@@ -410,7 +410,7 @@ public class ModBlocks {
 	public static Block meteor_brick_cracked;
 	public static Block meteor_brick_chiseled;
 	public static Block meteor_pillar;
-	public static Block meteor_spawner;
+	//public static Block meteor_spawner;
 	public static Block meteor_battery;
 
 	public static Block moon_turf;
@@ -3009,7 +3009,7 @@ public class ModBlocks {
 		GameRegistry.registerBlock(meteor_brick_cracked, meteor_brick_cracked.getUnlocalizedName());
 		GameRegistry.registerBlock(meteor_brick_chiseled, meteor_brick_chiseled.getUnlocalizedName());
 		GameRegistry.registerBlock(meteor_pillar, meteor_pillar.getUnlocalizedName());
-		GameRegistry.registerBlock(meteor_spawner, meteor_spawner.getUnlocalizedName());
+		//GameRegistry.registerBlock(meteor_spawner, meteor_spawner.getUnlocalizedName());
 		GameRegistry.registerBlock(meteor_battery, ItemBlockLore.class, meteor_battery.getUnlocalizedName());
 		GameRegistry.registerBlock(brick_jungle, brick_jungle.getUnlocalizedName());
 		GameRegistry.registerBlock(brick_jungle_cracked, brick_jungle_cracked.getUnlocalizedName());
@@ -3167,12 +3167,12 @@ public class ModBlocks {
 		GameRegistry.registerBlock(nuke_man, nuke_man.getUnlocalizedName());
 		GameRegistry.registerBlock(nuke_mike, nuke_mike.getUnlocalizedName());
 		GameRegistry.registerBlock(nuke_tsar, nuke_tsar.getUnlocalizedName());
-		GameRegistry.registerBlock(nuke_prototype, ItemPrototypeBlock.class, nuke_prototype.getUnlocalizedName());
+		//GameRegistry.registerBlock(nuke_prototype, ItemPrototypeBlock.class, nuke_prototype.getUnlocalizedName());
 		GameRegistry.registerBlock(nuke_fleija, nuke_fleija.getUnlocalizedName());
-		GameRegistry.registerBlock(nuke_solinium, nuke_solinium.getUnlocalizedName());
+		//GameRegistry.registerBlock(nuke_solinium, nuke_solinium.getUnlocalizedName());
 		GameRegistry.registerBlock(nuke_n2, nuke_n2.getUnlocalizedName());
-		GameRegistry.registerBlock(nuke_antimatter, nuke_antimatter.getUnlocalizedName());
-		GameRegistry.registerBlock(nuke_fstbmb, nuke_fstbmb.getUnlocalizedName());
+		//GameRegistry.registerBlock(nuke_antimatter, nuke_antimatter.getUnlocalizedName());
+		//GameRegistry.registerBlock(nuke_fstbmb, nuke_fstbmb.getUnlocalizedName());
 		GameRegistry.registerBlock(nuke_custom, nuke_custom.getUnlocalizedName());
 
 		//Generic Bombs
@@ -3699,9 +3699,9 @@ public class ModBlocks {
 		register(icf);
 
 		//E
-		GameRegistry.registerBlock(balefire, balefire.getUnlocalizedName());
-		GameRegistry.registerBlock(fire_digamma, fire_digamma.getUnlocalizedName());
-		GameRegistry.registerBlock(digamma_matter, digamma_matter.getUnlocalizedName());
+		//GameRegistry.registerBlock(balefire, balefire.getUnlocalizedName());
+		//GameRegistry.registerBlock(fire_digamma, fire_digamma.getUnlocalizedName());
+		//GameRegistry.registerBlock(digamma_matter, digamma_matter.getUnlocalizedName());
 		register(volcano_core);
 		register(volcano_rad_core);
 

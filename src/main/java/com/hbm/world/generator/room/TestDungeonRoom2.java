@@ -12,23 +12,4 @@ public class TestDungeonRoom2 extends CellularDungeonRoom {
 		super(parent);
 	}
 
-	public void generateMain(World world, int x, int y, int z) {
-		
-		super.generateMain(world, x, y, z);
-
-		int j = world.rand.nextInt(2) + 2;
-		int k = world.rand.nextInt(3) + 2;
-		
-		for(int i = 0; i < j; i++) {
-			int dx = world.rand.nextInt(parent.width - 6) + 3;
-			int dz = world.rand.nextInt(parent.width - 6) + 3;
-			world.setBlock(x + dx, y + 1, z + dz, ModBlocks.crate_ammo, 0, 2);
-		}
-		
-		for(int i = 0; i < k; i++) {
-			int dx = world.rand.nextInt(parent.width - 6) + 3;
-			int dz = world.rand.nextInt(parent.width - 6) + 3;
-			world.setBlock(x + dx, y + 1, z + dz, ModBlocks.crate_can, 0, 2);
-		}
-	}
 }
