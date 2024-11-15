@@ -3,11 +3,8 @@ package com.hbm.entity.projectile;
 import java.util.List;
 
 import com.hbm.config.BombConfig;
-import com.hbm.entity.effect.EntityBlackHole;
 import com.hbm.entity.effect.EntityCloudFleijaRainbow;
 import com.hbm.entity.effect.EntityNukeTorex;
-import com.hbm.entity.effect.EntityRagingVortex;
-import com.hbm.entity.effect.EntityVortex;
 import com.hbm.entity.grenade.EntityGrenadeZOMG;
 import com.hbm.entity.logic.EntityNukeExplosionMK3;
 import com.hbm.entity.logic.EntityNukeExplosionMK5;
@@ -31,7 +28,7 @@ import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
 public class EntityModBeam extends Entity implements IProjectile {
-	
+
 	private int field_145791_d = -1;
 	private int field_145792_e = -1;
 	private int field_145789_f = -1;
@@ -287,7 +284,7 @@ public class EntityModBeam extends Entity implements IProjectile {
 					}
 
 					if(movingobjectposition.entityHit instanceof EntityLivingBase) {
-						
+
 						if(!worldObj.isRemote)
 							((EntityLivingBase) movingobjectposition.entityHit).addPotionEffect(new PotionEffect(HbmPotion.bang.id, 60, 0));
 					} else {
@@ -392,7 +389,7 @@ public class EntityModBeam extends Entity implements IProjectile {
 	public double getDamage() {
 		return this.damage;
 	}
-	
+
 	@Override
 	public boolean canAttackWithItem() {
 		return false;
@@ -449,43 +446,43 @@ public class EntityModBeam extends Entity implements IProjectile {
 			} else if(mode == 4) {
 				this.worldObj.playSoundEffect(this.posX, this.posY, this.posZ, "random.explode", 100.0f, this.worldObj.rand.nextFloat() * 0.1F + 0.9F);
 
-				EntityVortex vortex = new EntityVortex(this.worldObj, 1F);
-				vortex.posX = this.posX;
-				vortex.posY = this.posY;
-				vortex.posZ = this.posZ;
-				this.worldObj.spawnEntityInWorld(vortex);
+				//EntityVortex vortex = new EntityVortex(this.worldObj, 1F);
+				//vortex.posX = this.posX;
+				//vortex.posY = this.posY;
+				//vortex.posZ = this.posZ;
+				//this.worldObj.spawnEntityInWorld(vortex);
 			} else if(mode == 5) {
 				this.worldObj.playSoundEffect(this.posX, this.posY, this.posZ, "random.explode", 100.0f, this.worldObj.rand.nextFloat() * 0.1F + 0.9F);
 
-				EntityVortex vortex = new EntityVortex(this.worldObj, 2.5F);
-				vortex.posX = this.posX;
-				vortex.posY = this.posY;
-				vortex.posZ = this.posZ;
-				this.worldObj.spawnEntityInWorld(vortex);
+				//EntityVortex vortex = new EntityVortex(this.worldObj, 2.5F);
+				//vortex.posX = this.posX;
+				//vortex.posY = this.posY;
+				//vortex.posZ = this.posZ;
+				//this.worldObj.spawnEntityInWorld(vortex);
 			} else if(mode == 6) {
 				this.worldObj.playSoundEffect(this.posX, this.posY, this.posZ, "random.explode", 100.0f, this.worldObj.rand.nextFloat() * 0.1F + 0.9F);
 
-				EntityRagingVortex vortex = new EntityRagingVortex(this.worldObj, 2.5F);
-				vortex.posX = this.posX;
-				vortex.posY = this.posY;
-				vortex.posZ = this.posZ;
-				this.worldObj.spawnEntityInWorld(vortex);
+				//EntityRagingVortex vortex = new EntityRagingVortex(this.worldObj, 2.5F);
+				//vortex.posX = this.posX;
+				//vortex.posY = this.posY;
+				//vortex.posZ = this.posZ;
+				//this.worldObj.spawnEntityInWorld(vortex);
 			} else if(mode == 7) {
 				this.worldObj.playSoundEffect(this.posX, this.posY, this.posZ, "random.explode", 100.0f, this.worldObj.rand.nextFloat() * 0.1F + 0.9F);
 
-				EntityRagingVortex vortex = new EntityRagingVortex(this.worldObj, 5F);
-				vortex.posX = this.posX;
-				vortex.posY = this.posY;
-				vortex.posZ = this.posZ;
-				this.worldObj.spawnEntityInWorld(vortex);
+				//EntityRagingVortex vortex = new EntityRagingVortex(this.worldObj, 5F);
+				//vortex.posX = this.posX;
+				//vortex.posY = this.posY;
+				//vortex.posZ = this.posZ;
+				//this.worldObj.spawnEntityInWorld(vortex);
 			} else if(mode == 8) {
 				this.worldObj.playSoundEffect(this.posX, this.posY, this.posZ, "random.explode", 100.0f, this.worldObj.rand.nextFloat() * 0.1F + 0.9F);
 
-				EntityBlackHole vortex = new EntityBlackHole(this.worldObj, 2F);
-				vortex.posX = this.posX;
-				vortex.posY = this.posY;
-				vortex.posZ = this.posZ;
-				this.worldObj.spawnEntityInWorld(vortex);
+				//EntityBlackHole vortex = new EntityBlackHole(this.worldObj, 2F);
+				//vortex.posX = this.posX;
+				//vortex.posY = this.posY;
+				//vortex.posZ = this.posZ;
+				//this.worldObj.spawnEntityInWorld(vortex);
 			} else {
 				this.worldObj.playSoundEffect(this.posX, this.posY, this.posZ, "random.explode", 100.0f, this.worldObj.rand.nextFloat() * 0.1F + 0.9F);
 

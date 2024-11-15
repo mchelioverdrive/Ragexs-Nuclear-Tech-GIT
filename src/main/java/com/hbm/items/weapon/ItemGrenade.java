@@ -13,7 +13,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
 public class ItemGrenade extends Item {
-	
+
 	public int fuse = 4;
 
 	public ItemGrenade(int fuse) {
@@ -102,9 +102,9 @@ public class ItemGrenade extends Item {
 			if (this == ModItems.grenade_shrapnel) {
 				p_77659_2_.spawnEntityInWorld(new EntityGrenadeShrapnel(p_77659_2_, p_77659_3_));
 			}
-			if (this == ModItems.grenade_black_hole) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeBlackHole(p_77659_2_, p_77659_3_));
-			}
+			//if (this == ModItems.grenade_black_hole) {
+			//	p_77659_2_.spawnEntityInWorld(new EntityGrenadeBlackHole(p_77659_2_, p_77659_3_));
+			//}
 			if (this == ModItems.grenade_gascan) {
 				p_77659_2_.spawnEntityInWorld(new EntityGrenadeGascan(p_77659_2_, p_77659_3_));
 			}
@@ -117,9 +117,9 @@ public class ItemGrenade extends Item {
 			if (this == ModItems.grenade_smart) {
 				p_77659_2_.spawnEntityInWorld(new EntityGrenadeSmart(p_77659_2_, p_77659_3_));
 			}
-			if (this == ModItems.grenade_mirv) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeMIRV(p_77659_2_, p_77659_3_));
-			}
+			//if (this == ModItems.grenade_mirv) {
+			//	p_77659_2_.spawnEntityInWorld(new EntityGrenadeMIRV(p_77659_2_, p_77659_3_));
+			//}
 			if (this == ModItems.grenade_breach) {
 				p_77659_2_.spawnEntityInWorld(new EntityGrenadeBreach(p_77659_2_, p_77659_3_));
 			}
@@ -157,12 +157,12 @@ public class ItemGrenade extends Item {
 			if (this == ModItems.grenade_if_mystery) {
 				p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFMystery(p_77659_2_, p_77659_3_));
 			}
-			if (this == ModItems.grenade_if_spark) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFSpark(p_77659_2_, p_77659_3_));
-			}
-			if (this == ModItems.grenade_if_hopwire) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFHopwire(p_77659_2_, p_77659_3_));
-			}
+			//if (this == ModItems.grenade_if_spark) {
+			//	p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFSpark(p_77659_2_, p_77659_3_));
+			//}
+			//if (this == ModItems.grenade_if_hopwire) {
+			//	p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFHopwire(p_77659_2_, p_77659_3_));
+			//}
 			if (this == ModItems.grenade_if_null) {
 				p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFNull(p_77659_2_, p_77659_3_));
 			}
@@ -194,14 +194,14 @@ public class ItemGrenade extends Item {
 
 		return EnumRarity.common;
 	}
-	
+
 	private String translateFuse() {
 		if(fuse == -1)
 			return "Impact";
-		
+
 		if(fuse == 0)
 			return "Instant";
-		
+
 		return fuse + "s";
 	}
 
@@ -270,7 +270,7 @@ public class ItemGrenade extends Item {
 			list.add(EnumChatFormatting.ITALIC + "java.lang.NullPointerException");
 		}
 	}
-	
+
 	public static int getFuseTicks(Item grenade) {
 		return ((ItemGrenade)grenade).fuse * 20;
 	}

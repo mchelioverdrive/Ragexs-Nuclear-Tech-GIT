@@ -3,7 +3,6 @@ package com.hbm.render.item.weapon;
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.items.ModItems;
-import com.hbm.items.weapon.GunB92;
 import com.hbm.items.weapon.GunLeverActionS;
 import com.hbm.lib.RefStrings;
 import com.hbm.render.model.ModelB92;
@@ -20,7 +19,7 @@ public class ItemRenderGunAnim implements IItemRenderer {
 	protected ModelLeverAction flippedGun;
 	protected ModelB92 b92;
 	protected ModelB93 b93;
-	
+
 	public ItemRenderGunAnim() {
 		flippedGun = new ModelLeverAction();
 		b92 = new ModelB92();
@@ -45,11 +44,11 @@ public class ItemRenderGunAnim implements IItemRenderer {
 
 	@Override
 	public void renderItem(ItemRenderType type, ItemStack item, Object... data) {
-		
+
 		switch(type) {
 		case EQUIPPED_FIRST_PERSON:
 			GL11.glPushMatrix();
-			
+
 				GL11.glEnable(GL11.GL_CULL_FACE);
 
 				if(item.getItem() == ModItems.gun_lever_action_sonata)
@@ -58,7 +57,7 @@ public class ItemRenderGunAnim implements IItemRenderer {
 					Minecraft.getMinecraft().renderEngine.bindTexture(new ResourceLocation(RefStrings.MODID +":textures/models/ModelB92SM.png"));
 				if(item.getItem() == ModItems.gun_b93)
 					Minecraft.getMinecraft().renderEngine.bindTexture(new ResourceLocation(RefStrings.MODID +":textures/models/ModelB93.png"));
-				
+
 				GL11.glRotatef(-135.0F, 0.0F, 0.0F, 1.0F);
 				GL11.glTranslatef(-0.5F, 0.0F, -0.2F);
 				GL11.glScalef(0.5F, 0.5F, 0.5F);
@@ -70,32 +69,32 @@ public class ItemRenderGunAnim implements IItemRenderer {
 					GL11.glRotatef(15F, 0.0F, 0.0F, 1.0F);
 					GL11.glTranslatef(2.3F, 0.2F, 0.8F);
 				}
-				
+
 				if((item.getItem() == ModItems.gun_lever_action_sonata) && GunLeverActionS.getRotationFromAnim(item) > 0) {
 					GL11.glRotatef(GunLeverActionS.getRotationFromAnim(item) * -25, 0.0F, 0.0F, 1.0F);
 					GL11.glTranslatef(GunLeverActionS.getOffsetFromAnim(item) * 1.5F, 0.0F, 0.0F);
 					GL11.glTranslatef(0.0F, GunLeverActionS.getOffsetFromAnim(item) * -1.5F, 0.0F);
 				}
-				
-				if(item.getItem() == ModItems.gun_b92 && GunB92.getRotationFromAnim(item) > 0) {
-					float off = GunB92.getRotationFromAnim(item) * 2;
-					GL11.glRotatef(GunB92.getRotationFromAnim(item) * -90, 0.0F, 0.0F, 1.0F);
-					GL11.glTranslatef(off * -0.5F, off * -0.5F, 0.0F);
-				}
-				
-				if(item.getItem() == ModItems.gun_b93 && GunB92.getRotationFromAnim(item) > 0) {
-					float off = GunB92.getRotationFromAnim(item) * 2;
-					GL11.glRotatef(GunB92.getRotationFromAnim(item) * -90, 0.0F, 0.0F, 1.0F);
-					GL11.glTranslatef(off * -0.5F, off * -0.5F, 0.0F);
-				}
-				
+
+				//if(item.getItem() == ModItems.gun_b92 && GunB92.getRotationFromAnim(item) > 0) {
+				//	float off = GunB92.getRotationFromAnim(item) * 2;
+				//	GL11.glRotatef(GunB92.getRotationFromAnim(item) * -90, 0.0F, 0.0F, 1.0F);
+				//	GL11.glTranslatef(off * -0.5F, off * -0.5F, 0.0F);
+				//}
+				//
+				//if(item.getItem() == ModItems.gun_b93 && GunB92.getRotationFromAnim(item) > 0) {
+				//	float off = GunB92.getRotationFromAnim(item) * 2;
+				//	GL11.glRotatef(GunB92.getRotationFromAnim(item) * -90, 0.0F, 0.0F, 1.0F);
+				//	GL11.glTranslatef(off * -0.5F, off * -0.5F, 0.0F);
+				//}
+
 				if(item.getItem() == ModItems.gun_lever_action_sonata)
 					flippedGun.renderAnim((Entity)data[1], 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, GunLeverActionS.getRotationFromAnim(item));
 				if(item.getItem() == ModItems.gun_b92)
-					b92.renderAnim((Entity)data[1], 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, GunB92.getTransFromAnim(item));
+			//	b92.renderAnim((Entity)data[1], 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, GunB92.getTransFromAnim(item));
 				if(item.getItem() == ModItems.gun_b93)
-					b93.renderAnim((Entity)data[1], 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, GunB92.getTransFromAnim(item));
-				
+			//		b93.renderAnim((Entity)data[1], 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, GunB92.getTransFromAnim(item));
+
 			GL11.glPopMatrix();
 			break;
 		case EQUIPPED:
@@ -116,7 +115,7 @@ public class ItemRenderGunAnim implements IItemRenderer {
 					Minecraft.getMinecraft().renderEngine.bindTexture(new ResourceLocation(RefStrings.MODID +":textures/models/ModelB92SM.png"));
 				if(item.getItem() == ModItems.gun_b93)
 					Minecraft.getMinecraft().renderEngine.bindTexture(new ResourceLocation(RefStrings.MODID +":textures/models/ModelB93.png"));
-				
+
 				GL11.glRotatef(-200.0F, 0.0F, 0.0F, 1.0F);
 				GL11.glRotatef(75.0F, 0.0F, 1.0F, 0.0F);
 				GL11.glRotatef(-30.0F, 1.0F, 0.0F, 0.0F);
@@ -133,10 +132,10 @@ public class ItemRenderGunAnim implements IItemRenderer {
 
 				if(item.getItem() == ModItems.gun_lever_action_sonata)
 					flippedGun.renderAnim((Entity)data[1], 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, GunLeverActionS.getRotationFromAnim(item));
-				if(item.getItem() == ModItems.gun_b92)
-					b92.renderAnim((Entity)data[1], 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, GunB92.getTransFromAnim(item));
-				if(item.getItem() == ModItems.gun_b93)
-					b93.renderAnim((Entity)data[1], 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, GunB92.getTransFromAnim(item));
+
+				//	b92.renderAnim((Entity)data[1], 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, GunB92.getTransFromAnim(item));
+
+				//	b93.renderAnim((Entity)data[1], 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, GunB92.getTransFromAnim(item));
 			GL11.glPopMatrix();
 		default: break;
 		}
