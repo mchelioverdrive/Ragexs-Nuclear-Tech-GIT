@@ -18,7 +18,9 @@ public class ToolConfig {
 	public static boolean abilityCrystallizer = true;
 	public static boolean abilityMercury = true;
 	public static boolean abilityExplosion = true;
-	
+
+	//how about a fucking damage multiplication option???? no im not coding it get removed jackass your mod should not be that powerful
+
 	public static void loadFromConfig(Configuration config) {
 
 		final String CATEGORY_TOOLS = CommonConfig.CATEGORY_TOOLS;

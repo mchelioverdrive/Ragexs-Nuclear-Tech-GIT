@@ -7,7 +7,7 @@ public class WorldConfig {
 	public static boolean overworldOre = true;
 	public static boolean netherOre = true;
 	public static boolean endOre = true;
-	
+
 	public static int uraniumSpawn = 6;
 	public static int thoriumSpawn = 7;
 	public static int titaniumSpawn = 8;
@@ -39,7 +39,7 @@ public class WorldConfig {
 	public static int dunaOilSpawn = 100;
 	public static int eveGasSpawn = 100;
 	public static int laytheOilSpawn = 100;
-	
+
 	public static boolean newBedrockOres = false;
 
 	public static int bedrockIronSpawn = 100;
@@ -114,10 +114,10 @@ public class WorldConfig {
 	public static int radfreq = 5000;
 	public static int vaultfreq = 2500;
 
-	public static boolean enableMeteorStrikes = true;
-	public static boolean enableMeteorShowers = true;
-	public static boolean enableMeteorTails = true;
-	public static boolean enableSpecialMeteors = true;
+	public static boolean enableMeteorStrikes = false;
+	public static boolean enableMeteorShowers = false;
+	public static boolean enableMeteorTails = false;
+	public static boolean enableSpecialMeteors = false;
 	public static int meteorStrikeChance = 20 * 60 * 180;
 	public static int meteorShowerChance = 20 * 60 * 5;
 	public static int meteorShowerDuration = 6000;
@@ -130,15 +130,15 @@ public class WorldConfig {
 	public static float craterBiomeInnerRad = 25F;
 	public static float craterBiomeOuterRad = 0.5F;
 	public static float craterBiomeWaterMult = 5F;
-	
+
 	public static void loadFromConfig(Configuration config) {
 
 		final String CATEGORY_OREGEN = CommonConfig.CATEGORY_ORES;
-		
+
 		overworldOre = CommonConfig.createConfigBool(config, CATEGORY_OREGEN, "2.D00_overworldOres", "General switch for whether overworld ores should be generated. Does not include special structures like oil.", true);
 		netherOre = CommonConfig.createConfigBool(config, CATEGORY_OREGEN, "2.D01_netherOres", "General switch for whether nether ores should be generated.", true);
 		endOre = CommonConfig.createConfigBool(config, CATEGORY_OREGEN, "2.D02_endOres", "General switch for whether end ores should be generated. Does not include special structures like trixite crystals.", true);
-		
+
 		uraniumSpawn = CommonConfig.createConfigInt(config, CATEGORY_OREGEN, "2.00_uraniumSpawnrate", "Amount of uranium ore veins per chunk", 7);
 		titaniumSpawn = CommonConfig.createConfigInt(config, CATEGORY_OREGEN, "2.01_titaniumSpawnrate", "Amount of titanium ore veins per chunk", 8);
 		sulfurSpawn = CommonConfig.createConfigInt(config, CATEGORY_OREGEN, "2.02_sulfurSpawnrate", "Amount of sulfur ore veins per chunk", 5);
@@ -222,7 +222,7 @@ public class WorldConfig {
 		randomSpawn = CommonConfig.createConfigInt(config, CATEGORY_OREGEN, "2.R01_randomOreSpawnrate", "Amount of random ore per chunk", 0);
 
 		final String CATEGORY_DUNGEON = CommonConfig.CATEGORY_DUNGEONS;
-		radioStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.00_radioSpawn", "Spawn radio station on every nTH chunk", 500);
+		//radioStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.00_radioSpawn", "Spawn radio station on every nTH chunk", 500);
 		antennaStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.01_antennaSpawn", "Spawn antenna on every nTH chunk", 250);
 		atomStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.02_atomSpawn", "Spawn power plant on every nTH chunk", 500);
 		vertibirdStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.03_vertibirdSpawn", "Spawn vertibird on every nTH chunk", 500);
@@ -230,27 +230,27 @@ public class WorldConfig {
 		relayStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.05_relaySpawn", "Spawn relay on every nTH chunk", 500);
 		satelliteStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.06_satelliteSpawn", "Spawn satellite dish on every nTH chunk", 500);
 		factoryStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.09_factorySpawn", "Spawn factory on every nTH chunk", 1000);
-		dudStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.10_dudSpawn", "Spawn dud on every nTH chunk", 500);
-		spaceshipStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.11_spaceshipSpawn", "Spawn spaceship on every nTH chunk", 1000);
+		//dudStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.10_dudSpawn", "Spawn dud on every nTH chunk", 500);
+		//spaceshipStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.11_spaceshipSpawn", "Spawn spaceship on every nTH chunk", 1000);
 		barrelStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.12_barrelSpawn", "Spawn waste tank on every nTH chunk", 5000);
-		broadcaster = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.13_broadcasterSpawn", "Spawn corrupt broadcaster on every nTH chunk", 5000);
-		minefreq = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.14_landmineSpawn", "Spawn AP landmine on every nTH chunk", 64);
+		//broadcaster = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.13_broadcasterSpawn", "Spawn corrupt broadcaster on every nTH chunk", 5000);
+		//minefreq = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.14_landmineSpawn", "Spawn AP landmine on every nTH chunk", 64);
 		radfreq = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.15_radHotspotSpawn", "Spawn radiation hotspot on every nTH chunk", 5000);
 		vaultfreq = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.16_vaultSpawn", "Spawn locked safe on every nTH chunk", 2500);
 		geyserWater = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.17_geyserWaterSpawn", "Spawn water geyser on every nTH chunk", 3000);
 		geyserChlorine = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.18_geyserChlorineSpawn", "Spawn poison geyser on every nTH chunk", 3000);
 		geyserVapor = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.19_geyserVaporSpawn", "Spawn vapor geyser on every nTH chunk", 500);
-		meteorStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.20_meteorSpawn", "Spawn meteor dungeon on every nTH chunk", 15000);
+		//meteorStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.20_meteorSpawn", "Spawn meteor dungeon on every nTH chunk", 15000);
 		capsuleStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.21_capsuleSpawn", "Spawn landing capsule on every nTH chunk", 100);
 		arcticStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.22_arcticVaultSpawn", "Spawn arctic code vault on every nTH chunk", 500);
-		jungleStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.23_jungleDungeonSpawn", "Spawn jungle dungeon on every nTH chunk", 2000);
+		//jungleStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.23_jungleDungeonSpawn", "Spawn jungle dungeon on every nTH chunk", 2000);
 		pyramidStructure = CommonConfig.createConfigInt(config, CATEGORY_DUNGEON, "4.24_pyramidSpawn", "Spawn pyramid on every nTH chunk", 4000);
 
 		final String CATEGORY_METEOR = CommonConfig.CATEGORY_METEORS;
-		enableMeteorStrikes = CommonConfig.createConfigBool(config, CATEGORY_METEOR, "5.00_enableMeteorStrikes", "Toggles the spawning of meteors", true);
-		enableMeteorShowers = CommonConfig.createConfigBool(config, CATEGORY_METEOR, "5.01_enableMeteorShowers", "Toggles meteor showers, which start with a 1% chance for every spawned meteor", true);
-		enableMeteorTails = CommonConfig.createConfigBool(config, CATEGORY_METEOR, "5.02_enableMeteorTails", "Toggles the particle effect created by falling meteors", true);
-		enableSpecialMeteors = CommonConfig.createConfigBool(config, CATEGORY_METEOR, "5.03_enableSpecialMeteors", "Toggles rare, special meteor types with different impact effects", true);
+		enableMeteorStrikes = CommonConfig.createConfigBool(config, CATEGORY_METEOR, "5.00_enableMeteorStrikes", "Toggles the spawning of meteors", false);
+		enableMeteorShowers = CommonConfig.createConfigBool(config, CATEGORY_METEOR, "5.01_enableMeteorShowers", "Toggles meteor showers, which start with a 1% chance for every spawned meteor", false);
+		enableMeteorTails = CommonConfig.createConfigBool(config, CATEGORY_METEOR, "5.02_enableMeteorTails", "Toggles the particle effect created by falling meteors", false);
+		enableSpecialMeteors = CommonConfig.createConfigBool(config, CATEGORY_METEOR, "5.03_enableSpecialMeteors", "Toggles rare, special meteor types with different impact effects", false);
 		meteorStrikeChance = CommonConfig.createConfigInt(config, CATEGORY_METEOR, "5.03_meteorStrikeChance", "The probability of a meteor spawning (an average of once every nTH ticks)", 20 * 60 * 60 * 5);
 		meteorShowerChance = CommonConfig.createConfigInt(config, CATEGORY_METEOR, "5.04_meteorShowerChance", "The probability of a meteor spawning during meteor shower (an average of once every nTH ticks)", 20 * 60 * 15);
 		meteorShowerDuration = CommonConfig.createConfigInt(config, CATEGORY_METEOR, "5.05_meteorShowerDuration", "Max duration of meteor shower in ticks", 20 * 60 * 30);
@@ -265,7 +265,7 @@ public class WorldConfig {
 		craterBiomeOuterRad = (float) CommonConfig.createConfigDouble(config, CATEGORY_BIOMES, "17.R02_craterBiomeOuterRad", "RAD/s for the outer crater biome", 0.5D);
 		craterBiomeWaterMult = (float) CommonConfig.createConfigDouble(config, CATEGORY_BIOMES, "17.R03_craterBiomeWaterMult", "Multiplier for RAD/s in crater biomes when in water", 5D);
 
-		radioStructure = CommonConfig.setDefZero(radioStructure, 1000);
+		//radioStructure = CommonConfig.setDefZero(radioStructure, 1000);
 		antennaStructure = CommonConfig.setDefZero(antennaStructure, 1000);
 		atomStructure = CommonConfig.setDefZero(atomStructure, 1000);
 		vertibirdStructure = CommonConfig.setDefZero(vertibirdStructure, 1000);
@@ -273,13 +273,13 @@ public class WorldConfig {
 		relayStructure = CommonConfig.setDefZero(relayStructure, 1000);
 		satelliteStructure = CommonConfig.setDefZero(satelliteStructure, 1000);
 		factoryStructure = CommonConfig.setDefZero(factoryStructure, 1000);
-		dudStructure = CommonConfig.setDefZero(dudStructure, 1000);
-		spaceshipStructure = CommonConfig.setDefZero(spaceshipStructure, 1000);
+		//dudStructure = CommonConfig.setDefZero(dudStructure, 1000);
+		//spaceshipStructure = CommonConfig.setDefZero(spaceshipStructure, 1000);
 		barrelStructure = CommonConfig.setDefZero(barrelStructure, 1000);
 		geyserWater = CommonConfig.setDefZero(geyserWater, 1000);
 		geyserChlorine = CommonConfig.setDefZero(geyserChlorine, 1000);
 		geyserVapor = CommonConfig.setDefZero(geyserVapor, 1000);
-		broadcaster = CommonConfig.setDefZero(broadcaster, 1000);
+		//broadcaster = CommonConfig.setDefZero(broadcaster, 1000);
 		minefreq = CommonConfig.setDefZero(minefreq, 1000);
 		radfreq = CommonConfig.setDefZero(radfreq, 1000);
 		vaultfreq = CommonConfig.setDefZero(vaultfreq, 1000);
@@ -287,11 +287,11 @@ public class WorldConfig {
 		jungleStructure = CommonConfig.setDefZero(jungleStructure, 1000);
 		capsuleStructure = CommonConfig.setDefZero(capsuleStructure, 100);
 		arcticStructure = CommonConfig.setDefZero(arcticStructure, 500);
-		
 
-		
-		meteorStrikeChance = CommonConfig.setDef(meteorStrikeChance, 1000);
-		meteorShowerChance = CommonConfig.setDef(meteorShowerChance, 1000);
+
+
+		//meteorStrikeChance = CommonConfig.setDef(meteorStrikeChance, 1000);
+		//meteorShowerChance = CommonConfig.setDef(meteorShowerChance, 1000);
 	}
 
 }

@@ -32,45 +32,45 @@ public class BlockHadronAccess extends BlockContainer implements IProxyControlle
 	public TileEntity createNewTileEntity(World world, int meta) {
 		return new TileEntityProxyInventory();
 	}
-	
+
     @SideOnly(Side.CLIENT)
     public IIcon getIcon(int side, int meta) {
-    	
+
 		ForgeDirection dir = ForgeDirection.getOrientation(meta).getOpposite();
-    	
+
     	if(side != dir.ordinal())
     		return ModBlocks.hadron_plating_blue.getIcon(side, meta);
-    	
+
     	return this.blockIcon;
     }
-	
+
     public void onBlockPlacedBy(World world, int x, int y, int z, EntityLivingBase player, ItemStack stack) {
-    	
+
         int l = BlockPistonBase.determineOrientation(world, x, y, z, player);
 		ForgeDirection dir = ForgeDirection.getOrientation(l).getOpposite();
         world.setBlockMetadataWithNotify(x, y, z, dir.ordinal(), 2);
     }
-	
+
 	@Override
 	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
-		
+
 		if(world.isRemote) {
 			return true;
 		} else if(!player.isSneaking()) {
-			
-			BossSpawnHandler.markFBI(player);
-			
+
+			//BossSpawnHandler.markFBI(player);
+
 			ForgeDirection dir = ForgeDirection.getOrientation(world.getBlockMetadata(x, y, z));
-			
+
 			for(int i = 1; i < 3; i++) {
-				
+
 				if(world.getBlock(x + dir.offsetX * i, y + dir.offsetY * i, z + dir.offsetZ * i) == ModBlocks.hadron_core) {
 					FMLNetworkHandler.openGui(player, MainRegistry.instance, 0, world, x + dir.offsetX * i, y + dir.offsetY * i, z + dir.offsetZ * i);
 				}
 			}
-			
+
 			return true;
-			
+
 		} else {
 			return false;
 		}
@@ -87,7 +87,7 @@ public class BlockHadronAccess extends BlockContainer implements IProxyControlle
 				return te;
 			}
 		}
-		
+
 		return null;
 	}
 }

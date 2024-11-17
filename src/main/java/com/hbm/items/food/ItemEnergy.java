@@ -25,16 +25,16 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.FakePlayer;
 
 public class ItemEnergy extends Item {
-	
+
 	private Item container = null;
 	private Item cap = null;
 	private boolean requiresOpener = false;
-	
+
 	public ItemEnergy() {
 		this.setCreativeTab(MainRegistry.consumableTab);
 	}
-	
-	
+
+
 	public ItemEnergy makeCan() {
 		this.container = ModItems.can_empty;
 		this.cap = ModItems.ring_pull;
@@ -42,7 +42,7 @@ public class ItemEnergy extends Item {
 		this.setContainerItem(this.container);
 		return this;
 	}
-	 
+
 	public ItemEnergy makeBottle(Item bottle, Item cap) {
 		this.container = bottle;
 		this.cap = cap;
@@ -51,7 +51,7 @@ public class ItemEnergy extends Item {
 		this.setCreativeTab(MainRegistry.consumableTab);
 		return this;
 	}
-	
+
 	public ItemEnergy makeGlass() {
 		this.requiresOpener = false;
 		return this;
@@ -70,7 +70,7 @@ public class ItemEnergy extends Item {
 				world.newExplosion(player, player.posX, player.posY, player.posZ, 5F, true, true);
 				return super.onEaten(stack, world, player);
 			}
-			
+
 			VersatileConfig.applyPotionSickness(player, 5);
 
 			if(this == ModItems.can_smart) {
@@ -139,7 +139,7 @@ public class ItemEnergy extends Item {
 				//System.out.println(this.container);
 			}
 			if(this == ModItems.teacup) {
-				player.heal(3F); 				
+				player.heal(3F);
 				player.addPotionEffect(new PotionEffect(Potion.resistance.id, 30 * 20, 4));
 
 				this.setContainerItem(ModItems.teacup_empty);
@@ -147,9 +147,9 @@ public class ItemEnergy extends Item {
 			}
 			if(this == ModItems.bottle_honey) {
 				player.heal(9F);  //sweet sorrow
-				float digamma = HbmLivingProps.getDigamma(player);
-				HbmLivingProps.setDigamma(player, Math.max(digamma - 0.3F, 0F));
-				
+				//float digamma = HbmLivingProps.getDigamma(player);
+				//HbmLivingProps.setDigamma(player, Math.max(digamma - 0.3F, 0F));
+
 				this.setContainerItem(Items.glass_bottle);
 				this.container = Items.glass_bottle;
 			}
@@ -227,7 +227,7 @@ public class ItemEnergy extends Item {
 					player.inventory.addItemStackToInventory(new ItemStack(this.container));
 				}
 			}
-			
+
 			player.inventoryContainer.detectAndSendChanges();
 		}
 
@@ -250,7 +250,7 @@ public class ItemEnergy extends Item {
 
 		if(VersatileConfig.hasPotionSickness(p_77659_3_))
 			return p_77659_1_;
-		
+
 			if(this.requiresOpener && !p_77659_3_.inventory.hasItem(ModItems.bottle_opener))
 				return p_77659_1_;
 

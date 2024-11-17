@@ -14,11 +14,11 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class MachineRadiolysis extends BlockDummyable {
-	
+
 	public MachineRadiolysis(Material mat) {
 		super(mat);
 	}
-	
+
 	@Override
 	public TileEntity createNewTileEntity(World world, int meta) {
 
@@ -26,17 +26,17 @@ public class MachineRadiolysis extends BlockDummyable {
 			return new TileEntityMachineRadiolysis();
 		if(meta >= 6)
 			return new TileEntityProxyCombo(true, true, true);
-		
+
 		return null;
 	}
-	
+
 	@Override
 	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
 		if(world.isRemote) {
 			return true;
 		} else if(!player.isSneaking()) {
-			BossSpawnHandler.markFBI(player);
-			
+			//BossSpawnHandler.markFBI(player);
+
 			int[] pos = this.findCore(world, x, y, z);
 
 			if(pos == null)
@@ -48,20 +48,20 @@ public class MachineRadiolysis extends BlockDummyable {
 			return false;
 		}
 	}
-	
+
 	@Override
 	public int[] getDimensions() {
-		return new int[] {2, 0, 1, 1, 1, 1,}; 
+		return new int[] {2, 0, 1, 1, 1, 1,};
 	}
-	
+
 	@Override
 	public int getOffset() {
 		return 0;
 	}
-	
+
 	protected void fillSpace(World world, int x, int y, int z, ForgeDirection dir, int o) {
 		super.fillSpace(world, x, y, z, dir, o);
-		
+
 		this.makeExtra(world, x + dir.offsetX * o + 1, y, z + dir.offsetZ * o);
 		this.makeExtra(world, x + dir.offsetX * o - 1, y, z + dir.offsetZ * o);
 		this.makeExtra(world, x + dir.offsetX * o, y, z + dir.offsetZ * o + 1);

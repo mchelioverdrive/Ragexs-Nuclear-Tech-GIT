@@ -21,7 +21,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class BlockHadronCore extends BlockContainer {
-	
+
 	@SideOnly(Side.CLIENT)
 	private IIcon iconIn;
 	@SideOnly(Side.CLIENT)
@@ -35,7 +35,7 @@ public class BlockHadronCore extends BlockContainer {
 	public TileEntity createNewTileEntity(World world, int meta) {
 		return new TileEntityHadron();
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public void registerBlockIcons(IIconRegister iconRegister) {
@@ -43,40 +43,40 @@ public class BlockHadronCore extends BlockContainer {
 		this.iconIn = iconRegister.registerIcon(RefStrings.MODID + ":hadron_core_in");
 		this.iconOut = iconRegister.registerIcon(RefStrings.MODID + ":hadron_core_out");
 	}
-	
+
     @SideOnly(Side.CLIENT)
     public IIcon getIcon(int side, int meta) {
-    	
+
     	if(side == meta)
     		return this.iconOut;
-    	
+
     	ForgeDirection dir = ForgeDirection.getOrientation(meta);
-    	
+
     	if(side == dir.getOpposite().ordinal())
     		return this.iconIn;
-    	
+
         return this.blockIcon;
     }
-	
+
     public void onBlockPlacedBy(World world, int x, int y, int z, EntityLivingBase player, ItemStack stack) {
-    	
+
         int l = BlockPistonBase.determineOrientation(world, x, y, z, player);
         world.setBlockMetadataWithNotify(x, y, z, l, 2);
     }
-	
+
 	@Override
 	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
 		if(world.isRemote) {
 			return true;
 		} else if(!player.isSneaking()) {
-			
-			BossSpawnHandler.markFBI(player);
-			
+
+			//BossSpawnHandler.markFBI(player);
+
 			TileEntityHadron entity = (TileEntityHadron) world.getTileEntity(x, y, z);
 			if(entity != null) {
 				FMLNetworkHandler.openGui(player, MainRegistry.instance, 0, world, x, y, z);
 			}
-			
+
 			return true;
 		} else {
 			return false;

@@ -35,7 +35,7 @@ public class SoyuzLauncher extends BlockDummyable {
 
 		if(meta >= 12) return new TileEntitySoyuzLauncher();
 		if(meta >= 6) return new TileEntityProxyCombo().power().fluid();
-		
+
 		return null;
 	}
 
@@ -43,7 +43,7 @@ public class SoyuzLauncher extends BlockDummyable {
 	public Item getItemDropped(int i, Random rand, int j) {
 		return null;
 	}
-	
+
 	@Override
 	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
 		if(world.isRemote)
@@ -52,12 +52,12 @@ public class SoyuzLauncher extends BlockDummyable {
 		} else if(!player.isSneaking())
 		{
 			int[] pos = this.findCore(world, x, y, z);
-			
+
 			if(pos == null)
 				return false;
-			
-			BossSpawnHandler.markFBI(player);
-			
+
+			//BossSpawnHandler.markFBI(player);
+
 			TileEntitySoyuzLauncher entity = (TileEntitySoyuzLauncher) world.getTileEntity(pos[0], pos[1], pos[2]);
 			if(entity != null)
 			{
@@ -68,28 +68,28 @@ public class SoyuzLauncher extends BlockDummyable {
 			return false;
 		}
 	}
-	
+
 	public static final int height = 4;
-	
+
 	@Override
 	public void onBlockPlacedBy(World world, int x, int y, int z, EntityLivingBase player, ItemStack itemStack) {
-		
+
 		if(!(player instanceof EntityPlayer))
 			return;
-		
+
 		EntityPlayer pl = (EntityPlayer) player;
-		
+
 		int o = -getOffset();
-		
+
 		ForgeDirection dir = ForgeDirection.EAST;
-		
+
 		if(!checkRequirement(world, x, y, z, dir, o)) {
 			world.setBlockToAir(x, y, z);
-			
+
 			if(!pl.capabilities.isCreativeMode) {
 				ItemStack stack = pl.inventory.mainInventory[pl.inventory.currentItem];
 				Item item = Item.getItemFromBlock(this);
-				
+
 				if(stack == null) {
 					pl.inventory.mainInventory[pl.inventory.currentItem] = new ItemStack(this);
 				} else {
@@ -100,12 +100,12 @@ public class SoyuzLauncher extends BlockDummyable {
 					}
 				}
 			}
-			
+
 			return;
 		}
-		
+
 		pl.getHeldItem().stackSize--;
-		
+
 		world.setBlock(x + dir.offsetX * o , y + dir.offsetY * o + height, z + dir.offsetZ * o, this, dir.ordinal() + offset, 3);
 		fillSpace(world, x, y, z, dir, o);
 		world.scheduleBlockUpdate(x, y, z, this, 1);
@@ -113,9 +113,9 @@ public class SoyuzLauncher extends BlockDummyable {
 
 		super.onBlockPlacedBy(world, x, y, z, player, itemStack);
 	}
-	
+
 	public boolean checkRequirement(World world, int x, int y, int z, ForgeDirection dir, int o) {
-		
+
 		x = x + dir.offsetX * o;
 		y = y + dir.offsetY * o + height;
 		z = z + dir.offsetZ * o;
@@ -127,12 +127,12 @@ public class SoyuzLauncher extends BlockDummyable {
 		if(!MultiblockHandlerXR.checkSpace(world, x, y, z, new int[] { -2, 4, -3, 6, 6, -3 }, x, y, z, dir)) return false;
 		if(!MultiblockHandlerXR.checkSpace(world, x, y, z, new int[] { 0, 4, 1, 1, -6, 8 }, x, y, z, dir)) return false;
 		if(!MultiblockHandlerXR.checkSpace(world, x, y, z, new int[] { 0, 4, 2, 2, 9, -5 }, x, y, z, dir)) return false;
-		
+
 		return true;
 	}
-	
+
 	public void fillSpace(World world, int x, int y, int z, ForgeDirection dir, int o) {
-		
+
 		x = x + dir.offsetX * o;
 		y = y + dir.offsetY * o + height;
 		z = z + dir.offsetZ * o;
@@ -144,11 +144,11 @@ public class SoyuzLauncher extends BlockDummyable {
 		MultiblockHandlerXR.fillSpace(world, x, y, z, new int[] { -2, 4, -3, 6, 6, -3 }, this, dir);
 		MultiblockHandlerXR.fillSpace(world, x, y, z, new int[] { 0, 4, 1, 1, -6, 8 }, this, dir);
 		MultiblockHandlerXR.fillSpace(world, x, y, z, new int[] { 0, 4, 2, 2, 9, -5 }, this, dir);
-		
+
 		keepInventory = true;
 		for(int ix = -6; ix <= 6; ix++) {
 			for(int iz = -6; iz <= 6; iz++) {
-				
+
 				if(ix == 6 || ix == -6 || iz == 6 || iz == -6) {
 					this.makeExtra(world, x + ix, y, z + iz);
 					this.makeExtra(world, x + ix, y + 1, z + iz);
@@ -168,10 +168,10 @@ public class SoyuzLauncher extends BlockDummyable {
 	public int getOffset() {
 		return 0;
 	}
-	
+
 	private final Random field_149933_a = new Random();
 	private static boolean keepInventory;
-	
+
 	@Override
 	public void breakBlock(World world, int x, int y, int z, Block p_149749_5_, int i) {
 		if(!keepInventory) {

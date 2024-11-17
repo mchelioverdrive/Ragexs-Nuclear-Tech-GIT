@@ -38,8 +38,8 @@ public class ReactorZirnox extends BlockDummyable {
 		if(world.isRemote) {
 			return true;
 		} else if(!player.isSneaking()) {
-			BossSpawnHandler.markFBI(player);
-			
+			//BossSpawnHandler.markFBI(player);
+
 			int[] pos = this.findCore(world, x, y, z);
 
 			if(pos == null)
@@ -54,7 +54,7 @@ public class ReactorZirnox extends BlockDummyable {
 
 	@Override
 	public int[] getDimensions() {
-		return new int[] {1, 0, 2, 2, 2, 2,}; 
+		return new int[] {1, 0, 2, 2, 2, 2,};
 	}
 
 	@Override

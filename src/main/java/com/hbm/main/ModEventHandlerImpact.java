@@ -43,32 +43,32 @@ import net.minecraftforge.event.terraingen.DecorateBiomeEvent.Decorate.EventType
 import net.minecraftforge.event.world.WorldEvent;
 
 public class ModEventHandlerImpact {
-	
+
 	//////////////////////////////////////////
 	private static Random rand = new Random();
 	//////////////////////////////////////////
-	
+
 	@SubscribeEvent
 	public void worldTick(WorldTickEvent event) {
 
 		if(event.world != null && !event.world.isRemote && event.phase == Phase.START) {
 			float settle = 1F / 14400000F; 	// 600 days to completely clear all dust.
 			float cool = 1F / 24000F;		// One MC day between initial impact and total darkness.
-			
+
 			ImpactWorldHandler.impactEffects(event.world);
 			TomSaveData data = TomSaveData.forWorld(event.world);
-			
+
 			if(data.dust > 0 && data.fire == 0) {
 				data.dust = Math.max(0, data.dust - settle);
 				data.markDirty();
 			}
-			
+
 			if(data.fire > 0) {
 				data.fire = Math.max(0, (data.fire - cool));
 				data.dust = Math.min(1, (data.dust + cool));
 				data.markDirty();
 			}
-			
+
 			if(data.time > 0) {
 				data.time--;
 				if(data.time<=2400)
@@ -77,10 +77,10 @@ public class ModEventHandlerImpact {
 					for(Iterator<EntityPlayer> en = new ArrayList<>(entities).iterator() ; en.hasNext();) {
 						EntityPlayer e = en.next();
 						Random rand = new Random();
-						if(rand.nextInt(100)==0)
-						{
-							BossSpawnHandler.spawnMeteorAtPlayer(e, false, true);
-						}	
+						//if(rand.nextInt(100)==0)
+						//{
+						//	//BossSpawnHandler.spawnMeteorAtPlayer(e, false, true);
+						//}
 					}
 				}
 				if(data.time==data.dtime)
@@ -93,19 +93,19 @@ public class ModEventHandlerImpact {
 				}
 				data.markDirty();
 			}
-			
+
 			if(!event.world.loadedEntityList.isEmpty()) {
-				
+
 				List<Object> oList = new ArrayList<Object>();
 				oList.addAll(event.world.loadedEntityList);
-				
+
 				for(Object e : oList) {
 					if(e instanceof EntityLivingBase) {
 						EntityLivingBase entity = (EntityLivingBase) e;
-						
+
 						if(entity.worldObj.provider.dimensionId == 0 && data.fire > 0 && data.dust < 0.75f &&
 								event.world.getSavedLightValue(EnumSkyBlock.Sky, (int) entity.posX, (int) entity.posY, (int) entity.posZ) > 7) {
-							
+
 							entity.setFire(5);
 							entity.attackEntityFrom(DamageSource.onFire, 2);
 						}
@@ -130,9 +130,9 @@ public class ModEventHandlerImpact {
 
 	@SubscribeEvent
 	public void extinction(CheckSpawn event) {
-		
+
 		TomSaveData data = TomSaveData.forWorld(event.world);
-		
+
 		if(data.impact) {
 			if(!(event.entityLiving instanceof EntityPlayer) && event.entityLiving instanceof EntityLivingBase) {
 				if(event.world.provider.dimensionId == 0) {
@@ -148,28 +148,28 @@ public class ModEventHandlerImpact {
 						event.entityLiving.setDead();
 					}
 				}
-			}		
-		}		
+			}
+		}
 	}
 
 	@SubscribeEvent
 	public void onPopulate(Populate event) {
-		
+
 		if(event.type == Populate.EventType.ANIMALS) {
-			
+
 			TomSaveData data = TomSaveData.forWorld(event.world);
-			
+
 			if(data.impact) { // OHHH THIS IS WHAT I WAS FUCKING MISSING. WHY FORGE WHY???? WHY THE FUCK DID YOU ADVERTISE THE CANCELSPAWN EVENTHANDLER WHEN THIS EXISTS???
 				event.setResult(Result.DENY);
 			}
 		}
 	}
-	
+
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onLoad(WorldEvent.Load event) {
-		
+
 		TomSaveData.resetLastCached();
-		
+
 		if(!(event.world.provider instanceof WorldProviderEarth)) {
 			DimensionManager.unregisterProviderType(0);
 			DimensionManager.registerProviderType(0, WorldProviderEarth.class, true);
@@ -180,18 +180,18 @@ public class ModEventHandlerImpact {
 	public void modifyVillageGen(BiomeEvent.GetVillageBlockID event) {
 		Block b = event.original;
 		Material mat = event.original.getMaterial();
-		
+
 		TomSaveData data = TomSaveData.getLastCachedOrNull();
-		
+
 		if(data == null || event.biome == null) {
 			return;
 		}
-		
+
 		if(data.impact) {
 			if(mat == Material.wood || mat == Material.glass || b == Blocks.ladder || b instanceof BlockCrops ||
 					b == Blocks.chest || b instanceof BlockDoor || mat == Material.cloth || mat == Material.water || b == Blocks.stone_slab) {
 				event.replacement = Blocks.air;
-				
+
 			} else if(b == Blocks.cobblestone || b == Blocks.stonebrick) {
 				if(rand.nextInt(3) == 1) {
 					event.replacement = Blocks.gravel;
@@ -204,19 +204,19 @@ public class ModEventHandlerImpact {
 				event.replacement = Blocks.dirt;
 			}
 		}
-		
+
 		if(event.replacement != null) {
 			event.setResult(Result.DENY);
 		}
 	}
 
-	
+
 	@SubscribeEvent
 	public void postImpactGeneration(BiomeEvent event) {
 		/// Disables post-impact surface replacement for superflat worlds
 		/// because they are retarded and crash with a NullPointerException if
 		/// you try to look for biome-specific blocks.
-		TomSaveData data = TomSaveData.getLastCachedOrNull(); //despite forcing the data, we cannot rule out canceling events or custom firing shenanigans 
+		TomSaveData data = TomSaveData.getLastCachedOrNull(); //despite forcing the data, we cannot rule out canceling events or custom firing shenanigans
 		if(data != null && event.biome != null) {
 			if(event.biome.topBlock != null) {
 				if(event.biome.topBlock == Blocks.grass) {
@@ -232,18 +232,18 @@ public class ModEventHandlerImpact {
 
 	@SubscribeEvent
 	public void postImpactDecoration(DecorateBiomeEvent.Decorate event) {
-		
+
 		TomSaveData data = TomSaveData.forWorld(event.world);
-		
+
 		if(data.impact) {
 			EventType type = event.type;
-			
+
 			if(data.dust > 0 || data.fire > 0) {
 				if(type == event.type.TREE || type == event.type.BIG_SHROOM || type == event.type.GRASS || type == event.type.REED || type == event.type.FLOWERS || type == event.type.DEAD_BUSH
 						|| type == event.type.CACTUS || type == event.type.PUMPKIN || type == event.type.LILYPAD) {
 					event.setResult(Result.DENY);
 				}
-				
+
 			} else if(data.dust == 0 && data.fire == 0) {
 				if(type == event.type.TREE || type == event.type.BIG_SHROOM || type == event.type.CACTUS) {
 					Random rand = new Random();
@@ -253,12 +253,12 @@ public class ModEventHandlerImpact {
 						event.setResult(Result.DENY);
 					}
 				}
-				
+
 				if(type == event.type.GRASS || type == event.type.REED) {
 					event.setResult(Result.DEFAULT);
 				}
 			}
-			
+
 		} else {
 			event.setResult(Result.DEFAULT);
 		}
@@ -267,20 +267,20 @@ public class ModEventHandlerImpact {
 
 	@SubscribeEvent
 	public void populateChunkPost(PopulateChunkEvent.Post event) {
-		
+
 		TomSaveData data = TomSaveData.forWorld(event.world);
-		
+
 		if(data.impact) {
 			Chunk chunk = event.world.getChunkFromChunkCoords(event.chunkX, event.chunkZ);
-			
+
 			for(ExtendedBlockStorage storage : chunk.getBlockStorageArray()) {
-				
+
 				if(storage != null) {
-					
+
 					for(int x = 0; x < 16; ++x) {
 						for(int y = 0; y < 16; ++y) {
 							for(int z = 0; z < 16; ++z) {
-								
+
 								if(data.dust > 0.25 || data.fire > 0) {
 									if(storage.getBlockByExtId(x, y, z) == Blocks.grass) {
 										storage.func_150818_a(x, y, z, ModBlocks.impact_dirt);

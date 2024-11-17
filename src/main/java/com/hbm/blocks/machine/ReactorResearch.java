@@ -22,7 +22,7 @@ public class ReactorResearch extends BlockDummyable {
 	public ReactorResearch(Material mat) {
 		super(mat);
 	}
-	
+
 	@Override
 	public TileEntity createNewTileEntity(World world, int meta) {
 
@@ -33,14 +33,14 @@ public class ReactorResearch extends BlockDummyable {
 
 		return null;
 	}
-	
+
 	@Override
 	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
 		if(world.isRemote) {
 			return true;
 		} else if(!player.isSneaking()) {
-			BossSpawnHandler.markFBI(player);
-			
+			//BossSpawnHandler.markFBI(player);
+
 			int[] pos = this.findCore(world, x, y, z);
 
 			if(pos == null)
@@ -52,12 +52,12 @@ public class ReactorResearch extends BlockDummyable {
 			return false;
 		}
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public void randomDisplayTick(World world, int x, int y, int z, Random rand) {
 		super.randomDisplayTick(world, x, y, z, rand);
-		
+
 		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
 
 			if(dir == ForgeDirection.DOWN || dir == ForgeDirection.UP)
@@ -78,12 +78,12 @@ public class ReactorResearch extends BlockDummyable {
 			}
 		}
 	}
-	
+
 	@Override
 	public int[] getDimensions() {
-		return new int[] {2, 0, 0, 0, 0, 0,}; 
+		return new int[] {2, 0, 0, 0, 0, 0,};
 	}
-	
+
 	@Override
 	public int getOffset() {
 		return 0;

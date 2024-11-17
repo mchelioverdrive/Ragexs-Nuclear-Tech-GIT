@@ -45,14 +45,14 @@ public class MachineMissileAssembly extends BlockContainer {
 	public boolean renderAsNormalBlock() {
 		return false;
 	}
-	
+
 	@Override
 	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
 		if(world.isRemote) {
 			return true;
 		} else if(!player.isSneaking()) {
 
-			BossSpawnHandler.markFBI(player);
+			//BossSpawnHandler.markFBI(player);
 
 			TileEntityMachineMissileAssembly entity = (TileEntityMachineMissileAssembly) world.getTileEntity(x, y, z);
 			if(entity != null) {
@@ -65,7 +65,7 @@ public class MachineMissileAssembly extends BlockContainer {
 	}
 
     private final Random field_149933_a = new Random();
-    
+
 	@Override
 	public void breakBlock(World p_149749_1_, int p_149749_2_, int p_149749_3_, int p_149749_4_, Block p_149749_5_,
 			int p_149749_6_) {
@@ -111,11 +111,11 @@ public class MachineMissileAssembly extends BlockContainer {
 
 		super.breakBlock(p_149749_1_, p_149749_2_, p_149749_3_, p_149749_4_, p_149749_5_, p_149749_6_);
 	}
-	
+
 	@Override
 	public void onBlockPlacedBy(World world, int x, int y, int z, EntityLivingBase player, ItemStack itemStack) {
 		int i = MathHelper.floor_double(player.rotationYaw * 4.0F / 360.0F + 0.5D) & 3;
-		
+
 		if(i == 0)
 		{
 			world.setBlockMetadataWithNotify(x, y, z, 2, 2);
@@ -132,7 +132,7 @@ public class MachineMissileAssembly extends BlockContainer {
 		{
 			world.setBlockMetadataWithNotify(x, y, z, 4, 2);
 		}
-		
+
 		if(itemStack.hasDisplayName())
 		{
 			((TileEntityMachineMissileAssembly)world.getTileEntity(x, y, z)).setCustomName(itemStack.getDisplayName());
