@@ -33,47 +33,47 @@ public class BreederRecipes extends SerializableRecipe {
 		setRecipe(BreedingRodType.U238, BreedingRodType.RGP, 300);
 		setRecipe(BreedingRodType.URANIUM, BreedingRodType.RGP, 200);
 		setRecipe(BreedingRodType.RGP, BreedingRodType.WASTE, 200);
-		
-		recipes.put(new ComparableStack(ModItems.meteorite_sword_etched), new BreederRecipe(new ItemStack(ModItems.meteorite_sword_bred), 1000));
+
+		//recipes.put(new ComparableStack(ModItems.meteorite_sword_etched), new BreederRecipe(new ItemStack(ModItems.meteorite_sword_bred), 1000));
 	}
-	
+
 	/** Sets recipes for single, dual, and quad rods **/
 	public static void setRecipe(BreedingRodType inputType, BreedingRodType outputType, int flux) {
 		recipes.put(new ComparableStack(new ItemStack(ModItems.rod, 1, inputType.ordinal())), new BreederRecipe(new ItemStack(ModItems.rod, 1, outputType.ordinal()), flux));
 		recipes.put(new ComparableStack(new ItemStack(ModItems.rod_dual, 1, inputType.ordinal())), new BreederRecipe(new ItemStack(ModItems.rod_dual, 1, outputType.ordinal()), flux * 2));
 		recipes.put(new ComparableStack(new ItemStack(ModItems.rod_quad, 1, inputType.ordinal())), new BreederRecipe(new ItemStack(ModItems.rod_quad, 1, outputType.ordinal()), flux * 3));
 	}
-	
+
 	public static HashMap<ItemStack, BreederRecipe> getAllRecipes() {
-		
+
 		HashMap<ItemStack, BreederRecipe> map = new HashMap();
-		
+
 		for(Map.Entry<ComparableStack, BreederRecipe> recipe : recipes.entrySet()) {
 			map.put(recipe.getKey().toStack(), recipe.getValue());
 		}
-		
+
 		return map;
 	}
-	
+
 	public static BreederRecipe getOutput(ItemStack stack) {
-		
+
 		if(stack == null)
 			return null;
-		
+
 		ComparableStack sta = new ComparableStack(stack).makeSingular();
 		return BreederRecipes.recipes.get(sta);
 	}
-	
+
 	//nicer than opaque object arrays
 	public static class BreederRecipe {
-		
+
 		public ItemStack output;
 		public int flux;
-		
+
 		public BreederRecipe(Item output, int flux) {
 			this(new ItemStack(output), flux);
 		}
-		
+
 		public BreederRecipe(ItemStack output, int flux) {
 			this.output = output;
 			this.flux = flux;
@@ -93,7 +93,7 @@ public class BreederRecipes extends SerializableRecipe {
 	@Override
 	public void readRecipe(JsonElement recipe) {
 		JsonObject obj = (JsonObject) recipe;
-		
+
 		AStack in = this.readAStack(obj.get("input").getAsJsonArray());
 		int flux = obj.get("flux").getAsInt();
 		ItemStack out = this.readItemStack(obj.get("output").getAsJsonArray());

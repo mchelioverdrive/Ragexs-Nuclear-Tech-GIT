@@ -22,31 +22,31 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityTrappedBrick extends TileEntity {
-	
+
 	AxisAlignedBB detector = null;
 	ForgeDirection dir = ForgeDirection.UNKNOWN;
-	
+
 	@Override
 	public void updateEntity() {
-		
+
 		if(!worldObj.isRemote) {
-			
+
 			if(detector == null) {
 				setDetector();
 			}
-			
+
 			List players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, detector);
-			
+
 			if(!players.isEmpty())
 				trigger();
 		}
 	}
-	
+
 	@SuppressWarnings("incomplete-switch")
 	private void trigger() {
-		
+
 		Trap trap = Trap.get(this.getBlockMetadata());
-		
+
 		switch(trap) {
 		case FALLING_ROCKS:
 			for(int x = 0; x < 3; x++) {
@@ -88,7 +88,7 @@ public class TileEntityTrappedBrick extends TileEntity {
 			zombie.setPosition(xCoord + 0.5, yCoord + 1, zCoord + 0.5);
 			switch(worldObj.rand.nextInt(3)) {
 			case 0: zombie.setCurrentItemOrArmor(0, new ItemStack(ModItems.chernobylsign)); break;
-			case 1: zombie.setCurrentItemOrArmor(0, new ItemStack(ModItems.cobalt_sword)); break;
+			//case 1: zombie.setCurrentItemOrArmor(0, new ItemStack(ModItems.cobalt_sword)); break;
 			case 2: zombie.setCurrentItemOrArmor(0, new ItemStack(ModItems.cmb_hoe)); break;
 			}
 			zombie.setEquipmentDropChance(0, 1.0F);
@@ -106,52 +106,52 @@ public class TileEntityTrappedBrick extends TileEntity {
 		worldObj.playSoundEffect(xCoord + 0.5D, yCoord + 0.5D, zCoord + 0.5D, "random.click", 0.3F, 0.6F);
 		worldObj.setBlock(xCoord, yCoord, zCoord, ModBlocks.brick_jungle);
 	}
-	
+
 	@SuppressWarnings("incomplete-switch")
 	private void setDetector() {
-		
+
 		Trap trap = Trap.get(this.getBlockMetadata());
-		
+
 		switch(trap) {
 		case FALLING_ROCKS:
 			detector = AxisAlignedBB.getBoundingBox(xCoord - 1, yCoord - 3, zCoord - 1, xCoord + 2, yCoord, zCoord + 2);
 			return;
-			
-		case PILLAR: 
+
+		case PILLAR:
 			detector = AxisAlignedBB.getBoundingBox(xCoord + 0.2, yCoord - 3, zCoord + 0.2, xCoord + 0.8, yCoord, zCoord + 0.8);
 			return;
-			
+
 		case ARROW:
 		case FLAMING_ARROW:
 		case POISON_DART:
 			setDetectorDirectional();
 			return;
-			
+
 		case ZOMBIE:
 			detector = AxisAlignedBB.getBoundingBox(xCoord - 1, yCoord + 1, zCoord - 1, xCoord + 2, yCoord + 2, zCoord + 2);
 			return;
-			
+
 		case SPIDERS:
 			detector = AxisAlignedBB.getBoundingBox(xCoord - 1, yCoord - 3, zCoord - 1, xCoord + 2, yCoord, zCoord + 2);
 			return;
 		}
-		
+
 		detector = AxisAlignedBB.getBoundingBox(xCoord, yCoord, zCoord, xCoord + 1, yCoord + 1, zCoord + 1);
 	}
-	
+
 	private void setDetectorDirectional() {
-		
+
 		List<ForgeDirection> dirs = new ArrayList() {{
 			add(ForgeDirection.NORTH);
 			add(ForgeDirection.SOUTH);
 			add(ForgeDirection.EAST);
 			add(ForgeDirection.WEST);
 		}};
-		
+
 		Collections.shuffle(dirs);
-		
+
 		for(ForgeDirection dir : dirs) {
-			
+
 			if(worldObj.getBlock(xCoord + dir.offsetX, yCoord, zCoord + dir.offsetZ) == Blocks.air) {
 
 				double minX = xCoord + 0.4;
@@ -160,23 +160,23 @@ public class TileEntityTrappedBrick extends TileEntity {
 				double maxX = xCoord + 0.6;
 				double maxY = yCoord + 0.6;
 				double maxZ = zCoord + 0.6;
-				
+
 				if(dir.offsetX > 0)
 					maxX += 3;
 				else if(dir.offsetX < 0)
 					minX -= 3;
-				
+
 				if(dir.offsetZ > 0)
 					maxZ += 3;
 				else if(dir.offsetZ < 0)
 					minZ -= 3;
-				
+
 				detector = AxisAlignedBB.getBoundingBox(minX, minY, minZ, maxX, maxY, maxZ);
 				this.dir = dir;
 				return;
 			}
 		}
-		
+
 		detector = AxisAlignedBB.getBoundingBox(xCoord, yCoord, zCoord, xCoord + 1, yCoord + 1, zCoord + 1);
 	}
 }

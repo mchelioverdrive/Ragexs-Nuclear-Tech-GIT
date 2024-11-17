@@ -37,23 +37,23 @@ import net.minecraft.item.ItemStack;
 public class PressRecipes extends SerializableRecipe {
 
 	public static HashMap<Pair<AStack, StampType>, ItemStack> recipes = new HashMap();
-	
+
 	public static ItemStack getOutput(ItemStack ingredient, ItemStack stamp) {
-		
+
 		if(ingredient == null || stamp == null)
 			return null;
-		
+
 		if(!(stamp.getItem() instanceof ItemStamp))
 			return null;
-		
+
 		StampType type = ((ItemStamp) stamp.getItem()).getStampType(stamp.getItem(), stamp.getItemDamage());
-		
+
 		for(Entry<Pair<AStack, StampType>, ItemStack> recipe : recipes.entrySet()) {
-			
+
 			if(recipe.getKey().getValue() == type && recipe.getKey().getKey().matchesRecipe(ingredient, true))
 				return recipe.getValue();
 		}
-		
+
 		return null;
 	}
 
@@ -66,7 +66,7 @@ public class PressRecipes extends SerializableRecipe {
 		makeRecipe(StampType.FLAT, new OreDictStack(EMERALD.dust()),						Items.emerald);
 		makeRecipe(StampType.FLAT, new ComparableStack(ModItems.biomass),					ModItems.biomass_compressed);
 		makeRecipe(StampType.FLAT, new OreDictStack(ANY_COKE.gem()),						ModItems.ingot_graphite);
-		makeRecipe(StampType.FLAT, new ComparableStack(ModItems.meteorite_sword_reforged),	ModItems.meteorite_sword_hardened);
+		//makeRecipe(StampType.FLAT, new ComparableStack(ModItems.meteorite_sword_reforged),	ModItems.meteorite_sword_hardened);
 		makeRecipe(StampType.FLAT, new ComparableStack(Blocks.log, 1, 3),					ModItems.ball_resin);
 
 		makeRecipe(StampType.FLAT, new OreDictStack(COAL.dust()),							DictFrame.fromOne(ModItems.briquette, EnumBriquetteType.COAL));
@@ -105,7 +105,7 @@ public class PressRecipes extends SerializableRecipe {
 		makeRecipe(StampType.C357, new ComparableStack(ModItems.assembly_nightmare),	ModItems.ammo_357.stackFromEnum(24, Ammo357Magnum.NIGHTMARE1));
 		makeRecipe(StampType.C357, new ComparableStack(ModItems.assembly_desh),			ModItems.ammo_357.stackFromEnum(24, Ammo357Magnum.DESH));
 		makeRecipe(StampType.C357, new OreDictStack(STEEL.ingot()),						ModItems.ammo_357.stackFromEnum(24, Ammo357Magnum.STEEL));
-		
+
 		makeRecipe(StampType.C44, new ComparableStack(ModItems.assembly_nopip),		new ItemStack(ModItems.ammo_44, 24));
 		makeRecipe(StampType.C44, new ComparableStack(ModItems.assembly_45), 		new ItemStack(ModItems.ammo_45, 32));
 
@@ -150,11 +150,11 @@ public class PressRecipes extends SerializableRecipe {
 	@Override
 	public void readRecipe(JsonElement recipe) {
 		JsonObject obj = (JsonObject) recipe;
-		
+
 		AStack input = this.readAStack(obj.get("input").getAsJsonArray());
 		StampType stamp = StampType.valueOf(obj.get("stamp").getAsString().toUpperCase());
 		ItemStack output = this.readItemStack(obj.get("output").getAsJsonArray());
-		
+
 		if(stamp != null) {
 			makeRecipe(stamp, input, output);
 		}
@@ -163,7 +163,7 @@ public class PressRecipes extends SerializableRecipe {
 	@Override
 	public void writeRecipe(Object recipe, JsonWriter writer) throws IOException {
 		Entry<Pair<AStack, StampType>, ItemStack> entry = (Entry<Pair<AStack, StampType>, ItemStack>) recipe;
-		
+
 		writer.name("input");
 		this.writeAStack(entry.getKey().getKey(), writer);
 		writer.name("stamp").value(entry.getKey().getValue().name().toLowerCase(Locale.US));

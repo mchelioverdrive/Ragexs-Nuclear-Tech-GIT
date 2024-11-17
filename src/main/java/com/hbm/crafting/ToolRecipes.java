@@ -28,48 +28,48 @@ import net.minecraft.item.ItemStack;
  * @author hbm
  */
 public class ToolRecipes {
-	
+
 	public static void register() {
-		
+
 		//Regular tools
-		addSword(	STEEL.ingot(), ModItems.steel_sword);
+		//addSword(	STEEL.ingot(), ModItems.steel_sword);
 		addPickaxe(	STEEL.ingot(), ModItems.steel_pickaxe);
 		addAxe(		STEEL.ingot(), ModItems.steel_axe);
 		addShovel(	STEEL.ingot(), ModItems.steel_shovel);
 		addHoe(		STEEL.ingot(), ModItems.steel_hoe);
-		addSword(	TI.ingot(), ModItems.titanium_sword);
+		//addSword(	TI.ingot(), ModItems.titanium_sword);
 		addPickaxe(	TI.ingot(), ModItems.titanium_pickaxe);
 		addAxe(		TI.ingot(), ModItems.titanium_axe);
 		addShovel(	TI.ingot(), ModItems.titanium_shovel);
 		addHoe(		TI.ingot(), ModItems.titanium_hoe);
-		addSword(	CO.ingot(), ModItems.cobalt_sword);
+		//addSword(	CO.ingot(), ModItems.cobalt_sword);
 		addPickaxe(	CO.ingot(), ModItems.cobalt_pickaxe);
 		addAxe(		CO.ingot(), ModItems.cobalt_axe);
 		addShovel(	CO.ingot(), ModItems.cobalt_shovel);
 		addHoe(		CO.ingot(), ModItems.cobalt_hoe);
-		addSword(	ALLOY.ingot(), ModItems.alloy_sword);
+		//addSword(	ALLOY.ingot(), ModItems.alloy_sword);
 		addPickaxe(	ALLOY.ingot(), ModItems.alloy_pickaxe);
 		addAxe(		ALLOY.ingot(), ModItems.alloy_axe);
 		addShovel(	ALLOY.ingot(), ModItems.alloy_shovel);
 		addHoe(		ALLOY.ingot(), ModItems.alloy_hoe);
-		addSword(	CMB.ingot(), ModItems.cmb_sword);
+		//addSword(	CMB.ingot(), ModItems.cmb_sword);
 		addPickaxe(	CMB.ingot(), ModItems.cmb_pickaxe);
 		addAxe(		CMB.ingot(), ModItems.cmb_axe);
 		addShovel(	CMB.ingot(), ModItems.cmb_shovel);
 		addHoe(		CMB.ingot(), ModItems.cmb_hoe);
-		addSword(	DESH.ingot(), ModItems.desh_sword);
+		//addSword(	DESH.ingot(), ModItems.desh_sword);
 		addPickaxe(	DESH.ingot(), ModItems.desh_pickaxe);
 		addAxe(		DESH.ingot(), ModItems.desh_axe);
 		addShovel(	DESH.ingot(), ModItems.desh_shovel);
 		addHoe(		DESH.ingot(), ModItems.desh_hoe);
-		
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.elec_sword, 1), new Object[] { "RPR", "RPR", " B ", 'P', ANY_PLASTIC.ingot(), 'D', DURA.ingot(), 'R', DURA.bolt(), 'M', ModItems.motor, 'B', ModItems.battery_lithium });
+
+		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.elec_sword, 1), new Object[] { "RPR", "RPR", " B ", 'P', ANY_PLASTIC.ingot(), 'D', DURA.ingot(), 'R', DURA.bolt(), 'M', ModItems.motor, 'B', ModItems.battery_lithium });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.elec_pickaxe, 1), new Object[] { "RDM", " PB", " P ", 'P', ANY_PLASTIC.ingot(), 'D', DURA.ingot(), 'R', DURA.bolt(), 'M', ModItems.motor, 'B', ModItems.battery_lithium });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.elec_axe, 1), new Object[] { " DP", "RRM", " PB", 'P', ANY_PLASTIC.ingot(), 'D', DURA.ingot(), 'R', DURA.bolt(), 'M', ModItems.motor, 'B', ModItems.battery_lithium });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.elec_shovel, 1), new Object[] { "  P", "RRM", "  B", 'P', ANY_PLASTIC.ingot(), 'D', DURA.ingot(), 'R', DURA.bolt(), 'M', ModItems.motor, 'B', ModItems.battery_lithium });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.centri_stick, 1), new Object[] { ModItems.centrifuge_element, ModItems.energy_core, KEY_STICK });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.smashing_hammer, 1), new Object[] { "STS", "SPS", " P ", 'S', STEEL.block(), 'T', W.block(), 'P', ANY_PLASTIC.ingot() });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.meteorite_sword, 1), new Object[] { "  B", "GB ", "SG ", 'B', ModItems.blade_meteorite, 'G', GOLD.plate(), 'S', KEY_STICK });
+		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.meteorite_sword, 1), new Object[] { "  B", "GB ", "SG ", 'B', ModItems.blade_meteorite, 'G', GOLD.plate(), 'S', KEY_STICK });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.dwarven_pickaxe, 1), new Object[] { "CIC", " S ", " S ", 'C', CU.ingot(), 'I', IRON.ingot(), 'S', KEY_STICK });
 
 		//Drax
@@ -90,7 +90,7 @@ public class ToolRecipes {
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.chlorophyte_axe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_steel, 'D', ModItems.powder_chlorophyte, 'A', FIBER.ingot(), 'P', ModItems.bismuth_axe, 'F', DURA.bolt() });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.chlorophyte_axe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_steel, 'D', ModItems.powder_chlorophyte, 'A', FIBER.ingot(), 'P', ModItems.volcanic_axe, 'F', DURA.bolt() });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.mese_axe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_desh, 'D', ModItems.powder_dineutronium, 'A', ModItems.plate_paa, 'P', ModItems.chlorophyte_axe, 'F', ModItems.shimmer_handle });
-		
+
 		//Chainsaws
 		CraftingManager.addRecipeAuto(ItemToolAbilityFueled.getEmptyTool(ModItems.chainsaw), new Object[] { "CCH", "BBP", "CCE", 'H', STEEL.shell(), 'B', ModItems.blades_steel, 'P', ModItems.piston_selenium, 'C', ModBlocks.chain, 'E', ModItems.canister_empty });
 
@@ -162,40 +162,40 @@ public class ToolRecipes {
 		CraftingManager.addRecipeAuto(ItemBlowtorch.getEmptyTool(ModItems.blowtorch), new Object[] { "CC ", " I ", "CCC", 'C', CU.plate528(), 'I', IRON.ingot() });
 		CraftingManager.addRecipeAuto(ItemBlowtorch.getEmptyTool(ModItems.acetylene_torch), new Object[] { "SS ", " PS", " T ", 'S', STEEL.plate528(), 'P', ANY_PLASTIC.ingot(), 'T', ModItems.tank_steel });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.boltgun), new Object[] { "DPS", " RD", " D ", 'D', DURA.ingot(), 'P', DictFrame.fromOne(ModItems.part_generic, EnumPartType.PISTON_PNEUMATIC), 'R', RUBBER.ingot(), 'S', STEEL.shell() });
-		
+
 		//Bobmazon
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.bobmazon_materials), new Object[] { Items.book, Items.gold_nugget, Items.string });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.bobmazon_machines), new Object[] { Items.book, Items.gold_nugget, KEY_RED });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.bobmazon_weapons), new Object[] { Items.book, Items.gold_nugget, KEY_GRAY });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.bobmazon_tools), new Object[] { Items.book, Items.gold_nugget, KEY_GREEN });
-		
+
 		//Carts
 		CraftingManager.addRecipeAuto(ItemModMinecart.createCartItem(EnumCartBase.WOOD, EnumMinecart.EMPTY), new Object[] { "P P", "WPW", 'P',KEY_SLAB, 'W', KEY_PLANKS });
 		CraftingManager.addRecipeAuto(ItemModMinecart.createCartItem(EnumCartBase.STEEL, EnumMinecart.EMPTY), new Object[] { "P P", "IPI", 'P', STEEL.plate(), 'I', STEEL.ingot() });
 		CraftingManager.addShapelessAuto(ItemModMinecart.createCartItem(EnumCartBase.PAINTED, EnumMinecart.EMPTY), new Object[] { ItemModMinecart.createCartItem(EnumCartBase.STEEL, EnumMinecart.EMPTY), KEY_RED });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.boat_rubber), new Object[] { "L L", "LLL", 'L', ANY_RUBBER.ingot() });
-		
+
 		for(EnumCartBase base : EnumCartBase.values()) {
-			
+
 			if(EnumMinecart.DESTROYER.supportsBase(base))	CraftingManager.addRecipeAuto(ItemModMinecart.createCartItem(base, EnumMinecart.DESTROYER), new Object[] { "S S", "BLB", "SCS", 'S', STEEL.ingot(), 'B', ModItems.blades_steel, 'L', Fluids.LAVA.getDict(1000), 'C', ItemModMinecart.createCartItem(base, EnumMinecart.EMPTY) });
 			if(EnumMinecart.POWDER.supportsBase(base))		CraftingManager.addRecipeAuto(ItemModMinecart.createCartItem(base, EnumMinecart.POWDER), new Object[] { "PPP", "PCP", "PPP", 'P', Items.gunpowder, 'C', ItemModMinecart.createCartItem(base, EnumMinecart.EMPTY) });
 			if(EnumMinecart.SEMTEX.supportsBase(base))		CraftingManager.addRecipeAuto(ItemModMinecart.createCartItem(base, EnumMinecart.SEMTEX), new Object[] { "S", "C", 'S', ModBlocks.semtex, 'C', ItemModMinecart.createCartItem(base, EnumMinecart.EMPTY) });
 		}
 		net.minecraft.item.crafting.CraftingManager.getInstance().addRecipe(DictFrame.fromOne(ModItems.cart, EnumMinecart.CRATE), new Object[] { "C", "S", 'C', ModBlocks.crate_steel, 'S', Items.minecart }).func_92100_c();
-		
+
 		//Configged
 		if(GeneralConfig.enableLBSM && GeneralConfig.enableLBSMSimpleToolRecipes) {
-			addSword(	CO.block(), ModItems.cobalt_decorated_sword);
+			//addSword(	CO.block(), ModItems.cobalt_decorated_sword);
 			addPickaxe(	CO.block(), ModItems.cobalt_decorated_pickaxe);
 			addAxe(		CO.block(), ModItems.cobalt_decorated_axe);
 			addShovel(	CO.block(), ModItems.cobalt_decorated_shovel);
 			addHoe(		CO.block(), ModItems.cobalt_decorated_hoe);
-			addSword(	STAR.ingot(), ModItems.starmetal_sword);
+			//addSword(	STAR.ingot(), ModItems.starmetal_sword);
 			addPickaxe(	STAR.ingot(), ModItems.starmetal_pickaxe);
 			addAxe(		STAR.ingot(), ModItems.starmetal_axe);
 			addShovel(	STAR.ingot(), ModItems.starmetal_shovel);
 			addHoe(		STAR.ingot(), ModItems.starmetal_hoe);
-			addSword(	SA326.ingot(), ModItems.schrabidium_sword);
+			//addSword(	SA326.ingot(), ModItems.schrabidium_sword);
 			addPickaxe(	SA326.ingot(), ModItems.schrabidium_pickaxe);
 			addAxe(		SA326.ingot(), ModItems.schrabidium_axe);
 			addShovel(	SA326.ingot(), ModItems.schrabidium_shovel);
@@ -209,12 +209,12 @@ public class ToolRecipes {
 			CraftingManager.addRecipeAuto(new ItemStack(ModItems.cobalt_decorated_hoe, 1), new Object[] { "II", " B", " S", 'I', CO.ingot(), 'S', ModItems.ingot_meteorite_forged, 'B', ModItems.cobalt_hoe });
 
 			 */
-			CraftingManager.addRecipeAuto(new ItemStack(ModItems.starmetal_sword, 1), new Object[] { " I ", " B ", "ISI", 'I', STAR.ingot(), 'S', ModItems.ring_starmetal, 'B', ModItems.cobalt_decorated_sword });
+			//CraftingManager.addRecipeAuto(new ItemStack(ModItems.starmetal_sword, 1), new Object[] { " I ", " B ", "ISI", 'I', STAR.ingot(), 'S', ModItems.ring_starmetal, 'B', ModItems.cobalt_decorated_sword });
 			CraftingManager.addRecipeAuto(new ItemStack(ModItems.starmetal_pickaxe, 1), new Object[] { "ISI", " B ", " I ", 'I', STAR.ingot(), 'S', ModItems.ring_starmetal, 'B', ModItems.cobalt_decorated_pickaxe });
 			CraftingManager.addRecipeAuto(new ItemStack(ModItems.starmetal_axe, 1), new Object[] { "IS", "IB", " I", 'I', STAR.ingot(), 'S', ModItems.ring_starmetal, 'B', ModItems.cobalt_decorated_axe });
 			CraftingManager.addRecipeAuto(new ItemStack(ModItems.starmetal_shovel, 1), new Object[] { "I", "B", "I", 'I', STAR.ingot(), 'B', ModItems.cobalt_decorated_shovel });
 			CraftingManager.addRecipeAuto(new ItemStack(ModItems.starmetal_hoe, 1), new Object[] { "IS", " B", " I", 'I', STAR.ingot(), 'S', ModItems.ring_starmetal, 'B', ModItems.cobalt_decorated_hoe });
-			CraftingManager.addRecipeAuto(new ItemStack(ModItems.schrabidium_sword, 1), new Object[] { "I", "W", "S", 'I', SA326.block(), 'W', ModItems.desh_sword, 'S', ANY_PLASTIC.ingot() });
+			//CraftingManager.addRecipeAuto(new ItemStack(ModItems.schrabidium_sword, 1), new Object[] { "I", "W", "S", 'I', SA326.block(), 'W', ModItems.desh_sword, 'S', ANY_PLASTIC.ingot() });
 			CraftingManager.addRecipeAuto(new ItemStack(ModItems.schrabidium_pickaxe, 1), new Object[] { "BSB", " W ", " P ", 'B', ModItems.blades_desh, 'S', SA326.block(), 'W', ModItems.desh_pickaxe, 'P', ANY_PLASTIC.ingot() });
 			CraftingManager.addRecipeAuto(new ItemStack(ModItems.schrabidium_axe, 1), new Object[] { "BS", "BW", " P", 'B', ModItems.blades_desh, 'S', SA326.block(), 'W', ModItems.desh_axe, 'P', ANY_PLASTIC.ingot() });
 			CraftingManager.addRecipeAuto(new ItemStack(ModItems.schrabidium_shovel, 1), new Object[] { "B", "W", "P", 'B', SA326.block(), 'W', ModItems.desh_shovel, 'P', ANY_PLASTIC.ingot() });
@@ -238,11 +238,11 @@ public class ToolRecipes {
 	public static void addHoe(Object ingot, Item hoe) {
 		addTool(ingot, hoe, patternHoe);
 	}
-	
+
 	public static void addTool(Object ingot, Item tool, String[] pattern) {
 		CraftingManager.addRecipeAuto(new ItemStack(tool), new Object[] { pattern, 'X', ingot, '#', KEY_STICK });
 	}
-	
+
 	public static final String[] patternSword = new String[] {"X", "X", "#"};
 	public static final String[] patternPick = new String[] {"XXX", " # ", " # "};
 	public static final String[] patternAxe = new String[] {"XX", "X#", " #"};

@@ -48,25 +48,25 @@ import net.minecraftforge.common.util.ForgeDirection;
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 //TODO: fix reactor control;
 public class TileEntityReactorResearch extends TileEntityMachineBase implements IControlReceiver, SimpleComponent, IGUIProvider, IInfoProviderEC, CompatHandler.OCComponent {
-	
+
 	@SideOnly(Side.CLIENT)
 	public double lastLevel;
 	public double level;
 	public double speed = 0.04;
 	public double targetLevel;
-	
+
 	public int heat;
 	public byte water;
 	public final int maxHeat = 50000;
 	public int[] slotFlux = new int[12];
 	public int totalFlux = 0;
-	
+
 	private static final int[] slot_io = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
 	public TileEntityReactorResearch() {
 		super(12);
 	}
-	
+
 	private static final HashMap<ComparableStack, ItemStack> fuelMap = new HashMap<ComparableStack, ItemStack>();
 	static {
 		fuelMap.put(new ComparableStack(ModItems.plate_fuel_u233), new ItemStack(ModItems.waste_plate_u233, 1, 1));
@@ -77,7 +77,7 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 		fuelMap.put(new ComparableStack(ModItems.plate_fuel_ra226be), new ItemStack(ModItems.waste_plate_ra226be, 1, 1));
 		fuelMap.put(new ComparableStack(ModItems.plate_fuel_pu238be), new ItemStack(ModItems.waste_plate_pu238be, 1, 1));
 	}
-	
+
 	public String getName() {
 		return "container.reactorResearch";
 	}
@@ -118,32 +118,32 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 		if(i < 12 && i >= 0)
 			if(fuelMap.containsValue(stack))
 				return true;
-		
+
 		return false;
 
 	}
-	
+
 	@Override
 	public void updateEntity() {
-		
+
 		rodControl();
 
 		if(!worldObj.isRemote) {
 			totalFlux = 0;
-			
+
 			if(level > 0) {
 				reaction();
 			}
-						
+
 			if(this.heat > 0) {
 				water = getWater();
-				
+
 				if(water > 0) {
 					this.heat -= (this.heat * (float) 0.07 * water / 12);
 				} else if(water == 0) {
 					this.heat -= 1;
 				}
-			
+
 				if(this.heat < 0)
 					this.heat = 0;
 			}
@@ -157,31 +157,31 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 				double range = 25D;
 				ChunkRadiationManager.proxy.incrementRad(worldObj, xCoord, yCoord, zCoord, rad);
 				List<EntityLivingBase> entities = worldObj.getEntitiesWithinAABB(EntityLivingBase.class, AxisAlignedBB.getBoundingBox(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5).expand(range, range, range));
-				
+
 				if(!RadiationConfig.disableNeutron) {
 					for(EntityLivingBase e : entities) {
 						Vec3 vec = Vec3.createVectorHelper(e.posX - (xCoord + 0.5), (e.posY + e.getEyeHeight()) - (yCoord + 0.5), e.posZ - (zCoord + 0.5));
 						double len = vec.lengthVector();
 						vec = vec.normalize();
-						
+
 						float res = 0;
-						
+
 						for(int i = 1; i < len; i++) {
 
 							int ix = (int)Math.floor(xCoord + 0.5 + vec.xCoord * i);
 							int iy = (int)Math.floor(yCoord + 0.5 + vec.yCoord * i);
 							int iz = (int)Math.floor(zCoord + 0.5 + vec.zCoord * i);
-							
+
 							res += worldObj.getBlock(ix, iy, iz).getExplosionResistance(null);
 						}
-						
+
 						if(res < 1)
 							res = 1;
-						
+
 						float eRads = rad;
 						eRads /= (float)res;
 						eRads /= (float)(len * len);
-						
+
 						ContaminationUtil.contaminate(e, HazardType.NEUTRON, ContaminationType.CREATIVE, eRads);
 						if(e instanceof EntityPlayer) {
 							EntityPlayer player = (EntityPlayer) e;
@@ -193,9 +193,9 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 							}
 						}
 					}
-				}				
+				}
 			}
-			
+
 			NBTTagCompound data = new NBTTagCompound();
 			data.setInteger("heat", heat);
 			data.setByte("water", water);
@@ -206,10 +206,10 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 			this.networkPack(data, 150);
 		}
 	}
-	
+
 	public void networkUnpack(NBTTagCompound data) {
 		super.networkUnpack(data);
-		
+
 		this.heat = data.getInteger("heat");
 		this.water = data.getByte("water");
 		this.level = data.getDouble("level");
@@ -217,10 +217,10 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 		this.slotFlux = data.getIntArray("slotFlux");
 		this.totalFlux = data.getInteger("totalFlux");
 	}
-	
+
 	public byte getWater() {
 		byte water = 0;
-		
+
 		for(byte d = 0; d < 6; d++) {
 			ForgeDirection dir = ForgeDirection.getOrientation(d);
 			if(d < 2) {
@@ -233,18 +233,18 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 				}
 			}
 		}
-		
+
 		return water;
 	}
-	
+
 	public boolean isSubmerged() {
-		
+
 		return worldObj.getBlock(xCoord + 1, yCoord + 1, zCoord).getMaterial() == Material.water ||
 				worldObj.getBlock(xCoord, yCoord + 1, zCoord + 1).getMaterial() == Material.water ||
 				worldObj.getBlock(xCoord - 1, yCoord + 1, zCoord).getMaterial() == Material.water ||
 				worldObj.getBlock(xCoord, yCoord + 1, zCoord - 1).getMaterial() == Material.water;
 	}
-	
+
 	/*private void getInteractions() {
 		getInteractionForBlock(xCoord + 1, yCoord + 1, zCoord);
 		getInteractionForBlock(xCoord - 1, yCoord + 1, zCoord);
@@ -273,7 +273,7 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 
 		return false;
 	}
-	
+
 	private int[] getNeighboringSlots(int id) {
 
 		switch(id) {
@@ -305,49 +305,49 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 
 		return null;
 	}
-	
+
 	private void reaction() {
 		for(byte i = 0; i < 12; i++) {
 			if(slots[i] == null)  {
 				slotFlux[i] = 0;
 				continue;
 			}
-			
+
 			if(slots[i].getItem() instanceof ItemPlateFuel) {
 				ItemPlateFuel rod = (ItemPlateFuel) slots[i].getItem();
-				
+
 				int outFlux = rod.react(worldObj, slots[i], slotFlux[i]);
 				this.heat += outFlux * 2;
 				slotFlux[i] = 0;
 				totalFlux += outFlux;
-				
+
 				int[] neighborSlots = getNeighboringSlots(i);
-				
+
 				if(ItemPlateFuel.getLifeTime(slots[i]) > rod.lifeTime) {
 					slots[i] = fuelMap.get(new ComparableStack(slots[i])).copy();
 				}
-				
+
 				for(byte j = 0; j < neighborSlots.length; j++) {
 					slotFlux[neighborSlots[j]] += (int) (outFlux * level);
 				}
 				continue;
 			}
-			
-			if(slots[i].getItem() == ModItems.meteorite_sword_bred)
-				slots[i] = new ItemStack(ModItems.meteorite_sword_irradiated);
-			
+
+			//if(slots[i].getItem() == ModItems.meteorite_sword_bred)
+			//	slots[i] = new ItemStack(ModItems.meteorite_sword_irradiated);
+
 			slotFlux[i] = 0;
 		}
 	}
 
 	private void explode() {
-		
+
 		for(int i = 0; i < slots.length; i++) {
 			this.slots[i] = null;
 		}
-		
+
 		worldObj.setBlockToAir(this.xCoord, this.yCoord, this.zCoord);
-		
+
 		for(byte d = 0; d < 6; d++) {
 			ForgeDirection dir = ForgeDirection.getOrientation(d);
 			if(d < 2) {
@@ -360,67 +360,67 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 				}
 			}
 		}
-		
+
 		worldObj.createExplosion(null, this.xCoord, this.yCoord, this.zCoord, 18.0F, true);
 		worldObj.setBlock(this.xCoord, this.yCoord, this.zCoord, ModBlocks.deco_steel);
 		worldObj.setBlock(this.xCoord, this.yCoord + 1, this.zCoord, ModBlocks.corium_block);
 		worldObj.setBlock(this.xCoord, this.yCoord + 2, this.zCoord, ModBlocks.deco_steel);
 
 		ChunkRadiationManager.proxy.incrementRad(worldObj, xCoord, yCoord, zCoord, 50);
-		
+
 		if(MobConfig.enableElementals) {
 			List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, AxisAlignedBB.getBoundingBox(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5).expand(100, 100, 100));
-			
+
 			for(EntityPlayer player : players) {
 				player.getEntityData().getCompoundTag(player.PERSISTED_NBT_TAG).setBoolean("radMark", true);
 			}
 		}
 	}
-	
+
 	//Control Rods
 	@Override
 	public boolean hasPermission(EntityPlayer player) {
 		return Vec3.createVectorHelper(xCoord - player.posX, yCoord - player.posY, zCoord - player.posZ).lengthVector() < 20;
 	}
-	
+
 	@Override
 	public void receiveControl(NBTTagCompound data) {
 		if(data.hasKey("level")) {
 			this.setTarget(data.getDouble("level"));
 		}
-		
+
 		this.markDirty();
 	}
-	
+
 	public void setTarget(double target) {
 		this.targetLevel = target;
 	}
-	
+
 	public void rodControl() {
 		if(worldObj.isRemote) {
-			
+
 			this.lastLevel = this.level;
-		
+
 		} else {
-			
+
 			if(level < targetLevel) {
-				
+
 				level += speed;
-				
+
 				if(level >= targetLevel)
 					level = targetLevel;
 			}
-			
+
 			if(level > targetLevel) {
-				
+
 				level -= speed;
-				
+
 				if(level <= targetLevel)
 					level = targetLevel;
 			}
 		}
 	}
-	
+
 	public int[] getDisplayData() {
 		int[] data = new int[2];
 		data[0] = this.totalFlux;
@@ -438,7 +438,7 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 	public double getMaxRenderDistanceSquared() {
 		return 65536.0D;
 	}
-	
+
 	// do some opencomputer stuff
 	@Override
 	@Optional.Method(modid = "OpenComputers")

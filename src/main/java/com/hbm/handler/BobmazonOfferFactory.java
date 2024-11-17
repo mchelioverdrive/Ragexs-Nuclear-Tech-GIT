@@ -24,9 +24,9 @@ public class BobmazonOfferFactory {
 	public static List<Offer> weapons = new ArrayList();
 	public static List<Offer> tools = new ArrayList();
 	public static List<Offer> special = new ArrayList();
-	
+
 	public static void init() {
-		
+
 		materials.clear();
 		machines.clear();
 		weapons.clear();
@@ -199,11 +199,11 @@ public class BobmazonOfferFactory {
 		special.add(new Offer(new ItemStack(ModBlocks.crate_ammo, 1), Requirement.STEEL, 2));
 		special.add(new Offer(new ItemStack(ModItems.crucible, 1, 3), Requirement.STEEL, 10));
 		special.add(new Offer(new ItemStack(ModItems.pellet_charged, 1), Requirement.STEEL, 16));
-		special.add(new Offer(new ItemStack(ModItems.spawn_chopper, 1), Requirement.STEEL, 10));
-		special.add(new Offer(new ItemStack(ModItems.spawn_worm, 1), Requirement.STEEL, 10));
-		special.add(new Offer(new ItemStack(ModItems.spawn_ufo, 1), Requirement.STEEL, 10));
+		//special.add(new Offer(new ItemStack(ModItems.spawn_chopper, 1), Requirement.STEEL, 10));
+		//special.add(new Offer(new ItemStack(ModItems.spawn_worm, 1), Requirement.STEEL, 10));
+		//special.add(new Offer(new ItemStack(ModItems.spawn_ufo, 1), Requirement.STEEL, 10));
 		special.add(new Offer(new ItemStack(ModItems.sat_laser, 1), Requirement.HIDDEN, 8));
-		special.add(new Offer(new ItemStack(ModItems.sat_gerald, 1), Requirement.HIDDEN, 32));
+		//special.add(new Offer(new ItemStack(ModItems.sat_gerald, 1), Requirement.HIDDEN, 32));
 		special.add(new Offer(new ItemStack(ModItems.billet_yharonite, 4), Requirement.HIDDEN, 16));
 		special.add(new Offer(new ItemStack(ModItems.ingot_chainsteel, 1), Requirement.HIDDEN, 16));
 		special.add(new Offer(new ItemStack(ModItems.ingot_electronium, 1), Requirement.HIDDEN, 16));
@@ -211,8 +211,8 @@ public class BobmazonOfferFactory {
 		special.add(new Offer(new ItemStack(ModItems.mese_pickaxe, 1), Requirement.HIDDEN, 16));
 		special.add(new Offer(new ItemStack(ModItems.mysteryshovel, 1), Requirement.HIDDEN, 16));
 		special.add(new Offer(new ItemStack(ModBlocks.ntm_dirt, 1), Requirement.HIDDEN, 16));
-		special.add(new Offer(new ItemStack(ModItems.euphemium_kit, 1), Requirement.HIDDEN, 64));
-		
+		//special.add(new Offer(new ItemStack(ModItems.euphemium_kit, 1), Requirement.HIDDEN, 64));
+
 		special.add(new Offer(ItemKitCustom.create("Fusion Man", "For the nuclear physicist on the go", 0xff00ff, 0x800080,
 				new ItemStack(ModBlocks.iter),
 				new ItemStack(ModBlocks.plasma_heater),
@@ -237,7 +237,7 @@ public class BobmazonOfferFactory {
 				new ItemStack(Items.paper, 64),
 				new ItemStack(Items.dye, 64)
 				), Requirement.HIDDEN, 64));
-		
+
 		special.add(new Offer(ItemKitCustom.create("Maid's Cleaning Utensils", "For the hard to reach spots", 0x00ff00, 0x008000,
 				new ItemStack(ModItems.gun_calamity),
 				ModItems.ammo_50bmg.stackFromEnum(64, Ammo50BMG.CHLOROPHYTE),
@@ -258,14 +258,14 @@ public class BobmazonOfferFactory {
 				ModItems.ammo_4gauge.stackFromEnum(64, Ammo4Gauge.FLECHETTE),
 				ModItems.ammo_4gauge.stackFromEnum(64, Ammo4Gauge.VOID)
 				), Requirement.HIDDEN, 64));
-		
+
 		special.add(new Offer(ItemKitNBT.create(
 				new ItemStack(ModItems.rod_of_discord).setStackDisplayName("Cock Joke"),
 				ModItems.canned_conserve.stackFromEnum(64,EnumFoodType.JIZZ).setStackDisplayName("Class A Horse Semen"),
 				new ItemStack(ModItems.pipe_lead).setStackDisplayName("Get Nutted, Dumbass"),
 				new ItemStack(ModItems.gem_alexandrite)
 				).setStackDisplayName("The Nut Bucket"), Requirement.HIDDEN, 64));
-		
+
 		special.add(new Offer(ItemKitNBT.create(
 				new ItemStack(ModItems.rpa_helmet),
 				new ItemStack(ModItems.rpa_plate),
@@ -281,9 +281,9 @@ public class BobmazonOfferFactory {
 				ModItems.ammo_5mm.stackFromEnum(64, Ammo5mm.STAR)
 				).setStackDisplayName("Frenchman's Reward"), Requirement.HIDDEN, 32));
 	}
-	
+
 	public static List<Offer> getOffers(ItemStack stack) {
-		
+
 		if(stack != null) {
 
 			if(stack.getItem() == ModItems.bobmazon_materials) return materials;
@@ -292,7 +292,7 @@ public class BobmazonOfferFactory {
 			if(stack.getItem() == ModItems.bobmazon_tools) return tools;
 			if(stack.getItem() == ModItems.bobmazon_hidden) return special;
 		}
-		
+
 		return null;
 	}
 

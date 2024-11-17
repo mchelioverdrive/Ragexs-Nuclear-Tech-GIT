@@ -106,21 +106,21 @@ public class EntityQuackos extends EntityDuck implements IBossDisplayData {
 			return false;
 		}
 	}
-	
+
 	/**
 	 * BOW
 	 */
 	public void despawn() {
-		
+
 		if(!worldObj.isRemote) {
 			for(int i = 0; i < 150; i++) {
-				
+
 				EntityBSmokeFX fx = new EntityBSmokeFX(worldObj);
 				fx.setPositionAndRotation(posX + rand.nextDouble() * 20 - 10, posY + rand.nextDouble() * 25, posZ + rand.nextDouble() * 20 - 10, 0, 0);
 				worldObj.spawnEntityInWorld(fx);
 			}
-			
-			dropItem(ModItems.spawn_duck, 3);
+
+			//dropItem(ModItems.spawn_duck, 3);
 		}
 		this.isDead = true;
 	}
@@ -156,7 +156,7 @@ public class EntityQuackos extends EntityDuck implements IBossDisplayData {
 	@Override
 	public void onLivingUpdate() {
 		super.onLivingUpdate();
-		
+
 		if(!worldObj.isRemote && this.posY < -30) {
 			this.setPosition(this.posX + rand.nextGaussian() * 30, 256, this.posZ + rand.nextGaussian() * 30);
 		}
