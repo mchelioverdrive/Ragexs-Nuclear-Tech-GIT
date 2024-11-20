@@ -41,7 +41,7 @@ public class WorldGeneratorCelestial implements IWorldGenerator {
         Block blockToReplace = celestialProvider.getStone();
         int meta = CelestialBody.getMeta(world);
 
-        generateStructures(world, rand, chunkX * 16, chunkZ * 16);
+        //generateStructures(world, rand, chunkX * 16, chunkZ * 16);
 
         // Generate vanilla ores too
         if(blockToReplace != Blocks.stone) {
@@ -52,25 +52,25 @@ public class WorldGeneratorCelestial implements IWorldGenerator {
         generateBedrockOres(world, rand, chunkX * 16, chunkZ * 16, blockToReplace);
     }
 
-    public void generateStructures(World world, Random rand, int x, int z) {
-		BiomeGenBase biome = world.getWorldChunkManager().getBiomeGenAt(x, z);
-
-		if(WorldConfig.meteorStructure > 0 && rand.nextInt(WorldConfig.meteorStructure) == 0 && biome != BiomeGenBase.ocean && biome != BiomeGenBase.deepOcean && biome != BiomeGenBaseLaythe.laytheOcean) {
-			int px = x + rand.nextInt(16) + 8;
-			int pz = z + rand.nextInt(16) + 8;
-			
-			CellularDungeonFactory.meteor.generate(world, px, 10, pz, rand);
-			
-			if(GeneralConfig.enableDebugMode)
-				MainRegistry.logger.info("[Debug] Successfully spawned meteor dungeon at " + px + " 10 " + pz);
-			
-			int y = world.getHeightValue(px, pz);
-			
-			for(int f = 0; f < 3; f++)
-				world.setBlock(px, y + f, pz, ModBlocks.meteor_pillar);
-			world.setBlock(px, y + 3, pz, ModBlocks.meteor_brick_chiseled);
-		}
-    }
+    //public void generateStructures(World world, Random rand, int x, int z) {
+	//	BiomeGenBase biome = world.getWorldChunkManager().getBiomeGenAt(x, z);
+//
+	//	if(WorldConfig.meteorStructure > 0 && rand.nextInt(WorldConfig.meteorStructure) == 0 && biome != BiomeGenBase.ocean && biome != BiomeGenBase.deepOcean && biome != BiomeGenBaseLaythe.laytheOcean) {
+	//		int px = x + rand.nextInt(16) + 8;
+	//		int pz = z + rand.nextInt(16) + 8;
+	//
+	//		CellularDungeonFactory.meteor.generate(world, px, 10, pz, rand);
+	//
+	//		if(GeneralConfig.enableDebugMode)
+	//			MainRegistry.logger.info("[Debug] Successfully spawned meteor dungeon at " + px + " 10 " + pz);
+	//
+	//		int y = world.getHeightValue(px, pz);
+	//
+	//		for(int f = 0; f < 3; f++)
+	//			world.setBlock(px, y + f, pz, ModBlocks.meteor_pillar);
+	//		world.setBlock(px, y + 3, pz, ModBlocks.meteor_brick_chiseled);
+	//	}
+    //}
 
     public void generateNTMOres(World world, Random rand, int x, int z, Block planetStone, int meta) {
 
@@ -125,7 +125,7 @@ public class WorldGeneratorCelestial implements IWorldGenerator {
             @SuppressWarnings("unchecked")
             WeightedRandomGeneric<BedrockOreDefinition> item = (WeightedRandomGeneric<BedrockOreDefinition>) WeightedRandom.getRandomItem(rand, list);
             BedrockOreDefinition def = item.get();
-            
+
             int randPosX = x + rand.nextInt(2) + 8;
             int randPosZ = z + rand.nextInt(2) + 8;
             BedrockOre.generate(world, randPosX, randPosZ, def.stack, def.acid, def.color, def.tier, ModBlocks.stone_depth, planetStone);

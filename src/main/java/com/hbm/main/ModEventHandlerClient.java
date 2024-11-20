@@ -154,17 +154,17 @@ import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 
 public class ModEventHandlerClient {
-	
+
 	public static final int flashDuration = 5_000;
 	public static long flashTimestamp;
 	public static final int shakeDuration = 1_500;
 	public static long shakeTimestamp;
-	
+
 	@SubscribeEvent
 	public void onOverlayRender(RenderGameOverlayEvent.Pre event) {
-		
+
 		EntityPlayer player = Minecraft.getMinecraft().thePlayer;
-		
+
 		/// NUKE FLASH ///
 		if(event.type == ElementType.CROSSHAIRS && (flashTimestamp + flashDuration - System.currentTimeMillis()) > 0) {
 			int width = event.resolution.getScaledWidth();
@@ -189,21 +189,21 @@ public class ModEventHandlerClient {
 			GL11.glDepthMask(true);
 			return;
 		}
-		
+
 		/// HANDLE GUN OVERLAYS ///
 		if(player.getHeldItem() != null && player.getHeldItem().getItem() instanceof IItemHUD) {
 			((IItemHUD)player.getHeldItem().getItem()).renderHUD(event, event.type, player, player.getHeldItem());
 		}
-		
+
 		/// HANDLE GEIGER COUNTER HUD ///
 		if(event.type == ElementType.HOTBAR) {
-			
+
 			if(!(ArmorFSB.hasFSBArmor(player) && ((ArmorFSB)player.inventory.armorInventory[2].getItem()).customGeiger)) {
-				
+
 				if(player.inventory.hasItem(ModItems.geiger_counter)) {
-	
+
 					float rads = HbmLivingProps.getRadiation(player);
-					
+
 					RenderScreenOverlay.renderRadCounter(event.resolution, rads, Minecraft.getMinecraft().ingameGUI);
 				}
 			}
@@ -215,37 +215,37 @@ public class ModEventHandlerClient {
 			Minecraft mc = Minecraft.getMinecraft();
 			World world = mc.theWorld;
 			MovingObjectPosition mop = mc.objectMouseOver;
-			
+
 			if(mop != null) {
-				
+
 				if(mop.typeOfHit == MovingObjectType.BLOCK) {
-					
+
 					if(player.getHeldItem() != null && player.getHeldItem().getItem() instanceof ILookOverlay) {
 						((ILookOverlay) player.getHeldItem().getItem()).printHook(event, world, mop.blockX, mop.blockY, mop.blockZ);
-						
+
 					} else if(world.getBlock(mop.blockX, mop.blockY, mop.blockZ) instanceof ILookOverlay) {
 						((ILookOverlay) world.getBlock(mop.blockX, mop.blockY, mop.blockZ)).printHook(event, world, mop.blockX, mop.blockY, mop.blockZ);
 					}
-					
+
 					/*List<String> text = new ArrayList();
 					text.add("Meta: " + world.getBlockMetadata(mop.blockX, mop.blockY, mop.blockZ));
 					ILookOverlay.printGeneric(event, "DEBUG", 0xffff00, 0x4040000, text);*/
-					
+
 				} else if(mop.typeOfHit == MovingObjectType.ENTITY) {
 					Entity entity = mop.entityHit;
-					
+
 					if(entity instanceof ILookOverlay) {
 						((ILookOverlay) entity).printHook(event, world, 0, 0, 0);
 					}
 				}
 			}
-			
+
 			/*List<String> text = new ArrayList();
 			text.add("IMPACT: " + ImpactWorldHandler.getImpactForClient(world));
 			text.add("DUST: " + ImpactWorldHandler.getDustForClient(world));
 			text.add("FIRE: " + ImpactWorldHandler.getFireForClient(world));
 			ILookOverlay.printGeneric(event, "DEBUG", 0xffff00, 0x4040000, text);*/
-			
+
 			/*if(mop != null && mop.typeOfHit == mop.typeOfHit.BLOCK) {
 				ScaledResolution resolution = event.resolution;
 				GL11.glPushMatrix();
@@ -257,125 +257,125 @@ public class ModEventHandlerClient {
 				GL11.glPopMatrix();
 				Minecraft.getMinecraft().renderEngine.bindTexture(Gui.icons);
 			}*/
-			
+
 			/*List<String> text = new ArrayList();
 			MovingObjectPosition pos = Library.rayTrace(player, 500, 1, false, true, false);
-			
+
 			for(int i = 0; i < 2; i++) if(pos != null && pos.typeOfHit == pos.typeOfHit.BLOCK) {
-				
+
 				float yaw = player.rotationYaw;
-				
+
 				Vec3 next = Vec3.createVectorHelper(pos.hitVec.xCoord, pos.hitVec.yCoord, pos.hitVec.zCoord);
 				int it = 0;
-				
+
 				BlockPos anchor = new BlockPos(pos.blockX, pos.blockY, pos.blockZ);
-				
+
 				double distanceToCover = 4D * (i == 0 ? 1 : -1);
-				
+
 				if(distanceToCover < 0) {
 					distanceToCover *= -1;
 					yaw += 180;
 				}
-				
+
 				do {
-					
+
 					it++;
-					
+
 					if(it > 30) {
 						world.createExplosion(player, pos.hitVec.xCoord, pos.hitVec.yCoord, pos.hitVec.zCoord, 5F, false);
 						break;
 					}
-					
+
 					int x = anchor.getX();
 					int y = anchor.getY();
 					int z = anchor.getZ();
 					Block block = world.getBlock(x, y, z);
-					
+
 					Vec3 rot = Vec3.createVectorHelper(0, 0, 1);
 					rot.rotateAroundY((float) (-yaw * Math.PI / 180D));
-					
+
 					if(block instanceof IRailNTM) {
 						IRailNTM rail = (IRailNTM) block;
 						RailContext info = new RailContext();
-						
+
 						boolean flip = distanceToCover < 0;
-						
+
 						if(it == 1) {
 							Vec3 snap = next = rail.getTravelLocation(world, x, y, z, next.xCoord, next.yCoord, next.zCoord, rot.xCoord, rot.yCoord, rot.zCoord, 0, info, new MoveContext(RailCheckType.CORE, 0));
 							if(i == 0) world.spawnParticle("reddust", snap.xCoord, snap.yCoord + 0.25, snap.zCoord, 0.1, 1, 0.1);
 						}
-						
+
 						Vec3 prev = next;
 						next = rail.getTravelLocation(world, x, y, z, prev.xCoord, prev.yCoord, prev.zCoord, rot.xCoord, rot.yCoord, rot.zCoord, distanceToCover, info, new MoveContext(i == 0 ? RailCheckType.FRONT : RailCheckType.BACK, 0));
 						distanceToCover = info.overshoot;
 						anchor = info.pos;
 						if(i == 0) world.spawnParticle("reddust", next.xCoord, next.yCoord + 0.25, next.zCoord, 0, distanceToCover != 0 ? 0.5 : 0, 0);
 						else world.spawnParticle("reddust", next.xCoord, next.yCoord + 0.25, next.zCoord, 0, distanceToCover != 0 ? 0.5 : 0, 1);
-						
+
 						double deltaX = next.xCoord - prev.xCoord;
 						double deltaZ = next.zCoord - prev.zCoord;
 						double radians = -Math.atan2(deltaX, deltaZ);
 						yaw = (float) MathHelper.wrapAngleTo180_double(radians * 180D / Math.PI + (flip ? 180 : 0));
-						
+
 						text.add(it + ": " + yaw);
-						
+
 					} else {
 						break;
 					}
-					
+
 				} while(distanceToCover != 0);
-				
+
 				ILookOverlay.printGeneric(event, "DEBUG", 0xffff00, 0x4040000, text);
 			}*/
 		}
-		
+
 		/// HANLDE ANIMATION BUSES ///
-		
+
 		for(int i = 0; i < HbmAnimations.hotbar.length; i++) {
-			
+
 			Animation animation = HbmAnimations.hotbar[i];
-			
+
 			if(animation == null)
 				continue;
 
 			if(animation.holdLastFrame)
 				continue;
-			
+
 			long time = System.currentTimeMillis() - animation.startMillis;
-			
+
 			if(time > animation.animation.getDuration())
 				HbmAnimations.hotbar[i] = null;
 		}
-			
+
 		if(!ducked && Keyboard.isKeyDown(Keyboard.KEY_O) && Minecraft.getMinecraft().currentScreen == null) {
 			ducked = true;
 			PacketDispatcher.wrapper.sendToServer(new AuxButtonPacket(0, 0, 0, 999, 0));
 		}
-		
+
 		/// HANDLE SCOPE OVERLAY ///
 		ItemStack held = player.getHeldItem();
-		
+
 		if(player.isSneaking() && held != null && held.getItem() instanceof ItemGunBase && event.type == ElementType.HOTBAR)  {
 			GunConfiguration config = ((ItemGunBase) held.getItem()).mainConfig;
-			
+
 			if(config.scopeTexture != null) {
 				ScaledResolution resolution = event.resolution;
 				RenderScreenOverlay.renderScope(resolution, config.scopeTexture);
 			}
 		}
-		
+
 		/// HANDLE FLASHBANG OVERLAY///
-		if(player.isPotionActive(HbmPotion.flashbang)) {		
+		if(player.isPotionActive(HbmPotion.flashbang)) {
 			RenderScreenOverlay.renderFlashbangOverlay(event.resolution);
 		}
 		/// HANDLE FSB HUD ///
 		ItemStack helmet = player.inventory.armorInventory[3];
-		
+
 		if(helmet != null && helmet.getItem() instanceof ArmorFSB) {
 			((ArmorFSB)helmet.getItem()).handleOverlay(event, player);
 		}
 		if(!event.isCanceled() && event.type == ElementType.HOTBAR) {
-			
+
 			HbmPlayerProps props = HbmPlayerProps.getData(player);
 			if(props.getDashCount() > 0) {
 				RenderScreenOverlay.renderDashBar(event.resolution, Minecraft.getMinecraft().ingameGUI, props);
@@ -384,12 +384,12 @@ public class ModEventHandlerClient {
 		}
 	}
 
-	
+
 	@SubscribeEvent(receiveCanceled = true)
 	public void onHUDRenderShield(RenderGameOverlayEvent.Pre event) {
 
 		EntityPlayer player = Minecraft.getMinecraft().thePlayer;
-		
+
 		if(event.type == ElementType.ARMOR) {
 
 			HbmPlayerProps props = HbmPlayerProps.getData(player);
@@ -398,15 +398,15 @@ public class ModEventHandlerClient {
 			}
 		}
 	}
-	
+
 	@SubscribeEvent(receiveCanceled = true, priority = EventPriority.LOW)
 	public void onHUDRenderBar(RenderGameOverlayEvent.Post event) {
-		
+
 		/// HANDLE ELECTRIC FSB HUD ///
-		
+
 		EntityPlayer player = Minecraft.getMinecraft().thePlayer;
 		Tessellator tess = Tessellator.instance;
-		
+
 		if(!event.isCanceled() && event.type == ElementType.HEALTH) {
 			if(player.isPotionActive(HbmPotion.nitan)) {
 				RenderScreenOverlay.renderTaintBar(event.resolution, Minecraft.getMinecraft().ingameGUI);
@@ -416,12 +416,12 @@ public class ModEventHandlerClient {
 		if (!event.isCanceled() && event.type == ElementType.ALL) {
 			long time = ImpactWorldHandler.getTimeForClient(player.worldObj);
 			if(time > 0) {
-				RenderScreenOverlay.renderCountdown(event.resolution, Minecraft.getMinecraft().ingameGUI, Minecraft.getMinecraft().theWorld);	
-			}        	
+				RenderScreenOverlay.renderCountdown(event.resolution, Minecraft.getMinecraft().ingameGUI, Minecraft.getMinecraft().theWorld);
+			}
 		}
 
 		if(event.type == ElementType.ARMOR) {
-			
+
 			if(ForgeHooks.getTotalArmorValue(player) == 0) {
 				GuiIngameForge.left_height -= 10;
 			}
@@ -438,7 +438,7 @@ public class ModEventHandlerClient {
 				tess.startDrawingQuads();
 
 				for(int i = 0; i < (noHelmet ? 3 : 4); i++) {
-					
+
 					int top = height - GuiIngameForge.left_height + 7;
 
 					ItemStack stack = player.inventory.armorInventory[i];
@@ -472,7 +472,7 @@ public class ModEventHandlerClient {
 				ItemStack stack = player.inventory.armorInventory[2];
 
 				float tot = (float) JetpackBase.getFuel(stack) / (float) ((JetpackBase) stack.getItem()).getMaxFill(stack);
-				
+
 				int top = height - GuiIngameForge.left_height + 3;
 
 				GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -495,135 +495,135 @@ public class ModEventHandlerClient {
 			}
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void setupFOV(FOVUpdateEvent event) {
-		
+
 		EntityPlayer player = Minecraft.getMinecraft().thePlayer;
 		ItemStack held = player.getHeldItem();
-		
+
 		if(held == null) return;
 		if(!(held.getItem() instanceof ItemGunBase)) return;
-		
+
 		GunConfiguration config = ((ItemGunBase) held.getItem()).mainConfig;
-		
+
 		if(config == null) return;
 		if(config.zoomFOV == 0F || !player.isSneaking()) return;
-		
+
 		if(config.absoluteFOV) {
 			event.newfov = config.zoomFOV;
 		} else {
 			event.newfov += config.zoomFOV;
 		}
 	}
-	
+
 	public static boolean ducked = false;
-	
+
 	@SubscribeEvent
 	public void preRenderEvent(RenderPlayerEvent.Pre event) {
-		
+
 		RenderPlayer renderer = event.renderer;
 		AbstractClientPlayer player = (AbstractClientPlayer)event.entityPlayer;
-		
+
 		PotionEffect invis = player.getActivePotionEffect(Potion.invisibility);
-		
+
 		if(invis != null && invis.getAmplifier() > 0)
 			event.setCanceled(true);
 
-		if(player.getDisplayName().toLowerCase(Locale.US).equals("martmn")) {
-			
-			event.setCanceled(true);
-			
-			float pX = (float) (player.prevPosX + (player.posX - player.prevPosX) * (double)event.partialRenderTick);
-			float pY = (float) (player.prevPosY + (player.posY - player.prevPosY) * (double)event.partialRenderTick);
-			float pZ = (float) (player.prevPosZ + (player.posZ - player.prevPosZ) * (double)event.partialRenderTick);
-			EntityPlayer me = Minecraft.getMinecraft().thePlayer;
-			float mX = (float) (me.prevPosX + (me.posX - me.prevPosX) * (double)event.partialRenderTick);
-			float mY = (float) (me.prevPosY + (me.posY - me.prevPosY) * (double)event.partialRenderTick);
-			float mZ = (float) (me.prevPosZ + (me.posZ - me.prevPosZ) * (double)event.partialRenderTick);
+		//if(player.getDisplayName().toLowerCase(Locale.US).equals("martmn")) {
+		//
+		//	event.setCanceled(true);
+		//
+		//	float pX = (float) (player.prevPosX + (player.posX - player.prevPosX) * (double)event.partialRenderTick);
+		//	float pY = (float) (player.prevPosY + (player.posY - player.prevPosY) * (double)event.partialRenderTick);
+		//	float pZ = (float) (player.prevPosZ + (player.posZ - player.prevPosZ) * (double)event.partialRenderTick);
+		//	EntityPlayer me = Minecraft.getMinecraft().thePlayer;
+		//	float mX = (float) (me.prevPosX + (me.posX - me.prevPosX) * (double)event.partialRenderTick);
+		//	float mY = (float) (me.prevPosY + (me.posY - me.prevPosY) * (double)event.partialRenderTick);
+		//	float mZ = (float) (me.prevPosZ + (me.posZ - me.prevPosZ) * (double)event.partialRenderTick);
+//
+		//	Minecraft.getMinecraft().renderEngine.bindTexture(new ResourceLocation(RefStrings.MODID + ":textures/particle/fart.png"));
+		//	GL11.glPushMatrix();
+		//	GL11.glDisable(GL11.GL_LIGHTING);
+		//	GL11.glDisable(GL11.GL_CULL_FACE);
+		//	GL11.glTranslatef(pX - mX, pY - mY + 0.75F - (float)player.getYOffset(), pZ - mZ);
+		//	GL11.glRotatef(-me.rotationYaw, 0.0F, 1.0F, 0.0F);
+		//	GL11.glRotatef(me.rotationPitch, 1.0F, 0.0F, 0.0F);
+		//	Tessellator t = Tessellator.instance;
+		//	t.startDrawingQuads();
+		//	t.setBrightness(240);
+		//	t.addVertexWithUV(-1, 1, 0, 0, 0);
+		//	t.addVertexWithUV(1, 1, 0, 1, 0);
+		//	t.addVertexWithUV(1, -1, 0, 1, 1);
+		//	t.addVertexWithUV(-1, -1, 0, 0, 1);
+		//	t.draw();
+		//
+		//	GL11.glEnable(GL11.GL_LIGHTING);
+		//
+		//	GL11.glPopMatrix();
+		//}
 
-			Minecraft.getMinecraft().renderEngine.bindTexture(new ResourceLocation(RefStrings.MODID + ":textures/particle/fart.png"));
-			GL11.glPushMatrix();
-			GL11.glDisable(GL11.GL_LIGHTING);
-			GL11.glDisable(GL11.GL_CULL_FACE);
-			GL11.glTranslatef(pX - mX, pY - mY + 0.75F - (float)player.getYOffset(), pZ - mZ);
-			GL11.glRotatef(-me.rotationYaw, 0.0F, 1.0F, 0.0F);
-			GL11.glRotatef(me.rotationPitch, 1.0F, 0.0F, 0.0F);
-			Tessellator t = Tessellator.instance;
-			t.startDrawingQuads();
-			t.setBrightness(240);
-			t.addVertexWithUV(-1, 1, 0, 0, 0);
-			t.addVertexWithUV(1, 1, 0, 1, 0);
-			t.addVertexWithUV(1, -1, 0, 1, 1);
-			t.addVertexWithUV(-1, -1, 0, 0, 1);
-			t.draw();
-			
-			GL11.glEnable(GL11.GL_LIGHTING);
-			
-			GL11.glPopMatrix();
-		}
-		
 		ResourceLocation cloak = RenderAccessoryUtility.getCloakFromPlayer(player);
-		
+
 		if(cloak != null)
 			player.func_152121_a(Type.CAPE, cloak);
-		
+
 		if(player.getHeldItem() != null && player.getHeldItem().getItem() instanceof IHoldableWeapon) {
 			renderer.modelBipedMain.aimedBow = true;
 			renderer.modelArmor.aimedBow = true;
 			renderer.modelArmorChestplate.aimedBow = true;
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void onRenderArmorEvent(RenderPlayerEvent.SetArmorModel event) {
-		
+
 		EntityPlayer player = event.entityPlayer;
-		
+
 		for(int i = 0; i < 4; i++) {
-			
+
 			ItemStack armor = player.getCurrentArmor(i);
-			
+
 			if(armor != null && ArmorModHandler.hasMods(armor)) {
-				
+
 				for(ItemStack mod : ArmorModHandler.pryMods(armor)) {
-					
+
 					if(mod != null && mod.getItem() instanceof ItemArmorMod) {
 						((ItemArmorMod)mod.getItem()).modRender(event, armor);
 					}
 				}
 			}
-			
+
 			//because armor that isn't ItemArmor doesn't render at all
 			if(armor != null && armor.getItem() instanceof JetpackBase) {
 				((ItemArmorMod)armor.getItem()).modRender(event, armor);
 			}
 		}
-		
-		if(player.getCurrentArmor(2) == null && !player.isPotionActive(Potion.invisibility)) {
-			if(player.getUniqueID().toString().equals(ShadyUtil.HbMinecraft) ||		player.getDisplayName().equals("HbMinecraft"))		RenderAccessoryUtility.renderWings(event, 2);
-			if(player.getUniqueID().toString().equals(ShadyUtil.the_NCR) ||			player.getDisplayName().equals("the_NCR"))			RenderAccessoryUtility.renderWings(event, 3);
-			if(player.getUniqueID().toString().equals(ShadyUtil.Barnaby99_x) ||		player.getDisplayName().equals("pheo7"))			RenderAccessoryUtility.renderAxePack(event);
-			if(player.getUniqueID().toString().equals(ShadyUtil.LePeeperSauvage) ||	player.getDisplayName().equals("LePeeperSauvage"))	RenderAccessoryUtility.renderFaggot(event);
-		}
+
+		//if(player.getCurrentArmor(2) == null && !player.isPotionActive(Potion.invisibility)) {
+		//	if(player.getUniqueID().toString().equals(ShadyUtil.HbMinecraft) ||		player.getDisplayName().equals("HbMinecraft"))		RenderAccessoryUtility.renderWings(event, 2);
+		//	if(player.getUniqueID().toString().equals(ShadyUtil.the_NCR) ||			player.getDisplayName().equals("the_NCR"))			RenderAccessoryUtility.renderWings(event, 3);
+		//	if(player.getUniqueID().toString().equals(ShadyUtil.Barnaby99_x) ||		player.getDisplayName().equals("pheo7"))			RenderAccessoryUtility.renderAxePack(event);
+		//	if(player.getUniqueID().toString().equals(ShadyUtil.LePeeperSauvage) ||	player.getDisplayName().equals("LePeeperSauvage"))	RenderAccessoryUtility.renderFaggot(event);
+		//}
 	}
 
 	@SubscribeEvent
 	public void clickHandler(MouseEvent event) {
-		
+
 		EntityPlayer player = Minecraft.getMinecraft().thePlayer;
-		
+
 		if(player.getHeldItem() != null) {
-			
+
 			Item held = player.getHeldItem().getItem();
-			
+
 			if(held instanceof ItemGunBase) {
-				
+
 				if(event.button == 0)
 					event.setCanceled(true);
-				
+
 				ItemGunBase item = (ItemGunBase)player.getHeldItem().getItem();
-				
+
 				if(event.button == 0 && !item.m1 && !item.m2) {
 					item.m1 = true;
 					PacketDispatcher.wrapper.sendToServer(new GunButtonPacket(true, (byte) 0));
@@ -664,16 +664,16 @@ public class ModEventHandlerClient {
 	@Spaghetti("please get this shit out of my face")
 	@SubscribeEvent
 	public void onPlaySound(PlaySoundEvent17 e) {
-		
+
 		EntityPlayer player = MainRegistry.proxy.me();
 		Minecraft mc = Minecraft.getMinecraft();
-		
+
 		if(player != null && mc.theWorld != null) {
 			int i = MathHelper.floor_double(player.posX);
 			int j = MathHelper.floor_double(player.posY);
 			int k = MathHelper.floor_double(player.posZ);
 			Block block = mc.theWorld.getBlock(i, j, k);
-			
+
 			if(block == ModBlocks.vacuum) {
 				e.result = null;
 				return;
@@ -681,40 +681,42 @@ public class ModEventHandlerClient {
 
 
 		}
-		
+
 		ResourceLocation r = e.sound.getPositionedSoundLocation();
 
 		WorldClient wc = mc.theWorld;
-		
+
 		//Alright, alright, I give the fuck up, you've wasted my time enough with this bullshit. You win.
 		//A winner is you.
 		//Conglaturations.
 		//Fuck you.
-		
+
+		//and fuck you too
+
 		if(r.toString().equals("hbm:misc.nullChopper") && Library.getClosestChopperForSound(wc, e.sound.getXPosF(), e.sound.getYPosF(), e.sound.getZPosF(), 2) != null)
 		{
 			EntityHunterChopper ent = Library.getClosestChopperForSound(wc, e.sound.getXPosF(), e.sound.getYPosF(), e.sound.getZPosF(), 2);
-			
+
 			if(MovingSoundPlayerLoop.getSoundByPlayer(ent, EnumHbmSound.soundChopperLoop) == null) {
 				MovingSoundPlayerLoop.globalSoundList.add(new MovingSoundChopper(new ResourceLocation("hbm:entity.chopperFlyingLoop"), ent, EnumHbmSound.soundChopperLoop));
 				MovingSoundPlayerLoop.getSoundByPlayer(ent, EnumHbmSound.soundChopperLoop).setVolume(10.0F);
 			}
 		}
-		
+
 		if(r.toString().equals("hbm:misc.nullCrashing") && Library.getClosestChopperForSound(wc, e.sound.getXPosF(), e.sound.getYPosF(), e.sound.getZPosF(), 2) != null)
 		{
 			EntityHunterChopper ent = Library.getClosestChopperForSound(wc, e.sound.getXPosF(), e.sound.getYPosF(), e.sound.getZPosF(), 2);
-			
+
 			if(MovingSoundPlayerLoop.getSoundByPlayer(ent, EnumHbmSound.soundCrashingLoop) == null) {
 				MovingSoundPlayerLoop.globalSoundList.add(new MovingSoundCrashing(new ResourceLocation("hbm:entity.chopperCrashingLoop"), ent, EnumHbmSound.soundCrashingLoop));
 				MovingSoundPlayerLoop.getSoundByPlayer(ent, EnumHbmSound.soundCrashingLoop).setVolume(10.0F);
 			}
 		}
-		
+
 		if(r.toString().equals("hbm:misc.nullMine") && Library.getClosestMineForSound(wc, e.sound.getXPosF(), e.sound.getYPosF(), e.sound.getZPosF(), 2) != null)
 		{
 			EntityChopperMine ent = Library.getClosestMineForSound(wc, e.sound.getXPosF(), e.sound.getYPosF(), e.sound.getZPosF(), 2);
-			
+
 			if(MovingSoundPlayerLoop.getSoundByPlayer(ent, EnumHbmSound.soundMineLoop) == null) {
 				MovingSoundPlayerLoop.globalSoundList.add(new MovingSoundChopperMine(new ResourceLocation("hbm:entity.chopperMineLoop"), ent, EnumHbmSound.soundMineLoop));
 				MovingSoundPlayerLoop.getSoundByPlayer(ent, EnumHbmSound.soundMineLoop).setVolume(10.0F);
@@ -730,67 +732,67 @@ public class ModEventHandlerClient {
 			}
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void drawTooltip(ItemTooltipEvent event) {
-		
+
 		ItemStack stack = event.itemStack;
 		List<String> list = event.toolTip;
-		
+
 		/// HAZMAT INFO ///
 		List<HazardClass> hazInfo = ArmorRegistry.hazardClasses.get(stack.getItem());
-		
+
 		if(hazInfo != null) {
-			
+
 			if(Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
 				list.add(EnumChatFormatting.GOLD + I18nUtil.resolveKey("hazard.prot"));
 				for(HazardClass clazz : hazInfo) {
 					list.add(EnumChatFormatting.YELLOW + "  " + I18nUtil.resolveKey(clazz.lang));
 				}
 			} else {
-				
+
 				list.add(EnumChatFormatting.DARK_GRAY + "" + EnumChatFormatting.ITALIC +"Hold <" +
 						EnumChatFormatting.YELLOW + "" + EnumChatFormatting.ITALIC + "LSHIFT" +
 						EnumChatFormatting.DARK_GRAY + "" + EnumChatFormatting.ITALIC + "> to display protection info");
 			}
 		}
-		
+
 		/// CLADDING (LEGACY) ///
 		double rad = HazmatRegistry.getResistance(stack);
 		rad = ((int)(rad * 1000)) / 1000D;
 		if(rad > 0) list.add(EnumChatFormatting.YELLOW + I18nUtil.resolveKey("trait.radResistance", rad));
-		
+
 		/// ARMOR MODS ///
 		if(stack.getItem() instanceof ItemArmor && ArmorModHandler.hasMods(stack)) {
-			
+
 			if(!Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) && !(Minecraft.getMinecraft().currentScreen instanceof GUIArmorTable)) {
-				
+
 				list.add(EnumChatFormatting.DARK_GRAY + "" + EnumChatFormatting.ITALIC +"Hold <" +
 						EnumChatFormatting.YELLOW + "" + EnumChatFormatting.ITALIC + "LSHIFT" +
 						EnumChatFormatting.DARK_GRAY + "" + EnumChatFormatting.ITALIC + "> to display installed armor mods");
-				
+
 			} else {
-				
+
 				list.add(EnumChatFormatting.YELLOW + "Mods:");
-				
+
 				ItemStack[] mods = ArmorModHandler.pryMods(stack);
-				
+
 				for(int i = 0; i < 8; i++) {
-					
+
 					if(mods[i] != null && mods[i].getItem() instanceof ItemArmorMod) {
-						
+
 						((ItemArmorMod)mods[i].getItem()).addDesc(list, mods[i], stack);
 					}
 				}
 			}
 		}
-		
+
 		/// HAZARDS ///
 		HazardSystem.addFullTooltip(stack, event.entityPlayer, list);
-		
+
 		if(event.showAdvancedItemTooltips) {
 			List<String> names = ItemStackUtil.getOreDictNames(stack);
-			
+
 			if(names.size() > 0) {
 				list.add(EnumChatFormatting.BLUE + "Ore Dict:");
 				for(String s : names) {
@@ -800,7 +802,7 @@ public class ModEventHandlerClient {
 				list.add(EnumChatFormatting.RED + "No Ore Dict data!");
 			}
 		}
-		
+
 		///NEUTRON ACTIVATION
 		float level = 0;
 		float rads = HazardSystem.getHazardLevelFromStack(stack, HazardRegistry.RADIATION);
@@ -808,41 +810,41 @@ public class ModEventHandlerClient {
 			if(stack.hasTagCompound() && stack.stackTagCompound.hasKey(HazardTypeNeutron.NEUTRON_KEY)) {
 				level += stack.stackTagCompound.getFloat(HazardTypeNeutron.NEUTRON_KEY);
 			}
-			
+
 			if(level >= 1e-5) {
 				list.add(EnumChatFormatting.GREEN + "[" + I18nUtil.resolveKey("trait.radioactive") + "]");
 				String rads2 = "" + (Math.floor(level* 1000) / 1000);
 				list.add(EnumChatFormatting.YELLOW + (rads2 + "RAD/s"));
-				
+
 				if(stack.stackSize > 1) {
 					list.add(EnumChatFormatting.YELLOW + "Stack: " + ((Math.floor(level * 1000 * stack.stackSize) / 1000) + "RAD/s"));
-				}	
+				}
 			}
 		}
-		
+
 		/// NUCLEAR FURNACE FUELS ///
 		int breeder = TileEntityNukeFurnace.getFuelValue(stack);
-		
+
 		if(breeder != 0) {
 			list.add(EnumChatFormatting.YELLOW + I18nUtil.resolveKey("trait.furnace", breeder));
 		}
-		
+
 		/// CUSTOM NUKE ///
 		ComparableStack comp = new ComparableStack(stack).makeSingular();
 		CustomNukeEntry entry = TileEntityNukeCustom.entries.get(comp);
-		
+
 		if(entry != null) {
-			
+
 			if(!list.isEmpty())
 				list.add("");
-			
+
 			if(entry.entry == EnumEntryType.ADD)
 				list.add(EnumChatFormatting.GOLD + "Adds " + entry.value + " to the custom nuke stage " + entry.type);
 
 			if(entry.entry == EnumEntryType.MULT)
 				list.add(EnumChatFormatting.GOLD + "Adds multiplier " + entry.value + " to the custom nuke stage " + entry.type);
 		}
-		
+
 		try {
 			CanneryBase cannery = Jars.canneries.get(comp);
 			if(cannery != null) {
@@ -853,36 +855,36 @@ public class ModEventHandlerClient {
 		} catch(Exception ex) {
 			list.add(EnumChatFormatting.RED + "Error loading cannery: " + ex.getLocalizedMessage());
 		}
-		
+
 		/*ItemStack copy = stack.copy();
 		List<MaterialStack> materials = Mats.getMaterialsFromItem(copy);
-		
+
 		if(!materials.isEmpty()) {
 			for(MaterialStack mat : materials) {
 				list.add(EnumChatFormatting.DARK_PURPLE + mat.material.names[0] + ": " + Mats.formatAmount(mat.amount * stack.stackSize));
 			}
 		}*/
 	}
-	
+
 	private static long canneryTimestamp;
 	private static ComparableStack lastCannery = null;
-	
+
 	private ResourceLocation ashes = new ResourceLocation(RefStrings.MODID + ":textures/misc/overlay_ash.png");
-	
+
 	@SideOnly(Side.CLIENT)
 	//@SubscribeEvent
 	public void onRenderStorm(RenderHandEvent event) {
-		
+
 		if(BlockAshes.ashes == 0)
 			return;
-		
+
 		GL11.glPushMatrix();
-		
+
 		Minecraft mc = Minecraft.getMinecraft();
 
 		GL11.glRotatef((float)-mc.thePlayer.rotationYaw, 0, 1, 0);
 		GL11.glRotatef((float)(mc.thePlayer.rotationPitch), 1, 0, 0);
-		
+
 		ScaledResolution resolution = new ScaledResolution(mc, mc.displayWidth, mc.displayHeight);
 
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
@@ -890,12 +892,12 @@ public class ModEventHandlerClient {
 		GL11.glEnable(GL11.GL_BLEND);
 		OpenGlHelper.glBlendFunc(770, 771, 1, 0);
 		GL11.glEnable(GL11.GL_ALPHA_TEST);
-		
+
 		int w = resolution.getScaledWidth();
 		int h = resolution.getScaledHeight();
 		double off = System.currentTimeMillis() / -10000D % 10000D;
 		double aw = 25;
-		
+
 		Tessellator tessellator = Tessellator.instance;
 
 		//int d = mc.theWorld.getLightBrightnessForSkyBlocks(MathHelper.floor_double(mc.thePlayer.posX), MathHelper.floor_double(mc.thePlayer.posY), MathHelper.floor_double(mc.thePlayer.posZ), 0);
@@ -904,21 +906,21 @@ public class ModEventHandlerClient {
 		int lX = lastBrightness % 65536;
 		int lY = lastBrightness / 65536;
 		float interp = (mc.theWorld.getTotalWorldTime() % 20) * 0.05F;
-		
+
 		if(mc.theWorld.getTotalWorldTime() == 1)
 			lastBrightness = currentBrightness;
-		
+
 		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, (float)(lX + (cX - lX) * interp) / 1.0F, (float)(lY + (cY - lY) * interp) / 1.0F);
 
 		mc.entityRenderer.enableLightmap((double)event.partialTicks);
-		
+
 		mc.getTextureManager().bindTexture(ashes);
-		
+
 		for(int i = 1; i < 3; i++) {
-			
+
 			GL11.glRotatef(-15, 0, 0, 1);
 			GL11.glColor4f(1.0F, 1.0F, 1.0F, BlockAshes.ashes / 256F * 0.98F / i);
-			
+
 			tessellator.startDrawingQuads();
 			tessellator.addVertexWithUV(-w * 0.25, 	h * 0.25, 	aw, 0.0D + off * i, 1.0D);
 			tessellator.addVertexWithUV(w * 0.25, 	h * 0.25, 	aw, 1.0D + off * i, 1.0D);
@@ -928,7 +930,7 @@ public class ModEventHandlerClient {
 		}
 
 		mc.entityRenderer.disableLightmap((double)event.partialTicks);
-		
+
 		GL11.glDepthMask(true);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glDisable(GL11.GL_BLEND);
@@ -941,15 +943,15 @@ public class ModEventHandlerClient {
 	public static int lastBrightness = 0;
 
 	static boolean isRenderingItems = false;
-	
+
 	@SubscribeEvent
 	public void clientTick(ClientTickEvent event) {
-		
+
 		Minecraft mc = Minecraft.getMinecraft();
 		ArmorNo9.updateWorldHook(mc.theWorld);
 
 		boolean supportsHighRenderDistance = FMLClientHandler.instance().hasOptifine() || Loader.isModLoaded("angelica");
-		
+
 		if(mc.gameSettings.renderDistanceChunks > 16 && GeneralConfig.enableRenderDistCheck && !supportsHighRenderDistance) {
 			mc.gameSettings.renderDistanceChunks = 16;
 			LoggingUtil.errorWithHighlight("========================== WARNING ==========================");
@@ -960,35 +962,35 @@ public class ModEventHandlerClient {
 			LoggingUtil.errorWithHighlight("If you got this error after downgrading your Minecraft version: Consider using a launcher that doesn't reuse the same folders for every game instance. MultiMC for example, it's really good and it comes with a dedicated cat button. You like cats, right? Are you using the Microsoft launcher? The one launcher that turns every version switch into a tightrope act because all the old config and options files are still here because different instances all use the same folder structure instead of different folders like a competent launcher would, because some MO-RON thought that this was an acceptable way of doing things? Really? The launcher that circumcises every crashlog into indecipherable garbage, tricking oblivious people into posting that as a \"crash report\", effectively wasting everyone's time? The launcher made by the company that thought it would be HI-LA-RI-OUS to force everyone to use Microsoft accounts, effectively breaking every other launcher until they implement their terrible auth system?");
 			LoggingUtil.errorWithHighlight("========================== WARNING ==========================");
 		}
-		
+
 		if(mc.theWorld == null || mc.thePlayer == null)
 			return;
-		
+
 		if(event.phase == Phase.START && event.side == Side.CLIENT) {
-			
+
 			if(BlockAshes.ashes > 256) BlockAshes.ashes = 256;
 			if(BlockAshes.ashes > 0) BlockAshes.ashes -= 2;
 			if(BlockAshes.ashes < 0) BlockAshes.ashes = 0;
-			
+
 			if(mc.theWorld.getTotalWorldTime() % 20 == 0) {
 				lastBrightness = currentBrightness;
 				currentBrightness = mc.theWorld.getLightBrightnessForSkyBlocks(MathHelper.floor_double(mc.thePlayer.posX), MathHelper.floor_double(mc.thePlayer.posY), MathHelper.floor_double(mc.thePlayer.posZ), 0);
 			}
-			
+
 			if(ArmorUtil.isWearingEmptyMask(mc.thePlayer)) {
 				MainRegistry.proxy.displayTooltip(EnumChatFormatting.RED + "Your mask has no filter!", ServerProxy.ID_FILTER);
 			}
 		}
-		
+
 		if(Keyboard.isKeyDown(Keyboard.KEY_F1)) {
-			
+
 			ComparableStack comp = canneryTimestamp > System.currentTimeMillis() - 100 ? lastCannery : null;
-			
+
 			if(comp == null) {
 				ItemStack stack = getMouseOverStack();
 				if(stack != null) comp = new ComparableStack(stack).makeSingular();
 			}
-			
+
 			if(comp != null) {
 				CanneryBase cannery = Jars.canneries.get(comp);
 				if(cannery != null) {
@@ -996,9 +998,9 @@ public class ModEventHandlerClient {
 				}
 			}
 		}
-		
+
 		if(Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) && Keyboard.isKeyDown(Keyboard.KEY_LMENU)) {
-			
+
 			ItemStack stack = getMouseOverStack();
 			if(stack != null) {
 				stack = stack.copy();
@@ -1045,19 +1047,19 @@ public class ModEventHandlerClient {
 		} else {
 			isRenderingItems = false;
 		}
-		
+
 		if(event.phase == Phase.START) {
 			EntityPlayer player = mc.thePlayer;
-			
+
 			float discriminator = 0.003F;
 			float defaultStepSize = 0.5F;
 			int newStepSize = 0;
-			
+
 			if(player.inventory.armorInventory[2] != null && player.inventory.armorInventory[2].getItem() instanceof ArmorFSB) {
 				ArmorFSB plate = (ArmorFSB) player.inventory.armorInventory[2].getItem();
 				if(ArmorFSB.hasFSBArmor(player)) newStepSize = plate.stepSize;
 			}
-			
+
 			if(newStepSize > 0) {
 				player.stepHeight = newStepSize + discriminator;
 			} else {
@@ -1076,9 +1078,9 @@ public class ModEventHandlerClient {
 			}
 		}
 	}
-	
+
 	public static ItemStack getMouseOverStack() {
-		
+
 		Minecraft mc = Minecraft.getMinecraft();
 		if(mc.currentScreen instanceof GuiContainer) {
 
@@ -1087,39 +1089,39 @@ public class ModEventHandlerClient {
 			int height = scaledresolution.getScaledHeight();
 			int mouseX = Mouse.getX() * width / mc.displayWidth;
 			int mouseY = height - Mouse.getY() * height / mc.displayHeight - 1;
-			
+
 			GuiContainer container = (GuiContainer) mc.currentScreen;
-			
+
 			for(Object o : container.inventorySlots.inventorySlots) {
 				Slot slot = (Slot) o;
-				
+
 				if(slot.getHasStack()) {
 					try {
 						Method isMouseOverSlot = ReflectionHelper.findMethod(GuiContainer.class, container, new String[] {"func_146981_a", "isMouseOverSlot"}, Slot.class, int.class, int.class);
-						
+
 						if((boolean) isMouseOverSlot.invoke(container, slot, mouseX, mouseY)) {
 							return slot.getStack();
 						}
-						
+
 					} catch(Exception ex) { }
 				}
 			}
 		}
-		
+
 		return null;
 	}
-	
+
 	@SideOnly(Side.CLIENT)
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onClientTickLast(ClientTickEvent event) {
-		
+
 		if(event.phase == Phase.START && GeneralConfig.enableSkyboxes) {
-			
+
 			World world = Minecraft.getMinecraft().theWorld;
 			if(world == null) return;
-			
+
 			IRenderHandler sky = world.provider.getSkyRenderer();
-			
+
 			// if(world.provider instanceof WorldProviderSurface) {
 			// 	if(!(sky instanceof RenderNTMSkyboxImpact)) {
 			// 		world.provider.setSkyRenderer(new RenderNTMSkyboxImpact());
@@ -1140,16 +1142,16 @@ public class ModEventHandlerClient {
 	@SideOnly(Side.CLIENT)
 	@SubscribeEvent(priority = EventPriority.LOW)
 	public void onMouseClicked(InputEvent.MouseInputEvent event) {
-		
+
 		Minecraft mc = Minecraft.getMinecraft();
 		if(GeneralConfig.enableKeybindOverlap && (mc.currentScreen == null || mc.currentScreen.allowUserInput)) {
 			boolean state = Mouse.getEventButtonState();
 			int keyCode = Mouse.getEventButton() - 100;
-			
+
 			//if anything errors here, run ./gradlew clean setupDecompWorkSpace
 			for(Object o : KeyBinding.keybindArray) {
 				KeyBinding key = (KeyBinding) o;
-				
+
 				if(key.getKeyCode() == keyCode && KeyBinding.hash.lookup(key.getKeyCode()) != key) {
 
 					key.pressed = state;
@@ -1158,20 +1160,20 @@ public class ModEventHandlerClient {
 					}
 				}
 			}
-			
+
 			boolean gunKey = keyCode == HbmKeybinds.gunPrimaryKey.getKeyCode() || keyCode == HbmKeybinds.gunSecondaryKey.getKeyCode() ||
 					keyCode == HbmKeybinds.gunTertiaryKey.getKeyCode() || keyCode == HbmKeybinds.reloadKey.getKeyCode();
-			
+
 			EntityPlayer player = mc.thePlayer;
-			
+
 			if(player.getHeldItem() != null && player.getHeldItem().getItem() instanceof ItemGunBaseNT) {
-				
+
 				/* Shoot in favor of attacking */
 				if(gunKey && keyCode == mc.gameSettings.keyBindAttack.getKeyCode()) {
 					mc.gameSettings.keyBindAttack.pressed = false;
 					mc.gameSettings.keyBindAttack.pressTime = 0;
 				}
-				
+
 				if(gunKey && keyCode == mc.gameSettings.keyBindPickBlock.getKeyCode()) {
 					mc.gameSettings.keyBindPickBlock.pressed = false;
 					mc.gameSettings.keyBindPickBlock.pressTime = 0;
@@ -1188,13 +1190,13 @@ public class ModEventHandlerClient {
 		if(GeneralConfig.enableKeybindOverlap && (mc.currentScreen == null || mc.currentScreen.allowUserInput)) {
 			boolean state = Keyboard.getEventKeyState();
 			int keyCode = Keyboard.getEventKey();
-			
+
 			//if anything errors here, run ./gradlew clean setupDecompWorkSpace
 			for(Object o : KeyBinding.keybindArray) {
 				KeyBinding key = (KeyBinding) o;
-				
+
 				if(keyCode != 0 && key.getKeyCode() == keyCode && KeyBinding.hash.lookup(key.getKeyCode()) != key) {
-					
+
 					key.pressed = state;
 					if(state && key.pressTime == 0) {
 						key.pressTime = 1;
@@ -1203,7 +1205,7 @@ public class ModEventHandlerClient {
 			}
 		}
 	}
-	
+
 	@SideOnly(Side.CLIENT)
 	@SubscribeEvent
 	public void onRenderWorldLastEvent(RenderWorldLastEvent event) {
@@ -1274,7 +1276,7 @@ public class ModEventHandlerClient {
 				GL11.glEnable(GL11.GL_CULL_FACE);
 				GL11.glPopMatrix();
 			}
-			
+
 			GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 
 			RenderHelper.disableStandardItemLighting();
@@ -1283,58 +1285,58 @@ public class ModEventHandlerClient {
 		}
 
 		GL11.glPopMatrix();
-		
+
 		boolean hudOn = HbmPlayerProps.getData(player).enableHUD;
-		
+
 		if(hudOn) {
 			RenderOverhead.renderMarkers(event.partialTicks);
-	
+
 			if(ArmorFSB.hasFSBArmor(player)) {
 				ItemStack plate = player.inventory.armorInventory[2];
 				ArmorFSB chestplate = (ArmorFSB) plate.getItem();
-	
+
 				if(chestplate.thermal)
 					RenderOverhead.renderThermalSight(event.partialTicks);
 			}
 		}
 	}
-	
+
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void preRenderEventFirst(RenderLivingEvent.Pre event) {
-		
+
 		if(MainRegistry.proxy.isVanished(event.entity))
 			event.setCanceled(true);
 	}
-	
+
 	@SubscribeEvent
 	public void preRenderEvent(RenderLivingEvent.Pre event) {
-		
+
 		EntityPlayer player = Minecraft.getMinecraft().thePlayer;
-		
+
 		if(ArmorFSB.hasFSBArmor(player) && HbmPlayerProps.getData(player).enableHUD) {
 			ItemStack plate = player.inventory.armorInventory[2];
 			ArmorFSB chestplate = (ArmorFSB)plate.getItem();
-			
+
 			if(chestplate.vats) {
-				
+
 				int count = (int)Math.min(event.entity.getMaxHealth(), 100);
-				
+
 				int bars = (int)Math.ceil(event.entity.getHealth() * count / event.entity.getMaxHealth());
-				
+
 				String bar = EnumChatFormatting.RED + "";
-				
+
 				for(int i = 0; i < count; i++) {
-					
+
 					if(i == bars)
 						bar += EnumChatFormatting.RESET + "";
-					
+
 						bar += "|";
 				}
 				RenderOverhead.renderTag(event.entity, event.x, event.y, event.z, event.renderer, bar, chestplate.thermal);
 			}
 		}
 	}
-	
+
 
 	public static IIcon particleBase;
 	public static IIcon particleLeaf;
@@ -1346,7 +1348,7 @@ public class ModEventHandlerClient {
 
 	@SubscribeEvent
 	public void onTextureStitch(TextureStitchEvent.Pre event) {
-		
+
 		if(event.map.getTextureType() == 0) {
 			particleBase = event.map.registerIcon(RefStrings.MODID + ":particle/particle_base");
 			particleLeaf = event.map.registerIcon(RefStrings.MODID + ":particle/dead_leaf");
@@ -1364,16 +1366,16 @@ public class ModEventHandlerClient {
 
 	private static final ResourceLocation poster = new ResourceLocation(RefStrings.MODID + ":textures/models/misc/poster.png");
 	private static final ResourceLocation poster_cat = new ResourceLocation(RefStrings.MODID + ":textures/models/misc/poster_cat.png");
-	
+
 	@SubscribeEvent
 	public void renderFrame(RenderItemInFrameEvent event) {
-		
+
 		if(event.item != null && event.item.getItem() == ModItems.flame_pony) {
 			event.setCanceled(true);
-			
+
 			double p = 0.0625D;
 			double o = p * 2.75D;
-			
+
 			GL11.glDisable(GL11.GL_LIGHTING);
 			Minecraft.getMinecraft().renderEngine.bindTexture(poster);
 			Tessellator tess = Tessellator.instance;
@@ -1385,10 +1387,10 @@ public class ModEventHandlerClient {
 			tess.draw();
 			GL11.glEnable(GL11.GL_LIGHTING);
 		}
-		
+
 		if(event.item != null && event.item.getItem() == Items.paper) {
 			event.setCanceled(true);
-			
+
 			double p = 0.0625D;
 			double o = p * 2.75D;
 
@@ -1404,16 +1406,16 @@ public class ModEventHandlerClient {
 			GL11.glEnable(GL11.GL_LIGHTING);
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void worldTick(WorldTickEvent event) {
-		
+
 		EntityPlayer player = Minecraft.getMinecraft().thePlayer;
-		
+
 		if(player != null && player.ridingEntity instanceof EntityRailCarRidable && player instanceof EntityClientPlayerMP) {
 			EntityRailCarRidable train = (EntityRailCarRidable) player.ridingEntity;
 			EntityClientPlayerMP client = (EntityClientPlayerMP) player;
-			
+
 			//mojank compensation, because apparently the "this makes the render work" method also determines the fucking input
 			if(!train.shouldRiderSit()) {
 				client.sendQueue.addToSendQueue(new C03PacketPlayer.C05PacketPlayerLook(client.rotationYaw, client.rotationPitch, client.onGround));
@@ -1423,35 +1425,38 @@ public class ModEventHandlerClient {
 
 
 
-            
+
 	}
-	
+
 	@SubscribeEvent
 	public void onOpenGUI(GuiOpenEvent event) {
-		
+
 		if(event.gui instanceof GuiMainMenu) {
 			GuiMainMenu main = (GuiMainMenu) event.gui;
-			int rand = (int)(Math.random() * 150);
-			
-			switch(rand) {
-			case 0: main.splashText = "Floppenheimer!"; break;
-			case 1: main.splashText = "i should dip my balls in sulfuric acid"; break;
-			case 2: main.splashText = "All answers are popbob!"; break;
-			case 3: main.splashText = "None may enter The Orb!"; break;
-			case 4: main.splashText = "Wacarb was here"; break;
-			case 5: main.splashText = "SpongeBoy me Bob I am overdosing on keramine agagagagaga"; break;
-			case 6: main.splashText = EnumChatFormatting.RED + "I know where you live, " + System.getProperty("user.name"); break;
-			case 7: main.splashText = "Nice toes, now hand them over."; break;
-			case 8: main.splashText = "I smell burnt toast!"; break;
-			case 9: main.splashText = "There are bugs under your skin!"; break;
-			case 10: main.splashText = "Fentanyl!"; break;
-			case 11: main.splashText = "Do drugs!"; break;
-			case 12: main.splashText = "Imagine being scared by splash texts!"; break;
-			}
-			
-			double d = Math.random();
-			if(d < 0.1) main.splashText = "Redditors aren't people!";
-			else if(d < 0.2) main.splashText = "Can someone tell me what corrosive fumes the people on Reddit are huffing so I can avoid those more effectively?";
+			//int rand = (int)(Math.random() * 150);
+//
+			//switch(rand) {
+			//case 0: main.splashText = "Floppenheimer!"; break;
+			//case 1: main.splashText = "i should dip my balls in sulfuric acid"; break;
+			//case 2: main.splashText = "All answers are popbob!"; break;
+			//case 3: main.splashText = "None may enter The Orb!"; break;
+			//case 4: main.splashText = "Wacarb was here"; break;
+			//case 5: main.splashText = "SpongeBoy me Bob I am overdosing on keramine agagagagaga"; break;
+			//case 6: main.splashText = EnumChatFormatting.RED + "I know where you live, " + System.getProperty("user.name"); break;
+			//case 7: main.splashText = "Nice toes, now hand them over."; break;
+			//case 8: main.splashText = "I smell burnt toast!"; break;
+			//case 9: main.splashText = "There are bugs under your skin!"; break;
+			//case 10: main.splashText = "Fentanyl!"; break;
+			//case 11: main.splashText = "Do drugs!"; break;
+			//case 12: main.splashText = "Imagine being scared by splash texts!"; break;
+			//}
+
+			//double d = Math.random();
+			//if(d < 0.1) main.splashText = "Redditors aren't people!";
+			//else if(d < 0.2) main.splashText = "Can someone tell me what corrosive fumes the people on Reddit are huffing so I can avoid those more effectively?";
+			//hahahahahahahahah ur so funny bro i forgot to laugh
+			// making fun of redditors with a large chicken in your mod thats so funny bro
+			// thats def gonna prove ur not a redditor bro
 		}
 	}
 }

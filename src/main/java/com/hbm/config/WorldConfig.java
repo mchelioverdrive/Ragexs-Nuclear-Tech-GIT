@@ -7,7 +7,7 @@ public class WorldConfig {
 	public static boolean overworldOre = true;
 	public static boolean netherOre = true;
 	public static boolean endOre = true;
-	
+
 	public static int uraniumSpawn = 6;
 	public static int thoriumSpawn = 7;
 	public static int titaniumSpawn = 8;
@@ -39,7 +39,7 @@ public class WorldConfig {
 	public static int dunaOilSpawn = 100;
 	public static int eveGasSpawn = 100;
 	public static int laytheOilSpawn = 100;
-	
+
 	public static boolean newBedrockOres = false;
 
 	public static int bedrockIronSpawn = 100;
@@ -114,10 +114,10 @@ public class WorldConfig {
 	public static int radfreq = 5000;
 	public static int vaultfreq = 2500;
 
-	public static boolean enableMeteorStrikes = true;
-	public static boolean enableMeteorShowers = true;
-	public static boolean enableMeteorTails = true;
-	public static boolean enableSpecialMeteors = true;
+	public static boolean enableMeteorStrikes = false;
+	public static boolean enableMeteorShowers = false;
+	public static boolean enableMeteorTails = false;
+	public static boolean enableSpecialMeteors = false;
 	public static int meteorStrikeChance = 20 * 60 * 180;
 	public static int meteorShowerChance = 20 * 60 * 5;
 	public static int meteorShowerDuration = 6000;
@@ -130,15 +130,15 @@ public class WorldConfig {
 	public static float craterBiomeInnerRad = 25F;
 	public static float craterBiomeOuterRad = 0.5F;
 	public static float craterBiomeWaterMult = 5F;
-	
+
 	public static void loadFromConfig(Configuration config) {
 
 		final String CATEGORY_OREGEN = CommonConfig.CATEGORY_ORES;
-		
+
 		overworldOre = CommonConfig.createConfigBool(config, CATEGORY_OREGEN, "2.D00_overworldOres", "General switch for whether overworld ores should be generated. Does not include special structures like oil.", true);
 		netherOre = CommonConfig.createConfigBool(config, CATEGORY_OREGEN, "2.D01_netherOres", "General switch for whether nether ores should be generated.", true);
 		endOre = CommonConfig.createConfigBool(config, CATEGORY_OREGEN, "2.D02_endOres", "General switch for whether end ores should be generated. Does not include special structures like trixite crystals.", true);
-		
+
 		uraniumSpawn = CommonConfig.createConfigInt(config, CATEGORY_OREGEN, "2.00_uraniumSpawnrate", "Amount of uranium ore veins per chunk", 7);
 		titaniumSpawn = CommonConfig.createConfigInt(config, CATEGORY_OREGEN, "2.01_titaniumSpawnrate", "Amount of titanium ore veins per chunk", 8);
 		sulfurSpawn = CommonConfig.createConfigInt(config, CATEGORY_OREGEN, "2.02_sulfurSpawnrate", "Amount of sulfur ore veins per chunk", 5);
@@ -287,9 +287,9 @@ public class WorldConfig {
 		jungleStructure = CommonConfig.setDefZero(jungleStructure, 1000);
 		capsuleStructure = CommonConfig.setDefZero(capsuleStructure, 100);
 		arcticStructure = CommonConfig.setDefZero(arcticStructure, 500);
-		
 
-		
+
+
 		meteorStrikeChance = CommonConfig.setDef(meteorStrikeChance, 1000);
 		meteorShowerChance = CommonConfig.setDef(meteorShowerChance, 1000);
 	}

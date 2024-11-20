@@ -22,17 +22,17 @@ public class ItemFELCrystal extends Item {
 		this.setMaxStackSize(1);
 	}
 
-	@Override
-	@SideOnly(Side.CLIENT)
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean bool) {
-		String desc = (stack.getItem() == ModItems.laser_crystal_digamma) ? (EnumChatFormatting.OBFUSCATED + "THERADIANCEOFATHOUSANDSUNS") : (this.getUnlocalizedNameInefficiently(stack) + ".desc");
-		list.add(I18nUtil.resolveKey(desc));
-		list.add(wavelength.textColor + I18nUtil.resolveKey(wavelength.name) + " - " + wavelength.textColor + I18nUtil.resolveKey(this.wavelength.wavelengthRange));
-	}
+	//@Override
+	//@SideOnly(Side.CLIENT)
+	//public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean bool) {
+	//	String desc = (stack.getItem() == ModItems.laser_crystal_digamma) ? (EnumChatFormatting.OBFUSCATED + "THERADIANCEOFATHOUSANDSUNS") : (this.getUnlocalizedNameInefficiently(stack) + ".desc");
+	//	list.add(I18nUtil.resolveKey(desc));
+	//	list.add(wavelength.textColor + I18nUtil.resolveKey(wavelength.name) + " - " + wavelength.textColor + I18nUtil.resolveKey(this.wavelength.wavelengthRange));
+	//}
 
 	public static enum EnumWavelengths{
 		NULL("la creatura", "6 dollar", 0x010101, 0x010101, EnumChatFormatting.WHITE), //why do you exist?
-		
+
 		//MICRO("wavelengths.name.micro", "wavelengths.waveRange.micro", 0xBB1010, 0xCC4040, EnumChatFormatting.GRAY),
 		IR("wavelengths.name.ir", "wavelengths.waveRange.ir", 0xBB1010, 0xCC4040, EnumChatFormatting.RED),
 		VISIBLE("wavelengths.name.visible", "wavelengths.waveRange.visible", 0, 0, EnumChatFormatting.GREEN),

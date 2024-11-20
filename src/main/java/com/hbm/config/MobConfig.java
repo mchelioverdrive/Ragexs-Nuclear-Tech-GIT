@@ -4,12 +4,12 @@ import net.minecraftforge.common.config.Configuration;
 
 public class MobConfig {
 
-	public static boolean enableMaskman = true;
+	public static boolean enableMaskman = false;
 	public static int maskmanDelay = 60 * 60 * 60;
 	public static int maskmanChance = 3;
 	public static int maskmanMinRad = 50;
 	public static boolean maskmanUnderground = true;
-	
+
 	public static boolean enableRaids = false;
 	public static int raidDelay = 30 * 60 * 60;
 	public static int raidChance = 3;
@@ -19,16 +19,16 @@ public class MobConfig {
 	public static int raidAttackReach = 2;
 	public static int raidAttackDistance = 32;
 
-	public static boolean enableElementals = true;
+	public static boolean enableElementals = false;
 	public static int elementalDelay = 30 * 60 * 60;
 	public static int elementalChance = 2;
 	public static int elementalAmount = 10;
 	public static int elementalDistance = 32;
-	
-	public static boolean enableDucks = true;
-	public static boolean enableMobGear = true;
-	
-	public static boolean enableHives = true;
+
+	public static boolean enableDucks = false;
+	public static boolean enableMobGear = false;
+
+	public static boolean enableHives = false;
 	public static int hiveSpawn = 256;
 	public static double scoutThreshold = 5;
 	public static int scoutSwarmSpawnChance = 2;
@@ -52,7 +52,7 @@ public class MobConfig {
 	public static int[] johnsonChance = {-50, 60, 50};
 
 	public static double spawnMax = 50;
-	public static boolean enableInfestation = true;
+	public static boolean enableInfestation = false;
 	public static double baseInfestChance = 5;
 	public static double targetingThreshold = 1;
 
@@ -66,12 +66,12 @@ public class MobConfig {
 	public static boolean rampantGlyphidGuidance = false;
 	public static double rampantSmokeStackOverride = 0.4;
 	public static double pollutionMult = 3;
-	
+
 	public static void loadFromConfig(Configuration config) {
 
 		final String CATEGORY = CommonConfig.CATEGORY_MOBS;
-		
-		enableMaskman = CommonConfig.createConfigBool(config, CATEGORY, "12.M00_enableMaskman", "Whether mask man should spawn", true);
+
+		enableMaskman = CommonConfig.createConfigBool(config, CATEGORY, "12.M00_enableMaskman", "Whether mask man should spawn", false);
 		maskmanDelay = CommonConfig.createConfigInt(config, CATEGORY, "12.M01_maskmanDelay", "How many world ticks need to pass for a check to be performed", 60 * 60 * 60);
 		maskmanChance = CommonConfig.createConfigInt(config, CATEGORY, "12.M02_maskmanChance", "1:x chance to spawn mask man, must be at least 1", 3);
 		maskmanMinRad = CommonConfig.createConfigInt(config, CATEGORY, "12.M03_maskmanMinRad", "The amount of radiation needed for mask man to spawn", 50);
@@ -86,16 +86,16 @@ public class MobConfig {
 		raidAttackDistance = CommonConfig.createConfigInt(config, CATEGORY, "12.F06_raidAttackDistance", "How far away agents will spawn from the targeted player", 32);
 		raidDrones = CommonConfig.createConfigInt(config, CATEGORY, "12.F07_raidDrones", "How many quadcopter drones are spawned each raid", 5);
 
-		enableElementals = CommonConfig.createConfigBool(config, CATEGORY, "12.E00_enableMeltdownElementals", "Whether there should be radiation elementals", true);
+		enableElementals = CommonConfig.createConfigBool(config, CATEGORY, "12.E00_enableMeltdownElementals", "Whether there should be radiation elementals", false);
 		elementalDelay = CommonConfig.createConfigInt(config, CATEGORY, "12.E01_elementalDelay", "How many world ticks need to pass for a check to be performed", 30 * 60 * 60);
 		elementalChance = CommonConfig.createConfigInt(config, CATEGORY, "12.E02_elementalChance", "1:x chance to spawn elementals, must be at least 1", 2);
 		elementalAmount = CommonConfig.createConfigInt(config, CATEGORY, "12.E03_elementalAmount", "How many elementals are spawned each raid", 10);
 		elementalDistance = CommonConfig.createConfigInt(config, CATEGORY, "12.E04_elementalAttackDistance", "How far away elementals will spawn from the targeted player", 32);
-		
-		enableDucks = CommonConfig.createConfigBool(config, CATEGORY, "12.D00_enableDucks", "Whether pressing O should allow the player to duck", true);
-		enableMobGear = CommonConfig.createConfigBool(config, CATEGORY, "12.D01_enableMobGear", "Whether zombies and skeletons should have additional gear when spawning", true);
 
-		enableHives = CommonConfig.createConfigBool(config, CATEGORY, "12.G00_enableHives", "Whether glyphid hives should spawn", true);
+		enableDucks = CommonConfig.createConfigBool(config, CATEGORY, "12.D00_enableDucks", "Whether pressing O should allow the player to duck", false);
+		enableMobGear = CommonConfig.createConfigBool(config, CATEGORY, "12.D01_enableMobGear", "Whether zombies and skeletons should have additional gear when spawning", false);
+
+		enableHives = CommonConfig.createConfigBool(config, CATEGORY, "12.G00_enableHives", "Whether glyphid hives should spawn", false);
 		hiveSpawn = CommonConfig.createConfigInt(config, CATEGORY, "12.G01_hiveSpawn", "The average amount of chunks per hive", 256);
 		scoutThreshold = CommonConfig.createConfigDouble(config, CATEGORY, "12.G02_scoutThreshold", "Minimum amount of soot for scouts to spawn", 1);
 		spawnMax = CommonConfig.createConfigDouble(config, CATEGORY, "12.G07_spawnMax", "Maximum amount of glyphids being able to exist at once through natural spawning", 50);
@@ -109,7 +109,7 @@ public class MobConfig {
 		waypointDebug = CommonConfig.createConfigBool(config, CATEGORY,"12.G13_waypointDebug", "Allows glyphid waypoints to be seen, mainly used for debugging, also useful as an aid against them", false);
 
 		//Infested structures
-		enableInfestation= CommonConfig.createConfigBool(config, CATEGORY, "12.I01_enableInfestation", "Whether structures infested with glyphids should spawn", true);
+		enableInfestation= CommonConfig.createConfigBool(config, CATEGORY, "12.I01_enableInfestation", "Whether structures infested with glyphids should spawn", false);
 		baseInfestChance = CommonConfig.createConfigDouble(config, CATEGORY, "12.I02_baseInfestChance", "The chance for infested structures to spawn", 5);
 
 		//Glyphid spawn stuff
