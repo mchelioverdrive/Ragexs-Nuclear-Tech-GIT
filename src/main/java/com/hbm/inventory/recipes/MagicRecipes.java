@@ -77,11 +77,11 @@ public class MagicRecipes {
 				new ComparableStack(ModBlocks.gravel_diamond),
 				new ComparableStack(ModItems.lead_gavel)));
 
-		recipes.add(new MagicRecipe(new ItemStack(ModItems.mese_gavel),
-				new ComparableStack(ModItems.shimmer_handle),
-				new ComparableStack(ModItems.powder_dineutronium),
-				new ComparableStack(ModItems.blades_desh),
-				new ComparableStack(ModItems.diamond_gavel)));
+		//recipes.add(new MagicRecipe(new ItemStack(ModItems.mese_gavel),
+		//		new ComparableStack(ModItems.shimmer_handle),
+		//		new ComparableStack(ModItems.powder_dineutronium),
+		//		new ComparableStack(ModItems.blades_desh),
+		//		new ComparableStack(ModItems.diamond_gavel)));
 
 		recipes.add(new MagicRecipe(new ItemStack(ModBlocks.hadron_coil_mese),
 				new ComparableStack(ModBlocks.hadron_coil_chlorophyte),

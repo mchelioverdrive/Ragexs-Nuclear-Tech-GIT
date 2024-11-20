@@ -11,7 +11,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraftforge.client.IItemRenderer;
 
 public class ItemRenderGavel implements IItemRenderer {
-	
+
 	public ItemRenderGavel() { }
 
 	@Override
@@ -33,7 +33,7 @@ public class ItemRenderGavel implements IItemRenderer {
 	@Override
 	public void renderItem(ItemRenderType type, ItemStack item, Object... data) {
 		GL11.glPushMatrix();
-		
+
 		EntityPlayer player = Minecraft.getMinecraft().thePlayer;
 
 		if(item.getItem() == ModItems.wood_gavel)
@@ -42,24 +42,24 @@ public class ItemRenderGavel implements IItemRenderer {
 			Minecraft.getMinecraft().renderEngine.bindTexture(ResourceManager.gavel_lead);
 		if(item.getItem() == ModItems.diamond_gavel)
 			Minecraft.getMinecraft().renderEngine.bindTexture(ResourceManager.gavel_diamond);
-		if(item.getItem() == ModItems.mese_gavel)
-			Minecraft.getMinecraft().renderEngine.bindTexture(ResourceManager.gavel_mese);
-		
+		//if(item.getItem() == ModItems.mese_gavel)
+		//	Minecraft.getMinecraft().renderEngine.bindTexture(ResourceManager.gavel_mese);
+
 		switch(type) {
 		case EQUIPPED_FIRST_PERSON:
 
 			GL11.glTranslated(1, 0.5, 0);
-			
+
 			if(player.isBlocking()) {
 				GL11.glTranslated(-0.5, 0, 0);
 			}
-			
+
 			GL11.glRotated(45, 0, 0, 1);
 			GL11.glRotated(90, 0, 1, 0);
-			
-			if(item.getItem() == ModItems.mese_gavel)
-				GL11.glScaled(2, 2, 2);
-			
+
+			//if(item.getItem() == ModItems.mese_gavel)
+			//	GL11.glScaled(2, 2, 2);
+
 			break;
 
 		case ENTITY:
@@ -70,21 +70,21 @@ public class ItemRenderGavel implements IItemRenderer {
 			GL11.glRotated(45, 0, 0, 1);
 			GL11.glTranslated(1.375, 0, 0);
 			GL11.glRotated(90, 0, 1, 0);
-			
-			if(item.getItem() == ModItems.mese_gavel) {
-				GL11.glScaled(2, 2, 2);
-				GL11.glTranslated(0, 0.25, 0);
-			}
-			
+
+			//if(item.getItem() == ModItems.mese_gavel) {
+			//	GL11.glScaled(2, 2, 2);
+			//	GL11.glTranslated(0, 0.25, 0);
+			//}
+
 			break;
 
 		default: break;
 		}
-		
+
 		GL11.glShadeModel(GL11.GL_SMOOTH);
 		ResourceManager.gavel.renderAll();
 		GL11.glShadeModel(GL11.GL_FLAT);
-		
+
 		GL11.glPopMatrix();
 	}
 }
