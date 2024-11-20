@@ -675,14 +675,14 @@ public class AssemblerRecipes extends SerializableRecipe {
 		//		new ComparableStack(ModItems.coin_worm, 1)
 		//	}, 1200);
 
-		makeRecipe(new ComparableStack(ModItems.sat_gerald, 1), new AStack[] {
-				new OreDictStack(SBD.plateCast(), 128),
-				new OreDictStack(BSCCO.wireDense(), 128),
-				new ComparableStack(ModBlocks.det_nuke, 64),
-				new ComparableStack(ModItems.part_generic, 256, EnumPartType.HDE),
-				new ComparableStack(ModItems.circuit, 64, EnumCircuitType.CONTROLLER_QUANTUM),
-				new ComparableStack(ModItems.coin_ufo, 1),
-			}, 1200, ModItems.journal_bj);
+		//makeRecipe(new ComparableStack(ModItems.sat_gerald, 1), new AStack[] {
+		//		new OreDictStack(SBD.plateCast(), 128),
+		//		new OreDictStack(BSCCO.wireDense(), 128),
+		//		new ComparableStack(ModBlocks.det_nuke, 64),
+		//		new ComparableStack(ModItems.part_generic, 256, EnumPartType.HDE),
+		//		new ComparableStack(ModItems.circuit, 64, EnumCircuitType.CONTROLLER_QUANTUM),
+		//		new ComparableStack(ModItems.coin_ufo, 1),
+		//	}, 1200, ModItems.journal_bj);
 
 		makeRecipe(new ComparableStack(ModBlocks.vault_door, 1), new AStack[] {
 				new OreDictStack(STEEL.ingot(), 32),
