@@ -6856,14 +6856,14 @@ public class ModItems {
 		GameRegistry.registerItem(particle_lutece, particle_lutece.getUnlocalizedName());
 
 		//Singularities, black holes and other cosmic horrors
-		GameRegistry.registerItem(singularity_micro, singularity_micro.getUnlocalizedName());
-		GameRegistry.registerItem(singularity, singularity.getUnlocalizedName());
-		GameRegistry.registerItem(singularity_counter_resonant, singularity_counter_resonant.getUnlocalizedName());
-		GameRegistry.registerItem(singularity_super_heated, singularity_super_heated.getUnlocalizedName());
-		GameRegistry.registerItem(black_hole, black_hole.getUnlocalizedName());
-		GameRegistry.registerItem(singularity_spark, singularity_spark.getUnlocalizedName());
-		GameRegistry.registerItem(crystal_xen, crystal_xen.getUnlocalizedName());
-		GameRegistry.registerItem(pellet_antimatter, pellet_antimatter.getUnlocalizedName());
+		//GameRegistry.registerItem(singularity_micro, singularity_micro.getUnlocalizedName());
+		//GameRegistry.registerItem(singularity, singularity.getUnlocalizedName());
+		//GameRegistry.registerItem(singularity_counter_resonant, singularity_counter_resonant.getUnlocalizedName());
+		//GameRegistry.registerItem(singularity_super_heated, singularity_super_heated.getUnlocalizedName());
+		//GameRegistry.registerItem(black_hole, black_hole.getUnlocalizedName());
+		//GameRegistry.registerItem(singularity_spark, singularity_spark.getUnlocalizedName());
+		//GameRegistry.registerItem(crystal_xen, crystal_xen.getUnlocalizedName());
+		//GameRegistry.registerItem(pellet_antimatter, pellet_antimatter.getUnlocalizedName());
 
 		//Infinite Tanks
 		GameRegistry.registerItem(inf_water, inf_water.getUnlocalizedName());
