@@ -201,7 +201,7 @@ public class CraftingManager {
 		addRecipeAuto(new ItemStack(ModItems.fins_quad_titanium, 1), new Object[] { " PP", "III", " PP", 'P', TI.plate(), 'I', TI.ingot() });
 		addRecipeAuto(new ItemStack(ModItems.sphere_steel, 1), new Object[] { "PIP", "I I", "PIP", 'P', STEEL.plate(), 'I', STEEL.ingot() });
 		addRecipeAuto(new ItemStack(ModItems.pedestal_steel, 1), new Object[] { "P P", "P P", "III", 'P', STEEL.plate(), 'I', STEEL.ingot() });
-		addRecipeAuto(new ItemStack(ModItems.lemon, 1), new Object[] { " D ", "DSD", " D ", 'D', KEY_YELLOW, 'S', "stone" });
+		//addRecipeAuto(new ItemStack(ModItems.lemon, 1), new Object[] { " D ", "DSD", " D ", 'D', KEY_YELLOW, 'S', "stone" });
 		addRecipeAuto(new ItemStack(ModItems.blade_titanium, 2), new Object[] { "TP", "TP", "TT", 'P', TI.plate(), 'T', TI.ingot() });
 		addRecipeAuto(new ItemStack(ModItems.blade_syngas, 2), new Object[] { "TP", "TP", "TT", 'P', STAINLESS.plate(), 'T', STAINLESS.ingot() });
 		addRecipeAuto(new ItemStack(ModItems.turbine_titanium, 1), new Object[] { "BBB", "BSB", "BBB", 'B', ModItems.blade_titanium, 'S', STEEL.ingot() });
@@ -367,7 +367,7 @@ public class CraftingManager {
 		addRecipeAuto(new ItemStack(ModItems.laser_crystal_bismuth, 1), new Object[] {"QUQ", "BCB", "QTQ", 'Q', ModBlocks.glass_quartz, 'U', U.ingot(), 'T', TH232.ingot(), 'B', ModItems.nugget_bismuth, 'C', ModItems.crystal_rare });
 		addRecipeAuto(new ItemStack(ModItems.laser_crystal_cmb, 1), new Object[] {"QBQ", "CSC", "QBQ", 'Q', ModBlocks.glass_quartz, 'B', CMB.ingot(), 'C', SBD.ingot(), 'S', ModItems.cell_anti_schrabidium });
 		addRecipeAuto(new ItemStack(ModItems.laser_crystal_iron, 1), new Object[] {"QGQ", "CSC", "QGQ", 'Q', ModBlocks.glass_quartz, 'G', GAAS.ingot(), 'C', ModItems.crystal_iron, 'S', ModItems.cell_balefire});
-		addRecipeAuto(new ItemStack(ModItems.laser_crystal_dnt, 1), new Object[] {"QDQ", "SBZ", "QDQ", 'Q', ModBlocks.glass_quartz, 'D', DNT.ingot(), 'B', ModItems.egg_balefire, 'S', ModItems.powder_spark_mix, 'Z', ModItems.powder_zinc });
+		//addRecipeAuto(new ItemStack(ModItems.laser_crystal_dnt, 1), new Object[] {"QDQ", "SBZ", "QDQ", 'Q', ModBlocks.glass_quartz, 'D', DNT.ingot(), 'B', ModItems.egg_balefire, 'S', ModItems.powder_spark_mix, 'Z', ModItems.powder_zinc });
 		//addRecipeAuto(new ItemStack(ModItems.laser_crystal_digamma, 1), new Object[] {"QUQ", "UEU", "QUQ", 'Q', ModBlocks.glass_quartz, 'U', ModItems.undefined, 'E', ModItems.ingot_electronium } );
 
 		Item[] bricks = new Item[] {Items.brick, Items.netherbrick};
@@ -1049,7 +1049,7 @@ public class CraftingManager {
 
 		addShapelessAuto(new ItemStack(ModItems.bdcl), new Object[] { ANY_TAR.any(), Fluids.WATER.getDict(1_000), KEY_WHITE });
 
-		addShapelessAuto(new ItemStack(ModItems.book_of_), new Object[] { DictFrame.fromOne(ModItems.page_of_, EnumPages.PAGE1), DictFrame.fromOne(ModItems.page_of_, EnumPages.PAGE2), DictFrame.fromOne(ModItems.page_of_, EnumPages.PAGE3), DictFrame.fromOne(ModItems.page_of_, EnumPages.PAGE4), DictFrame.fromOne(ModItems.page_of_, EnumPages.PAGE5), DictFrame.fromOne(ModItems.page_of_, EnumPages.PAGE6), DictFrame.fromOne(ModItems.page_of_, EnumPages.PAGE7), DictFrame.fromOne(ModItems.page_of_, EnumPages.PAGE8), ModItems.egg_balefire });
+		//addShapelessAuto(new ItemStack(ModItems.book_of_), new Object[] { DictFrame.fromOne(ModItems.page_of_, EnumPages.PAGE1), DictFrame.fromOne(ModItems.page_of_, EnumPages.PAGE2), DictFrame.fromOne(ModItems.page_of_, EnumPages.PAGE3), DictFrame.fromOne(ModItems.page_of_, EnumPages.PAGE4), DictFrame.fromOne(ModItems.page_of_, EnumPages.PAGE5), DictFrame.fromOne(ModItems.page_of_, EnumPages.PAGE6), DictFrame.fromOne(ModItems.page_of_, EnumPages.PAGE7), DictFrame.fromOne(ModItems.page_of_, EnumPages.PAGE8), ModItems.egg_balefire });
 
 		if(GeneralConfig.enableLBSM && GeneralConfig.enableLBSMSimpleCrafting) {
 			addShapelessAuto(new ItemStack(ModItems.cordite, 3), new Object[] { ModItems.ballistite, Items.gunpowder, new ItemStack(Blocks.wool, 1, OreDictionary.WILDCARD_VALUE) });
@@ -1084,7 +1084,7 @@ public class CraftingManager {
 				if(mat.shapes.contains(MaterialShapes.WIRE)) for(String name : mat.names) addRecipeAuto(new ItemStack(ModItems.wire_fine, 24, mat.id), new Object[] { "###", '#', MaterialShapes.INGOT.prefixes[0] + name });
 			}
 
-			addRecipeAuto(new ItemStack(ModItems.book_of_), new Object[] { "BGB", "GAG", "BGB", 'B', ModItems.egg_balefire_shard, 'G', GOLD.ingot(), 'A', Items.book });
+			//addRecipeAuto(new ItemStack(ModItems.book_of_), new Object[] { "BGB", "GAG", "BGB", 'B', ModItems.egg_balefire_shard, 'G', GOLD.ingot(), 'A', Items.book });
 		}
 
 		if(!GeneralConfig.enable528) {

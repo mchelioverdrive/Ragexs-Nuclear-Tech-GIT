@@ -8,7 +8,7 @@ import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.tileentity.TileEntity;
 
 public class RenderNukeSolinium extends TileEntitySpecialRenderer {
-	
+
 	public RenderNukeSolinium() { }
 
     @Override
@@ -18,9 +18,9 @@ public class RenderNukeSolinium extends TileEntitySpecialRenderer {
         GL11.glTranslated(x + 0.5D, y, z + 0.5D);
         GL11.glEnable(GL11.GL_LIGHTING);
         GL11.glDisable(GL11.GL_CULL_FACE);
-        
+
         GL11.glRotatef(90, 0F, 1F, 0F);
-        
+
 		switch(tileEntity.getBlockMetadata())
 		{
 		case 2:
@@ -34,8 +34,8 @@ public class RenderNukeSolinium extends TileEntitySpecialRenderer {
 		}
 
         bindTexture(ResourceManager.bomb_solinium_tex);
-        ResourceManager.bomb_solinium.renderAll();
-        
+        //ResourceManager.bomb_solinium.renderAll();
+
         GL11.glEnable(GL11.GL_CULL_FACE);
 
         GL11.glPopMatrix();

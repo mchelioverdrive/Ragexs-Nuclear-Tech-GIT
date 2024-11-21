@@ -29,10 +29,10 @@ public class RenderCrashedBomb extends TileEntitySpecialRenderer {
 		}
 
         bindTexture(ResourceManager.dud_tex);
-        ResourceManager.dud.renderAll();
+        //ResourceManager.dud.renderAll();
 
         GL11.glEnable(GL11.GL_CULL_FACE);
-        
+
         GL11.glPopMatrix();
     }
 }

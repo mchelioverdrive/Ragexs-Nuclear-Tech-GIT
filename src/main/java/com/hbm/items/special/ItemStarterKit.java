@@ -59,12 +59,12 @@ public class ItemStarterKit extends Item {
 			break;
 		}
 	}
-	
+
 	@Override
 	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
-		
+
 		//stack.damageItem(5, player);
-		
+
 		if(this == ModItems.nuke_starter_kit)
 		{
 
@@ -91,10 +91,10 @@ public class ItemStarterKit extends Item {
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.ingot_copper, 64));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.gas_mask_m65, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.geiger_counter, 1));
-			
+
 			giveHaz(world, player, 1);
 		}
-		
+
 		if(this == ModItems.nuke_advanced_kit)
 		{
 
@@ -135,10 +135,10 @@ public class ItemStarterKit extends Item {
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.geiger_counter, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.survey_scanner, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.gas_mask_m65, 1));
-			
+
 			giveHaz(world, player, 2);
 		}
-		
+
 		if(this == ModItems.nuke_commercially_kit)
 		{
 
@@ -168,7 +168,7 @@ public class ItemStarterKit extends Item {
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.gas_mask_filter_combo, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.gas_mask_filter_combo, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.gas_mask_filter_combo, 1));
-			
+
 			giveHaz(world, player, 2);
 		}
 
@@ -227,7 +227,7 @@ public class ItemStarterKit extends Item {
 			player.inventory.addItemStackToInventory(new ItemStack(ModBlocks.machine_converter_he_rf, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModBlocks.machine_converter_rf_he, 1));
 		}
-		
+
 		if(this == ModItems.gadget_kit)
 		{
 			player.inventory.addItemStackToInventory(new ItemStack(Item.getItemFromBlock(ModBlocks.nuke_gadget), 1));
@@ -237,10 +237,10 @@ public class ItemStarterKit extends Item {
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.early_explosive_lenses, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.gadget_wireing, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.gadget_core, 1));
-			
+
 			giveHaz(world, player, 0);
 		}
-		
+
 		if(this == ModItems.boy_kit)
 		{
 			player.inventory.addItemStackToInventory(new ItemStack(Item.getItemFromBlock(ModBlocks.nuke_boy), 1));
@@ -249,10 +249,10 @@ public class ItemStarterKit extends Item {
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.boy_bullet, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.boy_propellant, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.boy_igniter, 1));
-			
+
 			giveHaz(world, player, 0);
 		}
-		
+
 		if(this == ModItems.man_kit)
 		{
 			player.inventory.addItemStackToInventory(new ItemStack(Item.getItemFromBlock(ModBlocks.nuke_man), 1));
@@ -262,10 +262,10 @@ public class ItemStarterKit extends Item {
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.early_explosive_lenses, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.man_igniter, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.man_core, 1));
-			
+
 			giveHaz(world, player, 0);
 		}
-		
+
 		if(this == ModItems.mike_kit)
 		{
 			player.inventory.addItemStackToInventory(new ItemStack(Item.getItemFromBlock(ModBlocks.nuke_mike), 1));
@@ -277,10 +277,10 @@ public class ItemStarterKit extends Item {
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.mike_core, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.mike_deut, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.mike_cooling_unit, 1));
-			
+
 			giveHaz(world, player, 0);
 		}
-		
+
 		if(this == ModItems.tsar_kit)
 		{
 			player.inventory.addItemStackToInventory(new ItemStack(Item.getItemFromBlock(ModBlocks.nuke_tsar), 1));
@@ -290,10 +290,10 @@ public class ItemStarterKit extends Item {
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.explosive_lenses, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.man_core, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.tsar_core, 1));
-			
+
 			giveHaz(world, player, 0);
 		}
-		
+
 		if(this == ModItems.multi_kit)
 		{
 			player.inventory.addItemStackToInventory(new ItemStack(Item.getItemFromBlock(ModBlocks.bomb_multi), 6));
@@ -304,7 +304,7 @@ public class ItemStarterKit extends Item {
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.powder_poison, 2));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.pellet_gas, 2));
 		}
-		
+
 		if(this == ModItems.custom_kit)
 		{
 			player.inventory.addItemStackToInventory(new ItemStack(ModBlocks.nuke_custom));
@@ -328,85 +328,85 @@ public class ItemStarterKit extends Item {
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.custom_schrab, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.custom_fall, 1));
 		}
-		
-		if(this == ModItems.grenade_kit)
-		{
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_generic, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_strong, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_frag, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_fire, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_shrapnel, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_cluster, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_flare, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_electric, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_poison, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_gas, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_cloud, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_pink_cloud, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_smart, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_mirv, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_breach, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_burst, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_pulse, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_plasma, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_tau, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_schrabidium, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_lemon, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_gascan, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_mk2, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_aschrab, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_nuke, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_nuclear, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_zomg, 16));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_black_hole, 16));
-		}
-		
-		if(this == ModItems.fleija_kit)
-		{
-			player.inventory.addItemStackToInventory(new ItemStack(Item.getItemFromBlock(ModBlocks.nuke_fleija), 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_igniter, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_igniter, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_propellant, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_propellant, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_propellant, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_core, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_core, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_core, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_core, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_core, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_core, 1));
-			
-			giveHaz(world, player, 2);
-		}
-		
-		if(this == ModItems.solinium_kit)
-		{
-			player.inventory.addItemStackToInventory(new ItemStack(Item.getItemFromBlock(ModBlocks.nuke_solinium), 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.solinium_igniter, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.solinium_igniter, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.solinium_igniter, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.solinium_igniter, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.solinium_propellant, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.solinium_propellant, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.solinium_propellant, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.solinium_propellant, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.solinium_core, 1));
-			
-			giveHaz(world, player, 1);
-		}
-		
-		if(this == ModItems.prototype_kit)
-		{
-			player.inventory.addItemStackToInventory(new ItemStack(Item.getItemFromBlock(ModBlocks.nuke_prototype), 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.igniter, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.cell_sas3, 4));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.rod_quad, 4, BreedingRodType.URANIUM.ordinal()));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.rod_quad, 4, BreedingRodType.LEAD.ordinal()));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.rod_quad, 2, BreedingRodType.NP237.ordinal()));
-			
-			giveHaz(world, player, 2);
-		}
-		
+
+		//if(this == ModItems.grenade_kit)
+		//{
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_generic, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_strong, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_frag, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_fire, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_shrapnel, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_cluster, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_flare, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_electric, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_poison, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_gas, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_cloud, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_pink_cloud, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_smart, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_mirv, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_breach, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_burst, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_pulse, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_plasma, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_tau, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_schrabidium, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_lemon, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_gascan, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_mk2, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_aschrab, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_nuke, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_nuclear, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_zomg, 16));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.grenade_black_hole, 16));
+		//}
+
+		//if(this == ModItems.fleija_kit)
+		//{
+		//	player.inventory.addItemStackToInventory(new ItemStack(Item.getItemFromBlock(ModBlocks.nuke_fleija), 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_igniter, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_igniter, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_propellant, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_propellant, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_propellant, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_core, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_core, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_core, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_core, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_core, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.fleija_core, 1));
+		//
+		//	giveHaz(world, player, 2);
+		//}
+
+		//if(this == ModItems.solinium_kit)
+		//{
+		//	player.inventory.addItemStackToInventory(new ItemStack(Item.getItemFromBlock(ModBlocks.nuke_solinium), 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.solinium_igniter, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.solinium_igniter, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.solinium_igniter, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.solinium_igniter, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.solinium_propellant, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.solinium_propellant, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.solinium_propellant, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.solinium_propellant, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.solinium_core, 1));
+		//
+		//	giveHaz(world, player, 1);
+		//}
+
+		//if(this == ModItems.prototype_kit)
+		//{
+		//	player.inventory.addItemStackToInventory(new ItemStack(Item.getItemFromBlock(ModBlocks.nuke_prototype), 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.igniter, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.cell_sas3, 4));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.rod_quad, 4, BreedingRodType.URANIUM.ordinal()));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.rod_quad, 4, BreedingRodType.LEAD.ordinal()));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.rod_quad, 2, BreedingRodType.NP237.ordinal()));
+		//
+		//	giveHaz(world, player, 2);
+		//}
+
 		if(this == ModItems.missile_kit)
 		{
 			player.inventory.addItemStackToInventory(new ItemStack(Item.getItemFromBlock(ModBlocks.launch_pad), 1));
@@ -436,53 +436,53 @@ public class ItemStarterKit extends Item {
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.missile_schrabidium, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.missile_emp, 1));
 		}
-		
-		if(this == ModItems.t45_kit)
-		{
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.t45_helmet, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.t45_plate, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.t45_legs, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.t45_boots, 1));
-			player.inventory.addItemStackToInventory(ItemBattery.getFullBattery(ModItems.fusion_core));
-			player.inventory.addItemStackToInventory(ItemBattery.getFullBattery(ModItems.fusion_core));
-			player.inventory.addItemStackToInventory(ItemBattery.getFullBattery(ModItems.fusion_core));
-			player.inventory.addItemStackToInventory(ItemBattery.getFullBattery(ModItems.fusion_core));
-			player.inventory.addItemStackToInventory(ItemBattery.getFullBattery(ModItems.fusion_core));
-			player.inventory.addItemStackToInventory(ItemBattery.getFullBattery(ModItems.fusion_core));
-			player.inventory.addItemStackToInventory(ItemBattery.getFullBattery(ModItems.fusion_core));
-		}
-		
+
+		//if(this == ModItems.t45_kit)
+		//{
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.t45_helmet, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.t45_plate, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.t45_legs, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.t45_boots, 1));
+		//	player.inventory.addItemStackToInventory(ItemBattery.getFullBattery(ModItems.fusion_core));
+		//	player.inventory.addItemStackToInventory(ItemBattery.getFullBattery(ModItems.fusion_core));
+		//	player.inventory.addItemStackToInventory(ItemBattery.getFullBattery(ModItems.fusion_core));
+		//	player.inventory.addItemStackToInventory(ItemBattery.getFullBattery(ModItems.fusion_core));
+		//	player.inventory.addItemStackToInventory(ItemBattery.getFullBattery(ModItems.fusion_core));
+		//	player.inventory.addItemStackToInventory(ItemBattery.getFullBattery(ModItems.fusion_core));
+		//	player.inventory.addItemStackToInventory(ItemBattery.getFullBattery(ModItems.fusion_core));
+		//}
+
 		if(this == ModItems.stealth_boy)
 		{
 			player.addPotionEffect(new PotionEffect(Potion.invisibility.id, 30 * 20, 1, true));
 		}
-		
-		if(this == ModItems.euphemium_kit)
-		{
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.euphemium_helmet, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.euphemium_plate, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.euphemium_legs, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.euphemium_boots, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(Item.getItemFromBlock(ModBlocks.statue_elb), 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.gun_revolver_cursed, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.watch, 1));
-		}
-		
+
+		//if(this == ModItems.euphemium_kit)
+		//{
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.euphemium_helmet, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.euphemium_plate, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.euphemium_legs, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.euphemium_boots, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(Item.getItemFromBlock(ModBlocks.statue_elb), 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.gun_revolver_cursed, 1));
+		//	player.inventory.addItemStackToInventory(new ItemStack(ModItems.watch, 1));
+		//}
+
 		if(this == ModItems.hazmat_kit)
 		{
 			giveHaz(world, player, 0);
 		}
-		
+
 		if(this == ModItems.hazmat_red_kit)
 		{
 			giveHaz(world, player, 1);
 		}
-		
+
 		if(this == ModItems.hazmat_grey_kit)
 		{
 			giveHaz(world, player, 2);
 		}
-		
+
 		if(this == ModItems.letter && world.isRemote)
 		{
 			if(player.getUniqueID().toString().equals(ShadyUtil.a20)) {
@@ -495,9 +495,9 @@ public class ItemStarterKit extends Item {
 		world.playSoundAtEntity(player, "hbm:item.unpack", 1.0F, 1.0F);
 		stack.stackSize--;
 		return stack;
-		
+
 	}
-	
+
     @SideOnly(Side.CLIENT)
     @Override
     public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean b) {
@@ -511,11 +511,11 @@ public class ItemStarterKit extends Item {
     			this == ModItems.man_kit ||
     			this == ModItems.mike_kit ||
     			this == ModItems.tsar_kit ||
-    			this == ModItems.prototype_kit ||
-    			this == ModItems.fleija_kit ||
-    			this == ModItems.solinium_kit ||
-    			this == ModItems.t45_kit ||
-    			this == ModItems.grenade_kit ||
+    			//this == ModItems.prototype_kit ||
+    			//this == ModItems.fleija_kit ||
+    			//this == ModItems.solinium_kit ||
+    			//this == ModItems.t45_kit ||
+    			//this == ModItems.grenade_kit ||
     			this == ModItems.missile_kit ||
     			this == ModItems.multi_kit) {
     		list.add("Please empty inventory before opening!");
@@ -528,9 +528,9 @@ public class ItemStarterKit extends Item {
     			this == ModItems.man_kit ||
     			this == ModItems.mike_kit ||
     			this == ModItems.tsar_kit ||
-    			this == ModItems.prototype_kit ||
-    			this == ModItems.fleija_kit ||
-    			this == ModItems.solinium_kit ||
+    			//this == ModItems.prototype_kit ||
+    			//this == ModItems.fleija_kit ||
+    			//this == ModItems.solinium_kit ||
     			this == ModItems.hazmat_kit) {
     		list.add("Armor will be displaced by hazmat suit.");
     	}

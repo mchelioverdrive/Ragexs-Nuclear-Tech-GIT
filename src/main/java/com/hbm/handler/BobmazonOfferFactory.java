@@ -110,32 +110,32 @@ public class BobmazonOfferFactory {
 		weapons.add(new Offer(new ItemStack(ModItems.detonator), Requirement.ASSEMBLY, 15 * inflation));
 		weapons.add(new Offer(new ItemStack(ModItems.detonator_laser), Requirement.CHEMICS, 60 * inflation));
 		weapons.add(new Offer(new ItemStack(ModItems.defuser), Requirement.OIL, 5 * inflation));
-		weapons.add(new Offer(new ItemStack(ModItems.gun_revolver), Requirement.ASSEMBLY, 15 * inflation));
-		weapons.add(new Offer(new ItemStack(ModItems.gun_revolver_nopip), Requirement.ASSEMBLY, 20 * inflation));
-		weapons.add(new Offer(new ItemStack(ModItems.gun_minigun), Requirement.OIL, 100 * inflation));
-		weapons.add(new Offer(new ItemStack(ModItems.gun_panzerschreck), Requirement.ASSEMBLY, 95 * inflation));
-		weapons.add(new Offer(new ItemStack(ModItems.gun_hk69), Requirement.ASSEMBLY, 60 * inflation));
-		weapons.add(new Offer(new ItemStack(ModItems.gun_uzi), Requirement.OIL, 80 * inflation));
-		weapons.add(new Offer(new ItemStack(ModItems.gun_lever_action), Requirement.ASSEMBLY, 60 * inflation));
-		weapons.add(new Offer(new ItemStack(ModItems.gun_bolt_action), Requirement.ASSEMBLY, 35 * inflation));
-		weapons.add(new Offer(ModItems.ammo_357.stackFromEnum(6, Ammo357Magnum.LEAD), Requirement.OIL, 12 * inflation));
-		weapons.add(new Offer(ModItems.ammo_357.stackFromEnum(6, Ammo357Magnum.DESH), Requirement.OIL, 36 * inflation));
-		weapons.add(new Offer(new ItemStack(ModItems.ammo_44, 6), Requirement.OIL, 12 * inflation));
-		weapons.add(new Offer(ModItems.ammo_44.stackFromEnum(6, Ammo44Magnum.AP), Requirement.OIL, 18 * inflation));
-		weapons.add(new Offer(new ItemStack(ModItems.ammo_5mm, 50), Requirement.OIL, 50 * inflation));
-		weapons.add(new Offer(ModItems.ammo_5mm.stackFromEnum(50, Ammo5mm.DU), Requirement.OIL, 75 * inflation));
-		weapons.add(new Offer(new ItemStack(ModItems.ammo_rocket), Requirement.OIL, 5 * inflation));
-		weapons.add(new Offer(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.INCENDIARY), Requirement.OIL, 8 * inflation));
-		weapons.add(new Offer(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.SLEEK), Requirement.OIL, 12 * inflation));
-		weapons.add(new Offer(new ItemStack(ModItems.ammo_grenade), Requirement.OIL, 4 * inflation));
-		weapons.add(new Offer(ModItems.ammo_grenade.stackFromEnum(AmmoGrenade.INCENDIARY), Requirement.OIL, 6 * inflation));
-		weapons.add(new Offer(ModItems.ammo_grenade.stackFromEnum(AmmoGrenade.SLEEK), Requirement.OIL, 10 * inflation));
-		weapons.add(new Offer(new ItemStack(ModItems.ammo_22lr, 32), Requirement.OIL, 24 * inflation));
-		weapons.add(new Offer(ModItems.ammo_22lr.stackFromEnum(32, Ammo22LR.AP), Requirement.OIL, 32 * inflation));
-		weapons.add(new Offer(new ItemStack(ModItems.ammo_20gauge, 6), Requirement.OIL, 18 * inflation));
-		weapons.add(new Offer(ModItems.ammo_20gauge.stackFromEnum(6, Ammo20Gauge.SLUG), Requirement.OIL, 20 * inflation));
-		weapons.add(new Offer(ModItems.ammo_20gauge.stackFromEnum(6, Ammo20Gauge.FLECHETTE), Requirement.OIL, 22 * inflation));
-		weapons.add(new Offer(new ItemStack(ModItems.gun_hp_ammo, 1), Requirement.ASSEMBLY, 1000 * inflation));
+		//weapons.add(new Offer(new ItemStack(ModItems.gun_revolver), Requirement.ASSEMBLY, 15 * inflation));
+		//weapons.add(new Offer(new ItemStack(ModItems.gun_revolver_nopip), Requirement.ASSEMBLY, 20 * inflation));
+		//weapons.add(new Offer(new ItemStack(ModItems.gun_minigun), Requirement.OIL, 100 * inflation));
+		//weapons.add(new Offer(new ItemStack(ModItems.gun_panzerschreck), Requirement.ASSEMBLY, 95 * inflation));
+		//weapons.add(new Offer(new ItemStack(ModItems.gun_hk69), Requirement.ASSEMBLY, 60 * inflation));
+		//weapons.add(new Offer(new ItemStack(ModItems.gun_uzi), Requirement.OIL, 80 * inflation));
+		//weapons.add(new Offer(new ItemStack(ModItems.gun_lever_action), Requirement.ASSEMBLY, 60 * inflation));
+		//weapons.add(new Offer(new ItemStack(ModItems.gun_bolt_action), Requirement.ASSEMBLY, 35 * inflation));
+		//weapons.add(new Offer(ModItems.ammo_357.stackFromEnum(6, Ammo357Magnum.LEAD), Requirement.OIL, 12 * inflation));
+		//weapons.add(new Offer(ModItems.ammo_357.stackFromEnum(6, Ammo357Magnum.DESH), Requirement.OIL, 36 * inflation));
+		//weapons.add(new Offer(new ItemStack(ModItems.ammo_44, 6), Requirement.OIL, 12 * inflation));
+		//weapons.add(new Offer(ModItems.ammo_44.stackFromEnum(6, Ammo44Magnum.AP), Requirement.OIL, 18 * inflation));
+		//weapons.add(new Offer(new ItemStack(ModItems.ammo_5mm, 50), Requirement.OIL, 50 * inflation));
+		//weapons.add(new Offer(ModItems.ammo_5mm.stackFromEnum(50, Ammo5mm.DU), Requirement.OIL, 75 * inflation));
+		//weapons.add(new Offer(new ItemStack(ModItems.ammo_rocket), Requirement.OIL, 5 * inflation));
+		//weapons.add(new Offer(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.INCENDIARY), Requirement.OIL, 8 * inflation));
+		//weapons.add(new Offer(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.SLEEK), Requirement.OIL, 12 * inflation));
+		//weapons.add(new Offer(new ItemStack(ModItems.ammo_grenade), Requirement.OIL, 4 * inflation));
+		//weapons.add(new Offer(ModItems.ammo_grenade.stackFromEnum(AmmoGrenade.INCENDIARY), Requirement.OIL, 6 * inflation));
+		//weapons.add(new Offer(ModItems.ammo_grenade.stackFromEnum(AmmoGrenade.SLEEK), Requirement.OIL, 10 * inflation));
+		//weapons.add(new Offer(new ItemStack(ModItems.ammo_22lr, 32), Requirement.OIL, 24 * inflation));
+		//weapons.add(new Offer(ModItems.ammo_22lr.stackFromEnum(32, Ammo22LR.AP), Requirement.OIL, 32 * inflation));
+		//weapons.add(new Offer(new ItemStack(ModItems.ammo_20gauge, 6), Requirement.OIL, 18 * inflation));
+		//weapons.add(new Offer(ModItems.ammo_20gauge.stackFromEnum(6, Ammo20Gauge.SLUG), Requirement.OIL, 20 * inflation));
+		//weapons.add(new Offer(ModItems.ammo_20gauge.stackFromEnum(6, Ammo20Gauge.FLECHETTE), Requirement.OIL, 22 * inflation));
+		//weapons.add(new Offer(new ItemStack(ModItems.gun_hp_ammo, 1), Requirement.ASSEMBLY, 1000 * inflation));
 
 		tools.add(new Offer(new ItemStack(ModBlocks.crate_can, 1), Requirement.STEEL, 20 * inflation));
 		tools.add(new Offer(new ItemStack(ModBlocks.machine_keyforge), Requirement.STEEL, 10 * inflation));
@@ -169,10 +169,10 @@ public class BobmazonOfferFactory {
 		special.add(new Offer(new ItemStack(ModItems.ingot_desh, 64), Requirement.STEEL, 1));
 		special.add(new Offer(new ItemStack(ModItems.ingot_tantalium, 64), Requirement.STEEL, 5));
 		special.add(new Offer(new ItemStack(ModItems.ingot_bismuth, 16), Requirement.STEEL, 5));
-		special.add(new Offer(new ItemStack(ModItems.ingot_schrabidium, 16), Requirement.STEEL, 5));
-		special.add(new Offer(new ItemStack(ModItems.ingot_euphemium, 8), Requirement.STEEL, 16));
-		special.add(new Offer(new ItemStack(ModItems.ingot_dineutronium, 1), Requirement.STEEL, 16));
-		special.add(new Offer(new ItemStack(ModItems.ingot_starmetal, 16), Requirement.STEEL, 8));
+		//special.add(new Offer(new ItemStack(ModItems.ingot_schrabidium, 16), Requirement.STEEL, 5));
+		//special.add(new Offer(new ItemStack(ModItems.ingot_euphemium, 8), Requirement.STEEL, 16));
+		//special.add(new Offer(new ItemStack(ModItems.ingot_dineutronium, 1), Requirement.STEEL, 16));
+		//special.add(new Offer(new ItemStack(ModItems.ingot_starmetal, 16), Requirement.STEEL, 8));
 		special.add(new Offer(new ItemStack(ModItems.ingot_semtex, 16), Requirement.STEEL, 1));
 		special.add(new Offer(new ItemStack(ModItems.ingot_u235, 16), Requirement.STEEL, 1));
 		special.add(new Offer(new ItemStack(ModItems.ingot_pu239, 16), Requirement.STEEL, 1));
@@ -181,7 +181,7 @@ public class BobmazonOfferFactory {
 		special.add(new Offer(new ItemStack(ModItems.nuke_advanced_kit), Requirement.STEEL, 5));
 		special.add(new Offer(new ItemStack(ModItems.nuke_commercially_kit), Requirement.STEEL, 5));
 		special.add(new Offer(new ItemStack(ModItems.boy_kit), Requirement.STEEL, 5));
-		special.add(new Offer(new ItemStack(ModItems.prototype_kit), Requirement.STEEL, 10));
+		//special.add(new Offer(new ItemStack(ModItems.prototype_kit), Requirement.STEEL, 10));
 		special.add(new Offer(new ItemStack(ModItems.missile_kit), Requirement.STEEL, 5));
 		special.add(new Offer(new ItemStack(ModItems.grenade_kit), Requirement.STEEL, 5));
 		special.add(new Offer(new ItemStack(ModItems.jetpack_vector), Requirement.STEEL, 2));
@@ -238,48 +238,48 @@ public class BobmazonOfferFactory {
 				new ItemStack(Items.dye, 64)
 				), Requirement.HIDDEN, 64));
 
-		special.add(new Offer(ItemKitCustom.create("Maid's Cleaning Utensils", "For the hard to reach spots", 0x00ff00, 0x008000,
-				new ItemStack(ModItems.gun_calamity),
-				ModItems.ammo_50bmg.stackFromEnum(64, Ammo50BMG.CHLOROPHYTE),
-				ModItems.ammo_50bmg.stackFromEnum(64, Ammo50BMG.CHLOROPHYTE),
-				ModItems.ammo_50bmg.stackFromEnum(64, Ammo50BMG.CHLOROPHYTE),
-				ModItems.ammo_50ae.stackFromEnum(64, Ammo50AE.STAR),
-				ModItems.ammo_50ae.stackFromEnum(64, Ammo50AE.STAR),
-				new ItemStack(ModItems.gun_supershotgun),
-				ModItems.ammo_12gauge.stackFromEnum(64, Ammo12Gauge.DU),
-				ModItems.ammo_12gauge.stackFromEnum(64, Ammo12Gauge.DU),
-				ModItems.ammo_12gauge.stackFromEnum(64, Ammo12Gauge.SHRAPNEL),
-				ModItems.ammo_12gauge.stackFromEnum(64, Ammo12Gauge.SHRAPNEL),
-				ModItems.ammo_12gauge.stackFromEnum(4, Ammo12Gauge.MARAUDER),
-				new ItemStack(ModItems.gun_sauer),
-				new ItemStack(ModItems.ammo_4gauge, 64),
-				ModItems.ammo_4gauge.stackFromEnum(64, Ammo4Gauge.CLAW),
-				ModItems.ammo_4gauge.stackFromEnum(64, Ammo4Gauge.KAMPF),
-				ModItems.ammo_4gauge.stackFromEnum(64, Ammo4Gauge.FLECHETTE),
-				ModItems.ammo_4gauge.stackFromEnum(64, Ammo4Gauge.VOID)
-				), Requirement.HIDDEN, 64));
+		//special.add(new Offer(ItemKitCustom.create("Maid's Cleaning Utensils", "For the hard to reach spots", 0x00ff00, 0x008000,
+		//		new ItemStack(ModItems.gun_calamity),
+		//		ModItems.ammo_50bmg.stackFromEnum(64, Ammo50BMG.CHLOROPHYTE),
+		//		ModItems.ammo_50bmg.stackFromEnum(64, Ammo50BMG.CHLOROPHYTE),
+		//		ModItems.ammo_50bmg.stackFromEnum(64, Ammo50BMG.CHLOROPHYTE),
+		//		ModItems.ammo_50ae.stackFromEnum(64, Ammo50AE.STAR),
+		//		ModItems.ammo_50ae.stackFromEnum(64, Ammo50AE.STAR),
+		//		new ItemStack(ModItems.gun_supershotgun),
+		//		ModItems.ammo_12gauge.stackFromEnum(64, Ammo12Gauge.DU),
+		//		ModItems.ammo_12gauge.stackFromEnum(64, Ammo12Gauge.DU),
+		//		ModItems.ammo_12gauge.stackFromEnum(64, Ammo12Gauge.SHRAPNEL),
+		//		ModItems.ammo_12gauge.stackFromEnum(64, Ammo12Gauge.SHRAPNEL),
+		//		ModItems.ammo_12gauge.stackFromEnum(4, Ammo12Gauge.MARAUDER),
+		//		new ItemStack(ModItems.gun_sauer),
+		//		new ItemStack(ModItems.ammo_4gauge, 64),
+		//		ModItems.ammo_4gauge.stackFromEnum(64, Ammo4Gauge.CLAW),
+		//		ModItems.ammo_4gauge.stackFromEnum(64, Ammo4Gauge.KAMPF),
+		//		ModItems.ammo_4gauge.stackFromEnum(64, Ammo4Gauge.FLECHETTE),
+		//		ModItems.ammo_4gauge.stackFromEnum(64, Ammo4Gauge.VOID)
+		//		), Requirement.HIDDEN, 64));
 
-		special.add(new Offer(ItemKitNBT.create(
-				new ItemStack(ModItems.rod_of_discord).setStackDisplayName("Cock Joke"),
-				ModItems.canned_conserve.stackFromEnum(64,EnumFoodType.JIZZ).setStackDisplayName("Class A Horse Semen"),
-				new ItemStack(ModItems.pipe_lead).setStackDisplayName("Get Nutted, Dumbass"),
-				new ItemStack(ModItems.gem_alexandrite)
-				).setStackDisplayName("The Nut Bucket"), Requirement.HIDDEN, 64));
+		//special.add(new Offer(ItemKitNBT.create(
+		//		new ItemStack(ModItems.rod_of_discord).setStackDisplayName("Cock Joke"),
+		//		ModItems.canned_conserve.stackFromEnum(64,EnumFoodType.JIZZ).setStackDisplayName("Class A Horse Semen"),
+		//		new ItemStack(ModItems.pipe_lead).setStackDisplayName("Get Nutted, Dumbass"),
+		//		new ItemStack(ModItems.gem_alexandrite)
+		//		).setStackDisplayName("The Nut Bucket"), Requirement.HIDDEN, 64));
 
-		special.add(new Offer(ItemKitNBT.create(
-				new ItemStack(ModItems.rpa_helmet),
-				new ItemStack(ModItems.rpa_plate),
-				new ItemStack(ModItems.rpa_legs),
-				new ItemStack(ModItems.rpa_boots),
-				new ItemStack(ModItems.gun_lacunae),
-				ModItems.ammo_5mm.stackFromEnum(64, Ammo5mm.STAR),
-				ModItems.ammo_5mm.stackFromEnum(64, Ammo5mm.STAR),
-				ModItems.ammo_5mm.stackFromEnum(64, Ammo5mm.STAR),
-				ModItems.ammo_5mm.stackFromEnum(64, Ammo5mm.STAR),
-				ModItems.ammo_5mm.stackFromEnum(64, Ammo5mm.STAR),
-				ModItems.ammo_5mm.stackFromEnum(64, Ammo5mm.STAR),
-				ModItems.ammo_5mm.stackFromEnum(64, Ammo5mm.STAR)
-				).setStackDisplayName("Frenchman's Reward"), Requirement.HIDDEN, 32));
+		//special.add(new Offer(ItemKitNBT.create(
+		//		new ItemStack(ModItems.rpa_helmet),
+		//		new ItemStack(ModItems.rpa_plate),
+		//		new ItemStack(ModItems.rpa_legs),
+		//		new ItemStack(ModItems.rpa_boots),
+		//		new ItemStack(ModItems.gun_lacunae),
+		//		ModItems.ammo_5mm.stackFromEnum(64, Ammo5mm.STAR),
+		//		ModItems.ammo_5mm.stackFromEnum(64, Ammo5mm.STAR),
+		//		ModItems.ammo_5mm.stackFromEnum(64, Ammo5mm.STAR),
+		//		ModItems.ammo_5mm.stackFromEnum(64, Ammo5mm.STAR),
+		//		ModItems.ammo_5mm.stackFromEnum(64, Ammo5mm.STAR),
+		//		ModItems.ammo_5mm.stackFromEnum(64, Ammo5mm.STAR),
+		//		ModItems.ammo_5mm.stackFromEnum(64, Ammo5mm.STAR)
+		//		).setStackDisplayName("Frenchman's Reward"), Requirement.HIDDEN, 32));
 	}
 
 	public static List<Offer> getOffers(ItemStack stack) {

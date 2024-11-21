@@ -28,7 +28,7 @@ public class RenderNukeFleija extends TileEntitySpecialRenderer {
 		}
 
         bindTexture(ResourceManager.bomb_fleija_tex);
-        ResourceManager.bomb_fleija.renderAll();
+        //ResourceManager.bomb_fleija.renderAll();
 
         GL11.glPopMatrix();
     }

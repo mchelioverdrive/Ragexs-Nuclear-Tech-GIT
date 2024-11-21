@@ -623,7 +623,7 @@ public class AnvilRecipes {
 			{ModItems.ammo_20gauge.stackFromEnum(120, Ammo20Gauge.STOCK),	ModItems.coin_maskman,								ModItems.ammo_20gauge.stackFromEnum(120, Ammo20Gauge.SLEEK),		4},
 
 			{ModItems.ammo_4gauge.stackFromEnum(12, Ammo4Gauge.FLECHETTE),	P_WHITE.ingot(),				ModItems.ammo_4gauge.stackFromEnum(12, Ammo4Gauge.FLECHETTE_PHOSPHORUS),	2},
-			{ModItems.ammo_4gauge.stackFromEnum(12, Ammo4Gauge.EXPLOSIVE),	ModItems.egg_balefire_shard,	ModItems.ammo_4gauge.stackFromEnum(12, Ammo4Gauge.BALEFIRE),				4},
+			//{ModItems.ammo_4gauge.stackFromEnum(12, Ammo4Gauge.EXPLOSIVE),	ModItems.egg_balefire_shard,	ModItems.ammo_4gauge.stackFromEnum(12, Ammo4Gauge.BALEFIRE),				4},
 			{ModItems.ammo_4gauge.stackFromEnum(4, Ammo4Gauge.EXPLOSIVE),	ModItems.ammo_rocket,			ModItems.ammo_4gauge.stackFromEnum(4, Ammo4Gauge.KAMPF),					2},
 			{ModItems.ammo_4gauge.stackFromEnum(12, Ammo4Gauge.KAMPF),		ModItems.pellet_canister,		ModItems.ammo_4gauge.stackFromEnum(12, Ammo4Gauge.CANISTER),				3},
 			{ModItems.ammo_4gauge.stackFromEnum(4, Ammo4Gauge.STOCK),		ModItems.pellet_claws,			ModItems.ammo_4gauge.stackFromEnum(4, Ammo4Gauge.CLAW),						5},
@@ -1121,13 +1121,13 @@ public class AnvilRecipes {
 						new AnvilOutput(new ItemStack(ModItems.nuclear_waste_vitrified, 10))
 				}).setTier(3));
 
-		constructionRecipes.add(new AnvilConstructionRecipe(
-				new ComparableStack(ModItems.egg_glyphid), new AnvilOutput[] {
-						new AnvilOutput(new ItemStack(ModItems.glyphid_meat, 2)),
-						new AnvilOutput(new ItemStack(ModItems.glyphid_meat, 1), 0.5F),
-						new AnvilOutput(new ItemStack(Items.bone, 1), 0.75F),
-						new AnvilOutput(new ItemStack(Items.experience_bottle, 1), 0.5F)
-				}).setTier(1));
+		//constructionRecipes.add(new AnvilConstructionRecipe(
+		//		new ComparableStack(ModItems.egg_glyphid), new AnvilOutput[] {
+		//				new AnvilOutput(new ItemStack(ModItems.glyphid_meat, 2)),
+		//				new AnvilOutput(new ItemStack(ModItems.glyphid_meat, 1), 0.5F),
+		//				new AnvilOutput(new ItemStack(Items.bone, 1), 0.75F),
+		//				new AnvilOutput(new ItemStack(Items.experience_bottle, 1), 0.5F)
+		//		}).setTier(1));
 	}
 
 	public static void pullFromAssembler(ComparableStack result, int tier) {

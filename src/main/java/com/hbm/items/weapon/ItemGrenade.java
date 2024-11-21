@@ -13,7 +13,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
 public class ItemGrenade extends Item {
-	
+
 	public int fuse = 4;
 
 	public ItemGrenade(int fuse) {
@@ -87,9 +87,9 @@ public class ItemGrenade extends Item {
 			if (this == ModItems.grenade_tau) {
 				p_77659_2_.spawnEntityInWorld(new EntityGrenadeTau(p_77659_2_, p_77659_3_));
 			}
-			if (this == ModItems.grenade_lemon) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeLemon(p_77659_2_, p_77659_3_));
-			}
+			//if (this == ModItems.grenade_lemon) {
+			//	p_77659_2_.spawnEntityInWorld(new EntityGrenadeLemon(p_77659_2_, p_77659_3_));
+			//}
 			if (this == ModItems.grenade_mk2) {
 				p_77659_2_.spawnEntityInWorld(new EntityGrenadeMk2(p_77659_2_, p_77659_3_));
 			}
@@ -188,20 +188,20 @@ public class ItemGrenade extends Item {
 			return EnumRarity.epic;
 		}
 
-		if (this == ModItems.grenade_nuke || this == ModItems.grenade_nuclear || this == ModItems.grenade_tau || this == ModItems.grenade_lemon || this == ModItems.grenade_mk2 || this == ModItems.grenade_pulse || this == ModItems.grenade_gascan) {
+		if (this == ModItems.grenade_nuke || this == ModItems.grenade_nuclear || this == ModItems.grenade_tau || this == ModItems.grenade_mk2 || this == ModItems.grenade_pulse || this == ModItems.grenade_gascan) {
 			return EnumRarity.uncommon;
 		}
 
 		return EnumRarity.common;
 	}
-	
+
 	private String translateFuse() {
 		if(fuse == -1)
 			return "Impact";
-		
+
 		if(fuse == 0)
 			return "Instant";
-		
+
 		return fuse + "s";
 	}
 
@@ -270,7 +270,7 @@ public class ItemGrenade extends Item {
 			list.add(EnumChatFormatting.ITALIC + "java.lang.NullPointerException");
 		}
 	}
-	
+
 	public static int getFuseTicks(Item grenade) {
 		return ((ItemGrenade)grenade).fuse * 20;
 	}

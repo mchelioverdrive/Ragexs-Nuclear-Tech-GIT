@@ -24,7 +24,7 @@ public class SmeltingRecipes {
 
 	public static void AddSmeltingRec()
 	{
-		GameRegistry.addSmelting(ModItems.glyphid_meat, new ItemStack(ModItems.glyphid_meat_grilled), 1.0F);
+		//GameRegistry.addSmelting(ModItems.glyphid_meat, new ItemStack(ModItems.glyphid_meat_grilled), 1.0F);
 
 		// Oredict doesn't work for vanilla smelting :(
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_iron), new ItemStack(Items.iron_ingot), 0.7F);

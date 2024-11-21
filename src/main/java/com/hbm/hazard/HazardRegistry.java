@@ -218,8 +218,8 @@ public class HazardRegistry {
 		HazardSystem.register(cell_sas3, makeData().addEntry(RADIATION, sas3).addEntry(BLINDING, 60F));
 		HazardSystem.register(cell_balefire, makeData(RADIATION, 50F));
 		HazardSystem.register(powder_balefire, makeData(RADIATION, 500F));
-		HazardSystem.register(egg_balefire_shard, makeData(RADIATION, bf * nugget));
-		HazardSystem.register(egg_balefire, makeData(RADIATION, bf * ingot));
+		//HazardSystem.register(egg_balefire_shard, makeData(RADIATION, bf * nugget));
+		//HazardSystem.register(egg_balefire, makeData(RADIATION, bf * ingot));
 
 		HazardSystem.register(solid_fuel_bf, makeData(RADIATION, 1000)); //roughly the amount of the balefire shard diluted in 250mB of rocket fuel
 		HazardSystem.register(solid_fuel_presto_bf, makeData(RADIATION, 2000));

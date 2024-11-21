@@ -483,12 +483,12 @@ public class MainRegistry {
 				return new EntityGrenadeTau(p_82499_1_, p_82499_2_.getX(), p_82499_2_.getY(), p_82499_2_.getZ());
 			}
 		});
-		BlockDispenser.dispenseBehaviorRegistry.putObject(ModItems.grenade_lemon, new BehaviorProjectileDispense() {
-
-			protected IProjectile getProjectileEntity(World p_82499_1_, IPosition p_82499_2_) {
-				return new EntityGrenadeLemon(p_82499_1_, p_82499_2_.getX(), p_82499_2_.getY(), p_82499_2_.getZ());
-			}
-		});
+		//BlockDispenser.dispenseBehaviorRegistry.putObject(ModItems.grenade_lemon, new BehaviorProjectileDispense() {
+//
+		//	protected IProjectile getProjectileEntity(World p_82499_1_, IPosition p_82499_2_) {
+		//		return new EntityGrenadeLemon(p_82499_1_, p_82499_2_.getX(), p_82499_2_.getY(), p_82499_2_.getZ());
+		//	}
+		//});
 		BlockDispenser.dispenseBehaviorRegistry.putObject(ModItems.grenade_mk2, new BehaviorProjectileDispense() {
 
 			protected IProjectile getProjectileEntity(World p_82499_1_, IPosition p_82499_2_) {

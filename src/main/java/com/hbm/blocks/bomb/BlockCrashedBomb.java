@@ -82,7 +82,7 @@ public class BlockCrashedBomb extends BlockContainer implements IBomb {
 
 			world.func_147480_a(x, y, z, false);
 
-			world.spawnEntityInWorld(new EntityItem(world, x + 0.5, y + 0.5, z + 0.5, new ItemStack(ModItems.egg_balefire_shard)));
+			//world.spawnEntityInWorld(new EntityItem(world, x + 0.5, y + 0.5, z + 0.5, new ItemStack(ModItems.egg_balefire_shard)));
 			world.spawnEntityInWorld(new EntityItem(world, x + 0.5, y + 0.5, z + 0.5, new ItemStack(ModItems.plate_steel, 10 + world.rand.nextInt(15))));
 			world.spawnEntityInWorld(new EntityItem(world, x + 0.5, y + 0.5, z + 0.5, new ItemStack(ModItems.plate_titanium, 2 + world.rand.nextInt(7))));
 
@@ -111,7 +111,7 @@ public class BlockCrashedBomb extends BlockContainer implements IBomb {
 			PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(data, x + 0.5, y + 0.5, z + 0.5), new TargetPoint(world.provider.dimensionId, x + 0.5, y + 0.5, z + 0.5, 250));
 			world.playSoundEffect(x + 0.5, y + 0.5, z + 0.5, "hbm:weapon.mukeExplosion", 15.0F, 1.0F);
 		}
-		
+
 		return BombReturnCode.DETONATED;
 	}
 }

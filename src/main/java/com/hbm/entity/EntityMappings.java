@@ -81,7 +81,7 @@ public class EntityMappings {
 		addEntity(EntityGrenadeTau.class, "entity_grenade_tau", 500);
 		addEntity(EntityChopperMine.class, "entity_chopper_mine", 1000);
 		addEntity(EntityRainbow.class, "entity_rainbow", 1000);
-		addEntity(EntityGrenadeLemon.class, "entity_grenade_lemon", 500);
+		//addEntity(EntityGrenadeLemon.class, "entity_grenade_lemon", 500);
 		addEntity(EntityCloudFleija.class, "entity_cloud_fleija", 500);
 		addEntity(EntityGrenadeMk2.class, "entity_grenade_mk2", 500);
 		addEntity(EntityGrenadeZOMG.class, "entity_grenade_zomg", 500);

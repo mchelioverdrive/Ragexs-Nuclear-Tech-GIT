@@ -1831,7 +1831,7 @@ public class ModItems {
 	public static Item grenade_plasma;
 	public static Item grenade_tau;
 	public static Item grenade_schrabidium;
-	public static Item grenade_lemon;
+	//public static Item grenade_lemon;
 	public static Item grenade_gascan;
 	public static Item grenade_kyiv;
 	public static Item grenade_mk2;
@@ -1867,16 +1867,16 @@ public class ModItems {
 
 	public static Item weaponized_starblaster_cell;
 
-	public static Item bomb_waffle;
+	//public static Item bomb_waffle;
 	public static Item schnitzel_vegan;
 	public static Item cotton_candy;
-	public static Item apple_lead;
-	public static Item apple_schrabidium;
+	//public static Item apple_lead;
+	//public static Item apple_schrabidium;
 	public static Item tem_flakes;
-	public static Item glowing_stew;
-	public static Item balefire_scrambled;
-	public static Item balefire_and_ham;
-	public static Item lemon;
+	//public static Item glowing_stew;
+	//public static Item balefire_scrambled;
+	//public static Item balefire_and_ham;
+	//public static Item lemon;
 	public static Item definitelyfood;
 	public static Item loops;
 	public static Item loop_stew;
@@ -1891,9 +1891,9 @@ public class ModItems {
 	public static Item marshmallow;
 	public static Item cheese;
 	public static Item quesadilla;
-	public static Item glyphid_meat;
-	public static Item glyphid_meat_grilled;
-	public static Item egg_glyphid;
+	//public static Item glyphid_meat;
+	//public static Item glyphid_meat_grilled;
+	//public static Item egg_glyphid;
 
 	public static Item med_ipecac;
 	public static Item med_ptsd;
@@ -1936,8 +1936,8 @@ public class ModItems {
 	public static Item solinium_propellant;
 	public static Item solinium_core;
 	public static Item n2_charge;
-	public static Item egg_balefire_shard;
-	public static Item egg_balefire;
+	//public static Item egg_balefire_shard;
+	//public static Item egg_balefire;
 
 	public static Item custom_tnt;
 	public static Item custom_nuke;
@@ -2435,12 +2435,12 @@ public class ModItems {
 	public static Item multi_kit;
 	public static Item custom_kit;
 	public static Item grenade_kit;
-	public static Item fleija_kit;
-	public static Item prototype_kit;
+	//public static Item fleija_kit;
+	//public static Item prototype_kit;
 	public static Item missile_kit;
 	public static Item t45_kit;
 	public static Item euphemium_kit;
-	public static Item solinium_kit;
+	//public static Item solinium_kit;
 	public static Item hazmat_kit;
 	public static Item hazmat_red_kit;
 	public static Item hazmat_grey_kit;
@@ -2748,6 +2748,7 @@ public class ModItems {
 		plate_advanced_alloy = new Item().setUnlocalizedName("plate_advanced_alloy").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_advanced_alloy");
 		lithium = new Item().setUnlocalizedName("lithium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":lithium");
 		ingot_zirconium = new Item().setUnlocalizedName("ingot_zirconium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_zirconium");
+		//??? what the fuck is with the lemons
 		ingot_semtex = new ItemLemon(4, 5, true).setUnlocalizedName("ingot_semtex").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_semtex");
 		ingot_c4 = new Item().setUnlocalizedName("ingot_c4").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_c4");
 		ingot_phosphorus = new Item().setUnlocalizedName("ingot_phosphorus").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_phosphorus");
@@ -4640,7 +4641,7 @@ public class ModItems {
 		grenade_plasma = new ItemGrenade(5).setUnlocalizedName("grenade_plasma").setCreativeTab(MainRegistry.weaponTab).setTextureName(RefStrings.MODID + ":grenade_plasma_alt");
 		grenade_tau = new ItemGrenade(5).setUnlocalizedName("grenade_tau").setCreativeTab(MainRegistry.weaponTab).setTextureName(RefStrings.MODID + ":grenade_tau_alt");
 		grenade_schrabidium = new ItemGrenade(7).setUnlocalizedName("grenade_schrabidium").setCreativeTab(MainRegistry.weaponTab).setTextureName(RefStrings.MODID + ":grenade_schrabidium_alt");
-		grenade_lemon = new ItemGrenade(4).setUnlocalizedName("grenade_lemon").setCreativeTab(MainRegistry.weaponTab).setTextureName(RefStrings.MODID + ":grenade_lemon");
+		//grenade_lemon = new ItemGrenade(4).setUnlocalizedName("grenade_lemon").setCreativeTab(MainRegistry.weaponTab).setTextureName(RefStrings.MODID + ":grenade_lemon");
 		grenade_gascan = new ItemGrenade(-1).setUnlocalizedName("grenade_gascan").setCreativeTab(MainRegistry.weaponTab).setTextureName(RefStrings.MODID + ":grenade_gascan");
 		grenade_kyiv = new ItemGrenadeKyiv(-1).setUnlocalizedName("grenade_kyiv").setCreativeTab(MainRegistry.weaponTab).setTextureName(RefStrings.MODID + ":grenade_kyiv");
 		grenade_mk2 = new ItemGrenade(5).setUnlocalizedName("grenade_mk2").setCreativeTab(MainRegistry.weaponTab).setTextureName(RefStrings.MODID + ":grenade_mk2_alt");
@@ -4675,16 +4676,16 @@ public class ModItems {
 
 		weaponized_starblaster_cell = new WeaponizedCell().setUnlocalizedName("weaponized_starblaster_cell").setMaxStackSize(1).setCreativeTab(MainRegistry.weaponTab).setTextureName(RefStrings.MODID + ":gun_b92_ammo_weaponized");
 
-		bomb_waffle = new ItemWaffle(20, false).setUnlocalizedName("bomb_waffle").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":bomb_waffle");
+		//bomb_waffle = new ItemWaffle(20, false).setUnlocalizedName("bomb_waffle").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":bomb_waffle");
 		schnitzel_vegan = new ItemSchnitzelVegan(0, true).setUnlocalizedName("schnitzel_vegan").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":schnitzel_vegan");
 		cotton_candy = new ItemCottonCandy(5, false).setUnlocalizedName("cotton_candy").setCreativeTab(MainRegistry.consumableTab).setFull3D().setTextureName(RefStrings.MODID + ":cotton_candy");
-		apple_lead = new ItemAppleSchrabidium(5, 0, false).setUnlocalizedName("apple_lead").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":apple_lead");
-		apple_schrabidium = new ItemAppleSchrabidium(20, 100, false).setUnlocalizedName("apple_schrabidium").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":apple_schrabidium");
+		//apple_lead = new ItemAppleSchrabidium(5, 0, false).setUnlocalizedName("apple_lead").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":apple_lead");
+		//apple_schrabidium = new ItemAppleSchrabidium(20, 100, false).setUnlocalizedName("apple_schrabidium").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":apple_schrabidium");
 		tem_flakes = new ItemTemFlakes(0, 0, false).setUnlocalizedName("tem_flakes").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":tem_flakes");
-		glowing_stew = new ItemSoup(6).setUnlocalizedName("glowing_stew").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":glowing_stew");
-		balefire_scrambled = new ItemSoup(6).setUnlocalizedName("balefire_scrambled").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":balefire_scrambled");
-		balefire_and_ham = new ItemSoup(6).setUnlocalizedName("balefire_and_ham").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":balefire_and_ham");
-		lemon = new ItemLemon(3, 0.5F, false).setUnlocalizedName("lemon").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":lemon");
+		//glowing_stew = new ItemSoup(6).setUnlocalizedName("glowing_stew").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":glowing_stew");
+		//balefire_scrambled = new ItemSoup(6).setUnlocalizedName("balefire_scrambled").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":balefire_scrambled");
+		//balefire_and_ham = new ItemSoup(6).setUnlocalizedName("balefire_and_ham").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":balefire_and_ham");
+		//lemon = new ItemLemon(3, 0.5F, false).setUnlocalizedName("lemon").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":lemon");
 		definitelyfood = new ItemLemon(3, 0.5F, false).setUnlocalizedName("definitelyfood").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":definitelyfood");
 		med_ipecac = new ItemLemon(0, 0, false).setUnlocalizedName("med_ipecac").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":med_ipecac_new");
 		med_ptsd = new ItemLemon(0, 0, false).setUnlocalizedName("med_ptsd").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":med_ptsd_new");
@@ -4705,9 +4706,9 @@ public class ModItems {
 		cheese = new ItemLemon(5, 0.75F, false).setUnlocalizedName("cheese").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":cheese");
 		quesadilla = new ItemLemon(8, 1F, false).setUnlocalizedName("cheese_quesadilla").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":quesadilla");
 		mucho_mango = new ItemMuchoMango(10).setUnlocalizedName("mucho_mango").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":mucho_mango");
-		glyphid_meat = new ItemLemon(3, 0.5F, true).setUnlocalizedName("glyphid_meat").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":glyphid_meat");
-		glyphid_meat_grilled = new ItemLemon(8, 0.75F, true).setPotionEffect(Potion.damageBoost.id, 180, 1, 1F).setUnlocalizedName("glyphid_meat_grilled").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":glyphid_meat_grilled");
-		egg_glyphid = new Item().setUnlocalizedName("egg_glyphid").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":egg_glyphid");
+		//glyphid_meat = new ItemLemon(3, 0.5F, true).setUnlocalizedName("glyphid_meat").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":glyphid_meat");
+		//glyphid_meat_grilled = new ItemLemon(8, 0.75F, true).setPotionEffect(Potion.damageBoost.id, 180, 1, 1F).setUnlocalizedName("glyphid_meat_grilled").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":glyphid_meat_grilled");
+		//egg_glyphid = new Item().setUnlocalizedName("egg_glyphid").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":egg_glyphid");
 
 		defuser = new ItemTooling(ToolType.DEFUSER, 100).setUnlocalizedName("defuser").setMaxStackSize(1).setFull3D().setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":defuser");
 		reacher = new Item().setUnlocalizedName("reacher").setMaxStackSize(1).setFull3D().setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":reacher");
@@ -4751,8 +4752,8 @@ public class ModItems {
 
 		n2_charge = new ItemN2().setUnlocalizedName("n2_charge").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":n2_charge");
 
-		egg_balefire_shard = new Item().setUnlocalizedName("egg_balefire_shard").setMaxStackSize(16).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":egg_balefire_shard");
-		egg_balefire = new Item().setUnlocalizedName("egg_balefire").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":egg_balefire");
+		//egg_balefire_shard = new Item().setUnlocalizedName("egg_balefire_shard").setMaxStackSize(16).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":egg_balefire_shard");
+		//egg_balefire = new Item().setUnlocalizedName("egg_balefire").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":egg_balefire");
 
 		custom_tnt = new ItemCustomLore().setUnlocalizedName("custom_tnt").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":custom_tnt");
 		custom_nuke = new ItemCustomLore().setUnlocalizedName("custom_nuke").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":custom_nuke");
@@ -4896,12 +4897,12 @@ public class ModItems {
 		multi_kit = new ItemStarterKit().setUnlocalizedName("multi_kit").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":multi_kit");
 		custom_kit = new ItemStarterKit().setUnlocalizedName("custom_kit").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":custom_kit");
 		grenade_kit = new ItemStarterKit().setUnlocalizedName("grenade_kit").setMaxStackSize(1).setCreativeTab(MainRegistry.weaponTab).setTextureName(RefStrings.MODID + ":grenade_kit");
-		fleija_kit = new ItemStarterKit().setUnlocalizedName("fleija_kit").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":fleija_kit");
-		prototype_kit = new ItemStarterKit().setUnlocalizedName("prototype_kit").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":prototype_kit");
+		//fleija_kit = new ItemStarterKit().setUnlocalizedName("fleija_kit").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":fleija_kit");
+		//prototype_kit = new ItemStarterKit().setUnlocalizedName("prototype_kit").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":prototype_kit");
 		missile_kit = new ItemStarterKit().setUnlocalizedName("missile_kit").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_kit");
 		t45_kit = new ItemStarterKit().setUnlocalizedName("t45_kit").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":t45_kit");
 		euphemium_kit = new ItemStarterKit().setUnlocalizedName("euphemium_kit").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":code");
-		solinium_kit = new ItemStarterKit().setUnlocalizedName("solinium_kit").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":solinium_kit");
+		//solinium_kit = new ItemStarterKit().setUnlocalizedName("solinium_kit").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":solinium_kit");
 		hazmat_kit = new ItemStarterKit().setUnlocalizedName("hazmat_kit").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":hazmat_kit");
 		hazmat_red_kit = new ItemStarterKit().setUnlocalizedName("hazmat_red_kit").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":hazmat_red_kit");
 		hazmat_grey_kit = new ItemStarterKit().setUnlocalizedName("hazmat_grey_kit").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":hazmat_grey_kit");
@@ -7779,7 +7780,7 @@ public class ModItems {
 		GameRegistry.registerItem(grenade_tau, grenade_tau.getUnlocalizedName());
 		GameRegistry.registerItem(grenade_schrabidium, grenade_schrabidium.getUnlocalizedName());
 		GameRegistry.registerItem(grenade_nuke, grenade_nuke.getUnlocalizedName());
-		GameRegistry.registerItem(grenade_lemon, grenade_lemon.getUnlocalizedName());
+		//GameRegistry.registerItem(grenade_lemon, grenade_lemon.getUnlocalizedName());
 		GameRegistry.registerItem(grenade_gascan, grenade_gascan.getUnlocalizedName());
 		GameRegistry.registerItem(grenade_kyiv, grenade_kyiv.getUnlocalizedName());
 		GameRegistry.registerItem(grenade_mk2, grenade_mk2.getUnlocalizedName());
@@ -7971,16 +7972,16 @@ public class ModItems {
 		GameRegistry.registerItem(animan, animan.getUnlocalizedName());
 
 		//Food
-		GameRegistry.registerItem(bomb_waffle, bomb_waffle.getUnlocalizedName());
+		//GameRegistry.registerItem(bomb_waffle, bomb_waffle.getUnlocalizedName());
 		GameRegistry.registerItem(schnitzel_vegan, schnitzel_vegan.getUnlocalizedName());
 		GameRegistry.registerItem(cotton_candy, cotton_candy.getUnlocalizedName());
-		GameRegistry.registerItem(apple_lead, apple_lead.getUnlocalizedName());
-		GameRegistry.registerItem(apple_schrabidium, apple_schrabidium.getUnlocalizedName());
+		//GameRegistry.registerItem(apple_lead, apple_lead.getUnlocalizedName());
+		//GameRegistry.registerItem(apple_schrabidium, apple_schrabidium.getUnlocalizedName());
 		GameRegistry.registerItem(tem_flakes, tem_flakes.getUnlocalizedName());
-		GameRegistry.registerItem(glowing_stew, glowing_stew.getUnlocalizedName());
-		GameRegistry.registerItem(balefire_scrambled, balefire_scrambled.getUnlocalizedName());
-		GameRegistry.registerItem(balefire_and_ham, balefire_and_ham.getUnlocalizedName());
-		GameRegistry.registerItem(lemon, lemon.getUnlocalizedName());
+		//GameRegistry.registerItem(glowing_stew, glowing_stew.getUnlocalizedName());
+		//GameRegistry.registerItem(balefire_scrambled, balefire_scrambled.getUnlocalizedName());
+		//GameRegistry.registerItem(balefire_and_ham, balefire_and_ham.getUnlocalizedName());
+		//GameRegistry.registerItem(lemon, lemon.getUnlocalizedName());
 		GameRegistry.registerItem(definitelyfood, definitelyfood.getUnlocalizedName());
 		GameRegistry.registerItem(loops, loops.getUnlocalizedName());
 		GameRegistry.registerItem(loop_stew, loop_stew.getUnlocalizedName());
@@ -7997,9 +7998,9 @@ public class ModItems {
 		GameRegistry.registerItem(marshmallow, marshmallow.getUnlocalizedName());
 		GameRegistry.registerItem(cheese, cheese.getUnlocalizedName());
 		GameRegistry.registerItem(quesadilla, quesadilla.getUnlocalizedName());
-		GameRegistry.registerItem(glyphid_meat, glyphid_meat.getUnlocalizedName());
-		GameRegistry.registerItem(glyphid_meat_grilled, glyphid_meat_grilled.getUnlocalizedName());
-		GameRegistry.registerItem(egg_glyphid, egg_glyphid.getUnlocalizedName());
+		//GameRegistry.registerItem(glyphid_meat, glyphid_meat.getUnlocalizedName());
+		//GameRegistry.registerItem(glyphid_meat_grilled, glyphid_meat_grilled.getUnlocalizedName());
+		//GameRegistry.registerItem(egg_glyphid, egg_glyphid.getUnlocalizedName());
 		GameRegistry.registerItem(med_ipecac, med_ipecac.getUnlocalizedName());
 		GameRegistry.registerItem(med_ptsd, med_ptsd.getUnlocalizedName());
 		GameRegistry.registerItem(canteen_vodka, canteen_vodka.getUnlocalizedName());
@@ -8198,8 +8199,8 @@ public class ModItems {
 		GameRegistry.registerItem(n2_charge, n2_charge.getUnlocalizedName());
 
 		//FSTBMB
-		GameRegistry.registerItem(egg_balefire_shard, egg_balefire_shard.getUnlocalizedName());
-		GameRegistry.registerItem(egg_balefire, egg_balefire.getUnlocalizedName());
+		//GameRegistry.registerItem(egg_balefire_shard, egg_balefire_shard.getUnlocalizedName());
+		//GameRegistry.registerItem(egg_balefire, egg_balefire.getUnlocalizedName());
 
 		//Conventional Armor
 		GameRegistry.registerItem(goggles, goggles.getUnlocalizedName());
@@ -8422,9 +8423,9 @@ public class ModItems {
 		GameRegistry.registerItem(man_kit, man_kit.getUnlocalizedName());
 		GameRegistry.registerItem(mike_kit, mike_kit.getUnlocalizedName());
 		GameRegistry.registerItem(tsar_kit, tsar_kit.getUnlocalizedName());
-		GameRegistry.registerItem(prototype_kit, prototype_kit.getUnlocalizedName());
-		GameRegistry.registerItem(fleija_kit, fleija_kit.getUnlocalizedName());
-		GameRegistry.registerItem(solinium_kit, solinium_kit.getUnlocalizedName());
+		//GameRegistry.registerItem(prototype_kit, prototype_kit.getUnlocalizedName());
+		//GameRegistry.registerItem(fleija_kit, fleija_kit.getUnlocalizedName());
+		//GameRegistry.registerItem(solinium_kit, solinium_kit.getUnlocalizedName());
 		GameRegistry.registerItem(multi_kit, multi_kit.getUnlocalizedName());
 		GameRegistry.registerItem(custom_kit, custom_kit.getUnlocalizedName());
 		GameRegistry.registerItem(missile_kit, missile_kit.getUnlocalizedName());

@@ -37,7 +37,7 @@ import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.World;
 
 public class BlockGlyphidSpawner extends BlockContainer implements IBlockMulti {
-	
+
 	public IIcon[] icons = new IIcon[2];
 
 	public BlockGlyphidSpawner(Material mat) {
@@ -45,10 +45,11 @@ public class BlockGlyphidSpawner extends BlockContainer implements IBlockMulti {
 		this.setCreativeTab(MainRegistry.blockTab);
 	}
 
-	@Override
-	public Item getItemDropped(int meta, Random rand, int fortune) {
-		return ModItems.egg_glyphid;
-	}
+	//@Override
+	//public Item getItemDropped(int meta, Random rand, int fortune) {
+	//	//return ModItems.egg_glyphid;
+	//
+	//}
 
 	@Override
 	@SideOnly(Side.CLIENT)
@@ -139,11 +140,11 @@ public class BlockGlyphidSpawner extends BlockContainer implements IBlockMulti {
 				}
 			}
 		}
-		
+
 		public void trySpawnEntity(EntityGlyphid glyphid) {
 			double offsetX = glyphid.getRNG().nextGaussian() * 3;
 			double offsetZ = glyphid.getRNG().nextGaussian() * 3;
-			
+
 			for(int i = 0; i < 7; i++) {
 				glyphid.setLocationAndAngles(xCoord + 0.5 + offsetX, yCoord - 2 + i, zCoord + 0.5 + offsetZ, worldObj.rand.nextFloat() * 360.0F, 0.0F);
 				if(glyphid.getCanSpawnHere()) {
@@ -159,7 +160,7 @@ public class BlockGlyphidSpawner extends BlockContainer implements IBlockMulti {
 			ArrayList<EntityGlyphid> currentSpawns = new ArrayList<>();
 			int swarmAmount = (int) Math.min(MobConfig.baseSwarmSize * Math.max(MobConfig.swarmScalingMult * (soot / MobConfig.sootStep), 1), 10);
 			int cap = 100;
-			
+
 			while(currentSpawns.size() <= swarmAmount && cap >= 0) {
 				// (dys)functional programing
 				for(Pair<Function<World, EntityGlyphid>, int[]> glyphid : spawnMap) {
@@ -171,7 +172,7 @@ public class BlockGlyphidSpawner extends BlockContainer implements IBlockMulti {
 						currentSpawns.add(entity);
 					}
 				}
-				
+
 				cap--;
 			}
 			return currentSpawns;

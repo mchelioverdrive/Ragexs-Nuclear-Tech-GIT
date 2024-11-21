@@ -22,9 +22,9 @@ public class ItemPoolsPile {
 	public static final String POOL_PILE_MAKESHIFT_PLATES = "POOL_PILE_MAKESHIFT_PLATES";
 	public static final String POOL_PILE_MAKESHIFT_WIRE = "POOL_PILE_MAKESHIFT_WIRE";
 	public static final String POOL_PILE_NUKE_STORAGE = "POOL_PILE_NUKE_STORAGE";
-	
+
 	public static void init() {
-		
+
 		//items found in glyphid hives
 		new ItemPool(POOL_PILE_HIVE) {{
 			this.pool = new WeightedRandomChestContent[] {
@@ -41,25 +41,25 @@ public class ItemPoolsPile {
 					weighted(ModItems.steel_pickaxe, 0, 1, 1, 5),
 					weighted(ModItems.steel_shovel, 0, 1, 1, 5),
 					//Weapons
-					weighted(ModItems.gun_lever_action, 0, 1, 1, 5),
-					weighted(ModItems.gun_bio_revolver, 0, 1, 1, 1),
-					weighted(ModItems.grenade_if_generic, 0, 1, 2, 5),
-					weighted(ModItems.ammo_20gauge, 0, 8, 8, 10),
-					weighted(ModItems.ammo_12gauge, 0, 4, 4, 10),
-					weighted(ModItems.ammo_357, Ammo357Magnum.LEAD.ordinal(), 6, 12, 10),
-					weighted(ModItems.ammo_grenade, 0, 1, 1, 2),
-					weighted(ModItems.ammo_nuke, AmmoFatman.PUMPKIN.ordinal(), 1, 1, 1),
+					//weighted(ModItems.gun_lever_action, 0, 1, 1, 5),
+					//weighted(ModItems.gun_bio_revolver, 0, 1, 1, 1),
+					//weighted(ModItems.grenade_if_generic, 0, 1, 2, 5),
+					//weighted(ModItems.ammo_20gauge, 0, 8, 8, 10),
+					//weighted(ModItems.ammo_12gauge, 0, 4, 4, 10),
+					//weighted(ModItems.ammo_357, Ammo357Magnum.LEAD.ordinal(), 6, 12, 10),
+					//weighted(ModItems.ammo_grenade, 0, 1, 1, 2),
+					//weighted(ModItems.ammo_nuke, AmmoFatman.PUMPKIN.ordinal(), 1, 1, 1),
 					//Consumables
-					weighted(ModItems.bottle_nuka, 0, 1, 2, 20),
-					weighted(ModItems.bottle_quantum, 0, 1, 2, 1),
-					weighted(ModItems.definitelyfood, 0, 5, 12, 20),
-					weighted(ModItems.egg_glyphid, 0, 1, 3, 30),
+					//weighted(ModItems.bottle_nuka, 0, 1, 2, 20),
+					//weighted(ModItems.bottle_quantum, 0, 1, 2, 1),
+					//weighted(ModItems.definitelyfood, 0, 5, 12, 20),
+					//weighted(ModItems.egg_glyphid, 0, 1, 3, 30),
 					weighted(ModItems.syringe_metal_stimpak, 0, 1, 1, 5),
 					weighted(ModItems.iv_blood, 0, 1, 1, 10),
 					weighted(Items.experience_bottle, 0, 1, 3, 5),
 			};
 		}};
-		
+
 		//items found in glyphid bone piles
 		new ItemPool(POOL_PILE_BONES) {{
 			this.pool = new WeightedRandomChestContent[] {
@@ -68,7 +68,7 @@ public class ItemPoolsPile {
 					weighted(ModItems.biomass, 0, 1, 1, 2)
 			};
 		}};
-		
+
 		//bottlecap stashess
 		new ItemPool(POOL_PILE_CAPS) {{
 			this.pool = new WeightedRandomChestContent[] {
@@ -77,7 +77,7 @@ public class ItemPoolsPile {
 					weighted(ModItems.cap_sparkle, 0, 4, 4, 1),
 			};
 		}};
-		
+
 		//medicine stashes
 		new ItemPool(POOL_PILE_MED_SYRINGE) {{
 			this.pool = new WeightedRandomChestContent[] {
@@ -94,18 +94,18 @@ public class ItemPoolsPile {
 					weighted(ModItems.siox, 0, 1, 1, 5),
 			};
 		}};
-		
+
 		//makeshift gun
 		new ItemPool(POOL_PILE_MAKESHIFT_GUN) {{ this.pool = new WeightedRandomChestContent[] { weighted(ModItems.gun_lever_action, 0, 1, 1, 10) }; }};
 		new ItemPool(POOL_PILE_MAKESHIFT_WRENCH) {{ this.pool = new WeightedRandomChestContent[] { weighted(ModItems.wrench, 0, 1, 1, 10) }; }};
 		new ItemPool(POOL_PILE_MAKESHIFT_PLATES) {{ this.pool = new WeightedRandomChestContent[] { weighted(ModItems.plate_combine_steel, 0, 1, 1, 10) }; }};
 		new ItemPool(POOL_PILE_MAKESHIFT_WIRE) {{ this.pool = new WeightedRandomChestContent[] { weighted(ModItems.wire_fine, Mats.MAT_ALUMINIUM.id, 1, 1, 10) }; }};
-		
+
 		new ItemPool(POOL_PILE_NUKE_STORAGE) {{
 			this.pool = new WeightedRandomChestContent[] {
-					weighted(ModItems.ammo_nuke, AmmoFatman.STOCK.ordinal(), 1, 1, 10),
-					weighted(ModItems.ammo_nuke, AmmoFatman.LOW.ordinal(), 1, 1, 50),
-					weighted(ModItems.ammo_nuke, AmmoFatman.SAFE.ordinal(), 1, 1, 50),
+					//weighted(ModItems.ammo_nuke, AmmoFatman.STOCK.ordinal(), 1, 1, 10),
+					//weighted(ModItems.ammo_nuke, AmmoFatman.LOW.ordinal(), 1, 1, 50),
+					//weighted(ModItems.ammo_nuke, AmmoFatman.SAFE.ordinal(), 1, 1, 50),
 			};
 		}};
 	}

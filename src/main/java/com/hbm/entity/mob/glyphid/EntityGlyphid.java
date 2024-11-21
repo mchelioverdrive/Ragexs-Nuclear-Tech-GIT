@@ -78,7 +78,7 @@ public class EntityGlyphid extends EntityMob {
 	public static final int TASK_TERRAFORM = 5;
 	/** If any task other than IDLE is interrupted by an obstacle, initiates digging behavior which is also communicated to nearby glyohids */
 	public static final int TASK_DIG = 6;
-	
+
 	protected boolean hasWaypoint = false;
 	/** Yeah, fuck, whatever, anything goes now */
 	protected EntityWaypoint taskWaypoint = null;
@@ -91,7 +91,7 @@ public class EntityGlyphid extends EntityMob {
 	public static final int DW_WALL = 16;
 	public static final int DW_ARMOR = 17;
 	public static final int DW_SUBTYPE = 18;
-	
+
 	public EntityGlyphid(World world) {
 		super(world);
 		this.setSize(1.75F, 1F);
@@ -120,7 +120,7 @@ public class EntityGlyphid extends EntityMob {
 		this.getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(GlyphidStats.getStats().getGrunt().speed);
 		this.getEntityAttribute(SharedMonsterAttributes.attackDamage).setBaseValue(GlyphidStats.getStats().getGrunt().damage);
 	}
-	
+
 	public float getDivisorPerArmorPoint() {
 		return GlyphidStats.getStats().getGrunt().divisor;
 	}
@@ -177,8 +177,8 @@ public class EntityGlyphid extends EntityMob {
 	@Override
 	protected void dropFewItems(boolean byPlayer, int looting) {
 		super.dropFewItems(byPlayer, looting);
-		Item drop = isBurning() ? ModItems.glyphid_meat_grilled : ModItems.glyphid_meat;
-		if(rand.nextInt(2) == 0) this.entityDropItem(new ItemStack(drop, ((int) getScale() * 2) + looting), 0F);
+		//Item drop = isBurning() ? ModItems.glyphid_meat_grilled : ModItems.glyphid_meat;
+		//if(rand.nextInt(2) == 0) this.entityDropItem(new ItemStack(drop, ((int) getScale() * 2) + looting), 0F);
 	}
 
 	@Override
@@ -224,7 +224,7 @@ public class EntityGlyphid extends EntityMob {
 						}
 
 						if(hasWaypoint) {
-							
+
 							if(canDig()) {
 
 								MovingObjectPosition obstacle = findWaypointObstruction();
@@ -243,7 +243,7 @@ public class EntityGlyphid extends EntityMob {
 							}
 						}
 					}
-					
+
 					this.worldObj.theProfiler.endSection();
 				}
 			}
@@ -296,14 +296,14 @@ public class EntityGlyphid extends EntityMob {
 
 	@Override
 	public boolean attackEntityFrom(DamageSource source, float amount) {
-		
+
 		if(source.getEntity() instanceof EntityGlyphid) {
 			return false;
 		}
-		
+
 		boolean alive = this.getHealth() > 0;
 		boolean wasAttacked = GlyphidStats.getStats().handleAttack(this, source, amount);
-		
+
 		if(alive && this.getHealth() <= 0) {
 			if(doesInfectedSpawnMaggots() && this.dataWatcher.getWatchableObjectByte(DW_SUBTYPE) == TYPE_INFECTED) {
 
@@ -321,12 +321,12 @@ public class EntityGlyphid extends EntityMob {
 				}
 
 				worldObj.playSoundEffect(posX, posY, posZ, "mob.zombie.woodbreak", 2.0F, 0.95F + worldObj.rand.nextFloat() * 0.2F);
-				
+
 				NBTTagCompound vdat = new NBTTagCompound();
 				vdat.setString("type", "giblets");
 				vdat.setInteger("ent", this.getEntityId());
 				PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(vdat, posX, posY + height * 0.5, posZ), new TargetPoint(dimension, posX, posY + height * 0.5, posZ, 150));
-				
+
 			}
 		}
 
@@ -335,17 +335,17 @@ public class EntityGlyphid extends EntityMob {
 
 	/** Provides a direct entrypoint from outside to access the superclass' implementation because otherwise we end up wwith infinite recursion */
 	public boolean attackSuperclass(DamageSource source, float amount) {
-		
+
 		/*NBTTagCompound data = new NBTTagCompound();
 		data.setString("type", "debug");
 		data.setInteger("color", 0x0000ff);
 		data.setFloat("scale", 2.5F);
 		data.setString("text", "" + (int) amount);
 		PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(data, posX, posY + 2, posZ), new TargetPoint(dimension, posX, posY + 2, posZ, 50));*/
-		
+
 		return super.attackEntityFrom(source, amount);
 	}
-	
+
 	public boolean doesInfectedSpawnMaggots() {
 		return true;
 	}
@@ -437,12 +437,12 @@ public class EntityGlyphid extends EntityMob {
 	public boolean attackEntityAsMob(Entity victim) {
 		if(this.isSwingInProgress) return false;
 		this.swingItem();
-		
+
 		if(this.dataWatcher.getWatchableObjectByte(DW_SUBTYPE) == TYPE_INFECTED && victim instanceof EntityLivingBase) {
 			((EntityLivingBase) victim).addPotionEffect(new PotionEffect(Potion.poison.id, 100, 2));
 			((EntityLivingBase) victim).addPotionEffect(new PotionEffect(Potion.confusion.id, 100, 0));
 		}
-		
+
 		return super.attackEntityAsMob(victim);
 	}
 
@@ -524,14 +524,14 @@ public class EntityGlyphid extends EntityMob {
 			}
 
 			break;
-			
+
 		case TASK_DIG:
 			shouldDig = true;
 			break;
 
 		default:
 			break;
-			
+
 		}
 
 	}
@@ -601,7 +601,7 @@ public class EntityGlyphid extends EntityMob {
 
 	}
 	///DIGGING END
-	
+
 	@Override
 	public void writeEntityToNBT(NBTTagCompound nbt) {
 		super.writeEntityToNBT(nbt);

@@ -119,11 +119,11 @@ public class RodRecipes {
 		addRBMKRod(ModItems.billet_pu238be, ModItems.rbmk_fuel_pu238be);
 		addRBMKRod(ModItems.billet_australium_lesser, ModItems.rbmk_fuel_leaus);
 		addRBMKRod(ModItems.billet_australium_greater, ModItems.rbmk_fuel_heaus);
-		addRBMKRod(ModItems.egg_balefire_shard, ModItems.rbmk_fuel_balefire);
+		//addRBMKRod(ModItems.egg_balefire_shard, ModItems.rbmk_fuel_balefire);
 		addRBMKRod(ModItems.billet_les, ModItems.rbmk_fuel_les);
 		addRBMKRod(ModItems.billet_schrabidium_fuel, ModItems.rbmk_fuel_mes);
 		addRBMKRod(ModItems.billet_hes, ModItems.rbmk_fuel_hes);
-		addRBMKRod(ModItems.billet_balefire_gold, ModItems.rbmk_fuel_balefire_gold);
+		//addRBMKRod(ModItems.billet_balefire_gold, ModItems.rbmk_fuel_balefire_gold);
 		addRBMKRod(ModItems.billet_flashlead, ModItems.rbmk_fuel_flashlead);
 		addRBMKRod(ModItems.billet_zfb_bismuth, ModItems.rbmk_fuel_zfb_bismuth);
 		addRBMKRod(ModItems.billet_zfb_pu241, ModItems.rbmk_fuel_zfb_pu241);
