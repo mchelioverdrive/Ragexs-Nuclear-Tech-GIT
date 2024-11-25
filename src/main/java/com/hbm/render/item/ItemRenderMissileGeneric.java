@@ -18,11 +18,11 @@ import net.minecraftforge.client.IItemRenderer;
 import net.minecraftforge.client.model.IModelCustom;
 
 public class ItemRenderMissileGeneric implements IItemRenderer {
-	
+
 	public static HashMap<ComparableStack, Consumer<TextureManager>> renderers = new HashMap();
-	
+
 	protected RenderMissileType type;
-	
+
 	public static enum RenderMissileType {
 		TYPE_TIER0,
 		TYPE_TIER1,
@@ -34,11 +34,11 @@ public class ItemRenderMissileGeneric implements IItemRenderer {
 		TYPE_CARRIER,
 		TYPE_ROBIN
 	}
-	
+
 	public ItemRenderMissileGeneric(RenderMissileType type) {
 		this.type = type;
 	}
-	
+
 	@Override
 	public boolean handleRenderType(ItemStack item, ItemRenderType type) {
 		switch(type) {
@@ -61,7 +61,7 @@ public class ItemRenderMissileGeneric implements IItemRenderer {
 
 		Consumer<TextureManager> renderer = renderers.get(new ComparableStack(item).makeSingular());
 		if(renderer == null) return;
-		
+
 		GL11.glPushMatrix();
 
 		double guiScale = 1;
@@ -82,7 +82,7 @@ public class ItemRenderMissileGeneric implements IItemRenderer {
 		GL11.glEnable(GL11.GL_LIGHTING);
 		GL11.glAlphaFunc(GL11.GL_GREATER, 0F);
 		GL11.glEnable(GL11.GL_ALPHA_TEST);
-		
+
 		switch(type) {
 		case EQUIPPED:
 			double s = 0.15;
@@ -107,18 +107,18 @@ public class ItemRenderMissileGeneric implements IItemRenderer {
 			break;
 		default: break;
 		}
-		
+
 		GL11.glDisable(GL11.GL_CULL_FACE);
 		renderer.accept(Minecraft.getMinecraft().renderEngine);
 		GL11.glEnable(GL11.GL_CULL_FACE);
-		
+
 		GL11.glPopMatrix();
 	}
-	
+
 	public static Consumer<TextureManager> generateStandard(ResourceLocation texture, IModelCustom model) { return generateWithScale(texture, model, 1F); }
 	public static Consumer<TextureManager> generateLarge(ResourceLocation texture, IModelCustom model) { return generateWithScale(texture, model, 1.5F); }
 	public static Consumer<TextureManager> generateDouble(ResourceLocation texture, IModelCustom model) { return generateWithScale(texture, model, 2F); }
-	
+
 	public static Consumer<TextureManager> generateWithScale(ResourceLocation texture, IModelCustom model, float scale) {
 		return x -> {
 			GL11.glScalef(scale, scale, scale);
@@ -127,35 +127,35 @@ public class ItemRenderMissileGeneric implements IItemRenderer {
 			GL11.glShadeModel(GL11.GL_FLAT);
 		};
 	}
-	
+
 	public static void init() {
 
 		renderers.put(new ComparableStack(ModItems.missile_test), generateStandard(ResourceManager.missileMicroTest_tex, ResourceManager.missileMicro));
-		renderers.put(new ComparableStack(ModItems.missile_taint), generateStandard(ResourceManager.missileTaint_tex, ResourceManager.missileMicro));
+		//renderers.put(new ComparableStack(ModItems.missile_taint), generateStandard(ResourceManager.missileTaint_tex, ResourceManager.missileMicro));
 		renderers.put(new ComparableStack(ModItems.missile_micro), generateStandard(ResourceManager.missileMicro_tex, ResourceManager.missileMicro));
 		renderers.put(new ComparableStack(ModItems.missile_bhole), generateStandard(ResourceManager.missileMicroBHole_tex, ResourceManager.missileMicro));
 		renderers.put(new ComparableStack(ModItems.missile_schrabidium), generateStandard(ResourceManager.missileMicroSchrab_tex, ResourceManager.missileMicro));
 		renderers.put(new ComparableStack(ModItems.missile_emp), generateStandard(ResourceManager.missileMicroEMP_tex, ResourceManager.missileMicro));
-		
+
 		renderers.put(new ComparableStack(ModItems.missile_stealth), x -> {
 			GL11.glShadeModel(GL11.GL_SMOOTH);
 			x.bindTexture(ResourceManager.missileStealth_tex); ResourceManager.missileStealth.renderAll();
 			GL11.glShadeModel(GL11.GL_FLAT);
 		});
-		
+
 		renderers.put(new ComparableStack(ModItems.missile_generic), generateStandard(ResourceManager.missileV2_HE_tex, ResourceManager.missileV2));
 		renderers.put(new ComparableStack(ModItems.missile_incendiary), generateStandard(ResourceManager.missileV2_IN_tex, ResourceManager.missileV2));
 		renderers.put(new ComparableStack(ModItems.missile_cluster), generateStandard(ResourceManager.missileV2_CL_tex, ResourceManager.missileV2));
 		renderers.put(new ComparableStack(ModItems.missile_buster), generateStandard(ResourceManager.missileV2_BU_tex, ResourceManager.missileV2));
 		renderers.put(new ComparableStack(ModItems.missile_decoy), generateStandard(ResourceManager.missileV2_decoy_tex, ResourceManager.missileV2));
 		renderers.put(new ComparableStack(ModItems.missile_anti_ballistic), generateStandard(ResourceManager.missileAA_tex, ResourceManager.missileABM));
-		
+
 		renderers.put(new ComparableStack(ModItems.missile_strong), generateLarge(ResourceManager.missileStrong_HE_tex, ResourceManager.missileStrong));
 		renderers.put(new ComparableStack(ModItems.missile_incendiary_strong), generateLarge(ResourceManager.missileStrong_IN_tex, ResourceManager.missileStrong));
 		renderers.put(new ComparableStack(ModItems.missile_cluster_strong), generateLarge(ResourceManager.missileStrong_CL_tex, ResourceManager.missileStrong));
 		renderers.put(new ComparableStack(ModItems.missile_buster_strong), generateLarge(ResourceManager.missileStrong_BU_tex, ResourceManager.missileStrong));
 		renderers.put(new ComparableStack(ModItems.missile_emp_strong), generateLarge(ResourceManager.missileStrong_EMP_tex, ResourceManager.missileStrong));
-		
+
 		renderers.put(new ComparableStack(ModItems.missile_burst), generateStandard(ResourceManager.missileHuge_HE_tex, ResourceManager.missileHuge));
 		renderers.put(new ComparableStack(ModItems.missile_inferno), generateStandard(ResourceManager.missileHuge_IN_tex, ResourceManager.missileHuge));
 		renderers.put(new ComparableStack(ModItems.missile_rain), generateStandard(ResourceManager.missileHuge_CL_tex, ResourceManager.missileHuge));

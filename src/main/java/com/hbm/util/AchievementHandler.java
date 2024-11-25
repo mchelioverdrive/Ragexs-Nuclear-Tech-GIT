@@ -15,7 +15,7 @@ import net.minecraft.stats.Achievement;
 public class AchievementHandler {
 
 	public static HashMap<ComparableStack, Achievement> craftingAchievements = new HashMap();
-	
+
 	public static void register() {
 		craftingAchievements.put(new ComparableStack(ModItems.gun_mp40), MainRegistry.achFreytag);
 		craftingAchievements.put(new ComparableStack(ModItems.piston_selenium), MainRegistry.achSelenium);
@@ -48,14 +48,14 @@ public class AchievementHandler {
 		craftingAchievements.put(new ComparableStack(ModItems.mp_warhead_10_nuclear_large), MainRegistry.achRedBalloons);
 		craftingAchievements.put(new ComparableStack(ModItems.mp_warhead_15_nuclear), MainRegistry.achRedBalloons);
 		craftingAchievements.put(new ComparableStack(ModItems.mp_warhead_15_nuclear_shark), MainRegistry.achRedBalloons);
-		craftingAchievements.put(new ComparableStack(ModItems.mp_warhead_15_boxcar), MainRegistry.achRedBalloons);
+		//craftingAchievements.put(new ComparableStack(ModItems.mp_warhead_15_boxcar), MainRegistry.achRedBalloons);
 		craftingAchievements.put(new ComparableStack(ModBlocks.struct_iter_core), MainRegistry.achFusion);
 		craftingAchievements.put(new ComparableStack(ModBlocks.machine_difurnace_off), MainRegistry.achBlastFurnace);
 		craftingAchievements.put(new ComparableStack(ModBlocks.machine_assembler), MainRegistry.achAssembly);
 		craftingAchievements.put(new ComparableStack(ModItems.billet_pu_mix), MainRegistry.achChicagoPile);
 		craftingAchievements.put(new ComparableStack(ModItems.ammo_4gauge, 1, ItemAmmoEnums.Ammo4Gauge.VAMPIRE.ordinal()), MainRegistry.achWitchtaunter);
 	}
-	
+
 	public static void fire(EntityPlayer player, ItemStack stack) {
 		if(player.worldObj.isRemote) return;
 		ComparableStack comp = new ComparableStack(stack).makeSingular();

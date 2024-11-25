@@ -195,7 +195,7 @@ public class MissilePart {
 		MissilePart.registerPart(ModItems.mp_fuselage_15_solid_mimi, PartType.FUSELAGE, 10, 6, ResourceManager.mp_f_15_kerosene, ResourceManager.mp_f_15_solid_mimi_tex);
 		MissilePart.registerPart(ModItems.mp_fuselage_15_hydrogen, PartType.FUSELAGE, 10, 6, ResourceManager.mp_f_15_hydrogen, ResourceManager.mp_f_15_hydrogen_tex);
 		MissilePart.registerPart(ModItems.mp_fuselage_15_hydrogen_cathedral, PartType.FUSELAGE, 10, 6, ResourceManager.mp_f_15_hydrogen, ResourceManager.mp_f_15_hydrogen_cathedral_tex);
-		MissilePart.registerPart(ModItems.mp_fuselage_15_balefire, PartType.FUSELAGE, 10, 6, ResourceManager.mp_f_15_hydrogen, ResourceManager.mp_f_15_balefire_tex);
+		//MissilePart.registerPart(ModItems.mp_fuselage_15_balefire, PartType.FUSELAGE, 10, 6, ResourceManager.mp_f_15_hydrogen, ResourceManager.mp_f_15_balefire_tex);
 
 		MissilePart.registerPart(ModItems.mp_fuselage_15_20_kerosene, PartType.FUSELAGE, 16, 10, ResourceManager.mp_f_15_20_kerosene, ResourceManager.mp_f_15_20_kerosene_tex);
 		MissilePart.registerPart(ModItems.mp_fuselage_15_20_kerosene_magnusson, PartType.FUSELAGE, 16, 10, ResourceManager.mp_f_15_20_kerosene, ResourceManager.mp_f_15_20_kerosene_magnusson_tex);
@@ -215,17 +215,17 @@ public class MissilePart {
 		MissilePart.registerPart(ModItems.mp_warhead_10_buster, PartType.WARHEAD, 0.5, 1, ResourceManager.mp_w_10_buster, ResourceManager.mp_w_10_buster_tex);
 		MissilePart.registerPart(ModItems.mp_warhead_10_nuclear, PartType.WARHEAD, 2, 1.5, ResourceManager.mp_w_10_nuclear, ResourceManager.mp_w_10_nuclear_tex);
 		MissilePart.registerPart(ModItems.mp_warhead_10_nuclear_large, PartType.WARHEAD, 2.5, 1.5, ResourceManager.mp_w_10_nuclear_large, ResourceManager.mp_w_10_nuclear_large_tex);
-		MissilePart.registerPart(ModItems.mp_warhead_10_taint, PartType.WARHEAD, 2.25, 1.5, ResourceManager.mp_w_10_taint, ResourceManager.mp_w_10_taint_tex);
-		MissilePart.registerPart(ModItems.mp_warhead_10_cloud, PartType.WARHEAD, 2.25, 1.5, ResourceManager.mp_w_10_taint, ResourceManager.mp_w_10_cloud_tex);
+		//MissilePart.registerPart(ModItems.mp_warhead_10_taint, PartType.WARHEAD, 2.25, 1.5, ResourceManager.mp_w_10_taint, ResourceManager.mp_w_10_taint_tex);
+		//MissilePart.registerPart(ModItems.mp_warhead_10_cloud, PartType.WARHEAD, 2.25, 1.5, ResourceManager.mp_w_10_taint, ResourceManager.mp_w_10_cloud_tex);
 		//
 		MissilePart.registerPart(ModItems.mp_warhead_15_he, PartType.WARHEAD, 2, 1.5, ResourceManager.mp_w_15_he, ResourceManager.mp_w_15_he_tex);
 		MissilePart.registerPart(ModItems.mp_warhead_15_incendiary, PartType.WARHEAD, 2, 1.5, ResourceManager.mp_w_15_incendiary, ResourceManager.mp_w_15_incendiary_tex);
 		MissilePart.registerPart(ModItems.mp_warhead_15_nuclear, PartType.WARHEAD, 3.5, 2, ResourceManager.mp_w_15_nuclear, ResourceManager.mp_w_15_nuclear_tex);
 		MissilePart.registerPart(ModItems.mp_warhead_15_nuclear_shark, PartType.WARHEAD, 3.5, 2, ResourceManager.mp_w_15_nuclear, ResourceManager.mp_w_15_nuclear_shark_tex);
 		MissilePart.registerPart(ModItems.mp_warhead_15_nuclear_mimi, PartType.WARHEAD, 3.5, 2, ResourceManager.mp_w_15_nuclear, ResourceManager.mp_w_15_nuclear_mimi_tex);
-		MissilePart.registerPart(ModItems.mp_warhead_15_boxcar, PartType.WARHEAD, 2.25, 7.5, ResourceManager.mp_w_15_boxcar, ResourceManager.boxcar_tex);
+		//MissilePart.registerPart(ModItems.mp_warhead_15_boxcar, PartType.WARHEAD, 2.25, 7.5, ResourceManager.mp_w_15_boxcar, ResourceManager.boxcar_tex);
 		MissilePart.registerPart(ModItems.mp_warhead_15_n2, PartType.WARHEAD, 3, 2, ResourceManager.mp_w_15_n2, ResourceManager.mp_w_15_n2_tex);
-		MissilePart.registerPart(ModItems.mp_warhead_15_balefire, PartType.WARHEAD, 2.75, 2, ResourceManager.mp_w_15_balefire, ResourceManager.mp_w_15_balefire_tex);
+		//MissilePart.registerPart(ModItems.mp_warhead_15_balefire, PartType.WARHEAD, 2.75, 2, ResourceManager.mp_w_15_balefire, ResourceManager.mp_w_15_balefire_tex);
 		MissilePart.registerPart(ModItems.mp_warhead_15_turbine, PartType.WARHEAD, 2.25, 2, ResourceManager.mp_w_15_turbine, ResourceManager.mp_w_15_turbine_tex);
 
 		//
@@ -377,7 +377,7 @@ public class MissilePart {
 		MissilePart.registerPart(ModItems.mp_fuselage_15_solid_mimi, PartType.FUSELAGE, 10, 6);
 		MissilePart.registerPart(ModItems.mp_fuselage_15_hydrogen, PartType.FUSELAGE, 10, 6);
 		MissilePart.registerPart(ModItems.mp_fuselage_15_hydrogen_cathedral, PartType.FUSELAGE, 10, 6);
-		MissilePart.registerPart(ModItems.mp_fuselage_15_balefire, PartType.FUSELAGE, 10, 6);
+		//MissilePart.registerPart(ModItems.mp_fuselage_15_balefire, PartType.FUSELAGE, 10, 6);
 
 		MissilePart.registerPart(ModItems.mp_fuselage_15_20_kerosene, PartType.FUSELAGE, 16, 10);
 		MissilePart.registerPart(ModItems.mp_fuselage_15_20_kerosene_magnusson, PartType.FUSELAGE, 16, 10);
@@ -397,17 +397,17 @@ public class MissilePart {
 		MissilePart.registerPart(ModItems.mp_warhead_10_buster, PartType.WARHEAD, 0.5, 1);
 		MissilePart.registerPart(ModItems.mp_warhead_10_nuclear, PartType.WARHEAD, 2, 1.5);
 		MissilePart.registerPart(ModItems.mp_warhead_10_nuclear_large, PartType.WARHEAD, 2.5, 1.5);
-		MissilePart.registerPart(ModItems.mp_warhead_10_taint, PartType.WARHEAD, 2.25, 1.5);
-		MissilePart.registerPart(ModItems.mp_warhead_10_cloud, PartType.WARHEAD, 2.25, 1.5);
+		//MissilePart.registerPart(ModItems.mp_warhead_10_taint, PartType.WARHEAD, 2.25, 1.5);
+		//MissilePart.registerPart(ModItems.mp_warhead_10_cloud, PartType.WARHEAD, 2.25, 1.5);
 		//
 		MissilePart.registerPart(ModItems.mp_warhead_15_he, PartType.WARHEAD, 2, 1.5);
 		MissilePart.registerPart(ModItems.mp_warhead_15_incendiary, PartType.WARHEAD, 2, 1.5);
 		MissilePart.registerPart(ModItems.mp_warhead_15_nuclear, PartType.WARHEAD, 3.5, 2);
 		MissilePart.registerPart(ModItems.mp_warhead_15_nuclear_shark, PartType.WARHEAD, 3.5, 2);
 		MissilePart.registerPart(ModItems.mp_warhead_15_nuclear_mimi, PartType.WARHEAD, 3.5, 2);
-		MissilePart.registerPart(ModItems.mp_warhead_15_boxcar, PartType.WARHEAD, 2.25, 7.5);
+		//MissilePart.registerPart(ModItems.mp_warhead_15_boxcar, PartType.WARHEAD, 2.25, 7.5);
 		MissilePart.registerPart(ModItems.mp_warhead_15_n2, PartType.WARHEAD, 3, 2);
-		MissilePart.registerPart(ModItems.mp_warhead_15_balefire, PartType.WARHEAD, 2.75, 2);
+		//MissilePart.registerPart(ModItems.mp_warhead_15_balefire, PartType.WARHEAD, 2.75, 2);
 		MissilePart.registerPart(ModItems.mp_warhead_15_turbine, PartType.WARHEAD, 2.25, 2);
 
 		//

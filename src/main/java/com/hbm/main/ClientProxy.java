@@ -487,7 +487,7 @@ public class ClientProxy extends ServerProxy {
 
 		ItemRenderMissileGeneric.init();
 		MinecraftForgeClient.registerItemRenderer(ModItems.missile_test, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER0));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_taint, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER0));
+		//MinecraftForgeClient.registerItemRenderer(ModItems.missile_taint, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER0));
 		MinecraftForgeClient.registerItemRenderer(ModItems.missile_micro, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER0));
 		MinecraftForgeClient.registerItemRenderer(ModItems.missile_bhole, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER0));
 		MinecraftForgeClient.registerItemRenderer(ModItems.missile_schrabidium, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER0));
@@ -776,7 +776,7 @@ public class ClientProxy extends ServerProxy {
 	    RenderingRegistry.registerEntityRenderingHandler(EntityMissileDoomsdayRusted.class, new RenderMissileNuclear());
 	    RenderingRegistry.registerEntityRenderingHandler(EntitySoyuz.class, new RenderSoyuz());
 	    RenderingRegistry.registerEntityRenderingHandler(EntitySoyuzCapsule.class, new RenderSoyuzCapsule());
-	    RenderingRegistry.registerEntityRenderingHandler(EntityMissileTaint.class, new RenderMissileTaint());
+	    //RenderingRegistry.registerEntityRenderingHandler(EntityMissileTaint.class, new RenderMissileTaint());
 	    RenderingRegistry.registerEntityRenderingHandler(EntityMissileMicro.class, new RenderMissileTaint());
 	    RenderingRegistry.registerEntityRenderingHandler(EntityMissileBHole.class, new RenderMissileTaint());
 	    RenderingRegistry.registerEntityRenderingHandler(EntityMissileSchrabidium.class, new RenderMissileTaint());

@@ -1059,7 +1059,7 @@ public class ModItems {
 	public static Item syringe_metal_medx;
 	public static Item syringe_metal_psycho;
 	public static Item syringe_metal_super;
-	public static Item syringe_taint;
+	//public static Item syringe_taint;
 	public static Item syringe_mkunicorn;
 	public static Item iv_empty;
 	public static Item iv_blood;
@@ -1469,7 +1469,7 @@ public class ModItems {
 	public static Item missile_volcano;
 	public static Item missile_doomsday;
 	public static Item missile_doomsday_rusted;
-	public static Item missile_taint;
+	//public static Item missile_taint;
 	public static Item missile_micro;
 	public static Item missile_bhole;
 	public static Item missile_schrabidium;
@@ -1598,7 +1598,7 @@ public class ModItems {
 	public static Item mp_fuselage_15_hydrogen;
 	public static Item mp_fuselage_15_hydrogen_cathedral;
 
-	public static Item mp_fuselage_15_balefire;
+	//public static Item mp_fuselage_15_balefire;
 
 	public static Item mp_fuselage_15_20_kerosene;
 	public static Item mp_fuselage_15_20_kerosene_magnusson;
@@ -1612,16 +1612,16 @@ public class ModItems {
 	public static Item mp_warhead_10_buster;
 	public static Item mp_warhead_10_nuclear;
 	public static Item mp_warhead_10_nuclear_large;
-	public static Item mp_warhead_10_taint;
-	public static Item mp_warhead_10_cloud;
+	//public static Item mp_warhead_10_taint;
+	//public static Item mp_warhead_10_cloud;
 	public static Item mp_warhead_15_he;
 	public static Item mp_warhead_15_incendiary;
 	public static Item mp_warhead_15_nuclear;
 	public static Item mp_warhead_15_nuclear_shark;
 	public static Item mp_warhead_15_nuclear_mimi;
-	public static Item mp_warhead_15_boxcar;
+	//public static Item mp_warhead_15_boxcar;
 	public static Item mp_warhead_15_n2;
-	public static Item mp_warhead_15_balefire;
+	//public static Item mp_warhead_15_balefire;
 	public static Item mp_warhead_15_turbine;
 	public static Item mp_warhead_20_he;
 
@@ -3572,7 +3572,7 @@ public class ModItems {
 		syringe_metal_medx = new ItemSyringe().setUnlocalizedName("syringe_metal_medx").setFull3D().setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":syringe_metal_medx");
 		syringe_metal_psycho = new ItemSyringe().setUnlocalizedName("syringe_metal_psycho").setFull3D().setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":syringe_metal_psycho");
 		syringe_metal_super = new ItemSyringe().setUnlocalizedName("syringe_metal_super").setFull3D().setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":syringe_metal_super");
-		syringe_taint = new ItemSyringe().setUnlocalizedName("syringe_taint").setFull3D().setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":syringe_taint");
+		//syringe_taint = new ItemSyringe().setUnlocalizedName("syringe_taint").setFull3D().setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":syringe_taint");
 		syringe_mkunicorn = new ItemSyringe().setUnlocalizedName("syringe_mkunicorn").setFull3D().setCreativeTab(null).setTextureName(RefStrings.MODID + ":syringe_mkunicorn");
 
 		iv_empty = new ItemSimpleConsumable().setUseActionServer((stack, user) -> {
@@ -4286,7 +4286,7 @@ public class ModItems {
 		missile_volcano = new ItemMissile(MissileFormFactor.ATLAS, MissileTier.TIER4).setUnlocalizedName("missile_volcano").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_volcano");
 		missile_doomsday = new ItemMissile(MissileFormFactor.ATLAS, MissileTier.TIER4).setUnlocalizedName("missile_doomsday").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_doomsday");
 		missile_doomsday_rusted = new ItemMissile(MissileFormFactor.ATLAS, MissileTier.TIER4).notLaunchable().setUnlocalizedName("missile_doomsday_rusted").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_doomsday");
-		missile_taint = new ItemMissile(MissileFormFactor.MICRO, MissileTier.TIER0).setUnlocalizedName("missile_taint").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_taint");
+		//missile_taint = new ItemMissile(MissileFormFactor.MICRO, MissileTier.TIER0).setUnlocalizedName("missile_taint").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_taint");
 		missile_micro = new ItemMissile(MissileFormFactor.MICRO, MissileTier.TIER0).setUnlocalizedName("missile_micro").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_micro");
 		missile_bhole = new ItemMissile(MissileFormFactor.MICRO, MissileTier.TIER0).setUnlocalizedName("missile_bhole").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_bhole");
 		missile_schrabidium = new ItemMissile(MissileFormFactor.MICRO, MissileTier.TIER0).setUnlocalizedName("missile_schrabidium").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_schrabidium");
@@ -4437,7 +4437,7 @@ public class ModItems {
 		mp_fuselage_15_hydrogen = new ItemCustomMissilePart().makeFuselage(FuelType.HYDROGEN, 15000, 1000, PartSize.SIZE_15, PartSize.SIZE_15).setHealth(50F)	.setUnlocalizedName("mp_fuselage_15_hydrogen").setTextureName(RefStrings.MODID + ":mp_fuselage");
 		mp_fuselage_15_hydrogen_cathedral = ((ItemCustomMissilePart) mp_fuselage_15_hydrogen).copy().setRarity(Rarity.UNCOMMON).setAuthor("Satan").setTitle("Unholy Cathedral").setUnlocalizedName("mp_fuselage_15_hydrogen_cathedral");
 
-		mp_fuselage_15_balefire = new ItemCustomMissilePart().makeFuselage(FuelType.BALEFIRE, 15000, 1000, PartSize.SIZE_15, PartSize.SIZE_15).setHealth(75F)	.setUnlocalizedName("mp_fuselage_15_balefire").setTextureName(RefStrings.MODID + ":mp_fuselage");
+		//mp_fuselage_15_balefire = new ItemCustomMissilePart().makeFuselage(FuelType.BALEFIRE, 15000, 1000, PartSize.SIZE_15, PartSize.SIZE_15).setHealth(75F)	.setUnlocalizedName("mp_fuselage_15_balefire").setTextureName(RefStrings.MODID + ":mp_fuselage");
 
 		mp_fuselage_15_20_kerosene = new ItemCustomMissilePart().makeFuselage(FuelType.KEROSENE, 20000, 1000, PartSize.SIZE_15, PartSize.SIZE_20).setAuthor("Hoboy").setHealth(70F).setUnlocalizedName("mp_fuselage_15_20_kerosene").setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":mp_fuselage");
 		mp_fuselage_15_20_kerosene_magnusson = ((ItemCustomMissilePart)mp_fuselage_15_20_kerosene).copy().setRarity(Rarity.RARE).setAuthor("VT-6/24").setTitle("White Forest Rocket").setWittyText("And get your cranio-conjugal parasite away from my nose cone!").setUnlocalizedName("mp_fuselage_15_20_kerosene_magnusson");
@@ -4448,16 +4448,16 @@ public class ModItems {
 		mp_warhead_10_buster = new ItemCustomMissilePart().makeWarhead(WarheadType.BUSTER, 5F, 1500, PartSize.SIZE_10).setHealth(5F)						.setUnlocalizedName("mp_warhead_10_buster").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":mp_warhead");
 		mp_warhead_10_nuclear = new ItemCustomMissilePart().makeWarhead(WarheadType.NUCLEAR, 35F, 1500, PartSize.SIZE_10).setTitle("Tater Tot").setHealth(10F).setUnlocalizedName("mp_warhead_10_nuclear").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":mp_warhead");
 		mp_warhead_10_nuclear_large = new ItemCustomMissilePart().makeWarhead(WarheadType.NUCLEAR, 75F, 2500, PartSize.SIZE_10).setTitle("Chernobyl Boris").setHealth(15F).setUnlocalizedName("mp_warhead_10_nuclear_large").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":mp_warhead");
-		mp_warhead_10_taint = new ItemCustomMissilePart().makeWarhead(WarheadType.TAINT, 15F, 1500, PartSize.SIZE_10).setHealth(20F).setRarity(Rarity.UNCOMMON).setWittyText("Eat my taint! Bureaucracy is dead and we killed it!").setUnlocalizedName("mp_warhead_10_taint").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":mp_warhead");
-		mp_warhead_10_cloud = new ItemCustomMissilePart().makeWarhead(WarheadType.CLOUD, 15F, 1500, PartSize.SIZE_10).setHealth(20F).setRarity(Rarity.RARE).setUnlocalizedName("mp_warhead_10_cloud").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":mp_warhead");
+		//mp_warhead_10_taint = new ItemCustomMissilePart().makeWarhead(WarheadType.TAINT, 15F, 1500, PartSize.SIZE_10).setHealth(20F).setRarity(Rarity.UNCOMMON).setWittyText("Eat my taint! Bureaucracy is dead and we killed it!").setUnlocalizedName("mp_warhead_10_taint").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":mp_warhead");
+		//mp_warhead_10_cloud = new ItemCustomMissilePart().makeWarhead(WarheadType.CLOUD, 15F, 1500, PartSize.SIZE_10).setHealth(20F).setRarity(Rarity.RARE).setUnlocalizedName("mp_warhead_10_cloud").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":mp_warhead");
 		mp_warhead_15_he = new ItemCustomMissilePart().makeWarhead(WarheadType.HE, 50F, 2500, PartSize.SIZE_15).setHealth(10F)							.setUnlocalizedName("mp_warhead_15_he").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":mp_warhead");
 		mp_warhead_15_incendiary = new ItemCustomMissilePart().makeWarhead(WarheadType.INC, 35F, 2500, PartSize.SIZE_15).setHealth(10F)					.setUnlocalizedName("mp_warhead_15_incendiary").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":mp_warhead");
 		mp_warhead_15_nuclear = new ItemCustomMissilePart().makeWarhead(WarheadType.NUCLEAR, 125F, 5000, PartSize.SIZE_15).setTitle("Auntie Bertha").setHealth(15F).setUnlocalizedName("mp_warhead_15_nuclear").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":mp_warhead");
 		mp_warhead_15_nuclear_shark = ((ItemCustomMissilePart) mp_warhead_15_nuclear).copy().setRarity(Rarity.UNCOMMON).setTitle("Discount Bullet Bill").setWittyText("Nose art on a cannon bullet? Who does that?").setUnlocalizedName("mp_warhead_15_nuclear_shark");
 		mp_warhead_15_nuclear_mimi = ((ItemCustomMissilePart) mp_warhead_15_nuclear).copy().setRarity(Rarity.RARE).setTitle("FASHIONABLE MISSILE").setUnlocalizedName("mp_warhead_15_nuclear_mimi");
-		mp_warhead_15_boxcar = new ItemCustomMissilePart().makeWarhead(WarheadType.TX, 250F, 7500, PartSize.SIZE_15).setWittyText("?!?!").setHealth(35F).setRarity(Rarity.LEGENDARY).setUnlocalizedName("mp_warhead_15_boxcar").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":mp_warhead");
+		//mp_warhead_15_boxcar = new ItemCustomMissilePart().makeWarhead(WarheadType.TX, 250F, 7500, PartSize.SIZE_15).setWittyText("?!?!").setHealth(35F).setRarity(Rarity.LEGENDARY).setUnlocalizedName("mp_warhead_15_boxcar").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":mp_warhead");
 		mp_warhead_15_n2 = new ItemCustomMissilePart().makeWarhead(WarheadType.N2, 100F, 5000, PartSize.SIZE_15).setWittyText("[screams geometrically]").setHealth(20F).setRarity(Rarity.RARE).setUnlocalizedName("mp_warhead_15_n2").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":mp_warhead");
-		mp_warhead_15_balefire = new ItemCustomMissilePart().makeWarhead(WarheadType.BALEFIRE, 100F, 7500, PartSize.SIZE_15).setRarity(Rarity.LEGENDARY).setAuthor("VT-6/24").setHealth(15F).setWittyText("Hightower, never forgetti.").setUnlocalizedName("mp_warhead_15_balefire").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":mp_warhead");
+		//mp_warhead_15_balefire = new ItemCustomMissilePart().makeWarhead(WarheadType.BALEFIRE, 100F, 7500, PartSize.SIZE_15).setRarity(Rarity.LEGENDARY).setAuthor("VT-6/24").setHealth(15F).setWittyText("Hightower, never forgetti.").setUnlocalizedName("mp_warhead_15_balefire").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":mp_warhead");
 		mp_warhead_15_turbine = new ItemCustomMissilePart().makeWarhead(WarheadType.TURBINE, 200F, 5000, PartSize.SIZE_15).setRarity(Rarity.SEWS_CLOTHES_AND_SUCKS_HORSE_COCK).setHealth(250F).setUnlocalizedName("mp_warhead_15_turbine").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":mp_warhead");
 		mp_warhead_20_he = new ItemCustomMissilePart().makeWarhead(WarheadType.HE, 15F, 5000, PartSize.SIZE_20)												.setUnlocalizedName("mp_w_20").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":mp_warhead");
 
@@ -7369,7 +7369,7 @@ public class ModItems {
 		//Missiles
 		//Tier 0
 		GameRegistry.registerItem(missile_test, missile_test.getUnlocalizedName());
-		GameRegistry.registerItem(missile_taint, missile_taint.getUnlocalizedName());
+		//GameRegistry.registerItem(missile_taint, missile_taint.getUnlocalizedName());
 		GameRegistry.registerItem(missile_micro, missile_micro.getUnlocalizedName());
 		GameRegistry.registerItem(missile_bhole, missile_bhole.getUnlocalizedName());
 		GameRegistry.registerItem(missile_schrabidium, missile_schrabidium.getUnlocalizedName());
@@ -7517,7 +7517,7 @@ public class ModItems {
 		GameRegistry.registerItem(mp_fuselage_15_solid_mimi, mp_fuselage_15_solid_mimi.getUnlocalizedName());
 		GameRegistry.registerItem(mp_fuselage_15_hydrogen, mp_fuselage_15_hydrogen.getUnlocalizedName());
 		GameRegistry.registerItem(mp_fuselage_15_hydrogen_cathedral, mp_fuselage_15_hydrogen_cathedral.getUnlocalizedName());
-		GameRegistry.registerItem(mp_fuselage_15_balefire, mp_fuselage_15_balefire.getUnlocalizedName());
+		//GameRegistry.registerItem(mp_fuselage_15_balefire, mp_fuselage_15_balefire.getUnlocalizedName());
 		GameRegistry.registerItem(mp_fuselage_15_20_kerosene, mp_fuselage_15_20_kerosene.getUnlocalizedName());
 		GameRegistry.registerItem(mp_fuselage_15_20_kerosene_magnusson, mp_fuselage_15_20_kerosene_magnusson.getUnlocalizedName());
 		GameRegistry.registerItem(mp_fuselage_15_20_solid, mp_fuselage_15_20_solid.getUnlocalizedName());
@@ -7527,16 +7527,16 @@ public class ModItems {
 		GameRegistry.registerItem(mp_warhead_10_buster, mp_warhead_10_buster.getUnlocalizedName());
 		GameRegistry.registerItem(mp_warhead_10_nuclear, mp_warhead_10_nuclear.getUnlocalizedName());
 		GameRegistry.registerItem(mp_warhead_10_nuclear_large, mp_warhead_10_nuclear_large.getUnlocalizedName());
-		GameRegistry.registerItem(mp_warhead_10_taint, mp_warhead_10_taint.getUnlocalizedName());
-		GameRegistry.registerItem(mp_warhead_10_cloud, mp_warhead_10_cloud.getUnlocalizedName());
+		//GameRegistry.registerItem(mp_warhead_10_taint, mp_warhead_10_taint.getUnlocalizedName());
+		//GameRegistry.registerItem(mp_warhead_10_cloud, mp_warhead_10_cloud.getUnlocalizedName());
 		GameRegistry.registerItem(mp_warhead_15_he, mp_warhead_15_he.getUnlocalizedName());
 		GameRegistry.registerItem(mp_warhead_15_incendiary, mp_warhead_15_incendiary.getUnlocalizedName());
 		GameRegistry.registerItem(mp_warhead_15_nuclear, mp_warhead_15_nuclear.getUnlocalizedName());
 		GameRegistry.registerItem(mp_warhead_15_nuclear_shark, mp_warhead_15_nuclear_shark.getUnlocalizedName());
 		GameRegistry.registerItem(mp_warhead_15_nuclear_mimi, mp_warhead_15_nuclear_mimi.getUnlocalizedName());
-		GameRegistry.registerItem(mp_warhead_15_boxcar, mp_warhead_15_boxcar.getUnlocalizedName());
+		//GameRegistry.registerItem(mp_warhead_15_boxcar, mp_warhead_15_boxcar.getUnlocalizedName());
 		GameRegistry.registerItem(mp_warhead_15_n2, mp_warhead_15_n2.getUnlocalizedName());
-		GameRegistry.registerItem(mp_warhead_15_balefire, mp_warhead_15_balefire.getUnlocalizedName());
+		//GameRegistry.registerItem(mp_warhead_15_balefire, mp_warhead_15_balefire.getUnlocalizedName());
 		GameRegistry.registerItem(mp_warhead_15_turbine, mp_warhead_15_turbine.getUnlocalizedName());
 		GameRegistry.registerItem(mp_warhead_20_he, mp_warhead_20_he.getUnlocalizedName());
 
@@ -7939,7 +7939,7 @@ public class ModItems {
 		GameRegistry.registerItem(syringe_metal_medx, syringe_metal_medx.getUnlocalizedName());
 		GameRegistry.registerItem(syringe_metal_psycho, syringe_metal_psycho.getUnlocalizedName());
 		GameRegistry.registerItem(syringe_metal_super, syringe_metal_super.getUnlocalizedName());
-		GameRegistry.registerItem(syringe_taint, syringe_taint.getUnlocalizedName());
+		//GameRegistry.registerItem(syringe_taint, syringe_taint.getUnlocalizedName());
 		GameRegistry.registerItem(syringe_mkunicorn, syringe_mkunicorn.getUnlocalizedName());
 		GameRegistry.registerItem(med_bag, med_bag.getUnlocalizedName());
 		GameRegistry.registerItem(iv_empty, iv_empty.getUnlocalizedName());

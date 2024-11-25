@@ -42,13 +42,13 @@ public abstract class EntityMissileTier0 extends EntityMissileBaseNT {
 	protected float getContrailScale() {
 		return 0.5F;
 	}
-	
+
 	public static class EntityMissileTest extends EntityMissileTier0 {
 		public EntityMissileTest(World world) { super(world); }
 		public EntityMissileTest(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
 		@Override public ItemStack getDebrisRareDrop() { return null; }
 		@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_test); }
-		
+
 		@Override public void onImpact() {
 			int x = (int) Math.floor(posX);
 			int y = (int) Math.floor(posY);
@@ -63,7 +63,7 @@ public abstract class EntityMissileTier0 extends EntityMissileBaseNT {
 						Block block = worldObj.getBlock(x + iX, y + iY, z + iZ);
 						int meta = worldObj.getBlockMetadata(x + iX, y + iY, z + iZ);
 						int charMeta = (int) MathHelper.clamp_double(12 - (dist / range) * (dist / range) * 13, 0, 12);
-						
+
 						if(block.isNormalCube()) {
 							if(block != ModBlocks.sellafield_slaked || meta < charMeta) {
 								worldObj.setBlock(x + iX, y + iY, z + iZ, ModBlocks.sellafield_slaked, charMeta, 3);
@@ -76,7 +76,7 @@ public abstract class EntityMissileTier0 extends EntityMissileBaseNT {
 			}
 		}
 	}
-	
+
 	public static class EntityMissileMicro extends EntityMissileTier0 {
 		public EntityMissileMicro(World world) { super(world); }
 		public EntityMissileMicro(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
@@ -84,7 +84,7 @@ public abstract class EntityMissileTier0 extends EntityMissileBaseNT {
 		@Override public ItemStack getDebrisRareDrop() { return ModItems.ammo_nuke.stackFromEnum(AmmoFatman.HIGH); }
 		@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_micro); }
 	}
-	
+
 	public static class EntityMissileSchrabidium extends EntityMissileTier0 {
 		public EntityMissileSchrabidium(World world) { super(world); }
 		public EntityMissileSchrabidium(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
@@ -102,7 +102,7 @@ public abstract class EntityMissileTier0 extends EntityMissileBaseNT {
 		@Override public ItemStack getDebrisRareDrop() { return null; }
 		@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_schrabidium); }
 	}
-	
+
 	public static class EntityMissileBHole extends EntityMissileTier0 {
 		public EntityMissileBHole(World world) { super(world); }
 		public EntityMissileBHole(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
@@ -117,23 +117,23 @@ public abstract class EntityMissileTier0 extends EntityMissileBaseNT {
 		@Override public ItemStack getDebrisRareDrop() { return new ItemStack(ModItems.grenade_black_hole, 1); }
 		@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_bhole); }
 	}
-	
-	public static class EntityMissileTaint extends EntityMissileTier0 {
-		public EntityMissileTaint(World world) { super(world); }
-		public EntityMissileTaint(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
-		@Override public void onImpact() {
-			this.worldObj.createExplosion(this, this.posX, this.posY, this.posZ, 10.0F, true);
-			for(int i = 0; i < 100; i++) {
-				int a = rand.nextInt(11) + (int) this.posX - 5;
-				int b = rand.nextInt(11) + (int) this.posY - 5;
-				int c = rand.nextInt(11) + (int) this.posZ - 5;
-				if(worldObj.getBlock(a, b, c).isReplaceable(worldObj, a, b, c) && BlockTaint.hasPosNeightbour(worldObj, a, b, c)) worldObj.setBlock(a, b, c, ModBlocks.taint);
-			}
-		}
-		@Override public ItemStack getDebrisRareDrop() { return new ItemStack(ModItems.powder_spark_mix, 1); }
-		@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_taint); }
-	}
-	
+
+	//public static class EntityMissileTaint extends EntityMissileTier0 {
+	//	public EntityMissileTaint(World world) { super(world); }
+	//	public EntityMissileTaint(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
+	//	@Override public void onImpact() {
+	//		this.worldObj.createExplosion(this, this.posX, this.posY, this.posZ, 10.0F, true);
+	//		for(int i = 0; i < 100; i++) {
+	//			int a = rand.nextInt(11) + (int) this.posX - 5;
+	//			int b = rand.nextInt(11) + (int) this.posY - 5;
+	//			int c = rand.nextInt(11) + (int) this.posZ - 5;
+	//			if(worldObj.getBlock(a, b, c).isReplaceable(worldObj, a, b, c) && BlockTaint.hasPosNeightbour(worldObj, a, b, c)) worldObj.setBlock(a, b, c, ModBlocks.taint);
+	//		}
+	//	}
+	//	@Override public ItemStack getDebrisRareDrop() { return new ItemStack(ModItems.powder_spark_mix, 1); }
+	//	//@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_taint); }
+	//}
+
 	public static class EntityMissileEMP extends EntityMissileTier0 {
 		public EntityMissileEMP(World world) { super(world); }
 		public EntityMissileEMP(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
