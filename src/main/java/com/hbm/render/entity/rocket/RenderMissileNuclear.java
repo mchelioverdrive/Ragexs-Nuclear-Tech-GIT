@@ -11,7 +11,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
 
 public class RenderMissileNuclear extends Render {
-	
+
 	public RenderMissileNuclear() { }
 
 	@Override
@@ -34,12 +34,12 @@ public class RenderMissileNuclear extends Render {
 		if(entity instanceof EntityMissileMirv) bindTexture(ResourceManager.missileMIRV_tex);
 		if(entity instanceof EntityMissileDoomsday) bindTexture(ResourceManager.missileDoomsday_tex);
 		if(entity instanceof EntityMissileDoomsdayRusted) bindTexture(ResourceManager.missileDoomsdayRusted_tex);
-		if(entity instanceof EntityMissileVolcano) bindTexture(ResourceManager.missileVolcano_tex);
+		//if(entity instanceof EntityMissileVolcano) bindTexture(ResourceManager.missileVolcano_tex);
 
 		GL11.glShadeModel(GL11.GL_SMOOTH);
 		ResourceManager.missileNuclear.renderAll();
 		GL11.glShadeModel(GL11.GL_FLAT);
-		
+
 		GL11.glPopMatrix();
 	}
 

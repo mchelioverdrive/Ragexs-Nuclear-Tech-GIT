@@ -23,7 +23,7 @@ import net.minecraft.world.World;
 public class BlockStepEffect extends Block {
 
     // Fucking BlockOre replacement because who needs good naming
-    
+
 	public BlockStepEffect(Material mat) {
         super(mat);
     }
@@ -32,17 +32,17 @@ public class BlockStepEffect extends Block {
         super(mat);
 		this.setTickRandomly(tick);
     }
-	
+
 	public boolean allowFortune = true;
-	
+
 	public BlockStepEffect noFortune() {
 		this.allowFortune = false;
 		return this;
 	}
-	
+
 	@Override
 	public int quantityDroppedWithBonus(int fortune, Random rand) {
-		
+
 		if(fortune > 0 && Item.getItemFromBlock(this) != this.getItemDropped(0, rand, fortune) && allowFortune) {
 			int mult = rand.nextInt(fortune + 2) - 1;
 
@@ -136,9 +136,9 @@ public class BlockStepEffect extends Block {
 			if(this == ModBlocks.brick_jungle_ooze) {
 				((EntityLivingBase) entity).addPotionEffect(new PotionEffect(HbmPotion.radiation.id, 15 * 20, 9));
 			}
-			if(this == ModBlocks.brick_jungle_mystic) {
-				((EntityLivingBase) entity).addPotionEffect(new PotionEffect(HbmPotion.taint.id, 15 * 20, 2));
-			}
+			//if(this == ModBlocks.brick_jungle_mystic) {
+			//	((EntityLivingBase) entity).addPotionEffect(new PotionEffect(HbmPotion.taint.id, 15 * 20, 2));
+			//}
 		}
 
 		if(this == ModBlocks.block_meteor_molten)

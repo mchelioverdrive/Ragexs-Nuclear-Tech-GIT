@@ -51,7 +51,7 @@ public class MineralRecipes {
 		add1To9Pair(ModBlocks.block_rubber, ModItems.ingot_rubber);
 		add1To9Pair(ModBlocks.block_osmiridium, ModItems.ingot_osmiridium);
 
-		add1To9Pair(ModBlocks.bf_log, ModItems.woodemium_briquette);
+		//add1To9Pair(ModBlocks.bf_log, ModItems.woodemium_briquette);
 		//add1To9Pair(ModItems.powder_wd2004, ModItems.powder_wd2004_tiny);
 		add1To9Pair(ModBlocks.block_cadmium, ModItems.ingot_cadmium);
 		add1To9Pair(ModBlocks.block_tcalloy, ModItems.ingot_tcalloy);

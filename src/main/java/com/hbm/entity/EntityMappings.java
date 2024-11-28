@@ -121,8 +121,8 @@ public class EntityMappings {
 		addEntity(EntityCloudSolinium.class, "entity_cloud_rainbow", 1000);
 		addEntity(EntityRagingVortex.class, "entity_raging_vortex", 250);
 		addEntity(EntityModBeam.class, "entity_beam_bang", 1000);
-		addEntity(EntityMissileBHole.class, "entity_missile_blackhole", 1000);
-		addEntity(EntityMissileSchrabidium.class, "entity_missile_schrabidium", 1000);
+		//addEntity(EntityMissileBHole.class, "entity_missile_blackhole", 1000);
+		//addEntity(EntityMissileSchrabidium.class, "entity_missile_schrabidium", 1000);
 		addEntity(EntityMissileEMP.class, "entity_missile_emp", 1000);
 		addEntity(EntityChlorineFX.class, "entity_chlorine_fx", 1000);
 		addEntity(EntityPinkCloudFX.class, "entity_pink_cloud_fx", 1000);
@@ -184,7 +184,7 @@ public class EntityMappings {
 		addEntity(EntityUFO.class, "entity_ntm_ufo", 1000);
 		addEntity(EntityQuasar.class, "entity_digamma_quasar", 250);
 		addEntity(EntitySpear.class, "entity_digamma_spear", 1000);
-		addEntity(EntityMissileVolcano.class, "entity_missile_volcano", 1000);
+		//addEntity(EntityMissileVolcano.class, "entity_missile_volcano", 1000);
 		addEntity(EntityMissileShuttle.class, "entity_missile_shuttle", 1000);
 		addEntity(EntityZirnoxDebris.class, "entity_zirnox_debris", 1000);
 		addEntity(EntityGhost.class, "entity_ntm_ghost", 1000);
@@ -227,7 +227,7 @@ public class EntityMappings {
 		addMob(EntityWarBehemoth.class, "entity_war_behemoth", 0x204131, 0x75CE00);
 
 		addMob(EntityCreeperNuclear.class, "entity_mob_nuclear_creeper", 0x204131, 0x75CE00);
-		addMob(EntityCreeperTainted.class, "entity_mob_tainted_creeper", 0x813b9b, 0xd71fdd);
+		//addMob(EntityCreeperTainted.class, "entity_mob_tainted_creeper", 0x813b9b, 0xd71fdd);
 		addMob(EntityCreeperPhosgene.class, "entity_mob_phosgene_creeper", 0xE3D398, 0xB8A06B);
 		addMob(EntityCreeperVolatile.class, "entity_mob_volatile_creeper", 0xC28153, 0x4D382C);
 		addMob(EntityCreeperGold.class, "entity_mob_gold_creeper", 0xECC136, 0x9E8B3E);

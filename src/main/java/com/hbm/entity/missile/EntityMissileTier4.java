@@ -42,9 +42,9 @@ public abstract class EntityMissileTier4 extends EntityMissileBaseNT {
 
 	@Override
 	protected void spawnContrail() {
-		
+
 		byte rot = this.dataWatcher.getWatchableObjectByte(3);
-		
+
 		Vec3 thrust = Vec3.createVectorHelper(0, 0, 1);
 		switch(rot) {
 		case 2: thrust.rotateAroundY((float) -Math.PI / 2F); break;
@@ -59,7 +59,7 @@ public abstract class EntityMissileTier4 extends EntityMissileBaseNT {
 		this.spawnContraolWithOffset(0, 0, 0);
 		this.spawnContraolWithOffset(-thrust.xCoord, -thrust.zCoord, -thrust.zCoord);
 	}
-	
+
 	public static class EntityMissileNuclear extends EntityMissileTier4 {
 		public EntityMissileNuclear(World world) { super(world); }
 		public EntityMissileNuclear(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
@@ -70,7 +70,7 @@ public abstract class EntityMissileTier4 extends EntityMissileBaseNT {
 		@Override public ItemStack getDebrisRareDrop() { return new ItemStack(ModItems.warhead_nuclear); }
 		@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_nuclear); }
 	}
-	
+
 	public static class EntityMissileMirv extends EntityMissileTier4 {
 		public EntityMissileMirv(World world) { super(world); }
 		public EntityMissileMirv(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
@@ -89,19 +89,19 @@ public abstract class EntityMissileTier4 extends EntityMissileBaseNT {
 		@Override public ItemStack getDebrisRareDrop() { return new ItemStack(ModItems.warhead_mirv); }
 		@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_nuclear_cluster); }
 	}
-	
-	public static class EntityMissileVolcano extends EntityMissileTier4 {
-		public EntityMissileVolcano(World world) { super(world); }
-		public EntityMissileVolcano(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
-		@Override public void onImpact() {
-			ExplosionLarge.explode(worldObj, posX, posY, posZ, 10.0F, true, true, true);
-			for(int x = -1; x <= 1; x++) for(int y = -1; y <= 1; y++) for(int z = -1; z <= 1; z++) worldObj.setBlock((int)Math.floor(posX + x), (int)Math.floor(posY + y), (int)Math.floor(posZ + z), ModBlocks.volcanic_lava_block);
-			worldObj.setBlock((int)Math.floor(posX), (int)Math.floor(posY), (int)Math.floor(posZ), ModBlocks.volcano_core);
-		}
-		@Override public ItemStack getDebrisRareDrop() { return new ItemStack(ModItems.warhead_volcano); }
-		@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_volcano); }
-	}
-	
+
+	//public static class EntityMissileVolcano extends EntityMissileTier4 {
+	//	public EntityMissileVolcano(World world) { super(world); }
+	//	public EntityMissileVolcano(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
+	//	@Override public void onImpact() {
+	//		ExplosionLarge.explode(worldObj, posX, posY, posZ, 10.0F, true, true, true);
+	//		for(int x = -1; x <= 1; x++) for(int y = -1; y <= 1; y++) for(int z = -1; z <= 1; z++) worldObj.setBlock((int)Math.floor(posX + x), (int)Math.floor(posY + y), (int)Math.floor(posZ + z), ModBlocks.volcanic_lava_block);
+	//		worldObj.setBlock((int)Math.floor(posX), (int)Math.floor(posY), (int)Math.floor(posZ), ModBlocks.volcano_core);
+	//	}
+	//	@Override public ItemStack getDebrisRareDrop() { return new ItemStack(ModItems.warhead_volcano); }
+	//	//@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_volcano); }
+	//}
+
 	public static class EntityMissileDoomsday extends EntityMissileTier4 {
 		public EntityMissileDoomsday(World world) { super(world); }
 		public EntityMissileDoomsday(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
@@ -114,7 +114,7 @@ public abstract class EntityMissileTier4 extends EntityMissileBaseNT {
 		@Override public String getUnlocalizedName() { return "radar.target.doomsday"; }
 		@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_doomsday); }
 	}
-	
+
 	public static class EntityMissileDoomsdayRusted extends EntityMissileDoomsday {
 		public EntityMissileDoomsdayRusted(World world) { super(world); }
 		public EntityMissileDoomsdayRusted(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }

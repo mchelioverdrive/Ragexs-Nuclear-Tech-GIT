@@ -197,8 +197,8 @@ public class HazardRegistry {
 		//HazardSystem.register(ModItems.sat_gerald, makeData(AUTISM, 1F));
 
 
-		HazardSystem.register(ModItems.powder_wd2004, makeData(DIGAMMA, 1F));
-		HazardSystem.register(ModItems.powder_wd2004_tiny, makeData(DIGAMMA, 0.05F));
+		//HazardSystem.register(ModItems.powder_wd2004, makeData(DIGAMMA, 1F));
+		//HazardSystem.register(ModItems.powder_wd2004_tiny, makeData(DIGAMMA, 0.05F));
 
 		HazardSystem.register(cordite, makeData(EXPLOSIVE, 2F));
 		HazardSystem.register(ballistite, makeData(EXPLOSIVE, 1F));
@@ -429,7 +429,7 @@ public class HazardRegistry {
 		registerRBMKRod(rbmk_fuel_zfb_bismuth, pu241 * rod_rbmk * 0.1F, wst * rod_rbmk * 5F);
 		registerRBMKRod(rbmk_fuel_zfb_pu241, pu239 * rod_rbmk * 0.1F, wst * rod_rbmk * 7.5F);
 		registerRBMKRod(rbmk_fuel_zfb_am_mix, pu241 * rod_rbmk * 0.1F, wst * rod_rbmk * 10F);
-		registerRBMK(rbmk_fuel_drx, bf * rod_rbmk, bf * rod_rbmk * 100F, true, true, 0, 1F/3F);
+		//registerRBMK(rbmk_fuel_drx, bf * rod_rbmk, bf * rod_rbmk * 100F, true, true, 0, 1F/3F);
 		registerRBMKRod(rbmk_fuel_lecm, cmrg * 2.2F * rod_rbmk / 5F, wst * rod_rbmk);
 		registerRBMKRod(rbmk_fuel_mecm, cmrg * 2.2F * rod_rbmk / 3F, wst * rod_rbmk * 3F);
 		registerRBMKRod(rbmk_fuel_hecm, cmrg * 2.2F * rod_rbmk /1.5F, wst * rod_rbmk * 5F);
@@ -466,7 +466,7 @@ public class HazardRegistry {
 		registerRBMKPellet(rbmk_pellet_zfb_bismuth, pu241 * billet * 0.1F, wst * billet * 5F);
 		registerRBMKPellet(rbmk_pellet_zfb_pu241, pu239 * billet * 0.1F, wst * billet * 7.5F);
 		registerRBMKPellet(rbmk_pellet_zfb_am_mix, pu241 * billet * 0.1F, wst * billet * 10F);
-		registerRBMKPellet(rbmk_pellet_drx, bf * billet, bf * billet * 100F, true, 0F, 1F/24F);
+		//registerRBMKPellet(rbmk_pellet_drx, bf * billet, bf * billet * 100F, true, 0F, 1F/24F);
 		registerRBMKPellet(rbmk_pellet_lecm, cmrg * billet, wst * cf252 * 2.5F);
 		registerRBMKPellet(rbmk_pellet_mecm, cmrg * billet, wst * cf252 * 2.6F);
 		registerRBMKPellet(rbmk_pellet_hecm, cmrg * billet, wst * cf252 * 2.7F);
@@ -543,7 +543,7 @@ public class HazardRegistry {
 		HazardSystem.register(solinium_propellant, makeData(EXPLOSIVE, 10F));
 		HazardSystem.register(solinium_core, makeData().addEntry(RADIATION, sa327 * nugget * 8).addEntry(BLINDING, 45F));
 
-		HazardSystem.register(nuke_fstbmb, makeData(DIGAMMA, 0.01F));
+		//HazardSystem.register(nuke_fstbmb, makeData(DIGAMMA, 0.01F));
 		HazardSystem.register(DictFrame.fromOne(ModItems.holotape_image, EnumHoloImage.HOLO_RESTORED), makeData(DIGAMMA, 1F));
 		HazardSystem.register(holotape_damaged, makeData(DIGAMMA, 1_000F));
 

@@ -131,7 +131,7 @@ public class ExplosionChaos {
 					int Z = zz + z;
 					int ZZ = YY + zz * zz;
 					if (ZZ < r22) {
-						
+
 						if(world.getBlock(X, Y, Z).getExplosionResistance(null) <= 70)
 							pDestruction(world, X, Y, Z);
 					}
@@ -260,7 +260,7 @@ public class ExplosionChaos {
 
 	/**
 	 * Sets all flammable blocks on fire
-	 * 
+	 *
 	 * @param world
 	 * @param x
 	 * @param y
@@ -295,7 +295,7 @@ public class ExplosionChaos {
 
 	/**
 	 * Sets all blocks on fire
-	 * 
+	 *
 	 * @param world
 	 * @param x
 	 * @param y
@@ -330,11 +330,11 @@ public class ExplosionChaos {
 	}
 
 	public static void spawnChlorine(World world, double x, double y, double z, int count, double speed, int type) {
-		
+
 		for(int i = 0; i < count; i++) {
-			
+
 			EntityModFX fx = null;
-			
+
 			if(type == 0) {
 				fx = new EntityChlorineFX(world, x, y, z, 0.0, 0.0, 0.0);
 			} else if(type == 1) {
@@ -344,7 +344,7 @@ public class ExplosionChaos {
 			} else {
 				fx = new EntityOrangeFX(world, x, y, z, 0.0, 0.0, 0.0);
 			}
-			
+
 			fx.motionY = rand.nextGaussian() * speed;
 			fx.motionX = rand.nextGaussian() * speed;
 			fx.motionZ = rand.nextGaussian() * speed;
@@ -353,16 +353,16 @@ public class ExplosionChaos {
 	}
 
 	public static void spawnVolley(World world, double x, double y, double z, int count, double speed) {
-		
+
 		for(int i = 0; i < count; i++) {
-			
+
 			EntityModFX fx = new EntityOrangeFX(world, x, y, z, 0.0, 0.0, 0.0);
-			
+
 			fx.motionX = rand.nextGaussian() * speed;
 			fx.motionZ = rand.nextGaussian() * speed;
-			
+
 			fx.motionY = rand.nextDouble() * speed * 7.5D;
-			
+
 			world.spawnEntityInWorld(fx);
 		}
 	}
@@ -506,14 +506,14 @@ public class ExplosionChaos {
 	}
 
 	public static void poison(World world, double x, double y, double z, double range) {
-		
+
 		List<EntityLivingBase> affected = world.getEntitiesWithinAABB(EntityLivingBase.class, AxisAlignedBB.getBoundingBox(x - range, y - range, z - range, x + range, y + range, z + range));
-		
+
 		for(EntityLivingBase entity : affected) {
-			
+
 			if(entity.getDistance(x, y, z) > range)
 				continue;
-			
+
 			if(ArmorRegistry.hasAnyProtection(entity, 3, HazardClass.GAS_LUNG, HazardClass.GAS_BLISTERING)) {
 				ArmorUtil.damageGasMaskFilter(entity, 1);
 			} else {
@@ -527,14 +527,14 @@ public class ExplosionChaos {
 	}
 
 	public static void pc(World world, double x, double y, double z, double range) {
-		
+
 		List<EntityLivingBase> affected = world.getEntitiesWithinAABB(EntityLivingBase.class, AxisAlignedBB.getBoundingBox(x - range, y - range, z - range, x + range, y + range, z + range));
-		
+
 		for(EntityLivingBase entity : affected) {
-			
+
 			if(entity.getDistance(x, y, z) > range)
 				continue;
-			
+
 			ArmorUtil.damageSuit(entity, 0, 25);
 			ArmorUtil.damageSuit(entity, 1, 25);
 			ArmorUtil.damageSuit(entity, 2, 25);
@@ -544,27 +544,27 @@ public class ExplosionChaos {
 	}
 
 	public static void c(World world, double x, double y, double z, double range) {
-		
+
 		List<EntityLivingBase> affected = world.getEntitiesWithinAABB(EntityLivingBase.class, AxisAlignedBB.getBoundingBox(x - range, y - range, z - range, x + range, y + range, z + range));
-		
+
 		for(EntityLivingBase entity : affected) {
-			
+
 			if(entity.getDistance(x, y, z) > range)
 				continue;
-			
+
 			ArmorUtil.damageSuit(entity, 0, 25);
 			ArmorUtil.damageSuit(entity, 1, 25);
 			ArmorUtil.damageSuit(entity, 2, 25);
 			ArmorUtil.damageSuit(entity, 3, 25);
-			
+
 			if(ArmorUtil.checkForHazmat(entity))
 				continue;
-			
-			if(entity.isPotionActive(HbmPotion.taint.id)) {
-				entity.removePotionEffect(HbmPotion.taint.id);
-				entity.addPotionEffect(new PotionEffect(HbmPotion.mutation.id, 1 * 60 * 60 * 20, 0, false));
-			}
-			
+
+			//if(entity.isPotionActive(HbmPotion.taint.id)) {
+			//	entity.removePotionEffect(HbmPotion.taint.id);
+			//	entity.addPotionEffect(new PotionEffect(HbmPotion.mutation.id, 1 * 60 * 60 * 20, 0, false));
+			//}
+
 			entity.attackEntityFrom(ModDamageSource.cloud, 5);
 		}
 	}
@@ -849,29 +849,29 @@ public class ExplosionChaos {
 		if(!world.isRemote)
 		for (int i = x - radius; i <= x + radius; i++)
 			for (int j = z - radius; j <= z + radius; j++) {
-				
+
 				Block b = world.getBlock(i, y, j);
 				float k = b.getExplosionResistance(null);
-						
+
 				if(k < 6000 && b != Blocks.air) {
-					
+
 					EntityRubble rubble = new EntityRubble(world);
 					rubble.posX = i + 0.5F;
 					rubble.posY = y;
 					rubble.posZ = j + 0.5F;
-					
+
 					rubble.motionY = 0.025F * 10 + 0.15F;
 					rubble.setMetaBasedOnBlock(b, world.getBlockMetadata(i, y, j));
-					
+
 					world.spawnEntityInWorld(rubble);
-					
+
 					world.setBlock(i, y, j, Blocks.air);
 				}
 			}
 	}
 
 	public static void decontaminate(World world, int x, int y, int z) {
-		
+
 		Random random = new Random();
 
 		if (world.getBlock(x, y, z) == ModBlocks.waste_earth && random.nextInt(3) != 0) {
@@ -905,10 +905,10 @@ public class ExplosionChaos {
 		else if (world.getBlock(x, y, z) == ModBlocks.block_waste && random.nextInt(10) == 0) {
 			world.setBlock(x, y, z, ModBlocks.block_lead);
 		}
-		
+
 		else if(world.getBlock(x, y, z) == ModBlocks.sellafield) {
 			int meta = world.getBlockMetadata(x, y, z);
-			
+
 			if(meta > 0) {
 				if(meta == 5 && random.nextInt(10) == 0)
 					world.setBlockMetadataWithNotify(x, y, z, 4, 3);

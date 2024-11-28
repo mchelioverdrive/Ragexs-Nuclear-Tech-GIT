@@ -36,10 +36,10 @@ public class BombFloat extends Block implements IBomb {
 	@Override
 	@SideOnly(Side.CLIENT)
 	public void registerBlockIcons(IIconRegister iconRegister) {
-		if(this == ModBlocks.float_bomb) {
-			this.iconTop = iconRegister.registerIcon(RefStrings.MODID + ":bomb_float_top");
-			this.blockIcon = iconRegister.registerIcon(RefStrings.MODID + ":bomb_float");
-		}
+		//if(this == ModBlocks.float_bomb) {
+		//	this.iconTop = iconRegister.registerIcon(RefStrings.MODID + ":bomb_float_top");
+		//	this.blockIcon = iconRegister.registerIcon(RefStrings.MODID + ":bomb_float");
+		//}
 		if(this == ModBlocks.emp_bomb) {
 			this.iconTop = iconRegister.registerIcon(RefStrings.MODID + ":bomb_emp_top");
 			this.blockIcon = iconRegister.registerIcon(RefStrings.MODID + ":bomb_emp_side");
@@ -56,7 +56,7 @@ public class BombFloat extends Block implements IBomb {
 	if(!world.isRemote) {
 			if(GeneralConfig.enableExtendedLogging) {
 			MainRegistry.logger.log(Level.INFO, "[BOMBPL]" + this.getLocalizedName() + " placed at " + x + " / " + y + " / " + z + "! " + "by "+ player.getCommandSenderName());
-		}	
+		}
 	}
 	}
 
@@ -74,10 +74,10 @@ public class BombFloat extends Block implements IBomb {
 
 		if(!world.isRemote) {
 			world.setBlock(x, y, z, Blocks.air);
-			if(this == ModBlocks.float_bomb) {
-				ExplosionChaos.floater(world, x, y, z, 15, 50);
-				ExplosionChaos.move(world, x, y, z, 15, 0, 50, 0);
-			}
+			//if(this == ModBlocks.float_bomb) {
+			//	ExplosionChaos.floater(world, x, y, z, 15, 50);
+			//	ExplosionChaos.move(world, x, y, z, 15, 0, 50, 0);
+			//}
 			if(this == ModBlocks.emp_bomb) {
 				ExplosionNukeGeneric.empBlast(world, x, y, z, 50);
 				EntityEMPBlast wave = new EntityEMPBlast(world, 50);
@@ -87,7 +87,7 @@ public class BombFloat extends Block implements IBomb {
 				world.spawnEntityInWorld(wave);
 			}
 		}
-		
+
 		return BombReturnCode.DETONATED;
 	}
 

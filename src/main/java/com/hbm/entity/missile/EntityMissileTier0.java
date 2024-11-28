@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
-import com.hbm.blocks.bomb.BlockTaint;
 import com.hbm.config.BombConfig;
 import com.hbm.entity.effect.EntityBlackHole;
 import com.hbm.entity.effect.EntityCloudFleija;
@@ -85,38 +84,38 @@ public abstract class EntityMissileTier0 extends EntityMissileBaseNT {
 		@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_micro); }
 	}
 
-	public static class EntityMissileSchrabidium extends EntityMissileTier0 {
-		public EntityMissileSchrabidium(World world) { super(world); }
-		public EntityMissileSchrabidium(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
-		@Override public void onImpact() {
-			EntityNukeExplosionMK3 ex = EntityNukeExplosionMK3.statFacFleija(worldObj, posX, posY, posZ, BombConfig.aSchrabRadius);
-			if(!ex.isDead) {
-				worldObj.spawnEntityInWorld(ex);
-				EntityCloudFleija cloud = new EntityCloudFleija(this.worldObj, BombConfig.aSchrabRadius);
-				cloud.posX = this.posX;
-				cloud.posY = this.posY;
-				cloud.posZ = this.posZ;
-				this.worldObj.spawnEntityInWorld(cloud);
-			}
-		}
-		@Override public ItemStack getDebrisRareDrop() { return null; }
-		@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_schrabidium); }
-	}
+	//public static class EntityMissileSchrabidium extends EntityMissileTier0 {
+	//	public EntityMissileSchrabidium(World world) { super(world); }
+	//	public EntityMissileSchrabidium(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
+	//	@Override public void onImpact() {
+	//		EntityNukeExplosionMK3 ex = EntityNukeExplosionMK3.statFacFleija(worldObj, posX, posY, posZ, BombConfig.aSchrabRadius);
+	//		if(!ex.isDead) {
+	//			worldObj.spawnEntityInWorld(ex);
+	//			EntityCloudFleija cloud = new EntityCloudFleija(this.worldObj, BombConfig.aSchrabRadius);
+	//			cloud.posX = this.posX;
+	//			cloud.posY = this.posY;
+	//			cloud.posZ = this.posZ;
+	//			this.worldObj.spawnEntityInWorld(cloud);
+	//		}
+	//	}
+	//	@Override public ItemStack getDebrisRareDrop() { return null; }
+	//	//@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_schrabidium); }
+	//}
 
-	public static class EntityMissileBHole extends EntityMissileTier0 {
-		public EntityMissileBHole(World world) { super(world); }
-		public EntityMissileBHole(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
-		@Override public void onImpact() {
-			this.worldObj.createExplosion(this, this.posX, this.posY, this.posZ, 1.5F, true);
-			EntityBlackHole bl = new EntityBlackHole(this.worldObj, 1.5F);
-			bl.posX = this.posX;
-			bl.posY = this.posY;
-			bl.posZ = this.posZ;
-			this.worldObj.spawnEntityInWorld(bl);
-		}
-		@Override public ItemStack getDebrisRareDrop() { return new ItemStack(ModItems.grenade_black_hole, 1); }
-		@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_bhole); }
-	}
+	//public static class EntityMissileBHole extends EntityMissileTier0 {
+	//	public EntityMissileBHole(World world) { super(world); }
+	//	public EntityMissileBHole(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
+	//	@Override public void onImpact() {
+	//		this.worldObj.createExplosion(this, this.posX, this.posY, this.posZ, 1.5F, true);
+	//		EntityBlackHole bl = new EntityBlackHole(this.worldObj, 1.5F);
+	//		bl.posX = this.posX;
+	//		bl.posY = this.posY;
+	//		bl.posZ = this.posZ;
+	//		this.worldObj.spawnEntityInWorld(bl);
+	//	}
+	//	@Override public ItemStack getDebrisRareDrop() { return new ItemStack(ModItems.grenade_black_hole, 1); }
+	//	//@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_bhole); }
+	//}
 
 	//public static class EntityMissileTaint extends EntityMissileTier0 {
 	//	public EntityMissileTaint(World world) { super(world); }

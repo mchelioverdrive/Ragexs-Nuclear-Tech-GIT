@@ -421,19 +421,19 @@ public class ItemRenderLibrary {
 		        ResourceManager.n2.renderAll();
 			}});
 
-		renderers.put(Item.getItemFromBlock(ModBlocks.nuke_fstbmb), new ItemRenderBase() {
-			public void renderInventory() {
-				GL11.glScaled(2.25, 2.25, 2.25);
-			}
-			public void renderCommon() {
-				GL11.glTranslated(1, 0, 0);
-				GL11.glRotated(90, 0, 1, 0);
-		        GL11.glShadeModel(GL11.GL_SMOOTH);
-		        bindTexture(ResourceManager.fstbmb_tex);
-		        ResourceManager.fstbmb.renderPart("Body");
-		        ResourceManager.fstbmb.renderPart("Balefire");
-		        GL11.glShadeModel(GL11.GL_FLAT);
-			}});
+		//renderers.put(Item.getItemFromBlock(ModBlocks.nuke_fstbmb), new ItemRenderBase() {
+		//	public void renderInventory() {
+		//		GL11.glScaled(2.25, 2.25, 2.25);
+		//	}
+		//	public void renderCommon() {
+		//		GL11.glTranslated(1, 0, 0);
+		//		GL11.glRotated(90, 0, 1, 0);
+		//        GL11.glShadeModel(GL11.GL_SMOOTH);
+		//        bindTexture(ResourceManager.fstbmb_tex);
+		//        ResourceManager.fstbmb.renderPart("Body");
+		//        ResourceManager.fstbmb.renderPart("Balefire");
+		//        GL11.glShadeModel(GL11.GL_FLAT);
+		//	}});
 
 		renderers.put(Item.getItemFromBlock(ModBlocks.nuke_custom), new ItemRenderBase() {
 			public void renderInventory() {

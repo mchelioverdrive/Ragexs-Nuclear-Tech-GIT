@@ -37,7 +37,7 @@ import java.util.List;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBMKFluxReceiver, IRBMKLoadable, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent {
-	
+
 	//amount of "neutron energy" buffered for the next tick to use for the reaction
 	public double fluxFast;
 	public double fluxSlow;
@@ -51,12 +51,12 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 	public String getName() {
 		return "container.rbmkRod";
 	}
-	
+
 	@Override
 	public boolean isModerated() {
 		return ((RBMKRod)this.getBlockType()).moderated;
 	}
-	
+
 	@Override
 	public int trackingRange() {
 		return 25;
@@ -65,37 +65,37 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 	@SuppressWarnings("incomplete-switch") //shut the fuck up
 	@Override
 	public void receiveFlux(NType type, double flux) {
-		
+
 		switch(type) {
 		case FAST: this.fluxFast += flux; break;
 		case SLOW: this.fluxSlow += flux; break;
 		}
 	}
-	
+
 	@Override
 	public void updateEntity() {
 
 		if(!worldObj.isRemote) {
-			
+
 			if(slots[0] != null && slots[0].getItem() instanceof ItemRBMKRod) {
-				
+
 				ItemRBMKRod rod = ((ItemRBMKRod)slots[0].getItem());
-				
+
 				double fluxIn = fluxFromType(rod.nType);
 				double fluxOut = rod.burn(worldObj, slots[0], fluxIn);
 				NType rType = rod.rType;
-				
+
 				rod.updateHeat(worldObj, slots[0], 1.0D);
 				this.heat += rod.provideHeat(worldObj, slots[0], heat, 1.0D);
-				
+
 				if(!this.hasLid()) {
 					ChunkRadiationManager.proxy.incrementRad(worldObj, xCoord, yCoord, zCoord, (float) ((this.fluxFast + this.fluxSlow) * 0.05F));
 				}
-				
+
 				super.updateEntity();
-				
+
 				if(this.heat > this.maxHeat()) {
-					
+
 					if(RBMKDials.getMeltdownsDisabled(worldObj)) {
 						ParticleUtil.spawnGasFlame(worldObj, xCoord + 0.5, yCoord + RBMKDials.getColumnHeight(worldObj) + 0.5, zCoord + 0.5, 0, 0.2, 0);
 					} else {
@@ -105,9 +105,9 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 					this.fluxSlow = 0;
 					return;
 				}
-				
+
 				if(this.heat > 10_000) this.heat = 10_000;
-				
+
 				//for spreading, we want the buffered flux to be 0 because we want to know exactly how much gets reflected back
 				this.fluxFast = 0;
 				this.fluxSlow = 0;
@@ -115,21 +115,21 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 				this.worldObj.theProfiler.startSection("rbmkRod_flux_spread");
 				spreadFlux(rType, fluxOut);
 				this.worldObj.theProfiler.endSection();
-				
+
 				hasRod = true;
-				
+
 			} else {
 
 				this.fluxFast = 0;
 				this.fluxSlow = 0;
-				
+
 				hasRod = false;
-				
+
 				super.updateEntity();
 			}
 		}
 	}
-	
+
 	/**
 	 * SLOW: full efficiency for slow neutrons, fast neutrons have half efficiency
 	 * FAST: fast neutrons have 100% efficiency, slow only 30%
@@ -137,56 +137,56 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 	 * @param type
 	 * @return
 	 */
-	
+
 	private double fluxFromType(NType type) {
-		
+
 		switch(type) {
 		case SLOW: return this.fluxFast * 0.5D + this.fluxSlow;
 		case FAST: return this.fluxFast + this.fluxSlow * 0.3D;
 		case ANY: return this.fluxFast + this.fluxSlow;
 		}
-		
+
 		return 0.0D;
 	}
-	
+
 	public static final ForgeDirection[] fluxDirs = new ForgeDirection[] {
 			ForgeDirection.NORTH,
 			ForgeDirection.EAST,
 			ForgeDirection.SOUTH,
 			ForgeDirection.WEST
 	};
-	
+
 	protected static NType stream;
-	
+
 	protected void spreadFlux(NType type, double fluxOut) {
-		
+
 		int range = RBMKDials.getFluxRange(worldObj);
-		
+
 		for(ForgeDirection dir : fluxDirs) {
-			
+
 			stream = type;
 			double flux = fluxOut;
-			
+
 			for(int i = 1; i <= range; i++) {
-				
+
 				flux = runInteraction(xCoord + dir.offsetX * i, yCoord, zCoord + dir.offsetZ * i, flux);
-				
+
 				if(flux <= 0)
 					break;
 			}
 		}
 	}
-	
+
 	protected double runInteraction(int x, int y, int z, double flux) {
-		
+
 		TileEntity te = Compat.getTileStandard(worldObj, x, y, z);
-		
+
 		if(te instanceof TileEntityRBMKBase) {
 			TileEntityRBMKBase base = (TileEntityRBMKBase) te;
-			
+
 			if(!base.hasLid())
 				ChunkRadiationManager.proxy.incrementRad(worldObj, xCoord, yCoord, zCoord, (float) (flux * 0.05F));
-			
+
 			if(base.isModerated()) {
 				this.stream = NType.SLOW;
 			}
@@ -195,7 +195,7 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 		//burn baby burn
 		if(te instanceof TileEntityRBMKRod) {
 			TileEntityRBMKRod rod = (TileEntityRBMKRod)te;
-			
+
 			if(rod.getStackInSlot(0) != null && rod.getStackInSlot(0).getItem() instanceof ItemRBMKRod) {
 				rod.receiveFlux(stream, flux);
 				return 0;
@@ -203,68 +203,68 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 				return flux;
 			}
 		}
-		
+
 		if(te instanceof TileEntityRBMKOutgasser) {
 			TileEntityRBMKOutgasser rod = (TileEntityRBMKOutgasser)te;
-			
+
 			if(!rod.canProcess()) {
 				return flux;
 			}
 		}
-		
+
 		if(te instanceof IRBMKFluxReceiver) {
 			IRBMKFluxReceiver rod = (IRBMKFluxReceiver)te;
 			rod.receiveFlux(stream, flux);
 			return 0;
 		}
-		
+
 		//multiply neutron count with rod setting
 		if(te instanceof TileEntityRBMKControl) {
 			TileEntityRBMKControl control = (TileEntityRBMKControl)te;
-			
+
 			if(control.getMult() == 0.0D)
 				return 0;
-			
+
 			flux *= control.getMult();
-			
+
 			return flux;
 		}
-		
+
 		//set neutrons to slow
 		if(te instanceof TileEntityRBMKModerator) {
 			stream = NType.SLOW;
 			return flux;
 		}
-		
+
 		//return the neutrons back to this with no further action required
 		if(te instanceof TileEntityRBMKReflector) {
 			this.receiveFlux(this.isModerated() ? NType.SLOW : stream, flux);
 			return 0;
 		}
-		
+
 		//break the neutron flow and nothign else
 		if(te instanceof TileEntityRBMKAbsorber) {
 			return 0;
 		}
-		
+
 		if(te instanceof TileEntityRBMKBase) {
 			return flux;
 		}
-		
+
 		int limit = RBMKDials.getColumnHeight(worldObj);
 		int hits = 0;
 		for(int h = 0; h <= limit; h++) {
-			
+
 			if(!worldObj.getBlock(x, y + h, z).isOpaqueCube())
 				hits++;
 		}
-		
+
 		if(hits > 0)
 			ChunkRadiationManager.proxy.incrementRad(worldObj, xCoord, yCoord, zCoord, (float) (flux * 0.05F * hits / (float)limit));
-		
+
 		return 0;
 	}
-	
+
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
@@ -273,7 +273,7 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 		this.fluxSlow = nbt.getDouble("fluxSlow");
 		this.hasRod = nbt.getBoolean("hasRod");
 	}
-	
+
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
@@ -282,12 +282,12 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 		nbt.setDouble("fluxSlow", this.fluxSlow);
 		nbt.setBoolean("hasRod", this.hasRod);
 	}
-	
+
 	public void getDiagData(NBTTagCompound nbt) {
 		this.writeToNBT(nbt);
-		
+
 		if(slots[0] != null && slots[0].getItem() instanceof ItemRBMKRod) {
-			
+
 			ItemRBMKRod rod = ((ItemRBMKRod)slots[0].getItem());
 
 			nbt.setString("f_yield", rod.getYield(slots[0]) + " / " + rod.yield + " (" + (rod.getEnrichment(slots[0]) * 100) + "%)");
@@ -295,51 +295,51 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 			nbt.setString("f_heat", rod.getCoreHeat(slots[0]) + " / " + rod.getHullHeat(slots[0])  + " / " + rod.meltingPoint);
 		}
 	}
-	
+
 	@Override
 	public void onMelt(int reduce) {
 
 		boolean moderated = this.isModerated();
 		int h = RBMKDials.getColumnHeight(worldObj);
 		reduce = MathHelper.clamp_int(reduce, 1, h);
-		
+
 		if(worldObj.rand.nextInt(3) == 0)
 			reduce++;
-		
+
 		boolean corium = slots[0] != null && slots[0].getItem() instanceof ItemRBMKRod;
-		
-		if(corium && slots[0].getItem() == ModItems.rbmk_fuel_drx) 
-			RBMKBase.digamma = true;
-		
+
+		//if(corium && slots[0].getItem() == ModItems.rbmk_fuel_drx)
+		//	RBMKBase.digamma = true;
+
 		slots[0] = null;
 
 		if(corium) {
-			
+
 			for(int i = h; i >= 0; i--) {
 				worldObj.setBlock(xCoord, yCoord + i, zCoord, ModBlocks.corium_block, 5, 3);
 				worldObj.markBlockForUpdate(xCoord, yCoord + i, zCoord);
 			}
-			
+
 			int count = 1 + worldObj.rand.nextInt(RBMKDials.getColumnHeight(worldObj));
-			
+
 			for(int i = 0; i < count; i++) {
 				spawnDebris(DebrisType.FUEL);
 			}
 		} else {
 			this.standardMelt(reduce);
 		}
-		
+
 		if(moderated) {
-			
+
 			int count = 2 + worldObj.rand.nextInt(2);
-			
+
 			for(int i = 0; i < count; i++) {
 				spawnDebris(DebrisType.GRAPHITE);
 			}
 		}
-		
+
 		spawnDebris(DebrisType.ELEMENT);
-		
+
 		if(this.getBlockMetadata() == RBMKBase.DIR_NORMAL_LID.ordinal() + RBMKBase.offset)
 			spawnDebris(DebrisType.LID);
 	}
@@ -352,9 +352,9 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 	@Override
 	public NBTTagCompound getNBTForConsole() {
 		NBTTagCompound data = new NBTTagCompound();
-		
+
 		if(slots[0] != null && slots[0].getItem() instanceof ItemRBMKRod) {
-			
+
 			ItemRBMKRod rod = ((ItemRBMKRod)slots[0].getItem());
 			data.setDouble("enrichment", rod.getEnrichment(slots[0]));
 			data.setDouble("xenon", rod.getPoison(slots[0]));
@@ -362,7 +362,7 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 			data.setDouble("c_coreHeat", rod.getCoreHeat(slots[0]));
 			data.setDouble("c_maxHeat", rod.meltingPoint);
 		}
-		
+
 		return data;
 	}
 
@@ -392,7 +392,7 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 		slots[0] = null;
 		this.markDirty();
 	}
-	
+
 	// do some opencomputer stuff
 	@Override
 	@Optional.Method(modid = "OpenComputers")
@@ -417,7 +417,7 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 	public Object[] getFluxFast(Context context, Arguments args) {
 		return new Object[] {fluxFast};
 	}
-	
+
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getDepletion(Context context, Arguments args) {

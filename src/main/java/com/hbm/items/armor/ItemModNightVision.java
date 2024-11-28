@@ -4,6 +4,7 @@ import com.hbm.handler.ArmorModHandler;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemArmor;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
@@ -27,15 +28,15 @@ public class ItemModNightVision extends ItemArmorMod {
 	public void addDesc(List list, ItemStack stack, ItemStack armor) {
 		list.add(EnumChatFormatting.YELLOW + I18n.format("item.night_vision.description.in_armor", stack.getDisplayName()));
 	}
-
+//todo: fix dogshit
 	@Override
-	public void modUpdate(EntityLivingBase entity, ItemStack armor) {
-		if(!entity.worldObj.isRemote && entity instanceof EntityPlayer && armor.getItem() instanceof ArmorFSBPowered && ArmorFSBPowered.hasFSBArmor((EntityPlayer) entity)) {
+	public void modUpdate(EntityLivingBase entity, ItemStack armor) { //hopefully should work without being as anal as bob's BS
+		if(!entity.worldObj.isRemote && entity instanceof EntityPlayer && armor.getItem() instanceof ItemArmor) { //((EntityPlayer) entity)
 			entity.addPotionEffect(new PotionEffect(Potion.nightVision.id, 15 * 20, 0));
 
-			if(entity.getRNG().nextInt(100) == 0) {
-				armor.damageItem(1, entity);
-			}
+			//if(entity.getRNG().nextInt(100) == 0) {
+			//	armor.damageItem(1, entity);
+			//}
 		}
 	}
 }

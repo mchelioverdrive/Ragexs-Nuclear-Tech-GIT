@@ -3,8 +3,6 @@ package com.hbm.entity.missile;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.hbm.blocks.ModBlocks;
-import com.hbm.blocks.bomb.BlockTaint;
 import com.hbm.entity.effect.EntityNukeTorex;
 import com.hbm.entity.logic.EntityBalefire;
 import com.hbm.entity.logic.EntityNukeExplosionMK5;
@@ -78,14 +76,14 @@ public class EntityMissileCustom extends EntityMissileBaseNT implements IChunkLo
 			ExplosionLarge.spawnShrapnelShower(worldObj, posX, posY, posZ, motionX, motionY, motionZ, 15, 0.075);
 		}
 	}
-	
+
 	@Override
 	public void onUpdate() {
-		
+
 		if(!worldObj.isRemote) {
 			if(this.hasPropulsion()) this.fuel -= this.consumption;
 		}
-		
+
 		super.onUpdate();
 	}
 
@@ -125,7 +123,7 @@ public class EntityMissileCustom extends EntityMissileBaseNT implements IChunkLo
 		nbt.setInteger("fins", this.dataWatcher.getWatchableObjectInt(11));
 		nbt.setInteger("thruster", this.dataWatcher.getWatchableObjectInt(12));
 	}
-	
+
 	@Override
 	protected void spawnContrail() {
 
@@ -187,17 +185,17 @@ public class EntityMissileCustom extends EntityMissileBaseNT implements IChunkLo
 			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFacNoRad(worldObj, (int) strength, posX, posY, posZ));
 			EntityNukeTorex.statFac(worldObj, posX, posY, posZ, strength);
 			break;
-		case TAINT:
-			int r = (int) strength;
-			for(int i = 0; i < r * 10; i++) {
-				int a = rand.nextInt(r) + (int) posX - (r / 2 - 1);
-				int b = rand.nextInt(r) + (int) posY - (r / 2 - 1);
-				int c = rand.nextInt(r) + (int) posZ - (r / 2 - 1);
-				if(worldObj.getBlock(a, b, c).isReplaceable(worldObj, a, b, c) && BlockTaint.hasPosNeightbour(worldObj, a, b, c)) {
-					worldObj.setBlock(a, b, c, ModBlocks.taint, rand.nextInt(3) + 4, 2);
-				}
-			}
-			break;
+		//case TAINT:
+		//	int r = (int) strength;
+		//	for(int i = 0; i < r * 10; i++) {
+		//		int a = rand.nextInt(r) + (int) posX - (r / 2 - 1);
+		//		int b = rand.nextInt(r) + (int) posY - (r / 2 - 1);
+		//		int c = rand.nextInt(r) + (int) posZ - (r / 2 - 1);
+		//		if(worldObj.getBlock(a, b, c).isReplaceable(worldObj, a, b, c) && BlockTaint.hasPosNeightbour(worldObj, a, b, c)) {
+		//			worldObj.setBlock(a, b, c, ModBlocks.taint, rand.nextInt(3) + 4, 2);
+		//		}
+		//	} DIE
+		//	break;
 		case CLOUD:
 			this.worldObj.playAuxSFX(2002, (int) Math.round(this.posX), (int) Math.round(this.posY), (int) Math.round(this.posZ), 0);
 			ExplosionChaos.spawnChlorine(worldObj, posX - motionX, posY - motionY, posZ - motionZ, 750, 2.5, 2);
@@ -235,7 +233,7 @@ public class EntityMissileCustom extends EntityMissileBaseNT implements IChunkLo
 		if(top == PartSize.SIZE_15 && bottom == PartSize.SIZE_15) return "radar.target.custom15";
 		if(top == PartSize.SIZE_15 && bottom == PartSize.SIZE_20) return "radar.target.custom1520";
 		if(top == PartSize.SIZE_20 && bottom == PartSize.SIZE_20) return "radar.target.custom20";
-		
+
 		return "radar.target.custom";
 	}
 
@@ -251,7 +249,7 @@ public class EntityMissileCustom extends EntityMissileBaseNT implements IChunkLo
 		if(top == PartSize.SIZE_15 && bottom == PartSize.SIZE_15) return IRadarDetectableNT.TIER15;
 		if(top == PartSize.SIZE_15 && bottom == PartSize.SIZE_20) return IRadarDetectableNT.TIER15_20;
 		if(top == PartSize.SIZE_20 && bottom == PartSize.SIZE_20) return IRadarDetectableNT.TIER20;
-		
+
 		return IRadarDetectableNT.TIER1;
 	}
 

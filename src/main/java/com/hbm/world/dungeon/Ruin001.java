@@ -17,7 +17,7 @@ public class Ruin001 extends WorldGenerator {
 	Block Block1 = ModBlocks.brick_concrete;
 	Block Block2 = ModBlocks.brick_concrete_cracked;
 	Block Block3 = ModBlocks.brick_concrete_broken;
-	
+
 	protected Block[] GetValidSpawnBlocks() {
 		return new Block[] {Blocks.grass};
 	}
@@ -51,7 +51,7 @@ public class Ruin001 extends WorldGenerator {
 	}
 
 	public boolean generate(World world, Random rand, int x, int y, int z) {
-		
+
 		int i = rand.nextInt(1);
 
 		if(i == 0)
@@ -63,7 +63,7 @@ public class Ruin001 extends WorldGenerator {
 	}
 
 	public boolean generate_r0(World world, Random rand, int x, int y, int z) {
-		
+
 		if(!LocationIsValidSpawn(world, x, y, z) || !LocationIsValidSpawn(world, x + 12, y, z) || !LocationIsValidSpawn(world, x + 12, y, z + 14) || !LocationIsValidSpawn(world, x, y, z + 14)) {
 		//	return false;
 		}
@@ -313,7 +313,7 @@ public class Ruin001 extends WorldGenerator {
 		world.setBlock(x + 5, y + 3, z + 10, Blocks.air, 0, 3);
 		world.setBlock(x + 6, y + 3, z + 10, Blocks.air, 0, 3);
 		world.setBlock(x + 7, y + 3, z + 10, Blocks.air, 0, 3);
-		world.setBlock(x + 8, y + 3, z + 10, ModBlocks.crashed_balefire, 5, 3);
+		//world.setBlock(x + 8, y + 3, z + 10, ModBlocks.crashed_balefire, 5, 3);
 		world.setBlock(x + 9, y + 3, z + 10, Blocks.air, 0, 3);
 		world.setBlock(x + 10, y + 3, z + 10, Blocks.air, 0, 3);
 		world.setBlock(x + 11, y + 3, z + 10, Blocks.air, 0, 3);

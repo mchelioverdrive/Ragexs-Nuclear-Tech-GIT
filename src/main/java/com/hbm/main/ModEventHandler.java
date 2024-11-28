@@ -34,8 +34,7 @@ import com.hbm.entity.mob.EntityDuck;
 import com.hbm.entity.missile.EntityRideableRocket;
 import com.hbm.entity.missile.EntityRideableRocket.RocketState;
 import com.hbm.entity.mob.EntityCreeperNuclear;
-import com.hbm.entity.mob.EntityQuackos;
-import com.hbm.entity.mob.EntityCreeperTainted;
+
 import com.hbm.entity.projectile.EntityBulletBaseNT;
 import com.hbm.entity.projectile.EntityBurningFOEQ;
 import com.hbm.entity.train.EntityRailCarBase;
@@ -336,13 +335,13 @@ public class ModEventHandler {
 			event.entity.dropItem(ModItems.book_of_, 1);
 		}
 
-		if(event.entity instanceof EntityCreeperTainted && event.source == ModDamageSource.boxcar) {
-
-			for(Object o : event.entity.worldObj.getEntitiesWithinAABB(EntityPlayer.class, event.entity.boundingBox.expand(50, 50, 50))) {
-				EntityPlayer player = (EntityPlayer)o;
-				player.triggerAchievement(MainRegistry.bobHidden);
-			}
-		}
+		//if(event.entity instanceof EntityCreeperTainted && event.source == ModDamageSource.boxcar) {
+//
+		//	for(Object o : event.entity.worldObj.getEntitiesWithinAABB(EntityPlayer.class, event.entity.boundingBox.expand(50, 50, 50))) {
+		//		EntityPlayer player = (EntityPlayer)o;
+		//		player.triggerAchievement(MainRegistry.bobHidden);
+		//	}
+		//}
 
 		if(!event.entityLiving.worldObj.isRemote) {
 
@@ -937,10 +936,10 @@ public class ModEventHandler {
 
 			EntityPlayer player = (EntityPlayer) e;
 
-			if(ArmorUtil.checkArmor(player, ModItems.euphemium_helmet, ModItems.euphemium_plate, ModItems.euphemium_legs, ModItems.euphemium_boots)) {
-				HbmPlayerProps.plink(player, "random.break", 0.5F, 1.0F + e.getRNG().nextFloat() * 0.5F);
-				event.setCanceled(true);
-			}
+			//if(ArmorUtil.checkArmor(player, ModItems.euphemium_helmet, ModItems.euphemium_plate, ModItems.euphemium_legs, ModItems.euphemium_boots)) {
+			//	HbmPlayerProps.plink(player, "random.break", 0.5F, 1.0F + e.getRNG().nextFloat() * 0.5F);
+			//	event.setCanceled(true);
+			//}
 
 			if(player.inventory.armorInventory[2] != null && player.inventory.armorInventory[2].getItem() instanceof ArmorFSB)
 				((ArmorFSB)player.inventory.armorInventory[2].getItem()).handleAttack(event);

@@ -1,10 +1,7 @@
 package com.hbm.blocks.generic;
 
-import java.util.Random;
-
 import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.bomb.BlockDetonatable;
-import com.hbm.blocks.bomb.BlockTaint;
 import com.hbm.blocks.machine.BlockFluidBarrel;
 import com.hbm.entity.item.EntityTNTPrimedBase;
 import com.hbm.explosion.ExplosionThermo;
@@ -60,19 +57,20 @@ public class RedBarrel extends BlockDetonatable {
 			world.newExplosion(entity, x, y, z, 1F, false, false);
 
 			ExplosionThermo.freeze(world, ix, iy, iz, 7);
-		} else if(this == ModBlocks.taint_barrel) {
-			world.newExplosion(entity, x, y, z, 1F, false, false);
-
-			Random rand = world.rand;
-			for(int i = 0; i < 100; i++) {
-				int a = rand.nextInt(9) - 4 + ix;
-				int b = rand.nextInt(9) - 4 + iy;
-				int c = rand.nextInt(9) - 4 + iz;
-				if(world.getBlock(a, b, c).isReplaceable(world, a, b, c) && BlockTaint.hasPosNeightbour(world, a, b, c)) {
-					world.setBlock(a, b, c, ModBlocks.taint, rand.nextInt(3) + 4, 2);
-				}
-			}
 		}
+		//else if(this == ModBlocks.taint_barrel) {
+		//	world.newExplosion(entity, x, y, z, 1F, false, false);
+//
+		//	Random rand = world.rand;
+		//	for(int i = 0; i < 100; i++) {
+		//		int a = rand.nextInt(9) - 4 + ix;
+		//		int b = rand.nextInt(9) - 4 + iy;
+		//		int c = rand.nextInt(9) - 4 + iz;
+		//		if(world.getBlock(a, b, c).isReplaceable(world, a, b, c) && BlockTaint.hasPosNeightbour(world, a, b, c)) {
+		//			world.setBlock(a, b, c, ModBlocks.taint, rand.nextInt(3) + 4, 2);
+		//		}
+		//	}
+		//}
 	}
 
 }

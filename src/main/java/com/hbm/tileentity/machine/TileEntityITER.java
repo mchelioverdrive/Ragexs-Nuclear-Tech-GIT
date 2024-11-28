@@ -332,8 +332,8 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 		//if(slots[1] != null && slots[1].getItem() == ModItems.meteorite_sword_fused)
 		//	out = new BreederRecipe(ModItems.meteorite_sword_baleful, 4000);
 
-		if(slots[1] != null && slots[1].getItem() == Item.getItemFromBlock(ModBlocks.lattice_log))
-			out = new BreederRecipe(ModItems.woodemium_briquette, 4000);
+		//if(slots[1] != null && slots[1].getItem() == Item.getItemFromBlock(ModBlocks.lattice_log))
+		//	out = new BreederRecipe(ModItems.woodemium_briquette, 4000);
 
 		if(out == null) {
 			this.progress = 0;
