@@ -24,9 +24,9 @@ import net.minecraft.world.World;
 public class GunDetonatorFactory {
 
 	public static GunConfiguration getDetonatorConfig() {
-		
+
 		GunConfiguration config = new GunConfiguration();
-		
+
 		config.rateOfFire = 1;
 		config.roundsPerCycle = 1;
 		config.gunMode = GunConfiguration.MODE_NORMAL;
@@ -43,17 +43,17 @@ public class GunDetonatorFactory {
 		config.firingSound = "hbm:weapon.dartShoot";
 		config.reloadSoundEnd = false;
 		config.showAmmo = true;
-		
+
 		config.name = "laserDet";
 		config.manufacturer = EnumGunManufacturer.WESTTEK;
-		
+
 		config.config = new ArrayList();
 		config.config.add(BulletConfigSyncingUtil.DET_BOLT);
-		config.config.add(BulletConfigSyncingUtil.R5_NORMAL_BOLT);
-		config.config.add(BulletConfigSyncingUtil.R5_EXPLOSIVE_BOLT);
-		config.config.add(BulletConfigSyncingUtil.R5_DU_BOLT);
-		config.config.add(BulletConfigSyncingUtil.R5_STAR_BOLT);
-		config.config.add(BulletConfigSyncingUtil.CHL_R5_BOLT);
+		//config.config.add(BulletConfigSyncingUtil.R5_NORMAL_BOLT);
+		//config.config.add(BulletConfigSyncingUtil.R5_EXPLOSIVE_BOLT);
+		//config.config.add(BulletConfigSyncingUtil.R5_DU_BOLT);
+		//config.config.add(BulletConfigSyncingUtil.R5_STAR_BOLT);
+		//config.config.add(BulletConfigSyncingUtil.CHL_R5_BOLT);
 		config.config.add(BulletConfigSyncingUtil.G12_NORMAL);
 		config.config.add(BulletConfigSyncingUtil.G12_INCENDIARY);
 		config.config.add(BulletConfigSyncingUtil.G12_SHRAPNEL);
@@ -72,14 +72,14 @@ public class GunDetonatorFactory {
 		config.config.add(BulletConfigSyncingUtil.NUKE_MIRV_LOW);
 		config.config.add(BulletConfigSyncingUtil.NUKE_MIRV_SAFE);
 		config.config.add(BulletConfigSyncingUtil.NUKE_MIRV_HIGH);
-		
+
 		return config;
 	}
-	
+
 	public static BulletConfiguration getLaserConfig() {
-		
+
 		BulletConfiguration bullet = BulletConfigFactory.standardBulletConfig();
-		
+
 		bullet.ammo = new ComparableStack(Items.redstone);
 		bullet.spread = 0.0F;
 		bullet.maxAge = 100;
@@ -88,9 +88,9 @@ public class GunDetonatorFactory {
 		bullet.leadChance = 0;
 		bullet.doesRicochet = false;
 		bullet.setToBolt(BulletConfiguration.BOLT_LASER);
-		
+
 		bullet.bntImpact = (bulletnt, x, y, z, sideHit) -> {
-				
+
 			World world = bulletnt.worldObj;
 			if(!world.isRemote && y > 0) {
 				Block b = world.getBlock(x, y, z);
@@ -107,7 +107,7 @@ public class GunDetonatorFactory {
 				}
 			}
 		};
-		
+
 		return bullet;
 	}
 }

@@ -639,12 +639,12 @@ public class MainRegistry {
 				return new EntityGrenadeIFNull(p_82499_1_, p_82499_2_.getX(), p_82499_2_.getY(), p_82499_2_.getZ());
 			}
 		});
-		BlockDispenser.dispenseBehaviorRegistry.putObject(ModItems.nuclear_waste_pearl, new BehaviorProjectileDispense() {
-
-			protected IProjectile getProjectileEntity(World world, IPosition position) {
-				return new EntityWastePearl(world, position.getX(), position.getY(), position.getZ());
-			}
-		});
+		//BlockDispenser.dispenseBehaviorRegistry.putObject(ModItems.nuclear_waste_pearl, new BehaviorProjectileDispense() {
+//
+		//	protected IProjectile getProjectileEntity(World world, IPosition position) {
+		//		return new EntityWastePearl(world, position.getX(), position.getY(), position.getZ());
+		//	}
+		//});
 		BlockDispenser.dispenseBehaviorRegistry.putObject(ModItems.stick_dynamite, new BehaviorProjectileDispense() {
 
 			protected IProjectile getProjectileEntity(World world, IPosition position) {

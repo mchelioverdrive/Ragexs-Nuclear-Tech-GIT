@@ -13,7 +13,7 @@ public class ItemAmmoEnums {
 		INCENDIARY("ammo_luna_incendiary"),
 		EXPLOSIVE("ammo_luna_explosive"),
 		DANGER("ammo_luna_danger");
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -37,7 +37,7 @@ public class ItemAmmoEnums {
 		WATER("ammo_fireext"),
 		FOAM("ammo_fireext_foam"),
 		SAND("ammo_fireext_sand");
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -63,7 +63,7 @@ public class ItemAmmoEnums {
 		PHOSPHORUS("ammo_fuel_phosphorus", AmmoItemTrait.PRO_PHOSPHORUS_SPLASH, AmmoItemTrait.PRO_DAMAGE, AmmoItemTrait.PRO_RANGE, AmmoItemTrait.PRO_RANGE, AmmoItemTrait.PRO_ACCURATE1, AmmoItemTrait.NEU_WARCRIME1, AmmoItemTrait.CON_SING_PROJECTILE, AmmoItemTrait.CON_HEAVY_WEAR),
 		VAPORIZER("ammo_fuel_vaporizer", AmmoItemTrait.PRO_PHOSPHORUS, AmmoItemTrait.PRO_FLAMES, AmmoItemTrait.PRO_DAMAGE, AmmoItemTrait.NEU_ERASER, AmmoItemTrait.CON_ACCURACY2, AmmoItemTrait.CON_RANGE2, AmmoItemTrait.CON_HEAVY_WEAR, AmmoItemTrait.CON_LING_FIRE),
 		CHLORINE("ammo_fuel_gas", AmmoItemTrait.PRO_NO_GRAVITY, AmmoItemTrait.PRO_POISON_GAS, AmmoItemTrait.CON_NO_DAMAGE, AmmoItemTrait.CON_NO_FIRE);
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -86,7 +86,7 @@ public class ItemAmmoEnums {
 	public enum AmmoMisc implements IAmmoItemEnum {
 		//LUNA_SNIPER("ammo_lunar", Gun50BMGFactory.getLunaticSabotRound(), AmmoItemTrait.PRO_HEAVY_DAMAGE, AmmoItemTrait.PRO_ACCURATE2, AmmoItemTrait.NEU_HEAVY_METAL),
 		DGK("ammo_dkg");
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -112,7 +112,7 @@ public class ItemAmmoEnums {
 		INCENDIARY("ammo_stinger_rocket_incendiary", HbmCollection.IncendiaryType),
 		NUCLEAR("ammo_stinger_rocket_nuclear", AmmoItemTrait.PRO_NUCLEAR, AmmoItemTrait.CON_SUPER_WEAR),
 		BONES("ammo_stinger_rocket_bones");
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -151,7 +151,7 @@ public class ItemAmmoEnums {
 		PHOSPHORUS("ammo_rocket_phosphorus", HbmCollection.PhosphorusTypeSpecial),
 		CANISTER("ammo_rocket_canister"),
 		DIGAMMA("ammo_rocket_digamma");
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -189,7 +189,7 @@ public class ItemAmmoEnums {
 		TRACER("ammo_grenade_tracer", AmmoItemTrait.NEU_BLANK),
 		KAMPF("ammo_grenade_kampf", AmmoItemTrait.PRO_ROCKET_PROPELLED, AmmoItemTrait.PRO_RADIUS, AmmoItemTrait.PRO_ACCURATE1, AmmoItemTrait.CON_WEAR),
 		LEADBURSTER("ammo_grenade_leadburster", AmmoItemTrait.NEU_LEADBURSTER, AmmoItemTrait.CON_NO_EXPLODE1);
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -223,7 +223,7 @@ public class ItemAmmoEnums {
 		MIRV_SPECIAL("ammo_mirv_special"),
 		BALEFIRE("gun_bf_ammo"),
 		BARREL("ammo_nuke_barrel");
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -247,7 +247,7 @@ public class ItemAmmoEnums {
 		GPS("ammo_dart"),
 		NUCLEAR("ammo_dart_nuclear"),
 		NERF("ammo_dart_nerf");
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -273,7 +273,7 @@ public class ItemAmmoEnums {
 		APFSDS_T("ammo_shell_apfsds_t"),
 		APFSDS_DU("ammo_shell_apfsds_du"),
 		W9("ammo_shell_w9");
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -299,7 +299,7 @@ public class ItemAmmoEnums {
 		DU("ammo_9mm_du", HbmCollection.DUType),
 		CHLOROPHYTE("ammo_9mm_chlorophyte", HbmCollection.ChlorophyteType),
 		ROCKET("ammo_9mm_rocket", AmmoItemTrait.PRO_ROCKET, AmmoItemTrait.NEU_UHH);
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -331,7 +331,7 @@ public class ItemAmmoEnums {
 		TRACER("ammo_762_tracer", AmmoItemTrait.NEU_TRACER),
 		PHOSPHORUS("ammo_762_phosphorus", HbmCollection.PhosphorusType),
 		BLANK("ammo_762_k", AmmoItemTrait.NEU_BLANK);
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -360,7 +360,7 @@ public class ItemAmmoEnums {
 		STOCK("ammo_75bolt"),
 		INCENDIARY("ammo_75bolt_incendiary"),
 		HE("ammo_75bolt_he");
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -381,12 +381,12 @@ public class ItemAmmoEnums {
 	}
 
 	public enum Ammo5mm implements IAmmoItemEnum {
-		STOCK("ammo_5mm"),
-		EXPLOSIVE("ammo_5mm_explosive", HbmCollection.ExplosiveType),
-		DU("ammo_5mm_du", HbmCollection.DUType),
-		STAR("ammo_5mm_star", HbmCollection.StarmetalType),
-		CHLOROPHYTE("ammo_5mm_chlorophyte", HbmCollection.ChlorophyteType);
-		
+		STOCK("ammo_5mm");
+		//EXPLOSIVE("ammo_5mm_explosive", HbmCollection.ExplosiveType),
+		//DU("ammo_5mm_du", HbmCollection.DUType),
+		//STAR("ammo_5mm_star", HbmCollection.StarmetalType),
+		//CHLOROPHYTE("ammo_5mm_chlorophyte", HbmCollection.ChlorophyteType);
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -428,7 +428,7 @@ public class ItemAmmoEnums {
 		FLECHETTE_CHLOROPHYTE("ammo_556_flechette_chlorophyte", HbmCollection.ChlorophyteType),
 		FLECHETTE_SLEEK("ammo_556_flechette_sleek", AmmoItemTrait.NEU_MASKMAN_METEORITE),
 		K("ammo_556_k", AmmoItemTrait.NEU_BLANK);
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -454,19 +454,19 @@ public class ItemAmmoEnums {
 	}
 
 	public enum Ammo50BMG implements IAmmoItemEnum {
-		STOCK("ammo_50bmg"),
-		INCENDIARY("ammo_50bmg_incendiary", HbmCollection.IncendiaryType),
-		PHOSPHORUS("ammo_50bmg_phosphorus", HbmCollection.PhosphorusType),
-		EXPLOSIVE("ammo_50bmg_explosive", HbmCollection.ExplosiveType),
-		AP("ammo_50bmg_ap", HbmCollection.APType),
-		DU("ammo_50bmg_du", HbmCollection.DUType),
-		STAR("ammo_50bmg_star", HbmCollection.StarmetalType),
-		CHLOROPHYTE("ammo_50bmg_chlorophyte", HbmCollection.ChlorophyteType),
-		SLEEK("ammo_50bmg_sleek", AmmoItemTrait.NEU_MASKMAN_METEORITE),
-		FLECHETTE("ammo_50bmg_flechette", AmmoItemTrait.PRO_DAMAGE),
-		FLECHETTE_AM("ammo_50bmg_flechette_am", AmmoItemTrait.PRO_DAMAGE, AmmoItemTrait.NEU_UHH),
-		FLECHETTE_PO("ammo_50bmg_flechette_po", AmmoItemTrait.PRO_DAMAGE, AmmoItemTrait.NEU_UHH);
-		
+		STOCK("ammo_50bmg");
+		//INCENDIARY("ammo_50bmg_incendiary", HbmCollection.IncendiaryType),
+		//PHOSPHORUS("ammo_50bmg_phosphorus", HbmCollection.PhosphorusType),
+		//EXPLOSIVE("ammo_50bmg_explosive", HbmCollection.ExplosiveType),
+		//AP("ammo_50bmg_ap", HbmCollection.APType),
+		//DU("ammo_50bmg_du", HbmCollection.DUType),
+		//STAR("ammo_50bmg_star", HbmCollection.StarmetalType),
+		//CHLOROPHYTE("ammo_50bmg_chlorophyte", HbmCollection.ChlorophyteType),
+		//SLEEK("ammo_50bmg_sleek", AmmoItemTrait.NEU_MASKMAN_METEORITE),
+		//FLECHETTE("ammo_50bmg_flechette", AmmoItemTrait.PRO_DAMAGE),
+		//FLECHETTE_AM("ammo_50bmg_flechette_am", AmmoItemTrait.PRO_DAMAGE, AmmoItemTrait.NEU_UHH),
+		//FLECHETTE_PO("ammo_50bmg_flechette_po", AmmoItemTrait.PRO_DAMAGE, AmmoItemTrait.NEU_UHH);
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -497,7 +497,7 @@ public class ItemAmmoEnums {
 		DU("ammo_50ae_du", HbmCollection.DUType),
 		STAR("ammo_50ae_star", HbmCollection.StarmetalType),
 		CHLOROPHYTE("ammo_50ae_chlorophyte", HbmCollection.ChlorophyteType);
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -569,7 +569,7 @@ public class ItemAmmoEnums {
 		STOCK("ammo_45"),
 		AP("ammo_45_ap", HbmCollection.APType),
 		DU("ammo_45_du", HbmCollection.DUType);
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -605,7 +605,7 @@ public class ItemAmmoEnums {
 		BJ("ammo_44_bj", AmmoItemTrait.NEU_BOAT, AmmoItemTrait.CON_DAMAGE),
 		SILVER("ammo_44_silver", AmmoItemTrait.NEU_BUILDING, AmmoItemTrait.CON_DAMAGE),
 		ROCKET("ammo_44_rocket", AmmoItemTrait.PRO_ROCKET, AmmoItemTrait.NEU_UHH);
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -640,7 +640,7 @@ public class ItemAmmoEnums {
 		STEEL("gun_revolver_cursed_ammo"),
 		NIGHTMARE1("gun_revolver_nightmare_ammo"),
 		NIGHTMARE2("gun_revolver_nightmare2_ammo");
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -664,7 +664,7 @@ public class ItemAmmoEnums {
 		STOCK("ammo_22lr"),
 		AP("ammo_22lr_ap", HbmCollection.APType),
 		CHLOROPHYTE("ammo_22lr_chlorophyte", HbmCollection.ChlorophyteType);
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -700,7 +700,7 @@ public class ItemAmmoEnums {
 		SHOCK("ammo_20gauge_shock", AmmoItemTrait.PRO_DAMAGE, AmmoItemTrait.PRO_STUNNING, AmmoItemTrait.PRO_EMP, AmmoItemTrait.NEU_NO_BOUNCE, AmmoItemTrait.CON_HEAVY_WEAR),
 		WITHER("ammo_20gauge_wither", AmmoItemTrait.PRO_DAMAGE, AmmoItemTrait.PRO_WITHERING),
 		SLEEK("ammo_20gauge_sleek", AmmoItemTrait.NEU_MASKMAN_FLECHETTE);
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -733,7 +733,7 @@ public class ItemAmmoEnums {
 		MARAUDER("ammo_12gauge_marauder", AmmoItemTrait.PRO_MARAUDER, AmmoItemTrait.NEU_NO_CON),
 		SLEEK("ammo_12gauge_sleek", AmmoItemTrait.NEU_MASKMAN_FLECHETTE),
 		PERCUSSION("ammo_12gauge_percussion", AmmoItemTrait.PRO_PERCUSSION, AmmoItemTrait.CON_NO_PROJECTILE);
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 
@@ -757,7 +757,7 @@ public class ItemAmmoEnums {
 		STOCK("ammo_coilgun"),
 		DU("ammo_coilgun_du", AmmoItemTrait.PRO_HEAVY_DAMAGE, AmmoItemTrait.CON_HEAVY_WEAR),
 		RUBBER("ammo_coilgun_rubber", AmmoItemTrait.NEU_MORE_BOUNCY, AmmoItemTrait.CON_DAMAGE);
-		
+
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;
 

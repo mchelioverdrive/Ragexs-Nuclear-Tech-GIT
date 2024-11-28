@@ -34,7 +34,7 @@ public class EntityCyberCrab extends EntityMob implements IRangedAttackMob, IRad
 		this.setSize(0.75F, 0.35F);
 		this.getNavigator().setAvoidsWater(true);
 
-		if(!(this instanceof EntityTaintCrab))
+		//if(!(this instanceof EntityTaintCrab))
 			this.tasks.addTask(0, new EntityAIPanic(this, 0.75D));
 
 		this.tasks.addTask(1, new EntityAIWander(this, 0.5F));
@@ -114,9 +114,9 @@ public class EntityCyberCrab extends EntityMob implements IRangedAttackMob, IRad
 		if(this.getHealth() <= 0) {
 			this.setDead();
 
-			if(this instanceof EntityTaintCrab)
-				worldObj.createExplosion(this, this.posX, this.posY, this.posZ, 3F, false);
-			else
+			//if(this instanceof EntityTaintCrab)
+			//	worldObj.createExplosion(this, this.posX, this.posY, this.posZ, 3F, false);
+			//else
 				worldObj.createExplosion(this, this.posX, this.posY, this.posZ, 0.1F, false);
 		}
 	}

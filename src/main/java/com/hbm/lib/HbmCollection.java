@@ -9,7 +9,7 @@ import com.hbm.handler.BulletConfigSyncingUtil;
 import com.hbm.items.weapon.ItemAmmo.AmmoItemTrait;
 
 public class HbmCollection {
-	
+
 	public static final Set<AmmoItemTrait> APType = ImmutableSet.of(AmmoItemTrait.PRO_DAMAGE, AmmoItemTrait.CON_WEAR);
 	public static final Set<AmmoItemTrait> FlechetteType = ImmutableSet.of(AmmoItemTrait.PRO_DAMAGE, AmmoItemTrait.NEU_LESS_BOUNCY, AmmoItemTrait.CON_WEAR);
 	public static final Set<AmmoItemTrait> IncendiaryType = ImmutableSet.of(AmmoItemTrait.PRO_INCENDIARY, AmmoItemTrait.CON_WEAR);
@@ -19,7 +19,7 @@ public class HbmCollection {
 	public static final Set<AmmoItemTrait> DUType = ImmutableSet.of(AmmoItemTrait.PRO_HEAVY_DAMAGE, AmmoItemTrait.NEU_HEAVY_METAL, AmmoItemTrait.CON_HEAVY_WEAR);
 	public static final Set<AmmoItemTrait> StarmetalType = ImmutableSet.of(AmmoItemTrait.PRO_HEAVY_DAMAGE, AmmoItemTrait.NEU_STARMETAL, AmmoItemTrait.CON_HEAVY_WEAR);
 	public static final Set<AmmoItemTrait> ChlorophyteType = ImmutableSet.of(AmmoItemTrait.PRO_DAMAGE, AmmoItemTrait.PRO_WEAR, AmmoItemTrait.PRO_PENETRATION, AmmoItemTrait.NEU_CHLOROPHYTE, AmmoItemTrait.NEU_HOMING, AmmoItemTrait.CON_SPEED);
-	
+
 	/// BULLET COLLECTIONS
 	// SHOTGUNS
 	/** 12 GAUGE **/
@@ -45,9 +45,9 @@ public class HbmCollection {
 	public static final List<Integer> acp45 = ImmutableList.of(BulletConfigSyncingUtil.ACP_45, BulletConfigSyncingUtil.ACP_45_AP, BulletConfigSyncingUtil.ACP_45_DU);
 	// RIFLE CALIBER
 	/** .50 BROWNING MACHINE GUN **/
-	public static final List<Integer> bmg50 = ImmutableList.of(BulletConfigSyncingUtil.BMG50_NORMAL, BulletConfigSyncingUtil.BMG50_INCENDIARY, BulletConfigSyncingUtil.BMG50_PHOSPHORUS, BulletConfigSyncingUtil.BMG50_EXPLOSIVE, BulletConfigSyncingUtil.BMG50_AP, BulletConfigSyncingUtil.BMG50_DU, BulletConfigSyncingUtil.BMG50_STAR, BulletConfigSyncingUtil.CHL_BMG50, BulletConfigSyncingUtil.BMG50_SLEEK);
+	public static final List<Integer> bmg50 = ImmutableList.of(BulletConfigSyncingUtil.BMG50_NORMAL);
 	/** .50 BROWNING MACHINE GUN (FLECHETTE) **/
-	public static final List<Integer> bmg50Flechette = ImmutableList.of(BulletConfigSyncingUtil.BMG50_FLECHETTE_AM, BulletConfigSyncingUtil.BMG50_FLECHETTE_NORMAL, BulletConfigSyncingUtil.BMG50_FLECHETTE_PO);
+	//public static final List<Integer> bmg50Flechette = ImmutableList.of(BulletConfigSyncingUtil.BMG50_FLECHETTE_AM, BulletConfigSyncingUtil.BMG50_FLECHETTE_NORMAL, BulletConfigSyncingUtil.BMG50_FLECHETTE_PO);
 	/** 5.56MMx45 NATO (BASIC) **/
 	public static final List<Integer> r556 = ImmutableList.of(BulletConfigSyncingUtil.R556_NORMAL, BulletConfigSyncingUtil.R556_TRACER, BulletConfigSyncingUtil.R556_PHOSPHORUS, BulletConfigSyncingUtil.R556_AP, BulletConfigSyncingUtil.R556_DU, BulletConfigSyncingUtil.R556_STAR, BulletConfigSyncingUtil.CHL_R556, BulletConfigSyncingUtil.R556_SLEEK, BulletConfigSyncingUtil.R556_K, BulletConfigSyncingUtil.R556_GOLD);
 	/** 5.56MMx45 NATO (FLECHETTE) **/
@@ -57,9 +57,10 @@ public class HbmCollection {
 	public static final List<Integer> r762_hs = ImmutableList.of(BulletConfigSyncingUtil.R762_NORMAL_HS, BulletConfigSyncingUtil.R762_PHOSPHORUS_HS, BulletConfigSyncingUtil.R762_AP_HS, BulletConfigSyncingUtil.R762_DU_HS, BulletConfigSyncingUtil.R762_TRACER_HS, BulletConfigSyncingUtil.R762_K_HS);
 
 	/** 5MM **/
-	public static final List<Integer> r5 = ImmutableList.of(BulletConfigSyncingUtil.R5_NORMAL, BulletConfigSyncingUtil.R5_EXPLOSIVE, BulletConfigSyncingUtil.R5_DU, BulletConfigSyncingUtil.R5_STAR, BulletConfigSyncingUtil.CHL_R5);
+	public static final List<Integer> r5 = ImmutableList.of(BulletConfigSyncingUtil.R5_NORMAL);
 	/** 5MM LACUNAE **/
-	public static final List<Integer> r5Bolt = ImmutableList.of(BulletConfigSyncingUtil.R5_NORMAL_BOLT, BulletConfigSyncingUtil.R5_EXPLOSIVE_BOLT, BulletConfigSyncingUtil.R5_DU_BOLT, BulletConfigSyncingUtil.R5_STAR_BOLT, BulletConfigSyncingUtil.CHL_R5_BOLT);
+	//todo: check that this isnt causing bs
+	public static final List<Integer> r5Bolt = ImmutableList.of(BulletConfigSyncingUtil.R5_NORMAL_BOLT);
 	// MISC
 	/** .75 **/
 	public static final List<Integer> b75 = ImmutableList.of(BulletConfigSyncingUtil.B75_NORMAL, BulletConfigSyncingUtil.B75_INCENDIARY, BulletConfigSyncingUtil.B75_HE);
@@ -75,7 +76,7 @@ public class HbmCollection {
 	public static final List<Integer> grenade = ImmutableList.of(BulletConfigSyncingUtil.GRENADE_NORMAL, BulletConfigSyncingUtil.GRENADE_HE, BulletConfigSyncingUtil.GRENADE_INCENDIARY, BulletConfigSyncingUtil.GRENADE_PHOSPHORUS, BulletConfigSyncingUtil.GRENADE_CHEMICAL, BulletConfigSyncingUtil.GRENADE_CONCUSSION, BulletConfigSyncingUtil.GRENADE_FINNED, BulletConfigSyncingUtil.GRENADE_SLEEK, BulletConfigSyncingUtil.GRENADE_NUCLEAR, BulletConfigSyncingUtil.GRENADE_TRACER, BulletConfigSyncingUtil.GRENADE_KAMPF, BulletConfigSyncingUtil.GRENADE_LEADBURSTER);
 	/** 84MM ROCKET **/
 	public static final List<Integer> rocket = ImmutableList.of(BulletConfigSyncingUtil.ROCKET_NORMAL, BulletConfigSyncingUtil.ROCKET_HE, BulletConfigSyncingUtil.ROCKET_INCENDIARY, BulletConfigSyncingUtil.ROCKET_PHOSPHORUS, BulletConfigSyncingUtil.ROCKET_SHRAPNEL, BulletConfigSyncingUtil.ROCKET_EMP, BulletConfigSyncingUtil.ROCKET_GLARE, BulletConfigSyncingUtil.ROCKET_TOXIC, BulletConfigSyncingUtil.ROCKET_CANISTER, BulletConfigSyncingUtil.ROCKET_SLEEK, BulletConfigSyncingUtil.ROCKET_NUKE, BulletConfigSyncingUtil.ROCKET_CHAINSAW);
-		
+
 	/// FREQUENTLY USED TRANSLATION KEYS
 	// GUN MANUFACTURERS
 	public static enum EnumGunManufacturer {
@@ -173,12 +174,12 @@ public class HbmCollection {
 		WINCHESTER,
 		/**Winchester Repeating Arms Company / Big MT**/
 		WINCHESTER_BIGMT;
-	
+
 		public String getKey() {
 			return "gun.make." + toString();
 		}
 	}
-	
+
 	// GUN DETAILS
 	public static final String ammo = "desc.item.gun.ammo";
 	public static final String ammoMag = "desc.item.gun.ammoMag";

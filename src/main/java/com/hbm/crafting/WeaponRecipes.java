@@ -172,7 +172,7 @@ public class WeaponRecipes {
 		//TODO: somehow add more variance, 4 gauge is still missing
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.ammo_22lr, 16), new Object[] { ModItems.nitra_small });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.ammo_9mm, 16), new Object[] { ModItems.nitra_small, ModItems.nitra_small });
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.ammo_5mm, 16), new Object[] { ModItems.nitra_small, ModItems.nitra_small, ModItems.nitra_small });
+		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.ammo_5mm, 16), new Object[] { ModItems.nitra_small, ModItems.nitra_small, ModItems.nitra_small });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.ammo_357, 16, Ammo357Magnum.LEAD.ordinal()), new Object[] { ModItems.nitra, ModItems.nitra_small });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.ammo_44, 16), new Object[] { ModItems.nitra, ModItems.nitra_small, ModItems.nitra_small });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.ammo_45, 16), new Object[] { ModItems.nitra, ModItems.nitra_small, ModItems.nitra_small, ModItems.nitra_small });
@@ -181,7 +181,7 @@ public class WeaponRecipes {
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.ammo_20gauge, 16), new Object[] { ModItems.nitra, ModItems.nitra, ModItems.nitra_small, ModItems.nitra_small });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.ammo_12gauge, 16), new Object[] { ModItems.nitra, ModItems.nitra, ModItems.nitra });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.ammo_762, 16), new Object[] { ModItems.nitra, ModItems.nitra, ModItems.nitra, ModItems.nitra_small });
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.ammo_50bmg, 16), new Object[] { ModItems.nitra, ModItems.nitra, ModItems.nitra, ModItems.nitra });
+		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.ammo_50bmg, 16), new Object[] { ModItems.nitra, ModItems.nitra, ModItems.nitra, ModItems.nitra });
 
 		//Ammo assemblies
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.pellet_flechette, 1), new Object[] { " L ", " L ", "LLL", 'L', PB.nugget() });
@@ -358,7 +358,7 @@ public class WeaponRecipes {
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.grenade_burst, 1), new Object[] { "GGG", "GCG", "GGG", 'G', ModItems.grenade_breach, 'C', ModItems.grenade_generic });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.grenade_cloud), new Object[] { "SPS", "CAC", "SPS", 'S', S.dust(), 'P', ModItems.powder_poison, 'C', CU.dust(), 'A', new ItemStack(ModItems.fluid_tank_full, 1, Fluids.PEROXIDE.getID()) });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.grenade_pink_cloud), new Object[] { " S ", "ECE", " E ", 'S', ModItems.powder_spark_mix, 'E', ModItems.powder_magic, 'C', ModItems.grenade_cloud });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.nuclear_waste_pearl), new Object[] { "WWW", "WFW", "WWW", 'W', ModItems.nuclear_waste_tiny, 'F', ModBlocks.block_fallout });
+		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.nuclear_waste_pearl), new Object[] { "WWW", "WFW", "WWW", 'W', ModItems.nuclear_waste_tiny, 'F', ModBlocks.block_fallout });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.grenade_kyiv), new Object[] { ModItems.canister_napalm, ModItems.bottle2_empty, ModItems.rag });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.disperser_canister_empty, 4), new Object[] { " P ", "PGP", " P ", 'P', ANY_HARDPLASTIC.ingot(), 'G', ModBlocks.glass_boron });
 

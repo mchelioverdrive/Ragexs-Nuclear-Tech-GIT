@@ -166,9 +166,9 @@ public class ItemGrenade extends Item {
 			if (this == ModItems.grenade_if_null) {
 				p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFNull(p_77659_2_, p_77659_3_));
 			}
-			if (this == ModItems.nuclear_waste_pearl) {
-				p_77659_2_.spawnEntityInWorld(new EntityWastePearl(p_77659_2_, p_77659_3_));
-			}
+			//if (this == ModItems.nuclear_waste_pearl) {
+			//	p_77659_2_.spawnEntityInWorld(new EntityWastePearl(p_77659_2_, p_77659_3_));
+			//}
 			if (this == ModItems.stick_dynamite) {
 				p_77659_2_.spawnEntityInWorld(new EntityGrenadeDynamite(p_77659_2_, p_77659_3_));
 			}

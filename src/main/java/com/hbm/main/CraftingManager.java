@@ -229,15 +229,15 @@ public class CraftingManager {
 		addShapelessAuto(new ItemStack(Items.string, 3), new Object[] { DictFrame.fromOne(ModBlocks.plant_flower, EnumFlowerType.WEED) });
 		addRecipeAuto(new ItemStack(Items.paper, 3), new Object[] { "SSS", 'S', ModItems.powder_sawdust });
 
-		ItemStack infinity = new ItemStack(Items.enchanted_book);
-		EnchantmentUtil.addEnchantment(infinity, Enchantment.infinity, 1);
-		addRecipeAuto(infinity, new Object[] { "SBS", "BDB", "SBS", 'S', ModItems.ammo_50bmg.stackFromEnum(Ammo50BMG.STAR), 'B', ModItems.ammo_5mm.stackFromEnum(Ammo5mm.STAR), 'D', ModItems.powder_magic });
-		ItemStack unbreaking = new ItemStack(Items.enchanted_book);
-		EnchantmentUtil.addEnchantment(unbreaking, Enchantment.unbreaking, 3);
-		addRecipeAuto(unbreaking, new Object[] { "SBS", "BDB", "SBS", 'S', BIGMT.ingot(), 'B', ModItems.plate_armor_lunar, 'D', ModItems.powder_magic });
-		ItemStack thorns = new ItemStack(Items.enchanted_book);
-		EnchantmentUtil.addEnchantment(thorns, Enchantment.thorns, 3);
-		addRecipeAuto(thorns, new Object[] { "SBS", "BDB", "SBS", 'S', ModBlocks.barbed_wire, 'B', ModBlocks.spikes, 'D', ModItems.powder_magic });
+		//ItemStack infinity = new ItemStack(Items.enchanted_book);
+		//EnchantmentUtil.addEnchantment(infinity, Enchantment.infinity, 1);
+		//addRecipeAuto(infinity, new Object[] { "SBS", "BDB", "SBS", 'S', ModItems.ammo_50bmg.stackFromEnum(Ammo50BMG.STAR), 'B', ModItems.ammo_5mm.stackFromEnum(Ammo5mm.STAR), 'D', ModItems.powder_magic });
+		//ItemStack unbreaking = new ItemStack(Items.enchanted_book);
+		//EnchantmentUtil.addEnchantment(unbreaking, Enchantment.unbreaking, 3);
+		//addRecipeAuto(unbreaking, new Object[] { "SBS", "BDB", "SBS", 'S', BIGMT.ingot(), 'B', ModItems.plate_armor_lunar, 'D', ModItems.powder_magic });
+		//ItemStack thorns = new ItemStack(Items.enchanted_book);
+		//EnchantmentUtil.addEnchantment(thorns, Enchantment.thorns, 3);
+		//addRecipeAuto(thorns, new Object[] { "SBS", "BDB", "SBS", 'S', ModBlocks.barbed_wire, 'B', ModBlocks.spikes, 'D', ModItems.powder_magic });
 
 		addRecipeAuto(new ItemStack(ModItems.wrench, 1), new Object[] { " S ", " IS", "I  ", 'S', STEEL.ingot(), 'I', IRON.ingot() });
 		addRecipeAuto(new ItemStack(ModItems.wrench_flipped, 1), new Object[] { "S", "D", "W", 'S', Items.iron_sword, 'D', ModItems.ducttape, 'W', ModItems.wrench });
