@@ -42,14 +42,14 @@ public class MobConfig {
 	public static double swarmScalingMult = 1.2;
 	public static int sootStep = 50;
 
-	public static int[] glyphidChance = {50, -40, 0};
-	public static int[] brawlerChance = {5, 35, 1};
-	public static int[] bombardierChance = {20, -15, 1};
-	public static int[] blasterChance = {-15, 40, 5};
-	public static int[] diggerChance = {-15, 25, 5};
-	public static int[] behemothChance = {-30, 45, 10};
-	public static int[] brendaChance = {-50, 60, 20};
-	public static int[] johnsonChance = {-50, 60, 50};
+	//public static int[] glyphidChance = {50, -40, 0};
+	//public static int[] brawlerChance = {5, 35, 1};
+	//public static int[] bombardierChance = {20, -15, 1};
+	//public static int[] blasterChance = {-15, 40, 5};
+	//public static int[] diggerChance = {-15, 25, 5};
+	//public static int[] behemothChance = {-30, 45, 10};
+	//public static int[] brendaChance = {-50, 60, 20};
+	//public static int[] johnsonChance = {-50, 60, 50};
 
 	public static double spawnMax = 50;
 	public static boolean enableInfestation = false;
@@ -129,14 +129,14 @@ public class MobConfig {
 		sootStep =  CommonConfig.createConfigInt(config, CATEGORY, "12.GS03_sootStep", "The soot amount the above multiplier applies to the swarm size", 50);
 		swarmCooldown =  CommonConfig.createConfigInt(config, CATEGORY, "12.GS04_swarmCooldown", "How often do glyphid swarms spawn, in seconds", 120) * 20;
 
-		glyphidChance = CommonConfig.createConfigIntList(config, CATEGORY, "12.GC01_glyphidChance", "Base Spawn chance and soot modifier for a glyphid grunt", new int[]{50, -45, 0});
-		brawlerChance = CommonConfig.createConfigIntList(config, CATEGORY, "12.GC02_brawlerChance", "Base Spawn chance and soot modifier for a glyphid brawler", new int[]{10, 30, 1});
-		bombardierChance = CommonConfig.createConfigIntList(config, CATEGORY, "12.GC03_bombardierChance", "Base Spawn chance and soot modifier for a glyphid bombardier", new int[]{20, -15, 1});
-		blasterChance = CommonConfig.createConfigIntList(config, CATEGORY, "12.GC04_blasterChance", "Base Spawn chance and soot modifier for a glyphid blaster", new int[]{-5, 40, 5});
-		diggerChance = CommonConfig.createConfigIntList(config, CATEGORY, "12.GC05_diggerChance", "Base Spawn chance and soot modifier for a glyphid digger", new int[]{-15, 25, 5});
-		behemothChance = CommonConfig.createConfigIntList(config, CATEGORY, "12.GC06_behemothChance", "Base Spawn chance and soot modifier for a glyphid behemoth", new int[]{-30, 45, 10});
-		brendaChance = CommonConfig.createConfigIntList(config, CATEGORY, "12.GC07_brendaChance", "Base Spawn chance and soot modifier for a glyphid brenda", new int[]{-50, 60, 20});
-		johnsonChance = CommonConfig.createConfigIntList(config, CATEGORY, "12.GC08_johnsonChance", "Base Spawn chance and soot modifier for Big Man Johnson", new int[]{-50, 60, 50});
+		//glyphidChance = CommonConfig.createConfigIntList(config, CATEGORY, "12.GC01_glyphidChance", "Base Spawn chance and soot modifier for a glyphid grunt", new int[]{50, -45, 0});
+		//brawlerChance = CommonConfig.createConfigIntList(config, CATEGORY, "12.GC02_brawlerChance", "Base Spawn chance and soot modifier for a glyphid brawler", new int[]{10, 30, 1});
+		//bombardierChance = CommonConfig.createConfigIntList(config, CATEGORY, "12.GC03_bombardierChance", "Base Spawn chance and soot modifier for a glyphid bombardier", new int[]{20, -15, 1});
+		//blasterChance = CommonConfig.createConfigIntList(config, CATEGORY, "12.GC04_blasterChance", "Base Spawn chance and soot modifier for a glyphid blaster", new int[]{-5, 40, 5});
+		//diggerChance = CommonConfig.createConfigIntList(config, CATEGORY, "12.GC05_diggerChance", "Base Spawn chance and soot modifier for a glyphid digger", new int[]{-15, 25, 5});
+		//behemothChance = CommonConfig.createConfigIntList(config, CATEGORY, "12.GC06_behemothChance", "Base Spawn chance and soot modifier for a glyphid behemoth", new int[]{-30, 45, 10});
+		//brendaChance = CommonConfig.createConfigIntList(config, CATEGORY, "12.GC07_brendaChance", "Base Spawn chance and soot modifier for a glyphid brenda", new int[]{-50, 60, 20});
+		//johnsonChance = CommonConfig.createConfigIntList(config, CATEGORY, "12.GC08_johnsonChance", "Base Spawn chance and soot modifier for Big Man Johnson", new int[]{-50, 60, 50});
 
 		String rampantDesc = "Rampant Mode changes glyphid behavior and spawning to be more aggressive, changes include:\n"
 				+ "\n"
@@ -173,9 +173,9 @@ public class MobConfig {
 			if(pollutionMult == 1) {
 				pollutionMult = 3;
 			}
-			if (bombardierChance[2] == 1){
-				bombardierChance[2] = 0;
-			}
+			//if (bombardierChance[2] == 1){
+			//	bombardierChance[2] = 0;
+			//}
 			RadiationConfig.sootFogThreshold *= pollutionMult;
 		}
 	}

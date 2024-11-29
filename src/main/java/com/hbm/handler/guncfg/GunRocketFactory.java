@@ -20,11 +20,11 @@ import net.minecraft.block.material.Material;
 import net.minecraft.world.World;
 
 public class GunRocketFactory {
-	
+
 	public static GunConfiguration getGustavConfig() {
-		
+
 		GunConfiguration config = new GunConfiguration();
-		
+
 		config.rateOfFire = 30;
 		config.roundsPerCycle = 1;
 		config.gunMode = GunConfiguration.MODE_NORMAL;
@@ -38,34 +38,34 @@ public class GunRocketFactory {
 		config.firingSound = "hbm:weapon.rpgShoot";
 		config.reloadSound = GunConfiguration.RSOUND_LAUNCHER;
 		config.reloadSoundEnd = false;
-		
+
 		config.name = "gustav";
 		config.manufacturer = EnumGunManufacturer.SAAB;
 		config.comment.add("Fun fact of the day: Recoilless");
 		config.comment.add("rifles don't actually fire rockets.");
-		
+
 		config.config = new ArrayList<Integer>();
 		config.config.add(BulletConfigSyncingUtil.ROCKET_NORMAL);
 		config.config.add(BulletConfigSyncingUtil.ROCKET_HE);
 		config.config.add(BulletConfigSyncingUtil.ROCKET_INCENDIARY);
 		config.config.add(BulletConfigSyncingUtil.ROCKET_PHOSPHORUS);
 		config.config.add(BulletConfigSyncingUtil.ROCKET_SHRAPNEL);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_EMP);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_EMP);
 		config.config.add(BulletConfigSyncingUtil.ROCKET_GLARE);
 		config.config.add(BulletConfigSyncingUtil.ROCKET_TOXIC);
 		config.config.add(BulletConfigSyncingUtil.ROCKET_CANISTER);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_SLEEK);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_NUKE);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_CHAINSAW);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_SLEEK);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_NUKE);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_CHAINSAW);
 		config.durability = 140;
-		
+
 		return config;
 	}
-	
+
 	public static GunConfiguration getQuadroConfig() {
-		
+
 		GunConfiguration config = new GunConfiguration();
-		
+
 		config.rateOfFire = 5;
 		config.roundsPerCycle = 1;
 		config.gunMode = GunConfiguration.MODE_NORMAL;
@@ -79,14 +79,14 @@ public class GunRocketFactory {
 		config.firingSound = "hbm:weapon.rpgShoot";
 		config.reloadSound = "hbm:weapon.quadroReload";
 		config.reloadSoundEnd = false;
-		
+
 		config.animations.put(AnimType.CYCLE, new BusAnimation()
 				.addBus("QUADRO_RECOIL", new BusAnimationSequence()
 						.addKeyframePosition(0, 0, -0.5, 50)
 						.addKeyframePosition(0, 0, 0, 50)
 						)
 				);
-		
+
 		config.animations.put(AnimType.RELOAD, new BusAnimation()
 				.addBus("QUADRO_RELOAD_ROTATE", new BusAnimationSequence()
 						.addKeyframePosition(0, 0, 60, 750)
@@ -101,14 +101,14 @@ public class GunRocketFactory {
 						.addKeyframePosition(0, 0, 0, 750)
 						)
 				);
-		
+
 		config.name = "quadro";
 		config.manufacturer = EnumGunManufacturer.MANN;
 		config.comment.add("For the next three hundred years, people who needed to get to the second");
 		config.comment.add("floor used the only method available to them, which was rocket jumping.");
 		config.comment.add("This persisted until 1857, when the young bearded inventor named");
 		config.comment.add("President Abraham Lincoln invented stairs.");
-		
+
 		config.config = new ArrayList<Integer>();
 		config.config.add(BulletConfigSyncingUtil.ROCKET_NORMAL_LASER);
 		config.config.add(BulletConfigSyncingUtil.ROCKET_HE_LASER);
@@ -123,82 +123,82 @@ public class GunRocketFactory {
 		config.config.add(BulletConfigSyncingUtil.ROCKET_NUKE_LASER);
 		config.config.add(BulletConfigSyncingUtil.ROCKET_CHAINSAW_LASER);
 		config.durability = 500;
-		
+
 		return config;
 	}
-	
+
 	public static GunConfiguration getKarlConfig() {
-		
+
 		GunConfiguration config = getGustavConfig();
-		
+
 		config.reloadDuration = 20;
-		
+
 		config.name = "karl";
 		config.manufacturer = EnumGunManufacturer.UNKNOWN;
 		config.comment.clear();
-		
+
 		config.config = new ArrayList<Integer>();
 		config.config.add(BulletConfigSyncingUtil.ROCKET_HE);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_EMP);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_SLEEK);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_EMP);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_SLEEK);
 		config.config.add(BulletConfigSyncingUtil.ROCKET_TOXIC);
 		config.config.add(BulletConfigSyncingUtil.ROCKET_CANISTER);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_NUKE);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_CHAINSAW);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_NUKE);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_CHAINSAW);
 		config.config.add(BulletConfigSyncingUtil.ROCKET_ERROR);
 		config.durability = 500;
-		
+
 		return config;
 	}
-	
+
 	public static GunConfiguration getPanzConfig() {
-		
+
 		GunConfiguration config = getGustavConfig();
-		
+
 		config.reloadDuration = 25;
 		config.hasSights = true;
-		
+
 		config.name = "panz";
 		config.manufacturer = EnumGunManufacturer.ENZINGER;
 		config.comment.clear();
 		config.comment.add("Panzer-Shrek");
-		
+
 		config.durability = 260;
-		
+
 		return config;
 	}
-	
+
 	public static BulletConfiguration getRocketConfig() {
-		
+
 		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
-		
+
 		bullet.ammo = new ComparableStack(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.STOCK));
 		bullet.dmgMin = 10;
 		bullet.dmgMax = 15;
 		bullet.explosive = 4F;
 		bullet.trail = 0;
-		
+
 		return bullet;
 	}
-	
+
 	public static BulletConfiguration getRocketHEConfig() {
-		
+
 		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
-		
+
 		bullet.ammo = new ComparableStack(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.HE));
 		bullet.dmgMin = 10;
 		bullet.dmgMax = 15;
 		bullet.wear = 15;
 		bullet.explosive = 6.5F;
 		bullet.trail = 1;
-		
+
 		return bullet;
 	}
-	
+
 	public static BulletConfiguration getRocketIncendiaryConfig() {
-		
+
 		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
-		
+
 		bullet.ammo = new ComparableStack(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.INCENDIARY));
 		bullet.dmgMin = 10;
 		bullet.dmgMax = 15;
@@ -206,28 +206,28 @@ public class GunRocketFactory {
 		bullet.explosive = 4F;
 		bullet.incendiary = 5;
 		bullet.trail = 2;
-		
+
 		return bullet;
 	}
-	
+
 	public static BulletConfiguration getRocketEMPConfig() {
-		
+
 		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
-		
+
 		bullet.ammo = new ComparableStack(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.EMP));
 		bullet.dmgMin = 10;
 		bullet.dmgMax = 15;
 		bullet.explosive = 2.5F;
 		bullet.emp = 10;
 		bullet.trail = 4;
-		
+
 		return bullet;
 	}
-	
+
 	public static BulletConfiguration getRocketSleekConfig() {
-		
+
 		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
-		
+
 		bullet.ammo = new ComparableStack(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.SLEEK));
 		bullet.dmgMin = 10;
 		bullet.dmgMax = 15;
@@ -235,28 +235,28 @@ public class GunRocketFactory {
 		bullet.trail = 6;
 		bullet.gravity = 0;
 		bullet.jolt = 6.5D;
-		
+
 		return bullet;
 	}
-	
+
 	public static BulletConfiguration getRocketShrapnelConfig() {
-		
+
 		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
-		
+
 		bullet.ammo = new ComparableStack(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.SHRAPNEL));
 		bullet.dmgMin = 10;
 		bullet.dmgMax = 15;
 		bullet.explosive = 4F;
 		bullet.shrapnel = 25;
 		bullet.trail = 3;
-		
+
 		return bullet;
 	}
-	
+
 	public static BulletConfiguration getRocketGlareConfig() {
-		
+
 		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
-		
+
 		bullet.ammo = new ComparableStack(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.GLARE));
 		bullet.velocity = 5.0F;
 		bullet.dmgMin = 10;
@@ -265,14 +265,14 @@ public class GunRocketFactory {
 		bullet.explosive = 4F;
 		bullet.incendiary = 5;
 		bullet.trail = 5;
-		
+
 		return bullet;
 	}
-	
+
 	public static BulletConfiguration getRocketNukeConfig() {
-		
+
 		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
-		
+
 		bullet.ammo = new ComparableStack(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.NUCLEAR));
 		bullet.velocity = 1.5F;
 		bullet.dmgMin = 10;
@@ -281,18 +281,18 @@ public class GunRocketFactory {
 		bullet.explosive = 0;
 		bullet.incendiary = 0;
 		bullet.trail = 7;
-		
+
 		bullet.bntImpact = (bulletnt, x, y, z, sideHit) -> {
 			BulletConfigFactory.nuclearExplosion(bulletnt, x, y, z, ExplosionNukeSmall.PARAMS_MEDIUM);
 		};
-		
+
 		return bullet;
 	}
-	
+
 	public static BulletConfiguration getRocketChlorineConfig() {
-		
+
 		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
-		
+
 		bullet.ammo = new ComparableStack(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.CHLORINE));
 		bullet.velocity = 1.5F;
 		bullet.dmgMin = 10;
@@ -301,14 +301,14 @@ public class GunRocketFactory {
 		bullet.explosive = 0;
 		bullet.chlorine = 50;
 		bullet.trail = 7;
-		
+
 		return bullet;
 	}
-	
+
 	public static BulletConfiguration getRocketRPCConfig() {
-		
+
 		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
-		
+
 		bullet.ammo = new ComparableStack(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.RPC));
 		bullet.velocity = 3.0F;
 		bullet.dmgMin = 20;
@@ -321,7 +321,7 @@ public class GunRocketFactory {
 		bullet.ricochetAngle = 90;
 		bullet.LBRC = 100;
 		bullet.doesPenetrate = true;
-		
+
 		bullet.bntRicochet = (bulletnt, bX, bY, bZ) -> {
 			World worldObj = bulletnt.worldObj;
 			if(!worldObj.isRemote && (worldObj.getBlock(bX, bY, bZ).getMaterial() == Material.wood ||
@@ -331,14 +331,14 @@ public class GunRocketFactory {
 				worldObj.func_147480_a(bX, bY, bZ, false);
 
 		};
-		
+
 		return bullet;
 	}
-	
+
 	public static BulletConfiguration getRocketPhosphorusConfig() {
-		
+
 		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
-		
+
 		bullet.ammo = new ComparableStack(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.PHOSPHORUS));
 		bullet.dmgMin = 10;
 		bullet.dmgMax = 15;
@@ -346,22 +346,22 @@ public class GunRocketFactory {
 		bullet.explosive = 4F;
 		bullet.incendiary = 5;
 		bullet.trail = 9;
-		
+
 		bullet.bntImpact = BulletConfigFactory.getPhosphorousEffect(10, 60 * 20, 100, 0.5D, 1F);
-		
+
 		return bullet;
 	}
-	
+
 	public static BulletConfiguration getRocketCanisterConfig() {
-		
+
 		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
-		
+
 		bullet.ammo = new ComparableStack(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.CANISTER));
 		bullet.dmgMin = 10;
 		bullet.dmgMax = 15;
 		bullet.explosive = 2F;
 		bullet.trail = 0;
-		
+
 		bullet.bntUpdate = (bulletnt) -> {
 			if(!bulletnt.worldObj.isRemote) {
 				if(bulletnt.ticksExisted > 10) {
@@ -376,14 +376,14 @@ public class GunRocketFactory {
 				}
 			}
 		};
-		
+
 		return bullet;
 	}
-	
+
 	public static BulletConfiguration getRocketErrorConfig() {
-		
+
 		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
-		
+
 		bullet.ammo = new ComparableStack(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.DIGAMMA));
 		bullet.velocity = 0.5F;
 		bullet.dmgMin = 10;
@@ -392,7 +392,7 @@ public class GunRocketFactory {
 		bullet.explosive = 0;
 		bullet.incendiary = 0;
 		bullet.trail = 7;
-		
+
 		bullet.bntImpact = (bulletnt, x, y, z, sideHit) -> {
 
 			if(bulletnt.worldObj.isRemote)
@@ -405,7 +405,7 @@ public class GunRocketFactory {
 
 			bulletnt.worldObj.spawnEntityInWorld(spear);
 		};
-		
+
 		return bullet;
 	}
 }

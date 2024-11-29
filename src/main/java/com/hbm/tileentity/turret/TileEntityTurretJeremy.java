@@ -21,15 +21,15 @@ import net.minecraft.world.World;
 public class TileEntityTurretJeremy extends TileEntityTurretBaseNT {
 
 	static List<Integer> configs = new ArrayList();
-	
+
 	static {
 		configs.add(BulletConfigSyncingUtil.SHELL_NORMAL);
 		configs.add(BulletConfigSyncingUtil.SHELL_EXPLOSIVE);
-		configs.add(BulletConfigSyncingUtil.SHELL_AP);
-		configs.add(BulletConfigSyncingUtil.SHELL_DU);
+		//configs.add(BulletConfigSyncingUtil.SHELL_AP);
+		//configs.add(BulletConfigSyncingUtil.SHELL_DU);
 		configs.add(BulletConfigSyncingUtil.SHELL_W9);
 	}
-	
+
 	@Override
 	protected List<Integer> getAmmoList() {
 		return configs;
@@ -39,7 +39,7 @@ public class TileEntityTurretJeremy extends TileEntityTurretBaseNT {
 	public String getName() {
 		return "container.turretJeremy";
 	}
-	
+
 	@Override
 	public double getDecetorGrace() {
 		return 16D;
@@ -64,31 +64,31 @@ public class TileEntityTurretJeremy extends TileEntityTurretBaseNT {
 	public double getDecetorRange() {
 		return 80D;
 	}
-	
+
 	int timer;
 	int reload;
-	
+
 	@Override
 	public void updateEntity() {
-		
+
 		if(reload > 0)
 			reload--;
-		
+
 		if(reload == 1)
 			this.worldObj.playSoundEffect(xCoord, yCoord, zCoord, "hbm:turret.jeremy_reload", 2.0F, 1.0F);
-		
+
 		super.updateEntity();
 	}
 
 	@Override
 	public void updateFiringTick() {
-		
+
 		timer++;
-		
+
 		if(timer % 40 == 0) {
-			
+
 			BulletConfiguration conf = this.getFirstConfigLoaded();
-			
+
 			if(conf != null) {
 				this.cachedCasingConfig = conf.spentCasing;
 				this.spawnBullet(conf);
@@ -98,9 +98,9 @@ public class TileEntityTurretJeremy extends TileEntityTurretBaseNT {
 				Vec3 vec = Vec3.createVectorHelper(this.getBarrelLength(), 0, 0);
 				vec.rotateAroundZ((float) -this.rotationPitch);
 				vec.rotateAroundY((float) -(this.rotationYaw + Math.PI * 0.5));
-				
+
 				reload = 20;
-				
+
 				NBTTagCompound data = new NBTTagCompound();
 				data.setString("type", "vanillaExt");
 				data.setString("mode", "largeexplode");
@@ -113,22 +113,22 @@ public class TileEntityTurretJeremy extends TileEntityTurretBaseNT {
 
 	@Override
 	protected Vec3 getCasingSpawnPos() {
-		
+
 		Vec3 pos = this.getTurretPos();
 		Vec3 vec = Vec3.createVectorHelper(-2, 0, 0);
 		vec.rotateAroundZ((float) -this.rotationPitch);
 		vec.rotateAroundY((float) -(this.rotationYaw + Math.PI * 0.5));
-		
+
 		return Vec3.createVectorHelper(pos.xCoord + vec.xCoord, pos.yCoord + vec.yCoord, pos.zCoord + vec.zCoord);
 	}
 
 	protected static CasingEjector ejector = new CasingEjector().setAngleRange(0.01F, 0.01F).setMotion(0, 0, -0.2);
-	
+
 	@Override
 	protected CasingEjector getEjector() {
 		return ejector;
 	}
-	
+
 	@Override
 	public boolean usesCasings() {
 		return true;

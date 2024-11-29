@@ -1,16 +1,16 @@
 package com.hbm.entity.logic;
 
 import com.hbm.config.MobConfig;
-import com.hbm.entity.mob.glyphid.EntityGlyphid;
-import com.hbm.entity.mob.glyphid.EntityGlyphidNuclear;
-import com.hbm.entity.mob.glyphid.EntityGlyphidScout;
+//import com.hbm.entity.mob.glyphid.EntityGlyphid;
+//import com.hbm.entity.mob.glyphid.EntityGlyphidNuclear;
+//import com.hbm.entity.mob.glyphid.EntityGlyphidScout;
 import com.hbm.main.MainRegistry;
 import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 
-import static com.hbm.entity.mob.glyphid.EntityGlyphid.*;
+//import static com.hbm.entity.mob.glyphid.EntityGlyphid.*;
 
 import java.util.List;
 
@@ -54,9 +54,9 @@ public class EntityWaypoint extends Entity {
 	public int getColor() {
 		switch(getWaypointType()) {
 
-		case TASK_RETREAT_FOR_REINFORCEMENTS: return 0x5FA6E8;
-		case TASK_BUILD_HIVE:
-		case TASK_INITIATE_RETREAT: return 0x127766;
+		//case TASK_RETREAT_FOR_REINFORCEMENTS: return 0x5FA6E8;
+		//case TASK_BUILD_HIVE:
+		//case TASK_INITIATE_RETREAT: return 0x127766;
 		default: return 0x566573;
 		}
 	}
@@ -78,28 +78,28 @@ public class EntityWaypoint extends Entity {
 				List<Entity> targets = worldObj.getEntitiesWithinAABBExcludingEntity(this, bb);
 
 				for(Entity e : targets) {
-					if(e instanceof EntityGlyphid) {
-
-						EntityGlyphid bug = ((EntityGlyphid) e);
-
-						if(additional != null && !hasSpawned) {
-							worldObj.spawnEntityInWorld(additional);
-							hasSpawned = true;
-						}
-
-						boolean exceptions = bug.getWaypoint() != this || e instanceof EntityGlyphidScout || e instanceof EntityGlyphidNuclear;
-
-						if(!exceptions)
-							bug.setCurrentTask(getWaypointType(), additional);
-
-						if(getWaypointType() == TASK_BUILD_HIVE) {
-							if(e instanceof EntityGlyphidScout)
-								setDead();
-						} else {
-							setDead();
-						}
-
-					}
+					//if(e instanceof EntityGlyphid) {
+//
+					//	EntityGlyphid bug = ((EntityGlyphid) e);
+//
+					//	if(additional != null && !hasSpawned) {
+					//		worldObj.spawnEntityInWorld(additional);
+					//		hasSpawned = true;
+					//	}
+//
+					//	boolean exceptions = bug.getWaypoint() != this || e instanceof EntityGlyphidScout || e instanceof EntityGlyphidNuclear;
+//
+					//	if(!exceptions)
+					//		bug.setCurrentTask(getWaypointType(), additional);
+//
+					//	if(getWaypointType() == TASK_BUILD_HIVE) {
+					//		if(e instanceof EntityGlyphidScout)
+					//			setDead();
+					//	} else {
+					//		setDead();
+					//	}
+//
+					//}
 				}
 			}
 		} else if(MobConfig.waypointDebug) {

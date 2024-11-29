@@ -28,7 +28,7 @@ import com.hbm.world.feature.BedrockOre.BedrockOreDefinition;
 import com.hbm.world.feature.DepthDeposit;
 import com.hbm.world.feature.Geyser;
 import com.hbm.world.feature.GeyserLarge;
-import com.hbm.world.feature.GlyphidHive;
+//import com.hbm.world.feature.GlyphidHive;
 import com.hbm.world.feature.OilBubble;
 import com.hbm.world.feature.OilSandBubble;
 import com.hbm.world.feature.OilSpot;
@@ -269,18 +269,18 @@ public class HbmWorldGen implements IWorldGenerator {
 
 		if(enableDungeons && world.provider.dimensionId == 0) {
 
-			if(MobConfig.enableHives && rand.nextInt(MobConfig.hiveSpawn) == 0) {
-				int x = i + rand.nextInt(16) + 8;
-				int z = j + rand.nextInt(16) + 8;
-				int y = world.getHeightValue(x, z);
-
-				for(int k = 3; k >= -1; k--) {
-					if(world.getBlock(x, y - 1 + k, z).isNormalCube()) {
-						GlyphidHive.generateSmall(world, x, y + k, z, rand, rand.nextInt(10) == 0, true);
-						break;
-					}
-				}
-			}
+			//if(MobConfig.enableHives && rand.nextInt(MobConfig.hiveSpawn) == 0) {
+			//	int x = i + rand.nextInt(16) + 8;
+			//	int z = j + rand.nextInt(16) + 8;
+			//	int y = world.getHeightValue(x, z);
+//
+			//	for(int k = 3; k >= -1; k--) {
+			//		if(world.getBlock(x, y - 1 + k, z).isNormalCube()) {
+			//			GlyphidHive.generateSmall(world, x, y + k, z, rand, rand.nextInt(10) == 0, true);
+			//			break;
+			//		}
+			//	}
+			//}
 
 			if(biome == BiomeGenBase.plains || biome == BiomeGenBase.desert) {
 				if(WorldConfig.radioStructure > 0 && rand.nextInt(WorldConfig.radioStructure) == 0) {

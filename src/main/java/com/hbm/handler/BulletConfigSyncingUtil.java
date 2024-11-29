@@ -247,8 +247,8 @@ public class BulletConfigSyncingUtil {
 
 	public static int SHELL_NORMAL = i++;
 	public static int SHELL_EXPLOSIVE = i++;
-	public static int SHELL_AP = i++;
-	public static int SHELL_DU = i++;
+	//public static int SHELL_AP = i++;
+	//public static int SHELL_DU = i++;
 	public static int SHELL_W9 = i++;
 	public static int DGK_NORMAL = i++;
 	public static int FLA_NORMAL = i++;
@@ -354,11 +354,11 @@ public class BulletConfigSyncingUtil {
 		configSet.put(ROCKET_INCENDIARY, GunRocketFactory.getRocketIncendiaryConfig());
 		configSet.put(ROCKET_PHOSPHORUS, GunRocketFactory.getRocketPhosphorusConfig());
 		configSet.put(ROCKET_SHRAPNEL, GunRocketFactory.getRocketShrapnelConfig());
-		configSet.put(ROCKET_EMP, GunRocketFactory.getRocketEMPConfig());
+		//configSet.put(ROCKET_EMP, GunRocketFactory.getRocketEMPConfig());
 		configSet.put(ROCKET_GLARE, GunRocketFactory.getRocketGlareConfig());
-		configSet.put(ROCKET_SLEEK, GunRocketFactory.getRocketSleekConfig());
-		configSet.put(ROCKET_NUKE, GunRocketFactory.getRocketNukeConfig());
-		configSet.put(ROCKET_CHAINSAW, GunRocketFactory.getRocketRPCConfig());
+		//configSet.put(ROCKET_SLEEK, GunRocketFactory.getRocketSleekConfig());
+		//configSet.put(ROCKET_NUKE, GunRocketFactory.getRocketNukeConfig());
+		//configSet.put(ROCKET_CHAINSAW, GunRocketFactory.getRocketRPCConfig());
 		configSet.put(ROCKET_TOXIC, GunRocketFactory.getRocketChlorineConfig());
 		configSet.put(ROCKET_CANISTER, GunRocketFactory.getRocketCanisterConfig());
 		configSet.put(ROCKET_ERROR, GunRocketFactory.getRocketErrorConfig());
@@ -553,8 +553,8 @@ public class BulletConfigSyncingUtil {
 
 		configSet.put(SHELL_NORMAL, GunCannonFactory.getShellConfig());
 		configSet.put(SHELL_EXPLOSIVE, GunCannonFactory.getShellExplosiveConfig());
-		configSet.put(SHELL_AP, GunCannonFactory.getShellAPConfig());
-		configSet.put(SHELL_DU, GunCannonFactory.getShellDUConfig());
+		//configSet.put(SHELL_AP, GunCannonFactory.getShellAPConfig());
+		//configSet.put(SHELL_DU, GunCannonFactory.getShellDUConfig());
 		configSet.put(SHELL_W9, GunCannonFactory.getShellW9Config());
 		configSet.put(DGK_NORMAL, GunDGKFactory.getDGKConfig());
 		configSet.put(FLA_NORMAL, GunEnergyFactory.getTurretConfig());
