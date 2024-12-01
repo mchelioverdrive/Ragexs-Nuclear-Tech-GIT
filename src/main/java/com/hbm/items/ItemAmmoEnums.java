@@ -107,11 +107,11 @@ public class ItemAmmoEnums {
 	}
 
 	public enum AmmoStinger implements IAmmoItemEnum {
-		STOCK("ammo_stinger_rocket"),
-		HE("ammo_stinger_rocket_he", AmmoItemTrait.PRO_RADIUS, AmmoItemTrait.CON_WEAR),
-		INCENDIARY("ammo_stinger_rocket_incendiary", HbmCollection.IncendiaryType),
-		NUCLEAR("ammo_stinger_rocket_nuclear", AmmoItemTrait.PRO_NUCLEAR, AmmoItemTrait.CON_SUPER_WEAR),
-		BONES("ammo_stinger_rocket_bones");
+		STOCK("ammo_stinger_rocket");
+		//HE("ammo_stinger_rocket_he", AmmoItemTrait.PRO_RADIUS, AmmoItemTrait.CON_WEAR),
+		//INCENDIARY("ammo_stinger_rocket_incendiary", HbmCollection.IncendiaryType),
+		//NUCLEAR("ammo_stinger_rocket_nuclear", AmmoItemTrait.PRO_NUCLEAR, AmmoItemTrait.CON_SUPER_WEAR),
+		//BONES("ammo_stinger_rocket_bones");
 
 		private final Set<AmmoItemTrait> traits;
 		private final String unloc;

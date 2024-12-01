@@ -47,11 +47,11 @@ public class BulletConfigSyncingUtil {
 	public static int ROCKET_HE = i++;
 	public static int ROCKET_INCENDIARY = i++;
 	public static int ROCKET_SHRAPNEL = i++;
-	public static int ROCKET_EMP = i++;
+	//public static int ROCKET_EMP = i++;
 	public static int ROCKET_GLARE = i++;
-	public static int ROCKET_SLEEK = i++;
-	public static int ROCKET_NUKE = i++;
-	public static int ROCKET_CHAINSAW = i++;
+	//public static int ROCKET_SLEEK = i++;
+	//public static int ROCKET_NUKE = i++;
+	//public static int ROCKET_CHAINSAW = i++;
 	public static int ROCKET_TOXIC = i++;
 	public static int ROCKET_PHOSPHORUS = i++;
 	public static int ROCKET_CANISTER = i++;
@@ -61,14 +61,14 @@ public class BulletConfigSyncingUtil {
 	public static int GRENADE_HE = i++;
 	public static int GRENADE_INCENDIARY = i++;
 	public static int GRENADE_CHEMICAL = i++;
-	public static int GRENADE_SLEEK = i++;
+	//public static int GRENADE_SLEEK = i++;
 	public static int GRENADE_CONCUSSION = i++;
 	public static int GRENADE_FINNED = i++;
-	public static int GRENADE_NUCLEAR = i++;
+	//public static int GRENADE_NUCLEAR = i++;
 	public static int GRENADE_PHOSPHORUS = i++;
 	public static int GRENADE_TRACER = i++;
-	public static int GRENADE_KAMPF = i++;
-	public static int GRENADE_LEADBURSTER = i++;
+	//public static int GRENADE_KAMPF = i++;
+	//public static int GRENADE_LEADBURSTER = i++;
 
 	public static int G12_NORMAL = i++;
 	public static int G12_INCENDIARY = i++;
@@ -240,10 +240,10 @@ public class BulletConfigSyncingUtil {
 	public static int ROCKET_PHOSPHORUS_LASER = i++;
 
 	public static int ROCKET_STINGER = i++;
-	public static int ROCKET_STINGER_HE = i++;
-	public static int ROCKET_STINGER_INCENDIARY = i++;
-	public static int ROCKET_STINGER_NUCLEAR = i++;
-	public static int ROCKET_STINGER_BONES = i++;
+	//public static int ROCKET_STINGER_HE = i++;
+	//public static int ROCKET_STINGER_INCENDIARY = i++;
+	//public static int ROCKET_STINGER_NUCLEAR = i++;
+	//public static int ROCKET_STINGER_BONES = i++;
 
 	public static int SHELL_NORMAL = i++;
 	public static int SHELL_EXPLOSIVE = i++;
@@ -364,23 +364,23 @@ public class BulletConfigSyncingUtil {
 		configSet.put(ROCKET_ERROR, GunRocketFactory.getRocketErrorConfig());
 
 		configSet.put(ROCKET_STINGER, GunRocketHomingFactory.getRocketStingerConfig());
-		configSet.put(ROCKET_STINGER_HE, GunRocketHomingFactory.getRocketStingerHEConfig());
-		configSet.put(ROCKET_STINGER_INCENDIARY, GunRocketHomingFactory.getRocketStingerIncendiaryConfig());
-		configSet.put(ROCKET_STINGER_NUCLEAR, GunRocketHomingFactory.getRocketStingerNuclearConfig());
-		configSet.put(ROCKET_STINGER_BONES, GunRocketHomingFactory.getRocketStingerBonesConfig());
+		//configSet.put(ROCKET_STINGER_HE, GunRocketHomingFactory.getRocketStingerHEConfig());
+		//configSet.put(ROCKET_STINGER_INCENDIARY, GunRocketHomingFactory.getRocketStingerIncendiaryConfig());
+		//configSet.put(ROCKET_STINGER_NUCLEAR, GunRocketHomingFactory.getRocketStingerNuclearConfig());
+		//configSet.put(ROCKET_STINGER_BONES, GunRocketHomingFactory.getRocketStingerBonesConfig());
 
 		configSet.put(GRENADE_NORMAL, GunGrenadeFactory.getGrenadeConfig());
 		configSet.put(GRENADE_HE, GunGrenadeFactory.getGrenadeHEConfig());
 		configSet.put(GRENADE_INCENDIARY, GunGrenadeFactory.getGrenadeIncendirayConfig());
 		configSet.put(GRENADE_PHOSPHORUS, GunGrenadeFactory.getGrenadePhosphorusConfig());
 		configSet.put(GRENADE_CHEMICAL, GunGrenadeFactory.getGrenadeChlorineConfig());
-		configSet.put(GRENADE_SLEEK, GunGrenadeFactory.getGrenadeSleekConfig());
+		//configSet.put(GRENADE_SLEEK, GunGrenadeFactory.getGrenadeSleekConfig());
 		configSet.put(GRENADE_CONCUSSION, GunGrenadeFactory.getGrenadeConcussionConfig());
 		configSet.put(GRENADE_FINNED, GunGrenadeFactory.getGrenadeFinnedConfig());
-		configSet.put(GRENADE_NUCLEAR, GunGrenadeFactory.getGrenadeNuclearConfig());
+		//configSet.put(GRENADE_NUCLEAR, GunGrenadeFactory.getGrenadeNuclearConfig());
 		configSet.put(GRENADE_TRACER, GunGrenadeFactory.getGrenadeTracerConfig());
-		configSet.put(GRENADE_KAMPF, GunGrenadeFactory.getGrenadeKampfConfig());
-		configSet.put(GRENADE_LEADBURSTER, GunGrenadeFactory.getGrenadeLeadbursterConfig());
+		//configSet.put(GRENADE_KAMPF, GunGrenadeFactory.getGrenadeKampfConfig());
+		//configSet.put(GRENADE_LEADBURSTER, GunGrenadeFactory.getGrenadeLeadbursterConfig());
 
 		configSet.put(G12_NORMAL, Gun12GaugeFactory.get12GaugeConfig());
 		configSet.put(G12_INCENDIARY, Gun12GaugeFactory.get12GaugeFireConfig());

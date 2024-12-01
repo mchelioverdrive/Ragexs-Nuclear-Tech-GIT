@@ -41,9 +41,9 @@ public class WeaponSpecial extends ItemSword {
 		//if(this == ModItems.schrabidium_hammer) {
 		//	return EnumRarity.rare;
 		//}
-		if(this == ModItems.ullapool_caber) {
-			return EnumRarity.uncommon;
-		}
+		//if(this == ModItems.ullapool_caber) {
+		//	return EnumRarity.uncommon;
+		//}
 		//if(this == ModItems.shimmer_sledge || this == ModItems.shimmer_axe) {
 		//	return EnumRarity.epic;
 		//}
@@ -80,14 +80,14 @@ public class WeaponSpecial extends ItemSword {
         	world.playSoundAtEntity(entity, "random.anvil_land", 3.0F, 1.F);
 		}
 
-		if(this == ModItems.ullapool_caber) {
-			if (!world.isRemote)
-        	{
-				world.createExplosion(null, entity.posX, entity.posY, entity.posZ, 7.5F, true);
-        	}
-
-			stack.damageItem(505, entityPlayer);
-		}
+		//if(this == ModItems.ullapool_caber) {
+		//	if (!world.isRemote)
+        //	{
+		//		world.createExplosion(null, entity.posX, entity.posY, entity.posZ, 7.5F, true);
+        //	}
+//
+		//	stack.damageItem(505, entityPlayer);
+		//}
 
 		//if(this == ModItems.shimmer_sledge) {
 		//	Vec3 vec = entityPlayer.getLookVec();
@@ -252,10 +252,10 @@ public class WeaponSpecial extends ItemSword {
 		//	list.add("Even though it says \"+1000000000");
 		//	list.add("damage\", it's actually \"onehit anything\"");
 		//}
-		if(this == ModItems.ullapool_caber) {
-			list.add("High-yield Scottish face removal.");
-			list.add("A sober person would throw it...");
-		}
+		//if(this == ModItems.ullapool_caber) {
+		//	list.add("High-yield Scottish face removal.");
+		//	list.add("A sober person would throw it...");
+		//}
 		if(this == ModItems.bottle_opener) {
 			list.add("My very own bottle opener.");
 			list.add("Use with caution!");

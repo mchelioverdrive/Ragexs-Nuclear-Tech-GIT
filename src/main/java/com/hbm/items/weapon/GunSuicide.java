@@ -7,6 +7,7 @@ import com.google.common.collect.Multimap;
 import com.hbm.items.ModItems;
 import com.hbm.lib.ModDamageSource;
 
+import com.hbm.main.MainRegistry;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.enchantment.Enchantment;
@@ -24,7 +25,7 @@ import net.minecraftforge.event.entity.player.ArrowLooseEvent;
 import net.minecraftforge.event.entity.player.ArrowNockEvent;
 
 public class GunSuicide extends Item {
-	
+
     public static final String[] bowPullIconNameArray = new String[] {"pulling_0", "pulling_1", "pulling_2"};
     @SideOnly(Side.CLIENT)
     private IIcon[] iconArray;
@@ -38,7 +39,7 @@ public class GunSuicide extends Item {
         {
         	this.setMaxDamage(500);
         }
-        
+
         this.ammo = ModItems.ammo_357;
     }
 
@@ -74,7 +75,7 @@ public class GunSuicide extends Item {
 
             p_77615_1_.damageItem(1, p_77615_3_);
             p_77615_2_.playSoundAtEntity(p_77615_3_, "hbm:weapon.revolverShoot", 1.0F, 1.0F);
-            
+
             if (flag)
             { }
             else
@@ -140,12 +141,18 @@ public class GunSuicide extends Item {
 
 	@Override
 	public void addInformation(ItemStack itemstack, EntityPlayer player, List list, boolean bool) {
-
-		list.add("I've seen things...");
-		list.add("...I shouldn't have seen.");
+		//if(MainRegistry.polaroidID == 11)
+		//	list.add("When 5 counts of mail fraud are too much.");
+		//	list.add("and the black guy with the lightning starts making sense.");
+		//	list.add("");
+		//	list.add("Ammo: Lead Bullets");
+		//	list.add("Damage: Infinite");
+		list.add("the R. Budd Dwyer");
+		list.add("Special...");
 		list.add("");
 		list.add("Ammo: Lead Bullets");
 		list.add("Damage: Infinite");
+		list.add("[BLACKGUY WITH LIGHTNING]");
 	}
 
 	@Override

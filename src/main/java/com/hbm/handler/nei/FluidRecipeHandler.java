@@ -26,8 +26,8 @@ public class FluidRecipeHandler extends TemplateRecipeHandler implements ICompat
 				new ItemStack(ModItems.canister_empty),
 				new ItemStack(ModItems.gas_empty),
 				new ItemStack(ModItems.cell_empty),
-				new ItemStack(ModItems.disperser_canister_empty),
-				new ItemStack(ModItems.glyphid_gland_empty)};
+				new ItemStack(ModItems.disperser_canister_empty)};
+				//new ItemStack(ModItems.glyphid_gland_empty)};
 	}
 	@Override
 	public String getRecipeID() {
@@ -38,7 +38,7 @@ public class FluidRecipeHandler extends TemplateRecipeHandler implements ICompat
     {
     	PositionedStack input;
         PositionedStack result;
-    	
+
         public SmeltingSet(ItemStack input, ItemStack result) {
         	input.stackSize = 1;
             this.input = new PositionedStack(input, 83 - 27 - 18 + 1, 5 + 18 + 1);
@@ -55,7 +55,7 @@ public class FluidRecipeHandler extends TemplateRecipeHandler implements ICompat
             return result;
         }
     }
-    
+
 	@Override
 	public String getRecipeName() {
 		return "Fluid Containers";
@@ -65,7 +65,7 @@ public class FluidRecipeHandler extends TemplateRecipeHandler implements ICompat
 	public String getGuiTexture() {
 		return RefStrings.MODID + ":textures/gui/nei/gui_nei_fluid.png";
 	}
-	
+
 	@Override
 	public void loadCraftingRecipes(String outputId, Object... results) {
 		if ((outputId.equals("fluidcons")) && getClass() == FluidRecipeHandler.class) {
@@ -101,10 +101,10 @@ public class FluidRecipeHandler extends TemplateRecipeHandler implements ICompat
 		Map<Object, Object> recipes = MachineRecipes.instance().getFluidContainers();
 		for (Map.Entry<Object, Object> recipe : recipes.entrySet()) {
 			if (NEIServerUtils.areStacksSameType((ItemStack)recipe.getValue(), ingredient) || compareFluidStacks(ingredient, (ItemStack)recipe.getKey()))
-				this.arecipes.add(new SmeltingSet((ItemStack)recipe.getKey(), (ItemStack)recipe.getValue()));				
+				this.arecipes.add(new SmeltingSet((ItemStack)recipe.getKey(), (ItemStack)recipe.getValue()));
 		}
 	}
-	
+
 	private boolean compareFluidStacks(ItemStack sta1, ItemStack sta2) {
 		return sta1.getItem() == sta2.getItem() && sta1.getItemDamage() == sta2.getItemDamage();
 	}
@@ -114,10 +114,10 @@ public class FluidRecipeHandler extends TemplateRecipeHandler implements ICompat
         //return GUIMachineShredder.class;
     	return null;
     }
-    
+
     @Override
     public void loadTransferRects() {
-        
+
         transferRects.add(new RecipeTransferRect(new Rectangle(74 + 6 - 18, 23, 42, 18), "fluidcons"));
         RecipeTransferRectHandler.registerRectsToGuis(getRecipeTransferRectGuis(), transferRects);
     }

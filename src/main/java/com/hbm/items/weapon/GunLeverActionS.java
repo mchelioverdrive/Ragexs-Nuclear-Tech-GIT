@@ -28,12 +28,12 @@ import net.minecraftforge.event.entity.player.ArrowNockEvent;
 public class GunLeverActionS extends Item {
 
 	Random rand = new Random();
-	
+
 	public int dmgMin = 8;
 	public int dmgMax = 16;
 
 	public GunLeverActionS() {
-		
+
 		this.maxStackSize = 1;
 
 		this.setMaxDamage(500);
@@ -65,7 +65,7 @@ public class GunLeverActionS extends Item {
 			if (j > 10.0F) {
 				f = 10.0F;
 			}
-			
+
 			Vec3 vec = p_77615_3_.getLookVec();
 			vec.xCoord *= -1;
 			vec.yCoord *= -1;
@@ -85,26 +85,26 @@ public class GunLeverActionS extends Item {
         		p_77615_3_.setHealth(0.0F);
 
 			p_77615_2_.playSoundAtEntity(p_77615_3_, "hbm:weapon.revolverShootAlt", 5.0F, 0.75F);
-			
+
 			setAnim(p_77615_1_, 1);
 		}
 	}
 
-	
+
     @Override
 	public void onUpdate(ItemStack stack, World world, Entity entity, int i, boolean b) {
     	int j = getAnim(stack);
-    	
+
     	if(j > 0) {
     		if(j < 30)
     			setAnim(stack, j + 1);
     		else
     			setAnim(stack, 0);
-    		
+
         	if(j == 15)
         		world.playSoundAtEntity(entity, "hbm:weapon.leverActionReload", 2F, 0.85F);
     	}
-    	
+
     }
 
 	@Override
@@ -164,15 +164,15 @@ public class GunLeverActionS extends Item {
 	@Override
 	public void addInformation(ItemStack itemstack, EntityPlayer player, List list, boolean bool) {
 
-		if(MainRegistry.polaroidID == 11)
-			list.add("Vee guilt-tripped me into this.");
-		else
-			list.add("I hate your guts, Vee.");
+		//if(MainRegistry.polaroidID == 11)
+		//	list.add("Vee guilt-tripped me into this.");
+		//else
+		list.add("Hey guys... I guess that's it.");
 		list.add("");
-		list.add("Ammo: 12x74 Buckshot");
+		list.add("Ammo: 20 Gauge Buckshot");
 		list.add("Damage: Infinite");
 		list.add("");
-		list.add("[LEGENDARY WEAPON]");
+		list.add("[SKIBIDI WEAPON]");
 	}
 
 	@Override
@@ -182,48 +182,48 @@ public class GunLeverActionS extends Item {
 				new AttributeModifier(field_111210_e, "Weapon modifier", 3.5, 0));
 		return multimap;
 	}
-	
+
 	private static int getAnim(ItemStack stack) {
 		if(stack.stackTagCompound == null) {
 			stack.stackTagCompound = new NBTTagCompound();
 			return 0;
 		}
-		
+
 		return stack.stackTagCompound.getInteger("animation");
-		
+
 	}
-	
+
 	private static void setAnim(ItemStack stack, int i) {
 		if(stack.stackTagCompound == null) {
 			stack.stackTagCompound = new NBTTagCompound();
 		}
-		
+
 		stack.stackTagCompound.setInteger("animation", i);
-		
+
 	}
-	
+
 	public static float getRotationFromAnim(ItemStack stack) {
 		float rad = 0.0174533F;
 		rad *= 7.5F;
 		int i = getAnim(stack);
-		
+
 		if(i < 10)
 			return 0;
 		i -= 10;
-		
+
 		if(i < 10)
 			return rad * i;
 		else
 			return (rad * 10) - (rad * (i - 10));
 	}
-	
+
 	public static float getOffsetFromAnim(ItemStack stack) {
 		float i = getAnim(stack);
-		
+
 		if(i < 10)
 			return 0;
 		i -= 10;
-		
+
 		if(i < 10)
 			return i / 10;
 		else

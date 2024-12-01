@@ -18,7 +18,7 @@ import net.minecraft.world.World;
 import java.util.List;
 
 public class ItemDisperser extends ItemFluidTank {
-	
+
 	@Override
 	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
 
@@ -49,7 +49,7 @@ public class ItemDisperser extends ItemFluidTank {
 			int id = type.getID();
 			if(type.isDispersable() && this == ModItems.disperser_canister) {
 				list.add(new ItemStack(item, 1, id));
-			} else if(type == Fluids.PHEROMONE || type == Fluids.SULFURIC_ACID && this == ModItems.glyphid_gland) {
+			} else if(type == Fluids.PHEROMONE) {
 				list.add(new ItemStack(item, 1, id));
 			}
 
@@ -62,7 +62,7 @@ public class ItemDisperser extends ItemFluidTank {
 		String s = ("" + StatCollector.translateToLocal(this.getUnlocalizedName() + ".name")).trim();
 		String s1 = ("" + StatCollector.translateToLocal(Fluids.fromID(stack.getItemDamage()).getConditionalName())).trim();
 
-		s = this == ModItems.glyphid_gland ? s1 + " " + s : s + " " + s1;
+		s = s + " " + s1;
 		return s;
 	}
 

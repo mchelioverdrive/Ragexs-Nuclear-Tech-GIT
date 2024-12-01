@@ -115,13 +115,13 @@ public class GunRocketFactory {
 		config.config.add(BulletConfigSyncingUtil.ROCKET_INCENDIARY_LASER);
 		config.config.add(BulletConfigSyncingUtil.ROCKET_PHOSPHORUS_LASER);
 		config.config.add(BulletConfigSyncingUtil.ROCKET_SHRAPNEL_LASER);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_EMP_LASER);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_EMP_LASER);
 		config.config.add(BulletConfigSyncingUtil.ROCKET_GLARE_LASER);
 		config.config.add(BulletConfigSyncingUtil.ROCKET_TOXIC_LASER);
 		config.config.add(BulletConfigSyncingUtil.ROCKET_CANISTER);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_SLEEK_LASER);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_NUKE_LASER);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_CHAINSAW_LASER);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_SLEEK_LASER);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_NUKE_LASER);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_CHAINSAW_LASER);
 		config.durability = 500;
 
 		return config;
@@ -138,6 +138,7 @@ public class GunRocketFactory {
 		config.comment.clear();
 
 		config.config = new ArrayList<Integer>();
+		config.config.add(BulletConfigSyncingUtil.ROCKET_NORMAL);
 		config.config.add(BulletConfigSyncingUtil.ROCKET_HE);
 		//config.config.add(BulletConfigSyncingUtil.ROCKET_EMP);
 		//config.config.add(BulletConfigSyncingUtil.ROCKET_SLEEK);
@@ -145,7 +146,7 @@ public class GunRocketFactory {
 		config.config.add(BulletConfigSyncingUtil.ROCKET_CANISTER);
 		//config.config.add(BulletConfigSyncingUtil.ROCKET_NUKE);
 		//config.config.add(BulletConfigSyncingUtil.ROCKET_CHAINSAW);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_ERROR);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_ERROR);
 		config.durability = 500;
 
 		return config;
@@ -173,9 +174,9 @@ public class GunRocketFactory {
 		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
 
 		bullet.ammo = new ComparableStack(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.STOCK));
-		bullet.dmgMin = 10;
-		bullet.dmgMax = 15;
-		bullet.explosive = 4F;
+		bullet.dmgMin = 350;
+		bullet.dmgMax = 400;
+		bullet.explosive = 3F;
 		bullet.trail = 0;
 
 		return bullet;
@@ -186,8 +187,8 @@ public class GunRocketFactory {
 		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
 
 		bullet.ammo = new ComparableStack(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.HE));
-		bullet.dmgMin = 10;
-		bullet.dmgMax = 15;
+		bullet.dmgMin = 50;
+		bullet.dmgMax = 80;
 		bullet.wear = 15;
 		bullet.explosive = 6.5F;
 		bullet.trail = 1;
@@ -200,10 +201,10 @@ public class GunRocketFactory {
 		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
 
 		bullet.ammo = new ComparableStack(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.INCENDIARY));
-		bullet.dmgMin = 10;
-		bullet.dmgMax = 15;
+		bullet.dmgMin = 50;
+		bullet.dmgMax = 80;
 		bullet.wear = 15;
-		bullet.explosive = 4F;
+		bullet.explosive = 2F;
 		bullet.incendiary = 5;
 		bullet.trail = 2;
 
@@ -244,9 +245,9 @@ public class GunRocketFactory {
 		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
 
 		bullet.ammo = new ComparableStack(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.SHRAPNEL));
-		bullet.dmgMin = 10;
-		bullet.dmgMax = 15;
-		bullet.explosive = 4F;
+		bullet.dmgMin = 5;
+		bullet.dmgMax = 10;
+		bullet.explosive = 2F;
 		bullet.shrapnel = 25;
 		bullet.trail = 3;
 
@@ -259,8 +260,8 @@ public class GunRocketFactory {
 
 		bullet.ammo = new ComparableStack(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.GLARE));
 		bullet.velocity = 5.0F;
-		bullet.dmgMin = 10;
-		bullet.dmgMax = 15;
+		bullet.dmgMin = 350;
+		bullet.dmgMax = 400;
 		bullet.wear = 20;
 		bullet.explosive = 4F;
 		bullet.incendiary = 5;

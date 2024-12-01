@@ -39,10 +39,10 @@ public class GunRocketHomingFactory {
 
 		config.config = new ArrayList<Integer>();
 		config.config.add(BulletConfigSyncingUtil.ROCKET_STINGER);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_STINGER_HE);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_STINGER_INCENDIARY);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_STINGER_NUCLEAR);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_STINGER_BONES);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_STINGER_HE);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_STINGER_INCENDIARY);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_STINGER_NUCLEAR);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_STINGER_BONES);
 		config.durability = 250;
 
 		return config;
@@ -77,10 +77,10 @@ GunConfiguration config = new GunConfiguration();
 
 		config.config = new ArrayList<Integer>();
 		config.config.add(BulletConfigSyncingUtil.ROCKET_STINGER);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_STINGER_HE);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_STINGER_INCENDIARY);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_STINGER_NUCLEAR);
-		config.config.add(BulletConfigSyncingUtil.ROCKET_STINGER_BONES);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_STINGER_HE);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_STINGER_INCENDIARY);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_STINGER_NUCLEAR);
+		//config.config.add(BulletConfigSyncingUtil.ROCKET_STINGER_BONES);
 		config.durability = 1000;
 
 		return config;
@@ -90,8 +90,8 @@ GunConfiguration config = new GunConfiguration();
 		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
 
 		bullet.ammo = new ComparableStack(ModItems.ammo_stinger_rocket.stackFromEnum(AmmoStinger.STOCK));
-		bullet.dmgMin = 20;
-		bullet.dmgMax = 25;
+		bullet.dmgMin = 100;
+		bullet.dmgMax = 120;
 		bullet.explosive = 4F;
 		bullet.trail = 0;
 
@@ -100,10 +100,10 @@ GunConfiguration config = new GunConfiguration();
 			if(!bulletnt.worldObj.isRemote) {
 
 				EntityPlayer player = bulletnt.worldObj.getClosestPlayerToEntity(bulletnt, -1.0D);
-				EntityRocketHoming rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.0F, 5.0F, 0);
+				EntityRocketHoming rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.0F, 2.0F, 0);
 				if(player.getHeldItem().getItem() == ModItems.gun_skystinger && !player.isSneaking()) {
-					EntityRocketHoming rocket2 = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 15.0F, 0);
-					rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 15.0F, 0);
+					EntityRocketHoming rocket2 = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 2.0F, 0);
+					rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 2.0F, 0);
 					rocket.setIsCritical(true);
 					rocket2.setIsCritical(true);
 					bulletnt.worldObj.spawnEntityInWorld(rocket2);
@@ -118,140 +118,140 @@ GunConfiguration config = new GunConfiguration();
 		return bullet;
 	}
 
-	public static BulletConfiguration getRocketStingerHEConfig() {
-		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
+	//public static BulletConfiguration getRocketStingerHEConfig() {
+	//	BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
+//
+	//	bullet.ammo = new ComparableStack(ModItems.ammo_stinger_rocket.stackFromEnum(AmmoStinger.HE));
+	//	bullet.dmgMin = 30;
+	//	bullet.dmgMax = 35;
+	//	bullet.explosive = 8F;
+	//	bullet.trail = 0;
+	//	bullet.wear = 15;
+//
+	//	bullet.bntUpdate = (bulletnt) -> {
+//
+	//		if(!bulletnt.worldObj.isRemote) {
+//
+	//			EntityPlayer player = bulletnt.worldObj.getClosestPlayerToEntity(bulletnt, -1.0D);
+	//			EntityRocketHoming rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.0F, 5.0F, 1);
+	//			if(player.getHeldItem().getItem() == ModItems.gun_skystinger && !player.isSneaking()) {
+	//				EntityRocketHoming rocket2 = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 15.0F, 1);
+	//				rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 15.0F, 1);
+	//				rocket.setIsCritical(true);
+	//				rocket2.setIsCritical(true);
+	//				bulletnt.worldObj.spawnEntityInWorld(rocket2);
+	//			}
+	//			rocket.homingMod = 5;
+	//			rocket.homingRadius = 25;
+	//			bulletnt.worldObj.spawnEntityInWorld(rocket);
+	//			bulletnt.setDead();
+//
+	//		}
+	//	};
+	//	return bullet;
+	//}
 
-		bullet.ammo = new ComparableStack(ModItems.ammo_stinger_rocket.stackFromEnum(AmmoStinger.HE));
-		bullet.dmgMin = 30;
-		bullet.dmgMax = 35;
-		bullet.explosive = 8F;
-		bullet.trail = 0;
-		bullet.wear = 15;
+	//public static BulletConfiguration getRocketStingerIncendiaryConfig() {
+	//	BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
+//
+	//	bullet.ammo = new ComparableStack(ModItems.ammo_stinger_rocket.stackFromEnum(AmmoStinger.INCENDIARY));
+	//	bullet.dmgMin = 15;
+	//	bullet.dmgMax = 20;
+	//	bullet.explosive = 4F;
+	//	bullet.trail = 0;
+	//	bullet.wear = 12;
+//
+	//	bullet.bntUpdate = (bulletnt) -> {
+//
+	//		if(!bulletnt.worldObj.isRemote) {
+//
+	//			EntityPlayer player = bulletnt.worldObj.getClosestPlayerToEntity(bulletnt, -1.0D);
+	//			EntityRocketHoming rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.0F, 5.0F, 2);
+	//			if(player.getHeldItem().getItem() == ModItems.gun_skystinger && !player.isSneaking()) {
+	//				EntityRocketHoming rocket2 = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 15.0F, 2);
+	//				rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 15.0F, 2);
+	//				rocket.setIsCritical(true);
+	//				rocket2.setIsCritical(true);
+	//				bulletnt.worldObj.spawnEntityInWorld(rocket2);
+	//			}
+	//			rocket.homingMod = 5;
+	//			rocket.homingRadius = 25;
+	//			bulletnt.worldObj.spawnEntityInWorld(rocket);
+	//			bulletnt.setDead();
+//
+	//		}
+	//	};
+	//	return bullet;
+	//}
 
-		bullet.bntUpdate = (bulletnt) -> {
+	//public static BulletConfiguration getRocketStingerNuclearConfig() {
+	//	BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
+//
+	//	bullet.ammo = new ComparableStack(ModItems.ammo_stinger_rocket.stackFromEnum(AmmoStinger.NUCLEAR));
+	//	bullet.dmgMin = 50;
+	//	bullet.dmgMax = 55;
+	//	bullet.explosive = 15F;
+	//	bullet.trail = 0;
+	//	bullet.wear = 30;
+//
+	//	bullet.bntUpdate = (bulletnt) -> {
+//
+	//		if(!bulletnt.worldObj.isRemote) {
+//
+	//			EntityPlayer player = bulletnt.worldObj.getClosestPlayerToEntity(bulletnt, -1.0D);
+//
+	//			if(player.getDistanceToEntity(bulletnt) < 16) {
+	//				EntityRocketHoming rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.0F, 5.0F, 4);
+	//				if(player.getHeldItem() != null && player.getHeldItem().getItem() == ModItems.gun_skystinger && !player.isSneaking()) {
+	//					EntityRocketHoming rocket2 = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 15.0F, 4);
+	//					rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 15.0F, 4);
+	//					rocket.setIsCritical(true);
+	//					rocket2.setIsCritical(true);
+	//					bulletnt.worldObj.spawnEntityInWorld(rocket2);
+	//				}
+	//				rocket.homingMod = 5;
+	//				rocket.homingRadius = 25;
+	//				bulletnt.worldObj.spawnEntityInWorld(rocket);
+	//			}
+	//			bulletnt.setDead();
+//
+	//		}
+	//	};
+	//	return bullet;
+	//}
 
-			if(!bulletnt.worldObj.isRemote) {
-
-				EntityPlayer player = bulletnt.worldObj.getClosestPlayerToEntity(bulletnt, -1.0D);
-				EntityRocketHoming rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.0F, 5.0F, 1);
-				if(player.getHeldItem().getItem() == ModItems.gun_skystinger && !player.isSneaking()) {
-					EntityRocketHoming rocket2 = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 15.0F, 1);
-					rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 15.0F, 1);
-					rocket.setIsCritical(true);
-					rocket2.setIsCritical(true);
-					bulletnt.worldObj.spawnEntityInWorld(rocket2);
-				}
-				rocket.homingMod = 5;
-				rocket.homingRadius = 25;
-				bulletnt.worldObj.spawnEntityInWorld(rocket);
-				bulletnt.setDead();
-
-			}
-		};
-		return bullet;
-	}
-
-	public static BulletConfiguration getRocketStingerIncendiaryConfig() {
-		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
-
-		bullet.ammo = new ComparableStack(ModItems.ammo_stinger_rocket.stackFromEnum(AmmoStinger.INCENDIARY));
-		bullet.dmgMin = 15;
-		bullet.dmgMax = 20;
-		bullet.explosive = 4F;
-		bullet.trail = 0;
-		bullet.wear = 12;
-
-		bullet.bntUpdate = (bulletnt) -> {
-
-			if(!bulletnt.worldObj.isRemote) {
-
-				EntityPlayer player = bulletnt.worldObj.getClosestPlayerToEntity(bulletnt, -1.0D);
-				EntityRocketHoming rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.0F, 5.0F, 2);
-				if(player.getHeldItem().getItem() == ModItems.gun_skystinger && !player.isSneaking()) {
-					EntityRocketHoming rocket2 = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 15.0F, 2);
-					rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 15.0F, 2);
-					rocket.setIsCritical(true);
-					rocket2.setIsCritical(true);
-					bulletnt.worldObj.spawnEntityInWorld(rocket2);
-				}
-				rocket.homingMod = 5;
-				rocket.homingRadius = 25;
-				bulletnt.worldObj.spawnEntityInWorld(rocket);
-				bulletnt.setDead();
-
-			}
-		};
-		return bullet;
-	}
-
-	public static BulletConfiguration getRocketStingerNuclearConfig() {
-		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
-
-		bullet.ammo = new ComparableStack(ModItems.ammo_stinger_rocket.stackFromEnum(AmmoStinger.NUCLEAR));
-		bullet.dmgMin = 50;
-		bullet.dmgMax = 55;
-		bullet.explosive = 15F;
-		bullet.trail = 0;
-		bullet.wear = 30;
-
-		bullet.bntUpdate = (bulletnt) -> {
-
-			if(!bulletnt.worldObj.isRemote) {
-
-				EntityPlayer player = bulletnt.worldObj.getClosestPlayerToEntity(bulletnt, -1.0D);
-
-				if(player.getDistanceToEntity(bulletnt) < 16) {
-					EntityRocketHoming rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.0F, 5.0F, 4);
-					if(player.getHeldItem() != null && player.getHeldItem().getItem() == ModItems.gun_skystinger && !player.isSneaking()) {
-						EntityRocketHoming rocket2 = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 15.0F, 4);
-						rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 15.0F, 4);
-						rocket.setIsCritical(true);
-						rocket2.setIsCritical(true);
-						bulletnt.worldObj.spawnEntityInWorld(rocket2);
-					}
-					rocket.homingMod = 5;
-					rocket.homingRadius = 25;
-					bulletnt.worldObj.spawnEntityInWorld(rocket);
-				}
-				bulletnt.setDead();
-
-			}
-		};
-		return bullet;
-	}
-
-	public static BulletConfiguration getRocketStingerBonesConfig() {
-		BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
-
-		bullet.ammo = new ComparableStack(ModItems.ammo_stinger_rocket.stackFromEnum(AmmoStinger.BONES));
-		bullet.dmgMin = 20;
-		bullet.dmgMax = 25;
-		bullet.explosive = 8F;
-		bullet.trail = 0;
-
-		bullet.bntUpdate = (bulletnt) -> {
-
-			if(!bulletnt.worldObj.isRemote) {
-
-				EntityPlayer player = bulletnt.worldObj.getClosestPlayerToEntity(bulletnt, -1.0D);
-
-				if(player.getDistanceToEntity(bulletnt) < 16) {
-					EntityRocketHoming rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.0F, 5.0F, 42);
-					if(player.getHeldItem() != null && player.getHeldItem().getItem() == ModItems.gun_skystinger && !player.isSneaking()) {
-						EntityRocketHoming rocket2 = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 15.0F, 42);
-						rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 15.0F, 42);
-						rocket.setIsCritical(true);
-						rocket2.setIsCritical(true);
-						bulletnt.worldObj.spawnEntityInWorld(rocket2);
-					}
-					rocket.homingMod = 5;
-					rocket.homingRadius = 25;
-					bulletnt.worldObj.spawnEntityInWorld(rocket);
-				}
-				bulletnt.setDead();
-
-			}
-		};
-		return bullet;
-	}
-} 
+	//public static BulletConfiguration getRocketStingerBonesConfig() {
+	//	BulletConfiguration bullet = BulletConfigFactory.standardRocketConfig();
+//
+	//	bullet.ammo = new ComparableStack(ModItems.ammo_stinger_rocket.stackFromEnum(AmmoStinger.BONES));
+	//	bullet.dmgMin = 20;
+	//	bullet.dmgMax = 25;
+	//	bullet.explosive = 8F;
+	//	bullet.trail = 0;
+//
+	//	bullet.bntUpdate = (bulletnt) -> {
+//
+	//		if(!bulletnt.worldObj.isRemote) {
+//
+	//			EntityPlayer player = bulletnt.worldObj.getClosestPlayerToEntity(bulletnt, -1.0D);
+//
+	//			if(player.getDistanceToEntity(bulletnt) < 16) {
+	//				EntityRocketHoming rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.0F, 5.0F, 42);
+	//				if(player.getHeldItem() != null && player.getHeldItem().getItem() == ModItems.gun_skystinger && !player.isSneaking()) {
+	//					EntityRocketHoming rocket2 = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 15.0F, 42);
+	//					rocket = new EntityRocketHoming(bulletnt.worldObj, player, 1.5F, 15.0F, 42);
+	//					rocket.setIsCritical(true);
+	//					rocket2.setIsCritical(true);
+	//					bulletnt.worldObj.spawnEntityInWorld(rocket2);
+	//				}
+	//				rocket.homingMod = 5;
+	//				rocket.homingRadius = 25;
+	//				bulletnt.worldObj.spawnEntityInWorld(rocket);
+	//			}
+	//			bulletnt.setDead();
+//
+	//		}
+	//	};
+	//	return bullet;
+	//}
+}
