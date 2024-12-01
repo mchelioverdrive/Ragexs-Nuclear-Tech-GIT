@@ -27,11 +27,11 @@ import com.hbm.saveddata.satellites.Satellite;
 import com.hbm.util.BobMathUtil;
 
 public class SkyProviderCelestial extends IRenderHandler {
-	
+
 	private static final ResourceLocation planetTexture = new ResourceLocation(RefStrings.MODID, "textures/misc/space/planet.png");
 	private static final ResourceLocation flareTexture = new ResourceLocation(RefStrings.MODID, "textures/misc/space/sunspike.png");
 	private static final ResourceLocation nightTexture = new ResourceLocation(RefStrings.MODID, "textures/misc/space/night.png");
-	private static final ResourceLocation digammaStar = new ResourceLocation(RefStrings.MODID, "textures/misc/space/star_digamma.png");
+	//private static final ResourceLocation digammaStar = new ResourceLocation(RefStrings.MODID, "textures/misc/space/star_digamma.png");
 
 	private static final ResourceLocation noise = new ResourceLocation(RefStrings.MODID, "shaders/iChannel1.png");
 
@@ -180,7 +180,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 
 		renderStars(partialTicks, world, mc, starBrightness, celestialAngle, body.axialTilt);
 
-		
+
 		GL11.glPushMatrix();
 		{
 
@@ -197,7 +197,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 			double coronaSize = sunSize * (3 - MathHelper.clamp_float(pressure, 0.0F, 1.0F));
 
 			renderSun(partialTicks, world, mc, sunSize, coronaSize, visibility, pressure);
-			
+
 			float blendAmount = hasAtmosphere ? MathHelper.clamp_float(1 - world.getSunBrightnessFactor(partialTicks), 0.25F, 1F) : 1F;
 
 			double longitude = 0;
@@ -209,7 +209,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 
 			// Get our orrery of bodies
 			List<AstroMetric> metrics = SolarSystem.calculateMetricsFromBody(world, partialTicks, longitude, body);
-			
+
 			renderCelestials(partialTicks, world, mc, metrics, celestialAngle, tidalLockedBody, planetTint, visibility, blendAmount, null, 24);
 
 			GL11.glEnable(GL11.GL_BLEND);
@@ -220,7 +220,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 				if(world.provider.dimensionId == 0) {
 					renderSatellite(partialTicks, world, mc, celestialAngle, 1916169, new float[] { 1.0F, 0.534F, 0.385F });
 				}
-	
+
 				// Light up the sky
 				for(Map.Entry<Integer, Satellite> entry : SatelliteSavedData.getClientSats().entrySet()) {
 					renderSatellite(partialTicks, world, mc, celestialAngle, entry.getKey(), entry.getValue().getColor());
@@ -234,7 +234,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 		GL11.glDisable(GL11.GL_BLEND);
 		GL11.glEnable(GL11.GL_ALPHA_TEST);
 		GL11.glEnable(GL11.GL_FOG);
-			
+
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
 		GL11.glColor3f(0.0F, 0.0F, 0.0F);
 
@@ -294,7 +294,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 
 		}
 		GL11.glPopMatrix();
-		
+
 		double sc = 1 / (pos.yCoord / 1000);
 		double uvOffset = (pos.xCoord / 1024) % 1;
 		GL11.glPushMatrix();
@@ -308,11 +308,11 @@ public class SkyProviderCelestial extends IRenderHandler {
 			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 
 			float sunBrightness = world.getSunBrightness(partialTicks);
-	
+
 			GL11.glColor4f(sunBrightness, sunBrightness, sunBrightness, ((float)pos.yCoord - 200.0F) / 300.0F);
 			mc.renderEngine.bindTexture(body.texture);
 			GL11.glRotated(180, 1, 0, 0);
-			
+
 			tessellator.startDrawingQuads();
 			tessellator.addVertexWithUV(-115 * sc, 100.0D, -115 * sc, 0.0D + uvOffset, 0.0D);
 			tessellator.addVertexWithUV(115 * sc, 100.0D, -115 * sc, 1.0D + uvOffset, 0.0D);
@@ -334,10 +334,10 @@ public class SkyProviderCelestial extends IRenderHandler {
 		GL11.glDepthMask(true);
 
 	}
-	
+
 	protected void renderSunset(float partialTicks, WorldClient world, Minecraft mc) {
 		Tessellator tessellator = Tessellator.instance;
-		
+
 		float[] sunsetColor = world.provider.calcSunriseSunsetColors(world.getCelestialAngle(partialTicks), partialTicks);
 
 		if(sunsetColor != null) {
@@ -352,20 +352,20 @@ public class SkyProviderCelestial extends IRenderHandler {
 				GL11.glRotatef(90.0F, 1.0F, 0.0F, 0.0F);
 				GL11.glRotatef(MathHelper.sin(world.getCelestialAngleRadians(partialTicks)) < 0.0F ? 180.0F : 0.0F, 0.0F, 0.0F, 1.0F);
 				GL11.glRotatef(90.0F, 0.0F, 0.0F, 1.0F);
-	
+
 				tessellator.startDrawing(6);
 				tessellator.setColorRGBA_F(anaglyphColor[0], anaglyphColor[1], anaglyphColor[2], sunsetColor[3]);
 				tessellator.addVertex(0.0, 100.0, 0.0);
 				tessellator.setColorRGBA_F(sunsetColor[0], sunsetColor[1], sunsetColor[2], 0.0F);
 				byte segments = 16;
-	
+
 				for(int j = 0; j <= segments; ++j) {
 					float angle = (float)j * 3.1415927F * 2.0F / (float)segments;
 					float sinAngle = MathHelper.sin(angle);
 					float cosAngle = MathHelper.cos(angle);
 					tessellator.addVertex((double)(sinAngle * 120.0F), (double)(cosAngle * 120.0F), (double)(-cosAngle * 40.0F * sunsetColor[3]));
 				}
-	
+
 				tessellator.draw();
 
 			}
@@ -385,38 +385,38 @@ public class SkyProviderCelestial extends IRenderHandler {
 				GL11.glRotatef(axialTilt, 1.0F, 0.0F, 0.0F);
 
 				mc.renderEngine.bindTexture(nightTexture);
-	
+
 				GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
-	
+
 				float starBrightnessAlpha = starBrightness * 0.6f;
 				GL11.glColor4f(1.0F, 1.0F, 1.0F, starBrightnessAlpha);
-				
+
 				GL11.glRotatef(-90.0F, 0.0F, 1.0F, 0.0F);
-	
+
 				GL11.glRotatef(celestialAngle * 360.0F, 1.0F, 0.0F, 0.0F);
 				GL11.glRotatef(-90.0F, 1.0F, 0.0F, 0.0F);
 				GL11.glColor4f(1.0F, 1.0F, 1.0F, starBrightnessAlpha);
-				
+
 				GL11.glRotatef(90.0F, 1.0F, 0.0F, 0.0F);
 				GL11.glRotatef(-90.0F, 0.0F, 0.0F, 1.0F);
 				renderSkyboxSide(tessellator, 4);
-				
+
 				GL11.glPushMatrix();
 				GL11.glRotatef(90.0F, 1.0F, 0.0F, 0.0F);
 				renderSkyboxSide(tessellator, 1);
 				GL11.glPopMatrix();
-				
+
 				GL11.glPushMatrix();
 				GL11.glRotatef(-90.0F, 1.0F, 0.0F, 0.0F);
 				renderSkyboxSide(tessellator, 0);
 				GL11.glPopMatrix();
-				
+
 				GL11.glRotatef(90.0F, 0.0F, 0.0F, 1.0F);
 				renderSkyboxSide(tessellator, 5);
-				
+
 				GL11.glRotatef(90.0F, 0.0F, 0.0F, 1.0F);
 				renderSkyboxSide(tessellator, 2);
-				
+
 				GL11.glRotatef(90.0F, 0.0F, 0.0F, 1.0F);
 				renderSkyboxSide(tessellator, 3);
 
@@ -446,17 +446,17 @@ public class SkyProviderCelestial extends IRenderHandler {
 			int textureUnit = 0;
 
 			mc.renderEngine.bindTexture(noise);
-	
+
 			shader.setTime(time);
 			shader.setTextureUnit(textureUnit);
-			
+
 			tessellator.startDrawingQuads();
 			tessellator.addVertexWithUV(-shaderSize, 100.0D, -shaderSize, 0.0D, 0.0D);
 			tessellator.addVertexWithUV(shaderSize, 100.0D, -shaderSize, 1.0D, 0.0D);
 			tessellator.addVertexWithUV(shaderSize, 100.0D, shaderSize, 1.0D, 1.0D);
 			tessellator.addVertexWithUV(-shaderSize, 100.0D, shaderSize, 0.0D, 1.0D);
 			tessellator.draw();
-	
+
 			shader.stop();
 
 			OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ONE, GL11.GL_ZERO);
@@ -509,7 +509,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 			// Ignore self
 			if(metric.distance == 0)
 				continue;
-			
+
 			boolean orbitingThis = metric.body == orbiting;
 
 			double uvOffset = orbitingThis ? 1 - ((((double)world.getWorldTime() + partialTicks) / 1024) % 1) : 0;
@@ -549,7 +549,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 
 				if(!renderAsPoint) {
 					GL11.glEnable(GL11.GL_BLEND);
-					
+
 					// Draw a shader on top to render celestial phase
 					OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
 
@@ -558,7 +558,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 					planetShader.use();
 					planetShader.setTime((float)-metric.phase);
 					planetShader.setOffset((float)uvOffset);
-					
+
 					tessellator.startDrawingQuads();
 					tessellator.addVertexWithUV(-size, 100.0D, -size, 0.0D, 0.0D);
 					tessellator.addVertexWithUV(size, 100.0D, -size, 1.0D, 0.0D);
@@ -570,7 +570,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 
 
 					GL11.glDisable(GL11.GL_TEXTURE_2D);
-					
+
 					// Draw another layer on top to blend with the atmosphere
 					GL11.glColor4d(planetTint.xCoord - blendDarken, planetTint.yCoord - blendDarken, planetTint.zCoord - blendDarken, (1 - blendAmount * visibility));
 					OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ONE, GL11.GL_ZERO);
@@ -606,18 +606,18 @@ public class SkyProviderCelestial extends IRenderHandler {
 			GL11.glRotatef(140.0F, 1.0F, 0.0F, 0.0F);
 			GL11.glRotatef(-40.0F, 0.0F, 0.0F, 1.0F);
 
-			mc.renderEngine.bindTexture(digammaStar);
+			//mc.renderEngine.bindTexture(digammaStar);
 
-			float digamma = HbmLivingProps.getDigamma(Minecraft.getMinecraft().thePlayer);
-			float var12 = 1F * (1 + digamma * 0.25F);
-			double dist = 100D - digamma * 2.5;
+			//float digamma = HbmLivingProps.getDigamma(Minecraft.getMinecraft().thePlayer);
+			//float var12 = 1F * (1 + digamma * 0.25F);
+			//double dist = 100D - digamma * 2.5;
 
-			tessellator.startDrawingQuads();
-			tessellator.addVertexWithUV(-var12, dist, -var12, 0.0D, 0.0D);
-			tessellator.addVertexWithUV(var12, dist, -var12, 0.0D, 1.0D);
-			tessellator.addVertexWithUV(var12, dist, var12, 1.0D, 1.0D);
-			tessellator.addVertexWithUV(-var12, dist, var12, 1.0D, 0.0D);
-			tessellator.draw();
+			//tessellator.startDrawingQuads();
+			//tessellator.addVertexWithUV(-var12, dist, -var12, 0.0D, 0.0D);
+			//tessellator.addVertexWithUV(var12, dist, -var12, 0.0D, 1.0D);
+			//tessellator.addVertexWithUV(var12, dist, var12, 1.0D, 1.0D);
+			//tessellator.addVertexWithUV(-var12, dist, var12, 1.0D, 0.0D);
+			//tessellator.draw();
 
 		}
 		GL11.glPopMatrix();
@@ -645,13 +645,13 @@ public class SkyProviderCelestial extends IRenderHandler {
 			GL11.glRotatef((float)(seed % 50) * 0.1F - 20.0F, 0.0F, 1.0F, 0.0F);
 			GL11.glRotatef((float)(seed % 80) * 0.1F - 2.5F, 0.0F, 0.0F, 1.0F);
 			GL11.glRotated((ticks / 600.0D) * 360.0D, 1.0F, 0.0F, 0.0F);
-			
+
 			GL11.glColor4f(color[0], color[1], color[2], 1F);
-			
+
 			mc.renderEngine.bindTexture(planetTexture);
-			
+
 			float size = 0.5F;
-			
+
 			tessellator.startDrawingQuads();
 			tessellator.addVertexWithUV(-size, 100.0, -size, 0.0D, 0.0D);
 			tessellator.addVertexWithUV(size, 100.0, -size, 0.0D, 1.0D);
@@ -662,7 +662,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 		}
 		GL11.glPopMatrix();
 	}
-	
+
 	// is just drawing a big cube with UVs prepared to draw a gradient
 	private void renderSkyboxSide(Tessellator tessellator, int side) {
 		double u = side % 3 / 3.0D;

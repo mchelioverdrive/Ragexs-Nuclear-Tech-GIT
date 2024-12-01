@@ -20,9 +20,9 @@ public class ItemModAuto extends ItemArmorMod {
 
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean bool) {
-		
+
 		list.add(EnumChatFormatting.BLUE + "Imported from Japsterdam.");
-		
+
 		list.add("");
 		super.addInformation(stack, player, list, bool);
 	}
@@ -31,19 +31,19 @@ public class ItemModAuto extends ItemArmorMod {
 	public void addDesc(List list, ItemStack stack, ItemStack armor) {
 		list.add(EnumChatFormatting.BLUE + "  " + stack.getDisplayName());
 	}
-	
+
 	@Override
 	public void modUpdate(EntityLivingBase entity, ItemStack armor) {
-		
+
 		if(!entity.worldObj.isRemote) {
-			
-			if(HbmLivingProps.getDigamma(entity) >= 5F) {
-				ArmorModHandler.removeMod(armor, ArmorModHandler.extra);
-				entity.worldObj.playSoundAtEntity(entity, "hbm:item.syringe", 1.0F, 1.0F);
-				HbmLivingProps.setDigamma(entity, HbmLivingProps.getDigamma(entity) - 5F);
-				entity.addPotionEffect(new PotionEffect(HbmPotion.stability.id, 60 * 20, 0));
-				entity.heal(20F);
-			}
+
+			//if(HbmLivingProps.getDigamma(entity) >= 5F) {
+			//	ArmorModHandler.removeMod(armor, ArmorModHandler.extra);
+			//	entity.worldObj.playSoundAtEntity(entity, "hbm:item.syringe", 1.0F, 1.0F);
+			//	HbmLivingProps.setDigamma(entity, HbmLivingProps.getDigamma(entity) - 5F);
+			//	entity.addPotionEffect(new PotionEffect(HbmPotion.stability.id, 60 * 20, 0));
+			//	entity.heal(20F);
+			//}
 		}
 	}
 }

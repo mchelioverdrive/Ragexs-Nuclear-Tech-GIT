@@ -183,7 +183,7 @@ public class EntityMappings {
 		addEntity(EntityRBMKDebris.class, "entity_rbmk_debris", 1000);
 		addEntity(EntityUFO.class, "entity_ntm_ufo", 1000);
 		addEntity(EntityQuasar.class, "entity_digamma_quasar", 250);
-		addEntity(EntitySpear.class, "entity_digamma_spear", 1000);
+		//addEntity(EntitySpear.class, "entity_digamma_spear", 1000);
 		//addEntity(EntityMissileVolcano.class, "entity_missile_volcano", 1000);
 		addEntity(EntityMissileShuttle.class, "entity_missile_shuttle", 1000);
 		addEntity(EntityZirnoxDebris.class, "entity_zirnox_debris", 1000);
@@ -226,19 +226,19 @@ public class EntityMappings {
 		addEntity(EntityWaypoint.class, "entity_waypoint", 250, false);
 		addMob(EntityWarBehemoth.class, "entity_war_behemoth", 0x204131, 0x75CE00);
 
-		addMob(EntityCreeperNuclear.class, "entity_mob_nuclear_creeper", 0x204131, 0x75CE00);
+		//addMob(EntityCreeperNuclear.class, "entity_mob_nuclear_creeper", 0x204131, 0x75CE00);
 		//addMob(EntityCreeperTainted.class, "entity_mob_tainted_creeper", 0x813b9b, 0xd71fdd);
 		addMob(EntityCreeperPhosgene.class, "entity_mob_phosgene_creeper", 0xE3D398, 0xB8A06B);
 		addMob(EntityCreeperVolatile.class, "entity_mob_volatile_creeper", 0xC28153, 0x4D382C);
 		addMob(EntityCreeperGold.class, "entity_mob_gold_creeper", 0xECC136, 0x9E8B3E);
 		addMob(EntityCreeperFlesh.class, "entity_mob_flesh_creeper", 0xFF0000, 0xD65337);
-		addMob(EntityHunterChopper.class, "entity_mob_hunter_chopper", 0x000020, 0x2D2D72);
+		//addMob(EntityHunterChopper.class, "entity_mob_hunter_chopper", 0x000020, 0x2D2D72);
 		addMob(EntityCyberCrab.class, "entity_cyber_crab", 0xAAAAAA, 0x444444);
 		addMob(EntityTeslaCrab.class, "entity_tesla_crab", 0xAAAAAA, 0x440000);
 		//addMob(EntityTaintCrab.class, "entity_taint_crab", 0xAAAAAA, 0xFF00FF);
-		addMob(EntityMaskMan.class, "entity_mob_mask_man", 0x818572, 0xC7C1B7);
-		addMob(EntityDuck.class, "entity_fucc_a_ducc", 0xd0d0d0, 0xFFBF00);
-		addMob(EntityQuackos.class, "entity_elder_one", 0xd0d0d0, 0xFFBF00);
+		//addMob(EntityMaskMan.class, "entity_mob_mask_man", 0x818572, 0xC7C1B7);
+		//addMob(EntityDuck.class, "entity_fucc_a_ducc", 0xd0d0d0, 0xFFBF00);
+		//addMob(EntityQuackos.class, "entity_elder_one", 0xd0d0d0, 0xFFBF00);
 		addMob(EntityPigeon.class, "entity_pigeon", 0xC8C9CD, 0x858894);
 
 		addMob(EntityMoonCow.class, "entity_moon_cow", 0xECD376, 0x262A44);
@@ -246,7 +246,7 @@ public class EntityMappings {
 
 		addMob(EntityFBI.class, "entity_ntm_fbi", 0x008000, 0x404040);
 		addMob(EntityFBIDrone.class, "entity_ntm_fbi_drone", 0x008000, 0x404040);
-		addMob(EntityRADBeast.class, "entity_ntm_radiation_blaze", 0x303030, 0x008000);
+		//addMob(EntityRADBeast.class, "entity_ntm_radiation_blaze", 0x303030, 0x008000);
 		addMob(EntitySiegeZombie.class, "entity_meme_zombie", 0x303030, 0x008000);
 		addMob(EntitySiegeSkeleton.class, "entity_meme_skeleton", 0x303030, 0x000080);
 		addMob(EntitySiegeUFO.class, "entity_meme_ufo", 0x303030, 0x800000);

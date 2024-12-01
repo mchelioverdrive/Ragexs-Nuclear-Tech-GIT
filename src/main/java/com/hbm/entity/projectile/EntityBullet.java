@@ -31,7 +31,7 @@ import net.minecraft.world.World;
 
 import com.hbm.blocks.bomb.BlockDetonatable;
 import com.hbm.entity.grenade.EntityGrenadeTau;
-import com.hbm.entity.mob.EntityCreeperNuclear;
+//import com.hbm.entity.mob.EntityCreeperNuclear;
 import com.hbm.entity.particle.EntityBSmokeFX;
 import com.hbm.items.ModItems;
 import com.hbm.lib.ModDamageSource;
@@ -191,7 +191,7 @@ public class EntityBullet extends Entity implements IProjectile {
 		this.setChopper(isTau == "chopper");
 		this.setIsCritical(isTau != "chopper");
 	}
-	
+
 	//why the living shit did i make isTau a string? who knows, who cares.
 	public EntityBullet(World p_i1756_1_, EntityLivingBase p_i1756_2_, float p_i1756_3_, int dmgMin, int dmgMax,
 			boolean instakill, String isTau, EntityGrenadeTau grenade) {
@@ -265,7 +265,7 @@ public class EntityBullet extends Entity implements IProjectile {
 		this.prevRotationPitch = this.rotationPitch = (float) (Math.atan2(p_70186_3_, f3) * 180.0D / Math.PI);
 		this.ticksInGround = 0;
 	}
-	
+
 	public void setThrowableHeading2(double p_70186_1_, double p_70186_3_, double p_70186_5_, float p_70186_7_,
 			float p_70186_8_) {
 		float f2 = MathHelper.sqrt_double(p_70186_1_ * p_70186_1_ + p_70186_3_ * p_70186_3_ + p_70186_5_ * p_70186_5_);
@@ -351,7 +351,7 @@ public class EntityBullet extends Entity implements IProjectile {
 					&& !this.getIsCritical()) {
 				this.inGround = true;
 			}
-			
+
 			if(block instanceof BlockDetonatable) {
 				((BlockDetonatable) block).onShot(worldObj, this.tileX, this.tileY, this.tileZ);
 			}
@@ -370,7 +370,7 @@ public class EntityBullet extends Entity implements IProjectile {
 
 		if (this.inGround && !this.getIsCritical()) {
 			this.setDead();
-			
+
 		} else {
 			++this.ticksInAir;
 			Vec3 vec31 = Vec3.createVectorHelper(this.posX, this.posY, this.posZ);
@@ -453,13 +453,13 @@ public class EntityBullet extends Entity implements IProjectile {
 						//R: Chop
 						//X: NOT
 						//O: Direct
-						
+
 						//   X X   Bullet
 						//    \|
 						//   O-X   Tau
-						//   |/ 
+						//   |/
 						//   X-O   Displacer
-						
+
 						if (!this.getIsCritical() && !this.getIsChopper()) {
 							if (this.shootingEntity == null) {
 								damagesource = ModDamageSource.causeBulletDamage(this, this);
@@ -488,37 +488,37 @@ public class EntityBullet extends Entity implements IProjectile {
 							if (movingobjectposition.entityHit instanceof EntityLivingBase) {
 								EntityLivingBase entitylivingbase = (EntityLivingBase) movingobjectposition.entityHit;
 
-								if (rad) {
-									if (entitylivingbase instanceof EntityPlayer
-											&& ArmorUtil.checkForHazmat((EntityPlayer) entitylivingbase)) {
-									} else if (entitylivingbase instanceof EntityCreeper) {
-										EntityCreeperNuclear creep = new EntityCreeperNuclear(this.worldObj);
-										creep.setLocationAndAngles(entitylivingbase.posX, entitylivingbase.posY, entitylivingbase.posZ,
-												entitylivingbase.rotationYaw, entitylivingbase.rotationPitch);
-										if (!entitylivingbase.isDead)
-											if (!worldObj.isRemote)
-												worldObj.spawnEntityInWorld(creep);
-										entitylivingbase.setDead();
-									} else if (entitylivingbase instanceof EntityVillager) {
-										EntityZombie creep = new EntityZombie(this.worldObj);
-										creep.setLocationAndAngles(entitylivingbase.posX, entitylivingbase.posY, entitylivingbase.posZ,
-												entitylivingbase.rotationYaw, entitylivingbase.rotationPitch);
-										entitylivingbase.setDead();
-										if (!this.worldObj.isRemote)
-											this.worldObj.spawnEntityInWorld(creep);
-									} else if (entitylivingbase instanceof EntityLivingBase
-											&& !(entitylivingbase instanceof EntityCreeperNuclear)
-											&& !(entitylivingbase instanceof EntityMooshroom)
-											&& !(entitylivingbase instanceof EntityZombie)) {
-										entitylivingbase.addPotionEffect(new PotionEffect(Potion.poison.getId(), 2 * 60 * 20, 2));
-										entitylivingbase.addPotionEffect(new PotionEffect(Potion.wither.getId(), 20, 4));
-										entitylivingbase.addPotionEffect(new PotionEffect(Potion.moveSlowdown.getId(), 1 * 60 * 20, 1));
-									}
-								}
-								
+								//if (rad) {
+								//	if (entitylivingbase instanceof EntityPlayer
+								//			&& ArmorUtil.checkForHazmat((EntityPlayer) entitylivingbase)) {
+								//	} else if (entitylivingbase instanceof EntityCreeper) {
+								//		EntityCreeperNuclear creep = new EntityCreeperNuclear(this.worldObj);
+								//		creep.setLocationAndAngles(entitylivingbase.posX, entitylivingbase.posY, entitylivingbase.posZ,
+								//				entitylivingbase.rotationYaw, entitylivingbase.rotationPitch);
+								//		if (!entitylivingbase.isDead)
+								//			if (!worldObj.isRemote)
+								//				worldObj.spawnEntityInWorld(creep);
+								//		entitylivingbase.setDead();
+								//	} else if (entitylivingbase instanceof EntityVillager) {
+								//		EntityZombie creep = new EntityZombie(this.worldObj);
+								//		creep.setLocationAndAngles(entitylivingbase.posX, entitylivingbase.posY, entitylivingbase.posZ,
+								//				entitylivingbase.rotationYaw, entitylivingbase.rotationPitch);
+								//		entitylivingbase.setDead();
+								//		if (!this.worldObj.isRemote)
+								//			this.worldObj.spawnEntityInWorld(creep);
+								//	} else if (entitylivingbase instanceof EntityLivingBase
+								//			&& !(entitylivingbase instanceof EntityCreeperNuclear)
+								//			&& !(entitylivingbase instanceof EntityMooshroom)
+								//			&& !(entitylivingbase instanceof EntityZombie)) {
+								//		entitylivingbase.addPotionEffect(new PotionEffect(Potion.poison.getId(), 2 * 60 * 20, 2));
+								//		entitylivingbase.addPotionEffect(new PotionEffect(Potion.wither.getId(), 20, 4));
+								//		entitylivingbase.addPotionEffect(new PotionEffect(Potion.moveSlowdown.getId(), 1 * 60 * 20, 1));
+								//	}
+								//}
+
 								if(antidote)
 									entitylivingbase.clearActivePotions();
-								
+
 								if (this.knockbackStrength > 0) {
 									f4 = MathHelper
 											.sqrt_double(this.motionX * this.motionX + this.motionZ * this.motionZ);
@@ -542,24 +542,24 @@ public class EntityBullet extends Entity implements IProjectile {
 									((EntityPlayerMP) this.shootingEntity).playerNetServerHandler
 											.sendPacket(new S2BPacketChangeGameState(6, 0.0F));
 								}
-								
+
 								if(this.pip) {
 									if(!worldObj.isRemote) {
 										EntityBoxcar pippo = new EntityBoxcar(worldObj);
 										pippo.posX = movingobjectposition.entityHit.posX;
 										pippo.posY = movingobjectposition.entityHit.posY + 50;
 										pippo.posZ = movingobjectposition.entityHit.posZ;
-									
+
 										for(int j = 0; j < 50; j++) {
 											EntityBSmokeFX fx = new EntityBSmokeFX(worldObj, pippo.posX + (rand.nextDouble() - 0.5) * 4, pippo.posY + (rand.nextDouble() - 0.5) * 12, pippo.posZ + (rand.nextDouble() - 0.5) * 4, 0, 0, 0);
 											worldObj.spawnEntityInWorld(fx);
 										}
-									
+
 										worldObj.spawnEntityInWorld(pippo);
 									}
-									
-									worldObj.playSoundEffect(movingobjectposition.entityHit.posX, 
-											movingobjectposition.entityHit.posY + 50, 
+
+									worldObj.playSoundEffect(movingobjectposition.entityHit.posX,
+											movingobjectposition.entityHit.posY + 50,
 											movingobjectposition.entityHit.posZ, "hbm:alarm.trainHorn", 100F, 1F);
 								}
 							}
@@ -579,24 +579,24 @@ public class EntityBullet extends Entity implements IProjectile {
 									;
 							}
 						} else {
-							
+
 							if(movingobjectposition.entityHit instanceof EntityLivingBase) {
-								
+
 								try {
 									Field lastDamage = ReflectionHelper.findField(EntityLivingBase.class, "lastDamage", "field_110153_bc");
-									
+
 									float dmg = (float) damage + lastDamage.getFloat(movingobjectposition.entityHit);
-									
+
 									movingobjectposition.entityHit.attackEntityFrom(damagesource, dmg);
 								} catch (Exception x) { }
 							}
-							
+
 						}
-						
-						
-						
-						
-						
+
+
+
+
+
 						/* else {
 							if (movingobjectposition.entityHit instanceof EntityLivingBase && !(movingobjectposition.entityHit instanceof EntityHunterChopper)) {
 								EntityLivingBase target = (EntityLivingBase) movingobjectposition.entityHit;
@@ -664,10 +664,10 @@ public class EntityBullet extends Entity implements IProjectile {
 			/*
 			 * while (this.rotationPitch - this.prevRotationPitch >= 180.0F) {
 			 * this.prevRotationPitch += 360.0F; }
-			 * 
+			 *
 			 * while (this.rotationYaw - this.prevRotationYaw < -180.0F) {
 			 * this.prevRotationYaw -= 360.0F; }
-			 * 
+			 *
 			 * while (this.rotationYaw - this.prevRotationYaw >= 180.0F) {
 			 * this.prevRotationYaw += 360.0F; }
 			 */
@@ -852,7 +852,7 @@ public class EntityBullet extends Entity implements IProjectile {
 		byte b0 = this.dataWatcher.getWatchableObjectByte(18);
 		return (b0 & 1) != 0;
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public int getBrightnessForRender(float p_70070_1_) {

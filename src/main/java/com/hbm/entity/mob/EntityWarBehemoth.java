@@ -37,7 +37,7 @@ public class EntityWarBehemoth extends EntityMob implements IRangedAttackMob {
         super(p_i1733_1_);
         this.setSize(0.75F, 1.35F);
         this.getNavigator().setAvoidsWater(true);
-                
+
         this.targetTasks.addTask(1, new EntityAINearestAttackableTarget(this, EntityPlayer.class, 0, true));
         this.targetTasks.addTask(2, new EntityAINearestAttackableTarget(this, EntityLiving.class, 0, true, true, selector));
         this.tasks.addTask(3, new EntityAIStepTowardsTarget(this, 4, 0.4, 20, 60, 0.6));
@@ -49,25 +49,25 @@ public class EntityWarBehemoth extends EntityMob implements IRangedAttackMob {
 	@Override
 	public void attackEntityWithRangedAttack(EntityLivingBase p_82196_1_, float p_82196_2_) {
 		// TODO Auto-generated method stub
-		
+
 	}
 	@Override
 	public boolean attackEntityFrom(DamageSource source, float amount) {
-		
+
 		if(source instanceof EntityDamageSourceIndirect && ((EntityDamageSourceIndirect) source).getSourceOfDamage() instanceof EntityEgg && rand.nextInt(10) == 0) {
 			this.experienceValue = 0;
 			this.setHealth(0);
 			return true;
 		}
 
-		if(source.isFireDamage())
-			amount = 0;
-		if(source.isMagicDamage())
-			amount = 0;
-		if(source.isProjectile())
-			amount *= 0.25F;
-		if(source.isExplosion())
-			amount *= 0.5F;
+		//if(source.isFireDamage())
+		//	amount = 0;
+		//if(source.isMagicDamage())
+		//	amount = 0;
+		//if(source.isProjectile())
+		//	amount *= 0.25F;
+		//if(source.isExplosion())
+		//	amount *= 0.5F;
 
 		if(amount > 50) {
 			amount = 50 + (amount - 50) * 0.25F;
@@ -75,7 +75,7 @@ public class EntityWarBehemoth extends EntityMob implements IRangedAttackMob {
 
 		return super.attackEntityFrom(source, amount);
 	}
-	
+
 	@Override
 	protected void applyEntityAttributes() {
 		super.applyEntityAttributes();

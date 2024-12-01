@@ -129,7 +129,7 @@ public class EntityEffectHandler {
 		handleContamination(entity);
 		handleContagion(entity);
 		handleRadiation(entity);
-		handleDigamma(entity);
+		//handleDigamma(entity);
 		handleLungDisease(entity);
 		handleOil(entity);
 		handlePollution(entity);
@@ -341,28 +341,28 @@ public class EntityEffectHandler {
 		}
 	}
 
-	private static void handleDigamma(EntityLivingBase entity) {
-
-		if(!entity.worldObj.isRemote) {
-
-			float digamma = HbmLivingProps.getDigamma(entity);
-
-			if(digamma < 0.01F)
-				return;
-
-			int chance = Math.max(10 - (int)(digamma), 1);
-
-			if(chance == 1 || entity.getRNG().nextInt(chance) == 0) {
-
-				NBTTagCompound data = new NBTTagCompound();
-				data.setString("type", "sweat");
-				data.setInteger("count", 1);
-				data.setInteger("block", Block.getIdFromBlock(Blocks.soul_sand));
-				data.setInteger("entity", entity.getEntityId());
-				PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(data, 0, 0, 0),  new TargetPoint(entity.dimension, entity.posX, entity.posY, entity.posZ, 25));
-			}
-		}
-	}
+	//private static void handleDigamma(EntityLivingBase entity) {
+//
+	//	if(!entity.worldObj.isRemote) {
+//
+	//		float digamma = HbmLivingProps.getDigamma(entity);
+//
+	//		if(digamma < 0.01F)
+	//			return;
+//
+	//		int chance = Math.max(10 - (int)(digamma), 1);
+//
+	//		if(chance == 1 || entity.getRNG().nextInt(chance) == 0) {
+//
+	//			NBTTagCompound data = new NBTTagCompound();
+	//			data.setString("type", "sweat");
+	//			data.setInteger("count", 1);
+	//			data.setInteger("block", Block.getIdFromBlock(Blocks.soul_sand));
+	//			data.setInteger("entity", entity.getEntityId());
+	//			PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(data, 0, 0, 0),  new TargetPoint(entity.dimension, entity.posX, entity.posY, entity.posZ, 25));
+	//		}
+	//	}
+	//}
 
 	private static void handleContagion(EntityLivingBase entity) {
 

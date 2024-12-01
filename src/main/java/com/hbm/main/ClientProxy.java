@@ -793,7 +793,7 @@ public class ClientProxy extends ServerProxy {
 	    RenderingRegistry.registerEntityRenderingHandler(EntityRagingVortex.class, new RenderBlackHole());
 	    RenderingRegistry.registerEntityRenderingHandler(EntityQuasar.class, new RenderQuasar());
 	    RenderingRegistry.registerEntityRenderingHandler(EntityDeathBlast.class, new RenderDeathBlast());
-	    RenderingRegistry.registerEntityRenderingHandler(EntitySpear.class, new RenderSpear());
+	    //RenderingRegistry.registerEntityRenderingHandler(EntitySpear.class, new RenderSpear());
 	    RenderingRegistry.registerEntityRenderingHandler(EntityNukeTorex.class, new RenderTorex());
 		//minecarts
 		RenderingRegistry.registerEntityRenderingHandler(EntityMinecartTest.class, new RenderMinecartTest());
@@ -815,23 +815,23 @@ public class ClientProxy extends ServerProxy {
 		RenderingRegistry.registerEntityRenderingHandler(EntityRequestDrone.class, new RenderDeliveryDrone());
 		RenderingRegistry.registerEntityRenderingHandler(EntityFallingBlockNT.class, new RenderFallingBlockNT());
 		//mobs
-		RenderingRegistry.registerEntityRenderingHandler(EntityCreeperNuclear.class, new RenderCreeperUniversal(RefStrings.MODID + ":" + "textures/entity/creeper.png", RefStrings.MODID + ":" + "textures/entity/creeper_armor.png").setSwellMod(5F));
+		//RenderingRegistry.registerEntityRenderingHandler(EntityCreeperNuclear.class, new RenderCreeperUniversal(RefStrings.MODID + ":" + "textures/entity/creeper.png", RefStrings.MODID + ":" + "textures/entity/creeper_armor.png").setSwellMod(5F));
 		//RenderingRegistry.registerEntityRenderingHandler(EntityCreeperTainted.class, new RenderCreeperUniversal(RefStrings.MODID + ":" + "textures/entity/creeper_tainted.png", RefStrings.MODID + ":" + "textures/entity/creeper_armor_taint.png"));
 		RenderingRegistry.registerEntityRenderingHandler(EntityCreeperPhosgene.class, new RenderCreeperUniversal(RefStrings.MODID + ":" + "textures/entity/creeper_phosgene.png", "textures/entity/creeper/creeper_armor.png"));
 		RenderingRegistry.registerEntityRenderingHandler(EntityCreeperVolatile.class, new RenderCreeperUniversal(RefStrings.MODID + ":" + "textures/entity/creeper_volatile.png", "textures/entity/creeper/creeper_armor.png"));
 		RenderingRegistry.registerEntityRenderingHandler(EntityCreeperGold.class, new RenderCreeperUniversal(RefStrings.MODID + ":" + "textures/entity/creeper_gold.png", "textures/entity/creeper/creeper_armor.png"));
 		RenderingRegistry.registerEntityRenderingHandler(EntityCreeperFlesh.class, new RenderCreeperUniversal(RefStrings.MODID + ":" + "textures/entity/creeper_flesh.png", "textures/entity/creeper/creeper_armor.png"));
-		RenderingRegistry.registerEntityRenderingHandler(EntityHunterChopper.class, new RenderHunterChopper());
+		//RenderingRegistry.registerEntityRenderingHandler(EntityHunterChopper.class, new RenderHunterChopper());
 		RenderingRegistry.registerEntityRenderingHandler(EntityCyberCrab.class, new RenderCyberCrab());
 		RenderingRegistry.registerEntityRenderingHandler(EntityTeslaCrab.class, new RenderTeslaCrab());
 		//RenderingRegistry.registerEntityRenderingHandler(EntityTaintCrab.class, new RenderTaintCrab());
-		RenderingRegistry.registerEntityRenderingHandler(EntityMaskMan.class, new RenderMaskMan());
+		//RenderingRegistry.registerEntityRenderingHandler(EntityMaskMan.class, new RenderMaskMan());
 		RenderingRegistry.registerEntityRenderingHandler(EntityBOTPrimeHead.class, new RenderWormHead());
 		RenderingRegistry.registerEntityRenderingHandler(EntityBOTPrimeBody.class, new RenderWormBody());
-		RenderingRegistry.registerEntityRenderingHandler(EntityDuck.class, new RenderDuck(new ModelChicken(), 0.3F));
-		RenderingRegistry.registerEntityRenderingHandler(EntityQuackos.class, new RenderQuacc(new ModelChicken(), 7.5F));
+		//RenderingRegistry.registerEntityRenderingHandler(EntityDuck.class, new RenderDuck(new ModelChicken(), 0.3F));
+		//RenderingRegistry.registerEntityRenderingHandler(EntityQuackos.class, new RenderQuacc(new ModelChicken(), 7.5F));
 		RenderingRegistry.registerEntityRenderingHandler(EntityFBI.class, new RenderFBI());
-		RenderingRegistry.registerEntityRenderingHandler(EntityRADBeast.class, new RenderRADBeast());
+		//RenderingRegistry.registerEntityRenderingHandler(EntityRADBeast.class, new RenderRADBeast());
 		RenderingRegistry.registerEntityRenderingHandler(EntityBlockSpider.class, new RenderBlockSpider());
 		RenderingRegistry.registerEntityRenderingHandler(EntityUFO.class, new RenderUFO());
 		RenderingRegistry.registerEntityRenderingHandler(EntitySiegeZombie.class, new RenderSiegeZombie());

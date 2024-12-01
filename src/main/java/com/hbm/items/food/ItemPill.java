@@ -41,9 +41,9 @@ public class ItemPill extends ItemFood {
 	@Override
 	protected void onFoodEaten(ItemStack stack, World world, EntityPlayer player) {
 		if(!world.isRemote) {
-			
+
 			VersatileConfig.applyPotionSickness(player, 5);
-			
+
 			if(this == ModItems.pill_iodine) {
 				player.removePotionEffect(Potion.blindness.id);
 				player.removePotionEffect(Potion.confusion.id);
@@ -68,49 +68,49 @@ public class ItemPill extends ItemFood {
 			if(this == ModItems.radx) {
 				player.addPotionEffect(new PotionEffect(HbmPotion.radx.id, 3 * 60 * 20, 0));
 			}
-			
+
 			if(this == ModItems.siox) {
 				HbmLivingProps.setAsbestos(player, 0);
 				HbmLivingProps.setBlackLung(player, Math.min(HbmLivingProps.getBlackLung(player), HbmLivingProps.maxBlacklung / 5));
 			}
-			
+
 			if(this == ModItems.pill_herbal) {
 				HbmLivingProps.setAsbestos(player, 0);
 				HbmLivingProps.setBlackLung(player, Math.min(HbmLivingProps.getBlackLung(player), HbmLivingProps.maxBlacklung / 5));
 				HbmLivingProps.incrementRadiation(player, -100F);
-				
+
 				player.addPotionEffect(new PotionEffect(Potion.confusion.id, 10 * 20, 0));
 				player.addPotionEffect(new PotionEffect(Potion.weakness.id, 10 * 60 * 20, 2));
 				player.addPotionEffect(new PotionEffect(Potion.digSlowdown.id, 10 * 60 * 20, 2));
 				player.addPotionEffect(new PotionEffect(Potion.poison.id, 5 * 20, 2));
-				
+
 				PotionEffect eff = new PotionEffect(HbmPotion.potionsickness.id, 10 * 60 * 20);
 				eff.setCurativeItems(new ArrayList());
 				player.addPotionEffect(eff);
 			}
 
 			if(this == ModItems.xanax) {
-				float digamma = HbmLivingProps.getDigamma(player);
-				HbmLivingProps.setDigamma(player, Math.max(digamma - 0.5F, 0F));
+				//float digamma = HbmLivingProps.getDigamma(player);
+				//HbmLivingProps.setDigamma(player, Math.max(digamma - 0.5F, 0F));
 			}
 			if(this == ModItems.animan) {
 				int x = (int)MathHelper.floor_double(player.posX);
 				int y = (int)MathHelper.floor_double(player.posY);
 				int z = (int)MathHelper.floor_double(player.posZ);
 				world.playSoundEffect(x, y, z, "hbm:player.oil", 1.0F, 1.0F);
-				
+
 				player.addPotionEffect(new PotionEffect(HbmPotion.run.id, 10 * 20, 0));
-				
+
 				NBTTagCompound nbt = new NBTTagCompound();
 				nbt.setString("type", "vomit");
 				nbt.setString("mode", "normal");
 				nbt.setInteger("count", 25);
 				nbt.setInteger("entity", player.getEntityId());
 				PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(nbt, 0, 0, 0),  new TargetPoint(player.dimension, x, y, z, 25));
-				
+
 				world.playSoundEffect(x, y, z, "hbm:player.vomit", 1.0F, 1.0F);
 				player.addPotionEffect(new PotionEffect(Potion.hunger.id, 60, 19));
-			
+
 			}
 			if(this == ModItems.chocolate) {
 				if(rand.nextInt(25) == 0) {
@@ -122,28 +122,28 @@ public class ItemPill extends ItemFood {
 			}
 
 			if(this == ModItems.fmn) {
-				float digamma = HbmLivingProps.getDigamma(player);
-				HbmLivingProps.setDigamma(player, Math.min(digamma, 2F));
+				//float digamma = HbmLivingProps.getDigamma(player);
+				//HbmLivingProps.setDigamma(player, Math.min(digamma, 2F));
 				player.addPotionEffect(new PotionEffect(Potion.blindness.id, 60, 0));
 			}
 
 			if(this == ModItems.five_htp) {
-				HbmLivingProps.setDigamma(player, 0);
+				//HbmLivingProps.setDigamma(player, 0);
 				player.addPotionEffect(new PotionEffect(HbmPotion.stability.id, 10 * 60 * 20, 0));
 			}
 		}
 	}
-	
-	
+
+
 
 	@Override
 	public void addInformation(ItemStack itemstack, EntityPlayer player, List list, boolean bool) {
 		String unloc = this.getUnlocalizedName() + ".desc"; //this should really be an interface...
 		String loc = I18nUtil.resolveKey(unloc);
-		
+
 		if(!unloc.equals(loc)) {
 			String[] locs = loc.split("\\$");
-			
+
 			for(String s : locs) {
 				list.add(s);
 			}

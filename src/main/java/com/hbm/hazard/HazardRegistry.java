@@ -165,7 +165,7 @@ public class HazardRegistry {
 	public static final float rod_rbmk = rod * 8;
 
 	public static final HazardTypeBase RADIATION = new HazardTypeRadiation();
-	public static final HazardTypeBase DIGAMMA = new HazardTypeDigamma();
+	//public static final HazardTypeBase DIGAMMA = new HazardTypeDigamma();
 	public static final HazardTypeBase HOT = new HazardTypeHot();
 	public static final HazardTypeBase BLINDING = new HazardTypeBlinding();
 	public static final HazardTypeBase ASBESTOS = new HazardTypeAsbestos();
@@ -544,8 +544,8 @@ public class HazardRegistry {
 		HazardSystem.register(solinium_core, makeData().addEntry(RADIATION, sa327 * nugget * 8).addEntry(BLINDING, 45F));
 
 		//HazardSystem.register(nuke_fstbmb, makeData(DIGAMMA, 0.01F));
-		HazardSystem.register(DictFrame.fromOne(ModItems.holotape_image, EnumHoloImage.HOLO_RESTORED), makeData(DIGAMMA, 1F));
-		HazardSystem.register(holotape_damaged, makeData(DIGAMMA, 1_000F));
+		//HazardSystem.register(DictFrame.fromOne(ModItems.holotape_image, EnumHoloImage.HOLO_RESTORED), makeData(DIGAMMA, 1F));
+		//HazardSystem.register(holotape_damaged, makeData(DIGAMMA, 1_000F));
 
 		/*
 		 * Blacklist
@@ -609,7 +609,7 @@ public class HazardRegistry {
 		HazardData data = new HazardData();
 		data.addEntry(new HazardEntry(RADIATION, base).addMod(new HazardModifierRBMKRadiation(dep, linear)));
 		if(blinding > 0) data.addEntry(new HazardEntry(BLINDING, blinding));
-		if(digamma > 0) data.addEntry(new HazardEntry(DIGAMMA, digamma));
+		//if(digamma > 0) data.addEntry(new HazardEntry(DIGAMMA, digamma));
 		HazardSystem.register(pellet, data);
 	}
 
@@ -623,7 +623,7 @@ public class HazardRegistry {
 		data.addEntry(new HazardEntry(RADIATION, base).addMod(new HazardModifierRBMKRadiation(dep, linear)));
 		if(hot) data.addEntry(new HazardEntry(HOT, 0).addMod(new HazardModifierRBMKHot()));
 		if(blinding > 0) data.addEntry(new HazardEntry(BLINDING, blinding));
-		if(digamma > 0) data.addEntry(new HazardEntry(DIGAMMA, digamma));
+		//if(digamma > 0) data.addEntry(new HazardEntry(DIGAMMA, digamma));
 		HazardSystem.register(rod, data);
 	}
 

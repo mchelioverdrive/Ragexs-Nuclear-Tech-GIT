@@ -17,10 +17,11 @@ import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.EnumChatFormatting;
 
 public class HazardTypeAutism extends HazardTypeBase {
+	//mirror mirror on the wall,  who is the most unfunny of them all, a bobacat a doctor named nostalgia, maybe even some ducks and digamma.
 
 	@Override
 	public void onUpdate(EntityLivingBase target, float level, ItemStack stack) {
-		
+
 		if(RadiationConfig.disableBlinding)
 			return;
 

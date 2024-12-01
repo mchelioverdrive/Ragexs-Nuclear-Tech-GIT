@@ -4,7 +4,7 @@ import java.util.Random;
 
 import org.lwjgl.opengl.GL11;
 
-import com.hbm.entity.effect.EntitySpear;
+//import com.hbm.entity.effect.EntitySpear;
 import com.hbm.main.ResourceManager;
 
 import net.minecraft.client.renderer.OpenGlHelper;
@@ -18,49 +18,49 @@ public class RenderSpear extends Render {
 
 	@Override
 	public void doRender(Entity entity, double x, double y, double z, float f, float interp) {
-		
+
 		GL11.glPushMatrix();
 		GL11.glTranslatef((float) x, (float) y + 15, (float) z);
 		GL11.glEnable(GL11.GL_LIGHTING);
 		GL11.glEnable(GL11.GL_CULL_FACE);
-		
+
 		GL11.glRotated(180, 1, 0, 0);
 		GL11.glScaled(2, 2, 2);
-		
-		EntitySpear spear = (EntitySpear) entity;
-		
+
+		//EntitySpear spear = (EntitySpear) entity;
+
 		GL11.glShadeModel(GL11.GL_SMOOTH);
 		bindTexture(ResourceManager.lance_tex);
 		ResourceManager.lance.renderPart("Spear");
-		
-		if(spear.ticksInGround > 0) {
-			float occupancy = Math.min((spear.ticksInGround + interp) / 100F, 1F);
-			GL11.glColor4f(1F, 1F, 1F, occupancy);
 
-			GL11.glDisable(GL11.GL_LIGHTING);
-			GL11.glEnable(GL11.GL_BLEND);
-			GL11.glAlphaFunc(GL11.GL_GEQUAL, 0.0F);
-			GL11.glDisable(GL11.GL_TEXTURE_2D);
-			
-			OpenGlHelper.glBlendFunc(770, 771, 1, 0);
-			
-			ResourceManager.lance.renderPart("Spear");
-			
-			GL11.glEnable(GL11.GL_TEXTURE_2D);
-			GL11.glAlphaFunc(GL11.GL_GREATER, 0.1F);
-			GL11.glDisable(GL11.GL_BLEND);
-			GL11.glEnable(GL11.GL_LIGHTING);
-			
-			GL11.glColor4f(1F, 1F, 1F, 1F);
-			
-			renderFlash((spear.ticksInGround + interp) / 200D);
-		}
-		
+		//if(spear.ticksInGround > 0) {
+		//	float occupancy = Math.min((spear.ticksInGround + interp) / 100F, 1F);
+		//	GL11.glColor4f(1F, 1F, 1F, occupancy);
+//
+		//	GL11.glDisable(GL11.GL_LIGHTING);
+		//	GL11.glEnable(GL11.GL_BLEND);
+		//	GL11.glAlphaFunc(GL11.GL_GEQUAL, 0.0F);
+		//	GL11.glDisable(GL11.GL_TEXTURE_2D);
+		//
+		//	OpenGlHelper.glBlendFunc(770, 771, 1, 0);
+		//
+		//	ResourceManager.lance.renderPart("Spear");
+		//
+		//	GL11.glEnable(GL11.GL_TEXTURE_2D);
+		//	GL11.glAlphaFunc(GL11.GL_GREATER, 0.1F);
+		//	GL11.glDisable(GL11.GL_BLEND);
+		//	GL11.glEnable(GL11.GL_LIGHTING);
+		//
+		//	GL11.glColor4f(1F, 1F, 1F, 1F);
+		//
+		//	renderFlash((spear.ticksInGround + interp) / 200D);
+		//}
+
 		GL11.glShadeModel(GL11.GL_FLAT);
-		
+
 		GL11.glPopMatrix();
 	}
-	
+
 	private void renderFlash(double intensity) {
 
 		GL11.glScalef(0.2F, 0.2F, 0.2F);

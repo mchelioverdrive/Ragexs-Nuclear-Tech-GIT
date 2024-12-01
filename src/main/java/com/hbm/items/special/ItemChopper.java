@@ -2,8 +2,8 @@ package com.hbm.items.special;
 
 import java.util.List;
 
-import com.hbm.entity.mob.EntityDuck;
-import com.hbm.entity.mob.EntityHunterChopper;
+//import com.hbm.entity.mob.EntityDuck;
+//import com.hbm.entity.mob.EntityHunterChopper;
 import com.hbm.entity.mob.EntityUFO;
 import com.hbm.entity.mob.botprime.EntityBOTPrimeHead;
 import com.hbm.items.ModItems;

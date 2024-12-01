@@ -19,7 +19,7 @@ import com.hbm.config.SpaceConfig;
 import com.hbm.dim.SkyProviderCelestial;
 import com.hbm.dim.WorldProviderCelestial;
 import com.hbm.dim.orbit.WorldProviderOrbit;
-import com.hbm.entity.mob.EntityHunterChopper;
+//import com.hbm.entity.mob.EntityHunterChopper;
 import com.hbm.entity.projectile.EntityChopperMine;
 import com.hbm.entity.train.EntityRailCarRidable;
 import com.hbm.extprop.HbmLivingProps;
@@ -64,9 +64,9 @@ import com.hbm.render.util.RenderAccessoryUtility;
 import com.hbm.render.util.RenderOverhead;
 import com.hbm.render.util.RenderScreenOverlay;
 import com.hbm.render.util.SoyuzPronter;
-import com.hbm.sound.MovingSoundChopper;
+//import com.hbm.sound.MovingSoundChopper;
 import com.hbm.sound.MovingSoundChopperMine;
-import com.hbm.sound.MovingSoundCrashing;
+//import com.hbm.sound.MovingSoundCrashing;
 import com.hbm.sound.MovingSoundPlayerLoop;
 import com.hbm.tileentity.bomb.TileEntityNukeCustom;
 import com.hbm.tileentity.bomb.TileEntityNukeCustom.CustomNukeEntry;
@@ -693,25 +693,25 @@ public class ModEventHandlerClient {
 
 		//and fuck you too
 
-		if(r.toString().equals("hbm:misc.nullChopper") && Library.getClosestChopperForSound(wc, e.sound.getXPosF(), e.sound.getYPosF(), e.sound.getZPosF(), 2) != null)
-		{
-			EntityHunterChopper ent = Library.getClosestChopperForSound(wc, e.sound.getXPosF(), e.sound.getYPosF(), e.sound.getZPosF(), 2);
+		//if(r.toString().equals("hbm:misc.nullChopper") && Library.getClosestChopperForSound(wc, e.sound.getXPosF(), e.sound.getYPosF(), e.sound.getZPosF(), 2) != null)
+		//{
+		//	EntityHunterChopper ent = Library.getClosestChopperForSound(wc, e.sound.getXPosF(), e.sound.getYPosF(), e.sound.getZPosF(), 2);
+//
+		//	if(MovingSoundPlayerLoop.getSoundByPlayer(ent, EnumHbmSound.soundChopperLoop) == null) {
+		//		MovingSoundPlayerLoop.globalSoundList.add(new MovingSoundChopper(new ResourceLocation("hbm:entity.chopperFlyingLoop"), ent, EnumHbmSound.soundChopperLoop));
+		//		MovingSoundPlayerLoop.getSoundByPlayer(ent, EnumHbmSound.soundChopperLoop).setVolume(10.0F);
+		//	}
+		//}
 
-			if(MovingSoundPlayerLoop.getSoundByPlayer(ent, EnumHbmSound.soundChopperLoop) == null) {
-				MovingSoundPlayerLoop.globalSoundList.add(new MovingSoundChopper(new ResourceLocation("hbm:entity.chopperFlyingLoop"), ent, EnumHbmSound.soundChopperLoop));
-				MovingSoundPlayerLoop.getSoundByPlayer(ent, EnumHbmSound.soundChopperLoop).setVolume(10.0F);
-			}
-		}
-
-		if(r.toString().equals("hbm:misc.nullCrashing") && Library.getClosestChopperForSound(wc, e.sound.getXPosF(), e.sound.getYPosF(), e.sound.getZPosF(), 2) != null)
-		{
-			EntityHunterChopper ent = Library.getClosestChopperForSound(wc, e.sound.getXPosF(), e.sound.getYPosF(), e.sound.getZPosF(), 2);
-
-			if(MovingSoundPlayerLoop.getSoundByPlayer(ent, EnumHbmSound.soundCrashingLoop) == null) {
-				MovingSoundPlayerLoop.globalSoundList.add(new MovingSoundCrashing(new ResourceLocation("hbm:entity.chopperCrashingLoop"), ent, EnumHbmSound.soundCrashingLoop));
-				MovingSoundPlayerLoop.getSoundByPlayer(ent, EnumHbmSound.soundCrashingLoop).setVolume(10.0F);
-			}
-		}
+		//if(r.toString().equals("hbm:misc.nullCrashing") && Library.getClosestChopperForSound(wc, e.sound.getXPosF(), e.sound.getYPosF(), e.sound.getZPosF(), 2) != null)
+		//{
+		//	EntityHunterChopper ent = Library.getClosestChopperForSound(wc, e.sound.getXPosF(), e.sound.getYPosF(), e.sound.getZPosF(), 2);
+//
+		//	if(MovingSoundPlayerLoop.getSoundByPlayer(ent, EnumHbmSound.soundCrashingLoop) == null) {
+		//		MovingSoundPlayerLoop.globalSoundList.add(new MovingSoundCrashing(new ResourceLocation("hbm:entity.chopperCrashingLoop"), ent, EnumHbmSound.soundCrashingLoop));
+		//		MovingSoundPlayerLoop.getSoundByPlayer(ent, EnumHbmSound.soundCrashingLoop).setVolume(10.0F);
+		//	}
+		//}
 
 		if(r.toString().equals("hbm:misc.nullMine") && Library.getClosestMineForSound(wc, e.sound.getXPosF(), e.sound.getYPosF(), e.sound.getZPosF(), 2) != null)
 		{

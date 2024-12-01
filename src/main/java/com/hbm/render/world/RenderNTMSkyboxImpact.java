@@ -19,10 +19,10 @@ import com.hbm.handler.ImpactWorldHandler;
 import java.util.Random;
 
 public class RenderNTMSkyboxImpact extends IRenderHandler {
-	
+
 	private static final ResourceLocation sunTexture = new ResourceLocation("textures/environment/sun.png");
 	private static final ResourceLocation moonTexture = new ResourceLocation("textures/environment/moon_phases.png");
-	private static final ResourceLocation digammaStar = new ResourceLocation("hbm:textures/misc/star_digamma.png");
+	//private static final ResourceLocation digammaStar = new ResourceLocation("hbm:textures/misc/star_digamma.png");
 	private static final ResourceLocation bobmazonSat = new ResourceLocation("hbm:textures/misc/sat_bobmazon.png");
 
 	public int starGLCallList;
@@ -45,7 +45,7 @@ public class RenderNTMSkyboxImpact extends IRenderHandler {
 	/// make the skybox render correctly after Tom. Sorry about that. -Pu
 
 	private void initializeDisplayLists() {
-		
+
 	    starGLCallList = GLAllocation.generateDisplayLists(3);
 		GL11.glPushMatrix();
 		GL11.glNewList(this.starGLCallList, GL11.GL_COMPILE);
@@ -204,39 +204,39 @@ public class RenderNTMSkyboxImpact extends IRenderHandler {
 			GL11.glRotatef(140.0F, 1.0F, 0.0F, 0.0F);
 			GL11.glRotatef(-40.0F, 0.0F, 0.0F, 1.0F);
 
-			FMLClientHandler.instance().getClient().renderEngine.bindTexture(digammaStar);
+			//FMLClientHandler.instance().getClient().renderEngine.bindTexture(digammaStar);
 
-			float digamma = HbmLivingProps.getDigamma(Minecraft.getMinecraft().thePlayer);
-			float var12 = 1F * (1 + digamma * 0.25F);
-			double dist = 100D - digamma * 2.5;
+			//float digamma = HbmLivingProps.getDigamma(Minecraft.getMinecraft().thePlayer);
+			//float var12 = 1F * (1 + digamma * 0.25F);
+			//double dist = 100D - digamma * 2.5;
 
-			tessellator.startDrawingQuads();
-			tessellator.addVertexWithUV(-var12, dist, -var12, 0.0D, 0.0D);
-			tessellator.addVertexWithUV(var12, dist, -var12, 0.0D, 1.0D);
-			tessellator.addVertexWithUV(var12, dist, var12, 1.0D, 1.0D);
-			tessellator.addVertexWithUV(-var12, dist, var12, 1.0D, 0.0D);
-			tessellator.draw();
-			GL11.glPopMatrix();
-
-			GL11.glPushMatrix();
-			GL11.glColor4f(brightness, brightness, brightness, rain);
-			GL11.glRotatef(-40.0F, 1.0F, 0.0F, 0.0F);
-			GL11.glRotatef((System.currentTimeMillis() % (360 * 1000) / 1000F), 0.0F, 1.0F, 0.0F);
-			GL11.glRotatef((System.currentTimeMillis() % (360 * 100) / 100F), 1.0F, 0.0F, 0.0F);
-
-			FMLClientHandler.instance().getClient().renderEngine.bindTexture(bobmazonSat);
-
-			var12 = 0.5F;
-			dist = 100D;
-
-			tessellator.startDrawingQuads();
-			tessellator.addVertexWithUV(-var12, dist, -var12, 0.0D, 0.0D);
-			tessellator.addVertexWithUV(var12, dist, -var12, 0.0D, 1.0D);
-			tessellator.addVertexWithUV(var12, dist, var12, 1.0D, 1.0D);
-			tessellator.addVertexWithUV(-var12, dist, var12, 1.0D, 0.0D);
-			tessellator.draw();
-			GL11.glPopMatrix();
-		}
+			//tessellator.startDrawingQuads();
+			//tessellator.addVertexWithUV(-var12, dist, -var12, 0.0D, 0.0D);
+			//tessellator.addVertexWithUV(var12, dist, -var12, 0.0D, 1.0D);
+			//tessellator.addVertexWithUV(var12, dist, var12, 1.0D, 1.0D);
+			//tessellator.addVertexWithUV(-var12, dist, var12, 1.0D, 0.0D);
+			//tessellator.draw();
+			//GL11.glPopMatrix();
+//
+			//GL11.glPushMatrix();
+			//GL11.glColor4f(brightness, brightness, brightness, rain);
+			//GL11.glRotatef(-40.0F, 1.0F, 0.0F, 0.0F);
+			//GL11.glRotatef((System.currentTimeMillis() % (360 * 1000) / 1000F), 0.0F, 1.0F, 0.0F);
+			//GL11.glRotatef((System.currentTimeMillis() % (360 * 100) / 100F), 1.0F, 0.0F, 0.0F);
+//
+			//FMLClientHandler.instance().getClient().renderEngine.bindTexture(bobmazonSat);
+//
+			//var12 = 0.5F;
+			//dist = 100D;
+//
+			//tessellator.startDrawingQuads();
+			//tessellator.addVertexWithUV(-var12, dist, -var12, 0.0D, 0.0D);
+			//tessellator.addVertexWithUV(var12, dist, -var12, 0.0D, 1.0D);
+			//tessellator.addVertexWithUV(var12, dist, var12, 1.0D, 1.0D);
+			//tessellator.addVertexWithUV(-var12, dist, var12, 1.0D, 0.0D);
+			//tessellator.draw();
+			//GL11.glPopMatrix();
+		} //todo: make sure this absolute mong didnt code something that drastically fucks something either in here or in chainloader
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
 
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);

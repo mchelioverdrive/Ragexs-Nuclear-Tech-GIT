@@ -40,33 +40,33 @@ public class EntitySiegeSkeleton extends EntityMob implements IRangedAttackMob, 
 
 	@Override
 	public boolean attackEntityFrom(DamageSource source, float damage) {
-		
+
 		if(this.isEntityInvulnerable())
 			return false;
-		
+
 		SiegeTier tier = this.getTier();
-		
+
 		if(tier.fireProof && source.isFireDamage()) {
 			this.extinguish();
 			return false;
 		}
-		
+
 		if(tier.noFall && source == DamageSource.fall)
 			return false;
-		
+
 		//noFF can't be harmed by other mobs
 		if(tier.noFriendlyFire && source instanceof EntityDamageSource && !(((EntityDamageSource) source).getEntity() instanceof EntityPlayer))
 			return false;
-		
-		damage -= tier.dt;
-		
-		if(damage < 0) {
-			worldObj.playSoundAtEntity(this, "random.break", 5F, 1.0F + rand.nextFloat() * 0.5F);
-			return false;
-		}
-		
-		damage *= (1F - tier.dr);
-		
+
+		//damage -= tier.dt;
+
+		//if(damage < 0) {
+		//	worldObj.playSoundAtEntity(this, "random.break", 5F, 1.0F + rand.nextFloat() * 0.5F);
+		//	return false;
+		//}
+
+		//damage *= (1F - tier.dr);
+
 		return super.attackEntityFrom(source, damage);
 	}
 
@@ -83,7 +83,7 @@ public class EntitySiegeSkeleton extends EntityMob implements IRangedAttackMob, 
 		this.getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(0.23D);
 		this.getEntityAttribute(SharedMonsterAttributes.attackDamage).setBaseValue(3.0D);
 	}
-	
+
 	public void setTier(SiegeTier tier) {
 		this.getDataWatcher().updateObject(12, tier.id);
 
@@ -92,7 +92,7 @@ public class EntitySiegeSkeleton extends EntityMob implements IRangedAttackMob, 
 		this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(tier.health);
 		this.setHealth(this.getMaxHealth());
 	}
-	
+
 	public SiegeTier getTier() {
 		SiegeTier tier = SiegeTier.tiers[this.getDataWatcher().getWatchableObjectInt(12)];
 		return tier != null ? tier : SiegeTier.CLAY;
@@ -125,15 +125,15 @@ public class EntitySiegeSkeleton extends EntityMob implements IRangedAttackMob, 
 
 	@Override
 	public void attackEntityWithRangedAttack(EntityLivingBase target, float f) {
-		
+
 		double x = posX;
 		double y = posY + this.getEyeHeight();
 		double z = posZ;
-		
+
 		Vec3 vec = Vec3.createVectorHelper(target.posX - x, target.posY + target.getYOffset() + target.height * 0.5 - y, target.posZ - z).normalize();
-		
+
 		SiegeTier tier = this.getTier();
-		
+
 		for(int i = 0; i < 3; i++) {
 			EntitySiegeLaser laser = new EntitySiegeLaser(worldObj, this);
 			laser.setPosition(x, y, z);
@@ -145,7 +145,7 @@ public class EntitySiegeSkeleton extends EntityMob implements IRangedAttackMob, 
 			if(tier.laserIncendiary) laser.setIncendiary();
 			worldObj.spawnEntityInWorld(laser);
 		}
-		
+
 		this.playSound("hbm:weapon.ballsLaser", 2.0F, 0.9F + rand.nextFloat() * 0.2F);
 	}
 
@@ -171,7 +171,7 @@ public class EntitySiegeSkeleton extends EntityMob implements IRangedAttackMob, 
 
 	@Override
 	protected void dropFewItems(boolean byPlayer, int fortune) {
-		
+
 		if(byPlayer) {
 			for(ItemStack drop : this.getTier().dropItem) {
 				this.entityDropItem(drop.copy(), 0F);
