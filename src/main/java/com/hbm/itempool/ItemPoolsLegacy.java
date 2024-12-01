@@ -30,7 +30,7 @@ public class ItemPoolsLegacy {
 	public static final String POOL_NUKE_MISC = "POOL_NUKE_MISC";
 	public static final String POOL_VERTIBIRD = "POOL_VERTIBIRD";
 	public static final String POOL_SPACESHIP = "POOL_SPACESHIP";
-	
+
 	public static void init() {
 
 		//"generic" set, found commonly in chests in many structures
@@ -43,13 +43,13 @@ public class ItemPoolsLegacy {
 					weighted(ModItems.ingot_beryllium, 0, 1, 2, 4),
 					weighted(ModItems.ingot_titanium, 0, 1, 1, 3),
 					weighted(ModItems.circuit, EnumCircuitType.VACUUM_TUBE.ordinal(), 1, 1, 5),
-					weighted(ModItems.gun_revolver, 0, 1, 1, 3),
-					weighted(ModItems.ammo_357, Ammo357Magnum.LEAD.ordinal(), 2, 6, 4),
-					weighted(ModItems.gun_kit_1, 0, 1, 3, 4),
-					weighted(ModItems.gun_lever_action, 0, 1, 1, 1),
-					weighted(ModItems.ammo_20gauge, 0, 2, 6, 3),
-					weighted(ModItems.casing_9, 0, 4, 10, 3),
-					weighted(ModItems.casing_50, 0, 4, 10, 3),
+					//weighted(ModItems.gun_revolver, 0, 1, 1, 3),
+					//weighted(ModItems.ammo_357, Ammo357Magnum.LEAD.ordinal(), 2, 6, 4),
+					//weighted(ModItems.gun_kit_1, 0, 1, 3, 4),
+					//weighted(ModItems.gun_lever_action, 0, 1, 1, 1),
+					//weighted(ModItems.ammo_20gauge, 0, 2, 6, 3),
+					//weighted(ModItems.casing_9, 0, 4, 10, 3),
+					//weighted(ModItems.casing_50, 0, 4, 10, 3),
 					weighted(ModItems.cordite, 0, 4, 6, 5),
 					weighted(ModItems.battery_generic, 0, 1, 1, 4),
 					weighted(ModItems.battery_advanced, 0, 1, 1, 2),
@@ -96,7 +96,7 @@ public class ItemPoolsLegacy {
 					weighted(ModItems.gas_mask_filter, 0, 1, 1, 2)
 			};
 		}};
-		
+
 		//"hidden" loot
 		new ItemPool(POOL_EXPENSIVE) {{
 			this.pool = new WeightedRandomChestContent[] {
@@ -104,22 +104,22 @@ public class ItemPoolsLegacy {
 					weighted(ModItems.circuit, EnumCircuitType.VACUUM_TUBE.ordinal(), 1, 1, 4),
 					weighted(ModItems.circuit, EnumCircuitType.ANALOG.ordinal(), 1, 1, 3),
 					weighted(ModItems.circuit, EnumCircuitType.CHIP.ordinal(), 1, 1, 2),
-					weighted(ModItems.gun_kit_1, 0, 1, 3, 6),
-					weighted(ModItems.gun_kit_2, 0, 1, 2, 3),
-					weighted(ModItems.gun_rpg, 0, 1, 1, 4),
-					weighted(ModItems.ammo_rocket, 0, 1, 4, 5),
-					weighted(ModItems.gun_fatman, 0, 1, 1, 1),
-					weighted(ModItems.ammo_nuke, AmmoFatman.SAFE.ordinal(), 1, 2, 1),
-					weighted(ModItems.ammo_nuke, AmmoFatman.LOW.ordinal(), 1, 2, 1),
-					weighted(ModItems.ammo_nuke, AmmoFatman.PUMPKIN.ordinal(), 1, 2, 1),
-					weighted(ModItems.grenade_nuclear, 0, 1, 1, 2),
-					weighted(ModItems.grenade_smart, 0, 1, 3, 3),
-					weighted(ModItems.grenade_mirv, 0, 1, 1, 2),
-					weighted(ModItems.stealth_boy, 0, 1, 1, 2),
+					//weighted(ModItems.gun_kit_1, 0, 1, 3, 6),
+					//weighted(ModItems.gun_kit_2, 0, 1, 2, 3),
+					//weighted(ModItems.gun_rpg, 0, 1, 1, 4),
+					//weighted(ModItems.ammo_rocket, 0, 1, 4, 5),
+					//weighted(ModItems.gun_fatman, 0, 1, 1, 1),
+					//weighted(ModItems.ammo_nuke, AmmoFatman.SAFE.ordinal(), 1, 2, 1),
+					//weighted(ModItems.ammo_nuke, AmmoFatman.LOW.ordinal(), 1, 2, 1),
+					//weighted(ModItems.ammo_nuke, AmmoFatman.PUMPKIN.ordinal(), 1, 2, 1),
+					//weighted(ModItems.grenade_nuclear, 0, 1, 1, 2),
+					//weighted(ModItems.grenade_smart, 0, 1, 3, 3),
+					//weighted(ModItems.grenade_mirv, 0, 1, 1, 2),
+					//weighted(ModItems.stealth_boy, 0, 1, 1, 2),
 					weighted(ModItems.battery_advanced, 0, 1, 1, 3),
 					weighted(ModItems.battery_advanced_cell, 0, 1, 1, 2),
 					weighted(ModItems.battery_schrabidium, 0, 1, 1, 1),
-					weighted(ModItems.syringe_awesome, 0, 1, 1, 1),
+					//weighted(ModItems.syringe_awesome, 0, 1, 1, 1),
 					weighted(ModItems.crate_caller, 0, 1, 1, 3),
 					weighted(ModItems.fusion_core, 0, 1, 1, 4),
 					weighted(ModItems.bottle_nuka, 0, 1, 3, 6),
@@ -137,7 +137,7 @@ public class ItemPoolsLegacy {
 					weighted(ModItems.launch_code_piece, 0, 1, 1, 1)
 			};
 		}};
-		
+
 		//nuclear waste products found in powerplants
 		new ItemPool(POOL_NUKE_TRASH) {{
 			this.pool = new WeightedRandomChestContent[] {
@@ -154,7 +154,7 @@ public class ItemPoolsLegacy {
 					weighted(ModBlocks.yellow_barrel, 0, 1, 1, 2)
 			};
 		}};
-		
+
 		//all sorts of nuclear related items, mostly fissile isotopes found in nuclear powerplants
 		new ItemPool(POOL_NUKE_MISC) {{
 			this.pool = new WeightedRandomChestContent[] {
@@ -184,39 +184,39 @@ public class ItemPoolsLegacy {
 					weighted(ModBlocks.yellow_barrel, 0, 1, 3, 3)
 			};
 		}};
-		
+
 		//loot found in vertibirds
 		new ItemPool(POOL_VERTIBIRD) {{
 			this.pool = new WeightedRandomChestContent[] {
-					weighted(ModItems.t45_helmet, 0, 1, 1, 15),
-					weighted(ModItems.t45_plate, 0, 1, 1, 15),
-					weighted(ModItems.t45_legs, 0, 1, 1, 15),
-					weighted(ModItems.t45_boots, 0, 1, 1, 15),
-					weighted(ModItems.t45_kit, 0, 1, 1, 3),
-					weighted(ModItems.fusion_core, 0, 1, 1, 10),
-					weighted(ModItems.gun_revolver, 0, 1, 1, 4),
-					weighted(ModItems.ammo_357, Ammo357Magnum.LEAD.ordinal(), 1, 24, 4),
-					weighted(ModItems.gun_kit_1, 0, 2, 3, 4),
-					weighted(ModItems.gun_rpg, 0, 1, 1, 3),
-					weighted(ModItems.ammo_rocket, 0, 1, 6, 3),
+					//weighted(ModItems.t45_helmet, 0, 1, 1, 15),
+					//weighted(ModItems.t45_plate, 0, 1, 1, 15),
+					//weighted(ModItems.t45_legs, 0, 1, 1, 15),
+					//weighted(ModItems.t45_boots, 0, 1, 1, 15),
+					//weighted(ModItems.t45_kit, 0, 1, 1, 3),
+					//weighted(ModItems.fusion_core, 0, 1, 1, 10),
+					//weighted(ModItems.gun_revolver, 0, 1, 1, 4),
+					//weighted(ModItems.ammo_357, Ammo357Magnum.LEAD.ordinal(), 1, 24, 4),
+					//weighted(ModItems.gun_kit_1, 0, 2, 3, 4),
+					//weighted(ModItems.gun_rpg, 0, 1, 1, 3),
+					//weighted(ModItems.ammo_rocket, 0, 1, 6, 3),
 					weighted(ModItems.rod, BreedingRodType.U235.ordinal(), 1, 1, 2),
 					weighted(ModItems.billet_uranium_fuel, 0, 1, 1, 2),
 					weighted(ModItems.ingot_uranium_fuel, 0, 1, 1, 2),
-					weighted(ModItems.ammo_nuke, AmmoFatman.SAFE.ordinal(), 1, 2, 1),
-					weighted(ModItems.gun_fatman, 0, 1, 1, 1),
+					//weighted(ModItems.ammo_nuke, AmmoFatman.SAFE.ordinal(), 1, 2, 1),
+					//weighted(ModItems.gun_fatman, 0, 1, 1, 1),
 					weighted(ModItems.bottle_nuka, 0, 1, 3, 6),
 					weighted(ModItems.bottle_quantum, 0, 1, 1, 3),
 					weighted(ModItems.stealth_boy, 0, 1, 1, 7),
-					weighted(ModItems.crate_caller, 0, 1, 1, 3),
+					//weighted(ModItems.crate_caller, 0, 1, 1, 3),
 					weighted(ModItems.gas_mask_m65, 0, 1, 1, 5),
 					weighted(ModItems.gas_mask_filter, 0, 1, 1, 5),
-					weighted(ModItems.grenade_nuclear, 0, 1, 2, 2),
-					weighted(ModItems.bomb_caller, 0, 1, 1, 1),
-					weighted(ModItems.bomb_caller, 1, 1, 1, 1),
-					weighted(ModItems.bomb_caller, 2, 1, 1, 2)
+					//weighted(ModItems.grenade_nuclear, 0, 1, 2, 2),
+					//weighted(ModItems.bomb_caller, 0, 1, 1, 1),
+					//weighted(ModItems.bomb_caller, 1, 1, 1, 1),
+					//weighted(ModItems.bomb_caller, 2, 1, 1, 2)
 			};
 		}};
-		
+
 		//spaceship double chests
 		new ItemPool(POOL_SPACESHIP) {{
 			this.pool = new WeightedRandomChestContent[] {
@@ -226,7 +226,7 @@ public class ItemPoolsLegacy {
 					weighted(ModItems.coil_advanced_alloy, 0, 2, 16, 5),
 					weighted(ModItems.cell_deuterium, 0, 1, 8, 5),
 					weighted(ModItems.cell_tritium, 0, 1, 8, 5),
-					weighted(ModItems.cell_antimatter, 0, 1, 1, 1),
+					//weighted(ModItems.cell_antimatter, 0, 1, 1, 1),
 					weighted(ModItems.powder_neodymium, 0, 1, 1, 1),
 					weighted(ModItems.powder_niobium, 0, 1, 1, 1),
 					weighted(ModBlocks.fusion_conductor, 0, 2, 4, 5),

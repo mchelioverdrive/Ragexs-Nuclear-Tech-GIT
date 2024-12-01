@@ -13,9 +13,9 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.IItemRenderer;
 
 public class ItemRenderRevolver implements IItemRenderer {
-	
+
 	protected ModelRevolver swordModel;
-	
+
 	public ItemRenderRevolver() {
 		swordModel = new ModelRevolver();
 	}
@@ -41,32 +41,32 @@ public class ItemRenderRevolver implements IItemRenderer {
 		switch(type) {
 		case EQUIPPED_FIRST_PERSON:
 			GL11.glPushMatrix();
-	            
-				if(item.getItem() == ModItems.gun_revolver)
-					Minecraft.getMinecraft().renderEngine.bindTexture(new ResourceLocation(RefStrings.MODID +":textures/models/ModelRevolver.png"));
-				if(item.getItem() == ModItems.gun_revolver_saturnite)
-					Minecraft.getMinecraft().renderEngine.bindTexture(new ResourceLocation(RefStrings.MODID +":textures/models/ModelRevolverSaturnite.png"));
+
+				//if(item.getItem() == ModItems.gun_revolver)
+				//	Minecraft.getMinecraft().renderEngine.bindTexture(new ResourceLocation(RefStrings.MODID +":textures/models/ModelRevolver.png"));
+				//if(item.getItem() == ModItems.gun_revolver_saturnite)
+				//	Minecraft.getMinecraft().renderEngine.bindTexture(new ResourceLocation(RefStrings.MODID +":textures/models/ModelRevolverSaturnite.png"));
 				GL11.glRotatef(-135.0F, 0.0F, 0.0F, 1.0F);
 				GL11.glTranslatef(-0.5F, 0.0F, -0.2F);
 				//GL11.glScalef(2.0F, 2.0F, 2.0F);
 				GL11.glScalef(0.5F, 0.5F, 0.5F);
-				
+
 				GL11.glRotatef(-20.0F, 0.0F, 0.0F, 1.0F);
 				GL11.glRotatef(5.0F, 0.0F, 1.0F, 0.0F);
 				GL11.glTranslatef(-0.2F, 0.0F, -0.2F);
-	            
+
 				//((EntityPlayer)data[1]).isSwingInProgress = false;
-				
+
 				swordModel.render((Entity)data[1], 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F);
 			GL11.glPopMatrix();
 			break;
 		case EQUIPPED:
 		case ENTITY:
 			GL11.glPushMatrix();
-			if(item.getItem() == ModItems.gun_revolver)
-				Minecraft.getMinecraft().renderEngine.bindTexture(new ResourceLocation(RefStrings.MODID +":textures/models/ModelRevolver.png"));
-			if(item.getItem() == ModItems.gun_revolver_saturnite)
-				Minecraft.getMinecraft().renderEngine.bindTexture(new ResourceLocation(RefStrings.MODID +":textures/models/ModelRevolverSaturnite.png"));
+			//if(item.getItem() == ModItems.gun_revolver)
+			//	Minecraft.getMinecraft().renderEngine.bindTexture(new ResourceLocation(RefStrings.MODID +":textures/models/ModelRevolver.png"));
+			//if(item.getItem() == ModItems.gun_revolver_saturnite)
+			//	Minecraft.getMinecraft().renderEngine.bindTexture(new ResourceLocation(RefStrings.MODID +":textures/models/ModelRevolverSaturnite.png"));
 				GL11.glRotatef(-200.0F, 0.0F, 0.0F, 1.0F);
 				GL11.glRotatef(75.0F, 0.0F, 1.0F, 0.0F);
 				GL11.glRotatef(-30.0F, 1.0F, 0.0F, 0.0F);

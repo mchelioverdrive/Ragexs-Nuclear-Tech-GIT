@@ -17,7 +17,7 @@ public class ItemPoolsPile {
 	public static final String POOL_PILE_CAPS = "POOL_PILE_CAPS";
 	public static final String POOL_PILE_MED_SYRINGE = "POOL_PILE_MED_SYRINGE";
 	public static final String POOL_PILE_MED_PILLS = "POOL_PILE_MED_PILLS";
-	public static final String POOL_PILE_MAKESHIFT_GUN = "POOL_PILE_MAKESHIFT_GUN";
+	//public static final String POOL_PILE_MAKESHIFT_GUN = "POOL_PILE_MAKESHIFT_GUN";
 	public static final String POOL_PILE_MAKESHIFT_WRENCH = "POOL_PILE_MAKESHIFT_WRENCH";
 	public static final String POOL_PILE_MAKESHIFT_PLATES = "POOL_PILE_MAKESHIFT_PLATES";
 	public static final String POOL_PILE_MAKESHIFT_WIRE = "POOL_PILE_MAKESHIFT_WIRE";
@@ -96,7 +96,7 @@ public class ItemPoolsPile {
 		}};
 
 		//makeshift gun
-		new ItemPool(POOL_PILE_MAKESHIFT_GUN) {{ this.pool = new WeightedRandomChestContent[] { weighted(ModItems.gun_lever_action, 0, 1, 1, 10) }; }};
+		//new ItemPool(POOL_PILE_MAKESHIFT_GUN) {{ this.pool = new WeightedRandomChestContent[] { weighted(ModItems.gun_lever_action, 0, 1, 1, 10) }; }};
 		new ItemPool(POOL_PILE_MAKESHIFT_WRENCH) {{ this.pool = new WeightedRandomChestContent[] { weighted(ModItems.wrench, 0, 1, 1, 10) }; }};
 		new ItemPool(POOL_PILE_MAKESHIFT_PLATES) {{ this.pool = new WeightedRandomChestContent[] { weighted(ModItems.plate_combine_steel, 0, 1, 1, 10) }; }};
 		new ItemPool(POOL_PILE_MAKESHIFT_WIRE) {{ this.pool = new WeightedRandomChestContent[] { weighted(ModItems.wire_fine, Mats.MAT_ALUMINIUM.id, 1, 1, 10) }; }};

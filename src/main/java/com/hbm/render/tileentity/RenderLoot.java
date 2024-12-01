@@ -32,37 +32,37 @@ public class RenderLoot extends TileEntitySpecialRenderer {
 		GL11.glTranslated(x, y, z);
 		GL11.glEnable(GL11.GL_LIGHTING);
 		RenderHelper.enableStandardItemLighting();
-		
+
 		TileEntityLoot loot = (TileEntityLoot) te;
-		
+
 		for(Quartet<ItemStack, Double, Double, Double> item : loot.items) {
-			
+
 			ItemStack stack = item.getW();
 
 			GL11.glPushMatrix();
 			GL11.glTranslated(item.getX(), item.getY(), item.getZ());
-			
+
 			if(stack.getItem() == ModItems.ammo_nuke) {
 				renderNuke();
-				
-			} else if(stack.getItem() == ModItems.gun_fatman || stack.getItem() == ModItems.gun_proto || stack.getItem() == ModItems.gun_mirv) {
-				renderLauncher();
-				
-			} else if(stack.getItem() == ModItems.gun_lever_action) {
-				renderShotgun();
-				
+
+			//} else if(stack.getItem() == ModItems.gun_fatman || stack.getItem() == ModItems.gun_proto || stack.getItem() == ModItems.gun_mirv) {
+			//	renderLauncher();
+
+			//} else if(stack.getItem() == ModItems.gun_lever_action) {
+			//	renderShotgun();
+
 			} else if(stack.getItem() instanceof ArmorTrenchmaster) {
 				renderTrenchmaster(stack);
 			} else {
 				renderStandardItem(item.getW());
 			}
-			
+
 			GL11.glPopMatrix();
 		}
-		
+
 		GL11.glPopMatrix();
 	}
-	
+
 	private void renderTrenchmaster(ItemStack stack) {
 		GL11.glPushMatrix();
 		GL11.glTranslated(0.5, 1.5, 0.5);
@@ -125,16 +125,16 @@ public class RenderLoot extends TileEntitySpecialRenderer {
 
 	protected ModelFatman launcher;
 	private void renderLauncher() {
-		
+
 		if(launcher == null)
 			launcher = new ModelFatman();
-		
+
 		GL11.glRotated(180, 1, 0, 0);
 		GL11.glRotated(3, 0, 0, 1);
 		GL11.glTranslated(0.5, -0.3751, -0.625);
-		
+
 		bindTexture(new ResourceLocation(RefStrings.MODID +":textures/models/FatmanLauncher.png"));
-		launcher.render(null, 0F, 0F, 0F, 0F, 0F, 0.0625F, new ItemStack(ModItems.gun_fatman));
+		//launcher.render(null, 0F, 0F, 0F, 0F, 0F, 0.0625F, new ItemStack(ModItems.gun_fatman));
 	}
 
 	protected ModelLeverAction shotgun;
@@ -145,7 +145,7 @@ public class RenderLoot extends TileEntitySpecialRenderer {
 		GL11.glRotated(25, 0, 1, 0);
 		GL11.glRotated(90, 1, 0, 0);
 		GL11.glRotated(90, 0, 1, 0);
-		
+
 		GL11.glEnable(GL12.GL_RESCALE_NORMAL);
 		bindTexture(ResourceManager.ff_wood);
 		ResourceManager.ff_maresleg.renderPart("Grip");
@@ -154,17 +154,17 @@ public class RenderLoot extends TileEntitySpecialRenderer {
 		ResourceManager.ff_maresleg.renderPart("Lever");
 		GL11.glDisable(GL12.GL_RESCALE_NORMAL);
 	}
-	
+
 	private void renderStandardItem(ItemStack stack) {
 		GL11.glTranslated(0.25, 0, 0.25);
 		GL11.glScaled(0.5, 0.5, 0.5);
 		GL11.glRotated(90, 1, 0, 0);
 		GL11.glEnable(GL12.GL_RESCALE_NORMAL);
-		
+
 		bindTexture(TextureMap.locationItemsTexture);
-		
+
 		for(int i = 0; i < stack.getItem().getRenderPasses(stack.getItemDamage()); i++) {
-			
+
 			IIcon icon = stack.getItem().getIcon(stack, i);
 			float f14 = icon.getMinU();
 			float f15 = icon.getMaxU();

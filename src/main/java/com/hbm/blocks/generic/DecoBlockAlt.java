@@ -26,11 +26,11 @@ import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
 public class DecoBlockAlt extends BlockContainer {
-	
+
 	public DecoBlockAlt(Material p_i45386_1_) {
 		super(p_i45386_1_);
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public void registerBlockIcons(IIconRegister iconRegister) {
@@ -56,26 +56,26 @@ public class DecoBlockAlt extends BlockContainer {
     {
         return Item.getItemFromBlock(ModBlocks.statue_elb);
     }
-	
+
 	@Override
 	public int getRenderType(){
 		return -1;
 	}
-	
+
 	@Override
 	public boolean isOpaqueCube() {
 		return false;
 	}
-	
+
 	@Override
 	public boolean renderAsNormalBlock() {
 		return false;
 	}
-	
+
 	@Override
 	public void onBlockPlacedBy(World world, int x, int y, int z, EntityLivingBase player, ItemStack itemStack) {
 		int i = MathHelper.floor_double(player.rotationYaw * 4.0F / 360.0F + 0.5D) & 3;
-		
+
 		if(i == 0)
 		{
 			world.setBlockMetadataWithNotify(x, y, z, 2, 2);
@@ -93,7 +93,7 @@ public class DecoBlockAlt extends BlockContainer {
 			world.setBlockMetadataWithNotify(x, y, z, 4, 2);
 		}
 	}
-	
+
 	@Override
 	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
 		if(world.isRemote)
@@ -105,17 +105,17 @@ public class DecoBlockAlt extends BlockContainer {
 			{
 				if(this == ModBlocks.statue_elb)
 				{
-					if(player.getCurrentEquippedItem().getItem() == ModItems.gun_revolver_cursed)
-					{
-						world.setBlock(x, y, z, ModBlocks.statue_elb_g, world.getBlockMetadata(x, y, z), 2);
+					//if(player.getCurrentEquippedItem().getItem() == ModItems.gun_revolver_cursed)
+					//{
+					//	world.setBlock(x, y, z, ModBlocks.statue_elb_g, world.getBlockMetadata(x, y, z), 2);
+//
+                    //    if (!player.capabilities.isCreativeMode)
+                    //    {
+                    //        --player.getCurrentEquippedItem().stackSize;
+                    //    }
+					//	return true;
+					//}
 
-                        if (!player.capabilities.isCreativeMode)
-                        {
-                            --player.getCurrentEquippedItem().stackSize;
-                        }
-						return true;
-					}
-				
 					if(player.getCurrentEquippedItem().getItem() == ModItems.watch)
 					{
 						world.setBlock(x, y, z, ModBlocks.statue_elb_w, world.getBlockMetadata(x, y, z), 2);
@@ -140,31 +140,31 @@ public class DecoBlockAlt extends BlockContainer {
 						return true;
 					}
 				}
-				if(this == ModBlocks.statue_elb_w)
-				{
-					if(player.getCurrentEquippedItem().getItem() == ModItems.gun_revolver_cursed)
-					{
-						world.setBlock(x, y, z, ModBlocks.statue_elb_f, world.getBlockMetadata(x, y, z), 2);
-
-                        if (!player.capabilities.isCreativeMode)
-                        {
-                            --player.getCurrentEquippedItem().stackSize;
-                        }
-						return true;
-					}
-				}
+				//if(this == ModBlocks.statue_elb_w)
+				//{
+				//	if(player.getCurrentEquippedItem().getItem() == ModItems.gun_revolver_cursed)
+				//	{
+				//		world.setBlock(x, y, z, ModBlocks.statue_elb_f, world.getBlockMetadata(x, y, z), 2);
+//
+                //        if (!player.capabilities.isCreativeMode)
+                //        {
+                //            --player.getCurrentEquippedItem().stackSize;
+                //        }
+				//		return true;
+				//	}
+				//}
 			}
 		}
 		return false;
 	}
-	
+
 	@Override
 	public void setBlockBoundsBasedOnState(IBlockAccess p_149719_1_, int p_149719_2_, int p_149719_3_, int p_149719_4_)
     {
         float f = 0.0625F;
         this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 8*f, 1.0F);
     }
-	
+
 	@Override
 	public AxisAlignedBB getCollisionBoundingBoxFromPool(World world, int x, int y, int z) {
         float f = 0.0625F;

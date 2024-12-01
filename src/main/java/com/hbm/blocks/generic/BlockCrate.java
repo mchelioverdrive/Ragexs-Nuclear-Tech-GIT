@@ -144,19 +144,19 @@ public class BlockCrate extends BlockFalling {
 
 		// Red Crate
 		BlockCrate.addToListWithWeight(redList, ModItems.mysteryshovel, 1);
-		BlockCrate.addToListWithWeight(redList, ModItems.gun_revolver_pip, 1);
-		BlockCrate.addToListWithWeight(redList, ModItems.gun_revolver_blackjack, 1);
-		BlockCrate.addToListWithWeight(redList, ModItems.gun_revolver_silver, 1);
-		BlockCrate.addToListWithWeight(redList, ModItems.ammo_44.stackFromEnum(Ammo44Magnum.PIP), 1);
-		BlockCrate.addToListWithWeight(redList, ModItems.ammo_44.stackFromEnum(Ammo44Magnum.BJ), 1);
-		BlockCrate.addToListWithWeight(redList, ModItems.ammo_44.stackFromEnum(Ammo44Magnum.SILVER), 1);
+		//BlockCrate.addToListWithWeight(redList, ModItems.gun_revolver_pip, 1);
+		//BlockCrate.addToListWithWeight(redList, ModItems.gun_revolver_blackjack, 1);
+		//BlockCrate.addToListWithWeight(redList, ModItems.gun_revolver_silver, 1);
+		//BlockCrate.addToListWithWeight(redList, ModItems.ammo_44.stackFromEnum(Ammo44Magnum.PIP), 1);
+		//BlockCrate.addToListWithWeight(redList, ModItems.ammo_44.stackFromEnum(Ammo44Magnum.BJ), 1);
+		//BlockCrate.addToListWithWeight(redList, ModItems.ammo_44.stackFromEnum(Ammo44Magnum.SILVER), 1);
 		BlockCrate.addToListWithWeight(redList, ModItems.battery_spark, 1);
 		BlockCrate.addToListWithWeight(redList, ModItems.bottle_sparkle, 1);
 		BlockCrate.addToListWithWeight(redList, ModItems.bottle_rad, 1);
 		BlockCrate.addToListWithWeight(redList, ModItems.ring_starmetal, 1);
 		BlockCrate.addToListWithWeight(redList, ModItems.flame_pony, 1);
 		BlockCrate.addToListWithWeight(redList, Item.getItemFromBlock(ModBlocks.ntm_dirt), 1);
-		BlockCrate.addToListWithWeight(redList, Item.getItemFromBlock(ModBlocks.broadcaster_pc), 1);
+		//BlockCrate.addToListWithWeight(redList, Item.getItemFromBlock(ModBlocks.broadcaster_pc), 1);
 	}
 
 	public void dropItems(World world, int x, int y, int z) {

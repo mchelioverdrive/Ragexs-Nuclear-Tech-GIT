@@ -30,12 +30,12 @@ public class ItemGlitch extends Item implements IBatteryItem {
         this.setMaxDamage(1);
     }
 
-	
+
 	@Override
 	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
-		
+
 		stack.damageItem(5, player);
-		
+
 		if(!world.isRemote)
 			switch(itemRand.nextInt(31)) {
 			case 0:
@@ -45,60 +45,60 @@ public class ItemGlitch extends Item implements IBatteryItem {
 				player.addChatMessage(new ChatComponentText("Prometheus was punished by the gods by giving the gift of knowledge to man. He was cast into the bowels of the earth and pecked by birds."));
 				break;
 			case 2:
-				player.attackEntityFrom(ModDamageSource.radiation, 1000);
+				//player.attackEntityFrom(ModDamageSource.radiation, 1000);
 				break;
 			case 3:
-				player.attackEntityFrom(ModDamageSource.boxcar, 1000);
+				//player.attackEntityFrom(ModDamageSource.boxcar, 1000);
 				break;
 			case 4:
-				player.attackEntityFrom(ModDamageSource.blackhole, 1000);
+				//player.attackEntityFrom(ModDamageSource.blackhole, 1000);
 				break;
 			case 5:
-				player.inventory.addItemStackToInventory(new ItemStack(ModBlocks.block_meteor_treasure.getItemDropped(0, itemRand, 0)));
+				//player.inventory.addItemStackToInventory(new ItemStack(ModBlocks.block_meteor_treasure.getItemDropped(0, itemRand, 0)));
 				break;
 			case 6:
 				for(int i = 0; i < 3; i++)
-					player.inventory.addItemStackToInventory(new ItemStack(ModBlocks.block_meteor_treasure.getItemDropped(0, itemRand, 0)));
+					//player.inventory.addItemStackToInventory(new ItemStack(ModBlocks.block_meteor_treasure.getItemDropped(0, itemRand, 0)));
 				break;
 			case 7:
 				for(int i = 0; i < 10; i++)
-					player.inventory.addItemStackToInventory(new ItemStack(ModBlocks.block_meteor_treasure.getItemDropped(0, itemRand, 0)));
+					//player.inventory.addItemStackToInventory(new ItemStack(ModBlocks.block_meteor_treasure.getItemDropped(0, itemRand, 0)));
 				break;
 			case 8:
-				player.inventory.addItemStackToInventory(new ItemStack(ModItems.ammo_container, 10));
-				player.addChatMessage(new ChatComponentText("Oh, and by the way: The polaroid shifts reality. Things can be different if the polaroid is broken."));
+				//player.inventory.addItemStackToInventory(new ItemStack(ModItems.ammo_container, 10));
+				//player.addChatMessage(new ChatComponentText("Oh, and by the way: The polaroid shifts reality. Things can be different if the polaroid is broken."));
 				break;
 			case 9:
-				player.inventory.addItemStackToInventory(new ItemStack(ModItems.nuke_advanced_kit, 1));
+				//player.inventory.addItemStackToInventory(new ItemStack(ModItems.nuke_advanced_kit, 1));
 				break;
 			case 10:
-				player.inventory.addItemStackToInventory(new ItemStack(ModItems.nuke_starter_kit, 1));
+				//player.inventory.addItemStackToInventory(new ItemStack(ModItems.nuke_starter_kit, 1));
 				break;
 			case 11:
-				EntityBoxcar pip = new EntityBoxcar(world);
-				pip.posX = player.posX;
-				pip.posY = player.posY + 50;
-				pip.posZ = player.posZ;
-				world.spawnEntityInWorld(pip);
+				//EntityBoxcar pip = new EntityBoxcar(world);
+				//pip.posX = player.posX;
+				//pip.posY = player.posY + 50;
+				//pip.posZ = player.posZ;
+				//world.spawnEntityInWorld(pip);
 				break;
 			case 12:
-				for(int i = 0; i < 10; i++) {
-					EntityBoxcar pippo = new EntityBoxcar(world);
-					pippo.posX = player.posX + itemRand.nextGaussian() * 25;
-					pippo.posY = player.posY + 50;
-					pippo.posZ = player.posZ + itemRand.nextGaussian() * 25;
-					world.spawnEntityInWorld(pippo);
-				}
+				//for(int i = 0; i < 10; i++) {
+				//	EntityBoxcar pippo = new EntityBoxcar(world);
+				//	pippo.posX = player.posX + itemRand.nextGaussian() * 25;
+				//	pippo.posY = player.posY + 50;
+				//	pippo.posZ = player.posZ + itemRand.nextGaussian() * 25;
+				//	world.spawnEntityInWorld(pippo);
+				//}
 				break;
 			case 13:
-				player.inventory.addItemStackToInventory(new ItemStack(ModItems.gun_revolver_pip));
+				//player.inventory.addItemStackToInventory(new ItemStack(ModItems.gun_revolver_pip));
 				player.inventory.addItemStackToInventory(new ItemStack(ModItems.bottle_sparkle));
 				player.inventory.addItemStackToInventory(new ItemStack(ModItems.geiger_counter));
 				player.addChatMessage(new ChatComponentText("Have some free stuff. You'll need it for that one cryptic achievement."));
 				break;
 			case 14:
-				player.inventory.dropAllItems();
-				ExplosionChaos.burn(world, (int)player.posX, (int)player.posY, (int)player.posZ, 5);
+				//player.inventory.dropAllItems();
+				//ExplosionChaos.burn(world, (int)player.posX, (int)player.posY, (int)player.posZ, 5);
 				break;
 			case 15:
 				for(int i = 0; i < 36; i++)
@@ -111,126 +111,126 @@ public class ItemGlitch extends Item implements IBatteryItem {
 				player.addChatMessage(new ChatComponentText("89% of magic tricks are not magic. Technically, they are sorcery."));
 				break;
 			case 18:
-				player.inventory.addItemStackToInventory(new ItemStack(ModItems.gun_lever_action));
-				player.inventory.addItemStackToInventory(new ItemStack(ModItems.ammo_20gauge, 12));
+				//player.inventory.addItemStackToInventory(new ItemStack(ModItems.gun_lever_action));
+				//player.inventory.addItemStackToInventory(new ItemStack(ModItems.ammo_20gauge, 12));
 				player.addChatMessage(new ChatComponentText("Here ya go."));
 				break;
 			case 19:
-				player.addChatMessage(new ChatComponentText("Ë"));
+				player.addChatMessage(new ChatComponentText("unfunny bullshit"));
 				break;
 			case 20:
-				player.addChatMessage(new ChatComponentText("Good day, I am text"));
+				player.addChatMessage(new ChatComponentText("Good day, I am autistic"));
 				break;
 			case 21:
-				player.inventory.addItemStackToInventory(new ItemStack(ModItems.missile_nuclear));
+				//player.inventory.addItemStackToInventory(new ItemStack(ModItems.missile_nuclear));
 				player.addChatMessage(new ChatComponentText("73616d706c652074657874!"));
 				break;
 			case 22:
 				player.addChatMessage(new ChatComponentText("Budget cuts, no effect for you."));
 				break;
 			case 23:
-				player.addChatMessage(new ChatComponentText("oof"));
+				player.addChatMessage(new ChatComponentText("please laugh"));
 				break;
 			case 24:
-				player.addPotionEffect(new PotionEffect(Potion.resistance.id, 60 * 20, 9));
-				player.addChatMessage(new ChatComponentText("Tank!"));
+				//player.addPotionEffect(new PotionEffect(Potion.resistance.id, 60 * 20, 9));
+				//player.addChatMessage(new ChatComponentText("Tank!"));
 				break;
 			case 25:
-				player.addPotionEffect(new PotionEffect(Potion.damageBoost.id, 60 * 20, 9));
-				player.addChatMessage(new ChatComponentText("More devastating than a falling boxcar!"));
+				//player.addPotionEffect(new PotionEffect(Potion.damageBoost.id, 60 * 20, 9));
+				//player.addChatMessage(new ChatComponentText("More devastating than a falling boxcar!"));
 				break;
 			case 26:
-				player.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 60 * 20, 9));
+				//player.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 60 * 20, 9));
 				player.addChatMessage(new ChatComponentText("Ha!"));
 				break;
 			case 27:
-				EntityVortex vortex = new EntityVortex(world, 2.5F);
-				vortex.posX = player.posX;
-				vortex.posY = player.posY - 15;
-				vortex.posZ = player.posZ;
-				world.spawnEntityInWorld(vortex);
+				//EntityVortex vortex = new EntityVortex(world, 2.5F);
+				//vortex.posX = player.posX;
+				//vortex.posY = player.posY - 15;
+				//vortex.posZ = player.posZ;
+				//world.spawnEntityInWorld(vortex);
 				break;
 			case 28:
-				EntityMIRV mirv = new EntityMIRV(world);
-				mirv.posX = player.posX;
-				mirv.posY = player.posY + 100;
-				mirv.posZ = player.posZ;
-				world.spawnEntityInWorld(mirv);
+				//EntityMIRV mirv = new EntityMIRV(world);
+				//mirv.posX = player.posX;
+				//mirv.posY = player.posY + 100;
+				//mirv.posZ = player.posZ;
+				//world.spawnEntityInWorld(mirv);
 				player.addChatMessage(new ChatComponentText("Watch your head!"));
 				break;
 			case 29:
-				ExplosionLarge.spawnBurst(world, player.posX, player.posY, player.posZ, 27, 3);
+				//ExplosionLarge.spawnBurst(world, player.posX, player.posY, player.posZ, 27, 3);
 				player.addChatMessage(new ChatComponentText("Bam!"));
 				break;
 			case 30:
-				player.inventory.addItemStackToInventory(new ItemStack(ModItems.plate_saturnite));
+				//player.inventory.addItemStackToInventory(new ItemStack(ModItems.plate_saturnite));
 				player.addChatMessage(new ChatComponentText("It's dangerous to go alone, take this!"));
 				break;
 			}
-		
+
 		player.inventoryContainer.detectAndSendChanges();
-		
+
 		return stack;
 	}
-	
+
 	@Override
 	public void addInformation(ItemStack itemstack, EntityPlayer player, List list, boolean bool)
 	{
 		list.add("It's a gamble!");
 		list.add("");
 		switch(MainRegistry.polaroidID) {
-		case 1: 
+		case 1:
 			list.add("Click-click-click!");
 			break;
-		case 2: 
+		case 2:
 			list.add("Creek!");
 			break;
-		case 3: 
+		case 3:
 			list.add("Bzzzt!");
 			break;
-		case 4: 
+		case 4:
 			list.add("TS staring off into space.");
 			break;
-		case 5: 
+		case 5:
 			list.add("BANG!!");
 			break;
-		case 6: 
+		case 6:
 			list.add("Woop!");
 			break;
-		case 7: 
+		case 7:
 			list.add("Poow!");
 			break;
-		case 8: 
+		case 8:
 			list.add("Pft!");
 			break;
-		case 9: 
+		case 9:
 			list.add("GF fgnevat bss vagb fcnpr.");
 			break;
-		case 10: 
+		case 10:
 			list.add("Backup memory #8 on 1.44 million bytes.");
 			break;
-		case 11: 
+		case 11:
 			list.add("PTANG!");
 			break;
-		case 12: 
+		case 12:
 			list.add("Bzzt-zrrt!");
 			break;
-		case 13: 
+		case 13:
 			list.add("Clang, click-brrthththrtrtrtrtrtr!");
 			break;
-		case 14: 
+		case 14:
 			list.add("KABLAM!");
 			break;
-		case 15: 
+		case 15:
 			list.add("PLENG!");
 			break;
-		case 16: 
+		case 16:
 			list.add("Wheeeeeeee-");
 			break;
-		case 17: 
+		case 17:
 			list.add("Thump.");
 			break;
-		case 18: 
+		case 18:
 			list.add("BANG! Choo-chooo! B A N G ! ! !");
 			break;
 		}

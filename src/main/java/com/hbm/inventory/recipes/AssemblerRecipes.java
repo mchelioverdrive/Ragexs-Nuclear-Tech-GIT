@@ -620,27 +620,27 @@ public class AssemblerRecipes extends SerializableRecipe {
 				new ComparableStack(ModItems.circuit, 4, EnumCircuitType.BASIC)
 			}, 600);
 
-		makeRecipe(new ComparableStack(ModItems.gun_zomg, 1), new AStack[] {
-				new ComparableStack(ModItems.crystal_xen, 2),
-				new ComparableStack(ModItems.singularity_counter_resonant, 1),
-				new ComparableStack(ModItems.mechanism_special, 3),
-				new ComparableStack(ModItems.plate_paa, 12),
-				new OreDictStack(OreDictManager.getReflector(), 8),
-				new ComparableStack(ModItems.coil_magnetized_tungsten, 5),
-				new ComparableStack(ModItems.powder_magic, 4),
-				new OreDictStack(ASBESTOS.ingot(), 8)
-			}, 200);
-		makeRecipe(new ComparableStack(ModItems.gun_lunatic_marksman, 1), new AStack[] {
-				new OreDictStack(ANY_HARDPLASTIC.ingot(), 3),
-				new ComparableStack(ModItems.mechanism_special, 1),
-				new ComparableStack(ModItems.plate_paa, 14),
-				new OreDictStack(FERRO.ingot(), 8),
-				//new ComparableStack(ModItems.hull_small_steel, 4),
-				new OreDictStack(MAGTUNG.wireFine(), 8),
-				new OreDictStack(STEEL.plate(), 3),
-				new ComparableStack(ModBlocks.glass_quartz, 4),
-
-		}, 200);
+		//makeRecipe(new ComparableStack(ModItems.gun_zomg, 1), new AStack[] {
+		//		new ComparableStack(ModItems.crystal_xen, 2),
+		//		new ComparableStack(ModItems.singularity_counter_resonant, 1),
+		//		new ComparableStack(ModItems.mechanism_special, 3),
+		//		new ComparableStack(ModItems.plate_paa, 12),
+		//		new OreDictStack(OreDictManager.getReflector(), 8),
+		//		new ComparableStack(ModItems.coil_magnetized_tungsten, 5),
+		//		new ComparableStack(ModItems.powder_magic, 4),
+		//		new OreDictStack(ASBESTOS.ingot(), 8)
+		//	}, 200);
+		//makeRecipe(new ComparableStack(ModItems.gun_lunatic_marksman, 1), new AStack[] {
+		//		new OreDictStack(ANY_HARDPLASTIC.ingot(), 3),
+		//		new ComparableStack(ModItems.mechanism_special, 1),
+		//		new ComparableStack(ModItems.plate_paa, 14),
+		//		new OreDictStack(FERRO.ingot(), 8),
+		//		//new ComparableStack(ModItems.hull_small_steel, 4),
+		//		new OreDictStack(MAGTUNG.wireFine(), 8),
+		//		new OreDictStack(STEEL.plate(), 3),
+		//		new ComparableStack(ModBlocks.glass_quartz, 4),
+//
+		//}, 200);
 		makeRecipe(new ComparableStack(ModItems.ammo_75bolt, 2, ItemAmmoEnums.Ammo75Bolt.STOCK.ordinal()), new AStack[] {
 				new OreDictStack(STEEL.plate(), 4),
 				new OreDictStack(ANY_PLASTICEXPLOSIVE.ingot(), 2),

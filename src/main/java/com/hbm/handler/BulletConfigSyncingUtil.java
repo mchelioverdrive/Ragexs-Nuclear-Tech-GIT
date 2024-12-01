@@ -159,11 +159,11 @@ public class BulletConfigSyncingUtil {
 	public static int G4_LTBL_SUPER = i++;
 	public static int BUTTER = i++;
 
-	public static int SPECIAL_OSIPR = i++;
-	public static int SPECIAL_OSIPR_CHARGED = i++;
-	public static int SPECIAL_GAUSS = i++;
-	public static int SPECIAL_GAUSS_CHARGED = i++;
-	public static int SPECIAL_EMP = i++;
+	//public static int SPECIAL_OSIPR = i++;
+	//public static int SPECIAL_OSIPR_CHARGED = i++;
+	//public static int SPECIAL_GAUSS = i++;
+	//public static int SPECIAL_GAUSS_CHARGED = i++;
+	//public static int SPECIAL_EMP = i++;
 
 	public static int COIL_NORMAL = i++;
 	public static int COIL_DU = i++;
@@ -175,7 +175,7 @@ public class BulletConfigSyncingUtil {
 	public static int FLAMER_VAPORIZER = i++;
 	public static int FLAMER_GAS = i++;
 
-	public static int CRYO_NORMAL = i++;
+	//public static int CRYO_NORMAL = i++;
 
 	public static int FEXT_NORMAL = i++;
 	public static int FEXT_FOAM = i++;
@@ -471,11 +471,11 @@ public class BulletConfigSyncingUtil {
 		configSet.put(G4_LTBL_SUPER, Gun4GaugeFactory.get4GaugeLTBLSConfig());
 		configSet.put(BUTTER, Gun4GaugeFactory.get4GaugeButterConfig());
 
-		configSet.put(SPECIAL_OSIPR, GunOSIPRFactory.getPulseConfig());
-		configSet.put(SPECIAL_OSIPR_CHARGED, GunOSIPRFactory.getPulseChargedConfig());
-		configSet.put(SPECIAL_GAUSS, GunGaussFactory.getGaussConfig());
-		configSet.put(SPECIAL_GAUSS_CHARGED, GunGaussFactory.getAltConfig());
-		configSet.put(SPECIAL_EMP, GunEnergyFactory.getOrbusConfig());
+		//configSet.put(SPECIAL_OSIPR, GunOSIPRFactory.getPulseConfig());
+		//configSet.put(SPECIAL_OSIPR_CHARGED, GunOSIPRFactory.getPulseChargedConfig());
+		//configSet.put(SPECIAL_GAUSS, GunGaussFactory.getGaussConfig());
+		//configSet.put(SPECIAL_GAUSS_CHARGED, GunGaussFactory.getAltConfig());
+		//configSet.put(SPECIAL_EMP, GunEnergyFactory.getOrbusConfig());
 
 		configSet.put(COIL_NORMAL, GunEnergyFactory.getCoilConfig());
 		configSet.put(COIL_DU, GunEnergyFactory.getCoilDUConfig());
@@ -487,7 +487,7 @@ public class BulletConfigSyncingUtil {
 		configSet.put(FLAMER_VAPORIZER, GunEnergyFactory.getVaporizerConfig());
 		configSet.put(FLAMER_GAS, GunEnergyFactory.getGasConfig());
 
-		configSet.put(CRYO_NORMAL, GunEnergyFactory.getCryoConfig());
+		//configSet.put(CRYO_NORMAL, GunEnergyFactory.getCryoConfig());
 
 		configSet.put(FEXT_NORMAL, GunEnergyFactory.getFextConfig());
 		configSet.put(FEXT_FOAM, GunEnergyFactory.getFextFoamConfig());

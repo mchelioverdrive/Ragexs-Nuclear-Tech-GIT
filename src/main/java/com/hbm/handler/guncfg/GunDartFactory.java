@@ -22,9 +22,9 @@ import net.minecraft.potion.PotionEffect;
 public class GunDartFactory {
 
 	public static GunConfiguration getDarterConfig() {
-		
+
 		GunConfiguration config = new GunConfiguration();
-		
+
 		config.rateOfFire = 1;
 		config.roundsPerCycle = 1;
 		config.gunMode = GunConfiguration.MODE_NORMAL;
@@ -41,21 +41,21 @@ public class GunDartFactory {
 		config.firingSound = "hbm:weapon.dartShoot";
 		config.reloadSoundEnd = false;
 		config.showAmmo = true;
-		
+
 		config.name = "dart";
 		config.manufacturer = EnumGunManufacturer.NONE;
-		
+
 		config.config = new ArrayList();
 		config.config.add(BulletConfigSyncingUtil.NEEDLE_GPS);
 		config.config.add(BulletConfigSyncingUtil.NEEDLE_NUKE);
-		
+
 		return config;
 	}
 
 	public static GunConfiguration getMymyConfig() {
-		
+
 		GunConfiguration config = new GunConfiguration();
-		
+
 		config.rateOfFire = 1;
 		config.roundsPerCycle = 1;
 		config.gunMode = GunConfiguration.MODE_NORMAL;
@@ -72,21 +72,21 @@ public class GunDartFactory {
 		config.firingSound = "hbm:weapon.dartShoot";
 		config.reloadSoundEnd = false;
 		config.showAmmo = true;
-		
+
 		config.name = "nerf";
 		config.manufacturer = EnumGunManufacturer.HASBRO;
-		
+
 		config.config = new ArrayList();
 		config.config.add(BulletConfigSyncingUtil.DART_NORMAL);
 		config.config.add(BulletConfigSyncingUtil.NEEDLE_NUKE);
-		
+
 		return config;
 	}
 
 	public static BulletConfiguration getGPSConfig() {
-		
+
 		BulletConfiguration bullet = BulletConfigFactory.standardBulletConfig();
-		
+
 		bullet.ammo = new ComparableStack(ModItems.ammo_dart.stackFromEnum(AmmoDart.GPS));
 		bullet.velocity = 5.0F;
 		bullet.spread = 0;
@@ -96,10 +96,10 @@ public class GunDartFactory {
 		bullet.doesPenetrate = false;
 		bullet.style = bullet.STYLE_FLECHETTE;
 		bullet.leadChance = 0;
-		
+
 		bullet.effects = new ArrayList();
 		bullet.effects.add(new PotionEffect(Potion.wither.id, 60 * 20, 2));
-		
+
 		bullet.bntHurt = (bulletnt, hit) -> {
 
 			if(bulletnt.worldObj.isRemote)
@@ -114,21 +114,21 @@ public class GunDartFactory {
 
 					EntityPlayer shooter = (EntityPlayer) bulletnt.getThrower();
 
-					if(shooter.getHeldItem() != null && shooter.getHeldItem().getItem() == ModItems.gun_darter) {
-						ItemGunDart.writePlayer(shooter.getHeldItem(), (EntityPlayer) hit);
-						shooter.playSound("random.orb", 1.0F, 1.0F);
-					}
+					//if(shooter.getHeldItem() != null && shooter.getHeldItem().getItem() == ModItems.gun_darter) {
+					//	ItemGunDart.writePlayer(shooter.getHeldItem(), (EntityPlayer) hit);
+					//	shooter.playSound("random.orb", 1.0F, 1.0F);
+					//}
 				}
 			}
 		};
-		
+
 		return bullet;
 	}
 
 	public static BulletConfiguration getNukeConfig() {
-		
+
 		BulletConfiguration bullet = BulletConfigFactory.standardBulletConfig();
-		
+
 		bullet.ammo = new ComparableStack(ModItems.ammo_dart.stackFromEnum(AmmoDart.NUCLEAR));
 		bullet.velocity = 5.0F;
 		bullet.spread = 0;
@@ -138,7 +138,7 @@ public class GunDartFactory {
 		bullet.doesPenetrate = false;
 		bullet.style = bullet.STYLE_FLECHETTE;
 		bullet.leadChance = 0;
-		
+
 		bullet.bntHurt = (bulletnt, hit) -> {
 
 			if(bulletnt.worldObj.isRemote)
@@ -154,21 +154,21 @@ public class GunDartFactory {
 					HbmLivingProps.setTimer(e, MainRegistry.polaroidID * 60 * 20);
 			}
 		};
-		
+
 		return bullet;
 	}
 
 	public static BulletConfiguration getNERFConfig() {
-		
+
 		BulletConfiguration bullet = BulletConfigFactory.standardBulletConfig();
-		
+
 		bullet.ammo = new ComparableStack(ModItems.ammo_dart.stackFromEnum(AmmoDart.NERF));
 		bullet.velocity = 1.0F;
 		bullet.gravity = 0.04D;
 		bullet.dmgMin = 0;
 		bullet.dmgMax = 0;
 		bullet.leadChance = 0;
-		
+
 		return bullet;
 	}
 }

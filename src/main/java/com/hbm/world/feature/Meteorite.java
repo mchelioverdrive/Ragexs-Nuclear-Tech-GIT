@@ -124,11 +124,11 @@ public class Meteorite {
 				return;
 			case 12:
 				// Star Blaster
-				world.createExplosion(null, x + 0.5, y + 0.5, z + 0.5, 10F, !safe);
-				ItemStack stack = new ItemStack(ModItems.gun_b92);
-				stack.setStackDisplayName("§9Star Blaster§r");
-				EntityItem blaster = new EntityItem(world, x + 0.5, y + 0.5, z + 0.5, stack);
-				world.spawnEntityInWorld(blaster);
+				//world.createExplosion(null, x + 0.5, y + 0.5, z + 0.5, 10F, !safe);
+				//ItemStack stack = new ItemStack(ModItems.gun_b92);
+				//stack.setStackDisplayName("§9Star Blaster§r");
+				//EntityItem blaster = new EntityItem(world, x + 0.5, y + 0.5, z + 0.5, stack);
+				//world.spawnEntityInWorld(blaster);
 				return;
 			}
 

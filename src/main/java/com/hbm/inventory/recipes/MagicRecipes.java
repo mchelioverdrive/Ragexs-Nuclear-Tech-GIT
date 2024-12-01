@@ -95,11 +95,11 @@ public class MagicRecipes {
 				new OreDictStack(W.wireDense()),
 				new OreDictStack(GOLD.wireDense())));
 
-		recipes.add(new MagicRecipe(new ItemStack(ModItems.gun_darter),
-				new OreDictStack(STEEL.plate()),
-				new OreDictStack(STEEL.plate()),
-				new OreDictStack(ANY_PLASTIC.ingot()),
-				new OreDictStack(GOLD.plate())));
+		//recipes.add(new MagicRecipe(new ItemStack(ModItems.gun_darter),
+		//		new OreDictStack(STEEL.plate()),
+		//		new OreDictStack(STEEL.plate()),
+		//		new OreDictStack(ANY_PLASTIC.ingot()),
+		//		new OreDictStack(GOLD.plate())));
 
 		recipes.add(new MagicRecipe(new ItemStack(ModItems.ammo_dart, 4, ItemAmmoEnums.AmmoDart.NUCLEAR.ordinal()),
 				new OreDictStack(ANY_RUBBER.ingot()),

@@ -1112,7 +1112,7 @@ public class CivilianFeatures {
 			placeBlockAtCurrentPosition(world, ModBlocks.deco_loot, 0, 3, 2, 12, box);
 			LootGenerator.lootBookLore(world, getXWithOffset(3, 12), getYWithOffset(2), getZWithOffset(3, 12), HbmChestContents.generateLabBook(rand)); //TODO write more lore
 			placeBlockAtCurrentPosition(world, ModBlocks.deco_loot, 0, 5, 6, 5, box);
-			LootGenerator.lootMakeshiftGun(world, getXWithOffset(5, 5), getYWithOffset(6), getZWithOffset(5, 5));
+			//LootGenerator.lootMakeshiftGun(world, getXWithOffset(5, 5), getYWithOffset(6), getZWithOffset(5, 5));
 			placeRandomBobble(world, box, rand, 5, 5, 12);
 
 			return true;

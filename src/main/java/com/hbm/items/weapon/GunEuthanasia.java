@@ -54,28 +54,28 @@ public class GunEuthanasia extends Item {
 
 		boolean flag = player.capabilities.isCreativeMode
 				|| EnchantmentHelper.getEnchantmentLevel(Enchantment.infinity.effectId, stack) > 0;
-		if ((player.capabilities.isCreativeMode || player.inventory.hasItem(ModItems.gun_euthanasia_ammo))
-				&& count % 8 == 0) {
-			
-			int deadly = rand.nextInt(5);
-			
-			EntityBullet entityarrow = new EntityBullet(world, player, 3.0F, 2, 8, deadly == 0, false);
-			entityarrow.setDamage(1 + rand.nextInt(3));
-			entityarrow.antidote = true;
-
-			//world.playSoundAtEntity(player, "random.explode", 1.0F, 1.5F + (rand.nextFloat() / 4));
-			world.playSoundAtEntity(player, "hbm:weapon.rifleShoot", 1.0F, 0.8F + (rand.nextFloat() * 0.4F));
-
-			if (flag) {
-				entityarrow.canBePickedUp = 2;
-			} else {
-				player.inventory.consumeInventoryItem(ModItems.gun_euthanasia_ammo);
-			}
-
-			if (!world.isRemote) {
-				world.spawnEntityInWorld(entityarrow);
-			}
-		}
+		//if ((player.capabilities.isCreativeMode || player.inventory.hasItem(ModItems.gun_euthanasia_ammo))
+		//		&& count % 8 == 0) {
+		//
+		//	int deadly = rand.nextInt(5);
+		//
+		//	EntityBullet entityarrow = new EntityBullet(world, player, 3.0F, 2, 8, deadly == 0, false);
+		//	entityarrow.setDamage(1 + rand.nextInt(3));
+		//	entityarrow.antidote = true;
+//
+		//	//world.playSoundAtEntity(player, "random.explode", 1.0F, 1.5F + (rand.nextFloat() / 4));
+		//	world.playSoundAtEntity(player, "hbm:weapon.rifleShoot", 1.0F, 0.8F + (rand.nextFloat() * 0.4F));
+//
+		//	if (flag) {
+		//		entityarrow.canBePickedUp = 2;
+		//	} else {
+		//		player.inventory.consumeInventoryItem(ModItems.gun_euthanasia_ammo);
+		//	}
+//
+		//	if (!world.isRemote) {
+		//		world.spawnEntityInWorld(entityarrow);
+		//	}
+		//}
 	}
 
 	@Override

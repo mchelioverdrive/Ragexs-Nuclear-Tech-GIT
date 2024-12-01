@@ -96,7 +96,7 @@ public class EntityPlasmaBeam extends Entity implements IProjectile
             this.setThrowableHeading(d0, d1 + f4, d2, p_i1755_4_, p_i1755_5_);
         }
     }
-	
+
 	public EntityPlasmaBeam(World p_i1756_1_, EntityLivingBase p_i1756_2_, float p_i1756_3_, int dmgMin, int dmgMax, EntityGrenadeZOMG grenade) {
 		super(p_i1756_1_);
 		this.renderDistanceWeight = 10.0D;
@@ -142,11 +142,11 @@ public class EntityPlasmaBeam extends Entity implements IProjectile
     	this.posX = x + 0.5F;
     	this.posY = y + 0.5F;
     	this.posZ = z + 0.5F;
-    	
+
     	this.motionX = mx;
     	this.motionY = my;
     	this.motionZ = mz;
-    	
+
     	this.gravity = grav;
     }
 
@@ -224,7 +224,7 @@ public class EntityPlasmaBeam extends Entity implements IProjectile
 	public void onUpdate()
     {
         super.onUpdate();
-        
+
         if(this.ticksExisted > 100)
         	this.setDead();
 
@@ -239,7 +239,7 @@ public class EntityPlasmaBeam extends Entity implements IProjectile
 
         if (block.getMaterial() != Material.air)
         {
-            block.setBlockBoundsBasedOnState(this.worldObj, this.field_145791_d, this.field_145792_e, this.field_145789_f); 
+            block.setBlockBoundsBasedOnState(this.worldObj, this.field_145791_d, this.field_145792_e, this.field_145789_f);
             block.getCollisionBoundingBoxFromPool(this.worldObj, this.field_145791_d, this.field_145792_e, this.field_145789_f);
         	if(!worldObj.isRemote) {
         		ExplosionChaos.burn(this.worldObj, (int)this.posX, (int)this.posY, (int)this.posZ, 2);
@@ -304,14 +304,14 @@ public class EntityPlasmaBeam extends Entity implements IProjectile
             if (movingobjectposition != null && movingobjectposition.entityHit != null && movingobjectposition.entityHit instanceof EntityPlayer)
             {
                 EntityPlayer entityplayer = (EntityPlayer)movingobjectposition.entityHit;
-                
+
                 if (entityplayer.capabilities.disableDamage || this.shootingEntity instanceof EntityPlayer && !((EntityPlayer)this.shootingEntity).canAttackPlayer(entityplayer))
                 {
                     movingobjectposition = null;
                 }
 
-                if(this.ticksExisted > 5 && surviveImmolation(entityplayer))
-                    movingobjectposition = null;
+                //if(this.ticksExisted > 5 && surviveImmolation(entityplayer))
+                //    movingobjectposition = null;
             }
 
             float f2;
@@ -420,7 +420,7 @@ public class EntityPlasmaBeam extends Entity implements IProjectile
             {
                 this.extinguish();
             }
-            
+
             this.setPosition(this.posX, this.posY, this.posZ);
             this.func_145775_I();
         }
@@ -543,14 +543,14 @@ public class EntityPlasmaBeam extends Entity implements IProjectile
         byte b0 = this.dataWatcher.getWatchableObjectByte(16);
         return (b0 & 1) != 0;
     }
-    
-    private boolean surviveImmolation(EntityPlayer player) {
-    	if(player.inventory.hasItem(ModItems.gun_revolver_pip) && player.inventory.hasItem(ModItems.bottle_sparkle) && player.inventory.hasItem(ModItems.geiger_counter)) {
-    		player.triggerAchievement(MainRegistry.achSacrifice);
-    		player.addPotionEffect(new PotionEffect(Potion.regeneration.id, 3 * 20, 6));
-    		return true;
-    	} else {
-    		return false;
-    	}
-    }
+
+    //private boolean surviveImmolation(EntityPlayer player) {
+    //	if(player.inventory.hasItem(ModItems.gun_revolver_pip) && player.inventory.hasItem(ModItems.bottle_sparkle) && player.inventory.hasItem(ModItems.geiger_counter)) {
+    //		player.triggerAchievement(MainRegistry.achSacrifice);
+    //		player.addPotionEffect(new PotionEffect(Potion.regeneration.id, 3 * 20, 6));
+    //		return true;
+    //	} else {
+    //		return false;
+    //	}
+    //}
 }
