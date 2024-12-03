@@ -36,17 +36,23 @@ public class ItemCanteen extends Item {
 		stack.setItemDamage(stack.getMaxDamage());
 
 		if (this == ModItems.canteen_vodka) {
-			player.addPotionEffect(new PotionEffect(Potion.confusion.id, 10 * 20, 0));
-			player.addPotionEffect(new PotionEffect(Potion.damageBoost.id, 30 * 20, 2));
+			//aww pookie at least you feww bettew ahh
+			player.heal(2F);
+			player.addPotionEffect(new PotionEffect(Potion.confusion.id, 40 * 20, 1));  // Increased confusion duration and intensity
+			player.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 40 * 20, 1));   // Slowness for impaired movement
+			player.addPotionEffect(new PotionEffect(Potion.hunger.id, 5 * 10, 0));     // Increased hunger
+			//player.addPotionEffect(new PotionEffect(Potion.damageBoost.id, 30 * 20, 2));
 		}
 		if (this == ModItems.canteen_fab) {
-			player.heal(10F);
-			player.addPotionEffect(new PotionEffect(Potion.confusion.id, 15 * 20, 0));
-			player.addPotionEffect(new PotionEffect(Potion.damageBoost.id, 60 * 20, 2));
-			player.addPotionEffect(new PotionEffect(Potion.resistance.id, 60 * 20, 2));
-			player.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 60 * 20, 1));
+			player.heal(2F);
+			player.addPotionEffect(new PotionEffect(Potion.confusion.id, 120 * 20, 3));
+			player.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 20 * 20, 1));   // Slowness for impaired movement
+			player.addPotionEffect(new PotionEffect(Potion.hunger.id, 5 * 10, 0));
+			//player.addPotionEffect(new PotionEffect(Potion.damageBoost.id, 60 * 20, 2));
+			//player.addPotionEffect(new PotionEffect(Potion.resistance.id, 60 * 20, 2));
+			//player.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 60 * 20, 1));
 		}
-		
+
 		VersatileConfig.applyPotionSickness(player, 5);
 
 		return stack;
@@ -69,7 +75,7 @@ public class ItemCanteen extends Item {
 
 		return stack;
 	}
-    
+
     @Override
 	@SideOnly(Side.CLIENT)
     public void addInformation(ItemStack p_77624_1_, EntityPlayer p_77624_2_, List list, boolean p_77624_4_)
@@ -77,20 +83,20 @@ public class ItemCanteen extends Item {
     	if(this == ModItems.canteen_vodka)
     	{
 			list.add("Cooldown: 3 minutes");
-			list.add("Nausea I for 10 seconds");
-			list.add("Strength III for 30 seconds");
+			list.add("Coping with pain using shitty substances.");
+			list.add("May help you cope");
 			list.add("");
-			
+
     		if(MainRegistry.polaroidID == 11)
     			//list.add("Why sipp when you can succ?");
-				list.add("Time to get hammered & sickled!");
+				list.add("Well I'm not gonna stop you, it's *your* drinking problem");
     		else
-    			list.add("Smells like disinfectant, tastes like disinfectant.");
+    			list.add("In soviet russia, vodka drinks you haha guys, please upvote my post!!!");
     	}
     	if(this == ModItems.canteen_fab)
     	{
 			list.add("Cooldown: 2 minutes");
-			list.add("Engages the fab drive");
+			list.add("Fun fact for all you gigachads out there, alcohol has estrogenic properties");
     	}
     }
 

@@ -18,57 +18,57 @@ import net.minecraft.util.EntityDamageSource;
 import net.minecraftforge.common.ForgeHooks;
 
 public class EntityDamageUtil {
-	
+
 	public static boolean wasAttackedByV1(DamageSource source) {
 
 		if(source instanceof EntityDamageSource) {
 			Entity attacker = ((EntityDamageSource) source).getEntity();
-			
+
 			if(attacker instanceof EntityPlayer) {
 				EntityPlayer player = (EntityPlayer) attacker;
 				ItemStack chestplate = player.inventory.armorInventory[2];
-				
+
 				if(chestplate != null && ArmorModHandler.hasMods(chestplate)) {
 					ItemStack[] mods = ArmorModHandler.pryMods(chestplate);
-					
-					if(mods[ArmorModHandler.extra] != null && mods[ArmorModHandler.extra].getItem() == ModItems.v1) {
-						return true;
-					}
+
+					//if(mods[ArmorModHandler.extra] != null && mods[ArmorModHandler.extra].getItem() == ModItems.v1) {
+					//	return true;
+					//}
 				}
 			}
 		}
-		
+
 		return false;
 	}
-	
+
 	/**
 	 * Attacks the given entity twice, based on a piecring percentage. The second hit sets the damage source to bypass armor.
 	 * The damage source is modified, so you can't reuse damage source instances.
 	 */
 	public static boolean attackEntityFromArmorPiercing(Entity victim, DamageSource src, float damage, float piercing) {
-		
+
 		if(src.isUnblockable() || piercing == 0) return victim.attackEntityFrom(src, damage);
-		
+
 		if(piercing == 1) {
 			src.setDamageBypassesArmor();
 			return victim.attackEntityFrom(src, damage);
 		}
-		
+
 		boolean ret = false;
-		
+
 		ret |= victim.attackEntityFrom(src, damage * (1F - piercing));
 		src.setDamageBypassesArmor();
 		ret |= victim.attackEntityFrom(src, damage * piercing);
 		return ret;
 	}
-	
+
 	public static boolean attackEntityFromIgnoreIFrame(Entity victim, DamageSource src, float damage) {
 
 		if(!victim.attackEntityFrom(src, damage)) {
-			
+
 			if(victim instanceof EntityLivingBase) {
 				EntityLivingBase living = (EntityLivingBase) victim;
-				
+
 				if(living.hurtResistantTime > living.maxHurtResistantTime / 2.0F) {
 					damage += living.lastDamage;
 				}
@@ -78,10 +78,10 @@ public class EntityDamageUtil {
 			return true;
 		}
 	}
-	
+
 	/** Currently just a copy of the vanilla damage code */
 	public static boolean attackEntityFromNT(EntityLivingBase living, DamageSource source, float amount) {
-		
+
 		if(ForgeHooks.onLivingAttack(living, source, amount))
 			return false;
 		if(living.isEntityInvulnerable()) {
@@ -185,23 +185,23 @@ public class EntityDamageUtil {
 			}
 		}
 	}
-	
+
 	// in this household we drink gasoline and sniff glue
 	public static String getDeathSound(EntityLivingBase living) {
 		Method m = ReflectionHelper.findMethod(EntityLivingBase.class, living, new String[] {"func_70673_aS", "getDeathSound"});
 		try { return (String) m.invoke(living); } catch(Exception e) { } return "game.neutral.die";
 	}
-	
+
 	public static String getHurtSound(EntityLivingBase living) {
 		Method m = ReflectionHelper.findMethod(EntityLivingBase.class, living, new String[] {"func_70621_aR", "getHurtSound"});
 		try { return (String) m.invoke(living); } catch(Exception e) { } return "game.neutral.hurt";
 	}
-	
+
 	public static float getSoundVolume(EntityLivingBase living) {
 		Method m = ReflectionHelper.findMethod(EntityLivingBase.class, living, new String[] {"func_70599_aP", "getSoundVolume"});
 		try { return (float) m.invoke(living); } catch(Exception e) { } return 1F;
 	}
-	
+
 	public static float getSoundPitch(EntityLivingBase living) {
 		Method m = ReflectionHelper.findMethod(EntityLivingBase.class, living, new String[] {"func_70647_i", "getSoundPitch"});
 		try { return (float) m.invoke(living); } catch(Exception e) { } return 1F;
@@ -237,7 +237,7 @@ public class EntityDamageUtil {
 
 		return amount;
 	}
-	
+
 	public static float applyPotionDamageCalculations(EntityLivingBase living, DamageSource source, float amount) {
 		if(source.isDamageAbsolute()) {
 			return amount;
@@ -257,7 +257,7 @@ public class EntityDamageUtil {
 			if(amount <= 0.0F) {
 				return 0.0F;
 			} else {
-				
+
 				resistance = EnchantmentHelper.getEnchantmentModifierDamage(living.getLastActiveItems(), source);
 
 				if(resistance > 20) {

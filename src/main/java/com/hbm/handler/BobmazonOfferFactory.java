@@ -137,7 +137,7 @@ public class BobmazonOfferFactory {
 		//weapons.add(new Offer(ModItems.ammo_20gauge.stackFromEnum(6, Ammo20Gauge.FLECHETTE), Requirement.OIL, 22 * inflation));
 		//weapons.add(new Offer(new ItemStack(ModItems.gun_hp_ammo, 1), Requirement.ASSEMBLY, 1000 * inflation));
 
-		tools.add(new Offer(new ItemStack(ModBlocks.crate_can, 1), Requirement.STEEL, 20 * inflation));
+		//tools.add(new Offer(new ItemStack(ModBlocks.crate_can, 1), Requirement.STEEL, 20 * inflation));
 		tools.add(new Offer(new ItemStack(ModBlocks.machine_keyforge), Requirement.STEEL, 10 * inflation));
 		tools.add(new Offer(new ItemStack(ModBlocks.machine_satlinker), Requirement.CHEMICS, 50 * inflation));
 		tools.add(new Offer(new ItemStack(ModItems.oil_detector), Requirement.CHEMICS, 45 * inflation));
@@ -145,16 +145,16 @@ public class BobmazonOfferFactory {
 		tools.add(new Offer(new ItemStack(ModItems.key), Requirement.STEEL, 2 * inflation));
 		tools.add(new Offer(new ItemStack(ModItems.padlock), Requirement.STEEL, 5 * inflation));
 		tools.add(new Offer(new ItemStack(ModItems.padlock_reinforced), Requirement.OIL, 15 * inflation));
-		tools.add(new Offer(new ItemStack(ModItems.syringe_antidote, 6), Requirement.STEEL, 10 * inflation));
-		tools.add(new Offer(new ItemStack(ModItems.syringe_metal_stimpak, 4), Requirement.STEEL, 10 * inflation));
-		tools.add(new Offer(new ItemStack(ModItems.syringe_metal_medx, 4), Requirement.STEEL, 10 * inflation));
+		//tools.add(new Offer(new ItemStack(ModItems.syringe_antidote, 6), Requirement.STEEL, 10 * inflation));
+		//tools.add(new Offer(new ItemStack(ModItems.syringe_metal_stimpak, 4), Requirement.STEEL, 10 * inflation));
+		//tools.add(new Offer(new ItemStack(ModItems.syringe_metal_medx, 4), Requirement.STEEL, 10 * inflation));
 		tools.add(new Offer(new ItemStack(ModItems.radaway, 6), Requirement.ASSEMBLY, 30 * inflation));
 		tools.add(new Offer(new ItemStack(ModItems.radaway_strong, 3), Requirement.ASSEMBLY, 35 * inflation));
 		tools.add(new Offer(new ItemStack(ModItems.radx, 4), Requirement.ASSEMBLY, 20 * inflation));
 		tools.add(new Offer(new ItemStack(ModItems.pill_iodine, 6), Requirement.ASSEMBLY, 20 * inflation));
 		tools.add(new Offer(new ItemStack(ModItems.gas_mask_filter, 1), Requirement.ASSEMBLY, 5 * inflation));
-		tools.add(new Offer(new ItemStack(ModItems.gun_kit_1, 4), Requirement.OIL, 20 * inflation));
-		tools.add(new Offer(new ItemStack(ModItems.gun_kit_2, 2), Requirement.OIL, 45 * inflation));
+		//tools.add(new Offer(new ItemStack(ModItems.gun_kit_1, 4), Requirement.OIL, 20 * inflation));
+		//tools.add(new Offer(new ItemStack(ModItems.gun_kit_2, 2), Requirement.OIL, 45 * inflation));
 		tools.add(new Offer(new ItemStack(ModItems.hazmat_kit), Requirement.ASSEMBLY, 40 * inflation));
 		tools.add(new Offer(new ItemStack(ModItems.hazmat_red_kit), Requirement.CHEMICS, 100 * inflation));
 		tools.add(new Offer(new ItemStack(ModItems.hazmat_grey_kit), Requirement.OIL, 160 * inflation));
@@ -185,7 +185,7 @@ public class BobmazonOfferFactory {
 		special.add(new Offer(new ItemStack(ModItems.missile_kit), Requirement.STEEL, 5));
 		special.add(new Offer(new ItemStack(ModItems.grenade_kit), Requirement.STEEL, 5));
 		//special.add(new Offer(new ItemStack(ModItems.jetpack_vector), Requirement.STEEL, 2));
-		special.add(new Offer(new ItemStack(ModItems.jetpack_tank), Requirement.STEEL, 2));
+		//special.add(new Offer(new ItemStack(ModItems.jetpack_tank), Requirement.STEEL, 2));
 		special.add(new Offer(new ItemStack(ModItems.gun_kit_1, 10), Requirement.STEEL, 1));
 		special.add(new Offer(new ItemStack(ModItems.gun_kit_2, 5), Requirement.STEEL, 3));
 		special.add(new Offer(new ItemStack(ModBlocks.struct_launcher_core, 1), Requirement.STEEL, 3));

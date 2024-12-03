@@ -22,9 +22,9 @@ public class ItemPoolsComponent {
 	public static final String POOL_SOLID_FUEL = "POOL_SOLID_FUEL";
 	public static final String POOL_VAULT_LAB = "POOL_VAULT_LAB";
 	public static final String POOL_VAULT_LOCKERS = "POOL_VAULT_LOCKERS";
-	
+
 	public static void init() {
-		
+
 		//machine parts
 		new ItemPool(POOL_MACHINE_PARTS) {{
 			this.pool = new WeightedRandomChestContent[] {
@@ -47,7 +47,7 @@ public class ItemPoolsComponent {
 					weighted(ModItems.blade_titanium, 0, 1, 8, 1)
 			};
 		}};
-		
+
 		//fuel isotopes found in bunkers and labs
 		new ItemPool(POOL_NUKE_FUEL) {{
 			this.pool = new WeightedRandomChestContent[] {
@@ -68,7 +68,7 @@ public class ItemPoolsComponent {
 					weighted(ModItems.screwdriver, 0, 1, 1, 2)
 			};
 		}};
-		
+
 		//missile parts found in silos
 		new ItemPool(POOL_SILO) {{
 			this.pool = new WeightedRandomChestContent[] {
@@ -82,12 +82,12 @@ public class ItemPoolsComponent {
 					weighted(ModItems.thruster_medium, 0, 1, 1, 4),
 					weighted(ModItems.fuel_tank_small, 0, 1, 1, 5),
 					weighted(ModItems.fuel_tank_medium, 0, 1, 1, 4),
-					weighted(ModItems.bomb_caller, 0, 1, 1, 1),
-					weighted(ModItems.bomb_caller, 3, 1, 1, 1),
-					weighted(ModItems.bottle_nuka, 0, 1, 3, 10)
+					//weighted(ModItems.bomb_caller, 0, 1, 1, 1),
+					//weighted(ModItems.bomb_caller, 3, 1, 1, 1),
+					//weighted(ModItems.bottle_nuka, 0, 1, 3, 10)
 			};
 		}};
-		
+
 		//low quality items from offices in chests
 		new ItemPool(POOL_OFFICE_TRASH) {{
 			this.pool = new WeightedRandomChestContent[] {
@@ -108,7 +108,7 @@ public class ItemPoolsComponent {
 					weighted(ModBlocks.deco_computer, 0, 1, 1, 1)
 			};
 		}};
-		
+
 		//things found in various filing cabinets, paper, books, etc
 		new ItemPool(POOL_FILING_CABINET) {{
 			this.pool = new WeightedRandomChestContent[] {
@@ -120,10 +120,10 @@ public class ItemPoolsComponent {
 					weighted(ModItems.toothpicks, 0, 1, 16, 10),
 					weighted(ModItems.dust, 0, 1, 1, 40),
 					weighted(ModItems.dust_tiny, 0, 1, 3, 75),
-					weighted(ModItems.ink, 0, 1, 1, 1)
+					//weighted(ModItems.ink, 0, 1, 1, 1)
 			};
 		}};
-		
+
 		//solid fuels from bunker power rooms
 		new ItemPool(POOL_SOLID_FUEL) {{
 			this.pool = new WeightedRandomChestContent[] {
@@ -135,7 +135,7 @@ public class ItemPoolsComponent {
 					weighted(ModItems.niter, 0, 1, 3, 1)
 			};
 		}};
-		
+
 		//various lab related items from bunkers
 		new ItemPool(POOL_VAULT_LAB) {{
 			this.pool = new WeightedRandomChestContent[] {
@@ -143,7 +143,7 @@ public class ItemPoolsComponent {
 					weighted(ModItems.chemistry_set, 0, 1, 1, 15),
 					weighted(ModItems.screwdriver, 0, 1, 1, 10),
 					weighted(ModItems.nugget_mercury, 0, 1, 1, 3),
-					weighted(ModItems.morning_glory, 0, 1, 1, 1),
+					//weighted(ModItems.morning_glory, 0, 1, 1, 1),
 					weighted(ModItems.filter_coal, 0, 1, 1, 5),
 					weighted(ModItems.dust, 0, 1, 3, 25),
 					weighted(Items.paper, 0, 1, 2, 15),
@@ -156,31 +156,31 @@ public class ItemPoolsComponent {
 					weighted(ModItems.powder_boron, 0, 1, 1, 1)
 			};
 		}};
-		
+
 		//personal items and gear from vaults
 		new ItemPool(POOL_VAULT_LOCKERS) {{
 			this.pool = new WeightedRandomChestContent[] {
-					weighted(ModItems.robes_helmet, 0, 1, 1, 1),
-					weighted(ModItems.robes_plate, 0, 1, 1, 1),
-					weighted(ModItems.robes_legs, 0, 1, 1, 1),
-					weighted(ModItems.robes_boots, 0, 1, 1, 1),
-					weighted(ModItems.jackt, 0, 1, 1, 1),
-					weighted(ModItems.jackt2, 0, 1, 1, 1),
+					//weighted(ModItems.robes_helmet, 0, 1, 1, 1),
+					//weighted(ModItems.robes_plate, 0, 1, 1, 1),
+					//weighted(ModItems.robes_legs, 0, 1, 1, 1),
+					//weighted(ModItems.robes_boots, 0, 1, 1, 1),
+					//weighted(ModItems.jackt, 0, 1, 1, 1),
+					//weighted(ModItems.jackt2, 0, 1, 1, 1),
 					weighted(ModItems.gas_mask_m65, 0, 1, 1, 2),
 					weighted(ModItems.gas_mask_mono, 0, 1, 1, 2),
 					weighted(ModItems.goggles, 0, 1, 1, 2),
 					weighted(ModItems.gas_mask_filter, 0, 1, 1, 4),
-					weighted(ModItems.flame_opinion, 0, 1, 3, 5),
-					weighted(ModItems.flame_conspiracy, 0, 1, 3, 5),
-					weighted(ModItems.flame_politics, 0, 1, 3, 5),
-					weighted(ModItems.definitelyfood, 0, 2, 7, 5),
-					weighted(ModItems.cigarette, 0, 1, 8, 5),
-					weighted(ModItems.armor_polish, 0, 1, 1, 3),
+					//weighted(ModItems.flame_opinion, 0, 1, 3, 5),
+					//weighted(ModItems.flame_conspiracy, 0, 1, 3, 5),
+					//weighted(ModItems.flame_politics, 0, 1, 3, 5),
+					//weighted(ModItems.definitelyfood, 0, 2, 7, 5),
+					//weighted(ModItems.cigarette, 0, 1, 8, 5),
+					//weighted(ModItems.armor_polish, 0, 1, 1, 3),
 					weighted(ModItems.gun_kit_1, 0, 1, 1, 3),
 					weighted(ModItems.rag, 0, 1, 3, 5),
 					weighted(Items.paper, 0, 1, 6, 7),
 					weighted(Items.clock, 0, 1, 1, 3),
-					weighted(Items.book, 0, 1, 5, 10),
+					//weighted(Items.book, 0, 1, 5, 10),
 					weighted(Items.experience_bottle, 0, 1, 3, 1)
 			};
 		}};

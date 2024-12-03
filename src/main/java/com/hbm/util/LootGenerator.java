@@ -44,9 +44,9 @@ public class LootGenerator {
 			else
 				loot.addItem(new ItemStack(ModItems.ammo_rocket), -0.25, 0, -0.25);
 
-			for(int i = 0; i < 4; i++) addItemWithDeviation(loot, world.rand, new ItemStack(ModItems.cap_nuka, 2), 0.125, i * 0.03125, 0.25);
-			for(int i = 0; i < 2; i++) addItemWithDeviation(loot, world.rand, new ItemStack(ModItems.syringe_metal_stimpak, 1), -0.25, i * 0.03125, 0.25);
-			for(int i = 0; i < 6; i++) addItemWithDeviation(loot, world.rand, new ItemStack(ModItems.cap_nuka, 2), 0.125, i * 0.03125, -0.25);
+			//for(int i = 0; i < 4; i++) addItemWithDeviation(loot, world.rand, new ItemStack(ModItems.cap_nuka, 2), 0.125, i * 0.03125, 0.25);
+			//for(int i = 0; i < 2; i++) addItemWithDeviation(loot, world.rand, new ItemStack(ModItems.syringe_metal_stimpak, 1), -0.25, i * 0.03125, 0.25);
+			//for(int i = 0; i < 6; i++) addItemWithDeviation(loot, world.rand, new ItemStack(ModItems.cap_nuka, 2), 0.125, i * 0.03125, -0.25);
 		}
 	}
 

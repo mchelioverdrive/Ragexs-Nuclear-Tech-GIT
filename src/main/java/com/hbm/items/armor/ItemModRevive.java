@@ -19,22 +19,22 @@ public class ItemModRevive extends ItemArmorMod {
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean bool) {
 
-		if(this == ModItems.scrumpy) {
-			list.add(EnumChatFormatting.GOLD + "But how did you survive?");
-			list.add(EnumChatFormatting.RED + "I was drunk.");
-		}
-		if(this == ModItems.wild_p) {
-			list.add(EnumChatFormatting.DARK_GRAY + "Explosive " + EnumChatFormatting.RED + "Reactive " + EnumChatFormatting.DARK_GRAY + "Plot " + EnumChatFormatting.RED + "Armor");
-		}
-		if(this == ModItems.fabsols_vodka) {
-			list.add(EnumChatFormatting.ITALIC + "In the news:");
-			list.add(EnumChatFormatting.RED + "" + EnumChatFormatting.BOLD + "Man literally too angry to die.");
-			list.add("");
-			list.add(EnumChatFormatting.ITALIC + "\"I ain't got time to die\" says local");
-			list.add(EnumChatFormatting.ITALIC + "man after ripping the physical manifestation");
-			list.add(EnumChatFormatting.ITALIC + "of disaster itself in half.");
-		}
-		
+		//if(this == ModItems.scrumpy) {
+		//	list.add(EnumChatFormatting.GOLD + "But how did you survive?");
+		//	list.add(EnumChatFormatting.RED + "I was drunk.");
+		//}
+		//if(this == ModItems.wild_p) {
+		//	list.add(EnumChatFormatting.DARK_GRAY + "Explosive " + EnumChatFormatting.RED + "Reactive " + EnumChatFormatting.DARK_GRAY + "Plot " + EnumChatFormatting.RED + "Armor");
+		//}
+		//if(this == ModItems.fabsols_vodka) {
+		//	list.add(EnumChatFormatting.ITALIC + "In the news:");
+		//	list.add(EnumChatFormatting.RED + "" + EnumChatFormatting.BOLD + "Man literally too angry to die.");
+		//	list.add("");
+		//	list.add(EnumChatFormatting.ITALIC + "\"I ain't got time to die\" says local");
+		//	list.add(EnumChatFormatting.ITALIC + "man after ripping the physical manifestation");
+		//	list.add(EnumChatFormatting.ITALIC + "of disaster itself in half.");
+		//}
+
 		list.add("");
 		list.add(EnumChatFormatting.GOLD + "" + (stack.getMaxDamage() - stack.getItemDamage()) + " revives left");
 		list.add("");

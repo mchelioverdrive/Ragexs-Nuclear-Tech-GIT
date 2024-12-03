@@ -34,12 +34,12 @@ public class Relay extends WorldGenerator
 	Block Block7 = ModBlocks.deco_red_copper;
 	Block Block8 = ModBlocks.deco_tungsten;
 	Block Block9 = ModBlocks.pole_top;
-	
+
 	int s2 = 0;
 	int s3 = 0;
 	int s4 = 8;
 	int s5 = 8;
-	
+
 	protected Block[] GetValidSpawnBlocks()
 	{
 		return new Block[]
@@ -660,24 +660,24 @@ public class Relay extends WorldGenerator
 		world.setBlock(x + 6, y + 0, z + 10, ModBlocks.crate_iron, 0, 3);
 		world.setBlockMetadataWithNotify(x + 6, y + 0, z + 10, 3, 3);
 		WeightedRandomChestContent.generateChestContents(rand, ItemPool.getPool(ItemPoolsLegacy.POOL_GENERIC), (TileEntityCrateIron)world.getTileEntity(x + 6, y + 0, z + 10), 8);
-		
-		if(world.rand.nextInt(5) == 0) {
-			((TileEntityCrateIron)world.getTileEntity(x + 6, y + 0, z + 10)).setInventorySlotContents(11, new ItemStack(ModItems.morning_glory));
-		}
-		
+
+		//if(world.rand.nextInt(5) == 0) {
+		//	((TileEntityCrateIron)world.getTileEntity(x + 6, y + 0, z + 10)).setInventorySlotContents(11, new ItemStack(ModItems.morning_glory));
+		//}
+
 		if(world.rand.nextInt(10) > 0) {
 			LootGenerator.setBlock(world, x + 6, y + 1, z + 10);
 			LootGenerator.lootCapNuke(world, x + 6, y + 1, z + 10);
 		} else {
 			world.setBlock(x + 6, y + 1, z + 10, ModBlocks.bobblehead, 2, 3);
 			TileEntityBobble bobble = (TileEntityBobble) world.getTileEntity(x + 6, y + 1, z + 10);
-			
+
 			if(bobble != null) {
 				bobble.type = BobbleType.values()[world.rand.nextInt(BobbleType.values().length - 1) + 1];
 				bobble.markDirty();
 			}
 		}
-		
+
 		world.setBlock(x + 7, y + 0, z + 10, Blocks.brick_block, 0, 3);
 		world.setBlock(x + 8, y + 0, z + 10, Blocks.brick_block, 0, 3);
 		world.setBlock(x + 10, y + 0, z + 10, ModBlocks.fence_metal, 0, 3);

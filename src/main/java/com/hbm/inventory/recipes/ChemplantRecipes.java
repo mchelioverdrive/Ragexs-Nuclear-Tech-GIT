@@ -174,12 +174,13 @@ public class ChemplantRecipes extends SerializableRecipe {
 								new FluidStack(Fluids.HEATINGOIL, 200) :
 								new FluidStack(Fluids.GAS, 200))
 				.outputItems(new ItemStack(ModItems.cordite, 4)));
+		//and then the chemists arrived
 		recipes.add(new ChemRecipe(54, "KEVLAR", 40)
 				.inputItems(
 						new OreDictStack(KNO.dust(), 2),
 						new ComparableStack(Items.brick),
 						new OreDictStack(COAL.dust()))
-				.inputFluids(new FluidStack(Fluids.PETROLEUM, 100))
+				.inputFluids(new FluidStack(Fluids.OXYHYDROGEN, 100), new FluidStack(Fluids.AMMONIA, 100))
 				.outputItems(new ItemStack(ModItems.plate_kevlar, 4)));
 		recipes.add(new ChemRecipe(55, "CONCRETE", 100)
 				.inputItems(
@@ -339,14 +340,14 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(75, "ETHANOL", 50)
 				.inputItems(new ComparableStack(Items.sugar, 10))
 				.outputFluids(new FluidStack(Fluids.ETHANOL, 1000)));
-		recipes.add(new ChemRecipe(76, "METH", 30)
-				.inputItems(
-						new ComparableStack(Items.wheat),
-						new ComparableStack(Items.dye, 2, 3))
-				.inputFluids(
-						new FluidStack(Fluids.LUBRICANT, 400),
-						new FluidStack(Fluids.PEROXIDE, 400))
-				.outputItems(new ItemStack(ModItems.chocolate, 4)));
+		//recipes.add(new ChemRecipe(76, "METH", 30)
+		//		.inputItems(
+		//				new ComparableStack(Items.wheat),
+		//				new ComparableStack(Items.dye, 2, 3))
+		//		.inputFluids(
+		//				new FluidStack(Fluids.LUBRICANT, 400),
+		//				new FluidStack(Fluids.PEROXIDE, 400))
+		//		.outputItems(new ItemStack(ModItems.chocolate, 4)));
 		recipes.add(new ChemRecipe(77, "CO2", 60)
 				.inputFluids(new FluidStack(Fluids.GAS, 1000))
 				.outputFluids(new FluidStack(Fluids.CARBONDIOXIDE, 1000)));
@@ -388,11 +389,11 @@ public class ChemplantRecipes extends SerializableRecipe {
 						new ComparableStack(ModItems.nugget_gallium),
 						new ComparableStack(ModItems.nugget_arsenic))
 				.outputItems(new ItemStack(ModItems.nugget_gaas, 1)));
-		recipes.add(new ChemRecipe(106, "ANIMAN", 250)
-				.inputFluids(new FluidStack(Fluids.OLIVEOIL, 500))
-				.inputItems(
-						new ComparableStack(ModItems.canned_conserve, 1, 5))
-				.outputItems(new ItemStack(ModItems.animan, 1)));
+		//recipes.add(new ChemRecipe(106, "ANIMAN", 250)
+		//		.inputFluids(new FluidStack(Fluids.OLIVEOIL, 500))
+		//		.inputItems(
+		//				new ComparableStack(ModItems.canned_conserve, 1, 5))
+		//		.outputItems(new ItemStack(ModItems.animan, 1)));
 		recipes.add(new ChemRecipe(107, "ELBOWS", 250)
 				.inputFluids(new FluidStack(Fluids.PEROXIDE, 100), new FluidStack(Fluids.ELBOWGREASE, 900))
 				.inputItems(

@@ -19,11 +19,11 @@ public class ItemCottonCandy extends ItemFood {
     {
         if (!p_77849_2_.isRemote)
         {
-            p_77849_3_.addPotionEffect(new PotionEffect(Potion.poison.id, 15 * 20, 0));
-            p_77849_3_.addPotionEffect(new PotionEffect(Potion.wither.id, 5 * 20, 0));
-            p_77849_3_.addPotionEffect(new PotionEffect(Potion.weakness.id, 25 * 20, 2));
-            p_77849_3_.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 25 * 20, 2));
-            p_77849_3_.addPotionEffect(new PotionEffect(Potion.resistance.id, 30 * 20, 4));
+            //p_77849_3_.addPotionEffect(new PotionEffect(Potion.poison.id, 15 * 20, 0));
+            //p_77849_3_.addPotionEffect(new PotionEffect(Potion.wither.id, 5 * 20, 0));
+            //p_77849_3_.addPotionEffect(new PotionEffect(Potion.weakness.id, 25 * 20, 2));
+            //p_77849_3_.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 25 * 20, 2));
+            //p_77849_3_.addPotionEffect(new PotionEffect(Potion.resistance.id, 30 * 20, 4));
         }
     }
 

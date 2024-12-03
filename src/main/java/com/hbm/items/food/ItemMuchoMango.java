@@ -25,14 +25,15 @@ public class ItemMuchoMango extends ItemFood {
 	@Override
 	protected void onFoodEaten(ItemStack stack, World world, EntityPlayer player) {
 		if(!world.isRemote) {
-			player.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 200));
+			player.addPotionEffect(new PotionEffect(Potion.confusion.id, 5 * 20, 0));
+			//player.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 200));
 		}
 	}
 
 	@Override
 	public void addInformation(ItemStack itemstack, EntityPlayer player, List list, boolean bool) {
 		if(this == ModItems.mucho_mango) {
-			list.add("The Comically Large Can");
+			list.add("some form of unfunny breadtuber reference");
 		}
 	}
 

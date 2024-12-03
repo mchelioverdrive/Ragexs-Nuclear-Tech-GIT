@@ -53,34 +53,34 @@ public class ItemSyringe extends Item {
 			}
 		}
 
-		if(this == ModItems.syringe_awesome && !VersatileConfig.hasPotionSickness(player)) {
-			if(!world.isRemote) {
-				player.addPotionEffect(new PotionEffect(Potion.regeneration.id, 50 * 20, 9));
-				player.addPotionEffect(new PotionEffect(Potion.resistance.id, 50 * 20, 9));
-				player.addPotionEffect(new PotionEffect(Potion.fireResistance.id, 50 * 20, 0));
-				player.addPotionEffect(new PotionEffect(Potion.damageBoost.id, 50 * 20, 24));
-				player.addPotionEffect(new PotionEffect(Potion.digSpeed.id, 50 * 20, 9));
-				player.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 50 * 20, 6));
-				player.addPotionEffect(new PotionEffect(Potion.jump.id, 50 * 20, 9));
-				player.addPotionEffect(new PotionEffect(Potion.field_76434_w.id, 50 * 20, 9));
-				player.addPotionEffect(new PotionEffect(Potion.field_76444_x.id, 50 * 20, 4));
-				player.addPotionEffect(new PotionEffect(Potion.confusion.id, 5 * 20, 4));
-				player.addPotionEffect(new PotionEffect(HbmPotion.radx.id, 50 * 20, 9));
-
-				stack.stackSize--;
-				world.playSoundAtEntity(player, "hbm:item.syringe", 1.0F, 1.0F);
-
-				if(stack.stackSize <= 0) {
-					return new ItemStack(ModItems.syringe_empty);
-				}
-
-				if(!player.inventory.addItemStackToInventory(new ItemStack(ModItems.syringe_empty))) {
-					player.dropPlayerItemWithRandomChoice(new ItemStack(ModItems.syringe_empty, 1, 0), false);
-				}
-
-				VersatileConfig.applyPotionSickness(player, 50);
-			}
-		}
+		//if(this == ModItems.syringe_awesome && !VersatileConfig.hasPotionSickness(player)) {
+		//	if(!world.isRemote) {
+		//		player.addPotionEffect(new PotionEffect(Potion.regeneration.id, 50 * 20, 9));
+		//		player.addPotionEffect(new PotionEffect(Potion.resistance.id, 50 * 20, 9));
+		//		player.addPotionEffect(new PotionEffect(Potion.fireResistance.id, 50 * 20, 0));
+		//		player.addPotionEffect(new PotionEffect(Potion.damageBoost.id, 50 * 20, 24));
+		//		player.addPotionEffect(new PotionEffect(Potion.digSpeed.id, 50 * 20, 9));
+		//		player.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 50 * 20, 6));
+		//		player.addPotionEffect(new PotionEffect(Potion.jump.id, 50 * 20, 9));
+		//		player.addPotionEffect(new PotionEffect(Potion.field_76434_w.id, 50 * 20, 9));
+		//		player.addPotionEffect(new PotionEffect(Potion.field_76444_x.id, 50 * 20, 4));
+		//		player.addPotionEffect(new PotionEffect(Potion.confusion.id, 5 * 20, 4));
+		//		player.addPotionEffect(new PotionEffect(HbmPotion.radx.id, 50 * 20, 9));
+//
+		//		stack.stackSize--;
+		//		world.playSoundAtEntity(player, "hbm:item.syringe", 1.0F, 1.0F);
+//
+		//		if(stack.stackSize <= 0) {
+		//			return new ItemStack(ModItems.syringe_empty);
+		//		}
+//
+		//		if(!player.inventory.addItemStackToInventory(new ItemStack(ModItems.syringe_empty))) {
+		//			player.dropPlayerItemWithRandomChoice(new ItemStack(ModItems.syringe_empty, 1, 0), false);
+		//		}
+//
+		//		VersatileConfig.applyPotionSickness(player, 50);
+		//	}
+		//}
 
 		if(this == ModItems.syringe_poison) {
 			if(!world.isRemote) {
@@ -266,37 +266,37 @@ public class ItemSyringe extends Item {
 			}
 		}
 
-		if(this == ModItems.jetpack_tank && player.inventory.armorInventory[2] != null) {
-
-			if(!world.isRemote) {
-
-				ItemStack jetpack = player.inventory.armorInventory[2];
-
-				if(jetpack == null)
-					return stack;
-
-				if(jetpack.getItem() instanceof ItemArmor && ArmorModHandler.hasMods(jetpack)) {
-					jetpack = ArmorModHandler.pryMods(jetpack)[ArmorModHandler.plate_only];
-				}
-
-				if(jetpack == null || !(jetpack.getItem() instanceof IFillableItem))
-					return stack;
-
-				IFillableItem fillable = (IFillableItem) jetpack.getItem();
-
-				if(!fillable.acceptsFluid(Fluids.KEROSENE, jetpack))
-					return stack;
-
-				fillable.tryFill(Fluids.KEROSENE, 1000, jetpack);
-
-				if(jetpack.getItem() != player.inventory.armorInventory[2].getItem())
-					ArmorModHandler.applyMod(player.inventory.armorInventory[2], jetpack);
-
-				world.playSoundAtEntity(player, "hbm:item.jetpackTank", 1.0F, 1.0F);
-
-				stack.stackSize--;
-			}
-		}
+		//if(this == ModItems.jetpack_tank && player.inventory.armorInventory[2] != null) {
+//
+		//	if(!world.isRemote) {
+//
+		//		ItemStack jetpack = player.inventory.armorInventory[2];
+//
+		//		if(jetpack == null)
+		//			return stack;
+//
+		//		if(jetpack.getItem() instanceof ItemArmor && ArmorModHandler.hasMods(jetpack)) {
+		//			jetpack = ArmorModHandler.pryMods(jetpack)[ArmorModHandler.plate_only];
+		//		}
+//
+		//		if(jetpack == null || !(jetpack.getItem() instanceof IFillableItem))
+		//			return stack;
+//
+		//		IFillableItem fillable = (IFillableItem) jetpack.getItem();
+//
+		//		if(!fillable.acceptsFluid(Fluids.KEROSENE, jetpack))
+		//			return stack;
+//
+		//		fillable.tryFill(Fluids.KEROSENE, 1000, jetpack);
+//
+		//		if(jetpack.getItem() != player.inventory.armorInventory[2].getItem())
+		//			ArmorModHandler.applyMod(player.inventory.armorInventory[2], jetpack);
+//
+		//		world.playSoundAtEntity(player, "hbm:item.jetpackTank", 1.0F, 1.0F);
+//
+		//		stack.stackSize--;
+		//	}
+		//}
 
 		if(this == ModItems.lox_tank && player.inventory.armorInventory[3] != null) {
 			if(!world.isRemote) {
@@ -358,14 +358,14 @@ public class ItemSyringe extends Item {
 			}
 		}
 
-		if(this == ModItems.cbt_device) {
-			if(!world.isRemote) {
-				player.addPotionEffect(new PotionEffect(HbmPotion.bang.id, 30, 0));
-
-				stack.stackSize--;
-				world.playSoundAtEntity(player, "hbm:item.vice", 1.0F, 1.0F);
-			}
-		}
+		//if(this == ModItems.cbt_device) {
+		//	if(!world.isRemote) {
+		//		player.addPotionEffect(new PotionEffect(HbmPotion.bang.id, 30, 0));
+//
+		//		stack.stackSize--;
+		//		world.playSoundAtEntity(player, "hbm:item.vice", 1.0F, 1.0F);
+		//	}
+		//}
 
 		return stack;
 	}
@@ -373,18 +373,18 @@ public class ItemSyringe extends Item {
 	@Override
 	@SideOnly(Side.CLIENT)
 	public boolean hasEffect(ItemStack p_77636_1_) {
-		if(this == ModItems.syringe_awesome) {
-			return true;
-		}
+		//if(this == ModItems.syringe_awesome) {
+		//	return true;
+		//}
 
 		return false;
 	}
 
 	@Override
 	public EnumRarity getRarity(ItemStack p_77613_1_) {
-		if(this == ModItems.syringe_awesome) {
-			return EnumRarity.uncommon;
-		}
+		//if(this == ModItems.syringe_awesome) {
+		//	return EnumRarity.uncommon;
+		//}
 		return EnumRarity.common;
 	}
 
@@ -409,38 +409,38 @@ public class ItemSyringe extends Item {
 			}
 		}
 
-		if(this == ModItems.syringe_awesome && !VersatileConfig.hasPotionSickness(entity)) {
-			if(!world.isRemote) {
-
-				if(entity instanceof EntityCow) {
-
-					entity.addPotionEffect(new PotionEffect(HbmPotion.bang.id, 40, 0));
-
-				} else  {
-					entity.addPotionEffect(new PotionEffect(Potion.regeneration.id, 50 * 20, 9));
-					entity.addPotionEffect(new PotionEffect(Potion.resistance.id, 50 * 20, 9));
-					entity.addPotionEffect(new PotionEffect(Potion.fireResistance.id, 50 * 20, 0));
-					entity.addPotionEffect(new PotionEffect(Potion.damageBoost.id, 50 * 20, 24));
-					entity.addPotionEffect(new PotionEffect(Potion.digSpeed.id, 50 * 20, 9));
-					entity.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 50 * 20, 6));
-					entity.addPotionEffect(new PotionEffect(Potion.jump.id, 50 * 20, 9));
-					entity.addPotionEffect(new PotionEffect(Potion.field_76434_w.id, 50 * 20, 9));
-					entity.addPotionEffect(new PotionEffect(Potion.field_76444_x.id, 50 * 20, 4));
-					entity.addPotionEffect(new PotionEffect(Potion.confusion.id, 5 * 20, 4));
-					VersatileConfig.applyPotionSickness(entity, 50);
-				}
-
-				stack.stackSize--;
-				world.playSoundAtEntity(entity, "hbm:item.syringe", 1.0F, 1.0F);
-
-				if(entityPlayer instanceof EntityPlayer) {
-					EntityPlayer player = (EntityPlayer) entityPlayer;
-					if(!player.inventory.addItemStackToInventory(new ItemStack(ModItems.syringe_empty))) {
-						player.dropPlayerItemWithRandomChoice(new ItemStack(ModItems.syringe_empty, 1, 0), false);
-					}
-				}
-			}
-		}
+		//if(this == ModItems.syringe_awesome && !VersatileConfig.hasPotionSickness(entity)) {
+		//	if(!world.isRemote) {
+//
+		//		if(entity instanceof EntityCow) {
+//
+		//			entity.addPotionEffect(new PotionEffect(HbmPotion.bang.id, 40, 0));
+//
+		//		} else  {
+		//			entity.addPotionEffect(new PotionEffect(Potion.regeneration.id, 50 * 20, 9));
+		//			entity.addPotionEffect(new PotionEffect(Potion.resistance.id, 50 * 20, 9));
+		//			entity.addPotionEffect(new PotionEffect(Potion.fireResistance.id, 50 * 20, 0));
+		//			entity.addPotionEffect(new PotionEffect(Potion.damageBoost.id, 50 * 20, 24));
+		//			entity.addPotionEffect(new PotionEffect(Potion.digSpeed.id, 50 * 20, 9));
+		//			entity.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 50 * 20, 6));
+		//			entity.addPotionEffect(new PotionEffect(Potion.jump.id, 50 * 20, 9));
+		//			entity.addPotionEffect(new PotionEffect(Potion.field_76434_w.id, 50 * 20, 9));
+		//			entity.addPotionEffect(new PotionEffect(Potion.field_76444_x.id, 50 * 20, 4));
+		//			entity.addPotionEffect(new PotionEffect(Potion.confusion.id, 5 * 20, 4));
+		//			VersatileConfig.applyPotionSickness(entity, 50);
+		//		}
+//
+		//		stack.stackSize--;
+		//		world.playSoundAtEntity(entity, "hbm:item.syringe", 1.0F, 1.0F);
+//
+		//		if(entityPlayer instanceof EntityPlayer) {
+		//			EntityPlayer player = (EntityPlayer) entityPlayer;
+		//			if(!player.inventory.addItemStackToInventory(new ItemStack(ModItems.syringe_empty))) {
+		//				player.dropPlayerItemWithRandomChoice(new ItemStack(ModItems.syringe_empty, 1, 0), false);
+		//			}
+		//		}
+		//	}
+		//}
 
 		if(this == ModItems.syringe_poison) {
 			if(!world.isRemote) {
@@ -564,9 +564,9 @@ public class ItemSyringe extends Item {
 		if(this == ModItems.syringe_antidote) {
 			list.add("Removes all potion effects");
 		}
-		if(this == ModItems.syringe_awesome) {
-			list.add("Every good effect for 50 seconds");
-		}
+		//if(this == ModItems.syringe_awesome) {
+		//	list.add("Every good effect for 50 seconds");
+		//}
 		if(this == ModItems.syringe_metal_medx) {
 			list.add("Resistance III for 4 minutes");
 		}
@@ -608,9 +608,9 @@ public class ItemSyringe extends Item {
 		if(this == ModItems.gas_mask_filter_mono) {
 			list.add("Repairs worn monoxide mask");
 		}
-		if(this == ModItems.jetpack_tank) {
-			list.add("Fills worn jetpack with up to 1000mB of kerosene");
-		}
+		//if(this == ModItems.jetpack_tank) {
+		//	list.add("Fills worn jetpack with up to 1000mB of kerosene");
+		//}
 		if(this == ModItems.lox_tank) {
 			list.add("Fills a worn PLSS with 1000mB of oxygen");
 		}

@@ -61,9 +61,9 @@ public class ItemPill extends ItemFood {
 					player.attackEntityFrom(rand.nextBoolean() ? ModDamageSource.euthanizedSelf : ModDamageSource.euthanizedSelf2, 1000);
 			}
 
-			if(this == ModItems.pill_red) {
-				player.addPotionEffect(new PotionEffect(HbmPotion.death.id, 60 * 60 * 20, 0));
-			}
+			//if(this == ModItems.pill_red) {
+			//	player.addPotionEffect(new PotionEffect(HbmPotion.death.id, 60 * 60 * 20, 0));
+			//}
 
 			if(this == ModItems.radx) {
 				player.addPotionEffect(new PotionEffect(HbmPotion.radx.id, 3 * 60 * 20, 0));
@@ -93,33 +93,33 @@ public class ItemPill extends ItemFood {
 				//float digamma = HbmLivingProps.getDigamma(player);
 				//HbmLivingProps.setDigamma(player, Math.max(digamma - 0.5F, 0F));
 			}
-			if(this == ModItems.animan) {
-				int x = (int)MathHelper.floor_double(player.posX);
-				int y = (int)MathHelper.floor_double(player.posY);
-				int z = (int)MathHelper.floor_double(player.posZ);
-				world.playSoundEffect(x, y, z, "hbm:player.oil", 1.0F, 1.0F);
-
-				player.addPotionEffect(new PotionEffect(HbmPotion.run.id, 10 * 20, 0));
-
-				NBTTagCompound nbt = new NBTTagCompound();
-				nbt.setString("type", "vomit");
-				nbt.setString("mode", "normal");
-				nbt.setInteger("count", 25);
-				nbt.setInteger("entity", player.getEntityId());
-				PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(nbt, 0, 0, 0),  new TargetPoint(player.dimension, x, y, z, 25));
-
-				world.playSoundEffect(x, y, z, "hbm:player.vomit", 1.0F, 1.0F);
-				player.addPotionEffect(new PotionEffect(Potion.hunger.id, 60, 19));
-
-			}
-			if(this == ModItems.chocolate) {
-				if(rand.nextInt(25) == 0) {
-					player.attackEntityFrom(ModDamageSource.overdose, 1000);
-				}
-				player.addPotionEffect(new PotionEffect(Potion.digSpeed.id, 60 * 20, 3));
-				player.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 60 * 20, 3));
-				player.addPotionEffect(new PotionEffect(Potion.jump.id, 60 * 20, 3));
-			}
+			//if(this == ModItems.animan) {
+			//	int x = (int)MathHelper.floor_double(player.posX);
+			//	int y = (int)MathHelper.floor_double(player.posY);
+			//	int z = (int)MathHelper.floor_double(player.posZ);
+			//	world.playSoundEffect(x, y, z, "hbm:player.oil", 1.0F, 1.0F);
+//
+			//	player.addPotionEffect(new PotionEffect(HbmPotion.run.id, 10 * 20, 0));
+//
+			//	NBTTagCompound nbt = new NBTTagCompound();
+			//	nbt.setString("type", "vomit");
+			//	nbt.setString("mode", "normal");
+			//	nbt.setInteger("count", 25);
+			//	nbt.setInteger("entity", player.getEntityId());
+			//	PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(nbt, 0, 0, 0),  new TargetPoint(player.dimension, x, y, z, 25));
+//
+			//	world.playSoundEffect(x, y, z, "hbm:player.vomit", 1.0F, 1.0F);
+			//	player.addPotionEffect(new PotionEffect(Potion.hunger.id, 60, 19));
+//
+			//}
+			//if(this == ModItems.chocolate) {
+			//	if(rand.nextInt(25) == 0) {
+			//		player.attackEntityFrom(ModDamageSource.overdose, 1000);
+			//	}
+			//	player.addPotionEffect(new PotionEffect(Potion.digSpeed.id, 60 * 20, 3));
+			//	player.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 60 * 20, 3));
+			//	player.addPotionEffect(new PotionEffect(Potion.jump.id, 60 * 20, 3));
+			//}
 
 			if(this == ModItems.fmn) {
 				//float digamma = HbmLivingProps.getDigamma(player);

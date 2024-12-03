@@ -365,26 +365,26 @@ public class ModEventHandler {
 			if(event.source instanceof EntityDamageSource && ((EntityDamageSource)event.source).getEntity() instanceof EntityPlayer
 					 && !(((EntityDamageSource)event.source).getEntity() instanceof FakePlayer)) {
 
-				if(event.entityLiving instanceof EntitySpider && event.entityLiving.getRNG().nextInt(500) == 0) {
-					event.entityLiving.dropItem(ModItems.spider_milk, 1);
-				}
+				//if(event.entityLiving instanceof EntitySpider && event.entityLiving.getRNG().nextInt(500) == 0) {
+				//	event.entityLiving.dropItem(ModItems.spider_milk, 1);
+				//}
 
-				if(event.entityLiving instanceof EntityCaveSpider && event.entityLiving.getRNG().nextInt(100) == 0) {
-					event.entityLiving.dropItem(ModItems.serum, 1);
-				}
+				//if(event.entityLiving instanceof EntityCaveSpider && event.entityLiving.getRNG().nextInt(100) == 0) {
+				//	event.entityLiving.dropItem(ModItems.serum, 1);
+				//}
 
-				if(event.entityLiving instanceof EntityAnimal && event.entityLiving.getRNG().nextInt(500) == 0) {
-					event.entityLiving.dropItem(ModItems.bandaid, 1);
-				}
+				//if(event.entityLiving instanceof EntityAnimal && event.entityLiving.getRNG().nextInt(500) == 0) {
+				//	event.entityLiving.dropItem(ModItems.bandaid, 1);
+				//}
 
-				if(event.entityLiving instanceof IMob) {
-					if(event.entityLiving.getRNG().nextInt(1000) == 0) event.entityLiving.dropItem(ModItems.heart_piece, 1);
-					if(event.entityLiving.getRNG().nextInt(250) == 0) event.entityLiving.dropItem(ModItems.key_red_cracked, 1);
-					if(event.entityLiving.getRNG().nextInt(250) == 0) event.entityLiving.dropItem(ModItems.launch_code_piece, 1);
-				}
+				//if(event.entityLiving instanceof IMob) {
+				//	//if(event.entityLiving.getRNG().nextInt(1000) == 0) event.entityLiving.dropItem(ModItems.heart_piece, 1);
+				//	//if(event.entityLiving.getRNG().nextInt(250) == 0) event.entityLiving.dropItem(ModItems.key_red_cracked, 1);
+				//	//if(event.entityLiving.getRNG().nextInt(250) == 0) event.entityLiving.dropItem(ModItems.launch_code_piece, 1);
+				//}
 
 				if(event.entityLiving instanceof EntityCyberCrab && event.entityLiving.getRNG().nextInt(500) == 0) {
-					event.entityLiving.dropItem(ModItems.wd40, 1);
+					event.entityLiving.dropItem(ModItems.ingot_steel_dusted, 1);
 				}
 
 				if(event.entityLiving instanceof EntityVillager&& event.entityLiving.getRNG().nextInt(1) == 0) {
@@ -1043,34 +1043,34 @@ public class ModEventHandler {
 			ItemStack[] mods = ArmorModHandler.pryMods(chestplate);
 			ItemStack servo = mods[ArmorModHandler.servos];
 
-			if(servo != null && servo.getItem() == ModItems.ballistic_gauntlet) {
-
-				BulletConfiguration firedConfig = null;
-
-				for(Integer config : HbmCollection.g12) {
-					BulletConfiguration cfg = BulletConfigSyncingUtil.pullConfig(config);
-
-					if(InventoryUtil.doesPlayerHaveAStack(player, cfg.ammo, true, true)) {
-						firedConfig = cfg;
-						break;
-					}
-				}
-
-				if(firedConfig != null) {
-					int bullets = firedConfig.bulletsMin;
-
-					if(firedConfig.bulletsMax > firedConfig.bulletsMin) {
-						bullets += player.getRNG().nextInt(firedConfig.bulletsMax - firedConfig.bulletsMin);
-					}
-
-					for(int i = 0; i < bullets; i++) {
-						EntityBulletBaseNT bullet = new EntityBulletBaseNT(player.worldObj, BulletConfigSyncingUtil.getKey(firedConfig), player);
-						player.worldObj.spawnEntityInWorld(bullet);
-					}
-
-					player.worldObj.playSoundAtEntity(player, "hbm:weapon.shotgunShoot", 1.0F, 1.0F);
-				}
-			}
+			//if(servo != null && servo.getItem() == ModItems.ballistic_gauntlet) {
+//
+			//	BulletConfiguration firedConfig = null;
+//
+			//	for(Integer config : HbmCollection.g12) {
+			//		BulletConfiguration cfg = BulletConfigSyncingUtil.pullConfig(config);
+//
+			//		if(InventoryUtil.doesPlayerHaveAStack(player, cfg.ammo, true, true)) {
+			//			firedConfig = cfg;
+			//			break;
+			//		}
+			//	}
+//
+			//	if(firedConfig != null) {
+			//		int bullets = firedConfig.bulletsMin;
+//
+			//		if(firedConfig.bulletsMax > firedConfig.bulletsMin) {
+			//			bullets += player.getRNG().nextInt(firedConfig.bulletsMax - firedConfig.bulletsMin);
+			//		}
+//
+			//		for(int i = 0; i < bullets; i++) {
+			//			EntityBulletBaseNT bullet = new EntityBulletBaseNT(player.worldObj, BulletConfigSyncingUtil.getKey(firedConfig), player);
+			//			player.worldObj.spawnEntityInWorld(bullet);
+			//		}
+//
+			//		player.worldObj.playSoundAtEntity(player, "hbm:weapon.shotgunShoot", 1.0F, 1.0F);
+			//	}
+			//}
 		}
 	}
 
@@ -1538,9 +1538,9 @@ public class ModEventHandler {
 
 		if(!e.player.worldObj.isRemote && e.smelting.getItem() == ModItems.ingot_uranium && e.player.getRNG().nextInt(64) == 0) {
 
-			if(!e.player.inventory.addItemStackToInventory(new ItemStack(ModItems.quartz_plutonium)))
-				e.player.dropPlayerItemWithRandomChoice(new ItemStack(ModItems.quartz_plutonium), false);
-			else
+			//if(!e.player.inventory.addItemStackToInventory(new ItemStack(ModItems.quartz_plutonium)))
+			//	e.player.dropPlayerItemWithRandomChoice(new ItemStack(ModItems.quartz_plutonium), false);
+			//else
 				e.player.inventoryContainer.detectAndSendChanges();
 		}
 	}

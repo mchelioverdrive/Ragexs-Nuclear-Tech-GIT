@@ -208,7 +208,7 @@ public class HazardRegistry {
 		HazardSystem.register("dustLignite", makeData(COAL, powder));
 		HazardSystem.register("dustTinyLignite", makeData(COAL, powder_tiny));
 
-		HazardSystem.register(insert_polonium, makeData(RADIATION, 100F));
+		//HazardSystem.register(insert_polonium, makeData(RADIATION, 100F));
 
 		HazardSystem.register(demon_core_open, makeData(RADIATION, 5F));
 		HazardSystem.register(demon_core_closed, makeData().addEntry(RADIATION, 100_000F).addEntry(NEUTRON, 10_000F));

@@ -21,28 +21,29 @@ public class ItemModServos extends ItemArmorMod {
 	public ItemModServos() {
 		super(ArmorModHandler.servos, false, true, true, false);
 	}
-    
+
 	@Override
 	public void addInformation(ItemStack itemstack, EntityPlayer player, List list, boolean bool) {
-		
+
 		if(this == ModItems.servo_set) {
 			list.add(EnumChatFormatting.DARK_PURPLE + "Chestplate: Haste I / Damage +50%");
-			list.add(EnumChatFormatting.DARK_PURPLE + "Leggings: Speed +25% / Jump II");
+			list.add(EnumChatFormatting.DARK_PURPLE + "Leggings: Speed +25%");
 		}
 		if(this == ModItems.servo_set_desh) {
-			list.add(EnumChatFormatting.DARK_PURPLE + "Chestplate: Haste III / Damage +150%");
-			list.add(EnumChatFormatting.DARK_PURPLE + "Leggings: Speed +50% / Jump III");
+			list.add(EnumChatFormatting.DARK_PURPLE + "Chestplate: Haste III / Damage +100%");
+			list.add(EnumChatFormatting.DARK_PURPLE + "Leggings: Speed +25%");
+			//sorry kid jetpacks and rifles just aren't practical!
 		}
-		
+
 		list.add("");
 		super.addInformation(itemstack, player, list, bool);
 	}
 
 	@Override
 	public void addDesc(List list, ItemStack stack, ItemStack armor) {
-		
+
 		ItemArmor item = (ItemArmor)armor.getItem();
-		
+
 		if(item.armorType == 1) {
 
 			if(this == ModItems.servo_set) {
@@ -52,7 +53,7 @@ public class ItemModServos extends ItemArmorMod {
 				list.add(EnumChatFormatting.DARK_PURPLE + "  " + stack.getDisplayName() + " (Haste III / Damage +150%)");
 			}
 		}
-		
+
 		if(item.armorType == 2) {
 
 			if(this == ModItems.servo_set) {
@@ -63,11 +64,11 @@ public class ItemModServos extends ItemArmorMod {
 			}
 		}
 	}
-	
+
 	public void modUpdate(EntityLivingBase entity, ItemStack armor) {
-		
+
 		ItemArmor item = (ItemArmor)armor.getItem();
-		
+
 		if(item.armorType == 1) {
 
 			if(this == ModItems.servo_set) {
@@ -77,44 +78,44 @@ public class ItemModServos extends ItemArmorMod {
 				entity.addPotionEffect(new PotionEffect(Potion.digSpeed.id, 60, 2));
 			}
 		}
-		
+
 		if(item.armorType == 2) {
 
 			if(this == ModItems.servo_set) {
-				entity.addPotionEffect(new PotionEffect(Potion.jump.id, 60, 1));
+
 			}
 			if(this == ModItems.servo_set_desh) {
-				entity.addPotionEffect(new PotionEffect(Potion.jump.id, 60, 2));
+				//this isn't probable at all though esp considering steve isnt probable but like ill change that later
 			}
 		}
 	}
-	
+
 	@Override
 	public Multimap getModifiers(ItemStack armor) {
 		Multimap multimap = super.getAttributeModifiers(armor);
-		
+
 		ItemArmor item = (ItemArmor)armor.getItem();
-		
+
 		if(item.armorType == 1) {
 			if(this == ModItems.servo_set)
 				multimap.put(SharedMonsterAttributes.attackDamage.getAttributeUnlocalizedName(),
 						new AttributeModifier(ArmorModHandler.UUIDs[((ItemArmor)armor.getItem()).armorType], "NTM Armor Mod Servos", 0.5, 2));
-			
+
 			if(this == ModItems.servo_set_desh)
 				multimap.put(SharedMonsterAttributes.attackDamage.getAttributeUnlocalizedName(),
-						new AttributeModifier(ArmorModHandler.UUIDs[((ItemArmor)armor.getItem()).armorType], "NTM Armor Mod Servos", 1.5, 2));
+						new AttributeModifier(ArmorModHandler.UUIDs[((ItemArmor)armor.getItem()).armorType], "NTM Armor Mod Servos", 1.0, 2));
 		}
-		
+
 		if(item.armorType == 2) {
 			if(this == ModItems.servo_set)
 				multimap.put(SharedMonsterAttributes.movementSpeed.getAttributeUnlocalizedName(),
 						new AttributeModifier(ArmorModHandler.UUIDs[((ItemArmor)armor.getItem()).armorType], "NTM Armor Mod Servos", 0.25, 2));
-			
+
 			if(this == ModItems.servo_set_desh)
 				multimap.put(SharedMonsterAttributes.movementSpeed.getAttributeUnlocalizedName(),
-						new AttributeModifier(ArmorModHandler.UUIDs[((ItemArmor)armor.getItem()).armorType], "NTM Armor Mod Servos", 0.5, 2));
+						new AttributeModifier(ArmorModHandler.UUIDs[((ItemArmor)armor.getItem()).armorType], "NTM Armor Mod Servos", 0.25, 2));
 		}
-		
+
 		return multimap;
 	}
 }

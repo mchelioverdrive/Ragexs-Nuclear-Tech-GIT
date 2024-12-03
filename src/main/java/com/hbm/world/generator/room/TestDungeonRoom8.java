@@ -21,7 +21,7 @@ public class TestDungeonRoom8 extends CellularDungeonRoom {
 	}
 
 	public void generateMain(World world, int x, int y, int z) {
-		
+
 		super.generateMain(world, x, y, z);
 		DungeonToolbox.generateBox(world, x + parent.width / 2 - 3, y + 1, z + parent.width / 2 - 3, 1, parent.height - 2, 1, ModBlocks.meteor_pillar);
 		DungeonToolbox.generateBox(world, x + parent.width / 2 + 3, y + 1, z + parent.width / 2 - 3, 1, parent.height - 2, 1, ModBlocks.meteor_pillar);
@@ -33,9 +33,9 @@ public class TestDungeonRoom8 extends CellularDungeonRoom {
 		world.setBlock(x + parent.width / 2 - 3, y + 3, z + parent.width / 2 + 3, ModBlocks.meteor_brick_chiseled, 0, 2);
 
 		DungeonToolbox.generateBox(world, x + 4, y + 1, z + 4, parent.width - 8, 1, parent.width - 8, ModBlocks.meteor_polished);
-		
+
 		int i = world.rand.nextInt(8);
-		
+
 		switch(i) {
 		case 0: world.setBlock(x + parent.width / 2, y + 2, z + parent.width / 2, ModBlocks.meteor_brick_chiseled, 0, 3); break;
 		case 1: world.setBlock(x + parent.width / 2, y + 2, z + parent.width / 2, ModBlocks.ntm_dirt, 0, 3); break;
@@ -47,88 +47,88 @@ public class TestDungeonRoom8 extends CellularDungeonRoom {
 		case 7:
 			world.setBlock(x + parent.width / 2, y + 2, z + parent.width / 2, ModBlocks.safe, 0, 3);
 			if(world.getTileEntity(x + parent.width / 2, y + 2, z + parent.width / 2) instanceof TileEntitySafe) {
-				
+
 				int r = world.rand.nextInt(10);
-				
+
 				if(r == 0) {
 					((TileEntitySafe)world.getTileEntity(x + parent.width / 2, y + 2, z + parent.width / 2)).setInventorySlotContents(7, new ItemStack(ModItems.book_of_));
 				} else if(r < 4) {
 					TileEntitySafe safe =  (TileEntitySafe) world.getTileEntity(x + parent.width / 2, y + 2, z + parent.width / 2);
-					safe.setInventorySlotContents(5, generateBook(world));
-					safe.setInventorySlotContents(7, new ItemStack(ModItems.stamp_book, 1, world.rand.nextInt(8)));
-					safe.setInventorySlotContents(9, new ItemStack(ModItems.stamp_book, 1, world.rand.nextInt(8)));
+					//safe.setInventorySlotContents(5, generateBook(world));
+					//safe.setInventorySlotContents(7, new ItemStack(ModItems.stamp_book, 1, world.rand.nextInt(8)));
+					//safe.setInventorySlotContents(9, new ItemStack(ModItems.stamp_book, 1, world.rand.nextInt(8)));
 				} else {
 					TileEntitySafe safe =  (TileEntitySafe) world.getTileEntity(x + parent.width / 2, y + 2, z + parent.width / 2);
-					safe.setInventorySlotContents(5, new ItemStack(Items.book));
-					safe.setInventorySlotContents(7, new ItemStack(ModItems.stamp_book, 1, world.rand.nextInt(8)));
-					safe.setInventorySlotContents(9, new ItemStack(ModItems.stamp_book, 1, world.rand.nextInt(8)));
+					//safe.setInventorySlotContents(5, new ItemStack(Items.book));
+					//safe.setInventorySlotContents(7, new ItemStack(ModItems.stamp_book, 1, world.rand.nextInt(8)));
+					//safe.setInventorySlotContents(9, new ItemStack(ModItems.stamp_book, 1, world.rand.nextInt(8)));
 				}
 			}
 			break;
 		}
 	}
-	
-	public static ItemStack generateBook(World world) {
-		MKUCraftingHandler.generateRecipe(world);
-		ItemStack[] recipe = MKUCraftingHandler.MKURecipe;
-		
-		if(recipe == null) return new ItemStack(ModItems.flame_pony);
-		
-		String key;
-		int pages;
-		Item item;
-		switch(world.rand.nextInt(6)) {
-		case 0:
-			key = "book_iodine"; pages = 3;
-			item = ModItems.powder_iodine; break;
-		case 1:
-			key = "book_phosphorous"; pages = 2;
-			item = ModItems.powder_fire; break;
-		case 2:
-			key = "book_dust"; pages = 3;
-			item = ModItems.dust; break;
-		case 3:
-			key = "book_mercury"; pages = 2;
-			item = ModItems.ingot_mercury; break;
-		case 4:
-			key = "book_flower"; pages = 2;
-			item = ModItems.morning_glory; break;
-		case 5:
-			key = "book_syringe"; pages = 2;
-			item = ModItems.syringe_metal_empty; break;
-		default:
-			return new ItemStack(ModItems.flame_pony);
-		}
-		
-		int s = 1;
-		for(int i = 0; i < 9; i++) {
-			if(recipe[i] != null && recipe[i].getItem() == item) {
-				s = i + 1; break;
-			}
-		}
-		
-		ItemStack book = ItemBookLore.createBook(key, pages, 0x271E44, 0xFBFFF4);
-		ItemBookLore.addArgs(book, pages - 1, String.valueOf(s));
-		
-		return book;
-	}
-	
+	//https://youtu.be/ZKT5RO-C-jw
+	//public static ItemStack generateBook(World world) {
+	//	MKUCraftingHandler.generateRecipe(world);
+	//	ItemStack[] recipe = MKUCraftingHandler.MKURecipe;
+	//
+	//	if(recipe == null) return new ItemStack(ModItems.flame_pony);
+	//
+	//	String key;
+	//	int pages;
+	//	Item item;
+	//	switch(world.rand.nextInt(5)) {
+	//	case 0:
+	//		key = "book_iodine"; pages = 3;
+	//		item = ModItems.powder_iodine; break;
+	//	case 1:
+	//		key = "book_phosphorous"; pages = 2;
+	//		item = ModItems.powder_fire; break;
+	//	case 2:
+	//		key = "book_dust"; pages = 3;
+	//		item = ModItems.dust; break;
+	//	case 3:
+	//		key = "book_mercury"; pages = 2;
+	//		item = ModItems.ingot_mercury; break;
+	//	//case 4:
+	//	//	key = "book_flower"; pages = 2;
+	//	//	item = ModItems.morning_glory; break;
+	//	case 4:
+	//		key = "book_syringe"; pages = 2;
+	//		item = ModItems.syringe_metal_empty; break;
+	//	default:
+	//		return new ItemStack(ModItems.flame_pony);
+	//	}
+	//
+	//	int s = 1;
+	//	for(int i = 0; i < 9; i++) {
+	//		if(recipe[i] != null && recipe[i].getItem() == item) {
+	//			s = i + 1; break;
+	//		}
+	//	}
+	//
+	//	ItemStack book = ItemBookLore.createBook(key, pages, 0x271E44, 0xFBFFF4);
+	//	ItemBookLore.addArgs(book, pages - 1, String.valueOf(s));
+	//
+	//	return book;
+	//}
+
 	/*public static ItemStack genetateMKU(World world) {
-		
+
 		ItemStack book = new ItemStack(Items.written_book);
 		book.stackTagCompound = new NBTTagCompound();
 		book.stackTagCompound.setString("author", "Dave");
 		book.stackTagCompound.setString("title", "Note");
 		NBTTagList nbt = new NBTTagList();
-		
+
 		String[] pages = generatePages(world);
 
 		for(String s : pages) {
 			nbt.appendTag(new NBTTagString(s));
 		}
-		
+
 		book.stackTagCompound.setTag("pages", nbt);
-		
+
 		return book;
 	}
 
@@ -167,9 +167,9 @@ public class TestDungeonRoom8 extends CellularDungeonRoom {
 			"metal syringes that they got from medical. surplus ware i presume, they got thousands of needles just lying around. the metal",
 			"syringe goes into slot #"
 	};
-	
+
 	public static String[] generatePages(World world) {
-		
+
 		String[] orig;
 		Item ingred;
 		int r = world.rand.nextInt(6);
@@ -193,33 +193,33 @@ public class TestDungeonRoom8 extends CellularDungeonRoom {
 			orig = bookSyringe;
 			ingred = ModItems.syringe_metal_empty;
 		}
-		
+
 		String[] copy = new String[orig.length];
-		
+
 		for(int i = 0; i < orig.length; i++) {
 			copy[i] = orig[i] + ""; //Strings are reference types and i'm really not counting on my luck here
 		}
-		
+
 		copy[copy.length - 1] += getSlot(world, ingred);
-		
+
 		return copy;
 	}
-	
+
 		public static int getSlot(World world, Item item) {
-		
+
 		MKUCraftingHandler.generateRecipe(world);
 		ItemStack[] recipe = MKUCraftingHandler.MKURecipe;
-		
+
 		if(recipe == null) //take no chances
 			return -2;
-		
+
 		for(int i = 0; i < 9; i++) {
-			
+
 			if(recipe[i] != null && recipe[i].getItem() == item) {
 				return i + 1;
 			}
 		}
-		
+
 		return -1;
 	}*/
 }
