@@ -434,7 +434,7 @@ public class ItemStarterKit extends Item {
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.missile_micro, 1));
 			//player.inventory.addItemStackToInventory(new ItemStack(ModItems.missile_bhole, 1));
 			//player.inventory.addItemStackToInventory(new ItemStack(ModItems.missile_schrabidium, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.missile_emp, 1));
+			//player.inventory.addItemStackToInventory(new ItemStack(ModItems.missile_emp, 1));
 		}
 
 		//if(this == ModItems.t45_kit)

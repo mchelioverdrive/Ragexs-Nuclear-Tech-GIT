@@ -154,8 +154,8 @@ public class Landmine extends BlockContainer implements IBomb {
 			if(this == ModBlocks.mine_ap) {
 				world.newExplosion(null, x + 0.5, y + 0.5, z + 0.5, 2.5F, false, false);
 			} else if(this == ModBlocks.mine_he) {
-				ExplosionLarge.explode(world, x + 0.5, y + 0.5, z + 0.5, 3F, true, false, false);
-				world.newExplosion(null, x + 0.5, y + 2, z + 0.5, 15F, false, false);
+				ExplosionLarge.explode(world, x + 0.5, y + 0.5, z + 0.5, 2.5F, true, false, false);
+				world.newExplosion(null, x + 0.5, y + 2, z + 0.5, 10F, false, false);
 			} else if(this == ModBlocks.mine_shrap) {
 				ExplosionLarge.explode(world, x + 0.5, y + 0.5, z + 0.5, 1, true, false, false);
 				ExplosionLarge.spawnShrapnelShower(world, x + 0.5, y + 0.5, z + 0.5, 0, 1D, 0, 45, 0.2D);
@@ -172,7 +172,7 @@ public class Landmine extends BlockContainer implements IBomb {
 		if(!world.isRemote) {
 			if(GeneralConfig.enableExtendedLogging) {
 				MainRegistry.logger.log(Level.INFO, "[BOMBPL]" + this.getLocalizedName() + " placed at " + x + " / " + y + " / " + z + "! " + "by "+ player.getCommandSenderName());
-		}	
+		}
 	}
 	}
 

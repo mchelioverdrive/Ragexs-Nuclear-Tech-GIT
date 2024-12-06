@@ -26,6 +26,8 @@ public class ItemBDCL extends Item {
 	@Override
 	public ItemStack onEaten(ItemStack stack, World world, EntityPlayer player) {
 
+
+
 		if(!player.capabilities.isCreativeMode) {
 			--stack.stackSize;
 		}
@@ -34,11 +36,11 @@ public class ItemBDCL extends Item {
 
 	@Override
 	public void onUsingTick(ItemStack stack, EntityPlayer player, int count) {
-		
+
 		if(count % 5 == 0 && count >= 10) {
 			player.playSound("hbm:player.gulp", 1F, 1F);
 		}
-		
+
 		if(count == 1) {
 			this.onEaten(stack, player.worldObj, player);
 			player.clearItemInUse();
@@ -46,7 +48,7 @@ public class ItemBDCL extends Item {
 			player.playSound("hbm:player.groan", 1F, 1F);
 			return;
 		}
-		
+
 		if(count <= 24 && count % 4 == 0) {
 			player.itemInUseCount--;
 		}

@@ -188,7 +188,7 @@ public class MainRegistry {
 	public static Achievement achFreytag;
 	public static Achievement achPotato;
 	public static Achievement achC44;
-	public static Achievement achC20_5;
+	//public static Achievement achC20_5;
 	public static Achievement achFiend;
 	public static Achievement achFiend2;
 	public static Achievement achRadPoison;
@@ -699,7 +699,7 @@ public class MainRegistry {
 		achFreytag = new Achievement("achievement.freytag", "freytag", 0, -4, ModItems.gun_ar15, null).initIndependentStat().setSpecial().registerStat();
 		achPotato = new Achievement("achievement.potato", "potato", -2, -2, ModItems.battery_potatos, null).initIndependentStat().setSpecial().registerStat();
 		//achC44 = new Achievement("achievement.c44", "c44", 2, -4, ModItems.gun_revolver_pip, null).initIndependentStat().setSpecial().registerStat();
-		achC20_5 = new Achievement("achievement.c20_5", "c20_5", 3, 6, DictFrame.fromOne(ModItems.achievement_icon, EnumAchievementType.QUESTIONMARK), null).initIndependentStat().setSpecial().registerStat();
+		//achC20_5 = new Achievement("achievement.c20_5", "c20_5", 3, 6, DictFrame.fromOne(ModItems.achievement_icon, EnumAchievementType.QUESTIONMARK), null).initIndependentStat().setSpecial().registerStat();
 		//achFiend = new Achievement("achievement.fiend", "fiend", -6, 8, ModItems.shimmer_sledge, null).initIndependentStat().setSpecial().registerStat();
 		//achFiend2 = new Achievement("achievement.fiend2", "fiend2", -4, 9, ModItems.shimmer_axe, null).initIndependentStat().setSpecial().registerStat();
 		achStratum = new Achievement("achievement.stratum", "stratum", -4, -2, new ItemStack(ModBlocks.stone_gneiss), null).initIndependentStat().setSpecial().registerStat();
@@ -778,7 +778,7 @@ public class MainRegistry {
 				achFreytag,
 				achPotato,
 				achC44,
-				achC20_5,
+				//achC20_5,
 				achFiend,
 				achFiend2,
 				achStratum,

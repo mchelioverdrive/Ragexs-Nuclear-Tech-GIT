@@ -21,20 +21,20 @@ public class BlockChargeC4 extends BlockChargeBase {
 
 	@Override
 	public BombReturnCode explode(World world, int x, int y, int z) {
-		
+
 		if(!world.isRemote) {
 			safe = true;
 			world.setBlockToAir(x, y, z);
 			safe = false;
-			
-			ExplosionVNT xnt = new ExplosionVNT(world, x + 0.5, y + 0.5, z + 0.5, 15F).makeStandard();
+
+			ExplosionVNT xnt = new ExplosionVNT(world, x + 0.5, y + 0.5, z + 0.5, 10F).makeStandard();
 			xnt.setBlockAllocator(new BlockAllocatorStandard(32));
 			xnt.setBlockProcessor(new BlockProcessorStandard().setNoDrop());
 			xnt.explode();
-			
+
 			return BombReturnCode.DETONATED;
 		}
-		
+
 		return BombReturnCode.UNDEFINED;
 	}
 
@@ -44,7 +44,7 @@ public class BlockChargeC4 extends BlockChargeBase {
 	public int getRenderType() {
 		return renderID;
 	}
-	
+
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		super.addInformation(stack, player, list, ext);
@@ -55,7 +55,7 @@ public class BlockChargeC4 extends BlockChargeBase {
 	if(!world.isRemote) {
 			if(GeneralConfig.enableExtendedLogging) {
 			MainRegistry.logger.log(Level.INFO, "[BOMBPL]" + this.getLocalizedName() + " placed at " + x + " / " + y + " / " + z + "! " + "by "+ player.getCommandSenderName());
-		}	
+		}
 	}
 	}
 }

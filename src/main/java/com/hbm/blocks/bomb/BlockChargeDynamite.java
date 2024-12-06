@@ -16,18 +16,18 @@ public class BlockChargeDynamite extends BlockChargeBase {
 
 	@Override
 	public BombReturnCode explode(World world, int x, int y, int z) {
-		
+
 		if(!world.isRemote) {
 			safe = true;
 			world.setBlockToAir(x, y, z);
 			safe = false;
-			ExplosionNT exp = new ExplosionNT(world, null, x + 0.5, y + 0.5, z + 0.5, 4F);
+			ExplosionNT exp = new ExplosionNT(world, null, x + 0.5, y + 0.5, z + 0.5, 2F);
 			exp.explode();
 			ExplosionLarge.spawnParticles(world, x + 0.5, y + 0.5, z + 0.5, 20);
-			
+
 			return BombReturnCode.DETONATED;
 		}
-		
+
 		return BombReturnCode.UNDEFINED;
 	}
 
@@ -42,7 +42,7 @@ public class BlockChargeDynamite extends BlockChargeBase {
 	if(!world.isRemote) {
 			if(GeneralConfig.enableExtendedLogging) {
 			MainRegistry.logger.log(Level.INFO, "[BOMBPL]" + this.getLocalizedName() + " placed at " + x + " / " + y + " / " + z + "! " + "by "+ player.getCommandSenderName());
-		}	
+		}
 	}
 	}
 }

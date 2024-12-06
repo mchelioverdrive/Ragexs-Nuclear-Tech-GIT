@@ -7,12 +7,12 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
 public class ItemN2 extends Item {
-	
+
 	@Override
 	public void addInformation(ItemStack itemstack, EntityPlayer player, List list, boolean bool)
 	{
 		list.add("Used in:");
-		list.add("N² Mine");
+		list.add("Ammonium Nitrate Drum");
 	}
 
 }

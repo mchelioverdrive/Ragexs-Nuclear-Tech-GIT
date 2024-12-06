@@ -75,7 +75,7 @@ public class BlockCanCrate extends Block {
 
 		List<ItemStack> items = new ArrayList();
 		for(int a = 0; a < EnumFoodType.values().length; a++)
-			items.add(new ItemStack(ModItems.canned_conserve, 1, a));
+			//items.add(new ItemStack(ModItems.canned_conserve, 1, a));
 		items.add(new ItemStack(ModItems.can_smart));
 		items.add(new ItemStack(ModItems.can_creature));
 		items.add(new ItemStack(ModItems.can_redbomb));

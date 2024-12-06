@@ -120,7 +120,7 @@ public class ItemPoolsLegacy {
 					weighted(ModItems.battery_advanced_cell, 0, 1, 1, 2),
 					weighted(ModItems.battery_schrabidium, 0, 1, 1, 1),
 					//weighted(ModItems.syringe_awesome, 0, 1, 1, 1),
-					weighted(ModItems.crate_caller, 0, 1, 1, 3),
+					//weighted(ModItems.crate_caller, 0, 1, 1, 3),
 					weighted(ModItems.fusion_core, 0, 1, 1, 4),
 					//weighted(ModItems.bottle_nuka, 0, 1, 3, 6),
 					//weighted(ModItems.bottle_quantum, 0, 1, 1, 3),

@@ -90,6 +90,34 @@ public class ItemPill extends ItemFood {
 			}
 
 			if(this == ModItems.xanax) {
+
+				//int x = 0;
+				//x++;
+				//if (x == 5) {
+				//	player.addPotionEffect(new PotionEffect(Potion.confusion.id, 10 * 20, 0));
+				//} else if (x == 8) {
+				//	player.addPotionEffect(new PotionEffect(Potion.confusion.id, 30 * 20, 0));
+				//	player.addPotionEffect(new PotionEffect(Potion.blindness.id, 10 * 20, 0));
+				//}
+				//else if (x > 10) {
+				//	player.addPotionEffect(new PotionEffect(Potion.confusion.id, 50 * 20, 0));
+				//	player.addPotionEffect(new PotionEffect(Potion.blindness.id, 20 * 20, 0));
+				//	player.addPotionEffect(new PotionEffect(Potion.weakness.id, 10 * 20, 0));
+				//} else {
+				//	return;
+				//}
+//
+				//while (x > 0) {
+				//	try {
+				//		Thread.sleep(10000);
+				//		x--;
+				//	} catch (InterruptedException e) {
+				//		x--;
+				//		System.out.println("exception");
+				//		return;
+				//	}
+				//}
+
 				//float digamma = HbmLivingProps.getDigamma(player);
 				//HbmLivingProps.setDigamma(player, Math.max(digamma - 0.5F, 0F));
 			}

@@ -26,7 +26,7 @@ public class ItemLemon extends ItemFood {
 	public ItemLemon(int p_i45339_1_, float p_i45339_2_, boolean p_i45339_3_) {
 		super(p_i45339_1_, p_i45339_2_, p_i45339_3_);
 
-		if(this == ModItems.med_ipecac || this == ModItems.med_ptsd) {
+		if(this == ModItems.med_ipecac || this == ModItems.med_ptsd || this == ModItems.galaxygas) {
 			this.setAlwaysEdible();
 		}
 	}
@@ -41,6 +41,10 @@ public class ItemLemon extends ItemFood {
 		if(this == ModItems.med_ipecac) {
 			list.add("Bitter juice that will cause your stomach");
 			list.add("to forcefully eject its contents.");
+		}
+
+		if(this == ModItems.galaxygas) {
+			list.add("All the kids are doing it, it must be safe!");
 		}
 
 		if(this == ModItems.med_ptsd) {

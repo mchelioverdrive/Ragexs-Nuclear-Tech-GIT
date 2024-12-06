@@ -18,17 +18,17 @@ import com.hbm.items.ModItems;
 import net.minecraft.item.ItemStack;
 
 public class ExposureChamberRecipes extends SerializableRecipe {
-	
+
 	public static List<ExposureChamberRecipe> recipes = new ArrayList();
 
 	@Override
 	public void registerDefaults() {
 		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_higgs), new OreDictStack(U.ingot()), new ItemStack(ModItems.ingot_schraranium)));
 		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_higgs), new OreDictStack(U238.ingot()), new ItemStack(ModItems.ingot_schrabidium)));
-		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_dark), new OreDictStack(PU.ingot()), new ItemStack(ModItems.ingot_euphemium)));
+		//recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_dark), new OreDictStack(PU.ingot()), new ItemStack(ModItems.ingot_euphemium)));
 		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_sparkticle), new OreDictStack(SBD.ingot()), new ItemStack(ModItems.ingot_dineutronium)));
 	}
-	
+
 	public static ExposureChamberRecipe getRecipe(ItemStack particle, ItemStack input) {
 		for(ExposureChamberRecipe recipe : recipes) if(recipe.particle.matchesRecipe(particle, true) && recipe.ingredient.matchesRecipe(input, true)) return recipe;
 		return null;
@@ -37,21 +37,21 @@ public class ExposureChamberRecipes extends SerializableRecipe {
 	public static HashMap getRecipes() {
 
 		HashMap<Object, Object> recipes = new HashMap<Object, Object>();
-		
+
 		for(ExposureChamberRecipe recipe : ExposureChamberRecipes.recipes) {
-			
+
 			Object[] array = new Object[2];
-			
+
 			array[1] = recipe.particle;
 			AStack stack = recipe.ingredient.copy();
 			stack.stacksize = 8;
 			array[0] = stack;
 			ItemStack output = recipe.output.copy();
 			output.stackSize = 8;
-			
+
 			recipes.put(array, output);
 		}
-		
+
 		return recipes;
 	}
 
@@ -72,13 +72,13 @@ public class ExposureChamberRecipes extends SerializableRecipe {
 
 	@Override
 	public void readRecipe(JsonElement recipe) {
-		
+
 		JsonObject obj = (JsonObject) recipe;
 
 		AStack particle = this.readAStack(obj.get("particle").getAsJsonArray());
 		AStack ingredient = this.readAStack(obj.get("ingredient").getAsJsonArray());
 		ItemStack output = this.readItemStack(obj.get("output").getAsJsonArray());
-		
+
 		ExposureChamberRecipe rec = new ExposureChamberRecipe(particle, ingredient, output);
 		recipes.add(rec);
 	}
@@ -86,7 +86,7 @@ public class ExposureChamberRecipes extends SerializableRecipe {
 	@Override
 	public void writeRecipe(Object o, JsonWriter writer) throws IOException {
 		ExposureChamberRecipe recipe = (ExposureChamberRecipe) o;
-		
+
 		writer.name("particle");
 		this.writeAStack(recipe.particle, writer);
 		writer.name("ingredient");
@@ -94,13 +94,13 @@ public class ExposureChamberRecipes extends SerializableRecipe {
 		writer.name("output");
 		this.writeItemStack(recipe.output, writer);
 	}
-	
+
 	public static class ExposureChamberRecipe {
-		
+
 		public AStack particle;
 		public AStack ingredient;
 		public ItemStack output;
-		
+
 		public ExposureChamberRecipe(AStack particle, AStack ingredient, ItemStack output) {
 			this.particle = particle;
 			this.ingredient = ingredient;
