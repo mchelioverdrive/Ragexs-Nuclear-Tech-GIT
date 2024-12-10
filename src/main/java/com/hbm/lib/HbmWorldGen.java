@@ -227,9 +227,9 @@ public class HbmWorldGen implements IWorldGenerator {
 			}
 			BlockMotherOfAllOres.resetOverride();
 
-			if(GeneralConfig.enable528ColtanSpawn) {
-				DungeonToolbox.generateOre(world, rand, i, j, GeneralConfig.coltanRate, 4, 15, 40, ModBlocks.ore_coltan);
-			}
+			//if(GeneralConfig.enable528ColtanSpawn) {
+				DungeonToolbox.generateOre(world, rand, i, j, GeneralConfig.coltanRate, 8, 15, 40, ModBlocks.ore_coltan);
+			//}
 
 			Random colRand = new Random(world.getSeed() + 5);
 			int colX = (int) (colRand.nextGaussian() * 1500);
@@ -318,22 +318,22 @@ public class HbmWorldGen implements IWorldGenerator {
 				}
 			}
 
-			if(!biome.canSpawnLightningBolt() && biome.temperature >= 2F) {
-				if(WorldConfig.vertibirdStructure > 0 && rand.nextInt(WorldConfig.vertibirdStructure) == 0) {
-					for(int a = 0; a < 1; a++) {
-						int x = i + rand.nextInt(16);
-						int z = j + rand.nextInt(16);
-						int y = world.getHeightValue(x, z);
-
-						if(rand.nextInt(2) == 0) {
-							new Vertibird().generate(world, rand, x, y, z);
-						} else {
-							new CrashedVertibird().generate(world, rand, x, y, z);
-						}
-
-					}
-				}
-			}
+			//if(!biome.canSpawnLightningBolt() && biome.temperature >= 2F) {
+			//	if(WorldConfig.vertibirdStructure > 0 && rand.nextInt(WorldConfig.vertibirdStructure) == 0) {
+			//		for(int a = 0; a < 1; a++) {
+			//			int x = i + rand.nextInt(16);
+			//			int z = j + rand.nextInt(16);
+			//			int y = world.getHeightValue(x, z);
+//
+			//			if(rand.nextInt(2) == 0) {
+			//				new Vertibird().generate(world, rand, x, y, z);
+			//			} else {
+			//				new CrashedVertibird().generate(world, rand, x, y, z);
+			//			}
+//
+			//		}
+			//	}
+			//}
 
 			if(WorldConfig.dungeonStructure > 0 && rand.nextInt(WorldConfig.dungeonStructure) == 0) {
 				int x = i + rand.nextInt(16);
@@ -462,16 +462,16 @@ public class HbmWorldGen implements IWorldGenerator {
 				}
 			}
 
-			if(GeneralConfig.enable528 && GeneralConfig.enable528BosniaSimulator && rand.nextInt(16) == 0) {
-				int x = i + rand.nextInt(16);
-				int z = j + rand.nextInt(16);
-				int y = world.getHeightValue(x, z);
-				if(world.getBlock(x, y - 1, z).canPlaceTorchOnTop(world, x, y - 1, z)) {
-					world.setBlock(x, y, z, ModBlocks.mine_he);
-					TileEntityLandmine landmine = (TileEntityLandmine) world.getTileEntity(x, y, z);
-					landmine.waitingForPlayer = true;
-				}
-			}
+			//if(GeneralConfig.enable528 && GeneralConfig.enable528BosniaSimulator && rand.nextInt(16) == 0) {
+			//	int x = i + rand.nextInt(16);
+			//	int z = j + rand.nextInt(16);
+			//	int y = world.getHeightValue(x, z);
+			//	if(world.getBlock(x, y - 1, z).canPlaceTorchOnTop(world, x, y - 1, z)) {
+			//		world.setBlock(x, y, z, ModBlocks.mine_he);
+			//		TileEntityLandmine landmine = (TileEntityLandmine) world.getTileEntity(x, y, z);
+			//		landmine.waitingForPlayer = true;
+			//	}
+			//}
 
 			if(WorldConfig.radfreq > 0 && GeneralConfig.enableRad && rand.nextInt(WorldConfig.radfreq) == 0 && biome == BiomeGenBase.desert) {
 

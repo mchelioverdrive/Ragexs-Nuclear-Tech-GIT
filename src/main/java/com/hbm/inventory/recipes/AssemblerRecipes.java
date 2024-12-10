@@ -996,17 +996,17 @@ public class AssemblerRecipes extends SerializableRecipe {
 				new ComparableStack(ModItems.circuit, 16, EnumCircuitType.BASIC)
 			}, 400);
 
-		makeRecipe(new ComparableStack(ModItems.missile_shuttle, 1), new AStack[] {
-				new ComparableStack(ModItems.missile_generic, 2),
-				new ComparableStack(ModItems.missile_strong, 1),
-				new OreDictStack(KEY_ORANGE, 5),
-				new ComparableStack(ModItems.canister_full, 24, Fluids.GASOLINE_LEADED.getID()),
-				new OreDictStack(FIBER.ingot(), 12),
-				new ComparableStack(ModItems.circuit, 3, EnumCircuitType.BASIC),
-				new OreDictStack(ANY_PLASTICEXPLOSIVE.ingot(), 8),
-				new OreDictStack(KEY_ANYPANE, 6),
-				new OreDictStack(STEEL.plate(), 4),
-			}, 100);
+		//makeRecipe(new ComparableStack(ModItems.missile_shuttle, 1), new AStack[] {
+		//		new ComparableStack(ModItems.missile_generic, 2),
+		//		new ComparableStack(ModItems.missile_strong, 1),
+		//		new OreDictStack(KEY_ORANGE, 5),
+		//		new ComparableStack(ModItems.canister_full, 24, Fluids.GASOLINE_LEADED.getID()),
+		//		new OreDictStack(FIBER.ingot(), 12),
+		//		new ComparableStack(ModItems.circuit, 3, EnumCircuitType.BASIC),
+		//		new OreDictStack(ANY_PLASTICEXPLOSIVE.ingot(), 8),
+		//		new OreDictStack(KEY_ANYPANE, 6),
+		//		new OreDictStack(STEEL.plate(), 4),
+		//	}, 100);
 
 		makeRecipe(new ComparableStack(ModBlocks.machine_difurnace_rtg_off, 1), new AStack[] {
 				new ComparableStack(ModBlocks.machine_difurnace_off, 1),

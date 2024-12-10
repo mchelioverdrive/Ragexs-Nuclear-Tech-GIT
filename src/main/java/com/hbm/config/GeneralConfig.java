@@ -5,7 +5,7 @@ import net.minecraftforge.common.config.Configuration;
 public class GeneralConfig {
 
 	public static boolean enableThermosPreventer = true;
-	
+
 	public static boolean enableDebugMode = true;
 	public static boolean enableMycelium = false;
 	public static boolean enablePlutoniumOre = false;
@@ -41,14 +41,14 @@ public class GeneralConfig {
 	public static int hintPos = 0;
 
 	public static boolean enableExpensiveMode = false;
-	
+
 	public static boolean enable528 = false;
 	public static boolean enable528ReasimBoilers = true;
-	public static boolean enable528ColtanDeposit = true;
-	public static boolean enable528ColtanSpawn = false;
+	public static boolean enable528ColtanDeposit = false;
+	public static boolean enable528ColtanSpawn = true;
 	public static boolean enable528BedrockDeposit = true;
-	public static boolean enable528BedrockSpawn = false;
-	public static boolean enable528BosniaSimulator = true;
+	public static boolean enable528BedrockSpawn = true;
+	public static boolean enable528BosniaSimulator = false;
 	public static boolean enable528BedrockReplacement = true;
 	public static boolean enable528NetherBurn = true;
 	public static int coltanRate = 2;
@@ -73,7 +73,7 @@ public class GeneralConfig {
 
 	public static boolean enableThreadedAtmospheres = true;
 	public static boolean enableSacrilege = false;
-	
+
 	public static void loadFromConfig(Configuration config) {
 
 		final String CATEGORY_GENERAL = CommonConfig.CATEGORY_GENERAL;
@@ -120,34 +120,34 @@ public class GeneralConfig {
 		enableSacrilege = CommonConfig.createConfigBool(config, CATEGORY_GENERAL, "1.43_serverSafety", "Allows for automated entity culling to function properly.", false);
 
 		enableExpensiveMode = config.get(CATEGORY_GENERAL, "1.99_enableExpensiveMode", false, "It does what the name implies.").getBoolean(false);
-		
+
 		final String CATEGORY_528 = CommonConfig.CATEGORY_528;
 
 		config.addCustomCategoryComment(CATEGORY_528, "CAUTION\n"
 				+ "528 Mode: Please proceed with caution!\n"
 				+ "528-Modus: Lassen Sie Vorsicht walten!\n"
 				+ "способ-528: действовать с осторожностью!");
-		
-		enable528 = CommonConfig.createConfigBool(config, CATEGORY_528, "enable528Mode", "The central toggle for 528 mode.", false);
+
+		enable528 = CommonConfig.createConfigBool(config, CATEGORY_528, "enable528Mode", "The central toggle for 528 mode.", true);
 		enable528ReasimBoilers = CommonConfig.createConfigBool(config, CATEGORY_528, "X528_forceReasimBoilers", "Keeps the RBMK dial for ReaSim boilers on, preventing use of non-ReaSim boiler columns and forcing the use of steam in-/outlets", true);
-		enable528ColtanDeposit = CommonConfig.createConfigBool(config, CATEGORY_528, "X528_enableColtanDepsoit", "Enables the coltan deposit. A large amount of coltan will spawn around a single random location in the world.", true);
-		enable528ColtanSpawn = CommonConfig.createConfigBool(config, CATEGORY_528, "X528_enableColtanSpawning", "Enables coltan ore as a random spawn in the world. Unlike the deposit option, coltan will not just spawn in one central location.", false);
+		enable528ColtanDeposit = CommonConfig.createConfigBool(config, CATEGORY_528, "X528_enableColtanDepsoit", "Enables the coltan deposit. A large amount of coltan will spawn around a single random location in the world.", false);
+		enable528ColtanSpawn = CommonConfig.createConfigBool(config, CATEGORY_528, "X528_enableColtanSpawning", "Enables coltan ore as a random spawn in the world. Unlike the deposit option, coltan will not just spawn in one central location.", true);
 		enable528BedrockDeposit = CommonConfig.createConfigBool(config, CATEGORY_528, "X528_enableBedrockDepsoit", "Enables bedrock coltan ores in the coltan deposit. These ores can be drilled to extract infinite coltan, albeit slowly.", true);
-		enable528BedrockSpawn = CommonConfig.createConfigBool(config, CATEGORY_528, "X528_enableBedrockSpawning", "Enables the bedrock coltan ores as a rare spawn. These will be rarely found anywhere in the world.", false);
-		enable528BosniaSimulator = CommonConfig.createConfigBool(config, CATEGORY_528, "X528_enableBosniaSimulator", "Enables anti tank mines spawning all over the world.", true);
+		enable528BedrockSpawn = CommonConfig.createConfigBool(config, CATEGORY_528, "X528_enableBedrockSpawning", "Enables the bedrock coltan ores as a rare spawn. These will be rarely found anywhere in the world.", true);
+		enable528BosniaSimulator = CommonConfig.createConfigBool(config, CATEGORY_528, "X528_enableBosniaSimulator", "Enables anti tank mines spawning all over the world.", false);
 		enable528BedrockReplacement = CommonConfig.createConfigBool(config, CATEGORY_528, "X528_enable528BedrockReplacement", "Replaces certain bedrock ores with ones that require additional processing.", true);
 		enable528NetherBurn = CommonConfig.createConfigBool(config, CATEGORY_528, "X528_enable528NetherBurn", "Whether players burn in the nether", true);
-		coltanRate = CommonConfig.createConfigInt(config, CATEGORY_528, "X528_oreColtanFrequency", "Determines how many coltan ore veins are to be expected in a chunk. These values do not affect the frequency in deposits, and only apply if random coltan spanwing is enabled.", 2);
+		coltanRate = CommonConfig.createConfigInt(config, CATEGORY_528, "X528_oreColtanFrequency", "Determines how many coltan ore veins are to be expected in a chunk. These values do not affect the frequency in deposits, and only apply if random coltan spanwing is enabled.", 8);
 		bedrockRate = CommonConfig.createConfigInt(config, CATEGORY_528, "X528_bedrockColtanFrequency", "Determines how often (1 in X) bedrock coltan ores spawn. Applies for both the bedrock ores in the coltan deposit (if applicable) and the random bedrock ores (if applicable)", 50);
-		
-		
+
+
 		final String CATEGORY_LBSM = CommonConfig.CATEGORY_LBSM;
 
 		config.addCustomCategoryComment(CATEGORY_LBSM,
 				"Will most likely break standard progression!\n"
 				+ "However, the game gets generally easier and more enjoyable for casual players.\n"
 				+ "Progression-braking recipes are usually not too severe, so the mode is generally server-friendly!");
-		
+
 		enableLBSM = CommonConfig.createConfigBool(config, CATEGORY_LBSM, "enableLessBullshitMode", "The central toggle for LBS mode. Forced OFF when 528 is enabled!", false);
 		enableLBSMFullSchrab = CommonConfig.createConfigBool(config, CATEGORY_LBSM, "LBSM_fullSchrab", "When enabled, this will replace schraranium with full schrabidium ingots in the transmutator's output", true);
 		enableLBSMShorterDecay = CommonConfig.createConfigBool(config, CATEGORY_LBSM, "LBSM_shortDecay", "When enabled, this will highly accelerate the speed at which nuclear waste disposal drums decay their contents. 60x faster than 528 mode and 5-12x faster than on normal mode.", true);
@@ -164,8 +164,8 @@ public class GeneralConfig {
 		enableLBSMIGen = CommonConfig.createConfigBool(config, CATEGORY_LBSM, "LBSM_iGen", "When enabled, restores the industrial generator to pre-nerf power", true);
 		enableLBSMNeutronDecon = CommonConfig.createConfigBool(config, CATEGORY_LBSM, "LBSM_NeuCon", "When enabled, Player Decontaminators can decontaminate radioactive items stemmed from neutron rads.", true);
 		schrabRate = CommonConfig.createConfigInt(config, CATEGORY_LBSM, "LBSM_schrabOreRate", "Changes the amount of uranium ore needed on average to create one schrabidium ore using nukes. Standard mode value is 100", 20);
-		
-		
+
+
 		if(enable528) enableLBSM = false;
 	}
 }

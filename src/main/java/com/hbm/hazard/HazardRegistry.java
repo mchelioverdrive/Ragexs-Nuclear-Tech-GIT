@@ -346,10 +346,10 @@ public class HazardRegistry {
 		HazardSystem.register(ingot_americium_fuel, makeData(RADIATION, amf * ingot));
 
 
-		HazardSystem.register(nugget_schrabidium_fuel, makeData().addEntry(RADIATION, saf * nugget).addEntry(BLINDING, 5F * nugget));
-		HazardSystem.register(billet_schrabidium_fuel, makeData().addEntry(RADIATION, saf * billet).addEntry(BLINDING, 5F * billet));
-		HazardSystem.register(ingot_schrabidium_fuel, makeData().addEntry(RADIATION, saf * ingot).addEntry(BLINDING, 5F * ingot));
-		HazardSystem.register(block_schrabidium_fuel, makeData().addEntry(RADIATION, saf * block).addEntry(BLINDING, 5F * block));
+		HazardSystem.register(nugget_schrabidium_fuel, makeData(RADIATION, saf * nugget));
+		HazardSystem.register(billet_schrabidium_fuel, makeData(RADIATION, saf * billet));
+		HazardSystem.register(ingot_schrabidium_fuel, makeData(RADIATION, saf * ingot));
+		HazardSystem.register(block_schrabidium_fuel, makeData(RADIATION, saf * block));
 
 		HazardSystem.register(nugget_hes, makeData(RADIATION, saf * nugget));
 		HazardSystem.register(billet_hes, makeData(RADIATION, saf * billet));
@@ -515,7 +515,7 @@ public class HazardRegistry {
 
 		HazardSystem.register(brick_asbestos, makeData(ASBESTOS, 1F));
 		HazardSystem.register(tile_lab_broken, makeData(ASBESTOS, 1F));
-		HazardSystem.register(powder_coltan_ore, makeData(ASBESTOS, 3F));
+		//HazardSystem.register(powder_coltan_ore, makeData(ASBESTOS, 3F));
 
 		//crystals
 		HazardSystem.register(crystal_uranium, makeData(RADIATION, u * crystal));
