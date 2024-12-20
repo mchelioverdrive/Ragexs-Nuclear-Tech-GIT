@@ -495,6 +495,13 @@ public class ChemplantRecipes extends SerializableRecipe {
 						new ComparableStack(ModItems.strawberry, 4))
 				.outputItems(
 						new ItemStack(ModItems.s_cream, 4)));
+		recipes.add(new ChemRecipe(123, "POISON", 250)
+			.inputFluids(new FluidStack(Fluids.NITROGEN, 50)) //, new FluidStack(Fluids.CHLORINE, 50)
+			.inputItems(
+				new ComparableStack(ModItems.powder_sodium, 1),
+				new ComparableStack(ModItems.powder_coal, 1))
+
+			.outputItems(new ItemStack(ModItems.powder_poison, 4)));
 
 		recipes.add(new ChemRecipe(1001, "SOIL", 100)
 				.inputFluids(new FluidStack(Fluids.WATER, 4000))

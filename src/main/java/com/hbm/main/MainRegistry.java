@@ -243,7 +243,7 @@ public class MainRegistry {
 	public static Achievement achChicagoPile;
 	public static Achievement achSILEX;
 	public static Achievement achWatz;
-	public static Achievement achWatzBoom;
+	//public static Achievement achWatzBoom;
 	public static Achievement achRBMK;
 	public static Achievement achRBMKBoom;
 	public static Achievement achBismuth;
@@ -760,7 +760,7 @@ public class MainRegistry {
 		achChicagoPile = new Achievement("achievement.chicagoPile", "chicagoPile", 13, 0, ModItems.pile_rod_plutonium, achCentrifuge).initIndependentStat().registerStat();
 		achSILEX = new Achievement("achievement.SILEX", "SILEX", 12, 7, new ItemStack(ModBlocks.machine_silex), achAcidizer).initIndependentStat().registerStat();
 		achWatz = new Achievement("achievement.watz", "watz", 14, 3, ModItems.watz_pellet, achSchrab).initIndependentStat().registerStat();
-		achWatzBoom = new Achievement("achievement.watzBoom", "watzBoom", 14, 5, ModItems.bucket_mud, achWatz).initIndependentStat().setSpecial().registerStat();
+		//achWatzBoom = new Achievement("achievement.watzBoom", "watzBoom", 14, 5, ModItems.bucket_mud, achWatz).initIndependentStat().setSpecial().registerStat();
 		achRBMK = new Achievement("achievement.RBMK", "RBMK", 9, -5, ModItems.rbmk_fuel_ueu, achConcrete).initIndependentStat().registerStat();
 		achRBMKBoom = new Achievement("achievement.RBMKBoom", "RBMKBoom", 9, -7, ModItems.debris_fuel, achRBMK).initIndependentStat().setSpecial().registerStat();
 		achBismuth = new Achievement("achievement.bismuth", "bismuth", 11, -6, ModItems.ingot_bismuth, achRBMK).initIndependentStat().registerStat();
@@ -830,7 +830,7 @@ public class MainRegistry {
 				achChicagoPile,
 				achSILEX,
 				achWatz,
-				achWatzBoom,
+				//achWatzBoom,
 				achRBMK,
 				achRBMKBoom,
 				achBismuth,

@@ -1256,9 +1256,9 @@ public class ModBlocks {
 	public static Block decon;
 	public static Block transission_hatch;
 
-	public static Block mud_block;
-	public static Fluid mud_fluid;
-	public static final Material fluidmud = (new MaterialLiquid(MapColor.adobeColor));
+	//public static Block mud_block;
+	//public static Fluid mud_fluid;
+	//public static final Material fluidmud = (new MaterialLiquid(MapColor.adobeColor));
 
 	public static Block acid_block;
 	public static Fluid acid_fluid;
@@ -2519,9 +2519,9 @@ public class ModBlocks {
 		statue_elb_w = new DecoBlockAlt(Material.iron).setBlockName("#ngtv").setHardness(Float.POSITIVE_INFINITY).setResistance(Float.POSITIVE_INFINITY);
 		statue_elb_f = new DecoBlockAlt(Material.iron).setBlockName("#undef").setHardness(Float.POSITIVE_INFINITY).setLightLevel(1.0F).setResistance(Float.POSITIVE_INFINITY);
 
-		mud_fluid = new MudFluid().setDensity(2500).setViscosity(3000).setLuminosity(5).setTemperature(2773).setUnlocalizedName("mud_fluid");
-		FluidRegistry.registerFluid(mud_fluid);
-		mud_block = new MudBlock(mud_fluid, fluidmud.setReplaceable(), ModDamageSource.mudPoisoning).setBlockName("mud_block").setResistance(500F);
+		//mud_fluid = new MudFluid().setDensity(2500).setViscosity(3000).setLuminosity(5).setTemperature(2773).setUnlocalizedName("mud_fluid");
+		//FluidRegistry.registerFluid(mud_fluid);
+		//mud_block = new MudBlock(mud_fluid, fluidmud.setReplaceable(), ModDamageSource.mudPoisoning).setBlockName("mud_block").setResistance(500F);
 
 		acid_fluid = new AcidFluid().setDensity(2500).setViscosity(1500).setLuminosity(5).setTemperature(2773).setUnlocalizedName("acid_fluid");
 		FluidRegistry.registerFluid(acid_fluid);
@@ -3775,7 +3775,7 @@ public class ModBlocks {
 		GameRegistry.registerBlock(statue_elb_f, statue_elb_f.getUnlocalizedName());
 
 		//Fluids
-		GameRegistry.registerBlock(mud_block, mud_block.getUnlocalizedName());
+		//GameRegistry.registerBlock(mud_block, mud_block.getUnlocalizedName());
 		GameRegistry.registerBlock(acid_block, acid_block.getUnlocalizedName());
 		GameRegistry.registerBlock(toxic_block, toxic_block.getUnlocalizedName());
 		GameRegistry.registerBlock(schrabidic_block, schrabidic_block.getUnlocalizedName());
