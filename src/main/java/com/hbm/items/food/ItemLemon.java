@@ -109,6 +109,7 @@ public class ItemLemon extends ItemFood {
     {
 		if(this == ModItems.med_ipecac || this == ModItems.med_ptsd) {
 			player.addPotionEffect(new PotionEffect(Potion.hunger.id, 50, 49));
+			player.addPotionEffect(new PotionEffect(HbmPotion.radaway.id, 1, 20));
 			HbmPlayerProps props = HbmPlayerProps.getData(player);
 			if (props.nitanCount > 0){
 				player.removePotionEffect(HbmPotion.nitan.id);
