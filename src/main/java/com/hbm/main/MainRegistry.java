@@ -305,6 +305,7 @@ public class MainRegistry {
 		HazardRegistry.registerTrafos();
 
 		SolarSystem.init();
+		MinecraftForge.EVENT_BUS.register(new PlayerIntoxicationHandler());
 
 		OreDictManager oreMan = new OreDictManager();
 		MinecraftForge.EVENT_BUS.register(oreMan); //OreRegisterEvent

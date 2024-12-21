@@ -21,39 +21,41 @@ public class ItemCanteen extends Item {
 
 	public ItemCanteen(int cooldown) {
 
-		this.setMaxDamage(cooldown);
+		//this.setMaxDamage(cooldown);
 	}
 
 	@Override
 	public void onUpdate(ItemStack stack, World world, Entity entity, int i, boolean b) {
 
-		if(stack.getItemDamage() > 0 && entity.ticksExisted % 20 == 0)
-			stack.setItemDamage(stack.getItemDamage() - 1);
+		//if(stack.getItemDamage() > 0 && entity.ticksExisted % 20 == 0)
+		//	stack.setItemDamage(stack.getItemDamage() - 1);
 	}
 
 	@Override
 	public ItemStack onEaten(ItemStack stack, World world, EntityPlayer player) {
-		stack.setItemDamage(stack.getMaxDamage());
+
+		stack.setItemDamage(stack.getMaxDamage()); // Trigger cooldown.
 
 		if (this == ModItems.canteen_vodka) {
-			//aww pookie at least you feww bettew ahh
 			player.heal(2F);
-			player.addPotionEffect(new PotionEffect(Potion.confusion.id, 40 * 20, 1));  // Increased confusion duration and intensity
-			player.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 40 * 20, 1));   // Slowness for impaired movement
-			player.addPotionEffect(new PotionEffect(Potion.hunger.id, 5 * 10, 0));     // Increased hunger
-			//player.addPotionEffect(new PotionEffect(Potion.damageBoost.id, 30 * 20, 2));
-		}
-		if (this == ModItems.canteen_fab) {
-			player.heal(2F);
-			player.addPotionEffect(new PotionEffect(Potion.confusion.id, 120 * 20, 3));
-			player.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 20 * 20, 1));   // Slowness for impaired movement
+			int intoxicationLevel = VersatileConfig.getIntoxicationLevel(player);
+
+			// Effects scale with intoxication level
+			player.addPotionEffect(new PotionEffect(Potion.confusion.id, 40 * 20 + intoxicationLevel * 20, 1));
+			player.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 40 * 20 + intoxicationLevel * 10, 1));
 			player.addPotionEffect(new PotionEffect(Potion.hunger.id, 5 * 10, 0));
-			//player.addPotionEffect(new PotionEffect(Potion.damageBoost.id, 60 * 20, 2));
-			//player.addPotionEffect(new PotionEffect(Potion.resistance.id, 60 * 20, 2));
-			//player.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 60 * 20, 1));
+
+			VersatileConfig.increaseIntoxication(player, 1); // Track drinking level.
 		}
 
+		// Sobriety mechanic
 		VersatileConfig.applyPotionSickness(player, 5);
+
+		// Reduce durability
+		stack.setItemDamage(stack.getItemDamage() + 1);
+		if (stack.getItemDamage() >= stack.getMaxDamage()) {
+			stack.stackSize--; // Bottle becomes empty after all uses.
+		}
 
 		return stack;
 	}
