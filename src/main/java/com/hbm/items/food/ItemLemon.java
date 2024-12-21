@@ -29,6 +29,7 @@ public class ItemLemon extends ItemFood {
 		if(this == ModItems.med_ipecac || this == ModItems.med_ptsd || this == ModItems.galaxygas) {
 			this.setAlwaysEdible();
 		}
+		//hey dumbass this thing doesnt work
 	}
 
 	@Override

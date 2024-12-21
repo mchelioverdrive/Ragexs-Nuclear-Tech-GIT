@@ -235,7 +235,7 @@ public class ItemEnergy extends Item {
 			//	//ContaminationUtil.contaminate(player, HazardType.RADIATION, ContaminationType.RAD_BYPASS, 15.0F);
 			//}
 			if(this == ModItems.coffee) {
-				player.heal(5);
+				player.heal(2);
 				player.addPotionEffect(new PotionEffect(Potion.field_76443_y.id, 1 * 3, 0));
 				//player.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 60 * 20, 2));
 				this.setContainerItem(ModItems.cmug_empty);
@@ -243,8 +243,8 @@ public class ItemEnergy extends Item {
 				System.out.println(this.container);
 			}
 			if(this == ModItems.coffee_radium) {
-				player.heal(5);
-				player.addPotionEffect(new PotionEffect(Potion.field_76443_y.id, 10 * 20, 0));
+				player.heal(2);
+				player.addPotionEffect(new PotionEffect(Potion.field_76443_y.id, 1 * 3, 0));
 				//player.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 60 * 20, 2));
 				HbmLivingProps.incrementRadiation(player, 0.2F);
 				player.triggerAchievement(MainRegistry.achRadium);

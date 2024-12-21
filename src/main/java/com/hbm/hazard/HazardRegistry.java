@@ -182,9 +182,9 @@ public class HazardRegistry {
 		HazardSystem.register(Blocks.tnt, makeData(EXPLOSIVE, 4F));
 		HazardSystem.register(Items.pumpkin_pie, makeData(EXPLOSIVE, 1F));
 
-		HazardSystem.register(new ItemStack(Item.getItemFromBlock(ModBlocks.bobblehead), 1, 22), makeData(ASBESTOS, 1F)); //this works okay
+		//HazardSystem.register(new ItemStack(Item.getItemFromBlock(ModBlocks.bobblehead), 1, 22), makeData(ASBESTOS, 1F)); //this works okay
 
-		HazardSystem.register(new ItemStack(Item.getItemFromBlock(ModBlocks.bobblehead), 1, 25), makeData(GLITCH, 1F));
+		//HazardSystem.register(new ItemStack(Item.getItemFromBlock(ModBlocks.bobblehead), 1, 25), makeData(GLITCH, 1F));
 
 		HazardSystem.register(ModItems.ammonium_nitrate, makeData(EXPLOSIVE, 4F));
 
@@ -220,6 +220,9 @@ public class HazardRegistry {
 		HazardSystem.register(powder_balefire, makeData(RADIATION, 500F));
 		//HazardSystem.register(egg_balefire_shard, makeData(RADIATION, bf * nugget));
 		//HazardSystem.register(egg_balefire, makeData(RADIATION, bf * ingot));
+
+		HazardSystem.register(coffee_radium, makeData(RADIATION, 0.5F));
+		HazardSystem.register(chocolate, makeData(RADIATION, 0.5F));
 
 		HazardSystem.register(solid_fuel_bf, makeData(RADIATION, 1000)); //roughly the amount of the balefire shard diluted in 250mB of rocket fuel
 		HazardSystem.register(solid_fuel_presto_bf, makeData(RADIATION, 2000));
