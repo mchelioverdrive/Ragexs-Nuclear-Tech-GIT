@@ -83,7 +83,8 @@ import com.hbm.util.ContaminationUtil.HazardType;
 import com.hbm.util.*;
 import com.hbm.util.ArmorRegistry.HazardClass;
 import com.hbm.world.generator.TimedGenerator;
-
+import com.hbm.util.ContaminationUtil.ContaminationType;
+import com.hbm.util.ContaminationUtil.HazardType;
 import api.hbm.energymk2.Nodespace;
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -104,8 +105,10 @@ import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
+import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.item.EntityItem;
+import net.minecraft.entity.ai.EntityAITasks;
 import net.minecraft.entity.monster.EntityCaveSpider;
 import net.minecraft.entity.monster.EntityCreeper;
 import net.minecraft.entity.monster.EntitySkeleton;
@@ -133,6 +136,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntitySign;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ChatStyle;
+import net.minecraft.util.*;
 import net.minecraft.util.EntityDamageSource;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.FoodStats;
@@ -1435,7 +1439,7 @@ public class ModEventHandler {
 			/// NEW ITEM SYS END ///
 
 			/// SYNC START ///
-			if(player instanceof EntityPlayerMP) PacketDispatcher.wrapper.sendTo(new PermaSyncPacket((EntityPlayerMP) player), (EntityPlayerMP) player);
+			if(!player.worldObj.isRemote && player instanceof EntityPlayerMP) PacketDispatcher.wrapper.sendTo(new PermaSyncPacket((EntityPlayerMP) player), (EntityPlayerMP) player);
 			/// SYNC END ///
 		}
 

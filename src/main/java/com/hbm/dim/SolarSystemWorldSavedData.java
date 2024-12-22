@@ -35,19 +35,19 @@ public class SolarSystemWorldSavedData extends WorldSavedData {
 
 	private HashMap<String, HashMap<Class<? extends CelestialBodyTrait>, CelestialBodyTrait>> traitMap = new HashMap<String, HashMap<Class<? extends CelestialBodyTrait>, CelestialBodyTrait>>();
 	private HashMap<ChunkCoordIntPair, OrbitalStation> stations = new HashMap<>();
-	
+
 	public static SolarSystemWorldSavedData get() {
 		return get(DimensionManager.getWorld(0));
 	}
 
 	public static SolarSystemWorldSavedData get(World world) {
 		SolarSystemWorldSavedData result = (SolarSystemWorldSavedData) world.mapStorage.loadData(SolarSystemWorldSavedData.class, DATA_NAME);
-		
+
 		if(result == null) {
 			world.mapStorage.setData(DATA_NAME, new SolarSystemWorldSavedData(DATA_NAME));
 			result = (SolarSystemWorldSavedData) world.mapStorage.loadData(SolarSystemWorldSavedData.class, DATA_NAME);
 		}
-		
+
 		return result;
 	}
 
@@ -111,7 +111,7 @@ public class SolarSystemWorldSavedData extends WorldSavedData {
 				trait.writeToNBT(traitData);
 				data.setTag(name, traitData);
 			}
-	
+
 			nbt.setTag("b_" + entry.getKey(), data);
 		}
 
@@ -146,18 +146,22 @@ public class SolarSystemWorldSavedData extends WorldSavedData {
 		}
 
 		this.traitMap.put(bodyName, newTraits);
-		
+
 		markDirty();
 	}
 
 	public void clearTraits(String bodyName) {
 		this.traitMap.remove(bodyName);
-		
+
 		markDirty();
 	}
 
 	public HashMap<Class<? extends CelestialBodyTrait>, CelestialBodyTrait> getTraits(String bodyName) {
 		return traitMap.get(bodyName);
+	}
+
+	public HashMap<ChunkCoordIntPair, OrbitalStation> getStations() {
+		return stations;
 	}
 
 	// Grabs an existing station
@@ -215,5 +219,5 @@ public class SolarSystemWorldSavedData extends WorldSavedData {
 	public static HashMap<Class<? extends CelestialBodyTrait>, CelestialBodyTrait> getClientTraits(String bodyName) {
 		return clientTraits.get(bodyName);
 	}
-	
+
 }

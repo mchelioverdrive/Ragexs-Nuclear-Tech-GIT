@@ -13,15 +13,15 @@ public class EventHandlerParticleEngine {
 
 	@SubscribeEvent
 	public void worldTick(WorldTickEvent event) {
-		
+
 		if(event.phase == event.phase.START) {
-			
+
 		}
 	}
 
 	@SubscribeEvent
 	public void onRenderWorldLast(RenderWorldLastEvent event) {
-		float interp = event.partialTicks;
+		//float interp = event.partialTicks;
 	}
 
 	@SubscribeEvent

@@ -9,14 +9,14 @@ import com.hbm.inventory.recipes.OutgasserRecipes;
 public class OutgasserHandler extends NEIUniversalHandler {
 
 	public OutgasserHandler() {
-		super("Irradiation", ModBlocks.rbmk_outgasser, OutgasserRecipes.getRecipes());
+		super(ModBlocks.rbmk_outgasser.getLocalizedName(), ModBlocks.rbmk_outgasser, OutgasserRecipes.getRecipes());
 	}
 
 	@Override
 	public String getKey() {
 		return "ntmOutgasser";
 	}
-	
+
 	@Override
 	public void loadTransferRects() {
 		super.loadTransferRects();

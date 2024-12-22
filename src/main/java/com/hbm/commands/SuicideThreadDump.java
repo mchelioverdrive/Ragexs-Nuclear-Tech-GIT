@@ -1,4 +1,4 @@
-package com.hbm.util;
+package com.hbm.commands;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MonitorInfo;
@@ -21,8 +21,7 @@ public class SuicideThreadDump extends CommandBase {
 
 	public static void register() {
 		if(FMLLaunchHandler.side() != Side.CLIENT) return;
-		ClientCommandHandler handler = ClientCommandHandler.instance;
-		handler.registerCommand(new SuicideThreadDump());
+		ClientCommandHandler.instance.registerCommand(new SuicideThreadDump());
 	}
 
 	@Override
@@ -42,22 +41,22 @@ public class SuicideThreadDump extends CommandBase {
 
 	@Override
 	public void processCommand(ICommandSender sender, String[] args) {
-		
+
 		if(args.length != 1 || !(args[0].equals("dump") || args[0].equals("crash"))) {
 			throw new CommandException("Requires argument \"dump\" or \"crash\"!");
 		}
-		
+
 		ThreadInfo[] threads = ManagementFactory.getThreadMXBean().dumpAllThreads(true, true);
-		
+
 		for(ThreadInfo thread : threads) {
 			dumpThread(thread);
 		}
-		
+
 		if(args[0].equals("crash")) {
 			FMLCommonHandler.instance().exitJava(0, true);
 		}
 	}
-	
+
 	private static void dumpThread(ThreadInfo info) {
 
 		MainRegistry.logger.log(Level.FATAL, "===========================================");
@@ -67,7 +66,7 @@ public class SuicideThreadDump extends CommandBase {
 		MainRegistry.logger.log(Level.FATAL, "Runs Native: " + info.isInNative());
 		MainRegistry.logger.log(Level.FATAL, "State: " + info.getThreadState().name());
 		MainRegistry.logger.log(Level.FATAL, "-------------------------------------------");
-		
+
 		if(info.getLockedMonitors().length != 0) {
 			MainRegistry.logger.log(Level.FATAL, "Following locks found:");
 			for(MonitorInfo monitor : info.getLockedMonitors()) {
@@ -75,7 +74,7 @@ public class SuicideThreadDump extends CommandBase {
 			}
 			MainRegistry.logger.log(Level.FATAL, "-------------------------------------------");
 		}
-		
+
 		MainRegistry.logger.log(Level.FATAL, "Stacktrace:");
 		for(StackTraceElement line : info.getStackTrace()) {
 			MainRegistry.logger.log(Level.FATAL, "- " + line);

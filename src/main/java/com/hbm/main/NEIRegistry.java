@@ -11,9 +11,9 @@ import codechicken.nei.recipe.TemplateRecipeHandler;
 public class NEIRegistry {
 
 	public static List<TemplateRecipeHandler> handlers = new ArrayList<>();
-	
+
 	public static List<TemplateRecipeHandler> listAllHandlers() {
-		
+
 		if(!handlers.isEmpty()) return handlers;
 
 		handlers.add(new AnvilRecipeHandler());
@@ -70,10 +70,12 @@ public class NEIRegistry {
 		handlers.add(new ExposureChamberHandler());
 		handlers.add(new ArcFurnaceSolidHandler());
 		handlers.add(new ArcFurnaceFluidHandler());
+		handlers.add(new RotaryFurnaceHandler());
+		//handlers.add(new AmmoPressHandler());
 
 		//this shit comes last
 		handlers.add(new FluidRecipeHandler());
-		
+
 		return handlers;
 	}
 }

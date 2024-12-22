@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import net.minecraft.util.EntityDamageSource;
 
 import com.hbm.blocks.ModBlocks;
 
@@ -28,7 +29,7 @@ import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 
 public class ExplosionNT extends Explosion {
-	
+
 	public Set<ExAttrib> atttributes = new HashSet();
 
 	private Random explosionRNG = new Random();
@@ -81,18 +82,18 @@ public class ExplosionNT extends Explosion {
 		for(i = 0; i < this.resolution; ++i) {
 			for(j = 0; j < this.resolution; ++j) {
 				for(k = 0; k < this.resolution; ++k) {
-					
+
 					if(i == 0 || i == this.resolution - 1 || j == 0 || j == this.resolution - 1 || k == 0 || k == this.resolution - 1) {
-						
+
 						double d0 = (double) ((float) i / ((float) this.resolution - 1.0F) * 2.0F - 1.0F);
 						double d1 = (double) ((float) j / ((float) this.resolution - 1.0F) * 2.0F - 1.0F);
 						double d2 = (double) ((float) k / ((float) this.resolution - 1.0F) * 2.0F - 1.0F);
-						
+
 						double dist = Math.sqrt(d0 * d0 + d1 * d1 + d2 * d2);
 						d0 /= dist;
 						d1 /= dist;
 						d2 /= dist;
-						
+
 						float remainingPower = this.explosionSize * (0.7F + this.worldObj.rand.nextFloat() * 0.6F);
 						currentX = this.explosionX;
 						currentY = this.explosionY;
@@ -111,7 +112,7 @@ public class ExplosionNT extends Explosion {
 
 							if(block != Blocks.air && remainingPower > 0.0F && (this.exploder == null || this.exploder.func_145774_a(this, this.worldObj, xPos, yPos, zPos, block, remainingPower))) {
 								hashset.add(new ChunkPosition(xPos, yPos, zPos));
-								
+
 							} else if(this.has(ExAttrib.ERRODE) && errosion.containsKey(block)) {
 								hashset.add(new ChunkPosition(xPos, yPos, zPos));
 							}
@@ -156,7 +157,7 @@ public class ExplosionNT extends Explosion {
 						currentZ /= d9;
 						double d10 = (double) this.worldObj.getBlockDensity(vec3, entity.boundingBox);
 						double d11 = (1.0D - d4) * d10;
-						entity.attackEntityFrom(DamageSource.setExplosionSource(this), (float) ((int) ((d11 * d11 + d11) / 2.0D * 8.0D * (double) this.explosionSize + 1.0D)));
+						entity.attackEntityFrom(setExplosionSource(this), (float) ((int) ((d11 * d11 + d11) / 2.0D * 8.0D * (double) this.explosionSize + 1.0D)));
 						double d8 = EnchantmentProtection.func_92092_a(entity, d11);
 						entity.motionX += currentX * d8;
 						entity.motionY += currentY * d8;
@@ -171,6 +172,12 @@ public class ExplosionNT extends Explosion {
 
 			this.explosionSize = f;
 		}
+	}
+
+	public static DamageSource setExplosionSource(Explosion explosion) {
+		return explosion != null && explosion.getExplosivePlacedBy() != null ?
+			(new EntityDamageSource("explosion.player", explosion.getExplosivePlacedBy())).setExplosion() :
+			(new DamageSource("explosion")).setExplosion();
 	}
 
 	public void doExplosionB(boolean p_77279_1_) {
@@ -224,18 +231,18 @@ public class ExplosionNT extends Explosion {
 				}
 
 				if(block.getMaterial() != Material.air) {
-					
+
 					boolean doesErrode = false;
 					Block errodesInto = Blocks.air;
-					
+
 					if(this.has(ExAttrib.ERRODE) && this.explosionRNG.nextFloat() < 0.6F) { //errosion has a 60% chance to occour
-						
+
 						if(errosion.containsKey(block)) {
 							doesErrode = true;
 							errodesInto = errosion.get(block);
 						}
 					}
-					
+
 					if(block.canDropFromExplosion(this) && !has(ExAttrib.NODROP) && !doesErrode) {
 						float chance = 1.0F;
 
@@ -246,28 +253,28 @@ public class ExplosionNT extends Explosion {
 					}
 
 					block.onBlockExploded(this.worldObj, i, j, k, this);
-					
+
 					if(block.isNormalCube()) {
-						
+
 						if(doesErrode) {
 							this.worldObj.setBlock(i, j, k, errodesInto);
 						}
-						
+
 						if(has(ExAttrib.DIGAMMA)) {
 							this.worldObj.setBlock(i, j, k, ModBlocks.ash_digamma);
-							
+
 							if(this.explosionRNG.nextInt(5) == 0 && this.worldObj.getBlock(i, j + 1, k) == Blocks.air)
 								this.worldObj.setBlock(i, j + 1, k, ModBlocks.fire_digamma);
-							
+
 						} else if(has(ExAttrib.DIGAMMA_CIRCUIT)) {
-							
+
 							if(i % 3 == 0 && k % 3 == 0) {
 								this.worldObj.setBlock(i, j, k, ModBlocks.pribris_digamma);
 							} else if((i % 3 == 0 || k % 3 == 0) && this.explosionRNG.nextBoolean()) {
 								this.worldObj.setBlock(i, j, k, ModBlocks.pribris_digamma);
 							} else {
 								this.worldObj.setBlock(i, j, k, ModBlocks.ash_digamma);
-								
+
 								if(this.explosionRNG.nextInt(5) == 0 && this.worldObj.getBlock(i, j + 1, k) == Blocks.air)
 									this.worldObj.setBlock(i, j + 1, k, ModBlocks.fire_digamma);
 							}
@@ -321,7 +328,7 @@ public class ExplosionNT extends Explosion {
 	public boolean has(ExAttrib attrib) {
 		return this.atttributes.contains(attrib);
 	}
-	
+
 	//this solution is a bit hacky but in the end easier to work with
 	public static enum ExAttrib {
 		FIRE,		//classic vanilla fire explosion
@@ -339,9 +346,9 @@ public class ExplosionNT extends Explosion {
 		NOSOUND,
 		NOHURT
 	}
-	
+
 	public static final HashMap<Block, Block> errosion = new HashMap();
-	
+
 	static {
 		errosion.put(ModBlocks.concrete, Blocks.gravel);
 		errosion.put(ModBlocks.concrete_smooth, Blocks.gravel);

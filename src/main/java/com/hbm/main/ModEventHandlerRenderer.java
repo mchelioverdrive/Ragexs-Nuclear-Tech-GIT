@@ -1,15 +1,18 @@
 package com.hbm.main;
 
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GLContext;
 
 import com.hbm.blocks.ICustomBlockHighlight;
+import com.hbm.config.ClientConfig;
 import com.hbm.config.RadiationConfig;
 import com.hbm.dim.WorldProviderCelestial;
 import com.hbm.extprop.HbmLivingProps;
 import com.hbm.handler.pollution.PollutionHandler.PollutionType;
 import com.hbm.items.armor.IArmorDisableModel;
 import com.hbm.items.armor.IArmorDisableModel.EnumPlayerPart;
+import com.hbm.items.weapon.sedna.ItemGunBaseNT;
 import com.hbm.items.armor.ItemModOxy;
 import com.hbm.packet.PermaSyncHandler;
 import com.hbm.render.item.weapon.sedna.ItemRenderWeaponBase;
@@ -22,6 +25,8 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.WorldTickEvent;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.AbstractClientPlayer;
+import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.gui.GuiIngame;
 import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.client.renderer.RenderBlocks;
@@ -63,6 +68,7 @@ public class ModEventHandlerRenderer {
 
 		EntityPlayer player = event.entityPlayer;
 		RenderPlayer renderer = event.renderer;
+		ItemStack held = player.getHeldItem();
 
 		boolean isManly = PermaSyncHandler.boykissers.contains(player.getEntityId());
 
@@ -75,6 +81,18 @@ public class ModEventHandlerRenderer {
 				box.isHidden = true;
 			} else {
 				partsHidden[j] = false;
+			}
+		}
+
+		if(held != null) {
+			IItemRenderer customRenderer = MinecraftForgeClient.getItemRenderer(held, IItemRenderer.ItemRenderType.EQUIPPED);
+			if(customRenderer instanceof ItemRenderWeaponBase) {
+				ItemRenderWeaponBase renderGun = (ItemRenderWeaponBase) customRenderer;
+				//if(renderGun.isAkimbo()) {
+				//	partsHidden[EnumPlayerPart.LEFT_ARM.ordinal()] = true;
+				//	ModelRenderer box = getBoxFromType(renderer, EnumPlayerPart.LEFT_ARM);
+				//	box.isHidden = true;
+				//}
 			}
 		}
 
@@ -106,7 +124,33 @@ public class ModEventHandlerRenderer {
 		EntityPlayer player = event.entityPlayer;
 		RenderPlayer renderer = event.renderer;
 
+		boolean akimbo = false;
+
+		ItemStack held = player.getHeldItem();
+
+		if(held != null) {
+			IItemRenderer customRenderer = MinecraftForgeClient.getItemRenderer(held, IItemRenderer.ItemRenderType.EQUIPPED);
+			if(customRenderer instanceof ItemRenderWeaponBase) {
+				ItemRenderWeaponBase renderGun = (ItemRenderWeaponBase) customRenderer;
+			//if(renderGun.isAkimbo()) {
+			//	akimbo = true;
+			//}
+			}
+		}
+
 		boolean isManly = PermaSyncHandler.boykissers.contains(player.getEntityId());
+
+		if(akimbo) {
+			ModelBiped biped = renderer.modelBipedMain;
+			renderer.modelArmorChestplate.bipedLeftArm.rotateAngleY = renderer.modelArmor.bipedLeftArm.rotateAngleY = biped.bipedLeftArm.rotateAngleY =
+				0.1F + biped.bipedHead.rotateAngleY;
+			if(!isManly) {
+				AbstractClientPlayer acp = (AbstractClientPlayer) player;
+				Minecraft.getMinecraft().getTextureManager().bindTexture(acp.getLocationSkin());
+				biped.bipedLeftArm.isHidden = false;
+				biped.bipedLeftArm.render(0.0625F);
+			}
+		}
 
 		if(isManly) {
 			if(manlyModel == null)
@@ -122,6 +166,7 @@ public class ModEventHandlerRenderer {
 			if(f6 > 1.0F) {
 				f6 = 1.0F;
 			}
+
 			manlyModel.render(event.entityPlayer, f7, f6, yawWrapped, yaw, pitch, 0.0625F, renderer);
 		}
 	}
@@ -140,28 +185,89 @@ public class ModEventHandlerRenderer {
 	}
 
 	@SubscribeEvent
+	public void onRenderHeldGun(RenderPlayerEvent.Pre event) {
+
+		EntityPlayer player = event.entityPlayer;
+		RenderPlayer renderer = event.renderer;
+		ItemStack held = player.getHeldItem();
+
+		if(held != null && player.getHeldItem().getItem() instanceof ItemGunBaseNT) {
+			renderer.modelBipedMain.aimedBow = true;
+			renderer.modelArmor.aimedBow = true;
+			renderer.modelArmorChestplate.aimedBow = true;
+
+			//technically not necessary but it probably fixes some issues with mods that implement their armor weirdly
+			IItemRenderer customRenderer = MinecraftForgeClient.getItemRenderer(held, IItemRenderer.ItemRenderType.EQUIPPED);
+			if(customRenderer instanceof ItemRenderWeaponBase) {
+				ItemRenderWeaponBase renderGun = (ItemRenderWeaponBase) customRenderer;
+				//if(renderGun.isAkimbo()) {
+				//	ModelBiped biped = renderer.modelBipedMain;
+				//	renderer.modelArmorChestplate.bipedLeftArm.rotateAngleY = renderer.modelArmor.bipedLeftArm.rotateAngleY = biped.bipedLeftArm.rotateAngleY = 0.1F + biped.bipedHead.rotateAngleY;
+				//}
+			}
+		}
+	}
+
+	@SubscribeEvent
+	public void onRenderAkimbo(RenderPlayerEvent.Specials.Pre event) {
+
+		EntityPlayer player = event.entityPlayer;
+		RenderPlayer renderer = event.renderer;
+		ItemStack held = player.getHeldItem();
+		if(held == null) return;
+
+		IItemRenderer customRenderer = MinecraftForgeClient.getItemRenderer(held, IItemRenderer.ItemRenderType.EQUIPPED);
+
+		if(customRenderer instanceof ItemRenderWeaponBase) {
+			ItemRenderWeaponBase renderWeapon = (ItemRenderWeaponBase) customRenderer;
+			//if(renderWeapon.isAkimbo()) {
+			//	GL11.glPushMatrix();
+			//	renderer.modelBipedMain.bipedLeftArm.isHidden = false;
+			//	renderer.modelBipedMain.bipedLeftArm.postRender(0.0625F);
+			//	//vanilla bullshit
+			//	GL11.glTranslatef(-0.0625F, 0.4375F, 0.0625F);
+			//	float scale = 0.375F;
+			//	GL11.glTranslatef(0.25F, 0.1875F, -0.1875F);
+			//	GL11.glScalef(scale, scale, scale);
+			//	GL11.glRotatef(60.0F, 0.0F, 0.0F, 1.0F);
+			//	GL11.glRotatef(-90.0F, 1.0F, 0.0F, 0.0F);
+			//	GL11.glRotatef(20.0F, 0.0F, 0.0F, 1.0F);
+			//	// forge bullshit
+			//	GL11.glEnable(GL12.GL_RESCALE_NORMAL);
+			//	GL11.glTranslatef(0.0F, -0.3F, 0.0F);
+			//	GL11.glScalef(1.5F, 1.5F, 1.5F);
+			//	GL11.glRotatef(50.0F, 0.0F, 1.0F, 0.0F);
+			//	GL11.glRotatef(335.0F, 0.0F, 0.0F, 1.0F);
+			//	GL11.glTranslatef(-0.9375F, -0.0625F, 0.0F);
+			//	renderWeapon.setupThirdPersonAkimbo(held);
+			//	renderWeapon.renderEquippedAkimbo(held);
+			//	GL11.glDisable(GL12.GL_RESCALE_NORMAL);
+			//	GL11.glPopMatrix();
+			//}
+		}
+	}
+
+	@SubscribeEvent
 	public void onRenderHeldItem(RenderPlayerEvent.Specials.Pre event) {
 
 		EntityPlayer player = event.entityPlayer;
 		//RenderPlayer renderer = event.renderer;
 
 		boolean isManly = PermaSyncHandler.boykissers.contains(player.getEntityId());
-
-		if(!isManly)
-			return;
+		if(!isManly) return;
 
 		if(manlyModel == null)
 			manlyModel = new ModelMan();
-		
+
 		event.renderItem = false;
 
 		float f2 = 1.3333334F;
 
 		ItemStack held = player.getHeldItem();
-		
+
 		if(held == null)
 			return;
-		
+
 		GL11.glPushMatrix();
 		manlyModel.rightArm.postRender(0.0625F);
 		GL11.glTranslatef(-0.0625F, 0.4375F, 0.0625F);
@@ -176,8 +282,8 @@ public class ModEventHandlerRenderer {
 			enumaction = held.getItemUseAction();
 		}
 
-		net.minecraftforge.client.IItemRenderer customRenderer = net.minecraftforge.client.MinecraftForgeClient.getItemRenderer(held, net.minecraftforge.client.IItemRenderer.ItemRenderType.EQUIPPED);
-		boolean is3D = (customRenderer != null && customRenderer.shouldUseRenderHelper(net.minecraftforge.client.IItemRenderer.ItemRenderType.EQUIPPED, held, net.minecraftforge.client.IItemRenderer.ItemRendererHelper.BLOCK_3D));
+		IItemRenderer customRenderer = MinecraftForgeClient.getItemRenderer(held, IItemRenderer.ItemRenderType.EQUIPPED);
+		boolean is3D = (customRenderer != null && customRenderer.shouldUseRenderHelper(IItemRenderer.ItemRenderType.EQUIPPED, held, IItemRenderer.ItemRendererHelper.BLOCK_3D));
 
 		if(is3D || held.getItem() instanceof ItemBlock && RenderBlocks.renderItemIn3d(Block.getBlockFromItem(held.getItem()).getRenderType())) {
 			f2 = 0.5F;
@@ -249,26 +355,26 @@ public class ModEventHandlerRenderer {
 	private static ModelRenderer getBoxFromType(RenderPlayer renderer, EnumPlayerPart part) {
 
 		switch(part) {
-		case BODY: return renderer.modelBipedMain.bipedBody;
-		case HAT: return renderer.modelBipedMain.bipedHeadwear;
-		case HEAD: return renderer.modelBipedMain.bipedHead;
-		case LEFT_ARM: return renderer.modelBipedMain.bipedLeftArm;
-		case LEFT_LEG: return renderer.modelBipedMain.bipedLeftLeg;
-		case RIGHT_ARM: return renderer.modelBipedMain.bipedRightArm;
-		case RIGHT_LEG: return renderer.modelBipedMain.bipedRightLeg;
-		default: return null;
+			case BODY: return renderer.modelBipedMain.bipedBody;
+			case HAT: return renderer.modelBipedMain.bipedHeadwear;
+			case HEAD: return renderer.modelBipedMain.bipedHead;
+			case LEFT_ARM: return renderer.modelBipedMain.bipedLeftArm;
+			case LEFT_LEG: return renderer.modelBipedMain.bipedLeftLeg;
+			case RIGHT_ARM: return renderer.modelBipedMain.bipedRightArm;
+			case RIGHT_LEG: return renderer.modelBipedMain.bipedRightLeg;
+			default: return null;
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void onDrawHighlight(DrawBlockHighlightEvent event) {
 		MovingObjectPosition mop = event.target;
-		
+
 		if(mop != null && mop.typeOfHit == MovingObjectType.BLOCK) {
 			Block b = event.player.worldObj.getBlock(mop.blockX, mop.blockY, mop.blockZ);
 			if(b instanceof ICustomBlockHighlight) {
 				ICustomBlockHighlight cus = (ICustomBlockHighlight) b;
-				
+
 				if(cus.shouldDrawHighlight(event.player.worldObj, mop.blockX, mop.blockY, mop.blockZ)) {
 					cus.drawHighlight(event, event.player.worldObj, mop.blockX, mop.blockY, mop.blockZ);
 					event.setCanceled(true);
@@ -276,17 +382,17 @@ public class ModEventHandlerRenderer {
 			}
 		}
 	}
-	
+
 	float renderSoot = 0;
-	
+
 	@SubscribeEvent
 	public void worldTick(WorldTickEvent event) {
-		
+
 		if(event.phase == WorldTickEvent.Phase.START && RadiationConfig.enableSootFog) {
 
 			float step = 0.05F;
 			float soot = PermaSyncHandler.pollution[PollutionType.SOOT.ordinal()];
-			
+
 			if(Math.abs(renderSoot - soot) < step) {
 				renderSoot = soot;
 			} else if(renderSoot < soot) {
@@ -302,13 +408,13 @@ public class ModEventHandlerRenderer {
 		if(event.entity.worldObj.provider instanceof WorldProviderCelestial) {
 			WorldProviderCelestial provider = (WorldProviderCelestial) event.entity.worldObj.provider;
 			float fogDensity = provider.fogDensity();
-			
+
 			if(fogDensity > 0) {
 				if(GLContext.getCapabilities().GL_NV_fog_distance) {
 					GL11.glFogi(34138, 34139);
 				}
 				GL11.glFogi(GL11.GL_FOG_MODE, GL11.GL_EXP);
-	
+
 				event.density = fogDensity;
 				event.setCanceled(true);
 
@@ -319,7 +425,7 @@ public class ModEventHandlerRenderer {
 		float soot = (float) (renderSoot - RadiationConfig.sootFogThreshold);
 
 		if(soot > 0 && RadiationConfig.enableSootFog) {
-			
+
 			float farPlaneDistance = (float) (Minecraft.getMinecraft().gameSettings.renderDistanceChunks * 16);
 			float fogDist = farPlaneDistance / (1 + soot * 5F / (float) RadiationConfig.sootFogDivisor);
 			GL11.glFogf(GL11.GL_FOG_START, 0);
@@ -328,14 +434,14 @@ public class ModEventHandlerRenderer {
 			if(GLContext.getCapabilities().GL_NV_fog_distance) {
 				GL11.glFogi(34138, 34139);
 			}
-			
+
 			event.setCanceled(true);
 		}
 	}
-	
+
 	@SubscribeEvent(priority = EventPriority.LOW)
 	public void tintFog(FogColors event) {
-		
+
 		float soot = (float) (renderSoot - RadiationConfig.sootFogThreshold);
 		float sootColor = 0.15F;
 		float sootReq = (float) RadiationConfig.sootFogDivisor;
@@ -346,16 +452,16 @@ public class ModEventHandlerRenderer {
 			event.blue = event.blue * (1 - interp) + sootColor * interp;
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void onRenderHand(RenderHandEvent event) {
-		
+
 		//can't use plaxer.getHeldItem() here because the item rendering persists for a few frames after hitting the switch key
 		ItemStack toRender = Minecraft.getMinecraft().entityRenderer.itemRenderer.itemToRender;
-		
+
 		if(toRender != null) {
 			IItemRenderer renderer = MinecraftForgeClient.getItemRenderer(toRender, ItemRenderType.EQUIPPED_FIRST_PERSON);
-			
+
 			if(renderer instanceof ItemRenderWeaponBase) {
 				((ItemRenderWeaponBase) renderer).setPerspectiveAndRender(toRender, event.partialTicks);
 				event.setCanceled(true);
@@ -363,11 +469,11 @@ public class ModEventHandlerRenderer {
 		}
 	}
 
-	@SubscribeEvent
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onRenderHUD(RenderGameOverlayEvent.Pre event) {
 		Tessellator tess = Tessellator.instance;
-		
-		if(event.type == ElementType.HOTBAR && (ModEventHandlerClient.shakeTimestamp + ModEventHandlerClient.shakeDuration - System.currentTimeMillis()) > 0) {
+
+		if(event.type == ElementType.HOTBAR && (ModEventHandlerClient.shakeTimestamp + ModEventHandlerClient.shakeDuration - System.currentTimeMillis()) > 0 && ClientConfig.NUKE_HUD_SHAKE.get()) {
 			double mult = (ModEventHandlerClient.shakeTimestamp + ModEventHandlerClient.shakeDuration - System.currentTimeMillis()) / (double) ModEventHandlerClient.shakeDuration * 2;
 			double horizontal = MathHelper.clamp_double(Math.sin(System.currentTimeMillis() * 0.02), -0.7, 0.7) * 15;
 			double vertical = MathHelper.clamp_double(Math.sin(System.currentTimeMillis() * 0.01 + 2), -0.7, 0.7) * 3;
@@ -381,11 +487,11 @@ public class ModEventHandlerRenderer {
 			int air = HbmLivingProps.getOxy(player);
 			if(air < 100) {
 				GuiIngame gui = Minecraft.getMinecraft().ingameGUI;
-	
+
 				GL11.glEnable(GL11.GL_BLEND);
 				int left = width / 2 + 91;
 				int top = height - GuiIngameForge.right_height;
-	
+
 				int full = MathHelper.ceiling_double_int((double)(air - 2) * 10.0D / 100.0D);
 				int partial = MathHelper.ceiling_double_int((double)air * 10.0D / 100.0D) - full;
 
@@ -393,9 +499,9 @@ public class ModEventHandlerRenderer {
 					gui.drawTexturedModalRect(left - i * 8 - 9, top, (i < full ? 16 : 25), 18, 9, 9);
 				}
 				GuiIngameForge.right_height += 10;
-	
+
 				GL11.glDisable(GL11.GL_BLEND);
-	
+
 				// Prevent regular bubbles rendering
 				event.setCanceled(true);
 			}
@@ -403,9 +509,9 @@ public class ModEventHandlerRenderer {
 			ItemStack tankStack = ArmorUtil.getOxygenTank(player);
 			if(tankStack != null) {
 				ItemModOxy tank = (ItemModOxy)tankStack.getItem();
-				
+
 				float tot = (float)ItemModOxy.getFuel(tankStack) / (float)tank.getMaxFuel();
-				
+
 				GL11.glDisable(GL11.GL_TEXTURE_2D);
 				int right = width / 2 + 91;
 				int top = height - GuiIngameForge.right_height + 3;
@@ -422,24 +528,24 @@ public class ModEventHandlerRenderer {
 				tess.addVertex(right, top, 0);
 				tess.draw();
 				GL11.glEnable(GL11.GL_TEXTURE_2D);
-				
+
 				GuiIngameForge.right_height += 6;
 				event.setCanceled(true);
 			}
 		}
 
 	}
-	
+
 	private static boolean fogInit = false;
 	private static int fogX;
 	private static int fogZ;
 	private static Vec3 fogRGBMultiplier;
 	private static boolean doesBiomeApply = false;
 	private static long fogTimer = 0;
-	
+
 	/** Same procedure as getting the blended sky color but for fog */
 	public static Vec3 getFogBlendColor(World world, int playerX, int playerZ, float red, float green, float blue, double partialTicks) {
-		
+
 		long millis = System.currentTimeMillis() - fogTimer;
 		if(playerX == fogX && playerZ == fogZ && fogInit && millis < 3000) return fogRGBMultiplier;
 
@@ -448,7 +554,7 @@ public class ModEventHandlerRenderer {
 		GameSettings settings = Minecraft.getMinecraft().gameSettings;
 		int[] ranges = ForgeModContainer.blendRanges;
 		int distance = 0;
-		
+
 		if(settings.fancyGraphics && settings.renderDistanceChunks >= 0) {
 			distance = ranges[Math.min(settings.renderDistanceChunks, ranges.length - 1)];
 		}
@@ -456,10 +562,10 @@ public class ModEventHandlerRenderer {
 		float r = 0F;
 		float g = 0F;
 		float b = 0F;
-		
+
 		int divider = 0;
 		doesBiomeApply = false;
-		
+
 		for(int x = -distance; x <= distance; x++) {
 			for(int z = -distance; z <= distance; z++) {
 				BiomeGenBase biome = world.getBiomeGenForCoords(playerX + x,  playerZ + z);
@@ -473,7 +579,7 @@ public class ModEventHandlerRenderer {
 
 		fogX = playerX;
 		fogZ = playerZ;
-		
+
 		if(doesBiomeApply) {
 			fogRGBMultiplier = Vec3.createVectorHelper(r / divider, g / divider, b / divider);
 		} else {
@@ -482,25 +588,25 @@ public class ModEventHandlerRenderer {
 
 		return fogRGBMultiplier;
 	}
-	
+
 	/** Returns the current biome's fog color adjusted for brightness if in a crater, or the world's cached fog color if not */
 	public static Vec3 getBiomeFogColors(World world, BiomeGenBase biome, float r, float g, float b, double partialTicks) {
-		
+
 		if(biome instanceof BiomeGenCraterBase) {
 			int color = biome.getSkyColorByTemp(biome.temperature);
 			r = ((color & 0xff0000) >> 16) / 255F;
 			g = ((color & 0x00ff00) >> 8) / 255F;
 			b = (color & 0x0000ff) / 255F;
-			
+
 			float celestialAngle = world.getCelestialAngle((float) partialTicks);
 			float skyBrightness = MathHelper.clamp_float(MathHelper.cos(celestialAngle * (float) Math.PI * 2.0F) * 2.0F + 0.5F, 0F, 1F);
 			r *= skyBrightness;
 			g *= skyBrightness;
 			b *= skyBrightness;
-			
+
 			doesBiomeApply = true;
 		}
-		
+
 		return Vec3.createVectorHelper(r, g, b);
 	}
 }

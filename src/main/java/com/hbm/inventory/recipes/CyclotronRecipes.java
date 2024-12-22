@@ -24,7 +24,7 @@ import com.hbm.util.Tuple.Pair;
 import net.minecraft.item.ItemStack;
 
 public class CyclotronRecipes extends SerializableRecipe {
-	
+
 	public static HashMap<Pair<ComparableStack, AStack>, Pair<ItemStack, Integer>> recipes = new HashMap();
 
 	@Override
@@ -46,7 +46,7 @@ public class CyclotronRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack("dustActinium"), new ItemStack(ModItems.powder_thorium), liA);
 		makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack(U.dust()), new ItemStack(ModItems.powder_neptunium), liA);
 		makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack(NP237.dust()), new ItemStack(ModItems.powder_plutonium), liA);
-		makeRecipe(new ComparableStack(ModItems.part_lithium), new ComparableStack(ModItems.powder_reiium), new ItemStack(ModItems.powder_weidanium), liA);
+		//makeRecipe(new ComparableStack(ModItems.part_lithium), new ComparableStack(ModItems.powder_reiium), new ItemStack(ModItems.powder_weidanium), liA);
 		/// LITHIUM END ///
 
 		/// BERYLLIUM START ///
@@ -59,9 +59,9 @@ public class CyclotronRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.part_beryllium), new ComparableStack(ModItems.powder_strontium), new ItemStack(ModItems.powder_niobium), beA);
 		makeRecipe(new ComparableStack(ModItems.part_beryllium), new ComparableStack(ModItems.powder_cerium), new ItemStack(ModItems.powder_neodymium), beA);
 		makeRecipe(new ComparableStack(ModItems.part_beryllium), new OreDictStack("dustThorium"), new ItemStack(ModItems.powder_uranium), beA);
-		makeRecipe(new ComparableStack(ModItems.part_beryllium), new ComparableStack(ModItems.powder_weidanium), new ItemStack(ModItems.powder_australium), beA);
+		//makeRecipe(new ComparableStack(ModItems.part_beryllium), new ComparableStack(ModItems.powder_weidanium), new ItemStack(ModItems.powder_australium), beA);
 		/// BERYLLIUM END ///
-		
+
 		/// CARBON START ///
 		int caA = 10;
 
@@ -73,12 +73,12 @@ public class CyclotronRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.part_carbon), new ComparableStack(ModItems.ingot_mercury), new ItemStack(ModItems.powder_polonium), caA);
 		makeRecipe(new ComparableStack(ModItems.part_carbon), new OreDictStack(PB.dust()), new ItemStack(ModItems.powder_ra226),caA);
 		makeRecipe(new ComparableStack(ModItems.part_carbon), new ComparableStack(ModItems.powder_astatine), new ItemStack(ModItems.powder_actinium), caA);
-		makeRecipe(new ComparableStack(ModItems.part_carbon), new ComparableStack(ModItems.powder_australium), new ItemStack(ModItems.powder_verticium), caA);
+		//makeRecipe(new ComparableStack(ModItems.part_carbon), new ComparableStack(ModItems.powder_australium), new ItemStack(ModItems.powder_verticium), caA);
 		/// CARBON END ///
-		
+
 		/// COPPER START ///
 		int coA = 15;
-		
+
 		makeRecipe(new ComparableStack(ModItems.part_copper), new OreDictStack("dustBeryllium"), new ItemStack(ModItems.powder_quartz), coA);
 		makeRecipe(new ComparableStack(ModItems.part_copper), new OreDictStack("dustCoal"), new ItemStack(ModItems.powder_bromine), coA);
 		makeRecipe(new ComparableStack(ModItems.part_copper), new OreDictStack("dustTitanium"), new ItemStack(ModItems.powder_strontium), coA);
@@ -89,12 +89,12 @@ public class CyclotronRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.part_copper), new ComparableStack(ModItems.powder_iodine), new ItemStack(ModItems.powder_polonium), coA);
 		makeRecipe(new ComparableStack(ModItems.part_copper), new ComparableStack(ModItems.powder_caesium), new ItemStack(ModItems.powder_actinium), coA);
 		makeRecipe(new ComparableStack(ModItems.part_copper), new OreDictStack("dustGold"), new ItemStack(ModItems.powder_uranium), coA);
-		makeRecipe(new ComparableStack(ModItems.part_copper), new ComparableStack(ModItems.powder_verticium), new ItemStack(ModItems.powder_unobtainium), coA);
+		//makeRecipe(new ComparableStack(ModItems.part_copper), new ComparableStack(ModItems.powder_verticium), new ItemStack(ModItems.powder_unobtainium), coA);
 		/// COPPER END ///
 
 		/// PLUTONIUM START ///
 		int plA = 100;
-		
+
 		makeRecipe(new ComparableStack(ModItems.part_plutonium), new OreDictStack("dustPhosphorus"), new ItemStack(ModItems.powder_tennessine), plA);
 		makeRecipe(new ComparableStack(ModItems.part_plutonium), new OreDictStack(PU.dust()), new ItemStack(ModItems.powder_tennessine), plA);
 		makeRecipe(new ComparableStack(ModItems.part_plutonium), new ComparableStack(ModItems.powder_tennessine), new ItemStack(ModItems.powder_reiium), plA);
@@ -102,64 +102,64 @@ public class CyclotronRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.part_plutonium), new ComparableStack(ModItems.powder_unobtainium), new ItemStack(ModItems.powder_daffergon), plA);
 		makeRecipe(new ComparableStack(ModItems.part_plutonium), new ComparableStack(ModItems.cell_antimatter), new ItemStack(ModItems.cell_anti_schrabidium), 0);
 		/// PLUTONIUM END ///
-		
+
 		///TODO: fictional elements
 		makeRecipe(new ComparableStack(ModBlocks.block_euphemium), new ComparableStack(ModBlocks.bf_log), new ItemStack(ModBlocks.eu_log), 0);
-		
+
 	}
-	
+
 	private static void makeRecipe(ComparableStack part, AStack in, ItemStack out, int amat) {
 		recipes.put(new Pair(part, in), new Pair(out, amat));
 	}
-	
+
 	public static Object[] getOutput(ItemStack stack, ItemStack box) {
-		
+
 		if(stack == null || stack.getItem() == null || box == null)
 			return null;
 
 		ComparableStack boxStack = new ComparableStack(box).makeSingular();
 		ComparableStack comp = new ComparableStack(stack).makeSingular();
-		
+
 		//boo hoo we iterate over a hash map, cry me a river
 		for(Entry<Pair<ComparableStack, AStack>, Pair<ItemStack, Integer>> entry : recipes.entrySet()) {
-			
+
 			if(entry.getKey().getKey().isApplicable(boxStack) && entry.getKey().getValue().isApplicable(comp)) {
 				return new Object[] { entry.getValue().getKey().copy(), entry.getValue().getValue() };
 			}
 		}
-		
+
 		//there's literally 0 reason why this doesn't work yet it refuses, fuck this
-		
+
 		/*Pair<ItemStack, Integer> output = recipes.get(new Pair(boxStack, comp));
-		
+
 		if(output != null) {
 			return new Object[] { output.getKey().copy(), output.getValue() };
 		}
-		
+
 		for(String name : ItemStackUtil.getOreDictNames(stack)) {
 			OreDictStack ods = new OreDictStack(name);
 			output = recipes.get(new Pair(new ComparableStack(ModItems.part_beryllium), new OreDictStack("dustCobalt")));
-			
+
 			if(output != null) {
 				return new Object[] { output.getKey().copy(), output.getValue() };
 			}
 		}*/
-		
+
 		return null;
 	}
-	
+
 	public static Map<Object[], Object> getRecipes() {
-		
+
 		Map<Object[], Object> map = new HashMap<Object[], Object>();
-		
+
 		for(Entry<Pair<ComparableStack, AStack>, Pair<ItemStack, Integer>> entry : recipes.entrySet()) {
 			List<ItemStack> stack = entry.getKey().getValue().extractForNEI();
-			
+
 			for(ItemStack ingredient : stack) {
 				map.put(new ItemStack[] { entry.getKey().getKey().toStack(), ingredient }, entry.getValue().getKey());
 			}
 		}
-		
+
 		return map;
 	}
 
@@ -182,7 +182,7 @@ public class CyclotronRecipes extends SerializableRecipe {
 		ItemStack partStack = this.readItemStack(particle);
 		AStack inStack = this.readAStack(input);
 		ItemStack outStack = this.readItemStack(output);
-		
+
 		this.recipes.put(new Pair(new ComparableStack(partStack), inStack),  new Pair(outStack, antimatter));
 	}
 
@@ -190,7 +190,7 @@ public class CyclotronRecipes extends SerializableRecipe {
 	public void writeRecipe(Object recipe, JsonWriter writer) throws IOException {
 		try{
 			Entry<Pair<ComparableStack, AStack>, Pair<ItemStack, Integer>> rec = (Entry<Pair<ComparableStack, AStack>, Pair<ItemStack, Integer>>) recipe;
-			
+
 			writer.name("particle");
 			this.writeItemStack(rec.getKey().getKey().toStack(), writer);
 			writer.name("input");
@@ -198,7 +198,7 @@ public class CyclotronRecipes extends SerializableRecipe {
 			writer.name("output");
 			this.writeItemStack(rec.getValue().getKey(), writer);
 			writer.name("antimatter").value(rec.getValue().getValue());
-			
+
 		} catch(Exception ex) {
 			MainRegistry.logger.error(ex);
 			ex.printStackTrace();

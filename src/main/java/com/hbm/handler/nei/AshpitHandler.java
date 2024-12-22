@@ -17,7 +17,7 @@ import net.minecraft.item.ItemStack;
 public class AshpitHandler extends NEIUniversalHandler {
 
 	public AshpitHandler() {
-		super("Ashpit", ModBlocks.machine_ashpit, getRecipes());
+		super(ModBlocks.machine_ashpit.getLocalizedName(), ModBlocks.machine_ashpit, getRecipes());
 	}
 
 	@Override
@@ -26,7 +26,7 @@ public class AshpitHandler extends NEIUniversalHandler {
 	}
 
 	public static HashMap getRecipes() {
-		
+
 		HashMap<Object, Object> recipes = new HashMap<Object, Object>();
 
 		ItemStack[] ovens = new ItemStack[] {new ItemStack(ModBlocks.heater_firebox), new ItemStack(ModBlocks.heater_oven)};
@@ -44,7 +44,7 @@ public class AshpitHandler extends NEIUniversalHandler {
 			recipes.put(new ItemStack[][] {chimneys, new ItemStack[] {ItemFluidIcon.make(smoke, 2_000)}}, DictFrame.fromOne(ModItems.powder_ash, EnumAshType.FLY));
 			recipes.put(new ItemStack[][] {new ItemStack[] {new ItemStack(ModBlocks.chimney_industrial)}, new ItemStack[] {ItemFluidIcon.make(smoke, 8_000)}}, DictFrame.fromOne(ModItems.powder_ash, EnumAshType.SOOT));
 		}
-		
+
 		return recipes;
 	}
 }

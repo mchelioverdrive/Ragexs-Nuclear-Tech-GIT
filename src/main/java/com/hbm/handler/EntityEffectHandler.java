@@ -30,6 +30,7 @@ import com.hbm.packet.toclient.ExtPropPacket;
 import com.hbm.potion.HbmPotion;
 import com.hbm.saveddata.AuxSavedData;
 import com.hbm.util.ArmorRegistry;
+import com.hbm.particle.helper.FlameCreator;
 import com.hbm.util.ArmorUtil;
 import com.hbm.util.ContaminationUtil;
 import com.hbm.util.ArmorRegistry.HazardClass;
@@ -54,6 +55,7 @@ import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
+import net.minecraft.util.DamageSource;
 import net.minecraft.world.biome.BiomeGenBase;
 
 public class EntityEffectHandler {
@@ -624,34 +626,34 @@ public class EntityEffectHandler {
 		if(entity.worldObj.isRemote) return;
 
 		EntityLivingBase living = (EntityLivingBase) entity;
-		int temp = HbmLivingProps.getTemperature(living);
+		HbmLivingProps props = HbmLivingProps.getData(living);
+		Random rand = living.getRNG();
 
-		if(temp < 0) HbmLivingProps.setTemperature(living, temp + Math.min(-temp, 5));
-		if(temp > 0) HbmLivingProps.setTemperature(living, temp - Math.min(temp, 5));
+		if(!entity.isEntityAlive()) return;
 
-		if(HbmLivingProps.isFrozen(living)) {
-			living.motionX = 0;
-			living.motionZ = 0;
-			living.motionY = Math.min(living.motionY, 0);
-
-			if(entity.ticksExisted % 5 == 0) {
-				NBTTagCompound nbt0 = new NBTTagCompound();
-				nbt0.setString("type", "sweat");
-				nbt0.setInteger("count", 1);
-				nbt0.setInteger("block", Block.getIdFromBlock(Blocks.snow));
-				nbt0.setInteger("entity", entity.getEntityId());
-				PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(nbt0, 0, 0, 0), new TargetPoint(entity.dimension, entity.posX, entity.posY, entity.posZ, 25));
-
-				if(entity instanceof EntityPlayerMP) {
-					NBTTagCompound nbt1 = new NBTTagCompound();
-					nbt1.setString("type", "frozen");
-					PacketDispatcher.wrapper.sendTo(new AuxParticlePacketNT(nbt1, 0, 0, 0), (EntityPlayerMP) entity);
-				}
-			}
+		if(living.isImmuneToFire()) {
+			props.fire = 0;
+			props.phosphorus = 0;
 		}
 
-		if(HbmLivingProps.isBurning(living)) {
-			living.setFire(1);
+		double x = living.posX;
+		double y = living.posY;
+		double z = living.posZ;
+
+		if(living.isInWater() || living.isWet()) props.fire = 0;
+
+		if(props.fire > 0) {
+			props.fire--;
+			if((living.ticksExisted + living.getEntityId()) % 15 == 0) living.worldObj.playSoundEffect(living.posX, living.posY + living.height / 2, living.posZ, "random.fizz", 1F, 1.5F + rand.nextFloat() * 0.5F);
+			if((living.ticksExisted + living.getEntityId()) % 40 == 0) living.attackEntityFrom(DamageSource.onFire, 2F);
+			FlameCreator.composeEffect(entity.worldObj, x - living.width / 2 + living.width * rand.nextDouble(), y + rand.nextDouble() * living.height, z - living.width / 2 + living.width * rand.nextDouble(), FlameCreator.META_FIRE);
+		}
+
+		if(props.phosphorus > 0) {
+			props.phosphorus--;
+			if((living.ticksExisted + living.getEntityId()) % 15 == 0) living.worldObj.playSoundEffect(living.posX, living.posY + living.height / 2, living.posZ, "random.fizz", 1F, 1.5F + rand.nextFloat() * 0.5F);
+			if((living.ticksExisted + living.getEntityId()) % 40 == 0) living.attackEntityFrom(DamageSource.onFire, 5F);
+			FlameCreator.composeEffect(entity.worldObj, x - living.width / 2 + living.width * rand.nextDouble(), y + rand.nextDouble() * living.height, z - living.width / 2 + living.width * rand.nextDouble(), FlameCreator.META_FIRE);
 		}
 	}
 

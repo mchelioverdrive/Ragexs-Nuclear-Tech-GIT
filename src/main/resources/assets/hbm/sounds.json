@@ -237,7 +237,8 @@
 	"weapon.explosionLargeFar": {"category": "player", "sounds": [{"name": "weapon/explosionLargeFar", "stream": false}]},
 	
 	"weapon.dFlash": {"category": "player", "sounds": [{"name": "weapon/dFlash", "stream": false}]},
-
+	"weapon.explosionSmallNear": {"category": "player", "sounds": ["weapon/explosionSmallNear1", "weapon/explosionSmallNear2", "weapon/explosionSmallNear3"]},
+    "weapon.explosionSmallFar": {"category": "player", "sounds": ["weapon/explosionSmallFar1", "weapon/explosionSmallFar2"]},
 	"weapon.reloadTurret": {"category": "player", "sounds": [{"name": "weapon/reloadTurret", "stream": false}]},
 	"weapon.switchmode1": {"category": "player", "sounds": [{"name": "weapon/switchmode1", "stream": false}]},
 	"weapon.switchmode2": {"category": "player", "sounds": [{"name": "weapon/switchmode2", "stream": false}]},

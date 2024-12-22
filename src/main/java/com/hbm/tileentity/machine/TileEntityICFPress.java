@@ -27,7 +27,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 
 public class TileEntityICFPress extends TileEntityMachineBase implements IFluidStandardReceiver, IGUIProvider, IFluidCopiable {
-	
+
 	public FluidTank[] tanks;
 	public int muon;
 	public static final int maxMuon = 16;
@@ -46,22 +46,22 @@ public class TileEntityICFPress extends TileEntityMachineBase implements IFluidS
 
 	@Override
 	public void updateEntity() {
-		
+
 		if(!worldObj.isRemote) {
 
 			this.tanks[0].setType(6, slots);
 			this.tanks[1].setType(7, slots);
-			
+
 			if(worldObj.getTotalWorldTime() % 20 == 0) {
 				this.subscribeToAllAround(tanks[0].getTankType(), this);
 				this.subscribeToAllAround(tanks[1].getTankType(), this);
 			}
-			
+
 			if(muon <= 0 && slots[2] != null && slots[2].getItem() == ModItems.particle_muon) {
-				
+
 				ItemStack container = slots[2].getItem().getContainerItem(slots[2]);
 				boolean canStore = false;
-				
+
 				if(container == null) {
 					canStore = true;
 				} else if(slots[3] == null) {
@@ -71,44 +71,44 @@ public class TileEntityICFPress extends TileEntityMachineBase implements IFluidS
 					slots[3].stackSize++;
 					canStore = true;
 				}
-				
+
 				if(canStore) {
 					this.muon = this.maxMuon;
 					this.decrStackSize(2, 1);
 					this.markDirty();
 				}
 			}
-			
+
 			press();
-			
+
 			this.networkPackNT(15);
 		}
 	}
-	
+
 	public void press() {
 		if(slots[0] == null || slots[0].getItem() != ModItems.icf_pellet_empty) return;
 		if(slots[1] != null) return;
-		
+
 		ItemICFPellet.init();
-		
+
 		EnumICFFuel fuel1 = getFuel(tanks[0], slots[4], 0);
 		EnumICFFuel fuel2 = getFuel(tanks[1], slots[5], 1);
-		
+
 		if(fuel1 == null || fuel2 == null || fuel1 == fuel2) return;
-		
+
 		slots[1] = ItemICFPellet.setup(fuel1, fuel2, muon > 0);
-		
+
 		if(muon > 0) muon--;
 
 		this.decrStackSize(0, 1);
 		if(usedFluid[0]) tanks[0].setFill(tanks[0].getFill() - 1000); else this.decrStackSize(4, 1);
 		if(usedFluid[1]) tanks[1].setFill(tanks[1].getFill() - 1000); else this.decrStackSize(5, 1);
-		
+
 		this.markChanged();
 	}
 
 	public static boolean[] usedFluid = new boolean[2];
-	
+
 	public EnumICFFuel getFuel(FluidTank tank, ItemStack slot, int index) {
 		usedFluid[index] = false;
 		if(tank.getFill() >= 1000 && ItemICFPellet.fluidMap.containsKey(tank.getTankType())) {
@@ -130,10 +130,10 @@ public class TileEntityICFPress extends TileEntityMachineBase implements IFluidS
 		tanks[0].serialize(buf);
 		tanks[1].serialize(buf);
 	}
-	
+
 	@Override public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		
+
 		this.muon = buf.readByte();
 		tanks[0].deserialize(buf);
 		tanks[1].deserialize(buf);
@@ -156,9 +156,9 @@ public class TileEntityICFPress extends TileEntityMachineBase implements IFluidS
 
 	@Override
 	public boolean canExtractItem(int slot, ItemStack itemStack, int side) {
-		return slot == 1;
+		return slot == 1 || slot == 3;
 	}
-	
+
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
@@ -166,7 +166,7 @@ public class TileEntityICFPress extends TileEntityMachineBase implements IFluidS
 		tanks[1].readFromNBT(nbt, "t1");
 		this.muon = nbt.getByte("muon");
 	}
-	
+
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);

@@ -19,87 +19,76 @@ import net.minecraft.world.World;
 
 public class ItemCanteen extends Item {
 
-	public ItemCanteen(int cooldown) {
-
-		//this.setMaxDamage(cooldown);
-	}
-
-	@Override
-	public void onUpdate(ItemStack stack, World world, Entity entity, int i, boolean b) {
-
-		//if(stack.getItemDamage() > 0 && entity.ticksExisted % 20 == 0)
-		//	stack.setItemDamage(stack.getItemDamage() - 1);
+	public ItemCanteen() {
+		// Constructor does not set any cooldown-related attributes.
 	}
 
 	@Override
 	public ItemStack onEaten(ItemStack stack, World world, EntityPlayer player) {
+		if (!world.isRemote) {
+			if (this == ModItems.canteen_vodka) {
+				player.heal(2F);
+				int intoxicationLevel = VersatileConfig.getIntoxicationLevel(player);
 
-		stack.setItemDamage(stack.getMaxDamage()); // Trigger cooldown.
+				// Effects scale with intoxication level
+				player.addPotionEffect(new PotionEffect(Potion.confusion.id, 40 * 20 + intoxicationLevel * 20, 1));
+				player.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 40 * 20 + intoxicationLevel * 10, 1));
+				player.addPotionEffect(new PotionEffect(Potion.hunger.id, 5 * 10, 0));
 
-		if (this == ModItems.canteen_vodka) {
-			player.heal(2F);
-			int intoxicationLevel = VersatileConfig.getIntoxicationLevel(player);
+				VersatileConfig.increaseIntoxication(player, 1); // Track intoxication level
+			}
+			if (this == ModItems.canteen_fab) {
+				player.heal(2F);
+				player.addPotionEffect(new PotionEffect(Potion.confusion.id, 120 * 20, 3));
+				player.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 20 * 20, 1));
+				player.addPotionEffect(new PotionEffect(Potion.hunger.id, 5 * 10, 0));
+			}
 
-			// Effects scale with intoxication level
-			player.addPotionEffect(new PotionEffect(Potion.confusion.id, 40 * 20 + intoxicationLevel * 20, 1));
-			player.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 40 * 20 + intoxicationLevel * 10, 1));
-			player.addPotionEffect(new PotionEffect(Potion.hunger.id, 5 * 10, 0));
+			// Optional: Apply potion sickness if you still want this mechanic
+			VersatileConfig.applyPotionSickness(player, 5);
 
-			VersatileConfig.increaseIntoxication(player, 1); // Track drinking level.
-		}
-
-		// Sobriety mechanic
-		VersatileConfig.applyPotionSickness(player, 5);
-
-		// Reduce durability
-		stack.setItemDamage(stack.getItemDamage() + 1);
-		if (stack.getItemDamage() >= stack.getMaxDamage()) {
-			stack.stackSize--; // Bottle becomes empty after all uses.
+			// Handle stack reduction
+			stack.setItemDamage(stack.getItemDamage() + 1);
+			if (stack.getItemDamage() >= stack.getMaxDamage()) {
+				stack.stackSize--; // Bottle becomes empty
+			}
 		}
 
 		return stack;
-	}
-
-	@Override
-	public int getMaxItemUseDuration(ItemStack p_77626_1_) {
-		return 10;
-	}
-
-	@Override
-	public EnumAction getItemUseAction(ItemStack p_77661_1_) {
-		return EnumAction.drink;
 	}
 
 	@Override
 	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
-		if (stack.getItemDamage() == 0 && !VersatileConfig.hasPotionSickness(player))
-			player.setItemInUse(stack, this.getMaxItemUseDuration(stack));
-
+		// Allow drinking unconditionally
+		player.setItemInUse(stack, this.getMaxItemUseDuration(stack));
 		return stack;
 	}
 
-    @Override
+	@Override
+	public int getMaxItemUseDuration(ItemStack stack) {
+		return 10; // Duration of the drinking action
+	}
+
+	@Override
+	public EnumAction getItemUseAction(ItemStack stack) {
+		return EnumAction.drink; // Drinking animation
+	}
+
+	@Override
 	@SideOnly(Side.CLIENT)
-    public void addInformation(ItemStack p_77624_1_, EntityPlayer p_77624_2_, List list, boolean p_77624_4_)
-    {
-    	if(this == ModItems.canteen_vodka)
-    	{
-			list.add("Cooldown: 3 minutes");
+	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean advanced) {
+		if (this == ModItems.canteen_vodka) {
 			list.add("Coping with pain using shitty substances.");
-			list.add("May help you cope");
+			list.add("May help you cope.");
 			list.add("");
-
-    		if(MainRegistry.polaroidID == 11)
-    			//list.add("Why sipp when you can succ?");
-				list.add("Well I'm not gonna stop you, it's *your* drinking problem");
-    		else
-    			list.add("In soviet russia, vodka drinks you haha guys, please upvote my post!!!");
-    	}
-    	if(this == ModItems.canteen_fab)
-    	{
-			list.add("Cooldown: 2 minutes");
-			list.add("Fun fact for all you gigachads out there, alcohol has estrogenic properties");
-    	}
-    }
-
+			if (MainRegistry.polaroidID == 11) {
+				list.add("Well, I'm not gonna stop you, it's *your* drinking problem.");
+			} else {
+				list.add("In Soviet Russia, vodka drinks you. Haha guys, please upvote my post!");
+			}
+		}
+		if (this == ModItems.canteen_fab) {
+			list.add("Fun fact for all you gigachads out there, alcohol has estrogenic properties.");
+		}
+	}
 }

@@ -15,14 +15,14 @@ import net.minecraft.item.ItemStack;
 public class ArcWelderHandler extends NEIUniversalHandler {
 
 	public ArcWelderHandler() {
-		super("Arc Welder", ModBlocks.machine_arc_welder, ArcWelderRecipes.getRecipes());
+		super(ModBlocks.machine_arc_welder.getLocalizedName(), ModBlocks.machine_arc_welder, ArcWelderRecipes.getRecipes());
 	}
 
 	@Override
 	public String getKey() {
 		return "ntmArcWelder";
 	}
-	
+
 	@Override
 	public void loadTransferRects() {
 		super.loadTransferRects();
@@ -37,12 +37,12 @@ public class ArcWelderHandler extends NEIUniversalHandler {
 		RecipeSet rec = (RecipeSet) this.arecipes.get(recipe);
 		Object[] original = (Object[]) rec.originalInputInstance;
 		ItemStack output = rec.output[0].item;
-		
+
 		outer: for(ArcWelderRecipe arc : ArcWelderRecipes.recipes) {
-			
+
 			//checks do not include the fluid, will break of there's two recipes with identical input and output but with fluids
 			if(ItemStack.areItemStacksEqual(arc.output, output) && arc.ingredients.length == original.length - (arc.fluid == null ? 0 : 1)) {
-				
+
 				for(int i = 0; i < rec.input.length - (arc.fluid == null ? 0 : 1); i++) {
 					if(arc.ingredients[i] != original[i]) continue outer;
 				}

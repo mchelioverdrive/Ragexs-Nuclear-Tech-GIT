@@ -14,12 +14,13 @@ import org.lwjgl.opengl.GL11;
 import com.hbm.blocks.ILookOverlay;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.generic.BlockAshes;
+import com.hbm.config.ClientConfig;
 import com.hbm.config.GeneralConfig;
 import com.hbm.config.SpaceConfig;
 import com.hbm.dim.SkyProviderCelestial;
 import com.hbm.dim.WorldProviderCelestial;
 import com.hbm.dim.orbit.WorldProviderOrbit;
-//import com.hbm.entity.mob.EntityHunterChopper;
+
 import com.hbm.entity.projectile.EntityChopperMine;
 import com.hbm.entity.train.EntityRailCarRidable;
 import com.hbm.extprop.HbmLivingProps;
@@ -30,6 +31,7 @@ import com.hbm.handler.HTTPHandler;
 import com.hbm.handler.HazmatRegistry;
 import com.hbm.handler.HbmKeybinds;
 import com.hbm.handler.ImpactWorldHandler;
+import com.hbm.handler.HbmKeybinds.EnumKeybind;
 import com.hbm.hazard.HazardRegistry;
 import com.hbm.hazard.HazardSystem;
 import com.hbm.hazard.type.HazardTypeNeutron;
@@ -50,6 +52,7 @@ import com.hbm.items.machine.ItemDepletedFuel;
 import com.hbm.items.machine.ItemFluidDuct;
 import com.hbm.items.machine.ItemRBMKPellet;
 import com.hbm.items.weapon.ItemGunBase;
+import com.hbm.items.weapon.sedna.GunConfig;
 import com.hbm.items.weapon.sedna.ItemGunBaseNT;
 import com.hbm.lib.Library;
 import com.hbm.lib.RefStrings;
@@ -57,16 +60,18 @@ import com.hbm.packet.PacketDispatcher;
 import com.hbm.potion.HbmPotion;
 import com.hbm.packet.toserver.AuxButtonPacket;
 import com.hbm.packet.toserver.GunButtonPacket;
+import com.hbm.packet.toserver.KeybindPacket;
 import com.hbm.render.anim.HbmAnimations;
 import com.hbm.render.anim.HbmAnimations.Animation;
 import com.hbm.render.block.ct.CTStitchReceiver;
+import com.hbm.render.item.weapon.sedna.ItemRenderWeaponBase;
 import com.hbm.render.util.RenderAccessoryUtility;
 import com.hbm.render.util.RenderOverhead;
 import com.hbm.render.util.RenderScreenOverlay;
 import com.hbm.render.util.SoyuzPronter;
-//import com.hbm.sound.MovingSoundChopper;
+import com.hbm.sound.MovingSoundChopper;
 import com.hbm.sound.MovingSoundChopperMine;
-//import com.hbm.sound.MovingSoundCrashing;
+import com.hbm.sound.MovingSoundCrashing;
 import com.hbm.sound.MovingSoundPlayerLoop;
 import com.hbm.tileentity.bomb.TileEntityNukeCustom;
 import com.hbm.tileentity.bomb.TileEntityNukeCustom.CustomNukeEntry;
@@ -81,6 +86,7 @@ import com.hbm.wiaj.cannery.CanneryBase;
 import com.hbm.wiaj.cannery.Jars;
 import com.hbm.util.ArmorRegistry;
 import com.hbm.util.ArmorUtil;
+//import com.hbm.util.DamageResistanceHandler;
 import com.hbm.util.ArmorRegistry.HazardClass;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture.Type;
 
@@ -137,7 +143,9 @@ import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProvider;
 import net.minecraftforge.client.GuiIngameForge;
+import net.minecraftforge.client.IItemRenderer;
 import net.minecraftforge.client.IRenderHandler;
+import net.minecraftforge.client.MinecraftForgeClient;
 import net.minecraftforge.client.event.FOVUpdateEvent;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.MouseEvent;
@@ -166,7 +174,7 @@ public class ModEventHandlerClient {
 		EntityPlayer player = Minecraft.getMinecraft().thePlayer;
 
 		/// NUKE FLASH ///
-		if(event.type == ElementType.CROSSHAIRS && (flashTimestamp + flashDuration - System.currentTimeMillis()) > 0) {
+		if(event.type == ElementType.CROSSHAIRS && (flashTimestamp + flashDuration - System.currentTimeMillis()) > 0 && ClientConfig.NUKE_HUD_FLASH.get()) {
 			int width = event.resolution.getScaledWidth();
 			int height = event.resolution.getScaledHeight();
 			Tessellator tess = Tessellator.instance;
@@ -211,7 +219,7 @@ public class ModEventHandlerClient {
 
 
 		/// DODD DIAG HOOK FOR RBMK
-		if(event.type == ElementType.CROSSHAIRS) {
+		if(event.type == ElementType.CROSSHAIRS && ClientConfig.DODD_RBMK_DIAGNOSTIC.get()) {
 			Minecraft mc = Minecraft.getMinecraft();
 			World world = mc.theWorld;
 			MovingObjectPosition mop = mc.objectMouseOver;
@@ -329,7 +337,7 @@ public class ModEventHandlerClient {
 			}*/
 		}
 
-		/// HANLDE ANIMATION BUSES ///
+		/// HANDLE ANIMATION BUSES ///
 
 		for(int i = 0; i < HbmAnimations.hotbar.length; i++) {
 
@@ -831,18 +839,21 @@ public class ModEventHandlerClient {
 
 		/// CUSTOM NUKE ///
 		ComparableStack comp = new ComparableStack(stack).makeSingular();
-		CustomNukeEntry entry = TileEntityNukeCustom.entries.get(comp);
 
-		if(entry != null) {
+		if(ClientConfig.ITEM_TOOLTIP_SHOW_CUSTOM_NUKE.get()) {
+			CustomNukeEntry entry = TileEntityNukeCustom.entries.get(comp);
 
-			if(!list.isEmpty())
-				list.add("");
+			if (entry != null) {
 
-			if(entry.entry == EnumEntryType.ADD)
-				list.add(EnumChatFormatting.GOLD + "Adds " + entry.value + " to the custom nuke stage " + entry.type);
+				if (!list.isEmpty())
+					list.add("");
 
-			if(entry.entry == EnumEntryType.MULT)
-				list.add(EnumChatFormatting.GOLD + "Adds multiplier " + entry.value + " to the custom nuke stage " + entry.type);
+				if (entry.entry == EnumEntryType.ADD)
+					list.add(EnumChatFormatting.GOLD + "Adds " + entry.value + " to the custom nuke stage " + entry.type);
+
+				if (entry.entry == EnumEntryType.MULT)
+					list.add(EnumChatFormatting.GOLD + "Adds multiplier " + entry.value + " to the custom nuke stage " + entry.type);
+			}
 		}
 
 		try {
@@ -982,7 +993,7 @@ public class ModEventHandlerClient {
 			}
 		}
 
-		if(Keyboard.isKeyDown(Keyboard.KEY_F1)) {
+		if(Keyboard.isKeyDown(Keyboard.KEY_F1) && Minecraft.getMinecraft().currentScreen != null) {
 
 			ComparableStack comp = canneryTimestamp > System.currentTimeMillis() - 100 ? lastCannery : null;
 
@@ -1047,9 +1058,10 @@ public class ModEventHandlerClient {
 		} else {
 			isRenderingItems = false;
 		}
+		EntityPlayer player = mc.thePlayer;
 
 		if(event.phase == Phase.START) {
-			EntityPlayer player = mc.thePlayer;
+
 
 			float discriminator = 0.003F;
 			float defaultStepSize = 0.5F;
@@ -1115,25 +1127,23 @@ public class ModEventHandlerClient {
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onClientTickLast(ClientTickEvent event) {
 
-		if(event.phase == Phase.START && GeneralConfig.enableSkyboxes) {
+		if(event.phase == Phase.START) {
 
-			World world = Minecraft.getMinecraft().theWorld;
-			if(world == null) return;
+			//World world = Minecraft.getMinecraft().theWorld;
+			//if(world == null) return;
 
-			IRenderHandler sky = world.provider.getSkyRenderer();
+			Minecraft mc = Minecraft.getMinecraft();
 
-			// if(world.provider instanceof WorldProviderSurface) {
-			// 	if(!(sky instanceof RenderNTMSkyboxImpact)) {
-			// 		world.provider.setSkyRenderer(new RenderNTMSkyboxImpact());
-			// 		return;
-			// 	}
-			// }
+			if(mc.currentScreen != null && mc.currentScreen.allowUserInput) {
+				HbmPlayerProps props = HbmPlayerProps.getData(MainRegistry.proxy.me());
 
-			// Since we aren't just adding a star or two, we can't employ the chainloader,
-			// sorry, no custom skyboxes for SHPAYCE!
-			if(world.provider.dimensionId == 0) {
-				if(!(sky instanceof SkyProviderCelestial)) {
-					world.provider.setSkyRenderer(new SkyProviderCelestial());
+				for(EnumKeybind key : EnumKeybind.values()) {
+					boolean last = props.getKeyPressed(key);
+
+					if(last) {
+						PacketDispatcher.wrapper.sendToServer(new KeybindPacket(key, !last));
+						props.setKeyPressed(key, !last);
+					}
 				}
 			}
 		}
@@ -1345,6 +1355,7 @@ public class ModEventHandlerClient {
 
 
 	public static IIcon particleSplash;
+	public static IIcon particleAshes;
 
 	@SubscribeEvent
 	public void onTextureStitch(TextureStitchEvent.Pre event) {
@@ -1356,6 +1367,7 @@ public class ModEventHandlerClient {
 			particleLen = event.map.registerIcon(RefStrings.MODID + ":particle/particlenote1");
 
 			particleSplash = event.map.registerIcon(RefStrings.MODID + ":particle/particle_splash");
+			particleAshes = event.map.registerIcon(RefStrings.MODID + ":particle/particle_ashes");
 		}
 	}
 
@@ -1431,8 +1443,9 @@ public class ModEventHandlerClient {
 	@SubscribeEvent
 	public void onOpenGUI(GuiOpenEvent event) {
 
-		if(event.gui instanceof GuiMainMenu) {
+		if(event.gui instanceof GuiMainMenu && ClientConfig.MAIN_MENU_WACKY_SPLASHES.get()) {
 			GuiMainMenu main = (GuiMainMenu) event.gui;
+			//your mom vs your dad
 			//int rand = (int)(Math.random() * 150);
 //
 			//switch(rand) {

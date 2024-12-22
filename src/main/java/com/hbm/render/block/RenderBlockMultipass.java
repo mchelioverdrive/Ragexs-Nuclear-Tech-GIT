@@ -35,14 +35,14 @@ public class RenderBlockMultipass implements ISimpleBlockRenderingHandler {
 
 	@Override
 	public void renderInventoryBlock(Block block, int metadata, int modelId, RenderBlocks renderer) {
-		
+
 		Tessellator tessellator = Tessellator.instance;
 		block.setBlockBoundsForItemRender();
 		renderer.setRenderBoundsFromBlock(block);
 		GL11.glRotatef(90.0F, 0.0F, 1.0F, 0.0F);
 		GL11.glTranslatef(-0.5F, -0.5F, -0.5F);
 		IBlockMultiPass multi = (IBlockMultiPass) block;
-		
+
 		for(int i = 0; i < (multi.shouldRenderItemMulti() ? multi.getPasses() : 1); i++) {
 			currentPass = i;
 			tessellator.startDrawingQuads();
@@ -75,7 +75,7 @@ public class RenderBlockMultipass implements ISimpleBlockRenderingHandler {
 			renderer.renderFaceXPos(block, 0.0D, 0.0D, 0.0D, renderer.getBlockIconFromSideAndMetadata(block, 5, metadata));
 			tessellator.draw();
 		}
-		
+
 		/** terrible hack to make this shit work */
 		if(block == ModBlocks.ore_random) {
 
@@ -85,22 +85,22 @@ public class RenderBlockMultipass implements ISimpleBlockRenderingHandler {
 			ComparableStack stack = BlockMotherOfAllOres.itemMap.get(metadata);
 			int color = ColorUtil.getAverageColorFromStack(stack != null ? stack.toStack() : new ItemStack(ModItems.nothing));
 			color = ColorUtil.amplifyColor(color);
-			
+
 			Color col = new Color(color);
 			int r = col.getRed();
 			int g = col.getGreen();
 			int b = col.getBlue();
-			
+
 			float[] hsb = new Color(color).RGBtoHSB(r, g, b, new float[3]);
-			
+
 			if(hsb[1] > 0F && hsb[1] < 0.75F)
 				hsb[1] = 0.75F;
-			
+
 			color = Color.HSBtoRGB(hsb[0], hsb[1], hsb[2]);
 			col = new Color(color);
-			
+
 			GL11.glColor3f(col.getRed() / 255F, col.getGreen() / 255F, col.getBlue() / 255F);
-			
+
 			tessellator.startDrawingQuads();
 			tessellator.setNormal(0.0F, -1.0F, 0.0F);
 			renderer.renderFaceYNeg(block, 0.0D, 0.0D, 0.0D, renderer.getBlockIconFromSideAndMetadata(block, 0, metadata));
@@ -130,11 +130,11 @@ public class RenderBlockMultipass implements ISimpleBlockRenderingHandler {
 			tessellator.setNormal(1.0F, 0.0F, 0.0F);
 			renderer.renderFaceXPos(block, 0.0D, 0.0D, 0.0D, renderer.getBlockIconFromSideAndMetadata(block, 5, metadata));
 			tessellator.draw();
-			
+
 			renderer.clearOverrideBlockTexture();
 			GL11.glColor3f(1F, 1F, 1F);
 		}
-		
+
 		GL11.glTranslatef(0.5F, 0.5F, 0.5F);
 	}
 
@@ -144,22 +144,22 @@ public class RenderBlockMultipass implements ISimpleBlockRenderingHandler {
 		Tessellator tessellator = Tessellator.instance;
 
 		tessellator.setBrightness(block.getMixedBrightnessForBlock(world, x, y, z));
-		
+
 		if(!(block instanceof IBlockMultiPass)) {
 			renderer.renderStandardBlock(block, x, y, z);
 			return true;
 		}
-		
+
 		IBlockMultiPass multi = (IBlockMultiPass) block;
 		renderer.setRenderBounds(0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
-		
+
 		int passes = multi.getPasses();
-		
+
 		for(int i = 0; i < passes; i++) {
 			currentPass = i;
 			renderer.renderStandardBlock(block, x, y, z);
 		}
-		
+
 		currentPass = 0;
 
 		return true;

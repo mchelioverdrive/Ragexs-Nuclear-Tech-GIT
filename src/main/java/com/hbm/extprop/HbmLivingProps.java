@@ -54,6 +54,10 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 	private int oxygen = 100;
 	private boolean frozen = false;
 	private boolean burning = false;
+	public int fire;
+	public int phosphorus;
+	public int balefire;
+
 	private List<ContaminationEffect> contamination = new ArrayList();
 	private CBT_Atmosphere atmosphere;
 	private boolean gravity = false;
@@ -352,11 +356,13 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 		return getData(entity).atmosphere;
 	}
 
+
 	public static void setAtmosphere(EntityLivingBase entity, CBT_Atmosphere atmosphere) {
 		HbmLivingProps data = getData(entity);
 		data.atmosphere = atmosphere;
 		data.gravity = atmosphere != null;
 	}
+
 
 	// and gravity (attached to atmospheres, for now)
 	public static boolean hasGravity(EntityLivingBase entity) {
@@ -381,6 +387,9 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 		props.setInteger("hfr_oxygen", oxygen);
 		props.setFloat("hfr_activation", activation);
 		props.setBoolean("hfr_gravity", gravity);
+		props.setInteger("hfr_fire", fire);
+		props.setInteger("hfr_phosphorus", phosphorus);
+		props.setInteger("hfr_balefire", balefire);
 
 		props.setInteger("hfr_cont_count", this.contamination.size());
 
@@ -407,6 +416,9 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 			activation = props.getFloat("hfr_activation");
 			oxygen = props.getInteger("hfr_oxygen");
 			gravity = props.getBoolean("hfr_gravity");
+			fire = props.getInteger("hfr_fire");
+			phosphorus = props.getInteger("hfr_phosphorus");
+			balefire = props.getInteger("hfr_balefire");
 
 			int cont = props.getInteger("hfr_cont_count");
 

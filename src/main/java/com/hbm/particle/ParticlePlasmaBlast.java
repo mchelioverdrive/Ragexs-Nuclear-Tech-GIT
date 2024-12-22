@@ -2,6 +2,7 @@ package com.hbm.particle;
 
 import org.lwjgl.opengl.GL11;
 
+
 import com.hbm.lib.RefStrings;
 
 import cpw.mods.fml.relauncher.Side;
@@ -12,6 +13,7 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
+import net.minecraft.client.renderer.OpenGlHelper;
 
 @SideOnly(Side.CLIENT)
 public class ParticlePlasmaBlast extends EntityFX {
@@ -29,11 +31,11 @@ public class ParticlePlasmaBlast extends EntityFX {
 		this.rotationPitch = pitch;
 		this.rotationYaw = yaw;
 	}
-	
+
 	public void setMaxAge(int maxAge) {
 		this.particleMaxAge = maxAge;
 	}
-	
+
 	public void setScale(float scale) {
 		this.particleScale = scale;
 	}
@@ -43,7 +45,7 @@ public class ParticlePlasmaBlast extends EntityFX {
 	}
 
 	public void renderParticle(Tessellator tess, float interp, float x, float y, float z, float tx, float tz) {
-		
+
 		this.theRenderEngine.bindTexture(texture);
 
 		GL11.glPushMatrix();
@@ -54,10 +56,10 @@ public class ParticlePlasmaBlast extends EntityFX {
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
 		GL11.glDisable(GL11.GL_CULL_FACE);
 		RenderHelper.disableStandardItemLighting();
-		
+
 		boolean fog = GL11.glIsEnabled(GL11.GL_FOG);
 		if(fog) GL11.glDisable(GL11.GL_FOG);
-		
+
 		float pX = (float) (this.prevPosX + (this.posX - this.prevPosX) * (double)interp - interpPosX);
 		float pY = (float) (this.prevPosY + (this.posY - this.prevPosY) * (double)interp - interpPosY);
 		float pZ = (float) (this.prevPosZ + (this.posZ - this.prevPosZ) * (double)interp - interpPosZ);
@@ -65,17 +67,17 @@ public class ParticlePlasmaBlast extends EntityFX {
 		GL11.glTranslatef(pX, pY, pZ);
 		GL11.glRotated(this.rotationYaw, 0, 1, 0);
 		GL11.glRotated(this.rotationPitch, 1, 0, 0);
-			
+
 		tess.startDrawingQuads();
-		
+
 		tess.setNormal(0.0F, 1.0F, 0.0F);
 		tess.setBrightness(240);
-		
+
 		this.particleAlpha = 1 - (((float)this.particleAge + interp) / (float)this.particleMaxAge);
 		float scale = (1 - (float)Math.pow(Math.E, (this.particleAge + interp) * -0.125)) * this.particleScale;
-		
+
 		tess.setColorRGBA_F(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha);
-		
+
 		tess.addVertexWithUV((double)(- 1 * scale), (double)(- 0.25), (double)(- 1 * scale), 1, 1);
 		tess.addVertexWithUV((double)(- 1 * scale), (double)(- 0.25), (double)(+ 1 * scale), 1, 0);
 		tess.addVertexWithUV((double)(+ 1 * scale), (double)(- 0.25), (double)(+ 1 * scale), 0, 0);
@@ -87,6 +89,7 @@ public class ParticlePlasmaBlast extends EntityFX {
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		GL11.glAlphaFunc(GL11.GL_GREATER, 0.1F);
 		GL11.glEnable(GL11.GL_LIGHTING);
+		OpenGlHelper.glBlendFunc(770, 771, 1, 0);
 		GL11.glPopMatrix();
 	}
 }

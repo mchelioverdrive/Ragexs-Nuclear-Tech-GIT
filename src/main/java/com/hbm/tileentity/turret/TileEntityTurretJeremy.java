@@ -27,7 +27,7 @@ public class TileEntityTurretJeremy extends TileEntityTurretBaseNT {
 		configs.add(BulletConfigSyncingUtil.SHELL_EXPLOSIVE);
 		//configs.add(BulletConfigSyncingUtil.SHELL_AP);
 		//configs.add(BulletConfigSyncingUtil.SHELL_DU);
-		configs.add(BulletConfigSyncingUtil.SHELL_W9);
+		//configs.add(BulletConfigSyncingUtil.SHELL_W9);
 	}
 
 	@Override

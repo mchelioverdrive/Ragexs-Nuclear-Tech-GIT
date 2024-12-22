@@ -9,14 +9,14 @@ import com.hbm.inventory.recipes.PyroOvenRecipes;
 public class PyroHandler extends NEIUniversalHandler {
 
 	public PyroHandler() {
-		super("Pyrolysis", ModBlocks.machine_pyrooven, PyroOvenRecipes.getRecipes());
+		super(ModBlocks.machine_pyrooven.getLocalizedName(), ModBlocks.machine_pyrooven, PyroOvenRecipes.getRecipes());
 	}
 
 	@Override
 	public String getKey() {
 		return "ntmPyrolysis";
 	}
-	
+
 	@Override
 	public void loadTransferRects() {
 		super.loadTransferRects();

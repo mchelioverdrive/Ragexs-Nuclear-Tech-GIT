@@ -403,6 +403,9 @@ public class ResourceManager {
 	//Radiolysis
 	public static final IModelCustom radiolysis = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/radiolysis.obj"));
 
+	//RotaryFurnace
+	public static final IModelCustom rotary_furnace = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/rotary_furnace.obj")).asVBO();
+
 	//Electrolyser
 	public static final IModelCustom electrolyser = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/electrolyser.obj"));
 
@@ -416,6 +419,7 @@ public class ResourceManager {
 	public static final IModelCustom telex = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/machines/telex.obj"));
 
 	////Textures TEs
+	public static final ResourceLocation rotary_furnace_tex = new ResourceLocation(RefStrings.MODID, "textures/models/machines/rotary_furnace.png");
 
 	public static final ResourceLocation universal = new ResourceLocation(RefStrings.MODID, "textures/models/TheGadget3_.png");
 	public static final ResourceLocation universal_bright = new ResourceLocation(RefStrings.MODID, "textures/models/turbofan_blades.png");

@@ -25,25 +25,25 @@ import java.util.List;
 import java.util.Random;
 
 public class FalloutConfigJSON {
-	
+
 	public static final List<FalloutEntry> entries = new ArrayList();
 	public static Random rand = new Random();
 
 	public static final Gson gson = new Gson();
-	
+
 	public static void initialize() {
 		File folder = MainRegistry.configHbmDir;
 
 		File config = new File(folder.getAbsolutePath() + File.separatorChar + "hbmFallout.json");
 		File template = new File(folder.getAbsolutePath() + File.separatorChar + "_hbmFallout.json");
-		
+
 		initDefault();
-		
+
 		if(!config.exists()) {
 			writeDefault(template);
 		} else {
 			List<FalloutEntry> conf = readConfig(config);
-			
+
 			if(conf != null) {
 				entries.clear();
 				entries.addAll(conf);
@@ -52,9 +52,9 @@ public class FalloutConfigJSON {
 	}
 
 	private static void initDefault() {
-		
+
 		double woodEffectRange = 65D;
-		
+
 		/* petrify all wooden things possible */
 		entries.add(new FalloutEntry()	.mB(Blocks.log)							.prim(new Triplet(ModBlocks.waste_log, 0, 1))		.max(woodEffectRange));
 		entries.add(new FalloutEntry()	.mB(Blocks.log2)						.prim(new Triplet(ModBlocks.waste_log, 0, 1))		.max(woodEffectRange));
@@ -62,6 +62,7 @@ public class FalloutConfigJSON {
 		entries.add(new FalloutEntry()	.mB(Blocks.brown_mushroom_block).mM(10)	.prim(new Triplet(ModBlocks.waste_log, 0, 1))		.max(woodEffectRange));
 		entries.add(new FalloutEntry()	.mB(Blocks.red_mushroom_block)			.prim(new Triplet(Blocks.air, 0, 1))				.max(woodEffectRange));
 		entries.add(new FalloutEntry()	.mB(Blocks.brown_mushroom_block)		.prim(new Triplet(Blocks.air, 0, 1))				.max(woodEffectRange));
+		entries.add(new FalloutEntry() .mB(Blocks.snow_layer) .prim(new Triplet(Blocks.air, 0, 1)) .max(woodEffectRange));
 		entries.add(new FalloutEntry()	.mB(Blocks.planks)						.prim(new Triplet(ModBlocks.waste_planks, 0, 1))	.max(woodEffectRange));
 		/* if it can't be petrified, destroy it */
 		entries.add(new FalloutEntry()	.mMa(Material.wood)						.prim(new Triplet(Blocks.air, 0, 1))				.max(woodEffectRange));
@@ -75,10 +76,10 @@ public class FalloutConfigJSON {
 
 		entries.add(new FalloutEntry().mB(Blocks.mossy_cobblestone).prim(new Triplet(Blocks.coal_ore, 0, 1)));
 		entries.add(new FalloutEntry().mB(ModBlocks.ore_nether_uranium).prim(new Triplet(ModBlocks.ore_nether_schrabidium, 0, 1), new Triplet(ModBlocks.ore_nether_uranium_scorched, 0, 99)));
-		
+
 		Block deepslate = Compat.tryLoadBlock(Compat.MOD_EF, "deepslate");
 		Block stone = Compat.tryLoadBlock(Compat.MOD_EF, "stone");
-		
+
 		for(int i = 1; i <= 10; i++) {
 			int m = 10 - i;
 			entries.add(new FalloutEntry().prim(new Triplet(ModBlocks.ore_sellafield_diamond, m, 3),		new Triplet(ModBlocks.ore_sellafield_emerald, m, 2))			.c(0.5)		.max(i * 5).sol(true).mB(Blocks.coal_ore));
@@ -99,7 +100,7 @@ public class FalloutConfigJSON {
 			if(deepslate != null)	entries.add(new FalloutEntry()	.prim(new Triplet(ModBlocks.sellafield_slaked, m, 1)).max(i * 5).sol(true).mB(deepslate));
 			if(stone != null)		entries.add(new FalloutEntry()	.prim(new Triplet(ModBlocks.sellafield_slaked, m, 1)).max(i * 5).sol(true).mB(stone));
 		}
-		
+
 		entries.add(new FalloutEntry()
 				.mB(Blocks.mycelium)
 				.prim(new Triplet(ModBlocks.waste_mycelium, 0, 1)));
@@ -115,7 +116,7 @@ public class FalloutConfigJSON {
 				.mB(Blocks.clay)
 				.prim(new Triplet(Blocks.hardened_clay, 0, 1)));
 	}
-	
+
 	private static void writeDefault(File file) {
 
 		try {
@@ -123,13 +124,13 @@ public class FalloutConfigJSON {
 			writer.setIndent("  ");					//pretty formatting
 			writer.beginObject();					//initial '{'
 			writer.name("entries").beginArray();	//all recipes are stored in an array called "entries"
-			
+
 			for(FalloutEntry entry : entries) {
 				writer.beginObject();				//begin object for a single recipe
 				entry.write(writer);				//serialize here
 				writer.endObject();					//end recipe object
 			}
-			
+
 			writer.endArray();						//end recipe array
 			writer.endObject();						//final '}'
 			writer.close();
@@ -137,23 +138,23 @@ public class FalloutConfigJSON {
 			e.printStackTrace();
 		}
 	}
-	
+
 	private static List<FalloutEntry> readConfig(File config) {
-		
+
 		try {
 			JsonObject json = gson.fromJson(new FileReader(config), JsonObject.class);
 			JsonArray recipes = json.get("entries").getAsJsonArray();
 			List<FalloutEntry> conf = new ArrayList();
-			
+
 			for(JsonElement recipe : recipes) {
 				conf.add(FalloutEntry.readEntry(recipe));
 			}
 			return conf;
-			
+
 		} catch(Exception ex) {
 			ex.printStackTrace();
 		}
-		
+
 		return null;
 	}
 
@@ -170,10 +171,10 @@ public class FalloutConfigJSON {
 		private double minDist = 0.0D;
 		private double maxDist = 100.0D;
 		private double falloffStart = 0.9D;
-		
+
 		/** Whether the depth value should be decremented when this block is converted */
 		private boolean isSolid = false;
-		
+
 		public FalloutEntry clone() {
 			FalloutEntry entry = new FalloutEntry();
 			entry.mB(matchesBlock);
@@ -186,7 +187,7 @@ public class FalloutConfigJSON {
 			entry.max(maxDist);
 			entry.fo(falloffStart);
 			entry.sol(isSolid);
-			
+
 			return entry;
 		}
 
@@ -202,7 +203,7 @@ public class FalloutConfigJSON {
 		public FalloutEntry max(double max) { this.maxDist = max; return this; }
 		public FalloutEntry fo(double falloffStart) { this.falloffStart = falloffStart; return this; }
 		public FalloutEntry sol(boolean solid) { this.isSolid = solid; return this; }
-		
+
 		public boolean eval(World world, int x, int y, int z, Block b, int meta, double dist, Block originalBlock, int originalMeta) {
 
 			if(dist > maxDist || dist < minDist) return false;
@@ -213,51 +214,51 @@ public class FalloutConfigJSON {
 			if(dist > maxDist * falloffStart && Math.abs(world.rand.nextGaussian()) < Math.pow((dist - maxDist * falloffStart) / (maxDist - maxDist * falloffStart), 2D) * 3D) return false;
 
 			MetaBlock conversion = chooseRandomOutcome((primaryChance == 1D || rand.nextDouble() < primaryChance) ? primaryBlocks : secondaryBlocks);
-			
+
 			if(conversion != null) {
 				if(conversion.block == ModBlocks.sellafield_slaked && originalBlock == ModBlocks.sellafield_slaked && conversion.meta <= originalMeta) return false;
 				if(conversion.block == ModBlocks.sellafield_bedrock && originalBlock == ModBlocks.sellafield_bedrock && conversion.meta <= originalMeta) return false;
 				if(originalBlock == ModBlocks.sellafield_bedrock && conversion.block != ModBlocks.sellafield_bedrock) return false;
 				if(y == 0 && conversion.block != ModBlocks.sellafield_bedrock) return false;
-				
+
 				world.setBlock(x, y, z, conversion.block, conversion.meta, 3);
 				return true;
 			}
-			
+
 			return false;
 		}
-		
+
 		private MetaBlock chooseRandomOutcome(Triplet<Block, Integer, Integer>[] blocks) {
 			if(blocks == null) return null;
-			
+
 			int weight = 0;
-			
+
 			for(Triplet<Block, Integer, Integer> choice : blocks) {
 				weight += choice.getZ();
 			}
-			
+
 			int r = rand.nextInt(weight);
-			
+
 			for(Triplet<Block, Integer, Integer> choice : blocks) {
 				r -= choice.getZ();
-				
+
 				if(r <= 0) {
 					return new MetaBlock(choice.getX(), choice.getY());
 				}
 			}
-			
+
 			return new MetaBlock(blocks[0].getX(), blocks[0].getY());
 		}
-		
+
 		public boolean isSolid() {
 			return this.isSolid;
 		}
-		
+
 		public void write(JsonWriter writer) throws IOException {
 			if(matchesBlock != null) writer.name("matchesBlock").value(Block.blockRegistry.getNameForObject(matchesBlock));
 			if(matchesMeta != -1) writer.name("matchesMeta").value(matchesMeta);
 			if(matchesOpaque) writer.name("mustBeOpaque").value(true);
-			
+
 			if(matchesMaterial != null) {
 				String matName = matNames.inverse().get(matchesMaterial);
 				if(matName != null) {
@@ -275,11 +276,11 @@ public class FalloutConfigJSON {
 			if(maxDist != 100.0D) writer.name("maximumDistancePercent").value(maxDist);
 			if(falloffStart != 0.9D) writer.name("falloffStartFactor").value(falloffStart);
 		}
-		
+
 		private static FalloutEntry readEntry(JsonElement recipe) {
 			FalloutEntry entry = new FalloutEntry();
 			if(!recipe.isJsonObject()) return null;
-			
+
 			JsonObject obj = recipe.getAsJsonObject();
 
 			if(obj.has("matchesBlock")) entry.mB((Block) Block.blockRegistry.getObject(obj.get("matchesBlock").getAsString()));
@@ -296,14 +297,14 @@ public class FalloutConfigJSON {
 			if(obj.has("minimumDistancePercent")) entry.min(obj.get("minimumDistancePercent").getAsDouble());
 			if(obj.has("maximumDistancePercent")) entry.max(obj.get("maximumDistancePercent").getAsDouble());
 			if(obj.has("falloffStartFactor")) entry.fo(obj.get("falloffStartFactor").getAsDouble());
-			
+
 			return entry;
 		}
-		
+
 		private static void writeMetaArray(JsonWriter writer, Triplet<Block, Integer, Integer>[] array) throws IOException {
 			writer.beginArray();
 			writer.setIndent("");
-			
+
 			for(Triplet<Block, Integer, Integer> meta : array) {
 				writer.beginArray();
 				writer.value(Block.blockRegistry.getNameForObject(meta.getX()));
@@ -311,36 +312,36 @@ public class FalloutConfigJSON {
 				writer.value(meta.getZ());
 				writer.endArray();
 			}
-			
+
 			writer.endArray();
 			writer.setIndent("  ");
 		}
-		
+
 		private static Triplet<Block, Integer, Integer>[] readMetaArray(JsonElement jsonElement) {
-			
+
 			if(!jsonElement.isJsonArray()) return null;
-			
+
 			JsonArray array = jsonElement.getAsJsonArray();
 			Triplet<Block, Integer, Integer>[] metaArray = new Triplet[array.size()];
-			
+
 			for(int i = 0; i < metaArray.length; i++) {
 				JsonElement metaBlock = array.get(i);
-				
+
 				if(!metaBlock.isJsonArray()) {
 					throw new IllegalStateException("Could not read meta block " + metaBlock.toString());
 				}
-				
+
 				JsonArray mBArray = metaBlock.getAsJsonArray();
-				
+
 				metaArray[i] = new Triplet(Block.blockRegistry.getObject(mBArray.get(0).getAsString()), mBArray.get(1).getAsInt(), mBArray.get(2).getAsInt());
 			}
-			
+
 			return metaArray;
 		}
 	}
-	
+
 	public static HashBiMap<String, Material> matNames = HashBiMap.create();
-	
+
 	static {
 		matNames.put("grass", Material.grass);
 		matNames.put("ground", Material.ground);

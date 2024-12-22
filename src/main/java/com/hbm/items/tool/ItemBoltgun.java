@@ -32,29 +32,29 @@ public class ItemBoltgun extends Item implements IAnimatedItem {
 	public ItemBoltgun() {
 		this.setMaxStackSize(1);
 		this.setCreativeTab(MainRegistry.controlTab);
-		
+
 		ToolType.BOLT.register(new ItemStack(this));
 	}
-	
+
 	@Override
 	public Item setUnlocalizedName(String unlocalizedName) {
 		super.setUnlocalizedName(unlocalizedName);
 		this.setTextureName(RefStrings.MODID + ":"+ unlocalizedName);
 		return this;
 	}
-	
+
 	@Override
 	public boolean onLeftClickEntity(ItemStack stack, EntityPlayer player, Entity entity) {
-		
+
 		World world = player.worldObj;
 		if(!entity.isEntityAlive()) return false;
-		
+
 		ItemStack[] bolts = new ItemStack[] { new ItemStack(ModItems.bolt_spike), Mats.MAT_STEEL.make(ModItems.bolt), Mats.MAT_TUNGSTEN.make(ModItems.bolt), Mats.MAT_DURA.make(ModItems.bolt)};
-		
+
 		for(ItemStack bolt : bolts) {
 			for(int i = 0; i < player.inventory.getSizeInventory(); i++) {
 				ItemStack slot = player.inventory.getStackInSlot(i);
-				
+
 				if(slot != null) {
 					if(slot.getItem() == bolt.getItem() && slot.getItemDamage() == bolt.getItemDamage()) {
 						if(!world.isRemote) {
@@ -62,7 +62,7 @@ public class ItemBoltgun extends Item implements IAnimatedItem {
 							player.inventory.decrStackSize(i, 1);
 							player.inventoryContainer.detectAndSendChanges();
 							EntityDamageUtil.attackEntityFromIgnoreIFrame(entity, DamageSource.causePlayerDamage(player).setDamageBypassesArmor(), 10F);
-							
+
 							if(!entity.isEntityAlive() && entity instanceof EntityPlayer) {
 								((EntityPlayer) entity).triggerAchievement(MainRegistry.achGoFish);
 							}
@@ -85,15 +85,15 @@ public class ItemBoltgun extends Item implements IAnimatedItem {
 				}
 			}
 		}
-		
+
 		return false;
 	}
 
 	@Override
 	public boolean onItemUse(ItemStack stack, EntityPlayer player, World world, int x, int y, int z, int side, float fX, float fY, float fZ) {
-		
+
 		Block b = world.getBlock(x, y, z);
-		
+
 		if(b instanceof IToolable && ((IToolable)b).onScrew(world, player, x, y, z, side, fX, fY, fZ, ToolType.BOLT)) {
 
 			if(!world.isRemote) {
@@ -115,10 +115,10 @@ public class ItemBoltgun extends Item implements IAnimatedItem {
 				d0.setString("mode", "generic");
 				PacketDispatcher.wrapper.sendTo(new AuxParticlePacketNT(d0, 0, 0, 0), (EntityPlayerMP) player);
 			}
-			
+
 			return false;
 		}
-		
+
 		return false;
 	}
 

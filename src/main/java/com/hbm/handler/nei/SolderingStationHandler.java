@@ -15,14 +15,14 @@ import net.minecraft.item.ItemStack;
 public class SolderingStationHandler extends NEIUniversalHandler {
 
 	public SolderingStationHandler() {
-		super("Soldering Station", ModBlocks.machine_soldering_station, SolderingRecipes.getRecipes());
+		super(ModBlocks.machine_soldering_station.getLocalizedName(), ModBlocks.machine_soldering_station, SolderingRecipes.getRecipes());
 	}
 
 	@Override
 	public String getKey() {
 		return "ntmSoldering";
 	}
-	
+
 	@Override
 	public void loadTransferRects() {
 		super.loadTransferRects();
@@ -36,11 +36,11 @@ public class SolderingStationHandler extends NEIUniversalHandler {
 
 		RecipeSet rec = (RecipeSet) this.arecipes.get(recipe);
 		ItemStack output = rec.output[0].item;
-		
+
 		for(SolderingRecipe sol : SolderingRecipes.recipes) {
-			
+
 			//TODO: rethink this concept, checks only use the output and if two things output the same thing it'll break
-			
+
 			if(ItemStack.areItemStacksEqual(sol.output, output)) {
 
 				FontRenderer fontRenderer = Minecraft.getMinecraft().fontRenderer;

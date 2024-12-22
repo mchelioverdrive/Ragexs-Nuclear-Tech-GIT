@@ -745,6 +745,8 @@ public class ModBlocks {
 	public static Block machine_fel;
 	public static Block machine_silex;
 
+	public static Block machine_rotary_furnace;
+
 	public static Block machine_crystallizer;
 
 	public static Block machine_uf6_tank;
@@ -1960,6 +1962,7 @@ public class ModBlocks {
 		foundry_slagtap = new FoundrySlagtap().setBlockName("foundry_slagtap").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":brick_fire");
 		slag = new BlockDynamicSlag().setBlockName("slag").setHardness(5.0F).setResistance(10.0F).setCreativeTab(null).setBlockTextureName(RefStrings.MODID + ":slag");
 
+		machine_rotary_furnace = new MachineRotaryFurnace(Material.iron).setBlockName("machine_rotary_furnace").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":brick_fire");
 		machine_difurnace_off = new MachineDiFurnace(false).setBlockName("machine_difurnace_off").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab);
 		machine_difurnace_on = new MachineDiFurnace(true).setBlockName("machine_difurnace_on").setHardness(5.0F).setLightLevel(1.0F).setResistance(10.0F);
 		machine_difurnace_extension = new MachineDiFurnaceExtension().setBlockName("machine_difurnace_extension").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab);
@@ -2927,7 +2930,7 @@ public class ModBlocks {
 		GameRegistry.registerBlock(reinforced_ducrete, ItemBlockBlastInfo.class, reinforced_ducrete.getUnlocalizedName());
 		GameRegistry.registerBlock(concrete_smooth, ItemBlockBlastInfo.class, concrete_smooth.getUnlocalizedName());
 		GameRegistry.registerBlock(concrete_colored, ItemBlockColoredConcrete.class, concrete_colored.getUnlocalizedName());
-		register(concrete_colored_ext);
+		GameRegistry.registerBlock(concrete_colored_ext, ItemBlockBlastInfo.class, concrete_colored_ext.getUnlocalizedName());
 		GameRegistry.registerBlock(concrete, ItemBlockBlastInfo.class, concrete.getUnlocalizedName());
 		GameRegistry.registerBlock(concrete_asbestos, ItemBlockBlastInfo.class, concrete_asbestos.getUnlocalizedName());
 		GameRegistry.registerBlock(concrete_super, ItemBlockBlastInfo.class, concrete_super.getUnlocalizedName());
@@ -3343,6 +3346,7 @@ public class ModBlocks {
 		register(machine_boiler);
 		register(machine_industrial_boiler);
 		register(foundry_mold);
+		register(machine_rotary_furnace);
 		register(foundry_basin);
 		register(foundry_channel);
 		register(foundry_tank);

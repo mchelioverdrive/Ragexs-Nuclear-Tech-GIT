@@ -36,7 +36,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class BlockDynamicSlag extends BlockContainer {
-	
+
 	private HashMap<NTMMaterial, IIcon> iconMap = new HashMap();
 
 	public BlockDynamicSlag() {
@@ -52,10 +52,10 @@ public class BlockDynamicSlag extends BlockContainer {
 	@SideOnly(Side.CLIENT)
 	public void registerBlockIcons(IIconRegister reg) {
 		super.registerBlockIcons(reg);
-		
+
 		if(reg instanceof TextureMap) {
 			TextureMap map = (TextureMap) reg;
-			
+
 			for(NTMMaterial mat : Mats.orderedList) {
 				if(mat.solidColorLight != mat.solidColorDark) {
 					String placeholderName = this.getTextureName() + "-" + mat.names[0];
@@ -66,38 +66,38 @@ public class BlockDynamicSlag extends BlockContainer {
 			}
 		}
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public IIcon getIcon(IBlockAccess world, int x, int y, int z, int side) {
-		
+
 		TileEntitySlag tile = (TileEntitySlag) world.getTileEntity(x, y, z);
-		
+
 		if(tile != null && tile.mat != null) {
 			IIcon override = iconMap.get(tile.mat);
 			if(override != null) {
 				return override;
 			}
 		}
-		
+
 		return this.blockIcon;
 	}
 
 	@Override
 	@SideOnly(Side.CLIENT)
 	public int colorMultiplier(IBlockAccess world, int x, int y, int z) {
-		
+
 		TileEntitySlag tile = (TileEntitySlag) world.getTileEntity(x, y, z);
-		
+
 		if(tile != null && tile.mat != null) {
 			if(!iconMap.containsKey(tile.mat)) {
 				return tile.mat.moltenColor;
 			}
 		}
-		
+
 		return 0xffffff;
 	}
-	
+
 	@Override
 	public boolean isOpaqueCube() {
 		return false;
@@ -125,17 +125,17 @@ public class BlockDynamicSlag extends BlockContainer {
 
 		TileEntity s = Compat.getTileStandard(world, x, y, z);
 		TileEntity b = Compat.getTileStandard(world, x, y - 1, z);
-		
+
 		/* Error here, delete the block */
 		if(s == null || !(s instanceof TileEntitySlag)) {
 			world.setBlockToAir(x, y, z);
 			return;
 		}
-		
+
 		TileEntitySlag self = (TileEntitySlag) s;
-		
+
 		/* Flow down */
-		if(world.getBlock(x, y - 1, z).isReplaceable(world, x, y - 1, z)) {
+		if(world.getBlock(x, y - 1, z).isReplaceable(world, x, y - 1, z) && y > 0) {
 			world.setBlock(x, y - 1, z, ModBlocks.slag);
 			TileEntitySlag tile = (TileEntitySlag) Compat.getTileStandard(world, x, y - 1, z);
 			tile.mat = self.mat;
@@ -144,14 +144,14 @@ public class BlockDynamicSlag extends BlockContainer {
 			world.setBlockToAir(x, y, z);
 			return;
 		} else if(b instanceof TileEntitySlag) {
-			
+
 			TileEntitySlag below = (TileEntitySlag) b;
-			
+
 			if(below.mat == self.mat && below.amount < TileEntitySlag.maxAmount) {
 				int transfer = Math.min(TileEntitySlag.maxAmount - below.amount, self.amount);
 				below.amount += transfer;
 				self.amount -= transfer;
-				
+
 				if(self.amount <= 0){
 					world.setBlockToAir(x, y, z);
 				} else {
@@ -163,26 +163,26 @@ public class BlockDynamicSlag extends BlockContainer {
 				return;
 			}
 		}
-		
+
 		/* Flow sideways, no neighbors */
 		ForgeDirection[] sides = new ForgeDirection[] { ForgeDirection.NORTH, ForgeDirection.SOUTH, ForgeDirection.EAST, ForgeDirection.WEST };
 		int count = 0;
 		for(ForgeDirection dir : sides) {
 			int iX = x + dir.offsetX;
 			int iZ = z + dir.offsetZ;
-			
+
 			if(world.getBlock(iX, y, iZ).isReplaceable(world, iX, y, iZ)) {
 				count++;
 			}
 		}
-		
+
 		if(self.amount >= self.maxAmount / 5 && count > 0) {
 			int toSpread = Math.max(self.amount / (count * 2), 1);
-			
+
 			for(ForgeDirection dir : sides) {
 				int iX = x + dir.offsetX;
 				int iZ = z + dir.offsetZ;
-				
+
 				if(world.getBlock(iX, y, iZ).isReplaceable(world, iX, y, iZ)) {
 					world.setBlock(iX, y, iZ, ModBlocks.slag);
 					TileEntitySlag tile = (TileEntitySlag) Compat.getTileStandard(world, iX, y, iZ);
@@ -199,14 +199,14 @@ public class BlockDynamicSlag extends BlockContainer {
 
 	@Override
 	public void onBlockHarvested(World world, int x, int y, int z, int meta, EntityPlayer player) {
-		
+
 		if(!player.capabilities.isCreativeMode) {
 			harvesters.set(player);
 			this.dropBlockAsItem(world, x, y, z, meta, 0);
 			harvesters.set(null);
 		}
 	}
-	
+
 	@Override
 	public void harvestBlock(World world, EntityPlayer player, int x, int y, int z, int meta) {
 		player.addStat(StatList.mineBlockStatArray[getIdFromBlock(this)], 1);
@@ -216,30 +216,30 @@ public class BlockDynamicSlag extends BlockContainer {
 	@Override
 	public ArrayList<ItemStack> getDrops(World world, int x, int y, int z, int metadata, int fortune) {
 		ArrayList<ItemStack> ret = new ArrayList<ItemStack>();
-		
+
 		TileEntitySlag tile = (TileEntitySlag) world.getTileEntity(x, y, z);
-		
+
 		if(tile != null && tile.mat != null && tile.amount > 0) {
 			ret.add(ItemScraps.create(new MaterialStack(tile.mat, tile.amount)));
 		}
-		
+
 		return ret;
 	}
-	
+
 	@Override
 	public ItemStack getPickBlock(MovingObjectPosition target, World world, int x, int y, int z, EntityPlayer player) {
 
 		TileEntitySlag tile = (TileEntitySlag) world.getTileEntity(x, y, z);
-		
+
 		if(tile != null) {
 			return ItemScraps.create(new MaterialStack(tile.mat, tile.amount));
 		}
-		
+
 		return super.getPickBlock(target, world, x, y, z, player);
 	}
 
 	public static class TileEntitySlag extends TileEntity {
-		
+
 		public NTMMaterial mat;
 		public int amount;
 		public static int maxAmount = MaterialShapes.BLOCK.q(16);
@@ -255,7 +255,7 @@ public class BlockDynamicSlag extends BlockContainer {
 			this.writeToNBT(nbt);
 			return new S35PacketUpdateTileEntity(this.xCoord, this.yCoord, this.zCoord, 0, nbt);
 		}
-		
+
 		@Override
 		public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
 			this.readFromNBT(pkt.func_148857_g());

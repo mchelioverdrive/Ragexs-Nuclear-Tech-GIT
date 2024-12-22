@@ -2,10 +2,12 @@ package com.hbm.items.weapon;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.Consumer;
 
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.items.ModItems;
+import com.hbm.entity.missile.EntityMissileCustom;
 import com.hbm.items.special.ItemLootCrate;
 import com.hbm.lib.RefStrings;
 import com.hbm.main.MainRegistry;
@@ -16,7 +18,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 
 public class ItemCustomMissilePart extends Item {
-	
+
 	public PartType type;
 	public PartSize top;
 	public PartSize bottom;
@@ -26,29 +28,29 @@ public class ItemCustomMissilePart extends Item {
 	private String title;
 	private String author;
 	private String witty;
-	
+
 	public ItemCustomMissilePart() {
 		this.setCreativeTab(MainRegistry.missileTab);
 	}
-	
+
 	public static HashMap<Integer, ItemCustomMissilePart> parts = new HashMap<>();
-	
+
 	/**
 	 * == Chips ==
 	 * [0]: inaccuracy
-	 * 
+	 *
 	 * == Warheads ==
 	 * [0]: type
 	 * [1]: strength/radius/cluster count
 	 * [2]: weight
-	 * 
+	 *
 	 * == Fuselages ==
 	 * [0]: type
 	 * [1]: tank size
-	 * 
+	 *
 	 * == Stability ==
 	 * [0]: inaccuracy mod
-	 * 
+	 *
 	 * == Thrusters ===
 	 * [0]: type
 	 * [1]: consumption
@@ -58,7 +60,7 @@ public class ItemCustomMissilePart extends Item {
 	 * [4]: ISP (s)
 	 */
 	public Object[] attributes;
-	
+
 	public enum PartType {
 		CHIP,
 		WARHEAD, // aka payload
@@ -66,7 +68,7 @@ public class ItemCustomMissilePart extends Item {
 		FINS,
 		THRUSTER,
 	}
-	
+
 	public enum PartSize {
 		//for chips
 		ANY,
@@ -90,7 +92,7 @@ public class ItemCustomMissilePart extends Item {
 
 		public double radius;
 	}
-	
+
 	public enum WarheadType {
 		HE,
 		INC,
@@ -106,8 +108,18 @@ public class ItemCustomMissilePart extends Item {
 		TURBINE,
 		APOLLO,
 		SATELLITE,
+
+		//shit solution but it works. this allows traits to be attached to these empty dummy types, allowing for custom warheads
+		CUSTOM0, CUSTOM1, CUSTOM2, CUSTOM3, CUSTOM4, CUSTOM5, CUSTOM6, CUSTOM7, CUSTOM8, CUSTOM9;
+
+		/** Overrides that type's impact effect. Only runs serverside */
+		public Consumer<EntityMissileCustom> impactCustom = null;
+		/** Runs at the beginning of the missile's update cycle, both client and serverside. */
+		public Consumer<EntityMissileCustom> updateCustom = null;
+		/** Override for the warhead's name in the missile description */
+		public String labelCustom = null;
 	}
-	
+
 	public enum FuelType {
 		ANY, // Used by space-grade fuselages
 		KEROSENE,
@@ -119,35 +131,35 @@ public class ItemCustomMissilePart extends Item {
 		METHALOX,
 		KEROLOX, // oxygen rather than peroxide
 	}
-	
+
 	public enum Rarity {
-		
+
 		COMMON(EnumChatFormatting.GRAY + "Common"),
 		UNCOMMON(EnumChatFormatting.YELLOW + "Uncommon"),
 		RARE(EnumChatFormatting.AQUA + "Rare"),
 		EPIC(EnumChatFormatting.LIGHT_PURPLE + "Epic"),
 		LEGENDARY(EnumChatFormatting.DARK_GREEN + "Legendary"),
 		SEWS_CLOTHES_AND_SUCKS_HORSE_COCK(EnumChatFormatting.DARK_AQUA + "Strange");
-		
+
 		String name;
-		
+
 		Rarity(String name) {
 			this.name = name;
 		}
 	}
-	
+
 	public ItemCustomMissilePart makeChip(float inaccuracy) {
-		
+
 		this.type = PartType.CHIP;
 		this.top = PartSize.ANY;
 		this.bottom = PartSize.ANY;
 		this.attributes = new Object[] { inaccuracy };
-		
+
 		parts.put(this.hashCode(), this);
-		
+
 		return this;
 	}
-	
+
 	public ItemCustomMissilePart makeWarhead(WarheadType type, float punch, int mass, PartSize size) {
 
 		this.type = PartType.WARHEAD;
@@ -156,12 +168,12 @@ public class ItemCustomMissilePart extends Item {
 		this.mass = mass;
 		this.attributes = new Object[] { type, punch };
 		setTextureName(RefStrings.MODID + ":mp_warhead");
-		
+
 		parts.put(this.hashCode(), this);
-		
+
 		return this;
 	}
-	
+
 	public ItemCustomMissilePart makeFuselage(FuelType type, int fuel, int mass, PartSize top, PartSize bottom) {
 
 		this.type = PartType.FUSELAGE;
@@ -170,12 +182,12 @@ public class ItemCustomMissilePart extends Item {
 		this.mass = mass;
 		attributes = new Object[] { type, fuel };
 		setTextureName(RefStrings.MODID + ":mp_fuselage");
-		
+
 		parts.put(this.hashCode(), this);
-		
+
 		return this;
 	}
-	
+
 	public ItemCustomMissilePart makeStability(float inaccuracy, PartSize size) {
 
 		this.type = PartType.FINS;
@@ -183,12 +195,12 @@ public class ItemCustomMissilePart extends Item {
 		this.bottom = size;
 		this.attributes = new Object[] { inaccuracy };
 		setTextureName(RefStrings.MODID + ":mp_stability");
-		
+
 		parts.put(this.hashCode(), this);
-		
+
 		return this;
 	}
-	
+
 	public ItemCustomMissilePart makeThruster(FuelType type, float consumption, float lift, PartSize size, int thrust, int mass, int isp) {
 
 		this.type = PartType.THRUSTER;
@@ -197,9 +209,9 @@ public class ItemCustomMissilePart extends Item {
 		this.mass = mass;
 		this.attributes = new Object[] { type, consumption, lift, thrust, isp };
 		setTextureName(RefStrings.MODID + ":mp_thruster");
-		
+
 		parts.put(this.hashCode(), this);
-		
+
 		return this;
 	}
 
@@ -211,7 +223,7 @@ public class ItemCustomMissilePart extends Item {
 
 		if(title != null)
 			list.add(EnumChatFormatting.DARK_PURPLE + "\"" + title + "\"");
-		
+
 		try {
 			switch(type) {
 			case CHIP:
@@ -248,10 +260,10 @@ public class ItemCustomMissilePart extends Item {
 		} catch(Exception ex) {
 			list.add("### I AM ERROR ###");
 		}
-		
+
 		if(type != PartType.CHIP)
 			list.add(EnumChatFormatting.BOLD + "Health: " + EnumChatFormatting.GRAY + health + "HP");
-		
+
 		if(this.rarity != null)
 			list.add(EnumChatFormatting.BOLD + "Rarity: " + EnumChatFormatting.GRAY + this.rarity.name);
 		if(author != null)
@@ -259,9 +271,9 @@ public class ItemCustomMissilePart extends Item {
 		if(witty != null)
 			list.add(EnumChatFormatting.GOLD + "   " + EnumChatFormatting.ITALIC + "\"" + witty + "\"");
 	}
-	
+
 	public String getSize(PartSize size) {
-		
+
 		switch(size) {
 		case ANY:
 			return "Any";
@@ -279,11 +291,14 @@ public class ItemCustomMissilePart extends Item {
 			return "None";
 		}
 	}
-	
+
 	public String getWarhead() {
 		if(!(attributes[0] instanceof WarheadType)) return EnumChatFormatting.BOLD + "N/A";
-		
-		switch((WarheadType)attributes[0]) {
+		WarheadType type = (WarheadType) attributes[0];
+
+		if(type.labelCustom != null) return type.labelCustom;
+
+		switch(type) {
 		case HE:
 			return EnumChatFormatting.YELLOW + "HE";
 		case INC:
@@ -316,7 +331,7 @@ public class ItemCustomMissilePart extends Item {
 			return EnumChatFormatting.BOLD + "N/A";
 		}
 	}
-	
+
 	public String getFuelName() {
 		if(!(attributes[0] instanceof FuelType)) return EnumChatFormatting.BOLD + "N/A";
 
@@ -402,11 +417,11 @@ public class ItemCustomMissilePart extends Item {
 		if(!(attributes[1] instanceof Integer)) return 0;
 		return (Integer) attributes[1];
 	}
-	
+
 	//am i retarded?
 	/* yes */
 	public ItemCustomMissilePart copy() {
-		
+
 		ItemCustomMissilePart part = new ItemCustomMissilePart();
 		part.type = this.type;
 		part.top = this.top;
@@ -416,33 +431,33 @@ public class ItemCustomMissilePart extends Item {
 		part.health = this.health;
 		part.mass = this.mass;
 		part.setTextureName(this.iconString);
-		
+
 		return part;
 	}
-	
+
 	public ItemCustomMissilePart setAuthor(String author) {
 		this.author = author;
 		return this;
 	}
-	
+
 	public ItemCustomMissilePart setTitle(String title) {
 		this.title = title;
 		return this;
 	}
-	
+
 	public ItemCustomMissilePart setWittyText(String witty) {
 		this.witty = witty;
 		return this;
 	}
-	
+
 	public ItemCustomMissilePart setHealth(float health) {
 		this.health = health;
 		return this;
 	}
-	
+
 	public ItemCustomMissilePart setRarity(Rarity rarity) {
 		this.rarity = rarity;
-		
+
 		if(this.type == PartType.FUSELAGE) {
 			if(this.top == PartSize.SIZE_10)
 				ItemLootCrate.list10.add(this);

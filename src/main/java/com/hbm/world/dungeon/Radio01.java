@@ -652,7 +652,7 @@ public class Radio01 extends WorldGenerator
 		world.setBlock(x + 6, y + 0, z + 24, ModBlocks.deco_steel, 0, 3);
 		world.setBlock(x + 7, y + 0, z + 24, Blocks.chest, 2, 3);
 		world.setBlockMetadataWithNotify(x + 7, y + 0, z + 24, 5, 3);
-        WeightedRandomChestContent.generateChestContents(rand, ItemPool.getPool(ItemPoolsLegacy.POOL_ANTENNA), (TileEntityChest)world.getTileEntity(x + 7, y + 0, z + 24), 8);
+		if(world.getTileEntity(x + 7, y + 0, z + 24) instanceof TileEntityChest) WeightedRandomChestContent.generateChestContents(rand, ItemPool.getPool(ItemPoolsLegacy.POOL_ANTENNA), (TileEntityChest) world.getTileEntity(x + 7, y + 0, z + 24), 8);
 		world.setBlock(x + 8, y + 0, z + 24, ModBlocks.deco_steel, 0, 3);
 		world.setBlock(x + 9, y + 0, z + 24, ModBlocks.deco_steel, 0, 3);
 		world.setBlock(x + 10, y + 0, z + 24, Library.getRandomConcrete(), 0, 3);
@@ -2812,14 +2812,14 @@ public class Radio01 extends WorldGenerator
 		world.setBlock(x + 2, y + 8, z + 11, Blocks.air, 0, 3);
 		world.setBlock(x + 3, y + 8, z + 11, Blocks.air, 0, 3);
 		world.setBlock(x + 4, y + 8, z + 11, ModBlocks.deco_steel, 0, 3);
-		
+
 		/*world.setBlock(x + 5, y + 8, z + 11, Blocks.chest, 4, 3);
 		world.setBlockMetadataWithNotify(x + 5, y + 8, z + 11, 5, 3);
         WeightedRandomChestContent.generateChestContents(rand, HbmChestContents.getLoot(3), (TileEntityChest)world.getTileEntity(x + 5, y + 8, z + 11), 16);*/
-		
+
 		world.setBlock(x + 5, y + 8, z + 11, ModBlocks.crate_steel, 0, 3);
         WeightedRandomChestContent.generateChestContents(rand, ItemPool.getPool(ItemPoolsLegacy.POOL_EXPENSIVE), (TileEntityCrateSteel)world.getTileEntity(x + 5, y + 8, z + 11), 16);
-        
+
 		world.setBlock(x + 6, y + 8, z + 11, ModBlocks.deco_steel, 0, 3);
 		world.setBlock(x + 7, y + 8, z + 11, Blocks.air, 0, 3);
 		world.setBlock(x + 8, y + 8, z + 11, Blocks.air, 0, 3);

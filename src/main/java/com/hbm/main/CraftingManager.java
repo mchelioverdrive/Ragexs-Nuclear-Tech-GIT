@@ -79,6 +79,7 @@ public class CraftingManager {
 		RecipeSorter.register("hbm:cargo", CargoShellCraftingHandler.class, RecipeSorter.Category.SHAPELESS, "after:minecraft:shapeless");
 		RecipeSorter.register("hbm:scraps", ScrapsCraftingHandler.class, RecipeSorter.Category.SHAPELESS, "after:minecraft:shapeless");
 		RecipeSorter.register("hbm:mku", MKUCraftingHandler.class, RecipeSorter.Category.SHAPED, "after:minecraft:shaped before:minecraft:shapeless");
+		RecipeSorter.register("hbm:containerupgrade", ContainerUpgradeCraftingHandler.class, RecipeSorter.Category.SHAPED, "after:minecraft:shaped before:minecraft:shapeless");
 	}
 
 	public static void AddCraftingRec() {
@@ -378,7 +379,7 @@ public class CraftingManager {
 			addRecipeAuto(new ItemStack(ModItems.stamp_steel_flat, 1), new Object[] { "III", "SSS", 'I', brick, 'S', STEEL.ingot() });
 			addRecipeAuto(new ItemStack(ModItems.stamp_titanium_flat, 1), new Object[] { "III", "SSS", 'I', brick, 'S', TI.ingot() });
 			addRecipeAuto(new ItemStack(ModItems.stamp_obsidian_flat, 1), new Object[] { "III", "SSS", 'I', brick, 'S', Blocks.obsidian });
-			addRecipeAuto(new ItemStack(ModItems.stamp_desh_flat, 1), new Object[] { "BDB", "DSD", "BDB", 'B', brick, 'D', DESH.ingot(), 'S', BIGMT.ingot() });
+			addRecipeAuto(new ItemStack(ModItems.stamp_desh_flat, 1), new Object[] { "BDB", "DSD", "BDB", 'B', brick, 'D', DESH.ingot(), 'S', FERRO.ingot() });
 		}
 
 		addRecipeAuto(new ItemStack(ModItems.mechanism_revolver_1, 1), new Object[] { "ICI", "CAC", "ICI", 'I', IRON.plate(), 'C', CU.ingot(), 'A', AL.ingot() });
@@ -768,8 +769,8 @@ public class CraftingManager {
 		addShapelessAuto(new ItemStack(ModItems.rune_thurisaz, 1), new Object[] { ModItems.rune_blank, ModItems.powder_spark_mix, ModItems.black_hole });
 		addRecipeAuto(new ItemStack(ModItems.ams_lens, 1), new Object[] { "PDP", "GDG", "PDP", 'P', ModItems.plate_dineutronium, 'G', ModBlocks.reinforced_glass, 'D', Blocks.diamond_block });
 		addRecipeAuto(new ItemStack(ModItems.ams_catalyst_blank, 1), new Object[] { "TET", "ETE", "TET", 'T', TS.dust(), 'E', EUPH.ingot()});
-		addRecipeAuto(new ItemStack(ModItems.ams_focus_limiter, 1), new Object[] { "PDP", "GDG", "PDP", 'P', BIGMT.plate(), 'G', ModBlocks.reinforced_glass, 'D', Blocks.diamond_block });
-		addRecipeAuto(new ItemStack(ModItems.ams_muzzle, 1), new Object[] { "GDG", "GDG", "PGP", 'P', BIGMT.plate(), 'G', ModBlocks.reinforced_glass, 'D', Blocks.diamond_block });
+		//addRecipeAuto(new ItemStack(ModItems.ams_focus_limiter, 1), new Object[] { "PDP", "GDG", "PDP", 'P', BIGMT.plate(), 'G', ModBlocks.reinforced_glass, 'D', Blocks.diamond_block });
+		//addRecipeAuto(new ItemStack(ModItems.ams_muzzle, 1), new Object[] { "GDG", "GDG", "PGP", 'P', BIGMT.plate(), 'G', ModBlocks.reinforced_glass, 'D', Blocks.diamond_block });
 		addShapelessAuto(new ItemStack(ModItems.ams_catalyst_lithium, 1), new Object[] { ModItems.ams_catalyst_blank, ModItems.rune_isa, ModItems.rune_isa, ModItems.rune_jera, ModItems.rune_jera, LI.dust(), LI.dust(), LI.dust(), LI.dust() });
 		addShapelessAuto(new ItemStack(ModItems.ams_catalyst_beryllium, 1), new Object[] { ModItems.ams_catalyst_blank, ModItems.rune_isa, ModItems.rune_dagaz, ModItems.rune_jera, ModItems.rune_jera, BE.dust(), BE.dust(), BE.dust(), BE.dust() });
 		addShapelessAuto(new ItemStack(ModItems.ams_catalyst_copper, 1), new Object[] { ModItems.ams_catalyst_blank, ModItems.rune_dagaz, ModItems.rune_dagaz, ModItems.rune_jera, ModItems.rune_jera, CU.dust(), CU.dust(), CU.dust(), CU.dust() });
@@ -1083,10 +1084,14 @@ public class CraftingManager {
 			addRecipeAuto(new ItemStack(ModItems.neutron_reflector, 4), new Object[] { "##", "##", '#', W.ingot() });
 
 			for(NTMMaterial mat : Mats.orderedList) {
-				if(mat.shapes.contains(MaterialShapes.WIRE)) for(String name : mat.names) addRecipeAuto(new ItemStack(ModItems.wire_fine, 24, mat.id), new Object[] { "###", '#', MaterialShapes.INGOT.prefixes[0] + name });
+				if(mat.autogen.contains(MaterialShapes.WIRE)) for(String name : mat.names) addRecipeAuto(new ItemStack(ModItems.wire_fine, 24, mat.id), new Object[] { "###", '#', MaterialShapes.INGOT.prefixes[0] + name });
 			}
 
 			//addRecipeAuto(new ItemStack(ModItems.book_of_), new Object[] { "BGB", "GAG", "BGB", 'B', ModItems.egg_balefire_shard, 'G', GOLD.ingot(), 'A', Items.book });
+		}
+
+		for(NTMMaterial mat : Mats.orderedList) {
+			if(mat.autogen.contains(MaterialShapes.BOLT)) for(String name : mat.names) addRecipeAuto(new ItemStack(ModItems.bolt, 16, mat.id), new Object[] { "#", "#", '#', MaterialShapes.INGOT.prefixes[0] + name });
 		}
 
 		if(!GeneralConfig.enable528) {

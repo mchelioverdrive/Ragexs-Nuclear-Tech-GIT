@@ -263,6 +263,7 @@ public class MainRegistry {
 
 	@EventHandler
 	public void PreLoad(FMLPreInitializationEvent PreEvent) {
+		CrashHelper.init();
 
 		startupTime = System.currentTimeMillis();
 		configDir = PreEvent.getModConfigurationDirectory();
@@ -289,6 +290,7 @@ public class MainRegistry {
 		 * This "fix" just makes sure that the material system is loaded first no matter what. */
 		Mats.MAT_STONE.getUnlocalizedName();
 		Fluids.init();
+		proxy.registerPreRenderInfo();
 		ModBlocks.mainRegistry();
 		ModItems.mainRegistry();
 		ModBiomes.init();
@@ -898,10 +900,12 @@ public class MainRegistry {
 
 		FalloutConfigJSON.initialize();
 		ItemPoolConfigJSON.initialize();
+		ClientConfig.initConfig();
 
 		TileEntityNukeCustom.registerBombItems();
 		ArmorUtil.register();
 		HazmatRegistry.registerHazmats();
+		//DamageResistanceHandler.init();
 		FluidContainerRegistry.register();
 		BlockToolConversion.registerRecipes();
 		AchievementHandler.register();
@@ -961,6 +965,7 @@ public class MainRegistry {
 
 		Compat.handleRailcraftNonsense();
 		SuicideThreadDump.register();
+		CommandReloadClient.register();
 
 		WorldTypeTeleport.init();
 
@@ -1013,6 +1018,7 @@ public class MainRegistry {
 		event.registerServerCommand(new CommandDebugChunkLoad());
 		event.registerServerCommand(new CommandSatellites());
 		event.registerServerCommand(new CommandRadiation());
+		event.registerServerCommand(new CommandStations());
 	}
 
 	@EventHandler

@@ -48,14 +48,14 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityElectrolyser extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable, IMetalCopiable {
-	
+
 	public long power;
 	public static final long maxPower = 20000000;
 	public static final int usageOreBase = 10_000;
 	public static final int usageFluidBase = 10_000;
 	public int usageOre;
 	public int usageFluid;
-	
+
 	public int progressFluid;
 	public int processFluidTime = 100;
 	public int progressOre;
@@ -132,8 +132,8 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 			int speedLevel = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
 			int powerLevel = Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 3);
 
-			usageOre = usageOreBase - usageOreBase * powerLevel / 4;
-			usageFluid = usageFluidBase - usageFluidBase * powerLevel / 4;
+			usageOre = usageOreBase - usageOreBase * powerLevel / 4 + usageOreBase * speedLevel;
+			usageFluid = usageFluidBase - usageFluidBase * powerLevel / 4 + usageFluidBase * speedLevel;
 
 			for(int i = 0; i < getCycleCount(); i++) {
 				if (this.canProcessFluid()) {
@@ -503,7 +503,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 
 	@Override
 	public void receiveControl(NBTTagCompound data) { }
-	
+
 	@Override
 	public void receiveControl(EntityPlayer player, NBTTagCompound data) {
 

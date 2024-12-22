@@ -70,7 +70,7 @@ public class GeneralConfig {
 	public static boolean enableLBSMIGen = true;
 	public static boolean enableLBSMNeutronDecon = true;
 	public static int schrabRate = 20;
-
+	public static boolean enableHardcoreDarkness = false;
 	public static boolean enableThreadedAtmospheres = true;
 	public static boolean enableSacrilege = false;
 
@@ -113,6 +113,7 @@ public class GeneralConfig {
 		enableSteamParticles = config.get(CATEGORY_GENERAL, "1.38_enableSteamParticles", true, "If disabled, auxiliary cooling towers and large cooling towers will not emit steam particles when in use.").getBoolean(true);
 		enableSoundExtension = config.get(CATEGORY_GENERAL, "1.39_enableSoundExtension", true, "If enabled, will change the limit for how many sounds can play at once.").getBoolean(true);
 		enableMekanismChanges = config.get(CATEGORY_GENERAL, "1.40_enableMekanismChanges", true, "If enabled, will change some of Mekanism's recipes.").getBoolean(true);
+		enableHardcoreDarkness = CommonConfig.createConfigBool(config, CATEGORY_GENERAL, "1.44_hardcoreDarkness", "If enabled, sets night-time minimum fog to zero, to complement hardcore darkness mods", false);
 		normalSoundChannels = CommonConfig.createConfigInt(config, CATEGORY_GENERAL, "1.41_normalSoundChannels",
 				"The amount of channels to create while 1.39_enableSoundExtension is enabled.\n" +
 				"Note that a value below 28 or above 200 can cause buggy sounds and issues with other mods running out of sound memory.", 100);

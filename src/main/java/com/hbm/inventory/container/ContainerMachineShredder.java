@@ -55,12 +55,12 @@ public class ContainerMachineShredder extends Container {
 
 		for(int i = 0; i < 3; i++) {
 			for(int j = 0; j < 9; j++) {
-				this.addSlotToContainer(new Slot(invPlayer, j + i * 9 + 9, 8 + j * 18, 84 + i * 18 + 56));
+				this.addSlotToContainer(new Slot(invPlayer, j + i * 9 + 9, 8 + j * 18, 84 + i * 18 + 67));
 			}
 		}
 
 		for(int i = 0; i < 9; i++) {
-			this.addSlotToContainer(new Slot(invPlayer, i, 8 + i * 18, 142 + 56));
+			this.addSlotToContainer(new Slot(invPlayer, i, 8 + i * 18, 142 + 67));
 		}
 	}
 
@@ -84,7 +84,7 @@ public class ContainerMachineShredder extends Container {
 					return null;
 				}
 			} else {
-				
+
 				if(rStack.getItem() instanceof IBatteryItem || rStack.getItem() == ModItems.battery_creative) {
 					if(!this.mergeItemStack(stack, 29, 30, false)) return null;
 				} else if(rStack.getItem() instanceof ItemBlades) {

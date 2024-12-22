@@ -22,13 +22,13 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class BlockOreBasalt extends BlockEnumMulti {
-	
+
 	protected IIcon[] topIcons;
 
 	public BlockOreBasalt() {
 		super(Material.rock, EnumBasaltOreType.class, true, true);
 	}
-	
+
 	public static enum EnumBasaltOreType {
 		SULFUR,
 		FLUORITE,
@@ -36,15 +36,15 @@ public class BlockOreBasalt extends BlockEnumMulti {
 		GEM,
 		MOLYSITE
 	}
-	
+
 	public String getTextureMultiName(Enum num) {
 		return this.getTextureName() + "_" + num.name().toLowerCase(Locale.US);
 	}
-	
+
 	public String getUnlocalizedMultiName(Enum num) {
 		return super.getUnlocalizedName() + "_" + num.name().toLowerCase(Locale.US);
 	}
-	
+
 	@Override
 	public Item getItemDropped(int meta, Random rand, int fortune) {
 		if(meta == EnumBasaltOreType.SULFUR.ordinal())		return ModItems.sulfur;
@@ -65,14 +65,7 @@ public class BlockOreBasalt extends BlockEnumMulti {
 	}
 
 	@Override
-	public void onNeighborBlockChange(World world, int x, int y, int z, Block block) {
-		int meta = world.getBlockMetadata(x, y, z);
-		if(meta == EnumBasaltOreType.ASBESTOS.ordinal()) for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-			if(world.getBlock(x + dir.offsetX, y + dir.offsetY, z + dir.offsetZ) == Blocks.air) {
-				world.setBlock(x + dir.offsetX, y + dir.offsetY, z + dir.offsetZ, ModBlocks.gas_asbestos);
-			}
-		}
-	}
+	public void onNeighborBlockChange(World world, int x, int y, int z, Block block) { }
 
 	@Override
 	public void dropBlockAsItemWithChance(World world, int x, int y, int z, int meta, float chance, int fortune) {
@@ -92,13 +85,13 @@ public class BlockOreBasalt extends BlockEnumMulti {
 
 		Enum[] enums = theEnum.getEnumConstants();
 		this.topIcons = new IIcon[enums.length];
-		
+
 		for(int i = 0; i < topIcons.length; i++) {
 			Enum num = enums[i];
 			this.topIcons[i] = reg.registerIcon(this.getTextureMultiName(num) + "_top");
 		}
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public IIcon getIcon(int side, int meta) {

@@ -2,6 +2,7 @@ package com.hbm.handler.atmosphere;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -14,7 +15,10 @@ import com.hbm.handler.ThreeInts;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.trait.FT_Corrosive;
 import com.hbm.main.MainRegistry;
+import com.hbm.util.Tuple.Pair;
 
+import cpw.mods.fml.common.gameevent.TickEvent;
+import cpw.mods.fml.common.gameevent.TickEvent.Phase;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFire;
 import net.minecraft.block.BlockTorch;
@@ -23,10 +27,12 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.MathHelper;
+import net.minecraft.world.ChunkPosition;
 import net.minecraft.world.World;
 import net.minecraftforge.common.IPlantable;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.world.BlockEvent;
+import net.minecraftforge.event.world.ExplosionEvent;
 import net.minecraftforge.event.world.WorldEvent;
 
 public class ChunkAtmosphereHandler {
@@ -115,8 +121,10 @@ public class ChunkAtmosphereHandler {
 		HashMap<IAtmosphereProvider, AtmosphereBlob> blobs = worldBlobs.get(world.provider.dimensionId);
 		List<AtmosphereBlob> list = new LinkedList<AtmosphereBlob>();
 
+		double radiusSqr = radius * radius;
+
 		for(AtmosphereBlob blob : blobs.values()) {
-			if(blob.getRootPosition().getDistanceSquared(pos) <= radius * radius) {
+			if(blob.getRootPosition().getDistanceSquared(pos) <= radiusSqr) {
 				list.add(blob);
 			}
 		}
@@ -124,8 +132,8 @@ public class ChunkAtmosphereHandler {
 		return list;
 	}
 
-    // Assuming 21% AIR/9% OXY is required for breathable atmosphere
-    public boolean canBreathe(EntityLivingBase entity) {
+	// Assuming 21% AIR/9% OXY is required for breathable atmosphere
+	public boolean canBreathe(EntityLivingBase entity) {
 		CBT_Atmosphere atmosphere = getAtmosphere(entity);
 
 		if(GeneralConfig.enableDebugMode && entity instanceof EntityPlayer && entity.worldObj.getTotalWorldTime() % 20 == 0) {
@@ -139,10 +147,10 @@ public class ChunkAtmosphereHandler {
 		}
 
 		return canBreathe(atmosphere);
-    }
+	}
 
 	public boolean canBreathe(CBT_Atmosphere atmosphere) {
-        return atmosphere != null && (atmosphere.hasFluid(Fluids.AIR, 0.21) || atmosphere.hasFluid(Fluids.OXYGEN, 0.09));
+		return atmosphere != null && (atmosphere.hasFluid(Fluids.AIR, 0.21) || atmosphere.hasFluid(Fluids.OXYGEN, 0.09));
 	}
 
 	// Is the air pressure high enough to support liquids
@@ -185,7 +193,7 @@ public class ChunkAtmosphereHandler {
 		}
 
 		if(canExist) return false;
-		
+
 		block.dropBlockAsItem(world, x, y, z, world.getBlockMetadata(x, y, z), 0);
 		world.setBlockToAir(x, y, z);
 
@@ -207,7 +215,7 @@ public class ChunkAtmosphereHandler {
 	public void registerAtmosphere(IAtmosphereProvider handler) {
 		HashMap<IAtmosphereProvider, AtmosphereBlob> blobs = worldBlobs.get(handler.getWorld().provider.dimensionId);
 		AtmosphereBlob blob = blobs.get(handler);
-		
+
 		if(blob == null) {
 			blob = new AtmosphereBlob(handler);
 			blob.addBlock(handler.getRootPosition());
@@ -258,7 +266,7 @@ public class ChunkAtmosphereHandler {
 		for(AtmosphereBlob blob : nearbyBlobs) {
 			// Make sure that a block can actually be attached to the blob
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-				if(blob.contains(pos.getPositionAtOffset(dir.offsetX, dir.offsetY, dir.offsetZ))) {
+				if(blob.contains(pos.getPositionAtOffset(dir))) {
 					blob.addBlock(pos);
 					break;
 				}
@@ -289,5 +297,52 @@ public class ChunkAtmosphereHandler {
 		if(event.world.isRemote) return;
 		onBlockRemoved(event.world, new ThreeInts(event.x, event.y, event.z));
 	}
-	
+
+	// Stores explosion events to execute unsealing after they complete, and the blocks that actually unseal from the explosion
+	private static List<Pair<ExplosionEvent.Detonate, List<ThreeInts>>> explosions = new ArrayList<>();
+
+	// For every affected blob, attempt addBlock once for the first valid position only
+	// This just stores the affected blocks, since the explosion hasn't actually occurred yet
+	public void receiveDetonate(ExplosionEvent.Detonate event) {
+		if(event.world.isRemote) return;
+		List<ThreeInts> unsealingBlocks = new ArrayList<ThreeInts>();
+		for(ChunkPosition block : event.getAffectedBlocks()) {
+			if(AtmosphereBlob.isBlockSealed(event.world, block.chunkPosX, block.chunkPosY, block.chunkPosZ)) {
+				unsealingBlocks.add(new ThreeInts(block.chunkPosX, block.chunkPosY, block.chunkPosZ));
+			}
+		}
+		explosions.add(new Pair<>(event, unsealingBlocks));
+	}
+
+	// If we stored any explosions, process them now
+	public void receiveServerTick(TickEvent.ServerTickEvent tick) {
+		if(tick.phase == Phase.END) return;
+		if(explosions.isEmpty()) return;
+
+		for(Pair<ExplosionEvent.Detonate, List<ThreeInts>> pair : explosions) {
+			ExplosionEvent.Detonate event = pair.key;
+			ThreeInts explosion = new ThreeInts(MathHelper.floor_double(event.explosion.explosionX), MathHelper.floor_double(event.explosion.explosionY), MathHelper.floor_double(event.explosion.explosionZ));
+			List<AtmosphereBlob> nearbyBlobs = getBlobsWithinRadius(event.world, explosion, MAX_BLOB_RADIUS + MathHelper.ceiling_float_int(event.explosion.explosionSize));
+
+			for(ThreeInts pos : pair.value) {
+				if(nearbyBlobs.size() == 0) break;
+
+				Iterator<AtmosphereBlob> iterator = nearbyBlobs.iterator();
+
+				while(iterator.hasNext()) {
+					AtmosphereBlob blob = iterator.next();
+					for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
+						if(blob.contains(pos.getPositionAtOffset(dir))) {
+							blob.addBlock(pos);
+							iterator.remove();
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		explosions.clear();
+	}
+
 }

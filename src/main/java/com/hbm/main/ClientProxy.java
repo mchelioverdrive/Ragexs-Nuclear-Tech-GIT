@@ -92,6 +92,7 @@ import com.hbm.lib.RefStrings;
 import com.hbm.particle.*;
 import com.hbm.particle.helper.ExplosionCreator;
 import com.hbm.particle.helper.IParticleCreator;
+import com.hbm.particle.helper.*;
 import com.hbm.particle.psys.engine.EventHandlerParticleEngine;
 import com.hbm.render.anim.*;
 import com.hbm.render.anim.HbmAnimations.Animation;
@@ -141,6 +142,8 @@ import cpw.mods.fml.relauncher.ReflectionHelper;
 public class ClientProxy extends ServerProxy {
 
 	public RenderInfoSystem theInfoSystem = new RenderInfoSystem();
+
+
 
 	@Override
 	public void registerRenderInfo() {
@@ -313,6 +316,7 @@ public class ClientProxy extends ServerProxy {
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityMachineDrain.class, new RenderDrain());
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityMachineRadiolysis.class, new RenderRadiolysis());
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityElectrolyser.class, new RenderElectrolyser());
+		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityMachineRotaryFurnace.class, new RenderRotaryFurnace());
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityFurnaceIron.class, new RenderFurnaceIron());
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityFurnaceSteel.class, new RenderFurnaceSteel());
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityFurnaceCombination.class, new RenderFurnaceCombination());

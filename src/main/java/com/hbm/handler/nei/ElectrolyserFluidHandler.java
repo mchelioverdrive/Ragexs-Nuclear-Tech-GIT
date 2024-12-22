@@ -9,14 +9,14 @@ import com.hbm.inventory.recipes.ElectrolyserFluidRecipes;
 public class ElectrolyserFluidHandler extends NEIUniversalHandler {
 
 	public ElectrolyserFluidHandler() {
-		super("Electrolysis", ModBlocks.machine_electrolyser, ElectrolyserFluidRecipes.getRecipes());
+		super(ModBlocks.machine_electrolyser.getLocalizedName(), ModBlocks.machine_electrolyser, ElectrolyserFluidRecipes.getRecipes());
 	}
 
 	@Override
 	public String getKey() {
 		return "ntmElectrolysisFluid";
 	}
-	
+
 	@Override
 	public void loadTransferRects() {
 		super.loadTransferRects();

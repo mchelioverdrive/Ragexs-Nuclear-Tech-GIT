@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
+import com.hbm.inventory.OreDictManager;
+import com.hbm.inventory.material.MaterialShapes;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -448,7 +450,7 @@ public class CentrifugeRecipes extends SerializableRecipe {
 				lbs ? new ItemStack(ModItems.nugget_ra226, 2) : new ItemStack(ModItems.nugget_ra226, 1),
 				new ItemStack(Blocks.gravel, 1) });
 
-		recipes.put(new OreDictStack(TH232.ore()), new ItemStack[] {
+		for(String ore : OreDictManager.TH232.all(MaterialShapes.ORE)) recipes.put(new OreDictStack(ore), new ItemStack[] {
 				new ItemStack(ModItems.powder_thorium, 1),
 				new ItemStack(ModItems.powder_thorium, 1),
 				new ItemStack(ModItems.powder_uranium, 1),
