@@ -320,12 +320,12 @@ public class ItemStarterKit extends Item {
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.custom_nuke, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.custom_hydro, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.custom_hydro, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.custom_amat, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.custom_amat, 1));
+			//player.inventory.addItemStackToInventory(new ItemStack(ModItems.custom_amat, 1));
+			//player.inventory.addItemStackToInventory(new ItemStack(ModItems.custom_amat, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.custom_dirty, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.custom_dirty, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.custom_dirty, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.custom_schrab, 1));
+			//player.inventory.addItemStackToInventory(new ItemStack(ModItems.custom_schrab, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.custom_fall, 1));
 		}
 

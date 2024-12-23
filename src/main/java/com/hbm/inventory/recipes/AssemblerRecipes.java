@@ -418,19 +418,19 @@ public class AssemblerRecipes extends SerializableRecipe {
 				new ComparableStack(ModItems.circuit, 16, EnumCircuitType.BISMOID),
 			}, 500);
 
-		makeRecipe(new ComparableStack(ModBlocks.machine_fensu, 1), new AStack[] {
-				new ComparableStack(ModItems.ingot_electronium, 32),
-				new ComparableStack(ModBlocks.machine_dineutronium_battery, 16),
-				!exp ? new OreDictStack(ANY_RESISTANTALLOY.plateWelded(), 64) : new OreDictStack(ANY_RESISTANTALLOY.heavyComp(), 64),
-				new OreDictStack(DURA.block(), 16),
-				new OreDictStack(STAR.block(), 64),
-				new ComparableStack(ModBlocks.machine_transformer_dnt, 8),
-				new ComparableStack(ModItems.coil_magnetized_tungsten, 24),
-				new ComparableStack(ModItems.powder_magic, 64),
-				new ComparableStack(ModItems.plate_dineutronium, 24),
-				new ComparableStack(ModItems.ingot_u238m2),
-				new ComparableStack(ModItems.ingot_cft, 128)
-			}, 1200);
+		//makeRecipe(new ComparableStack(ModBlocks.machine_fensu, 1), new AStack[] {
+		//		new ComparableStack(ModItems.ingot_electronium, 32),
+		//		new ComparableStack(ModBlocks.machine_dineutronium_battery, 16),
+		//		!exp ? new OreDictStack(ANY_RESISTANTALLOY.plateWelded(), 64) : new OreDictStack(ANY_RESISTANTALLOY.heavyComp(), 64),
+		//		new OreDictStack(DURA.block(), 16),
+		//		new OreDictStack(STAR.block(), 64),
+		//		new ComparableStack(ModBlocks.machine_transformer_dnt, 8),
+		//		new ComparableStack(ModItems.coil_magnetized_tungsten, 24),
+		//		new ComparableStack(ModItems.powder_magic, 64),
+		//		new ComparableStack(ModItems.plate_dineutronium, 24),
+		//		new ComparableStack(ModItems.ingot_u238m2),
+		//		new ComparableStack(ModItems.ingot_cft, 128)
+		//	}, 1200);
 		makeRecipe(new ComparableStack(ModBlocks.struct_iter_core, 1), new AStack[] {
 				!exp ? new OreDictStack(ANY_RESISTANTALLOY.plateWelded(), 6) : new OreDictStack(ANY_RESISTANTALLOY.heavyComp(), 2),
 				!exp ? new OreDictStack(W.plateWelded(), 6) : new OreDictStack(W.heavyComp(), 1),
@@ -1500,11 +1500,12 @@ public class AssemblerRecipes extends SerializableRecipe {
 			}
 		}
 
-		for(NTMMaterial mat : Mats.orderedList) {
-			if(mat.autogen.contains(MaterialShapes.CASTPLATE) && mat.autogen.contains(MaterialShapes.HEAVY_COMPONENT)) {
-				makeRecipe(new ComparableStack(ModItems.heavy_component, 1, mat.id), new AStack[] { new OreDictStack(MaterialShapes.CASTPLATE.name() + mat.names[0], 256) }, 12_000);
-			}
-		}
+		//add to lang
+		//for(NTMMaterial mat : Mats.orderedList) {
+		//	if(mat.autogen.contains(MaterialShapes.CASTPLATE) && mat.autogen.contains(MaterialShapes.HEAVY_COMPONENT)) {
+		//		makeRecipe(new ComparableStack(ModItems.heavy_component, 1, mat.id), new AStack[] { new OreDictStack(MaterialShapes.CASTPLATE.name() + mat.names[0], 256) }, 12_000);
+		//	}
+		//}
 
 		// WarTec compatibility code
 		try {
