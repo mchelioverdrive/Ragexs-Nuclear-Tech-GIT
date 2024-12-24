@@ -1,6 +1,7 @@
 package com.hbm.dim;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import com.hbm.dim.trait.CBT_Atmosphere;
 import com.hbm.dim.trait.CBT_Atmosphere.FluidEntry;
@@ -24,6 +25,7 @@ import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import net.minecraft.util.WeightedRandomFishable;
+import net.minecraft.world.World;
 import net.minecraft.world.WorldProvider;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.client.IRenderHandler;
@@ -528,5 +530,9 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 		return null;
 	}
 	/// FISH ///
+
+	//public abstract void onEntityCollidedWithBlock(World world, int x, int y, int z, Entity entity);
+//
+	//public abstract void updateTick(World world, int x, int y, int z, Random rand);
 
 }

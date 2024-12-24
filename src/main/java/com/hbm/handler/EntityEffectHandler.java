@@ -8,6 +8,7 @@ import com.hbm.config.BombConfig;
 import com.hbm.config.GeneralConfig;
 import com.hbm.config.RadiationConfig;
 import com.hbm.config.WorldConfig;
+import com.hbm.dim.moon.BiomeGenMoon;
 import com.hbm.dim.trait.CBT_Atmosphere;
 import com.hbm.entity.missile.EntityRideableRocket;
 import com.hbm.entity.mob.EntityMoonCow;
@@ -241,6 +242,8 @@ public class EntityEffectHandler {
 				HbmLivingProps.setNeutronActivation(entity,0);
 			if(world.provider.isHellWorld && RadiationConfig.hellRad > 0 && rad < RadiationConfig.hellRad)
 				rad = (float) RadiationConfig.hellRad;
+
+
 
 			if(rad > 0) {
 				ContaminationUtil.contaminate(entity, HazardType.RADIATION, ContaminationType.CREATIVE, rad / 20F);

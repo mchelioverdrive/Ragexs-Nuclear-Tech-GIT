@@ -4,11 +4,15 @@ import java.util.Random;
 
 import com.hbm.blocks.ModBlocks;
 import com.hbm.dim.BiomeGenBaseCelestial;
-import com.hbm.entity.mob.EntityMoonCow;
 
+import com.hbm.potion.HbmPotion;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.potion.PotionEffect;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
 
@@ -42,6 +46,10 @@ public class BiomeGenMoon extends BiomeGenBaseCelestial {
 	public float getSpawningChance() {
         return 0.008F;
     }
+
+
+
+
 
 	@Override
 	public void genTerrainBlocks(World world, Random rand, Block[] blocks, byte[] meta, int x, int z, double noise) {
