@@ -11,6 +11,8 @@ import com.hbm.blocks.generic.BlockNTMFlower.EnumFlowerType;
 import com.hbm.inventory.OreDictManager.DictFrame;
 import com.hbm.items.ModItems;
 
+import net.minecraft.entity.Entity;
+import java.util.List;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
@@ -30,7 +32,7 @@ import net.minecraftforge.common.EnumPlantType;
 import net.minecraftforge.common.IPlantable;
 
 public class BlockTallPlant extends BlockEnumMulti implements IPlantable, IGrowable {
-	
+
 	public BlockTallPlant() {
 		super(Material.plants, EnumTallFlower.class, true, true);
 		this.setTickRandomly(true);
@@ -41,7 +43,7 @@ public class BlockTallPlant extends BlockEnumMulti implements IPlantable, IGrowa
 		CD2(true),
 		CD3(true),
 		CD4(true);
-		
+
 		public boolean needsOil;
 		private EnumTallFlower(boolean needsOil) {
 			this.needsOil = needsOil;
@@ -50,16 +52,16 @@ public class BlockTallPlant extends BlockEnumMulti implements IPlantable, IGrowa
 
 	@Override
 	public Item getItemDropped(int meta, Random rand, int fortune) {
-		
+
 		/*if(meta == EnumTallFlower.WEED.ordinal()) {
 			return Item.getItemFromBlock(ModBlocks.plant_flower);
 		}
-		
+
 		return Item.getItemFromBlock(this);*/
-		
+
 		return Item.getItemFromBlock(ModBlocks.plant_flower);
 	}
-	
+
 	@Override
 	public int quantityDropped(int meta, int fortune, Random random) {
 		return 1;
@@ -68,31 +70,36 @@ public class BlockTallPlant extends BlockEnumMulti implements IPlantable, IGrowa
 	@Override
 	public int damageDropped(int meta) {
 		meta = rectify(meta);
-		
+
 		if(meta == EnumTallFlower.WEED.ordinal()) {
 			return EnumFlowerType.WEED.ordinal();
 		}
 
 		return EnumFlowerType.CD0.ordinal();
 	}
-	
+
 	protected IIcon[] bottomIcons;
 
 	@Override
 	@SideOnly(Side.CLIENT)
 	public void registerBlockIcons(IIconRegister reg) {
-		
+
 		Enum[] enums = theEnum.getEnumConstants();
 		this.icons = new IIcon[enums.length];
 		this.bottomIcons = new IIcon[enums.length];
-		
+
 		for(int i = 0; i < icons.length; i++) {
 			Enum num = enums[i];
 			this.icons[i] = reg.registerIcon(this.getTextureName() + "." + num.name().toLowerCase(Locale.US) + ".upper");
 			this.bottomIcons[i] = reg.registerIcon(this.getTextureName() + "." + num.name().toLowerCase(Locale.US) + ".lower");
 		}
 	}
-	
+
+	@Override
+	public void setBlockBoundsBasedOnState(IBlockAccess world, int x, int y, int z) {
+		this.setBlockBounds(0.1F, 0.0F, 0.1F, 0.9F, 1F, 0.9F);
+	}
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public IIcon getIcon(int side, int meta) {
@@ -101,7 +108,13 @@ public class BlockTallPlant extends BlockEnumMulti implements IPlantable, IGrowa
 
 	@Override
 	public AxisAlignedBB getCollisionBoundingBoxFromPool(World world, int x, int y, int z) {
+		// Null means no collision box like tall grass
 		return null;
+	}
+
+	@Override
+	public void addCollisionBoxesToList(World world, int x, int y, int z, AxisAlignedBB mask, List list, Entity entity) {
+		// Do nothing to mimic grass-like behavior (no collision).
 	}
 
 	@Override
@@ -133,7 +146,7 @@ public class BlockTallPlant extends BlockEnumMulti implements IPlantable, IGrowa
 		super.onNeighborBlockChange(world, x, y, z, block);
 		this.checkAndDropBlock(world, x, y, z);
 	}
-	
+
 	public static boolean detectCut = true;
 	protected void checkAndDropBlock(World world, int x, int y, int z) {
 		if(!this.canBlockStay(world, x, y, z)) {
@@ -142,13 +155,13 @@ public class BlockTallPlant extends BlockEnumMulti implements IPlantable, IGrowa
 			}
 			world.setBlock(x, y, z, Blocks.air, 0, 3);
 		}
-		
+
 		if(!detectCut) return;
-		
+
 		Block block = world.getBlock(x, y + 1, z);
 		int meta = world.getBlockMetadata(x, y + 1, z);
 		int ownMeta = world.getBlockMetadata(x, y, z);
-		
+
 		if(ownMeta < 8 && (meta != ownMeta + 8 || block != this) && ModBlocks.plant_flower.canBlockStay(world, x, y, z)) {
 
 			if(ownMeta == EnumTallFlower.WEED.ordinal())
@@ -161,26 +174,26 @@ public class BlockTallPlant extends BlockEnumMulti implements IPlantable, IGrowa
 	@Override
 	public boolean canBlockStay(World world, int x, int y, int z) {
 		int meta = world.getBlockMetadata(x, y, z);
-		
+
 		if(meta > 7) {
 			return world.getBlock(x, y - 1, z) == this && world.getBlockMetadata(x, y - 1, z) == meta - 8;
 		}
-		
+
 		return canPlaceBlockOn(world.getBlock(x, y - 1, z));
 	}
-	
+
 	@Override
 	public int getDamageValue(World world, int x, int y, int z) {
 		return world.getBlockMetadata(x, y, z) % 8;
 	}
-	
+
 	@Override
 	public void onBlockHarvested(World world, int x, int y, int z, int meta, EntityPlayer player) {
-		
+
 		if(meta > 7) {
 			// dead
 		} else if(world.getBlock(x, y + 1, z) == this) {
-			
+
 			if(player.capabilities.isCreativeMode) {
 				world.setBlock(x, y + 1, z, Blocks.air, 0, 2);
 			} else {
@@ -190,7 +203,7 @@ public class BlockTallPlant extends BlockEnumMulti implements IPlantable, IGrowa
 
 		super.onBlockHarvested(world, x, y, z, meta, player);
 	}
-	
+
 	@Override
 	public void onBlockPlacedBy(World world, int x, int y, int z, EntityLivingBase entity, ItemStack stack) {
 		world.setBlock(x, y + 1, z, this, stack.getItemDamage() + 8, 2);
@@ -200,20 +213,20 @@ public class BlockTallPlant extends BlockEnumMulti implements IPlantable, IGrowa
 	public void updateTick(World world, int x, int y, int z, Random rand) {
 
 		if(world.isRemote) return; //not possible i believe, but better safe than sorry
-		
+
 		int meta = world.getBlockMetadata(x, y, z);
 		if(meta > 7) return;
-		
+
 		EnumTallFlower type = EnumTallFlower.values()[rectify(meta)];
 		Block onTop = world.getBlock(x, y - 1, z);
-		
+
 		if(!type.needsOil) {
 			if(onTop == ModBlocks.dirt_dead || onTop == ModBlocks.dirt_oily) {
 				world.setBlock(x, y, z, ModBlocks.plant_dead, EnumDeadPlantType.BIGFLOWER.ordinal(), 3);
 				return;
 			}
 		}
-		
+
 		if(func_149851_a(world, x, y, z, false) && func_149852_a(world, rand, x, y, z) && rand.nextInt(3) == 0) {
 			func_149853_b(world, rand, x, y, z);
 		}
@@ -222,14 +235,14 @@ public class BlockTallPlant extends BlockEnumMulti implements IPlantable, IGrowa
 	/* grow condition */
 	@Override
 	public boolean func_149851_a(World world, int x, int y, int z, boolean b) {
-		
+
 		int meta = world.getBlockMetadata(x, y, z);
 		int rec = rectify(meta);
-		
+
 		if(rec == EnumTallFlower.CD2.ordinal() || rec == EnumTallFlower.CD3.ordinal()) {
-			
+
 			int y0 = rec == meta ? y : y - 1;
-			
+
 			if(world.getBlock(x + 1, y0 - 1, z).getMaterial() != Material.water &&
 					world.getBlock(x - 1, y0 - 1, z).getMaterial() != Material.water &&
 					world.getBlock(x, y0 - 1, z + 1).getMaterial() != Material.water &&
@@ -237,12 +250,12 @@ public class BlockTallPlant extends BlockEnumMulti implements IPlantable, IGrowa
 				return false;
 			}
 		}
-		
+
 		if(rec == EnumTallFlower.CD3.ordinal()) {
 			Block onTop = world.getBlock(x, y - (rec == meta ? 1 : 2), z);
 			return onTop == ModBlocks.dirt_dead || onTop == ModBlocks.dirt_oily;
 		}
-		
+
 		return rec != EnumTallFlower.CD4.ordinal() && rec != EnumTallFlower.WEED.ordinal();
 	}
 
@@ -259,14 +272,14 @@ public class BlockTallPlant extends BlockEnumMulti implements IPlantable, IGrowa
 	/* grow */
 	@Override
 	public void func_149853_b(World world, Random rand, int x, int y, int z) {
-		
+
 		int meta = world.getBlockMetadata(x, y, z);
 		int rec = rectify(meta);
-		
+
 		detectCut = false;
-		
+
 		if(rec == EnumTallFlower.CD2.ordinal() || rec == EnumTallFlower.CD3.ordinal()) {
-			
+
 			if(meta == rec) {
 				world.setBlockMetadataWithNotify(x, y + 1, z, meta + 9, 3);
 				world.setBlockMetadataWithNotify(x, y, z, meta + 1, 3);
@@ -281,7 +294,7 @@ public class BlockTallPlant extends BlockEnumMulti implements IPlantable, IGrowa
 				}
 			}
 		}
-		
+
 		detectCut = true;
 	}
 
@@ -299,16 +312,16 @@ public class BlockTallPlant extends BlockEnumMulti implements IPlantable, IGrowa
 	public int getPlantMetadata(IBlockAccess world, int x, int y, int z) {
 		return world.getBlockMetadata(x, y, z);
 	}
-	
+
 
 	@Override
 	public ArrayList<ItemStack> getDrops(World world, int x, int y, int z, int metadata, int fortune) {
 		ArrayList<ItemStack> ret = super.getDrops(world, x, y, z, metadata, fortune);
-		
+
 		if(metadata == EnumTallFlower.CD4.ordinal() + 8) {
 			ret.add(DictFrame.fromOne(ModItems.plant_item, com.hbm.items.ItemEnums.EnumPlantType.MUSTARDWILLOW, 3 + world.rand.nextInt(4)));
 		}
-		
+
 		return ret;
 	}
 }

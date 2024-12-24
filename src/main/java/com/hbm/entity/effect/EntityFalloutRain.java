@@ -25,7 +25,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 import java.util.*;
 
 public class EntityFalloutRain extends EntityExplosionChunkloading {
-	
+
 	private boolean firstTick = true; // Of course Vanilla has it private in Entity...
 	private boolean salted = false;
 	public EntityFalloutRain(World p_i1582_1_) {
@@ -45,11 +45,11 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
 	@Override
 	public void onUpdate() {
-		
+
 		if(!worldObj.isRemote) {
-			
+
 			long start = System.currentTimeMillis();
-			
+
 			if(firstTick) {
 				if(chunksToProcess.isEmpty() && outerChunksToProcess.isEmpty()) gatherChunks();
 				firstTick = false;
@@ -57,7 +57,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
 			if(tickDelay == 0) {
 				tickDelay = BombConfig.fDelay;
-				
+
 				while(System.currentTimeMillis() < start + BombConfig.mk5) {
 					if(!chunksToProcess.isEmpty()) {
 						long chunkPos = chunksToProcess.remove(chunksToProcess.size() - 1); // Just so it doesn't shift the whole list every time
@@ -76,7 +76,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 							}
 						}
 						if(biomeModified) WorldUtil.syncBiomeChange(worldObj, chunkPosX << 4, chunkPosZ << 4);
-						
+
 					} else if (!outerChunksToProcess.isEmpty()) {
 						long chunkPos = outerChunksToProcess.remove(outerChunksToProcess.size() - 1);
 						int chunkPosX = (int) (chunkPos & Integer.MAX_VALUE);
@@ -97,7 +97,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 							}
 						}
 						if(biomeModified) WorldUtil.syncBiomeChange(worldObj, chunkPosX << 4, chunkPosZ << 4);
-						
+
 					} else {
 						this.clearChunkLoader();
 						this.setDead();
@@ -120,7 +120,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 			}
 		}
 	}
-	
+
 	public static BiomeGenBase getBiomeChange(double dist, int scale, BiomeGenBase original) {
 		if(!WorldConfig.enableCraterBiomes) return null;
 		if(scale >= 150 && dist < 15)
@@ -160,24 +160,24 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 		Collections.reverse(chunksToProcess); // So it starts nicely from the middle
 		Collections.reverse(outerChunksToProcess);
 	}
-	
+
 	private void stomp(int x, int z, double dist) {
 
 		int depth = 0;
 
 		for(int y = 255; y >= 0; y--) {
-			
+
 			if(depth >= 3) return;
 
 			Block b = worldObj.getBlock(x, y, z);
 
 			if(b.getMaterial() == Material.air || b == ModBlocks.fallout) continue;
-			
+
 			if(b == ModBlocks.volcano_core) {
 				worldObj.setBlock(x, y, z, ModBlocks.volcano_rad_core, worldObj.getBlockMetadata(x, y, z), 3);
 				continue;
 			}
-			
+			//todo may make it so fallout layers stack if two nuclear bombs intersect, but i dont feel like doing that shit right now
 			Block ab = worldObj.getBlock(x, y + 1, z);
 			int meta = worldObj.getBlockMetadata(x, y, z);
 
@@ -190,7 +190,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 				if(this.salted)
 				{
 					if(chance >= rand.nextDouble() && ModBlocks.fallout.canPlaceBlockAt(worldObj, x, y + 1, z))
-						setBlock(x, y + 1, z, ModBlocks.salted_fallout);	
+						setBlock(x, y + 1, z, ModBlocks.salted_fallout);
 				}
 				else
 				{
@@ -203,11 +203,11 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 				if(rand.nextInt(5) == 0 && worldObj.getBlock(x, y + 1, z).isAir(worldObj, x, y + 1, z))
 					setBlock(x, y + 1, z, Blocks.fire);
 			}
-			
+
 			boolean eval = false;
-			
+
 			for(FalloutEntry entry : FalloutConfigJSON.entries) {
-				
+
 				if(entry.eval(worldObj, x, y, z, b, meta, dist, b, meta)) {
 					if(entry.isSolid()) {
 						depth++;
@@ -216,10 +216,10 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 					break;
 				}
 			}
-			
+
 			float hardness = b.getBlockHardness(worldObj, x, y, z);
 			if(y > 0 && dist < 65 && hardness <= Blocks.stonebrick.getExplosionResistance(null) && hardness >= 0/* && !b.hasTileEntity(worldObj.getBlockMetadata(x, y, z))*/) {
-				
+
 				if(worldObj.getBlock(x, y - 1, z) == Blocks.air) {
 					for(int i = 0; i <= depth; i++) {
 						Block block = worldObj.getBlock(x, y + i, z);
@@ -232,17 +232,17 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 					}
 				}
 			}
-			
+
 			if(!eval && b.isNormalCube()) {
 				depth++;
 			}
 		}
 	}
-	
+
 	public void setBlock(int x, int y, int z, Block block) {
 		setBlock(x, y, z, block, 0);
 	}
-	
+
 	public void setBlock(int x, int y, int z, Block block, int meta) {
 		worldObj.setBlock(x, y, z, block, meta, 3); //this was supposed to write the position to a list for a multi block update, but forge already has that built-in. whoops.
 	}

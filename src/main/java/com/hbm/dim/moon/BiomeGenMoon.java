@@ -21,7 +21,14 @@ public class BiomeGenMoon extends BiomeGenBaseCelestial {
 		this.setBiomeName("Mun");
 		this.setDisableRain();
 
-        this.creatures.add(new BiomeGenBase.SpawnListEntry(EntityMoonCow.class, 10, 4, 4));
+        //this.creatures.add(new BiomeGenBase.SpawnListEntry(EntityMoonCow.class, 10, 4, 4));
+		//Now I miss her, she is still with me,
+		// but I can only see her sometimes and this ship is very hard to control.
+		// I'm a bad driver, I can crash if the way is too much for me,
+		// I can lose her if I can't continue and it's so hard to continue,
+		// I can lose all. I don't want to crash, I don't want to lose,
+		// but it's so dark out there and I can't see the future,
+		// I'm afraid to look and realize she is not there anymore
 
 		this.theBiomeDecorator.generateLakes = false;
 

@@ -14,6 +14,7 @@ import com.hbm.items.ModItems;
 import net.minecraft.block.Block;
 import net.minecraft.block.IGrowable;
 import net.minecraft.block.material.Material;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
@@ -23,6 +24,8 @@ import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.common.EnumPlantType;
 import net.minecraftforge.common.IPlantable;
+import net.minecraft.entity.Entity;
+import java.util.List;
 
 public class BlockNTMFlower extends BlockEnumMulti implements IPlantable, IGrowable, ITooltipProvider {
 
@@ -30,7 +33,7 @@ public class BlockNTMFlower extends BlockEnumMulti implements IPlantable, IGrowa
 		super(Material.plants, EnumFlowerType.class, true, true);
 		this.setTickRandomly(true);
 	}
-	
+
 	public static enum EnumFlowerType {
 		FOXGLOVE(false),
 		TOBACCO(false),
@@ -39,7 +42,7 @@ public class BlockNTMFlower extends BlockEnumMulti implements IPlantable, IGrowa
 		CD0(true),
 		CD1(true),
 		STRAWBERRY(false);
-		
+
 		public boolean needsOil;
 		private EnumFlowerType(boolean needsOil) {
 			this.needsOil = needsOil;
@@ -75,12 +78,22 @@ public class BlockNTMFlower extends BlockEnumMulti implements IPlantable, IGrowa
 		super.onNeighborBlockChange(world, x, y, z, block);
 		this.checkAndDropBlock(world, x, y, z);
 	}
-	
+
 	protected void checkAndDropBlock(World world, int x, int y, int z) {
 		if(!this.canBlockStay(world, x, y, z)) {
 			this.dropBlockAsItem(world, x, y, z, world.getBlockMetadata(x, y, z), 0);
 			world.setBlock(x, y, z, Blocks.air, 0, 2);
 		}
+	}
+
+	@Override
+	public void setBlockBoundsBasedOnState(IBlockAccess world, int x, int y, int z) {
+		this.setBlockBounds(0.1F, 0.0F, 0.1F, 0.9F, 1F, 0.9F);
+	}
+
+	@Override
+	public void addCollisionBoxesToList(World world, int x, int y, int z, AxisAlignedBB mask, List list, Entity entity) {
+		// Do nothing to mimic grass-like behavior (no collision).
 	}
 
 	@Override
@@ -113,20 +126,22 @@ public class BlockNTMFlower extends BlockEnumMulti implements IPlantable, IGrowa
 		if(meta == EnumFlowerType.CD1.ordinal()) {
 			return EnumFlowerType.CD0.ordinal();
 		}
-		
+
 		return meta;
 	}
+
+
 
 	@Override
 	public void updateTick(World world, int x, int y, int z, Random rand) {
 
 		if(world.isRemote) return; //not possible i believe, but better safe than sorry
-		
+
 		int meta = world.getBlockMetadata(x, y, z);
 		EnumFlowerType type = EnumFlowerType.values()[rectify(meta)];
-		
+
 		if(!(type == EnumFlowerType.WEED || type == EnumFlowerType.CD0 || type == EnumFlowerType.CD1)) return;
-		
+
 		if(func_149851_a(world, x, y, z, false) && func_149852_a(world, rand, x, y, z) && rand.nextInt(3) == 0) {
 			func_149853_b(world, rand, x, y, z);
 		}
@@ -135,12 +150,12 @@ public class BlockNTMFlower extends BlockEnumMulti implements IPlantable, IGrowa
 	/* grow condition */
 	@Override
 	public boolean func_149851_a(World world, int x, int y, int z, boolean b) {
-		
+
 		int meta = world.getBlockMetadata(x, y, z);
-		
+
 		//cadmium willows can only grow with water
 		if(meta == EnumFlowerType.CD0.ordinal() || meta == EnumFlowerType.CD1.ordinal()) {
-			
+
 			if(world.getBlock(x + 1, y - 1, z).getMaterial() != Material.water &&
 					world.getBlock(x - 1, y - 1, z).getMaterial() != Material.water &&
 					world.getBlock(x, y - 1, z + 1).getMaterial() != Material.water &&
@@ -148,7 +163,7 @@ public class BlockNTMFlower extends BlockEnumMulti implements IPlantable, IGrowa
 				return false;
 			}
 		}
-		
+
 		if(meta == EnumFlowerType.WEED.ordinal() ||  meta == EnumFlowerType.CD1.ordinal()) {
 			return world.isAirBlock(x, y + 1, z);
 		}
@@ -158,13 +173,13 @@ public class BlockNTMFlower extends BlockEnumMulti implements IPlantable, IGrowa
 	/* chance */
 	@Override
 	public boolean func_149852_a(World world, Random rand, int x, int y, int z) {
-		
+
 		int meta = world.getBlockMetadata(x, y, z);
-		
+
 		if(meta == EnumFlowerType.WEED.ordinal() || meta == EnumFlowerType.CD0.ordinal() || meta == EnumFlowerType.CD1.ordinal()) {
 			return rand.nextFloat() < 0.33F;
 		}
-		
+
 		return true;
 	}
 
@@ -174,31 +189,31 @@ public class BlockNTMFlower extends BlockEnumMulti implements IPlantable, IGrowa
 
 		int meta = world.getBlockMetadata(x, y, z);
 		Block onTop = world.getBlock(x, y - 1, z);
-		
+
 		if(meta == EnumFlowerType.WEED.ordinal()) {
 			if(onTop == ModBlocks.dirt_dead || onTop == ModBlocks.dirt_oily) {
 				world.setBlock(x, y, z, ModBlocks.plant_dead, EnumDeadPlantType.GENERIC.ordinal(), 3);
 				return;
 			}
 		}
-		
+
 		if(meta == EnumFlowerType.WEED.ordinal()) {
 			world.setBlock(x, y, z, ModBlocks.plant_tall, EnumTallFlower.WEED.ordinal(), 3);
 			world.setBlock(x, y + 1, z, ModBlocks.plant_tall, EnumTallFlower.WEED.ordinal() + 8, 3);
 			return;
 		}
-		
+
 		if(meta == EnumFlowerType.CD0.ordinal()) {
 			world.setBlock(x, y, z, ModBlocks.plant_flower, EnumFlowerType.CD1.ordinal(), 3);
 			return;
 		}
-		
+
 		if(meta == EnumFlowerType.CD1.ordinal()) {
 			world.setBlock(x, y, z, ModBlocks.plant_tall, EnumTallFlower.CD2.ordinal(), 3);
 			world.setBlock(x, y + 1, z, ModBlocks.plant_tall, EnumTallFlower.CD2.ordinal() + 8, 3);
 			return;
 		}
-		
+
 		this.dropBlockAsItem(world, x, y, z, world.getBlockMetadata(x, y, z), 0);
 	}
 
