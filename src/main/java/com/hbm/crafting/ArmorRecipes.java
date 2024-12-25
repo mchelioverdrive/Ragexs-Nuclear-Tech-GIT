@@ -33,10 +33,10 @@ public class ArmorRecipes {
 		addChest(	STEEL.ingot(), ModItems.steel_plate);
 		addLegs(	STEEL.ingot(), ModItems.steel_legs);
 		addBoots(	STEEL.ingot(), ModItems.steel_boots);
-		//addHelmet(	TI.ingot(), ModItems.titanium_helmet);
-		//addChest(	TI.ingot(), ModItems.titanium_plate);
-		//addLegs(	TI.ingot(), ModItems.titanium_legs);
-		//addBoots(	TI.ingot(), ModItems.titanium_boots);
+		addHelmet(	TI.ingot(), ModItems.titanium_helmet);
+		addChest(	TI.ingot(), ModItems.titanium_plate);
+		addLegs(	TI.ingot(), ModItems.titanium_legs);
+		addBoots(	TI.ingot(), ModItems.titanium_boots);
 		//addHelmet(	ALLOY.ingot(), ModItems.alloy_helmet);
 		//addChest(	ALLOY.ingot(), ModItems.alloy_plate);
 		//addLegs(	ALLOY.ingot(), ModItems.alloy_legs);
