@@ -73,23 +73,24 @@ public class ToolRecipes {
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.dwarven_pickaxe, 1), new Object[] { "CIC", " S ", " S ", 'C', CU.ingot(), 'I', IRON.ingot(), 'S', KEY_STICK });
 
 		//Drax
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.drax, 1), new Object[] { "BDS", "CDC", "FMF", 'B', ModItems.starmetal_pickaxe, 'S', ModItems.starmetal_shovel, 'C', CO.ingot(), 'F', ModItems.fusion_core, 'D', DESH.ingot(), 'M', ModItems.motor_desh });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.drax_mk2, 1), new Object[] { "SCS", "IDI", "FEF", 'S', STAR.ingot(), 'C', ModItems.crystal_trixite, 'I', BIGMT.ingot(), 'D', ModItems.drax, 'F', ModItems.fusion_core, 'E', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.ADVANCED) });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.drax_mk3, 1), new Object[] { "ECE", "CDC", "SBS", 'E', ModBlocks.block_euphemium_cluster, 'C', ModItems.crystal_schrabidium, 'D', ModItems.drax_mk2, 'S', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BISMOID), 'B', ItemBattery.getFullBattery(ModItems.battery_spark) });
+		CraftingManager.addRecipeAuto(new ItemStack(ModItems.drax, 1), new Object[] { "BDS", "CDC", "FMF", 'B', ModItems.elec_pickaxe, 'S', ModItems.drillbit, 'C', CO.ingot(), 'F', ModItems.battery_lithium, 'D', STEEL.ingot(), 'M', ModItems.motor_desh });
+		CraftingManager.addRecipeAuto(new ItemStack(ModItems.drax_mk2, 1), new Object[] { "SCS", "IDI", "FEF", 'S', STEEL.ingot(), 'C', ModItems.drill_titanium, 'I', BIGMT.ingot(), 'D', ModItems.drax, 'F', ModItems.armor_battery, 'E', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.ADVANCED) });
+		CraftingManager.addRecipeAuto(new ItemStack(ModItems.drax_mk3, 1), new Object[] { "ECE", "CDC", "SBS", 'E', ModItems.drill_titanium, 'C', ModItems.ingot_advanced_alloy, 'D', ModItems.drax_mk2, 'S', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BISMOID), 'B', ItemBattery.getFullBattery(ModItems.armor_battery) });
 
 		//Super pickaxes
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.bismuth_pickaxe, 1), new Object[] { " BM", "BPB", "TB ", 'B', ModItems.ingot_bismuth, 'M', ModItems.ingot_meteorite, 'P', ModItems.starmetal_pickaxe, 'T', W.bolt() });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.volcanic_pickaxe, 1), new Object[] { " BM", "BPB", "TB ", 'B', ModItems.gem_volcanic, 'M', ModItems.ingot_meteorite, 'P', ModItems.starmetal_pickaxe, 'T', W.bolt() });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.chlorophyte_pickaxe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_steel, 'D', ModItems.powder_chlorophyte, 'A', FIBER.ingot(), 'P', ModItems.bismuth_pickaxe, 'F', DURA.bolt() });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.chlorophyte_pickaxe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_steel, 'D', ModItems.powder_chlorophyte, 'A', FIBER.ingot(), 'P', ModItems.volcanic_pickaxe, 'F', DURA.bolt() });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.mese_pickaxe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_desh, 'D', ModItems.powder_dineutronium, 'A', ModItems.plate_paa, 'P', ModItems.chlorophyte_pickaxe, 'F', ModItems.shimmer_handle });
+		//arent real
+		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.volcanic_pickaxe, 1), new Object[] { " BM", "BPB", "TB ", 'B', ModItems.gem_volcanic, 'M', ModItems.ingot_meteorite, 'P', ModItems.starmetal_pickaxe, 'T', W.bolt() });
+		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.chlorophyte_pickaxe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_steel, 'D', ModItems.powder_chlorophyte, 'A', FIBER.ingot(), 'P', ModItems.bismuth_pickaxe, 'F', DURA.bolt() });
+		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.chlorophyte_pickaxe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_steel, 'D', ModItems.powder_chlorophyte, 'A', FIBER.ingot(), 'P', ModItems.volcanic_pickaxe, 'F', DURA.bolt() });
+		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.mese_pickaxe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_desh, 'D', ModItems.powder_dineutronium, 'A', ModItems.plate_paa, 'P', ModItems.chlorophyte_pickaxe, 'F', ModItems.shimmer_handle });
 
 		//Super Axes
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.bismuth_axe, 1), new Object[] { " BM", "BPB", "TB ", 'B', ModItems.ingot_bismuth, 'M', ModItems.ingot_meteorite, 'P', ModItems.starmetal_axe, 'T', W.bolt() });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.volcanic_axe, 1), new Object[] { " BM", "BPB", "TB ", 'B', ModItems.gem_volcanic, 'M', ModItems.ingot_meteorite, 'P', ModItems.starmetal_axe, 'T', W.bolt() });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.chlorophyte_axe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_steel, 'D', ModItems.powder_chlorophyte, 'A', FIBER.ingot(), 'P', ModItems.bismuth_axe, 'F', DURA.bolt() });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.chlorophyte_axe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_steel, 'D', ModItems.powder_chlorophyte, 'A', FIBER.ingot(), 'P', ModItems.volcanic_axe, 'F', DURA.bolt() });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.mese_axe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_desh, 'D', ModItems.powder_dineutronium, 'A', ModItems.plate_paa, 'P', ModItems.chlorophyte_axe, 'F', ModItems.shimmer_handle });
+		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.volcanic_axe, 1), new Object[] { " BM", "BPB", "TB ", 'B', ModItems.gem_volcanic, 'M', ModItems.ingot_meteorite, 'P', ModItems.starmetal_axe, 'T', W.bolt() });
+		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.chlorophyte_axe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_steel, 'D', ModItems.powder_chlorophyte, 'A', FIBER.ingot(), 'P', ModItems.bismuth_axe, 'F', DURA.bolt() });
+		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.chlorophyte_axe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_steel, 'D', ModItems.powder_chlorophyte, 'A', FIBER.ingot(), 'P', ModItems.volcanic_axe, 'F', DURA.bolt() });
+		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.mese_axe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_desh, 'D', ModItems.powder_dineutronium, 'A', ModItems.plate_paa, 'P', ModItems.chlorophyte_axe, 'F', ModItems.shimmer_handle });
 
 		//Chainsaws
 		CraftingManager.addRecipeAuto(ItemToolAbilityFueled.getEmptyTool(ModItems.chainsaw), new Object[] { "CCH", "BBP", "CCE", 'H', STEEL.shell(), 'B', ModItems.blades_steel, 'P', ModItems.piston_selenium, 'C', ModBlocks.chain, 'E', ModItems.canister_empty });

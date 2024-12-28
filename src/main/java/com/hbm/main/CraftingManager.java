@@ -592,9 +592,28 @@ public class CraftingManager {
 		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_advanced), new Object[] { " A ", "PLP", "PSP", 'A', MINGRADE.wireFine(), 'P', CU.plate(), 'S', "dustSulfur", 'L', PB.dust() });
 		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_lithium), new Object[] { "A A", "PSP", "PLP", 'A', GOLD.wireFine(), 'P', TI.plate(), 'S', LI.dust(), 'L', CO.dust() });
 		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_lithium), new Object[] { "A A", "PLP", "PSP", 'A', GOLD.wireFine(), 'P', TI.plate(), 'S', LI.dust(), 'L', CO.dust() });
-		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_schrabidium), new Object[] { " A ", "PNP", "PSP", 'A', SA326.wireFine(), 'P', SA326.plate(), 'S', SA326.dust(), 'N', NP237.dust() });
-		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_schrabidium), new Object[] { " A ", "PSP", "PNP", 'A', SA326.wireFine(), 'P', SA326.plate(), 'S', SA326.dust(), 'N', NP237.dust() });
-		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_spark), new Object[] { "P", "S", "S", 'P', ModItems.plate_dineutronium, 'S', ModItems.powder_spark_mix });
+		// First recipe
+		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_schrabidium), new Object[] {
+			" A ",
+			"PNP",
+			"PSP",
+			'A', ModItems.battery_lithium,
+			'P', ModItems.nugget_tantalium,
+			'S', GOLD.wireFine(),
+			'N', GOLD.nugget()
+		});
+
+	// Second recipe
+		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_schrabidium), new Object[] {
+			" A ",
+			"PSP",
+			"PNP",
+			'A', ModItems.battery_lithium,
+			'P', ModItems.nugget_tantalium,
+			'S', GOLD.wireFine(),
+			'N', GOLD.nugget()
+		});
+		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_spark), new Object[] { "P", "S", "S", 'P', ModItems.battery_schrabidium, 'S', ModItems.ingot_red_copper });
 		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_trixite), new Object[] { " A ", "PSP", "PTP", 'A', AL.wireFine(), 'P', AL.plate(), 'S', ModItems.powder_power, 'T', ModItems.crystal_trixite });
 		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_trixite), new Object[] { " A ", "PTP", "PSP", 'A', AL.wireFine(), 'P', AL.plate(), 'S', ModItems.powder_power, 'T', ModItems.crystal_trixite });
 		addRecipeAuto(ItemBattery.getFullBattery(ModItems.energy_core), new Object[] { "PCW", "TRD", "PCW", 'P', ALLOY.plate(), 'C', ModItems.coil_advanced_alloy, 'W', ALLOY.wireFine(), 'R', ModItems.cell_tritium, 'D', ModItems.cell_deuterium, 'T', W.ingot() });

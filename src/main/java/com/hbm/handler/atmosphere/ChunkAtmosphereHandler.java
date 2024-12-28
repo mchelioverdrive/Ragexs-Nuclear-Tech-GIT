@@ -11,6 +11,7 @@ import com.hbm.dim.CelestialBody;
 import com.hbm.dim.orbit.WorldProviderOrbit;
 import com.hbm.dim.trait.CBT_Atmosphere;
 import com.hbm.dim.trait.CBT_Atmosphere.FluidEntry;
+import com.hbm.extprop.HbmLivingProps;
 import com.hbm.handler.ThreeInts;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.trait.FT_Corrosive;
@@ -160,6 +161,8 @@ public class ChunkAtmosphereHandler {
 	public boolean canBreathe(CBT_Atmosphere atmosphere) {
 		return atmosphere != null && (atmosphere.hasFluid(Fluids.AIR, 0.21) || atmosphere.hasFluid(Fluids.OXYGEN, 0.09));
 	}
+
+
 
 
 

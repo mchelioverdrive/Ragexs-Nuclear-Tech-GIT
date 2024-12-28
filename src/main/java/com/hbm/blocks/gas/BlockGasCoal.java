@@ -28,23 +28,23 @@ public class BlockGasCoal extends BlockGasBase {
 
 	@Override
 	public void onEntityCollidedWithBlock(World world, int x, int y, int z, Entity entity) {
-		
+
 		if(entity instanceof EntityLivingBase) {
-			
+
 			EntityLivingBase living = (EntityLivingBase) entity;
-			
+
 			if(!ArmorRegistry.hasProtection(living, 3, HazardClass.PARTICLE_COARSE)) {
-				HbmLivingProps.incrementBlackLung(living, 10);
+				HbmLivingProps.incrementBlackLung(living, 5);
 			}
 		}
 	}
 
 	@Override
 	public ForgeDirection getFirstDirection(World world, int x, int y, int z) {
-		
+
 		if(world.rand.nextInt(5) == 0)
 			return ForgeDirection.DOWN;
-		
+
 		return ForgeDirection.getOrientation(world.rand.nextInt(6));
 	}
 
@@ -60,7 +60,7 @@ public class BlockGasCoal extends BlockGasBase {
 			world.setBlockToAir(x, y, z);
 			return;
 		}
-		
+
 		super.updateTick(world, x, y, z, rand);
 	}
 }

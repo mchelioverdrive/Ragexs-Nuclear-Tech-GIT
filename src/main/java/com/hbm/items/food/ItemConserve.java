@@ -39,8 +39,13 @@ public class ItemConserve extends ItemEnumMulti {
 
 	//the fancy enum lambdas and method references and whatever can come later if necessary
 	protected void onFoodEaten(ItemStack stack, World world, EntityPlayer player) {
-		player.inventory.addItemStackToInventory(new ItemStack(ModItems.can_key));
-		//EnumFoodType num = EnumUtil.grabEnumSafely(theEnum, stack.getItemDamage());
+		EnumFoodType num = EnumUtil.grabEnumSafely(theEnum, stack.getItemDamage());
+		if (num == EnumFoodType.TUBE) {
+		} else {
+			player.inventory.addItemStackToInventory(new ItemStack(ModItems.can_key));
+		}
+
+		//
 
 		//if(num == EnumFoodType.BHOLE && !world.isRemote) {
 		//	EntityVortex vortex = new EntityVortex(world, 0.5F);
@@ -120,6 +125,9 @@ public class ItemConserve extends ItemEnumMulti {
 		CHINESE(6, 0.1F),
 		BARK(2, 1F);
 
+		// Define a method to check if an item is astronaut food
+
+
 		protected int foodLevel;
 		protected float saturation;
 
@@ -128,4 +136,19 @@ public class ItemConserve extends ItemEnumMulti {
 			this.saturation = sat;
 		}
 	}
+
+	public static boolean isAstronautFood(ItemStack itemStack) {
+		if (itemStack == null || itemStack.getItem() == null) {
+			return false;
+		}
+
+		// Validate item and food type
+		if (itemStack.getItem() == ModItems.canned_conserve) {
+			int meta = itemStack.getItemDamage();
+			return meta >= 0 && meta < EnumFoodType.values().length && EnumFoodType.values()[meta] == EnumFoodType.TUBE;
+		}
+
+		return false;
+	}
+
 }

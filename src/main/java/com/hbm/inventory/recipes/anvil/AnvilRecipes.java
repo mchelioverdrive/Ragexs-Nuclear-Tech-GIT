@@ -80,10 +80,10 @@ public class AnvilRecipes {
 
 
 		//smithingRecipes.add(new AnvilSmithingHotRecipe(3, new ItemStack(ModItems.cobalt_decorated_sword, 1), new ComparableStack(ModItems.cobalt_sword), new ComparableStack(ModItems.ingot_meteorite)));
-		smithingRecipes.add(new AnvilSmithingHotRecipe(3, new ItemStack(ModItems.cobalt_decorated_pickaxe, 1), new ComparableStack(ModItems.cobalt_pickaxe), new ComparableStack(ModItems.ingot_meteorite)));
-		smithingRecipes.add(new AnvilSmithingHotRecipe(3, new ItemStack(ModItems.cobalt_decorated_axe, 1), new ComparableStack(ModItems.cobalt_axe), new ComparableStack(ModItems.ingot_meteorite)));
-		smithingRecipes.add(new AnvilSmithingHotRecipe(3, new ItemStack(ModItems.cobalt_decorated_shovel, 1), new ComparableStack(ModItems.cobalt_shovel), new ComparableStack(ModItems.ingot_meteorite)));
-		smithingRecipes.add(new AnvilSmithingHotRecipe(3, new ItemStack(ModItems.cobalt_decorated_hoe, 1), new ComparableStack(ModItems.cobalt_hoe), new ComparableStack(ModItems.ingot_meteorite)));
+		smithingRecipes.add(new AnvilSmithingRecipe(3, new ItemStack(ModItems.cobalt_decorated_pickaxe, 1), new ComparableStack(ModItems.cobalt_pickaxe), new ComparableStack(ModBlocks.block_cobalt)));
+		smithingRecipes.add(new AnvilSmithingRecipe(3, new ItemStack(ModItems.cobalt_decorated_axe, 1), new ComparableStack(ModItems.cobalt_axe), new ComparableStack(ModBlocks.block_cobalt)));
+		smithingRecipes.add(new AnvilSmithingRecipe(3, new ItemStack(ModItems.cobalt_decorated_shovel, 1), new ComparableStack(ModItems.cobalt_shovel), new ComparableStack(ModBlocks.block_cobalt)));
+		smithingRecipes.add(new AnvilSmithingRecipe(3, new ItemStack(ModItems.cobalt_decorated_hoe, 1), new ComparableStack(ModItems.cobalt_hoe), new ComparableStack(ModBlocks.block_cobalt)));
 
 		smithingRecipes.add(new AnvilSmithingRecipe(1, new ItemStack(ModItems.ingot_gunmetal, 1), new OreDictStack(CU.ingot()), new OreDictStack(AL.ingot())));
 		//smithingRecipes.add(new AnvilSmithingRecipe(1, new ItemStack(ModItems.gun_ar15, 1), new ComparableStack(ModItems.gun_thompson), new ComparableStack(ModItems.pipe_lead)));

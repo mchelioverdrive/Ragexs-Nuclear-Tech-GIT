@@ -7,6 +7,8 @@ import java.util.UUID;
 import com.hbm.config.RadiationConfig;
 import com.hbm.dim.trait.CBT_Atmosphere;
 //import com.hbm.entity.mob.EntityDuck;
+import com.hbm.inventory.fluid.Fluids;
+import com.hbm.items.food.ItemConserve;
 import com.hbm.lib.ModDamageSource;
 import com.hbm.main.MainRegistry;
 import com.hbm.packet.PacketDispatcher;
@@ -14,6 +16,7 @@ import com.hbm.packet.toclient.AuxParticlePacketNT;
 import com.hbm.packet.toclient.PlayerInformPacket;
 import com.hbm.util.ChatBuilder;
 
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
@@ -25,11 +28,14 @@ import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
+import net.minecraft.item.ItemFood;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.common.IExtendedEntityProperties;
+import net.minecraftforge.event.entity.player.PlayerUseItemEvent;
 
 public class HbmLivingProps implements IExtendedEntityProperties {
 
@@ -267,6 +273,8 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 	public static int getOxy(EntityLivingBase entity) {
 		return getData(entity).oxygen;
 	}
+
+
 
 	public static void setOxy(EntityLivingBase entity, int oxygen) {
 		if(oxygen <= 0) {
