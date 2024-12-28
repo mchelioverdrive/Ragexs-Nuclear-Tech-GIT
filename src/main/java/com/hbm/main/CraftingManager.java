@@ -28,6 +28,7 @@ import com.hbm.items.ItemEnums.EnumLegendaryType;
 import com.hbm.items.ItemEnums.EnumPages;
 import com.hbm.items.ItemEnums.EnumPlantType;
 import com.hbm.items.ItemGenericPart.EnumPartType;
+import com.hbm.items.food.ItemConserve;
 import com.hbm.items.food.ItemConserve.EnumFoodType;
 import com.hbm.items.machine.ItemArcElectrode.EnumElectrodeType;
 import com.hbm.items.machine.ItemBattery;
@@ -39,11 +40,13 @@ import com.hbm.items.tool.ItemDrone.EnumDroneType;
 import com.hbm.items.tool.ItemGuideBook.BookType;
 import com.hbm.util.EnchantmentUtil;
 
+import cpw.mods.fml.common.registry.GameData;
 import net.minecraft.block.Block;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemFood;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraftforge.oredict.OreDictionary;
@@ -90,6 +93,31 @@ public class CraftingManager {
 		for(Object[] array : BlockGenericStairs.recipeGen) {
 			addRecipeAuto(new ItemStack((Block) array[2], 4), new Object[] { "#  ",  "## ",  "###", '#', new ItemStack((Block) array[0], 1, (int) array[1]) });
 		}
+
+		// Gather all food items
+		List<ItemStack> allFoods = new ArrayList<>();
+		for (Object obj : GameData.getItemRegistry()) {
+			if (obj instanceof Item) {
+				Item item = (Item) obj;
+				if (item instanceof ItemFood) {
+					allFoods.add(new ItemStack(item));
+				}
+			}
+		}
+
+		// Get the ordinal value of the TUBE enum
+		int tubeMeta = ItemConserve.EnumFoodType.TUBE.ordinal();
+
+		// Register recipes for each food item
+		//please god just work
+		for (ItemStack food : allFoods) {
+			GameRegistry.addShapelessRecipe(
+				new ItemStack(ModItems.canned_conserve, 1, tubeMeta), // Output with meta
+				food // Input: any food item
+			);
+		}
+
+
 
 		//addRecipeAuto(new ItemStack(ModItems.redstone_sword, 1), new Object[] { "R", "R", "S", 'R', REDSTONE.block(), 'S', KEY_STICK });
 		//addRecipeAuto(new ItemStack(ModItems.big_sword, 1), new Object[] { "QIQ", "QIQ", "GSG", 'G', Items.gold_ingot, 'S', KEY_STICK, 'I', Items.iron_ingot, 'Q', Items.quartz});

@@ -6,6 +6,7 @@ import com.hbm.inventory.OreDictManager.DictFrame;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.material.Mats;
 import com.hbm.items.ItemAmmoEnums.AmmoFatman;
+import com.hbm.items.food.ItemConserve;
 import com.hbm.items.machine.ItemCircuit.EnumCircuitType;
 import com.hbm.items.ItemEnums;
 import com.hbm.items.ModItems;
@@ -13,11 +14,17 @@ import com.hbm.main.CraftingManager;
 
 import static com.hbm.inventory.OreDictManager.*;
 
+import com.hbm.util.EnumUtil;
+import cpw.mods.fml.common.registry.GameData;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemFood;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.oredict.OreDictionary;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * For foods, drinks or other consumables
@@ -67,6 +74,28 @@ public class ConsumableRecipes {
 
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.cheese), new Object[] { Items.wheat, Items.milk_bucket, ModItems.sulfur });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.cheese), new Object[] { Items.wheat_seeds, Items.milk_bucket, ModItems.sulfur });
+
+		////astronaut food
+		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.canned_conserve &&
+		//	ItemConserve.EnumFoodType.TUBE.name().equals(EnumUtil.grabEnumSafely(ItemConserve.EnumFoodType.class, item.getItemDamage()).name())), new Object[] { Items.wheat_seeds, Items.milk_bucket, ModItems.sulfur });
+
+		//List<ItemStack> allFoods = new ArrayList<>();
+		//for (Object obj : GameData.getItemRegistry()) {
+		//	if (obj instanceof Item) {
+		//		Item item = (Item) obj;
+		//		if (item instanceof ItemFood) {
+		//			allFoods.add(new ItemStack(item));
+		//		}
+		//	}
+		//}
+//
+		//int tubeMeta = ItemConserve.EnumFoodType.TUBE.ordinal(); // Get the ordinal value of the TUBE enum
+		//CraftingManager.addShapelessAuto(
+		//	new ItemStack(ModItems.canned_conserve, 1, tubeMeta),
+		//	new Object[] {
+		//		allFoods,
+		//	}
+		//);
 
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.twinkie), new Object[] { Items.wheat, Items.egg, Items.sugar, ModItems.butter});
 

@@ -65,6 +65,13 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 		this.worldObj.getWorldInfo().setThundering(false);
 		this.worldObj.rainingStrength = 0.0F;
 		this.worldObj.thunderingStrength = 0.0F;
+
+		//is this where atmospheres are handled?
+		//if (event.item.getItem() instanceof ItemFood) {
+		//	event.setCanceled(true);
+		//	event.entityPlayer.addChatMessage(new ChatComponentText("You cannot eat here without an atmosphere!"));
+		//}
+
 	}
 
 	// Can be overridden to provide fog changing events based on weather

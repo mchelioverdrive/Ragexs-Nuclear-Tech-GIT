@@ -32,8 +32,7 @@ public class ItemModNightVision extends ItemArmorMod {
 	@Override
 	public void modUpdate(EntityLivingBase entity, ItemStack armor) { //hopefully should work without being as anal as bob's BS
 		if(!entity.worldObj.isRemote && entity instanceof EntityPlayer && armor.getItem() instanceof ItemArmor) { //((EntityPlayer) entity)
-			entity.addPotionEffect(new PotionEffect(Potion.nightVision.id, 15 * 20, 0));
-
+			entity.addPotionEffect(new PotionEffect(Potion.nightVision.id, 1 * 20, 0));
 			//if(entity.getRNG().nextInt(100) == 0) {
 			//	armor.damageItem(1, entity);
 			//}

@@ -14,9 +14,14 @@ import com.hbm.dim.trait.CBT_Atmosphere.FluidEntry;
 import com.hbm.handler.ThreeInts;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.trait.FT_Corrosive;
+import com.hbm.items.ModItems;
+import com.hbm.items.food.ItemConserve;
+import com.hbm.items.food.ItemLemon;
 import com.hbm.main.MainRegistry;
+import com.hbm.util.EnumUtil;
 import com.hbm.util.Tuple.Pair;
 
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.Phase;
 import net.minecraft.block.Block;
@@ -26,11 +31,14 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.item.ItemFood;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.ChunkPosition;
 import net.minecraft.world.World;
 import net.minecraftforge.common.IPlantable;
 import net.minecraftforge.common.util.ForgeDirection;
+import net.minecraftforge.event.entity.player.PlayerUseItemEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.event.world.ExplosionEvent;
 import net.minecraftforge.event.world.WorldEvent;
@@ -152,6 +160,8 @@ public class ChunkAtmosphereHandler {
 	public boolean canBreathe(CBT_Atmosphere atmosphere) {
 		return atmosphere != null && (atmosphere.hasFluid(Fluids.AIR, 0.21) || atmosphere.hasFluid(Fluids.OXYGEN, 0.09));
 	}
+
+
 
 	// Is the air pressure high enough to support liquids
 	public boolean hasLiquidPressure(CBT_Atmosphere atmosphere) {

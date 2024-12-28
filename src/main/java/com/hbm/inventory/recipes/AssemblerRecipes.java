@@ -1461,6 +1461,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 				new OreDictStack(ANY_HARDPLASTIC.ingot(), 8),
 				new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ADVANCED),
 				new OreDictStack(CU.pipe(), 4),
+				new ComparableStack(ModBlocks.machine_htr3, 1),
 		}, 400);
 		makeRecipe(new ComparableStack(ModBlocks.machine_htr3, 1), new AStack[] {
 				new OreDictStack(STEEL.plateWelded(), 8),

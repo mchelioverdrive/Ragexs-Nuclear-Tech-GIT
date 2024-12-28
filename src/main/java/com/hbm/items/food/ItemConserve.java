@@ -35,6 +35,7 @@ public class ItemConserve extends ItemEnumMulti {
 		this.onFoodEaten(stack, world, player);
 		return stack;
 	}
+	//tfw this just fucking breaks anything special and hates god for no reason
 
 	//the fancy enum lambdas and method references and whatever can come later if necessary
 	protected void onFoodEaten(ItemStack stack, World world, EntityPlayer player) {

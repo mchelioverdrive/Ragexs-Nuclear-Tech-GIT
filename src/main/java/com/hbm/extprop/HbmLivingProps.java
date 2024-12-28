@@ -356,7 +356,7 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 		return getData(entity).atmosphere;
 	}
 
-
+//todo gravity fall damage
 	public static void setAtmosphere(EntityLivingBase entity, CBT_Atmosphere atmosphere) {
 		HbmLivingProps data = getData(entity);
 		data.atmosphere = atmosphere;
