@@ -24,34 +24,7 @@ public class ChunkAtmosphereManager {
     public static ChunkAtmosphereHandler proxy = new ChunkAtmosphereHandler();
 
 
-	//alright fuck your enums good enough
-	//nvm no it isnt goddammit
-	//@SubscribeEvent
-	//public void onItemUse(PlayerUseItemEvent.Start event) {
-	//	World world = event.entityPlayer.worldObj;
-	//	EntityPlayer player = event.entityPlayer;
-//
-	//	// Ensure the item exists and is food
-	//	if (event.item != null && event.item.getItem() instanceof ItemFood) {
-	//		// Check if the item is astronaut food
-	//		boolean isAstronautFood = ItemConserve.isAstronautFood(event.item);
-//
-	//		// Retrieve atmosphere and oxygen level
-	//		CBT_Atmosphere atmosphere = HbmLivingProps.getAtmosphere(player);
-	//		int oxygenLevel = HbmLivingProps.getOxy(player);
-//
-	//		// Use proxy to check if the player can breathe
-	//		boolean canBreathe = ChunkAtmosphereManager.proxy.canBreathe(atmosphere);
-//
-	//		// Cancel the event if conditions are not met
-	//		if (!isAstronautFood && (!canBreathe || oxygenLevel <= 0)) {
-	//			event.setCanceled(true);
-	//			player.addChatMessage(new ChatComponentText("You cannot eat this here without a breathable atmosphere or sufficient oxygen!"));
-	//		}
-	//	}
-	//}
 
-	//ok you fucking win my bad for even trying
 
     @SubscribeEvent
     public void onWorldLoad(WorldEvent.Load event) {

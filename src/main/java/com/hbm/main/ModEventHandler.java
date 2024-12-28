@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+import com.hbm.items.food.ItemConserve;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.Level;
 
@@ -1558,6 +1559,39 @@ public class ModEventHandler {
 		//if(event.pickedUp.getEntityItem().getItem() == ModItems.egg_balefire)
 		//	event.player.triggerAchievement(MainRegistry.rotConsum);
 	}
+
+	//at least this actually prevents the item being eaten
+	//@SubscribeEvent
+	//public void onPlayerInteract(PlayerInteractEvent event) {
+	//	if (event.action == PlayerInteractEvent.Action.RIGHT_CLICK_AIR || event.action == PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK) {
+	//		EntityPlayer player = event.entityPlayer;
+	//		World world = player.worldObj;
+//
+	//		// Check if the item in hand is valid and is food
+	//		if (player.getHeldItem() != null && player.getHeldItem().getItem() instanceof ItemFood) {
+	//			boolean isAstronautFood = ItemConserve.isAstronautFood(player.getHeldItem());
+	//			CBT_Atmosphere atmosphere = HbmLivingProps.getAtmosphere(player);
+	//			int oxygenLevel = HbmLivingProps.getOxy(player);
+	//			boolean canBreathe = ChunkAtmosphereManager.proxy.canBreathe(atmosphere);
+//
+	//			// Cancel the event if conditions are not met
+	//			//leave this shit out for now, im trying to debug this not cause infinite pain:
+	//			//end || oxygenLevel <= 0
+	//			//front !isAstronautFood &&
+	//			if ( (!canBreathe )) {
+	//				event.setCanceled(true);
+//
+	//				// Notify the player
+	//				String message = canBreathe
+	//					? "You cannot eat this here due to insufficient oxygen!"
+	//					: "You cannot eat this here without a breathable atmosphere!";
+	//				player.addChatMessage(new ChatComponentText(message));
+	//			}
+	//		}
+	//	}
+	//}
+
+	//fuck it you win
 
 	@SubscribeEvent
 	public void onBlockBreak(BreakEvent event) {

@@ -142,10 +142,10 @@ public class ItemConserve extends ItemEnumMulti {
 			return false;
 		}
 
-		// Validate item and food type
+		// Check if the item is a "canned conserve" and matches the "TUBE" food type
 		if (itemStack.getItem() == ModItems.canned_conserve) {
-			int meta = itemStack.getItemDamage();
-			return meta >= 0 && meta < EnumFoodType.values().length && EnumFoodType.values()[meta] == EnumFoodType.TUBE;
+			EnumFoodType foodType = EnumUtil.grabEnumSafely(EnumFoodType.class, itemStack.getItemDamage());
+			return foodType == EnumFoodType.TUBE;
 		}
 
 		return false;
