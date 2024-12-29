@@ -59,6 +59,8 @@ import net.minecraft.world.World;
 import net.minecraft.util.DamageSource;
 import net.minecraft.world.biome.BiomeGenBase;
 
+import static com.hbm.items.food.ItemConserve.isAstronautFood;
+
 public class EntityEffectHandler {
 
 	public static void onUpdate(EntityLivingBase entity) {
@@ -324,6 +326,20 @@ public class EntityEffectHandler {
 		//eat my ass
 		if(entity instanceof EntityMoonCow) return; // MOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 		if(entity.ridingEntity != null && entity.ridingEntity instanceof EntityRideableRocket) return; // breathe easy in your ship
+
+		//if(entity.isEating()) {
+//
+		//	if (!isAstronautFood) {
+		//		event.setCanceled(true);
+		//	}
+		//}
+
+		//if (entity.isUsingItem() && entity.getHeldItem() != null) {
+		//	if (!isAstronautFood(entity.getHeldItem())) {
+		//		// Cancel eating action by forcing item use to stop
+		//		entity.stopUsingItem();
+		//	}
+		//}
 
 		if (!ArmorUtil.checkForOxy(entity, atmosphere)) {
 			HbmLivingProps.setOxy(entity, HbmLivingProps.getOxy(entity) - 1);
