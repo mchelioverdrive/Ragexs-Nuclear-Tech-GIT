@@ -37,7 +37,7 @@ import net.minecraft.world.World;
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityMachineStardar extends TileEntityMachineBase implements IGUIProvider, IControlReceiver, CompatHandler.OCComponent {
 
-	private int timeUntilPoint = 0;
+	private static long pointAtTime = 0;
 
 	// Used to point the dish on the client
 	public float dishYaw = 0;
@@ -46,8 +46,8 @@ public class TileEntityMachineStardar extends TileEntityMachineBase implements I
 	public float prevDishPitch = 0;
 
 	// Sent by the server for the client to smoothly lerp to
-	public float targetYaw = 0;
-	public float targetPitch = 0;
+	public static float targetYaw = 0;
+	public static float targetPitch = 0;
 
 	private float maxSpeedYaw = 0.5F;
 
@@ -62,9 +62,8 @@ public class TileEntityMachineStardar extends TileEntityMachineBase implements I
 	@Override
 	public void updateEntity() {
 		if(!worldObj.isRemote) {
-			timeUntilPoint--;
-			if(timeUntilPoint < 0) {
-				timeUntilPoint = worldObj.rand.nextInt(300) + 300;
+			if(worldObj.getTotalWorldTime() >= pointAtTime) {
+				pointAtTime = worldObj.getTotalWorldTime() + worldObj.rand.nextInt(300) + 300;
 
 				targetYaw = MathHelper.wrapAngleTo180_float(worldObj.rand.nextFloat() * 360);
 				targetPitch = worldObj.rand.nextFloat() * 80;
@@ -152,8 +151,6 @@ public class TileEntityMachineStardar extends TileEntityMachineBase implements I
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setInteger("time", timeUntilPoint);
-
 		nbt.setFloat("yaw", targetYaw);
 		nbt.setFloat("pitch", targetPitch);
 	}
@@ -161,8 +158,6 @@ public class TileEntityMachineStardar extends TileEntityMachineBase implements I
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		timeUntilPoint = nbt.getInteger("time");
-
 		targetYaw = nbt.getFloat("yaw");
 		targetPitch = nbt.getFloat("pitch");
 	}
@@ -229,7 +224,7 @@ public class TileEntityMachineStardar extends TileEntityMachineBase implements I
 			} else {
 				pos = SolarSystemWorldSavedData.get(worldObj).findFreeSpace();
 			}
-	
+
 			slots[0].stackTagCompound = new NBTTagCompound();
 			slots[0].stackTagCompound.setInteger("x", pos.chunkXPos);
 			slots[0].stackTagCompound.setInteger("z", pos.chunkZPos);
@@ -237,7 +232,7 @@ public class TileEntityMachineStardar extends TileEntityMachineBase implements I
 		}
 
 		// Now point the dish at the target planet
-		timeUntilPoint = worldObj.rand.nextInt(300) + 300;
+		pointAtTime = worldObj.rand.nextInt(300) + 300;
 		targetYaw = MathHelper.wrapAngleTo180_float(worldObj.rand.nextFloat() * 360);
 		targetPitch = worldObj.rand.nextFloat() * 80;
 
@@ -266,21 +261,21 @@ public class TileEntityMachineStardar extends TileEntityMachineBase implements I
 		CelestialBody body = CelestialBody.getBody(args.checkString(0));
 		if (body != null) {
 			return new Object[]{
-					// wow, that's a lot (basically give a bunch of info about the planet/body specified)
-					body.name,
-					body.parent.name,
-					body.getStar().name,
-					body.tidallyLockedTo,
-					body.axialTilt,
-					body.canLand,
-					body.massKg,
-					body.processingLevel,
-					body.radiusKm,
-					body.semiMajorAxisKm,
-					body.getSunPower(),
-					body.getSurfaceGravity(),
-					body.getRotationalPeriod(),
-					body.getOrbitalPeriod()
+				// wow, that's a lot (basically give a bunch of info about the planet/body specified)
+				body.name,
+				body.parent.name,
+				body.getStar().name,
+				body.tidallyLockedTo,
+				body.axialTilt,
+				body.canLand,
+				body.massKg,
+				body.processingLevel,
+				body.radiusKm,
+				body.semiMajorAxisKm,
+				body.getSunPower(),
+				body.getSurfaceGravity(),
+				body.getRotationalPeriod(),
+				body.getOrbitalPeriod()
 			};
 		}
 		return new Object[] {null, "No body with that name found."};

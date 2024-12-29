@@ -1,14 +1,13 @@
 package com.hbm.dim;
 
 import java.util.ArrayList;
-import java.util.Random;
 
+import com.hbm.config.GeneralConfig;
 import com.hbm.dim.trait.CBT_Atmosphere;
 import com.hbm.dim.trait.CBT_Atmosphere.FluidEntry;
 import com.hbm.dim.trait.CelestialBodyTrait.CBT_Destroyed;
 import com.hbm.handler.atmosphere.ChunkAtmosphereManager;
 import com.hbm.inventory.fluid.Fluids;
-import com.hbm.config.GeneralConfig;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -25,7 +24,6 @@ import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import net.minecraft.util.WeightedRandomFishable;
-import net.minecraft.world.World;
 import net.minecraft.world.WorldProvider;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.client.IRenderHandler;
@@ -65,13 +63,6 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 		this.worldObj.getWorldInfo().setThundering(false);
 		this.worldObj.rainingStrength = 0.0F;
 		this.worldObj.thunderingStrength = 0.0F;
-
-		//is this where atmospheres are handled?
-		//if (event.item.getItem() instanceof ItemFood) {
-		//	event.setCanceled(true);
-		//	event.entityPlayer.addChatMessage(new ChatComponentText("You cannot eat here without an atmosphere!"));
-		//}
-
 	}
 
 	// Can be overridden to provide fog changing events based on weather
@@ -158,6 +149,7 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 			sunG *= 0.94F;
 			sunB *= 0.91F;
 		}
+
 		float totalPressure = (float)atmosphere.getPressure();
 		Vec3 color = Vec3.createVectorHelper(0, 0, 0);
 
@@ -194,7 +186,6 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 			color.yCoord += 0.06F * nightDensity;
 			color.zCoord += 0.09F * nightDensity;
 		}
-
 
 		// Fog intensity remains high to simulate a thin looking atmosphere on low pressure planets
 		float pressureFactor = MathHelper.clamp_float(totalPressure * 10.0F, 0.0F, 1.0F);
@@ -434,8 +425,8 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 
 		return super.getCloudHeight();
 	}
-	private IRenderHandler skyProvider;
 
+	private IRenderHandler skyProvider;
 
 	@Override
 	@SideOnly(Side.CLIENT)
@@ -537,9 +528,5 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 		return null;
 	}
 	/// FISH ///
-
-	//public abstract void onEntityCollidedWithBlock(World world, int x, int y, int z, Entity entity);
-//
-	//public abstract void updateTick(World world, int x, int y, int z, Random rand);
 
 }

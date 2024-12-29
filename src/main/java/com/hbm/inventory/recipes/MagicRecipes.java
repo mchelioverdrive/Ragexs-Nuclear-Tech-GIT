@@ -43,27 +43,27 @@ public class MagicRecipes {
 	}
 
 	public static void register() {
-		recipes.add(new MagicRecipe(new ItemStack(ModItems.ingot_u238m2), new ComparableStack(ModItems.ingot_u238m2, 1, 1), new ComparableStack(ModItems.ingot_u238m2, 1, 2), new ComparableStack(ModItems.ingot_u238m2, 1, 3)));
+		//recipes.add(new MagicRecipe(new ItemStack(ModItems.ingot_u238m2), new ComparableStack(ModItems.ingot_u238m2, 1, 1), new ComparableStack(ModItems.ingot_u238m2, 1, 2), new ComparableStack(ModItems.ingot_u238m2, 1, 3)));
 		//recipes.add(new MagicRecipe(new ItemStack(ModItems.rod_of_discord), new ComparableStack(Items.ender_pearl), new ComparableStack(Items.blaze_rod), new ComparableStack(ModItems.nugget_euphemium)));
 		//recipes.add(new MagicRecipe(new ItemStack(ModItems.balefire_and_steel), new OreDictStack(STEEL.ingot()), new ComparableStack(ModItems.egg_balefire_shard)));
-		recipes.add(new MagicRecipe(new ItemStack(ModItems.mysteryshovel), new ComparableStack(Items.iron_shovel), new ComparableStack(Items.bone), new ComparableStack(ModItems.ingot_starmetal), new ComparableStack(ModItems.ducttape)));
-		recipes.add(new MagicRecipe(new ItemStack(ModItems.ingot_electronium), new ComparableStack(ModItems.pellet_charged), new ComparableStack(ModItems.pellet_charged), new ComparableStack(ModItems.ingot_dineutronium), new ComparableStack(ModItems.ingot_dineutronium)));
+		//recipes.add(new MagicRecipe(new ItemStack(ModItems.mysteryshovel), new ComparableStack(Items.iron_shovel), new ComparableStack(Items.bone), new ComparableStack(ModItems.ingot_starmetal), new ComparableStack(ModItems.ducttape)));
+		//recipes.add(new MagicRecipe(new ItemStack(ModItems.ingot_electronium), new ComparableStack(ModItems.pellet_charged), new ComparableStack(ModItems.pellet_charged), new ComparableStack(ModItems.ingot_dineutronium), new ComparableStack(ModItems.ingot_dineutronium)));
 
-		recipes.add(new MagicRecipe(new ItemStack(ModItems.ammo_44, 1, ItemAmmoEnums.Ammo44Magnum.PIP.ordinal()),
-				new ComparableStack(ModItems.ammo_44),
-				new ComparableStack(ModItems.powder_magic),
-				new ComparableStack(ModItems.powder_magic),
-				new ComparableStack(ModItems.powder_magic)));
-		recipes.add(new MagicRecipe(new ItemStack(ModItems.ammo_44, 1, ItemAmmoEnums.Ammo44Magnum.BJ.ordinal()),
-				new ComparableStack(ModItems.ammo_44),
-				new ComparableStack(ModItems.powder_magic),
-				new ComparableStack(ModItems.powder_magic),
-				new ComparableStack(ModItems.powder_desh)));
-		recipes.add(new MagicRecipe(new ItemStack(ModItems.ammo_44, 1, ItemAmmoEnums.Ammo44Magnum.SILVER.ordinal()),
-				new ComparableStack(ModItems.ammo_44),
-				new ComparableStack(ModItems.powder_magic),
-				new ComparableStack(ModItems.powder_magic),
-				new ComparableStack(ModItems.ingot_starmetal)));
+		//recipes.add(new MagicRecipe(new ItemStack(ModItems.ammo_44, 1, ItemAmmoEnums.Ammo44Magnum.PIP.ordinal()),
+		//		new ComparableStack(ModItems.ammo_44),
+		//		new ComparableStack(ModItems.powder_magic),
+		//		new ComparableStack(ModItems.powder_magic),
+		//		new ComparableStack(ModItems.powder_magic)));
+		//recipes.add(new MagicRecipe(new ItemStack(ModItems.ammo_44, 1, ItemAmmoEnums.Ammo44Magnum.BJ.ordinal()),
+		//		new ComparableStack(ModItems.ammo_44),
+		//		new ComparableStack(ModItems.powder_magic),
+		//		new ComparableStack(ModItems.powder_magic),
+		//		new ComparableStack(ModItems.powder_desh)));
+		//recipes.add(new MagicRecipe(new ItemStack(ModItems.ammo_44, 1, ItemAmmoEnums.Ammo44Magnum.SILVER.ordinal()),
+		//		new ComparableStack(ModItems.ammo_44),
+		//		new ComparableStack(ModItems.powder_magic),
+		//		new ComparableStack(ModItems.powder_magic),
+		//		new ComparableStack(ModItems.ingot_starmetal)));
 
 		//recipes.add(new MagicRecipe(new ItemStack(ModItems.gun_bf),
 		//		new ComparableStack(ModItems.gun_fatman),
@@ -83,17 +83,17 @@ public class MagicRecipes {
 		//		new ComparableStack(ModItems.blades_desh),
 		//		new ComparableStack(ModItems.diamond_gavel)));
 
-		recipes.add(new MagicRecipe(new ItemStack(ModBlocks.hadron_coil_mese),
-				new ComparableStack(ModBlocks.hadron_coil_chlorophyte),
-				new ComparableStack(ModItems.powder_dineutronium),
-				new ComparableStack(ModItems.plate_desh),
-				new OreDictStack(GOLD.dust())));
+		//recipes.add(new MagicRecipe(new ItemStack(ModBlocks.hadron_coil_mese),
+		//		new ComparableStack(ModBlocks.hadron_coil_chlorophyte),
+		//		new ComparableStack(ModItems.powder_dineutronium),
+		//		new ComparableStack(ModItems.plate_desh),
+		//		new OreDictStack(GOLD.dust())));
 
-		recipes.add(new MagicRecipe(new ItemStack(ModBlocks.hadron_coil_mese),
-				new ComparableStack(ModBlocks.hadron_coil_chlorophyte),
-				new OreDictStack(DNT.wireDense()),
-				new OreDictStack(W.wireDense()),
-				new OreDictStack(GOLD.wireDense())));
+		//recipes.add(new MagicRecipe(new ItemStack(ModBlocks.hadron_coil_mese),
+		//		new ComparableStack(ModBlocks.hadron_coil_chlorophyte),
+		//		new OreDictStack(DNT.wireDense()),
+		//		new OreDictStack(W.wireDense()),
+		//		new OreDictStack(GOLD.wireDense())));
 
 		//recipes.add(new MagicRecipe(new ItemStack(ModItems.gun_darter),
 		//		new OreDictStack(STEEL.plate()),
@@ -101,15 +101,15 @@ public class MagicRecipes {
 		//		new OreDictStack(ANY_PLASTIC.ingot()),
 		//		new OreDictStack(GOLD.plate())));
 
-		recipes.add(new MagicRecipe(new ItemStack(ModItems.ammo_dart, 4, ItemAmmoEnums.AmmoDart.NUCLEAR.ordinal()),
-				new OreDictStack(ANY_RUBBER.ingot()),
-				new ComparableStack(ModItems.nugget_pu239),
-				new ComparableStack(ModItems.circuit, 1, EnumCircuitType.VACUUM_TUBE)));
+		//recipes.add(new MagicRecipe(new ItemStack(ModItems.ammo_dart, 4, ItemAmmoEnums.AmmoDart.NUCLEAR.ordinal()),
+		//		new OreDictStack(ANY_RUBBER.ingot()),
+		//		new ComparableStack(ModItems.nugget_pu239),
+		//		new ComparableStack(ModItems.circuit, 1, EnumCircuitType.VACUUM_TUBE)));
 
-		recipes.add(new MagicRecipe(new ItemStack(Item.getItemFromBlock(ModBlocks.bobblehead), 1, 21),
-				new ComparableStack(ModItems.ingot_gwenium),
-				new ComparableStack(ModItems.ingot_dineutronium),
-				new ComparableStack(ModItems.ingot_dineutronium)));
+		//recipes.add(new MagicRecipe(new ItemStack(Item.getItemFromBlock(ModBlocks.bobblehead), 1, 21),
+		//		new ComparableStack(ModItems.ingot_gwenium),
+		//		new ComparableStack(ModItems.ingot_dineutronium),
+		//		new ComparableStack(ModItems.ingot_dineutronium)));
 	}
 
 	public static List<MagicRecipe> getRecipes() {

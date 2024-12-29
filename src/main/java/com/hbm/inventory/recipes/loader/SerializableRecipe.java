@@ -38,6 +38,7 @@ public abstract class SerializableRecipe {
 	public static List<SerializableRecipe> recipeHandlers = new ArrayList();
 
 	public boolean modified = false;
+
 	/*
 	 * INIT
 	 */
@@ -70,11 +71,14 @@ public abstract class SerializableRecipe {
 		recipeHandlers.add(new ElectrolyserFluidRecipes());
 		recipeHandlers.add(new ElectrolyserMetalRecipes());
 		recipeHandlers.add(new ArcWelderRecipes());
-		recipeHandlers.add(new ExposureChamberRecipes());
 		recipeHandlers.add(new RotaryFurnaceRecipes());
+		recipeHandlers.add(new ExposureChamberRecipes());
+		//At some point maybe
+		//recipeHandlers.add(new AmmoPressRecipes());
 		recipeHandlers.add(new AssemblerRecipes());
 		recipeHandlers.add(new AlkylationRecipes());
 		recipeHandlers.add(new VacuumCircuitRecipes());
+		//recipeHandlers.add(new PedestalRecipes());
 
 		recipeHandlers.add(new MatDistribution());
 		recipeHandlers.add(new CryoRecipes());

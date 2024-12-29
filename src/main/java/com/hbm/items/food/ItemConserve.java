@@ -137,6 +137,7 @@ public class ItemConserve extends ItemEnumMulti {
 		}
 	}
 
+	//you have been a massive pain in my side since I found out you were an enum
 	public static boolean isAstronautFood(ItemStack itemStack) {
 		if (itemStack == null || itemStack.getItem() == null) {
 			return false;

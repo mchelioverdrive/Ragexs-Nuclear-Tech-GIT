@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
+import com.hbm.util.*;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
@@ -77,15 +78,9 @@ import com.hbm.tileentity.bomb.TileEntityNukeCustom;
 import com.hbm.tileentity.bomb.TileEntityNukeCustom.CustomNukeEntry;
 import com.hbm.tileentity.bomb.TileEntityNukeCustom.EnumEntryType;
 import com.hbm.tileentity.machine.TileEntityNukeFurnace;
-import com.hbm.util.I18nUtil;
-import com.hbm.util.ItemStackUtil;
-import com.hbm.util.LoggingUtil;
-import com.hbm.util.ShadyUtil;
 import com.hbm.wiaj.GuiWorldInAJar;
 import com.hbm.wiaj.cannery.CanneryBase;
 import com.hbm.wiaj.cannery.Jars;
-import com.hbm.util.ArmorRegistry;
-import com.hbm.util.ArmorUtil;
 //import com.hbm.util.DamageResistanceHandler;
 import com.hbm.util.ArmorRegistry.HazardClass;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture.Type;
@@ -746,6 +741,9 @@ public class ModEventHandlerClient {
 
 		ItemStack stack = event.itemStack;
 		List<String> list = event.toolTip;
+
+		/// DAMAGE RESISTANCE ///
+		DamageResistanceHandler.addInfo(stack, list);
 
 		/// HAZMAT INFO ///
 		List<HazardClass> hazInfo = ArmorRegistry.hazardClasses.get(stack.getItem());

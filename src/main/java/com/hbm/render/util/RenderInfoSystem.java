@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.lwjgl.opengl.GL11;
 
-import com.hbm.config.GeneralConfig;
+import com.hbm.config.ClientConfig;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent;
@@ -18,7 +18,6 @@ import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
-import com.hbm.config.ClientConfig;
 
 public class RenderInfoSystem {
 
@@ -50,6 +49,9 @@ public class RenderInfoSystem {
 
 		if(event.type != ElementType.CROSSHAIRS)
 			return;
+
+		//this.messages.put(-666, new InfoEntry(Minecraft.getMinecraft().theWorld.getCelestialAngle(0) + "", 666_666));
+		//this.messages.put(-665, new InfoEntry(Minecraft.getMinecraft().theWorld.getMoonPhase() + "", 666_666));
 
 		if(this.messages.isEmpty())
 			return;
@@ -168,13 +170,8 @@ public class RenderInfoSystem {
 
 		@Override
 		public int compareTo(Object o) {
-
-			if(!(o instanceof InfoEntry)) {
-				return 0;
-			}
-
+			if(!(o instanceof InfoEntry)) { return 0; }
 			InfoEntry other = (InfoEntry) o;
-
 			return this.millis < other.millis ? -1 : this.millis > other.millis ? 1 : 0;
 		}
 	}

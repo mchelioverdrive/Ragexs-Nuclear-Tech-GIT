@@ -22,10 +22,11 @@ public class BoilingHandler extends NEIUniversalHandler {
 	}
 
 	public static HashMap<Object, Object> cache;
+	public static boolean isReload=false;
 
 	public static HashMap<Object, Object> generateRecipes() {
 
-		if(cache != null) return cache;
+		if(cache != null && !isReload) return cache;
 
 		cache = new HashMap();
 
@@ -40,7 +41,7 @@ public class BoilingHandler extends NEIUniversalHandler {
 				}
 			}
 		}
-
+		isReload=false;
 		return cache;
 	}
 }

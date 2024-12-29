@@ -6,6 +6,7 @@ import java.util.List;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.machine.MachineITER;
+import com.hbm.blocks.machine.MachineHTRF4;
 import com.hbm.inventory.container.ContainerPlasmaHeater;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
@@ -29,10 +30,10 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IFluidCopiable {
-	
+
 	public long power;
 	public static final long maxPower = 100000000;
-	
+
 	public FluidTank[] tanks;
 	public FluidTank plasma;
 
@@ -51,9 +52,9 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 
 	@Override
 	public void updateEntity() {
-		
+
 		if(!worldObj.isRemote) {
-			
+
 			if(this.worldObj.getTotalWorldTime() % 20 == 0)
 				this.updateConnections();
 
@@ -61,52 +62,79 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 			power = Library.chargeTEFromItems(slots, 0, power, maxPower);
 			tanks[0].setType(1, 2, slots);
 			tanks[1].setType(3, 4, slots);
-			
+
 			updateType();
-			
+
 			int maxConv = 50;
 			int powerReq = 10000;
-			
+
 			int convert = Math.min(tanks[0].getFill(), tanks[1].getFill());
 			convert = Math.min(convert, (plasma.getMaxFill() - plasma.getFill()) / 2);
 			convert = Math.min(convert, maxConv);
 			convert = (int) Math.min(convert, power / powerReq);
 			convert = Math.max(0, convert);
-			
+
 			if(convert > 0 && plasma.getTankType() != Fluids.NONE) {
 
 				tanks[0].setFill(tanks[0].getFill() - convert);
 				tanks[1].setFill(tanks[1].getFill() - convert);
-				
+
 				plasma.setFill(plasma.getFill() + convert * 2);
 				power -= convert * powerReq;
-				
+
 				this.markDirty();
 			}
 			/// END Managing all the internal stuff ///
 
 			/// START Loading plasma into the ITER ///
-			
+
 			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset).getOpposite();
 			int dist = 11;
-			
-			if(worldObj.getBlock(xCoord + dir.offsetX * dist, yCoord + 2, zCoord + dir.offsetZ * dist) == ModBlocks.iter) {
-				int[] pos = ((MachineITER)ModBlocks.iter).findCore(worldObj, xCoord + dir.offsetX * dist, yCoord + 2, zCoord + dir.offsetZ * dist);
-				
+
+			if(worldObj.getBlock(xCoord + dir.offsetX * dist, yCoord + 1, zCoord + dir.offsetZ * dist) == ModBlocks.machine_htrf4) {
+				int[] pos = ((MachineHTRF4)ModBlocks.machine_htrf4).findCore(worldObj, xCoord + dir.offsetX * dist, yCoord + 1, zCoord + dir.offsetZ * dist);
+
 				if(pos != null) {
 					TileEntity te = worldObj.getTileEntity(pos[0], pos[1], pos[2]);
-					
+
+					if(te instanceof TileEntityMachineHTRF4) {
+						TileEntityMachineHTRF4 htrf = (TileEntityMachineHTRF4)te;
+
+						if(htrf.tanks[0].getFill() == 0 && this.plasma.getTankType() != Fluids.NONE) {
+							htrf.tanks[0].setTankType(this.plasma.getTankType());
+						}
+						{
+							if(htrf.tanks[0].getTankType() == this.plasma.getTankType()) {
+
+								int toLoad = Math.min(htrf.tanks[0].getMaxFill() - htrf.tanks[0].getFill(), this.plasma.getFill());
+								toLoad = Math.min(toLoad, 40);
+								this.plasma.setFill(this.plasma.getFill() - toLoad);
+								htrf.tanks[0].setFill(htrf.tanks[0].getFill() + toLoad);
+								this.markDirty();
+								htrf.markDirty();
+							}
+						}
+					}
+				}
+			}
+
+			if(worldObj.getBlock(xCoord + dir.offsetX * dist, yCoord + 2, zCoord + dir.offsetZ * dist) == ModBlocks.iter) {
+				int[] pos = ((MachineITER)ModBlocks.iter).findCore(worldObj, xCoord + dir.offsetX * dist, yCoord + 2, zCoord + dir.offsetZ * dist);
+
+				if(pos != null) {
+					TileEntity te = worldObj.getTileEntity(pos[0], pos[1], pos[2]);
+
 					if(te instanceof TileEntityITER) {
 						TileEntityITER iter = (TileEntityITER)te;
-							
+
 						if(iter.plasma.getFill() == 0 && this.plasma.getTankType() != Fluids.NONE) {
 							iter.plasma.setTankType(this.plasma.getTankType());
 						}
-							
-							if(iter.isOn) {
-							
+
+						if(iter.isOn) {
+
 							if(iter.plasma.getTankType() == this.plasma.getTankType()) {
-								
+
 								int toLoad = Math.min(iter.plasma.getMaxFill() - iter.plasma.getFill(), this.plasma.getFill());
 								toLoad = Math.min(toLoad, 40);
 								this.plasma.setFill(this.plasma.getFill() - toLoad);
@@ -118,11 +146,11 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 					}
 				}
 			}
-			
+
 			/// END Loading plasma into the ITER ///
 
 			/// START Notif packets ///
-			
+
 			NBTTagCompound data = new NBTTagCompound();
 			data.setLong("power", power);
 			tanks[0].writeToNBT(data, "t0");
@@ -132,14 +160,14 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 			/// END Notif packets ///
 		}
 	}
-	
+
 	private void updateConnections()  {
-		
+
 		this.getBlockMetadata();
-		
+
 		ForgeDirection dir = ForgeDirection.getOrientation(this.blockMetadata - BlockDummyable.offset);
 		ForgeDirection side = dir.getRotation(ForgeDirection.UP);
-		
+
 		for(int i = 1; i < 4; i++) {
 			for(int j = -1; j < 2; j++) {
 				this.trySubscribe(worldObj, xCoord + side.offsetX * j + dir.offsetX * 2, yCoord + i, zCoord + side.offsetZ * j + dir.offsetZ * 2, j < 0 ? ForgeDirection.DOWN : ForgeDirection.UP);
@@ -148,18 +176,18 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 			}
 		}
 	}
-	
+
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
-		
+
 		this.power = nbt.getLong("power");
 		tanks[0].readFromNBT(nbt, "t0");
 		tanks[1].readFromNBT(nbt, "t1");
 		plasma.readFromNBT(nbt, "t2");
 	}
-	
+
 	private void updateType() {
-		
+
 		List<FluidType> types = new ArrayList() {{ add(tanks[0].getTankType()); add(tanks[1].getTankType()); }};
 
 		if(types.contains(Fluids.DEUTERIUM) && types.contains(Fluids.TRITIUM)) {
@@ -186,14 +214,14 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 			plasma.setTankType(Fluids.PLASMA_BF);
 			return;
 		}
-		
+
 		plasma.setTankType(Fluids.NONE);
 	}
-	
+
 	public long getPowerScaled(int i) {
 		return (power * i) / maxPower;
 	}
-	
+
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
@@ -203,7 +231,7 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 		tanks[1].readFromNBT(nbt, "fuel_2");
 		plasma.readFromNBT(nbt, "plasma");
 	}
-	
+
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
@@ -228,12 +256,12 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 	public long getMaxPower() {
 		return maxPower;
 	}
-	
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
 		return TileEntity.INFINITE_EXTENT_AABB;
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public double getMaxRenderDistanceSquared() {

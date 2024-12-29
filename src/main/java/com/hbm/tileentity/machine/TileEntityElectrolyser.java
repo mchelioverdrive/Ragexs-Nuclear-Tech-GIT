@@ -231,12 +231,12 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
 
 		return new DirPos[] {
-				new DirPos(xCoord - dir.offsetX * 6, yCoord, zCoord - dir.offsetZ * 6, dir.getOpposite()),
-				new DirPos(xCoord - dir.offsetX * 6 + rot.offsetX, yCoord, zCoord - dir.offsetZ * 6 + rot.offsetZ, dir.getOpposite()),
-				new DirPos(xCoord - dir.offsetX * 6 - rot.offsetX, yCoord, zCoord - dir.offsetZ * 6 - rot.offsetZ, dir.getOpposite()),
-				new DirPos(xCoord + dir.offsetX * 6, yCoord, zCoord + dir.offsetZ * 6, dir),
-				new DirPos(xCoord + dir.offsetX * 6 + rot.offsetX, yCoord, zCoord + dir.offsetZ * 6 + rot.offsetZ, dir),
-				new DirPos(xCoord + dir.offsetX * 6 - rot.offsetX, yCoord, zCoord + dir.offsetZ * 6 - rot.offsetZ, dir)
+			new DirPos(xCoord - dir.offsetX * 6, yCoord, zCoord - dir.offsetZ * 6, dir.getOpposite()),
+			new DirPos(xCoord - dir.offsetX * 6 + rot.offsetX, yCoord, zCoord - dir.offsetZ * 6 + rot.offsetZ, dir.getOpposite()),
+			new DirPos(xCoord - dir.offsetX * 6 - rot.offsetX, yCoord, zCoord - dir.offsetZ * 6 - rot.offsetZ, dir.getOpposite()),
+			new DirPos(xCoord + dir.offsetX * 6, yCoord, zCoord + dir.offsetZ * 6, dir),
+			new DirPos(xCoord + dir.offsetX * 6 + rot.offsetX, yCoord, zCoord + dir.offsetZ * 6 + rot.offsetZ, dir),
+			new DirPos(xCoord + dir.offsetX * 6 - rot.offsetX, yCoord, zCoord + dir.offsetZ * 6 - rot.offsetZ, dir)
 		};
 	}
 
@@ -440,13 +440,13 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 
 		if(bb == null) {
 			bb = AxisAlignedBB.getBoundingBox(
-					xCoord - 5,
-					yCoord - 0,
-					zCoord - 5,
-					xCoord + 6,
-					yCoord + 4,
-					zCoord + 6
-					);
+				xCoord - 5,
+				yCoord - 0,
+				zCoord - 5,
+				xCoord + 6,
+				yCoord + 4,
+				zCoord + 6
+			);
 		}
 
 		return bb;
@@ -585,9 +585,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 	public int[] getMatsToCopy() {
 		ArrayList<Integer> types = new ArrayList<>();
 		if(leftStack != null)	types.add(leftStack.material.id);
-
 		if(rightStack != null)	types.add(rightStack.material.id);
-
 		return BobMathUtil.intCollectionToArray(types);
 	}
 }

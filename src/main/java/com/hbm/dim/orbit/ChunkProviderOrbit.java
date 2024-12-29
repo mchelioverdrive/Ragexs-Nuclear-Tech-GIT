@@ -3,7 +3,10 @@ package com.hbm.dim.orbit;
 import java.util.List;
 
 import com.hbm.config.SpaceConfig;
+import com.hbm.util.Compat;
+import com.hbm.world.WorldUtil;
 
+import cpw.mods.fml.common.Loader;
 import net.minecraft.block.Block;
 import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.util.IProgressUpdate;
@@ -19,7 +22,7 @@ public class ChunkProviderOrbit implements IChunkProvider {
 	public ChunkProviderOrbit(World world) {
 		this.worldObj = world;
 	}
-	
+
 	/**
 	 * Checks to see if a chunk exists at x, z
 	 */
@@ -32,10 +35,16 @@ public class ChunkProviderOrbit implements IChunkProvider {
 	public Chunk provideChunk(int x, int z) {
 		Chunk chunk = new Chunk(worldObj, new Block[65536], new byte[65536], x, z);
 
-		byte[] abyte1 = chunk.getBiomeArray();
-
-		for(int k = 0; k < abyte1.length; ++k) {
-			abyte1[k] = (byte)SpaceConfig.orbitBiome;
+		if(Loader.isModLoaded(Compat.MOD_EIDS)) {
+			short[] biomes = WorldUtil.getBiomeShortArray(chunk);
+			for(int k = 0; k < biomes.length; ++k) {
+				biomes[k] = (short) SpaceConfig.orbitBiome;
+			}
+		} else {
+			byte[] biomes = chunk.getBiomeArray();
+			for(int k = 0; k < biomes.length; ++k) {
+				biomes[k] = (byte) SpaceConfig.orbitBiome;
+			}
 		}
 
 		chunk.generateSkylightMap();
@@ -55,7 +64,7 @@ public class ChunkProviderOrbit implements IChunkProvider {
 	 */
 	@Override
 	public void populate(IChunkProvider provider, int x, int z) {
-		
+
 	}
 
 	/**

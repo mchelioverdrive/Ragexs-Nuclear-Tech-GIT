@@ -27,6 +27,7 @@ public class SmeltingRecipes {
 		//GameRegistry.addSmelting(ModItems.glyphid_meat, new ItemStack(ModItems.glyphid_meat_grilled), 1.0F);
 
 		// Oredict doesn't work for vanilla smelting :(
+
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_iron), new ItemStack(Items.iron_ingot), 0.7F);
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_gold), new ItemStack(Items.gold_ingot), 1.0F);
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_diamond), new ItemStack(Items.diamond), 1.0F);
@@ -47,6 +48,8 @@ public class SmeltingRecipes {
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.moho_regolith), new ItemStack(Blocks.stone), 0.1F);
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.moon_rock), new ItemStack(Blocks.stone), 0.1F);
 
+		//why the fuck is this not here
+		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_silicon), new ItemStack(ModItems.ingot_silicon), 0.7F);
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_thorium), new ItemStack(ModItems.ingot_th232), 3.0F);
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_uranium), new ItemStack(ModItems.ingot_uranium), 6.0F);
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_uranium_scorched), new ItemStack(ModItems.ingot_uranium), 6.0F);

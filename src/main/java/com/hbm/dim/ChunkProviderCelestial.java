@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import com.hbm.util.Compat;
+import com.hbm.world.WorldUtil;
 import com.hbm.world.biome.BiomeGenCraterBase;
 
+import cpw.mods.fml.common.Loader;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFalling;
 import net.minecraft.entity.EnumCreatureType;
@@ -45,16 +48,16 @@ public abstract class ChunkProviderCelestial implements IChunkProvider {
 
 	// Embiggenify
 	protected boolean amplified = false;
-	
+
 	//round
 	protected boolean reclamp = true;
-	
+
 
 	// Now for the regular stuff, changing these won't change gen, just break things
 	protected World worldObj;
 	protected final boolean mapFeaturesEnabled;
 	protected Random rand;
-	
+
 	// Generation buffers and the like, no need to modify or have visibility to these
 	private NoiseGeneratorOctaves firstOrder;
 	private NoiseGeneratorOctaves secondOrder;
@@ -207,10 +210,10 @@ public abstract class ChunkProviderCelestial implements IChunkProvider {
 						float f3 = biomegenbase1.rootHeight;
 						float f4 = biomegenbase1.heightVariation;
 
-                        if(amplified && f3 > 0.0F) {
-                            f3 = 1.0F + f3 * 2.0F;
-                            f4 = 1.0F + f4 * 4.0F;
-                        }
+						if(amplified && f3 > 0.0F) {
+							f3 = 1.0F + f3 * 2.0F;
+							f4 = 1.0F + f4 * 4.0F;
+						}
 
 						float f5 = parabolicField[l1 + 2 + (i2 + 2) * 5] / (f3 + 2.0F);
 
@@ -267,7 +270,7 @@ public abstract class ChunkProviderCelestial implements IChunkProvider {
 						d6 *= 4.0D;
 					}
 
-					double d7 = firstOrderBuffer[l] / 512.0D; 
+					double d7 = firstOrderBuffer[l] / 512.0D;
 					double d8 = secondOrderBuffer[l] / 512.0D;
 					double d9 = (thirdOrderBuffer[l] / 10.0D + 1.0D) / 2.0D;
 					//srry, there has to be a better way to smooth out things, we got the perlin tools to do so but i have no idea how to invoke those tools here.
@@ -312,10 +315,16 @@ public abstract class ChunkProviderCelestial implements IChunkProvider {
 		BlockMetaBuffer ablock = getChunkPrimer(x, z);
 		Chunk chunk = new Chunk(worldObj, ablock.blocks, ablock.metas, x, z);
 
-		byte[] abyte1 = chunk.getBiomeArray();
-
-		for(int k = 0; k < abyte1.length; ++k) {
-			abyte1[k] = (byte) biomesForGeneration[k].biomeID;
+		if(Loader.isModLoaded(Compat.MOD_EIDS)) {
+			short[] biomes = WorldUtil.getBiomeShortArray(chunk);
+			for(int k = 0; k < biomes.length; ++k) {
+				biomes[k] = (short) biomesForGeneration[k].biomeID;
+			}
+		} else {
+			byte[] biomes = chunk.getBiomeArray();
+			for(int k = 0; k < biomes.length; ++k) {
+				biomes[k] = (byte) biomesForGeneration[k].biomeID;
+			}
 		}
 
 		chunk.generateSkylightMap();
@@ -394,9 +403,9 @@ public abstract class ChunkProviderCelestial implements IChunkProvider {
 	@SuppressWarnings("rawtypes")
 	@Override
 	public List getPossibleCreatures(EnumCreatureType creatureType, int x, int y, int z) {
-        BiomeGenBase biomegenbase = this.worldObj.getBiomeGenForCoords(x, z);
+		BiomeGenBase biomegenbase = this.worldObj.getBiomeGenForCoords(x, z);
 		if(biomegenbase instanceof BiomeGenCraterBase) return new ArrayList<SpawnListEntry>();
-        return biomegenbase.getSpawnableList(creatureType);
+		return biomegenbase.getSpawnableList(creatureType);
 	}
 
 	/**

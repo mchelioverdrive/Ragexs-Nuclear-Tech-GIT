@@ -40,22 +40,15 @@ public class DecoBlockAlt extends BlockContainer {
 
 	@Override
 	public TileEntity createNewTileEntity(World p_149915_1_, int p_149915_2_) {
-		if(this == ModBlocks.statue_elb)
-			return new TileEntityDecoBlockAlt();
-		if(this == ModBlocks.statue_elb_g)
-			return new TileEntityDecoBlockAltG();
-		if(this == ModBlocks.statue_elb_w)
-			return new TileEntityDecoBlockAltW();
-		if(this == ModBlocks.statue_elb_f)
-			return new TileEntityDecoBlockAltF();
+		if(this == ModBlocks.statue_elb_f) return new TileEntityDecoBlockAltF();
 		return null;
 	}
 
-    @Override
-	public Item getItemDropped(int p_149650_1_, Random p_149650_2_, int p_149650_3_)
-    {
-        return Item.getItemFromBlock(ModBlocks.statue_elb);
-    }
+    //@Override
+	//public Item getItemDropped(int p_149650_1_, Random p_149650_2_, int p_149650_3_)
+    //{
+    //    return Item.getItemFromBlock(ModBlocks.statue_elb);
+    //}
 
 	@Override
 	public int getRenderType(){

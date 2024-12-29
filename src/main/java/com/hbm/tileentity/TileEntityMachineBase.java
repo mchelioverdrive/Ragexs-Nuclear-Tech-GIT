@@ -2,16 +2,12 @@ package com.hbm.tileentity;
 
 import java.util.List;
 
-import io.netty.buffer.Unpooled;
 import com.hbm.dim.CelestialBody;
 import com.hbm.dim.orbit.WorldProviderOrbit;
 import com.hbm.dim.trait.CBT_Atmosphere;
 import com.hbm.handler.atmosphere.AtmosphereBlob;
 import com.hbm.handler.atmosphere.ChunkAtmosphereManager;
 import com.hbm.inventory.fluid.Fluids;
-import com.hbm.packet.toclient.AuxGaugePacket;
-import com.hbm.packet.toclient.BufPacket;
-import com.hbm.packet.toclient.NBTPacket;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxGaugePacket;
 import com.hbm.packet.toclient.BufPacket;
@@ -20,6 +16,7 @@ import com.hbm.util.fauxpointtwelve.DirPos;
 
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.ISidedInventory;
@@ -34,6 +31,7 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 	public ItemStack slots[];
 
 	private String customName;
+
 	private NBTTagCompound lastPackedNBT = null;
 	private ByteBuf lastPackedBuf = null;
 
@@ -64,7 +62,7 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 			slots[i] = null;
 			return itemStack;
 		} else {
-		return null;
+			return null;
 		}
 	}
 
@@ -171,6 +169,7 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 
 	@Deprecated public void networkPack(NBTTagCompound nbt, int range) {
 		nbt.setBoolean("muffled", muffled);
+
 		if(worldObj.isRemote) {
 			return;
 		}

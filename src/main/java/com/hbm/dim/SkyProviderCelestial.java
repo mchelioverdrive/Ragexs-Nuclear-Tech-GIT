@@ -2,16 +2,14 @@ package com.hbm.dim;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
-//import net.minecraft.client.renderer.GLAllocation;
-import net.minecraft.client.renderer.RenderGlobal;
 import net.minecraft.client.renderer.OpenGlHelper;
+import net.minecraft.client.renderer.RenderGlobal;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Vec3;
 import net.minecraftforge.client.IRenderHandler;
-import cpw.mods.fml.relauncher.ReflectionHelper;
 
 import java.util.List;
 import java.util.Map;
@@ -28,6 +26,8 @@ import com.hbm.saveddata.SatelliteSavedData;
 import com.hbm.saveddata.satellites.Satellite;
 import com.hbm.util.BobMathUtil;
 
+import cpw.mods.fml.relauncher.ReflectionHelper;
+
 public class SkyProviderCelestial extends IRenderHandler {
 
 	private static final ResourceLocation planetTexture = new ResourceLocation(RefStrings.MODID, "textures/misc/space/planet.png");
@@ -41,6 +41,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 
 	private static final String[] GL_SKY_LIST = new String[] { "glSkyList", "field_72771_w", "G" };
 	private static final String[] GL_SKY_LIST2 = new String[] { "glSkyList2", "field_72781_x", "H" };
+
 	public static boolean displayListsInitialized = false;
 	public static int glSkyList;
 	public static int glSkyList2;
@@ -127,7 +128,6 @@ public class SkyProviderCelestial extends IRenderHandler {
 		GL11.glDepthMask(false);
 		GL11.glEnable(GL11.GL_FOG);
 		GL11.glColor3f(skyR, skyG, skyB);
-
 
 		GL11.glPushMatrix();
 		{
@@ -582,18 +582,18 @@ public class SkyProviderCelestial extends IRenderHandler {
 			GL11.glRotatef(140.0F, 1.0F, 0.0F, 0.0F);
 			GL11.glRotatef(-40.0F, 0.0F, 0.0F, 1.0F);
 
-			//mc.renderEngine.bindTexture(digammaStar);
+		//	mc.renderEngine.bindTexture(digammaStar);
 
 			//float digamma = HbmLivingProps.getDigamma(Minecraft.getMinecraft().thePlayer);
-			//float var12 = 1F * (1 + digamma * 0.25F);
+		//	float var12 = 1F * (1 + digamma * 0.25F);
 			//double dist = 100D - digamma * 2.5;
 
-			//tessellator.startDrawingQuads();
-			//tessellator.addVertexWithUV(-var12, dist, -var12, 0.0D, 0.0D);
-			//tessellator.addVertexWithUV(var12, dist, -var12, 0.0D, 1.0D);
-			//tessellator.addVertexWithUV(var12, dist, var12, 1.0D, 1.0D);
-			//tessellator.addVertexWithUV(-var12, dist, var12, 1.0D, 0.0D);
-			//tessellator.draw();
+		//	tessellator.startDrawingQuads();
+		//	tessellator.addVertexWithUV(-var12, dist, -var12, 0.0D, 0.0D);
+		//	tessellator.addVertexWithUV(var12, dist, -var12, 0.0D, 1.0D);
+		//	tessellator.addVertexWithUV(var12, dist, var12, 1.0D, 1.0D);
+		//	tessellator.addVertexWithUV(-var12, dist, var12, 1.0D, 0.0D);
+		//	tessellator.draw();
 
 		}
 		GL11.glPopMatrix();

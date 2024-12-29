@@ -11,6 +11,7 @@ import com.hbm.items.ItemGenericPart.EnumPartType;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemBattery;
 import com.hbm.items.machine.ItemCircuit.EnumCircuitType;
+import com.hbm.items.machine.ItemDrillbit;
 import com.hbm.items.tool.ItemBlowtorch;
 import com.hbm.items.tool.ItemModMinecart;
 import com.hbm.items.tool.ItemModMinecart.EnumCartBase;
@@ -75,7 +76,7 @@ public class ToolRecipes {
 		//Drax
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.drax, 1), new Object[] { "BDS", "CDC", "FMF", 'B', ModItems.elec_pickaxe, 'S', ModItems.drillbit, 'C', CO.ingot(), 'F', ModItems.battery_lithium, 'D', STEEL.ingot(), 'M', ModItems.motor_desh });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.drax_mk2, 1), new Object[] { "SCS", "IDI", "FEF", 'S', STEEL.ingot(), 'C', ModItems.drill_titanium, 'I', BIGMT.ingot(), 'D', ModItems.drax, 'F', ModItems.armor_battery, 'E', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.ADVANCED) });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.drax_mk3, 1), new Object[] { "ECE", "CDC", "SBS", 'E', ModItems.drill_titanium, 'C', ModItems.ingot_advanced_alloy, 'D', ModItems.drax_mk2, 'S', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BISMOID), 'B', ItemBattery.getFullBattery(ModItems.armor_battery) });
+		CraftingManager.addRecipeAuto(new ItemStack(ModItems.drax_mk3, 1), new Object[] { "ECE", "CDC", "SBS", 'E', new ItemStack(ModItems.drillbit, 1, ItemDrillbit.EnumDrillType.HSS_DIAMOND.ordinal()), 'C', ModItems.ingot_advanced_alloy, 'D', ModItems.drax_mk2, 'S', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BISMOID), 'B', ItemBattery.getFullBattery(ModItems.armor_battery) });
 
 		//Super pickaxes
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.bismuth_pickaxe, 1), new Object[] { " BM", "BPB", "TB ", 'B', ModItems.ingot_bismuth, 'M', ModItems.ingot_meteorite, 'P', ModItems.starmetal_pickaxe, 'T', W.bolt() });

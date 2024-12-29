@@ -4,19 +4,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
+//import com.hbm.entity.projectile.EntityBulletBaseMK4;
 import com.hbm.explosion.vanillant.ExplosionVNT;
 import com.hbm.explosion.vanillant.interfaces.ICustomDamageHandler;
 import com.hbm.explosion.vanillant.interfaces.IEntityProcessor;
 import com.hbm.explosion.vanillant.interfaces.IEntityRangeMutator;
 
-import net.minecraft.util.EntityDamageSource;
-import net.minecraft.world.Explosion;
 import net.minecraft.enchantment.EnchantmentProtection;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.EntityDamageSource;
 import net.minecraft.util.Vec3;
+import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.ForgeEventFactory;
@@ -27,9 +28,15 @@ public class EntityProcessorCross implements IEntityProcessor {
 	protected double nodeDist = 2D;
 	protected IEntityRangeMutator range;
 	protected ICustomDamageHandler damage;
+	protected boolean allowSelfDamage = false;
 
 	public EntityProcessorCross(double nodeDist) {
 		this.nodeDist = nodeDist;
+	}
+
+	public EntityProcessorCross setAllowSelfDamage() {
+		this.allowSelfDamage = true;
+		return this;
 	}
 
 	@Override
@@ -50,7 +57,7 @@ public class EntityProcessorCross implements IEntityProcessor {
 		double minZ = z - (double) size - 1.0D;
 		double maxZ = z + (double) size + 1.0D;
 
-		List list = world.getEntitiesWithinAABBExcludingEntity(explosion.exploder, AxisAlignedBB.getBoundingBox(minX, minY, minZ, maxX, maxY, maxZ));
+		List list = world.getEntitiesWithinAABBExcludingEntity(allowSelfDamage ? null : explosion.exploder, AxisAlignedBB.getBoundingBox(minX, minY, minZ, maxX, maxY, maxZ));
 
 		ForgeEventFactory.onExplosionDetonate(world, explosion.compat, list, size);
 
@@ -94,19 +101,19 @@ public class EntityProcessorCross implements IEntityProcessor {
 
 					float dmg = calculateDamage(distanceScaled, density, knockback, size);
 					if(!damageMap.containsKey(entity) || damageMap.get(entity) < dmg) damageMap.put(entity, dmg);
-
 					double enchKnockback = EnchantmentProtection.func_92092_a(entity, knockback);
 
 					entity.motionX += deltaX * enchKnockback;
 					entity.motionY += deltaY * enchKnockback;
 					entity.motionZ += deltaZ * enchKnockback;
+					//if(!(entity instanceof EntityBulletBaseMK4)) {
+					//	entity.motionX += deltaX * enchKnockback;
+					//	entity.motionY += deltaY * enchKnockback;
+					//	entity.motionZ += deltaZ * enchKnockback;
+					//}
 
 					if(entity instanceof EntityPlayer) {
 						affectedPlayers.put((EntityPlayer) entity, Vec3.createVectorHelper(deltaX * knockback, deltaY * knockback, deltaZ * knockback));
-					}
-
-					if(damage != null) {
-						damage.handleAttack(explosion, entity, distanceScaled);
 					}
 				}
 			}
@@ -122,7 +129,6 @@ public class EntityProcessorCross implements IEntityProcessor {
 				damage.handleAttack(explosion, entity, distanceScaled);
 			}
 		}
-
 
 		return affectedPlayers;
 	}

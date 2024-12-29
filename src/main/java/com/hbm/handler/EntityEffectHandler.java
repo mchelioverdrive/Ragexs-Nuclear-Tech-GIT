@@ -8,9 +8,9 @@ import com.hbm.config.BombConfig;
 import com.hbm.config.GeneralConfig;
 import com.hbm.config.RadiationConfig;
 import com.hbm.config.WorldConfig;
-import com.hbm.dim.moon.BiomeGenMoon;
 import com.hbm.dim.trait.CBT_Atmosphere;
 import com.hbm.entity.missile.EntityRideableRocket;
+import com.hbm.entity.mob.EntityCyberCrab;
 import com.hbm.entity.mob.EntityMoonCow;
 import com.hbm.explosion.ExplosionNukeSmall;
 import com.hbm.extprop.HbmLivingProps;
@@ -28,10 +28,10 @@ import com.hbm.main.MainRegistry;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
 import com.hbm.packet.toclient.ExtPropPacket;
+import com.hbm.particle.helper.FlameCreator;
 import com.hbm.potion.HbmPotion;
 import com.hbm.saveddata.AuxSavedData;
 import com.hbm.util.ArmorRegistry;
-import com.hbm.particle.helper.FlameCreator;
 import com.hbm.util.ArmorUtil;
 import com.hbm.util.ContaminationUtil;
 import com.hbm.util.ArmorRegistry.HazardClass;
@@ -53,13 +53,11 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
-import net.minecraft.util.DamageSource;
 import net.minecraft.world.biome.BiomeGenBase;
-
-import static com.hbm.items.food.ItemConserve.isAstronautFood;
 
 public class EntityEffectHandler {
 
@@ -245,8 +243,6 @@ public class EntityEffectHandler {
 			if(world.provider.isHellWorld && RadiationConfig.hellRad > 0 && rad < RadiationConfig.hellRad)
 				rad = (float) RadiationConfig.hellRad;
 
-
-
 			if(rad > 0) {
 				ContaminationUtil.contaminate(entity, HazardType.RADIATION, ContaminationType.CREATIVE, rad / 20F);
 			}
@@ -320,26 +316,9 @@ public class EntityEffectHandler {
 
 	private static void handleOxy(EntityLivingBase entity, CBT_Atmosphere atmosphere) {
 		if(entity.worldObj.isRemote) return;
-		//if(entity instanceof EntityGlyphid) return; // can't suffocate the bastards
-		//not real
-		//if(entity instanceof EntityCyberCrab) return; // machines
-		//eat my ass
+		if(entity instanceof EntityCyberCrab) return; // machines
 		if(entity instanceof EntityMoonCow) return; // MOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 		if(entity.ridingEntity != null && entity.ridingEntity instanceof EntityRideableRocket) return; // breathe easy in your ship
-
-		//if(entity.isEating()) {
-//
-		//	if (!isAstronautFood) {
-		//		event.setCanceled(true);
-		//	}
-		//}
-
-		//if (entity.isUsingItem() && entity.getHeldItem() != null) {
-		//	if (!isAstronautFood(entity.getHeldItem())) {
-		//		// Cancel eating action by forcing item use to stop
-		//		entity.stopUsingItem();
-		//	}
-		//}
 
 		if (!ArmorUtil.checkForOxy(entity, atmosphere)) {
 			HbmLivingProps.setOxy(entity, HbmLivingProps.getOxy(entity) - 1);
@@ -351,8 +330,7 @@ public class EntityEffectHandler {
 	// Corrosive atmospheres melt your suit, without appropriate protection
 	private static void handleCorrosion(EntityLivingBase entity, CBT_Atmosphere atmosphere) {
 		if(entity.worldObj.isRemote) return;
-		//if(entity instanceof EntityGlyphid) return;
-		//if(entity instanceof EntityCyberCrab) return;
+		if(entity instanceof EntityCyberCrab) return;
 		if(entity.ridingEntity != null && entity.ridingEntity instanceof EntityRideableRocket) return;
 
 		// If we should corrode but we have armor, damage it heavily
@@ -361,29 +339,6 @@ public class EntityEffectHandler {
 			entity.attackEntityFrom(ModDamageSource.acid, 1);
 		}
 	}
-
-	//private static void handleDigamma(EntityLivingBase entity) {
-//
-	//	if(!entity.worldObj.isRemote) {
-//
-	//		float digamma = HbmLivingProps.getDigamma(entity);
-//
-	//		if(digamma < 0.01F)
-	//			return;
-//
-	//		int chance = Math.max(10 - (int)(digamma), 1);
-//
-	//		if(chance == 1 || entity.getRNG().nextInt(chance) == 0) {
-//
-	//			NBTTagCompound data = new NBTTagCompound();
-	//			data.setString("type", "sweat");
-	//			data.setInteger("count", 1);
-	//			data.setInteger("block", Block.getIdFromBlock(Blocks.soul_sand));
-	//			data.setInteger("entity", entity.getEntityId());
-	//			PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(data, 0, 0, 0),  new TargetPoint(entity.dimension, entity.posX, entity.posY, entity.posZ, 25));
-	//		}
-	//	}
-	//}
 
 	private static void handleContagion(EntityLivingBase entity) {
 
@@ -674,8 +629,19 @@ public class EntityEffectHandler {
 			if((living.ticksExisted + living.getEntityId()) % 40 == 0) living.attackEntityFrom(DamageSource.onFire, 5F);
 			FlameCreator.composeEffect(entity.worldObj, x - living.width / 2 + living.width * rand.nextDouble(), y + rand.nextDouble() * living.height, z - living.width / 2 + living.width * rand.nextDouble(), FlameCreator.META_FIRE);
 		}
+
+		if(props.balefire > 0) {
+			props.balefire--;
+			if((living.ticksExisted + living.getEntityId()) % 15 == 0) living.worldObj.playSoundEffect(living.posX, living.posY + living.height / 2, living.posZ, "random.fizz", 1F, 1.5F + rand.nextFloat() * 0.5F);
+			ContaminationUtil.contaminate(living, HazardType.RADIATION, ContaminationType.CREATIVE, 5F);
+			if((living.ticksExisted + living.getEntityId()) % 20 == 0) living.attackEntityFrom(DamageSource.onFire, 5F);
+			FlameCreator.composeEffect(entity.worldObj, x - living.width / 2 + living.width * rand.nextDouble(), y + rand.nextDouble() * living.height, z - living.width / 2 + living.width * rand.nextDouble(), FlameCreator.META_BALEFIRE);
+		}
+
+		//if(props.fire > 0 || props.phosphorus > 0 || props.balefire > 0) if(!entity.isEntityAlive()) ConfettiUtil.decideConfetti(living, DamageSource.onFire);
 	}
 
+	//todo remove
 	private static void handleDashing(Entity entity) {
 
 		//AAAAAAAAAAAAAAAAAAAAEEEEEEEEEEEEEEEEEEEE
