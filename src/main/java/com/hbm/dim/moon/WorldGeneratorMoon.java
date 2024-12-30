@@ -32,7 +32,7 @@ public class WorldGeneratorMoon implements IWorldGenerator {
 		DungeonToolbox.generateOre(world, rand, i, j, WorldConfig.lithiumSpawn,  6, 4, 8, ModBlocks.ore_lithium, meta, ModBlocks.moon_rock);
 		DungeonToolbox.generateOre(world, rand, i, j, WorldConfig.aluminiumSpawn,  6, 5, 40, ModBlocks.ore_aluminium, meta, ModBlocks.moon_rock);
         DungeonToolbox.generateOre(world, rand, i, j, WorldConfig.fluoriteSpawn, 4, 5, 45, ModBlocks.ore_fluorite, meta, ModBlocks.moon_rock);
-		DungeonToolbox.generateOre(world, rand, i, j, 8, 12, 14, 32, ModBlocks.ore_silicon, meta, ModBlocks.moon_rock);
+		//DungeonToolbox.generateOre(world, rand, i, j, 8, 12, 14, 32, ModBlocks.ore_silicon, meta, ModBlocks.moon_rock); //ore quartz is the same thing
 		DungeonToolbox.generateOre(world, rand, i, j, 16, 12, 25, 30, ModBlocks.stone_resource, BlockEnums.EnumStoneType.CALCIUM.ordinal(), ModBlocks.moon_rock);
         DungeonToolbox.generateOre(world, rand, i, j, 10, 13, 5, 64, ModBlocks.ore_quartz, meta, ModBlocks.moon_rock);
 

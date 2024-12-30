@@ -10,6 +10,7 @@ import com.hbm.items.ItemEnums.EnumBriquetteType;
 import com.hbm.items.ItemEnums.EnumChunkType;
 import com.hbm.items.ItemEnums.EnumCokeType;
 import com.hbm.items.ItemEnums.EnumPlantType;
+import com.hbm.items.special.ItemByproduct;
 import com.hbm.items.special.ItemHot;
 import com.hbm.items.special.ItemBedrockOre.EnumBedrockOre;
 
@@ -49,7 +50,14 @@ public class SmeltingRecipes {
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.moon_rock), new ItemStack(Blocks.stone), 0.1F);
 
 		//why the fuck is this not here
-		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_silicon), new ItemStack(ModItems.ingot_silicon), 0.7F);
+		//nvm
+		GameRegistry.addSmelting(Item.getItemFromBlock(Blocks.glass), (DictFrame.fromOne(ModItems.ore_byproduct, ItemByproduct.EnumByproduct.B_SILICON) ), 0.7F);
+
+		//GameRegistry.addSmelting(DictFrame.fromOne(ModItems.arc_electrode_burnt, EnumElectrodeType.SATURNITE), new ItemStack(ModItems.ingot_saturnite), 3.0F);
+
+		//GameRegistry.addSmelting(Item.getItemFromBlock(Blocks.glass), new ItemStack(ModItems.nugget_silicon), 0.7F);
+		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_silicon), (DictFrame.fromOne(ModItems.ore_byproduct, ItemByproduct.EnumByproduct.B_SILICON) ), 0.7F);
+
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_thorium), new ItemStack(ModItems.ingot_th232), 3.0F);
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_uranium), new ItemStack(ModItems.ingot_uranium), 6.0F);
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_uranium_scorched), new ItemStack(ModItems.ingot_uranium), 6.0F);

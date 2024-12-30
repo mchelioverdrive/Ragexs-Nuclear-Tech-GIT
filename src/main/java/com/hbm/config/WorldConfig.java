@@ -18,6 +18,8 @@ public class WorldConfig {
 	public static int zincSpawn = 8;
 	public static int mineralSpawn = 5;
 	public static int fluoriteSpawn = 6;
+	//public static int siliconSpawn = 8;
+	public static int quartzSpawn = 12;
 	public static int niterSpawn = 6;
 	public static int tungstenSpawn = 10;
 	public static int leadSpawn = 6;
