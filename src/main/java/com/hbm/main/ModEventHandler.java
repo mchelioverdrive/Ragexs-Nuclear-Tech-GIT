@@ -10,6 +10,7 @@ import java.util.Random;
 import java.util.UUID;
 
 import com.hbm.items.food.ItemConserve;
+import com.hbm.world.generator.DungeonToolbox;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.Level;
 
@@ -187,7 +188,7 @@ public class ModEventHandler {
 		if(!event.player.worldObj.isRemote) {
 
 			if(GeneralConfig.enableMOTD) {
-				event.player.addChatMessage(new ChatComponentText("Loaded world with JameH2's NTM: Space " + RefStrings.VERSION + " for Minecraft 1.7.10!"));
+				event.player.addChatMessage(new ChatComponentText("Loaded world with RTM: Space " + RefStrings.VERSION + " for Minecraft 1.7.10!"));
 
 				if(HTTPHandler.newVersion) {
 					event.player.addChatMessage(
@@ -233,19 +234,52 @@ public class ModEventHandler {
 	}
 
 
+
+	//@SubscribeEvent(priority = EventPriority.LOW)
+	//public void oreDropEvent(BreakEvent event) {
+//
+	//	if(event.isCanceled())
+	//		return;
+//
+	//	World world = event.world;
+//
+	//	if(world.isRemote)
+	//		return;
+//
+	//	if(event.block != Blocks.stone)
+	//		return;
+	//	//if(world.rand.nextDouble() < 0.04)
+	//	//	world.spawnEntityInWorld(new EntityItem(world, event.x + 0.5, event.y + 0.5, event.z + 0.5, new ItemStack(ModItems.ore)));
+//
+	//	//if(world.rand.nextDouble() < MainRegistry.ironChance)
+	//	//	world.spawnEntityInWorld(new EntityItem(world, event.x + 0.5, event.y + 0.5, event.z + 0.5, new ItemStack(Blocks.iron_ore)));
+	//	//if(world.rand.nextDouble() < MainRegistry.goldChance)
+	//	//	world.spawnEntityInWorld(new EntityItem(world, event.x + 0.5, event.y + 0.5, event.z + 0.5, new ItemStack(Blocks.gold_ore)));
+//
+	//	/*ResourceData data = ResourceData.getData(world);
+//
+	//	if(world.rand.nextFloat() < 0.05F && data.isInArea(event.x, event.z, data.iron))
+	//		world.spawnEntityInWorld(new EntityItem(world, event.x + 0.5, event.y + 0.5, event.z + 0.5, new ItemStack(Blocks.iron_ore)));
+//
+	//	if(world.rand.nextFloat() < 0.1F && data.isInArea(event.x, event.z, data.coal))
+	//		world.spawnEntityInWorld(new EntityItem(world, event.x + 0.5, event.y + 0.5, event.z + 0.5, new ItemStack(Items.coal)));*/
+//
+	//}
+
+
 	@SubscribeEvent
 	public void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
 
 		EntityPlayer player = event.player;
 
-		if((player.getUniqueID().toString().equals(ShadyUtil.Dr_Nostalgia) || player.getDisplayName().equals("Dr_Nostalgia")) && !player.worldObj.isRemote) {
-
-			if(!player.inventory.hasItem(ModItems.hat))
-				player.inventory.addItemStackToInventory(new ItemStack(ModItems.hat));
-
-			if(!player.inventory.hasItem(ModItems.beta))
-				player.inventory.addItemStackToInventory(new ItemStack(ModItems.beta));
-		}
+		//if((player.getUniqueID().toString().equals(ShadyUtil.Dr_Nostalgia) || player.getDisplayName().equals("Dr_Nostalgia")) && !player.worldObj.isRemote) {
+//
+		//	if(!player.inventory.hasItem(ModItems.hat))
+		//		player.inventory.addItemStackToInventory(new ItemStack(ModItems.hat));
+//
+		//	if(!player.inventory.hasItem(ModItems.beta))
+		//		player.inventory.addItemStackToInventory(new ItemStack(ModItems.beta));
+		//}
 	}
 
 	@SubscribeEvent
