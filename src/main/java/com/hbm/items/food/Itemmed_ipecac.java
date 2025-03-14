@@ -35,51 +35,61 @@ public class Itemmed_ipecac extends ItemFood {
 		return EnumAction.drink;
 	}
 
-	//@Override
-	//public ItemStack onEaten(ItemStack stack, World world, EntityPlayer player) {
-	//	if (!world.isRemote) {
-	//		player.addPotionEffect(new PotionEffect(Potion.hunger.id, 50, 49));
-	//		player.addPotionEffect(new PotionEffect(HbmPotion.radaway.id, 1, 20));
-	//	}
-	//}
+	@Override
+	public ItemStack onEaten(ItemStack stack, World world, EntityPlayer player) {
+		// Ensure the super method is called
+		ItemStack result = super.onEaten(stack, world, player);
 
-	public ItemStack onEaten(ItemStack stack, World worldObj, EntityPlayer player)
-	{
-		ItemStack sta = super.onEaten(stack, worldObj, player);
-
-		return sta;
+		// Call the method to apply food-eaten effects
+		onFoodEaten(stack, world, player);
+		return result;
 	}
 
 	@Override
 	protected void onFoodEaten(ItemStack stack, World world, EntityPlayer player) {
-		//add throwing up effect here
-		//if(this == ModItems.med_ipecac || this == ModItems.med_ptsd) {
-		player.addPotionEffect(new PotionEffect(Potion.hunger.id, 50, 49));
-		int hungerLevel = player.getFoodStats().getFoodLevel();
-		player.getFoodStats().setFoodLevel(Math.max(hungerLevel - 3, 0));
-		if (hungerLevel > 0 && HbmLivingProps.getRadiation(player) < 600) {
-			player.addPotionEffect(new PotionEffect(HbmPotion.radaway.id, 1, 20));
-		}
+		// Add throwing up effect here
+		if (!world.isRemote) { // Ensure this logic only runs on the server side
+			// Apply the hunger effect (server-side)
+			player.addPotionEffect(new PotionEffect(Potion.hunger.id, 50, 49));
+
+			// Adjust hunger level
+			int hungerLevel = player.getFoodStats().getFoodLevel();
+			player.getFoodStats().setFoodLevel(Math.max(hungerLevel - 3, 0));
+
+			// If player's radiation level is low, apply radaway potion effect
+			if (hungerLevel > 0 && HbmLivingProps.getRadiation(player) < 600) {
+				player.addPotionEffect(new PotionEffect(HbmPotion.radaway.id, 1, 20));
+			}
+
+			// Handle Nitan count reset if applicable
 			HbmPlayerProps props = HbmPlayerProps.getData(player);
-			if (props.nitanCount > 0){
+			if (props.nitanCount > 0) {
 				player.removePotionEffect(HbmPotion.nitan.id);
 				props.nitanCount = 0;
 			}
-		NBTTagCompound nbt = new NBTTagCompound();
-		nbt.setString("type", "vomit");
-		nbt.setString("mode", "normal");
-		nbt.setInteger("count", 15);
-		nbt.setInteger("entity", player.getEntityId());
-		PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(nbt, 0, 0, 0),  new NetworkRegistry.TargetPoint(player.dimension, player.posX, player.posY, player.posZ, 25));
-		world.playSoundEffect(player.posX, player.posY, player.posZ, "hbm:player.vomit", 1.0F, 1.0F);
-		//}
 
+			// Send vomit particle effect to all players around
+			NBTTagCompound nbt = new NBTTagCompound();
+			nbt.setString("type", "vomit");
+			nbt.setString("mode", "normal");
+			nbt.setInteger("count", 15);
+			nbt.setInteger("entity", player.getEntityId());
+
+			// Ensure packet is properly sent to players around the player
+			PacketDispatcher.wrapper.sendToAllAround(
+				new AuxParticlePacketNT(nbt, 0, 0, 0),
+				new NetworkRegistry.TargetPoint(player.dimension, player.posX, player.posY, player.posZ, 25)
+			);
+
+			// Play sound for the vomit effect (only on the server)
+			world.playSoundAtEntity(player, "hbm:player.vomit", 1.0F, 1.0F);
+		}
 	}
 
 	@Override
 	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
+		// Begin item usage (on right-click) and start the item use action
 		player.setItemInUse(stack, this.getMaxItemUseDuration(stack));
 		return stack;
 	}
-
 }
