@@ -477,10 +477,10 @@ public class ItemGunBase extends Item implements IHoldableWeapon, IItemHUD, IEqu
 	//item mouseover text
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean bool) {
-		System.out.println("DEBUG: addInformation called");
-		System.out.println("DEBUG: ItemStack = " + stack);
-		System.out.println("DEBUG: Player = " + player);
-		System.out.println("DEBUG: World = " + (player != null ? player.worldObj : "null"));
+		//System.out.println("DEBUG: addInformation called");
+		//System.out.println("DEBUG: ItemStack = " + stack);
+		//System.out.println("DEBUG: Player = " + player);
+		//System.out.println("DEBUG: World = " + (player != null ? player.worldObj : "null"));
 
 		// Ensure stack and mainConfig are not null before proceeding
 		if (stack == null) {
@@ -498,7 +498,7 @@ public class ItemGunBase extends Item implements IHoldableWeapon, IItemHUD, IEqu
 		try {
 			// Log mag type and verify that it's valid
 			int magType = getMagType(stack);
-			System.out.println("DEBUG: MagType = " + magType);
+			//System.out.println("DEBUG: MagType = " + magType);
 
 			// Pull the ammo configuration safely
 			BulletConfiguration bulletConfig = BulletConfigSyncingUtil.pullConfig(mainConfig.config.get(magType));
@@ -554,8 +554,8 @@ public class ItemGunBase extends Item implements IHoldableWeapon, IItemHUD, IEqu
 
 	protected void addAdditionalInformation(ItemStack stack, List<String> list) {
 
-		System.out.println("DEBUG: addAdditionalInformation called");
-		System.out.println("DEBUG: Stack = " + stack);
+		//System.out.println("DEBUG: addAdditionalInformation called");
+		//System.out.println("DEBUG: Stack = " + stack);
 
 		if (stack == null) {
 			System.out.println("ERROR: ItemStack is null");

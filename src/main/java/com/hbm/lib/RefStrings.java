@@ -9,6 +9,10 @@ public class RefStrings {
 	//V -> next release version
 	//T -> build type
 	//X -> days since 10/10/10
+	//ragex's naming convention:
+	//the god
+	//the sun
+	//and the holy spirit
 	public static final String CLIENTSIDE = "com.hbm.main.ClientProxy";
 	public static final String SERVERSIDE = "com.hbm.main.ServerProxy";
 }

@@ -54,7 +54,8 @@ public class Itemmed_ipecac extends ItemFood {
 
 			// Adjust hunger level
 			int hungerLevel = player.getFoodStats().getFoodLevel();
-			player.getFoodStats().setFoodLevel(Math.max(hungerLevel - 3, 0));
+			player.getFoodStats().addExhaustion(6.0F); // Equivalent to reducing hunger
+
 
 			// If player's radiation level is low, apply radaway potion effect
 			if (hungerLevel > 0 && HbmLivingProps.getRadiation(player) < 600) {

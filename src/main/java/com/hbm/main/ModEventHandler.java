@@ -190,20 +190,20 @@ public class ModEventHandler {
 			if(GeneralConfig.enableMOTD) {
 				event.player.addChatMessage(new ChatComponentText("Loaded world with RTM: Space " + RefStrings.VERSION + " for Minecraft 1.7.10!"));
 
-				if(HTTPHandler.newVersion) {
-					event.player.addChatMessage(
-							new ChatComponentText("New version " + HTTPHandler.versionNumber + " is available! Click ")
-							.setChatStyle(new ChatStyle().setColor(EnumChatFormatting.YELLOW))
-							.appendSibling(new ChatComponentText("[here]")
-									.setChatStyle(new ChatStyle()
-										.setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://github.com/JameH2/Hbm-s-Nuclear-Tech-GIT/releases"))
-										.setUnderlined(true)
-										.setColor(EnumChatFormatting.RED)
-									)
-								)
-							.appendSibling(new ChatComponentText(" to download!").setChatStyle(new ChatStyle().setColor(EnumChatFormatting.YELLOW)))
-							);
-				}
+				//if(HTTPHandler.newVersion) {
+				//	event.player.addChatMessage(
+				//			new ChatComponentText("New version " + HTTPHandler.versionNumber + " is available! Click ")
+				//			.setChatStyle(new ChatStyle().setColor(EnumChatFormatting.YELLOW))
+				//			.appendSibling(new ChatComponentText("[here]")
+				//					.setChatStyle(new ChatStyle()
+				//						.setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://github.com/JameH2/Hbm-s-Nuclear-Tech-GIT/releases"))
+				//						.setUnderlined(true)
+				//						.setColor(EnumChatFormatting.RED)
+				//					)
+				//				)
+				//			.appendSibling(new ChatComponentText(" to download!").setChatStyle(new ChatStyle().setColor(EnumChatFormatting.YELLOW)))
+				//			);
+				//}
 			}
 
 			if(MobConfig.enableDucks && event.player instanceof EntityPlayerMP && !event.player.getEntityData().getCompoundTag(EntityPlayer.PERSISTED_NBT_TAG).getBoolean("hasDucked"))
