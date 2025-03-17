@@ -484,13 +484,13 @@ public class ItemGunBase extends Item implements IHoldableWeapon, IItemHUD, IEqu
 
 		// Ensure stack and mainConfig are not null before proceeding
 		if (stack == null) {
-			System.out.println("ERROR: ItemStack is null.");
+			//System.out.println("ERROR: ItemStack is null.");
 			list.add("Invalid ItemStack.");
 			return;
 		}
 
 		if (mainConfig == null) {
-			System.out.println("ERROR: mainConfig is null.");
+			//System.out.println("ERROR: mainConfig is null.");
 			list.add("Configuration not initialized.");
 			return;
 		}
@@ -503,7 +503,7 @@ public class ItemGunBase extends Item implements IHoldableWeapon, IItemHUD, IEqu
 			// Pull the ammo configuration safely
 			BulletConfiguration bulletConfig = BulletConfigSyncingUtil.pullConfig(mainConfig.config.get(magType));
 			if (bulletConfig == null) {
-				System.out.println("ERROR: Bullet configuration is null for MagType = " + magType);
+				//System.out.println("ERROR: Bullet configuration is null for MagType = " + magType);
 				list.add("Error: Bullet configuration is missing.");
 				return;
 			}
@@ -511,7 +511,7 @@ public class ItemGunBase extends Item implements IHoldableWeapon, IItemHUD, IEqu
 			// Ensure ammo is not null before proceeding
 			ComparableStack ammo = bulletConfig.ammo;
 			if (ammo == null) {
-				System.out.println("ERROR: Ammo is null.");
+				//System.out.println("ERROR: Ammo is null.");
 				list.add("Error: Ammo configuration is missing.");
 				return;
 			}
@@ -525,18 +525,18 @@ public class ItemGunBase extends Item implements IHoldableWeapon, IItemHUD, IEqu
 				if (ammo2 != null && !ammo.isApplicable(ammo2)) {
 					list.add(I18nUtil.resolveKey(HbmCollection.altAmmoType, ammo2.toStack().getDisplayName()));
 				} else {
-					System.out.println("INFO: Alt ammo configuration is either null or applicable.");
+					//System.out.println("INFO: Alt ammo configuration is either null or applicable.");
 				}
 			}
 
 		} catch (NullPointerException e) {
 			// Catch NullPointerException and log it
-			System.out.println("ERROR: NullPointerException while fetching ammo configuration.");
+			//System.out.println("ERROR: NullPointerException while fetching ammo configuration.");
 			e.printStackTrace();
 			list.add("Error: Ammo configuration is missing.");
 		} catch (Exception e) {
 			// Catch any other exceptions
-			System.out.println("ERROR: Exception occurred while adding ammo type information.");
+			//System.out.println("ERROR: Exception occurred while adding ammo type information.");
 			e.printStackTrace();
 			list.add("Error: " + e.getMessage());
 		}
@@ -546,7 +546,7 @@ public class ItemGunBase extends Item implements IHoldableWeapon, IItemHUD, IEqu
 			addAdditionalInformation(stack, list);
 		} catch (Exception e) {
 			// Catch errors in addAdditionalInformation method
-			System.out.println("ERROR: Exception occurred in addAdditionalInformation.");
+			//System.out.println("ERROR: Exception occurred in addAdditionalInformation.");
 			e.printStackTrace();
 			list.add("Error occurred: " + e.getMessage());
 		}
@@ -558,33 +558,33 @@ public class ItemGunBase extends Item implements IHoldableWeapon, IItemHUD, IEqu
 		//System.out.println("DEBUG: Stack = " + stack);
 
 		if (stack == null) {
-			System.out.println("ERROR: ItemStack is null");
+			//System.out.println("ERROR: ItemStack is null");
 			list.add("Invalid ItemStack.");
 			return;
 		}
 
-		System.out.println("DEBUG: Checking mainConfig...");
+		//System.out.println("DEBUG: Checking mainConfig...");
 		if (mainConfig == null) {
-			System.out.println("ERROR: mainConfig is null");
+			//System.out.println("ERROR: mainConfig is null");
 			list.add("Configuration not initialized.");
 			return;
 		}
 
 		try {
 			int magType = getMagType(stack);
-			System.out.println("DEBUG: MagType = " + magType);
+			//System.out.println("DEBUG: MagType = " + magType);
 
 			BulletConfiguration bulletConfig = BulletConfigSyncingUtil.pullConfig(mainConfig.config.get(magType));
-			System.out.println("DEBUG: BulletConfiguration loaded: " + bulletConfig);
+			//System.out.println("DEBUG: BulletConfiguration loaded: " + bulletConfig);
 
 			list.add(I18nUtil.resolveKey(HbmCollection.gunDamage, bulletConfig.dmgMin, bulletConfig.dmgMax));
 		} catch (Exception e) {
-			System.out.println("ERROR: Exception in addAdditionalInformation");
+			//System.out.println("ERROR: Exception in addAdditionalInformation");
 			e.printStackTrace();
 			list.add("Error: " + e.getMessage());
 		}
 
-		System.out.println("Ammo Type: " + ammoType);
+		//System.out.println("Ammo Type: " + ammoType);
 
 		final BulletConfiguration bulletConfig = BulletConfigSyncingUtil.pullConfig(mainConfig.config.get(getMagType(stack)));
 		list.add(I18nUtil.resolveKey(HbmCollection.gunDamage, bulletConfig.dmgMin, bulletConfig.dmgMax));
