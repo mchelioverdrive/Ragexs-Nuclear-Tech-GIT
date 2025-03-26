@@ -79,6 +79,10 @@ public class HbmPotion extends Potion {
 		if (id >= Potion.potionTypes.length) {
 
 			Potion[] newArray = new Potion[Math.max(256, id)];
+			//YOU ARE A FUCKING RETARD YOU ARE A COMPLETE FUCKING RETARD WHY WOULD YOU DO THIS STUPID FUCKING SHIT I HATE YOU I HATE YOU
+			//STOP CODING USING VANILLA SHIT
+			//MAKE YOUR OWN FUCKING METHODS FOR POTIONS FUCKS SAKES ITS JAVA
+			//WHY THE ACTUAL FUCK IS THIS SHIT LIKE THIS THIS IS FUCKING TERRIBLE
 			System.arraycopy(Potion.potionTypes, 0, newArray, 0, Potion.potionTypes.length);
 
 			Field field = ReflectionHelper.findField(Potion.class, new String[] { "field_76425_a", "potionTypes" });
