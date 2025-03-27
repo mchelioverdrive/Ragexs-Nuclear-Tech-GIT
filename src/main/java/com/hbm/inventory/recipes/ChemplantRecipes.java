@@ -277,8 +277,9 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.outputItems(new ItemStack(ModItems.powder_schrabidate)));
 		recipes.add(new ChemRecipe(65, "COLTAN_CLEANING", 60)
 				.inputItems(
-						new OreDictStack(COLTAN.dust(), 2),
-						new OreDictStack(ANY_COAL_COKE.dust()))
+						new OreDictStack(COLTAN.dust(), 2))
+							//,
+						//new OreDictStack(ANY_COAL_COKE.dust()))
 				.inputFluids(
 						new FluidStack(Fluids.PEROXIDE, 250),
 						new FluidStack(Fluids.HYDROGEN, 500))
@@ -287,14 +288,15 @@ public class ChemplantRecipes extends SerializableRecipe {
 						new ItemStack(ModItems.powder_niobium),
 						new ItemStack(ModItems.dust))
 				.outputFluids(new FluidStack(Fluids.WATER, 500)));
-		recipes.add(new ChemRecipe(66, "COLTAN_PAIN", 120)
-				.inputItems(
-						new ComparableStack(ModItems.powder_coltan),
-						new OreDictStack(F.dust()))
-				.inputFluids(
-						new FluidStack(Fluids.GAS, 1000),
-						new FluidStack(Fluids.OXYGEN, 500))
-				.outputFluids(new FluidStack(Fluids.PAIN, 1000)));
+		//pls die in a fire kthx
+		//recipes.add(new ChemRecipe(66, "COLTAN_PAIN", 120)
+		//		.inputItems(
+		//				new ComparableStack(ModItems.powder_coltan),
+		//				new OreDictStack(F.dust()))
+		//		.inputFluids(
+		//				new FluidStack(Fluids.GAS, 1000),
+		//				new FluidStack(Fluids.OXYGEN, 500))
+		//		.outputFluids(new FluidStack(Fluids.PAIN, 1000)));
 		recipes.add(new ChemRecipe(67, "COLTAN_CRYSTAL", 80)
 				.inputFluids(
 						new FluidStack(Fluids.PAIN, 1000),
