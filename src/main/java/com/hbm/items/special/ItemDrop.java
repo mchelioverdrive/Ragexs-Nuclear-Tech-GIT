@@ -101,80 +101,80 @@ public class ItemDrop extends Item {
 						new ExplosionVNT(entityItem.worldObj, entityItem.posX, entityItem.posY, entityItem.posZ, 4F).makeAmat().explode();
 					}
 				}
-				if (stack.getItem() != null && stack.getItem() == ModItems.pellet_antimatter && WeaponConfig.dropCell) {
-					if (!entityItem.worldObj.isRemote) {
-						new ExplosionVNT(entityItem.worldObj, entityItem.posX, entityItem.posY, entityItem.posZ, 20F).makeAmat().explode();
-					}
-				}
-				if (stack.getItem() != null && stack.getItem() == ModItems.cell_anti_schrabidium && WeaponConfig.dropCell) {
-					if (!entityItem.worldObj.isRemote) {
-						EntityNukeExplosionMK3 ex = EntityNukeExplosionMK3.statFacFleija(entityItem.worldObj, entityItem.posX, entityItem.posY, entityItem.posZ, BombConfig.aSchrabRadius);
-						if(!ex.isDead) {
-							entityItem.worldObj.playSoundEffect(entityItem.posX, entityItem.posY, entityItem.posZ, "random.explode", 100.0F, entityItem.worldObj.rand.nextFloat() * 0.1F + 0.9F);
-							entityItem.worldObj.spawnEntityInWorld(ex);
-
-							EntityCloudFleija cloud = new EntityCloudFleija(entityItem.worldObj, BombConfig.aSchrabRadius);
-							cloud.posX = entityItem.posX;
-							cloud.posY = entityItem.posY;
-							cloud.posZ = entityItem.posZ;
-							entityItem.worldObj.spawnEntityInWorld(cloud);
-						}
-					}
-				}
-				if (stack.getItem() != null && stack.getItem() == ModItems.singularity && WeaponConfig.dropSing) {
-					if (!entityItem.worldObj.isRemote) {
-
-						EntityVortex bl = new EntityVortex(entityItem.worldObj, 1.5F);
-						bl.posX = entityItem.posX;
-						bl.posY = entityItem.posY;
-						bl.posZ = entityItem.posZ;
-						entityItem.worldObj.spawnEntityInWorld(bl);
-					}
-				}
-				if (stack.getItem() != null && stack.getItem() == ModItems.singularity_counter_resonant && WeaponConfig.dropSing) {
-					if (!entityItem.worldObj.isRemote) {
-
-						EntityVortex bl = new EntityVortex(entityItem.worldObj, 2.5F);
-						bl.posX = entityItem.posX;
-						bl.posY = entityItem.posY;
-						bl.posZ = entityItem.posZ;
-						entityItem.worldObj.spawnEntityInWorld(bl);
-					}
-				}
-				if (stack.getItem() != null && stack.getItem() == ModItems.singularity_super_heated && WeaponConfig.dropSing) {
-					if (!entityItem.worldObj.isRemote) {
-
-						EntityVortex bl = new EntityVortex(entityItem.worldObj, 2.5F);
-						bl.posX = entityItem.posX;
-						bl.posY = entityItem.posY;
-						bl.posZ = entityItem.posZ;
-						entityItem.worldObj.spawnEntityInWorld(bl);
-					}
-				}
-				if (stack.getItem() != null && stack.getItem() == ModItems.black_hole && WeaponConfig.dropSing) {
-					if (!entityItem.worldObj.isRemote) {
-						EntityBlackHole bl = new EntityBlackHole(entityItem.worldObj, 1.5F);
-						bl.posX = entityItem.posX;
-						bl.posY = entityItem.posY;
-						bl.posZ = entityItem.posZ;
-						entityItem.worldObj.spawnEntityInWorld(bl);
-					}
-				}
-				if (stack.getItem() != null && stack.getItem() == ModItems.singularity_spark && WeaponConfig.dropSing) {
-					if (!entityItem.worldObj.isRemote) {
-						EntityRagingVortex bl = new EntityRagingVortex(entityItem.worldObj, 3.5F);
-						bl.posX = entityItem.posX;
-						bl.posY = entityItem.posY;
-						bl.posZ = entityItem.posZ;
-						entityItem.worldObj.spawnEntityInWorld(bl);
-					}
-				}
-				if (stack.getItem() != null && stack.getItem() == ModItems.crystal_xen && WeaponConfig.dropCrys) {
-					if (!entityItem.worldObj.isRemote) {
-						ExplosionChaos.floater(entityItem.worldObj, (int)entityItem.posX, (int)entityItem.posY, (int)entityItem.posZ, 25, 75);
-						ExplosionChaos.move(entityItem.worldObj, (int)entityItem.posX, (int)entityItem.posY, (int)entityItem.posZ, 25, 0, 75, 0);
-					}
-				}
+				//if (stack.getItem() != null && stack.getItem() == ModItems.pellet_antimatter && WeaponConfig.dropCell) {
+				//	if (!entityItem.worldObj.isRemote) {
+				//		new ExplosionVNT(entityItem.worldObj, entityItem.posX, entityItem.posY, entityItem.posZ, 20F).makeAmat().explode();
+				//	}
+				//}
+				//if (stack.getItem() != null && stack.getItem() == ModItems.cell_anti_schrabidium && WeaponConfig.dropCell) {
+				//	if (!entityItem.worldObj.isRemote) {
+				//		EntityNukeExplosionMK3 ex = EntityNukeExplosionMK3.statFacFleija(entityItem.worldObj, entityItem.posX, entityItem.posY, entityItem.posZ, BombConfig.aSchrabRadius);
+				//		if(!ex.isDead) {
+				//			entityItem.worldObj.playSoundEffect(entityItem.posX, entityItem.posY, entityItem.posZ, "random.explode", 100.0F, entityItem.worldObj.rand.nextFloat() * 0.1F + 0.9F);
+				//			entityItem.worldObj.spawnEntityInWorld(ex);
+//
+				//			EntityCloudFleija cloud = new EntityCloudFleija(entityItem.worldObj, BombConfig.aSchrabRadius);
+				//			cloud.posX = entityItem.posX;
+				//			cloud.posY = entityItem.posY;
+				//			cloud.posZ = entityItem.posZ;
+				//			entityItem.worldObj.spawnEntityInWorld(cloud);
+				//		}
+				//	}
+				//}
+				//if (stack.getItem() != null && stack.getItem() == ModItems.singularity && WeaponConfig.dropSing) {
+				//	if (!entityItem.worldObj.isRemote) {
+//
+				//		EntityVortex bl = new EntityVortex(entityItem.worldObj, 1.5F);
+				//		bl.posX = entityItem.posX;
+				//		bl.posY = entityItem.posY;
+				//		bl.posZ = entityItem.posZ;
+				//		entityItem.worldObj.spawnEntityInWorld(bl);
+				//	}
+				//}
+				//if (stack.getItem() != null && stack.getItem() == ModItems.singularity_counter_resonant && WeaponConfig.dropSing) {
+				//	if (!entityItem.worldObj.isRemote) {
+//
+				//		EntityVortex bl = new EntityVortex(entityItem.worldObj, 2.5F);
+				//		bl.posX = entityItem.posX;
+				//		bl.posY = entityItem.posY;
+				//		bl.posZ = entityItem.posZ;
+				//		entityItem.worldObj.spawnEntityInWorld(bl);
+				//	}
+				//}
+				//if (stack.getItem() != null && stack.getItem() == ModItems.singularity_super_heated && WeaponConfig.dropSing) {
+				//	if (!entityItem.worldObj.isRemote) {
+//
+				//		EntityVortex bl = new EntityVortex(entityItem.worldObj, 2.5F);
+				//		bl.posX = entityItem.posX;
+				//		bl.posY = entityItem.posY;
+				//		bl.posZ = entityItem.posZ;
+				//		entityItem.worldObj.spawnEntityInWorld(bl);
+				//	}
+				//}
+				//if (stack.getItem() != null && stack.getItem() == ModItems.black_hole && WeaponConfig.dropSing) {
+				//	if (!entityItem.worldObj.isRemote) {
+				//		EntityBlackHole bl = new EntityBlackHole(entityItem.worldObj, 1.5F);
+				//		bl.posX = entityItem.posX;
+				//		bl.posY = entityItem.posY;
+				//		bl.posZ = entityItem.posZ;
+				//		entityItem.worldObj.spawnEntityInWorld(bl);
+				//	}
+				//}
+				//if (stack.getItem() != null && stack.getItem() == ModItems.singularity_spark && WeaponConfig.dropSing) {
+				//	if (!entityItem.worldObj.isRemote) {
+				//		EntityRagingVortex bl = new EntityRagingVortex(entityItem.worldObj, 3.5F);
+				//		bl.posX = entityItem.posX;
+				//		bl.posY = entityItem.posY;
+				//		bl.posZ = entityItem.posZ;
+				//		entityItem.worldObj.spawnEntityInWorld(bl);
+				//	}
+				//}
+				//if (stack.getItem() != null && stack.getItem() == ModItems.crystal_xen && WeaponConfig.dropCrys) {
+				//	if (!entityItem.worldObj.isRemote) {
+				//		ExplosionChaos.floater(entityItem.worldObj, (int)entityItem.posX, (int)entityItem.posY, (int)entityItem.posZ, 25, 75);
+				//		ExplosionChaos.move(entityItem.worldObj, (int)entityItem.posX, (int)entityItem.posY, (int)entityItem.posZ, 25, 0, 75, 0);
+				//	}
+				//}
 
 				entityItem.setDead();
 				return true;
@@ -190,42 +190,42 @@ public class ItemDrop extends Item {
 			list.add("Warning: Exposure to matter will");
 			list.add("lead to violent annihilation!");
 		}
-		if (this == ModItems.pellet_antimatter) {
-			list.add("Very heavy antimatter cluster.");
-			list.add("Gets rid of black holes.");
-		}
+		//if (this == ModItems.pellet_antimatter) {
+		//	list.add("Very heavy antimatter cluster.");
+		//	list.add("Gets rid of black holes.");
+		//}
 		if (this == ModItems.cell_anti_schrabidium) {
 			list.add("Warning: Exposure to matter will");
 			list.add("create a fólkvangr field!");
 		}
-		if (this == ModItems.singularity) {
-			list.add("You may be asking:");
-			list.add("\"But HBM, a manifold with an undefined");
-			list.add("state of spacetime? How is this possible?\"");
-			list.add("Long answer short:");
-			list.add("\"I have no idea!\"");
-		}
-		if (this == ModItems.singularity_counter_resonant) {
-			list.add("Nullifies resonance of objects in");
-			list.add("non-euclidean space, creates variable");
-			list.add("gravity well. Spontaneously spawns");
-			list.add("tesseracts. If a tesseract happens to");
-			list.add("appear near you, do not look directly");
-			list.add("at it.");
-		}
-		if (this == ModItems.singularity_super_heated) {
-			list.add("Continuously heats up matter by");
-			list.add("resonating every planck second.");
-			list.add("Tends to catch fire or to create");
-			list.add("small plamsa arcs. Not edible.");
-		}
-		if (this == ModItems.black_hole) {
-			list.add("Contains a regular singularity");
-			list.add("in the center. Large enough to");
-			list.add("stay stable. It's not the end");
-			list.add("of the world as we know it,");
-			list.add("and I don't feel fine.");
-		}
+		//if (this == ModItems.singularity) {
+		//	list.add("You may be asking:");
+		//	list.add("\"But HBM, a manifold with an undefined");
+		//	list.add("state of spacetime? How is this possible?\"");
+		//	list.add("Long answer short:");
+		//	list.add("\"I have no idea!\"");
+		//}
+		//if (this == ModItems.singularity_counter_resonant) {
+		//	list.add("Nullifies resonance of objects in");
+		//	list.add("non-euclidean space, creates variable");
+		//	list.add("gravity well. Spontaneously spawns");
+		//	list.add("tesseracts. If a tesseract happens to");
+		//	list.add("appear near you, do not look directly");
+		//	list.add("at it.");
+		//}
+		//if (this == ModItems.singularity_super_heated) {
+		//	list.add("Continuously heats up matter by");
+		//	list.add("resonating every planck second.");
+		//	list.add("Tends to catch fire or to create");
+		//	list.add("small plamsa arcs. Not edible.");
+		//}
+		//if (this == ModItems.black_hole) {
+		//	list.add("Contains a regular singularity");
+		//	list.add("in the center. Large enough to");
+		//	list.add("stay stable. It's not the end");
+		//	list.add("of the world as we know it,");
+		//	list.add("and I don't feel fine.");
+		//}
 		if (this == ModItems.detonator_deadman) {
 			list.add("Shift right-click to set position,");
 			list.add("drop to detonate!");

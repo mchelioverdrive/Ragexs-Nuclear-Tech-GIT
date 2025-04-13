@@ -286,7 +286,8 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.outputItems(
 						new ItemStack(ModItems.powder_coltan),
 						new ItemStack(ModItems.powder_niobium),
-						new ItemStack(ModItems.dust))
+						new ItemStack(ModItems.powder_tantalium))
+						//BOB YOU'RE A FUCKING RETARD LEARN CHEMISTRY
 				.outputFluids(new FluidStack(Fluids.WATER, 500)));
 		//pls die in a fire kthx
 		//recipes.add(new ChemRecipe(66, "COLTAN_PAIN", 120)
