@@ -869,7 +869,7 @@ public class CraftingManager {
 		addRecipeAuto(new ItemStack(ModItems.upgrade_ejector, 1, 1), new Object[] { " C ", "PUP", " C ", 'C', ModItems.plate_gold, 'P', ModItems.motor, 'U', new ItemStack(ModItems.upgrade_ejector, 1, 0) });
 		addRecipeAuto(new ItemStack(ModItems.upgrade_ejector, 1, 2), new Object[] { " C ", "PUP", " C ", 'C', ModItems.plate_saturnite, 'P', ModItems.motor, 'U', new ItemStack(ModItems.upgrade_ejector, 1, 1) });
 
-		addRecipeAuto(new ItemStack(ModItems.mech_key, 1), new Object[] { "MCM", "MKM", "MMM", 'M', ModItems.ingot_meteorite_forged, 'C', ModItems.coin_maskman, 'K', ModItems.key });
+		//addRecipeAuto(new ItemStack(ModItems.mech_key, 1), new Object[] { "MCM", "MKM", "MMM", 'M', ModItems.ingot_meteorite_forged, 'C', ModItems.coin_maskman, 'K', ModItems.key });
 		//addRecipeAuto(new ItemStack(ModItems.spawn_ufo, 1), new Object[] { "MMM", "DCD", "MMM", 'M', ModItems.ingot_meteorite, 'D', DNT.ingot(), 'C', ModItems.coin_worm });
 
 		addRecipeAuto(new ItemStack(ModBlocks.hadron_coil_alloy, 1), new Object[] { "WWW", "WCW", "WWW", 'W', ALLOY.wireFine(), 'C', ModBlocks.fusion_conductor });
@@ -966,6 +966,17 @@ public class CraftingManager {
 		addShapelessAuto(new ItemStack(ModBlocks.deco_pipe, 1), new Object[] { ModBlocks.deco_pipe_framed });
 		addShapelessAuto(new ItemStack(ModBlocks.deco_pipe, 1), new Object[] { ModBlocks.deco_pipe_quad });
 
+		GameRegistry.addShapelessRecipe(
+			new ItemStack(Blocks.dirt, 1),
+			new ItemStack(Blocks.clay, 1)
+		);
+
+		GameRegistry.addShapelessRecipe(
+			new ItemStack(Blocks.clay, 1),
+			new ItemStack(Blocks.dirt, 1)
+		);
+		//please just fucking work you stupid fucking retarded ass slop fest of a mod
+
 		addRecipeAuto(new ItemStack(ModBlocks.deco_pipe_rim, 8), new Object[] { "PPP", "PCP", "PPP", 'P', ModBlocks.deco_pipe, 'C', STEEL.plate() });
 		addRecipeAuto(new ItemStack(ModBlocks.deco_pipe_quad, 4), new Object[] { "PP", "PP", 'P', ModBlocks.deco_pipe });
 		addRecipeAuto(new ItemStack(ModBlocks.deco_pipe_framed, 8), new Object[] { "PPP", "PCP", "PPP", 'P', ModBlocks.deco_pipe, 'C', Blocks.iron_bars });
@@ -1050,22 +1061,22 @@ public class CraftingManager {
 		addRecipeAuto(new ItemStack(ModBlocks.radar_screen), new Object[] { "PCP", "SRS", "PCP", 'P', ANY_PLASTIC.ingot(), 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC), 'S', STEEL.plate(), 'R', ModItems.crt_display });
 		addRecipeAuto(new ItemStack(ModItems.radar_linker), new Object[] { "S", "C", "P", 'S', ModItems.crt_display, 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC), 'P', STEEL.plate() });
 
-		addRecipeAuto(new ItemStack(ModItems.drone, 2, EnumDroneType.PATROL.ordinal()), new Object[] { " P ", "HCH", " B ", 'P', ANY_PLASTIC.ingot(), 'H', STEEL.pipe(), 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.VACUUM_TUBE), 'B', STEEL.shell() });
+		//addRecipeAuto(new ItemStack(ModItems.drone, 2, EnumDroneType.PATROL.ordinal()), new Object[] { " P ", "HCH", " B ", 'P', ANY_PLASTIC.ingot(), 'H', STEEL.pipe(), 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.VACUUM_TUBE), 'B', STEEL.shell() });
 		//addRecipeAuto(new ItemStack(ModItems.drone, 1, EnumDroneType.PATROL_CHUNKLOADING.ordinal()), new Object[] { "E", "D", 'E', Items.ender_pearl, 'D', new ItemStack(ModItems.drone, 1, EnumDroneType.PATROL.ordinal()) });
-		addRecipeAuto(new ItemStack(ModItems.drone, 1, EnumDroneType.PATROL_EXPRESS.ordinal()), new Object[] { " P ", "KDK", " P ", 'P', TI.plateWelded(), 'K', Fluids.KEROSENE.getDict(1_000), 'D', new ItemStack(ModItems.drone, 1, EnumDroneType.PATROL.ordinal()) });
+		//addRecipeAuto(new ItemStack(ModItems.drone, 1, EnumDroneType.PATROL_EXPRESS.ordinal()), new Object[] { " P ", "KDK", " P ", 'P', TI.plateWelded(), 'K', Fluids.KEROSENE.getDict(1_000), 'D', new ItemStack(ModItems.drone, 1, EnumDroneType.PATROL.ordinal()) });
 		//addRecipeAuto(new ItemStack(ModItems.drone, 1, EnumDroneType.PATROL_EXPRESS_CHUNKLOADING.ordinal()), new Object[] { "E", "D", 'E', Items.ender_pearl, 'D', new ItemStack(ModItems.drone, 1, EnumDroneType.PATROL_EXPRESS.ordinal()) });
 		//addRecipeAuto(new ItemStack(ModItems.drone, 1, EnumDroneType.PATROL_EXPRESS_CHUNKLOADING.ordinal()), new Object[] { " P ", "KDK", " P ", 'P', TI.plateWelded(), 'K', Fluids.KEROSENE.getDict(1_000), 'D', new ItemStack(ModItems.drone, 1, EnumDroneType.PATROL_CHUNKLOADING.ordinal()) });
 		//addShapelessAuto(new ItemStack(ModItems.drone, 1, EnumDroneType.PATROL.ordinal()), new Object[] { new ItemStack(ModItems.drone, 1, EnumDroneType.PATROL_CHUNKLOADING.ordinal()) });
 		//addShapelessAuto(new ItemStack(ModItems.drone, 1, EnumDroneType.PATROL_EXPRESS.ordinal()), new Object[] { new ItemStack(ModItems.drone, 1, EnumDroneType.PATROL_EXPRESS_CHUNKLOADING.ordinal()) });
-		addRecipeAuto(new ItemStack(ModItems.drone, 1, EnumDroneType.REQUEST.ordinal()), new Object[] { "E", "D", 'E', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.CHIP), 'D', new ItemStack(ModItems.drone, 1, EnumDroneType.PATROL.ordinal()) });
+		//addRecipeAuto(new ItemStack(ModItems.drone, 1, EnumDroneType.REQUEST.ordinal()), new Object[] { "E", "D", 'E', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.CHIP), 'D', new ItemStack(ModItems.drone, 1, EnumDroneType.PATROL.ordinal()) });
 
-		addRecipeAuto(new ItemStack(ModItems.drone_linker), new Object[] { "T", "C", 'T', ModBlocks.drone_waypoint, 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC) });
-		addRecipeAuto(new ItemStack(ModBlocks.drone_waypoint, 4), new Object[] { "G", "T", "C", 'G', KEY_GREEN, 'T', Blocks.redstone_torch, 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC) });
-		addRecipeAuto(new ItemStack(ModBlocks.drone_crate), new Object[] { "T", "C", 'T', ModBlocks.drone_waypoint, 'C', ModBlocks.crate_steel });
-		addRecipeAuto(new ItemStack(ModBlocks.drone_waypoint_request, 4), new Object[] { "G", "T", "C", 'G', KEY_BLUE, 'T', Blocks.redstone_torch, 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC) });
-		addRecipeAuto(new ItemStack(ModBlocks.drone_crate_requester), new Object[] { "T", "C", "B", 'T', ModBlocks.drone_waypoint_request, 'C', ModBlocks.crate_steel, 'B', KEY_YELLOW });
-		addRecipeAuto(new ItemStack(ModBlocks.drone_crate_provider), new Object[] { "T", "C", "B", 'T', ModBlocks.drone_waypoint_request, 'C', ModBlocks.crate_steel, 'B', KEY_ORANGE });
-		addRecipeAuto(new ItemStack(ModBlocks.drone_dock), new Object[] { "T", "C", "B", 'T', ModBlocks.drone_waypoint_request, 'C', ModBlocks.crate_steel, 'B', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.ADVANCED) });
+		//addRecipeAuto(new ItemStack(ModItems.drone_linker), new Object[] { "T", "C", 'T', ModBlocks.drone_waypoint, 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC) });
+		//addRecipeAuto(new ItemStack(ModBlocks.drone_waypoint, 4), new Object[] { "G", "T", "C", 'G', KEY_GREEN, 'T', Blocks.redstone_torch, 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC) });
+		//addRecipeAuto(new ItemStack(ModBlocks.drone_crate), new Object[] { "T", "C", 'T', ModBlocks.drone_waypoint, 'C', ModBlocks.crate_steel });
+		//addRecipeAuto(new ItemStack(ModBlocks.drone_waypoint_request, 4), new Object[] { "G", "T", "C", 'G', KEY_BLUE, 'T', Blocks.redstone_torch, 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC) });
+		//addRecipeAuto(new ItemStack(ModBlocks.drone_crate_requester), new Object[] { "T", "C", "B", 'T', ModBlocks.drone_waypoint_request, 'C', ModBlocks.crate_steel, 'B', KEY_YELLOW });
+		//addRecipeAuto(new ItemStack(ModBlocks.drone_crate_provider), new Object[] { "T", "C", "B", 'T', ModBlocks.drone_waypoint_request, 'C', ModBlocks.crate_steel, 'B', KEY_ORANGE });
+		//addRecipeAuto(new ItemStack(ModBlocks.drone_dock), new Object[] { "T", "C", "B", 'T', ModBlocks.drone_waypoint_request, 'C', ModBlocks.crate_steel, 'B', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.ADVANCED) });
 
 		addRecipeAuto(new ItemStack(ModItems.ball_resin), new Object[] { "DD", "DD", 'D', Blocks.yellow_flower });
 

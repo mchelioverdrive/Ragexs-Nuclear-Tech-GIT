@@ -480,9 +480,9 @@ public class ModItems {
 	public static Item nugget_lanthanium;
 	public static Item ingot_actinium;
 
-	public static Item ingot_meteorite;
-	public static Item ingot_meteorite_forged;
-	public static Item blade_meteorite;
+	//public static Item ingot_meteorite;
+	//public static Item ingot_meteorite_forged;
+	//public static Item blade_meteorite;
 	public static Item ingot_steel_dusted;
 	public static Item ingot_chainsteel;
 
@@ -621,7 +621,7 @@ public class ModItems {
 	public static Item powder_polymer;
 	public static Item powder_bakelite;
 	public static Item powder_euphemium;
-	public static Item powder_meteorite;
+	//public static Item powder_meteorite;
 
 	//public static Item powder_wd2004_tiny;
 	//public static Item powder_wd2004;
@@ -2572,7 +2572,7 @@ public class ModItems {
 	public static Item book_secret;
 	public static Item book_of_;
 	public static Item page_of_;
-	public static Item book_lemegeton;
+	//public static Item book_lemegeton;
 	public static Item burnt_bark;
 
 	public static Item b_smoke1;
@@ -2938,9 +2938,9 @@ public class ModItems {
 		nugget_lanthanium = new Item().setUnlocalizedName("nugget_lanthanium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_lanthanium");
 		ingot_actinium = new ItemCustomLore().setUnlocalizedName("ingot_actinium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_actinium");
 
-		ingot_meteorite = new ItemHot(200).setUnlocalizedName("ingot_meteorite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_meteorite");
-		ingot_meteorite_forged = new ItemHot(200).setUnlocalizedName("ingot_meteorite_forged").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_meteorite_forged");
-		blade_meteorite = new ItemHot(200).setUnlocalizedName("blade_meteorite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":blade_meteorite");
+		//ingot_meteorite = new ItemHot(200).setUnlocalizedName("ingot_meteorite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_meteorite");
+		//ingot_meteorite_forged = new ItemHot(200).setUnlocalizedName("ingot_meteorite_forged").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_meteorite_forged");
+		//blade_meteorite = new ItemHot(200).setUnlocalizedName("blade_meteorite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":blade_meteorite");
 		ingot_steel_dusted = new ItemHotDusted(200).setUnlocalizedName("ingot_steel_dusted").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_steel_dusted");
 		ingot_chainsteel = new ItemHot(100).setUnlocalizedName("ingot_chainsteel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_chainsteel");
 
@@ -3202,7 +3202,7 @@ public class ModItems {
 		powder_euphemium = new ItemCustomLore().setRarity(EnumRarity.epic).setUnlocalizedName("powder_euphemium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_euphemium");
 		//powder_wd2004_tiny = new ItemCustomLore().setRarity(EnumRarity.epic).setUnlocalizedName("powder_wd2004_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_wd2004_tiny");
 		//powder_wd2004 = new ItemCustomLore().setRarity(EnumRarity.epic).setUnlocalizedName("powder_wd2004").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_wd2004");
-		powder_meteorite = new Item().setUnlocalizedName("powder_meteorite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_meteorite");
+		//powder_meteorite = new Item().setUnlocalizedName("powder_meteorite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_meteorite");
 		powder_lanthanium = new ItemCustomLore().setRarity(EnumRarity.epic).setUnlocalizedName("powder_lanthanium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lanthanium");
 		powder_actinium = new ItemCustomLore().setRarity(EnumRarity.epic).setUnlocalizedName("powder_actinium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_actinium");
 		powder_boron = new ItemCustomLore().setRarity(EnumRarity.epic).setUnlocalizedName("powder_boron").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_boron");
@@ -5897,7 +5897,7 @@ public class ModItems {
 		book_secret = new ItemCustomLore().setUnlocalizedName("book_secret").setCreativeTab(MainRegistry.polaroidID == 11 ? MainRegistry.consumableTab : null).setTextureName(RefStrings.MODID + ":book_secret");
 		book_of_ = new ItemBook().setUnlocalizedName("book_of_").setMaxStackSize(1).setCreativeTab(null).setTextureName(RefStrings.MODID + ":book_of_");
 		page_of_ = new ItemEnumMulti(ItemEnums.EnumPages.class, true, false).setUnlocalizedName("page_of_").setMaxStackSize(1).setCreativeTab(null).setTextureName(RefStrings.MODID + ":page_of_");
-		book_lemegeton = new ItemBookLemegeton().setUnlocalizedName("book_lemegeton").setMaxStackSize(1).setCreativeTab(null).setTextureName(RefStrings.MODID + ":book_lemegeton");
+		//book_lemegeton = new ItemBookLemegeton().setUnlocalizedName("book_lemegeton").setMaxStackSize(1).setCreativeTab(null).setTextureName(RefStrings.MODID + ":book_lemegeton");
 		burnt_bark = new ItemCustomLore().setUnlocalizedName("burnt_bark").setCreativeTab(null).setTextureName(RefStrings.MODID + ":burnt_bark");
 
 		b_smoke1 = new Item().setUnlocalizedName("b_smoke1").setTextureName(RefStrings.MODID + ":b_smoke1");
@@ -6136,9 +6136,9 @@ public class ModItems {
 		//Meteorite Ingots
 		GameRegistry.registerItem(ingot_steel_dusted, ingot_steel_dusted.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_chainsteel, ingot_chainsteel.getUnlocalizedName());
-		GameRegistry.registerItem(ingot_meteorite, ingot_meteorite.getUnlocalizedName());
-		GameRegistry.registerItem(ingot_meteorite_forged, ingot_meteorite_forged.getUnlocalizedName());
-		GameRegistry.registerItem(blade_meteorite, blade_meteorite.getUnlocalizedName());
+		//GameRegistry.registerItem(ingot_meteorite, ingot_meteorite.getUnlocalizedName());
+		//GameRegistry.registerItem(ingot_meteorite_forged, ingot_meteorite_forged.getUnlocalizedName());
+		//GameRegistry.registerItem(blade_meteorite, blade_meteorite.getUnlocalizedName());
 
 		//Misc Ingots
 		GameRegistry.registerItem(ingot_phosphorus, ingot_phosphorus.getUnlocalizedName());
@@ -6350,7 +6350,7 @@ public class ModItems {
 		GameRegistry.registerItem(powder_desh, powder_desh.getUnlocalizedName());
 		GameRegistry.registerItem(powder_nitan_mix, powder_nitan_mix.getUnlocalizedName());
 		GameRegistry.registerItem(powder_spark_mix, powder_spark_mix.getUnlocalizedName());
-		GameRegistry.registerItem(powder_meteorite, powder_meteorite.getUnlocalizedName());
+		//GameRegistry.registerItem(powder_meteorite, powder_meteorite.getUnlocalizedName());
 		GameRegistry.registerItem(powder_meteorite_tiny, powder_meteorite_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(powder_euphemium, powder_euphemium.getUnlocalizedName());
 		//GameRegistry.registerItem(powder_wd2004_tiny, powder_wd2004_tiny.getUnlocalizedName());
@@ -8440,7 +8440,7 @@ public class ModItems {
 		GameRegistry.registerItem(book_secret, book_secret.getUnlocalizedName());
 		GameRegistry.registerItem(book_of_, book_of_.getUnlocalizedName());
 		GameRegistry.registerItem(page_of_, page_of_.getUnlocalizedName());
-		GameRegistry.registerItem(book_lemegeton, book_lemegeton.getUnlocalizedName());
+		//GameRegistry.registerItem(book_lemegeton, book_lemegeton.getUnlocalizedName());
 		GameRegistry.registerItem(burnt_bark, burnt_bark.getUnlocalizedName());
 
 		//Kits

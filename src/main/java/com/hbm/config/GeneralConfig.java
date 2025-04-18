@@ -50,6 +50,8 @@ public class GeneralConfig {
 	public static boolean enable528BedrockSpawn = true;
 	public static boolean enable528BosniaSimulator = false;
 	public static boolean enable528BedrockReplacement = true;
+
+	//todo add bedrock replacement for already generated worlds somehow
 	public static boolean enable528NetherBurn = true;
 	public static int coltanRate = 2;
 	public static int bedrockRate = 50;
@@ -73,6 +75,7 @@ public class GeneralConfig {
 	public static boolean enableHardcoreDarkness = false;
 	public static boolean enableThreadedAtmospheres = true;
 	public static boolean enableSacrilege = false;
+	public static boolean enableNuking = true;
 
 	public static void loadFromConfig(Configuration config) {
 
@@ -122,6 +125,8 @@ public class GeneralConfig {
 
 		enableExpensiveMode = config.get(CATEGORY_GENERAL, "1.99_enableExpensiveMode", false, "It does what the name implies.").getBoolean(false);
 
+		enableNuking = config.get(CATEGORY_GENERAL, "2.0RTM", true, "Enables nuclear warfare, mainly for servers").getBoolean(true);
+
 		final String CATEGORY_528 = CommonConfig.CATEGORY_528;
 
 		config.addCustomCategoryComment(CATEGORY_528, "CAUTION\n"
@@ -165,6 +170,7 @@ public class GeneralConfig {
 		enableLBSMIGen = CommonConfig.createConfigBool(config, CATEGORY_LBSM, "LBSM_iGen", "When enabled, restores the industrial generator to pre-nerf power", true);
 		enableLBSMNeutronDecon = CommonConfig.createConfigBool(config, CATEGORY_LBSM, "LBSM_NeuCon", "When enabled, Player Decontaminators can decontaminate radioactive items stemmed from neutron rads.", true);
 		schrabRate = CommonConfig.createConfigInt(config, CATEGORY_LBSM, "LBSM_schrabOreRate", "Changes the amount of uranium ore needed on average to create one schrabidium ore using nukes. Standard mode value is 100", 20);
+
 
 
 		if(enable528) enableLBSM = false;

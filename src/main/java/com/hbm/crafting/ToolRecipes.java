@@ -79,7 +79,7 @@ public class ToolRecipes {
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.drax_mk3, 1), new Object[] { "ECE", "CDC", "SBS", 'E', new ItemStack(ModItems.drillbit, 1, ItemDrillbit.EnumDrillType.HSS_DIAMOND.ordinal()), 'C', ModItems.ingot_advanced_alloy, 'D', ModItems.drax_mk2, 'S', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BISMOID), 'B', ItemBattery.getFullBattery(ModItems.armor_battery) });
 
 		//Super pickaxes
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.bismuth_pickaxe, 1), new Object[] { " BM", "BPB", "TB ", 'B', ModItems.ingot_bismuth, 'M', ModItems.ingot_meteorite, 'P', ModItems.starmetal_pickaxe, 'T', W.bolt() });
+		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.bismuth_pickaxe, 1), new Object[] { " BM", "BPB", "TB ", 'B', ModItems.ingot_bismuth, 'M', ModItems.ingot_meteorite, 'P', ModItems.starmetal_pickaxe, 'T', W.bolt() });
 		//arent real
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.volcanic_pickaxe, 1), new Object[] { " BM", "BPB", "TB ", 'B', ModItems.gem_volcanic, 'M', ModItems.ingot_meteorite, 'P', ModItems.starmetal_pickaxe, 'T', W.bolt() });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.chlorophyte_pickaxe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_steel, 'D', ModItems.powder_chlorophyte, 'A', FIBER.ingot(), 'P', ModItems.bismuth_pickaxe, 'F', DURA.bolt() });
@@ -87,7 +87,7 @@ public class ToolRecipes {
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.mese_pickaxe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_desh, 'D', ModItems.powder_dineutronium, 'A', ModItems.plate_paa, 'P', ModItems.chlorophyte_pickaxe, 'F', ModItems.shimmer_handle });
 
 		//Super Axes
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.bismuth_axe, 1), new Object[] { " BM", "BPB", "TB ", 'B', ModItems.ingot_bismuth, 'M', ModItems.ingot_meteorite, 'P', ModItems.starmetal_axe, 'T', W.bolt() });
+		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.bismuth_axe, 1), new Object[] { " BM", "BPB", "TB ", 'B', ModItems.ingot_bismuth, 'M', ModItems.ingot_meteorite, 'P', ModItems.starmetal_axe, 'T', W.bolt() });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.volcanic_axe, 1), new Object[] { " BM", "BPB", "TB ", 'B', ModItems.gem_volcanic, 'M', ModItems.ingot_meteorite, 'P', ModItems.starmetal_axe, 'T', W.bolt() });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.chlorophyte_axe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_steel, 'D', ModItems.powder_chlorophyte, 'A', FIBER.ingot(), 'P', ModItems.bismuth_axe, 'F', DURA.bolt() });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.chlorophyte_axe, 1), new Object[] { " SD", "APS", "FA ", 'S', ModItems.blades_steel, 'D', ModItems.powder_chlorophyte, 'A', FIBER.ingot(), 'P', ModItems.volcanic_axe, 'F', DURA.bolt() });

@@ -243,15 +243,9 @@ public class MineralRecipes {
 		);
 
 		//this recipe was in int and I liked it, it makes sense unlike this fucking mod originally
-		GameRegistry.addShapelessRecipe(
-			new ItemStack(Blocks.dirt, 1),
-			new ItemStack(Blocks.clay, 1)
-		);
 
-		GameRegistry.addShapelessRecipe(
-			new ItemStack(Blocks.clay, 1),
-			new ItemStack(Blocks.dirt, 1)
-		);
+
+		//annnnnd this did not work on the server for some fucking reason
 
 		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.ball_fireclay, 4), new Object[] { Items.clay_ball, Items.clay_ball, DictFrame.fromOne(ModBlocks.stone_resource, EnumStoneType.LIMESTONE), KEY_SAND });
 
@@ -488,8 +482,8 @@ public class MineralRecipes {
 		GameRegistry.addRecipe(new ItemStack(ModItems.powder_lanthanium_tiny, 9), new Object[] { "#", '#', ModItems.powder_lanthanium });
 		GameRegistry.addRecipe(new ItemStack(ModItems.powder_actinium, 1), new Object[] { "###", "###", "###", '#', ModItems.powder_actinium_tiny });
 		GameRegistry.addRecipe(new ItemStack(ModItems.powder_actinium_tiny, 9), new Object[] { "#", '#', ModItems.powder_actinium });
-		GameRegistry.addRecipe(new ItemStack(ModItems.powder_meteorite, 1), new Object[] { "###", "###", "###", '#', ModItems.powder_meteorite_tiny });
-		GameRegistry.addRecipe(new ItemStack(ModItems.powder_meteorite_tiny, 9), new Object[] { "#", '#', ModItems.powder_meteorite });
+		//GameRegistry.addRecipe(new ItemStack(ModItems.powder_meteorite, 1), new Object[] { "###", "###", "###", '#', ModItems.powder_meteorite_tiny });
+		//GameRegistry.addRecipe(new ItemStack(ModItems.powder_meteorite_tiny, 9), new Object[] { "#", '#', ModItems.powder_meteorite });
 		GameRegistry.addRecipe(new ItemStack(ModItems.ingot_solinium, 1), new Object[] { "###", "###", "###", '#', ModItems.nugget_solinium });
 		GameRegistry.addRecipe(new ItemStack(ModItems.nugget_solinium, 9), new Object[] { "#", '#', ModItems.ingot_solinium });
 		GameRegistry.addRecipe(new ItemStack(ModItems.nuclear_waste, 1), new Object[] { "###", "###", "###", '#', ModItems.nuclear_waste_tiny });

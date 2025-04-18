@@ -107,8 +107,8 @@ public class GunDartFactory {
 
 			if(hit instanceof EntityPlayer) {
 
-				if(((EntityPlayer) hit).inventory.hasItem(ModItems.ingot_meteorite_forged))
-					return;
+				//if(((EntityPlayer) hit).inventory.hasItem(ModItems.ingot_meteorite_forged))
+				//	return;
 
 				if(bulletnt.getThrower() instanceof EntityPlayer) {
 
