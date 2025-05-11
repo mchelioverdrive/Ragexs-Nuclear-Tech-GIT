@@ -7,11 +7,16 @@ public class SpaceConfig {
 	//thanks minecraft, for making the biome id limit 127(!!) because apparently anything after that spawns in the overworld.
 	//THANKS MOJANG..
 
+	//infinite ids mod exists
+
 	//hey instead of blaming people how about we shift the dimensions ID if a dimension id is already taken by say another mod or a error occurs
 
 	public static int dunaoilSpawn = 100;
 
 	//xradar compat
+	//some idiot somehow managed to fuck this up, I don't know how, I don't know why, I don't even know when
+	//If you can't figure out how to change a dimension ID via config you're absolutely tiktok rotmaxxing
+	//seek fucking help
 	public static int moonDimension = 16;
 	public static int dunaDimension = 17;
 	public static int ikeDimension = 18;

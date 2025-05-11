@@ -22,25 +22,26 @@ import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
 public class SolarSystem {
-	
+
 	public static CelestialBody kerbol;
 
 	// How much to scale celestial objects when rendering
-	public static final double RENDER_SCALE = 180F;
+	public static final double RENDER_SCALE = 90F;
+	//nerfed for irl values
 	public static final double SUN_RENDER_SCALE = 4F;
 
 
 	public static void init() {
 		// All values pulled directly from KSP, most values are auto-converted to MC friendly ones
 		kerbol = new CelestialBody("kerbol")
-			.withMassRadius(1.757e28F, 261_600)
-			.withRotationalPeriod(432_000)
+			.withMassRadius(1.989e30F, 696_340) //testing irl values
+			.withRotationalPeriod(432_000) //idc about rotational period, you can have that
 			.withTexture("textures/environment/sun.png")
 			.withShader(new ResourceLocation(RefStrings.MODID, "shaders/blackhole.frag"), 3) // Only shows when CBT_Destroyed
 			.withSatellites(
 
 				new CelestialBody("moho", SpaceConfig.mohoDimension, Body.MOHO)
-					.withMassRadius(2.526e21F, 250)
+					.withMassRadius(3.301e23F, 2_440)
 					.withSemiMajorAxis(5_263_138)
 					.withRotationalPeriod(210_000)
 					.withColor(0.4863F, 0.4F, 0.3456F)
@@ -50,15 +51,15 @@ public class SolarSystem {
 					.withTraits(new CBT_Temperature(200)),
 
 				new CelestialBody("eve", SpaceConfig.eveDimension, Body.EVE)
-					.withMassRadius(1.224e23F, 700)
-					.withSemiMajorAxis(9_832_684)
+					.withMassRadius(4.867e24F, 6_052)
+					.withSemiMajorAxis(9_832_684) //idk what this is
 					.withRotationalPeriod(80_500)
 					.withColor(0.408F, 0.298F, 0.553F)
 					.withBlockTextures(RefStrings.MODID + ":eve_stone_2", "", "", "")
 					.withProcessingLevel(2)
 					.withTraits(new CBT_Atmosphere(Fluids.EVEAIR, 5D), new CBT_Temperature(400), new CBT_Water(Fluids.MERCURY))
 					.withSatellites(
-						
+
 						new CelestialBody("gilly")
 							.withMassRadius(1.242e17F, 13)
 							.withSemiMajorAxis(31_500)
@@ -68,7 +69,7 @@ public class SolarSystem {
 					),
 
 				new CelestialBody("kerbin", 0, Body.KERBIN) // overworld
-					.withMassRadius(5.292e22F, 600)
+					.withMassRadius(5.972e24F, 6_371)
 					.withSemiMajorAxis(13_599_840)
 					.withRotationalPeriod(21_549)
 					.withColor(0.608F, 0.914F, 1.0F)
@@ -76,23 +77,24 @@ public class SolarSystem {
 					.withSatellites(
 
 						new CelestialBody("mun", SpaceConfig.moonDimension, Body.MUN)
-							.withMassRadius(9.76e20F, 200)
+							.withMassRadius(7.347e22F, 1_737)
 							.withSemiMajorAxis(12_000)
 							.withRotationalPeriod(138_984)
 							.withTidalLockingTo("kerbin")
-							.withBlockTextures(RefStrings.MODID + ":moon_rock", "", "", ""),
+							.withBlockTextures(RefStrings.MODID + ":moon_rock", "", "", "")
+						//,
 
-						new CelestialBody("minmus", SpaceConfig.minmusDimension, Body.MINMUS)
-							.withMassRadius(2.646e19F, 60)
-							.withSemiMajorAxis(47_000)
-							.withRotationalPeriod(40_400)
-							.withBlockTextures(RefStrings.MODID + ":minmus_stone", "", "", "")
-							.withTraits(new CBT_Water(Fluids.MILK))
+						//new CelestialBody("minmus", SpaceConfig.minmusDimension, Body.MINMUS)
+						//	.withMassRadius(2.646e19F, 60)
+						//	.withSemiMajorAxis(47_000)
+						//	.withRotationalPeriod(40_400)
+						//	.withBlockTextures(RefStrings.MODID + ":minmus_stone", "", "", "")
+						//	.withTraits(new CBT_Water(Fluids.MILK))
 
 					),
 
 				new CelestialBody("duna", SpaceConfig.dunaDimension, Body.DUNA)
-					.withMassRadius(4.515e21F, 320)
+					.withMassRadius(6.417e23F, 3_390)
 					.withSemiMajorAxis(20_726_155)
 					.withRotationalPeriod(65_518)
 					.withTidalLockingTo("ike")
@@ -104,7 +106,7 @@ public class SolarSystem {
 					.withSatellites(
 
 						new CelestialBody("ike", SpaceConfig.ikeDimension, Body.IKE)
-							.withMassRadius(2.782e20F, 130)
+							.withMassRadius(1.0659e16F, 11)
 							.withSemiMajorAxis(3_200)
 							.withBlockTextures(RefStrings.MODID + ":ike_stone", "", "", "")
 							.withProcessingLevel(1)
@@ -115,80 +117,92 @@ public class SolarSystem {
 
 					),
 
+				//ceres
 				new CelestialBody("dres", SpaceConfig.dresDimension, Body.DRES)
-					.withMassRadius(3.219e20F, 138)
+					.withMassRadius(9.393e20F, 473)
 					.withSemiMajorAxis(40_839_348)
 					.withRotationalPeriod(34_800)
 					.withBlockTextures(RefStrings.MODID + ":dresbase", "", "", "")
 					.withProcessingLevel(2),
-					
+
 
 				new CelestialBody("jool")
-					.withMassRadius(4.233e24F, 3_000) // was radius 6_000 but that just rendered too large, so density is currently incorrect
+					.withMassRadius(1.898e27F, 69_911) // was radius 6_000 but that just rendered too large, so density is currently incorrect
+					//skibidi mode: on
 					.withSemiMajorAxis(68_773_560)
 					.withRotationalPeriod(36_000)
 					.withColor(0.4588f, 0.6784f, 0.3059f)
 					.withSatellites(
 
+						//europa
 						new CelestialBody("laythe", SpaceConfig.laytheDimension, Body.LAYTHE)
-							.withMassRadius(2.94e22F, 500)
+							.withMassRadius(4.799e22F, 1_560)
 							.withSemiMajorAxis(27_184)
 							.withRotationalPeriod(52_981)
 							.withTidalLockingTo("jool")
 							.withProcessingLevel(3)
 							.withTraits(new CBT_Atmosphere(Fluids.AIR, 0.45D).and(Fluids.XENON, 0.15D), new CBT_Water()),
 
+						//Ganymede
 						new CelestialBody("vall") //probably
-							.withMassRadius(3.109e21F, 300)
+							.withMassRadius(1.4819e23F, 2_634)
 							.withSemiMajorAxis(43_152)
 							.withRotationalPeriod(105_962),
 
+						//Callisto
 						new CelestialBody("tylo") // what value is this planet gonna add???
-							.withMassRadius(4.233e22F, 600)
+							.withMassRadius(1.0759e23F, 2_410)
 							.withSemiMajorAxis(68_500)
 							.withRotationalPeriod(211_926),
 
+						//Amalthea
 						new CelestialBody("bop")
-							.withMassRadius(3.726e19F, 65)
+							.withMassRadius(2.08e18F, 83)
 							.withSemiMajorAxis(128_500)
 							.withRotationalPeriod(544_507),
 
+						//Himalia
 						new CelestialBody("pol")
-							.withMassRadius(1.081e19F, 44)
+							.withMassRadius(6.7e18F, 85)
 							.withSemiMajorAxis(179_890)
 							.withRotationalPeriod(901_902)
 
 					),
-					
+
 				new CelestialBody("sarnus")
-					.withMassRadius(1.223e24F, 5_300)
+					.withMassRadius(5.683e26F, 58_232)
 					.withSemiMajorAxis(125_798_522)
 					.withRotationalPeriod(28_500)
 					.withColor(1f, 0.6862f, 0.5882f)
 					.withSatellites(
-							
+
+					//pan
 					new CelestialBody("hale") //no
-						.withMassRadius(1.2166e16F, 6)
+						.withMassRadius(4.95e15F, 14)
 						.withSemiMajorAxis(10_488)
 						.withRotationalPeriod(23_555),
 
+					//Atlas
 					new CelestialBody("ovok") //nah
-						.withMassRadius(4.233e17F, 26)
+						.withMassRadius(6.6e16F, 15)
 						.withSemiMajorAxis(12_169)
 						.withRotationalPeriod(29_440),
 
+					//Pluto
 					new CelestialBody("eeloo") //will add
-						.withMassRadius(1.115e21F, 210)
+						.withMassRadius(1.309e22F, 1_188)
 						.withSemiMajorAxis(19_106)
 						.withRotationalPeriod(57_915),
 
+					//IO
 					new CelestialBody("slate") //not you tho
-						.withMassRadius(2.965e22F, 540)
+						.withMassRadius(8.94e22F, 1_815)
 						.withSemiMajorAxis(42_593)
 						.withRotationalPeriod(192_771),
 
+					//Titan
 					new CelestialBody("tekto")
-						.withMassRadius(2.883e21F, 480)
+						.withMassRadius(1.345e23F, 2_575)
 						.withSemiMajorAxis(67_355)
 						.withRotationalPeriod(57_915)
 						.withAxialTilt(25F)
@@ -299,7 +313,7 @@ public class SolarSystem {
 		List<AstroMetric> metrics = new ArrayList<AstroMetric>();
 
 		double ticks = ((double)world.getTotalWorldTime() + partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
-		
+
 		// Get our XYZ coordinates of all bodies
 		calculatePositionsRecursive(metrics, null, orbiting.getStar(), ticks);
 
@@ -327,7 +341,7 @@ public class SolarSystem {
 		List<AstroMetric> metrics = new ArrayList<AstroMetric>();
 
 		double ticks = ((double)world.getTotalWorldTime() + partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
-		
+
 		// Get our XYZ coordinates of all bodies
 		calculatePositionsRecursive(metrics, null, from.getStar(), ticks);
 
@@ -361,7 +375,7 @@ public class SolarSystem {
 		List<AstroMetric> metrics = new ArrayList<AstroMetric>();
 
 		double ticks = (double)world.getTotalWorldTime() * (double)AstronomyUtil.TIME_MULTIPLIER;
-		
+
 		// Get our XYZ coordinates of all bodies
 		calculatePositionsRecursive(metrics, null, from.getStar(), ticks);
 
@@ -449,7 +463,7 @@ public class SolarSystem {
 	private static void calculateMetric(AstroMetric metric, Vec3 position) {
 		// Calculate distance between bodies, for sorting
 		metric.distance = position.distanceTo(metric.position);
-		
+
 		// Calculate apparent size, for scaling in render
 		metric.apparentSize = getApparentSize(metric.body.radiusKm, metric.distance);
 
@@ -504,7 +518,7 @@ public class SolarSystem {
 		List<AstroMetric> metrics = new ArrayList<AstroMetric>();
 
 		double ticks = ((double)world.getTotalWorldTime() + partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
-		
+
 		// Get our XYZ coordinates of all bodies
 		calculatePositionsRecursive(metrics, null, orbiting.getStar(), ticks);
 
@@ -535,7 +549,7 @@ public class SolarSystem {
 		double launchDV = fromOrbit ? 0 : SolarSystem.getLiftoffDeltaV(from, mass, thrust, fromDrag);
 		double travelDV = SolarSystem.getDeltaVBetween(from, to);
 		double landerDV = toOrbit ? 0 : SolarSystem.getLandingDeltaV(to, mass, thrust, toDrag);
-		
+
 		double totalDV = launchDV + travelDV + landerDV;
 
 		return getFuelCost(totalDV, mass, isp);
@@ -663,7 +677,7 @@ public class SolarSystem {
 
 	private static CelestialBody getCommonParent(CelestialBody start, CelestialBody end) {
 		CelestialBody startParent = start.parent;
-			
+
 		while(startParent != null) {
 			CelestialBody endParent = end.parent;
 			while(endParent != null) {
@@ -678,7 +692,7 @@ public class SolarSystem {
 		throw new InvalidParameterException("Bodies aren't in the same solar system");
 	}
 
-	
+
 	// All transfer math is commutative, injection burn (getting onto the transfer orbit) takes the exact same dV as
 	// the insertion burn (entering the target orbit)
 

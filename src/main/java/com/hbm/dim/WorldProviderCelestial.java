@@ -157,12 +157,14 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 			FluidEntry entry = atmosphere.fluids.get(i);
 			Vec3 fluidColor;
 
+
 			if(entry.fluid == Fluids.EVEAIR) {
 				fluidColor = Vec3.createVectorHelper(53F / 255F * sunR, 32F / 255F * sunG, 74F / 255F * sunB);
 			} else if(entry.fluid == Fluids.DUNAAIR || entry.fluid == Fluids.CARBONDIOXIDE) {
 				fluidColor = Vec3.createVectorHelper(212F / 255F * sunR, 112F / 255F * sunG, 78F / 255F * sunB);
 			} else if(entry.fluid == Fluids.AIR || entry.fluid == Fluids.OXYGEN || entry.fluid == Fluids.NITROGEN) {
 				// Default to regular ol' overworld
+				//todo, food eating logic here
 				fluidColor = Vec3.createVectorHelper(0.7529412F * sunR, 0.84705883F * sunG, 1.0F * sunB);
 			} else {
 				fluidColor = getColorFromHex(entry.fluid.getColor());
@@ -193,7 +195,8 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 		color.yCoord *= pressureFactor;
 		color.zCoord *= pressureFactor;
 
-		if(Minecraft.getMinecraft().renderViewEntity.posY > 600) {
+		if(Minecraft.getMinecraft().renderViewEntity.posY > 10000) { //ten thousand meters is the edge of space, not 600. Yeah, no it's that bad.
+			//fuck this isn't the actual planet renderer thing
 			double curvature = MathHelper.clamp_float((1000.0F - (float)Minecraft.getMinecraft().renderViewEntity.posY) / 400.0F, 0.0F, 1.0F);
 			color.xCoord *= curvature;
 			color.zCoord *= curvature;

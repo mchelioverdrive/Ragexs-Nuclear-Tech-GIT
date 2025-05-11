@@ -114,6 +114,7 @@ public class WorldGeneratorCelestial implements IWorldGenerator {
     }
 
     public void generateBedrockOres(World world, Random rand, int x, int z, Block planetStone) {
+		//todo add a way to generate bedrock ores to already existing worlds
         if(rand.nextInt(3) == 0) {
             List<WeightedRandomGeneric<BedrockOreDefinition>> list = BedrockOre.weightedOres;
             SolarSystem.Body bodyEnum = CelestialBody.getEnum(world);
