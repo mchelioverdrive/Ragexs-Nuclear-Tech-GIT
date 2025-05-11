@@ -33,6 +33,7 @@ public class SolarSystem {
 
 	public static void init() {
 		// All values pulled directly from KSP, most values are auto-converted to MC friendly ones
+		//the sun
 		kerbol = new CelestialBody("kerbol")
 			.withMassRadius(1.989e30F, 696_340) //testing irl values
 			.withRotationalPeriod(432_000) //idc about rotational period, you can have that
@@ -40,9 +41,19 @@ public class SolarSystem {
 			.withShader(new ResourceLocation(RefStrings.MODID, "shaders/blackhole.frag"), 3) // Only shows when CBT_Destroyed
 			.withSatellites(
 
+				//alright, we're gonna do some math here
+				//basically this shit is not actually kilometers, if it was it would look right, so we're gonna assume:
+				// A. KSP values are being used (1/10th) so divided by 10, but I scaled the actual space objects down
+				// from 180 to 90 so
+				// that'd be
+				// B. I'm not gonna do the stupid fucking time scale shit mainly because this is minecraft
+				// and that ruins the game
+				//My current understanding of this system is that Semi Major Axis just means distance from the sun basically
+
+				//mercury
 				new CelestialBody("moho", SpaceConfig.mohoDimension, Body.MOHO)
 					.withMassRadius(3.301e23F, 2_440)
-					.withSemiMajorAxis(5_263_138)
+					.withSemiMajorAxis(57_909_000)
 					.withRotationalPeriod(210_000)
 					.withColor(0.4863F, 0.4F, 0.3456F)
 					.withBlockTextures(RefStrings.MODID + ":moho_stone", "", "", "")
@@ -50,27 +61,31 @@ public class SolarSystem {
 					.withProcessingLevel(1)
 					.withTraits(new CBT_Temperature(200)),
 
+				//venus
 				new CelestialBody("eve", SpaceConfig.eveDimension, Body.EVE)
 					.withMassRadius(4.867e24F, 6_052)
-					.withSemiMajorAxis(9_832_684) //idk what this is
+					.withSemiMajorAxis(108_210_000) //idk what this is
 					.withRotationalPeriod(80_500)
 					.withColor(0.408F, 0.298F, 0.553F)
 					.withBlockTextures(RefStrings.MODID + ":eve_stone_2", "", "", "")
 					.withProcessingLevel(2)
-					.withTraits(new CBT_Atmosphere(Fluids.EVEAIR, 5D), new CBT_Temperature(400), new CBT_Water(Fluids.MERCURY))
-					.withSatellites(
+					.withTraits(new CBT_Atmosphere(Fluids.EVEAIR, 5D), new CBT_Temperature(400), new CBT_Water(Fluids.MERCURY)),
+					//.withSatellites(
 
-						new CelestialBody("gilly")
-							.withMassRadius(1.242e17F, 13)
-							.withSemiMajorAxis(31_500)
-							.withRotationalPeriod(28_255)
-							.withTexture("hbm:textures/misc/space/planet.png")
+					//	new CelestialBody("gilly")
+					//		.withMassRadius(1.242e17F, 13)
+					//		.withSemiMajorAxis(31_500)
+					//		.withRotationalPeriod(28_255)
+					//		.withTexture("hbm:textures/misc/space/planet.png")
 
-					),
+					//),
+					//venus has no moons.
+					//this should be Deimos (Mars’s other moon).
 
+				//earth
 				new CelestialBody("kerbin", 0, Body.KERBIN) // overworld
 					.withMassRadius(5.972e24F, 6_371)
-					.withSemiMajorAxis(13_599_840)
+					.withSemiMajorAxis(49_666_666) //149_598_000/3 = 49,666,666
 					.withRotationalPeriod(21_549)
 					.withColor(0.608F, 0.914F, 1.0F)
 					.withTraits(new CBT_Atmosphere(Fluids.AIR, 1D), new CBT_Water())
@@ -78,7 +93,7 @@ public class SolarSystem {
 
 						new CelestialBody("mun", SpaceConfig.moonDimension, Body.MUN)
 							.withMassRadius(7.347e22F, 1_737)
-							.withSemiMajorAxis(12_000)
+							.withSemiMajorAxis(96_100) //384_400 / 4 = 96,100 because it could not be seen
 							.withRotationalPeriod(138_984)
 							.withTidalLockingTo("kerbin")
 							.withBlockTextures(RefStrings.MODID + ":moon_rock", "", "", "")
@@ -95,7 +110,7 @@ public class SolarSystem {
 
 				new CelestialBody("duna", SpaceConfig.dunaDimension, Body.DUNA)
 					.withMassRadius(6.417e23F, 3_390)
-					.withSemiMajorAxis(20_726_155)
+					.withSemiMajorAxis(227_956_000) //too big too big too big
 					.withRotationalPeriod(65_518)
 					.withTidalLockingTo("ike")
 					.withColor(0.6471f, 0.2824f, 0.1608f)
