@@ -66,7 +66,7 @@ public class SolarSystem {
 				//venus
 				new CelestialBody("eve", SpaceConfig.eveDimension, Body.EVE)
 					.withMassRadius(4.867e24F, 6_052)
-					.withSemiMajorAxis(108_210_000) //idk what this is
+					.withSemiMajorAxis(108_210_000)
 					.withRotationalPeriod(80_500)
 					.withColor(0.408F, 0.298F, 0.553F)
 					.withBlockTextures(RefStrings.MODID + ":eve_stone_2", "", "", "")
@@ -117,7 +117,7 @@ public class SolarSystem {
 					.withMassRadius(6.417e23F, 3_390)
 					.withSemiMajorAxis(227_956_000) //too big too big too big
 					.withRotationalPeriod(65_518)
-					.withTidalLockingTo("ike")
+					//.withTidalLockingTo("ike") //??? literally fucking what
 					.withColor(0.6471f, 0.2824f, 0.1608f)
 					.withBlockTextures(RefStrings.MODID + ":duna_rock", "", "", "")
 					.withProcessingLevel(1)
