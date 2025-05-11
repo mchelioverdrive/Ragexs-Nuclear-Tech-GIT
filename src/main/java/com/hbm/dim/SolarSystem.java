@@ -50,6 +50,8 @@ public class SolarSystem {
 				// and that ruins the game
 				//My current understanding of this system is that Semi Major Axis just means distance from the sun basically
 
+				//yk what nah just gonna put irl values in
+
 				//mercury
 				new CelestialBody("moho", SpaceConfig.mohoDimension, Body.MOHO)
 					.withMassRadius(3.301e23F, 2_440)
@@ -91,6 +93,8 @@ public class SolarSystem {
 					.withTraits(new CBT_Atmosphere(Fluids.AIR, 1D), new CBT_Water())
 					.withSatellites(
 
+						//our atmosphere refracts light and shit so fuck you it looks right
+
 						new CelestialBody("mun", SpaceConfig.moonDimension, Body.MUN)
 							.withMassRadius(7.347e22F, 1_737)
 							.withSemiMajorAxis(96_100) //384_400 / 4 = 96,100 because it could not be seen
@@ -108,6 +112,7 @@ public class SolarSystem {
 
 					),
 
+				//mars
 				new CelestialBody("duna", SpaceConfig.dunaDimension, Body.DUNA)
 					.withMassRadius(6.417e23F, 3_390)
 					.withSemiMajorAxis(227_956_000) //too big too big too big
@@ -120,9 +125,10 @@ public class SolarSystem {
 					.withProcessingLevel(1)
 					.withSatellites(
 
+						//phobos
 						new CelestialBody("ike", SpaceConfig.ikeDimension, Body.IKE)
 							.withMassRadius(1.0659e16F, 11)
-							.withSemiMajorAxis(3_200)
+							.withSemiMajorAxis(9_377)
 							.withBlockTextures(RefStrings.MODID + ":ike_stone", "", "", "")
 							.withProcessingLevel(1)
 							.withRotationalPeriod(65_518)
@@ -135,16 +141,19 @@ public class SolarSystem {
 				//ceres
 				new CelestialBody("dres", SpaceConfig.dresDimension, Body.DRES)
 					.withMassRadius(9.393e20F, 473)
-					.withSemiMajorAxis(40_839_348)
+					.withSemiMajorAxis(413_700_000)
 					.withRotationalPeriod(34_800)
 					.withBlockTextures(RefStrings.MODID + ":dresbase", "", "", "")
 					.withProcessingLevel(2),
 
 
+
+
+				//jupiter
 				new CelestialBody("jool")
 					.withMassRadius(1.898e27F, 69_911) // was radius 6_000 but that just rendered too large, so density is currently incorrect
 					//skibidi mode: on
-					.withSemiMajorAxis(68_773_560)
+					.withSemiMajorAxis(778_479_000)
 					.withRotationalPeriod(36_000)
 					.withColor(0.4588f, 0.6784f, 0.3059f)
 					.withSatellites(
@@ -152,7 +161,7 @@ public class SolarSystem {
 						//europa
 						new CelestialBody("laythe", SpaceConfig.laytheDimension, Body.LAYTHE)
 							.withMassRadius(4.799e22F, 1_560)
-							.withSemiMajorAxis(27_184)
+							.withSemiMajorAxis(671_100)
 							.withRotationalPeriod(52_981)
 							.withTidalLockingTo("jool")
 							.withProcessingLevel(3)
@@ -161,32 +170,33 @@ public class SolarSystem {
 						//Ganymede
 						new CelestialBody("vall") //probably
 							.withMassRadius(1.4819e23F, 2_634)
-							.withSemiMajorAxis(43_152)
+							.withSemiMajorAxis(1_070_400)
 							.withRotationalPeriod(105_962),
 
 						//Callisto
 						new CelestialBody("tylo") // what value is this planet gonna add???
 							.withMassRadius(1.0759e23F, 2_410)
-							.withSemiMajorAxis(68_500)
+							.withSemiMajorAxis(1_882_700)
 							.withRotationalPeriod(211_926),
 
 						//Amalthea
 						new CelestialBody("bop")
 							.withMassRadius(2.08e18F, 83)
-							.withSemiMajorAxis(128_500)
+							.withSemiMajorAxis(181_365)
 							.withRotationalPeriod(544_507),
 
 						//Himalia
 						new CelestialBody("pol")
 							.withMassRadius(6.7e18F, 85)
-							.withSemiMajorAxis(179_890)
+							.withSemiMajorAxis(11_460_000)
 							.withRotationalPeriod(901_902)
 
 					),
 
+				//saturn
 				new CelestialBody("sarnus")
 					.withMassRadius(5.683e26F, 58_232)
-					.withSemiMajorAxis(125_798_522)
+					.withSemiMajorAxis(1_429_400_000)
 					.withRotationalPeriod(28_500)
 					.withColor(1f, 0.6862f, 0.5882f)
 					.withSatellites(
@@ -194,36 +204,41 @@ public class SolarSystem {
 					//pan
 					new CelestialBody("hale") //no
 						.withMassRadius(4.95e15F, 14)
-						.withSemiMajorAxis(10_488)
+						.withSemiMajorAxis(133_584)
 						.withRotationalPeriod(23_555),
 
 					//Atlas
 					new CelestialBody("ovok") //nah
 						.withMassRadius(6.6e16F, 15)
-						.withSemiMajorAxis(12_169)
+						.withSemiMajorAxis(137_670)
 						.withRotationalPeriod(29_440),
 
-					//Pluto
-					new CelestialBody("eeloo") //will add
-						.withMassRadius(1.309e22F, 1_188)
-						.withSemiMajorAxis(19_106)
-						.withRotationalPeriod(57_915),
 
 					//IO
 					new CelestialBody("slate") //not you tho
 						.withMassRadius(8.94e22F, 1_815)
-						.withSemiMajorAxis(42_593)
+						.withSemiMajorAxis(421_700)
 						.withRotationalPeriod(192_771),
 
 					//Titan
 					new CelestialBody("tekto")
 						.withMassRadius(1.345e23F, 2_575)
-						.withSemiMajorAxis(67_355)
+						.withSemiMajorAxis(1_221_870)
 						.withRotationalPeriod(57_915)
 						.withAxialTilt(25F)
 						.withTraits(new CBT_Atmosphere(Fluids.TEKTOAIR, 1.5F))
 
-				)
+				),
+
+				//Pluto
+				new CelestialBody("eeloo") //will add
+					.withMassRadius(1.309e22F, 1_188)
+					.withSemiMajorAxis(5_906_380)
+					//5,906,380,000 int too large also isn't pluto
+					// like not a fucking moon of saturn?
+					.withRotationalPeriod(9_157_915)
+
+
 			);
 
 		runTests();
