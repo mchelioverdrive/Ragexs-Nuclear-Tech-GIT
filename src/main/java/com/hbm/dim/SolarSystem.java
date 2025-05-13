@@ -692,11 +692,13 @@ public class SolarSystem {
 		double fromDrag = getAtmosphericDrag(from.getTrait(CBT_Atmosphere.class));
 		double toDrag = getAtmosphericDrag(to.getTrait(CBT_Atmosphere.class));
 
-		double launchDV = fromOrbit ? 0 : SolarSystem.getLiftoffDeltaV(from, mass, thrust, fromDrag);
-		double travelDV = SolarSystem.getDeltaVBetween(from, to);
-		double landerDV = toOrbit ? 0 : SolarSystem.getLandingDeltaV(to, mass, thrust, toDrag);
+		// Scale deltaV to gameplay-friendly numbers
+		double launchDV = fromOrbit ? 0 : SolarSystem.getLiftoffDeltaV(from, mass, thrust, fromDrag) * 0.4;
+		double travelDV = SolarSystem.getDeltaVBetween(from, to) * 0.4;
+		double landerDV = toOrbit ? 0 : SolarSystem.getLandingDeltaV(to, mass, thrust, toDrag) * 0.4;
 
 		double totalDV = launchDV + travelDV + landerDV;
+		totalDV = Math.min(totalDV, 1000000); // cap insane transfers to 1M
 
 		return getFuelCost(totalDV, mass, isp);
 	}
@@ -713,7 +715,7 @@ public class SolarSystem {
 		double propellantMass = totalMass - mass;
 		double propellantVolume = propellantMass / 2; // two propellants
 
-		return propellantVolume + 100 > Integer.MAX_VALUE ? Integer.MAX_VALUE : MathHelper.ceiling_double_int(propellantVolume * 0.00001D) * 100;
+		return propellantVolume + 100 > Integer.MAX_VALUE ? Integer.MAX_VALUE : MathHelper.ceiling_double_int(propellantVolume * 0.008D) * 100;
 		//cocking spaniel le ebin fuel costs are in trump tarrif territories ebin :DDD
 		//but jesse you cant just do that you have to align yourself to my arbitrary made up bullshit space game!
 		//i dont care walter white yo im gonna fucking do it my way
