@@ -26,7 +26,7 @@ import net.minecraft.util.MathHelper;
 import net.minecraftforge.common.util.Constants;
 
 public class RocketStruct {
-	
+
 	public MissilePart capsule;
 	public ArrayList<RocketStage> stages = new ArrayList<>();
 	public int satFreq = 0;
@@ -68,7 +68,7 @@ public class RocketStruct {
 
 		if(capsule.part.attributes[0] != WarheadType.APOLLO && capsule.part.attributes[0] != WarheadType.SATELLITE)
 			return false;
-		
+
 		if(stages.size() == 0)
 			return false;
 
@@ -81,7 +81,7 @@ public class RocketStruct {
 
 			if(stage.fuselage.part.attributes[0] != FuelType.ANY && stage.fuselage.part.attributes[0] != stage.thruster.part.attributes[0]) return false;
 		}
-		
+
 		return true;
 	}
 
@@ -116,7 +116,7 @@ public class RocketStruct {
 				issues.add(EnumChatFormatting.RED + "Stage " + (i + 1) + " missing fuselage");
 			if(stage.thruster == null)
 				issues.add(EnumChatFormatting.RED + "Stage " + (i + 1) + " missing thruster");
-			
+
 			if(stage.fuselage == null || stage.thruster == null)
 				continue;
 
@@ -193,7 +193,7 @@ public class RocketStruct {
 		int fuelRequirement = getFuelRequired(0, from, to, fromOrbit, toOrbit);
 		int fuelCapacity = getFuelCapacity(0);
 
-		return fuelCapacity >= fuelRequirement;
+		return fuelCapacity >= fuelRequirement /10;
 	}
 
 	private int getFuelCapacity(int stageNum) {
@@ -212,7 +212,7 @@ public class RocketStruct {
 		RocketStage stage = stages.get(stageNum);
 
 		if(stage.fuselage == null || stage.thruster == null) return -1;
-		
+
 		int rocketMass = getLaunchMass(stageNum);
 		int thrust = getThrust(stage);
 		int isp = getISP(stage);
@@ -223,7 +223,7 @@ public class RocketStruct {
 	private int getThrust(RocketStage stage) {
 		return stage.thruster.part.getThrust() * stage.thrusterCount;
 	}
-	
+
 	private int getISP(RocketStage stage) {
 		return stage.thruster.part.getISP();
 	}
@@ -262,7 +262,7 @@ public class RocketStruct {
 
 	public double getHeight() {
 		double height = 0;
-		
+
 		if(capsule != null) height += capsule.height;
 
 		boolean isDeployed = true;
@@ -303,10 +303,10 @@ public class RocketStruct {
 
 		return height;
 	}
-	
+
 	public void writeToByteBuffer(ByteBuf buf) {
 		buf.writeInt(MissilePart.getId(capsule));
-		
+
 		buf.writeInt(stages.size());
 		for(RocketStage stage : stages) {
 			buf.writeInt(MissilePart.getId(stage.fuselage));
@@ -321,7 +321,7 @@ public class RocketStruct {
 			BufferUtil.writeString(buf, issue);
 		}
 	}
-	
+
 	public static RocketStruct readFromByteBuffer(ByteBuf buf) {
 		RocketStruct rocket = new RocketStruct();
 
@@ -343,7 +343,7 @@ public class RocketStruct {
 		for(int i = 0; i < count; i++) {
 			rocket.extraIssues.add(BufferUtil.readString(buf));
 		}
-		
+
 		return rocket;
 	}
 
@@ -455,7 +455,7 @@ public class RocketStruct {
 		public int getCluster() {
 			return Math.max(fuselageCount / getStack(), 1);
 		}
-		
+
 	}
 
 }
