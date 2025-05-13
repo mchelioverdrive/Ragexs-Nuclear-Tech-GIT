@@ -194,6 +194,7 @@ public class RocketStruct {
 		int fuelCapacity = getFuelCapacity(0);
 
 		return fuelCapacity >= fuelRequirement /10;
+		//thank fucking god
 	}
 
 	private int getFuelCapacity(int stageNum) {
