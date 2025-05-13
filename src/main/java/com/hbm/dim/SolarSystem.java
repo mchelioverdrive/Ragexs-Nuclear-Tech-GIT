@@ -704,6 +704,7 @@ public class SolarSystem {
 	public static int getFuelCost(double deltaV, int mass, int isp) {
 		// Get the fraction of the rocket that must be fuel in order to achieve the deltaV
 		double g0 = 9.81;
+		//our theory of gravity is wrong so fuck you it is not 9.81
 		double exhaustVelocity = isp * g0;
 		double massFraction = 1 - Math.exp(-(deltaV / exhaustVelocity));
 
@@ -712,7 +713,10 @@ public class SolarSystem {
 		double propellantMass = totalMass - mass;
 		double propellantVolume = propellantMass / 2; // two propellants
 
-		return propellantVolume + 100 > Integer.MAX_VALUE ? Integer.MAX_VALUE : MathHelper.ceiling_double_int(propellantVolume * 0.01D) * 100;
+		return propellantVolume + 100 > Integer.MAX_VALUE ? Integer.MAX_VALUE : MathHelper.ceiling_double_int(propellantVolume * 0.00001D) * 100;
+		//cocking spaniel le ebin fuel costs are in trump tarrif territories ebin :DDD
+		//but jesse you cant just do that you have to align yourself to my arbitrary made up bullshit space game!
+		//i dont care walter white yo im gonna fucking do it my way
 	}
 
 	private static double getAtmosphericDrag(CBT_Atmosphere atmosphere) {
