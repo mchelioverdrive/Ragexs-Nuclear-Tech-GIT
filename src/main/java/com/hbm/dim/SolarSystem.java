@@ -717,6 +717,8 @@ public class SolarSystem {
 		//cocking spaniel le ebin fuel costs are in trump tarrif territories ebin :DDD
 		//but jesse you cant just do that you have to align yourself to my arbitrary made up bullshit space game!
 		//i dont care walter white yo im gonna fucking do it my way
+		//ok so less is more fuel efficient, because I tried 0.15 and that increased the fuel costs to a million
+		//however going down to like 0.00001D made fuel costs go to heckin 100mb for a moon trip
 	}
 
 	private static double getAtmosphericDrag(CBT_Atmosphere atmosphere) {
