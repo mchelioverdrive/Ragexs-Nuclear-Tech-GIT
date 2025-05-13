@@ -33,6 +33,7 @@ public class SolarSystem {
 
 	public static void init() {
 		// All values pulled directly from KSP, most values are auto-converted to MC friendly ones
+		// Then selectively lobotomized to realistic standards by ragex
 		//the sun
 		kerbol = new CelestialBody("kerbol")
 			.withMassRadius(1.989e30F, 696_340) //testing irl values
@@ -134,7 +135,7 @@ public class SolarSystem {
 							.withProcessingLevel(1)
 							.withRotationalPeriod(65_518)
 							.withTidalLockingTo("duna")
-							.withProcessingLevel(1)
+							//.withProcessingLevel(1) already set
 							.withTraits(new CBT_Water(Fluids.BROMINE)),
 
 						//RTM changes: Adding rest of moons/planets for realism WIP
@@ -233,7 +234,7 @@ public class SolarSystem {
 					.withSatellites(
 
 					//pan
-					new CelestialBody("hale") //no
+					new CelestialBody("hale") //tiny rock thing
 						.withMassRadius(4.95e15F, 14)
 						.withSemiMajorAxis(133_584)
 						.withRotationalPeriod(23_555),
@@ -244,10 +245,8 @@ public class SolarSystem {
 						.withSemiMajorAxis(137_670)
 						.withRotationalPeriod(29_440),
 
-
-					//IO is not a moon of saturn cunt, this is
 					//Enceladus
-					new CelestialBody("slate") //not you tho
+					new CelestialBody("slate") //Subsurface ocean, geysers.
 						.withMassRadius(8.94e22F, 1_815)
 						.withSemiMajorAxis(421_700)
 						.withRotationalPeriod(192_771),
@@ -258,7 +257,19 @@ public class SolarSystem {
 						.withSemiMajorAxis(1_221_870)
 						.withRotationalPeriod(57_915)
 						.withAxialTilt(25F)
-						.withTraits(new CBT_Atmosphere(Fluids.TEKTOAIR, 1.5F))
+						.withTraits(new CBT_Atmosphere(Fluids.TEKTOAIR, 1.5F)),
+
+					//Iapetus
+					new CelestialBody("iapetus")
+						.withMassRadius(1.8e21F, 1_471)
+						.withSemiMajorAxis(3_560_000)
+						.withRotationalPeriod(1_000),
+
+					//Mimas
+					new CelestialBody("mimas")
+						.withMassRadius(3.749e19F, 396)
+						.withSemiMajorAxis(185_520)
+						.withRotationalPeriod(1_000)
 
 				),
 
@@ -286,6 +297,12 @@ public class SolarSystem {
 						new CelestialBody("oberon")
 							.withMassRadius(3.01e21F, 761)
 							.withSemiMajorAxis(583_500)
+							.withRotationalPeriod(1_000),
+
+						//Ariel
+						new CelestialBody("ariel")
+							.withMassRadius(1.4e21F, 1_158)
+							.withSemiMajorAxis(191_000)
 							.withRotationalPeriod(1_000)
 
 					),
@@ -299,7 +316,7 @@ public class SolarSystem {
 					.withSatellites(
 
 						//Triton
-						new CelestialBody("niven")
+						new CelestialBody("triton")
 							.withMassRadius(2.14e22F, 1_353)
 							.withSemiMajorAxis(354_800)
 							.withRotationalPeriod(5_000),
@@ -321,11 +338,21 @@ public class SolarSystem {
 					),
 
 				//Pluto
-				new CelestialBody("eeloo") //will add
+				new CelestialBody("eeloo")
+					//todo at some point just go through and change all the annoying KSP names to be correct
+					// but god only knows how many fucking times in this code it's referenced
 					.withMassRadius(1.309e22F, 1_188)
 					.withSemiMajorAxis(5_906_380)
 					//5,906,380,000 int too large
 					.withRotationalPeriod(9_157_915)
+					.withSatellites(
+						//Charon
+						new CelestialBody("charon")
+							.withMassRadius(1.586e21F, 606)
+							.withSemiMajorAxis(19_591)
+							.withRotationalPeriod(1_000)
+
+					)
 
 
 			);
