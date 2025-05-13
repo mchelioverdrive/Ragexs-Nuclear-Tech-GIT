@@ -94,6 +94,7 @@ public class SolarSystem {
 					.withSatellites(
 
 						//our atmosphere refracts light and shit so fuck you it looks right
+						//even if the axis and shit is wrong
 
 						new CelestialBody("mun", SpaceConfig.moonDimension, Body.MUN)
 							.withMassRadius(7.347e22F, 1_737)
@@ -115,7 +116,7 @@ public class SolarSystem {
 				//mars
 				new CelestialBody("duna", SpaceConfig.dunaDimension, Body.DUNA)
 					.withMassRadius(6.417e23F, 3_390)
-					.withSemiMajorAxis(227_956_000) //too big too big too big
+					.withSemiMajorAxis(227_956_000)
 					.withRotationalPeriod(65_518)
 					//.withTidalLockingTo("ike") //??? literally fucking what
 					.withColor(0.6471f, 0.2824f, 0.1608f)
@@ -134,7 +135,27 @@ public class SolarSystem {
 							.withRotationalPeriod(65_518)
 							.withTidalLockingTo("duna")
 							.withProcessingLevel(1)
-							.withTraits(new CBT_Water(Fluids.BROMINE))
+							.withTraits(new CBT_Water(Fluids.BROMINE)),
+
+						//RTM changes: Adding rest of moons/planets for realism WIP
+
+						//fuck your ksp bullshit, I'm calling it what it is,
+						//Deimos
+						new CelestialBody("deimos")
+							//, SpaceConfig.deimosDimension, Body.DEI
+							//we got DEI planets before gta 6
+							.withMassRadius(1.4762e15F, 6)
+							.withSemiMajorAxis(23_460)
+							//todo change block textures
+							.withBlockTextures(RefStrings.MODID + ":ike_stone", "", "", "")
+							//this is probably fine
+							.withTexture("hbm:textures/misc/space/planet.png")
+							//todo add new bullshit
+							.withProcessingLevel(1)
+							.withRotationalPeriod(65_518)
+							.withTidalLockingTo("duna")
+							.withProcessingLevel(1)
+							//.withTraits(new CBT_Water(Fluids.BROMINE))
 
 					),
 
@@ -165,6 +186,7 @@ public class SolarSystem {
 							.withRotationalPeriod(52_981)
 							.withTidalLockingTo("jool")
 							.withProcessingLevel(3)
+							//not accurate, I'll see about changing it later
 							.withTraits(new CBT_Atmosphere(Fluids.AIR, 0.45D).and(Fluids.XENON, 0.15D), new CBT_Water()),
 
 						//Ganymede
@@ -189,6 +211,15 @@ public class SolarSystem {
 						new CelestialBody("pol")
 							.withMassRadius(6.7e18F, 85)
 							.withSemiMajorAxis(11_460_000)
+							.withRotationalPeriod(901_902),
+
+						//RTM changes: Adding rest of moons/planets for realism WIP
+
+						//IO moon
+						new CelestialBody("io")
+							//volcanic hazards
+							.withMassRadius(8.9319e22F, 1_821)
+							.withSemiMajorAxis(421_800)
 							.withRotationalPeriod(901_902)
 
 					),
@@ -214,7 +245,8 @@ public class SolarSystem {
 						.withRotationalPeriod(29_440),
 
 
-					//IO
+					//IO is not a moon of saturn cunt, this is
+					//Enceladus
 					new CelestialBody("slate") //not you tho
 						.withMassRadius(8.94e22F, 1_815)
 						.withSemiMajorAxis(421_700)
@@ -230,12 +262,69 @@ public class SolarSystem {
 
 				),
 
+				//Uranus
+				new CelestialBody("uranus")
+					.withMassRadius(8.681e25F, 25_362)
+					.withSemiMajorAxis(2_000_000_000) //2_870_990_000 is too large
+					.withRotationalPeriod(17_000)
+					.withColor(0.4F, 0.6F, 0.8F)
+					.withSatellites(
+
+						//Miranda
+						new CelestialBody("miranda")
+							.withMassRadius(6.5e20F, 471)
+							.withSemiMajorAxis(235_800)
+							.withRotationalPeriod(1_000),
+
+						//Titania
+						new CelestialBody("titania")
+							.withMassRadius(3.4e21F, 788)
+							.withSemiMajorAxis(436_300)
+							.withRotationalPeriod(1_000),
+
+						//Oberon
+						new CelestialBody("oberon")
+							.withMassRadius(3.01e21F, 761)
+							.withSemiMajorAxis(583_500)
+							.withRotationalPeriod(1_000)
+
+					),
+
+				//neptune
+				new CelestialBody("neptune")
+					.withMassRadius(1.024e26F, 24_622)
+					.withSemiMajorAxis(2_100_000_000) //4_498_252_900 is too large
+					.withRotationalPeriod(16_000)
+					.withColor(0.2F, 0.4F, 0.6F)
+					.withSatellites(
+
+						//Triton
+						new CelestialBody("niven")
+							.withMassRadius(2.14e22F, 1_353)
+							.withSemiMajorAxis(354_800)
+							.withRotationalPeriod(5_000),
+
+						//Proteus
+						new CelestialBody("proteus")
+							.withMassRadius(4.2e19F, 420)
+							.withSemiMajorAxis(117_600)
+							.withRotationalPeriod(1_000),
+
+						//Nereid
+						new CelestialBody("nereid")
+							.withMassRadius(3.4e19F, 170)
+							.withSemiMajorAxis(5_000_000)
+							.withRotationalPeriod(1_000)
+
+
+
+					),
+
 				//Pluto
 				new CelestialBody("eeloo") //will add
 					.withMassRadius(1.309e22F, 1_188)
 					.withSemiMajorAxis(5_906_380)
-					//5,906,380,000 int too large also isn't pluto
-					// like not a fucking moon of saturn?
+					//5,906,380,000 int too large
 					.withRotationalPeriod(9_157_915)
 
 
