@@ -22,6 +22,7 @@ import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.storage.WorldInfo;
 import net.minecraftforge.common.util.ForgeDirection;
 
+
 import java.util.*;
 
 public class EntityFalloutRain extends EntityExplosionChunkloading {
@@ -68,11 +69,15 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 							for(int z = chunkPosZ << 4; z < (chunkPosZ << 4) + 16; z++) {
 								double percent = Math.hypot(x - posX, z - posZ) * 100 / getScale();
 								stomp(x, z, percent);
-								BiomeGenBase biome = getBiomeChange(percent, getScale(), worldObj.getBiomeGenForCoords(x, z));
-								if(biome != null) {
-									WorldUtil.setBiome(worldObj, x, z, biome);
-									biomeModified = true;
+
+								if (worldObj.provider.dimensionId == 0) {
+									BiomeGenBase biome = getBiomeChange(percent, getScale(), worldObj.getBiomeGenForCoords(x, z));
+									if (biome != null) {
+										WorldUtil.setBiome(worldObj, x, z, biome);
+										biomeModified = true;
+									}
 								}
+
 							}
 						}
 						if(biomeModified) WorldUtil.syncBiomeChange(worldObj, chunkPosX << 4, chunkPosZ << 4);
@@ -88,11 +93,18 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 								if(distance <= getScale()) {
 									double percent = distance * 100 / getScale();
 									stomp(x, z, percent);
-									BiomeGenBase biome = getBiomeChange(percent, getScale(), worldObj.getBiomeGenForCoords(x, z));
-									if(biome != null) {
-										WorldUtil.setBiome(worldObj, x, z, biome);
-										biomeModified = true;
+
+									if (worldObj.provider.dimensionId == 0) {
+										//no more space fuckery
+
+										BiomeGenBase biome = getBiomeChange(percent, getScale(), worldObj.getBiomeGenForCoords(x, z));
+										if (biome != null) {
+											WorldUtil.setBiome(worldObj, x, z, biome);
+											biomeModified = true;
+										}
+
 									}
+
 								}
 							}
 						}
@@ -123,6 +135,10 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
 	public static BiomeGenBase getBiomeChange(double dist, int scale, BiomeGenBase original) {
 		if(!WorldConfig.enableCraterBiomes) return null;
+		//get world dimension, if not overworld, return null
+		//if (world == null || world.provider.dimensionId != 0) return null;
+		//we can't register world here because of how fucked minecraft modding is
+
 		if(scale >= 150 && dist < 15)
 			return BiomeGenCraterBase.craterInnerBiome;
 		if(scale >= 100 && dist < 55 && original != BiomeGenCraterBase.craterInnerBiome)
