@@ -94,7 +94,9 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 									double percent = distance * 100 / getScale();
 									stomp(x, z, percent);
 
-									if (worldObj.provider.dimensionId == 0) {
+									if (worldObj.provider.dimensionId == 0) { //todo || if detonation is above y 256
+										// also todo no more mushroom cloud above y 256 or in space
+										// but idk where that is rn
 										//no more space fuckery
 
 										BiomeGenBase biome = getBiomeChange(percent, getScale(), worldObj.getBiomeGenForCoords(x, z));

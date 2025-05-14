@@ -5,17 +5,18 @@ import net.minecraftforge.common.config.Property;
 
 public class BombConfig {
 
-	public static int gadgetRadius = 150;
-	public static int boyRadius = 120;
-	public static int manRadius = 175;
-	public static int mikeRadius = 250;
+	public static int gadgetRadius = 45;
+	//bruh 45 is still big as shit what the hell was this fucking retard thinking
+	public static int boyRadius = 40;
+	public static int manRadius = 60;
+	public static int mikeRadius = 160;
 	public static int tsarRadius = 500;
 	public static int prototypeRadius = 150;
 	public static int fleijaRadius = 50;
 	public static int soliniumRadius = 150;
-	public static int n2Radius = 200;
-	public static int missileRadius = 100;
-	public static int mirvRadius = 100;
+	public static int n2Radius = 25;
+	public static int missileRadius = 55;
+	public static int mirvRadius = 50;
 	public static int fatmanRadius = 35;
 	public static int nukaRadius = 25;
 	public static int aSchrabRadius = 20;
@@ -28,20 +29,20 @@ public class BombConfig {
 	public static int rain = 0;
 	public static int cont = 0;
 	public static boolean chunkloading = true;
-	
+
 	public static void loadFromConfig(Configuration config) {
 
 		final String CATEGORY_NUKES = CommonConfig.CATEGORY_NUKES;
-		Property propGadget = config.get(CATEGORY_NUKES, "3.00_gadgetRadius", 150);
+		Property propGadget = config.get(CATEGORY_NUKES, "3.00_gadgetRadius", 45);
 		propGadget.comment = "Radius of the Gadget";
 		gadgetRadius = propGadget.getInt();
-		Property propBoy = config.get(CATEGORY_NUKES, "3.01_boyRadius", 120);
+		Property propBoy = config.get(CATEGORY_NUKES, "3.01_boyRadius", 40);
 		propBoy.comment = "Radius of Little Boy";
 		boyRadius = propBoy.getInt();
-		Property propMan = config.get(CATEGORY_NUKES, "3.02_manRadius", 175);
+		Property propMan = config.get(CATEGORY_NUKES, "3.02_manRadius", 60);
 		propMan.comment = "Radius of Fat Man";
 		manRadius = propMan.getInt();
-		Property propMike = config.get(CATEGORY_NUKES, "3.03_mikeRadius", 250);
+		Property propMike = config.get(CATEGORY_NUKES, "3.03_mikeRadius", 160);
 		propMike.comment = "Radius of Ivy Mike";
 		mikeRadius = propMike.getInt();
 		Property propTsar = config.get(CATEGORY_NUKES, "3.04_tsarRadius", 500);
@@ -53,10 +54,10 @@ public class BombConfig {
 		Property propFleija = config.get(CATEGORY_NUKES, "3.06_fleijaRadius", 50);
 		propFleija.comment = "Radius of F.L.E.I.J.A.";
 		fleijaRadius = propFleija.getInt();
-		Property propMissile = config.get(CATEGORY_NUKES, "3.07_missileRadius", 100);
+		Property propMissile = config.get(CATEGORY_NUKES, "3.07_missileRadius", 55);
 		propMissile.comment = "Radius of the nuclear missile";
 		missileRadius = propMissile.getInt();
-		Property propMirv = config.get(CATEGORY_NUKES, "3.08_mirvRadius", 100);
+		Property propMirv = config.get(CATEGORY_NUKES, "3.08_mirvRadius", 50);
 		propMirv.comment = "Radius of a MIRV";
 		mirvRadius = propMirv.getInt();
 		Property propFatman = config.get(CATEGORY_NUKES, "3.09_fatmanRadius", 35);
@@ -71,8 +72,8 @@ public class BombConfig {
 		Property propSolinium = config.get(CATEGORY_NUKES, "3.12_soliniumRadius", 150);
 		propSolinium.comment = "Radius of the blue rinse";
 		soliniumRadius = propSolinium.getInt();
-		Property propN2 = config.get(CATEGORY_NUKES, "3.13_n2Radius", 200);
-		propN2.comment = "Radius of the N2 mine";
+		Property propN2 = config.get(CATEGORY_NUKES, "3.13_n2Radius", 25);
+		propN2.comment = "Radius of the Ammonium Nitrate Bomb";
 		n2Radius = propN2.getInt();
 
 		final String CATEGORY_NUKE = CommonConfig.CATEGORY_EXPLOSIONS;
@@ -101,7 +102,7 @@ public class BombConfig {
 		Property rainCont = config.get(CATEGORY_NUKE, "6.06_falloutRainRadiation", 0);
 		rainCont.comment = "Radiation in 100th RADs created by fallout rain";
 		cont = rainCont.getInt();
-		
+
 		chunkloading = CommonConfig.createConfigBool(config, CATEGORY_NUKE, "6.XX_enableChunkLoading", "Allows all types of procedural explosions to keep the central chunk loaded.", true);
 	}
 }
