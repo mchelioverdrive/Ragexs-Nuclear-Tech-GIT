@@ -495,7 +495,7 @@ public class CelestialBody {
 	// Get the power multiplier for sun based machines
 	public float getSunPower() {
 		float distanceAU = getPlanet().semiMajorAxisKm / AstronomyUtil.KM_IN_AU;
-		return 1 / (distanceAU * distanceAU);
+		return 1 / (distanceAU *10 * distanceAU *10);
 	}
 
 

@@ -588,15 +588,18 @@ public class ItemSyringe extends Item {
 			list.add("Full heal, regardless of max health");
 			list.add("Removes negative effects");
 		}
-		if(this == ModItems.radaway) {
-			list.add("Removes 140 RAD");
-		}
-		if(this == ModItems.radaway_strong) {
-			list.add("Removes 350 RAD");
-		}
-		if(this == ModItems.radaway_flush) {
-			list.add("Removes 1000 RAD");
-		}
+		//if(this == ModItems.radaway) {
+		//	list.add("Removes 140 RAD");
+		//}
+		//if(this == ModItems.radaway_strong) {
+		//	list.add("Removes 350 RAD");
+		//}
+		//if(this == ModItems.radaway_flush) {
+		//	list.add("Removes 1000 RAD");
+		//}
+		//why is the fucking radaway/prussian blue desc not working
+		//I NOW KNOW WHY, BECAUSE ITS NOT A FUCKING ITEMSYRINGE
+
 		//if(this == ModItems.syringe_taint) {
 		//	list.add("Tainted I for 60 seconds");
 		//	list.add("Nausea I for 5 seconds");
@@ -625,4 +628,24 @@ public class ItemSyringe extends Item {
 			list.add(EnumChatFormatting.RED + "?");
 		}
 	}
+
+
+	public class ItemMed extends Item {
+
+		//stupid FUCKING MOD
+		@Override
+		public void addInformation(ItemStack itemstack, EntityPlayer player, List list, boolean bool) {
+			if (this == ModItems.radaway) {
+				list.add("Removes 140 RAD");
+			}
+			if (this == ModItems.radaway_strong) {
+				list.add("Removes 350 RAD");
+			}
+			if (this == ModItems.radaway_flush) {
+				list.add("Removes 1000 RAD");
+			}
+			// Add other items here if needed
+		}
+	}
+
 }

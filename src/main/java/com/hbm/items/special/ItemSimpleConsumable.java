@@ -1,8 +1,10 @@
 package com.hbm.items.special;
 
+import java.util.List;
 import java.util.function.BiConsumer;
 
 import com.hbm.items.ItemCustomLore;
+import com.hbm.items.ModItems;
 import com.hbm.util.Tuple.Pair;
 
 import net.minecraft.entity.EntityLivingBase;
@@ -13,7 +15,7 @@ import net.minecraft.potion.PotionEffect;
 import net.minecraft.world.World;
 
 public class ItemSimpleConsumable extends ItemCustomLore {
-	
+
 	//if java is giving me the power of generics and delegates then i'm going to use them, damn it!
 	private BiConsumer<ItemStack, EntityPlayer> useAction;
 	private BiConsumer<ItemStack, EntityPlayer> useActionServer;
@@ -25,33 +27,51 @@ public class ItemSimpleConsumable extends ItemCustomLore {
 
 		if(this.useAction != null)
 			this.useAction.accept(stack, player);
-		
+
 		if(!world.isRemote && this.useActionServer != null)
 			this.useActionServer.accept(stack, player);
-		
+
 		return stack;
 	}
 
 	@Override
+	public void addInformation(ItemStack itemstack, EntityPlayer player, List list, boolean bool) {
+		if (this == ModItems.radaway) {
+			list.add("You're probably looking for Radaway");
+			list.add("Removes 140 RAD");
+		}
+		if (this == ModItems.radaway_strong) {
+			list.add("Radaway, but stronger");
+			list.add("Removes 350 RAD");
+		}
+		if (this == ModItems.radaway_flush) {
+			list.add("Radaway maxxing");
+			list.add("Removes 1000 RAD");
+			list.add("FUCK FALLOUT FANS YOU WOULD DIE IN A NUCLEAR EXPLOSION");
+		}
+		// bobcat is a STUPID FUCKING CUNT
+	}
+
+	@Override
 	public boolean hitEntity(ItemStack stack, EntityLivingBase entity, EntityLivingBase entityPlayer) {
-		
+
 		if(this.hitAction != null)
 			this.hitAction.accept(stack, new Pair(entity, entityPlayer));
-		
+
 		if(!entity.worldObj.isRemote && this.hitActionServer != null)
 			this.hitActionServer.accept(stack, new Pair(entity, entityPlayer));
-		
+
 		return false;
 	}
-	
+
 	public static void giveSoundAndDecrement(ItemStack stack, EntityLivingBase entity, String sound, ItemStack container) {
 		stack.stackSize--;
 		entity.worldObj.playSoundAtEntity(entity, sound, 1.0F, 1.0F);
 		ItemSimpleConsumable.tryAddItem(entity, container);
 	}
-	
+
 	public static void addPotionEffect(EntityLivingBase entity, Potion effect, int duration, int level) {
-		
+
 		if(!entity.isPotionActive(effect)) {
 			entity.addPotionEffect(new PotionEffect(effect.id, duration, level));
 		} else {
@@ -59,7 +79,7 @@ public class ItemSimpleConsumable extends ItemCustomLore {
 			entity.addPotionEffect(new PotionEffect(effect.id, d, level));
 		}
 	}
-	
+
 	public static void tryAddItem(EntityLivingBase entity, ItemStack stack) {
 		if(entity instanceof EntityPlayer) {
 			EntityPlayer player = (EntityPlayer) entity;
@@ -68,7 +88,7 @@ public class ItemSimpleConsumable extends ItemCustomLore {
 			}
 		}
 	}
-	
+
 	//this formatting style probably already has a name but i will call it "the greg"
 	public ItemSimpleConsumable setUseAction(		BiConsumer<ItemStack, EntityPlayer> delegate) {								this.useAction = delegate;			return this; }
 	public ItemSimpleConsumable setUseActionServer(	BiConsumer<ItemStack, EntityPlayer> delegate) {								this.useActionServer = delegate;	return this; }
