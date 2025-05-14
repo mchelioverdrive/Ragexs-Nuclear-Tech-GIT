@@ -117,39 +117,53 @@ public class EntityNukeTorex extends Entity {
 			}
 
 			if (type == DetonationType.AIRBURST) {
-				if (ticksExisted == 1) {
-					this.setScale((float) s);
-					System.out.println("Airburst Cloudlets Triggered");
-				}
+				// Skip mushroom, maybe spawn a pressure ring + light cone
+				//spawnAirburstRingCloud();
 
-				if (worldObj.isRemote && ticksExisted < 120) {
-					int count = 24;
-					double radius = ticksExisted * 0.8;
-					int lifetime = 300;
+				//heres logic for airburstringcloud, in it's actual position:
+
+
+				float radius = 20F + (ticksExisted * 0.5F); // expanding ring
+
+				int lifetime = Math.min((ticksExisted * ticksExisted) + 200, maxAge - ticksExisted + 200);
+
+				if (ticksExisted < 130 * s) {
+					lifetime *= s;
+
+					int count = 60; // more = smoother ring
+					float angleOffset = rand.nextFloat() * ((float) Math.PI * 2); // avoid same pattern
 
 					for (int i = 0; i < count; i++) {
-						double angle = 2 * Math.PI * i / count;
-						double dx = Math.cos(angle);
-						double dz = Math.sin(angle);
-						double x = posX + dx * radius;
-						double z = posZ + dz * radius;
-						double y = posY + 60;
+						float angle = (float) (2 * Math.PI * i / count + angleOffset);
+						double xOffset = radius * Math.cos(angle);
+						double zOffset = radius * Math.sin(angle);
 
-						Cloudlet cloud = new Cloudlet(x, y, z, (float) angle, 0, lifetime, TorexType.RING);
-						cloud.setScale(3F, 3F);
-						cloud.setMotion(0.05 * dx, 0, 0.05 * dz);
+						Cloudlet cloud = new Cloudlet(
+							posX + xOffset,
+							posY + coreHeight,
+							posZ + zOffset,
+							angle,
+							0,
+							lifetime,
+							TorexType.RING
+						);
+
+						cloud.setScale(1F + this.ticksExisted * 0.0025F * (float) (cs * cs), 2.5F * (float) (cs * cs));
+						cloud.setMotion(0.1 + rand.nextFloat() * 0.15); // outward motion
+
 						cloudlets.add(cloud);
 					}
 				}
 
-				// Update clouds
-				for (Cloudlet cloud : cloudlets) cloud.update();
-				cloudlets.removeIf(x -> x.isDead);
+				if (!didPlaySound && MainRegistry.proxy.me() != null && MainRegistry.proxy.me().getDistanceToEntity(this) < radius * 2) {
+					MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 8000F, 1F);
+					didPlaySound = true;
+				}
+
+
 
 				return;
 			} else {
-
-				//normal logic
 
 				if (ticksExisted == 1) this.setScale((float) s);
 
@@ -265,51 +279,50 @@ public class EntityNukeTorex extends Entity {
 		}
 	}
 
-	//old logic, unused
-	//private void spawnAirburstRingCloud() {
-	//	int cloudCount = 80; // number of ring segments
-	//	float radius = 20F + (ticksExisted * 0.5F); // expanding ring
-	//	float verticalVariance = 0.5F; // slight Y jitter
-	//	int lifetime = 150 + rand.nextInt(50); // how long each cloud lasts
-	//	float scale = 3.5F; // size of each cloudlet
-//
-	//	//actual ring logic, rest is lobotomized gpt nonsense
-	//	//if (ticksExisted < 130 * s) {
-	//	//	lifetime *= s;
-	//	//	for (int i = 0; i < 2; i++) {
-	//	//		Cloudlet cloud = new Cloudlet(posX, posY + coreHeight, posZ, (float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime, TorexType.RING);
-	//	//		cloud.setScale(1F + this.ticksExisted * 0.0025F * (float) (cs * cs), 3F * (float) (cs * cs));
-	//	//		cloudlets.add(cloud);
-	//	//	}
-	//	//}
-//
-	//	for (int i = 0; i < cloudCount; i++) {
-	//		float angle = (float) (2 * Math.PI * i / cloudCount);
-	//		double xOffset = radius * Math.cos(angle);
-	//		double zOffset = radius * Math.sin(angle);
-	//		double yOffset = (rand.nextFloat() - 0.5F) * verticalVariance;
-//
-	//		Cloudlet cloud = new Cloudlet(
-	//			posX + xOffset,
-	//			posY + yOffset,
-	//			posZ + zOffset,
-	//			angle,
-	//			0,
-	//			lifetime,
-	//			TorexType.RING // use the existing RING type or create AIRBURST_RING
-	//		);
-//
-	//		cloud.setScale(scale, 2F); // (width, height)
-	//		cloud.setMotion(0.25 + rand.nextDouble() * 0.1); // slow outward motion
-//
-	//		cloudlets.add(cloud);
-	//	}
-//
-	//	if (!didPlaySound && MainRegistry.proxy.me() != null && MainRegistry.proxy.me().getDistanceToEntity(this) < radius * 2) {
-	//		MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 8000F, 1F);
-	//		didPlaySound = true;
-	//	}
-	//}
+	private void spawnAirburstRingCloud() {
+		int cloudCount = 80; // number of ring segments
+		float radius = 20F + (ticksExisted * 0.5F); // expanding ring
+		float verticalVariance = 0.5F; // slight Y jitter
+		int lifetime = 150 + rand.nextInt(50); // how long each cloud lasts
+		float scale = 3.5F; // size of each cloudlet
+
+		//actual ring logic, rest is lobotomized gpt nonsense
+		//if (ticksExisted < 130 * s) {
+		//	lifetime *= s;
+		//	for (int i = 0; i < 2; i++) {
+		//		Cloudlet cloud = new Cloudlet(posX, posY + coreHeight, posZ, (float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime, TorexType.RING);
+		//		cloud.setScale(1F + this.ticksExisted * 0.0025F * (float) (cs * cs), 3F * (float) (cs * cs));
+		//		cloudlets.add(cloud);
+		//	}
+		//}
+
+		for (int i = 0; i < cloudCount; i++) {
+			float angle = (float) (2 * Math.PI * i / cloudCount);
+			double xOffset = radius * Math.cos(angle);
+			double zOffset = radius * Math.sin(angle);
+			double yOffset = (rand.nextFloat() - 0.5F) * verticalVariance;
+
+			Cloudlet cloud = new Cloudlet(
+				posX + xOffset,
+				posY + yOffset,
+				posZ + zOffset,
+				angle,
+				0,
+				lifetime,
+				TorexType.RING // use the existing RING type or create AIRBURST_RING
+			);
+
+			cloud.setScale(scale, 2F); // (width, height)
+			cloud.setMotion(0.25 + rand.nextDouble() * 0.1); // slow outward motion
+
+			cloudlets.add(cloud);
+		}
+
+		if (!didPlaySound && MainRegistry.proxy.me() != null && MainRegistry.proxy.me().getDistanceToEntity(this) < radius * 2) {
+			MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 8000F, 1F);
+			didPlaySound = true;
+		}
+	}
 
 	private void spawnSpaceDetonationFlash() {
 
@@ -433,7 +446,6 @@ public class EntityNukeTorex extends Entity {
 			this.type = type;
 
 			this.updateColor();
-
 		}
 
 		private void update() {
@@ -700,20 +712,6 @@ public class EntityNukeTorex extends Entity {
 
 		public Cloudlet setMotion(double mult) {
 			this.motionMult = mult;
-			return this;
-		}
-
-		public void setMotionVec(double x, double y, double z) {
-			this.motionX = x;
-			this.motionY = y;
-			this.motionZ = z;
-			//return this;
-		}
-
-		public Cloudlet setMotion(double mx, double my, double mz) {
-			this.motionX = mx;
-			this.motionY = my;
-			this.motionZ = mz;
 			return this;
 		}
 	}
