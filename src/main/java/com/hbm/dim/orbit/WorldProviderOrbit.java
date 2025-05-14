@@ -68,6 +68,24 @@ public class WorldProviderOrbit extends WorldProvider {
 		return new ChunkProviderOrbit(this.worldObj);
 	}
 
+	private boolean playerHasAtmosphere(EntityPlayer player) {
+		//checks if the player has an atmosphere for radiation effects
+		CBT_Atmosphere atm = ChunkAtmosphereManager.proxy.getAtmosphere(
+			player.worldObj,
+			(int) player.posX, (int) player.posY, (int) player.posZ
+		);
+
+		if (atm == null || atm.fluids == null) return false;
+
+		for (CBT_Atmosphere.FluidEntry entry : atm.fluids) {
+			if (entry.pressure > 0.01) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	@Override
 	public void updateWeather() {
 		super.updateWeather();
@@ -79,6 +97,18 @@ public class WorldProviderOrbit extends WorldProvider {
 			for (Object obj : worldObj.playerEntities) {
 				if (obj instanceof EntityPlayer) {
 					EntityPlayer player = (EntityPlayer) obj;
+
+					//todone when added cryochamber,
+					// if not in cryo chamber, or riding rocket (drop pods, etc)
+					//we won't need to do all that because if you're dumb enough to put
+					// a fucking cryochamber in nil atmosphere you deserve the rads
+
+					//todone more conditions like shielding, atmosphere
+
+					if (playerHasAtmosphere(player)) {
+						continue;
+					}
+					//works
 
 					// Check if the player can see the sky
 					if (worldObj.canBlockSeeTheSky((int) player.posX, (int) player.posY, (int) player.posZ)) {

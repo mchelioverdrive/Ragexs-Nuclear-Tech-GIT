@@ -756,15 +756,15 @@ public class AssemblerRecipes extends SerializableRecipe {
 
 		makeRecipe(new ComparableStack(ModBlocks.turret_chekhov, 1), new AStack[] {
 				new ComparableStack(ModBlocks.machine_battery, 1),
-				new OreDictStack(STEEL.ingot(), 16),
-				new OreDictStack(DURA.ingot(), 4),
-				new ComparableStack(ModItems.motor, 3),
-				new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ADVANCED),
-				new OreDictStack(STEEL.pipe(), 3),
-				new ComparableStack(ModItems.mechanism_rifle_2, 1),
+				new OreDictStack(STEEL.ingot(), 32),
+				new OreDictStack(DURA.ingot(), 16),
+				new ComparableStack(ModItems.motor, 8),
+				new ComparableStack(ModItems.circuit, 12, EnumCircuitType.ADVANCED),
+				new OreDictStack(STEEL.pipe(), 12),
+				new ComparableStack(ModItems.mechanism_rifle_2, 3),
 				new ComparableStack(ModBlocks.crate_iron, 1),
 				new ComparableStack(ModItems.crt_display, 1)
-			}, 200);
+			}, 1200);
 		//makeRecipe(new ComparableStack(ModBlocks.turret_friendly, 1), new AStack[] {
 		//		new ComparableStack(ModBlocks.machine_battery, 1),
 		//		new OreDictStack(STEEL.ingot(), 16),
@@ -800,30 +800,32 @@ public class AssemblerRecipes extends SerializableRecipe {
 		//		new ComparableStack(ModItems.battery_lithium, 1),
 		//		new ComparableStack(ModItems.crt_display, 1)
 		//	}, 200);
-		makeRecipe(new ComparableStack(ModBlocks.turret_richard, 1), new AStack[] {
-				new ComparableStack(ModBlocks.machine_battery, 1),
-				new OreDictStack(STEEL.ingot(), 16),
-				new OreDictStack(DURA.ingot(), 4),
-				new ComparableStack(ModItems.motor, 2),
-				new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ADVANCED),
-				new OreDictStack(ANY_PLASTIC.ingot(), 2),
-				new OreDictStack(STEEL.shell(), 8),
-				new ComparableStack(ModItems.mechanism_launcher_2, 1),
-				new ComparableStack(ModBlocks.crate_steel, 1),
-				new ComparableStack(ModItems.crt_display, 1)
-			}, 200);
+		//makeRecipe(new ComparableStack(ModBlocks.turret_richard, 1), new AStack[] {
+		//		new ComparableStack(ModBlocks.machine_battery, 1),
+		//		new OreDictStack(STEEL.ingot(), 16),
+		//		new OreDictStack(DURA.ingot(), 4),
+		//		new ComparableStack(ModItems.motor, 2),
+		//		new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ADVANCED),
+		//		new OreDictStack(ANY_PLASTIC.ingot(), 2),
+		//		new OreDictStack(STEEL.shell(), 8),
+		//		new ComparableStack(ModItems.mechanism_launcher_2, 1),
+		//		new ComparableStack(ModBlocks.crate_steel, 1),
+		//		new ComparableStack(ModItems.crt_display, 1)
+		//	}, 200);
+
+		//AND FUCK YOU
 		makeRecipe(new ComparableStack(ModBlocks.turret_howard, 1), new AStack[] {
 				new ComparableStack(ModBlocks.machine_battery, 1),
-				new OreDictStack(STEEL.ingot(), 24),
-				new OreDictStack(DURA.ingot(), 6),
-				new ComparableStack(ModItems.motor, 2),
-				new ComparableStack(ModItems.motor_desh, 2),
-				new ComparableStack(ModItems.circuit, 3, EnumCircuitType.ADVANCED),
-				new OreDictStack(STEEL.pipe(), 10),
-				new ComparableStack(ModItems.mechanism_rifle_2, 2),
+				new OreDictStack(STEEL.ingot(), 32),
+				new OreDictStack(DURA.ingot(), 8),
+				new ComparableStack(ModItems.motor, 5),
+				//new ComparableStack(ModItems.motor_desh, 2),
+				new ComparableStack(ModItems.circuit, 6, EnumCircuitType.ADVANCED),
+				new OreDictStack(STEEL.pipe(), 15),
+				new ComparableStack(ModItems.mechanism_rifle_2, 4),
 				new ComparableStack(ModBlocks.crate_steel, 1),
 				new ComparableStack(ModItems.crt_display, 1)
-			}, 200);
+			}, 1200);
 		//makeRecipe(new ComparableStack(ModBlocks.turret_maxwell, 1), new AStack[] {
 		//		new ComparableStack(ModBlocks.machine_lithium_battery, 1),
 		//		new OreDictStack(STEEL.ingot(), 24),
@@ -843,10 +845,10 @@ public class AssemblerRecipes extends SerializableRecipe {
 				new ComparableStack(ModItems.motor, 3),
 				new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ADVANCED),
 				new OreDictStack(STEEL.pipe(), 8),
-				new ComparableStack(ModItems.mechanism_launcher_1, 1),
+				new ComparableStack(ModItems.mechanism_launcher_1, 2),
 				new ComparableStack(ModBlocks.barrel_steel, 1),
 				new ComparableStack(ModItems.crt_display, 1)
-			}, 200);
+			}, 1200);
 		//makeRecipe(new ComparableStack(ModBlocks.turret_arty, 1), new AStack[] {
 		//		new ComparableStack(ModBlocks.machine_battery, 1),
 		//		new OreDictStack(STEEL.ingot(), 128),

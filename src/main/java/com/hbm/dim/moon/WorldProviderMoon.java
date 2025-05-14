@@ -56,7 +56,7 @@ public class WorldProviderMoon extends WorldProviderCelestial {
 					if (worldObj.canBlockSeeTheSky((int) player.posX, (int) player.posY, (int) player.posZ)) {
 						// Apply radiation effect with a random chance
 						if (rand.nextInt(100) == 0) {
-							player.addPotionEffect(new PotionEffect(HbmPotion.radiation.id, 20, 1));
+							player.addPotionEffect(new PotionEffect(HbmPotion.radiation.id, 20, 0));
 						}
 					}
 				}
