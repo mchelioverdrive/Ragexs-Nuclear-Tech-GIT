@@ -39,7 +39,7 @@ public class PlanetGen {
 		GameRegistry.registerWorldGenerator(new WorldGeneratorEve(), 1);
 		GameRegistry.registerWorldGenerator(new WorldGeneratorDres(), 1);
 		GameRegistry.registerWorldGenerator(new WorldGeneratorMoho(), 1);
-		GameRegistry.registerWorldGenerator(new WorldGeneratorMinmus(), 1);
+		//GameRegistry.registerWorldGenerator(new WorldGeneratorMinmus(), 1);
 		GameRegistry.registerWorldGenerator(new WorldGeneratorLaythe(), 1);
 		GameRegistry.registerWorldGenerator(new WorldGeneratorTekto(), 1);
 
@@ -49,7 +49,7 @@ public class PlanetGen {
 		registerDimension(SpaceConfig.eveDimension, WorldProviderEve.class);
 		registerDimension(SpaceConfig.dresDimension, WorldProviderDres.class);
 		registerDimension(SpaceConfig.mohoDimension, WorldProviderMoho.class);
-		registerDimension(SpaceConfig.minmusDimension, WorldProviderMinmus.class);
+		//registerDimension(SpaceConfig.minmusDimension, WorldProviderMinmus.class);
 		registerDimension(SpaceConfig.laytheDimension, WorldProviderLaythe.class);
 		registerDimension(SpaceConfig.orbitDimension, WorldProviderOrbit.class);
 		registerDimension(SpaceConfig.tektoDimension, WorldProviderTekto.class);
@@ -60,6 +60,6 @@ public class PlanetGen {
 		DimensionManager.registerProviderType(dimensionId, clazz, false);
 		DimensionManager.registerDimension(dimensionId, dimensionId);
 	}
-	
+
 }
 

@@ -29,19 +29,19 @@ public class GenLayerMinmusPlains extends GenLayer {
 				this.initChunkSeed((long) (j1 + p_151626_1_), (long) (i1 + p_151626_2_));
 				int k1 = aint[j1 + 1 + (i1 + 1) * k];
 
-				if(k1 == BiomeGenBaseMinmus.minmusPlains.biomeID) {
-					int l1 = aint[j1 + 1 + (i1 + 1 - 1) * k];
-					int i2 = aint[j1 + 1 + 1 + (i1 + 1) * k];
-					int j2 = aint[j1 + 1 - 1 + (i1 + 1) * k];
-					int k2 = aint[j1 + 1 + (i1 + 1 + 1) * k];
-					boolean flag = ((l1 == BiomeGenBaseMinmus.minmusCanyon.biomeID)
-							|| (i2 == BiomeGenBaseMinmus.minmusCanyon.biomeID)
-							|| (j2 == BiomeGenBaseMinmus.minmusCanyon.biomeID)
-							|| (k2 == BiomeGenBaseMinmus.minmusCanyon.biomeID));
-					if(flag) {
-						k1 = BiomeGenBaseMinmus.minmusPlains.biomeID;
-					}
-				}
+				//if(k1 == BiomeGenBaseMinmus.minmusPlains.biomeID) {
+				//	int l1 = aint[j1 + 1 + (i1 + 1 - 1) * k];
+				//	int i2 = aint[j1 + 1 + 1 + (i1 + 1) * k];
+				//	int j2 = aint[j1 + 1 - 1 + (i1 + 1) * k];
+				//	int k2 = aint[j1 + 1 + (i1 + 1 + 1) * k];
+				//	boolean flag = ((l1 == BiomeGenBaseMinmus.minmusCanyon.biomeID)
+				//			|| (i2 == BiomeGenBaseMinmus.minmusCanyon.biomeID)
+				//			|| (j2 == BiomeGenBaseMinmus.minmusCanyon.biomeID)
+				//			|| (k2 == BiomeGenBaseMinmus.minmusCanyon.biomeID));
+				//	if(flag) {
+				//		k1 = BiomeGenBaseMinmus.minmusPlains.biomeID;
+				//	}
+				//}
 
 				aint1[j1 + i1 * p_151626_3_] = k1;
 			}

@@ -365,7 +365,7 @@ public class SolarSystem {
 		ORBIT(""),
 		KERBIN("kerbin"),
 		MUN("mun"),
-		MINMUS("minmus"),
+		//MINMUS("minmus"),
 		DUNA("duna"),
 		MOHO("moho"),
 		DRES("dres"),
@@ -897,7 +897,8 @@ public class SolarSystem {
 		CelestialBody eve = CelestialBody.getBody("eve");
 		CelestialBody duna = CelestialBody.getBody("duna");
 		CelestialBody mun = CelestialBody.getBody("mun");
-		CelestialBody minmus = CelestialBody.getBody("minmus");
+		//CelestialBody minmus = CelestialBody.getBody("minmus");
+		//sorry lil bro ur not real
 		CelestialBody ike = CelestialBody.getBody("ike");
 
 		float deltaIVMass = 500_000;
@@ -907,7 +908,7 @@ public class SolarSystem {
 		MainRegistry.logger.info("Eve launch cost: " + getLiftoffDeltaV(eve, deltaIVMass, RD180RocketThrust, 0));
 		MainRegistry.logger.info("Duna launch cost: " + getLiftoffDeltaV(duna, deltaIVMass, RD180RocketThrust, 0));
 		MainRegistry.logger.info("Mun launch cost: " + getLiftoffDeltaV(mun, deltaIVMass, RD180RocketThrust, 0));
-		MainRegistry.logger.info("Minmus launch cost: " + getLiftoffDeltaV(minmus, deltaIVMass, RD180RocketThrust, 0));
+		//MainRegistry.logger.info("Minmus launch cost: " + getLiftoffDeltaV(minmus, deltaIVMass, RD180RocketThrust, 0));
 		MainRegistry.logger.info("Ike launch cost: " + getLiftoffDeltaV(ike, deltaIVMass, RD180RocketThrust, 0));
 
 		MainRegistry.logger.info("Kerbin -> Eve cost: " + getDeltaVBetween(kerbin, eve) + " - should be: " + (950+90+80+1330));
@@ -915,10 +916,10 @@ public class SolarSystem {
 		MainRegistry.logger.info("Kerbin -> Ike cost: " + getDeltaVBetween(kerbin, ike) + " - should be: " + (950+130+250+30+180));
 		MainRegistry.logger.info("Eve -> Duna cost: " + getDeltaVBetween(eve, duna));
 		MainRegistry.logger.info("Kerbin -> Mun cost: " + getDeltaVBetween(kerbin, mun) + " - should be: " + (860+310));
-		MainRegistry.logger.info("Kerbin -> Minmus cost: " + getDeltaVBetween(kerbin, minmus) + " - should be: " + (930+160));
+		//MainRegistry.logger.info("Kerbin -> Minmus cost: " + getDeltaVBetween(kerbin, minmus) + " - should be: " + (930+160));
 		MainRegistry.logger.info("Mun -> Kerbin cost: " + getDeltaVBetween(mun, kerbin) + " - should be: " + (860+310));
-		MainRegistry.logger.info("Minmus -> Kerbin cost: " + getDeltaVBetween(minmus, kerbin) + " - should be: " + (930+160));
-		MainRegistry.logger.info("Minmus -> Ike cost: " + getDeltaVBetween(minmus, ike));
+		//MainRegistry.logger.info("Minmus -> Kerbin cost: " + getDeltaVBetween(minmus, kerbin) + " - should be: " + (930+160));
+		//MainRegistry.logger.info("Minmus -> Ike cost: " + getDeltaVBetween(minmus, ike));
 
 		MainRegistry.logger.info("Kerbin orbital period: " + kerbin.getOrbitalPeriod() + " - should be: " + 426);
 		MainRegistry.logger.info("Eve orbital period: " + eve.getOrbitalPeriod() + " - should be: " + 261);

@@ -8,7 +8,7 @@ import net.minecraft.world.gen.layer.IntCache;
 
 public class GenLayerDiversifyMinmus extends GenLayer {
 
-    private static final BiomeGenBase[] biomes = new BiomeGenBase[] { BiomeGenBaseMinmus.minmusCanyon, BiomeGenBaseMinmus.minmusPlains };
+    //private static final BiomeGenBase[] biomes = new BiomeGenBase[] { BiomeGenBaseMinmus.minmusCanyon, BiomeGenBaseMinmus.minmusPlains };
 
     public GenLayerDiversifyMinmus(long l, GenLayer parent) {
         super(l);
@@ -24,17 +24,17 @@ public class GenLayerDiversifyMinmus extends GenLayer {
         int input[] = this.parent.getInts(x, z, width, height);
         int output[] = IntCache.getIntCache(width * height);
         // EnumBiomeTypeDevonian type;
-        for(int zOut = 0; zOut < height; zOut++) {
-            for(int xOut = 0; xOut < width; xOut++) {
-                int i = xOut + zOut * width;
-                int center = input[i];
-                initChunkSeed(xOut + x, zOut + z);
-                if(nextInt(2) == 0) {
-                    output[i] = biomes[nextInt(biomes.length)].biomeID;
-                } else
-                    output[i] = center;
-            }
-        }
+        //for(int zOut = 0; zOut < height; zOut++) {
+        //    for(int xOut = 0; xOut < width; xOut++) {
+        //        int i = xOut + zOut * width;
+        //        int center = input[i];
+        //        initChunkSeed(xOut + x, zOut + z);
+        //        if(nextInt(2) == 0) {
+        //            output[i] = biomes[nextInt(biomes.length)].biomeID;
+        //        } else
+        //            output[i] = center;
+        //    }
+        //}
         return output;
     }
 }

@@ -6,7 +6,7 @@ import net.minecraft.world.gen.layer.GenLayer;
 import net.minecraft.world.gen.layer.IntCache;
 
 public class GenLayerMinmusBasins extends GenLayer {
-	
+
 	public GenLayerMinmusBasins(long seed, GenLayer genLayer) {
 		super(seed);
 		this.parent = genLayer;
@@ -29,19 +29,19 @@ public class GenLayerMinmusBasins extends GenLayer {
 				this.initChunkSeed((long) (j1 + p_151626_1_), (long) (i1 + p_151626_2_));
 				int k1 = aint[j1 + 1 + (i1 + 1) * k];
 
-				if(k1 == BiomeGenBaseMinmus.minmusCanyon.biomeID) {
-					int l1 = aint[j1 + 1 + (i1 + 1 - 1) * k];
-					int i2 = aint[j1 + 1 + 1 + (i1 + 1) * k];
-					int j2 = aint[j1 + 1 - 1 + (i1 + 1) * k];
-					int k2 = aint[j1 + 1 + (i1 + 1 + 1) * k];
-					boolean flag = ((l1 == BiomeGenBaseMinmus.minmusPlains.biomeID)
-							|| (i2 == BiomeGenBaseMinmus.minmusPlains.biomeID)
-							|| (j2 == BiomeGenBaseMinmus.minmusPlains.biomeID)
-							|| (k2 == BiomeGenBaseMinmus.minmusPlains.biomeID));
-					if(flag) {
-						k1 = BiomeGenBaseMinmus.minmusCanyon.biomeID;
-					}
-				}
+				//if(k1 == BiomeGenBaseMinmus.minmusCanyon.biomeID) {
+				//	int l1 = aint[j1 + 1 + (i1 + 1 - 1) * k];
+				//	int i2 = aint[j1 + 1 + 1 + (i1 + 1) * k];
+				//	int j2 = aint[j1 + 1 - 1 + (i1 + 1) * k];
+				//	int k2 = aint[j1 + 1 + (i1 + 1 + 1) * k];
+				//	boolean flag = ((l1 == BiomeGenBaseMinmus.minmusPlains.biomeID)
+				//			|| (i2 == BiomeGenBaseMinmus.minmusPlains.biomeID)
+				//			|| (j2 == BiomeGenBaseMinmus.minmusPlains.biomeID)
+				//			|| (k2 == BiomeGenBaseMinmus.minmusPlains.biomeID));
+				//	if(flag) {
+				//		k1 = BiomeGenBaseMinmus.minmusCanyon.biomeID;
+				//	}
+				//}
 
 				aint1[j1 + i1 * p_151626_3_] = k1;
 			}

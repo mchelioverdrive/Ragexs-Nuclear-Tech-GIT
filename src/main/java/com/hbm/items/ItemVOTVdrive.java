@@ -29,7 +29,7 @@ public class ItemVOTVdrive extends ItemEnumMulti {
 
 	private IIcon[] IIcons;
 	private IIcon baseIcon;
-	
+
 	public ItemVOTVdrive() {
 		super(SolarSystem.Body.class, false, true);
 		this.setMaxStackSize(1);
@@ -40,14 +40,14 @@ public class ItemVOTVdrive extends ItemEnumMulti {
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean bool) {
 		super.addInformation(stack, player, list, bool);
-		
+
 		Destination destination = getDestination(stack);
 
 		if(destination.body == SolarSystem.Body.ORBIT) {
 			String identifier = stack.stackTagCompound.getString("stationName");
-			
+
 			if(identifier.equals("")) identifier = "0x" + Integer.toHexString(new ChunkCoordIntPair(destination.x, destination.z).hashCode()).toUpperCase();
-			
+
 			list.add("Destination: ORBITAL STATION");
 			list.add("Station: " + identifier);
 			return;
@@ -86,18 +86,27 @@ public class ItemVOTVdrive extends ItemEnumMulti {
 	@Override
 	@SideOnly(Side.CLIENT)
 	public IIcon getIconFromDamage(int metadata) {
-		SolarSystem.Body destinationType = SolarSystem.Body.values()[metadata];
 
-		if(destinationType == SolarSystem.Body.ORBIT)
+		try {
+
+			SolarSystem.Body destinationType = SolarSystem.Body.values()[metadata];
+
+			if (destinationType == SolarSystem.Body.ORBIT)
+				return baseIcon;
+
+			int processingLevel = destinationType.getProcessingLevel();
+			if (processingLevel >= 0 && processingLevel <= IIcons.length) {
+				return IIcons[processingLevel]; // Subtract 1 to match array indexing
+			}
+
+			// Default to the base icon for unprocessed drives
 			return baseIcon;
 
-		int processingLevel = destinationType.getProcessingLevel();
-		if (processingLevel >= 0 && processingLevel <= IIcons.length) {
-			return IIcons[processingLevel]; // Subtract 1 to match array indexing
+		} catch (ArrayIndexOutOfBoundsException e) {
+			// Handle the case where metadata is out of bounds
+			System.out.println("Invalid metadata for ItemVOTVdrive: " + metadata + ". Defaulting to base icon.");
+			return baseIcon;
 		}
-
-		// Default to the base icon for unprocessed drives
-		return baseIcon;
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -142,7 +151,7 @@ public class ItemVOTVdrive extends ItemEnumMulti {
 
 				return new Target(body, true, hasStation);
 			}
-			
+
 			OrbitalStation station = OrbitalStation.getStation(destination.x, destination.z);
 			if(!station.hasStation) station.orbiting = CelestialBody.getBody(world);
 
@@ -173,14 +182,14 @@ public class ItemVOTVdrive extends ItemEnumMulti {
 	public static boolean getProcessed(ItemStack stack) {
 		if(!stack.hasTagCompound())
 			stack.stackTagCompound = new NBTTagCompound();
-		
+
 		return stack.stackTagCompound.getBoolean("Processed");
 	}
 
 	public static void setProcessed(ItemStack stack, boolean processed) {
 		if(!stack.hasTagCompound())
 			stack.stackTagCompound = new NBTTagCompound();
-		
+
 		stack.stackTagCompound.setBoolean("Processed", processed);
 	}
 
@@ -202,7 +211,7 @@ public class ItemVOTVdrive extends ItemEnumMulti {
 	public static void markCopied(ItemStack stack) {
 		if(!stack.hasTagCompound())
 			stack.stackTagCompound = new NBTTagCompound();
-		
+
 		stack.stackTagCompound.setBoolean("copied", true);
 	}
 
@@ -235,10 +244,10 @@ public class ItemVOTVdrive extends ItemEnumMulti {
 					} else {
 						newStack.stackSize = 0;
 					}
-		
+
 					rocket.navDrive = stack.copy();
 					rocket.navDrive.stackSize = 1;
-		
+
 					if(!world.isRemote) {
 						rocket.setState(RocketState.AWAITING);
 					}
@@ -247,11 +256,11 @@ public class ItemVOTVdrive extends ItemEnumMulti {
 				}
 			}
 		}
-	
+
 		return newStack;
 	}
 
-	
+
 	@Override
 	public boolean onItemUse(ItemStack stack, EntityPlayer player, World world, int x, int y, int z, int side, float fx, float fy, float fz) {
 		Destination destination = getDestination(stack);
@@ -282,7 +291,7 @@ public class ItemVOTVdrive extends ItemEnumMulti {
 			this.x = x;
 			this.z = z;
 		}
-		
+
 		public ChunkCoordIntPair getChunk() {
 			return new ChunkCoordIntPair(x >> 4, z >> 4);
 		}
