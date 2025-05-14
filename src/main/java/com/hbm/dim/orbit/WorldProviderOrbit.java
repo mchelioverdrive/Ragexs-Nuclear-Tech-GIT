@@ -8,13 +8,16 @@ import com.hbm.dim.trait.CBT_Atmosphere;
 import com.hbm.dim.trait.CelestialBodyTrait.CBT_Destroyed;
 import com.hbm.handler.atmosphere.ChunkAtmosphereManager;
 import com.hbm.lib.Library;
+import com.hbm.potion.HbmPotion;
 import com.hbm.util.AstronomyUtil;
 import com.hbm.util.BobMathUtil;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
@@ -23,6 +26,8 @@ import net.minecraft.world.biome.WorldChunkManagerHell;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraftforge.client.IRenderHandler;
+
+import java.util.Random;
 
 public class WorldProviderOrbit extends WorldProvider {
 
@@ -33,7 +38,7 @@ public class WorldProviderOrbit extends WorldProvider {
 	protected float getOrbitalAltitude(CelestialBody body) {
 		return getAltitudeForPeriod(body.massKg, ORBITAL_PERIOD);
 	}
-	
+
 	// r = ∛[(G x Me x T2) / (4π2)]
 	private float getAltitudeForPeriod(float massKg, float period) {
 		return (float)Math.cbrt((AstronomyUtil.GRAVITATIONAL_CONSTANT * massKg * (period * period)) / (4 * Math.PI * Math.PI));
@@ -57,7 +62,7 @@ public class WorldProviderOrbit extends WorldProvider {
 	public String getDimensionName() {
 		return "Orbit";
 	}
-	
+
 	@Override
 	public IChunkProvider createChunkGenerator() {
 		return new ChunkProviderOrbit(this.worldObj);
@@ -65,7 +70,26 @@ public class WorldProviderOrbit extends WorldProvider {
 
 	@Override
 	public void updateWeather() {
-		
+		super.updateWeather();
+
+		// Apply radiation effect to players in orbit
+		if (!worldObj.isRemote) {
+			Random rand = new Random();
+
+			for (Object obj : worldObj.playerEntities) {
+				if (obj instanceof EntityPlayer) {
+					EntityPlayer player = (EntityPlayer) obj;
+
+					// Check if the player can see the sky
+					if (worldObj.canBlockSeeTheSky((int) player.posX, (int) player.posY, (int) player.posZ)) {
+						// Apply radiation effect with a random chance
+						if (rand.nextInt(80) == 0) {
+							player.addPotionEffect(new PotionEffect(HbmPotion.radiation.id, 100, 1));
+						}
+					}
+				}
+			}
+		}
 	}
 
 	@Override
@@ -131,7 +155,7 @@ public class WorldProviderOrbit extends WorldProvider {
 	public boolean canDoRainSnowIce(Chunk chunk) {
 		return false;
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public float getCloudHeight() {
@@ -182,5 +206,5 @@ public class WorldProviderOrbit extends WorldProvider {
 
 		return false;
 	}
-	
+
 }
