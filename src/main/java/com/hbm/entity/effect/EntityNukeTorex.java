@@ -127,12 +127,30 @@ public class EntityNukeTorex extends Entity {
 
 				int lifetime = Math.min((ticksExisted * ticksExisted) + 200, maxAge - ticksExisted + 200);
 
-				//actual ring logic, rest is lobotomized gpt nonsense
 				if (ticksExisted < 130 * s) {
 					lifetime *= s;
-					for (int i = 0; i < 2; i++) {
-						Cloudlet cloud = new Cloudlet(posX, posY + coreHeight, posZ, (float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime, TorexType.RING);
-						cloud.setScale(1F + this.ticksExisted * 0.0025F * (float) (cs * cs), 3F * (float) (cs * cs));
+
+					int count = 60; // more = smoother ring
+					float angleOffset = rand.nextFloat() * ((float) Math.PI * 2); // avoid same pattern
+
+					for (int i = 0; i < count; i++) {
+						float angle = (float) (2 * Math.PI * i / count + angleOffset);
+						double xOffset = radius * Math.cos(angle);
+						double zOffset = radius * Math.sin(angle);
+
+						Cloudlet cloud = new Cloudlet(
+							posX + xOffset,
+							posY + coreHeight,
+							posZ + zOffset,
+							angle,
+							0,
+							lifetime,
+							TorexType.RING
+						);
+
+						cloud.setScale(1F + this.ticksExisted * 0.0025F * (float) (cs * cs), 2.5F * (float) (cs * cs));
+						cloud.setMotion(0.1 + rand.nextFloat() * 0.15); // outward motion
+
 						cloudlets.add(cloud);
 					}
 				}
