@@ -64,10 +64,18 @@ public class EntityNukeTorex extends Entity {
 	}
 
 	private DetonationType getDetonationType(World world, int x, int y, int z) {
-		if (isSpaceDimension(world) ) {
+		if (isSpaceDimension(world)) {
 			return DetonationType.SPACE;
-		} else if (y >= 256 || isAirColumnBelow(world, x, y, z, 30)) {
-			return DetonationType.AIRBURST;
+		}
+
+		int groundY = world.getHeightValue(x, z); // Gets the top solid or liquid block at X,Z
+
+		int diff = y - groundY;
+
+		if (diff >= 30) {
+			return DetonationType.AIRBURST; // Very high above terrain
+		} else if (diff >= 5) {
+			return DetonationType.AIRBURST; // Mid-air detonation
 		} else {
 			return DetonationType.GROUND;
 		}
