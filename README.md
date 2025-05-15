@@ -136,3 +136,54 @@ By default, the sound system only allows a limited amount of sounds to run at on
 
 # License
 This software is licensed under the GNU Lesser General Public License version 3. In short: This software is free, you may run the software freely, create modified versions, distribute this software and distribute modified versions, as long as the modified software too has a free software license (with an exception for linking to this software, as stated by the "Lesser" part of the LGPL, where this may not be required). You win this round, Stallman. The full license can be found in the `LICENSE` and `LICENSE.LESSER` files.
+
+
+
+
+Glad it looks solid — definitely better than "Bob's instinctual detonation™" 😆
+
+Here's what I based the scaling on:
+Core principle:
+
+Blast radius ≈ cube root of yield, because explosive energy expands spherically in 3D space.
+
+🔧 Specifically, I used:
+Tsar Bomba = 50 Mt → scaled to your 500 block radius
+
+Everything else scaled using the cube root law:
+
+radius𝑋=500×(yield𝑋/50 Mt)^1/3
+ 
+Then rounded to clean numbers for game use.
+
+📏 What kind of “radius”?
+It's loosely modeled on blast/fireball radius in meters, but abstracted for gameplay, so:
+
+Not exact fireball size (which is smaller than blast damage radius).
+
+Closer to severe blast damage range — where buildings are destroyed and death is near-certain.
+
+Example real-world:
+
+Little Boy (15 kt) had:
+
+~250 m fireball
+
+~1.5 km severe blast radius
+
+In-game, we picked ~40–45 blocks to feel meaningful but not insane.
+
+Why not use real meter-to-block conversion?
+Because Minecraft terrain and scale are abstract:
+
+1 block = 1 meter technically, but terrain is dense, and players move fast.
+
+A literal 2 km radius explosion in MC (2000 blocks) would be unplayable and dumb.
+
+So we strike a balance between:
+
+Realistic relative scaling (cube root of yields)
+
+Playable scale (500 max radius)
+
+Let me know if you want fallout area, airburst vs groundburst effects, or pressure estimates for lore.

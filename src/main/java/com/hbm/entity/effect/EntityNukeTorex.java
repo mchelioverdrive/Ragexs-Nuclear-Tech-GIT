@@ -32,6 +32,7 @@ public class EntityNukeTorex extends Entity {
 
 	public boolean didPlaySound = false;
 	public boolean didShake = false;
+	private DetonationType type;
 
 	public EntityNukeTorex(World world) {
 		super(world);
@@ -63,15 +64,13 @@ public class EntityNukeTorex extends Entity {
 	}
 
 	private DetonationType getDetonationType(World world, int x, int y, int z) {
-		if (isSpaceDimension(world) || y >= 256 || isAirColumnBelow(world, x, y, z, 30)) {
+		if (isSpaceDimension(world) ) {
 			return DetonationType.SPACE;
-		}
-
-		if (isAirColumnBelow(world, x, y, z, 5)) {
+		} else if (y >= 256 || isAirColumnBelow(world, x, y, z, 30)) {
 			return DetonationType.AIRBURST;
+		} else {
+			return DetonationType.GROUND;
 		}
-
-		return DetonationType.GROUND;
 	}
 
 	private boolean isAirColumnBelow(World world, int x, int y, int z, int depth) {
@@ -92,171 +91,176 @@ public class EntityNukeTorex extends Entity {
 
 	@Override
 	public void onUpdate() {
-
-		double s = 1.5; //this.getScale();
+		double s = 1.5;
 		double cs = 1.5;
 		int maxAge = this.getMaxAge();
 
-		//todo, if there's nothing but air below > 30Y of just air, or above 256 SPAWN A CIRCLE OF THE MUSHROOM CLOUD EFFECT
-		// or something different,
-		// and if not in the over world DO NOT SPAWN CLOUDS
+		if (worldObj.isRemote) {
 
-		if(worldObj.isRemote) {
-
-			DetonationType type = getDetonationType(worldObj, (int) posX, (int) posY, (int) posZ);
-
-
-			if (type == DetonationType.SPACE) {
-				// Replace clouds with visual-only FX
-				if (ticksExisted == 1) {
-					spawnSpaceDetonationFlash(); // create expanding light ring, EMP shock
-					//playEMPSound();
-				}
-				// No clouds, no fireball, no shockwave.
-				return;
+			// Get the detonation type ONCE, at the start of the explosion
+			if (ticksExisted == 1) {
+				this.type = getDetonationType(worldObj, (int) posX, (int) posY, (int) posZ);
+				System.out.println("Detected detonation type: " + this.type);
 			}
 
-			if (type == DetonationType.AIRBURST) {
-				// Skip mushroom, maybe spawn a pressure ring + light cone
-				//spawnAirburstRingCloud();
+			// Make sure 'type' is never null
+			if (this.type == null) {
+				System.err.println("Detonation type is NULL, defaulting to GROUND");
+				this.type = DetonationType.GROUND;
+			}
 
-				//heres logic for airburstringcloud, in it's actual position:
+			switch (this.type) {
 
+				case SPACE: {
+					if (ticksExisted == 1) {
+						spawnSpaceDetonationFlash();
+					}
+					// No cloudlets at all
+					return;
+				}
 
-				float radius = 20F + (ticksExisted * 0.5F); // expanding ring
+				case AIRBURST: {
+					float radius = 20F + (ticksExisted * 0.5F);
+					int lifetime = Math.min((ticksExisted * ticksExisted) + 200, maxAge - ticksExisted + 200);
 
-				int lifetime = Math.min((ticksExisted * ticksExisted) + 200, maxAge - ticksExisted + 200);
+					if (ticksExisted < 130 * s) {
+						lifetime *= s;
+						for (int i = 0; i < 2; i++) {
+							Cloudlet cloud = new Cloudlet(posX, posY + coreHeight, posZ,
+								(float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime, TorexType.RING);
+							cloud.setScale(1F + this.ticksExisted * 0.0025F * (float) (cs * cs), 3F * (float) (cs * cs));
+							cloudlets.add(cloud);
+						}
+					}
 
-				//actual ring logic, rest is lobotomized gpt nonsense
-				if (ticksExisted < 130 * s) {
-					lifetime *= s;
-					for (int i = 0; i < 2; i++) {
-						Cloudlet cloud = new Cloudlet(posX, posY + coreHeight, posZ, (float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime, TorexType.RING);
-						cloud.setScale(1F + this.ticksExisted * 0.0025F * (float) (cs * cs), 3F * (float) (cs * cs));
+					if (!didPlaySound && MainRegistry.proxy.me() != null &&
+						MainRegistry.proxy.me().getDistanceToEntity(this) < radius * 2) {
+						MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 8000F, 1F);
+						didPlaySound = true;
+					}
+
+					break;
+				}
+
+				case GROUND:
+				default: {
+
+					if (ticksExisted == 1) this.setScale((float) s);
+
+					if (lastSpawnY == -1) {
+						lastSpawnY = posY - 3;
+					}
+
+					int spawnTarget = Math.max(worldObj.getHeightValue((int) Math.floor(posX), (int) Math.floor(posZ)) - 3, 1);
+					double moveSpeed = 0.5D;
+
+					if (Math.abs(spawnTarget - lastSpawnY) < moveSpeed) {
+						lastSpawnY = spawnTarget;
+					} else {
+						lastSpawnY += moveSpeed * Math.signum(spawnTarget - lastSpawnY);
+					}
+
+					// Mushroom cloud
+					double range = (torusWidth - rollerSize) * 0.25;
+					double simSpeed = getSimulationSpeed();
+					int toSpawn = (int) Math.ceil(10 * simSpeed * simSpeed);
+					int lifetime = Math.min((ticksExisted * ticksExisted) + 200, maxAge - ticksExisted + 200);
+
+					for (int i = 0; i < toSpawn; i++) {
+						double x = posX + rand.nextGaussian() * range;
+						double z = posZ + rand.nextGaussian() * range;
+						Cloudlet cloud = new Cloudlet(x, lastSpawnY, z,
+							(float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime);
+						cloud.setScale(1F + this.ticksExisted * 0.005F * (float) cs, 5F * (float) cs);
 						cloudlets.add(cloud);
 					}
-				}
 
-				if (!didPlaySound && MainRegistry.proxy.me() != null && MainRegistry.proxy.me().getDistanceToEntity(this) < radius * 2) {
-					MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 8000F, 1F);
-					didPlaySound = true;
-				}
+					// Shock ring
+					if (ticksExisted < 150) {
+						int cloudCount = ticksExisted * 5;
+						int shockLife = Math.max(300 - ticksExisted * 20, 50);
 
+						for (int i = 0; i < cloudCount; i++) {
+							Vec3 vec = Vec3.createVectorHelper((ticksExisted * 1.5 + rand.nextDouble()) * 1.5, 0, 0);
+							float rot = (float) (Math.PI * 2 * rand.nextDouble());
+							vec.rotateAroundY(rot);
+							cloudlets.add(new Cloudlet(vec.xCoord + posX,
+								worldObj.getHeightValue((int) (vec.xCoord + posX) + 1, (int) (vec.zCoord + posZ)),
+								vec.zCoord + posZ, rot, 0, shockLife, TorexType.SHOCK)
+								.setScale(7F, 2F)
+								.setMotion(ticksExisted > 15 ? 0.75 : 0));
+						}
 
-
-				return;
-			} else {
-
-				if (ticksExisted == 1) this.setScale((float) s);
-
-				if (lastSpawnY == -1) {
-					lastSpawnY = posY - 3;
-				}
-
-				int spawnTarget = Math.max(worldObj.getHeightValue((int) Math.floor(posX), (int) Math.floor(posZ)) - 3, 1);
-				double moveSpeed = 0.5D;
-
-				if (Math.abs(spawnTarget - lastSpawnY) < moveSpeed) {
-					lastSpawnY = spawnTarget;
-				} else {
-					lastSpawnY += moveSpeed * Math.signum(spawnTarget - lastSpawnY);
-				}
-
-				// spawn mush clouds
-				double range = (torusWidth - rollerSize) * 0.25;
-				double simSpeed = getSimulationSpeed();
-				int toSpawn = (int) Math.ceil(10 * simSpeed * simSpeed);
-				int lifetime = Math.min((ticksExisted * ticksExisted) + 200, maxAge - ticksExisted + 200);
-
-				for (int i = 0; i < toSpawn; i++) {
-					double x = posX + rand.nextGaussian() * range;
-					double z = posZ + rand.nextGaussian() * range;
-					Cloudlet cloud = new Cloudlet(x, lastSpawnY, z, (float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime);
-					cloud.setScale(1F + this.ticksExisted * 0.005F * (float) cs, 5F * (float) cs);
-					cloudlets.add(cloud);
-				}
-
-				// spawn shock clouds
-				if (ticksExisted < 150) {
-
-					int cloudCount = ticksExisted * 5;
-					int shockLife = Math.max(300 - ticksExisted * 20, 50);
-
-					for (int i = 0; i < cloudCount; i++) {
-						Vec3 vec = Vec3.createVectorHelper((ticksExisted * 1.5 + rand.nextDouble()) * 1.5, 0, 0);
-						float rot = (float) (Math.PI * 2 * rand.nextDouble());
-						vec.rotateAroundY(rot);
-						this.cloudlets.add(new Cloudlet(vec.xCoord + posX, worldObj.getHeightValue((int) (vec.xCoord + posX) + 1, (int) (vec.zCoord + posZ)), vec.zCoord + posZ, rot, 0, shockLife, TorexType.SHOCK)
-							.setScale(7F, 2F)
-							.setMotion(ticksExisted > 15 ? 0.75 : 0));
-					}
-
-					if (!didPlaySound) {
-						if (MainRegistry.proxy.me() != null && MainRegistry.proxy.me().getDistanceToEntity(this) < (ticksExisted * 1.5 + 1) * 1.5) {
+						if (!didPlaySound && MainRegistry.proxy.me() != null &&
+							MainRegistry.proxy.me().getDistanceToEntity(this) < (ticksExisted * 1.5 + 1) * 1.5) {
 							MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 10_000F, 1F);
 							didPlaySound = true;
 						}
 					}
-				}
 
-				// spawn ring clouds
-				if (ticksExisted < 130 * s) {
-					lifetime *= s;
-					for (int i = 0; i < 2; i++) {
-						Cloudlet cloud = new Cloudlet(posX, posY + coreHeight, posZ, (float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime, TorexType.RING);
-						cloud.setScale(1F + this.ticksExisted * 0.0025F * (float) (cs * cs), 3F * (float) (cs * cs));
-						cloudlets.add(cloud);
-					}
-				}
-
-				// spawn condensation clouds
-				if (ticksExisted > 130 * s && ticksExisted < 600 * s) {
-
-					for (int i = 0; i < 20; i++) {
-						for (int j = 0; j < 4; j++) {
-							float angle = (float) (Math.PI * 2 * rand.nextDouble());
-							Vec3 vec = Vec3.createVectorHelper(torusWidth + rollerSize * (5 + rand.nextDouble()), 0, 0);
-							vec.rotateAroundZ((float) (Math.PI / 45 * j));
-							vec.rotateAroundY(angle);
-							Cloudlet cloud = new Cloudlet(posX + vec.xCoord, posY + coreHeight - 5 + j * s, posZ + vec.zCoord, angle, 0, (int) ((20 + ticksExisted / 10) * (1 + rand.nextDouble() * 0.1)), TorexType.CONDENSATION);
-							cloud.setScale(0.125F * (float) (cs), 3F * (float) (cs));
+					// Ring + condensation
+					if (ticksExisted < 130 * s) {
+						lifetime *= s;
+						for (int i = 0; i < 2; i++) {
+							Cloudlet cloud = new Cloudlet(posX, posY + coreHeight, posZ,
+								(float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime, TorexType.RING);
+							cloud.setScale(1F + this.ticksExisted * 0.0025F * (float) (cs * cs), 3F * (float) (cs * cs));
 							cloudlets.add(cloud);
 						}
 					}
-				}
-				if (ticksExisted > 200 * s && ticksExisted < 600 * s) {
 
-					for (int i = 0; i < 20; i++) {
-						for (int j = 0; j < 4; j++) {
-							float angle = (float) (Math.PI * 2 * rand.nextDouble());
-							Vec3 vec = Vec3.createVectorHelper(torusWidth + rollerSize * (3 + rand.nextDouble() * 0.5), 0, 0);
-							vec.rotateAroundZ((float) (Math.PI / 45 * j));
-							vec.rotateAroundY(angle);
-							Cloudlet cloud = new Cloudlet(posX + vec.xCoord, posY + coreHeight + 25 + j * cs, posZ + vec.zCoord, angle, 0, (int) ((20 + ticksExisted / 10) * (1 + rand.nextDouble() * 0.1)), TorexType.CONDENSATION);
-							cloud.setScale(0.125F * (float) (cs), 3F * (float) (cs));
-							cloudlets.add(cloud);
+					if (ticksExisted > 130 * s && ticksExisted < 600 * s) {
+						for (int i = 0; i < 20; i++) {
+							for (int j = 0; j < 4; j++) {
+								float angle = (float) (Math.PI * 2 * rand.nextDouble());
+								Vec3 vec = Vec3.createVectorHelper(torusWidth + rollerSize * (5 + rand.nextDouble()), 0, 0);
+								vec.rotateAroundZ((float) (Math.PI / 45 * j));
+								vec.rotateAroundY(angle);
+								Cloudlet cloud = new Cloudlet(posX + vec.xCoord,
+									posY + coreHeight - 5 + j * s,
+									posZ + vec.zCoord, angle, 0,
+									(int) ((20 + ticksExisted / 10) * (1 + rand.nextDouble() * 0.1)), TorexType.CONDENSATION);
+								cloud.setScale(0.125F * (float) cs, 3F * (float) cs);
+								cloudlets.add(cloud);
+							}
 						}
 					}
+
+					if (ticksExisted > 200 * s && ticksExisted < 600 * s) {
+						for (int i = 0; i < 20; i++) {
+							for (int j = 0; j < 4; j++) {
+								float angle = (float) (Math.PI * 2 * rand.nextDouble());
+								Vec3 vec = Vec3.createVectorHelper(torusWidth + rollerSize * (3 + rand.nextDouble() * 0.5), 0, 0);
+								vec.rotateAroundZ((float) (Math.PI / 45 * j));
+								vec.rotateAroundY(angle);
+								Cloudlet cloud = new Cloudlet(posX + vec.xCoord,
+									posY + coreHeight + 25 + j * cs,
+									posZ + vec.zCoord, angle, 0,
+									(int) ((20 + ticksExisted / 10) * (1 + rand.nextDouble() * 0.1)), TorexType.CONDENSATION);
+								cloud.setScale(0.125F * (float) cs, 3F * (float) cs);
+								cloudlets.add(cloud);
+							}
+						}
+					}
+
+					// Update all cloudlets
+					for (Cloudlet cloud : cloudlets) cloud.update();
+
+					// Adjust core visuals
+					coreHeight += 0.15 / s;
+					torusWidth += 0.05 / s;
+					rollerSize = torusWidth * 0.35;
+					convectionHeight = coreHeight + rollerSize;
+
+					// Adjust heat and cleanup
+					int maxHeat = (int) (50 * cs);
+					heat = maxHeat - Math.pow((maxHeat * this.ticksExisted) / maxAge, 1);
+					cloudlets.removeIf(x -> x.isDead);
 				}
-
-				for (Cloudlet cloud : cloudlets) {
-					cloud.update();
-				}
-				coreHeight += 0.15 / s;
-				torusWidth += 0.05 / s;
-				rollerSize = torusWidth * 0.35;
-				convectionHeight = coreHeight + rollerSize;
-
-				int maxHeat = (int) (50 * cs);
-				heat = maxHeat - Math.pow((maxHeat * this.ticksExisted) / maxAge, 1);
-
-				cloudlets.removeIf(x -> x.isDead);
 			}
-
-
 		}
 
-		if(!worldObj.isRemote && this.ticksExisted > maxAge) {
+		if (!worldObj.isRemote && ticksExisted > maxAge) {
 			this.setDead();
 		}
 	}
