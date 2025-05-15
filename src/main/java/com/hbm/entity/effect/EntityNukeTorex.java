@@ -32,7 +32,7 @@ public class EntityNukeTorex extends Entity {
 
 	public boolean didPlaySound = false;
 	public boolean didShake = false;
-	private DetonationType type = DetonationType.GROUND;
+	private DetonationType type;
 
 	public EntityNukeTorex(World world) {
 		super(world);
@@ -103,28 +103,15 @@ public class EntityNukeTorex extends Entity {
 		double cs = 1.5;
 		int maxAge = this.getMaxAge();
 
-		if (this.type == null) {
-			this.type = getDetonationType(worldObj, (int) posX, (int) posY, (int) posZ);
-		}
-
 		if (worldObj.isRemote) {
 
-			if (this.type == null) {
-				this.type = getDetonationType(worldObj, (int) posX, (int) posY, (int) posZ);
-				System.out.println("Late fallback: " + this.type);
-				//FUCKING WORK GOD DAMN YOU
-			}
-
-			//if (this.type == null || ticksExisted == 1) {
-			//	this.type = getDetonationType(worldObj, (int) posX, (int) posY, (int) posZ);
-			//	System.out.println("Detonation type: " + this.type);
-			//}
-
+			// Get the detonation type ONCE, at the start of the explosion
 			if (ticksExisted == 1) {
 				this.type = getDetonationType(worldObj, (int) posX, (int) posY, (int) posZ);
 				System.out.println("Detected detonation type: " + this.type);
 			}
 
+			// Make sure 'type' is never null
 			if (this.type == null) {
 				System.err.println("Detonation type is NULL, defaulting to GROUND");
 				this.type = DetonationType.GROUND;
@@ -132,11 +119,13 @@ public class EntityNukeTorex extends Entity {
 
 			switch (this.type) {
 
-				case SPACE:
+				case SPACE: {
 					if (ticksExisted == 1) {
 						spawnSpaceDetonationFlash();
 					}
+					// No cloudlets at all
 					return;
+				}
 
 				case AIRBURST: {
 					float radius = 20F + (ticksExisted * 0.5F);
@@ -157,11 +146,13 @@ public class EntityNukeTorex extends Entity {
 						MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 8000F, 1F);
 						didPlaySound = true;
 					}
+
 					break;
 				}
 
 				case GROUND:
 				default: {
+
 					if (ticksExisted == 1) this.setScale((float) s);
 
 					if (lastSpawnY == -1) {
@@ -177,6 +168,7 @@ public class EntityNukeTorex extends Entity {
 						lastSpawnY += moveSpeed * Math.signum(spawnTarget - lastSpawnY);
 					}
 
+					// Mushroom cloud
 					double range = (torusWidth - rollerSize) * 0.25;
 					double simSpeed = getSimulationSpeed();
 					int toSpawn = (int) Math.ceil(10 * simSpeed * simSpeed);
@@ -191,6 +183,7 @@ public class EntityNukeTorex extends Entity {
 						cloudlets.add(cloud);
 					}
 
+					// Shock ring
 					if (ticksExisted < 150) {
 						int cloudCount = ticksExisted * 5;
 						int shockLife = Math.max(300 - ticksExisted * 20, 50);
@@ -213,6 +206,7 @@ public class EntityNukeTorex extends Entity {
 						}
 					}
 
+					// Ring + condensation
 					if (ticksExisted < 130 * s) {
 						lifetime *= s;
 						for (int i = 0; i < 2; i++) {
@@ -257,17 +251,19 @@ public class EntityNukeTorex extends Entity {
 						}
 					}
 
+					// Update all cloudlets
 					for (Cloudlet cloud : cloudlets) cloud.update();
 
+					// Adjust core visuals
 					coreHeight += 0.15 / s;
 					torusWidth += 0.05 / s;
 					rollerSize = torusWidth * 0.35;
 					convectionHeight = coreHeight + rollerSize;
 
+					// Adjust heat and cleanup
 					int maxHeat = (int) (50 * cs);
 					heat = maxHeat - Math.pow((maxHeat * this.ticksExisted) / maxAge, 1);
 					cloudlets.removeIf(x -> x.isDead);
-					break;
 				}
 			}
 		}
