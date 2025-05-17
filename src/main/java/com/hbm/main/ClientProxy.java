@@ -1,6 +1,5 @@
  package com.hbm.main;
 
-import com.hbm.client.VacuumSoundHandler;
 import com.hbm.handler.imc.IMCHandlerNHNEI;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -143,13 +142,6 @@ import cpw.mods.fml.relauncher.ReflectionHelper;
 public class ClientProxy extends ServerProxy {
 
 	public RenderInfoSystem theInfoSystem = new RenderInfoSystem();
-
-	@Override
-	public void init() {
-		super.init();
-		net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(new VacuumSoundHandler());
-	}
-	//seek god
 
 
 
