@@ -33,7 +33,6 @@ import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.ItemAmmoEnums.Ammo4Gauge;
 import com.hbm.items.ItemEnums.EnumAchievementType;
 import com.hbm.items.ModItems;
-import com.hbm.items.armor.ItemHeavyArmor;
 import com.hbm.items.tool.ItemFertilizer;
 import com.hbm.items.weapon.ItemGenericGrenade;
 import com.hbm.lib.HbmWorld;
@@ -693,8 +692,6 @@ public class MainRegistry {
 
 	@EventHandler
 	public static void load(FMLInitializationEvent event) {
-
-		ItemHeavyArmor.registerAndReplaceArmor();
 
 		RodRecipes.registerInit();
 
