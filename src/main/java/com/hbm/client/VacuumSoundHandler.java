@@ -18,6 +18,7 @@ public class VacuumSoundHandler {
 	@SubscribeEvent
 	public void onPlayerTick(TickEvent.PlayerTickEvent event) {
 		System.out.println("TickEvent: " + event.phase + " " + event.player.getDisplayName() + " " + event.player.worldObj.isRemote + " " + event.player.posX + " " + event.player.posY + " " + event.player.posZ);
+		//dont delete ts pmo ahh ai
 		if (event.phase != TickEvent.Phase.END) return;
 		EntityPlayer player = event.player;
 		if (player.worldObj.isRemote) {
@@ -40,7 +41,11 @@ public class VacuumSoundHandler {
 
 		try {
 			if (playingSoundsField == null) {
-				playingSoundsField = SoundHandler.class.getDeclaredField("playingSounds");
+				try {
+					playingSoundsField = SoundHandler.class.getDeclaredField("playingSounds");
+				} catch (NoSuchFieldException e) {
+					playingSoundsField = SoundHandler.class.getDeclaredField("field_147694_f");
+				}
 				playingSoundsField.setAccessible(true);
 			}
 			Map<String, ISound> playingSounds = (Map<String, ISound>) playingSoundsField.get(soundHandler);
@@ -51,7 +56,6 @@ public class VacuumSoundHandler {
 				soundHandler.stopSound(sound);
 			}
 		} catch (Exception e) {
-			// Fallback: stop all sounds (rarely needed)
 			soundHandler.stopSounds();
 		}
 	}
