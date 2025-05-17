@@ -1,13 +1,11 @@
 package com.hbm.main;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Random;
+import java.util.*;
 
+import com.hbm.handler.atmosphere.ChunkAtmosphereManager;
 import com.hbm.util.*;
+import net.minecraft.client.audio.SoundHandler;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
@@ -169,6 +167,7 @@ public class ModEventHandlerClient {
 		EntityPlayer player = Minecraft.getMinecraft().thePlayer;
 
 		/// NUKE FLASH ///
+		//todo extend this for space/non atmosphere
 		if(event.type == ElementType.CROSSHAIRS && (flashTimestamp + flashDuration - System.currentTimeMillis()) > 0 && ClientConfig.NUKE_HUD_FLASH.get()) {
 			int width = event.resolution.getScaledWidth();
 			int height = event.resolution.getScaledHeight();
@@ -952,12 +951,45 @@ public class ModEventHandlerClient {
 	public static int lastBrightness = 0;
 
 	static boolean isRenderingItems = false;
+	private boolean wasInVacuum = false;
+
 
 	@SubscribeEvent
 	public void clientTick(ClientTickEvent event) {
 
+
+
 		Minecraft mc = Minecraft.getMinecraft();
 		ArmorNo9.updateWorldHook(mc.theWorld);
+
+		boolean hasAtmosphere = ChunkAtmosphereManager.proxy.hasAtmosphere(
+			mc.theWorld,
+			(int)mc.thePlayer.posX,
+			(int)mc.thePlayer.posY,
+			(int)mc.thePlayer.posZ
+		);
+
+		if (!hasAtmosphere && !wasInVacuum) {
+			// Just entered vacuum, mute sounds once
+			SoundHandler soundHandler = mc.getSoundHandler();
+			try {
+				java.lang.reflect.Field field = SoundHandler.class.getDeclaredField("playingSounds");
+				field.setAccessible(true);
+				Map<String, ISound> playingSounds = (Map<String, ISound>) field.get(soundHandler);
+				for (ISound sound : playingSounds.values()) {
+					String name = sound.getPositionedSoundLocation().toString();
+					if (name.contains("plss_breathing") || name.contains("helmet")) continue;
+					soundHandler.stopSound(sound);
+				}
+			} catch (Exception e) {
+				soundHandler.stopSounds();
+			}
+			wasInVacuum = true;
+		} else if (hasAtmosphere && wasInVacuum) {
+			// Optionally, do something when returning to atmosphere
+			wasInVacuum = false;
+		}
+
 
 		boolean supportsHighRenderDistance = FMLClientHandler.instance().hasOptifine() || Loader.isModLoaded("angelica");
 
