@@ -58,23 +58,22 @@ public class WorldProviderDuna extends WorldProviderCelestial {
 		super.updateWeather();
 
 		if(!worldObj.isRemote) {
-			if(dustStormTimer <= 0) {
 
+			for (Object obj : worldObj.playerEntities) {
+				if (obj instanceof EntityPlayer) {
+					EntityPlayer player = (EntityPlayer) obj;
 
-
-				for (Object obj : worldObj.playerEntities) {
-					if (obj instanceof EntityPlayer) {
-						EntityPlayer player = (EntityPlayer) obj;
-
-						// Check if the player can see the sky
-						if (worldObj.canBlockSeeTheSky((int) player.posX, (int) player.posY, (int) player.posZ)) {
-							// Apply radiation effect with a random chance
-							if (rand.nextInt(500) == 0) {
-								player.addPotionEffect(new PotionEffect(HbmPotion.radiation.id, 20, 0));
-							}
+					// Check if the player can see the sky
+					if (worldObj.canBlockSeeTheSky((int) player.posX, (int) player.posY, (int) player.posZ)) {
+						// Apply radiation effect with a random chance
+						if (rand.nextInt(500) == 0) {
+							player.addPotionEffect(new PotionEffect(HbmPotion.radiation.id, 20, 0));
 						}
 					}
 				}
+			}
+
+			if(dustStormTimer <= 0) {
 
 				if(dustStormIntensity >= 0.5F) {
 					dustStormIntensity = 0;
@@ -93,20 +92,6 @@ public class WorldProviderDuna extends WorldProviderCelestial {
 				vec.rotateAroundZ((float)(worldObj.rand.nextDouble() * Math.PI * 10));
 				vec.rotateAroundY((float)(worldObj.rand.nextDouble() * Math.PI * 2 * 5));
 				ParticleUtil.spawnDustFlame(worldObj, viewEntity.posX + vec.xCoord, viewEntity.posY, viewEntity.posZ + vec.zCoord, -4, 0, 0);
-
-				for (Object obj : worldObj.playerEntities) {
-					if (obj instanceof EntityPlayer) {
-						EntityPlayer player = (EntityPlayer) obj;
-
-						// Check if the player can see the sky
-						if (worldObj.canBlockSeeTheSky((int) player.posX, (int) player.posY, (int) player.posZ)) {
-							// Apply radiation effect with a random chance
-							if (rand.nextInt(520) == 0) {
-								player.addPotionEffect(new PotionEffect(HbmPotion.radiation.id, 20, 0));
-							}
-						}
-					}
-				}
 
 			}
 		}
