@@ -3,6 +3,7 @@ package com.hbm.entity.effect;
 import java.awt.Color;
 import java.util.ArrayList;
 
+import com.hbm.explosion.ExplosionLarge;
 import com.hbm.main.MainRegistry;
 import com.hbm.util.BobMathUtil;
 import com.hbm.util.TrackerUtil;
@@ -117,14 +118,15 @@ public class EntityNukeTorex extends Entity {
 
 				case SPACE: {
 					if (ticksExisted == 1) {
-						spawnSpaceDetonationFlash();
+						spawnSpaceDetonationFlash((float) getScale());
+						//pray
 					}
 					// No cloudlets at all
 					return;
 				}
 
 				case AIRBURST: {
-					//float radius = 20F + (ticksExisted * 0.5F);
+					float radius = 20F + (ticksExisted * 0.5F);
 					//int lifetime = Math.min((ticksExisted * ticksExisted) + 200, maxAge - ticksExisted + 200);
 //
 					//if (ticksExisted < 130 * s) {
@@ -136,12 +138,13 @@ public class EntityNukeTorex extends Entity {
 					//		cloudlets.add(cloud);
 					//	}
 					//}
+					//caused a fucking null pointer exception because all the bobcat ground det spaghetti bullshit all fucking works together
 //
-					//if (!didPlaySound && MainRegistry.proxy.me() != null &&
-					//	MainRegistry.proxy.me().getDistanceToEntity(this) < radius * 2) {
-					//	MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 8000F, 1F);
-					//	didPlaySound = true;
-					//}
+					if (!didPlaySound && MainRegistry.proxy.me() != null &&
+						MainRegistry.proxy.me().getDistanceToEntity(this) < radius * 2) {
+						MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 8000F, 1F);
+						didPlaySound = true;
+					}
 
 					break;
 				}
@@ -314,17 +317,27 @@ public class EntityNukeTorex extends Entity {
 		}
 	}
 
-	private void spawnSpaceDetonationFlash() {
+	private void spawnSpaceDetonationFlash(float scale) {
 
-		//copy of schrabidium type bomb explosion logic, just not blue but rather orange
+		//It would look more like a gray firework exploding silently in a vacuum than any kind of atmospheric detonation.
 
-		this.setSize(1, 4);
-		this.ignoreFrustumCheck = true;
-		this.isImmuneToFire = true;
+		World World = worldObj;
+		//x = ;
+		//y = this.posY;
+		//z = this.posZ;
+		//surely this wont null pointer fuck itself righttttt
+
+		ExplosionLarge.spawnParticles(World, this.posX, this.posY, this.posZ, ExplosionLarge.cloudFunction((int) scale));
+
+		//cloud func size should be proportional to the actual nuke size
+
+		//NOT DOING: copy of schrabidium type bomb explosion logic, just not blue but rather orange
 
 
 
-
+		//this.setSize(1, 4);
+		//this.ignoreFrustumCheck = true;
+		//this.isImmuneToFire = true;
 	}
 
 	public EntityNukeTorex setScale(float scale) {
