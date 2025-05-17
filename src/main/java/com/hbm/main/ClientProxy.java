@@ -1,5 +1,6 @@
  package com.hbm.main;
 
+import com.hbm.explosion.ExplosionNukeSmall;
 import com.hbm.handler.imc.IMCHandlerNHNEI;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -1647,10 +1648,11 @@ public class ClientProxy extends ServerProxy {
 
 			//single swing: 			HT 15,  MHT 15
 			//double swing: 			HT 60,  MHT 50
-
-			player.hurtTime = 15;
-			player.maxHurtTime = 15;
-			player.attackedAtYaw = 0F;
+			if (!ExplosionNukeSmall.PARAMS_VISUALNOSHRAP.visual) {
+				player.hurtTime = 15;
+				player.maxHurtTime = 15;
+				player.attackedAtYaw = 0F;
+			}
 		}
 
 		if("tinytot".equals(type)) {
