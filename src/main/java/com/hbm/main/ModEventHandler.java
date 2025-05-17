@@ -1041,6 +1041,11 @@ public class ModEventHandler {
 
 						// === 0.1–0.25 Sv: Subclinical, possible fatigue ===
 						} else if (eRad >= 100) {
+							// Tick timer
+							HbmLivingProps props = HbmLivingProps.get(entity);
+							if (props != null) {
+								props.radDeathTimer = 0;
+							}
 							if (event.world.rand.nextInt(500) == 0)
 								entity.addPotionEffect(new PotionEffect(Potion.confusion.id, 5 * 20, 0));
 
