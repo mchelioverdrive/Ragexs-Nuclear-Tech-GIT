@@ -60,10 +60,10 @@ public class DamageResistanceHandler {
 			//.addCategory(CATEGORY_PROJECTILE, 5F, 0.0F));
 		//oh my god no what the hell is this shit
 		registerSet(ModItems.steel_helmet, ModItems.steel_plate, ModItems.steel_legs, ModItems.steel_boots, new ResistanceStats());
-		registerSet(ModItems.titanium_helmet, ModItems.titanium_plate, ModItems.titanium_legs, ModItems.titanium_boots, new ResistanceStats());
-		registerSet(ModItems.alloy_helmet, ModItems.alloy_plate, ModItems.alloy_legs, ModItems.alloy_boots, new ResistanceStats());
+		//registerSet(ModItems.titanium_helmet, ModItems.titanium_plate, ModItems.titanium_legs, ModItems.titanium_boots, new ResistanceStats());
+		//registerSet(ModItems.alloy_helmet, ModItems.alloy_plate, ModItems.alloy_legs, ModItems.alloy_boots, new ResistanceStats());
 			//.addCategory(CATEGORY_PROJECTILE, 2F, 0.1F));
-		registerSet(ModItems.cobalt_helmet, ModItems.cobalt_plate, ModItems.cobalt_legs, ModItems.cobalt_boots, new ResistanceStats());
+		//registerSet(ModItems.cobalt_helmet, ModItems.cobalt_plate, ModItems.cobalt_legs, ModItems.cobalt_boots, new ResistanceStats());
 			//.addCategory(CATEGORY_PROJECTILE, 2F, 0.1F));
 		//registerSet(ModItems.starmetal_helmet, ModItems.starmetal_plate, ModItems.starmetal_legs, ModItems.starmetal_boots, new ResistanceStats()
 		//	.addCategory(CATEGORY_PROJECTILE, 3F, 0.25F)
@@ -77,10 +77,10 @@ public class DamageResistanceHandler {
 		//registerSet(ModItems.schrabidium_helmet, ModItems.schrabidium_plate, ModItems.schrabidium_legs, ModItems.schrabidium_boots, new ResistanceStats()
 		//	.addCategory(CATEGORY_PROJECTILE, 10F, 0.65F)
 		//	.setOther(5F, 0.5F));
-		registerSet(ModItems.robes_helmet, ModItems.robes_plate, ModItems.robes_legs, ModItems.robes_boots, new ResistanceStats());
+		//registerSet(ModItems.robes_helmet, ModItems.robes_plate, ModItems.robes_legs, ModItems.robes_boots, new ResistanceStats());
 
-		registerSet(ModItems.security_helmet, ModItems.security_plate, ModItems.security_legs, ModItems.security_boots, new ResistanceStats()
-			.addCategory(CATEGORY_PROJECTILE, 5F, 0.5F));
+		//registerSet(ModItems.security_helmet, ModItems.security_plate, ModItems.security_legs, ModItems.security_boots, new ResistanceStats()
+		//	.addCategory(CATEGORY_PROJECTILE, 5F, 0.2F));
 			//.addCategory(CATEGORY_EXPLOSION, 2F, 0.25F));
 		registerSet(ModItems.steamsuit_helmet, ModItems.steamsuit_plate, ModItems.steamsuit_legs, ModItems.steamsuit_boots, new ResistanceStats()
 			//.addCategory(CATEGORY_PROJECTILE, 2F, 0.15F)
