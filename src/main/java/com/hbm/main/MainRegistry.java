@@ -182,78 +182,78 @@ public class MainRegistry {
 	public static CreativeTabs weaponTab = new WeaponTab(CreativeTabs.getNextID(), "tabWeapon");				// turrets, weapons, ammo
 	public static CreativeTabs consumableTab = new ConsumableTab(CreativeTabs.getNextID(), "tabConsumable");	// drinks, kits, tools
 
-	// Achievements
-	//public static Achievement achSacrifice;
-	//public static Achievement achImpossible;
-	//public static Achievement achTOB;
-	//public static Achievement achFreytag;
-	public static Achievement achPotato;
-	//public static Achievement achC44;
-	//public static Achievement achC20_5;
-	//public static Achievement achFiend;
-	//public static Achievement achFiend2;
-	public static Achievement achRadPoison;
-	public static Achievement achRadDeath;
-	public static Achievement achStratum;
-	//public static Achievement achOmega12;
-	//public static Achievement achSomeWounds;
-	public static Achievement achSlimeball;
-	public static Achievement achSulfuric;
-	//public static Achievement achWitchtaunter;
-	//public static Achievement achGoFish;
-	public static Achievement achNo9;
-	public static Achievement achInferno;
-	//public static Achievement achRedRoom;
-	//public static Achievement bobHidden;
-	//public static Achievement horizonsStart;
-	//public static Achievement horizonsEnd;
-	//public static Achievement horizonsBonus;
-	//public static Achievement bossCreeper;
-	//public static Achievement bossMeltdown;
-	//public static Achievement bossMaskman;
-	//public static Achievement bossWorm;
-	//public static Achievement bossUFO;
-	//public static Achievement digammaSee;
-	//public static Achievement digammaFeel;
-	//public static Achievement digammaKnow;
-	//public static Achievement digammaKauaiMoho;
-	//public static Achievement digammaUpOnTop;
-	//public static Achievement rotConsum;
-
-	public static Achievement achBurnerPress;
-	public static Achievement achBlastFurnace;
-	public static Achievement achAssembly;
-	//public static Achievement achSelenium;
-	public static Achievement achChemplant;
-	public static Achievement achConcrete;
-	public static Achievement achPolymer;
-	//public static Achievement achDesh;
-	public static Achievement achTantalum;
-	public static Achievement achRedBalloons;
-	public static Achievement achManhattan;
-	//public static Achievement achGasCent;
-	public static Achievement achCentrifuge;
-	public static Achievement achFOEQ;
-	//public static Achievement achSoyuz;
-	//public static Achievement achSpace;
-	//public static Achievement achSchrab;
-	public static Achievement achAcidizer;
-	public static Achievement achRadium;
-	public static Achievement achTechnetium;
-	public static Achievement achZIRNOXBoom;
-	public static Achievement achChicagoPile;
-	public static Achievement achSILEX;
-	//public static Achievement achWatz;
-	//public static Achievement achWatzBoom;
-	public static Achievement achRBMK;
-	public static Achievement achRBMKBoom;
-	public static Achievement achBismuth;
-	public static Achievement achBreeding;
-	public static Achievement achFusion;
-	public static Achievement achMeltdown;
+//	// Achievements
+//	//public static Achievement achSacrifice;
+//	//public static Achievement achImpossible;
+//	//public static Achievement achTOB;
+//	//public static Achievement achFreytag;
+//	public static Achievement achPotato;
+//	//public static Achievement achC44;
+//	//public static Achievement achC20_5;
+//	//public static Achievement achFiend;
+//	//public static Achievement achFiend2;
+//	public static Achievement achRadPoison;
+//	public static Achievement achRadDeath;
+//	public static Achievement achStratum;
+//	//public static Achievement achOmega12;
+//	//public static Achievement achSomeWounds;
+//	public static Achievement achSlimeball;
+//	public static Achievement achSulfuric;
+//	//public static Achievement achWitchtaunter;
+//	//public static Achievement achGoFish;
+//	public static Achievement achNo9;
+//	public static Achievement achInferno;
+//	//public static Achievement achRedRoom;
+//	//public static Achievement bobHidden;
+//	//public static Achievement horizonsStart;
+//	//public static Achievement horizonsEnd;
+//	//public static Achievement horizonsBonus;
+//	//public static Achievement bossCreeper;
+//	//public static Achievement bossMeltdown;
+//	//public static Achievement bossMaskman;
+//	//public static Achievement bossWorm;
+//	//public static Achievement bossUFO;
+//	//public static Achievement digammaSee;
+//	//public static Achievement digammaFeel;
+//	//public static Achievement digammaKnow;
+//	//public static Achievement digammaKauaiMoho;
+//	//public static Achievement digammaUpOnTop;
+//	//public static Achievement rotConsum;
+//
+//	public static Achievement achBurnerPress;
+//	public static Achievement achBlastFurnace;
+//	public static Achievement achAssembly;
+//	//public static Achievement achSelenium;
+//	public static Achievement achChemplant;
+//	public static Achievement achConcrete;
+//	public static Achievement achPolymer;
+//	//public static Achievement achDesh;
+//	public static Achievement achTantalum;
+//	public static Achievement achRedBalloons;
+//	public static Achievement achManhattan;
+//	//public static Achievement achGasCent;
+//	public static Achievement achCentrifuge;
+//	public static Achievement achFOEQ;
+//	//public static Achievement achSoyuz;
+//	//public static Achievement achSpace;
+//	//public static Achievement achSchrab;
+//	public static Achievement achAcidizer;
+//	public static Achievement achRadium;
+//	public static Achievement achTechnetium;
+//	public static Achievement achZIRNOXBoom;
+//	public static Achievement achChicagoPile;
+//	public static Achievement achSILEX;
+//	//public static Achievement achWatz;
+//	//public static Achievement achWatzBoom;
+//	public static Achievement achRBMK;
+//	public static Achievement achRBMKBoom;
+//	public static Achievement achBismuth;
+//	public static Achievement achBreeding;
+//	public static Achievement achFusion;
+//	public static Achievement achMeltdown;
 	//public static Achievement achDriveFail;
 
-	//public static int generalOverride = 0;
+	public static int generalOverride = 0;
 	public static int polaroidID = 1;
 
 	public static long startupTime = 0;
@@ -275,13 +275,13 @@ public class MainRegistry {
 		logger.info("THE LOGGER FUCKING WORKS GODDAMMIT");
 
 		// Reroll Polaroid
-		//if(generalOverride > 0 && generalOverride < 19) {
-		//	polaroidID = generalOverride;
-		//} else {
-		//	polaroidID = rand.nextInt(18) + 1;
-		//	while(polaroidID == 4 || polaroidID == 9)
-		//		polaroidID = rand.nextInt(18) + 1;
-		//}
+		if(generalOverride > 0 && generalOverride < 19) {
+			polaroidID = generalOverride;
+		} else {
+			polaroidID = rand.nextInt(18) + 1;
+			while(polaroidID == 4 || polaroidID == 9)
+				polaroidID = rand.nextInt(18) + 1;
+		}
 
 		//ShadyUtil.test();
 		loadConfig(PreEvent);
