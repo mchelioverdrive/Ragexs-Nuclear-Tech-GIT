@@ -1,5 +1,6 @@
 package com.hbm.main;
 
+import com.hbm.explosion.ExplosionNukeSmall;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GLContext;
@@ -57,6 +58,8 @@ import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
 import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.client.event.RenderPlayerEvent;
 import net.minecraftforge.common.ForgeModContainer;
+
+import static com.hbm.explosion.ExplosionNukeSmall.PARAMS_VISUALNOSHRAP;
 
 public class ModEventHandlerRenderer {
 
@@ -472,8 +475,12 @@ public class ModEventHandlerRenderer {
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onRenderHUD(RenderGameOverlayEvent.Pre event) {
 		Tessellator tess = Tessellator.instance;
+		//if (!ExplosionNukeSmall.PARAMS_VISUALNOSHRAP.visual)
+		if(event.type == ElementType.HOTBAR && (ModEventHandlerClient.shakeTimestamp + ModEventHandlerClient.shakeDuration - System.currentTimeMillis()) > 0 && ClientConfig.NUKE_HUD_SHAKE.get()  ) {
 
-		if(event.type == ElementType.HOTBAR && (ModEventHandlerClient.shakeTimestamp + ModEventHandlerClient.shakeDuration - System.currentTimeMillis()) > 0 && ClientConfig.NUKE_HUD_SHAKE.get()) {
+			//|| !ExplosionNukeSmall.PARAMS_VISUALNOSHRAP.visual
+			//FUCK WHY DOESNT THIS STOP IT FROM HAPPENING WHAT THE FUCKKKKK
+
 			double mult = (ModEventHandlerClient.shakeTimestamp + ModEventHandlerClient.shakeDuration - System.currentTimeMillis()) / (double) ModEventHandlerClient.shakeDuration * 2;
 			double horizontal = MathHelper.clamp_double(Math.sin(System.currentTimeMillis() * 0.02), -0.7, 0.7) * 15;
 			double vertical = MathHelper.clamp_double(Math.sin(System.currentTimeMillis() * 0.01 + 2), -0.7, 0.7) * 3;
@@ -484,6 +491,10 @@ public class ModEventHandlerRenderer {
 			int height = event.resolution.getScaledHeight();
 
 			// If we're suffocating for a reason other than water, render the HUD bubbles
+			//todo if we're suffocating for a reason other than water, just fucking die immediately due to a pressure difference
+			//this mod's radiation system is already disgusting against the player but we want to be lax on no oxygen?
+			//NO
+			//oh goddammit this is just rendering shit
 			int air = HbmLivingProps.getOxy(player);
 			if(air < 100) {
 				GuiIngame gui = Minecraft.getMinecraft().ingameGUI;

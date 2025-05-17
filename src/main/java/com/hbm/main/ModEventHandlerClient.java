@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
+import com.hbm.explosion.ExplosionNukeSmall;
 import com.hbm.util.*;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -156,6 +157,8 @@ import net.minecraftforge.client.event.sound.PlaySoundEvent17;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 
+import static com.hbm.explosion.ExplosionNukeSmall.PARAMS_VISUALNOSHRAP;
+
 public class ModEventHandlerClient {
 
 	public static final int flashDuration = 5_000;
@@ -169,6 +172,8 @@ public class ModEventHandlerClient {
 		EntityPlayer player = Minecraft.getMinecraft().thePlayer;
 
 		/// NUKE FLASH ///
+
+		//if (!ExplosionNukeSmall.PARAMS_VISUALNOSHRAP.visual) { //no more goddamn spamming of WAIT FUCK THIS ISN'T THE SCREEN TILT BS
 		if(event.type == ElementType.CROSSHAIRS && (flashTimestamp + flashDuration - System.currentTimeMillis()) > 0 && ClientConfig.NUKE_HUD_FLASH.get()) {
 			int width = event.resolution.getScaledWidth();
 			int height = event.resolution.getScaledHeight();
@@ -192,6 +197,7 @@ public class ModEventHandlerClient {
 			GL11.glDepthMask(true);
 			return;
 		}
+		//}
 
 		/// HANDLE GUN OVERLAYS ///
 		if(player.getHeldItem() != null && player.getHeldItem().getItem() instanceof IItemHUD) {

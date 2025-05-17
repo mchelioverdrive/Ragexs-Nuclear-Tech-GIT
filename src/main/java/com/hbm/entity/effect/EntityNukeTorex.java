@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.util.ArrayList;
 
 import com.hbm.explosion.ExplosionLarge;
+import com.hbm.explosion.ExplosionNukeGeneric;
+import com.hbm.explosion.ExplosionNukeSmall;
 import com.hbm.main.MainRegistry;
 import com.hbm.util.BobMathUtil;
 import com.hbm.util.TrackerUtil;
@@ -140,6 +142,9 @@ public class EntityNukeTorex extends Entity {
 					//}
 					//caused a fucking null pointer exception because all the bobcat ground det spaghetti bullshit all fucking works together
 //
+					if (ticksExisted < 600) {
+						spawnAirburstRingCloud();
+					}
 					if (!didPlaySound && MainRegistry.proxy.me() != null &&
 						MainRegistry.proxy.me().getDistanceToEntity(this) < radius * 2) {
 						MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 8000F, 1F);
@@ -273,48 +278,33 @@ public class EntityNukeTorex extends Entity {
 	}
 
 	private void spawnAirburstRingCloud() {
-		int cloudCount = 80; // number of ring segments
-		float radius = 20F + (ticksExisted * 0.5F); // expanding ring
-		float verticalVariance = 0.5F; // slight Y jitter
-		int lifetime = 150 + rand.nextInt(50); // how long each cloud lasts
-		float scale = 3.5F; // size of each cloudlet
+		//emp FX
+		World World = worldObj;
+		//ExplosionNukeGeneric.empBlast(World, (int) this.posX, (int) this.posY, (int) this.posZ, 50);
+		//EntityEMPBlast wave = new EntityEMPBlast(World, 100);
+		//wave.posX = this.posX + 0.5;
+		//wave.posY = this.posY + 0.5;
+		//wave.posZ = this.posZ + 0.5;
+		//World.spawnEntityInWorld(wave);
 
-		//actual ring logic, rest is lobotomized gpt nonsense
-		//if (ticksExisted < 130 * s) {
-		//	lifetime *= s;
-		//	for (int i = 0; i < 2; i++) {
-		//		Cloudlet cloud = new Cloudlet(posX, posY + coreHeight, posZ, (float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime, TorexType.RING);
-		//		cloud.setScale(1F + this.ticksExisted * 0.0025F * (float) (cs * cs), 3F * (float) (cs * cs));
-		//		cloudlets.add(cloud);
-		//	}
-		//}
+		//removing temp
 
-		for (int i = 0; i < cloudCount; i++) {
-			float angle = (float) (2 * Math.PI * i / cloudCount);
-			double xOffset = radius * Math.cos(angle);
-			double zOffset = radius * Math.sin(angle);
-			double yOffset = (rand.nextFloat() - 0.5F) * verticalVariance;
-
-			Cloudlet cloud = new Cloudlet(
-				posX + xOffset,
-				posY + yOffset,
-				posZ + zOffset,
-				angle,
-				0,
-				lifetime,
-				TorexType.RING // use the existing RING type or create AIRBURST_RING
-			);
-
-			cloud.setScale(scale, 2F); // (width, height)
-			cloud.setMotion(0.25 + rand.nextDouble() * 0.1); // slow outward motion
-
-			cloudlets.add(cloud);
+		//todone summon fissure explosion fx too
+		//todo test
+		if (ticksExisted < 40) {
+			//should last about 2 seconds as 20 ticks = 1s right
+			ExplosionNukeSmall.explode(World, this.posX, this.posY, this.posZ, ExplosionNukeSmall.PARAMS_VISUAL);
+			System.out.println("fired in torex class");
+		} else {
+			//no more shrapnel afterwords
+			//cloud.didShake = true;
+			//didShake = true;
+			//todo disable shake bs
+			ExplosionNukeSmall.explode(World, this.posX, this.posY, this.posZ, ExplosionNukeSmall.PARAMS_VISUALNOSHRAP);
 		}
 
-		if (!didPlaySound && MainRegistry.proxy.me() != null && MainRegistry.proxy.me().getDistanceToEntity(this) < radius * 2) {
-			MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 8000F, 1F);
-			didPlaySound = true;
-		}
+
+
 	}
 
 	private void spawnSpaceDetonationFlash(float scale) {

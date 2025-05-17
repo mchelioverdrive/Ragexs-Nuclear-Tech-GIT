@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Random;
 
+import com.hbm.explosion.ExplosionNukeSmall;
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.entity.effect.EntityNukeTorex;
@@ -29,27 +30,33 @@ public class RenderTorex extends Render {
 
 	@Override
 	public void doRender(Entity entity, double x, double y, double z, float f0, float interp) {
-		
+
 		GL11.glPushMatrix();
 		GL11.glTranslated(x, y, z);
 		boolean fog = GL11.glIsEnabled(GL11.GL_FOG);
-		if(fog) GL11.glDisable(GL11.GL_FOG);
-		EntityNukeTorex cloud = (EntityNukeTorex)entity;
+		if (fog) GL11.glDisable(GL11.GL_FOG);
+		EntityNukeTorex cloud = (EntityNukeTorex) entity;
 		cloudletWrapper(cloud, interp);
-		if(cloud.ticksExisted < 101) flashWrapper(cloud, interp);
-		if(cloud.ticksExisted < 10 && System.currentTimeMillis() - ModEventHandlerClient.flashTimestamp > 1_000) ModEventHandlerClient.flashTimestamp = System.currentTimeMillis();
-		if(cloud.didPlaySound && !cloud.didShake && System.currentTimeMillis() - ModEventHandlerClient.shakeTimestamp > 1_000) {
-			ModEventHandlerClient.shakeTimestamp = System.currentTimeMillis();
-			cloud.didShake = true;
-			EntityPlayer player = MainRegistry.proxy.me();
-			player.hurtTime = 15;
-			player.maxHurtTime = 15;
-			player.attackedAtYaw = 0F;
-		}
+		if (cloud.ticksExisted < 101) flashWrapper(cloud, interp);
+		if (cloud.ticksExisted < 10 && System.currentTimeMillis() - ModEventHandlerClient.flashTimestamp > 1_000)
+			ModEventHandlerClient.flashTimestamp = System.currentTimeMillis();
+
+		//if (!ExplosionNukeSmall.PARAMS_VISUALNOSHRAP.visual) { //please fucking work
+			if (cloud.didPlaySound && !cloud.didShake && System.currentTimeMillis() - ModEventHandlerClient.shakeTimestamp > 1_000) {
+				ModEventHandlerClient.shakeTimestamp = System.currentTimeMillis();
+				cloud.didShake = true;
+				EntityPlayer player = MainRegistry.proxy.me();
+				player.hurtTime = 15;
+				player.maxHurtTime = 15;
+				player.attackedAtYaw = 0F;
+			}
+	//}
+		//DAMMIT WHERE DOES THIS FUCKING MOD KEEP ITS SMALL NUKE SCREEN TILT FUCKERY
+
 		if(fog) GL11.glEnable(GL11.GL_FOG);
 		GL11.glPopMatrix();
 	}
-	
+
 	private Comparator cloudSorter = new Comparator() {
 
 		@Override
@@ -59,7 +66,7 @@ public class RenderTorex extends Render {
 			EntityPlayer player = MainRegistry.proxy.me();
 			double dist1 = player.getDistanceSq(first.posX, first.posY, first.posZ);
 			double dist2 = player.getDistanceSq(second.posX, second.posY, second.posZ);
-			
+
 			return dist1 > dist2 ? -1 : dist1 == dist2 ? 0 : 1;
 		}
 	};
@@ -79,10 +86,10 @@ public class RenderTorex extends Render {
 
 		Tessellator tess = Tessellator.instance;
 		tess.startDrawingQuads();
-		
+
 		ArrayList<Cloudlet> cloudlets = new ArrayList(cloud.cloudlets);
 		cloudlets.sort(cloudSorter);
-		
+
 		for(Cloudlet cloudlet : cloudlets) {
 			Vec3 vec = cloudlet.getInterpPos(interp);
 			double x = vec.xCoord - cloud.posX;
@@ -100,7 +107,7 @@ public class RenderTorex extends Render {
 		GL11.glDisable(GL11.GL_BLEND);
 		GL11.glPopMatrix();
 	}
-	
+
 	private void flashWrapper(EntityNukeTorex cloud, float interp) {
 
 		GL11.glPushMatrix();
@@ -115,12 +122,12 @@ public class RenderTorex extends Render {
 
 		Tessellator tess = Tessellator.instance;
 		tess.startDrawingQuads();
-		
+
 		double age = Math.min(cloud.ticksExisted + interp, 100);
 		float alpha = (float) ((100D - age) / 100F);
-		
+
 		Random rand = new Random(cloud.getEntityId());
-		
+
 		for(int i = 0; i < 3; i++) {
 			float x = (float) (rand.nextGaussian() * 0.5F * cloud.rollerSize);
 			float y = (float) (rand.nextGaussian() * 0.5F * cloud.rollerSize);
