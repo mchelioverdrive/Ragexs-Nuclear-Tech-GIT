@@ -66,7 +66,7 @@ public class EntityNukeTorex extends Entity {
 	private DetonationType getDetonationType(World world, int x, int y, int z) {
 		if (isSpaceDimension(world) ) {
 			return DetonationType.SPACE;
-		} else if (y >= 256 || isAirColumnBelow(world, x, y, z, 30)) {
+		} else if (y >= 256 || isAirColumnBelow(world, x, y -1, z, 30)) {
 			return DetonationType.AIRBURST;
 		} else {
 			return DetonationType.GROUND;
