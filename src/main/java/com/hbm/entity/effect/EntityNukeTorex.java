@@ -118,7 +118,7 @@ public class EntityNukeTorex extends Entity {
 
 				case SPACE: {
 					if (ticksExisted == 1) {
-						spawnSpaceDetonationFlash((float) getScale());
+						spawnSpaceDetonationFlash((float) getScale() * 10F);
 						//pray
 					}
 					// No cloudlets at all
