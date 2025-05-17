@@ -124,24 +124,24 @@ public class EntityNukeTorex extends Entity {
 				}
 
 				case AIRBURST: {
-					float radius = 20F + (ticksExisted * 0.5F);
-					int lifetime = Math.min((ticksExisted * ticksExisted) + 200, maxAge - ticksExisted + 200);
-
-					if (ticksExisted < 130 * s) {
-						lifetime *= s;
-						for (int i = 0; i < 2; i++) {
-							Cloudlet cloud = new Cloudlet(posX, posY + coreHeight, posZ,
-								(float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime, TorexType.RING);
-							cloud.setScale(1F + this.ticksExisted * 0.0025F * (float) (cs * cs), 3F * (float) (cs * cs));
-							cloudlets.add(cloud);
-						}
-					}
-
-					if (!didPlaySound && MainRegistry.proxy.me() != null &&
-						MainRegistry.proxy.me().getDistanceToEntity(this) < radius * 2) {
-						MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 8000F, 1F);
-						didPlaySound = true;
-					}
+					//float radius = 20F + (ticksExisted * 0.5F);
+					//int lifetime = Math.min((ticksExisted * ticksExisted) + 200, maxAge - ticksExisted + 200);
+//
+					//if (ticksExisted < 130 * s) {
+					//	lifetime *= s;
+					//	for (int i = 0; i < 2; i++) {
+					//		Cloudlet cloud = new Cloudlet(posX, posY + coreHeight, posZ,
+					//			(float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime, TorexType.RING);
+					//		cloud.setScale(1F + this.ticksExisted * 0.0025F * (float) (cs * cs), 3F * (float) (cs * cs));
+					//		cloudlets.add(cloud);
+					//	}
+					//}
+//
+					//if (!didPlaySound && MainRegistry.proxy.me() != null &&
+					//	MainRegistry.proxy.me().getDistanceToEntity(this) < radius * 2) {
+					//	MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 8000F, 1F);
+					//	didPlaySound = true;
+					//}
 
 					break;
 				}
