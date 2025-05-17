@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import com.hbm.items.food.ItemConserve;
 import com.hbm.world.generator.DungeonToolbox;
+import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.Level;
 
@@ -595,6 +596,9 @@ public class ModEventHandler {
 	@SubscribeEvent
 	public void onLivingUpdate(LivingUpdateEvent event) {
 
+
+
+
 		if(!event.entity.worldObj.isRemote && event.entityLiving.isPotionActive(HbmPotion.slippery.id)) {
 			if (event.entityLiving.onGround) {
 				double slipperiness = 0.6;
@@ -621,6 +625,41 @@ public class ModEventHandler {
 						event.entityLiving.motionZ -= event.entityLiving.motionZ / totalVelocity * smoothingAmount;
 				}
 			}
+
+			if (!(event.entityLiving instanceof EntityPlayer)) return;
+
+			EntityPlayer player = (EntityPlayer) event.entityLiving;
+
+			// Only do this server-side
+			if (player.worldObj.isRemote) return;
+
+			// Reset any previous speed modifiers
+			removeSpeedDebuff(player);
+
+			ItemStack[] armor = player.inventory.armorInventory;
+
+
+			// Check how much "heavy" armor the player is wearing
+			int heavyPieces = 0;
+
+
+			for (ItemStack piece : armor) {
+				if (piece == null) continue;
+				Item item = piece.getItem();
+
+				if (item == Items.iron_helmet || item == Items.iron_chestplate || item == Items.iron_leggings || item == Items.iron_boots
+					|| item == Items.diamond_helmet || item == Items.diamond_chestplate || item == Items.diamond_leggings || item == Items.diamond_boots) {
+					heavyPieces++;
+				}
+			}
+
+			// If they're wearing heavy armor, apply a speed debuff
+			if (heavyPieces > 0) {
+				double speedMultiplier = 1.0 - (0.05 * heavyPieces); // e.g., -5% per heavy piece
+				applySpeedDebuff(player, speedMultiplier);
+			}
+
+
 		}
 
 		boolean isFlying = event.entity instanceof EntityPlayer ? ((EntityPlayer) event.entity).capabilities.isFlying : false;
@@ -729,6 +768,24 @@ public class ModEventHandler {
 
 		if(!event.entity.worldObj.isRemote && !(event.entityLiving instanceof EntityPlayer)) {
 			HazardSystem.updateLivingInventory(event.entityLiving);
+		}
+	}
+
+	private static final UUID HEAVY_ARMOR_SPEED_UUID = UUID.fromString("a6f9c6a1-2f19-43e7-9c1c-20b3de1b442b");
+
+	private void applySpeedDebuff(EntityPlayer player, double multiplier) {
+		IAttributeInstance movement = player.getEntityAttribute(SharedMonsterAttributes.movementSpeed);
+		if (movement.getModifier(HEAVY_ARMOR_SPEED_UUID) != null) return;
+
+		AttributeModifier slow = new AttributeModifier(HEAVY_ARMOR_SPEED_UUID, "HeavyArmorDebuff", multiplier - 1.0, 2); // Multiplier - 1.0 since it's additive
+		movement.applyModifier(slow);
+	}
+
+	private void removeSpeedDebuff(EntityPlayer player) {
+		IAttributeInstance movement = player.getEntityAttribute(SharedMonsterAttributes.movementSpeed);
+		AttributeModifier existing = movement.getModifier(HEAVY_ARMOR_SPEED_UUID);
+		if (existing != null) {
+			movement.removeModifier(existing);
 		}
 	}
 
