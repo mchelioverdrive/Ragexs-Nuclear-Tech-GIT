@@ -55,9 +55,9 @@ public class DamageResistanceHandler {
 		entityStats.put(EntityCreeper.class, new ResistanceStats().addCategory(CATEGORY_EXPLOSION, 2F, 0.5F));
 
 		itemStats.put(ModItems.jackt, new ResistanceStats()
-			.addCategory(CATEGORY_PROJECTILE, 5F, 0.5F));
+			//.addCategory(CATEGORY_PROJECTILE, 5F, 0.0F));
 		itemStats.put(ModItems.jackt2, new ResistanceStats()
-			.addCategory(CATEGORY_PROJECTILE, 5F, 0.5F));
+			//.addCategory(CATEGORY_PROJECTILE, 5F, 0.0F));
 		//oh my god no what the hell is this shit
 		registerSet(ModItems.steel_helmet, ModItems.steel_plate, ModItems.steel_legs, ModItems.steel_boots, new ResistanceStats());
 		registerSet(ModItems.titanium_helmet, ModItems.titanium_plate, ModItems.titanium_legs, ModItems.titanium_boots, new ResistanceStats());

@@ -32,6 +32,8 @@ public class HazmatRegistry {
 		//real coefficient turned out to be 5
 		//oops
 
+		//this is rad resistance, idk why it couldn't have just been CALLED that
+
 		double helmet = 0.2D;
 		double chest = 0.4D;
 		double legs = 0.3D;
