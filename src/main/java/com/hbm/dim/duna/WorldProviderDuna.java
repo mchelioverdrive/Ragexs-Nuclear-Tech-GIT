@@ -87,23 +87,20 @@ public class WorldProviderDuna extends WorldProviderCelestial {
 	}
 
 	private void applyRadiationToPlayers(int chance, int duration) {
-		if (!worldObj.isRemote) {
-			for (Object obj : worldObj.playerEntities) {
-				if (obj instanceof EntityPlayer) {
-					EntityPlayer player = (EntityPlayer) obj;
-					int x = MathHelper.floor_double(player.posX);
-					int y = MathHelper.floor_double(player.posY + player.getEyeHeight());
-					int z = MathHelper.floor_double(player.posZ);
+		for (Object obj : worldObj.playerEntities) {
+			if (obj instanceof EntityPlayer) {
+				EntityPlayer player = (EntityPlayer) obj;
+				int x = MathHelper.floor_double(player.posX);
+				int y = MathHelper.floor_double(player.posY + player.getEyeHeight());
+				int z = MathHelper.floor_double(player.posZ);
 
-					if (worldObj.canBlockSeeTheSky(x, y, z)) {
-						if (rand.nextInt(chance) == 0) {
-							player.addPotionEffect(new PotionEffect(HbmPotion.radiation.id, duration, 0));
-						}
+				if (worldObj.canBlockSeeTheSky(x, y, z)) {
+					if (rand.nextInt(chance) == 0) {
+						player.addPotionEffect(new PotionEffect(HbmPotion.radiation.id, duration, 0));
 					}
 				}
 			}
 		}
-
 	}
 
 	private void startDustStorm() {
