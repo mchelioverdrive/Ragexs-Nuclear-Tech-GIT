@@ -63,6 +63,20 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 	public int fire;
 	public int phosphorus;
 	public int balefire;
+	public int radDeathTimer = 0;
+
+	public void writeToNBT(NBTTagCompound nbt) {
+		nbt.setInteger("radDeathTimer", radDeathTimer);
+	}
+
+	public void readFromNBT(NBTTagCompound nbt) {
+		radDeathTimer = nbt.getInteger("radDeathTimer");
+	}
+
+	public static HbmLivingProps get(EntityLivingBase entity) {
+		return (HbmLivingProps) entity.getExtendedProperties("HbmProps");
+	}
+
 
 	private List<ContaminationEffect> contamination = new ArrayList();
 	private CBT_Atmosphere atmosphere;
@@ -110,8 +124,8 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 		HbmLivingProps data = getData(entity);
 		float radiation = getData(entity).radiation + rad;
 
-		if(radiation > 2500)
-			radiation = 2500;
+		if(radiation > 8000)
+			radiation = 8000;
 		if(radiation < 0)
 			radiation = 0;
 
