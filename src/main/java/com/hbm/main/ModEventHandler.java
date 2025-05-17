@@ -856,36 +856,6 @@ public class ModEventHandler {
 
 						float eRad = HbmLivingProps.getRadiation(entity);
 
-						//if(entity.getClass().equals(EntityCreeper.class) && eRad >= 200 && entity.getHealth() > 0) {
-//
-						//	if(event.world.rand.nextInt(3) == 0 ) {
-						//		//EntityCreeperNuclear creep = new EntityCreeperNuclear(event.world);
-						//		//creep.setLocationAndAngles(entity.posX, entity.posY, entity.posZ, entity.rotationYaw, entity.rotationPitch);
-//
-						//		//if(!entity.isDead)
-						//		//	if(!event.world.isRemote)
-						//		//		event.world.spawnEntityInWorld(creep);
-						//		//entity.setDead();
-						//	} else {
-						//		entity.attackEntityFrom(ModDamageSource.radiation, 100F);
-						//	}
-						//	continue;
-//
-						//} else if(entity instanceof EntityCow && !(entity instanceof EntityMooshroom) && eRad >= 50) {
-						//	EntityMooshroom creep = new EntityMooshroom(event.world);
-						//	creep.setLocationAndAngles(entity.posX, entity.posY, entity.posZ, entity.rotationYaw, entity.rotationPitch);
-//
-						//	if(!entity.isDead)
-						//		if(!event.world.isRemote)
-						//			event.world.spawnEntityInWorld(creep);
-						//	entity.setDead();
-						//	continue;
-//
-						//}
-						//**both of these were incredibly unfunny haha FUCKING DUCK MEME GUYS HAHAHAHA
-						// SO FUNNY IM SO FUNNY GUYS PLEASE LAUGH GIVE ME REDDIT KARMA GUYS HAHA BIG CHUNGUS
-						// HAHAHAHAHA HECKIN FUCKING CHONKER WHOLESOME FUCK GOD DAMMIT I HATE ALL OF YOU
-						//** SHUT UP SHUT THE HELL UP MAKE A GOOD MOD FOR ONCE!!!
 						if (eRad < 100 || ContaminationUtil.isRadImmune(entity))
 							continue;
 
