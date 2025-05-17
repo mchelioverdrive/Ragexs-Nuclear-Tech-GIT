@@ -16,6 +16,11 @@ import net.minecraft.world.World;
 
 public class ServerProxy {
 
+	public void init() {
+		// Server-side initialization (can be empty)
+	}
+	//holy shit this mod is so retarded how do people even meat ride bobcat
+
 	//sort by estimated time of display. longer lasting ones should be sorted at the top.
 	public static final int ID_DUCK = 0;
 	public static final int ID_FILTER = 1;
