@@ -60,7 +60,7 @@ public class WorldProviderDuna extends WorldProviderCelestial {
 
 		final int RADIATION_DURATION = 20;
 		final int RADIATION_CHANCE_SERVER = 500;
-		final int RADIATION_CHANCE_CLIENT = 520;
+		//final int RADIATION_CHANCE_CLIENT = 520;
 
 		if (!worldObj.isRemote) {
 			if (dustStormTimer <= 0) {
@@ -81,7 +81,7 @@ public class WorldProviderDuna extends WorldProviderCelestial {
 				spawnStormParticles();
 
 				// Apply client-side radiation visual effect
-				applyRadiationToPlayers(RADIATION_CHANCE_CLIENT, RADIATION_DURATION);
+				//applyRadiationToPlayers(RADIATION_CHANCE_CLIENT, RADIATION_DURATION);
 			}
 		}
 	}
