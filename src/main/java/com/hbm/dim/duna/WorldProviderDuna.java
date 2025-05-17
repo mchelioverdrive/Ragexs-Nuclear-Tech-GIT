@@ -8,14 +8,17 @@ import com.hbm.dim.WorldChunkManagerCelestial.BiomeGenLayers;
 import com.hbm.dim.duna.GenLayerDuna.GenLayerDiversifyDuna;
 import com.hbm.dim.duna.GenLayerDuna.GenLayerDunaBiomes;
 import com.hbm.dim.duna.GenLayerDuna.GenLayerDunaLowlands;
+import com.hbm.potion.HbmPotion;
 import com.hbm.util.ParticleUtil;
 
 import io.netty.buffer.ByteBuf;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.layer.GenLayer;
@@ -25,6 +28,8 @@ import net.minecraft.world.gen.layer.GenLayerRiverMix;
 import net.minecraft.world.gen.layer.GenLayerSmooth;
 import net.minecraft.world.gen.layer.GenLayerVoronoiZoom;
 import net.minecraft.world.gen.layer.GenLayerZoom;
+
+import java.util.Random;
 
 public class WorldProviderDuna extends WorldProviderCelestial {
 
@@ -37,7 +42,7 @@ public class WorldProviderDuna extends WorldProviderCelestial {
 	public String getDimensionName() {
 		return "Duna";
 	}
-	
+
 	@Override
 	public IChunkProvider createChunkGenerator() {
 		return new ChunkProviderDuna(this.worldObj, this.getSeed(), false);
@@ -46,6 +51,7 @@ public class WorldProviderDuna extends WorldProviderCelestial {
 
 	private int dustStormTimer = 0;
 	private float dustStormIntensity = 1;
+	Random rand = new Random();
 
 	@Override
 	public void updateWeather() {
@@ -53,6 +59,23 @@ public class WorldProviderDuna extends WorldProviderCelestial {
 
 		if(!worldObj.isRemote) {
 			if(dustStormTimer <= 0) {
+
+
+
+				for (Object obj : worldObj.playerEntities) {
+					if (obj instanceof EntityPlayer) {
+						EntityPlayer player = (EntityPlayer) obj;
+
+						// Check if the player can see the sky
+						if (worldObj.canBlockSeeTheSky((int) player.posX, (int) player.posY, (int) player.posZ)) {
+							// Apply radiation effect with a random chance
+							if (rand.nextInt(500) == 0) {
+								player.addPotionEffect(new PotionEffect(HbmPotion.radiation.id, 20, 0));
+							}
+						}
+					}
+				}
+
 				if(dustStormIntensity >= 0.5F) {
 					dustStormIntensity = 0;
 					dustStormTimer = worldObj.rand.nextInt(168000) + 12000;
@@ -70,6 +93,21 @@ public class WorldProviderDuna extends WorldProviderCelestial {
 				vec.rotateAroundZ((float)(worldObj.rand.nextDouble() * Math.PI * 10));
 				vec.rotateAroundY((float)(worldObj.rand.nextDouble() * Math.PI * 2 * 5));
 				ParticleUtil.spawnDustFlame(worldObj, viewEntity.posX + vec.xCoord, viewEntity.posY, viewEntity.posZ + vec.zCoord, -4, 0, 0);
+
+				for (Object obj : worldObj.playerEntities) {
+					if (obj instanceof EntityPlayer) {
+						EntityPlayer player = (EntityPlayer) obj;
+
+						// Check if the player can see the sky
+						if (worldObj.canBlockSeeTheSky((int) player.posX, (int) player.posY, (int) player.posZ)) {
+							// Apply radiation effect with a random chance
+							if (rand.nextInt(520) == 0) {
+								player.addPotionEffect(new PotionEffect(HbmPotion.radiation.id, 20, 0));
+							}
+						}
+					}
+				}
+
 			}
 		}
 	}
@@ -144,7 +182,7 @@ public class WorldProviderDuna extends WorldProviderCelestial {
 
 	private static BiomeGenLayers createBiomeGenerators(long seed) {
 		GenLayer biomes = new GenLayerDunaBiomes(seed);
-		
+
 		biomes = new GenLayerFuzzyZoom(2000L, biomes);
 		biomes = new GenLayerZoom(2001L, biomes);
 		biomes = new GenLayerDiversifyDuna(1000L, biomes);
@@ -162,7 +200,7 @@ public class WorldProviderDuna extends WorldProviderCelestial {
 		biomes = new GenLayerSmooth(706L, biomes);
 		biomes = new GenLayerFuzzyZoom(1002L, biomes);
 		biomes = new GenLayerZoom(1006L, biomes);
-		
+
 		GenLayer genlayerVoronoiZoom = new GenLayerVoronoiZoom(10L, biomes);
 
 		GenLayer genlayerRiverZoom = new GenLayerZoom(1000L, biomes);
