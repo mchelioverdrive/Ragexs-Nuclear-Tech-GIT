@@ -77,11 +77,11 @@ public class EntityNukeTorex extends Entity {
 	}
 
 	private boolean isAirColumnBelow(World world, int x, int y, int z, int depth) {
-		System.out.println("Checking air column BELOW starting under (" + x + ", " + y + ", " + z + ") with depth: " + depth);
+		//System.out.println("Checking air column BELOW starting under (" + x + ", " + y + ", " + z + ") with depth: " + depth);
 		for (int i = 1; i <= depth && (y - i) >= 0; i++) {
 			int checkY = y - i;
 			boolean isAir = world.isAirBlock(x, checkY, z);
-			System.out.println("  -> Checking block at (" + x + ", " + checkY + ", " + z + "): " + (isAir ? "AIR" : "NOT AIR"));
+			//System.out.println("  -> Checking block at (" + x + ", " + checkY + ", " + z + "): " + (isAir ? "AIR" : "NOT AIR"));
 			if (!isAir) return false;
 		}
 		return true;
@@ -107,12 +107,12 @@ public class EntityNukeTorex extends Entity {
 			// Get the detonation type ONCE, at the start of the explosion
 			if (ticksExisted == 1) {
 				this.type = getDetonationType(worldObj, (int) posX, (int) posY, (int) posZ);
-				System.out.println("Detected detonation type: " + this.type);
+				//System.out.println("Detected detonation type: " + this.type);
 			}
 
 			// Make sure 'type' is never null
 			if (this.type == null) {
-				System.err.println("Detonation type is NULL, defaulting to GROUND");
+				//System.err.println("Detonation type is NULL, defaulting to GROUND");
 				this.type = DetonationType.GROUND;
 			}
 
@@ -280,12 +280,12 @@ public class EntityNukeTorex extends Entity {
 	private void spawnAirburstRingCloud() {
 		//emp FX
 		World World = worldObj;
-		//ExplosionNukeGeneric.empBlast(World, (int) this.posX, (int) this.posY, (int) this.posZ, 50);
-		//EntityEMPBlast wave = new EntityEMPBlast(World, 100);
-		//wave.posX = this.posX + 0.5;
-		//wave.posY = this.posY + 0.5;
-		//wave.posZ = this.posZ + 0.5;
-		//World.spawnEntityInWorld(wave);
+		ExplosionNukeGeneric.empBlast(World, (int) this.posX, (int) this.posY, (int) this.posZ, 50);
+		EntityEMPBlast wave = new EntityEMPBlast(World, 100);
+		wave.posX = this.posX + 0.5;
+		wave.posY = this.posY + 0.5;
+		wave.posZ = this.posZ + 0.5;
+		World.spawnEntityInWorld(wave);
 
 		//removing temp
 
@@ -294,12 +294,13 @@ public class EntityNukeTorex extends Entity {
 		if (ticksExisted < 40) {
 			//should last about 2 seconds as 20 ticks = 1s right
 			ExplosionNukeSmall.explode(World, this.posX, this.posY, this.posZ, ExplosionNukeSmall.PARAMS_VISUAL);
-			System.out.println("fired in torex class");
+			//System.out.println("fired in torex class");
 		} else {
 			//no more shrapnel afterwords
 			//cloud.didShake = true;
 			//didShake = true;
-			//todo disable shake bs
+			//todone disable shake bs
+			//done in clientproxy because this FUCKING MOD IS RETARDED
 			ExplosionNukeSmall.explode(World, this.posX, this.posY, this.posZ, ExplosionNukeSmall.PARAMS_VISUALNOSHRAP);
 		}
 
