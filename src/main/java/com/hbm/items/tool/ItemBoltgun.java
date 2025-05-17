@@ -64,7 +64,7 @@ public class ItemBoltgun extends Item implements IAnimatedItem {
 							EntityDamageUtil.attackEntityFromIgnoreIFrame(entity, DamageSource.causePlayerDamage(player).setDamageBypassesArmor(), 10F);
 
 							if(!entity.isEntityAlive() && entity instanceof EntityPlayer) {
-								((EntityPlayer) entity).triggerAchievement(MainRegistry.achGoFish);
+								//((EntityPlayer) entity).triggerAchievement(MainRegistry.achGoFish);
 							}
 
 							NBTTagCompound data = new NBTTagCompound();

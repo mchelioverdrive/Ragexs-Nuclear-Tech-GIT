@@ -183,28 +183,28 @@ public class MainRegistry {
 	public static CreativeTabs consumableTab = new ConsumableTab(CreativeTabs.getNextID(), "tabConsumable");	// drinks, kits, tools
 
 	// Achievements
-	public static Achievement achSacrifice;
-	public static Achievement achImpossible;
-	public static Achievement achTOB;
-	public static Achievement achFreytag;
+	//public static Achievement achSacrifice;
+	//public static Achievement achImpossible;
+	//public static Achievement achTOB;
+	//public static Achievement achFreytag;
 	public static Achievement achPotato;
-	public static Achievement achC44;
+	//public static Achievement achC44;
 	//public static Achievement achC20_5;
-	public static Achievement achFiend;
-	public static Achievement achFiend2;
+	//public static Achievement achFiend;
+	//public static Achievement achFiend2;
 	public static Achievement achRadPoison;
 	public static Achievement achRadDeath;
 	public static Achievement achStratum;
-	public static Achievement achOmega12;
+	//public static Achievement achOmega12;
 	//public static Achievement achSomeWounds;
 	public static Achievement achSlimeball;
 	public static Achievement achSulfuric;
-	public static Achievement achWitchtaunter;
-	public static Achievement achGoFish;
+	//public static Achievement achWitchtaunter;
+	//public static Achievement achGoFish;
 	public static Achievement achNo9;
 	public static Achievement achInferno;
-	public static Achievement achRedRoom;
-	public static Achievement bobHidden;
+	//public static Achievement achRedRoom;
+	//public static Achievement bobHidden;
 	//public static Achievement horizonsStart;
 	//public static Achievement horizonsEnd;
 	//public static Achievement horizonsBonus;
@@ -243,7 +243,7 @@ public class MainRegistry {
 	public static Achievement achZIRNOXBoom;
 	public static Achievement achChicagoPile;
 	public static Achievement achSILEX;
-	public static Achievement achWatz;
+	//public static Achievement achWatz;
 	//public static Achievement achWatzBoom;
 	public static Achievement achRBMK;
 	public static Achievement achRBMKBoom;
@@ -251,9 +251,9 @@ public class MainRegistry {
 	public static Achievement achBreeding;
 	public static Achievement achFusion;
 	public static Achievement achMeltdown;
-	public static Achievement achDriveFail;
+	//public static Achievement achDriveFail;
 
-	public static int generalOverride = 0;
+	//public static int generalOverride = 0;
 	public static int polaroidID = 1;
 
 	public static long startupTime = 0;
@@ -275,13 +275,13 @@ public class MainRegistry {
 		logger.info("THE LOGGER FUCKING WORKS GODDAMMIT");
 
 		// Reroll Polaroid
-		if(generalOverride > 0 && generalOverride < 19) {
-			polaroidID = generalOverride;
-		} else {
-			polaroidID = rand.nextInt(18) + 1;
-			while(polaroidID == 4 || polaroidID == 9)
-				polaroidID = rand.nextInt(18) + 1;
-		}
+		//if(generalOverride > 0 && generalOverride < 19) {
+		//	polaroidID = generalOverride;
+		//} else {
+		//	polaroidID = rand.nextInt(18) + 1;
+		//	while(polaroidID == 4 || polaroidID == 9)
+		//		polaroidID = rand.nextInt(18) + 1;
+		//}
 
 		//ShadyUtil.test();
 		loadConfig(PreEvent);
@@ -700,10 +700,10 @@ public class MainRegistry {
 
 		try {
 
-		achSacrifice = new Achievement("achievement.sacrifice", "sacrifice", -3, 1, ModItems.burnt_bark, null).initIndependentStat().setSpecial().registerStat();
-		achImpossible = new Achievement("achievement.impossible", "impossible", 18, 10, ModItems.nothing, null).initIndependentStat().setSpecial().registerStat();
-		achTOB = new Achievement("achievement.tasteofblood", "tasteofblood", 3, 10, new ItemStack(ModItems.fluid_icon, 1, Fluids.ASCHRAB.getID()), null).initIndependentStat().setSpecial().registerStat();
-		achGoFish = new Achievement("achievement.goFish", "goFish", 5, 10, DictFrame.fromOne(ModItems.achievement_icon, EnumAchievementType.GOFISH), null).initIndependentStat().setSpecial().registerStat();
+		//achSacrifice = new Achievement("achievement.sacrifice", "sacrifice", -3, 1, ModItems.burnt_bark, null).initIndependentStat().setSpecial().registerStat();
+		//achImpossible = new Achievement("achievement.impossible", "impossible", 18, 10, ModItems.nothing, null).initIndependentStat().setSpecial().registerStat();
+		//achTOB = new Achievement("achievement.tasteofblood", "tasteofblood", 3, 10, new ItemStack(ModItems.fluid_icon, 1, Fluids.ASCHRAB.getID()), null).initIndependentStat().setSpecial().registerStat();
+		//achGoFish = new Achievement("achievement.goFish", "goFish", 5, 10, DictFrame.fromOne(ModItems.achievement_icon, EnumAchievementType.GOFISH), null).initIndependentStat().setSpecial().registerStat();
 		//achFreytag = new Achievement("achievement.freytag", "freytag", 0, -4, ModItems.gun_ar15, null).initIndependentStat().setSpecial().registerStat();
 		achPotato = new Achievement("achievement.potato", "potato", -2, -2, ModItems.battery_potatos, null).initIndependentStat().setSpecial().registerStat();
 		//achC44 = new Achievement("achievement.c44", "c44", 2, -4, ModItems.gun_revolver_pip, null).initIndependentStat().setSpecial().registerStat();
@@ -713,14 +713,14 @@ public class MainRegistry {
 		achStratum = new Achievement("achievement.stratum", "stratum", -4, -2, new ItemStack(ModBlocks.stone_gneiss), null).initIndependentStat().setSpecial().registerStat();
 		//achOmega12 = new Achievement("achievement.omega12", "omega12", 17, -1, ModItems.particle_digamma, null).initIndependentStat().setSpecial().registerStat();
 
-		achWitchtaunter = new Achievement("achievement.witchtaunter", "witchtaunter", -8, 7, ModItems.ammo_4gauge.stackFromEnum(Ammo4Gauge.VAMPIRE), null).initIndependentStat().setSpecial().registerStat();
+		//achWitchtaunter = new Achievement("achievement.witchtaunter", "witchtaunter", -8, 7, ModItems.ammo_4gauge.stackFromEnum(Ammo4Gauge.VAMPIRE), null).initIndependentStat().setSpecial().registerStat();
 		achNo9 = new Achievement("achievement.no9", "no9", -8, 12, ModItems.no9, null).initIndependentStat().registerStat();
 		achSlimeball = new Achievement("achievement.slimeball", "slimeball", -10, 6, DictFrame.fromOne(ModItems.achievement_icon, EnumAchievementType.ACID), null).initIndependentStat().registerStat();
 		achSulfuric = new Achievement("achievement.sulfuric", "sulfuric", -10, 8, DictFrame.fromOne(ModItems.achievement_icon, EnumAchievementType.BALLS), achSlimeball).initIndependentStat().setSpecial().registerStat();
 		achInferno = new Achievement("achievement.inferno", "inferno", -8, 10, ModItems.canister_napalm, null).initIndependentStat().setSpecial().registerStat();
-		achRedRoom = new Achievement("achievement.redRoom", "redRoom", -10, 10, ModItems.key_red, null).initIndependentStat().setSpecial().registerStat();
+		//achRedRoom = new Achievement("achievement.redRoom", "redRoom", -10, 10, ModItems.key_red, null).initIndependentStat().setSpecial().registerStat();
 
-		bobHidden = new Achievement("achievement.hidden", "hidden", 15, -4, DictFrame.fromOne(ModItems.achievement_icon, EnumAchievementType.QUESTIONMARK), null).initIndependentStat().registerStat();
+		//bobHidden = new Achievement("achievement.hidden", "hidden", 15, -4, DictFrame.fromOne(ModItems.achievement_icon, EnumAchievementType.QUESTIONMARK), null).initIndependentStat().registerStat();
 
 		//horizonsStart = new Achievement("achievement.horizonsStart", "horizonsStart", -5, 4, ModItems.sat_gerald, null).initIndependentStat().registerStat();
 		//horizonsEnd = new Achievement("achievement.horizonsEnd", "horizonsEnd", -3, 4, ModItems.sat_gerald, horizonsStart).initIndependentStat().registerStat();
@@ -756,7 +756,7 @@ public class MainRegistry {
 		achTantalum = new Achievement("achievement.tantalum", "tantalum", 7, 3, ModItems.gem_tantalium, achChemplant).initIndependentStat().setSpecial().registerStat();
 		//achGasCent = new Achievement("achievement.gasCent", "gasCent", 13, 2, ModItems.ingot_uranium_fuel, achDesh).initIndependentStat().registerStat();
 		achCentrifuge = new Achievement("achievement.centrifuge", "centrifuge", 12, -2, new ItemStack(ModBlocks.machine_centrifuge), achPolymer).initIndependentStat().registerStat();
-		achDriveFail = new Achievement("achievement.driveFail", "driveFail", 8, -3, new ItemStack(ModItems.full_drive), achPolymer).initIndependentStat().setSpecial().registerStat();
+		//achDriveFail = new Achievement("achievement.driveFail", "driveFail", 8, -3, new ItemStack(ModItems.full_drive), achPolymer).initIndependentStat().setSpecial().registerStat();
 		//achFOEQ = new Achievement("achievement.FOEQ", "FOEQ", 5, 5, ModItems.sat_foeq, achDesh).initIndependentStat().setSpecial().registerStat();
 		//achSoyuz = new Achievement("achievement.soyuz", "soyuz", 7, 6, Items.baked_potato, achDesh).initIndependentStat().setSpecial().registerStat();
 		//achSpace = new Achievement("achievement.space", "space", 9, 7, ModItems.missile_carrier, achDesh).initIndependentStat().setSpecial().registerStat();
@@ -779,28 +779,28 @@ public class MainRegistry {
 		achManhattan = new Achievement("achievement.manhattan", "manhattan", 11, -4, new ItemStack(ModBlocks.nuke_boy), achPolymer).initIndependentStat().setSpecial().registerStat();
 
 		AchievementPage.registerAchievementPage(new AchievementPage("Nuclear Tech", new Achievement[] {
-				achSacrifice,
-				achImpossible,
-				achTOB,
-				achGoFish,
+				//achSacrifice,
+				//achImpossible,
+				//achTOB,
+				//achGoFish,
 				//achFreytag,
 				achPotato,
-				achC44,
+				//achC44,
 				//achC20_5,
-				achFiend,
-				achFiend2,
+				//achFiend,
+				//achFiend2,
 				achStratum,
-				achOmega12,
-				bobHidden,
+				//achOmega12,
+				//bobHidden,
 				//horizonsStart,
 				//horizonsEnd,
 				//horizonsBonus,
 				achRadPoison,
 				achRadDeath,
-				achWitchtaunter,
+				//achWitchtaunter,
 				achNo9,
 				achInferno,
-				achRedRoom,
+				//achRedRoom,
 				achSlimeball,
 				achSulfuric,
 				//bossCreeper,
@@ -826,7 +826,7 @@ public class MainRegistry {
 				achTantalum,
 				//achGasCent,
 				achCentrifuge,
-				achDriveFail,
+				//achDriveFail,
 				achFOEQ,
 				//achSoyuz,
 				//achSpace,

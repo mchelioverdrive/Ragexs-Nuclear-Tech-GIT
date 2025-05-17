@@ -20,7 +20,7 @@ public class AchievementHandler {
 
 		try {
 
-			craftingAchievements.put(new ComparableStack(ModItems.gun_ar15), MainRegistry.achFreytag);
+			//craftingAchievements.put(new ComparableStack(ModItems.gun_ar15), MainRegistry.achFreytag);
 			//craftingAchievements.put(new ComparableStack(ModItems.piston_selenium), MainRegistry.achSelenium);
 			//craftingAchievements.put(new ComparableStack(ModItems.gun_b92), MainRegistry.achSelenium);
 			craftingAchievements.put(new ComparableStack(ModItems.battery_potatos), MainRegistry.achPotato);
@@ -56,7 +56,7 @@ public class AchievementHandler {
 			craftingAchievements.put(new ComparableStack(ModBlocks.machine_difurnace_off), MainRegistry.achBlastFurnace);
 			craftingAchievements.put(new ComparableStack(ModBlocks.machine_assembler), MainRegistry.achAssembly);
 			craftingAchievements.put(new ComparableStack(ModItems.billet_pu_mix), MainRegistry.achChicagoPile);
-			craftingAchievements.put(new ComparableStack(ModItems.ammo_4gauge, 1, ItemAmmoEnums.Ammo4Gauge.VAMPIRE.ordinal()), MainRegistry.achWitchtaunter);
+			//craftingAchievements.put(new ComparableStack(ModItems.ammo_4gauge, 1, ItemAmmoEnums.Ammo4Gauge.VAMPIRE.ordinal()), MainRegistry.achWitchtaunter);
 		} catch (Exception e) {
 			System.out.println("[Ragex's Nuclear Tech Mod] Failed to register achievements! (AchievementHandler.java)" + e);
 			e.printStackTrace();

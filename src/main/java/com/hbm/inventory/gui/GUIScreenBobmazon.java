@@ -287,8 +287,8 @@ public class GUIScreenBobmazon extends GuiScreen {
 		ASSEMBLY(MainRegistry.achAssembly),
 		CHEMICS(MainRegistry.achChemplant),
 		//OIL(MainRegistry.achDesh),
-		NUCLEAR(MainRegistry.achTechnetium),
-		HIDDEN(MainRegistry.bobHidden);
+		NUCLEAR(MainRegistry.achTechnetium);
+		//HIDDEN(MainRegistry.bobHidden);
 
 		private Requirement(Achievement achievement) {
 			this.achievement = achievement;

@@ -30,7 +30,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 public class BlockKeyhole extends BlockStone {
 
 	protected IIcon iconTop;
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public void registerBlockIcons(IIconRegister iconRegister) {
@@ -51,7 +51,7 @@ public class BlockKeyhole extends BlockStone {
 
 	@Override
 	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
-		
+
 		if(player.getHeldItem() != null) {
 			boolean cracked = player.getHeldItem().getItem() == ModItems.key_red_cracked;
 			if((player.getHeldItem().getItem() == ModItems.key_red || cracked) && side != 0 && side != 1) {
@@ -66,20 +66,20 @@ public class BlockKeyhole extends BlockStone {
 				if(side == 4) b = 0;
 				ItemModDoor.placeDoorBlock(world, x, y - 1, z, b, ModBlocks.door_red);
 				world.playSoundAtEntity(player, "hbm:block.lockOpen", 1.0F, 1.0F);
-				player.triggerAchievement(MainRegistry.achRedRoom);
+				//player.triggerAchievement(MainRegistry.achRedRoom);
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
-	
+
 	protected static void generateRoom(World world, int x, int y, int z) {
-		
+
 		int size = 9;
 		int height = 5;
 		int width = size / 2;
-		
+
 		//Outer Edges, top and bottom
 		for(int i = -width; i <= width; i++) {
 			world.setBlock(x + i, y, z + width, ModBlocks.brick_red, 6, 3);
@@ -91,14 +91,14 @@ public class BlockKeyhole extends BlockStone {
 			world.setBlock(x + width, y + height - 1, z + i, ModBlocks.brick_red, 6, 3);
 			world.setBlock(x - width, y + height - 1, z + i, ModBlocks.brick_red, 6, 3);
 		}
-		
+
 		for(int i = 1; i <= height - 2; i++) {
 			//Outer edges, sides
 			world.setBlock(x + width, y + i, z + width, ModBlocks.brick_red, 6, 3);
 			world.setBlock(x + width, y + i, z - width, ModBlocks.brick_red, 6, 3);
 			world.setBlock(x - width, y + i, z + width, ModBlocks.brick_red, 6, 3);
 			world.setBlock(x - width, y + i, z - width, ModBlocks.brick_red, 6, 3);
-			
+
 			//Walls
 			for(int j = -width + 1; j <= width - 1; j++) {
 				world.setBlock(x + width, y + i, z + j, ModBlocks.brick_red, 4, 3);
@@ -107,13 +107,13 @@ public class BlockKeyhole extends BlockStone {
 				world.setBlock(x + j, y + i, z - width, ModBlocks.brick_red, 3, 3);
 			}
 		}
-		
+
 		for(int i = -width + 1; i <= width - 1; i++) {
 			for(int j = -width + 1; j <= width - 1; j++) {
 				//Floor and ceiling
 				world.setBlock(x + i, y, z + j, ModBlocks.brick_red, 1, 3);
 				world.setBlock(x + i, y + height - 1, z + j, ModBlocks.brick_red, 0, 3);
-				
+
 				for(int k = 1; k <= height - 2; k++) {
 					world.setBlock(x + i, y + k, z + j, Blocks.air);
 				}
@@ -131,7 +131,7 @@ public class BlockKeyhole extends BlockStone {
 		world.setBlock(x - torchOff, y + 2, z + torchDist, Blocks.torch);
 		world.setBlock(x + torchOff, y + 2, z - torchDist, Blocks.torch);
 		world.setBlock(x - torchOff, y + 2, z - torchDist, Blocks.torch);
-		
+
 		//Cobwebs
 		if(world.rand.nextInt(4) == 0) {
 			for(int i = -width + 1; i <= width - 1; i++) {
@@ -140,7 +140,7 @@ public class BlockKeyhole extends BlockStone {
 				}
 			}
 		}
-		
+
 		//Pillars
 		if(world.rand.nextInt(4) == 0) {
 			for(int i = 1; i <= height - 2; i++) {
@@ -150,7 +150,7 @@ public class BlockKeyhole extends BlockStone {
 				world.setBlock(x - width + 2, y + i, z - width + 2, ModBlocks.concrete_colored, 14, 3);
 			}
 		}
-		
+
 		//Fire
 		if(world.rand.nextInt(4) == 0) {
 			world.setBlock(x + width - 1, y, z + width - 1, Blocks.netherrack);
@@ -162,7 +162,7 @@ public class BlockKeyhole extends BlockStone {
 			world.setBlock(x - width + 1, y + 1, z + width - 1, Blocks.fire);
 			world.setBlock(x - width + 1, y + 1, z - width + 1, Blocks.fire);
 		}
-		
+
 		//Circle
 		if(world.rand.nextInt(4) == 0) {
 			for(int i = -1; i <= 1; i++) {
@@ -171,7 +171,7 @@ public class BlockKeyhole extends BlockStone {
 				}
 			}
 		}
-		
+
 		//Lava
 		if(world.rand.nextInt(4) == 0) {
 			world.setBlock(x + width - 2, y, z + width - 1, Blocks.lava);
@@ -191,9 +191,9 @@ public class BlockKeyhole extends BlockStone {
 			world.setBlock(x - width + 1, y, z - width + 2, Blocks.lava);
 			world.setBlock(x - width + 1, y, z - width + 3, Blocks.lava);
 		}
-		
+
 		int rand = world.rand.nextInt(20);
-		
+
 		if(rand == 0) {
 	 		world.setBlock(x, y + 1, z, ModBlocks.deco_loot);
 			TileEntityLoot loot = (TileEntityLoot) world.getTileEntity(x, y + 1, z);
@@ -204,12 +204,12 @@ public class BlockKeyhole extends BlockStone {
 		} else {
 			spawnPedestalItem(world, x, y + 1, z);
 		}
-		
+
 		//Clear dropped items
 		List<EntityItem> items = world.getEntitiesWithinAABB(EntityItem.class, AxisAlignedBB.getBoundingBox(x + 0.5, y, z + 0.5, x + 0.5, y + height, z + 0.5).expand(size / 2D, 0, size / 2D));
 		for(EntityItem item : items) item.setDead();
 	}
-	
+
 	public static void spawnPedestalItem(World world, int x, int y, int z) {
 		world.setBlock(x, y, z, ModBlocks.pedestal);
 		TileEntityPedestal pedestal = (TileEntityPedestal) world.getTileEntity(x, y, z);
