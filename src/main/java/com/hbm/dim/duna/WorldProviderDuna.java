@@ -19,7 +19,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.PotionEffect;
-import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.layer.GenLayer;
@@ -58,73 +57,60 @@ public class WorldProviderDuna extends WorldProviderCelestial {
 	public void updateWeather() {
 		super.updateWeather();
 
-		final int RADIATION_DURATION = 20;
-		final int RADIATION_CHANCE_SERVER = 500;
-		final int RADIATION_CHANCE_CLIENT = 520;
+		if(!worldObj.isRemote) {
+			if(dustStormTimer <= 0) {
 
-		if (!worldObj.isRemote) {
-			if (dustStormTimer <= 0) {
-				// Apply radiation effects to players during storm setup
-				applyRadiationToPlayers(RADIATION_CHANCE_SERVER, RADIATION_DURATION);
 
-				// Toggle storm intensity and reset timer
-				if (dustStormIntensity >= 0.5F) {
-					endDustStorm();
+
+				for (Object obj : worldObj.playerEntities) {
+					if (obj instanceof EntityPlayer) {
+						EntityPlayer player = (EntityPlayer) obj;
+
+						// Check if the player can see the sky
+						if (worldObj.canBlockSeeTheSky((int) player.posX, (int) player.posY, (int) player.posZ)) {
+							// Apply radiation effect with a random chance
+							if (rand.nextInt(500) == 0) {
+								player.addPotionEffect(new PotionEffect(HbmPotion.radiation.id, 20, 0));
+							}
+						}
+					}
+				}
+
+				if(dustStormIntensity >= 0.5F) {
+					dustStormIntensity = 0;
+					dustStormTimer = worldObj.rand.nextInt(168000) + 12000;
 				} else {
-					startDustStorm();
+					dustStormIntensity = worldObj.rand.nextFloat() * 0.5F + 0.5F;
+					dustStormTimer = worldObj.rand.nextInt(12000) + 12000;
 				}
 			}
 
 			dustStormTimer--;
 		} else {
-			if (dustStormIntensity >= 0.5F) {
-				spawnStormParticles();
+			if(dustStormIntensity >= 0.5F) {
+				EntityLivingBase viewEntity = Minecraft.getMinecraft().renderViewEntity;
+				Vec3 vec = Vec3.createVectorHelper(20, 0, 50);
+				vec.rotateAroundZ((float)(worldObj.rand.nextDouble() * Math.PI * 10));
+				vec.rotateAroundY((float)(worldObj.rand.nextDouble() * Math.PI * 2 * 5));
+				ParticleUtil.spawnDustFlame(worldObj, viewEntity.posX + vec.xCoord, viewEntity.posY, viewEntity.posZ + vec.zCoord, -4, 0, 0);
 
-				// Apply client-side radiation visual effect
-				applyRadiationToPlayers(RADIATION_CHANCE_CLIENT, RADIATION_DURATION);
-			}
-		}
-	}
+				for (Object obj : worldObj.playerEntities) {
+					if (obj instanceof EntityPlayer) {
+						EntityPlayer player = (EntityPlayer) obj;
 
-	private void applyRadiationToPlayers(int chance, int duration) {
-		for (Object obj : worldObj.playerEntities) {
-			if (obj instanceof EntityPlayer) {
-				EntityPlayer player = (EntityPlayer) obj;
-				int x = MathHelper.floor_double(player.posX);
-				int y = MathHelper.floor_double(player.posY + player.getEyeHeight());
-				int z = MathHelper.floor_double(player.posZ);
-
-				if (worldObj.canBlockSeeTheSky(x, y, z)) {
-					if (rand.nextInt(chance) == 0) {
-						player.addPotionEffect(new PotionEffect(HbmPotion.radiation.id, duration, 0));
+						// Check if the player can see the sky
+						if (worldObj.canBlockSeeTheSky((int) player.posX, (int) player.posY, (int) player.posZ)) {
+							// Apply radiation effect with a random chance
+							if (rand.nextInt(520) == 0) {
+								player.addPotionEffect(new PotionEffect(HbmPotion.radiation.id, 20, 0));
+							}
+						}
 					}
 				}
+
 			}
 		}
 	}
-
-	private void startDustStorm() {
-		dustStormIntensity = worldObj.rand.nextFloat() * 0.5F + 0.5F;
-		dustStormTimer = worldObj.rand.nextInt(12000) + 12000;
-	}
-
-	private void endDustStorm() {
-		dustStormIntensity = 0;
-		dustStormTimer = worldObj.rand.nextInt(168000) + 12000;
-	}
-
-	private void spawnStormParticles() {
-		EntityLivingBase viewEntity = Minecraft.getMinecraft().renderViewEntity;
-		Vec3 vec = Vec3.createVectorHelper(20, 0, 50);
-		vec.rotateAroundZ((float) (worldObj.rand.nextDouble() * Math.PI * 10));
-		vec.rotateAroundY((float) (worldObj.rand.nextDouble() * Math.PI * 2 * 5));
-		ParticleUtil.spawnDustFlame(worldObj,
-			viewEntity.posX + vec.xCoord,
-			viewEntity.posY,
-			viewEntity.posZ + vec.zCoord,
-			-4, 0, 0);
-	}
-
 
 	@Override
 	public float fogDensity() {
