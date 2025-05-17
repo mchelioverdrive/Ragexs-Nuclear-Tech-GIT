@@ -824,26 +824,27 @@ public class ModEventHandler {
 						//effect for radiation
 						EntityLivingBase entity = (EntityLivingBase) e;
 
-						if(entity instanceof EntityPlayer) {
+						if (entity instanceof EntityPlayer) {
 							EntityPlayer player = (EntityPlayer) entity;
 
 							int randSlot = rand.nextInt(player.inventory.mainInventory.length);
 							HazardTypeNeutron.decay(player.inventory.getStackInSlot(randSlot), 0.999916F);
 
 							// handle dismount events, or our players will splat upon leaving tall rockets
-							if(player.ridingEntity != null && player.ridingEntity instanceof EntityRideableRocket && player.isSneaking()) {
+							if (player.ridingEntity != null && player.ridingEntity instanceof EntityRideableRocket && player.isSneaking()) {
 								EntityRideableRocket rocket = (EntityRideableRocket) player.ridingEntity;
 								RocketState state = rocket.getState();
 
 								// Prevent leaving a rocket in motion, for safety
-								if(state != RocketState.LANDING && state != RocketState.LAUNCHING && state != RocketState.DOCKING && state != RocketState.UNDOCKING) {
+								if (state != RocketState.LANDING && state != RocketState.LAUNCHING && state != RocketState.DOCKING && state != RocketState.UNDOCKING) {
 									boolean inOrbit = event.world.provider instanceof WorldProviderOrbit;
 									Entity ridingEntity = player.ridingEntity;
 									float prevHeight = ridingEntity.height;
 
 									ridingEntity.height = inOrbit ? ridingEntity.height + 1.0F : 1.0F;
 									player.mountEntity(null);
-									if(!inOrbit) player.setPositionAndUpdate(player.posX + 2, player.posY, player.posZ);
+									if (!inOrbit)
+										player.setPositionAndUpdate(player.posX + 2, player.posY, player.posZ);
 									ridingEntity.height = prevHeight;
 								}
 
@@ -851,7 +852,7 @@ public class ModEventHandler {
 							}
 						}
 
-						if(entity instanceof EntityPlayer && ((EntityPlayer)entity).capabilities.isCreativeMode)
+						if (entity instanceof EntityPlayer && ((EntityPlayer) entity).capabilities.isCreativeMode)
 							continue;
 
 						float eRad = HbmLivingProps.getRadiation(entity);
@@ -863,39 +864,13 @@ public class ModEventHandler {
 						if (eRad > 5000)
 							HbmLivingProps.setRadiation(entity, 5000);
 
-						if (entity.getHealth() > 0) {
-							HbmLivingProps props = HbmLivingProps.get(entity);
-							props.radDeathTimer++;
+						HbmLivingProps props = HbmLivingProps.get(entity);
 
-							// Worsen every 30s
-							if (props.radDeathTimer % 600 == 0) {
-								entity.addPotionEffect(new PotionEffect(Potion.weakness.id, 800, 2));
-								entity.addPotionEffect(new PotionEffect(Potion.confusion.id, 600, 1));
-								if (event.world.rand.nextInt(100) == 0)
-									entity.addPotionEffect(new PotionEffect(Potion.poison.id, 50 * 20, 2));
-								if (event.world.rand.nextInt(150) == 0)
-									entity.addPotionEffect(new PotionEffect(Potion.confusion.id, 40 * 20, 1));
-								if (event.world.rand.nextInt(200) == 0)
-									entity.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 40 * 20, 1));
-								if (event.world.rand.nextInt(500) == 0)
-									entity.addPotionEffect(new PotionEffect(Potion.blindness.id, 60 * 20, 0));
-							}
-
-							// Final death after 2 minutes
-							if (props.radDeathTimer >= 2400) {
-								entity.attackEntityFrom(ModDamageSource.radiation, Float.MAX_VALUE);
-								entity.onDeath(ModDamageSource.radiation);
-							}
-						}
-
-// === Fatal Exposure ===
-						if (eRad >= 4000) {
+						if (eRad >= 4000) { // === Fatal Exposure ===
 
 							if (entity.getHealth() > 0) {
-								HbmLivingProps props = HbmLivingProps.get(entity);
 								props.radDeathTimer++;
 
-								// Worsen every 30s
 								if (props.radDeathTimer % 700 == 0) {
 									entity.addPotionEffect(new PotionEffect(Potion.weakness.id, 600, 2));
 									entity.addPotionEffect(new PotionEffect(Potion.confusion.id, 400, 1));
@@ -909,7 +884,6 @@ public class ModEventHandler {
 										entity.addPotionEffect(new PotionEffect(Potion.blindness.id, 40 * 20, 0));
 								}
 
-								// Final death after >2 minutes
 								if (props.radDeathTimer >= 4800) {
 									entity.attackEntityFrom(ModDamageSource.radiation, Float.MAX_VALUE);
 									entity.onDeath(ModDamageSource.radiation);
@@ -919,8 +893,7 @@ public class ModEventHandler {
 							if (entity instanceof EntityPlayer)
 								((EntityPlayer) entity).triggerAchievement(MainRegistry.achRadDeath);
 
-// === 2–4 Sv: Fatal if untreated ===
-						} else if (eRad >= 2000) {
+						} else if (eRad >= 2000) { // === 2–4 Sv: Fatal if untreated ===
 
 							if (entity.getHealth() == 0)
 								entity.onDeath(ModDamageSource.radiation);
@@ -928,10 +901,8 @@ public class ModEventHandler {
 							if (entity instanceof EntityPlayer)
 								((EntityPlayer) entity).triggerAchievement(MainRegistry.achRadDeath);
 
-							HbmLivingProps props = HbmLivingProps.get(entity);
 							if (event.world.rand.nextInt(200) == 0)
-								if (props != null)
-									props.radDeathTimer++;
+								props.radDeathTimer++;
 
 							if (props.radDeathTimer % 800 == 0) {
 								entity.addPotionEffect(new PotionEffect(Potion.weakness.id, 600, 2));
@@ -949,12 +920,9 @@ public class ModEventHandler {
 							if (props.radDeathTimer >= 9600)
 								entity.attackEntityFrom(ModDamageSource.radiation, Float.MAX_VALUE);
 
-// === 1–2 Sv: Severe sickness ===
-						} else if (eRad >= 1000) {
+						} else if (eRad >= 1000) { // === 1–2 Sv: Severe sickness ===
 
-							HbmLivingProps props = HbmLivingProps.get(entity);
-							if (props != null)
-								props.radDeathTimer++;
+							props.radDeathTimer++;
 
 							if (props.radDeathTimer % 900 == 0) {
 								entity.addPotionEffect(new PotionEffect(Potion.weakness.id, 600, 2));
@@ -971,23 +939,21 @@ public class ModEventHandler {
 							if (event.world.rand.nextInt(250) == 0)
 								entity.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 10 * 20, 1));
 
-// === 0.5–1 Sv: Moderate sickness ===
-						} else if (eRad >= 500) {
+						} else if (eRad >= 500) { // === 0.5–1 Sv: Moderate sickness ===
+
 							if (event.world.rand.nextInt(300) == 0)
 								entity.addPotionEffect(new PotionEffect(Potion.weakness.id, 15 * 20, 1));
 							if (event.world.rand.nextInt(400) == 0)
 								entity.addPotionEffect(new PotionEffect(Potion.confusion.id, 10 * 20, 0));
 
-// === 0.25–0.5 Sv: Mild symptoms ===
-						} else if (eRad >= 250) {
+						} else if (eRad >= 250) { // === 0.25–0.5 Sv: Mild symptoms ===
+
 							if (event.world.rand.nextInt(400) == 0)
 								entity.addPotionEffect(new PotionEffect(Potion.weakness.id, 10 * 20, 0));
 
-// === 0.1–0.25 Sv: Subclinical, possible fatigue ===
-						} else if (eRad >= 100) {
-							HbmLivingProps props = HbmLivingProps.get(entity);
-							if (props != null)
-								props.radDeathTimer = 0;
+						} else if (eRad >= 100) { // === 0.1–0.25 Sv: Subclinical ===
+
+							props.radDeathTimer = 0;
 
 							if (event.world.rand.nextInt(500) == 0)
 								entity.addPotionEffect(new PotionEffect(Potion.confusion.id, 5 * 20, 0));
@@ -996,8 +962,8 @@ public class ModEventHandler {
 								((EntityPlayer) entity).triggerAchievement(MainRegistry.achRadPoison);
 						}
 
-					}
 
+					}
 					if(e instanceof EntityItem) {
 						EntityItem item = (EntityItem) e;
 						HazardSystem.updateDroppedItem(item);
