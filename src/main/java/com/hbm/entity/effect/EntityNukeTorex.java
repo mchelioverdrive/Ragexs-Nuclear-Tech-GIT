@@ -74,8 +74,12 @@ public class EntityNukeTorex extends Entity {
 	}
 
 	private boolean isAirColumnBelow(World world, int x, int y, int z, int depth) {
-		for (int i = 0; i < depth && y - i > 0; i++) {
-			if (!world.isAirBlock(x, y - i, z)) return false;
+		System.out.println("Checking air column BELOW starting under (" + x + ", " + y + ", " + z + ") with depth: " + depth);
+		for (int i = 1; i <= depth && (y - i) >= 0; i++) {
+			int checkY = y - i;
+			boolean isAir = world.isAirBlock(x, checkY, z);
+			System.out.println("  -> Checking block at (" + x + ", " + checkY + ", " + z + "): " + (isAir ? "AIR" : "NOT AIR"));
+			if (!isAir) return false;
 		}
 		return true;
 	}
