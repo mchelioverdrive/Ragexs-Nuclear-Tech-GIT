@@ -141,19 +141,6 @@ public class CelestialBody {
 		return this;
 	}
 
-	public static int getAtmosphericPressure(World world) {
-		if (world == null || world.provider == null)
-			return 0;
-
-		CelestialBody body = getBody(world);
-
-		if (body == null)
-			return 0;
-
-		return body.getTrait(CBT_Atmosphere.class) != null ? (int) ((CBT_Atmosphere) body.getTrait(CBT_Atmosphere.class)).getPressure() : 0;
-		//get atmosphereic pressure
-	}
-
 	public CelestialBody withTraits(CelestialBodyTrait... traits) {
 		for(CelestialBodyTrait trait : traits) this.traits.put(trait.getClass(), trait);
 		return this;
