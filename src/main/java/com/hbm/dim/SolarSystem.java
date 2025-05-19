@@ -174,11 +174,14 @@ public class SolarSystem {
 				//jupiter
 				new CelestialBody("jool")
 					.withMassRadius(1.898e27F, 69_911) // was radius 6_000 but that just rendered too large, so density is currently incorrect
+
+					//69_911
+
 					//skibidi mode: on
 					.withSemiMajorAxis(778_479_000)
 					.withRotationalPeriod(36_000)
 					//.withColor(0.4588f, 0.6784f, 0.3059f)
-					//neptune/uranus color
+					//was neptune/uranus color?
 					.withColor(1.0f, 0.5f, 0.0f)
 					//hopefully orange?
 					.withSatellites(
