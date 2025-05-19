@@ -62,7 +62,7 @@ public class SolarSystem {
 					.withBlockTextures(RefStrings.MODID + ":moho_stone", "", "", "")
 					.withAxialTilt(30F)
 					.withProcessingLevel(1)
-					.withTraits(new CBT_Temperature(200)),
+					.withTraits(new CBT_Temperature(430)),
 
 				//venus
 				new CelestialBody("eve", SpaceConfig.eveDimension, Body.EVE)
@@ -72,7 +72,7 @@ public class SolarSystem {
 					.withColor(0.408F, 0.298F, 0.553F)
 					.withBlockTextures(RefStrings.MODID + ":eve_stone_2", "", "", "")
 					.withProcessingLevel(2)
-					.withTraits(new CBT_Atmosphere(Fluids.EVEAIR, 5D), new CBT_Temperature(400), new CBT_Water(Fluids.MERCURY)),
+					.withTraits(new CBT_Atmosphere(Fluids.EVEAIR, 5D), new CBT_Temperature(464), new CBT_Water(Fluids.MERCURY)),
 					//.withSatellites(
 
 					//	new CelestialBody("gilly")
