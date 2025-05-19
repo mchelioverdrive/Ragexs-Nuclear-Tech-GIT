@@ -184,6 +184,7 @@ public class SolarSystem {
 					//was neptune/uranus color?
 					.withColor(1.0f, 0.5f, 0.0f)
 					//hopefully orange?
+					//OH ITS BECAUSE THIS ISNT AN OVERLAY, THIS MOD ACTUALLY USES A TEXTURE FOR UP CLOSE SHIT AMAZING
 					.withSatellites(
 
 						//europa
