@@ -22,7 +22,7 @@ public class ItemInfiniteFluid extends Item {
 	private int amount;
 	private int chance;
 	private boolean requiresTable; // Whether or not a CBT_Water with matching FluidType must be present to function
-	
+
 	public ItemInfiniteFluid(FluidType type, int amount) {
 		this(type, amount, 1, false);
 	}
@@ -34,7 +34,7 @@ public class ItemInfiniteFluid extends Item {
 	public ItemInfiniteFluid(FluidType type, int amount, boolean requiresTable) {
 		this(type, amount, 1, requiresTable);
 	}
-	
+
 	public ItemInfiniteFluid(FluidType type, int amount, int chance, boolean requiresTable) {
 		this.type = type;
 		this.amount = amount;
@@ -43,23 +43,30 @@ public class ItemInfiniteFluid extends Item {
 	}
 
 	public void onUpdate(ItemStack stack, World world, Entity player, int slot, boolean inHand) {
-		if(!requiresTable) return;
+		if (!requiresTable) return;
 
-		if(stack.stackTagCompound == null)
+		if (stack.stackTagCompound == null)
 			stack.stackTagCompound = new NBTTagCompound();
 
-		if(world.provider instanceof WorldProviderOrbit) {
+		if (world.provider instanceof WorldProviderOrbit) {
 			stack.stackTagCompound.setBoolean("noAtmo", true);
 			stack.stackTagCompound.setInteger("fluid", 0);
 			return;
 		}
-		
-		// Check that the current body has a water table
+
+		int pressure = CelestialBody.getAtmosphericPressure(world); // hypothetical
+		if (!allowPressure(pressure)) {
+			stack.stackTagCompound.setBoolean("noAtmo", true);
+			stack.stackTagCompound.setInteger("fluid", 0);
+			return;
+		}
+
 		CBT_Water table = CelestialBody.getTrait(world, CBT_Water.class);
 		boolean canOperate = table != null && table.fluid == type;
 		stack.stackTagCompound.setBoolean("noAtmo", !canOperate);
 		stack.stackTagCompound.setInteger("fluid", table != null ? table.fluid.getID() : 0);
 	}
+
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
