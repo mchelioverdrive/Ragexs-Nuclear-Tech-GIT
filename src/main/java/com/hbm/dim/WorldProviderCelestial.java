@@ -223,7 +223,7 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 			Vec3 fluidColor;
 
 			if(entry.fluid == Fluids.EVEAIR) {
-				fluidColor = Vec3.createVectorHelper(53F / 255F * sun, 32F / 255F * sun, 74F / 255F * sun);
+				fluidColor = Vec3.createVectorHelper(230F / 255F * sun, 200F / 255F * sun, 50F / 255F * sun);
 			} else if(entry.fluid == Fluids.DUNAAIR || entry.fluid == Fluids.CARBONDIOXIDE) {
 				fluidColor = Vec3.createVectorHelper(212F / 255F * sun, 112F / 255F * sun, 78F / 255F * sun);
 			} else if(entry.fluid == Fluids.AIR || entry.fluid == Fluids.OXYGEN || entry.fluid == Fluids.NITROGEN) {
@@ -272,23 +272,30 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 		// Mars IRL has inverted blue sunsets, which look cool as
 		// So carbon dioxide rich atmospheres will do the same
 		// for now, it's just a swizzle between red and blue
+
+		//>mars
+		//>look inside
+		//>its actually just a ksp rip off
+		//mfw
 		if(atmosphere.hasFluid(Fluids.DUNAAIR) || atmosphere.hasFluid(Fluids.CARBONDIOXIDE)) {
 			float tmp = colors[0];
 			colors[0] = colors[2];
 			colors[2] = tmp;
 		} else if (atmosphere.hasFluid(Fluids.EVEAIR)) {
 			float f2 = 0.4F;
-			float f3 = MathHelper.cos((celestialAngle) * (float)Math.PI * 2.0F) - 0.0F;
-			float f4 = -0.0F;
+			float f3 = MathHelper.cos((celestialAngle) * (float)Math.PI * 2.0F);
+			float f4 = 0.0F;
 
 			if (f3 >= f4 - f2 && f3 <= f4 + f2) {
 				float f5 = (f3 - f4) / f2 * 0.5F + 0.5F;
 				float f6 = 1.0F - (1.0F - MathHelper.sin(f5 * (float)Math.PI)) * 0.99F;
 				f6 *= f6;
-				colors[0] = f5 * 0.01F;
-				colors[1] = f5 * f5 * 0.9F + 0.3F;
-				colors[2] = f5 * f5;
-				colors[3] = f6;
+
+				// Venus-like yellow-orange sunset
+				colors[0] = f5 * 0.9F + 0.1F;       // Red: dominant
+				colors[1] = f5 * 0.7F + 0.2F;       // Green: moderately strong
+				colors[2] = f5 * 0.1F;              // Blue: nearly absent for orange/yellow
+				colors[3] = f6;                     // Alpha/brightness
 			}
 		}
 
