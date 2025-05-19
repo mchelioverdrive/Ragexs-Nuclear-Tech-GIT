@@ -155,7 +155,8 @@ public class SolarSystem {
 							.withProcessingLevel(1)
 							.withRotationalPeriod(65_518)
 							.withTidalLockingTo("duna")
-							.withProcessingLevel(1)
+							//idk what processinglevel even does
+							//oh it's technology lock
 							//.withTraits(new CBT_Water(Fluids.BROMINE))
 
 					),
