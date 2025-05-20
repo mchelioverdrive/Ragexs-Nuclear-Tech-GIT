@@ -128,29 +128,104 @@ public class EntityNukeTorex extends Entity {
 				}
 
 				case AIRBURST: {
+					float yieldScale = (float) cs;
 					float radius = 20F + (ticksExisted * 0.5F);
-					//int lifetime = Math.min((ticksExisted * ticksExisted) + 200, maxAge - ticksExisted + 200);
-//
-					//if (ticksExisted < 130 * s) {
-					//	lifetime *= s;
-					//	for (int i = 0; i < 2; i++) {
-					//		Cloudlet cloud = new Cloudlet(posX, posY + coreHeight, posZ,
-					//			(float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime, TorexType.RING);
-					//		cloud.setScale(1F + this.ticksExisted * 0.0025F * (float) (cs * cs), 3F * (float) (cs * cs));
-					//		cloudlets.add(cloud);
-					//	}
-					//}
-					//caused a fucking null pointer exception because all the bobcat ground det spaghetti bullshit all fucking works together
-//
-					if (ticksExisted < 600) {
-						spawnAirburstRingCloud();
+
+					if (ticksExisted == 1) {
+						this.setScale((float) s);
+						lastSpawnY = posY;
 					}
+
+					if (lastSpawnY == -1) {
+						lastSpawnY = posY - 6;
+					}
+
+					if (ticksExisted < 80) {
+						spawnAirburstRingCloud();
+						//fireball
+					}
+
+					// Rising stem (central column)
+					// Better stem (tight vertical column)
+					if (ticksExisted >= 3 && ticksExisted < 150) {
+						double range = (torusWidth - rollerSize) * 0.25;
+						int toSpawn = (int) Math.ceil(10 * getSimulationSpeed() * getSimulationSpeed());
+						int lifetime = Math.min((ticksExisted * ticksExisted) + 200, maxAge - ticksExisted + 200);
+
+						for (int i = 0; i < toSpawn; i++) {
+							double x = posX + rand.nextGaussian() * range;
+							double z = posZ + rand.nextGaussian() * range;
+							Cloudlet cloud = new Cloudlet(x, lastSpawnY, z,
+								(float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime);
+							cloud.setScale(1F + ticksExisted * 0.005F * (float) cs, 5F * (float) cs);
+							cloudlets.add(cloud);
+						}
+					}
+
+					// Mushroom cap (torus)
+					if (ticksExisted >= 80 && ticksExisted < 600) {
+						int capClouds = 20;
+						int layers = 4;
+						double capRadius = 20 + (ticksExisted * 0.05) * yieldScale;
+						double yCap = lastSpawnY + 30 + (ticksExisted * 0.03);
+
+						for (int i = 0; i < capClouds; i++) {
+							for (int j = 0; j < layers; j++) {
+								float angle = (float)(Math.PI * 2 * rand.nextDouble());
+								Vec3 vec = Vec3.createVectorHelper(capRadius + rand.nextDouble() * 3.0, 0, 0);
+								vec.rotateAroundY(angle);
+								vec.rotateAroundZ((float)(Math.PI / 30 * j));
+								Cloudlet cloud = new Cloudlet(
+									posX + vec.xCoord,
+									yCap + j * 2,
+									posZ + vec.zCoord,
+									angle,
+									0,
+									400 + rand.nextInt(100),
+									TorexType.CONDENSATION);
+								cloud.setScale(0.5F * yieldScale, 3F * yieldScale);
+								cloudlets.add(cloud);
+							}
+						}
+					}
+
+					// Shock ring
+					if (ticksExisted < 100) {
+						int shockClouds = ticksExisted * 4;
+						int shockLife = 300 - ticksExisted * 2;
+						for (int i = 0; i < shockClouds; i++) {
+							Vec3 vec = Vec3.createVectorHelper((ticksExisted * 1.2 + rand.nextDouble()) * 1.5, 0, 0);
+							float rot = (float)(Math.PI * 2 * rand.nextDouble());
+							vec.rotateAroundY(rot);
+							cloudlets.add(new Cloudlet(
+								vec.xCoord + posX,
+								posY,
+								vec.zCoord + posZ,
+								rot,
+								0,
+								shockLife,
+								TorexType.SHOCK)
+								.setScale(6F * yieldScale, 2F)
+								.setMotion(0.75));
+						}
+					}
+
+					// Play sound once within blast radius
 					if (!didPlaySound && MainRegistry.proxy.me() != null &&
 						MainRegistry.proxy.me().getDistanceToEntity(this) < radius * 2) {
-						MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 8000F, 1F);
+						MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 10000F, 1F);
 						didPlaySound = true;
 					}
 
+					// Cloudlet updates
+					for (Cloudlet cloud : cloudlets) cloud.update();
+					cloudlets.removeIf(x -> x.isDead);
+
+					// Visual scaling
+					coreHeight += 0.1 / s;
+					torusWidth += 0.04 / s;
+					rollerSize = torusWidth * 0.4F;
+					convectionHeight = coreHeight + rollerSize;
 					break;
 				}
 
@@ -294,6 +369,7 @@ public class EntityNukeTorex extends Entity {
 		if (ticksExisted < 40) {
 			//should last about 2 seconds as 20 ticks = 1s right
 			ExplosionNukeSmall.explode(World, this.posX, this.posY, this.posZ, ExplosionNukeSmall.PARAMS_VISUAL);
+			//just a large ball of fire, this should probably be the space effect actually
 			//System.out.println("fired in torex class");
 		} else {
 			//no more shrapnel afterwords
@@ -310,7 +386,8 @@ public class EntityNukeTorex extends Entity {
 
 	private void spawnSpaceDetonationFlash(float scale) {
 
-		//It would look more like a gray firework exploding silently in a vacuum than any kind of atmospheric detonation.
+		//"It would look more like a gray firework exploding silently in a vacuum than any kind of atmospheric detonation."
+		//allegedly
 
 		World World = worldObj;
 		//x = ;
