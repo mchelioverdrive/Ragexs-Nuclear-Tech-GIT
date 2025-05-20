@@ -145,8 +145,7 @@ public class EntityNukeTorex extends Entity {
 						//fireball
 					}
 
-					// Rising stem (central column)
-					// Better stem (tight vertical column)
+					//this is not the stem, this is the mushroom cloud...??????????
 					if (ticksExisted < 150) {
 						double range = (torusWidth - rollerSize) * 0.25;
 						double simSpeed = getSimulationSpeed();
