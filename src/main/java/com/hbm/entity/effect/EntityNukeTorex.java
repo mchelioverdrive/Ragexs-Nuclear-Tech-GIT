@@ -147,9 +147,10 @@ public class EntityNukeTorex extends Entity {
 
 					// Rising stem (central column)
 					// Better stem (tight vertical column)
-					if (ticksExisted >= 3 && ticksExisted < 150) {
+					if (ticksExisted < 150) {
 						double range = (torusWidth - rollerSize) * 0.25;
-						int toSpawn = (int) Math.ceil(10 * getSimulationSpeed() * getSimulationSpeed());
+						double simSpeed = getSimulationSpeed();
+						int toSpawn = (int) Math.ceil(10 * simSpeed * simSpeed);
 						int lifetime = Math.min((ticksExisted * ticksExisted) + 200, maxAge - ticksExisted + 200);
 
 						for (int i = 0; i < toSpawn; i++) {
@@ -157,7 +158,7 @@ public class EntityNukeTorex extends Entity {
 							double z = posZ + rand.nextGaussian() * range;
 							Cloudlet cloud = new Cloudlet(x, lastSpawnY, z,
 								(float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime);
-							cloud.setScale(1F + ticksExisted * 0.005F * (float) cs, 5F * (float) cs);
+							cloud.setScale(1F + this.ticksExisted * 0.005F * (float) cs, 5F * (float) cs);
 							cloudlets.add(cloud);
 						}
 					}
