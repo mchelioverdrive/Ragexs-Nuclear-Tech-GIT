@@ -145,11 +145,21 @@ public class EntityNukeTorex extends Entity {
 						//fireball
 					}
 
-					//this is not the stem, this is the mushroom cloud...??????????
-					if (ticksExisted < 150) {
-						double range = (torusWidth - rollerSize) * 0.25;
+					int spawnTarget = Math.max(worldObj.getHeightValue((int) Math.floor(posX), (int) Math.floor(posZ)) - 3, 1);
+					double moveSpeed = 0.5D;
+
+					if (lastSpawnY == -1) {
+						lastSpawnY = spawnTarget;
+					} else if (Math.abs(spawnTarget - lastSpawnY) < moveSpeed) {
+						lastSpawnY = spawnTarget;
+					} else {
+						lastSpawnY += moveSpeed * Math.signum(spawnTarget - lastSpawnY);
+					}
+
+					if (ticksExisted < 600) {
+						double range = (torusWidth - rollerSize) * 0.25 * yieldScale;
 						double simSpeed = getSimulationSpeed();
-						int toSpawn = (int) Math.ceil(10 * simSpeed * simSpeed);
+						int toSpawn = (int) Math.ceil(10 * simSpeed * simSpeed * yieldScale);
 						int lifetime = Math.min((ticksExisted * ticksExisted) + 200, maxAge - ticksExisted + 200);
 
 						for (int i = 0; i < toSpawn; i++) {
@@ -157,7 +167,7 @@ public class EntityNukeTorex extends Entity {
 							double z = posZ + rand.nextGaussian() * range;
 							Cloudlet cloud = new Cloudlet(x, lastSpawnY, z,
 								(float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime);
-							cloud.setScale(1F + this.ticksExisted * 0.005F * (float) cs, 5F * (float) cs);
+							cloud.setScale(1F + this.ticksExisted * 0.005F * yieldScale, 5F * yieldScale);
 							cloudlets.add(cloud);
 						}
 					}
