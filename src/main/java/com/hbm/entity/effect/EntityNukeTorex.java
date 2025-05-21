@@ -167,7 +167,7 @@ public class EntityNukeTorex extends Entity {
 							double z = posZ + rand.nextGaussian() * range;
 							Cloudlet cloud = new Cloudlet(x, lastSpawnY, z,
 								(float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime);
-							cloud.setScale(1F + this.ticksExisted * 0.005F * yieldScale, 5F * yieldScale);
+							cloud.setScale(1F + this.ticksExisted * 0.005F * yieldScale, 15F * yieldScale);
 							cloudlets.add(cloud);
 						}
 					}
