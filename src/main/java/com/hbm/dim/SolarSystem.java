@@ -109,6 +109,8 @@ public class SolarSystem {
 							//that dont work
 							.withTidalLockingTo("kerbin")
 							.withBlockTextures(RefStrings.MODID + ":moon_rock", "", "", "")
+							//.getOrbitalAngle()
+							//.getAngle("kerbin")
 							//.
 						//,
 

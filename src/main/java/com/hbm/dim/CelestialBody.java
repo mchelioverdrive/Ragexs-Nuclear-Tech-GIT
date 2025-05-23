@@ -68,6 +68,24 @@ public class CelestialBody {
 
 	public float shaderScale = 1; // If the shader renders the item within the quad (not filling it entirely), scale it up from the true size
 
+	// Returns current angle of rotation or orbit in degrees (0 to 360)
+	//public float getAngle(World world) {
+	//	if (world == null) return 0F;
+//
+	//	long time = world.getWorldTime();
+	//	int period = this.getEffectivePeriod();
+//
+	//	return (float) ((time % period) / (double) period * 360.0);
+	//}
+//
+	//// If tidally locked, use parent's period (orbital period), otherwise use own rotation
+	//public int getEffectivePeriod() {
+	//	if (this.tidallyLockedTo != null && this.parent != null) {
+	//		return this.rotationalPeriod; // rotationalPeriod is being used to represent orbital period here
+	//	}
+	//	return this.rotationalPeriod;
+	//}
+
 	public CelestialBody(String name) {
 		this.name = name;
 		this.texture = new ResourceLocation("hbm:textures/misc/space/" + name + ".png");
