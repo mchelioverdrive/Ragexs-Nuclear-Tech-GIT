@@ -92,7 +92,7 @@ public class SolarSystem {
 				new CelestialBody("kerbin", 0, Body.KERBIN) // overworld
 					.withMassRadius(5.972e24F, 6_371)
 					.withSemiMajorAxis(49_666_666) //149_598_000/3 = 49,666,666
-					.withRotationalPeriod(21_549)
+					.withRotationalPeriod(21_549) //23hrs = 82k seconds
 					.withColor(0.608F, 0.914F, 1.0F)
 					.withTraits(new CBT_Atmosphere(Fluids.AIR, 1D), new CBT_Water())
 					.withSatellites(
@@ -103,9 +103,13 @@ public class SolarSystem {
 						new CelestialBody("mun", SpaceConfig.moonDimension, Body.MUN)
 							.withMassRadius(7.347e22F, 1_737)
 							.withSemiMajorAxis(96_100) //384_400 / 4 = 96,100 because it could not be seen
-							.withRotationalPeriod(138_984)
+							.withRotationalPeriod(655_719) //27 days = 2,332,800 seconds
+							//testing
+							//but then minecraft scaling and shit so 655_719
+							//that dont work
 							.withTidalLockingTo("kerbin")
 							.withBlockTextures(RefStrings.MODID + ":moon_rock", "", "", "")
+							//.
 						//,
 
 						//new CelestialBody("minmus", SpaceConfig.minmusDimension, Body.MINMUS)

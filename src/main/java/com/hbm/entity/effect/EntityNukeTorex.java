@@ -119,11 +119,71 @@ public class EntityNukeTorex extends Entity {
 			switch (this.type) {
 
 				case SPACE: {
+
+					float yieldScale = (float) cs;
+					float radius = 20F + (ticksExisted * 0.5F);
+
+					if (ticksExisted == 1) {
+						this.setScale((float) s);
+						lastSpawnY = posY;
+					}
+
+					if (lastSpawnY == -1) {
+						lastSpawnY = posY;
+						//0 gravity
+					}
+
+					int spawnTarget = Math.max(worldObj.getHeightValue((int) Math.floor(posX), (int) Math.floor(posZ)) - 3, 1);
+					double moveSpeed = 5.5D;
+
+					if (lastSpawnY == -1) {
+						lastSpawnY = spawnTarget;
+					}
+					//im assuming this is ploomage/torex mushroom
+					//} else if (Math.abs(spawnTarget - lastSpawnY) < moveSpeed) {
+					//	lastSpawnY = spawnTarget;
+					//} else {
+					//	lastSpawnY += moveSpeed * Math.signum(spawnTarget - lastSpawnY);
+					//}
+					//it infact was not
+
 					if (ticksExisted == 1) {
 						spawnSpaceDetonationFlash((float) getScale() * 10F);
 						//pray
 					}
-					// No cloudlets at all
+					// ball of gas rapidly expanding and disentegrating
+
+					// Mushroom cloud
+					double range = ticksExisted * 0.1F; // Ball grows over time
+					double simSpeed = getSimulationSpeed()/2;
+					int toSpawn = (int) Math.ceil(10 * simSpeed * simSpeed);
+					int lifetime = Math.min((ticksExisted * ticksExisted) + 100, maxAge - ticksExisted + 100);
+
+					for (int i = 0; i < toSpawn; i++) {
+						double theta = rand.nextDouble() * 2 * Math.PI;
+						double phi = Math.acos(2 * rand.nextDouble() - 1);
+						double r = rand.nextDouble() * range;
+
+						double x = posX + r * Math.sin(phi) * Math.cos(theta);
+						double y = posY + r * Math.sin(phi) * Math.sin(theta);
+						double z = posZ + r * Math.cos(phi);
+
+						Cloudlet cloud = new Cloudlet(x, y, z,
+							(float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime);
+						cloud.setScale(1F + this.ticksExisted * 0.005F * (float) cs, 10F * (float) cs);
+						cloudlets.add(cloud);
+					}
+
+					// Cloudlet updates
+					for (Cloudlet cloud : cloudlets) cloud.update();
+					cloudlets.removeIf(x -> x.isDead);
+
+					// Visual scaling
+					//coreHeight += 0.1 / s;
+					//torusWidth += 0.04 / s;
+					//rollerSize = torusWidth * 0.4F;
+					//convectionHeight = coreHeight + rollerSize;
+
 					return;
 				}
 
@@ -140,7 +200,7 @@ public class EntityNukeTorex extends Entity {
 						lastSpawnY = posY - 6;
 					}
 
-					if (ticksExisted < 80) {
+					if (ticksExisted < 50) {
 						spawnAirburstRingCloud();
 						//fireball
 					}
@@ -193,7 +253,7 @@ public class EntityNukeTorex extends Entity {
 									0,
 									400 + rand.nextInt(100),
 									TorexType.CONDENSATION);
-								cloud.setScale(0.5F * yieldScale, 3F * yieldScale);
+								cloud.setScale(0.5F * yieldScale, 10F * yieldScale);
 								cloudlets.add(cloud);
 							}
 						}
@@ -399,7 +459,21 @@ public class EntityNukeTorex extends Entity {
 		//"It would look more like a gray firework exploding silently in a vacuum than any kind of atmospheric detonation."
 		//allegedly
 
+		//bigger emp FX
 		World World = worldObj;
+		ExplosionNukeGeneric.empBlast(World, (int) this.posX, (int) this.posY, (int) this.posZ, 50);
+		EntityEMPBlast wave = new EntityEMPBlast(World, 400);
+		wave.posX = this.posX + 0.5;
+		wave.posY = this.posY + 0.5;
+		wave.posZ = this.posZ + 0.5;
+		World.spawnEntityInWorld(wave);
+
+
+		if (ticksExisted < 110) {
+			ExplosionNukeSmall.explode(World, this.posX, this.posY, this.posZ, ExplosionNukeSmall.PARAMS_VISUALNOSHRAP);
+			//fireball
+		}
+
 		//x = ;
 		//y = this.posY;
 		//z = this.posZ;

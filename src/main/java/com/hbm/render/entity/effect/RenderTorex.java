@@ -51,7 +51,7 @@ public class RenderTorex extends Render {
 				player.attackedAtYaw = 0F;
 			}
 	//}
-		//DAMMIT WHERE DOES THIS FUCKING MOD KEEP ITS SMALL NUKE SCREEN TILT FUCKERY
+		//torex visual, not explosion visual, its in clientproxy or some shit amazing coding btw
 
 		if(fog) GL11.glEnable(GL11.GL_FOG);
 		GL11.glPopMatrix();
