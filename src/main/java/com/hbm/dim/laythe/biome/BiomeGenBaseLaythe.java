@@ -28,12 +28,13 @@ public abstract class BiomeGenBaseLaythe extends BiomeGenBaseCelestial {
 		this.waterColorMultiplier = 0x5b009a;
 
         this.waterCreatures.add(new BiomeGenBase.SpawnListEntry(EntityScutterfish.class, 10, 4, 4));
+		//annoying
 
 		BiomeDecoratorCelestial decorator = new BiomeDecoratorCelestial(Blocks.stone);
 		decorator.waterPlantsPerChunk = 32;
 		this.theBiomeDecorator = decorator;
 		this.theBiomeDecorator.generateLakes = false;
-        
+
         this.topBlock = ModBlocks.laythe_silt;
         this.fillerBlock = ModBlocks.laythe_silt;
 		BiomeDictionary.registerBiomeType(this, BiomeDictionary.Type.COLD, BiomeDictionary.Type.WET, BiomeDictionary.Type.DENSE, BiomeDictionary.Type.SPOOKY);

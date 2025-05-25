@@ -25,7 +25,7 @@ public class ChunkProviderLaythe extends ChunkProviderCelestial {
 
 	public ChunkProviderLaythe(World world, long seed, boolean hasMapFeatures) {
 		super(world, seed, hasMapFeatures);
-		
+
 		spires.rock = Blocks.stone;
 		spires.regolith = ModBlocks.laythe_silt;
 		spires.curve = true;
@@ -34,8 +34,9 @@ public class ChunkProviderLaythe extends ChunkProviderCelestial {
 
 		seaBlock = Blocks.water;
 
+		//todo change:
 		spawnedOfFlesh.add(new SpawnListEntry(EntityCreeperFlesh.class, 10, 4, 4));
-		
+
 		snowires.rock = Blocks.packed_ice;
 		snowires.regolith = Blocks.snow;
 		snowires.curve = true;
@@ -47,7 +48,7 @@ public class ChunkProviderLaythe extends ChunkProviderCelestial {
 	@Override
 	public BlockMetaBuffer getChunkPrimer(int x, int z) {
 		BlockMetaBuffer buffer = super.getChunkPrimer(x, z);
-		
+
 		spires.func_151539_a(this, worldObj, x, z, buffer.blocks);
 		caveGenV3.func_151539_a(this, worldObj, x, z, buffer.blocks);
 		if(biomesForGeneration[0] == BiomeGenBaseLaythe.laythePolar) {
