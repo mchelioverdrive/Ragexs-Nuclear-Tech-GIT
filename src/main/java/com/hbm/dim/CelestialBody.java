@@ -85,6 +85,7 @@ public class CelestialBody {
 	//	}
 	//	return this.rotationalPeriod;
 	//}
+	//what the actual fuck am I doing with my life
 
 	public CelestialBody(String name) {
 		this.name = name;
