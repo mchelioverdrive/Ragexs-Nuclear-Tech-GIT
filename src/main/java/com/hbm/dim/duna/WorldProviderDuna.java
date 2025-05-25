@@ -20,6 +20,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.Vec3;
+import net.minecraft.util.WeightedRandomFishable;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.layer.GenLayer;
 import net.minecraft.world.gen.layer.GenLayerFuzzyZoom;
@@ -29,6 +30,7 @@ import net.minecraft.world.gen.layer.GenLayerSmooth;
 import net.minecraft.world.gen.layer.GenLayerVoronoiZoom;
 import net.minecraft.world.gen.layer.GenLayerZoom;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 public class WorldProviderDuna extends WorldProviderCelestial {
@@ -163,6 +165,18 @@ public class WorldProviderDuna extends WorldProviderCelestial {
 			return dimensionId;
 
 		return super.getRespawnDimension(player);
+	}
+
+	public ArrayList<WeightedRandomFishable> getFish() {
+		return new ArrayList<>();
+	}
+
+	public ArrayList<WeightedRandomFishable> getJunk() {
+		return new ArrayList<>();
+	}
+
+	public ArrayList<WeightedRandomFishable> getTreasure() {
+		return new ArrayList<>();
 	}
 
 	private static BiomeGenLayers createBiomeGenerators(long seed) {

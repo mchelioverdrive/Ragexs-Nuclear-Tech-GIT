@@ -107,6 +107,18 @@ public class WorldProviderIke extends WorldProviderCelestial {
 	//	return getPlushie();
 	//}
 
+	public ArrayList<WeightedRandomFishable> getFish() {
+		return new ArrayList<>();
+	}
+
+	public ArrayList<WeightedRandomFishable> getJunk() {
+		return new ArrayList<>();
+	}
+
+	public ArrayList<WeightedRandomFishable> getTreasure() {
+		return new ArrayList<>();
+	}
+
 	//HAHAHA DUDE THESE ANIMALS ARE SO FUCKING FUNNY THEY MAKE ME WANT TO MERGE WITHOUT LOOKING
 
 	/// FISH ///

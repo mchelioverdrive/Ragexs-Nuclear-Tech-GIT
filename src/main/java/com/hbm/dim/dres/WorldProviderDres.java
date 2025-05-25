@@ -13,6 +13,7 @@ import com.hbm.potion.HbmPotion;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.WeightedRandomFishable;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.layer.GenLayer;
 import net.minecraft.world.gen.layer.GenLayerFuzzyZoom;
@@ -20,6 +21,7 @@ import net.minecraft.world.gen.layer.GenLayerSmooth;
 import net.minecraft.world.gen.layer.GenLayerVoronoiZoom;
 import net.minecraft.world.gen.layer.GenLayerZoom;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 public class WorldProviderDres extends WorldProviderCelestial {
@@ -92,6 +94,18 @@ public class WorldProviderDres extends WorldProviderCelestial {
 		GenLayer genLayerVeronoiZoom = new GenLayerVoronoiZoom(10L, biomes);
 
 		return new BiomeGenLayers(biomes, genLayerVeronoiZoom, seed);
+	}
+
+	public ArrayList<WeightedRandomFishable> getFish() {
+		return new ArrayList<>();
+	}
+
+	public ArrayList<WeightedRandomFishable> getJunk() {
+		return new ArrayList<>();
+	}
+
+	public ArrayList<WeightedRandomFishable> getTreasure() {
+		return new ArrayList<>();
 	}
 
 }

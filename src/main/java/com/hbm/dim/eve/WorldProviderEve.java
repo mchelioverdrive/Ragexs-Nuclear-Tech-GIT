@@ -15,12 +15,15 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.Vec3;
+import net.minecraft.util.WeightedRandomFishable;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.layer.GenLayer;
 import net.minecraft.world.gen.layer.GenLayerRiver;
 import net.minecraft.world.gen.layer.GenLayerSmooth;
 import net.minecraft.world.gen.layer.GenLayerVoronoiZoom;
 import net.minecraft.world.gen.layer.GenLayerZoom;
+
+import java.util.ArrayList;
 
 public class WorldProviderEve extends WorldProviderCelestial {
 
@@ -114,6 +117,18 @@ public class WorldProviderEve extends WorldProviderCelestial {
 	@Override
 	public Block getStone() {
 		return ModBlocks.eve_rock;
+	}
+
+	public ArrayList<WeightedRandomFishable> getFish() {
+		return new ArrayList<>();
+	}
+
+	public ArrayList<WeightedRandomFishable> getJunk() {
+		return new ArrayList<>();
+	}
+
+	public ArrayList<WeightedRandomFishable> getTreasure() {
+		return new ArrayList<>();
 	}
 
 	private static BiomeGenLayers createBiomeGenerators(long seed) {

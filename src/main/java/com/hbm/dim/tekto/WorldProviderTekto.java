@@ -17,12 +17,15 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.Vec3;
+import net.minecraft.util.WeightedRandomFishable;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.layer.GenLayer;
 import net.minecraft.world.gen.layer.GenLayerRiver;
 import net.minecraft.world.gen.layer.GenLayerSmooth;
 import net.minecraft.world.gen.layer.GenLayerVoronoiZoom;
 import net.minecraft.world.gen.layer.GenLayerZoom;
+
+import java.util.ArrayList;
 
 public class WorldProviderTekto extends WorldProviderCelestial {
 
@@ -35,7 +38,7 @@ public class WorldProviderTekto extends WorldProviderCelestial {
 	public String getDimensionName() {
 		return "Tekto";
 	}
-	
+
 	@Override
 	public IChunkProvider createChunkGenerator() {
 		return new ChunkProviderTekto(this.worldObj, this.getSeed(), false);
@@ -54,9 +57,9 @@ public class WorldProviderTekto extends WorldProviderCelestial {
 		Vec3 ohshit = super.getSkyColor(camera, partialTicks);
 
 		return Vec3.createVectorHelper(ohshit.xCoord , ohshit.yCoord, ohshit.zCoord);
-		
+
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public float getSunBrightness(float par1) {
@@ -87,8 +90,20 @@ public class WorldProviderTekto extends WorldProviderCelestial {
 		GenLayerSmooth genlayersmooth1 = new GenLayerSmooth(1000L, genlayerBiomes);
 		GenLayerTektoRiverMix genlayerrivermix = new GenLayerTektoRiverMix(100L, genlayersmooth1, genlayersmooth);
 		GenLayerVoronoiZoom genlayervoronoizoom = new GenLayerVoronoiZoom(10L, genlayerrivermix);
-		
+
 		return new BiomeGenLayers(genlayerrivermix, genlayervoronoizoom, seed);
+	}
+
+	public ArrayList<WeightedRandomFishable> getFish() {
+		return new ArrayList<>();
+	}
+
+	public ArrayList<WeightedRandomFishable> getJunk() {
+		return new ArrayList<>();
+	}
+
+	public ArrayList<WeightedRandomFishable> getTreasure() {
+		return new ArrayList<>();
 	}
 
 }
