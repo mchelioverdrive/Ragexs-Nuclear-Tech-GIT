@@ -12,6 +12,8 @@ import com.hbm.dim.dres.GenLayerDres.GenLayerDresPlains;
 import com.hbm.potion.HbmPotion;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
+import net.minecraft.item.ItemStack;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.WeightedRandomFishable;
 import net.minecraft.world.chunk.IChunkProvider;
@@ -96,16 +98,29 @@ public class WorldProviderDres extends WorldProviderCelestial {
 		return new BiomeGenLayers(biomes, genLayerVeronoiZoom, seed);
 	}
 
+	private static ArrayList<WeightedRandomFishable> plushie;
+
+	private ArrayList<WeightedRandomFishable> getPlushie() {
+		if(plushie == null) {
+			plushie = new ArrayList<>();
+			plushie.add(new WeightedRandomFishable(new ItemStack(Blocks.air, 1, 1), 100));
+			//DIE
+		}
+//
+		return plushie;
+	}
+
+	/// FISH ///
 	public ArrayList<WeightedRandomFishable> getFish() {
-		return new ArrayList<>();
+		return getPlushie();
 	}
-
+	//
 	public ArrayList<WeightedRandomFishable> getJunk() {
-		return new ArrayList<>();
+		return getPlushie();
 	}
-
+	//
 	public ArrayList<WeightedRandomFishable> getTreasure() {
-		return new ArrayList<>();
+		return getPlushie();
 	}
 
 }

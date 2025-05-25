@@ -10,6 +10,7 @@ import com.hbm.dim.WorldProviderCelestial;
 import com.hbm.potion.HbmPotion;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.WeightedRandomFishable;
@@ -79,45 +80,44 @@ public class WorldProviderIke extends WorldProviderCelestial {
 		}
 	}
 
-	//private static ArrayList<WeightedRandomFishable> plushie;
+	private static ArrayList<WeightedRandomFishable> plushie;
 
-	//HAHA GUYS ANIME DUDE FUCKING ANIME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//GUYS GUYS ANIME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ITS SO FUCKING FUNNY GET IT
-	//ANIME!!!!!
-
-	//private ArrayList<WeightedRandomFishable> getPlushie() {
-	//	if(plushie == null) {
-	//		plushie = new ArrayList<>();
-	//		plushie.add(new WeightedRandomFishable(new ItemStack(ModBlocks.plushie, 1, 1), 100));
-	//	}
+	private ArrayList<WeightedRandomFishable> getPlushie() {
+		if(plushie == null) {
+			plushie = new ArrayList<>();
+			plushie.add(new WeightedRandomFishable(new ItemStack(Blocks.air, 1, 1), 100));
+			//DIE
+		}
 //
-	//	return plushie;
-	//}
+		return plushie;
+	}
 
 	/// FISH ///
+	public ArrayList<WeightedRandomFishable> getFish() {
+		return getPlushie();
+	}
+//
+	public ArrayList<WeightedRandomFishable> getJunk() {
+		return getPlushie();
+	}
+//
+	public ArrayList<WeightedRandomFishable> getTreasure() {
+		return getPlushie();
+	}
+
 	//public ArrayList<WeightedRandomFishable> getFish() {
-	//	return getPlushie();
+	//	return new ArrayList<>();
 	//}
 //
 	//public ArrayList<WeightedRandomFishable> getJunk() {
-	//	return getPlushie();
+	//	return new ArrayList<>();
 	//}
 //
 	//public ArrayList<WeightedRandomFishable> getTreasure() {
-	//	return getPlushie();
+	//	return new ArrayList<>();
 	//}
-
-	public ArrayList<WeightedRandomFishable> getFish() {
-		return new ArrayList<>();
-	}
-
-	public ArrayList<WeightedRandomFishable> getJunk() {
-		return new ArrayList<>();
-	}
-
-	public ArrayList<WeightedRandomFishable> getTreasure() {
-		return new ArrayList<>();
-	}
+	//forge 1.7.10 moment
+	//actually probably a java moment
 
 	//HAHAHA DUDE THESE ANIMALS ARE SO FUCKING FUNNY THEY MAKE ME WANT TO MERGE WITHOUT LOOKING
 

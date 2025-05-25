@@ -9,8 +9,11 @@ import com.hbm.dim.laythe.GenLayerLaythe.GenLayerLaytheIslands;
 import com.hbm.dim.laythe.GenLayerLaythe.GenLayerLaytheOceans;
 import com.hbm.dim.laythe.GenLayerLaythe.GenLayerLaythePolar;
 
+import com.hbm.potion.HbmPotion;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.potion.PotionEffect;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.layer.GenLayer;
 import net.minecraft.world.gen.layer.GenLayerFuzzyZoom;
@@ -19,6 +22,8 @@ import net.minecraft.world.gen.layer.GenLayerVoronoiZoom;
 import net.minecraft.world.gen.layer.GenLayerZoom;
 import net.minecraftforge.client.IRenderHandler;
 
+import java.util.Random;
+
 public class WorldProviderLaythe extends WorldProviderCelestial {
 
 	@Override
@@ -26,11 +31,15 @@ public class WorldProviderLaythe extends WorldProviderCelestial {
 		this.worldChunkMgr = new WorldChunkManagerCelestial(createBiomeGenerators(worldObj.getSeed()));
 	}
 
+
+	private static final double RADIATION_MULTIPLIER_EUROPA = 14210.53;
+
+
 	@Override
 	public String getDimensionName() {
 		return "Laythe";
 	}
-	
+
 	@Override
 	public IChunkProvider createChunkGenerator() {
 		return new ChunkProviderLaythe(this.worldObj, this.getSeed(), false);
@@ -69,23 +78,66 @@ public class WorldProviderLaythe extends WorldProviderCelestial {
 		return true;
 	}
 
+
+	@Override
+	public void updateWeather() {
+		super.updateWeather();
+
+		if (!worldObj.isRemote) {
+			for (Object obj : worldObj.playerEntities) {
+				if (obj instanceof EntityPlayer) {
+					EntityPlayer player = (EntityPlayer) obj;
+
+					if (worldObj.canBlockSeeTheSky((int) player.posX, (int) player.posY, (int) player.posZ)) {
+
+						// For ultra-high radiation, just apply the effect every tick
+						int baseDuration = 60; // 3 seconds
+
+						Random rand = new Random();
+						double fluctuation = 0.8 + rand.nextDouble() * 0.4;
+
+						// Scale the amplifier logarithmically so it's not instantly fatal
+						//int amplifier = Math.min(220, (int)(Math.log10(RADIATION_MULTIPLIER_EUROPA)));
+						//no enjoy your game should have worn a suit dumbass
+						//int amplifier = (int) (220 * fluctuation);
+						int peakAmp = 220;
+
+						int amplifier = Math.min(peakAmp, (int)(peakAmp * fluctuation));
+
+
+						//was 4 upping to 220, might try 127 if too much bc minecraft lim
+
+						//we're gonna need a better suit.
+
+						// Scale duration linearly to make it stack or persist
+						//int duration = baseDuration * amplifier;
+						int duration = 20;
+
+						player.addPotionEffect(new PotionEffect(HbmPotion.radiation.id, duration, amplifier));
+					}
+				}
+			}
+		}
+	}
+
+
 	private static BiomeGenLayers createBiomeGenerators(long seed) {
 		GenLayer biomes = new GenLayerLaytheBiomes(seed);
 		GenLayer polar = new GenLayerLaythePolar(1000L, biomes);
-		
-		
-		
+
+
+
 		biomes = new GenLayerFuzzyZoom(2000L, biomes);
 
 		biomes = new GenLayerZoom(2001L, biomes);
-		
-		
+
+
 		polar = new GenLayerZoom(1000L, polar);
 		GenLayer polarmag = GenLayerZoom.magnify(1000L, polar, 1);
 		biomes = new GenLayerLaythePolar(1000L, polarmag);
-		
+
 		biomes = new GenLayerDiversifyLaythe(1000L, biomes);
-		
+
 		biomes = new GenLayerZoom(1000L, biomes);
 		biomes = new GenLayerZoom(1001L, biomes);
 
@@ -93,16 +145,16 @@ public class WorldProviderLaythe extends WorldProviderCelestial {
 		biomes = new GenLayerLaytheOceans(4000L, biomes);
 		biomes = new GenLayerLaytheOceans(4000L, biomes);
 		biomes = new GenLayerLaytheOceans(4000L, biomes);
-		
+
 		GenLayer oceanGenLayer = new GenLayerLaytheOceans(4000L, biomes);
 		oceanGenLayer = GenLayerZoom.magnify(4000L, biomes, 0);
-		
+
 		biomes = new GenLayerZoom(1003L, biomes);
 		biomes = new GenLayerSmooth(700L, biomes);
 		biomes = new GenLayerLaytheIslands(200L, biomes);
 
 		biomes = new GenLayerZoom(1006L, biomes);
-			
+
 		GenLayer genLayerVoronoiZoom = new GenLayerVoronoiZoom(10L, biomes);
 
 		return new BiomeGenLayers(biomes, genLayerVoronoiZoom, seed);

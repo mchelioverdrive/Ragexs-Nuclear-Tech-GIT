@@ -15,6 +15,8 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
+import net.minecraft.init.Blocks;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.Vec3;
 import net.minecraft.util.WeightedRandomFishable;
@@ -94,16 +96,31 @@ public class WorldProviderTekto extends WorldProviderCelestial {
 		return new BiomeGenLayers(genlayerrivermix, genlayervoronoizoom, seed);
 	}
 
+	private static ArrayList<WeightedRandomFishable> plushie;
+
+	private ArrayList<WeightedRandomFishable> getPlushie() {
+		if(plushie == null) {
+			plushie = new ArrayList<>();
+			plushie.add(new WeightedRandomFishable(new ItemStack(Blocks.air, 1, 1), 100));
+			//DIE
+		}
+//
+		return plushie;
+	}
+
+	/// FISH ///
 	public ArrayList<WeightedRandomFishable> getFish() {
-		return new ArrayList<>();
+		return getPlushie();
 	}
-
+	//
 	public ArrayList<WeightedRandomFishable> getJunk() {
-		return new ArrayList<>();
+		return getPlushie();
+	}
+	//
+	public ArrayList<WeightedRandomFishable> getTreasure() {
+		return getPlushie();
 	}
 
-	public ArrayList<WeightedRandomFishable> getTreasure() {
-		return new ArrayList<>();
-	}
+
 
 }
