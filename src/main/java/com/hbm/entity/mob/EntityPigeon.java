@@ -142,6 +142,7 @@ public class EntityPigeon extends EntityCreature implements IFlyingCreature, IAn
 	//get the fuck outta here
 	//not that it matters, minecraft is laggy as shit for spawning in mobs anyways
 
+
 	protected String getHurtSound() {
 		return null;
 	}

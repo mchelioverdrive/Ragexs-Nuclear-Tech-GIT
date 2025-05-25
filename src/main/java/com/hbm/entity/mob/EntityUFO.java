@@ -50,7 +50,7 @@ public class EntityUFO extends EntityFlying implements IMob, IBossDisplayData, I
 
 	public EntityUFO(World p_i1587_1_) {
 		super(p_i1587_1_);
-		this.setSize(15F, 4F);
+		this.setSize(25F, 4F);
 		this.isImmuneToFire = true;
 		this.experienceValue = 500;
 		this.ignoreFrustumCheck = true;
