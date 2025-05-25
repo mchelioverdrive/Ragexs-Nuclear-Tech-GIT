@@ -1,19 +1,23 @@
 package com.hbm.dim.Ike;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import com.hbm.blocks.ModBlocks;
 import com.hbm.config.SpaceConfig;
 import com.hbm.dim.WorldProviderCelestial;
 
+import com.hbm.potion.HbmPotion;
 import net.minecraft.block.Block;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.WeightedRandomFishable;
 import net.minecraft.world.biome.*;
 import net.minecraft.world.chunk.IChunkProvider;
 
 public class WorldProviderIke extends WorldProviderCelestial {
-	
+
 	@Override
 	public void registerWorldChunkManager() {
 		this.worldChunkMgr = new WorldChunkManagerHell(new BiomeGenIke(SpaceConfig.ikeBiome), dimensionId);
@@ -23,7 +27,7 @@ public class WorldProviderIke extends WorldProviderCelestial {
 	public String getDimensionName() {
 		return "Ike";
 	}
-	
+
 	@Override
 	public IChunkProvider createChunkGenerator() {
 		return new ChunkProviderIke(this.worldObj, this.getSeed(), false);
@@ -51,29 +55,60 @@ public class WorldProviderIke extends WorldProviderCelestial {
 		return true;
 	}
 
-	private static ArrayList<WeightedRandomFishable> plushie;
+	@Override
+	public void updateWeather() {
+		super.updateWeather();
 
-	private ArrayList<WeightedRandomFishable> getPlushie() {
-		if(plushie == null) {
-			plushie = new ArrayList<>();
-			plushie.add(new WeightedRandomFishable(new ItemStack(ModBlocks.plushie, 1, 1), 100));
+		// Apply radiation effect to players on phobos 50% less than moon
+		if (!worldObj.isRemote) {
+			Random rand = new Random();
+
+			for (Object obj : worldObj.playerEntities) {
+				if (obj instanceof EntityPlayer) {
+					EntityPlayer player = (EntityPlayer) obj;
+
+					// Check if the player can see the sky
+					if (worldObj.canBlockSeeTheSky((int) player.posX, (int) player.posY, (int) player.posZ)) {
+						// Apply radiation effect with a random chance
+						if (rand.nextInt(150) == 0) {
+							player.addPotionEffect(new PotionEffect(HbmPotion.radiation.id, 20, 0));
+						}
+					}
+				}
+			}
 		}
-
-		return plushie;
 	}
+
+	//private static ArrayList<WeightedRandomFishable> plushie;
+
+	//HAHA GUYS ANIME DUDE FUCKING ANIME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//GUYS GUYS ANIME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ITS SO FUCKING FUNNY GET IT
+	//ANIME!!!!!
+
+	//private ArrayList<WeightedRandomFishable> getPlushie() {
+	//	if(plushie == null) {
+	//		plushie = new ArrayList<>();
+	//		plushie.add(new WeightedRandomFishable(new ItemStack(ModBlocks.plushie, 1, 1), 100));
+	//	}
+//
+	//	return plushie;
+	//}
 
 	/// FISH ///
-	public ArrayList<WeightedRandomFishable> getFish() {
-		return getPlushie();
-	}
+	//public ArrayList<WeightedRandomFishable> getFish() {
+	//	return getPlushie();
+	//}
+//
+	//public ArrayList<WeightedRandomFishable> getJunk() {
+	//	return getPlushie();
+	//}
+//
+	//public ArrayList<WeightedRandomFishable> getTreasure() {
+	//	return getPlushie();
+	//}
 
-	public ArrayList<WeightedRandomFishable> getJunk() {
-		return getPlushie();
-	}
+	//HAHAHA DUDE THESE ANIMALS ARE SO FUCKING FUNNY THEY MAKE ME WANT TO MERGE WITHOUT LOOKING
 
-	public ArrayList<WeightedRandomFishable> getTreasure() {
-		return getPlushie();
-	}
 	/// FISH ///
 
 }

@@ -87,6 +87,23 @@ public class SkyProviderCelestial extends IRenderHandler {
 
 		float pressure = hasAtmosphere ? (float)atmosphere.getPressure() : 0.0F;
 		float visibility = hasAtmosphere ? MathHelper.clamp_float(2.0F - pressure, 0.1F, 1.0F) : 1.0F;
+		//NO DUMBASS NOT - pressure
+		//wait why is it still foggy as shit WTF IS THIS
+
+		//added back - pressure
+
+		//OH MY GOD WHAT THE ACTUAL FUCKJ IS GOING ON IN THIS CODE BASE
+
+		//float visibility = 1.0F;
+		//if (hasAtmosphere) {
+		//	if (atmosphere.hasObscuringClouds()) {
+		//		visibility = 0.3F;
+		//	} else if (atmosphere.getFluids().contains(Fluids.DUNAAIR)) {
+		//		visibility = 0.6F;
+		//	} else {
+		//		visibility = 1.0F;
+		//	}
+		//}
 
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
 		Vec3 skyColor = world.getSkyColor(mc.renderViewEntity, partialTicks);

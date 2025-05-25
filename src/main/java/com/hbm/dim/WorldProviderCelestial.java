@@ -74,7 +74,14 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 
 		if(pressure <= 2F) return 0;
 
-		return pressure * pressure * 0.002F;
+		//planetfogdensity = etc etc bullshit
+
+		return 0.002F; //todo temporary fix for whatever slop this codebase is, PLEASE WORK I SWEAR TO FUCK IF TS ISN'T IT IM GONNA BE MAD AS SHIT
+		//AAAAAAAAAAAAAAAND OF COURSE THIS IS USED EVERYWHERE IN THE FUCKING CODE BASE I SWEAR TO FUCK JAMES WHAT IS THIS
+		//IS IT SUPPOSED TO BE REALISTIC???
+		//GOD FUCKING WEEPS AT THIS MISERABLE CODE
+		//old method: pressure * pressure * 0.002F
+		//pressure * pressure * 0.00002F * planetfogdensity
 	}
 
 	/**
@@ -164,7 +171,7 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 				fluidColor = Vec3.createVectorHelper(212F / 255F * sunR, 112F / 255F * sunG, 78F / 255F * sunB);
 			} else if(entry.fluid == Fluids.AIR || entry.fluid == Fluids.OXYGEN || entry.fluid == Fluids.NITROGEN) {
 				// Default to regular ol' overworld
-				//todo, food eating logic here
+				//todo, food eating logic here except this is fucking rendering logic which is client side so get fucked past me
 				fluidColor = Vec3.createVectorHelper(0.7529412F * sunR, 0.84705883F * sunG, 1.0F * sunB);
 			} else {
 				fluidColor = getColorFromHex(entry.fluid.getColor());
@@ -179,6 +186,11 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 				color.yCoord + fluidColor.yCoord * percentage,
 				color.zCoord + fluidColor.zCoord * percentage
 			);
+			//no, venus doesn't even fucking look like that! It looks actually really clear despite the infinite pressure!
+			//wait wtf??? this wasn't even affecting it wtf???
+			//oh it was under this amazing.
+			//added back in case it wasn't causing the issue
+			//todo rework fog density vs pressure/color/fluid composition because it's all just wrong
 		}
 
 		// Add minimum fog colour, for night-time glow
@@ -190,13 +202,15 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 		}
 
 		// Fog intensity remains high to simulate a thin looking atmosphere on low pressure planets
+		//NO DUMBASS THATS NOT EVEN HOW THAT WORKS LOOK AT VENUS
 		float pressureFactor = MathHelper.clamp_float(totalPressure * 10.0F, 0.0F, 1.0F);
 		color.xCoord *= pressureFactor;
 		color.yCoord *= pressureFactor;
 		color.zCoord *= pressureFactor;
+		//didn't solve our problem, added back
 
 		if(Minecraft.getMinecraft().renderViewEntity.posY > 10000) { //ten thousand meters is the edge of space, not 600. Yeah, no it's that bad.
-			//fuck this isn't the actual planet renderer thing
+			//this just renders the stars
 			double curvature = MathHelper.clamp_float((1000.0F - (float)Minecraft.getMinecraft().renderViewEntity.posY) / 400.0F, 0.0F, 1.0F);
 			color.xCoord *= curvature;
 			color.zCoord *= curvature;
@@ -281,16 +295,18 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 			float tmp = colors[0];
 			colors[0] = colors[2];
 			colors[2] = tmp;
-		} else if (atmosphere.hasFluid(Fluids.EVEAIR)) {
+		}
+
+		else if (atmosphere.hasFluid(Fluids.EVEAIR)) {
 			float f2 = 0.4F;
 			float f3 = MathHelper.cos((celestialAngle) * (float)Math.PI * 2.0F);
 			float f4 = 0.0F;
-
+//
 			if (f3 >= f4 - f2 && f3 <= f4 + f2) {
 				float f5 = (f3 - f4) / f2 * 0.5F + 0.5F;
 				float f6 = 1.0F - (1.0F - MathHelper.sin(f5 * (float)Math.PI)) * 0.99F;
 				f6 *= f6;
-
+//
 				// Venus-like yellow-orange sunset
 				colors[0] = f5 * 0.9F + 0.1F;       // Red: dominant
 				colors[1] = f5 * 0.7F + 0.2F;       // Green: moderately strong
@@ -298,6 +314,9 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 				colors[3] = f6;                     // Alpha/brightness
 			}
 		}
+		//whatever
+		//did not solve the issue
+		//added back
 
 		return colors;
 	}

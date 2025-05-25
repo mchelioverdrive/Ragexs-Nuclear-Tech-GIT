@@ -9,7 +9,10 @@ import com.hbm.dim.dres.GenLayerDres.GenLayerDresBasins;
 import com.hbm.dim.dres.GenLayerDres.GenLayerDresBiomes;
 import com.hbm.dim.dres.GenLayerDres.GenLayerDresPlains;
 
+import com.hbm.potion.HbmPotion;
 import net.minecraft.block.Block;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.potion.PotionEffect;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.layer.GenLayer;
 import net.minecraft.world.gen.layer.GenLayerFuzzyZoom;
@@ -17,8 +20,10 @@ import net.minecraft.world.gen.layer.GenLayerSmooth;
 import net.minecraft.world.gen.layer.GenLayerVoronoiZoom;
 import net.minecraft.world.gen.layer.GenLayerZoom;
 
+import java.util.Random;
+
 public class WorldProviderDres extends WorldProviderCelestial {
-	
+
 	@Override
 	public void registerWorldChunkManager() {
 		this.worldChunkMgr = new WorldChunkManagerCelestial(createBiomeGenerators(worldObj.getSeed()));
@@ -28,15 +33,41 @@ public class WorldProviderDres extends WorldProviderCelestial {
 	public String getDimensionName() {
 		return "Dres";
 	}
-	
+
 	@Override
 	public IChunkProvider createChunkGenerator() {
 		return new ChunkProviderDres(this.worldObj, this.getSeed(), false);
 	}
-	
+
+
+	@Override
+	public void updateWeather() {
+		super.updateWeather();
+
+		// Apply radiation effect to players on 'dres' aka ceres
+		if (!worldObj.isRemote) {
+			Random rand = new Random();
+
+			for (Object obj : worldObj.playerEntities) {
+				if (obj instanceof EntityPlayer) {
+					EntityPlayer player = (EntityPlayer) obj;
+
+					// Check if the player can see the sky
+					if (worldObj.canBlockSeeTheSky((int) player.posX, (int) player.posY, (int) player.posZ)) {
+						// Apply radiation effect with a random chance
+						if (rand.nextInt(125) == 0) {
+							player.addPotionEffect(new PotionEffect(HbmPotion.radiation.id, 20, 0));
+						}
+					}
+				}
+			}
+		}
+	}
+
 	// sorry mellow...
 	// OOH I AM FOR REAL
 	// NEVER MEANT TO MAKE YOUR DAUGHTER CRY
+	//what the actual fuck is blud waffling about
 	@Override
 	public Block getStone() {
 		return ModBlocks.dres_rock;
@@ -57,7 +88,7 @@ public class WorldProviderDres extends WorldProviderCelestial {
 		biomes = new GenLayerDresPlains(200L, biomes);
 
 		biomes = new GenLayerZoom(1006L, biomes);
-		 
+
 		GenLayer genLayerVeronoiZoom = new GenLayerVoronoiZoom(10L, biomes);
 
 		return new BiomeGenLayers(biomes, genLayerVeronoiZoom, seed);

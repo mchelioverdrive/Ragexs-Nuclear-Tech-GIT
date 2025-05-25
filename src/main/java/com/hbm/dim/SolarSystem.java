@@ -72,10 +72,11 @@ public class SolarSystem {
 					.withColor(0.408F, 0.298F, 0.553F)
 					.withBlockTextures(RefStrings.MODID + ":eve_stone_2", "", "", "")
 					.withProcessingLevel(2)
-					.withTraits(new CBT_Atmosphere(Fluids.EVEAIR, 22D), new CBT_Temperature(464), new CBT_Water(Fluids.MERCURY)),
+					.withTraits(new CBT_Atmosphere(Fluids.EVEAIR, 92D), new CBT_Temperature(464), new CBT_Water(Fluids.MERCURY)),
 					//alright you win this time retarded ass system
 					//92 did something ODD
 					//I don't think pressure is calculated properly bc it should not make visibility go down, if anything up
+					//fixed stupid fucking pressure rendering system
 					//.withSatellites(
 
 					//	new CelestialBody("gilly")
