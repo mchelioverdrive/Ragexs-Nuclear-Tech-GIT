@@ -93,16 +93,11 @@ public class WorldProviderLaythe extends WorldProviderCelestial {
 						// For ultra-high radiation, just apply the effect every tick
 						int baseDuration = 60; // 3 seconds
 
-						Random rand = new Random();
-						double fluctuation = 0.8 + rand.nextDouble() * 0.4;
 
 						// Scale the amplifier logarithmically so it's not instantly fatal
 						//int amplifier = Math.min(220, (int)(Math.log10(RADIATION_MULTIPLIER_EUROPA)));
 						//no enjoy your game should have worn a suit dumbass
-						//int amplifier = (int) (220 * fluctuation);
-						int peakAmp = 220;
-
-						int amplifier = Math.min(peakAmp, (int)(peakAmp * fluctuation));
+						int amplifier = 220;
 
 
 						//was 4 upping to 220, might try 127 if too much bc minecraft lim
