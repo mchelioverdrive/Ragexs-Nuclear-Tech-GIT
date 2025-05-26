@@ -38,7 +38,7 @@ public class EntityUAP extends EntityFlying implements IMob {
 
 	public EntityUAP(World p_i1587_1_) {
 		super(p_i1587_1_);
-		this.setSize(10F, 4F);
+		this.setSize(6F, 3F);
 		this.isImmuneToFire = true;
 		this.experienceValue = 500;
 		this.ignoreFrustumCheck = true;
@@ -117,7 +117,7 @@ public class EntityUAP extends EntityFlying implements IMob {
 
 				// Avoid getting too close
 				double dist = this.getDistanceToEntity(this.target);
-				if (dist < 5.0D) {
+				if (dist < 8.0D) {
 					// Emergency evasive action
 					this.setWaypoint(
 						(int)(this.posX + (rand.nextDouble() - 0.5D) * 60),
@@ -130,19 +130,38 @@ public class EntityUAP extends EntityFlying implements IMob {
 
 					int wX = (int)(this.target.posX - vec.xCoord * overshoot + rand.nextInt(10) - 5);
 					int wZ = (int)(this.target.posZ - vec.zCoord * overshoot + rand.nextInt(10) - 5);
-					int wY = (int)(this.target.posY + 10 + rand.nextInt(20) - 10);
+					int groundY = this.worldObj.getHeightValue(wX, wZ);
+					int wY = groundY + 20 + rand.nextInt(61); // 20 to 80 above ground
 
 					this.setWaypoint(wX, wY, wZ);
 				}
 			} else {
 				// Wander randomly
 				int wX = (int)(this.posX + rand.nextInt(60) - 30);
-				int wY = (int)(this.posY + rand.nextInt(20) - 10);
 				int wZ = (int)(this.posZ + rand.nextInt(60) - 30);
+				int groundY = this.worldObj.getHeightValue(wX, wZ);
+				int wY = groundY + 20 + rand.nextInt(61);
 				this.setWaypoint(wX, wY, wZ);
 			}
 
 			this.courseChangeCooldown = 20 + rand.nextInt(20);
+		}
+
+		// Force reposition if player is too close (hard fail-safe)
+		if (this.target != null && this.getDistanceToEntity(this.target) < 8.0D) {
+			double awayX = this.posX + (rand.nextDouble() - 0.5D) * 100;
+			double awayZ = this.posZ + (rand.nextDouble() - 0.5D) * 100;
+			int wX = (int) awayX;
+			int wZ = (int) awayZ;
+			int groundY = this.worldObj.getHeightValue(wX, wZ);
+			int wY = groundY + 20 + rand.nextInt(61);
+			this.setWaypoint(wX, wY, wZ);
+
+			this.motionX = 0;
+			this.motionY = 0;
+			this.motionZ = 0;
+			this.courseChangeCooldown = 10 + rand.nextInt(10);
+			return;
 		}
 
 		this.motionX = 0;
