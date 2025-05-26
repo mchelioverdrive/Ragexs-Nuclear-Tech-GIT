@@ -19,7 +19,7 @@ public class RenderUAP extends Render {
 	@Override
 	public void doRender(Entity entity, double x, double y, double z, float f0, float f1) {
 
-		BossStatus.setBossStatus((IBossDisplayData)entity, false);
+		//BossStatus.setBossStatus((IBossDisplayData)entity, false);
 
 		GL11.glPushMatrix();
 		GL11.glTranslated(x, y + 1, z);
@@ -36,7 +36,9 @@ public class RenderUAP extends Render {
 		this.bindTexture(getEntityTexture(entity));
 
 		GL11.glPushMatrix();
-		double rot = (entity.ticksExisted + f1) * 5 % 360D;
+		//double rot = (entity.ticksExisted + f1) * 5 % 360D;
+		//spinning motion, we don't want that since this is the tictac UAP.
+		double rot = 90;
 		GL11.glRotated(rot, 0, 1, 0);
 		GL11.glScaled(scale, scale, scale);
 		GL11.glShadeModel(GL11.GL_SMOOTH);

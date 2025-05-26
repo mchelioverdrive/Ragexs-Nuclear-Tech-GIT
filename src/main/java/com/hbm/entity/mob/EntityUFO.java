@@ -133,9 +133,6 @@ public class EntityUFO extends EntityFlying implements IBossDisplayData, IRadiat
 
 
 
-
-
-
 		}
 
 		this.motionX = 0;
