@@ -90,31 +90,55 @@ public class EntityUAP extends EntityFlying implements IMob {
 			this.target = null;
 		}
 
-		// Random darting or target-focused
+		// Random teleportation (5% chance)
+		if (rand.nextInt(100) < 5) {
+			double tx = this.posX + rand.nextInt(40) - 20;
+			double ty = this.posY + rand.nextInt(20) - 10;
+			double tz = this.posZ + rand.nextInt(40) - 20;
+
+			// Ensure it's not inside terrain
+			if (worldObj.isAirBlock((int)tx, (int)ty, (int)tz)) {
+				this.setPosition(tx, ty, tz);
+				this.motionX = 0;
+				this.motionY = 0;
+				this.motionZ = 0;
+				this.courseChangeCooldown = 10 + rand.nextInt(10); // brief pause after teleport
+				return;
+			}
+		}
+
+		// Move to new waypoint either randomly or based on target
 		if (this.courseChangeCooldown <= 0) {
-			double x = this.posX;
-			double y = this.posY;
-			double z = this.posZ;
 
 			if (this.target != null) {
-				// Move relative to target
+				// Vector away from player with randomness
 				Vec3 vec = Vec3.createVectorHelper(this.posX - this.target.posX, 0, this.posZ - this.target.posZ);
+				vec = vec.normalize();
 
-				// Add more erratic offset
-				vec.rotateAroundY((float)(Math.PI * 2 * rand.nextDouble()));
-				double length = vec.lengthVector();
-				double overshoot = 30 + rand.nextInt(20); // randomness
+				// Avoid getting too close
+				double dist = this.getDistanceToEntity(this.target);
+				if (dist < 5.0D) {
+					// Emergency evasive action
+					this.setWaypoint(
+						(int)(this.posX + (rand.nextDouble() - 0.5D) * 60),
+						(int)(this.posY + 15 + rand.nextInt(10)),
+						(int)(this.posZ + (rand.nextDouble() - 0.5D) * 60)
+					);
+				} else {
+					vec.rotateAroundY((float)(Math.PI * 2 * rand.nextDouble()));
+					double overshoot = 30 + rand.nextInt(20);
 
-				int wX = (int)Math.floor(this.target.posX - vec.xCoord / length * overshoot + rand.nextInt(10) - 5);
-				int wZ = (int)Math.floor(this.target.posZ - vec.zCoord / length * overshoot + rand.nextInt(10) - 5);
-				int wY = (int)(this.target.posY + 10 + rand.nextInt(20) - 10); // vertical erratic height
+					int wX = (int)(this.target.posX - vec.xCoord * overshoot + rand.nextInt(10) - 5);
+					int wZ = (int)(this.target.posZ - vec.zCoord * overshoot + rand.nextInt(10) - 5);
+					int wY = (int)(this.target.posY + 10 + rand.nextInt(20) - 10);
 
-				this.setWaypoint(wX, wY, wZ);
+					this.setWaypoint(wX, wY, wZ);
+				}
 			} else {
-				// Move randomly if no target
-				int wX = (int)(x + rand.nextInt(60) - 30);
-				int wY = (int)(y + rand.nextInt(20) - 10);
-				int wZ = (int)(z + rand.nextInt(60) - 30);
+				// Wander randomly
+				int wX = (int)(this.posX + rand.nextInt(60) - 30);
+				int wY = (int)(this.posY + rand.nextInt(20) - 10);
+				int wZ = (int)(this.posZ + rand.nextInt(60) - 30);
 				this.setWaypoint(wX, wY, wZ);
 			}
 
@@ -125,6 +149,7 @@ public class EntityUAP extends EntityFlying implements IMob {
 		this.motionY = 0;
 		this.motionZ = 0;
 
+		// Apply movement toward waypoint
 		if (this.courseChangeCooldown > 0) {
 			double deltaX = this.getX() - this.posX;
 			double deltaY = this.getY() - this.posY;
@@ -132,7 +157,6 @@ public class EntityUAP extends EntityFlying implements IMob {
 			Vec3 delta = Vec3.createVectorHelper(deltaX, deltaY, deltaZ);
 			double len = delta.lengthVector();
 
-			// Randomize speed more
 			double baseSpeed = this.target instanceof EntityPlayer ? 4D : 1.5D;
 			double speed = baseSpeed + rand.nextDouble() * 2.0;
 
