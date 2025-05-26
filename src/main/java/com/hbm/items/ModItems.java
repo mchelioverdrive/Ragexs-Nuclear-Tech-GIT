@@ -2526,6 +2526,7 @@ public class ModItems {
 	//public static Item spawn_worm;
 	//public static Item spawn_ufo;
 	//public static Item spawn_duck;
+	public static Item spawn_uap;
 
 	public static Item key;
 	public static Item key_red;
@@ -5013,6 +5014,10 @@ public class ModItems {
 		//spawn_worm = new ItemChopper().setUnlocalizedName("spawn_worm").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":spawn_worm");
 		//spawn_ufo = new ItemChopper().setUnlocalizedName("spawn_ufo").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":spawn_ufo");
 		//spawn_duck = new ItemChopper().setUnlocalizedName("spawn_duck").setMaxStackSize(16).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":spawn_duck");
+
+		spawn_uap = new ItemChopper().setUnlocalizedName("spawn_uap").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":spawn_uap");
+
+
 		linker = new ItemTeleLink().setUnlocalizedName("linker").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":linker");
 		reactor_sensor = new ItemReactorSensor().setUnlocalizedName("reactor_sensor").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":reactor_sensor");
 		oil_detector = new ItemOilDetector().setUnlocalizedName("oil_detector").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":oil_detector");
@@ -7360,6 +7365,7 @@ public class ModItems {
 		//GameRegistry.registerItem(spawn_worm, spawn_worm.getUnlocalizedName());
 		//GameRegistry.registerItem(spawn_ufo, spawn_ufo.getUnlocalizedName());
 		//GameRegistry.registerItem(spawn_duck, spawn_duck.getUnlocalizedName());
+		GameRegistry.registerItem(spawn_uap, spawn_uap.getUnlocalizedName());
 
 		//Computer Tools
 		GameRegistry.registerItem(designator, designator.getUnlocalizedName());

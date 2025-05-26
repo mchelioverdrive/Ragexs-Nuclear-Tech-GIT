@@ -4,6 +4,7 @@ import java.util.List;
 
 //import com.hbm.entity.mob.EntityDuck;
 //import com.hbm.entity.mob.EntityHunterChopper;
+import com.hbm.entity.mob.EntityUAP;
 import com.hbm.entity.mob.EntityUFO;
 import com.hbm.entity.mob.botprime.EntityBOTPrimeHead;
 import com.hbm.items.ModItems;
@@ -119,6 +120,13 @@ public class ItemChopper extends Item {
 		//
 		//if(this == ModItems.spawn_duck)
 		//	entity = new EntityDuck(world);
+
+		if(this == ModItems.spawn_uap) {
+				entity = new EntityUAP(world);
+				//((EntityUAP)entity).scanCooldown = 100;
+				y += 35;
+			}
+
 
 		if(entity != null) {
 
