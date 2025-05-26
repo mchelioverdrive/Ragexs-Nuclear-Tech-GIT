@@ -73,74 +73,71 @@ public class EntityUAP extends EntityFlying implements IMob {
 	@Override
 	protected void updateEntityActionState() {
 
-		if(!this.worldObj.isRemote) {
+		if (!this.worldObj.isRemote) {
 
-			if(this.worldObj.difficultySetting == EnumDifficulty.PEACEFUL) {
+			if (this.worldObj.difficultySetting == EnumDifficulty.PEACEFUL) {
 				this.setDead();
 				return;
 			}
 
-			if(this.hurtCooldown > 0) {
-				this.hurtCooldown--;
-			}
+			if (this.hurtCooldown > 0) this.hurtCooldown--;
 		}
 
-		if(this.courseChangeCooldown > 0) {
-			this.courseChangeCooldown--;
-		}
-		if(this.scanCooldown > 0) {
-			this.scanCooldown--;
-		}
+		if (this.courseChangeCooldown > 0) this.courseChangeCooldown--;
+		if (this.scanCooldown > 0) this.scanCooldown--;
 
-		if(this.target != null && !this.target.isEntityAlive()) {
+		if (this.target != null && !this.target.isEntityAlive()) {
 			this.target = null;
 		}
 
+		// Random darting or target-focused
+		if (this.courseChangeCooldown <= 0) {
+			double x = this.posX;
+			double y = this.posY;
+			double z = this.posZ;
 
+			if (this.target != null) {
+				// Move relative to target
+				Vec3 vec = Vec3.createVectorHelper(this.posX - this.target.posX, 0, this.posZ - this.target.posZ);
 
-		if(this.target != null && this.courseChangeCooldown <= 0) {
+				// Add more erratic offset
+				vec.rotateAroundY((float)(Math.PI * 2 * rand.nextDouble()));
+				double length = vec.lengthVector();
+				double overshoot = 30 + rand.nextInt(20); // randomness
 
-			Vec3 vec = Vec3.createVectorHelper(this.posX - this.target.posX, 0, this.posZ - this.target.posZ);
+				int wX = (int)Math.floor(this.target.posX - vec.xCoord / length * overshoot + rand.nextInt(10) - 5);
+				int wZ = (int)Math.floor(this.target.posZ - vec.zCoord / length * overshoot + rand.nextInt(10) - 5);
+				int wY = (int)(this.target.posY + 10 + rand.nextInt(20) - 10); // vertical erratic height
 
-			if(rand.nextInt(3) > 0)
-				vec.rotateAroundY((float)Math.PI * 2 * rand.nextFloat());
+				this.setWaypoint(wX, wY, wZ);
+			} else {
+				// Move randomly if no target
+				int wX = (int)(x + rand.nextInt(60) - 30);
+				int wY = (int)(y + rand.nextInt(20) - 10);
+				int wZ = (int)(z + rand.nextInt(60) - 30);
+				this.setWaypoint(wX, wY, wZ);
+			}
 
-			double length = vec.lengthVector();
-			double overshoot = 35;
-
-			int wX = (int)Math.floor(this.target.posX - vec.xCoord / length * overshoot);
-			int wZ = (int)Math.floor(this.target.posZ - vec.zCoord / length * overshoot);
-
-			this.setWaypoint(wX, Math.max(this.worldObj.getHeightValue(wX, wZ) + 20 + rand.nextInt(15), (int) this.target.posY + 15),  wZ);
-
-			this.courseChangeCooldown = 40 + rand.nextInt(20);
-		}
-
-		if(!worldObj.isRemote) {
-
-
-
-
-
-
-
+			this.courseChangeCooldown = 20 + rand.nextInt(20);
 		}
 
 		this.motionX = 0;
 		this.motionY = 0;
 		this.motionZ = 0;
 
-		if(this.courseChangeCooldown > 0) {
-
+		if (this.courseChangeCooldown > 0) {
 			double deltaX = this.getX() - this.posX;
 			double deltaY = this.getY() - this.posY;
 			double deltaZ = this.getZ() - this.posZ;
 			Vec3 delta = Vec3.createVectorHelper(deltaX, deltaY, deltaZ);
 			double len = delta.lengthVector();
-			double speed = this.target instanceof EntityPlayer ? 5D : 2D;
 
-			if(len > 5) {
-				if(isCourseTraversable(this.getX(), this.getY(), this.getZ(), len)) {
+			// Randomize speed more
+			double baseSpeed = this.target instanceof EntityPlayer ? 4D : 1.5D;
+			double speed = baseSpeed + rand.nextDouble() * 2.0;
+
+			if (len > 4) {
+				if (isCourseTraversable(this.getX(), this.getY(), this.getZ(), len)) {
 					this.motionX = delta.xCoord * speed / len;
 					this.motionY = delta.yCoord * speed / len;
 					this.motionZ = delta.zCoord * speed / len;
