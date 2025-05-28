@@ -12,6 +12,14 @@ I don't care if you think my efforts are in vain.
 
 I don't even care how many more commits behind this repo is. I am going to be tweaking things to my liking/for external use.
 
+THIS FORK'S DL LINKS: 
+
+[RTM MODRINTH](https://modrinth.com/mod/ragexs-nuclear-tech)
+
+[RTM CF](https://www.curseforge.com/minecraft/mc-mods/ragexs-nuclear-tech)
+
+ORIGINAL MOD LINKS:
+
 [NTM Space on Modrinth](https://modrinth.com/mod/ntmspace)
 
 [NTM on CurseForge](https://minecraft.curseforge.com/projects/hbms-nuclear-tech-mod?gameCategorySlug=mc-mods&projectID=235439)
