@@ -1,6 +1,16 @@
-# HBM's Nuclear Tech Mod for Minecraft 1.7.10
+# Ragex's Nuclear Tech Mod for Minecraft 1.7.10
+
+(RTM)
 
 Hi, i am memeing things into existence, dont mind me! im just the bent fork at the end of the table -JamesH_2
+
+Hello I am RagexPrince683. You may know me from such fantastical tales such as 'the antagonist of NTM' 'ragex broke his pc by sticking his dick in the ram slot' or some other made up nonsense that the absolute super dense black hole that plagues the original HBM's 'nuclear tech' mods 'community' and I put those quotes for good reason. How are you going to label yourself as a nuclear tech mod if there is 0 focus on nuclear tech, and just more ripping from other games? I'm not insulting HBM with this repo, I'm not insulting James with this repo. I like both of their works. However, if you're going to come on this repo and act like a jackass you're not welcome here. I'm not gonna even acknowledge your emotionally charged dick riding for a meme mod that has the capability to simulate legitimate real world technology inside of minecraft. Just because you don't like it doesn't matter. If you're really going to come here and waste your fucking time typing up a wall of shit all day over a mod you didn't make, you deserve to be mad. Infact, how about you get mad at mojang for adding real life animals to the game? or Microsoft for ruining the minecraft scene outside of Java? You come in here and you're mad at me telling me to in essence 'go outside' my friend I am not the one so worked up over a mod you do not own.
+
+I do not care if you don't like realism.
+
+I don't care if you think my efforts are in vain.
+
+I don't even care how many more commits behind this repo is. I am going to be tweaking things to my liking/for external use.
 
 [NTM Space on Modrinth](https://modrinth.com/mod/ntmspace)
 
