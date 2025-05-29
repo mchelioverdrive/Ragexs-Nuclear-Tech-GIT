@@ -38,7 +38,7 @@ public class EntityUAP extends EntityFlying implements IMob {
 
 	public EntityUAP(World p_i1587_1_) {
 		super(p_i1587_1_);
-		this.setSize(6F, 3F);
+		this.setSize(6F, 6F);
 		this.isImmuneToFire = true;
 		this.experienceValue = 500;
 		this.ignoreFrustumCheck = true;
@@ -74,12 +74,10 @@ public class EntityUAP extends EntityFlying implements IMob {
 	protected void updateEntityActionState() {
 
 		if (!this.worldObj.isRemote) {
-
 			if (this.worldObj.difficultySetting == EnumDifficulty.PEACEFUL) {
 				this.setDead();
 				return;
 			}
-
 			if (this.hurtCooldown > 0) this.hurtCooldown--;
 		}
 
@@ -90,77 +88,78 @@ public class EntityUAP extends EntityFlying implements IMob {
 			this.target = null;
 		}
 
-		// Random teleportation (5% chance)
-		if (rand.nextInt(100) < 5) {
+		// Random teleportation (under 5% chance), avoid player proximity
+		if (rand.nextInt(200) < 1) {
 			double tx = this.posX + rand.nextInt(40) - 20;
 			double ty = this.posY + rand.nextInt(20) - 10;
 			double tz = this.posZ + rand.nextInt(40) - 20;
+			EntityPlayer closestPlayer = this.worldObj.getClosestPlayer(tx, ty, tz, 10.0D);
 
-			// Ensure it's not inside terrain
-			if (worldObj.isAirBlock((int)tx, (int)ty, (int)tz)) {
+			if (closestPlayer == null && worldObj.isAirBlock((int) tx, (int) ty, (int) tz)) {
 				this.setPosition(tx, ty, tz);
 				this.motionX = 0;
 				this.motionY = 0;
 				this.motionZ = 0;
-				this.courseChangeCooldown = 10 + rand.nextInt(10); // brief pause after teleport
+				this.courseChangeCooldown = 10 + rand.nextInt(10);
 				return;
 			}
 		}
 
-		// Move to new waypoint either randomly or based on target
+		// Waypoint logic
 		if (this.courseChangeCooldown <= 0) {
-
 			if (this.target != null) {
-				// Vector away from player with randomness
-				Vec3 vec = Vec3.createVectorHelper(this.posX - this.target.posX, 0, this.posZ - this.target.posZ);
-				vec = vec.normalize();
+				double distance = this.getDistanceToEntity(this.target);
 
-				// Avoid getting too close
-				double dist = this.getDistanceToEntity(this.target);
-				if (dist < 8.0D) {
-					// Emergency evasive action
-					this.setWaypoint(
-						(int)(this.posX + (rand.nextDouble() - 0.5D) * 60),
-						(int)(this.posY + 15 + rand.nextInt(10)),
-						(int)(this.posZ + (rand.nextDouble() - 0.5D) * 60)
-					);
+				// Always maintain 8 block radius
+				if (distance < 10.0D) {
+					Vec3 escapeVec = Vec3.createVectorHelper(this.posX - this.target.posX, 0, this.posZ - this.target.posZ);
+					escapeVec = escapeVec.normalize();
+
+					double escapeX = this.posX + escapeVec.xCoord * 30 + (rand.nextDouble() - 0.5D) * 20;
+					double escapeZ = this.posZ + escapeVec.zCoord * 30 + (rand.nextDouble() - 0.5D) * 20;
+					int wX = (int) escapeX;
+					int wZ = (int) escapeZ;
+					int groundY = this.worldObj.getHeightValue(wX, wZ);
+					int wY = groundY + 20 + rand.nextInt(61);
+
+					this.setWaypoint(wX, wY, wZ);
 				} else {
+					Vec3 vec = Vec3.createVectorHelper(this.posX - this.target.posX, 0, this.posZ - this.target.posZ);
+					vec = vec.normalize();
 					vec.rotateAroundY((float)(Math.PI * 2 * rand.nextDouble()));
-					double overshoot = 30 + rand.nextInt(20);
 
+					double overshoot = 30 + rand.nextInt(20);
 					int wX = (int)(this.target.posX - vec.xCoord * overshoot + rand.nextInt(10) - 5);
 					int wZ = (int)(this.target.posZ - vec.zCoord * overshoot + rand.nextInt(10) - 5);
 					int groundY = this.worldObj.getHeightValue(wX, wZ);
-					int wY = groundY + 20 + rand.nextInt(61); // 20 to 80 above ground
+					int wY = groundY + 20 + rand.nextInt(61);
 
-					this.setWaypoint(wX, wY, wZ);
+					// Distance check from target's future location
+					double futureDist = this.target.getDistanceSq(wX + 0.5D, wY + 0.5D, wZ + 0.5D);
+					if (futureDist >= 64.0D) { // 8 blocks squared
+						this.setWaypoint(wX, wY, wZ);
+					} else {
+						this.setWaypoint((int)(this.posX + (rand.nextDouble() - 0.5D) * 80),
+							this.worldObj.getHeightValue((int)this.posX, (int)this.posZ) + 30 + rand.nextInt(40),
+							(int)(this.posZ + (rand.nextDouble() - 0.5D) * 80));
+					}
 				}
 			} else {
-				// Wander randomly
 				int wX = (int)(this.posX + rand.nextInt(60) - 30);
 				int wZ = (int)(this.posZ + rand.nextInt(60) - 30);
 				int groundY = this.worldObj.getHeightValue(wX, wZ);
 				int wY = groundY + 20 + rand.nextInt(61);
 				this.setWaypoint(wX, wY, wZ);
 			}
-
 			this.courseChangeCooldown = 20 + rand.nextInt(20);
 		}
 
-		// Force reposition if player is too close (hard fail-safe)
+		// Block motion update if too close
 		if (this.target != null && this.getDistanceToEntity(this.target) < 8.0D) {
-			double awayX = this.posX + (rand.nextDouble() - 0.5D) * 100;
-			double awayZ = this.posZ + (rand.nextDouble() - 0.5D) * 100;
-			int wX = (int) awayX;
-			int wZ = (int) awayZ;
-			int groundY = this.worldObj.getHeightValue(wX, wZ);
-			int wY = groundY + 20 + rand.nextInt(61);
-			this.setWaypoint(wX, wY, wZ);
-
 			this.motionX = 0;
 			this.motionY = 0;
 			this.motionZ = 0;
-			this.courseChangeCooldown = 10 + rand.nextInt(10);
+			this.courseChangeCooldown = 0; // Trigger immediate reevaluation next tick
 			return;
 		}
 
@@ -168,7 +167,7 @@ public class EntityUAP extends EntityFlying implements IMob {
 		this.motionY = 0;
 		this.motionZ = 0;
 
-		// Apply movement toward waypoint
+		// Motion application
 		if (this.courseChangeCooldown > 0) {
 			double deltaX = this.getX() - this.posX;
 			double deltaY = this.getY() - this.posY;
@@ -176,17 +175,17 @@ public class EntityUAP extends EntityFlying implements IMob {
 			Vec3 delta = Vec3.createVectorHelper(deltaX, deltaY, deltaZ);
 			double len = delta.lengthVector();
 
+			if (this.target != null && this.getDistanceToEntity(this.target) < 8.0D) return;
+
 			double baseSpeed = this.target instanceof EntityPlayer ? 4D : 1.5D;
 			double speed = baseSpeed + rand.nextDouble() * 2.0;
 
-			if (len > 4) {
-				if (isCourseTraversable(this.getX(), this.getY(), this.getZ(), len)) {
-					this.motionX = delta.xCoord * speed / len;
-					this.motionY = delta.yCoord * speed / len;
-					this.motionZ = delta.zCoord * speed / len;
-				} else {
-					this.courseChangeCooldown = 0;
-				}
+			if (len > 4 && isCourseTraversable(this.getX(), this.getY(), this.getZ(), len)) {
+				this.motionX = delta.xCoord * speed / len;
+				this.motionY = delta.yCoord * speed / len;
+				this.motionZ = delta.zCoord * speed / len;
+			} else {
+				this.courseChangeCooldown = 0;
 			}
 		}
 	}
