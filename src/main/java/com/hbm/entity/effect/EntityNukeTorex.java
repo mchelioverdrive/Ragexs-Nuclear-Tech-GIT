@@ -3,9 +3,8 @@ package com.hbm.entity.effect;
 import java.awt.Color;
 import java.util.ArrayList;
 
-import com.hbm.explosion.ExplosionLarge;
-import com.hbm.explosion.ExplosionNukeGeneric;
-import com.hbm.explosion.ExplosionNukeSmall;
+import com.hbm.dim.CelestialBody;
+import com.hbm.dim.trait.CBT_Atmosphere;
 import com.hbm.main.MainRegistry;
 import com.hbm.util.BobMathUtil;
 import com.hbm.util.TrackerUtil;
@@ -35,12 +34,19 @@ public class EntityNukeTorex extends Entity {
 
 	public boolean didPlaySound = false;
 	public boolean didShake = false;
-	private DetonationType type;
+
+	private boolean hasSufficientPressure = true;
 
 	public EntityNukeTorex(World world) {
 		super(world);
 		this.ignoreFrustumCheck = true;
 		this.setSize(1F, 50F);
+
+		// Check current atmospheric pressure (wow, so difficult)
+		CBT_Atmosphere atmosphere = CelestialBody.getTrait(world, CBT_Atmosphere.class);
+		if(CelestialBody.inOrbit(world) || atmosphere == null || atmosphere.getPressure() < 0.01) {
+			hasSufficientPressure = false;
+		}
 	}
 
 	@Override
@@ -49,447 +55,168 @@ public class EntityNukeTorex extends Entity {
 		this.dataWatcher.addObject(11, new Integer(0));
 	}
 
-	@Override
-	@SideOnly(Side.CLIENT)
-	public int getBrightnessForRender(float p_70070_1_) {
-		return 15728880;
-	}
-
-	@Override
-	public float getBrightness(float p_70013_1_) {
-		return 1.0F;
-	}
-
-	public enum DetonationType {
-		GROUND,
-		AIRBURST,
-		SPACE
-	}
-
-	private DetonationType getDetonationType(World world, int x, int y, int z) {
-		if (isSpaceDimension(world) ) {
-			return DetonationType.SPACE;
-		} else if (y >= 256 || isAirColumnBelow(world, x, y -1, z, 30)) {
-			return DetonationType.AIRBURST;
-		} else {
-			return DetonationType.GROUND;
-		}
-	}
-
-	private boolean isAirColumnBelow(World world, int x, int y, int z, int depth) {
-		//System.out.println("Checking air column BELOW starting under (" + x + ", " + y + ", " + z + ") with depth: " + depth);
-		for (int i = 1; i <= depth && (y - i) >= 0; i++) {
-			int checkY = y - i;
-			boolean isAir = world.isAirBlock(x, checkY, z);
-			//System.out.println("  -> Checking block at (" + x + ", " + checkY + ", " + z + "): " + (isAir ? "AIR" : "NOT AIR"));
-			if (!isAir) return false;
-		}
-		return true;
-	}
-
-	private boolean isSpaceDimension(World world) {
-		// Either tag your dimension with `hasAtmosphere`, or hardcode space dimIDs
-		return world.provider.dimensionId != 0; //|| world.provider.getClass().getName().contains("space")
-		//unfortunately our planet biomes (to my knowledge) don't use the word space, so
-		//todo refine this logic for better implementation around james's added schizophrenia
-		// and add an atmosphere check here instead of just basing it on the dimension ID
-	}
-
+	@Override @SideOnly(Side.CLIENT) public int getBrightnessForRender(float interp) { return 15728880; }
+	@Override public float getBrightness(float interp) { return 1.0F; }
 
 	@Override
 	public void onUpdate() {
-		double s = 1.5;
+
+		double s = 1.5; //this.getScale();
 		double cs = 1.5;
 		int maxAge = this.getMaxAge();
 
-		if (worldObj.isRemote) {
+		if(worldObj.isRemote) {
 
-			// Get the detonation type ONCE, at the start of the explosion
-			if (ticksExisted == 1) {
-				this.type = getDetonationType(worldObj, (int) posX, (int) posY, (int) posZ);
-				//System.out.println("Detected detonation type: " + this.type);
+			if(ticksExisted == 1) this.setScale((float) s);
+
+			if(lastSpawnY == -1) {
+				lastSpawnY = posY - 3;
 			}
 
-			// Make sure 'type' is never null
-			if (this.type == null) {
-				//System.err.println("Detonation type is NULL, defaulting to GROUND");
-				this.type = DetonationType.GROUND;
+			if(ticksExisted < 100) this.worldObj.lastLightningBolt = 2;
+
+			int spawnTarget = Math.max(worldObj.getHeightValue((int) Math.floor(posX), (int) Math.floor(posZ)) - 3, 1);
+			double moveSpeed = 0.5D;
+
+			if(Math.abs(spawnTarget - lastSpawnY) < moveSpeed) {
+				lastSpawnY = spawnTarget;
+			} else {
+				lastSpawnY += moveSpeed * Math.signum(spawnTarget - lastSpawnY);
 			}
 
-			switch (this.type) {
+			if(!hasSufficientPressure) {
+				// pondering my glowing orb
+				if(ticksExisted < 40) {
+					double range = (ticksExisted + rand.nextDouble()) * 0.6;
+					int toSpawn = ticksExisted * 5;
+					int lifetime = Math.max(800 - ticksExisted * 10, 40);
 
-				case SPACE: {
-
-					float yieldScale = (float) cs;
-					float radius = 20F + (ticksExisted * 0.5F);
-
-					if (ticksExisted == 1) {
-						this.setScale((float) s);
-						lastSpawnY = posY;
-					}
-
-					if (lastSpawnY == -1) {
-						lastSpawnY = posY;
-						//0 gravity
-					}
-
-					int spawnTarget = Math.max(worldObj.getHeightValue((int) Math.floor(posX), (int) Math.floor(posZ)) - 3, 1);
-					double moveSpeed = 5.5D;
-
-					if (lastSpawnY == -1) {
-						lastSpawnY = spawnTarget;
-					}
-					//im assuming this is ploomage/torex mushroom
-					//} else if (Math.abs(spawnTarget - lastSpawnY) < moveSpeed) {
-					//	lastSpawnY = spawnTarget;
-					//} else {
-					//	lastSpawnY += moveSpeed * Math.signum(spawnTarget - lastSpawnY);
-					//}
-					//it infact was not
-
-					if (ticksExisted == 1) {
-						spawnSpaceDetonationFlash((float) getScale() * 10F);
-						//pray
-					}
-					// ball of gas rapidly expanding and disentegrating
-
-					// Mushroom cloud
-					double range = ticksExisted * 0.1F; // Ball grows over time
-					double simSpeed = getSimulationSpeed()/2;
-					int toSpawn = (int) Math.ceil(10 * simSpeed * simSpeed);
-					int lifetime = Math.min((ticksExisted * ticksExisted) + 100, maxAge - ticksExisted + 100);
-
-					for (int i = 0; i < toSpawn; i++) {
-						double theta = rand.nextDouble() * 2 * Math.PI;
-						double phi = Math.acos(2 * rand.nextDouble() - 1);
-						double r = rand.nextDouble() * range;
-
-						double x = posX + r * Math.sin(phi) * Math.cos(theta);
-						double y = posY + r * Math.sin(phi) * Math.sin(theta);
-						double z = posZ + r * Math.cos(phi);
-
-						Cloudlet cloud = new Cloudlet(x, y, z,
-							(float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime);
-						cloud.setScale(1F + this.ticksExisted * 0.005F * (float) cs, 10F * (float) cs);
+					for(int i = 0; i < toSpawn; i++) {
+						double x = posX + rand.nextGaussian() * range;
+						double y = posY + rand.nextGaussian() * range;
+						double z = posZ + rand.nextGaussian() * range;
+						Cloudlet cloud = new Cloudlet(x, y, z, (float)(rand.nextDouble() * 2D * Math.PI), 0, lifetime, TorexType.STARFISH);
+						cloud.setScale(4F, 5F);
+						cloud.setMotion(ticksExisted < 25 && rand.nextBoolean() ? 0.5 : 0.05);
 						cloudlets.add(cloud);
 					}
-
-					// Cloudlet updates
-					for (Cloudlet cloud : cloudlets) cloud.update();
-					cloudlets.removeIf(x -> x.isDead);
-
-					// Visual scaling
-					//coreHeight += 0.1 / s;
-					//torusWidth += 0.04 / s;
-					//rollerSize = torusWidth * 0.4F;
-					//convectionHeight = coreHeight + rollerSize;
-
-					return;
 				}
 
-				case AIRBURST: {
-					float yieldScale = (float) cs;
-					float radius = 20F + (ticksExisted * 0.5F);
-
-					if (ticksExisted == 1) {
-						this.setScale((float) s);
-						lastSpawnY = posY;
-					}
-
-					if (lastSpawnY == -1) {
-						lastSpawnY = posY - 6;
-					}
-
-					if (ticksExisted < 50) {
-						spawnAirburstRingCloud();
-						//fireball
-					}
-
-					int spawnTarget = Math.max(worldObj.getHeightValue((int) Math.floor(posX), (int) Math.floor(posZ)) - 3, 1);
-					double moveSpeed = 0.5D;
-
-					if (lastSpawnY == -1) {
-						lastSpawnY = spawnTarget;
-					} else if (Math.abs(spawnTarget - lastSpawnY) < moveSpeed) {
-						lastSpawnY = spawnTarget;
-					} else {
-						lastSpawnY += moveSpeed * Math.signum(spawnTarget - lastSpawnY);
-					}
-
-					if (ticksExisted < 600) {
-						double range = (torusWidth - rollerSize) * 0.25 * yieldScale;
-						double simSpeed = getSimulationSpeed();
-						int toSpawn = (int) Math.ceil(10 * simSpeed * simSpeed * yieldScale);
-						int lifetime = Math.min((ticksExisted * ticksExisted) + 200, maxAge - ticksExisted + 200);
-
-						for (int i = 0; i < toSpawn; i++) {
-							double x = posX + rand.nextGaussian() * range;
-							double z = posZ + rand.nextGaussian() * range;
-							Cloudlet cloud = new Cloudlet(x, lastSpawnY, z,
-								(float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime);
-							cloud.setScale(1F + this.ticksExisted * 0.005F * yieldScale, 15F * yieldScale);
-							cloudlets.add(cloud);
-						}
-					}
-
-					// Mushroom cap (torus)
-					if (ticksExisted >= 80 && ticksExisted < 600) {
-						int capClouds = 20;
-						int layers = 4;
-						double capRadius = 20 + (ticksExisted * 0.05) * yieldScale;
-						double yCap = lastSpawnY + 30 + (ticksExisted * 0.03);
-
-						for (int i = 0; i < capClouds; i++) {
-							for (int j = 0; j < layers; j++) {
-								float angle = (float)(Math.PI * 2 * rand.nextDouble());
-								Vec3 vec = Vec3.createVectorHelper(capRadius + rand.nextDouble() * 3.0, 0, 0);
-								vec.rotateAroundY(angle);
-								vec.rotateAroundZ((float)(Math.PI / 30 * j));
-								Cloudlet cloud = new Cloudlet(
-									posX + vec.xCoord,
-									yCap + j * 2,
-									posZ + vec.zCoord,
-									angle,
-									0,
-									400 + rand.nextInt(100),
-									TorexType.CONDENSATION);
-								cloud.setScale(0.5F * yieldScale, 10F * yieldScale);
-								cloudlets.add(cloud);
-							}
-						}
-					}
-
-					// Shock ring
-					if (ticksExisted < 100) {
-						int shockClouds = ticksExisted * 4;
-						int shockLife = 300 - ticksExisted * 2;
-						for (int i = 0; i < shockClouds; i++) {
-							Vec3 vec = Vec3.createVectorHelper((ticksExisted * 1.2 + rand.nextDouble()) * 1.5, 0, 0);
-							float rot = (float)(Math.PI * 2 * rand.nextDouble());
-							vec.rotateAroundY(rot);
-							cloudlets.add(new Cloudlet(
-								vec.xCoord + posX,
-								posY,
-								vec.zCoord + posZ,
-								rot,
-								0,
-								shockLife,
-								TorexType.SHOCK)
-								.setScale(6F * yieldScale, 2F)
-								.setMotion(0.75));
-						}
-					}
-
-					// Play sound once within blast radius
-					if (!didPlaySound && MainRegistry.proxy.me() != null &&
-						MainRegistry.proxy.me().getDistanceToEntity(this) < radius * 2) {
-						MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 10000F, 1F);
+				if(ticksExisted < 150 && !didPlaySound) {
+					if(MainRegistry.proxy.me() != null && MainRegistry.proxy.me().getDistanceToEntity(this) < (ticksExisted * 1.5 + 1) * 1.5) {
+						MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 10_000F, 1F);
 						didPlaySound = true;
 					}
-
-					// Cloudlet updates
-					for (Cloudlet cloud : cloudlets) cloud.update();
-					cloudlets.removeIf(x -> x.isDead);
-
-					// Visual scaling
-					coreHeight += 0.1 / s;
-					torusWidth += 0.04 / s;
-					rollerSize = torusWidth * 0.4F;
-					convectionHeight = coreHeight + rollerSize;
-					break;
 				}
 
-				case GROUND:
-				default: {
+				for(Cloudlet cloud : cloudlets) cloud.update();
+				coreHeight += 0.15 / s;
+				torusWidth += 0.05 / s;
+				rollerSize = torusWidth * 0.8;
+				convectionHeight = coreHeight + rollerSize;
 
-					if (ticksExisted == 1) this.setScale((float) s);
+				int maxHeat = (int) (50 * cs);
+				heat = maxHeat - Math.pow((maxHeat * this.ticksExisted) / maxAge, 1);
 
-					if (lastSpawnY == -1) {
-						lastSpawnY = posY - 3;
+				cloudlets.removeIf(x -> x.isDead);
+
+				return;
+			}
+
+			// spawn mush clouds
+			double range = (torusWidth - rollerSize) * 0.25;
+			double simSpeed = getSimulationSpeed();
+			int toSpawn = (int) Math.ceil(10 * simSpeed * simSpeed);
+			int lifetime = Math.min((ticksExisted * ticksExisted) + 200, maxAge - ticksExisted + 200);
+
+			for(int i = 0; i < toSpawn; i++) {
+				double x = posX + rand.nextGaussian() * range;
+				double z = posZ + rand.nextGaussian() * range;
+				Cloudlet cloud = new Cloudlet(x, lastSpawnY, z, (float)(rand.nextDouble() * 2D * Math.PI), 0, lifetime);
+				cloud.setScale(1F + this.ticksExisted * 0.005F * (float) cs, 5F * (float) cs);
+				cloudlets.add(cloud);
+			}
+
+			// spawn shock clouds
+			if(ticksExisted < 150) {
+
+				int cloudCount = ticksExisted * 5;
+				int shockLife = Math.max(300 - ticksExisted * 20, 50);
+
+				for(int i = 0; i < cloudCount; i++) {
+					Vec3 vec = Vec3.createVectorHelper((ticksExisted * 1.5 + rand.nextDouble()) * 1.5, 0, 0);
+					float rot = (float) (Math.PI * 2 * rand.nextDouble());
+					vec.rotateAroundY(rot);
+					this.cloudlets.add(new Cloudlet(vec.xCoord + posX, worldObj.getHeightValue((int) (vec.xCoord + posX) + 1, (int) (vec.zCoord + posZ)), vec.zCoord + posZ, rot, 0, shockLife, TorexType.SHOCK)
+						.setScale(7F, 2F)
+						.setMotion(ticksExisted > 15 ? 0.75 : 0));
+				}
+
+				if(!didPlaySound) {
+					if(MainRegistry.proxy.me() != null && MainRegistry.proxy.me().getDistanceToEntity(this) < (ticksExisted * 1.5 + 1) * 1.5) {
+						MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 10_000F, 1F);
+						didPlaySound = true;
 					}
-
-					int spawnTarget = Math.max(worldObj.getHeightValue((int) Math.floor(posX), (int) Math.floor(posZ)) - 3, 1);
-					double moveSpeed = 0.5D;
-
-					if (Math.abs(spawnTarget - lastSpawnY) < moveSpeed) {
-						lastSpawnY = spawnTarget;
-					} else {
-						lastSpawnY += moveSpeed * Math.signum(spawnTarget - lastSpawnY);
-					}
-
-					// Mushroom cloud
-					double range = (torusWidth - rollerSize) * 0.25;
-					double simSpeed = getSimulationSpeed();
-					int toSpawn = (int) Math.ceil(10 * simSpeed * simSpeed);
-					int lifetime = Math.min((ticksExisted * ticksExisted) + 200, maxAge - ticksExisted + 200);
-
-					for (int i = 0; i < toSpawn; i++) {
-						double x = posX + rand.nextGaussian() * range;
-						double z = posZ + rand.nextGaussian() * range;
-						Cloudlet cloud = new Cloudlet(x, lastSpawnY, z,
-							(float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime);
-						cloud.setScale(1F + this.ticksExisted * 0.005F * (float) cs, 5F * (float) cs);
-						cloudlets.add(cloud);
-					}
-
-					// Shock ring
-					if (ticksExisted < 150) {
-						int cloudCount = ticksExisted * 5;
-						int shockLife = Math.max(300 - ticksExisted * 20, 50);
-
-						for (int i = 0; i < cloudCount; i++) {
-							Vec3 vec = Vec3.createVectorHelper((ticksExisted * 1.5 + rand.nextDouble()) * 1.5, 0, 0);
-							float rot = (float) (Math.PI * 2 * rand.nextDouble());
-							vec.rotateAroundY(rot);
-							cloudlets.add(new Cloudlet(vec.xCoord + posX,
-								worldObj.getHeightValue((int) (vec.xCoord + posX) + 1, (int) (vec.zCoord + posZ)),
-								vec.zCoord + posZ, rot, 0, shockLife, TorexType.SHOCK)
-								.setScale(7F, 2F)
-								.setMotion(ticksExisted > 15 ? 0.75 : 0));
-						}
-
-						if (!didPlaySound && MainRegistry.proxy.me() != null &&
-							MainRegistry.proxy.me().getDistanceToEntity(this) < (ticksExisted * 1.5 + 1) * 1.5) {
-							MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 10_000F, 1F);
-							didPlaySound = true;
-						}
-					}
-
-					// Ring + condensation
-					if (ticksExisted < 130 * s) {
-						lifetime *= s;
-						for (int i = 0; i < 2; i++) {
-							Cloudlet cloud = new Cloudlet(posX, posY + coreHeight, posZ,
-								(float) (rand.nextDouble() * 2D * Math.PI), 0, lifetime, TorexType.RING);
-							cloud.setScale(1F + this.ticksExisted * 0.0025F * (float) (cs * cs), 3F * (float) (cs * cs));
-							cloudlets.add(cloud);
-						}
-					}
-
-					if (ticksExisted > 130 * s && ticksExisted < 600 * s) {
-						for (int i = 0; i < 20; i++) {
-							for (int j = 0; j < 4; j++) {
-								float angle = (float) (Math.PI * 2 * rand.nextDouble());
-								Vec3 vec = Vec3.createVectorHelper(torusWidth + rollerSize * (5 + rand.nextDouble()), 0, 0);
-								vec.rotateAroundZ((float) (Math.PI / 45 * j));
-								vec.rotateAroundY(angle);
-								Cloudlet cloud = new Cloudlet(posX + vec.xCoord,
-									posY + coreHeight - 5 + j * s,
-									posZ + vec.zCoord, angle, 0,
-									(int) ((20 + ticksExisted / 10) * (1 + rand.nextDouble() * 0.1)), TorexType.CONDENSATION);
-								cloud.setScale(0.125F * (float) cs, 3F * (float) cs);
-								cloudlets.add(cloud);
-							}
-						}
-					}
-
-					if (ticksExisted > 200 * s && ticksExisted < 600 * s) {
-						for (int i = 0; i < 20; i++) {
-							for (int j = 0; j < 4; j++) {
-								float angle = (float) (Math.PI * 2 * rand.nextDouble());
-								Vec3 vec = Vec3.createVectorHelper(torusWidth + rollerSize * (3 + rand.nextDouble() * 0.5), 0, 0);
-								vec.rotateAroundZ((float) (Math.PI / 45 * j));
-								vec.rotateAroundY(angle);
-								Cloudlet cloud = new Cloudlet(posX + vec.xCoord,
-									posY + coreHeight + 25 + j * cs,
-									posZ + vec.zCoord, angle, 0,
-									(int) ((20 + ticksExisted / 10) * (1 + rand.nextDouble() * 0.1)), TorexType.CONDENSATION);
-								cloud.setScale(0.125F * (float) cs, 3F * (float) cs);
-								cloudlets.add(cloud);
-							}
-						}
-					}
-
-					// Update all cloudlets
-					for (Cloudlet cloud : cloudlets) cloud.update();
-
-					// Adjust core visuals
-					coreHeight += 0.15 / s;
-					torusWidth += 0.05 / s;
-					rollerSize = torusWidth * 0.35;
-					convectionHeight = coreHeight + rollerSize;
-
-					// Adjust heat and cleanup
-					int maxHeat = (int) (50 * cs);
-					heat = maxHeat - Math.pow((maxHeat * this.ticksExisted) / maxAge, 1);
-					cloudlets.removeIf(x -> x.isDead);
 				}
 			}
+
+			// spawn ring clouds
+			if(ticksExisted < 130 * s) {
+				lifetime *= s;
+				for(int i = 0; i < 2; i++) {
+					Cloudlet cloud = new Cloudlet(posX, posY + coreHeight, posZ, (float)(rand.nextDouble() * 2D * Math.PI), 0, lifetime, TorexType.RING);
+					cloud.setScale(1F + this.ticksExisted * 0.0025F * (float) (cs * cs), 3F * (float) (cs * cs));
+					cloudlets.add(cloud);
+				}
+			}
+
+			// spawn condensation clouds
+			if(ticksExisted > 130 * s && ticksExisted < 600 * s) {
+
+				for(int i = 0; i < 20; i++) {
+					for(int j = 0; j < 4; j++) {
+						float angle = (float) (Math.PI * 2 * rand.nextDouble());
+						Vec3 vec = Vec3.createVectorHelper(torusWidth + rollerSize * (5 + rand.nextDouble()), 0, 0);
+						vec.rotateAroundZ((float) (Math.PI / 45 * j));
+						vec.rotateAroundY(angle);
+						Cloudlet cloud = new Cloudlet(posX + vec.xCoord, posY + coreHeight - 5 + j * s, posZ + vec.zCoord, angle, 0, (int) ((20 + ticksExisted / 10) * (1 + rand.nextDouble() * 0.1)), TorexType.CONDENSATION);
+						cloud.setScale(0.125F * (float) (cs), 3F * (float) (cs));
+						cloudlets.add(cloud);
+					}
+				}
+			}
+			if(ticksExisted > 200 * s && ticksExisted < 600 * s) {
+
+				for(int i = 0; i < 20; i++) {
+					for(int j = 0; j < 4; j++) {
+						float angle = (float) (Math.PI * 2 * rand.nextDouble());
+						Vec3 vec = Vec3.createVectorHelper(torusWidth + rollerSize * (3 + rand.nextDouble() * 0.5), 0, 0);
+						vec.rotateAroundZ((float) (Math.PI / 45 * j));
+						vec.rotateAroundY(angle);
+						Cloudlet cloud = new Cloudlet(posX + vec.xCoord, posY + coreHeight + 25 + j * cs, posZ + vec.zCoord, angle, 0, (int) ((20 + ticksExisted / 10) * (1 + rand.nextDouble() * 0.1)), TorexType.CONDENSATION);
+						cloud.setScale(0.125F * (float) (cs), 3F * (float) (cs));
+						cloudlets.add(cloud);
+					}
+				}
+			}
+
+			for(Cloudlet cloud : cloudlets) {
+				cloud.update();
+			}
+			coreHeight += 0.15 / s;
+			torusWidth += 0.05 / s;
+			rollerSize = torusWidth * 0.35;
+			convectionHeight = coreHeight + rollerSize;
+
+			int maxHeat = (int) (50 * cs);
+			heat = maxHeat - Math.pow((maxHeat * this.ticksExisted) / maxAge, 1);
+
+			cloudlets.removeIf(x -> x.isDead);
 		}
 
-		if (!worldObj.isRemote && ticksExisted > maxAge) {
+		if(!worldObj.isRemote && this.ticksExisted > maxAge) {
 			this.setDead();
 		}
-	}
-
-	private void spawnAirburstRingCloud() {
-		//emp FX
-		World World = worldObj;
-		ExplosionNukeGeneric.empBlast(World, (int) this.posX, (int) this.posY, (int) this.posZ, 50);
-		EntityEMPBlast wave = new EntityEMPBlast(World, 100);
-		wave.posX = this.posX + 0.5;
-		wave.posY = this.posY + 0.5;
-		wave.posZ = this.posZ + 0.5;
-		World.spawnEntityInWorld(wave);
-
-		//removing temp
-
-		//todone summon fissure explosion fx too
-		//todo test
-		if (ticksExisted < 40) {
-			//should last about 2 seconds as 20 ticks = 1s right
-			ExplosionNukeSmall.explode(World, this.posX, this.posY, this.posZ, ExplosionNukeSmall.PARAMS_VISUAL);
-			//just a large ball of fire, this should probably be the space effect actually
-			//System.out.println("fired in torex class");
-		} else {
-			//no more shrapnel afterwords
-			//cloud.didShake = true;
-			//didShake = true;
-			//todone disable shake bs
-			//done in clientproxy because this FUCKING MOD IS RETARDED
-			ExplosionNukeSmall.explode(World, this.posX, this.posY, this.posZ, ExplosionNukeSmall.PARAMS_VISUALNOSHRAP);
-		}
-
-
-
-	}
-
-	private void spawnSpaceDetonationFlash(float scale) {
-
-		//"It would look more like a gray firework exploding silently in a vacuum than any kind of atmospheric detonation."
-		//allegedly
-
-		//bigger emp FX
-		World World = worldObj;
-		ExplosionNukeGeneric.empBlast(World, (int) this.posX, (int) this.posY, (int) this.posZ, 50);
-		EntityEMPBlast wave = new EntityEMPBlast(World, 400);
-		wave.posX = this.posX + 0.5;
-		wave.posY = this.posY + 0.5;
-		wave.posZ = this.posZ + 0.5;
-		World.spawnEntityInWorld(wave);
-
-
-		if (ticksExisted < 110) {
-			ExplosionNukeSmall.explode(World, this.posX, this.posY, this.posZ, ExplosionNukeSmall.PARAMS_VISUALNOSHRAP);
-			//fireball
-		}
-
-		//x = ;
-		//y = this.posY;
-		//z = this.posZ;
-		//surely this wont null pointer fuck itself righttttt
-
-		ExplosionLarge.spawnParticles(World, this.posX, this.posY, this.posZ, ExplosionLarge.cloudFunction((int) scale));
-
-		//cloud func size should be proportional to the actual nuke size
-
-		//NOT DOING: copy of schrabidium type bomb explosion logic, just not blue but rather orange
-
-
-
-		//this.setSize(1, 4);
-		//this.ignoreFrustumCheck = true;
-		//this.isImmuneToFire = true;
 	}
 
 	public EntityNukeTorex setScale(float scale) {
@@ -628,7 +355,6 @@ public class EntityNukeTorex extends Entity {
 				this.motionY = convection.yCoord * factor + lift.yCoord * (1D - factor);
 				this.motionZ = convection.zCoord * factor + lift.zCoord * (1D - factor);
 			} else if(this.type == TorexType.SHOCK) {
-
 				double factor = MathHelper.clamp_double((this.posY - EntityNukeTorex.this.posY) / EntityNukeTorex.this.coreHeight, 0, 1);
 				Vec3 motion = Vec3.createVectorHelper(1, 0, 0);
 				motion.rotateAroundY(this.angle);
@@ -645,6 +371,13 @@ public class EntityNukeTorex extends Entity {
 				this.motionX = motion.xCoord;
 				this.motionY = motion.yCoord;
 				this.motionZ = motion.zCoord;
+			} else if(this.type == TorexType.STARFISH) {
+				double factor = MathHelper.clamp_double((this.posY - EntityNukeTorex.this.posY) / EntityNukeTorex.this.coreHeight, 0, 1);
+				Vec3 motion = Vec3.createVectorHelper(1, 0, 0);
+				motion.rotateAroundY(this.angle);
+				this.motionX = motion.xCoord * factor;
+				this.motionY = motion.yCoord * factor;
+				this.motionZ = motion.zCoord * factor;
 			}
 
 			double mult = this.motionMult * getSimulationSpeed();
@@ -671,9 +404,9 @@ public class EntityNukeTorex extends Entity {
 
 			/* the position of the torus' outer ring center */
 			Vec3 torusPos = Vec3.createVectorHelper(
-					(EntityNukeTorex.this.posX + torusWidth),
-					(EntityNukeTorex.this.posY + coreHeight * 0.5),
-					EntityNukeTorex.this.posZ);
+				(EntityNukeTorex.this.posX + torusWidth),
+				(EntityNukeTorex.this.posY + coreHeight * 0.5),
+				EntityNukeTorex.this.posZ);
 
 			/* the difference between the cloudlet and the torus' ring center */
 			Vec3 delta = Vec3.createVectorHelper(torusPos.xCoord - simPosX, torusPos.yCoord - this.posY, torusPos.zCoord - simPosZ);
@@ -695,9 +428,9 @@ public class EntityNukeTorex extends Entity {
 
 			/* the direction from the cloudlet to the target position on the perimeter */
 			Vec3 motion = Vec3.createVectorHelper(
-					torusPos.xCoord + rot.xCoord - simPosX,
-					torusPos.yCoord + rot.yCoord - this.posY,
-					torusPos.zCoord + rot.zCoord - simPosZ);
+				torusPos.xCoord + rot.xCoord - simPosX,
+				torusPos.yCoord + rot.yCoord - this.posY,
+				torusPos.zCoord + rot.zCoord - simPosZ);
 
 			double speed = 0.001D;
 			motion.xCoord *= speed;
@@ -715,9 +448,9 @@ public class EntityNukeTorex extends Entity {
 
 			/* the position of the torus' outer ring center */
 			Vec3 torusPos = Vec3.createVectorHelper(
-					(EntityNukeTorex.this.posX + torusWidth),
-					(EntityNukeTorex.this.posY + coreHeight),
-					EntityNukeTorex.this.posZ);
+				(EntityNukeTorex.this.posX + torusWidth),
+				(EntityNukeTorex.this.posY + coreHeight),
+				EntityNukeTorex.this.posZ);
 
 			/* the difference between the cloudlet and the torus' ring center */
 			Vec3 delta = Vec3.createVectorHelper(torusPos.xCoord - simPosX, torusPos.yCoord - this.posY, torusPos.zCoord - simPosZ);
@@ -739,9 +472,9 @@ public class EntityNukeTorex extends Entity {
 
 			/* the direction from the cloudlet to the target position on the perimeter */
 			Vec3 motion = Vec3.createVectorHelper(
-					torusPos.xCoord + rot.xCoord - simPosX,
-					torusPos.yCoord + rot.yCoord - this.posY,
-					torusPos.zCoord + rot.zCoord - simPosZ);
+				torusPos.xCoord + rot.xCoord - simPosX,
+				torusPos.yCoord + rot.yCoord - this.posY,
+				torusPos.zCoord + rot.zCoord - simPosZ);
 
 			motion = motion.normalize();
 			motion.rotateAroundY(this.angle);
@@ -782,38 +515,44 @@ public class EntityNukeTorex extends Entity {
 
 			int type = EntityNukeTorex.this.dataWatcher.getWatchableObjectInt(11);
 
-			if(type == 1) {
+			if(this.type == TorexType.STARFISH) {
 				this.color = Vec3.createVectorHelper(
-						Math.max(col * 1, 0.25),
-						Math.max(col * 2, 0.25),
-						Math.max(col * 0.5, 0.25)
-						);
+					Math.max(col * 8, 0.5),
+					Math.max(col * 1.5, 0.1),
+					Math.max(col * 0.5, 0.05)
+				);
+			} else if(type == 1) {
+				this.color = Vec3.createVectorHelper(
+					Math.max(col * 1, 0.25),
+					Math.max(col * 2, 0.25),
+					Math.max(col * 0.5, 0.25)
+				);
 			} else if(type == 2) {
 				Color color = Color.getHSBColor(this.angle / 2F / (float) Math.PI, 1F, 1F);
 				if(this.type == TorexType.RING) {
 					this.color = Vec3.createVectorHelper(
-							Math.max(col * 1, 0.25),
-							Math.max(col * 1, 0.25),
-							Math.max(col * 1, 0.25)
-							);
+						Math.max(col * 1, 0.25),
+						Math.max(col * 1, 0.25),
+						Math.max(col * 1, 0.25)
+					);
 				} else {
 					this.color = Vec3.createVectorHelper(color.getRed() / 255D, color.getGreen() / 255D, color.getBlue() / 255D);
 				}
 			} else {
 				this.color = Vec3.createVectorHelper(
-						Math.max(col * 2, 0.25),
-						Math.max(col * 1.5, 0.25),
-						Math.max(col * 0.5, 0.25)
-						);
+					Math.max(col * 2, 0.25),
+					Math.max(col * 1.5, 0.25),
+					Math.max(col * 0.5, 0.25)
+				);
 			}
 		}
 
 		public Vec3 getInterpPos(float interp) {
 			float scale = (float) EntityNukeTorex.this.getScale();
 			Vec3 base = Vec3.createVectorHelper(
-					prevPosX + (posX - prevPosX) * interp,
-					prevPosY + (posY - prevPosY) * interp,
-					prevPosZ + (posZ - prevPosZ) * interp);
+				prevPosX + (posX - prevPosX) * interp,
+				prevPosY + (posY - prevPosY) * interp,
+				prevPosZ + (posZ - prevPosZ) * interp);
 
 			if(this.type != TorexType.SHOCK) { //no rescale for the shockwave as this messes with the positions
 				base.xCoord = ((base.xCoord) - EntityNukeTorex.this.posX) * scale + EntityNukeTorex.this.posX;
@@ -837,9 +576,9 @@ public class EntityNukeTorex extends Entity {
 			}
 
 			return Vec3.createVectorHelper(
-					(prevColor.xCoord + (color.xCoord - prevColor.xCoord) * interp) * greying,
-					(prevColor.yCoord + (color.yCoord - prevColor.yCoord) * interp) * greying,
-					(prevColor.zCoord + (color.zCoord - prevColor.zCoord) * interp) * greying);
+				(prevColor.xCoord + (color.xCoord - prevColor.xCoord) * interp) * greying,
+				(prevColor.yCoord + (color.yCoord - prevColor.yCoord) * interp) * greying,
+				(prevColor.zCoord + (color.zCoord - prevColor.zCoord) * interp) * greying);
 		}
 
 		public float getAlpha() {
@@ -875,7 +614,8 @@ public class EntityNukeTorex extends Entity {
 		STANDARD,
 		SHOCK,
 		RING,
-		CONDENSATION
+		CONDENSATION,
+		STARFISH,
 	}
 
 	@Override protected void writeEntityToNBT(NBTTagCompound nbt) { }
@@ -888,16 +628,11 @@ public class EntityNukeTorex extends Entity {
 		return true;
 	}
 
+	public static void statFacStandard(World world, double x, double y, double z, float scale) { statFac(world, x, y, z, scale); }
+	public static void statFacBale(World world, double x, double y, double z, float scale) { statFac(world, x, y, z, scale); }
+
 	public static void statFac(World world, double x, double y, double z, float scale) {
 		EntityNukeTorex torex = new EntityNukeTorex(world).setScale(MathHelper.clamp_float((float) BobMathUtil.squirt(scale * 0.01) * 1.5F, 0.5F, 5F));
-		torex.setPosition(x, y, z);
-		torex.forceSpawn = true;
-		world.spawnEntityInWorld(torex);
-		TrackerUtil.setTrackingRange(world, torex, 1000);
-	}
-
-	public static void statFacBale(World world, double x, double y, double z, float scale) {
-		EntityNukeTorex torex = new EntityNukeTorex(world).setScale(MathHelper.clamp_float((float) BobMathUtil.squirt(scale * 0.01) * 1.5F, 0.5F, 5F)).setType(1);
 		torex.setPosition(x, y, z);
 		torex.forceSpawn = true;
 		world.spawnEntityInWorld(torex);
