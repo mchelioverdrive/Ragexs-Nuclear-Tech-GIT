@@ -1949,6 +1949,7 @@ public class ModItems {
 	public static Item mike_core;
 	public static Item mike_deut;
 	public static Item mike_cooling_unit;
+	public static Item tsar_corereal;
 	public static Item tsar_core;
 	public static Item fleija_igniter;
 	public static Item fleija_propellant;
@@ -4790,6 +4791,9 @@ public class ModItems {
 		mike_cooling_unit = new Item().setUnlocalizedName("mike_cooling_unit").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":mike_cooling_unit");
 
 		tsar_core = new Item().setUnlocalizedName("tsar_core").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":tsar_core");
+
+		tsar_corereal = new Item().setUnlocalizedName("tsar_corereal").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":tsar_corereal");
+
 
 		fleija_igniter = new ItemFleija().setUnlocalizedName("fleija_igniter").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":fleija_igniter");
 		fleija_propellant = new ItemFleija().setUnlocalizedName("fleija_propellant").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":fleija_propellant");
@@ -8232,6 +8236,10 @@ public class ModItems {
 
 		//Tsar Bomba
 		GameRegistry.registerItem(tsar_core, tsar_core.getUnlocalizedName());
+
+		GameRegistry.registerItem(tsar_corereal, tsar_corereal.getUnlocalizedName());
+
+		//made up bullshit from here on out
 
 		//FLEIJA
 		GameRegistry.registerItem(fleija_igniter, fleija_igniter.getUnlocalizedName());

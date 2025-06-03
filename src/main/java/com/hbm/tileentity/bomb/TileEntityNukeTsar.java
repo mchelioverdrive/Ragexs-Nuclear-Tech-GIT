@@ -22,11 +22,11 @@ public class TileEntityNukeTsar extends TileEntity implements ISidedInventory, I
 
 	private ItemStack slots[];
 	private String customName;
-	
+
 	public TileEntityNukeTsar() {
 		slots = new ItemStack[6];
 	}
-	
+
 	@Override
 	public int getSizeInventory() {
 		return slots.length;
@@ -52,7 +52,7 @@ public class TileEntityNukeTsar extends TileEntity implements ISidedInventory, I
 			{
 				slots[i] = null;
 			}
-			
+
 			return itemStack1;
 		} else {
 			return null;
@@ -89,7 +89,7 @@ public class TileEntityNukeTsar extends TileEntity implements ISidedInventory, I
 	public boolean hasCustomInventoryName() {
 		return this.customName != null && this.customName.length() > 0;
 	}
-	
+
 	public void setCustomName(String name) {
 		this.customName = name;
 	}
@@ -111,12 +111,12 @@ public class TileEntityNukeTsar extends TileEntity implements ISidedInventory, I
 
 	@Override
 	public void openInventory() {
-		
+
 	}
 
 	@Override
 	public void closeInventory() {
-		
+
 	}
 
 	@Override
@@ -138,13 +138,13 @@ public class TileEntityNukeTsar extends TileEntity implements ISidedInventory, I
 	public boolean canExtractItem(int i, ItemStack itemStack, int j) {
 		return j != 0 || i != 1 || itemStack.getItem() == Items.bucket;
 	}
-	
+
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		NBTTagList list = nbt.getTagList("items", 10);
 		slots = new ItemStack[getSizeInventory()];
-		
+
 		for(int i = 0; i < list.tagCount(); i++)
 		{
 			NBTTagCompound nbt1 = list.getCompoundTagAt(i);
@@ -155,12 +155,12 @@ public class TileEntityNukeTsar extends TileEntity implements ISidedInventory, I
 			}
 		}
 	}
-	
+
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		NBTTagList list = new NBTTagList();
-		
+
 		for(int i = 0; i < slots.length; i++)
 		{
 			if(slots[i] != null)
@@ -173,50 +173,50 @@ public class TileEntityNukeTsar extends TileEntity implements ISidedInventory, I
 		}
 		nbt.setTag("items", list);
 	}
-	
+
 	public boolean isReady() {
-		
+
 		if(slots[0] != null && slots[1] != null && slots[2] != null && slots[3] != null && slots[4] != null)
-			if(slots[0].getItem() == ModItems.explosive_lenses && 
-			slots[1].getItem() == ModItems.explosive_lenses && 
-			slots[2].getItem() == ModItems.explosive_lenses && 
-			slots[3].getItem() == ModItems.explosive_lenses && 
-			slots[4].getItem() == ModItems.man_core)
+			if(slots[0].getItem() == ModItems.explosive_lenses &&
+			slots[1].getItem() == ModItems.explosive_lenses &&
+			slots[2].getItem() == ModItems.explosive_lenses &&
+			slots[3].getItem() == ModItems.explosive_lenses &&
+			slots[4].getItem() == ModItems.tsar_corereal)
 			{
 				return true;
 			}
-		
+
 		return false;
 	}
-	
+
 	public boolean isFilled() {
-		
+
 		if(slots[0] != null && slots[1] != null && slots[2] != null && slots[3] != null && slots[4] != null && slots[5] != null)
-			if(slots[0].getItem() == ModItems.explosive_lenses && 
-			slots[1].getItem() == ModItems.explosive_lenses && 
-			slots[2].getItem() == ModItems.explosive_lenses && 
-			slots[3].getItem() == ModItems.explosive_lenses && 
-			slots[4].getItem() == ModItems.man_core && 
+			if(slots[0].getItem() == ModItems.explosive_lenses &&
+			slots[1].getItem() == ModItems.explosive_lenses &&
+			slots[2].getItem() == ModItems.explosive_lenses &&
+			slots[3].getItem() == ModItems.explosive_lenses &&
+			slots[4].getItem() == ModItems.tsar_corereal &&
 			slots[5].getItem() == ModItems.tsar_core)
 			{
 				return true;
 			}
-		
+
 		return false;
 	}
-	
+
 	public void clearSlots() {
 		for(int i = 0; i < slots.length; i++)
 		{
 			slots[i] = null;
 		}
 	}
-	
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
 		return TileEntity.INFINITE_EXTENT_AABB;
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public double getMaxRenderDistanceSquared()
