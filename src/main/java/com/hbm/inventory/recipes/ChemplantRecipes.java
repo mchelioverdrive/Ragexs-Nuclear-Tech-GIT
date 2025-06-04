@@ -128,6 +128,8 @@ public class ChemplantRecipes extends SerializableRecipe {
 						new FluidStack(Fluids.OXYGEN, 100))
 				.outputItems(new ItemStack(ModItems.ingot_pet)));*/
 
+
+
 		//Laminate Glass going here
 		recipes.add(new ChemRecipe(97, "LAMINATE", 100)
 				.inputFluids(
@@ -545,6 +547,21 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(1002, "CHLOROMETHANE", 50)
 				.inputFluids(new FluidStack(Fluids.GAS, 750), new FluidStack(Fluids.CHLORINE, 250))
 				.outputFluids(new FluidStack(Fluids.CHLOROMETHANE, 1000)));
+
+		//aluminum processing
+
+		recipes.add(new ChemRecipe(1003, "Bayer Process", 50)
+			.inputItems(new ComparableStack(ModBlocks.ore_aluminium))
+			.inputFluids(
+				new FluidStack(Fluids.WATER, 600),
+				new FluidStack(Fluids.SODIUM, 200))
+			//.outputFluids(new FluidStack(Fluids.NITAN, 1000)));
+			.outputItems(new ItemStack(ModItems.powder_aluminium, 8)));
+
+		//todo methamphetamine
+
+
+
 	}
 
 	public static void registerOtherOil() {

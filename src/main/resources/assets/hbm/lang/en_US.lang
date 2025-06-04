@@ -725,6 +725,7 @@ chem.MASS_CAKE=Cake Production
 chem.BUTTER=Butter Mixing
 chem.STRAWICE=Strawberry ice cream freezing
 chem.POISON=Cyanide Powder
+chem.Bayer Process=Bayer Process
 
 commands.satellite.no_active_satellites=No active satellites found!
 commands.satellite.no_satellite=No satellite using this frequency found!
@@ -6026,7 +6027,7 @@ tile.ore_plutonium.name=Plutonium Ore
 tile.ore_iodine.name=Iodine Ore
 tile.ore_arsenic.name=Arsenic Ore
 tile.ore_alexandrite.name=Alexandrite Ore
-tile.ore_aluminium.name=Aluminium Ore
+tile.ore_aluminium.name=Bauxite Ore
 tile.ore_asbestos.name=Asbestos Ore
 tile.ore_australium.name=Australian Ore
 tile.ore_basalt_asbestos.name=Asbestos-Rich Basalt
