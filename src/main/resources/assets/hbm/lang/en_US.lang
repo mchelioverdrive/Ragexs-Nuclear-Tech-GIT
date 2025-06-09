@@ -3845,6 +3845,7 @@ item.ore.copper=Copper
 item.ore.fluorite=Fluorite
 item.ore.gold=Gold
 tile.stone.name=Limestone
+item.redstone.name=Complex Wiring
 item.ore.hematite=Hematite
 item.ore.iron=Iron
 item.ore.malachite=Malachite

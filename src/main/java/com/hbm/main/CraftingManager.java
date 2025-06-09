@@ -258,6 +258,9 @@ public class CraftingManager {
 		addShapelessAuto(new ItemStack(Items.string, 3), new Object[] { DictFrame.fromOne(ModBlocks.plant_flower, EnumFlowerType.WEED) });
 		addRecipeAuto(new ItemStack(Items.paper, 3), new Object[] { "SSS", 'S', ModItems.powder_sawdust });
 
+		addShapelessAuto(new ItemStack(Items.redstone, 1), new Object[] { ModItems.wire_copper });
+
+
 		//ItemStack infinity = new ItemStack(Items.enchanted_book);
 		//EnchantmentUtil.addEnchantment(infinity, Enchantment.infinity, 1);
 		//addRecipeAuto(infinity, new Object[] { "SBS", "BDB", "SBS", 'S', ModItems.ammo_50bmg.stackFromEnum(Ammo50BMG.STAR), 'B', ModItems.ammo_5mm.stackFromEnum(Ammo5mm.STAR), 'D', ModItems.powder_magic });
