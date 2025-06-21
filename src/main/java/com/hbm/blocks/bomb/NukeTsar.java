@@ -115,7 +115,8 @@ public class NukeTsar extends BlockContainer implements IBomb {
 				this.onBlockDestroyedByPlayer(p_149695_1_, x, y, z, 1);
 				entity.clearSlots();
 				p_149695_1_.setBlockToAir(x, y, z);
-				igniteTestBomb(p_149695_1_, x, y, z, BombConfig.manRadius);
+				igniteTestBomb(p_149695_1_, x, y, z, BombConfig.tsarlegitrad);
+				//no fucker it was still absolutely fucking massive
 			}
 
 			if(entity.isFilled()) {
@@ -172,7 +173,7 @@ public class NukeTsar extends BlockContainer implements IBomb {
 		if(!world.isRemote) {
 			if(GeneralConfig.enableExtendedLogging) {
 				MainRegistry.logger.log(Level.INFO, "[BOMBPL]" + this.getLocalizedName() + " placed at " + x + " / " + y + " / " + z + "! " + "by "+ player.getCommandSenderName());
-		}	
+		}
 	}
 }
 
@@ -185,7 +186,7 @@ public class NukeTsar extends BlockContainer implements IBomb {
 				this.onBlockDestroyedByPlayer(world, x, y, z, 1);
 				entity.clearSlots();
 				world.setBlockToAir(x, y, z);
-				igniteTestBomb(world, x, y, z, BombConfig.manRadius);
+				igniteTestBomb(world, x, y, z, BombConfig.tsarlegitrad);
 				return BombReturnCode.DETONATED;
 			}
 
@@ -196,7 +197,7 @@ public class NukeTsar extends BlockContainer implements IBomb {
 				igniteTestBomb(world, x, y, z, BombConfig.tsarRadius);
 				return BombReturnCode.DETONATED;
 			}
-			
+
 			return BombReturnCode.ERROR_MISSING_COMPONENT;
 		}
 
