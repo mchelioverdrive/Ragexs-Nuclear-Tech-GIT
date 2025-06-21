@@ -9,7 +9,9 @@ public class BombConfig {
 	//remathed
 	public static int boyRadius = 50;
 	public static int manRadius = 60;
-	public static int mikeRadius = 160;
+	public static int mikeRadius = 400;
+	//should be 800 or 1,450 (larger est) bc apparently the radius is fucking 2900 and we div by 2 because bob has autism
+	//literal server ending event above apparently mike was just so juicy and fragrant he gerald sigma maxxed servers
 	public static int tsarlegitrad = 200;
 	//was used irl
 	public static int tsarRadius = 500;
@@ -17,8 +19,9 @@ public class BombConfig {
 	public static int fleijaRadius = 50;
 	public static int soliniumRadius = 150;
 	public static int n2Radius = 25;
-	public static int missileRadius = 55;
-	public static int mirvRadius = 50;
+	public static int missileRadius = 90;
+	//150kt
+	public static int mirvRadius = 90;
 	public static int fatmanRadius = 60;
 	public static int nukaRadius = 25;
 	public static int aSchrabRadius = 20;
