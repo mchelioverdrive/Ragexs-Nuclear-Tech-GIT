@@ -349,6 +349,8 @@ public class ExplosionChaos {
 			fx.motionX = rand.nextGaussian() * speed;
 			fx.motionZ = rand.nextGaussian() * speed;
 			world.spawnEntityInWorld(fx);
+			//I'm so tempted to fuck over anyone still using regular NTM but I know I'm 1 billion commits behind that schizo bullshit
+			//but like im so close to just not giving a fuck
 		}
 	}
 
