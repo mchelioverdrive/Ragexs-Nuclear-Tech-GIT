@@ -113,8 +113,8 @@ public class SkyProviderCelestial extends IRenderHandler {
 		float skyB = (float) skyColor.zCoord;
 
 		// Diminish sky colour when leaving the atmosphere
-		if(mc.renderViewEntity.posY > 300) {
-			double curvature = MathHelper.clamp_float((800.0F - (float)mc.renderViewEntity.posY) / 500.0F, 0.0F, 1.0F);
+		if (mc.renderViewEntity.posY > 20000.0) {
+			float curvature = MathHelper.clamp_float((25000.0F - (float) mc.renderViewEntity.posY) / 5000.0F, 0.0F, 1.0F);
 			skyR *= curvature;
 			skyG *= curvature;
 			skyB *= curvature;
@@ -182,7 +182,8 @@ public class SkyProviderCelestial extends IRenderHandler {
 			GL11.glRotatef(celestialAngle * 360.0F, 1.0F, 0.0F, 0.0F);
 
 			// Draw DIGAMMA STAR
-			renderDigamma(partialTicks, world, mc, celestialAngle);
+			//renderDigamma(partialTicks, world, mc, celestialAngle);
+			//nah fuck allat wack shit
 
 			OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ONE, GL11.GL_ZERO);
 
@@ -288,7 +289,8 @@ public class SkyProviderCelestial extends IRenderHandler {
 		}
 		GL11.glPopMatrix();
 
-		double sc = 1 / (pos.yCoord / 1000);
+		double sc = 20.0; // scale? probably. I love magic numbers and schizophrenic bullshit.
+		// AT LEAST ITS NOT MCHELI SCHIZOPHRENIC BULLSHIT!!!
 		double uvOffset = (pos.xCoord / 1024) % 1;
 		GL11.glPushMatrix();
 		{
@@ -302,7 +304,8 @@ public class SkyProviderCelestial extends IRenderHandler {
 
 			float sunBrightness = world.getSunBrightness(partialTicks);
 
-			GL11.glColor4f(sunBrightness, sunBrightness, sunBrightness, ((float)pos.yCoord - 200.0F) / 300.0F);
+			float alpha = MathHelper.clamp_float(((float)pos.yCoord - 20000.0F) / 5000.0F, 0.0F, 1.0F);
+			GL11.glColor4f(sunBrightness, sunBrightness, sunBrightness, alpha);
 			mc.renderEngine.bindTexture(body.texture);
 			GL11.glRotated(180, 1, 0, 0);
 

@@ -55,7 +55,8 @@ public class SkyProviderOrbit extends SkyProviderCelestial {
 			GL11.glRotatef(celestialAngle * 360.0F, 1.0F, 0.0F, 0.0F);
 
 			// digma balls
-			renderDigamma(partialTicks, world, mc, celestialAngle);
+			//renderDigamma(partialTicks, world, mc, celestialAngle);
+			//no
 
 			OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ONE, GL11.GL_ZERO);
 
@@ -118,5 +119,5 @@ public class SkyProviderOrbit extends SkyProviderCelestial {
 			return ((float)BobMathUtil.clerp(progress, travelAngle, celestialAngle) + 180.0F) / 360.0F;
 		}
 	}
-	
+
 }
