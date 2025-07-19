@@ -289,7 +289,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 		}
 		GL11.glPopMatrix();
 
-		double sc = 20.0; // scale? probably. I love magic numbers and schizophrenic bullshit.
+		double sc = 4.0; // scale? probably. I love magic numbers and schizophrenic bullshit.
 		// AT LEAST ITS NOT MCHELI SCHIZOPHRENIC BULLSHIT!!!
 		double uvOffset = (pos.xCoord / 1024) % 1;
 		GL11.glPushMatrix();
