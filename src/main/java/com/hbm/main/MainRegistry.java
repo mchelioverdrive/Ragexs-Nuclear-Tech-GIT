@@ -233,16 +233,16 @@ public class MainRegistry {
 	public static Achievement achManhattan;
 	//public static Achievement achGasCent;
 	public static Achievement achCentrifuge;
-	public static Achievement achFOEQ;
+	//public static Achievement achFOEQ;
 	//public static Achievement achSoyuz;
 	//public static Achievement achSpace;
 	//public static Achievement achSchrab;
-	public static Achievement achAcidizer;
+	//public static Achievement achAcidizer;
 	public static Achievement achRadium;
 	public static Achievement achTechnetium;
 	public static Achievement achZIRNOXBoom;
 	public static Achievement achChicagoPile;
-	public static Achievement achSILEX;
+	//public static Achievement achSILEX;
 	//public static Achievement achWatz;
 	//public static Achievement achWatzBoom;
 	public static Achievement achRBMK;
@@ -766,7 +766,7 @@ public class MainRegistry {
 		achTechnetium = new Achievement("achievement.technetium", "technetium", 15, -2, ModItems.ingot_tcalloy, achCentrifuge).initIndependentStat().registerStat();
 		achZIRNOXBoom = new Achievement("achievement.ZIRNOXBoom", "ZIRNOXBoom", 14, -1, ModItems.debris_element, achCentrifuge).initIndependentStat().setSpecial().registerStat();
 		achChicagoPile = new Achievement("achievement.chicagoPile", "chicagoPile", 13, 0, ModItems.pile_rod_plutonium, achCentrifuge).initIndependentStat().registerStat();
-		achSILEX = new Achievement("achievement.SILEX", "SILEX", 12, 7, new ItemStack(ModBlocks.machine_silex), achAcidizer).initIndependentStat().registerStat();
+		//achSILEX = new Achievement("achievement.SILEX", "SILEX", 12, 7, new ItemStack(ModBlocks.machine_silex), achAcidizer).initIndependentStat().registerStat();
 		//achWatz = new Achievement("achievement.watz", "watz", 14, 3, ModItems.watz_pellet, achSchrab).initIndependentStat().registerStat();
 		//achWatzBoom = new Achievement("achievement.watzBoom", "watzBoom", 14, 5, ModItems.bucket_mud, achWatz).initIndependentStat().setSpecial().registerStat();
 		achRBMK = new Achievement("achievement.RBMK", "RBMK", 9, -5, ModItems.rbmk_fuel_ueu, achConcrete).initIndependentStat().registerStat();
@@ -827,16 +827,16 @@ public class MainRegistry {
 				//achGasCent,
 				achCentrifuge,
 				//achDriveFail,
-				achFOEQ,
+				//achFOEQ,
 				//achSoyuz,
 				//achSpace,
 				//achSchrab,
-				achAcidizer,
+				//achAcidizer,
 				achRadium,
 				achTechnetium,
 				achZIRNOXBoom,
 				achChicagoPile,
-				achSILEX,
+				//achSILEX,
 				//achWatz,
 				//achWatzBoom,
 				achRBMK,
@@ -850,10 +850,9 @@ public class MainRegistry {
 		}
 		));
 
-			System.out.println("[YourMod] Listing all loaded achievements:");
+			System.out.println("[RTM] Listing all loaded achievements:");
 			for (Achievement achievement : (List<Achievement>)AchievementList.achievementList) {
-				System.out.println("[YourMod] Achievement: " + achievement.statId +
-					" | Name: " + achievement.getDescription() +
+				System.out.println("[RTM] Achievement: " + achievement.statId +
 					" | Parent: " + (achievement.parentAchievement != null ? achievement.parentAchievement.statId : "none"));
 			}
 

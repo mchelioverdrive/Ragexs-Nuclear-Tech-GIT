@@ -119,15 +119,26 @@ public class PollutionHandler {
 				if(pollutionFile != null) {
 
 					if(pollutionFile.exists()) {
-						FileInputStream io = new FileInputStream(pollutionFile);
-						NBTTagCompound data = CompressedStreamTools.readCompressed(io);
-						io.close();
-						perWorld.put(event.world, new PollutionPerWorld(data));
+						try {
+							FileInputStream io = new FileInputStream(pollutionFile);
+							NBTTagCompound data = CompressedStreamTools.readCompressed(io);
+							io.close();
+							perWorld.put(event.world, new PollutionPerWorld(data));
+						} catch(Exception ex) {
+							System.out.println("Failed to read " + pollutionFile.getAbsolutePath());
+							ex.printStackTrace();
+						}
 					} else {
-						perWorld.put(event.world, new PollutionPerWorld());
+						try {
+							perWorld.put(event.world, new PollutionPerWorld());
+						} catch(Exception ex) {
+							System.out.println("Failed to create " + pollutionFile.getAbsolutePath());
+							ex.printStackTrace();
+						}
 					}
 				}
 			} catch(Exception ex) {
+				System.out.println("Failed to create " + dirPath + File.separator + fileName);
 				ex.printStackTrace();
 			}
 		}
