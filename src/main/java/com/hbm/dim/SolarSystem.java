@@ -28,7 +28,7 @@ public class SolarSystem {
 	// How much to scale celestial objects when rendering
 	public static final double RENDER_SCALE = 90F;
 	//nerfed for irl values
-	public static final double SUN_RENDER_SCALE = 4F;
+	public static final double SUN_RENDER_SCALE = 16F;
 
 
 	public static void init() {
@@ -37,7 +37,7 @@ public class SolarSystem {
 		//the sun
 		kerbol = new CelestialBody("kerbol")
 			.withMassRadius(1.989e30F, 696_340) //testing irl values
-			.withRotationalPeriod(432_000) //idc about rotational period, you can have that
+			.withRotationalPeriod(2_192_832)
 			.withTexture("textures/environment/sun.png")
 			.withShader(new ResourceLocation(RefStrings.MODID, "shaders/blackhole.frag"), 3) // Only shows when CBT_Destroyed
 			.withSatellites(
@@ -57,18 +57,18 @@ public class SolarSystem {
 				new CelestialBody("moho", SpaceConfig.mohoDimension, Body.MOHO)
 					.withMassRadius(3.301e23F, 2_440)
 					.withSemiMajorAxis(57_909_000)
-					.withRotationalPeriod(210_000)
+					.withRotationalPeriod(5_067_360)
 					.withColor(0.4863F, 0.4F, 0.3456F)
 					.withBlockTextures(RefStrings.MODID + ":moho_stone", "", "", "")
 					.withAxialTilt(30F)
 					.withProcessingLevel(1)
 					.withTraits(new CBT_Temperature(430)),
 
-				//venus
+				//venus (retrograde)
 				new CelestialBody("eve", SpaceConfig.eveDimension, Body.EVE)
 					.withMassRadius(4.867e24F, 6_052)
 					.withSemiMajorAxis(108_210_000)
-					.withRotationalPeriod(80_500)
+					.withRotationalPeriod(-20_997_000)
 					.withColor(0.408F, 0.298F, 0.553F)
 					.withBlockTextures(RefStrings.MODID + ":eve_stone_2", "", "", "")
 					.withProcessingLevel(2)
@@ -92,8 +92,10 @@ public class SolarSystem {
 				//earth
 				new CelestialBody("kerbin", 0, Body.KERBIN) // overworld
 					.withMassRadius(5.972e24F, 6_371)
-					.withSemiMajorAxis(49_666_666) //149_598_000/3 = 49,666,666
-					.withRotationalPeriod(21_549) //23hrs = 82k seconds
+					.withSemiMajorAxis(149_598_023) //149_598_000/3 = 49,666,666
+					.withRotationalPeriod(86_164) //23hrs = 82k seconds
+					//by default, minecraft has a day lasting 20 minutes. That's retarded.
+					//I'm gonna make it an hour
 					.withColor(0.608F, 0.914F, 1.0F)
 					.withTraits(new CBT_Atmosphere(Fluids.AIR, 1D), new CBT_Water())
 					.withSatellites(
@@ -102,9 +104,9 @@ public class SolarSystem {
 						//even if the axis and shit is wrong
 
 						new CelestialBody("mun", SpaceConfig.moonDimension, Body.MUN)
-							.withMassRadius(7.347e22F, 1_737)
-							.withSemiMajorAxis(96_100) //384_400 / 4 = 96,100 because it could not be seen
-							.withRotationalPeriod(655_719) //27 days = 2,332,800 seconds
+							.withMassRadius(7.346e22F, 1_737)
+							.withSemiMajorAxis(384_400) //384_400 / 4 = 96,100 because it could not be seen
+							.withRotationalPeriod(2_360_621) //27 days = 2,332,800 seconds
 							//testing
 							//but then minecraft scaling and shit so 655_719
 							//that dont work
@@ -127,8 +129,8 @@ public class SolarSystem {
 				//mars
 				new CelestialBody("duna", SpaceConfig.dunaDimension, Body.DUNA)
 					.withMassRadius(6.417e23F, 3_390)
-					.withSemiMajorAxis(227_956_000)
-					.withRotationalPeriod(65_518)
+					.withSemiMajorAxis(227_939_200)
+					.withRotationalPeriod(88_642)
 					//.withTidalLockingTo("ike") //??? literally fucking what
 					.withColor(0.6471f, 0.2824f, 0.1608f)
 					.withBlockTextures(RefStrings.MODID + ":duna_rock", "", "", "")
@@ -140,10 +142,10 @@ public class SolarSystem {
 						//phobos
 						new CelestialBody("ike", SpaceConfig.ikeDimension, Body.IKE)
 							.withMassRadius(1.0659e16F, 11)
-							.withSemiMajorAxis(9_377)
+							.withSemiMajorAxis(9_376)
 							.withBlockTextures(RefStrings.MODID + ":ike_stone", "", "", "")
 							.withProcessingLevel(1)
-							.withRotationalPeriod(65_518)
+							.withRotationalPeriod(27_554)
 							.withTidalLockingTo("duna")
 							//.withProcessingLevel(1) already set
 							.withTraits(new CBT_Water(Fluids.BROMINE)),
@@ -156,14 +158,14 @@ public class SolarSystem {
 							//, SpaceConfig.deimosDimension, Body.DEI
 							//we got DEI planets before gta 6
 							.withMassRadius(1.4762e15F, 6)
-							.withSemiMajorAxis(23_460)
+							.withSemiMajorAxis(23_463)
 							//todo change block textures
 							.withBlockTextures(RefStrings.MODID + ":ike_stone", "", "", "")
 							//this is probably fine
 							.withTexture("hbm:textures/misc/space/planet.png")
 							//todo add new bullshit
 							.withProcessingLevel(1)
-							.withRotationalPeriod(65_518)
+							.withRotationalPeriod(109_075)
 							.withTidalLockingTo("duna")
 							//idk what processinglevel even does
 							//oh it's technology lock
@@ -173,9 +175,9 @@ public class SolarSystem {
 
 				//ceres
 				new CelestialBody("dres", SpaceConfig.dresDimension, Body.DRES)
-					.withMassRadius(9.393e20F, 473)
-					.withSemiMajorAxis(413_700_000)
-					.withRotationalPeriod(34_800)
+					.withMassRadius(9.393e20F, 469)
+					.withSemiMajorAxis(414_000_000)
+					.withRotationalPeriod(32_667)
 					.withBlockTextures(RefStrings.MODID + ":dresbase", "", "", "")
 					.withProcessingLevel(2),
 
@@ -190,7 +192,7 @@ public class SolarSystem {
 
 					//skibidi mode: on
 					.withSemiMajorAxis(778_479_000)
-					.withRotationalPeriod(36_000)
+					.withRotationalPeriod(35_730)
 					//.withColor(0.4588f, 0.6784f, 0.3059f)
 					//was neptune/uranus color?
 					.withColor(1.0f, 0.5f, 0.0f)
@@ -200,9 +202,9 @@ public class SolarSystem {
 
 						//europa
 						new CelestialBody("laythe", SpaceConfig.laytheDimension, Body.LAYTHE)
-							.withMassRadius(4.799e22F, 1_560)
+							.withMassRadius(4.7998e22F, 1_560)
 							.withSemiMajorAxis(671_100)
-							.withRotationalPeriod(52_981)
+							.withRotationalPeriod(306_822)
 							.withTidalLockingTo("jool")
 							.withProcessingLevel(3)
 							//not accurate, I'll see about changing it later
@@ -212,25 +214,29 @@ public class SolarSystem {
 						new CelestialBody("vall") //probably
 							.withMassRadius(1.4819e23F, 2_634)
 							.withSemiMajorAxis(1_070_400)
-							.withRotationalPeriod(105_962),
+							.withRotationalPeriod(618_153)
+							.withTidalLockingTo("jool"),
 
 						//Callisto
 						new CelestialBody("tylo") // what value is this planet gonna add???
 							.withMassRadius(1.0759e23F, 2_410)
 							.withSemiMajorAxis(1_882_700)
-							.withRotationalPeriod(211_926),
+							.withRotationalPeriod(1_441_931)
+							.withTidalLockingTo("jool"),
 
 						//Amalthea
 						new CelestialBody("bop")
 							.withMassRadius(2.08e18F, 83)
-							.withSemiMajorAxis(181_365)
-							.withRotationalPeriod(544_507),
+							.withSemiMajorAxis(181_366)
+							.withRotationalPeriod(43_043)
+							.withTidalLockingTo("jool"),
 
 						//Himalia
 						new CelestialBody("pol")
 							.withMassRadius(6.7e18F, 85)
 							.withSemiMajorAxis(11_460_000)
-							.withRotationalPeriod(901_902),
+							.withRotationalPeriod(21_648_989)
+							.withTidalLockingTo("jool"),
 
 						//RTM changes: Adding rest of moons/planets for realism WIP
 
@@ -239,7 +245,8 @@ public class SolarSystem {
 							//volcanic hazards
 							.withMassRadius(8.9319e22F, 1_821)
 							.withSemiMajorAxis(421_800)
-							.withRotationalPeriod(901_902)
+							.withRotationalPeriod(152_854)
+							.withTidalLockingTo("jool")
 
 					),
 
@@ -247,7 +254,7 @@ public class SolarSystem {
 				new CelestialBody("sarnus")
 					.withMassRadius(5.683e26F, 58_232)
 					.withSemiMajorAxis(1_429_400_000)
-					.withRotationalPeriod(28_500)
+					.withRotationalPeriod(38_362)
 					.withColor(1f, 0.6862f, 0.5882f)
 					.withSatellites(
 
@@ -255,73 +262,83 @@ public class SolarSystem {
 					new CelestialBody("hale") //tiny rock thing
 						.withMassRadius(4.95e15F, 14)
 						.withSemiMajorAxis(133_584)
-						.withRotationalPeriod(23_555),
+						.withRotationalPeriod(49_684)
+						.withTidalLockingTo("sarnus"),
 
 					//Atlas
 					new CelestialBody("ovok") //nah
 						.withMassRadius(6.6e16F, 15)
 						.withSemiMajorAxis(137_670)
-						.withRotationalPeriod(29_440),
+						.withRotationalPeriod(52_004)
+						.withTidalLockingTo("sarnus"),
 
 					//Enceladus
 					new CelestialBody("slate") //Subsurface ocean, geysers.
-						.withMassRadius(8.94e22F, 1_815)
-						.withSemiMajorAxis(421_700)
-						.withRotationalPeriod(192_771),
+						.withMassRadius(1.08e20F, 252)
+						.withSemiMajorAxis(238_000)
+						.withRotationalPeriod(118_387)
+						.withTidalLockingTo("sarnus"),
 
 					//Titan
 					new CelestialBody("tekto")
-						.withMassRadius(1.345e23F, 2_575)
+						.withMassRadius(1.3452e23F, 2_575)
 						.withSemiMajorAxis(1_221_870)
-						.withRotationalPeriod(57_915)
+						.withRotationalPeriod(1_377_648)
+						.withTidalLockingTo("sarnus")
 						.withAxialTilt(25F)
 						.withTraits(new CBT_Atmosphere(Fluids.TEKTOAIR, 1.5F)),
 
 					//Iapetus
 					new CelestialBody("iapetus")
-						.withMassRadius(1.8e21F, 1_471)
+						.withMassRadius(1.8056e21F, 734)
 						.withSemiMajorAxis(3_560_000)
-						.withRotationalPeriod(1_000),
+						.withRotationalPeriod(6_853_378)
+						.withTidalLockingTo("sarnus"),
 
 					//Mimas
 					new CelestialBody("mimas")
-						.withMassRadius(3.749e19F, 396)
+						.withMassRadius(3.7493e19F, 198)
 						.withSemiMajorAxis(185_520)
-						.withRotationalPeriod(1_000)
+						.withRotationalPeriod(81_425)
+						.withTidalLockingTo("sarnus")
 
 				),
 
-				//Uranus
+				//Uranus (retrograde)
 				new CelestialBody("uranus")
 					.withMassRadius(8.681e25F, 25_362)
 					.withSemiMajorAxis(2_000_000_000) //2_870_990_000 is too large
-					.withRotationalPeriod(17_000)
+					.withRotationalPeriod(-62_064)
 					.withColor(0.4F, 0.6F, 0.8F)
 					.withSatellites(
 
 						//Miranda
 						new CelestialBody("miranda")
-							.withMassRadius(6.5e20F, 471)
-							.withSemiMajorAxis(235_800)
-							.withRotationalPeriod(1_000),
+							.withMassRadius(6.59e19F, 235)
+							.withSemiMajorAxis(129_390)
+							.withRotationalPeriod(122_125)
+							.withTidalLockingTo("uranus"),
 
 						//Titania
 						new CelestialBody("titania")
-							.withMassRadius(3.4e21F, 788)
+							.withMassRadius(3.527e21F, 788)
 							.withSemiMajorAxis(436_300)
-							.withRotationalPeriod(1_000),
+							.withRotationalPeriod(752_187)
+							.withTidalLockingTo("uranus"),
 
 						//Oberon
 						new CelestialBody("oberon")
 							.withMassRadius(3.01e21F, 761)
-							.withSemiMajorAxis(583_500)
-							.withRotationalPeriod(1_000),
+							.withSemiMajorAxis(583_520)
+							.withRotationalPeriod(1_163_223)
+							.withTidalLockingTo("uranus"),
 
 						//Ariel
 						new CelestialBody("ariel")
-							.withMassRadius(1.4e21F, 1_158)
-							.withSemiMajorAxis(191_000)
-							.withRotationalPeriod(1_000)
+							.withMassRadius(1.353e21F, 578)
+							.withSemiMajorAxis(191_020)
+							.withRotationalPeriod(217_761)
+							.withTidalLockingTo("uranus")
 
 					),
 
@@ -329,7 +346,7 @@ public class SolarSystem {
 				new CelestialBody("neptune")
 					.withMassRadius(1.024e26F, 24_622)
 					.withSemiMajorAxis(2_100_000_000) //4_498_252_900 is too large
-					.withRotationalPeriod(16_000)
+					.withRotationalPeriod(57_996)
 					.withColor(0.2F, 0.4F, 0.6F)
 					.withSatellites(
 
@@ -337,19 +354,22 @@ public class SolarSystem {
 						new CelestialBody("triton")
 							.withMassRadius(2.14e22F, 1_353)
 							.withSemiMajorAxis(354_800)
-							.withRotationalPeriod(5_000),
+							.withRotationalPeriod(507_760)
+							.withTidalLockingTo("neptune"),
 
 						//Proteus
 						new CelestialBody("proteus")
-							.withMassRadius(4.2e19F, 420)
-							.withSemiMajorAxis(117_600)
-							.withRotationalPeriod(1_000),
+							.withMassRadius(4.4e19F, 210)
+							.withSemiMajorAxis(117_647)
+							.withRotationalPeriod(96_968)
+							.withTidalLockingTo("neptune"),
 
 						//Nereid
 						new CelestialBody("nereid")
-							.withMassRadius(3.4e19F, 170)
-							.withSemiMajorAxis(5_000_000)
-							.withRotationalPeriod(1_000)
+							.withMassRadius(3.1e19F, 170)
+							.withSemiMajorAxis(5_513_400)
+							.withRotationalPeriod(31_116_096)
+							.withTidalLockingTo("neptune")
 
 
 
@@ -360,15 +380,16 @@ public class SolarSystem {
 					//todo at some point just go through and change all the annoying KSP names to be correct
 					// but god only knows how many fucking times in this code it's referenced
 					.withMassRadius(1.309e22F, 1_188)
-					.withSemiMajorAxis(5_906_380)
+					.withSemiMajorAxis(590_638_000) //.withSemiMajorAxis(5_906_380_000) too large
 					//5,906,380,000 int too large
-					.withRotationalPeriod(9_157_915)
+					.withRotationalPeriod(551_854)
 					.withSatellites(
 						//Charon
 						new CelestialBody("charon")
 							.withMassRadius(1.586e21F, 606)
 							.withSemiMajorAxis(19_591)
-							.withRotationalPeriod(1_000)
+							.withRotationalPeriod(551_857)
+							.withTidalLockingTo("eeloo") //tidal locking to pluto
 
 					)
 
@@ -638,7 +659,9 @@ public class SolarSystem {
 	}
 
 	private static double getApparentSize(double radius, double distance) {
-		return 2D * (float)Math.atan((2D * radius) / (2D * distance)) * RENDER_SCALE;
+		// Apparent angular size in radians
+		double angle = 2.0 * Math.atan(radius / distance);
+		return angle * RENDER_SCALE;
 	}
 
 	private static double getApparentAngleDegrees(Vec3 from, Vec3 to) {
