@@ -855,6 +855,8 @@ public class OreDictManager {
 		public String[] all(MaterialShapes shape) {				return appendToAll(shape.prefixes); }
 
 		/** Returns cast (triple) plates if 528 mode is enabled or normal plates if not */
+		//so fun fact, when a server has this enabled,
+		//clients are NOT notified meaning recipes just look un-fucking craftable to clients. Amazing!
 		public String plate528() { return GeneralConfig.enable528 ? plateCast() : plate(); }
 
 		private String[] appendToAll(String... prefix) {
