@@ -358,6 +358,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 						new FluidStack(Fluids.PETROLEUM, 100),
 						new FluidStack(Fluids.WATER, 1000))
 				.outputFluids(new FluidStack(Fluids.FRACKSOL, 1000)));
+		//kill
 		recipes.add(new ChemRecipe(73, "HELIUM3", 200)
 				.inputItems(new ComparableStack(ModBlocks.moon_turf, 8))
 				.outputFluids(new FluidStack(Fluids.HELIUM3, 1000)));
@@ -558,6 +559,17 @@ public class ChemplantRecipes extends SerializableRecipe {
 			//.outputFluids(new FluidStack(Fluids.NITAN, 1000)));
 			.outputItems(new ItemStack(ModItems.powder_aluminium, 8)));
 
+		//ACTUAL FRACKING SOLUTION
+		recipes.add(new ChemRecipe(1004, "FRACKSOL2", 20)
+			.inputItems(
+				new OreDictStack(S.dust()),
+				new ComparableStack(Blocks.gravel, 8)
+			)
+			.inputFluids(
+				//new FluidStack(Fluids.PETROLEUM, 100),
+				new FluidStack(Fluids.WATER, 1000))
+			.outputFluids(new FluidStack(Fluids.FRACKSOL, 1000)));
+
 		//todo methamphetamine
 
 
@@ -575,7 +587,8 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputFluids(new FluidStack(2000, Fluids.PETROLEUM))
 				.outputFluids(new FluidStack(1000, Fluids.LPG)));
 		recipes.add(new ChemRecipe(34, "OIL_SAND", 200)
-				.inputItems(new ComparableStack(ModBlocks.ore_oil_sand, 16), new OreDictStack(ANY_TAR.any(), 1))
+				.inputItems(new ComparableStack(ModBlocks.ore_oil_sand, 16))
+					//, new OreDictStack(ANY_TAR.any(), 1))
 				.outputItems(new ItemStack(Blocks.sand, 16))
 				.outputFluids(new FluidStack(1000, Fluids.BITUMEN)));
 		recipes.add(new ChemRecipe(35, "ASPHALT", 100)
