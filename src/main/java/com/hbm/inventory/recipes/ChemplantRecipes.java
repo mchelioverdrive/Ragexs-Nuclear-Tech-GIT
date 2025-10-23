@@ -39,34 +39,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 	@Override
 	public void registerDefaults() {
 
-		recipes.add(new ChemRecipe(1004, "URANIUM_BROMIDE", 50)
-			.inputItems(
-				new OreDictStack(U235.billet(), 1),
-				new ComparableStack(ModItems.powder_bromine),
-				new OreDictStack(ASBESTOS.ingot(), 1))
-			.inputFluids(new FluidStack(Fluids.HYDROGEN, 4000))
-			.outputFluids(new FluidStack(Fluids.URANIUM_BROMIDE, 4000)));
-		recipes.add(new ChemRecipe(1005, "PLUTONIUM_BROMIDE", 50)
-			.inputItems(
-				new OreDictStack(PU239.billet(), 1),
-				new ComparableStack(ModItems.powder_bromine),
-				new OreDictStack(ASBESTOS.ingot(), 1))
-			.inputFluids(new FluidStack(Fluids.HYDROGEN, 4000))
-			.outputFluids(new FluidStack(Fluids.PLUTONIUM_BROMIDE, 4000)));
-		recipes.add(new ChemRecipe(1006, "SCHRABIDIUM_BROMIDE", 50)
-			.inputItems(
-				new OreDictStack(SA326.billet(), 1),
-				new ComparableStack(ModItems.powder_bromine),
-				new OreDictStack(ASBESTOS.ingot(), 1))
-			.inputFluids(new FluidStack(Fluids.HYDROGEN, 4000))
-			.outputFluids(new FluidStack(Fluids.SCHRABIDIUM_BROMIDE, 4000)));
-		recipes.add(new ChemRecipe(1007, "THORIUM_BROMIDE", 50)
-			.inputItems(
-				new OreDictStack(TH232.billet(), 1),
-				new ComparableStack(ModItems.powder_bromine),
-				new OreDictStack(ASBESTOS.ingot(), 1))
-			.inputFluids(new FluidStack(Fluids.HYDROGEN, 4000))
-			.outputFluids(new FluidStack(Fluids.THORIUM_BROMIDE, 4000)));
+
 
 		//6-30, formerly oil cracking, coal liquefaction and solidifciation
 		registerOtherOil();
@@ -559,8 +532,37 @@ public class ChemplantRecipes extends SerializableRecipe {
 			//.outputFluids(new FluidStack(Fluids.NITAN, 1000)));
 			.outputItems(new ItemStack(ModItems.powder_aluminium, 8)));
 
+		recipes.add(new ChemRecipe(1004, "URANIUM_BROMIDE", 50)
+			.inputItems(
+				new OreDictStack(U235.billet(), 1),
+				new ComparableStack(ModItems.powder_bromine),
+				new OreDictStack(ASBESTOS.ingot(), 1))
+			.inputFluids(new FluidStack(Fluids.HYDROGEN, 4000))
+			.outputFluids(new FluidStack(Fluids.URANIUM_BROMIDE, 4000)));
+		recipes.add(new ChemRecipe(1005, "PLUTONIUM_BROMIDE", 50)
+			.inputItems(
+				new OreDictStack(PU239.billet(), 1),
+				new ComparableStack(ModItems.powder_bromine),
+				new OreDictStack(ASBESTOS.ingot(), 1))
+			.inputFluids(new FluidStack(Fluids.HYDROGEN, 4000))
+			.outputFluids(new FluidStack(Fluids.PLUTONIUM_BROMIDE, 4000)));
+		recipes.add(new ChemRecipe(1006, "SCHRABIDIUM_BROMIDE", 50)
+			.inputItems(
+				new OreDictStack(SA326.billet(), 1),
+				new ComparableStack(ModItems.powder_bromine),
+				new OreDictStack(ASBESTOS.ingot(), 1))
+			.inputFluids(new FluidStack(Fluids.HYDROGEN, 4000))
+			.outputFluids(new FluidStack(Fluids.SCHRABIDIUM_BROMIDE, 4000)));
+		recipes.add(new ChemRecipe(1007, "THORIUM_BROMIDE", 50)
+			.inputItems(
+				new OreDictStack(TH232.billet(), 1),
+				new ComparableStack(ModItems.powder_bromine),
+				new OreDictStack(ASBESTOS.ingot(), 1))
+			.inputFluids(new FluidStack(Fluids.HYDROGEN, 4000))
+			.outputFluids(new FluidStack(Fluids.THORIUM_BROMIDE, 4000)));
+
 		//ACTUAL FRACKING SOLUTION
-		recipes.add(new ChemRecipe(1004, "FRACKSOL2", 20)
+		recipes.add(new ChemRecipe(1008, "FRACKSOL2", 20)
 			.inputItems(
 				new OreDictStack(S.dust()),
 				new ComparableStack(Blocks.gravel, 8)
@@ -569,6 +571,8 @@ public class ChemplantRecipes extends SerializableRecipe {
 				//new FluidStack(Fluids.PETROLEUM, 100),
 				new FluidStack(Fluids.WATER, 1000))
 			.outputFluids(new FluidStack(Fluids.FRACKSOL, 1000)));
+
+
 
 		//todo methamphetamine
 
