@@ -24,7 +24,8 @@ public class ChunkProviderMoho extends ChunkProviderCelestial {
 
 		smallCrater.setSize(8, 32);
 		largeCrater.setSize(96, 128);
-		volcano.setSize(64, 128);
+		//volcano.setSize(64, 128);
+		//todo volcano example
 
 		smallCrater.regolith = largeCrater.regolith = ModBlocks.moho_regolith;
 		smallCrater.rock = largeCrater.rock = ModBlocks.moho_stone;
@@ -44,7 +45,7 @@ public class ChunkProviderMoho extends ChunkProviderCelestial {
 		rgen.func_151539_a(this, worldObj, x, z, buffer.blocks);
 		smallCrater.func_151539_a(this, worldObj, x, z, buffer.blocks);
 		largeCrater.func_151539_a(this, worldObj, x, z, buffer.blocks);
-		volcano.func_151539_a(this, worldObj, x, z, buffer.blocks);
+		//volcano.func_151539_a(this, worldObj, x, z, buffer.blocks);
 
 		return buffer;
 	}

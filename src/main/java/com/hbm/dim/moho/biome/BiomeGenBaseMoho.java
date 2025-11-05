@@ -17,7 +17,8 @@ public abstract class BiomeGenBaseMoho extends BiomeGenBaseCelestial {
 		this.setDisableRain();
 
 		BiomeDecoratorCelestial decorator = new BiomeDecoratorCelestial(ModBlocks.moho_stone);
-		decorator.lavaCount = 50;
+		//decorator.lavaCount = 50;
+		//no longer geologically active
 		this.theBiomeDecorator = decorator;
 
 		this.setTemperatureRainfall(1.0F, 0.0F);

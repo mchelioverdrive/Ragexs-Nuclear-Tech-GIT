@@ -16,12 +16,14 @@ public class BiomeGenOrbit extends BiomeGenBaseCelestial {
 		this.setBiomeName("Space");
 		this.setDisableRain();
 		this.monsters.add(new BiomeGenBase.SpawnListEntry(EntityFRIEND.class, 50, 1, 1));
+		//why won't you spawn
 	}
 
-	@Override
-	public float getSpawningChance() {
-		return 8F;
-	}
+	//@Override
+	//public float getSpawningChance() {
+	//	return 8F;
+	//}
+	//not needed?
 
 	@Override
 	public void genTerrainBlocks(World world, Random rand, Block[] blocks, byte[] meta, int x, int z, double noise) {

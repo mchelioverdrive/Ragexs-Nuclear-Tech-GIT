@@ -47,46 +47,48 @@ public class WorldGeneratorMoho implements IWorldGenerator {
 		DungeonToolbox.generateOre(world, rand, i, j, 2, 4, 0, 24, ModBlocks.ore_basalt, 3, ModBlocks.basalt);
 		DungeonToolbox.generateOre(world, rand, i, j, 8, 10, 16, 64, ModBlocks.ore_basalt, 4, ModBlocks.basalt);
 
-		for(int k = 0; k < 2; k++){
-			int x = i + rand.nextInt(16);
-			int z = j + rand.nextInt(16);
-			int d = 16 + rand.nextInt(96);
+		//for(int k = 0; k < 2; k++){
+		//	int x = i + rand.nextInt(16);
+		//	int z = j + rand.nextInt(16);
+		//	int d = 16 + rand.nextInt(96);
 
-			for(int y = d - 5; y <= d; y++) {
-				Block b = world.getBlock(x, y, z);
-				if(world.getBlock(x, y + 1, z) == Blocks.air && (b == ModBlocks.moho_stone || b == ModBlocks.moho_regolith)) {
-					world.setBlock(x, y, z, ModBlocks.geysir_nether);
-					world.setBlock(x+1, y, z, Blocks.netherrack);
-					world.setBlock(x-1, y, z, Blocks.netherrack);
-					world.setBlock(x, y, z+1, Blocks.netherrack);
-					world.setBlock(x, y, z-1, Blocks.netherrack);
-					world.setBlock(x+1, y-1, z, Blocks.netherrack);
-					world.setBlock(x-1, y-1, z, Blocks.netherrack);
-					world.setBlock(x, y-1, z+1, Blocks.netherrack);
-					world.setBlock(x, y-1, z-1, Blocks.netherrack);
-				}
-			}
-		}
+		//	for(int y = d - 5; y <= d; y++) {
+		//		Block b = world.getBlock(x, y, z);
+		//		if(world.getBlock(x, y + 1, z) == Blocks.air && (b == ModBlocks.moho_stone || b == ModBlocks.moho_regolith)) {
+		//			world.setBlock(x, y, z, ModBlocks.geysir_nether);
+		//			world.setBlock(x+1, y, z, Blocks.netherrack);
+		//			world.setBlock(x-1, y, z, Blocks.netherrack);
+		//			world.setBlock(x, y, z+1, Blocks.netherrack);
+		//			world.setBlock(x, y, z-1, Blocks.netherrack);
+		//			world.setBlock(x+1, y-1, z, Blocks.netherrack);
+		//			world.setBlock(x-1, y-1, z, Blocks.netherrack);
+		//			world.setBlock(x, y-1, z+1, Blocks.netherrack);
+		//			world.setBlock(x, y-1, z-1, Blocks.netherrack);
+		//		}
+		//	}
+		//}
 
 		// Kick the volcanoes into action, and fix SOME floating lava
 		// a full fix for floating lava would cause infinite cascades so we uh, don't
-		for(int x = 0; x < 16; x++) {
-			for(int z = 0; z < 16; z++) {
-				for(int y = 32; y < 128; y++) {
-					int ox = i + x;
-					int oz = j + z;
-					Block b = world.getBlock(ox, y, oz);
 
-					if(b == Blocks.lava && world.getBlock(ox, y - 1, oz) == Blocks.air) {
-						world.setBlock(ox, y - 1, oz, Blocks.flowing_lava, 0, 0);
-						world.markBlockForUpdate(ox, y - 1, oz);
-					} else if(b == ModBlocks.volcano_core) {
-						world.setBlock(ox, y, oz, ModBlocks.volcano_core, BlockVolcano.META_STATIC_EXTINGUISHING, 0);
-						world.markBlockForUpdate(ox, y, oz);
-					}
-				}
-			}
-		}
+		//todo volcano implem example here
+		//for(int x = 0; x < 16; x++) {
+		//	for(int z = 0; z < 16; z++) {
+		//		for(int y = 32; y < 128; y++) {
+		//			int ox = i + x;
+		//			int oz = j + z;
+		//			Block b = world.getBlock(ox, y, oz);
+
+		//			if(b == Blocks.lava && world.getBlock(ox, y - 1, oz) == Blocks.air) {
+		//				world.setBlock(ox, y - 1, oz, Blocks.flowing_lava, 0, 0);
+		//				world.markBlockForUpdate(ox, y - 1, oz);
+		//			} else if(b == ModBlocks.volcano_core) {
+		//				world.setBlock(ox, y, oz, ModBlocks.volcano_core, BlockVolcano.META_STATIC_EXTINGUISHING, 0);
+		//				world.markBlockForUpdate(ox, y, oz);
+		//			}
+		//		}
+		//	}
+		//}
 	}
 
 }

@@ -10,6 +10,7 @@ import com.hbm.dim.CelestialBody;
 import com.hbm.world.generator.DungeonToolbox;
 
 import cpw.mods.fml.common.IWorldGenerator;
+import net.minecraft.init.Blocks;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.IChunkProvider;
 
@@ -24,6 +25,14 @@ public class WorldGeneratorDres implements IWorldGenerator {
 
 	private void generateDres(World world, Random rand, int i, int j) {
 		int meta = CelestialBody.getMeta(world);
+
+		//Phyllosilicates
+		DungeonToolbox.generateOre(world, rand, i, j, 18, 12, 40, 20, Blocks.clay,0, ModBlocks.dres_rock);
+		//Carbonates
+		DungeonToolbox.generateOre(world, rand, i, j, 10, 8, 20, 30, ModBlocks.block_graphite,0, ModBlocks.dres_rock);
+
+		//Ammonium salts
+		DungeonToolbox.generateOre(world, rand, i, j, 6, 6, 10, 10, ModBlocks.ore_, meta, ModBlocks.dres_rock);
 
 		DungeonToolbox.generateOre(world, rand, i, j, WorldConfig.cobaltSpawn, 4, 3, 22, ModBlocks.ore_cobalt, meta, ModBlocks.dres_rock);
 		DungeonToolbox.generateOre(world, rand, i, j, WorldConfig.copperSpawn, 9, 4, 27, ModBlocks.ore_iron, meta, ModBlocks.dres_rock);
