@@ -12,6 +12,7 @@ import com.hbm.creativetabs.*;
 import com.hbm.entity.EntityMappings;
 import com.hbm.entity.grenade.*;
 import com.hbm.entity.logic.IChunkLoader;
+import com.hbm.entity.mob.EntityFRIEND;
 import com.hbm.entity.mob.siege.SiegeTier;
 import com.hbm.handler.*;
 import com.hbm.handler.atmosphere.ChunkAtmosphereManager;
@@ -60,6 +61,7 @@ import cpw.mods.fml.common.event.FMLInterModComms.IMCEvent;
 import cpw.mods.fml.common.event.FMLInterModComms.IMCMessage;
 import cpw.mods.fml.common.event.FMLMissingMappingsEvent.MissingMapping;
 import cpw.mods.fml.common.network.NetworkRegistry;
+import cpw.mods.fml.common.registry.EntityRegistry;
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.relauncher.Side;
 import net.minecraft.block.BlockDispenser;
@@ -900,6 +902,16 @@ public class MainRegistry {
 		SILEXRecipes.register();
 		RefineryRecipes.registerRefinery();
 		GasCentrifugeRecipes.register();
+
+		EntityRegistry.registerModEntity(
+			EntityFRIEND.class,
+			"entity_friend",                 // must match summon ID
+			956,                             // pick a unique number not used by anything else
+			MainRegistry.instance,
+			128,                             // tracking range
+			1,                               // update frequency
+			true                             // send velocity updates
+		); //I don't know why or how but I guess we have to register this one specifically.
 
 		CustomMachineConfigJSON.initialize();
 
