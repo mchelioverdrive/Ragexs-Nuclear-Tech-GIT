@@ -103,7 +103,7 @@ public class WorldProviderEve extends WorldProviderCelestial {
 		Vec3 ohshit = super.getSkyColor(camera, partialTicks);
 		float alpha = (flashd <= 0) ? 0.0F : 1.0F - Math.min(1.0F, flashd / 100);
 
-		return Vec3.createVectorHelper(ohshit.xCoord + alpha , ohshit.yCoord + alpha, ohshit.zCoord);
+		return Vec3.createVectorHelper(ohshit.xCoord + alpha , ohshit.yCoord + alpha, 0);
 
 	}
 
