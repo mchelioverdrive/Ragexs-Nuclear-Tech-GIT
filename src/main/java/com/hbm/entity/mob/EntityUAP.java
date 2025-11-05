@@ -32,7 +32,6 @@ public class EntityUAP extends EntityFlying implements IMob {
 	public double waypointY;
 	public double waypointZ;*/
 	public int hurtCooldown;
-	public int beamTimer;
 	private Entity target;
 	private List<Entity> secondaries = new ArrayList();
 

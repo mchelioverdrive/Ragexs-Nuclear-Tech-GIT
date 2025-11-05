@@ -1,5 +1,7 @@
 package com.hbm.entity.mob;
 
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.EntityAILookIdle;
@@ -24,6 +26,8 @@ public class EntityFRIEND extends EntityCreature {
 		this.tasks.addTask(3, new EntityAIWatchClosest(this, EntityPlayer.class, 15.0F));
 
 		this.renderDistanceWeight *= 10;
+		this.setSize(0.6F, 1.8F);
+		this.getNavigator().setBreakDoors(true);
 	}
 
 	@Override
@@ -37,12 +41,12 @@ public class EntityFRIEND extends EntityCreature {
 	public void onUpdate() {
 		super.onUpdate();
 
-		if(!worldObj.isRemote) {
-			double despawnRange = 50;
-			List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, this.boundingBox.expand(despawnRange, despawnRange, despawnRange));
-			if(!players.isEmpty())
-				this.setDead();
-		}
+		//if(!worldObj.isRemote) {
+		//	double despawnRange = 50;
+		//	List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, this.boundingBox.expand(despawnRange, despawnRange, despawnRange));
+		//	if(!players.isEmpty())
+		//		this.setDead();
+		//}
 	}
 
 	@Override
@@ -53,6 +57,12 @@ public class EntityFRIEND extends EntityCreature {
 	@Override
 	public boolean isEntityInvulnerable() {
 		return true;
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public boolean isInRangeToRenderDist(double distance) {
+		return distance < 500000;
 	}
 
 	//same attrib as ghost, will have a different model and will appear in space when you are ALONE.

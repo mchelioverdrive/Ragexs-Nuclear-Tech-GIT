@@ -31,13 +31,21 @@ public class RenderFRIEND extends RenderBiped {
 	}
 
 	@Override
-	public void doRender(EntityLiving p_76986_1_, double p_76986_2_, double p_76986_4_, double p_76986_6_, float p_76986_8_, float p_76986_9_) {
+	public void doRender(EntityLiving entity, double x, double y, double z, float yaw, float partialTicks) {
+		GL11.glPushMatrix();
 		GL11.glEnable(GL11.GL_BLEND);
-		GL11.glAlphaFunc(GL11.GL_GREATER, 0);
-		OpenGlHelper.glBlendFunc(770, 771, 1, 0);
-		super.doRender(p_76986_1_, p_76986_2_, p_76986_4_, p_76986_6_, p_76986_8_, p_76986_9_);
-		GL11.glAlphaFunc(GL11.GL_GREATER, 0.1F);
+		// Blend source alpha with inverse destination alpha (standard transparency)
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+		// Set RGBA: alpha = 0.5f → 50% transparent
+		GL11.glColor4f(1.0F, 1.0F, 1.0F, 0.5F);
+
+		// Render normally
+		super.doRender(entity, x, y, z, yaw, partialTicks);
+
+		// Reset to full opacity for other renders
+		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 		GL11.glDisable(GL11.GL_BLEND);
+		GL11.glPopMatrix();
 	}
 
 

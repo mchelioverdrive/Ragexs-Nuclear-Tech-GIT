@@ -190,7 +190,8 @@ public class EntityMappings {
 		addEntity(EntityMissileShuttle.class, "entity_missile_shuttle", 1000);
 		addEntity(EntityZirnoxDebris.class, "entity_zirnox_debris", 1000);
 		addEntity(EntityGhost.class, "entity_ntm_ghost", 1000);
-		addEntity(EntityFRIEND.class, "entity_friend", 1000);
+		//do not reg as ...entity..?
+		//addEntity(EntityFRIEND.class, "entity_friend", 1000);
 		addEntity(EntityGrenadeDynamite.class, "entity_grenade_dynamite", 250);
 		addEntity(EntitySiegeLaser.class, "entity_ntm_siege_laser", 1000);
 		addEntity(EntityTNTPrimedBase.class, "entity_ntm_tnt_primed", 1000);
@@ -253,6 +254,10 @@ public class EntityMappings {
 		addMob(EntitySiegeCraft.class, "entity_meme_craft", 0x303030, 0x808000);
 
 		addMob(EntityUAP.class, "UAP", 0x003030, 0x008000);
+		//addMob(EntityFRIEND.class, "FRIEND", 0x403030, 0x108000);
+		addMob(EntityFRIEND.class, "entity_friend", 0x123456, 0xabcdef);
+
+
 
 
 		addMob(EntityPlasticBag.class, "entity_plastic_bag", 0xd0d0d0, 0x808080);
