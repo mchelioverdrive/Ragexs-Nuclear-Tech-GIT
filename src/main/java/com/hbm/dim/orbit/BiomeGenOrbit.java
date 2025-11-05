@@ -15,7 +15,12 @@ public class BiomeGenOrbit extends BiomeGenBaseCelestial {
 		super(id);
 		this.setBiomeName("Space");
 		this.setDisableRain();
-		this.creatures.add(new BiomeGenBase.SpawnListEntry(EntityFRIEND.class, 1, 1, 1));
+		this.monsters.add(new BiomeGenBase.SpawnListEntry(EntityFRIEND.class, 50, 1, 1));
+	}
+
+	@Override
+	public float getSpawningChance() {
+		return 8F;
 	}
 
 	@Override
