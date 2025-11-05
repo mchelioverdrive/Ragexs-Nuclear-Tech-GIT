@@ -277,6 +277,7 @@
 	"entity.ufoBeam": {"category": "hostile", "sounds": [{"name": "entity/ufoBeamShort", "stream": false}]},
 	"entity.ufoBlast": {"category": "hostile", "sounds": [{"name": "entity/ufoBlast", "stream": false}]},
 	"entity.siegeIdle": {"category": "hostile", "sounds": ["entity/siegeIdle1"]},
+	"entity.pigeoncoo": {"category": "neutral", "sounds": ["entity/pigeoncoo"]},
 	"entity.siegeHurt": {"category": "hostile", "sounds": ["entity/siegeHurt1", "entity/siegeHurt2"]},
 	"entity.siegeDeath": {"category": "hostile", "sounds": ["entity/siegeDeath1", "entity/siegeDeath2", "entity/siegeDeath3"]},
 	"entity.beep": {"category": "hostile", "sounds": [{"name": "footsteps/deepbeep", "stream": false}]},
