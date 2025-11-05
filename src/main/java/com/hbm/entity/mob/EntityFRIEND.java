@@ -14,6 +14,8 @@ import net.minecraft.world.World;
 import java.util.List;
 
 public class EntityFRIEND extends EntityCreature {
+
+	private int timer = 0;
 	//let him in.
 	//(*is actually a god awful thing that will cause you psychological distress)
 	//do not go to space, idiot.
@@ -23,7 +25,7 @@ public class EntityFRIEND extends EntityCreature {
 		this.tasks.addTask(0, new EntityAISwimming(this));
 		this.tasks.addTask(1, new EntityAIWander(this, 1.0D));
 		this.tasks.addTask(2, new EntityAILookIdle(this));
-		this.tasks.addTask(3, new EntityAIWatchClosest(this, EntityPlayer.class, 15.0F));
+		this.tasks.addTask(3, new EntityAIWatchClosest(this, EntityPlayer.class, 64.0F));
 
 		this.renderDistanceWeight *= 10;
 		this.setSize(0.6F, 1.8F);
@@ -40,13 +42,16 @@ public class EntityFRIEND extends EntityCreature {
 	@Override
 	public void onUpdate() {
 		super.onUpdate();
-
-		//if(!worldObj.isRemote) {
-		//	double despawnRange = 50;
-		//	List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, this.boundingBox.expand(despawnRange, despawnRange, despawnRange));
-		//	if(!players.isEmpty())
-		//		this.setDead();
-		//}
+		if(!worldObj.isRemote) {
+			//the wholesome
+			double despawnRange = 3;
+			List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, this.boundingBox.expand(despawnRange, despawnRange, despawnRange));
+			if(!players.isEmpty())
+				timer++;
+				if (timer > 3) {
+					this.setDead();
+				}
+		}
 	}
 
 	@Override

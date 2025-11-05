@@ -35,6 +35,8 @@ import java.util.Random;
 
 public class WorldProviderOrbit extends WorldProvider {
 
+	//todo spawn our FRIEND here when there's an atmosphere, it's breathable, and there's a door. then our friend can KNOCK.
+
 	// Orbit at an altitude that provides an hour-long realtime orbit (game time is fast so we go slow)
 	// We want a consistent orbital period to prevent orbiting too slow or fast (both for player comfort and feel)
 	private static final float ORBITAL_PERIOD = 7200;

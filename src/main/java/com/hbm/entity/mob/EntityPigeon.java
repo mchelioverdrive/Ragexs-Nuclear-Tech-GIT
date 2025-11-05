@@ -152,12 +152,13 @@ public class EntityPigeon extends EntityCreature implements IFlyingCreature, IAn
 
 
 	protected String getHurtSound() {
-		return null;
+		return "hbm:entity.pigeoncoo";
 	}
 
 	protected String getDeathSound() {
-		return null;
+		return "hbm:entity.pigeoncoo";
 	}
+	//low effort posting
 
 	@Override
 	protected void updateAITasks() {

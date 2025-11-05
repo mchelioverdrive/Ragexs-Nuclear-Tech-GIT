@@ -4,8 +4,10 @@ import java.util.Random;
 
 import com.hbm.dim.BiomeGenBaseCelestial;
 
+import com.hbm.entity.mob.EntityFRIEND;
 import net.minecraft.block.Block;
 import net.minecraft.world.World;
+import net.minecraft.world.biome.BiomeGenBase;
 
 public class BiomeGenOrbit extends BiomeGenBaseCelestial {
 
@@ -13,6 +15,7 @@ public class BiomeGenOrbit extends BiomeGenBaseCelestial {
 		super(id);
 		this.setBiomeName("Space");
 		this.setDisableRain();
+		this.creatures.add(new BiomeGenBase.SpawnListEntry(EntityFRIEND.class, 1, 1, 1));
 	}
 
 	@Override
@@ -23,5 +26,5 @@ public class BiomeGenOrbit extends BiomeGenBaseCelestial {
 	public void decorate(World world, Random rand, int x, int z) {
 		// EVEN LESS
 	}
-	
+
 }
