@@ -14,6 +14,7 @@ import com.hbm.packet.toclient.AuxParticlePacketNT;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import net.minecraft.block.Block;
 import net.minecraft.entity.EntityCreature;
+import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.EntityAILookIdle;
 import net.minecraft.entity.ai.EntityAIWatchClosest;
 import net.minecraft.entity.item.EntityItem;
@@ -37,6 +38,13 @@ public class EntityPigeon extends EntityCreature implements IFlyingCreature, IAn
 	public float prevDest;
 	public float prevFallTime;
 	public float offGroundTimer = 1.0F;
+
+	@Override
+	protected void applyEntityAttributes() {
+		super.applyEntityAttributes();
+		this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(4.0D);
+		//why the fuck did this have 20 health
+	}
 
 	public EntityPigeon(World world) {
 		super(world);
@@ -131,7 +139,7 @@ public class EntityPigeon extends EntityCreature implements IFlyingCreature, IAn
 	}
 
 	protected String getLivingSound() {
-		return null;
+		return "hbm:entity.pigeoncoo";
 	}
 	//>go to google
 	//>search up pigeon sound effect
