@@ -32,10 +32,21 @@ public class WorldGeneratorDres implements IWorldGenerator {
 		DungeonToolbox.generateOre(world, rand, i, j, 10, 8, 20, 30, ModBlocks.block_graphite,0, ModBlocks.dres_rock);
 
 		//Ammonium salts
-		DungeonToolbox.generateOre(world, rand, i, j, 6, 6, 10, 10, ModBlocks.ore_, meta, ModBlocks.dres_rock);
+		//god dammit we don't have table salt in NTM
+		DungeonToolbox.generateOre(world, rand, i, j, 6, 6, 10, 10, Blocks.netherrack, 0, ModBlocks.dres_rock);
+		//fuck this you're getting netherrack and a trade for pam's table salt at spawn if needed
+		// too lazy to add another fucking ore to this 3k commit behind rendering shit hole
 
+		//water ice
+		DungeonToolbox.generateOre(world, rand, i, j, 12, 4, 5, 15, Blocks.packed_ice, 0, ModBlocks.dres_rock);
+
+		//magnetite (iron)
+		DungeonToolbox.generateOre(world, rand, i, j, WorldConfig.copperSpawn, 18, 2, 27, ModBlocks.ore_iron, meta, ModBlocks.dres_rock);
+
+
+
+		//other random shit that james probably added for random progression...?
 		DungeonToolbox.generateOre(world, rand, i, j, WorldConfig.cobaltSpawn, 4, 3, 22, ModBlocks.ore_cobalt, meta, ModBlocks.dres_rock);
-		DungeonToolbox.generateOre(world, rand, i, j, WorldConfig.copperSpawn, 9, 4, 27, ModBlocks.ore_iron, meta, ModBlocks.dres_rock);
 		DungeonToolbox.generateOre(world, rand, i, j, 12,  8, 1, 33, ModBlocks.ore_niobium, meta, ModBlocks.dres_rock);
 		DungeonToolbox.generateOre(world, rand, i, j, GeneralConfig.coltanRate, 4, 15, 40, ModBlocks.ore_coltan, meta, ModBlocks.dres_rock);
 		DungeonToolbox.generateOre(world, rand, i, j, 1, 6, 4, 64, ModBlocks.ore_lanthanium, meta, ModBlocks.dres_rock);
