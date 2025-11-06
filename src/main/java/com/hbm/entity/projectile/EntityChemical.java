@@ -290,17 +290,17 @@ public class EntityChemical extends EntityThrowableNT {
 			}
 		}
 
-		if(type == Fluids.XPJUICE) {
+		//if(type == Fluids.XPJUICE) {
+//
+		//	if(e instanceof EntityPlayer) {
+		//		EnchantmentUtil.addExperience((EntityPlayer) e, 1, false);
+		//		this.setDead();
+		//	}
+		//}
 
-			if(e instanceof EntityPlayer) {
-				EnchantmentUtil.addExperience((EntityPlayer) e, 1, false);
-				this.setDead();
-			}
-		}
-
-		if(type == Fluids.ENDERJUICE) {
-			this.teleportRandomly(e);
-		}
+		//if(type == Fluids.ENDERJUICE) {
+		//	this.teleportRandomly(e);
+		//}
 	}
 
 	/* whether this type should extinguish entities */

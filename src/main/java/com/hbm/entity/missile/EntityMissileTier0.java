@@ -80,7 +80,8 @@ public abstract class EntityMissileTier0 extends EntityMissileBaseNT {
 		public EntityMissileMicro(World world) { super(world); }
 		public EntityMissileMicro(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
 		@Override public void onImpact() { ExplosionNukeSmall.explode(worldObj, posX, posY + 0.5, posZ, ExplosionNukeSmall.PARAMS_HIGH); }
-		@Override public ItemStack getDebrisRareDrop() { return ModItems.ammo_nuke.stackFromEnum(AmmoFatman.HIGH); }
+		//todo change to use mk5
+		@Override public ItemStack getDebrisRareDrop() { return new ItemStack(ModItems.mp_warhead_10_nuclear); }
 		@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_micro); }
 	}
 

@@ -122,19 +122,21 @@ public class BombMulti extends BlockContainer implements IBomb {
 	}
 
 	public BombReturnCode igniteTestBomb(World world, int x, int y, int z) {
+		//if (config.enablenukes)
+
 		TileEntityBombMulti entity = (TileEntityBombMulti) world.getTileEntity(x, y, z);
 		if(!world.isRemote) {
-			
+
 			if(entity.isLoaded()) {
-				
+
 				float explosionValue = 0.0F;
 				int clusterCount = 0;
 				int fireRadius = 0;
 				int poisonRadius = 0;
 				int gasCloud = 0;
-				
+
 				explosionValue = this.explosionBaseValue;
-				
+
 				switch(entity.return2type()) {
 				case 1: explosionValue += 1.0F; break;
 				case 2: explosionValue += 4.0F; break;
@@ -174,7 +176,7 @@ public class BombMulti extends BlockContainer implements IBomb {
 				if(gasCloud > 0) {
 					ExplosionChaos.spawnChlorine(world, x, y, z, gasCloud, gasCloud / 50, 0);
 				}
-				
+
 				return BombReturnCode.DETONATED;
 			}
 		}
@@ -218,7 +220,7 @@ public class BombMulti extends BlockContainer implements IBomb {
 		}
 	}
 }
-	
+
 
 	@Override
 	public void setBlockBoundsBasedOnState(IBlockAccess p_149719_1_, int p_149719_2_, int p_149719_3_, int p_149719_4_) {
@@ -235,17 +237,17 @@ public class BombMulti extends BlockContainer implements IBomb {
 
 	@Override
 	public BombReturnCode explode(World world, int x, int y, int z) {
-		
+
 		if(!world.isRemote) {
 			TileEntityBombMulti entity = (TileEntityBombMulti) world.getTileEntity(x, y, z);
-			
+
 			if(entity.isLoaded()) {
 				return igniteTestBomb(world, x, y, z);
 			}
-			
+
 			return BombReturnCode.ERROR_MISSING_COMPONENT;
 		}
-		
+
 		return BombReturnCode.UNDEFINED;
 	}
 
