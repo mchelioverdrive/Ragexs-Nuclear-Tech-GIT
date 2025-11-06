@@ -61,22 +61,24 @@ public abstract class EntityMissileTier4 extends EntityMissileBaseNT {
 	}
 
 	public static class EntityMissileNuclear extends EntityMissileTier4 {
+		//SM-65 Atlas D Missile with W49 Thermonuclear Warhead
 		public EntityMissileNuclear(World world) { super(world); }
 		public EntityMissileNuclear(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
 		@Override public void onImpact() {
-			this.worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, BombConfig.missileRadius, posX, posY, posZ));
-			EntityNukeTorex.statFac(worldObj, posX, posY, posZ, BombConfig.missileRadius);
+			this.worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, 42, posX, posY, posZ));
+			EntityNukeTorex.statFac(worldObj, posX, posY, posZ, 42);
 		}
 		@Override public ItemStack getDebrisRareDrop() { return new ItemStack(ModItems.warhead_nuclear); }
 		@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_nuclear); }
 	}
 
 	public static class EntityMissileMirv extends EntityMissileTier4 {
+		//SM-65 Atlas F Missile with W38 Thermonuclear Warhead
 		public EntityMissileMirv(World world) { super(world); }
 		public EntityMissileMirv(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
 		@Override public void onImpact() {
-			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, BombConfig.missileRadius * 2, posX, posY, posZ));
-			EntityNukeTorex.statFac(worldObj, posX, posY, posZ, BombConfig.missileRadius * 2);
+			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, 110, posX, posY, posZ));
+			EntityNukeTorex.statFac(worldObj, posX, posY, posZ, 110);
 		}
 		@Override public List<ItemStack> getDebris() {
 			List<ItemStack> list = new ArrayList<ItemStack>();
@@ -90,6 +92,8 @@ public abstract class EntityMissileTier4 extends EntityMissileBaseNT {
 		@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_nuclear_cluster); }
 	}
 
+	//TODO MORE MISSILES!!!
+
 	//public static class EntityMissileVolcano extends EntityMissileTier4 {
 	//	public EntityMissileVolcano(World world) { super(world); }
 	//	public EntityMissileVolcano(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
@@ -102,6 +106,9 @@ public abstract class EntityMissileTier4 extends EntityMissileBaseNT {
 	//	//@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_volcano); }
 	//}
 
+
+
+	//what the actual fuck are these for
 	public static class EntityMissileDoomsday extends EntityMissileTier4 {
 		public EntityMissileDoomsday(World world) { super(world); }
 		public EntityMissileDoomsday(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }

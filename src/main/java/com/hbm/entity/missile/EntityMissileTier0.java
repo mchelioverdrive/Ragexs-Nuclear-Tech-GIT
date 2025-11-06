@@ -83,8 +83,8 @@ public abstract class EntityMissileTier0 extends EntityMissileBaseNT {
 		public EntityMissileMicro(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
 		@Override public void onImpact() {
 			//ExplosionNukeSmall.explode(worldObj, posX, posY + 0.5, posZ, ExplosionNukeSmall.PARAMS_HIGH);
-			this.worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, 34, posX, posY, posZ)); //67 haha oh wait /2
-			EntityNukeTorex.statFac(worldObj, posX, posY, posZ, 34); //no but seriously I'm basing this off the north korean nuke test from 2006 on nukemap
+			this.worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, 16, posX, posY, posZ)); //31/2
+			EntityNukeTorex.statFac(worldObj, posX, posY, posZ, 16); //basing this off the north korean nuke test from 2006 on nukemap crater radius
 		}
 		//todo change to use mk5
 		//
