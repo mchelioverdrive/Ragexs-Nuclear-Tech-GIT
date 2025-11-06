@@ -33,7 +33,7 @@ public class ChunkProviderMoho extends ChunkProviderCelestial {
 		caveGenV2.stoneBlock = ModBlocks.moho_stone;
 		rgen.stoneBlock = ModBlocks.moho_stone;
 		stoneBlock = ModBlocks.moho_stone;
-		seaBlock = Blocks.lava;
+		seaBlock = Blocks.obsidian;
 	}
 
 	@Override

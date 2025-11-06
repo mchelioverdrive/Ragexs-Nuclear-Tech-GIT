@@ -40,6 +40,10 @@ public class WorldGeneratorMoho implements IWorldGenerator {
 
 		DungeonToolbox.generateOre(world, rand, i, j, 10, 32, 0, 128, ModBlocks.basalt, 0, ModBlocks.moho_stone);
 
+		//graphite
+		DungeonToolbox.generateOre(world, rand, i, j, 8, 20, 0, 60, ModBlocks.block_graphite, 0, ModBlocks.moho_stone);
+
+
 		// More basalt ores!
 		DungeonToolbox.generateOre(world, rand, i, j, 16, 6, 16, 64, ModBlocks.ore_basalt, 0, ModBlocks.basalt);
 		DungeonToolbox.generateOre(world, rand, i, j, 12, 8, 8, 32, ModBlocks.ore_basalt, 1, ModBlocks.basalt);
