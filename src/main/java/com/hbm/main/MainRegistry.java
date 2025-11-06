@@ -1050,6 +1050,7 @@ public class MainRegistry {
 		event.registerServerCommand(new CommandSatellites());
 		event.registerServerCommand(new CommandRadiation());
 		event.registerServerCommand(new CommandStations());
+		event.registerServerCommand(new CommandEnableNukes());
 	}
 
 	@EventHandler
