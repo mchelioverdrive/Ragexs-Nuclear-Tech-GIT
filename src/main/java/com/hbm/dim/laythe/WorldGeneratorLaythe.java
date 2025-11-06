@@ -34,7 +34,18 @@ public class WorldGeneratorLaythe implements IWorldGenerator {
 			OilBubble.spawnOil(world, randPosX, randPosY, randPosZ, 10 + rand.nextInt(7), ModBlocks.ore_oil, meta, Blocks.stone);
 		}
 
-        DungeonToolbox.generateOre(world, rand, i, j, WorldConfig.asbestosSpawn, 4, 16, 16, ModBlocks.ore_asbestos, meta);
+		//table salt
+		DungeonToolbox.generateOre(world, rand, i, j, 12, 4, 16, 8, Blocks.netherrack, 0);
+
+		//clay
+		DungeonToolbox.generateOre(world, rand, i, j, 20, 12, 32, 0, Blocks.clay, 0);
+
+		//sulfur
+		DungeonToolbox.generateOre(world, rand, i, j, 18, 10, 28, 0, ModBlocks.ore_sulfur, meta);
+
+
+		//pre existing
+		DungeonToolbox.generateOre(world, rand, i, j, WorldConfig.asbestosSpawn, 4, 16, 16, ModBlocks.ore_asbestos, meta);
     }
-    
+
 }
