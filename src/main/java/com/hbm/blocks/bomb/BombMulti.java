@@ -122,13 +122,13 @@ public class BombMulti extends BlockContainer implements IBomb {
 	}
 
 	public BombReturnCode igniteTestBomb(World world, int x, int y, int z) {
-		//if (config.enablenukes)
-		//todo: add config check for all bombs amd missiles
+		if (GeneralConfig.enableNuking) {
+			//todo: add config check for all bombs amd missiles
 
-		TileEntityBombMulti entity = (TileEntityBombMulti) world.getTileEntity(x, y, z);
-		if(!world.isRemote) {
+			TileEntityBombMulti entity = (TileEntityBombMulti) world.getTileEntity(x, y, z);
+		if (!world.isRemote) {
 
-			if(entity.isLoaded()) {
+			if (entity.isLoaded()) {
 
 				float explosionValue = 0.0F;
 				int clusterCount = 0;
@@ -138,21 +138,45 @@ public class BombMulti extends BlockContainer implements IBomb {
 
 				explosionValue = this.explosionBaseValue;
 
-				switch(entity.return2type()) {
-				case 1: explosionValue += 1.0F; break;
-				case 2: explosionValue += 4.0F; break;
-				case 3: clusterCount += 50; break;
-				case 4: fireRadius += 10; break;
-				case 5: poisonRadius += 15; break;
-				case 6: gasCloud += 50; break;
+				switch (entity.return2type()) {
+					case 1:
+						explosionValue += 1.0F;
+						break;
+					case 2:
+						explosionValue += 4.0F;
+						break;
+					case 3:
+						clusterCount += 50;
+						break;
+					case 4:
+						fireRadius += 10;
+						break;
+					case 5:
+						poisonRadius += 15;
+						break;
+					case 6:
+						gasCloud += 50;
+						break;
 				}
-				switch(entity.return5type()) {
-				case 1: explosionValue += 1.0F; break;
-				case 2: explosionValue += 4.0F; break;
-				case 3: clusterCount += 50; break;
-				case 4: fireRadius += 10; break;
-				case 5: poisonRadius += 15; break;
-				case 6: gasCloud += 50; break;
+				switch (entity.return5type()) {
+					case 1:
+						explosionValue += 1.0F;
+						break;
+					case 2:
+						explosionValue += 4.0F;
+						break;
+					case 3:
+						clusterCount += 50;
+						break;
+					case 4:
+						fireRadius += 10;
+						break;
+					case 5:
+						poisonRadius += 15;
+						break;
+					case 6:
+						gasCloud += 50;
+						break;
 				}
 
 				entity.clearSlots();
@@ -162,19 +186,19 @@ public class BombMulti extends BlockContainer implements IBomb {
 				ExplosionLarge.explode(world, x, y, z, explosionValue, true, true, true);
 				explosionValue = 0;
 
-				if(clusterCount > 0) {
+				if (clusterCount > 0) {
 					ExplosionChaos.cluster(world, x, y, z, clusterCount, 1);
 				}
 
-				if(fireRadius > 0) {
+				if (fireRadius > 0) {
 					ExplosionChaos.burn(world, x, y, z, fireRadius);
 				}
 
-				if(poisonRadius > 0) {
+				if (poisonRadius > 0) {
 					ExplosionNukeGeneric.wasteNoSchrab(world, x, y, z, poisonRadius);
 				}
 
-				if(gasCloud > 0) {
+				if (gasCloud > 0) {
 					ExplosionChaos.spawnChlorine(world, x, y, z, gasCloud, gasCloud / 50, 0);
 				}
 
@@ -182,6 +206,8 @@ public class BombMulti extends BlockContainer implements IBomb {
 			}
 		}
 		return BombReturnCode.ERROR_MISSING_COMPONENT;
+		}
+		return BombReturnCode.ERROR_DISABLED;
 	}
 
 	@Override

@@ -24,7 +24,9 @@ public interface IBomb {
 		ERROR_MISSING_COMPONENT(false, "bomb.missingComponent"),	//error for bomb parts missing
 		//todo: add config check for all bombs and missiles
 		ERROR_INCOMPATIBLE(false, "bomb.incompatible"),				//error for target being incompatible (but still implements IBomb for some reason), like locked blast doors
-		ERROR_NO_BOMB(false, "bomb.nobomb");						//not to be used by the bombs themselves, this is the generic error when trying to trigger no-bomb blocks
+		ERROR_NO_BOMB(false, "bomb.nobomb"),						//not to be used by the bombs themselves, this is the generic error when trying to trigger no-bomb blocks
+
+		ERROR_DISABLED(false,"bomb.disabled");
 
 		private String unloc;
 		private boolean success;
