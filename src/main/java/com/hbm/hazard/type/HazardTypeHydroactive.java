@@ -17,25 +17,25 @@ public class HazardTypeHydroactive extends HazardTypeBase {
 
 	@Override
 	public void onUpdate(EntityLivingBase target, float level, ItemStack stack) {
-		
+
 		if(RadiationConfig.disableHydro)
 			return;
-		
+
 		if(target.isWet() && stack.stackSize > 0) {
 			stack.stackSize = 0;
-			target.worldObj.newExplosion(null, target.posX, target.posY + target.getEyeHeight() - target.getYOffset(), target.posZ, level, false, true);
+			target.worldObj.newExplosion(null, target.posX, target.posY + target.getEyeHeight() - target.getYOffset(), target.posZ, level, false, false);
 		}
 	}
 
 	@Override
 	public void updateEntity(EntityItem item, float level) {
-		
+
 		if(RadiationConfig.disableHydro)
 			return;
-		
+
 		if(item.isWet() || item.worldObj.getBlock((int) Math.floor(item.posX), (int) Math.floor(item.posY), (int) Math.floor(item.posZ)).getMaterial() == Material.water) {
 			item.setDead();
-			item.worldObj.newExplosion(null, item.posX, item.posY + item.height * 0.5, item.posZ, level, false, true);
+			item.worldObj.newExplosion(null, item.posX, item.posY + item.height * 0.5, item.posZ, level, false, false);
 		}
 	}
 
