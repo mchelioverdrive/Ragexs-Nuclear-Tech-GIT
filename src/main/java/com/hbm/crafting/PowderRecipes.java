@@ -56,8 +56,21 @@ public class PowderRecipes {
 		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_meteorite, 4), new Object[] { IRON.dust(), CU.dust(), LI.dust(), NETHERQUARTZ.dust() });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_thermite, 4), new Object[] { IRON.dust(), IRON.dust(), IRON.dust(), AL.dust() });
 
+		//tool steel
+		//"Melting: Scrap steel is melted, usually in an electric arc furnace,
+		// and alloying elements (like chromium, tungsten, molybdenum, and vanadium)
+		// are added to achieve the desired composition for properties such as hardness and heat resistance. "
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_desh_mix, 1), new Object[] { B.dustTiny(), B.dustTiny(), LA.dustTiny(), LA.dustTiny(), CE.dustTiny(), CO.dustTiny(), LI.dustTiny(), ND.dustTiny(), NB.dustTiny() });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_desh_mix, 9), new Object[] { B.dust(), B.dust(), LA.dust(), LA.dust(), CE.dust(), CO.dust(), LI.dust(), ND.dust(), NB.dust() });
+
+		//ok let's just leave the old recipe there because idk it might be useful this mod is pain
+
+		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_desh_mix, 1), new Object[] {
+			W.dust(), W.dust(), ModItems.ingot_stainless, ModItems.ingot_steel_dusted, CE.dustTiny(), CO.ingot(), ModItems.ingot_graphite, NI.ingot(), ModItems.ingot_steel
+		});
+
+		//powder_tungsten
+
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_desh_ready, 1), new Object[] { ModItems.powder_desh_mix, ModItems.ingot_mercury, ModItems.ingot_mercury, COAL.dust() });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_desh_ready, 1), new Object[] { ModItems.powder_desh_mix, ModItems.ingot_mercury, ModItems.ingot_mercury, ANY_COKE.dust() });
 
