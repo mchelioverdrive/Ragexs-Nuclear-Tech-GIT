@@ -123,6 +123,7 @@ public class BombMulti extends BlockContainer implements IBomb {
 
 	public BombReturnCode igniteTestBomb(World world, int x, int y, int z) {
 		//if (config.enablenukes)
+		//todo: add config check for all bombs amd missiles
 
 		TileEntityBombMulti entity = (TileEntityBombMulti) world.getTileEntity(x, y, z);
 		if(!world.isRemote) {

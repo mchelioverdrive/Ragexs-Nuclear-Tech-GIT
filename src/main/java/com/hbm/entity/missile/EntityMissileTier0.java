@@ -8,7 +8,9 @@ import com.hbm.config.BombConfig;
 import com.hbm.entity.effect.EntityBlackHole;
 import com.hbm.entity.effect.EntityCloudFleija;
 import com.hbm.entity.effect.EntityEMPBlast;
+import com.hbm.entity.effect.EntityNukeTorex;
 import com.hbm.entity.logic.EntityNukeExplosionMK3;
+import com.hbm.entity.logic.EntityNukeExplosionMK5;
 import com.hbm.explosion.ExplosionNukeGeneric;
 import com.hbm.explosion.ExplosionNukeSmall;
 import com.hbm.inventory.material.Mats;
@@ -79,8 +81,13 @@ public abstract class EntityMissileTier0 extends EntityMissileBaseNT {
 	public static class EntityMissileMicro extends EntityMissileTier0 {
 		public EntityMissileMicro(World world) { super(world); }
 		public EntityMissileMicro(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
-		@Override public void onImpact() { ExplosionNukeSmall.explode(worldObj, posX, posY + 0.5, posZ, ExplosionNukeSmall.PARAMS_HIGH); }
+		@Override public void onImpact() {
+			//ExplosionNukeSmall.explode(worldObj, posX, posY + 0.5, posZ, ExplosionNukeSmall.PARAMS_HIGH);
+			this.worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, 67, posX, posY, posZ)); //67 haha
+			EntityNukeTorex.statFac(worldObj, posX, posY, posZ, 67); //no but seriously I'm basing this off the north korean nuke test from 2006 on nukemap
+		}
 		//todo change to use mk5
+		//
 		@Override public ItemStack getDebrisRareDrop() { return new ItemStack(ModItems.mp_warhead_10_nuclear); }
 		@Override public ItemStack getMissileItemForInfo() { return new ItemStack(ModItems.missile_micro); }
 	}
