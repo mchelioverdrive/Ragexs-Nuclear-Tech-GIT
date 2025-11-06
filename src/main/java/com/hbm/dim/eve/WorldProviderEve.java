@@ -100,21 +100,34 @@ public class WorldProviderEve extends WorldProviderCelestial {
 	@Override
 	@SideOnly(Side.CLIENT)
 	public Vec3 getSkyColor(Entity camera, float partialTicks) {
-		Vec3 ohshit = super.getSkyColor(camera, partialTicks);
-		float alpha = (flashd <= 0) ? 0.0F : 1.0F - Math.min(1.0F, flashd / 100);
+		Vec3 base = super.getSkyColor(camera, partialTicks);
 
-		return Vec3.createVectorHelper(ohshit.xCoord + alpha , ohshit.yCoord + alpha, 0);
+		// Compute flash factor from 0 → 1
+		float flash = Math.min(1.0F, flashd / 100F);
 
+		// Target bright yellow (you can tweak these to taste)
+		double targetR = 1.0D;
+		double targetG = 1.0D;
+		double targetB = 0.0D;
+
+		// Interpolate toward yellow: base*(1-flash) + target*flash
+		double r = base.xCoord * (1.0D - flash) + targetR * flash;
+		double g = base.yCoord * (1.0D - flash) + targetG * flash;
+		double b = base.zCoord * (1.0D - flash) + targetB * flash;
+
+		return Vec3.createVectorHelper(r, g, b);
 	}
 
 	@Override
 	@SideOnly(Side.CLIENT)
 	public float getSunBrightness(float par1) {
-		float imsuper = super.getSunBrightness(par1);
-		float alpha = (flashd <= 0) ? 0.0F : 1.0F - Math.min(1.0F, flashd / 100);
+		float base = super.getSunBrightness(par1);
+		float flash = Math.min(1.0F, flashd / 100F);
 
-		return imsuper + alpha * 0.7F;
+		// Brighten slightly more during flash
+		return base + flash * 0.5F;
 	}
+
 
 	@Override
 	public Block getStone() {
