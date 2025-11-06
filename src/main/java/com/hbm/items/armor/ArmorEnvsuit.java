@@ -2,7 +2,9 @@ package com.hbm.items.armor;
 
 import java.util.UUID;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.hbm.handler.ArmorModHandler;
 import com.hbm.items.ModItems;
 import com.hbm.render.model.ModelArmorEnvsuit;
 
@@ -42,7 +44,16 @@ public class ArmorEnvsuit extends ArmorFSBPowered {
 		return models[armorSlot];
 	}
 
-	private static final UUID speed = UUID.fromString("6ab858ba-d712-485c-bae9-e5e765fc555a");
+	@Override
+	public Multimap getItemAttributeModifiers() {
+
+		Multimap multimap = HashMultimap.create();
+		//multimap.put(SharedMonsterAttributes.knockbackResistance.getAttributeUnlocalizedName(), new AttributeModifier(ArmorModHandler.fixedUUIDs[this.armorType], "Armor modifier", 100D, 0));
+		multimap.put(SharedMonsterAttributes.movementSpeed.getAttributeUnlocalizedName(), new AttributeModifier(ArmorModHandler.fixedUUIDs[this.armorType], "Armor modifier", -0.1D, 1));
+		return multimap;
+	} //todo this but for like all vanilla armors/space suits
+
+	//private static final UUID speed = UUID.fromString("6ab858ba-d712-485c-bae9-e5e765fc555a");
 
 	@Override
 	public void onArmorTick(World world, EntityPlayer player, ItemStack stack) {
@@ -68,15 +79,14 @@ public class ArmorEnvsuit extends ArmorFSBPowered {
 					player.addPotionEffect(new PotionEffect(Potion.nightVision.id, 15 * 20, 0));
 				}
 
-				double mo = 0.1 * player.moveForward;
-				Vec3 vec = player.getLookVec();
-				vec.xCoord *= mo;
-				vec.yCoord *= mo;
-				vec.zCoord *= mo;
-
-				player.motionX += vec.xCoord;
-				player.motionY += vec.yCoord;
-				player.motionZ += vec.zCoord;
+				//double mo = 0.1 * player.moveForward;
+				//Vec3 vec = player.getLookVec();
+				//vec.xCoord *= mo;
+				//vec.yCoord *= mo;
+				//vec.zCoord *= mo;
+				//player.motionX += vec.xCoord;
+				//player.motionY += vec.yCoord;
+				//player.motionZ += vec.zCoord;
 			} else {
 				if(!world.isRemote) {
 					player.removePotionEffect(Potion.nightVision.id);

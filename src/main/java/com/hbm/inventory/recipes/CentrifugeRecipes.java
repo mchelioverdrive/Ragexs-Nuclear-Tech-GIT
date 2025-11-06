@@ -372,6 +372,14 @@ public class CentrifugeRecipes extends SerializableRecipe {
 				new ItemStack(Blocks.gravel, 1) });
 
 
+		//this bob guy's kinda retarded
+		recipes.put(new OreDictStack("oreZinc"), new ItemStack[] {
+			new ItemStack(ModItems.powder_zinc, 1),
+			new ItemStack(ModItems.powder_cadmium, 1),
+			new ItemStack(ModItems.powder_copper, 1),
+			new ItemStack(Blocks.gravel, 1) });
+
+
 		recipes.put(new OreDictStack(GOLD.ore()), new ItemStack[] {
 				lbs ? new ItemStack(ModItems.powder_gold, 2) : new ItemStack(ModItems.powder_gold, 1),
 				new ItemStack(ModItems.powder_gold, 1),
@@ -411,7 +419,7 @@ public class CentrifugeRecipes extends SerializableRecipe {
 		recipes.put(new OreDictStack(CU.ore()), new ItemStack[] {
 				lbs ? new ItemStack(ModItems.powder_copper, 2) : new ItemStack(ModItems.powder_copper, 1),
 				new ItemStack(ModItems.powder_copper, 1),
-				new ItemStack(ModItems.powder_gold, 1),
+				new ItemStack(ModItems.powder_cadmium, 1),
 				new ItemStack(Blocks.gravel, 1) });
 
 		recipes.put(new OreDictStack(AL.ore()), new ItemStack[] {
