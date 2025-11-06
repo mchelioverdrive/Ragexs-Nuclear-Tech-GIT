@@ -47,6 +47,7 @@ import com.hbm.util.RTGUtil;
 import api.hbm.block.IToolable.ToolType;
 import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.EnumRarity;
 import net.minecraft.item.Item;
@@ -57,6 +58,7 @@ import net.minecraft.item.ItemSoup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.common.MinecraftForge;
@@ -3624,10 +3626,40 @@ public class ModItems {
 			}
 		}).setUnlocalizedName("iv_empty").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":iv_empty");
 
-		iv_blood = new ItemSimpleConsumable().setUseActionServer((stack, user) -> {
-			ItemSimpleConsumable.giveSoundAndDecrement(stack, user, "hbm:item.radaway", new ItemStack(ModItems.iv_empty));
-			user.heal(5F);
-		}).setUnlocalizedName("iv_blood").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":iv_blood");
+		iv_blood = new ItemSimpleConsumable()
+			.setUseActionServer((stack, user) -> {
+				// We only run on server side
+				if (!user.worldObj.isRemote && user instanceof EntityPlayer) {
+					EntityPlayer player = (EntityPlayer)user;
+
+					// Cooldown key name
+					String tagKey = "IVBloodLastUse";
+					// Cooldown in ticks (5 seconds = 100 ticks)
+					int cooldownTicks = 100;
+
+					// Read NBT from player
+					if (!player.getEntityData().hasKey(tagKey)) {
+						player.getEntityData().setLong(tagKey, 0L);
+					}
+					long lastUse = player.getEntityData().getLong(tagKey);
+					long current = player.worldObj.getTotalWorldTime();
+
+					if (current - lastUse >= cooldownTicks) {
+						// Cooldown has passed, allow use
+						player.getEntityData().setLong(tagKey, current);
+
+						// Do the heal & decrement logic
+						ItemSimpleConsumable.giveSoundAndDecrement(stack, user, "hbm:item.radaway", new ItemStack(ModItems.iv_empty));
+						user.heal(3F);
+					} else {
+						// Cooldown not yet ended — you can optionally send a message or just skip
+						player.addChatMessage(new ChatComponentText("You cannot use this right now!"));
+					}
+				}
+			})
+			.setUnlocalizedName("iv_blood")
+			.setCreativeTab(MainRegistry.consumableTab)
+			.setTextureName(RefStrings.MODID + ":iv_blood");
 
 		//iv_xp_empty = new ItemSimpleConsumable().setUseActionServer((stack, user) -> {
 		//	if(EnchantmentUtil.getTotalExperience(user) >= 100) {
