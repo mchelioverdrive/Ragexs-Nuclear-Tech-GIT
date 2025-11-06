@@ -167,12 +167,14 @@ public class NukeMan extends BlockContainer implements IBomb {
 		if(!world.isRemote) {
 			if(GeneralConfig.enableExtendedLogging) {
 				MainRegistry.logger.log(Level.INFO, "[BOMBPL]" + this.getLocalizedName() + " placed at " + x + " / " + y + " / " + z + "! " + "by "+ player.getCommandSenderName());
-		}	
+		}
 	}
 }
 
 	@Override
 	public BombReturnCode explode(World world, int x, int y, int z) {
+
+		if (GeneralConfig.enableNuking) {
 
 		if(!world.isRemote) {
 			TileEntityNukeMan entity = (TileEntityNukeMan) world.getTileEntity(x, y, z);
@@ -188,5 +190,8 @@ public class NukeMan extends BlockContainer implements IBomb {
 		}
 
 		return BombReturnCode.UNDEFINED;
+
+		}
+		return BombReturnCode.ERROR_DISABLED;
 	}
 }

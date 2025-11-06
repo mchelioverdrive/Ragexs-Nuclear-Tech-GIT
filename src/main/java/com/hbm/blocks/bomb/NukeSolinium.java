@@ -124,7 +124,7 @@ public class NukeSolinium extends BlockContainer implements IBomb {
 			if(!ex.isDead) {
 				world.playSoundEffect(x, y, z, "random.explode", 1.0f, world.rand.nextFloat() * 0.1F + 0.9F);
 				world.spawnEntityInWorld(ex);
-	
+
 				EntityCloudSolinium cloud = new EntityCloudSolinium(world, r);
 				cloud.posX = x;
 				cloud.posY = y;
@@ -170,12 +170,14 @@ public class NukeSolinium extends BlockContainer implements IBomb {
 		if(!world.isRemote) {
 			if(GeneralConfig.enableExtendedLogging) {
 				MainRegistry.logger.log(Level.INFO, "[BOMBPL]" + this.getLocalizedName() + " placed at " + x + " / " + y + " / " + z + "! " + "by "+ player.getCommandSenderName());
-		}	
+		}
 	}
 }
 
 	@Override
 	public BombReturnCode explode(World world, int x, int y, int z) {
+
+		if (GeneralConfig.enableNuking) {
 
 		if(!world.isRemote) {
 			TileEntityNukeSolinium entity = (TileEntityNukeSolinium) world.getTileEntity(x, y, z);
@@ -186,10 +188,13 @@ public class NukeSolinium extends BlockContainer implements IBomb {
 				igniteTestBomb(world, x, y, z, BombConfig.soliniumRadius);
 				return BombReturnCode.DETONATED;
 			}
-			
+
 			return BombReturnCode.ERROR_MISSING_COMPONENT;
 		}
 
 		return BombReturnCode.UNDEFINED;
+
+		}
+		return BombReturnCode.ERROR_DISABLED;
 	}
 }

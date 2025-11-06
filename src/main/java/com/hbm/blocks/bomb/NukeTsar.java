@@ -180,6 +180,8 @@ public class NukeTsar extends BlockContainer implements IBomb {
 	@Override
 	public BombReturnCode explode(World world, int x, int y, int z) {
 
+		if (GeneralConfig.enableNuking) {
+
 		if(!world.isRemote) {
 			TileEntityNukeTsar entity = (TileEntityNukeTsar) world.getTileEntity(x, y, z);
 			if(entity.isReady() && !entity.isFilled()) {
@@ -202,6 +204,9 @@ public class NukeTsar extends BlockContainer implements IBomb {
 		}
 
 		return BombReturnCode.UNDEFINED;
+
+		}
+		return BombReturnCode.ERROR_DISABLED;
 	}
 
 }

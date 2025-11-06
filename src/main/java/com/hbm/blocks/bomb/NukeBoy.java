@@ -129,7 +129,7 @@ public class NukeBoy extends BlockContainer implements IBomb {
 
 			world.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(world, BombConfig.boyRadius, x + 0.5, y + 0.5, z + 0.5));
 			//world.spawnEntityInWorld(EntityNukeCloudSmall.statFac(world, x, y, z, BombConfig.boyRadius));
-			
+
 			EntityNukeTorex torex = new EntityNukeTorex(world);
 			torex.setPositionAndRotation(x + 0.5, y + 1, z + 0.5, 0, 0);
 			torex.getDataWatcher().updateObject(10, 1.5F);
@@ -173,16 +173,18 @@ public class NukeBoy extends BlockContainer implements IBomb {
 		if(!world.isRemote) {
 			if(GeneralConfig.enableExtendedLogging) {
 				MainRegistry.logger.log(Level.INFO, "[BOMBPL]" + this.getLocalizedName() + " placed at " + x + " / " + y + " / " + z + "! " + "by "+ player.getCommandSenderName());
-		}	
+		}
 	}
 }
 
 	@Override
 	public BombReturnCode explode(World world, int x, int y, int z) {
 
+		if (GeneralConfig.enableNuking) {
+
 		if(!world.isRemote) {
 			TileEntityNukeBoy entity = (TileEntityNukeBoy) world.getTileEntity(x, y, z);
-			
+
 			if(entity.isReady()) {
 				this.onBlockDestroyedByPlayer(world, x, y, z, 1);
 				entity.clearSlots();
@@ -190,10 +192,13 @@ public class NukeBoy extends BlockContainer implements IBomb {
 				igniteTestBomb(world, x, y, z);
 				return BombReturnCode.DETONATED;
 			}
-			
+
 			return BombReturnCode.ERROR_MISSING_COMPONENT;
 		}
 
 		return BombReturnCode.UNDEFINED;
+
+		}
+		return BombReturnCode.ERROR_DISABLED;
 	}
 }

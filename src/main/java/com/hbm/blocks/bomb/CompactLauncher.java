@@ -3,6 +3,7 @@ package com.hbm.blocks.bomb;
 import java.util.Random;
 
 import com.hbm.blocks.ModBlocks;
+import com.hbm.config.GeneralConfig;
 import com.hbm.interfaces.IBomb;
 import com.hbm.interfaces.IMultiblock;
 import com.hbm.main.MainRegistry;
@@ -120,6 +121,9 @@ public class CompactLauncher extends BlockContainer implements IMultiblock, IBom
 
 	@Override
 	public BombReturnCode explode(World world, int x, int y, int z) {
+
+		if (GeneralConfig.enableNuking) {
+
 		TileEntityCompactLauncher entity = (TileEntityCompactLauncher) world.getTileEntity(x, y, z);
 
 		if(entity.canLaunch()) {
@@ -128,6 +132,8 @@ public class CompactLauncher extends BlockContainer implements IMultiblock, IBom
 		}
 
 		return BombReturnCode.ERROR_MISSING_COMPONENT;
+		}
+		return BombReturnCode.ERROR_DISABLED;
 	}
 
 	private final Random field_149933_a = new Random();

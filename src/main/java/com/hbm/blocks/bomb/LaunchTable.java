@@ -3,6 +3,7 @@ package com.hbm.blocks.bomb;
 import java.util.Random;
 
 import com.hbm.blocks.ModBlocks;
+import com.hbm.config.GeneralConfig;
 import com.hbm.interfaces.IBomb;
 import com.hbm.interfaces.IMultiblock;
 import com.hbm.main.MainRegistry;
@@ -158,19 +159,24 @@ public class LaunchTable extends BlockContainer implements IMultiblock, IBomb {
 
 	@Override
 	public BombReturnCode explode(World world, int x, int y, int z) {
-		
+
+		if (GeneralConfig.enableNuking) {
+
 		if(!world.isRemote) {
 			TileEntityLaunchTable entity = (TileEntityLaunchTable) world.getTileEntity(x, y, z);
-	
+
 			if(entity.canLaunch()) {
 				entity.launchFromDesignator();
 				return BombReturnCode.LAUNCHED;
 			}
-			
+
 			return BombReturnCode.ERROR_MISSING_COMPONENT;
 		}
-		
+
 		return BombReturnCode.UNDEFINED;
+
+		}
+		return BombReturnCode.ERROR_DISABLED;
 	}
 
 	public static boolean keepInventory = false;

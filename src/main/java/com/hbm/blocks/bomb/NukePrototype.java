@@ -137,7 +137,7 @@ public class NukePrototype extends BlockContainer implements IBomb {
 			if(!ex.isDead) {
 				world.playSoundEffect(x, y, z, "random.explode", 1.0f, world.rand.nextFloat() * 0.1F + 0.9F);
 				world.spawnEntityInWorld(ex);
-	
+
 				EntityCloudFleija cloud = new EntityCloudFleija(world, r);
 				cloud.posX = x;
 				cloud.posY = y;
@@ -183,12 +183,14 @@ public class NukePrototype extends BlockContainer implements IBomb {
 		if(!world.isRemote) {
 			if(GeneralConfig.enableExtendedLogging) {
 				MainRegistry.logger.log(Level.INFO, "[BOMBPL]" + this.getLocalizedName() + " placed at " + x + " / " + y + " / " + z + "! " + "by "+ player.getCommandSenderName());
-		}	
+		}
 	}
 }
 
 	@Override
 	public BombReturnCode explode(World world, int x, int y, int z) {
+
+		if (GeneralConfig.enableNuking) {
 
 		if(!world.isRemote) {
 			TileEntityNukePrototype entity = (TileEntityNukePrototype) world.getTileEntity(x, y, z);
@@ -199,11 +201,14 @@ public class NukePrototype extends BlockContainer implements IBomb {
 				igniteTestBomb(world, x, y, z, BombConfig.prototypeRadius);
 				return BombReturnCode.DETONATED;
 			}
-			
+
 			return BombReturnCode.ERROR_MISSING_COMPONENT;
 		}
 
 		return BombReturnCode.UNDEFINED;
+
+		}
+		return BombReturnCode.ERROR_DISABLED;
 	}
 
 }

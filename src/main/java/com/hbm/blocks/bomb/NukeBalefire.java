@@ -27,17 +27,17 @@ public class NukeBalefire extends BlockMachineBase implements IBomb {
 	public TileEntity createNewTileEntity(World world, int meta) {
 		return new TileEntityNukeBalefire();
 	}
-	
+
 	@Override
 	public int getRenderType(){
 		return -1;
 	}
-	
+
 	@Override
 	public boolean isOpaqueCube() {
 		return false;
 	}
-	
+
 	@Override
 	public boolean renderAsNormalBlock() {
 		return false;
@@ -55,25 +55,30 @@ public class NukeBalefire extends BlockMachineBase implements IBomb {
 		if(!world.isRemote) {
 			if(GeneralConfig.enableExtendedLogging) {
 				MainRegistry.logger.log(Level.INFO, "[BOMBPL]" + this.getLocalizedName() + " placed at " + x + " / " + y + " / " + z + "! " + "by "+ player.getCommandSenderName());
-		}	
+		}
 	}
 	}
 
 	@Override
 	public BombReturnCode explode(World world, int x, int y, int z) {
-		
+
+		if (GeneralConfig.enableNuking) {
+
 		if(!world.isRemote) {
 			TileEntityNukeBalefire bomb = (TileEntityNukeBalefire) world.getTileEntity(x, y, z);
-				
+
 			if(bomb.isLoaded()) {
 				bomb.explode();
 				return BombReturnCode.DETONATED;
 			}
-			
+
 			return BombReturnCode.ERROR_MISSING_COMPONENT;
 		}
-		
+
 		return BombReturnCode.UNDEFINED;
+
+		}
+		return BombReturnCode.ERROR_DISABLED;
 	}
 
 }

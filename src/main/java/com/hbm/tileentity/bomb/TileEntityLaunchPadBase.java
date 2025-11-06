@@ -374,6 +374,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 	}
 
 	public BombReturnCode launchFromDesignator() {
+		if (GeneralConfig.enableNuking) {
 		if(!canLaunch()) return BombReturnCode.ERROR_MISSING_COMPONENT;
 
 		boolean needsDesignator = needsDesignator(slots[0].getItem());
@@ -395,9 +396,13 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 		}
 
 		return this.launchToCoordinate(targetX, targetZ);
+
+		}
+		return BombReturnCode.ERROR_DISABLED;
 	}
 
 	public BombReturnCode launchToEntity(Entity entity) {
+		if (GeneralConfig.enableNuking) {
 		if(!canLaunch()) return BombReturnCode.ERROR_MISSING_COMPONENT;
 
 		Entity e = instantiateMissile((int) Math.floor(entity.posX), (int) Math.floor(entity.posZ));
@@ -412,9 +417,12 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 			return BombReturnCode.LAUNCHED;
 		}
 		return BombReturnCode.ERROR_MISSING_COMPONENT;
+		}
+		return BombReturnCode.ERROR_DISABLED;
 	}
 
 	public BombReturnCode launchToCoordinate(int targetX, int targetZ) {
+		if (GeneralConfig.enableNuking) {
 		if(!canLaunch()) return BombReturnCode.ERROR_MISSING_COMPONENT;
 
 		Entity e = instantiateMissile(targetX, targetZ);
@@ -423,6 +431,8 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 			return BombReturnCode.LAUNCHED;
 		}
 		return BombReturnCode.ERROR_MISSING_COMPONENT;
+		}
+		return BombReturnCode.ERROR_DISABLED;
 	}
 
 	@Override

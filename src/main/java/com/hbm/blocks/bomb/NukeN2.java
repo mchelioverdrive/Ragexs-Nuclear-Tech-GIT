@@ -163,12 +163,14 @@ public class NukeN2 extends BlockContainer implements IBomb {
 		if(!world.isRemote) {
 			if(GeneralConfig.enableExtendedLogging) {
 				MainRegistry.logger.log(Level.INFO, "[BOMBPL]" + this.getLocalizedName() + " placed at " + x + " / " + y + " / " + z + "! " + "by "+ player.getCommandSenderName());
-		}	
+		}
 	}
 }
 
 	@Override
 	public BombReturnCode explode(World world, int x, int y, int z) {
+
+		if (GeneralConfig.enableNuking) {
 
 		if(!world.isRemote) {
 			TileEntityNukeN2 entity = (TileEntityNukeN2) world.getTileEntity(x, y, z);
@@ -177,13 +179,16 @@ public class NukeN2 extends BlockContainer implements IBomb {
 				entity.clearSlots();
 				world.setBlockToAir(x, y, z);
 				igniteTestBomb(world, x, y, z, BombConfig.n2Radius);
-				
+
 				return BombReturnCode.DETONATED;
 			}
-			
+
 			return BombReturnCode.ERROR_MISSING_COMPONENT;
 		}
 
 		return BombReturnCode.UNDEFINED;
+
+		}
+		return BombReturnCode.ERROR_DISABLED;
 	}
 }
