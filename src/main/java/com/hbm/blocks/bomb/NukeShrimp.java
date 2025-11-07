@@ -113,7 +113,7 @@ public class NukeShrimp extends BlockContainer implements IBomb {
 				this.onBlockDestroyedByPlayer(p_149695_1_, x, y, z, 1);
 				entity.clearSlots();
 				p_149695_1_.setBlockToAir(x, y, z);
-				igniteTestBomb(p_149695_1_, x, y, z, BombConfig.manRadius);
+				igniteTestBomb(p_149695_1_, x, y, z, BombConfig.manRadius + 10);
 			}
 
 			if(entity.isFilled()) {
@@ -189,7 +189,7 @@ public class NukeShrimp extends BlockContainer implements IBomb {
 				this.onBlockDestroyedByPlayer(world, x, y, z, 1);
 				entity.clearSlots();
 				world.setBlockToAir(x, y, z);
-				igniteTestBomb(world, x, y, z, BombConfig.manRadius);
+				igniteTestBomb(world, x, y, z, BombConfig.manRadius + 10);
 				return BombReturnCode.DETONATED;
 			}
 

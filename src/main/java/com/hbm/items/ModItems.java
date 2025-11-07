@@ -1956,6 +1956,7 @@ public class ModItems {
 
 	public static Item tsar_corereal;
 	public static Item tsar_core;
+	public static Item tsar_corelead;
 	public static Item fleija_igniter;
 	public static Item fleija_propellant;
 	public static Item fleija_core;
@@ -4829,6 +4830,8 @@ public class ModItems {
 
 
 		tsar_core = new Item().setUnlocalizedName("tsar_core").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":tsar_core");
+		tsar_corelead = new Item().setUnlocalizedName("tsar_corelead").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":tsar_corelead");
+
 
 		tsar_corereal = new Item().setUnlocalizedName("tsar_corereal").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":tsar_corereal");
 
@@ -8278,6 +8281,8 @@ public class ModItems {
 
 		//Tsar Bomba
 		GameRegistry.registerItem(tsar_core, tsar_core.getUnlocalizedName());
+
+		GameRegistry.registerItem(tsar_corelead, tsar_corelead.getUnlocalizedName());
 
 		GameRegistry.registerItem(tsar_corereal, tsar_corereal.getUnlocalizedName());
 

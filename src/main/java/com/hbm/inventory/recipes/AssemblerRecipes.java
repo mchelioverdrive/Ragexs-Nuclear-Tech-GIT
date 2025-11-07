@@ -202,12 +202,15 @@ public class AssemblerRecipes extends SerializableRecipe {
 
 		makeRecipe(new ComparableStack(ModItems.tsar_corereal, 1), new AStack[] {new OreDictStack(PU239.nugget(), 12), new OreDictStack(BE.nugget(), 2), new OreDictStack(BE.nugget(), 2), new ComparableStack(ModItems.cell_deuterium, 20), new ComparableStack(ModItems.cell_tritium, 3)  },850);
 
+		makeRecipe(new ComparableStack(ModItems.tsar_corelead, 1), new AStack[] {new OreDictStack(PU239.block(), 12), new OreDictStack(PB.block(), 2), new OreDictStack(BE.nugget(), 2), new ComparableStack(ModItems.cell_deuterium, 5), new ComparableStack(ModItems.cell_tritium, 3)  },1950);
+
+
 
 		makeRecipe(new ComparableStack(ModItems.mike_core, 1), new AStack[] {new OreDictStack(U238.nugget(), 24), new OreDictStack(PB.ingot(), 6), },250);
 		makeRecipe(new ComparableStack(ModItems.mike_deut, 1), new AStack[] {new OreDictStack(IRON.plate528(), 12), new OreDictStack(STEEL.plate528(), 16), new ComparableStack(ModItems.cell_deuterium, 10), },200);
 		makeRecipe(new ComparableStack(ModItems.mike_cooling_unit, 1), new AStack[] {new OreDictStack(IRON.plate528(), 8), new ComparableStack(ModItems.coil_copper, 5), new ComparableStack(ModItems.coil_tungsten, 5), new ComparableStack(ModItems.motor, 2), },200);
 
-		makeRecipe(new ComparableStack(ModItems.shrimp_lithium, 1), new AStack[] {new OreDictStack(IRON.plate528(), 8), new ComparableStack(ModItems.coil_copper, 5), new ComparableStack(ModItems.lithium, 5), new ComparableStack(ModItems.motor, 2), },200);
+		makeRecipe(new ComparableStack(ModItems.shrimp_lithium, 1), new AStack[] {new OreDictStack(IRON.plate528(), 8), new ComparableStack(ModItems.mike_deut, 5), new ComparableStack(ModItems.lithium, 5), },600);
 
 
 		//makeRecipe(new ComparableStack(ModItems.fleija_igniter, 1), new AStack[] {new OreDictStack(TI.plate528(), 6), new OreDictStack(SA326.wireFine(), 2), new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ADVANCED.ordinal()), },300);

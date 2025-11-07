@@ -176,12 +176,13 @@ public class TileEntityNukeTsar extends TileEntity implements ISidedInventory, I
 
 	public boolean isReady() {
 
-		if(slots[0] != null && slots[1] != null && slots[2] != null && slots[3] != null && slots[4] != null)
+		if(slots[0] != null && slots[1] != null && slots[2] != null && slots[3] != null && slots[4] != null && slots[5] != null)
 			if(slots[0].getItem() == ModItems.explosive_lenses &&
 			slots[1].getItem() == ModItems.explosive_lenses &&
 			slots[2].getItem() == ModItems.explosive_lenses &&
 			slots[3].getItem() == ModItems.explosive_lenses &&
-			slots[4].getItem() == ModItems.tsar_corereal)
+			slots[4].getItem() == ModItems.tsar_corereal &&
+			slots[5].getItem() == ModItems.tsar_corelead)
 			{
 				return true;
 			}

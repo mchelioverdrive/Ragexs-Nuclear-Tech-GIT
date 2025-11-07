@@ -5,6 +5,7 @@ import net.minecraftforge.common.config.Property;
 
 public class BombConfig {
 
+	//my current formula is just divide by 2 and that's the full crater radius in meters
 	public static int gadgetRadius = 53;
 	//remathed
 	public static int boyRadius = 48;
@@ -13,16 +14,25 @@ public class BombConfig {
 	//should be 800 or 1,450 (larger est) bc apparently the radius is fucking 2900 and we div by 2 because bob has autism
 	//literal server ending event above apparently mike was just so juicy and fragrant he gerald sigma maxxed servers
 	public static int shrimpRadius = 475;
+	//I don't even care anymore enjoy your 1400m crater game
 	public static int tsarlegitrad = 708;
 	//was used irl
 	public static int tsarRadius = 893;
+	//note: most fake bullshit anime bronie nukes are FUCKING REMOVED FROM THIS FORK. GET THAT SHIT OUT OF THE NUCLEAR TECH MOD
 	public static int prototypeRadius = 150;
 	public static int fleijaRadius = 50;
 	public static int soliniumRadius = 150;
+
+
+	//ammonium nitrate drum, was heckin evangelon unemployed thing, soon to be just literally an ammonium nitrate canister/ beirut explosion.
 	public static int n2Radius = 25;
+
 	public static int missileRadius = 90;
-	//150kt
+	//150kt 'generic?' nuke
 	public static int mirvRadius = 90;
+
+	//duplicate for some reason, probably not needed given I destroyed every last gun from this mod
+	//but eh I'm sure it might be used somewhere important.
 	public static int fatmanRadius = 53;
 	public static int nukaRadius = 25;
 	public static int aSchrabRadius = 20;
@@ -52,7 +62,7 @@ public class BombConfig {
 		propMike.comment = "Radius of Ivy Mike";
 		mikeRadius = propMike.getInt();
 		Property propTsar = config.get(CATEGORY_NUKES, "3.04_tsarRadius", 893);
-		propTsar.comment = "Radius of the Tsar Bomba";
+		propTsar.comment = "Radius of the FULL Tsar Bomba";
 		tsarRadius = propTsar.getInt();
 
 
@@ -85,7 +95,7 @@ public class BombConfig {
 		propN2.comment = "Radius of the Ammonium Nitrate Bomb";
 		n2Radius = propN2.getInt();
 
-		//I have no idea if this shithole codebase will even accept this but fuck it we ball
+		//FUN
 		Property propTsar2 = config.get(CATEGORY_NUKES, "3.14_tsarlegitRadius", 708);
 		propTsar2.comment = "Radius of the 50MT Tsar Bomba";
 		tsarlegitrad = propTsar2.getInt();
