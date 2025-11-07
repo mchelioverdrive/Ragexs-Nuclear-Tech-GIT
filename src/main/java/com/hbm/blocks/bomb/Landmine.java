@@ -2,6 +2,8 @@ package com.hbm.blocks.bomb;
 
 import java.util.Random;
 
+import com.hbm.entity.effect.EntityNukeTorex;
+import com.hbm.entity.logic.EntityNukeExplosionMK5;
 import org.apache.logging.log4j.Level;
 
 import com.hbm.blocks.ModBlocks;
@@ -161,7 +163,10 @@ public class Landmine extends BlockContainer implements IBomb {
 				ExplosionLarge.spawnShrapnelShower(world, x + 0.5, y + 0.5, z + 0.5, 0, 1D, 0, 45, 0.2D);
 				ExplosionLarge.spawnShrapnels(world, x + 0.5, y + 0.5, z + 0.5, 5);
 			} else if(this == ModBlocks.mine_fat) {
-				ExplosionNukeSmall.explode(world, x + 0.5, y + 0.5, z + 0.5, ExplosionNukeSmall.PARAMS_MEDIUM);
+				world.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(world, 9, x, y, z)); //31/2
+				EntityNukeTorex.statFac(world, x, y, z, 9); //crude terrorist nuclear weapon 100T
+				//ExplosionNukeSmall.explode(world, x + 0.5, y + 0.5, z + 0.5, ExplosionNukeSmall.PARAMS_MEDIUM);
+
 			}
 		}
 
