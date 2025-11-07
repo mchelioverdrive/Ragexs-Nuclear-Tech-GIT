@@ -206,6 +206,10 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mike_core, 1), new AStack[] {new OreDictStack(U238.nugget(), 24), new OreDictStack(PB.ingot(), 6), },250);
 		makeRecipe(new ComparableStack(ModItems.mike_deut, 1), new AStack[] {new OreDictStack(IRON.plate528(), 12), new OreDictStack(STEEL.plate528(), 16), new ComparableStack(ModItems.cell_deuterium, 10), },200);
 		makeRecipe(new ComparableStack(ModItems.mike_cooling_unit, 1), new AStack[] {new OreDictStack(IRON.plate528(), 8), new ComparableStack(ModItems.coil_copper, 5), new ComparableStack(ModItems.coil_tungsten, 5), new ComparableStack(ModItems.motor, 2), },200);
+
+		makeRecipe(new ComparableStack(ModItems.shrimp_lithium, 1), new AStack[] {new OreDictStack(IRON.plate528(), 8), new ComparableStack(ModItems.coil_copper, 5), new ComparableStack(ModItems.lithium, 5), new ComparableStack(ModItems.motor, 2), },200);
+
+
 		//makeRecipe(new ComparableStack(ModItems.fleija_igniter, 1), new AStack[] {new OreDictStack(TI.plate528(), 6), new OreDictStack(SA326.wireFine(), 2), new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ADVANCED.ordinal()), },300);
 		//makeRecipe(new ComparableStack(ModItems.fleija_core, 1), new AStack[] {new OreDictStack(U235.nugget(), 8), new OreDictStack(NP237.nugget(), 2), new OreDictStack(BE.nugget(), 4), new ComparableStack(ModItems.coil_copper, 2), },500);
 		//makeRecipe(new ComparableStack(ModItems.fleija_propellant, 1), new AStack[] {new OreDictStack(ANY_HIGHEXPLOSIVE.ingot(), 3), new OreDictStack(SA326.plate(), 8), },400);

@@ -1951,6 +1951,9 @@ public class ModItems {
 	public static Item mike_core;
 	public static Item mike_deut;
 	public static Item mike_cooling_unit;
+
+	public static Item shrimp_lithium;
+
 	public static Item tsar_corereal;
 	public static Item tsar_core;
 	public static Item fleija_igniter;
@@ -4821,6 +4824,9 @@ public class ModItems {
 		mike_core = new Item().setUnlocalizedName("mike_core").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":mike_core");
 		mike_deut = new Item().setUnlocalizedName("mike_deut").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setContainerItem(ModItems.tank_steel).setTextureName(RefStrings.MODID + ":mike_deut");
 		mike_cooling_unit = new Item().setUnlocalizedName("mike_cooling_unit").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":mike_cooling_unit");
+
+		shrimp_lithium = new Item().setUnlocalizedName("shrimp_lithium").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":shrimp_lithium");
+
 
 		tsar_core = new Item().setUnlocalizedName("tsar_core").setMaxStackSize(1).setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":tsar_core");
 
@@ -8265,6 +8271,10 @@ public class ModItems {
 		GameRegistry.registerItem(mike_core, mike_core.getUnlocalizedName());
 		GameRegistry.registerItem(mike_deut, mike_deut.getUnlocalizedName());
 		GameRegistry.registerItem(mike_cooling_unit, mike_cooling_unit.getUnlocalizedName());
+
+		//Castle Bravo
+		GameRegistry.registerItem(shrimp_lithium, shrimp_lithium.getUnlocalizedName());
+
 
 		//Tsar Bomba
 		GameRegistry.registerItem(tsar_core, tsar_core.getUnlocalizedName());

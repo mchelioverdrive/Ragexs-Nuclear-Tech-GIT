@@ -63,7 +63,7 @@ public class GUINukeShrimp extends GuiInfoContainer {
 		if(testNuke.getStackInSlot(6) != null && testNuke.getStackInSlot(6).getItem() == ModItems.mike_deut)
 			drawTexturedModalRect(guiLeft + 79, guiTop + 30, 180, 88, 58, 26);
 
-		if(testNuke.getStackInSlot(7) != null && testNuke.getStackInSlot(7).getItem() == ModItems.mike_cooling_unit)
+		if(testNuke.getStackInSlot(7) != null && testNuke.getStackInSlot(7).getItem() == ModItems.shrimp_lithium)
 			drawTexturedModalRect(guiLeft + 140, guiTop + 30, 240, 88, 12, 26);
 
 		for(int i = 0; i < 4; i++) {

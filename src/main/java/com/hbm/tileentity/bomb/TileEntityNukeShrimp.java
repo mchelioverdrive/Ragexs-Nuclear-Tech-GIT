@@ -200,7 +200,7 @@ public class TileEntityNukeShrimp extends TileEntity implements ISidedInventory,
 			slots[4].getItem() == ModItems.man_core &&
 			slots[5].getItem() == ModItems.mike_core &&
 			slots[6].getItem() == ModItems.mike_deut &&
-			slots[7].getItem() == ModItems.mike_cooling_unit)
+			slots[7].getItem() == ModItems.shrimp_lithium)
 			{
 				return true;
 			}

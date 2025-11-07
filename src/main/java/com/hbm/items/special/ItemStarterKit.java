@@ -280,6 +280,7 @@ public class ItemStarterKit extends Item {
 
 			giveHaz(world, player, 0);
 		}
+		//todo shrimp kit
 
 		if(this == ModItems.tsar_kit)
 		{

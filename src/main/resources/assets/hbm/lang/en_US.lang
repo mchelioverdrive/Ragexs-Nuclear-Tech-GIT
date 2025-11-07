@@ -6001,6 +6001,7 @@ tile.nuke_antimatter.name=Antimatter Bomb
 tile.nuke_gadget.name=The Gadget
 tile.nuke_man.name=Fat Man
 tile.nuke_mike.name=Ivy Mike
+tile.nuke_shrimp.name=Castle Bravo (SHRIMP Device)
 tile.nuke_n2.name=Large Ammonium Nitrate Drum
 tile.nuke_n45.name=N45 Naval Mine
 tile.nuke_prototype.name=The Prototype
