@@ -14,7 +14,7 @@ import org.lwjgl.opengl.GL11;
 
 public class GUINukeShrimp extends GuiInfoContainer {
 
-	private static ResourceLocation texture = new ResourceLocation(RefStrings.MODID + ":textures/gui/weapon/ivyMikeSchematic.png");
+	private static ResourceLocation texture = new ResourceLocation(RefStrings.MODID + ":textures/gui/weapon/ShrimpSchematic.png");
 	private TileEntityNukeShrimp testNuke;
 
 	public GUINukeShrimp(InventoryPlayer invPlayer, TileEntityNukeShrimp tedf) {
