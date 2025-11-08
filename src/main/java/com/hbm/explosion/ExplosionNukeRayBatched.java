@@ -76,7 +76,7 @@ public class ExplosionNukeRayBatched {
 	}
 
 	public void collectTip(int count) {
-		
+
 		//count = Math.min(count, 10);
 
 		int amountProcessed = 0;
@@ -106,7 +106,7 @@ public class ExplosionNukeRayBatched {
 
 				double fac = 100 - ((double) i) / ((double) length) * 100;
 				fac *= 0.07D;
-				
+
 				Block block = world.getBlock(iX, iY, iZ);
 
 				if(!block.getMaterial().isLiquid())
@@ -114,7 +114,8 @@ public class ExplosionNukeRayBatched {
 				//else
 				//	res -= Math.pow(Blocks.air.getExplosionResistance(null), 7.5D - fac); // air is 0, might want to raise that is necessary
 
-				if(res > 0 && block != Blocks.air) {
+				if(res > 0 && block != Blocks.air || res > 0 && block != Blocks.water) { //|| res > 0 && block != Blocks.water
+					//just chunk crap, should be fine but if it isn't I will add a fluid check.
 					lastPos = new FloatTriplet(x0, y0, z0);
 					//all-air chunks don't need to be buffered at all
 					ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(iX >> 4, iZ >> 4);
@@ -125,18 +126,18 @@ public class ExplosionNukeRayBatched {
 					break;
 				}
 			}
-			
+
 			for(ChunkCoordIntPair pos : chunkCoords) {
 				List<FloatTriplet> triplets = perChunk.get(pos);
-				
+
 				if(triplets == null) {
 					triplets = new ArrayList();
 					perChunk.put(pos, triplets); //we re-use the same pos instead of using individualized per-chunk ones to save on RAM
 				}
-				
+
 				triplets.add(lastPos);
 			}
-			
+
 			// Raise one generalized spiral points
 			this.generateGspUp();
 
@@ -145,20 +146,20 @@ public class ExplosionNukeRayBatched {
 				return;
 			}
 		}
-		
+
 		orderedChunks.addAll(perChunk.keySet());
 		orderedChunks.sort(comparator);
-		
+
 		isAusf3Complete = true;
 	}
-	
+
 	public static float masqueradeResistance(Block block) {
 
 		if(block == Blocks.sandstone) return Blocks.stone.getExplosionResistance(null);
 		if(block == Blocks.obsidian) return Blocks.stone.getExplosionResistance(null) * 3;
 		return block.getExplosionResistance(null);
 	}
-	
+
 	/** little comparator for roughly sorting chunks by distance to the center */
 	public class CoordComparator implements Comparator<ChunkCoordIntPair> {
 
@@ -170,15 +171,15 @@ public class ExplosionNukeRayBatched {
 
 			int diff1 = Math.abs((chunkX - o1.chunkXPos)) + Math.abs((chunkZ - o1.chunkZPos));
 			int diff2 = Math.abs((chunkX - o2.chunkXPos)) + Math.abs((chunkZ - o2.chunkZPos));
-			
+
 			return diff1 - diff2;
 		}
 	}
 
 	public void processChunk() {
-		
+
 		if(this.perChunk.isEmpty()) return;
-		
+
 		ChunkCoordIntPair coord = orderedChunks.get(0);
 		List<FloatTriplet> list = perChunk.get(coord);
 		HashSet<BlockPos> toRem = new HashSet();
@@ -186,13 +187,13 @@ public class ExplosionNukeRayBatched {
 		//List<BlockPos> toRem = new ArrayList();
 		int chunkX = coord.chunkXPos;
 		int chunkZ = coord.chunkZPos;
-		
+
 		int enter = (int) (Math.min(
 				Math.abs(posX - (chunkX << 4)),
 				Math.abs(posZ - (chunkZ << 4)))) - 16; //jump ahead to cut back on NOPs
-		
+
 		enter = Math.max(enter, 0);
-		
+
 		for(FloatTriplet triplet : list) {
 			float x = triplet.xCoord;
 			float y = triplet.yCoord;
@@ -205,13 +206,13 @@ public class ExplosionNukeRayBatched {
 			int tipX = (int) Math.floor(x);
 			int tipY = (int) Math.floor(y);
 			int tipZ = (int) Math.floor(z);
-			
+
 			boolean inChunk = false;
 			for(int i = enter; i < vec.lengthVector(); i++) {
 				int x0 = (int) Math.floor(posX + pX * i);
 				int y0 = (int) Math.floor(posY + pY * i);
 				int z0 = (int) Math.floor(posZ + pZ * i);
-				
+
 				if(x0 >> 4 != chunkX || z0 >> 4 != chunkZ) {
 					if(inChunk) {
 						break;
@@ -219,14 +220,15 @@ public class ExplosionNukeRayBatched {
 						continue;
 					}
 				}
-				
+
 				inChunk = true;
 
-				if(!world.isAirBlock(x0, y0, z0)) {
-					
+				// skip air and liquids — treat liquids like air
+				Block blockHere = world.getBlock(x0, y0, z0);
+				if (!world.isAirBlock(x0, y0, z0) && !blockHere.getMaterial().isLiquid()) {
 					BlockPos pos = new BlockPos(x0, y0, z0);
-					
-					if(x0 == tipX && y0 == tipY && z0 == tipZ) {
+
+					if (x0 == tipX && y0 == tipY && z0 == tipZ) {
 						toRemTips.add(pos);
 					}
 					toRem.add(pos);
@@ -241,20 +243,20 @@ public class ExplosionNukeRayBatched {
 				world.setBlock(pos.getX(), pos.getY(), pos.getZ(), Blocks.air, 0, 2);
 			}
 		}
-		
+
 		perChunk.remove(coord);
 		orderedChunks.remove(0);
 	}
-	
+
 	protected void handleTip(int x, int y, int z) {
 		world.setBlock(x, y, z, Blocks.air, 0, 3);
 	}
-	
+
 	public class FloatTriplet {
 		public float xCoord;
 		public float yCoord;
 		public float zCoord;
-		
+
 		public FloatTriplet(float x, float y, float z) {
 			xCoord = x;
 			yCoord = y;

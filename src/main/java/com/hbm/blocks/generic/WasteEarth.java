@@ -60,7 +60,7 @@ public class WasteEarth extends Block {
 
 	@Override
 	public Item getItemDropped(int p_149650_1_, Random p_149650_2_, int p_149650_3_) {
-		
+
 		if(this == ModBlocks.waste_earth || this == ModBlocks.waste_mycelium || this == ModBlocks.burning_earth) {
 			return Item.getItemFromBlock(Blocks.dirt);
 		}
@@ -79,11 +79,11 @@ public class WasteEarth extends Block {
 
 	@Override
 	public void onEntityWalking(World p_149724_1_, int x, int y, int z, Entity entity) {
-		
+
 		if(entity instanceof EntityLivingBase) {
-			
+
 			EntityLivingBase living = (EntityLivingBase) entity;
-			
+
 			if(this == ModBlocks.frozen_grass) {
 				living.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 2 * 60 * 20, 2));
 			}
@@ -100,7 +100,7 @@ public class WasteEarth extends Block {
 	@SideOnly(Side.CLIENT)
 	public void randomDisplayTick(World world, int x, int y, int z, Random rand) {
 		super.randomDisplayTick(world, x, y, z, rand);
-		
+
 		if(this == ModBlocks.waste_mycelium) {
 			world.spawnParticle("townaura", x + rand.nextFloat(), y + 1.1F, z + rand.nextFloat(), 0.0D, 0.0D, 0.0D);
 		}
@@ -112,7 +112,7 @@ public class WasteEarth extends Block {
 
 	@Override
 	public void updateTick(World world, int x, int y, int z, Random rand) {
-		
+
 		if(this == ModBlocks.waste_mycelium && GeneralConfig.enableMycelium) {
 			for(int i = -1; i < 2; i++) {
 				for(int j = -1; j < 2; j++) {
@@ -126,19 +126,19 @@ public class WasteEarth extends Block {
 				}
 			}
 		}
-		
+
 		if(this == ModBlocks.burning_earth) {
-			
+
 			if(rand.nextInt(5) == 0) {
 				for(int i = -1; i < 2; i++) {
 					for(int j = -1; j < 2; j++) {
 						for(int k = -1; k < 2; k++) {
-							
+
 							if(!world.blockExists(x + i, y + j, z + k)) continue;
-							
+
 							Block b0 = world.getBlock(x + i, y + j, z + k);
 							Block b1 = world.getBlock(x + i, y + j + 1, z + k);
-							
+
 							if(!b1.isOpaqueCube() &&
 									((b0 == Blocks.grass || b0 == Blocks.mycelium || b0 == ModBlocks.waste_earth ||
 									b0 == ModBlocks.frozen_grass || b0 == ModBlocks.waste_mycelium)
@@ -161,22 +161,22 @@ public class WasteEarth extends Block {
 			world.setBlock(x, y, z, ModBlocks.impact_dirt);
 		}
 
-		if(this == ModBlocks.waste_earth || this == ModBlocks.waste_mycelium) {
-			
+		if(this == ModBlocks.waste_earth || this == ModBlocks.waste_mycelium) { //todo cleanup of the other stuff too
+
 			if(RadiationConfig.cleanupDeadDirt || (world.getBlockLightValue(x, y + 1, z) < 4 && world.getBlockLightOpacity(x, y + 1, z) > 2)) {
 				world.setBlock(x, y, z, Blocks.dirt);
-				
+
 			}
-			
+
 			if(world.getBlock(x, y + 1, z) instanceof BlockMushroom) {
 				world.setBlock(x, y + 1, z, ModBlocks.mush);
 			}
 		}
 	}
-	
+
 	@Override
 	public void onNeighborBlockChange(World world, int x, int y, int z, Block block) {
-		
+
 		if(this == ModBlocks.burning_earth) {
 			Block b = world.getBlock(x, y + 1, z);
 			if(b instanceof BlockLiquid || b instanceof BlockFluidBase || b.isNormalCube()) {
@@ -184,14 +184,14 @@ public class WasteEarth extends Block {
 			}
 		}
 	}
-	
+
 	@Override
 	public boolean canSustainPlant(IBlockAccess world, int x, int y, int z, ForgeDirection direction, IPlantable plantable) {
-		
+
 		if(this == ModBlocks.waste_earth || this == ModBlocks.waste_mycelium) {
 			return plantable.getPlantType(world, x, y, z) == EnumPlantType.Cave;
 		}
-		
+
 		return false;
 	}
 }

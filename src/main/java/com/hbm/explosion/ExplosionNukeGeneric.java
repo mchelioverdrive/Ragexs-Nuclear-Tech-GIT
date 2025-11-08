@@ -141,53 +141,92 @@ public class ExplosionNukeGeneric {
 		}
 	}
 
+	public static final float LIQUID_RESISTANCE_THRESHOLD = 200f; // keep blocks with high resistance
+	public static final float PROTECTION_DIVISOR = 300f;
+	private static final Random RANDOM = new Random();
+
 	public static int destruction(World world, int x, int y, int z) {
-		int rand;
-		if (!world.isRemote) {
-			Block b = world.getBlock(x,y,z);
-			if (b.getExplosionResistance(null)>=200f) {	//500 is the resistance of liquids
-				//blocks to be spared
-				int protection = (int)(b.getExplosionResistance(null)/300f);
-				if (b == ModBlocks.brick_concrete) {
-					rand = random.nextInt(8);
-					if (rand == 0) {
-						world.setBlock(x, y, z, Blocks.gravel, 0, 3);
-						return 0;
-					}
-				} else if (b == ModBlocks.brick_light) {
-					rand = random.nextInt(3);
-					if (rand == 0) {
-						world.setBlock(x, y, z, ModBlocks.waste_planks, 0, 3);
-						return 0;
-					}else if (rand == 1){
-						world.setBlock(x,y,z,ModBlocks.block_scrap,0,3);
-						return 0;
-					}
-				} else if (b == ModBlocks.brick_obsidian) {
-					rand = random.nextInt(20);
-					if (rand == 0) {
-						world.setBlock(x, y, z, Blocks.obsidian, 0, 3);
-					}
-				} else if (b == Blocks.obsidian) {
-					world.setBlock(x, y, z, ModBlocks.gravel_obsidian, 0, 3);
-					return 0;
-				} else if(random.nextInt(protection+3)==0){
-					world.setBlock(x, y, z, ModBlocks.block_scrap,0,3);
-				}
-				return protection;
-			}else{//otherwise, kill the block!
-				world.setBlock(x, y, z, Blocks.air,0, 2);
-			}
+		if (world.isRemote) return 0; // server-only
+
+		Block block = world.getBlock(x, y, z);
+		if (block == null) return 0;
+
+		// skip liquids (don't destroy oceans/rivers)
+		Material mat = block.getMaterial();
+		if (mat.isLiquid()) {
+			return 0;
 		}
+
+		// cache resistance once
+		float resistance = block.getExplosionResistance(null);
+
+		// If very resistant, we treat it as "protected" and possibly replace with scraps/gravel/etc.
+		if (resistance >= LIQUID_RESISTANCE_THRESHOLD) {
+			int protection = Math.max(1, (int) (resistance / PROTECTION_DIVISOR)); // at least 1 so division by zero avoided
+
+			// Special-case certain blocks
+			if (block == ModBlocks.brick_concrete) {
+				if (RANDOM.nextInt(8) == 0) {
+					replaceBlockPreservingTile(world, x, y, z, Blocks.gravel, 0);
+					return 0;
+				}
+			} else if (block == ModBlocks.brick_light) {
+				int r = RANDOM.nextInt(3);
+				if (r == 0) {
+					replaceBlockPreservingTile(world, x, y, z, ModBlocks.waste_planks, 0);
+					return 0;
+				} else if (r == 1) {
+					replaceBlockPreservingTile(world, x, y, z, ModBlocks.block_scrap, 0);
+					return 0;
+				}
+			} else if (block == ModBlocks.brick_obsidian) {
+				if (RANDOM.nextInt(20) == 0) {
+					replaceBlockPreservingTile(world, x, y, z, Blocks.obsidian, 0);
+					return protection;
+				}
+			} else if (block == Blocks.obsidian) {
+				replaceBlockPreservingTile(world, x, y, z, ModBlocks.gravel_obsidian, 0);
+				return 0;
+			} else {
+				// generic protected-block behavior
+				if (RANDOM.nextInt(protection + 3) == 0) {
+					replaceBlockPreservingTile(world, x, y, z, ModBlocks.block_scrap, 0);
+				}
+			}
+
+			return protection;
+		}
+
+		// otherwise kill the block
+		// remove tile-entity (if any) before setting to air to avoid stale TEs
+		if (world.getTileEntity(x, y, z) != null) {
+			world.removeTileEntity(x, y, z);
+		}
+		//can use setBlockToAir, but setBlock(x,y,z,Blocks.air,0,2) is fine too.
+		world.setBlockToAir(x, y, z);
 		return 0;
 	}
+
+	/** helper to set a block while removing any existing tile entity first */
+	private static void replaceBlockPreservingTile(World world, int x, int y, int z, Block newBlock, int meta) {
+		if (world.getTileEntity(x, y, z) != null) {
+			world.removeTileEntity(x, y, z);
+		}
+		world.setBlock(x, y, z, newBlock, meta, 3);
+	}
+
 
 	public static int vaporDest(World world, int x, int y, int z) {
 		if (!world.isRemote) {
 			Block b = world.getBlock(x,y,z);
-			if (b.getExplosionResistance(null)<0.5f //most light things
+
+			if (b.getMaterial().isLiquid()) {
+				if (random.nextInt(50) == 0) { // 1 in 50 chance
+					world.setBlock(x, y, z, Blocks.air, 0, 2);
+				}
+			} else if (b.getExplosionResistance(null)<0.5f //most light things
 					|| b == Blocks.web || b == ModBlocks.red_cable
-					|| b instanceof BlockLiquid) {
+					) { //|| b instanceof BlockLiquid WHY WOULD THIS BE INTENTIONAL????? WTF
 				world.setBlock(x, y, z, Blocks.air,0, 2);
 				return 0;
 			} else if (b.getExplosionResistance(null)<=3.0f && !b.isOpaqueCube()){
@@ -221,7 +260,7 @@ public class ExplosionNukeGeneric {
 					int Z = zz + z;
 					int ZZ = YY + zz * zz;
 					if (ZZ < r22 + world.rand.nextInt(r22 / 5)) {
-						if (world.getBlock(X, Y, Z) != Blocks.air)
+						if (world.getBlock(X, Y, Z) != Blocks.air || world.getBlock(X, Y, Z) != Blocks.water)
 							wasteDest(world, X, Y, Z);
 					}
 				}
@@ -264,8 +303,8 @@ public class ExplosionNukeGeneric {
 			}
 
 			else if (b == Blocks.coal_ore) {
-				rand = random.nextInt(10);
-				if (rand == 1 || rand == 2 || rand == 3) {
+				rand = random.nextInt(50);
+				if (rand == 1) {
 					world.setBlock(x, y, z, Blocks.diamond_ore);
 				}
 				if (rand == 9) {
@@ -300,8 +339,6 @@ public class ExplosionNukeGeneric {
 			else if (b == ModBlocks.ore_uranium) {
 				rand = random.nextInt(VersatileConfig.getSchrabOreChance());
 				if (rand == 1) {
-					world.setBlock(x, y, z, ModBlocks.ore_schrabidium);
-				} else {
 					world.setBlock(x, y, z, ModBlocks.ore_uranium_scorched);
 				}
 			}
@@ -309,8 +346,7 @@ public class ExplosionNukeGeneric {
 			else if (b == ModBlocks.ore_nether_uranium) {
 				rand = random.nextInt(VersatileConfig.getSchrabOreChance());
 				if (rand == 1) {
-					world.setBlock(x, y, z, ModBlocks.ore_nether_schrabidium);
-				} else {
+					//world.setBlock(x, y, z, ModBlocks.ore_nether_schrabidium);
 					world.setBlock(x, y, z, ModBlocks.ore_nether_uranium_scorched);
 				}
 			}
@@ -318,8 +354,6 @@ public class ExplosionNukeGeneric {
 			else if (b == ModBlocks.ore_gneiss_uranium) {
 				rand = random.nextInt(VersatileConfig.getSchrabOreChance());
 				if (rand == 1) {
-					world.setBlock(x, y, z, ModBlocks.ore_gneiss_schrabidium);
-				} else {
 					world.setBlock(x, y, z, ModBlocks.ore_gneiss_uranium_scorched);
 				}
 			}
@@ -386,8 +420,8 @@ public class ExplosionNukeGeneric {
 			}
 
 			else if (world.getBlock(x, y, z) == Blocks.coal_ore) {
-				rand = random.nextInt(30);
-				if (rand == 1 || rand == 2 || rand == 3) {
+				rand = random.nextInt(80);
+				if (rand == 1) {
 					world.setBlock(x, y, z, Blocks.diamond_ore);
 				}
 				if (rand == 29) {
