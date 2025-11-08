@@ -819,6 +819,7 @@ public class ModEventHandler {
 				 * except the entity dismounting part, it literally can NOT be done elsewhere
 				 */
 				for(Object e : oList) {
+
 					if(e instanceof EntityLivingBase) {
 
 						//effect for radiation
@@ -860,7 +861,7 @@ public class ModEventHandler {
 						if (eRad < 100 || ContaminationUtil.isRadImmune(entity))
 							continue;
 
-// Cap radiation at 5000 mSv (~5 Sv, terminal dose)
+						// Cap radiation at 5000 mSv (~5 Sv, terminal dose)
 						if (eRad > 5000)
 							HbmLivingProps.setRadiation(entity, 5000);
 

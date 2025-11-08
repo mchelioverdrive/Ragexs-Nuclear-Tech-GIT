@@ -104,16 +104,22 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 		if(!RadiationConfig.enableContamination)
 			return 0;
 
+		if (entity instanceof EntityPlayer && ((EntityPlayer) entity).capabilities.isCreativeMode)
+			return 0;
+
 		return getData(entity).radiation;
 	}
 
 	public static void setRadiation(EntityLivingBase entity, float rad) {
 		if(RadiationConfig.enableContamination)
 			getData(entity).radiation = rad;
+
 	}
 
 	public static void incrementRadiation(EntityLivingBase entity, float rad) {
 		if(!RadiationConfig.enableContamination)
+			return;
+		if (entity instanceof EntityPlayer && ((EntityPlayer) entity).capabilities.isCreativeMode)
 			return;
 
 		if (entity.getCreatureAttribute()==EnumCreatureAttribute.UNDEAD)

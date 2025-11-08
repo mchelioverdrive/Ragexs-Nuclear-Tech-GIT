@@ -82,6 +82,7 @@ public class ContaminationUtil {
 		}
 
 		if("cyano.lootable.entities.EntityLootableBody".equals(entityClass.getName())) return true;
+		//todo mch vehicles too
 
 		return false;
 	}
