@@ -117,7 +117,7 @@ public class ExplosionNukeRayBatched {
 				if(res > 0 && block != Blocks.air || res > 0 && block != Blocks.water) { //|| res > 0 && block != Blocks.water
 					//just chunk crap, should be fine but if it isn't I will add a fluid check.
 					lastPos = new FloatTriplet(x0, y0, z0);
-					//all-air chunks don't need to be buffered at all
+					//all-air chunks or water blocks don't need to be buffered at all
 					ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(iX >> 4, iZ >> 4);
 					chunkCoords.add(chunkPos);
 				}
