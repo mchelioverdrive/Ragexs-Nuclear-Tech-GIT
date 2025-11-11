@@ -46,7 +46,7 @@ public class ItemOilDetector extends Item {
 			String reserveType = "";
 			if(reserve == ModBlocks.ore_gas)
 				reserveType = "_gas";
-						
+
 			if(direct) {
 				PacketDispatcher.wrapper.sendTo(new PlayerInformPacket(ChatBuilder.start("").nextTranslation(this.getUnlocalizedName() + ".bullseye" + reserveType).color(EnumChatFormatting.DARK_GREEN).flush(), ServerProxy.ID_DETONATOR), (EntityPlayerMP) player);
 			} else if(reserve != null) {
@@ -57,9 +57,9 @@ public class ItemOilDetector extends Item {
 		}
 
 		world.playSoundAtEntity(player, "hbm:item.techBleep", 1.0F, 1.0F);
-		
+
 		player.swingItem();
-		
+
 		return stack;
 	}
 
@@ -69,12 +69,12 @@ public class ItemOilDetector extends Item {
 		if((reserve = searchDirect(world, x - 5, y, z)) != null) return reserve;
 		if((reserve = searchDirect(world, x, y, z + 5)) != null) return reserve;
 		if((reserve = searchDirect(world, x, y, z - 5)) != null) return reserve;
-		
+
 		if((reserve = searchDirect(world, x + 10, y, z)) != null) return reserve;
 		if((reserve = searchDirect(world, x - 10, y, z)) != null) return reserve;
 		if((reserve = searchDirect(world, x, y, z + 10)) != null) return reserve;
 		if((reserve = searchDirect(world, x, y, z - 10)) != null) return reserve;
-		
+
 		if((reserve = searchDirect(world, x + 5, y, z + 5)) != null) return reserve;
 		if((reserve = searchDirect(world, x - 5, y, z + 5)) != null) return reserve;
 		if((reserve = searchDirect(world, x + 5, y, z - 5)) != null) return reserve;
@@ -86,6 +86,7 @@ public class ItemOilDetector extends Item {
 	private Block searchDirect(World world, int x, int y, int z) {
 		for(int i =  y + 15; i > 5; i--) {
 			Block block = world.getBlock(x, i, z);
+			if(block == ModBlocks.ore_bedrock_oil) return block;
 			if(block == ModBlocks.ore_oil) return block;
 			if(block == ModBlocks.ore_gas) return block;
 		}

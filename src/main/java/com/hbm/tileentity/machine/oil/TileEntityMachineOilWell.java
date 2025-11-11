@@ -41,6 +41,11 @@ public class TileEntityMachineOilWell extends TileEntityOilDrillBase {
 	protected static double drainChance = 0.05D;
 	protected static double drainChanceDuna = 0.1D;
 
+	protected static int oilPerBedrockDepsoit = 30;
+	protected static int gasPerBedrockDepositMin = 2;
+	protected static int gasPerBedrockDepositMax = 5;
+
+
 	// Gas from pure natgas deposits
 	protected static int gasPerDeposit = 500;
 	protected static int petgasPerDepositMin = 10;
@@ -73,7 +78,7 @@ public class TileEntityMachineOilWell extends TileEntityOilDrillBase {
 		int[] ids = OreDictionary.getOreIDs(stack);
 		for(Integer i : ids) {
 			String name = OreDictionary.getOreName(i);
-			
+
 			if("oreUranium".equals(name)) {
 				for(int j = -1; j <= 1; j++) {
 					for(int k = -1; k <= 1; k++) {
@@ -83,7 +88,7 @@ public class TileEntityMachineOilWell extends TileEntityOilDrillBase {
 					}
 				}
 			}
-			
+
 			if("oreAsbestos".equals(name)) {
 				for(int j = -1; j <= 1; j++) {
 					for(int k = -1; k <= 1; k++) {
@@ -102,6 +107,9 @@ public class TileEntityMachineOilWell extends TileEntityOilDrillBase {
 
 		int meta = worldObj.getBlockMetadata(x, y, z);
 		Block block = worldObj.getBlock(x, y, z);
+
+		int oil = 0;
+		int gas = 0;
 
         if(block == ModBlocks.ore_oil) {
 			if(meta == SolarSystem.Body.LAYTHE.ordinal()) {
@@ -125,12 +133,17 @@ public class TileEntityMachineOilWell extends TileEntityOilDrillBase {
 				if(this.tanks[0].getFill() > this.tanks[0].getMaxFill()) this.tanks[0].setFill(tanks[0].getMaxFill());
 				this.tanks[1].setFill(this.tanks[1].getFill() + (gasPerDepositMin + worldObj.rand.nextInt((gasPerDepositMax - gasPerDepositMin + 1))));
 				if(this.tanks[1].getFill() > this.tanks[1].getMaxFill()) this.tanks[1].setFill(tanks[1].getMaxFill());
-				
+
 				if(worldObj.rand.nextDouble() < drainChance) {
 					worldObj.setBlock(x, y, z, ModBlocks.ore_oil_empty, meta, 3);
 				}
 			}
         }
+
+		if(block == ModBlocks.ore_bedrock_oil) {
+			oil = oilPerBedrockDepsoit;
+			gas = gasPerBedrockDepositMin + worldObj.rand.nextInt(gasPerBedrockDepositMax - gasPerBedrockDepositMin + 1);
+		}
 
 		if(block == ModBlocks.ore_gas) {
 			tanks[0].setTankType(Fluids.GAS);
@@ -145,13 +158,18 @@ public class TileEntityMachineOilWell extends TileEntityOilDrillBase {
 				worldObj.setBlock(x, y, z, ModBlocks.ore_gas_empty, meta, 3);
 			}
 		}
+
+		this.tanks[0].setFill(this.tanks[0].getFill() + oil);
+		if(this.tanks[0].getFill() > this.tanks[0].getMaxFill()) this.tanks[0].setFill(tanks[0].getMaxFill());
+		this.tanks[1].setFill(this.tanks[1].getFill() + gas);
+		if(this.tanks[1].getFill() > this.tanks[1].getMaxFill()) this.tanks[1].setFill(tanks[1].getMaxFill());
 	}
-	
+
 	AxisAlignedBB bb = null;
-	
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
-		
+
 		if(bb == null) {
 			bb = AxisAlignedBB.getBoundingBox(
 					xCoord - 1,
@@ -162,7 +180,7 @@ public class TileEntityMachineOilWell extends TileEntityOilDrillBase {
 					zCoord + 2
 					);
 		}
-		
+
 		return bb;
 	}
 
@@ -202,7 +220,7 @@ public class TileEntityMachineOilWell extends TileEntityOilDrillBase {
 		writer.name("I:gasPerDepositMax").value(gasPerDepositMax);
 		writer.name("D:drainChance").value(drainChance);
 	}
-	
+
 	@Override
 	public Container provideContainer(int ID, EntityPlayer player, World world, int x, int y, int z) {
 		return new ContainerMachineOilWell(player.inventory, this);

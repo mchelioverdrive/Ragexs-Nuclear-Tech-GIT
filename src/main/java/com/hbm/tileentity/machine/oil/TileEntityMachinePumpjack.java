@@ -43,11 +43,15 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 	protected static double drainChance = 0.025D;
 	protected static double drainChanceDuna = 0.05D; //essentially, duna is supposed to produce weaker oil than the overworld.
 
+	protected static int oilPerBedrockDepsoit = 40;
+	protected static int gasPerBedrockDepositMin = 5;
+	protected static int gasPerBedrockDepositMax = 9;
+
 	// Gas from pure natgas deposits
 	protected static int gasPerDeposit = 750;
 	protected static int petgasPerDepositMin = 10;
 	protected static int petgasPerDepositMax = 50;
-	
+
 	public float rot = 0;
 	public float prevRot = 0;
 	public float speed = 0;
@@ -79,7 +83,7 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 		int[] ids = OreDictionary.getOreIDs(stack);
 		for(Integer i : ids) {
 			String name = OreDictionary.getOreName(i);
-			
+
 			if("oreUranium".equals(name)) {
 				for(int j = 2; j < 6; j++) {
 					ForgeDirection dir = ForgeDirection.getOrientation(j);
@@ -88,7 +92,7 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 					}
 				}
 			}
-			
+
 			if("oreAsbestos".equals(name)) {
 				for(int j = 2; j < 6; j++) {
 					ForgeDirection dir = ForgeDirection.getOrientation(j);
@@ -103,15 +107,15 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 	@Override
 	public void updateEntity() {
 		super.updateEntity();
-		
+
 		if(worldObj.isRemote) {
 
 			this.prevRot = rot;
-			
+
 			if(this.indicator == 0) {
 				this.rot += speed;
 			}
-			
+
 			if(this.rot >= 360) {
 				this.prevRot -= 360;
 				this.rot -= 360;
@@ -125,11 +129,11 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 
 		super.networkPack(nbt, range);
 	}
-	
+
 	@Override
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
-		
+
 		this.speed = nbt.getFloat("speed");
 	}
 
@@ -137,7 +141,10 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 	public void onSuck(int x, int y, int z) {
 		int meta = worldObj.getBlockMetadata(x, y, z);
 		Block block = worldObj.getBlock(x, y, z);
-		
+
+		int oil = 0;
+		int gas = 0;
+
         if(block == ModBlocks.ore_oil) {
 			if(meta == SolarSystem.Body.LAYTHE.ordinal()) {
 				tanks[0].setTankType(Fluids.OIL_DS);
@@ -151,7 +158,7 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 				if(this.tanks[0].getFill() > this.tanks[0].getMaxFill()) this.tanks[0].setFill(tanks[0].getMaxFill());
 				this.tanks[1].setFill(this.tanks[1].getFill() + (gasPerDepositMin + worldObj.rand.nextInt((gasPerDepositMax - gasPerDepositMin + 1)))); // ditto, lotsa gas
 				if(this.tanks[1].getFill() > this.tanks[1].getMaxFill()) this.tanks[1].setFill(tanks[1].getMaxFill());
-				
+
 				if(worldObj.rand.nextDouble() < drainChanceDuna) {
 					worldObj.setBlock(x, y, z, ModBlocks.ore_oil_empty, meta, 3);
 				}
@@ -167,6 +174,11 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 			}
         }
 
+		if(block == ModBlocks.ore_bedrock_oil) {
+			oil = oilPerBedrockDepsoit;
+			gas = gasPerBedrockDepositMin + worldObj.rand.nextInt(gasPerBedrockDepositMax - gasPerBedrockDepositMin + 1);
+		}
+
 		if(block == ModBlocks.ore_gas) {
 			tanks[0].setTankType(Fluids.GAS);
 			tanks[1].setTankType(Fluids.PETROLEUM);
@@ -180,14 +192,20 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 				worldObj.setBlock(x, y, z, ModBlocks.ore_gas_empty, meta, 3);
 			}
 		}
+
+		this.tanks[0].setFill(this.tanks[0].getFill() + oil);
+		if(this.tanks[0].getFill() > this.tanks[0].getMaxFill()) this.tanks[0].setFill(tanks[0].getMaxFill());
+		this.tanks[1].setFill(this.tanks[1].getFill() + gas);
+		if(this.tanks[1].getFill() > this.tanks[1].getMaxFill()) this.tanks[1].setFill(tanks[1].getMaxFill());
+
 	}
-        
+
 
 	AxisAlignedBB bb = null;
-	
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
-		
+
 		if(bb == null) {
 			bb = AxisAlignedBB.getBoundingBox(
 					xCoord - 7,
@@ -198,7 +216,7 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 					zCoord + 8
 					);
 		}
-		
+
 		return bb;
 	}
 
@@ -207,7 +225,7 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 		this.getBlockMetadata();
 		ForgeDirection dir = ForgeDirection.getOrientation(this.blockMetadata - BlockDummyable.offset);
 		ForgeDirection rot = dir.getRotation(ForgeDirection.DOWN);
-		
+
 		return new DirPos[] {
 			new DirPos(xCoord + rot.offsetX * 2 + dir.offsetX * 2, yCoord, zCoord + rot.offsetZ * 2 + dir.offsetZ * 2, dir),
 			new DirPos(xCoord + rot.offsetX * 2 + dir.offsetX * 2, yCoord, zCoord + rot.offsetZ * 4 - dir.offsetZ * 2, dir.getOpposite()),
@@ -242,7 +260,7 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 		writer.name("I:gasPerDepositMax").value(gasPerDepositMax);
 		writer.name("D:drainChance").value(drainChance);
 	}
-	
+
 	@Override
 	public Container provideContainer(int ID, EntityPlayer player, World world, int x, int y, int z) {
 		return new ContainerMachineOilWell(player.inventory, this);
