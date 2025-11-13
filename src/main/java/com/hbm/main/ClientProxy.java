@@ -936,6 +936,9 @@ public class ClientProxy extends ServerProxy {
 		RenderingRegistry.registerBlockHandler(new RenderBlockRotated(ModBlocks.charge_dynamite.getRenderType(), ResourceManager.charge_dynamite));
 		RenderingRegistry.registerBlockHandler(new RenderBlockRotated(ModBlocks.charge_c4.getRenderType(), ResourceManager.charge_c4));
 
+		RenderingRegistry.registerBlockHandler(new RenderBlockRotated(ModBlocks.charge_c4csgo.getRenderType(), ResourceManager.charge_c4));
+
+
 		RenderingRegistry.registerBlockHandler(new RenderRBMKRod());
 		RenderingRegistry.registerBlockHandler(new RenderRBMKReflector());
 		RenderingRegistry.registerBlockHandler(new RenderRBMKControl());

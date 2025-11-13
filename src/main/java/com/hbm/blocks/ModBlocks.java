@@ -613,6 +613,8 @@ public class ModBlocks {
 	public static Block charge_c4;
 	public static Block charge_semtex;
 
+	public static Block charge_c4csgo;
+
 	public static Block mine_ap;
 	public static Block mine_he;
 	public static Block mine_shrap;
@@ -1931,6 +1933,9 @@ public class ModBlocks {
 		charge_c4 = new BlockChargeC4().setBlockName("charge_c4").setCreativeTab(MainRegistry.nukeTab).setResistance(20.0F);
 		charge_semtex = new BlockChargeSemtex().setBlockName("charge_semtex").setCreativeTab(MainRegistry.nukeTab).setResistance(20.0F);
 
+		charge_c4csgo = new BlockChargeC4CSGO().setBlockName("charge_c4csgo").setCreativeTab(MainRegistry.nukeTab).setResistance(20.0F);
+
+
 		mine_ap = new Landmine(Material.iron, 1.5D, 1D).setBlockName("mine_ap").setCreativeTab(MainRegistry.nukeTab).setHardness(1.0F).setBlockTextureName(RefStrings.MODID + ":mine_ap");
 		mine_he = new Landmine(Material.iron, 2D, 5D).setBlockName("mine_he").setCreativeTab(MainRegistry.nukeTab).setHardness(1.0F).setBlockTextureName(RefStrings.MODID + ":mine_he");
 		mine_shrap = new Landmine(Material.iron, 1.5D, 1D).setBlockName("mine_shrap").setCreativeTab(MainRegistry.nukeTab).setHardness(1.0F).setBlockTextureName(RefStrings.MODID + ":mine_shrap");
@@ -3222,6 +3227,8 @@ public class ModBlocks {
 		GameRegistry.registerBlock(charge_miner, ItemBlockBase.class, charge_miner.getUnlocalizedName());
 		GameRegistry.registerBlock(charge_c4, ItemBlockBase.class, charge_c4.getUnlocalizedName());
 		GameRegistry.registerBlock(charge_semtex, ItemBlockBase.class, charge_semtex.getUnlocalizedName());
+
+		GameRegistry.registerBlock(charge_c4csgo, ItemBlockBase.class, charge_c4csgo.getUnlocalizedName());
 
 		//Mines
 		GameRegistry.registerBlock(mine_ap, mine_ap.getUnlocalizedName());

@@ -41,6 +41,7 @@ public abstract class BlockChargeBase extends BlockContainerBase implements IBom
 
 	public BlockChargeBase() {
 		super(Material.tnt);
+		this.setHardness(80.0F);
 	}
 
 	@Override
