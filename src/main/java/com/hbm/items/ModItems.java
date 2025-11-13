@@ -2028,7 +2028,7 @@ public class ModItems {
 	public static Item screwdriver_desh;
 	public static Item hand_drill;
 	public static Item hand_drill_desh;
-	//what the fuck is the point of this bullshit, they don't even fucking work as hand drills
+	//what the fuck is the point of this bullshit, they don't even fucking work as hand drills, OH the chicago pile
 	public static Item wrench_archineer;
 	public static Item chemistry_set;
 	public static Item chemistry_set_boron;
