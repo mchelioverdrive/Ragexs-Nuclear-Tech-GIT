@@ -35,6 +35,8 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public abstract class BlockChargeBase extends BlockContainerBase implements IBomb, IToolable, ITooltipProvider, IFuckingExplode {
 
+
+
 	public static boolean safe = false;
 
 	public BlockChargeBase() {
@@ -136,19 +138,14 @@ public abstract class BlockChargeBase extends BlockContainerBase implements IBom
 		TileEntityCharge charge = (TileEntityCharge) world.getTileEntity(x, y, z);
 
 		if(charge.started) {
-			// start a 5-second deferred disarm (minimal change)
 			charge.defusePending = true;
 			charge.defusePendingTicks = TileEntityCharge.DEFUSE_DELAY_TICKS;
+			charge.defusingPlayer = player.getCommandSenderName(); // track who started defusing
 
-			// force ticking & sync
 			world.scheduleBlockUpdate(x, y, z, this, 1);
 			world.markBlockForUpdate(x, y, z);
-
-			// play the same immediate sound you had (keeps feedback)
-			// play on server so all nearby players hear it
 			world.playSoundEffect(x + 0.5D, y + 0.5D, z + 0.5D, "hbm:weapon.fstbmbStart", 1.0F, 1.0F);
 
-			// ensure tile state is saved/synced to clients
 			charge.markDirty();
 		} else {
 			// existing original disarm path unchanged
