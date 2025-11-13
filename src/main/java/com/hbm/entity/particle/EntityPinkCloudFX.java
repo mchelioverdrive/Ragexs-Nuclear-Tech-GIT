@@ -61,34 +61,34 @@ public class EntityPinkCloudFX extends EntityModFX {
 			this.motionX *= 0.699999988079071D;
 			this.motionZ *= 0.699999988079071D;
 		}
-		
+
 		if(worldObj.isRaining() && worldObj.canBlockSeeTheSky(MathHelper.floor_double(this.posX), MathHelper.floor_double(this.posY), MathHelper.floor_double(this.posZ))) {
 			this.motionY -= 0.01;
 		}
-		
+
 		double subdivisions = 4;
-		
+
 		for(int i = 0; i < subdivisions; i++) {
-	
+
 			this.posX += this.motionX/subdivisions;
 			this.posY += this.motionY/subdivisions;
 			this.posZ += this.motionZ/subdivisions;
-			
-			if(worldObj.getBlock((int) posX, (int) posY, (int) posZ) == ModBlocks.radiorec) {
-				this.setDead();
-				int meta = worldObj.getBlockMetadata((int) posX, (int) posY, (int) posZ);
-				worldObj.setBlock((int) posX, (int) posY, (int) posZ, ModBlocks.broadcaster_pc, meta, 2);
-			}
-			
+
+			//if(worldObj.getBlock((int) posX, (int) posY, (int) posZ) == ModBlocks.radiorec) {
+			//	this.setDead();
+			//	int meta = worldObj.getBlockMetadata((int) posX, (int) posY, (int) posZ);
+			//	worldObj.setBlock((int) posX, (int) posY, (int) posZ, ModBlocks.broadcaster_pc, meta, 2);
+			//}
+
 			if (worldObj.getBlock((int) posX, (int) posY, (int) posZ).isNormalCube()) {
-	
+
 				if(rand.nextInt(5) != 0)
 					this.setDead();
-				
+
 				this.posX -= this.motionX/subdivisions;
 				this.posY -= this.motionY/subdivisions;
 				this.posZ -= this.motionZ/subdivisions;
-	
+
 				this.motionX = 0;
 				this.motionY = 0;
 				this.motionZ = 0;

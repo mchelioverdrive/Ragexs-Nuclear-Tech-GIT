@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm.entity.effect.EntityNukeTorex;
-import com.hbm.entity.logic.EntityBalefire;
 import com.hbm.entity.logic.EntityNukeExplosionMK5;
 import com.hbm.entity.logic.IChunkLoader;
 import com.hbm.entity.projectile.EntityBulletBaseNT;
@@ -139,7 +138,7 @@ public class EntityMissileCustom extends EntityMissileBaseNT implements IChunkLo
 		FuelType type = (FuelType) part.attributes[0];
 
 		switch(type) {
-		case BALEFIRE: smoke = "exBalefire"; break;
+		//case BALEFIRE: smoke = "exBalefire"; break;
 		case HYDROGEN: smoke = "exHydrogen"; break;
 		case KEROSENE: smoke = "exKerosene"; break;
 		case SOLID: smoke = "exSolid"; break;
@@ -183,15 +182,15 @@ public class EntityMissileCustom extends EntityMissileBaseNT implements IChunkLo
 			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, (int) strength, posX, posY, posZ));
 			EntityNukeTorex.statFac(worldObj, posX, posY, posZ, strength);
 			break;
-		case BALEFIRE:
-			EntityBalefire bf = new EntityBalefire(worldObj);
-			bf.posX = this.posX;
-			bf.posY = this.posY;
-			bf.posZ = this.posZ;
-			bf.destructionRange = (int) strength;
-			worldObj.spawnEntityInWorld(bf);
-			EntityNukeTorex.statFacBale(worldObj, posX, posY, posZ, strength);
-			break;
+		//case BALEFIRE:
+		//	EntityBalefire bf = new EntityBalefire(worldObj);
+		//	bf.posX = this.posX;
+		//	bf.posY = this.posY;
+		//	bf.posZ = this.posZ;
+		//	bf.destructionRange = (int) strength;
+		//	worldObj.spawnEntityInWorld(bf);
+		//	EntityNukeTorex.statFacBale(worldObj, posX, posY, posZ, strength);
+		//	break;
 		case N2:
 			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFacNoRad(worldObj, (int) strength, posX, posY, posZ));
 			EntityNukeTorex.statFac(worldObj, posX, posY, posZ, strength);

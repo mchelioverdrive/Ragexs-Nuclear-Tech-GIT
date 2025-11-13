@@ -288,7 +288,7 @@ public class ExplosionNT extends Explosion {
 			}
 		}
 
-		if(has(ExAttrib.FIRE) || has(ExAttrib.BALEFIRE) || has(ExAttrib.LAVA)) {
+		if(has(ExAttrib.FIRE) || has(ExAttrib.LAVA)) {
 			iterator = this.affectedBlockPositions.iterator();
 
 			while(iterator.hasNext()) {
@@ -307,8 +307,8 @@ public class ExplosionNT extends Explosion {
 				if(block.getMaterial() == Material.air && block1.func_149730_j() && shouldReplace) {
 					if(has(ExAttrib.FIRE))
 						this.worldObj.setBlock(i, j, k, Blocks.fire);
-					else if(has(ExAttrib.BALEFIRE))
-						this.worldObj.setBlock(i, j, k, ModBlocks.balefire);
+					//else if(has(ExAttrib.BALEFIRE))
+					//	this.worldObj.setBlock(i, j, k, ModBlocks.balefire);
 					else if(has(ExAttrib.LAVA))
 						this.worldObj.setBlock(i, j, k, Blocks.flowing_lava);
 				}
@@ -332,7 +332,7 @@ public class ExplosionNT extends Explosion {
 	//this solution is a bit hacky but in the end easier to work with
 	public static enum ExAttrib {
 		FIRE,		//classic vanilla fire explosion
-		BALEFIRE,	//same with but with balefire
+		//BALEFIRE,	//same with but with balefire
 		DIGAMMA,
 		DIGAMMA_CIRCUIT,
 		LAVA,		//again the same thing but lava

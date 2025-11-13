@@ -101,7 +101,7 @@ public class ItemCustomMissilePart extends Item {
 		NUCLEAR,
 		TX,
 		N2,
-		BALEFIRE,
+		//BALEFIRE,
 		SCHRAB,
 		TAINT,
 		CLOUD,
@@ -126,7 +126,7 @@ public class ItemCustomMissilePart extends Item {
 		SOLID,
 		HYDROGEN,
 		XENON,
-		BALEFIRE,
+		//BALEFIRE,
 		HYDRAZINE,
 		METHALOX,
 		KEROLOX, // oxygen rather than peroxide
@@ -313,8 +313,8 @@ public class ItemCustomMissilePart extends Item {
 			return EnumChatFormatting.DARK_PURPLE + "Thermonuclear (TX)";
 		case N2:
 			return EnumChatFormatting.RED + "N²";
-		case BALEFIRE:
-			return EnumChatFormatting.GREEN + "BF";
+		//case BALEFIRE:
+		//	return EnumChatFormatting.GREEN + "BF";
 		case SCHRAB:
 			return EnumChatFormatting.AQUA + "Schrabidium";
 		case TAINT:
@@ -350,8 +350,8 @@ public class ItemCustomMissilePart extends Item {
 			return EnumChatFormatting.DARK_AQUA + "Hydrogen / Oxygen";
 		case XENON:
 			return EnumChatFormatting.DARK_PURPLE + "Xenon Gas";
-		case BALEFIRE:
-			return EnumChatFormatting.GREEN + "BF Rocket Fuel / Peroxide";
+		//case BALEFIRE:
+		//	return EnumChatFormatting.GREEN + "BF Rocket Fuel / Peroxide";
 		case HYDRAZINE:
 			return EnumChatFormatting.AQUA + "Hydrazine";
 		default:
@@ -373,8 +373,8 @@ public class ItemCustomMissilePart extends Item {
 			return Fluids.HYDROGEN;
 		case XENON:
 			return Fluids.XENON;
-		case BALEFIRE:
-			return Fluids.BALEFIRE;
+		//case BALEFIRE:
+		//	return Fluids.BALEFIRE;
 		case HYDRAZINE:
 			return Fluids.HYDRAZINE;
 		case SOLID:
@@ -393,8 +393,8 @@ public class ItemCustomMissilePart extends Item {
 		case METHALOX:
 			return Fluids.OXYGEN;
 		case KEROSENE:
-		case BALEFIRE:
-			return Fluids.PEROXIDE;
+		//case BALEFIRE:
+		//	return Fluids.PEROXIDE;
 		default:
 			return null;
 		}

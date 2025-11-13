@@ -3,8 +3,6 @@ package com.hbm.world.gen.component;
 import java.util.Random;
 
 import com.hbm.blocks.ModBlocks;
-import com.hbm.blocks.generic.BlockBobble.BobbleType;
-import com.hbm.blocks.generic.BlockBobble.TileEntityBobble;
 import com.hbm.itempool.ItemPool;
 import com.hbm.itempool.ItemPoolsComponent;
 import com.hbm.itempool.ItemPoolsLegacy;
@@ -264,14 +262,6 @@ public class CivilianFeatures {
 						this.getYWithOffset(1), this.getZWithOffset(15 - 5, 1)), 10);
 				this.hasPlacedLoot[1] = true;
 			}
-			this.placeBlockAtCurrentPosition(world, ModBlocks.bobblehead, rand.nextInt(16), 15 - 5, 1, 4, box);
-			TileEntityBobble bobble = (TileEntityBobble) world.getTileEntity(this.getXWithOffset(15 - 5, 4), this.getYWithOffset(1), this.getZWithOffset(15 - 5, 4));
-
-			if(bobble != null) {
-				bobble.type = BobbleType.values()[rand.nextInt(BobbleType.values().length - 1) + 1];
-				bobble.markDirty();
-			}
-
 			this.randomlyFillWithBlocks(world, box, rand, 0.25F, 15 - 4, 1, 1, 15 - 1, 1, 9 - 1, Blocks.sand, Blocks.air, false);
 
 			return true;
@@ -715,13 +705,6 @@ public class CivilianFeatures {
 
 			this.fillWithMetadataBlocks(world, box, 10 - 2, 0, 5, 10 - 1, 0, 5, ModBlocks.steel_grate, 7, Blocks.air, 0, false);
 			this.placeBlockAtCurrentPosition(world, ModBlocks.tape_recorder, southMeta, 10 - 2, 1, 5, box);
-			this.placeBlockAtCurrentPosition(world, ModBlocks.bobblehead, rand.nextInt(16), 10 - 1, 1, 5, box);
-			TileEntityBobble bobble = (TileEntityBobble) world.getTileEntity(this.getXWithOffset(10 - 1, 5), this.getYWithOffset(1), this.getZWithOffset(10 - 1, 5));
-
-			if(bobble != null) {
-				bobble.type = BobbleType.values()[rand.nextInt(BobbleType.values().length - 1) + 1];
-				bobble.markDirty();
-			}
 			this.fillWithMetadataBlocks(world, box, 10 - 2, 0, 2, 10 - 2, 0, 3, Blocks.log, pillarMetaWE, Blocks.air, 0, false);
 			this.placeBlockAtCurrentPosition(world, Blocks.log, pillarMetaWE, 10 - 2, 1, 2, box);
 			this.placeBlockAtCurrentPosition(world, Blocks.web, 0, 10 - 2, 1, 3, box);
@@ -1113,7 +1096,6 @@ public class CivilianFeatures {
 			LootGenerator.lootBookLore(world, getXWithOffset(3, 12), getYWithOffset(2), getZWithOffset(3, 12), HbmChestContents.generateLabBook(rand)); //TODO write more lore
 			placeBlockAtCurrentPosition(world, ModBlocks.deco_loot, 0, 5, 6, 5, box);
 			//LootGenerator.lootMakeshiftGun(world, getXWithOffset(5, 5), getYWithOffset(6), getZWithOffset(5, 5));
-			placeRandomBobble(world, box, rand, 5, 5, 12);
 
 			return true;
 		}

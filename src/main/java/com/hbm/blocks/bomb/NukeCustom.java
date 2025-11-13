@@ -53,7 +53,7 @@ public class NukeCustom extends BlockContainer implements IBomb {
 
 	@Override
 	public void breakBlock(World p_149749_1_, int p_149749_2_, int p_149749_3_, int p_149749_4_, Block p_149749_5_, int p_149749_6_) {
-		
+
 		if (!keepInventory) {
 			TileEntityNukeCustom tileentityfurnace = (TileEntityNukeCustom) p_149749_1_.getTileEntity(p_149749_2_,
 					p_149749_3_, p_149749_4_);
@@ -102,19 +102,19 @@ public class NukeCustom extends BlockContainer implements IBomb {
 
 	@Override
 	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
-		
+
 		if (world.isRemote) {
 			return true;
-			
+
 		} else if (!player.isSneaking()) {
-			
+
 			TileEntityNukeCustom entity = (TileEntityNukeCustom) world.getTileEntity(x, y, z);
-			
+
 			if (entity != null) {
 				FMLNetworkHandler.openGui(player, MainRegistry.instance, 0, world, x, y, z);
 			}
 			return true;
-			
+
 		} else {
 			return false;
 		}
@@ -122,7 +122,7 @@ public class NukeCustom extends BlockContainer implements IBomb {
 
 	@Override
 	public void onNeighborBlockChange(World world, int x, int y, int z, Block p_149695_5_) {
-		
+
 		if(world.isBlockIndirectlyGettingPowered(x, y, z)) {
 			this.explode(world, x, y, z);
 		}
@@ -133,34 +133,36 @@ public class NukeCustom extends BlockContainer implements IBomb {
 	public static final int maxHydro = 350;
 	public static final int maxAmat = 350;
 	public static final int maxSchrab = 250;
-	
-	public static void explodeCustom(World worldObj, double xCoord, double yCoord, double zCoord, float tnt, float nuke, float hydro, float amat, float dirty, float schrab, float euph) {
-		
-		dirty = Math.min(dirty, 100);
-		
-		/// EUPHEMIUM ///
-		if(euph > 0) {
-			
-			EntityGrenadeZOMG zomg = new EntityGrenadeZOMG(worldObj, xCoord, yCoord, zCoord);
-			ExplosionChaos.zomgMeSinPi(worldObj, xCoord, yCoord, zCoord, 1000, null, zomg);
-			
-		// SCHRABIDIUM ///
-		} else if(schrab > 0) {
-			
-			schrab += amat / 2 + hydro / 4 + nuke / 8 + tnt / 16;
-			schrab = Math.min(schrab, maxSchrab);
-			
-			EntityNukeExplosionMK3 ex = EntityNukeExplosionMK3.statFacFleija(worldObj, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, (int) schrab);
-			if(!ex.isDead) {
-				worldObj.spawnEntityInWorld(ex);
-	
-				EntityCloudFleija cloud = new EntityCloudFleija(worldObj, (int) schrab);
-				cloud.setPosition(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5);
-				worldObj.spawnEntityInWorld(cloud);
-			}
 
-    	/// ANTIMATTER ///
-		} else if(amat > 0) {
+	public static void explodeCustom(World worldObj, double xCoord, double yCoord, double zCoord, float tnt, float nuke, float hydro, float amat, float dirty, float schrab, float euph) {
+
+		dirty = Math.min(dirty, 100);
+
+		/// EUPHEMIUM ///
+		//if(euph > 0) {
+		//
+		//	EntityGrenadeZOMG zomg = new EntityGrenadeZOMG(worldObj, xCoord, yCoord, zCoord);
+		//	ExplosionChaos.zomgMeSinPi(worldObj, xCoord, yCoord, zCoord, 1000, null, zomg);
+		//
+		//// SCHRABIDIUM ///
+		//} else if(schrab > 0) {
+		//
+		//	schrab += amat / 2 + hydro / 4 + nuke / 8 + tnt / 16;
+		//	schrab = Math.min(schrab, maxSchrab);
+		//
+		//	EntityNukeExplosionMK3 ex = EntityNukeExplosionMK3.statFacFleija(worldObj, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, (int) schrab);
+		//	if(!ex.isDead) {
+		//		worldObj.spawnEntityInWorld(ex);
+	//
+		//		EntityCloudFleija cloud = new EntityCloudFleija(worldObj, (int) schrab);
+		//		cloud.setPosition(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5);
+		//		worldObj.spawnEntityInWorld(cloud);
+		//	}
+//
+    	///// ANTIMATTER ///
+		//}
+		if(amat > 0) {
+			//I can't tell that this even does anything
 
 			amat += hydro / 2 + nuke / 4 + tnt / 8;
 			amat = Math.min(amat, maxAmat);
@@ -171,7 +173,7 @@ public class NukeCustom extends BlockContainer implements IBomb {
 			bf.destructionRange = (int) amat;
 			worldObj.spawnEntityInWorld(bf);
 			EntityNukeTorex.startFacAnti(worldObj, xCoord + 0.5, yCoord + 5, zCoord + 0.5, amat);
-			
+
 		/// HYDROGEN ///
 		} else if(hydro > 0) {
 
@@ -181,16 +183,16 @@ public class NukeCustom extends BlockContainer implements IBomb {
 
 			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, (int)hydro, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5).moreFallout((int)dirty));
 			EntityNukeTorex.statFac(worldObj, xCoord + 0.5, yCoord + 5, zCoord + 0.5, hydro);
-			
+
 		/// NUCLEAR ///
 		} else if(nuke > 0) {
-			
+
 			nuke += tnt / 2;
 			nuke = Math.min(nuke, maxNuke);
 
 			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, (int)nuke, xCoord + 0.5, yCoord + 5, zCoord + 0.5).moreFallout((int)dirty));
 			EntityNukeTorex.statFac(worldObj, xCoord + 0.5, yCoord + 5, zCoord + 0.5, nuke);
-			
+
 		/// NON-NUCLEAR ///
 		} else if(tnt >= 75) {
 
@@ -199,7 +201,7 @@ public class NukeCustom extends BlockContainer implements IBomb {
 			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFacNoRad(worldObj, (int)tnt, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5));
 			EntityNukeTorex.statFac(worldObj, xCoord + 0.5, yCoord + 5, zCoord + 0.5, tnt);
 		} else if(tnt > 0) {
-			
+
 			ExplosionLarge.explode(worldObj, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, tnt, true, true, true);
 		}
 	}
@@ -239,19 +241,19 @@ public class NukeCustom extends BlockContainer implements IBomb {
 
 	@Override
 	public BombReturnCode explode(World world, int x, int y, int z) {
-		
+
 		if(!world.isRemote) {
 			TileEntityNukeCustom entity = (TileEntityNukeCustom) world.getTileEntity(x, y, z);
-			
+
 			if(!entity.isFalling()) {
-				
+
 				entity.clearSlots();
 				world.func_147480_a(x, y, z, false);
 				NukeCustom.explodeCustom(world, x + 0.5, y + 0.5, z + 0.5, entity.tnt, entity.nuke, entity.hydro, entity.amat, entity.dirty, entity.schrab, entity.euph);
 				return BombReturnCode.DETONATED;
-				
+
 			} else {
-				
+
 				EntityFallingNuke bomb = new EntityFallingNuke(world, entity.tnt, entity.nuke, entity.hydro, entity.amat, entity.dirty, entity.schrab, entity.euph);
 				bomb.getDataWatcher().updateObject(20, (byte)world.getBlockMetadata(x, y, z));
 				bomb.setPositionAndRotation(x + 0.5, y, z + 0.5, 0, 0);
@@ -261,7 +263,7 @@ public class NukeCustom extends BlockContainer implements IBomb {
 				return BombReturnCode.TRIGGERED;
 			}
 		}
-		
+
 		return BombReturnCode.UNDEFINED;
 	}
 }

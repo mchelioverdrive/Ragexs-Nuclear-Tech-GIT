@@ -42,7 +42,7 @@ public class TestDungeonRoom8 extends CellularDungeonRoom {
 		case 2: world.setBlock(x + parent.width / 2, y + 2, z + parent.width / 2, ModBlocks.block_starmetal, 0, 3); break;
 		case 3: world.setBlock(x + parent.width / 2, y + 2, z + parent.width / 2, ModBlocks.statue_elb_f, 0, 3); break;
 		case 4: world.setBlock(x + parent.width / 2, y + 2, z + parent.width / 2, ModBlocks.crate_red, 0, 3); break;
-		case 5: world.setBlock(x + parent.width / 2, y + 2, z + parent.width / 2, ModBlocks.balefire, 0, 3); break;
+		case 5: world.setBlock(x + parent.width / 2, y + 2, z + parent.width / 2, ModBlocks.block_asbestos, 0, 3); break;
 		case 6: world.setBlock(x + parent.width / 2, y + 2, z + parent.width / 2, ModBlocks.block_meteor, 0, 3); break;
 		case 7:
 			world.setBlock(x + parent.width / 2, y + 2, z + parent.width / 2, ModBlocks.safe, 0, 3);
