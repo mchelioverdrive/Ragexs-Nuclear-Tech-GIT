@@ -122,16 +122,13 @@ public abstract class BlockChargeBase extends BlockContainerBase implements IBom
 		if(tool != ToolType.DEFUSER)
 			return false;
 
-		if(world.isRemote)
-			return true; // only handle on server
-
 		TileEntityCharge charge = (TileEntityCharge) world.getTileEntity(x, y, z);
 
 		if(charge == null)
 			return false;
 
-		// If bomb is already started (armed) and has time left -> start defuse process for this player
-		if(charge.started && charge.timer > 0) {
+		// If bomb is already started (armed) -> start defuse process for this player
+		if(charge.started) {
 			// If already defusing by same player -> cancel defuse (toggle behavior)
 			if(charge.defusing && charge.defuserName != null && charge.defuserName.equals(player.getCommandSenderName())) {
 				// Cancel defuse
@@ -140,7 +137,6 @@ public abstract class BlockChargeBase extends BlockContainerBase implements IBom
 				charge.defuserName = "";
 				world.playSoundEffect(x + 0.5D, y + 0.5D, z + 0.5D, "hbm:item.defuseStop", 1.0F, 1.0F);
 				charge.markDirty();
-				world.markBlockForUpdate(x, y, z);
 				return true;
 			}
 
@@ -150,7 +146,6 @@ public abstract class BlockChargeBase extends BlockContainerBase implements IBom
 			charge.defuserName = player.getCommandSenderName();
 			world.playSoundEffect(x + 0.5D, y + 0.5D, z + 0.5D, "hbm:item.defuseStart", 1.0F, 1.0F);
 			charge.markDirty();
-			world.markBlockForUpdate(x, y, z);
 		} else {
 			// If not started, behave like before: remove or toggle
 			safe = true;
@@ -160,7 +155,6 @@ public abstract class BlockChargeBase extends BlockContainerBase implements IBom
 
 		return true;
 	}
-
 
 
 	@Override
