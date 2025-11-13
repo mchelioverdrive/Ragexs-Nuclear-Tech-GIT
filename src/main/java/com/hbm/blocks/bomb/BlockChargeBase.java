@@ -67,6 +67,17 @@ public abstract class BlockChargeBase extends BlockContainerBase implements IBom
 	}
 
 	@Override
+	public void updateTick(World world, int x, int y, int z, Random rand) {
+		TileEntity te = world.getTileEntity(x, y, z);
+		if (te instanceof TileEntityCharge) {
+			((TileEntityCharge) te).updateEntity();
+			if (((TileEntityCharge) te).defusePending) {
+				world.scheduleBlockUpdate(x, y, z, this, 1);
+			}
+		}
+	}
+
+	@Override
 	public boolean canPlaceBlockOnSide(World world, int x, int y, int z, int side) {
 		ForgeDirection dir = ForgeDirection.getOrientation(side);
 		return	(dir == DOWN && world.isSideSolid(x, y + 1, z, DOWN)) ||
