@@ -1922,11 +1922,15 @@ public class ModBlocks {
 		//taint_barrel = new RedBarrel(Material.iron, false).setBlockName("taint_barrel").setCreativeTab(MainRegistry.nukeTab).setHardness(0.5F).setResistance(2.5F).setBlockTextureName(RefStrings.MODID + ":barrel_taint");
 		//crashed_balefire = new BlockCrashedBomb(Material.iron).setBlockName("crashed_bomb").setCreativeTab(MainRegistry.nukeTab).setBlockUnbreakable().setResistance(6000.0F).setBlockTextureName(RefStrings.MODID + ":crashed_balefire");
 		fireworks = new BlockFireworks(Material.iron).setBlockName("fireworks").setCreativeTab(MainRegistry.nukeTab).setResistance(5.0F);
-		charge_dynamite = new BlockChargeDynamite().setBlockName("charge_dynamite").setCreativeTab(MainRegistry.nukeTab).setResistance(1.0F);
+
+
 		fissure_bomb = new BlockFissureBomb().setBlockName("fissure_bomb").setStepSound(Block.soundTypeGrass).setCreativeTab(MainRegistry.nukeTab).setHardness(0.0F).setBlockTextureName(RefStrings.MODID + ":fissure_bomb");
-		charge_miner = new BlockChargeMiner().setBlockName("charge_miner").setCreativeTab(MainRegistry.nukeTab).setResistance(1.0F);
-		charge_c4 = new BlockChargeC4().setBlockName("charge_c4").setCreativeTab(MainRegistry.nukeTab).setResistance(1.0F);
-		charge_semtex = new BlockChargeSemtex().setBlockName("charge_semtex").setCreativeTab(MainRegistry.nukeTab).setResistance(1.0F);
+
+		charge_dynamite = new BlockChargeDynamite().setBlockName("charge_dynamite").setCreativeTab(MainRegistry.nukeTab).setResistance(20.0F);
+		charge_miner = new BlockChargeMiner().setBlockName("charge_miner").setCreativeTab(MainRegistry.nukeTab).setResistance(20.0F);
+		charge_c4 = new BlockChargeC4().setBlockName("charge_c4").setCreativeTab(MainRegistry.nukeTab).setResistance(20.0F);
+		charge_semtex = new BlockChargeSemtex().setBlockName("charge_semtex").setCreativeTab(MainRegistry.nukeTab).setResistance(20.0F);
+
 		mine_ap = new Landmine(Material.iron, 1.5D, 1D).setBlockName("mine_ap").setCreativeTab(MainRegistry.nukeTab).setHardness(1.0F).setBlockTextureName(RefStrings.MODID + ":mine_ap");
 		mine_he = new Landmine(Material.iron, 2D, 5D).setBlockName("mine_he").setCreativeTab(MainRegistry.nukeTab).setHardness(1.0F).setBlockTextureName(RefStrings.MODID + ":mine_he");
 		mine_shrap = new Landmine(Material.iron, 1.5D, 1D).setBlockName("mine_shrap").setCreativeTab(MainRegistry.nukeTab).setHardness(1.0F).setBlockTextureName(RefStrings.MODID + ":mine_shrap");

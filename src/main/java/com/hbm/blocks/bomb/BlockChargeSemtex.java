@@ -2,6 +2,7 @@ package com.hbm.blocks.bomb;
 
 import java.util.List;
 
+import com.hbm.explosion.ExplosionLarge;
 import org.apache.logging.log4j.Level;
 
 import com.hbm.config.GeneralConfig;
@@ -34,6 +35,7 @@ public class BlockChargeSemtex extends BlockChargeBase {
 					//.setFortune(3));
 			xnt.setSFX(new ExplosionEffectStandard());
 			xnt.explode();
+			ExplosionLarge.spawnParticles(world, x + 0.5, y + 0.5, z + 0.5, 10);
 
 			return BombReturnCode.DETONATED;
 		}

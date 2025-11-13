@@ -584,10 +584,10 @@ public class CraftingManager {
 		addRecipeAuto(new ItemStack(ModBlocks.det_miner, 4), new Object[] { "FFF", "ITI", "ITI", 'F', Items.flint, 'I', IRON.plate(), 'T', ModItems.ball_dynamite });
 		addRecipeAuto(new ItemStack(ModBlocks.det_miner, 12), new Object[] { "FFF", "ITI", "ITI", 'F', Items.flint, 'I', STEEL.plate(), 'T', ANY_PLASTICEXPLOSIVE.ingot() });
 		//addRecipeAuto(new ItemStack(ModBlocks.emp_bomb, 1), new Object[] { "LML", "LCL", "LML", 'L', PB.plate(), 'M', ModItems.magnetron, 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.ADVANCED) });
-		addShapelessAuto(new ItemStack(ModBlocks.charge_dynamite, 1), new Object[] { ModItems.stick_dynamite, ModItems.stick_dynamite, ModItems.stick_dynamite, ModItems.ducttape });
-		addRecipeAuto(new ItemStack(ModBlocks.charge_miner, 1), new Object[] { " F ", "FCF", " F ", 'F', Items.flint, 'C', ModBlocks.charge_dynamite });
-		addShapelessAuto(new ItemStack(ModBlocks.charge_semtex, 1), new Object[] { ModItems.stick_semtex, ModItems.stick_semtex, ModItems.stick_semtex, ModItems.ducttape });
-		addShapelessAuto(new ItemStack(ModBlocks.charge_c4, 1), new Object[] { ModItems.stick_c4, ModItems.stick_c4, ModItems.stick_c4, ModItems.ducttape });
+		addShapelessAuto(new ItemStack(ModBlocks.charge_dynamite, 1), new Object[] { ModItems.stick_dynamite, ModItems.stick_dynamite, ModItems.stick_dynamite, ModItems.ducttape, DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC) });
+		addRecipeAuto(new ItemStack(ModBlocks.charge_miner, 1), new Object[] { " F ", "FCF", " F ", 'F', ModItems.stick_dynamite, 'C', ModBlocks.charge_dynamite });
+		addShapelessAuto(new ItemStack(ModBlocks.charge_semtex, 1), new Object[] { ModItems.stick_semtex, ModItems.stick_semtex, ModItems.stick_semtex, ModItems.ducttape, DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC) });
+		addShapelessAuto(new ItemStack(ModBlocks.charge_c4, 1), new Object[] { ModItems.stick_c4, ModItems.stick_c4, ModItems.stick_c4, ModItems.ducttape, DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC) });
 
 		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_generic), new Object[] { " A ", "PRP", "PRP", 'A', AL.wireFine(), 'P', AL.plate(), 'R', REDSTONE.dust() });
 		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_advanced), new Object[] { " A ", "PSP", "PLP", 'A', MINGRADE.wireFine(), 'P', CU.plate(), 'S', "sulfur", 'L', PB.dust() });

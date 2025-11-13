@@ -2,6 +2,7 @@ package com.hbm.blocks.bomb;
 
 import java.util.List;
 
+import com.hbm.explosion.ExplosionLarge;
 import org.apache.logging.log4j.Level;
 
 import com.hbm.config.GeneralConfig;
@@ -31,6 +32,7 @@ public class BlockChargeC4 extends BlockChargeBase {
 			xnt.setBlockAllocator(new BlockAllocatorStandard(32));
 			xnt.setBlockProcessor(new BlockProcessorStandard().setNoDrop());
 			xnt.explode();
+			ExplosionLarge.spawnParticles(world, x + 0.5, y + 0.5, z + 0.5, 20);
 
 			return BombReturnCode.DETONATED;
 		}
