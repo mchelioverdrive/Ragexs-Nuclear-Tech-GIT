@@ -76,6 +76,12 @@ public class TileEntityCharge extends TileEntity implements INBTPacketReceiver {
 			data.setBoolean("defusePending", defusePending);
 			data.setInteger("defusePendingTicks", defusePendingTicks);
 			PacketDispatcher.wrapper.sendToAllAround(new NBTPacket(data, xCoord, yCoord, zCoord), new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 100));
+
+			if (defusePending) {
+				// keep the block actively ticking
+				worldObj.scheduleBlockUpdate(xCoord, yCoord, zCoord, this.getBlockType(), 1);
+			}
+
 		}
 	}
 
