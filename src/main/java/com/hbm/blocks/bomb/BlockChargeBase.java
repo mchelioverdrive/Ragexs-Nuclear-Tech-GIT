@@ -109,12 +109,18 @@ public abstract class BlockChargeBase extends BlockContainerBase implements IBom
 	}
 
 	@Override
-	public boolean onScrew(World world, EntityPlayer player, int x, int y, int z, int side, float fX, float fY, float fZ, ToolType tool) {
+	public boolean onScrew(World world, EntityPlayer player, int x, int y, int z, int side,
+						   float fX, float fY, float fZ, ToolType tool) {
 
 		//ONLY MODIFY THIS METHOD IF POSSIBLE TO ADD DELAYED DISARMING FUNCTIONALITY, DO NOT ADD ANY OTHER FUNCTIONALITY OR IMPROVEMENTS
 
 		if(tool != ToolType.DEFUSER)
 			return false;
+
+		// IMPORTANT: only run the defuse-starting code on the server.
+		// If this method is called client-side (it often is), return true so the client sees the click but we don't change tile data here.
+		if(world.isRemote)
+			return true;
 
 		TileEntityCharge charge = (TileEntityCharge) world.getTileEntity(x, y, z);
 
@@ -123,16 +129,16 @@ public abstract class BlockChargeBase extends BlockContainerBase implements IBom
 			charge.defusePending = true;
 			charge.defusePendingTicks = TileEntityCharge.DEFUSE_DELAY_TICKS;
 
+			// force ticking & sync
 			world.scheduleBlockUpdate(x, y, z, this, 1);
-
-			// play the same immediate sound you had (keeps feedback)
-			world.playSoundEffect(x, y, z, "hbm:weapon.fstbmbStart", 1.0F, 1.0F);
-
-			// ensure tile state is saved/synced
-			charge.markDirty();
 			world.markBlockForUpdate(x, y, z);
 
-			// NOTE: nothing else changed here — we do NOT toggle charge.started here.
+			// play the same immediate sound you had (keeps feedback)
+			// play on server so all nearby players hear it
+			world.playSoundEffect(x + 0.5D, y + 0.5D, z + 0.5D, "hbm:weapon.fstbmbStart", 1.0F, 1.0F);
+
+			// ensure tile state is saved/synced to clients
+			charge.markDirty();
 		} else {
 			// existing original disarm path unchanged
 			safe = true;
