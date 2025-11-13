@@ -151,7 +151,11 @@ public abstract class BlockChargeBase extends BlockContainerBase implements IBom
 		} else {
 			// existing original disarm path unchanged
 			safe = true;
+			//if (world.BlockChargeC4CSGO != null) {
+			//	this.dismantlenodrop(world, x, y, z);
+			//} else {
 			this.dismantle(world, x, y, z);
+			//}
 			safe = false;
 		}
 

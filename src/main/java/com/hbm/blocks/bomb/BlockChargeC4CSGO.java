@@ -60,6 +60,37 @@ public class BlockChargeC4CSGO extends BlockChargeC4 {
 	}
 	}
 
+	//@Override
+	//public boolean onScrew(World world, EntityPlayer player, int x, int y, int z, int side,
+	//					   float fX, float fY, float fZ, ToolType tool) {
+	//	if(tool != ToolType.DEFUSER)
+	//		return false;
+//
+	//	if(world.isRemote)
+	//		return true;
+//
+	//	TileEntityCharge charge = (TileEntityCharge) world.getTileEntity(x, y, z);
+//
+	//	if(charge.started) {
+	//		charge.defusePending = true;
+	//		charge.defusePendingTicks = TileEntityCharge.DEFUSE_DELAY_TICKS;
+	//		charge.defusingPlayer = player.getCommandSenderName();
+//
+	//		world.scheduleBlockUpdate(x, y, z, this, 1);
+	//		world.markBlockForUpdate(x, y, z);
+	//		world.playSoundEffect(x + 0.5D, y + 0.5D, z + 0.5D, "hbm:weapon.fstbmbStart", 1.0F, 1.0F);
+//
+	//		charge.markDirty();
+	//	} else {
+	//		safe = true;
+	//		this.dismantlenodrop(world, x, y, z);
+	//		safe = false;
+	//	}
+//
+	//	return true;
+	//}
+	//doesn't work :c
+
 	@Override
 	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
 		if(world.isRemote) {
@@ -86,7 +117,8 @@ public class BlockChargeC4CSGO extends BlockChargeC4 {
 				} else {
 
 
-					if(charge.timer == 600) { charge.timer = 1200; }
+					//if(charge.timer == 600) { charge.timer = 1200; }
+					if(charge.timer == 0) { charge.timer = 1200; }
 
 					world.playSoundEffect(x, y, z, "hbm:item.techBoop", 1.0F, 1.0F);
 				}
