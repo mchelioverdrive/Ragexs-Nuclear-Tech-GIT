@@ -3268,7 +3268,8 @@ public class ModItems {
 		biomass = new Item().setUnlocalizedName("biomass").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":biomass");
 		biomass_compressed = new Item().setUnlocalizedName("biomass_compressed").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":biomass_compressed");
 		bio_wafer = new ItemLemon(4, 2F, false).setUnlocalizedName("bio_wafer").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":bio_wafer");
-		flesh = new Item().setUnlocalizedName("flesh").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":flesh");
+		//JE's jerky
+		flesh = new ItemLemon(1, 2F, false).setUnlocalizedName("flesh").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":flesh");
 		flesh_wafer = new ItemLemon(5, 5F, false).setUnlocalizedName("flesh_wafer").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":blood_wafer");
 		grilled_flesh = new ItemLemon(6, 10F, false).setUnlocalizedName("grilled_flesh").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":blood_patty");
 	    flesh_burger = new ItemLemon(7, 20F, false).setUnlocalizedName("flesh_burger").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":blood_burger");

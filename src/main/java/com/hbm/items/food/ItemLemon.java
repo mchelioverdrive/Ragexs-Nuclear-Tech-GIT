@@ -102,12 +102,21 @@ public class ItemLemon extends ItemFood {
 		if(this == ModItems.flesh_burger) {
 			list.add("juicy!.");
 		}
+		if(this == ModItems.flesh) {
+			list.add("JE's special island jerky!");
+		}
 	}
 
 
     @Override
 	protected void onFoodEaten(ItemStack stack, World world, EntityPlayer player)
     {
+
+		if(this == ModItems.flesh) {
+			//hunger, side effects of cannibalism
+			player.addPotionEffect(new PotionEffect(Potion.hunger.id, 20 * 30, 0));
+		}
+
 		if(this == ModItems.med_ipecac || this == ModItems.med_ptsd) {
 			player.addPotionEffect(new PotionEffect(Potion.hunger.id, 50, 49));
 			player.addPotionEffect(new PotionEffect(HbmPotion.radaway.id, 1, 20));
