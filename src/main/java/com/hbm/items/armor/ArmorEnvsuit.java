@@ -72,11 +72,13 @@ public class ArmorEnvsuit extends ArmorFSBPowered {
 
 			if(player.isSprinting()) player.getAttributeMap().applyAttributeModifiers(multimap);
 
+			player.addPotionEffect(new PotionEffect(Potion.nightVision.id, 15 * 20, 0));
+
 			if(player.isInWater()) {
 
 				if(!world.isRemote) {
 					player.setAir(300);
-					player.addPotionEffect(new PotionEffect(Potion.nightVision.id, 15 * 20, 0));
+					//apply night vision regardless
 				}
 
 				//double mo = 0.1 * player.moveForward;
@@ -88,9 +90,13 @@ public class ArmorEnvsuit extends ArmorFSBPowered {
 				//player.motionY += vec.yCoord;
 				//player.motionZ += vec.zCoord;
 			} else {
-				if(!world.isRemote) {
-					player.removePotionEffect(Potion.nightVision.id);
-				}
+				//if(!world.isRemote) {
+				//	//player.removePotionEffect(Potion.nightVision.id);
+				//}
+			}
+		} else {
+			if(!world.isRemote) {
+				player.removePotionEffect(Potion.nightVision.id);
 			}
 		}
 	}

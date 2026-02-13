@@ -2535,7 +2535,7 @@ public class ModItems {
 	//public static Item turret_biometry;
 
 	//public static Item spawn_chopper;
-	//public static Item spawn_worm;
+	public static Item spawn_worm;
 	//public static Item spawn_ufo;
 	//public static Item spawn_duck;
 	public static Item spawn_uap;
@@ -3745,11 +3745,11 @@ public class ModItems {
 		//cladding_ghiorsium = new ItemModCladding(0.5).setUnlocalizedName("cladding_ghiorsium").setTextureName(RefStrings.MODID + ":cladding_ghiorsium");
 		cladding_iron = new ItemModIron().setUnlocalizedName("cladding_iron").setTextureName(RefStrings.MODID + ":cladding_iron");
 		cladding_obsidian = new ItemModObsidian().setUnlocalizedName("cladding_obsidian").setTextureName(RefStrings.MODID + ":cladding_obsidian");
-		insert_kevlar = new ItemModInsert(15, 1F, 0.95F, 1F, 1F).setUnlocalizedName("insert_kevlar").setTextureName(RefStrings.MODID + ":insert_kevlar");
-		insert_sapi = new ItemModInsert(15, 1F, 0.90F, 1F, 0.95F).setUnlocalizedName("insert_sapi").setTextureName(RefStrings.MODID + ":insert_sapi");
-		insert_esapi = new ItemModInsert(15, 1F, 0.85F, 1F, 0.93F).setUnlocalizedName("insert_esapi").setTextureName(RefStrings.MODID + ":insert_esapi");
-		insert_xsapi = new ItemModInsert(20, 1F, 0.80F, 1F, 0.91F).setUnlocalizedName("insert_xsapi").setTextureName(RefStrings.MODID + ":insert_xsapi");
-		insert_steel = new ItemModInsert(100, 1F, 0.90F, 1F, 0.90F).setUnlocalizedName("insert_steel").setTextureName(RefStrings.MODID + ":insert_steel");
+		insert_kevlar = new ItemModInsert(5, 1F, 0.97F, 1F, 1F).setUnlocalizedName("insert_kevlar").setTextureName(RefStrings.MODID + ":insert_kevlar");
+		insert_sapi = new ItemModInsert(6, 1F, 0.95F, 1F, 0.95F).setUnlocalizedName("insert_sapi").setTextureName(RefStrings.MODID + ":insert_sapi");
+		insert_esapi = new ItemModInsert(7, 1F, 0.90F, 1F, 0.93F).setUnlocalizedName("insert_esapi").setTextureName(RefStrings.MODID + ":insert_esapi");
+		insert_xsapi = new ItemModInsert(8, 1F, 0.85F, 1F, 0.91F).setUnlocalizedName("insert_xsapi").setTextureName(RefStrings.MODID + ":insert_xsapi");
+		insert_steel = new ItemModInsert(50, 1F, 0.96F, 1F, 0.88F).setUnlocalizedName("insert_steel").setTextureName(RefStrings.MODID + ":insert_steel");
 		//insert_du = new ItemModInsert(1500, 0.9F, 0.85F, 0.5F, 0.9F).setUnlocalizedName("insert_du").setTextureName(RefStrings.MODID + ":insert_du");
 		//insert_polonium = new ItemModInsert(500, 0.9F, 1F, 0.95F, 0.9F).setUnlocalizedName("insert_polonium").setTextureName(RefStrings.MODID + ":insert_polonium");
 		//insert_ghiorsium = new ItemModInsert(2000, 0.8F, 0.75F, 0.35F, 0.9F).setUnlocalizedName("insert_ghiorsium").setTextureName(RefStrings.MODID + ":insert_ghiorsium");
@@ -5067,7 +5067,7 @@ public class ModItems {
 		//meteor_remote = new ItemMeteorRemote().setUnlocalizedName("meteor_remote").setMaxStackSize(1).setFull3D().setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":meteor_remote");
 		anchor_remote = new ItemAnchorRemote().setUnlocalizedName("anchor_remote").setMaxStackSize(1).setFull3D().setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":anchor_remote");
 		//spawn_chopper = new ItemChopper().setUnlocalizedName("chopper").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":chopper");
-		//spawn_worm = new ItemChopper().setUnlocalizedName("spawn_worm").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":spawn_worm");
+		spawn_worm = new ItemChopper().setUnlocalizedName("spawn_worm").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":spawn_worm");
 		//spawn_ufo = new ItemChopper().setUnlocalizedName("spawn_ufo").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":spawn_ufo");
 		//spawn_duck = new ItemChopper().setUnlocalizedName("spawn_duck").setMaxStackSize(16).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":spawn_duck");
 
@@ -7419,7 +7419,7 @@ public class ModItems {
 
 		//Spawners
 		//GameRegistry.registerItem(spawn_chopper, spawn_chopper.getUnlocalizedName());
-		//GameRegistry.registerItem(spawn_worm, spawn_worm.getUnlocalizedName());
+		GameRegistry.registerItem(spawn_worm, spawn_worm.getUnlocalizedName());
 		//GameRegistry.registerItem(spawn_ufo, spawn_ufo.getUnlocalizedName());
 		//GameRegistry.registerItem(spawn_duck, spawn_duck.getUnlocalizedName());
 		GameRegistry.registerItem(spawn_uap, spawn_uap.getUnlocalizedName());
@@ -8040,6 +8040,9 @@ public class ModItems {
 		GameRegistry.registerItem(syringe_metal_medx, syringe_metal_medx.getUnlocalizedName());
 		GameRegistry.registerItem(syringe_metal_psycho, syringe_metal_psycho.getUnlocalizedName());
 		GameRegistry.registerItem(syringe_metal_super, syringe_metal_super.getUnlocalizedName());
+
+		GameRegistry.registerItem(tourniquet, tourniquet.getUnlocalizedName());
+
 		//GameRegistry.registerItem(syringe_taint, syringe_taint.getUnlocalizedName());
 		GameRegistry.registerItem(syringe_mkunicorn, syringe_mkunicorn.getUnlocalizedName());
 		GameRegistry.registerItem(med_bag, med_bag.getUnlocalizedName());

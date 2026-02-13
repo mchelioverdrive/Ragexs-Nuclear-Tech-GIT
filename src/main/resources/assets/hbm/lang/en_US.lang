@@ -4772,6 +4772,7 @@ item.syringe_metal_empty.name=Metal Syringe
 item.syringe_metal_medx.name=Med-X
 item.syringe_metal_psycho.name=Psycho
 item.syringe_metal_stimpak.name=Stimpak
+item.tourniquet.name=Tourniquet
 item.syringe_metal_super.name=Super Stimpak
 item.syringe_mkunicorn.name=MKUNICORN
 item.syringe_poison.name=Poisonous Injection

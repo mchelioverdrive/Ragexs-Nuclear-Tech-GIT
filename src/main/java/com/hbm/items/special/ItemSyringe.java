@@ -131,11 +131,11 @@ public class ItemSyringe extends Item {
 				player.getEntityData().setInteger("DelayedHealTicks", 100);
 
 				stack.stackSize--;
-				//world.playSoundAtEntity(player, "hbm:item.syringe", 1.0F, 1.0F);
+				world.playSoundAtEntity(player, "hbm:item.tourniquet", 1.0F, 1.0F);
 
 
 
-				VersatileConfig.applyPotionSickness(player, 5);
+				VersatileConfig.applyPotionSickness(player, 3);
 			}
 		}
 		//hmm well it would seem there's already 'potion sickness' here. I guess I can use that for realism. I'll have to add bleeding.

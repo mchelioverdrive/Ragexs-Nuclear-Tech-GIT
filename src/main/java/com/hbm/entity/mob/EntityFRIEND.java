@@ -1,5 +1,7 @@
 package com.hbm.entity.mob;
 
+import com.hbm.dim.laythe.WorldProviderLaythe;
+import com.hbm.entity.mob.ai.EntityAIDigToPlayer;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.EntityCreature;
@@ -15,6 +17,8 @@ import java.util.List;
 
 public class EntityFRIEND extends EntityCreature {
 
+	private int despawnTimer = 0;
+
 	private int timer = 0;
 	//let him in.
 	//(*is actually a god awful thing that will cause you psychological distress)
@@ -23,6 +27,7 @@ public class EntityFRIEND extends EntityCreature {
 	public EntityFRIEND(World world) {
 		super(world);
 		this.tasks.addTask(0, new EntityAISwimming(this));
+		this.tasks.addTask(1, new EntityAIDigToPlayer(this, 1.0D, 32.0D));
 		this.tasks.addTask(1, new EntityAIWander(this, 1.0D));
 		this.tasks.addTask(2, new EntityAILookIdle(this));
 		this.tasks.addTask(3, new EntityAIWatchClosest(this, EntityPlayer.class, 64.0F));
@@ -30,6 +35,22 @@ public class EntityFRIEND extends EntityCreature {
 		this.renderDistanceWeight *= 10;
 		this.setSize(0.6F, 1.8F);
 		this.getNavigator().setBreakDoors(true);
+	}
+
+
+
+	@Override
+	public boolean getCanSpawnHere() {
+
+		// Only below Y = 50
+		if (this.posY >= 50 && this.worldObj.provider instanceof WorldProviderLaythe) {
+
+			if (this.rand.nextInt(10) != 0) return false; // 10%
+			return false;
+
+		}
+
+		return super.getCanSpawnHere();
 	}
 
 	@Override
@@ -44,13 +65,49 @@ public class EntityFRIEND extends EntityCreature {
 		super.onUpdate();
 		if(!worldObj.isRemote) {
 			//the wholesome
-			double despawnRange = 3;
-			List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, this.boundingBox.expand(despawnRange, despawnRange, despawnRange));
-			if(!players.isEmpty())
-				timer++;
+
+			if (this.rand.nextBoolean()) {
+
+				double despawnRange = 3;
+				List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, this.boundingBox.expand(despawnRange, despawnRange, despawnRange));
+				if (!players.isEmpty())
+					timer++;
 				if (timer > 3) {
-					this.setDead();
+					if (this.rand.nextBoolean()) {
+						this.setDead();
+					} else {
+						//runaway
+						double runawayRange = 20;
+						List<EntityPlayer> players2 = worldObj.getEntitiesWithinAABB(EntityPlayer.class, this.boundingBox.expand(runawayRange, runawayRange, runawayRange));
+						for (EntityPlayer player : players2) {
+							double x = this.posX - player.posX;
+							double y = this.posY - player.posY;
+							double z = this.posZ - player.posZ;
+							this.motionX += x * 0.1;
+							this.motionY += y * 0.1;
+							this.motionZ += z * 0.1;
+						}
+						despawnTimer++;
+
+						if (despawnTimer >= 5 * 20) { // 5 seconds
+							this.setDead();
+						}
+					}
 				}
+			} else {
+				//the unwholesome
+				double mogrange = 5;
+				List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, this.boundingBox.expand(mogrange, mogrange, mogrange));
+				//if there is a player nearby, encircle them in a perfect circle while looking at them, then disappear
+				for (EntityPlayer player : players) {
+					double x = this.posX - player.posX;
+					double y = this.posY - player.posY;
+					double z = this.posZ - player.posZ;
+					this.motionX += x * 0.1;
+					this.motionY += y * 0.1;
+					this.motionZ += z * 0.1;
+				}
+			}
 		}
 	}
 

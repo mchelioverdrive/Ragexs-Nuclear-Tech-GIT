@@ -1575,16 +1575,7 @@ public class ModEventHandler {
 		}
 	}
 
-	//@SubscribeEvent
-	//public void onClickSign(PlayerInteractEvent event) {
-//
-	//	int x = event.x;
-	//	int y = event.y;
-	//	int z = event.z;
-	//	World world = event.world;
-//
-	//
-	//}
+
 
 	// This is really fucky, but ensures we can respawn safely on celestial bodies
 	// and prevents beds exploding

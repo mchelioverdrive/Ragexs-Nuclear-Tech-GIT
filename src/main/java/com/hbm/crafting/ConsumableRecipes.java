@@ -200,6 +200,10 @@ public class ConsumableRecipes {
 
 		//IV Bags
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.iv_empty, 4), new Object[] { "S", "I", "S", 'S', ANY_RUBBER.ingot(), 'I', IRON.plate() });
+
+		//tourniquets
+		CraftingManager.addRecipeAuto(new ItemStack(ModItems.tourniquet, 1), new Object[] { "R", "P", "R", 'R', Blocks.wool, 'P', Items.stick });
+
 		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.iv_xp_empty, 1), new Object[] { ModItems.iv_empty, ModItems.powder_magic });
 
 		//Radaway you mean prussian blue idiot

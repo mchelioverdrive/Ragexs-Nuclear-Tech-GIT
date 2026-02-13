@@ -15,8 +15,7 @@ import com.hbm.main.ModEventHandler;
 import cpw.mods.fml.relauncher.ReflectionHelper;
 
 /**
- * Handles anything regarding hashes, base64 encoding, etc. Shady looking stuff, that is
- * @author hbm
+ * corny self obsessed behaviors
  *
  */
 public class ShadyUtil {

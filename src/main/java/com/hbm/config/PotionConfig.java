@@ -23,10 +23,10 @@ public class PotionConfig {
 	public static int nitanID = 74;
 	public static int flashbangID = 75;
 
-	
-	public static int potionSickness = 0;
+
+	public static int potionSickness = 2;
 	public static int slipperyID = 77;
-	
+
 	public static void loadFromConfig(Configuration config) {
 
 		final String CATEGORY_POTION = CommonConfig.CATEGORY_POTION;
@@ -48,13 +48,13 @@ public class PotionConfig {
 		slipperyID = CommonConfig.createConfigInt(config, CATEGORY_POTION, "8.14_slipperyID", "What potion ID the slippery effect will have", 77);
 
 
-		
+
 		String s = CommonConfig.createConfigString(config, CATEGORY_POTION, "8.S0_potionSickness", "Valid configs include \"NORMAL\" and \"TERRARIA\", otherwise potion sickness is turned off", "OFF");
 
 		if("normal".equals(s.toLowerCase(Locale.US)))
 			potionSickness = 1;
 		if("terraria".equals(s.toLowerCase(Locale.US)))
 			potionSickness = 2;
-		
+
 	}
 }

@@ -109,6 +109,7 @@
 	"item.jetpackTank": {"category": "player", "sounds": [{"name": "tool/jetpackTank", "stream": false}]},
 	"item.unpack": {"category": "player", "sounds": ["tool/extract1", "tool/extract2"]},
 	"item.syringe": {"category": "player", "sounds": [{"name": "tool/stim", "stream": false}]},
+	"item.tourniquet": {"category": "player", "sounds": [{"name": "tool/tourniquet", "stream": false}]},
 	"item.radaway": {"category": "player", "sounds": [{"name": "tool/radaway", "stream": false}]},
 	"item.spray": {"category": "player", "sounds": [{"name": "tool/spray", "stream": false}]},
 	"item.repair": {"category": "player", "sounds": ["tool/repair1", "tool/repair2", "tool/repair3", "tool/repair4", "tool/repair5", "tool/repair6", "tool/repair7"]},

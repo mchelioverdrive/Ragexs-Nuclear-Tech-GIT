@@ -109,9 +109,9 @@ public class ItemChopper extends Item {
 		//if(this == ModItems.spawn_chopper)
 		//	entity = new EntityHunterChopper(world);
 		//
-		//if(this == ModItems.spawn_worm)
-		//	entity = new EntityBOTPrimeHead(world);
-		//
+		if(this == ModItems.spawn_worm)
+			entity = new EntityBOTPrimeHead(world);
+
 		//if(this == ModItems.spawn_ufo) {
 		//	entity = new EntityUFO(world);
 		//	((EntityUFO)entity).scanCooldown = 100;

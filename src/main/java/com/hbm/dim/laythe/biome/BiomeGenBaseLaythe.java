@@ -11,6 +11,7 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.config.SpaceConfig;
 import com.hbm.dim.BiomeDecoratorCelestial;
 import com.hbm.dim.BiomeGenBaseCelestial;
+import com.hbm.entity.mob.EntityFRIEND;
 import com.hbm.entity.mob.EntityScutterfish;
 
 import net.minecraft.init.Blocks;
@@ -27,7 +28,10 @@ public abstract class BiomeGenBaseLaythe extends BiomeGenBaseCelestial {
 		super(id);
 		this.waterColorMultiplier = 0x5b009a;
 
-        this.waterCreatures.add(new BiomeGenBase.SpawnListEntry(EntityScutterfish.class, 3, 1, 4));
+        //this.waterCreatures.add(new BiomeGenBase.SpawnListEntry(EntityScutterfish.class, 3, 1, 4));
+		this.monsters.add(new BiomeGenBase.SpawnListEntry(EntityFRIEND.class, 1, 1, 1));
+		//todo debug, if this works decrease to 3 scratch that 1
+
 		//annoying
 
 		BiomeDecoratorCelestial decorator = new BiomeDecoratorCelestial(Blocks.stone);
