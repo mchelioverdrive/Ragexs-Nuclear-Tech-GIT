@@ -31,19 +31,14 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 		if (entity.worldObj.isRemote) return false;
 
+		EntityPlayer player = entity.worldObj.getClosestPlayerToEntity(entity, range);
 
-		target = (EntityPlayer) entity.getAttackTarget();
-		if (target == null) return false;
+		if (player == null || player.isDead) return false;
 
-		if (target == null) {
-			System.out.println("No player found");
-			return false;
-		}
-
-		System.out.println("Player found: " + target.getCommandSenderName());
-		this.target = target;
+		this.target = player;
 		return true;
 	}
+
 
 
 	@Override
