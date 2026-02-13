@@ -17,7 +17,6 @@ import com.hbm.items.armor.ItemModCladding;
 import com.hbm.main.MainRegistry;
 import com.hbm.potion.HbmPotion;
 import com.hbm.util.Compat;
-import com.hbm.util.ShadyUtil;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;

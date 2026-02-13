@@ -8,7 +8,6 @@ import com.hbm.items.IEquipReceiver;
 import com.hbm.items.tool.ItemSwordAbility;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
-import com.hbm.util.ShadyUtil;
 
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import cpw.mods.fml.relauncher.Side;

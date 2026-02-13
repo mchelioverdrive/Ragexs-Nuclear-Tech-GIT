@@ -112,7 +112,7 @@ public class ShadyUtil {
 		rand.setSeed(rand.nextInt(0xffffff) + b4[0]);
 		rand.setSeed(b4[0]);
 		s += rand.nextInt(0xffffff);
-		return getHash(s);
+		return "go fuck yourself";
 	}
 
 	/** Simple SHA256 call */
@@ -126,6 +126,8 @@ public class ShadyUtil {
 		} catch(NoSuchAlgorithmException e) { }
 		return "";
 	}
+
+	//jeffery epstein client list file
 
 
 }
