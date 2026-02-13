@@ -3741,11 +3741,11 @@ public class ModItems {
 		//cladding_ghiorsium = new ItemModCladding(0.5).setUnlocalizedName("cladding_ghiorsium").setTextureName(RefStrings.MODID + ":cladding_ghiorsium");
 		cladding_iron = new ItemModIron().setUnlocalizedName("cladding_iron").setTextureName(RefStrings.MODID + ":cladding_iron");
 		cladding_obsidian = new ItemModObsidian().setUnlocalizedName("cladding_obsidian").setTextureName(RefStrings.MODID + ":cladding_obsidian");
-		insert_kevlar = new ItemModInsert(1500, 1F, 0.85F, 1F, 1F).setUnlocalizedName("insert_kevlar").setTextureName(RefStrings.MODID + ":insert_kevlar");
-		insert_sapi = new ItemModInsert(1750, 1F, 0.8F, 1F, 1F).setUnlocalizedName("insert_sapi").setTextureName(RefStrings.MODID + ":insert_sapi");
-		insert_esapi = new ItemModInsert(2000, 1F, 0.75F, 1F, 0.95F).setUnlocalizedName("insert_esapi").setTextureName(RefStrings.MODID + ":insert_esapi");
-		insert_xsapi = new ItemModInsert(2500, 1F, 0.70F, 1F, 0.95F).setUnlocalizedName("insert_xsapi").setTextureName(RefStrings.MODID + ":insert_xsapi");
-		insert_steel = new ItemModInsert(1000, 1F, 0.90F, 1F, 0.90F).setUnlocalizedName("insert_steel").setTextureName(RefStrings.MODID + ":insert_steel");
+		insert_kevlar = new ItemModInsert(15, 1F, 0.95F, 1F, 1F).setUnlocalizedName("insert_kevlar").setTextureName(RefStrings.MODID + ":insert_kevlar");
+		insert_sapi = new ItemModInsert(15, 1F, 0.90F, 1F, 0.95F).setUnlocalizedName("insert_sapi").setTextureName(RefStrings.MODID + ":insert_sapi");
+		insert_esapi = new ItemModInsert(15, 1F, 0.85F, 1F, 0.93F).setUnlocalizedName("insert_esapi").setTextureName(RefStrings.MODID + ":insert_esapi");
+		insert_xsapi = new ItemModInsert(20, 1F, 0.80F, 1F, 0.91F).setUnlocalizedName("insert_xsapi").setTextureName(RefStrings.MODID + ":insert_xsapi");
+		insert_steel = new ItemModInsert(100, 1F, 0.90F, 1F, 0.90F).setUnlocalizedName("insert_steel").setTextureName(RefStrings.MODID + ":insert_steel");
 		//insert_du = new ItemModInsert(1500, 0.9F, 0.85F, 0.5F, 0.9F).setUnlocalizedName("insert_du").setTextureName(RefStrings.MODID + ":insert_du");
 		//insert_polonium = new ItemModInsert(500, 0.9F, 1F, 0.95F, 0.9F).setUnlocalizedName("insert_polonium").setTextureName(RefStrings.MODID + ":insert_polonium");
 		//insert_ghiorsium = new ItemModInsert(2000, 0.8F, 0.75F, 0.35F, 0.9F).setUnlocalizedName("insert_ghiorsium").setTextureName(RefStrings.MODID + ":insert_ghiorsium");
