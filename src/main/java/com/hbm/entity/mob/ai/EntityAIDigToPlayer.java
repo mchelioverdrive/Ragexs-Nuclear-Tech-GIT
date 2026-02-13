@@ -29,48 +29,63 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 	@Override
 	public boolean shouldExecute() {
 
-		EntityPlayer player = entity.worldObj.getClosestVulnerablePlayerToEntity(entity, range);
+		if (entity.worldObj.isRemote) return false;
 
-		if (player == null)
+
+		target = (EntityPlayer) entity.getAttackTarget();
+		if (target == null) return false;
+
+		if (target == null) {
+			System.out.println("No player found");
 			return false;
+		}
 
-		this.target = player;
+		System.out.println("Player found: " + target.getCommandSenderName());
+		this.target = target;
 		return true;
 	}
+
 
 	@Override
 	public void updateTask() {
 
-		System.out.println("DIGGING TOWARD PLAYER");
+		entity.setAttackTarget(target);
+		entity.getLookHelper().setLookPositionWithEntity(target, 30F, 30F);
+
+		//System.out.println("DIGGING TOWARD PLAYER");
+
+		boolean pathing = entity.getNavigator().tryMoveToEntityLiving(target, speed);
+		//System.out.println("Pathing result: " + pathing);
 
 
 		if (target == null)
 			return;
 
-		entity.getNavigator().tryMoveToEntityLiving(target, speed);
+		//entity.getNavigator().tryMoveToEntityLiving(target, speed);
+		entity.motionX = (target.posX - entity.posX) * 0.01;
+		entity.motionZ = (target.posZ - entity.posZ) * 0.01;
 
 		breakBlocksTowardTarget();
 	}
 
 	private void breakBlocksTowardTarget() {
 
-		int x = (int)Math.floor(entity.posX);
-		int y = (int)Math.floor(entity.posY);
-		int z = (int)Math.floor(entity.posZ);
-
-		// Block in front of entity
 		int dx = (int)Math.signum(target.posX - entity.posX);
+		int dy = (int)Math.signum(target.posY - entity.posY);
 		int dz = (int)Math.signum(target.posZ - entity.posZ);
 
-		int bx = x + dx;
-		int by = y;
-		int bz = z + dz;
+		int bx = (int)Math.floor(entity.posX + dx);
+		int by = (int)Math.floor(entity.posY + dy);
+		int bz = (int)Math.floor(entity.posZ + dz);
 
-		Block block = entity.worldObj.getBlock(bx, by, bz);
+		for (int yOffset = 0; yOffset < 2; yOffset++) { // break 2 blocks tall
+			Block block = entity.worldObj.getBlock(bx, by + yOffset, bz);
 
-		if (block != Blocks.air && block.getBlockHardness(entity.worldObj, bx, by, bz) >= 0) {
-			entity.worldObj.func_147480_a(bx, by, bz, true); // destroy block
+			if (block != Blocks.air && block.getBlockHardness(entity.worldObj, bx, by + yOffset, bz) >= 0) {
+				entity.worldObj.func_147480_a(bx, by + yOffset, bz, true);
+			}
 		}
 	}
+
 }
 
