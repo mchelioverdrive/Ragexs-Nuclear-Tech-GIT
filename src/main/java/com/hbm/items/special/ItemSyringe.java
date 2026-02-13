@@ -121,6 +121,25 @@ public class ItemSyringe extends Item {
 			}
 		}
 
+		if(this == ModItems.tourniquet && !VersatileConfig.hasPotionSickness(player)) {
+			if(!world.isRemote) {
+				//delay healing, but remove bleeding and give a small heal.
+				//I'll have to fully flesh out my combat system/balance at some point.
+
+				//player.heal(2);
+				player.getEntityData().setInteger("DelayedHealAmount", 2);
+				player.getEntityData().setInteger("DelayedHealTicks", 100);
+
+				stack.stackSize--;
+				//world.playSoundAtEntity(player, "hbm:item.syringe", 1.0F, 1.0F);
+
+
+
+				VersatileConfig.applyPotionSickness(player, 5);
+			}
+		}
+		//hmm well it would seem there's already 'potion sickness' here. I guess I can use that for realism. I'll have to add bleeding.
+
 		if(this == ModItems.syringe_metal_medx && !VersatileConfig.hasPotionSickness(player)) {
 			if(!world.isRemote) {
 				player.addPotionEffect(new PotionEffect(Potion.resistance.id, 4 * 60 * 20, 2));
@@ -577,6 +596,11 @@ public class ItemSyringe extends Item {
 		if(this == ModItems.syringe_metal_stimpak) {
 			list.add("Heals 2.5 hearts");
 		}
+
+		if(this == ModItems.tourniquet) {
+			list.add("Used to stop bleeding");
+		}
+
 		if(this == ModItems.syringe_metal_super) {
 			list.add("Heals 25 hearts");
 			list.add("Slowness I for 10 seconds");

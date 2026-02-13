@@ -67,7 +67,6 @@ import com.hbm.render.anim.HbmAnimations;
 import com.hbm.render.anim.HbmAnimations.Animation;
 import com.hbm.render.block.ct.CTStitchReceiver;
 import com.hbm.render.item.weapon.sedna.ItemRenderWeaponBase;
-import com.hbm.render.util.RenderAccessoryUtility;
 import com.hbm.render.util.RenderOverhead;
 import com.hbm.render.util.RenderScreenOverlay;
 import com.hbm.render.util.SoyuzPronter;
@@ -572,10 +571,10 @@ public class ModEventHandlerClient {
 		//	GL11.glPopMatrix();
 		//}
 
-		ResourceLocation cloak = RenderAccessoryUtility.getCloakFromPlayer(player);
+		//ResourceLocation cloak = RenderAccessoryUtility.getCloakFromPlayer(player);
 
-		if(cloak != null)
-			player.func_152121_a(Type.CAPE, cloak);
+		//if(cloak != null)
+		//	player.func_152121_a(Type.CAPE, cloak);
 
 		if(player.getHeldItem() != null && player.getHeldItem().getItem() instanceof IHoldableWeapon) {
 			renderer.modelBipedMain.aimedBow = true;

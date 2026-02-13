@@ -58,11 +58,9 @@ public class ShadyUtil {
 	public static String DUODEC_ = "85d54b8c-1862-4c86-b351-5ef1b998aa32";
 	public static String LePeeperSauvage = "433c2bb7-018c-4d51-acfe-27f907432b5e";
 
-	public static final Set<String> hashes = new HashSet();
-	static {
-		hashes.add("41de5c372b0589bbdb80571e87efa95ea9e34b0d74c6005b8eab495b7afd9994");
-		hashes.add("31da6223a100ed348ceb3254ceab67c9cc102cb2a04ac24de0df3ef3479b1036");
-	}
+	//can you guys stop having gay furry sex in the nuclear tech mod, I know you like MLP shit but this is too far
+
+
 
 	public static final int c = 0x3d;
 	public static String initializer =	"Ur bp7mN-@UFZKXBx9N[/>M'k\\7\\9m3b";
@@ -72,11 +70,7 @@ public class ShadyUtil {
 	public static String testCase =		"dYPq\\YzrNm3FUH;P[ZTq";
 	public static String testValue =	"WGm?";
 
-	public static Set<String> contributors = Sets.newHashSet(new String[] {
-			"06ab7c03-55ce-43f8-9d3c-2850e3c652de", //mustang_rudolf
-			"5bf069bc-5b46-4179-aafe-35c0a07dee8b", //JMF781
-			"ccd9aa1c-26b9-4dde-8f37-b96f8d99de22", //kakseao
-			});
+
 
 	// simple cryptographic utils
 	public static String encode(String msg) { return Base64.getEncoder().encodeToString(msg.getBytes()); }
@@ -133,19 +127,5 @@ public class ShadyUtil {
 		return "";
 	}
 
-	public static void test() {
-		if(!GeneralConfig.enableDebugMode) return; //only run in debug mode
 
-		try {
-			Class test = Class.forName(decode(offset(signature, -2)));
-			Field field = ReflectionHelper.findField(test, decode(offset(checksum, -2)));
-			if(field != null) {
-				System.out.println("TEST SECTION START");
-				Class toLoad = Class.forName(decode(offset(testCase, -2)));
-				Field toRead = ReflectionHelper.findField(toLoad, decode(offset(testValue, -2)));
-				if(new Random(System.currentTimeMillis()).nextInt(4) == 0) ModEventHandler.reference = toRead;
-				System.out.println("TEST SECTION END");
-			}
-		} catch(Throwable e) { }
-	}
 }
