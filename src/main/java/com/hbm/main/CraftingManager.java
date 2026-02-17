@@ -240,8 +240,8 @@ public class CraftingManager {
 		addRecipeAuto(new ItemStack(ModItems.shimmer_handle, 1), new Object[] { "GP", "GP", "GP", 'G', GOLD.plate(), 'P', ANY_PLASTIC.ingot() });
 		//addRecipeAuto(new ItemStack(ModItems.shimmer_sledge, 1), new Object[] { "H", "G", "G", 'G', ModItems.shimmer_handle, 'H', ModItems.shimmer_head });
 		//addRecipeAuto(new ItemStack(ModItems.shimmer_axe, 1), new Object[] { "H", "G", "G", 'G', ModItems.shimmer_handle, 'H', ModItems.shimmer_axe_head });
-		addShapelessAuto(new ItemStack(ModItems.definitelyfood, 4), new Object[] { Items.carrot, Items.wheat, "treeSapling" });
-		addShapelessAuto(new ItemStack(ModItems.definitelyfood, 4), new Object[] { Items.potato, Items.wheat, Items.wheat_seeds, Items.wheat_seeds, Items.wheat_seeds });
+		addShapelessAuto(new ItemStack(ModItems.definitelyfood, 12), new Object[] { Items.carrot, Items.wheat, "treeSapling", Items.sugar });
+		addShapelessAuto(new ItemStack(ModItems.definitelyfood, 16), new Object[] { Items.potato, Items.wheat, Items.wheat_seeds, Items.wheat_seeds, Items.wheat_seeds });
 		addRecipeAuto(new ItemStack(ModItems.turbine_tungsten, 1), new Object[] { "BBB", "BSB", "BBB", 'B', ModItems.blade_tungsten, 'S', DURA.ingot() });
 		addRecipeAuto(new ItemStack(ModItems.ring_starmetal, 1), new Object[] { " S ", "S S", " S ", 'S', STAR.ingot() });
 		addRecipeAuto(new ItemStack(ModItems.flywheel_beryllium, 1), new Object[] { "IBI", "BTB", "IBI", 'B', BE.block(), 'I', IRON.plateCast(), 'T', DURA.pipe() });
