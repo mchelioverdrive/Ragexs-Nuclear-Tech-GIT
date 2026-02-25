@@ -127,7 +127,7 @@ public class ItemSyringe extends Item {
 				//I'll have to fully flesh out my combat system/balance at some point.
 
 				//player.heal(2);
-				player.getEntityData().setInteger("DelayedHealAmount", 2);
+				player.getEntityData().setInteger("DelayedHealAmount", 6);
 				player.getEntityData().setInteger("DelayedHealTicks", 100);
 
 				stack.stackSize--;
