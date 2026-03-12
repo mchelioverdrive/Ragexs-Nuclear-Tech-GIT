@@ -111,6 +111,10 @@ public class CraftingManager {
 		// Register recipes for each food item
 		//please god just work
 		for (ItemStack food : allFoods) {
+			//skip random dogshit
+			if (food.getItem() == ModItems.canned_conserve || food.getItem() == Items.spider_eye || food.getItem() == Items.rotten_flesh || food.getItem() == Items.poisonous_potato || food.getItem() == ModItems.med_ipecac || food.getItem() == ModItems.med_ptsd || food.getItem() == ModItems.plan_c || food.getItem() == ModItems.pill_iodine || food.getItem() == ModItems.radx || food.getItem() == ModItems.siox || food.getItem() == ModItems.pill_herbal || food.getItem() == ModItems.xanax || food.getItem() == ModItems.fmn || food.getItem() == ModItems.five_htp || food.getItem() == ModItems.crayon) {
+				continue; // Skip if the item is the canned conserve itself to avoid infinite loop
+			}
 			GameRegistry.addShapelessRecipe(
 				new ItemStack(ModItems.canned_conserve, 1, tubeMeta), // Output with meta
 				food // Input: any food item
@@ -260,6 +264,9 @@ public class CraftingManager {
 
 		//hey so this doesn't actually work when it's a wire and FUCK YOU DO YOU WANT A CHICKEN NUGGET?
 		addShapelessAuto(new ItemStack(Items.redstone, 1), new Object[] { ModItems.ingot_copper });
+
+		//vice versa.. eh whatever
+
 
 
 		//ItemStack infinity = new ItemStack(Items.enchanted_book);
