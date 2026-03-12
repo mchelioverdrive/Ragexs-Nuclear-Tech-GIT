@@ -26,7 +26,7 @@ public class ItemLemon extends ItemFood {
 	public ItemLemon(int p_i45339_1_, float p_i45339_2_, boolean p_i45339_3_) {
 		super(p_i45339_1_, p_i45339_2_, p_i45339_3_);
 
-		if(this == ModItems.med_ipecac || this == ModItems.med_ptsd || this == ModItems.galaxygas) {
+		if(this == ModItems.med_ipecac || this == ModItems.med_ptsd || this == ModItems.galaxygas || this == ModItems.crystal_meth) {
 			this.setAlwaysEdible();
 		}
 		//hey dumbass this thing doesnt work
@@ -149,6 +149,24 @@ public class ItemLemon extends ItemFood {
 		if(this == ModItems.chocolate) {
 			HbmLivingProps.incrementRadiation(player, 0.2F);
 		}
+
+		//if(this == ModItems.crystal_meth) {
+		//	player.addPotionEffect(new PotionEffect(Potion.digSpeed.id, 60 * 20, 3));
+		//	//give off the appearance of being on meth by adjusting the FOV and adding a slight blur effect
+//
+		//	//also schedule a task to apply slowness after a long time to simulate withdrawal... and if you take it again you lose with drawal. oh yeah and add overdosing lol
+//
+		//	NBTTagCompound data = player.getEntityData();
+//
+		//	long time = player.worldObj.getTotalWorldTime();
+//
+		//	data.setLong("MethLastUse", time);
+//
+		//	int dose = data.getInteger("MethDose");
+		//	data.setInteger("MethDose", dose + 1);
+//
+		//}
+		//we cant use this here
 
     }
 

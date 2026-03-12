@@ -13,6 +13,7 @@ import com.hbm.items.food.ItemConserve;
 import com.hbm.world.generator.DungeonToolbox;
 import net.minecraft.stats.Achievement;
 import net.minecraft.stats.AchievementList;
+import net.minecraftforge.client.event.FOVUpdateEvent;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.Level;
 
@@ -1404,7 +1405,75 @@ public class ModEventHandler {
 			/// SYNC END ///
 		}
 
+		// METH CRASH SYSTEM
 
+
+		if(data.hasKey("MethLastUse")) {
+
+			long lastUse = data.getLong("MethLastUse");
+			long current = player.worldObj.getTotalWorldTime();
+			long timeSince = current - lastUse;
+
+			int dose = data.getInteger("MethDose");
+
+			if(rand.nextInt(400) == 0 && dose >= 3) {
+				player.worldObj.playSoundAtEntity(player, "mob.endermen.stare", 1.0F, 0.4F);
+			}
+
+			if(data.hasKey("MethVisualTicks")) {
+
+				int ticks = data.getInteger("MethVisualTicks");
+
+				if(ticks > 0) {
+					data.setInteger("MethVisualTicks", ticks - 1);
+				} else {
+					data.removeTag("MethVisualTicks");
+					data.setBoolean("OnMeth", false);
+				}
+			}
+
+			// crash after ~8 minutes
+			if(timeSince > 20 * 60 * 8 && timeSince < 20 * 60 * 12) {
+
+				player.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 200, 1));
+				player.addPotionEffect(new PotionEffect(Potion.digSlowdown.id, 200, 1));
+				//player.addPotionEffect(new PotionEffect(Potion.confusion.id, 200, 0));
+				//player.addPotionEffect(new PotionEffect(Potion.weakness.id, 200, 1));
+			}
+
+			// heavy crash if user binged
+			if(dose >= 4 && timeSince > 20 * 60 * 6) {
+
+				player.addPotionEffect(new PotionEffect(Potion.confusion.id, 300, 1));
+				player.addPotionEffect(new PotionEffect(Potion.blindness.id, 200, 0));
+			}
+
+			// overdose
+			if(dose >= 6) {
+
+				player.addPotionEffect(new PotionEffect(Potion.poison.id, 200, 2));
+				player.attackEntityFrom(DamageSource.magic, 4.0F);
+			}
+
+			// reset addiction after 10 minutes
+			if(timeSince > 20 * 60 * 10) {
+				data.removeTag("MethLastUse");
+				data.setInteger("MethDose", 0);
+			}
+		}
+
+
+	}
+
+	@SubscribeEvent
+	public void onFOVUpdate(FOVUpdateEvent event) {
+
+		EntityPlayer player = event.entity;
+		NBTTagCompound data = player.getEntityData();
+
+		if(data.getBoolean("OnMeth")) {
+			event.newfov *= 1.3F;
+		}
 	}
 
 	@SubscribeEvent
