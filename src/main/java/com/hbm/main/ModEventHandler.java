@@ -1416,8 +1416,13 @@ public class ModEventHandler {
 
 			int dose = data.getInteger("MethDose");
 
-			if(rand.nextInt(400) == 0 && dose >= 3) {
-				player.worldObj.playSoundAtEntity(player, "mob.endermen.stare", 1.0F, 0.4F);
+			if(player.worldObj.isRemote && rand.nextInt(400) == 0 && dose >= 3) {
+
+				double x = player.posX + (player.getRNG().nextDouble() - 0.5) * 6;
+				double y = player.posY;
+				double z = player.posZ + (player.getRNG().nextDouble() - 0.5) * 6;
+
+				player.worldObj.playSound(x, y, z, "mob.endermen.stare", 1.0F, 0.4F, false);
 			}
 
 			if(data.hasKey("MethVisualTicks")) {
@@ -1457,6 +1462,8 @@ public class ModEventHandler {
 
 			// reset addiction after 10 minutes
 			if(timeSince > 20 * 60 * 10) {
+				data.removeTag("MethVisualTicks");
+				data.setBoolean("OnMeth", false);
 				data.removeTag("MethLastUse");
 				data.setInteger("MethDose", 0);
 			}
@@ -1472,7 +1479,17 @@ public class ModEventHandler {
 		NBTTagCompound data = player.getEntityData();
 
 		if(data.getBoolean("OnMeth")) {
-			event.newfov *= 1.3F;
+
+			int dose = data.getInteger("MethDose");
+
+			// base stimulant FOV
+			event.newfov *= 1.25F;
+
+			// jitter if heavily dosed
+			if(dose >= 3) {
+				float jitter = (player.getRNG().nextFloat() - 0.5F) * 0.06F;
+				event.newfov *= 1.0F + jitter;
+			}
 		}
 	}
 
