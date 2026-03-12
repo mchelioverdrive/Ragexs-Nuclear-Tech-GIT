@@ -5474,7 +5474,7 @@ public class ModItems {
 		jackt = new ModArmor(MainRegistry.aMatSteel, 1).setUnlocalizedName("jackt").setTextureName(RefStrings.MODID + ":jackt");
 		jackt2 = new ModArmor(MainRegistry.aMatSteel, 1).setUnlocalizedName("jackt2").setTextureName(RefStrings.MODID + ":jackt2");
 
-		chainsaw = new ItemChainsaw(10, -0.05, MainRegistry.tMatChainsaw, EnumToolType.AXE, 5000, 1, 250,
+		chainsaw = new ItemChainsaw(7, -0.05, MainRegistry.tMatChainsaw, EnumToolType.AXE, 5000, 1, 250,
 				Fluids.DIESEL, Fluids.DIESEL_CRACK, Fluids.KEROSENE, Fluids.BIOFUEL, Fluids.GASOLINE, Fluids.GASOLINE_LEADED, Fluids.PETROIL, Fluids.PETROIL_LEADED, Fluids.COALGAS, Fluids.COALGAS_LEADED)
 				.addBreakAbility(new ToolAbility.SilkAbility())
 				.addBreakAbility(new ToolAbility.RecursionAbility(5))
