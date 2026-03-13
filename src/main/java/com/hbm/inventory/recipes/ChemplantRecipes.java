@@ -573,6 +573,28 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.outputFluids(new FluidStack(Fluids.FRACKSOL, 1000)));
 
 
+		//coal gasification
+		recipes.add(new ChemRecipe(1009, "COALGAS", 60)
+			.inputItems(
+				new OreDictStack(COAL.dust(), 8))
+			.inputFluids(
+				new FluidStack(Fluids.ULTRAHOTSTEAM, 3000))
+			.outputFluids(
+				new FluidStack(Fluids.HYDROGEN, 1000),
+				new FluidStack(Fluids.CARBONDIOXIDE, 500),
+				new FluidStack(Fluids.GAS, 5)
+			));
+
+		// methane reforming
+		recipes.add(new ChemRecipe(1010, "SMR", 60)
+			.inputFluids(
+				new FluidStack(Fluids.GAS, 1000),
+				new FluidStack(Fluids.ULTRAHOTSTEAM, 1000))
+			.outputFluids(
+				new FluidStack(Fluids.HYDROGEN, 3000),
+				new FluidStack(Fluids.CARBONDIOXIDE, 1000)));
+
+
 
 		//todo methamphetamine
 
