@@ -97,6 +97,9 @@ public class CrystallizerRecipes extends SerializableRecipe {
 		//(iron + acid → hydrogen)
 		//→ leaching reactor
 
+		//registerRecipe(AL.ingot(),									new CrystallizerRecipe(ModItems.ingot_rubber, mixingTime), new FluidStack(Fluids.NITROGEN, 150));
+		//why isn't it possible you stupid bastard
+
 
 		registerRecipe((new ComparableStack(ModBlocks.ore_mineral, 1, OreDictionary.WILDCARD_VALUE)),		new CrystallizerRecipe(ModItems.crystal_mineral, baseTime)); //temp
 

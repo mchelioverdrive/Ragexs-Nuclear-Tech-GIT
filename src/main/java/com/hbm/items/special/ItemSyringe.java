@@ -128,6 +128,7 @@ public class ItemSyringe extends Item {
 
 				//player.heal(2);
 				player.getEntityData().setInteger("DelayedHealAmount", 6);
+				//how is 6 equivalent to 2? Ok whatever.
 				player.getEntityData().setInteger("DelayedHealTicks", 100);
 
 				stack.stackSize--;
