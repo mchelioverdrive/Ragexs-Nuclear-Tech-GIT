@@ -269,6 +269,7 @@ public class CraftingManager {
 		addShapelessAuto(new ItemStack(ModItems.ingot_copper, 1), new Object[] { Items.redstone });
 
 		//redstone is just copper wiring don't @ me
+		//I swear to god if I have to come in here again and fix some more recipe bullshit related to this...
 
 
 		//ItemStack infinity = new ItemStack(Items.enchanted_book);
