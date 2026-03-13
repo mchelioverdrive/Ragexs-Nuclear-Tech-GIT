@@ -265,8 +265,10 @@ public class CraftingManager {
 		//hey so this doesn't actually work when it's a wire and FUCK YOU DO YOU WANT A CHICKEN NUGGET?
 		addShapelessAuto(new ItemStack(Items.redstone, 1), new Object[] { ModItems.ingot_copper });
 
-		//vice versa.. eh whatever
+		//vice versa..
+		addShapelessAuto(new ItemStack(ModItems.ingot_copper, 1), new Object[] { Items.redstone });
 
+		//redstone is just copper wiring don't @ me
 
 
 		//ItemStack infinity = new ItemStack(Items.enchanted_book);
