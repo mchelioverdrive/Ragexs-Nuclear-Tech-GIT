@@ -376,7 +376,8 @@ public class OreDictManager {
 
 		//pams cancer
 		//SALT.dust(itemsalt);
-		OreDictionary.registerOre("dustSalt", new ItemStack(ModItems.itemsalt));
+		OreDictionary.registerOre("foodSalt", new ItemStack(ModItems.itemsalt));
+		//idk if this works in a live game because this fucking NEI version in my codebase is fucked up and keeps Caused by: java.lang.ArrayIndexOutOfBoundsException: 9
 		//OreDictionary.registerOre("foodSalt", new ItemStack(ModItems.itemsalt));
 		//OreDictionary.registerOre("itemSalt", new ItemStack(ModItems.itemsalt));
 

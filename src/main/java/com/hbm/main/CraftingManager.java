@@ -268,6 +268,9 @@ public class CraftingManager {
 		//vice versa..
 		addShapelessAuto(new ItemStack(ModItems.ingot_copper, 1), new Object[] { Items.redstone });
 
+		//addShapelessAuto(new ItemStack (Items.water_bucket), new ItemStack(ModItems.itemsalt, 16));
+		addShapelessAuto(new ItemStack (ModItems.itemsalt, 16), new ItemStack(Items.water_bucket));
+
 		//redstone is just copper wiring don't @ me
 		//I swear to god if I have to come in here again and fix some more recipe bullshit related to this...
 
