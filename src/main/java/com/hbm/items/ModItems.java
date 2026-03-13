@@ -540,7 +540,7 @@ public class ModItems {
 	public static Item crystal_meth;
 
 
-
+	public static Item itemsalt;
 
 	public static Item gem_sodalite;
 	public static Item gem_tantalium;
@@ -3147,6 +3147,9 @@ public class ModItems {
 		crystal_niobium = new Item().setUnlocalizedName("crystal_niobium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niobium");
 
 		crystal_meth = new ItemMeth(1).setUnlocalizedName("crystal_meth").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_fluorite");
+
+
+		itemsalt = new ItemSalt(1).setUnlocalizedName("itemsalt").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 
 
 		crystal_basaltic = new Item().setUnlocalizedName("crystal_basaltic").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_basaltic");
@@ -6516,6 +6519,8 @@ public class ModItems {
 		GameRegistry.registerItem(crystal_basaltic, crystal_basaltic.getUnlocalizedName());
 
 		GameRegistry.registerItem(crystal_meth, crystal_meth.getUnlocalizedName());
+
+		GameRegistry.registerItem(itemsalt, itemsalt.getUnlocalizedName());
 
 
 		//Fragments
