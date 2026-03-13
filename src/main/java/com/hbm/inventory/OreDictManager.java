@@ -377,8 +377,8 @@ public class OreDictManager {
 		//pams cancer
 		//SALT.dust(itemsalt);
 		OreDictionary.registerOre("dustSalt", new ItemStack(ModItems.itemsalt));
-		OreDictionary.registerOre("foodSalt", new ItemStack(ModItems.itemsalt));
-		OreDictionary.registerOre("itemSalt", new ItemStack(ModItems.itemsalt));
+		//OreDictionary.registerOre("foodSalt", new ItemStack(ModItems.itemsalt));
+		//OreDictionary.registerOre("itemSalt", new ItemStack(ModItems.itemsalt));
 
 
 		/*
