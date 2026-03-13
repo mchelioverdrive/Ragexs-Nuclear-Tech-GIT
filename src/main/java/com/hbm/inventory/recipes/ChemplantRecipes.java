@@ -581,8 +581,9 @@ public class ChemplantRecipes extends SerializableRecipe {
 				new FluidStack(Fluids.ULTRAHOTSTEAM, 3000))
 			.outputFluids(
 				new FluidStack(Fluids.HYDROGEN, 1000),
-				new FluidStack(Fluids.CARBONDIOXIDE, 500),
-				new FluidStack(Fluids.GAS, 5)
+				new FluidStack(Fluids.CARBONDIOXIDE, 500)
+				//new FluidStack(Fluids.GAS, 5)
+				//this fucking idiot bob only supports 2 outputs.
 			));
 
 		// methane reforming

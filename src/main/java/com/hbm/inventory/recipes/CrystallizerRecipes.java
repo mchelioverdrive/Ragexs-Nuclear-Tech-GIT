@@ -47,6 +47,8 @@ import net.minecraftforge.oredict.OreDictionary;
 //...right?
 public class CrystallizerRecipes extends SerializableRecipe {
 
+	//ORE ACIDIZER/LEACHING REACTOR
+
 	//'Object' is either a ComparableStack or the key for the ore dict
 	private static HashMap<Pair<Object, FluidType>, CrystallizerRecipe> recipes = new HashMap();
 	private static HashMap<Object, Integer> amounts = new HashMap(); // for use in the partitioner
@@ -91,7 +93,9 @@ public class CrystallizerRecipes extends SerializableRecipe {
 		registerRecipe(NB.ore(),		new CrystallizerRecipe(ModItems.crystal_niobium, baseTime), sulfur);
 
 
-
+		//todo Acid-metal hydrogen generation
+		//(iron + acid → hydrogen)
+		//→ leaching reactor
 
 
 		registerRecipe((new ComparableStack(ModBlocks.ore_mineral, 1, OreDictionary.WILDCARD_VALUE)),		new CrystallizerRecipe(ModItems.crystal_mineral, baseTime)); //temp
