@@ -259,6 +259,8 @@ public class Fluids {
 	/* Lagacy names for compatibility purposes */
 	@Deprecated public static FluidType ACID;	//JAOPCA uses this, apparently
 
+	public static FluidType MOLTEN_SALT;
+
 	public static final HashBiMap<String, FluidType> renameMapping = HashBiMap.create();
 
 	public static List<FluidType> customFluids = new ArrayList();
@@ -516,6 +518,9 @@ public class Fluids {
 		GASEOUS_SCHRABIDIUM_BROMIDE =	new FluidType("GASEOUS_SCHRABIDIUM_BROMIDE",		0x006B6B, 0, 0, 0, EnumSymbol.NONE).setTemp(3000).addTraits(GASEOUS, NOCON, NOID, new FT_Rocket(3000, 700_000));
 		GASEOUS_THORIUM_BROMIDE =	new FluidType("GASEOUS_THORIUM_BROMIDE",		0x7A5542, 0, 0, 0, EnumSymbol.NONE).setTemp(2300).addTraits(GASEOUS, NOCON, NOID, new FT_Rocket(1300, 700_000));
 
+		MOLTEN_SALT =			new FluidType("MOLTEN_SALT",		0xFF6A00, 2, 0, 3, EnumSymbol.NONE).setTemp(800).addTraits(LIQUID, VISCOUS, new FT_Corrosive(65));
+
+
 		// ^ ^ ^ ^ ^ ^ ^ ^
 		//ADD NEW FLUIDS HERE
 
@@ -740,6 +745,9 @@ public class Fluids {
 		metaOrder.add(EMILK);
 		metaOrder.add(CMILK);
 		metaOrder.add(CREAM);
+
+		metaOrder.add(MOLTEN_SALT);
+
 
 		//smoke
 		metaOrder.add(SMOKE);
