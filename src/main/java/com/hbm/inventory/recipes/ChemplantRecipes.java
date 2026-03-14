@@ -596,6 +596,18 @@ public class ChemplantRecipes extends SerializableRecipe {
 				new FluidStack(Fluids.CARBONDIOXIDE, 1000)));
 
 
+		//molten salt actually this is going in the crucible since it's FUCKING USELESS BOB YOU RELENTLESS FUCK
+		//NEVERMIND THE FUCKING CRUCIBLE ONLY OUTPUTS FUCKING SOLIDS FOR SOME FUCKING REASON DESPITE BEING USED TO POUR FLUIDS
+		//NICE SHITLOW TINKERS RIPPED DOGSHIT SYSTEM. ANYWAY IT'S GOING IN THE FUCKING CHEMPLANT JUST LIKE EVERY OTHER RETARDED
+		//ACTUAL CHEMICAL PROCESS\
+		recipes.add(new ChemRecipe(1011, "MOLTEN_SALT", 100)
+			.inputItems(
+				new OreDictStack(KEY_SALT, 4))
+			.inputFluids(
+				new FluidStack(Fluids.ULTRAHOTSTEAM, 2000))
+					//I don't give a fuck suffer
+			.outputFluids(new FluidStack(Fluids.MOLTEN_SALT, 2000)));
+
 
 		//todo methamphetamine
 

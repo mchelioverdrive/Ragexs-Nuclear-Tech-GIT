@@ -104,6 +104,9 @@ public class OreDictManager {
 
 	public static final String KEY_GLYPHID_MEAT = "glyphidMeat";
 
+	public static final String KEY_SALT = "foodSalt";
+
+
 	/*
 	 * MATERIALS
 	 */

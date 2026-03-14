@@ -136,6 +136,12 @@ public class CrucibleRecipes extends SerializableRecipe {
 			.inputs(new MaterialStack(Mats.MAT_STEEL, n), new MaterialStack(Mats.MAT_NICKEL, n))
 			.outputs(new MaterialStack(Mats.MAT_STAINLESS, n * 2)));
 
+		//molten salt
+		//recipes.add(new CrucibleRecipe(22, "crucible.molten_salt", 2, new ItemStack(ModItems.itemsalt))
+		//	.inputs(new MaterialStack(ModItems.itemsalt, i * 2))
+		//	.outputs(new MaterialStack(Mats.MAT_MOLTEN_SALT, i * 2)));
+		//oh dear god
+
 		registerMoldsForNEI();
 	}
 
