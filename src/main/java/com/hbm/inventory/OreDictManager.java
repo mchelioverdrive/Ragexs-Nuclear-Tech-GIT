@@ -175,6 +175,7 @@ public class OreDictManager {
 	public static final DictFrame GH336 = new DictFrame("Ghiorsium336", "Gh336");
 	//public static final DictFrame MUD = new DictFrame("WatzMud");
 	public static final DictFrame CN989 = new DictFrame("Chinesium989", "Cn989");
+	public static final DictFrame Rb = new DictFrame("Rubidium", "Rb");
 	/*
 	 * STABLE
 	 */
@@ -435,6 +436,8 @@ public class OreDictManager {
 		GH336	.rad(HazardRegistry.gh336)							.nugget(nugget_gh336)		.billet(billet_gh336)		.ingot(ingot_gh336);
 		//MUD		.rad(HazardRegistry.mud)																					.ingot(ingot_mud);
 		CN989   .rad(HazardRegistry.cn989)  .hot(4F)                .nugget(nugget_cn989)       .billet(billet_cn989)       .ingot(ingot_cn989)         .dust(powder_cn989)         .plate(plate_cn989);
+
+		Rb .rad(HazardRegistry.Rb) .ingot(rubidium_ingot) ; //.dust(powder_rubidium) .ore(ore_rubidium) yeah yeah whatever
 
 		/*
 		 * STABLE

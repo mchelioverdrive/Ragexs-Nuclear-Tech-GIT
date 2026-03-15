@@ -976,14 +976,6 @@ public class AssemblerRecipes extends SerializableRecipe {
 				new ComparableStack(ModItems.plate_polymer, 4)
 			}, 100);
 
-		makeRecipe(new ComparableStack(ModItems.multitool_hit, 1), new AStack[] {
-				new OreDictStack(ANY_RESISTANTALLOY.ingot(), 4),
-				new OreDictStack(STEEL.plate(), 4),
-				new OreDictStack(GOLD.wireFine(), 12),
-				new ComparableStack(ModItems.motor, 4),
-				new ComparableStack(ModItems.circuit, 16, EnumCircuitType.CAPACITOR_BOARD)
-			}, 100);
-
 		makeRecipe(new ComparableStack(ModBlocks.machine_assemfac, 1), new AStack[] {
 				!exp ? new OreDictStack(STEEL.ingot(), 48) : new OreDictStack(STEEL.heavyComp(), 2),
 				new OreDictStack(ANY_RESISTANTALLOY.ingot(), 8),

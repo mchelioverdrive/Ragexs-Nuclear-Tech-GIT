@@ -621,6 +621,9 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.outputItems(
 				new ItemStack(ModItems.itemsalt, 2),
 				new ItemStack(ModItems.rubidiumsalt, 1)));
+		//oh my god it's radioactive and
+		// god fucking dammit I need to add more ways to obtain it and
+		// god fucking dammit I have to rebalance anything relating to clocks or GPS systems.
 
 		//Molten KCl + sodium vapor → molten NaCl + potassium vapor
 		recipes.add(new ChemRecipe(1013, "POTASSIUM", 90)
@@ -641,6 +644,21 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 		);
 
+
+		//rubidium salt -> rubidium metal
+		recipes.add(new ChemRecipe(1015, "RUBIDIUM", 90)
+			.inputItems(
+				new ComparableStack(ModItems.rubidiumsalt, 1),
+				new ComparableStack(ModItems.ingot_calcium, 1))
+
+				//.inputFluids(new FluidStack(Fluids.CALCIUM_SOLUTION, 2000)) //
+
+			//.outputFluids(
+			//	new FluidStack(Fluids.MOLTEN_SALT, 2000),
+			//	new FluidStack(Fluids.RUBIDIUM, 2000))
+
+				.outputItems(new ItemStack(ModItems.rubidium_ingot, 1))
+				.outputFluids(new FluidStack(Fluids.CALCIUM_CHLORIDE, 800)));
 
 
 

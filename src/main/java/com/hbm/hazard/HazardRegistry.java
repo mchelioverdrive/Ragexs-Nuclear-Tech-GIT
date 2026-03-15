@@ -126,6 +126,8 @@ public class HazardRegistry {
 	public static final float gh336 = 5.0F;
 	public static final float mud = 1.0F;
 	public static final float cn989 = 89.0F;
+	public static final float Rb = 0.001F;
+
 	public static final float radsource_mult = 3.0F;
 	public static final float pobe = po210 * radsource_mult;
 	public static final float rabe = ra226 * radsource_mult;
@@ -263,6 +265,8 @@ public class HazardRegistry {
 
 		HazardSystem.register(new ItemStack(ModBlocks.ore_sellafield_radgem), makeData(RADIATION, 25F));
 		HazardSystem.register(new ItemStack(ModItems.gem_rad), makeData(RADIATION, 25F));
+
+		HazardSystem.register(new ItemStack(ModItems.rubidiumsalt), makeData(RADIATION, Rb * nugget)); //im sure its fine
 
 		registerOtherFuel(rod_zirnox, EnumZirnoxType.NATURAL_URANIUM_FUEL.ordinal(), u * rod_dual, wst * rod_dual * 11.5F, false);
 		registerOtherFuel(rod_zirnox, EnumZirnoxType.URANIUM_FUEL.ordinal(), uf * rod_dual, wst * rod_dual * 10F, false);

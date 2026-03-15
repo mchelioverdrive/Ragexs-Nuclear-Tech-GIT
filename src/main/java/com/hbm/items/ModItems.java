@@ -114,6 +114,8 @@ public class ModItems {
 	public static Item ingot_cm247;
 	public static Item ingot_cm_fuel;
 
+	public static Item rubidium_ingot;
+
 	public static Item ingot_cm_mix;
 
 	public static Item ingot_bk247;
@@ -2720,6 +2722,7 @@ public class ModItems {
 		ingot_bk247 = new Item().setUnlocalizedName("ingot_bk247").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_bk247");
 		ingot_cf251 = new Item().setUnlocalizedName("ingot_cf251").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID +":ingot_cf251");
 		ingot_cf252 = new Item().setUnlocalizedName("ingot_cf252").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_cf252");
+		rubidium_ingot = new Item().setUnlocalizedName("rubidium_ingot").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":rubidium_ingot");
 
 
 		ingot_es253 = new Item().setUnlocalizedName("ingot_es253").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_es253");
@@ -5126,10 +5129,10 @@ public class ModItems {
 		key_kit = new ItemCounterfitKeys().setUnlocalizedName("key_kit").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":key_pair");
 		key_fake = new ItemKey().setUnlocalizedName("key_fake").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":key_gold");
 		pin = new ItemCustomLore().setUnlocalizedName("pin").setMaxStackSize(8).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":pin");
-		padlock_rusty = new ItemLock(1).setUnlocalizedName("padlock_rusty").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":padlock_rusty");
-		padlock = new ItemLock(0.1).setUnlocalizedName("padlock").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":padlock");
-		padlock_reinforced = new ItemLock(0.02).setUnlocalizedName("padlock_reinforced").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":padlock_reinforced");
-		padlock_unbreakable = new ItemLock(0).setUnlocalizedName("padlock_unbreakable").setMaxStackSize(1).setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":padlock_unbreakable");
+		padlock_rusty = new ItemLock(0.65).setUnlocalizedName("padlock_rusty").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":padlock_rusty");
+		padlock = new ItemLock(0.4).setUnlocalizedName("padlock").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":padlock");
+		padlock_reinforced = new ItemLock(0.05).setUnlocalizedName("padlock_reinforced").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":padlock_reinforced");
+		padlock_unbreakable = new ItemLock(0.01).setUnlocalizedName("padlock_unbreakable").setMaxStackSize(1).setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":padlock_unbreakable");
 
 		mech_key = new ItemCustomLore().setUnlocalizedName("mech_key").setMaxStackSize(1).setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":mech_key");
 
@@ -6126,6 +6129,7 @@ public class ModItems {
 		GameRegistry.registerItem(ingot_cm246, ingot_cm246.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cm247, ingot_cm247.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cm_fuel, ingot_cm_fuel.getUnlocalizedName());
+		GameRegistry.registerItem(rubidium_ingot, rubidium_ingot.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cm_mix, ingot_cm_mix.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_bk247, ingot_bk247.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cf251, ingot_cf251.getUnlocalizedName());
