@@ -29,7 +29,7 @@ public class ElectrolyserFluidRecipes extends SerializableRecipe {
 		recipes.put(Fluids.VITRIOL, new ElectrolysisRecipe(1_000, new FluidStack(Fluids.SULFURIC_ACID, 500), new FluidStack(Fluids.CHLORINE, 500), new ItemStack(ModItems.powder_iron), new ItemStack(ModItems.ingot_mercury)));
 		recipes.put(Fluids.SLOP, new ElectrolysisRecipe(1_000, new FluidStack(Fluids.MERCURY, 250), new FluidStack(Fluids.NONE, 0), new ItemStack(ModItems.niter, 2), new ItemStack(ModItems.powder_limestone, 2), new ItemStack(ModItems.sulfur)));
 
-		recipes.put(Fluids.POTASSIUM_CHLORIDE, new ElectrolysisRecipe(250, new FluidStack(Fluids.CHLORINE, 125), new FluidStack(Fluids.NONE, 0), new ItemStack(ModItems.dust)));
+		recipes.put(Fluids.POTASSIUM_CHLORIDE, new ElectrolysisRecipe(250, new FluidStack(Fluids.CHLORINE, 125), new FluidStack(Fluids.HYDROGEN, 50)));
 		recipes.put(Fluids.CALCIUM_CHLORIDE, new ElectrolysisRecipe(250, new FluidStack(Fluids.CHLORINE, 125), new FluidStack(Fluids.CALCIUM_SOLUTION, 125)));
 
 		//molten salt -> 2sodium and 2chlorine
