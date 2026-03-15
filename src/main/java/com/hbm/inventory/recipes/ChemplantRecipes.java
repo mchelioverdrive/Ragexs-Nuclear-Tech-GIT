@@ -628,6 +628,16 @@ public class ChemplantRecipes extends SerializableRecipe {
 				new FluidStack(Fluids.POTASSIUM, 2000))
 			);
 
+		//potassium hydroxide + water + Iodine (2) = potassium iodide
+		recipes.add(new ChemRecipe(1014, "POTASSIUM_IODIDE", 100)
+			.inputFluids(new FluidStack(Fluids.POTASSIUM_HYDROXIDE, 1000), new FluidStack(Fluids.WATER, 500))
+			.inputItems(new ComparableStack(ModItems.powder_iodine, 2))
+
+
+			.outputItems(new ItemStack(ModItems.potassium_iodide_powder, 2))
+
+		);
+
 
 
 

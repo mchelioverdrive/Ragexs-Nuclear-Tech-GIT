@@ -156,6 +156,7 @@ public class Fluids {
 	public static FluidType POLYTHYLENE; //this is so that you wont need to go through microcrafting hell on circuits //idea is that rubber solution makes these casts that can then be imprinted in the assembly machine without needing to go through the resources to make the circuits one by one, it would be gated behind oil though.
 	public static FluidType RADIOSOLVENT;		//DCM-ish made by wacky radio cracking
 	public static FluidType CHLORINE;			//everone's favorite!
+	public static FluidType POTASSIUM_HYDROXIDE;
 	public static FluidType HEAVYOIL_VACUUM;
 	public static FluidType REFORMATE;
 	public static FluidType LIGHTOIL_VACUUM;
@@ -529,6 +530,11 @@ public class Fluids {
 				.setTemp(200)
 				.addTraits(LIQUID, new FT_Flammable(20000));
 
+		POTASSIUM_HYDROXIDE = new FluidType("POTASSIUM_HYDROXIDE", 0xD7D1C7, 1, 2, 3, EnumSymbol.NONE)
+				.setTemp(200)
+				.addTraits(LIQUID, new FT_Corrosive(50), new FT_Poison(true, 1));
+		//I AM GETTING FUCKING CANCER
+
 
 		// ^ ^ ^ ^ ^ ^ ^ ^
 		//ADD NEW FLUIDS HERE
@@ -765,6 +771,8 @@ public class Fluids {
 		metaOrder.add(SMOKE_POISON);
 
 		metaOrder.add(DUNAAIR);
+
+		metaOrder.add(POTASSIUM_HYDROXIDE);
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!
 		// V
