@@ -273,6 +273,8 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//				new FluidStack(Fluids.GAS, 1000),
 		//				new FluidStack(Fluids.OXYGEN, 500))
 		//		.outputFluids(new FluidStack(Fluids.PAIN, 1000)));
+
+		//HAHA 67 HAHAHA 67 67 67
 		recipes.add(new ChemRecipe(67, "COLTAN_CRYSTAL", 80)
 				.inputFluids(
 						new FluidStack(Fluids.PAIN, 1000),
@@ -335,13 +337,13 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(73, "HELIUM3", 200)
 				.inputItems(new ComparableStack(ModBlocks.moon_turf, 8))
 				.outputFluids(new FluidStack(Fluids.HELIUM3, 1000)));
-		recipes.add(new ChemRecipe(74, "OSMIRIDIUM_DEATH", 240)
-				.inputItems(
-						new ComparableStack(ModItems.powder_paleogenite),
-						new OreDictStack(F.dust(), 8),
-						new ComparableStack(ModItems.nugget_bismuth, 4))
-				.inputFluids(new FluidStack(Fluids.PEROXIDE, 1000, 5))
-				.outputFluids(new FluidStack(Fluids.DEATH, 1000, 0)));
+		//recipes.add(new ChemRecipe(74, "OSMIRIDIUM_DEATH", 240)
+		//		.inputItems(
+		//				new ComparableStack(ModItems.powder_paleogenite),
+		//				new OreDictStack(F.dust(), 8),
+		//				new ComparableStack(ModItems.nugget_bismuth, 4))
+		//		.inputFluids(new FluidStack(Fluids.PEROXIDE, 1000, 5))
+		//		.outputFluids(new FluidStack(Fluids.DEATH, 1000, 0)));
 		//one bucket of ethanol equals 275_000 TU using the diesel baseline0
 		//the coal baseline is 400_000 per piece
 		//if we assume a burntime of 1.5 ops (300 ticks) for sugar at 100 TU/t that would equal a total of 30_000 TU
@@ -364,10 +366,10 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.outputFluids(
 						new FluidStack(Fluids.DEUTERIUM, 200),
 						new FluidStack(Fluids.OXYGEN, 200)));
-		recipes.add(new ChemRecipe(80, "EPEARL", 100)
-				.inputItems(new OreDictStack(DIAMOND.dust(), 1))
-				.inputFluids(new FluidStack(Fluids.XPJUICE, 500))
-				.outputFluids(new FluidStack(Fluids.ENDERJUICE, 100)));
+		//recipes.add(new ChemRecipe(80, "EPEARL", 100)
+		//		.inputItems(new OreDictStack(DIAMOND.dust(), 1))
+		//		.inputFluids(new FluidStack(Fluids.XPJUICE, 500))
+		//		.outputFluids(new FluidStack(Fluids.ENDERJUICE, 100)));
 		//recipes.add(new ChemRecipe(99, "NITROCRYO", 150)
 				//.inputItems(new ComparableStack(ModItems.powder_ice, 4))
 				//.inputFluids(new FluidStack(Fluids.BLOOD, 1000))
@@ -407,32 +409,32 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputItems(
 						new ComparableStack(ModBlocks.sand_dirty, 20))
 				.outputItems(new ItemStack(ModItems.ingot_iridium, 1)));
-		recipes.add(new ChemRecipe(108, "ELBOMB", 300)
-				.inputFluids(new FluidStack(Fluids.ELBOWGREASE, 100))
-				.inputItems(
-						new ComparableStack(ModItems.ingot_lead, 1),
-						new OreDictStack(ANY_SMOKELESS.dust(), 1))
-				.outputItems(new ItemStack(ModItems.assembly_smg, 32))); //9mm
-		recipes.add(new ChemRecipe(109, "ELBOOB", 350)
-				.inputFluids(new FluidStack(Fluids.ELBOWGREASE, 100))
-				.inputItems(
-						new ComparableStack(ModItems.ingot_copper, 1),
-						new OreDictStack(ANY_SMOKELESS.dust(), 1))
-				.outputItems(new ItemStack(ModItems.assembly_762, 32))); //762
-		recipes.add(new ChemRecipe(110, "ELGORE", 250)
-				.inputFluids(new FluidStack(Fluids.ELBOWGREASE, 100))
-				.inputItems(
-						new ComparableStack(ModItems.ingot_copper, 1),
-						new ComparableStack(ModItems.ingot_lead, 1),
-						new OreDictStack(ANY_SMOKELESS.dust(), 1))
-				.outputItems(new ItemStack(ModItems.assembly_556, 32))); //556
-		recipes.add(new ChemRecipe(111, "FIVEFIVE", 300)
-				.inputFluids(new FluidStack(Fluids.ELBOWGREASE, 100))
-				.inputItems(
-						new ComparableStack(ModItems.ingot_copper, 1),
-						new ComparableStack(ModItems.ingot_steel, 1),
-						new OreDictStack(ANY_SMOKELESS.dust(), 1))
-				.outputItems(new ItemStack(ModItems.assembly_lacunae, 32))); //5mm
+		//recipes.add(new ChemRecipe(108, "ELBOMB", 300)
+		//		.inputFluids(new FluidStack(Fluids.ELBOWGREASE, 100))
+		//		.inputItems(
+		//				new ComparableStack(ModItems.ingot_lead, 1),
+		//				new OreDictStack(ANY_SMOKELESS.dust(), 1))
+		//		.outputItems(new ItemStack(ModItems.assembly_smg, 32))); //9mm
+		//recipes.add(new ChemRecipe(109, "ELBOOB", 350)
+		//		.inputFluids(new FluidStack(Fluids.ELBOWGREASE, 100))
+		//		.inputItems(
+		//				new ComparableStack(ModItems.ingot_copper, 1),
+		//				new OreDictStack(ANY_SMOKELESS.dust(), 1))
+		//		.outputItems(new ItemStack(ModItems.assembly_762, 32))); //762
+		//recipes.add(new ChemRecipe(110, "ELGORE", 250)
+		//		.inputFluids(new FluidStack(Fluids.ELBOWGREASE, 100))
+		//		.inputItems(
+		//				new ComparableStack(ModItems.ingot_copper, 1),
+		//				new ComparableStack(ModItems.ingot_lead, 1),
+		//				new OreDictStack(ANY_SMOKELESS.dust(), 1))
+		//		.outputItems(new ItemStack(ModItems.assembly_556, 32))); //556
+		//recipes.add(new ChemRecipe(111, "FIVEFIVE", 300)
+		//		.inputFluids(new FluidStack(Fluids.ELBOWGREASE, 100))
+		//		.inputItems(
+		//				new ComparableStack(ModItems.ingot_copper, 1),
+		//				new ComparableStack(ModItems.ingot_steel, 1),
+		//				new OreDictStack(ANY_SMOKELESS.dust(), 1))
+		//		.outputItems(new ItemStack(ModItems.assembly_lacunae, 32))); //5mm
 		recipes.add(new ChemRecipe(112, "NMASSIII", 300)
 				.inputFluids(new FluidStack(Fluids.DEATH, 7000), (new FluidStack(Fluids.ELBOWGREASE, 6000)))
 				.inputItems(
@@ -600,13 +602,14 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//NEVERMIND THE FUCKING CRUCIBLE ONLY OUTPUTS FUCKING SOLIDS FOR SOME FUCKING REASON DESPITE BEING USED TO POUR FLUIDS
 		//NICE SHITLOW TINKERS RIPPED DOGSHIT SYSTEM. ANYWAY IT'S GOING IN THE FUCKING CHEMPLANT JUST LIKE EVERY OTHER RETARDED
 		//ACTUAL CHEMICAL PROCESS\
-		recipes.add(new ChemRecipe(1011, "MOLTEN_SALT", 100)
+		recipes.add(new ChemRecipe(1011, "MOLTEN_SALT", 500)
 			.inputItems(
 				new OreDictStack(KEY_SALT, 4))
-			.inputFluids(
-				new FluidStack(Fluids.ULTRAHOTSTEAM, 2000))
+			//.inputFluids(
+			//	new FluidStack(Fluids.ULTRAHOTSTEAM, 2000))
 					//I don't give a fuck suffer
-			.outputFluids(new FluidStack(Fluids.MOLTEN_SALT, 2000)));
+			//nvm just use fucking energy because why not
+			.outputFluids(new FluidStack(Fluids.MOLTEN_SALT, 576)));
 
 
 		//todo methamphetamine

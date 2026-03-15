@@ -46,6 +46,7 @@ import net.minecraftforge.oredict.OreDictionary;
 import net.minecraftforge.oredict.OreDictionary.OreRegisterEvent;
 
 //the more i optimize this, the more it starts looking like gregtech
+//aka im soy and i have no original ideas
 public class OreDictManager {
 
 	/** Alternate, additional names for ore dict registration. Used mostly for DictGroups */
