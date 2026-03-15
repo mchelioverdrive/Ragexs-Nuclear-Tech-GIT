@@ -16,6 +16,7 @@ public class WorldConfig {
 	public static int copperSpawn = 12;
 	public static int nickelSpawn = 9;
 	public static int zincSpawn = 8;
+	public static int potashSpawn = 4;
 	public static int mineralSpawn = 5;
 	public static int fluoriteSpawn = 6;
 	//public static int siliconSpawn = 8;
@@ -168,6 +169,7 @@ public class WorldConfig {
 		meteoriteSpawn = CommonConfig.createConfigInt(config, CATEGORY_OREGEN, "2.23_meteoriteSpawnRate", "Spawns a fallen meteorite every nTH chunk", 200);
 		nickelSpawn = CommonConfig.createConfigInt(config, CATEGORY_OREGEN, "2.24_nickelSpawnrate", "Amount of nickel ore veins per chunk", 12);
 		zincSpawn = CommonConfig.createConfigInt(config, CATEGORY_OREGEN, "2.25_zincSpawnrate", "Amount of zinc ore veins per chunk", 8);
+		potashSpawn = CommonConfig.createConfigInt(config, CATEGORY_OREGEN, "2.NEW_potashSpawnrate", "Amount of potash ore veins per chunk", 4);
 		mineralSpawn = CommonConfig.createConfigInt(config, CATEGORY_OREGEN, "2.26_mineralSpawnrate", "Amount of mineral ore veins per chunk", 4);
 		dunaOilSpawn = CommonConfig.createConfigInt(config, CATEGORY_OREGEN, "2.27S_oilSpawnRate", "Spawns an oil bubble every nTH chunk (on Duna)", 100);
 		laytheOilSpawn = CommonConfig.createConfigInt(config, CATEGORY_OREGEN, "2.28S_oilSpawnRate", "Spawns a DS oil bubble every nTH chunk (on Laythe)", 100);

@@ -96,6 +96,8 @@ public class ModBlocks {
 	public static Block ore_fire;
 	public static Block ore_shale;
 
+	public static Block ore_potash;
+
 	public static Block ore_random;
 	public static Block ore_bedrock;
 	public static Block ore_volcano;
@@ -1405,6 +1407,7 @@ public class ModBlocks {
 		ore_silicon = new BlockOre(Material.rock).setBlockName("ore_silicon").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_silicon");
 		ore_fire = new BlockOre(Material.rock).setBlockName("ore_fire").setCreativeTab(MainRegistry.blockTab).setHardness(0.4F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_fire");
 		ore_shale = new BlockOre(Material.rock).setBlockName("ore_shale").setCreativeTab(MainRegistry.blockTab).setHardness(1.5F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_shale");
+		ore_potash = new BlockOre(Material.rock).setBlockName("ore_potash").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_potash");
 
 		cluster_iron = new BlockCluster(Material.rock).setBlockName("cluster_iron").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(15.0F).setBlockTextureName(RefStrings.MODID + ":cluster_iron");
 		cluster_titanium = new BlockCluster(Material.rock).setBlockName("cluster_titanium").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(15.0F).setBlockTextureName(RefStrings.MODID + ":cluster_titanium");
@@ -2677,6 +2680,8 @@ public class ModBlocks {
 		GameRegistry.registerBlock(ore_silicon, ItemBlockBase.class, ore_silicon.getUnlocalizedName());
 		GameRegistry.registerBlock(ore_fire, ItemBlockBase.class, ore_fire.getUnlocalizedName());
 		GameRegistry.registerBlock(ore_shale, ItemBlockBase.class, ore_shale.getUnlocalizedName());
+		GameRegistry.registerBlock(ore_potash, ItemBlockBase.class, ore_potash.getUnlocalizedName());
+
 
 		//Rare Minerals
 		GameRegistry.registerBlock(ore_australium, ItemOreBlock.class, ore_australium.getUnlocalizedName());

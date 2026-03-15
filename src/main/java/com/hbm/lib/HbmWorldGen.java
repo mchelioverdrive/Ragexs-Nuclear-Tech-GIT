@@ -172,6 +172,8 @@ public class HbmWorldGen implements IWorldGenerator {
 			DungeonToolbox.generateOre(world, rand, i, j, WorldConfig.copperSpawn, 6, 5, 45, ModBlocks.ore_copper);
 			// DungeonToolbox.generateOre(world, rand, i, j, WorldConfig.nickelSpawn, 6, 5, 10, ModBlocks.ore_nickel);
 			DungeonToolbox.generateOre(world, rand, i, j, WorldConfig.zincSpawn, 6, 5, 32, ModBlocks.ore_zinc);
+			DungeonToolbox.generateOre(world, rand, i, j, WorldConfig.potashSpawn, 6, 5, 32, ModBlocks.ore_potash);
+
 			// DungeonToolbox.generateOre(world, rand, i, j, WorldConfig.mineralSpawn, 10, 12, 32, ModBlocks.ore_mineral);
 			//DungeonToolbox.generateOre(world, rand, i, j, WorldConfig.siliconSpawn, 4, 5, 45, ModBlocks.ore_silicon);
 			DungeonToolbox.generateOre(world, rand, i, j, WorldConfig.quartzSpawn, 4, 5, 50, ModBlocks.ore_quartz);

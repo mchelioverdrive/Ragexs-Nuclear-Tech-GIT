@@ -250,6 +250,10 @@ public class OreDictManager {
 	public static final DictFrame GAAS = new DictFrame("GalliumArsenide");
 	public static final DictFrame PLATNIUM = new DictFrame("Platnium"); //ah shit forgot this was in the mod
 
+	//infinite pain
+	//public static final DictFrame K = new DictFrame("Potassium");
+
+
 	public static final DictFrame MIN = new DictFrame("Mineral");
 	/*
 	 * DUST AND GEM ORES
