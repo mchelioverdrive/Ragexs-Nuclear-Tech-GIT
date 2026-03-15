@@ -207,6 +207,7 @@ public class Fluids {
 	public static FluidType CHLOROCALCITE_MIX;
 	public static FluidType CHLOROCALCITE_CLEANED;
 	public static FluidType POTASSIUM_CHLORIDE;
+	public static FluidType POTASSIUM;
 	public static FluidType CALCIUM_CHLORIDE;
 	public static FluidType CALCIUM_SOLUTION;
 	public static FluidType SMOKE;
@@ -469,7 +470,10 @@ public class Fluids {
 		CHLOROCALCITE_MIX =		new FluidType("CHLOROCALCITE_MIX",	0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, NOCON, new FT_Corrosive(60));
 		CHLOROCALCITE_CLEANED =	new FluidType("CHLOROCALCITE_CLEANED", 0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, NOCON, new FT_Corrosive(60));
 		POTASSIUM_CHLORIDE =	new FluidType("POTASSIUM_CHLORIDE",	0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, NOCON, new FT_Corrosive(60));
-		CALCIUM_CHLORIDE =		new FluidType("CALCIUM_CHLORIDE", 0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, NOCON, new FT_Corrosive(60));
+		//apparently this is supposed to be heated...???
+
+
+		CALCIUM_CHLORIDE =		new FluidType("CALCIUM_CHLORIDE", 0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS, NOCON); //not corrosive? , new FT_Corrosive(60)
 		CALCIUM_SOLUTION =		new FluidType(149, "CALCIUM_SOLUTION", 0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, NOCON, new FT_Corrosive(60));
 		SMOKE =					new FluidType("SMOKE",				0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(GASEOUS, NOID, NOCON);
 		SMOKE_LEADED =			new FluidType(151, "SMOKE_LEADED",		0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(GASEOUS, NOID, NOCON);
@@ -519,6 +523,11 @@ public class Fluids {
 		GASEOUS_THORIUM_BROMIDE =	new FluidType("GASEOUS_THORIUM_BROMIDE",		0x7A5542, 0, 0, 0, EnumSymbol.NONE).setTemp(2300).addTraits(GASEOUS, NOCON, NOID, new FT_Rocket(1300, 700_000));
 
 		MOLTEN_SALT =			new FluidType("MOLTEN_SALT",		0xFF6A00, 2, 0, 3, EnumSymbol.NONE).setTemp(800).addTraits(LIQUID, VISCOUS, new FT_Corrosive(65));
+
+		POTASSIUM =
+			new FluidType("POTASSIUM", 0xD7D1C7, 1, 2, 3, EnumSymbol.NONE)
+				.setTemp(200)
+				.addTraits(LIQUID, new FT_Flammable(20000));
 
 
 		// ^ ^ ^ ^ ^ ^ ^ ^
@@ -697,6 +706,7 @@ public class Fluids {
 		metaOrder.add(CHLOROCALCITE_SOLUTION);
 		metaOrder.add(CHLOROCALCITE_MIX);
 		metaOrder.add(CHLOROCALCITE_CLEANED);
+		metaOrder.add(POTASSIUM);
 		metaOrder.add(POTASSIUM_CHLORIDE);
 		metaOrder.add(CALCIUM_CHLORIDE);
 		metaOrder.add(CALCIUM_SOLUTION);

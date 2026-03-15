@@ -611,6 +611,25 @@ public class ChemplantRecipes extends SerializableRecipe {
 			//nvm just use fucking energy because why not
 			.outputFluids(new FluidStack(Fluids.MOLTEN_SALT, 576)));
 
+		//potash to potassium chloride
+		recipes.add(new ChemRecipe(1012, "POTASSIUM_CHLORIDEPROD", 50)
+				.inputItems(
+					new ComparableStack(ModItems.powder_potash)
+				)
+				.outputFluids(new FluidStack(Fluids.POTASSIUM_CHLORIDE, 2000))
+			.outputItems(new ItemStack(ModItems.itemsalt, 1)));
+
+		//Molten KCl + sodium vapor → molten NaCl + potassium vapor
+		recipes.add(new ChemRecipe(1013, "POTASSIUM", 90)
+			.inputFluids(new FluidStack(Fluids.POTASSIUM_CHLORIDE, 2000), new FluidStack(Fluids.SODIUM, 2000))
+
+			.outputFluids(
+				new FluidStack(Fluids.MOLTEN_SALT, 2000),
+				new FluidStack(Fluids.POTASSIUM, 2000))
+			);
+
+
+
 
 		//todo methamphetamine
 
