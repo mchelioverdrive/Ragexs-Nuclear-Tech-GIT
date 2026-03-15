@@ -8,6 +8,8 @@ import net.minecraftforge.client.IItemRenderer;
 
 public abstract class ItemRenderBase implements IItemRenderer {
 
+	//TODO how the hell do I get rid of the random fucking satellite rendering at y500 at 0,0
+
 	@Override
 	public boolean handleRenderType(ItemStack item, ItemRenderType type) {
 		switch(type) {
@@ -24,14 +26,14 @@ public abstract class ItemRenderBase implements IItemRenderer {
 	public boolean shouldUseRenderHelper(ItemRenderType type, ItemStack item, ItemRendererHelper helper) {
 		return type == ItemRenderType.ENTITY && (helper == ItemRendererHelper.ENTITY_BOBBING || helper == ItemRendererHelper.ENTITY_ROTATION);
 	}
-	
+
 	@Override
 	public void renderItem(ItemRenderType type, ItemStack item, Object... data) {
-		
+
 		GL11.glPushMatrix();
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		GL11.glEnable(GL11.GL_ALPHA_TEST);
-		
+
 		if(type == ItemRenderType.INVENTORY) {
 			RenderHelper.enableGUIStandardItemLighting();
 			GL11.glTranslated(8, 10, 0);
@@ -40,12 +42,12 @@ public abstract class ItemRenderBase implements IItemRenderer {
 			GL11.glScaled(-1, -1, -1);
 			renderInventory();
 		} else {
-			
+
 			if(type != ItemRenderType.ENTITY)
 				GL11.glTranslated(0.5, 0.25, 0);
 			else
 				GL11.glScaled(1.5, 1.5, 1.5);
-			
+
 			GL11.glScaled(0.25, 0.25, 0.25);
 
 			if(type != ItemRenderType.EQUIPPED)
@@ -54,7 +56,7 @@ public abstract class ItemRenderBase implements IItemRenderer {
 		}
 		renderCommon();
 		renderCommonWithStack(item);
-		
+
 		GL11.glPopMatrix();
 	}
 

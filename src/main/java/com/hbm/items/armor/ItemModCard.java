@@ -6,16 +6,17 @@ import com.hbm.extprop.HbmPlayerProps;
 import com.hbm.handler.ArmorModHandler;
 import com.hbm.items.ModItems;
 
+import com.hbm.main.MainRegistry;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 
 public class ItemModCard extends ItemArmorMod {
-	
+
 	public ItemModCard() {
 		super(ArmorModHandler.helmet_only, true, true, false, false);
-		this.setCreativeTab(null);
+		this.setCreativeTab(MainRegistry.partsTab);
 	}
 
 	@Override
@@ -36,7 +37,7 @@ public class ItemModCard extends ItemArmorMod {
 	public void addDesc(List list, ItemStack stack, ItemStack armor) {
 		list.add(EnumChatFormatting.RED + stack.getDisplayName());
 	}
-	
+
 	@Override
 	public void modDamage(LivingHurtEvent event, ItemStack armor) {
 		if(this == ModItems.card_qos && event.entityLiving.getRNG().nextInt(3) == 0 && event.entityLiving instanceof EntityPlayer) {

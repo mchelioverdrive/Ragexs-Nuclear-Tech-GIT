@@ -1238,7 +1238,9 @@ public class ModEventHandlerClient {
 
 		Vec3 vec = Vec3.createVectorHelper(x - dx, y - dy, z - dz);
 
+/*
 		if(player.worldObj.provider.dimensionId == 0 && vec.lengthVector() < dist && !HTTPHandler.capsule.isEmpty()) {
+			//???
 
 			GL11.glTranslated(vec.xCoord, vec.yCoord, vec.zCoord);
 
@@ -1296,6 +1298,7 @@ public class ModEventHandlerClient {
 
 			GL11.glPopMatrix();
 		}
+*/
 
 		GL11.glPopMatrix();
 

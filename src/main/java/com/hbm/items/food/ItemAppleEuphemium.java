@@ -1,5 +1,6 @@
 package com.hbm.items.food;
 
+import com.hbm.main.MainRegistry;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.player.EntityPlayer;
@@ -15,7 +16,7 @@ public class ItemAppleEuphemium extends ItemFood {
 	public ItemAppleEuphemium(int p_i45339_1_, float p_i45339_2_, boolean p_i45339_3_) {
 		super(p_i45339_1_, p_i45339_2_, p_i45339_3_);
         this.setAlwaysEdible();
-        this.setCreativeTab(null);
+        this.setCreativeTab(MainRegistry.partsTab);
 	}
 
     @Override
@@ -35,7 +36,7 @@ public class ItemAppleEuphemium extends ItemFood {
             p_77849_3_.addPotionEffect(new PotionEffect(Potion.field_76443_y.id, 2147483647, 120));
         }
     }
-    
+
     @Override
 	public EnumRarity getRarity(ItemStack p_77613_1_)
     {
