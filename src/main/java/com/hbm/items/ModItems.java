@@ -3161,6 +3161,11 @@ public class ModItems {
 		rubidiumsalt = new ItemSalt(1).setUnlocalizedName("rubidiumsalt").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 
 
+		//oh my god how the fuck am I gonna add francium
+		//answer: uhhhh let's skip that for now. I already added a shit ton of missing textures.
+
+
+
 		crystal_basaltic = new Item().setUnlocalizedName("crystal_basaltic").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_basaltic");
 
 
