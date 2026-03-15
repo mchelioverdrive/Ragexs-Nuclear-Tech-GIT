@@ -532,7 +532,8 @@ public class ChemplantRecipes extends SerializableRecipe {
 				new FluidStack(Fluids.WATER, 600),
 				new FluidStack(Fluids.SODIUM, 200))
 			//.outputFluids(new FluidStack(Fluids.NITAN, 1000)));
-			.outputItems(new ItemStack(ModItems.powder_aluminium, 8)));
+			.outputItems(new ItemStack(ModItems.powder_aluminium, 8)
+				));
 
 		recipes.add(new ChemRecipe(1004, "URANIUM_BROMIDE", 50)
 			.inputItems(
