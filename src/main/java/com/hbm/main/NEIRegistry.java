@@ -36,7 +36,8 @@ public class NEIRegistry {
 		handlers.add(new HydrotreatingHandler());
 		handlers.add(new ChemplantRecipeHandler());
 		handlers.add(new CrystallizerRecipeHandler());
-		handlers.add(new BookRecipeHandler());
+		//handlers.add(new BookRecipeHandler());
+		//I actually just genuinely fucking hate this mod sometimes
 		handlers.add(new FusionRecipeHandler());
 		handlers.add(new HadronRecipeHandler());
 		handlers.add(new SILEXRecipeHandler());

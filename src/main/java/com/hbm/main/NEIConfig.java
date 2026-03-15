@@ -24,7 +24,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.oredict.OreDictionary;
 
 public class NEIConfig implements IConfigureNEI {
-	
+
 	@Override
 	public void loadConfig() {
 		for (TemplateRecipeHandler handler: NEIRegistry.listAllHandlers()) {
@@ -34,7 +34,7 @@ public class NEIConfig implements IConfigureNEI {
 		for(CustomMachineConfigJSON.MachineConfiguration conf : CustomMachineConfigJSON.niceList) {
 			registerHandlerBypass(new CustomMachineHandler(conf));
 		}
-		
+
 		//Some things are even beyond my control...or are they?
 		API.hideItem(ItemBattery.getEmptyBattery(ModItems.memory));
 		API.hideItem(ItemBattery.getFullBattery(ModItems.memory));
@@ -55,12 +55,9 @@ public class NEIConfig implements IConfigureNEI {
 		API.hideItem(new ItemStack(ModItems.euphemium_kit));
 		API.hideItem(new ItemStack(ModItems.bobmazon_hidden));
 		API.hideItem(new ItemStack(ModItems.book_lore)); //the broken nbt-less one shouldn't show up in normal play anyway
-		if(MainRegistry.polaroidID != 11) {
-			API.hideItem(new ItemStack(ModItems.book_secret));
-			API.hideItem(new ItemStack(ModItems.book_of_));
-			API.hideItem(new ItemStack(ModItems.burnt_bark));
-			API.hideItem(new ItemStack(ModItems.ams_core_thingy));
-		}
+
+		//WHAT IS THIS MICKEY MOUSE SHIT
+
 		API.hideItem(new ItemStack(ModBlocks.dummy_block_vault));
 		API.hideItem(new ItemStack(ModBlocks.dummy_block_blast));
 		API.hideItem(new ItemStack(ModBlocks.dummy_block_uf6));
@@ -90,7 +87,7 @@ public class NEIConfig implements IConfigureNEI {
 		API.hideItem(new ItemStack(ModItems.bedrock_ore_base));
 		API.hideItem(new ItemStack(ModItems.ore_density_scanner));
 		API.hideItem(new ItemStack(ModBlocks.machine_ore_slopper));
-		
+
 		API.registerHighlightIdentifier(ModBlocks.ore_random, new IHighlightHandler() {
 
 			@Override
@@ -98,14 +95,14 @@ public class NEIConfig implements IConfigureNEI {
 				int x = mop.blockX;
 				int y = mop.blockY;
 				int z = mop.blockZ;
-				
+
 				TileEntity te = world.getTileEntity(x, y, z);
-				
+
 				if(te instanceof TileEntityRandomOre) {
 					TileEntityRandomOre ore = (TileEntityRandomOre) te;
 					return new ItemStack(ModBlocks.ore_random, 1, ore.getStackId());
 				}
-				
+
 				return null;
 			}
 
@@ -113,9 +110,9 @@ public class NEIConfig implements IConfigureNEI {
 			public List<String> handleTextData(ItemStack itemStack, World world, EntityPlayer player, MovingObjectPosition mop, List<String> currenttip, Layout layout) {
 				return currenttip;
 			}
-			
+
 		});
-		
+
 		API.registerHighlightIdentifier(ModBlocks.plushie, new IHighlightHandler() {
 			@Override public ItemStack identifyHighlight(World world, EntityPlayer player, MovingObjectPosition mop) {
 				int x = mop.blockX;
@@ -131,12 +128,12 @@ public class NEIConfig implements IConfigureNEI {
 			@Override public List<String> handleTextData(ItemStack itemStack, World world, EntityPlayer player, MovingObjectPosition mop, List<String> currenttip, Layout layout) { return currenttip; }
 		});
 	}
-	
+
 	public static void registerHandler(Object o) {
 		API.registerRecipeHandler((ICraftingHandler) o);
 		API.registerUsageHandler((IUsageHandler) o);
 	}
-	
+
 	/** Bypasses the utterly useless restriction of one registered handler per class */
 	public static void registerHandlerBypass(Object o) {
 		GuiCraftingRecipe.craftinghandlers.add((ICraftingHandler) o);

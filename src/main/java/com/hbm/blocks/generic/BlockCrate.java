@@ -143,7 +143,7 @@ public class BlockCrate extends BlockFalling {
 		BlockCrate.addToListWithWeight(metalList, ModItems.piston_selenium, 6);
 
 		// Red Crate
-		BlockCrate.addToListWithWeight(redList, ModItems.mysteryshovel, 1);
+		//BlockCrate.addToListWithWeight(redList, ModItems.mysteryshovel, 1);
 		//BlockCrate.addToListWithWeight(redList, ModItems.gun_revolver_pip, 1);
 		//BlockCrate.addToListWithWeight(redList, ModItems.gun_revolver_blackjack, 1);
 		//BlockCrate.addToListWithWeight(redList, ModItems.gun_revolver_silver, 1);

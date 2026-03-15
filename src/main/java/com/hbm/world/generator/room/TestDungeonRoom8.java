@@ -48,21 +48,21 @@ public class TestDungeonRoom8 extends CellularDungeonRoom {
 			world.setBlock(x + parent.width / 2, y + 2, z + parent.width / 2, ModBlocks.safe, 0, 3);
 			if(world.getTileEntity(x + parent.width / 2, y + 2, z + parent.width / 2) instanceof TileEntitySafe) {
 
-				int r = world.rand.nextInt(10);
+				//int r = world.rand.nextInt(10);
 
-				if(r == 0) {
-					((TileEntitySafe)world.getTileEntity(x + parent.width / 2, y + 2, z + parent.width / 2)).setInventorySlotContents(7, new ItemStack(ModItems.book_of_));
-				} else if(r < 4) {
-					TileEntitySafe safe =  (TileEntitySafe) world.getTileEntity(x + parent.width / 2, y + 2, z + parent.width / 2);
-					//safe.setInventorySlotContents(5, generateBook(world));
-					//safe.setInventorySlotContents(7, new ItemStack(ModItems.stamp_book, 1, world.rand.nextInt(8)));
-					//safe.setInventorySlotContents(9, new ItemStack(ModItems.stamp_book, 1, world.rand.nextInt(8)));
-				} else {
-					TileEntitySafe safe =  (TileEntitySafe) world.getTileEntity(x + parent.width / 2, y + 2, z + parent.width / 2);
-					//safe.setInventorySlotContents(5, new ItemStack(Items.book));
-					//safe.setInventorySlotContents(7, new ItemStack(ModItems.stamp_book, 1, world.rand.nextInt(8)));
-					//safe.setInventorySlotContents(9, new ItemStack(ModItems.stamp_book, 1, world.rand.nextInt(8)));
-				}
+				//if(r == 0) {
+				//	((TileEntitySafe)world.getTileEntity(x + parent.width / 2, y + 2, z + parent.width / 2)).setInventorySlotContents(7, new ItemStack(ModItems.book_of_));
+				//} else if(r < 4) {
+				//	TileEntitySafe safe =  (TileEntitySafe) world.getTileEntity(x + parent.width / 2, y + 2, z + parent.width / 2);
+				//	//safe.setInventorySlotContents(5, generateBook(world));
+				//	//safe.setInventorySlotContents(7, new ItemStack(ModItems.stamp_book, 1, world.rand.nextInt(8)));
+				//	//safe.setInventorySlotContents(9, new ItemStack(ModItems.stamp_book, 1, world.rand.nextInt(8)));
+				//} else {
+				//	TileEntitySafe safe =  (TileEntitySafe) world.getTileEntity(x + parent.width / 2, y + 2, z + parent.width / 2);
+				//	//safe.setInventorySlotContents(5, new ItemStack(Items.book));
+				//	//safe.setInventorySlotContents(7, new ItemStack(ModItems.stamp_book, 1, world.rand.nextInt(8)));
+				//	//safe.setInventorySlotContents(9, new ItemStack(ModItems.stamp_book, 1, world.rand.nextInt(8)));
+				//}
 			}
 			break;
 		}
