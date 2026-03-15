@@ -173,7 +173,7 @@ public class ConsumableRecipes {
 		//Medicine
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.pill_iodine, 8), new Object[] { "IF", 'I', I.dust(), 'F', F.dust() });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.plan_c, 1), new Object[] { "PFP", 'P', ModItems.powder_poison, 'F', F.dust() });
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.radx, 1), new Object[] { ModItems.potassium_iodide_powder, F.dust() });
+		CraftingManager.addShapelessAuto(new ItemStack(ModItems.radx, 4), new Object[] { ModItems.potassium_iodide_powder, F.dust() });
 
 		//unfunny dogshit award
 		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.fmn, 1), new Object[] { COAL.dust(), PO210.dust(), ST.dust() });

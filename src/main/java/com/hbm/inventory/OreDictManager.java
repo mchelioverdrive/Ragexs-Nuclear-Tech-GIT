@@ -319,7 +319,7 @@ public class OreDictManager {
 	public static final DictFrame I = new DictFrame("Iodine");
 	/** ASTATINE */
 	public static final DictFrame AT = new DictFrame("Astatine");
-	/** CAESIUM */
+	/** CESIUM */
 	public static final DictFrame CS = new DictFrame("Caesium");
 	/** STRONTIUM */
 	public static final DictFrame ST = new DictFrame("Strontium");

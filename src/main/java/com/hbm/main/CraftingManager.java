@@ -112,7 +112,7 @@ public class CraftingManager {
 		//please god just work
 		for (ItemStack food : allFoods) {
 			//skip random dogshit
-			if (food.getItem() == ModItems.canned_conserve || food.getItem() == Items.spider_eye || food.getItem() == Items.rotten_flesh || food.getItem() == Items.poisonous_potato || food.getItem() == ModItems.med_ipecac || food.getItem() == ModItems.med_ptsd || food.getItem() == ModItems.plan_c || food.getItem() == ModItems.pill_iodine || food.getItem() == ModItems.radx || food.getItem() == ModItems.siox || food.getItem() == ModItems.pill_herbal || food.getItem() == ModItems.xanax || food.getItem() == ModItems.fmn || food.getItem() == ModItems.five_htp || food.getItem() == ModItems.crayon || food.getItem() == ModItems.itemsalt) {
+			if (food.getItem() == ModItems.canned_conserve || food.getItem() == Items.spider_eye || food.getItem() == Items.rotten_flesh || food.getItem() == Items.poisonous_potato || food.getItem() == ModItems.med_ipecac || food.getItem() == ModItems.med_ptsd || food.getItem() == ModItems.plan_c || food.getItem() == ModItems.pill_iodine || food.getItem() == ModItems.radx || food.getItem() == ModItems.siox || food.getItem() == ModItems.pill_herbal || food.getItem() == ModItems.xanax || food.getItem() == ModItems.fmn || food.getItem() == ModItems.five_htp || food.getItem() == ModItems.crayon || food.getItem() == ModItems.itemsalt || food.getItem() == ModItems.rubidiumsalt) {
 				continue; // Skip if the item is the canned conserve itself to avoid infinite loop
 			}
 			GameRegistry.addShapelessRecipe(
@@ -287,7 +287,7 @@ public class CraftingManager {
 
 		addRecipeAuto(new ItemStack(ModItems.wrench, 1), new Object[] { " S ", " IS", "I  ", 'S', STEEL.ingot(), 'I', IRON.ingot() });
 		addRecipeAuto(new ItemStack(ModItems.wrench_flipped, 1), new Object[] { "S", "D", "W", 'S', Items.iron_sword, 'D', ModItems.ducttape, 'W', ModItems.wrench });
-		addRecipeAuto(new ItemStack(ModItems.memespoon, 1), new Object[] { "CGC", "PSP", "IAI", 'C', ModItems.powder_yellowcake, 'G', TH232.block(), 'P', ModItems.photo_panel, 'S', ModItems.steel_shovel, 'I', ModItems.plate_polymer, 'A', "ingotAustralium" });
+		//addRecipeAuto(new ItemStack(ModItems.memespoon, 1), new Object[] { "CGC", "PSP", "IAI", 'C', ModItems.powder_yellowcake, 'G', TH232.block(), 'P', ModItems.photo_panel, 'S', ModItems.steel_shovel, 'I', ModItems.plate_polymer, 'A', "ingotAustralium" });
 		//addShapelessAuto(new ItemStack(ModItems.cbt_device, 1), new Object[] { STEEL.bolt(), ModItems.wrench });
 
 		addShapelessAuto(new ItemStack(ModItems.toothpicks, 3), new Object[] { KEY_STICK, KEY_STICK, KEY_STICK });

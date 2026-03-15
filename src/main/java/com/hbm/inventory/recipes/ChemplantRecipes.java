@@ -617,7 +617,9 @@ public class ChemplantRecipes extends SerializableRecipe {
 					new ComparableStack(ModItems.powder_potash)
 				)
 				.outputFluids(new FluidStack(Fluids.POTASSIUM_CHLORIDE, 2000))
-			.outputItems(new ItemStack(ModItems.itemsalt, 1)));
+			.outputItems(
+				new ItemStack(ModItems.itemsalt, 2),
+				new ItemStack(ModItems.rubidiumsalt, 1)));
 
 		//Molten KCl + sodium vapor → molten NaCl + potassium vapor
 		recipes.add(new ChemRecipe(1013, "POTASSIUM", 90)
