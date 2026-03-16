@@ -1127,13 +1127,14 @@ public class AssemblerRecipes extends SerializableRecipe {
 				new ComparableStack(ModItems.circuit, 4, EnumCircuitType.BASIC)
 			}, 400);
 
-		makeRecipe(new ComparableStack(ModItems.euphemium_capacitor, 1), new AStack[] {
-				new OreDictStack(NB.ingot(), 4),
-				new ComparableStack(ModItems.redcoil_capacitor, 1),
-				new ComparableStack(ModItems.ingot_euphemium, 4),
-				new ComparableStack(ModItems.circuit, 8, EnumCircuitType.CAPACITOR_BOARD),
-				new ComparableStack(ModItems.powder_nitan_mix, 18),
-			}, 600);
+		//makeRecipe(new ComparableStack(ModItems.euphemium_capacitor, 1), new AStack[] {
+		//		new OreDictStack(NB.ingot(), 4),
+		//		new ComparableStack(ModItems.redcoil_capacitor, 1),
+		//		new ComparableStack(ModItems.ingot_euphemium, 4),
+		//		new ComparableStack(ModItems.circuit, 8, EnumCircuitType.CAPACITOR_BOARD),
+		//		new ComparableStack(ModItems.powder_nitan_mix, 18),
+		//	}, 600);
+		//nah
 
 		makeRecipe(new ComparableStack(ModBlocks.icf_laser_component, 1, EnumICFPart.CELL.ordinal()), new AStack[] {
 				new ComparableStack(ModItems.ingot_cft, 2),

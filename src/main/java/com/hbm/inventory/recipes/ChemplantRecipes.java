@@ -45,13 +45,16 @@ public class ChemplantRecipes extends SerializableRecipe {
 		registerOtherOil();
 
 		recipes.add(new ChemRecipe(36, "COOLANT", 50)
-				.inputItems(new OreDictStack(KNO.dust()))
+				//NITER
+				.inputItems(new OreDictStack(KNO.any()))
 				.inputFluids(new FluidStack(Fluids.WATER, 1800))
 				.outputFluids(new FluidStack(Fluids.COOLANT, 2000)));
 		recipes.add(new ChemRecipe(37, "CRYOGEL", 50)
 				.inputItems(new ComparableStack(ModItems.powder_ice))
 				.inputFluids(new FluidStack(Fluids.COOLANT, 1800))
 				.outputFluids(new FluidStack(Fluids.CRYOGEL, 2000)));
+
+		//TOOL STEEL DOES NOT INVOLVE FUCKING MERCURY RETARD
 		recipes.add(new ChemRecipe(38, "DESH", 300)
 				.inputItems(new ComparableStack(ModItems.powder_desh_mix))
 				.inputFluids(
@@ -379,9 +382,12 @@ public class ChemplantRecipes extends SerializableRecipe {
 				//.inputFluids(new FluidStack(Fluids.BLOOD, 1000))
 				//.outputItems(new ItemStack(Blocks.sand, 4))
 				//.outputFluids(new FluidStack(Fluids.NITROGEN, 1000)));
-		recipes.add(new ChemRecipe(99, "NITROACID", 100)
-				.inputFluids(new FluidStack(Fluids.AMMONIA, 1000), new FluidStack(Fluids.WATER, 500))
-				.outputFluids(new FluidStack(Fluids.NITRIC_ACID, 1000)));
+		recipes.add(new ChemRecipe(99, "NITROACID", 180)
+			.inputFluids(
+				new FluidStack(Fluids.AMMONIA, 1000),
+				new FluidStack(Fluids.OXYGEN, 1000),
+				new FluidStack(Fluids.WATER, 500))
+			.outputFluids(new FluidStack(Fluids.NITRIC_ACID, 1000)));
 		recipes.add(new ChemRecipe(100, "HYDRAZINE", 250)
 				.inputFluids(new FluidStack(Fluids.NITRIC_ACID, 2000), new FluidStack(Fluids.AMMONIA, 1000))
 				.outputFluids(new FluidStack(Fluids.HYDRAZINE, 800)));
