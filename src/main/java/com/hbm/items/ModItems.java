@@ -2722,7 +2722,7 @@ public class ModItems {
 		ingot_bk247 = new Item().setUnlocalizedName("ingot_bk247").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_bk247");
 		ingot_cf251 = new Item().setUnlocalizedName("ingot_cf251").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID +":ingot_cf251");
 		ingot_cf252 = new Item().setUnlocalizedName("ingot_cf252").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_cf252");
-		rubidium_ingot = new Item().setUnlocalizedName("rubidium_ingot").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":rubidium_ingot");
+		rubidium_ingot = new Item().setUnlocalizedName("rubidium_ingot").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_rubidium");
 
 
 		ingot_es253 = new Item().setUnlocalizedName("ingot_es253").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_es253");

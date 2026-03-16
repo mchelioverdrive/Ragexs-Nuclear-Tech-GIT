@@ -437,7 +437,7 @@ public class OreDictManager {
 		//MUD		.rad(HazardRegistry.mud)																					.ingot(ingot_mud);
 		CN989   .rad(HazardRegistry.cn989)  .hot(4F)                .nugget(nugget_cn989)       .billet(billet_cn989)       .ingot(ingot_cn989)         .dust(powder_cn989)         .plate(plate_cn989);
 
-		Rb .rad(HazardRegistry.Rb) .ingot(rubidium_ingot) ; //.dust(powder_rubidium) .ore(ore_rubidium) yeah yeah whatever
+		Rb .rad(HazardRegistry.Rb) .ingot(rubidium_ingot) .hydro(1) ; //.dust(powder_rubidium) .ore(ore_rubidium) yeah yeah whatever
 
 		/*
 		 * STABLE
