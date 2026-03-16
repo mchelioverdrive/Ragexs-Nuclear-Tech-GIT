@@ -66,8 +66,12 @@ public class ChemplantRecipes extends SerializableRecipe {
 						new FluidStack(Fluids.MERCURY, 200))
 				.outputFluids(new FluidStack(Fluids.NITAN, 1000)));
 		recipes.add(new ChemRecipe(40, "PEROXIDE", 50)
-				.inputFluids(new FluidStack(Fluids.WATER, 1000))
-				.outputFluids(new FluidStack(Fluids.PEROXIDE, 800)));
+				.inputFluids(
+					new FluidStack(Fluids.WATER, 1000)
+					//new FluidStack(Fluids.OXYGEN, 500)
+					//well I mean it's like everywhere but at the same time the like chemical process or something
+				)
+				.outputFluids(new FluidStack(Fluids.PEROXIDE, 1000)));
 		recipes.add(new ChemRecipe(90, "SULFURIC_ACID", 50)
 				.inputItems(new OreDictStack(S.dust()))
 				.inputFluids(
@@ -381,17 +385,15 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(100, "HYDRAZINE", 250)
 				.inputFluids(new FluidStack(Fluids.NITRIC_ACID, 2000), new FluidStack(Fluids.AMMONIA, 1000))
 				.outputFluids(new FluidStack(Fluids.HYDRAZINE, 800)));
+		//ammonia
 		recipes.add(new ChemRecipe(101, "AMONGUS", 250)
-				.inputFluids(new FluidStack(Fluids.NITROGEN, 600), new FluidStack(Fluids.WATER, 1000))
+				.inputFluids(new FluidStack(Fluids.NITROGEN, 600), new FluidStack(Fluids.HYDROGEN, 1000))
 				.outputFluids(new FluidStack(Fluids.AMMONIA, 800)));
-		//recipes.add(new ChemRecipe(102, "BLOODFUEL", 250)
-		//		.inputFluids(new FluidStack(Fluids.AMMONIA, 350), new FluidStack(Fluids.BLOOD, 800))
-		//		.outputFluids(new FluidStack(Fluids.BLOODGAS, 1000)));
 		recipes.add(new ChemRecipe(103, "HCL", 250)
 				.inputFluids(new FluidStack(Fluids.HYDROGEN, 300), new FluidStack(Fluids.CHLORINE, 1000))
 				.outputFluids(new FluidStack(Fluids.HCL, 400)));
 		recipes.add(new ChemRecipe(104, "AMMONIUM", 250)
-				.inputFluids(new FluidStack(Fluids.AMMONIA, 500), new FluidStack(Fluids.NITROGEN, 1000))
+				.inputFluids(new FluidStack(Fluids.AMMONIA, 500), new FluidStack(Fluids.NITRIC_ACID, 1000))
 				.outputItems(new ItemStack(ModItems.ammonium_nitrate, 4)));
 		recipes.add(new ChemRecipe(105, "ARSENIDE", 250)
 				.inputFluids(new FluidStack(Fluids.WATER, 500), new FluidStack(Fluids.LIGHTOIL, 900))
@@ -530,7 +532,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.inputItems(new ComparableStack(ModBlocks.ore_aluminium))
 			.inputFluids(
 				new FluidStack(Fluids.WATER, 600),
-				new FluidStack(Fluids.SODIUM, 200))
+				new FluidStack(Fluids.SODIUM_HYDROXIDE, 200))
 			//.outputFluids(new FluidStack(Fluids.NITAN, 1000)));
 			.outputItems(new ItemStack(ModItems.powder_aluminium, 8)
 				));
@@ -659,6 +661,22 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 				.outputItems(new ItemStack(ModItems.rubidium_ingot, 1))
 				.outputFluids(new FluidStack(Fluids.CALCIUM_CHLORIDE, 800)));
+
+
+		//pure potassium
+		//Raw potassium metal is primarily manufactured by reducing molten potassium chloride with sodium metal at high temperatures
+		//recipes.add(new ChemRecipe(1016, "POTASSIUM_PURE", 110)
+		//	.inputFluids(new FluidStack(Fluids.POTASSIUM_CHLORIDE, 2000), new FluidStack(Fluids.SODIUM, 2000))
+		//		.outputItems(new ItemStack(ModItems.potassium_powder, 1), new ItemStack(ModItems.itemsalt, 1)));
+		//should be done in the solidifier
+		//done
+
+		//sodium hydroxide
+		recipes.add(new ChemRecipe(1016, "SODIUM_HYDROXIDE", 50)
+			.inputFluids(new FluidStack(Fluids.SODIUM, 1000), new FluidStack(Fluids.WATER, 500))
+			.outputFluids(new FluidStack(Fluids.SODIUM_HYDROXIDE, 1000))
+		);
+
 
 
 

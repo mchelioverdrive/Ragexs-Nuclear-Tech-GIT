@@ -217,6 +217,8 @@ public class Fluids {
 	public static FluidType HELIUM4;
 	public static FluidType HEAVYWATER_HOT;
 	public static FluidType SODIUM;
+	public static FluidType SODIUM_HYDROXIDE;
+	//end me
 	public static FluidType SODIUM_HOT;
 	public static FluidType LEAD;
 	public static FluidType LEAD_HOT;
@@ -493,6 +495,7 @@ public class Fluids {
 		HELIUM4 =				new FluidType("HELIUM4",			0xE54B0A, 0, 0, 0, EnumSymbol.ASPHYXIANT).addTraits(GASEOUS);
 		HEAVYWATER_HOT =		new FluidType("HEAVYWATER_HOT",		0x4D007B, 1, 0, 0, EnumSymbol.NONE).setTemp(600).addTraits(LIQUID, VISCOUS);
 		SODIUM =				new FluidType("SODIUM",				0xCCD4D5, 1, 2, 3, EnumSymbol.NONE).setTemp(400).addTraits(LIQUID, VISCOUS);
+		SODIUM_HYDROXIDE =		new FluidType("SODIUM_HYDROXIDE",	0xCCD4D5, 1, 2, 3, EnumSymbol.NONE).setTemp(400).addTraits(LIQUID, VISCOUS, new FT_Corrosive(65));
 		SODIUM_HOT =			new FluidType("SODIUM_HOT",			0xE2ADC1, 1, 2, 3, EnumSymbol.NONE).setTemp(1200).addTraits(LIQUID, VISCOUS);
 		THORIUM_SALT =			new FluidType("THORIUM_SALT",		0x7A5542, 2, 0, 3, EnumSymbol.NONE).setTemp(800).addTraits(LIQUID, VISCOUS, new FT_Corrosive(65));
 		THORIUM_SALT_HOT =		new FluidType("THORIUM_SALT_HOT",	0x3E3627, 2, 0, 3, EnumSymbol.NONE).setTemp(1600).addTraits(LIQUID, VISCOUS, new FT_Corrosive(65));
@@ -578,6 +581,7 @@ public class Fluids {
 		metaOrder.add(BLOODGAS);
 		metaOrder.add(BLOOD_HOT);
 		metaOrder.add(SODIUM);
+		metaOrder.add(SODIUM_HYDROXIDE);
 		metaOrder.add(SODIUM_HOT);
 		metaOrder.add(LEAD);
 		metaOrder.add(LEAD_HOT);
@@ -855,6 +859,8 @@ public class Fluids {
 		HEAVYWATER_HOT.addTraits(new FT_Coolable(HEAVYWATER, 1, 1, 300).setEff(CoolingType.HEATEXCHANGER, 1.0D));
 
 		SODIUM.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 2.5D).setEff(HeatingType.ICF, 3D).addStep(400, 1, SODIUM_HOT, 1));
+		//SODIUM_HYDROXIDE.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 1.0D).addStep(400, 1, SODIUM_HOT, 1));
+		//idk shit about the PWR so I'm gonna leave this alone for now
 		SODIUM_HOT.addTraits(new FT_Coolable(SODIUM, 1, 1, 400).setEff(CoolingType.HEATEXCHANGER, 1.0D));
 		/* Fuck you, this is final now. If you had any concerns, you could have told me like a normal person instead of shitting on in-dev values that change every other day */
 		LEAD.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 0.75D).setEff(HeatingType.ICF, 4D).addStep(800, 1, LEAD_HOT, 1), new FT_PWRModerator(0.75D));

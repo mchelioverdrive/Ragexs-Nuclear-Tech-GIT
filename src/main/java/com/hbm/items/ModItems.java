@@ -165,6 +165,8 @@ public class ModItems {
 
 	public static Item potassium_iodide_powder;
 
+	public static Item potassium_powder;
+
 	public static Item niter;
 	public static Item ingot_copper;
 	public static Item ingot_red_copper;
@@ -3001,7 +3003,8 @@ public class ModItems {
 		powder_cement = new Item().setUnlocalizedName("powder_cement").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_cement");
 
 		potassium_iodide_powder = new Item().setUnlocalizedName("potassium_iodide_powder").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_aluminium");
-
+		potassium_powder = new Item().setUnlocalizedName("potassium_powder").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_aluminium");
+		//visually the same but uhhhhhh
 
 		ingot_gh336 = new ItemCustomLore().setRarity(EnumRarity.epic).setUnlocalizedName("ingot_gh336").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_gh336");
 		nugget_gh336 = new ItemCustomLore().setRarity(EnumRarity.epic).setUnlocalizedName("nugget_gh336").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_gh336");
@@ -6462,7 +6465,7 @@ public class ModItems {
 		GameRegistry.registerItem(powder_cement, powder_cement.getUnlocalizedName());
 
 		GameRegistry.registerItem(potassium_iodide_powder, potassium_iodide_powder.getUnlocalizedName());
-
+		GameRegistry.registerItem(potassium_powder, potassium_powder.getUnlocalizedName());
 
 
 		//Powders

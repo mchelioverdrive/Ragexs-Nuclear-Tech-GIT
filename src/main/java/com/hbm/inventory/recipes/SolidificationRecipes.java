@@ -52,6 +52,8 @@ public class SolidificationRecipes extends SerializableRecipe {
 	//mostly for alternate chemistry, dump into SF if not desired
 	public static final int SF_AROMA =		1000;
 	public static final int SF_UNSAT =		1000;
+
+	public static final int SF_POTASSIUM = 100;
 	//in the event that these compounds are STILL too useless, add unsat + gas -> kerosene recipe for all those missile junkies
 	//aromatics can be idfk wax or soap or sth, perhaps artificial lubricant?
 	//on that note, add more leaded variants
@@ -75,6 +77,10 @@ public class SolidificationRecipes extends SerializableRecipe {
 		registerRecipe(SLOP,		250,			ModBlocks.ore_oil_sand);
 		registerRecipe(CARBONDIOXIDE, 1000,		ModBlocks.dry_ice);
 
+
+		registerRecipe(POTASSIUM, 1000,	ModItems.potassium_powder);
+		//idk anymore im losing my mind
+
 		registerRecipe(OIL,				SF_OIL,			DictFrame.fromOne(ModItems.oil_tar, EnumTarType.CRUDE));
 		registerRecipe(CRACKOIL,		SF_CRACK,		DictFrame.fromOne(ModItems.oil_tar, EnumTarType.CRACK));
 		registerRecipe(COALOIL,			SF_COALOIL,		DictFrame.fromOne(ModItems.oil_tar, EnumTarType.COAL));
@@ -86,7 +92,6 @@ public class SolidificationRecipes extends SerializableRecipe {
 		registerRecipe(LUBRICANT,		SF_LUBE,		DictFrame.fromOne(ModItems.oil_tar, EnumTarType.PARAFFIN));
 
 		registerRecipe(BALEFIRE,		250,			ModItems.solid_fuel_bf);
-
 
 		registerSFAuto(SMEAR);
 		registerSFAuto(HEATINGOIL);
@@ -117,6 +122,9 @@ public class SolidificationRecipes extends SerializableRecipe {
 		registerSFAuto(REFORMATE);
 		registerSFAuto(XYLENE);
 		registerSFAuto(BALEFIRE, 24_000_000L, ModItems.solid_fuel_bf); //holy shit this is energy dense*/
+
+		//todo: potassium powder
+
 
 	}
 
