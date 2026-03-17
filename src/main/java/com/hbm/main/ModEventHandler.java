@@ -1227,25 +1227,7 @@ public class ModEventHandler {
 	public void onPlayerTick(TickEvent.PlayerTickEvent event) {
 
 
-		if(event.phase != TickEvent.Phase.END) return;
-		if(event.player.worldObj.isRemote) return;
 
-		NBTTagCompound data = event.player.getEntityData();
-
-		if(data.hasKey("DelayedHealTicks")) {
-
-			int ticks = data.getInteger("DelayedHealTicks");
-
-			if(ticks > 0) {
-				data.setInteger("DelayedHealTicks", ticks - 1);
-			} else {
-				int heal = data.getInteger("DelayedHealAmount");
-				event.player.heal(heal);
-
-				data.removeTag("DelayedHealTicks");
-				data.removeTag("DelayedHealAmount");
-			}
-		}
 
 
 
@@ -1403,6 +1385,27 @@ public class ModEventHandler {
 			/// SYNC START ///
 			if(!player.worldObj.isRemote && player instanceof EntityPlayerMP) PacketDispatcher.wrapper.sendTo(new PermaSyncPacket((EntityPlayerMP) player), (EntityPlayerMP) player);
 			/// SYNC END ///
+		}
+
+
+		if(event.phase != TickEvent.Phase.END) return;
+		if(event.player.worldObj.isRemote) return;
+
+		NBTTagCompound data = event.player.getEntityData();
+
+		if(data.hasKey("DelayedHealTicks")) {
+
+			int ticks = data.getInteger("DelayedHealTicks");
+
+			if(ticks > 0) {
+				data.setInteger("DelayedHealTicks", ticks - 1);
+			} else {
+				int heal = data.getInteger("DelayedHealAmount");
+				event.player.heal(heal);
+
+				data.removeTag("DelayedHealTicks");
+				data.removeTag("DelayedHealAmount");
+			}
 		}
 
 		// METH CRASH SYSTEM
