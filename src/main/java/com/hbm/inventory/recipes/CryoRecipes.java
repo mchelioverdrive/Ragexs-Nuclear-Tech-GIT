@@ -17,18 +17,18 @@ import com.hbm.util.Tuple.Quartet;
 import net.minecraft.item.ItemStack;
 
 public class CryoRecipes extends SerializableRecipe {
-	
+
 	private static HashMap<FluidType, Quartet<FluidStack, FluidStack, FluidStack, FluidStack>> recipes = new HashMap();
 
 	@Override
 	public void registerDefaults() {
 		recipes.put(Fluids.AIR, new Quartet<>(
-				new FluidStack(Fluids.NITROGEN, 50),
-				new FluidStack(Fluids.OXYGEN, 15),
-				new FluidStack(Fluids.KRYPTON, 10),
-				new FluidStack(Fluids.CARBONDIOXIDE, 5)
-				));
-		
+			new FluidStack(Fluids.NITROGEN, 78),
+			new FluidStack(Fluids.OXYGEN, 21),
+			new FluidStack(Fluids.ARGON, 1),
+			new FluidStack(Fluids.CARBONDIOXIDE, 1)
+		)); //are we retarded or retarded?
+
 		recipes.put(Fluids.TEKTOAIR, new Quartet<>(
 				new FluidStack(Fluids.CHLORINE, 45),
 				new FluidStack(Fluids.AROMATICS, 25),
@@ -73,21 +73,21 @@ public class CryoRecipes extends SerializableRecipe {
 				));
 		recipes.put(Fluids.DUNAAIR, new Quartet<>(
 				new FluidStack(Fluids.CARBONDIOXIDE, 80),
-				new FluidStack(Fluids.NITROGEN, 10), 
+				new FluidStack(Fluids.NITROGEN, 10),
 				new FluidStack(Fluids.ARGON, 8),
 				new FluidStack(Fluids.OXYGEN, 2)
 				));
-		
+
 	} // this is such a sexy machine might use your code for atmospheric distillator
-	
+
 	public static Quartet<FluidStack, FluidStack, FluidStack, FluidStack> getOutput(FluidType type) {
 		return recipes.get(type);
 	}
-	
+
 	public static HashMap<Object, Object> getCryoRecipes() {
 
 		HashMap<Object, Object> map = new HashMap<Object, Object>();
-		
+
 		for(Entry<FluidType, Quartet<FluidStack, FluidStack, FluidStack, FluidStack>> recipe : recipes.entrySet()) {
 			map.put(ItemFluidIcon.make(recipe.getKey(), 1000),
 					new ItemStack[] {
@@ -97,7 +97,7 @@ public class CryoRecipes extends SerializableRecipe {
 							ItemFluidIcon.make(recipe.getValue().getZ().type,	recipe.getValue().getZ().fill * 10)});
 
 		}
-		
+
 		return map;
 	}
 
@@ -121,14 +121,14 @@ public class CryoRecipes extends SerializableRecipe {
 		FluidStack output3 = this.readFluidStack(obj.get("output3").getAsJsonArray());
 		FluidStack output4 = this.readFluidStack(obj.get("output4").getAsJsonArray());
 
-		
+
 		recipes.put(input, new Quartet(output1, output2, output3, output4));
 	}
 
 	@Override
 	public void writeRecipe(Object recipe, JsonWriter writer) throws IOException {
 		Entry<FluidType, Quartet<FluidStack, FluidStack, FluidStack, FluidStack>> rec = (Entry<FluidType, Quartet<FluidStack, FluidStack, FluidStack, FluidStack>>) recipe;
-		
+
 		writer.name("input").value(rec.getKey().getName());
 		writer.name("output1"); this.writeFluidStack(rec.getValue().getW(), writer);
 		writer.name("output2"); this.writeFluidStack(rec.getValue().getZ(), writer);

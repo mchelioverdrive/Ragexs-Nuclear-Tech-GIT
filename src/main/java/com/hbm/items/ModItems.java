@@ -395,6 +395,9 @@ public class ModItems {
 	public static Item plate_aluminium;
 	public static Item neutron_reflector;
 	public static Item ingot_steel;
+	public static Item ingot_chromium;
+	public static Item ingot_vanadium;
+
 	public static Item ingot_stainless;
 	public static Item plate_stainless;
 	public static Item plate_steel;
@@ -2778,6 +2781,9 @@ public class ModItems {
 		fluorite = new Item().setUnlocalizedName("fluorite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fluorite");
 		ingot_beryllium = new Item().setUnlocalizedName("ingot_beryllium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_beryllium");
 		ingot_steel = new Item().setUnlocalizedName("ingot_steel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_steel");
+		ingot_chromium = new Item().setUnlocalizedName("ingot_chromium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_aluminium");
+		ingot_vanadium = new Item().setUnlocalizedName("ingot_vanadium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_bismuth");
+
 		plate_steel = new Item().setUnlocalizedName("plate_steel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_steel");
 		ingot_stainless = new Item().setUnlocalizedName("ingot_stainless").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_stainless");
 		plate_stainless = new Item().setUnlocalizedName("plate_stainless").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_stainless");
@@ -6164,6 +6170,8 @@ public class ModItems {
 		GameRegistry.registerItem(ingot_palladium, ingot_palladium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_aluminium, ingot_aluminium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_steel, ingot_steel.getUnlocalizedName());
+		GameRegistry.registerItem(ingot_chromium, ingot_chromium.getUnlocalizedName());
+		GameRegistry.registerItem(ingot_vanadium, ingot_vanadium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_stainless, ingot_stainless.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_tcalloy, ingot_tcalloy.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cdalloy, ingot_cdalloy.getUnlocalizedName());

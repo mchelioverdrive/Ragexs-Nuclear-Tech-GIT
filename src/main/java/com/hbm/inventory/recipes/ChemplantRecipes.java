@@ -56,11 +56,19 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 		//TOOL STEEL DOES NOT INVOLVE FUCKING MERCURY RETARD
 		recipes.add(new ChemRecipe(38, "DESH", 300)
-				.inputItems(new ComparableStack(ModItems.powder_desh_mix))
+				.inputItems(
+					new ComparableStack(ModItems.ingot_steel, 2),
+					new ComparableStack(ModItems.powder_coal, 1)
+					//,
+					//new ComparableStack(ModItems.ingot_chromium, 1),
+					//new ComparableStack(ModItems.ingot_vanadium, 1)
+					//TODO
+				)
 				.inputFluids(
-						(GeneralConfig.enableLBSM && GeneralConfig.enableLBSMSimpleChemsitry) ?
-								new FluidStack[] {new FluidStack(Fluids.LIGHTOIL, 200)} :
-								new FluidStack[] {new FluidStack(Fluids.MERCURY, 200), new FluidStack(Fluids.LIGHTOIL, 200)})
+						//(GeneralConfig.enableLBSM && GeneralConfig.enableLBSMSimpleChemsitry) ?
+								//new FluidStack[] {new FluidStack(Fluids.LIGHTOIL, 200)} :
+								new FluidStack[] {new FluidStack(Fluids.OXYGEN, 200),
+								new FluidStack(Fluids.ARGON, 20)})
 				.outputItems(new ItemStack(ModItems.ingot_desh)));
 		recipes.add(new ChemRecipe(39, "NITAN", 50)
 				.inputItems(new ComparableStack(ModItems.powder_nitan_mix))
@@ -385,7 +393,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(99, "NITROACID", 180)
 			.inputFluids(
 				new FluidStack(Fluids.AMMONIA, 1000),
-				new FluidStack(Fluids.OXYGEN, 1000),
+				//new FluidStack(Fluids.OXYGEN, 1000),
 				new FluidStack(Fluids.WATER, 500))
 			.outputFluids(new FluidStack(Fluids.NITRIC_ACID, 1000)));
 		recipes.add(new ChemRecipe(100, "HYDRAZINE", 250)
@@ -682,6 +690,12 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.inputFluids(new FluidStack(Fluids.SODIUM, 1000), new FluidStack(Fluids.WATER, 500))
 			.outputFluids(new FluidStack(Fluids.SODIUM_HYDROXIDE, 1000))
 		);
+
+		//recipes.add(new ChemRecipe(1017, "ARGON", 100)
+		//	.inputFluids(new FluidStack(Fluids.AIR, 1000))
+		//	.outputFluids(new FluidStack(Fluids.ARGON, 10))
+		//);
+		//cryogenic distillation
 
 
 
