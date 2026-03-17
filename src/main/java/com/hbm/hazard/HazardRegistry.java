@@ -498,6 +498,9 @@ public class HazardRegistry {
 		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.ES253), makeData(RADIATION, es253 * ingot * 4));
 
 
+
+
+
 		registerPWRFuel(EnumPWRFuel.MEU, uf * billet * 2);
 		registerPWRFuel(EnumPWRFuel.HEU233, u233 * billet * 2);
 		registerPWRFuel(EnumPWRFuel.HEU235, u235 * billet * 2);
@@ -519,8 +522,11 @@ public class HazardRegistry {
 		HazardSystem.register(ModItems.fallout, makeData(RADIATION, fo * powder));
 		HazardSystem.register(ModBlocks.fallout, makeData(RADIATION, fo * powder * 2));
 		HazardSystem.register(ModBlocks.block_fallout, makeData(RADIATION, yc * block * powder_mult));
-		HazardSystem.register(powder_caesium, makeData().addEntry(HYDROACTIVE, 1F).addEntry(HOT, 3F));
-		HazardSystem.register(ingot_cesium, makeData().addEntry(HYDROACTIVE, 1F).addEntry(HOT, 3F));
+		//you really shouldn't be touching these.. I should add a system to craft them into stable forms
+		HazardSystem.register(powder_caesium, makeData().addEntry(HYDROACTIVE, 20F).addEntry(HOT, 30F));
+		HazardSystem.register(ingot_cesium, makeData().addEntry(HYDROACTIVE, 50F).addEntry(HOT, 30F));
+		//you however...
+		HazardSystem.register(francium_ingot, makeData().addEntry(HYDROACTIVE, 100F).addEntry(HOT, 300F).addEntry(RADIATION, 1000000));
 
 		//todone beryllium powder carcinogen
 
