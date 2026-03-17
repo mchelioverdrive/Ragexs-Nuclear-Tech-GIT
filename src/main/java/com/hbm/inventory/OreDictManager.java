@@ -176,6 +176,7 @@ public class OreDictManager {
 	//public static final DictFrame MUD = new DictFrame("WatzMud");
 	public static final DictFrame CN989 = new DictFrame("Chinesium989", "Cn989");
 	public static final DictFrame Rb = new DictFrame("Rubidium", "Rb");
+	public static final DictFrame K = new DictFrame("Potassium", "K");
 	/*
 	 * STABLE
 	 */
@@ -438,6 +439,8 @@ public class OreDictManager {
 		CN989   .rad(HazardRegistry.cn989)  .hot(4F)                .nugget(nugget_cn989)       .billet(billet_cn989)       .ingot(ingot_cn989)         .dust(powder_cn989)         .plate(plate_cn989);
 
 		Rb .rad(HazardRegistry.Rb) .ingot(rubidium_ingot) .hydro(1) ; //.dust(powder_rubidium) .ore(ore_rubidium) yeah yeah whatever
+
+		K .hydro(5) .dust(potassium_powder);
 
 		/*
 		 * STABLE
