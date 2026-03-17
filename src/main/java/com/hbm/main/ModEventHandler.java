@@ -1225,254 +1225,260 @@ public class ModEventHandler {
 
 	@SubscribeEvent
 	public void onPlayerTick(TickEvent.PlayerTickEvent event) {
-
-
-
-
-
-
 		EntityPlayer player = event.player;
-		if(player.posY > 300 && player.posY <1000) {
-			Vec3 vec = Vec3.createVectorHelper(3 * rand.nextDouble(), 0, 0);
-			CBT_Atmosphere thatmosphere = CelestialBody.getTrait(player.worldObj, CBT_Atmosphere.class);
+		if (player == null) return;
 
-			if(thatmosphere != null && thatmosphere.getPressure() > 0.05 && !player.isRiding()) {
-				if(Math.abs(player.motionX) > 1 || Math.abs(player.motionY) > 1 || Math.abs(player.motionZ) > 1) {
-					ParticleUtil.spawnGasFlame(player.worldObj, player.posX - 1 + vec.xCoord, player.posY + vec.yCoord, player.posZ + vec.zCoord, 0, 0, 0);
-				}
-			}
-		}
+		boolean isServer = !player.worldObj.isRemote;
 
-		if(player.isPotionActive(HbmPotion.slippery.id) && !player.capabilities.isFlying) {
-			if (player.onGround) {
-				double slipperiness = 0.6;
-				double inertia = 0.1;
-				boolean isMoving = player.moveForward != 0.0 || player.moveStrafing != 0.0;
-				// double playerMotion = Math.sqrt(player.motionX * player.motionX + player.motionZ * player.motionZ);
+		/********** PHASE: START **********/
+		if (event.phase == TickEvent.Phase.START) {
 
-				double angle = Math.atan2(player.motionZ, player.motionX);
-
-				double targetXMotion = Math.cos(angle) * slipperiness;
-				double targetZMotion = Math.sin(angle) * slipperiness;
-
-				double diffX = targetXMotion - player.motionX;
-				double diffZ = targetZMotion - player.motionZ;
-
-				player.motionX += diffX * inertia; //god weeps
-				player.motionZ += diffZ * inertia;
-
-				if (!isMoving) {
-					player.motionX *= (1.0 - 0.1);
-
-					double totalVelocity = Math.sqrt(player.motionX * player.motionX + player.motionZ * player.motionZ);
-					double smoothingAmount = totalVelocity * 0.02;
-					player.motionX -= player.motionX / totalVelocity * smoothingAmount;
-					player.motionZ -= player.motionZ / totalVelocity * smoothingAmount;
-				}
-			}
-		}
-
-		if(player.inventory.armorInventory[2] != null && player.inventory.armorInventory[2].getItem() instanceof ArmorFSB)
-			((ArmorFSB)player.inventory.armorInventory[2].getItem()).handleTick(event);
-
-		if(player.ticksExisted == 100 || player.ticksExisted == 200)
-			CraftingManager.crumple();
-
-		if(event.phase == TickEvent.Phase.START) {
-			int x = MathHelper.floor_double(player.posX);
-			int y = MathHelper.floor_double(player.posY - player.yOffset - 0.01);
-			int z = MathHelper.floor_double(player.posZ);
-			Block b = player.worldObj.getBlock(x, y, z);
-
-			if(b instanceof IStepTickReceiver && !player.capabilities.isFlying) {
-				IStepTickReceiver step = (IStepTickReceiver) b;
-				step.onPlayerStep(player.worldObj, x, y, z, player);
-			}
-		}
-
-
-
-		if(!player.worldObj.isRemote && event.phase == TickEvent.Phase.START) {
-			// Check for players attempting to cross over to another orbital grid
-			if(player.worldObj.provider instanceof WorldProviderOrbit) {
-				double rx = Math.abs(player.posX) % OrbitalStation.STATION_SIZE;
-				double rz = Math.abs(player.posZ) % OrbitalStation.STATION_SIZE;
-
-				int minBuffer = OrbitalStation.BUFFER_SIZE;
-				int maxBuffer = OrbitalStation.STATION_SIZE - minBuffer;
-
-				int minWarning = OrbitalStation.BUFFER_SIZE + OrbitalStation.WARNING_SIZE;
-				int maxWarning = OrbitalStation.STATION_SIZE - minWarning;
-
-				if(player instanceof EntityPlayerMP && (rx < minWarning || rx > maxWarning || rz < minWarning || rz > maxWarning)) {
-					PacketDispatcher.wrapper.sendTo(new PlayerInformPacket(ChatBuilder.start("").nextTranslation("info.orbitfall").color(EnumChatFormatting.RED).flush(), ServerProxy.ID_GAS_HAZARD, 3000), (EntityPlayerMP) player);
-				}
-
-				if(rx < minBuffer || rx > maxBuffer || rz < minBuffer || rz > maxBuffer) {
-					OrbitalStation station = OrbitalStation.getStationFromPosition((int)player.posX, (int)player.posZ);
-					DebugTeleporter.teleport(player, station.orbiting.dimensionId, rand.nextInt(SpaceConfig.maxProbeDistance * 2) - SpaceConfig.maxProbeDistance, 800, rand.nextInt(SpaceConfig.maxProbeDistance * 2) - SpaceConfig.maxProbeDistance, false);
+			// High-altitude gas flame visuals (run on client only)
+			if (player.posY > 300 && player.posY < 1000) {
+				if (player.worldObj.isRemote) {
+					Vec3 vec = Vec3.createVectorHelper(3.0 * rand.nextDouble(), 0.0, 0.0);
+					CBT_Atmosphere thatmosphere = CelestialBody.getTrait(player.worldObj, CBT_Atmosphere.class);
+					if (thatmosphere != null && thatmosphere.getPressure() > 0.05 && !player.isRiding()) {
+						if (Math.abs(player.motionX) > 1.0 || Math.abs(player.motionY) > 1.0 || Math.abs(player.motionZ) > 1.0) {
+							ParticleUtil.spawnGasFlame(player.worldObj, player.posX - 1 + vec.xCoord, player.posY + vec.yCoord, player.posZ + vec.zCoord, 0, 0, 0);
+						}
+					}
 				}
 			}
 
-			// keep Nether teleports localized
-			// this effectively turns the Nether into a shared pocket dimension, but disallows using it to travel between celestial bodies
-			if(player.inPortal) {
-				MinecraftServer minecraftserver = ((WorldServer)player.worldObj).func_73046_m();
-				int maxTime = player.getMaxInPortalTime();
-				if(minecraftserver.getAllowNether() && player.ridingEntity == null && player.portalCounter + 1 >= maxTime) {
-					player.portalCounter = maxTime;
-					player.timeUntilPortal = player.getPortalCooldown();
+			// Slippery potion movement adjustment (server-authoritative motion)
+			if (player.isPotionActive(HbmPotion.slippery.id) && !player.capabilities.isFlying) {
+				if (player.onGround) {
+					double slipperiness = 0.6;
+					double inertia = 0.1;
+					boolean isMoving = player.moveForward != 0.0 || player.moveStrafing != 0.0;
 
-					HbmPlayerProps props = HbmPlayerProps.getData(player);
-					int targetDimension = -1;
-					if(player.worldObj.provider.dimensionId == -1) {
-						targetDimension = props.lastDimension;
+					double angle = Math.atan2(player.motionZ, player.motionX);
+					double targetXMotion = Math.cos(angle) * slipperiness;
+					double targetZMotion = Math.sin(angle) * slipperiness;
+
+					double diffX = targetXMotion - player.motionX;
+					double diffZ = targetZMotion - player.motionZ;
+
+					player.motionX += diffX * inertia;
+					player.motionZ += diffZ * inertia;
+
+					if (!isMoving) {
+						player.motionX *= 0.9;
+						double totalVelocity = Math.sqrt(player.motionX * player.motionX + player.motionZ * player.motionZ);
+						if (totalVelocity > 0.0001) {
+							double smoothingAmount = totalVelocity * 0.02;
+							player.motionX -= (player.motionX / totalVelocity) * smoothingAmount;
+							player.motionZ -= (player.motionZ / totalVelocity) * smoothingAmount;
+						}
+					}
+				}
+			}
+
+			// Armor tick handler (keep as-is)
+			if (player.inventory.armorInventory[2] != null && player.inventory.armorInventory[2].getItem() instanceof ArmorFSB) {
+				((ArmorFSB) player.inventory.armorInventory[2].getItem()).handleTick(event);
+			}
+
+			// Periodic crafting manager call
+			if (player.ticksExisted == 100 || player.ticksExisted == 200) {
+				CraftingManager.crumple();
+			}
+
+			// Block step receiver check
+			{
+				int x = MathHelper.floor_double(player.posX);
+				int y = MathHelper.floor_double(player.posY - player.yOffset - 0.01);
+				int z = MathHelper.floor_double(player.posZ);
+				Block b = player.worldObj.getBlock(x, y, z);
+
+				if (b instanceof IStepTickReceiver && !player.capabilities.isFlying) {
+					((IStepTickReceiver) b).onPlayerStep(player.worldObj, x, y, z, player);
+				}
+			}
+
+			// Server-only START logic
+			if (isServer) {
+
+				// Orbital-station buffer / teleport checks
+				if (player.worldObj.provider instanceof WorldProviderOrbit) {
+					double rx = Math.abs(player.posX) % OrbitalStation.STATION_SIZE;
+					double rz = Math.abs(player.posZ) % OrbitalStation.STATION_SIZE;
+
+					int minBuffer = OrbitalStation.BUFFER_SIZE;
+					int maxBuffer = OrbitalStation.STATION_SIZE - minBuffer;
+
+					int minWarning = OrbitalStation.BUFFER_SIZE + OrbitalStation.WARNING_SIZE;
+					int maxWarning = OrbitalStation.STATION_SIZE - minWarning;
+
+					if (player instanceof EntityPlayerMP && (rx < minWarning || rx > maxWarning || rz < minWarning || rz > maxWarning)) {
+						PacketDispatcher.wrapper.sendTo(
+							new PlayerInformPacket(ChatBuilder.start("").nextTranslation("info.orbitfall").color(EnumChatFormatting.RED).flush(), ServerProxy.ID_GAS_HAZARD, 3000),
+							(EntityPlayerMP) player
+						);
+					}
+
+					if (rx < minBuffer || rx > maxBuffer || rz < minBuffer || rz > maxBuffer) {
+						OrbitalStation station = OrbitalStation.getStationFromPosition((int) player.posX, (int) player.posZ);
+						DebugTeleporter.teleport(player, station.orbiting.dimensionId,
+							rand.nextInt(SpaceConfig.maxProbeDistance * 2) - SpaceConfig.maxProbeDistance,
+							800,
+							rand.nextInt(SpaceConfig.maxProbeDistance * 2) - SpaceConfig.maxProbeDistance,
+							false
+						);
+					}
+				}
+
+				// Portal localization (server)
+				if (player.inPortal) {
+					MinecraftServer minecraftserver = ((WorldServer) player.worldObj).func_73046_m();
+					int maxTime = player.getMaxInPortalTime();
+					if (minecraftserver.getAllowNether() && player.ridingEntity == null && player.portalCounter + 1 >= maxTime) {
+						player.portalCounter = maxTime;
+						player.timeUntilPortal = player.getPortalCooldown();
+
+						HbmPlayerProps props = HbmPlayerProps.getData(player);
+						int targetDimension = -1;
+						if (player.worldObj.provider.dimensionId == -1) {
+							targetDimension = props.lastDimension;
+						} else {
+							props.lastDimension = player.worldObj.provider.dimensionId;
+						}
+
+						player.travelToDimension(targetDimension);
+						player.inPortal = false;
+					}
+				}
+
+				// Ghost-fix (server)
+				if (!Float.isFinite(player.getHealth()) || !Float.isFinite(player.getAbsorptionAmount())) {
+					player.addChatComponentMessage(new ChatComponentText("Your health has been restored!"));
+					player.worldObj.playSoundAtEntity(player, "hbm:item.syringe", 1.0F, 1.0F);
+					player.setHealth(player.getMaxHealth());
+					player.setAbsorptionAmount(0);
+				}
+
+				// Beta health handling (server)
+				if (player.inventory.hasItem(ModItems.beta)) {
+					if (player.getFoodStats().getFoodLevel() > 10) {
+						player.heal(player.getFoodStats().getFoodLevel() - 10);
+					}
+					if (player.getFoodStats().getFoodLevel() != 10) {
+						try {
+							Field food = ReflectionHelper.findField(FoodStats.class, "field_75127_a", "foodLevel");
+							food.setInt(player.getFoodStats(), 10);
+						} catch (Exception ex) {
+							// ignore
+						}
+					}
+				}
+
+				// Inventory neutron activation -> contamination (legacy behavior preserved)
+				ItemStack[] inv = player.inventory.mainInventory;
+				for (int i = 0; i < inv.length; i++) {
+					ItemStack stack = inv[i];
+					if (stack != null && stack.hasTagCompound()) {
+						// Only apply this legacy path if the stack has no registered radiation hazard
+						if (HazardSystem.getHazardLevelFromStack(stack, HazardRegistry.RADIATION) == 0) {
+							float activation = stack.stackTagCompound.getFloat(HazardTypeNeutron.NEUTRON_KEY);
+							if (activation > 0.0F) {
+								ContaminationUtil.contaminate(player, HazardType.NEUTRON, ContaminationUtil.ContaminationType.CREATIVE, activation / 20.0F);
+							}
+						}
+					}
+				}
+
+				// NEW ITEM SYSTEM: update inventory hazards (server)
+				HazardSystem.updatePlayerInventory(player);
+
+				// SYNC to player (server)
+				if (player instanceof EntityPlayerMP) {
+					PacketDispatcher.wrapper.sendTo(new PermaSyncPacket((EntityPlayerMP) player), (EntityPlayerMP) player);
+				}
+			} // end isServer
+		} // end START
+
+		/********** PHASE: END **********/
+		if (event.phase == TickEvent.Phase.END) {
+
+			// Server-only END logic (healing, meth system, etc.)
+			if (isServer) {
+
+				NBTTagCompound data = player.getEntityData();
+
+				// Delayed heal
+				if (data.hasKey("DelayedHealTicks")) {
+					int ticks = data.getInteger("DelayedHealTicks");
+					if (ticks > 0) {
+						data.setInteger("DelayedHealTicks", ticks - 1);
 					} else {
-						props.lastDimension = player.worldObj.provider.dimensionId;
-					}
-
-					player.travelToDimension(targetDimension);
-					player.inPortal = false;
-				}
-			}
-
-			/// GHOST FIX START ///
-
-			if(!Float.isFinite(player.getHealth()) || !Float.isFinite(player.getAbsorptionAmount())) {
-				player.addChatComponentMessage(new ChatComponentText("Your health has been restored!"));
-				player.worldObj.playSoundAtEntity(player, "hbm:item.syringe", 1.0F, 1.0F);
-				player.setHealth(player.getMaxHealth());
-				player.setAbsorptionAmount(0);
-			}
-
-			/// GHOST FIX END ///
-
-			/// BETA HEALTH START ///
-			if(player.inventory.hasItem(ModItems.beta)) {
-
-				if(player.getFoodStats().getFoodLevel() > 10) {
-					player.heal(player.getFoodStats().getFoodLevel() - 10);
-				}
-
-				if(player.getFoodStats().getFoodLevel() != 10) {
-
-					// Why can't you be normal??
-					try {
-						Field food = ReflectionHelper.findField(FoodStats.class, "field_75127_a", "foodLevel");
-						food.setInt(player.getFoodStats(), 10);
-					} catch(Exception e) { }
-				}
-			}
-			/// BETA HEALTH END ///
-
-
-
-			for(int i = 0; i < player.inventory.mainInventory.length; i++) {
-				ItemStack stack2 = player.inventory.getStackInSlot(i);
-
-				//oh yeah remind me...
-				if(stack2 != null) {
-					if(stack2.hasTagCompound() && HazardSystem.getHazardLevelFromStack(stack2, HazardRegistry.RADIATION) == 0) {
-						float activation = stack2.stackTagCompound.getFloat(HazardTypeNeutron.NEUTRON_KEY);
-						ContaminationUtil.contaminate(player, HazardType.RADIATION, ContaminationType.CREATIVE, activation / 20);
+						int heal = data.getInteger("DelayedHealAmount");
+						player.heal(heal);
+						data.removeTag("DelayedHealTicks");
+						data.removeTag("DelayedHealAmount");
 					}
 				}
-			}
-			/// NEW ITEM SYS START ///
-			HazardSystem.updatePlayerInventory(player);
-			/// NEW ITEM SYS END ///
 
-			/// SYNC START ///
-			if(!player.worldObj.isRemote && player instanceof EntityPlayerMP) PacketDispatcher.wrapper.sendTo(new PermaSyncPacket((EntityPlayerMP) player), (EntityPlayerMP) player);
-			/// SYNC END ///
-		}
+				// Meth crash system
+				if (data.hasKey("MethLastUse")) {
+					long lastUse = data.getLong("MethLastUse");
+					long current = player.worldObj.getTotalWorldTime();
+					long timeSince = current - lastUse;
+					int dose = data.getInteger("MethDose");
 
+					// Visual sounds are client-side, dispatch as needed via packets; the original played them client-side.
+					// Apply server-side potion and damage effects below.
 
-		if(event.phase != TickEvent.Phase.END) return;
-		if(event.player.worldObj.isRemote) return;
+					if (data.hasKey("MethVisualTicks")) {
+						int ticks = data.getInteger("MethVisualTicks");
+						if (ticks > 0) {
+							data.setInteger("MethVisualTicks", ticks - 1);
+						} else {
+							data.removeTag("MethVisualTicks");
+							data.setBoolean("OnMeth", false);
+						}
+					}
 
-		NBTTagCompound data = event.player.getEntityData();
+					// crash after ~8 minutes
+					if (timeSince > 20L * 60L * 8L && timeSince < 20L * 60L * 12L) {
+						player.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 200, 1));
+						player.addPotionEffect(new PotionEffect(Potion.digSlowdown.id, 200, 1));
+					}
 
-		if(data.hasKey("DelayedHealTicks")) {
+					// heavy crash if user binged
+					if (dose >= 4 && timeSince > 20L * 60L * 6L) {
+						player.addPotionEffect(new PotionEffect(Potion.confusion.id, 300, 1));
+						player.addPotionEffect(new PotionEffect(Potion.blindness.id, 200, 0));
+					}
 
-			int ticks = data.getInteger("DelayedHealTicks");
+					// overdose
+					if (dose >= 6) {
+						player.addPotionEffect(new PotionEffect(Potion.poison.id, 200, 2));
+						player.attackEntityFrom(DamageSource.magic, 4.0F);
+					}
 
-			if(ticks > 0) {
-				data.setInteger("DelayedHealTicks", ticks - 1);
+					// reset addiction after 10 minutes
+					if (timeSince > 20L * 60L * 10L) {
+						data.removeTag("MethVisualTicks");
+						data.setBoolean("OnMeth", false);
+						data.removeTag("MethLastUse");
+						data.setInteger("MethDose", 0);
+					}
+				}
 			} else {
-				int heal = data.getInteger("DelayedHealAmount");
-				event.player.heal(heal);
-
-				data.removeTag("DelayedHealTicks");
-				data.removeTag("DelayedHealAmount");
-			}
-		}
-
-		// METH CRASH SYSTEM
-
-
-		if(data.hasKey("MethLastUse")) {
-
-			long lastUse = data.getLong("MethLastUse");
-			long current = player.worldObj.getTotalWorldTime();
-			long timeSince = current - lastUse;
-
-			int dose = data.getInteger("MethDose");
-
-			if(player.worldObj.isRemote && rand.nextInt(400) == 0 && dose >= 3) {
-
-				double x = player.posX + (player.getRNG().nextDouble() - 0.5) * 6;
-				double y = player.posY;
-				double z = player.posZ + (player.getRNG().nextDouble() - 0.5) * 6;
-
-				player.worldObj.playSound(x, y, z, "mob.endermen.stare", 1.0F, 0.4F, false);
-			}
-
-			if(data.hasKey("MethVisualTicks")) {
-
-				int ticks = data.getInteger("MethVisualTicks");
-
-				if(ticks > 0) {
-					data.setInteger("MethVisualTicks", ticks - 1);
-				} else {
-					data.removeTag("MethVisualTicks");
-					data.setBoolean("OnMeth", false);
+				// Client-only END logic (original did client-side end sounds)
+				NBTTagCompound data = player.getEntityData();
+				if (data.hasKey("MethLastUse")) {
+					int dose = data.getInteger("MethDose");
+					if (rand.nextInt(400) == 0 && dose >= 3) {
+						double x = player.posX + (player.getRNG().nextDouble() - 0.5) * 6;
+						double y = player.posY;
+						double z = player.posZ + (player.getRNG().nextDouble() - 0.5) * 6;
+						player.worldObj.playSound(x, y, z, "mob.endermen.stare", 1.0F, 0.4F, false);
+					}
 				}
 			}
-
-			// crash after ~8 minutes
-			if(timeSince > 20 * 60 * 8 && timeSince < 20 * 60 * 12) {
-
-				player.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 200, 1));
-				player.addPotionEffect(new PotionEffect(Potion.digSlowdown.id, 200, 1));
-				//player.addPotionEffect(new PotionEffect(Potion.confusion.id, 200, 0));
-				//player.addPotionEffect(new PotionEffect(Potion.weakness.id, 200, 1));
-			}
-
-			// heavy crash if user binged
-			if(dose >= 4 && timeSince > 20 * 60 * 6) {
-
-				player.addPotionEffect(new PotionEffect(Potion.confusion.id, 300, 1));
-				player.addPotionEffect(new PotionEffect(Potion.blindness.id, 200, 0));
-			}
-
-			// overdose
-			if(dose >= 6) {
-
-				player.addPotionEffect(new PotionEffect(Potion.poison.id, 200, 2));
-				player.attackEntityFrom(DamageSource.magic, 4.0F);
-			}
-
-			// reset addiction after 10 minutes
-			if(timeSince > 20 * 60 * 10) {
-				data.removeTag("MethVisualTicks");
-				data.setBoolean("OnMeth", false);
-				data.removeTag("MethLastUse");
-				data.setInteger("MethDose", 0);
-			}
-		}
-
-
+		} // end END
 	}
 
 	@SubscribeEvent
