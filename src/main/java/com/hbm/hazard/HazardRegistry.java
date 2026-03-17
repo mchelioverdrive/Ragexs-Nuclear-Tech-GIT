@@ -522,6 +522,10 @@ public class HazardRegistry {
 		HazardSystem.register(powder_caesium, makeData().addEntry(HYDROACTIVE, 1F).addEntry(HOT, 3F));
 		HazardSystem.register(ingot_cesium, makeData().addEntry(HYDROACTIVE, 1F).addEntry(HOT, 3F));
 
+		//todone beryllium powder carcinogen
+
+
+		HazardSystem.register(powder_beryllium, makeData().addEntry(ASBESTOS, 1F));
 		HazardSystem.register(brick_asbestos, makeData(ASBESTOS, 1F));
 		HazardSystem.register(tile_lab_broken, makeData(ASBESTOS, 1F));
 		//HazardSystem.register(powder_coltan_ore, makeData(ASBESTOS, 3F));

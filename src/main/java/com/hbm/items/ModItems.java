@@ -8211,7 +8211,7 @@ public class ModItems {
 		//GameRegistry.registerItem(bottle2_fritz, bottle2_fritz.getUnlocalizedName());
 		//GameRegistry.registerItem(bottle2_korl_special, bottle2_korl_special.getUnlocalizedName());
 		//GameRegistry.registerItem(bottle2_fritz_special, bottle2_fritz_special.getUnlocalizedName());
-		//GameRegistry.registerItem(bottle_opener, bottle_opener.getUnlocalizedName());
+		GameRegistry.registerItem(bottle_opener, bottle_opener.getUnlocalizedName());
 
 		//Flasks
 		//GameRegistry.registerItem(flask_infusion, flask_infusion.getUnlocalizedName());
