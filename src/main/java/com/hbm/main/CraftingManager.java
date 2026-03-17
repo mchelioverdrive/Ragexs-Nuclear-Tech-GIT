@@ -1,7 +1,6 @@
 package com.hbm.main;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import com.hbm.blocks.BlockEnums.DecoCabinetEnum;
 import com.hbm.blocks.ModBlocks;
@@ -112,8 +111,34 @@ public class CraftingManager {
 		//please god just work
 		for (ItemStack food : allFoods) {
 			//skip random dogshit
-			if (food.getItem() == ModItems.canned_conserve || food.getItem() == Items.spider_eye || food.getItem() == Items.rotten_flesh || food.getItem() == Items.poisonous_potato || food.getItem() == ModItems.med_ipecac || food.getItem() == ModItems.med_ptsd || food.getItem() == ModItems.plan_c || food.getItem() == ModItems.pill_iodine || food.getItem() == ModItems.radx || food.getItem() == ModItems.siox || food.getItem() == ModItems.pill_herbal || food.getItem() == ModItems.xanax || food.getItem() == ModItems.fmn || food.getItem() == ModItems.five_htp || food.getItem() == ModItems.crayon || food.getItem() == ModItems.itemsalt || food.getItem() == ModItems.rubidiumsalt) {
-				continue; // Skip if the item is the canned conserve itself to avoid infinite loop
+			// Define a set of items to skip
+			Set<Item> skipItems = new HashSet<>(Arrays.asList(
+				ModItems.canned_conserve,
+				Items.spider_eye,
+				Items.rotten_flesh,
+				Items.poisonous_potato,
+				ModItems.med_ipecac,
+				ModItems.med_ptsd,
+				ModItems.plan_c,
+				ModItems.pill_iodine,
+				ModItems.radx,
+				ModItems.siox,
+				ModItems.pill_herbal,
+				ModItems.xanax,
+				ModItems.fmn,
+				ModItems.five_htp,
+				ModItems.crayon,
+				ModItems.itemsalt,
+				ModItems.rubidiumsalt,
+				ModItems.cesium_salt,
+				ModItems.chocolate,
+				ModItems.crystal_meth,
+				ModItems.galaxygas
+			));
+
+			// Then just check
+			if (skipItems.contains(food.getItem())) {
+				continue; // Skip unwanted items
 			}
 			GameRegistry.addShapelessRecipe(
 				new ItemStack(ModItems.canned_conserve, 1, tubeMeta), // Output with meta
