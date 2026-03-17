@@ -485,6 +485,7 @@ public class ModItems {
 	public static Item powder_cadmium;
 	public static Item powder_bismuth;
 	public static Item powder_potash;
+	public static Item powder_pollucite;
 	//public static Item ingot_mud;
 	public static Item ingot_cft;
 
@@ -2939,6 +2940,7 @@ public class ModItems {
 		powder_cadmium = new Item().setUnlocalizedName("powder_cadmium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_cadmium");
 		powder_bismuth = new Item().setUnlocalizedName("powder_bismuth").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_bismuth");
 		powder_potash = new Item().setUnlocalizedName("powder_potash").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_potash");
+		powder_pollucite = new Item().setUnlocalizedName("powder_pollucite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		//ingot_mud = new Item().setUnlocalizedName("ingot_mud").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_mud");
 		ingot_cft = new Item().setUnlocalizedName("ingot_cft").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_cft");
 
@@ -6392,6 +6394,7 @@ public class ModItems {
 		GameRegistry.registerItem(powder_lead, powder_lead.getUnlocalizedName());
 		GameRegistry.registerItem(powder_bismuth, powder_bismuth.getUnlocalizedName());
 		GameRegistry.registerItem(powder_potash, powder_potash.getUnlocalizedName());
+		GameRegistry.registerItem(powder_pollucite, powder_pollucite.getUnlocalizedName());
 		GameRegistry.registerItem(powder_calcium, powder_calcium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_cadmium, powder_cadmium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_coltan_ore, powder_coltan_ore.getUnlocalizedName());

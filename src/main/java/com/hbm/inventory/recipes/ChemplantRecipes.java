@@ -58,10 +58,9 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(38, "DESH", 300)
 				.inputItems(
 					new ComparableStack(ModItems.ingot_steel, 2),
-					new ComparableStack(ModItems.powder_coal, 1)
-					//,
-					//new ComparableStack(ModItems.ingot_chromium, 1),
-					//new ComparableStack(ModItems.ingot_vanadium, 1)
+					new ComparableStack(ModItems.powder_coal, 1),
+					new ComparableStack(ModItems.ingot_chromium, 1),
+					new ComparableStack(ModItems.ingot_vanadium, 1)
 					//TODO
 				)
 				.inputFluids(
@@ -695,7 +694,15 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//	.inputFluids(new FluidStack(Fluids.AIR, 1000))
 		//	.outputFluids(new FluidStack(Fluids.ARGON, 10))
 		//);
-		//cryogenic distillation
+		//in cryogenic distillation
+
+		//pollucite dust + sulfuric acid = Mixed sulfate solution + silica
+		recipes.add(new ChemRecipe(1017, "POLLUCITE", 100)
+			.inputItems(new ComparableStack(ModBlocks.ore_pollucite))
+			.inputFluids(new FluidStack(Fluids.SULFURIC_ACID, 2000))
+			.outputFluids(new FluidStack(Fluids.POLLUCITE_SOLUTION, 2000))
+			.outputItems(new ItemStack(Blocks.sand, 8), new ItemStack(ModItems.powder_quartz, 2))
+		);
 
 
 

@@ -236,6 +236,8 @@ public class Fluids {
 	public static FluidType PHEROMONE;
 	public static FluidType PHEROMONE_M;
 
+	public static FluidType POLLUCITE_SOLUTION;
+
 	//morkite would be like a gravelly oil. it would be a goopy liquidized gravel.
 	//point being, if the crystals were melted down and the liquid extracted
 	//you could be able to dissolve it directly with the vacuum refinery, or maybe something else
@@ -767,6 +769,8 @@ public class Fluids {
 		metaOrder.add(CREAM);
 
 		metaOrder.add(MOLTEN_SALT);
+
+		metaOrder.add(POLLUCITE_SOLUTION);
 
 
 		//smoke

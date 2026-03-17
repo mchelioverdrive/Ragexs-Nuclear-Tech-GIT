@@ -212,6 +212,8 @@ public class ShredderRecipes extends SerializableRecipe {
 		ShredderRecipes.setRecipe(ModItems.crystal_cleaned, new ItemStack(ModItems.mineral_dust, 4));
 
 		ShredderRecipes.setRecipe(new ItemStack (ModBlocks.ore_potash, 1 , OreDictionary.WILDCARD_VALUE), new ItemStack(ModItems.powder_potash, 4));
+		//pollucite powder
+		ShredderRecipes.setRecipe(new ItemStack(ModBlocks.ore_pollucite, 1, OreDictionary.WILDCARD_VALUE), new ItemStack(ModItems.powder_pollucite, 4));
 
 		ShredderRecipes.setRecipe(new ItemStack(ModBlocks.ore_mineral, 1, OreDictionary.WILDCARD_VALUE), new ItemStack(ModItems.mineral_dust, 1)); // it was deserved
 
