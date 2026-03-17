@@ -238,6 +238,9 @@ public class Fluids {
 
 	public static FluidType POLLUCITE_SOLUTION;
 
+	public static FluidType POLLUCITE_SOLUTION_HEAVY;
+	public static FluidType POLLUCITE_SOLUTION_LIGHT;
+
 	//morkite would be like a gravelly oil. it would be a goopy liquidized gravel.
 	//point being, if the crystals were melted down and the liquid extracted
 	//you could be able to dissolve it directly with the vacuum refinery, or maybe something else
@@ -538,6 +541,9 @@ public class Fluids {
 		POTASSIUM_HYDROXIDE = new FluidType("POTASSIUM_HYDROXIDE", 0xD7D1C7, 1, 2, 3, EnumSymbol.NONE)
 				.setTemp(200)
 				.addTraits(LIQUID, new FT_Corrosive(50), new FT_Poison(true, 1));
+		POLLUCITE_SOLUTION = new FluidType("POLLUCITE_SOLUTION", 0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, NOCON, new FT_Corrosive(60));
+		POLLUCITE_SOLUTION_HEAVY = new FluidType("POLLUCITE_SOLUTION_HEAVY", 0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, NOCON, new FT_Corrosive(60));
+		POLLUCITE_SOLUTION_LIGHT = new FluidType("POLLUCITE_SOLUTION_LIGHT", 0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, NOCON, new FT_Corrosive(60));
 		//I AM GETTING FUCKING CANCER
 
 
@@ -771,6 +777,8 @@ public class Fluids {
 		metaOrder.add(MOLTEN_SALT);
 
 		metaOrder.add(POLLUCITE_SOLUTION);
+		metaOrder.add(POLLUCITE_SOLUTION_HEAVY);
+		metaOrder.add(POLLUCITE_SOLUTION_LIGHT);
 
 
 		//smoke

@@ -1,5 +1,6 @@
 package com.hbm.items.food;
 
+import com.hbm.items.ModItems;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemFood;
 import net.minecraft.item.ItemStack;
@@ -18,7 +19,13 @@ public class ItemSalt extends ItemFood {
 	@Override
 	public ItemStack onEaten(ItemStack stack, World world, EntityPlayer player) {
 		if (!world.isRemote) {
-			player.attackEntityFrom(DamageSource.generic, 2.0F);
+			if (stack.getItem() == ModItems.cesium_salt) {
+				//poison
+				player.addPotionEffect(new net.minecraft.potion.PotionEffect(net.minecraft.potion.Potion.poison.id, 200, 0));
+			} else {
+				//you shouldn't eat salt
+				player.attackEntityFrom(DamageSource.generic, 2.0F);
+			}
 		}
 
 		if (!player.capabilities.isCreativeMode) {

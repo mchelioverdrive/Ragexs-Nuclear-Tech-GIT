@@ -704,6 +704,46 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.outputItems(new ItemStack(Blocks.sand, 8), new ItemStack(ModItems.powder_quartz, 2))
 		);
 
+		//pollucite solution into heavy fraction and light fraction
+		recipes.add(new ChemRecipe(1018, "POLLUCITE_FRACTION", 100)
+			.inputFluids(new FluidStack(Fluids.POLLUCITE_SOLUTION, 2000))
+			.outputFluids(new FluidStack(Fluids.POLLUCITE_SOLUTION_HEAVY, 500), new FluidStack(Fluids.POLLUCITE_SOLUTION_LIGHT, 1500))
+		);
+
+		//heavy fraction → cesium alum (or cesium compound)
+		recipes.add(new ChemRecipe(1019, "CESIUM_EXTRACTION", 100)
+			.inputFluids(new FluidStack(Fluids.POLLUCITE_SOLUTION_HEAVY, 1000))
+			.outputItems(new ItemStack(ModItems.cesium_salt, 1), new ItemStack(ModItems.rubidiumsalt))
+
+		);
+
+		//light fraction → Na + K
+		recipes.add(new ChemRecipe(1020, "POTASSIUM_SODIUM_EXTRACTION", 100)
+			.inputFluids(new FluidStack(Fluids.POLLUCITE_SOLUTION_LIGHT, 1000))
+			//.outputFluids(new FluidStack(Fluids.SODIUM, 500), new FluidStack(Fluids.POTASSIUM, 500))
+			.outputItems(
+			    new ItemStack(ModItems.sodium_sulfate, 1),
+			    new ItemStack(ModItems.potassium_sulfate, 1)
+			)
+		);
+
+
+		//cesium salt + calcium -> cesium metal + calcium chloride
+		recipes.add(new ChemRecipe(1021, "CESIUM_EXTRACTION_2", 100)
+			.inputFluids(new FluidStack(Fluids.ARGON, 10)) // for storing cesium (it's highly reactive)
+			.inputItems(new ComparableStack(ModItems.cesium_salt, 1), new ComparableStack(ModItems.ingot_calcium, 1))
+			//we are changing the cesium powder item to be a contained version of cesium since it cannot exist in air
+			.outputItems(new ItemStack(ModItems.powder_caesium, 1))
+			.outputFluids(new FluidStack(Fluids.CALCIUM_CHLORIDE, 800))
+		);
+
+
+		//easier glass production using sodium sulfate
+		recipes.add(new ChemRecipe(1022, "GLASS_SODIUM", 50)
+			.inputItems(new ComparableStack(ModItems.sodium_sulfate, 1), new ComparableStack(Blocks.sand, 8))
+			.outputItems(new ItemStack(Blocks.glass, 8))
+		);
+
 
 
 

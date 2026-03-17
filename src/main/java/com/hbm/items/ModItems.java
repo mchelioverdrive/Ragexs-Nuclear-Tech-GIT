@@ -554,6 +554,9 @@ public class ModItems {
 	public static Item itemsalt;
 	public static Item rubidiumsalt;
 
+	public static Item sodium_sulfate;
+	public static Item potassium_sulfate;
+
 	public static Item gem_sodalite;
 	public static Item gem_tantalium;
 	public static Item gem_volcanic;
@@ -603,6 +606,9 @@ public class ModItems {
 	public static Item powder_neodymium;
 	public static Item powder_astatine;
 	public static Item powder_caesium;
+	public static Item ingot_cesium;
+
+	public static Item cesium_salt;
 
 	public static Item powder_strontium;
 	public static Item powder_cobalt;
@@ -2980,6 +2986,8 @@ public class ModItems {
 		ingot_steel_dusted = new ItemHotDusted(200).setUnlocalizedName("ingot_steel_dusted").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_steel_dusted");
 		ingot_chainsteel = new ItemHot(100).setUnlocalizedName("ingot_chainsteel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_chainsteel");
 
+		ingot_cesium = new Item().setUnlocalizedName("ingot_cesium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_cesium");
+
 		plate_armor_titanium = new Item().setUnlocalizedName("plate_armor_titanium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_armor_titanium");
 		plate_armor_ajr = new Item().setUnlocalizedName("plate_armor_ajr").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_armor_ajr");
 		plate_armor_hev = new Item().setUnlocalizedName("plate_armor_hev").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_armor_hev");
@@ -3174,6 +3182,11 @@ public class ModItems {
 		itemsalt = new ItemSalt(1).setUnlocalizedName("itemsalt").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		rubidiumsalt = new ItemSalt(1).setUnlocalizedName("rubidiumsalt").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 
+		sodium_sulfate = new Item().setUnlocalizedName("sodium_sulfate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
+		potassium_sulfate = new ItemFertilizer().setUnlocalizedName("potassium_sulfate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
+
+		//IF I HAVE TO ADD ONE MORE GODDAMN WHITE POWDER IM GONNA SCREAM
+
 
 		//oh my god how the fuck am I gonna add francium
 		//answer: uhhhh let's skip that for now. I already added a shit ton of missing textures.
@@ -3240,6 +3253,8 @@ public class ModItems {
 		powder_neodymium = new ItemCustomLore().setRarity(EnumRarity.epic).setUnlocalizedName("powder_neodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_neodymium");
 		powder_astatine = new ItemCustomLore().setRarity(EnumRarity.epic).setUnlocalizedName("powder_astatine").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_astatine");
 		powder_caesium = new ItemCustomLore().setRarity(EnumRarity.epic).setUnlocalizedName("powder_caesium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_caesium");
+		cesium_salt = new ItemSalt(1).setUnlocalizedName("cesium_salt").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
+
 		powder_australium = new ItemCustomLore().setRarity(EnumRarity.uncommon).setUnlocalizedName("powder_australium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_australium");
 		powder_weidanium = new ItemCustomLore().setRarity(EnumRarity.uncommon).setUnlocalizedName("powder_weidanium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_weidanium");
 		powder_reiium = new ItemCustomLore().setRarity(EnumRarity.uncommon).setUnlocalizedName("powder_reiium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_reiium");
@@ -6428,6 +6443,8 @@ public class ModItems {
 		GameRegistry.registerItem(powder_neodymium_tiny, powder_neodymium_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(powder_astatine, powder_astatine.getUnlocalizedName());
 		GameRegistry.registerItem(powder_caesium, powder_caesium.getUnlocalizedName());
+		GameRegistry.registerItem(cesium_salt, cesium_salt.getUnlocalizedName());
+		GameRegistry.registerItem(ingot_cesium, ingot_cesium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_australium, powder_australium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_weidanium, powder_weidanium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_reiium, powder_reiium.getUnlocalizedName());
@@ -6559,6 +6576,9 @@ public class ModItems {
 
 		GameRegistry.registerItem(itemsalt, itemsalt.getUnlocalizedName());
 		GameRegistry.registerItem(rubidiumsalt, rubidiumsalt.getUnlocalizedName());
+
+		GameRegistry.registerItem(sodium_sulfate, sodium_sulfate.getUnlocalizedName());
+		GameRegistry.registerItem(potassium_sulfate, potassium_sulfate.getUnlocalizedName());
 
 		//Fragments
 		GameRegistry.registerItem(fragment_neodymium, fragment_neodymium.getUnlocalizedName());

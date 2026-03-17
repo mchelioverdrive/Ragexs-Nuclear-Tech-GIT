@@ -1018,14 +1018,14 @@ public class AssemblerRecipes extends SerializableRecipe {
 		//		new OreDictStack(STEEL.plate(), 4),
 		//	}, 100);
 
-		makeRecipe(new ComparableStack(ModBlocks.machine_difurnace_rtg_off, 1), new AStack[] {
-				new ComparableStack(ModBlocks.machine_difurnace_off, 1),
-				new ComparableStack(ModItems.rtg_unit, 3),
-				new OreDictStack(DESH.ingot(), 4),
-				new OreDictStack(PB.plate528(), 6),
-				new OreDictStack(OreDictManager.getReflector(), 8),
-				new OreDictStack(CU.plate(), 12)
-			}, 150);
+		//makeRecipe(new ComparableStack(ModBlocks.machine_difurnace_rtg_off, 1), new AStack[] {
+		//		new ComparableStack(ModBlocks.machine_difurnace_off, 1),
+		//		new ComparableStack(ModItems.rtg_unit, 3),
+		//		new OreDictStack(DESH.ingot(), 4),
+		//		new OreDictStack(PB.plate528(), 6),
+		//		new OreDictStack(OreDictManager.getReflector(), 8),
+		//		new OreDictStack(CU.plate(), 12)
+		//	}, 150);
 
 		makeRecipe(new ComparableStack(ModBlocks.machine_vacuum_distill, 1), new AStack[] {
 				!exp ? new OreDictStack(STEEL.plateCast(), 16) : new OreDictStack(STEEL.heavyComp(), 4),
