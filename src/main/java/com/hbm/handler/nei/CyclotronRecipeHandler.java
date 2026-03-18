@@ -39,7 +39,7 @@ public class CyclotronRecipeHandler extends TemplateRecipeHandler implements ICo
     	PositionedStack input1;
 		PositionedStack input2;
         PositionedStack result;
-    	
+
         public SmeltingSet(ItemStack input1, ItemStack input2, ItemStack result) {
         	input1.stackSize = 1;
         	input2.stackSize = 1;
@@ -58,7 +58,7 @@ public class CyclotronRecipeHandler extends TemplateRecipeHandler implements ICo
             return result;
         }
     }
-    
+
 	@Override
 	public String getRecipeName() {
 		return "Cyclotron";
@@ -68,7 +68,7 @@ public class CyclotronRecipeHandler extends TemplateRecipeHandler implements ICo
 	public String getGuiTexture() {
 		return RefStrings.MODID + ":textures/gui/nei/gui_nei_cyclotron.png";
 	}
-	
+
 	@Override
 	public void loadCraftingRecipes(String outputId, Object... results) {
 		if ((outputId.equals("cyclotronProcessing")) && getClass() == CyclotronRecipeHandler.class) {
@@ -101,10 +101,26 @@ public class CyclotronRecipeHandler extends TemplateRecipeHandler implements ICo
 
 	@Override
 	public void loadUsageRecipes(ItemStack ingredient) {
+		if (ingredient == null) return;
+
 		Map<Object[], Object> recipes = CyclotronRecipes.getRecipes();
-		for (Map.Entry<Object[], Object> recipe : recipes.entrySet()) {
-			if (NEIServerUtils.areStacksSameType(ingredient, (ItemStack)recipe.getKey()[0]) || NEIServerUtils.areStacksSameType(ingredient, (ItemStack)recipe.getKey()[1]))
-				this.arecipes.add(new SmeltingSet((ItemStack)recipe.getKey()[0], (ItemStack)recipe.getKey()[1], (ItemStack)recipe.getValue()));				
+
+		for (Map.Entry<Object[], Object> entry : recipes.entrySet()) {
+
+			Object[] key = entry.getKey();
+			if (key == null || key.length < 2) continue;
+
+			ItemStack particle = (ItemStack) key[0];
+			ItemStack input = (ItemStack) key[1];
+			ItemStack output = (ItemStack) entry.getValue();
+
+			if (particle == null || input == null || output == null) continue;
+
+			if (NEIServerUtils.areStacksSameType(ingredient, particle) ||
+				NEIServerUtils.areStacksSameType(ingredient, input)) {
+
+				this.arecipes.add(new SmeltingSet(particle, input, output));
+			}
 		}
 	}
 
@@ -113,12 +129,12 @@ public class CyclotronRecipeHandler extends TemplateRecipeHandler implements ICo
         //return GUITestDiFurnace.class;
     	return null;
     }
-    
+
     @Override
     public void loadTransferRects() {
         transferRectsGui = new LinkedList<RecipeTransferRect>();
         guiGui = new LinkedList<Class<? extends GuiContainer>>();
-        
+
         transferRects.add(new RecipeTransferRect(new Rectangle(83 - 3 + 16 - 52, 5 + 18 + 1, 24, 18), "cyclotronProcessing"));
         transferRectsGui.add(new RecipeTransferRect(new Rectangle(48 - 5, 27 - 11, 34, 34), "cyclotronProcessing"));
         guiGui.add(GUIMachineCyclotron.class);

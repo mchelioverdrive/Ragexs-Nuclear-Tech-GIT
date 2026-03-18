@@ -307,6 +307,8 @@ public class RecipesCommon {
 		}
 	}
 
+
+
 	/*
 	 * This implementation does not override the compare function, which effectively makes it ignore stack data.
 	 * This is still in line with the use-case of the ComparableNBTStack holding machine output stack information,

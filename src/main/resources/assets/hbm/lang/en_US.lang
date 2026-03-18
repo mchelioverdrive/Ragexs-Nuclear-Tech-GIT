@@ -6449,7 +6449,7 @@ tile.round_airlock_door.name=Round Airlock Door
 tile.secure_access_door.name=Secure Access Door
 tile.sliding_seal_door.name=Sliding Seal Door
 
-trait.asbestos=Asbestos
+trait.asbestos=Carcinogen
 trait.blinding=Blinding
 trait.coal=Coal Dust
 trait.confusion=Autism
