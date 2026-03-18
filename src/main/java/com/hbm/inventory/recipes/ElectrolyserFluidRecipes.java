@@ -36,6 +36,23 @@ public class ElectrolyserFluidRecipes extends SerializableRecipe {
 
 		//molten salt -> 2sodium and 2chlorine
 		recipes.put(Fluids.MOLTEN_SALT, new ElectrolysisRecipe(1_000, new FluidStack(Fluids.SODIUM, 500), new FluidStack(Fluids.CHLORINE, 500)));
+
+		//CACL2 -> 2Ca + Cl2
+		recipes.put(Fluids.CACL2, new ElectrolysisRecipe(
+			250,
+			new FluidStack(Fluids.CHLORINE, 500), // fluid output 1
+			new FluidStack(Fluids.NONE, 0),       // fluid output 2 (unused)
+			new ItemStack(ModItems.ingot_calcium, 1) // item output 1
+		));
+
+		recipes.put(Fluids.MOLTEN_STRONTIUM_CHLORIDE,
+			new ElectrolysisRecipe(
+				1000,
+				new FluidStack(Fluids.CHLORINE, 500),
+				new FluidStack(Fluids.NONE, 0),
+				new ItemStack(ModItems.powder_strontium, 1)
+			));
+
 	}
 
 	public static HashMap getRecipes() {

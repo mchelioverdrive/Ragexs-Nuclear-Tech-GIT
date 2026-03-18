@@ -145,6 +145,7 @@ public class Fluids {
 	private static FluidType BLOOD_HOT;
 	public static FluidType SOLVENT; //oranic solvent in fact
 	public static FluidType HCL;
+	public static FluidType CACL2;
 	public static FluidType SYNGAS;
 	public static FluidType OXYHYDROGEN;
 	public static FluidType EVEAIR; // when cryogenically distillated, can yield stuff like mercury, that one chemical pu suggested involving something purple i forgot, and possibly iodine
@@ -241,6 +242,8 @@ public class Fluids {
 
 	public static FluidType POLLUCITE_SOLUTION_HEAVY;
 	public static FluidType POLLUCITE_SOLUTION_LIGHT;
+
+	public static FluidType MOLTEN_STRONTIUM_CHLORIDE;
 
 	//morkite would be like a gravelly oil. it would be a goopy liquidized gravel.
 	//point being, if the crystals were melted down and the liquid extracted
@@ -548,6 +551,11 @@ public class Fluids {
 		POLLUCITE_SOLUTION_LIGHT = new FluidType("POLLUCITE_SOLUTION_LIGHT", 0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, NOCON, new FT_Corrosive(60));
 		//I AM GETTING FUCKING CANCER
 
+		CACL2 = 				new FluidType("CACL2",				0xBFCF39, 3, 0, 3, EnumSymbol.ACID).addTraits(new FT_Corrosive(20), LIQUID);
+
+		MOLTEN_STRONTIUM_CHLORIDE = new FluidType("MOLTEN_STRONTIUM_CHLORIDE", 0xBFCF39, 3, 0, 3, EnumSymbol.ACID).addTraits(new FT_Corrosive(20), LIQUID).setTemp(700);
+
+
 
 		// ^ ^ ^ ^ ^ ^ ^ ^
 		//ADD NEW FLUIDS HERE
@@ -783,6 +791,8 @@ public class Fluids {
 		metaOrder.add(POLLUCITE_SOLUTION_HEAVY);
 		metaOrder.add(POLLUCITE_SOLUTION_LIGHT);
 
+		metaOrder.add(MOLTEN_STRONTIUM_CHLORIDE);
+
 
 		//smoke
 		metaOrder.add(SMOKE);
@@ -792,6 +802,8 @@ public class Fluids {
 		metaOrder.add(DUNAAIR);
 
 		metaOrder.add(POTASSIUM_HYDROXIDE);
+
+		metaOrder.add(CACL2);
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!
 		// V

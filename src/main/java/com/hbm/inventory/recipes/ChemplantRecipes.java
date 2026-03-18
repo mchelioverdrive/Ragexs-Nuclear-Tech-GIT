@@ -804,6 +804,37 @@ public class ChemplantRecipes extends SerializableRecipe {
 		);
 
 
+		//calcium step 1 HCl + quicklime -> CACL2
+		// Calcium chloride synthesis
+		recipes.add(new ChemRecipe(1028, "CALCIUM_CHLORIDE", 200)
+			.inputItems(
+				new ComparableStack(ModItems.quicklime, 1)
+			)
+			.inputFluids(
+				new FluidStack(Fluids.HCL, 200) // 2x ratio
+			)
+			.outputFluids(
+				new FluidStack(Fluids.CACL2, 1000),
+				new FluidStack(Fluids.WATER, 200)
+			)
+		);
+
+		recipes.add(new ChemRecipe(1029, "MOLTEN_STRONTIUM_CHLORIDE", 50)
+			.inputItems(new ComparableStack(ModItems.strontium_chloride, 1))
+			.outputFluids(new FluidStack(Fluids.MOLTEN_STRONTIUM_CHLORIDE, 1000))
+		);
+
+		recipes.add(new ChemRecipe(1030, "STRONTIUM_CHLORIDE", 50)
+			.inputItems(new ComparableStack(ModItems.powder_strontium_oxide, 1))
+			.inputFluids(new FluidStack(Fluids.HCL, 1000))
+			.outputItems(new ItemStack(ModItems.strontium_chloride, 1))
+			.outputFluids(new FluidStack(Fluids.WATER, 500))
+		);
+
+
+
+
+
 
 
 		//todo methamphetamine

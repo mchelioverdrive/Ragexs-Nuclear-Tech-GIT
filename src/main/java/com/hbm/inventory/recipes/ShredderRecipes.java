@@ -217,6 +217,8 @@ public class ShredderRecipes extends SerializableRecipe {
 
 		ShredderRecipes.setRecipe(new ItemStack(ModBlocks.ore_mineral, 1, OreDictionary.WILDCARD_VALUE), new ItemStack(ModItems.mineral_dust, 1)); // it was deserved
 
+		//powder_celestite
+		ShredderRecipes.setRecipe(new ItemStack(ModBlocks.ore_celestite, 1, OreDictionary.WILDCARD_VALUE), new ItemStack(ModItems.powder_celestite, 4));
 
 		ShredderRecipes.setRecipe(ModItems.bean_roast,  new ItemStack(ModItems.powder_coffee, 1));
 

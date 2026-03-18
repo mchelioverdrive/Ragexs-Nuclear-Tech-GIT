@@ -162,6 +162,7 @@ public class ModBlocks {
 
 	public static Block basalt;
 	public static Block ore_basalt;
+	public static Block ore_celestite;
 	public static Block basalt_smooth;
 	public static Block basalt_brick;
 	public static Block basalt_polished;
@@ -1481,6 +1482,7 @@ public class ModBlocks {
 
 		basalt = new BlockPillar(Material.rock, RefStrings.MODID + ":basalt_top").setBlockName("basalt").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":basalt");
 		ore_basalt = new BlockOreBasalt().setBlockName("ore_basalt").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_basalt");
+		ore_celestite = new BlockOre(Material.rock).setBlockName("ore_celestite").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_celestite");
 		basalt_smooth = new BlockGeneric(Material.rock).setBlockName("basalt_smooth").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":basalt_smooth");
 		basalt_brick = new BlockGeneric(Material.rock).setBlockName("basalt_brick").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":basalt_brick");
 		basalt_polished = new BlockGeneric(Material.rock).setBlockName("basalt_polished").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":basalt_polished");
@@ -2753,6 +2755,8 @@ public class ModBlocks {
 
 		//Basalt ores
 		register(ore_basalt);
+
+		register(ore_celestite);
 
 		//End Ores
 		GameRegistry.registerBlock(ore_tikite, ore_tikite.getUnlocalizedName());

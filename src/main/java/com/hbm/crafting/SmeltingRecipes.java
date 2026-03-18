@@ -1,5 +1,6 @@
 package com.hbm.crafting;
 
+import com.hbm.blocks.BlockEnums;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.BlockEnums.EnumMeteorType;
 import com.hbm.blocks.generic.BlockNTMFlower.EnumFlowerType;
@@ -28,6 +29,9 @@ public class SmeltingRecipes {
 		//GameRegistry.addSmelting(ModItems.glyphid_meat, new ItemStack(ModItems.glyphid_meat_grilled), 1.0F);
 
 		// Oredict doesn't work for vanilla smelting :(
+
+		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.stone_resource), new ItemStack(ModItems.quicklime), 0.2F);
+		//EnumStoneType.LIMESTONE.ordinal()
 
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_iron), new ItemStack(Items.iron_ingot), 0.7F);
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_gold), new ItemStack(Items.gold_ingot), 1.0F);

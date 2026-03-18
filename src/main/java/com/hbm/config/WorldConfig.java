@@ -37,6 +37,7 @@ public class WorldConfig {
 	public static int gasbubbleSpawn = 12;
 	public static int explosivebubbleSpawn = 0;
 	public static int cobaltSpawn = 2;
+	public static int celestiteSpawn = 4;
 	public static int oilSpawn = 100;
 	public static int bedrockOilSpawn = 200;
 	public static int meteoriteSpawn = 500;

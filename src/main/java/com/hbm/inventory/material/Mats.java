@@ -134,6 +134,8 @@ public class Mats {
 	public static final NTMMaterial MAT_CADMIUM			= makeSmeltable(4800,		CD,				0xFFFADE, 0x350000, 0xA85600).setAutogen(DUST).m();
 	public static final NTMMaterial MAT_SILICON			= makeSmeltable(1400,		SI,				0xD1D7DF, 0x1A1A3D, 0x878B9E).setAutogen(FRAGMENT, NUGGET, BILLET).m();
 	public static final NTMMaterial MAT_MAGNESIUM = makeSmeltable(1500,		MG,				0xFFFFFF, 0xB9B9B9, 0xFFFFFF).setAutogen(FRAGMENT, NUGGET, DUST).m();
+	//public static final NTMMaterial powder_strontium_oxide = makeSmeltable(1501,		PSO,			0xCFCFA6, 0x747F6E, 0xB7B784).setAutogen(DUST).n();
+	//god decided the crucible is retarded and I refuse to challenge him on that
 	public static final NTMMaterial MAT_ASBESTOS		= makeSmeltable(1401,		ASBESTOS,		0xD8D9CF, 0x616258, 0xB0B3A8).setAutogen(FRAGMENT, BLOCK).n();
 	public static final NTMMaterial MAT_OSMIRIDIUM		= makeSmeltable(7699,		OSMIRIDIUM, 	0xDBE3EF, 0x7891BE, 0xACBDD9).setAutogen(NUGGET, CASTPLATE, WELDEDPLATE).m();
 	public static final NTMMaterial MAT_NICKEL			= makeSmeltable(2800,		NI,				0xAE9572, 0xAE9572, 0xAE9572).setAutogen(NUGGET, DUST, BLOCK).m();

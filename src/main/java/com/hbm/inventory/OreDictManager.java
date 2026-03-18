@@ -227,6 +227,7 @@ public class OreDictManager {
 	/** SILICON */
 	public static final DictFrame SI = new DictFrame("Silicon");
 	public static final DictFrame MG = new DictFrame("Magnesium");
+	//public static final DictFrame PSO = new DictFrame("StrontiumOxide");
 	public static final DictFrame GRAPHITE = new DictFrame("Graphite");
 	public static final DictFrame CARBON = new DictFrame("Carbon");
 	public static final DictFrame DURA = new DictFrame("DuraSteel");
@@ -477,6 +478,7 @@ public class OreDictManager {
 		B			.nugget(fragment_boron)									.ingot(ingot_boron)				.dustSmall(powder_boron_tiny)		.dust(powder_boron)												.block(block_boron);
 		SI			.nugget(nugget_silicon)		.billet(billet_silicon)		.ingot(ingot_silicon);
 		MG			.ingot(magnesium_ingot);	//.billet(billet_magnesium)	.ingot(ingot_magnesium)												.dust(powder_magnesium)											.block(block_magnesium)		.oreAll(ore_magnesium);
+		//PSO .nugget(powder_strontium_oxide);
 		GRAPHITE															.ingot(ingot_graphite)																												.block(block_graphite);
 		CARBON																.ingot(ingot_graphite)																												.block(block_graphite);
 		DURA																.ingot(ingot_dura_steel)											.dust(powder_dura_steel)		.plate(plate_dura_steel)		.block(block_dura_steel);

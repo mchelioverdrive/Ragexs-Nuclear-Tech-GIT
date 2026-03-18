@@ -46,6 +46,7 @@ import com.hbm.util.RTGUtil;
 
 import api.hbm.block.IToolable.ToolType;
 import cpw.mods.fml.common.registry.GameRegistry;
+import net.minecraft.block.Block;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
@@ -68,6 +69,8 @@ import net.minecraftforge.fluids.FluidStack;
 
 public class ModItems {
 
+
+
 	public static void mainRegistry()
 	{
 		initializeItem();
@@ -77,6 +80,9 @@ public class ModItems {
 	//public static Item redstone_sword;
 	//public static Item big_sword;
 	//public static Item butter_sword;
+	public static Item strontium_sulfide;
+	public static Item powder_strontium_oxide;
+	public static Item strontium_chloride;
 	public static Item ingot_gunmetal;
 	public static Item magnesium_ingot;
 	public static Item slagingot;
@@ -151,6 +157,7 @@ public class ModItems {
 
 	public static Item coke;
 	public static Item powder_coke;
+	public static Item powder_celestite;
 	public static Item lignite;
 	public static Item powder_lignite;
 	public static Item briquette;
@@ -557,6 +564,8 @@ public class ModItems {
 
 	public static Item itemsalt;
 	public static Item rubidiumsalt;
+
+	public static Item quicklime;
 
 	public static Item sodium_sulfate;
 	public static Item potassium_sulfate;
@@ -2873,6 +2882,9 @@ public class ModItems {
 		billet_cf252 = new Item().setUnlocalizedName("billet_cf252").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":billet_cf252");
 
 		ingot_gunmetal = new Item().setUnlocalizedName("ingot_gunmetal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_gunmetal");
+		strontium_sulfide = new Item().setUnlocalizedName("strontium_sulfide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
+		powder_strontium_oxide = new Item().setUnlocalizedName("powder_strontium_oxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
+		strontium_chloride = new Item().setUnlocalizedName("strontium_chloride").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		magnesium_ingot = new Item().setUnlocalizedName("magnesium_ingot").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_magnesium");
 		slagingot = new Item().setUnlocalizedName("slagingot").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_slagingot");
 		plate_gunmetal = new Item().setUnlocalizedName("plate_gunmetal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_gunmetal");
@@ -3016,6 +3028,7 @@ public class ModItems {
 		rocket_fuel = new Item().setUnlocalizedName("rocket_fuel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":rocket_fuel");
 		coke = new ItemEnumMulti(EnumCokeType.class, true, true).setUnlocalizedName("coke").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":coke");
 		powder_coke = new ItemEnumMulti(EnumCokeType.class, true, true).setUnlocalizedName("powder_coke").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_coke");
+		powder_celestite = new Item().setUnlocalizedName("powder_celestite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_celestite");
 		lignite = new Item().setUnlocalizedName("lignite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":lignite");
 		briquette = new ItemEnumMulti(EnumBriquetteType.class, true, true).setUnlocalizedName("briquette").setCreativeTab(MainRegistry.partsTab);
 		powder_lignite = new Item().setUnlocalizedName("powder_lignite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lignite");
@@ -3196,6 +3209,8 @@ public class ModItems {
 
 		sodium_sulfate = new Item().setUnlocalizedName("sodium_sulfate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		potassium_sulfate = new ItemFertilizer().setUnlocalizedName("potassium_sulfate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
+
+		quicklime = new Item().setUnlocalizedName("quicklime").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 
 		//IF I HAVE TO ADD ONE MORE GODDAMN WHITE POWDER IM GONNA SCREAM
 
@@ -6261,6 +6276,9 @@ public class ModItems {
 		GameRegistry.registerItem(ingot_ferrouranium, ingot_ferrouranium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_starmetal, ingot_starmetal.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_gunmetal, ingot_gunmetal.getUnlocalizedName());
+		GameRegistry.registerItem(strontium_sulfide, strontium_sulfide.getUnlocalizedName());
+		GameRegistry.registerItem(powder_strontium_oxide, powder_strontium_oxide.getUnlocalizedName());
+		GameRegistry.registerItem(strontium_chloride, strontium_chloride.getUnlocalizedName());
 		GameRegistry.registerItem(magnesium_ingot, magnesium_ingot.getUnlocalizedName());
 		GameRegistry.registerItem(slagingot, slagingot.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_weaponsteel, ingot_weaponsteel.getUnlocalizedName());
@@ -6375,6 +6393,7 @@ public class ModItems {
 		GameRegistry.registerItem(bottle_mercury, bottle_mercury.getUnlocalizedName());
 		GameRegistry.registerItem(coke, coke.getUnlocalizedName());
 		GameRegistry.registerItem(powder_coke, powder_coke.getUnlocalizedName());
+		GameRegistry.registerItem(powder_celestite, powder_celestite.getUnlocalizedName());
 		GameRegistry.registerItem(lignite, lignite.getUnlocalizedName());
 		GameRegistry.registerItem(coal_infernal, coal_infernal.getUnlocalizedName());
 		GameRegistry.registerItem(briquette, briquette.getUnlocalizedName());
@@ -6597,6 +6616,8 @@ public class ModItems {
 
 		GameRegistry.registerItem(sodium_sulfate, sodium_sulfate.getUnlocalizedName());
 		GameRegistry.registerItem(potassium_sulfate, potassium_sulfate.getUnlocalizedName());
+
+		GameRegistry.registerItem(quicklime, quicklime.getUnlocalizedName());
 
 		//Fragments
 		GameRegistry.registerItem(fragment_neodymium, fragment_neodymium.getUnlocalizedName());
