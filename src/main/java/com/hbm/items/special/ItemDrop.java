@@ -63,14 +63,14 @@ public class ItemDrop extends Item {
 					}
 
 					entityItem.worldObj.createExplosion(entityItem, entityItem.posX, entityItem.posY,
-							entityItem.posZ, 0.0F, true);
+							entityItem.posZ, 0.0F, false);
 					entityItem.setDead();
 				}
 			}
 			if (stack.getItem() != null && stack.getItem() == ModItems.detonator_de) {
 				if (!entityItem.worldObj.isRemote && WeaponConfig.dropDead) {
 					entityItem.worldObj.createExplosion(entityItem, entityItem.posX, entityItem.posY,
-							entityItem.posZ, 5.0F, true);
+							entityItem.posZ, 5.0F, false);
 
 		    		if(GeneralConfig.enableExtendedLogging)
 		    			MainRegistry.logger.log(Level.INFO, "[DET] Detonated dead man's explosive at " + ((int)entityItem.posX) + " / " + ((int)entityItem.posY) + " / " + ((int)entityItem.posZ) + "!");

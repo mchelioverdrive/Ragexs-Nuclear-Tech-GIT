@@ -88,6 +88,7 @@ public class HazardRegistry {
 	public static final float th232 = 0.1F;
 	public static final float thf = 1.75F;
 	public static final float u = 0.35F;
+	public static final float be = 2F;
 	public static final float u233 = 5.0F;
 	public static final float u235 = 1.0F;
 	public static final float u238 = 0.25F;
@@ -528,10 +529,22 @@ public class HazardRegistry {
 		//you however...
 		HazardSystem.register(francium_ingot, makeData().addEntry(HYDROACTIVE, 100F).addEntry(HOT, 300F).addEntry(RADIATION, 1000000));
 
+		//todo add half lifes
+
 		//todone beryllium powder carcinogen
 
 
-		HazardSystem.register(powder_beryllium, makeData().addEntry(ASBESTOS, 1F));
+		HazardSystem.register(powder_beryllium, makeData().addEntry(ASBESTOS, be * powder));
+		HazardSystem.register(ingot_beryllium, makeData().addEntry(ASBESTOS, be * ingot));
+		HazardSystem.register(block_beryllium, makeData().addEntry(ASBESTOS, be * block));
+		HazardSystem.register(billet_beryllium, makeData().addEntry(ASBESTOS, be * billet));
+		HazardSystem.register(nugget_beryllium, makeData().addEntry(ASBESTOS, be * nugget));
+		HazardSystem.register(crystal_beryllium, makeData().addEntry(ASBESTOS, be * crystal));
+		//nah id win, win like technoblade
+
+		//may or may not based on which kind of emerald powder (assumed to be from beryl)
+		HazardSystem.register(powder_emerald, makeData().addEntry(ASBESTOS, 0.5F * powder));
+
 		HazardSystem.register(brick_asbestos, makeData(ASBESTOS, 1F));
 		HazardSystem.register(tile_lab_broken, makeData(ASBESTOS, 1F));
 		//HazardSystem.register(powder_coltan_ore, makeData(ASBESTOS, 3F));
