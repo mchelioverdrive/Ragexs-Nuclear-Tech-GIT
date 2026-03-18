@@ -266,56 +266,72 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 
 	/// ASBESTOS ///
 	public static int getAsbestos(EntityLivingBase entity) {
-		if(RadiationConfig.disableAsbestos) return 0;
-		return getData(entity).asbestos;
+		if (RadiationConfig.disableAsbestos) return 0;
+		return entity.getEntityData().getInteger("Asbestos");
 	}
 
 	public static void setAsbestos(EntityLivingBase entity, int asbestos) {
 		if (RadiationConfig.disableAsbestos) return;
 
 		NBTTagCompound tag = entity.getEntityData();
-
-		// clamp value
 		asbestos = Math.min(asbestos, maxAsbestos);
+
 		tag.setInteger("Asbestos", asbestos);
+	}
 
-		int level = asbestos;
+	public static void updateAsbestos(EntityLivingBase entity) {
+		if (RadiationConfig.disableAsbestos) return;
+		if (entity.worldObj.isRemote) return;
 
-		// Tier 1: mild exposure
-		if (level > maxAsbestos * 0.25) {
-			if (entity.ticksExisted % 200 == 0) {
-				entity.attackEntityFrom(ModDamageSource.asbestos, 1.0F);
-			}
+		int level = getAsbestos(entity);
+		if (level <= 0) return;
+
+		// Tier 1
+		if (level > maxAsbestos * 0.25 && entity.ticksExisted % 200 == 0) {
+			entity.attackEntityFrom(ModDamageSource.asbestos, 1.0F);
 		}
 
-		// Tier 2: moderate exposure
-		if (level > maxAsbestos * 0.5) {
-			if (entity.ticksExisted % 100 == 0) {
-				entity.attackEntityFrom(ModDamageSource.asbestos, 2.0F);
-			}
+		// Tier 2
+		if (level > maxAsbestos * 0.5 && entity.ticksExisted % 100 == 0) {
+			entity.attackEntityFrom(ModDamageSource.asbestos, 2.0F);
 		}
 
-		// Tier 3: severe exposure
-		if (level > maxAsbestos * 0.75) {
-			if (entity.ticksExisted % 60 == 0) {
-				entity.attackEntityFrom(ModDamageSource.asbestos, 3.0F);
-			}
+		// Tier 3
+		if (level > maxAsbestos * 0.75 && entity.ticksExisted % 60 == 0) {
+			entity.attackEntityFrom(ModDamageSource.asbestos, 3.0F);
 		}
 
-		// Extreme exposure: rare spike damage
-		if (level >= maxAsbestos) {
-			if (entity.getRNG().nextFloat() < 0.01F && entity.ticksExisted % 40 == 0) {
+		// Extreme spike
+		if (level >= maxAsbestos && entity.ticksExisted % 40 == 0) {
+			if (entity.getRNG().nextFloat() < 0.01F) {
 				entity.attackEntityFrom(ModDamageSource.asbestos, 20.0F);
 			}
+		}
+
+		// --- DECAY ---
+		if (entity.ticksExisted % 600 == 0) { // every 30 seconds
+			setAsbestos(entity, level - 1);
 		}
 	}
 
 	public static void incrementAsbestos(EntityLivingBase entity, int asbestos) {
-		if(RadiationConfig.disableAsbestos) return;
-		setAsbestos(entity, getAsbestos(entity) + asbestos);
+		if (RadiationConfig.disableAsbestos) return;
 
-		if(entity instanceof EntityPlayerMP) {
-			PacketDispatcher.wrapper.sendTo(new PlayerInformPacket(ChatBuilder.start("").nextTranslation("info.asbestos").color(EnumChatFormatting.RED).flush(), MainRegistry.proxy.ID_GAS_HAZARD, 3000), (EntityPlayerMP) entity);
+		int newLevel = getAsbestos(entity) + asbestos;
+		setAsbestos(entity, newLevel);
+
+		if(entity instanceof EntityPlayerMP && asbestos > 0) {
+			PacketDispatcher.wrapper.sendTo(
+				new PlayerInformPacket(
+					ChatBuilder.start("")
+						.nextTranslation("info.asbestos")
+						.color(EnumChatFormatting.RED)
+						.flush(),
+					MainRegistry.proxy.ID_GAS_HAZARD,
+					3000
+				),
+				(EntityPlayerMP) entity
+			);
 		}
 	}
 

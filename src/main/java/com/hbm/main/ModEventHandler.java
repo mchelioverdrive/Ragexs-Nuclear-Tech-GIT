@@ -181,6 +181,8 @@ import net.minecraftforge.event.world.BlockEvent.BreakEvent;
 import net.minecraftforge.event.world.BlockEvent.PlaceEvent;
 import net.minecraftforge.event.world.WorldEvent;
 
+import static com.hbm.extprop.HbmLivingProps.updateAsbestos;
+
 public class ModEventHandler {
 
 	private static Random rand = new Random();
@@ -775,6 +777,7 @@ public class ModEventHandler {
 		}
 
 		EntityEffectHandler.onUpdate(event.entityLiving);
+		updateAsbestos(event.entityLiving);
 
 		if(!event.entity.worldObj.isRemote && !(event.entityLiving instanceof EntityPlayer)) {
 			HazardSystem.updateLivingInventory(event.entityLiving);

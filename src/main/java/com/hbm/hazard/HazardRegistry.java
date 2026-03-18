@@ -545,6 +545,9 @@ public class HazardRegistry {
 		//may or may not based on which kind of emerald powder (assumed to be from beryl)
 		HazardSystem.register(powder_emerald, makeData().addEntry(ASBESTOS, 0.5F * powder));
 
+		HazardSystem.register(ore_beryllium, makeData().addEntry(ASBESTOS, be * ore));
+		//sowwy >w<
+
 		HazardSystem.register(brick_asbestos, makeData(ASBESTOS, 1F));
 		HazardSystem.register(tile_lab_broken, makeData(ASBESTOS, 1F));
 		//HazardSystem.register(powder_coltan_ore, makeData(ASBESTOS, 3F));

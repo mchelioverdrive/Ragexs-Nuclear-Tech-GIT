@@ -744,6 +744,29 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.outputItems(new ItemStack(Blocks.glass, 8))
 		);
 
+		// Alkali roasting of beryl (fixed + balanced) (SIMPLISTIC)
+		recipes.add(new ChemRecipe(1023, "BERYL_ROASTING", 120)
+			.inputItems(new ComparableStack(ModBlocks.ore_beryllium, 2))
+			.inputFluids(new FluidStack(Fluids.SODIUM_CARBONATE, 1000))
+			.outputItems(
+				new ItemStack(ModItems.powder_beryllium, 2),
+				new ItemStack(ModItems.powder_aluminium, 2),
+				new ItemStack(ModItems.powder_sodium, 3)
+			)
+		);
+
+		// Sodium carbonate synthesis (CO2 absorption)
+		recipes.add(new ChemRecipe(1024, "SODIUM_CARBONATE", 60)
+			.inputFluids(
+				new FluidStack(Fluids.SODIUM_HYDROXIDE, 1000),
+				new FluidStack(Fluids.CARBONDIOXIDE, 500)
+			)
+			.outputFluids(
+				new FluidStack(Fluids.SODIUM_CARBONATE, 1000),
+				new FluidStack(Fluids.WATER, 250)
+			)
+		);
+
 
 
 

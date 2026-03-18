@@ -219,6 +219,7 @@ public class Fluids {
 	public static FluidType SODIUM;
 	public static FluidType SODIUM_HYDROXIDE;
 	//end me
+	public static FluidType SODIUM_CARBONATE;
 	public static FluidType SODIUM_HOT;
 	public static FluidType LEAD;
 	public static FluidType LEAD_HOT;
@@ -501,6 +502,7 @@ public class Fluids {
 		HEAVYWATER_HOT =		new FluidType("HEAVYWATER_HOT",		0x4D007B, 1, 0, 0, EnumSymbol.NONE).setTemp(600).addTraits(LIQUID, VISCOUS);
 		SODIUM =				new FluidType("SODIUM",				0xCCD4D5, 1, 2, 3, EnumSymbol.NONE).setTemp(400).addTraits(LIQUID, VISCOUS);
 		SODIUM_HYDROXIDE =		new FluidType("SODIUM_HYDROXIDE",	0xCCD4D5, 1, 2, 3, EnumSymbol.NONE).setTemp(400).addTraits(LIQUID, VISCOUS, new FT_Corrosive(65));
+		SODIUM_CARBONATE = 	new FluidType("SODIUM_CARBONATE",	0xCCD4D5, 1, 2, 3, EnumSymbol.NONE).setTemp(400).addTraits(LIQUID, VISCOUS, new FT_Corrosive(65));
 		SODIUM_HOT =			new FluidType("SODIUM_HOT",			0xE2ADC1, 1, 2, 3, EnumSymbol.NONE).setTemp(1200).addTraits(LIQUID, VISCOUS);
 		THORIUM_SALT =			new FluidType("THORIUM_SALT",		0x7A5542, 2, 0, 3, EnumSymbol.NONE).setTemp(800).addTraits(LIQUID, VISCOUS, new FT_Corrosive(65));
 		THORIUM_SALT_HOT =		new FluidType("THORIUM_SALT_HOT",	0x3E3627, 2, 0, 3, EnumSymbol.NONE).setTemp(1600).addTraits(LIQUID, VISCOUS, new FT_Corrosive(65));
@@ -590,6 +592,7 @@ public class Fluids {
 		metaOrder.add(BLOOD_HOT);
 		metaOrder.add(SODIUM);
 		metaOrder.add(SODIUM_HYDROXIDE);
+		metaOrder.add(SODIUM_CARBONATE);
 		metaOrder.add(SODIUM_HOT);
 		metaOrder.add(LEAD);
 		metaOrder.add(LEAD_HOT);
