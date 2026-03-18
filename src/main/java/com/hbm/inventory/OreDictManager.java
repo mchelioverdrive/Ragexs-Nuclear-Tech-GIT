@@ -195,6 +195,8 @@ public class OreDictManager {
 	public static final DictFrame AL = new DictFrame("Aluminum");
 	public static final DictFrame STEEL = new DictFrame("Steel");
 	public static final DictFrame STAINLESS = new DictFrame("StainlessSteel");
+
+	public static final DictFrame CDOLOMITE = new DictFrame("CDolomite");
 	/** TECHNETIUM STEEL */
 	public static final DictFrame TCALLOY = new DictFrame("TcAlloy");
 	/** CADMIUM STEEL */
@@ -224,6 +226,7 @@ public class OreDictManager {
 	public static final DictFrame B = new DictFrame("Boron");
 	/** SILICON */
 	public static final DictFrame SI = new DictFrame("Silicon");
+	public static final DictFrame MG = new DictFrame("Magnesium");
 	public static final DictFrame GRAPHITE = new DictFrame("Graphite");
 	public static final DictFrame CARBON = new DictFrame("Carbon");
 	public static final DictFrame DURA = new DictFrame("DuraSteel");
@@ -454,6 +457,7 @@ public class OreDictManager {
 		W																	.ingot(ingot_tungsten)												.dust(powder_tungsten)											.block(block_tungsten)		.ore(ore_nether_tungsten)	.oreNether(ore_nether_tungsten) .oreAll(ore_tungsten);
 		AL																	.ingot(ingot_aluminium)												.dust(powder_aluminium)			.plate(plate_aluminium)			.block(block_aluminium)		.oreAll(ore_aluminium);
 		STEEL																.ingot(ingot_steel)				.dustSmall(powder_steel_tiny)		.dust(powder_steel)				.plate(plate_steel)				.block(block_steel);
+		CDOLOMITE 															.ingot(calcined_dolomite);
 		STAINLESS															.ingot(ingot_stainless)			 																	.plate(plate_stainless);
 		TCALLOY																.ingot(ingot_tcalloy)												.dust(powder_tcalloy)											.block(block_tcalloy);
 		CDALLOY																.ingot(ingot_cdalloy)																												.block(block_cdalloy);
@@ -472,6 +476,7 @@ public class OreDictManager {
 		CO			.nugget(fragment_cobalt)	.nugget(nugget_cobalt)		.billet(billet_cobalt)			.ingot(ingot_cobalt)				.dust(powder_cobalt)			.dustSmall(powder_cobalt_tiny)	.block(block_cobalt)		.ore(ore_nether_cobalt)	.oreAll(ore_cobalt);
 		B			.nugget(fragment_boron)									.ingot(ingot_boron)				.dustSmall(powder_boron_tiny)		.dust(powder_boron)												.block(block_boron);
 		SI			.nugget(nugget_silicon)		.billet(billet_silicon)		.ingot(ingot_silicon);
+		MG			.ingot(magnesium_ingot);	//.billet(billet_magnesium)	.ingot(ingot_magnesium)												.dust(powder_magnesium)											.block(block_magnesium)		.oreAll(ore_magnesium);
 		GRAPHITE															.ingot(ingot_graphite)																												.block(block_graphite);
 		CARBON																.ingot(ingot_graphite)																												.block(block_graphite);
 		DURA																.ingot(ingot_dura_steel)											.dust(powder_dura_steel)		.plate(plate_dura_steel)		.block(block_dura_steel);
@@ -523,7 +528,7 @@ public class OreDictManager {
 		HEMATITE																														.ore(fromOne(stone_resource, EnumStoneType.HEMATITE));
 		MALACHITE																														.ore(fromOne(stone_resource, EnumStoneType.MALACHITE));
 		LIMESTONE																		.dust(powder_limestone)							.ore(fromOne(stone_resource, EnumStoneType.LIMESTONE));
-		SLAG																									.block(block_slag) .ingot(new Mats.MaterialStack(MAT_SLAG, 1) );//.ingot(slagpowder)
+		SLAG																									.block(block_slag) .ingot(slagingot);//.ingot(slagpowder)
 		CONGLOMERATE																													.ore(fromOne(stone_resource, EnumStoneType.CONGLOMERATE));
 		/*
 		 * HAZARDS, MISC

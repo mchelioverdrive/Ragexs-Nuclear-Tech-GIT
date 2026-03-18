@@ -79,6 +79,7 @@ public class ModItems {
 	//public static Item butter_sword;
 	public static Item ingot_gunmetal;
 	public static Item magnesium_ingot;
+	public static Item slagingot;
 	public static Item plate_gunmetal;
 	public static Item ingot_weaponsteel;
 	public static Item plate_weaponsteel;
@@ -2873,6 +2874,7 @@ public class ModItems {
 
 		ingot_gunmetal = new Item().setUnlocalizedName("ingot_gunmetal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_gunmetal");
 		magnesium_ingot = new Item().setUnlocalizedName("magnesium_ingot").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_magnesium");
+		slagingot = new Item().setUnlocalizedName("slagingot").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_slagingot");
 		plate_gunmetal = new Item().setUnlocalizedName("plate_gunmetal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_gunmetal");
 		ingot_weaponsteel = new Item().setUnlocalizedName("ingot_weaponsteel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_gunsteel");
 		plate_weaponsteel = new Item().setUnlocalizedName("plate_weaponsteel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_gunsteel");
@@ -6260,6 +6262,7 @@ public class ModItems {
 		GameRegistry.registerItem(ingot_starmetal, ingot_starmetal.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_gunmetal, ingot_gunmetal.getUnlocalizedName());
 		GameRegistry.registerItem(magnesium_ingot, magnesium_ingot.getUnlocalizedName());
+		GameRegistry.registerItem(slagingot, slagingot.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_weaponsteel, ingot_weaponsteel.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_saturnite, ingot_saturnite.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_euphemium, ingot_euphemium.getUnlocalizedName());

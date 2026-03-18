@@ -13,7 +13,6 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.config.GeneralConfig;
 import com.hbm.inventory.FluidStack;
 import static com.hbm.inventory.OreDictManager.*;
-import static com.hbm.inventory.material.Mats.MAT_SLAG;
 
 import com.hbm.inventory.RecipesCommon.AStack;
 import com.hbm.inventory.RecipesCommon.ComparableStack;
@@ -788,13 +787,13 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(1027, "MAGNESIUM_REDUCTION", 200)
 			.inputItems(
 				new ComparableStack(ModItems.calcined_dolomite, 1),
-				new ComparableStack(ModItems.nugget_silicon, 1)
+				new ComparableStack(ModItems.ingot_silicon, 1)
 			)
 			.outputItems(
 				new ItemStack(ModItems.magnesium_ingot, 1),
 				//slag whatever
 				//SLAG //new MaterialStack(Mats.MAT_SLAG
-				new ItemStack(ModItems.powder_iron, 1)
+				new ItemStack(ModItems.slagingot, 1)
 				//new OreDictStack(SLAG.ingot(), 1)
 				//new Mats.MaterialStack(MAT_SLAG, 1)
 				//(ItemStack) new Mats.MaterialStack(MAT_SLAG, 1)
