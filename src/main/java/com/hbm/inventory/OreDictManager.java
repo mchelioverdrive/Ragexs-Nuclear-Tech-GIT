@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 
 //i love you
+import static com.hbm.inventory.material.Mats.MAT_SLAG;
 import static com.hbm.items.ModItems.*;
 import static com.hbm.blocks.ModBlocks.*;
 import static com.hbm.inventory.OreDictManager.DictFrame.*;
@@ -522,7 +523,7 @@ public class OreDictManager {
 		HEMATITE																														.ore(fromOne(stone_resource, EnumStoneType.HEMATITE));
 		MALACHITE																														.ore(fromOne(stone_resource, EnumStoneType.MALACHITE));
 		LIMESTONE																		.dust(powder_limestone)							.ore(fromOne(stone_resource, EnumStoneType.LIMESTONE));
-		SLAG																									.block(block_slag);
+		SLAG																									.block(block_slag) .ingot(new Mats.MaterialStack(MAT_SLAG, 1) );//.ingot(slagpowder)
 		CONGLOMERATE																													.ore(fromOne(stone_resource, EnumStoneType.CONGLOMERATE));
 		/*
 		 * HAZARDS, MISC

@@ -93,6 +93,8 @@ public class ModBlocks {
 	public static Block ore_iodine;
 	public static Block ore_arsenic;
 	public static Block ore_silicon;
+	public static Block ore_magnesite;
+	//name it to Dolomite in lang
 	public static Block ore_fire;
 	public static Block ore_shale;
 
@@ -1407,6 +1409,7 @@ public class ModBlocks {
 		ore_coal_oil = new BlockCoalOil(Material.rock).setBlockName("ore_coal_oil").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(15.0F).setBlockTextureName(RefStrings.MODID + ":ore_coal_oil");
 		ore_coal_oil_burning = new BlockCoalBurning(Material.rock).setBlockName("ore_coal_oil_burning").setCreativeTab(MainRegistry.blockTab).setLightLevel(10F/15F).setHardness(5.0F).setResistance(15.0F).setBlockTextureName(RefStrings.MODID + ":ore_coal_oil_burning");
 		ore_silicon = new BlockOre(Material.rock).setBlockName("ore_silicon").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_silicon");
+		ore_magnesite = new BlockOre(Material.rock).setBlockName("ore_magnesite").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_magnesite");
 		ore_fire = new BlockOre(Material.rock).setBlockName("ore_fire").setCreativeTab(MainRegistry.blockTab).setHardness(0.4F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_fire");
 		ore_shale = new BlockOre(Material.rock).setBlockName("ore_shale").setCreativeTab(MainRegistry.blockTab).setHardness(1.5F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_shale");
 		ore_potash = new BlockOre(Material.rock).setBlockName("ore_potash").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_potash");
@@ -2681,6 +2684,7 @@ public class ModBlocks {
 		GameRegistry.registerBlock(ore_iodine, ItemBlockBase.class, ore_iodine.getUnlocalizedName());
 		GameRegistry.registerBlock(ore_arsenic, ItemBlockBase.class, ore_arsenic.getUnlocalizedName());
 		GameRegistry.registerBlock(ore_silicon, ItemBlockBase.class, ore_silicon.getUnlocalizedName());
+		GameRegistry.registerBlock(ore_magnesite, ItemBlockBase.class, ore_magnesite.getUnlocalizedName());
 		GameRegistry.registerBlock(ore_fire, ItemBlockBase.class, ore_fire.getUnlocalizedName());
 		GameRegistry.registerBlock(ore_shale, ItemBlockBase.class, ore_shale.getUnlocalizedName());
 		GameRegistry.registerBlock(ore_potash, ItemBlockBase.class, ore_potash.getUnlocalizedName());

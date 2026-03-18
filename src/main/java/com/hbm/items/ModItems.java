@@ -78,6 +78,7 @@ public class ModItems {
 	//public static Item big_sword;
 	//public static Item butter_sword;
 	public static Item ingot_gunmetal;
+	public static Item magnesium_ingot;
 	public static Item plate_gunmetal;
 	public static Item ingot_weaponsteel;
 	public static Item plate_weaponsteel;
@@ -415,6 +416,7 @@ public class ModItems {
 	public static Item ingot_silicon;
 	public static Item billet_silicon;
 	public static Item nugget_silicon;
+	public static Item calcined_dolomite;
 	public static Item ingot_niobium;
 	public static Item nugget_niobium;
 	public static Item ingot_osmiridium;
@@ -2362,6 +2364,8 @@ public class ModItems {
 	public static Item sopsign;
 	public static Item chernobylsign;
 
+	//public static Item slagpowder;
+
 	public static Item crystal_horn;
 	public static Item crystal_charred;
 
@@ -2868,6 +2872,7 @@ public class ModItems {
 		billet_cf252 = new Item().setUnlocalizedName("billet_cf252").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":billet_cf252");
 
 		ingot_gunmetal = new Item().setUnlocalizedName("ingot_gunmetal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_gunmetal");
+		magnesium_ingot = new Item().setUnlocalizedName("magnesium_ingot").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_magnesium");
 		plate_gunmetal = new Item().setUnlocalizedName("plate_gunmetal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_gunmetal");
 		ingot_weaponsteel = new Item().setUnlocalizedName("ingot_weaponsteel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_gunsteel");
 		plate_weaponsteel = new Item().setUnlocalizedName("plate_weaponsteel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_gunsteel");
@@ -3102,6 +3107,7 @@ public class ModItems {
 		ingot_silicon = new Item().setUnlocalizedName("ingot_silicon").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_silicon");
 		billet_silicon = new Item().setUnlocalizedName("billet_silicon").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":billet_silicon");
 		nugget_silicon = new Item().setUnlocalizedName("nugget_silicon").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_silicon");
+		calcined_dolomite = new Item().setUnlocalizedName("calcined_dolomite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":calcined_dolomite");
 		ingot_niobium = new Item().setUnlocalizedName("ingot_niobium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_niobium");
 		ingot_gallium = new Item().setUnlocalizedName("ingot_gallium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_gallium");
 		nugget_gallium = new Item().setUnlocalizedName("nugget_gallium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_gallium");
@@ -6253,6 +6259,7 @@ public class ModItems {
 		GameRegistry.registerItem(ingot_ferrouranium, ingot_ferrouranium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_starmetal, ingot_starmetal.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_gunmetal, ingot_gunmetal.getUnlocalizedName());
+		GameRegistry.registerItem(magnesium_ingot, magnesium_ingot.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_weaponsteel, ingot_weaponsteel.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_saturnite, ingot_saturnite.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_euphemium, ingot_euphemium.getUnlocalizedName());
@@ -6653,6 +6660,7 @@ public class ModItems {
 		GameRegistry.registerItem(nugget_arsenic, nugget_arsenic.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_tantalium, nugget_tantalium.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_silicon, nugget_silicon.getUnlocalizedName());
+		GameRegistry.registerItem(calcined_dolomite, calcined_dolomite.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_niobium, nugget_niobium.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_beryllium, nugget_beryllium.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_schrabidium, nugget_schrabidium.getUnlocalizedName());

@@ -13,10 +13,13 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.config.GeneralConfig;
 import com.hbm.inventory.FluidStack;
 import static com.hbm.inventory.OreDictManager.*;
+import static com.hbm.inventory.material.Mats.MAT_SLAG;
+
 import com.hbm.inventory.RecipesCommon.AStack;
 import com.hbm.inventory.RecipesCommon.ComparableStack;
 import com.hbm.inventory.RecipesCommon.OreDictStack;
 import com.hbm.inventory.fluid.Fluids;
+import com.hbm.inventory.material.Mats;
 import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.ModItems;
 import com.hbm.main.MainRegistry;
@@ -773,6 +776,32 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(1025, "REINFORCED_GLASS", 100)
 			.inputItems(new ComparableStack(ModItems.powder_sodium_silicate, 4), new ComparableStack(Blocks.sand, 8))
 			.outputItems(new ItemStack(ModBlocks.reinforced_glass, 8))
+		);
+
+		recipes.add(new ChemRecipe(1026, "CALCINED_DOLOMITE", 100)
+			//dolomite
+			.inputItems(new ComparableStack(ModBlocks.ore_magnesite, 1))
+			.outputItems(new ItemStack(ModItems.calcined_dolomite, 1))
+			.outputFluids(new FluidStack(Fluids.CARBONDIOXIDE, 500))
+		);
+
+		recipes.add(new ChemRecipe(1027, "MAGNESIUM_REDUCTION", 200)
+			.inputItems(
+				new ComparableStack(ModItems.calcined_dolomite, 1),
+				new ComparableStack(ModItems.nugget_silicon, 1)
+			)
+			.outputItems(
+				new ItemStack(ModItems.magnesium_ingot, 1),
+				//slag whatever
+				//SLAG //new MaterialStack(Mats.MAT_SLAG
+				new ItemStack(ModItems.powder_iron, 1)
+				//new OreDictStack(SLAG.ingot(), 1)
+				//new Mats.MaterialStack(MAT_SLAG, 1)
+				//(ItemStack) new Mats.MaterialStack(MAT_SLAG, 1)
+				//incompatible types
+				//TODO FIX THIS DOGSHIT
+				//would be but bob coded this shit so retarded that I don't even want to touch it.
+			)
 		);
 
 
