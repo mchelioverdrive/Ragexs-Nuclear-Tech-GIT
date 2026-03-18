@@ -271,12 +271,42 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 	}
 
 	public static void setAsbestos(EntityLivingBase entity, int asbestos) {
-		if(RadiationConfig.disableAsbestos) return;
-		getData(entity).asbestos = asbestos;
+		if (RadiationConfig.disableAsbestos) return;
 
-		if(asbestos >= maxAsbestos) {
-			getData(entity).asbestos = 0;
-			entity.attackEntityFrom(ModDamageSource.asbestos, 1000);
+		NBTTagCompound tag = entity.getEntityData();
+
+		// clamp value
+		asbestos = Math.min(asbestos, maxAsbestos);
+		tag.setInteger("Asbestos", asbestos);
+
+		int level = asbestos;
+
+		// Tier 1: mild exposure
+		if (level > maxAsbestos * 0.25) {
+			if (entity.ticksExisted % 200 == 0) {
+				entity.attackEntityFrom(ModDamageSource.asbestos, 1.0F);
+			}
+		}
+
+		// Tier 2: moderate exposure
+		if (level > maxAsbestos * 0.5) {
+			if (entity.ticksExisted % 100 == 0) {
+				entity.attackEntityFrom(ModDamageSource.asbestos, 2.0F);
+			}
+		}
+
+		// Tier 3: severe exposure
+		if (level > maxAsbestos * 0.75) {
+			if (entity.ticksExisted % 60 == 0) {
+				entity.attackEntityFrom(ModDamageSource.asbestos, 3.0F);
+			}
+		}
+
+		// Extreme exposure: rare spike damage
+		if (level >= maxAsbestos) {
+			if (entity.getRNG().nextFloat() < 0.01F && entity.ticksExisted % 40 == 0) {
+				entity.attackEntityFrom(ModDamageSource.asbestos, 20.0F);
+			}
 		}
 	}
 
