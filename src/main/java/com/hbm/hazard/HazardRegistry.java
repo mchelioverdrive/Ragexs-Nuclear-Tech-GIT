@@ -156,7 +156,8 @@ public class HazardRegistry {
 	public static final float powder_mult = 3.0F;
 	public static final float powder = ingot * powder_mult;
 	public static final float powder_tiny = nugget * powder_mult;
-	public static final float ore = ingot;
+	public static final float ore = ingot * 1.2F;
+	//"Ores generally pose a higher risk of radiation exposure and cancer-related health effects compared to processed ingots"
 	public static final float specore = ingot;
 	public static final float block = 10.0F;
 	public static final float crystal = block;

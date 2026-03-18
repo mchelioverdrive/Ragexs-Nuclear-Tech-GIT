@@ -750,8 +750,10 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.inputFluids(new FluidStack(Fluids.SODIUM_CARBONATE, 1000))
 			.outputItems(
 				new ItemStack(ModItems.powder_beryllium, 2),
-				new ItemStack(ModItems.powder_aluminium, 2),
-				new ItemStack(ModItems.powder_sodium, 3)
+				new ItemStack(ModItems.powder_aluminium, 3),
+				new ItemStack(ModItems.powder_sodium_silicate, 4)
+				//not actually a powder, looks more like crystal meth but whatever
+				//new ItemStack(ModItems.sodium_silicate, 3)
 			)
 		);
 
@@ -759,12 +761,18 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(1024, "SODIUM_CARBONATE", 60)
 			.inputFluids(
 				new FluidStack(Fluids.SODIUM_HYDROXIDE, 1000),
-				new FluidStack(Fluids.CARBONDIOXIDE, 500)
+				new FluidStack(Fluids.CARBONDIOXIDE, 1000)
 			)
 			.outputFluids(
 				new FluidStack(Fluids.SODIUM_CARBONATE, 1000),
-				new FluidStack(Fluids.WATER, 250)
+				new FluidStack(Fluids.WATER, 500)
 			)
+		);
+
+		//reinforced glass (silicate use
+		recipes.add(new ChemRecipe(1025, "REINFORCED_GLASS", 100)
+			.inputItems(new ComparableStack(ModItems.powder_sodium_silicate, 4), new ComparableStack(Blocks.sand, 8))
+			.outputItems(new ItemStack(ModBlocks.reinforced_glass, 8))
 		);
 
 
