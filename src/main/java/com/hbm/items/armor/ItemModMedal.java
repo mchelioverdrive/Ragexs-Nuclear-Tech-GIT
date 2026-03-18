@@ -18,18 +18,18 @@ public class ItemModMedal extends ItemArmorMod {
 
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean bool) {
-		list.add(EnumChatFormatting.GOLD + "-10 RAD/s");
+		list.add(EnumChatFormatting.GOLD + "-10 Sv/s");
 		super.addInformation(stack, player, list, bool);
 	}
 
 	@Override
 	public void addDesc(List list, ItemStack stack, ItemStack armor) {
-		list.add(EnumChatFormatting.GOLD + "  " + stack.getDisplayName() + " (-10 RAD/s)");
+		list.add(EnumChatFormatting.GOLD + "  " + stack.getDisplayName() + " (-10 Sv/s)");
 	}
-	
+
 	@Override
 	public void modUpdate(EntityLivingBase entity, ItemStack armor) {
-		
+
 		if(!entity.worldObj.isRemote) {
 			float rad = HbmLivingProps.getRadiation(entity);
 			rad -= 0.5F;

@@ -164,7 +164,7 @@ public class ArmorHEV extends ArmorFSBPowered {
 			else if(radiation < 1)
 				delta = "<1";
 
-			Minecraft.getMinecraft().fontRenderer.drawString(delta + " RAD/s", dX, dY, 0xFF0000);
+			Minecraft.getMinecraft().fontRenderer.drawString(delta + " Sv/s", dX, dY, 0xFF0000);
 		}
 
 		GL11.glColor4f(1F, 1F, 1F, 1F);

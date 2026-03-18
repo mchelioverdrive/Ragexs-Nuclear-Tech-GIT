@@ -57,6 +57,8 @@ public class HazardRegistry {
 	//from newguy: if the neutron system is a bit convoluted for you (or i'm just retarded), basically just assign the radiation value here as usual, then in OreDictManager add ".neutron(HazardRegistry.yourmaterial/number you want to divide by", which will take the radiation value assigned here and divide it by the number you put there
 
 	//simplified groups for ReC compat
+
+	//NEW NON TARD METHOD: SET THE MATERIAL RADS TO Sv/s EQUIVALENT
 	public static final float gen_S = 10_000F;
 	public static final float gen_H = 2_000F;
 	public static final float gen_10D = 100F;
