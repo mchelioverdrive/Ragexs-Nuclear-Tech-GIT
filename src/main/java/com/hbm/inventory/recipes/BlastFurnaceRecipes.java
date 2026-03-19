@@ -94,6 +94,9 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 			IMCBlastFurnace.buffer.clear();
 		}
 
+		//barium
+		addRecipe(new ComparableStack(ModBlocks.ore_barite, 1), COAL, new ItemStack(ModItems.barium_sulfide, 1));
+
 		//hiddenRecipes.add(new ComparableStack(ModItems.meteorite_sword_alloyed));
 	}
 

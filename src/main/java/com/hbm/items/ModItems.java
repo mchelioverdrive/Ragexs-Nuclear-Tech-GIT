@@ -99,6 +99,11 @@ public class ModItems {
 	public static Item part_stock;
 	public static Item part_grip;
 
+	public static Item barium_sulfide;
+	public static Item barium_carbonate;
+	public static Item barium_oxide;
+	public static Item ingot_barium;
+
 	public static Item ingot_th232;
 	public static Item ingot_uranium;
 	public static Item ingot_u233;
@@ -3587,6 +3592,11 @@ public class ModItems {
 		part_stock = new ItemAutogen(MaterialShapes.STOCK).setUnlocalizedName("part_stock").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":part_stock");
 		part_grip = new ItemAutogen(MaterialShapes.GRIP).setUnlocalizedName("part_grip").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":part_grip");
 
+		barium_sulfide = new Item().setUnlocalizedName("barium_sulfide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_coal");
+		barium_carbonate = new Item().setUnlocalizedName("barium_carbonate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
+		barium_oxide = new Item().setUnlocalizedName("barium_oxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
+		ingot_barium = new Item().setUnlocalizedName("ingot_barium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_barium");
+
 		demon_core_open = new ItemDemonCore().setUnlocalizedName("demon_core_open").setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":demon_core_open");
 		demon_core_closed = new Item().setUnlocalizedName("demon_core_closed").setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":demon_core_closed");
 
@@ -3651,9 +3661,9 @@ public class ModItems {
 		stamp_desh_9 = new ItemStamp(0, StampType.C9).setUnlocalizedName("stamp_desh_9").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":stamp_9_desh");
 		stamp_desh_50 = new ItemStamp(0, StampType.C50).setUnlocalizedName("stamp_desh_50").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":stamp_50_desh");
 
-		blades_steel = new ItemBlades(200).setUnlocalizedName("blades_steel").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":blades_steel");
-		blades_titanium = new ItemBlades(350).setUnlocalizedName("blades_titanium").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":blades_titanium");
-		blades_advanced_alloy = new ItemBlades(700).setUnlocalizedName("blades_advanced_alloy").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":blades_advanced_alloy");
+		blades_steel = new ItemBlades(800).setUnlocalizedName("blades_steel").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":blades_steel");
+		blades_titanium = new ItemBlades(4000).setUnlocalizedName("blades_titanium").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":blades_titanium");
+		blades_advanced_alloy = new ItemBlades(12000).setUnlocalizedName("blades_advanced_alloy").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":blades_advanced_alloy");
 		blades_desh = new ItemBlades(0).setUnlocalizedName("blades_desh").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":blades_desh");
 
 		mold_base = new Item().setUnlocalizedName("mold_base").setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":mold_base");
@@ -6838,6 +6848,10 @@ public class ModItems {
 		GameRegistry.registerItem(part_mechanism, part_mechanism.getUnlocalizedName());
 		GameRegistry.registerItem(part_stock, part_stock.getUnlocalizedName());
 		GameRegistry.registerItem(part_grip, part_grip.getUnlocalizedName());
+		GameRegistry.registerItem(barium_sulfide, barium_sulfide.getUnlocalizedName());
+		GameRegistry.registerItem(barium_carbonate, barium_carbonate.getUnlocalizedName());
+		GameRegistry.registerItem(barium_oxide, barium_oxide.getUnlocalizedName());
+		GameRegistry.registerItem(ingot_barium, ingot_barium.getUnlocalizedName());
 		GameRegistry.registerItem(hard_drive, hard_drive.getUnlocalizedName());
 		GameRegistry.registerItem(full_drive, full_drive.getUnlocalizedName());
 

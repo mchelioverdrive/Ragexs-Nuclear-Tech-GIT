@@ -132,6 +132,12 @@ public class ElectrolyserMetalRecipes extends SerializableRecipe {
 				new ItemStack(ModItems.powder_copper, 4),
 				new ItemStack(ModItems.powder_lithium_tiny, 3)));
 
+		//barium BaO   → Ba + O2
+		//recipes.put(new ComparableStack(ModItems.barium_oxide), new ElectrolysisMetalRecipe(
+		//		new MaterialStack(Mats.MAT_BARIUM, MaterialShapes.INGOT.q(6)),
+		//		new MaterialStack(Mats.MAT_STRONTIUM, MaterialShapes.INGOT.q(2)),
+		//		new ItemStack(ModItems.powder_lithium_tiny, 3)));
+
 		for(BedrockOreType type : BedrockOreType.values()) {
 			ArrayList<Pair<Object, Integer>> productsF = new ArrayList<>();
 			productsF.add(new Pair(type.primary1, 8));

@@ -98,6 +98,9 @@ public class ModBlocks {
 	public static Block ore_fire;
 	public static Block ore_shale;
 
+	public static Block ore_barite;
+	//useless fuck
+
 	public static Block ore_potash;
 
 	public static Block ore_pollucite;
@@ -1415,6 +1418,7 @@ public class ModBlocks {
 		ore_shale = new BlockOre(Material.rock).setBlockName("ore_shale").setCreativeTab(MainRegistry.blockTab).setHardness(1.5F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_shale");
 		ore_potash = new BlockOre(Material.rock).setBlockName("ore_potash").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_potash");
 		ore_pollucite = new BlockOre(Material.rock).setBlockName("ore_pollucite").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_pollucite");
+		ore_barite = new BlockOre(Material.rock).setBlockName("ore_barite").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_barite");
 
 		cluster_iron = new BlockCluster(Material.rock).setBlockName("cluster_iron").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(15.0F).setBlockTextureName(RefStrings.MODID + ":cluster_iron");
 		cluster_titanium = new BlockCluster(Material.rock).setBlockName("cluster_titanium").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(15.0F).setBlockTextureName(RefStrings.MODID + ":cluster_titanium");
@@ -2690,6 +2694,7 @@ public class ModBlocks {
 		GameRegistry.registerBlock(ore_fire, ItemBlockBase.class, ore_fire.getUnlocalizedName());
 		GameRegistry.registerBlock(ore_shale, ItemBlockBase.class, ore_shale.getUnlocalizedName());
 		GameRegistry.registerBlock(ore_potash, ItemBlockBase.class, ore_potash.getUnlocalizedName());
+		GameRegistry.registerBlock(ore_barite, ItemBlockBase.class, ore_barite.getUnlocalizedName());
 		GameRegistry.registerBlock(ore_pollucite, ItemBlockBase.class, ore_pollucite.getUnlocalizedName());
 
 

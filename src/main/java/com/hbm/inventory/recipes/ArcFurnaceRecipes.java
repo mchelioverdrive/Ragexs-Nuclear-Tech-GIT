@@ -54,6 +54,23 @@ public class ArcFurnaceRecipes extends SerializableRecipe {
 		recipes.put(new OreDictStack(ASBESTOS.dust()),	new ArcFurnaceRecipe().solid(new ItemStack(ModItems.nugget_silicon, 4))		.fluid(new MaterialStack(Mats.MAT_SILICON, MaterialShapes.INGOT.q(1, 2))));
 		recipes.put(new OreDictStack(ASBESTOS.block()),	new ArcFurnaceRecipe().solid(new ItemStack(ModItems.nugget_silicon, 40))	.fluid(new MaterialStack(Mats.MAT_SILICON, MaterialShapes.INGOT.q(9, 2))));
 
+		//barium BaO   → Ba + O2
+		//recipes.put(new ComparableStack(ModItems.barium_oxide), new ArcFurnaceRecipe().solid(new ItemStack(ModItems.ingot_barium, 4)).fluid(new MaterialStack(Mats.MAT_BARIUM, MaterialShapes.INGOT.q(1, 2)), new MaterialStack(Mats.MAT_OXYGEN, MaterialShapes.INGOT.q(1, 2)))
+
+		//help
+
+		// barium production (aluminum reduction in arc furnace)
+		//recipes.put(
+		//	new ComparableStack(ModItems.barium_oxide),
+		//	new ArcFurnaceRecipe()
+		//		.solid(new ItemStack(ModItems.ingot_barium, 1))
+		//		.fluid(
+		//			new MaterialStack(Mats.MAT_BARIUM, MaterialShapes.INGOT.q(1)),
+		//			new MaterialStack(Mats.MAT_ALUMINIUM, MaterialShapes.DUST.q(1))
+		//			//end me
+		//		)
+		//);
+
 		recipes.put(new ComparableStack(ModBlocks.sand_quartz), new ArcFurnaceRecipe().solid(new ItemStack(ModBlocks.glass_quartz)));
 		recipes.put(new OreDictStack(BORAX.dust()), new ArcFurnaceRecipe().solid(new ItemStack(ModItems.powder_boron_tiny, 3)).fluid(new MaterialStack(Mats.MAT_BORON, MaterialShapes.NUGGET.q(3))));
 

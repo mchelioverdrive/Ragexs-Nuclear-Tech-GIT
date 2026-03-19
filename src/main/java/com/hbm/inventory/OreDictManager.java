@@ -286,6 +286,9 @@ public class OreDictManager {
 	public static final DictFrame MALACHITE = new DictFrame("Malachite");
 	public static final DictFrame LIMESTONE = new DictFrame("Limestone");
 	public static final DictFrame SLAG = new DictFrame("Slag");
+
+	public static final DictFrame BA = new DictFrame("Barium");
+	public static final DictFrame AL_OXIDE = new DictFrame("AluminumOxide");
 	/*
 	 * HAZARDS, MISC
 	 */
@@ -532,6 +535,7 @@ public class OreDictManager {
 		LIMESTONE																		.dust(powder_limestone)							.ore(fromOne(stone_resource, EnumStoneType.LIMESTONE));
 		SLAG																									.block(block_slag) .ingot(slagingot);//.ingot(slagpowder)
 		CONGLOMERATE																													.ore(fromOne(stone_resource, EnumStoneType.CONGLOMERATE));
+		BA .ingot(ingot_barium);
 		/*
 		 * HAZARDS, MISC
 		 */

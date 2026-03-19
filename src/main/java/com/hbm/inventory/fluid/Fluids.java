@@ -45,6 +45,8 @@ public class Fluids {
 	public static FluidType COOLANT;
 	public static FluidType COOLANT_HOT;
 	public static FluidType SUPERHEATED_HYDROGEN;
+
+	public static FluidType HYDROGEN_SULFIDE;
 	public static FluidType URANIUM_BROMIDE;
 	public static FluidType PLUTONIUM_BROMIDE;
 	public static FluidType SCHRABIDIUM_BROMIDE;
@@ -55,6 +57,7 @@ public class Fluids {
 	public static FluidType GASEOUS_THORIUM_BROMIDE;
 	public static FluidType GAS_WATZ;
 	public static FluidType LAVA;
+	//todo change lava to not be made from obsidian
 	public static FluidType DEUTERIUM;
 	public static FluidType TRITIUM;
 	public static FluidType OIL;
@@ -554,6 +557,7 @@ public class Fluids {
 		CACL2 = 				new FluidType("CACL2",				0xBFCF39, 3, 0, 3, EnumSymbol.ACID).addTraits(new FT_Corrosive(20), LIQUID);
 
 		MOLTEN_STRONTIUM_CHLORIDE = new FluidType("MOLTEN_STRONTIUM_CHLORIDE", 0xBFCF39, 3, 0, 3, EnumSymbol.ACID).addTraits(new FT_Corrosive(20), LIQUID).setTemp(700);
+		HYDROGEN_SULFIDE = new FluidType("HYDROGEN_SULFIDE", 0xBFCF39, 3, 0, 3, EnumSymbol.ACID).addTraits(new FT_Corrosive(20), GASEOUS).addTraits(new FT_Flammable(20000));
 
 
 
@@ -804,6 +808,7 @@ public class Fluids {
 		metaOrder.add(POTASSIUM_HYDROXIDE);
 
 		metaOrder.add(CACL2);
+		metaOrder.add(HYDROGEN_SULFIDE);
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!
 		// V

@@ -429,6 +429,7 @@ public class CraftingManager {
 		addRecipeAuto(new ItemStack(ModItems.blades_steel, 1), new Object[] { " P ", "PIP", " P ", 'P', STEEL.plate(), 'I', STEEL.ingot() });
 		addRecipeAuto(new ItemStack(ModItems.blades_titanium, 1), new Object[] { " P ", "PIP", " P ", 'P', TI.plate(), 'I', TI.ingot() });
 		addRecipeAuto(new ItemStack(ModItems.blades_advanced_alloy, 1), new Object[] { " P ", "PIP", " P ", 'P', ALLOY.plate(), 'I', ALLOY.ingot() });
+		//todo change to some steel alloy or some shit idk
 		addRecipeAuto(new ItemStack(ModItems.blades_desh, 1), new Object[] { " S ", "PBP", " S ", 'S', BIGMT.plate(), 'P', ModItems.plate_desh, 'B', ModItems.blades_advanced_alloy }); //4 desh ingots still needed to do anything
 
 		addRecipeAuto(new ItemStack(ModItems.blades_steel, 1), new Object[] { "PIP", 'P', STEEL.plate(), 'I', new ItemStack(ModItems.blades_steel, 1, OreDictionary.WILDCARD_VALUE) });

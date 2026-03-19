@@ -53,6 +53,15 @@ public class ElectrolyserFluidRecipes extends SerializableRecipe {
 				new ItemStack(ModItems.powder_strontium, 1)
 			));
 
+		//recipes.put(Fluids.MOLTEN_BARIUM_CHLORIDE,
+		//	new ElectrolysisRecipe(
+		//		1000,
+		//		new FluidStack(Fluids.CHLORINE, 500),
+		//		new FluidStack(Fluids.NONE, 0),
+		//		new ItemStack(ModItems.ingot_barium, 1)
+		//	)
+		//);
+
 	}
 
 	public static HashMap getRecipes() {

@@ -831,7 +831,42 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.outputFluids(new FluidStack(Fluids.WATER, 500))
 		);
 
+		// barium carbonate
+		recipes.add(new ChemRecipe(1031, "BARIUM_CARBONATE", 50)
+			.inputItems(new ComparableStack(ModItems.barium_sulfide, 1))
+			.inputFluids(
+				new FluidStack(Fluids.CARBONDIOXIDE, 1000),
+				new FluidStack(Fluids.WATER, 500)
+			)
+			.outputItems(new ItemStack(ModItems.barium_carbonate, 1)) //, new ItemStack(ModItems.sulfur)
+			//I literally cannot be bothered to add Hydrogen sulfide. cry about it...
+			//ok maybe I will just give me the damn template already.
+			.outputFluids(new FluidStack(Fluids.HYDROGEN_SULFIDE, 1000))
+		);
 
+		//hydrogen sulfide synthesis
+		recipes.add(new ChemRecipe(1032, "HYDROGEN_SULFIDE", 50)
+			.inputItems(new ComparableStack(ModItems.sulfur, 1))
+			.inputFluids(new FluidStack(Fluids.HYDROGEN, 1000))
+			.outputFluids(new FluidStack(Fluids.HYDROGEN_SULFIDE, 1000))
+		);
+
+		//barium oxide
+		//recipes.add(new ChemRecipe(1032, "BARIUM_OXIDE", 50)
+		//	.inputItems(new ComparableStack(ModItems.barium_carbonate, 1)) //BaCO3 + heat -> BaO + CO2
+		//	.outputItems(new ItemStack(ModItems.barium_oxide, 1))
+		//	.outputFluids(new FluidStack(Fluids.CARBONDIOXIDE, 1000))
+		//);
+		//regular furnace/etc.
+
+		// barium production (hydrogen reduction)
+		recipes.add(new ChemRecipe(1033, "BARIUM_REDUCTION", 50)
+			.inputItems(new ComparableStack(ModItems.barium_oxide, 1))
+			.inputFluids(new FluidStack(Fluids.HYDROGEN, 1000))
+			.outputItems(new ItemStack(ModItems.ingot_barium, 1))
+			.outputFluids(new FluidStack(Fluids.WATER, 500))
+		);
+		//please kill me
 
 
 

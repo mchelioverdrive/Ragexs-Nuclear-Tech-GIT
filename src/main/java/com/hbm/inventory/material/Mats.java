@@ -72,6 +72,10 @@ public class Mats {
 	public static final NTMMaterial MAT_MALACHITE		= makeAdditive(	2901,			MALACHITE,			0xA2F0C8, 0x227048, 0x61AF87).m();
 	public static final NTMMaterial MAT_CONGLOMERATE	= makeAdditive(	2993,			CONGLOMERATE,		0x797979, 0x797979, 0x797979).m();
 
+	public static final NTMMaterial MAT_BARIUM			= makeSmeltable(5600,		BA,				0xFCE9B8, 0x3A1C00, 0xC9B27E).setAutogen(FRAGMENT, INGOT, DUST).m();
+
+	//public static final NTMMaterial MAT_ALUMINUM_OXIDE = makeSmeltable(1500,		AL_OXIDE,		0xFFFFFF, 0x344550, 0xD0B8EB).setAutogen(DUST).m();
+
 	//Radioactive
 	public static final NTMMaterial MAT_URANIUM		= makeSmeltable(9200,		U,			0xC1C7BD, 0x2B3227, 0x9AA196).setAutogen(FRAGMENT, NUGGET, BILLET, DUST, BLOCK).m();
 	public static final NTMMaterial MAT_U233		= makeSmeltable(9233,		U233,		0xC1C7BD, 0x2B3227, 0x9AA196).setAutogen(NUGGET, BILLET, DUST, BLOCK).m();
