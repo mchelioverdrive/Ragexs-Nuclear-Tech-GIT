@@ -574,6 +574,7 @@ public class ModItems {
 	public static Item quicklime;
 
 	public static Item sodium_sulfate;
+	public static Item sodium_sulfide;
 	public static Item potassium_sulfate;
 
 	public static Item gem_sodalite;
@@ -3214,6 +3215,7 @@ public class ModItems {
 		rubidiumsalt = new ItemSalt(1).setUnlocalizedName("rubidiumsalt").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 
 		sodium_sulfate = new Item().setUnlocalizedName("sodium_sulfate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
+		sodium_sulfide = new Item().setUnlocalizedName("sodium_sulfide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_sodium");
 		potassium_sulfate = new ItemFertilizer().setUnlocalizedName("potassium_sulfate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 
 		quicklime = new Item().setUnlocalizedName("quicklime").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
@@ -6627,6 +6629,7 @@ public class ModItems {
 		GameRegistry.registerItem(rubidiumsalt, rubidiumsalt.getUnlocalizedName());
 
 		GameRegistry.registerItem(sodium_sulfate, sodium_sulfate.getUnlocalizedName());
+		GameRegistry.registerItem(sodium_sulfide, sodium_sulfide.getUnlocalizedName());
 		GameRegistry.registerItem(potassium_sulfate, potassium_sulfate.getUnlocalizedName());
 
 		GameRegistry.registerItem(quicklime, quicklime.getUnlocalizedName());

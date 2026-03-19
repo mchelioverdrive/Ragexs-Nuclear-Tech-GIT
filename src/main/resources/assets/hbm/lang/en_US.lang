@@ -6583,3 +6583,17 @@ desc.gui.upgrade.effectiveness= * §aEffectiveness§r: Stacks to level 3
 desc.gui.upgrade.overdrive= * §7Overdrive§r: Stacks to level 3
 desc.gui.upgrade.power= * §1Power-Saving§r: Stacks to level 3
 desc.gui.upgrade.speed= * §4Speed§r: Stacks to level 3
+
+item.rubidium_ingot.name=Rubidium Ingot
+item.ingot_chromium.name=Chromium Ingot
+item.ingot_vanadium.name=Vanadium Ingot
+item.powder_potash.name=Potash Powder
+item.powder_pollucite.name=Pollucite Powder
+item.cesium_salt.name=Cesium Salt
+item.ingot_cesium.name=Cesium Ingot
+item.potassium_iodide_powder.name=Potassium Iodide Powder
+item.potassium_powder.name=Potassium Powder
+item.itemsalt.name=Salt
+item.rubidiumsalt.name=Rubidium Salt
+item.sodium_sulfate.name=Sodium Sulfate
+item.potassium_sulfate.name=Potassium Sulfate

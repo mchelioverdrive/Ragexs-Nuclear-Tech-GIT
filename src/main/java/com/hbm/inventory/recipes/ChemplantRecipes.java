@@ -893,6 +893,34 @@ public class ChemplantRecipes extends SerializableRecipe {
 			)
 		);
 
+		//sodium sulfate into sodium first step Reduce sodium sulfate with carbon:
+		recipes.add(new ChemRecipe(1035, "SODIUM_SULFATE_REDUCTION", 100)
+			.inputItems(
+				new ComparableStack(ModItems.sodium_sulfate, 1),
+				new ComparableStack(ModItems.powder_coal, 2)
+			)
+			.inputFluids(new FluidStack(Fluids.ULTRAHOTSTEAM, 2000))
+			.outputItems(new ItemStack(ModItems.sodium_sulfide, 1))
+			.outputFluids(new FluidStack(Fluids.CARBONDIOXIDE, 2000))
+		);
+
+		//sodium sulfide into hydrogen sulfide
+		recipes.add(new ChemRecipe(1036, "SODIUM_SULFIDE_ACIDIFICATION", 100)
+			.inputItems(new ComparableStack(ModItems.sodium_sulfide, 1))
+			.inputFluids(new FluidStack(Fluids.HCL, 1000))
+			.outputItems(new ItemStack(ModItems.itemsalt, 2)) // NaCl
+			.outputFluids(new FluidStack(Fluids.HYDROGEN_SULFIDE, 1000))
+		);
+
+		recipes.add(new ChemRecipe(1037, "HYDROGEN_SULFIDE_OXIDATION", 100)
+			.inputFluids(
+				new FluidStack(Fluids.HYDROGEN_SULFIDE, 2000),
+				new FluidStack(Fluids.OXYGEN, 1000)
+			)
+			.outputItems(new ItemStack(ModItems.sulfur, 2))
+			.outputFluids(new FluidStack(Fluids.STEAM, 2000))
+		);
+
 
 
 		//todo methamphetamine, methylamine, ephedrine, pseudoephedrine, etc. for fun chemistry and maybe a drug lab or something who knows
