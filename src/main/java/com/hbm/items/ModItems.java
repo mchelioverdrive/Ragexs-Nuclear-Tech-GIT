@@ -103,6 +103,7 @@ public class ModItems {
 	public static Item barium_carbonate;
 	public static Item barium_oxide;
 	public static Item ingot_barium;
+	public static Item barium_nugget;
 
 	public static Item ingot_th232;
 	public static Item ingot_uranium;
@@ -3596,6 +3597,7 @@ public class ModItems {
 		barium_carbonate = new Item().setUnlocalizedName("barium_carbonate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		barium_oxide = new Item().setUnlocalizedName("barium_oxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		ingot_barium = new Item().setUnlocalizedName("ingot_barium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_barium");
+		barium_nugget = new Item().setUnlocalizedName("barium_nugget").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_barium");
 
 		demon_core_open = new ItemDemonCore().setUnlocalizedName("demon_core_open").setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":demon_core_open");
 		demon_core_closed = new Item().setUnlocalizedName("demon_core_closed").setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":demon_core_closed");
@@ -6852,6 +6854,7 @@ public class ModItems {
 		GameRegistry.registerItem(barium_carbonate, barium_carbonate.getUnlocalizedName());
 		GameRegistry.registerItem(barium_oxide, barium_oxide.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_barium, ingot_barium.getUnlocalizedName());
+		GameRegistry.registerItem(barium_nugget, barium_nugget.getUnlocalizedName());
 		GameRegistry.registerItem(hard_drive, hard_drive.getUnlocalizedName());
 		GameRegistry.registerItem(full_drive, full_drive.getUnlocalizedName());
 

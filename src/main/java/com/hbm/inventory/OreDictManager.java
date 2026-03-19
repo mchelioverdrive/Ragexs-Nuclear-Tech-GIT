@@ -535,7 +535,7 @@ public class OreDictManager {
 		LIMESTONE																		.dust(powder_limestone)							.ore(fromOne(stone_resource, EnumStoneType.LIMESTONE));
 		SLAG																									.block(block_slag) .ingot(slagingot);//.ingot(slagpowder)
 		CONGLOMERATE																													.ore(fromOne(stone_resource, EnumStoneType.CONGLOMERATE));
-		BA .ingot(ingot_barium);
+		BA .ingot(ingot_barium) .nugget(barium_nugget);
 		/*
 		 * HAZARDS, MISC
 		 */

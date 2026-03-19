@@ -864,16 +864,39 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.inputItems(new ComparableStack(ModItems.barium_oxide, 1))
 			.inputFluids(new FluidStack(Fluids.HYDROGEN, 1000))
 			.outputItems(new ItemStack(ModItems.ingot_barium, 1))
+				//reasoning: I cannot be bothered to change how radium is currently obtained (centrifuging uranium ore)
+				//however, I also want to add a use for barium
+				//and since barium is used as a binding agent to produce radium this is at least somewhat based on real chemistry.
+				//new ItemStack(ModItems.nugget_ra226))
+			//moved to own process
 			.outputFluids(new FluidStack(Fluids.WATER, 500))
 		);
 		//please kill me
 
+		// radium extraction (barium-assisted, simple and 'sane')
+		recipes.add(new ChemRecipe(1034, "RADIUM_EXTRACTION", 80)
+			.inputItems(
+				new ComparableStack(ModItems.powder_uranium, 1),
+				new ComparableStack(ModItems.ingot_barium, 1)
+			)
+			.inputFluids(
+				new FluidStack(Fluids.SULFURIC_ACID, 1000) // sulfuric, nitric, whatever you already use
+			)
+			.outputItems(
+				new ItemStack(ModItems.nugget_ra226, 2),   // the actual goal
+				new ItemStack(ModItems.nugget_uranium, 8), // most uranium remains
+				new ItemStack(ModItems.nuclear_waste, 1),          // junk
+				new ItemStack(ModItems.barium_nugget, 8)            // carrier
+			)
+			.outputFluids(
+				new FluidStack(Fluids.WASTEFLUID, 500)
+			)
+		);
 
 
 
-
-		//todo methamphetamine
-
+		//todo methamphetamine, methylamine, ephedrine, pseudoephedrine, etc. for fun chemistry and maybe a drug lab or something who knows
+		//thanks for the very legal autofill ai anyway to the chemical reactor *bat man noise
 
 
 	}
