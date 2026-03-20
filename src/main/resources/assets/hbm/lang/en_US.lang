@@ -6662,6 +6662,6 @@ item.powder_sodium_silicate.name=Sodium Silicate
 item.sodium_sulfide.name=Sodium Sulfide
 tile.ore_potash.name=Potash Ore
 tile.ore_pollucite.name=Pollucite Ore
-tile.ore_magnesite.name=Magnesite Ore
+tile.ore_magnesite.name=Dolomite Ore
 tile.ore_celestite.name=Celestite Ore
 tile.ore_barite.name=Barite Ore

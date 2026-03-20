@@ -44,8 +44,8 @@ public class ItemRenderWeaponObj implements IItemRenderer {
 
 		EntityPlayer player = Minecraft.getMinecraft().thePlayer;
 
-		if(item.getItem() == ModItems.gun_hk69)
-			Minecraft.getMinecraft().renderEngine.bindTexture(ResourceManager.hk69_tex);
+		//if(item.getItem() == ModItems.gun_hk69)
+		//	Minecraft.getMinecraft().renderEngine.bindTexture(ResourceManager.hk69_tex);
 
 		//if(item.getItem() == ModItems.gun_deagle)
 		//	Minecraft.getMinecraft().renderEngine.bindTexture(ResourceManager.universal_bright);
@@ -61,19 +61,19 @@ public class ItemRenderWeaponObj implements IItemRenderer {
 		case EQUIPPED_FIRST_PERSON:
 
 
-			if(item.getItem() == ModItems.gun_hk69) {
-				GL11.glTranslatef(1.0F, 0.5F, 0.0F);
-				GL11.glRotatef(90F, 0.0F, 1.0F, 0.0F);
-				GL11.glRotatef(-25F, 1.0F, 0.0F, 0.0F);
-				GL11.glRotatef(-10F, 0.0F, 1.0F, 0.0F);
-				GL11.glScaled(0.75, 0.75, 0.75);
-
-				if(player.isSneaking()) {
-					GL11.glTranslatef(1.16F, 0.35F, -0.8F);
-					GL11.glRotatef(5.5F, 0.0F, 1.0F, 0.0F);
-					GL11.glRotatef(4F, 1.0F, 0.0F, 0.0F);
-				}
-			}
+			//if(item.getItem() == ModItems.gun_hk69) {
+			//	GL11.glTranslatef(1.0F, 0.5F, 0.0F);
+			//	GL11.glRotatef(90F, 0.0F, 1.0F, 0.0F);
+			//	GL11.glRotatef(-25F, 1.0F, 0.0F, 0.0F);
+			//	GL11.glRotatef(-10F, 0.0F, 1.0F, 0.0F);
+			//	GL11.glScaled(0.75, 0.75, 0.75);
+//
+			//	if(player.isSneaking()) {
+			//		GL11.glTranslatef(1.16F, 0.35F, -0.8F);
+			//		GL11.glRotatef(5.5F, 0.0F, 1.0F, 0.0F);
+			//		GL11.glRotatef(4F, 1.0F, 0.0F, 0.0F);
+			//	}
+			//}
 
 			//if(item.getItem() == ModItems.gun_deagle) {
 			//	GL11.glRotatef(90F, 0.0F, 1.0F, 0.0F);
@@ -139,12 +139,12 @@ public class ItemRenderWeaponObj implements IItemRenderer {
 
 		case EQUIPPED:
 
-			if(item.getItem() == ModItems.gun_hk69) {
-				GL11.glRotatef(20F, 1.0F, 0.0F, 1.0F);
-				GL11.glRotatef(10F, 0.0F, 1.0F, 0.0F);
-				GL11.glTranslatef(0.4F, 0.0F, 0.55F);
-				GL11.glScaled(0.75, 0.75, 0.75);
-			}
+			//if(item.getItem() == ModItems.gun_hk69) {
+			//	GL11.glRotatef(20F, 1.0F, 0.0F, 1.0F);
+			//	GL11.glRotatef(10F, 0.0F, 1.0F, 0.0F);
+			//	GL11.glTranslatef(0.4F, 0.0F, 0.55F);
+			//	GL11.glScaled(0.75, 0.75, 0.75);
+			//}
 
 			//if(item.getItem() == ModItems.gun_deagle) {
 			//	GL11.glRotatef(90F, 0.0F, 1.0F, 0.0F);
@@ -178,11 +178,11 @@ public class ItemRenderWeaponObj implements IItemRenderer {
 
 		case ENTITY:
 
-			if(item.getItem() == ModItems.gun_hk69) {
-				GL11.glTranslatef(0.0F, 0.2F, 0.0F);
-				GL11.glRotatef(-90F, 0.0F, 1.0F, 0.0F);
-				GL11.glScaled(0.75, 0.75, 0.75);
-			}
+			//if(item.getItem() == ModItems.gun_hk69) {
+			//	GL11.glTranslatef(0.0F, 0.2F, 0.0F);
+			//	GL11.glRotatef(-90F, 0.0F, 1.0F, 0.0F);
+			//	GL11.glScaled(0.75, 0.75, 0.75);
+			//}
 
 			//if(item.getItem() == ModItems.gun_deagle) {
 			//	GL11.glTranslatef(0.0F, 0.2F, 0.0F);
@@ -213,13 +213,13 @@ public class ItemRenderWeaponObj implements IItemRenderer {
 
 			GL11.glEnable(GL11.GL_LIGHTING);
 
-			if(item.getItem() == ModItems.gun_hk69) {
-				GL11.glScaled(7.5, 7.5, -7.5);
-				GL11.glTranslatef(0.85F, 1.2F, 0.0F);
-				GL11.glRotatef(180F, 1.0F, 0.0F, 0.0F);
-				GL11.glRotatef(-90F, 0.0F, 1.0F, 0.0F);
-				GL11.glRotatef(-45F, 1.0F, 0.0F, 0.0F);
-			}
+			//if(item.getItem() == ModItems.gun_hk69) {
+			//	GL11.glScaled(7.5, 7.5, -7.5);
+			//	GL11.glTranslatef(0.85F, 1.2F, 0.0F);
+			//	GL11.glRotatef(180F, 1.0F, 0.0F, 0.0F);
+			//	GL11.glRotatef(-90F, 0.0F, 1.0F, 0.0F);
+			//	GL11.glRotatef(-45F, 1.0F, 0.0F, 0.0F);
+			//}
 
 			//if(item.getItem() == ModItems.gun_deagle) {
 			//	GL11.glScaled(2.5, 2.5, -2.5);
@@ -257,11 +257,11 @@ public class ItemRenderWeaponObj implements IItemRenderer {
 		default: break;
 		}
 
-		if(item.getItem() == ModItems.gun_hk69) {
-			GL11.glShadeModel(GL11.GL_SMOOTH);
-			ResourceManager.hk69.renderAll();
-			GL11.glShadeModel(GL11.GL_FLAT);
-		}
+		//if(item.getItem() == ModItems.gun_hk69) {
+		//	GL11.glShadeModel(GL11.GL_SMOOTH);
+		//	ResourceManager.hk69.renderAll();
+		//	GL11.glShadeModel(GL11.GL_FLAT);
+		//}
 
 		//if(item.getItem() == ModItems.gun_deagle) {
 		//	GL11.glShadeModel(GL11.GL_SMOOTH);
