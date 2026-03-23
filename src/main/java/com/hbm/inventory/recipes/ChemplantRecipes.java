@@ -164,6 +164,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 						new OreDictStack(U.billet(), 2), //12 nuggets: the numbers do match up :)
 						new OreDictStack(S.dust(), 2))
 				.inputFluids(new FluidStack(Fluids.PEROXIDE, 500))
+				.outputFluids(new FluidStack(Fluids.RAFFINATE, 1000))
 				.outputItems(new ItemStack(ModItems.powder_yellowcake)));
 		recipes.add(new ChemRecipe(47, "UF6", 100)
 				.inputItems(
@@ -549,8 +550,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				new FluidStack(Fluids.WATER, 600),
 				new FluidStack(Fluids.SODIUM_HYDROXIDE, 200))
 			//.outputFluids(new FluidStack(Fluids.NITAN, 1000)));
-			.outputItems(new ItemStack(ModItems.powder_aluminium, 8)
-				));
+			.outputItems(new ItemStack(ModItems.powder_aluminium, 8)));
 
 		recipes.add(new ChemRecipe(1004, "URANIUM_BROMIDE", 50)
 			.inputItems(
