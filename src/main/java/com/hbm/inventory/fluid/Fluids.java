@@ -36,6 +36,7 @@ public class Fluids {
 
 	public static final Gson gson = new Gson();
 
+
 	public static FluidType NONE;
 	public static FluidType WATER;
 	public static FluidType STEAM;
@@ -252,6 +253,7 @@ public class Fluids {
 
 	public static FluidType MOLTEN_STRONTIUM_CHLORIDE;
 
+
 	//morkite would be like a gravelly oil. it would be a goopy liquidized gravel.
 	//point being, if the crystals were melted down and the liquid extracted
 	//you could be able to dissolve it directly with the vacuum refinery, or maybe something else
@@ -280,6 +282,7 @@ public class Fluids {
 	@Deprecated public static FluidType ACID;	//JAOPCA uses this, apparently
 
 	public static FluidType MOLTEN_SALT;
+	public static FluidType ACIDWASTE;
 
 	public static final HashBiMap<String, FluidType> renameMapping = HashBiMap.create();
 
@@ -378,7 +381,6 @@ public class Fluids {
 		ASCHRAB =				new FluidType("ASCHRAB",			0xb50000, 5, 0, 5, EnumSymbol.ANTIMATTER).addTraits(ANTI, GASEOUS);
 		PEROXIDE =				new FluidType("PEROXIDE",			0xfff7aa, 3, 0, 3, EnumSymbol.OXIDIZER).addTraits(new FT_Corrosive(40), LIQUID);
 		WATZ =					new FluidType("WATZ",				0x86653E, 4, 0, 3, EnumSymbol.ACID).addTraits(new FT_Corrosive(60), new FT_VentRadiation(0.1F), LIQUID, VISCOUS, new FT_Polluting().release(PollutionType.POISON, POISON_EXTREME));
-		RAFFINATE = 			new FluidType("RAFFINATE",			0x7a5230, 2, 1, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0xF65723)).addTraits(new FT_Flammable(100_000), new FT_Combustible(FuelGrade.LOW, 200_000), LIQUID, VISCOUS, P_FUEL);
 		CRYOGEL =				new FluidType("CRYOGEL",			0x32ffff, 2, 0, 0, EnumSymbol.CROYGENIC).setTemp(-170).addTraits(LIQUID, VISCOUS);
 		HYDROGEN =				new FluidType("HYDROGEN",			0x4286f4, 3, 4, 0, EnumSymbol.CROYGENIC).setTemp(-260).addContainers(new CD_Gastank(0x4286f4, 0xffffff)).addTraits(new FT_Flammable(5_000), new FT_Combustible(FuelGrade.HIGH, 10_000), LIQUID, EVAP, new FT_Rocket(380, 700_000));
 		OXYGEN =				new FluidType("OXYGEN",				0x98bdf9, 3, 0, 0, EnumSymbol.CROYGENIC).setTemp(-100).addContainers(new CD_Gastank(0x98bdf9, 0xffffff)).addTraits(LIQUID, EVAP);
@@ -545,6 +547,7 @@ public class Fluids {
 		GASEOUS_THORIUM_BROMIDE =	new FluidType("GASEOUS_THORIUM_BROMIDE",		0x7A5542, 0, 0, 0, EnumSymbol.NONE).setTemp(2300).addTraits(GASEOUS, NOCON, NOID, new FT_Rocket(1300, 700_000));
 
 		MOLTEN_SALT =			new FluidType("MOLTEN_SALT",		0xFF6A00, 2, 0, 3, EnumSymbol.NONE).setTemp(800).addTraits(LIQUID, VISCOUS, new FT_Corrosive(65));
+		ACIDWASTE = 			new FluidType("ACIDWASTE", 0x00FF00, 4, 0, 0, EnumSymbol.ACID).setTemp(300).addTraits(LIQUID, VISCOUS, new FT_Corrosive(80), new FT_Poison(true, 1));
 
 		POTASSIUM =
 			new FluidType("POTASSIUM", 0xD7D1C7, 1, 2, 3, EnumSymbol.NONE)
@@ -563,6 +566,8 @@ public class Fluids {
 
 		MOLTEN_STRONTIUM_CHLORIDE = new FluidType("MOLTEN_STRONTIUM_CHLORIDE", 0xBFCF39, 3, 0, 3, EnumSymbol.ACID).addTraits(new FT_Corrosive(20), LIQUID).setTemp(700);
 		HYDROGEN_SULFIDE = new FluidType("HYDROGEN_SULFIDE", 0xBFCF39, 3, 0, 3, EnumSymbol.ACID).addTraits(new FT_Corrosive(20), GASEOUS).addTraits(new FT_Flammable(20000));
+		RAFFINATE = 			new FluidType("RAFFINATE",			0x7a5230, 2, 1, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0xF65723)).addTraits(new FT_Flammable(100_000), new FT_Combustible(FuelGrade.LOW, 200_000), LIQUID, VISCOUS, P_FUEL);
+
 
 
 
@@ -816,6 +821,7 @@ public class Fluids {
 		metaOrder.add(HYDROGEN_SULFIDE);
 
 		metaOrder.add(RAFFINATE);
+		metaOrder.add(ACIDWASTE);
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!
 		// V

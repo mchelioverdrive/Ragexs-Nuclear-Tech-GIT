@@ -80,6 +80,10 @@ public class ModItems {
 	//public static Item redstone_sword;
 	//public static Item big_sword;
 	//public static Item butter_sword;
+	public static Item scandium_chloride;
+	public static Item scandium_ingot;
+	public static Item REE_sludge;
+	public static Item scandium_oxide;
 	public static Item strontium_sulfide;
 	public static Item powder_strontium_oxide;
 	public static Item strontium_chloride;
@@ -2891,6 +2895,10 @@ public class ModItems {
 
 		ingot_gunmetal = new Item().setUnlocalizedName("ingot_gunmetal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_gunmetal");
 		strontium_sulfide = new Item().setUnlocalizedName("strontium_sulfide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
+		scandium_oxide = new Item().setUnlocalizedName("scandium_oxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
+		REE_sludge = new Item().setUnlocalizedName("REE_sludge").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_sludge");
+		scandium_chloride = new Item().setUnlocalizedName("scandium_chloride").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
+		scandium_ingot = new Item().setUnlocalizedName("scandium_ingot").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_scandium");
 		powder_strontium_oxide = new Item().setUnlocalizedName("powder_strontium_oxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		strontium_chloride = new Item().setUnlocalizedName("strontium_chloride").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		magnesium_ingot = new Item().setUnlocalizedName("magnesium_ingot").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_magnesium");
@@ -6293,6 +6301,10 @@ public class ModItems {
 		GameRegistry.registerItem(ingot_starmetal, ingot_starmetal.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_gunmetal, ingot_gunmetal.getUnlocalizedName());
 		GameRegistry.registerItem(strontium_sulfide, strontium_sulfide.getUnlocalizedName());
+		GameRegistry.registerItem(scandium_oxide, scandium_oxide.getUnlocalizedName());
+		GameRegistry.registerItem(REE_sludge, REE_sludge.getUnlocalizedName());
+		GameRegistry.registerItem(scandium_chloride, scandium_chloride.getUnlocalizedName());
+		GameRegistry.registerItem(scandium_ingot, scandium_ingot.getUnlocalizedName());
 		GameRegistry.registerItem(powder_strontium_oxide, powder_strontium_oxide.getUnlocalizedName());
 		GameRegistry.registerItem(strontium_chloride, strontium_chloride.getUnlocalizedName());
 		GameRegistry.registerItem(magnesium_ingot, magnesium_ingot.getUnlocalizedName());

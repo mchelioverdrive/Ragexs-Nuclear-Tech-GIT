@@ -921,6 +921,58 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.outputFluids(new FluidStack(Fluids.STEAM, 2000))
 		);
 
+		recipes.add(new ChemRecipe(1038, "RARE_EARTH_ELEMENTS", 100)
+			.inputFluids(
+				new FluidStack(Fluids.RAFFINATE, 1000),
+				new FluidStack(Fluids.AMMONIA, 500)
+			)
+
+
+			.outputItems(new ItemStack(ModItems.REE_sludge))
+		);
+
+		// Scandium extraction
+		recipes.add(new ChemRecipe(1039, "SCANDIUM_EXTRACTION", 100)
+			.inputItems(new ComparableStack(ModItems.REE_sludge, 1))
+			.inputFluids(new FluidStack(Fluids.HCL, 500))
+			.outputItems(new ItemStack(ModItems.scandium_oxide, 1))
+			.outputFluids(new FluidStack(Fluids.ACIDWASTE, 500))
+		);
+
+		//waste_water + lime → water + sludge
+		recipes.add(new ChemRecipe(1040, "WASTE_WATER_TREATMENT", 100)
+			.inputFluids(new FluidStack(Fluids.ACIDWASTE, 1000), new FluidStack(Fluids.WATER, 1000))
+			.inputItems(new ComparableStack(ModItems.quicklime, 1))
+			.outputFluids(new FluidStack(Fluids.WATER, 800), new FluidStack(Fluids.MINSOL, 250))
+			//.outputItems(new ItemStack(ModItems.slagingot, 1))
+		);
+
+		//waste_water + sodium_hydroxide → water + salt_sludge
+		recipes.add(new ChemRecipe(1041, "WASTE_WATER_TREATMENT_2", 100)
+			.inputFluids(new FluidStack(Fluids.ACIDWASTE, 1000))
+			.inputFluids(new FluidStack(Fluids.SODIUM_HYDROXIDE, 500))
+			//mineral slurry and water
+			.outputFluids(new FluidStack(Fluids.WATER, 800), new FluidStack(Fluids.MINSOL, 250))
+
+		);
+
+		recipes.add(new ChemRecipe(1042, "SCANDIUM_CHLORIDE", 100)
+			.inputItems(new ComparableStack(ModItems.scandium_oxide, 1))
+			.inputFluids(new FluidStack(Fluids.HCL, 500))
+			.outputItems(new ItemStack(ModItems.scandium_chloride, 1))
+			.outputFluids(new FluidStack(Fluids.WATER, 250))
+		);
+
+		recipes.add(new ChemRecipe(1043, "SCANDIUM_REDUCTION", 150)
+			.inputItems(
+				new ComparableStack(ModItems.scandium_chloride, 1),
+				new ComparableStack(ModItems.ingot_calcium, 1)
+			)
+			.outputItems(new ItemStack(ModItems.scandium_ingot, 1))
+			//shouldn't this be like a nugget? whatever.
+			.outputFluids(new FluidStack(Fluids.CALCIUM_CHLORIDE, 800))
+		);
+
 
 
 		//todo methamphetamine, methylamine, ephedrine, pseudoephedrine, etc. for fun chemistry and maybe a drug lab or something who knows
