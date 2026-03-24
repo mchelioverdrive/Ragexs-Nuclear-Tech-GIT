@@ -674,6 +674,7 @@ public class ModItems {
 
 	public static Item powder_steel_tiny;
 	public static Item powder_lithium_tiny;
+	public static Item titanium_trace_metals_slurry;
 	public static Item powder_neodymium_tiny;
 	public static Item powder_cobalt_tiny;
 	public static Item powder_niobium_tiny;
@@ -3321,6 +3322,7 @@ public class ModItems {
 		powder_desh = new Item().setUnlocalizedName("powder_desh").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_desh");
 		powder_steel_tiny = new Item().setUnlocalizedName("powder_steel_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_steel_tiny");
 		powder_lithium_tiny = new Item().setUnlocalizedName("powder_lithium_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lithium_tiny");
+		titanium_trace_metals_slurry = new Item().setUnlocalizedName("titanium_trace_metals_slurry").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":titanium_trace_metals_slurry");
 		powder_neodymium_tiny = new Item().setUnlocalizedName("powder_neodymium_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_neodymium_tiny");
 		powder_cobalt_tiny = new Item().setUnlocalizedName("powder_cobalt_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_cobalt_tiny");
 		powder_niobium_tiny = new Item().setUnlocalizedName("powder_niobium_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_niobium_tiny");
@@ -6484,6 +6486,7 @@ public class ModItems {
 		GameRegistry.registerItem(powder_combine_steel, powder_combine_steel.getUnlocalizedName());
 		GameRegistry.registerItem(powder_lithium, powder_lithium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_lithium_tiny, powder_lithium_tiny.getUnlocalizedName());
+		GameRegistry.registerItem(titanium_trace_metals_slurry, titanium_trace_metals_slurry.getUnlocalizedName());
 		GameRegistry.registerItem(powder_zirconium, powder_zirconium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_sodium, powder_sodium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_sodium_silicate, powder_sodium_silicate.getUnlocalizedName());
