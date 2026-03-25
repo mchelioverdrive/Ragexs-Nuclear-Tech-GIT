@@ -1015,6 +1015,8 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.outputFluids(new FluidStack(Fluids.CALCIUM_CHLORIDE, 800))
 		);
 
+		
+
 
 
 		//todo methamphetamine, methylamine, ephedrine, pseudoephedrine, etc. for fun chemistry and maybe a drug lab or something who knows
