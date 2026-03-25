@@ -939,8 +939,16 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.outputFluids(new FluidStack(Fluids.ACIDWASTE, 500))
 		);
 
+		// Yttrium extraction
+		recipes.add(new ChemRecipe(1040, "YTTRIUM_EXTRACTION", 100)
+			.inputItems(new ComparableStack(ModItems.REE_sludge, 1))
+			.inputFluids(new FluidStack(Fluids.HCL, 500))
+			.outputItems(new ItemStack(ModItems.yttrium_oxide, 1))
+			.outputFluids(new FluidStack(Fluids.ACIDWASTE, 500))
+		);
+
 		//waste_water + lime → water + sludge
-		recipes.add(new ChemRecipe(1040, "WASTE_WATER_TREATMENT", 100)
+		recipes.add(new ChemRecipe(1041, "WASTE_WATER_TREATMENT", 100)
 			.inputFluids(new FluidStack(Fluids.ACIDWASTE, 1000), new FluidStack(Fluids.WATER, 1000))
 			.inputItems(new ComparableStack(ModItems.quicklime, 1))
 			.outputFluids(new FluidStack(Fluids.WATER, 800), new FluidStack(Fluids.MINSOL, 250))
@@ -948,7 +956,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		);
 
 		//waste_water + sodium_hydroxide → water + salt_sludge
-		recipes.add(new ChemRecipe(1041, "WASTE_WATER_TREATMENT_2", 100)
+		recipes.add(new ChemRecipe(1042, "WASTE_WATER_TREATMENT_2", 100)
 			.inputFluids(new FluidStack(Fluids.ACIDWASTE, 1000))
 			.inputFluids(new FluidStack(Fluids.SODIUM_HYDROXIDE, 500))
 			//mineral slurry and water
@@ -956,20 +964,54 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 		);
 
-		recipes.add(new ChemRecipe(1042, "SCANDIUM_CHLORIDE", 100)
+		recipes.add(new ChemRecipe(1043, "SCANDIUM_CHLORIDE", 100)
 			.inputItems(new ComparableStack(ModItems.scandium_oxide, 1))
 			.inputFluids(new FluidStack(Fluids.HCL, 500))
 			.outputItems(new ItemStack(ModItems.scandium_chloride, 1))
 			.outputFluids(new FluidStack(Fluids.WATER, 250))
 		);
 
-		recipes.add(new ChemRecipe(1043, "SCANDIUM_REDUCTION", 150)
+		recipes.add(new ChemRecipe(1044, "SCANDIUM_REDUCTION", 150)
 			.inputItems(
 				new ComparableStack(ModItems.scandium_chloride, 1),
 				new ComparableStack(ModItems.ingot_calcium, 1)
 			)
 			.outputItems(new ItemStack(ModItems.scandium_ingot, 1))
-			//shouldn't this be like a nugget? whatever.
+			//TODO nugget
+			.outputFluids(new FluidStack(Fluids.CALCIUM_CHLORIDE, 800))
+		);
+
+		//scandium oxide from rare metals residue (titanium)
+		recipes.add(new ChemRecipe(1045, "SCANDIUM_FROM_TITANIUM", 150)
+			.inputItems(new ComparableStack(ModItems.titanium_trace_metals_slurry, 1))
+			.inputFluids(new FluidStack(Fluids.HCL, 500))
+			.outputItems(
+				new ItemStack(ModItems.scandium_oxide, 1)
+			)
+			.outputFluids(new FluidStack(Fluids.ACIDWASTE, 250))
+		);
+
+		// Yttrium from titanium
+		recipes.add(new ChemRecipe(1046, "YTTRIUM_FROM_TITANIUM", 150)
+			.inputItems(new ComparableStack(ModItems.titanium_trace_metals_slurry, 1))
+			.inputFluids(new FluidStack(Fluids.HCL, 500))
+			.outputItems(new ItemStack(ModItems.yttrium_oxide, 1))
+			.outputFluids(new FluidStack(Fluids.ACIDWASTE, 250))
+		);
+
+		recipes.add(new ChemRecipe(1047, "YTTRIUM_CHLORIDE", 100)
+			.inputItems(new ComparableStack(ModItems.yttrium_oxide, 1))
+			.inputFluids(new FluidStack(Fluids.HCL, 500))
+			.outputItems(new ItemStack(ModItems.yttrium_chloride, 1))
+			.outputFluids(new FluidStack(Fluids.WATER, 250))
+		);
+
+		recipes.add(new ChemRecipe(1048, "YTTRIUM_REDUCTION", 150)
+			.inputItems(
+				new ComparableStack(ModItems.yttrium_chloride, 1),
+				new ComparableStack(ModItems.ingot_calcium, 1)
+			)
+			.outputItems(new ItemStack(ModItems.yttrium_ingot, 1))
 			.outputFluids(new FluidStack(Fluids.CALCIUM_CHLORIDE, 800))
 		);
 
