@@ -723,10 +723,9 @@ public class AnvilRecipes {
 		constructionRecipes.add(new AnvilConstructionRecipe(
 			new ComparableStack(new ItemStack(ModItems.chunk_ironoxide)),
 			new AnvilOutput[] {
-				new AnvilOutput(new ItemStack(ModBlocks.stone_resource, 1, 2)), //hematite
-				new AnvilOutput(new ItemStack(ModItems.magnetite, 1)),
-				//I am not adding a fucking block for all these shits
-				new AnvilOutput(new ItemStack(ModItems.goethite, 1))
+				new AnvilOutput(new ItemStack(ModBlocks.stone_resource, 2, 2)), // Hematite (dominant, guaranteed)
+				new AnvilOutput(new ItemStack(ModItems.magnetite, 1), 0.6F), // common
+				new AnvilOutput(new ItemStack(ModItems.goethite, 1), 0.35F)  // less common
 
 			}
 		).setTier(2));
@@ -739,10 +738,13 @@ public class AnvilRecipes {
 		constructionRecipes.add(new AnvilConstructionRecipe(
 			new ComparableStack(new ItemStack(ModItems.chunk_coppersulfide)),
 			new AnvilOutput[] {
-				new AnvilOutput(new ItemStack(ModItems.chalcopyrite, 1)),
-				new AnvilOutput(new ItemStack(ModItems.bornite, 1)),
-				new AnvilOutput(new ItemStack(ModItems.chalcocite, 1)),
-				new AnvilOutput(new ItemStack(ModItems.covellite, 1))
+				// dominant
+				new AnvilOutput(new ItemStack(ModItems.chalcopyrite, 2)),
+				// common secondary
+				new AnvilOutput(new ItemStack(ModItems.bornite, 1), 0.55F),
+				// enrichment minerals (rarer)
+				new AnvilOutput(new ItemStack(ModItems.chalcocite, 1), 0.35F),
+				new AnvilOutput(new ItemStack(ModItems.covellite, 1), 0.15F)
 			}
 		).setTier(2));
 

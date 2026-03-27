@@ -3407,7 +3407,7 @@ public class ModItems {
 		//copper
 		chalcopyrite = new Item().setUnlocalizedName("chalcopyrite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_copper");
 		bornite = new Item().setUnlocalizedName("bornite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":chunk_ore.rare");
-		chalcocite = new Item().setUnlocalizedName("chalcocite").setCreativeTab(MainRegistry.partsTab).setTextureName("minecraft" + "coal"); //TEMP
+		chalcocite = new Item().setUnlocalizedName("chalcocite").setCreativeTab(MainRegistry.partsTab).setTextureName("minecraft" + ":coal"); //coal but shiny
 		covellite = new Item().setUnlocalizedName("covellite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niobium");
 
 
