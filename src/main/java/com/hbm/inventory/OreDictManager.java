@@ -322,6 +322,8 @@ public class OreDictManager {
 	public static final DictFrame ND = new DictFrame("Neodymium");
 	/** CERIUM */
 	public static final DictFrame CE = new DictFrame("Cerium");
+	public static final DictFrame SC = new DictFrame("Scandium");
+	public static final DictFrame Y = new DictFrame("Yttrium");
 	/*
 	 * NITAN
 	 */
@@ -566,6 +568,9 @@ public class OreDictManager {
 		ZR	.nugget(nugget_zirconium)		.ingot(ingot_zirconium)		.billet(billet_zirconium)												.dust(powder_zirconium)		.block(block_zirconium)		.ore(ore_depth_zirconium);
 		ND	.nugget(fragment_neodymium)																		.dustSmall(powder_neodymium_tiny)	.dust(powder_neodymium)									.ore(ore_depth_nether_neodymium)	.oreNether(ore_depth_nether_neodymium);
 		CE	.nugget(fragment_cerium)																		.dustSmall(powder_cerium_tiny)		.dust(powder_cerium);
+		SC  .ingot(scandium_ingot);
+		Y 	.ingot(yttrium_ingot) .nugget(fragment_yttrium) .dustSmall(powder_yttrium_tiny) .dust(powder_yttrium);
+
 
 		/*
 		 * NITAN

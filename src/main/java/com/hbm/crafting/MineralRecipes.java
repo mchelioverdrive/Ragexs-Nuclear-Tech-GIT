@@ -481,6 +481,11 @@ public class MineralRecipes {
 		GameRegistry.addRecipe(new ItemStack(ModItems.powder_cerium_tiny, 9), new Object[] { "#", '#', ModItems.powder_cerium });
 		GameRegistry.addRecipe(new ItemStack(ModItems.powder_lanthanium, 1), new Object[] { "###", "###", "###", '#', ModItems.powder_lanthanium_tiny });
 		GameRegistry.addRecipe(new ItemStack(ModItems.powder_lanthanium_tiny, 9), new Object[] { "#", '#', ModItems.powder_lanthanium });
+
+		//yttrium
+		GameRegistry.addRecipe(new ItemStack(ModItems.powder_yttrium, 1), new Object[] { "###", "###", "###", '#', ModItems.powder_yttrium_tiny });
+		GameRegistry.addRecipe(new ItemStack(ModItems.powder_yttrium_tiny, 9), new Object[] { "#", '#', ModItems.powder_yttrium });
+
 		GameRegistry.addRecipe(new ItemStack(ModItems.powder_actinium, 1), new Object[] { "###", "###", "###", '#', ModItems.powder_actinium_tiny });
 		GameRegistry.addRecipe(new ItemStack(ModItems.powder_actinium_tiny, 9), new Object[] { "#", '#', ModItems.powder_actinium });
 		//GameRegistry.addRecipe(new ItemStack(ModItems.powder_meteorite, 1), new Object[] { "###", "###", "###", '#', ModItems.powder_meteorite_tiny });

@@ -670,17 +670,24 @@ public class AnvilRecipes {
 	public static void registerConstructionRecycling() {
 
 		constructionRecipes.add(new AnvilConstructionRecipe(
-				new ComparableStack(DictFrame.fromOne(ModItems.chunk_ore, EnumChunkType.RARE)),
-				new AnvilOutput[] {
-						new AnvilOutput(new ItemStack(ModItems.fragment_boron)),
-						new AnvilOutput(new ItemStack(ModItems.fragment_boron), 0.5F),
-						new AnvilOutput(new ItemStack(ModItems.fragment_lanthanium), 0.1F),
-						new AnvilOutput(new ItemStack(ModItems.fragment_cobalt)),
-						new AnvilOutput(new ItemStack(ModItems.fragment_cobalt), 0.5F),
-						new AnvilOutput(new ItemStack(ModItems.fragment_cerium), 0.1F),
-						new AnvilOutput(new ItemStack(ModItems.fragment_neodymium), 0.5F),
-						new AnvilOutput(new ItemStack(ModItems.fragment_niobium), 0.5F),
-				}
+			new ComparableStack(DictFrame.fromOne(ModItems.chunk_ore, EnumChunkType.RARE)),
+			new AnvilOutput[] {
+
+				// Bastnäsite / Monazite / Xenotime inspired
+
+				// DOMINANT (almost always present)
+				new AnvilOutput(new ItemStack(ModItems.fragment_cerium)),
+
+				// COMMON REEs
+				new AnvilOutput(new ItemStack(ModItems.fragment_lanthanium), 0.75F),
+				new AnvilOutput(new ItemStack(ModItems.fragment_neodymium), 0.7F),
+
+				// TRACE ELEMENT
+				new AnvilOutput(new ItemStack(ModItems.fragment_niobium), 0.35F),
+				new AnvilOutput(new ItemStack(ModItems.fragment_yttrium), 0.15F),
+
+				//TODO fragment_samarium and fragment_praseodymium if needed
+			}
 		).setTier(2));
 
 		constructionRecipes.add(new AnvilConstructionRecipe(new ComparableStack(ModBlocks.deco_titanium, 4), new AnvilOutput[] {new AnvilOutput(new ItemStack(ModItems.ingot_titanium, 1))}).setTier(1));

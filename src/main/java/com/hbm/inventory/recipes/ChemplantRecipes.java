@@ -1015,7 +1015,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.outputFluids(new FluidStack(Fluids.CALCIUM_CHLORIDE, 800))
 		);
 
-		
+
 
 
 
