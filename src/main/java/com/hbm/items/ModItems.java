@@ -731,6 +731,22 @@ public class ModItems {
 	public static Item fragment_coltan;
 	public static Item chunk_ore;
 
+	public static Item chunk_ironoxide;
+	public static Item chunk_coppersulfide;
+
+
+	//actual ore groups that bob hates:
+	//iron
+	public static Item magnetite;
+	public static Item goethite;
+
+	//copper
+	public static Item chalcopyrite;
+	public static Item bornite;
+	public static Item chalcocite;
+	public static Item covellite;
+
+
 	public static Item biomass;
 	public static Item flesh;
 	public static Item flesh_wafer;
@@ -3377,6 +3393,24 @@ public class ModItems {
 		fragment_meteorite = new Item().setUnlocalizedName("fragment_meteorite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_meteorite");
 		fragment_coltan = new Item().setUnlocalizedName("fragment_coltan").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_coltan");
 		chunk_ore = new ItemEnumMulti(EnumChunkType.class, true, true).setUnlocalizedName("chunk_ore").setCreativeTab(MainRegistry.partsTab);
+
+		//why the fuck did you need enums... bobcat moment!
+		chunk_ironoxide = new Item().setUnlocalizedName("chunk_ironoxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_iron");
+		chunk_coppersulfide = new Item().setUnlocalizedName("chunk_coppersulfide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_copper");
+
+
+		//ORE GROUPS
+		//iron
+		magnetite = new Item().setUnlocalizedName("magnetite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_beryllium");
+		goethite = new Item().setUnlocalizedName("goethite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_beryllium");
+
+		//copper
+		chalcopyrite = new Item().setUnlocalizedName("chalcopyrite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_copper");
+		bornite = new Item().setUnlocalizedName("bornite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":chunk_ore.rare");
+		chalcocite = new Item().setUnlocalizedName("chalcocite").setCreativeTab(MainRegistry.partsTab).setTextureName("minecraft" + "coal"); //TEMP
+		covellite = new Item().setUnlocalizedName("covellite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niobium");
+
+
 
 		biomass = new Item().setUnlocalizedName("biomass").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":biomass");
 		biomass_compressed = new Item().setUnlocalizedName("biomass_compressed").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":biomass_compressed");
@@ -6678,6 +6712,24 @@ public class ModItems {
 		GameRegistry.registerItem(fragment_meteorite, fragment_meteorite.getUnlocalizedName());
 		GameRegistry.registerItem(fragment_coltan, fragment_coltan.getUnlocalizedName());
 		GameRegistry.registerItem(chunk_ore, chunk_ore.getUnlocalizedName());
+
+		//anti retard logic for ores
+		GameRegistry.registerItem(chunk_ironoxide, chunk_ironoxide.getUnlocalizedName());
+		GameRegistry.registerItem(chunk_coppersulfide, chunk_coppersulfide.getUnlocalizedName());
+
+
+		//ore groups
+
+		//iron
+		GameRegistry.registerItem(magnetite, magnetite.getUnlocalizedName());
+		GameRegistry.registerItem(goethite, goethite.getUnlocalizedName());
+
+		//copper
+		GameRegistry.registerItem(chalcopyrite, chalcopyrite.getUnlocalizedName());
+		GameRegistry.registerItem(bornite, bornite.getUnlocalizedName());
+		GameRegistry.registerItem(chalcocite, chalcocite.getUnlocalizedName());
+		GameRegistry.registerItem(covellite, covellite.getUnlocalizedName());
+
 
 		//Things that look like rotten flesh but aren't
 		GameRegistry.registerItem(biomass, biomass.getUnlocalizedName());

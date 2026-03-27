@@ -669,6 +669,8 @@ public class AnvilRecipes {
 
 	public static void registerConstructionRecycling() {
 
+		//rule: whatever it is mainly composed of is guaranteed, then it's the chance of it being in the output for how rare it is in the earth's crust
+
 		constructionRecipes.add(new AnvilConstructionRecipe(
 			new ComparableStack(DictFrame.fromOne(ModItems.chunk_ore, EnumChunkType.RARE)),
 			new AnvilOutput[] {
@@ -686,9 +688,70 @@ public class AnvilRecipes {
 				new AnvilOutput(new ItemStack(ModItems.fragment_niobium), 0.35F),
 				new AnvilOutput(new ItemStack(ModItems.fragment_yttrium), 0.15F),
 
+				//thorium
+				new AnvilOutput(new ItemStack(ModItems.nugget_th232), 0.05F)
+
 				//TODO fragment_samarium and fragment_praseodymium if needed
+
+				//^Lanthanum
+				//^Cerium
+				//^Neodymium
+				//xSamarium
+				//^yttrium
+				//^thorium
 			}
 		).setTier(2));
+
+		//TODO more ore groups eg:
+		// < indicates it is done under this comment block, ^ indicates it is done above
+		// <Iron Oxide Ore -> hematite, magnetite, limonite, goethite, etc gpt: Hematite/Magnetite/Goethite
+		// <Copper Sulfide Ore -> chalcopyrite, bornite, chalcocite, covellite, etc gpt:Chalcopyrite/Bornite/Chalcocite
+		// Lead-Zinc Sulfide Ore -> galena, sphalerite, etc gpt: Galena/Sphalerite
+		// Nickel Sulfide Ore -> pentlandite, millerite, etc gpt: Pentlandite/Pyrrhotite
+		// Tin-Tungsten Ore -> cassiterite, wolframite, etc gpt: Cassiterite/Wolframite/Columbite
+		// Bauxite (already aluminum ore renamed) -> needs byproducts of Gallium/Scandium
+		// ^REE DONE!
+		// Lithium Pegmatite Ore -> spodumene, lepidolite, petalite, etc gpt: Spodumene/Lepidolite
+		// Uranium Ore -> Uraninite/Pitchblende
+		// Heavy Mineral Sand -> Ilmenite, rutile, zircon, monazite, etc gpt: Ilmenite/Rutile/Zircon
+		// Chromite Ore -> Chromite
+		// Evaporite Minerals -> halite, gypsum, etc gpt: Halite/Sylvite/Carnallite/Borates
+		// Phosphate Ore -> Apatite
+		// Carbon Deposits -> Graphite, coal, etc gpt: Coal/Graphite
+
+		//Iron Oxide Ore
+		constructionRecipes.add(new AnvilConstructionRecipe(
+			new ComparableStack(new ItemStack(ModItems.chunk_ironoxide)),
+			new AnvilOutput[] {
+				new AnvilOutput(new ItemStack(ModBlocks.stone_resource, 1, 2)), //hematite
+				new AnvilOutput(new ItemStack(ModItems.magnetite, 1)),
+				//I am not adding a fucking block for all these shits
+				new AnvilOutput(new ItemStack(ModItems.goethite, 1))
+
+			}
+		).setTier(2));
+
+		//DictFrame.fromOne(ModBlocks.stone_resource, EnumStoneType.HEMATITE)
+		//bob using enums for some fucking reason instead of just registering shit normally
+		//DOOD DOOD ITS 10% MORE EFFICIENT I DONT CARE IT MAKES ACTUALLY WORKING WITH IT ANNOYING AS SHIT
+
+		//Copper Sulfide Ore
+		constructionRecipes.add(new AnvilConstructionRecipe(
+			new ComparableStack(new ItemStack(ModItems.chunk_coppersulfide)),
+			new AnvilOutput[] {
+				new AnvilOutput(new ItemStack(ModItems.chalcopyrite, 1)),
+				new AnvilOutput(new ItemStack(ModItems.bornite, 1)),
+				new AnvilOutput(new ItemStack(ModItems.chalcocite, 1)),
+				new AnvilOutput(new ItemStack(ModItems.covellite, 1))
+			}
+		).setTier(2));
+
+		//Lead-Zinc Sulfide Ore
+
+
+
+
+
 
 		constructionRecipes.add(new AnvilConstructionRecipe(new ComparableStack(ModBlocks.deco_titanium, 4), new AnvilOutput[] {new AnvilOutput(new ItemStack(ModItems.ingot_titanium, 1))}).setTier(1));
 		constructionRecipes.add(new AnvilConstructionRecipe(new ComparableStack(ModBlocks.deco_red_copper, 4), new AnvilOutput[] {new AnvilOutput(new ItemStack(ModItems.ingot_red_copper, 1))}).setTier(1));
