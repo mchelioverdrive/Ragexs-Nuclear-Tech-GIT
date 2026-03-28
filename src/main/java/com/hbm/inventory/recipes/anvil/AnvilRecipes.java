@@ -728,7 +728,7 @@ public class AnvilRecipes {
 				new AnvilOutput(new ItemStack(ModBlocks.stone_resource, 2, 2)), // Hematite (dominant, guaranteed)
 				new AnvilOutput(new ItemStack(ModItems.magnetite, 1), 0.5F),
 				new AnvilOutput(new ItemStack(ModItems.goethite, 1), 0.5F),
-				//actually dolomite
+				//actually dolomite but I don't feel like changing the name in the code damn get off my back
 				new AnvilOutput(new ItemStack(ModBlocks.ore_magnesite, 1), 0.2F)
 
 			}
@@ -745,9 +745,9 @@ public class AnvilRecipes {
 				// dominant
 				new AnvilOutput(new ItemStack(ModItems.chalcopyrite, 2)),
 				// common secondary
-				new AnvilOutput(new ItemStack(ModItems.bornite, 1), 0.45F),
+				new AnvilOutput(new ItemStack(ModItems.bornite, 1), 0.5F),
 				// enrichment minerals (rarer)
-				new AnvilOutput(new ItemStack(ModItems.chalcocite, 1), 0.45F),
+				new AnvilOutput(new ItemStack(ModItems.chalcocite, 1), 0.35F),
 				new AnvilOutput(new ItemStack(ModItems.covellite, 1), 0.15F)
 			}
 		).setTier(2));
@@ -757,14 +757,14 @@ public class AnvilRecipes {
 			new ComparableStack(new ItemStack(ModItems.chunk_leadzincsulfide)),
 			new AnvilOutput[] {
 				// dominant
-				new AnvilOutput(new ItemStack(ModItems.galena, 1)),
+				new AnvilOutput(new ItemStack(ModItems.galena, 2)),
 				// codominant
-				new AnvilOutput(new ItemStack(ModItems.sphalerite, 1))
+				new AnvilOutput(new ItemStack(ModItems.sphalerite, 1), 0.75F),
 				// trace gangue minerals
 				new AnvilOutput(new ItemStack(ModBlocks.ore_barite, 1), 0.25F),
 				new AnvilOutput(new ItemStack(ModBlocks.ore_celestite, 1), 0.1F),
 				//actually dolomite but I don't feel like changing the name in the code
-				new AnvilOutput(new ItemStack(ModBlocks.ore_magnesite, 1), 0.3F),
+				new AnvilOutput(new ItemStack(ModBlocks.ore_magnesite, 1), 0.3F)
 			}
 		).setTier(2));
 
@@ -777,7 +777,7 @@ public class AnvilRecipes {
 				// common secondary
 				new AnvilOutput(new ItemStack(ModItems.pyrrhotite, 1), 0.6F),
 				//copper is often carried
-				new AnvilOutput(new ItemStack(ModItems.chalcopyrite, 1), 0.3F),
+				new AnvilOutput(new ItemStack(ModItems.chalcopyrite, 1), 0.3F)
 			}
 		).setTier(2));
 
@@ -818,7 +818,7 @@ public class AnvilRecipes {
 				// rarer secondary
 				new AnvilOutput(new ItemStack(ModItems.zircon, 1), 0.35F)
 				//new AnvilOutput(new ItemStack(ModItems.monazite, 1), 0.1F)
-				//if it's not already mentioned I cannot be bothered
+				//monazite was the first thing we did, I guess we could add the rare earth ore thingy here? but that's just excess
 			}
 		).setTier(2));
 
