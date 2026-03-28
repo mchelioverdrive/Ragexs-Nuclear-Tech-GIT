@@ -670,6 +670,8 @@ public class AnvilRecipes {
 	public static void registerConstructionRecycling() {
 
 		//rule: whatever it is mainly composed of is guaranteed, then it's the chance of it being in the output for how rare it is in the earth's crust
+		//*chance based on deposit association, but like if something isn't in a deposit with something else but it's the same type,
+		//it still belongs there so just pretend it is in there but base it on the actual like abundance in the actual deposit
 
 		constructionRecipes.add(new AnvilConstructionRecipe(
 			new ComparableStack(DictFrame.fromOne(ModItems.chunk_ore, EnumChunkType.RARE)),
@@ -706,26 +708,28 @@ public class AnvilRecipes {
 		// < indicates it is done under this comment block, ^ indicates it is done above
 		// <Iron Oxide Ore -> hematite, magnetite, limonite, goethite, etc gpt: Hematite/Magnetite/Goethite
 		// <Copper Sulfide Ore -> chalcopyrite, bornite, chalcocite, covellite, etc gpt:Chalcopyrite/Bornite/Chalcocite
-		// Lead-Zinc Sulfide Ore -> galena, sphalerite, etc gpt: Galena/Sphalerite
-		// Nickel Sulfide Ore -> pentlandite, millerite, etc gpt: Pentlandite/Pyrrhotite
-		// Tin-Tungsten Ore -> cassiterite, wolframite, etc gpt: Cassiterite/Wolframite/Columbite
-		// Bauxite (already aluminum ore renamed) -> needs byproducts of Gallium/Scandium
+		// <Lead-Zinc Sulfide Ore -> galena, sphalerite, etc gpt: Galena/Sphalerite
+		// <Nickel Sulfide Ore -> pentlandite, millerite, etc gpt: Pentlandite/Pyrrhotite
+		// <Tin-Tungsten Ore -> cassiterite, wolframite, etc gpt: Cassiterite/Wolframite/Columbite
+		// !Bauxite (already aluminum ore renamed) -> needs byproducts of Gallium/Scandium
 		// ^REE DONE!
-		// Lithium Pegmatite Ore -> spodumene, lepidolite, petalite, etc gpt: Spodumene/Lepidolite
-		// Uranium Ore -> Uraninite/Pitchblende
-		// Heavy Mineral Sand -> Ilmenite, rutile, zircon, monazite, etc gpt: Ilmenite/Rutile/Zircon
-		// Chromite Ore -> Chromite
-		// Evaporite Minerals -> halite, gypsum, etc gpt: Halite/Sylvite/Carnallite/Borates
-		// Phosphate Ore -> Apatite
-		// Carbon Deposits -> Graphite, coal, etc gpt: Coal/Graphite
+		// <Lithium Pegmatite Ore -> spodumene, lepidolite, petalite, etc gpt: Spodumene/Lepidolite
+		// !Uranium Ore (combined into one ore, already exists) -> Uraninite/Pitchblende
+		// <Heavy Mineral Sand -> Ilmenite, rutile, zircon, monazite, etc gpt: Ilmenite/Rutile/Zircon
+		// *Chromite Ore -> Chromite
+		// <Evaporite Minerals -> halite, gypsum, etc gpt: Halite/Sylvite/Carnallite/Borates
+		// !*Phosphate Ore -> Apatite just rename phosphorous ore
+		// <Carbon Deposits -> Graphite, coal, etc gpt: Coal/Graphite
 
 		//Iron Oxide Ore
 		constructionRecipes.add(new AnvilConstructionRecipe(
 			new ComparableStack(new ItemStack(ModItems.chunk_ironoxide)),
 			new AnvilOutput[] {
 				new AnvilOutput(new ItemStack(ModBlocks.stone_resource, 2, 2)), // Hematite (dominant, guaranteed)
-				new AnvilOutput(new ItemStack(ModItems.magnetite, 1), 0.6F), // common
-				new AnvilOutput(new ItemStack(ModItems.goethite, 1), 0.35F)  // less common
+				new AnvilOutput(new ItemStack(ModItems.magnetite, 1), 0.5F),
+				new AnvilOutput(new ItemStack(ModItems.goethite, 1), 0.5F),
+				//actually dolomite
+				new AnvilOutput(new ItemStack(ModBlocks.ore_magnesite, 1), 0.2F)
 
 			}
 		).setTier(2));
@@ -741,18 +745,115 @@ public class AnvilRecipes {
 				// dominant
 				new AnvilOutput(new ItemStack(ModItems.chalcopyrite, 2)),
 				// common secondary
-				new AnvilOutput(new ItemStack(ModItems.bornite, 1), 0.55F),
+				new AnvilOutput(new ItemStack(ModItems.bornite, 1), 0.45F),
 				// enrichment minerals (rarer)
-				new AnvilOutput(new ItemStack(ModItems.chalcocite, 1), 0.35F),
+				new AnvilOutput(new ItemStack(ModItems.chalcocite, 1), 0.45F),
 				new AnvilOutput(new ItemStack(ModItems.covellite, 1), 0.15F)
 			}
 		).setTier(2));
 
 		//Lead-Zinc Sulfide Ore
+		constructionRecipes.add(new AnvilConstructionRecipe(
+			new ComparableStack(new ItemStack(ModItems.chunk_leadzincsulfide)),
+			new AnvilOutput[] {
+				// dominant
+				new AnvilOutput(new ItemStack(ModItems.galena, 1)),
+				// codominant
+				new AnvilOutput(new ItemStack(ModItems.sphalerite, 1))
+				// trace gangue minerals
+				new AnvilOutput(new ItemStack(ModBlocks.ore_barite, 1), 0.25F),
+				new AnvilOutput(new ItemStack(ModBlocks.ore_celestite, 1), 0.1F),
+				//actually dolomite but I don't feel like changing the name in the code
+				new AnvilOutput(new ItemStack(ModBlocks.ore_magnesite, 1), 0.3F),
+			}
+		).setTier(2));
 
+		//Nickel Sulfide Ore
+		constructionRecipes.add(new AnvilConstructionRecipe(
+			new ComparableStack(new ItemStack(ModItems.chunk_nickelsulfide)),
+			new AnvilOutput[] {
+				// dominant
+				new AnvilOutput(new ItemStack(ModItems.pentlandite, 2)),
+				// common secondary
+				new AnvilOutput(new ItemStack(ModItems.pyrrhotite, 1), 0.6F),
+				//copper is often carried
+				new AnvilOutput(new ItemStack(ModItems.chalcopyrite, 1), 0.3F),
+			}
+		).setTier(2));
 
+		//Tin-Tungsten Ore
+		constructionRecipes.add(new AnvilConstructionRecipe(
+			new ComparableStack(new ItemStack(ModItems.chunk_tintungsten)),
+			new AnvilOutput[] {
+				// dominant
+				new AnvilOutput(new ItemStack(ModItems.cassiterite, 2)),
+				// common secondary
+				new AnvilOutput(new ItemStack(ModItems.wolframite, 1), 0.35F),
+				// rarer secondary
+				new AnvilOutput(new ItemStack(ModItems.columbite, 1), 0.15F)
+			}
+		).setTier(2));
 
+		//Lithium Pegmatite Ore
+		constructionRecipes.add(new AnvilConstructionRecipe(
+			new ComparableStack(new ItemStack(ModItems.chunk_lithiumpegmatite)),
+			new AnvilOutput[] {
+				// dominant
+				new AnvilOutput(new ItemStack(ModItems.spodumene, 2)),
+				// common secondary
+				new AnvilOutput(new ItemStack(ModItems.lepidolite, 1), 0.55F),
+				// rarer secondary
+				new AnvilOutput(new ItemStack(ModItems.petalite, 1), 0.15F)
+			}
+		).setTier(2));
 
+		//heavy mineral sand
+		constructionRecipes.add(new AnvilConstructionRecipe(
+			new ComparableStack(new ItemStack(ModItems.chunk_heavymineralsand)),
+			new AnvilOutput[] {
+				// dominant
+				new AnvilOutput(new ItemStack(ModItems.ilmenite, 2)),
+				// common secondary
+				new AnvilOutput(new ItemStack(ModItems.rutile, 1), 0.45F),
+				// rarer secondary
+				new AnvilOutput(new ItemStack(ModItems.zircon, 1), 0.35F)
+				//new AnvilOutput(new ItemStack(ModItems.monazite, 1), 0.1F)
+				//if it's not already mentioned I cannot be bothered
+			}
+		).setTier(2));
+
+		//evaporite
+		constructionRecipes.add(new AnvilConstructionRecipe(
+			new ComparableStack(new ItemStack(ModItems.chunk_evaporite)),
+			new AnvilOutput[] {
+				// halite
+				new AnvilOutput(new ItemStack(ModItems.itemsalt, 2)),
+				// sylvite basically
+				new AnvilOutput(new ItemStack(ModItems.powder_potash, 1), 0.45F),
+				// rarer secondary
+				new AnvilOutput(new ItemStack(ModItems.carnallite, 1), 0.35F)
+				//yes I know we skipped some steps but I don't have all goddamn day to add rocks
+			}
+		).setTier(2));
+
+		//carbon
+		constructionRecipes.add(new AnvilConstructionRecipe(
+			new ComparableStack(new ItemStack(ModItems.chunk_carbon)),
+			new AnvilOutput[] {
+				// dominant
+				new AnvilOutput(new ItemStack(Items.coal, 2)),
+				// it isn't found with coal but it's found in carbon deposits
+				new AnvilOutput(new ItemStack(ModItems.ingot_graphite, 1), 0.15F),
+				//diamond
+				new AnvilOutput(new ItemStack(Items.diamond, 1), 0.02F),
+
+				//lignite
+				new AnvilOutput(new ItemStack(ModItems.lignite, 1), 0.6F)
+
+				//lignite, coal coke, diamond, etc could be added
+				//petroleum coke?
+			}
+		).setTier(2));
 
 
 		constructionRecipes.add(new AnvilConstructionRecipe(new ComparableStack(ModBlocks.deco_titanium, 4), new AnvilOutput[] {new AnvilOutput(new ItemStack(ModItems.ingot_titanium, 1))}).setTier(1));

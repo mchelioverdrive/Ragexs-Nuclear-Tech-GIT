@@ -734,6 +734,14 @@ public class ModItems {
 	public static Item chunk_ironoxide;
 	public static Item chunk_coppersulfide;
 
+	public static Item chunk_leadzincsulfide;
+	public static Item chunk_nickelsulfide;
+	public static Item chunk_tintungsten;
+	public static Item chunk_lithiumpegmatite;
+	public static Item chunk_heavymineralsand;
+	public static Item chunk_evaporite;
+	public static Item chunk_carbon;
+
 
 	//actual ore groups that bob hates:
 	//iron
@@ -745,6 +753,34 @@ public class ModItems {
 	public static Item bornite;
 	public static Item chalcocite;
 	public static Item covellite;
+
+	//lead/zinc
+	public static Item galena;
+	public static Item sphalerite;
+
+	//nickel
+	public static Item pentlandite;
+	public static Item pyrrhotite;
+
+	//tin-tungsten
+	public static Item cassiterite;
+	public static Item wolframite;
+	public static Item columbite;
+
+	//lithium
+	public static Item spodumene;
+	public static Item lepidolite;
+	public static Item petalite;
+
+	//heavy mineral sand
+	public static Item ilmenite;
+	public static Item rutile;
+	public static Item zircon;
+
+	//evaporite
+	public static Item carnallite;
+
+
 
 
 	public static Item biomass;
@@ -3397,6 +3433,13 @@ public class ModItems {
 		//why the fuck did you need enums... bobcat moment!
 		chunk_ironoxide = new Item().setUnlocalizedName("chunk_ironoxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_iron");
 		chunk_coppersulfide = new Item().setUnlocalizedName("chunk_coppersulfide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_copper");
+		chunk_leadzincsulfide = new Item().setUnlocalizedName("chunk_leadzincsulfide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_lead");
+		chunk_nickelsulfide = new Item().setUnlocalizedName("chunk_nickelsulfide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_nickel");
+		chunk_tintungsten = new Item().setUnlocalizedName("chunk_tintungsten").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_iron");
+		chunk_lithiumpegmatite = new Item().setUnlocalizedName("chunk_lithiumpegmatite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_fluorite");
+		chunk_heavymineralsand = new Item().setUnlocalizedName("chunk_heavymineralsand").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_mineral");
+		chunk_evaporite = new Item().setUnlocalizedName("chunk_evaporite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niter");
+		chunk_carbon = new Item().setUnlocalizedName("chunk_carbon").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_tungsten");
 
 
 		//ORE GROUPS
@@ -3410,7 +3453,31 @@ public class ModItems {
 		chalcocite = new Item().setUnlocalizedName("chalcocite").setCreativeTab(MainRegistry.partsTab).setTextureName("minecraft" + ":coal"); //coal but shiny
 		covellite = new Item().setUnlocalizedName("covellite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niobium");
 
+		//lead-Zinc
+		galena = new Item().setUnlocalizedName("galena").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_nickel");
+		sphalerite = new Item().setUnlocalizedName("sphalerite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_lead");
 
+		//nickel
+		pentlandite = new Item().setUnlocalizedName("pentlandite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_mineral");
+		pyrrhotite = new Item().setUnlocalizedName("pyrrhotite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_lead");
+
+		//tin-tungsten
+		cassiterite = new Item().setUnlocalizedName("cassiterite").setCreativeTab(MainRegistry.partsTab).setTextureName("minecraft" + ":coal");
+		wolframite = new Item().setUnlocalizedName("wolframite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_tungsten");
+		columbite = new Item().setUnlocalizedName("columbite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_nickel");
+
+		//lithium
+		spodumene = new Item().setUnlocalizedName("spodumene").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_lithium");
+		lepidolite = new Item().setUnlocalizedName("lepidolite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niobium");
+		petalite = new Item().setUnlocalizedName("petalite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_lithium");
+
+		//heavy mineral sand
+		ilmenite = new Item().setUnlocalizedName("ilmenite").setCreativeTab(MainRegistry.partsTab).setTextureName("minecraft" + ":coal");
+		rutile = new Item().setUnlocalizedName("rutile").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_titanium");
+		zircon = new Item().setUnlocalizedName("zircon").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_copper");
+
+		//evaporite
+		carnallite = new Item().setUnlocalizedName("carnallite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_copper");
 
 		biomass = new Item().setUnlocalizedName("biomass").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":biomass");
 		biomass_compressed = new Item().setUnlocalizedName("biomass_compressed").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":biomass_compressed");
@@ -6716,6 +6783,13 @@ public class ModItems {
 		//anti retard logic for ores
 		GameRegistry.registerItem(chunk_ironoxide, chunk_ironoxide.getUnlocalizedName());
 		GameRegistry.registerItem(chunk_coppersulfide, chunk_coppersulfide.getUnlocalizedName());
+		GameRegistry.registerItem(chunk_leadzincsulfide, chunk_leadzincsulfide.getUnlocalizedName());
+		GameRegistry.registerItem(chunk_nickelsulfide, chunk_nickelsulfide.getUnlocalizedName());
+		GameRegistry.registerItem(chunk_tintungsten, chunk_tintungsten.getUnlocalizedName());
+		GameRegistry.registerItem(chunk_lithiumpegmatite, chunk_lithiumpegmatite.getUnlocalizedName());
+		GameRegistry.registerItem(chunk_heavymineralsand, chunk_heavymineralsand.getUnlocalizedName());
+		GameRegistry.registerItem(chunk_evaporite, chunk_evaporite.getUnlocalizedName());
+		GameRegistry.registerItem(chunk_carbon, chunk_carbon.getUnlocalizedName());
 
 
 		//ore groups
@@ -6729,6 +6803,32 @@ public class ModItems {
 		GameRegistry.registerItem(bornite, bornite.getUnlocalizedName());
 		GameRegistry.registerItem(chalcocite, chalcocite.getUnlocalizedName());
 		GameRegistry.registerItem(covellite, covellite.getUnlocalizedName());
+
+		//lead-zinc
+		GameRegistry.registerItem(galena, galena.getUnlocalizedName());
+		GameRegistry.registerItem(sphalerite, sphalerite.getUnlocalizedName());
+
+		//nickel
+		GameRegistry.registerItem(pentlandite, pentlandite.getUnlocalizedName());
+		GameRegistry.registerItem(pyrrhotite, pyrrhotite.getUnlocalizedName());
+
+		//tin-tungsten
+		GameRegistry.registerItem(cassiterite, cassiterite.getUnlocalizedName());
+		GameRegistry.registerItem(wolframite, wolframite.getUnlocalizedName());
+		GameRegistry.registerItem(columbite, columbite.getUnlocalizedName());
+
+		//lithium
+		GameRegistry.registerItem(spodumene, spodumene.getUnlocalizedName());
+		GameRegistry.registerItem(lepidolite, lepidolite.getUnlocalizedName());
+		GameRegistry.registerItem(petalite, petalite.getUnlocalizedName());
+
+		//heavy mineral sand
+		GameRegistry.registerItem(ilmenite, ilmenite.getUnlocalizedName());
+		GameRegistry.registerItem(rutile, rutile.getUnlocalizedName());
+		GameRegistry.registerItem(zircon, zircon.getUnlocalizedName());
+
+		//evaporite
+		GameRegistry.registerItem(carnallite, carnallite.getUnlocalizedName());
 
 
 		//Things that look like rotten flesh but aren't
