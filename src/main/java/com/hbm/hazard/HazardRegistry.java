@@ -91,6 +91,7 @@ public class HazardRegistry {
 	public static final float thf = 1.75F;
 	public static final float u = 0.35F;
 	public static final float be = 2F;
+	public static final float pb = 0.8F;
 	public static final float u233 = 5.0F;
 	public static final float u235 = 1.0F;
 	public static final float u238 = 0.25F;
@@ -550,6 +551,15 @@ public class HazardRegistry {
 
 		HazardSystem.register(ore_beryllium, makeData().addEntry(ASBESTOS, be * ore));
 		//sowwy >w<
+
+		//lead
+		HazardSystem.register(ore_lead, makeData().addEntry(ASBESTOS, pb * ore));
+		HazardSystem.register(powder_lead, makeData().addEntry(ASBESTOS, pb * powder) .addEntry(BLINDING, 0.2F)); //blindness test
+		//powder lead is more hazardous than ingot lead because of the dust, but ingot lead is still pretty bad
+		HazardSystem.register(ingot_lead, makeData().addEntry(ASBESTOS, pb / ingot));
+		HazardSystem.register(block_lead, makeData().addEntry(ASBESTOS, pb / ingot));
+		HazardSystem.register(nugget_lead, makeData().addEntry(ASBESTOS, pb / nugget));
+
 
 		HazardSystem.register(brick_asbestos, makeData(ASBESTOS, 1F));
 		HazardSystem.register(tile_lab_broken, makeData(ASBESTOS, 1F));

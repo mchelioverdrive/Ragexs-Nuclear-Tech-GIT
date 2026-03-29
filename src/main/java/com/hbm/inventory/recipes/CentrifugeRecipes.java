@@ -735,10 +735,11 @@ public class CentrifugeRecipes extends SerializableRecipe {
 				new ItemStack(ModItems.powder_zinc, 8),
 				new ItemStack(ModItems.powder_cadmium, 1),
 				new ItemStack(ModItems.nugget_gallium, 1),
-				new ItemStack(ModItems.nugget_cobalt, 1),
+				//new ItemStack(ModItems.nugget_cobalt, 1),
 				//replace with germanium when added ^
 				//minor/trace elements—notably
 				//cadmium (Cd), gallium (Ga), germanium (Ge), and indium (In)
+				//wait that's 5 nevermind
 				new ItemStack(ModItems.sulfur, 1) });
 
 		//pentlandite (Fe,Ni)9S8
@@ -755,6 +756,8 @@ public class CentrifugeRecipes extends SerializableRecipe {
 				new ItemStack(ModItems.nugget_cobalt, 1),
 				//trace cobalt
 				new ItemStack(ModItems.sulfur, 10) });
+
+
 
 
 
