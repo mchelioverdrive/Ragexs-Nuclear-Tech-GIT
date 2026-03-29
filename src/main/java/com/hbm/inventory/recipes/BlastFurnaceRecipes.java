@@ -98,7 +98,7 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 		addRecipe(new ComparableStack(ModBlocks.ore_barite, 1), COAL, new ItemStack(ModItems.barium_sulfide, 1));
 
 		//Pyrometallurgy of chalcopyrite
-		addRecipe(new ComparableStack(ModItems.chalcopyrite, 1), COAL, new ItemStack(ModItems.crystal_copper, 2));
+		addRecipe(new ComparableStack(ModItems.chalcopyrite, 1), COAL, new ItemStack(ModBlocks.ore_copper, 2));
 
 		//hiddenRecipes.add(new ComparableStack(ModItems.meteorite_sword_alloyed));
 	}

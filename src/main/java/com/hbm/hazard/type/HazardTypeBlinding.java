@@ -25,7 +25,7 @@ public class HazardTypeBlinding extends HazardTypeBase {
 			return;
 
 		if(!ArmorRegistry.hasProtection(target, 3, HazardClass.LIGHT)) {
-			//todo: make this scale with level also long term health effects, not just spergy bronie logic blindess
+			//todo: long term health effects, not just spergy bronie logic blindess
 			target.addPotionEffect(new PotionEffect(Potion.blindness.id, (int)Math.ceil(level), 0));
 		}
 	}

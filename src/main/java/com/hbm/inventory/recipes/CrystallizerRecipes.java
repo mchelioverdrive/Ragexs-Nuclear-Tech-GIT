@@ -73,23 +73,23 @@ public class CrystallizerRecipes extends SerializableRecipe {
 
 		//Hydrometallurgy:
 		//chalcopyrite
-		registerRecipe(new ComparableStack(ModItems.chalcopyrite), new CrystallizerRecipe(new ItemStack(ModItems.crystal_copper), baseTime * 16), sulfur);
+		registerRecipe(new ComparableStack(ModItems.chalcopyrite), new CrystallizerRecipe(new ItemStack(ModBlocks.ore_copper), baseTime * 16), sulfur);
 
 		//bornite
-		registerRecipe(new ComparableStack(ModItems.bornite), new CrystallizerRecipe(new ItemStack(ModItems.crystal_copper), baseTime * 2), bio);
+		registerRecipe(new ComparableStack(ModItems.bornite), new CrystallizerRecipe(new ItemStack(ModBlocks.ore_copper), baseTime * 2), bio);
 
 		//chalcocite
-		registerRecipe(new ComparableStack(ModItems.chalcocite), new CrystallizerRecipe(new ItemStack(ModItems.crystal_copper), baseTime * 4), sulfur);
-		registerRecipe(new ComparableStack(ModItems.chalcocite), new CrystallizerRecipe(new ItemStack(ModItems.crystal_copper), baseTime * 5), bio);
+		registerRecipe(new ComparableStack(ModItems.chalcocite), new CrystallizerRecipe(new ItemStack(ModBlocks.ore_copper), baseTime * 4), sulfur);
+		registerRecipe(new ComparableStack(ModItems.chalcocite), new CrystallizerRecipe(new ItemStack(ModBlocks.ore_copper), baseTime * 5), bio);
 		//also uses bio
 
 		//covellite
-		registerRecipe(new ComparableStack(ModItems.covellite), new CrystallizerRecipe(new ItemStack(ModItems.crystal_copper), baseTime * 8), sulfur);
-		registerRecipe(new ComparableStack(ModItems.covellite), new CrystallizerRecipe(new ItemStack(ModItems.crystal_copper), baseTime * 7), bio);
+		registerRecipe(new ComparableStack(ModItems.covellite), new CrystallizerRecipe(new ItemStack(ModBlocks.ore_copper), baseTime * 8), sulfur);
+		registerRecipe(new ComparableStack(ModItems.covellite), new CrystallizerRecipe(new ItemStack(ModBlocks.ore_copper), baseTime * 7), bio);
 
 		//pyrrhotite
-		registerRecipe(new ComparableStack(ModItems.pyrrhotite), new CrystallizerRecipe(new ItemStack(ModItems.crystal_sulfur), baseTime * 4), nitric);
-		registerRecipe(new ComparableStack(ModItems.pyrrhotite), new CrystallizerRecipe(new ItemStack(ModItems.crystal_sulfur), baseTime * 4), bio);
+		registerRecipe(new ComparableStack(ModItems.pyrrhotite), new CrystallizerRecipe(new ItemStack(ModBlocks.ore_sulfur), baseTime * 4), nitric);
+		registerRecipe(new ComparableStack(ModItems.pyrrhotite), new CrystallizerRecipe(new ItemStack(ModBlocks.ore_sulfur), baseTime * 4), bio);
 
 
 

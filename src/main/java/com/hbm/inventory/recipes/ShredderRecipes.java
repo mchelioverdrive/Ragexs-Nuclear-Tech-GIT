@@ -135,10 +135,10 @@ public class ShredderRecipes extends SerializableRecipe {
 		//actual real life bullshit:
 
 		//Fe2
-		ShredderRecipes.setRecipe(new ItemStack(ModBlocks.stone_resource, 1, EnumStoneType.HEMATITE.ordinal()), new ItemStack(ModItems.crystal_iron, 2));
+		ShredderRecipes.setRecipe(new ItemStack(ModBlocks.stone_resource, 1, EnumStoneType.HEMATITE.ordinal()), new ItemStack(Blocks.iron_ore, 2));
 		//idea: you get a benefit for doing the REAL industrial processes. The old ones will still exist though. For now.
 		//Fe3
-		ShredderRecipes.setRecipe(new ItemStack(ModItems.magnetite), new ItemStack(ModItems.crystal_iron, 3));
+		ShredderRecipes.setRecipe(new ItemStack(ModItems.magnetite), new ItemStack(Blocks.iron_ore, 3));
 
 		//ShredderRecipes.setRecipe(new ItemStack(ModItems.goethite), new ItemStack(ModItems.crystal_iron, 1));
 		//goethite -> hematite in a furnace
@@ -148,7 +148,7 @@ public class ShredderRecipes extends SerializableRecipe {
 
 
 		//chalcocite
-		ShredderRecipes.setRecipe(new ItemStack(ModItems.chalcocite), new ItemStack(ModItems.crystal_copper, 2)); //should also produce sulfur but whatever
+		ShredderRecipes.setRecipe(new ItemStack(ModItems.chalcocite), new ItemStack(ModBlocks.ore_copper, 2)); //should also produce sulfur but whatever
 
 		//galena
 		ShredderRecipes.setRecipe(new ItemStack(ModItems.galena), new ItemStack(ModItems.powder_lead, 2)); //should also produce sulfur but whatever

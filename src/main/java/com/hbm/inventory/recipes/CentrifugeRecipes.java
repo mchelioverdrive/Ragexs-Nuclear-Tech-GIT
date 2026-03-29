@@ -694,7 +694,7 @@ public class CentrifugeRecipes extends SerializableRecipe {
 		//real shit
 		// Froth Flotation (chalcopyrite): Chalcopyrite (CuFeS2)
 		recipes.put(new ComparableStack(ModItems.chalcopyrite), new ItemStack[] {
-				new ItemStack(ModItems.crystal_copper, 4),
+				new ItemStack(ModBlocks.ore_copper, 4),
 				new ItemStack(ModItems.powder_iron, 2),
 				new ItemStack(Items.gold_nugget, 1),
 			//Secondary Elements: Often contains gold, silver, nickel, and cobalt, which can be extracted as byproducts.
@@ -702,7 +702,7 @@ public class CentrifugeRecipes extends SerializableRecipe {
 
 		//Bornite Cu5FeS4
 		recipes.put(new ComparableStack(ModItems.bornite), new ItemStack[] {
-				new ItemStack(ModItems.crystal_copper, 5),
+				new ItemStack(ModBlocks.ore_copper, 5),
 				new ItemStack(ModItems.powder_iron, 1),
 				new ItemStack(ModItems.nugget_bismuth, 1),
 				//trace ^
@@ -710,7 +710,7 @@ public class CentrifugeRecipes extends SerializableRecipe {
 
 		//covellite CuS
 		recipes.put(new ComparableStack(ModItems.covellite), new ItemStack[] {
-				new ItemStack(ModItems.crystal_copper, 3),
+				new ItemStack(ModBlocks.ore_copper, 3),
 				new ItemStack(ModItems.powder_cadmium, 1),
 				new ItemStack(ModItems.nugget_lead, 1),
 				//Sb (antimony) should be in place of lead but I'll have to add it.
