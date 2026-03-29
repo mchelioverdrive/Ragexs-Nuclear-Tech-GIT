@@ -33,6 +33,16 @@ public class SmeltingRecipes {
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.stone_resource), new ItemStack(ModItems.quicklime), 0.2F);
 		//EnumStoneType.LIMESTONE.ordinal()
 
+		//I cannot be bothered to differentiate ore smelting and food smelting but eh maybe later
+		//goethite -> hematite in a furnace
+		GameRegistry.addSmelting(ModItems.goethite, new ItemStack(ModBlocks.stone_resource, 1, 2), 0.1F);
+
+		//bornite
+		GameRegistry.addSmelting(ModItems.bornite, new ItemStack(ModItems.ingot_copper, 2), 0.1F);
+
+		//covellite
+		GameRegistry.addSmelting(ModItems.covellite, new ItemStack(ModItems.ingot_copper, 1), 0.1F);
+
 
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_iron), new ItemStack(Items.iron_ingot), 0.7F);
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_gold), new ItemStack(Items.gold_ingot), 1.0F);

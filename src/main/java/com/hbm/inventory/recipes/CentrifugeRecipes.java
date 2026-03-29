@@ -691,6 +691,36 @@ public class CentrifugeRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(ModItems.crystal_basaltic), new ItemStack[] { new ItemStack(ModItems.powder_iron, 2), new ItemStack(ModItems.powder_calcium, 2), new ItemStack(ModItems.nugget_silicon, 1), new ItemStack(ModItems.powder_aluminium, 1) });
 
 
+		//real shit
+		// Froth Flotation (chalcopyrite): Chalcopyrite (CuFeS2)
+		recipes.put(new ComparableStack(ModItems.chalcopyrite), new ItemStack[] {
+				new ItemStack(ModItems.crystal_copper, 4),
+				new ItemStack(ModItems.powder_iron, 2),
+				new ItemStack(Items.gold_nugget, 1),
+			//Secondary Elements: Often contains gold, silver, nickel, and cobalt, which can be extracted as byproducts.
+				new ItemStack(ModItems.sulfur, 1) });
+
+		//Bornite Cu5FeS4
+		recipes.put(new ComparableStack(ModItems.bornite), new ItemStack[] {
+				new ItemStack(ModItems.crystal_copper, 5),
+				new ItemStack(ModItems.powder_iron, 1),
+				new ItemStack(ModItems.nugget_bismuth, 1),
+				//trace ^
+				new ItemStack(ModItems.sulfur, 4) });
+
+		//covellite CuS
+		recipes.put(new ComparableStack(ModItems.covellite), new ItemStack[] {
+				new ItemStack(ModItems.crystal_copper, 3),
+				new ItemStack(ModItems.powder_cadmium, 1),
+				new ItemStack(ModItems.nugget_lead, 1),
+				//Sb (antimony) should be in place of lead but I'll have to add it.
+				//trace ^
+				new ItemStack(ModItems.sulfur, 3) });
+
+
+
+
+
 	}
 
 

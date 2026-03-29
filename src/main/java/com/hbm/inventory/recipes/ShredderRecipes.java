@@ -132,6 +132,30 @@ public class ShredderRecipes extends SerializableRecipe {
 	@Override
 	public void registerDefaults() {
 
+		//actual real life bullshit:
+
+		//Fe2
+		ShredderRecipes.setRecipe(new ItemStack(ModBlocks.stone_resource, 1, EnumStoneType.HEMATITE.ordinal()), new ItemStack(ModItems.crystal_iron, 2));
+		//idea: you get a benefit for doing the REAL industrial processes. The old ones will still exist though. For now.
+		//Fe3
+		ShredderRecipes.setRecipe(new ItemStack(ModItems.magnetite), new ItemStack(ModItems.crystal_iron, 3));
+
+		//ShredderRecipes.setRecipe(new ItemStack(ModItems.goethite), new ItemStack(ModItems.crystal_iron, 1));
+		//goethite -> hematite in a furnace
+
+		//oh come on, is there really no way to export more than one itemstack at a time per shred?
+			//i guess i could just make a custom itemstack that contains multiple stacks, but that seems like a lot of work for something that would only be used in like 5 recipes at most
+
+
+		//chalcocite
+		ShredderRecipes.setRecipe(new ItemStack(ModItems.chalcocite), new ItemStack(ModItems.crystal_copper, 2)); //should also produce sulfur but whatever
+
+
+
+
+		//other possibly realistic probably not bullshit:
+
+
 		/* Primary recipes */
 		ShredderRecipes.setRecipe(ModItems.scrap, new ItemStack(ModItems.dust));
 		ShredderRecipes.setRecipe(ModItems.dust, new ItemStack(ModItems.dust));

@@ -63,8 +63,34 @@ public class CrystallizerRecipes extends SerializableRecipe {
 		FluidStack nitric = new FluidStack(Fluids.NITRIC_ACID, 500);
 		FluidStack organic = new FluidStack(Fluids.SOLVENT, 500);
 		FluidStack chloric = new FluidStack(Fluids.HCL, 500);
-		FluidStack schrabidic = new FluidStack(Fluids.SCHRABIDIC, 1000);
+		//FluidStack schrabidic = new FluidStack(Fluids.SCHRABIDIC, 1000);
 		FluidStack hiperf = new FluidStack(Fluids.RADIOSOLVENT, 500);
+
+		FluidStack bio = new FluidStack(Fluids.BIOFUEL, 500);
+
+
+		//real bullshit:
+
+		//Hydrometallurgy:
+		//chalcopyrite
+		registerRecipe(new ComparableStack(ModItems.chalcopyrite), new CrystallizerRecipe(new ItemStack(ModItems.crystal_copper), baseTime * 16), sulfur);
+
+		//bornite
+		registerRecipe(new ComparableStack(ModItems.bornite), new CrystallizerRecipe(new ItemStack(ModItems.crystal_copper), baseTime * 2), bio);
+
+		//chalcocite
+		registerRecipe(new ComparableStack(ModItems.chalcocite), new CrystallizerRecipe(new ItemStack(ModItems.crystal_copper), baseTime * 4), sulfur);
+		registerRecipe(new ComparableStack(ModItems.chalcocite), new CrystallizerRecipe(new ItemStack(ModItems.crystal_copper), baseTime * 5), bio);
+		//also uses bio
+
+		//covellite
+		registerRecipe(new ComparableStack(ModItems.covellite), new CrystallizerRecipe(new ItemStack(ModItems.crystal_copper), baseTime * 8), sulfur);
+		registerRecipe(new ComparableStack(ModItems.covellite), new CrystallizerRecipe(new ItemStack(ModItems.crystal_copper), baseTime * 7), bio);
+
+
+
+		//fake shit most likely:
+
 
 		registerRecipe(COAL.ore(),		new CrystallizerRecipe(ModItems.crystal_coal, baseTime));
 		registerRecipe(IRON.ore(),		new CrystallizerRecipe(ModItems.crystal_iron, baseTime));
