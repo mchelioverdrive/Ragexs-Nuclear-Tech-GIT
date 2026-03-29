@@ -104,7 +104,7 @@ public class OreDictManager {
 	public static final String KEY_TOOL_CHEMISTRYSET = "ntmchemistryset";
 	public static final String KEY_TOOL_TORCH = "ntmtorch";
 
-	public static final String KEY_GLYPHID_MEAT = "glyphidMeat";
+	//public static final String KEY_GLYPHID_MEAT = "glyphidMeat";
 
 	public static final String KEY_SALT = "foodSalt";
 
@@ -324,6 +324,7 @@ public class OreDictManager {
 	public static final DictFrame CE = new DictFrame("Cerium");
 	public static final DictFrame SC = new DictFrame("Scandium");
 	public static final DictFrame Y = new DictFrame("Yttrium");
+	public static final DictFrame Sn = new DictFrame("Tin");
 	/*
 	 * NITAN
 	 */
@@ -570,6 +571,7 @@ public class OreDictManager {
 		CE	.nugget(fragment_cerium)																		.dustSmall(powder_cerium_tiny)		.dust(powder_cerium);
 		SC  .ingot(scandium_ingot);
 		Y 	.ingot(yttrium_ingot) .nugget(fragment_yttrium) .dustSmall(powder_yttrium_tiny) .dust(powder_yttrium);
+		Sn 	.ingot(ingot_tin)		 .oreAll(ore_tin); //.block(block_tin)		.ore(ore_gneiss_tin) .nugget(nugget_tin)
 
 
 		/*

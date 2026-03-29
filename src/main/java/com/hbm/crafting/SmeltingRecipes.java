@@ -46,6 +46,9 @@ public class SmeltingRecipes {
 		//galena
 		GameRegistry.addSmelting(ModItems.galena, new ItemStack(ModItems.powder_lead, 1), 0.1F);
 
+		//tin
+		GameRegistry.addSmelting(ModBlocks.ore_tin, new ItemStack(ModItems.ingot_tin), 0.1F);
+
 
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_iron), new ItemStack(Items.iron_ingot), 0.7F);
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_gold), new ItemStack(Items.gold_ingot), 1.0F);

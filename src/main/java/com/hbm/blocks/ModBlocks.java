@@ -96,7 +96,7 @@ public class ModBlocks {
 	public static Block ore_arsenic;
 	public static Block ore_silicon;
 	public static Block ore_magnesite;
-	//name it to Dolomite in lang
+	//named to Dolomite in lang
 	public static Block ore_fire;
 	public static Block ore_shale;
 
@@ -106,6 +106,8 @@ public class ModBlocks {
 	public static Block ore_potash;
 
 	public static Block ore_pollucite;
+	public static Block ore_tin;
+
 
 	public static Block ore_random;
 	public static Block ore_bedrock;
@@ -1422,6 +1424,7 @@ public class ModBlocks {
 		ore_potash = new BlockOre(Material.rock).setBlockName("ore_potash").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_potash");
 		ore_pollucite = new BlockOre(Material.rock).setBlockName("ore_pollucite").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_pollucite");
 		ore_barite = new BlockOre(Material.rock).setBlockName("ore_barite").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_barite");
+		ore_tin = new BlockOre(Material.rock).setBlockName("ore_tin").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_tin");
 
 		cluster_iron = new BlockCluster(Material.rock).setBlockName("cluster_iron").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(15.0F).setBlockTextureName(RefStrings.MODID + ":cluster_iron");
 		cluster_titanium = new BlockCluster(Material.rock).setBlockName("cluster_titanium").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(15.0F).setBlockTextureName(RefStrings.MODID + ":cluster_titanium");
@@ -2700,6 +2703,7 @@ public class ModBlocks {
 		GameRegistry.registerBlock(ore_potash, ItemBlockBase.class, ore_potash.getUnlocalizedName());
 		GameRegistry.registerBlock(ore_barite, ItemBlockBase.class, ore_barite.getUnlocalizedName());
 		GameRegistry.registerBlock(ore_pollucite, ItemBlockBase.class, ore_pollucite.getUnlocalizedName());
+		GameRegistry.registerBlock(ore_tin, ItemBlockBase.class, ore_tin.getUnlocalizedName());
 
 
 		//Rare Minerals

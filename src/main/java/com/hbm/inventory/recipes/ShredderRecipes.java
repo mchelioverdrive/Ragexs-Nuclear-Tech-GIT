@@ -156,6 +156,9 @@ public class ShredderRecipes extends SerializableRecipe {
 		//sphalerite
 		ShredderRecipes.setRecipe(new ItemStack(ModItems.sphalerite), new ItemStack(ModItems.powder_zinc, 6)); //should also produce sulfur but whatever
 
+		//tin
+		ShredderRecipes.setRecipe(new ItemStack(ModItems.cassiterite), new ItemStack(ModBlocks.ore_tin, 2));
+
 
 
 		//other possibly realistic probably not bullshit:
