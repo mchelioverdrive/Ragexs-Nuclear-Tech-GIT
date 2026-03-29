@@ -150,6 +150,11 @@ public class ShredderRecipes extends SerializableRecipe {
 		//chalcocite
 		ShredderRecipes.setRecipe(new ItemStack(ModItems.chalcocite), new ItemStack(ModItems.crystal_copper, 2)); //should also produce sulfur but whatever
 
+		//galena
+		ShredderRecipes.setRecipe(new ItemStack(ModItems.galena), new ItemStack(ModItems.powder_lead, 2)); //should also produce sulfur but whatever
+
+		//sphalerite
+		ShredderRecipes.setRecipe(new ItemStack(ModItems.sphalerite), new ItemStack(ModItems.powder_zinc, 6)); //should also produce sulfur but whatever
 
 
 

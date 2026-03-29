@@ -87,6 +87,10 @@ public class CrystallizerRecipes extends SerializableRecipe {
 		registerRecipe(new ComparableStack(ModItems.covellite), new CrystallizerRecipe(new ItemStack(ModItems.crystal_copper), baseTime * 8), sulfur);
 		registerRecipe(new ComparableStack(ModItems.covellite), new CrystallizerRecipe(new ItemStack(ModItems.crystal_copper), baseTime * 7), bio);
 
+		//pyrrhotite
+		registerRecipe(new ComparableStack(ModItems.pyrrhotite), new CrystallizerRecipe(new ItemStack(ModItems.crystal_sulfur), baseTime * 4), nitric);
+		registerRecipe(new ComparableStack(ModItems.pyrrhotite), new CrystallizerRecipe(new ItemStack(ModItems.crystal_sulfur), baseTime * 4), bio);
+		
 
 
 		//fake shit most likely:

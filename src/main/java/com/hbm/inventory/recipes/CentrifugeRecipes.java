@@ -717,6 +717,45 @@ public class CentrifugeRecipes extends SerializableRecipe {
 				//trace ^
 				new ItemStack(ModItems.sulfur, 3) });
 
+		//galena PbS
+		recipes.put(new ComparableStack(ModItems.galena), new ItemStack[] {
+				new ItemStack(ModItems.powder_lead, 3),
+				new ItemStack(ModItems.powder_copper, 1),
+				//replace this with silver when added^
+				new ItemStack(ModItems.nugget_bismuth, 1),
+				//minor/trace elements—notably
+				//silver
+				//bismuth
+				//selenium
+				//and tellurium
+				new ItemStack(ModItems.sulfur, 1) });
+
+		//sphalerite ZnS
+		recipes.put(new ComparableStack(ModItems.sphalerite), new ItemStack[] {
+				new ItemStack(ModItems.powder_zinc, 8),
+				new ItemStack(ModItems.powder_cadmium, 1),
+				new ItemStack(ModItems.nugget_gallium, 1),
+				new ItemStack(ModItems.nugget_cobalt, 1),
+				//replace with germanium when added ^
+				//minor/trace elements—notably
+				//cadmium (Cd), gallium (Ga), germanium (Ge), and indium (In)
+				new ItemStack(ModItems.sulfur, 1) });
+
+		//pentlandite (Fe,Ni)9S8
+		recipes.put(new ComparableStack(ModItems.pentlandite), new ItemStack[] {
+				new ItemStack(ModItems.powder_iron, 9),
+				new ItemStack(ModItems.powder_nickel, 9),
+				new ItemStack(ModItems.nugget_cobalt, 1),
+				//trace cobalt
+				new ItemStack(ModItems.sulfur, 8) });
+
+		//pyrrhotite Fe(1-x)S
+		recipes.put(new ComparableStack(ModItems.pyrrhotite), new ItemStack[] {
+				new ItemStack(ModItems.powder_iron, 10),
+				new ItemStack(ModItems.nugget_cobalt, 1),
+				//trace cobalt
+				new ItemStack(ModItems.sulfur, 10) });
+
 
 
 
