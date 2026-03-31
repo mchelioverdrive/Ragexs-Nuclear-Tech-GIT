@@ -763,7 +763,7 @@ public class CentrifugeRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(ModItems.wolframite), new ItemStack[] {
 				new ItemStack(ModItems.powder_tungsten, 3),
 				new ItemStack(ModItems.powder_iron, 1),
-				//new ItemStack(ModItems.nugget_manganese, 1),
+				new ItemStack(ModItems.manganese_powder, 1),
 				//trace manganese
 			//ill fix this crap later
 				new ItemStack(Blocks.gravel, 1) });
