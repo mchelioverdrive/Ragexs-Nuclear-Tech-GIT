@@ -49,17 +49,14 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		boolean canSee = entity.canEntityBeSeen(target);
 
 		if (canSee) {
-			// ✅ NORMAL MODE (VISIBLE)
 			entity.getNavigator().tryMoveToEntityLiving(target, speed);
 			return;
 		}
 
-		// ✅ DIG MODE (NOT VISIBLE)
+		// DIG MODE
 
-		// ❌ kill pathfinding interference
 		entity.getNavigator().clearPathEntity();
 
-		// direction vector
 		double dx = target.posX - entity.posX;
 		double dy = (target.posY + target.getEyeHeight()) - entity.posY;
 		double dz = target.posZ - entity.posZ;
@@ -71,13 +68,22 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		dy /= dist;
 		dz /= dist;
 
-		// smooth movement through tunnel
-		entity.motionX = dx * speed;
-		entity.motionY = dy * speed * 0.5;
-		entity.motionZ = dz * speed;
-
-		// carve tunnel forward (this is the important part)
+		// ✅ carve FIRST
 		carveTunnel(dx, dy, dz);
+
+		// ✅ force movement AFTER carving (this is the key fix)
+		double moveSpeed = 0.3D;
+
+		entity.setPosition(
+			entity.posX + dx * moveSpeed,
+			entity.posY + dy * moveSpeed * 0.5,
+			entity.posZ + dz * moveSpeed
+		);
+
+		// ❌ kill leftover physics interference
+		entity.motionX = 0;
+		entity.motionY = 0;
+		entity.motionZ = 0;
 	}
 
 	private void carveTunnel(double dx, double dy, double dz) {
