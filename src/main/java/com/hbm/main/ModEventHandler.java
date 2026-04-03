@@ -1025,6 +1025,7 @@ public class ModEventHandler {
 
 			// FRIEND spawn logic goes here, once per tick, server-side
 			if(event.phase == Phase.END) {
+				//this works
 				World world = event.world;
 
 				// use whichever check is actually reliable in your setup

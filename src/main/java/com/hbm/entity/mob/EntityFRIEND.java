@@ -74,12 +74,67 @@ public class EntityFRIEND extends EntityCreature {
 	@Override
 	protected void applyEntityAttributes() {
 		super.applyEntityAttributes();
-		this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(8.0D);
+		this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(28.0D);
 		this.getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(0.2D);
 	}
 
 	@Override
 	protected boolean isAIEnabled() {
+		return true;
+	}
+
+	private boolean teleportUndergroundNearPlayer(EntityPlayer player) {
+
+		int range = 32;
+
+		for(int i = 0; i < 32; i++) { // more attempts (Enderman-style)
+
+			int x = (int)(player.posX + (rand.nextDouble() - 0.5) * range);
+			int z = (int)(player.posZ + (rand.nextDouble() - 0.5) * range);
+
+			int topY = worldObj.getTopSolidOrLiquidBlock(x, z);
+
+			int y = topY - (10 + rand.nextInt(20));
+			if(y < 5) y = 5;
+
+			if(placeUnderground(x, y, z)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private boolean isSafeTeleportSpot(int x, int y, int z) {
+
+		if(y <= 0 || y >= worldObj.getHeight()) return false;
+
+		// feet + head must be air
+		if(!worldObj.isAirBlock(x, y, z)) return false;
+		if(!worldObj.isAirBlock(x, y + 1, z)) return false;
+
+		// must stand on something solid
+		if(!worldObj.getBlock(x, y - 1, z).getMaterial().isSolid()) return false;
+
+		return true;
+	}
+
+	private boolean placeUnderground(int x, int y, int z) {
+
+		if(y <= 1 || y >= worldObj.getHeight() - 2) return false;
+
+		// carve space if needed (this is the important fix)
+		if(worldObj.getBlock(x, y, z).isOpaqueCube()) {
+			worldObj.setBlockToAir(x, y, z);
+		}
+		if(worldObj.getBlock(x, y + 1, z).isOpaqueCube()) {
+			worldObj.setBlockToAir(x, y + 1, z);
+		}
+
+		// must have ground below
+		if(!worldObj.getBlock(x, y - 1, z).getMaterial().isSolid()) return false;
+
+		this.setPosition(x + 0.5, y, z + 0.5);
 		return true;
 	}
 
@@ -98,7 +153,10 @@ public class EntityFRIEND extends EntityCreature {
 				if (timer > 3) {
 					if (this.rand.nextBoolean()) {
 						//teleport away into a safe place, where the player cannot find.
-						this.setPosition(this.posX + (rand.nextDouble() - 0.5) * 100, this.posY + (rand.nextDouble() - 0.5) * 100, this.posZ + (rand.nextDouble() - 0.5) * 100);
+						if(!players.isEmpty()) {
+							EntityPlayer target = players.get(0);
+							teleportUndergroundNearPlayer(target);
+						}
 					} else {
 						//runaway
 						double runawayRange = 20;
@@ -117,7 +175,10 @@ public class EntityFRIEND extends EntityCreature {
 							//this.setDead();
 							//teleport away into a safe place, where the player cannot find.
 							//this.setPosition(this.posX + (rand.nextDouble() - 0.5) * 50, this.posY + (rand.nextDouble() - 0.5) * 50, this.posZ + (rand.nextDouble() - 0.5) * 50);
-							this.setPosition(this.posX + (rand.nextDouble() - 0.5) * 100, this.posY + (rand.nextDouble() - 0.5) * 100, this.posZ + (rand.nextDouble() - 0.5) * 100);
+							if(!players2.isEmpty()) {
+								EntityPlayer target = players2.get(rand.nextInt(players2.size()));
+								teleportUndergroundNearPlayer(target);
+							}
 						}
 					}
 				}
@@ -130,10 +191,12 @@ public class EntityFRIEND extends EntityCreature {
 					double x = this.posX - player.posX;
 					double y = this.posY - player.posY;
 					double z = this.posZ - player.posZ;
-					this.motionX += x * 0.1;
-					this.motionY += y * 0.1;
-					this.motionZ += z * 0.1;
+					this.motionX = x * 0.1;
+					this.motionY = y * 0.1;
+					this.motionZ = z * 0.1;
 				}
+				//attack player, then teleportUndergroundNearPlayer(player);
+
 			}
 		}
 	}
@@ -145,7 +208,7 @@ public class EntityFRIEND extends EntityCreature {
 
 	@Override
 	public boolean isEntityInvulnerable() {
-		return true;
+		return false;
 	}
 
 	@Override
