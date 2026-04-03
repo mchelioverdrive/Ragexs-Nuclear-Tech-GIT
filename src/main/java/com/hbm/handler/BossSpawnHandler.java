@@ -43,7 +43,39 @@ public class BossSpawnHandler {
 
 		TomSaveData data = TomSaveData.forWorld(world);
 
+
+
 		// === YOUR FRIEND SPAWN ===
+
+		//this works
+
+		// use whichever check is actually reliable in your setup
+		if(!(world.provider instanceof WorldProviderLaythe)) return;
+
+		//if (world.rand.nextInt(2000) != 0) return;
+		// 1 in 2000 chance every tick, which is about 1 in 100 every second + the 1% chance in getCanSpawnHere
+		// Might tweak it, but this should also have a trigger condition that the player chooses to activate,
+		//like breaking a specific block or something to make it a deliberate choice encounter (like wither)
+
+		for(Object obj : world.loadedEntityList) {
+			if(obj instanceof EntityFRIEND) return;
+		}
+
+		if(world.playerEntities.isEmpty()) return;
+		EntityPlayer player = (EntityPlayer) world.playerEntities.get(world.rand.nextInt(world.playerEntities.size()));
+
+		EntityFRIEND friend = new EntityFRIEND(world);
+
+		int x = MathHelper.floor_double(player.posX + (world.rand.nextDouble() - 0.5) * 50);
+		int z = MathHelper.floor_double(player.posZ + (world.rand.nextDouble() - 0.5) * 50);
+		int y = world.getTopSolidOrLiquidBlock(x, z) - (10 + world.rand.nextInt(20));
+		if(y < 5) y = 5;
+
+		friend.setPosition(x + 0.5, y, z + 0.5);
+
+		if(friend.getCanSpawnHere()) {
+			world.spawnEntityInWorld(friend);
+		}
 //
 		/*
 		 * Spawns every 3 hours with a 33% chance if
@@ -88,7 +120,7 @@ public class BossSpawnHandler {
 
 				if(world.rand.nextInt(MobConfig.raidChance) == 0 && !world.playerEntities.isEmpty() && world.provider.isSurfaceWorld()) {
 
-					EntityPlayer player = (EntityPlayer) world.playerEntities.get(world.rand.nextInt(world.playerEntities.size()));
+					//EntityPlayer player = (EntityPlayer) world.playerEntities.get(world.rand.nextInt(world.playerEntities.size()));
 
 					if(player.getEntityData().getCompoundTag(player.PERSISTED_NBT_TAG).getLong("fbiMark") < world.getTotalWorldTime()) {
 						player.addChatComponentMessage(new ChatComponentText("FBI, OPEN UP!").setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));

@@ -21,66 +21,86 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 	}
 
 	@Override
-	public boolean continueExecuting() {
-		return target != null && !target.isDead
-			&& entity.getDistanceSqToEntity(target) <= range * range;
-	}
-
-	@Override
 	public boolean shouldExecute() {
 
 		if (entity.worldObj.isRemote) return false;
 
 		EntityPlayer player = entity.worldObj.getClosestPlayerToEntity(entity, range);
-
 		if (player == null || player.isDead) return false;
 
 		this.target = player;
 		return true;
 	}
 
-
+	@Override
+	public boolean continueExecuting() {
+		return target != null
+			&& !target.isDead
+			&& entity.getDistanceSqToEntity(target) <= range * range;
+	}
 
 	@Override
 	public void updateTask() {
 
-		entity.setAttackTarget(target);
+		if (target == null) return;
+
 		entity.getLookHelper().setLookPositionWithEntity(target, 30F, 30F);
 
-		//System.out.println("DIGGING TOWARD PLAYER");
+		boolean canSee = entity.canEntityBeSeen(target);
 
-		boolean pathing = entity.getNavigator().tryMoveToEntityLiving(target, speed);
-		//System.out.println("Pathing result: " + pathing);
-
-
-		if (target == null)
+		if (canSee) {
+			// ✅ NORMAL MODE (VISIBLE)
+			entity.getNavigator().tryMoveToEntityLiving(target, speed);
 			return;
+		}
 
-		//entity.getNavigator().tryMoveToEntityLiving(target, speed);
-		entity.motionX = (target.posX - entity.posX) * 0.01;
-		entity.motionZ = (target.posZ - entity.posZ) * 0.01;
+		// ✅ DIG MODE (NOT VISIBLE)
 
-		breakBlocksTowardTarget();
+		// ❌ kill pathfinding interference
+		entity.getNavigator().clearPathEntity();
+
+		// direction vector
+		double dx = target.posX - entity.posX;
+		double dy = (target.posY + target.getEyeHeight()) - entity.posY;
+		double dz = target.posZ - entity.posZ;
+
+		double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+		if (dist == 0) return;
+
+		dx /= dist;
+		dy /= dist;
+		dz /= dist;
+
+		// smooth movement through tunnel
+		entity.motionX = dx * speed;
+		entity.motionY = dy * speed * 0.5;
+		entity.motionZ = dz * speed;
+
+		// carve tunnel forward (this is the important part)
+		carveTunnel(dx, dy, dz);
 	}
 
-	private void breakBlocksTowardTarget() {
+	private void carveTunnel(double dx, double dy, double dz) {
 
-		int dx = (int)Math.signum(target.posX - entity.posX);
-		int dy = (int)Math.signum(target.posY - entity.posY);
-		int dz = (int)Math.signum(target.posZ - entity.posZ);
+		int steps = 2; // how far ahead to carve
 
-		int bx = (int)Math.floor(entity.posX + dx);
-		int by = (int)Math.floor(entity.posY + dy);
-		int bz = (int)Math.floor(entity.posZ + dz);
+		for (int i = 0; i <= steps; i++) {
 
-		for (int yOffset = 0; yOffset < 2; yOffset++) { // break 2 blocks tall
-			Block block = entity.worldObj.getBlock(bx, by + yOffset, bz);
+			int bx = (int)Math.floor(entity.posX + dx * i);
+			int by = (int)Math.floor(entity.posY + dy * i);
+			int bz = (int)Math.floor(entity.posZ + dz * i);
 
-			if (block != Blocks.air && block.getBlockHardness(entity.worldObj, bx, by + yOffset, bz) >= 0) {
-				entity.worldObj.func_147480_a(bx, by + yOffset, bz, true);
+			// break 2-block tall space
+			for (int yOffset = 0; yOffset < 2; yOffset++) {
+
+				Block block = entity.worldObj.getBlock(bx, by + yOffset, bz);
+
+				if (block != Blocks.air &&
+					((Block) block).getBlockHardness(entity.worldObj, bx, by + yOffset, bz) >= 0) {
+
+					entity.worldObj.func_147480_a(bx, by + yOffset, bz, true);
+				}
 			}
 		}
 	}
-
 }
-

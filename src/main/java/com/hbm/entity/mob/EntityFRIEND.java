@@ -25,10 +25,11 @@ public class EntityFRIEND extends EntityCreature {
 		super(world);
 
 		this.tasks.addTask(0, new EntityAIDigToPlayer(this, 0.1D, 160.0D));
-		this.tasks.addTask(1, new EntityAISwimming(this));
-		this.tasks.addTask(2, new EntityAIWander(this, 1.0D));
-		this.tasks.addTask(3, new EntityAILookIdle(this));
-		this.tasks.addTask(4, new EntityAIWatchClosest(this, EntityPlayer.class, 64.0F));
+		this.tasks.addTask(1, new EntityAIWatchClosest(this, EntityPlayer.class, 64.0F));
+		this.tasks.addTask(2, new EntityAISwimming(this));
+		this.tasks.addTask(3, new EntityAIWander(this, 1.0D));
+		this.tasks.addTask(4, new EntityAILookIdle(this));
+
 
 		this.targetTasks.addTask(1, new EntityAINearestAttackableTarget(this, EntityPlayer.class, 0, true));
 
@@ -168,107 +169,79 @@ public class EntityFRIEND extends EntityCreature {
 		return closest;
 	}
 
+//	@Override
+//	public void onUpdate() {
+//		super.onUpdate();
+//
+//		if (worldObj.isRemote) return;
+//
+//		EntityPlayer target = getClosestPlayer(32.0D);
+//		if (target == null) return;
+//
+//		boolean canSeeTarget = this.canEntityBeSeen(target);
+//
+//		if (modeCooldown <= 0) {
+//			boolean newDigMode = !canSeeTarget;
+//
+//			if (newDigMode != digMode) {
+//				digMode = newDigMode;
+//				modeCooldown = 20; // 1 second of stability
+//				this.getNavigator().clearPathEntity();
+//			}
+//		} else {
+//			modeCooldown--;
+//		}
+//
+//		if (digMode) {
+//			// dig mode: target player, let AI do the work
+//			this.setAttackTarget(target);
+//			this.getNavigator().tryMoveToEntityLiving(target, 1.0D);
+//			return;
+//		}
+//
+//		// visible mode: react to being seen
+//		this.setAttackTarget(null);
+//
+//		double dx = this.posX - target.posX;
+//		double dy = this.posY - target.posY;
+//		double dz = this.posZ - target.posZ;
+//
+//		double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+//		if (dist > 0.0D) {
+//			dx /= dist;
+//			dy /= dist;
+//			dz /= dist;
+//		}
+//
+//		this.motionX += dx * 0.08D;
+//		this.motionY += dy * 0.02D;
+//		this.motionZ += dz * 0.08D;
+//
+//		this.getLookHelper().setLookPosition(
+//			target.posX,
+//			target.posY + target.getEyeHeight(),
+//			target.posZ,
+//			10.0F,
+//			40.0F
+//		);
+//
+//		if (target.getDistanceSqToEntity(this) < 100.0D) {
+//			this.attackEntityAsMob(target);
+//			teleportUndergroundNearPlayer(target);
+//		}
+//	}
+
 	@Override
 	public void onUpdate() {
 		super.onUpdate();
-		if (!worldObj.isRemote) {
+		if(!worldObj.isRemote) {
 			//the wholesome
-//
-			if (this.rand.nextBoolean()) {
-//
-				double despawnRange = 3;
-				List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, this.boundingBox.expand(despawnRange, despawnRange, despawnRange));
-				if (!players.isEmpty())
-					timer++;
-				if (timer > 3) {
-					if (this.rand.nextBoolean()) {
-						//teleport away into a safe place, where the player cannot find.
-						if (!players.isEmpty()) {
-							EntityPlayer target = players.get(0);
-							teleportUndergroundNearPlayer(target);
-						}
-					} else {
-						//runaway
-						double runawayRange = 20;
-						List<EntityPlayer> players2 = worldObj.getEntitiesWithinAABB(
-							EntityPlayer.class,
-							this.boundingBox.expand(runawayRange, runawayRange, runawayRange)
-						);
-
-						if (!players2.isEmpty()) {
-
-							EntityPlayer player = players2.get(0);
-
-							// direction away from player
-							double dx = this.posX - player.posX;
-							double dy = this.posY - player.posY;
-							double dz = this.posZ - player.posZ;
-
-							double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-							if (dist > 0) {
-								dx /= dist;
-								dy /= dist;
-								dz /= dist;
-							}
-
-							// ✅ DO NOT clear navigator every tick
-							// only redirect movement occasionally
-							if (this.getNavigator().noPath()) {
-								double targetX = this.posX + dx * 10;
-								double targetY = this.posY + dy * 5;
-								double targetZ = this.posZ + dz * 10;
-
-								this.getNavigator().tryMoveToXYZ(targetX, targetY, targetZ, 1.0D);
-							}
-						}
-						despawnTimer++;
-//
-						if (despawnTimer >= 5 * 20) { // 5 seconds
-							//this.setDead();
-							//teleport away into a safe place, where the player cannot find.
-							//this.setPosition(this.posX + (rand.nextDouble() - 0.5) * 50, this.posY + (rand.nextDouble() - 0.5) * 50, this.posZ + (rand.nextDouble() - 0.5) * 50);
-							if (!players2.isEmpty()) {
-								EntityPlayer target = players2.get(rand.nextInt(players2.size()));
-								teleportUndergroundNearPlayer(target);
-								//reset despawn timer after teleport so it's not going ape shit
-								despawnTimer = 0;
-							}
-						}
-					}
-				}
-			} else {
-				//the unwholesome
-				double mogrange = 5;
-				List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, this.boundingBox.expand(mogrange, mogrange, mogrange));
-				//if there is a player nearby, encircle them in a perfect circle while looking at them, then disappear
-				for (EntityPlayer player : players) {
-					double x = this.posX - player.posX;
-					double y = this.posY - player.posY;
-					double z = this.posZ - player.posZ;
-					this.motionX = x * 0.1;
-					this.motionY = y * 0.1;
-					this.motionZ = z * 0.1;
-					this.getLookHelper().setLookPosition(player.posX, player.posY + player.getEyeHeight(), player.posZ, 10.0F, 40.0F);
-					//if the player is not looking at the entity, then attack them and teleport underground near them
-					double lookRange = 10;
-					double dx = player.posX - this.posX;
-					double dy = (player.posY + player.getEyeHeight()) - (this.posY + this.height / 2);
-					double dz = player.posZ - this.posZ;
-					double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-					if (dist < lookRange) {
-						double lookX = player.getLookVec().xCoord;
-						double lookY = player.getLookVec().yCoord;
-						double lookZ = player.getLookVec().zCoord;
-						double dot = (dx * lookX + dy * lookY + dz * lookZ) / dist; // cosine of angle between player look and direction to entity
-						if (dot < 0.5) { // if player is not looking at entity (less than ~60 degrees)
-							//attack player, then teleportUndergroundNearPlayer(player);
-							this.attackEntityAsMob(player);
-							teleportUndergroundNearPlayer(player);
-						}
-					}
-					//attack player, then teleportUndergroundNearPlayer(player);
-
-				}
+			double despawnRange = 3;
+			List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, this.boundingBox.expand(despawnRange, despawnRange, despawnRange));
+			if(!players.isEmpty())
+				timer++;
+			if (timer > 3) {
+				this.setDead();
 			}
 		}
 	}
