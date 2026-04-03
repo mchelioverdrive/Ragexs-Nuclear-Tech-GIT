@@ -87,7 +87,7 @@ public class EntityFRIEND extends EntityCreature {
 
 		int range = 32;
 
-		for(int i = 0; i < 32; i++) { // more attempts (Enderman-style)
+		for (int i = 0; i < 32; i++) {
 
 			int x = (int)(player.posX + (rand.nextDouble() - 0.5) * range);
 			int z = (int)(player.posZ + (rand.nextDouble() - 0.5) * range);
@@ -95,9 +95,16 @@ public class EntityFRIEND extends EntityCreature {
 			int topY = worldObj.getTopSolidOrLiquidBlock(x, z);
 
 			int y = topY - (10 + rand.nextInt(20));
-			if(y < 5) y = 5;
+			if (y < 5) y = 5;
 
-			if(placeUnderground(x, y, z)) {
+			// ✅ FIRST: try natural safe spot
+			if (isSafeTeleportSpot(x, y, z)) {
+				this.setPosition(x + 0.5, y, z + 0.5);
+				return true;
+			}
+
+			// ✅ SECOND: fallback → carve space
+			if (placeUnderground(x, y, z)) {
 				return true;
 			}
 		}
@@ -121,18 +128,18 @@ public class EntityFRIEND extends EntityCreature {
 
 	private boolean placeUnderground(int x, int y, int z) {
 
-		if(y <= 1 || y >= worldObj.getHeight() - 2) return false;
+		if (y <= 1 || y >= worldObj.getHeight() - 2) return false;
 
-		// carve space if needed (this is the important fix)
-		if(worldObj.getBlock(x, y, z).isOpaqueCube()) {
+		// must have ground BELOW first
+		if (!worldObj.getBlock(x, y - 1, z).getMaterial().isSolid()) return false;
+
+		// carve space AFTER validation
+		if (!worldObj.isAirBlock(x, y, z)) {
 			worldObj.setBlockToAir(x, y, z);
 		}
-		if(worldObj.getBlock(x, y + 1, z).isOpaqueCube()) {
+		if (!worldObj.isAirBlock(x, y + 1, z)) {
 			worldObj.setBlockToAir(x, y + 1, z);
 		}
-
-		// must have ground below
-		if(!worldObj.getBlock(x, y - 1, z).getMaterial().isSolid()) return false;
 
 		this.setPosition(x + 0.5, y, z + 0.5);
 		return true;
@@ -165,9 +172,16 @@ public class EntityFRIEND extends EntityCreature {
 							double x = this.posX - player.posX;
 							double y = this.posY - player.posY;
 							double z = this.posZ - player.posZ;
-							this.motionX += x * 0.1;
-							this.motionY += y * 0.1;
-							this.motionZ += z * 0.1;
+							//this.motionX += x * 0.1;
+							//this.motionY += y * 0.1;
+							//this.motionZ += z * 0.1;
+
+							//this.getNavigator().clearPathEntity();
+
+							this.motionX = x * 0.1;
+							this.motionY = y * 0.1;
+							this.motionZ = z * 0.1;
+							//do not do that...?
 						}
 						despawnTimer++;
 //
@@ -178,6 +192,8 @@ public class EntityFRIEND extends EntityCreature {
 							if(!players2.isEmpty()) {
 								EntityPlayer target = players2.get(rand.nextInt(players2.size()));
 								teleportUndergroundNearPlayer(target);
+								//reset despawn timer after teleport so it's not going ape shit
+								despawnTimer = 0;
 							}
 						}
 					}
