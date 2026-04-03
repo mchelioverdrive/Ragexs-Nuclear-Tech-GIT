@@ -88,7 +88,7 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 	private void carveTunnel(double dx, double dy, double dz) {
 
-		int steps = 2; // how far ahead to carve
+		int steps = 2;
 
 		for (int i = 0; i <= steps; i++) {
 
@@ -96,15 +96,22 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 			int by = (int)Math.floor(entity.posY + dy * i);
 			int bz = (int)Math.floor(entity.posZ + dz * i);
 
-			// break 2-block tall space
-			for (int yOffset = 0; yOffset < 2; yOffset++) {
+			for (int xOff = -1; xOff <= 1; xOff++) {
+				for (int zOff = -1; zOff <= 1; zOff++) {
+					for (int yOff = 0; yOff < 2; yOff++) {
 
-				Block block = entity.worldObj.getBlock(bx, by + yOffset, bz);
+						int x = bx + xOff;
+						int y = by + yOff;
+						int z = bz + zOff;
 
-				if (block != Blocks.air &&
-					((Block) block).getBlockHardness(entity.worldObj, bx, by + yOffset, bz) >= 0) {
+						Block block = entity.worldObj.getBlock(x, y, z);
 
-					entity.worldObj.func_147480_a(bx, by + yOffset, bz, true);
+						if (block != Blocks.air &&
+							block.getBlockHardness(entity.worldObj, x, y, z) >= 0) {
+
+							entity.worldObj.func_147480_a(x, y, z, true);
+						}
+					}
 				}
 			}
 		}
