@@ -1023,25 +1023,6 @@ public class ModEventHandler {
 			}
 			/// RADIATION STUFF END ///
 
-
-			if(event.phase == Phase.END) {
-				EntityRailCarBase.updateMotion(event.world);
-
-				DebugTeleporter.runQueuedTeleport();
-
-				// Once per second, run atmospheric chemistry
-				if(event.world.getTotalWorldTime() % 20 == 0) {
-					CelestialBody.updateChemistry(event.world);
-				}
-			}
-
-			// Tick our per celestial body timer
-			if(event.phase == Phase.START && event.world.provider instanceof WorldProviderCelestial && event.world.provider.dimensionId != 0) {
-				if(event.world.getGameRules().getGameRuleBooleanValue("doDaylightCycle")) {
-					event.world.provider.setWorldTime(event.world.provider.getWorldTime() + 1L);
-				}
-			}
-
 			// FRIEND spawn logic goes here, once per tick, server-side
 			if(event.phase == Phase.END) {
 				World world = event.world;
@@ -1074,6 +1055,27 @@ public class ModEventHandler {
 					world.spawnEntityInWorld(friend);
 				}
 			}
+
+
+			if(event.phase == Phase.END) {
+				EntityRailCarBase.updateMotion(event.world);
+
+				DebugTeleporter.runQueuedTeleport();
+
+				// Once per second, run atmospheric chemistry
+				if(event.world.getTotalWorldTime() % 20 == 0) {
+					CelestialBody.updateChemistry(event.world);
+				}
+			}
+
+			// Tick our per celestial body timer
+			if(event.phase == Phase.START && event.world.provider instanceof WorldProviderCelestial && event.world.provider.dimensionId != 0) {
+				if(event.world.getGameRules().getGameRuleBooleanValue("doDaylightCycle")) {
+					event.world.provider.setWorldTime(event.world.provider.getWorldTime() + 1L);
+				}
+			}
+
+
 
 		}
 
