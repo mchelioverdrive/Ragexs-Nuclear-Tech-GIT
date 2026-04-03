@@ -38,31 +38,37 @@ public class EntityFRIEND extends EntityCreature {
 
 
 
+//	@Override
+//	public boolean getCanSpawnHere() {
+//
+//		// Only in Laythe (europa)
+//		if (!(this.worldObj.provider instanceof WorldProviderLaythe)) return false;
+//
+//		// Only below Y = 50
+//		if (this.posY >= 50) return false;
+//
+//		// 1% chance
+//		//if (this.rand.nextInt(100) != 0) return false;
+//
+//		// Check for other FRIEND entities
+//		//double range = 64;
+//		//List<EntityFRIEND> friends = this.worldObj.getEntitiesWithinAABB(
+//		//	EntityFRIEND.class,
+//		//	this.boundingBox.expand(range, range, range)
+//		//);
+////
+//		//for (EntityFRIEND f : friends) {
+//		//	if (f != this) return false;
+//		//}
+//		//done in ntmworldgenerator
+//
+//		return super.getCanSpawnHere();
+//	}
+
+	//temp
 	@Override
 	public boolean getCanSpawnHere() {
-
-		// Only in Laythe (europa)
-		if (!(this.worldObj.provider instanceof WorldProviderLaythe)) return false;
-
-		// Only below Y = 50
-		if (this.posY >= 50) return false;
-
-		// 1% chance
-		//if (this.rand.nextInt(100) != 0) return false;
-
-		// Check for other FRIEND entities
-		//double range = 64;
-		//List<EntityFRIEND> friends = this.worldObj.getEntitiesWithinAABB(
-		//	EntityFRIEND.class,
-		//	this.boundingBox.expand(range, range, range)
-		//);
-//
-		//for (EntityFRIEND f : friends) {
-		//	if (f != this) return false;
-		//}
-		//done in ntmworldgenerator
-
-		return super.getCanSpawnHere();
+		return true;
 	}
 
 	@Override

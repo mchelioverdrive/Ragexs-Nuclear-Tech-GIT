@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+import com.hbm.dim.laythe.WorldProviderLaythe;
+import com.hbm.entity.mob.EntityFRIEND;
 import com.hbm.items.food.ItemConserve;
 import com.hbm.world.generator.DungeonToolbox;
 import net.minecraft.stats.Achievement;
@@ -794,6 +796,46 @@ public class ModEventHandler {
 	public static boolean didSit = false;
 	public static Field reference = null;
 
+//	@SubscribeEvent
+//	public void onWorldTick(TickEvent.WorldTickEvent event) {
+//		if (event.phase != TickEvent.Phase.END) return;
+//
+//		World world = event.world;
+//
+//		System.out.println("Tick: " + world.provider.getClass().getName());
+//
+//		if (world.isRemote) return;
+//		if (!(world.provider instanceof WorldProviderLaythe)) return;
+//
+//		//if (world.rand.nextInt(2000) != 0) return;
+//		// 1 in 2000 chance every tick, which is about 1 in 100 every second + the 1% chance in getCanSpawnHere
+//		// Might tweak it, but this should also have a trigger condition that the player chooses to activate,
+//		//like breaking a specific block or something to make it a deliberate choice encounter (like wither)
+//
+//		for (Object obj : world.loadedEntityList) {
+//			if (obj instanceof EntityFRIEND) return;
+//		}
+//
+//		if (world.playerEntities.isEmpty()) return;
+//		EntityPlayer player = (EntityPlayer) world.playerEntities.get(
+//			world.rand.nextInt(world.playerEntities.size())
+//		);
+//
+//		EntityFRIEND friend = new EntityFRIEND(world);
+//
+//		int x = MathHelper.floor_double(player.posX + (world.rand.nextDouble() - 0.5) * 50);
+//		int z = MathHelper.floor_double(player.posZ + (world.rand.nextDouble() - 0.5) * 50);
+//		int y = world.getTopSolidOrLiquidBlock(x, z) - (10 + world.rand.nextInt(20));
+//
+//		if (y < 5) y = 5;
+//
+//		friend.setPosition(x + 0.5, y, z + 0.5);
+//
+//		if (friend.getCanSpawnHere()) {
+//			world.spawnEntityInWorld(friend);
+//		}
+//	}
+
 
 
 	@SubscribeEvent
@@ -997,6 +1039,39 @@ public class ModEventHandler {
 			if(event.phase == Phase.START && event.world.provider instanceof WorldProviderCelestial && event.world.provider.dimensionId != 0) {
 				if(event.world.getGameRules().getGameRuleBooleanValue("doDaylightCycle")) {
 					event.world.provider.setWorldTime(event.world.provider.getWorldTime() + 1L);
+				}
+			}
+
+			// FRIEND spawn logic goes here, once per tick, server-side
+			if(event.phase == Phase.END) {
+				World world = event.world;
+
+				// use whichever check is actually reliable in your setup
+				if(!(world.provider instanceof WorldProviderLaythe)) return;
+
+				//if (world.rand.nextInt(2000) != 0) return;
+				// 1 in 2000 chance every tick, which is about 1 in 100 every second + the 1% chance in getCanSpawnHere
+				// Might tweak it, but this should also have a trigger condition that the player chooses to activate,
+				//like breaking a specific block or something to make it a deliberate choice encounter (like wither)
+
+				for(Object obj : world.loadedEntityList) {
+					if(obj instanceof EntityFRIEND) return;
+				}
+
+				if(world.playerEntities.isEmpty()) return;
+				EntityPlayer player = (EntityPlayer) world.playerEntities.get(world.rand.nextInt(world.playerEntities.size()));
+
+				EntityFRIEND friend = new EntityFRIEND(world);
+
+				int x = MathHelper.floor_double(player.posX + (world.rand.nextDouble() - 0.5) * 50);
+				int z = MathHelper.floor_double(player.posZ + (world.rand.nextDouble() - 0.5) * 50);
+				int y = world.getTopSolidOrLiquidBlock(x, z) - (10 + world.rand.nextInt(20));
+				if(y < 5) y = 5;
+
+				friend.setPosition(x + 0.5, y, z + 0.5);
+
+				if(friend.getCanSpawnHere()) {
+					world.spawnEntityInWorld(friend);
 				}
 			}
 
