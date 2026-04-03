@@ -41,24 +41,26 @@ public class EntityFRIEND extends EntityCreature {
 	@Override
 	public boolean getCanSpawnHere() {
 
-		//todo spawn conditions, spawn should happen once per trigger event
-		// (eventually have a trigger event item or block when mined that will allow this to run,
-		// once spawned and target acquired it should not spawn again unless the trigger is met again,
-		// only one friend should spawn at a time.)
+		// Only in Laythe (europa)
+		if (!(this.worldObj.provider instanceof WorldProviderLaythe)) return false;
 
 		// Only below Y = 50
-		if (this.posY >= 50 && this.worldObj.provider instanceof WorldProviderLaythe ) {
+		if (this.posY >= 50) return false;
 
-			for (Object obj : this.worldObj.loadedEntityList) {
-				if (obj instanceof EntityFRIEND) {
-					return false;
-				}
-			}
+		// 1% chance
+		if (this.rand.nextInt(100) != 0) return false;
 
-			if (this.rand.nextInt(100) != 0) return false; // 1%
-			return false;
-
-		}
+		// Check for other FRIEND entities
+		//double range = 64;
+		//List<EntityFRIEND> friends = this.worldObj.getEntitiesWithinAABB(
+		//	EntityFRIEND.class,
+		//	this.boundingBox.expand(range, range, range)
+		//);
+//
+		//for (EntityFRIEND f : friends) {
+		//	if (f != this) return false;
+		//}
+		//done in ntmworldgenerator
 
 		return super.getCanSpawnHere();
 	}

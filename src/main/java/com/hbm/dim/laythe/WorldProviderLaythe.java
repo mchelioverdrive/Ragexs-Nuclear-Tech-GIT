@@ -9,11 +9,15 @@ import com.hbm.dim.laythe.GenLayerLaythe.GenLayerLaytheIslands;
 import com.hbm.dim.laythe.GenLayerLaythe.GenLayerLaytheOceans;
 import com.hbm.dim.laythe.GenLayerLaythe.GenLayerLaythePolar;
 
+import com.hbm.entity.mob.EntityFRIEND;
 import com.hbm.potion.HbmPotion;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.TickEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.potion.PotionEffect;
+import net.minecraft.world.World;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.layer.GenLayer;
 import net.minecraft.world.gen.layer.GenLayerFuzzyZoom;

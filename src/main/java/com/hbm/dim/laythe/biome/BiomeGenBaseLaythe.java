@@ -29,7 +29,7 @@ public abstract class BiomeGenBaseLaythe extends BiomeGenBaseCelestial {
 		this.waterColorMultiplier = 0x5b009a;
 
         //this.waterCreatures.add(new BiomeGenBase.SpawnListEntry(EntityScutterfish.class, 3, 1, 4));
-		this.monsters.add(new BiomeGenBase.SpawnListEntry(EntityFRIEND.class, 1, 1, 1));
+		//this.monsters.add(new BiomeGenBase.SpawnListEntry(EntityFRIEND.class, 1, 1, 1));
 		//todo debug, if this works decrease to 3 scratch that 1
 
 		//annoying

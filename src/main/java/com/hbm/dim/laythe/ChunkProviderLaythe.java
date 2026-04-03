@@ -64,6 +64,29 @@ public class ChunkProviderLaythe extends ChunkProviderCelestial {
 		if(creatureType == EnumCreatureType.monster && worldObj.getBlock(x, y - 1, z) == ModBlocks.tumor)
 			return spawnedOfFlesh;
 
+		//world, player, EntityFRIEND, setPosition, and getCanSpawnHere are NOT defined in this class. Define them or fix this.
+		//if (!world.isRemote) {
+		//	if (world.rand.nextInt(5000) == 0) { // rare event
+//
+		//		// check if one already exists
+		//		for (Object obj : world.loadedEntityList) {
+		//			if (obj instanceof EntityFRIEND) return;
+		//		}
+//
+		//		EntityFRIEND friend = new EntityFRIEND(world);
+//
+		//		double x = player.posX + (rand.nextDouble() - 0.5) * 50;
+		//		double y = player.posY;
+		//		double z = player.posZ + (rand.nextDouble() - 0.5) * 50;
+//
+		//		friend.setPosition(x, y, z);
+//
+		//		if (friend.getCanSpawnHere()) {
+		//			world.spawnEntityInWorld(friend);
+		//		}
+		//	}
+		//}
+
 		return super.getPossibleCreatures(creatureType, x, y, z);
 	}
 

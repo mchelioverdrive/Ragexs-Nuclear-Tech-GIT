@@ -14,7 +14,7 @@ import net.minecraft.world.World;
 /**
  * Copy-pasted shit from the squid class
  * Mojang-certified
- * 
+ *
  * @author hbm
  */
 public class EntityPlasticBag extends EntityWaterMob {
@@ -35,15 +35,15 @@ public class EntityPlasticBag extends EntityWaterMob {
 
 	@Override
 	public boolean attackEntityFrom(DamageSource source, float amount) {
-		
+
 		if(!worldObj.isRemote) {
 			this.setDead();
 			this.dropItem(ModItems.plastic_bag, 1);
 		}
-		
+
 		return true;
 	}
-	
+
 	@Override
 	public EntityItem entityDropItem(ItemStack stack, float offset) {
 		if(stack.stackSize != 0 && stack.getItem() != null) {
@@ -153,8 +153,8 @@ public class EntityPlasticBag extends EntityWaterMob {
 		this.despawnEntity();
 	}
 
-	@Override
-	public boolean getCanSpawnHere() {
-		return this.posY > 45.0D && this.posY < 63.0D && this.getRNG().nextInt(10) == 0 && super.getCanSpawnHere();
-	}
+	//@Override
+	//public boolean getCanSpawnHere() {
+	//	return this.posY > 45.0D && this.posY < 63.0D && this.getRNG().nextInt(10) == 0 && super.getCanSpawnHere();
+	//}
 }
