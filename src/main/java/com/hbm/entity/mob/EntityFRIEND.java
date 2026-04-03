@@ -41,10 +41,21 @@ public class EntityFRIEND extends EntityCreature {
 	@Override
 	public boolean getCanSpawnHere() {
 
-		// Only below Y = 50
-		if (this.posY >= 50 && this.worldObj.provider instanceof WorldProviderLaythe) {
+		//todo spawn conditions, spawn should happen once per trigger event
+		// (eventually have a trigger event item or block when mined that will allow this to run,
+		// once spawned and target acquired it should not spawn again unless the trigger is met again,
+		// only one friend should spawn at a time.)
 
-			if (this.rand.nextInt(10) != 0) return false; // 10%
+		// Only below Y = 50
+		if (this.posY >= 50 && this.worldObj.provider instanceof WorldProviderLaythe ) {
+
+			for (Object obj : this.worldObj.loadedEntityList) {
+				if (obj instanceof EntityFRIEND) {
+					return false;
+				}
+			}
+
+			if (this.rand.nextInt(100) != 0) return false; // 1%
 			return false;
 
 		}
@@ -78,7 +89,8 @@ public class EntityFRIEND extends EntityCreature {
 					timer++;
 				if (timer > 3) {
 					if (this.rand.nextBoolean()) {
-						this.setDead();
+						//teleport away into a safe place, where the player cannot find.
+						this.setPosition(this.posX + (rand.nextDouble() - 0.5) * 100, this.posY + (rand.nextDouble() - 0.5) * 100, this.posZ + (rand.nextDouble() - 0.5) * 100);
 					} else {
 						//runaway
 						double runawayRange = 20;
@@ -94,7 +106,10 @@ public class EntityFRIEND extends EntityCreature {
 						despawnTimer++;
 //
 						if (despawnTimer >= 5 * 20) { // 5 seconds
-							this.setDead();
+							//this.setDead();
+							//teleport away into a safe place, where the player cannot find.
+							//this.setPosition(this.posX + (rand.nextDouble() - 0.5) * 50, this.posY + (rand.nextDouble() - 0.5) * 50, this.posZ + (rand.nextDouble() - 0.5) * 50);
+							this.setPosition(this.posX + (rand.nextDouble() - 0.5) * 100, this.posY + (rand.nextDouble() - 0.5) * 100, this.posZ + (rand.nextDouble() - 0.5) * 100);
 						}
 					}
 				}
