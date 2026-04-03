@@ -145,10 +145,33 @@ public class EntityFRIEND extends EntityCreature {
 		return true;
 	}
 
+	private boolean digMode = true;
+	private int modeCooldown = 0;
+
+	private EntityPlayer getClosestPlayer(double range) {
+		List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(
+			EntityPlayer.class,
+			this.boundingBox.expand(range, range, range)
+		);
+
+		EntityPlayer closest = null;
+		double closestDist = Double.MAX_VALUE;
+
+		for (EntityPlayer player : players) {
+			double dist = this.getDistanceSqToEntity(player);
+			if (dist < closestDist) {
+				closestDist = dist;
+				closest = player;
+			}
+		}
+
+		return closest;
+	}
+
 	@Override
 	public void onUpdate() {
 		super.onUpdate();
-		if(!worldObj.isRemote) {
+		if (!worldObj.isRemote) {
 			//the wholesome
 //
 			if (this.rand.nextBoolean()) {
@@ -160,28 +183,43 @@ public class EntityFRIEND extends EntityCreature {
 				if (timer > 3) {
 					if (this.rand.nextBoolean()) {
 						//teleport away into a safe place, where the player cannot find.
-						if(!players.isEmpty()) {
+						if (!players.isEmpty()) {
 							EntityPlayer target = players.get(0);
 							teleportUndergroundNearPlayer(target);
 						}
 					} else {
 						//runaway
 						double runawayRange = 20;
-						List<EntityPlayer> players2 = worldObj.getEntitiesWithinAABB(EntityPlayer.class, this.boundingBox.expand(runawayRange, runawayRange, runawayRange));
-						for (EntityPlayer player : players2) {
-							double x = this.posX - player.posX;
-							double y = this.posY - player.posY;
-							double z = this.posZ - player.posZ;
-							//this.motionX += x * 0.1;
-							//this.motionY += y * 0.1;
-							//this.motionZ += z * 0.1;
+						List<EntityPlayer> players2 = worldObj.getEntitiesWithinAABB(
+							EntityPlayer.class,
+							this.boundingBox.expand(runawayRange, runawayRange, runawayRange)
+						);
 
-							//this.getNavigator().clearPathEntity();
+						if (!players2.isEmpty()) {
 
-							this.motionX = x * 0.1;
-							this.motionY = y * 0.1;
-							this.motionZ = z * 0.1;
-							//do not do that...?
+							EntityPlayer player = players2.get(0);
+
+							// direction away from player
+							double dx = this.posX - player.posX;
+							double dy = this.posY - player.posY;
+							double dz = this.posZ - player.posZ;
+
+							double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+							if (dist > 0) {
+								dx /= dist;
+								dy /= dist;
+								dz /= dist;
+							}
+
+							// ✅ DO NOT clear navigator every tick
+							// only redirect movement occasionally
+							if (this.getNavigator().noPath()) {
+								double targetX = this.posX + dx * 10;
+								double targetY = this.posY + dy * 5;
+								double targetZ = this.posZ + dz * 10;
+
+								this.getNavigator().tryMoveToXYZ(targetX, targetY, targetZ, 1.0D);
+							}
 						}
 						despawnTimer++;
 //
@@ -189,7 +227,7 @@ public class EntityFRIEND extends EntityCreature {
 							//this.setDead();
 							//teleport away into a safe place, where the player cannot find.
 							//this.setPosition(this.posX + (rand.nextDouble() - 0.5) * 50, this.posY + (rand.nextDouble() - 0.5) * 50, this.posZ + (rand.nextDouble() - 0.5) * 50);
-							if(!players2.isEmpty()) {
+							if (!players2.isEmpty()) {
 								EntityPlayer target = players2.get(rand.nextInt(players2.size()));
 								teleportUndergroundNearPlayer(target);
 								//reset despawn timer after teleport so it's not going ape shit
@@ -210,9 +248,27 @@ public class EntityFRIEND extends EntityCreature {
 					this.motionX = x * 0.1;
 					this.motionY = y * 0.1;
 					this.motionZ = z * 0.1;
-				}
-				//attack player, then teleportUndergroundNearPlayer(player);
+					this.getLookHelper().setLookPosition(player.posX, player.posY + player.getEyeHeight(), player.posZ, 10.0F, 40.0F);
+					//if the player is not looking at the entity, then attack them and teleport underground near them
+					double lookRange = 10;
+					double dx = player.posX - this.posX;
+					double dy = (player.posY + player.getEyeHeight()) - (this.posY + this.height / 2);
+					double dz = player.posZ - this.posZ;
+					double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+					if (dist < lookRange) {
+						double lookX = player.getLookVec().xCoord;
+						double lookY = player.getLookVec().yCoord;
+						double lookZ = player.getLookVec().zCoord;
+						double dot = (dx * lookX + dy * lookY + dz * lookZ) / dist; // cosine of angle between player look and direction to entity
+						if (dot < 0.5) { // if player is not looking at entity (less than ~60 degrees)
+							//attack player, then teleportUndergroundNearPlayer(player);
+							this.attackEntityAsMob(player);
+							teleportUndergroundNearPlayer(player);
+						}
+					}
+					//attack player, then teleportUndergroundNearPlayer(player);
 
+				}
 			}
 		}
 	}
