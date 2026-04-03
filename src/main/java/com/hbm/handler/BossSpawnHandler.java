@@ -6,9 +6,11 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.config.GeneralConfig;
 import com.hbm.config.MobConfig;
 import com.hbm.config.WorldConfig;
+import com.hbm.dim.laythe.WorldProviderLaythe;
 import com.hbm.entity.mob.EntityFBI;
 import com.hbm.entity.mob.EntityFBIDrone;
 //import com.hbm.entity.mob.EntityGhost;
+import com.hbm.entity.mob.EntityFRIEND;
 import com.hbm.saveddata.TomSaveData;
 //import com.hbm.entity.mob.EntityMaskMan;
 //import com.hbm.entity.mob.EntityRADBeast;
@@ -26,10 +28,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.stats.StatBase;
 import net.minecraft.stats.StatList;
-import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.ChatStyle;
-import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.Vec3;
+import net.minecraft.util.*;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProviderEnd;
 import net.minecraft.world.WorldProviderHell;
@@ -44,6 +43,8 @@ public class BossSpawnHandler {
 
 		TomSaveData data = TomSaveData.forWorld(world);
 
+		// === YOUR FRIEND SPAWN ===
+//
 		/*
 		 * Spawns every 3 hours with a 33% chance if
 		 * - the player is 3 blocks below the surface
