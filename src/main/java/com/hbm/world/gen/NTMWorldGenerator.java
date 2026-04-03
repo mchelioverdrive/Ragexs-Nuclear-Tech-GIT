@@ -146,7 +146,7 @@ public class NTMWorldGenerator implements IWorldGenerator {
 		if (world.isRemote) return;
 		if (!(world.provider instanceof WorldProviderLaythe)) return;
 
-		if (world.rand.nextInt(2000) != 0) return;
+		//if (world.rand.nextInt(2000) != 0) return;
 		// 1 in 2000 chance every tick, which is about 1 in 100 every second + the 1% chance in getCanSpawnHere
 		// Might tweak it, but this should also have a trigger condition that the player chooses to activate,
 		//like breaking a specific block or something to make it a deliberate choice encounter (like wither)

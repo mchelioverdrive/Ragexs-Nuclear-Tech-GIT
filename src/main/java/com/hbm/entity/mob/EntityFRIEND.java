@@ -48,7 +48,7 @@ public class EntityFRIEND extends EntityCreature {
 		if (this.posY >= 50) return false;
 
 		// 1% chance
-		if (this.rand.nextInt(100) != 0) return false;
+		//if (this.rand.nextInt(100) != 0) return false;
 
 		// Check for other FRIEND entities
 		//double range = 64;
