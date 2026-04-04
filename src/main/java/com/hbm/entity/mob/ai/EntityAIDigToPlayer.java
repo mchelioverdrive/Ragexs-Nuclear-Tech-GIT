@@ -59,14 +59,18 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 		// This is the actual "weeping angel" check:
 		// freeze when the PLAYER can see the entity.
-		boolean watched = target.canEntityBeSeen(entity);
+		boolean hasLOS = target.canEntityBeSeen(entity);
+		boolean looking = isPlayerLookingAtEntity(target);
+
+		// ONLY freeze if BOTH are true
+		boolean watched = hasLOS && looking;
 
 		double distSq = entity.getDistanceSqToEntity(target);
 		applyEffects(target, distSq);
 
 		// Freeze when watched
 		if (watched) {
-			entity.getNavigator().clearPathEntity();
+			//entity.getNavigator().clearPathEntity();
 
 			entity.motionX = 0;
 			entity.motionZ = 0;
