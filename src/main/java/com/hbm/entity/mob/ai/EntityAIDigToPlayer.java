@@ -45,6 +45,8 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 			&& entity.getDistanceSqToEntity(target) <= range * range;
 	}
 
+	private int teleportCooldown = 0;
+
 	@Override
 	public void updateTask() {
 
@@ -98,6 +100,10 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		if (distSq < 4.0D) {
 
 			if (!playerLooking) {
+
+				// 20 percent chance to teleport
+				
+
 
 				if (attackCooldown > 0) attackCooldown--;
 

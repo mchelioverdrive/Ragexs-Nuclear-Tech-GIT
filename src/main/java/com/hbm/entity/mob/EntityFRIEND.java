@@ -58,9 +58,22 @@ public class EntityFRIEND extends EntityCreature {
 //		return super.getCanSpawnHere();
 //	}
 
+	// ✅ LIMIT TO ONE ENTITY NEARBY
 	@Override
 	public boolean getCanSpawnHere() {
-		return true;
+
+		double range = 64;
+
+		List<EntityFRIEND> list = this.worldObj.getEntitiesWithinAABB(
+			EntityFRIEND.class,
+			this.boundingBox.expand(range, range, range)
+		);
+
+		for (EntityFRIEND e : list) {
+			if (e != this) return false;
+		}
+
+		return super.getCanSpawnHere();
 	}
 
 	@Override
@@ -75,16 +88,32 @@ public class EntityFRIEND extends EntityCreature {
 		return true;
 	}
 
-	// ❌ IMPORTANT: do NOTHING here anymore
+	private int teleportCooldown = 0;
+
 	@Override
 	public void onUpdate() {
 		super.onUpdate();
+		if (teleportCooldown > 0) teleportCooldown--;
 	}
 
-	// ✅ FORCE DAMAGE (fixes “no damage” issue in 1.7 sometimes)
+	// ✅ REAL DAMAGE
 	@Override
 	public boolean attackEntityAsMob(Entity entity) {
-		return entity.attackEntityFrom(DamageSource.causeMobDamage(this), 6.0F);
+
+		boolean hit = entity.attackEntityFrom(DamageSource.causeMobDamage(this), 6.0F);
+
+		if (hit && entity instanceof EntityPlayer) {
+
+			EntityPlayer player = (EntityPlayer) entity;
+
+			// teleport after landing hit
+			if (!this.worldObj.isRemote && teleportCooldown <= 0) {
+				this.teleportUndergroundNearPlayer(player);
+				teleportCooldown = 40; // 2 seconds
+			}
+		}
+
+		return hit;
 	}
 
 	public boolean teleportUndergroundNearPlayer(EntityPlayer player) {
@@ -131,21 +160,14 @@ public class EntityFRIEND extends EntityCreature {
 
 		if (!worldObj.getBlock(x, y - 1, z).getMaterial().isSolid()) return false;
 
-		if (!worldObj.isAirBlock(x, y, z)) {
-			worldObj.setBlockToAir(x, y, z);
-		}
-		if (!worldObj.isAirBlock(x, y + 1, z)) {
-			worldObj.setBlockToAir(x, y + 1, z);
-		}
+		worldObj.setBlockToAir(x, y, z);
+		worldObj.setBlockToAir(x, y + 1, z);
 
 		this.setPosition(x + 0.5, y, z + 0.5);
 		return true;
 	}
 
-	@Override
-	public void setHealth(float health) {
-		super.setHealth(50);
-	}
+
 
 	@Override
 	public boolean isEntityInvulnerable() {
