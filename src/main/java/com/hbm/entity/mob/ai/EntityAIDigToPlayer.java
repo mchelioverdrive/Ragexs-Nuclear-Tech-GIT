@@ -65,12 +65,14 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		if (hasLOS && playerLooking) {
 			entity.getNavigator().clearPathEntity();
 			entity.motionX = 0;
-			entity.motionY = 0;
+			//entity.motionY = 0;
+			//don't do that, it causes weird vertical stuttering when the player looks away and it tries to move again
 			entity.motionZ = 0;
+			teleportCooldown--;
 			return;
 		}
 
-		if (!playerLooking) {
+		if (!playerLooking && entity.getRNG().nextInt(5) == 0) {
 			//no line of sight or player not looking - DIG and TELEPORT
 			EntityPlayer player = (EntityPlayer) target;
 
