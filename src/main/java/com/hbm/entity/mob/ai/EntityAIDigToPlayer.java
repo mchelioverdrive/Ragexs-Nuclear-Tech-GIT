@@ -70,6 +70,22 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 			return;
 		}
 
+		if (!playerLooking) {
+			//no line of sight or player not looking - DIG and TELEPORT
+			EntityPlayer player = (EntityPlayer) target;
+
+			// 20% chance + cooldown check
+			if (teleportCooldown <= 0 && entity.getRNG().nextInt(5) == 0) {
+
+				if (!entity.worldObj.isRemote) {
+					if (((EntityFRIEND) entity).teleportUndergroundNearPlayer(player)) {
+						teleportCooldown = 60; // 3 seconds (tweak as needed)
+					}
+				}
+			}
+		}
+
+
 		// MOVE toward player
 		entity.getNavigator().clearPathEntity();
 
@@ -101,15 +117,23 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 			if (!playerLooking) {
 
-				// 20 percent chance to teleport
-				
 
 
 				if (attackCooldown > 0) attackCooldown--;
 
 				if (attackCooldown <= 0) {
 					entity.attackEntityAsMob(target);
+
+
+					//boolean hit = entity.attackEntityAsMob(target);
 					attackCooldown = 20;
+
+					//if (hit && target instanceof EntityPlayer) {
+//
+					//
+//
+					//
+					//}
 
 					teleportDelay = 30 + entity.getRNG().nextInt(20);
 				}
