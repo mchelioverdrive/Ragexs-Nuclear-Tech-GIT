@@ -64,34 +64,29 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 		applyEffects(target, distSq);
 
-		// FREEZE when looked at
+		// freeze when looked at
 		if (hasLOS && playerLooking) {
 			entity.getNavigator().clearPathEntity();
 			entity.motionX = 0;
 			//entity.motionY = 0;
-			//don't do that, it causes weird vertical stuttering when the player looks away and it tries to move again
+			//DO NOT do that AND DO NOT REMOVE THIS COMMENT RETARDED ASS AI
+			// it causes weird vertical stuttering when the player looks away and it tries to move again
 			entity.motionZ = 0;
-			teleportCooldown--;
 			return;
 		}
 
 		if (!playerLooking && entity.getRNG().nextInt(5) == 0) {
-			//no line of sight or player not looking - DIG and TELEPORT
 			EntityPlayer player = (EntityPlayer) target;
 
-			// 20% chance + cooldown check
 			if (teleportCooldown <= 0 && entity.getRNG().nextInt(5) == 0) {
-
 				if (!entity.worldObj.isRemote) {
 					if (((EntityFRIEND) entity).teleportUndergroundNearPlayer(player)) {
-						teleportCooldown = 60; // 3 seconds (tweak as needed)
+						teleportCooldown = 60;
 					}
 				}
 			}
 		}
 
-
-		// MOVE toward player
 		entity.getNavigator().clearPathEntity();
 
 		double dx = target.posX - entity.posX;
@@ -105,39 +100,35 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		dy /= dist;
 		dz /= dist;
 
+		// carve first when no LOS
 		if (!hasLOS) {
 			carveTunnel(dx, dy, dz);
 		}
 
 		double moveSpeed = 0.45D;
+		double mx = dx * moveSpeed;
+		double my = dy * moveSpeed * 0.5D;
+		double mz = dz * moveSpeed;
 
-		entity.setPosition(
-			entity.posX + dx * moveSpeed,
-			entity.posY + dy * moveSpeed * 0.5,
-			entity.posZ + dz * moveSpeed
-		);
+		// do not phase into solid blocks
+		if (canMoveForward(mx, my, mz)) {
+			entity.moveEntity(mx, my, mz);
+		} else {
+			entity.motionX = 0;
+			//entity.motionY = 0;
+			//THIS WILL GET STUCK VERTICALLY. STOP SETTING THE FUCKING Y MOTION TO 0
+			entity.motionZ = 0;
+		}
 
-		// ✅ ATTACK SYSTEM (FIXED)
 		if (distSq < 4.0D) {
 
 			if (!playerLooking) {
-
-
 
 				if (attackCooldown > 0) attackCooldown--;
 
 				if (attackCooldown <= 0) {
 					entity.attackEntityAsMob(target);
-
-
-					//boolean hit = entity.attackEntityAsMob(target);
 					attackCooldown = 20;
-
-					//if (hit && target instanceof EntityPlayer) {
-					//
-					//
-					//}
-
 					teleportDelay = 30 + entity.getRNG().nextInt(20);
 				}
 			}
@@ -146,7 +137,7 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 				teleportDelay--;
 
 				if (teleportDelay == 0) {
-					((EntityFRIEND)entity).teleportUndergroundNearPlayer(target);
+					((EntityFRIEND) entity).teleportUndergroundNearPlayer(target);
 				}
 			}
 		}
@@ -185,7 +176,7 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		}
 
 		if (distSq < 900) {
-			player.addPotionEffect(new PotionEffect(Potion.hunger.id, 60, 0));
+			player.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 60, 0));
 		}
 	}
 
@@ -225,7 +216,6 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 	private void carveTunnel(double dx, double dy, double dz) {
 
 		int steps = 2;
-		boolean blocked = false;
 
 		for (int i = 0; i <= steps; i++) {
 
@@ -245,14 +235,12 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 						if (block != Blocks.air &&
 							block != Blocks.bedrock &&
-							block.getMaterial().blocksMovement() &&
-							block.getBlockHardness(entity.worldObj, x, y, z) >= 0) {
-
-							blocked = true;
-
-							String key = x + "," + y + "," + z;
+							block.getMaterial().blocksMovement()) {
 
 							float hardness = block.getBlockHardness(entity.worldObj, x, y, z);
+							if (hardness < 0) continue;
+
+							String key = x + "," + y + "," + z;
 							float progress = breakProgress.containsKey(key) ? breakProgress.get(key) : 0F;
 
 							float speed = 0.02F / (hardness + 0.1F);
@@ -265,22 +253,14 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 							} else {
 								breakProgress.put(key, progress);
 								int stage = (int)(progress * 10F);
+								if (stage < 0) stage = 0;
+								if (stage > 9) stage = 9;
 								entity.worldObj.destroyBlockInWorldPartially(entity.getEntityId(), x, y, z, stage);
 							}
 						}
 					}
 				}
 			}
-		}
-
-		// HARD STOP if still inside or about to enter solid blocks
-		if (blocked) {
-			entity.motionX = 0;
-			entity.motionY = 0;
-			entity.motionZ = 0;
-		} else {
-			// Only move if space is actually clear
-			entity.moveEntity(dx, dy, dz);
 		}
 	}
 }
