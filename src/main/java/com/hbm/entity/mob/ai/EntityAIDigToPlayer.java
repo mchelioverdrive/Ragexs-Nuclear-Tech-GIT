@@ -219,12 +219,13 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		return true; // clear
 	}
 
+	//todo cooldown on this and/or limit how many blocks it can break per second
+	//also maybe add some randomness to the tunnel shape instead of a straight line?
+
 	private void carveTunnel(double dx, double dy, double dz) {
 
-		//todo cooldown on this and/or limit how many blocks it can break per second
-		//also maybe add some randomness to the tunnel shape instead of a straight line?
-
 		int steps = 2;
+		boolean blocked = false;
 
 		for (int i = 0; i <= steps; i++) {
 
@@ -242,31 +243,27 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 						Block block = entity.worldObj.getBlock(x, y, z);
 
-						// FIXED condition
 						if (block != Blocks.air &&
 							block != Blocks.bedrock &&
+							block.getMaterial().blocksMovement() &&
 							block.getBlockHardness(entity.worldObj, x, y, z) >= 0) {
+
+							blocked = true;
 
 							String key = x + "," + y + "," + z;
 
 							float hardness = block.getBlockHardness(entity.worldObj, x, y, z);
 							float progress = breakProgress.containsKey(key) ? breakProgress.get(key) : 0F;
 
-							// Dig speed (tune this)
 							float speed = 0.02F / (hardness + 0.1F);
-
 							progress += speed;
 
 							if (progress >= 1.0F) {
 								entity.worldObj.func_147480_a(x, y, z, true);
 								breakProgress.remove(key);
-
-								// Clear crack animation
 								entity.worldObj.destroyBlockInWorldPartially(entity.getEntityId(), x, y, z, -1);
 							} else {
 								breakProgress.put(key, progress);
-
-								// Crack animation (0–9)
 								int stage = (int)(progress * 10F);
 								entity.worldObj.destroyBlockInWorldPartially(entity.getEntityId(), x, y, z, stage);
 							}
@@ -274,6 +271,16 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 					}
 				}
 			}
+		}
+
+		// HARD STOP if still inside or about to enter solid blocks
+		if (blocked) {
+			entity.motionX = 0;
+			entity.motionY = 0;
+			entity.motionZ = 0;
+		} else {
+			// Only move if space is actually clear
+			entity.moveEntity(dx, dy, dz);
 		}
 	}
 }
