@@ -59,6 +59,7 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 		boolean hasLOS = entity.canEntityBeSeen(target);
 		boolean playerLooking = isPlayerLookingAtEntity(target);
+		//boolean playerLooking = target.canEntityBeSeen(entity);
 
 		double distSq = entity.getDistanceSqToEntity(target);
 
@@ -66,12 +67,24 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 		// freeze when looked at
 		if (hasLOS && playerLooking) {
+
+			// completely stop AI movement
 			entity.getNavigator().clearPathEntity();
+
+			// HARD freeze horizontal movement
 			entity.motionX = 0;
-			//entity.motionY = 0;
-			//DO NOT do that AND DO NOT REMOVE THIS COMMENT RETARDED ASS AI
-			// it causes weird vertical stuttering when the player looks away and it tries to move again
 			entity.motionZ = 0;
+
+			// let gravity handle Y (fall naturally)
+			if (!entity.onGround) {
+				entity.motionY -= 0.08D; // vanilla gravity
+			} else {
+				entity.motionY = 0;
+			}
+
+			// also kill any leftover velocity properly
+			entity.setVelocity(0, entity.motionY, 0);
+
 			return;
 		}
 
@@ -100,7 +113,7 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		dy /= dist;
 		dz /= dist;
 
-		// carve first when no LOS
+		// carve only when we do not have direct sight
 		if (!hasLOS) {
 			carveTunnel(dx, dy, dz);
 		}
@@ -110,16 +123,13 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		double my = dy * moveSpeed * 0.5D;
 		double mz = dz * moveSpeed;
 
-		// do not phase into solid blocks
-		if (canMoveForward(mx, my, mz) && !hasLOS) {
+		// move whenever the space is actually clear
+		if (canMoveForward(mx, my, mz)) {
 			entity.moveEntity(mx, my, mz);
 		} else {
-			if (!hasLOS) {
-				entity.motionX = 0;
-				//entity.motionY = 0;
-				//THIS WILL GET STUCK VERTICALLY. STOP SETTING THE FUCKING Y MOTION TO 0
-				entity.motionZ = 0;
-			}
+			entity.motionX = 0;
+			entity.motionZ = 0;
+			// do NOT zero Y here
 		}
 
 		if (distSq < 4.0D) {
