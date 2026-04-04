@@ -9,6 +9,9 @@ import net.minecraft.init.Blocks;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class EntityAIDigToPlayer extends EntityAIBase {
 
 	private final EntityCreature entity;
@@ -131,9 +134,7 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 					attackCooldown = 20;
 
 					//if (hit && target instanceof EntityPlayer) {
-//
 					//
-//
 					//
 					//}
 
@@ -188,6 +189,8 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		}
 	}
 
+	private final Map<String, Float> breakProgress = new HashMap<>();
+
 	private void carveTunnel(double dx, double dy, double dz) {
 
 		int steps = 2;
@@ -208,10 +211,34 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 						Block block = entity.worldObj.getBlock(x, y, z);
 
+						// FIXED condition
 						if (block != Blocks.air &&
+							block != Blocks.bedrock &&
 							block.getBlockHardness(entity.worldObj, x, y, z) >= 0) {
 
-							entity.worldObj.func_147480_a(x, y, z, true);
+							String key = x + "," + y + "," + z;
+
+							float hardness = block.getBlockHardness(entity.worldObj, x, y, z);
+							float progress = breakProgress.containsKey(key) ? breakProgress.get(key) : 0F;
+
+							// Dig speed (tune this)
+							float speed = 0.2F / (hardness + 0.1F);
+
+							progress += speed;
+
+							if (progress >= 1.0F) {
+								entity.worldObj.func_147480_a(x, y, z, true);
+								breakProgress.remove(key);
+
+								// Clear crack animation
+								entity.worldObj.destroyBlockInWorldPartially(entity.getEntityId(), x, y, z, -1);
+							} else {
+								breakProgress.put(key, progress);
+
+								// Crack animation (0–9)
+								int stage = (int)(progress * 10F);
+								entity.worldObj.destroyBlockInWorldPartially(entity.getEntityId(), x, y, z, stage);
+							}
 						}
 					}
 				}
