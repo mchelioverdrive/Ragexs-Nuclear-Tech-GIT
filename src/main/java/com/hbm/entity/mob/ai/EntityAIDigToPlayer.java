@@ -191,7 +191,38 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 	private final Map<String, Float> breakProgress = new HashMap<>();
 
+	private boolean canMoveForward(double dx, double dy, double dz) {
+
+		int bx = (int)Math.floor(entity.posX + dx);
+		int by = (int)Math.floor(entity.posY + dy);
+		int bz = (int)Math.floor(entity.posZ + dz);
+
+		for (int xOff = -1; xOff <= 1; xOff++) {
+			for (int zOff = -1; zOff <= 1; zOff++) {
+				for (int yOff = 0; yOff < 2; yOff++) {
+
+					int x = bx + xOff;
+					int y = by + yOff;
+					int z = bz + zOff;
+
+					Block block = entity.worldObj.getBlock(x, y, z);
+
+					if (block != Blocks.air &&
+						block.getMaterial().blocksMovement()) {
+
+						return false; // blocked
+					}
+				}
+			}
+		}
+
+		return true; // clear
+	}
+
 	private void carveTunnel(double dx, double dy, double dz) {
+
+		//todo cooldown on this and/or limit how many blocks it can break per second
+		//also maybe add some randomness to the tunnel shape instead of a straight line?
 
 		int steps = 2;
 
@@ -222,7 +253,7 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 							float progress = breakProgress.containsKey(key) ? breakProgress.get(key) : 0F;
 
 							// Dig speed (tune this)
-							float speed = 0.2F / (hardness + 0.1F);
+							float speed = 0.02F / (hardness + 0.1F);
 
 							progress += speed;
 
