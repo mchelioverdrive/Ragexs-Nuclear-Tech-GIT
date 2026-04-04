@@ -111,13 +111,15 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		double mz = dz * moveSpeed;
 
 		// do not phase into solid blocks
-		if (canMoveForward(mx, my, mz)) {
+		if (canMoveForward(mx, my, mz) && !hasLOS) {
 			entity.moveEntity(mx, my, mz);
 		} else {
-			entity.motionX = 0;
-			//entity.motionY = 0;
-			//THIS WILL GET STUCK VERTICALLY. STOP SETTING THE FUCKING Y MOTION TO 0
-			entity.motionZ = 0;
+			if (!hasLOS) {
+				entity.motionX = 0;
+				//entity.motionY = 0;
+				//THIS WILL GET STUCK VERTICALLY. STOP SETTING THE FUCKING Y MOTION TO 0
+				entity.motionZ = 0;
+			}
 		}
 
 		if (distSq < 4.0D) {
