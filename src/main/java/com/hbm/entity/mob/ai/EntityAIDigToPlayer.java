@@ -57,45 +57,44 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 		entity.getLookHelper().setLookPositionWithEntity(target, 30F, 30F);
 
-		boolean hasLOS = entity.canEntityBeSeen(target);
-		boolean playerLooking = isPlayerLookingAtEntity(target);
-		//boolean playerLooking = target.canEntityBeSeen(entity);
+		// This is the actual "weeping angel" check:
+		// freeze when the PLAYER can see the entity.
+		boolean watched = target.canEntityBeSeen(entity);
 
 		double distSq = entity.getDistanceSqToEntity(target);
-
 		applyEffects(target, distSq);
 
-		// freeze when looked at
-		if (hasLOS && playerLooking) {
-
-			// completely stop AI movement
+		// Freeze when watched
+		if (watched) {
 			entity.getNavigator().clearPathEntity();
 
-			// HARD freeze horizontal movement
 			entity.motionX = 0;
 			entity.motionZ = 0;
 
-			// let gravity handle Y (fall naturally)
-			if (!entity.onGround) {
-				entity.motionY -= 0.08D; // vanilla gravity
-			} else {
-				entity.motionY = 0;
-			}
-
-			// also kill any leftover velocity properly
-			entity.setVelocity(0, entity.motionY, 0);
+			// leave Y alone if you want gravity to still pull it down
+			// entity.motionY = 0;
 
 			return;
 		}
 
-		if (!playerLooking && entity.getRNG().nextInt(5) == 0) {
-			EntityPlayer player = (EntityPlayer) target;
+		EntityPlayer player = target;
 
-			if (teleportCooldown <= 0 && entity.getRNG().nextInt(5) == 0) {
-				if (!entity.worldObj.isRemote) {
-					if (((EntityFRIEND) entity).teleportUndergroundNearPlayer(player)) {
-						teleportCooldown = 60;
-					}
+		// attack / teleport logic only when not watched
+		if (distSq < 4.0D) {
+
+			if (attackCooldown > 0) attackCooldown--;
+
+			if (attackCooldown <= 0) {
+				entity.attackEntityAsMob(target);
+				attackCooldown = 20;
+				teleportDelay = 30 + entity.getRNG().nextInt(20);
+			}
+
+			if (teleportDelay > 0) {
+				teleportDelay--;
+
+				if (teleportDelay == 0) {
+					((EntityFRIEND) entity).teleportUndergroundNearPlayer(target);
 				}
 			}
 		}
@@ -113,46 +112,39 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		dy /= dist;
 		dz /= dist;
 
-		// carve only when we do not have direct sight
-		if (!hasLOS) {
-			carveTunnel(dx, dy, dz);
-		}
-
 		double moveSpeed = 0.45D;
 		double mx = dx * moveSpeed;
 		double my = dy * moveSpeed * 0.5D;
 		double mz = dz * moveSpeed;
 
-		// move whenever the space is actually clear
+		// If blocked, dig first, then try again
+		boolean moved = false;
+
+// Try movement first
 		if (canMoveForward(mx, my, mz)) {
 			entity.moveEntity(mx, my, mz);
-		} else {
-			entity.motionX = 0;
-			entity.motionZ = 0;
-			// do NOT zero Y here
+			moved = true;
 		}
 
-		if (distSq < 4.0D) {
+		// If blocked, FORCE digging + retry movement immediately
+		if (!moved) {
 
-			if (!playerLooking) {
+			// Dig more aggressively
+			carveTunnel(dx, dy, dz);
+			carveTunnel(dx, dy, dz); // <-- yes, twice (important)
 
-				if (attackCooldown > 0) attackCooldown--;
-
-				if (attackCooldown <= 0) {
-					entity.attackEntityAsMob(target);
-					attackCooldown = 20;
-					teleportDelay = 30 + entity.getRNG().nextInt(20);
-				}
-			}
-
-			if (teleportDelay > 0) {
-				teleportDelay--;
-
-				if (teleportDelay == 0) {
-					((EntityFRIEND) entity).teleportUndergroundNearPlayer(target);
-				}
+			// Try again AFTER carving
+			if (canMoveForward(mx, my, mz)) {
+				entity.moveEntity(mx, my, mz);
+			} else {
+				// still blocked → don't hard freeze, just slow it
+				entity.motionX *= 0.2;
+				entity.motionZ *= 0.2;
 			}
 		}
+
+		// Optional: if you still want the old "only carve when not visible to the entity"
+		// logic, keep this around for tuning, but it should NOT control movement anymore.
 	}
 
 	private boolean isPlayerLookingAtEntity(EntityPlayer player) {
