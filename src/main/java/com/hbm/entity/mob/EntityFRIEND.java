@@ -75,7 +75,7 @@ public class EntityFRIEND extends EntityCreature {
 	@Override
 	protected void applyEntityAttributes() {
 		super.applyEntityAttributes();
-		this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(28.0D);
+		this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(50.0D);
 		this.getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(0.2D);
 	}
 
@@ -234,21 +234,26 @@ public class EntityFRIEND extends EntityCreature {
 	@Override
 	public void onUpdate() {
 		super.onUpdate();
-		if(!worldObj.isRemote) {
-			//the wholesome
-			double despawnRange = 3;
-			List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, this.boundingBox.expand(despawnRange, despawnRange, despawnRange));
-			if(!players.isEmpty())
-				timer++;
-			if (timer > 3) {
-				this.setDead();
+
+		if (worldObj.isRemote) return;
+
+		EntityPlayer player = getClosestPlayer(32.0D);
+
+		if (player == null) return;
+
+		double distSq = this.getDistanceSqToEntity(player);
+
+		// 👻 vanish instead of dying
+		if (distSq < 9.0D) { // 3 blocks
+			if (this.rand.nextInt(40) == 0) { // not instant
+				teleportUndergroundNearPlayer(player);
 			}
 		}
 	}
 
 	@Override
 	public void setHealth(float health) {
-		super.setHealth(this.getMaxHealth());
+		super.setHealth(50);
 	}
 
 	@Override

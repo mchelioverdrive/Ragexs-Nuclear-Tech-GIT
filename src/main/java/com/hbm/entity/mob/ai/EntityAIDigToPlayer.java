@@ -5,6 +5,8 @@ import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.ai.EntityAIBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.potion.Potion;
+import net.minecraft.potion.PotionEffect;
 
 public class EntityAIDigToPlayer extends EntityAIBase {
 
@@ -46,14 +48,24 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 		entity.getLookHelper().setLookPositionWithEntity(target, 30F, 30F);
 
-		boolean canSee = entity.canEntityBeSeen(target);
+		boolean hasLOS = entity.canEntityBeSeen(target);
+		boolean playerLooking = isPlayerLookingAtEntity(target);
 
-		if (canSee) {
-			entity.getNavigator().tryMoveToEntityLiving(target, speed);
+		double distSq = entity.getDistanceSqToEntity(target);
+
+		// 🔥 APPLY EFFECTS
+		applyEffects(target, distSq);
+
+		// 🧊 FREEZE if player is looking directly
+		if (hasLOS && playerLooking) {
+			entity.getNavigator().clearPathEntity();
+			entity.motionX = 0;
+			entity.motionY = 0;
+			entity.motionZ = 0;
 			return;
 		}
 
-		// DIG MODE
+		// 👹 NOT LOOKED AT → AGGRESSIVE MODE
 
 		entity.getNavigator().clearPathEntity();
 
@@ -68,11 +80,13 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		dy /= dist;
 		dz /= dist;
 
-		// ✅ carve FIRST
-		carveTunnel(dx, dy, dz);
+		// dig if no LOS
+		if (!hasLOS) {
+			carveTunnel(dx, dy, dz);
+		}
 
-		// ✅ force movement AFTER carving (this is the key fix)
-		double moveSpeed = 0.3D;
+		// FAST movement when not seen
+		double moveSpeed = 0.45D;
 
 		entity.setPosition(
 			entity.posX + dx * moveSpeed,
@@ -80,10 +94,48 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 			entity.posZ + dz * moveSpeed
 		);
 
-		// ❌ kill leftover physics interference
-		entity.motionX = 0;
-		entity.motionY = 0;
-		entity.motionZ = 0;
+		// attack if close
+		if (distSq < 4.0D) { // ~2 blocks
+			entity.attackEntityAsMob(target);
+		}
+	}
+
+	private boolean isPlayerLookingAtEntity(EntityPlayer player) {
+
+		double dx = entity.posX - player.posX;
+		double dy = (entity.posY + entity.height / 2.0) - (player.posY + player.getEyeHeight());
+		double dz = entity.posZ - player.posZ;
+
+		double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+		if (dist == 0) return true;
+
+		dx /= dist;
+		dy /= dist;
+		dz /= dist;
+
+		double lookX = player.getLookVec().xCoord;
+		double lookY = player.getLookVec().yCoord;
+		double lookZ = player.getLookVec().zCoord;
+
+		double dot = dx * lookX + dy * lookY + dz * lookZ;
+
+		// tighter = harder to “freeze” it
+		return dot > 0.7D;
+	}
+
+	private void applyEffects(EntityPlayer player, double distSq) {
+
+		if (distSq < 36) { // 6 blocks
+			player.addPotionEffect(new PotionEffect(Potion.confusion.id, 40, 0));
+		}
+
+		if (distSq < 144) { // 12 blocks
+			player.addPotionEffect(new PotionEffect(Potion.weakness.id, 40, 0));
+		}
+
+		if (distSq < 900) { // 30 blocks
+			player.addPotionEffect(new PotionEffect(Potion.hunger.id, 60, 0));
+		}
 	}
 
 	private void carveTunnel(double dx, double dy, double dz) {
