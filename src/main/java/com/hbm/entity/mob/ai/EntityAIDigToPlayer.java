@@ -1,5 +1,6 @@
 package com.hbm.entity.mob.ai;
 
+import com.hbm.entity.mob.EntityFRIEND;
 import net.minecraft.block.Block;
 import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.ai.EntityAIBase;
@@ -14,6 +15,9 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 	private final double speed;
 	private final double range;
 	private EntityPlayer target;
+
+	private int attackCooldown = 0;
+	private int teleportDelay = 0;
 
 	public EntityAIDigToPlayer(EntityCreature entity, double speed, double range) {
 		this.entity = entity;
@@ -53,10 +57,9 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 		double distSq = entity.getDistanceSqToEntity(target);
 
-		// 🔥 APPLY EFFECTS
 		applyEffects(target, distSq);
 
-		// 🧊 FREEZE if player is looking directly
+		// FREEZE when looked at
 		if (hasLOS && playerLooking) {
 			entity.getNavigator().clearPathEntity();
 			entity.motionX = 0;
@@ -65,8 +68,7 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 			return;
 		}
 
-		// 👹 NOT LOOKED AT → AGGRESSIVE MODE
-
+		// MOVE toward player
 		entity.getNavigator().clearPathEntity();
 
 		double dx = target.posX - entity.posX;
@@ -80,12 +82,10 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		dy /= dist;
 		dz /= dist;
 
-		// dig if no LOS
 		if (!hasLOS) {
 			carveTunnel(dx, dy, dz);
 		}
 
-		// FAST movement when not seen
 		double moveSpeed = 0.45D;
 
 		entity.setPosition(
@@ -94,9 +94,28 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 			entity.posZ + dz * moveSpeed
 		);
 
-		// attack if close
-		if (distSq < 4.0D) { // ~2 blocks
-			entity.attackEntityAsMob(target);
+		// ✅ ATTACK SYSTEM (FIXED)
+		if (distSq < 4.0D) {
+
+			if (!playerLooking) {
+
+				if (attackCooldown > 0) attackCooldown--;
+
+				if (attackCooldown <= 0) {
+					entity.attackEntityAsMob(target);
+					attackCooldown = 20;
+
+					teleportDelay = 30 + entity.getRNG().nextInt(20);
+				}
+			}
+
+			if (teleportDelay > 0) {
+				teleportDelay--;
+
+				if (teleportDelay == 0) {
+					((EntityFRIEND)entity).teleportUndergroundNearPlayer(target);
+				}
+			}
 		}
 	}
 
@@ -119,21 +138,20 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 		double dot = dx * lookX + dy * lookY + dz * lookZ;
 
-		// tighter = harder to “freeze” it
-		return dot > 0.7D;
+		return dot > 0.85D; // stricter
 	}
 
 	private void applyEffects(EntityPlayer player, double distSq) {
 
-		if (distSq < 36) { // 6 blocks
+		if (distSq < 36) {
 			player.addPotionEffect(new PotionEffect(Potion.confusion.id, 40, 0));
 		}
 
-		if (distSq < 144) { // 12 blocks
+		if (distSq < 144) {
 			player.addPotionEffect(new PotionEffect(Potion.weakness.id, 40, 0));
 		}
 
-		if (distSq < 900) { // 30 blocks
+		if (distSq < 900) {
 			player.addPotionEffect(new PotionEffect(Potion.hunger.id, 60, 0));
 		}
 	}
