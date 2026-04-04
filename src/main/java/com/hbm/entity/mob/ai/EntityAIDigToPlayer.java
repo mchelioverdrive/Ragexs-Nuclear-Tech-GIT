@@ -8,6 +8,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.Vec3;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,6 +22,7 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 	private int attackCooldown = 0;
 	private int teleportDelay = 0;
+	private boolean wasWatched = false;
 
 	public EntityAIDigToPlayer(EntityCreature entity, double speed, double range) {
 		this.entity = entity;
@@ -31,7 +33,6 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 	@Override
 	public boolean shouldExecute() {
-
 		if (entity.worldObj.isRemote) return false;
 
 		EntityPlayer player = entity.worldObj.getClosestPlayerToEntity(entity, range);
@@ -48,44 +49,47 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 			&& entity.getDistanceSqToEntity(target) <= range * range;
 	}
 
-	private int teleportCooldown = 0;
+	@Override
+	public void resetTask() {
+		this.target = null;
+		this.attackCooldown = 0;
+		this.teleportDelay = 0;
+		this.wasWatched = false;
+		entity.getNavigator().clearPathEntity();
+	}
 
 	@Override
 	public void updateTask() {
-
 		if (target == null) return;
 
 		entity.getLookHelper().setLookPositionWithEntity(target, 30F, 30F);
 
-		// This is the actual "weeping angel" check:
-		// freeze when the PLAYER can see the entity.
-		boolean hasLOS = target.canEntityBeSeen(entity);
-		boolean looking = isPlayerLookingAtEntity(target);
-
-		// ONLY freeze if BOTH are true
-		boolean watched = hasLOS && looking;
+		boolean entitySeesPlayer = canEntitySeeTarget(entity, target);
+		boolean playerLooking = isPlayerLookingAtEntity(target);
+		boolean watched = entitySeesPlayer && playerLooking;
 
 		double distSq = entity.getDistanceSqToEntity(target);
 		applyEffects(target, distSq);
 
-		// Freeze when watched
+		// Freeze only while the player is actually watching it.
 		if (watched) {
-			//entity.getNavigator().clearPathEntity();
-
-			entity.motionX = 0;
-			entity.motionZ = 0;
-
-			// leave Y alone if you want gravity to still pull it down
-			// entity.motionY = 0;
-
+			wasWatched = true;
+			entity.getNavigator().clearPathEntity();
+			entity.motionX = 0.0D;
+			entity.motionZ = 0.0D;
 			return;
 		}
 
-		EntityPlayer player = target;
+		// Just came out of frozen state: clear any stale path/motion.
+		if (wasWatched) {
+			wasWatched = false;
+			entity.getNavigator().clearPathEntity();
+			entity.motionX = 0.0D;
+			entity.motionZ = 0.0D;
+		}
 
-		// attack / teleport logic only when not watched
+		// Close range attack / teleport logic
 		if (distSq < 4.0D) {
-
 			if (attackCooldown > 0) attackCooldown--;
 
 			if (attackCooldown <= 0) {
@@ -96,13 +100,20 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 			if (teleportDelay > 0) {
 				teleportDelay--;
-
 				if (teleportDelay == 0) {
 					((EntityFRIEND) entity).teleportUndergroundNearPlayer(target);
 				}
 			}
 		}
 
+		// If it can see the player, STOP DIGGING and move normally toward them.
+		if (entitySeesPlayer) {
+			entity.getNavigator().clearPathEntity();
+			moveDirectlyTowardTarget(0.18D);
+			return;
+		}
+
+		// No visibility on player: dig toward them.
 		entity.getNavigator().clearPathEntity();
 
 		double dx = target.posX - entity.posX;
@@ -121,38 +132,71 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		double my = dy * moveSpeed * 0.5D;
 		double mz = dz * moveSpeed;
 
-		// If blocked, dig first, then try again
 		boolean moved = false;
 
-// Try movement first
 		if (canMoveForward(mx, my, mz)) {
 			entity.moveEntity(mx, my, mz);
 			moved = true;
 		}
 
-		// If blocked, FORCE digging + retry movement immediately
 		if (!moved) {
-
-			// Dig more aggressively
 			carveTunnel(dx, dy, dz);
-			carveTunnel(dx, dy, dz); // <-- yes, twice (important)
+			carveTunnel(dx, dy, dz);
 
-			// Try again AFTER carving
 			if (canMoveForward(mx, my, mz)) {
 				entity.moveEntity(mx, my, mz);
 			} else {
-				// still blocked → don't hard freeze, just slow it
-				entity.motionX *= 0.2;
-				entity.motionZ *= 0.2;
+				entity.motionX *= 0.2D;
+				entity.motionZ *= 0.2D;
 			}
 		}
+	}
 
-		// Optional: if you still want the old "only carve when not visible to the entity"
-		// logic, keep this around for tuning, but it should NOT control movement anymore.
+	private void moveDirectlyTowardTarget(double step) {
+		double dx = target.posX - entity.posX;
+		double dy = (target.posY + target.getEyeHeight()) - entity.posY;
+		double dz = target.posZ - entity.posZ;
+
+		double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+		if (dist == 0.0D) return;
+
+		dx /= dist;
+		dy /= dist;
+		dz /= dist;
+
+		double mx = dx * step;
+		double my = dy * step * 0.35D;
+		double mz = dz * step;
+
+		// Direct movement only. No digging here.
+		if (canMoveForward(mx, my, mz)) {
+			entity.moveEntity(mx, my, mz);
+		} else {
+			// If it somehow still has a block in the way, do not dig in the visible state.
+			// Just keep pressure on it instead of freezing it in place.
+			entity.motionX = dx * step;
+			entity.motionY = dy * step * 0.20D;
+			entity.motionZ = dz * step;
+		}
+	}
+
+	private boolean canEntitySeeTarget(EntityCreature entity, EntityPlayer target) {
+		Vec3 start = Vec3.createVectorHelper(
+			entity.posX,
+			entity.posY + entity.getEyeHeight(),
+			entity.posZ
+		);
+
+		Vec3 end = Vec3.createVectorHelper(
+			target.posX,
+			target.posY + target.getEyeHeight(),
+			target.posZ
+		);
+
+		return entity.worldObj.rayTraceBlocks(start, end) == null;
 	}
 
 	private boolean isPlayerLookingAtEntity(EntityPlayer player) {
-
 		double dx = entity.posX - player.posX;
 		double dy = (entity.posY + entity.height / 2.0) - (player.posY + player.getEyeHeight());
 		double dz = entity.posZ - player.posZ;
@@ -169,12 +213,10 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		double lookZ = player.getLookVec().zCoord;
 
 		double dot = dx * lookX + dy * lookY + dz * lookZ;
-
-		return dot > 0.85D; // stricter
+		return dot > 0.85D;
 	}
 
 	private void applyEffects(EntityPlayer player, double distSq) {
-
 		if (distSq < 36) {
 			player.addPotionEffect(new PotionEffect(Potion.confusion.id, 40, 0));
 		}
@@ -188,10 +230,9 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		}
 	}
 
-	private final Map<String, Float> breakProgress = new HashMap<>();
+	private final Map<String, Float> breakProgress = new HashMap<String, Float>();
 
 	private boolean canMoveForward(double dx, double dy, double dz) {
-
 		int bx = (int)Math.floor(entity.posX + dx);
 		int by = (int)Math.floor(entity.posY + dy);
 		int bz = (int)Math.floor(entity.posZ + dz);
@@ -199,34 +240,26 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		for (int xOff = -1; xOff <= 1; xOff++) {
 			for (int zOff = -1; zOff <= 1; zOff++) {
 				for (int yOff = 0; yOff < 2; yOff++) {
-
 					int x = bx + xOff;
 					int y = by + yOff;
 					int z = bz + zOff;
 
 					Block block = entity.worldObj.getBlock(x, y, z);
 
-					if (block != Blocks.air &&
-						block.getMaterial().blocksMovement()) {
-
-						return false; // blocked
+					if (block != Blocks.air && block.getMaterial().blocksMovement()) {
+						return false;
 					}
 				}
 			}
 		}
 
-		return true; // clear
+		return true;
 	}
 
-	//todo cooldown on this and/or limit how many blocks it can break per second
-	//also maybe add some randomness to the tunnel shape instead of a straight line?
-
 	private void carveTunnel(double dx, double dy, double dz) {
-
 		int steps = 2;
 
 		for (int i = 0; i <= steps; i++) {
-
 			int bx = (int)Math.floor(entity.posX + dx * i);
 			int by = (int)Math.floor(entity.posY + dy * i);
 			int bz = (int)Math.floor(entity.posZ + dz * i);
@@ -234,7 +267,6 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 			for (int xOff = -1; xOff <= 1; xOff++) {
 				for (int zOff = -1; zOff <= 1; zOff++) {
 					for (int yOff = 0; yOff < 2; yOff++) {
-
 						int x = bx + xOff;
 						int y = by + yOff;
 						int z = bz + zOff;
@@ -251,8 +283,8 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 							String key = x + "," + y + "," + z;
 							float progress = breakProgress.containsKey(key) ? breakProgress.get(key) : 0F;
 
-							float speed = 0.02F / (hardness + 0.1F);
-							progress += speed;
+							float breakSpeed = 0.02F / (hardness + 0.1F);
+							progress += breakSpeed;
 
 							if (progress >= 1.0F) {
 								entity.worldObj.func_147480_a(x, y, z, true);
