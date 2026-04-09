@@ -90,11 +90,21 @@ public abstract class EntityBOTPrimeBase extends EntityWormBaseNT implements IRa
 			//this.playSound("hbm:weapon.ballsLaser", 5.0F, 0.75F);
 
 		} else {
-			//1 in 50 % chance
+			// 1 in 50 chance
+			if(this.rand.nextInt(50) == 0) {
 
-			EntityBulletBaseNT bullet = new EntityBulletBaseNT(this.worldObj, BulletConfigSyncingUtil.WORM_LASER, this, living, 0.25F, 0.425F);
-			this.worldObj.spawnEntityInWorld(bullet);
-			this.playSound("hbm:weapon.ballsLaser", 5.0F, 1.0F);
+				EntityBulletBaseNT bullet = new EntityBulletBaseNT(
+					this.worldObj,
+					BulletConfigSyncingUtil.WORM_LASER,
+					this,
+					living,
+					0.25F,
+					0.125F
+				);
+
+				this.worldObj.spawnEntityInWorld(bullet);
+				this.playSound("hbm:weapon.ballsLaser", 5.0F, 1.0F);
+			}
 		}
 	}
 }
