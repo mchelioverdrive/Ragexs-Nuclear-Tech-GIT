@@ -58,6 +58,8 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		entity.getNavigator().clearPathEntity();
 	}
 
+	private int stuckTime = 0;
+
 	@Override
 	public void updateTask() {
 		if (target == null) return;
@@ -70,6 +72,12 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 		double distSq = entity.getDistanceSqToEntity(target);
 		applyEffects(target, distSq);
+
+		if (entity.getNavigator().noPath()) {
+			stuckTime++;
+		} else {
+			stuckTime = 0;
+		}
 
 		// Freeze only while the player is actually watching it.
 		if (watched) {
@@ -113,7 +121,18 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 			return;
 		}
 
-		// No visibility on player: dig toward them.
+		// Try pathfinding first
+		if (entity.getNavigator().tryMoveToEntityLiving(target, speed)) {
+
+			// If not stuck, keep using path
+			if (stuckTime < 20) {
+				return;
+			}
+
+			// Path failed → fall through to digging
+		}
+
+		// No path exists → dig toward them
 		entity.getNavigator().clearPathEntity();
 
 		double dx = target.posX - entity.posX;
@@ -266,7 +285,7 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 			for (int xOff = -1; xOff <= 1; xOff++) {
 				for (int zOff = -1; zOff <= 1; zOff++) {
-					for (int yOff = 0; yOff < 2; yOff++) {
+					for (int yOff = 0; yOff < 4; yOff++) {
 						int x = bx + xOff;
 						int y = by + yOff;
 						int z = bz + zOff;

@@ -28,7 +28,7 @@ public class EntityFRIEND extends EntityCreature {
 		this.targetTasks.addTask(1, new EntityAINearestAttackableTarget(this, EntityPlayer.class, 0, true));
 
 		this.renderDistanceWeight *= 10;
-		this.setSize(0.6F, 1.8F);
+		this.setSize(0.6F, 3.3F);
 	}
 
 	//	@Override
@@ -116,6 +116,54 @@ public class EntityFRIEND extends EntityCreature {
 		return hit;
 	}
 
+	@Override
+	public boolean attackEntityFrom(DamageSource source, float amount) {
+
+		boolean result = super.attackEntityFrom(source, amount);
+
+		if (!worldObj.isRemote && result) {
+
+			// Check if damage came from a projectile
+			if (source.isProjectile()) {
+
+				if (this.teleportCooldown <= 0) {
+
+					if (source.getEntity() instanceof EntityPlayer) {
+						EntityPlayer player = (EntityPlayer) source.getEntity();
+						this.teleportUndergroundNearPlayer(player);
+					} else {
+						// fallback: teleport randomly if no player source
+						this.teleportRandomly();
+					}
+
+					this.teleportCooldown = 10;
+				}
+
+				//health regen on projectile hit
+				this.heal(8.0F);
+			}
+		}
+
+		return result;
+	}
+
+	private void teleportRandomly() {
+
+		double range = 16;
+
+		for (int i = 0; i < 16; i++) {
+
+			int x = (int)(this.posX + (rand.nextDouble() - 0.5D) * range);
+			int z = (int)(this.posZ + (rand.nextDouble() - 0.5D) * range);
+			int y = worldObj.getTopSolidOrLiquidBlock(x, z);
+
+			if (y > 0 && y < worldObj.getHeight()) {
+				this.setPosition(x + 0.5, y, z + 0.5);
+				return;
+			}
+		}
+	}
+
 	public boolean teleportUndergroundNearPlayer(EntityPlayer player) {
 
 		int range = 32;
@@ -148,6 +196,7 @@ public class EntityFRIEND extends EntityCreature {
 
 		if(!worldObj.isAirBlock(x, y, z)) return false;
 		if(!worldObj.isAirBlock(x, y + 1, z)) return false;
+		if(!worldObj.isAirBlock(x, y + 2, z)) return false;
 
 		if(!worldObj.getBlock(x, y - 1, z).getMaterial().isSolid()) return false;
 
@@ -162,6 +211,7 @@ public class EntityFRIEND extends EntityCreature {
 
 		worldObj.setBlockToAir(x, y, z);
 		worldObj.setBlockToAir(x, y + 1, z);
+		worldObj.setBlockToAir(x, y + 2, z);
 
 		this.setPosition(x + 0.5, y, z + 0.5);
 		return true;
