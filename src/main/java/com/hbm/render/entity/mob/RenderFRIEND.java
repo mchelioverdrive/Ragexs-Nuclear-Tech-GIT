@@ -7,6 +7,7 @@ import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.entity.RenderBiped;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
@@ -39,9 +40,9 @@ public class RenderFRIEND extends RenderBiped {
 		// Set RGBA: alpha = 0.5f → 50% transparent
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 0.5F);
 
-		GL11.glScalef(0.7F, 1.6F, 0.7F); // skinny + tall
-		//y offset to prevent sinking into the ground
-		GL11.glTranslatef(0.0F, 0.6F, 0.0F);
+		//GL11.glScalef(0.7F, 1.6F, 0.7F); // skinny + tall
+		//y offset to keep it from sinking into the ground
+		//GL11.glTranslatef(0.0F, 0.6F, 0.0F);
 
 		// Render normally
 		super.doRender(entity, x, y, z, yaw, partialTicks);
@@ -50,6 +51,11 @@ public class RenderFRIEND extends RenderBiped {
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 		GL11.glDisable(GL11.GL_BLEND);
 		GL11.glPopMatrix();
+	}
+
+	@Override
+	protected void preRenderCallback(EntityLivingBase entity, float partialTickTime) {
+		GL11.glScalef(0.7F, 1.6F, 0.7F);
 	}
 
 
