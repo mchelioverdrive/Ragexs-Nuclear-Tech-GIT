@@ -81,6 +81,7 @@ public class EntityFRIEND extends EntityCreature {
 		super.applyEntityAttributes();
 		this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(50.0D);
 		this.getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(0.2D);
+		this.getEntityAttribute(SharedMonsterAttributes.knockbackResistance).setBaseValue(1.0D);
 	}
 
 	@Override
@@ -119,35 +120,28 @@ public class EntityFRIEND extends EntityCreature {
 	@Override
 	public boolean attackEntityFrom(DamageSource source, float amount) {
 
-		boolean result = super.attackEntityFrom(source, amount);
+		Entity src = source.getSourceOfDamage();
 
-		if (!worldObj.isRemote && result) {
+		// Handle projectiles FIRST (like Enderman)
+		if (src instanceof net.minecraft.entity.projectile.EntityArrow
+			|| src instanceof net.minecraft.entity.projectile.EntityThrowable) {
 
-			// Check if damage came from a projectile
-			if (source.isProjectile()) {
+			if (!this.worldObj.isRemote) {
 
-				if (this.teleportCooldown <= 0) {
-
-					if (source.getEntity() instanceof EntityPlayer) {
-						EntityPlayer player = (EntityPlayer) source.getEntity();
-						this.teleportUndergroundNearPlayer(player);
-					} else {
-						// fallback: teleport randomly if no player source
-						this.teleportRandomly();
+				for (int i = 0; i < 16; i++) {
+					if (this.teleportRandomly()) {
+						return false; // CANCEL DAMAGE
 					}
-
-					this.teleportCooldown = 10;
 				}
-
-				//health regen on projectile hit
-				this.heal(8.0F);
 			}
+
+			return false; // always cancel projectile damage
 		}
 
-		return result;
+		return super.attackEntityFrom(source, amount);
 	}
 
-	private void teleportRandomly() {
+	private boolean teleportRandomly() {
 
 		double range = 16;
 
@@ -159,9 +153,11 @@ public class EntityFRIEND extends EntityCreature {
 
 			if (y > 0 && y < worldObj.getHeight()) {
 				this.setPosition(x + 0.5, y, z + 0.5);
-				return;
+				return true;
 			}
 		}
+
+		return false;
 	}
 
 	public boolean teleportUndergroundNearPlayer(EntityPlayer player) {
