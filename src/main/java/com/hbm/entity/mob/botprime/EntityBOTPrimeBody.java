@@ -31,11 +31,11 @@ public class EntityBOTPrimeBody extends EntityBOTPrimeBase {
 	@Override
 	public float getAttackStrength(Entity target) {
 
-		if(target instanceof EntityLivingBase) {
-			return ((EntityLivingBase) target).getHealth() * 0.75F;
-		}
+		//if(target instanceof EntityLivingBase) {
+		//	return ((EntityLivingBase) target).getHealth() * 0.75F;
+		//}
 
-		return 100;
+		return 140;
 	}
 
 	@Override
@@ -47,7 +47,7 @@ public class EntityBOTPrimeBody extends EntityBOTPrimeBase {
 	protected void updateAITasks() {
 		this.updateEntityActionState();
 		this.targetTasks.onUpdateTasks();
-		
+
 		updateMovement();
 
 		if(this.didCheck) {
@@ -65,7 +65,7 @@ public class EntityBOTPrimeBody extends EntityBOTPrimeBase {
 				if(this.attackCounter == 10) {
 					laserAttack(this.getAttackTarget(), false);
 
-					this.attackCounter = -20;
+					this.attackCounter = -30;
 				}
 			} else if(this.attackCounter > 0) {
 				this.attackCounter -= 1;

@@ -47,7 +47,7 @@ public abstract class EntityBOTPrimeBase extends EntityWormBaseNT implements IRa
 	@Override
 	protected void applyEntityAttributes() {
 		super.applyEntityAttributes();
-		this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(15000.0D);
+		this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(153000.0D);
 		this.getEntityAttribute(SharedMonsterAttributes.knockbackResistance).setBaseValue(1.0D);
 	}
 
@@ -69,6 +69,8 @@ public abstract class EntityBOTPrimeBase extends EntityWormBaseNT implements IRa
 		return "hbm:entity.bombDet";
 	}
 
+	//where are the fucking probes bob
+
 	protected void laserAttack(Entity target, boolean head) {
 
 		if(!(target instanceof EntityLivingBase))
@@ -77,17 +79,20 @@ public abstract class EntityBOTPrimeBase extends EntityWormBaseNT implements IRa
 		EntityLivingBase living = (EntityLivingBase) target;
 
 		if(head) {
+			//head doesn't attack using lasers BOB
 
-			for(int i = 0; i < 5; i++) {
-
-				EntityBulletBaseNT bullet = new EntityBulletBaseNT(this.worldObj, BulletConfigSyncingUtil.WORM_LASER, this, living, 1.0F, i * 0.05F);
-				this.worldObj.spawnEntityInWorld(bullet);
-			}
-
-			this.playSound("hbm:weapon.ballsLaser", 5.0F, 0.75F);
+			//for(int i = 0; i < 5; i++) {
+//
+			//	EntityBulletBaseNT bullet = new EntityBulletBaseNT(this.worldObj, BulletConfigSyncingUtil.WORM_LASER, this, living, 1.0F, i * 0.05F);
+			//	this.worldObj.spawnEntityInWorld(bullet);
+			//}
+//
+			//this.playSound("hbm:weapon.ballsLaser", 5.0F, 0.75F);
 
 		} else {
-			EntityBulletBaseNT bullet = new EntityBulletBaseNT(this.worldObj, BulletConfigSyncingUtil.WORM_BOLT, this, living, 0.5F, 0.125F);
+			//1 in 50 % chance
+
+			EntityBulletBaseNT bullet = new EntityBulletBaseNT(this.worldObj, BulletConfigSyncingUtil.WORM_LASER, this, living, 0.25F, 0.425F);
 			this.worldObj.spawnEntityInWorld(bullet);
 			this.playSound("hbm:weapon.ballsLaser", 5.0F, 1.0F);
 		}

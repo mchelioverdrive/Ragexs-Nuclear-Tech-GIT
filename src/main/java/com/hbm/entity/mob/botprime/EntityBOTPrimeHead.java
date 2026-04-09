@@ -95,13 +95,14 @@ public class EntityBOTPrimeHead extends EntityBOTPrimeBase implements IBossDispl
 
 		updateHeadMovement();
 
-		if((getHealth() < getMaxHealth()) && (this.ticksExisted % 6 == 0)) {
-			if(this.targetedEntity != null) {
-				heal(1.0F);
-			} else if(this.recentlyHit == 0) {
-				heal(4.0F);
-			}
-		}
+		//if((getHealth() < getMaxHealth()) && (this.ticksExisted % 6 == 0)) {
+		//	if(this.targetedEntity != null) {
+		//		//heal(1.0F);
+		//	} else if(this.recentlyHit == 0) {
+		//		//heal(4.0F);
+		//	}
+		//}
+		//I'm sorry WHAT?
 		if((this.targetedEntity != null) && (this.targetedEntity.getDistanceSqToEntity(this) < this.attackRange * this.attackRange)) {
 			if(canEntityBeSeenThroughNonSolids(this.targetedEntity)) {
 
@@ -147,7 +148,7 @@ public class EntityBOTPrimeHead extends EntityBOTPrimeBase implements IBossDispl
 
 	@Override
 	public float getAttackStrength(Entity target) {
-		return 1000;
+		return 420;
 	}
 
 	public void writeEntityToNBT(NBTTagCompound nbt) {
