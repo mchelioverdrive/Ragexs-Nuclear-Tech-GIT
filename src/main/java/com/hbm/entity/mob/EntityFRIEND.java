@@ -95,6 +95,17 @@ public class EntityFRIEND extends EntityCreature {
 	public void onUpdate() {
 		super.onUpdate();
 		if (teleportCooldown > 0) teleportCooldown--;
+
+		if (forcedAggroTime > 0) {
+			forcedAggroTime--;
+
+			if (forcedTarget != null) {
+				this.getNavigator().tryMoveToEntityLiving(forcedTarget, 1.2D);
+			}
+		} else {
+			forcedTarget = null;
+		}
+
 	}
 
 	// ✅ REAL DAMAGE
@@ -117,26 +128,70 @@ public class EntityFRIEND extends EntityCreature {
 		return hit;
 	}
 
+	public int forcedAggroTime = 0;
+	private EntityPlayer forcedTarget = null;
+
 	@Override
 	public boolean attackEntityFrom(DamageSource source, float amount) {
 
 		Entity src = source.getSourceOfDamage();
 
-		// Handle projectiles FIRST (like Enderman)
-		if (src instanceof net.minecraft.entity.projectile.EntityArrow
-			|| src instanceof net.minecraft.entity.projectile.EntityThrowable) {
+		//50%
 
-			if (!this.worldObj.isRemote) {
 
-				for (int i = 0; i < 16; i++) {
-					if (this.teleportRandomly()) {
-						return false; // CANCEL DAMAGE
+			// Handle projectiles FIRST (like Enderman)
+			if (src instanceof net.minecraft.entity.projectile.EntityArrow
+				|| src instanceof net.minecraft.entity.projectile.EntityThrowable) {
+
+				if (!this.worldObj.isRemote) {
+
+					EntityPlayer player = null;
+
+					if (src instanceof net.minecraft.entity.projectile.EntityArrow) {
+						net.minecraft.entity.projectile.EntityArrow arrow = (net.minecraft.entity.projectile.EntityArrow) src;
+						if (arrow.shootingEntity instanceof EntityPlayer) {
+							player = (EntityPlayer) arrow.shootingEntity;
+						}
+					} else if (src instanceof net.minecraft.entity.projectile.EntityThrowable) {
+						net.minecraft.entity.projectile.EntityThrowable throwable = (net.minecraft.entity.projectile.EntityThrowable) src;
+						if (throwable.getThrower() instanceof EntityPlayer) {
+							player = (EntityPlayer) throwable.getThrower();
+						}
+					}
+
+					// 50/50 behavior (FIXED RNG)
+					if (this.rand.nextBoolean()) {
+
+						boolean success = false;
+
+						if (player != null) {
+							for (int i = 0; i < 16; i++) {
+								if (this.teleportUndergroundNearPlayer(player)) {
+									success = true;
+									break;
+								}
+							}
+						}
+
+						// fallback if no player OR teleport failed
+						if (!success) {
+							for (int i = 0; i < 16; i++) {
+								if (this.teleportRandomly()) break;
+							}
+						}
+
+					} else {
+						// move toward player (creepy pressure)
+						if (player != null) {
+							this.forcedAggroTime = 60; // 3 seconds
+							this.forcedTarget = player;
+						}
 					}
 				}
+
+				return false; // always cancel projectile damage
 			}
 
-			return false; // always cancel projectile damage
-		}
 
 		return super.attackEntityFrom(source, amount);
 	}

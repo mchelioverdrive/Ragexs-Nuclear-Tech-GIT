@@ -80,7 +80,7 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		}
 
 		// Freeze only while the player is actually watching it.
-		if (watched) {
+		if (watched && ((EntityFRIEND)entity).forcedAggroTime <= 0) {
 			wasWatched = true;
 			entity.getNavigator().clearPathEntity();
 			entity.motionX = 0.0D;
