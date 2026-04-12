@@ -49,6 +49,13 @@ public class SmeltingRecipes {
 		//tin
 		GameRegistry.addSmelting(ModBlocks.ore_tin, new ItemStack(ModItems.ingot_tin), 0.1F);
 
+		//spodumene
+		GameRegistry.addSmelting(ModItems.crushed_spodumene, new ItemStack(ModItems.crystal_lithium), 0.1F);
+
+		//crushed petalite -> lithium
+		GameRegistry.addSmelting(ModItems.crushed_petalite, new ItemStack(ModItems.powder_lithium), 0.1F);
+		//should have more to it but whatever
+
 
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_iron), new ItemStack(Items.iron_ingot), 0.7F);
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_gold), new ItemStack(Items.gold_ingot), 1.0F);

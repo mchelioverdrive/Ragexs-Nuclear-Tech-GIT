@@ -768,7 +768,12 @@ public class CentrifugeRecipes extends SerializableRecipe {
 			//ill fix this crap later
 				new ItemStack(Blocks.gravel, 1) });
 
-
+		//columbite
+		recipes.put(new ComparableStack(ModItems.powder_columbite), new ItemStack[] {
+				new ItemStack(ModItems.powder_niobium, 2),
+				new ItemStack(ModItems.powder_tantalium, 1),
+				new ItemStack(ModItems.powder_iron, 1),
+				new ItemStack(ModItems.manganese_powder, 1) });
 
 
 

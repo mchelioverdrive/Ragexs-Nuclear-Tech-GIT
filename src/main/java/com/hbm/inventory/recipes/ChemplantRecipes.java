@@ -1015,6 +1015,27 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.outputFluids(new FluidStack(Fluids.CALCIUM_CHLORIDE, 800))
 		);
 
+		//lepidolite
+		recipes.add(new ChemRecipe(1049, "LEPIDOLITE", 100)
+			.inputItems(new ComparableStack(ModItems.lepidolite))
+			.inputFluids(new FluidStack(Fluids.SULFURIC_ACID, 2000))
+			.outputItems(new ItemStack(ModItems.lithium, 1), new ItemStack(ModItems.potassium_sulfate, 1))
+			.outputFluids(new FluidStack(Fluids.ACIDWASTE, 2000))
+		);
+		//I can't be bothered to separate this into another process, maybe later
+
+		//carnallite + water -> potassium chloride + magnesium chloride + water
+		recipes.add(new ChemRecipe(1050, "CARNALLITE", 100)
+			.inputItems(new ComparableStack(ModItems.carnallite))
+			.inputFluids(new FluidStack(Fluids.WATER, 2000))
+			.outputItems(
+				new ItemStack(ModItems.itemsalt, 1),
+				new ItemStack(ModItems.magnesium_chloride, 1)
+			)
+			.outputFluids(new FluidStack(Fluids.WATER, 1500))
+		);
+
+
 
 
 

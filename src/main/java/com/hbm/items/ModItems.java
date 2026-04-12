@@ -577,6 +577,7 @@ public class ModItems {
 
 
 	public static Item itemsalt;
+	public static Item magnesium_chloride;
 	public static Item rubidiumsalt;
 
 	public static Item quicklime;
@@ -616,6 +617,7 @@ public class ModItems {
 	public static Item powder_gold;
 	public static Item powder_iron;
 	public static Item powder_titanium;
+	public static Item powder_zircon;
 	public static Item powder_nickel;
 	public static Item powder_gallium_tiny;
 	public static Item powder_gallium;
@@ -624,6 +626,7 @@ public class ModItems {
 	public static Item powder_platnium;
 	public static Item powder_uranium;
 	public static Item powder_plutonium;
+	public static Item powder_columbite;
 	public static Item dust;
 	public static Item dust_tiny;
 	public static Item fallout;
@@ -743,6 +746,7 @@ public class ModItems {
 	public static Item chunk_heavymineralsand;
 	public static Item chunk_evaporite;
 	public static Item chunk_carbon;
+	public static Item chunk_chromite;
 
 
 	//actual ore groups that bob hates:
@@ -779,8 +783,18 @@ public class ModItems {
 	public static Item rutile;
 	public static Item zircon;
 
+	//chromite
+	public static Item chromite;
+
 	//evaporite
 	public static Item carnallite;
+
+	public static Item crushed_spodumene;
+	public static Item crushed_petalite;
+	//public static Item powder_ilmenite;
+	//titanium crystal
+	//public static Item roasted_spodumene;
+	//basically a lithium crystal, just rename it so the processing makes sense.
 
 
 
@@ -3286,6 +3300,8 @@ public class ModItems {
 
 		itemsalt = new ItemSalt(1).setUnlocalizedName("itemsalt").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		rubidiumsalt = new ItemSalt(1).setUnlocalizedName("rubidiumsalt").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
+		magnesium_chloride = new Item().setUnlocalizedName("magnesium_chloride").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
+
 
 		sodium_sulfate = new Item().setUnlocalizedName("sodium_sulfate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		sodium_sulfide = new Item().setUnlocalizedName("sodium_sulfide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_sodium");
@@ -3331,10 +3347,12 @@ public class ModItems {
 		powder_gold = new Item().setUnlocalizedName("powder_gold").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_gold");
 		powder_iron = new Item().setUnlocalizedName("powder_iron").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_iron");
 		powder_titanium = new Item().setUnlocalizedName("powder_titanium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_titanium");
+		powder_zircon = new Item().setUnlocalizedName("powder_zircon").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_copper");
 		powder_nickel = new Item().setUnlocalizedName("powder_nickel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_nickel");
 		powder_tungsten = new Item().setUnlocalizedName("powder_tungsten").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_tungsten");
 		powder_uranium = new Item().setUnlocalizedName("powder_uranium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_uranium");
 		powder_plutonium = new Item().setUnlocalizedName("powder_plutonium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_plutonium");
+		powder_columbite = new Item().setUnlocalizedName("powder_columbite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_coal");
 		dust = new ItemCustomLore().setUnlocalizedName("dust").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":dust");
 		dust_tiny = new Item().setUnlocalizedName("dust_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":dust_tiny");
 		fallout = new Item().setUnlocalizedName("fallout").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fallout");
@@ -3444,6 +3462,7 @@ public class ModItems {
 		chunk_heavymineralsand = new Item().setUnlocalizedName("chunk_heavymineralsand").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_mineral");
 		chunk_evaporite = new Item().setUnlocalizedName("chunk_evaporite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niter");
 		chunk_carbon = new Item().setUnlocalizedName("chunk_carbon").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_tungsten");
+		chunk_chromite = new Item().setUnlocalizedName("chunk_chromite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_iron");
 
 
 		//ORE GROUPS
@@ -3480,8 +3499,16 @@ public class ModItems {
 		rutile = new Item().setUnlocalizedName("rutile").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_titanium");
 		zircon = new Item().setUnlocalizedName("zircon").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_copper");
 
+		//chromite
+		chromite = new Item().setUnlocalizedName("chromite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_iron");
+
 		//evaporite
 		carnallite = new Item().setUnlocalizedName("carnallite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_copper");
+
+		crushed_spodumene = new Item().setUnlocalizedName("crushed_spodumene").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lithium");
+		crushed_petalite = new Item().setUnlocalizedName("crushed_petalite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lithium");
+		//roasted_spodumene = new Item().setUnlocalizedName("roasted_spodumene").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lithium");
+		//powder_ilmenite = new Item().setUnlocalizedName("powder_ilmenite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_titanium");
 
 		biomass = new Item().setUnlocalizedName("biomass").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":biomass");
 		biomass_compressed = new Item().setUnlocalizedName("biomass_compressed").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":biomass_compressed");
@@ -6562,6 +6589,7 @@ public class ModItems {
 		GameRegistry.registerItem(powder_emerald, powder_emerald.getUnlocalizedName());
 		GameRegistry.registerItem(powder_uranium, powder_uranium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_plutonium, powder_plutonium.getUnlocalizedName());
+		GameRegistry.registerItem(powder_columbite, powder_columbite.getUnlocalizedName());
 		GameRegistry.registerItem(powder_neptunium, powder_neptunium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_polonium, powder_polonium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_co60, powder_co60.getUnlocalizedName());
@@ -6578,6 +6606,7 @@ public class ModItems {
 		GameRegistry.registerItem(powder_ra226, powder_ra226.getUnlocalizedName());
 		GameRegistry.registerItem(powder_at209, powder_at209.getUnlocalizedName());
 		GameRegistry.registerItem(powder_titanium, powder_titanium.getUnlocalizedName());
+		GameRegistry.registerItem(powder_zircon, powder_zircon.getUnlocalizedName());
 		GameRegistry.registerItem(powder_nickel, powder_nickel.getUnlocalizedName());
 		GameRegistry.registerItem(powder_copper, powder_copper.getUnlocalizedName());
 		GameRegistry.registerItem(powder_zinc, powder_zinc.getUnlocalizedName());
@@ -6766,6 +6795,7 @@ public class ModItems {
 
 		GameRegistry.registerItem(itemsalt, itemsalt.getUnlocalizedName());
 		GameRegistry.registerItem(rubidiumsalt, rubidiumsalt.getUnlocalizedName());
+		GameRegistry.registerItem(magnesium_chloride, magnesium_chloride.getUnlocalizedName());
 
 		GameRegistry.registerItem(sodium_sulfate, sodium_sulfate.getUnlocalizedName());
 		GameRegistry.registerItem(sodium_sulfide, sodium_sulfide.getUnlocalizedName());
@@ -6796,6 +6826,7 @@ public class ModItems {
 		GameRegistry.registerItem(chunk_heavymineralsand, chunk_heavymineralsand.getUnlocalizedName());
 		GameRegistry.registerItem(chunk_evaporite, chunk_evaporite.getUnlocalizedName());
 		GameRegistry.registerItem(chunk_carbon, chunk_carbon.getUnlocalizedName());
+		GameRegistry.registerItem(chunk_chromite, chunk_chromite.getUnlocalizedName());
 
 
 		//ore groups
@@ -6833,9 +6864,15 @@ public class ModItems {
 		GameRegistry.registerItem(rutile, rutile.getUnlocalizedName());
 		GameRegistry.registerItem(zircon, zircon.getUnlocalizedName());
 
+		//chromite
+		GameRegistry.registerItem(chromite, chromite.getUnlocalizedName());
+
 		//evaporite
 		GameRegistry.registerItem(carnallite, carnallite.getUnlocalizedName());
 
+		GameRegistry.registerItem(crushed_spodumene, crushed_spodumene.getUnlocalizedName());
+		GameRegistry.registerItem(crushed_petalite, crushed_petalite.getUnlocalizedName());
+		//GameRegistry.registerItem(roasted_spodumene, roasted_spodumene.getUnlocalizedName());
 
 		//Things that look like rotten flesh but aren't
 		GameRegistry.registerItem(biomass, biomass.getUnlocalizedName());

@@ -159,9 +159,25 @@ public class ShredderRecipes extends SerializableRecipe {
 		//tin
 		ShredderRecipes.setRecipe(new ItemStack(ModItems.cassiterite), new ItemStack(ModBlocks.ore_tin, 2));
 
+		//columbite
+		ShredderRecipes.setRecipe(new ItemStack(ModItems.columbite), new ItemStack(ModItems.powder_columbite, 2));
 
+		//spodumene
+		ShredderRecipes.setRecipe(new ItemStack(ModItems.spodumene), new ItemStack(ModItems.crushed_spodumene, 2));
 
-		//other possibly realistic probably not bullshit:
+		//petalite
+		ShredderRecipes.setRecipe(new ItemStack(ModItems.petalite), new ItemStack(ModItems.crushed_petalite, 1));
+
+		//ilmenite
+		ShredderRecipes.setRecipe(new ItemStack(ModItems.ilmenite), new ItemStack(ModItems.crystal_titanium, 2));
+
+		//rutile
+		ShredderRecipes.setRecipe(new ItemStack(ModItems.rutile), new ItemStack(ModItems.powder_titanium, 3));
+
+		//zircon
+		ShredderRecipes.setRecipe(new ItemStack(ModItems.zircon), new ItemStack(ModItems.powder_zircon, 3));
+
+		//other possibly realistic probably not, bullshit:
 
 
 		/* Primary recipes */

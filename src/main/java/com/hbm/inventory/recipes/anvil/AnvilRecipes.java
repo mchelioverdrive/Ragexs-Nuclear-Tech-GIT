@@ -677,7 +677,7 @@ public class AnvilRecipes {
 			new ComparableStack(DictFrame.fromOne(ModItems.chunk_ore, EnumChunkType.RARE)),
 			new AnvilOutput[] {
 
-				// Bastnäsite / Monazite / Xenotime inspired
+				// Bastnäsite / Monazite / Xenotime all grouped together as "REE Ore"
 
 				// DOMINANT (almost always present)
 				new AnvilOutput(new ItemStack(ModItems.fragment_cerium)),
@@ -716,7 +716,7 @@ public class AnvilRecipes {
 		// <Lithium Pegmatite Ore -> spodumene, lepidolite, petalite, etc gpt: Spodumene/Lepidolite
 		// !Uranium Ore (combined into one ore, already exists) -> Uraninite/Pitchblende
 		// <Heavy Mineral Sand -> Ilmenite, rutile, zircon, monazite, etc gpt: Ilmenite/Rutile/Zircon
-		// *Chromite Ore -> Chromite
+		// !<Chromite Ore -> Chromite
 		// <Evaporite Minerals -> halite, gypsum, etc gpt: Halite/Sylvite/Carnallite/Borates
 		// !*Phosphate Ore -> Apatite just rename phosphorous ore
 		// <Carbon Deposits -> Graphite, coal, etc gpt: Coal/Graphite
@@ -777,7 +777,8 @@ public class AnvilRecipes {
 				// common secondary
 				new AnvilOutput(new ItemStack(ModItems.pyrrhotite, 1), 0.6F),
 				//copper is often carried
-				new AnvilOutput(new ItemStack(ModItems.chalcopyrite, 1), 0.3F)
+				new AnvilOutput(new ItemStack(ModItems.chalcopyrite, 1), 0.3F),
+				new AnvilOutput(new ItemStack(ModBlocks.ore_palladium, 1), 0.15F)
 			}
 		).setTier(2));
 
@@ -816,9 +817,20 @@ public class AnvilRecipes {
 				// common secondary
 				new AnvilOutput(new ItemStack(ModItems.rutile, 1), 0.45F),
 				// rarer secondary
-				new AnvilOutput(new ItemStack(ModItems.zircon, 1), 0.35F)
+				new AnvilOutput(new ItemStack(ModItems.zircon, 1), 0.35F),
+				new AnvilOutput(new ItemStack(ModItems.nugget_hafnium, 1), 0.2F)
 				//new AnvilOutput(new ItemStack(ModItems.monazite, 1), 0.1F)
 				//monazite was the first thing we did, I guess we could add the rare earth ore thingy here? but that's just excess
+			}
+		).setTier(2));
+
+		//chromite
+		constructionRecipes.add(new AnvilConstructionRecipe(
+			new ComparableStack(new ItemStack(ModItems.chunk_chromite)),
+			new AnvilOutput[] {
+				// dominant
+				new AnvilOutput(new ItemStack(ModItems.chromite, 2)),
+				new AnvilOutput(new ItemStack(ModItems.chunk_ironoxide, 1))
 			}
 		).setTier(2));
 
