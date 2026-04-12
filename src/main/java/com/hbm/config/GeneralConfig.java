@@ -42,7 +42,7 @@ public class GeneralConfig {
 
 	public static boolean enableExpensiveMode = false;
 
-	public static boolean enable528 = false;
+	public static boolean enable528 = true;
 	public static boolean enable528ReasimBoilers = true;
 	public static boolean enable528ColtanDeposit = false;
 	public static boolean enable528ColtanSpawn = true;
