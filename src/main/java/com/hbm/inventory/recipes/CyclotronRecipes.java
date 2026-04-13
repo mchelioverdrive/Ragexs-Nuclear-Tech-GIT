@@ -159,6 +159,12 @@ public class CyclotronRecipes extends SerializableRecipe {
 		/// Francium production (realistic parent: Actinium)
 		makeRecipe(new ComparableStack(ModItems.ingot_actinium), new OreDictStack("dustActinium227"), new ItemStack(ModItems.francium_ingot), 300);
 
+		//rutherfordium
+		//graphite is our stand in for carbon-12
+		makeRecipe(new ComparableStack(ModItems.nugget_cf249), new ComparableStack(ModItems.ingot_graphite), new ItemStack(ModItems.rutherfordium_nugget), 400);
+
+		//californium
+		makeRecipe(new ComparableStack(ModItems.powder_cf252), new ComparableStack(ModItems.ingot_graphite), new ItemStack(ModItems.californium_nugget), 500);
 
 	}
 

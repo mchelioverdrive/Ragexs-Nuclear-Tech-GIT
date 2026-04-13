@@ -99,6 +99,7 @@ public class MineralRecipes {
 		//californium
 		add1To9Pair(ModItems.ingot_cf251, ModItems.nugget_cf251);
 		add1To9Pair(ModItems.ingot_cf252, ModItems.nugget_cf252);
+		add1To9Pair(ModItems.ingot_cf249, ModItems.nugget_cf249);
 
 
 

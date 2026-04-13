@@ -111,6 +111,7 @@ public class ModItems {
 	public static Item barium_oxide;
 	public static Item ingot_barium;
 	public static Item barium_nugget;
+	public static Item rutherfordium_nugget;
 
 	public static Item ingot_th232;
 	public static Item ingot_uranium;
@@ -142,6 +143,8 @@ public class ModItems {
 	public static Item ingot_bk247;
 
 	public static Item ingot_cf251;
+	public static Item cf_light_fraction; //used in silex to get cf-249
+	public static Item ingot_cf249;
 
 	public static Item ingot_es253;
 	public static Item ingot_es255;
@@ -400,6 +403,8 @@ public class ModItems {
 	public static Item nugget_cm_fuel;
     public static Item nugget_cf251;
 	public static Item nugget_cf252;
+	public static Item nugget_cf249;
+	public static Item nugget_cf250;
 	public static Item nugget_cm_mix;
 	public static Item nugget_es253;
 	public static Item nugget_am_mix;
@@ -2836,7 +2841,9 @@ public class ModItems {
 		ingot_bk247 = new Item().setUnlocalizedName("ingot_bk247").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_bk247");
 		ingot_cf251 = new Item().setUnlocalizedName("ingot_cf251").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID +":ingot_cf251");
 		ingot_cf252 = new Item().setUnlocalizedName("ingot_cf252").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_cf252");
+		cf_light_fraction = new Item().setUnlocalizedName("cf_light_fraction").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_cf252");
 		rubidium_ingot = new Item().setUnlocalizedName("rubidium_ingot").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_rubidium");
+		ingot_cf249 = new Item().setUnlocalizedName("ingot_cf249").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_cf252");
 
 
 		ingot_es253 = new Item().setUnlocalizedName("ingot_es253").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_es253");
@@ -3186,6 +3193,8 @@ public class ModItems {
 		nugget_cm247 = new Item().setUnlocalizedName("nugget_cm247").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_cm247");
 		nugget_cf251 = new Item().setUnlocalizedName("nugget_cf251").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID +":nugget_cf251");
 		nugget_cf252 = new Item().setUnlocalizedName("nugget_cf252").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_cf252");
+		nugget_cf249 = new Item().setUnlocalizedName("nugget_cf249").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_cf252");
+		nugget_cf250 = new Item().setUnlocalizedName("nugget_cf250").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_cf252");
 		nugget_cm_fuel = new Item().setUnlocalizedName("nugget_cm_fuel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_cm_fuel");
 		nugget_es253 = new Item().setUnlocalizedName("nugget_es253").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_es253");
 		nugget_cm_mix = new Item().setUnlocalizedName("nugget_cm_mix").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_cm_mix");
@@ -3754,6 +3763,7 @@ public class ModItems {
 		barium_oxide = new Item().setUnlocalizedName("barium_oxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		ingot_barium = new Item().setUnlocalizedName("ingot_barium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_barium");
 		barium_nugget = new Item().setUnlocalizedName("barium_nugget").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_barium");
+		rutherfordium_nugget = new Item().setUnlocalizedName("rutherfordium_nugget").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":pellets_charged");
 
 		demon_core_open = new ItemDemonCore().setUnlocalizedName("demon_core_open").setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":demon_core_open");
 		demon_core_closed = new Item().setUnlocalizedName("demon_core_closed").setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":demon_core_closed");
@@ -6356,6 +6366,8 @@ public class ModItems {
 		GameRegistry.registerItem(ingot_bk247, ingot_bk247.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cf251, ingot_cf251.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cf252, ingot_cf252.getUnlocalizedName());
+		GameRegistry.registerItem(cf_light_fraction, cf_light_fraction.getUnlocalizedName());
+		GameRegistry.registerItem(ingot_cf249, ingot_cf249.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_es253, ingot_es253.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_es255, ingot_es255.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_neptunium, ingot_neptunium.getUnlocalizedName());
@@ -6910,6 +6922,8 @@ public class ModItems {
 		GameRegistry.registerItem(nugget_cm_fuel, nugget_cm_fuel.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_cf251, nugget_cf251.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_cf252, nugget_cf252.getUnlocalizedName());
+		GameRegistry.registerItem(nugget_cf249, nugget_cf249.getUnlocalizedName());
+		GameRegistry.registerItem(nugget_cf250, nugget_cf250.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_es253, nugget_es253.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_cn989, nugget_cn989.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_neptunium, nugget_neptunium.getUnlocalizedName());
@@ -7086,6 +7100,7 @@ public class ModItems {
 		GameRegistry.registerItem(barium_oxide, barium_oxide.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_barium, ingot_barium.getUnlocalizedName());
 		GameRegistry.registerItem(barium_nugget, barium_nugget.getUnlocalizedName());
+		GameRegistry.registerItem(rutherfordium_nugget, rutherfordium_nugget.getUnlocalizedName());
 		GameRegistry.registerItem(hard_drive, hard_drive.getUnlocalizedName());
 		GameRegistry.registerItem(full_drive, full_drive.getUnlocalizedName());
 

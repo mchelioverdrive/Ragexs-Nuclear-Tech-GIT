@@ -32,6 +32,8 @@ public class OutgasserRecipes extends SerializableRecipe {
 	@Override
 	public void registerDefaults() {
 
+		//outgasser/rbmk irradiation recipes.
+
 		/* lithium to tritium */
 		recipes.put(new OreDictStack(LI.block()),		new Pair(null, new FluidStack(Fluids.TRITIUM, 10_000)));
 		recipes.put(new OreDictStack(LI.ingot()),		new Pair(null, new FluidStack(Fluids.TRITIUM, 1_000)));
@@ -71,6 +73,14 @@ public class OutgasserRecipes extends SerializableRecipe {
 
 		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.COAL)),	new Pair(null, new FluidStack(Fluids.COALOIL, 100)));
 		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.WAX)),	new Pair(null, new FluidStack(Fluids.RADIOSOLVENT, 100)));
+
+		/* californium mass shifting */
+		recipes.put(new ComparableStack(ModItems.ingot_cf252),
+			new Pair(new ItemStack(ModItems.ingot_cf251), null));
+
+		recipes.put(new ComparableStack(ModItems.ingot_cf251),
+			new Pair(new ItemStack(ModItems.cf_light_fraction), null)); //mix of light isotopes, mostly for cf-249 we'll handle other isotopes in the future if needed.
+
 	}
 
 	public static Pair<ItemStack, FluidStack> getOutput(ItemStack input) {
