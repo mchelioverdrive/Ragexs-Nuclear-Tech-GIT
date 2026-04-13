@@ -164,7 +164,8 @@ public class CyclotronRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.nugget_cf249), new ComparableStack(ModItems.ingot_graphite), new ItemStack(ModItems.rutherfordium_nugget), 400);
 
 		//californium
-		makeRecipe(new ComparableStack(ModItems.powder_cf252), new ComparableStack(ModItems.ingot_graphite), new ItemStack(ModItems.californium_nugget), 500);
+		makeRecipe(new ComparableStack(ModItems.ingot_cm247), new ComparableStack(ModItems.powder_uranium), new ItemStack(ModItems.nugget_cf249), 500);
+		//help I am losing my mind
 
 	}
 
