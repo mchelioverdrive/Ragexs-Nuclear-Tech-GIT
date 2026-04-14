@@ -30,7 +30,19 @@ public class SmeltingRecipes {
 
 		// Oredict doesn't work for vanilla smelting :(
 
-		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.stone_resource), new ItemStack(ModItems.quicklime), 0.2F);
+		//this needs to be SPECIFICALLY malachite.
+		GameRegistry.addSmelting(
+			new ItemStack(ModBlocks.stone_resource, 1, BlockEnums.EnumStoneType.MALACHITE.ordinal()),
+			new ItemStack(ModItems.ingot_copper),
+			0.1F
+		);
+
+		//this needs to be ONLY limestone.
+		GameRegistry.addSmelting(
+			new ItemStack(ModBlocks.stone_resource, 1, BlockEnums.EnumStoneType.LIMESTONE.ordinal()),
+			new ItemStack(ModItems.quicklime),
+			0.2F
+		);
 		//EnumStoneType.LIMESTONE.ordinal()
 
 		//I cannot be bothered to differentiate ore smelting and food smelting but eh maybe later

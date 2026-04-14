@@ -16,6 +16,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
+import com.hbm.blocks.BlockEnums;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.config.GeneralConfig;
 import com.hbm.handler.imc.IMCBlastFurnace;
@@ -29,6 +30,7 @@ import com.hbm.main.MainRegistry;
 import com.hbm.util.Tuple.Triplet;
 
 import net.minecraft.block.Block;
+import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
@@ -71,6 +73,10 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 		//addRecipe(ModBlocks.block_meteor,				CO,												new ItemStack(ModItems.ingot_meteorite));
 
 		//addRecipe(new ComparableStack(ModItems.strontium_sulfide, 1),							COAL,										new ItemStack(ModItems.powder_strontium, 2));
+
+		//early game hematite -> iron progression
+		//FUCK BOBCAT AND HIS FUCKING ENUMS
+		addRecipe(new ComparableStack(ModBlocks.stone_resource, 1, BlockEnums.EnumStoneType.HEMATITE.ordinal()), COAL, new ItemStack(Items.iron_ingot, 1));
 
 		addRecipe(
 			new ComparableStack(ModItems.strontium_sulfide, 1),

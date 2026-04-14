@@ -177,6 +177,9 @@ public class ShredderRecipes extends SerializableRecipe {
 		//zircon
 		ShredderRecipes.setRecipe(new ItemStack(ModItems.zircon), new ItemStack(ModItems.powder_zircon, 3));
 
+		//magnesium -> glowstone, for my sanity.
+		ShredderRecipes.setRecipe(new ItemStack(ModItems.magnesium_ingot), new ItemStack(Blocks.glowstone, 4));
+
 		//other possibly realistic probably not, bullshit:
 
 

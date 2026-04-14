@@ -147,6 +147,18 @@ public class CraftingManager {
 		}
 
 
+		//TODOne BLOOMERY BASIC RECIPE HERE
+		//needs to be craftable, this is retarded
+		//constructionRecipes.add(new AnvilConstructionRecipe(
+		//		new AStack[] {
+		//				new ComparableStack(Blocks.stonebrick, 4),
+		//				new ComparableStack(ModItems.ingot_firebrick, 4),
+		//				new OreDictStack(CU.plate(), 4)
+		//		},
+		//		new AnvilOutput(new ItemStack(ModBlocks.machine_difurnace_off))).setTier(1));
+		addRecipeAuto(new ItemStack(ModBlocks.machine_difurnace_off, 1), new Object[] { "BBB", "SFS", "SAS", 'S', Blocks.stonebrick, 'F', ModItems.ingot_firebrick, 'A', Blocks.furnace, 'B', CU.ingot() });
+
+
 
 		//addRecipeAuto(new ItemStack(ModItems.redstone_sword, 1), new Object[] { "R", "R", "S", 'R', REDSTONE.block(), 'S', KEY_STICK });
 		//addRecipeAuto(new ItemStack(ModItems.big_sword, 1), new Object[] { "QIQ", "QIQ", "GSG", 'G', Items.gold_ingot, 'S', KEY_STICK, 'I', Items.iron_ingot, 'Q', Items.quartz});
