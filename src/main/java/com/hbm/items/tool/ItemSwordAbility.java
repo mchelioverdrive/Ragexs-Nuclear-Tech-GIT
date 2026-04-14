@@ -25,7 +25,7 @@ public class ItemSwordAbility extends ItemSword implements IItemAbility {
 	// was there a reason for this to be private?
 	protected float damage;
 	protected double movement;
-	public List<WeaponAbility> hitAbility = new ArrayList();
+	private List<WeaponAbility> hitAbility = new ArrayList();
 
 	public ItemSwordAbility(float damage, double movement, ToolMaterial material) {
 		super(material);

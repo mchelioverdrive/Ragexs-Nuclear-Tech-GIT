@@ -9,6 +9,7 @@ import java.util.Random;
 
 import com.hbm.explosion.ExplosionNukeSmall;
 import com.hbm.util.*;
+import net.minecraft.nbt.NBTTagCompound;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
@@ -388,6 +389,27 @@ public class ModEventHandlerClient {
 			if(props.getDashCount() > 0) {
 				RenderScreenOverlay.renderDashBar(event.resolution, Minecraft.getMinecraft().ingameGUI, props);
 
+			}
+		}
+	}
+
+	@SubscribeEvent
+	public void onFOVUpdate(FOVUpdateEvent event) {
+
+		EntityPlayer player = event.entity;
+		NBTTagCompound data = player.getEntityData();
+
+		if(data.getBoolean("OnMeth")) {
+
+			int dose = data.getInteger("MethDose");
+
+			// base stimulant FOV
+			event.newfov *= 1.25F;
+
+			// jitter if heavily dosed
+			if(dose >= 3) {
+				float jitter = (player.getRNG().nextFloat() - 0.5F) * 0.06F;
+				event.newfov *= 1.0F + jitter;
 			}
 		}
 	}
