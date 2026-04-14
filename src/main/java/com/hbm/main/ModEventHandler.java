@@ -11,7 +11,10 @@ import java.util.UUID;
 
 import com.hbm.dim.laythe.WorldProviderLaythe;
 import com.hbm.entity.mob.EntityFRIEND;
+import com.hbm.handler.*;
 import com.hbm.items.food.ItemConserve;
+import com.hbm.items.tool.IItemAbility;
+import com.hbm.items.tool.ItemSwordAbility;
 import com.hbm.world.generator.DungeonToolbox;
 import net.minecraft.stats.Achievement;
 import net.minecraft.stats.AchievementList;
@@ -47,17 +50,10 @@ import com.hbm.entity.projectile.EntityBurningFOEQ;
 import com.hbm.entity.train.EntityRailCarBase;
 import com.hbm.extprop.HbmLivingProps;
 import com.hbm.extprop.HbmPlayerProps;
-import com.hbm.handler.ArmorModHandler;
-import com.hbm.handler.BobmazonOfferFactory;
-import com.hbm.handler.BossSpawnHandler;
-import com.hbm.handler.BulletConfigSyncingUtil;
-import com.hbm.handler.BulletConfiguration;
-import com.hbm.handler.EntityEffectHandler;
 import com.hbm.hazard.HazardRegistry;
 import com.hbm.hazard.HazardSystem;
 import com.hbm.hazard.type.HazardTypeNeutron;
 import com.hbm.interfaces.IBomb;
-import com.hbm.handler.HTTPHandler;
 import com.hbm.handler.HbmKeybinds.EnumKeybind;
 import com.hbm.handler.atmosphere.ChunkAtmosphereManager;
 import com.hbm.handler.pollution.PollutionHandler;
@@ -217,6 +213,49 @@ public class ModEventHandler {
 			System.out.println("[DEBUG] Exception in DebugAchievementTicker: " + e);
 			e.printStackTrace();
 		}
+	}
+
+	@SubscribeEvent
+	public void onDeath(LivingDeathEvent event) {
+
+		if(!(event.entityLiving instanceof EntityPlayer)) return;
+
+		EntityPlayer victim = (EntityPlayer) event.entityLiving;
+
+		// Only care if killed by a player (optional, remove if you want ALL deaths)
+		if(!(event.source.getEntity() instanceof EntityPlayer)) {
+			dropHead(victim);
+			return;
+		}
+
+		EntityPlayer killer = (EntityPlayer) event.source.getEntity();
+		ItemStack held = killer.getHeldItem();
+
+		// If killer has a beheader weapon → DO NOTHING (skip drop)
+		if(held != null && held.getItem() instanceof IItemAbility) {
+
+			IItemAbility tool = (IItemAbility) held.getItem();
+
+			if(tool instanceof ItemSwordAbility) {
+				ItemSwordAbility sword = (ItemSwordAbility) tool;
+
+				boolean hasBeheader = sword.hitAbility.stream()
+					.anyMatch(a -> a instanceof WeaponAbility.BeheaderAbility);
+
+				if(hasBeheader) return; // <-- THIS is the key change
+			}
+		}
+
+		// Default behavior → ALWAYS drop head
+		dropHead(victim);
+	}
+
+	private void dropHead(EntityPlayer victim) {
+		ItemStack head = new ItemStack(Items.skull, 1, 3);
+		head.stackTagCompound = new NBTTagCompound();
+		head.stackTagCompound.setString("SkullOwner", victim.getDisplayName());
+
+		victim.entityDropItem(head, 0.0F);
 	}
 
 	@SubscribeEvent

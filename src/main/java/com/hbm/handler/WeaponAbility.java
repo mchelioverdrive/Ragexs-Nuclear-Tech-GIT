@@ -289,6 +289,8 @@ public abstract class WeaponAbility {
 		@Override
 		public void onHit(World world, EntityPlayer player, Entity victim, IItemAbility tool) {
 
+			//this should just be standard , not just ability.
+
 			if(victim instanceof EntityLivingBase && ((EntityLivingBase) victim).getHealth() <= 0.0F) {
 
 				EntityLivingBase living = (EntityLivingBase) victim;
