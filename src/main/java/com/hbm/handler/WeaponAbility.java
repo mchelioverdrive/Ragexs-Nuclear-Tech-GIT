@@ -315,13 +315,17 @@ public abstract class WeaponAbility {
 					living.entityDropItem(new ItemStack(Items.magma_cream, 3), 0.0F);
 				} else if(living instanceof EntitySlime) {
 					living.entityDropItem(new ItemStack(Items.slime_ball, 3), 0.0F);
-				} else if(living instanceof EntityPlayer) {
-
-					ItemStack head = new ItemStack(Items.skull, 1, 3);
-					head.stackTagCompound = new NBTTagCompound();
-					head.stackTagCompound.setString("SkullOwner", ((EntityPlayer) living).getDisplayName());
-					living.entityDropItem(head, 0.0F);
 				} else {
+				//else if(living instanceof EntityPlayer) {
+//
+				//	//ItemStack head = new ItemStack(Items.skull, 1, 3);
+				//	//head.stackTagCompound = new NBTTagCompound();
+				//	//head.stackTagCompound.setString("SkullOwner", ((EntityPlayer) living).getDisplayName());
+				//	//living.entityDropItem(head, 0.0F);
+				//} else {
+
+					//whatever
+
 					living.entityDropItem(new ItemStack(Items.rotten_flesh, 3, 0), 0.0F);
 					//living.entityDropItem(new ItemStack(Items.bone, 2, 0), 0.0F);
 				}
