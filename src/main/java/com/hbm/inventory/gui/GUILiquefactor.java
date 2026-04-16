@@ -12,18 +12,18 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.util.ResourceLocation;
 
 public class GUILiquefactor extends GuiInfoContainer {
-	
+
 	private static ResourceLocation texture = new ResourceLocation(RefStrings.MODID + ":textures/gui/processing/gui_liquefactor.png");
 	private TileEntityMachineLiquefactor liquefactor;
 
 	public GUILiquefactor(InventoryPlayer invPlayer, TileEntityMachineLiquefactor tedf) {
 		super(new ContainerLiquefactor(invPlayer, tedf));
 		liquefactor = tedf;
-		
+
 		this.xSize = 176;
 		this.ySize = 204;
 	}
-	
+
 	@Override
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
@@ -31,12 +31,12 @@ public class GUILiquefactor extends GuiInfoContainer {
 		liquefactor.tank.renderTankInfo(this, mouseX, mouseY, guiLeft + 71, guiTop + 36, 16, 52);
 		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 134, guiTop + 18, 16, 52, liquefactor.power, liquefactor.maxPower);
 	}
-	
+
 	@Override
 	protected void drawGuiContainerForegroundLayer(int i, int j) {
-		
+
 		String name = this.liquefactor.hasCustomInventoryName() ? this.liquefactor.getInventoryName() : I18n.format(this.liquefactor.getInventoryName());
-		
+
 		this.fontRendererObj.drawString(name, 70 - this.fontRendererObj.getStringWidth(name) / 2, 6, 0xC7C1A3);
 		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96 + 2, 4210752);
 	}
@@ -49,13 +49,18 @@ public class GUILiquefactor extends GuiInfoContainer {
 
 		int i = (int)(liquefactor.getPower() * 52 / liquefactor.getMaxPower());
 		drawTexturedModalRect(guiLeft + 134, guiTop + 70 - i, 176, 52 - i, 16, i);
-		
-		int j = liquefactor.progress * 42 / liquefactor.processTime;
+
+		int j = 0;
+
+		if (liquefactor.processTime > 0) {
+			j = liquefactor.progress * 42 / liquefactor.processTime;
+		}
+		//causes a divide by 0 crash... somehow? ^
 		drawTexturedModalRect(guiLeft + 42, guiTop + 17, 192, 0, j, 35);
-		
+
 		if(i > 0)
 			drawTexturedModalRect(guiLeft + 138, guiTop + 4, 176, 52, 9, 12);
-		
+
 		liquefactor.tank.renderTank(guiLeft + 71, guiTop + 88, this.zLevel, 16, 52);
 	}
 }

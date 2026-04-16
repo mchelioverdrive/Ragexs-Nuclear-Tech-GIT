@@ -74,6 +74,9 @@ public class LiquefactionRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(ModItems.ingot_osmiridium),	new FluidStack(24000, Fluids.ETHANOL));
 		//recipes.put(new ComparableStack(ModItems.solid_fuel_bf),	new FluidStack(250, Fluids.BALEFIRE));
 
+		//potassium -> liquid potassium
+		recipes.put(new ComparableStack(ModItems.potassium_powder),				new FluidStack(800, Fluids.POTASSIUM));
+
 		//TODO: more recipes as the crack oil derivatives are added
 	}
 

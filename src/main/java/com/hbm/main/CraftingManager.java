@@ -159,6 +159,10 @@ public class CraftingManager {
 		addRecipeAuto(new ItemStack(ModBlocks.machine_difurnace_off, 1), new Object[] { "BBB", "SFS", "SAS", 'S', Blocks.stonebrick, 'F', ModItems.ingot_firebrick, 'A', Blocks.furnace, 'B', CU.ingot() });
 
 
+		//potassium sulfate recipe
+		addRecipeAuto(new ItemStack(ModItems.potassium_sulfate, 1), new Object[] { " S ", "SKK", " S ", 'S', S.dust(), 'K', ModItems.potassium_powder });
+
+
 
 		//addRecipeAuto(new ItemStack(ModItems.redstone_sword, 1), new Object[] { "R", "R", "S", 'R', REDSTONE.block(), 'S', KEY_STICK });
 		//addRecipeAuto(new ItemStack(ModItems.big_sword, 1), new Object[] { "QIQ", "QIQ", "GSG", 'G', Items.gold_ingot, 'S', KEY_STICK, 'I', Items.iron_ingot, 'Q', Items.quartz});

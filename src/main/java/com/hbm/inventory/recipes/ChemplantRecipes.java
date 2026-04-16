@@ -1035,6 +1035,27 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.outputFluids(new FluidStack(Fluids.WATER, 1500))
 		);
 
+		//powder_fertilizer from potassium chloride
+		recipes.add(new ChemRecipe(1051, "FERTILIZER", 50)
+			.inputFluids(new FluidStack(Fluids.POTASSIUM_CHLORIDE, 1000))
+			.outputItems(new ItemStack(ModItems.powder_fertilizer, 4))
+		);
+
+		//potassium sulfate from potassium chloride and sulfuric acid (best fertilizer)
+		//recipes.add(new ChemRecipe(1052, "POTASSIUM_SULFATE", 50)
+		//	.inputFluids(new FluidStack(Fluids.POTASSIUM_CHLORIDE, 1000), new FluidStack(Fluids.SULFURIC_ACID, 1000))
+		//	.outputItems(new ItemStack(ModItems.potassium_sulfate, 1))
+		//	.outputFluids(new FluidStack(Fluids.HCL, 1000))
+		//);
+
+		//fertilizer from potassium sulfate (best process)
+		recipes.add(new ChemRecipe(1052, "FERTILIZER_2", 50)
+			.inputItems(new ComparableStack(ModItems.potassium_sulfate, 1))
+			.outputItems(new ItemStack(ModItems.powder_fertilizer, 8))
+		);
+
+
+
 
 
 
