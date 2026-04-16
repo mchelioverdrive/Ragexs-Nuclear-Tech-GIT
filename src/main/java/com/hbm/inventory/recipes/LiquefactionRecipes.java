@@ -46,8 +46,8 @@ public class LiquefactionRecipes extends SerializableRecipe {
 		recipes.put(PB.dust(),										new FluidStack(100, Fluids.LEAD));
 		//general utility recipes because why not
 		recipes.put(new ComparableStack(Blocks.netherrack),			new FluidStack(250, Fluids.LAVA));
-		recipes.put(new ComparableStack(Blocks.cobblestone),		new FluidStack(250, Fluids.LAVA));
-		recipes.put(new ComparableStack(Blocks.stone),				new FluidStack(250, Fluids.LAVA));
+		//recipes.put(new ComparableStack(Blocks.cobblestone),		new FluidStack(250, Fluids.LAVA));
+		//recipes.put(new ComparableStack(Blocks.stone),				new FluidStack(250, Fluids.LAVA));
 		recipes.put(new ComparableStack(Blocks.obsidian),			new FluidStack(500, Fluids.LAVA));
 		recipes.put(new ComparableStack(Items.snowball),			new FluidStack(125, Fluids.WATER));
 		recipes.put(new ComparableStack(Blocks.snow),				new FluidStack(500, Fluids.WATER));
@@ -55,11 +55,15 @@ public class LiquefactionRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(Blocks.packed_ice),			new FluidStack(2000, Fluids.WATER));
 		recipes.put(new ComparableStack(ModBlocks.dry_ice),			new FluidStack(1000, Fluids.CARBONDIOXIDE));
 		//recipes.put(new ComparableStack(Items.ender_pearl),			new FluidStack(100, Fluids.ENDERJUICE));
+		//ionized particles -> helium 4
 		recipes.put(new ComparableStack(ModItems.pellet_charged),	new FluidStack(4000, Fluids.HELIUM4));
+
 		recipes.put(new ComparableStack(ModBlocks.ore_oil_sand),	new FluidStack(100, Fluids.BITUMEN));
 
 		recipes.put(new ComparableStack(Items.sugar),				new FluidStack(100, Fluids.ETHANOL));
+		//hemp
 		recipes.put(new ComparableStack(ModBlocks.plant_flower, 1, 3), new FluidStack(150, Fluids.ETHANOL));
+		//mustard willow
 		recipes.put(new ComparableStack(ModBlocks.plant_flower, 1, 4), new FluidStack(50, Fluids.ETHANOL));
 		recipes.put(new ComparableStack(ModItems.biomass),			new FluidStack(125, Fluids.BIOGAS));
 		//recipes.put(new ComparableStack(ModItems.glyphid_gland_empty),			new FluidStack(2000, Fluids.BIOGAS));
@@ -70,12 +74,17 @@ public class LiquefactionRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(Blocks.tallgrass, 1, 1),	new FluidStack(100, Fluids.SEEDSLURRY));
 		recipes.put(new ComparableStack(Blocks.tallgrass, 1, 2),	new FluidStack(100, Fluids.SEEDSLURRY));
 		recipes.put(new ComparableStack(Blocks.vine),				new FluidStack(100, Fluids.SEEDSLURRY));
-		recipes.put(new ComparableStack(ModItems.flesh),			new FluidStack(100, Fluids.BLOOD));
-		recipes.put(new ComparableStack(ModItems.ingot_osmiridium),	new FluidStack(24000, Fluids.ETHANOL));
+		//recipes.put(new ComparableStack(ModItems.flesh),			new FluidStack(20, Fluids.BLOOD));
+		//that's not how that works either-
+		//recipes.put(new ComparableStack(ModItems.ingot_osmiridium),	new FluidStack(24000, Fluids.ETHANOL));
+		//I don't think that's how that works-
 		//recipes.put(new ComparableStack(ModItems.solid_fuel_bf),	new FluidStack(250, Fluids.BALEFIRE));
 
 		//potassium -> liquid potassium
 		recipes.put(new ComparableStack(ModItems.potassium_powder),				new FluidStack(800, Fluids.POTASSIUM));
+
+		//potato -> small amount of potassium
+		recipes.put(new ComparableStack(Items.potato),				new FluidStack(5, Fluids.POTASSIUM));
 
 		//TODO: more recipes as the crack oil derivatives are added
 	}
