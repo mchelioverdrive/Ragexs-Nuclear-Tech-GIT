@@ -81,6 +81,10 @@ public class OutgasserRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(ModItems.ingot_cf251),
 			new Pair(new ItemStack(ModItems.cf_light_fraction), null)); //mix of light isotopes, mostly for cf-249 we'll handle other isotopes in the future if needed.
 
+		//actinium from radium
+		recipes.put(new ComparableStack(ModItems.ingot_ra226),
+			new Pair(new ItemStack(ModItems.ingot_actinium), null));
+
 	}
 
 	public static Pair<ItemStack, FluidStack> getOutput(ItemStack input) {
