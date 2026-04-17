@@ -741,8 +741,10 @@ public class ModItems {
 	public static Item fragment_coltan;
 	public static Item chunk_ore;
 
+
 	public static Item chunk_ironoxide;
 	public static Item chunk_coppersulfide;
+	public static Item powder_vanadium;
 
 	public static Item chunk_leadzincsulfide;
 	public static Item chunk_nickelsulfide;
@@ -758,6 +760,7 @@ public class ModItems {
 	//iron
 	public static Item magnetite;
 	public static Item goethite;
+	public static Item fragment_vanadium;
 
 	//copper
 	public static Item chalcopyrite;
@@ -3464,6 +3467,7 @@ public class ModItems {
 		//why the fuck did you need enums... bobcat moment!
 		chunk_ironoxide = new Item().setUnlocalizedName("chunk_ironoxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_iron");
 		chunk_coppersulfide = new Item().setUnlocalizedName("chunk_coppersulfide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_copper");
+		powder_vanadium = new Item().setUnlocalizedName("powder_vanadium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + "powder_vanadium");
 		chunk_leadzincsulfide = new Item().setUnlocalizedName("chunk_leadzincsulfide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_lead");
 		chunk_nickelsulfide = new Item().setUnlocalizedName("chunk_nickelsulfide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_nickel");
 		chunk_tintungsten = new Item().setUnlocalizedName("chunk_tintungsten").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_iron");
@@ -3478,6 +3482,7 @@ public class ModItems {
 		//iron
 		magnetite = new Item().setUnlocalizedName("magnetite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_beryllium");
 		goethite = new Item().setUnlocalizedName("goethite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_beryllium");
+		fragment_vanadium = new Item().setUnlocalizedName("fragment_vanadium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_vanadium");
 
 		//copper
 		chalcopyrite = new Item().setUnlocalizedName("chalcopyrite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_copper");
@@ -6828,6 +6833,7 @@ public class ModItems {
 		//anti retard logic for ores
 		GameRegistry.registerItem(chunk_ironoxide, chunk_ironoxide.getUnlocalizedName());
 		GameRegistry.registerItem(chunk_coppersulfide, chunk_coppersulfide.getUnlocalizedName());
+		GameRegistry.registerItem(powder_vanadium, powder_vanadium.getUnlocalizedName());
 		GameRegistry.registerItem(chunk_leadzincsulfide, chunk_leadzincsulfide.getUnlocalizedName());
 		GameRegistry.registerItem(chunk_nickelsulfide, chunk_nickelsulfide.getUnlocalizedName());
 		GameRegistry.registerItem(chunk_tintungsten, chunk_tintungsten.getUnlocalizedName());
@@ -6843,6 +6849,7 @@ public class ModItems {
 		//iron
 		GameRegistry.registerItem(magnetite, magnetite.getUnlocalizedName());
 		GameRegistry.registerItem(goethite, goethite.getUnlocalizedName());
+		GameRegistry.registerItem(fragment_vanadium, fragment_vanadium.getUnlocalizedName());
 
 		//copper
 		GameRegistry.registerItem(chalcopyrite, chalcopyrite.getUnlocalizedName());

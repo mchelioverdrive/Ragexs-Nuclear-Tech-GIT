@@ -689,7 +689,8 @@ public class AnvilRecipes {
 				new AnvilOutput(new ItemStack(ModItems.fragment_neodymium), 0.7F),
 
 				// TRACE ELEMENT
-				new AnvilOutput(new ItemStack(ModItems.fragment_niobium), 0.35F),
+				//new AnvilOutput(new ItemStack(ModItems.fragment_niobium), 0.35F),
+				//does not belong here
 				new AnvilOutput(new ItemStack(ModItems.fragment_yttrium), 0.15F),
 
 				//thorium
@@ -731,7 +732,8 @@ public class AnvilRecipes {
 				new AnvilOutput(new ItemStack(ModItems.magnetite, 1), 0.5F),
 				new AnvilOutput(new ItemStack(ModItems.goethite, 1), 0.5F),
 				//actually dolomite but I don't feel like changing the name in the code damn get off my back
-				new AnvilOutput(new ItemStack(ModBlocks.ore_magnesite, 1), 0.2F)
+				new AnvilOutput(new ItemStack(ModBlocks.ore_magnesite, 1), 0.2F),
+				new AnvilOutput(new ItemStack(ModItems.fragment_vanadium), 0.2F)
 
 			}
 		).setTier(2));
@@ -797,7 +799,9 @@ public class AnvilRecipes {
 				// common secondary
 				new AnvilOutput(new ItemStack(ModItems.wolframite, 1), 0.35F),
 				// rarer secondary
-				new AnvilOutput(new ItemStack(ModItems.columbite, 1), 0.15F)
+				new AnvilOutput(new ItemStack(ModItems.columbite, 1), 0.15F),
+				//new AnvilOutput(new ItemStack(ModItems.fragment_niobium), 0.2F)
+				//covered in columbite.
 			}
 		).setTier(2));
 
@@ -810,7 +814,9 @@ public class AnvilRecipes {
 				// common secondary
 				new AnvilOutput(new ItemStack(ModItems.lepidolite, 1), 0.55F),
 				// rarer secondary
-				new AnvilOutput(new ItemStack(ModItems.petalite, 1), 0.15F)
+				new AnvilOutput(new ItemStack(ModItems.petalite, 1), 0.15F),
+				//new AnvilOutput(new ItemStack(ModItems.fragment_coltan), 0.2F)
+				//columbite already does this.
 			}
 		).setTier(2));
 

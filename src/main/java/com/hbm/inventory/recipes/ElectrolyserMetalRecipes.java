@@ -104,10 +104,10 @@ public class ElectrolyserMetalRecipes extends SerializableRecipe {
 				new MaterialStack(Mats.MAT_PLUTONIUM, MaterialShapes.INGOT.q(2)),
 				new ItemStack(ModItems.powder_lithium_tiny, 3)));
 
-		recipes.put(new ComparableStack(ModItems.crystal_rare), new ElectrolysisMetalRecipe(
-				new MaterialStack(Mats.MAT_ZIRCONIUM, MaterialShapes.NUGGET.q(6)),
-				new MaterialStack(Mats.MAT_BORON, MaterialShapes.NUGGET.q(2)),
-				new ItemStack(ModItems.powder_desh_mix, 3)));
+		//recipes.put(new ComparableStack(ModItems.crystal_rare), new ElectrolysisMetalRecipe(
+		//		new MaterialStack(Mats.MAT_ZIRCONIUM, MaterialShapes.NUGGET.q(6)),
+		//		new MaterialStack(Mats.MAT_BORON, MaterialShapes.NUGGET.q(2)),
+		//		new ItemStack(ModItems.powder_desh_mix, 3)));
 
 		recipes.put(new ComparableStack(ModItems.crystal_trixite), new ElectrolysisMetalRecipe(
 				new MaterialStack(Mats.MAT_PLUTONIUM, MaterialShapes.INGOT.q(3)),

@@ -60,19 +60,22 @@ public class PowderRecipes {
 		//"Melting: Scrap steel is melted, usually in an electric arc furnace,
 		// and alloying elements (like chromium, tungsten, molybdenum, and vanadium)
 		// are added to achieve the desired composition for properties such as hardness and heat resistance. "
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_desh_mix, 1), new Object[] { B.dustTiny(), B.dustTiny(), LA.dustTiny(), LA.dustTiny(), CE.dustTiny(), CO.dustTiny(), LI.dustTiny(), ND.dustTiny(), NB.dustTiny() });
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_desh_mix, 9), new Object[] { B.dust(), B.dust(), LA.dust(), LA.dust(), CE.dust(), CO.dust(), LI.dust(), ND.dust(), NB.dust() });
+		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_desh_mix, 1), new Object[] { B.dustTiny(), B.dustTiny(), LA.dustTiny(), LA.dustTiny(), CE.dustTiny(), CO.dustTiny(), LI.dustTiny(), ND.dustTiny(), NB.dustTiny() });
+		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_desh_mix, 9), new Object[] { B.dust(), B.dust(), LA.dust(), LA.dust(), CE.dust(), CO.dust(), LI.dust(), ND.dust(), NB.dust() });
 
 		//ok let's just leave the old recipe there because idk it might be useful this mod is pain
+		//GOODBYE.
 
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_desh_mix, 1), new Object[] {
 			W.dust(), W.dust(), ModItems.ingot_stainless, ModItems.ingot_steel_dusted, CE.dustTiny(), CO.ingot(), ModItems.ingot_graphite, NI.ingot(), ModItems.ingot_steel
 		});
+		//TODO put this in place of steel ingot+coal powder in tool steel (desh ingot) production.
 
 		//powder_tungsten
 
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_desh_ready, 1), new Object[] { ModItems.powder_desh_mix, ModItems.ingot_mercury, ModItems.ingot_mercury, COAL.dust() });
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_desh_ready, 1), new Object[] { ModItems.powder_desh_mix, ModItems.ingot_mercury, ModItems.ingot_mercury, ANY_COKE.dust() });
+		//mercury is NOT PART OF TOOL STEEL PRODUCTION.
+		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_desh_ready, 1), new Object[] { ModItems.powder_desh_mix, ModItems.ingot_mercury, ModItems.ingot_mercury, COAL.dust() });
+		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_desh_ready, 1), new Object[] { ModItems.powder_desh_mix, ModItems.ingot_mercury, ModItems.ingot_mercury, ANY_COKE.dust() });
 
 		//Metal powders
 		CraftingManager.addShapelessAuto(ItemScraps.create(new MaterialStack(Mats.MAT_MINGRADE, MaterialShapes.INGOT.q(2))), new Object[] { CU.dust(), REDSTONE.dust() });

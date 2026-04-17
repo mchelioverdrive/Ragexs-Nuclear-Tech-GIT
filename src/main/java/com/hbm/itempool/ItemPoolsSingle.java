@@ -61,7 +61,7 @@ public class ItemPoolsSingle {
 			this.pool = new WeightedRandomChestContent[] {
 					weighted(ModItems.ingot_desh, 0, 2, 6, 1),
 					weighted(ModItems.battery_advanced_cell_4, 0, 1, 1, 1),
-					weighted(ModItems.powder_desh_mix, 0, 1, 5, 1),
+					//weighted(ModItems.powder_desh_mix, 0, 1, 5, 1),
 					weighted(Items.diamond, 0, 3, 6, 1),
 					//weighted(ModItems.ammo_nuke, 0, 1, 1, 1),
 					weighted(ModItems.ammo_container, 0, 1, 1, 1),

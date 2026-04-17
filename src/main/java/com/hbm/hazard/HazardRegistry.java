@@ -273,6 +273,9 @@ public class HazardRegistry {
 
 		HazardSystem.register(new ItemStack(ModItems.rubidiumsalt), makeData(RADIATION, Rb * nugget)); //im sure its fine
 
+		//the idea is this should NOT exist. Maybe I'll add decay at some point.
+		HazardSystem.register(new ItemStack(ModItems.rutherfordium_nugget), makeData(RADIATION, 1000000).addEntry(NEUTRON, 100000F).addEntry(HOT, 100000F).addEntry(BLINDING, 1000F).addEntry(EXPLOSIVE, 100F).addEntry(AUTISM, 500F).addEntry(ASBESTOS, 500F).addEntry(COAL, 500F).addEntry(HYDROACTIVE, 500F));
+
 		registerOtherFuel(rod_zirnox, EnumZirnoxType.NATURAL_URANIUM_FUEL.ordinal(), u * rod_dual, wst * rod_dual * 11.5F, false);
 		registerOtherFuel(rod_zirnox, EnumZirnoxType.URANIUM_FUEL.ordinal(), uf * rod_dual, wst * rod_dual * 10F, false);
 		registerOtherFuel(rod_zirnox, EnumZirnoxType.TH232.ordinal(), th232 * rod_dual, thf * rod_dual, false);

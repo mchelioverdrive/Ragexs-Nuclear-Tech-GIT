@@ -59,8 +59,9 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//TOOL STEEL DOES NOT INVOLVE FUCKING MERCURY RETARD
 		recipes.add(new ChemRecipe(38, "DESH", 300)
 				.inputItems(
-					new ComparableStack(ModItems.ingot_steel, 2),
-					new ComparableStack(ModItems.powder_coal, 1),
+					//new ComparableStack(ModItems.ingot_steel, 2),
+					//new ComparableStack(ModItems.powder_coal, 1),
+					new ComparableStack(ModItems.powder_desh_mix, 1),
 					new ComparableStack(ModItems.ingot_chromium, 1),
 					new ComparableStack(ModItems.ingot_vanadium, 1)
 					//TODO
@@ -70,7 +71,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 								//new FluidStack[] {new FluidStack(Fluids.LIGHTOIL, 200)} :
 								new FluidStack[] {new FluidStack(Fluids.OXYGEN, 200),
 								new FluidStack(Fluids.ARGON, 20)})
-				.outputItems(new ItemStack(ModItems.ingot_desh)));
+				.outputItems(new ItemStack(ModItems.ingot_desh, 4))); //here have 4 since this is already cancer
 		recipes.add(new ChemRecipe(39, "NITAN", 50)
 				.inputItems(new ComparableStack(ModItems.powder_nitan_mix))
 				.inputFluids(

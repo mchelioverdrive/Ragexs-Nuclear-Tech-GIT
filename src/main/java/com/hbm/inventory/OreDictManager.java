@@ -325,6 +325,7 @@ public class OreDictManager {
 	public static final DictFrame SC = new DictFrame("Scandium");
 	public static final DictFrame Y = new DictFrame("Yttrium");
 	public static final DictFrame Sn = new DictFrame("Tin");
+	public static final DictFrame V = new DictFrame("Vanadium");
 	/*
 	 * NITAN
 	 */
@@ -572,6 +573,7 @@ public class OreDictManager {
 		SC  .ingot(scandium_ingot);
 		Y 	.ingot(yttrium_ingot) .nugget(fragment_yttrium) .dustSmall(powder_yttrium_tiny) .dust(powder_yttrium);
 		Sn 	.ingot(ingot_tin)		 .oreAll(ore_tin); //.block(block_tin)		.ore(ore_gneiss_tin) .nugget(nugget_tin)
+		V 	.ingot(ingot_vanadium) .nugget(fragment_vanadium)	.dust(powder_vanadium);
 
 
 		/*

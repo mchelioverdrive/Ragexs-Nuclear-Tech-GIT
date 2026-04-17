@@ -1514,6 +1514,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_10_kerosene,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_10,
 										   1),
 					   new OreDictStack(STEEL.pipe(),
@@ -1527,6 +1530,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_10_solid,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_10,
 										   1),
 					   new ComparableStack(ModItems.coil_tungsten,
@@ -1540,6 +1546,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_10_xenon,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_10,
 										   1),
 					   new OreDictStack(STEEL.plate(),
@@ -1554,6 +1563,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_15_kerosene,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_15,
 										   1),
 					   new OreDictStack(STEEL.pipe(),
@@ -1568,6 +1580,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_15_kerosene_dual,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_15,
 										   1),
 					   new OreDictStack(STEEL.pipe(),
@@ -1582,6 +1597,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_15_kerosene_triple,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_15,
 										   1),
 					   new OreDictStack(STEEL.pipe(),
@@ -1596,6 +1614,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_15_solid,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_15,
 										   1),
 					   new OreDictStack(STEEL.plate(),
@@ -1608,6 +1629,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_15_solid_hexdecuple,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_15,
 										   1),
 					   new OreDictStack(STEEL.plate(),
@@ -1620,6 +1644,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_15_hydrogen,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_15,
 										   1),
 					   new OreDictStack(STEEL.pipe(),
@@ -1636,6 +1663,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_15_hydrogen_dual,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_15,
 										   1),
 					   new OreDictStack(STEEL.pipe(),
@@ -1654,6 +1684,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_15_balefire_short,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_15,
 										   1),
 					   new ComparableStack(ModItems.plate_polymer,
@@ -1666,14 +1699,17 @@ public class AssemblerRecipes extends SerializableRecipe {
 										12),
 					   new OreDictStack(CU.plateCast(),
 										2),
-					   new ComparableStack(ModItems.ingot_uranium_fuel,
-										   4),
+					// new ComparableStack(ModItems.ingot_uranium_fuel,
+					//					   4),
 					   new ComparableStack(ModItems.pipes_steel,
 										   2),},
 				   500);
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_15_balefire,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_15,
 										   1),
 					   new ComparableStack(ModItems.plate_polymer,
@@ -1686,14 +1722,17 @@ public class AssemblerRecipes extends SerializableRecipe {
 										24),
 					   new OreDictStack(CU.plateCast(),
 										4),
-					   new ComparableStack(ModItems.ingot_uranium_fuel,
-										   8),
+					//   new ComparableStack(ModItems.ingot_uranium_fuel,
+					//					   8),
 					   new ComparableStack(ModItems.pipes_steel,
 										   2),},
 				   500);
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_15_balefire_large,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_15,
 										   1),
 					   new ComparableStack(ModItems.plate_polymer,
@@ -1706,8 +1745,8 @@ public class AssemblerRecipes extends SerializableRecipe {
 										32),
 					   new OreDictStack(CU.plateCast(),
 										4),
-					   new ComparableStack(ModItems.ingot_uranium_fuel,
-										   8),
+				//	   new ComparableStack(ModItems.ingot_uranium_fuel,
+				//						   8),
 					   new ComparableStack(ModItems.pipes_steel,
 										   2),},
 				   500);
@@ -1715,6 +1754,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_20_kerosene,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_20,
 										   1),
 					   new OreDictStack(STEEL.pipe(),
@@ -1729,6 +1771,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_20_kerosene_dual,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_20,
 										   1),
 					   new OreDictStack(STEEL.pipe(),
@@ -1743,6 +1788,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_20_kerosene_triple,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_20,
 										   1),
 					   new OreDictStack(STEEL.pipe(),
@@ -1757,6 +1805,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_20_methalox,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_20,
 										   1),
 					   new OreDictStack(STEEL.pipe(),
@@ -1771,6 +1822,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_20_methalox_dual,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_20,
 										   1),
 					   new OreDictStack(STEEL.pipe(),
@@ -1785,6 +1839,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_20_methalox_triple,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_20,
 										   1),
 					   new OreDictStack(STEEL.pipe(),
@@ -1799,6 +1856,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_20_hydrogen,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_20,
 										   1),
 					   new OreDictStack(STEEL.pipe(),
@@ -1813,6 +1873,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_20_hydrogen_dual,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_20,
 										   1),
 					   new OreDictStack(STEEL.pipe(),
@@ -1827,6 +1890,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_20_hydrogen_triple,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_20,
 										   1),
 					   new OreDictStack(STEEL.pipe(),
@@ -1841,6 +1907,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_20_solid,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_20,
 										   1),
 					   new ComparableStack(ModItems.coil_tungsten,
@@ -1853,6 +1922,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_20_solid_multi,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_20,
 										   1),
 					   new ComparableStack(ModItems.coil_tungsten,
@@ -1865,6 +1937,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModItems.mp_thruster_20_solid_multier,
 									   1),
 				   new AStack[]{
+					   //thruster standard:
+					   new ComparableStack(ModItems.scandium_ingot, 1),
+					   new ComparableStack(ModItems.yttrium_ingot, 4),
 					   new ComparableStack(ModItems.seg_20,
 										   1),
 					   new ComparableStack(ModItems.coil_tungsten,
