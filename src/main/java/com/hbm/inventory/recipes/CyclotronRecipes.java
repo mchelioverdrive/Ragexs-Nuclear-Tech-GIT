@@ -186,11 +186,12 @@ public class CyclotronRecipes extends SerializableRecipe {
 
 		for(Entry<Pair<ComparableStack, AStack>, Pair<ItemStack, Integer>> entry : recipes.entrySet()) {
 
-			System.out.println("---- CHECKING RECIPE ----");
-			System.out.println("Part: " + entry.getKey().getKey().toStack());
-			System.out.println("Input type: " + entry.getKey().getValue().getClass().getSimpleName());
-			System.out.println("BoxStack: " + boxStack.toStack());
-			System.out.println("Input stack: " + (stack == null ? "null" : stack.toString()));
+			//System.out.println("---- CHECKING RECIPE ----");
+			//System.out.println("Part: " + entry.getKey().getKey().toStack());
+			//System.out.println("Input type: " + entry.getKey().getValue().getClass().getSimpleName());
+			//System.out.println("BoxStack: " + boxStack.toStack());
+			//System.out.println("Input stack: " + (stack == null ? "null" : stack.toString()));
+			//OK SHUT UP
 
 			AStack input = entry.getKey().getValue();
 

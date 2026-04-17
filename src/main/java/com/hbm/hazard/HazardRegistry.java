@@ -277,6 +277,12 @@ public class HazardRegistry {
 		HazardSystem.register(new ItemStack(ModItems.rutherfordium_nugget), makeData(RADIATION, 1000000).addEntry(NEUTRON, 100000F).addEntry(HOT, 100000F).addEntry(BLINDING, 1F).addEntry(EXPLOSIVE, 1F).addEntry(AUTISM, 5F).addEntry(ASBESTOS, 500F).addEntry(COAL, 500F).addEntry(HYDROACTIVE, 1F));
 		//this FUCKING THING FUCKED UP MY PERIODIC TABLE BY EXPLODING!!!!
 
+		//californium isotopes
+		//cf light fraction is a mix of cf249, cf251, and cf250 when split in the silex.
+		HazardSystem.register(new ItemStack(cf_light_fraction, 1, 0), makeData(RADIATION, cf251 * cf252));
+		HazardSystem.register(new ItemStack(nugget_cf249), makeData(RADIATION, cf251 * nugget));
+		HazardSystem.register(new ItemStack(nugget_cf250), makeData(RADIATION, cf252 * nugget));
+
 		registerOtherFuel(rod_zirnox, EnumZirnoxType.NATURAL_URANIUM_FUEL.ordinal(), u * rod_dual, wst * rod_dual * 11.5F, false);
 		registerOtherFuel(rod_zirnox, EnumZirnoxType.URANIUM_FUEL.ordinal(), uf * rod_dual, wst * rod_dual * 10F, false);
 		registerOtherFuel(rod_zirnox, EnumZirnoxType.TH232.ordinal(), th232 * rod_dual, thf * rod_dual, false);
