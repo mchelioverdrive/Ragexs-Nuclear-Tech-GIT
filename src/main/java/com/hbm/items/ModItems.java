@@ -82,6 +82,7 @@ public class ModItems {
 	//public static Item butter_sword;
 	public static Item scandium_chloride;
 	public static Item scandium_ingot;
+	public static Item scandium_nugget;
 	public static Item yttrium_ingot;
 	public static Item REE_sludge;
 	public static Item scandium_oxide;
@@ -2988,6 +2989,7 @@ public class ModItems {
 		REE_sludge = new Item().setUnlocalizedName("REE_sludge").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_sludge");
 		scandium_chloride = new Item().setUnlocalizedName("scandium_chloride").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		scandium_ingot = new Item().setUnlocalizedName("scandium_ingot").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_scandium");
+		scandium_nugget = new Item().setUnlocalizedName("scandium_nugget").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_scandium");
 		yttrium_ingot = new Item().setUnlocalizedName("yttrium_ingot").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_yttrium");
 		powder_strontium_oxide = new Item().setUnlocalizedName("powder_strontium_oxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		strontium_chloride = new Item().setUnlocalizedName("strontium_chloride").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
@@ -6470,6 +6472,7 @@ public class ModItems {
 		GameRegistry.registerItem(REE_sludge, REE_sludge.getUnlocalizedName());
 		GameRegistry.registerItem(scandium_chloride, scandium_chloride.getUnlocalizedName());
 		GameRegistry.registerItem(scandium_ingot, scandium_ingot.getUnlocalizedName());
+		GameRegistry.registerItem(scandium_nugget, scandium_nugget.getUnlocalizedName());
 		GameRegistry.registerItem(yttrium_ingot, yttrium_ingot.getUnlocalizedName());
 		GameRegistry.registerItem(powder_strontium_oxide, powder_strontium_oxide.getUnlocalizedName());
 		GameRegistry.registerItem(strontium_chloride, strontium_chloride.getUnlocalizedName());

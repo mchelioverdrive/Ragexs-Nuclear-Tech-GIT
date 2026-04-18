@@ -88,6 +88,7 @@ public class MineralRecipes {
 		add1To9Pair(ModItems.ingot_pb209, ModItems.nugget_pb209);
 		add1To9Pair(ModItems.ingot_ra226, ModItems.nugget_ra226);
 		add1To9Pair(ModItems.ingot_barium, ModItems.barium_nugget);
+		add1To9Pair(ModItems.scandium_ingot, ModItems.scandium_nugget);
 		add1To9Pair(ModItems.ingot_actinium, ModItems.nugget_actinium);
 		add1To9Pair(ModItems.ingot_arsenic, ModItems.nugget_arsenic);
 		add1To9Pair(ModItems.ingot_bk247, ModItems.nugget_bk247);// TODO: ACTINIDE NUGGETS

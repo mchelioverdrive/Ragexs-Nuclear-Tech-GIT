@@ -570,7 +570,7 @@ public class OreDictManager {
 		ZR	.nugget(nugget_zirconium)		.ingot(ingot_zirconium)		.billet(billet_zirconium)												.dust(powder_zirconium)		.block(block_zirconium)		.ore(ore_depth_zirconium);
 		ND	.nugget(fragment_neodymium)																		.dustSmall(powder_neodymium_tiny)	.dust(powder_neodymium)									.ore(ore_depth_nether_neodymium)	.oreNether(ore_depth_nether_neodymium);
 		CE	.nugget(fragment_cerium)																		.dustSmall(powder_cerium_tiny)		.dust(powder_cerium);
-		SC  .ingot(scandium_ingot);
+		SC  .ingot(scandium_ingot) .nugget(scandium_nugget);
 		Y 	.ingot(yttrium_ingot) .nugget(fragment_yttrium) .dustSmall(powder_yttrium_tiny) .dust(powder_yttrium);
 		Sn 	.ingot(ingot_tin)		 .oreAll(ore_tin); //.block(block_tin)		.ore(ore_gneiss_tin) .nugget(nugget_tin)
 		V 	.ingot(ingot_vanadium) .nugget(fragment_vanadium)	.dust(powder_vanadium) .block(block_vanadium) .dustSmall(powder_vanadium_tiny);

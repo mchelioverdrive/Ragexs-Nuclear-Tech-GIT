@@ -977,8 +977,8 @@ public class ChemplantRecipes extends SerializableRecipe {
 				new ComparableStack(ModItems.scandium_chloride, 1),
 				new ComparableStack(ModItems.ingot_calcium, 1)
 			)
-			.outputItems(new ItemStack(ModItems.scandium_ingot, 1))
-			//TODO nugget
+			.outputItems(new ItemStack(ModItems.scandium_nugget, 1))
+			//TODOne nugget
 			.outputFluids(new FluidStack(Fluids.CALCIUM_CHLORIDE, 800))
 		);
 
@@ -1012,7 +1012,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				new ComparableStack(ModItems.yttrium_chloride, 1),
 				new ComparableStack(ModItems.ingot_calcium, 1)
 			)
-			.outputItems(new ItemStack(ModItems.yttrium_ingot, 1))
+			.outputItems(new ItemStack(ModItems.powder_yttrium_tiny, 1)) //suffer
 			.outputFluids(new FluidStack(Fluids.CALCIUM_CHLORIDE, 800))
 		);
 
