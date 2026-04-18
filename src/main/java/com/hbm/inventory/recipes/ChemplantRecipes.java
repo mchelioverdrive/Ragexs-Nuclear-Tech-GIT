@@ -701,7 +701,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 		//pollucite dust + sulfuric acid = Mixed sulfate solution + silica
 		recipes.add(new ChemRecipe(1017, "POLLUCITE", 100)
-			.inputItems(new ComparableStack(ModBlocks.ore_pollucite))
+			.inputItems(new ComparableStack(ModItems.powder_pollucite))
 			.inputFluids(new FluidStack(Fluids.SULFURIC_ACID, 2000))
 			.outputFluids(new FluidStack(Fluids.POLLUCITE_SOLUTION, 2000))
 			.outputItems(new ItemStack(Blocks.sand, 8), new ItemStack(ModItems.powder_quartz, 2))

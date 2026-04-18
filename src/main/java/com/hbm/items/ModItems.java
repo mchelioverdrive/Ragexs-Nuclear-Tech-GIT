@@ -3248,7 +3248,7 @@ public class ModItems {
 		ingot_platnium = new Item().setUnlocalizedName("ingot_platnium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_platnium");
 		powder_platnium = new Item().setUnlocalizedName("powder_platnium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_platnium");
 		nugget_niobium = new Item().setUnlocalizedName("nugget_niobium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_niobium");
-		nugget_vanadium = new Item().setUnlocalizedName("nugget_vanadium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_vanadium");
+		nugget_vanadium = new Item().setUnlocalizedName("nugget_vanadium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_bismuth");
 		ingot_osmiridium = new ItemCustomLore().setRarity(EnumRarity.rare).setUnlocalizedName("ingot_osmiridium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_osmiridium");
 		nugget_osmiridium = new ItemCustomLore().setRarity(EnumRarity.rare).setUnlocalizedName("nugget_osmiridium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_osmiridium");
 		ingot_hafnium = new ItemCustomLore().setUnlocalizedName("ingot_hafnium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_hafnium");
@@ -3471,7 +3471,7 @@ public class ModItems {
 		//why the fuck did you need enums... bobcat moment!
 		chunk_ironoxide = new Item().setUnlocalizedName("chunk_ironoxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_iron");
 		chunk_coppersulfide = new Item().setUnlocalizedName("chunk_coppersulfide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_copper");
-		powder_vanadium = new Item().setUnlocalizedName("powder_vanadium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + "powder_vanadium");
+		powder_vanadium = new Item().setUnlocalizedName("powder_vanadium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_vanadium");
 		chunk_leadzincsulfide = new Item().setUnlocalizedName("chunk_leadzincsulfide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_lead");
 		chunk_nickelsulfide = new Item().setUnlocalizedName("chunk_nickelsulfide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_nickel");
 		chunk_tintungsten = new Item().setUnlocalizedName("chunk_tintungsten").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_iron");
