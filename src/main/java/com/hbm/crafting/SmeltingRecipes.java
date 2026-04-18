@@ -26,9 +26,15 @@ public class SmeltingRecipes {
 
 	public static void AddSmeltingRec()
 	{
-		//GameRegistry.addSmelting(ModItems.glyphid_meat, new ItemStack(ModItems.glyphid_meat_grilled), 1.0F);
 
 		// Oredict doesn't work for vanilla smelting :(
+
+		//vanadium from magnetite
+		GameRegistry.addSmelting(
+			new ItemStack(ModItems.magnetite),
+			new ItemStack(ModItems.fragment_vanadium),
+			0.1F
+		);
 
 		//this needs to be SPECIFICALLY malachite.
 		GameRegistry.addSmelting(
@@ -187,6 +193,9 @@ public class SmeltingRecipes {
 		GameRegistry.addSmelting(ModItems.powder_yttrium, new ItemStack(ModItems.yttrium_ingot), 1.0F);
 		GameRegistry.addSmelting(ModItems.powder_actinium, new ItemStack(ModItems.ingot_actinium), 1.0F);
 		GameRegistry.addSmelting(ModItems.powder_boron, new ItemStack(ModItems.ingot_boron), 1.0F);
+		GameRegistry.addSmelting(ModItems.powder_vanadium, new ItemStack(ModItems.ingot_vanadium), 1.0F);
+
+
 		//GameRegistry.addSmelting(ModItems.powder_desh, new ItemStack(ModItems.ingot_desh), 1.0F);
 		GameRegistry.addSmelting(ModItems.powder_dineutronium, new ItemStack(ModItems.ingot_dineutronium), 5.0F);
 		GameRegistry.addSmelting(ModItems.powder_asbestos, new ItemStack(ModItems.ingot_asbestos), 1.0F);

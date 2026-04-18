@@ -74,6 +74,11 @@ public class OutgasserRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.COAL)),	new Pair(null, new FluidStack(Fluids.COALOIL, 100)));
 		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.WAX)),	new Pair(null, new FluidStack(Fluids.RADIOSOLVENT, 100)));
 
+		//curium to californium
+		recipes.put(new ComparableStack(ModItems.ingot_cm247),
+			new Pair(new ItemStack(ModItems.ingot_cf252), null));
+		//yeah yeah we skipped a step, not adding infinite isotope hell
+
 		/* californium mass shifting */
 		recipes.put(new ComparableStack(ModItems.ingot_cf252),
 			new Pair(new ItemStack(ModItems.ingot_cf251), null));

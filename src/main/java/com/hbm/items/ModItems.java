@@ -446,6 +446,7 @@ public class ModItems {
 	public static Item calcined_dolomite;
 	public static Item ingot_niobium;
 	public static Item nugget_niobium;
+	public static Item nugget_vanadium;
 	public static Item ingot_osmiridium;
 	public static Item nugget_osmiridium;
 	public static Item ingot_hafnium;
@@ -701,6 +702,7 @@ public class ModItems {
 	public static Item powder_actinium_tiny;
 	public static Item powder_boron_tiny;
 	public static Item powder_meteorite_tiny;
+	public static Item powder_vanadium_tiny;
 
 	public static Item powder_coltan_ore;
 	public static Item powder_coltan;
@@ -3246,6 +3248,7 @@ public class ModItems {
 		ingot_platnium = new Item().setUnlocalizedName("ingot_platnium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_platnium");
 		powder_platnium = new Item().setUnlocalizedName("powder_platnium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_platnium");
 		nugget_niobium = new Item().setUnlocalizedName("nugget_niobium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_niobium");
+		nugget_vanadium = new Item().setUnlocalizedName("nugget_vanadium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_vanadium");
 		ingot_osmiridium = new ItemCustomLore().setRarity(EnumRarity.rare).setUnlocalizedName("ingot_osmiridium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_osmiridium");
 		nugget_osmiridium = new ItemCustomLore().setRarity(EnumRarity.rare).setUnlocalizedName("nugget_osmiridium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_osmiridium");
 		ingot_hafnium = new ItemCustomLore().setUnlocalizedName("ingot_hafnium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_hafnium");
@@ -3435,6 +3438,7 @@ public class ModItems {
 		powder_actinium_tiny = new Item().setUnlocalizedName("powder_actinium_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_actinium_tiny");
 		powder_yttrium_tiny = new Item().setUnlocalizedName("powder_yttrium_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_yttrium_tiny");
 		powder_boron_tiny = new Item().setUnlocalizedName("powder_boron_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_boron_tiny");
+		powder_vanadium_tiny = new Item().setUnlocalizedName("powder_vanadium_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_vanadium_tiny");
 		powder_meteorite_tiny = new Item().setUnlocalizedName("powder_meteorite_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_meteorite_tiny");
 		powder_yellowcake = new Item().setUnlocalizedName("powder_yellowcake").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_yellowcake");
 		powder_magic = new Item().setUnlocalizedName("powder_magic").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_magic");
@@ -6712,6 +6716,7 @@ public class ModItems {
 		GameRegistry.registerItem(powder_spark_mix, powder_spark_mix.getUnlocalizedName());
 		//GameRegistry.registerItem(powder_meteorite, powder_meteorite.getUnlocalizedName());
 		GameRegistry.registerItem(powder_meteorite_tiny, powder_meteorite_tiny.getUnlocalizedName());
+		GameRegistry.registerItem(powder_vanadium_tiny, powder_vanadium_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(powder_euphemium, powder_euphemium.getUnlocalizedName());
 		//GameRegistry.registerItem(powder_wd2004_tiny, powder_wd2004_tiny.getUnlocalizedName());
 		//GameRegistry.registerItem(powder_wd2004, powder_wd2004.getUnlocalizedName());
@@ -6947,6 +6952,7 @@ public class ModItems {
 		GameRegistry.registerItem(nugget_silicon, nugget_silicon.getUnlocalizedName());
 		GameRegistry.registerItem(calcined_dolomite, calcined_dolomite.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_niobium, nugget_niobium.getUnlocalizedName());
+		GameRegistry.registerItem(nugget_vanadium, nugget_vanadium.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_beryllium, nugget_beryllium.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_schrabidium, nugget_schrabidium.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_solinium, nugget_solinium.getUnlocalizedName());

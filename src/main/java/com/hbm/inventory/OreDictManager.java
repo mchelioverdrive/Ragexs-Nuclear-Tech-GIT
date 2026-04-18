@@ -573,7 +573,7 @@ public class OreDictManager {
 		SC  .ingot(scandium_ingot);
 		Y 	.ingot(yttrium_ingot) .nugget(fragment_yttrium) .dustSmall(powder_yttrium_tiny) .dust(powder_yttrium);
 		Sn 	.ingot(ingot_tin)		 .oreAll(ore_tin); //.block(block_tin)		.ore(ore_gneiss_tin) .nugget(nugget_tin)
-		V 	.ingot(ingot_vanadium) .nugget(fragment_vanadium)	.dust(powder_vanadium);
+		V 	.ingot(ingot_vanadium) .nugget(fragment_vanadium)	.dust(powder_vanadium) .block(block_vanadium) .dustSmall(powder_vanadium_tiny);
 
 
 		/*

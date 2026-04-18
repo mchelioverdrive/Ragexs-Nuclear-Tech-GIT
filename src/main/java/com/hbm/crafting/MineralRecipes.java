@@ -64,6 +64,7 @@ public class MineralRecipes {
 		}
 
 		addMineralSet(ModItems.nugget_niobium, ModItems.ingot_niobium, ModBlocks.block_niobium);
+		addMineralSet(ModItems.nugget_vanadium, ModItems.ingot_vanadium, ModBlocks.block_vanadium);
 		addMineralSet(ModItems.nugget_bismuth, ModItems.ingot_bismuth, ModBlocks.block_bismuth);
 		addMineralSet(ModItems.nugget_tantalium, ModItems.ingot_tantalium, ModBlocks.block_tantalium);
 		addMineralSet(ModItems.nugget_zirconium, ModItems.ingot_zirconium, ModBlocks.block_zirconium);
@@ -74,6 +75,7 @@ public class MineralRecipes {
 		add1To9Pair(ModItems.ingot_silicon, ModItems.nugget_silicon);
 
 		add1To9Pair(ModItems.powder_boron, ModItems.powder_boron_tiny);
+		add1To9Pair(ModItems.powder_vanadium, ModItems.powder_vanadium_tiny);
 		add1To9Pair(ModItems.powder_sr90, ModItems.powder_sr90_tiny);
 		add1To9Pair(ModItems.powder_xe135, ModItems.powder_xe135_tiny);
 		add1To9Pair(ModItems.powder_cs137, ModItems.powder_cs137_tiny);
@@ -189,6 +191,8 @@ public class MineralRecipes {
 		addBillet(ModItems.billet_bismuth,				ModItems.ingot_bismuth,				ModItems.nugget_bismuth);
 		addBillet(ModItems.billet_silicon,				ModItems.ingot_silicon,				ModItems.nugget_silicon, SI.nugget());
 
+		//cerium + silicon nugget = 2 billet_silicon because cerium is used in silicon wafers.
+		GameRegistry.addShapelessRecipe(new ItemStack(ModItems.billet_silicon, 2), new Object[] { ModItems.powder_cerium, ModItems.nugget_silicon });
 		GameRegistry.addShapelessRecipe(new ItemStack(ModItems.billet_thorium_fuel, 6), new Object[] { ModItems.billet_th232, ModItems.billet_th232, ModItems.billet_th232, ModItems.billet_th232, ModItems.billet_th232, ModItems.billet_u233 });
 		GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(ModItems.billet_thorium_fuel, 1), new Object[] { "nuggetThorium232", "nuggetThorium232", "nuggetThorium232", "nuggetThorium232", "nuggetThorium232", "nuggetUranium233" }));
 		GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(ModItems.billet_thorium_fuel, 1), new Object[] { "tinyTh232", "tinyTh232", "tinyTh232", "tinyTh232", "tinyTh232", "tinyU233" }));
