@@ -237,6 +237,7 @@ public class ShredderRecipes extends SerializableRecipe {
 		ShredderRecipes.setRecipe(ModItems.fragment_lanthanium, new ItemStack(ModItems.powder_lanthanium_tiny, 1));
 		ShredderRecipes.setRecipe(ModItems.fragment_yttrium, new ItemStack(ModItems.powder_yttrium_tiny, 1));
 		ShredderRecipes.setRecipe(ModItems.fragment_actinium, new ItemStack(ModItems.powder_actinium_tiny, 1));
+		ShredderRecipes.setRecipe(ModItems.fragment_praseodymium, new ItemStack(ModItems.powder_praseodymium_tiny, 1));
 		ShredderRecipes.setRecipe(ModItems.fragment_boron, new ItemStack(ModItems.powder_boron_tiny, 1));
 		ShredderRecipes.setRecipe(ModItems.fragment_meteorite, new ItemStack(ModItems.powder_meteorite_tiny, 1));
 		ShredderRecipes.setRecipe(ModItems.fragment_vanadium, new ItemStack(ModItems.powder_vanadium_tiny, 1));

@@ -694,9 +694,10 @@ public class AnvilRecipes {
 				new AnvilOutput(new ItemStack(ModItems.fragment_yttrium), 0.15F),
 
 				//thorium
-				new AnvilOutput(new ItemStack(ModItems.nugget_th232), 0.05F)
+				new AnvilOutput(new ItemStack(ModItems.nugget_th232), 0.05F),
+				new AnvilOutput(new ItemStack(ModItems.fragment_praseodymium), 0.08F) //ppm
 
-				//TODO fragment_samarium and fragment_praseodymium if needed
+				//TODO fragment_samarium and ^fragment_praseodymium if needed
 
 				//^Lanthanum
 				//^Cerium

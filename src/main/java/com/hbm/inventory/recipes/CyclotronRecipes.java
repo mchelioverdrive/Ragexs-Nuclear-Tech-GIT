@@ -38,7 +38,7 @@ public class CyclotronRecipes extends SerializableRecipe {
 		/// TODO Actual Lithium reactions (light element reactions)
 		//makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack("dustLithium"), new ItemStack(ModItems.powder_helium), 50); // Li → He
 		//helium... powder?
-		makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack("dustBeryllium"), new ItemStack(ModItems.part_carbon), 60); // Li + Be → C (simplified)
+		makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack("dustBeryllium"), new ItemStack(ModItems.part_carbon), 6); // Li + Be → C (simplified)
 
 		//pre existing unrealistic dogshit A:
 
@@ -98,8 +98,8 @@ public class CyclotronRecipes extends SerializableRecipe {
 		int coA = 15;
 
 		/// Copper reactions (medium-heavy element)
-		makeRecipe(new ComparableStack(ModItems.part_copper), new OreDictStack("dustNickel"), new ItemStack(ModItems.powder_cobalt), 120);
-		makeRecipe(new ComparableStack(ModItems.part_copper), new OreDictStack("dustZinc"), new ItemStack(ModItems.powder_gallium), 150);
+		makeRecipe(new ComparableStack(ModItems.part_copper), new OreDictStack("dustNickel"), new ItemStack(ModItems.powder_cobalt), 1);
+		makeRecipe(new ComparableStack(ModItems.part_copper), new OreDictStack("dustZinc"), new ItemStack(ModItems.powder_gallium), 1);
 
 
 		//pre existing unrealistic dogshit D:
@@ -128,7 +128,7 @@ public class CyclotronRecipes extends SerializableRecipe {
 			new ComparableStack(ModItems.powder_uranium),
 			new ComparableStack(Items.redstone),
 			new ItemStack(ModItems.powder_actinium),
-			200
+			2
 		);
 
 
@@ -140,7 +140,7 @@ public class CyclotronRecipes extends SerializableRecipe {
 		int plA = 100;
 
 		/// Plutonium production via decay chain
-		makeRecipe(new ComparableStack(ModItems.powder_uranium), new OreDictStack("nuggetUranium238"), new ItemStack(ModItems.nugget_pu239), 500);
+		makeRecipe(new ComparableStack(ModItems.powder_uranium), new OreDictStack("nuggetUranium238"), new ItemStack(ModItems.nugget_pu239), 5);
 
 		//pre existing unrealistic dogshit E:
 
@@ -157,15 +157,21 @@ public class CyclotronRecipes extends SerializableRecipe {
 
 		//not sure how thorium doesn't make sense here but ok sure gpt
 		/// Francium production (realistic parent: Actinium)
-		makeRecipe(new ComparableStack(ModItems.ingot_actinium), new OreDictStack("dustActinium227"), new ItemStack(ModItems.francium_ingot), 300);
+		makeRecipe(new ComparableStack(ModItems.ingot_actinium), new OreDictStack("dustActinium227"), new ItemStack(ModItems.francium_ingot), 3);
 
 		//rutherfordium
 		//graphite is our stand in for carbon-12
-		makeRecipe(new ComparableStack(ModItems.nugget_cf249), new ComparableStack(ModItems.ingot_graphite), new ItemStack(ModItems.rutherfordium_nugget), 400);
+		makeRecipe(new ComparableStack(ModItems.nugget_cf249), new ComparableStack(ModItems.ingot_graphite), new ItemStack(ModItems.rutherfordium_nugget), 4);
 
 		//californium
-		makeRecipe(new ComparableStack(ModItems.ingot_cm247), new ComparableStack(ModItems.powder_uranium), new ItemStack(ModItems.nugget_cf249), 500);
+		makeRecipe(new ComparableStack(ModItems.ingot_cm247), new ComparableStack(ModItems.powder_uranium), new ItemStack(ModItems.nugget_cf249), 5);
 		//help I am losing my mind
+
+		//dubnium
+		//poison powder is made from nitrogen, so it's almost accurate. I'll add solid nitrogen later.
+		makeRecipe(new ComparableStack(ModItems.nugget_cf249), new ComparableStack(ModItems.powder_poison), new ItemStack(ModItems.dubnium_nugget), 6);
+
+		//TODO gold -> more anti matter than all other reactions (the final number is antimatter fluid amount)
 
 	}
 

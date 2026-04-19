@@ -194,6 +194,7 @@ public class SmeltingRecipes {
 		GameRegistry.addSmelting(ModItems.powder_actinium, new ItemStack(ModItems.ingot_actinium), 1.0F);
 		GameRegistry.addSmelting(ModItems.powder_boron, new ItemStack(ModItems.ingot_boron), 1.0F);
 		GameRegistry.addSmelting(ModItems.powder_vanadium, new ItemStack(ModItems.ingot_vanadium), 1.0F);
+		GameRegistry.addSmelting(ModItems.powder_praseodymium, new ItemStack(ModItems.ingot_praseodymium), 1.0F);
 
 
 		//GameRegistry.addSmelting(ModItems.powder_desh, new ItemStack(ModItems.ingot_desh), 1.0F);
@@ -241,7 +242,7 @@ public class SmeltingRecipes {
 
 		GameRegistry.addSmelting(ModItems.ingot_schraranium, new ItemStack(ModItems.nugget_schrabidium, 1), 2.0F);
 
-		GameRegistry.addSmelting(ModItems.lodestone, new ItemStack(ModItems.crystal_iron, 1), 5.0F);
+		GameRegistry.addSmelting(ModItems.lodestone, new ItemStack(Items.iron_ingot, 1), 2.0F);
 		GameRegistry.addSmelting(ModItems.crystal_iron, new ItemStack(Items.iron_ingot, 2), 2.0F);
 		GameRegistry.addSmelting(ModItems.crystal_gold, new ItemStack(Items.gold_ingot, 2), 2.0F);
 		GameRegistry.addSmelting(ModItems.crystal_redstone, new ItemStack(Items.redstone, 6), 2.0F);

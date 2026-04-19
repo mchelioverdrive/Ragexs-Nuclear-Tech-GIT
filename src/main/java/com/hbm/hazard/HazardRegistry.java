@@ -280,6 +280,10 @@ public class HazardRegistry {
 		HazardSystem.register(new ItemStack(ModItems.rutherfordium_nugget), makeData(RADIATION, 1000000).addEntry(NEUTRON, 100000F).addEntry(HOT, 100000F).addEntry(BLINDING, 1F).addEntry(EXPLOSIVE, 1F).addEntry(AUTISM, 5F).addEntry(ASBESTOS, 500F).addEntry(COAL, 500F).addEntry(HYDROACTIVE, 1F));
 		//this FUCKING THING FUCKED UP MY PERIODIC TABLE BY EXPLODING!!!!
 
+		//dubnium
+		HazardSystem.register(new ItemStack(ModItems.dubnium_nugget), makeData(RADIATION, 100000F).addEntry(NEUTRON, 10000F).addEntry(HOT, 10000F).addEntry(BLINDING, 0.5F).addEntry(EXPLOSIVE, 0.5F).addEntry(AUTISM, 2.5F).addEntry(ASBESTOS, 250F).addEntry(COAL, 250F).addEntry(HYDROACTIVE, 0.5F));
+
+
 		//californium isotopes
 		//cf light fraction is a mix of cf249, cf251, and cf250 when split in the silex.
 		HazardSystem.register(new ItemStack(cf_light_fraction, 1, 0), makeData(RADIATION, cf251 * cf252));
@@ -358,6 +362,8 @@ public class HazardRegistry {
 		HazardSystem.register(billet_thorium_fuel, makeData(RADIATION, thf * billet));
 		HazardSystem.register(ingot_thorium_fuel, makeData(RADIATION, thf * ingot));
 		HazardSystem.register(block_thorium_fuel, makeData(RADIATION, thf * block));
+
+		HazardSystem.register(nugget_protactinium, makeData(RADIATION, 50));
 
 		HazardSystem.register(nugget_neptunium_fuel, makeData(RADIATION, npf * nugget));
 		HazardSystem.register(billet_neptunium_fuel, makeData(RADIATION, npf * billet));

@@ -76,6 +76,7 @@ public class MineralRecipes {
 
 		add1To9Pair(ModItems.powder_boron, ModItems.powder_boron_tiny);
 		add1To9Pair(ModItems.powder_vanadium, ModItems.powder_vanadium_tiny);
+		add1To9Pair(ModItems.ingot_praseodymium, ModItems.nugget_praseodymium);
 		add1To9Pair(ModItems.powder_sr90, ModItems.powder_sr90_tiny);
 		add1To9Pair(ModItems.powder_xe135, ModItems.powder_xe135_tiny);
 		add1To9Pair(ModItems.powder_cs137, ModItems.powder_cs137_tiny);
@@ -499,7 +500,10 @@ public class MineralRecipes {
 		GameRegistry.addRecipe(new ItemStack(ModItems.powder_yttrium_tiny, 9), new Object[] { "#", '#', ModItems.powder_yttrium });
 
 		GameRegistry.addRecipe(new ItemStack(ModItems.powder_actinium, 1), new Object[] { "###", "###", "###", '#', ModItems.powder_actinium_tiny });
+		GameRegistry.addRecipe(new ItemStack(ModItems.powder_praseodymium, 1), new Object[] { "###", "###", "###", '#', ModItems.powder_praseodymium_tiny });
 		GameRegistry.addRecipe(new ItemStack(ModItems.powder_actinium_tiny, 9), new Object[] { "#", '#', ModItems.powder_actinium });
+		GameRegistry.addRecipe(new ItemStack(ModItems.powder_praseodymium_tiny, 9), new Object[] { "#", '#', ModItems.powder_praseodymium });
+
 		//GameRegistry.addRecipe(new ItemStack(ModItems.powder_meteorite, 1), new Object[] { "###", "###", "###", '#', ModItems.powder_meteorite_tiny });
 		//GameRegistry.addRecipe(new ItemStack(ModItems.powder_meteorite_tiny, 9), new Object[] { "#", '#', ModItems.powder_meteorite });
 		GameRegistry.addRecipe(new ItemStack(ModItems.ingot_solinium, 1), new Object[] { "###", "###", "###", '#', ModItems.nugget_solinium });

@@ -260,6 +260,7 @@ public class ConsumableRecipes {
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.armor_battery_mk3, 1), new Object[] { "PCP", "PCP", "PCP", 'P', GOLD.plate(), 'C', ModBlocks.capacitor_tantalium });
 
 		//Special Mods
+		CraftingManager.addRecipeAuto(new ItemStack(ModItems.lodestone, 1), new Object[] { "IGI", "GPG", "IGI", 'I', IRON.ingot(), 'G', NI.ingot(), 'P', ModItems.ingot_praseodymium });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.horseshoe_magnet, 1), new Object[] { "L L", "I I", "ILI", 'L', ModItems.lodestone, 'I', IRON.ingot() });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.industrial_magnet, 1), new Object[] { "SMS", " B ", "SMS", 'S', STEEL.ingot(), 'M', ModItems.horseshoe_magnet, 'B', ModBlocks.fusion_conductor });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.heart_container, 1), new Object[] { "HAH", "ACA", "HAH", 'H', ModItems.heart_piece, 'A', AL.ingot(), 'C', ModItems.coin_creeper });

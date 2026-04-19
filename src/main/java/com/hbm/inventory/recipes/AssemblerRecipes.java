@@ -1075,6 +1075,14 @@ public class AssemblerRecipes extends SerializableRecipe {
 					   new ComparableStack(ModItems.coil_advanced_alloy,
 										   5),},
 				   100);
+
+		//makeRecipe(new ComparableStack(ModBlocks.fusion_conductor,
+		//							   1),
+		//		   new AStack[]{
+		//			   new ComparableStack(ModItems.ingot_praseodymium,
+		//								   2),},
+		//		   100);
+
 		makeRecipe(new ComparableStack(ModBlocks.fusion_center,
 									   1),
 				   new AStack[]{

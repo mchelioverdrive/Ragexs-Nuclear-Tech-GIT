@@ -90,6 +90,10 @@ public class OutgasserRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(ModItems.ingot_ra226),
 			new Pair(new ItemStack(ModItems.ingot_actinium), null));
 
+		//thorium fuel to protactinium
+		recipes.put(new ComparableStack(ModItems.ingot_thorium_fuel),
+			new Pair(new ItemStack(ModItems.nugget_protactinium), null));
+
 	}
 
 	public static Pair<ItemStack, FluidStack> getOutput(ItemStack input) {
