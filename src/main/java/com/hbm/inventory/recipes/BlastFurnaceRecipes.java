@@ -54,11 +54,16 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 		addRecipe(IRON.ore(),	new ComparableStack(ModItems.powder_flux),	new ItemStack(ModItems.ingot_steel, 3));
 
 
+		//complex tool steel
 		addRecipe(ModItems.ingot_zinc, ModItems.ingot_dura_steel, new ItemStack(ModItems.powder_desh, 1));
 
+		//stainless steel metallurgy
 		addRecipe(NI,			STEEL,										new ItemStack(ModItems.ingot_stainless, 2));
 		addRecipe(CE, 			STEEL,										new ItemStack(ModItems.ingot_stainless, 1));
+		addRecipe(Cr, 			STEEL,										new ItemStack(ModItems.ingot_stainless, 3));
+
 		addRecipe(CU,									REDSTONE,										new ItemStack(ModItems.ingot_red_copper, 2));
+		//steel copper alloy
 		addRecipe(STEEL,								MINGRADE,										new ItemStack(ModItems.ingot_advanced_alloy, 2));
 		addRecipe(W,									COAL,											new ItemStack(ModItems.neutron_reflector, 2));
 		addRecipe(W,									ANY_COKE,										new ItemStack(ModItems.neutron_reflector, 2));

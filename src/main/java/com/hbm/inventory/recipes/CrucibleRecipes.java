@@ -48,6 +48,8 @@ public class CrucibleRecipes extends SerializableRecipe {
 		int n = MaterialShapes.NUGGET.q(1);
 		int i = MaterialShapes.INGOT.q(1);
 
+		//oh my god this is hell
+
 		recipes.add(new CrucibleRecipe(0, "crucible.steel", 2, new ItemStack(ModItems.ingot_steel))
 			.inputs(new MaterialStack(Mats.MAT_IRON, n * 2), new MaterialStack(Mats.MAT_CARBON, n))
 			.outputs(new MaterialStack(Mats.MAT_STEEL, n * 2)));
@@ -84,9 +86,11 @@ public class CrucibleRecipes extends SerializableRecipe {
 			.inputs(new MaterialStack(Mats.MAT_STEEL, n * 5), new MaterialStack(Mats.MAT_TUNGSTEN, n * 3), new MaterialStack(Mats.MAT_COBALT, n * 1))
 			.outputs(new MaterialStack(Mats.MAT_DURA, n * 9)));
 
-		//recipes.add(new CrucibleRecipe(3, "crucible.hss", 9, new ItemStack(ModItems.ingot_dura_steel))
-		//	.inputs(new MaterialStack(Mats.MAT_STEEL, n * 5), new MaterialStack(Mats.MAT_TUNGSTEN, n * 3), new MaterialStack(Mats.MAT_TUNGSTEN, n * 1))
-		//	.outputs(new MaterialStack(Mats.MAT_DURA, n * 9)));
+		//barium
+		//I'm sure it's fine...
+		recipes.add(new CrucibleRecipe(6, "crucible.barium", 6, new ItemStack(ModItems.ingot_barium))
+			.inputs(new MaterialStack(Mats.MAT_BARIUM, i * 2), new MaterialStack(Mats.MAT_FLUX, n * 2))
+			.outputs(new MaterialStack(Mats.MAT_BARIUM, i), new MaterialStack(Mats.MAT_SLAG, n * 3)));
 
 		recipes.add(new CrucibleRecipe(14, "crucible.hsss", 12, new ItemStack(ModItems.ingot_dura_steel))
 			.inputs(new MaterialStack(Mats.MAT_STAINLESS, n * 5), new MaterialStack(Mats.MAT_TUNGSTEN, n * 3), new MaterialStack(Mats.MAT_COBALT, n * 1))
@@ -115,10 +119,6 @@ public class CrucibleRecipes extends SerializableRecipe {
 		recipes.add(new CrucibleRecipe(15, "crucible.abronze", 9, new ItemStack(ModItems.ingot_arsenic_bronze))
 			.inputs(new MaterialStack(Mats.MAT_COPPER, n * 8), new MaterialStack(Mats.MAT_ARSENIC, n), new MaterialStack(Mats.MAT_FLUX, n * 3))
 			.outputs(new MaterialStack(Mats.MAT_ABRONZE, i), new MaterialStack(Mats.MAT_SLAG, n * 3)));
-
-		//recipes.add(new CrucibleRecipe(17, "crucible.cmb", 3, new ItemStack(ModItems.ingot_combine_steel))
-		//	.inputs(new MaterialStack(Mats.MAT_MAGTUNG, n * 6), new MaterialStack(Mats.MAT_MUD, n * 3))
-		//	.outputs(new MaterialStack(Mats.MAT_CMB, i)));
 
 		recipes.add(new CrucibleRecipe(18, "crucible.magtung", 3, new ItemStack(ModItems.ingot_magnetized_tungsten))
 			.inputs(new MaterialStack(Mats.MAT_TUNGSTEN, i), new MaterialStack(Mats.MAT_SCHRABIDIUM, n * 1))

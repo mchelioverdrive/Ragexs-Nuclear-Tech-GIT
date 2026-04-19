@@ -71,6 +71,9 @@ public class ArcFurnaceRecipes extends SerializableRecipe {
 		//		)
 		//);
 
+		//chromium
+		recipes.put(new ComparableStack(ModItems.powder_chromium), new ArcFurnaceRecipe().solid(new ItemStack(ModItems.ingot_chromium, 1)).fluid(new MaterialStack(Mats.MAT_CHROMIUM, MaterialShapes.INGOT.q(1))));
+
 		recipes.put(new ComparableStack(ModBlocks.sand_quartz), new ArcFurnaceRecipe().solid(new ItemStack(ModBlocks.glass_quartz)));
 		recipes.put(new OreDictStack(BORAX.dust()), new ArcFurnaceRecipe().solid(new ItemStack(ModItems.powder_boron_tiny, 3)).fluid(new MaterialStack(Mats.MAT_BORON, MaterialShapes.NUGGET.q(3))));
 

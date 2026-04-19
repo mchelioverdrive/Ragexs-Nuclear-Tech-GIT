@@ -72,7 +72,7 @@ public class Mats {
 	public static final NTMMaterial MAT_MALACHITE		= makeAdditive(	2901,			MALACHITE,			0xA2F0C8, 0x227048, 0x61AF87).m();
 	public static final NTMMaterial MAT_CONGLOMERATE	= makeAdditive(	2993,			CONGLOMERATE,		0x797979, 0x797979, 0x797979).m();
 
-	public static final NTMMaterial MAT_BARIUM			= makeSmeltable(5600,		BA,				0xFCE9B8, 0x3A1C00, 0xC9B27E).setAutogen(FRAGMENT, INGOT, DUST).m();
+	public static final NTMMaterial MAT_BARIUM			= makeSmeltable(5600,		BA,				0xFCE9B8, 0x3A1C00, 0xC9B27E).setAutogen(INGOT, NUGGET).m();
 
 	//public static final NTMMaterial MAT_ALUMINUM_OXIDE = makeSmeltable(1500,		AL_OXIDE,		0xFFFFFF, 0x344550, 0xD0B8EB).setAutogen(DUST).m();
 
@@ -141,6 +141,7 @@ public class Mats {
 	public static final NTMMaterial MAT_MAGNESIUM = makeSmeltable(1500,		MG,				0xFFFFFF, 0xB9B9B9, 0xFFFFFF).setAutogen(FRAGMENT, NUGGET, DUST).m();
 	//public static final NTMMaterial powder_strontium_oxide = makeSmeltable(1501,		PSO,			0xCFCFA6, 0x747F6E, 0xB7B784).setAutogen(DUST).n();
 	//god decided the crucible is retarded and I refuse to challenge him on that
+	public static final NTMMaterial MAT_CHROMIUM		= makeSmeltable(4500,		Cr,				0xB8D0FF, 0xB8D0FF, 0xB8D0FF).setAutogen(INGOT).m(); //yeah yeah whatever not adding all that for now
 	public static final NTMMaterial MAT_ASBESTOS		= makeSmeltable(1401,		ASBESTOS,		0xD8D9CF, 0x616258, 0xB0B3A8).setAutogen(FRAGMENT, BLOCK).n();
 	public static final NTMMaterial MAT_OSMIRIDIUM		= makeSmeltable(7699,		OSMIRIDIUM, 	0xDBE3EF, 0x7891BE, 0xACBDD9).setAutogen(NUGGET, CASTPLATE, WELDEDPLATE).m();
 	public static final NTMMaterial MAT_NICKEL			= makeSmeltable(2800,		NI,				0xAE9572, 0xAE9572, 0xAE9572).setAutogen(NUGGET, DUST, BLOCK).m();
