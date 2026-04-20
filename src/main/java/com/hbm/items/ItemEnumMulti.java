@@ -15,7 +15,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.IIcon;
 
 public class ItemEnumMulti extends Item {
-	
+
 	//hell yes, now we're thinking with enums!
 	protected Class<? extends Enum> theEnum;
 	protected boolean multiName;
@@ -35,24 +35,24 @@ public class ItemEnumMulti extends Item {
 			list.add(new ItemStack(item, 1, i));
 		}
 	}
-	
+
 	@Override
 	public Item setUnlocalizedName(String unlocalizedName) {
 		super.setUnlocalizedName(unlocalizedName);
 		this.setTextureName(RefStrings.MODID + ":"+ unlocalizedName);
 		return this;
 	}
-	
+
 	protected IIcon[] icons;
 
 	@Override
 	@SideOnly(Side.CLIENT)
 	public void registerIcons(IIconRegister reg) {
-		
+
 		if(multiTexture) {
 			Enum[] enums = theEnum.getEnumConstants();
 			this.icons = new IIcon[enums.length];
-			
+
 			for(int i = 0; i < icons.length; i++) {
 				Enum num = enums[i];
 				this.icons[i] = reg.registerIcon(this.getIconString() + "." + num.name().toLowerCase(Locale.US));
@@ -65,31 +65,44 @@ public class ItemEnumMulti extends Item {
 	@Override
 	@SideOnly(Side.CLIENT)
 	public IIcon getIconFromDamage(int meta) {
-		
-		if(multiTexture) {
+
+		if (multiTexture) {
+
 			Enum num = EnumUtil.grabEnumSafely(theEnum, meta);
-			return this.icons[num.ordinal()];
+
+			if (num == null || icons == null) {
+				return this.itemIcon;
+			}
+
+			int index = num.ordinal();
+
+			if (index < 0 || index >= icons.length || icons[index] == null) {
+				return this.itemIcon;
+			}
+
+			return icons[index];
+
 		} else {
 			return this.itemIcon;
 		}
 	}
-	
+
 	/** Returns null when the wrong enum is passed. Only really used for recipes anyway so it's good. */
 	public ItemStack stackFromEnum(int count, Enum num) {
-		
+
 		if(num.getClass() != this.theEnum)
 			return null;
-		
+
 		return new ItemStack(this, count, num.ordinal());
 	}
-	
+
 	public ItemStack stackFromEnum(Enum num) {
 		return stackFromEnum(1, num);
 	}
-	
+
 	@Override
 	public String getUnlocalizedName(ItemStack stack) {
-		
+
 		if(multiName) {
 			Enum num = EnumUtil.grabEnumSafely(theEnum, stack.getItemDamage());
 			return super.getUnlocalizedName() + "." + num.name().toLowerCase(Locale.US);

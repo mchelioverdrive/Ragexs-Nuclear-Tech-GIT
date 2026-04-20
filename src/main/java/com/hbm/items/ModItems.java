@@ -114,6 +114,7 @@ public class ModItems {
 	public static Item barium_nugget;
 	public static Item rutherfordium_nugget;
 	public static Item dubnium_nugget;
+	public static Item powder_molybdenite;
 
 	public static Item ingot_th232;
 	public static Item ingot_uranium;
@@ -154,6 +155,7 @@ public class ModItems {
 	public static Item ingot_neptunium;
 	public static Item ingot_polonium;
 	public static Item ingot_technetium;
+	public static Item ingot_molybdenum;
 	public static Item ingot_co60;
 	public static Item ingot_sr90;
 	public static Item ingot_au198;
@@ -778,6 +780,7 @@ public class ModItems {
 	public static Item bornite;
 	public static Item chalcocite;
 	public static Item covellite;
+	public static Item molybdenite;
 
 	//lead/zinc
 	public static Item galena;
@@ -2865,6 +2868,7 @@ public class ModItems {
 		ingot_neptunium = new ItemCustomLore().setUnlocalizedName("ingot_neptunium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_neptunium");
 		ingot_polonium = new Item().setUnlocalizedName("ingot_polonium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_polonium");
 		ingot_technetium = new Item().setUnlocalizedName("ingot_technetium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_technetium");
+		ingot_molybdenum = new Item().setUnlocalizedName("ingot_molybdenum").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_technetium");
 		ingot_co60 = new Item().setUnlocalizedName("ingot_co60").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_co60");
 		ingot_sr90 = new Item().setUnlocalizedName("ingot_sr90").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_sr90");
 		ingot_au198 = new Item().setUnlocalizedName("ingot_au198").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_au198");
@@ -3510,6 +3514,7 @@ public class ModItems {
 		bornite = new Item().setUnlocalizedName("bornite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":chunk_ore.rare");
 		chalcocite = new Item().setUnlocalizedName("chalcocite").setCreativeTab(MainRegistry.partsTab).setTextureName("minecraft" + ":coal"); //coal but shiny
 		covellite = new Item().setUnlocalizedName("covellite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niobium");
+		molybdenite = new Item().setUnlocalizedName("molybdenite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_tungsten");
 
 		//lead-Zinc
 		galena = new Item().setUnlocalizedName("galena").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_nickel");
@@ -3791,6 +3796,7 @@ public class ModItems {
 		barium_nugget = new Item().setUnlocalizedName("barium_nugget").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_barium");
 		rutherfordium_nugget = new Item().setUnlocalizedName("rutherfordium_nugget").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":pellets_charged");
 		dubnium_nugget = new Item().setUnlocalizedName("dubnium_nugget").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":pellets_charged");
+		powder_molybdenite = new Item().setUnlocalizedName("powder_molybdenite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lead");
 
 		demon_core_open = new ItemDemonCore().setUnlocalizedName("demon_core_open").setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":demon_core_open");
 		demon_core_closed = new Item().setUnlocalizedName("demon_core_closed").setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":demon_core_closed");
@@ -6397,6 +6403,7 @@ public class ModItems {
 		GameRegistry.registerItem(ingot_neptunium, ingot_neptunium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_polonium, ingot_polonium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_technetium, ingot_technetium.getUnlocalizedName());
+		GameRegistry.registerItem(ingot_molybdenum, ingot_molybdenum.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_co60, ingot_co60.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_sr90, ingot_sr90.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_au198, ingot_au198.getUnlocalizedName());
@@ -6887,6 +6894,7 @@ public class ModItems {
 		GameRegistry.registerItem(bornite, bornite.getUnlocalizedName());
 		GameRegistry.registerItem(chalcocite, chalcocite.getUnlocalizedName());
 		GameRegistry.registerItem(covellite, covellite.getUnlocalizedName());
+		GameRegistry.registerItem(molybdenite, molybdenite.getUnlocalizedName());
 
 		//lead-zinc
 		GameRegistry.registerItem(galena, galena.getUnlocalizedName());
@@ -7138,6 +7146,7 @@ public class ModItems {
 		GameRegistry.registerItem(barium_nugget, barium_nugget.getUnlocalizedName());
 		GameRegistry.registerItem(rutherfordium_nugget, rutherfordium_nugget.getUnlocalizedName());
 		GameRegistry.registerItem(dubnium_nugget, dubnium_nugget.getUnlocalizedName());
+		GameRegistry.registerItem(powder_molybdenite, powder_molybdenite.getUnlocalizedName());
 		GameRegistry.registerItem(hard_drive, hard_drive.getUnlocalizedName());
 		GameRegistry.registerItem(full_drive, full_drive.getUnlocalizedName());
 

@@ -36,8 +36,11 @@ public class PowderRecipes {
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_cement, 4), new Object[] { LIMESTONE.dust(), Items.clay_ball, Items.clay_ball, Items.clay_ball });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_cement, 4), new Object[] { CA.dust(), KEY_SAND, Items.clay_ball, Items.clay_ball }); // Alite cement recipe
 
-		//Other
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.ingot_steel_dusted, 1), new Object[] { STEEL.ingot(), COAL.dust() });
+
+		//HSS
+		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.ingot_steel_dusted, 1), new Object[] { STEEL.ingot(), COAL.dust() });
+		//why is this not done in at least a blast furnace?
+
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_bakelite, 2), new Object[] { Fluids.AROMATICS.getDict(1000), Fluids.PETROLEUM.getDict(1000), KEY_TOOL_CHEMISTRYSET });
 
 		CraftingManager.addShapelessAuto(new ItemStack(Items.dye, 8, 15), new Object[] { ModItems.ammonium_nitrate, CA.dust() });
@@ -92,9 +95,11 @@ public class PowderRecipes {
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_flux, 12), new Object[] { CA.dust(), KEY_SAND });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_flux, 16), new Object[] { BORAX.dust(), KEY_SAND });
 
+		//probably bobslop:
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_fertilizer, 4), new Object[] { CA.dust(), P_RED.dust(), ModItems.ammonium_nitrate });
-
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_fertilizer, 4), new Object[] { ANY_ASH.any(), P_RED.dust(), KNO.dust(), ModItems.ammonium_nitrate});
+		//actual fertilizer, magnesium sulfate
+		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_fertilizer, 4), new Object[] { Mn.dust(), S.dust()});
 
 		if(GeneralConfig.enableLBSM && GeneralConfig.enableLBSMSimpleCrafting) {
 			CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_advanced_alloy, 4), new Object[] { REDSTONE.dust(), IRON.dust(), COAL.dust(), CU.dust() });

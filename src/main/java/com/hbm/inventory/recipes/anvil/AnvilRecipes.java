@@ -756,7 +756,8 @@ public class AnvilRecipes {
 				new AnvilOutput(new ItemStack(ModItems.covellite, 1), 0.15F),
 
 				//malachite, trace mineral for early game
-				new AnvilOutput(new ItemStack(ModBlocks.stone_resource, 1, BlockEnums.EnumStoneType.MALACHITE.ordinal()), 0.2F)
+				new AnvilOutput(new ItemStack(ModBlocks.stone_resource, 1, BlockEnums.EnumStoneType.MALACHITE.ordinal()), 0.2F),
+				new AnvilOutput(new ItemStack(ModItems.molybdenite, 1), 0.2F)
 
 			}
 		).setTier(2));

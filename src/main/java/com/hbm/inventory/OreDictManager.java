@@ -195,6 +195,7 @@ public class OreDictManager {
 	public static final DictFrame AL = new DictFrame("Aluminum");
 	public static final DictFrame STEEL = new DictFrame("Steel");
 	public static final DictFrame STAINLESS = new DictFrame("StainlessSteel");
+	public static final DictFrame Mn = new DictFrame("Manganese");
 
 	public static final DictFrame CDOLOMITE = new DictFrame("CDolomite");
 	/** TECHNETIUM STEEL */
@@ -327,6 +328,7 @@ public class OreDictManager {
 	public static final DictFrame Y = new DictFrame("Yttrium");
 	public static final DictFrame Sn = new DictFrame("Tin");
 	public static final DictFrame V = new DictFrame("Vanadium");
+	public static final DictFrame Mo = new DictFrame("Molybdenum");
 	public static final DictFrame Pr = new DictFrame("Praseodymium");
 	public static final DictFrame Pa = new DictFrame("Protactinium");
 	/*
@@ -488,6 +490,7 @@ public class OreDictManager {
 		B			.nugget(fragment_boron)									.ingot(ingot_boron)				.dustSmall(powder_boron_tiny)		.dust(powder_boron)												.block(block_boron);
 		SI			.nugget(nugget_silicon)		.billet(billet_silicon)		.ingot(ingot_silicon);
 		MG			.ingot(magnesium_ingot);	//.billet(billet_magnesium)	.ingot(ingot_magnesium)												.dust(powder_magnesium)											.block(block_magnesium)		.oreAll(ore_magnesium);
+		Mn .dust(manganese_powder);
 		//PSO .nugget(powder_strontium_oxide);
 		GRAPHITE															.ingot(ingot_graphite)																												.block(block_graphite);
 		CARBON																.ingot(ingot_graphite)																												.block(block_graphite);
@@ -577,6 +580,7 @@ public class OreDictManager {
 		Y 	.ingot(yttrium_ingot) .nugget(fragment_yttrium) .dustSmall(powder_yttrium_tiny) .dust(powder_yttrium);
 		Sn 	.ingot(ingot_tin)		 .oreAll(ore_tin); //.block(block_tin)		.ore(ore_gneiss_tin) .nugget(nugget_tin)
 		V 	.ingot(ingot_vanadium) .nugget(fragment_vanadium)	.dust(powder_vanadium) .block(block_vanadium) .dustSmall(powder_vanadium_tiny);
+		Mo .ingot(ingot_molybdenum);
 		Pr .nugget(fragment_praseodymium) .ingot(ingot_praseodymium) .nugget(nugget_praseodymium) .dust(powder_praseodymium);
 		Pa .nugget(nugget_protactinium);
 		Cr .dust(powder_chromium) .ingot(ingot_chromium) ; //.block(block_chromium) .ore(ore_gneiss_chromium) .oreAll(ore_chromium)

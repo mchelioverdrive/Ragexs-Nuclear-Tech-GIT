@@ -29,6 +29,9 @@ public class SmeltingRecipes {
 
 		// Oredict doesn't work for vanilla smelting :(
 
+		//powder_molybdenite
+		GameRegistry.addSmelting(ModItems.powder_molybdenite, new ItemStack(ModItems.ingot_molybdenum), 1.0F);
+
 		//vanadium from magnetite
 		GameRegistry.addSmelting(
 			new ItemStack(ModItems.magnetite),
