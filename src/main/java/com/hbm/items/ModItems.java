@@ -115,6 +115,7 @@ public class ModItems {
 	public static Item rutherfordium_nugget;
 	public static Item dubnium_nugget;
 	public static Item powder_molybdenite;
+	public static Item powder_rhenium;
 
 	public static Item ingot_th232;
 	public static Item ingot_uranium;
@@ -3797,6 +3798,7 @@ public class ModItems {
 		rutherfordium_nugget = new Item().setUnlocalizedName("rutherfordium_nugget").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":pellets_charged");
 		dubnium_nugget = new Item().setUnlocalizedName("dubnium_nugget").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":pellets_charged");
 		powder_molybdenite = new Item().setUnlocalizedName("powder_molybdenite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lead");
+		powder_rhenium = new Item().setUnlocalizedName("powder_rhenium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lead");
 
 		demon_core_open = new ItemDemonCore().setUnlocalizedName("demon_core_open").setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":demon_core_open");
 		demon_core_closed = new Item().setUnlocalizedName("demon_core_closed").setCreativeTab(MainRegistry.nukeTab).setTextureName(RefStrings.MODID + ":demon_core_closed");
@@ -7147,6 +7149,7 @@ public class ModItems {
 		GameRegistry.registerItem(rutherfordium_nugget, rutherfordium_nugget.getUnlocalizedName());
 		GameRegistry.registerItem(dubnium_nugget, dubnium_nugget.getUnlocalizedName());
 		GameRegistry.registerItem(powder_molybdenite, powder_molybdenite.getUnlocalizedName());
+		GameRegistry.registerItem(powder_rhenium, powder_rhenium.getUnlocalizedName());
 		GameRegistry.registerItem(hard_drive, hard_drive.getUnlocalizedName());
 		GameRegistry.registerItem(full_drive, full_drive.getUnlocalizedName());
 

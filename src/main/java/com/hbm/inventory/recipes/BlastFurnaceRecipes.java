@@ -75,6 +75,9 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 		//manganese is also used in stainless steel batteries, so let's make it also make stainless from dusted steel
 		addRecipe(ModItems.ingot_steel_dusted, Mn.dust(), new ItemStack(ModItems.ingot_stainless, 2));
 
+		//zinc ingot + rhenium powder = steel alloy (ingot_saturnite)
+		addRecipe(ZI.ingot(), ModItems.powder_rhenium, new ItemStack(ModItems.ingot_saturnite));
+
 		addRecipe(CU,									REDSTONE,										new ItemStack(ModItems.ingot_red_copper, 2));
 		//steel copper alloy
 		addRecipe(STEEL,								MINGRADE,										new ItemStack(ModItems.ingot_advanced_alloy, 2));

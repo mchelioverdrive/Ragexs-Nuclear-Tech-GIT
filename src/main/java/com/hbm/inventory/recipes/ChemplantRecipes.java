@@ -337,6 +337,13 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(71, "GASOLINE", 40)
 				.inputFluids(new FluidStack(Fluids.NAPHTHA, 1000))
 				.outputFluids(new FluidStack(Fluids.GASOLINE, 800)));
+		recipes.add(new ChemRecipe(71, "GASOLINE2", 45)
+						.inputFluids(new FluidStack(Fluids.NAPHTHA, 1200))
+						.inputItems(new ComparableStack(ModItems.powder_rhenium)) //rhenium is used to make lead free gasoline
+						.outputFluids(new FluidStack(Fluids.GASOLINE, 1100)));
+		//WHY THE FUCK DOES LEADED FUCKING GASOLINE EXIST IF WE AREN'T GOING TO GIVE IT A USE BOB?
+		// HUH? MAYBE WE COULD USE IT TO RUN OUR FUCKING ENGINES HOTTER IN RETURN FOR MORE POLLUTION?
+		// NO LET'S JUST MAKE IT BE USED IN LITERALLY ONLY THE TOSSABLE GAS CAN FOR SOME REASON!!!
 		recipes.add(new ChemRecipe(85, "GASOLINE_LEADED", 40)
 				.inputItems(new ComparableStack(ModItems.fuel_additive))
 				.inputFluids(new FluidStack(Fluids.GASOLINE, 10_000))

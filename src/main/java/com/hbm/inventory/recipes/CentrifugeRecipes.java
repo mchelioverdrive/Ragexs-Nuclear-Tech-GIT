@@ -776,6 +776,14 @@ public class CentrifugeRecipes extends SerializableRecipe {
 				new ItemStack(ModItems.powder_iron, 1),
 				new ItemStack(Blocks.gravel, 1) });
 
+		//froth flotation of molybdenite
+		recipes.put(new ComparableStack(ModItems.powder_molybdenite), new ItemStack[] {
+				new ItemStack(ModItems.powder_rhenium, 1),
+				new ItemStack(ModItems.ingot_molybdenum, 1),
+				new ItemStack(ModItems.powder_iron, 1),
+				new ItemStack(ModItems.powder_coal_tiny, 1)
+				 });
+
 
 
 
