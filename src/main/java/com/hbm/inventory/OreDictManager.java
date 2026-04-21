@@ -94,6 +94,9 @@ public class OreDictManager {
 	public static final String KEY_CRACK_TAR = "cracktar";
 	public static final String KEY_COAL_TAR = "coaltar";
 	public static final String KEY_WOOD_TAR = "woodtar";
+	public static final String KEY_WAX_TAR = "waxtar";
+	public static final String KEY_PARAFFIN_TAR = "paraffintar";
+
 
 	public static final String KEY_UNIVERSAL_TANK = "ntmuniversaltank";
 	public static final String KEY_HAZARD_TANK = "ntmhazardtank";
@@ -380,7 +383,12 @@ public class OreDictManager {
 	public static final DictFrame ANY_COKE = new DictFrame("AnyCoke", "Coke");
 	public static final DictGroup ANY_COAL_COKE = new DictGroup("AnyCoalCoke", ANY_COKE, COAL);
 	public static final DictFrame ANY_CONCRETE = new DictFrame("Concrete");			//no any prefix means that any has to be appended with the any() or anys() getters, registering works with the any (i.e. no shape) setter
-	public static final DictGroup ANY_TAR = new DictGroup("Tar", KEY_OIL_TAR, KEY_COAL_TAR, KEY_CRACK_TAR, KEY_WOOD_TAR);
+
+	public static final DictGroup ANY_TAR = new DictGroup("Tar"); //6 THERE ARE 6 TARS, NOT 4 //, KEY_OIL_TAR, KEY_COAL_TAR, KEY_CRACK_TAR, KEY_WOOD_TAR, KEY_WAX_TAR, KEY_PARAFFIN_TAR
+	//why the hell is this broken?
+
+	public static final String KEY_ANY_TAR = "tar"; // or "anyTar", just be consistent
+
 	/** Any special post-RBMK gating material, namely bismuth and arsenic */
 	public static final DictFrame ANY_BISMOID = new DictFrame("AnyBismoid");
 	public static final DictFrame ANY_ASH = new DictFrame("Ash");
@@ -615,6 +623,7 @@ public class OreDictManager {
 		ANY_CONCRETE			.any(concrete, concrete_smooth, concrete_asbestos, ducrete, ducrete_smooth);
 		for(int i = 0; i < 16; i++) { ANY_CONCRETE.any(new ItemStack(ModBlocks.concrete_colored, 1, i)); }
 		for(int i = 0; i < 16; i++) { ANY_CONCRETE.any(new ItemStack(ModBlocks.concrete_colored_ext, 1, i)); }
+
 		ANY_COKE				.gem(fromAll(coke, EnumCokeType.class))	.dust(fromAll(powder_coke, EnumCokeType.class))	.block(fromAll(block_coke, EnumCokeType.class));
 		ANY_BISMOID				.ingot(ingot_bismuth, ingot_arsenic).nugget(nugget_bismuth, nugget_arsenic).block(block_bismuth);
 		ANY_ASH					.any(fromOne(ModItems.powder_ash, EnumAshType.WOOD), fromOne(ModItems.powder_ash, EnumAshType.COAL), fromOne(ModItems.powder_ash, EnumAshType.MISC), fromOne(ModItems.powder_ash, EnumAshType.FLY), fromOne(ModItems.powder_ash, EnumAshType.SOOT));
@@ -626,6 +635,29 @@ public class OreDictManager {
 		OreDictionary.registerOre(KEY_CRACK_TAR, fromOne(oil_tar, EnumTarType.CRACK));
 		OreDictionary.registerOre(KEY_COAL_TAR, fromOne(oil_tar, EnumTarType.COAL));
 		OreDictionary.registerOre(KEY_WOOD_TAR, fromOne(oil_tar, EnumTarType.WOOD));
+		//WHY ARE THERE ONLY 4 IF THERE ARE 6 IN THE MOD???
+		//DOES THAT MAKE ANY SENSE?
+		OreDictionary.registerOre(KEY_WAX_TAR, fromOne(oil_tar, EnumTarType.WAX));
+		OreDictionary.registerOre(KEY_PARAFFIN_TAR, fromOne(oil_tar, EnumTarType.PARAFFIN));
+		//enum cancer, now there's a bunch of absolutely FUCKED recipes. THANKS.
+
+		//, KEY_OIL_TAR, KEY_COAL_TAR, KEY_CRACK_TAR, KEY_WOOD_TAR, KEY_WAX_TAR, KEY_PARAFFIN_TAR
+
+		//OreDictionary.registerOre(String.valueOf(ANY_TAR), fromOne(oil_tar, EnumTarType.CRUDE));
+		//OreDictionary.registerOre(String.valueOf(ANY_TAR), fromOne(oil_tar, EnumTarType.CRACK));
+		//OreDictionary.registerOre(String.valueOf(ANY_TAR), fromOne(oil_tar, EnumTarType.COAL));
+		//OreDictionary.registerOre(String.valueOf(ANY_TAR), fromOne(oil_tar, EnumTarType.WOOD));
+		//OreDictionary.registerOre(String.valueOf(ANY_TAR), fromOne(oil_tar, EnumTarType.WAX));
+		//OreDictionary.registerOre(String.valueOf(ANY_TAR), fromOne(oil_tar, EnumTarType.PARAFFIN));
+		//please just nail my goddamn head to a train track
+
+		OreDictionary.registerOre(KEY_ANY_TAR, fromOne(oil_tar, EnumTarType.CRUDE));
+		OreDictionary.registerOre(KEY_ANY_TAR, fromOne(oil_tar, EnumTarType.CRACK));
+		OreDictionary.registerOre(KEY_ANY_TAR, fromOne(oil_tar, EnumTarType.COAL));
+		OreDictionary.registerOre(KEY_ANY_TAR, fromOne(oil_tar, EnumTarType.WOOD));
+		OreDictionary.registerOre(KEY_ANY_TAR, fromOne(oil_tar, EnumTarType.WAX));
+		OreDictionary.registerOre(KEY_ANY_TAR, fromOne(oil_tar, EnumTarType.PARAFFIN));
+		//now we pray it works
 
 		/*
 		 * TANKS

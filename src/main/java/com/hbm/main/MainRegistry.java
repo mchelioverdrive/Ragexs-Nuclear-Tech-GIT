@@ -1566,6 +1566,7 @@ public class MainRegistry {
 		remapItems.put("hbm:item.man_explosive8", ModItems.explosive_lenses);
 		remapItems.put("hbm:item.briquette_lignite", ModItems.briquette);
 		remapItems.put("hbm:item.antiknock", ModItems.fuel_additive);
+		//what the actual fuck is going on here and why
 
 		for(MissingMapping mapping : event.get()) {
 

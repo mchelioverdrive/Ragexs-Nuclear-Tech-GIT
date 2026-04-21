@@ -6,6 +6,11 @@ package com.hbm.items;
  * since that's entirely against the point of ItemEnumMulti to begin with.
  * @author hbm
  */
+
+/**
+ * Please never touch enums again, this is actually the worst shit ever, and it's abysmally broken; please kill me
+ * @author Ragex
+ */
 public class ItemEnums {
 
 	public static enum EnumCokeType {
@@ -21,7 +26,9 @@ public class ItemEnums {
 		WOOD,
 		WAX,
 		PARAFFIN
-	}
+		//6 THINGS
+	} //OH MY GOD YOU COULD HAVE JUST FUCKING MADE IT A REGULAR ITEM. THIS IS ACTUALLY FUCKING RETARDED
+
 
 	public static enum EnumAshType {
 		WOOD,
@@ -43,6 +50,7 @@ public class ItemEnums {
 		TIER2,
 		TIER3
 	}
+	//literally just like useless non used crap
 
 	public static enum EnumPlantType {
 		TOBACCO,
@@ -55,25 +63,22 @@ public class ItemEnums {
 	}
 
 	public static enum EnumAchievementType {
-		GOFISH,
+		//GOFISH,
 		ACID,
 		BALLS,
-		DIGAMMASEE,
-		DIGAMMAFEEL,
-		DIGAMMAKNOW,
-		DIGAMMAKAUAIMOHO,
-		DIGAMMAUPONTOP,
-		DIGAMMAFOROURRIGHT,
-		QUESTIONMARK
+		//DIGAMMASEE,
+		//DIGAMMAFEEL,
+		//DIGAMMAKNOW,
+		//DIGAMMAKAUAIMOHO,
+		//DIGAMMAUPONTOP,
+		//DIGAMMAFOROURRIGHT,
+		//QUESTIONMARK
+		//No more human slop plz kthx
 	}
 
 	public static enum EnumFuelAdditive {
 		ANTIKNOCK,
 		DEICER
-	}
-
-	public static enum EnumPages {
-		PAGE1, PAGE2, PAGE3, PAGE4, PAGE5, PAGE6, PAGE7, PAGE8
 	}
 
 	public static enum EnumSecretType {

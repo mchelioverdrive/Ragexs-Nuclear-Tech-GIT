@@ -21,7 +21,6 @@ import com.hbm.inventory.material.Mats;
 import com.hbm.inventory.material.NTMMaterial;
 import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.ItemEnums.EnumBriquetteType;
-import com.hbm.items.ItemEnums.EnumPages;
 import com.hbm.items.ItemAmmoEnums.Ammo357Magnum;
 import com.hbm.items.ItemAmmoEnums.Ammo556mm;
 import com.hbm.items.ItemAmmoEnums.AmmoLunaticSniper;
