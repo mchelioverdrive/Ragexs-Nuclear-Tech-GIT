@@ -740,8 +740,8 @@ public class CentrifugeRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(ModItems.pentlandite), new ItemStack[] {
 				new ItemStack(ModItems.powder_iron, 9),
 				new ItemStack(ModItems.powder_nickel, 9),
-				new ItemStack(ModItems.nugget_cobalt, 1),
-				//trace cobalt
+				new ItemStack(ModItems.nugget_ruthenium, 1),
+				//ruthenium byproduct
 				new ItemStack(ModItems.sulfur, 8) });
 
 		//pyrrhotite Fe(1-x)S

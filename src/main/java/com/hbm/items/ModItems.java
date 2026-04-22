@@ -290,6 +290,7 @@ public class ModItems {
 	public static Item nugget_mercury;
 	public static Item ingot_mercury; //It's to prevent any ambiguity, as it was treated as a full ingot in the past anyway
 	public static Item bottle_mercury;
+	public static Item nugget_ruthenium;
 
 	public static Item ingot_tt;
 	public static Item ingot_ttas;
@@ -3081,6 +3082,7 @@ public class ModItems {
 		nugget_zirconium = new ItemCustomLore().setUnlocalizedName("nugget_zirconium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_zirconium");
 		nugget_nickel = new ItemCustomLore().setUnlocalizedName("nugget_nickel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_nickel");
 		nugget_mercury = new Item().setUnlocalizedName("nugget_mercury_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_mercury_tiny");
+		nugget_ruthenium = new Item().setUnlocalizedName("nugget_ruthenium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_ruthenium");
 		ingot_mercury = new ItemCustomLore().setUnlocalizedName("nugget_mercury").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_mercury");
 		bottle_mercury = new ItemCustomLore().setUnlocalizedName("bottle_mercury").setContainerItem(Items.glass_bottle).setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":bottle_mercury");
 		ingot_calcium = new Item().setUnlocalizedName("ingot_calcium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_calcium");
@@ -6612,6 +6614,7 @@ public class ModItems {
 		//Dusts & Other
 		GameRegistry.registerItem(cinnebar, cinnebar.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_mercury, nugget_mercury.getUnlocalizedName());
+		GameRegistry.registerItem(nugget_ruthenium, nugget_ruthenium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_mercury, ingot_mercury.getUnlocalizedName());
 		GameRegistry.registerItem(bottle_mercury, bottle_mercury.getUnlocalizedName());
 		GameRegistry.registerItem(coke, coke.getUnlocalizedName());
