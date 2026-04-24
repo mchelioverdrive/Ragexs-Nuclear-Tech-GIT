@@ -788,7 +788,8 @@ public class AnvilRecipes {
 				new AnvilOutput(new ItemStack(ModItems.pyrrhotite, 1), 0.6F),
 				//copper is often carried
 				new AnvilOutput(new ItemStack(ModItems.chalcopyrite, 1), 0.3F),
-				new AnvilOutput(new ItemStack(ModBlocks.ore_palladium, 1), 0.15F)
+				new AnvilOutput(new ItemStack(ModBlocks.ore_palladium, 1), 0.15F),
+				new AnvilOutput(new ItemStack(ModItems.osmiridium, 1), 0.05F),
 			}
 		).setTier(2));
 

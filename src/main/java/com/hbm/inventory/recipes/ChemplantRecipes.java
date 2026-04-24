@@ -18,7 +18,6 @@ import com.hbm.inventory.RecipesCommon.AStack;
 import com.hbm.inventory.RecipesCommon.ComparableStack;
 import com.hbm.inventory.RecipesCommon.OreDictStack;
 import com.hbm.inventory.fluid.Fluids;
-import com.hbm.inventory.material.Mats;
 import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.ModItems;
 import com.hbm.main.MainRegistry;
@@ -458,27 +457,27 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//				new ComparableStack(ModItems.ingot_steel, 1),
 		//				new OreDictStack(ANY_SMOKELESS.dust(), 1))
 		//		.outputItems(new ItemStack(ModItems.assembly_lacunae, 32))); //5mm
-		recipes.add(new ChemRecipe(112, "NMASSIII", 300)
-				.inputFluids(new FluidStack(Fluids.DEATH, 7000), (new FluidStack(Fluids.ELBOWGREASE, 6000)))
-				.inputItems(
-						new ComparableStack(ModBlocks.dfc_core, 1),
-						new ComparableStack(ModBlocks.block_euphemium, 32),
-						new OreDictStack(ANY_SMOKELESS.dust(), 1))
-				.outputFluids(new FluidStack(Fluids.NMASSTETRANOL, 100), new FluidStack(Fluids.ETHANOL, 24000)));
-		recipes.add(new ChemRecipe(113, "NMASSII", 300)
-				.inputFluids(new FluidStack(Fluids.SCHRABIDIC, 650), (new FluidStack(Fluids.IONGEL, 800)))
-				.inputItems(
-						new ComparableStack(ModItems.pellet_charged, 1),
-						new ComparableStack(ModItems.ingot_euphemium, 1))
-				.outputFluids(new FluidStack(Fluids.NMASS, 1000), new FluidStack(Fluids.WASTEGAS, 2000)));
-		recipes.add(new ChemRecipe(114, "LUNAE", 250)
-				.inputFluids(new FluidStack(Fluids.NMASS, 3000), new FluidStack(Fluids.ASCHRAB, 500)) //eventually used to actually warp to other stars
-				.inputItems(
-						new ComparableStack(ModItems.powder_power, 5),
-						new ComparableStack(ModItems.ingot_ferrouranium, 1),
-						new ComparableStack(ModItems.ingot_copper, 1),
-						new OreDictStack(ANY_SMOKELESS.dust(), 1))
-				.outputItems(new ItemStack(ModItems.ammo_luna_sniper, 1, 3))); //556
+		//recipes.add(new ChemRecipe(112, "NMASSIII", 300)
+		//		.inputFluids(new FluidStack(Fluids.OSMIRIDIUM_SOLUTION, 7000), (new FluidStack(Fluids.ELBOWGREASE, 6000)))
+		//		.inputItems(
+		//				new ComparableStack(ModBlocks.dfc_core, 1),
+		//				new ComparableStack(ModBlocks.block_euphemium, 32),
+		//				new OreDictStack(ANY_SMOKELESS.dust(), 1))
+		//		.outputFluids(new FluidStack(Fluids.NMASSTETRANOL, 100), new FluidStack(Fluids.ETHANOL, 24000)));
+		//recipes.add(new ChemRecipe(113, "NMASSII", 300)
+		//		.inputFluids(new FluidStack(Fluids.SCHRABIDIC, 650), (new FluidStack(Fluids.IONGEL, 800)))
+		//		.inputItems(
+		//				new ComparableStack(ModItems.pellet_charged, 1),
+		//				new ComparableStack(ModItems.ingot_euphemium, 1))
+		//		.outputFluids(new FluidStack(Fluids.NMASS, 1000), new FluidStack(Fluids.WASTEGAS, 2000)));
+		//recipes.add(new ChemRecipe(114, "LUNAE", 250)
+		//		.inputFluids(new FluidStack(Fluids.NMASS, 3000), new FluidStack(Fluids.ASCHRAB, 500)) //eventually used to actually warp to other stars
+		//		.inputItems(
+		//				new ComparableStack(ModItems.powder_power, 5),
+		//				new ComparableStack(ModItems.ingot_ferrouranium, 1),
+		//				new ComparableStack(ModItems.ingot_copper, 1),
+		//				new OreDictStack(ANY_SMOKELESS.dust(), 1))
+		//		.outputItems(new ItemStack(ModItems.ammo_luna_sniper, 1, 3))); //556
 		recipes.add(new ChemRecipe(115, "SHELL_CHLORINE", 100)
 				.inputItems(
 						new ComparableStack(ModItems.ammo_arty, 1, 0),
@@ -1066,6 +1065,13 @@ public class ChemplantRecipes extends SerializableRecipe {
 						.inputItems(new ComparableStack(ModItems.powder_rhenium)) //rhenium is used to make lead free gasoline
 						.outputFluids(new FluidStack(Fluids.GASOLINE, 1100)));
 
+		//Step 2: Oxidation Furnace stand in for now - osmiridium powder + dense steam + oxygen = osmium tetroxide (gas/fluid) & iridium-rich residue (solid)
+		recipes.add(new ChemRecipe(1054, "OSMIRIDIUM_OXIDATION", 300)
+			.inputItems(new ComparableStack(ModItems.powder_impure_osmiridium, 1))
+			.inputFluids(new FluidStack(Fluids.ULTRAHOTSTEAM, 4000), new FluidStack(Fluids.OXYGEN, 1000))
+			.outputItems(new ItemStack(ModItems.iridium_rich_residue, 1))
+			.outputFluids(new FluidStack(Fluids.ULTRAHOTSTEAM, 3000), new FluidStack(Fluids.OSMIRIDIUM_SOLUTION, 1000))
+		);
 
 
 

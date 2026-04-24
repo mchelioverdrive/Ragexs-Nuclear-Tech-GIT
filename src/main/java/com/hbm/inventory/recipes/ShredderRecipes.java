@@ -269,6 +269,9 @@ public class ShredderRecipes extends SerializableRecipe {
 		//molybdenite
 		ShredderRecipes.setRecipe(new ItemStack(ModItems.molybdenite, 1, OreDictionary.WILDCARD_VALUE), new ItemStack(ModItems.powder_molybdenite, 4));
 
+		//osmiridium step 1
+		ShredderRecipes.setRecipe(new ItemStack(ModItems.osmiridium, 1), new ItemStack(ModItems.powder_impure_osmiridium, 1));
+
 		ShredderRecipes.setRecipe(ModItems.bean_roast,  new ItemStack(ModItems.powder_coffee, 1));
 
 		//BYPRODUCTS

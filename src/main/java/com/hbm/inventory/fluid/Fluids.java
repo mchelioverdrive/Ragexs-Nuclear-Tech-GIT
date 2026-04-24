@@ -132,7 +132,7 @@ public class Fluids {
 	public static FluidType PLASMA_BF;
 	public static FluidType CARBONDIOXIDE;
 	public static FluidType HELIUM3;
-	public static FluidType DEATH;				//osmiridium solution
+	public static FluidType OSMIRIDIUM_SOLUTION;				//osmiridium solution
 	public static FluidType ETHANOL;
 	public static FluidType HEAVYWATER;
 	public static FluidType SALIENT;
@@ -402,7 +402,7 @@ public class Fluids {
 		CARBONDIOXIDE =			new FluidType("CARBONDIOXIDE",		0x404040, 3, 0, 0, EnumSymbol.ASPHYXIANT).addTraits(GASEOUS, new FT_Polluting().release(PollutionType.POISON, POISON_MINOR));
 		PLASMA_DH3 =			new FluidType("PLASMA_DH3",			0xFF83AA, 0, 4, 0, EnumSymbol.RADIATION).setTemp(3480).addTraits(NOCON, NOID, PLASMA, new FT_Rocket(20000, 700_000));
 		HELIUM3 =				new FluidType("HELIUM3",			0xFCF0C4, 0, 0, 0, EnumSymbol.ASPHYXIANT).addTraits(GASEOUS);
-		DEATH =					new FluidType("DEATH",				0x717A88, 2, 0, 1, EnumSymbol.ACID).setTemp(300).addTraits(new FT_Corrosive(80), new FT_Poison(true, 4), LEADCON, LIQUID, VISCOUS);
+		OSMIRIDIUM_SOLUTION =					new FluidType("OSMIRIDIUM_SOLUTION", 0x717A88, 2, 0, 1, EnumSymbol.ACID).setTemp(300).addTraits(new FT_Corrosive(80), new FT_Poison(true, 4), LEADCON, LIQUID, VISCOUS);
 		ETHANOL =				new FluidType("ETHANOL",			0xe0ffff, 2, 3, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0xEAFFF3)).addTraits(new FT_Flammable(75_000), new FT_Combustible(FuelGrade.HIGH, 200_000), LIQUID, P_FUEL);
 		HEAVYWATER =			new FluidType("HEAVYWATER",			0x00a0b0, 1, 0, 0, EnumSymbol.NONE).addTraits(LIQUID);
 		CRACKOIL =				new FluidType("CRACKOIL",			0x020202, 2, 1, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0x424242)).addTraits(new FT_Flammable(10_000), LIQUID, VISCOUS, P_OIL);
@@ -740,7 +740,7 @@ public class Fluids {
 		metaOrder.add(PUF6);
 		metaOrder.add(SAS3);
 		metaOrder.add(PAIN);
-		metaOrder.add(DEATH);
+		metaOrder.add(OSMIRIDIUM_SOLUTION);
 		metaOrder.add(WATZ);
 		metaOrder.add(REDMUD);
 		metaOrder.add(FULLERENE);

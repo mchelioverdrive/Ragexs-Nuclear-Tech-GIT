@@ -719,6 +719,7 @@ public class ModItems {
 	public static Item powder_paleogenite;
 	public static Item powder_paleogenite_tiny;
 	public static Item powder_impure_osmiridium;
+	public static Item iridium_rich_residue;
 	public static Item powder_borax;
 	public static Item powder_chlorocalcite;
 	public static Item powder_molysite;
@@ -783,6 +784,9 @@ public class ModItems {
 	public static Item chalcocite;
 	public static Item covellite;
 	public static Item molybdenite;
+
+	//the silly platinum cancer
+	public static Item osmiridium;
 
 	//lead/zinc
 	public static Item galena;
@@ -3472,6 +3476,7 @@ public class ModItems {
 		powder_paleogenite = new Item().setUnlocalizedName("powder_paleogenite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_paleogenite");
 		powder_paleogenite_tiny = new Item().setUnlocalizedName("powder_paleogenite_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_paleogenite_tiny");
 		powder_impure_osmiridium = new Item().setUnlocalizedName("powder_impure_osmiridium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_impure_osmiridium");
+		iridium_rich_residue = new Item().setUnlocalizedName("iridium_rich_residue").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":iridium_rich_residue");
 		powder_borax = new Item().setUnlocalizedName("powder_borax").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_borax");
 		powder_chlorocalcite = new Item().setUnlocalizedName("powder_chlorocalcite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_chlorocalcite");
 		powder_molysite = new Item().setUnlocalizedName("powder_molysite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_molysite");
@@ -3518,6 +3523,9 @@ public class ModItems {
 		chalcocite = new Item().setUnlocalizedName("chalcocite").setCreativeTab(MainRegistry.partsTab).setTextureName("minecraft" + ":coal"); //coal but shiny
 		covellite = new Item().setUnlocalizedName("covellite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niobium");
 		molybdenite = new Item().setUnlocalizedName("molybdenite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_tungsten");
+
+		//PLAT
+		osmiridium = new Item().setUnlocalizedName("osmiridium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_coal");
 
 		//lead-Zinc
 		galena = new Item().setUnlocalizedName("galena").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_nickel");
@@ -6684,6 +6692,7 @@ public class ModItems {
 		GameRegistry.registerItem(powder_paleogenite, powder_paleogenite.getUnlocalizedName());
 		GameRegistry.registerItem(powder_paleogenite_tiny, powder_paleogenite_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(powder_impure_osmiridium, powder_impure_osmiridium.getUnlocalizedName());
+		GameRegistry.registerItem(iridium_rich_residue, iridium_rich_residue.getUnlocalizedName());
 		GameRegistry.registerItem(powder_borax, powder_borax.getUnlocalizedName());
 		GameRegistry.registerItem(powder_chlorocalcite, powder_chlorocalcite.getUnlocalizedName());
 		GameRegistry.registerItem(powder_molysite, powder_molysite.getUnlocalizedName());
@@ -6900,6 +6909,9 @@ public class ModItems {
 		GameRegistry.registerItem(chalcocite, chalcocite.getUnlocalizedName());
 		GameRegistry.registerItem(covellite, covellite.getUnlocalizedName());
 		GameRegistry.registerItem(molybdenite, molybdenite.getUnlocalizedName());
+
+		//PLAT GROUP
+		GameRegistry.registerItem(osmiridium, osmiridium.getUnlocalizedName());
 
 		//lead-zinc
 		GameRegistry.registerItem(galena, galena.getUnlocalizedName());
