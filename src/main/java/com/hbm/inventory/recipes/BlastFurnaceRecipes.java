@@ -78,6 +78,9 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 		//zinc ingot + rhenium powder = steel alloy (ingot_saturnite)
 		addRecipe(ZI.ingot(), ModItems.powder_rhenium, new ItemStack(ModItems.ingot_saturnite));
 
+		//osmium powder -> osmium ingot
+		addRecipe(ModItems.powder_osmium, COAL, new ItemStack(ModItems.ingot_osmiridium, 1)); //bobcat when calling what is clearly osmium osmiridium
+
 		addRecipe(CU,									REDSTONE,										new ItemStack(ModItems.ingot_red_copper, 2));
 		//steel copper alloy
 		addRecipe(STEEL,								MINGRADE,										new ItemStack(ModItems.ingot_advanced_alloy, 2));

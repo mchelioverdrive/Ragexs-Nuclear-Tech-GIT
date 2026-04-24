@@ -104,6 +104,21 @@ public class SolderingRecipes extends SerializableRecipe {
 											new OreDictStack(PB.wireFine(), 12)}
 		));
 
+		//osmium makes a lot of these since it's hard to get and gives players a incentive to make osmium and is used for
+		//highly advanced electronics
+		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 12, EnumCircuitType.CHIP_BISMOID.ordinal()), 300, 5_000,
+										new FluidStack(Fluids.SOLVENT, 500),
+										new AStack[] {
+											new ComparableStack(ModItems.ingot_osmiridium),
+											new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CHIP),
+											new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CAPACITOR)},
+										new AStack[] {
+											new ComparableStack(ModItems.circuit, 8, EnumCircuitType.PCB),
+											new OreDictStack(RUBBER.ingot(), 2)},
+										new AStack[] {
+											new OreDictStack(PB.wireFine(), 8)}
+		));
+
 		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.AVIONICS.ordinal()), 300, 1_000,
 				new AStack[] {
 						new ComparableStack(ModItems.circuit, 3, EnumCircuitType.CHIP)},

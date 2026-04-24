@@ -517,7 +517,8 @@ public class MineralRecipes {
 		GameRegistry.addRecipe(new ItemStack(ModItems.nitra, 1), new Object[] { "##", "##", '#', ModItems.nitra_small });
 		GameRegistry.addRecipe(new ItemStack(ModItems.nitra_small, 4), new Object[] { "#", '#', ModItems.nitra });
 		add1To9Pair(ModItems.powder_paleogenite, ModItems.powder_paleogenite_tiny);
-		add1To9Pair(ModItems.ingot_osmiridium, ModItems.nugget_osmiridium);
+		add1To9Pair(ModItems.powder_osmium, ModItems.powder_osmium_tiny);
+		add1To9Pair(ModItems.ingot_osmiridium, ModItems.nugget_osmiridium); //actually osmium now
 
 		//GameRegistry.addRecipe(new ItemStack(ModItems.egg_balefire_shard, 1), new Object[] { "##", "##", '#', ModItems.powder_balefire });
 		//add9To1(ModItems.cell_balefire, ModItems.egg_balefire_shard);

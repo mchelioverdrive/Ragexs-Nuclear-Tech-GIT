@@ -1065,12 +1065,18 @@ public class ChemplantRecipes extends SerializableRecipe {
 						.inputItems(new ComparableStack(ModItems.powder_rhenium)) //rhenium is used to make lead free gasoline
 						.outputFluids(new FluidStack(Fluids.GASOLINE, 1100)));
 
-		//Step 2: Oxidation Furnace stand in for now - osmiridium powder + dense steam + oxygen = osmium tetroxide (gas/fluid) & iridium-rich residue (solid)
+		// Step 2: Oxidation (Chemplant)
 		recipes.add(new ChemRecipe(1054, "OSMIRIDIUM_OXIDATION", 300)
-			.inputItems(new ComparableStack(ModItems.powder_impure_osmiridium, 1))
-			.inputFluids(new FluidStack(Fluids.ULTRAHOTSTEAM, 4000), new FluidStack(Fluids.OXYGEN, 1000))
-			.outputItems(new ItemStack(ModItems.iridium_rich_residue, 1))
-			.outputFluids(new FluidStack(Fluids.ULTRAHOTSTEAM, 3000), new FluidStack(Fluids.OSMIRIDIUM_SOLUTION, 1000))
+						.inputItems(new ComparableStack(ModItems.powder_impure_osmiridium, 1))
+						.inputFluids(new FluidStack(Fluids.OXYGEN, 1000))
+						.outputItems(new ItemStack(ModItems.iridium_rich_residue, 1))
+						.outputFluids(new FluidStack(Fluids.OSMIRIDIUM_SOLUTION, 200)) //osmium tetroxide, I am not refactoring it again; it's called it in LANG.
+		);
+
+		recipes.add(new ChemRecipe(1055, "OSMIUM_REDUCTION", 200)
+						.inputFluids(new FluidStack(Fluids.OSMIRIDIUM_SOLUTION, 1000), new FluidStack(Fluids.HYDROGEN, 1000))
+						.outputItems(new ItemStack(ModItems.powder_osmium_tiny, 1))
+						.outputFluids(new FluidStack(Fluids.WATER, 1000))
 		);
 
 
