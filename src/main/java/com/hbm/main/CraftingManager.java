@@ -936,7 +936,7 @@ public class CraftingManager {
 		addRecipeAuto(new ItemStack(ModBlocks.struct_watz_core, 1), new Object[] { "CBC", "BHB", "CBC", 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.ADVANCED), 'B', ANY_RESISTANTALLOY.plateCast(), 'H', ModBlocks.watz_cooler });
 		addShapelessAuto(new ItemStack(ModBlocks.fusion_heater), new Object[] { ModBlocks.fusion_hatch });
 		addShapelessAuto(new ItemStack(ModItems.energy_core), new Object[] { ModItems.fusion_core, ModItems.fuse });
-		addRecipeAuto(new ItemStack(ModItems.catalytic_converter, 1), new Object[] { "PCP", "PBP", "PCP", 'P', ANY_HARDPLASTIC.ingot(), 'C', CE.dust(), 'B', BI.ingot() });
+		addRecipeAuto(new ItemStack(ModItems.catalytic_converter, 1), new Object[] { "PCP", "PBP", "PRP", 'P', ANY_HARDPLASTIC.ingot(), 'C', CE.dust(), 'B', BI.ingot(), 'R', ModItems.powder_rhodium });
 
 		addRecipeAuto(new ItemStack(ModItems.upgrade_nullifier, 1), new Object[] { "SPS", "PUP", "SPS", 'S', STEEL.plate(), 'P', ModItems.powder_fire, 'U', ModItems.upgrade_template });
 		addRecipeAuto(new ItemStack(ModItems.upgrade_smelter, 1), new Object[] { "PHP", "CUC", "DTD", 'P', CU.plate(), 'H', Blocks.hopper, 'C', ModItems.coil_tungsten, 'U', ModItems.upgrade_template, 'D', ModItems.coil_copper, 'T', ModBlocks.machine_transformer });

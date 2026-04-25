@@ -784,6 +784,14 @@ public class CentrifugeRecipes extends SerializableRecipe {
 				new ItemStack(ModItems.powder_coal_tiny, 1)
 				 });
 
+		//pgm_residue into platinum group metals
+		recipes.put(new ComparableStack(ModItems.pgm_residue), new ItemStack[] {
+				new ItemStack(ModItems.powder_rhodium_solution, 1),
+				new ItemStack(ModItems.powder_palladium, 1),
+				new ItemStack(ModItems.powder_platnium, 1), //mod is made by a fucking IDIOT
+				// I just work here and don't feel like renaming. Could I refactor? Yes. Will I? No.
+				new ItemStack(ModItems.powder_iron, 1) });
+
 
 
 

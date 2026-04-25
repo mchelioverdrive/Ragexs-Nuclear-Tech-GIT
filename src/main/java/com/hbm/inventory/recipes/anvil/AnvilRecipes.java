@@ -789,7 +789,12 @@ public class AnvilRecipes {
 				//copper is often carried
 				new AnvilOutput(new ItemStack(ModItems.chalcopyrite, 1), 0.3F),
 				new AnvilOutput(new ItemStack(ModBlocks.ore_palladium, 1), 0.15F),
+				//PGM
 				new AnvilOutput(new ItemStack(ModItems.osmiridium, 1), 0.05F),
+				//rhodium?
+				//new AnvilOutput(new ItemStack(ModItems.rhodium, 1), 0.02F)
+				new AnvilOutput(new ItemStack(ModItems.pgm_residue, 1), 0.03F) // rhodium lives here
+
 			}
 		).setTier(2));
 
@@ -881,6 +886,8 @@ public class AnvilRecipes {
 				//petroleum coke?
 			}
 		).setTier(2));
+
+		//end of realistic ore grouping for XF drops
 
 
 		constructionRecipes.add(new AnvilConstructionRecipe(new ComparableStack(ModBlocks.deco_titanium, 4), new AnvilOutput[] {new AnvilOutput(new ItemStack(ModItems.ingot_titanium, 1))}).setTier(1));

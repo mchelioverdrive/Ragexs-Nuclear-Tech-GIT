@@ -1079,6 +1079,27 @@ public class ChemplantRecipes extends SerializableRecipe {
 						.outputFluids(new FluidStack(Fluids.WATER, 1000))
 		);
 
+		//rhodium extraction using chlorine
+		recipes.add(new ChemRecipe(1056, "RHODIUM_EXTRACTION", 300)
+						.inputItems(new ComparableStack(ModItems.powder_rhodium_solution, 1))
+						.inputFluids(new FluidStack(Fluids.CHLORINE, 1000))
+						.outputItems(new ItemStack(ModItems.iridium_rich_residue, 1)) // leftovers after Rh extraction
+						.outputFluids(new FluidStack(Fluids.RHODIUM_SOLUTION, 200))
+		);
+
+		recipes.add(new ChemRecipe(1057, "IRIDIUM_OXIDATION", 400)
+						.inputItems(new ComparableStack(ModItems.iridium_rich_residue, 1))
+						.inputFluids(new FluidStack(Fluids.OXYGEN, 1000))
+						.outputItems(new ItemStack(ModItems.iridium_oxide, 1))
+		);
+
+		recipes.add(new ChemRecipe(1061, "IRIDIUM_DISSOLUTION", 300)
+						.inputItems(new ComparableStack(ModItems.iridium_oxide, 1))
+						.inputFluids(new FluidStack(Fluids.CHLORINE, 1000))
+						.outputFluids(new FluidStack(Fluids.IRIDIUM_SOLUTION, 200))
+						.outputItems(new ItemStack(ModItems.ruthenium_residue, 1))
+		);
+
 
 
 		//todo methamphetamine, methylamine, ephedrine, pseudoephedrine, etc. for fun chemistry and maybe a drug lab or something who knows

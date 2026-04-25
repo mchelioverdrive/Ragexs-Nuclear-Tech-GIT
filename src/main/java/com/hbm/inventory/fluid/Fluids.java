@@ -162,6 +162,8 @@ public class Fluids {
 	public static FluidType POLYTHYLENE; //this is so that you wont need to go through microcrafting hell on circuits //idea is that rubber solution makes these casts that can then be imprinted in the assembly machine without needing to go through the resources to make the circuits one by one, it would be gated behind oil though.
 	public static FluidType RADIOSOLVENT;		//DCM-ish made by wacky radio cracking
 	public static FluidType CHLORINE;			//everone's favorite!
+
+
 	public static FluidType POTASSIUM_HYDROXIDE;
 	public static FluidType HEAVYOIL_VACUUM;
 	public static FluidType REFORMATE;
@@ -252,28 +254,6 @@ public class Fluids {
 	public static FluidType POLLUCITE_SOLUTION_LIGHT;
 
 	public static FluidType MOLTEN_STRONTIUM_CHLORIDE;
-
-
-	//morkite would be like a gravelly oil. it would be a goopy liquidized gravel.
-	//point being, if the crystals were melted down and the liquid extracted
-	//you could be able to dissolve it directly with the vacuum refinery, or maybe something else
-	//you would get a slurry, a gaseous version, and maybe some other mysterious product.
-	//the slurry would be churned into various minerals like copper and quartz.
-	//the gaseous version would be distilled to get acetylene, hydrogen, maybe some aromatics.
-	//or fractioned for acetylene and sour gas? im making shit up here oh god...
-	//regardless, you can get some fuels from it, but its more utility wise imo... would be best for welding
-	//or chemical mixing with nitrogens.
-
-	//bitch its simple
-	//fraction the morkine gas to get ethylene
-	//sourgas never fit anyway
-
-	//alright well thats the *light* part of morkite done. now for the heavier shit.
-	//im thinking it actually needs to be gas centrifuged maybe to get the other products or something else entirely.
-	//reformation of hydrocarbons, aka that feedstock shit could be used in the "MSLURRY", the oils get extracted while leaving some goopy deposits idfk.
-	//MSLURRY should defintely be dissolved though, acidized and fed through some sort of machine that settles the silica goop to the bottom before finally leaving
-	//some aqueous gel-like fluid behind.
-	//that aqueous gel would then be the main plaything of this godforsaken chain
 	public static FluidType STELLAR_FLUX;
 	public static FluidType VITRIOL;
 	public static FluidType SLOP;
@@ -283,6 +263,10 @@ public class Fluids {
 
 	public static FluidType MOLTEN_SALT;
 	public static FluidType ACIDWASTE;
+
+	public static FluidType RHODIUM_SOLUTION;
+
+	public static FluidType IRIDIUM_SOLUTION;
 
 	public static final HashBiMap<String, FluidType> renameMapping = HashBiMap.create();
 
@@ -567,8 +551,11 @@ public class Fluids {
 		MOLTEN_STRONTIUM_CHLORIDE = new FluidType("MOLTEN_STRONTIUM_CHLORIDE", 0xBFCF39, 3, 0, 3, EnumSymbol.ACID).addTraits(new FT_Corrosive(20), LIQUID).setTemp(700);
 		HYDROGEN_SULFIDE = new FluidType("HYDROGEN_SULFIDE", 0xBFCF39, 3, 0, 3, EnumSymbol.ACID).addTraits(new FT_Corrosive(20), GASEOUS).addTraits(new FT_Flammable(20000));
 		RAFFINATE = 			new FluidType("RAFFINATE",			0x7a5230, 2, 1, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0xF65723)).addTraits(new FT_Flammable(100_000), new FT_Combustible(FuelGrade.LOW, 200_000), LIQUID, VISCOUS, P_FUEL);
+		RHODIUM_SOLUTION =		new FluidType("RHODIUM_SOLUTION",	0xB9B9B9, 2, 0, 1, EnumSymbol.ACID).setTemp(300).addTraits(new FT_Corrosive(80), new FT_Poison(true, 4), LEADCON, LIQUID, VISCOUS);
+		IRIDIUM_SOLUTION =		new FluidType("IRIDIUM_SOLUTION",	0xB9B9B9, 2, 0, 1, EnumSymbol.ACID).setTemp(300).addTraits(new FT_Corrosive(80), new FT_Poison(true, 4), LEADCON, LIQUID, VISCOUS);
 
 
+//I am getting really sick and tired of this retarded ass fluid system
 
 
 		// ^ ^ ^ ^ ^ ^ ^ ^
@@ -822,6 +809,8 @@ public class Fluids {
 
 		metaOrder.add(RAFFINATE);
 		metaOrder.add(ACIDWASTE);
+		metaOrder.add(RHODIUM_SOLUTION);
+		metaOrder.add(IRIDIUM_SOLUTION);
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!
 		// V
