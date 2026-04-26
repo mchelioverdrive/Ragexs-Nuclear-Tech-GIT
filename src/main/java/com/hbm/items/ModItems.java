@@ -171,6 +171,7 @@ public class ModItems {
 	public static Item ingot_gaas;
 	public static Item ingot_iridium;
 	public static Item powder_iridium;
+	public static Item ruthenium_residue;
 	public static Item sulfur;
 	public static Item ingot_palladium;
 
@@ -3299,6 +3300,7 @@ public class ModItems {
 		nugget_hafnium = new ItemCustomLore().setUnlocalizedName("nugget_hafnium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_hafnium");
 		ingot_iridium = new ItemCustomLore().setRarity(EnumRarity.rare).setUnlocalizedName("ingot_iridium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_iridium");
 		powder_iridium = new ItemCustomLore().setRarity(EnumRarity.rare).setUnlocalizedName("powder_iridium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_aluminium");
+		ruthenium_residue = new ItemCustomLore().setRarity(EnumRarity.rare).setUnlocalizedName("ruthenium_residue").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_red_copper");
 		nugget_schrabidium = new ItemCustomLore().setRarity(EnumRarity.rare).setUnlocalizedName("nugget_schrabidium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_schrabidium");
 		nugget_beryllium = new Item().setUnlocalizedName("nugget_beryllium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_beryllium");
 		hazmat_cloth = new Item().setUnlocalizedName("hazmat_cloth").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":hazmat_cloth");
@@ -6463,6 +6465,7 @@ public class ModItems {
 		GameRegistry.registerItem(ingot_platnium, ingot_platnium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_iridium, ingot_iridium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_iridium, powder_iridium.getUnlocalizedName());
+		GameRegistry.registerItem(ruthenium_residue, ruthenium_residue.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_palladium, ingot_palladium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_aluminium, ingot_aluminium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_tin, ingot_tin.getUnlocalizedName());
