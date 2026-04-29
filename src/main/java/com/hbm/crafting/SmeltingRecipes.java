@@ -77,6 +77,9 @@ public class SmeltingRecipes {
 		GameRegistry.addSmelting(ModItems.crushed_petalite, new ItemStack(ModItems.powder_lithium), 0.1F);
 		//should have more to it but whatever
 
+		//palladium
+		GameRegistry.addSmelting(ModItems.powder_palladium, new ItemStack(ModItems.ingot_palladium), 0.1F);
+
 
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_iron), new ItemStack(Items.iron_ingot), 0.7F);
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_gold), new ItemStack(Items.gold_ingot), 1.0F);

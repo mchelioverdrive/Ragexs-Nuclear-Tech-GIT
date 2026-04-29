@@ -358,13 +358,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(73, "HELIUM3", 200)
 				.inputItems(new ComparableStack(ModBlocks.moon_turf, 8))
 				.outputFluids(new FluidStack(Fluids.HELIUM3, 1000)));
-		//recipes.add(new ChemRecipe(74, "OSMIRIDIUM_DEATH", 240)
-		//		.inputItems(
-		//				new ComparableStack(ModItems.powder_paleogenite),
-		//				new OreDictStack(F.dust(), 8),
-		//				new ComparableStack(ModItems.nugget_bismuth, 4))
-		//		.inputFluids(new FluidStack(Fluids.PEROXIDE, 1000, 5))
-		//		.outputFluids(new FluidStack(Fluids.DEATH, 1000, 0)));
+
 		//one bucket of ethanol equals 275_000 TU using the diesel baseline0
 		//the coal baseline is 400_000 per piece
 		//if we assume a burntime of 1.5 ops (300 ticks) for sugar at 100 TU/t that would equal a total of 30_000 TU
@@ -421,63 +415,25 @@ public class ChemplantRecipes extends SerializableRecipe {
 						new ComparableStack(ModItems.nugget_gallium),
 						new ComparableStack(ModItems.nugget_arsenic))
 				.outputItems(new ItemStack(ModItems.nugget_gaas, 1)));
-		//recipes.add(new ChemRecipe(106, "ANIMAN", 250)
-		//		.inputFluids(new FluidStack(Fluids.OLIVEOIL, 500))
+
+		//recipes.add(new ChemRecipe(107, "ELBOWS", 250)
+		//		.inputFluids(new FluidStack(Fluids.PEROXIDE, 100), new FluidStack(Fluids.ELBOWGREASE, 900))
 		//		.inputItems(
-		//				new ComparableStack(ModItems.canned_conserve, 1, 5))
-		//		.outputItems(new ItemStack(ModItems.animan, 1)));
-		recipes.add(new ChemRecipe(107, "ELBOWS", 250)
-				.inputFluids(new FluidStack(Fluids.PEROXIDE, 100), new FluidStack(Fluids.ELBOWGREASE, 900))
-				.inputItems(
-						new ComparableStack(ModBlocks.sand_dirty, 20))
-				.outputItems(new ItemStack(ModItems.ingot_iridium, 1)));
-		//recipes.add(new ChemRecipe(108, "ELBOMB", 300)
-		//		.inputFluids(new FluidStack(Fluids.ELBOWGREASE, 100))
-		//		.inputItems(
-		//				new ComparableStack(ModItems.ingot_lead, 1),
-		//				new OreDictStack(ANY_SMOKELESS.dust(), 1))
-		//		.outputItems(new ItemStack(ModItems.assembly_smg, 32))); //9mm
-		//recipes.add(new ChemRecipe(109, "ELBOOB", 350)
-		//		.inputFluids(new FluidStack(Fluids.ELBOWGREASE, 100))
-		//		.inputItems(
-		//				new ComparableStack(ModItems.ingot_copper, 1),
-		//				new OreDictStack(ANY_SMOKELESS.dust(), 1))
-		//		.outputItems(new ItemStack(ModItems.assembly_762, 32))); //762
-		//recipes.add(new ChemRecipe(110, "ELGORE", 250)
-		//		.inputFluids(new FluidStack(Fluids.ELBOWGREASE, 100))
-		//		.inputItems(
-		//				new ComparableStack(ModItems.ingot_copper, 1),
-		//				new ComparableStack(ModItems.ingot_lead, 1),
-		//				new OreDictStack(ANY_SMOKELESS.dust(), 1))
-		//		.outputItems(new ItemStack(ModItems.assembly_556, 32))); //556
-		//recipes.add(new ChemRecipe(111, "FIVEFIVE", 300)
-		//		.inputFluids(new FluidStack(Fluids.ELBOWGREASE, 100))
-		//		.inputItems(
-		//				new ComparableStack(ModItems.ingot_copper, 1),
-		//				new ComparableStack(ModItems.ingot_steel, 1),
-		//				new OreDictStack(ANY_SMOKELESS.dust(), 1))
-		//		.outputItems(new ItemStack(ModItems.assembly_lacunae, 32))); //5mm
-		//recipes.add(new ChemRecipe(112, "NMASSIII", 300)
-		//		.inputFluids(new FluidStack(Fluids.OSMIRIDIUM_SOLUTION, 7000), (new FluidStack(Fluids.ELBOWGREASE, 6000)))
-		//		.inputItems(
-		//				new ComparableStack(ModBlocks.dfc_core, 1),
-		//				new ComparableStack(ModBlocks.block_euphemium, 32),
-		//				new OreDictStack(ANY_SMOKELESS.dust(), 1))
-		//		.outputFluids(new FluidStack(Fluids.NMASSTETRANOL, 100), new FluidStack(Fluids.ETHANOL, 24000)));
-		//recipes.add(new ChemRecipe(113, "NMASSII", 300)
-		//		.inputFluids(new FluidStack(Fluids.SCHRABIDIC, 650), (new FluidStack(Fluids.IONGEL, 800)))
-		//		.inputItems(
-		//				new ComparableStack(ModItems.pellet_charged, 1),
-		//				new ComparableStack(ModItems.ingot_euphemium, 1))
-		//		.outputFluids(new FluidStack(Fluids.NMASS, 1000), new FluidStack(Fluids.WASTEGAS, 2000)));
-		//recipes.add(new ChemRecipe(114, "LUNAE", 250)
-		//		.inputFluids(new FluidStack(Fluids.NMASS, 3000), new FluidStack(Fluids.ASCHRAB, 500)) //eventually used to actually warp to other stars
-		//		.inputItems(
-		//				new ComparableStack(ModItems.powder_power, 5),
-		//				new ComparableStack(ModItems.ingot_ferrouranium, 1),
-		//				new ComparableStack(ModItems.ingot_copper, 1),
-		//				new OreDictStack(ANY_SMOKELESS.dust(), 1))
-		//		.outputItems(new ItemStack(ModItems.ammo_luna_sniper, 1, 3))); //556
+		//				new ComparableStack(ModBlocks.sand_dirty, 20))
+		//		.outputItems(new ItemStack(ModItems.ingot_iridium, 1)));
+
+		/*
+		I’m not going to do the insult part—but yeah, chemically this doesn’t make sense.
+		You’ve basically got:
+		peroxide (oxidizer)
+		“elbow grease” (I’m assuming oil/organic sludge)
+		oily sand
+		→ somehow producing pure iridium metal
+		That jumps over multiple real-world steps and mixes things that don’t logically lead to iridium at all.
+		Iridium isn’t something you “extract” from dirty sand + oxidizer—it’s one of the rarest platinum group metals
+		and shows up in very specific geological contexts.
+		 */
+
 		recipes.add(new ChemRecipe(115, "SHELL_CHLORINE", 100)
 				.inputItems(
 						new ComparableStack(ModItems.ammo_arty, 1, 0),
@@ -570,13 +526,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				new OreDictStack(ASBESTOS.ingot(), 1))
 			.inputFluids(new FluidStack(Fluids.HYDROGEN, 4000))
 			.outputFluids(new FluidStack(Fluids.PLUTONIUM_BROMIDE, 4000)));
-		//recipes.add(new ChemRecipe(1006, "SCHRABIDIUM_BROMIDE", 50)
-		//	.inputItems(
-		//		new OreDictStack(SA326.billet(), 1),
-		//		new ComparableStack(ModItems.powder_bromine),
-		//		new OreDictStack(ASBESTOS.ingot(), 1))
-		//	.inputFluids(new FluidStack(Fluids.HYDROGEN, 4000))
-		//	.outputFluids(new FluidStack(Fluids.SCHRABIDIUM_BROMIDE, 4000)));
+
 		recipes.add(new ChemRecipe(1007, "THORIUM_BROMIDE", 50)
 			.inputItems(
 				new OreDictStack(TH232.billet(), 1),
@@ -623,7 +573,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//molten salt actually this is going in the crucible since it's FUCKING USELESS BOB YOU RELENTLESS FUCK
 		//NEVERMIND THE FUCKING CRUCIBLE ONLY OUTPUTS FUCKING SOLIDS FOR SOME FUCKING REASON DESPITE BEING USED TO POUR FLUIDS
 		//NICE SHITLOW TINKERS RIPPED DOGSHIT SYSTEM. ANYWAY IT'S GOING IN THE FUCKING CHEMPLANT JUST LIKE EVERY OTHER RETARDED
-		//ACTUAL CHEMICAL PROCESS\
+		//ACTUAL CHEMICAL PROCESS
 		recipes.add(new ChemRecipe(1011, "MOLTEN_SALT", 500)
 			.inputItems(
 				new OreDictStack(KEY_SALT, 4))

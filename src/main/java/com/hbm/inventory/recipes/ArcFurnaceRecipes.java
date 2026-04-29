@@ -80,6 +80,9 @@ public class ArcFurnaceRecipes extends SerializableRecipe {
 		//rhodium
 		recipes.put(new ComparableStack(ModItems.powder_rhodium), new ArcFurnaceRecipe().solid(new ItemStack(ModItems.ingot_rhodium, 1)).fluid(new MaterialStack(Mats.MAT_RHODIUM, MaterialShapes.INGOT.q(1))));
 
+		//iridium
+		recipes.put(new ComparableStack(ModItems.powder_iridium), new ArcFurnaceRecipe().solid(new ItemStack(ModItems.ingot_iridium, 1)).fluid(new MaterialStack(Mats.MAT_IRIDIUM, MaterialShapes.INGOT.q(1))));
+
 
 		for(BedrockOreType type : BedrockOreType.values()) {
 			recipes.put(new ComparableStack(ItemBedrockOreNew.make(BedrockOreGrade.SULFURIC_BYPRODUCT, type)), new ArcFurnaceRecipe().solid(ItemBedrockOreNew.make(BedrockOreGrade.SULFURIC_ARC, type, 2)));
