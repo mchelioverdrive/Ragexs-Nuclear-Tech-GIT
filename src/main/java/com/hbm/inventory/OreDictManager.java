@@ -230,6 +230,8 @@ public class OreDictManager {
 	public static final DictFrame B = new DictFrame("Boron");
 	//rhodium
 	public static final DictFrame Rh = new DictFrame("Rhodium");
+	//silver
+	public static final DictFrame Ag = new DictFrame("Silver");
 
 	/** SILICON */
 	public static final DictFrame SI = new DictFrame("Silicon");
@@ -488,6 +490,7 @@ public class OreDictManager {
 		BBRONZE																.ingot(ingot_bismuth_bronze);
 		ABRONZE																.ingot(ingot_arsenic_bronze);
 		PB			.nugget(nugget_lead)									.ingot(ingot_lead)													.dust(powder_lead)				.plate(plate_lead)				.block(block_lead)			.oreAll(ore_lead);
+		Ag 			.nugget(nugget_silver)									.ingot(ingot_silver)												.dust(powder_silver);
 		BSCCO																.ingot(ingot_bscco);
 		BI			.nugget(nugget_bismuth)		.billet(billet_bismuth)		.ingot(ingot_bismuth)												.dust(powder_bismuth)											.block(block_bismuth);
 		AS			.nugget(nugget_arsenic)									.ingot(ingot_arsenic);

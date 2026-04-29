@@ -714,8 +714,8 @@ public class CentrifugeRecipes extends SerializableRecipe {
 		//galena PbS
 		recipes.put(new ComparableStack(ModItems.galena), new ItemStack[] {
 				new ItemStack(ModItems.powder_lead, 3),
-				new ItemStack(ModItems.powder_copper, 1),
-				//replace this with silver when added^
+				new ItemStack(ModItems.nugget_silver, 2),
+
 				new ItemStack(ModItems.nugget_bismuth, 1),
 				//minor/trace elements—notably
 				//silver
