@@ -509,8 +509,20 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.inputFluids(
 				new FluidStack(Fluids.WATER, 600),
 				new FluidStack(Fluids.SODIUM_HYDROXIDE, 200))
-			//.outputFluids(new FluidStack(Fluids.NITAN, 1000)));
-			.outputItems(new ItemStack(ModItems.powder_aluminium, 8)));
+			.outputFluids(new FluidStack(Fluids.REDMUD, 1000))
+			.outputItems(
+				new ItemStack(ModItems.powder_aluminium, 8),
+				//new ItemStack(ModItems.REE_sludge, 1) //REE sludge is a yttrium/scandium processing step; not sure that's right
+				new ItemStack(ModItems.powder_gallium_tiny, 3),
+				//bauxite sands
+				new ItemStack(Blocks.sand, 1),
+				//we have one item slot left here, I could be autistic about this or simplistic here
+				//Trace Element Concentration: Naturally occurring radioactive materials like uranium, thorium,
+				//and radium are concentrated in the residue, known as TENORM
+				//Ok for my sanity here's a thorium nugget
+				new ItemStack(ModItems.nugget_th232, 1)
+
+			));
 
 		recipes.add(new ChemRecipe(1004, "URANIUM_BROMIDE", 50)
 			.inputItems(

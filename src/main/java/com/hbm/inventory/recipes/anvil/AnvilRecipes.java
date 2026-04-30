@@ -225,6 +225,24 @@ public class AnvilRecipes {
 		pullFromAssembler(new ComparableStack(ModItems.filter_coal), 2);
 		pullFromAssembler(new ComparableStack(ModItems.thermo_element), 2);
 
+		//makeRecipe(new ComparableStack(ModItems.thermo_element,
+		//									   1),
+		//				   new AStack[]{
+		//					   new OreDictStack(STEEL.plate(),
+		//										1),
+		//					   new OreDictStack(MINGRADE.wireFine(),
+		//										3),
+		//					   new OreDictStack(Hg.ingot(),
+		//										2),},
+		//				   90);
+		constructionRecipes.add(new AnvilConstructionRecipe(
+			new AStack[] {
+				new OreDictStack(STEEL.plate(), 1),
+				new OreDictStack(MINGRADE.wireFine(), 3),
+				new OreDictStack(Hg.ingot(), 2)
+			},
+			new AnvilOutput(new ItemStack(ModItems.thermo_element, 1))).setTier(2).setOverlay(OverlayType.CONSTRUCTION));
+
 		//needs to be craftable, this is retarded
 		//constructionRecipes.add(new AnvilConstructionRecipe(
 		//		new AStack[] {
@@ -774,7 +792,9 @@ public class AnvilRecipes {
 				new AnvilOutput(new ItemStack(ModBlocks.ore_barite, 1), 0.25F),
 				new AnvilOutput(new ItemStack(ModBlocks.ore_celestite, 1), 0.1F),
 				//actually dolomite but I don't feel like changing the name in the code
-				new AnvilOutput(new ItemStack(ModBlocks.ore_magnesite, 1), 0.3F)
+				new AnvilOutput(new ItemStack(ModBlocks.ore_magnesite, 1), 0.3F),
+				// very rare mercury source
+				new AnvilOutput(new ItemStack(ModItems.cinnebar, 1), 0.05F)
 			}
 		).setTier(2));
 
@@ -864,7 +884,8 @@ public class AnvilRecipes {
 				// sylvite basically
 				new AnvilOutput(new ItemStack(ModItems.powder_potash, 1), 0.45F),
 				// rarer secondary
-				new AnvilOutput(new ItemStack(ModItems.carnallite, 1), 0.35F)
+				new AnvilOutput(new ItemStack(ModItems.carnallite, 1), 0.35F),
+				new AnvilOutput(new ItemStack(ModItems.powder_borax, 1), 0.25F),
 				//yes I know we skipped some steps but I don't have all goddamn day to add rocks
 			}
 		).setTier(2));
@@ -881,7 +902,10 @@ public class AnvilRecipes {
 				new AnvilOutput(new ItemStack(Items.diamond, 1), 0.02F),
 
 				//lignite
-				new AnvilOutput(new ItemStack(ModItems.lignite, 1), 0.6F)
+				new AnvilOutput(new ItemStack(ModItems.lignite, 1), 0.6F),
+
+				//cinnabar is found commonly in carbon depos...??? No? Google? stop lying to me??? ???
+				//new AnvilOutput(new ItemStack(ModItems.cinnebar, 1), 0.01F) //it's rare...?
 
 				//lignite, coal coke, diamond, etc could be added
 				//petroleum coke?

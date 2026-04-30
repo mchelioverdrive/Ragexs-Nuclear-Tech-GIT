@@ -92,6 +92,8 @@ public class HazardRegistry {
 	public static final float u = 0.35F;
 	public static final float be = 2F;
 	public static final float pb = 0.8F;
+	public static final float hg = 0.9F;
+
 	public static final float u233 = 5.0F;
 	public static final float u235 = 1.0F;
 	public static final float u238 = 0.25F;
@@ -580,6 +582,9 @@ public class HazardRegistry {
 		HazardSystem.register(block_lead, makeData().addEntry(ASBESTOS, pb / ingot));
 		HazardSystem.register(nugget_lead, makeData().addEntry(ASBESTOS, pb / nugget));
 
+		//mercury
+		HazardSystem.register(ingot_mercury, makeData().addEntry(ASBESTOS, hg * ingot) .addEntry(BLINDING, 0.2F * ingot) .addEntry(AUTISM, 0.6F * ingot) .addEntry(COAL, 0.5F * ingot));
+		HazardSystem.register(nugget_mercury, makeData().addEntry(ASBESTOS, hg * nugget) .addEntry(BLINDING, 0.2F * nugget) .addEntry(AUTISM, 0.6F * nugget) .addEntry(COAL, 0.5F * nugget));
 
 		HazardSystem.register(brick_asbestos, makeData(ASBESTOS, 1F));
 		HazardSystem.register(tile_lab_broken, makeData(ASBESTOS, 1F));

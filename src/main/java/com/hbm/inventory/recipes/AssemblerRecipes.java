@@ -645,6 +645,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 					   new OreDictStack(NETHERQUARTZ.dust(),
 										2),},
 				   60);
+
+
+
 		makeRecipe(new ComparableStack(ModItems.plate_dalekanium,
 									   1),
 				   new AStack[]{
