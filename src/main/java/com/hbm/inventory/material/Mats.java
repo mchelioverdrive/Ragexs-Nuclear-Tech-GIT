@@ -149,6 +149,7 @@ public class Mats {
 	public static final NTMMaterial MAT_GALLIUM			= makeSmeltable(3100,		GALLIUM,		0x52687F, 0x52687F, 0x52687F).setAutogen(NUGGET, DUST, DUSTTINY).m();
 	public static final NTMMaterial MAT_ZINC			= makeSmeltable(3000,		ZI,				0xA79DA8, 0xA79DA8, 0xA79DA8).setAutogen(NUGGET, DUST, WIRE).m();
 	public static final NTMMaterial MAT_IRIDIUM			= makeSmeltable(7700,		IRIDIUM,		0xB8D0FF, 0xB8D0FF, 0xB8D0FF).setAutogen(INGOT).m();
+	public static final NTMMaterial MAT_INDIUM 		= makeSmeltable(3200,		In,		0x52687F, 0x52687F, 0x52687F).setAutogen(NUGGET, DUST, INGOT).m();
 	public static final NTMMaterial MAT_PLATNIUM		= makeSmeltable(7800,		PLATNIUM,		0xE6E8F3, 0xE6E8F3, 0xE6E8F3).setAutogen(NUGGET, INGOT, DUST).m();
 
 	//Alloys

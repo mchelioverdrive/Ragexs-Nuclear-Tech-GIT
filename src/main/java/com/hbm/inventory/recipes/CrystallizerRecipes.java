@@ -130,6 +130,9 @@ public class CrystallizerRecipes extends SerializableRecipe {
 		//registerRecipe(AL.ingot(),									new CrystallizerRecipe(ModItems.ingot_rubber, mixingTime), new FluidStack(Fluids.NITROGEN, 150));
 		//why isn't it possible you stupid bastard
 
+		//ore_zinc needs to make a crystal that can be electrolysized into indium and other byproducts...
+		registerRecipe(new ComparableStack(ModBlocks.ore_zinc),		new CrystallizerRecipe(ModItems.crystal_zinc, baseTime));
+
 
 		registerRecipe((new ComparableStack(ModBlocks.ore_mineral, 1, OreDictionary.WILDCARD_VALUE)),		new CrystallizerRecipe(ModItems.crystal_mineral, baseTime)); //temp
 

@@ -94,26 +94,16 @@ public class ElectrolyserMetalRecipes extends SerializableRecipe {
 				new MaterialStack(Mats.MAT_GOLD, MaterialShapes.INGOT.q(2)),
 				new ItemStack(ModItems.powder_lithium_tiny, 3)));
 
-		recipes.put(new ComparableStack(ModItems.crystal_schraranium), new ElectrolysisMetalRecipe(
-				new MaterialStack(Mats.MAT_SCHRABIDIUM, MaterialShapes.NUGGET.q(5)),
-				new MaterialStack(Mats.MAT_URANIUM, MaterialShapes.NUGGET.q(2)),
-				new ItemStack(ModItems.nugget_neptunium, 2)));
+		//indium and other byproducts from crystalized zinc
+		recipes.put(new ComparableStack(ModItems.crystal_zinc), new ElectrolysisMetalRecipe(
+				new MaterialStack(Mats.MAT_ZINC, MaterialShapes.INGOT.q(6)),
+				new MaterialStack(Mats.MAT_SULFUR, MaterialShapes.DUST.q(1)),
+				//??? whatever
+				new ItemStack(ModItems.powder_indium, 3),
+				new ItemStack(ModItems.powder_cadmium, 2)
+		));
 
-		recipes.put(new ComparableStack(ModItems.crystal_schrabidium), new ElectrolysisMetalRecipe(
-				new MaterialStack(Mats.MAT_SCHRABIDIUM, MaterialShapes.INGOT.q(6)),
-				new MaterialStack(Mats.MAT_PLUTONIUM, MaterialShapes.INGOT.q(2)),
-				new ItemStack(ModItems.powder_lithium_tiny, 3)));
 
-		//recipes.put(new ComparableStack(ModItems.crystal_rare), new ElectrolysisMetalRecipe(
-		//		new MaterialStack(Mats.MAT_ZIRCONIUM, MaterialShapes.NUGGET.q(6)),
-		//		new MaterialStack(Mats.MAT_BORON, MaterialShapes.NUGGET.q(2)),
-		//		new ItemStack(ModItems.powder_desh_mix, 3)));
-
-		recipes.put(new ComparableStack(ModItems.crystal_trixite), new ElectrolysisMetalRecipe(
-				new MaterialStack(Mats.MAT_PLUTONIUM, MaterialShapes.INGOT.q(3)),
-				new MaterialStack(Mats.MAT_COBALT, MaterialShapes.INGOT.q(4)),
-				new ItemStack(ModItems.powder_niobium, 4),
-				new ItemStack(ModItems.powder_nitan_mix, 2)));
 
 		recipes.put(new ComparableStack(ModItems.crystal_lithium), new ElectrolysisMetalRecipe(
 				new MaterialStack(Mats.MAT_LITHIUM, MaterialShapes.INGOT.q(6)),

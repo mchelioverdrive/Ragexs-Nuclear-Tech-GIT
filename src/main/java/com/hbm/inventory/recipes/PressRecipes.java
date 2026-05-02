@@ -102,6 +102,7 @@ public class PressRecipes extends SerializableRecipe {
 			}
 		}
 
+		//TODO this process should also be doable en-masse in the exposure chamber.
 		makeRecipe(StampType.CIRCUIT, new OreDictStack(SI.billet()),						DictFrame.fromOne(ModItems.circuit, EnumCircuitType.SILICON));
 		makeRecipe(StampType.CIRCUIT, new OreDictStack(GAAS.billet()),						DictFrame.fromOne(ModItems.circuit, EnumCircuitType.GAAS));
 
