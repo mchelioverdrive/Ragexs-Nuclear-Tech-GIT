@@ -199,6 +199,7 @@ public class OreDictManager {
 	public static final DictFrame STEEL = new DictFrame("Steel");
 	public static final DictFrame STAINLESS = new DictFrame("StainlessSteel");
 	public static final DictFrame Mn = new DictFrame("Manganese");
+	public static final DictFrame Tl = new DictFrame("Thallium");
 
 	public static final DictFrame CDOLOMITE = new DictFrame("CDolomite");
 	/** TECHNETIUM STEEL */
@@ -511,6 +512,7 @@ public class OreDictManager {
 		MG			.ingot(magnesium_ingot);	//.billet(billet_magnesium)	.ingot(ingot_magnesium)												.dust(powder_magnesium)											.block(block_magnesium)		.oreAll(ore_magnesium);
 		Mn .dust(manganese_powder);
 		Rh  .ingot(ingot_rhodium); //.dust(powder_rhodium) don't do that because we want to gate rh to the arc furnace
+		Tl .ingot(ingot_thallium) .dust(powder_thallium) .nugget(nugget_thallium);
 		//PSO .nugget(powder_strontium_oxide);
 		GRAPHITE															.ingot(ingot_graphite)																												.block(block_graphite);
 		CARBON																.ingot(ingot_graphite)																												.block(block_graphite);

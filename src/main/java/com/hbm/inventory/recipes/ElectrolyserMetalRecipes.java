@@ -100,7 +100,7 @@ public class ElectrolyserMetalRecipes extends SerializableRecipe {
 				new MaterialStack(Mats.MAT_SULFUR, MaterialShapes.DUST.q(1)),
 				//??? whatever
 				new ItemStack(ModItems.powder_indium, 3),
-				new ItemStack(ModItems.powder_cadmium, 2)
+				new ItemStack(ModItems.powder_thallium, 2)
 		));
 
 

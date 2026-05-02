@@ -83,6 +83,9 @@ public class SmeltingRecipes {
 		//silver
 		GameRegistry.addSmelting(ModItems.powder_silver, new ItemStack(ModItems.ingot_silver), 0.1F);
 
+		//thallium
+		GameRegistry.addSmelting(ModItems.powder_thallium, new ItemStack(ModItems.ingot_thallium), 0.1F);
+
 
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_iron), new ItemStack(Items.iron_ingot), 0.7F);
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_gold), new ItemStack(Items.gold_ingot), 1.0F);

@@ -91,7 +91,10 @@ public class ModItems {
 	public static Item strontium_sulfide;
 	public static Item ingot_indium;
 	public static Item powder_indium;
+	public static Item powder_thallium;
+	public static Item ingot_thallium;
 	public static Item nugget_indium;
+	public static Item nugget_thallium;
 	public static Item crystal_zinc;
 	public static Item powder_strontium_oxide;
 	public static Item strontium_chloride;
@@ -3032,9 +3035,12 @@ public class ModItems {
 		scandium_chloride = new Item().setUnlocalizedName("scandium_chloride").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		scandium_ingot = new Item().setUnlocalizedName("scandium_ingot").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_scandium");
 		ingot_indium = new Item().setUnlocalizedName("ingot_indium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_scandium");
+		ingot_thallium = new Item().setUnlocalizedName("ingot_thallium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_scandium");
 		powder_indium = new Item().setUnlocalizedName("powder_indium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_aluminium");
+		powder_thallium = new Item().setUnlocalizedName("powder_thallium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_aluminium");
 		scandium_nugget = new Item().setUnlocalizedName("scandium_nugget").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_scandium");
 		nugget_indium = new Item().setUnlocalizedName("nugget_indium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_scandium");
+		nugget_thallium = new Item().setUnlocalizedName("nugget_thallium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_scandium");
 		crystal_zinc = new Item().setUnlocalizedName("crystal_zinc").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niter");
 		yttrium_ingot = new Item().setUnlocalizedName("yttrium_ingot").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_yttrium");
 		powder_strontium_oxide = new Item().setUnlocalizedName("powder_strontium_oxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
@@ -6557,8 +6563,11 @@ public class ModItems {
 		GameRegistry.registerItem(scandium_chloride, scandium_chloride.getUnlocalizedName());
 		GameRegistry.registerItem(scandium_ingot, scandium_ingot.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_indium, ingot_indium.getUnlocalizedName());
+		GameRegistry.registerItem(ingot_thallium, ingot_thallium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_indium, powder_indium.getUnlocalizedName());
+		GameRegistry.registerItem(powder_thallium, powder_thallium.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_indium, nugget_indium.getUnlocalizedName());
+		GameRegistry.registerItem(nugget_thallium, nugget_thallium.getUnlocalizedName());
 		GameRegistry.registerItem(crystal_zinc, crystal_zinc.getUnlocalizedName());
 		GameRegistry.registerItem(scandium_nugget, scandium_nugget.getUnlocalizedName());
 		GameRegistry.registerItem(yttrium_ingot, yttrium_ingot.getUnlocalizedName());
