@@ -22,6 +22,7 @@ import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.material.MaterialShapes;
 import com.hbm.inventory.recipes.loader.SerializableRecipe;
+import com.hbm.items.ItemEnums;
 import com.hbm.items.ItemEnums.EnumAshType;
 import com.hbm.items.ItemEnums.EnumPlantType;
 import com.hbm.items.ItemEnums.EnumTarType;
@@ -68,6 +69,8 @@ public class CrystallizerRecipes extends SerializableRecipe {
 
 		FluidStack bio = new FluidStack(Fluids.BIOFUEL, 500);
 
+		FluidStack ammonia = new FluidStack(Fluids.AMMONIA, 500);
+
 
 		//real bullshit:
 
@@ -96,7 +99,17 @@ public class CrystallizerRecipes extends SerializableRecipe {
 		//fake shit most likely:
 
 
-		registerRecipe(COAL.ore(),		new CrystallizerRecipe(ModItems.crystal_coal, baseTime));
+		//registerRecipe(COAL.ore(),		new CrystallizerRecipe(ModItems.crystal_coal, baseTime));
+		//COAL
+		//registerRecipe(new ComparableStack(Items.coal),	new CrystallizerRecipe(ModItems.crystal_coal, baseTime * 5), ammonia);
+		//charcoal
+		registerRecipe(new ComparableStack(Items.coal, 1, 1),	new CrystallizerRecipe(ModItems.crystal_coal, baseTime * 5), ammonia);
+		//briquettes should be used
+		registerRecipe((new ComparableStack(ModItems.briquette, 1, ItemEnums.EnumBriquetteType.COAL)), new CrystallizerRecipe(ModItems.crystal_coal, baseTime * 3), ammonia);
+
+
+
+
 		registerRecipe(IRON.ore(),		new CrystallizerRecipe(ModItems.crystal_iron, baseTime));
 		registerRecipe(GOLD.ore(),		new CrystallizerRecipe(ModItems.crystal_gold, baseTime));
 		registerRecipe(REDSTONE.ore(),	new CrystallizerRecipe(ModItems.crystal_redstone, baseTime));

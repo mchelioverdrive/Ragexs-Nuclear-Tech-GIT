@@ -175,8 +175,6 @@ public class HazardRegistry {
 	public static final float rod_quad = rod * 4;
 	public static final float rod_rbmk = rod * 8;
 
-	public static final float P_RED = 3.5F;
-
 	public static final HazardTypeBase RADIATION = new HazardTypeRadiation();
 	//public static final HazardTypeBase DIGAMMA = new HazardTypeDigamma();
 	public static final HazardTypeBase HOT = new HazardTypeHot();
@@ -269,10 +267,6 @@ public class HazardRegistry {
 		HazardSystem.register(ancient_scrap, makeData(RADIATION, 150F));
 		HazardSystem.register(block_corium, makeData(RADIATION, 150F));
 		HazardSystem.register(block_corium_cobble, makeData(RADIATION, 150F));
-
-		HazardSystem.register(new ItemStack(ModItems.powder_fire, 1, 0), makeData(EXPLOSIVE, P_RED));
-		HazardSystem.register(new ItemStack(ModBlocks.block_red_phosphorus, 1, 0), makeData(EXPLOSIVE, P_RED *9));
-
 
 		HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 0), makeData(RADIATION, 0.5F));
 		HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 1), makeData(RADIATION, 1F));

@@ -164,7 +164,8 @@ public class AnvilRecipes {
 			}
 		}
 
-		constructionRecipes.add(new AnvilConstructionRecipe(new OreDictStack(COAL.dust()), new AnvilOutput(new ItemStack(Items.coal))).setTier(3));
+		//constructionRecipes.add(new AnvilConstructionRecipe(new OreDictStack(COAL.dust()), new AnvilOutput(new ItemStack(Items.coal))).setTier(3));
+		//no coal duping
 		constructionRecipes.add(new AnvilConstructionRecipe(new OreDictStack(COALCOKE.dust()), new AnvilOutput(new ItemStack(ModItems.coke, 1, EnumCokeType.COAL.ordinal()))).setTier(3));
 		constructionRecipes.add(new AnvilConstructionRecipe(new OreDictStack(LIGCOKE.dust()), new AnvilOutput(new ItemStack(ModItems.coke, 1, EnumCokeType.LIGNITE.ordinal()))).setTier(3));
 		constructionRecipes.add(new AnvilConstructionRecipe(new OreDictStack(PETCOKE.dust()), new AnvilOutput(new ItemStack(ModItems.coke, 1, EnumCokeType.PETROLEUM.ordinal()))).setTier(3));

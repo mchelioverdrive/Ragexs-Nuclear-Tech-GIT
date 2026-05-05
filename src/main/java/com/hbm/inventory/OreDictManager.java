@@ -553,7 +553,7 @@ public class OreDictManager {
 		KNO																				.dust(niter)			.block(block_niter)		.oreAll(ore_niter);
 		F																				.dust(fluorite)			.block(block_fluorite)	.ore(DictFrame.fromOne(ore_basalt, EnumBasaltOreType.FLUORITE)) .oreAll(ore_fluorite);
 		LIGNITE							.gem(lignite)									.dust(powder_lignite)							.oreAll(ore_lignite);
-		COALCOKE						.gem(fromOne(coke, EnumCokeType.COAL))			.dust(fromOne(powder_coke, EnumCokeType.COAL))		.block(fromOne(block_coke, EnumCokeType.COAL));
+		COALCOKE					.gem(fromOne(coke, EnumCokeType.COAL))			.dust(fromOne(powder_coke, EnumCokeType.COAL))		.block(fromOne(block_coke, EnumCokeType.COAL));
 		PETCOKE							.gem(fromOne(coke, EnumCokeType.PETROLEUM))		.dust(fromOne(powder_coke, EnumCokeType.PETROLEUM))	.block(fromOne(block_coke, EnumCokeType.PETROLEUM));
 		LIGCOKE							.gem(fromOne(coke, EnumCokeType.LIGNITE))		.dust(fromOne(powder_coke, EnumCokeType.LIGNITE))	.block(fromOne(block_coke, EnumCokeType.LIGNITE));
 		CINNABAR	.crystal(cinnebar)	.gem(cinnebar)																					.ore(ore_depth_cinnebar) .oreAll(ore_cinnebar);
@@ -577,8 +577,9 @@ public class OreDictManager {
 		/*
 		 * PHOSPHORUS
 		 */
-		P_WHITE	.hot(5)	.ingot(ingot_phosphorus)	.block(block_white_phosphorus);
-		P_RED			.dust(powder_fire)			.block(block_red_phosphorus) .oreAll(ore_fire);
+		P_WHITE .hot(5) 	.ingot(ingot_phosphorus)	.block(block_white_phosphorus); //.explosive(1)
+		//breaking bad literally had a scene on this... Fucking CHRIST BOBCAT AT LEAST PRETEND YOU CARE ABOUT CHEMISTRY
+		P_RED   .explosive(4)			.dust(powder_fire)			.block(block_red_phosphorus) .oreAll(ore_fire);
 
 		/*
 		 * RARE METALS
