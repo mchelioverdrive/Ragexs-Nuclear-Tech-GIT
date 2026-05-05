@@ -680,6 +680,7 @@ public class ModItems {
 	public static Item ingot_cesium;
 
 	public static Item cesium_salt;
+	public static Item arsenic_trioxide;
 
 	public static Item powder_strontium;
 	public static Item powder_cobalt;
@@ -3472,6 +3473,7 @@ public class ModItems {
 		powder_astatine = new ItemCustomLore().setRarity(EnumRarity.epic).setUnlocalizedName("powder_astatine").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_astatine");
 		powder_caesium = new ItemCustomLore().setRarity(EnumRarity.epic).setUnlocalizedName("powder_caesium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_caesium");
 		cesium_salt = new ItemSalt(1).setUnlocalizedName("cesium_salt").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
+		arsenic_trioxide = new Item().setUnlocalizedName("arsenic_trioxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		manganese_powder = new Item().setUnlocalizedName("powder_manganese").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_aluminium");
 
 		powder_australium = new ItemCustomLore().setRarity(EnumRarity.uncommon).setUnlocalizedName("powder_australium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_australium");
@@ -6798,6 +6800,7 @@ public class ModItems {
 		GameRegistry.registerItem(powder_astatine, powder_astatine.getUnlocalizedName());
 		GameRegistry.registerItem(powder_caesium, powder_caesium.getUnlocalizedName());
 		GameRegistry.registerItem(cesium_salt, cesium_salt.getUnlocalizedName());
+		GameRegistry.registerItem(arsenic_trioxide, arsenic_trioxide.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cesium, ingot_cesium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_australium, powder_australium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_weidanium, powder_weidanium.getUnlocalizedName());

@@ -70,7 +70,7 @@ public class ElectrolyserMetalRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(ModItems.crystal_copper), new ElectrolysisMetalRecipe(
 				new MaterialStack(Mats.MAT_COPPER, MaterialShapes.INGOT.q(6)),
 				new MaterialStack(Mats.MAT_LEAD, MaterialShapes.NUGGET.q(4)),
-				new ItemStack(ModItems.powder_lithium_tiny, 3),
+				new ItemStack(ModItems.arsenic_trioxide, 1),
 				new ItemStack(ModItems.sulfur, 2)));
 
 		recipes.put(new ComparableStack(ModItems.crystal_tungsten), new ElectrolysisMetalRecipe(
@@ -92,6 +92,7 @@ public class ElectrolyserMetalRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(ModItems.crystal_lead), new ElectrolysisMetalRecipe(
 				new MaterialStack(Mats.MAT_LEAD, MaterialShapes.INGOT.q(6)),
 				new MaterialStack(Mats.MAT_GOLD, MaterialShapes.INGOT.q(2)),
+				new ItemStack(ModItems.arsenic_trioxide, 1),
 				new ItemStack(ModItems.powder_lithium_tiny, 3)));
 
 		//indium and other byproducts from crystalized zinc

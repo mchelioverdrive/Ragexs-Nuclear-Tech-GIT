@@ -81,6 +81,9 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 		//osmium powder -> osmium ingot
 		addRecipe(ModItems.powder_osmium, COAL, new ItemStack(ModItems.ingot_osmiridium, 1)); //bobcat when calling what is clearly osmium osmiridium
 
+		//arsenic from arsenic_trioxide + ingot_carbon (graphite is a form of carbon...? I guess it works)
+		addRecipe(ModItems.arsenic_trioxide, ModItems.ingot_graphite, new ItemStack(ModItems.nugget_arsenic, 1));
+
 		addRecipe(CU,									REDSTONE,										new ItemStack(ModItems.ingot_red_copper, 2));
 		//steel copper alloy
 		addRecipe(STEEL,								MINGRADE,										new ItemStack(ModItems.ingot_advanced_alloy, 2));

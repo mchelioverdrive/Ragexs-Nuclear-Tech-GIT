@@ -151,7 +151,7 @@ public class ShredderRecipes extends SerializableRecipe {
 		ShredderRecipes.setRecipe(new ItemStack(ModItems.chalcocite), new ItemStack(ModBlocks.ore_copper, 2)); //should also produce sulfur but whatever
 
 		//galena
-		ShredderRecipes.setRecipe(new ItemStack(ModItems.galena), new ItemStack(ModItems.powder_lead, 2)); //should also produce sulfur but whatever
+		ShredderRecipes.setRecipe(new ItemStack(ModItems.galena), new ItemStack(ModItems.crystal_lead, 2));
 
 		//sphalerite
 		ShredderRecipes.setRecipe(new ItemStack(ModItems.sphalerite), new ItemStack(ModBlocks.ore_zinc, 2)); //should also produce sulfur but whatever

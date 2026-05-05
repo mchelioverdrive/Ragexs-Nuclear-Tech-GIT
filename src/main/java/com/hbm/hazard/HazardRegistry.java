@@ -92,6 +92,7 @@ public class HazardRegistry {
 	public static final float u = 0.35F;
 	public static final float be = 2F;
 	public static final float pb = 0.8F;
+	public static final float as = 6F;
 	public static final float hg = 0.9F;
 	public static final float tl = 100.0F;
 
@@ -173,6 +174,8 @@ public class HazardRegistry {
 	public static final float rod_dual = rod * 2;
 	public static final float rod_quad = rod * 4;
 	public static final float rod_rbmk = rod * 8;
+
+	public static final float P_RED = 3.5F;
 
 	public static final HazardTypeBase RADIATION = new HazardTypeRadiation();
 	//public static final HazardTypeBase DIGAMMA = new HazardTypeDigamma();
@@ -266,6 +269,10 @@ public class HazardRegistry {
 		HazardSystem.register(ancient_scrap, makeData(RADIATION, 150F));
 		HazardSystem.register(block_corium, makeData(RADIATION, 150F));
 		HazardSystem.register(block_corium_cobble, makeData(RADIATION, 150F));
+
+		HazardSystem.register(new ItemStack(ModItems.powder_fire, 1, 0), makeData(EXPLOSIVE, P_RED));
+		HazardSystem.register(new ItemStack(ModBlocks.block_red_phosphorus, 1, 0), makeData(EXPLOSIVE, P_RED *9));
+
 
 		HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 0), makeData(RADIATION, 0.5F));
 		HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 1), makeData(RADIATION, 1F));
@@ -582,6 +589,18 @@ public class HazardRegistry {
 		HazardSystem.register(ingot_lead, makeData().addEntry(ASBESTOS, pb / ingot));
 		HazardSystem.register(block_lead, makeData().addEntry(ASBESTOS, pb / ingot));
 		HazardSystem.register(nugget_lead, makeData().addEntry(ASBESTOS, pb / nugget));
+		HazardSystem.register(crystal_lead, makeData().addEntry(ASBESTOS, pb / crystal));
+
+		//arsenic
+		HazardSystem.register(ore_arsenic, makeData().addEntry(ASBESTOS, as * ore));
+		HazardSystem.register(arsenic_trioxide, makeData().addEntry(ASBESTOS, as * powder) .addEntry(BLINDING, as * powder) .addEntry(AUTISM, as * powder) .addEntry(COAL, as * powder));
+		HazardSystem.register(ingot_arsenic, makeData().addEntry(ASBESTOS, as * ingot) .addEntry(BLINDING, as * ingot) .addEntry(AUTISM, as * ingot) .addEntry(COAL, as * ingot));
+		HazardSystem.register(nugget_arsenic, makeData().addEntry(ASBESTOS, as * nugget) .addEntry(BLINDING, as * nugget) .addEntry(AUTISM, as * nugget) .addEntry(COAL, as * nugget));
+		HazardSystem.register(ingot_arsenic_bronze, makeData().addEntry(ASBESTOS, as * ingot) .addEntry(BLINDING, as * ingot) .addEntry(AUTISM, as * ingot) .addEntry(COAL, as * ingot));
+		HazardSystem.register(ingot_gaas, makeData().addEntry(ASBESTOS, as * ingot) .addEntry(BLINDING, as * ingot) .addEntry(AUTISM, as * ingot) .addEntry(COAL, as * ingot));
+		HazardSystem.register(billet_gaas, makeData().addEntry(ASBESTOS, as * billet) .addEntry(BLINDING, as * billet) .addEntry(AUTISM, as * billet) .addEntry(COAL, as * billet));
+		HazardSystem.register(nugget_gaas, makeData().addEntry(ASBESTOS, as * nugget) .addEntry(BLINDING, as * nugget) .addEntry(AUTISM, as * nugget) .addEntry(COAL, as * nugget));
+		HazardSystem.register(circuit_arsenic, makeData().addEntry(ASBESTOS, as * nugget) .addEntry(BLINDING, as * nugget) .addEntry(AUTISM, as * nugget) .addEntry(COAL, as * nugget));
 
 		//mercury
 		HazardSystem.register(ingot_mercury, makeData().addEntry(ASBESTOS, hg * ingot) .addEntry(BLINDING, 0.2F * ingot) .addEntry(AUTISM, 0.6F * ingot) .addEntry(COAL, 0.5F * ingot));

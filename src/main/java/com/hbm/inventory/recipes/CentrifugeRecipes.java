@@ -670,7 +670,7 @@ public class CentrifugeRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(ModItems.crystal_aluminium), new ItemStack[] { new ItemStack(ModItems.powder_aluminium, 2), new ItemStack(ModItems.powder_aluminium, 2), new ItemStack(ModItems.powder_iron, 1), new ItemStack(ModItems.nugget_silicon, 1) });
 		recipes.put(new ComparableStack(ModItems.crystal_fluorite), new ItemStack[] { new ItemStack(ModItems.fluorite, 4), new ItemStack(ModItems.fluorite, 4), new ItemStack(ModItems.gem_sodalite, 2), new ItemStack(ModItems.nugget_silicon, 1) });
 		recipes.put(new ComparableStack(ModItems.crystal_beryllium), new ItemStack[] { new ItemStack(ModItems.powder_beryllium, 2), new ItemStack(ModItems.powder_beryllium, 2), new ItemStack(ModItems.powder_quartz, 1), new ItemStack(ModItems.powder_lithium, 1) });
-		recipes.put(new ComparableStack(ModItems.crystal_lead), new ItemStack[] { new ItemStack(ModItems.powder_lead, 2), new ItemStack(ModItems.powder_lead, 2), new ItemStack(ModItems.powder_gold, 1), new ItemStack(ModItems.powder_copper, 1) }); //should also have silver but bob's a little special
+		recipes.put(new ComparableStack(ModItems.crystal_lead), new ItemStack[] { new ItemStack(ModItems.powder_lead, 2), new ItemStack(ModItems.powder_silver, 4), new ItemStack(ModItems.powder_gold, 1), new ItemStack(ModItems.powder_copper, 1) });
 
 		//u234? might remove if fake bullshit ... so I'm probably removing it.
 		recipes.put(new ComparableStack(ModItems.crystal_schraranium), new ItemStack[] { new ItemStack(ModItems.nugget_schrabidium, 2), new ItemStack(ModItems.nugget_schrabidium, 2), new ItemStack(ModItems.nugget_uranium, 2), new ItemStack(ModItems.nugget_neptunium, 2) });
@@ -714,7 +714,7 @@ public class CentrifugeRecipes extends SerializableRecipe {
 		//galena PbS
 		recipes.put(new ComparableStack(ModItems.galena), new ItemStack[] {
 				new ItemStack(ModItems.powder_lead, 3),
-				new ItemStack(ModItems.nugget_silver, 2),
+				new ItemStack(ModItems.nugget_silver, 16),
 
 				new ItemStack(ModItems.nugget_bismuth, 1),
 				//minor/trace elements—notably

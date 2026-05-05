@@ -126,6 +126,11 @@ public class CrucibleRecipes extends SerializableRecipe {
 			.inputs(new MaterialStack(Mats.MAT_COPPER, n * 8), new MaterialStack(Mats.MAT_ARSENIC, n), new MaterialStack(Mats.MAT_FLUX, n * 3))
 			.outputs(new MaterialStack(Mats.MAT_ABRONZE, i), new MaterialStack(Mats.MAT_SLAG, n * 3)));
 
+		recipes.add(new CrucibleRecipe(23, "crucible.abronze2", 9, new ItemStack(ModItems.ingot_arsenic_bronze))
+			.inputs(new MaterialStack(Mats.MAT_COPPER, n * 8), new MaterialStack(Mats.MAT_TIN, n), new MaterialStack(Mats.MAT_FLUX, n * 1))
+			.outputs(new MaterialStack(Mats.MAT_ABRONZE, i * 3), new MaterialStack(Mats.MAT_SLAG, n * 3)));
+			//I cannot be bothered to add another bronze for tin, that does basically the same shit
+
 		recipes.add(new CrucibleRecipe(18, "crucible.magtung", 3, new ItemStack(ModItems.ingot_magnetized_tungsten))
 			.inputs(new MaterialStack(Mats.MAT_TUNGSTEN, i), new MaterialStack(Mats.MAT_SCHRABIDIUM, n * 1))
 			.outputs(new MaterialStack(Mats.MAT_MAGTUNG, i)));

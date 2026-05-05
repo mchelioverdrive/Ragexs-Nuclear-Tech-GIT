@@ -239,8 +239,8 @@ public class WeaponRecipes {
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.ammo_rocket, 1), new Object[] { "T", "C", "G", 'T', ModItems.ball_dynamite, 'G', ModItems.rocket_fuel, 'C', STEEL.shell() });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.ammo_rocket, 2), new Object[] { "T", "C", "G", 'T', ANY_PLASTICEXPLOSIVE.ingot(), 'G', ModItems.rocket_fuel, 'C', STEEL.shell() });
 		CraftingManager.addRecipeAuto(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.HE), new Object[] { "G", "R", 'G', ANY_PLASTICEXPLOSIVE.ingot(), 'R', ModItems.ammo_rocket });
-		CraftingManager.addRecipeAuto(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.INCENDIARY), new Object[] { "G", "R", 'G', P_RED.dust(), 'R', ModItems.ammo_rocket });
-		CraftingManager.addRecipeAuto(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.PHOSPHORUS), new Object[] { "G", "R", 'G', P_WHITE.ingot(), 'R', ModItems.ammo_rocket });
+		//CraftingManager.addRecipeAuto(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.INCENDIARY), new Object[] { "G", "R", 'G', P_RED.dust(), 'R', ModItems.ammo_rocket });
+		//CraftingManager.addRecipeAuto(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.PHOSPHORUS), new Object[] { "G", "R", 'G', P_WHITE.ingot(), 'R', ModItems.ammo_rocket });
 		//CraftingManager.addRecipeAuto(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.EMP), new Object[] { "G", "R", 'G', "dustDiamond", 'R', ModItems.ammo_rocket });
 		CraftingManager.addRecipeAuto(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.SHRAPNEL), new Object[] { "G", "R", 'G', ModItems.pellet_buckshot, 'R', ModItems.ammo_rocket });
 		CraftingManager.addRecipeAuto(ModItems.ammo_rocket.stackFromEnum(AmmoRocket.GLARE), new Object[] { "GGG", "GRG", "GGG", 'G', REDSTONE.dust(), 'R', ModItems.ammo_rocket });
@@ -259,15 +259,15 @@ public class WeaponRecipes {
 		//CraftingManager.addRecipeAuto(ModItems.ammo_stinger_rocket.stackFromEnum(AmmoStinger.BONES), new Object[] { " C ", "SKR", " P ", 'C', ModItems.fallout, 'S', SR90.dust(), 'K', ModItems.ammo_stinger_rocket, 'R', RA226.dust(), 'P', PU.dust() });
 
 		//40mm grenades
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.ammo_grenade, 2), new Object[] { " T ", "GCI", 'T', ANY_HIGHEXPLOSIVE.ingot(), 'G', ANY_SMOKELESS.dust(), 'C', ModItems.casing_50, 'I', IRON.plate() });
-		CraftingManager.addRecipeAuto(ModItems.ammo_grenade.stackFromEnum(2, AmmoGrenade.TRACER), new Object[] { " T ", "GCI", 'T', LAPIS.dust(), 'G', ANY_SMOKELESS.dust(), 'C', ModItems.casing_50, 'I', IRON.plate() });
-		CraftingManager.addRecipeAuto(ModItems.ammo_grenade.stackFromEnum(2, AmmoGrenade.HE), new Object[] { "GIG", 'G', ModItems.ammo_grenade, 'I', ANY_PLASTICEXPLOSIVE.ingot() });
-		CraftingManager.addRecipeAuto(ModItems.ammo_grenade.stackFromEnum(2, AmmoGrenade.INCENDIARY), new Object[] { "GIG", 'G', ModItems.ammo_grenade, 'I', P_RED.dust() });
-		CraftingManager.addRecipeAuto(ModItems.ammo_grenade.stackFromEnum(2, AmmoGrenade.PHOSPHORUS), new Object[] { "GIG", 'G', ModItems.ammo_grenade, 'I', P_WHITE.ingot() });
-		CraftingManager.addRecipeAuto(ModItems.ammo_grenade.stackFromEnum(2, AmmoGrenade.CHLORINE), new Object[] { "GIG", 'G', ModItems.ammo_grenade, 'I', ModItems.powder_poison });
-		CraftingManager.addRecipeAuto(ModItems.ammo_grenade.stackFromEnum(2, AmmoGrenade.CONCUSSION), new Object[] { "GIG", 'G', ModItems.ammo_grenade, 'I', Items.glowstone_dust });
+		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.ammo_grenade, 2), new Object[] { " T ", "GCI", 'T', ANY_HIGHEXPLOSIVE.ingot(), 'G', ANY_SMOKELESS.dust(), 'C', ModItems.casing_50, 'I', IRON.plate() });
+		//CraftingManager.addRecipeAuto(ModItems.ammo_grenade.stackFromEnum(2, AmmoGrenade.TRACER), new Object[] { " T ", "GCI", 'T', LAPIS.dust(), 'G', ANY_SMOKELESS.dust(), 'C', ModItems.casing_50, 'I', IRON.plate() });
+		//CraftingManager.addRecipeAuto(ModItems.ammo_grenade.stackFromEnum(2, AmmoGrenade.HE), new Object[] { "GIG", 'G', ModItems.ammo_grenade, 'I', ANY_PLASTICEXPLOSIVE.ingot() });
+		//CraftingManager.addRecipeAuto(ModItems.ammo_grenade.stackFromEnum(2, AmmoGrenade.INCENDIARY), new Object[] { "GIG", 'G', ModItems.ammo_grenade, 'I', P_RED.dust() });
+		//CraftingManager.addRecipeAuto(ModItems.ammo_grenade.stackFromEnum(2, AmmoGrenade.PHOSPHORUS), new Object[] { "GIG", 'G', ModItems.ammo_grenade, 'I', P_WHITE.ingot() });
+		//CraftingManager.addRecipeAuto(ModItems.ammo_grenade.stackFromEnum(2, AmmoGrenade.CHLORINE), new Object[] { "GIG", 'G', ModItems.ammo_grenade, 'I', ModItems.powder_poison });
+		//CraftingManager.addRecipeAuto(ModItems.ammo_grenade.stackFromEnum(2, AmmoGrenade.CONCUSSION), new Object[] { "GIG", 'G', ModItems.ammo_grenade, 'I', Items.glowstone_dust });
 		//CraftingManager.addRecipeAuto(ModItems.ammo_grenade.stackFromEnum(2, AmmoGrenade.NUCLEAR), new Object[] { " P ", "GIG", " P ", 'G', ModItems.ammo_grenade.stackFromEnum(AmmoGrenade.HE), 'I', ModItems.neutron_reflector, 'P', PU239.nugget() });
-		CraftingManager.addRecipeAuto(ModItems.ammo_grenade.stackFromEnum(AmmoGrenade.FINNED), new Object[] { "G", "R", 'G', Items.feather, 'R', ModItems.ammo_grenade });
+		//CraftingManager.addRecipeAuto(ModItems.ammo_grenade.stackFromEnum(AmmoGrenade.FINNED), new Object[] { "G", "R", 'G', Items.feather, 'R', ModItems.ammo_grenade });
 		//CraftingManager.addRecipeAuto(ModItems.ammo_grenade.stackFromEnum(AmmoGrenade.KAMPF), new Object[] { "G", "R", 'G', ModItems.ammo_rocket, 'R', ModItems.ammo_grenade });
 		//CraftingManager.addRecipeAuto(ModItems.ammo_grenade.stackFromEnum(AmmoGrenade.LEADBURSTER), new Object[] { "LCL",  "CHC", "LML", 'L', ModItems.pellet_buckshot, 'C', ANY_SMOKELESS.dust(), 'H', AL.shell(), 'M', ModItems.motor });
 

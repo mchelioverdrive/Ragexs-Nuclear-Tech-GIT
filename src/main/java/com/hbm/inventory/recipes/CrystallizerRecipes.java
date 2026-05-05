@@ -133,6 +133,9 @@ public class CrystallizerRecipes extends SerializableRecipe {
 		//ore_zinc needs to make a crystal that can be electrolysized into indium and other byproducts...
 		registerRecipe(new ComparableStack(ModBlocks.ore_zinc),		new CrystallizerRecipe(ModItems.crystal_zinc, baseTime));
 
+		//HCL used to make germanium ingot from germanium powder
+		registerRecipe(new ComparableStack(ModItems.powder_germanium),		new CrystallizerRecipe(ModItems.ingot_germanium, baseTime), chloric);
+
 
 		registerRecipe((new ComparableStack(ModBlocks.ore_mineral, 1, OreDictionary.WILDCARD_VALUE)),		new CrystallizerRecipe(ModItems.crystal_mineral, baseTime)); //temp
 
