@@ -362,8 +362,8 @@ public class CentrifugeRecipes extends SerializableRecipe {
 		recipes.put(new OreDictStack("oreZinc"), new ItemStack[] {
 			new ItemStack(ModItems.powder_zinc, 1),
 			new ItemStack(ModItems.powder_cadmium, 1),
-			new ItemStack(ModItems.powder_copper, 1),
-			new ItemStack(Blocks.gravel, 1) });
+			new ItemStack(ModItems.powder_gallium, 1),
+			new ItemStack(ModItems.powder_germanium, 1) });
 
 
 		recipes.put(new OreDictStack(GOLD.ore()), new ItemStack[] {
