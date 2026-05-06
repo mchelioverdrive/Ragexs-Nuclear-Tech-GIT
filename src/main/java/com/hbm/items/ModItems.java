@@ -41,12 +41,10 @@ import com.hbm.lib.RefStrings;
 import com.hbm.main.MainRegistry;
 import com.hbm.potion.HbmPotion;
 import com.hbm.tileentity.machine.rbmk.IRBMKFluxReceiver.NType;
-import com.hbm.util.EnchantmentUtil;
 import com.hbm.util.RTGUtil;
 
 import api.hbm.block.IToolable.ToolType;
 import cpw.mods.fml.common.registry.GameRegistry;
-import net.minecraft.block.Block;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
@@ -55,13 +53,11 @@ import net.minecraft.item.Item;
 import net.minecraft.item.Item.ToolMaterial;
 import net.minecraft.item.ItemArmor.ArmorMaterial;
 import net.minecraft.item.ItemFood;
-import net.minecraft.item.ItemSoup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.EnumHelper;
 import net.minecraftforge.fluids.FluidContainerRegistry;
@@ -751,6 +747,7 @@ public class ModItems {
 	public static Item powder_borax;
 	public static Item powder_chlorocalcite;
 	public static Item powder_molysite;
+	public static Item powder_antimony_trioxide;
 
 	public static Item powder_lanthanium;
 	public static Item powder_yttrium;
@@ -820,6 +817,7 @@ public class ModItems {
 	//lead/zinc
 	public static Item galena;
 	public static Item sphalerite;
+	public static Item stibnite;
 
 	//nickel
 	public static Item pentlandite;
@@ -3537,6 +3535,7 @@ public class ModItems {
 		powder_borax = new Item().setUnlocalizedName("powder_borax").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_borax");
 		powder_chlorocalcite = new Item().setUnlocalizedName("powder_chlorocalcite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_chlorocalcite");
 		powder_molysite = new Item().setUnlocalizedName("powder_molysite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_molysite");
+		powder_antimony_trioxide = new Item().setUnlocalizedName("powder_antimony_trioxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lead");
 
 		fragment_neodymium = new Item().setUnlocalizedName("fragment_neodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_neodymium");
 		fragment_cobalt = new Item().setUnlocalizedName("fragment_cobalt").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_cobalt");
@@ -3589,6 +3588,7 @@ public class ModItems {
 		//lead-Zinc
 		galena = new Item().setUnlocalizedName("galena").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_nickel");
 		sphalerite = new Item().setUnlocalizedName("sphalerite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_lead");
+		stibnite = new Item().setUnlocalizedName("stibnite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_lead");
 
 		//nickel
 		pentlandite = new Item().setUnlocalizedName("pentlandite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_mineral");
@@ -6776,6 +6776,7 @@ public class ModItems {
 		GameRegistry.registerItem(powder_borax, powder_borax.getUnlocalizedName());
 		GameRegistry.registerItem(powder_chlorocalcite, powder_chlorocalcite.getUnlocalizedName());
 		GameRegistry.registerItem(powder_molysite, powder_molysite.getUnlocalizedName());
+		GameRegistry.registerItem(powder_antimony_trioxide, powder_antimony_trioxide.getUnlocalizedName());
 		GameRegistry.registerItem(powder_yellowcake, powder_yellowcake.getUnlocalizedName());
 		GameRegistry.registerItem(powder_beryllium, powder_beryllium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_dura_steel, powder_dura_steel.getUnlocalizedName());
@@ -6998,6 +6999,7 @@ public class ModItems {
 		//lead-zinc
 		GameRegistry.registerItem(galena, galena.getUnlocalizedName());
 		GameRegistry.registerItem(sphalerite, sphalerite.getUnlocalizedName());
+		GameRegistry.registerItem(stibnite, stibnite.getUnlocalizedName());
 
 		//nickel
 		GameRegistry.registerItem(pentlandite, pentlandite.getUnlocalizedName());

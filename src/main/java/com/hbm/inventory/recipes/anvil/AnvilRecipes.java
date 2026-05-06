@@ -794,6 +794,7 @@ public class AnvilRecipes {
 				new AnvilOutput(new ItemStack(ModBlocks.ore_celestite, 1), 0.1F),
 				//actually dolomite but I don't feel like changing the name in the code
 				new AnvilOutput(new ItemStack(ModBlocks.ore_magnesite, 1), 0.3F),
+				new AnvilOutput(new ItemStack(ModItems.stibnite, 1), 0.12F),
 				// very rare mercury source
 				new AnvilOutput(new ItemStack(ModItems.cinnebar, 1), 0.05F)
 			}
