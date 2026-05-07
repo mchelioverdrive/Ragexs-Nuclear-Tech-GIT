@@ -214,6 +214,7 @@ public class OreDictManager {
 	public static final DictFrame BSCCO = new DictFrame("BSCCO");
 	/** LEAD */
 	public static final DictFrame PB = new DictFrame("Lead");
+	public static final DictFrame Sb = new DictFrame("Antimony");
 	public static final DictFrame BI = new DictFrame("Bismuth");
 	public static final DictFrame AS = new DictFrame("Arsenic");
 	public static final DictFrame CA = new DictFrame("Calcium");
@@ -395,7 +396,6 @@ public class OreDictManager {
 	public static final DictFrame ANY_CONCRETE = new DictFrame("Concrete");			//no any prefix means that any has to be appended with the any() or anys() getters, registering works with the any (i.e. no shape) setter
 
 	public static final DictGroup ANY_TAR = new DictGroup("Tar"); //6 THERE ARE 6 TARS, NOT 4 //, KEY_OIL_TAR, KEY_COAL_TAR, KEY_CRACK_TAR, KEY_WOOD_TAR, KEY_WAX_TAR, KEY_PARAFFIN_TAR
-	//why the hell is this broken?
 
 	public static final String KEY_ANY_TAR = "tar"; // or "anyTar", just be consistent
 
@@ -496,6 +496,7 @@ public class OreDictManager {
 		ABRONZE																.ingot(ingot_arsenic_bronze);
 		PB			.nugget(nugget_lead)									.ingot(ingot_lead)													.dust(powder_lead)				.plate(plate_lead)				.block(block_lead)			.oreAll(ore_lead);
 		Ag 			.nugget(nugget_silver)									.ingot(ingot_silver)												.dust(powder_silver);
+		Sb .coal(4)  			.nugget(nugget_antimony)								.dust(powder_antimony_trioxide);
 		Hg 			.nugget(nugget_mercury)									.ingot(ingot_mercury);
 		BSCCO																.ingot(ingot_bscco);
 		BI			.nugget(nugget_bismuth)		.billet(billet_bismuth)		.ingot(ingot_bismuth)												.dust(powder_bismuth)											.block(block_bismuth);

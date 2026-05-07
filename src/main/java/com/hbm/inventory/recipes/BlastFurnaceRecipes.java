@@ -84,6 +84,11 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 		//arsenic from arsenic_trioxide + ingot_carbon (graphite is a form of carbon...? I guess it works)
 		addRecipe(ModItems.arsenic_trioxide, ModItems.ingot_graphite, new ItemStack(ModItems.nugget_arsenic, 1));
 
+		//antimony from antimony_trioxide + ingot_carbon
+		addRecipe(ModItems.powder_antimony_trioxide, ModItems.ingot_graphite, new ItemStack(ModItems.nugget_antimony, 1));
+		//inverse
+		addRecipe(ModItems.nugget_antimony, ModItems.ingot_graphite, new ItemStack(ModItems.powder_antimony_trioxide, 1));
+
 		addRecipe(CU,									REDSTONE,										new ItemStack(ModItems.ingot_red_copper, 2));
 		//steel copper alloy
 		addRecipe(STEEL,								MINGRADE,										new ItemStack(ModItems.ingot_advanced_alloy, 2));

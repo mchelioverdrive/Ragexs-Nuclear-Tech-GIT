@@ -873,7 +873,8 @@ public class AnvilRecipes {
 			new AnvilOutput[] {
 				// dominant
 				new AnvilOutput(new ItemStack(ModItems.chromite, 2)),
-				new AnvilOutput(new ItemStack(ModItems.chunk_ironoxide, 1))
+				new AnvilOutput(new ItemStack(ModItems.chunk_ironoxide, 1)),
+				new AnvilOutput(new ItemStack(ModItems.powder_asbestos, 1), 0.12F)
 			}
 		).setTier(2));
 
@@ -915,6 +916,23 @@ public class AnvilRecipes {
 		).setTier(2));
 
 		//end of realistic ore grouping for XF drops
+
+		//antimony for this recipe but like later in progression to resemble fireproofing's evolution from asbestos to antimony:
+		//makeRecipe(new ComparableStack(ModItems.asbestos_cloth,
+		//									   4),
+		//				   new AStack[]{
+		//					   new OreDictStack(ASBESTOS.ingot(),
+		//										2),
+		//					   new ComparableStack(Items.string,
+		//										   6),
+		//					   new ComparableStack(Blocks.wool,
+		//										   1),},
+		//				   50);
+		constructionRecipes.add(new AnvilConstructionRecipe(new AStack[]{
+			new ComparableStack(ModItems.powder_antimony_trioxide, 1),
+			new ComparableStack(Items.string, 4),
+			new ComparableStack(Blocks.wool, 1)
+		}, new AnvilOutput(new ItemStack(ModItems.asbestos_cloth, 4))).setTier(3));
 
 
 		constructionRecipes.add(new AnvilConstructionRecipe(new ComparableStack(ModBlocks.deco_titanium, 4), new AnvilOutput[] {new AnvilOutput(new ItemStack(ModItems.ingot_titanium, 1))}).setTier(1));

@@ -566,8 +566,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 										   1),},
 				   50);
 		makeRecipe(new ComparableStack(ModItems.pellet_buckshot,
-									   1),
+									   4),
 				   new AStack[]{
+					   new ComparableStack(ModItems.nugget_antimony),
 					   new OreDictStack(PB.nugget(),
 										6),},
 				   50);

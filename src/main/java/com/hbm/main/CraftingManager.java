@@ -689,11 +689,13 @@ public class CraftingManager {
 		addShapelessAuto(new ItemStack(ModBlocks.charge_semtex, 1), new Object[] { ModItems.stick_semtex, ModItems.stick_semtex, ModItems.stick_semtex, ModItems.ducttape, DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC) });
 		addShapelessAuto(new ItemStack(ModBlocks.charge_c4, 1), new Object[] { ModItems.stick_c4, ModItems.stick_c4, ModItems.stick_c4, ModItems.ducttape, DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC) });
 
+		addShapelessAuto(new ItemStack(ModItems.pellet_buckshot, 1), new Object[] { PB.nugget(), PB.nugget(), PB.nugget(), PB.nugget(), PB.nugget(), PB.nugget() });
+
 		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_generic), new Object[] { " A ", "PRP", "PRP", 'A', AL.wireFine(), 'P', AL.plate(), 'R', REDSTONE.dust() });
-		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_advanced), new Object[] { " A ", "PSP", "PLP", 'A', MINGRADE.wireFine(), 'P', CU.plate(), 'S', "sulfur", 'L', PB.dust() });
-		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_advanced), new Object[] { " A ", "PLP", "PSP", 'A', MINGRADE.wireFine(), 'P', CU.plate(), 'S', "sulfur", 'L', PB.dust() });
-		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_advanced), new Object[] { " A ", "PSP", "PLP", 'A', MINGRADE.wireFine(), 'P', CU.plate(), 'S', "dustSulfur", 'L', PB.dust() });
-		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_advanced), new Object[] { " A ", "PLP", "PSP", 'A', MINGRADE.wireFine(), 'P', CU.plate(), 'S', "dustSulfur", 'L', PB.dust() });
+		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_advanced), new Object[] { "NAN", "PSP", "PLP", 'A', MINGRADE.wireFine(), 'P', CU.plate(), 'S', "sulfur", 'L', PB.dust() });
+		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_advanced), new Object[] { "NAN", "PLP", "PSP", 'A', MINGRADE.wireFine(), 'P', CU.plate(), 'S', "sulfur", 'L', PB.dust() });
+		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_advanced), new Object[] { "NAN", "PSP", "PLP", 'A', MINGRADE.wireFine(), 'P', CU.plate(), 'S', "dustSulfur", 'L', PB.dust(), 'N', Sb.nugget() });
+		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_advanced), new Object[] { "NAN", "PLP", "PSP", 'A', MINGRADE.wireFine(), 'P', CU.plate(), 'S', "dustSulfur", 'L', PB.dust(), 'N', Sb.nugget() });
 		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_lithium), new Object[] { "A A", "PSP", "PLP", 'A', GOLD.wireFine(), 'P', TI.plate(), 'S', LI.dust(), 'L', CO.dust() });
 		addRecipeAuto(ItemBattery.getEmptyBattery(ModItems.battery_lithium), new Object[] { "A A", "PLP", "PSP", 'A', GOLD.wireFine(), 'P', TI.plate(), 'S', LI.dust(), 'L', CO.dust() });
 		// First recipe

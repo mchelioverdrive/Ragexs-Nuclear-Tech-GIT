@@ -453,6 +453,7 @@ public class ModItems {
 
 	public static Item ingot_arsenic;
 	public static Item nugget_arsenic;
+	public static Item nugget_antimony;
 	public static Item ingot_tantalium;
 	public static Item nugget_tantalium;
 	public static Item ingot_silicon;
@@ -3285,6 +3286,7 @@ public class ModItems {
 		nugget_silver = new Item().setUnlocalizedName("nugget_silver").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_tantalium");
 		ingot_arsenic = new ItemCustomLore().setUnlocalizedName("ingot_arsenic").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_arsenic");
 		nugget_arsenic = new Item().setUnlocalizedName("nugget_arsenic").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_arsenic");
+		nugget_antimony = new Item().setUnlocalizedName("nugget_antimony").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_lead");
 		ingot_tantalium = new ItemCustomLore().setUnlocalizedName("ingot_tantalium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_tantalium");
 		nugget_tantalium = new ItemCustomLore().setUnlocalizedName("nugget_tantalium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_tantalium");
 		ingot_silicon = new Item().setUnlocalizedName("ingot_silicon").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_silicon");
@@ -7084,6 +7086,7 @@ public class ModItems {
 		GameRegistry.registerItem(nugget_bismuth, nugget_bismuth.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_silver, nugget_silver.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_arsenic, nugget_arsenic.getUnlocalizedName());
+		GameRegistry.registerItem(nugget_antimony, nugget_antimony.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_tantalium, nugget_tantalium.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_silicon, nugget_silicon.getUnlocalizedName());
 		GameRegistry.registerItem(calcined_dolomite, calcined_dolomite.getUnlocalizedName());
