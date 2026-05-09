@@ -494,6 +494,10 @@ public class MineralRecipes {
 		GameRegistry.addRecipe(new ItemStack(ModItems.powder_neodymium, 1), new Object[] { "###", "###", "###", '#', ModItems.powder_neodymium_tiny });
 		GameRegistry.addRecipe(new ItemStack(ModItems.powder_neodymium_tiny, 9), new Object[] { "#", '#', ModItems.powder_neodymium });
 
+		//tellurium
+		GameRegistry.addRecipe(new ItemStack(ModItems.powder_tellurium, 1), new Object[] { "###", "###", "###", '#', ModItems.nugget_tellurium });
+		GameRegistry.addRecipe(new ItemStack(ModItems.nugget_tellurium, 9), new Object[] { "#", '#', ModItems.powder_tellurium });
+
 		//should be a fucking shapeless recipe for conversion. TARDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
 		//GameRegistry.addRecipe(new ItemStack(ModItems.powder_niobium, 1), new Object[] { "###", "###", "###", '#', ModItems.powder_niobium_tiny });
 		//GameRegistry.addRecipe(new ItemStack(ModItems.powder_niobium_tiny, 9), new Object[] { "#", '#', ModItems.powder_niobium });

@@ -71,6 +71,8 @@ public class ElectrolyserMetalRecipes extends SerializableRecipe {
 				new MaterialStack(Mats.MAT_COPPER, MaterialShapes.INGOT.q(6)),
 				new MaterialStack(Mats.MAT_LEAD, MaterialShapes.NUGGET.q(4)),
 				new ItemStack(ModItems.arsenic_trioxide, 1),
+				new ItemStack(ModItems.powder_selenium, 1),
+				new ItemStack(ModItems.powder_tellurium_dioxide, 1),
 				new ItemStack(ModItems.sulfur, 2)));
 
 		recipes.put(new ComparableStack(ModItems.crystal_tungsten), new ElectrolysisMetalRecipe(

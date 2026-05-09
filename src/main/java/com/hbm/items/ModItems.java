@@ -678,6 +678,10 @@ public class ModItems {
 
 	public static Item cesium_salt;
 	public static Item arsenic_trioxide;
+	public static Item powder_selenium;
+	public static Item powder_tellurium_dioxide;
+	public static Item powder_tellurium;
+	public static Item nugget_tellurium;
 
 	public static Item powder_strontium;
 	public static Item powder_cobalt;
@@ -3475,6 +3479,10 @@ public class ModItems {
 		cesium_salt = new ItemSalt(1).setUnlocalizedName("cesium_salt").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		arsenic_trioxide = new Item().setUnlocalizedName("arsenic_trioxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		manganese_powder = new Item().setUnlocalizedName("powder_manganese").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_aluminium");
+		powder_selenium = new Item().setUnlocalizedName("powder_selenium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lead");
+		powder_tellurium = new Item().setUnlocalizedName("powder_tellurium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lead");
+		nugget_tellurium = new Item().setUnlocalizedName("nugget_tellurium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_lead");
+		powder_tellurium_dioxide = new Item().setUnlocalizedName("powder_tellurium_dioxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 
 		powder_australium = new ItemCustomLore().setRarity(EnumRarity.uncommon).setUnlocalizedName("powder_australium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_australium");
 		powder_weidanium = new ItemCustomLore().setRarity(EnumRarity.uncommon).setUnlocalizedName("powder_weidanium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_weidanium");
@@ -6804,6 +6812,10 @@ public class ModItems {
 		GameRegistry.registerItem(powder_caesium, powder_caesium.getUnlocalizedName());
 		GameRegistry.registerItem(cesium_salt, cesium_salt.getUnlocalizedName());
 		GameRegistry.registerItem(arsenic_trioxide, arsenic_trioxide.getUnlocalizedName());
+		GameRegistry.registerItem(powder_selenium, powder_selenium.getUnlocalizedName());
+		GameRegistry.registerItem(powder_tellurium_dioxide, powder_tellurium_dioxide.getUnlocalizedName());
+		GameRegistry.registerItem(powder_tellurium, powder_tellurium.getUnlocalizedName());
+		GameRegistry.registerItem(nugget_tellurium, nugget_tellurium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cesium, ingot_cesium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_australium, powder_australium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_weidanium, powder_weidanium.getUnlocalizedName());

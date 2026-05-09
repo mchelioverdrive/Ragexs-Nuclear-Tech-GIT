@@ -75,6 +75,9 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 		//manganese is also used in stainless steel batteries, so let's make it also make stainless from dusted steel
 		addRecipe(ModItems.ingot_steel_dusted, Mn.dust(), new ItemStack(ModItems.ingot_stainless, 2));
 
+		//stainless steel from selenium
+		addRecipe(STEEL, Se.dust(), new ItemStack(ModItems.ingot_stainless, 4));
+
 		//zinc ingot + rhenium powder = steel alloy (ingot_saturnite)
 		addRecipe(ZI.ingot(), ModItems.powder_rhenium, new ItemStack(ModItems.ingot_saturnite));
 
@@ -88,6 +91,9 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 		addRecipe(ModItems.powder_antimony_trioxide, ModItems.ingot_graphite, new ItemStack(ModItems.nugget_antimony, 1));
 		//inverse
 		addRecipe(ModItems.nugget_antimony, ModItems.ingot_graphite, new ItemStack(ModItems.powder_antimony_trioxide, 1));
+
+		//tellurium from tellurium_dioxide + ingot_carbon
+		addRecipe(ModItems.powder_tellurium_dioxide, ModItems.ingot_graphite, new ItemStack(ModItems.nugget_tellurium, 1));
 
 		addRecipe(CU,									REDSTONE,										new ItemStack(ModItems.ingot_red_copper, 2));
 		//steel copper alloy

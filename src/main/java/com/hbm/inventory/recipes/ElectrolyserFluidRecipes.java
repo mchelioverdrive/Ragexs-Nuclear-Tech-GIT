@@ -70,6 +70,8 @@ public class ElectrolyserFluidRecipes extends SerializableRecipe {
 						new ItemStack(ModItems.powder_iridium, 1)
 					));
 
+
+
 		//recipes.put(Fluids.MOLTEN_BARIUM_CHLORIDE,
 		//	new ElectrolysisRecipe(
 		//		1000,
