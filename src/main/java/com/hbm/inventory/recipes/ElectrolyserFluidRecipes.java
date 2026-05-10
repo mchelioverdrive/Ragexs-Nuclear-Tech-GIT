@@ -70,6 +70,15 @@ public class ElectrolyserFluidRecipes extends SerializableRecipe {
 						new ItemStack(ModItems.powder_iridium, 1)
 					));
 
+		recipes.put(Fluids.HYDROFLUORIC_ACID,
+					new ElectrolysisRecipe(
+						1000,
+						new FluidStack(Fluids.FLUORINE, 500),
+						new FluidStack(Fluids.HYDROGEN, 500)
+					));
+
+
+
 
 
 		//recipes.put(Fluids.MOLTEN_BARIUM_CHLORIDE,

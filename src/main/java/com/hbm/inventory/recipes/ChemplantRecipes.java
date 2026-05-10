@@ -95,10 +95,21 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.outputFluids(new FluidStack(Fluids.SOLVENT, 1000)));
 		recipes.add(new ChemRecipe(43, "POLYMER", 100)
 				.inputItems(
-						new OreDictStack(ANY_COAL_COKE.dust(), 2),
+						new OreDictStack(COKE.dust(), 2),
 						new OreDictStack(F.dust()))
 				.inputFluids(new FluidStack(Fluids.PETROLEUM, 500, GeneralConfig.enable528 ? 1 : 0))
+				.outputItems(new ItemStack(ModItems.ingot_polymer, 16)));
+
+		//but synthetic polymers exist
+		recipes.add(new ChemRecipe(44, "SYN_POLYMER", 180)
+				.inputItems(
+						new OreDictStack(COKE.dust(), 2),
+						new OreDictStack(F.dust()))
+				.inputFluids(new FluidStack(Fluids.BIOFUEL, 1500))
 				.outputItems(new ItemStack(ModItems.ingot_polymer)));
+
+
+
 		recipes.add(new ChemRecipe(81, "BAKELITE", 100)
 				.inputFluids(
 						new FluidStack(Fluids.AROMATICS, 500, GeneralConfig.enable528 ? 1 : 0),
@@ -166,18 +177,20 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputFluids(new FluidStack(Fluids.PEROXIDE, 500))
 				.outputFluids(new FluidStack(Fluids.RAFFINATE, 1000))
 				.outputItems(new ItemStack(ModItems.powder_yellowcake)));
-		recipes.add(new ChemRecipe(47, "UF6", 100)
+		//what is this mickey mouse shit
+		recipes.add(new ChemRecipe(47, "UF6", 800)
 				.inputItems(
-						new ComparableStack(ModItems.powder_yellowcake),
-						new OreDictStack(F.dust(), 4))
-				.inputFluids(new FluidStack(Fluids.WATER, 1000))
-				.outputItems(new ItemStack(ModItems.sulfur, 2))
+						new ComparableStack(ModItems.powder_yellowcake, 4))
+				//not technically right? But also not wrong? There's no water in this process though.
+						//new OreDictStack(F.dust(), 4))
+				.inputFluids(new FluidStack(Fluids.FLUORINE, 600))
+				//.outputItems(new ItemStack(ModItems.sulfur, 2)) //?
 				.outputFluids(new FluidStack(Fluids.UF6, 1200)));
-		recipes.add(new ChemRecipe(48, "PUF6", 150)
+		recipes.add(new ChemRecipe(48, "PUF6", 950)
 				.inputItems(
-						new OreDictStack(PU.dust()),
-						new OreDictStack(F.dust(), 3))
-				.inputFluids(new FluidStack(Fluids.WATER, 1000))
+						new OreDictStack(PU.dust()))
+						//new OreDictStack(F.dust(), 3))
+				.inputFluids(new FluidStack(Fluids.FLUORINE, 600))
 				.outputFluids(new FluidStack(Fluids.PUF6, 900)));
 		recipes.add(new ChemRecipe(49, "SAS3", 200)
 				.inputItems(
@@ -1061,6 +1074,16 @@ public class ChemplantRecipes extends SerializableRecipe {
 						.outputFluids(new FluidStack(Fluids.IRIDIUM_SOLUTION, 200))
 						.outputItems(new ItemStack(ModItems.ruthenium_residue, 1))
 		);
+
+		//Fluorite → hydrofluoric acid
+		recipes.add(new ChemRecipe(1062, "HYDROFLUORIC_ACID", 100)
+						.inputItems(new ComparableStack(ModItems.crystal_fluorite, 1))
+						.inputFluids(new FluidStack(Fluids.SULFURIC_ACID, 1000))
+						.outputFluids(new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000))
+						.outputItems(new ItemStack(ModItems.gypsum, 4)) //should be calcium sulfate/gypsum? idk I'm just autofilling for now.
+		);
+
+
 
 
 

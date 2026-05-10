@@ -33,7 +33,8 @@ public class PowderRecipes {
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_semtex_mix, 1), new Object[] { ModItems.solid_fuel, ModItems.ballistite, KNO.dust() });
 		CraftingManager.addShapelessAuto(new ItemStack(Items.clay_ball, 4), new Object[] { KEY_SAND, ModItems.dust, ModItems.dust, Fluids.WATER.getDict(1_000) });
 		CraftingManager.addShapelessAuto(new ItemStack(Items.clay_ball, 4), new Object[] { Blocks.clay }); //clay uncrafting because placing and breaking it isn't worth anyone's time
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_cement, 4), new Object[] { LIMESTONE.dust(), Items.clay_ball, Items.clay_ball, Items.clay_ball });
+		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_cement, 8), new Object[] { LIMESTONE.dust(), Items.clay_ball, Items.clay_ball, Items.clay_ball });
+		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_cement, 6), new Object[] { ModItems.gypsum, Items.clay_ball, Items.clay_ball, Items.clay_ball });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_cement, 4), new Object[] { CA.dust(), KEY_SAND, Items.clay_ball, Items.clay_ball }); // Alite cement recipe
 
 
@@ -71,6 +72,9 @@ public class PowderRecipes {
 
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_desh_mix, 1), new Object[] {
 			W.dust(), W.dust(), ModItems.ingot_stainless, ModItems.ingot_steel_dusted, CE.dustTiny(), CO.ingot(), ModItems.ingot_graphite, NI.ingot(), ModItems.ingot_steel
+		});
+		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_desh_mix, 1), new Object[] {
+			W.dust(), W.dust(), ModItems.ingot_stainless, ModItems.ingot_steel_dusted, CE.dustTiny(), Te.dust(), ModItems.ingot_graphite, NI.ingot(), ModItems.ingot_steel
 		});
 		//TODO put this in place of steel ingot+coal powder in tool steel (desh ingot) production.
 

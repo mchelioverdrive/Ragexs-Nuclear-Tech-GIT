@@ -257,6 +257,7 @@ public class Fluids {
 	public static FluidType STELLAR_FLUX;
 	public static FluidType VITRIOL;
 	public static FluidType SLOP;
+	public static FluidType HYDROFLUORIC_ACID;
 
 	/* Lagacy names for compatibility purposes */
 	@Deprecated public static FluidType ACID;	//JAOPCA uses this, apparently
@@ -553,6 +554,7 @@ public class Fluids {
 		RAFFINATE = 			new FluidType("RAFFINATE",			0x7a5230, 2, 1, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0xF65723)).addTraits(new FT_Flammable(100_000), new FT_Combustible(FuelGrade.LOW, 200_000), LIQUID, VISCOUS, P_FUEL);
 		RHODIUM_SOLUTION =		new FluidType("RHODIUM_SOLUTION",	0xB9B9B9, 2, 0, 1, EnumSymbol.ACID).setTemp(300).addTraits(new FT_Corrosive(80), new FT_Poison(true, 4), LEADCON, LIQUID, VISCOUS);
 		IRIDIUM_SOLUTION =		new FluidType("IRIDIUM_SOLUTION",	0xB9B9B9, 2, 0, 1, EnumSymbol.ACID).setTemp(300).addTraits(new FT_Corrosive(80), new FT_Poison(true, 4), LEADCON, LIQUID, VISCOUS);
+		HYDROFLUORIC_ACID = new FluidType("HYDROFLUORIC_ACID", 0xB9B9B9, 2, 0, 1, EnumSymbol.ACID).setTemp(300).addTraits(new FT_Corrosive(80), new FT_Poison(true, 4), LEADCON, LIQUID, VISCOUS);
 
 
 //I am getting really sick and tired of this retarded ass fluid system
@@ -811,6 +813,7 @@ public class Fluids {
 		metaOrder.add(ACIDWASTE);
 		metaOrder.add(RHODIUM_SOLUTION);
 		metaOrder.add(IRIDIUM_SOLUTION);
+		metaOrder.add(HYDROFLUORIC_ACID);
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!
 		// V

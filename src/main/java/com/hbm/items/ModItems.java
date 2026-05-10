@@ -175,6 +175,8 @@ public class ModItems {
 	public static Item ingot_iridium;
 	public static Item powder_iridium;
 	public static Item ruthenium_residue;
+
+	public static Item gypsum;
 	public static Item sulfur;
 	public static Item ingot_palladium;
 
@@ -2922,6 +2924,7 @@ public class ModItems {
 		sulfur = new Item().setUnlocalizedName("sulfur").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":sulfur");
 		nitra = new Item().setUnlocalizedName("nitra").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nitra");
 		nitra_small = new Item().setUnlocalizedName("nitra_small").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nitra_small");
+		gypsum = new ItemFertilizer().setUnlocalizedName("gypsum").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
 
 		ingot_uranium_fuel = new Item().setUnlocalizedName("ingot_uranium_fuel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_uranium_fuel");
 		ingot_plutonium_fuel = new Item().setUnlocalizedName("ingot_plutonium_fuel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_plutonium_fuel");
@@ -6712,6 +6715,7 @@ public class ModItems {
 		GameRegistry.registerItem(briquette, briquette.getUnlocalizedName());
 		//GameRegistry.registerItem(woodemium_briquette, woodemium_briquette.getUnlocalizedName());
 		GameRegistry.registerItem(sulfur, sulfur.getUnlocalizedName());
+		GameRegistry.registerItem(gypsum, gypsum.getUnlocalizedName());
 		GameRegistry.registerItem(niter, niter.getUnlocalizedName());
 		GameRegistry.registerItem(nitra, nitra.getUnlocalizedName());
 		GameRegistry.registerItem(nitra_small, nitra_small.getUnlocalizedName());

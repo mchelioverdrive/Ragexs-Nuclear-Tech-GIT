@@ -96,6 +96,7 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 		addRecipe(ModItems.powder_tellurium_dioxide, ModItems.ingot_graphite, new ItemStack(ModItems.nugget_tellurium, 1));
 
 		addRecipe(CU,									REDSTONE,										new ItemStack(ModItems.ingot_red_copper, 2));
+		addRecipe(CU,									Te.nugget(),										new ItemStack(ModItems.ingot_red_copper, 3));
 		//steel copper alloy
 		addRecipe(STEEL,								MINGRADE,										new ItemStack(ModItems.ingot_advanced_alloy, 2));
 		addRecipe(W,									COAL,											new ItemStack(ModItems.neutron_reflector, 2));

@@ -231,6 +231,8 @@ public class OreDictManager {
 	public static final DictFrame BE = new DictFrame("Beryllium");
 	/** COBALT */
 	public static final DictFrame CO = new DictFrame("Cobalt");
+	//tellurium
+	public static final DictFrame Te = new DictFrame("Tellurium");
 	/** BORON */
 	public static final DictFrame B = new DictFrame("Boron");
 	//rhodium
@@ -395,7 +397,10 @@ public class OreDictManager {
 	/** Any higher tier high explosive (therefore excluding dynamite) like TNT */
 	public static final DictFrame ANY_HIGHEXPLOSIVE = new DictFrame("AnyHighexplosive");
 	public static final DictFrame ANY_COKE = new DictFrame("AnyCoke", "Coke");
-	public static final DictGroup ANY_COAL_COKE = new DictGroup("AnyCoalCoke", ANY_COKE, COAL);
+	//public static final DictGroup ANY_COAL_COKE = new DictGroup("AnyCoalCoke", ANY_COKE, COAL);
+	public static final DictFrame COKE = new DictFrame("Coke");
+	public static final DictGroup ANY_COAL_COKE = new DictGroup("AnyCoalCoke", COAL, COKE);
+	//holy retard
 	public static final DictFrame ANY_CONCRETE = new DictFrame("Concrete");			//no any prefix means that any has to be appended with the any() or anys() getters, registering works with the any (i.e. no shape) setter
 
 	public static final DictGroup ANY_TAR = new DictGroup("Tar"); //6 THERE ARE 6 TARS, NOT 4 //, KEY_OIL_TAR, KEY_COAL_TAR, KEY_CRACK_TAR, KEY_WOOD_TAR, KEY_WAX_TAR, KEY_PARAFFIN_TAR
@@ -518,6 +523,7 @@ public class OreDictManager {
 		Rh  .ingot(ingot_rhodium); //.dust(powder_rhodium) don't do that because we want to gate rh to the arc furnace
 		Tl .ingot(ingot_thallium) .dust(powder_thallium) .nugget(nugget_thallium);
 		Se .dust(powder_selenium);
+		Te .dust(powder_tellurium) .nugget(nugget_tellurium);
 		//PSO .nugget(powder_strontium_oxide);
 		GRAPHITE															.ingot(ingot_graphite)																												.block(block_graphite);
 		CARBON																.ingot(ingot_graphite)																												.block(block_graphite);

@@ -244,6 +244,15 @@ public class AnvilRecipes {
 			},
 			new AnvilOutput(new ItemStack(ModItems.thermo_element, 1))).setTier(2).setOverlay(OverlayType.CONSTRUCTION));
 
+		constructionRecipes.add(new AnvilConstructionRecipe(
+			new AStack[] {
+				new OreDictStack(STEEL.plate(), 1),
+				new OreDictStack(MINGRADE.wireFine(), 3),
+				new OreDictStack(BI.ingot(), 1),
+				new OreDictStack(Te.dust(), 1)
+			},
+			new AnvilOutput(new ItemStack(ModItems.thermo_element, 2))).setTier(2).setOverlay(OverlayType.CONSTRUCTION));
+
 		//needs to be craftable, this is retarded
 		//constructionRecipes.add(new AnvilConstructionRecipe(
 		//		new AStack[] {
@@ -795,6 +804,7 @@ public class AnvilRecipes {
 				//actually dolomite but I don't feel like changing the name in the code
 				new AnvilOutput(new ItemStack(ModBlocks.ore_magnesite, 1), 0.3F),
 				new AnvilOutput(new ItemStack(ModItems.stibnite, 1), 0.12F),
+				new AnvilOutput(new ItemStack(ModItems.crystal_fluorite, 1), 0.2F),
 				// very rare mercury source
 				new AnvilOutput(new ItemStack(ModItems.cinnebar, 1), 0.05F)
 			}
