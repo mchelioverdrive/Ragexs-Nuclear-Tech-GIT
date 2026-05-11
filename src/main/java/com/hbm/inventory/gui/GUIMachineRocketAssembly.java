@@ -35,7 +35,7 @@ public class GUIMachineRocketAssembly extends GuiInfoContainerLayered {
 	public GUIMachineRocketAssembly(InventoryPlayer invPlayer, TileEntityMachineRocketAssembly machine) {
 		super(new ContainerMachineRocketAssembly(invPlayer, machine));
 		this.machine = machine;
-		
+
 		this.xSize = 192;
 		this.ySize = 224;
 	}
@@ -52,23 +52,26 @@ public class GUIMachineRocketAssembly extends GuiInfoContainerLayered {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 
+		if(machine == null || machine.rocket == null || machine.rocket.stages == null) {
+			return;
+		}
+
 		int stage = Math.max(machine.rocket.stages.size() - 1 - getLayer(), -1);
 
 		drawTexturedModalRect(guiLeft + 47, guiTop + 39, xSize + 18 + (stage + 1) * 6, 0, 6, 8);
 
 		stage = Math.max(stage, 0);
 
-		double dt = (double)(System.nanoTime() - lastTime) / 1000000000;
+		double dt = (double)(System.nanoTime() - lastTime) / 1000000000D;
 		lastTime = System.nanoTime();
-		
+
 		GL11.glPushMatrix();
 		{
-
 			pushScissor(65, 5, 90, 106);
 
 			GL11.glTranslatef(guiLeft + 116, guiTop + 103, 100);
 			GL11.glRotatef(System.currentTimeMillis() / 10 % 360, 0, -1, 0);
-			
+
 			double size = 86;
 			double height = machine.rocket.getHeight(stage);
 			double targetScale = size / Math.max(height, 6);
@@ -76,20 +79,18 @@ public class GUIMachineRocketAssembly extends GuiInfoContainerLayered {
 
 			double targetOffset = machine.rocket.getOffset(stage);
 			currentOffset = currentOffset + (targetOffset - currentOffset) * dt * 4;
-			
+
 			GL11.glScaled(-currentScale, -currentScale, -currentScale);
 			GL11.glTranslated(0, -currentOffset, 0);
 
 			MissilePronter.prontRocket(machine.rocket, Minecraft.getMinecraft().getTextureManager());
 
 			popScissor();
-
 		}
 		GL11.glPopMatrix();
 
 		GL11.glPushMatrix();
 		{
-
 			GL11.glTranslatef(0, 0, 150);
 			GL11.glScalef(0.5F, 0.5F, 0.5F);
 
@@ -101,13 +102,14 @@ public class GUIMachineRocketAssembly extends GuiInfoContainerLayered {
 
 			List<String> issues = machine.rocket.findIssues(stage, from.body, to.body, from.inOrbit, to.inOrbit);
 			for(int i = 0; i < issues.size(); i++) {
-				String issue = issues.get(i);
-				fontRendererObj.drawStringWithShadow(issue, (guiLeft + 65) * 2, (guiTop + 5) * 2 + i * 8, 0xFFFFFF);
+				fontRendererObj.drawStringWithShadow(issues.get(i), (guiLeft + 65) * 2, (guiTop + 5) * 2 + i * 8, 0xFFFFFF);
 			}
 
-			if(from.body != null) fontRendererObj.drawString(I18nUtil.resolveKey("body." + from.body.name), (guiLeft + 162) * 2, (guiTop + 75) * 2, 0x00FF00);
-			if(to.body != null) fontRendererObj.drawString(I18nUtil.resolveKey("body." + to.body.name), (guiLeft + 162) * 2, (guiTop + 108) * 2, 0x00FF00);
+			if(from.body != null)
+				fontRendererObj.drawString(I18nUtil.resolveKey("body." + from.body.name), (guiLeft + 162) * 2, (guiTop + 75) * 2, 0x00FF00);
 
+			if(to.body != null)
+				fontRendererObj.drawString(I18nUtil.resolveKey("body." + to.body.name), (guiLeft + 162) * 2, (guiTop + 108) * 2, 0x00FF00);
 		}
 		GL11.glPopMatrix();
 	}
@@ -120,7 +122,7 @@ public class GUIMachineRocketAssembly extends GuiInfoContainerLayered {
 		if(checkClick(mouseX, mouseY, 17, 34, 18, 8)) {
 			drawTexturedModalRect(17, 34, xSize, 36, 18, 8);
 		}
-		
+
 		if(checkClick(mouseX, mouseY, 17, 98, 18, 8)) {
 			drawTexturedModalRect(17, 98, xSize, 44, 18, 8);
 		}
@@ -137,7 +139,7 @@ public class GUIMachineRocketAssembly extends GuiInfoContainerLayered {
 	@Override
 	protected void mouseClicked(int x, int y, int i) {
 		super.mouseClicked(x, y, i);
-		
+
 		// Stage up
 		if(checkClick(x, y, 17, 34, 18, 8)) {
 			mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0F));
@@ -171,5 +173,5 @@ public class GUIMachineRocketAssembly extends GuiInfoContainerLayered {
 			}
 		}
 	}
-		
+
 }

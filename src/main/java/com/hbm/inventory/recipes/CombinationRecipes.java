@@ -42,7 +42,7 @@ public class CombinationRecipes extends SerializableRecipe {
 		recipes.put(COAL.gem(),		new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.COAL), new FluidStack(Fluids.COALCREOSOTE, 100)));
 		recipes.put(COAL.dust(),	new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.COAL), new FluidStack(Fluids.COALCREOSOTE, 100)));
 		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.briquette, EnumBriquetteType.COAL)), new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.COAL), new FluidStack(Fluids.COALCREOSOTE, 150)));
-		
+
 		recipes.put(LIGNITE.gem(),										new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.LIGNITE), new FluidStack(Fluids.COALCREOSOTE, 50)));
 		recipes.put(LIGNITE.dust(),										new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.LIGNITE), new FluidStack(Fluids.COALCREOSOTE, 50)));
 		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.briquette, EnumBriquetteType.LIGNITE)), new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.LIGNITE), new FluidStack(Fluids.COALCREOSOTE, 100)));
@@ -50,7 +50,8 @@ public class CombinationRecipes extends SerializableRecipe {
 		recipes.put(CHLOROCALCITE.dust(),						new Pair(new ItemStack(ModItems.powder_calcium), new FluidStack(Fluids.CHLORINE, 250)));
 		recipes.put(MOLYSITE.dust(),							new Pair(new ItemStack(Items.iron_ingot), new FluidStack(Fluids.CHLORINE, 250)));
 		recipes.put(CINNABAR.crystal(),							new Pair(new ItemStack(ModItems.sulfur), new FluidStack(Fluids.MERCURY, 100)));
-		recipes.put(new ComparableStack(Items.glowstone_dust),	new Pair(new ItemStack(ModItems.sulfur), new FluidStack(Fluids.CHLORINE, 100)));
+		//it's magnesium, not whatever the fuck this is
+		//recipes.put(new ComparableStack(Items.glowstone_dust),	new Pair(new ItemStack(ModItems.sulfur), new FluidStack(Fluids.CHLORINE, 100)));
 		recipes.put(SODALITE.gem(),								new Pair(new ItemStack(ModItems.powder_sodium), new FluidStack(Fluids.CHLORINE, 100)));
 		recipes.put(new ComparableStack(DictFrame.fromOne(ModBlocks.stone_resource, EnumStoneType.BAUXITE)), new Pair(new ItemStack(ModItems.ingot_aluminium, 2), new FluidStack(Fluids.REDMUD, 250)));
 		recipes.put(NA.dust(),									new Pair(null, new FluidStack(Fluids.SODIUM, 100)));
@@ -66,7 +67,7 @@ public class CombinationRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.WOOD)),		new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.COAL), null));
 		recipes.put(new ComparableStack(Items.reeds), new Pair(new ItemStack(Items.sugar, 2), new FluidStack(Fluids.ETHANOL, 50)));
 		recipes.put(new ComparableStack(Blocks.clay), new Pair(new ItemStack(Blocks.brick_block, 1), null));
-		
+
 		for(BedrockOreType type : BedrockOreType.values()) {
 			recipes.put(new ComparableStack(ItemBedrockOreNew.make(BedrockOreGrade.BASE, type)), new Pair(ItemBedrockOreNew.make(BedrockOreGrade.BASE_ROASTED, type), new FluidStack(Fluids.VITRIOL, 50)));
 			recipes.put(new ComparableStack(ItemBedrockOreNew.make(BedrockOreGrade.PRIMARY, type)), new Pair(ItemBedrockOreNew.make(BedrockOreGrade.PRIMARY_ROASTED, type), new FluidStack(Fluids.VITRIOL, 50)));
@@ -75,21 +76,21 @@ public class CombinationRecipes extends SerializableRecipe {
 			recipes.put(new ComparableStack(ItemBedrockOreNew.make(BedrockOreGrade.RAD_BYPRODUCT, type)), new Pair(ItemBedrockOreNew.make(BedrockOreGrade.RAD_ROASTED, type), new FluidStack(Fluids.VITRIOL, 50)));
 		}
 	}
-	
+
 	public static Pair<ItemStack, FluidStack> getOutput(ItemStack stack) {
-		
+
 		if(stack == null || stack.getItem() == null)
 			return null;
-		
+
 		ComparableStack comp = new ComparableStack(stack.getItem(), 1, stack.getItemDamage());
-		
+
 		if(recipes.containsKey(comp)) {
 			Pair<ItemStack, FluidStack> out = recipes.get(comp);
 			return new Pair(out.getKey() == null ? null : out.getKey().copy(), out.getValue());
 		}
-		
+
 		String[] dictKeys = comp.getDictKeys();
-		
+
 		for(String key : dictKeys) {
 
 			if(recipes.containsKey(key)) {
@@ -97,19 +98,19 @@ public class CombinationRecipes extends SerializableRecipe {
 				return new Pair(out.getKey() == null ? null : out.getKey().copy(), out.getValue());
 			}
 		}
-		
+
 		return null;
 	}
 
 	public static HashMap getRecipes() {
-		
+
 		HashMap<Object, Object[]> recipes = new HashMap<Object, Object[]>();
-		
+
 		for(Entry<Object, Pair<ItemStack, FluidStack>> entry : CombinationRecipes.recipes.entrySet()) {
 			Object key = entry.getKey();
 			Pair<ItemStack, FluidStack> val = entry.getValue();
 			Object o = key instanceof String ? new OreDictStack((String) key) : key;
-			
+
 			if(val.getKey() != null && val.getValue() != null) {
 				recipes.put(o, new ItemStack[] {val.getKey(), ItemFluidIcon.make(val.getValue())});
 			} else if(val.getKey() != null) {
@@ -118,7 +119,7 @@ public class CombinationRecipes extends SerializableRecipe {
 				recipes.put(o, new ItemStack[] {ItemFluidIcon.make(val.getValue())});
 			}
 		}
-		
+
 		return recipes;
 	}
 
@@ -138,10 +139,10 @@ public class CombinationRecipes extends SerializableRecipe {
 		AStack in = this.readAStack(obj.get("input").getAsJsonArray());
 		FluidStack fluid = null;
 		ItemStack out = null;
-		
+
 		if(obj.has("fluid")) fluid = this.readFluidStack(obj.get("fluid").getAsJsonArray());
 		if(obj.has("output")) out = this.readItemStack(obj.get("output").getAsJsonArray());
-		
+
 		if(in instanceof ComparableStack) {
 			recipes.put(((ComparableStack) in).makeSingular(), new Pair(out, fluid));
 		} else if(in instanceof OreDictStack) {
@@ -156,7 +157,7 @@ public class CombinationRecipes extends SerializableRecipe {
 		Pair<ItemStack, FluidStack> Pair = rec.getValue();
 		ItemStack output = Pair.key;
 		FluidStack fluid = Pair.value;
-		
+
 		writer.name("input");
 		if(in instanceof String) {
 			this.writeAStack(new OreDictStack((String) in), writer);

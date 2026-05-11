@@ -1083,6 +1083,42 @@ public class ChemplantRecipes extends SerializableRecipe {
 						.outputItems(new ItemStack(ModItems.gypsum, 4)) //should be calcium sulfate/gypsum? idk I'm just autofilling for now.
 		);
 
+		//salt + water + power → chlorine + hydrogen + lye
+		recipes.add(new ChemRecipe(1063, "CHLORINE_PRODUCTION", 130)
+						.inputItems(new ComparableStack(ModItems.itemsalt, 1))
+						.inputFluids(
+							new FluidStack(Fluids.WATER, 1000),
+							new FluidStack(Fluids.OXYGEN, 500)
+						)
+						//.oxygenConsumption = 500 // consumes oxygen from the atmosphere to prevent infinite loops with water electrolysis
+						//that's great gpt but I'm not doing allat I'm just adding oxygen fluid in input
+						.outputFluids(
+							new FluidStack(Fluids.CHLORINE, 1000),
+							new FluidStack(Fluids.HYDROGEN, 1000)
+							//new FluidStack(Fluids.SODIUM_HYDROXIDE, 1000)
+						)
+						//.outputItems(new ItemStack(ModItems.sodium_hydroxide, 1))
+		);
+
+		//chlorocalcite from calcium chloride and potassium chloride
+		recipes.add(new ChemRecipe(1064, "CHLOROCALCITE", 100)
+						.inputFluids(
+							new FluidStack(Fluids.CALCIUM_CHLORIDE, 1200),
+							new FluidStack(Fluids.POTASSIUM_CHLORIDE, 1000)
+						)
+						.outputItems(new ItemStack(ModItems.powder_chlorocalcite, 1))
+		);
+
+		//RUTHENIUM_RESIDUE + HYDROGEN -> RUTHENIUM + STEAM
+		recipes.add(new ChemRecipe(1065, "RUTHENIUM_REDUCTION", 300)
+						.inputItems(new ComparableStack(ModItems.ruthenium_residue, 1))
+						.inputFluids(new FluidStack(Fluids.HYDROGEN, 1000))
+						.outputItems(new ItemStack(ModItems.nugget_ruthenium, 1))
+						.outputFluids(new FluidStack(Fluids.STEAM, 850))
+		);
+
+
+
 
 
 

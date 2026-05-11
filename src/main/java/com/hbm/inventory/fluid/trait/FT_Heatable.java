@@ -21,6 +21,14 @@ public class FT_Heatable extends FluidTrait {
 
 	/** Add in ascending order, lowest heat required goes first! */
 	public FT_Heatable addStep(int heat, int req, FluidType type, int prod) {
+		if(type == null) {
+			throw new IllegalArgumentException(
+				"FT_Heatable.addStep(): type is null (heat=" + heat +
+					", req=" + req +
+					", prod=" + prod + ")"
+			);
+		}
+
 		steps.add(new HeatingStep(req, heat, type, prod));
 		return this;
 	}
@@ -86,6 +94,17 @@ public class FT_Heatable extends FluidTrait {
 		writer.name("steps").beginArray();
 
 		for(HeatingStep step : steps) {
+
+			if(step == null) {
+				continue;
+			}
+
+			if(step.typeProduced == null) {
+				throw new IllegalStateException(
+					"FT_Heatable contains a HeatingStep with null typeProduced"
+				);
+			}
+
 			writer.beginObject();
 			writer.name("typeProduced").value(step.typeProduced.getName());
 			writer.name("amountReq").value(step.amountReq);
@@ -96,8 +115,12 @@ public class FT_Heatable extends FluidTrait {
 
 		writer.endArray();
 
-		for(Entry<HeatingType, Double> entry : this.efficiency.entrySet()) {
-			writer.name(entry.getKey().name()).value(entry.getValue());
+		if(this.efficiency != null) {
+			for(Entry<HeatingType, Double> entry : this.efficiency.entrySet()) {
+				if(entry.getKey() != null && entry.getValue() != null) {
+					writer.name(entry.getKey().name()).value(entry.getValue());
+				}
+			}
 		}
 	}
 

@@ -118,6 +118,9 @@ public class PyroOvenRecipes extends SerializableRecipe {
 		recipes.add(new PyroOvenRecipe(60)
 				.in(new FluidStack(GAS_COKER, 4_000))
 				.out(new FluidStack(Fluids.REFORMGAS, 100)));
+
+
+
 	}
 
 	private static void registerSFAuto(FluidType fluid) {
