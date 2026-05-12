@@ -237,12 +237,12 @@ public class TileEntityTurretMaxwell extends TileEntityTurretBaseNT implements I
 
 		if(this.target != null && this.getPower() >= demand) {
 
-			if(_5g && target instanceof EntityPlayer) {
-				EntityPlayer living = (EntityPlayer) target;
-				living.addPotionEffect(new PotionEffect(HbmPotion.death.id, 30 * 60 * 20, 0, true));
-			} else {
+			//if(_5g && target instanceof EntityPlayer) {
+			//	EntityPlayer living = (EntityPlayer) target;
+			//	living.addPotionEffect(new PotionEffect(HbmPotion.death.id, 30 * 60 * 20, 0, true));
+			//} else {
 				EntityDamageUtil.attackEntityFromIgnoreIFrame(this.target, ModDamageSource.microwave, (this.blackLevel * 10 + this.redLevel + 1F) * 0.25F);
-			}
+			//}
 
 			if(pinkLevel > 0)
 				this.target.setFire(this.pinkLevel * 3);

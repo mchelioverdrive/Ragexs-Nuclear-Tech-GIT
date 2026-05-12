@@ -78,6 +78,15 @@ public class CryoRecipes extends SerializableRecipe {
 				new FluidStack(Fluids.OXYGEN, 2)
 				));
 
+		//brine -> iodine brine + salt water (which is just brine...)
+		recipes.put(Fluids.BRINE, new Quartet<>(
+				new FluidStack(Fluids.WATER, 900),
+				new FluidStack(Fluids.IODINE_BRINE, 100),
+				new FluidStack(Fluids.WATER, 900),
+				new FluidStack(Fluids.IODINE_BRINE, 100)
+				));
+
+
 	} // this is such a sexy machine might use your code for atmospheric distillator
 
 	public static Quartet<FluidStack, FluidStack, FluidStack, FluidStack> getOutput(FluidType type) {

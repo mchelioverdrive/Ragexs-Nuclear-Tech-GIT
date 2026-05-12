@@ -1117,13 +1117,57 @@ public class ChemplantRecipes extends SerializableRecipe {
 						.outputFluids(new FluidStack(Fluids.STEAM, 850))
 		);
 
+		//bromine from bittern + chlorine
+		recipes.add(new ChemRecipe(1066, "BROMINE_EXTRACTION", 200)
+						.inputFluids(
+							new FluidStack(Fluids.BITTERN, 2000),
+							new FluidStack(Fluids.CHLORINE, 1000)
+						)
+						.outputItems(new ItemStack(ModItems.powder_bromine, 1))
+						.outputFluids(
+							//new FluidStack(Fluids.BROMINE, 1000),
+							new FluidStack(Fluids.BRINE, 400)
+						)
+		);
+
+		//iodine brine + chlorine -> iodine + salt brine
+		recipes.add(new ChemRecipe(1067, "IODINE_EXTRACTION", 200)
+						.inputFluids(
+							new FluidStack(Fluids.IODINE_BRINE, 2000),
+							new FluidStack(Fluids.CHLORINE, 1000)
+						)
+						.outputItems(new ItemStack(ModBlocks.ore_iodine, 1))
+						.outputFluids(
+							new FluidStack(Fluids.BRINE, 400)
+							//Brine is a high-concentration solution of salt (usually sodium chloride) dissolved in water
+							//so why the fuck would we specify that it is salty, obviously it's fucking salty,
+							// it's water with high salt
+						)
+		);
+
+		//potassium iodide solution + chlorine -> iodine + potassium chloride
+		recipes.add(new ChemRecipe(1068, "IODINE_EXTRACTION2", 180)
+						.inputItems(
+							new ComparableStack(ModItems.potassium_iodide_powder, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.CHLORINE, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.powder_iodine, 4)
+						)
+						.outputFluids(
+							new FluidStack(Fluids.POTASSIUM_CHLORIDE, 800)
+						)
+		);
 
 
 
 
 
 
-		//todo methamphetamine, methylamine, ephedrine, pseudoephedrine, etc. for fun chemistry and maybe a drug lab or something who knows
+
+								   //todo methamphetamine, methylamine, ephedrine, pseudoephedrine, etc. for fun chemistry and maybe a drug lab or something who knows
 		//thanks for the very legal autofill ai anyway to the chemical reactor *bat man noise
 
 

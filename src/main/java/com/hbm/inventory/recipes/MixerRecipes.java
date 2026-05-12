@@ -110,7 +110,7 @@ public class MixerRecipes extends SerializableRecipe {
 		register(Fluids.SCUTTERBLOOD, new MixerRecipe(550, 50).setStack1(new FluidStack(Fluids.HCL, 300)).setSolid(new ComparableStack(ModItems.scuttertail)));
 
 		//salt to brine
-		register(Fluids.BRINE, new MixerRecipe(1000, 50).setStack1(new FluidStack(Fluids.WATER, 1000)).setSolid(new ComparableStack(ModItems.itemsalt)));
+		register(Fluids.BRINE, new MixerRecipe(1000, 50).setStack1(new FluidStack(Fluids.WATER, 1000)).setSolid(new ComparableStack(ModItems.itemsalt, 32)));
 
 	}
 

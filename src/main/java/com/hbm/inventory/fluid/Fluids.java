@@ -202,6 +202,7 @@ public class Fluids {
 	public static FluidType NMASS; //weaker, much more suitable for FTL
 	public static FluidType SCUTTERBLOOD;
 	public static FluidType BRINE;
+	public static FluidType IODINE_BRINE;
 	public static FluidType BITTERN;
 	public static FluidType HTCO4;//we
 	public static FluidType OIL_COKER;			//heavy fractions from coking, mostly bitumen
@@ -209,6 +210,7 @@ public class Fluids {
 	public static FluidType GAS_COKER;			//light fractions from coking, natgas and co2
 	public static FluidType EGG;
 	public static FluidType CHOLESTEROL;
+	//you don't get to make estrogen bullshit anymore, fuck you
 	public static FluidType ESTRADIOL;
 	public static FluidType FISHOIL;
 	public static FluidType SUNFLOWEROIL;
@@ -566,6 +568,8 @@ public class Fluids {
 		HYDROFLUORIC_ACID = new FluidType("HYDROFLUORIC_ACID", 0xB9B9B9, 2, 0, 1, EnumSymbol.ACID).setTemp(300).addTraits(new FT_Corrosive(80), new FT_Poison(true, 4), LEADCON, LIQUID, VISCOUS);
 		BRINE = new FluidType("BRINE", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE);
 		BITTERN = new FluidType("BITTERN", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).setTemp(300).addTraits(LIQUID, VISCOUS, new FT_Corrosive(20));
+		IODINE_BRINE = new FluidType("IODINE_BRINE", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS, new FT_Corrosive(200)); //.setTemp(300) idk about that one
+
 
 //I am getting really sick and tired of this retarded ass fluid system
 
@@ -826,6 +830,7 @@ public class Fluids {
 		metaOrder.add(HYDROFLUORIC_ACID);
 		metaOrder.add(BRINE);
 		metaOrder.add(BITTERN);
+		metaOrder.add(IODINE_BRINE);
 
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!
@@ -842,9 +847,11 @@ public class Fluids {
 		PHOSGENE.addTraits(new FT_Toxin().addEntry(new ToxinDirectDamage(ModDamageSource.cloud, 4F, 20, HazardClass.GAS_LUNG, false)));
 		MUSTARDGAS.addTraits(new FT_Toxin().addEntry(new ToxinDirectDamage(ModDamageSource.cloud, 4F, 10, HazardClass.GAS_BLISTERING, false))
 			.addEntry(new ToxinEffects(HazardClass.GAS_BLISTERING, true).add(new PotionEffect(Potion.wither.id, 100, 1), new PotionEffect(Potion.confusion.id, 100, 0))));
+		//we just really out here adding bullshit instead of chemistry huh
 		ESTRADIOL.addTraits(new FT_Toxin().addEntry(new ToxinEffects(HazardClass.PARTICLE_FINE, false).add(new PotionEffect(HbmPotion.death.id, 60 * 60 * 20, 0))));
-		REDMUD.addTraits(new FT_Toxin().addEntry(new ToxinEffects(HazardClass.GAS_BLISTERING, false).add(new PotionEffect(Potion.wither.id, 30 * 20, 2))));
-		FLUORINE.addTraits(new FT_Toxin().addEntry(new ToxinEffects(HazardClass.GAS_BLISTERING, false).add(new PotionEffect(Potion.wither.id, 30 * 20, 2))));
+		//not actually a toxin, just astfolo skin BS^
+		REDMUD.addTraits(new FT_Toxin().addEntry(new ToxinEffects(HazardClass.PARTICLE_FINE, false).add(new PotionEffect(Potion.wither.id, 30 * 20, 2))));
+		FLUORINE.addTraits(new FT_Toxin().addEntry(new ToxinEffects(HazardClass.GAS_BLISTERING, true).add(new PotionEffect(Potion.wither.id, 30 * 20, 2))));
 
 		double eff_steam_boil = 1.0D;
 		double eff_steam_heatex = 0.25D;
