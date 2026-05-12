@@ -1210,6 +1210,10 @@ public class ModItems {
 	public static Item particle_strange;
 	public static Item particle_dark;
 	public static Item particle_sparkticle;
+	public static Item particle_helium;
+	public static Item particle_astatine;
+	public static Item particle_neutron;
+	public static Item particle_beta;
 	//public static Item particle_digamma;
 	public static Item particle_lutece;
 
@@ -3901,6 +3905,10 @@ public class ModItems {
 		particle_sparkticle = new Item().setUnlocalizedName("particle_sparkticle").setCreativeTab(MainRegistry.controlTab).setContainerItem(ModItems.particle_empty).setTextureName(RefStrings.MODID + ":particle_sparkticle");
 		//particle_digamma = new ItemDigamma(60).setUnlocalizedName("particle_digamma").setCreativeTab(MainRegistry.controlTab).setContainerItem(ModItems.particle_empty).setTextureName(RefStrings.MODID + ":particle_digamma");
 		particle_lutece = new Item().setUnlocalizedName("particle_lutece").setCreativeTab(MainRegistry.controlTab).setContainerItem(ModItems.particle_empty).setTextureName(RefStrings.MODID + ":particle_lutece");
+		particle_helium = new Item().setUnlocalizedName("particle_helium").setCreativeTab(MainRegistry.controlTab).setContainerItem(ModItems.particle_empty).setTextureName(RefStrings.MODID + ":particle_hydrogen");
+		particle_astatine = new Item().setUnlocalizedName("particle_astatine").setCreativeTab(MainRegistry.controlTab).setContainerItem(ModItems.particle_empty).setTextureName(RefStrings.MODID + ":particle_hydrogen");
+		particle_neutron = new Item().setUnlocalizedName("particle_neutron").setCreativeTab(MainRegistry.controlTab).setContainerItem(ModItems.particle_empty).setTextureName(RefStrings.MODID + ":particle_hydrogen");
+		particle_beta = new Item().setUnlocalizedName("particle_beta").setCreativeTab(MainRegistry.controlTab).setContainerItem(ModItems.particle_empty).setTextureName(RefStrings.MODID + ":particle_hydrogen");
 		//singularity_micro = new ItemDrop().setUnlocalizedName("singularity_micro").setCreativeTab(MainRegistry.controlTab).setContainerItem(ModItems.nuclear_waste).setTextureName(RefStrings.MODID + ":singularity_micro");
 
 		//singularity = new ItemDrop().setUnlocalizedName("singularity").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setContainerItem(ModItems.nuclear_waste).setTextureName(RefStrings.MODID + ":singularity");
@@ -7495,6 +7503,10 @@ public class ModItems {
 		GameRegistry.registerItem(particle_strange, particle_strange.getUnlocalizedName());
 		GameRegistry.registerItem(particle_dark, particle_dark.getUnlocalizedName());
 		GameRegistry.registerItem(particle_sparkticle, particle_sparkticle.getUnlocalizedName());
+		GameRegistry.registerItem(particle_helium, particle_helium.getUnlocalizedName());
+		GameRegistry.registerItem(particle_astatine, particle_astatine.getUnlocalizedName());
+		GameRegistry.registerItem(particle_neutron, particle_neutron.getUnlocalizedName());
+		GameRegistry.registerItem(particle_beta, particle_beta.getUnlocalizedName());
 		//GameRegistry.registerItem(particle_digamma, particle_digamma.getUnlocalizedName());
 		GameRegistry.registerItem(particle_lutece, particle_lutece.getUnlocalizedName());
 

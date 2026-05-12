@@ -84,6 +84,7 @@ public class HazardRegistry {
 	public static final float au198 = 500.0F;
 	public static final float pb209 = 10000.0F;
 	public static final float at209 = 7500.0F;
+	public static final float at = 1500.0F;
 	public static final float po210 = 75.0F;
 	public static final float ra226 = 7.5F;
 	public static final float ac227 = 30.0F;

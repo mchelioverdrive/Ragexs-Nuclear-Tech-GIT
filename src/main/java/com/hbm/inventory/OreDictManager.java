@@ -640,6 +640,7 @@ public class OreDictManager {
 		XE135	.rad(HazardRegistry.xe135)	.hot(10F)				.dustSmall(powder_xe135_tiny)	.dust(powder_xe135);
 		CS137	.rad(HazardRegistry.cs137)	.hot(3F)	.hydro(3F)	.dustSmall(powder_cs137_tiny)	.dust(powder_cs137);
 		AT209	.rad(HazardRegistry.at209)	.hot(20F)												.dust(powder_at209);
+		AT 		.rad(HazardRegistry.at)		.hot(20F)												.dust(powder_astatine);
 
 		/*
 		 * COLLECTIONS
