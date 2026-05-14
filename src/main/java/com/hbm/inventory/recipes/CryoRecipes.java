@@ -86,6 +86,16 @@ public class CryoRecipes extends SerializableRecipe {
 				new FluidStack(Fluids.IODINE_BRINE, 100)
 				));
 
+		//helium 4 production non retarded:
+		recipes.put(Fluids.GAS, new Quartet<>(
+			new FluidStack(Fluids.GAS, 10),
+			new FluidStack(Fluids.HELIUM4, 25),
+			new FluidStack(Fluids.GAS, 70), //methane
+			new FluidStack(Fluids.HYDROGEN, 275)
+			//new FluidStack(Fluids.PROPANE, 100),
+			//new FluidStack(Fluids.BUTANE, 50) //DAMMIT BOBBY I DONT FEEL LIKE ADDING ALL THAT RIGHT NOW
+		));
+
 
 	} // this is such a sexy machine might use your code for atmospheric distillator
 

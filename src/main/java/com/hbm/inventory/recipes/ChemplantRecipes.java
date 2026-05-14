@@ -1206,6 +1206,19 @@ public class ChemplantRecipes extends SerializableRecipe {
 						)
 		);
 
+		//helium capsule
+		recipes.add(new ChemRecipe(1072, "HELIUM_CAPSULE", 50)
+						.inputItems(
+							new ComparableStack(ModItems.particle_empty, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.HELIUM4, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.particle_helium, 1)
+						)
+		);
+
 
 
 
