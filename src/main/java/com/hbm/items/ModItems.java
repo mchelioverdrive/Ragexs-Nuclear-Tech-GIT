@@ -205,6 +205,8 @@ public class ModItems {
 	public static Item potassium_powder;
 
 	public static Item niter;
+	public static Item ammonium_chloride;
+	public static Item sodium_nitrate;
 	public static Item ingot_copper;
 	public static Item ingot_red_copper;
 	public static Item ingot_tungsten;
@@ -2953,6 +2955,8 @@ public class ModItems {
 		ingot_bscco = new Item().setUnlocalizedName("ingot_bscco").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_bscco");
 
 		niter = new Item().setUnlocalizedName("niter").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":salpeter");
+		ammonium_chloride = new ItemFertilizer().setUnlocalizedName("ammonium_chloride").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":salpeter");
+		sodium_nitrate = new ItemFertilizer().setUnlocalizedName("sodium_nitrate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":salpeter");
 		ingot_copper = new Item().setUnlocalizedName("ingot_copper").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_copper");
 		ingot_red_copper = new Item().setUnlocalizedName("ingot_red_copper").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_red_copper");
 		billet_red_copper = new Item().setUnlocalizedName("billet_red_copper").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":billet_red_copper");
@@ -6725,6 +6729,8 @@ public class ModItems {
 		GameRegistry.registerItem(sulfur, sulfur.getUnlocalizedName());
 		GameRegistry.registerItem(gypsum, gypsum.getUnlocalizedName());
 		GameRegistry.registerItem(niter, niter.getUnlocalizedName());
+		GameRegistry.registerItem(ammonium_chloride, ammonium_chloride.getUnlocalizedName());
+		GameRegistry.registerItem(sodium_nitrate, sodium_nitrate.getUnlocalizedName());
 		GameRegistry.registerItem(nitra, nitra.getUnlocalizedName());
 		GameRegistry.registerItem(nitra_small, nitra_small.getUnlocalizedName());
 		GameRegistry.registerItem(fluorite, fluorite.getUnlocalizedName());

@@ -900,6 +900,8 @@ public class AnvilRecipes {
 				new AnvilOutput(new ItemStack(ModItems.carnallite, 1), 0.35F),
 				new AnvilOutput(new ItemStack(ModItems.powder_borax, 1), 0.25F),
 				//yes I know we skipped some steps but I don't have all goddamn day to add rocks
+				new AnvilOutput(new ItemStack(ModItems.sodium_nitrate, 1), 0.15F),
+				new AnvilOutput(new ItemStack(ModItems.niter, 1), 0.08F)
 			}
 		).setTier(2));
 

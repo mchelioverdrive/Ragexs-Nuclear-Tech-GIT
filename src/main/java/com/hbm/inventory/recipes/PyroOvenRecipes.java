@@ -118,8 +118,11 @@ public class PyroOvenRecipes extends SerializableRecipe {
 		recipes.add(new PyroOvenRecipe(60)
 				.in(new FluidStack(GAS_COKER, 4_000))
 				.out(new FluidStack(Fluids.REFORMGAS, 100)));
-
-
+		////ammonium chloride + heat -> ammonia + hydrogen chloride
+		//recipes.add(new PyroOvenRecipe(20)
+		//		.in(new ComparableStack(ModItems.ammonium_chloride, 1))
+		//		.out(new FluidStack(Fluids.AMMONIA, 125)).out(new FluidStack(Fluids.HCL, 125)));
+		//anndd this stupid shit doesn't have two fluid outputs because why would it
 
 	}
 

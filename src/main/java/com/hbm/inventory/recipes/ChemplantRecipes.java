@@ -1161,7 +1161,50 @@ public class ChemplantRecipes extends SerializableRecipe {
 						)
 		);
 
+		//Potassium chloride + ammonium nitrate = saltpeter/niter
+		recipes.add(new ChemRecipe(1069, "SALTPETER", 200)
+						.inputItems(
+							new ComparableStack(
+								ModItems.ammonium_nitrate
+							)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.POTASSIUM_CHLORIDE, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.niter, 1),
+							new ItemStack(ModItems.ammonium_chloride, 1)
+						)
 
+		);
+
+		//ammonium chloride + heat -> ammonia + hydrogen chloride
+		recipes.add(new ChemRecipe(1070, "AMMONIUM_CHLORIDE_DECOMPOSITION", 150)
+						.inputItems(
+							new ComparableStack(ModItems.ammonium_chloride, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.ULTRAHOTSTEAM, 1000)
+						)
+						.outputFluids(
+							new FluidStack(Fluids.AMMONIA, 500),
+							new FluidStack(Fluids.HCL, 500)
+						)
+		);
+
+		//Potassium chloride + sodium nitrate = saltpeter/niter
+		recipes.add(new ChemRecipe(1071, "SALTPETER2", 200)
+						.inputItems(
+							new ComparableStack(ModItems.sodium_nitrate)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.POTASSIUM_CHLORIDE, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.niter, 1),
+							new ItemStack(ModItems.itemsalt, 1)
+						)
+		);
 
 
 
