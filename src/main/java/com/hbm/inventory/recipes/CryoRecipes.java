@@ -22,55 +22,72 @@ public class CryoRecipes extends SerializableRecipe {
 
 	@Override
 	public void registerDefaults() {
+
+		//assume there's a 0 after all these numbers because that's how this works for some reason (in mb)
+
 		recipes.put(Fluids.AIR, new Quartet<>(
 			new FluidStack(Fluids.NITROGEN, 78),
 			new FluidStack(Fluids.OXYGEN, 21),
 			new FluidStack(Fluids.ARGON, 1),
-			new FluidStack(Fluids.CARBONDIOXIDE, 1)
-		)); //are we retarded or retarded?
+			new FluidStack(Fluids.NOBLE_GAS_MIX, 1)
+		));
 
+		recipes.put(Fluids.NOBLE_GAS_MIX, new Quartet<>(
+			new FluidStack(Fluids.NEON, 40),
+			new FluidStack(Fluids.CARBONDIOXIDE, 1),
+			new FluidStack(Fluids.KRYPTON, 10),
+			new FluidStack(Fluids.XENON, 5)
+		));
+
+		//Titan
 		recipes.put(Fluids.TEKTOAIR, new Quartet<>(
 				new FluidStack(Fluids.CHLORINE, 45),
 				new FluidStack(Fluids.AROMATICS, 25),
 				new FluidStack(Fluids.GAS, 15),
 				new FluidStack(Fluids.PETROLEUM, 5)
 				));
+
+		//Jupiter
 		recipes.put(Fluids.JOOLGAS, new Quartet<>(
 				new FluidStack(Fluids.HELIUM3, 25),
 				new FluidStack(Fluids.HYDROGEN, 25),
 				new FluidStack(Fluids.CHLORINE, 20),
 				new FluidStack(Fluids.NEON, 12)
 				));
+
+		//Neptune
 		recipes.put(Fluids.NGAS, new Quartet<>(
 				new FluidStack(Fluids.GAS, 35),
 				new FluidStack(Fluids.AMMONIA, 24),
 				new FluidStack(Fluids.UNSATURATEDS, 15),
 				new FluidStack(Fluids.XENON, 14)
 				));
+
+		//Uranus
 		recipes.put(Fluids.UGAS, new Quartet<>(
 				new FluidStack(Fluids.OXYGEN, 35),
 				new FluidStack(Fluids.NITROGEN, 25),
 				new FluidStack(Fluids.METHANOL, 15),
 				new FluidStack(Fluids.AROMATICS, 10)
 				));
+
+		//Saturn
 		recipes.put(Fluids.SARNUSGAS, new Quartet<>(
 				new FluidStack(Fluids.HYDROGEN, 45),
 				new FluidStack(Fluids.HELIUM3, 25),
 				new FluidStack(Fluids.GAS, 15),
 				new FluidStack(Fluids.NITROGEN, 5)
 				));
+
+		//Venus
 		recipes.put(Fluids.EVEAIR, new Quartet<>(
 				new FluidStack(Fluids.KMnO4, 30),
 				new FluidStack(Fluids.MERCURY, 25),
 				new FluidStack(Fluids.XENON, 15),
 				new FluidStack(Fluids.AMMONIA, 5)
 				));
-		//recipes.put(Fluids.MORKINE, new Quartet<>(
-		//		new FluidStack(Fluids.UNSATURATEDS, 40), //PURE acetylene
-		//		new FluidStack(Fluids.AROMATICS, 25),
-		//		new FluidStack(Fluids.METHYLENE, 14),
-		//		new FluidStack(Fluids.HYDROGEN, 10)
-		//		));
+
+		//Mars
 		recipes.put(Fluids.DUNAAIR, new Quartet<>(
 				new FluidStack(Fluids.CARBONDIOXIDE, 80),
 				new FluidStack(Fluids.NITROGEN, 10),
@@ -80,18 +97,18 @@ public class CryoRecipes extends SerializableRecipe {
 
 		//brine -> iodine brine + salt water (which is just brine...)
 		recipes.put(Fluids.BRINE, new Quartet<>(
-				new FluidStack(Fluids.WATER, 900),
-				new FluidStack(Fluids.IODINE_BRINE, 100),
-				new FluidStack(Fluids.WATER, 900),
-				new FluidStack(Fluids.IODINE_BRINE, 100)
+				new FluidStack(Fluids.WATER, 30),
+				new FluidStack(Fluids.IODINE_BRINE, 10),
+				new FluidStack(Fluids.WATER, 30),
+				new FluidStack(Fluids.IODINE_BRINE, 10)
 				));
 
 		//helium 4 production non retarded:
 		recipes.put(Fluids.GAS, new Quartet<>(
 			new FluidStack(Fluids.GAS, 10),
-			new FluidStack(Fluids.HELIUM4, 25),
+			new FluidStack(Fluids.HELIUM4, 1),
 			new FluidStack(Fluids.GAS, 70), //methane
-			new FluidStack(Fluids.HYDROGEN, 275)
+			new FluidStack(Fluids.HYDROGEN, 27)
 			//new FluidStack(Fluids.PROPANE, 100),
 			//new FluidStack(Fluids.BUTANE, 50) //DAMMIT BOBBY I DONT FEEL LIKE ADDING ALL THAT RIGHT NOW
 		));

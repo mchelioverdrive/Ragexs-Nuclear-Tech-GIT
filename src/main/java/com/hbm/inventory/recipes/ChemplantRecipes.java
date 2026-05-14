@@ -20,6 +20,7 @@ import com.hbm.inventory.RecipesCommon.OreDictStack;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.ModItems;
+import com.hbm.items.machine.ItemCircuit;
 import com.hbm.main.MainRegistry;
 
 
@@ -46,9 +47,10 @@ public class ChemplantRecipes extends SerializableRecipe {
 		registerOtherOil();
 
 		recipes.add(new ChemRecipe(36, "COOLANT", 50)
-				//NITER
-				.inputItems(new OreDictStack(KNO.any()))
-				.inputFluids(new FluidStack(Fluids.WATER, 1800))
+				//SUGAR, NOT NITER
+				//.inputItems(new OreDictStack(KNO.dust()))
+				//more bobcat crack rock chemistry
+				.inputFluids(new FluidStack(Fluids.WATER, 200), new FluidStack(Fluids.ETHANOL, 1800))
 				.outputFluids(new FluidStack(Fluids.COOLANT, 2000)));
 		recipes.add(new ChemRecipe(37, "CRYOGEL", 50)
 				.inputItems(new ComparableStack(ModItems.powder_ice))
@@ -1216,6 +1218,21 @@ public class ChemplantRecipes extends SerializableRecipe {
 						)
 						.outputItems(
 							new ItemStack(ModItems.particle_helium, 1)
+						)
+		);
+
+		//neon used to make vaccum tubes
+		recipes.add(new ChemRecipe(1073, "NEON_CAPSULE", 50)
+						.inputItems(
+							new OreDictStack(KEY_ANYPANE),
+							new ComparableStack(ModItems.plate_polymer),
+							new OreDictStack(CARBON.wireFine())
+						)
+						.inputFluids(
+							new FluidStack(Fluids.NEON, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.circuit, 8, ItemCircuit.EnumCircuitType.VACUUM_TUBE.ordinal())
 						)
 		);
 
