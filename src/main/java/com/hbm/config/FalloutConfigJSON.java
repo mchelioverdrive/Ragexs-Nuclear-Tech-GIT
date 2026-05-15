@@ -55,74 +55,171 @@ public class FalloutConfigJSON {
 
 		double woodEffectRange = 65D;
 
-		/* petrify all wooden things possible */
-		entries.add(new FalloutEntry()	.mB(Blocks.log)							.prim(new Triplet(ModBlocks.waste_log, 0, 1))		.max(woodEffectRange));
-		entries.add(new FalloutEntry()	.mB(Blocks.log2)						.prim(new Triplet(ModBlocks.waste_log, 0, 1))		.max(woodEffectRange));
-		entries.add(new FalloutEntry()	.mB(Blocks.red_mushroom_block).mM(10)	.prim(new Triplet(ModBlocks.waste_log, 0, 1))		.max(woodEffectRange));
-		entries.add(new FalloutEntry()	.mB(Blocks.brown_mushroom_block).mM(10)	.prim(new Triplet(ModBlocks.waste_log, 0, 1))		.max(woodEffectRange));
-		entries.add(new FalloutEntry()	.mB(Blocks.red_mushroom_block)			.prim(new Triplet(Blocks.air, 0, 1))				.max(woodEffectRange));
-		entries.add(new FalloutEntry()	.mB(Blocks.brown_mushroom_block)		.prim(new Triplet(Blocks.air, 0, 1))				.max(woodEffectRange));
-		entries.add(new FalloutEntry() .mB(Blocks.snow_layer) .prim(new Triplet(Blocks.air, 0, 1)) .max(woodEffectRange));
-		entries.add(new FalloutEntry()	.mB(Blocks.planks)						.prim(new Triplet(ModBlocks.waste_planks, 0, 1))	.max(woodEffectRange));
-		/* if it can't be petrified, destroy it */
-		entries.add(new FalloutEntry()	.mMa(Material.wood)						.prim(new Triplet(Blocks.air, 0, 1))				.max(woodEffectRange));
-		/* destroy all leaves within the radios, kill all leaves outside of it */
-		entries.add(new FalloutEntry()	.mMa(Material.leaves)		.prim(new Triplet(Blocks.air, 0, 1))				.max(woodEffectRange));
-		entries.add(new FalloutEntry()	.mMa(Material.plants)		.prim(new Triplet(Blocks.air, 0, 1))				.max(woodEffectRange));
-		entries.add(new FalloutEntry()	.mMa(Material.vine)			.prim(new Triplet(Blocks.air, 0, 1))				.max(woodEffectRange));
-		entries.add(new FalloutEntry()	.mB(ModBlocks.waste_leaves)	.prim(new Triplet(Blocks.air, 0, 1))				.max(woodEffectRange));
-		entries.add(new FalloutEntry()	.mB(Blocks.leaves)			.prim(new Triplet(ModBlocks.waste_leaves, 0, 1))	.min(woodEffectRange - 5D));
-		entries.add(new FalloutEntry()	.mB(Blocks.leaves2)			.prim(new Triplet(ModBlocks.waste_leaves, 0, 1))	.min(woodEffectRange - 5D));
+		/* char and destroy wooden structures */
+		entries.add(new FalloutEntry()
+						.mB(Blocks.log)
+						.prim(new Triplet(ModBlocks.waste_log, 0, 1))
+						.max(woodEffectRange));
 
-		/* break all glass */
+		entries.add(new FalloutEntry()
+						.mB(Blocks.log2)
+						.prim(new Triplet(ModBlocks.waste_log, 0, 1))
+						.max(woodEffectRange));
 
-		entries.add(new FalloutEntry()	.mMa(Material.glass)		.prim(new Triplet(Blocks.air, 0, 1))				.max(woodEffectRange));
+		entries.add(new FalloutEntry()
+						.mB(Blocks.red_mushroom_block).mM(10)
+						.prim(new Triplet(ModBlocks.waste_log, 0, 1))
+						.max(woodEffectRange));
 
-		entries.add(new FalloutEntry().mB(Blocks.mossy_cobblestone).prim(new Triplet(Blocks.coal_ore, 0, 1)));
-		entries.add(new FalloutEntry().mB(ModBlocks.ore_nether_uranium).prim(new Triplet(ModBlocks.ore_nether_schrabidium, 0, 1), new Triplet(ModBlocks.ore_nether_uranium_scorched, 0, 99)));
+		entries.add(new FalloutEntry()
+						.mB(Blocks.brown_mushroom_block).mM(10)
+						.prim(new Triplet(ModBlocks.waste_log, 0, 1))
+						.max(woodEffectRange));
 
+		entries.add(new FalloutEntry()
+						.mB(Blocks.red_mushroom_block)
+						.prim(new Triplet(Blocks.air, 0, 1))
+						.max(woodEffectRange));
+
+		entries.add(new FalloutEntry()
+						.mB(Blocks.brown_mushroom_block)
+						.prim(new Triplet(Blocks.air, 0, 1))
+						.max(woodEffectRange));
+
+		entries.add(new FalloutEntry()
+						.mB(Blocks.snow_layer)
+						.prim(new Triplet(Blocks.air, 0, 1))
+						.max(woodEffectRange));
+
+		entries.add(new FalloutEntry()
+						.mB(Blocks.planks)
+						.prim(new Triplet(ModBlocks.waste_planks, 0, 1))
+						.max(woodEffectRange));
+
+		/* destroy remaining wood materials */
+		entries.add(new FalloutEntry()
+						.mMa(Material.wood)
+						.prim(new Triplet(Blocks.air, 0, 1))
+						.max(woodEffectRange));
+
+		/* vegetation destruction */
+		entries.add(new FalloutEntry()
+						.mMa(Material.leaves)
+						.prim(new Triplet(Blocks.air, 0, 1))
+						.max(woodEffectRange));
+
+		entries.add(new FalloutEntry()
+						.mMa(Material.plants)
+						.prim(new Triplet(Blocks.air, 0, 1))
+						.max(woodEffectRange));
+
+		entries.add(new FalloutEntry()
+						.mMa(Material.vine)
+						.prim(new Triplet(Blocks.air, 0, 1))
+						.max(woodEffectRange));
+
+		entries.add(new FalloutEntry()
+						.mB(ModBlocks.waste_leaves)
+						.prim(new Triplet(Blocks.air, 0, 1))
+						.max(woodEffectRange));
+
+		entries.add(new FalloutEntry()
+						.mB(Blocks.leaves)
+						.prim(new Triplet(ModBlocks.waste_leaves, 0, 1))
+						.min(woodEffectRange - 5D));
+
+		entries.add(new FalloutEntry()
+						.mB(Blocks.leaves2)
+						.prim(new Triplet(ModBlocks.waste_leaves, 0, 1))
+						.min(woodEffectRange - 5D));
+
+		/* blast wave destroys glass */
+		entries.add(new FalloutEntry()
+						.mMa(Material.glass)
+						.prim(new Triplet(Blocks.air, 0, 1))
+						.max(woodEffectRange));
+
+		/* biological contamination */
+		entries.add(new FalloutEntry()
+						.mB(Blocks.mycelium)
+						.prim(new Triplet(ModBlocks.waste_mycelium, 0, 1)));
+
+		/* sand vitrification from nuclear thermal pulse */
+		entries.add(new FalloutEntry()
+						.mB(Blocks.sand).mM(0)
+						.prim(new Triplet(ModBlocks.waste_trinitite, 0, 1))
+						.c(0.05));
+
+		entries.add(new FalloutEntry()
+						.mB(Blocks.sand).mM(1)
+						.prim(new Triplet(ModBlocks.waste_trinitite_red, 0, 1))
+						.c(0.05));
+
+		/* clay baking */
+		entries.add(new FalloutEntry()
+						.mB(Blocks.clay)
+						.prim(new Triplet(Blocks.hardened_clay, 0, 1)));
+
+		/* scorched uranium ore */
+		entries.add(new FalloutEntry()
+						.mB(ModBlocks.ore_uranium)
+						.prim(new Triplet(ModBlocks.ore_uranium_scorched, 0, 1))
+						.c(0.35));
+
+		/* scorched plutonium ore */
+		entries.add(new FalloutEntry()
+						.mB(ModBlocks.ore_plutonium)
+						.prim(new Triplet(ModBlocks.ore_uranium_scorched, 0, 1))
+						.c(0.45));
+
+		/* scorched rock and terrain */
+		entries.add(new FalloutEntry()
+						.mMa(Material.rock)
+						.prim(new Triplet(ModBlocks.scorched_stone, 0, 1))
+						.c(0.12));
+
+		entries.add(new FalloutEntry()
+						.mMa(Material.ground)
+						.prim(new Triplet(ModBlocks.waste_earth, 0, 1))
+						.c(0.15));
+
+		entries.add(new FalloutEntry()
+						.mMa(Material.grass)
+						.prim(new Triplet(ModBlocks.waste_earth, 0, 1))
+						.c(0.35));
+
+		/* metals oxidize/slag */
+		entries.add(new FalloutEntry()
+						.mMa(Material.iron)
+						.prim(new Triplet(ModBlocks.sellafield_slaked, 0, 1))
+						.c(0.08));
+
+		/* coal seams can ignite/carbonize */
+		entries.add(new FalloutEntry()
+						.mB(Blocks.coal_ore)
+						.prim(
+							new Triplet(ModBlocks.scorched_stone, 0, 4),
+							new Triplet(Blocks.coal_block, 0, 1)
+						)
+						.c(0.04));
+
+		/* optional modded stone support */
 		Block deepslate = Compat.tryLoadBlock(Compat.MOD_EF, "deepslate");
 		Block stone = Compat.tryLoadBlock(Compat.MOD_EF, "stone");
 
-		for(int i = 1; i <= 10; i++) {
-			int m = 10 - i;
-			entries.add(new FalloutEntry().prim(new Triplet(ModBlocks.ore_sellafield_diamond, m, 3),		new Triplet(ModBlocks.ore_sellafield_emerald, m, 2))			.c(0.08)		.max(i * 5).sol(true).mB(Blocks.coal_ore));
-			entries.add(new FalloutEntry().prim(new Triplet(ModBlocks.ore_sellafield_diamond, m, 1))																		.c(0.02)		.max(i * 5).sol(true).mB(ModBlocks.ore_lignite));
-			entries.add(new FalloutEntry().prim(new Triplet(ModBlocks.ore_sellafield_emerald, m, 1))																					.max(i * 5).sol(true).mB(ModBlocks.ore_beryllium));
-			//I mean technically? yeah sure I guess???
-			//but like why not use a actual compressor for this lmao
-			//im just gonna nerf the shit out of it except the emeralds, they can stay since you already can get them from beryl
-
-			//if(m > 4) entries.add(new FalloutEntry().prim(new Triplet(ModBlocks.ore_sellafield_schrabidium, m, 1),	new Triplet(ModBlocks.ore_sellafield_uranium_scorched, m, 9))		.max(i * 5).sol(true).mB(ModBlocks.ore_uranium));
-			//if(m > 4) entries.add(new FalloutEntry().prim(new Triplet(ModBlocks.ore_sellafield_schrabidium, m, 1),	new Triplet(ModBlocks.ore_sellafield_uranium_scorched, m, 9))		.max(i * 5).sol(true).mB(ModBlocks.ore_gneiss_uranium));
-			entries.add(new FalloutEntry().prim(new Triplet(ModBlocks.ore_sellafield_radgem, m, 1))																						.max(i * 5).sol(true).mB(Blocks.diamond_ore));
-			entries.add(new FalloutEntry()							.prim(new Triplet(ModBlocks.sellafield_bedrock, m, 1)).max(i * 5).sol(true).mB(Blocks.bedrock));
-			entries.add(new FalloutEntry()							.prim(new Triplet(ModBlocks.sellafield_bedrock, m, 1)).max(i * 5).sol(true).mB(ModBlocks.ore_bedrock));
-			entries.add(new FalloutEntry()							.prim(new Triplet(ModBlocks.sellafield_bedrock, m, 1)).max(i * 5).sol(true).mB(ModBlocks.ore_bedrock_oil));
-			entries.add(new FalloutEntry()							.prim(new Triplet(ModBlocks.sellafield_bedrock, m, 1)).max(i * 5).sol(true).mB(ModBlocks.sellafield_bedrock));
-			entries.add(new FalloutEntry()							.prim(new Triplet(ModBlocks.sellafield_slaked, m, 1)).max(i * 5).sol(true).mMa(Material.iron));
-			entries.add(new FalloutEntry()							.prim(new Triplet(ModBlocks.sellafield_slaked, m, 1)).max(i * 5).sol(true).mMa(Material.rock));
-			entries.add(new FalloutEntry()							.prim(new Triplet(ModBlocks.sellafield_slaked, m, 1)).max(i * 5).sol(true).mMa(Material.sand));
-			entries.add(new FalloutEntry()							.prim(new Triplet(ModBlocks.sellafield_slaked, m, 1)).max(i * 5).sol(true).mMa(Material.ground));
-			if(i <= 9) entries.add(new FalloutEntry()				.prim(new Triplet(ModBlocks.sellafield_slaked, m, 1)).max(i * 5).sol(true).mMa(Material.grass));
-			if(deepslate != null)	entries.add(new FalloutEntry()	.prim(new Triplet(ModBlocks.sellafield_slaked, m, 1)).max(i * 5).sol(true).mB(deepslate));
-			if(stone != null)		entries.add(new FalloutEntry()	.prim(new Triplet(ModBlocks.sellafield_slaked, m, 1)).max(i * 5).sol(true).mB(stone));
+		if(deepslate != null) {
+			entries.add(new FalloutEntry()
+							.mB(deepslate)
+							.prim(new Triplet(ModBlocks.scorched_stone, 0, 1))
+							.c(0.15));
 		}
 
-		entries.add(new FalloutEntry()
-				.mB(Blocks.mycelium)
-				.prim(new Triplet(ModBlocks.waste_mycelium, 0, 1)));
-		entries.add(new FalloutEntry()
-				.mB(Blocks.sand).mM(0)
-				.prim(new Triplet(ModBlocks.waste_trinitite, 0, 1))
-				.c(0.05));
-		entries.add(new FalloutEntry()
-				.mB(Blocks.sand).mM(1)
-				.prim(new Triplet(ModBlocks.waste_trinitite_red, 0, 1))
-				.c(0.05));
-		entries.add(new FalloutEntry()
-				.mB(Blocks.clay)
-				.prim(new Triplet(Blocks.hardened_clay, 0, 1)));
+		if(stone != null) {
+			entries.add(new FalloutEntry()
+							.mB(stone)
+							.prim(new Triplet(ModBlocks.scorched_stone, 0, 1))
+							.c(0.15));
+		}
 	}
 
 	private static void writeDefault(File file) {
