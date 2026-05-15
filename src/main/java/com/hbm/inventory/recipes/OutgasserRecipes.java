@@ -94,6 +94,18 @@ public class OutgasserRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(ModItems.ingot_thorium_fuel),
 			new Pair(new ItemStack(ModItems.nugget_protactinium), null));
 
+		//Bombarding enriched Uranium-235 to make promethium
+		recipes.put(new ComparableStack(ModItems.nugget_u235),
+			new Pair(new ItemStack(ModItems.nugget_promethium), null));
+
+		//neodymium target + reactor irradiation = promethium as well
+		recipes.put(new ComparableStack(ModItems.powder_neodymium),
+			new Pair(new ItemStack(ModItems.nugget_promethium), null));
+
+		//u238 to neptunium
+		recipes.put(new ComparableStack(ModItems.ingot_u238),
+			new Pair(new ItemStack(ModItems.nugget_neptunium), null));
+
 	}
 
 	public static Pair<ItemStack, FluidStack> getOutput(ItemStack input) {
