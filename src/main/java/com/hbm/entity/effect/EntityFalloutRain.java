@@ -141,11 +141,11 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 		//if (world == null || world.provider.dimensionId != 0) return null;
 		//we can't register world here because of how fucked minecraft modding is
 
-		if(scale >= 150 && dist < 15)
+		if(scale >= 150 && dist < 8)
 			return BiomeGenCraterBase.craterInnerBiome;
-		if(scale >= 100 && dist < 55 && original != BiomeGenCraterBase.craterInnerBiome)
+		if(scale >= 100 && dist < 28 && original != BiomeGenCraterBase.craterInnerBiome)
 			return BiomeGenCraterBase.craterBiome;
-		if(scale >= 25 && original != BiomeGenCraterBase.craterInnerBiome && original != BiomeGenCraterBase.craterBiome)
+		if(scale >= 40 && original != BiomeGenCraterBase.craterInnerBiome && original != BiomeGenCraterBase.craterBiome)
 			return BiomeGenCraterBase.craterOuterBiome;
 		return null;
 	}
@@ -185,73 +185,110 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
 		for(int y = 255; y >= 0; y--) {
 
-			if(depth >= 3) return;
+			// Fallout is primarily a SURFACE phenomenon
+			if(depth >= 2)
+				return;
 
 			Block b = worldObj.getBlock(x, y, z);
 
-			if(b.getMaterial() == Material.air || b == ModBlocks.fallout) continue;
-
-			if(b == ModBlocks.volcano_core) {
-				worldObj.setBlock(x, y, z, ModBlocks.volcano_rad_core, worldObj.getBlockMetadata(x, y, z), 3);
+			if(b.getMaterial() == Material.air || b == ModBlocks.fallout || b == ModBlocks.salted_fallout)
 				continue;
-			}
-			//todo may make it so fallout layers stack if two nuclear bombs intersect, but i dont feel like doing that shit right now
-			Block ab = worldObj.getBlock(x, y + 1, z);
+
+			Block above = worldObj.getBlock(x, y + 1, z);
 			int meta = worldObj.getBlockMetadata(x, y, z);
 
-			if(depth == 0 && b != ModBlocks.fallout && (ab == Blocks.air || (ab.isReplaceable(worldObj, x, y + 1, z) && !ab.getMaterial().isLiquid()))) {
+			/*
+			 * Fallout deposition
+			 *
+			 * Real fallout settles mostly in a ring outside the fireball,
+			 * not directly at ground zero.
+			 */
+			if(depth == 0 && (above == Blocks.air || above.isReplaceable(worldObj, x, y + 1, z))) {
 
-				double d = dist / 100;
+				double normalized = dist / 100D;
 
-				double chance = 0.1 - Math.pow((d - 0.7) * 1.0, 2);
-				//double chance = 1-d;
-				if(this.salted)
-				{
-					if(chance >= rand.nextDouble() && ModBlocks.fallout.canPlaceBlockAt(worldObj, x, y + 1, z))
+				// Peak fallout deposition farther away from hypocenter
+				double chance = 0.18D * Math.exp(-Math.pow((normalized - 0.72D) / 0.22D, 2));
+
+				if(this.salted) {
+					chance *= 1.75D;
+				}
+
+				if(rand.nextDouble() < chance) {
+
+					if(this.salted) {
 						setBlock(x, y + 1, z, ModBlocks.salted_fallout);
-				}
-				else
-				{
-					if(chance >= rand.nextDouble() && ModBlocks.fallout.canPlaceBlockAt(worldObj, x, y + 1, z))
+					} else {
 						setBlock(x, y + 1, z, ModBlocks.fallout);
+					}
 				}
 			}
 
-			if(dist < 65 && b.isFlammable(worldObj, x, y, z, ForgeDirection.UP)) {
-				if(rand.nextInt(5) == 0 && worldObj.getBlock(x, y + 1, z).isAir(worldObj, x, y + 1, z))
+			/*
+			 * Thermal ignition near hypocenter
+			 */
+			if(dist < 35 && b.isFlammable(worldObj, x, y, z, ForgeDirection.UP)) {
+
+				if(rand.nextInt(3) == 0 &&
+					worldObj.getBlock(x, y + 1, z).isAir(worldObj, x, y + 1, z)) {
+
 					setBlock(x, y + 1, z, Blocks.fire);
+				}
 			}
 
-			boolean eval = false;
+			/*
+			 * Apply fallout material transformations
+			 */
+			boolean transformed = false;
 
 			for(FalloutEntry entry : FalloutConfigJSON.entries) {
 
 				if(entry.eval(worldObj, x, y, z, b, meta, dist, b, meta)) {
+
 					if(entry.isSolid()) {
 						depth++;
 					}
-					eval = true;
+
+					transformed = true;
 					break;
 				}
 			}
 
+			/*
+			 * Blast-collapse behavior
+			 */
 			float hardness = b.getBlockHardness(worldObj, x, y, z);
-			if(y > 0 && dist < 65 && hardness <= Blocks.stonebrick.getExplosionResistance(null) && hardness >= 0/* && !b.hasTileEntity(worldObj.getBlockMetadata(x, y, z))*/) {
+
+			if(
+				y > 0 &&
+					dist < 30 &&
+					hardness >= 0 &&
+					hardness <= 8F
+			) {
 
 				if(worldObj.getBlock(x, y - 1, z) == Blocks.air) {
+
 					for(int i = 0; i <= depth; i++) {
+
 						Block block = worldObj.getBlock(x, y + i, z);
-						hardness = block.getBlockHardness(worldObj, x, y + i, z);
-						if(hardness <= Blocks.stonebrick.getExplosionResistance(null) && hardness >= 0) {
-							EntityFallingBlockNT entityfallingblock = new EntityFallingBlockNT(worldObj, x + 0.5D, y + 0.5D + i, z + 0.5D, block, worldObj.getBlockMetadata(x, y + i, z));
-							entityfallingblock.canDrop = false; //turn off block drops because block dropping was coded by a mule with dementia
-							worldObj.spawnEntityInWorld(entityfallingblock);
-						}
+
+						EntityFallingBlockNT entityfallingblock =
+							new EntityFallingBlockNT(
+								worldObj,
+								x + 0.5D,
+								y + 0.5D + i,
+								z + 0.5D,
+								block,
+								worldObj.getBlockMetadata(x, y + i, z)
+							);
+
+						entityfallingblock.canDrop = false;
+						worldObj.spawnEntityInWorld(entityfallingblock);
 					}
 				}
 			}
 
-			if(!eval && b.isNormalCube()) {
+			if(!transformed && b.isNormalCube()) {
 				depth++;
 			}
 		}
