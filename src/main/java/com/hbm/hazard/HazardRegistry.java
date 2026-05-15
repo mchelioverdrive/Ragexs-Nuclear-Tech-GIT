@@ -91,6 +91,7 @@ public class HazardRegistry {
 	public static final float th232 = 0.1F;
 	public static final float thf = 1.75F;
 	public static final float u = 0.35F;
+	public static final float pm = 1F;
 	public static final float be = 2F;
 	public static final float pb = 0.8F;
 	public static final float as = 6F;

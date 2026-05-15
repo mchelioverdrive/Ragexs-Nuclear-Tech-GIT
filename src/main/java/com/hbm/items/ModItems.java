@@ -73,9 +73,7 @@ public class ModItems {
 		registerItem();
 	}
 
-	//public static Item redstone_sword;
-	//public static Item big_sword;
-	//public static Item butter_sword;
+
 	public static Item scandium_chloride;
 	public static Item scandium_ingot;
 	public static Item scandium_nugget;
@@ -122,6 +120,7 @@ public class ModItems {
 
 	public static Item ingot_th232;
 	public static Item ingot_uranium;
+	public static Item ingot_promethium;
 	public static Item ingot_u233;
 	public static Item ingot_u235;
 	public static Item ingot_u238;
@@ -397,6 +396,7 @@ public class ModItems {
 
 	public static Item nugget_th232;
 	public static Item nugget_uranium;
+	public static Item nugget_promethium;
 	public static Item nugget_u233;
 	public static Item nugget_u235;
 	public static Item nugget_u238;
@@ -2880,6 +2880,7 @@ public class ModItems {
 
 		ingot_th232 = new Item().setUnlocalizedName("ingot_th232").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_th232");
 		ingot_uranium = new Item().setUnlocalizedName("ingot_uranium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_uranium");
+		ingot_promethium = new Item().setUnlocalizedName("ingot_promethium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_promethium");
 		ingot_u233 = new Item().setUnlocalizedName("ingot_u233").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_u233");
 		ingot_u235 = new Item().setUnlocalizedName("ingot_u235").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_u235");
 		ingot_u238 = new Item().setUnlocalizedName("ingot_u238").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_u238");
@@ -3252,6 +3253,7 @@ public class ModItems {
 
 		nugget_th232 = new Item().setUnlocalizedName("nugget_th232").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_th232");
 		nugget_uranium = new Item().setUnlocalizedName("nugget_uranium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_uranium");
+		nugget_promethium = new Item().setUnlocalizedName("nugget_promethium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_promethium");
 		nugget_u233 = new Item().setUnlocalizedName("nugget_u233").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_u233");
 		nugget_u235 = new Item().setUnlocalizedName("nugget_u235").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_u235");
 		nugget_u238 = new Item().setUnlocalizedName("nugget_u238").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_u238");
@@ -6466,6 +6468,7 @@ public class ModItems {
 
 		//Ingots
 		GameRegistry.registerItem(ingot_uranium, ingot_uranium.getUnlocalizedName());
+		GameRegistry.registerItem(ingot_promethium, ingot_promethium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_u233, ingot_u233.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_u235, ingot_u235.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_u238, ingot_u238.getUnlocalizedName());
@@ -7074,6 +7077,7 @@ public class ModItems {
 
 		//Nuggets
 		GameRegistry.registerItem(nugget_uranium, nugget_uranium.getUnlocalizedName());
+		GameRegistry.registerItem(nugget_promethium, nugget_promethium.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_u233, nugget_u233.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_u235, nugget_u235.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_u238, nugget_u238.getUnlocalizedName());
