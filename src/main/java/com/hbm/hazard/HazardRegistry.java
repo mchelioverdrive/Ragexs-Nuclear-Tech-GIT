@@ -233,17 +233,17 @@ public class HazardRegistry {
 
 		HazardSystem.register(cell_tritium, makeData(RADIATION, 0.001F));
 		HazardSystem.register(cell_sas3, makeData().addEntry(RADIATION, sas3).addEntry(BLINDING, 60F));
-		HazardSystem.register(cell_balefire, makeData(RADIATION, 50F));
-		HazardSystem.register(powder_balefire, makeData(RADIATION, 500F));
+		//HazardSystem.register(cell_balefire, makeData(RADIATION, 50F));
+		//HazardSystem.register(powder_balefire, makeData(RADIATION, 500F));
 		//HazardSystem.register(egg_balefire_shard, makeData(RADIATION, bf * nugget));
 		//HazardSystem.register(egg_balefire, makeData(RADIATION, bf * ingot));
 
 		HazardSystem.register(coffee_radium, makeData(RADIATION, 0.5F));
 		HazardSystem.register(chocolate, makeData(RADIATION, 0.5F));
 
-		HazardSystem.register(solid_fuel_bf, makeData(RADIATION, 1000)); //roughly the amount of the balefire shard diluted in 250mB of rocket fuel
-		HazardSystem.register(solid_fuel_presto_bf, makeData(RADIATION, 2000));
-		HazardSystem.register(solid_fuel_presto_triplet_bf, makeData(RADIATION, 6000));
+		//HazardSystem.register(solid_fuel_bf, makeData(RADIATION, 1000)); //roughly the amount of the balefire shard diluted in 250mB of rocket fuel
+		//HazardSystem.register(solid_fuel_presto_bf, makeData(RADIATION, 2000));
+		//HazardSystem.register(solid_fuel_presto_triplet_bf, makeData(RADIATION, 6000));
 
 		HazardSystem.register(nuclear_waste_long, makeData(RADIATION, 5F));
 		HazardSystem.register(nuclear_waste_long_tiny, makeData(RADIATION, 0.5F));
@@ -266,19 +266,20 @@ public class HazardRegistry {
 		HazardSystem.register(block_waste, makeData(RADIATION, wst * block));
 		HazardSystem.register(block_waste_painted, makeData(RADIATION, wst * block));
 		HazardSystem.register(block_waste_vitrified, makeData(RADIATION, wstv * block));
-		HazardSystem.register(ancient_scrap, makeData(RADIATION, 150F));
+		//HazardSystem.register(ancient_scrap, makeData(RADIATION, 150F));
 		HazardSystem.register(block_corium, makeData(RADIATION, 150F));
 		HazardSystem.register(block_corium_cobble, makeData(RADIATION, 150F));
 
-		HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 0), makeData(RADIATION, 0.5F));
-		HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 1), makeData(RADIATION, 1F));
-		HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 2), makeData(RADIATION, 2.5F));
-		HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 3), makeData(RADIATION, 4F));
-		HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 4), makeData(RADIATION, 5F));
-		HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 5), makeData(RADIATION, 10F));
+		//HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 0), makeData(RADIATION, 0.5F));
+		//HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 1), makeData(RADIATION, 1F));
+		//HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 2), makeData(RADIATION, 2.5F));
+		//HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 3), makeData(RADIATION, 4F));
+		//HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 4), makeData(RADIATION, 5F));
+		//HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 5), makeData(RADIATION, 10F));
 
-		HazardSystem.register(new ItemStack(ModBlocks.ore_sellafield_radgem), makeData(RADIATION, 25F));
-		HazardSystem.register(new ItemStack(ModItems.gem_rad), makeData(RADIATION, 25F));
+		//HazardSystem.register(new ItemStack(ModBlocks.ore_sellafield_radgem), makeData(RADIATION, 25F));
+		//HazardSystem.register(new ItemStack(ModItems.gem_rad), makeData(RADIATION, 25F));
+		HazardSystem.register(scorched_stone, makeData(RADIATION, 0.05F));
 
 		HazardSystem.register(new ItemStack(ModItems.rubidiumsalt), makeData(RADIATION, Rb * nugget)); //im sure its fine
 
@@ -552,6 +553,7 @@ public class HazardRegistry {
 		HazardSystem.register(block_yellowcake, makeData(RADIATION, yc * block * powder_mult));
 		HazardSystem.register(ModItems.fallout, makeData(RADIATION, fo * powder));
 		HazardSystem.register(ModBlocks.fallout, makeData(RADIATION, fo * powder * 2));
+		HazardSystem.register(ModBlocks.salted_fallout, makeData(RADIATION, fo * powder * 4));
 		HazardSystem.register(ModBlocks.block_fallout, makeData(RADIATION, yc * block * powder_mult));
 		//you really shouldn't be touching these.. I should add a system to craft them into stable forms
 		HazardSystem.register(powder_caesium, makeData().addEntry(HYDROACTIVE, 20F).addEntry(HOT, 30F));
