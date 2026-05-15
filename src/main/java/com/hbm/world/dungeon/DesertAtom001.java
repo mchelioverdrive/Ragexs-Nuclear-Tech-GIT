@@ -34,7 +34,7 @@ public class DesertAtom001 extends WorldGenerator
 	Block Block14 = ModBlocks.pwr_fuel;
 	Block Block15 = ModBlocks.deco_titanium;
 	Block Block16 = ModBlocks.block_lead;
-	Block Block17 = ModBlocks.ore_schrabidium;
+	Block Block17 = ModBlocks.ore_uranium;
 	Block Block18 = ModBlocks.waste_planks;
 	Block Block19 = ModBlocks.machine_centrifuge;
 	Block Block20 = ModBlocks.machine_uf6_tank;

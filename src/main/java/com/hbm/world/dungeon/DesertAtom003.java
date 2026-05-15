@@ -37,7 +37,7 @@ public class DesertAtom003
 	Block Block14 = ModBlocks.pwr_fuel;
 	Block Block15 = ModBlocks.deco_titanium;
 	Block Block16 = ModBlocks.block_lead;
-	Block Block17 = ModBlocks.ore_schrabidium;
+	Block Block17 = ModBlocks.ore_uranium;
 	Block Block18 = ModBlocks.waste_planks;
 	Block Block19 = ModBlocks.machine_centrifuge;
 	Block Block20 = ModBlocks.machine_uf6_tank;
@@ -50,7 +50,7 @@ public class DesertAtom003
 	Block Block27 = ModBlocks.pole_top;
 	Block Block28 = ModBlocks.machine_battery;
 	Block Block29 = ModBlocks.machine_electric_furnace_off;
-	
+
 	public boolean generate_r00(World world, Random rand, int x, int y, int z)
     {
 		world.setBlock(x + 21, y + 3, z + 12, Block6, 0, 3);

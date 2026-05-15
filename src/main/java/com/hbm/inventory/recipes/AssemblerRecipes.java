@@ -582,20 +582,20 @@ public class AssemblerRecipes extends SerializableRecipe {
 					   new ComparableStack(ModItems.coil_tungsten,
 										   1),},
 				   100);
-		makeRecipe(new ComparableStack(ModItems.redcoil_capacitor,
-									   1),
-				   new AStack[]{
-					   new OreDictStack(GOLD.plate(),
-										3),
-					   new ComparableStack(ModItems.fuse,
-										   1),
-					   new OreDictStack(ALLOY.wireFine(),
-										4),
-					   new ComparableStack(ModItems.coil_advanced_alloy,
-										   6),
-					   new ComparableStack(Blocks.redstone_block,
-										   2),},
-				   200);
+		//makeRecipe(new ComparableStack(ModItems.redcoil_capacitor,
+		//							   1),
+		//		   new AStack[]{
+		//			   new OreDictStack(GOLD.plate(),
+		//								3),
+		//			   new ComparableStack(ModItems.fuse,
+		//								   1),
+		//			   new OreDictStack(ALLOY.wireFine(),
+		//								4),
+		//			   new ComparableStack(ModItems.coil_advanced_alloy,
+		//								   6),
+		//			   new ComparableStack(Blocks.redstone_block,
+		//								   2),},
+		//		   200);
 		makeRecipe(new ComparableStack(ModItems.part_lithium,
 									   8),
 				   new AStack[]{

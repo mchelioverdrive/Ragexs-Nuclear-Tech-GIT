@@ -38,6 +38,7 @@ public class NukeEnvironmentalEffect {
 	}
 
 	public static void applyStandardEffect(World world, int x, int y, int z) {
+
 		int chance = 100;
 		Block b = null;
 		int meta = 0;
@@ -48,12 +49,7 @@ public class NukeEnvironmentalEffect {
 		if(in == Blocks.air)
 			return;
 
-		//Task done by fallout effect entity.
-		/*if(in == Blocks.grass) {
-			b = ModBlocks.waste_earth;
-
-		} else */
-
+		// Sand -> Trinitite
 		if(in == Blocks.sand) {
 
 			if(inMeta == 1)
@@ -61,54 +57,78 @@ public class NukeEnvironmentalEffect {
 			else
 				b = ModBlocks.waste_trinitite;
 
-			chance = 20;
+			chance = 250;
 
+			// Grass / dirt contamination
+		} else if(in == Blocks.grass || in == Blocks.dirt) {
+
+			b = ModBlocks.waste_earth;
+			chance = 400;
+
+			// Mycelium death
 		} else if(in == Blocks.mycelium) {
+
 			b = ModBlocks.waste_mycelium;
+			chance = 500;
 
+			// Trees carbonize
 		} else if(in == Blocks.log || in == Blocks.log2) {
+
 			b = ModBlocks.waste_log;
+			chance = 600;
 
+			// Wooden structures char/burn
 		} else if(in == Blocks.planks) {
-			b = ModBlocks.waste_planks;
 
-		} else if(in == Blocks.mossy_cobblestone) {
-			b = ModBlocks.ore_oil;
+			b = ModBlocks.waste_planks;
+			chance = 700;
+
+			// Clay hardens from heat
+		} else if(in == Blocks.clay) {
+
+			b = Blocks.hardened_clay;
+			chance = 500;
+
+			// Stone scorches/cracks
+		} else if(
+			in == Blocks.stone ||
+				in == Blocks.cobblestone ||
+				in == Blocks.mossy_cobblestone
+		) {
+
+			b = ModBlocks.scorched_stone;
+			chance = 200;
+
+			// Ores become irradiated/scorched
+		} else if(
+			in == Blocks.coal_ore ||
+				in == Blocks.iron_ore ||
+				in == Blocks.gold_ore ||
+				in == Blocks.redstone_ore ||
+				in == Blocks.lapis_ore ||
+				in == Blocks.emerald_ore ||
+				in == Blocks.diamond_ore ||
+				in == ModBlocks.ore_uranium ||
+				in == ModBlocks.ore_plutonium
+		) {
+
+			b = ModBlocks.ore_uranium_scorched;
 			chance = 50;
 
-		} else if(in == Blocks.coal_ore) {
-			b = Blocks.diamond_ore;
-			chance = 2;
-		} else if(in == ModBlocks.ore_uranium) {
-			b = ModBlocks.ore_schrabidium;
-			chance = 0;
-		} else if(in == ModBlocks.ore_plutonium) {
-			b = ModBlocks.ore_schrabidium;
-			chance = 0;
+			// Mushroom caps burn away
+		} else if(
+			(in == Blocks.brown_mushroom_block && inMeta == 10) ||
+				(in == Blocks.red_mushroom_block && inMeta == 10)
+		) {
 
-		} else if(in == ModBlocks.ore_nether_uranium) {
-			b = ModBlocks.ore_nether_schrabidium;
-			chance = 0;
+			b = Blocks.air;
+			chance = 800;
 
-		} else if(in == ModBlocks.ore_nether_plutonium) {
-			b = ModBlocks.ore_nether_schrabidium;
-			chance = 0;
-
-		} else if(in == Blocks.brown_mushroom_block && inMeta == 10) {
-			b = ModBlocks.waste_planks;
-
-		} else if(in == Blocks.red_mushroom_block && inMeta == 10) {
-			b = ModBlocks.waste_planks;
-
-		} else if(in == Blocks.end_stone) {
-			b = ModBlocks.ore_tikite;
-			chance = 0;
-
-		} else if(in == Blocks.clay) {
-			b = Blocks.hardened_clay;
+			// General flammables ignite
 		} else if(in.getMaterial().getCanBurn()) {
+
 			b = Blocks.fire;
-			chance = 100;
+			chance = 850;
 		}
 
 		if(b != null && rand.nextInt(1000) < chance)

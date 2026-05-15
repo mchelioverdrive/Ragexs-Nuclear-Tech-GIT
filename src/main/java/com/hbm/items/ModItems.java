@@ -332,6 +332,7 @@ public class ModItems {
 	public static Item billet_th232;
 	public static Item billet_plutonium;
 	public static Item billet_pu238;
+	public static Item billet_pm;
 	public static Item billet_pu239;
 	public static Item billet_pu240;
 	public static Item billet_pu241;
@@ -1123,6 +1124,7 @@ public class ModItems {
 	public static Item pellet_rtg_radium;
 	public static Item pellet_rtg_weak;
 	public static Item pellet_rtg;
+	public static Item pellet_rtg_promethium;
 	public static Item pellet_rtg_strontium;
 	public static Item pellet_rtg_cobalt;
 	public static Item pellet_rtg_actinium;
@@ -3029,6 +3031,7 @@ public class ModItems {
 		billet_th232 = new Item().setUnlocalizedName("billet_th232").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":billet_th232");
 		billet_plutonium = new Item().setUnlocalizedName("billet_plutonium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":billet_plutonium");
 		billet_pu238 = new Item().setUnlocalizedName("billet_pu238").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":billet_pu238");
+		billet_pm = new Item().setUnlocalizedName("billet_pm").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":billet_ra226");
 		billet_pu239 = new Item().setUnlocalizedName("billet_pu239").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":billet_pu239");
 		billet_pu240 = new Item().setUnlocalizedName("billet_pu240").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":billet_pu240");
 		billet_pu241 = new Item().setUnlocalizedName("billet_pu241").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":billet_pu241");
@@ -3820,19 +3823,141 @@ public class ModItems {
 
 		pellet_rtg_depleted = new ItemRTGPelletDepleted().setContainerItem(plate_iron).setUnlocalizedName("pellet_rtg_depleted").setCreativeTab(MainRegistry.controlTab);
 
-		pellet_rtg_radium = new ItemRTGPellet(3).setDecays(DepletedRTGMaterial.LEAD, (long) (RTGUtil.getLifespan(16.0F, HalfLifeType.LONG, false) * 1.5)).setUnlocalizedName("pellet_rtg_radium").setCreativeTab(MainRegistry.controlTab).setMaxStackSize(1).setTextureName(RefStrings.MODID + ":pellet_rtg_radium");
-		pellet_rtg_weak = new ItemRTGPellet(5).setDecays(DepletedRTGMaterial.LEAD, (long) (RTGUtil.getLifespan(1.0F, HalfLifeType.LONG, false) * 1.5)).setUnlocalizedName("pellet_rtg_weak").setCreativeTab(MainRegistry.controlTab).setMaxStackSize(1).setTextureName(RefStrings.MODID + ":pellet_rtg_weak");
-		pellet_rtg = new ItemRTGPellet(10).setDecays(DepletedRTGMaterial.LEAD, (long) (RTGUtil.getLifespan(87.7F, HalfLifeType.MEDIUM, false) * 1.5)).setUnlocalizedName("pellet_rtg").setCreativeTab(MainRegistry.controlTab).setMaxStackSize(1).setTextureName(RefStrings.MODID + ":pellet_rtg");
-		pellet_rtg_strontium = new ItemRTGPellet(15).setDecays(DepletedRTGMaterial.ZIRCONIUM, (long) (RTGUtil.getLifespan(29.0F, HalfLifeType.MEDIUM, false) * 1.5)).setUnlocalizedName("pellet_rtg_strontium").setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":pellet_rtg_strontium");
-		pellet_rtg_cobalt = new ItemRTGPellet(15).setDecays(DepletedRTGMaterial.NICKEL, (long) (RTGUtil.getLifespan(5.3F, HalfLifeType.MEDIUM, false) * 1.5)).setUnlocalizedName("pellet_rtg_cobalt").setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":pellet_rtg_cobalt");
-		pellet_rtg_actinium = new ItemRTGPellet(20).setDecays(DepletedRTGMaterial.LEAD, (long) (RTGUtil.getLifespan(21.8F, HalfLifeType.MEDIUM, false) * 1.5)).setUnlocalizedName("pellet_rtg_actinium").setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":pellet_rtg_actinium");
-		pellet_rtg_americium = new ItemRTGPellet(20).setDecays(DepletedRTGMaterial.NEPTUNIUM, (long) (RTGUtil.getLifespan(4.7F, HalfLifeType.LONG, false) * 1.5)).setUnlocalizedName("pellet_rtg_americium").setCreativeTab(MainRegistry.controlTab).setMaxStackSize(1).setTextureName(RefStrings.MODID + ":pellet_rtg_americium");
-		pellet_rtg_berkelium = new ItemRTGPellet(20).setUnlocalizedName("pellet_rtg_berkelium").setCreativeTab(MainRegistry.controlTab).setMaxStackSize(1).setTextureName(RefStrings.MODID + ":pellet_rtg_berkelium");
-		pellet_rtg_polonium = new ItemRTGPellet(50).setDecays(DepletedRTGMaterial.LEAD, (long) (RTGUtil.getLifespan(138.0F, HalfLifeType.SHORT, false) * 1.5)).setUnlocalizedName("pellet_rtg_polonium").setCreativeTab(MainRegistry.controlTab).setMaxStackSize(1).setTextureName(RefStrings.MODID + ":pellet_rtg_polonium");
-		pellet_rtg_gold = new ItemRTGPellet(VersatileConfig.rtgDecay() ? 200 : 100).setDecays(DepletedRTGMaterial.MERCURY, (long) (RTGUtil.getLifespan(2.7F, HalfLifeType.SHORT, false) * 1.5)).setUnlocalizedName("pellet_rtg_gold").setCreativeTab(MainRegistry.controlTab).setMaxStackSize(1).setTextureName(RefStrings.MODID + ":pellet_rtg_gold");
-		pellet_rtg_lead = new ItemRTGPellet(VersatileConfig.rtgDecay() ? 600 : 200).setDecays(DepletedRTGMaterial.BISMUTH, (long) (RTGUtil.getLifespan(0.3F, HalfLifeType.SHORT, false) * 1.5)).setUnlocalizedName("pellet_rtg_lead").setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":pellet_rtg_lead");
-		pellet_rtg_cf251 = new ItemRTGPellet(VersatileConfig.rtgDecay() ? 600 : 200).setDecays(DepletedRTGMaterial.LEAD, (long) (RTGUtil.getLifespan(1F, HalfLifeType.SHORT, false) * 2.5)).setUnlocalizedName("pellet_rtg_cf251").setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":pellet_rtg_cf251");
-		pellet_rtg_cf252 = new ItemRTGPellet(VersatileConfig.rtgDecay() ? 600 : 200).setDecays(DepletedRTGMaterial.LEAD, (long) (RTGUtil.getLifespan(1F, HalfLifeType.SHORT, false) * 2.5)).setUnlocalizedName("pellet_rtg_cf252").setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":pellet_rtg_cf252");
+		// Radium-226
+		// ~0.03 W/g thermal, primitive historical RTG concept
+		pellet_rtg_radium = new ItemRTGPellet(2)
+			.setDecays(DepletedRTGMaterial.LEAD,
+					   (long)(RTGUtil.getLifespan(1600.0F, HalfLifeType.LONG, false) * 1.5))
+			.setUnlocalizedName("pellet_rtg_radium")
+			.setCreativeTab(MainRegistry.controlTab)
+			.setMaxStackSize(1)
+			.setTextureName(RefStrings.MODID + ":pellet_rtg_radium");
+
+		// Pm-147
+		// ~0.33 W/g thermal
+		pellet_rtg_weak = new ItemRTGPellet(4)
+			.setDecays(DepletedRTGMaterial.LEAD,
+					   (long)(RTGUtil.getLifespan(2.6F, HalfLifeType.MEDIUM, false) * 1.5))
+			.setUnlocalizedName("pellet_rtg_weak")
+			.setCreativeTab(MainRegistry.controlTab)
+			.setMaxStackSize(1)
+			.setTextureName(RefStrings.MODID + ":pellet_rtg_weak");
+
+		// Pu-238
+		// ~0.56 W/g thermal, real NASA RTG fuel
+		pellet_rtg = new ItemRTGPellet(10)
+			.setDecays(DepletedRTGMaterial.LEAD,
+					   (long)(RTGUtil.getLifespan(87.7F, HalfLifeType.LONG, false) * 1.5))
+			.setUnlocalizedName("pellet_rtg")
+			.setCreativeTab(MainRegistry.controlTab)
+			.setMaxStackSize(1)
+			.setTextureName(RefStrings.MODID + ":pellet_rtg");
+
+		// Pm-147 alternate pellet
+		pellet_rtg_promethium = new ItemRTGPellet(4)
+			.setDecays(DepletedRTGMaterial.LEAD,
+					   (long)(RTGUtil.getLifespan(2.6F, HalfLifeType.MEDIUM, false) * 1.5))
+			.setUnlocalizedName("pellet_rtg_promethium")
+			.setCreativeTab(MainRegistry.controlTab)
+			.setMaxStackSize(1)
+			.setTextureName(RefStrings.MODID + ":pellet_rtg");
+
+		// Sr-90
+		// ~0.93 W/g thermal
+		pellet_rtg_strontium = new ItemRTGPellet(15)
+			.setDecays(DepletedRTGMaterial.ZIRCONIUM,
+					   (long)(RTGUtil.getLifespan(28.8F, HalfLifeType.MEDIUM, false) * 1.5))
+			.setUnlocalizedName("pellet_rtg_strontium")
+			.setCreativeTab(MainRegistry.controlTab)
+			.setTextureName(RefStrings.MODID + ":pellet_rtg_strontium");
+
+		// Co-60
+		// Very energetic but dangerous gamma emitter
+		pellet_rtg_cobalt = new ItemRTGPellet(25)
+			.setDecays(DepletedRTGMaterial.NICKEL,
+					   (long)(RTGUtil.getLifespan(5.27F, HalfLifeType.SHORT, false) * 1.5))
+			.setUnlocalizedName("pellet_rtg_cobalt")
+			.setCreativeTab(MainRegistry.controlTab)
+			.setTextureName(RefStrings.MODID + ":pellet_rtg_cobalt");
+
+		// Ac-227
+		// Exotic alpha emitter
+		pellet_rtg_actinium = new ItemRTGPellet(18)
+			.setDecays(DepletedRTGMaterial.LEAD,
+					   (long)(RTGUtil.getLifespan(21.8F, HalfLifeType.MEDIUM, false) * 1.5))
+			.setUnlocalizedName("pellet_rtg_actinium")
+			.setCreativeTab(MainRegistry.controlTab)
+			.setTextureName(RefStrings.MODID + ":pellet_rtg_actinium");
+
+		// Am-241
+		// ESA future RTG candidate
+		pellet_rtg_americium = new ItemRTGPellet(8)
+			.setDecays(DepletedRTGMaterial.NEPTUNIUM,
+					   (long)(RTGUtil.getLifespan(432.0F, HalfLifeType.LONG, false) * 1.5))
+			.setUnlocalizedName("pellet_rtg_americium")
+			.setCreativeTab(MainRegistry.controlTab)
+			.setMaxStackSize(1)
+			.setTextureName(RefStrings.MODID + ":pellet_rtg_americium");
+
+		// Bk-249 experimental
+		pellet_rtg_berkelium = new ItemRTGPellet(30)
+			.setDecays(DepletedRTGMaterial.LEAD,
+					   (long)(RTGUtil.getLifespan(0.9F, HalfLifeType.SHORT, false) * 1.5))
+			.setUnlocalizedName("pellet_rtg_berkelium")
+			.setCreativeTab(MainRegistry.controlTab)
+			.setMaxStackSize(1)
+			.setTextureName(RefStrings.MODID + ":pellet_rtg_berkelium");
+
+		// Po-210
+		// ~140 W/g thermal
+		pellet_rtg_polonium = new ItemRTGPellet(60)
+			.setDecays(DepletedRTGMaterial.LEAD,
+					   (long)(RTGUtil.getLifespan(138.0F, HalfLifeType.SHORT, false) * 1.5))
+			.setUnlocalizedName("pellet_rtg_polonium")
+			.setCreativeTab(MainRegistry.controlTab)
+			.setMaxStackSize(1)
+			.setTextureName(RefStrings.MODID + ":pellet_rtg_polonium");
+
+		// Experimental Au-198 RTG
+		// Unrealistic but plausible "high output" synthetic isotope
+		pellet_rtg_gold = new ItemRTGPellet(
+			VersatileConfig.rtgDecay() ? 80 : 40)
+			.setDecays(DepletedRTGMaterial.MERCURY,
+					   (long)(RTGUtil.getLifespan(2.7F, HalfLifeType.SHORT, false) * 1.5))
+			.setUnlocalizedName("pellet_rtg_gold")
+			.setCreativeTab(MainRegistry.controlTab)
+			.setMaxStackSize(1)
+			.setTextureName(RefStrings.MODID + ":pellet_rtg_gold");
+
+		// Pb-210 experimental RTG
+		pellet_rtg_lead = new ItemRTGPellet(
+			VersatileConfig.rtgDecay() ? 120 : 60)
+			.setDecays(DepletedRTGMaterial.BISMUTH,
+					   (long)(RTGUtil.getLifespan(22.3F, HalfLifeType.MEDIUM, false) * 1.5))
+			.setUnlocalizedName("pellet_rtg_lead")
+			.setCreativeTab(MainRegistry.controlTab)
+			.setTextureName(RefStrings.MODID + ":pellet_rtg_lead");
+
+		// Cf-251
+		// Neutron-heavy exotic isotope
+		pellet_rtg_cf251 = new ItemRTGPellet(
+			VersatileConfig.rtgDecay() ? 150 : 75)
+			.setDecays(DepletedRTGMaterial.LEAD,
+					   (long)(RTGUtil.getLifespan(898.0F, HalfLifeType.LONG, false) * 1.5))
+			.setUnlocalizedName("pellet_rtg_cf251")
+			.setCreativeTab(MainRegistry.controlTab)
+			.setTextureName(RefStrings.MODID + ":pellet_rtg_cf251");
+
+		// Cf-252
+		// Extremely energetic neutron emitter
+		pellet_rtg_cf252 = new ItemRTGPellet(
+			VersatileConfig.rtgDecay() ? 250 : 120)
+			.setDecays(DepletedRTGMaterial.LEAD,
+					   (long)(RTGUtil.getLifespan(2.65F, HalfLifeType.SHORT, false) * 1.5))
+			.setUnlocalizedName("pellet_rtg_cf252")
+			.setCreativeTab(MainRegistry.controlTab)
+			.setTextureName(RefStrings.MODID + ":pellet_rtg_cf252");
+
 
 		tritium_deuterium_cake = new ItemCustomLore().setUnlocalizedName("tritium_deuterium_cake").setCreativeTab(MainRegistry.controlTab).setMaxStackSize(1).setTextureName(RefStrings.MODID + ":tritium_deuterium_cake");
 
@@ -6655,6 +6780,7 @@ public class ModItems {
 		GameRegistry.registerItem(billet_th232, billet_th232.getUnlocalizedName());
 		GameRegistry.registerItem(billet_plutonium, billet_plutonium.getUnlocalizedName());
 		GameRegistry.registerItem(billet_pu238, billet_pu238.getUnlocalizedName());
+		GameRegistry.registerItem(billet_pm, billet_pm.getUnlocalizedName());
 		GameRegistry.registerItem(billet_pu239, billet_pu239.getUnlocalizedName());
 		GameRegistry.registerItem(billet_pu240, billet_pu240.getUnlocalizedName());
 		GameRegistry.registerItem(billet_pu241, billet_pu241.getUnlocalizedName());
@@ -7453,6 +7579,7 @@ public class ModItems {
 		GameRegistry.registerItem(pellet_rtg_radium, pellet_rtg_radium.getUnlocalizedName());
 		GameRegistry.registerItem(pellet_rtg_weak, pellet_rtg_weak.getUnlocalizedName());
 		GameRegistry.registerItem(pellet_rtg, pellet_rtg.getUnlocalizedName());
+		GameRegistry.registerItem(pellet_rtg_promethium, pellet_rtg_promethium.getUnlocalizedName());
 		GameRegistry.registerItem(pellet_rtg_strontium, pellet_rtg_strontium.getUnlocalizedName());
 		GameRegistry.registerItem(pellet_rtg_cobalt, pellet_rtg_cobalt.getUnlocalizedName());
 		GameRegistry.registerItem(pellet_rtg_actinium, pellet_rtg_actinium.getUnlocalizedName());

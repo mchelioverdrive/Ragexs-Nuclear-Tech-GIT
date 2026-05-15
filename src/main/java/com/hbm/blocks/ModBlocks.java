@@ -62,6 +62,7 @@ public class ModBlocks {
 
 	public static Block ore_uranium;
 	public static Block ore_uranium_scorched;
+	public static Block scorched_stone;
 	public static Block ore_plutonium;
 	public static Block ore_titanium;
 	public static Block ore_sulfur;
@@ -1391,6 +1392,7 @@ public class ModBlocks {
 
 		ore_uranium = new BlockOreOutgas(Material.rock, true, 5, true).setBlockName("ore_uranium").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_uranium");
 		ore_uranium_scorched = new BlockOutgas(Material.rock, true, 5, true).setBlockName("ore_uranium_scorched").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_uranium_scorched");
+		scorched_stone = new BlockGeneric(Material.rock).setBlockName("scorched_stone").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":scorched_stone");
 		ore_plutonium = new BlockOreOutgas(Material.rock, true, 5, true).setBlockName("ore_plutonium").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_plutonium");
 		ore_titanium = new BlockOre(Material.rock).setBlockName("ore_titanium").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_titanium");
 		ore_sulfur = new BlockOre(Material.rock).setBlockName("ore_sulfur").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F).setBlockTextureName(RefStrings.MODID + ":ore_sulfur");
@@ -2668,6 +2670,7 @@ public class ModBlocks {
 		//Ores
 		GameRegistry.registerBlock(ore_uranium, ItemBlockBase.class, ore_uranium.getUnlocalizedName());
 		GameRegistry.registerBlock(ore_uranium_scorched, ItemBlockBase.class, ore_uranium_scorched.getUnlocalizedName());
+		GameRegistry.registerBlock(scorched_stone, ItemBlockBase.class, scorched_stone.getUnlocalizedName());
 		GameRegistry.registerBlock(ore_plutonium, ItemBlockBase.class, ore_plutonium.getUnlocalizedName());
 		GameRegistry.registerBlock(ore_thorium, ItemBlockBase.class, ore_thorium.getUnlocalizedName());
 		//GameRegistry.registerBlock(ore_morkite, ItemBlockBase.class, ore_morkite.getUnlocalizedName());

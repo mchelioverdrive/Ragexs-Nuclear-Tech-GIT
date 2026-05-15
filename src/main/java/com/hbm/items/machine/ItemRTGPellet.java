@@ -23,20 +23,20 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
 public class ItemRTGPellet extends Item {
-	
+
 	private short heat = 0;
 	private boolean doesDecay = false;
 	private ItemStack decayItem = null;
 	private long lifespan = 0;
-	
+
 	public static final List<ItemRTGPellet> pelletList = new ArrayList();
-	
+
 	public ItemRTGPellet(int heatIn) {
 		heat = (short) heatIn;
 		setMaxStackSize(1);
 		pelletList.add(this);
 	}
-	
+
 	private static final String[] facts = new String[] {
 			"One gram of Pu-238 costs $8,000.",
 			"One gram of Pu-238 produces just under half a Watt of decay heat.",
@@ -55,14 +55,14 @@ public class ItemRTGPellet extends Item {
 			"In the 1920s, uranium was considered a useless byproduct of the production of radium.",
 			"The Manhattan Project referred to refined natural uranium as tuballoy, enriched uranium as oralloy, and depleted uranium as depletalloy."
 	};
-	
+
 	public ItemRTGPellet setDecays(DepletedRTGMaterial mat, long life) {
 		doesDecay = true;
 		decayItem = new ItemStack(ModItems.pellet_rtg_depleted, 1, mat.ordinal());
 		lifespan = life;
 		return this;
 	}
-	
+
 	public long getMaxLifespan() {
 		return lifespan;
 	}
@@ -79,7 +79,7 @@ public class ItemRTGPellet extends Item {
 	public boolean getDoesDecay() {
 		return this.doesDecay;
 	}
-	
+
 	public static ItemStack handleDecay(ItemStack stack, ItemRTGPellet instance) {
 		if (instance.getDoesDecay() && VersatileConfig.rtgDecay()) {
 			if (instance.getLifespan(stack) <= 0)
@@ -87,10 +87,10 @@ public class ItemRTGPellet extends Item {
 			else
 				instance.decay(stack);
 		}
-		
+
 		return stack;
 	}
-	
+
 	public void decay(ItemStack stack) {
 		if (stack != null && stack.getItem() instanceof ItemRTGPellet) {
 			if (!((ItemRTGPellet) stack.getItem()).getDoesDecay())
@@ -103,7 +103,7 @@ public class ItemRTGPellet extends Item {
 			}
 		}
 	}
-	
+
 	public long getLifespan(ItemStack stack)
 	{
 		if (stack != null && stack.getItem() instanceof ItemRTGPellet)
@@ -119,19 +119,27 @@ public class ItemRTGPellet extends Item {
 		}
 		return 0;
 	}
-	
+
 	public static short getScaledPower(ItemRTGPellet fuel, ItemStack stack) {
-		return (short) Math.ceil(fuel.getHeat() * ((double)fuel.getLifespan(stack) / (double)fuel.getMaxLifespan()));
+
+		double remaining =
+			(double)fuel.getLifespan(stack) /
+				(double)fuel.getMaxLifespan();
+
+		// Exponential approximation
+		double power = fuel.getHeat() * Math.pow(remaining, 0.25D);
+
+		return (short)Math.max(1, Math.ceil(power));
 	}
-	
+
 	@Override
 	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
-		
+
 		if(!world.isRemote && this == ModItems.pellet_rtg) {
 			player.addChatComponentMessage(new ChatComponentText(facts[world.rand.nextInt(facts.length)]).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.YELLOW)));
 			world.playSoundAtEntity(player, "random.orb", 1.0F, 1.0F);
 		}
-		
+
 		return stack;
 	}
 
@@ -139,13 +147,13 @@ public class ItemRTGPellet extends Item {
 	public boolean showDurabilityBar(ItemStack stack) {
 		return getDoesDecay() && getLifespan(stack) != getMaxLifespan();
 	}
-	
+
 	@Override
 	public double getDurabilityForDisplay(ItemStack stack) {
 		final ItemRTGPellet instance = (ItemRTGPellet) stack.getItem();
 		return 1D - (double)instance.getLifespan(stack) / (double)instance.getMaxLifespan();
 	}
-	
+
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean bool) {
 		super.addInformation(stack, player, list, bool);
@@ -169,16 +177,16 @@ public class ItemRTGPellet extends Item {
 	public String getData() {
 		return String.format(Locale.US, "%s (%s HE/t) %s", I18nUtil.resolveKey(getUnlocalizedName().concat(".name")), getHeat(), (getDoesDecay() ? " (decays)" : ""));
 	}
-	
+
 	public static HashMap<ItemStack, ItemStack> getRecipeMap() {
 		HashMap<ItemStack, ItemStack> map = new HashMap<ItemStack, ItemStack>();
-		
+
 		for(ItemRTGPellet pellet : pelletList) {
 			if(pellet.decayItem != null) {
 				map.put(new ItemStack(pellet), pellet.decayItem.copy());
 			}
 		}
-		
+
 		return map;
 	}
 }
