@@ -440,7 +440,7 @@ public class OreDictManager {
 		 * RADIOACTIVE
 		 */
 		U		.rad(HazardRegistry.u)								.nugget(nugget_uranium)		.billet(billet_uranium)		.ingot(ingot_uranium)		.dust(powder_uranium)									.block(block_uranium)		.ore(ore_uranium_scorched, ore_gneiss_uranium, ore_gneiss_uranium_scorched, ore_nether_uranium, ore_nether_uranium_scorched, ore_sellafield_uranium_scorched)	.oreNether(ore_nether_uranium, ore_nether_uranium_scorched) .oreAll(ore_uranium);
-		Pm 		.rad(HazardRegistry.pm)								.nugget(nugget_promethium)						.ingot(ingot_promethium); //.billet(billet_pm)
+		Pm 		.rad(HazardRegistry.pm)								.nugget(nugget_promethium)						.ingot(ingot_promethium) .billet(billet_pm);
 		U233	.rad(HazardRegistry.u233)							.nugget(nugget_u233)		.billet(billet_u233)		.ingot(ingot_u233)																	.block(block_u233);
 		U235	.rad(HazardRegistry.u235)							.nugget(nugget_u235)		.billet(billet_u235)		.ingot(ingot_u235)																	.block(block_u235);
 		U238	.rad(HazardRegistry.u238)							.nugget(nugget_u238)		.billet(billet_u238)		.ingot(ingot_u238)																	.block(block_u238);

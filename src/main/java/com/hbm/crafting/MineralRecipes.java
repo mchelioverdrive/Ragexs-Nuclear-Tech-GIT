@@ -199,6 +199,7 @@ public class MineralRecipes {
 		addBillet(ModItems.billet_zirconium,			ModItems.ingot_zirconium,			ModItems.nugget_zirconium, ZR.nugget());
 		addBillet(ModItems.billet_bismuth,				ModItems.ingot_bismuth,				ModItems.nugget_bismuth);
 		addBillet(ModItems.billet_silicon,				ModItems.ingot_silicon,				ModItems.nugget_silicon, SI.nugget());
+		addBillet(ModItems.billet_pm,					ModItems.ingot_promethium,			ModItems.nugget_promethium, Pm.nugget());
 
 		//cerium + silicon nugget = 2 billet_silicon because cerium is used in silicon wafers.
 		GameRegistry.addShapelessRecipe(new ItemStack(ModItems.billet_silicon, 2), new Object[] { ModItems.powder_cerium, ModItems.nugget_silicon });

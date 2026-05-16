@@ -58,7 +58,7 @@ public class HazardRegistry {
 
 	//simplified groups for ReC compat
 
-	//NEW NON TARD METHOD: SET THE MATERIAL RADS TO Sv/s EQUIVALENT
+	//NEW NON TARD METHOD: SET THE MATERIAL RADS TO mSv/s EQUIVALENT
 	public static final float gen_S = 10_000F;
 	public static final float gen_H = 2_000F;
 	public static final float gen_10D = 100F;
@@ -117,6 +117,7 @@ public class HazardRegistry {
 	public static final float cm244 = 2.0F; //fertile
 	public static final float cm245 = 0.8F; //fissile
 	public static final float cm246 = 2.5F; //fertile
+	public static final float pm147 = 5.0F; //fissile
 	public static final float cm247 = 0.2F; //fissile
 	public static final float cmrg = 6.0F; //reactor-grade curium
 	public static final float cmf = 2.2F; //curium fuel
@@ -415,6 +416,7 @@ public class HazardRegistry {
 		registerRTGPellet(pellet_rtg_lead, pb209 * rtg, 0, 7F, 50F);
 		registerRTGPellet(pellet_rtg_gold, au198 * rtg, 0, 5F);
 		registerRTGPellet(pellet_rtg_americium, am241 * rtg, 0);
+		registerRTGPellet(pellet_rtg_promethium, pm147 * rtg, 0);
 		HazardSystem.register(new ItemStack(pellet_rtg_depleted, 1, DepletedRTGMaterial.NEPTUNIUM.ordinal()), makeData(RADIATION, np237 * rtg));
 
 		HazardSystem.register(pile_rod_uranium, makeData(RADIATION, u * billet * 3));
