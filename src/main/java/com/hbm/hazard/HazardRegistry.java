@@ -59,124 +59,241 @@ public class HazardRegistry {
 	//simplified groups for ReC compat
 
 	//NEW NON TARD METHOD: SET THE MATERIAL RADS TO mSv/s EQUIVALENT
-	public static final float gen_S = 10_000F;
-	public static final float gen_H = 2_000F;
-	public static final float gen_10D = 100F;
-	public static final float gen_100D = 80F;
-	public static final float gen_1Y = 50F;
-	public static final float gen_10Y = 30F;
-	public static final float gen_100Y = 10F;
-	public static final float gen_1K = 7.5F;
-	public static final float gen_10K = 6.25F;
-	public static final float gen_100K = 5F;
-	public static final float gen_1M = 2.5F;
-	public static final float gen_10M = 1.5F;
-	public static final float gen_100M = 1F;
-	public static final float gen_1B = 0.5F;
-	public static final float gen_10B = 0.1F;
+	// =====================================================================================
+	// GENERIC RADIOACTIVITY GROUPS (mSv/s)
+	// based loosely on half-life / practical hazard
+	// =====================================================================================
 
-	public static final float co60 = 30.0F;
-	public static final float sr90 = 15.0F;
-	public static final float tc99 = 2.75F;
-	public static final float i131 = 150.0F;
-	public static final float xe135 = 1250.0F;
-	public static final float cs137 = 20.0F;
-	public static final float au198 = 500.0F;
-	public static final float pb209 = 10000.0F;
-	public static final float at209 = 7500.0F;
-	public static final float at = 1500.0F;
+	public static final float gen_S       = 10_000F;
+	public static final float gen_H       = 2_000F;
+	public static final float gen_10D     = 100F;
+	public static final float gen_100D    = 80F;
+	public static final float gen_1Y      = 50F;
+	public static final float gen_10Y     = 30F;
+	public static final float gen_100Y    = 10F;
+	public static final float gen_1K      = 7.5F;
+	public static final float gen_10K     = 6.25F;
+	public static final float gen_100K    = 5F;
+	public static final float gen_1M      = 2.5F;
+	public static final float gen_10M     = 1.5F;
+	public static final float gen_100M    = 1F;
+	public static final float gen_1B      = 0.5F;
+	public static final float gen_10B     = 0.1F;
+
+
+	// =====================================================================================
+	// FISSION PRODUCTS / REACTOR ISOTOPES
+	// =====================================================================================
+
+	public static final float co60  = 30.0F;      // cobalt-60 (major gamma emitter)
+	public static final float sr90  = 15.0F;      // strontium-90
+	public static final float tc99  = 2.75F;      // technetium-99
+	public static final float i131  = 150.0F;     // iodine-131
+	public static final float xe135 = 1250.0F;    // xenon-135 (extremely radioactive)
+	public static final float cs137 = 20.0F;      // cesium-137
+	public static final float au198 = 500.0F;     // gold-198
+
+
+	// =====================================================================================
+	// EXTREMELY HOT / SHORT-LIVED ISOTOPES
+	// =====================================================================================
+
+	public static final float pb209 = 10_000.0F;
+	public static final float at209 = 7_500.0F;
+	public static final float at    = 1_500.0F;
+
+
+	// =====================================================================================
+	// NATURAL / ALPHA EMITTERS
+	// =====================================================================================
+
 	public static final float po210 = 75.0F;
 	public static final float ra226 = 7.5F;
 	public static final float ac227 = 30.0F;
 	public static final float th232 = 0.1F;
-	public static final float thf = 1.75F;
-	public static final float u = 0.35F;
-	public static final float pm = 1F;
-	public static final float be = 2F;
+
+	// material groups
+	public static final float thf = 1.75F;    // thorium fuel
+	public static final float u   = 0.35F;    // natural uranium
+	public static final float uf  = 0.5F;     // uranium fuel
+
+	// toxic/heavy metals
+	public static final float pm = 1.0F;
+	public static final float be = 2.0F;
 	public static final float pb = 0.8F;
-	public static final float as = 6F;
+	public static final float as = 6.0F;
 	public static final float hg = 0.9F;
 	public static final float tl = 100.0F;
+
+
+	// =====================================================================================
+	// URANIUM ISOTOPES
+	// =====================================================================================
 
 	public static final float u233 = 5.0F;
 	public static final float u235 = 1.0F;
 	public static final float u238 = 0.25F;
-	public static final float uf = 0.5F;
+
+
+	// =====================================================================================
+	// NEPTUNIUM
+	// =====================================================================================
+
 	public static final float np237 = 2.5F;
-	public static final float npf = 1.5F;
-	public static final float pu = 7.5F;
-	public static final float purg = 6.25F;
+	public static final float npf   = 1.5F;
+
+
+	// =====================================================================================
+	// PLUTONIUM
+	// =====================================================================================
+
+	public static final float pu    = 7.5F;
+	public static final float purg  = 6.25F;     // reactor-grade plutonium
+
 	public static final float pu238 = 10.0F;
 	public static final float pu239 = 5.0F;
 	public static final float pu240 = 7.5F;
 	public static final float pu241 = 25.0F;
-	public static final float puf = 4.25F;
+
+	public static final float puf   = 4.25F;
+
+
+	// =====================================================================================
+	// AMERICIUM
+	// =====================================================================================
+
 	public static final float am241 = 8.5F;
-	public static final float cm242 = 9.3F; //fertile but probably unused
-	public static final float cm243 = 5.6F; //fissile
-	public static final float cm244 = 2.0F; //fertile
-	public static final float cm245 = 0.8F; //fissile
-	public static final float cm246 = 2.5F; //fertile
-	public static final float pm147 = 5.0F; //fissile
-	public static final float cm247 = 0.2F; //fissile
-	public static final float cmrg = 6.0F; //reactor-grade curium
-	public static final float cmf = 2.2F; //curium fuel
+	public static final float am242 = 9.5F;
+
+	public static final float amrg  = 9.0F;      // reactor-grade americium
+	public static final float amf   = 4.75F;
+
+
+	// =====================================================================================
+	// CURIUM
+	// =====================================================================================
+
+	public static final float cm242 = 9.3F;      // fertile
+	public static final float cm243 = 5.6F;      // fissile
+	public static final float cm244 = 2.0F;      // fertile
+	public static final float cm245 = 0.8F;      // fissile
+	public static final float cm246 = 2.5F;      // fertile
+	public static final float cm247 = 0.2F;      // fissile
+
+	public static final float cmrg  = 6.0F;      // reactor-grade curium
+	public static final float cmf   = 2.2F;      // curium fuel
+
+
+	// =====================================================================================
+	// PROMETHIUM
+	// =====================================================================================
+
+	public static final float pm147 = 5.0F;
+
+
+	// =====================================================================================
+	// HEAVY TRANSURANICS
+	// =====================================================================================
+
 	public static final float bk247 = 10.5F;
+
 	public static final float cf251 = 14.3F;
 	public static final float cf252 = 15.3F;
+
 	public static final float es253 = 18.3F;
 	public static final float es255 = 19.3F;
-	public static final float am242 = 9.5F;
-	public static final float amrg = 9.0F;
-	public static final float amf = 4.75F;
-	public static final float mox = 2.5F;
+
+
+	// =====================================================================================
+	// FUELS / FICTIONAL / MOD MATERIALS
+	// =====================================================================================
+
+	public static final float mox   = 2.5F;
+
 	public static final float sa326 = 15.0F;
 	public static final float sa327 = 17.5F;
-	public static final float saf = 5.85F;
-	public static final float sas3 = 5F;
+	public static final float saf   = 5.85F;
+	public static final float sas3  = 5.0F;
+
 	public static final float gh336 = 5.0F;
-	public static final float mud = 1.0F;
-	public static final float cn989 = 89.0F;
-	public static final float Rb = 0.001F;
+	public static final float mud   = 1.0F;
+	//public static final float cn989 = 89.0F;
+
+
+
+	//rubidium
+	public static final float Rb    = 0.001F;
+
+
+	// =====================================================================================
+	// SOURCES / SPECIAL MIXTURES
+	// =====================================================================================
 
 	public static final float radsource_mult = 3.0F;
-	public static final float pobe = po210 * radsource_mult;
-	public static final float rabe = ra226 * radsource_mult;
-	public static final float pube = pu238 * radsource_mult;
-	public static final float zfb_bi = u235 * 0.35F;
-	public static final float zfb_pu241 = pu241 * 0.5F;
+
+	public static final float pobe       = po210 * radsource_mult;
+	public static final float rabe       = ra226 * radsource_mult;
+	public static final float pube       = pu238 * radsource_mult;
+
+	public static final float zfb_bi     = u235 * 0.35F;
+	public static final float zfb_pu241  = pu241 * 0.5F;
 	public static final float zfb_am_mix = amrg * 0.5F;
-	public static final float bf = 300_000.0F;
-	public static final float bfb = 500_000.0F;
 
-	public static final float sr = sa326 * 0.1F;
-	public static final float sb = sa326 * 0.1F;
-	public static final float trx = 25.0F;
-	public static final float trn = 0.1F;
-	public static final float wst = 15.0F;
-	public static final float wstv = 7.5F;
-	public static final float yc = u;
-	public static final float fo = 10F;
 
-	public static final float nugget = 0.1F;
-	public static final float ingot = 1.0F;
-	public static final float gem = 1.0F;
-	public static final float plate = ingot;
-	public static final float plateCast = plate * 3;
+	// =====================================================================================
+	// Balefire Bullshit
+	// =====================================================================================
+
+	//public static final float bf  = 300_000.0F;
+	//public static final float bfb = 500_000.0F;
+
+
+	// =====================================================================================
+	// WORLD MATERIALS / WASTE
+	// =====================================================================================
+
+	public static final float sr   = sa326 * 0.1F;
+	public static final float sb   = sa326 * 0.1F;
+
+	public static final float trx  = 25.0F;      // transuranic mix
+	public static final float trn  = 0.1F;       // trinitite (mostly glass)
+
+	public static final float wst  = 15.0F;      // nuclear waste
+	public static final float wstv = 7.5F;       // vitrified waste
+
+	public static final float yc   = u;          // yellowcake uranium
+	public static final float fo   = 10F;        // fallout
+
+
+	// =====================================================================================
+	// FORM FACTORS / MULTIPLIERS
+	// =====================================================================================
+
+	public static final float nugget      = 0.1F;
+
+	public static final float ingot       = 1.0F;
+	public static final float gem         = 1.0F;
+	public static final float plate       = ingot;
+	public static final float plateCast   = plate * 3;
+
 	public static final float powder_mult = 3.0F;
-	public static final float powder = ingot * powder_mult;
+	public static final float powder      = ingot * powder_mult;
 	public static final float powder_tiny = nugget * powder_mult;
-	public static final float ore = ingot * 1.2F;
-	//"Ores generally pose a higher risk of radiation exposure and cancer-related health effects compared to processed ingots"
-	public static final float specore = ingot;
-	public static final float block = 10.0F;
-	public static final float crystal = block;
-	public static final float billet = 0.5F;
-	public static final float rtg = billet * 3;
-	public static final float rod = 0.5F;
-	public static final float rod_dual = rod * 2;
-	public static final float rod_quad = rod * 4;
-	public static final float rod_rbmk = rod * 8;
+
+	// ores are slightly hotter due to gangue contamination
+	public static final float ore         = ingot * 1.2F;
+	public static final float specore     = ingot;
+
+	public static final float block       = 10.0F;
+	public static final float crystal     = block;
+
+	public static final float billet      = 0.5F;
+	public static final float rtg         = billet * 3;
+
+	public static final float rod         = 0.5F;
+	public static final float rod_dual    = rod * 2;
+	public static final float rod_quad    = rod * 4;
+	public static final float rod_rbmk    = rod * 8;
 
 	public static final HazardTypeBase RADIATION = new HazardTypeRadiation();
 	//public static final HazardTypeBase DIGAMMA = new HazardTypeDigamma();
@@ -194,12 +311,7 @@ public class HazardRegistry {
 
 		HazardSystem.register(Items.gunpowder, makeData(EXPLOSIVE, 1F));
 		HazardSystem.register(Blocks.tnt, makeData(EXPLOSIVE, 4F));
-		//HazardSystem.register(Items.pumpkin_pie, makeData(EXPLOSIVE, 1F));
-		//literally why
 
-		//HazardSystem.register(new ItemStack(Item.getItemFromBlock(ModBlocks.bobblehead), 1, 22), makeData(ASBESTOS, 1F)); //this works okay
-
-		//HazardSystem.register(new ItemStack(Item.getItemFromBlock(ModBlocks.bobblehead), 1, 25), makeData(GLITCH, 1F));
 
 		HazardSystem.register(ModItems.ammonium_nitrate, makeData(EXPLOSIVE, 4F));
 
@@ -212,12 +324,6 @@ public class HazardRegistry {
 		HazardSystem.register(stick_semtex, makeData(EXPLOSIVE, 2.5F));
 		HazardSystem.register(stick_c4, makeData(EXPLOSIVE, 2.5F));
 
-		//HazardSystem.register(ModItems.sat_gerald, makeData(AUTISM, 1F));
-
-
-		//HazardSystem.register(ModItems.powder_wd2004, makeData(DIGAMMA, 1F));
-		//HazardSystem.register(ModItems.powder_wd2004_tiny, makeData(DIGAMMA, 0.05F));
-
 		HazardSystem.register(cordite, makeData(EXPLOSIVE, 2F));
 		HazardSystem.register(ballistite, makeData(EXPLOSIVE, 1F));
 
@@ -226,25 +332,15 @@ public class HazardRegistry {
 		HazardSystem.register("dustLignite", makeData(COAL, powder));
 		HazardSystem.register("dustTinyLignite", makeData(COAL, powder_tiny));
 
-		//HazardSystem.register(insert_polonium, makeData(RADIATION, 100F));
-
 		HazardSystem.register(demon_core_open, makeData(RADIATION, 5F));
 		HazardSystem.register(demon_core_closed, makeData().addEntry(RADIATION, 100_000F).addEntry(NEUTRON, 10_000F));
 		HazardSystem.register(lamp_demon, makeData().addEntry(RADIATION, 100_000F).addEntry(NEUTRON, 10_000F));
 
 		HazardSystem.register(cell_tritium, makeData(RADIATION, 0.001F));
 		HazardSystem.register(cell_sas3, makeData().addEntry(RADIATION, sas3).addEntry(BLINDING, 60F));
-		//HazardSystem.register(cell_balefire, makeData(RADIATION, 50F));
-		//HazardSystem.register(powder_balefire, makeData(RADIATION, 500F));
-		//HazardSystem.register(egg_balefire_shard, makeData(RADIATION, bf * nugget));
-		//HazardSystem.register(egg_balefire, makeData(RADIATION, bf * ingot));
 
 		HazardSystem.register(coffee_radium, makeData(RADIATION, 0.5F));
 		HazardSystem.register(chocolate, makeData(RADIATION, 0.5F));
-
-		//HazardSystem.register(solid_fuel_bf, makeData(RADIATION, 1000)); //roughly the amount of the balefire shard diluted in 250mB of rocket fuel
-		//HazardSystem.register(solid_fuel_presto_bf, makeData(RADIATION, 2000));
-		//HazardSystem.register(solid_fuel_presto_triplet_bf, makeData(RADIATION, 6000));
 
 		HazardSystem.register(nuclear_waste_long, makeData(RADIATION, 5F));
 		HazardSystem.register(nuclear_waste_long_tiny, makeData(RADIATION, 0.5F));
@@ -267,19 +363,10 @@ public class HazardRegistry {
 		HazardSystem.register(block_waste, makeData(RADIATION, wst * block));
 		HazardSystem.register(block_waste_painted, makeData(RADIATION, wst * block));
 		HazardSystem.register(block_waste_vitrified, makeData(RADIATION, wstv * block));
-		//HazardSystem.register(ancient_scrap, makeData(RADIATION, 150F));
+
 		HazardSystem.register(block_corium, makeData(RADIATION, 150F));
 		HazardSystem.register(block_corium_cobble, makeData(RADIATION, 150F));
 
-		//HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 0), makeData(RADIATION, 0.5F));
-		//HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 1), makeData(RADIATION, 1F));
-		//HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 2), makeData(RADIATION, 2.5F));
-		//HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 3), makeData(RADIATION, 4F));
-		//HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 4), makeData(RADIATION, 5F));
-		//HazardSystem.register(new ItemStack(ModBlocks.sellafield, 1, 5), makeData(RADIATION, 10F));
-
-		//HazardSystem.register(new ItemStack(ModBlocks.ore_sellafield_radgem), makeData(RADIATION, 25F));
-		//HazardSystem.register(new ItemStack(ModItems.gem_rad), makeData(RADIATION, 25F));
 		HazardSystem.register(scorched_stone, makeData(RADIATION, 0.05F));
 
 		HazardSystem.register(new ItemStack(ModItems.rubidiumsalt), makeData(RADIATION, Rb * nugget)); //im sure its fine
@@ -417,6 +504,11 @@ public class HazardRegistry {
 		registerRTGPellet(pellet_rtg_gold, au198 * rtg, 0, 5F);
 		registerRTGPellet(pellet_rtg_americium, am241 * rtg, 0);
 		registerRTGPellet(pellet_rtg_promethium, pm147 * rtg, 0);
+		//registerRTGPellet(pellet_rtg_curium, cm244 * rtg, 0) //not added yet
+		//new:
+		registerRTGPellet(pellet_rtg_cf251, cf251 * rtg, 0);
+		registerRTGPellet(pellet_rtg_cf252, cf252 * rtg, 0);
+		registerRTGPellet(rbmk_pellet_bk247, bk247 * rtg, 0);
 		HazardSystem.register(new ItemStack(pellet_rtg_depleted, 1, DepletedRTGMaterial.NEPTUNIUM.ordinal()), makeData(RADIATION, np237 * rtg));
 
 		HazardSystem.register(pile_rod_uranium, makeData(RADIATION, u * billet * 3));
@@ -465,9 +557,9 @@ public class HazardRegistry {
 		registerRBMKRod(rbmk_fuel_po210be, pobe * rod_rbmk, pobe * rod_rbmk * 0.1F, true);
 		registerRBMKRod(rbmk_fuel_ra226be, rabe * rod_rbmk, rabe * rod_rbmk * 0.4F, true);
 		registerRBMKRod(rbmk_fuel_pu238be, pube * rod_rbmk, wst * rod_rbmk * 2.5F);
-		registerRBMKRod(rbmk_fuel_balefire_gold, au198 * rod_rbmk, bf * rod_rbmk * 0.5F, true);
+		//registerRBMKRod(rbmk_fuel_balefire_gold, au198 * rod_rbmk, bf * rod_rbmk * 0.5F, true);
 		registerRBMKRod(rbmk_fuel_flashlead, pb209 * 1.25F * rod_rbmk, pb209 * nugget * 0.05F * rod_rbmk, true);
-		registerRBMKRod(rbmk_fuel_balefire, bf * rod_rbmk, bf * rod_rbmk * 100F, true);
+		//registerRBMKRod(rbmk_fuel_balefire, bf * rod_rbmk, bf * rod_rbmk * 100F, true);
 		registerRBMKRod(rbmk_fuel_zfb_bismuth, pu241 * rod_rbmk * 0.1F, wst * rod_rbmk * 5F);
 		registerRBMKRod(rbmk_fuel_zfb_pu241, pu239 * rod_rbmk * 0.1F, wst * rod_rbmk * 7.5F);
 		registerRBMKRod(rbmk_fuel_zfb_am_mix, pu241 * rod_rbmk * 0.1F, wst * rod_rbmk * 10F);
@@ -502,9 +594,9 @@ public class HazardRegistry {
 		registerRBMKPellet(rbmk_pellet_po210be, pobe * billet, pobe * billet * 0.1F, true);
 		registerRBMKPellet(rbmk_pellet_ra226be, rabe * billet, rabe * billet * 0.4F, true);
 		registerRBMKPellet(rbmk_pellet_pu238be, pube * billet, wst * 1.5F);
-		registerRBMKPellet(rbmk_pellet_balefire_gold, au198 * billet, bf * billet * 0.5F, true);
+		//registerRBMKPellet(rbmk_pellet_balefire_gold, au198 * billet, bf * billet * 0.5F, true);
 		registerRBMKPellet(rbmk_pellet_flashlead, pb209 * 1.25F * billet, pb209 * nugget * 0.05F, true, 0, 0);
-		registerRBMKPellet(rbmk_pellet_balefire, bf * billet, bf * billet * 100F, true);
+		//registerRBMKPellet(rbmk_pellet_balefire, bf * billet, bf * billet * 100F, true);
 		registerRBMKPellet(rbmk_pellet_zfb_bismuth, pu241 * billet * 0.1F, wst * billet * 5F);
 		registerRBMKPellet(rbmk_pellet_zfb_pu241, pu239 * billet * 0.1F, wst * billet * 7.5F);
 		registerRBMKPellet(rbmk_pellet_zfb_am_mix, pu241 * billet * 0.1F, wst * billet * 10F);
@@ -642,10 +734,6 @@ public class HazardRegistry {
 
 		HazardSystem.register(solinium_propellant, makeData(EXPLOSIVE, 10F));
 		HazardSystem.register(solinium_core, makeData().addEntry(RADIATION, sa327 * nugget * 8).addEntry(BLINDING, 45F));
-
-		//HazardSystem.register(nuke_fstbmb, makeData(DIGAMMA, 0.01F));
-		//HazardSystem.register(DictFrame.fromOne(ModItems.holotape_image, EnumHoloImage.HOLO_RESTORED), makeData(DIGAMMA, 1F));
-		//HazardSystem.register(holotape_damaged, makeData(DIGAMMA, 1_000F));
 
 		/*
 		 * Blacklist

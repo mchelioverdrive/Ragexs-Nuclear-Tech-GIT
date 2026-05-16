@@ -85,6 +85,6 @@ public class TileEntityGeiger extends TileEntity implements SimpleComponent, IIn
 	public void provideExtraInfo(NBTTagCompound data) {
 		int rads = check();
 		String chunkPrefix = ContaminationUtil.getPreffixFromRad(rads);
-		data.setString(CompatEnergyControl.S_CHUNKRAD, chunkPrefix + rads + " Sv/s");
+		data.setString(CompatEnergyControl.S_CHUNKRAD, chunkPrefix + rads + " mSv/s");
 	}
 }

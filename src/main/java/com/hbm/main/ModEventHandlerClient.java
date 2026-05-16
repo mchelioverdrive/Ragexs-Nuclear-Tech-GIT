@@ -847,10 +847,10 @@ public class ModEventHandlerClient {
 			if(level >= 1e-5) {
 				list.add(EnumChatFormatting.GREEN + "[" + I18nUtil.resolveKey("trait.radioactive") + "]");
 				String rads2 = "" + (Math.floor(level* 1000) / 1000);
-				list.add(EnumChatFormatting.YELLOW + (rads2 + "Sv/s"));
+				list.add(EnumChatFormatting.YELLOW + (rads2 + "mSv/s"));
 
 				if(stack.stackSize > 1) {
-					list.add(EnumChatFormatting.YELLOW + "Stack: " + ((Math.floor(level * 1000 * stack.stackSize) / 1000) + "Sv/s"));
+					list.add(EnumChatFormatting.YELLOW + "Stack: " + ((Math.floor(level * 1000 * stack.stackSize) / 1000) + "mSv/s"));
 				}
 			}
 		}

@@ -882,7 +882,7 @@ public class ModEventHandler {
 	@SubscribeEvent
 	public void worldTick(WorldTickEvent event) {
 
-		/// RADIATION STUFF START ///
+
 		if(event.world != null && !event.world.isRemote) {
 
 			if(reference != null) {
@@ -941,6 +941,7 @@ public class ModEventHandler {
 							}
 						}
 
+						/// RADIATION STUFF START ///
 						if (entity instanceof EntityPlayer && ((EntityPlayer) entity).capabilities.isCreativeMode)
 							continue;
 
@@ -1050,6 +1051,7 @@ public class ModEventHandler {
 							if (entity instanceof EntityPlayer)
 								((EntityPlayer) entity).triggerAchievement(MainRegistry.achRadPoison);
 						}
+						/// RADIATION STUFF END ///
 
 
 					}
@@ -1062,7 +1064,6 @@ public class ModEventHandler {
 				 * REMOVE THIS ^ ^ ^
 				 */
 			}
-			/// RADIATION STUFF END ///
 
 
 			if(event.phase == Phase.END) {

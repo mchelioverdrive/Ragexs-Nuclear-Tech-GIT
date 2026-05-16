@@ -26,7 +26,7 @@ public class RadiationConfig {
 	public static boolean disableHydro = false;
 	public static boolean disableBlinding = false;
 	public static boolean disableFibrosis = false;
-	public static boolean disableNeutron = true;
+	public static boolean disableNeutron = false;
 
 	public static boolean enablePollution = true;
 	public static boolean enableLeadFromBlocks = true;
@@ -44,7 +44,7 @@ public class RadiationConfig {
 
 		fogRad = CommonConfig.createConfigInt(config, CATEGORY_NUKE, "FOG_00_threshold", "Radiation in RADs required for fog to spawn", 100);
 		fogCh = CommonConfig.createConfigInt(config, CATEGORY_NUKE, "FOG_01_threshold", "1:n chance of fog spawning every second", 20);
-		hellRad = CommonConfig.createConfigDouble(config, CATEGORY_NUKE, "AMBIENT_00_nether", "Sv/s in the nether", 0.1D);
+		hellRad = CommonConfig.createConfigDouble(config, CATEGORY_NUKE, "AMBIENT_00_nether", "mSv/s in the nether", 0.1D);
 		worldRadEffects = CommonConfig.createConfigBool(config, CATEGORY_NUKE, "RADWORLD_00_toggle", "Whether high radiation levels should perform changes in the world", true);
 		worldRad = CommonConfig.createConfigInt(config, CATEGORY_NUKE, "RADWORLD_01_amount", "How many block operations radiation can perform per tick", 10);
 		worldRadThreshold = CommonConfig.createConfigInt(config, CATEGORY_NUKE, "RADWORLD_02_minimum", "The least amount of RADs required for block modification to happen", 20);
@@ -66,7 +66,7 @@ public class RadiationConfig {
 		disableHydro = CommonConfig.createConfigBool(config, CATEGORY_HAZ, "HAZ_04_disableHydroactive", "When turned off, all hydroactive hazards are disabled", false);
 		disableBlinding = CommonConfig.createConfigBool(config, CATEGORY_HAZ, "HAZ_05_disableBlinding", "When turned off, all blinding hazards are disabled", false);
 		disableFibrosis = CommonConfig.createConfigBool(config, CATEGORY_HAZ, "HAZ_06_disableFibrosis", "When turned off, all fibrosis hazards are disabled", false);
-		disableNeutron = CommonConfig.createConfigBool(config, CATEGORY_HAZ, "HAZ_01_disableNeutrons", "When turned off, all neutron radiation hazards are disabled", true);
+		disableNeutron = CommonConfig.createConfigBool(config, CATEGORY_HAZ, "HAZ_01_disableNeutrons", "When turned off, all neutron radiation hazards are disabled", false);
 
 		final String CATEGORY_POL = CommonConfig.CATEGORY_POLLUTION;
 		enablePollution = CommonConfig.createConfigBool(config, CATEGORY_POL, "POL_00_enablePollution", "If disabled, none of the polltuion related things will work", true);

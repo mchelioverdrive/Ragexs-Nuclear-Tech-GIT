@@ -224,7 +224,7 @@ public class EntityEffectHandler {
 
 		if(!world.isRemote) {
 
-			if(ContaminationUtil.isRadImmune(entity))
+			if(ContaminationUtil.isRadImmune(entity)) 
 				return;
 
 			int ix = (int)MathHelper.floor_double(entity.posX);
@@ -260,47 +260,100 @@ public class EntityEffectHandler {
 			int r600 = rand.nextInt(600);
 			int r1200 = rand.nextInt(1200);
 
-			if(HbmLivingProps.getRadiation(entity) > 600) {
+			// =====================================================================================
+			// RADIATION SICKNESS EFFECTS (ACCUMULATED mSv)
+			// =====================================================================================
 
-				if((world.getTotalWorldTime() + r600) % 600 < 20 && canVomit(entity)) {
-					NBTTagCompound nbt = new NBTTagCompound();
-					nbt.setString("type", "vomit");
-					nbt.setString("mode", "blood");
-					nbt.setInteger("count", 25);
-					nbt.setInteger("entity", entity.getEntityId());
-					PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(nbt, 0, 0, 0),  new TargetPoint(entity.dimension, entity.posX, entity.posY, entity.posZ, 25));
+			float eRad = HbmLivingProps.getRadiation(entity);
 
-					if((world.getTotalWorldTime() + r600) % 600 == 1) {
-						world.playSoundEffect(ix, iy, iz, "hbm:player.vomit", 1.0F, 1.0F);
-						entity.addPotionEffect(new PotionEffect(Potion.hunger.id, 60, 19));
-					}
-				}
 
-			} else if(HbmLivingProps.getRadiation(entity) > 200 && (world.getTotalWorldTime() + r1200) % 1200 < 20 && canVomit(entity)) {
+			// =====================================================================================
+			// MILD SICKNESS (~0.5 Sv)
+			// =====================================================================================
+
+			if(eRad > 500 &&
+				(world.getTotalWorldTime() + r1200) % 1200 < 20 &&
+				canVomit(entity)) {
 
 				NBTTagCompound nbt = new NBTTagCompound();
 				nbt.setString("type", "vomit");
 				nbt.setString("mode", "normal");
 				nbt.setInteger("count", 15);
 				nbt.setInteger("entity", entity.getEntityId());
-				PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(nbt, 0, 0, 0),  new TargetPoint(entity.dimension, entity.posX, entity.posY, entity.posZ, 25));
+
+				PacketDispatcher.wrapper.sendToAllAround(
+					new AuxParticlePacketNT(nbt, 0, 0, 0),
+					new TargetPoint(entity.dimension, entity.posX, entity.posY, entity.posZ, 25)
+				);
 
 				if((world.getTotalWorldTime() + r1200) % 1200 == 1) {
 					world.playSoundEffect(ix, iy, iz, "hbm:player.vomit", 1.0F, 1.0F);
-					entity.addPotionEffect(new PotionEffect(Potion.hunger.id, 60, 19));
+					entity.addPotionEffect(new PotionEffect(Potion.hunger.id, 60, 4));
+					entity.addPotionEffect(new PotionEffect(Potion.confusion.id, 100, 0));
 				}
-
 			}
 
-			if(HbmLivingProps.getRadiation(entity) > 900 && (world.getTotalWorldTime() + rand.nextInt(10)) % 10 == 0) {
+
+			// =====================================================================================
+			// MODERATE / SEVERE ARS (~1.5 Sv)
+			// =====================================================================================
+
+			if(eRad > 1500) {
+
+				if((world.getTotalWorldTime() + r600) % 600 < 20 && canVomit(entity)) {
+
+					NBTTagCompound nbt = new NBTTagCompound();
+					nbt.setString("type", "vomit");
+					nbt.setString("mode", "blood");
+					nbt.setInteger("count", 25);
+					nbt.setInteger("entity", entity.getEntityId());
+
+					PacketDispatcher.wrapper.sendToAllAround(
+						new AuxParticlePacketNT(nbt, 0, 0, 0),
+						new TargetPoint(entity.dimension, entity.posX, entity.posY, entity.posZ, 25)
+					);
+
+					if((world.getTotalWorldTime() + r600) % 600 == 1) {
+
+						world.playSoundEffect(ix, iy, iz,
+											  "hbm:player.vomit", 1.0F, 1.0F);
+
+						entity.addPotionEffect(
+							new PotionEffect(Potion.hunger.id, 120, 19));
+
+						entity.addPotionEffect(
+							new PotionEffect(Potion.weakness.id, 200, 1));
+
+						entity.addPotionEffect(
+							new PotionEffect(Potion.confusion.id, 200, 0));
+					}
+				}
+			}
+
+
+			// =====================================================================================
+			// HEMORRHAGIC / TERMINAL ARS (~3 Sv)
+			// =====================================================================================
+
+			if(eRad > 3000 &&
+				(world.getTotalWorldTime() + rand.nextInt(10)) % 10 == 0) {
 
 				NBTTagCompound nbt = new NBTTagCompound();
+
 				nbt.setString("type", "sweat");
 				nbt.setInteger("count", 1);
-				nbt.setInteger("block", Block.getIdFromBlock(Blocks.redstone_block));
+				nbt.setInteger("block",
+							   Block.getIdFromBlock(Blocks.redstone_block));
 				nbt.setInteger("entity", entity.getEntityId());
-				PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(nbt, 0, 0, 0),  new TargetPoint(entity.dimension, entity.posX, entity.posY, entity.posZ, 25));
 
+				PacketDispatcher.wrapper.sendToAllAround(
+					new AuxParticlePacketNT(nbt, 0, 0, 0),
+					new TargetPoint(entity.dimension,
+									entity.posX,
+									entity.posY,
+									entity.posZ,
+									25)
+				);
 			}
 		} else {
 			float radiation = HbmLivingProps.getRadiation(entity);
