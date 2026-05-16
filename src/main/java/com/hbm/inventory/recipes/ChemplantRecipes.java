@@ -1236,6 +1236,20 @@ public class ChemplantRecipes extends SerializableRecipe {
 						)
 		);
 
+		//fragment_samarium
+		//    ↓ (Chemical Plant + acid)
+		recipes.add(new ChemRecipe(1074, "SAMARIUM_FRAGMENT_REFINEMENT", 200)
+						.inputItems(
+							new ComparableStack(ModItems.fragment_samarium, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.HCL, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.powder_samarium, 1)
+						)
+		);
+
 
 
 

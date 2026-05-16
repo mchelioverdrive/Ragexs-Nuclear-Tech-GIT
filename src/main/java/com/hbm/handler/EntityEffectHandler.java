@@ -224,7 +224,7 @@ public class EntityEffectHandler {
 
 		if(!world.isRemote) {
 
-			if(ContaminationUtil.isRadImmune(entity)) 
+			if(ContaminationUtil.isRadImmune(entity))
 				return;
 
 			int ix = (int)MathHelper.floor_double(entity.posX);

@@ -350,6 +350,7 @@ public class OreDictManager {
 	public static final DictFrame Pa = new DictFrame("Protactinium");
 	public static final DictFrame In = new DictFrame("Indium");
 	public static final DictFrame Pd = new DictFrame("Palladium");
+	public static final DictFrame Sm = new DictFrame("Samarium");
 
 	/*
 	 * NITAN
@@ -622,6 +623,7 @@ public class OreDictManager {
 		Cr .dust(powder_chromium) .ingot(ingot_chromium) ; //.block(block_chromium) .ore(ore_gneiss_chromium) .oreAll(ore_chromium)
 		In .ingot(ingot_indium) .nugget(nugget_indium) .dust(powder_indium);
 		Pd .ingot(ingot_palladium) .ore(ore_palladium) .dust(powder_palladium);
+		Sm .ingot(ingot_samarium) .nugget(fragment_samarium) .dust(powder_samarium);
 
 		/*
 		 * NITAN

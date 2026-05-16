@@ -131,6 +131,9 @@ public class ArcWelderRecipes extends SerializableRecipe {
 
 		recipes.add(new ArcWelderRecipe(new ItemStack(ModBlocks.machine_xenon_thruster), 600, 50_000L, new FluidStack(Fluids.ARGON, 1_000), new OreDictStack(W.plateWelded(), 2), new ComparableStack(ModItems.plate_stainless, 6), new ComparableStack(ModItems.arc_electrode, 1, EnumElectrodeType.GRAPHITE)));
 
+		//krypton + silicon wafer = printed silicon wafer
+		recipes.add(new ArcWelderRecipe(DictFrame.fromOne(ModItems.circuit, EnumCircuitType.SILICON), 30, 1_000L, new FluidStack(Fluids.KRYPTON, 400), new ComparableStack(ModItems.billet_silicon)));
+
 	}
 
 	public static HashMap getRecipes() {

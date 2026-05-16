@@ -131,6 +131,15 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 			new ItemStack(ModItems.strontium_sulfide, 1)
 		);
 
+		//powder_samarium
+		//    ↓ (Blast Furnace / Arc Furnace)
+		//ingot_samarium
+		addRecipe(
+			new ComparableStack(ModItems.powder_samarium, 1),
+			COAL,
+			new ItemStack(ModItems.ingot_samarium)
+		);
+
 		if(GeneralConfig.enableLBSM && GeneralConfig.enableLBSMSimpleChemsitry) {
 			addRecipe(ModItems.canister_empty, COAL, new ItemStack(ModItems.canister_full, 1, Fluids.OIL.getID()));
 		}

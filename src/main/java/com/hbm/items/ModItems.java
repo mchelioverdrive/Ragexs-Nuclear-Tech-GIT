@@ -178,6 +178,7 @@ public class ModItems {
 	public static Item gypsum;
 	public static Item sulfur;
 	public static Item ingot_palladium;
+	public static Item ingot_samarium;
 
 	public static Item nitra;
 	public static Item nitra_small;
@@ -664,6 +665,7 @@ public class ModItems {
 	public static Item ingot_rhodium;
 
 	public static Item powder_palladium;
+	public static Item powder_samarium;
 
 	public static Item powder_uranium;
 	public static Item powder_plutonium;
@@ -787,6 +789,7 @@ public class ModItems {
 	public static Item fragment_meteorite;
 	public static Item fragment_coltan;
 	public static Item fragment_praseodymium;
+	public static Item fragment_samarium;
 	public static Item ingot_praseodymium;
 	public static Item nugget_praseodymium;
 	public static Item powder_praseodymium;
@@ -3338,6 +3341,7 @@ public class ModItems {
 		powder_rhodium_solution = new Item().setUnlocalizedName("powder_rhodium_solution").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_coal");
 		ingot_rhodium = new Item().setUnlocalizedName("ingot_rhodium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_platnium");
 		powder_palladium = new Item().setUnlocalizedName("powder_palladium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_red_copper");
+		powder_samarium = new Item().setUnlocalizedName("powder_samarium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_red_copper");
 
 		nugget_niobium = new Item().setUnlocalizedName("nugget_niobium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_niobium");
 		nugget_vanadium = new Item().setUnlocalizedName("nugget_vanadium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_bismuth");
@@ -3365,6 +3369,7 @@ public class ModItems {
 		nugget_les = new Item().setUnlocalizedName("nugget_les").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_les");
 		plate_combine_steel = new Item().setUnlocalizedName("plate_combine_steel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_combine_steel");
 		ingot_palladium = new ItemCustomLore().setUnlocalizedName("ingot_palladium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_palladium");
+		ingot_samarium = new ItemCustomLore().setUnlocalizedName("ingot_samarium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_palladium");
 		scuttertail = new Item().setUnlocalizedName("scuttertail").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":scuttertail");
 		saltleaf = new Item().setUnlocalizedName("saltleaf").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":salt_leaf");
 
@@ -3574,6 +3579,7 @@ public class ModItems {
 		fragment_meteorite = new Item().setUnlocalizedName("fragment_meteorite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_meteorite");
 		fragment_coltan = new Item().setUnlocalizedName("fragment_coltan").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_coltan");
 		fragment_praseodymium = new Item().setUnlocalizedName("fragment_praseodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_praseodymium");
+		fragment_samarium = new Item().setUnlocalizedName("fragment_samarium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_praseodymium");
 		ingot_praseodymium = new Item().setUnlocalizedName("ingot_praseodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_praseodymium");
 		nugget_praseodymium = new Item().setUnlocalizedName("nugget_praseodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_praseodymium");
 		powder_praseodymium = new Item().setUnlocalizedName("powder_praseodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_praseodymium");
@@ -6650,6 +6656,7 @@ public class ModItems {
 		GameRegistry.registerItem(powder_iridium, powder_iridium.getUnlocalizedName());
 		GameRegistry.registerItem(ruthenium_residue, ruthenium_residue.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_palladium, ingot_palladium.getUnlocalizedName());
+		GameRegistry.registerItem(ingot_samarium, ingot_samarium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_aluminium, ingot_aluminium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_tin, ingot_tin.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_steel, ingot_steel.getUnlocalizedName());
@@ -6902,6 +6909,7 @@ public class ModItems {
 		GameRegistry.registerItem(powder_rhodium_solution, powder_rhodium_solution.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_rhodium, ingot_rhodium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_palladium, powder_palladium.getUnlocalizedName());
+		GameRegistry.registerItem(powder_samarium, powder_samarium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_gallium_tiny, powder_gallium_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(powder_gallium, powder_gallium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_germanium, powder_germanium.getUnlocalizedName());
@@ -7120,6 +7128,7 @@ public class ModItems {
 		GameRegistry.registerItem(fragment_meteorite, fragment_meteorite.getUnlocalizedName());
 		GameRegistry.registerItem(fragment_coltan, fragment_coltan.getUnlocalizedName());
 		GameRegistry.registerItem(fragment_praseodymium, fragment_praseodymium.getUnlocalizedName());
+		GameRegistry.registerItem(fragment_samarium, fragment_samarium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_praseodymium, ingot_praseodymium.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_praseodymium, nugget_praseodymium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_praseodymium, powder_praseodymium.getUnlocalizedName());
