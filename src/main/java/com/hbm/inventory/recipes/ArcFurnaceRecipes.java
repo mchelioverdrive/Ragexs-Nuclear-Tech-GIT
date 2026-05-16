@@ -90,6 +90,9 @@ public class ArcFurnaceRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(ModItems.powder_indium), new ArcFurnaceRecipe().solid(new ItemStack(ModItems.ingot_indium)).fluid(new MaterialStack(Mats.MAT_INDIUM, MaterialShapes.INGOT.q(1))));
 		//auto registers somehow...??? doesn't? Why is it registered twice??? Whatever.
 
+		//samarium
+		recipes.put(new ComparableStack(ModItems.powder_samarium), new ArcFurnaceRecipe().solid(new ItemStack(ModItems.ingot_samarium, 1)).fluid(new MaterialStack(Mats.MAT_SAMARIUM, MaterialShapes.INGOT.q(1))));
+
 
 		for(BedrockOreType type : BedrockOreType.values()) {
 			recipes.put(new ComparableStack(ItemBedrockOreNew.make(BedrockOreGrade.SULFURIC_BYPRODUCT, type)), new ArcFurnaceRecipe().solid(ItemBedrockOreNew.make(BedrockOreGrade.SULFURIC_ARC, type, 2)));

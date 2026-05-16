@@ -140,6 +140,13 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 			new ItemStack(ModItems.ingot_samarium)
 		);
 
+		//samarium cobalt magnet
+		addRecipe(
+			ModItems.ingot_samarium,
+			ModItems.ingot_cobalt,
+			new ItemStack(ModItems.ingot_smco)
+		);
+
 		if(GeneralConfig.enableLBSM && GeneralConfig.enableLBSMSimpleChemsitry) {
 			addRecipe(ModItems.canister_empty, COAL, new ItemStack(ModItems.canister_full, 1, Fluids.OIL.getID()));
 		}

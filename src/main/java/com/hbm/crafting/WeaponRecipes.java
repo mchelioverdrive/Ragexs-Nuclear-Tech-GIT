@@ -38,11 +38,13 @@ public class WeaponRecipes {
 		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.missile_emp, 1), new Object[] { ModItems.missile_assembly, ModItems.ducttape, ModBlocks.emp_bomb });
 
 		//Missile fins
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.mp_stability_10_flat, 1), new Object[] { "PSP", "P P", 'P', STEEL.plate(), 'S', ModBlocks.steel_scaffold });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.mp_stability_10_cruise, 1), new Object[] { "ASA", " S ", "PSP", 'A', TI.plate(), 'P', STEEL.plate(), 'S', ModBlocks.steel_scaffold });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.mp_stability_10_space, 1), new Object[] { "ASA", "PSP", 'A', AL.plate(), 'P', STEEL.ingot(), 'S', ModBlocks.steel_scaffold });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.mp_stability_15_flat, 1), new Object[] { "ASA", "PSP", 'A', AL.plate(), 'P', STEEL.plate(), 'S', ModBlocks.steel_scaffold });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.mp_stability_15_thin, 1), new Object[] { "A A", "PSP", "PSP", 'A', AL.plate(), 'P', STEEL.plate(), 'S', ModBlocks.steel_scaffold });
+		//todo change to use better materials/tiering also organize by best to worst
+		CraftingManager.addRecipeAuto(new ItemStack(ModItems.mp_stability_10_flat, 1), new Object[] { "PSP", "PAP", 'P', STEEL.plate(), 'S', ModBlocks.steel_scaffold, 'A', ModItems.ingot_smco });
+		CraftingManager.addRecipeAuto(new ItemStack(ModItems.mp_stability_10_cruise, 1), new Object[] { "ASA", " S ", "PFP", 'A', TI.plate(), 'P', STEEL.plate(), 'S', ModBlocks.steel_scaffold, 'F', ModItems.ingot_smco });
+		CraftingManager.addRecipeAuto(new ItemStack(ModItems.mp_stability_10_space, 1), new Object[] { "ASA", "PSP", 'F', AL.plate(), 'P', STEEL.ingot(), 'S', ModBlocks.steel_scaffold, 'F', ModItems.ingot_smco });
+		CraftingManager.addRecipeAuto(new ItemStack(ModItems.mp_stability_15_flat, 1), new Object[] { "ASA", "PFP", 'A', AL.plate(), 'P', STEEL.plate(), 'S', ModBlocks.steel_scaffold, 'F', ModItems.ingot_smco });
+		CraftingManager.addRecipeAuto(new ItemStack(ModItems.mp_stability_15_thin, 1), new Object[] { "AFA", "PSP", "PSP", 'A', AL.plate(), 'P', STEEL.plate(), 'S', ModBlocks.steel_scaffold, 'F', ModItems.ingot_smco });
+		CraftingManager.addRecipeAuto(new ItemStack(ModItems.mp_stability_15_soyuz, 1), new Object[] { "AFA", " S ", "PAP", 'A', AL.plate(), 'P', STEEL.plate(), 'S', ModBlocks.steel_scaffold, 'F', ModItems.ingot_smco });
 
 		//Missile thrusters
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.mp_thruster_15_balefire_large_rad, 1), new Object[] { "CCC", "CTC", "CCC", 'C', CU.plateCast(), 'T', ModItems.mp_thruster_15_balefire_large });

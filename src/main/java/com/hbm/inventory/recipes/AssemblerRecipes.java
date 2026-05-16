@@ -228,18 +228,18 @@ public class AssemblerRecipes extends SerializableRecipe {
 										   1,
 										   EnumCircuitType.CAPACITOR.ordinal()),},
 				   100);
-		makeRecipe(new ComparableStack(ModItems.levitation_unit,
-									   1),
-				   new AStack[]{
-					   new ComparableStack(ModItems.coil_copper,
-										   4),
-					   new ComparableStack(ModItems.coil_tungsten,
-										   2),
-					   new OreDictStack(TI.plate(),
-										6),
-					   new ComparableStack(ModItems.nugget_schrabidium,
-										   2),},
-				   100);
+		//makeRecipe(new ComparableStack(ModItems.levitation_unit,
+		//							   1),
+		//		   new AStack[]{
+		//			   new ComparableStack(ModItems.coil_copper,
+		//								   4),
+		//			   new ComparableStack(ModItems.coil_tungsten,
+		//								   2),
+		//			   new OreDictStack(TI.plate(),
+		//								6),
+		//			   new ComparableStack(ModItems.nugget_schrabidium,
+		//								   2),},
+		//		   100);
 		makeRecipe(new ComparableStack(ModItems.drill_titanium,
 									   1),
 				   new AStack[]{
@@ -1464,8 +1464,10 @@ public class AssemblerRecipes extends SerializableRecipe {
 										   EnumCircuitType.BASIC.ordinal()),
 					   new ComparableStack(ModItems.coil_copper,
 										   12),
+					   new ComparableStack(ModItems.ingot_smco, 1),
 					   new ComparableStack(ModItems.crt_display,
 										   4),},
+
 				   300);
 
 		//I'm pretty sure the large radar lags out the game. Could be wrong though.
@@ -1489,6 +1491,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 										   EnumCircuitType.ADVANCED),
 					   new ComparableStack(ModItems.coil_copper,
 										   32),
+					   new ComparableStack(ModItems.ingot_smco, 1),
 					   new ComparableStack(ModItems.crt_display,
 										   4),},
 				   600);
@@ -3067,11 +3070,13 @@ public class AssemblerRecipes extends SerializableRecipe {
 					   new ComparableStack(ModItems.flywheel_beryllium,
 										   1),
 					   new OreDictStack(GOLD.wireDense(),
-										48),
+										2),
 					   new OreDictStack(DURA.pipe(),
 										16),
 					   new OreDictStack(STEEL.pipe(),
-										16)
+										16),
+					   new ComparableStack(ModItems.ingot_smco,
+										   2)
 				   },
 				   600);
 
