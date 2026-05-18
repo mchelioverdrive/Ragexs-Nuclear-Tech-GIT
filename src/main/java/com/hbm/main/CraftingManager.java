@@ -589,6 +589,7 @@ public class CraftingManager {
 		addRecipeAuto(new ItemStack(ModBlocks.lantern, 1), new Object[] { "PGP", " S ", " S ", 'P', KEY_ANYPANE, 'G', Items.glowstone_dust, 'S', ModBlocks.steel_beam });
 		addRecipeAuto(new ItemStack(ModBlocks.spotlight_incandescent, 8), new Object[] { "G", "T", "I", 'G', KEY_ANYPANE, 'T', W.wireFine(), 'I', IRON.ingot() });
 		addRecipeAuto(new ItemStack(ModBlocks.spotlight_fluoro, 8), new Object[] { "G", "M", "A", 'G', KEY_ANYPANE, 'M', ModItems.ingot_mercury, 'A', ModItems.plate_aluminium });
+		addRecipeAuto(new ItemStack(ModBlocks.spotlight_fluoro, 12), new Object[] { "G", "M", "A", 'G', KEY_ANYPANE, 'M', ModItems.nugget_europium, 'A', ModItems.plate_aluminium });
 		addRecipeAuto(new ItemStack(ModBlocks.spotlight_halogen, 8), new Object[] { "G", "B", "S", 'G', KEY_ANYPANE, 'B', ModItems.powder_bromine, 'S', STEEL.plate() });
 		addRecipeAuto(new ItemStack(ModBlocks.floodlight, 2), new Object[] { "CSC", "TST", "G G", 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.CAPACITOR), 'S', STEEL.plate(), 'T', ModItems.coil_tungsten, 'G', KEY_ANYPANE });
 
@@ -1043,6 +1044,7 @@ public class CraftingManager {
 
 		addRecipeAuto(new ItemStack(ModBlocks.pwr_fuel, 4), new Object[] { "LZL", "L L", "LZL", 'L', PB.plate528(), 'Z', ZR.plateWelded() });
 		addRecipeAuto(new ItemStack(ModBlocks.pwr_control, 4), new Object[] { "SBS", "MBM", "SBS", 'S', STEEL.plate528(), 'B', B.ingot(), 'M', ModItems.motor });
+		addRecipeAuto(new ItemStack(ModBlocks.pwr_control, 8), new Object[] { "SBS", "MBM", "SBS", 'S', STEEL.plate528(), 'B', ModItems.ingot_europium, 'M', ModItems.motor });
 		addRecipeAuto(new ItemStack(ModBlocks.pwr_channel, 4), new Object[] { "CPC", "BPB", "CPC", 'C', CU.ingot(), 'P', STEEL.pipe(), 'B', ANY_PLASTIC.ingot() });
 		addRecipeAuto(new ItemStack(ModBlocks.pwr_heatex, 4), new Object[] { "CSC", "SMS", "CSC", 'C', CU.plateCast(), 'S', STEEL.plate528(), 'M', ModItems.motor });
 		addRecipeAuto(new ItemStack(ModBlocks.pwr_heatsink, 4), new Object[] { "SCS", "CRC", "SCS", 'S', BIGMT.plateCast(), 'C', CU.plate(), 'R', RUBBER.ingot() });

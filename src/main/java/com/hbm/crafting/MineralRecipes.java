@@ -145,6 +145,7 @@ public class MineralRecipes {
 
 		addMineralSet(ModItems.nugget_pu_mix, ModItems.ingot_pu_mix, ModBlocks.block_pu_mix);
 		add1To9Pair(ModItems.ingot_neptunium_fuel, ModItems.nugget_neptunium_fuel);
+		add1To9Pair(ModItems.ingot_europium, ModItems.nugget_europium);
 
 		addBillet(ModItems.billet_cobalt,				ModItems.ingot_cobalt,				ModItems.nugget_cobalt);
 		addBillet(ModItems.billet_gaas,					ModItems.ingot_gaas,				ModItems.nugget_gaas);

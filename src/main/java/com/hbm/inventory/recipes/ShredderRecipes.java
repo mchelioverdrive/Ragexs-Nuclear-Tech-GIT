@@ -391,6 +391,9 @@ public class ShredderRecipes extends SerializableRecipe {
 		//scorched_stone
 		ShredderRecipes.setRecipe(ModBlocks.scorched_stone, new ItemStack(ModItems.scrap_nuclear, 1));
 
+		//europium stage 1
+		ShredderRecipes.setRecipe(ModItems.fragment_europium, new ItemStack(ModItems.europium_dust_tiny, 1));
+
 		/* Fracking debris scrapping */
 		ShredderRecipes.setRecipe(ModBlocks.dirt_dead, new ItemStack(ModItems.scrap_oil, 1));
 		ShredderRecipes.setRecipe(ModBlocks.dirt_oily, new ItemStack(ModItems.scrap_oil, 1));

@@ -19,13 +19,16 @@ import com.hbm.inventory.RecipesCommon.ComparableStack;
 import com.hbm.inventory.RecipesCommon.OreDictStack;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.recipes.loader.SerializableRecipe;
+import com.hbm.items.ItemEnums;
 import com.hbm.items.ModItems;
+import com.hbm.items.machine.ItemArcElectrode;
 import com.hbm.items.machine.ItemCircuit;
 import com.hbm.main.MainRegistry;
 
 
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
 public class ChemplantRecipes extends SerializableRecipe {
@@ -1247,6 +1250,41 @@ public class ChemplantRecipes extends SerializableRecipe {
 						)
 						.outputItems(
 							new ItemStack(ModItems.powder_samarium, 1)
+						)
+		);
+
+		//fullerene from graphite electrodes + helium
+		recipes.add(new ChemRecipe(1075, "FULLERENE_SYNTHESIS", 600)
+						.inputItems(
+							new ComparableStack(ModItems.arc_electrode, 1, ItemArcElectrode.EnumElectrodeType.GRAPHITE)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.HELIUM4, 2000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.powder_ash, 1 ,
+										  ItemEnums.EnumAshType.SOOT.ordinal() ), //holy shit I hate enums
+							new ItemStack(ModItems.arc_electrode_burnt, 1, ItemArcElectrode.EnumElectrodeType.GRAPHITE.ordinal())
+						)
+						.outputFluids(
+							new FluidStack(Fluids.FULLERENE, 1000)
+						)
+		);
+
+		//sulfuric acid + europium_dust_tiny = europium solution
+		recipes.add(new ChemRecipe(1076, "EUROPIUM_SOL", 400)
+						.inputItems(
+							new ComparableStack(
+								ModItems.europium_dust_tiny, 9
+							)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.SULFURIC_ACID, 1000)
+						)
+						.outputItems(
+							new ItemStack(
+								ModItems.europiumsol
+							)
 						)
 		);
 

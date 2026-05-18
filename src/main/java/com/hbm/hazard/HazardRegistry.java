@@ -220,9 +220,12 @@ public class HazardRegistry {
 	//public static final float cn989 = 89.0F;
 
 
+	//weak, negligible or barely radioactive/hazards
 
 	//rubidium
 	public static final float Rb    = 0.001F;
+	//samarium
+	public static final float Sm    = 0.001F;
 
 
 	// =====================================================================================
@@ -370,6 +373,8 @@ public class HazardRegistry {
 		HazardSystem.register(scorched_stone, makeData(RADIATION, 0.05F));
 
 		HazardSystem.register(new ItemStack(ModItems.rubidiumsalt), makeData(RADIATION, Rb * nugget)); //im sure its fine
+		HazardSystem.register(new ItemStack(ModItems.ingot_samarium), makeData(RADIATION, Sm));
+		HazardSystem.register(new ItemStack(ModItems.ingot_smco), makeData(RADIATION, Sm));
 
 		//the idea is this should NOT exist. Maybe I'll add decay at some point.
 		HazardSystem.register(new ItemStack(ModItems.rutherfordium_nugget), makeData(RADIATION, 1000000).addEntry(NEUTRON, 100000F).addEntry(HOT, 100000F).addEntry(BLINDING, 1F).addEntry(EXPLOSIVE, 1F).addEntry(AUTISM, 5F).addEntry(ASBESTOS, 500F).addEntry(COAL, 500F).addEntry(HYDROACTIVE, 1F));

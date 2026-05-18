@@ -180,6 +180,8 @@ public class ModItems {
 	public static Item ingot_palladium;
 	public static Item ingot_samarium;
 	public static Item ingot_smco;
+	public static Item ingot_europium;
+	public static Item nugget_europium;
 
 	public static Item nitra;
 	public static Item nitra_small;
@@ -791,6 +793,9 @@ public class ModItems {
 	public static Item fragment_coltan;
 	public static Item fragment_praseodymium;
 	public static Item fragment_samarium;
+	public static Item fragment_europium;
+	public static Item europium_dust_tiny;
+	public static Item europiumsol;
 	public static Item ingot_praseodymium;
 	public static Item nugget_praseodymium;
 	public static Item powder_praseodymium;
@@ -3372,6 +3377,8 @@ public class ModItems {
 		ingot_palladium = new ItemCustomLore().setUnlocalizedName("ingot_palladium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_palladium");
 		ingot_samarium = new ItemCustomLore().setUnlocalizedName("ingot_samarium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_samarium");
 		ingot_smco = new ItemCustomLore().setUnlocalizedName("ingot_smco").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_samarium");
+		ingot_europium = new ItemCustomLore().setUnlocalizedName("ingot_europium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_samarium");
+		nugget_europium = new ItemCustomLore().setUnlocalizedName("nugget_europium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_technetium");
 		scuttertail = new Item().setUnlocalizedName("scuttertail").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":scuttertail");
 		saltleaf = new Item().setUnlocalizedName("saltleaf").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":salt_leaf");
 
@@ -3582,6 +3589,9 @@ public class ModItems {
 		fragment_coltan = new Item().setUnlocalizedName("fragment_coltan").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_coltan");
 		fragment_praseodymium = new Item().setUnlocalizedName("fragment_praseodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_praseodymium");
 		fragment_samarium = new Item().setUnlocalizedName("fragment_samarium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_samarium");
+		fragment_europium = new Item().setUnlocalizedName("fragment_europium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_samarium");
+		europium_dust_tiny = new Item().setUnlocalizedName("europium_dust_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_mercury_tiny");
+		europiumsol = new Item().setUnlocalizedName("europiumsol").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_fluorite");
 		ingot_praseodymium = new Item().setUnlocalizedName("ingot_praseodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_praseodymium");
 		nugget_praseodymium = new Item().setUnlocalizedName("nugget_praseodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_praseodymium");
 		powder_praseodymium = new Item().setUnlocalizedName("powder_praseodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_praseodymium");
@@ -6660,6 +6670,8 @@ public class ModItems {
 		GameRegistry.registerItem(ingot_palladium, ingot_palladium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_samarium, ingot_samarium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_smco, ingot_smco.getUnlocalizedName());
+		GameRegistry.registerItem(ingot_europium, ingot_europium.getUnlocalizedName());
+		GameRegistry.registerItem(nugget_europium, nugget_europium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_aluminium, ingot_aluminium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_tin, ingot_tin.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_steel, ingot_steel.getUnlocalizedName());
@@ -7132,6 +7144,9 @@ public class ModItems {
 		GameRegistry.registerItem(fragment_coltan, fragment_coltan.getUnlocalizedName());
 		GameRegistry.registerItem(fragment_praseodymium, fragment_praseodymium.getUnlocalizedName());
 		GameRegistry.registerItem(fragment_samarium, fragment_samarium.getUnlocalizedName());
+		GameRegistry.registerItem(fragment_europium, fragment_europium.getUnlocalizedName());
+		GameRegistry.registerItem(europium_dust_tiny, europium_dust_tiny.getUnlocalizedName());
+		GameRegistry.registerItem(europiumsol, europiumsol.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_praseodymium, ingot_praseodymium.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_praseodymium, nugget_praseodymium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_praseodymium, powder_praseodymium.getUnlocalizedName());

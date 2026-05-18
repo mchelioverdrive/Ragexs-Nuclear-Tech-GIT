@@ -147,6 +147,13 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 			new ItemStack(ModItems.ingot_smco)
 		);
 
+		//europium
+		addRecipe(
+			ModItems.europiumsol,
+			LA.ingot(),
+			new ItemStack(ModItems.ingot_europium)
+		);
+
 		if(GeneralConfig.enableLBSM && GeneralConfig.enableLBSMSimpleChemsitry) {
 			addRecipe(ModItems.canister_empty, COAL, new ItemStack(ModItems.canister_full, 1, Fluids.OIL.getID()));
 		}

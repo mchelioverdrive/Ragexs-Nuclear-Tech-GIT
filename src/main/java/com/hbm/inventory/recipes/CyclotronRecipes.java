@@ -171,6 +171,16 @@ public class CyclotronRecipes extends SerializableRecipe {
 		//poison powder is made from nitrogen, so it's almost accurate. I'll add solid nitrogen later.
 		makeRecipe(new ComparableStack(ModItems.nugget_cf249), new ComparableStack(ModItems.powder_poison), new ItemStack(ModItems.dubnium_nugget), 6);
 
+		//plutonium 239 to 240 via neutron capture
+		makeRecipe(new ComparableStack(ModItems.nugget_pu239), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_pu240), 3);
+
+		//plutonium 240 to 241 via neutron capture
+		makeRecipe(new ComparableStack(ModItems.nugget_pu240), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_pu241), 4);
+
+		//americium 241 from plutonium 241
+		//should be decay but thats pain
+		makeRecipe(new ComparableStack(ModItems.nugget_pu241), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_am241), 7);
+
 		//TODO gold -> more anti matter than all other reactions (the final number is antimatter fluid amount)
 
 	}
