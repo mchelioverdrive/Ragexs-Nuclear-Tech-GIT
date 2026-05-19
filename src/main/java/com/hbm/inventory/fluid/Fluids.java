@@ -272,6 +272,7 @@ public class Fluids {
 	public static FluidType RHODIUM_SOLUTION;
 
 	public static FluidType IRIDIUM_SOLUTION;
+	public static FluidType GADOLINIUM;
 	public static FluidType NOBLE_GAS_MIX;
 
 	public static final HashBiMap<String, FluidType> renameMapping = HashBiMap.create();
@@ -571,6 +572,7 @@ public class Fluids {
 		BITTERN = new FluidType("BITTERN", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).setTemp(300).addTraits(LIQUID, VISCOUS, new FT_Corrosive(20));
 		IODINE_BRINE = new FluidType("IODINE_BRINE", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS, new FT_Corrosive(200)); //.setTemp(300) idk about that one
 		NOBLE_GAS_MIX = new FluidType("NOBLE_GAS_MIX", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(GASEOUS, NOCON);
+		GADOLINIUM = new FluidType("GADOLINIUM", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS, new FT_Corrosive(20));
 
 //I am getting really sick and tired of this retarded ass fluid system
 
@@ -833,6 +835,7 @@ public class Fluids {
 		metaOrder.add(BITTERN);
 		metaOrder.add(IODINE_BRINE);
 		metaOrder.add(NOBLE_GAS_MIX);
+		metaOrder.add(GADOLINIUM);
 
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!

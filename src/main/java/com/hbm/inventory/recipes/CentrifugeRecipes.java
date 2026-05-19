@@ -36,6 +36,7 @@ import com.hbm.util.ItemStackUtil;
 
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.oredict.OreDictionary;
 
@@ -259,8 +260,6 @@ public class CentrifugeRecipes extends SerializableRecipe {
 				new ItemStack(ModItems.powder_iron, 1),
 				new ItemStack(Blocks.gravel, 1) });
 
-
-		//this bob guy's kinda retarded
 		recipes.put(new OreDictStack("oreZinc"), new ItemStack[] {
 			new ItemStack(ModItems.powder_zinc, 1),
 			new ItemStack(ModItems.powder_cadmium, 1),
@@ -677,6 +676,14 @@ public class CentrifugeRecipes extends SerializableRecipe {
 				new ItemStack(Items.gold_nugget, 1),
 				new ItemStack(ModItems.nugget_silver, 1),
 				new ItemStack(ModItems.powder_lead, 1) });
+
+		//gadoliniumsol to gadolinium concentrate
+		recipes.put(new ComparableStack(ModItems.gadoliniumsol), new ItemStack[] {
+				new ItemStack(ModItems.powder_gadolinium, 1),
+				new ItemStack(ModItems.nugget_th232, 1),
+				new ItemStack(ModItems.powder_cerium_tiny)
+				//new ItemStack(ModItems.powder_iron, 1) //no?
+		});
 
 
 

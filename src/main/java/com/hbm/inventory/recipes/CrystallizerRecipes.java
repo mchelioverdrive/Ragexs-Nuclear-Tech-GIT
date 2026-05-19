@@ -94,6 +94,12 @@ public class CrystallizerRecipes extends SerializableRecipe {
 		registerRecipe(new ComparableStack(ModItems.pyrrhotite), new CrystallizerRecipe(new ItemStack(ModBlocks.ore_sulfur), baseTime * 4), nitric);
 		registerRecipe(new ComparableStack(ModItems.pyrrhotite), new CrystallizerRecipe(new ItemStack(ModBlocks.ore_sulfur), baseTime * 4), bio);
 
+		//gadolinium step
+		//gadolinium_dust_tiny into gadolinium concentrate
+
+		registerRecipe(new ComparableStack(ModItems.gadolinium_dust_tiny, 9), new CrystallizerRecipe(new ItemStack(ModItems.gadoliniumsol), baseTime * 4), sulfur);
+		registerRecipe(new ComparableStack(ModItems.gadolinium_dust_tiny, 9), new CrystallizerRecipe(new ItemStack(ModItems.gadoliniumsol), baseTime * 4), chloric);
+
 
 
 		//fake shit most likely:

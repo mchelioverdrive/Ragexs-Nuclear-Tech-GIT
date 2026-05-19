@@ -1288,6 +1288,40 @@ public class ChemplantRecipes extends SerializableRecipe {
 						)
 		);
 
+		//gadolinium_dust_tiny into gadolinium concentrate
+		//recipes.add(new ChemRecipe(1077, "GADOLIN_SOL", 400)
+		//				.inputItems(
+		//					new ComparableStack(
+		//						ModItems.gadolinium_dust_tiny, 9
+		//					)
+		//				)
+		//				.inputFluids(
+		//					new FluidStack(Fluids.SULFURIC_ACID, 1000)
+		//				)
+		//				.outputItems(
+		//					new ItemStack(
+		//						ModItems.gadoliniumsol
+		//					)
+		//				)
+		//);
+		//belongs in the crystalizer (leaching reactor)
+
+
+		//now gadolinium powder + heat (steam) = liquid gadolinium
+		recipes.add(new ChemRecipe(1077, "GADOLINIUM_LIQUID", 400)
+						.inputItems(
+							new ComparableStack(
+								ModItems.powder_gadolinium, 1
+							)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.ULTRAHOTSTEAM, 1000)
+						)
+						.outputFluids(
+							new FluidStack(Fluids.GADOLINIUM, 1000)
+						)
+		);
+
 
 
 
