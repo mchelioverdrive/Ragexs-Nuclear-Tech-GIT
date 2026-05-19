@@ -103,6 +103,7 @@ public class MineralRecipes {
 		add1To9Pair(ModItems.ingot_cm247, ModItems.nugget_cm247);
 
 		add1To9Pair(ModItems.ingot_indium, ModItems.nugget_indium);
+		add1To9Pair(ModItems.gadolinium_dust_step, ModItems.gadolinium_dust_tiny);
 
 		//thallium
 		add1To9Pair(ModItems.powder_thallium, ModItems.nugget_thallium);

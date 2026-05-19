@@ -351,6 +351,7 @@ public class OreDictManager {
 	public static final DictFrame In = new DictFrame("Indium");
 	public static final DictFrame Pd = new DictFrame("Palladium");
 	public static final DictFrame Sm = new DictFrame("Samarium");
+	public static final DictFrame Gd = new DictFrame("Gadolinium");
 
 	/*
 	 * NITAN
@@ -624,6 +625,7 @@ public class OreDictManager {
 		In .ingot(ingot_indium) .nugget(nugget_indium) .dust(powder_indium);
 		Pd .ingot(ingot_palladium) .ore(ore_palladium) .dust(powder_palladium);
 		Sm .ingot(ingot_samarium) .nugget(fragment_samarium) .dust(powder_samarium);
+		Gd .ingot(ingot_gadolinium)  .dust(powder_gadolinium2); //.nugget(fragment_gadolinium) //we don't want the crucible to allow skips for pain the element
 
 		/*
 		 * NITAN

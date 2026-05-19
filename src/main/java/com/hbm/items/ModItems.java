@@ -798,7 +798,10 @@ public class ModItems {
 	public static Item europium_dust_tiny;
 	public static Item gadolinium_dust_tiny;
 	public static Item gadoliniumsol;
+	public static Item gadolinium_dust_step;
 	public static Item powder_gadolinium;
+	public static Item powder_gadolinium2;
+	public static Item ingot_gadolinium;
 	public static Item europiumsol;
 	public static Item ingot_praseodymium;
 	public static Item nugget_praseodymium;
@@ -3598,7 +3601,10 @@ public class ModItems {
 		europium_dust_tiny = new Item().setUnlocalizedName("europium_dust_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_mercury_tiny");
 		gadolinium_dust_tiny = new Item().setUnlocalizedName("gadolinium_dust_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_mercury_tiny");
 		gadoliniumsol = new Item().setUnlocalizedName("gadoliniumsol").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_fluorite");
+		gadolinium_dust_step = new Item().setUnlocalizedName("gadolinium_dust_step").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_iron");
 		powder_gadolinium = new Item().setUnlocalizedName("powder_gadolinium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_zirconium");
+		powder_gadolinium2 = new Item().setUnlocalizedName("powder_gadolinium2").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_zirconium");
+		ingot_gadolinium = new Item().setUnlocalizedName("ingot_gadolinium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_uranium");
 		europiumsol = new Item().setUnlocalizedName("europiumsol").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_fluorite");
 		ingot_praseodymium = new Item().setUnlocalizedName("ingot_praseodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_praseodymium");
 		nugget_praseodymium = new Item().setUnlocalizedName("nugget_praseodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_praseodymium");
@@ -7157,7 +7163,10 @@ public class ModItems {
 		GameRegistry.registerItem(europium_dust_tiny, europium_dust_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(gadolinium_dust_tiny, gadolinium_dust_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(gadoliniumsol, gadoliniumsol.getUnlocalizedName());
+		GameRegistry.registerItem(gadolinium_dust_step, gadolinium_dust_step.getUnlocalizedName());
 		GameRegistry.registerItem(powder_gadolinium, powder_gadolinium.getUnlocalizedName());
+		GameRegistry.registerItem(powder_gadolinium2, powder_gadolinium2.getUnlocalizedName());
+		GameRegistry.registerItem(ingot_gadolinium, ingot_gadolinium.getUnlocalizedName());
 		GameRegistry.registerItem(europiumsol, europiumsol.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_praseodymium, ingot_praseodymium.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_praseodymium, nugget_praseodymium.getUnlocalizedName());

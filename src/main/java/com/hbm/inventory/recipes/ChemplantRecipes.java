@@ -1322,6 +1322,17 @@ public class ChemplantRecipes extends SerializableRecipe {
 						)
 		);
 
+		//liquid gadolinium + solvent = gadolinium powder 2
+		recipes.add(new ChemRecipe(1078, "GADOLINIUM_PRECIPITATION", 400)
+						.inputFluids(
+							new FluidStack(Fluids.GADOLINIUM, 1000),
+							new FluidStack(Fluids.SOLVENT, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.powder_gadolinium2, 1)
+						)
+		);
+
 
 
 

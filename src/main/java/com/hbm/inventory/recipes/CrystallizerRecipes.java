@@ -97,8 +97,8 @@ public class CrystallizerRecipes extends SerializableRecipe {
 		//gadolinium step
 		//gadolinium_dust_tiny into gadolinium concentrate
 
-		registerRecipe(new ComparableStack(ModItems.gadolinium_dust_tiny, 9), new CrystallizerRecipe(new ItemStack(ModItems.gadoliniumsol), baseTime * 4), sulfur);
-		registerRecipe(new ComparableStack(ModItems.gadolinium_dust_tiny, 9), new CrystallizerRecipe(new ItemStack(ModItems.gadoliniumsol), baseTime * 4), chloric);
+		registerRecipe(new ComparableStack(ModItems.gadolinium_dust_step), new CrystallizerRecipe(new ItemStack(ModItems.gadoliniumsol), baseTime * 4), sulfur);
+		registerRecipe(new ComparableStack(ModItems.gadolinium_dust_step), new CrystallizerRecipe(new ItemStack(ModItems.gadoliniumsol), baseTime * 4), chloric);
 
 
 
