@@ -179,7 +179,10 @@ public class CyclotronRecipes extends SerializableRecipe {
 
 		//americium 241 from plutonium 241
 		//should be decay but thats pain
-		makeRecipe(new ComparableStack(ModItems.nugget_pu241), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_am241), 7);
+		makeRecipe(new ComparableStack(ModItems.nugget_pu241), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_am241), 4);
+
+		//am 242 from am241
+		makeRecipe(new ComparableStack(ModItems.nugget_am241), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_am242), 4);
 
 		//TODO gold -> more anti matter than all other reactions (the final number is antimatter fluid amount)
 

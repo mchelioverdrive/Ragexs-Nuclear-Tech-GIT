@@ -92,13 +92,19 @@ public class BreederRecipeHandler extends TemplateRecipeHandler implements IComp
 			BreederRecipes.getAllRecipes();
 
 		for(Map.Entry<ItemStack, BreederRecipe> recipe : recipes) {
-			this.arecipes.add(
-				new BreedingSet(
-					recipe.getKey(),
-					recipe.getValue().output,
-					recipe.getValue().flux
-				)
-			);
+
+			if(NEIServerUtils.areStacksSameType(
+				result,
+				recipe.getValue().output)) {
+
+				this.arecipes.add(
+					new BreedingSet(
+						recipe.getKey(),
+						recipe.getValue().output,
+						recipe.getValue().flux
+					)
+				);
+			}
 		}
 	}
 
@@ -118,8 +124,10 @@ public class BreederRecipeHandler extends TemplateRecipeHandler implements IComp
 			BreederRecipes.getAllRecipes();
 
 		for(Map.Entry<ItemStack, BreederRecipe> recipe : recipes) {
+
 			if(NEIServerUtils.areStacksSameType(
-				recipe.getValue().output, ingredient)) {
+				ingredient,
+				recipe.getKey())) {
 
 				this.arecipes.add(
 					new BreedingSet(

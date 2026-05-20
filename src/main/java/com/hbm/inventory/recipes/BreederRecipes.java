@@ -44,6 +44,21 @@ public class BreederRecipes extends SerializableRecipe {
 		//You breed Pu-239 from U-238. You can breed Pu-238 from Pu-239, but it's not really worth it.
 		//setRecipe(BreedingRodType.RA226, BreedingRodType.AC227, 300); //this would literally be radon
 
+		//AM241 -> CM242
+		setRecipe(BreedingRodType.AM241, BreedingRodType.CM242, 200);
+
+		//Cm242 -> Cm243   (200)
+		setRecipe(BreedingRodType.CM242, BreedingRodType.CM243, 200);
+		//Cm243 -> Cm244   (300)
+		setRecipe(BreedingRodType.CM243, BreedingRodType.CM244, 300);
+		//Cm244 -> Cm245   (500)
+		setRecipe(BreedingRodType.CM244, BreedingRodType.CM245, 500);
+		//Cm245 -> Cm246   (700)
+		setRecipe(BreedingRodType.CM245, BreedingRodType.CM246, 700);
+		//Cm246 -> Cm247   (1000)
+		setRecipe(BreedingRodType.CM246, BreedingRodType.CM247, 1000);
+
+
 	}
 
 	/** Sets recipes for single, dual, and quad rods **/
