@@ -203,19 +203,46 @@ public class ContaminationUtil {
 
 	public static void printDosimeterData(EntityPlayer player) {
 
-		double env = ((int)(HbmLivingProps.getRadBuf(player) * 10D)) / 10D;
+		// HBM radiation assumed to be mSv/s
+		double envMSvS = HbmLivingProps.getRadBuf(player);
+
+		// Convert mSv/s -> R/h
+		// 1 Sv ≈ 104.17 R
+		// mSv -> Sv = /1000
+		// seconds -> hours = *3600
+		double envRoentgen = envMSvS * 0.001D * 3600D * 104.17D;
+
+		// round to 1 decimal place
+		envRoentgen = ((int)(envRoentgen * 10D)) / 10D;
+
 		boolean limit = false;
 
-		if(env > 3.6D) {
-			env = 3.6D;
+		// DP-3V upper limit
+		if(envRoentgen > 3.6D) {
+			envRoentgen = 3.6D;
 			limit = true;
 		}
 
-		String envPrefix = getPreffixFromRad(env);
+		String envPrefix = getPreffixFromRad(envRoentgen);
 
-		player.addChatMessage(new ChatComponentText("===== ☢ ").appendSibling(new ChatComponentTranslation("geiger.title.dosimeter")).appendSibling(new ChatComponentText(" ☢ =====")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.GOLD)));
-		player.addChatMessage(new ChatComponentTranslation("geiger.envRad").appendSibling(new ChatComponentText(" " + envPrefix + (limit ? ">" : "") + env + " mSv/s")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.YELLOW)));
+		player.addChatMessage(
+			new ChatComponentText("===== ☢ ")
+				.appendSibling(new ChatComponentTranslation("geiger.title.dosimeter"))
+				.appendSibling(new ChatComponentText(" ☢ ====="))
+				.setChatStyle(new ChatStyle().setColor(EnumChatFormatting.GOLD))
+		);
+
+		player.addChatMessage(
+			new ChatComponentTranslation("geiger.envRad")
+				.appendSibling(
+					new ChatComponentText(
+						" " + envPrefix + (limit ? ">" : "") + envRoentgen + " R/h"
+					)
+				)
+				.setChatStyle(new ChatStyle().setColor(EnumChatFormatting.YELLOW))
+		);
 	}
+	//this thing is now practically useless lol
 
 	public static String getPreffixFromRad(double rads) {
 

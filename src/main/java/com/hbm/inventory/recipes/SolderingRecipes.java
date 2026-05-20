@@ -89,11 +89,33 @@ public class SolderingRecipes extends SerializableRecipe {
 											new OreDictStack(PB.wireFine(), 4)}
 		));
 
+		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 4, EnumCircuitType.ADVANCED.ordinal()), 100, 1_000,
+										new FluidStack(Fluids.SULFURIC_ACID, 1_000),
+										new AStack[] {
+											new ComparableStack(ModItems.circuit, 2, EnumCircuitType.CHIP),
+											new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CAPACITOR)},
+										new AStack[] {
+											new ComparableStack(ModItems.circuit, 6, EnumCircuitType.PCB),
+											new ComparableStack(ModItems.ingot_terbium)},
+										new AStack[] {
+											new OreDictStack(PB.wireFine(), 4)}
+		));
+
 
 		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.CAPACITOR_BOARD.ordinal()), 200, 300,
 				new FluidStack(Fluids.PEROXIDE, 250),
 				new AStack[] {
 						new ComparableStack(ModItems.circuit, 3, EnumCircuitType.CAPACITOR_TANTALIUM)},
+				new AStack[] {
+						new ComparableStack(ModItems.circuit, 1, EnumCircuitType.PCB)},
+				new AStack[] {
+						new OreDictStack(PB.wireFine(), 3)}
+		));
+
+		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 16, EnumCircuitType.CAPACITOR_BOARD.ordinal()), 200, 300,
+				new FluidStack(Fluids.PEROXIDE, 250),
+				new AStack[] {
+						new ComparableStack(ModItems.ingot_terbium)},
 				new AStack[] {
 						new ComparableStack(ModItems.circuit, 1, EnumCircuitType.PCB)},
 				new AStack[] {
@@ -106,6 +128,19 @@ public class SolderingRecipes extends SerializableRecipe {
 						new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CHIP_BISMOID),
 						new ComparableStack(ModItems.circuit, lbsm ? 4 : 16, EnumCircuitType.CHIP),
 						new ComparableStack(ModItems.circuit, lbsm ? 8 : 24, EnumCircuitType.CAPACITOR)},
+				new AStack[] {
+						new ComparableStack(ModItems.circuit, 12, EnumCircuitType.PCB),
+						new OreDictStack(ANY_HARDPLASTIC.ingot(), 2)},
+				new AStack[] {
+						new OreDictStack(PB.wireFine(), 12)}
+		));
+
+		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 32, EnumCircuitType.BISMOID.ordinal()), 400, 10_000,
+				new FluidStack(Fluids.SOLVENT, 1_000),
+				new AStack[] {
+						new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CHIP_BISMOID),
+						new ComparableStack(ModItems.ingot_terbium),
+						new ComparableStack(ModItems.circuit, 24, EnumCircuitType.CAPACITOR)},
 				new AStack[] {
 						new ComparableStack(ModItems.circuit, 12, EnumCircuitType.PCB),
 						new OreDictStack(ANY_HARDPLASTIC.ingot(), 2)},
