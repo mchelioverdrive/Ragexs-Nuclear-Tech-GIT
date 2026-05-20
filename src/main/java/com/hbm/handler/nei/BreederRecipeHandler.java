@@ -67,22 +67,24 @@ public class BreederRecipeHandler extends TemplateRecipeHandler implements IComp
 	@Override
 	public void loadCraftingRecipes(String outputId, Object... results) {
 
-		if(!"breeding".equals(outputId))
+		if("breeding".equals(outputId)
+			&& getClass() == BreederRecipeHandler.class) {
+
+			List<Map.Entry<ItemStack, BreederRecipe>> recipes =
+				BreederRecipes.getAllRecipes();
+
+			for(Map.Entry<ItemStack, BreederRecipe> recipe : recipes) {
+				this.arecipes.add(new BreedingSet(
+					recipe.getKey(),
+					recipe.getValue().output,
+					recipe.getValue().flux
+				));
+			}
+
 			return;
-
-		if(getClass() != BreederRecipeHandler.class)
-			return;
-
-		List<Map.Entry<ItemStack, BreederRecipe>> recipes =
-			BreederRecipes.getAllRecipes();
-
-		for(Map.Entry<ItemStack, BreederRecipe> recipe : recipes) {
-			this.arecipes.add(new BreedingSet(
-				recipe.getKey(),
-				recipe.getValue().output,
-				recipe.getValue().flux
-			));
 		}
+
+		super.loadCraftingRecipes(outputId, results);
 	}
 
 	@Override
