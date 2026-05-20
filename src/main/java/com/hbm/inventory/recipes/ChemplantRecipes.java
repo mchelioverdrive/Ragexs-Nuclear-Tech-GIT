@@ -1333,6 +1333,8 @@ public class ChemplantRecipes extends SerializableRecipe {
 						)
 		);
 
+		//gadoliniumsol + high perf solvent = gadolinium 
+
 
 
 

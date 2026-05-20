@@ -100,6 +100,10 @@ public class CrystallizerRecipes extends SerializableRecipe {
 		registerRecipe(new ComparableStack(ModItems.gadolinium_dust_step), new CrystallizerRecipe(new ItemStack(ModItems.gadoliniumsol), baseTime * 4), sulfur);
 		registerRecipe(new ComparableStack(ModItems.gadolinium_dust_step), new CrystallizerRecipe(new ItemStack(ModItems.gadoliniumsol), baseTime * 4), chloric);
 
+		//terbium step
+		registerRecipe(new ComparableStack(ModItems.powder_terbium), new CrystallizerRecipe(new ItemStack(ModItems.terbiumsol), baseTime * 4), sulfur);
+		registerRecipe(new ComparableStack(ModItems.powder_terbium), new CrystallizerRecipe(new ItemStack(ModItems.terbiumsol), baseTime * 4), nitric);
+
 
 
 		//fake shit most likely:

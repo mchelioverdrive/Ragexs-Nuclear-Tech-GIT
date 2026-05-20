@@ -181,6 +181,7 @@ public class ModItems {
 	public static Item ingot_samarium;
 	public static Item ingot_smco;
 	public static Item ingot_europium;
+	public static Item ingot_terbium;
 	public static Item nugget_europium;
 
 	public static Item nitra;
@@ -795,9 +796,13 @@ public class ModItems {
 	public static Item fragment_samarium;
 	public static Item fragment_europium;
 	public static Item fragment_gadolinium;
+	public static Item fragment_terbium;
+	public static Item powder_terbium_tiny;
+	public static Item powder_terbium;
 	public static Item europium_dust_tiny;
 	public static Item gadolinium_dust_tiny;
 	public static Item gadoliniumsol;
+	public static Item terbiumsol;
 	public static Item gadolinium_dust_step;
 	public static Item powder_gadolinium;
 	public static Item powder_gadolinium2;
@@ -3385,6 +3390,7 @@ public class ModItems {
 		ingot_samarium = new ItemCustomLore().setUnlocalizedName("ingot_samarium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_samarium");
 		ingot_smco = new ItemCustomLore().setUnlocalizedName("ingot_smco").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_samarium");
 		ingot_europium = new ItemCustomLore().setUnlocalizedName("ingot_europium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_samarium");
+		ingot_terbium = new ItemCustomLore().setUnlocalizedName("ingot_terbium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_samarium");
 		nugget_europium = new ItemCustomLore().setUnlocalizedName("nugget_europium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_technetium");
 		scuttertail = new Item().setUnlocalizedName("scuttertail").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":scuttertail");
 		saltleaf = new Item().setUnlocalizedName("saltleaf").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":salt_leaf");
@@ -3598,9 +3604,13 @@ public class ModItems {
 		fragment_samarium = new Item().setUnlocalizedName("fragment_samarium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_samarium");
 		fragment_europium = new Item().setUnlocalizedName("fragment_europium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_samarium");
 		fragment_gadolinium = new Item().setUnlocalizedName("fragment_gadolinium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_praseodymium");
+		fragment_terbium = new Item().setUnlocalizedName("fragment_terbium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_samarium");
+		powder_terbium_tiny = new Item().setUnlocalizedName("powder_terbium_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_praseodymium_tiny");
+		powder_terbium = new Item().setUnlocalizedName("powder_terbium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_titanium");
 		europium_dust_tiny = new Item().setUnlocalizedName("europium_dust_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_mercury_tiny");
 		gadolinium_dust_tiny = new Item().setUnlocalizedName("gadolinium_dust_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_mercury_tiny");
 		gadoliniumsol = new Item().setUnlocalizedName("gadoliniumsol").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_fluorite");
+		terbiumsol = new Item().setUnlocalizedName("terbiumsol").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niter");
 		gadolinium_dust_step = new Item().setUnlocalizedName("gadolinium_dust_step").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_iron");
 		powder_gadolinium = new Item().setUnlocalizedName("powder_gadolinium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_zirconium");
 		powder_gadolinium2 = new Item().setUnlocalizedName("powder_gadolinium2").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_zirconium");
@@ -6685,6 +6695,7 @@ public class ModItems {
 		GameRegistry.registerItem(ingot_samarium, ingot_samarium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_smco, ingot_smco.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_europium, ingot_europium.getUnlocalizedName());
+		GameRegistry.registerItem(ingot_terbium, ingot_terbium.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_europium, nugget_europium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_aluminium, ingot_aluminium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_tin, ingot_tin.getUnlocalizedName());
@@ -7160,9 +7171,13 @@ public class ModItems {
 		GameRegistry.registerItem(fragment_samarium, fragment_samarium.getUnlocalizedName());
 		GameRegistry.registerItem(fragment_europium, fragment_europium.getUnlocalizedName());
 		GameRegistry.registerItem(fragment_gadolinium, fragment_gadolinium.getUnlocalizedName());
+		GameRegistry.registerItem(fragment_terbium, fragment_terbium.getUnlocalizedName());
+		GameRegistry.registerItem(powder_terbium_tiny, powder_terbium_tiny.getUnlocalizedName());
+		GameRegistry.registerItem(powder_terbium, powder_terbium.getUnlocalizedName());
 		GameRegistry.registerItem(europium_dust_tiny, europium_dust_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(gadolinium_dust_tiny, gadolinium_dust_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(gadoliniumsol, gadoliniumsol.getUnlocalizedName());
+		GameRegistry.registerItem(terbiumsol, terbiumsol.getUnlocalizedName());
 		GameRegistry.registerItem(gadolinium_dust_step, gadolinium_dust_step.getUnlocalizedName());
 		GameRegistry.registerItem(powder_gadolinium, powder_gadolinium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_gadolinium2, powder_gadolinium2.getUnlocalizedName());

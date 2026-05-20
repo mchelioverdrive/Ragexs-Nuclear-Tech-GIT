@@ -730,7 +730,10 @@ public class AnvilRecipes {
 				new AnvilOutput(new ItemStack(ModItems.fragment_europium), 0.01F), //please kill me
 
 				//gadolinium
-				new AnvilOutput(new ItemStack(ModItems.fragment_gadolinium), 0.01F)
+				new AnvilOutput(new ItemStack(ModItems.fragment_gadolinium), 0.01F),
+
+				//terbium
+				new AnvilOutput(new ItemStack(ModItems.fragment_terbium), 0.01F)
 
 				//TODOne ^fragment_samarium and ^fragment_praseodymium if needed
 
