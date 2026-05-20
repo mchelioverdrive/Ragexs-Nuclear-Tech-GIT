@@ -82,12 +82,14 @@ public class RodRecipes {
 		addBreedingRod(ModItems.billet_nuclear_waste, BreedingRodType.WASTE);
 
 		addBreedingRod(AM241, ModItems.billet_am241, BreedingRodType.AM241);
+		addBreedingRod(AM242, ModItems.billet_am242, BreedingRodType.AM242);
 		addBreedingRod(CM242, ModItems.billet_cm242, BreedingRodType.CM242);
 		addBreedingRod(CM243, ModItems.billet_cm243, BreedingRodType.CM243);
 		addBreedingRod(CM244, ModItems.billet_cm244, BreedingRodType.CM244);
 		addBreedingRod(CM245, ModItems.billet_cm245, BreedingRodType.CM245);
 		addBreedingRod(CM246, ModItems.billet_cm246, BreedingRodType.CM246);
 		addBreedingRod(CM247, ModItems.billet_cm247, BreedingRodType.CM247);
+		addBreedingRod(BK247, ModItems.billet_bk247, BreedingRodType.BK247);
 
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.rod, 1, BreedingRodType.LEAD.ordinal()), new Object[] { ModItems.rod_empty, PB.nugget(), PB.nugget(), PB.nugget(), PB.nugget(), PB.nugget(), PB.nugget() });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.nugget_lead, 6), new Object[] { new ItemStack(ModItems.rod, 1, BreedingRodType.LEAD.ordinal()) });

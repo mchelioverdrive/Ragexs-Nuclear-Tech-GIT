@@ -42,10 +42,15 @@ public class BreederRecipes extends SerializableRecipe {
 		setRecipe(BreedingRodType.RGP, BreedingRodType.WASTE, 200);
 		//rgp = reactor grade plutonium
 		//You breed Pu-239 from U-238. You can breed Pu-238 from Pu-239, but it's not really worth it.
-		//setRecipe(BreedingRodType.RA226, BreedingRodType.AC227, 300); //this would literally be radon
+		//setRecipe(BreedingRodType.RA226, BreedingRodType.AC227, 300);
+		// this would literally be radon and radon has no real uses yet other than killing you
+		//so IDC
 
-		//AM241 -> CM242
-		setRecipe(BreedingRodType.AM241, BreedingRodType.CM242, 200);
+		//AM241 -> AM242
+		setRecipe(BreedingRodType.AM241, BreedingRodType.AM242, 200);
+
+		//AM242 -> CM242
+		setRecipe(BreedingRodType.AM242, BreedingRodType.CM242, 200);
 
 		//Cm242 -> Cm243   (200)
 		setRecipe(BreedingRodType.CM242, BreedingRodType.CM243, 200);
@@ -57,6 +62,8 @@ public class BreederRecipes extends SerializableRecipe {
 		setRecipe(BreedingRodType.CM245, BreedingRodType.CM246, 700);
 		//Cm246 -> Cm247   (1000)
 		setRecipe(BreedingRodType.CM246, BreedingRodType.CM247, 1000);
+		//CM247 -> BK247   (2000)
+		setRecipe(BreedingRodType.CM247, BreedingRodType.BK247, 2000);
 
 
 	}
