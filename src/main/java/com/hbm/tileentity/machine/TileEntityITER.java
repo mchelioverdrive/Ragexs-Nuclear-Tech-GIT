@@ -288,32 +288,11 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 
 	private void explode() {
 		this.disassemble();
-
-		//if(this.plasma.getTankType() == Fluids.PLASMA_BF) {
-//
-		//	worldObj.playSoundEffect(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, "hbm:weapon.mukeExplosion", 15.0F, 1.0F);
-		//	ExplosionLarge.spawnShrapnels(worldObj, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, 50);
-//
-		//	ExplosionNT exp = new ExplosionNT(worldObj, null, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, 20F)
-		//			.addAttrib(ExAttrib.BALEFIRE)
-		//			.addAttrib(ExAttrib.NOPARTICLE)
-		//			.addAttrib(ExAttrib.NOSOUND)
-		//			.addAttrib(ExAttrib.NODROP)
-		//			.overrideResolution(64);
-		//	exp.doExplosionA();
-		//	exp.doExplosionB(false);
-//
-		//	NBTTagCompound data = new NBTTagCompound();
-		//	data.setString("type", "muke");
-		//	data.setBoolean("balefire", true);
-		//	PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(data, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 250));
-//
-		//} else {
 			Vec3 vec = Vec3.createVectorHelper(5.5, 0, 0);
 			vec.rotateAroundY(worldObj.rand.nextFloat() * (float)Math.PI * 2F);
 
 			worldObj.newExplosion(null, xCoord + 0.5 + vec.xCoord, yCoord + 0.5 + worldObj.rand.nextGaussian() * 1.5D, zCoord + 0.5 + vec.zCoord, 2.5F, true, true);
-		//}
+
 
 	}
 
@@ -324,30 +303,18 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 			return;
 		}
 
-		BreederRecipe out = BreederRecipes.getOutput(slots[1]);
+		int level = FusionRecipes.getBreedingLevel(plasma.getTankType());
 
-		//if(slots[1] != null && slots[1].getItem() == ModItems.meteorite_sword_irradiated)
-		//	out = new BreederRecipe(ModItems.meteorite_sword_fused, 1000);
-		//
-		//if(slots[1] != null && slots[1].getItem() == ModItems.meteorite_sword_fused)
-		//	out = new BreederRecipe(ModItems.meteorite_sword_baleful, 4000);
-
-		//if(slots[1] != null && slots[1].getItem() == Item.getItemFromBlock(ModBlocks.lattice_log))
-		//	out = new BreederRecipe(ModItems.woodemium_briquette, 4000);
+		BreederRecipe out = BreederRecipes.getOutput(slots[1], level);
 
 		if(out == null) {
 			this.progress = 0;
 			return;
 		}
 
-		if(slots[2] != null && slots[2].stackSize >= slots[2].getMaxStackSize()) {
-			this.progress = 0;
-			return;
-		}
+		if(slots[2] != null &&
+			slots[2].stackSize >= slots[2].getMaxStackSize()) {
 
-		int level = FusionRecipes.getBreedingLevel(plasma.getTankType());
-
-		if(out.flux > level) {
 			this.progress = 0;
 			return;
 		}
@@ -386,7 +353,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 	@Override
 	public boolean isItemValidForSlot(int i, ItemStack itemStack) {
 
-		if(i == 1 && BreederRecipes.getOutput(itemStack) != null)
+		if(i == 1 && BreederRecipes.hasRecipe(itemStack))
 			return true;
 
 		return false;

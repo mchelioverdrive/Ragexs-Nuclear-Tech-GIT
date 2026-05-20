@@ -34,13 +34,13 @@ public class TileEntityMachineReactorBreeding extends TileEntityMachineBase impl
 
 	public int flux;
 	public float progress;
-	
+
 	private static final int[] slots_io = new int[] { 0, 1 };
 
 	public TileEntityMachineReactorBreeding() {
 		super(2);
 	}
-	
+
 	@Override
 	public String getName() {
 		return "container.reactorBreeding";
@@ -50,42 +50,49 @@ public class TileEntityMachineReactorBreeding extends TileEntityMachineBase impl
 	public void updateEntity() {
 
 		if(!worldObj.isRemote) {
+
 			this.flux = 0;
 			getInteractions();
-			
-			if(canProcess()) {
-				
-				progress += 0.0025F * (this.flux / BreederRecipes.getOutput(slots[0]).flux);
-				
+
+			BreederRecipe out =
+				BreederRecipes.getOutput(slots[0], this.flux);
+
+			if(canProcess() && out != null) {
+
+				progress += 0.0025F *
+					((float)this.flux / (float)out.flux);
+
 				if(this.progress >= 1.0F) {
+
 					this.progress = 0F;
 					this.processItem();
 					this.markDirty();
 				}
+
 			} else {
 				progress = 0.0F;
 			}
-						
+
 			NBTTagCompound data = new NBTTagCompound();
 			data.setInteger("flux", flux);
 			data.setFloat("progress", progress);
 			this.networkPack(data, 20);
 		}
 	}
-	
+
 	public void networkUnpack(NBTTagCompound data) {
 		super.networkUnpack(data);
-		
+
 		flux = data.getInteger("flux");
 		progress = data.getFloat("progress");
 	}
-	
+
 	public void getInteractions() {
-		
+
 		for(byte d = 2; d < 6; d++) {
 			ForgeDirection dir = ForgeDirection.getOrientation(d);
 			Block b = worldObj.getBlock(xCoord + dir.offsetX, yCoord, zCoord + dir.offsetZ);
-			
+
 			if(b == ModBlocks.reactor_research) {
 
 				int[] pos = ((ReactorResearch) ModBlocks.reactor_research).findCore(worldObj, xCoord + dir.offsetX, yCoord, zCoord + dir.offsetZ);
@@ -103,16 +110,14 @@ public class TileEntityMachineReactorBreeding extends TileEntityMachineBase impl
 	}
 
 	public boolean canProcess() {
-		
+
 		if(slots[0] == null)
 			return false;
-		
-		BreederRecipe recipe = BreederRecipes.getOutput(slots[0]);
-		
+
+		BreederRecipe recipe =
+			BreederRecipes.getOutput(slots[0], this.flux);
+
 		if(recipe == null)
-			return false;
-		
-		if(this.flux < recipe.flux)
 			return false;
 
 		if(slots[1] == null)
@@ -121,38 +126,36 @@ public class TileEntityMachineReactorBreeding extends TileEntityMachineBase impl
 		if(!slots[1].isItemEqual(recipe.output))
 			return false;
 
-		if(slots[1].stackSize < slots[1].getMaxStackSize())
-			return true;
-		else
-			return false;
+		return slots[1].stackSize < slots[1].getMaxStackSize();
 	}
 
 	private void processItem() {
-		
-		if(canProcess()) {
-			
-			BreederRecipe rec = BreederRecipes.getOutput(slots[0]);
-			
-			if(rec == null)
-				return;
-			
-			ItemStack itemStack = rec.output;
 
-			if(slots[1] == null) {
-				slots[1] = itemStack.copy();
-			} else if(slots[1].isItemEqual(itemStack)) {
-				slots[1].stackSize += itemStack.stackSize;
-			}
+		BreederRecipe rec =
+			BreederRecipes.getOutput(slots[0], this.flux);
 
-			slots[0].stackSize--;
-				
-			if(slots[0].stackSize <= 0) {
-				slots[0] = null;
-			}
+		if(rec == null)
+			return;
+
+		ItemStack itemStack = rec.output;
+
+		if(slots[1] == null) {
+
+			slots[1] = itemStack.copy();
+
+		} else if(slots[1].isItemEqual(itemStack)) {
+
+			slots[1].stackSize += itemStack.stackSize;
+		}
+
+		slots[0].stackSize--;
+
+		if(slots[0].stackSize <= 0) {
+			slots[0] = null;
 		}
 	}
 
-	
+
 
 	@Override
 	public int[] getAccessibleSlotsFromSide(int side) {
@@ -176,7 +179,7 @@ public class TileEntityMachineReactorBreeding extends TileEntityMachineBase impl
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		
+
 		flux = nbt.getInteger("flux");
 		progress = nbt.getFloat("progress");
 	}
@@ -184,16 +187,16 @@ public class TileEntityMachineReactorBreeding extends TileEntityMachineBase impl
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		
+
 		nbt.setInteger("flux", flux);
 		nbt.setFloat("progress", progress);
 	}
-	
+
 	AxisAlignedBB bb = null;
-	
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
-		
+
 		if(bb == null) {
 			bb = AxisAlignedBB.getBoundingBox(
 					xCoord,
@@ -204,16 +207,16 @@ public class TileEntityMachineReactorBreeding extends TileEntityMachineBase impl
 					zCoord + 1
 					);
 		}
-		
+
 		return bb;
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public double getMaxRenderDistanceSquared() {
 		return 65536.0D;
 	}
-	
+
 	// do some opencomputer stuff
 	@Override
 	@Optional.Method(modid = "OpenComputers")

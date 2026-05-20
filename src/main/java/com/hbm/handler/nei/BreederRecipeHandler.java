@@ -47,7 +47,7 @@ public class BreederRecipeHandler extends TemplateRecipeHandler implements IComp
 		public List<PositionedStack> getIngredients() {
 			return getCycledIngredients(cycleticks / 48, Arrays.asList(new PositionedStack[] { input }));
 		}
-		
+
 		@Override
 		public PositionedStack getResult() {
 			return result;
@@ -69,9 +69,9 @@ public class BreederRecipeHandler extends TemplateRecipeHandler implements IComp
 
 		if((outputId.equals("breeding")) && getClass() == BreederRecipeHandler.class) {
 
-			Map<ItemStack, BreederRecipe> recipes = BreederRecipes.getAllRecipes();
+			List<Map.Entry<ItemStack, BreederRecipe>> recipes = BreederRecipes.getAllRecipes();
 
-			for(Map.Entry<ItemStack, BreederRecipe> recipe : recipes.entrySet()) {
+			for(Map.Entry<ItemStack, BreederRecipe> recipe : recipes) {
 				this.arecipes.add(new BreedingSet(recipe.getKey(), recipe.getValue().output, recipe.getValue().flux));
 			}
 		} else {
@@ -82,11 +82,17 @@ public class BreederRecipeHandler extends TemplateRecipeHandler implements IComp
 	@Override
 	public void loadCraftingRecipes(ItemStack result) {
 
-		Map<ItemStack, BreederRecipe> recipes = BreederRecipes.getAllRecipes();
+		List<Map.Entry<ItemStack, BreederRecipe>> recipes =
+			BreederRecipes.getAllRecipes();
 
-		for(Map.Entry<ItemStack, BreederRecipe> recipe : recipes.entrySet()) {
-			if(NEIServerUtils.areStacksSameType(recipe.getValue().output, result))
-				this.arecipes.add(new BreedingSet(recipe.getKey(), recipe.getValue().output, recipe.getValue().flux));
+		for(Map.Entry<ItemStack, BreederRecipe> recipe : recipes) {
+			this.arecipes.add(
+				new BreedingSet(
+					recipe.getKey(),
+					recipe.getValue().output,
+					recipe.getValue().flux
+				)
+			);
 		}
 	}
 
@@ -102,11 +108,21 @@ public class BreederRecipeHandler extends TemplateRecipeHandler implements IComp
 	@Override
 	public void loadUsageRecipes(ItemStack ingredient) {
 
-		Map<ItemStack, BreederRecipe> recipes = BreederRecipes.getAllRecipes();
+		List<Map.Entry<ItemStack, BreederRecipe>> recipes =
+			BreederRecipes.getAllRecipes();
 
-		for(Map.Entry<ItemStack, BreederRecipe> recipe : recipes.entrySet()) {
-			if(NEIServerUtils.areStacksSameType(ingredient, (ItemStack) recipe.getKey()))
-				this.arecipes.add(new BreedingSet(recipe.getKey(), recipe.getValue().output, recipe.getValue().flux));
+		for(Map.Entry<ItemStack, BreederRecipe> recipe : recipes) {
+			if(NEIServerUtils.areStacksSameType(
+				recipe.getValue().output, ingredient)) {
+
+				this.arecipes.add(
+					new BreedingSet(
+						recipe.getKey(),
+						recipe.getValue().output,
+						recipe.getValue().flux
+					)
+				);
+			}
 		}
 	}
 
@@ -123,7 +139,7 @@ public class BreederRecipeHandler extends TemplateRecipeHandler implements IComp
 	@Override
 	public void drawExtras(int recipe) {
 		drawProgressBar(48, 21, 176, 0, 70, 20, 50, 0);
-		
+
 		String flux = ((BreedingSet) this.arecipes.get(recipe)).flux + "";
 		GuiDraw.drawString(flux, 83 - GuiDraw.fontRenderer.getStringWidth(flux) / 2, 10, 0x08FF00);
 	}
