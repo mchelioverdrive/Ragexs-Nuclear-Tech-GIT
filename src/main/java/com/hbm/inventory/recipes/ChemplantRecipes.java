@@ -1333,7 +1333,64 @@ public class ChemplantRecipes extends SerializableRecipe {
 						)
 		);
 
-		//gadoliniumsol + high perf solvent = gadolinium 
+		//terbiumsol + high perf solvent = terbium step toward ingot
+		//Separation: The mixture is leached using acids, (we did this in the crystallizer (leaching reactor))
+		// and specialized solvent extraction or ion-exchange methods are utilized to separate terbium from other (here!)
+		// rare-earth elements.
+		recipes.add(new ChemRecipe(1079, "TERBIUM_SEPARATION", 400)
+						.inputItems(
+							new ComparableStack(
+								ModItems.terbiumsol, 1
+							)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.RADIOSOLVENT, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.powder_terbium2, 1),
+							new ItemStack(ModItems.powder_yttrium_tiny, 1),
+							new ItemStack(ModItems.nugget_th232, 1),
+							new ItemStack(ModItems.nugget_uranium, 1)
+						)
+		);
+
+		//terbium oxidation
+		recipes.add(new ChemRecipe(1080, "TERBIUM_OXIDATION", 400)
+						.inputItems(
+							new ComparableStack(
+								ModItems.powder_terbium2, 1
+							)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.OXYGEN, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.powder_terbium_oxide, 1)
+						)
+		);
+
+		//Metallothermic Reduction: To obtain metallic terbium, the oxide is converted into terbium fluoride ( //we are here
+		//) or anhydrous chloride, which is then reduced using calcium or lithium metal in a high-temperature vacuum or inert atmosphere.
+		recipes.add(new ChemRecipe(1081, "TERBIUM_FLUORIDE", 400)
+						.inputItems(
+							new ComparableStack(
+								ModItems.powder_terbium_oxide, 1
+							)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.powder_terbium_fluoride, 1)
+						)
+		);
+
+						//.inputFluids(
+						//	new FluidStack(Fluids.CALCIUM_SOLUTION, 1000)
+						//)
+						//.outputItems(
+						//	new ItemStack(ModItems.terbium_ingot, 1)
+						//) //no those come later
 
 
 

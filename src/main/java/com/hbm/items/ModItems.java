@@ -803,6 +803,10 @@ public class ModItems {
 	public static Item gadolinium_dust_tiny;
 	public static Item gadoliniumsol;
 	public static Item terbiumsol;
+	public static Item powder_terbium2;
+	public static Item powder_terbium_oxide;
+	public static Item powder_terbium_fluoride;
+	public static Item ingot_terbium_impure;
 	public static Item gadolinium_dust_step;
 	public static Item powder_gadolinium;
 	public static Item powder_gadolinium2;
@@ -3611,6 +3615,10 @@ public class ModItems {
 		gadolinium_dust_tiny = new Item().setUnlocalizedName("gadolinium_dust_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_mercury_tiny");
 		gadoliniumsol = new Item().setUnlocalizedName("gadoliniumsol").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_fluorite");
 		terbiumsol = new Item().setUnlocalizedName("terbiumsol").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niter");
+		powder_terbium2 = new Item().setUnlocalizedName("powder_terbium2").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_platnium");
+		powder_terbium_oxide = new Item().setUnlocalizedName("powder_terbium_oxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
+		powder_terbium_fluoride = new Item().setUnlocalizedName("powder_terbium_fluoride").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_calcium");
+		ingot_terbium_impure = new Item().setUnlocalizedName("ingot_terbium_impure").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_titanium");
 		gadolinium_dust_step = new Item().setUnlocalizedName("gadolinium_dust_step").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_iron");
 		powder_gadolinium = new Item().setUnlocalizedName("powder_gadolinium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_zirconium");
 		powder_gadolinium2 = new Item().setUnlocalizedName("powder_gadolinium2").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_zirconium");
@@ -7178,6 +7186,10 @@ public class ModItems {
 		GameRegistry.registerItem(gadolinium_dust_tiny, gadolinium_dust_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(gadoliniumsol, gadoliniumsol.getUnlocalizedName());
 		GameRegistry.registerItem(terbiumsol, terbiumsol.getUnlocalizedName());
+		GameRegistry.registerItem(powder_terbium2, powder_terbium2.getUnlocalizedName());
+		GameRegistry.registerItem(powder_terbium_oxide, powder_terbium_oxide.getUnlocalizedName());
+		GameRegistry.registerItem(powder_terbium_fluoride, powder_terbium_fluoride.getUnlocalizedName());
+		GameRegistry.registerItem(ingot_terbium_impure, ingot_terbium_impure.getUnlocalizedName());
 		GameRegistry.registerItem(gadolinium_dust_step, gadolinium_dust_step.getUnlocalizedName());
 		GameRegistry.registerItem(powder_gadolinium, powder_gadolinium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_gadolinium2, powder_gadolinium2.getUnlocalizedName());

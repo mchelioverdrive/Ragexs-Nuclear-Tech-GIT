@@ -154,6 +154,20 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 			new ItemStack(ModItems.ingot_europium)
 		);
 
+		//terbium powder_terbium_fluoride -> ingot_terbium_impure
+		addRecipe(
+			new ComparableStack(ModItems.powder_terbium_fluoride, 1),
+			CA.dust(),
+			new ItemStack(ModItems.ingot_terbium_impure)
+		);
+		addRecipe(
+			new ComparableStack(ModItems.powder_terbium_fluoride, 1),
+			LI.dust(),
+			new ItemStack(ModItems.ingot_terbium_impure)
+		);
+
+
+
 		if(GeneralConfig.enableLBSM && GeneralConfig.enableLBSMSimpleChemsitry) {
 			addRecipe(ModItems.canister_empty, COAL, new ItemStack(ModItems.canister_full, 1, Fluids.OIL.getID()));
 		}
