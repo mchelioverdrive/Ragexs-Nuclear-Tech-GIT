@@ -1914,12 +1914,15 @@ public class HazardRegistry {
 
 		HazardSystem.register(francium_ingot, makeData().addEntry(HYDROACTIVE, 100F).addEntry(HOT, 300F).addEntry(RADIATION, 200000F));
 
+
+		//zirconium fast breeder billets
+		HazardSystem.register(billet_zfb_bismuth, makeData().addEntry(RADIATION, 0.08F * ingot)); // essentially low external hazard, Bi-based breeder matrix
+		HazardSystem.register(billet_zfb_pu241, makeData().addEntry(RADIATION, 2.4F * ingot));    // Pu-241 → elevated gamma from Am-241 ingrowth
+		HazardSystem.register(billet_am_mix, makeData().addEntry(RADIATION, 3.6F * ingot));       // americium mix, strong gamma/alpha hazard
+
+
 		//stopped here
 
-
-		//todo add half lifes
-
-		//todone beryllium powder carcinogen
 		HazardSystem.register(powder_beryllium, makeData().addEntry(ASBESTOS, be * powder));
 		HazardSystem.register(ingot_beryllium, makeData().addEntry(ASBESTOS, be * ingot));
 		HazardSystem.register(block_beryllium, makeData().addEntry(ASBESTOS, be * block));
