@@ -182,6 +182,7 @@ public class ModItems {
 	public static Item ingot_smco;
 	public static Item ingot_europium;
 	public static Item ingot_terbium;
+	public static Item ingot_thulium;
 	public static Item nugget_europium;
 
 	public static Item nitra;
@@ -802,13 +803,16 @@ public class ModItems {
 	public static Item fragment_erbium;
 	public static Item fragment_ytterbium;
 	public static Item fragment_lutetium;
-	public static Item fragment_thullium;
+	public static Item fragment_thulium;
 	public static Item powder_terbium_tiny;
 	public static Item powder_dysprosium_tiny;
 	public static Item powder_holmium_tiny;
 	public static Item powder_erbium_tiny;
+	public static Item powder_thulium2;
+	public static Item powder_thulium;
 	public static Item powder_ytterbium_tiny;
 	public static Item powder_lutetium_tiny;
+	public static Item powder_thulium_tiny;
 	public static Item powder_terbium;
 	public static Item powder_dysprosium_concentrate;
 	public static Item powder_dysprosium;
@@ -818,6 +822,7 @@ public class ModItems {
 	public static Item terbiumsol;
 	public static Item dysprosiumsol;
 	public static Item lutetiumsol;
+	public static Item thuliumsol;
 	public static Item powder_lutetium2;
 	public static Item powder_dysprosium2;
 	public static Item powder_holmium_oxide;
@@ -828,6 +833,7 @@ public class ModItems {
 	public static Item powder_erbium_concentrate;
 	public static Item powder_ytterbium_concentrate;
 	public static Item powder_lutetium_concentrate;
+	public static Item powder_thulium_concentrate;
 	public static Item erbium_powder;
 	public static Item ingot_erbium;
 	public static Item ingot_ytterbium;
@@ -3426,6 +3432,7 @@ public class ModItems {
 		ingot_smco = new ItemCustomLore().setUnlocalizedName("ingot_smco").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_samarium");
 		ingot_europium = new ItemCustomLore().setUnlocalizedName("ingot_europium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_samarium");
 		ingot_terbium = new ItemCustomLore().setUnlocalizedName("ingot_terbium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_samarium");
+		ingot_thulium = new ItemCustomLore().setUnlocalizedName("ingot_thulium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_plutonium");
 		nugget_europium = new ItemCustomLore().setUnlocalizedName("nugget_europium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_technetium");
 		scuttertail = new Item().setUnlocalizedName("scuttertail").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":scuttertail");
 		saltleaf = new Item().setUnlocalizedName("saltleaf").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":salt_leaf");
@@ -3645,13 +3652,16 @@ public class ModItems {
 		fragment_erbium = new Item().setUnlocalizedName("fragment_erbium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_praseodymium");
 		fragment_ytterbium = new Item().setUnlocalizedName("fragment_ytterbium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_praseodymium");
 		fragment_lutetium = new Item().setUnlocalizedName("fragment_lutetium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_lanthanium");
-		fragment_thullium = new Item().setUnlocalizedName("fragment_thullium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_meteorite");
+		fragment_thulium = new Item().setUnlocalizedName("fragment_thulium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_meteorite");
 		powder_terbium_tiny = new Item().setUnlocalizedName("powder_terbium_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_praseodymium_tiny");
 		powder_dysprosium_tiny = new Item().setUnlocalizedName("powder_dysprosium_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_praseodymium_tiny");
 		powder_holmium_tiny = new Item().setUnlocalizedName("powder_holmium_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_coal_tiny");
 		powder_erbium_tiny = new Item().setUnlocalizedName("powder_erbium_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_praseodymium_tiny");
+		powder_thulium2 = new Item().setUnlocalizedName("powder_thulium2").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_praseodymium");
+		powder_thulium = new Item().setUnlocalizedName("powder_thulium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lead");
 		powder_ytterbium_tiny = new Item().setUnlocalizedName("powder_ytterbium_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_neodymium_tiny");
 		powder_lutetium_tiny = new Item().setUnlocalizedName("powder_lutetium_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_steel_tiny");
+		powder_thulium_tiny = new Item().setUnlocalizedName("powder_thulium_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_steel_tiny");
 		powder_terbium = new Item().setUnlocalizedName("powder_terbium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_titanium");
 		powder_dysprosium_concentrate = new Item().setUnlocalizedName("powder_dysprosium_concentrate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_titanium");
 		powder_dysprosium = new Item().setUnlocalizedName("powder_dysprosium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_titanium");
@@ -3661,6 +3671,7 @@ public class ModItems {
 		terbiumsol = new Item().setUnlocalizedName("terbiumsol").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niter");
 		dysprosiumsol = new Item().setUnlocalizedName("dysprosiumsol").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niter");
 		lutetiumsol = new Item().setUnlocalizedName("lutetiumsol").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_lead");
+		thuliumsol = new Item().setUnlocalizedName("thuliumsol").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lead");
 		powder_lutetium2 = new Item().setUnlocalizedName("powder_lutetium2").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_lead");
 		powder_dysprosium2 = new Item().setUnlocalizedName("powder_dysprosium2").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_titanium");
 		powder_holmium_oxide = new Item().setUnlocalizedName("powder_holmium_oxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_yellowcake");
@@ -3671,6 +3682,7 @@ public class ModItems {
 		powder_erbium_concentrate = new Item().setUnlocalizedName("powder_erbium_concentrate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_iron");
 		powder_ytterbium_concentrate = new Item().setUnlocalizedName("powder_ytterbium_concentrate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_titanium");
 		powder_lutetium_concentrate = new Item().setUnlocalizedName("powder_lutetium_concentrate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lead");
+		powder_thulium_concentrate = new Item().setUnlocalizedName("powder_thulium_concentrate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lanthanium");
 		erbium_powder = new Item().setUnlocalizedName("erbium_powder").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_titanium");
 		ingot_erbium = new Item().setUnlocalizedName("ingot_erbium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_nickel");
 		ingot_ytterbium = new Item().setUnlocalizedName("ingot_ytterbium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_nickel");
@@ -6766,6 +6778,7 @@ public class ModItems {
 		GameRegistry.registerItem(ingot_smco, ingot_smco.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_europium, ingot_europium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_terbium, ingot_terbium.getUnlocalizedName());
+		GameRegistry.registerItem(ingot_thulium, ingot_thulium.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_europium, nugget_europium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_aluminium, ingot_aluminium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_tin, ingot_tin.getUnlocalizedName());
@@ -7247,13 +7260,16 @@ public class ModItems {
 		GameRegistry.registerItem(fragment_erbium, fragment_erbium.getUnlocalizedName());
 		GameRegistry.registerItem(fragment_ytterbium, fragment_ytterbium.getUnlocalizedName());
 		GameRegistry.registerItem(fragment_lutetium, fragment_lutetium.getUnlocalizedName());
-		GameRegistry.registerItem(fragment_thullium, fragment_thullium.getUnlocalizedName());
+		GameRegistry.registerItem(fragment_thulium, fragment_thulium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_terbium_tiny, powder_terbium_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(powder_dysprosium_tiny, powder_dysprosium_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(powder_holmium_tiny, powder_holmium_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(powder_erbium_tiny, powder_erbium_tiny.getUnlocalizedName());
+		GameRegistry.registerItem(powder_thulium2, powder_thulium2.getUnlocalizedName());
+		GameRegistry.registerItem(powder_thulium, powder_thulium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_ytterbium_tiny, powder_ytterbium_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(powder_lutetium_tiny, powder_lutetium_tiny.getUnlocalizedName());
+		GameRegistry.registerItem(powder_thulium_tiny, powder_thulium_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(powder_terbium, powder_terbium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_dysprosium_concentrate, powder_dysprosium_concentrate.getUnlocalizedName());
 		GameRegistry.registerItem(powder_dysprosium, powder_dysprosium.getUnlocalizedName());
@@ -7263,6 +7279,7 @@ public class ModItems {
 		GameRegistry.registerItem(terbiumsol, terbiumsol.getUnlocalizedName());
 		GameRegistry.registerItem(dysprosiumsol, dysprosiumsol.getUnlocalizedName());
 		GameRegistry.registerItem(lutetiumsol, lutetiumsol.getUnlocalizedName());
+		GameRegistry.registerItem(thuliumsol, thuliumsol.getUnlocalizedName());
 		GameRegistry.registerItem(powder_lutetium2, powder_lutetium2.getUnlocalizedName());
 		GameRegistry.registerItem(powder_dysprosium2, powder_dysprosium2.getUnlocalizedName());
 		GameRegistry.registerItem(powder_holmium_oxide, powder_holmium_oxide.getUnlocalizedName());
@@ -7273,6 +7290,7 @@ public class ModItems {
 		GameRegistry.registerItem(powder_erbium_concentrate, powder_erbium_concentrate.getUnlocalizedName());
 		GameRegistry.registerItem(powder_ytterbium_concentrate, powder_ytterbium_concentrate.getUnlocalizedName());
 		GameRegistry.registerItem(powder_lutetium_concentrate, powder_lutetium_concentrate.getUnlocalizedName());
+		GameRegistry.registerItem(powder_thulium_concentrate, powder_thulium_concentrate.getUnlocalizedName());
 		GameRegistry.registerItem(erbium_powder, erbium_powder.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_erbium, ingot_erbium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_ytterbium, ingot_ytterbium.getUnlocalizedName());

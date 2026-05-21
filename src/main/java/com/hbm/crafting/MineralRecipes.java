@@ -110,6 +110,7 @@ public class MineralRecipes {
 		add1To9Pair(ModItems.powder_erbium_concentrate, ModItems.powder_erbium_tiny);
 		add1To9Pair(ModItems.powder_ytterbium_concentrate, ModItems.powder_ytterbium_tiny);
 		add1To9Pair(ModItems.powder_lutetium_concentrate, ModItems.powder_lutetium_tiny);
+		add1To9Pair(ModItems.powder_thulium_concentrate, ModItems.powder_thulium_tiny);
 
 		//thallium
 		add1To9Pair(ModItems.powder_thallium, ModItems.nugget_thallium);

@@ -111,6 +111,11 @@ public class CrystallizerRecipes extends SerializableRecipe {
 		registerRecipe(new ComparableStack(ModItems.powder_lutetium_concentrate), new CrystallizerRecipe(new ItemStack(ModItems.lutetiumsol), baseTime * 4), sulfur);
 		registerRecipe(new ComparableStack(ModItems.powder_lutetium_concentrate), new CrystallizerRecipe(new ItemStack(ModItems.lutetiumsol), baseTime * 4), chloric);
 
+		//powder_thulium_concentrate -> thulium solution
+		registerRecipe(new ComparableStack(ModItems.powder_thulium_concentrate), new CrystallizerRecipe(new ItemStack(ModItems.thuliumsol), baseTime * 4), sulfur);
+		registerRecipe(new ComparableStack(ModItems.powder_thulium_concentrate), new CrystallizerRecipe(new ItemStack(ModItems.thuliumsol), baseTime * 4), nitric);
+
+
 
 
 		//fake shit most likely:

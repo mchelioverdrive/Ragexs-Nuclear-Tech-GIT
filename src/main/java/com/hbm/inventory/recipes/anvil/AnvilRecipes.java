@@ -7,7 +7,6 @@ import com.hbm.blocks.BlockEnums;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.config.GeneralConfig;
 import com.hbm.inventory.OreDictManager;
-import com.hbm.inventory.OreNames;
 import com.hbm.inventory.OreDictManager.DictFrame;
 
 import static com.hbm.inventory.OreDictManager.*;
@@ -20,17 +19,14 @@ import com.hbm.inventory.material.Mats;
 import com.hbm.inventory.material.NTMMaterial;
 import com.hbm.inventory.recipes.AssemblerRecipes;
 import com.hbm.inventory.recipes.AssemblerRecipes.AssemblerRecipe;
-import com.hbm.items.ItemAmmoEnums.*;
 import com.hbm.items.ItemEnums.EnumChunkType;
 import com.hbm.items.ItemEnums.EnumCokeType;
 import com.hbm.items.ModItems;
-import com.hbm.items.food.ItemFlask.EnumInfusion;
 import com.hbm.items.machine.ItemCircuit.EnumCircuitType;
 
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.oredict.OreDictionary;
 
@@ -747,7 +743,7 @@ public class AnvilRecipes {
 				new AnvilOutput(new ItemStack(ModItems.fragment_lutetium), 0.001F),
 
 				//thullium
-				new AnvilOutput(new ItemStack(ModItems.fragment_thullium), 0.001F)
+				new AnvilOutput(new ItemStack(ModItems.fragment_thulium), 0.001F)
 
 
 

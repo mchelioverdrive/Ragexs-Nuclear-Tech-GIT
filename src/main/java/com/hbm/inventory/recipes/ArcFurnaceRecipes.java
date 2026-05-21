@@ -99,6 +99,9 @@ public class ArcFurnaceRecipes extends SerializableRecipe {
 		//ingot_terbium_impure into terbium ingot
 		recipes.put(new ComparableStack(ModItems.ingot_terbium_impure), new ArcFurnaceRecipe().solid(new ItemStack(ModItems.ingot_terbium, 1)).fluid(new MaterialStack(Mats.MAT_TERBIUM, MaterialShapes.INGOT.q(1))));
 
+		//powder_thulium into thulium ingot
+		recipes.put(new ComparableStack(ModItems.powder_thulium), new ArcFurnaceRecipe().solid(new ItemStack(ModItems.ingot_thulium, 1)).fluid(new MaterialStack(Mats.MAT_THULIUM, MaterialShapes.INGOT.q(1))));
+
 
 		for(BedrockOreType type : BedrockOreType.values()) {
 			recipes.put(new ComparableStack(ItemBedrockOreNew.make(BedrockOreGrade.SULFURIC_BYPRODUCT, type)), new ArcFurnaceRecipe().solid(ItemBedrockOreNew.make(BedrockOreGrade.SULFURIC_ARC, type, 2)));

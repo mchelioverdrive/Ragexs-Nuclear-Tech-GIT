@@ -250,6 +250,7 @@ public class ShredderRecipes extends SerializableRecipe {
 		ShredderRecipes.setRecipe(ModItems.fragment_erbium, new ItemStack(ModItems.powder_erbium_tiny, 1));
 		ShredderRecipes.setRecipe(ModItems.fragment_ytterbium, new ItemStack(ModItems.powder_ytterbium_tiny, 1));
 		ShredderRecipes.setRecipe(ModItems.fragment_lutetium, new ItemStack(ModItems.powder_lutetium_tiny, 1));
+		ShredderRecipes.setRecipe(ModItems.fragment_thulium, new ItemStack(ModItems.powder_thulium_tiny, 1));
 
 
 

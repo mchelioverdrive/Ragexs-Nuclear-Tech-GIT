@@ -199,6 +199,13 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 			new ItemStack(ModItems.powder_ytterbium)
 		);
 
+		//powder_thulium2 + powder_calcium
+		addRecipe(
+			new ComparableStack(ModItems.powder_thulium2, 1),
+			CA.dust(),
+			new ItemStack(ModItems.powder_thulium)
+		);
+
 
 
 		if(GeneralConfig.enableLBSM && GeneralConfig.enableLBSMSimpleChemsitry) {

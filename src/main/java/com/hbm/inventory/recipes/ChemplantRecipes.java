@@ -1442,6 +1442,23 @@ public class ChemplantRecipes extends SerializableRecipe {
 						)
 		);
 
+		//thuliumsol + solvent = thuliumsol2
+		recipes.add(new ChemRecipe(1085, "THULIUM_SEPARATION", 400)
+						.inputItems(
+							new ComparableStack(
+								ModItems.thuliumsol, 1
+							)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.RADIOSOLVENT, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.powder_thulium2, 1),
+							new ItemStack(ModItems.powder_erbium_tiny, 1),
+							new ItemStack(ModItems.powder_dysprosium2, 1)
+						)
+		);
+
 
 
 
