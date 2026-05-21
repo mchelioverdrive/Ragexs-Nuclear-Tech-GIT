@@ -1918,8 +1918,7 @@ public class HazardRegistry {
 		//zirconium fast breeder billets
 		HazardSystem.register(billet_zfb_bismuth, makeData().addEntry(RADIATION, 0.08F * ingot)); // essentially low external hazard, Bi-based breeder matrix
 		HazardSystem.register(billet_zfb_pu241, makeData().addEntry(RADIATION, 2.4F * ingot));    // Pu-241 → elevated gamma from Am-241 ingrowth
-		HazardSystem.register(billet_am_mix, makeData().addEntry(RADIATION, 3.6F * ingot));       // americium mix, strong gamma/alpha hazard
-
+		HazardSystem.register(billet_zfb_am_mix, makeData().addEntry(RADIATION, 3.0F * ingot));    // Am mix → strong gamma/alpha hazard from Am-241 and Cm isotopes
 
 
 		HazardSystem.register(powder_beryllium, makeData().addEntry(ASBESTOS, be * powder * 2.5F));
@@ -2060,9 +2059,22 @@ public class HazardRegistry {
 	private static HazardData makeData(HazardTypeBase hazard, float level, boolean override) { return new HazardData().addEntry(hazard, level, override); }
 
 	private static void registerPWRFuel(EnumPWRFuel fuel, float baseRad) {
-		HazardSystem.register(DictFrame.fromOne(ModItems.pwr_fuel, fuel), makeData(RADIATION, baseRad));
-		HazardSystem.register(DictFrame.fromOne(ModItems.pwr_fuel_hot, fuel), makeData(RADIATION, baseRad * 10).addEntry(HOT, 5));
-		HazardSystem.register(DictFrame.fromOne(ModItems.pwr_fuel_depleted, fuel), makeData(RADIATION, baseRad * 10));
+		HazardSystem.register(
+			DictFrame.fromOne(ModItems.pwr_fuel, fuel),
+			makeData(RADIATION, baseRad)
+		);
+
+		HazardSystem.register(
+			DictFrame.fromOne(ModItems.pwr_fuel_hot, fuel),
+			makeData(RADIATION, baseRad * 35F) // fresh-out-of-reactor spent fuel = extreme gamma field
+				.addEntry(HOT, 5F)
+				.addEntry(BLINDING, 2F)
+		);
+
+		HazardSystem.register(
+			DictFrame.fromOne(ModItems.pwr_fuel_depleted, fuel),
+			makeData(RADIATION, baseRad * 8F) // cooled spent fuel / depleted fuel still nasty but far lower
+		);
 	}
 
 	private static void registerRBMKPellet(Item pellet, float base, float dep) { registerRBMKPellet(pellet, base, dep, false, 0F, 0F); }
@@ -2070,76 +2082,183 @@ public class HazardRegistry {
 	private static void registerRBMKPellet(Item pellet, float base, float dep, boolean linear, float blinding, float digamma) {
 
 		HazardData data = new HazardData();
-		data.addEntry(new HazardEntry(RADIATION, base).addMod(new HazardModifierRBMKRadiation(dep, linear)));
-		if(blinding > 0) data.addEntry(new HazardEntry(BLINDING, blinding));
-		//if(digamma > 0) data.addEntry(new HazardEntry(DIGAMMA, digamma));
+
+		data.addEntry(
+			new HazardEntry(RADIATION, base)
+				.addMod(new HazardModifierRBMKRadiation(dep, linear))
+		);
+
+		if(blinding > 0)
+			data.addEntry(new HazardEntry(BLINDING, blinding * 0.5F));
+
 		HazardSystem.register(pellet, data);
 	}
 
-	private static void registerRBMKRod(Item rod, float base, float dep) { registerRBMK(rod, base, dep, true, false, 0F, 0F); }
-	private static void registerRBMKRod(Item rod, float base, float dep, float blinding) { registerRBMK(rod, base, dep, true, false, blinding, 0F); }
-	private static void registerRBMKRod(Item rod, float base, float dep, boolean linear) { registerRBMK(rod, base, dep, true, linear, 0F, 0F); }
+	private static void registerRBMKRod(Item rod, float base, float dep) {
+		registerRBMK(rod, base, dep, true, false, 0F, 0F);
+	}
+
+	private static void registerRBMKRod(Item rod, float base, float dep, float blinding) {
+		registerRBMK(rod, base, dep, true, false, blinding, 0F);
+	}
+
+	private static void registerRBMKRod(Item rod, float base, float dep, boolean linear) {
+		registerRBMK(rod, base, dep, true, linear, 0F, 0F);
+	}
 
 	private static void registerRBMK(Item rod, float base, float dep, boolean hot, boolean linear, float blinding, float digamma) {
 
 		HazardData data = new HazardData();
-		data.addEntry(new HazardEntry(RADIATION, base).addMod(new HazardModifierRBMKRadiation(dep, linear)));
-		if(hot) data.addEntry(new HazardEntry(HOT, 0).addMod(new HazardModifierRBMKHot()));
-		if(blinding > 0) data.addEntry(new HazardEntry(BLINDING, blinding));
-		//if(digamma > 0) data.addEntry(new HazardEntry(DIGAMMA, digamma));
+
+		data.addEntry(
+			new HazardEntry(RADIATION, base)
+				.addMod(new HazardModifierRBMKRadiation(dep, linear))
+		);
+
+		// thermal heating from reactor operation / burnup
+		if(hot)
+			data.addEntry(
+				new HazardEntry(HOT, 0F)
+					.addMod(new HazardModifierRBMKHot())
+			);
+
+		// gamma flash / eye damage proxy
+		if(blinding > 0)
+			data.addEntry(
+				new HazardEntry(BLINDING, blinding * 0.5F)
+			);
+
+		//if(digamma > 0)
+		//	data.addEntry(new HazardEntry(DIGAMMA, digamma));
+
 		HazardSystem.register(rod, data);
 	}
 
 	private static void registerBreedingRodRadiation(BreedingRodType type, float base) {
-		HazardSystem.register(new ItemStack(ModItems.rod, 1, type.ordinal()), makeData(RADIATION, base));
-		HazardSystem.register(new ItemStack(ModItems.rod_dual, 1, type.ordinal()), makeData(RADIATION, base * rod_dual));
-		HazardSystem.register(new ItemStack(ModItems.rod_quad, 1, type.ordinal()), makeData(RADIATION, base * rod_quad));
+		HazardSystem.register(
+			new ItemStack(ModItems.rod, 1, type.ordinal()),
+			makeData(RADIATION, base)
+		);
+
+		HazardSystem.register(
+			new ItemStack(ModItems.rod_dual, 1, type.ordinal()),
+			makeData(RADIATION, base * rod_dual * 0.9F)
+		);
+
+		HazardSystem.register(
+			new ItemStack(ModItems.rod_quad, 1, type.ordinal()),
+			makeData(RADIATION, base * rod_quad * 0.85F)
+		);
 	}
 
 	private static void registerOtherFuel(Item fuel, float base, float target, boolean blinding) {
 
 		HazardData data = new HazardData();
-		data.addEntry(new HazardEntry(RADIATION, base).addMod(new HazardModifierFuelRadiation(target)));
+
+		data.addEntry(
+			new HazardEntry(RADIATION, base)
+				.addMod(new HazardModifierFuelRadiation(target))
+		);
+
 		if(blinding)
-			data.addEntry(BLINDING, 20F);
+			data.addEntry(BLINDING, 4F);
+
 		HazardSystem.register(fuel, data);
 	}
 
 	private static void registerOtherFuel(Item fuel, int meta, float base, float target, boolean blinding) {
 
 		HazardData data = new HazardData();
-		data.addEntry(new HazardEntry(RADIATION, base).addMod(new HazardModifierFuelRadiation(target)));
+
+		data.addEntry(
+			new HazardEntry(RADIATION, base)
+				.addMod(new HazardModifierFuelRadiation(target))
+		);
+
 		if(blinding)
-			data.addEntry(BLINDING, 20F);
+			data.addEntry(BLINDING, 4F);
+
 		HazardSystem.register(new ItemStack(fuel, 1, meta), data);
 	}
 
-	private static void registerRTGPellet(Item pellet, float base, float target) { registerRTGPellet(pellet, base, target, 0, 0); }
-	private static void registerRTGPellet(Item pellet, float base, float target, float hot) { registerRTGPellet(pellet, base, target, hot, 0); }
+	private static void registerRTGPellet(Item pellet, float base, float target) {
+		registerRTGPellet(pellet, base, target, 0F, 0F);
+	}
+
+	private static void registerRTGPellet(Item pellet, float base, float target, float hot) {
+		registerRTGPellet(pellet, base, target, hot, 0F);
+	}
 
 	private static void registerRTGPellet(Item pellet, float base, float target, float hot, float blinding) {
+
 		HazardData data = new HazardData();
-		data.addEntry(new HazardEntry(RADIATION, base).addMod(new HazardModifierRTGRadiation(target)));
-		if(hot > 0) data.addEntry(new HazardEntry(HOT, hot));
-		if(blinding > 0) data.addEntry(new HazardEntry(BLINDING, blinding));
+
+		data.addEntry(
+			new HazardEntry(RADIATION, base)
+				.addMod(new HazardModifierRTGRadiation(target))
+		);
+
+		// RTGs are primarily thermal hazards (Pu-238 etc.)
+		if(hot > 0)
+			data.addEntry(
+				new HazardEntry(HOT, hot * 1.5F)
+			);
+
+		// only strong gamma emitters should blind significantly
+		if(blinding > 0)
+			data.addEntry(
+				new HazardEntry(BLINDING, blinding * 0.35F)
+			);
+
 		HazardSystem.register(pellet, data);
 	}
 
 	private static void registerOtherWaste(Item waste, float base) {
-		HazardSystem.register(new ItemStack(waste, 1, 0), makeData(RADIATION, base * 0.075F));
+
+		// cooled / stabilized waste
+		HazardSystem.register(
+			new ItemStack(waste, 1, 0),
+			makeData(RADIATION, base * 0.075F)
+		);
 
 		HazardData data = new HazardData();
+
+		// fresh/high activity waste
 		data.addEntry(new HazardEntry(RADIATION, base));
-		data.addEntry(new HazardEntry(HOT, 5F));
-		HazardSystem.register(new ItemStack(waste, 1, 1), data);
+
+		// heat roughly follows activity instead of flat constant
+		data.addEntry(
+			new HazardEntry(HOT,
+							Math.max(1.5F, Math.min(base * 0.12F, 12F))
+			)
+		);
+
+		HazardSystem.register(
+			new ItemStack(waste, 1, 1),
+			data
+		);
 	}
 
 	private static void registerRadSourceWaste(Item waste, float base) {
-		HazardSystem.register(new ItemStack(waste, 1, 0), makeData(RADIATION, base));
+
+		HazardSystem.register(
+			new ItemStack(waste, 1, 0),
+			makeData(RADIATION, base)
+		);
 
 		HazardData data = new HazardData();
+
 		data.addEntry(new HazardEntry(RADIATION, base));
-		data.addEntry(new HazardEntry(HOT, 5F));
-		HazardSystem.register(new ItemStack(waste, 1, 1), data);
+
+		data.addEntry(
+			new HazardEntry(HOT,
+							Math.max(1.5F, Math.min(base * 0.12F, 12F))
+			)
+		);
+
+		HazardSystem.register(
+			new ItemStack(waste, 1, 1),
+			data
+		);
 	}
 }
