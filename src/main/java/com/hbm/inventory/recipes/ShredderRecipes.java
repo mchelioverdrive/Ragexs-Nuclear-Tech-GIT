@@ -245,6 +245,11 @@ public class ShredderRecipes extends SerializableRecipe {
 
 		//terbium into terbium powder
 		ShredderRecipes.setRecipe(ModItems.fragment_terbium, new ItemStack(ModItems.powder_terbium_tiny, 4));
+		ShredderRecipes.setRecipe(ModItems.fragment_dysprosium, new ItemStack(ModItems.powder_dysprosium_tiny, 1));
+		ShredderRecipes.setRecipe(ModItems.fragment_holmium, new ItemStack(ModItems.powder_holmium_tiny, 1));
+		ShredderRecipes.setRecipe(ModItems.fragment_erbium, new ItemStack(ModItems.powder_erbium_tiny, 1));
+		ShredderRecipes.setRecipe(ModItems.fragment_ytterbium, new ItemStack(ModItems.powder_ytterbium_tiny, 1));
+		ShredderRecipes.setRecipe(ModItems.fragment_lutetium, new ItemStack(ModItems.powder_lutetium_tiny, 1));
 
 
 

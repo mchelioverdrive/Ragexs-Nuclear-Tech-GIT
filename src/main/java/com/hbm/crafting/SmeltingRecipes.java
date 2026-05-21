@@ -32,6 +32,21 @@ public class SmeltingRecipes {
 		//powder_molybdenite
 		GameRegistry.addSmelting(ModItems.powder_molybdenite, new ItemStack(ModItems.ingot_molybdenum), 1.0F);
 
+		//powder_holmium_concentrate -> holmium oxide
+		GameRegistry.addSmelting(ModItems.powder_holmium_concentrate, new ItemStack(ModItems.powder_holmium_oxide), 0.1F);
+
+		GameRegistry.addSmelting(ModItems.erbium_powder, new ItemStack(ModItems.ingot_erbium), 1.0F);
+
+		GameRegistry.addSmelting(ModItems.powder_ytterbium_concentrate, new ItemStack(ModItems.powder_ytterbium_oxide), 0.1F);
+
+		GameRegistry.addSmelting(ModItems.powder_ytterbium, new ItemStack(ModItems.ingot_ytterbium), 1.0F);
+
+		GameRegistry.addSmelting(
+			ModItems.powder_lutetium2,
+			new ItemStack(ModItems.ingot_lutetium),
+			1.0F
+		);
+
 		//vanadium from magnetite
 		GameRegistry.addSmelting(
 			new ItemStack(ModItems.magnetite),

@@ -125,6 +125,9 @@ public class HazardRegistry {
 	public static final float hg = 0.9F;
 	public static final float tl = 100.0F;
 
+	//terbium
+	public static final float tb = 0.5F;
+
 
 	// =====================================================================================
 	// URANIUM ISOTOPES
@@ -298,6 +301,9 @@ public class HazardRegistry {
 	public static final float rod_quad    = rod * 4;
 	public static final float rod_rbmk    = rod * 8;
 
+	//europium
+	//public static final float eu   = 0.001F;
+
 	public static final HazardTypeBase RADIATION = new HazardTypeRadiation();
 	//public static final HazardTypeBase DIGAMMA = new HazardTypeDigamma();
 	public static final HazardTypeBase HOT = new HazardTypeHot();
@@ -312,376 +318,1614 @@ public class HazardRegistry {
 
 	public static void registerItems() {
 
-		HazardSystem.register(Items.gunpowder, makeData(EXPLOSIVE, 1F));
-		HazardSystem.register(Blocks.tnt, makeData(EXPLOSIVE, 4F));
+		// ======================================================
+		// EXPLOSIVES / ENERGETICS
+		// ======================================================
+
+		// Black powder - burns rapidly, relatively low brisance
+				HazardSystem.register(Items.gunpowder,
+									  makeData(EXPLOSIVE, 0.75F));
+
+		// TNT block - stable explosive, dangerous but not super shock sensitive
+				HazardSystem.register(Blocks.tnt,
+									  makeData(EXPLOSIVE, 4F));
+
+		// Fertilizer explosive precursor
+		// AN itself is fairly stable unless contaminated/confined
+				HazardSystem.register(ModItems.ammonium_nitrate,
+									  makeData(EXPLOSIVE, 2F));
+
+		// Dynamite ball (larger charge)
+				HazardSystem.register(ball_dynamite,
+									  makeData(EXPLOSIVE, 3F));
+
+		// Dynamite stick
+		// Nitroglycerin-based = less stable than TNT
+				HazardSystem.register(stick_dynamite,
+									  makeData(EXPLOSIVE, 2.5F));
+
+		// TNT stick
+		// Stable military explosive
+				HazardSystem.register(stick_tnt,
+									  makeData(EXPLOSIVE, 1.5F));
+
+		// Semtex
+		// Stable but powerful plastic explosive
+				HazardSystem.register(stick_semtex,
+									  makeData(EXPLOSIVE, 2F));
+
+		// C4
+		// Very stable explosive, hard to accidentally detonate
+				HazardSystem.register(stick_c4,
+									  makeData(EXPLOSIVE, 1.75F));
+
+		// Propellant - smokeless powder
+		// Fire/explosion hazard more than detonation hazard
+				HazardSystem.register(cordite,
+									  makeData(EXPLOSIVE, 1.5F));
+
+		// Double-base smokeless powder
+				HazardSystem.register(ballistite,
+									  makeData(EXPLOSIVE, 1.5F));
 
 
-		HazardSystem.register(ModItems.ammonium_nitrate, makeData(EXPLOSIVE, 4F));
+		// ======================================================
+		// RADIOACTIVE / INDUSTRIAL MATERIALS
+		// ======================================================
 
-		//raffinate + ammonia mix for scandium/yttrium processing
-		HazardSystem.register(ModItems.REE_sludge, makeData(RADIATION, 3F));
+		// Raffinate + ammonia mix for scandium / yttrium extraction
+		// Mild thorium + REE contamination from monazite/xenotime processing
+				HazardSystem.register(ModItems.REE_sludge,
+									  makeData(RADIATION, 1.5F));
 
-		HazardSystem.register(ball_dynamite, makeData(EXPLOSIVE, 2F));
-		HazardSystem.register(stick_dynamite, makeData(EXPLOSIVE, 1F));
-		HazardSystem.register(stick_tnt, makeData(EXPLOSIVE, 1.5F));
-		HazardSystem.register(stick_semtex, makeData(EXPLOSIVE, 2.5F));
-		HazardSystem.register(stick_c4, makeData(EXPLOSIVE, 2.5F));
 
-		HazardSystem.register(cordite, makeData(EXPLOSIVE, 2F));
-		HazardSystem.register(ballistite, makeData(EXPLOSIVE, 1F));
+		// ======================================================
+		// PARTICULATE / RESPIRATORY HAZARDS
+		// ======================================================
 
-		HazardSystem.register("dustCoal", makeData(COAL, powder));
-		HazardSystem.register("dustTinyCoal", makeData(COAL, powder_tiny));
-		HazardSystem.register("dustLignite", makeData(COAL, powder));
-		HazardSystem.register("dustTinyLignite", makeData(COAL, powder_tiny));
+		// Coal dust - respiratory hazard (black lung)
+		// Fine particulates are the real danger
+				HazardSystem.register("dustCoal",
+									  makeData(COAL, powder));
 
-		HazardSystem.register(demon_core_open, makeData(RADIATION, 5F));
-		HazardSystem.register(demon_core_closed, makeData().addEntry(RADIATION, 100_000F).addEntry(NEUTRON, 10_000F));
-		HazardSystem.register(lamp_demon, makeData().addEntry(RADIATION, 100_000F).addEntry(NEUTRON, 10_000F));
+				HazardSystem.register("dustTinyCoal",
+									  makeData(COAL, powder_tiny));
 
-		HazardSystem.register(cell_tritium, makeData(RADIATION, 0.001F));
-		HazardSystem.register(cell_sas3, makeData().addEntry(RADIATION, sas3).addEntry(BLINDING, 60F));
+		// Lignite = dirtier, more particulate contamination
+				HazardSystem.register("dustLignite",
+									  makeData(COAL, powder * 1.15F));
 
-		HazardSystem.register(coffee_radium, makeData(RADIATION, 0.5F));
-		HazardSystem.register(chocolate, makeData(RADIATION, 0.5F));
+				HazardSystem.register("dustTinyLignite",
+									  makeData(COAL, powder_tiny * 1.15F));
 
-		HazardSystem.register(nuclear_waste_long, makeData(RADIATION, 5F));
-		HazardSystem.register(nuclear_waste_long_tiny, makeData(RADIATION, 0.5F));
-		HazardSystem.register(nuclear_waste_short, makeData().addEntry(RADIATION, 30F).addEntry(HOT, 5F));
-		HazardSystem.register(nuclear_waste_short_tiny, makeData().addEntry(RADIATION, 3F).addEntry(HOT, 5F));
-		HazardSystem.register(nuclear_waste_long_depleted, makeData(RADIATION, 0.5F));
-		HazardSystem.register(nuclear_waste_long_depleted_tiny, makeData(RADIATION, 0.05F));
-		HazardSystem.register(nuclear_waste_short_depleted, makeData(RADIATION, 3F));
-		HazardSystem.register(nuclear_waste_short_depleted_tiny, makeData(RADIATION, 0.3F));
+		// ======================================================
+		// CRITICALITY / EXOTIC SOURCES
+		// ======================================================
 
-		HazardSystem.register(scrap_nuclear, makeData(RADIATION, 1F));
-		HazardSystem.register(trinitite, makeData(RADIATION, trn * ingot));
-		HazardSystem.register(block_trinitite, makeData(RADIATION, trn * block));
-		HazardSystem.register(nuclear_waste, makeData(RADIATION, wst * ingot));
-		HazardSystem.register(yellow_barrel, makeData(RADIATION, wst * ingot * 10));
-		HazardSystem.register(billet_nuclear_waste, makeData(RADIATION, wst * billet));
-		HazardSystem.register(nuclear_waste_tiny, makeData(RADIATION, wst * nugget));
-		HazardSystem.register(nuclear_waste_vitrified, makeData(RADIATION, wstv * ingot));
-		HazardSystem.register(nuclear_waste_vitrified_tiny, makeData(RADIATION, wstv * nugget));
-		HazardSystem.register(block_waste, makeData(RADIATION, wst * block));
-		HazardSystem.register(block_waste_painted, makeData(RADIATION, wst * block));
-		HazardSystem.register(block_waste_vitrified, makeData(RADIATION, wstv * block));
+		// Exposed plutonium core
+		// Dangerous if handled or kept nearby for prolonged periods
+				HazardSystem.register(demon_core_open,
+									  makeData(RADIATION, 75F));
+
+		// Prompt critical / near-critical configuration
+		// Severe gamma + neutron flux
+				HazardSystem.register(demon_core_closed,
+									  makeData()
+										  .addEntry(RADIATION, 5000F)
+										  .addEntry(NEUTRON, 2500F));
+
+		// Demon lamp = intentionally absurd hotspot
+				HazardSystem.register(lamp_demon,
+									  makeData()
+										  .addEntry(RADIATION, 5000F)
+										  .addEntry(NEUTRON, 2500F));
+
+
+		// ======================================================
+		// RADIOISOTOPE CELLS
+		// ======================================================
+
+		// Tritium beta emitter
+		// Almost harmless externally unless released
+				HazardSystem.register(cell_tritium,
+									  makeData(RADIATION, 0.0001F));
+
+		// Exotic luminous/radioactive source
+				HazardSystem.register(cell_sas3,
+									  makeData()
+										  .addEntry(RADIATION, sas3)
+										  .addEntry(BLINDING, 60F));
+
+
+		// ======================================================
+		// CONSUMER / NOVELTY ITEMS
+		// ======================================================
+
+		// "Radium coffee" joke item
+		// Mildly spicy but not insane
+				HazardSystem.register(coffee_radium,
+									  makeData(RADIATION, 0.05F));
+
+		// Chocolate naturally contains trace radioactivity (potassium)
+				HazardSystem.register(chocolate,
+									  makeData(RADIATION, 0.001F));
+
+
+		// ======================================================
+		// RAW NUCLEAR WASTE
+		// ======================================================
+
+		// Long-lived waste
+		// Persistent actinides, lower activity
+				HazardSystem.register(nuclear_waste_long,
+									  makeData(RADIATION, 2.5F));
+
+				HazardSystem.register(nuclear_waste_long_tiny,
+									  makeData(RADIATION, 0.25F));
+
+		// Short-lived waste
+		// Fresh fission products = MUCH hotter
+				HazardSystem.register(nuclear_waste_short,
+									  makeData()
+										  .addEntry(RADIATION, 35F)
+										  .addEntry(HOT, 5F));
+
+				HazardSystem.register(nuclear_waste_short_tiny,
+									  makeData()
+										  .addEntry(RADIATION, 3.5F)
+										  .addEntry(HOT, 5F));
+
+
+		// ======================================================
+		// DEPLETED / AGED WASTE
+		// ======================================================
+
+		// After cooling / partial decay
+				HazardSystem.register(nuclear_waste_long_depleted,
+									  makeData(RADIATION, 0.5F));
+
+				HazardSystem.register(nuclear_waste_long_depleted_tiny,
+									  makeData(RADIATION, 0.05F));
+
+				HazardSystem.register(nuclear_waste_short_depleted,
+									  makeData(RADIATION, 2.5F));
+
+				HazardSystem.register(nuclear_waste_short_depleted_tiny,
+									  makeData(RADIATION, 0.25F));
+
+
+		// ======================================================
+		// GENERAL NUCLEAR MATERIALS
+		// ======================================================
+
+		// Random contaminated reactor scrap
+				HazardSystem.register(scrap_nuclear,
+									  makeData(RADIATION, 1.5F));
+
+		// Fallout glass
+		// Slightly radioactive but mostly safe
+				HazardSystem.register(trinitite,
+									  makeData(RADIATION, trn * ingot));
+
+				HazardSystem.register(block_trinitite,
+									  makeData(RADIATION, trn * block));
+
+
+		// ======================================================
+		// STANDARD NUCLEAR WASTE SYSTEM
+		// ======================================================
+
+		// Mixed reactor waste
+				HazardSystem.register(nuclear_waste,
+									  makeData(RADIATION, wst * ingot));
+
+		// Waste barrel
+		// Large concentrated source
+				HazardSystem.register(yellow_barrel,
+									  makeData(RADIATION, wst * ingot * 6));
+
+		// Waste billet
+				HazardSystem.register(billet_nuclear_waste,
+									  makeData(RADIATION, wst * billet));
+
+		// Tiny waste fragment
+				HazardSystem.register(nuclear_waste_tiny,
+									  makeData(RADIATION, wst * nugget));
+
+
+		// ======================================================
+		// VITRIFIED WASTE
+		// ======================================================
+
+		// Glassified = safer to handle due to immobilization/shielding
+				HazardSystem.register(nuclear_waste_vitrified,
+									  makeData(RADIATION, wstv * ingot * 0.75F));
+
+				HazardSystem.register(nuclear_waste_vitrified_tiny,
+									  makeData(RADIATION, wstv * nugget * 0.75F));
+
+
+		// ======================================================
+		// WASTE BLOCKS
+		// ======================================================
+
+		// Massive concentrated storage blocks
+		HazardSystem.register(block_waste,
+							  makeData(RADIATION, wst * block));
+
+		HazardSystem.register(block_waste_painted,
+							  makeData(RADIATION, wst * block));
+
+		HazardSystem.register(block_waste_vitrified,
+							  makeData(RADIATION, wstv * block * 0.75F));
 
 		HazardSystem.register(block_corium, makeData(RADIATION, 150F));
 		HazardSystem.register(block_corium_cobble, makeData(RADIATION, 150F));
 
 		HazardSystem.register(scorched_stone, makeData(RADIATION, 0.05F));
 
-		HazardSystem.register(new ItemStack(ModItems.rubidiumsalt), makeData(RADIATION, Rb * nugget)); //im sure its fine
-		HazardSystem.register(new ItemStack(ModItems.ingot_samarium), makeData(RADIATION, Sm));
-		HazardSystem.register(new ItemStack(ModItems.ingot_smco), makeData(RADIATION, Sm));
+		// ======================================================
+		// LIGHTLY RADIOACTIVE / INDUSTRIAL MATERIALS
+		// ======================================================
 
-		//the idea is this should NOT exist. Maybe I'll add decay at some point.
-		HazardSystem.register(new ItemStack(ModItems.rutherfordium_nugget), makeData(RADIATION, 1000000).addEntry(NEUTRON, 100000F).addEntry(HOT, 100000F).addEntry(BLINDING, 1F).addEntry(EXPLOSIVE, 1F).addEntry(AUTISM, 5F).addEntry(ASBESTOS, 500F).addEntry(COAL, 500F).addEntry(HYDROACTIVE, 1F));
-		//this FUCKING THING FUCKED UP MY PERIODIC TABLE BY EXPLODING!!!!
+		// Rubidium salt
+		// Mostly Rb-87 (very long-lived, weak beta emitter)
+		// Basically harmless
+				HazardSystem.register(
+					new ItemStack(ModItems.rubidiumsalt),
+					makeData(RADIATION, Rb * nugget)
+				);
 
-		//dubnium
-		HazardSystem.register(new ItemStack(ModItems.dubnium_nugget), makeData(RADIATION, 100000F).addEntry(NEUTRON, 10000F).addEntry(HOT, 10000F).addEntry(BLINDING, 0.5F).addEntry(EXPLOSIVE, 0.5F).addEntry(AUTISM, 2.5F).addEntry(ASBESTOS, 250F).addEntry(COAL, 250F).addEntry(HYDROACTIVE, 0.5F));
+		// Samarium metal
+		// Slight natural radioactivity
+				HazardSystem.register(
+					new ItemStack(ModItems.ingot_samarium),
+					makeData(RADIATION, 0.01F)
+				);
 
-
-		//californium isotopes
-		//cf light fraction is a mix of cf249, cf251, and cf250 when split in the silex.
-		HazardSystem.register(new ItemStack(cf_light_fraction, 1, 0), makeData(RADIATION, cf251 * cf252));
-		HazardSystem.register(new ItemStack(nugget_cf249), makeData(RADIATION, cf251 * nugget));
-		HazardSystem.register(new ItemStack(ingot_cf249), makeData(RADIATION, cf251 * ingot));
-		HazardSystem.register(new ItemStack(nugget_cf250), makeData(RADIATION, cf252 * nugget));
-
-		registerOtherFuel(rod_zirnox, EnumZirnoxType.NATURAL_URANIUM_FUEL.ordinal(), u * rod_dual, wst * rod_dual * 11.5F, false);
-		registerOtherFuel(rod_zirnox, EnumZirnoxType.URANIUM_FUEL.ordinal(), uf * rod_dual, wst * rod_dual * 10F, false);
-		registerOtherFuel(rod_zirnox, EnumZirnoxType.TH232.ordinal(), th232 * rod_dual, thf * rod_dual, false);
-		registerOtherFuel(rod_zirnox, EnumZirnoxType.THORIUM_FUEL.ordinal(), thf * rod_dual, wst * rod_dual * 7.5F, false);
-		registerOtherFuel(rod_zirnox, EnumZirnoxType.MOX_FUEL.ordinal(), mox * rod_dual, wst * rod_dual * 10F, false);
-		registerOtherFuel(rod_zirnox, EnumZirnoxType.PLUTONIUM_FUEL.ordinal(), puf * rod_dual, wst * rod_dual * 12.5F, false);
-		registerOtherFuel(rod_zirnox, EnumZirnoxType.U233_FUEL.ordinal(), u233 * rod_dual, wst * rod_dual * 10F, false);
-		registerOtherFuel(rod_zirnox, EnumZirnoxType.U235_FUEL.ordinal(), u235 * rod_dual, wst * rod_dual * 11F, false);
-		registerOtherFuel(rod_zirnox, EnumZirnoxType.LES_FUEL.ordinal(), saf * rod_dual, wst * rod_dual * 15F, false);
-		registerOtherFuel(rod_zirnox, EnumZirnoxType.LITHIUM.ordinal(), 0, 0.001F * rod_dual, false);
-		registerOtherFuel(rod_zirnox, EnumZirnoxType.ZFB_MOX.ordinal(), mox * rod_dual, wst * rod_dual * 5F, false);
-
-		HazardSystem.register(rod_zirnox_natural_uranium_fuel_depleted, makeData(RADIATION, wst * rod_dual * 11.5F));
-		HazardSystem.register(rod_zirnox_uranium_fuel_depleted, makeData(RADIATION, wst * rod_dual * 10F));
-		HazardSystem.register(rod_zirnox_thorium_fuel_depleted, makeData(RADIATION, wst * rod_dual * 7.5F));
-		HazardSystem.register(rod_zirnox_mox_fuel_depleted, makeData(RADIATION, wst * rod_dual * 10F));
-		HazardSystem.register(rod_zirnox_plutonium_fuel_depleted, makeData(RADIATION, wst * rod_dual * 12.5F));
-		HazardSystem.register(rod_zirnox_u233_fuel_depleted, makeData(RADIATION, wst * rod_dual * 10F));
-		HazardSystem.register(rod_zirnox_u235_fuel_depleted, makeData(RADIATION, wst * rod_dual * 11F));
-		HazardSystem.register(rod_zirnox_les_fuel_depleted, makeData().addEntry(RADIATION, wst * rod_dual * 15F).addEntry(BLINDING, 20F));
-		HazardSystem.register(rod_zirnox_tritium, makeData(RADIATION, 0.001F * rod_dual));
-		HazardSystem.register(rod_zirnox_zfb_mox_depleted, makeData(RADIATION, wst * rod_dual * 5F));
-
-		registerOtherWaste(waste_natural_uranium, wst * billet * 11.5F);
-		registerOtherWaste(waste_uranium, wst * billet * 10F);
-		registerOtherWaste(waste_thorium, wst * billet * 7.5F);
-		registerOtherWaste(waste_mox, wst * billet * 10F);
-		registerOtherWaste(waste_plutonium, wst * billet * 12.5F);
-		registerOtherWaste(waste_u233, wst * billet * 10F);
-		registerOtherWaste(waste_u235, wst * billet * 11F);
-		registerOtherWaste(waste_schrabidium, wst * billet * 15F);
-		registerOtherWaste(waste_zfb_mox, wst * billet * 5F);
-
-		registerOtherFuel(plate_fuel_u233, u233 * ingot, wst * ingot * 13F, false);
-		registerOtherFuel(plate_fuel_u235, u235 * ingot, wst * ingot * 10F, false);
-		registerOtherFuel(plate_fuel_mox, mox * ingot, wst * ingot * 16F, false);
-		registerOtherFuel(plate_fuel_pu239, pu239 * ingot, wst * ingot * 13.5F, false);
-		registerOtherFuel(plate_fuel_sa326, sa326 * ingot, wst * ingot * 10F, true);
-		registerOtherFuel(plate_fuel_ra226be, rabe * billet, pobe * nugget * 3, false);
-		registerOtherFuel(plate_fuel_pu238be, pube * billet, pube * nugget * 1, false);
-
-		registerOtherWaste(waste_plate_u233, wst * ingot * 13F);
-		registerOtherWaste(waste_plate_u235, wst * ingot * 10F);
-		registerOtherWaste(waste_plate_mox, wst * ingot * 16F);
-		registerOtherWaste(waste_plate_pu239, wst * ingot * 13.5F);
-		registerOtherWaste(waste_plate_sa326, wst * ingot * 10F);
-		registerRadSourceWaste(waste_plate_ra226be, pobe * nugget * 3);
-		registerRadSourceWaste(waste_plate_pu238be, pube * nugget * 1);
-
-		HazardSystem.register(debris_graphite, makeData().addEntry(RADIATION, 70F).addEntry(HOT, 5F));
-		HazardSystem.register(debris_metal, makeData(RADIATION, 5F));
-		HazardSystem.register(debris_fuel, makeData().addEntry(RADIATION, 500F).addEntry(HOT, 5F));
-		HazardSystem.register(debris_concrete, makeData(RADIATION, 30F));
-		HazardSystem.register(debris_exchanger, makeData(RADIATION, 25F));
-		HazardSystem.register(debris_shrapnel, makeData(RADIATION, 2.5F));
-		HazardSystem.register(debris_element, makeData(RADIATION, 100F));
-
-		HazardSystem.register(nugget_uranium_fuel, makeData(RADIATION, uf * nugget));
-		HazardSystem.register(billet_uranium_fuel, makeData(RADIATION, uf * billet));
-		HazardSystem.register(ingot_uranium_fuel, makeData(RADIATION, uf * ingot));
-		HazardSystem.register(block_uranium_fuel, makeData(RADIATION, uf * block));
-
-		HazardSystem.register(nugget_plutonium_fuel, makeData(RADIATION, puf * nugget));
-		HazardSystem.register(billet_plutonium_fuel, makeData(RADIATION, puf * billet));
-		HazardSystem.register(ingot_plutonium_fuel, makeData(RADIATION, puf * ingot));
-		HazardSystem.register(block_plutonium_fuel, makeData(RADIATION, puf * block));
-
-		HazardSystem.register(nugget_thorium_fuel, makeData(RADIATION, thf * nugget));
-		HazardSystem.register(billet_thorium_fuel, makeData(RADIATION, thf * billet));
-		HazardSystem.register(ingot_thorium_fuel, makeData(RADIATION, thf * ingot));
-		HazardSystem.register(block_thorium_fuel, makeData(RADIATION, thf * block));
-
-		HazardSystem.register(nugget_protactinium, makeData(RADIATION, 50));
-
-		HazardSystem.register(nugget_neptunium_fuel, makeData(RADIATION, npf * nugget));
-		HazardSystem.register(billet_neptunium_fuel, makeData(RADIATION, npf * billet));
-		HazardSystem.register(ingot_neptunium_fuel, makeData(RADIATION, npf * ingot));
-
-		HazardSystem.register(nugget_mox_fuel, makeData(RADIATION, mox * nugget));
-		HazardSystem.register(billet_mox_fuel, makeData(RADIATION, mox * billet));
-		HazardSystem.register(ingot_mox_fuel, makeData(RADIATION, mox * ingot));
-		HazardSystem.register(block_mox_fuel, makeData(RADIATION, mox * block));
-
-		HazardSystem.register(nugget_americium_fuel, makeData(RADIATION, amf * nugget));
-		HazardSystem.register(billet_americium_fuel, makeData(RADIATION, amf * billet));
-		HazardSystem.register(ingot_americium_fuel, makeData(RADIATION, amf * ingot));
+		// Samarium-cobalt magnet alloy
+		// Same general category as samarium
+				HazardSystem.register(
+					new ItemStack(ModItems.ingot_smco),
+					makeData(RADIATION, 0.01F)
+				);
 
 
-		HazardSystem.register(nugget_schrabidium_fuel, makeData(RADIATION, saf * nugget));
-		HazardSystem.register(billet_schrabidium_fuel, makeData(RADIATION, saf * billet));
-		HazardSystem.register(ingot_schrabidium_fuel, makeData(RADIATION, saf * ingot));
-		HazardSystem.register(block_schrabidium_fuel, makeData(RADIATION, saf * block));
+		// ======================================================
+		// SUPERTHEHEAVY "THIS SHOULD NOT EXIST"
+		// ======================================================
 
-		HazardSystem.register(nugget_hes, makeData(RADIATION, saf * nugget));
-		HazardSystem.register(billet_hes, makeData(RADIATION, saf * billet));
-		HazardSystem.register(ingot_hes, makeData(RADIATION, saf * ingot));
+		// Rutherfordium
+		// The joke is: this should immediately self-destruct.
+		// Preserving insanity, but slightly normalized scaling.
+		HazardSystem.register(
+			new ItemStack(ModItems.rutherfordium_nugget),
+			makeData(RADIATION, 1_000_000F)
+				.addEntry(NEUTRON, 250_000F)
+				.addEntry(HOT, 100_000F)
+				.addEntry(BLINDING, 1F)
+				.addEntry(EXPLOSIVE, 1F)
+				.addEntry(AUTISM, 5F)
+				.addEntry(ASBESTOS, 500F)
+				.addEntry(COAL, 500F)
+				.addEntry(HYDROACTIVE, 1F)
+		);
 
-		HazardSystem.register(nugget_les, makeData(RADIATION, saf * nugget));
-		HazardSystem.register(billet_les, makeData(RADIATION, saf * billet));
-		HazardSystem.register(ingot_les, makeData(RADIATION, saf * ingot));
+		// "this FUCKING THING FUCKED UP MY PERIODIC TABLE BY EXPLODING!!!!"
 
-		HazardSystem.register(billet_balefire_gold, makeData(RADIATION, au198 * billet).addEntry(NEUTRON, au198 * billet * 0.02f));
-		HazardSystem.register(billet_flashlead, makeData().addEntry(RADIATION, pb209 * 1.25F * billet).addEntry(HOT, 7F).addEntry(NEUTRON, pb209 * billet * 0.002f));
-		HazardSystem.register(billet_po210be, makeData().addEntry(RADIATION, pobe * billet).addEntry(NEUTRON, pobe/10 * billet));
-		HazardSystem.register(billet_ra226be, makeData().addEntry(RADIATION, rabe * billet).addEntry(NEUTRON, rabe/10 * billet));
-		HazardSystem.register(billet_pu238be, makeData().addEntry(RADIATION, pube * billet).addEntry(NEUTRON, pube/10 * billet));
-
-		registerRTGPellet(pellet_rtg, pu238 * rtg, 0, 3F);
-		registerRTGPellet(pellet_rtg_radium, ra226 * rtg, 0);
-		registerRTGPellet(pellet_rtg_weak, (pu238 + (u238 * 2)) * billet, 0);
-		registerRTGPellet(pellet_rtg_strontium, sr90 * rtg, 0);
-		registerRTGPellet(pellet_rtg_cobalt, co60 * rtg, 0);
-		registerRTGPellet(pellet_rtg_actinium, ac227 * rtg, 0);
-		registerRTGPellet(pellet_rtg_polonium, po210 * rtg, 0, 3F);
-		registerRTGPellet(pellet_rtg_lead, pb209 * rtg, 0, 7F, 50F);
-		registerRTGPellet(pellet_rtg_gold, au198 * rtg, 0, 5F);
-		registerRTGPellet(pellet_rtg_americium, am241 * rtg, 0);
-		registerRTGPellet(pellet_rtg_promethium, pm147 * rtg, 0);
-		//registerRTGPellet(pellet_rtg_curium, cm244 * rtg, 0) //not added yet
-		//new:
-		registerRTGPellet(pellet_rtg_cf251, cf251 * rtg, 0);
-		registerRTGPellet(pellet_rtg_cf252, cf252 * rtg, 0);
-		registerRTGPellet(rbmk_pellet_bk247, bk247 * rtg, 0);
-		HazardSystem.register(new ItemStack(pellet_rtg_depleted, 1, DepletedRTGMaterial.NEPTUNIUM.ordinal()), makeData(RADIATION, np237 * rtg));
-
-		HazardSystem.register(pile_rod_uranium, makeData(RADIATION, u * billet * 3));
-		HazardSystem.register(pile_rod_pu239, makeData(RADIATION, !GeneralConfig.enable528 ? purg * billet + pu239 * billet + u * billet : purg * billet + pu239 * billet + wst * billet));
-		HazardSystem.register(pile_rod_plutonium, makeData().addEntry(RADIATION, !GeneralConfig.enable528 ? purg * billet * 2 + u * billet : purg * billet * 2 + wst * billet).addEntry(NEUTRON, rabe * billet * 0.2f));
-		HazardSystem.register(pile_rod_source, makeData().addEntry(RADIATION, rabe * billet * 3).addEntry(NEUTRON, rabe * billet * 0.3f));
+		// Dubnium
+		// Still catastrophic, but less ridiculous than Rf
+		HazardSystem.register(
+			new ItemStack(ModItems.dubnium_nugget),
+			makeData(RADIATION, 100_000F)
+				.addEntry(NEUTRON, 25_000F)
+				.addEntry(HOT, 10_000F)
+				.addEntry(BLINDING, 0.5F)
+				.addEntry(EXPLOSIVE, 0.5F)
+				.addEntry(AUTISM, 2.5F)
+				.addEntry(ASBESTOS, 250F)
+				.addEntry(COAL, 250F)
+				.addEntry(HYDROACTIVE, 0.5F)
+		);
 
 
-		registerBreedingRodRadiation(BreedingRodType.TRITIUM, 0.001F);
-		registerBreedingRodRadiation(BreedingRodType.CO60, co60);
-		registerBreedingRodRadiation(BreedingRodType.RA226, ra226);
-		registerBreedingRodRadiation(BreedingRodType.AC227, ac227);
-		registerBreedingRodRadiation(BreedingRodType.TH232, th232);
-		registerBreedingRodRadiation(BreedingRodType.THF, thf);
-		registerBreedingRodRadiation(BreedingRodType.U235, u235);
-		registerBreedingRodRadiation(BreedingRodType.NP237, np237);
-		registerBreedingRodRadiation(BreedingRodType.U238, u238);
-		registerBreedingRodRadiation(BreedingRodType.PU238, pu238); //it's in a container :)
-		registerBreedingRodRadiation(BreedingRodType.PU239, pu239);
-		registerBreedingRodRadiation(BreedingRodType.RGP, purg);
-		registerBreedingRodRadiation(BreedingRodType.WASTE, wst);
-		registerBreedingRodRadiation(BreedingRodType.URANIUM, u);
+		// ======================================================
+		// CALIFORNIUM ISOTOPES
+		// ======================================================
 
-		registerBreedingRodRadiation(BreedingRodType.AM241, am241);
-		registerBreedingRodRadiation(BreedingRodType.AM242, am242);
-		registerBreedingRodRadiation(BreedingRodType.CM242, cm242);
-		registerBreedingRodRadiation(BreedingRodType.CM243, cm243);
-		registerBreedingRodRadiation(BreedingRodType.CM244, cm244);
-		registerBreedingRodRadiation(BreedingRodType.CM245, cm245);
-		registerBreedingRodRadiation(BreedingRodType.CM246, cm246);
-		registerBreedingRodRadiation(BreedingRodType.CM247, cm247);
-		registerBreedingRodRadiation(BreedingRodType.BK247, bk247);
+		// Cf light fraction
+		// Mix of Cf-249 / 250 / 251 from SILEX split
+		// Neutron spicy but not Cf-252 levels
+				HazardSystem.register(
+					new ItemStack(cf_light_fraction, 1, 0),
+					makeData(RADIATION, cf251 * ingot)
+						.addEntry(NEUTRON, 10F)
+				);
 
-		registerRBMKRod(rbmk_fuel_ueu, u * rod_rbmk, wst * rod_rbmk * 20F);
-		registerRBMKRod(rbmk_fuel_meu, uf * rod_rbmk, wst * rod_rbmk * 21.5F);
-		registerRBMKRod(rbmk_fuel_heu233, u233 * rod_rbmk, wst * rod_rbmk * 31F);
-		registerRBMKRod(rbmk_fuel_heu235, u235 * rod_rbmk, wst * rod_rbmk * 30F);
-		registerRBMKRod(rbmk_fuel_thmeu, thf * rod_rbmk, wst * rod_rbmk * 17.5F);
-		registerRBMKRod(rbmk_fuel_lep, puf * rod_rbmk, wst * rod_rbmk * 25F);
-		registerRBMKRod(rbmk_fuel_mep, purg * rod_rbmk, wst * rod_rbmk * 30F);
-		registerRBMKRod(rbmk_fuel_hep239, pu239 * rod_rbmk, wst * rod_rbmk * 32.5F);
-		registerRBMKRod(rbmk_fuel_hep241, pu241 * rod_rbmk, wst * rod_rbmk * 35F);
-		registerRBMKRod(rbmk_fuel_lea, amf * rod_rbmk, wst * rod_rbmk * 26F);
-		registerRBMKRod(rbmk_fuel_mea, amrg * rod_rbmk, wst * rod_rbmk * 30.5F);
-		registerRBMKRod(rbmk_fuel_hea241, am241 * rod_rbmk, wst * rod_rbmk * 33.5F);
-		registerRBMKRod(rbmk_fuel_hea242, am242 * rod_rbmk, wst * rod_rbmk * 34F);
-		registerRBMKRod(rbmk_fuel_bk247, bk247 * rod_rbmk, wst * rod_rbmk * 38F);
-		registerRBMKRod(rbmk_fuel_men, npf * rod_rbmk, wst * rod_rbmk * 22.5F);
-		registerRBMKRod(rbmk_fuel_hen, np237 * rod_rbmk, wst * rod_rbmk * 30F);
-		registerRBMKRod(rbmk_fuel_mox, mox * rod_rbmk, wst * rod_rbmk * 25.5F);
-		registerRBMKRod(rbmk_fuel_les, saf * rod_rbmk, wst * rod_rbmk * 24.5F);
-		registerRBMKRod(rbmk_fuel_mes, saf * rod_rbmk, wst * rod_rbmk * 30F);
-		registerRBMKRod(rbmk_fuel_hes, saf * rod_rbmk, wst * rod_rbmk * 50F);
-		registerRBMKRod(rbmk_fuel_leaus, 0F, wst * rod_rbmk * 37.5F);
-		registerRBMKRod(rbmk_fuel_heaus, 0F, wst * rod_rbmk * 32.5F);
-		registerRBMKRod(rbmk_fuel_po210be, pobe * rod_rbmk, pobe * rod_rbmk * 0.1F, true);
-		registerRBMKRod(rbmk_fuel_ra226be, rabe * rod_rbmk, rabe * rod_rbmk * 0.4F, true);
-		registerRBMKRod(rbmk_fuel_pu238be, pube * rod_rbmk, wst * rod_rbmk * 2.5F);
-		//registerRBMKRod(rbmk_fuel_balefire_gold, au198 * rod_rbmk, bf * rod_rbmk * 0.5F, true);
-		registerRBMKRod(rbmk_fuel_flashlead, pb209 * 1.25F * rod_rbmk, pb209 * nugget * 0.05F * rod_rbmk, true);
-		//registerRBMKRod(rbmk_fuel_balefire, bf * rod_rbmk, bf * rod_rbmk * 100F, true);
-		registerRBMKRod(rbmk_fuel_zfb_bismuth, pu241 * rod_rbmk * 0.1F, wst * rod_rbmk * 5F);
-		registerRBMKRod(rbmk_fuel_zfb_pu241, pu239 * rod_rbmk * 0.1F, wst * rod_rbmk * 7.5F);
-		registerRBMKRod(rbmk_fuel_zfb_am_mix, pu241 * rod_rbmk * 0.1F, wst * rod_rbmk * 10F);
-		//registerRBMK(rbmk_fuel_drx, bf * rod_rbmk, bf * rod_rbmk * 100F, true, true, 0, 1F/3F);
-		registerRBMKRod(rbmk_fuel_lecm, cmrg * 2.2F * rod_rbmk / 5F, wst * rod_rbmk);
-		registerRBMKRod(rbmk_fuel_mecm, cmrg * 2.2F * rod_rbmk / 3F, wst * rod_rbmk * 3F);
-		registerRBMKRod(rbmk_fuel_hecm, cmrg * 2.2F * rod_rbmk /1.5F, wst * rod_rbmk * 5F);
+		// Cf-249
+		// Strong alpha emitter, moderate neutron relevance
+				HazardSystem.register(
+					new ItemStack(nugget_cf249),
+					makeData(RADIATION, cf251 * nugget)
+						.addEntry(NEUTRON, 2F)
+				);
+
+				HazardSystem.register(
+					new ItemStack(ingot_cf249),
+					makeData(RADIATION, cf251 * ingot)
+						.addEntry(NEUTRON, 8F)
+				);
+
+		// Cf-250
+		// More active, stronger spontaneous fission component
+		HazardSystem.register(
+			new ItemStack(nugget_cf250),
+			makeData(RADIATION, cf252 * nugget)
+				.addEntry(NEUTRON, 4F)
+		);
+
+		// ======================================================
+		// ZIRNOX FUEL REGISTRATION
+		// ======================================================
+
+		// Natural uranium fuel
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.NATURAL_URANIUM_FUEL.ordinal(),
+					u * rod_dual,
+					wst * rod_dual * 9F,
+					false
+				);
+
+		// Enriched uranium fuel
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.URANIUM_FUEL.ordinal(),
+					uf * rod_dual,
+					wst * rod_dual * 10F,
+					false
+				);
+
+		// Thorium breeder blanket
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.TH232.ordinal(),
+					th232 * rod_dual,
+					thf * rod_dual,
+					false
+				);
+
+		// Thorium/U233 fuel cycle
+		// Cleaner waste profile than plutonium
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.THORIUM_FUEL.ordinal(),
+					thf * rod_dual,
+					wst * rod_dual * 6F,
+					false
+				);
+
+		// MOX fuel
+		// Higher actinides + plutonium buildup
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.MOX_FUEL.ordinal(),
+					mox * rod_dual,
+					wst * rod_dual * 12F,
+					false
+				);
+
+		// Dedicated plutonium fuel
+		// Nasty spent fuel
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.PLUTONIUM_FUEL.ordinal(),
+					puf * rod_dual,
+					wst * rod_dual * 14F,
+					false
+				);
+
+		// U233 breeder fuel
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.U233_FUEL.ordinal(),
+					u233 * rod_dual,
+					wst * rod_dual * 8F,
+					false
+				);
+
+		// U235 fuel
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.U235_FUEL.ordinal(),
+					u235 * rod_dual,
+					wst * rod_dual * 10F,
+					false
+				);
+
+		// LES fuel (looks intentionally cursed / exotic)
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.LES_FUEL.ordinal(),
+					saf * rod_dual,
+					wst * rod_dual * 16F,
+					false
+				);
+
+		// Lithium breeder
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.LITHIUM.ordinal(),
+					0,
+					0.0001F * rod_dual,
+					false
+				);
+
+		// ZFB MOX
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.ZFB_MOX.ordinal(),
+					mox * rod_dual,
+					wst * rod_dual * 7F,
+					false
+				);
 
 
-		registerRBMKPellet(rbmk_pellet_ueu, u * billet, wst * billet * 20F);
-		registerRBMKPellet(rbmk_pellet_meu, uf * billet, wst * billet * 21.5F);
-		registerRBMKPellet(rbmk_pellet_heu233, u233 * billet, wst * billet * 31F);
-		registerRBMKPellet(rbmk_pellet_heu235, u235 * billet, wst * billet * 30F);
-		registerRBMKPellet(rbmk_pellet_thmeu, thf * billet, wst * billet * 17.5F);
-		registerRBMKPellet(rbmk_pellet_lep, puf * billet, wst * billet * 25F);
-		registerRBMKPellet(rbmk_pellet_mep, purg * billet, wst * billet * 30F);
-		registerRBMKPellet(rbmk_pellet_hep239, pu239 * billet, wst * billet * 32.5F);
-		registerRBMKPellet(rbmk_pellet_hep241, pu241 * billet, wst * billet * 35F);
-		registerRBMKPellet(rbmk_pellet_lea, amf * billet, wst * billet * 26F);
-		registerRBMKPellet(rbmk_pellet_mea, amrg * billet, wst * billet * 30.5F);
-		registerRBMKPellet(rbmk_pellet_hea241, am241 * billet, wst * billet * 33.5F);
-		registerRBMKPellet(rbmk_pellet_hea242, am242 * billet, wst * billet * 34F);
-		registerRBMKPellet(rbmk_pellet_bk247, bk247 * billet, wst * billet * 37F);
-		registerRBMKPellet(rbmk_pellet_men, npf * billet, wst * billet * 22.5F);
-		registerRBMKPellet(rbmk_pellet_hen, np237 * billet, wst * billet * 30F);
-		registerRBMKPellet(rbmk_pellet_mox, mox * billet, wst * billet * 25.5F);
-		registerRBMKPellet(rbmk_pellet_les, saf * billet, wst * billet * 24.5F);
-		registerRBMKPellet(rbmk_pellet_mes, saf * billet, wst * billet * 30F);
-		registerRBMKPellet(rbmk_pellet_hes, saf * billet, wst * billet * 50F);
-		registerRBMKPellet(rbmk_pellet_leaus, 0F, wst * billet * 37.5F);
-		registerRBMKPellet(rbmk_pellet_heaus, 0F, wst * billet * 32.5F);
-		registerRBMKPellet(rbmk_pellet_po210be, pobe * billet, pobe * billet * 0.1F, true);
-		registerRBMKPellet(rbmk_pellet_ra226be, rabe * billet, rabe * billet * 0.4F, true);
-		registerRBMKPellet(rbmk_pellet_pu238be, pube * billet, wst * 1.5F);
-		//registerRBMKPellet(rbmk_pellet_balefire_gold, au198 * billet, bf * billet * 0.5F, true);
-		registerRBMKPellet(rbmk_pellet_flashlead, pb209 * 1.25F * billet, pb209 * nugget * 0.05F, true, 0, 0);
-		//registerRBMKPellet(rbmk_pellet_balefire, bf * billet, bf * billet * 100F, true);
-		registerRBMKPellet(rbmk_pellet_zfb_bismuth, pu241 * billet * 0.1F, wst * billet * 5F);
-		registerRBMKPellet(rbmk_pellet_zfb_pu241, pu239 * billet * 0.1F, wst * billet * 7.5F);
-		registerRBMKPellet(rbmk_pellet_zfb_am_mix, pu241 * billet * 0.1F, wst * billet * 10F);
-		//registerRBMKPellet(rbmk_pellet_drx, bf * billet, bf * billet * 100F, true, 0F, 1F/24F);
-		registerRBMKPellet(rbmk_pellet_lecm, cmrg * billet, wst * cf252 * 2.5F);
-		registerRBMKPellet(rbmk_pellet_mecm, cmrg * billet, wst * cf252 * 2.6F);
-		registerRBMKPellet(rbmk_pellet_hecm, cmrg * billet, wst * cf252 * 2.7F);
+		// ======================================================
+		// DEPLETED ZIRNOX RODS
+		// ======================================================
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.SCHRABIDIUM), makeData(RADIATION, sa326 * ingot * 4));
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.HES), makeData(RADIATION, saf * ingot * 4));
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.MES), makeData(RADIATION, saf * ingot * 4));
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.LES), makeData(RADIATION, saf * ingot * 4));
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.HEN), makeData(RADIATION, np237 * ingot * 4));
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.MEU), makeData(RADIATION, uf * ingot * 4));
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.MEP), makeData(RADIATION, purg * ingot * 4));
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.DU), makeData(RADIATION, u238 * ingot * 4));
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.NQD), makeData(RADIATION, u235 * ingot * 4));
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.NQR), makeData(RADIATION, pu239 * ingot * 4));
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.PU241), makeData(RADIATION, pu241 * ingot * 4));
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.AMRG), makeData(RADIATION, amrg * ingot * 4));
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.CMRG), makeData(RADIATION, cmrg * ingot * 4));
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.CMF), makeData(RADIATION, cmf * ingot * 4));
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.BK247), makeData(RADIATION, bk247 * ingot * 4));
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.CF252), makeData(RADIATION, cf252 * ingot * 4));
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.ES253), makeData(RADIATION, es253 * ingot * 4));
+		// Natural uranium
+				HazardSystem.register(
+					rod_zirnox_natural_uranium_fuel_depleted,
+					makeData(RADIATION, wst * rod_dual * 9F)
+				);
+
+		// Enriched uranium
+				HazardSystem.register(
+					rod_zirnox_uranium_fuel_depleted,
+					makeData(RADIATION, wst * rod_dual * 10F)
+				);
+
+		// Thorium cycle
+				HazardSystem.register(
+					rod_zirnox_thorium_fuel_depleted,
+					makeData(RADIATION, wst * rod_dual * 6F)
+				);
+
+		// MOX
+				HazardSystem.register(
+					rod_zirnox_mox_fuel_depleted,
+					makeData(RADIATION, wst * rod_dual * 12F)
+				);
+
+		// Plutonium
+				HazardSystem.register(
+					rod_zirnox_plutonium_fuel_depleted,
+					makeData(RADIATION, wst * rod_dual * 14F)
+				);
+
+		// U233
+				HazardSystem.register(
+					rod_zirnox_u233_fuel_depleted,
+					makeData(RADIATION, wst * rod_dual * 8F)
+				);
+
+		// U235
+				HazardSystem.register(
+					rod_zirnox_u235_fuel_depleted,
+					makeData(RADIATION, wst * rod_dual * 10F)
+				);
+
+		// LES
+				HazardSystem.register(
+					rod_zirnox_les_fuel_depleted,
+					makeData()
+						.addEntry(RADIATION, wst * rod_dual * 16F)
+						.addEntry(BLINDING, 20F)
+				);
+
+		// Tritium rod
+				HazardSystem.register(
+					rod_zirnox_tritium,
+					makeData(RADIATION, 0.0001F * rod_dual)
+				);
+
+		// ZFB MOX
+		HazardSystem.register(
+			rod_zirnox_zfb_mox_depleted,
+			makeData(RADIATION, wst * rod_dual * 7F)
+		);
+
+		// ========================================================================
+		// ZIRNOX FUEL RODS
+		// radiation = fresh fuel handling hazard (mSv-equivalent)
+		// waste = depleted/spent rod handling hazard
+		// ========================================================================
+
+		// --- Uranium Cycle ---
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.NATURAL_URANIUM_FUEL.ordinal(),
+					u * rod_dual,
+					wst * rod_dual * 12F,
+					false
+				);
+
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.URANIUM_FUEL.ordinal(),
+					uf * rod_dual,
+					wst * rod_dual * 10F,
+					false
+				);
+
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.U233_FUEL.ordinal(),
+					u233 * rod_dual,
+					wst * rod_dual * 11F,
+					false
+				);
+
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.U235_FUEL.ordinal(),
+					u235 * rod_dual,
+					wst * rod_dual * 11F,
+					false
+				);
+
+		// --- Thorium Cycle ---
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.TH232.ordinal(),
+					th232 * rod_dual,
+					thf * rod_dual,
+					false
+				);
+
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.THORIUM_FUEL.ordinal(),
+					thf * rod_dual,
+					wst * rod_dual * 8F,
+					false
+				);
+
+		// --- Plutonium / MOX ---
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.MOX_FUEL.ordinal(),
+					mox * rod_dual,
+					wst * rod_dual * 14F,
+					false
+				);
+
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.PLUTONIUM_FUEL.ordinal(),
+					puf * rod_dual,
+					wst * rod_dual * 13F,
+					false
+				);
+
+		// --- Schrabidium / Exotic ---
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.LES_FUEL.ordinal(),
+					saf * rod_dual,
+					wst * rod_dual * 16F,
+					false
+				);
+
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.ZFB_MOX.ordinal(),
+					mox * rod_dual,
+					wst * rod_dual * 6F,
+					false
+				);
+
+		// --- Utility / Non-fissile ---
+				registerOtherFuel(
+					rod_zirnox,
+					EnumZirnoxType.LITHIUM.ordinal(),
+					0F,
+					0.001F * rod_dual,
+					false
+				);
+
+		// ========================================================================
+		// DEPLETED FUEL RODS
+		// ========================================================================
+
+				HazardSystem.register(
+					rod_zirnox_natural_uranium_fuel_depleted,
+					makeData(RADIATION, wst * rod_dual * 12F)
+				);
+
+				HazardSystem.register(
+					rod_zirnox_uranium_fuel_depleted,
+					makeData(RADIATION, wst * rod_dual * 10F)
+				);
+
+				HazardSystem.register(
+					rod_zirnox_thorium_fuel_depleted,
+					makeData(RADIATION, wst * rod_dual * 8F)
+				);
+
+				HazardSystem.register(
+					rod_zirnox_mox_fuel_depleted,
+					makeData(RADIATION, wst * rod_dual * 14F)
+				);
+
+				HazardSystem.register(
+					rod_zirnox_plutonium_fuel_depleted,
+					makeData(RADIATION, wst * rod_dual * 13F)
+				);
+
+				HazardSystem.register(
+					rod_zirnox_u233_fuel_depleted,
+					makeData(RADIATION, wst * rod_dual * 11F)
+				);
+
+				HazardSystem.register(
+					rod_zirnox_u235_fuel_depleted,
+					makeData(RADIATION, wst * rod_dual * 11F)
+				);
+
+				HazardSystem.register(
+					rod_zirnox_les_fuel_depleted,
+					makeData()
+						.addEntry(RADIATION, wst * rod_dual * 16F)
+						.addEntry(BLINDING, 20F)
+				);
+
+				HazardSystem.register(
+					rod_zirnox_tritium,
+					makeData(RADIATION, 0.001F * rod_dual)
+				);
+
+				HazardSystem.register(
+					rod_zirnox_zfb_mox_depleted,
+					makeData(RADIATION, wst * rod_dual * 6F)
+				);
+
+		// ========================================================================
+		// WASTE PRODUCTS / REPROCESSING BILLETS
+		// ========================================================================
+
+				registerOtherWaste(waste_natural_uranium, wst * billet * 12F);
+				registerOtherWaste(waste_uranium,         wst * billet * 10F);
+
+				registerOtherWaste(waste_thorium,         wst * billet * 8F);
+
+				registerOtherWaste(waste_mox,             wst * billet * 14F);
+				registerOtherWaste(waste_plutonium,       wst * billet * 13F);
+
+				registerOtherWaste(waste_u233,            wst * billet * 11F);
+				registerOtherWaste(waste_u235,            wst * billet * 11F);
+
+				registerOtherWaste(waste_schrabidium,     wst * billet * 16F);
+				registerOtherWaste(waste_zfb_mox,         wst * billet * 6F);
+
+		// ========================================================================
+		// FUEL PLATES
+		// ========================================================================
+
+				registerOtherFuel(
+					plate_fuel_u233,
+					u233 * ingot,
+					wst * ingot * 11F,
+					false
+				);
+
+				registerOtherFuel(
+					plate_fuel_u235,
+					u235 * ingot,
+					wst * ingot * 10F,
+					false
+				);
+
+				registerOtherFuel(
+					plate_fuel_mox,
+					mox * ingot,
+					wst * ingot * 14F,
+					false
+				);
+
+				registerOtherFuel(
+					plate_fuel_pu239,
+					pu239 * ingot,
+					wst * ingot * 13F,
+					false
+				);
+
+				registerOtherFuel(
+					plate_fuel_sa326,
+					sa326 * ingot,
+					wst * ingot * 16F,
+					true
+				);
+
+		// Alpha-neutron RTG / source plates
+		registerOtherFuel(
+			plate_fuel_ra226be,
+			rabe * billet,
+			pobe * nugget * 3F,
+			false
+		);
+
+		registerOtherFuel(
+			plate_fuel_pu238be,
+			pube * billet,
+			pube * nugget,
+			false
+		);
+
+		// ========================================================================
+		// SPENT FUEL PLATES / REPROCESSING WASTE
+		// ========================================================================
+
+				registerOtherWaste(waste_plate_u233,   wst * ingot * 11F);
+				registerOtherWaste(waste_plate_u235,   wst * ingot * 10F);
+
+				registerOtherWaste(waste_plate_mox,    wst * ingot * 14F);
+				registerOtherWaste(waste_plate_pu239,  wst * ingot * 13F);
+
+				registerOtherWaste(waste_plate_sa326,  wst * ingot * 16F);
+
+		// Alpha-neutron rad source waste
+				registerRadSourceWaste(
+					waste_plate_ra226be,
+					pobe * nugget * 3F
+				);
+
+				registerRadSourceWaste(
+					waste_plate_pu238be,
+					pube * nugget
+				);
+
+		// ========================================================================
+		// REACTOR DEBRIS / MELTDOWN MATERIAL
+		// ========================================================================
+
+		// Highly contaminated irradiated graphite moderator
+		// (Chernobyl-style graphite chunks)
+				HazardSystem.register(
+					debris_graphite,
+					makeData()
+						.addEntry(RADIATION, 120F)
+						.addEntry(HOT, 5F)
+				);
+
+		// Contaminated reactor structural metal
+		// piping, vessel fragments, activated steel
+				HazardSystem.register(
+					debris_metal,
+					makeData(RADIATION, 12F)
+				);
+
+		// Melted fuel / corium fragments
+		// "do not touch under any circumstances"
+				HazardSystem.register(
+					debris_fuel,
+					makeData()
+						.addEntry(RADIATION, 1500F)
+						.addEntry(HOT, 8F)
+				);
+
+		// Fallout contaminated / neutron activated concrete
+				HazardSystem.register(
+					debris_concrete,
+					makeData(RADIATION, 20F)
+				);
+
+		// Heat exchanger contamination
+		// activated coolant residue + metal activation
+				HazardSystem.register(
+					debris_exchanger,
+					makeData(RADIATION, 35F)
+				);
+
+		// Low-grade irradiated fragments
+				HazardSystem.register(
+					debris_shrapnel,
+					makeData(RADIATION, 5F)
+				);
+
+		// Extremely contaminated reactor internals
+		// control elements, vessel internals, mystery hell chunks
+		HazardSystem.register(
+			debris_element,
+			makeData(RADIATION, 250F)
+		);
+
+		// ========================================================================
+		// PROCESSED FUEL MATERIALS
+		// ========================================================================
+
+		// --- Uranium Fuel ---
+		// Moderately radioactive enriched fuel material
+				HazardSystem.register(
+					nugget_uranium_fuel,
+					makeData(RADIATION, uf * nugget)
+				);
+				HazardSystem.register(
+					billet_uranium_fuel,
+					makeData(RADIATION, uf * billet)
+				);
+				HazardSystem.register(
+					ingot_uranium_fuel,
+					makeData(RADIATION, uf * ingot)
+				);
+				HazardSystem.register(
+					block_uranium_fuel,
+					makeData(RADIATION, uf * block)
+				);
+
+		// --- Plutonium Fuel ---
+		// More radiotoxic and generally nastier to handle
+				HazardSystem.register(
+					nugget_plutonium_fuel,
+					makeData(RADIATION, puf * nugget)
+				);
+				HazardSystem.register(
+					billet_plutonium_fuel,
+					makeData(RADIATION, puf * billet)
+				);
+				HazardSystem.register(
+					ingot_plutonium_fuel,
+					makeData(RADIATION, puf * ingot)
+				);
+				HazardSystem.register(
+					block_plutonium_fuel,
+					makeData(RADIATION, puf * block)
+				);
+
+		// --- Thorium Fuel ---
+		// Relatively mild handling hazard
+				HazardSystem.register(
+					nugget_thorium_fuel,
+					makeData(RADIATION, thf * nugget)
+				);
+				HazardSystem.register(
+					billet_thorium_fuel,
+					makeData(RADIATION, thf * billet)
+				);
+				HazardSystem.register(
+					ingot_thorium_fuel,
+					makeData(RADIATION, thf * ingot)
+				);
+				HazardSystem.register(
+					block_thorium_fuel,
+					makeData(RADIATION, thf * block)
+				);
+
+		// ========================================================================
+		// PROTACTINIUM
+		// ========================================================================
+
+		// Likely Pa-233 (thorium breeding intermediate)
+		// Strong gamma emitter, nasty to handle, short-lived
+		HazardSystem.register(
+			nugget_protactinium,
+			makeData(RADIATION, 8F)
+		);
+
+		// ========================================================================
+		// NEPTUNIUM FUEL
+		// ========================================================================
+		// More radioactive than uranium fuel,
+		// less nasty than plutonium fuel.
+
+				HazardSystem.register(
+					nugget_neptunium_fuel,
+					makeData(RADIATION, npf * nugget)
+				);
+
+				HazardSystem.register(
+					billet_neptunium_fuel,
+					makeData(RADIATION, npf * billet)
+				);
+
+				HazardSystem.register(
+					ingot_neptunium_fuel,
+					makeData(RADIATION, npf * ingot)
+				);
+
+
+		// ========================================================================
+		// MOX FUEL (Mixed Oxide Fuel)
+		// ========================================================================
+		// Uranium + plutonium mix.
+		// Hotter than uranium fuel and unpleasant to handle.
+
+				HazardSystem.register(
+					nugget_mox_fuel,
+					makeData(RADIATION, mox * nugget)
+				);
+
+				HazardSystem.register(
+					billet_mox_fuel,
+					makeData(RADIATION, mox * billet)
+				);
+
+				HazardSystem.register(
+					ingot_mox_fuel,
+					makeData(RADIATION, mox * ingot)
+				);
+
+				HazardSystem.register(
+					block_mox_fuel,
+					makeData(RADIATION, mox * block)
+				);
+
+
+		// ========================================================================
+		// AMERICIUM FUEL
+		// ========================================================================
+		// Quite nasty radiologically.
+		// Should feel spicier than plutonium fuel.
+
+		HazardSystem.register(
+			nugget_americium_fuel,
+			makeData(RADIATION, amf * nugget)
+		);
+
+		HazardSystem.register(
+			billet_americium_fuel,
+			makeData(RADIATION, amf * billet)
+		);
+
+		HazardSystem.register(
+			ingot_americium_fuel,
+			makeData(RADIATION, amf * ingot)
+		);
+		// ========================================================================
+		// HES / LES FUEL MATERIALS
+		// ========================================================================
+		// Highly enriched schrabidium fuel.
+		// Nasty but still processable in industry.
+
+				HazardSystem.register(
+					nugget_hes,
+					makeData(RADIATION, saf * nugget)
+				);
+
+				HazardSystem.register(
+					billet_hes,
+					makeData(RADIATION, saf * billet)
+				);
+
+				HazardSystem.register(
+					ingot_hes,
+					makeData(RADIATION, saf * ingot)
+				);
+
+
+		// Low enriched schrabidium
+				HazardSystem.register(
+					nugget_les,
+					makeData(RADIATION, saf * nugget * 0.75F)
+				);
+
+				HazardSystem.register(
+					billet_les,
+					makeData(RADIATION, saf * billet * 0.75F)
+				);
+
+				HazardSystem.register(
+					ingot_les,
+					makeData(RADIATION, saf * ingot * 0.75F)
+				);
+
+
+		// ========================================================================
+		// FLASH MATERIALS / EXOTIC HOT MATERIALS
+		// ========================================================================
+
+		// Flash gold (Au-198)
+		// Strong gamma emitter but short-lived
+				HazardSystem.register(
+					billet_balefire_gold,
+					makeData()
+						.addEntry(RADIATION, au198 * billet)
+						.addEntry(NEUTRON, au198 * billet * 0.01F)
+				);
+
+
+		// Flashlead (Pb-209)
+		// Extremely unstable, violently radioactive
+				HazardSystem.register(
+					billet_flashlead,
+					makeData()
+						.addEntry(RADIATION, pb209 * billet * 1.15F)
+						.addEntry(HOT, 10F)
+						.addEntry(NEUTRON, pb209 * billet * 0.001F)
+				);
+
+
+		// ========================================================================
+		// ALPHA-NEUTRON SOURCES
+		// ========================================================================
+		// Radiation lowered slightly relative to neutron hazard.
+		// Main danger is neutron flux.
+
+		HazardSystem.register(
+			billet_po210be,
+			makeData()
+				.addEntry(RADIATION, pobe * billet)
+				.addEntry(NEUTRON, pobe * billet * 0.15F)
+		);
+
+		HazardSystem.register(
+			billet_ra226be,
+			makeData()
+				.addEntry(RADIATION, rabe * billet)
+				.addEntry(NEUTRON, rabe * billet * 0.12F)
+		);
+
+		HazardSystem.register(
+			billet_pu238be,
+			makeData()
+				.addEntry(RADIATION, pube * billet)
+				.addEntry(NEUTRON, pube * billet * 0.18F)
+		);
+
+		// ======================================================
+		// RTG PELLETS
+		// ======================================================
+
+		// Standard Pu-238 RTG (realistic strong alpha RTG)
+				registerRTGPellet(pellet_rtg, pu238 * rtg, 0, 2F);
+
+		// Ra-226 RTG (old-school, dirty, weaker efficiency)
+				registerRTGPellet(pellet_rtg_radium, ra226 * rtg, 0);
+
+		// Weak RTG (Pu-238 + depleted uranium blend)
+				registerRTGPellet(
+					pellet_rtg_weak,
+					((pu238 * 0.35F) + (u238 * 2F)) * billet,
+					0
+				);
+
+		// Industrial beta RTGs
+				registerRTGPellet(pellet_rtg_strontium, sr90 * rtg, 0);
+				registerRTGPellet(pellet_rtg_cobalt, co60 * rtg, 0);
+
+		// High-power niche RTGs
+				registerRTGPellet(pellet_rtg_actinium, ac227 * rtg, 0);
+
+		// Extremely dangerous compact alpha RTG
+				registerRTGPellet(pellet_rtg_polonium, po210 * rtg, 0, 3F);
+
+		// Flash materials / unstable exotic heat sources
+				registerRTGPellet(
+					pellet_rtg_lead,
+					pb209 * rtg * 0.35F,
+					0,
+					6F,
+					40F
+				);
+
+				registerRTGPellet(
+					pellet_rtg_gold,
+					au198 * rtg * 0.4F,
+					0,
+					4F
+				);
+
+		// Low-power long-life isotopic RTGs
+				registerRTGPellet(pellet_rtg_americium, am241 * rtg, 0);
+				registerRTGPellet(pellet_rtg_promethium, pm147 * rtg, 0);
+
+		// Future Curium
+		// registerRTGPellet(pellet_rtg_curium, cm244 * rtg, 0);
+
+		// ======================================================
+		// TRANSURANIC / EXOTIC RTGs
+		// ======================================================
+
+		// Californium is nasty but don't let it instantly exceed demon-core territory
+				registerRTGPellet(pellet_rtg_cf251, cf251 * rtg * 0.85F, 0);
+				registerRTGPellet(pellet_rtg_cf252, cf252 * rtg, 0);
+
+		// Berkelium experimental fuel
+				registerRTGPellet(rbmk_pellet_bk247, bk247 * rtg * 0.9F, 0);
+
+		// Depleted RTG remains
+				HazardSystem.register(
+					new ItemStack(
+						pellet_rtg_depleted,
+						1,
+						DepletedRTGMaterial.NEPTUNIUM.ordinal()
+					),
+					makeData(RADIATION, np237 * rtg)
+				);
+
+
+		// ======================================================
+		// REACTOR PILE RODS
+		// ======================================================
+
+		// Natural uranium pile rod
+				HazardSystem.register(
+					pile_rod_uranium,
+					makeData(RADIATION, u * billet * 3F)
+				);
+
+		// Pu239 breeding rod
+				HazardSystem.register(
+					pile_rod_pu239,
+					makeData(
+						RADIATION,
+						!GeneralConfig.enable528
+							? (purg * billet * 0.75F) + (pu239 * billet)
+							: (purg * billet * 0.75F) + (wst * billet)
+					)
+				);
+
+		// Reactor-grade plutonium source rod
+				HazardSystem.register(
+					pile_rod_plutonium,
+					makeData()
+						.addEntry(
+							RADIATION,
+							!GeneralConfig.enable528
+								? (purg * billet * 1.25F) + (u * billet)
+								: (purg * billet * 1.25F) + (wst * billet)
+						)
+						.addEntry(
+							NEUTRON,
+							rabe * billet * 0.08F
+						)
+				);
+
+		// Dedicated neutron source rod
+		HazardSystem.register(
+			pile_rod_source,
+			makeData()
+				.addEntry(
+					RADIATION,
+					rabe * billet * 1.75F
+				)
+				.addEntry(
+					NEUTRON,
+					rabe * billet * 0.15F
+				)
+		);
+
+		// ======================================================
+		// LOW / CONTAINED SOURCES
+		// ======================================================
+
+				registerBreedingRodRadiation(BreedingRodType.TRITIUM, 0.001F);
+
+		// ======================================================
+		// FISSION PRODUCTS / ACTIVATION PRODUCTS
+		// ======================================================
+
+				registerBreedingRodRadiation(BreedingRodType.CO60, co60);
+				registerBreedingRodRadiation(BreedingRodType.RA226, ra226);
+				registerBreedingRodRadiation(BreedingRodType.AC227, ac227);
+
+		// ======================================================
+		// THORIUM / URANIUM CYCLE
+		// ======================================================
+
+				registerBreedingRodRadiation(BreedingRodType.TH232, th232);
+				registerBreedingRodRadiation(BreedingRodType.THF, thf);
+
+				registerBreedingRodRadiation(BreedingRodType.URANIUM, u);
+				registerBreedingRodRadiation(BreedingRodType.U235, u235);
+				registerBreedingRodRadiation(BreedingRodType.U238, u238);
+				registerBreedingRodRadiation(BreedingRodType.NP237, np237);
+
+		// ======================================================
+		// PLUTONIUM CYCLE
+		// ======================================================
+
+		// Encapsulated fuel -> slightly safer than loose material
+				registerBreedingRodRadiation(BreedingRodType.PU238, pu238 * 0.85F);
+				registerBreedingRodRadiation(BreedingRodType.PU239, pu239 * 0.9F);
+				registerBreedingRodRadiation(BreedingRodType.RGP, purg * 0.9F);
+
+		// Spent fuel
+				registerBreedingRodRadiation(BreedingRodType.WASTE, wst);
+
+		// ======================================================
+		// AMERICIUM / CURIUM SERIES
+		// ======================================================
+
+				registerBreedingRodRadiation(BreedingRodType.AM241, am241);
+				registerBreedingRodRadiation(BreedingRodType.AM242, am242);
+
+				registerBreedingRodRadiation(BreedingRodType.CM242, cm242); // fertile
+				registerBreedingRodRadiation(BreedingRodType.CM243, cm243); // fissile
+				registerBreedingRodRadiation(BreedingRodType.CM244, cm244); // fertile
+				registerBreedingRodRadiation(BreedingRodType.CM245, cm245); // fissile
+				registerBreedingRodRadiation(BreedingRodType.CM246, cm246); // fertile
+				registerBreedingRodRadiation(BreedingRodType.CM247, cm247); // fissile
+
+		// ======================================================
+		// HEAVY TRANSURANICS
+		// ======================================================
+
+		registerBreedingRodRadiation(
+			BreedingRodType.BK247,
+			bk247 * 0.9F
+		);
+
+		// ======================================================
+		// URANIUM CYCLE
+		// ======================================================
+
+				registerRBMKRod(rbmk_fuel_ueu,     u * rod_rbmk,      wst * rod_rbmk * 6.0F);
+				registerRBMKRod(rbmk_fuel_meu,     uf * rod_rbmk,     wst * rod_rbmk * 7.0F);
+				registerRBMKRod(rbmk_fuel_heu233,  u233 * rod_rbmk,   wst * rod_rbmk * 10.0F);
+				registerRBMKRod(rbmk_fuel_heu235,  u235 * rod_rbmk,   wst * rod_rbmk * 9.5F);
+				registerRBMKRod(rbmk_fuel_thmeu,   thf * rod_rbmk,    wst * rod_rbmk * 5.5F);
+
+		// ======================================================
+		// PLUTONIUM / MOX
+		// ======================================================
+
+				registerRBMKRod(rbmk_fuel_lep,     puf * rod_rbmk,    wst * rod_rbmk * 8.5F);
+				registerRBMKRod(rbmk_fuel_mep,     purg * rod_rbmk,   wst * rod_rbmk * 10.0F);
+				registerRBMKRod(rbmk_fuel_hep239,  pu239 * rod_rbmk,  wst * rod_rbmk * 11.0F);
+				registerRBMKRod(rbmk_fuel_hep241,  pu241 * rod_rbmk,  wst * rod_rbmk * 12.5F);
+				registerRBMKRod(rbmk_fuel_mox,     mox * rod_rbmk,    wst * rod_rbmk * 8.0F);
+
+		// ======================================================
+		// AMERICIUM
+		// ======================================================
+
+				registerRBMKRod(rbmk_fuel_lea,     amf * rod_rbmk,    wst * rod_rbmk * 9.0F);
+				registerRBMKRod(rbmk_fuel_mea,     amrg * rod_rbmk,   wst * rod_rbmk * 10.5F);
+				registerRBMKRod(rbmk_fuel_hea241,  am241 * rod_rbmk,  wst * rod_rbmk * 12.0F);
+				registerRBMKRod(rbmk_fuel_hea242,  am242 * rod_rbmk,  wst * rod_rbmk * 13.0F);
+
+		// ======================================================
+		// TRANSURANICS
+		// ======================================================
+
+				registerRBMKRod(rbmk_fuel_bk247,   bk247 * rod_rbmk,  wst * rod_rbmk * 15.0F);
+
+				registerRBMKRod(rbmk_fuel_men,     npf * rod_rbmk,    wst * rod_rbmk * 7.5F);
+				registerRBMKRod(rbmk_fuel_hen,     np237 * rod_rbmk,  wst * rod_rbmk * 10.0F);
+
+		// ======================================================
+		// SCHRABIDIUM
+		// ======================================================
+
+				registerRBMKRod(rbmk_fuel_les,     saf * rod_rbmk,    wst * rod_rbmk * 8.5F);
+				registerRBMKRod(rbmk_fuel_mes,     saf * rod_rbmk,    wst * rod_rbmk * 11.0F);
+				registerRBMKRod(rbmk_fuel_hes,     saf * rod_rbmk,    wst * rod_rbmk * 18.0F);
+
+		// ======================================================
+		// AUSSEN / SPECIAL
+		// ======================================================
+
+				registerRBMKRod(rbmk_fuel_leaus,   0F,                wst * rod_rbmk * 12.5F);
+				registerRBMKRod(rbmk_fuel_heaus,   0F,                wst * rod_rbmk * 10.5F);
+
+		// ======================================================
+		// RADIOISOTOPE / BERYLLIUM SOURCES
+		// ======================================================
+
+				registerRBMKRod(
+					rbmk_fuel_po210be,
+					pobe * rod_rbmk,
+					pobe * rod_rbmk * 0.06F,
+					true
+				);
+
+				registerRBMKRod(
+					rbmk_fuel_ra226be,
+					rabe * rod_rbmk,
+					rabe * rod_rbmk * 0.18F,
+					true
+				);
+
+				registerRBMKRod(
+					rbmk_fuel_pu238be,
+					pube * rod_rbmk,
+					wst * rod_rbmk * 1.75F
+				);
+
+		// ======================================================
+		// EXOTIC / FLASH MATERIALS
+		// ======================================================
+
+		// registerRBMKRod(rbmk_fuel_balefire_gold, au198 * rod_rbmk, bf * rod_rbmk * 0.5F, true);
+
+				registerRBMKRod(
+					rbmk_fuel_flashlead,
+					pb209 * 1.25F * rod_rbmk,
+					pb209 * nugget * 0.025F * rod_rbmk,
+					true
+				);
+
+		// registerRBMKRod(rbmk_fuel_balefire, bf * rod_rbmk, bf * rod_rbmk * 100F, true);
+
+		// ======================================================
+		// ZFB
+		// ======================================================
+
+				registerRBMKRod(
+					rbmk_fuel_zfb_bismuth,
+					pu241 * rod_rbmk * 0.1F,
+					wst * rod_rbmk * 3.5F
+				);
+
+				registerRBMKRod(
+					rbmk_fuel_zfb_pu241,
+					pu239 * rod_rbmk * 0.1F,
+					wst * rod_rbmk * 5.0F
+				);
+
+				registerRBMKRod(
+					rbmk_fuel_zfb_am_mix,
+					pu241 * rod_rbmk * 0.1F,
+					wst * rod_rbmk * 6.5F
+				);
+
+		// ======================================================
+		// CURIUM
+		// ======================================================
+
+		registerRBMKRod(
+			rbmk_fuel_lecm,
+			cmrg * 2.2F * rod_rbmk / 5F,
+			wst * rod_rbmk * 2F
+		);
+
+		registerRBMKRod(
+			rbmk_fuel_mecm,
+			cmrg * 2.2F * rod_rbmk / 3F,
+			wst * rod_rbmk * 4F
+		);
+
+		registerRBMKRod(
+			rbmk_fuel_hecm,
+			cmrg * 2.2F * rod_rbmk / 1.5F,
+			wst * rod_rbmk * 6F
+		);
+
+
+		// ======================================================
+		// URANIUM CYCLE
+		// ======================================================
+
+				registerRBMKPellet(rbmk_pellet_ueu,      u * billet,      wst * billet * 6.0F);
+				registerRBMKPellet(rbmk_pellet_meu,      uf * billet,     wst * billet * 7.0F);
+				registerRBMKPellet(rbmk_pellet_heu233,   u233 * billet,   wst * billet * 10.0F);
+				registerRBMKPellet(rbmk_pellet_heu235,   u235 * billet,   wst * billet * 9.5F);
+				registerRBMKPellet(rbmk_pellet_thmeu,    thf * billet,    wst * billet * 5.5F);
+
+		// ======================================================
+		// PLUTONIUM / MOX
+		// ======================================================
+
+				registerRBMKPellet(rbmk_pellet_lep,      puf * billet,    wst * billet * 8.5F);
+				registerRBMKPellet(rbmk_pellet_mep,      purg * billet,   wst * billet * 10.0F);
+				registerRBMKPellet(rbmk_pellet_hep239,   pu239 * billet,  wst * billet * 11.0F);
+				registerRBMKPellet(rbmk_pellet_hep241,   pu241 * billet,  wst * billet * 12.5F);
+				registerRBMKPellet(rbmk_pellet_mox,      mox * billet,    wst * billet * 8.0F);
+
+		// ======================================================
+		// AMERICIUM
+		// ======================================================
+
+				registerRBMKPellet(rbmk_pellet_lea,      amf * billet,    wst * billet * 9.0F);
+				registerRBMKPellet(rbmk_pellet_mea,      amrg * billet,   wst * billet * 10.5F);
+				registerRBMKPellet(rbmk_pellet_hea241,   am241 * billet,  wst * billet * 12.0F);
+				registerRBMKPellet(rbmk_pellet_hea242,   am242 * billet,  wst * billet * 13.0F);
+
+		// ======================================================
+		// TRANSURANICS
+		// ======================================================
+
+				registerRBMKPellet(rbmk_pellet_bk247,    bk247 * billet,  wst * billet * 15.0F);
+
+				registerRBMKPellet(rbmk_pellet_men,      npf * billet,    wst * billet * 7.5F);
+				registerRBMKPellet(rbmk_pellet_hen,      np237 * billet,  wst * billet * 10.0F);
+
+		// ======================================================
+		// SCHRABIDIUM
+		// ======================================================
+
+				registerRBMKPellet(rbmk_pellet_les,      saf * billet,    wst * billet * 8.5F);
+				registerRBMKPellet(rbmk_pellet_mes,      saf * billet,    wst * billet * 11.0F);
+				registerRBMKPellet(rbmk_pellet_hes,      saf * billet,    wst * billet * 18.0F);
+
+		// ======================================================
+		// AUSSEN / SPECIAL
+		// ======================================================
+
+				registerRBMKPellet(rbmk_pellet_leaus,    0F,              wst * billet * 12.5F);
+				registerRBMKPellet(rbmk_pellet_heaus,    0F,              wst * billet * 10.5F);
+
+		// ======================================================
+		// RADIOISOTOPE / BERYLLIUM SOURCES
+		// ======================================================
+
+				registerRBMKPellet(
+					rbmk_pellet_po210be,
+					pobe * billet,
+					pobe * billet * 0.06F,
+					true
+				);
+
+				registerRBMKPellet(
+					rbmk_pellet_ra226be,
+					rabe * billet,
+					rabe * billet * 0.18F,
+					true
+				);
+
+				registerRBMKPellet(
+					rbmk_pellet_pu238be,
+					pube * billet,
+					wst * billet * 1.75F
+				);
+
+		// ======================================================
+		// EXOTIC / FLASH MATERIALS
+		// ======================================================
+
+		// registerRBMKPellet(rbmk_pellet_balefire_gold, au198 * billet, bf * billet * 0.5F, true);
+
+				registerRBMKPellet(
+					rbmk_pellet_flashlead,
+					pb209 * 1.25F * billet,
+					pb209 * nugget * 0.025F,
+					true,
+					0,
+					0
+				);
+
+		// registerRBMKPellet(rbmk_pellet_balefire, bf * billet, bf * billet * 100F, true);
+
+		// ======================================================
+		// ZFB
+		// ======================================================
+
+				registerRBMKPellet(
+					rbmk_pellet_zfb_bismuth,
+					pu241 * billet * 0.1F,
+					wst * billet * 3.5F
+				);
+
+				registerRBMKPellet(
+					rbmk_pellet_zfb_pu241,
+					pu239 * billet * 0.1F,
+					wst * billet * 5.0F
+				);
+
+				registerRBMKPellet(
+					rbmk_pellet_zfb_am_mix,
+					pu241 * billet * 0.1F,
+					wst * billet * 6.5F
+				);
+
+		// registerRBMKPellet(rbmk_pellet_drx, bf * billet, bf * billet * 100F, true, 0F, 1F/24F);
+
+		// ======================================================
+		// CURIUM
+		// ======================================================
+
+		registerRBMKPellet(
+			rbmk_pellet_lecm,
+			cmrg * billet,
+			wst * billet * 2.0F
+		);
+
+		registerRBMKPellet(
+			rbmk_pellet_mecm,
+			cmrg * billet,
+			wst * billet * 4.0F
+		);
+
+		registerRBMKPellet(
+			rbmk_pellet_hecm,
+			cmrg * billet,
+			wst * billet * 6.0F
+		);
+
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.HES),
+							  makeData(RADIATION, saf * ingot * 0.3F));
+
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.MES),
+							  makeData(RADIATION, saf * ingot * 0.6F));
+
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.LES),
+							  makeData(RADIATION, saf * ingot * 1.0F));
+
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.HEN),
+							  makeData(RADIATION, np237 * ingot * 1.5F));   // high alpha emitter, weak external gamma
+
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.MEU),
+							  makeData(RADIATION, uf * ingot * 0.4F));      // low-grade uranium fuel
+
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.MEP),
+							  makeData(RADIATION, purg * ingot * 0.8F));    // “purified” intermediate waste
+
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.DU),
+							  makeData(RADIATION, u238 * ingot * 0.15F));   // depleted uranium baseline
+
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.NQD),
+							  makeData(RADIATION, u235 * ingot * 0.5F));    // low-enriched fuel
+
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.NQR),
+							  makeData(RADIATION, pu239 * ingot * 1.2F));   // weapon-grade plutonium equivalent
+
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.PU241),
+							  makeData(RADIATION, pu241 * ingot * 2.5F));   // higher gamma contributor
+
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.AMRG),
+							  makeData(RADIATION, amrg * ingot * 4.0F));    // Am-241 dominant gamma hazard
+
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.CMRG),
+							  makeData(RADIATION, cmrg * ingot * 8.0F));    // Cm mix, strong neutron source
+
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.CMF),
+							  makeData(RADIATION, cmf * ingot * 12.0F));    // curium fuel grade, very active
+
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.BK247),
+							  makeData(RADIATION, bk247 * ingot * 15.0F));   // high alpha, moderate gamma
+
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.CF252),
+							  makeData(RADIATION, cf252 * ingot * 60.0F));   // extreme neutron emitter (dominant hazard)
+
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.ES253),
+							  makeData(RADIATION, es253 * ingot * 25.0F));   // very high specific activity alpha/gamma
 
 
 
 
+		registerPWRFuel(EnumPWRFuel.MEU, uf * billet * 0.8F);
+		registerPWRFuel(EnumPWRFuel.HEU233, u233 * billet * 1.2F);
+		registerPWRFuel(EnumPWRFuel.HEU235, u235 * billet * 1.0F);
+		registerPWRFuel(EnumPWRFuel.MEN, npf * billet * 1.1F);
+		registerPWRFuel(EnumPWRFuel.HEN237, np237 * billet * 1.8F);
+		registerPWRFuel(EnumPWRFuel.MOX, mox * billet * 1.4F);
+		registerPWRFuel(EnumPWRFuel.MEP, purg * billet * 1.3F);
+		registerPWRFuel(EnumPWRFuel.HEP239, pu239 * billet * 1.6F);
+		registerPWRFuel(EnumPWRFuel.HEP241, pu241 * billet * 2.4F);
+		registerPWRFuel(EnumPWRFuel.MEA, amrg * billet * 3.5F);
+		registerPWRFuel(EnumPWRFuel.HEA242, am242 * billet * 2.8F);
+		registerPWRFuel(EnumPWRFuel.HES326, sa326 * billet * 4.5F);
+		registerPWRFuel(EnumPWRFuel.HES327, sa327 * billet * 5.5F);
+		registerPWRFuel(EnumPWRFuel.BFB_AM_MIX, amrg * billet * 3.2F);
+		registerPWRFuel(EnumPWRFuel.BFB_PU241, pu241 * billet * 2.2F);
 
-		registerPWRFuel(EnumPWRFuel.MEU, uf * billet * 2);
-		registerPWRFuel(EnumPWRFuel.HEU233, u233 * billet * 2);
-		registerPWRFuel(EnumPWRFuel.HEU235, u235 * billet * 2);
-		registerPWRFuel(EnumPWRFuel.MEN, npf * billet * 2);
-		registerPWRFuel(EnumPWRFuel.HEN237, np237 * billet * 2);
-		registerPWRFuel(EnumPWRFuel.MOX, mox * billet * 2);
-		registerPWRFuel(EnumPWRFuel.MEP, purg * billet * 2);
-		registerPWRFuel(EnumPWRFuel.HEP239, pu239 * billet * 2);
-		registerPWRFuel(EnumPWRFuel.HEP241, pu241 * billet * 2);
-		registerPWRFuel(EnumPWRFuel.MEA, amrg * billet * 2);
-		registerPWRFuel(EnumPWRFuel.HEA242, am242 * billet * 2);
-		registerPWRFuel(EnumPWRFuel.HES326, sa326 * billet * 2);
-		registerPWRFuel(EnumPWRFuel.HES327, sa327 * billet * 2);
-		registerPWRFuel(EnumPWRFuel.BFB_AM_MIX, amrg * billet);
-		registerPWRFuel(EnumPWRFuel.BFB_PU241, pu241 * billet);
+		HazardSystem.register(powder_yellowcake, makeData(RADIATION, yc * powder * 0.2F));
+		HazardSystem.register(block_yellowcake, makeData(RADIATION, yc * block * powder_mult * 0.25F));
+		HazardSystem.register(ModItems.fallout, makeData(RADIATION, fo * powder * 1.5F));
+		HazardSystem.register(ModBlocks.fallout, makeData(RADIATION, fo * powder * 3.0F));
+		HazardSystem.register(ModBlocks.salted_fallout, makeData(RADIATION, fo * powder * 6.0F));
+		HazardSystem.register(ModBlocks.block_fallout, makeData(RADIATION, yc * block * powder_mult * 0.35F));
 
-		HazardSystem.register(powder_yellowcake, makeData(RADIATION, yc * powder));
-		HazardSystem.register(block_yellowcake, makeData(RADIATION, yc * block * powder_mult));
-		HazardSystem.register(ModItems.fallout, makeData(RADIATION, fo * powder));
-		HazardSystem.register(ModBlocks.fallout, makeData(RADIATION, fo * powder * 2));
-		HazardSystem.register(ModBlocks.salted_fallout, makeData(RADIATION, fo * powder * 4));
-		HazardSystem.register(ModBlocks.block_fallout, makeData(RADIATION, yc * block * powder_mult));
-		//you really shouldn't be touching these.. I should add a system to craft them into stable forms
-		HazardSystem.register(powder_caesium, makeData().addEntry(HYDROACTIVE, 20F).addEntry(HOT, 30F));
-		HazardSystem.register(ingot_cesium, makeData().addEntry(HYDROACTIVE, 50F).addEntry(HOT, 30F));
-		//you however...
-		HazardSystem.register(francium_ingot, makeData().addEntry(HYDROACTIVE, 100F).addEntry(HOT, 300F).addEntry(RADIATION, 1000000));
+		HazardSystem.register(powder_caesium, makeData().addEntry(HYDROACTIVE, 20F).addEntry(HOT, 30F).addEntry(RADIATION, 5F));
+		HazardSystem.register(ingot_cesium, makeData().addEntry(HYDROACTIVE, 50F).addEntry(HOT, 30F).addEntry(RADIATION, 12F));
+
+		HazardSystem.register(francium_ingot, makeData().addEntry(HYDROACTIVE, 100F).addEntry(HOT, 300F).addEntry(RADIATION, 200000F));
+
+		//stopped here
+
 
 		//todo add half lifes
 
 		//todone beryllium powder carcinogen
-
-
 		HazardSystem.register(powder_beryllium, makeData().addEntry(ASBESTOS, be * powder));
 		HazardSystem.register(ingot_beryllium, makeData().addEntry(ASBESTOS, be * ingot));
 		HazardSystem.register(block_beryllium, makeData().addEntry(ASBESTOS, be * block));
 		HazardSystem.register(billet_beryllium, makeData().addEntry(ASBESTOS, be * billet));
 		HazardSystem.register(nugget_beryllium, makeData().addEntry(ASBESTOS, be * nugget));
 		HazardSystem.register(crystal_beryllium, makeData().addEntry(ASBESTOS, be * crystal));
-		//nah id win, win like technoblade
 
 		//may or may not based on which kind of emerald powder (assumed to be from beryl)
 		HazardSystem.register(powder_emerald, makeData().addEntry(ASBESTOS, 0.5F * powder));
@@ -718,6 +1962,17 @@ public class HazardRegistry {
 		HazardSystem.register(nugget_thallium, makeData().addEntry(ASBESTOS, tl * nugget) .addEntry(BLINDING, tl * nugget) .addEntry(AUTISM, tl * nugget) .addEntry(COAL, tl * nugget));
 		HazardSystem.register(powder_thallium, makeData().addEntry(ASBESTOS, tl * powder) .addEntry(BLINDING, tl * powder) .addEntry(AUTISM, tl * powder) .addEntry(COAL, tl * powder));
 
+		//terbium
+		HazardSystem.register(ingot_terbium, makeData().addEntry(ASBESTOS, tb * ingot) .addEntry(BLINDING, 0.2F * ingot) .addEntry(AUTISM, 0.6F * ingot) .addEntry(COAL, 0.5F * ingot));
+		HazardSystem.register(powder_terbium, makeData().addEntry(ASBESTOS, tb * powder) .addEntry(BLINDING, 0.2F * powder) .addEntry(AUTISM, 0.6F * powder) .addEntry(COAL, 0.5F * powder));
+		HazardSystem.register(powder_terbium_fluoride, makeData().addEntry(ASBESTOS, tb * powder) .addEntry(BLINDING, 0.2F * powder) .addEntry(AUTISM, 0.6F * powder) .addEntry(COAL, 0.5F * powder));
+		HazardSystem.register(ingot_terbium_impure, makeData().addEntry(ASBESTOS, tb * ingot) .addEntry(BLINDING, 0.2F * ingot) .addEntry(AUTISM, 0.6F * ingot) .addEntry(COAL, 0.5F * ingot));
+		HazardSystem.register(powder_terbium_tiny, makeData().addEntry(ASBESTOS, tb * powder) .addEntry(BLINDING, 0.2F * powder) .addEntry(AUTISM, 0.6F * powder) .addEntry(COAL, 0.5F * powder));
+		HazardSystem.register(terbiumsol, makeData().addEntry(ASBESTOS, tb * ingot) .addEntry(BLINDING, 0.2F * ingot) .addEntry(AUTISM, 0.6F * ingot) .addEntry(COAL, 0.5F * ingot));
+		HazardSystem.register(powder_terbium_oxide, makeData().addEntry(ASBESTOS, tb * powder) .addEntry(BLINDING, 0.2F * powder) .addEntry(AUTISM, 0.6F * powder) .addEntry(COAL, 0.5F * powder));
+		HazardSystem.register(powder_terbium2, makeData().addEntry(ASBESTOS, tb * powder) .addEntry(BLINDING, 0.2F * powder) .addEntry(AUTISM, 0.6F * powder) .addEntry(COAL, 0.5F * powder));
+		HazardSystem.register(fragment_terbium, makeData().addEntry(ASBESTOS, tb * nugget) .addEntry(BLINDING, 0.2F * nugget) .addEntry(AUTISM, 0.6F * nugget) .addEntry(COAL, 0.5F * nugget));
+
 		HazardSystem.register(brick_asbestos, makeData(ASBESTOS, 1F));
 		HazardSystem.register(tile_lab_broken, makeData(ASBESTOS, 1F));
 		//HazardSystem.register(powder_coltan_ore, makeData(ASBESTOS, 3F));
@@ -726,11 +1981,9 @@ public class HazardRegistry {
 		HazardSystem.register(crystal_uranium, makeData(RADIATION, u * crystal));
 		HazardSystem.register(crystal_thorium, makeData(RADIATION, th232 * crystal));
 		HazardSystem.register(crystal_plutonium, makeData(RADIATION, pu * crystal));
-		HazardSystem.register(crystal_schraranium, makeData(RADIATION, sr * crystal));
-		HazardSystem.register(crystal_schrabidium, makeData(RADIATION, sa326 * crystal));
 		HazardSystem.register(crystal_phosphorus, makeData(HOT, 2F * crystal));
 		HazardSystem.register(crystal_lithium, makeData(HYDROACTIVE, 1F * crystal));
-		HazardSystem.register(ModItems.crystal_trixite, makeData(RADIATION, trx * crystal));
+
 
 		//nuke parts
 		HazardSystem.register(boy_propellant, makeData(EXPLOSIVE, 2F));

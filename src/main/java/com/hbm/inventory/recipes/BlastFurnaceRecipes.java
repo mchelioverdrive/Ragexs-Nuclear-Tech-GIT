@@ -166,6 +166,39 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 			new ItemStack(ModItems.ingot_terbium_impure)
 		);
 
+		//holy shit I am losing it
+
+		//powder_dysprosium2
+		addRecipe(
+			new ComparableStack(ModItems.powder_dysprosium2, 1),
+			COAL,
+			new ItemStack(ModItems.ingot_dysprosium)
+		);
+
+		//ingot_holmium
+		addRecipe(
+			new ComparableStack(ModItems.powder_holmium_oxide, 1),
+			CA.dust(),
+			new ItemStack(ModItems.ingot_holmium)
+		);
+
+		//powder_erbium_concentrate reduction using magnesium or calcium
+		addRecipe(
+			new ComparableStack(ModItems.powder_erbium_concentrate,1),
+			MG.ingot(),
+			new ItemStack(ModItems.erbium_powder)
+		);
+
+		//powder_ytterbium_fluoride
+		//    + powder_calcium
+		//        ↓ blast furnace
+		//powder_ytterbium
+		addRecipe(
+			new ComparableStack(ModItems.powder_ytterbium_fluoride, 1),
+			CA.dust(),
+			new ItemStack(ModItems.powder_ytterbium)
+		);
+
 
 
 		if(GeneralConfig.enableLBSM && GeneralConfig.enableLBSMSimpleChemsitry) {

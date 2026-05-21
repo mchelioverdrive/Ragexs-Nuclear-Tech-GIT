@@ -104,6 +104,13 @@ public class CrystallizerRecipes extends SerializableRecipe {
 		registerRecipe(new ComparableStack(ModItems.powder_terbium), new CrystallizerRecipe(new ItemStack(ModItems.terbiumsol), baseTime * 4), sulfur);
 		registerRecipe(new ComparableStack(ModItems.powder_terbium), new CrystallizerRecipe(new ItemStack(ModItems.terbiumsol), baseTime * 4), nitric);
 
+		//powder_dysprosium_concentrate -> dysprosium solution
+		registerRecipe(new ComparableStack(ModItems.powder_dysprosium_concentrate), new CrystallizerRecipe(new ItemStack(ModItems.dysprosiumsol), baseTime * 4), sulfur);
+
+		//powder_lutetium_concentrate -> lutetium solution
+		registerRecipe(new ComparableStack(ModItems.powder_lutetium_concentrate), new CrystallizerRecipe(new ItemStack(ModItems.lutetiumsol), baseTime * 4), sulfur);
+		registerRecipe(new ComparableStack(ModItems.powder_lutetium_concentrate), new CrystallizerRecipe(new ItemStack(ModItems.lutetiumsol), baseTime * 4), chloric);
+
 
 
 		//fake shit most likely:

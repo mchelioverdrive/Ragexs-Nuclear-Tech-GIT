@@ -1392,6 +1392,56 @@ public class ChemplantRecipes extends SerializableRecipe {
 						//	new ItemStack(ModItems.terbium_ingot, 1)
 						//) //no those come later
 
+		//dysprosiumsol + solvent = dysprosium powder 2
+		recipes.add(new ChemRecipe(1082, "DYSPROSIUM_SEPARATION", 400)
+						.inputItems(
+							new ComparableStack(
+								ModItems.dysprosiumsol, 1
+							)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.RADIOSOLVENT, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.powder_dysprosium2, 1),
+							new ItemStack(ModItems.powder_yttrium_tiny, 1),
+							new ItemStack(ModItems.powder_neodymium_tiny, 1),
+							new ItemStack(ModItems.powder_gadolinium2, 1)
+						)
+		);
+
+		//powder_ytterbium_oxide + hydrofluoric acid = powder_ytterbium_fluoride
+		recipes.add(new ChemRecipe(1083, "YTTERBIUM_FLUORIDE", 400)
+						.inputItems(
+							new ComparableStack(
+								ModItems.powder_ytterbium_oxide, 1
+							)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.powder_ytterbium_fluoride, 1)
+						)
+		);
+
+		//lutetiumsol + solvent = lutetium powder 2
+		recipes.add(new ChemRecipe(1084, "LUTETIUM_SEPARATION", 400)
+						.inputItems(
+							new ComparableStack(
+								ModItems.lutetiumsol, 1
+							)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.RADIOSOLVENT, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.powder_lutetium2, 1),
+							new ItemStack(ModItems.powder_ytterbium_tiny, 1),
+							new ItemStack(ModItems.powder_erbium_tiny, 1)
+						)
+		);
+
 
 
 
