@@ -1921,90 +1921,87 @@ public class HazardRegistry {
 		HazardSystem.register(billet_am_mix, makeData().addEntry(RADIATION, 3.6F * ingot));       // americium mix, strong gamma/alpha hazard
 
 
-		//stopped here
 
-		HazardSystem.register(powder_beryllium, makeData().addEntry(ASBESTOS, be * powder));
-		HazardSystem.register(ingot_beryllium, makeData().addEntry(ASBESTOS, be * ingot));
-		HazardSystem.register(block_beryllium, makeData().addEntry(ASBESTOS, be * block));
-		HazardSystem.register(billet_beryllium, makeData().addEntry(ASBESTOS, be * billet));
-		HazardSystem.register(nugget_beryllium, makeData().addEntry(ASBESTOS, be * nugget));
-		HazardSystem.register(crystal_beryllium, makeData().addEntry(ASBESTOS, be * crystal));
+		HazardSystem.register(powder_beryllium, makeData().addEntry(ASBESTOS, be * powder * 2.5F));
+		HazardSystem.register(ingot_beryllium, makeData().addEntry(ASBESTOS, be * ingot * 0.15F));
+		HazardSystem.register(block_beryllium, makeData().addEntry(ASBESTOS, be * block * 0.05F));
+		HazardSystem.register(billet_beryllium, makeData().addEntry(ASBESTOS, be * billet * 0.1F));
+		HazardSystem.register(nugget_beryllium, makeData().addEntry(ASBESTOS, be * nugget * 0.1F));
+		HazardSystem.register(crystal_beryllium, makeData().addEntry(ASBESTOS, be * crystal * 0.4F));
 
-		//may or may not based on which kind of emerald powder (assumed to be from beryl)
-		HazardSystem.register(powder_emerald, makeData().addEntry(ASBESTOS, 0.5F * powder));
+		HazardSystem.register(powder_emerald, makeData().addEntry(ASBESTOS, 0.35F * powder));
 
-		HazardSystem.register(ore_beryllium, makeData().addEntry(ASBESTOS, be * ore));
-		//sowwy >w<
+		HazardSystem.register(ore_beryllium, makeData().addEntry(ASBESTOS, be * ore * 0.6F));
 
-		//lead
-		HazardSystem.register(ore_lead, makeData().addEntry(ASBESTOS, pb * ore));
-		HazardSystem.register(powder_lead, makeData().addEntry(ASBESTOS, pb * powder) .addEntry(BLINDING, 0.2F)); //blindness test
-		//powder lead is more hazardous than ingot lead because of the dust, but ingot lead is still pretty bad
-		HazardSystem.register(ingot_lead, makeData().addEntry(ASBESTOS, pb / ingot));
-		HazardSystem.register(block_lead, makeData().addEntry(ASBESTOS, pb / ingot));
-		HazardSystem.register(nugget_lead, makeData().addEntry(ASBESTOS, pb / nugget));
-		HazardSystem.register(crystal_lead, makeData().addEntry(ASBESTOS, pb / crystal));
+		HazardSystem.register(ore_lead, makeData().addEntry(ASBESTOS, pb * ore * 0.2F));
+		HazardSystem.register(powder_lead, makeData().addEntry(ASBESTOS, pb * powder * 2.5F).addEntry(BLINDING, 0.2F));
+		HazardSystem.register(ingot_lead, makeData().addEntry(ASBESTOS, pb * ingot * 0.08F));
+		HazardSystem.register(block_lead, makeData().addEntry(ASBESTOS, pb * block * 0.03F));
+		HazardSystem.register(nugget_lead, makeData().addEntry(ASBESTOS, pb * nugget * 0.08F));
+		HazardSystem.register(crystal_lead, makeData().addEntry(ASBESTOS, pb * crystal * 0.12F));
 
-		//arsenic
-		HazardSystem.register(ore_arsenic, makeData().addEntry(ASBESTOS, as * ore));
-		HazardSystem.register(arsenic_trioxide, makeData().addEntry(ASBESTOS, as * powder) .addEntry(BLINDING, as * powder) .addEntry(AUTISM, as * powder) .addEntry(COAL, as * powder));
-		HazardSystem.register(ingot_arsenic, makeData().addEntry(ASBESTOS, as * ingot) .addEntry(BLINDING, as * ingot) .addEntry(AUTISM, as * ingot) .addEntry(COAL, as * ingot));
-		HazardSystem.register(nugget_arsenic, makeData().addEntry(ASBESTOS, as * nugget) .addEntry(BLINDING, as * nugget) .addEntry(AUTISM, as * nugget) .addEntry(COAL, as * nugget));
-		HazardSystem.register(ingot_arsenic_bronze, makeData().addEntry(ASBESTOS, as * ingot) .addEntry(BLINDING, as * ingot) .addEntry(AUTISM, as * ingot) .addEntry(COAL, as * ingot));
-		HazardSystem.register(ingot_gaas, makeData().addEntry(ASBESTOS, as * ingot) .addEntry(BLINDING, as * ingot) .addEntry(AUTISM, as * ingot) .addEntry(COAL, as * ingot));
-		HazardSystem.register(billet_gaas, makeData().addEntry(ASBESTOS, as * billet) .addEntry(BLINDING, as * billet) .addEntry(AUTISM, as * billet) .addEntry(COAL, as * billet));
-		HazardSystem.register(nugget_gaas, makeData().addEntry(ASBESTOS, as * nugget) .addEntry(BLINDING, as * nugget) .addEntry(AUTISM, as * nugget) .addEntry(COAL, as * nugget));
-		HazardSystem.register(circuit_arsenic, makeData().addEntry(ASBESTOS, as * nugget) .addEntry(BLINDING, as * nugget) .addEntry(AUTISM, as * nugget) .addEntry(COAL, as * nugget));
+		HazardSystem.register(ore_arsenic, makeData().addEntry(ASBESTOS, as * ore * 0.5F));
+		HazardSystem.register(arsenic_trioxide, makeData().addEntry(ASBESTOS, as * powder * 3.5F).addEntry(BLINDING, as * powder * 2.0F).addEntry(AUTISM, as * powder * 2.0F).addEntry(COAL, as * powder * 2.5F));
+		HazardSystem.register(ingot_arsenic, makeData().addEntry(ASBESTOS, as * ingot * 1.2F).addEntry(BLINDING, as * ingot * 0.8F).addEntry(AUTISM, as * ingot * 0.8F).addEntry(COAL, as * ingot * 1.0F));
+		HazardSystem.register(nugget_arsenic, makeData().addEntry(ASBESTOS, as * nugget * 1.2F).addEntry(BLINDING, as * nugget * 0.8F).addEntry(AUTISM, as * nugget * 0.8F).addEntry(COAL, as * nugget * 1.0F));
+		HazardSystem.register(ingot_arsenic_bronze, makeData().addEntry(ASBESTOS, as * ingot * 0.25F).addEntry(BLINDING, as * ingot * 0.1F).addEntry(AUTISM, as * ingot * 0.1F).addEntry(COAL, as * ingot * 0.15F));
+		HazardSystem.register(ingot_gaas, makeData().addEntry(ASBESTOS, as * ingot * 0.35F).addEntry(BLINDING, as * ingot * 0.15F).addEntry(AUTISM, as * ingot * 0.15F).addEntry(COAL, as * ingot * 0.2F));
+		HazardSystem.register(billet_gaas, makeData().addEntry(ASBESTOS, as * billet * 0.35F).addEntry(BLINDING, as * billet * 0.15F).addEntry(AUTISM, as * billet * 0.15F).addEntry(COAL, as * billet * 0.2F));
+		HazardSystem.register(nugget_gaas, makeData().addEntry(ASBESTOS, as * nugget * 0.35F).addEntry(BLINDING, as * nugget * 0.15F).addEntry(AUTISM, as * nugget * 0.15F).addEntry(COAL, as * nugget * 0.2F));
+		HazardSystem.register(circuit_arsenic, makeData().addEntry(ASBESTOS, as * nugget * 0.08F).addEntry(BLINDING, as * nugget * 0.04F).addEntry(AUTISM, as * nugget * 0.04F).addEntry(COAL, as * nugget * 0.05F));
 
 		//mercury
-		HazardSystem.register(ingot_mercury, makeData().addEntry(ASBESTOS, hg * ingot) .addEntry(BLINDING, 0.2F * ingot) .addEntry(AUTISM, 0.6F * ingot) .addEntry(COAL, 0.5F * ingot));
-		HazardSystem.register(nugget_mercury, makeData().addEntry(ASBESTOS, hg * nugget) .addEntry(BLINDING, 0.2F * nugget) .addEntry(AUTISM, 0.6F * nugget) .addEntry(COAL, 0.5F * nugget));
+				HazardSystem.register(ingot_mercury, makeData().addEntry(ASBESTOS, hg * ingot * 0.8F).addEntry(BLINDING, 0.08F * ingot).addEntry(AUTISM, 0.5F * ingot).addEntry(COAL, 0.35F * ingot));
+				HazardSystem.register(nugget_mercury, makeData().addEntry(ASBESTOS, hg * nugget * 0.8F).addEntry(BLINDING, 0.08F * nugget).addEntry(AUTISM, 0.5F * nugget).addEntry(COAL, 0.35F * nugget));
 
 		//thallium
-		HazardSystem.register(ingot_thallium, makeData().addEntry(ASBESTOS, tl * ingot) .addEntry(BLINDING, tl * ingot) .addEntry(AUTISM, tl * ingot) .addEntry(COAL, tl * ingot));
-		HazardSystem.register(nugget_thallium, makeData().addEntry(ASBESTOS, tl * nugget) .addEntry(BLINDING, tl * nugget) .addEntry(AUTISM, tl * nugget) .addEntry(COAL, tl * nugget));
-		HazardSystem.register(powder_thallium, makeData().addEntry(ASBESTOS, tl * powder) .addEntry(BLINDING, tl * powder) .addEntry(AUTISM, tl * powder) .addEntry(COAL, tl * powder));
+				HazardSystem.register(ingot_thallium, makeData().addEntry(ASBESTOS, tl * ingot * 1.5F).addEntry(BLINDING, tl * ingot * 1.2F).addEntry(AUTISM, tl * ingot * 1.5F).addEntry(COAL, tl * ingot * 1.4F));
+				HazardSystem.register(nugget_thallium, makeData().addEntry(ASBESTOS, tl * nugget * 1.5F).addEntry(BLINDING, tl * nugget * 1.2F).addEntry(AUTISM, tl * nugget * 1.5F).addEntry(COAL, tl * nugget * 1.4F));
+				HazardSystem.register(powder_thallium, makeData().addEntry(ASBESTOS, tl * powder * 3.0F).addEntry(BLINDING, tl * powder * 2.5F).addEntry(AUTISM, tl * powder * 3.5F).addEntry(COAL, tl * powder * 3.0F));
 
 		//terbium
-		HazardSystem.register(ingot_terbium, makeData().addEntry(ASBESTOS, tb * ingot) .addEntry(BLINDING, 0.2F * ingot) .addEntry(AUTISM, 0.6F * ingot) .addEntry(COAL, 0.5F * ingot));
-		HazardSystem.register(powder_terbium, makeData().addEntry(ASBESTOS, tb * powder) .addEntry(BLINDING, 0.2F * powder) .addEntry(AUTISM, 0.6F * powder) .addEntry(COAL, 0.5F * powder));
-		HazardSystem.register(powder_terbium_fluoride, makeData().addEntry(ASBESTOS, tb * powder) .addEntry(BLINDING, 0.2F * powder) .addEntry(AUTISM, 0.6F * powder) .addEntry(COAL, 0.5F * powder));
-		HazardSystem.register(ingot_terbium_impure, makeData().addEntry(ASBESTOS, tb * ingot) .addEntry(BLINDING, 0.2F * ingot) .addEntry(AUTISM, 0.6F * ingot) .addEntry(COAL, 0.5F * ingot));
-		HazardSystem.register(powder_terbium_tiny, makeData().addEntry(ASBESTOS, tb * powder) .addEntry(BLINDING, 0.2F * powder) .addEntry(AUTISM, 0.6F * powder) .addEntry(COAL, 0.5F * powder));
-		HazardSystem.register(terbiumsol, makeData().addEntry(ASBESTOS, tb * ingot) .addEntry(BLINDING, 0.2F * ingot) .addEntry(AUTISM, 0.6F * ingot) .addEntry(COAL, 0.5F * ingot));
-		HazardSystem.register(powder_terbium_oxide, makeData().addEntry(ASBESTOS, tb * powder) .addEntry(BLINDING, 0.2F * powder) .addEntry(AUTISM, 0.6F * powder) .addEntry(COAL, 0.5F * powder));
-		HazardSystem.register(powder_terbium2, makeData().addEntry(ASBESTOS, tb * powder) .addEntry(BLINDING, 0.2F * powder) .addEntry(AUTISM, 0.6F * powder) .addEntry(COAL, 0.5F * powder));
-		HazardSystem.register(fragment_terbium, makeData().addEntry(ASBESTOS, tb * nugget) .addEntry(BLINDING, 0.2F * nugget) .addEntry(AUTISM, 0.6F * nugget) .addEntry(COAL, 0.5F * nugget));
+		HazardSystem.register(ingot_terbium, makeData().addEntry(ASBESTOS, tb * ingot * 0.08F));
+		HazardSystem.register(powder_terbium, makeData().addEntry(ASBESTOS, tb * powder * 0.35F));
+		HazardSystem.register(powder_terbium_fluoride, makeData().addEntry(ASBESTOS, tb * powder * 0.6F).addEntry(COAL, 0.15F * powder));
+		HazardSystem.register(ingot_terbium_impure, makeData().addEntry(ASBESTOS, tb * ingot * 0.15F));
+		HazardSystem.register(powder_terbium_tiny, makeData().addEntry(ASBESTOS, tb * powder * 0.35F));
+		HazardSystem.register(terbiumsol, makeData().addEntry(ASBESTOS, tb * ingot * 0.2F));
+		HazardSystem.register(powder_terbium_oxide, makeData().addEntry(ASBESTOS, tb * powder * 0.25F));
+		HazardSystem.register(powder_terbium2, makeData().addEntry(ASBESTOS, tb * powder * 0.35F));
+		HazardSystem.register(fragment_terbium, makeData().addEntry(ASBESTOS, tb * nugget * 0.08F));
 
-		HazardSystem.register(brick_asbestos, makeData(ASBESTOS, 1F));
-		HazardSystem.register(tile_lab_broken, makeData(ASBESTOS, 1F));
+
+		HazardSystem.register(brick_asbestos, makeData(ASBESTOS, 2.5F));
+		HazardSystem.register(tile_lab_broken, makeData(ASBESTOS, 1.8F));
 		//HazardSystem.register(powder_coltan_ore, makeData(ASBESTOS, 3F));
 
 		//crystals
-		HazardSystem.register(crystal_uranium, makeData(RADIATION, u * crystal));
-		HazardSystem.register(crystal_thorium, makeData(RADIATION, th232 * crystal));
-		HazardSystem.register(crystal_plutonium, makeData(RADIATION, pu * crystal));
-		HazardSystem.register(crystal_phosphorus, makeData(HOT, 2F * crystal));
-		HazardSystem.register(crystal_lithium, makeData(HYDROACTIVE, 1F * crystal));
-
+		HazardSystem.register(crystal_uranium, makeData(RADIATION, u * crystal * 0.6F));
+		HazardSystem.register(crystal_thorium, makeData(RADIATION, th232 * crystal * 0.35F));
+		HazardSystem.register(crystal_plutonium, makeData(RADIATION, pu * crystal * 2.0F));
+		HazardSystem.register(crystal_phosphorus, makeData(HOT, 4F * crystal));
+		HazardSystem.register(crystal_lithium, makeData(HYDROACTIVE, 1.5F * crystal));
 
 		//nuke parts
 		HazardSystem.register(boy_propellant, makeData(EXPLOSIVE, 2F));
 
-		HazardSystem.register(gadget_core, makeData(RADIATION, pu239 * nugget * 10));
-		HazardSystem.register(boy_target, makeData(RADIATION, u235 * ingot * 2));
-		HazardSystem.register(boy_bullet, makeData(RADIATION, u235 * ingot));
-		HazardSystem.register(man_core, makeData(RADIATION, pu239 * nugget * 10));
-		HazardSystem.register(mike_core, makeData(RADIATION, u238 * nugget * 10));
-		HazardSystem.register(tsar_core, makeData(RADIATION, pu239 * nugget * 15));
-		HazardSystem.register(tsar_corelead, makeData(RADIATION, pu239 * nugget * 5));
-		HazardSystem.register(tsar_corereal, makeData(RADIATION, pu239 * nugget * 20));
+		HazardSystem.register(gadget_core, makeData(RADIATION, pu239 * nugget * 16F));      // Trinity-style Pu pit
+		HazardSystem.register(boy_target, makeData(RADIATION, u235 * ingot * 1.5F));        // HEU target
+		HazardSystem.register(boy_bullet, makeData(RADIATION, u235 * ingot * 1.2F));        // lower mass than target
+		HazardSystem.register(man_core, makeData(RADIATION, pu239 * nugget * 18F));          // Fat Man core
+		HazardSystem.register(mike_core, makeData(RADIATION, u238 * nugget * 2.0F));         // mostly tamper material
+		HazardSystem.register(tsar_core, makeData(RADIATION, pu239 * nugget * 22F));         // high fissile content
+		HazardSystem.register(tsar_corelead, makeData(RADIATION, pu239 * nugget * 6F));      // lead tamped version
+		HazardSystem.register(tsar_corereal, makeData(RADIATION, pu239 * nugget * 28F));     // U-238 jacketed "real" Tsar
 
-		HazardSystem.register(fleija_propellant, makeData().addEntry(RADIATION, 15F).addEntry(EXPLOSIVE, 8F).addEntry(BLINDING, 50F));
-		HazardSystem.register(fleija_core, makeData(RADIATION, 10F));
 
-		HazardSystem.register(solinium_propellant, makeData(EXPLOSIVE, 10F));
-		HazardSystem.register(solinium_core, makeData().addEntry(RADIATION, sa327 * nugget * 8).addEntry(BLINDING, 45F));
+
+		//larp bullshit (I think)
+		//HazardSystem.register(fleija_propellant, makeData().addEntry(RADIATION, 15F).addEntry(EXPLOSIVE, 8F).addEntry(BLINDING, 50F));
+		//HazardSystem.register(fleija_core, makeData(RADIATION, 10F));
+
+		//HazardSystem.register(solinium_propellant, makeData(EXPLOSIVE, 10F));
+		//HazardSystem.register(solinium_core, makeData().addEntry(RADIATION, sa327 * nugget * 8).addEntry(BLINDING, 45F));
 
 		/*
 		 * Blacklist
@@ -2028,15 +2025,22 @@ public class HazardRegistry {
 		if(Compat.isModLoaded(Compat.MOD_GT6)) {
 
 			Object[][] data = new Object[][] {
-				{"Naquadah", u},
-				{"Naquadah-Enriched", u235},
-				{"Naquadria", pu239},
-			};
+				{"Naquadah", u * 1.2F},
+				{"Naquadah-Enriched", u235 * 2.0F},
+				{"Naquadria", pu239 * 4.0F},
+				};
 
 			for(MaterialShapes shape : MaterialShapes.allShapes) {
 				if(!shape.noAutogen) for(String prefix : shape.prefixes) {
 					for(Object[] o : data) {
-						HazardSystem.register(prefix + o[0], new HazardData().setMutex(0b1).addEntry(new HazardEntry(RADIATION, (float) o[1] * shape.q(1) / MaterialShapes.INGOT.q(1))));
+						HazardSystem.register(prefix + o[0],
+											  new HazardData()
+												  .setMutex(0b1)
+												  .addEntry(new HazardEntry(
+													  RADIATION,
+													  (float)o[1] * shape.q(1) / MaterialShapes.INGOT.q(1)
+												  ))
+						);
 					}
 				}
 			}
