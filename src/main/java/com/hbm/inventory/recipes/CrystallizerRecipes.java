@@ -115,6 +115,38 @@ public class CrystallizerRecipes extends SerializableRecipe {
 		registerRecipe(new ComparableStack(ModItems.powder_thulium_concentrate), new CrystallizerRecipe(new ItemStack(ModItems.thuliumsol), baseTime * 4), sulfur);
 		registerRecipe(new ComparableStack(ModItems.powder_thulium_concentrate), new CrystallizerRecipe(new ItemStack(ModItems.thuliumsol), baseTime * 4), nitric);
 
+		registerRecipe(
+			new ComparableStack(ModItems.er_yag_sintered),
+				new CrystallizerRecipe(
+					new ItemStack(ModItems.yttrium_aluminum_erbium_crystal),
+					1200),
+						chloric
+			);
+
+
+		registerRecipe(
+			new ComparableStack(ModItems.yby_sintered),
+				new CrystallizerRecipe(
+					new ItemStack(ModItems.YbY_crystal),
+					1200),
+						chloric
+		);
+
+		registerRecipe(
+			new ComparableStack(ModItems.znse_feedstock),
+				new CrystallizerRecipe(
+					new ItemStack(ModItems.ZnSe_crystal),
+					1200),
+						chloric
+		);
+		registerRecipe(
+			new ComparableStack(ModItems.ingot_germanium),
+				new CrystallizerRecipe(
+					new ItemStack(ModItems.germanium_crystal),
+					500),
+						chloric
+		);
+
 
 
 

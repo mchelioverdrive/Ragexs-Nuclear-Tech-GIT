@@ -1474,6 +1474,76 @@ public class ChemplantRecipes extends SerializableRecipe {
 						)
 		);
 
+		recipes.add(new ChemRecipe(1087, "ER_YAG_PRECURSOR", 300)
+						.inputItems(
+							new ComparableStack(ModItems.powder_yttrium, 3),
+							new ComparableStack(ModItems.powder_aluminium, 5),
+							new ComparableStack(ModItems.erbium_powder, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.OXYGEN, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.er_yag_feedstock)
+						)
+		);
+
+		recipes.add(new ChemRecipe(1088, "YB_YAG_PRECURSOR", 300)
+						.inputItems(
+							new ComparableStack(ModItems.powder_yttrium, 3),
+							new ComparableStack(ModItems.powder_aluminium, 5),
+							new ComparableStack(ModItems.powder_ytterbium, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.OXYGEN, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.yby_feedstock)
+						)
+		);
+
+		recipes.add(new ChemRecipe(1089, "ZNSE_SYNTHESIS", 200)
+						.inputItems(
+							new ComparableStack(ModItems.crystal_zinc, 1),
+							new ComparableStack(ModItems.powder_selenium, 1)
+						)
+						.outputItems(
+							new ItemStack(ModItems.znse_feedstock)
+						)
+		);
+
+		//recipes.add(new ChemRecipe(1090, "IR_LASER_GASMIX", 400)
+		//				.inputFluids(
+		//					new FluidStack(Fluids.CARBONDIOXIDE, 1000),
+		//					new FluidStack(Fluids.NITROGEN, 500),
+		//					//new FluidStack(Fluids.HELIUM4, 500) //helium 3...?
+		//					//EXCEPT THAT THE CHEMPLANT CANNOT TAKE MORE THAN 2 FLUIDS AT A TIME, SO I HAVE TO ADD EVEN MORE FUCKING RECIPES!!!
+		//				)
+		//				.outputFluids(
+		//					new FluidStack(Fluids.CARBONDIOXIDE_NITROGEN_HELIUM, 400)
+		//				)
+		//);
+
+		recipes.add(new ChemRecipe(1090, "IR_LASER_GASMIX_1", 200)
+						.inputFluids(
+							new FluidStack(Fluids.NITROGEN, 500),
+							new FluidStack(Fluids.HELIUM4, 500)
+						)
+						.outputFluids(
+							new FluidStack(Fluids.NITROGEN_HELIUM, 1000)
+						)
+		);
+
+		recipes.add(new ChemRecipe(1091, "IR_LASER_GASMIX_2", 400)
+						.inputFluids(
+							new FluidStack(Fluids.CARBONDIOXIDE, 1000),
+							new FluidStack(Fluids.NITROGEN_HELIUM, 1000)
+						)
+						.outputFluids(
+							new FluidStack(Fluids.CARBONDIOXIDE_NITROGEN_HELIUM, 400)
+						)
+		);
+
 
 
 

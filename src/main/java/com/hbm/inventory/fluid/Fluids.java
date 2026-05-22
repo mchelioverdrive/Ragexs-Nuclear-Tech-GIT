@@ -106,6 +106,7 @@ public class Fluids {
 	public static FluidType HYDROGEN;
 	public static FluidType OXYGEN;
 	public static FluidType NITROGEN;
+	public static FluidType NITROGEN_HELIUM;
 	public static FluidType NITRIC_ACID;
 	public static FluidType BLOOD;				//WEEE
 	public static FluidType XENON;
@@ -131,6 +132,7 @@ public class Fluids {
 	public static FluidType PLASMA_XM;
 	public static FluidType PLASMA_BF;
 	public static FluidType CARBONDIOXIDE;
+	public static FluidType CARBONDIOXIDE_NITROGEN_HELIUM;
 	public static FluidType HELIUM3;
 	public static FluidType OSMIRIDIUM_SOLUTION;				//osmiridium solution
 	public static FluidType ETHANOL;
@@ -573,6 +575,8 @@ public class Fluids {
 		IODINE_BRINE = new FluidType("IODINE_BRINE", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS, new FT_Corrosive(200)); //.setTemp(300) idk about that one
 		NOBLE_GAS_MIX = new FluidType("NOBLE_GAS_MIX", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(GASEOUS, NOCON);
 		GADOLINIUM = new FluidType("GADOLINIUM", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS, new FT_Corrosive(20));
+		CARBONDIOXIDE_NITROGEN_HELIUM = new FluidType("CARBONDIOXIDE_NITROGEN_HELIUM", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(GASEOUS);
+		NITROGEN_HELIUM = new FluidType("NITROGEN_HELIUM", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(GASEOUS, NOCON);
 
 //I am getting really sick and tired of this retarded ass fluid system
 
@@ -836,6 +840,8 @@ public class Fluids {
 		metaOrder.add(IODINE_BRINE);
 		metaOrder.add(NOBLE_GAS_MIX);
 		metaOrder.add(GADOLINIUM);
+		metaOrder.add(CARBONDIOXIDE_NITROGEN_HELIUM);
+		metaOrder.add(NITROGEN_HELIUM);
 
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!

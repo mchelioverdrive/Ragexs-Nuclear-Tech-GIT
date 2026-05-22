@@ -63,6 +63,9 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 		addRecipe(Cr, 			STEEL,										new ItemStack(ModItems.ingot_stainless, 3));
 		addRecipe(ModItems.powder_ytterbium_tiny, 			STEEL,										new ItemStack(ModItems.ingot_stainless, 12));
 
+		addRecipe(ModItems.er_yag_feedstock, COAL, new ItemStack(ModItems.er_yag_sintered));
+		addRecipe(ModItems.yby_feedstock, COAL, new ItemStack(ModItems.yby_sintered));
+
 		//super steel alloy from ingot_molybdenum
 		addRecipe(Mo, DESH, new ItemStack(ModItems.ingot_saturnite, 1));
 

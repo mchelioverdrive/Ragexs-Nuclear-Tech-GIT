@@ -172,6 +172,7 @@ public class ModItems {
 	public static Item ingot_zinc;
 	public static Item ingot_platnium;
 	public static Item ingot_gaas;
+	public static Item silver_gallium_arsenide;
 	public static Item ingot_iridium;
 	public static Item powder_iridium;
 	public static Item ruthenium_residue;
@@ -789,6 +790,7 @@ public class ModItems {
 	public static Item powder_fertilizer;
 
 	public static Item fragment_neodymium;
+	public static Item ingot_neodymium;
 	public static Item fragment_cobalt;
 	public static Item fragment_niobium;
 	public static Item fragment_cerium;
@@ -840,6 +842,15 @@ public class ModItems {
 	public static Item powder_lutetium_concentrate;
 	public static Item powder_thulium_concentrate;
 	public static Item erbium_powder;
+	public static Item er_yag_feedstock;
+	public static Item yby_feedstock;
+	public static Item znse_feedstock;
+	public static Item er_yag_sintered;
+	public static Item yby_sintered;
+	public static Item yttrium_aluminum_erbium_crystal;
+	public static Item YbY_crystal;
+	public static Item ZnSe_crystal;
+	public static Item germanium_crystal;
 	public static Item ingot_erbium;
 	public static Item ingot_ytterbium;
 	public static Item ingot_lutetium;
@@ -3394,6 +3405,7 @@ public class ModItems {
 		ingot_tt = new ItemCustomLore().setRarity(EnumRarity.uncommon).setUnlocalizedName("ingot_tt").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_techtactium");
 		ingot_ttas = new ItemCustomLore().setRarity(EnumRarity.rare).setUnlocalizedName("ingot_ttas").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_techtactium_as");
 		ingot_gaas = new ItemCustomLore().setRarity(EnumRarity.rare).setUnlocalizedName("ingot_gaas").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_gaas1");
+		silver_gallium_arsenide = new ItemCustomLore().setRarity(EnumRarity.epic).setUnlocalizedName("silver_gallium_arsenide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_gaas1");
 		nugget_gaas = new Item().setUnlocalizedName("nugget_gaas").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_gaas");
 		billet_gaas = new Item().setUnlocalizedName("billet_gaas").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":billet_gaas1");
 		nugget_zinc = new Item().setUnlocalizedName("nugget_zinc").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_zinc");
@@ -3644,6 +3656,7 @@ public class ModItems {
 		powder_antimony_trioxide = new Item().setUnlocalizedName("powder_antimony_trioxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lead");
 
 		fragment_neodymium = new Item().setUnlocalizedName("fragment_neodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_neodymium");
+		ingot_neodymium = new Item().setUnlocalizedName("ingot_neodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_neodymium");
 		fragment_cobalt = new Item().setUnlocalizedName("fragment_cobalt").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_cobalt");
 		fragment_niobium = new Item().setUnlocalizedName("fragment_niobium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_niobium");
 		fragment_cerium = new Item().setUnlocalizedName("fragment_cerium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_cerium");
@@ -3695,6 +3708,15 @@ public class ModItems {
 		powder_lutetium_concentrate = new Item().setUnlocalizedName("powder_lutetium_concentrate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lead");
 		powder_thulium_concentrate = new Item().setUnlocalizedName("powder_thulium_concentrate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lanthanium");
 		erbium_powder = new Item().setUnlocalizedName("erbium_powder").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_titanium");
+		er_yag_feedstock = new Item().setUnlocalizedName("er_yag_feedstock").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_iron");
+		yby_feedstock = new Item().setUnlocalizedName("yby_feedstock").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_fluorite");
+		znse_feedstock = new Item().setUnlocalizedName("znse_feedstock").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_zinc");
+		er_yag_sintered = new Item().setUnlocalizedName("er_yag_sintered").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_tungsten");
+		yby_sintered = new Item().setUnlocalizedName("yby_sintered").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_nickel");
+		yttrium_aluminum_erbium_crystal = new Item().setUnlocalizedName("yttrium_aluminum_erbium_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_thorium");
+		YbY_crystal = new Item().setUnlocalizedName("YbY_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niter");
+		ZnSe_crystal = new Item().setUnlocalizedName("ZnSe_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_zinc");
+		germanium_crystal = new Item().setUnlocalizedName("germanium_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_basalt");
 		ingot_erbium = new Item().setUnlocalizedName("ingot_erbium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_nickel");
 		ingot_ytterbium = new Item().setUnlocalizedName("ingot_ytterbium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_nickel");
 		ingot_lutetium = new Item().setUnlocalizedName("ingot_lutetium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_lead");
@@ -6791,6 +6813,7 @@ public class ModItems {
 		GameRegistry.registerItem(ingot_tungsten, ingot_tungsten.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_gallium, ingot_gallium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_gaas, ingot_gaas.getUnlocalizedName());
+		GameRegistry.registerItem(silver_gallium_arsenide, silver_gallium_arsenide.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_tt, ingot_tt.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_ttas, ingot_ttas.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_platnium, ingot_platnium.getUnlocalizedName());
@@ -7267,6 +7290,7 @@ public class ModItems {
 
 		//Fragments
 		GameRegistry.registerItem(fragment_neodymium, fragment_neodymium.getUnlocalizedName());
+		GameRegistry.registerItem(ingot_neodymium, ingot_neodymium.getUnlocalizedName());
 		GameRegistry.registerItem(fragment_cobalt, fragment_cobalt.getUnlocalizedName());
 		GameRegistry.registerItem(fragment_niobium, fragment_niobium.getUnlocalizedName());
 		GameRegistry.registerItem(fragment_cerium, fragment_cerium.getUnlocalizedName());
@@ -7318,6 +7342,15 @@ public class ModItems {
 		GameRegistry.registerItem(powder_lutetium_concentrate, powder_lutetium_concentrate.getUnlocalizedName());
 		GameRegistry.registerItem(powder_thulium_concentrate, powder_thulium_concentrate.getUnlocalizedName());
 		GameRegistry.registerItem(erbium_powder, erbium_powder.getUnlocalizedName());
+		GameRegistry.registerItem(er_yag_feedstock, er_yag_feedstock.getUnlocalizedName());
+		GameRegistry.registerItem(yby_feedstock, yby_feedstock.getUnlocalizedName());
+		GameRegistry.registerItem(znse_feedstock, znse_feedstock.getUnlocalizedName());
+		GameRegistry.registerItem(er_yag_sintered, er_yag_sintered.getUnlocalizedName());
+		GameRegistry.registerItem(yby_sintered, yby_sintered.getUnlocalizedName());
+		GameRegistry.registerItem(yttrium_aluminum_erbium_crystal, yttrium_aluminum_erbium_crystal.getUnlocalizedName());
+		GameRegistry.registerItem(YbY_crystal, YbY_crystal.getUnlocalizedName());
+		GameRegistry.registerItem(ZnSe_crystal, ZnSe_crystal.getUnlocalizedName());
+		GameRegistry.registerItem(germanium_crystal, germanium_crystal.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_erbium, ingot_erbium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_ytterbium, ingot_ytterbium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_lutetium, ingot_lutetium.getUnlocalizedName());

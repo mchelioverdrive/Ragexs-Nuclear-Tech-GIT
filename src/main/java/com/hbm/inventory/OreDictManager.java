@@ -620,7 +620,7 @@ public class OreDictManager {
 		RAREEARTH.ingot(DictFrame.fromOne(ModItems.chunk_ore, EnumChunkType.RARE)).ore(ore_gneiss_rare).oreAll(ore_rare);
 		LA	.nugget(nugget_lanthanium, fragment_lanthanium)	.ingot(ingot_lanthanium)						.dustSmall(powder_lanthanium_tiny)	.dust(powder_lanthanium)	.block(block_lanthanium)	.oreAll(ore_lanthanium);
 		ZR	.nugget(nugget_zirconium)		.ingot(ingot_zirconium)		.billet(billet_zirconium)												.dust(powder_zirconium)		.block(block_zirconium)		.ore(ore_depth_zirconium);
-		ND	.nugget(fragment_neodymium)																		.dustSmall(powder_neodymium_tiny)	.dust(powder_neodymium)									.ore(ore_depth_nether_neodymium)	.oreNether(ore_depth_nether_neodymium);
+		ND	.ingot(ingot_neodymium) .nugget(fragment_neodymium)																		.dustSmall(powder_neodymium_tiny)	.dust(powder_neodymium)									.ore(ore_depth_nether_neodymium)	.oreNether(ore_depth_nether_neodymium);
 		CE	.explosive(4)  .hydro(2F).nugget(fragment_cerium)																		.dustSmall(powder_cerium_tiny)		.dust(powder_cerium);
 		SC  .ingot(scandium_ingot) .nugget(scandium_nugget);
 		Y 	.ingot(yttrium_ingot) .nugget(fragment_yttrium) .dustSmall(powder_yttrium_tiny) .dust(powder_yttrium);

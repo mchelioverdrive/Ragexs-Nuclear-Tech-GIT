@@ -497,7 +497,22 @@ public class CraftingManager {
 		addRecipeAuto(new ItemStack(ModItems.blades_titanium, 1), new Object[] { "PIP", 'P', TI.plate(), 'I', new ItemStack(ModItems.blades_titanium, 1, OreDictionary.WILDCARD_VALUE) });
 		addRecipeAuto(new ItemStack(ModItems.blades_advanced_alloy, 1), new Object[] { "PIP", 'P', ALLOY.plate(), 'I', new ItemStack(ModItems.blades_advanced_alloy, 1, OreDictionary.WILDCARD_VALUE) });
 
-		addRecipeAuto(new ItemStack(ModItems.laser_crystal_co2, 1), new Object[] { "QDQ", "NCN", "QDQ", 'Q', ModBlocks.glass_quartz, 'D', DESH.ingot(), 'N', NB.ingot(), 'C', new ItemStack(ModItems.fluid_tank_full, 1, Fluids.CARBONDIOXIDE.getID()) });
+		addRecipeAuto(new ItemStack(ModItems.laser_crystal_co2, 1), new Object[] { //IR CRYSTAL
+			"ABC",
+			"DEF",
+			"GHI",
+			'A', ModItems.ingot_neodymium,
+			'B', ModItems.yttrium_aluminum_erbium_crystal,
+			'C', ModItems.YbY_crystal,
+			'D', ModItems.ZnSe_crystal,
+			'E', ModItems.germanium_crystal,
+			'F', ModItems.silver_gallium_arsenide,
+			'G', ModItems.ingot_holmium,
+			'H', ModBlocks.glass_quartz,
+			//'D', DESH.ingot(), //unused
+			//'N', NB.ingot(), //x2
+			'I', new ItemStack(ModItems.fluid_tank_full, 1, Fluids.CARBONDIOXIDE_NITROGEN_HELIUM.getID()) //needs to be a gas mix of co2, nitrogen, helium (3?)
+		}); //please let my mental farming be over
 		addRecipeAuto(new ItemStack(ModItems.laser_crystal_bismuth, 1), new Object[] {"QUQ", "BCB", "QTQ", 'Q', ModBlocks.glass_quartz, 'U', U.ingot(), 'T', TH232.ingot(), 'B', ModItems.nugget_bismuth, 'C', ModItems.crystal_rare });
 		addRecipeAuto(new ItemStack(ModItems.laser_crystal_cmb, 1), new Object[] {"QBQ", "CSC", "QBQ", 'Q', ModBlocks.glass_quartz, 'B', CMB.ingot(), 'C', SBD.ingot(), 'S', ModItems.cell_anti_schrabidium });
 		addRecipeAuto(new ItemStack(ModItems.laser_crystal_iron, 1), new Object[] {"QGQ", "CSC", "QGQ", 'Q', ModBlocks.glass_quartz, 'G', GAAS.ingot(), 'C', ModItems.crystal_iron, 'S', ModItems.cell_balefire});
