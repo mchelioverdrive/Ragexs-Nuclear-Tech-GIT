@@ -1544,6 +1544,85 @@ public class ChemplantRecipes extends SerializableRecipe {
 						)
 		);
 
+		recipes.add(new ChemRecipe(1092, "KTP_CRYSTAL", 400)
+						.inputItems(
+							new ComparableStack(ModItems.potassium_powder, 1),
+							new ComparableStack(ModItems.ingot_titanium, 1),
+							new ComparableStack(ModItems.ingot_phosphorus, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.WATER, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.KTP_crystal, 1)
+						)
+		);
+
+		recipes.add(new ChemRecipe(1093, "BBO_CRYSTAL", 400)
+						.inputItems(
+							new OreDictStack(BA.ingot(), 1),
+							new OreDictStack(B.ingot(), 2)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.WATER, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.BBO_crystal, 1)
+						)
+		);
+
+		recipes.add(new ChemRecipe(1094, "TITANIUM_SAPPHIRE_CRYSTAL", 400)
+						.inputItems(
+							new ComparableStack(ModItems.gem_sapphire, 1),
+							new ComparableStack(ModItems.ingot_titanium, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.WATER, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.titanium_sapphire_crystal, 1)
+						)
+		);
+
+		recipes.add(new ChemRecipe(1095, "LITHIUM_NIOBATE_CRYSTAL", 400)
+						.inputItems(
+							new ComparableStack(ModItems.lithium, 1),
+							new ComparableStack(ModItems.ingot_niobium, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.WATER, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.lithium_niobate_crystal, 1)
+						)
+		);
+
+		recipes.add(new ChemRecipe(1096, "VISIBLE_OPTICS_ARRAY", 400)
+						.inputItems(
+							new ComparableStack(ModItems.KTP_crystal, 1),
+							new ComparableStack(ModItems.LBO_crystal, 1),
+							new ComparableStack(ModItems.BBO_crystal, 1),
+							new ComparableStack(ModItems.lithium_niobate_crystal, 1)
+						)
+						.outputItems(
+							new ItemStack(ModItems.visible_optics_array, 1)
+						)
+		);
+
+		recipes.add(new ChemRecipe(1097, "VISIBLE_DOPANT_CRYSTAL", 400)
+						.inputItems(
+							new ComparableStack(ModItems.ingot_praseodymium, 1),
+							new ComparableStack(ModItems.ingot_dysprosium, 1),
+							new ComparableStack(ModItems.ingot_europium, 1),
+							new ComparableStack(ModItems.ingot_terbium, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.WATER, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.visible_dopant_crystal, 1)
+						)
+		);
 
 
 

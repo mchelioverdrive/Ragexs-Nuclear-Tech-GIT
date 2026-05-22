@@ -543,6 +543,7 @@ public class ModItems {
 	public static Item ingot_asbestos;
 	public static Item powder_asbestos;
 	public static Item gem_ruby;
+	public static Item gem_sapphire;
 	public static Item ingot_calcium;
 	public static Item powder_calcium;
 	public static Item ingot_cadmium;
@@ -632,6 +633,13 @@ public class ModItems {
 	public static Item gem_volcanic;
 	public static Item gem_rad;
 	public static Item gem_alexandrite;
+	public static Item titanium_sapphire_crystal;
+	public static Item KTP_crystal;
+	public static Item lithium_niobate_crystal;
+	public static Item visible_optics_array;
+	public static Item visible_dopant_crystal;
+	public static Item BBO_crystal;
+	public static Item LBO_crystal;
 
 	public static Item powder_lead;
 	public static Item powder_silver;
@@ -849,6 +857,7 @@ public class ModItems {
 	public static Item er_yag_sintered;
 	public static Item yby_sintered;
 	public static Item yttrium_aluminum_erbium_crystal;
+	//public static Item ruby_crystal;
 	public static Item YbY_crystal;
 	public static Item ZnSe_crystal;
 	public static Item germanium_crystal;
@@ -3220,6 +3229,7 @@ public class ModItems {
 		ingot_asbestos = new ItemCustomLore().setUnlocalizedName("ingot_asbestos").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_asbestos");
 		powder_asbestos = new ItemCustomLore().setUnlocalizedName("powder_asbestos").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_asbestos");
 		gem_ruby = new ItemCustomLore().setUnlocalizedName("gem_ruby").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":gem_ruby");
+		gem_sapphire = new ItemCustomLore().setUnlocalizedName("gem_sapphire").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":gem_sapphire");
 		ingot_electronium = new ItemCustomLore().setUnlocalizedName("ingot_electronium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_electronium");
 		ingot_gwenium = new ItemCustomLore().setUnlocalizedName("ingot_gwenium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_gwenium");
 		nugget_zirconium = new ItemCustomLore().setUnlocalizedName("nugget_zirconium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_zirconium");
@@ -3495,6 +3505,13 @@ public class ModItems {
 		gem_volcanic = new ItemCustomLore().setRarity(EnumRarity.uncommon).setUnlocalizedName("gem_volcanic").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":gem_volcanic");
 		gem_rad = new ItemCustomLore().setRarity(EnumRarity.uncommon).setUnlocalizedName("gem_rad").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":gem_rad");
 		gem_alexandrite = new ItemAlexandrite().setUnlocalizedName("gem_alexandrite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":gem_alexandrite");
+		titanium_sapphire_crystal = new ItemCustomLore().setUnlocalizedName("titanium_sapphire_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_titanium");
+		KTP_crystal = new Item().setUnlocalizedName("KTP_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_titanium");
+		lithium_niobate_crystal = new Item().setUnlocalizedName("lithium_niobate_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_titanium");
+		visible_optics_array = new Item().setUnlocalizedName("visible_optics_array").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_fluorite");
+		visible_dopant_crystal = new Item().setUnlocalizedName("visible_dopant_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_fluorite");
+		BBO_crystal = new Item().setUnlocalizedName("BBO_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_titanium");
+		LBO_crystal = new Item().setUnlocalizedName("LBO_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_titanium");
 		crystal_nickel = new Item().setUnlocalizedName("crystal_nickel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_nickel");
 		crystal_niobium = new Item().setUnlocalizedName("crystal_niobium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niobium");
 
@@ -3716,6 +3733,7 @@ public class ModItems {
 		er_yag_sintered = new Item().setUnlocalizedName("er_yag_sintered").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_tungsten");
 		yby_sintered = new Item().setUnlocalizedName("yby_sintered").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_nickel");
 		yttrium_aluminum_erbium_crystal = new Item().setUnlocalizedName("yttrium_aluminum_erbium_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_thorium");
+		//ruby_crystal = new Item().setUnlocalizedName("ruby_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_phosphorus");
 		YbY_crystal = new Item().setUnlocalizedName("YbY_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niter");
 		ZnSe_crystal = new Item().setUnlocalizedName("ZnSe_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_copper");
 		germanium_crystal = new Item().setUnlocalizedName("germanium_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_basaltic");
@@ -7172,6 +7190,7 @@ public class ModItems {
 		GameRegistry.registerItem(powder_boron_tiny, powder_boron_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(powder_asbestos, powder_asbestos.getUnlocalizedName());
 		GameRegistry.registerItem(gem_ruby, gem_ruby.getUnlocalizedName());
+		GameRegistry.registerItem(gem_sapphire, gem_sapphire.getUnlocalizedName());
 		GameRegistry.registerItem(powder_magic, powder_magic.getUnlocalizedName());
 		GameRegistry.registerItem(powder_sawdust, powder_sawdust.getUnlocalizedName());
 		GameRegistry.registerItem(powder_flux, powder_flux.getUnlocalizedName());
@@ -7274,6 +7293,13 @@ public class ModItems {
 		GameRegistry.registerItem(gem_volcanic, gem_volcanic.getUnlocalizedName());
 		GameRegistry.registerItem(gem_rad, gem_rad.getUnlocalizedName());
 		GameRegistry.registerItem(gem_alexandrite, gem_alexandrite.getUnlocalizedName());
+		GameRegistry.registerItem(titanium_sapphire_crystal, titanium_sapphire_crystal.getUnlocalizedName());
+		GameRegistry.registerItem(KTP_crystal, KTP_crystal.getUnlocalizedName());
+		GameRegistry.registerItem(lithium_niobate_crystal, lithium_niobate_crystal.getUnlocalizedName());
+		GameRegistry.registerItem(visible_optics_array, visible_optics_array.getUnlocalizedName());
+		GameRegistry.registerItem(visible_dopant_crystal, visible_dopant_crystal.getUnlocalizedName());
+		GameRegistry.registerItem(BBO_crystal, BBO_crystal.getUnlocalizedName());
+		GameRegistry.registerItem(LBO_crystal, LBO_crystal.getUnlocalizedName());
 		GameRegistry.registerItem(crystal_nickel, crystal_nickel.getUnlocalizedName()); //l like nickel, i dont care, fuck off
 		GameRegistry.registerItem(crystal_niobium, crystal_niobium.getUnlocalizedName()); // the true path to enlightenment is ignoring the little green circle
 
@@ -7351,6 +7377,7 @@ public class ModItems {
 		GameRegistry.registerItem(er_yag_sintered, er_yag_sintered.getUnlocalizedName());
 		GameRegistry.registerItem(yby_sintered, yby_sintered.getUnlocalizedName());
 		GameRegistry.registerItem(yttrium_aluminum_erbium_crystal, yttrium_aluminum_erbium_crystal.getUnlocalizedName());
+		//GameRegistry.registerItem(ruby_crystal, ruby_crystal.getUnlocalizedName());
 		GameRegistry.registerItem(YbY_crystal, YbY_crystal.getUnlocalizedName());
 		GameRegistry.registerItem(ZnSe_crystal, ZnSe_crystal.getUnlocalizedName());
 		GameRegistry.registerItem(germanium_crystal, germanium_crystal.getUnlocalizedName());

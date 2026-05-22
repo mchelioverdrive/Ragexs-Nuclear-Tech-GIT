@@ -147,6 +147,22 @@ public class CrystallizerRecipes extends SerializableRecipe {
 						chloric
 		);
 
+		//registerRecipe(
+		//	new ComparableStack(ModItems.gem_sapphire),
+		//	new CrystallizerRecipe(
+		//		new ItemStack(ModItems.titanium_sapphire_crystal),
+		//		500),
+		//	new ComparableStack(ModItems.ingot_titanium)
+		//);
+//
+		//registerRecipe(
+		//	new ComparableStack(ModItems.ingot_niobium),
+		//	new CrystallizerRecipe(
+		//		new ItemStack(ModItems.lithium_niobate_crystal),
+		//		500),
+		//	new ComparableStack(ModItems.lithium)
+		//);
+
 
 
 

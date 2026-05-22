@@ -894,7 +894,8 @@ public class AnvilRecipes {
 				new AnvilOutput(new ItemStack(ModItems.rutile, 1), 0.45F),
 				// rarer secondary
 				new AnvilOutput(new ItemStack(ModItems.zircon, 1), 0.35F),
-				new AnvilOutput(new ItemStack(ModItems.nugget_hafnium, 1), 0.2F)
+				new AnvilOutput(new ItemStack(ModItems.nugget_hafnium, 1), 0.2F),
+				new AnvilOutput(new ItemStack(ModItems.gem_sapphire, 1), 0.005F),
 				//new AnvilOutput(new ItemStack(ModItems.monazite, 1), 0.1F)
 				//monazite was the first thing we did, I guess we could add the rare earth ore thingy here? but that's just excess
 			}

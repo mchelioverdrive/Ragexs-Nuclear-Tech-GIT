@@ -513,15 +513,25 @@ public class CraftingManager {
 			//'N', NB.ingot(), //x2
 			'I', new ItemStack(ModItems.fluid_tank_full, 1, Fluids.CARBONDIOXIDE_NITROGEN_HELIUM.getID()) //needs to be a gas mix of co2, nitrogen, helium (3?)
 		}); //please let my mental farming be over
-		addRecipeAuto(new ItemStack(ModItems.laser_crystal_bismuth, 1), new Object[] { //VISIBLE LIGHT
-			"QUQ",
-			"BCB",
-			"QTQ",
-			'Q', ModBlocks.glass_quartz,
-			'U', U.ingot(),
-			'T', TH232.ingot(),
-			'B', ModItems.nugget_bismuth,
-			'C', ModItems.crystal_rare
+		addRecipeAuto(new ItemStack(ModItems.laser_crystal_bismuth, 1), new Object[] { //VIS LIGHT
+			"ABC",
+			"DEF",
+			" H ",
+
+			// Gain media
+			'A', ModItems.gem_ruby,
+			'B', ModItems.gem_alexandrite,
+			'C', ModItems.titanium_sapphire_crystal,
+
+			// Beam tuning / optics
+			'D', ModItems.visible_optics_array,
+			'E', ModItems.crystal_copper,
+			'F', ModItems.visible_dopant_crystal,
+
+			// Stabilization / assembly
+			//'G', ModItems.KTP_crystal, // again already used in VO array
+			'H', ModBlocks.glass_quartz,
+			//'I', ModItems.LBO_crystal //already in the VO Array??? Why use twice?
 		});
 		addRecipeAuto(new ItemStack(ModItems.laser_crystal_cmb, 1), new Object[] {"QBQ", "CSC", "QBQ", 'Q', ModBlocks.glass_quartz, 'B', CMB.ingot(), 'C', SBD.ingot(), 'S', ModItems.cell_anti_schrabidium });
 		addRecipeAuto(new ItemStack(ModItems.laser_crystal_iron, 1), new Object[] {"QGQ", "CSC", "QGQ", 'Q', ModBlocks.glass_quartz, 'G', GAAS.ingot(), 'C', ModItems.crystal_iron, 'S', ModItems.cell_balefire});
@@ -1182,7 +1192,7 @@ public class CraftingManager {
 		addRecipeAuto(new ItemStack(ModBlocks.field_disturber), new Object[] { "ICI", "CAC", "ICI", 'I', STAR.ingot(), 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BISMOID), 'A', ModItems.gem_alexandrite });
 
 		//addShapelessAuto(new ItemStack(ModItems.holotape_image, 1, EnumHoloImage.HOLO_RESTORED.ordinal()), new Object[] { new ItemStack(ModItems.holotape_image, 1, EnumHoloImage.HOLO_DIGAMMA.ordinal()), KEY_TOOL_SCREWDRIVER, ModItems.ducttape, ModItems.armor_polish });
-		addShapelessAuto(new ItemStack(ModItems.holotape_damaged), new Object[] { DictFrame.fromOne(ModItems.holotape_image, EnumHoloImage.HOLO_RESTORED), ModItems.upgrade_muffler, ModItems.crt_display, ModItems.gem_alexandrite /* placeholder for amplifier */ });
+		//addShapelessAuto(new ItemStack(ModItems.holotape_damaged), new Object[] { DictFrame.fromOne(ModItems.holotape_image, EnumHoloImage.HOLO_RESTORED), ModItems.upgrade_muffler, ModItems.crt_display, ModItems.gem_alexandrite /* placeholder for amplifier */ });
 
 		addRecipeAuto(DictFrame.fromOne(ModItems.part_generic, EnumPartType.PISTON_PNEUMATIC, 4), new Object[] { " I ", "CPC", " I ", 'I', IRON.ingot(), 'C', CU.ingot(), 'P', IRON.plate() });
 		addRecipeAuto(DictFrame.fromOne(ModItems.part_generic, EnumPartType.PISTON_HYDRAULIC, 4), new Object[] { " I ", "CPC", " I ", 'I', STEEL.ingot(), 'C', TI.ingot(), 'P', Fluids.LUBRICANT.getDict(1000) });
