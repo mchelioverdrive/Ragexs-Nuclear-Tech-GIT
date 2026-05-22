@@ -878,6 +878,7 @@ public class AnvilRecipes {
 				new AnvilOutput(new ItemStack(ModItems.lepidolite, 1), 0.55F),
 				// rarer secondary
 				new AnvilOutput(new ItemStack(ModItems.petalite, 1), 0.15F),
+				new AnvilOutput(new ItemStack(ModItems.gem_alexandrite, 1), 0.002F),
 				//new AnvilOutput(new ItemStack(ModItems.fragment_coltan), 0.2F)
 				//columbite already does this.
 			}
@@ -906,7 +907,9 @@ public class AnvilRecipes {
 				// dominant
 				new AnvilOutput(new ItemStack(ModItems.chromite, 2)),
 				new AnvilOutput(new ItemStack(ModItems.chunk_ironoxide, 1)),
-				new AnvilOutput(new ItemStack(ModItems.powder_asbestos, 1), 0.12F)
+				new AnvilOutput(new ItemStack(ModItems.powder_asbestos, 1), 0.12F),
+				//rubies
+				new AnvilOutput(new ItemStack(ModItems.gem_ruby, 1), 0.005F)
 			}
 		).setTier(2));
 

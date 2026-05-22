@@ -281,6 +281,11 @@ public class ShredderRecipes extends SerializableRecipe {
 		//osmiridium step 1
 		ShredderRecipes.setRecipe(new ItemStack(ModItems.osmiridium, 1), new ItemStack(ModItems.powder_impure_osmiridium, 1));
 
+		//erbium ingot back into erbium powder
+		 ShredderRecipes.setRecipe(new ItemStack(ModItems.ingot_erbium, 1), new ItemStack(ModItems.erbium_powder, 1));
+		 //ingot ytterbium back into powder
+		 ShredderRecipes.setRecipe(new ItemStack(ModItems.ingot_ytterbium, 1), new ItemStack(ModItems.powder_ytterbium, 1));
+
 		ShredderRecipes.setRecipe(ModItems.bean_roast,  new ItemStack(ModItems.powder_coffee, 1));
 
 		//BYPRODUCTS

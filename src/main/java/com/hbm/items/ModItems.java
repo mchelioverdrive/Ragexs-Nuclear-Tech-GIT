@@ -542,6 +542,7 @@ public class ModItems {
 	public static Item ingot_fiberglass;
 	public static Item ingot_asbestos;
 	public static Item powder_asbestos;
+	public static Item gem_ruby;
 	public static Item ingot_calcium;
 	public static Item powder_calcium;
 	public static Item ingot_cadmium;
@@ -3218,6 +3219,7 @@ public class ModItems {
 		ingot_fiberglass = new ItemCustomLore().setUnlocalizedName("ingot_fiberglass").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_fiberglass");
 		ingot_asbestos = new ItemCustomLore().setUnlocalizedName("ingot_asbestos").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_asbestos");
 		powder_asbestos = new ItemCustomLore().setUnlocalizedName("powder_asbestos").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_asbestos");
+		gem_ruby = new ItemCustomLore().setUnlocalizedName("gem_ruby").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":gem_ruby");
 		ingot_electronium = new ItemCustomLore().setUnlocalizedName("ingot_electronium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_electronium");
 		ingot_gwenium = new ItemCustomLore().setUnlocalizedName("ingot_gwenium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_gwenium");
 		nugget_zirconium = new ItemCustomLore().setUnlocalizedName("nugget_zirconium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_zirconium");
@@ -3710,13 +3712,13 @@ public class ModItems {
 		erbium_powder = new Item().setUnlocalizedName("erbium_powder").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_titanium");
 		er_yag_feedstock = new Item().setUnlocalizedName("er_yag_feedstock").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_iron");
 		yby_feedstock = new Item().setUnlocalizedName("yby_feedstock").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_fluorite");
-		znse_feedstock = new Item().setUnlocalizedName("znse_feedstock").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_zinc");
+		znse_feedstock = new Item().setUnlocalizedName("znse_feedstock").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niter");
 		er_yag_sintered = new Item().setUnlocalizedName("er_yag_sintered").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_tungsten");
 		yby_sintered = new Item().setUnlocalizedName("yby_sintered").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_nickel");
 		yttrium_aluminum_erbium_crystal = new Item().setUnlocalizedName("yttrium_aluminum_erbium_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_thorium");
 		YbY_crystal = new Item().setUnlocalizedName("YbY_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niter");
-		ZnSe_crystal = new Item().setUnlocalizedName("ZnSe_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_zinc");
-		germanium_crystal = new Item().setUnlocalizedName("germanium_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_basalt");
+		ZnSe_crystal = new Item().setUnlocalizedName("ZnSe_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_copper");
+		germanium_crystal = new Item().setUnlocalizedName("germanium_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_basaltic");
 		ingot_erbium = new Item().setUnlocalizedName("ingot_erbium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_nickel");
 		ingot_ytterbium = new Item().setUnlocalizedName("ingot_ytterbium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_nickel");
 		ingot_lutetium = new Item().setUnlocalizedName("ingot_lutetium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_lead");
@@ -7169,6 +7171,7 @@ public class ModItems {
 		GameRegistry.registerItem(powder_boron, powder_boron.getUnlocalizedName());
 		GameRegistry.registerItem(powder_boron_tiny, powder_boron_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(powder_asbestos, powder_asbestos.getUnlocalizedName());
+		GameRegistry.registerItem(gem_ruby, gem_ruby.getUnlocalizedName());
 		GameRegistry.registerItem(powder_magic, powder_magic.getUnlocalizedName());
 		GameRegistry.registerItem(powder_sawdust, powder_sawdust.getUnlocalizedName());
 		GameRegistry.registerItem(powder_flux, powder_flux.getUnlocalizedName());
