@@ -65,6 +65,9 @@ public class BreederRecipes extends SerializableRecipe {
 		//CM247 -> BK247   (2000)
 		setRecipe(BreedingRodType.CM247, BreedingRodType.BK247, 2000);
 
+		//thulium normal into tm-170
+		//setRecipe(BreedingRodType.THULIUM, BreedingRodType.TM170, 200);
+
 
 	}
 

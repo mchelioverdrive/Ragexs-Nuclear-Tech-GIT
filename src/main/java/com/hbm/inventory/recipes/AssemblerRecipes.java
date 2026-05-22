@@ -2563,7 +2563,8 @@ public class AssemblerRecipes extends SerializableRecipe {
 										   EnumCircuitType.ADVANCED),
 					   new ComparableStack(ModBlocks.glass_quartz,
 										   8),
-					   new ComparableStack(ModItems.ingot_terbium)
+					   new ComparableStack(ModItems.ingot_terbium),
+					   new ComparableStack(ModItems.ingot_ytterbium)
 					   },
 				   400);
 		makeRecipe(new ComparableStack(ModItems.sat_head_scanner,

@@ -166,6 +166,7 @@ public class MineralRecipes {
 		addBillet(ModItems.billet_th232,				ModItems.ingot_th232,				ModItems.nugget_th232, TH232.all(MaterialShapes.NUGGET));
 		addBillet(ModItems.billet_plutonium,			ModItems.ingot_plutonium,			ModItems.nugget_plutonium, PU.all(MaterialShapes.NUGGET));
 		addBillet(ModItems.billet_pu238,				ModItems.ingot_pu238,				ModItems.nugget_pu238, PU238.all(MaterialShapes.NUGGET));
+		addBillet(ModItems.billet_tm170,				ModItems.ingot_thulium170,			ModItems.nugget_tm170, TM170.all(MaterialShapes.NUGGET));
 		addBillet(ModItems.billet_pu239,				ModItems.ingot_pu239,				ModItems.nugget_pu239, PU239.all(MaterialShapes.NUGGET));
 		addBillet(ModItems.billet_pu240,				ModItems.ingot_pu240,				ModItems.nugget_pu240, PU240.all(MaterialShapes.NUGGET));
 		addBillet(ModItems.billet_pu241,				ModItems.ingot_pu241,				ModItems.nugget_pu241, PU241.all(MaterialShapes.NUGGET));
@@ -328,6 +329,7 @@ public class MineralRecipes {
 		GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(ModItems.pellet_rtg_gold), new Object[] { ModItems.billet_au198, ModItems.billet_au198, ModItems.billet_au198, NI.plate() }));
 		GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(ModItems.pellet_rtg_americium), new Object[] { ModItems.billet_am241, ModItems.billet_am241, ModItems.billet_am241, IRON.plate() }));
 		GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(ModItems.pellet_rtg_berkelium), new Object[] { ModItems.billet_bk247, ModItems.billet_bk247, ModItems.billet_bk247, NI.plate() }));
+		GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(ModItems.pellet_rtg_tm170), new Object[] { ModItems.billet_tm170, ModItems.billet_tm170, ModItems.billet_tm170, NI.plate() }));
 
 		//There's no need for anvil recycling recipes if you simply set the container item
 		GameRegistry.addShapelessRecipe(new ItemStack(ModItems.billet_bismuth, 3), new Object[] { new ItemStack(ModItems.pellet_rtg_depleted, 1, DepletedRTGMaterial.BISMUTH.ordinal()) });
@@ -336,6 +338,11 @@ public class MineralRecipes {
 		GameRegistry.addShapelessRecipe(new ItemStack(ModItems.billet_neptunium, 3), new Object[] { new ItemStack(ModItems.pellet_rtg_depleted, 1, DepletedRTGMaterial.NEPTUNIUM.ordinal()) });
 		GameRegistry.addShapelessRecipe(new ItemStack(ModItems.billet_zirconium, 3), new Object[] { new ItemStack(ModItems.pellet_rtg_depleted, 1, DepletedRTGMaterial.ZIRCONIUM.ordinal()) });
 		GameRegistry.addShapelessRecipe(new ItemStack(ModItems.ingot_nickel, 2), new Object[] { new ItemStack(ModItems.pellet_rtg_depleted, 1, DepletedRTGMaterial.NICKEL.ordinal()) });
+		GameRegistry.addShapelessRecipe(new ItemStack(ModItems.ingot_samarium, 2), new Object[] { new ItemStack(ModItems.pellet_rtg_depleted, 1, DepletedRTGMaterial.SAMARIUM.ordinal()) });
+		GameRegistry.addShapelessRecipe(new ItemStack(ModItems.ingot_cf249, 2), new Object[] { new ItemStack(ModItems.pellet_rtg_depleted, 1, DepletedRTGMaterial.CALIFORNIUM249.ordinal()) });
+		GameRegistry.addShapelessRecipe(new ItemStack(ModItems.ingot_yb170, 2), new Object[] { new ItemStack(ModItems.pellet_rtg_depleted, 1, DepletedRTGMaterial.YB170.ordinal()) });
+		GameRegistry.addShapelessRecipe(new ItemStack(ModItems.ingot_cf247, 2), new Object[] { new ItemStack(ModItems.pellet_rtg_depleted, 1, DepletedRTGMaterial.CALIFORNIUM247.ordinal()) });
+		GameRegistry.addShapelessRecipe(new ItemStack(ModItems.ingot_cf252, 2), new Object[] { new ItemStack(ModItems.pellet_rtg_depleted, 1, DepletedRTGMaterial.CALIFORNIUM247.ordinal()) });
 
 
 		//GameRegistry.addShapelessRecipe(new ItemStack(ModItems.powder_niobium, 1), new Object[] { new ItemStack(ModItems.powder_niobium_tiny, 9) });

@@ -145,6 +145,7 @@ public class OreDictManager {
 	public static final DictFrame PU = new DictFrame("Plutonium");
 	public static final DictFrame PURG = new DictFrame("PlutoniumRG");
 	public static final DictFrame PU238 = new DictFrame("Plutonium238", "Pu238");
+	public static final DictFrame TM170 = new DictFrame("Thulium170", "Tm170");
 	public static final DictFrame PU239 = new DictFrame("Plutonium239", "Pu239");
 	public static final DictFrame PU240 = new DictFrame("Plutonium240", "Pu240");
 	public static final DictFrame PU241 = new DictFrame("Plutonium241", "Pu241");
@@ -201,6 +202,8 @@ public class OreDictManager {
 	public static final DictFrame STAINLESS = new DictFrame("StainlessSteel");
 	public static final DictFrame Mn = new DictFrame("Manganese");
 	public static final DictFrame Tl = new DictFrame("Thallium");
+	public static final DictFrame Dy = new DictFrame("Dysprosium");
+	public static final DictFrame Ho = new DictFrame("Holmium");
 
 	//selenium
 	public static final DictFrame Se = new DictFrame("Selenium");
@@ -452,6 +455,7 @@ public class OreDictManager {
 		PU		.rad(HazardRegistry.pu)								.nugget(nugget_plutonium)	.billet(billet_plutonium)	.ingot(ingot_plutonium)		.dust(powder_plutonium)									.block(block_plutonium)		.ore(ore_nether_plutonium)	.oreNether(ore_nether_plutonium) .oreAll(ore_plutonium);
 		PURG	.rad(HazardRegistry.purg).neutron(HazardRegistry.purg/60f)							.nugget(nugget_pu_mix)		.billet(billet_pu_mix)		.ingot(ingot_pu_mix)																.block(block_pu_mix);
 		PU238	.rad(HazardRegistry.pu238)	.hot(3F)				.nugget(nugget_pu238)		.billet(billet_pu238)		.ingot(ingot_pu238)																	.block(block_pu238);
+		TM170 	.rad(HazardRegistry.tm170)								.nugget(nugget_tm170)		.billet(billet_tm170)		.ingot(ingot_thulium170);
 		PU239	.rad(HazardRegistry.pu239)							.nugget(nugget_pu239)		.billet(billet_pu239)		.ingot(ingot_pu239)																	.block(block_pu239);
 		PU240	.rad(HazardRegistry.pu240).neutron(HazardRegistry.pu240/120f)					.nugget(nugget_pu240)		.billet(billet_pu240)		.ingot(ingot_pu240)																	.block(block_pu240);
 		PU241	.rad(HazardRegistry.pu241)							.nugget(nugget_pu241)		.billet(billet_pu241)		.ingot(ingot_pu241);																//.block(block_pu241);
@@ -528,6 +532,8 @@ public class OreDictManager {
 		Mn .dust(manganese_powder);
 		Rh  .ingot(ingot_rhodium); //.dust(powder_rhodium) don't do that because we want to gate rh to the arc furnace
 		Tl .ingot(ingot_thallium) .dust(powder_thallium) .nugget(nugget_thallium);
+		Dy .ingot(ingot_dysprosium);
+		Ho .ingot(ingot_holmium);
 		Se .dust(powder_selenium);
 		Te .dust(powder_tellurium) .nugget(nugget_tellurium);
 		//PSO .nugget(powder_strontium_oxide);

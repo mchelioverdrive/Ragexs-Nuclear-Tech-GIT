@@ -106,6 +106,10 @@ public class OutgasserRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(ModItems.ingot_u238),
 			new Pair(new ItemStack(ModItems.nugget_neptunium), null));
 
+		//THULIUM to thulium-170
+		recipes.put(new ComparableStack(ModItems.ingot_thulium),
+			new Pair(new ItemStack(ModItems.ingot_thulium170), null));
+
 	}
 
 	public static Pair<ItemStack, FluidStack> getOutput(ItemStack input) {

@@ -1455,9 +1455,25 @@ public class ChemplantRecipes extends SerializableRecipe {
 						.outputItems(
 							new ItemStack(ModItems.powder_thulium2, 1),
 							new ItemStack(ModItems.powder_erbium_tiny, 1),
-							new ItemStack(ModItems.powder_dysprosium2, 1)
+							new ItemStack(ModItems.powder_ytterbium_tiny, 1)
 						)
 		);
+
+		//powder_vanadium + erbium powder tiny = 3 ingot vanadium since erbium can be used to make vanadium
+		recipes.add(new ChemRecipe(1086, "VANADIUM_INGOT", 400)
+						.inputItems(
+							new ComparableStack(
+								ModItems.powder_vanadium, 1
+							),
+							new ComparableStack(
+								ModItems.powder_erbium_tiny, 1
+							)
+						)
+						.outputItems(
+							new ItemStack(ModItems.ingot_vanadium, 3)
+						)
+		);
+
 
 
 

@@ -154,6 +154,7 @@ public class HazardRegistry {
 	public static final float purg  = 6.25F;     // reactor-grade plutonium
 
 	public static final float pu238 = 10.0F;
+	public static final float tm170 = 5F;    // thulium-170
 	public static final float pu239 = 5.0F;
 	public static final float pu240 = 7.5F;
 	public static final float pu241 = 25.0F;
