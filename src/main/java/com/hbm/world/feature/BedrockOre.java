@@ -35,6 +35,9 @@ public class BedrockOre {
 	public static HashMap<String, BedrockOreDefinition> replacements = new HashMap<>();
 
 	public static void init() {
+
+		//TODO FIX ASAP
+
 		// NTMain bedrock ores
 		BedrockOreDefinition iron = new BedrockOreDefinition(EnumBedrockOre.IRON,													1);
 		BedrockOreDefinition copper = new BedrockOreDefinition(EnumBedrockOre.COPPER,												1);
@@ -68,7 +71,7 @@ public class BedrockOre {
 		BedrockOreDefinition ice = new BedrockOreDefinition(new ItemStack(Blocks.packed_ice, 8), 1, 0xAAFFFF);
 		BedrockOreDefinition coltan = new BedrockOreDefinition(new ItemStack(ModItems.fragment_coltan), 1, 0xA78D7A);
 		BedrockOreDefinition lanthanium = new BedrockOreDefinition(new ItemStack(ModItems.powder_lanthanium), 2, 0xA1B9B9);
-		BedrockOreDefinition schrabidium = new BedrockOreDefinition(new ItemStack(ModItems.powder_schrabidium, 1), 4, 0x00FFFF, new FluidStack(Fluids.NITRIC_ACID, 500));
+		//BedrockOreDefinition schrabidium = new BedrockOreDefinition(new ItemStack(ModItems.powder_schrabidium, 1), 4, 0x00FFFF, new FluidStack(Fluids.NITRIC_ACID, 500));
 		BedrockOreDefinition cinnabar = new BedrockOreDefinition(new ItemStack(ModItems.cinnebar, 4), 1, 0xFF0000);
 		BedrockOreDefinition hematite = new BedrockOreDefinition(DictFrame.fromOne(ModBlocks.stone_resource, EnumStoneType.HEMATITE, 2), 1, 0xEF7213);
 
@@ -153,7 +156,7 @@ public class BedrockOre {
 		registerBedrockOre(Body.EVE, thorium, WorldConfig.bedrockThoriumSpawn);
 		registerBedrockOre(Body.EVE, niobium, WorldConfig.bedrockNiobiumSpawn);
 		registerBedrockOre(Body.EVE, rare, WorldConfig.bedrockRareEarthSpawn);
-		registerBedrockOre(Body.EVE, schrabidium, 100);
+		//registerBedrockOre(Body.EVE, schrabidium, 100);
 		registerBedrockOre(Body.EVE, cinnabar, 100);
 
 		replacements.put("ore" + EnumBedrockOre.IRON.oreName, new BedrockOreDefinition(EnumBedrockOre.HEMATITE, 1));

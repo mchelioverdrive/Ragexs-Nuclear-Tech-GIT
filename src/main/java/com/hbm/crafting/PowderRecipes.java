@@ -87,7 +87,7 @@ public class PowderRecipes {
 
 		//Metal powders
 		CraftingManager.addShapelessAuto(ItemScraps.create(new MaterialStack(Mats.MAT_MINGRADE, MaterialShapes.INGOT.q(2))), new Object[] { CU.dust(), REDSTONE.dust() });
-		CraftingManager.addShapelessAuto(ItemScraps.create(new MaterialStack(Mats.MAT_MAGTUNG, MaterialShapes.INGOT.q(1))), new Object[] { W.dust(), SA326.nugget() });
+		//CraftingManager.addShapelessAuto(ItemScraps.create(new MaterialStack(Mats.MAT_MAGTUNG, MaterialShapes.INGOT.q(1))), new Object[] { W.dust(), SA326.nugget() });
 		CraftingManager.addShapelessAuto(ItemScraps.create(new MaterialStack(Mats.MAT_TCALLOY, MaterialShapes.INGOT.q(1))), new Object[] { STEEL.dust(), TC99.nugget() });
 		CraftingManager.addShapelessAuto(ItemScraps.create(new MaterialStack(Mats.MAT_STEEL, MaterialShapes.INGOT.q(1))), new Object[] { IRON.dust(), COAL.dust() });
 		CraftingManager.addShapelessAuto(ItemScraps.create(new MaterialStack(Mats.MAT_STEEL, MaterialShapes.INGOT.q(4))), new Object[] { IRON.dust(), IRON.dust(), IRON.dust(), IRON.dust(), COAL.dust(), COAL.dust(), COAL.dust(), COAL.dust() });

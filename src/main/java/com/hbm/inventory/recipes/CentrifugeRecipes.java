@@ -202,16 +202,16 @@ public class CentrifugeRecipes extends SerializableRecipe {
 				new ItemStack(ModItems.nugget_zirconium, 2),
 				new ItemStack(ModItems.nugget_technetium, 1),
 				new ItemStack(ModItems.nuclear_waste_tiny, 6) });
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.HES326)), new ItemStack[] {
-				new ItemStack(ModItems.nugget_solinium, 3),
-				new ItemStack(ModItems.nugget_lead, 2),
-				new ItemStack(ModItems.nugget_euphemium, 1),
-				new ItemStack(ModItems.nuclear_waste_tiny, 6) });
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.HES327)), new ItemStack[] {
-				new ItemStack(ModItems.nugget_australium, 4),
-				new ItemStack(ModItems.nugget_lead, 1),
-				new ItemStack(ModItems.nugget_euphemium, 1),
-				new ItemStack(ModItems.nuclear_waste_tiny, 6) });
+		//recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.HES326)), new ItemStack[] {
+		//		new ItemStack(ModItems.nugget_solinium, 3),
+		//		new ItemStack(ModItems.nugget_lead, 2),
+		//		new ItemStack(ModItems.nugget_euphemium, 1),
+		//		new ItemStack(ModItems.nuclear_waste_tiny, 6) });
+		//recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.HES327)), new ItemStack[] {
+		//		new ItemStack(ModItems.nugget_australium, 4),
+		//		new ItemStack(ModItems.nugget_lead, 1),
+		//		new ItemStack(ModItems.nugget_euphemium, 1),
+		//		new ItemStack(ModItems.nuclear_waste_tiny, 6) });
 		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.BFB_AM_MIX)), new ItemStack[] {
 				new ItemStack(ModItems.nugget_am_mix, 9),
 				new ItemStack(ModItems.nugget_pu_mix, 2),
@@ -550,8 +550,6 @@ public class CentrifugeRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(ModItems.crystal_beryllium), new ItemStack[] { new ItemStack(ModItems.powder_beryllium, 2), new ItemStack(ModItems.powder_beryllium, 2), new ItemStack(ModItems.powder_quartz, 1), new ItemStack(ModItems.powder_lithium, 1) });
 		recipes.put(new ComparableStack(ModItems.crystal_lead), new ItemStack[] { new ItemStack(ModItems.powder_lead, 2), new ItemStack(ModItems.powder_silver, 4), new ItemStack(ModItems.powder_gold, 1), new ItemStack(ModItems.powder_copper, 1) });
 
-		//u234? might remove if fake bullshit ... so I'm probably removing it.
-		recipes.put(new ComparableStack(ModItems.crystal_schraranium), new ItemStack[] { new ItemStack(ModItems.nugget_schrabidium, 2), new ItemStack(ModItems.nugget_schrabidium, 2), new ItemStack(ModItems.nugget_uranium, 2), new ItemStack(ModItems.nugget_neptunium, 2) });
 
 		recipes.put(new ComparableStack(ModItems.crystal_phosphorus), new ItemStack[] { new ItemStack(ModItems.powder_fire, 3), new ItemStack(ModItems.powder_fire, 3), new ItemStack(ModItems.ingot_phosphorus, 2), new ItemStack(Items.blaze_powder, 2) });
 		recipes.put(new ComparableStack(ModItems.crystal_lithium), new ItemStack[] { new ItemStack(ModItems.powder_lithium, 2), new ItemStack(ModItems.powder_lithium, 2), new ItemStack(ModItems.powder_quartz, 1), new ItemStack(ModItems.fluorite, 1) });

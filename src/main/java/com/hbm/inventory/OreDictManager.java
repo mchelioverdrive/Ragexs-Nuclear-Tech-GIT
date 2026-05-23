@@ -269,7 +269,7 @@ public class OreDictManager {
 	public static final DictFrame GUNMETAL = new DictFrame("GunMetal");
 	public static final DictFrame WEAPONSTEEL = new DictFrame("WeaponSteel");
 	public static final DictFrame FERRO = new DictFrame("Ferrouranium");
-	public static final DictFrame EUPH = new DictFrame("Euphemium");
+	//public static final DictFrame EUPH = new DictFrame("Euphemium");
 	public static final DictFrame DNT = new DictFrame("Dineutronium");
 	public static final DictFrame FIBER = new DictFrame("Fiberglass");
 	public static final DictFrame ASBESTOS = new DictFrame("Asbestos");
@@ -487,7 +487,8 @@ public class OreDictManager {
 		CO60	.rad(HazardRegistry.co60)	.hot(1)					.nugget(nugget_co60)		.billet(billet_co60)		.ingot(ingot_co60)			.dust(powder_co60);
 		AU198	.rad(HazardRegistry.au198)	.hot(5)					.nugget(nugget_au198)		.billet(billet_au198)		.ingot(ingot_au198)			.dust(powder_au198);
 		PB209	.rad(HazardRegistry.pb209)	.blinding(50F)	.hot(7)	.nugget(nugget_pb209)		.billet(billet_pb209)		.ingot(ingot_pb209);
-		SA326	.rad(HazardRegistry.sa326)				.nugget(nugget_schrabidium)	.billet(billet_schrabidium)	.ingot(ingot_schrabidium)	.dust(powder_schrabidium).plate(plate_schrabidium).plateCast(Mats.MAT_SCHRABIDIUM.make(plate_cast)).block(block_schrabidium).ore(ore_gneiss_schrabidium, ore_nether_schrabidium, ore_sellafield_schrabidium)	.oreNether(ore_nether_schrabidium) .oreAll(ore_schrabidium);
+		//TODO KILL
+		//SA326	.rad(HazardRegistry.sa326)				.nugget(nugget_schrabidium)	.billet(billet_schrabidium)	.ingot(ingot_schrabidium)	.dust(powder_schrabidium).plate(plate_schrabidium).plateCast(Mats.MAT_SCHRABIDIUM.make(plate_cast)).block(block_schrabidium).ore(ore_gneiss_schrabidium, ore_nether_schrabidium, ore_sellafield_schrabidium)	.oreNether(ore_nether_schrabidium) .oreAll(ore_schrabidium);
 		SA327	.rad(HazardRegistry.sa327)				.nugget(nugget_solinium)	.billet(billet_solinium)	.ingot(ingot_solinium)																.block(block_solinium);
 		SBD		.rad(HazardRegistry.sb)																		.ingot(ingot_schrabidate)	.dust(powder_schrabidate)								.block(block_schrabidate);
 		SRN		.rad(HazardRegistry.sr)																		.ingot(ingot_schraranium)															.block(block_schraranium);

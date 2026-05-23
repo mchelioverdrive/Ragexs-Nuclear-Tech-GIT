@@ -4643,13 +4643,40 @@ public class ModItems {
 		pile_rod_lithium = new ItemPileRod().setUnlocalizedName("pile_rod_lithium").setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":pile_rod_lithium");
 		pile_rod_detector = new ItemPileRod().setUnlocalizedName("pile_rod_detector").setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":pile_rod_detector");
 
-		plate_fuel_u233 = new ItemPlateFuel(2200000).setFunction(FunctionEnum.SQUARE_ROOT, 50).setUnlocalizedName("plate_fuel_u233").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":plate_fuel_u233");
-		plate_fuel_u235 = new ItemPlateFuel(2200000).setFunction(FunctionEnum.SQUARE_ROOT, 40).setUnlocalizedName("plate_fuel_u235").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":plate_fuel_u235");
-		plate_fuel_mox = new ItemPlateFuel(2400000).setFunction(FunctionEnum.LOGARITHM, 50).setUnlocalizedName("plate_fuel_mox").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":plate_fuel_mox");
-		plate_fuel_pu239 = new ItemPlateFuel(2000000).setFunction(FunctionEnum.NEGATIVE_QUADRATIC, 50).setUnlocalizedName("plate_fuel_pu239").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":plate_fuel_pu239");
+		// realistic-ish research reactor plate fuel
+
+		// U-233 - extremely fissile, high neutron economy
+				plate_fuel_u233 =
+					new ItemPlateFuel(1800000)
+						.setFunction(FunctionEnum.SQUARE_ROOT, 60);
+
+		// U-235 - standard research reactor fuel
+				plate_fuel_u235 =
+					new ItemPlateFuel(2200000)
+						.setFunction(FunctionEnum.SQUARE_ROOT, 50);
+
+		// MOX - workable but poorer neutron economy in thermal systems
+				plate_fuel_mox =
+					new ItemPlateFuel(1600000)
+						.setFunction(FunctionEnum.LOGARITHM, 35);
+
+		// Pu-239 - very reactive but problematic in thermal plate reactors
+				plate_fuel_pu239 =
+					new ItemPlateFuel(1400000)
+						.setFunction(FunctionEnum.NEGATIVE_QUADRATIC, 65);
+
+		// Ra-Be neutron source (startup source, not fuel)
+				plate_fuel_ra226be =
+					new ItemPlateFuel(5000000)
+						.setFunction(FunctionEnum.PASSIVE, 8);
+
+		// Pu-Be neutron source, stronger than Ra-Be
+				plate_fuel_pu238be =
+					new ItemPlateFuel(7000000)
+						.setFunction(FunctionEnum.PASSIVE, 18);
+		//unrealistic schrab bullshit below
 		plate_fuel_sa326 = new ItemPlateFuel(2000000).setFunction(FunctionEnum.LINEAR, 80).setUnlocalizedName("plate_fuel_sa326").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":plate_fuel_sa326");
-		plate_fuel_ra226be = new ItemPlateFuel(1300000).setFunction(FunctionEnum.PASSIVE, 30).setUnlocalizedName("plate_fuel_ra226be").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":plate_fuel_ra226be");
-		plate_fuel_pu238be = new ItemPlateFuel(1000000).setFunction(FunctionEnum.PASSIVE, 50).setUnlocalizedName("plate_fuel_pu238be").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":plate_fuel_pu238be");
+
 
 		pwr_fuel = new ItemPWRFuel().setUnlocalizedName("pwr_fuel").setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":pwr_fuel");
 		pwr_fuel_hot = new ItemEnumMulti(EnumPWRFuel.class, true, false).setUnlocalizedName("pwr_fuel_hot").setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":pwr_fuel_hot");

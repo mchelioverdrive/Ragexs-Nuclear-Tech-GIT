@@ -201,10 +201,10 @@ public class ToolRecipes {
 			addShovel(	STAR.ingot(), ModItems.starmetal_shovel);
 			addHoe(		STAR.ingot(), ModItems.starmetal_hoe);
 			//addSword(	SA326.ingot(), ModItems.schrabidium_sword);
-			addPickaxe(	SA326.ingot(), ModItems.schrabidium_pickaxe);
-			addAxe(		SA326.ingot(), ModItems.schrabidium_axe);
-			addShovel(	SA326.ingot(), ModItems.schrabidium_shovel);
-			addHoe(		SA326.ingot(), ModItems.schrabidium_hoe);
+			//addPickaxe(	SA326.ingot(), ModItems.schrabidium_pickaxe);
+			//addAxe(		SA326.ingot(), ModItems.schrabidium_axe);
+			//addShovel(	SA326.ingot(), ModItems.schrabidium_shovel);
+			//addHoe(		SA326.ingot(), ModItems.schrabidium_hoe);
 		} else {
 			/*
 			CraftingManager.addRecipeAuto(new ItemStack(ModItems.cobalt_decorated_sword, 1), new Object[] { " I ", " I ", "SBS", 'I', CO.ingot(), 'S', ModItems.ingot_meteorite_forged, 'B', ModItems.cobalt_sword });
@@ -220,10 +220,10 @@ public class ToolRecipes {
 			CraftingManager.addRecipeAuto(new ItemStack(ModItems.starmetal_shovel, 1), new Object[] { "I", "B", "I", 'I', STAR.ingot(), 'B', ModItems.cobalt_decorated_shovel });
 			CraftingManager.addRecipeAuto(new ItemStack(ModItems.starmetal_hoe, 1), new Object[] { "IS", " B", " I", 'I', STAR.ingot(), 'S', ModItems.ring_starmetal, 'B', ModItems.cobalt_decorated_hoe });
 			//CraftingManager.addRecipeAuto(new ItemStack(ModItems.schrabidium_sword, 1), new Object[] { "I", "W", "S", 'I', SA326.block(), 'W', ModItems.desh_sword, 'S', ANY_PLASTIC.ingot() });
-			CraftingManager.addRecipeAuto(new ItemStack(ModItems.schrabidium_pickaxe, 1), new Object[] { "BSB", " W ", " P ", 'B', ModItems.blades_desh, 'S', SA326.block(), 'W', ModItems.desh_pickaxe, 'P', ANY_PLASTIC.ingot() });
-			CraftingManager.addRecipeAuto(new ItemStack(ModItems.schrabidium_axe, 1), new Object[] { "BS", "BW", " P", 'B', ModItems.blades_desh, 'S', SA326.block(), 'W', ModItems.desh_axe, 'P', ANY_PLASTIC.ingot() });
-			CraftingManager.addRecipeAuto(new ItemStack(ModItems.schrabidium_shovel, 1), new Object[] { "B", "W", "P", 'B', SA326.block(), 'W', ModItems.desh_shovel, 'P', ANY_PLASTIC.ingot() });
-			CraftingManager.addRecipeAuto(new ItemStack(ModItems.schrabidium_hoe, 1), new Object[] { "IW", " S", " S", 'I', SA326.ingot(), 'W', ModItems.desh_hoe, 'S', ANY_PLASTIC.ingot() });
+			//CraftingManager.addRecipeAuto(new ItemStack(ModItems.schrabidium_pickaxe, 1), new Object[] { "BSB", " W ", " P ", 'B', ModItems.blades_desh, 'S', SA326.block(), 'W', ModItems.desh_pickaxe, 'P', ANY_PLASTIC.ingot() });
+			//CraftingManager.addRecipeAuto(new ItemStack(ModItems.schrabidium_axe, 1), new Object[] { "BS", "BW", " P", 'B', ModItems.blades_desh, 'S', SA326.block(), 'W', ModItems.desh_axe, 'P', ANY_PLASTIC.ingot() });
+			//CraftingManager.addRecipeAuto(new ItemStack(ModItems.schrabidium_shovel, 1), new Object[] { "B", "W", "P", 'B', SA326.block(), 'W', ModItems.desh_shovel, 'P', ANY_PLASTIC.ingot() });
+			//CraftingManager.addRecipeAuto(new ItemStack(ModItems.schrabidium_hoe, 1), new Object[] { "IW", " S", " S", 'I', SA326.ingot(), 'W', ModItems.desh_hoe, 'S', ANY_PLASTIC.ingot() });
 		}
 	}
 

@@ -220,16 +220,16 @@ public class TileEntityNukeCustom extends TileEntity implements ISidedInventory,
 		entries.put(new ComparableStack(ModItems.ingot_tungsten), new CustomNukeEntry(EnumBombType.DIRTY, 1F));
 		entries.put(new ComparableStack(ModItems.custom_dirty), new CustomNukeEntry(EnumBombType.DIRTY, 10F));
 
-		entries.put(new ComparableStack(ModItems.ingot_schrabidium), new CustomNukeEntry(EnumBombType.SCHRAB, 5F));
-		entries.put(new ComparableStack(ModBlocks.block_schrabidium), new CustomNukeEntry(EnumBombType.SCHRAB, 50F));
-		entries.put(new ComparableStack(ModItems.nugget_schrabidium), new CustomNukeEntry(EnumBombType.SCHRAB, 0.5F));
-		entries.put(new ComparableStack(ModItems.powder_schrabidium), new CustomNukeEntry(EnumBombType.SCHRAB, 5F));
-		entries.put(new ComparableStack(ModItems.cell_sas3), new CustomNukeEntry(EnumBombType.SCHRAB, 7.5F));
-		entries.put(new ComparableStack(ModItems.cell_anti_schrabidium), new CustomNukeEntry(EnumBombType.SCHRAB, 15F));
-		entries.put(new ComparableStack(ModItems.custom_schrab), new CustomNukeEntry(EnumBombType.SCHRAB, 15F));
+		//entries.put(new ComparableStack(ModItems.ingot_schrabidium), new CustomNukeEntry(EnumBombType.SCHRAB, 5F));
+		//entries.put(new ComparableStack(ModBlocks.block_schrabidium), new CustomNukeEntry(EnumBombType.SCHRAB, 50F));
+		//entries.put(new ComparableStack(ModItems.nugget_schrabidium), new CustomNukeEntry(EnumBombType.SCHRAB, 0.5F));
+		//entries.put(new ComparableStack(ModItems.powder_schrabidium), new CustomNukeEntry(EnumBombType.SCHRAB, 5F));
+		//entries.put(new ComparableStack(ModItems.cell_sas3), new CustomNukeEntry(EnumBombType.SCHRAB, 7.5F));
+		//entries.put(new ComparableStack(ModItems.cell_anti_schrabidium), new CustomNukeEntry(EnumBombType.SCHRAB, 15F));
+		//entries.put(new ComparableStack(ModItems.custom_schrab), new CustomNukeEntry(EnumBombType.SCHRAB, 15F));
 
-		entries.put(new ComparableStack(ModItems.nugget_euphemium), new CustomNukeEntry(EnumBombType.EUPH, 1F));
-		entries.put(new ComparableStack(ModItems.ingot_euphemium), new CustomNukeEntry(EnumBombType.EUPH, 1F));
+		//entries.put(new ComparableStack(ModItems.nugget_euphemium), new CustomNukeEntry(EnumBombType.EUPH, 1F));
+		//entries.put(new ComparableStack(ModItems.ingot_euphemium), new CustomNukeEntry(EnumBombType.EUPH, 1F));
 
 		entries.put(new ComparableStack(Items.redstone), new CustomNukeEntry(EnumBombType.TNT, 1.05F, EnumEntryType.MULT));
 		entries.put(new ComparableStack(Blocks.redstone_block), new CustomNukeEntry(EnumBombType.TNT, 1.5F, EnumEntryType.MULT));

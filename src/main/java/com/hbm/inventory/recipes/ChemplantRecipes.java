@@ -197,12 +197,12 @@ public class ChemplantRecipes extends SerializableRecipe {
 						//new OreDictStack(F.dust(), 3))
 				.inputFluids(new FluidStack(Fluids.FLUORINE, 600))
 				.outputFluids(new FluidStack(Fluids.PUF6, 900)));
-		recipes.add(new ChemRecipe(49, "SAS3", 200)
-				.inputItems(
-						new OreDictStack(SA326.dust()),
-						new OreDictStack(S.dust(), 2))
-				.inputFluids(new FluidStack(Fluids.PEROXIDE, 2000))
-				.outputFluids(new FluidStack(Fluids.SAS3, 1000)));
+		//recipes.add(new ChemRecipe(49, "SAS3", 200)
+		//		.inputItems(
+		//				new OreDictStack(SA326.dust()),
+		//				new OreDictStack(S.dust(), 2))
+		//		.inputFluids(new FluidStack(Fluids.PEROXIDE, 2000))
+		//		.outputFluids(new FluidStack(Fluids.SAS3, 1000)));
 		recipes.add(new ChemRecipe(53, "CORDITE", 40)
 				.inputItems(
 						new OreDictStack(KNO.dust(), 2),

@@ -1051,12 +1051,12 @@ public class HazardRegistry {
 					false
 				);
 
-				registerOtherFuel(
-					plate_fuel_sa326,
-					sa326 * ingot,
-					wst * ingot * 16F,
-					true
-				);
+				//registerOtherFuel(
+				//	plate_fuel_sa326,
+				//	sa326 * ingot,
+				//	wst * ingot * 16F,
+				//	true
+				//);
 
 		// Alpha-neutron RTG / source plates
 		registerOtherFuel(
@@ -1950,8 +1950,8 @@ public class HazardRegistry {
 		registerPWRFuel(EnumPWRFuel.HEP241, pu241 * billet * 2.4F);
 		registerPWRFuel(EnumPWRFuel.MEA, amrg * billet * 3.5F);
 		registerPWRFuel(EnumPWRFuel.HEA242, am242 * billet * 2.8F);
-		registerPWRFuel(EnumPWRFuel.HES326, sa326 * billet * 4.5F);
-		registerPWRFuel(EnumPWRFuel.HES327, sa327 * billet * 5.5F);
+		//registerPWRFuel(EnumPWRFuel.HES326, sa326 * billet * 4.5F);
+		//registerPWRFuel(EnumPWRFuel.HES327, sa327 * billet * 5.5F);
 		registerPWRFuel(EnumPWRFuel.BFB_AM_MIX, amrg * billet * 3.2F);
 		registerPWRFuel(EnumPWRFuel.BFB_PU241, pu241 * billet * 2.2F);
 

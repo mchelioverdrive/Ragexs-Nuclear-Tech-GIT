@@ -23,10 +23,10 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class BlockHazard extends Block implements ITooltipProvider {
-		
+
 	protected float rad = 0.0F;
 	private ExtDisplayEffect extEffect = null;
-	
+
 	private boolean beaconable = false;
 
 	public BlockHazard() {
@@ -36,7 +36,7 @@ public class BlockHazard extends Block implements ITooltipProvider {
 	public BlockHazard(Material mat) {
 		super(mat);
 	}
-	
+
 	public BlockHazard setDisplayEffect(ExtDisplayEffect extEffect) {
 		this.extEffect = extEffect;
 		return this;
@@ -45,28 +45,28 @@ public class BlockHazard extends Block implements ITooltipProvider {
 	@SideOnly(Side.CLIENT)
 	public void randomDisplayTick(World world, int x, int y, int z, Random rand) {
 		super.randomDisplayTick(world, x, y, z, rand);
-		
+
 		if(extEffect == null)
 			return;
-		
+
 		switch(extEffect) {
 		case RADFOG:
 		case SCHRAB:
 		case FLAMES:
 			sPart(world, x, y, z, rand);
 			break;
-			
+
 		case SPARKS:
 			break;
-			
+
 		case LAVAPOP:
 			world.spawnParticle("lava", x + rand.nextFloat(), y + 1.1F, z + rand.nextFloat(), 0.0D, 0.0D, 0.0D);
 			break;
-			
+
 		default: break;
 		}
 	}
-	
+
 	private void sPart(World world, int x, int y, int z, Random rand) {
 
 		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
@@ -137,14 +137,14 @@ public class BlockHazard extends Block implements ITooltipProvider {
 
 	public void onBlockAdded(World world, int x, int y, int z) {
 		super.onBlockAdded(world, x, y, z);
-		
+
 		// who wrote this???
 		rad = HazardSystem.getHazardLevelFromStack(new ItemStack(this), HazardRegistry.RADIATION) * 0.1F;
 
 		if(this.rad > 0)
 			world.scheduleBlockUpdate(x, y, z, this, this.tickRate(world));
 	}
-	
+
 	public static enum ExtDisplayEffect {
 		RADFOG,
 		SPARKS,
@@ -158,14 +158,14 @@ public class BlockHazard extends Block implements ITooltipProvider {
 
 	@Override
 	public EnumRarity getRarity(ItemStack stack) {
-		
-		if(this == ModBlocks.block_schraranium
-				|| this == ModBlocks.block_schraranium
-				|| this == ModBlocks.block_schrabidate
+
+		if(
+
+				this == ModBlocks.block_schrabidate
 				|| this == ModBlocks.block_solinium
 				|| this == ModBlocks.block_schrabidium_fuel)
 			return EnumRarity.rare;
-		
+
 		return EnumRarity.common;
 	}
 }
