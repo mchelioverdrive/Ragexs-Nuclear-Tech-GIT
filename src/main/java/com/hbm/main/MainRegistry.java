@@ -1052,6 +1052,7 @@ public class MainRegistry {
 		event.registerServerCommand(new CommandRadiation());
 		event.registerServerCommand(new CommandStations());
 		event.registerServerCommand(new CommandEnableNukes());
+		event.registerServerCommand(new CommandBedrockDrop());
 	}
 
 	@EventHandler
