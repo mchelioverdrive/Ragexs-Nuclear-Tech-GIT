@@ -65,6 +65,10 @@ public class BreederRecipes extends SerializableRecipe {
 		//CM247 -> BK247   (2000)
 		setRecipe(BreedingRodType.CM247, BreedingRodType.BK247, 2000);
 
+		//fermium from plutonium-239 or curium 244
+		setRecipe(BreedingRodType.PU239, BreedingRodType.FM255, 5000);
+		setRecipe(BreedingRodType.CM244, BreedingRodType.FM257, 5000);
+
 		//thulium normal into tm-170
 		//setRecipe(BreedingRodType.THULIUM, BreedingRodType.TM170, 200);
 

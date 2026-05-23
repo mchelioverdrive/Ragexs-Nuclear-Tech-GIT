@@ -19,6 +19,7 @@ public class ItemRTGPelletDepleted extends ItemEnumMulti {
 		CALIFORNIUM249,
 		CALIFORNIUM247,
 		CM248,
-		YB170;
+		YB170,
+		BK247;
 	}
 }

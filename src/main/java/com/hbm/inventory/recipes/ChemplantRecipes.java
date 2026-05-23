@@ -1624,6 +1624,113 @@ public class ChemplantRecipes extends SerializableRecipe {
 						)
 		);
 
+		recipes.add(new ChemRecipe(1098, "CERIUM_CRYSTAL", 400)
+						.inputItems(
+							new ComparableStack(ModItems.powder_cerium, 1),
+							new ComparableStack(ModBlocks.glass_quartz, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.WATER, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.cerium_crystal, 1)
+						)
+		);
+
+		//TWO FLUIDS AT A TIME BECAUSE BOB HATES GOD
+		//recipes.add(new ChemRecipe(1097, "EXCIMER_GASMIX", 400)
+		//				.inputFluids(
+		//					new FluidStack(Fluids.KRYPTON, 250),
+		//					new FluidStack(Fluids.XENON, 250),
+		//					new FluidStack(Fluids.FLUORINE, 250),
+		//					new FluidStack(Fluids.CHLORINE, 250)
+		//				)
+		//				.outputFluids(
+		//					new FluidStack(Fluids.EXCIMER_GASMIX, 1000)
+		//				)
+		//);
+
+		recipes.add(new ChemRecipe(1099, "EXCIMER_GASMIX1", 400)
+						.inputFluids(
+							new FluidStack(Fluids.KRYPTON, 500),
+							new FluidStack(Fluids.FLUORINE, 500)
+						)
+						.outputFluids(
+							new FluidStack(Fluids.KRYPTON_FLUORINE, 200)
+						)
+		);
+
+		recipes.add(new ChemRecipe(1100, "EXCIMER_GASMIX2", 400)
+						.inputFluids(
+							new FluidStack(Fluids.XENON, 500),
+							new FluidStack(Fluids.CHLORINE, 500)
+						)
+						.outputFluids(
+							new FluidStack(Fluids.XENON_CHLORINE, 200)
+						)
+		);
+		recipes.add(new ChemRecipe(1101, "EXCIMER_GASMIX3", 400)
+						.inputFluids(
+							new FluidStack(Fluids.XENON_CHLORINE, 500),
+							new FluidStack(Fluids.KRYPTON_FLUORINE, 500)
+						)
+						.outputFluids(
+							new FluidStack(Fluids.EXCIMER_GASMIX, 1000)
+						)
+		);
+
+		recipes.add(new ChemRecipe(1102, "CALCIUM_FLUORIDE_CRYSTAL", 400)
+						.inputItems(
+							new ComparableStack(ModItems.powder_calcium, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.calcium_fluoride_crystal, 1)
+						)
+		);
+
+		recipes.add(new ChemRecipe(1103, "KDP_CRYSTAL", 400)
+						.inputItems(
+							new ComparableStack(ModItems.potassium_powder, 1),
+							new ComparableStack(ModItems.ingot_phosphorus, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.WATER, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.KDP_crystal, 1)
+						)
+		);
+
+		recipes.add(new ChemRecipe(1104, "CLBO_CRYSTAL", 400)
+						.inputItems(
+							new ComparableStack(ModItems.powder_caesium, 1),
+							new ComparableStack(ModItems.lithium, 1),
+							new ComparableStack(ModItems.powder_boron, 2)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.WATER, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.CLBO_crystal, 1)
+						)
+		);
+
+		recipes.add(new ChemRecipe(1105, "LBO_CRYSTAL", 400)
+						.inputItems(
+							new ComparableStack(ModItems.lithium, 1),
+							new ComparableStack(ModItems.powder_boron, 3)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.WATER, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.LBO_crystal, 1)
+						)
+		);
+
 
 
 

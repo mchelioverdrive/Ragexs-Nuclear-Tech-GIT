@@ -533,7 +533,26 @@ public class CraftingManager {
 			'H', ModBlocks.glass_quartz,
 			//'I', ModItems.LBO_crystal //already in the VO Array??? Why use twice?
 		});
-		addRecipeAuto(new ItemStack(ModItems.laser_crystal_cmb, 1), new Object[] {"QBQ", "CSC", "QBQ", 'Q', ModBlocks.glass_quartz, 'B', CMB.ingot(), 'C', SBD.ingot(), 'S', ModItems.cell_anti_schrabidium });
+		addRecipeAuto(new ItemStack(ModItems.laser_crystal_cmb, 1), new Object[] { //ULTRA VIOLET LIGHT
+			"ABC",
+			"DEF",
+			"GH ",
+
+			// Direct UV / gain media
+			'A', ModItems.cerium_crystal,
+			'B', new ItemStack(ModItems.fluid_tank_full, 1, Fluids.EXCIMER_GASMIX.getID()),
+			'C', ModItems.calcium_fluoride_crystal,
+
+			// UV nonlinear optics
+			'D', ModItems.BBO_crystal,
+			'E', ModItems.KDP_crystal,
+			'F', ModItems.LBO_crystal,
+
+			// Advanced deep UV
+			'G', ModItems.CLBO_crystal,
+			'H', ModBlocks.glass_quartz,
+			//'I', ModItems.crystal_rare fuck no, did you mean visible optics array?
+		});
 		addRecipeAuto(new ItemStack(ModItems.laser_crystal_iron, 1), new Object[] {"QGQ", "CSC", "QGQ", 'Q', ModBlocks.glass_quartz, 'G', GAAS.ingot(), 'C', ModItems.crystal_iron, 'S', ModItems.cell_balefire});
 		//addRecipeAuto(new ItemStack(ModItems.laser_crystal_dnt, 1), new Object[] {"QDQ", "SBZ", "QDQ", 'Q', ModBlocks.glass_quartz, 'D', DNT.ingot(), 'B', ModItems.egg_balefire, 'S', ModItems.powder_spark_mix, 'Z', ModItems.powder_zinc });
 		//addRecipeAuto(new ItemStack(ModItems.laser_crystal_digamma, 1), new Object[] {"QUQ", "UEU", "QUQ", 'Q', ModBlocks.glass_quartz, 'U', ModItems.undefined, 'E', ModItems.ingot_electronium } );

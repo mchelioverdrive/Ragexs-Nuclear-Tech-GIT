@@ -177,15 +177,20 @@ public class HazardRegistry {
 	// CURIUM
 	// =====================================================================================
 
-	public static final float cm242 = 9.3F;      // fertile
-	public static final float cm243 = 5.6F;      // fissile
-	public static final float cm244 = 2.0F;      // fertile
-	public static final float cm245 = 0.8F;      // fissile
-	public static final float cm246 = 2.5F;      // fertile
-	public static final float cm247 = 0.2F;      // fissile
+	public static final float cm242 = 9.0F;      // fertile, ultra-short half-life, extremely active
+	public static final float cm243 = 2.8F;      // fissile, still very hot but much calmer than 242
+	public static final float cm244 = 4.5F;      // fertile, major neutron source, reactor-significant
+	public static final float cm245 = 0.9F;      // fissile, long-lived, lower specific activity
+	public static final float cm246 = 1.4F;      // fertile, moderate
+	public static final float cm247 = 0.12F;     // fissile, very long-lived, relatively quiet
+	public static final float cm248 = 0.25F;     // fertile, long-lived, relatively quiet
 
 	public static final float cmrg  = 6.0F;      // reactor-grade curium
 	public static final float cmf   = 2.2F;      // curium fuel
+
+	//fermium
+	public static final float fm255 = 12.0F;     // fermium-255, extremely hot, short half-life
+	public static final float fm257 = 8.0F;      // fermium-257, still very hot, but much longer half-life than 255
 
 
 	// =====================================================================================
@@ -203,6 +208,9 @@ public class HazardRegistry {
 
 	public static final float cf251 = 14.3F;
 	public static final float cf252 = 15.3F;
+	public static final float cf247 = 12.5F;
+	public static final float cf248 = 13.5F;
+	public static final float cf249 = 14.0F;
 
 	public static final float es253 = 18.3F;
 	public static final float es255 = 19.3F;
@@ -1433,8 +1441,13 @@ public class HazardRegistry {
 				registerRTGPellet(pellet_rtg_cf251, cf251 * rtg * 0.85F, 0);
 				registerRTGPellet(pellet_rtg_cf252, cf252 * rtg, 0);
 
+
+
 		// Berkelium experimental fuel
-				registerRTGPellet(rbmk_pellet_bk247, bk247 * rtg * 0.9F, 0);
+				registerRTGPellet(pellet_rtg_berkelium, bk247 * rtg * 0.9F, 0);
+
+				//tm170
+				registerRTGPellet(pellet_rtg_tm170, tm170 * rtg * 0.9F, 0);
 
 		// Depleted RTG remains
 				HazardSystem.register(
@@ -1444,6 +1457,43 @@ public class HazardRegistry {
 						DepletedRTGMaterial.NEPTUNIUM.ordinal()
 					),
 					makeData(RADIATION, np237 * rtg)
+				);
+
+				HazardSystem.register(
+					new ItemStack(
+						pellet_rtg_depleted,
+						1,
+						DepletedRTGMaterial.BK247.ordinal()
+					),
+					makeData(RADIATION, bk247 * rtg * 0.5F)
+
+				);
+
+				HazardSystem.register(
+					new ItemStack(
+						pellet_rtg_depleted,
+						1,
+						DepletedRTGMaterial.CM248.ordinal()
+					),
+					makeData(RADIATION, cm248 * rtg * 0.5F) //0.5?
+				);
+
+				HazardSystem.register(
+					new ItemStack(
+						pellet_rtg_depleted,
+						1,
+						DepletedRTGMaterial.SAMARIUM.ordinal()
+					),
+					makeData(RADIATION, Sm * rtg * 0.5F) //weak
+				);
+
+				HazardSystem.register(
+					new ItemStack(
+						pellet_rtg_depleted,
+						1,
+						DepletedRTGMaterial.CALIFORNIUM249.ordinal()
+					),
+					makeData(RADIATION, cf249 * rtg * 0.5F) //apparently 14
 				);
 
 
@@ -1549,6 +1599,8 @@ public class HazardRegistry {
 				registerBreedingRodRadiation(BreedingRodType.CM245, cm245); // fissile
 				registerBreedingRodRadiation(BreedingRodType.CM246, cm246); // fertile
 				registerBreedingRodRadiation(BreedingRodType.CM247, cm247); // fissile
+				registerBreedingRodRadiation(BreedingRodType.FM255, fm255);
+				registerBreedingRodRadiation(BreedingRodType.FM257, fm257);
 
 		// ======================================================
 		// HEAVY TRANSURANICS
@@ -1953,6 +2005,16 @@ public class HazardRegistry {
 		//mercury
 				HazardSystem.register(ingot_mercury, makeData().addEntry(ASBESTOS, hg * ingot * 0.8F).addEntry(BLINDING, 0.08F * ingot).addEntry(AUTISM, 0.5F * ingot).addEntry(COAL, 0.35F * ingot));
 				HazardSystem.register(nugget_mercury, makeData().addEntry(ASBESTOS, hg * nugget * 0.8F).addEntry(BLINDING, 0.08F * nugget).addEntry(AUTISM, 0.5F * nugget).addEntry(COAL, 0.35F * nugget));
+				//RTG
+		HazardSystem.register(
+			new ItemStack(
+				pellet_rtg_depleted,
+				1,
+				DepletedRTGMaterial.MERCURY.ordinal()
+			),
+			makeData(ASBESTOS, hg * rtg * 0.8F).addEntry(BLINDING, 0.08F * rtg).addEntry(AUTISM, 0.5F * rtg).addEntry(COAL, 0.35F * rtg)
+
+		);
 
 		//thallium
 				HazardSystem.register(ingot_thallium, makeData().addEntry(ASBESTOS, tl * ingot * 1.5F).addEntry(BLINDING, tl * ingot * 1.2F).addEntry(AUTISM, tl * ingot * 1.5F).addEntry(COAL, tl * ingot * 1.4F));

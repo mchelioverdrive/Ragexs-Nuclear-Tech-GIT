@@ -101,11 +101,11 @@ public class EntitySoyuz extends Entity {
 
 				ItemStack load = payload[0];
 
-				if(load.getItem() == ModItems.flame_pony) {
-					ExplosionLarge.spawnTracers(worldObj, posX, posY, posZ, 25);
-					//for(Object p : worldObj.playerEntities)
-						//((EntityPlayer)p).triggerAchievement(MainRegistry.achSpace);
-				}
+				//if(load.getItem() == ModItems.flame_pony) {
+				//	//ExplosionLarge.spawnTracers(worldObj, posX, posY, posZ, 25);
+				//	//for(Object p : worldObj.playerEntities)
+				//		//((EntityPlayer)p).triggerAchievement(MainRegistry.achSpace);
+				//}
 
 				//if(load.getItem() == ModItems.sat_foeq) {
 				//	for(Object p : worldObj.playerEntities)

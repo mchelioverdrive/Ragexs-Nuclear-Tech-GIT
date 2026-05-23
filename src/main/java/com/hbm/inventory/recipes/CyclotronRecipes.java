@@ -163,9 +163,23 @@ public class CyclotronRecipes extends SerializableRecipe {
 		//graphite is our stand in for carbon-12
 		makeRecipe(new ComparableStack(ModItems.nugget_cf249), new ComparableStack(ModItems.ingot_graphite), new ItemStack(ModItems.rutherfordium_nugget), 4);
 
-		//californium
-		makeRecipe(new ComparableStack(ModItems.ingot_cm247), new ComparableStack(ModItems.powder_uranium), new ItemStack(ModItems.nugget_cf249), 5);
-		//help I am losing my mind
+		// Cm-248 neutron activation -> Cf-249 (simplified breeder path)
+		makeRecipe(new ComparableStack(ModItems.ingot_cm247), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_cm248), 5);
+		makeRecipe(new ComparableStack(ModItems.ingot_cm248), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_cf249), 5);
+
+		// Californium breeding chain
+		makeRecipe(new ComparableStack(ModItems.nugget_cf249),
+				   new ComparableStack(ModItems.particle_neutron),
+				   new ItemStack(ModItems.nugget_cf250), 5);
+
+		makeRecipe(new ComparableStack(ModItems.nugget_cf250),
+				   new ComparableStack(ModItems.particle_neutron),
+				   new ItemStack(ModItems.nugget_cf251), 6);
+
+		makeRecipe(new ComparableStack(ModItems.nugget_cf251),
+				   new ComparableStack(ModItems.particle_neutron),
+				   new ItemStack(ModItems.nugget_cf252), 7);
+
 
 		//dubnium
 		//poison powder is made from nitrogen, so it's almost accurate. I'll add solid nitrogen later.
@@ -179,10 +193,13 @@ public class CyclotronRecipes extends SerializableRecipe {
 
 		//americium 241 from plutonium 241
 		//should be decay but thats pain
-		makeRecipe(new ComparableStack(ModItems.nugget_pu241), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_am241), 4);
+		makeRecipe(new ComparableStack(ModItems.nugget_pu241), new ComparableStack(Items.redstone), new ItemStack(ModItems.nugget_am241), 4);
 
 		//am 242 from am241
 		makeRecipe(new ComparableStack(ModItems.nugget_am241), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_am242), 4);
+
+		//Cf-252 + neutron -> Es-253
+		makeRecipe(new ComparableStack(ModItems.nugget_cf252), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_es253), 8);
 
 		//TODO gold -> more anti matter than all other reactions (the final number is antimatter fluid amount)
 

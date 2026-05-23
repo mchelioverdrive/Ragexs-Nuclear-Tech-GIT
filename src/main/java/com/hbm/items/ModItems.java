@@ -151,6 +151,7 @@ public class ModItems {
 	public static Item ingot_cf251;
 	public static Item cf_light_fraction; //used in silex to get cf-249
 	public static Item ingot_cf249;
+	public static Item ingot_cf248;
 	public static Item ingot_yb170;
 
 	public static Item ingot_es253;
@@ -356,12 +357,14 @@ public class ModItems {
 	public static Item billet_cm245;
 	public static Item billet_cm246;
 	public static Item billet_cm247;
+	public static Item billet_cm248;
 	public static Item billet_cn989;
 	public static Item billet_cm_fuel;
 	public static Item billet_cf252;
     public static Item billet_cf251;
 	public static Item ingot_cf252;
 	public static Item ingot_cf247;
+	public static Item ingot_cm248;
 	public static Item billet_cm_mix;
 	public static Item billet_es253;
 	public static Item billet_am_mix;
@@ -428,11 +431,13 @@ public class ModItems {
 	public static Item nugget_cm245;
 	public static Item nugget_cm246;
 	public static Item nugget_cm247;
+	public static Item nugget_cm248;
 	public static Item nugget_cn989;
 	public static Item nugget_cm_fuel;
     public static Item nugget_cf251;
 	public static Item nugget_cf252;
 	public static Item nugget_cf249;
+	public static Item nugget_cf248;
 	public static Item nugget_cf250;
 	public static Item nugget_cm_mix;
 	public static Item nugget_es253;
@@ -634,11 +639,15 @@ public class ModItems {
 	public static Item gem_rad;
 	public static Item gem_alexandrite;
 	public static Item titanium_sapphire_crystal;
+	public static Item cerium_crystal;
+	public static Item calcium_fluoride_crystal;
 	public static Item KTP_crystal;
 	public static Item lithium_niobate_crystal;
 	public static Item visible_optics_array;
 	public static Item visible_dopant_crystal;
 	public static Item BBO_crystal;
+	public static Item KDP_crystal;
+	public static Item CLBO_crystal;
 	public static Item LBO_crystal;
 
 	public static Item powder_lead;
@@ -2997,9 +3006,11 @@ public class ModItems {
 		ingot_cf251 = new Item().setUnlocalizedName("ingot_cf251").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID +":ingot_cf251");
 		ingot_cf252 = new Item().setUnlocalizedName("ingot_cf252").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_cf252");
 		ingot_cf247 = new Item().setUnlocalizedName("ingot_cf247").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_cf252");
+		ingot_cm248 = new Item().setUnlocalizedName("ingot_cm248").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_cm247");
 		cf_light_fraction = new Item().setUnlocalizedName("cf_light_fraction").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_cf252");
 		rubidium_ingot = new Item().setUnlocalizedName("rubidium_ingot").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_rubidium");
 		ingot_cf249 = new Item().setUnlocalizedName("ingot_cf249").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_cf252");
+		ingot_cf248 = new Item().setUnlocalizedName("ingot_cf248").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_cf252");
 		ingot_yb170 = new Item().setUnlocalizedName("ingot_yb170").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_titanium");
 
 
@@ -3138,6 +3149,7 @@ public class ModItems {
 		billet_cm245 = new Item().setUnlocalizedName("billet_cm245").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":billet_cm245");
 		billet_cm246 = new Item().setUnlocalizedName("billet_cm246").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":billet_cm246");
 		billet_cm247 = new Item().setUnlocalizedName("billet_cm247").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":billet_cm247");
+		billet_cm248 = new Item().setUnlocalizedName("billet_cm248").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":billet_cm247");
 		billet_cf252 = new Item().setUnlocalizedName("billet_cf252").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":billet_cf252");
 
 		ingot_gunmetal = new Item().setUnlocalizedName("ingot_gunmetal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_gunmetal");
@@ -3371,9 +3383,11 @@ public class ModItems {
 		nugget_cm245 = new Item().setUnlocalizedName("nugget_cm245").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_cm245");
 		nugget_cm246 = new Item().setUnlocalizedName("nugget_cm246").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_cm246");
 		nugget_cm247 = new Item().setUnlocalizedName("nugget_cm247").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_cm247");
+		nugget_cm248 = new Item().setUnlocalizedName("nugget_cm248").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_cm247");
 		nugget_cf251 = new Item().setUnlocalizedName("nugget_cf251").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID +":nugget_cf251");
 		nugget_cf252 = new Item().setUnlocalizedName("nugget_cf252").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_cf252");
 		nugget_cf249 = new Item().setUnlocalizedName("nugget_cf249").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_cf252");
+		nugget_cf248 = new Item().setUnlocalizedName("nugget_cf248").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_cf252");
 		nugget_cf250 = new Item().setUnlocalizedName("nugget_cf250").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_cf252");
 		nugget_cm_fuel = new Item().setUnlocalizedName("nugget_cm_fuel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_cm_fuel");
 		nugget_es253 = new Item().setUnlocalizedName("nugget_es253").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_es253");
@@ -3506,11 +3520,15 @@ public class ModItems {
 		gem_rad = new ItemCustomLore().setRarity(EnumRarity.uncommon).setUnlocalizedName("gem_rad").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":gem_rad");
 		gem_alexandrite = new ItemAlexandrite().setUnlocalizedName("gem_alexandrite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":gem_alexandrite");
 		titanium_sapphire_crystal = new ItemCustomLore().setUnlocalizedName("titanium_sapphire_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_titanium");
+		cerium_crystal = new ItemCustomLore().setUnlocalizedName("cerium_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_gold");
+		calcium_fluoride_crystal = new ItemCustomLore().setUnlocalizedName("calcium_fluoride_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_fluorite");
 		KTP_crystal = new Item().setUnlocalizedName("KTP_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_titanium");
 		lithium_niobate_crystal = new Item().setUnlocalizedName("lithium_niobate_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_titanium");
 		visible_optics_array = new Item().setUnlocalizedName("visible_optics_array").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_fluorite");
 		visible_dopant_crystal = new Item().setUnlocalizedName("visible_dopant_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_fluorite");
 		BBO_crystal = new Item().setUnlocalizedName("BBO_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_titanium");
+		KDP_crystal = new Item().setUnlocalizedName("KDP_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_titanium");
+		CLBO_crystal = new Item().setUnlocalizedName("CLBO_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_titanium");
 		LBO_crystal = new Item().setUnlocalizedName("LBO_crystal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_titanium");
 		crystal_nickel = new Item().setUnlocalizedName("crystal_nickel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_nickel");
 		crystal_niobium = new Item().setUnlocalizedName("crystal_niobium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_niobium");
@@ -3752,7 +3770,7 @@ public class ModItems {
 		ingot_gadolinium = new Item().setUnlocalizedName("ingot_gadolinium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_uranium");
 		europiumsol = new Item().setUnlocalizedName("europiumsol").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_fluorite");
 		ingot_praseodymium = new Item().setUnlocalizedName("ingot_praseodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_praseodymium");
-		nugget_praseodymium = new Item().setUnlocalizedName("nugget_praseodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_praseodymium");
+		nugget_praseodymium = new Item().setUnlocalizedName("nugget_praseodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_lead");
 		powder_praseodymium = new Item().setUnlocalizedName("powder_praseodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_praseodymium");
 		chunk_ore = new ItemEnumMulti(EnumChunkType.class, true, true).setUnlocalizedName("chunk_ore").setCreativeTab(MainRegistry.partsTab);
 
@@ -4129,7 +4147,7 @@ public class ModItems {
 		// Neutron-heavy exotic isotope
 		pellet_rtg_cf251 = new ItemRTGPellet(
 			11)
-			.setDecays(DepletedRTGMaterial.CALIFORNIUM247,
+			.setDecays(DepletedRTGMaterial.BK247, //skip cf-247 as it decays into bk-247 and I don't want to add more shit
 					   (long)(RTGUtil.getLifespan(898.0F, HalfLifeType.LONG, false) * 1.5))
 			.setUnlocalizedName("pellet_rtg_cf251")
 			.setCreativeTab(MainRegistry.controlTab)
@@ -6809,8 +6827,10 @@ public class ModItems {
 		GameRegistry.registerItem(ingot_cf251, ingot_cf251.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cf252, ingot_cf252.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cf247, ingot_cf247.getUnlocalizedName());
+		GameRegistry.registerItem(ingot_cm248, ingot_cm248.getUnlocalizedName());
 		GameRegistry.registerItem(cf_light_fraction, cf_light_fraction.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cf249, ingot_cf249.getUnlocalizedName());
+		GameRegistry.registerItem(ingot_cf248, ingot_cf248.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_yb170, ingot_yb170.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_es253, ingot_es253.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_es255, ingot_es255.getUnlocalizedName());
@@ -6994,6 +7014,7 @@ public class ModItems {
 		GameRegistry.registerItem(billet_cm245, billet_cm245.getUnlocalizedName());
 		GameRegistry.registerItem(billet_cm246, billet_cm246.getUnlocalizedName());
 		GameRegistry.registerItem(billet_cm247, billet_cm247.getUnlocalizedName());
+		GameRegistry.registerItem(billet_cm248, billet_cm248.getUnlocalizedName());
 		GameRegistry.registerItem(billet_cm_fuel, billet_cm_fuel.getUnlocalizedName());
 		GameRegistry.registerItem(billet_cm_mix, billet_cm_mix.getUnlocalizedName());
 		GameRegistry.registerItem(billet_cf251, billet_cf251.getUnlocalizedName());
@@ -7294,11 +7315,15 @@ public class ModItems {
 		GameRegistry.registerItem(gem_rad, gem_rad.getUnlocalizedName());
 		GameRegistry.registerItem(gem_alexandrite, gem_alexandrite.getUnlocalizedName());
 		GameRegistry.registerItem(titanium_sapphire_crystal, titanium_sapphire_crystal.getUnlocalizedName());
+		GameRegistry.registerItem(cerium_crystal, cerium_crystal.getUnlocalizedName());
+		GameRegistry.registerItem(calcium_fluoride_crystal, calcium_fluoride_crystal.getUnlocalizedName());
 		GameRegistry.registerItem(KTP_crystal, KTP_crystal.getUnlocalizedName());
 		GameRegistry.registerItem(lithium_niobate_crystal, lithium_niobate_crystal.getUnlocalizedName());
 		GameRegistry.registerItem(visible_optics_array, visible_optics_array.getUnlocalizedName());
 		GameRegistry.registerItem(visible_dopant_crystal, visible_dopant_crystal.getUnlocalizedName());
 		GameRegistry.registerItem(BBO_crystal, BBO_crystal.getUnlocalizedName());
+		GameRegistry.registerItem(KDP_crystal, KDP_crystal.getUnlocalizedName());
+		GameRegistry.registerItem(CLBO_crystal, CLBO_crystal.getUnlocalizedName());
 		GameRegistry.registerItem(LBO_crystal, LBO_crystal.getUnlocalizedName());
 		GameRegistry.registerItem(crystal_nickel, crystal_nickel.getUnlocalizedName()); //l like nickel, i dont care, fuck off
 		GameRegistry.registerItem(crystal_niobium, crystal_niobium.getUnlocalizedName()); // the true path to enlightenment is ignoring the little green circle
@@ -7501,10 +7526,12 @@ public class ModItems {
 		GameRegistry.registerItem(nugget_cm245, nugget_cm245.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_cm246, nugget_cm246.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_cm247, nugget_cm247.getUnlocalizedName());
+		GameRegistry.registerItem(nugget_cm248, nugget_cm248.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_cm_fuel, nugget_cm_fuel.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_cf251, nugget_cf251.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_cf252, nugget_cf252.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_cf249, nugget_cf249.getUnlocalizedName());
+		GameRegistry.registerItem(nugget_cf248, nugget_cf248.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_cf250, nugget_cf250.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_es253, nugget_es253.getUnlocalizedName());
 		GameRegistry.registerItem(nugget_cn989, nugget_cn989.getUnlocalizedName());

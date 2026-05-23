@@ -37,6 +37,8 @@ public class ItemBreedingRod extends ItemEnumMulti {
 		CM246,
 		CM247,
 		BK247,
-		AM242
+		AM242,
+		FM255,
+		FM257
 	}
 }

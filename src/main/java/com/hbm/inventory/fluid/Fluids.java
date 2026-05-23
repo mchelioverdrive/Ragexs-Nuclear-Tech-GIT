@@ -133,6 +133,7 @@ public class Fluids {
 	public static FluidType PLASMA_BF;
 	public static FluidType CARBONDIOXIDE;
 	public static FluidType CARBONDIOXIDE_NITROGEN_HELIUM;
+	public static FluidType EXCIMER_GASMIX;
 	public static FluidType HELIUM3;
 	public static FluidType OSMIRIDIUM_SOLUTION;				//osmiridium solution
 	public static FluidType ETHANOL;
@@ -276,6 +277,8 @@ public class Fluids {
 	public static FluidType IRIDIUM_SOLUTION;
 	public static FluidType GADOLINIUM;
 	public static FluidType NOBLE_GAS_MIX;
+	public static FluidType KRYPTON_FLUORINE;
+	public static FluidType XENON_CHLORINE;
 
 	public static final HashBiMap<String, FluidType> renameMapping = HashBiMap.create();
 
@@ -577,6 +580,9 @@ public class Fluids {
 		GADOLINIUM = new FluidType("GADOLINIUM", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS, new FT_Corrosive(20));
 		CARBONDIOXIDE_NITROGEN_HELIUM = new FluidType("CARBONDIOXIDE_NITROGEN_HELIUM", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(GASEOUS);
 		NITROGEN_HELIUM = new FluidType("NITROGEN_HELIUM", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(GASEOUS, NOCON);
+		EXCIMER_GASMIX = new FluidType("EXCIMER_GASMIX", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(GASEOUS);
+		KRYPTON_FLUORINE = new FluidType("KRYPTON_FLUORINE", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(GASEOUS, NOCON);
+		XENON_CHLORINE = new FluidType("XENON_CHLORINE", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(GASEOUS, NOCON);
 
 //I am getting really sick and tired of this retarded ass fluid system
 
@@ -842,6 +848,9 @@ public class Fluids {
 		metaOrder.add(GADOLINIUM);
 		metaOrder.add(CARBONDIOXIDE_NITROGEN_HELIUM);
 		metaOrder.add(NITROGEN_HELIUM);
+		metaOrder.add(EXCIMER_GASMIX);
+		metaOrder.add(KRYPTON_FLUORINE);
+		metaOrder.add(XENON_CHLORINE);
 
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!
