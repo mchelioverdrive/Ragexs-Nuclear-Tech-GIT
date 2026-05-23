@@ -20,6 +20,7 @@ import api.hbm.fluid.IFluidStandardTransceiver;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
+import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -193,6 +194,11 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 	public void tryDrill(int y) {
 		Block b = worldObj.getBlock(xCoord, y, zCoord);
 
+		if(b == Blocks.bedrock) {
+			this.indicator = 0;
+			return;
+		}
+
 		if(b.getExplosionResistance(null) < 1000) {
 			onDrill(y);
 			worldObj.setBlock(xCoord, y, zCoord, ModBlocks.oil_pipe);
@@ -224,7 +230,7 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 	}
 
 	public boolean canSuckBlock(Block b) {
-		return b == ModBlocks.ore_oil || b == ModBlocks.ore_oil_empty || b == ModBlocks.ore_gas || b == ModBlocks.ore_gas_empty || b == ModBlocks.ore_bedrock_oil;
+		return b == ModBlocks.ore_oil || b == ModBlocks.ore_oil_empty || b == ModBlocks.ore_gas || b == ModBlocks.ore_gas_empty || b == Blocks.bedrock;
 	}
 
 	protected HashSet<Tuple.Triplet<Integer, Integer, Integer>> trace = new HashSet();
@@ -243,7 +249,7 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 
 		Block b = worldObj.getBlock(x, y, z);
 
-		if(b == ModBlocks.ore_oil || b == ModBlocks.ore_bedrock_oil || b == ModBlocks.ore_gas) {
+		if(b == ModBlocks.ore_oil || b == Blocks.bedrock || b == ModBlocks.ore_gas) {
 			doSuck(x, y, z);
 			return true;
 		}
@@ -263,7 +269,7 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 	public void doSuck(int x, int y, int z) {
 		Block b = worldObj.getBlock(x, y, z);
 
-		if(b == ModBlocks.ore_oil || b == ModBlocks.ore_gas || b == ModBlocks.ore_bedrock_oil) {
+		if(b == ModBlocks.ore_oil || b == ModBlocks.ore_gas || b == Blocks.bedrock) {
 			onSuck(x, y, z);
 		}
 	}

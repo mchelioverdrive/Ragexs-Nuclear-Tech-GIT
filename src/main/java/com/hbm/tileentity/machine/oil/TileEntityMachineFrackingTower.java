@@ -24,6 +24,7 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
 import net.minecraft.inventory.Container;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
@@ -81,34 +82,34 @@ public class TileEntityMachineFrackingTower extends TileEntityOilDrillBase {
 	@Override
 	public boolean canPump() {
 		boolean b = this.tanks[2].getFill() >= solutionRequired;
-		
+
 		if(!b) {
 			this.indicator = 3;
 		}
-		
+
 		return b;
 	}
 
 	@Override
 	public boolean canSuckBlock(Block b) {
-		return super.canSuckBlock(b) || b == ModBlocks.ore_bedrock_oil;
+		return super.canSuckBlock(b) || b == Blocks.bedrock;
 	}
 
 	@Override
 	public void doSuck(int x, int y, int z) {
 		super.doSuck(x, y, z);
-		
-		if(worldObj.getBlock(x, y, z) == ModBlocks.ore_bedrock_oil) {
+
+		if(worldObj.getBlock(x, y, z) == Blocks.bedrock) {
 			onSuck(x, y, z);
 		}
 	}
 
 	@Override
 	public void onSuck(int x, int y, int z) {
-		
+
 		Block b = worldObj.getBlock(x, y, z);
 		int meta = worldObj.getBlockMetadata(x, y, z);
-		
+
 		int oil = 0;
 		int gas = 0;
 
@@ -118,7 +119,7 @@ public class TileEntityMachineFrackingTower extends TileEntityOilDrillBase {
 
 				oil = oilPerDunaDeposit;
 				gas = gasPerDepositMin + worldObj.rand.nextInt(gasPerDepositMax - gasPerDepositMin + 1);
-				
+
 				if(worldObj.rand.nextDouble() < DunadrainChance) {
 					worldObj.setBlock(x, y, z, ModBlocks.ore_oil_empty, meta, 3);
 				}
@@ -127,7 +128,7 @@ public class TileEntityMachineFrackingTower extends TileEntityOilDrillBase {
 
 				oil = oilPerDeposit;
 				gas = gasPerDepositMin + worldObj.rand.nextInt(gasPerDepositMax - gasPerDepositMin + 1);
-				
+
 				if(worldObj.rand.nextDouble() < drainChance) {
 					worldObj.setBlock(x, y, z, ModBlocks.ore_oil_empty, meta, 3);
 				}
@@ -136,23 +137,23 @@ public class TileEntityMachineFrackingTower extends TileEntityOilDrillBase {
 
 				oil = oilPerDeposit;
 				gas = gasPerDepositMin + worldObj.rand.nextInt(gasPerDepositMax - gasPerDepositMin + 1);
-				
+
 				if(worldObj.rand.nextDouble() < drainChance) {
 					worldObj.setBlock(x, y, z, ModBlocks.ore_oil_empty, meta, 3);
 				}
 			}
 		}
-		
-		if(b == ModBlocks.ore_bedrock_oil) {
+
+		if(b == Blocks.bedrock) {
 			oil = oilPerBedrockDepsoit;
 			gas = gasPerBedrockDepositMin + worldObj.rand.nextInt(gasPerBedrockDepositMax - gasPerBedrockDepositMin + 1);
 		}
-		
+
 		this.tanks[0].setFill(this.tanks[0].getFill() + oil);
 		if(this.tanks[0].getFill() > this.tanks[0].getMaxFill()) this.tanks[0].setFill(tanks[0].getMaxFill());
 		this.tanks[1].setFill(this.tanks[1].getFill() + gas);
 		if(this.tanks[1].getFill() > this.tanks[1].getMaxFill()) this.tanks[1].setFill(tanks[1].getMaxFill());
-		
+
 		this.tanks[2].setFill(tanks[2].getFill() - solutionRequired);
 
 		OilSpot.generateOilSpot(worldObj, xCoord, zCoord, destructionRange, 10, false);

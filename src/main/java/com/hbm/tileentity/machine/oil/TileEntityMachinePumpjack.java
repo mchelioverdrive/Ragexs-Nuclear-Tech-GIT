@@ -22,6 +22,7 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -174,7 +175,7 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 			}
         }
 
-		if(block == ModBlocks.ore_bedrock_oil) {
+		if(block == Blocks.bedrock) {
 			oil = oilPerBedrockDepsoit;
 			gas = gasPerBedrockDepositMin + worldObj.rand.nextInt(gasPerBedrockDepositMax - gasPerBedrockDepositMin + 1);
 		}
