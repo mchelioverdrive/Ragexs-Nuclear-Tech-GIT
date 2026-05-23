@@ -29,6 +29,10 @@ public class SmeltingRecipes {
 
 		// Oredict doesn't work for vanilla smelting :(
 
+		//yb-170 into normal ytterbium ingot (it changes the microcrystal structure or something idk realism lol)
+		//also you waited 192 years to get this item amazing
+		GameRegistry.addSmelting(ModItems.ingot_yb170, new ItemStack(ModItems.ingot_ytterbium), 1.0F);
+
 		//powder_molybdenite
 		GameRegistry.addSmelting(ModItems.powder_molybdenite, new ItemStack(ModItems.ingot_molybdenum), 1.0F);
 
