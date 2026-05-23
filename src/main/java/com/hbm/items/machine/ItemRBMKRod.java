@@ -24,12 +24,22 @@ public class ItemRBMKRod extends Item {
 	public double selfRate;					//self-inflicted flux from self-igniting fuels
 	public EnumBurnFunc function = EnumBurnFunc.LOG_TEN;
 	public EnumDepleteFunc depFunc = EnumDepleteFunc.GENTLE_SLOPE;
-	public double xGen = 0.5D;				//multiplier for xenon production
-	public double xBurn = 50D;				//divider for xenon burnup
+	public double xGen = 0.7D;			//multiplier for xenon production
+	public double xBurn = 120D;				//divider for xenon burnup
 	public double heat = 1D;				//heat produced per outFlux
 	public double yield;					//total potential inFlux the rod can take in its lifetime
 	public double meltingPoint = 1000D;		//the maximum heat of the rod's hull before shit hits the fan. the core can be as hot as it wants to be
 	public double diffusion = 0.02D;		//the speed at which the core heats the hull
+	//this needs to be modeled:
+	//U fuels     = moderate diffusion
+	//MOX         = worse diffusion
+	//Pu          = poor diffusion
+	//Thorium     = excellent diffusion
+	//U fuel      0.025
+	//MOX         0.018
+	//Pu          0.015
+	//U233        0.030
+	//Thorium     0.032
 	public NType nType = NType.SLOW;		//neutronType, the most efficient neutron type for fission
 	public NType rType = NType.FAST;		//releaseType, the type of neutrons released by this fuel
 
@@ -129,33 +139,100 @@ public class ItemRBMKRod extends Item {
 	 */
 	public double burn(World world, ItemStack stack, double inFlux) {
 
-		inFlux += selfRate;
+		// --------------------------------------------------
+		// 1. self-ignition / neutron source contribution
+		// --------------------------------------------------
+
+		double flux = inFlux + selfRate;
+
+		// --------------------------------------------------
+		// 2. xenon poisoning (RBMK realism)
+		// --------------------------------------------------
 
 		double xenon = getPoison(stack);
-		xenon -= xenonBurnFunc(inFlux);
 
-		inFlux *= (1D - getPoisonLevel(stack));
+		// xenon burns slower than vanilla HBM
+		xenon -= xenonBurnFunc(flux);
 
-		xenon += xenonGenFunc(inFlux);
+		if(xenon < 0D)
+			xenon = 0D;
 
-		if(xenon < 0D) xenon = 0D;
-		if(xenon > 100D) xenon = 100D;
+		// poison suppresses neutron multiplication
+		double poisonedFlux = flux * (1D - getPoisonLevel(stack));
+
+		// generate xenon after fission
+		xenon += xenonGenFunc(poisonedFlux);
+
+		// clamp poison
+		if(xenon > 100D)
+			xenon = 100D;
 
 		setPoison(stack, xenon);
 
-		double outFlux = reactivityFunc(inFlux, getEnrichment(stack)) * RBMKDials.getReactivityMod(world);
+		// --------------------------------------------------
+		// 3. RBMK positive void coefficient
+		// --------------------------------------------------
+
+		double hullHeat = getHullHeat(stack);
+		double voidCoeff = 1D;
+
+		// hotter coolant -> steam voids -> less neutron absorption
+		// only meaningful once temperatures rise
+		if(hullHeat > 250D) {
+
+			// gradual ramp
+			double voidRise = (hullHeat - 250D) / 1800D;
+
+			// cap so it doesn't become stupid
+			voidCoeff += Math.min(voidRise, 0.35D);
+		}
+
+		// --------------------------------------------------
+		// 4. fuel burnup / depletion
+		// --------------------------------------------------
+
+		double enrichment = getEnrichment(stack);
+
+		// base reactivity
+		double outFlux =
+			reactivityFunc(poisonedFlux, enrichment)
+				* voidCoeff
+				* RBMKDials.getReactivityMod(world);
+
+		// --------------------------------------------------
+		// 5. consume fuel
+		// --------------------------------------------------
 
 		double y = getYield(stack);
-		y -= inFlux;
 
-		if(y < 0D) y = 0D;
+		// burn proportional to actual neutron activity
+		y -= Math.max(poisonedFlux * 0.9D, 0.05D);
+
+		if(y < 0D)
+			y = 0D;
 
 		setYield(stack, y);
 
-		double coreHeat = this.getCoreHeat(stack);
-		coreHeat += outFlux * heat;
+		// --------------------------------------------------
+		// 6. core heat generation
+		// --------------------------------------------------
 
-		this.setCoreHeat(stack, rectify(coreHeat));
+		double coreHeat = getCoreHeat(stack);
+
+		// hotter rods become slightly less efficient
+		// helps self-stabilize without killing gameplay
+		double thermalPenalty = 1D;
+
+		if(coreHeat > 900D) {
+			thermalPenalty -= Math.min(
+				(coreHeat - 900D) / 5000D,
+				0.20D
+			);
+		}
+
+		coreHeat += (outFlux * heat) * thermalPenalty;
+
+		setCoreHeat(stack, rectify(coreHeat));
 
 		return outFlux;
 	}
