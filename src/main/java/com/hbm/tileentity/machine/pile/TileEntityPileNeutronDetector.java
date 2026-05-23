@@ -7,24 +7,59 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 
 public class TileEntityPileNeutronDetector extends TileEntity implements IPileNeutronReceiver {
-	
+
 	public int lastNeutrons;
 	public int neutrons;
 	public int maxNeutrons = 10;
-	
+	public int averagedNeutrons;
+	public int cooldown;
+
 	@Override
 	public void updateEntity() {
-		
+
 		if(!worldObj.isRemote) {
-			
-			//lastNeutrons is used to reduce the responsiveness of control rods; should cut down on sound/updates whilst keeping them still useful for automatic control.
-			//Even with it, the auto rods are *very* subject to triggering on and off rapidly - this is necessary, as rays in smaller piles aren't guarenteed to consistently flood all surrounding areas
-			if(this.neutrons >= this.maxNeutrons && (this.getBlockMetadata() & 8) > 0)
-				((BlockGraphiteNeutronDetector)worldObj.getBlock(xCoord, yCoord, zCoord)).triggerRods(worldObj, xCoord, yCoord, zCoord);
-			if(this.neutrons < this.maxNeutrons && this.lastNeutrons < this.maxNeutrons && (this.getBlockMetadata() & 8) == 0)
-				((BlockGraphiteNeutronDetector)worldObj.getBlock(xCoord, yCoord, zCoord)).triggerRods(worldObj, xCoord, yCoord, zCoord);
-			
-			this.lastNeutrons = this.neutrons;
+
+			// smooth detector readings (primitive instrumentation realism)
+			this.averagedNeutrons =
+				(int)(this.averagedNeutrons * 0.8D +
+					this.neutrons * 0.2D);
+
+			// rod movement delay
+			if(this.cooldown > 0)
+				this.cooldown--;
+
+			int insertThreshold = this.maxNeutrons;
+			int retractThreshold = this.maxNeutrons - 4;
+
+			boolean rodsInserted =
+				(this.getBlockMetadata() & 8) > 0;
+
+			// insert rods
+			if(this.averagedNeutrons >= insertThreshold
+				&& rodsInserted
+				&& this.cooldown <= 0) {
+
+				((BlockGraphiteNeutronDetector)
+					worldObj.getBlock(xCoord, yCoord, zCoord))
+					.triggerRods(worldObj, xCoord, yCoord, zCoord);
+
+				this.cooldown = 20;
+			}
+
+			// retract rods
+			if(this.averagedNeutrons <= retractThreshold
+				&& this.lastNeutrons <= retractThreshold
+				&& !rodsInserted
+				&& this.cooldown <= 0) {
+
+				((BlockGraphiteNeutronDetector)
+					worldObj.getBlock(xCoord, yCoord, zCoord))
+					.triggerRods(worldObj, xCoord, yCoord, zCoord);
+
+				this.cooldown = 20;
+			}
+
+			this.lastNeutrons = this.averagedNeutrons;
 			this.neutrons = 0;
 		}
 	}
@@ -33,16 +68,24 @@ public class TileEntityPileNeutronDetector extends TileEntity implements IPileNe
 	public void receiveNeutrons(int n) {
 		this.neutrons += n;
 	}
-	
+
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+
 		nbt.setInteger("maxNeutrons", this.maxNeutrons);
+		nbt.setInteger("avgNeutrons", this.averagedNeutrons);
+		nbt.setInteger("cooldown", this.cooldown);
 	}
-	
+
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+
 		this.maxNeutrons = nbt.getInteger("maxNeutrons");
+		this.averagedNeutrons =
+			nbt.getInteger("avgNeutrons");
+		this.cooldown =
+			nbt.getInteger("cooldown");
 	}
 }
