@@ -4732,311 +4732,504 @@ public class ModItems {
 
 		rbmk_fuel_empty = new Item().setUnlocalizedName("rbmk_fuel_empty").setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":rbmk_fuel_empty");
 		rbmk_fuel_ueu = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_ueu)
-				.setYield(100000000D)
-				.setStats(15)
-				.setFunction(EnumBurnFunc.LOG_TEN)
-				.setDepletionFunction(EnumDepleteFunc.RAISING_SLOPE)
-				.setHeat(0.65) //0.5 is too much of a nerf in heat; pu239 buildup justifies it being on par with MEU ig
-				.setMeltingPoint(2865)
-				.setUnlocalizedName("rbmk_fuel_ueu").setTextureName(RefStrings.MODID + ":rbmk_fuel_ueu");
+			.setYield(115000000D)
+			.setStats(18)
+			.setFunction(EnumBurnFunc.PLATEU)
+			.setDepletionFunction(EnumDepleteFunc.RAISING_SLOPE)
+			.setXenon(0.75D, 120D)
+			.setHeat(0.60D)
+			.setDiffusion(0.028D)
+			.setMeltingPoint(2865)
+			.setUnlocalizedName("rbmk_fuel_ueu")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_ueu");
+
 		rbmk_fuel_meu = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_meu)
-				.setYield(100000000D)
-				.setStats(20)
-				.setFunction(EnumBurnFunc.LOG_TEN)
-				.setDepletionFunction(EnumDepleteFunc.RAISING_SLOPE)
-				.setHeat(0.65) //0.75 was a bit too much...
-				.setMeltingPoint(2865)
-				.setUnlocalizedName("rbmk_fuel_meu").setTextureName(RefStrings.MODID + ":rbmk_fuel_meu");
+			.setYield(105000000D)
+			.setStats(22)
+			.setFunction(EnumBurnFunc.PLATEU)
+			.setDepletionFunction(EnumDepleteFunc.RAISING_SLOPE)
+			.setXenon(0.80D, 115D)
+			.setHeat(0.68D)
+			.setDiffusion(0.026D)
+			.setMeltingPoint(2865)
+			.setUnlocalizedName("rbmk_fuel_meu")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_meu");
+
 		rbmk_fuel_heu233 = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_heu233)
-				.setYield(100000000D)
-				.setStats(27.5D)
-				.setFunction(EnumBurnFunc.LINEAR)
-				.setHeat(1.25D)
-				.setMeltingPoint(2865)
-				.setUnlocalizedName("rbmk_fuel_heu233").setTextureName(RefStrings.MODID + ":rbmk_fuel_heu233");
+			.setYield(95000000D)
+			.setStats(30D)
+			.setFunction(EnumBurnFunc.PLATEU)
+			.setDepletionFunction(EnumDepleteFunc.GENTLE_SLOPE)
+			.setXenon(0.65D, 140D)
+			.setHeat(0.95D)
+			.setDiffusion(0.032D)
+			.setMeltingPoint(2865)
+			.setUnlocalizedName("rbmk_fuel_heu233")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_heu233");
+
 		rbmk_fuel_heu235 = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_heu235)
-				.setYield(100000000D)
-				.setStats(50) //Consistency with HEN; its critical mass is too high to justify a linear function
-				.setFunction(EnumBurnFunc.SQUARE_ROOT)
-				.setMeltingPoint(2865)
-				.setUnlocalizedName("rbmk_fuel_heu235").setTextureName(RefStrings.MODID + ":rbmk_fuel_heu235");
+			.setYield(90000000D)
+			.setStats(28D)
+			.setFunction(EnumBurnFunc.PLATEU)
+			.setDepletionFunction(EnumDepleteFunc.GENTLE_SLOPE)
+			.setXenon(0.70D, 125D)
+			.setHeat(0.90D)
+			.setDiffusion(0.027D)
+			.setMeltingPoint(2865)
+			.setUnlocalizedName("rbmk_fuel_heu235")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_heu235");
+
 		rbmk_fuel_thmeu = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_thmeu)
-				.setYield(100000000D)
-				.setStats(20)
-				.setFunction(EnumBurnFunc.PLATEU)
-				.setDepletionFunction(EnumDepleteFunc.BOOSTED_SLOPE)
-				.setHeat(0.65D) //Consistency with MEU
-				.setMeltingPoint(3350)
-				.setUnlocalizedName("rbmk_fuel_thmeu").setTextureName(RefStrings.MODID + ":rbmk_fuel_thmeu");
+			.setYield(120000000D)
+			.setStats(20D)
+			.setFunction(EnumBurnFunc.PLATEU)
+			.setDepletionFunction(EnumDepleteFunc.BOOSTED_SLOPE)
+			.setXenon(0.55D, 160D)
+			.setHeat(0.62D)
+			.setDiffusion(0.035D)
+			.setMeltingPoint(3350)
+			.setUnlocalizedName("rbmk_fuel_thmeu")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_thmeu");
+
 		rbmk_fuel_lep = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_lep)
-				.setYield(100000000D)
-				.setStats(35)
-				.setFunction(EnumBurnFunc.LOG_TEN)
-				.setDepletionFunction(EnumDepleteFunc.RAISING_SLOPE)
-				.setHeat(0.75D)
-				.setMeltingPoint(2744)
-				.setUnlocalizedName("rbmk_fuel_lep").setTextureName(RefStrings.MODID + ":rbmk_fuel_lep");
+			.setYield(85000000D)
+			.setStats(26D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.RAISING_SLOPE)
+			.setXenon(0.90D, 100D)
+			.setHeat(1.05D)
+			.setDiffusion(0.020D)
+			.setMeltingPoint(2744)
+			.setUnlocalizedName("rbmk_fuel_lep")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_lep");
+
 		rbmk_fuel_mep = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_mep)
-				.setYield(100000000D)
-				.setStats(35)
-				.setFunction(EnumBurnFunc.SQUARE_ROOT)
-				.setMeltingPoint(2744)
-				.setUnlocalizedName("rbmk_fuel_mep").setTextureName(RefStrings.MODID + ":rbmk_fuel_mep");
+			.setYield(78000000D)
+			.setStats(30D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.RAISING_SLOPE)
+			.setXenon(0.95D, 95D)
+			.setHeat(1.15D)
+			.setDiffusion(0.018D)
+			.setMeltingPoint(2744)
+			.setUnlocalizedName("rbmk_fuel_mep")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_mep");
+
 		rbmk_fuel_hep239 = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_hep239)
-				.setYield(100000000D)
-				.setStats(30)
-				.setFunction(EnumBurnFunc.LINEAR)
-				.setHeat(1.25D)
-				.setMeltingPoint(2744)
-				.setUnlocalizedName("rbmk_fuel_hep").setTextureName(RefStrings.MODID + ":rbmk_fuel_hep");
+			.setYield(70000000D)
+			.setStats(34D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.GENTLE_SLOPE)
+			.setXenon(1.0D, 90D)
+			.setHeat(1.25D)
+			.setDiffusion(0.015D)
+			.setMeltingPoint(2744)
+			.setUnlocalizedName("rbmk_fuel_hep")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_hep");
 		rbmk_fuel_hep241 = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_hep241)
-				.setYield(100000000D)
-				.setStats(40)
-				.setFunction(EnumBurnFunc.LINEAR)
-				.setHeat(1.75D)
-				.setMeltingPoint(2744)
-				.setUnlocalizedName("rbmk_fuel_hep241").setTextureName(RefStrings.MODID + ":rbmk_fuel_hep241");
+			.setYield(65000000D)
+			.setStats(36D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.RAISING_SLOPE)
+			.setXenon(1.10D, 85D)
+			.setHeat(1.35D)
+			.setDiffusion(0.014D)
+			.setMeltingPoint(2744)
+			.setUnlocalizedName("rbmk_fuel_hep241")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_hep241");
+
 		rbmk_fuel_lea = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_lea)
-				.setYield(100000000D)
-				.setStats(60, 10)
-				.setFunction(EnumBurnFunc.SQUARE_ROOT)
-				.setDepletionFunction(EnumDepleteFunc.RAISING_SLOPE)
-				.setHeat(1.5D)
-				.setMeltingPoint(2386)
-				.setUnlocalizedName("rbmk_fuel_lea").setTextureName(RefStrings.MODID + ":rbmk_fuel_lea");
+			.setYield(85000000D)
+			.setStats(28D, 5D)
+			.setFunction(EnumBurnFunc.PLATEU)
+			.setDepletionFunction(EnumDepleteFunc.RAISING_SLOPE)
+			.setXenon(1.00D, 95D)
+			.setHeat(1.15D)
+			.setDiffusion(0.018D)
+			.setMeltingPoint(2386)
+			.setUnlocalizedName("rbmk_fuel_lea")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_lea");
+
 		rbmk_fuel_mea = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_mea)
-				.setYield(100000000D)
-				.setStats(35D, 20)
-				.setFunction(EnumBurnFunc.ARCH)
-				.setHeat(1.75D)
-				.setMeltingPoint(2386)
-				.setUnlocalizedName("rbmk_fuel_mea").setTextureName(RefStrings.MODID + ":rbmk_fuel_mea");
+			.setYield(70000000D)
+			.setStats(34D, 10D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.GENTLE_SLOPE)
+			.setXenon(1.15D, 85D)
+			.setHeat(1.40D)
+			.setDiffusion(0.014D)
+			.setMeltingPoint(2386)
+			.setUnlocalizedName("rbmk_fuel_mea")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_mea");
+
 		rbmk_fuel_hea241 = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_hea241)
-				.setYield(100000000D)
-				.setStats(65, 15)
-				.setFunction(EnumBurnFunc.SQUARE_ROOT)
-				.setHeat(1.85D)
-				.setMeltingPoint(2386)
-				.setNeutronTypes(NType.FAST, NType.FAST)
-				.setUnlocalizedName("rbmk_fuel_hea241").setTextureName(RefStrings.MODID + ":rbmk_fuel_hea241");
+			.setYield(60000000D)
+			.setStats(38D, 12D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.GENTLE_SLOPE)
+			.setXenon(1.20D, 80D)
+			.setHeat(1.55D)
+			.setDiffusion(0.012D)
+			.setMeltingPoint(2386)
+			.setNeutronTypes(NType.FAST, NType.FAST)
+			.setUnlocalizedName("rbmk_fuel_hea241")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_hea241");
+
 		rbmk_fuel_hea242 = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_hea242)
-				.setYield(100000000D)
-				.setStats(45)
-				.setFunction(EnumBurnFunc.LINEAR)
-				.setHeat(2D)
-				.setMeltingPoint(2386)
-				.setUnlocalizedName("rbmk_fuel_hea242").setTextureName(RefStrings.MODID + ":rbmk_fuel_hea242");
+			.setYield(50000000D)
+			.setStats(42D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.GENTLE_SLOPE)
+			.setXenon(1.30D, 75D)
+			.setHeat(1.75D)
+			.setDiffusion(0.010D)
+			.setMeltingPoint(2386)
+			.setUnlocalizedName("rbmk_fuel_hea242")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_hea242");
+
 		rbmk_fuel_bk247 = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_bk247)
-				.setYield(100000000D)
-				.setStats(50)
-				.setFunction(EnumBurnFunc.LINEAR)
-				.setHeat(2D)
-				.setMeltingPoint(2993)
-				.setUnlocalizedName("rbmk_fuel_bk247").setTextureName(RefStrings.MODID + ":rbmk_fuel_bk247");
+			.setYield(40000000D)
+			.setStats(46D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.CF_SLOPE)
+			.setXenon(1.35D, 70D)
+			.setHeat(1.95D)
+			.setDiffusion(0.009D)
+			.setMeltingPoint(2993)
+			.setUnlocalizedName("rbmk_fuel_bk247")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_bk247");
+		// Medium Enriched Neptunium (assumed Np fuel)
 		rbmk_fuel_men = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_men)
-				.setYield(100000000D)
-				.setStats(30)
-				.setFunction(EnumBurnFunc.SQUARE_ROOT)
-				.setDepletionFunction(EnumDepleteFunc.RAISING_SLOPE)
-				.setHeat(0.75)
-				.setMeltingPoint(2800)
-				.setNeutronTypes(NType.ANY, NType.FAST) //Build-up of Pu-239 leads to both speeds of neutrons grooving
-				.setUnlocalizedName("rbmk_fuel_men").setTextureName(RefStrings.MODID + ":rbmk_fuel_men");
+			.setYield(70000000D)
+			.setStats(28D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.RAISING_SLOPE)
+			.setXenon(1.05D, 90D)
+			.setHeat(1.00D)
+			.setDiffusion(0.018D)
+			.setMeltingPoint(2800)
+			.setNeutronTypes(NType.ANY, NType.FAST) // Pu-239 build-up broadens neutron behavior
+			.setUnlocalizedName("rbmk_fuel_men")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_men");
+
+		// High Enriched Neptunium (assumed Np fuel)
 		rbmk_fuel_hen = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_hen)
-				.setYield(100000000D)
-				.setStats(40)
-				.setFunction(EnumBurnFunc.SQUARE_ROOT)
-				.setMeltingPoint(2800)
-				.setNeutronTypes(NType.FAST, NType.FAST)
-				.setUnlocalizedName("rbmk_fuel_hen").setTextureName(RefStrings.MODID + ":rbmk_fuel_hen");
+			.setYield(55000000D)
+			.setStats(34D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.GENTLE_SLOPE)
+			.setXenon(1.15D, 80D)
+			.setHeat(1.20D)
+			.setDiffusion(0.014D)
+			.setMeltingPoint(2800)
+			.setNeutronTypes(NType.FAST, NType.FAST)
+			.setUnlocalizedName("rbmk_fuel_hen")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_hen");
+
+		// Mixed Oxide Fuel (U/Pu mix)
 		rbmk_fuel_mox = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_mox)
-				.setYield(100000000D)
-				.setStats(40)
-				.setFunction(EnumBurnFunc.LOG_TEN)
-				.setDepletionFunction(EnumDepleteFunc.RAISING_SLOPE)
-				.setMeltingPoint(2815)
-				.setUnlocalizedName("rbmk_fuel_mox").setTextureName(RefStrings.MODID + ":rbmk_fuel_mox");
+			.setYield(85000000D)
+			.setStats(30D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.RAISING_SLOPE)
+			.setXenon(0.95D, 100D)
+			.setHeat(0.90D)
+			.setDiffusion(0.020D)
+			.setMeltingPoint(2815)
+			.setUnlocalizedName("rbmk_fuel_mox")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_mox");
+
+		// Lesser Enriched Schrabidium (legacy Bobcat/HBM material)
+		// TODO realism pass intentionally skipped - fictional material
 		rbmk_fuel_les = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_les)
-				.setYield(100000000D)
-				.setStats(50)
-				.setFunction(EnumBurnFunc.SQUARE_ROOT)
-				.setHeat(1.25D)
-				.setMeltingPoint(2500)
-				.setNeutronTypes(NType.SLOW, NType.SLOW) //Beryllium Moderation
-				.setUnlocalizedName("rbmk_fuel_les").setTextureName(RefStrings.MODID + ":rbmk_fuel_les");
+			.setYield(100000000D)
+			.setStats(50)
+			.setFunction(EnumBurnFunc.SQUARE_ROOT)
+			.setHeat(1.25D)
+			.setMeltingPoint(2500)
+			.setNeutronTypes(NType.SLOW, NType.SLOW)
+			.setUnlocalizedName("rbmk_fuel_les")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_les");
+
+		// Medium Enriched Schrabidium (legacy Bobcat/HBM material)
+		// TODO realism pass intentionally skipped - fictional material
 		rbmk_fuel_mes = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_mes)
-				.setYield(100000000D)
-				.setStats(75D)
-				.setFunction(EnumBurnFunc.ARCH)
-				.setHeat(1.5D)
-				.setMeltingPoint(2750)
-				.setUnlocalizedName("rbmk_fuel_mes").setTextureName(RefStrings.MODID + ":rbmk_fuel_mes");
+			.setYield(100000000D)
+			.setStats(75D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setHeat(1.5D)
+			.setMeltingPoint(2750)
+			.setUnlocalizedName("rbmk_fuel_mes")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_mes");
+
+		// High Enriched Schrabidium (legacy Bobcat/HBM material)
+		// TODO realism pass intentionally skipped - fictional material
 		rbmk_fuel_hes = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_hes)
-				.setYield(100000000D)
-				.setStats(90)
-				.setFunction(EnumBurnFunc.LINEAR)
-				.setDepletionFunction(EnumDepleteFunc.LINEAR)
-				.setHeat(1.75D)
-				.setMeltingPoint(3000)
-				.setUnlocalizedName("rbmk_fuel_hes").setTextureName(RefStrings.MODID + ":rbmk_fuel_hes");
+			.setYield(100000000D)
+			.setStats(90)
+			.setFunction(EnumBurnFunc.LINEAR)
+			.setDepletionFunction(EnumDepleteFunc.LINEAR)
+			.setHeat(1.75D)
+			.setMeltingPoint(3000)
+			.setUnlocalizedName("rbmk_fuel_hes")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_hes");
+		// austrailium bullshit (IGNORE FOR REALISM)
 		rbmk_fuel_leaus = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_leaus)
-				.setYield(100000000D)
-				.setStats(30)
-				.setFunction(EnumBurnFunc.SIGMOID)
-				.setDepletionFunction(EnumDepleteFunc.LINEAR)
-				.setXenon(0.05D, 50D)
-				.setHeat(1.5D)
-				.setMeltingPoint(7029).setUnlocalizedName("rbmk_fuel_leaus").setTextureName(RefStrings.MODID + ":rbmk_fuel_leaus");
+			.setYield(100000000D)
+			.setStats(30)
+			.setFunction(EnumBurnFunc.SIGMOID)
+			.setDepletionFunction(EnumDepleteFunc.LINEAR)
+			.setXenon(0.05D, 50D)
+			.setHeat(1.5D)
+			.setMeltingPoint(7029)
+			.setUnlocalizedName("rbmk_fuel_leaus")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_leaus");
+
 		rbmk_fuel_heaus = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_heaus)
-				.setYield(100000000D)
-				.setStats(35)
-				.setFunction(EnumBurnFunc.SQUARE_ROOT)
-				.setXenon(0.05D, 50D)
-				.setHeat(2D)
-				.setMeltingPoint(5211).setUnlocalizedName("rbmk_fuel_heaus").setTextureName(RefStrings.MODID + ":rbmk_fuel_heaus");
+			.setYield(100000000D)
+			.setStats(35)
+			.setFunction(EnumBurnFunc.SQUARE_ROOT)
+			.setXenon(0.05D, 50D)
+			.setHeat(2D)
+			.setMeltingPoint(5211)
+			.setUnlocalizedName("rbmk_fuel_heaus")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_heaus");
+
+
+		// Polonium-Beryllium neutron source
+		// realistic: very strong neutron source, short-lived, startup fuel
 		rbmk_fuel_po210be = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_po210be)
-				.setYield(25000000D)
-				.setStats(0D, 50)
-				.setFunction(EnumBurnFunc.PASSIVE)
-				.setDepletionFunction(EnumDepleteFunc.LINEAR)
-				.setXenon(0.0D, 50D)
-				.setHeat(0.1D)
-				.setDiffusion(0.05D)
-				.setMeltingPoint(1287)
-				.setNeutronTypes(NType.SLOW, NType.SLOW) //Beryllium Moderation
-				.setUnlocalizedName("rbmk_fuel_po210be").setTextureName(RefStrings.MODID + ":rbmk_fuel_po210be");
+			.setYield(10000000D)
+			.setStats(0D, 65D)
+			.setFunction(EnumBurnFunc.PASSIVE)
+			.setDepletionFunction(EnumDepleteFunc.LINEAR)
+			.setXenon(0.0D, 999D)
+			.setHeat(0.25D)
+			.setDiffusion(0.030D)
+			.setMeltingPoint(1287)
+			.setNeutronTypes(NType.SLOW, NType.SLOW) // Be moderation
+			.setUnlocalizedName("rbmk_fuel_po210be")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_po210be");
+
+
+		// Radium-Beryllium neutron source
+		// weaker than Po-Be but very long-lived
 		rbmk_fuel_ra226be = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_ra226be)
-				.setYield(100000000D)
-				.setStats(0D, 20)
-				.setFunction(EnumBurnFunc.PASSIVE)
-				.setDepletionFunction(EnumDepleteFunc.LINEAR)
-				.setXenon(0.0D, 50D)
-				.setHeat(0.035D)
-				.setDiffusion(0.5D)
-				.setMeltingPoint(700)
-				.setNeutronTypes(NType.SLOW, NType.SLOW) //Beryllium Moderation
-				.setUnlocalizedName("rbmk_fuel_ra226be").setTextureName(RefStrings.MODID + ":rbmk_fuel_ra226be");
+			.setYield(300000000D)
+			.setStats(0D, 12D)
+			.setFunction(EnumBurnFunc.PASSIVE)
+			.setDepletionFunction(EnumDepleteFunc.LINEAR)
+			.setXenon(0.0D, 999D)
+			.setHeat(0.05D)
+			.setDiffusion(0.080D)
+			.setMeltingPoint(700)
+			.setNeutronTypes(NType.SLOW, NType.SLOW) // Be moderation
+			.setUnlocalizedName("rbmk_fuel_ra226be")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_ra226be");
+
+
+		// Pu-238 + Be neutron source
+		// hotter, stronger, semi-self sustaining but not real fissile reactor fuel
 		rbmk_fuel_pu238be = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_pu238be)
-				.setYield(50000000D)
-				.setStats(40, 40)
-				.setFunction(EnumBurnFunc.SQUARE_ROOT)
-				.setHeat(0.1D)
-				.setDiffusion(0.05D)
-				.setMeltingPoint(1287)
-				.setNeutronTypes(NType.SLOW, NType.SLOW) //Beryllium Moderation
-				.setUnlocalizedName("rbmk_fuel_pu238be").setTextureName(RefStrings.MODID + ":rbmk_fuel_pu238be");
+			.setYield(40000000D)
+			.setStats(8D, 45D)
+			.setFunction(EnumBurnFunc.PLATEU)
+			.setDepletionFunction(EnumDepleteFunc.GENTLE_SLOPE)
+			.setXenon(0.0D, 999D)
+			.setHeat(0.40D)
+			.setDiffusion(0.025D)
+			.setMeltingPoint(1287)
+			.setNeutronTypes(NType.SLOW, NType.SLOW) // Be moderation
+			.setUnlocalizedName("rbmk_fuel_pu238be")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_pu238be");
+
+
+		// Balefire Gold (legacy HBM/Bobcat material)
+		// TODO realism pass intentionally skipped - fictional material
 		rbmk_fuel_balefire_gold = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_balefire_gold)
-				.setYield(100000000D)
-				.setStats(50, 10)
-				.setFunction(EnumBurnFunc.ARCH)
-				.setDepletionFunction(EnumDepleteFunc.LINEAR)
-				.setXenon(0.0D, 50D)
-				.setMeltingPoint(2000)
-				.setUnlocalizedName("rbmk_fuel_balefire_gold").setTextureName(RefStrings.MODID + ":rbmk_fuel_balefire_gold");
+			.setYield(100000000D)
+			.setStats(50, 10)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.LINEAR)
+			.setXenon(0.0D, 50D)
+			.setMeltingPoint(2000)
+			.setUnlocalizedName("rbmk_fuel_balefire_gold")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_balefire_gold");
+
+
+		// Flashlead (legacy HBM/Bobcat material)
+		// TODO realism pass intentionally skipped - fictional material
 		rbmk_fuel_flashlead = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_flashlead)
-				.setYield(250000000D)
-				.setStats(40, 50)
-				.setFunction(EnumBurnFunc.ARCH)
-				.setDepletionFunction(EnumDepleteFunc.LINEAR)
-				.setXenon(0.0D, 50D)
-				.setMeltingPoint(2050)
-				.setUnlocalizedName("rbmk_fuel_flashlead").setTextureName(RefStrings.MODID + ":rbmk_fuel_flashlead");
+			.setYield(250000000D)
+			.setStats(40, 50)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.LINEAR)
+			.setXenon(0.0D, 50D)
+			.setMeltingPoint(2050)
+			.setUnlocalizedName("rbmk_fuel_flashlead")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_flashlead");
+		// Balefire (legacy HBM/Bobcat material)
+		// TODO realism pass intentionally skipped - fictional material
 		rbmk_fuel_balefire = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_balefire)
-				.setYield(100000000D)
-				.setStats(100, 35)
-				.setFunction(EnumBurnFunc.LINEAR)
-				.setXenon(0.0D, 50D)
-				.setHeat(3D)
-				.setMeltingPoint(3652)
-				.setUnlocalizedName("rbmk_fuel_balefire").setTextureName(RefStrings.MODID + ":rbmk_fuel_balefire");
+			.setYield(100000000D)
+			.setStats(100, 35)
+			.setFunction(EnumBurnFunc.LINEAR)
+			.setXenon(0.0D, 50D)
+			.setHeat(3D)
+			.setMeltingPoint(3652)
+			.setUnlocalizedName("rbmk_fuel_balefire")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_balefire");
+
+
+		// Zirconium Fast Breeder Bismuth fuel
+		// assumed breeder blanket / transmutation support fuel
 		rbmk_fuel_zfb_bismuth = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_zfb_bismuth)
-				.setYield(50000000D)
-				.setStats(20)
-				.setFunction(EnumBurnFunc.SQUARE_ROOT)
-				.setHeat(1.75D)
-				.setMeltingPoint(2744)
-				.setUnlocalizedName("rbmk_fuel_zfb_bismuth").setTextureName(RefStrings.MODID + ":rbmk_fuel_zfb_bismuth");
+			.setYield(35000000D)
+			.setStats(16D)
+			.setFunction(EnumBurnFunc.PLATEU)
+			.setDepletionFunction(EnumDepleteFunc.GENTLE_SLOPE)
+			.setXenon(0.75D, 115D)
+			.setHeat(1.20D)
+			.setDiffusion(0.025D)
+			.setMeltingPoint(2744)
+			.setNeutronTypes(NType.FAST, NType.FAST)
+			.setUnlocalizedName("rbmk_fuel_zfb_bismuth")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_zfb_bismuth");
+
+
+		// Fast breeder Pu-241 fuel
 		rbmk_fuel_zfb_pu241 = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_zfb_pu241)
-				.setYield(50000000D)
-				.setStats(20)
-				.setFunction(EnumBurnFunc.SQUARE_ROOT)
-				.setMeltingPoint(2865)
-				.setUnlocalizedName("rbmk_fuel_zfb_pu241").setTextureName(RefStrings.MODID + ":rbmk_fuel_zfb_pu241");
+			.setYield(45000000D)
+			.setStats(24D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.GENTLE_SLOPE)
+			.setXenon(0.90D, 95D)
+			.setHeat(1.30D)
+			.setDiffusion(0.018D)
+			.setMeltingPoint(2865)
+			.setNeutronTypes(NType.FAST, NType.FAST)
+			.setUnlocalizedName("rbmk_fuel_zfb_pu241")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_zfb_pu241");
+
+
+		// Fast breeder americium mix
 		rbmk_fuel_zfb_am_mix = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_zfb_am_mix)
-				.setYield(50000000D)
-				.setStats(20)
-				.setFunction(EnumBurnFunc.LINEAR)
-				.setHeat(1.75D)
-				.setMeltingPoint(2744)
-				.setUnlocalizedName("rbmk_fuel_zfb_am_mix").setTextureName(RefStrings.MODID + ":rbmk_fuel_zfb_am_mix");
-		//rbmk_fuel_drx = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_drx)
-		//		.setYield(1000000D)
-		//		.setStats(1000, 10)
-		//		.setFunction(EnumBurnFunc.QUADRATIC)
-		//		.setHeat(0.1D)
-		//		.setMeltingPoint(100000)
-		//		.setUnlocalizedName("rbmk_fuel_drx").setTextureName(RefStrings.MODID + ":rbmk_fuel_drx");
+			.setYield(38000000D)
+			.setStats(20D, 12D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.CF_SLOPE)
+			.setXenon(1.10D, 85D)
+			.setHeat(1.55D)
+			.setDiffusion(0.014D)
+			.setMeltingPoint(2744)
+			.setNeutronTypes(NType.FAST, NType.FAST)
+			.setUnlocalizedName("rbmk_fuel_zfb_am_mix")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_zfb_am_mix");
+
+
+		// DRX dev nonsense
+		// TODO realism pass intentionally skipped - nonphysical/dev fuel
+		// rbmk_fuel_drx = ...
+
+
+		// test/dev nonsense
+		// TODO realism pass intentionally skipped - dev/test fuel
 		rbmk_fuel_test = (ItemRBMKRod) new ItemRBMKRod("THE VOICES")
-				.setYield(1000000D)
-				.setStats(100)
-				.setFunction(EnumBurnFunc.EXPERIMENTAL)
-				.setHeat(1.0D)
-				.setMeltingPoint(100000)
-				.setUnlocalizedName("rbmk_fuel_test").setTextureName(RefStrings.MODID + ":rbmk_fuel_test");
+			.setYield(1000000D)
+			.setStats(100)
+			.setFunction(EnumBurnFunc.EXPERIMENTAL)
+			.setHeat(1.0D)
+			.setMeltingPoint(100000)
+			.setUnlocalizedName("rbmk_fuel_test")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_test");
+
+
+		// Low Enriched Curium (assumed)
 		rbmk_fuel_lecm = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_lecm)
-				.setYield(30000000D)
-				.setStats(20, 5)
-				.setFunction(EnumBurnFunc.SLOW_LINEAR)
-				.setDepletionFunction(EnumDepleteFunc.CF_SLOPE)
-				.setHeat(1.25D)
-				.setMeltingPoint(1340)
-				.setDiffusion(0.4D)
-				.setUnlocalizedName("rbmk_fuel_lecm").setTextureName(RefStrings.MODID + ":rbmk_fuel_lecm");
+			.setYield(24000000D)
+			.setStats(18D, 8D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.CF_SLOPE)
+			.setXenon(1.20D, 80D)
+			.setHeat(1.45D)
+			.setMeltingPoint(1340)
+			.setDiffusion(0.025D)
+			.setNeutronTypes(NType.FAST, NType.FAST)
+			.setUnlocalizedName("rbmk_fuel_lecm")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_lecm");
+
+
+		// Medium Enriched Curium (assumed)
 		rbmk_fuel_mecm = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_mecm)
-				.setYield(27000000D)
-				.setStats(30, 10)
-				.setFunction(EnumBurnFunc.SLOW_LINEAR)
-				.setDepletionFunction(EnumDepleteFunc.CF_SLOPE)
-				.setHeat(1.25D)
-				.setMeltingPoint(1720)
-				.setDiffusion(0.3D)
-				.setUnlocalizedName("rbmk_fuel_mecm").setTextureName(RefStrings.MODID + ":rbmk_fuel_mecm");
+			.setYield(20000000D)
+			.setStats(24D, 12D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.CF_SLOPE)
+			.setXenon(1.35D, 70D)
+			.setHeat(1.70D)
+			.setMeltingPoint(1720)
+			.setDiffusion(0.018D)
+			.setNeutronTypes(NType.FAST, NType.FAST)
+			.setUnlocalizedName("rbmk_fuel_mecm")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_mecm");
+		// High Enriched Curium (assumed)
 		rbmk_fuel_hecm = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_hecm)
-				.setYield(24000000D)
-				.setStats(60, 25)
-				.setFunction(EnumBurnFunc.SLOW_LINEAR)
-				.setDepletionFunction(EnumDepleteFunc.CF_SLOPE)
-				.setHeat(1.3D)
-				.setMeltingPoint(1880)
-				.setDiffusion(0.3D)
-				.setUnlocalizedName("rbmk_fuel_hecm").setTextureName(RefStrings.MODID + ":rbmk_fuel_hecm");
+			.setYield(18000000D)
+			.setStats(30D, 18D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.CF_SLOPE)
+			.setXenon(1.45D, 65D)
+			.setHeat(1.90D)
+			.setMeltingPoint(1880)
+			.setDiffusion(0.015D)
+			.setNeutronTypes(NType.FAST, NType.FAST)
+			.setUnlocalizedName("rbmk_fuel_hecm")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_hecm");
+
+
+		// Low Enriched Californium (assumed)
 		rbmk_fuel_lecf = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_lecf)
-				.setYield(8800000D)
-				.setStats(50, 30)
-				.setFunction(EnumBurnFunc.SLOW_LINEAR)
-				.setDepletionFunction(EnumDepleteFunc.CF_SLOPE)
-				.setHeat(1.3D)
-				.setMeltingPoint(1450)
-				.setDiffusion(0.3D)
-				.setUnlocalizedName("rbmk_fuel_lecf").setTextureName(RefStrings.MODID + ":rbmk_fuel_lecf");
+			.setYield(7000000D)
+			.setStats(28D, 35D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.CF_SLOPE)
+			.setXenon(0.0D, 999D)
+			.setHeat(2.10D)
+			.setMeltingPoint(1450)
+			.setDiffusion(0.012D)
+			.setNeutronTypes(NType.FAST, NType.FAST)
+			.setUnlocalizedName("rbmk_fuel_lecf")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_lecf");
+
+
+		// Medium Enriched Californium (assumed)
 		rbmk_fuel_mecf = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_mecf)
-				.setYield(6800000D)
-				.setStats(70, 50)
-				.setFunction(EnumBurnFunc.SLOW_LINEAR)
-				.setDepletionFunction(EnumDepleteFunc.CF_SLOPE)
-				.setHeat(1.3D)
-				.setMeltingPoint(1450)
-				.setDiffusion(0.3D)
-				.setUnlocalizedName("rbmk_fuel_mecf").setTextureName(RefStrings.MODID + ":rbmk_fuel_mecf");
+			.setYield(5000000D)
+			.setStats(34D, 45D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.CF_SLOPE)
+			.setXenon(0.0D, 999D)
+			.setHeat(2.45D)
+			.setMeltingPoint(1450)
+			.setDiffusion(0.010D)
+			.setNeutronTypes(NType.FAST, NType.FAST)
+			.setUnlocalizedName("rbmk_fuel_mecf")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_mecf");
+
+
+		// High Enriched Californium (assumed)
 		rbmk_fuel_hecf = (ItemRBMKRod) new ItemRBMKRod(rbmk_pellet_hecf)
-				.setYield(6800000D)
-				.setStats(70, 50)
-				.setFunction(EnumBurnFunc.SLOW_LINEAR)
-				.setDepletionFunction(EnumDepleteFunc.CF_SLOPE)
-				.setHeat(1.3D)
-				.setMeltingPoint(1450)
-				.setDiffusion(0.3D)
-				.setUnlocalizedName("rbmk_fuel_hecf").setTextureName(RefStrings.MODID + ":rbmk_fuel_hecf");
+			.setYield(3500000D)
+			.setStats(40D, 60D)
+			.setFunction(EnumBurnFunc.ARCH)
+			.setDepletionFunction(EnumDepleteFunc.CF_SLOPE)
+			.setXenon(0.0D, 999D)
+			.setHeat(2.90D)
+			.setMeltingPoint(1450)
+			.setDiffusion(0.008D)
+			.setNeutronTypes(NType.FAST, NType.FAST)
+			.setUnlocalizedName("rbmk_fuel_hecf")
+			.setTextureName(RefStrings.MODID + ":rbmk_fuel_hecf");
 
 
 		watz_pellet = new ItemWatzPellet().setUnlocalizedName("watz_pellet").setTextureName(RefStrings.MODID + ":watz_pellet");
