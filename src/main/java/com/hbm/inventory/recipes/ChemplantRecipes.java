@@ -1731,6 +1731,16 @@ public class ChemplantRecipes extends SerializableRecipe {
 						)
 		);
 
+		//tritium into helium 3 (small amount)
+		recipes.add(new ChemRecipe(1106, "TRITIUM_DECAY", 400)
+						.inputFluids(
+							new FluidStack(Fluids.TRITIUM, 1000)
+						)
+						.outputFluids(
+							new FluidStack(Fluids.HELIUM3, 5)
+						)
+		); //WILL BE USED IN NUCLEAR FUSION!!!
+
 
 
 

@@ -188,9 +188,9 @@ public class HazardRegistry {
 	public static final float cmrg  = 6.0F;      // reactor-grade curium
 	public static final float cmf   = 2.2F;      // curium fuel
 
-	//fermium
-	public static final float fm255 = 12.0F;     // fermium-255, extremely hot, short half-life
-	public static final float fm257 = 8.0F;      // fermium-257, still very hot, but much longer half-life than 255
+	// fermium
+	public static final float fm255 = 40.0F;   // absurdly hot, short-lived
+	public static final float fm257 = 0.35F;   // still dangerous, but vastly cooler
 
 
 	// =====================================================================================
