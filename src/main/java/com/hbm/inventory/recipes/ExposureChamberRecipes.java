@@ -18,6 +18,7 @@ import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemBreedingRod;
 import com.hbm.items.machine.ItemCircuit;
 import com.hbm.items.machine.ItemZirnoxRod;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
 public class ExposureChamberRecipes extends SerializableRecipe {
@@ -60,7 +61,75 @@ public class ExposureChamberRecipes extends SerializableRecipe {
 											  new ComparableStack(ModItems.circuit, 8, ItemCircuit.EnumCircuitType.CHIP_BISMOID).toStack()));
 
 		//particle_neutron + lithium → tritium
-		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_aelectron), new ComparableStack(new ItemStack(ModItems.rod_quad, 1, ItemBreedingRod.BreedingRodType.LITHIUM.ordinal())), new ItemStack(ModItems.rod_quad, 1, ItemBreedingRod.BreedingRodType.TRITIUM.ordinal())));
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_aelectron),
+											  new ComparableStack(new ItemStack(ModItems.rod_quad, 1,
+																				ItemBreedingRod.BreedingRodType.LITHIUM.ordinal())),
+											  new ItemStack(ModItems.rod_quad, 1,
+															ItemBreedingRod.BreedingRodType.TRITIUM.ordinal())));
+
+		////am 242 from am241
+		//		makeRecipe(new ComparableStack(ModItems.nugget_am241), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_am242), 4);
+		//
+		//		//Cf-252 + neutron -> Es-253
+		//		makeRecipe(new ComparableStack(ModItems.nugget_cf252), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_es253), 8);
+		//TODO transfer particle recipes from cyclotron to exposure chamber
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
+											  new ComparableStack(ModItems.nugget_am241),
+											  new ItemStack(ModItems.nugget_am242)));
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
+											  new ComparableStack(ModItems.nugget_cf252),
+											  new ItemStack(ModItems.nugget_es253)));
+
+		////plutonium 239 to 240 via neutron capture
+		//		makeRecipe(new ComparableStack(ModItems.nugget_pu239), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_pu240), 3);
+		//
+		//		//plutonium 240 to 241 via neutron capture
+		//		makeRecipe(new ComparableStack(ModItems.nugget_pu240), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_pu241), 4);
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
+											  new ComparableStack(ModItems.nugget_pu239),
+											  new ItemStack(ModItems.nugget_pu240)));
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
+											  new ComparableStack(ModItems.nugget_pu240),
+											  new ItemStack(ModItems.nugget_pu241)));
+
+		//// Californium breeding chain
+		//		makeRecipe(new ComparableStack(ModItems.nugget_cf249),
+		//				   new ComparableStack(ModItems.particle_neutron),
+		//				   new ItemStack(ModItems.nugget_cf250), 5);
+		//
+		//		makeRecipe(new ComparableStack(ModItems.nugget_cf250),
+		//				   new ComparableStack(ModItems.particle_neutron),
+		//				   new ItemStack(ModItems.nugget_cf251), 6);
+		//
+		//		makeRecipe(new ComparableStack(ModItems.nugget_cf251),
+		//				   new ComparableStack(ModItems.particle_neutron),
+		//				   new ItemStack(ModItems.nugget_cf252), 7);
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
+											  new ComparableStack(ModItems.nugget_cf249),
+											  new ItemStack(ModItems.nugget_cf250)));
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
+											  new ComparableStack(ModItems.nugget_cf250),
+											  new ItemStack(ModItems.nugget_cf251)));
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
+											  new ComparableStack(ModItems.nugget_cf251),
+											  new ItemStack(ModItems.nugget_cf252)));
+
+		//// Cm-248 neutron activation -> Cf-249 (simplified breeder path)
+		//		makeRecipe(new ComparableStack(ModItems.ingot_cm247), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_cm248), 5);
+		//		makeRecipe(new ComparableStack(ModItems.ingot_cm248), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_cf249), 5);
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
+											  new ComparableStack(ModItems.ingot_cm247),
+											  new ItemStack(ModItems.nugget_cm248)));
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
+											  new ComparableStack(ModItems.ingot_cm248),
+											  new ItemStack(ModItems.nugget_cf249)));
+
+		//		makeRecipe(new ComparableStack(ModItems.neutron_reflector), new OreDictStack("dustBismuth"), new ItemStack(ModItems.powder_polonium), coA);
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
+											  new OreDictStack("dustBismuth"),
+											  new ItemStack(ModItems.powder_polonium)));
+
+
 
 	}
 
