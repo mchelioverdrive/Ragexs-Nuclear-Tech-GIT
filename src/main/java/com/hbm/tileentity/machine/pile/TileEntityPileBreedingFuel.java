@@ -36,17 +36,19 @@ public class TileEntityPileBreedingFuel extends TileEntityPileBase implements IP
 			GeneralConfig.enable528 ? 0.12D : 0.20D;
 
 		double heatPenalty =
-			1D - Math.min(0.4D,
-						  (heat / maxHeat) * 0.4D);
+			1D - Math.min(
+				0.4D,
+				(heat / maxHeat) * 0.4D);
 
 		int absorbed =
 			(int)(this.neutrons *
 				efficiency *
 				heatPenalty);
-		heat += absorbed * 0.015D;
-		heat *= 0.995D;
 
 		this.progress += absorbed;
+
+		heat += absorbed * 0.015D;
+		heat *= 0.995D;
 
 		if(lastNeutrons <= 0) {
 			this.neutrons = 0;
@@ -56,10 +58,12 @@ public class TileEntityPileBreedingFuel extends TileEntityPileBase implements IP
 		this.neutrons = 0;
 
 		int secondary =
-			Math.min(4, Math.max(1, lastNeutrons / 8));
+			Math.min(4,
+					 Math.max(1, lastNeutrons / 8));
 
-		for(int i = 0; i < secondary; i++)
+		for(int i = 0; i < secondary; i++) {
 			this.castRay(1, 3);
+		}
 	}
 
 	@Override
