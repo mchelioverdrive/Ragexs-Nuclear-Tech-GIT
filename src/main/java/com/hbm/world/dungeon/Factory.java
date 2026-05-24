@@ -23,9 +23,9 @@ public class Factory extends WorldGenerator
 	Block Block2 = ModBlocks.red_barrel;
 	Block Block4 = ModBlocks.steel_wall;
 	Block Block5 = ModBlocks.reinforced_light;
-	
+
 	int s4 = 8;
-	
+
 	protected Block[] GetValidSpawnBlocks()
 	{
 		return new Block[]
@@ -109,7 +109,7 @@ public class Factory extends WorldGenerator
 				}
 			}
 		}
-		
+
 		world.setBlock(x + 0, y + -1, z + 0, Blocks.stonebrick, 0, 3);
 		world.setBlock(x + 1, y + -1, z + 0, Blocks.stonebrick, 0, 3);
 		world.setBlock(x + 2, y + -1, z + 0, Blocks.stonebrick, 0, 3);
@@ -3064,77 +3064,78 @@ public class Factory extends WorldGenerator
 		world.setBlock(x + 3, y + 35, z + 25, Blocks.brick_block, 0, 3);
 		world.setBlock(x + 5, y + 35, z + 25, Blocks.brick_block, 0, 3);
 		world.setBlock(x + 4, y + 35, z + 26, Blocks.brick_block, 0, 3);
-		world.setBlock(x + 4, y + 36, z + 25, Blocks.web, 0, 3);
-		world.setBlock(x + 6, y + 37, z + 22, Blocks.web, 0, 3);
-		world.setBlock(x + 5, y + 37, z + 23, Blocks.web, 0, 3);
-		world.setBlock(x + 4, y + 37, z + 24, Blocks.web, 0, 3);
-		world.setBlock(x + 5, y + 37, z + 24, Blocks.web, 0, 3);
-		world.setBlock(x + 4, y + 37, z + 25, Blocks.web, 0, 3);
-		world.setBlock(x + 5, y + 37, z + 25, Blocks.web, 0, 3);
-		world.setBlock(x + 5, y + 38, z + 20, Blocks.web, 0, 3);
-		world.setBlock(x + 6, y + 38, z + 20, Blocks.web, 0, 3);
-		world.setBlock(x + 7, y + 38, z + 20, Blocks.web, 0, 3);
-		world.setBlock(x + 4, y + 38, z + 21, Blocks.web, 0, 3);
-		world.setBlock(x + 5, y + 38, z + 21, Blocks.web, 0, 3);
-		world.setBlock(x + 6, y + 38, z + 21, Blocks.web, 0, 3);
-		world.setBlock(x + 7, y + 38, z + 21, Blocks.web, 0, 3);
-		world.setBlock(x + 4, y + 38, z + 22, Blocks.web, 0, 3);
-		world.setBlock(x + 5, y + 38, z + 22, Blocks.web, 0, 3);
-		world.setBlock(x + 6, y + 38, z + 22, Blocks.web, 0, 3);
-		world.setBlock(x + 4, y + 38, z + 23, Blocks.web, 0, 3);
-		world.setBlock(x + 5, y + 38, z + 23, Blocks.web, 0, 3);
-		world.setBlock(x + 4, y + 38, z + 24, Blocks.web, 0, 3);
-		world.setBlock(x + 5, y + 38, z + 24, Blocks.web, 0, 3);
-		world.setBlock(x + 10, y + 39, z + 14, Blocks.web, 0, 3);
-		world.setBlock(x + 11, y + 39, z + 14, Blocks.web, 0, 3);
-		world.setBlock(x + 12, y + 39, z + 14, Blocks.web, 0, 3);
-		world.setBlock(x + 9, y + 39, z + 15, Blocks.web, 0, 3);
-		world.setBlock(x + 10, y + 39, z + 15, Blocks.web, 0, 3);
-		world.setBlock(x + 11, y + 39, z + 15, Blocks.web, 0, 3);
-		world.setBlock(x + 12, y + 39, z + 15, Blocks.web, 0, 3);
-		world.setBlock(x + 9, y + 39, z + 16, Blocks.web, 0, 3);
-		world.setBlock(x + 10, y + 39, z + 16, Blocks.web, 0, 3);
-		world.setBlock(x + 11, y + 39, z + 16, Blocks.web, 0, 3);
-		world.setBlock(x + 12, y + 39, z + 16, Blocks.web, 0, 3);
-		world.setBlock(x + 9, y + 39, z + 17, Blocks.web, 0, 3);
-		world.setBlock(x + 10, y + 39, z + 17, Blocks.web, 0, 3);
-		world.setBlock(x + 6, y + 39, z + 20, Blocks.web, 0, 3);
-		world.setBlock(x + 7, y + 39, z + 20, Blocks.web, 0, 3);
-		world.setBlock(x + 4, y + 39, z + 21, Blocks.web, 0, 3);
-		world.setBlock(x + 5, y + 39, z + 21, Blocks.web, 0, 3);
-		world.setBlock(x + 6, y + 39, z + 21, Blocks.web, 0, 3);
-		world.setBlock(x + 4, y + 39, z + 22, Blocks.web, 0, 3);
-		world.setBlock(x + 5, y + 39, z + 22, Blocks.web, 0, 3);
-		world.setBlock(x + 6, y + 39, z + 22, Blocks.web, 0, 3);
-		world.setBlock(x + 5, y + 39, z + 23, Blocks.web, 0, 3);
-		world.setBlock(x + 11, y + 40, z + 14, Blocks.web, 0, 3);
-		world.setBlock(x + 10, y + 40, z + 15, Blocks.web, 0, 3);
-		world.setBlock(x + 11, y + 40, z + 15, Blocks.web, 0, 3);
-		world.setBlock(x + 12, y + 40, z + 15, Blocks.web, 0, 3);
-		world.setBlock(x + 10, y + 40, z + 16, Blocks.web, 0, 3);
-		world.setBlock(x + 11, y + 40, z + 16, Blocks.web, 0, 3);
-		world.setBlock(x + 9, y + 40, z + 17, Blocks.web, 0, 3);
-		world.setBlock(x + 10, y + 40, z + 17, Blocks.web, 0, 3);
-		world.setBlock(x + 5, y + 40, z + 21, Blocks.web, 0, 3);
-		world.setBlock(x + 6, y + 40, z + 21, Blocks.web, 0, 3);
-		world.setBlock(x + 11, y + 41, z + 15, Blocks.web, 0, 3);
-		world.setBlock(x + 10, y + 41, z + 16, Blocks.web, 0, 3);
-		world.setBlock(x + 17, y + 42, z + 9, Blocks.web, 0, 3);
-		world.setBlock(x + 18, y + 42, z + 9, Blocks.web, 0, 3);
-		world.setBlock(x + 16, y + 42, z + 10, Blocks.web, 0, 3);
-		world.setBlock(x + 17, y + 42, z + 10, Blocks.web, 0, 3);
-		world.setBlock(x + 18, y + 42, z + 10, Blocks.web, 0, 3);
-		world.setBlock(x + 19, y + 42, z + 10, Blocks.web, 0, 3);
-		world.setBlock(x + 15, y + 42, z + 11, Blocks.web, 0, 3);
-		world.setBlock(x + 16, y + 42, z + 11, Blocks.web, 0, 3);
-		world.setBlock(x + 17, y + 42, z + 11, Blocks.web, 0, 3);
-		world.setBlock(x + 18, y + 42, z + 11, Blocks.web, 0, 3);
-		world.setBlock(x + 15, y + 42, z + 12, Blocks.web, 0, 3);
-		world.setBlock(x + 16, y + 42, z + 12, Blocks.web, 0, 3);
-		world.setBlock(x + 17, y + 42, z + 12, Blocks.web, 0, 3);
-		world.setBlock(x + 17, y + 43, z + 10, Blocks.web, 0, 3);
-		world.setBlock(x + 18, y + 43, z + 10, Blocks.web, 0, 3);
-		world.setBlock(x + 17, y + 43, z + 11, Blocks.web, 0, 3);
+		//world.setBlock(x + 4, y + 36, z + 25, Blocks.web, 0, 3);
+		//world.setBlock(x + 6, y + 37, z + 22, Blocks.web, 0, 3);
+		//world.setBlock(x + 5, y + 37, z + 23, Blocks.web, 0, 3);
+		//world.setBlock(x + 4, y + 37, z + 24, Blocks.web, 0, 3);
+		//world.setBlock(x + 5, y + 37, z + 24, Blocks.web, 0, 3);
+		//world.setBlock(x + 4, y + 37, z + 25, Blocks.web, 0, 3);
+		//world.setBlock(x + 5, y + 37, z + 25, Blocks.web, 0, 3);
+		//world.setBlock(x + 5, y + 38, z + 20, Blocks.web, 0, 3);
+		//world.setBlock(x + 6, y + 38, z + 20, Blocks.web, 0, 3);
+		//world.setBlock(x + 7, y + 38, z + 20, Blocks.web, 0, 3);
+		//world.setBlock(x + 4, y + 38, z + 21, Blocks.web, 0, 3);
+		//world.setBlock(x + 5, y + 38, z + 21, Blocks.web, 0, 3);
+		//world.setBlock(x + 6, y + 38, z + 21, Blocks.web, 0, 3);
+		//world.setBlock(x + 7, y + 38, z + 21, Blocks.web, 0, 3);
+		//world.setBlock(x + 4, y + 38, z + 22, Blocks.web, 0, 3);
+		//world.setBlock(x + 5, y + 38, z + 22, Blocks.web, 0, 3);
+		//world.setBlock(x + 6, y + 38, z + 22, Blocks.web, 0, 3);
+		//world.setBlock(x + 4, y + 38, z + 23, Blocks.web, 0, 3);
+		//world.setBlock(x + 5, y + 38, z + 23, Blocks.web, 0, 3);
+		//world.setBlock(x + 4, y + 38, z + 24, Blocks.web, 0, 3);
+		//world.setBlock(x + 5, y + 38, z + 24, Blocks.web, 0, 3);
+		//world.setBlock(x + 10, y + 39, z + 14, Blocks.web, 0, 3);
+		//world.setBlock(x + 11, y + 39, z + 14, Blocks.web, 0, 3);
+		//world.setBlock(x + 12, y + 39, z + 14, Blocks.web, 0, 3);
+		//world.setBlock(x + 9, y + 39, z + 15, Blocks.web, 0, 3);
+		//world.setBlock(x + 10, y + 39, z + 15, Blocks.web, 0, 3);
+		//world.setBlock(x + 11, y + 39, z + 15, Blocks.web, 0, 3);
+		//world.setBlock(x + 12, y + 39, z + 15, Blocks.web, 0, 3);
+		//world.setBlock(x + 9, y + 39, z + 16, Blocks.web, 0, 3);
+		//world.setBlock(x + 10, y + 39, z + 16, Blocks.web, 0, 3);
+		//world.setBlock(x + 11, y + 39, z + 16, Blocks.web, 0, 3);
+		//world.setBlock(x + 12, y + 39, z + 16, Blocks.web, 0, 3);
+		//world.setBlock(x + 9, y + 39, z + 17, Blocks.web, 0, 3);
+		//world.setBlock(x + 10, y + 39, z + 17, Blocks.web, 0, 3);
+		//world.setBlock(x + 6, y + 39, z + 20, Blocks.web, 0, 3);
+		//world.setBlock(x + 7, y + 39, z + 20, Blocks.web, 0, 3);
+		//world.setBlock(x + 4, y + 39, z + 21, Blocks.web, 0, 3);
+		//world.setBlock(x + 5, y + 39, z + 21, Blocks.web, 0, 3);
+		//world.setBlock(x + 6, y + 39, z + 21, Blocks.web, 0, 3);
+		//world.setBlock(x + 4, y + 39, z + 22, Blocks.web, 0, 3);
+		//world.setBlock(x + 5, y + 39, z + 22, Blocks.web, 0, 3);
+		//world.setBlock(x + 6, y + 39, z + 22, Blocks.web, 0, 3);
+		//world.setBlock(x + 5, y + 39, z + 23, Blocks.web, 0, 3);
+		//world.setBlock(x + 11, y + 40, z + 14, Blocks.web, 0, 3);
+		//world.setBlock(x + 10, y + 40, z + 15, Blocks.web, 0, 3);
+		//world.setBlock(x + 11, y + 40, z + 15, Blocks.web, 0, 3);
+		//world.setBlock(x + 12, y + 40, z + 15, Blocks.web, 0, 3);
+		//world.setBlock(x + 10, y + 40, z + 16, Blocks.web, 0, 3);
+		//world.setBlock(x + 11, y + 40, z + 16, Blocks.web, 0, 3);
+		//world.setBlock(x + 9, y + 40, z + 17, Blocks.web, 0, 3);
+		//world.setBlock(x + 10, y + 40, z + 17, Blocks.web, 0, 3);
+		//world.setBlock(x + 5, y + 40, z + 21, Blocks.web, 0, 3);
+		//world.setBlock(x + 6, y + 40, z + 21, Blocks.web, 0, 3);
+		//world.setBlock(x + 11, y + 41, z + 15, Blocks.web, 0, 3);
+		//world.setBlock(x + 10, y + 41, z + 16, Blocks.web, 0, 3);
+		//world.setBlock(x + 17, y + 42, z + 9, Blocks.web, 0, 3);
+		//world.setBlock(x + 18, y + 42, z + 9, Blocks.web, 0, 3);
+		//world.setBlock(x + 16, y + 42, z + 10, Blocks.web, 0, 3);
+		//world.setBlock(x + 17, y + 42, z + 10, Blocks.web, 0, 3);
+		//world.setBlock(x + 18, y + 42, z + 10, Blocks.web, 0, 3);
+		//world.setBlock(x + 19, y + 42, z + 10, Blocks.web, 0, 3);
+		//world.setBlock(x + 15, y + 42, z + 11, Blocks.web, 0, 3);
+		//world.setBlock(x + 16, y + 42, z + 11, Blocks.web, 0, 3);
+		//world.setBlock(x + 17, y + 42, z + 11, Blocks.web, 0, 3);
+		//world.setBlock(x + 18, y + 42, z + 11, Blocks.web, 0, 3);
+		//world.setBlock(x + 15, y + 42, z + 12, Blocks.web, 0, 3);
+		//world.setBlock(x + 16, y + 42, z + 12, Blocks.web, 0, 3);
+		//world.setBlock(x + 17, y + 42, z + 12, Blocks.web, 0, 3);
+		//world.setBlock(x + 17, y + 43, z + 10, Blocks.web, 0, 3);
+		//world.setBlock(x + 18, y + 43, z + 10, Blocks.web, 0, 3);
+		//world.setBlock(x + 17, y + 43, z + 11, Blocks.web, 0, 3);
+		//why would the factory be active if its abandoned
 		if(GeneralConfig.enableDebugMode)
 			System.out.print("[Debug] Successfully spawned abandoned factory at " + x + " " + y +" " + z + "\n");
 		return true;

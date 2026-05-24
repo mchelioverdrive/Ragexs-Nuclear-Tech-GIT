@@ -80,6 +80,7 @@ public class TileEntityMachineOilWell extends TileEntityOilDrillBase {
 		for(Integer i : ids) {
 			String name = OreDictionary.getOreName(i);
 
+			//TODO random % chance to spawn gas from regular stone
 			if("oreUranium".equals(name)) {
 				for(int j = -1; j <= 1; j++) {
 					for(int k = -1; k <= 1; k++) {

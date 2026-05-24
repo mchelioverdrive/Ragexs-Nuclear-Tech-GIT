@@ -10,7 +10,7 @@ import net.minecraft.world.World;
 public class RBMKDials {
 
 	public static final String KEY_SAVE_DIALS = "dialSaveDials";
-	
+
 	public static final String KEY_PASSIVE_COOLING = "dialPassiveCooling";
 	public static final String KEY_COLUMN_HEAT_FLOW = "dialColumnHeatFlow";
 	public static final String KEY_FUEL_DIFFUSION_MOD = "dialDiffusionMod";
@@ -30,16 +30,17 @@ public class RBMKDials {
 	public static final String KEY_REASIM_BOILER_SPEED = "dialReasimBoilerSpeed";
 	public static final String KEY_DISABLE_MELTDOWNS = "dialDisableMeltdowns";
 	public static final String KEY_ENABLE_MELTDOWN_OVERPRESSURE = "dialEnableMeltdownOverpressure";
-	
+
 	public static void createDials(World world) {
 		GameRules rules = world.getGameRules();
-		
+
 		if(!rules.getGameRuleBooleanValue(KEY_SAVE_DIALS)) {
 			rules.setOrCreateGameRule(KEY_PASSIVE_COOLING, "1.0");
 			rules.setOrCreateGameRule(KEY_COLUMN_HEAT_FLOW, "0.2");
 			rules.setOrCreateGameRule(KEY_FUEL_DIFFUSION_MOD, "1.0");
 			rules.setOrCreateGameRule(KEY_HEAT_PROVISION, "0.2");
 			rules.setOrCreateGameRule(KEY_COLUMN_HEIGHT, "4");
+			//3.6m -> round up to 4 realism checks out at least here
 			rules.setOrCreateGameRule(KEY_PERMANENT_SCRAP, "true");
 			rules.setOrCreateGameRule(KEY_BOILER_HEAT_CONSUMPTION, "0.1");
 			rules.setOrCreateGameRule(KEY_CONTROL_SPEED_MOD, "1.0");
@@ -51,13 +52,13 @@ public class RBMKDials {
 			rules.setOrCreateGameRule(KEY_REASIM_RANGE, "10");
 			rules.setOrCreateGameRule(KEY_REASIM_COUNT, "6");
 			rules.setOrCreateGameRule(KEY_REASIM_MOD, "1.0");
-			rules.setOrCreateGameRule(KEY_REASIM_BOILERS, "false");
+			rules.setOrCreateGameRule(KEY_REASIM_BOILERS, "true");
 			rules.setOrCreateGameRule(KEY_REASIM_BOILER_SPEED, "0.05");
 			rules.setOrCreateGameRule(KEY_DISABLE_MELTDOWNS, "false");
 			rules.setOrCreateGameRule(KEY_ENABLE_MELTDOWN_OVERPRESSURE, "false");
 		}
 	}
-	
+
 	/**
 	 * Returns the amount of heat per tick removed from components passively
 	 * @param world
@@ -66,7 +67,7 @@ public class RBMKDials {
 	public static double getPassiveCooling(World world) {
 		return Math.max(GameRuleHelper.parseDouble(world.getGameRules().getGameRuleStringValue(KEY_PASSIVE_COOLING), 1.0D), 0.0D);
 	}
-	
+
 	/**
 	 * Returns the percentual step size how quickly neighboring component heat equalizes. 1 is instant, 0.5 is in 50% steps, et cetera.
 	 * @param world
@@ -75,7 +76,7 @@ public class RBMKDials {
 	public static double getColumnHeatFlow(World world) {
 		return MathHelper.clamp_double(GameRuleHelper.parseDouble(world.getGameRules().getGameRuleStringValue(KEY_COLUMN_HEAT_FLOW), 0.2D), 0.0D, 1.0D);
 	}
-	
+
 	/**
 	 * Returns a modifier for fuel rod diffusion, i.e. how quickly the core and hull temperatures equalize.
 	 * @param world
@@ -84,7 +85,7 @@ public class RBMKDials {
 	public static double getFuelDiffusionMod(World world) {
 		return Math.max(GameRuleHelper.parseDouble(world.getGameRules().getGameRuleStringValue(KEY_FUEL_DIFFUSION_MOD), 1.0D), 0.0D);
 	}
-	
+
 	/**
 	 * Returns the percentual step size how quickly the fuel hull heat and the component heat equalizes. 1 is instant, 0.5 is in 50% steps, et cetera.
 	 * @param world
@@ -93,7 +94,7 @@ public class RBMKDials {
 	public static double getFuelHeatProvision(World world) {
 		return MathHelper.clamp_double(GameRuleHelper.parseDouble(world.getGameRules().getGameRuleStringValue(KEY_HEAT_PROVISION), 0.2D), 0.0D, 1.0D);
 	}
-	
+
 	/**
 	 * Simple integer that decides how tall the structure is.
 	 * @param world
@@ -102,7 +103,7 @@ public class RBMKDials {
 	public static int getColumnHeight(World world) {
 		return MathHelper.clamp_int(GameRuleHelper.parseInt(world.getGameRules().getGameRuleStringValue(KEY_COLUMN_HEIGHT), 4), 2, 16) - 1;
 	}
-	
+
 	/**
 	 * Whether or not scrap entities despawn on their own or remain alive until picked up.
 	 * @param world
@@ -111,7 +112,7 @@ public class RBMKDials {
 	public static boolean getPermaScrap(World world) {
 		return world.getGameRules().getGameRuleBooleanValue(KEY_PERMANENT_SCRAP);
 	}
-	
+
 	/**
 	 * How many heat units are consumed per mB water used.
 	 * @param world
@@ -120,7 +121,7 @@ public class RBMKDials {
 	public static double getBoilerHeatConsumption(World world) {
 		return Math.max(GameRuleHelper.parseDouble(world.getGameRules().getGameRuleStringValue(KEY_BOILER_HEAT_CONSUMPTION), 0.1D), 0D);
 	}
-	
+
 	/**
 	 * A multiplier for how quickly the control rods move.
 	 * @param world
@@ -129,7 +130,7 @@ public class RBMKDials {
 	public static double getControlSpeed(World world) {
 		return Math.max(GameRuleHelper.parseDouble(world.getGameRules().getGameRuleStringValue(KEY_CONTROL_SPEED_MOD), 1.0D), 0.0D);
 	}
-	
+
 	/**
 	 * A multiplier for how much flux the rods give out.
 	 * @param world
@@ -138,7 +139,7 @@ public class RBMKDials {
 	public static double getReactivityMod(World world) {
 		return Math.max(GameRuleHelper.parseDouble(world.getGameRules().getGameRuleStringValue(KEY_REACTIVITY_MOD), 1.0D), 0.0D);
 	}
-	
+
 	/**
 	 * A multiplier for how much flux the rods give out.
 	 * @param world
@@ -147,7 +148,7 @@ public class RBMKDials {
 	public static double getOutgasserMod(World world) {
 		return Math.max(GameRuleHelper.parseDouble(world.getGameRules().getGameRuleStringValue(KEY_OUTGASSER_MOD), 1.0D), 0.0D);
 	}
-	
+
 	/**
 	 * A multiplier for how high the power surge goes when inserting control rods.
 	 * @param world
@@ -156,7 +157,7 @@ public class RBMKDials {
 	public static double getSurgeMod(World world) {
 		return Math.max(GameRuleHelper.parseDouble(world.getGameRules().getGameRuleStringValue(KEY_SURGE_MOD), 1.0D), 0.0D);
 	}
-	
+
 	/**
 	 * Simple integer that decides how far the flux of a normal fuel rod reaches.
 	 * @param world
@@ -165,7 +166,7 @@ public class RBMKDials {
 	public static int getFluxRange(World world) {
 		return MathHelper.clamp_int(GameRuleHelper.parseInt(world.getGameRules().getGameRuleStringValue(KEY_FLUX_RANGE), 5), 1, 100);
 	}
-	
+
 	/**
 	 * Simple integer that decides how far the flux of a ReaSim fuel rod reaches.
 	 * @param world
@@ -174,7 +175,7 @@ public class RBMKDials {
 	public static int getReaSimRange(World world) {
 		return MathHelper.clamp_int(GameRuleHelper.parseInt(world.getGameRules().getGameRuleStringValue(KEY_REASIM_RANGE), 10), 1, 100);
 	}
-	
+
 	/**
 	 * Simple integer that decides how many neutrons are created from ReaSim fuel rods.
 	 * @param world
@@ -183,7 +184,7 @@ public class RBMKDials {
 	public static int getReaSimCount(World world) {
 		return MathHelper.clamp_int(GameRuleHelper.parseInt(world.getGameRules().getGameRuleStringValue(KEY_REASIM_COUNT), 6), 1, 24);
 	}
-	
+
 	/**
 	 * Returns a modifier for the outgoing flux of individual streams from the ReaSim fuel rod to compensate for the potentially increased stream count.
 	 * @param world
@@ -192,7 +193,7 @@ public class RBMKDials {
 	public static double getReaSimOutputMod(World world) {
 		return Math.max(GameRuleHelper.parseDouble(world.getGameRules().getGameRuleStringValue(KEY_REASIM_MOD), 1.0D), 0.0D);
 	}
-	
+
 	/**
 	 * Whether or not all components should act like boilers with dedicated in/outlet blocks
 	 * @param world
@@ -201,7 +202,7 @@ public class RBMKDials {
 	public static boolean getReasimBoilers(World world) {
 		return world.getGameRules().getGameRuleBooleanValue(KEY_REASIM_BOILERS) || (GeneralConfig.enable528 && GeneralConfig.enable528ReasimBoilers);
 	}
-	
+
 	/**
 	 * How much % of the possible steam ends up being produced per tick
 	 * @param world
@@ -210,7 +211,7 @@ public class RBMKDials {
 	public static double getReaSimBoilerSpeed(World world) {
 		return MathHelper.clamp_double(GameRuleHelper.parseDouble(world.getGameRules().getGameRuleStringValue(KEY_REASIM_BOILER_SPEED), 0.05D), 0.0D, 1.0D);
 	}
-	
+
 	/**
 	 * Whether or not fuel columns should initiate a meltdown when overheating
 	 * The method is in reverse because the default for older worlds will be 'false'
@@ -220,7 +221,7 @@ public class RBMKDials {
 	public static boolean getMeltdownsDisabled(World world) {
 		return world.getGameRules().getGameRuleBooleanValue(KEY_DISABLE_MELTDOWNS);
 	}
-	
+
 	/**
 	 * Whether or not connected pipes and turbines should explode when the reactor undergoes a meltdown.
 	 * @param world

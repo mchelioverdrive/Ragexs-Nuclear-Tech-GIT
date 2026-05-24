@@ -211,6 +211,7 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 
 	public int getDrillDepth() {
 		//tiering shit so ores have to be enabled award
+		//fuck you we milk regular bedrock here sir
 		return 0;
 	}
 
