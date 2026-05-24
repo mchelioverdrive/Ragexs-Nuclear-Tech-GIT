@@ -11,7 +11,8 @@ public class TileEntityPileSource extends TileEntityPileBase {
 
 			int n =
 				this.getBlockType() ==
-					ModBlocks.block_graphite_source ? 1 : 3;
+					ModBlocks.block_graphite_source
+					? 4 : 8;
 
 			int rays = 8 + worldObj.rand.nextInt(5);
 

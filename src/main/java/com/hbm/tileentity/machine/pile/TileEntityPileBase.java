@@ -33,7 +33,7 @@ public abstract class TileEntityPileBase extends TileEntity {
 
 		for(float i = 1; i <= range; i += 0.5F) {
 
-			flux *= 0.96D;
+			flux *= 0.985D;
 
 			if(flux <= 0)
 				return;
