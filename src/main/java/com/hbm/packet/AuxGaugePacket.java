@@ -1,12 +1,7 @@
-package com.hbm.packet.toclient;
+package com.hbm.packet;
 
-import com.hbm.interfaces.Spaghetti;
-import com.hbm.items.weapon.ItemCustomMissilePart.PartSize;
-import com.hbm.tileentity.TileEntityMachineBase;
-import com.hbm.tileentity.bomb.TileEntityCompactLauncher;
-import com.hbm.tileentity.bomb.TileEntityLaunchTable;
 import com.hbm.tileentity.bomb.TileEntityTurretCIWS;
-import com.hbm.tileentity.machine.TileEntityMachineArcFurnace;
+
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -17,11 +12,8 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraft.tileentity.TileEntity;
 
-@Spaghetti("Changing all machines to use TileEntityMachineBase will reduce the total chaos in this class")
-@Deprecated //use the NBT packet instead
 public class AuxGaugePacket implements IMessage {
 
-	//needed for CIWS
 	int x;
 	int y;
 	int z;
@@ -67,37 +59,15 @@ public class AuxGaugePacket implements IMessage {
 		public IMessage onMessage(AuxGaugePacket m, MessageContext ctx) {
 			try {
 				TileEntity te = Minecraft.getMinecraft().theWorld.getTileEntity(m.x, m.y, m.z);
-				if (te instanceof TileEntityMachineArcFurnace) {
-					TileEntityMachineArcFurnace furn = (TileEntityMachineArcFurnace)te;
 
-					if(m.id == 0)
-						furn.dualCookTime = m.value;
-				}
-				if (te instanceof TileEntityCompactLauncher) {
-					TileEntityCompactLauncher launcher = (TileEntityCompactLauncher)te;
-
-					launcher.solid = m.value;
-				}
-				if (te instanceof TileEntityLaunchTable) {
-					TileEntityLaunchTable launcher = (TileEntityLaunchTable)te;
-
-					if(m.id == 0)
-						launcher.solid = m.value;
-					if(m.id == 1)
-						launcher.padSize = PartSize.values()[m.value];
-				}
-
-				if(te instanceof TileEntityMachineBase) {
-					((TileEntityMachineBase)te).processGauge(m.value, m.id);
-				}
 
 				if (te instanceof TileEntityTurretCIWS) {
-					TileEntityTurretCIWS ciws = (TileEntityTurretCIWS)te;
+					TileEntityTurretCIWS cwis = (TileEntityTurretCIWS)te;
 
-					ciws.rotation = m.value;
+					cwis.rotation = m.value;
 				}
 
-			} catch (Exception x) {}
+			} catch (Exception x) { }
 			return null;
 		}
 	}

@@ -33,6 +33,12 @@ public class ResourceManager {
 	public static final IModelCustom turret_himars = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/turrets/turret_himars.obj")).asVBO();
 	public static final IModelCustom turret_sentry = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/turrets/turret_sentry.obj")).asVBO();
 
+	public static final IModelCustom turret_ciws_base = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/ciws_base.obj"));
+	public static final IModelCustom turret_ciws_rotor = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/ciws_rotor.obj"));
+	public static final IModelCustom turret_ciws_head = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/ciws_head.obj"));
+	public static final IModelCustom turret_ciws_gun = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/ciws_gun.obj"));
+
+
 	public static final IModelCustom turret_howard_damaged = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/turrets/turret_howard_damaged.obj")).asVBO();
 
 	//Heaters
