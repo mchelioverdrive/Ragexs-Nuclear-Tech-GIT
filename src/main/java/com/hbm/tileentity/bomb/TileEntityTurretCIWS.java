@@ -32,15 +32,6 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 	@Override
 	public void updateEntity() {
 
-
-
-		//this.ammo = 100;
-		//??? what does this do other than inf ammo?
-
-
-
-
-
 		if(!worldObj.isRemote) {
 			updateConnections();
 
@@ -52,17 +43,35 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 				}
 			}
 
-
 			if(spin > 0)
 				spin -= 1;
 
 			rotation += spin;
 			rotation = rotation % 360;
+			//I'm pretty sure this is just the barrel rotating, not the actual turret rotation, and it's working just fine, so we need to sync the rotation to the client so it doesn't just sit at 0.-
 
-			PacketDispatcher.wrapper.sendToAll(new AuxGaugePacket(xCoord, yCoord, zCoord, rotation, 0));
-
+			PacketDispatcher.wrapper.sendToAll(
+				new AuxGaugePacket(
+					xCoord,
+					yCoord,
+					zCoord,
+					rotation,
+					0
+				)
+			);
+			//when this is on the server, the client will not update the rotation and it will be stuck at 0
 			super.updateEntity();
 		}
+		if (this.hasPower()) {
+			super.updateEntity();
+		}
+		//double up so we're sync'd but ONLY if we have power.-
+		//JUST KIDDING IT ACTUALLY STILL SITS AT 0 FOR SOME REASON!!! SO WE NEED TO SYNC SOMETHING
+
+		// Run AI AFTER power has updated
+		//this will run on the client:
+		//TODO move to server if still bugged
+
 	}
 
 	private DirPos[] getConPos() {
