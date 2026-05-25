@@ -145,24 +145,24 @@ public class RodRecipes {
 		addRBMKRod(CM245, ModItems.rbmk_fuel_hecm);
 
 		//addPellet(SA326,							EnumWatzType.SCHRABIDIUM);
-		addPellet(ModItems.ingot_hes,				EnumWatzType.HES);
-		addPellet(ModItems.ingot_schrabidium_fuel,	EnumWatzType.MES);
-		addPellet(ModItems.ingot_les,				EnumWatzType.LES);
-		addPellet(NP237,							EnumWatzType.HEN);
-		addPellet(ModItems.ingot_uranium_fuel,		EnumWatzType.MEU);
-		addPellet(ModItems.ingot_pu_mix,			EnumWatzType.MEP);
+		//addPellet(ModItems.ingot_hes,				EnumWatzType.HES);
+		//addPellet(ModItems.ingot_schrabidium_fuel,	EnumWatzType.MES);
+		//addPellet(ModItems.ingot_les,				EnumWatzType.LES);
+		addPellet(TH232,							EnumWatzType.TH232);
+		addPellet(ModItems.billet_u233,		EnumWatzType.U233);
+		addPellet(ModItems.ingot_mox_fuel,			EnumWatzType.MOX241);
 		addPellet(PB,								EnumWatzType.LEAD);
 		addPellet(B,								EnumWatzType.BORON);
 		addPellet(U238,								EnumWatzType.DU);
-		addPellet(PU241,							EnumWatzType.PU241);
-		addPellet(AMF,								EnumWatzType.AMF);
-		addPellet(AMRG,								EnumWatzType.AMRG);
-		addPellet(CMRG,								EnumWatzType.CMRG);
-		addPellet(CMF,								EnumWatzType.CMF);
-		addPellet(BK247,							EnumWatzType.BK247);
-		addPellet(CF252,							EnumWatzType.CF252);
-		addPellet(CF251,							EnumWatzType.CF251);
-		addPellet(ES253,							EnumWatzType.ES253);
+		//addPellet(PU241,							EnumWatzType.PU241);
+		//addPellet(AMF,								EnumWatzType.AMF);
+		//addPellet(AMRG,								EnumWatzType.AMRG);
+		//addPellet(CMRG,								EnumWatzType.CMRG);
+		//addPellet(CMF,								EnumWatzType.CMF);
+		//addPellet(BK247,							EnumWatzType.BK247);
+		//addPellet(CF252,							EnumWatzType.CF252);
+		//addPellet(CF251,							EnumWatzType.CF251);
+		//addPellet(ES253,							EnumWatzType.ES253);
 
 		//PWR fuel
 		CraftingManager.addRecipeAuto(DictFrame.fromOne(ModItems.pwr_fuel, EnumPWRFuel.MEU), new Object[] { "F", "I", "F", 'F', ModItems.billet_uranium_fuel, 'I', ModItems.plate_polymer });

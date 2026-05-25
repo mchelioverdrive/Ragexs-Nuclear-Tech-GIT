@@ -1888,22 +1888,22 @@ public class HazardRegistry {
 			wst * billet * 6.0F
 		);
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.HES),
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.HALEU1975),
 							  makeData(RADIATION, saf * ingot * 0.3F));
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.MES),
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.HALEU15),
 							  makeData(RADIATION, saf * ingot * 0.6F));
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.LES),
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.LEU5),
 							  makeData(RADIATION, saf * ingot * 1.0F));
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.HEN),
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.TH232),
 							  makeData(RADIATION, np237 * ingot * 1.5F));   // high alpha emitter, weak external gamma
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.MEU),
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.U233),
 							  makeData(RADIATION, uf * ingot * 0.4F));      // low-grade uranium fuel
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.MEP),
+		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.MOX241),
 							  makeData(RADIATION, purg * ingot * 0.8F));    // “purified” intermediate waste
 
 		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.DU),
@@ -1915,26 +1915,26 @@ public class HazardRegistry {
 		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.NQR),
 							  makeData(RADIATION, pu239 * ingot * 1.2F));   // weapon-grade plutonium equivalent
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.PU241),
-							  makeData(RADIATION, pu241 * ingot * 2.5F));   // higher gamma contributor
+		//HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.PU241),
+		//					  makeData(RADIATION, pu241 * ingot * 2.5F));   // higher gamma contributor
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.AMRG),
-							  makeData(RADIATION, amrg * ingot * 4.0F));    // Am-241 dominant gamma hazard
+		//HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.AMRG),
+		//					  makeData(RADIATION, amrg * ingot * 4.0F));    // Am-241 dominant gamma hazard
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.CMRG),
-							  makeData(RADIATION, cmrg * ingot * 8.0F));    // Cm mix, strong neutron source
+		//HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.CMRG),
+		//					  makeData(RADIATION, cmrg * ingot * 8.0F));    // Cm mix, strong neutron source
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.CMF),
-							  makeData(RADIATION, cmf * ingot * 12.0F));    // curium fuel grade, very active
+		//HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.CMF),
+		//					  makeData(RADIATION, cmf * ingot * 12.0F));    // curium fuel grade, very active
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.BK247),
-							  makeData(RADIATION, bk247 * ingot * 15.0F));   // high alpha, moderate gamma
+		//HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.BK247),
+		//					  makeData(RADIATION, bk247 * ingot * 15.0F));   // high alpha, moderate gamma
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.CF252),
-							  makeData(RADIATION, cf252 * ingot * 60.0F));   // extreme neutron emitter (dominant hazard)
+		//HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.CF252),
+		//					  makeData(RADIATION, cf252 * ingot * 60.0F));   // extreme neutron emitter (dominant hazard)
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.ES253),
-							  makeData(RADIATION, es253 * ingot * 25.0F));   // very high specific activity alpha/gamma
+		//HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.ES253),
+		//					  makeData(RADIATION, es253 * ingot * 25.0F));   // very high specific activity alpha/gamma
 
 
 

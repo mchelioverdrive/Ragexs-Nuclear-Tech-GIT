@@ -45,6 +45,7 @@ public class Fluids {
 	public static FluidType ULTRAHOTSTEAM;
 	public static FluidType COOLANT;
 	public static FluidType COOLANT_HOT;
+	public static FluidType HELIUM4_HOT;
 	public static FluidType SUPERHEATED_HYDROGEN;
 
 	public static FluidType HYDROGEN_SULFIDE;
@@ -583,6 +584,8 @@ public class Fluids {
 		EXCIMER_GASMIX = new FluidType("EXCIMER_GASMIX", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(GASEOUS);
 		KRYPTON_FLUORINE = new FluidType("KRYPTON_FLUORINE", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(GASEOUS, NOCON);
 		XENON_CHLORINE = new FluidType("XENON_CHLORINE", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(GASEOUS, NOCON);
+		HELIUM4_HOT =			new FluidType("HELIUM4_HOT", 0x99525E, 1, 0, 0, EnumSymbol.NONE).setTemp(600).addTraits(LIQUID);
+
 
 //I am getting really sick and tired of this retarded ass fluid system
 
@@ -851,6 +854,7 @@ public class Fluids {
 		metaOrder.add(EXCIMER_GASMIX);
 		metaOrder.add(KRYPTON_FLUORINE);
 		metaOrder.add(XENON_CHLORINE);
+		metaOrder.add(HELIUM4_HOT);
 
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!
@@ -944,6 +948,9 @@ public class Fluids {
 
 		HEAVYWATER.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 1.0D).addStep(300, 1, HEAVYWATER_HOT, 1), new FT_PWRModerator(1.25D));
 		HEAVYWATER_HOT.addTraits(new FT_Coolable(HEAVYWATER, 1, 1, 300).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+
+		HELIUM4.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 1.0D).addStep(300, 1, HELIUM4_HOT, 1));
+		HELIUM4_HOT.addTraits(new FT_Coolable(HELIUM4, 1, 1, 300).setEff(CoolingType.HEATEXCHANGER, 1.0D));
 
 		SODIUM.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 2.5D).setEff(HeatingType.ICF, 3D).addStep(400, 1, SODIUM_HOT, 1));
 		//SODIUM_HYDROXIDE.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 1.0D).addStep(400, 1, SODIUM_HOT, 1));

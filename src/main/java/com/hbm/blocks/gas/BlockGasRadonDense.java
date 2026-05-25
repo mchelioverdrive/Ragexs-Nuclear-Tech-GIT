@@ -29,12 +29,12 @@ public class BlockGasRadonDense extends BlockGasBase {
 
 	@Override
 	public void onEntityCollidedWithBlock(World world, int p_149670_2_, int p_149670_3_, int p_149670_4_, Entity entity) {
-		
+
 		if(!(entity instanceof EntityLivingBase))
 			return;
-		
+
 		EntityLivingBase entityLiving = (EntityLivingBase) entity;
-		
+
 		if(ArmorRegistry.hasAllProtection(entityLiving, 3, HazardClass.PARTICLE_FINE)) {
 			ArmorUtil.damageGasMaskFilter(entityLiving, 1);
 		} else {
@@ -53,10 +53,10 @@ public class BlockGasRadonDense extends BlockGasBase {
 
 	@Override
 	public ForgeDirection getFirstDirection(World world, int x, int y, int z) {
-		
+
 		if(world.rand.nextInt(5) == 0)
 			return ForgeDirection.UP;
-		
+
 		return ForgeDirection.DOWN;
 	}
 
@@ -67,25 +67,25 @@ public class BlockGasRadonDense extends BlockGasBase {
 
 	@Override
 	public void updateTick(World world, int x, int y, int z, Random rand) {
-		
+
 		if(!world.isRemote) {
-	
+
 			if(rand.nextInt(20) == 0) {
 				if(world.getBlock(x, y - 1, z) == Blocks.grass)
 					world.setBlock(x, y - 1, z, ModBlocks.waste_earth);
 			}
-	
-			if(rand.nextInt(30) == 0) {
+
+			if(rand.nextInt(30) == 0 && !(world.getBlock(x, y, z) == ModBlocks.fallout)) {
 				world.setBlockToAir(x, y, z);
-				
+
 				if(ModBlocks.fallout.canPlaceBlockAt(world, x, y, z)) {
 					world.setBlock(x, y, z, ModBlocks.fallout);
 				}
-				
+
 				return;
 			}
 		}
-		
+
 		super.updateTick(world, x, y, z, rand);
 	}
 }

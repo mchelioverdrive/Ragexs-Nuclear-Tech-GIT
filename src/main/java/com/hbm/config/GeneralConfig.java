@@ -4,6 +4,9 @@ import net.minecraftforge.common.config.Configuration;
 
 public class GeneralConfig {
 
+	public static Long scheduledNukeTime = null;
+	public static Boolean scheduledNukeValue = null;
+
 	public static boolean enableThermosPreventer = true;
 
 	public static boolean enableDebugMode = true;

@@ -25,6 +25,7 @@ import net.minecraft.world.World;
 
 /*
  * Watz Isotropic Fuel, Oxidized
+ * REALISTIFICATION: PBR: Pebble Bed Reactor pellets
  */
 public class ItemWatzPellet extends ItemEnumMulti {
 
@@ -36,29 +37,104 @@ public class ItemWatzPellet extends ItemEnumMulti {
 
 	public static enum EnumWatzType {
 
+		//absolute nonsense list:
+		//AMRG
+		//AMF
+		//CMRG
+		//CMF
+		//BK247
+		//CF251
+		//CF252
+		//ES253
+
 		//SCHRABIDIUM(	0x32FFFF, 0x005C5C, 2_000,	20D,	0.01D,		new FunctionLinear(1.5D), new FunctionSqrtFalling(10D), null),
-		HES(			0x66DCD6, 0x023933, 1_750,	20D,	0.005D,		new FunctionLinear(1.25D), new FunctionSqrtFalling(15D), null),
-		MES(			0xCBEADF, 0x28473C, 1_500,	15D,	0.0025D,	new FunctionLinear(1.15D), new FunctionSqrtFalling(15D), null),
-		LES(			0xABB4A8, 0x0C1105, 1_250,	15D,	0.00125D,	new FunctionLinear(1D), new FunctionSqrtFalling(20D), null),
-		HEN(			0xA6B2A6, 0x030F03, 0,		10D,	0.0005D,	new FunctionSqrt(100), new FunctionSqrtFalling(10D), null),
-		MEU(			0xC1C7BD, 0x2B3227, 0,		10D,	0.0005D,	new FunctionSqrt(75), new FunctionSqrtFalling(10D), null),
-		MEP(			0x9AA3A0, 0x111A17, 0,		15D,	0.0005D,	new FunctionSqrt(150), new FunctionSqrtFalling(10D), null),
+		HALEU1975(
+			0x66DCD6,
+			0x023933,
+			1000,
+			24D,
+			0.0015D,
+			new FunctionLinear(1.2D),
+			new FunctionSqrtFalling(22D),
+			null
+		),
+		HALEU15(
+			0xCBEADF,
+			0x28473C,
+			750,
+			18D,
+			0.001D,
+			new FunctionLinear(1.05D),
+			new FunctionSqrtFalling(24D),
+			null
+		),
+		LEU5(
+			0xABB4A8,
+			0x0C1105,
+			450,
+			12D,
+			0.0005D,
+			new FunctionLinear(0.85D),
+			new FunctionSqrtFalling(30D),
+			null
+		),
+		TH232(
+			0xA6B2A6,
+			0x030F03,
+			20,
+			2D,
+			0.0001D,
+			new FunctionSqrt(10),
+			new FunctionSqrtFalling(40D),
+			null
+		),
+		U233(
+			0xC1C7BD,
+			0x2B3227,
+			950,
+			24D,
+			0.0012D,
+			new FunctionSqrt(90),
+			new FunctionSqrtFalling(18D),
+			null
+		),
+		MOX241(
+			0x9AA3A0,
+			0x111A17,
+			950,
+			30D,
+			0.0020D,
+			new FunctionSqrt(100),
+			new FunctionSqrtFalling(12D),
+			null
+		),
 		LEAD(			0xA6A6B2, 0x03030F, 0,		0,		0.0025D,	null, null, new FunctionSqrt(10)), //standard absorber, negative coefficient
 		BORON(			0xBDC8D2, 0x29343E, 0,		0,		0.0025D,	null, null, new FunctionLinear(10)), //improved absorber, linear
 		DU(				0xC1C7BD, 0x2B3227, 0,		0,		0.0025D,	null, null, new FunctionQuadratic(1D, 1D).withDiv(100)), //absorber with positive coefficient
 		NQD(			0x4B4B4B, 0x121212, 2_000,	20,		0.01D,		new FunctionLinear(2D), new FunctionSqrt(1D/25D).withOff(25D * 25D), null),
 		NQR(			0x2D2D2D, 0x0B0B0B, 2_500,	30,		0.01D,		new FunctionLinear(1.5D), new FunctionSqrt(1D/25D).withOff(25D * 25D), null),
-		PU241(			0x78817E, 394240, 1_950,	25,		0.0025D,		new FunctionLinear(1.30D), new FunctionSqrt(2.66D/18D).withOff(24D * 24D), null),
-		AMRG(			0x93767B, 0x66474D, 2_888,	48,		0.0035D,		new FunctionLinear(1.33D), new FunctionSqrt(4.33D/25.5D).withOff(28D * 28D), null),
-		AMF(			0x93767B, 0x66474D, 2_333,	44,		0.003D,		new FunctionLinear(1.33D), new FunctionSqrt(4.11D/22.2D).withOff(27D * 27D), null),
+		//PU241(			0x78817E, 394240, 1_950,	25,		0.0025D,		new FunctionLinear(1.30D), new FunctionSqrt(2.66D/18D).withOff(24D * 24D), null),
+		//nonsense below:
+		//AMRG(			0x93767B, 0x66474D, 2_888,	48,		0.0035D,		new FunctionLinear(1.33D), new FunctionSqrt(4.33D/25.5D).withOff(28D * 28D), null),
+		//AMF(			0x93767B, 0x66474D, 2_333,	44,		0.003D,		new FunctionLinear(1.33D), new FunctionSqrt(4.11D/22.2D).withOff(27D * 27D), null),
 
-		CMRG(			0xD8C2C4, 0xAD9799, 2_999,	50,		0.005D,		new FunctionLinear(1.5D), new FunctionSqrt(5.5D/25.5D).withOff(30D * 28D), null),
-		CMF(			0xD8C2C4, 0xAD9799, 2_444,	48,		0.0045D,		new FunctionLinear(1.8D), new FunctionSqrt(5.0D/20D).withOff(26D * 24D), null),
-		BK247(			0xC2C9C7, 0x8D9592, 3_000,	55,		0.012D,		new FunctionLinear(1.5D), new FunctionSqrt(6.0D/23.5D).withOff(10D * 10D), null),
-		CF251(			0x7879B4, 0x4D4E89, 1_250,	60,		0.001D,		new FunctionLinear(1.7D), new FunctionSqrt(6.65D/23.5D).withOff(10D * 10D), null),
+		//CMRG(			0xD8C2C4, 0xAD9799, 2_999,	50,		0.005D,		new FunctionLinear(1.5D), new FunctionSqrt(5.5D/25.5D).withOff(30D * 28D), null),
+		//CMF(			0xD8C2C4, 0xAD9799, 2_444,	48,		0.0045D,		new FunctionLinear(1.8D), new FunctionSqrt(5.0D/20D).withOff(26D * 24D), null),
+		//BK247(			0xC2C9C7, 0x8D9592, 3_000,	55,		0.012D,		new FunctionLinear(1.5D), new FunctionSqrt(6.0D/23.5D).withOff(10D * 10D), null),
+		//CF251(			0x7879B4, 0x4D4E89, 1_250,	60,		0.001D,		new FunctionLinear(1.7D), new FunctionSqrt(6.65D/23.5D).withOff(10D * 10D), null),
 
-		CF252(			0x7879B4, 0x4D4E89, 1_050,	120,		0.0015D,		new FunctionLinear(1.8D), new FunctionSqrt(8.85D/28.8D).withOff(10D * 10D), null),
-		ES253(			0xB9BFB2, 0x594E44, 3_750,	70,		0.0001D,		new FunctionLinear(1.3D), new FunctionSqrt(7.0D/27.7D).withOff(10D * 10D), null);
+		//CF252(0x7879B4, 0x4D4E89, 0, 0, 0, null, null, null),
+		//ES253(			0xB9BFB2, 0x594E44, 3_750,	70,		0.0001D,		new FunctionLinear(1.3D), new FunctionSqrt(7.0D/27.7D).withOff(10D * 10D), null),
+		GRAPHITE(
+			0x4A4A4A,
+			0x1F1F1F,
+			25,
+			0,
+			0,
+			null,
+			null,
+			null
+		);
 		public double yield = 1_000_000_000;
 		public int colorLight;
 		public int colorDark;
@@ -144,8 +220,7 @@ public class ItemWatzPellet extends ItemEnumMulti {
 		String reset = EnumChatFormatting.RESET + "";
 
 		if(num.passive > 0){
-			list.add(color + "Base fission rate: " + reset + num.passive);
-			list.add(EnumChatFormatting.RED + "Self-igniting!");
+			list.add(color + "Neutron response: " + reset + num.passive);
 		}
 		if(num.heatEmission > 0) list.add(color + "Heat per flux: " + reset + num.heatEmission + " TU");
 		if(num.burnFunc != null) {
