@@ -43,7 +43,8 @@ public abstract class TileEntityTurretBase extends TileEntity {
 
 		//TODOne if you do not power turret, it will not shoot and rotate.
 
-		if(isAI) { //TODO test && canOperate() HERE
+		if(isAI) { //&& canOperate()) bricks turret rotation even when having power so we cannot do that here
+			//we only care about the AI part of our automated close in weapon system.
 
 			Object[] iter = worldObj.loadedEntityList.toArray();
 			double radius = 1000;
@@ -65,7 +66,7 @@ public abstract class TileEntityTurretBase extends TileEntity {
 				}
 			}
 
-			if(target != null ) { //&& canOperate()
+			if(target != null ) { //&& canOperate() we also cannot do that here.
 
 				Vec3 turret = Vec3.createVectorHelper(target.posX - (xCoord + 0.5), target.posY + target.getEyeHeight() - (yCoord + 1), target.posZ - (zCoord + 0.5));
 
@@ -92,27 +93,6 @@ public abstract class TileEntityTurretBase extends TileEntity {
 				use = 0;
 			}
 		}
-
-		//this was not needed before, if it works now I'd be surprised
-		// because the turret was just rotating perfectly earlier with this commented out fully.
-		//but then we added energy storage and it isnt rotating.
-		//if(!worldObj.isRemote &&
-		//	(rotationYaw != lastYaw ||
-		//		rotationPitch != lastPitch)) {
-//
-		//	PacketDispatcher.wrapper.sendToAll(
-		//		new TETurretPacket(
-		//			xCoord,
-		//			yCoord,
-		//			zCoord,
-		//			rotationYaw,
-		//			rotationPitch
-		//		)
-		//	);
-//
-		//	lastYaw = rotationYaw;
-		//	lastPitch = rotationPitch;
-		//}
 	}
 
 	private boolean isInSight(Entity e) {
