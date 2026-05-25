@@ -330,6 +330,7 @@
 	"alarm.nostromoSiren": {"category": "record", "sounds": [{"name": "alarm/nostromoSiren", "stream": false}]},
 	"alarm.easAlarm": {"category": "record", "sounds": [{"name": "alarm/easAlarm", "stream": false}]},
 	"alarm.airRaid": {"category": "record", "sounds": [{"name": "alarm/airRaid", "stream": true}]},
+	"alarm.incoming": {"category": "record", "sounds": [{"name": "alarm/incoming", "stream": true}]},
 	"alarm.classic": {"category": "record", "sounds": [{"name": "alarm/classicSiren", "stream": false}]},
 	"alarm.gambit": {"category": "record", "sounds": [{"name": "alarm/gambit", "stream": true}]},
 	"alarm.soyuzed": {"category": "record", "sounds": [{"name": "alarm/soyuzed", "stream": false}]},
