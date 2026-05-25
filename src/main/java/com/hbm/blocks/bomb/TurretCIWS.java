@@ -34,57 +34,63 @@ public class TurretCIWS extends TurretBase implements ITooltipProvider {
 	@Override
 	public boolean executeHoldAction(World world, int i, double yaw, double pitch, int x, int y, int z) {
 
-		TileEntityTurretCIWS te = (TileEntityTurretCIWS)world.getTileEntity(x, y, z);
+		TileEntityTurretCIWS te = (TileEntityTurretCIWS) world.getTileEntity(x, y, z);
+
+		// No power = no tracking, no rotation, no firing
+		if(!te.hasPower()) {
+			return false;
+		}
+
 		boolean flag = false;
-
-		//if (te.canOperate()) //so apparently this does nothing apparently
-		if(te.hasPower())
-
-		//todo if canOperate() then literally everything in this block, then maybe turret rotation won't be fucked?
-
-		//TODO if you do not power turret, it will not shoot and rotate.
-
-
 
 		if(pitch < -60)
 			pitch = -60;
 		if(pitch > 30)
 			pitch = 30;
 
-
-
 		if(te.spin < 35)
 			te.spin += 5;
 
 		if(te.spin > 25 && i % 2 == 0) {
+
+			// Double-check power before firing
+			if(te.getPower() < TileEntityTurretCIWS.POWER_PER_SHOT) {
+				return false;
+			}
+
 			Vec3 vector = Vec3.createVectorHelper(
-				-Math.sin(yaw / 180.0F * (float) Math.PI) * Math.cos(pitch / 180.0F * (float) Math.PI),
-				-Math.sin(pitch / 180.0F * (float) Math.PI),
-				Math.cos(yaw / 180.0F * (float) Math.PI) * Math.cos(pitch / 180.0F * (float) Math.PI));
+				-Math.sin(yaw / 180.0F * (float)Math.PI) * Math.cos(pitch / 180.0F * (float)Math.PI),
+				-Math.sin(pitch / 180.0F * (float)Math.PI),
+				Math.cos(yaw / 180.0F * (float)Math.PI) * Math.cos(pitch / 180.0F * (float)Math.PI)
+			);
 
 			vector.normalize();
 
 			if(!world.isRemote) {
 
-				rayShot(world, vector, x + vector.xCoord * 2.5 + 0.5, y + vector.yCoord * 2.5 + 0.5, z + vector.zCoord * 2.5 + 0.5, 100, 40.0F, 40); //40% accuracy should be, 100 for debugging
+				rayShot(
+					world,
+					vector,
+					x + vector.xCoord * 2.5 + 0.5,
+					y + vector.yCoord * 2.5 + 0.5,
+					z + vector.zCoord * 2.5 + 0.5,
+					100,
+					40.0F,
+					40
+				);
 
-				//EntityGasFlameFX smoke = new EntityGasFlameFX(world);
-				//smoke.posX = x + vector.xCoord * 2.5 + 0.5;
-				//smoke.posY = y + vector.yCoord * 2.5 + 1.5;
-				//smoke.posZ = z + vector.zCoord * 2.5 + 0.5;
-//
-				//smoke.motionX = vector.xCoord * 0.25;
-				//smoke.motionY = vector.yCoord * 0.25;
-				//smoke.motionZ = vector.zCoord * 0.25;
-
-				//world.spawnEntityInWorld(smoke);
-				//TODO add back in
+				// Consume power per shot
+				te.consumePower(TileEntityTurretCIWS.POWER_PER_SHOT);
 			}
 
-			//te.consumePower(250);
-			//I don't know that we should do that here?
-
-			world.playSoundEffect(x, y, z, "hbm:weapon.gun_m61a1_snd", 5.0F, 1.25F);
+			world.playSoundEffect(
+				x,
+				y,
+				z,
+				"hbm:weapon.gun_m61a1_snd",
+				5.0F,
+				1.25F
+			);
 
 			flag = true;
 		}

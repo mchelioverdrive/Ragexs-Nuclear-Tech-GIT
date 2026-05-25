@@ -18,7 +18,7 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 	public int rotation;
 	private long power;
 	private static final long maxPower = 100_000;
-	private static final long POWER_PER_SHOT = 250;
+	public static final long POWER_PER_SHOT = 250;
 	public static final int consumption = 1000;
 
 	//trySubscribe(
@@ -32,7 +32,7 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 	@Override
 	public void updateEntity() {
 
-		super.updateEntity();
+
 
 		//this.ammo = 100;
 		//??? what does this do other than inf ammo?
@@ -60,6 +60,8 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 			rotation = rotation % 360;
 
 			PacketDispatcher.wrapper.sendToAll(new AuxGaugePacket(xCoord, yCoord, zCoord, rotation, 0));
+
+			super.updateEntity();
 		}
 	}
 

@@ -33,6 +33,8 @@ public abstract class TileEntityTurretBase extends TileEntity {
 	public int ammo = 0;
 	private double lastYaw;
 	private double lastPitch;
+	//TileEntityTurretCIWS te = (TileEntityTurretCIWS) worldObj.getTileEntity(xCoord, yCoord, zCoord);
+	//CRASHES THE GAME
 
 	protected boolean canOperate() {
 		return true;
@@ -41,9 +43,20 @@ public abstract class TileEntityTurretBase extends TileEntity {
 	@Override
 	public void updateEntity() {
 
+		if(this instanceof TileEntityTurretCIWS) {
+			System.out.println("Power: " + ((TileEntityTurretCIWS)this).getPower());
+		}
+
+
 		//TODOne if you do not power turret, it will not shoot and rotate.
 
-		if(isAI) { //&& canOperate()) bricks turret rotation even when having power so we cannot do that here
+		if(isAI && (
+			!(this instanceof TileEntityTurretCIWS)
+				|| ((TileEntityTurretCIWS)this).hasPower()
+		)) {
+
+
+			//&& canOperate()) bricks turret rotation even when having power so we cannot do that here
 			//we only care about the AI part of our automated close in weapon system.
 
 			Object[] iter = worldObj.loadedEntityList.toArray();
@@ -67,6 +80,7 @@ public abstract class TileEntityTurretBase extends TileEntity {
 			}
 
 			if(target != null ) { //&& canOperate() we also cannot do that here.
+				//I wanna try && te.getPower() but te isn't defined here. Let's try something else.
 
 				Vec3 turret = Vec3.createVectorHelper(target.posX - (xCoord + 0.5), target.posY + target.getEyeHeight() - (yCoord + 1), target.posZ - (zCoord + 0.5));
 
@@ -82,6 +96,18 @@ public abstract class TileEntityTurretBase extends TileEntity {
 				if(rotationPitch > 30)
 					rotationPitch = 30;
 
+				if(!worldObj.isRemote) {
+					PacketDispatcher.wrapper.sendToAll(
+						new TETurretPacket(
+							xCoord,
+							yCoord,
+							zCoord,
+							rotationYaw,
+							rotationPitch
+						)
+					);
+				}
+
 				use++;
 
 				if(worldObj.getBlock(xCoord, yCoord, zCoord) instanceof TurretBase && ammo > 0) {
@@ -93,6 +119,7 @@ public abstract class TileEntityTurretBase extends TileEntity {
 				use = 0;
 			}
 		}
+
 	}
 
 	private boolean isInSight(Entity e) {
