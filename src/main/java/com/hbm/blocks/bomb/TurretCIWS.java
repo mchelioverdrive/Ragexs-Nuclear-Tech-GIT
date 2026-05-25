@@ -34,16 +34,24 @@ public class TurretCIWS extends TurretBase implements ITooltipProvider {
 	@Override
 	public boolean executeHoldAction(World world, int i, double yaw, double pitch, int x, int y, int z) {
 
-		//TODOne if you do not power turret, it will not shoot and rotate.
-
+		TileEntityTurretCIWS te = (TileEntityTurretCIWS)world.getTileEntity(x, y, z);
 		boolean flag = false;
+
+		//if (te.canOperate()) //so apparently this does nothing apparently
+		if(te.hasPower())
+
+		//todo if canOperate() then literally everything in this block, then maybe turret rotation won't be fucked?
+
+		//TODO if you do not power turret, it will not shoot and rotate.
+
+
 
 		if(pitch < -60)
 			pitch = -60;
 		if(pitch > 30)
 			pitch = 30;
 
-		TileEntityTurretCIWS te = (TileEntityTurretCIWS)world.getTileEntity(x, y, z);
+
 
 		if(te.spin < 35)
 			te.spin += 5;
@@ -73,7 +81,8 @@ public class TurretCIWS extends TurretBase implements ITooltipProvider {
 				//TODO add back in
 			}
 
-			te.consumePower(250);
+			//te.consumePower(250);
+			//I don't know that we should do that here?
 
 			world.playSoundEffect(x, y, z, "hbm:weapon.gun_m61a1_snd", 5.0F, 1.25F);
 
