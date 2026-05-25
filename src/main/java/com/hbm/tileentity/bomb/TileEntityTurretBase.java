@@ -1,6 +1,7 @@
 package com.hbm.tileentity.bomb;
 
-import com.hbm.blocks.bomb.TurretBase;
+//import com.hbm.blocks.bomb.TurretBase;
+import com.hbm.blocks.turret.TurretBase;
 //import com.hbm.entity.missile.EntityMissileBaseAdvanced;
 import com.hbm.entity.missile.EntityMissileBaseNT;
 import com.hbm.lib.Library;
@@ -30,11 +31,19 @@ public abstract class TileEntityTurretBase extends TileEntity {
 	public String uuid = "none";
 	public int use;
 	public int ammo = 0;
+	private double lastYaw;
+	private double lastPitch;
+
+	protected boolean canOperate() {
+		return true;
+	}
 
 	@Override
 	public void updateEntity() {
 
-		if(isAI) {
+		//TODOne if you do not power turret, it will not shoot and rotate.
+
+		if(isAI) { //TODO test && canOperate() HERE
 
 			Object[] iter = worldObj.loadedEntityList.toArray();
 			double radius = 1000;
@@ -56,7 +65,7 @@ public abstract class TileEntityTurretBase extends TileEntity {
 				}
 			}
 
-			if(target != null) {
+			if(target != null ) { //&& canOperate()
 
 				Vec3 turret = Vec3.createVectorHelper(target.posX - (xCoord + 0.5), target.posY + target.getEyeHeight() - (yCoord + 1), target.posZ - (zCoord + 0.5));
 
@@ -84,8 +93,26 @@ public abstract class TileEntityTurretBase extends TileEntity {
 			}
 		}
 
-		//if(!worldObj.isRemote)
-		//	PacketDispatcher.wrapper.sendToAll(new TETurretPacket(xCoord, yCoord, zCoord, rotationYaw, rotationPitch));
+		//this was not needed before, if it works now I'd be surprised
+		// because the turret was just rotating perfectly earlier with this commented out fully.
+		//but then we added energy storage and it isnt rotating.
+		//if(!worldObj.isRemote &&
+		//	(rotationYaw != lastYaw ||
+		//		rotationPitch != lastPitch)) {
+//
+		//	PacketDispatcher.wrapper.sendToAll(
+		//		new TETurretPacket(
+		//			xCoord,
+		//			yCoord,
+		//			zCoord,
+		//			rotationYaw,
+		//			rotationPitch
+		//		)
+		//	);
+//
+		//	lastYaw = rotationYaw;
+		//	lastPitch = rotationPitch;
+		//}
 	}
 
 	private boolean isInSight(Entity e) {

@@ -142,6 +142,8 @@ public class ModItems {
 	public static Item ingot_cm247;
 	public static Item ingot_cm_fuel;
 
+	public static Item turret_light_ammo;
+
 	public static Item rubidium_ingot;
 
 	public static Item ingot_cm_mix;
@@ -3012,6 +3014,8 @@ public class ModItems {
 		ingot_cf249 = new Item().setUnlocalizedName("ingot_cf249").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_cf252");
 		ingot_cf248 = new Item().setUnlocalizedName("ingot_cf248").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_cf252");
 		ingot_yb170 = new Item().setUnlocalizedName("ingot_yb170").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_titanium");
+
+		turret_light_ammo = new ItemTurretAmmo(ModBlocks.turret_ciws, 25).setUnlocalizedName("turret_light_ammo").setCreativeTab(MainRegistry.weaponTab).setTextureName(RefStrings.MODID + ":turret_light_ammo");
 
 
 		ingot_es253 = new Item().setUnlocalizedName("ingot_es253").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_es253");
@@ -7047,6 +7051,7 @@ public class ModItems {
 		GameRegistry.registerItem(ingot_cm246, ingot_cm246.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cm247, ingot_cm247.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cm_fuel, ingot_cm_fuel.getUnlocalizedName());
+		GameRegistry.registerItem(turret_light_ammo, turret_light_ammo.getUnlocalizedName());
 		GameRegistry.registerItem(rubidium_ingot, rubidium_ingot.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cm_mix, ingot_cm_mix.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_bk247, ingot_bk247.getUnlocalizedName());

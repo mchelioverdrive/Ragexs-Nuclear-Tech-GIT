@@ -5,19 +5,21 @@ import java.util.Random;
 
 import com.hbm.blocks.turret.TurretBase;
 //import com.hbm.entity.particle.EntityGasFlameFX;
-import com.hbm.entity.projectile.EntityBullet;
 import com.hbm.lib.ModDamageSource;
 import com.hbm.tileentity.bomb.TileEntityTurretCIWS;
 
+import com.hbm.blocks.ITooltipProvider;
 
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
-public class TurretCIWS extends TurretBase {
+public class TurretCIWS extends TurretBase implements ITooltipProvider {
 
 	public TurretCIWS(Material mat) {
 		super(mat);
@@ -31,6 +33,8 @@ public class TurretCIWS extends TurretBase {
 
 	@Override
 	public boolean executeHoldAction(World world, int i, double yaw, double pitch, int x, int y, int z) {
+
+		//TODOne if you do not power turret, it will not shoot and rotate.
 
 		boolean flag = false;
 
@@ -54,7 +58,7 @@ public class TurretCIWS extends TurretBase {
 
 			if(!world.isRemote) {
 
-				rayShot(world, vector, x + vector.xCoord * 2.5 + 0.5, y + vector.yCoord * 2.5 + 0.5, z + vector.zCoord * 2.5 + 0.5, 100, 10.0F, 50);
+				rayShot(world, vector, x + vector.xCoord * 2.5 + 0.5, y + vector.yCoord * 2.5 + 0.5, z + vector.zCoord * 2.5 + 0.5, 100, 40.0F, 40); //40% accuracy should be, 100 for debugging
 
 				//EntityGasFlameFX smoke = new EntityGasFlameFX(world);
 				//smoke.posX = x + vector.xCoord * 2.5 + 0.5;
@@ -69,7 +73,9 @@ public class TurretCIWS extends TurretBase {
 				//TODO add back in
 			}
 
-			world.playSoundEffect(x, y, z, "hbm:weapon.sawShoot", 1.0F, 1.25F);
+			te.consumePower(250);
+
+			world.playSoundEffect(x, y, z, "hbm:weapon.gun_m61a1_snd", 5.0F, 1.25F);
 
 			flag = true;
 		}
@@ -89,8 +95,18 @@ public class TurretCIWS extends TurretBase {
 			if(world.getBlock((int)pX, (int)pY, (int)pZ).getMaterial() != Material.air)
 				break;
 
-			List<Entity> hit = world.getEntitiesWithinAABBExcludingEntity(null, AxisAlignedBB.getBoundingBox(pX - 0.125, pY - 0.125, pZ - 0.125, pX + 0.125, pY + 0.125, pZ + 0.125));
-
+			List<Entity> hit =
+				world.getEntitiesWithinAABBExcludingEntity(
+					null,
+					AxisAlignedBB.getBoundingBox(
+						pX - 0.125,
+						pY - 0.125,
+						pZ - 0.125,
+						pX + 0.125,
+						pY + 0.125,
+						pZ + 0.125
+					)
+				);
 
 			for(int j = 0; j < hit.size(); j++) {
 				Entity ent = hit.get(j);
@@ -101,6 +117,20 @@ public class TurretCIWS extends TurretBase {
 				}
 			}
 		}
+	}
+
+	@Override
+	public void addInformation(
+		ItemStack stack,
+		EntityPlayer player,
+		List list,
+		boolean ext
+	) {
+		this.addStandardInfo(stack, player, list, ext);
+
+		list.add("Requires power");
+		list.add("Uses 20×102 mm ammunition");
+		list.add("Intercepts incoming missiles");
 	}
 
 	@Override

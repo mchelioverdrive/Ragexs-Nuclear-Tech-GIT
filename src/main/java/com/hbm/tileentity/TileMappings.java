@@ -287,6 +287,8 @@ public class TileMappings {
 		put(TileEntityTurretHIMARS.class, "tileentity_turret_himars");
 		put(TileEntityTurretSentry.class, "tileentity_turret_sentry");
 		put(TileEntityTurretSentryDamaged.class, "tileentity_turret_sentry_damaged");
+		//GameRegistry.registerTileEntity(TileEntityTurretCIWS.class, "tileentity_turret_cwis");
+		put(TileEntityTurretCIWS.class, "tileentity_turret_ciws");
 	}
 
 	private static void putMachines() {

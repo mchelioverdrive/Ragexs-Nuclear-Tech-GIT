@@ -44,6 +44,7 @@ import com.hbm.saveddata.satellites.Satellite;
 import com.hbm.tileentity.TileMappings;
 import com.hbm.tileentity.bomb.TileEntityLaunchPadBase;
 import com.hbm.tileentity.bomb.TileEntityNukeCustom;
+import com.hbm.tileentity.bomb.TileEntityTurretCIWS;
 import com.hbm.tileentity.machine.TileEntityNukeFurnace;
 import com.hbm.tileentity.machine.rbmk.RBMKDials;
 import com.hbm.util.*;
@@ -343,6 +344,9 @@ public class MainRegistry {
 		tMatCMB.setRepairItem(new ItemStack(ModItems.ingot_combine_steel));
 		enumToolMaterialBottleOpener.setRepairItem(new ItemStack(ModItems.plate_steel));
 		tMatDesh.setRepairItem(new ItemStack(ModItems.ingot_desh));
+		//I guess this is still needed? But we have a for loop below this that seems like it would cover this.
+		//GameRegistry.registerTileEntity(TileEntityTurretCIWS.class, "tileentity_turret_ciws");
+		//*Use TileMappings instead
 
 		NetworkRegistry.INSTANCE.registerGuiHandler(instance, new GUIHandler());
 

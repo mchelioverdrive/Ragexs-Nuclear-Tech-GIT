@@ -6665,3 +6665,5 @@ tile.ore_pollucite.name=Pollucite Ore
 tile.ore_magnesite.name=Dolomite Ore
 tile.ore_celestite.name=Celestite Ore
 tile.ore_barite.name=Barite Ore
+tile.turret_ciws.name=Phalanx Mk-15 CIWS
+tile.turret_ciws.desc=Requires power\nUses 20×102 mm ammunition\nIntercepts incoming missiles

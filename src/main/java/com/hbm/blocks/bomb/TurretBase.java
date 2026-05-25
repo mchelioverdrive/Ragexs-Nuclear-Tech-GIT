@@ -10,6 +10,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.world.World;
 
+//DELETE
 public abstract class TurretBase extends BlockContainer {
 
 	Random rand = new Random();
