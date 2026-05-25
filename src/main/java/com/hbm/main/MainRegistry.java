@@ -1053,6 +1053,8 @@ public class MainRegistry {
 		event.registerServerCommand(new CommandStations());
 		event.registerServerCommand(new CommandEnableNukes());
 		event.registerServerCommand(new CommandBedrockDrop());
+		MinecraftForge.EVENT_BUS.register(new NukeScheduler());
+		FMLCommonHandler.instance().bus().register(new NukeScheduler());
 	}
 
 	@EventHandler

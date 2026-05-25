@@ -9,7 +9,7 @@ import java.util.Locale;
 
 public class CommandEnableNukes extends CommandBase {
 
-	//TODO this command but you can set a custom DATE and TIME for when nukes will be enabled,
+	//TODOne? this command but you can set a custom DATE and TIME for when nukes will be enabled,
 	// and it will automatically enable/disable them at the specified time.
 	// ALSO fix the fact this command says an unknown error occurred when you run it without true or false
 	@Override
@@ -29,33 +29,71 @@ public class CommandEnableNukes extends CommandBase {
 
 		if(args.length == 0) {
 			sender.addChatMessage(new net.minecraft.util.ChatComponentText(
-				EnumChatFormatting.RED + "Usage: /ntmenablenukes true/false"
+				EnumChatFormatting.RED +
+					"Usage: /ntmenablenukes true/false OR /ntmenablenukes schedule true/false yyyy-MM-dd HH:mm"
 			));
 			return;
 		}
 
-		switch(args[0].toLowerCase(Locale.US)) {
+		// normal instant toggle
+		if(args.length == 1) {
 
-			case "true":
-				GeneralConfig.enableNuking = true;
-				sender.addChatMessage(new net.minecraft.util.ChatComponentText(
-					EnumChatFormatting.GREEN + "Nukes enabled."
-				));
-				break;
+			switch(args[0].toLowerCase(Locale.US)) {
 
-			case "false":
-				GeneralConfig.enableNuking = false;
-				sender.addChatMessage(new net.minecraft.util.ChatComponentText(
-					EnumChatFormatting.RED + "Nukes disabled."
-				));
-				break;
+				case "true":
+					GeneralConfig.enableNuking = true;
+					sender.addChatMessage(new net.minecraft.util.ChatComponentText(
+						EnumChatFormatting.GREEN + "Nukes enabled."
+					));
+					return;
 
-			default:
-				sender.addChatMessage(new net.minecraft.util.ChatComponentText(
-					EnumChatFormatting.RED + "Invalid argument. Use true/false."
-				));
-				break;
+				case "false":
+					GeneralConfig.enableNuking = false;
+					sender.addChatMessage(new net.minecraft.util.ChatComponentText(
+						EnumChatFormatting.RED + "Nukes disabled."
+					));
+					return;
+			}
 		}
+
+		// scheduled toggle
+		if(args.length == 4 && args[0].equalsIgnoreCase("schedule")) {
+
+			try {
+
+				boolean enable = Boolean.parseBoolean(args[1]);
+
+				String dateTime = args[2] + " " + args[3];
+
+				java.text.SimpleDateFormat format =
+					new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm");
+
+				long timestamp = format.parse(dateTime).getTime();
+
+				GeneralConfig.scheduledNukeTime = timestamp;
+				GeneralConfig.scheduledNukeValue = enable;
+
+				sender.addChatMessage(new net.minecraft.util.ChatComponentText(
+					EnumChatFormatting.YELLOW +
+						"Nukes scheduled to be " +
+						(enable ? "ENABLED" : "DISABLED") +
+						" at " + dateTime
+				));
+
+			} catch(Exception ex) {
+
+				sender.addChatMessage(new net.minecraft.util.ChatComponentText(
+					EnumChatFormatting.RED +
+						"Invalid format. Example: /ntmenablenukes schedule true 2026-05-30 18:30"
+				));
+			}
+
+			return;
+		}
+
+		sender.addChatMessage(new net.minecraft.util.ChatComponentText(
+			EnumChatFormatting.RED + "Invalid command usage."
+		));
 	}
 
 
