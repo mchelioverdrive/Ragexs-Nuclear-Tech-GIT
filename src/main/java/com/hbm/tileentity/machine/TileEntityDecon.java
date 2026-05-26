@@ -27,9 +27,25 @@ public class TileEntityDecon extends TileEntity {
 			List<EntityLivingBase> entities = this.worldObj.getEntitiesWithinAABB(EntityLivingBase.class, AxisAlignedBB.getBoundingBox(this.xCoord - 0.5, this.yCoord, this.zCoord - 0.5, this.xCoord + 1.5, this.yCoord + 2, this.zCoord + 1.5));
 			if(!entities.isEmpty()) {
 				for(EntityLivingBase e : entities) {
-					HbmLivingProps.incrementRadiation(e, -0.5F);
+					float ambientDoseRate = HbmLivingProps.getDoseRate(e); // mSv/s equivalent internal field
+					float deconEfficiency = 0.85F; // 85% shielding equivalent
+
+					float reducedDose = ambientDoseRate * (1.0F - deconEfficiency);
+
+					// apply only net reduction over time step
+					HbmLivingProps.incrementRadiation(e, -reducedDose * 1F / 20F);
 					e.removePotionEffect(HbmPotion.radiation.id);
-					HbmLivingProps.getCont(e).clear();
+					float washChance = 0.25F; // per tick exposure inside decon
+
+					for(ContaminationType type : ContaminationType.values()) {
+						float current = HbmLivingProps.getCont(e).get(type);
+
+						if(current > 0) {
+							float removed = current * washChance;
+
+							HbmLivingProps.getCont(e).add(type, -removed);
+						}
+					}
 				}
 
 				deconNeutron(entities);
@@ -61,11 +77,15 @@ public class TileEntityDecon extends TileEntity {
 
 			if(e instanceof EntityPlayer) {
 				EntityPlayer player = (EntityPlayer) e;
-				for(int i = 0; i < player.inventory.mainInventory.length; i++) {
-					HazardTypeNeutron.decay(player.inventory.getStackInSlot(i), 0.899916F);
-				}
+				
+					for(ItemStack stack : player.inventory.mainInventory) {
+						if(stack != null) {
+							HazardTypeNeutron.decay(stack, 0.02F); // 2% per tick exposure wash
+						}
+					}
+
 				for(int i = 0; i < player.inventory.armorInventory.length; i++) {
-					HazardTypeNeutron.decay(player.inventory.armorItemInSlot(i), 0.899916F);
+					HazardTypeNeutron.decay(player.inventory.armorItemInSlot(i), 0.03F); // higher exposure cleaning
 				}
 			}
 		}

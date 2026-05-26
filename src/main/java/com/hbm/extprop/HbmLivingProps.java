@@ -187,6 +187,21 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 		return getData(entity).contamination;
 	}
 
+	public static float getDoseRate(EntityLivingBase entity) {
+		HbmLivingProps data = getData(entity);
+
+		float env = data.radEnv;
+
+		float cont = 0F;
+		for(ContaminationEffect c : data.contamination) {
+			cont += c.getRad();
+		}
+
+		float activation = data.activation * 0.001F; // scale down to mSv/s equivalent
+
+		return env + cont + activation;
+	}
+
 	public static void addCont(EntityLivingBase entity, ContaminationEffect cont) {
 		getData(entity).contamination.add(cont);
 	}

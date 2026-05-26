@@ -78,26 +78,38 @@ public class BlockGasRadonDense extends BlockGasBase {
 
 			if(rand.nextInt(30) == 0) {
 
-				Block existing = world.getBlock(x, y, z);
-				int meta = world.getBlockMetadata(x, y, z);
-
 				world.setBlockToAir(x, y, z);
 
-				// Existing fallout -> stack it
+				// Determine fallout placement position
+				int placeY = y;
+
+				// If fallout exists below, stack there
+				if(world.getBlock(x, y - 1, z) == ModBlocks.fallout) {
+					placeY = y - 1;
+				}
+
+				Block existing = world.getBlock(x, placeY, z);
+				int meta = world.getBlockMetadata(x, placeY, z);
+
+				// Stack existing fallout
 				if(existing == ModBlocks.fallout) {
 
 					if(meta < 7) {
-						world.setBlock(x, y, z, ModBlocks.fallout, meta + 1, 3);
-					} else {
-						world.setBlock(x, y, z, ModBlocks.fallout, 7, 3);
+						world.setBlockMetadataWithNotify(
+							x,
+							placeY,
+							z,
+							meta + 1,
+							3
+						);
 					}
 
 					return;
 				}
 
-				// New fallout
-				if(ModBlocks.fallout.canPlaceBlockAt(world, x, y, z)) {
-					world.setBlock(x, y, z, ModBlocks.fallout, 0, 3);
+				// Place new fallout
+				if(ModBlocks.fallout.canPlaceBlockAt(world, x, placeY, z)) {
+					world.setBlock(x, placeY, z, ModBlocks.fallout, 0, 3);
 				}
 
 				return;
