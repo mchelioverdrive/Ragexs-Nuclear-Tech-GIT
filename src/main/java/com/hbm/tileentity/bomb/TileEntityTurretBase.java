@@ -82,35 +82,65 @@ public abstract class TileEntityTurretBase extends TileEntity {
 	@Override
 	public void updateEntity() {
 
-		boolean isCiws = this instanceof TileEntityTurretCIWS;
-		boolean hasPower = !isCiws || ((TileEntityTurretCIWS) this).hasPower();
+		//if(this instanceof TileEntityTurretCIWS) {
+		//	System.out.println("Power: " + ((TileEntityTurretCIWS)this).getPower());
+		//}
 
-		if(!worldObj.isRemote && isAI && hasPower) {
+
+		//TODOne if you do not power turret, it will not shoot and rotate.
+
+		System.out.println(
+			"AI=" + isAI +
+				" remote=" + worldObj.isRemote +
+				" hasPower=" +
+				(this instanceof TileEntityTurretCIWS
+					? ((TileEntityTurretCIWS)this).hasPower()
+					: "N/A")
+		);
+
+		if(!worldObj.isRemote && isAI && (
+			!(this instanceof TileEntityTurretCIWS)
+				|| ((TileEntityTurretCIWS)this).hasPower()
+		))
+
+			System.out.println("ENTERED AI BLOCK");
+
+
+			//&& canOperate()) bricks turret rotation even when having power so we cannot do that here
+			//we only care about the AI part of our automated close in weapon system.
+
 			Object[] iter = worldObj.loadedEntityList.toArray();
 			double radius = 1000;
 
-			if(isCiws)
+			if(this instanceof TileEntityTurretCIWS)
 				radius *= 100;
 			Entity target = null;
-			for (int i = 0; i < iter.length; i++) {
+			for (int i = 0; i < iter.length; i++)
+			{
 				Entity e = (Entity) iter[i];
-				if (isInSight(e)) {
+				if (isInSight(e))
+				{
 					double distance = e.getDistanceSq(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5);
-					if (distance < radius) {
+					if (distance < radius)
+					{
 						radius = distance;
 						target = e;
 					}
 				}
 			}
 
-			if(target != null) {
+			if(target != null ) { //&& canOperate() we also cannot do that here.
+				//I wanna try && te.getPower() but te isn't defined here. Let's try something else.
+
+				//System.out.println("TARGET = " + target);
+
 				Vec3 turret = Vec3.createVectorHelper(target.posX - (xCoord + 0.5), target.posY + target.getEyeHeight() - (yCoord + 1), target.posZ - (zCoord + 0.5));
 
-				if(isCiws) {
+				if(this instanceof TileEntityTurretCIWS ) {
 					turret = Vec3.createVectorHelper(target.posX - (xCoord + 0.5), target.posY + target.getEyeHeight() - (yCoord + 1.5), target.posZ - (zCoord + 0.5));
 				}
 
-				rotationPitch = -Math.asin(turret.yCoord / turret.lengthVector()) * 180 / Math.PI;
+				rotationPitch = -Math.asin(turret.yCoord/turret.lengthVector()) * 180 / Math.PI;
 				rotationYaw = -Math.atan2(turret.xCoord, turret.zCoord) * 180 / Math.PI;
 
 				if(rotationPitch < -60)
@@ -118,31 +148,38 @@ public abstract class TileEntityTurretBase extends TileEntity {
 				if(rotationPitch > 30)
 					rotationPitch = 30;
 
-				worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
+				if(!worldObj.isRemote) {
+					worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
+				}
 
-				PacketDispatcher.wrapper.sendToAll(
-					new TETurretPacket(
-						xCoord,
-						yCoord,
-						zCoord,
-						rotationYaw,
-						rotationPitch
-					)
-				);
+				if(!worldObj.isRemote) {
+					PacketDispatcher.wrapper.sendToAll(
+						new TETurretPacket(
+							xCoord,
+							yCoord,
+							zCoord,
+							rotationYaw,
+							rotationPitch
+						)
+					);
+				}
 
 				use++;
 
 				if(worldObj.getBlock(xCoord, yCoord, zCoord) instanceof TurretBase && ammo > 0) {
+					//System.out.println(
+					//	"SHOOT CHECK ammo=" + ammo +
+					//		" yaw=" + rotationYaw +
+					//		" pitch=" + rotationPitch
+					//);
 					if(((TurretBase)worldObj.getBlock(xCoord, yCoord, zCoord)).executeHoldAction(worldObj, use, rotationYaw, rotationPitch, xCoord, yCoord, zCoord))
 						ammo--;
 				}
+
 			} else {
 				use = 0;
 			}
-		} else if(!worldObj.isRemote) {
-			use = 0;
 		}
-	}
 
 
 
