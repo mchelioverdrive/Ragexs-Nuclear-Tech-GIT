@@ -10,16 +10,18 @@ import com.hbm.tileentity.bomb.TileEntityTurretCIWS;
 
 import com.hbm.blocks.ITooltipProvider;
 
+import com.hbm.util.I18nUtil;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
-public class TurretCIWS extends TurretBase implements ITooltipProvider {
+public class TurretCIWS extends TurretBase {
 
 	public TurretCIWS(Material mat) {
 		super(mat);
@@ -120,18 +122,32 @@ public class TurretCIWS extends TurretBase implements ITooltipProvider {
 		}
 	}
 
-	@Override
-	public void addInformation(
-		ItemStack stack,
-		EntityPlayer player,
-		List list,
-		boolean ext
-	) {
-		this.addStandardInfo(stack, player, list, ext);
+	//@Override
+	//public void addInformation(
+	//	ItemStack stack,
+	//	EntityPlayer player,
+	//	List list,
+	//	boolean ext
+	//) {
+	//	this.addStandardInfo(stack, player, list, ext);
+//
+	//	list.add("Requires power");
+	//	list.add("Uses 20×102 mm ammunition");
+	//	list.add("Intercepts incoming missiles");
+	//}
 
-		list.add("Requires power");
-		list.add("Uses 20×102 mm ammunition");
-		list.add("Intercepts incoming missiles");
+	//@Override
+	//public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
+	//	//super.addInformation(stack, player, list, ext);
+	//	list.add(EnumChatFormatting.YELLOW + "Requires power");
+	//	list.add(EnumChatFormatting.YELLOW + "Uses 20×102 mm ammunition");
+	//	list.add(EnumChatFormatting.YELLOW + "Intercepts incoming missiles");
+	//}
+	@Override
+	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
+		list.add(EnumChatFormatting.YELLOW + "Requires power");
+		list.add(EnumChatFormatting.YELLOW + "Uses 20x102 mm ammunition");
+		list.add(EnumChatFormatting.YELLOW + "Intercepts incoming missiles");
 	}
 
 	@Override
