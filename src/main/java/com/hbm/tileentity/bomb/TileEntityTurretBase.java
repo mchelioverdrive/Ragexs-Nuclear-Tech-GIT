@@ -46,6 +46,11 @@ public abstract class TileEntityTurretBase extends TileEntity {
 		if(isAI && canOperate()) {
 			//we only care about the AI part of our automated close in weapon system.
 
+			if(this instanceof TileEntityTurretCIWS && !((TileEntityTurretCIWS)this).hasPower()) {
+				use = 0;
+				return;
+			}
+
 			Object[] iter = worldObj.loadedEntityList.toArray();
 			double radius = 1000;
 
@@ -72,6 +77,7 @@ public abstract class TileEntityTurretBase extends TileEntity {
 					use = 0;
 					return;
 				}
+
 
 				Vec3 turret = Vec3.createVectorHelper(target.posX - (xCoord + 0.5), target.posY + target.getEyeHeight() - (yCoord + 1), target.posZ - (zCoord + 0.5));
 
