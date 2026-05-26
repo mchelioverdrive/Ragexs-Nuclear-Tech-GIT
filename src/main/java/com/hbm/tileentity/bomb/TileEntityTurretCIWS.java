@@ -23,6 +23,9 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 	public double turretYaw;
 	public double turretPitch;
 
+	public double renderYaw;
+	public double renderPitch;
+
 	//trySubscribe(
 	//				worldObj,
 	//				xCoord,
@@ -50,7 +53,6 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 
 			rotation += spin;
 			rotation = rotation % 360;
-			//I'm pretty sure this is just the barrel rotating, not the actual turret rotation, and it's working just fine, so we need to sync the rotation to the client so it doesn't just sit at 0.-
 
 			PacketDispatcher.wrapper.sendToAll(
 				new AuxGaugePacket(
@@ -61,21 +63,9 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 					0
 				)
 			);
-			//when this is on the server, the client will not update the rotation and it will be stuck at 0
-			super.updateEntity();
-			this.turretYaw = this.rotationYaw;
-			this.turretPitch = this.rotationPitch;
 		}
-		if (this.hasPower()) {
-			super.updateEntity();
-		}
-		//double up so we're sync'd but ONLY if we have power.-
-		//JUST KIDDING IT ACTUALLY STILL SITS AT 0 FOR SOME REASON!!! SO WE NEED TO SYNC SOMETHING
 
-		// Run AI AFTER power has updated
-		//this will run on the client:
-		//TODO move to server if still bugged
-
+		super.updateEntity();
 	}
 
 	private DirPos[] getConPos() {
