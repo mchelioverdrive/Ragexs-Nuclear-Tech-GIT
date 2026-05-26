@@ -4395,37 +4395,88 @@ public class ModItems {
 			.setCreativeTab(MainRegistry.consumableTab)
 			.setTextureName(RefStrings.MODID + ":iv_blood");
 
-		//iv_xp_empty = new ItemSimpleConsumable().setUseActionServer((stack, user) -> {
-		//	if(EnchantmentUtil.getTotalExperience(user) >= 100) {
-		//		ItemSimpleConsumable.giveSoundAndDecrement(stack, user, "hbm:item.syringe", new ItemStack(ModItems.iv_xp));
-		//		EnchantmentUtil.setExperience(user, EnchantmentUtil.getTotalExperience(user) - 100);
-		//	}
-		//}).setUnlocalizedName("iv_xp_empty").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":iv_xp_empty");
-
-		//iv_xp = new ItemSimpleConsumable().setUseActionServer((stack, user) -> {
-		//	ItemSimpleConsumable.giveSoundAndDecrement(stack, user, "random.orb", new ItemStack(ModItems.iv_xp_empty));
-		//	EnchantmentUtil.addExperience(user, 100, false);
-		//}).setUnlocalizedName("iv_xp").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":iv_xp");
-
 		radaway = new ItemSimpleConsumable().setUseActionServer((stack, user) -> {
-			ItemSimpleConsumable.giveSoundAndDecrement(stack, user, "hbm:item.radaway", new ItemStack(ModItems.iv_empty));
-			ItemSimpleConsumable.addPotionEffect(user, HbmPotion.radaway, 140, 0);
-		}).setUnlocalizedName("radaway").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":radaway");
+				ItemSimpleConsumable.giveSoundAndDecrement(
+					stack,
+					user,
+					"hbm:item.radaway",
+					new ItemStack(ModItems.iv_empty)
+				);
+
+				// Standard anti-rad IV
+				ItemSimpleConsumable.addPotionEffect(
+					user,
+					HbmPotion.radaway,
+					140,
+					0
+				);
+
+			}).setUnlocalizedName("radaway")
+			.setCreativeTab(MainRegistry.consumableTab)
+			.setTextureName(RefStrings.MODID + ":radaway");
+
 
 		prussian_blue_powder = new ItemSimpleConsumable().setUseActionServer((stack, user) -> {
-			ItemSimpleConsumable.giveSoundAndDecrement(stack, user, "hbm:item.radaway", new ItemStack(ModItems.iv_empty));
-			ItemSimpleConsumable.addPotionEffect(user, HbmPotion.radaway, 400, 0);
-		}).setUnlocalizedName("prussian_blue_powder").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":powder_lapis");
+				ItemSimpleConsumable.giveSoundAndDecrement(
+					stack,
+					user,
+					"hbm:item.radaway",
+					null // or remove if no empty returned
+				);
+
+				// Weak oral fallout treatment
+				ItemSimpleConsumable.addPotionEffect(
+					user,
+					HbmPotion.radaway,
+					100,
+					0
+				);
+
+			}).setUnlocalizedName("prussian_blue_powder")
+			.setCreativeTab(MainRegistry.consumableTab)
+			.setTextureName(RefStrings.MODID + ":powder_lapis");
+
 
 		radaway_strong = new ItemSimpleConsumable().setUseActionServer((stack, user) -> {
-			ItemSimpleConsumable.giveSoundAndDecrement(stack, user, "hbm:item.radaway", new ItemStack(ModItems.iv_empty));
-			ItemSimpleConsumable.addPotionEffect(user, HbmPotion.radaway, 350, 0);
-		}).setUnlocalizedName("radaway_strong").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":radaway_strong");
+				ItemSimpleConsumable.giveSoundAndDecrement(
+					stack,
+					user,
+					"hbm:item.radaway",
+					new ItemStack(ModItems.iv_empty)
+				);
+
+				// Hospital-grade treatment
+				ItemSimpleConsumable.addPotionEffect(
+					user,
+					HbmPotion.radaway,
+					350,
+					0
+				);
+
+			}).setUnlocalizedName("radaway_strong")
+			.setCreativeTab(MainRegistry.consumableTab)
+			.setTextureName(RefStrings.MODID + ":radaway_strong");
+
 
 		radaway_flush = new ItemSimpleConsumable().setUseActionServer((stack, user) -> {
-			ItemSimpleConsumable.giveSoundAndDecrement(stack, user, "hbm:item.radaway", new ItemStack(ModItems.iv_empty));
-			ItemSimpleConsumable.addPotionEffect(user, HbmPotion.radaway, 500, 2);
-		}).setUnlocalizedName("radaway_flush").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":radaway_flush");
+				ItemSimpleConsumable.giveSoundAndDecrement(
+					stack,
+					user,
+					"hbm:item.radaway",
+					new ItemStack(ModItems.iv_empty)
+				);
+
+				// Emergency radiological intervention
+				ItemSimpleConsumable.addPotionEffect(
+					user,
+					HbmPotion.radaway,
+					500,
+					1
+				);
+
+			}).setUnlocalizedName("radaway_flush")
+			.setCreativeTab(MainRegistry.consumableTab)
+			.setTextureName(RefStrings.MODID + ":radaway_flush");
 
 		med_bag = new ItemSyringe().setUnlocalizedName("med_bag").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":med_bag");
 		radx = new ItemPill(0).setUnlocalizedName("radx").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":radx");

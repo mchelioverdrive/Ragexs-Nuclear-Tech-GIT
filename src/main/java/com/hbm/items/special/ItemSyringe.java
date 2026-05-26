@@ -220,21 +220,30 @@ public class ItemSyringe extends Item {
 			}
 		}
 
-		//TODO realistify
+		//TODOne realistify
 
-		if(this == ModItems.radaway) { //currently 140MsV
+		if(this == ModItems.radaway) { //2400
+
 			if(!world.isRemote) {
-				player.addPotionEffect(new PotionEffect(HbmPotion.radaway.id, 14, 9));
+
+				player.addPotionEffect(
+					new PotionEffect(HbmPotion.radaway.id, 20 * 45, 0)
+				);
+
+				player.addPotionEffect(
+					new PotionEffect(Potion.hunger.id, 20 * 20, 1)
+				);
+
 				VersatileConfig.applyPotionSickness(player, 5);
 
 				stack.stackSize--;
-				world.playSoundAtEntity(player, "hbm:item.radaway", 1.0F, 1.0F);
+				world.playSoundAtEntity(player, "hbm:item.radaway", 1F, 1F);
 			}
 		}
-		
+
 		if(this == ModItems.prussian_blue_powder) { //copied stats (assume this is like shittier desprate pill form, I'll add a pill soon.
 			if(!world.isRemote) {
-				player.addPotionEffect(new PotionEffect(HbmPotion.radaway.id, 14, 9));
+				player.addPotionEffect(new PotionEffect(HbmPotion.radaway.id, 14, 3));
 				//no cooldown if pill form, IVs are annoying lol
 
 				stack.stackSize--;
@@ -242,11 +251,11 @@ public class ItemSyringe extends Item {
 			}
 		}
 
-		if(this == ModItems.radaway_strong) { //350 MsV placeholder
+		if(this == ModItems.radaway_strong) { //5400
 			if(!world.isRemote) {
 				VersatileConfig.applyPotionSickness(player, 5);
-				int duration = 35;
-				int level = 9;
+				int duration = 20 * 45;
+				int level = 5;
 
 				if(!player.isPotionActive(HbmPotion.radaway)) {
 					player.addPotionEffect(new PotionEffect(HbmPotion.radaway.id, duration, level));
@@ -256,38 +265,34 @@ public class ItemSyringe extends Item {
 					player.addPotionEffect(new PotionEffect(HbmPotion.radaway.id, d, level));
 				}
 
+				player.addPotionEffect(
+					new PotionEffect(Potion.weakness.id, 20 * 12, 0)
+				);
+
 				stack.stackSize--;
 				world.playSoundAtEntity(player, "hbm:item.radaway", 1.0F, 1.0F);
 			}
 		}
 
-		if(this == ModItems.radaway_flush) { //placeholder value is 1000 Msv
+		if(this == ModItems.radaway_flush) { //10800
 			VersatileConfig.applyPotionSickness(player, 5);
 			if(!world.isRemote) {
-				player.addPotionEffect(new PotionEffect(HbmPotion.radaway.id, 50, 19));
+				player.addPotionEffect(
+					new PotionEffect(HbmPotion.radaway.id, 20 * 60, 8)
+				);
+				player.addPotionEffect(
+					new PotionEffect(Potion.hunger.id, 20 * 20, 1)
+				);
+
+				player.addPotionEffect(
+					new PotionEffect(Potion.weakness.id, 20 * 15, 1)
+				);
 
 				stack.stackSize--;
 				world.playSoundAtEntity(player, "hbm:item.radaway", 1.0F, 1.0F);
 			}
 		}
 
-		//if(this == ModItems.syringe_taint) {
-		//	if(!world.isRemote) {
-		//		player.addPotionEffect(new PotionEffect(HbmPotion.taint.id, 60 * 20, 0));
-		//		player.addPotionEffect(new PotionEffect(Potion.confusion.id, 5 * 20, 0));
-//
-		//		stack.stackSize--;
-		//		world.playSoundAtEntity(player, "hbm:item.syringe", 1.0F, 1.0F);
-		//	}
-//
-		//	if(!player.inventory.addItemStackToInventory(new ItemStack(ModItems.syringe_metal_empty))) {
-		//		player.dropPlayerItemWithRandomChoice(new ItemStack(ModItems.syringe_metal_empty, 1, 0), false);
-		//	}
-//
-		//	if(!player.inventory.addItemStackToInventory(new ItemStack(ModItems.bottle2_empty))) {
-		//		player.dropPlayerItemWithRandomChoice(new ItemStack(ModItems.bottle2_empty, 1, 0), false);
-		//	}
-		//}
 
 		if(this == ModItems.gas_mask_filter_mono && player.inventory.armorInventory[3] != null && player.inventory.armorInventory[3].getItem() == ModItems.gas_mask_mono) {
 			if(!world.isRemote) {
