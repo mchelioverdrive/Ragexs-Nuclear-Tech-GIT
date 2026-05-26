@@ -43,7 +43,7 @@ public abstract class TileEntityTurretBase extends TileEntity {
 
 		//TODOne if you do not power turret, it will not shoot and rotate.
 
-		if(isAI) { //&& canOperate()) bricks turret rotation even when having power so we cannot do that here
+		if(isAI && canOperate()) {
 			//we only care about the AI part of our automated close in weapon system.
 
 			Object[] iter = worldObj.loadedEntityList.toArray();
@@ -66,7 +66,7 @@ public abstract class TileEntityTurretBase extends TileEntity {
 				}
 			}
 
-			if(target != null ) { //&& canOperate() we also cannot do that here.
+			if(target != null ) {
 
 				Vec3 turret = Vec3.createVectorHelper(target.posX - (xCoord + 0.5), target.posY + target.getEyeHeight() - (yCoord + 1), target.posZ - (zCoord + 0.5));
 
