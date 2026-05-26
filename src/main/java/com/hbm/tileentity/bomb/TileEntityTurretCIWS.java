@@ -31,11 +31,6 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 
 
 	@Override
-	protected boolean canOperate() {
-		return hasPower();
-	}
-
-	@Override
 	public void updateEntity() {
 
 		super.updateEntity();
@@ -49,14 +44,6 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 
 		if(!worldObj.isRemote) {
 			updateConnections();
-
-			if(hasPower()) {
-				this.power -= consumption;
-
-				if(this.power < 0) {
-					this.power = 0;
-				}
-			}
 
 
 			if(spin > 0)
@@ -118,6 +105,14 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 
 	public boolean hasPower() {
 		return power >= consumption;
+	}
+
+	public boolean hasPowerForShot() {
+		return power >= POWER_PER_SHOT;
+	}
+
+	public void consumeShotPower() {
+		consumePower(POWER_PER_SHOT);
 	}
 
 	@Override
