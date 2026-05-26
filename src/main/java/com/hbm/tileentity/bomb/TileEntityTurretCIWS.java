@@ -20,8 +20,6 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 	private static final long maxPower = 100_000;
 	public static final long POWER_PER_SHOT = 250;
 	public static final int consumption = 1000;
-	public double turretYaw;
-	public double turretPitch;
 
 	//trySubscribe(
 	//				worldObj,
@@ -63,8 +61,6 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 			);
 			//when this is on the server, the client will not update the rotation and it will be stuck at 0
 			super.updateEntity();
-			this.turretYaw = this.rotationYaw;
-			this.turretPitch = this.rotationPitch;
 		}
 		if (this.hasPower()) {
 			super.updateEntity();
@@ -102,16 +98,12 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		power = nbt.getLong("power");
-		turretYaw = nbt.getDouble("turretYaw");
-		turretPitch = nbt.getDouble("turretPitch");
 	}
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		nbt.setLong("power", power);
-		nbt.setDouble("turretYaw", turretYaw);
-		nbt.setDouble("turretPitch", turretPitch);
 	}
 
 	@Override
