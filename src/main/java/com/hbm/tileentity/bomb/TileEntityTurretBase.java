@@ -9,6 +9,7 @@ import com.hbm.lib.Library;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.TETurretPacket;
 
+import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.Entity;
@@ -44,6 +45,7 @@ public abstract class TileEntityTurretBase extends TileEntity {
 		//TODOne if you do not power turret, it will not shoot and rotate.
 
 		if(isAI && canOperate()) {
+
 			//we only care about the AI part of our automated close in weapon system.
 
 
@@ -93,6 +95,12 @@ public abstract class TileEntityTurretBase extends TileEntity {
 
 			} else {
 				use = 0;
+			}
+			if(!worldObj.isRemote && (rotationYaw != lastYaw || rotationPitch != lastPitch)) {
+				PacketDispatcher.wrapper.sendToAllAround(new TETurretPacket(xCoord, yCoord, zCoord, rotationYaw, rotationPitch),
+					new TargetPoint(worldObj.provider.dimensionId, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, 128));
+				lastYaw = rotationYaw;
+				lastPitch = rotationPitch;
 			}
 		}
 	}
