@@ -37,14 +37,10 @@ public class TurretCIWS extends TurretBase implements ITooltipProvider {
 		TileEntityTurretCIWS te = (TileEntityTurretCIWS)world.getTileEntity(x, y, z);
 		boolean flag = false;
 
-		//if (te.canOperate()) //so apparently this does nothing apparently
-		if(te.hasPower())
-
-		//todo if canOperate() then literally everything in this block, then maybe turret rotation won't be fucked?
-
-		//TODO if you do not power turret, it will not shoot and rotate.
-
-
+		if(!te.hasPower()) {
+			te.spin = 0;
+			return false;
+		}
 
 		if(pitch < -60)
 			pitch = -60;
@@ -56,7 +52,7 @@ public class TurretCIWS extends TurretBase implements ITooltipProvider {
 		if(te.spin < 35)
 			te.spin += 5;
 
-		if(te.spin > 25 && i % 2 == 0) {
+		if(te.spin > 25 && i % 2 == 0 && te.hasPowerForShot()) {
 			Vec3 vector = Vec3.createVectorHelper(
 				-Math.sin(yaw / 180.0F * (float) Math.PI) * Math.cos(pitch / 180.0F * (float) Math.PI),
 				-Math.sin(pitch / 180.0F * (float) Math.PI),
@@ -81,8 +77,7 @@ public class TurretCIWS extends TurretBase implements ITooltipProvider {
 				//TODO add back in
 			}
 
-			//te.consumePower(250);
-			//I don't know that we should do that here?
+			te.consumeShotPower();
 
 			world.playSoundEffect(x, y, z, "hbm:weapon.gun_m61a1_snd", 5.0F, 1.25F);
 
