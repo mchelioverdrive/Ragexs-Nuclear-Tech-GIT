@@ -98,10 +98,11 @@ public abstract class TileEntityTurretBase extends TileEntity {
 					: "N/A")
 		);
 
-		if(!worldObj.isRemote && isAI && (
-			!(this instanceof TileEntityTurretCIWS)
+		if(isAI && (
+			worldObj.isRemote
+				|| !(this instanceof TileEntityTurretCIWS)
 				|| ((TileEntityTurretCIWS)this).hasPower()
-		))
+		)) {
 
 			System.out.println("ENTERED AI BLOCK");
 
@@ -132,7 +133,7 @@ public abstract class TileEntityTurretBase extends TileEntity {
 			if(target != null ) { //&& canOperate() we also cannot do that here.
 				//I wanna try && te.getPower() but te isn't defined here. Let's try something else.
 
-				//System.out.println("TARGET = " + target);
+				System.out.println("TARGET = " + target);
 
 				Vec3 turret = Vec3.createVectorHelper(target.posX - (xCoord + 0.5), target.posY + target.getEyeHeight() - (yCoord + 1), target.posZ - (zCoord + 0.5));
 
@@ -167,11 +168,11 @@ public abstract class TileEntityTurretBase extends TileEntity {
 				use++;
 
 				if(worldObj.getBlock(xCoord, yCoord, zCoord) instanceof TurretBase && ammo > 0) {
-					//System.out.println(
-					//	"SHOOT CHECK ammo=" + ammo +
-					//		" yaw=" + rotationYaw +
-					//		" pitch=" + rotationPitch
-					//);
+					System.out.println(
+						"SHOOT CHECK ammo=" + ammo +
+							" yaw=" + rotationYaw +
+							" pitch=" + rotationPitch
+					);
 					if(((TurretBase)worldObj.getBlock(xCoord, yCoord, zCoord)).executeHoldAction(worldObj, use, rotationYaw, rotationPitch, xCoord, yCoord, zCoord))
 						ammo--;
 				}
@@ -181,7 +182,7 @@ public abstract class TileEntityTurretBase extends TileEntity {
 			}
 		}
 
-
+	}
 
 	private boolean isInSight(Entity e) {
 		if(!(e instanceof EntityLivingBase) && !(e instanceof EntityMissileBaseNT))
