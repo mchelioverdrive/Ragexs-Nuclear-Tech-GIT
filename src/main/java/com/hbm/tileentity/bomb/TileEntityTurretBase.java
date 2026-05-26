@@ -68,6 +68,11 @@ public abstract class TileEntityTurretBase extends TileEntity {
 
 			if(target != null ) { //&& canOperate() we also cannot do that here.
 
+				if(this instanceof TileEntityTurretCIWS && !((TileEntityTurretCIWS)this).hasPower()) {
+					use = 0;
+					return;
+				}
+
 				Vec3 turret = Vec3.createVectorHelper(target.posX - (xCoord + 0.5), target.posY + target.getEyeHeight() - (yCoord + 1), target.posZ - (zCoord + 0.5));
 
 				if(this instanceof TileEntityTurretCIWS ) {
