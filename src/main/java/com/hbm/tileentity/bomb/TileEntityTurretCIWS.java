@@ -31,21 +31,20 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 
 
 	@Override
+	protected boolean canOperate() {
+		return hasPower();
+	}
+
+	@Override
 	public void updateEntity() {
-
-		super.updateEntity();
-
-		//this.ammo = 100;
-		//??? what does this do other than inf ammo?
-
-
-
-
 
 		if(!worldObj.isRemote) {
 			updateConnections();
+		}
 
+		super.updateEntity();
 
+		if(!worldObj.isRemote) {
 			if(spin > 0)
 				spin -= 1;
 
@@ -105,6 +104,14 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 
 	public boolean hasPower() {
 		return power >= consumption;
+	}
+
+	public boolean hasPowerForShot() {
+		return power >= POWER_PER_SHOT;
+	}
+
+	public void consumeShotPower() {
+		consumePower(POWER_PER_SHOT);
 	}
 
 	public boolean hasPowerForShot() {
