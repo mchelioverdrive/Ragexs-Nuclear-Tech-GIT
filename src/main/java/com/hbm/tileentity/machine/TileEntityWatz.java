@@ -59,8 +59,9 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 	public boolean isLocked = false;
 	public ItemStack[] locks;
 
-	//TODO xenon poisoning
+	//TODOne xenon poisoning
 	public double xenon;
+	public double iodine;
 
 	private static final double[] SLOT_WEIGHTS = {
 
@@ -88,10 +89,10 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 	public TileEntityWatz() {
 		super(24);
 		this.locks = new ItemStack[slots.length];
-		this.tanks = new FluidTank[3];
+		this.tanks = new FluidTank[2];
 		this.tanks[0] = new FluidTank(Fluids.HELIUM4, 64_000);
 		this.tanks[1] = new FluidTank(Fluids.HELIUM4_HOT, 64_000);
-		this.tanks[2] = new FluidTank(Fluids.WATZ, 64_000); //shouldn't this be xenon or something?
+		//this.tanks[2] = new FluidTank(Fluids.WATZ, 64_000); //shouldn't this be xenon or something?
 	}
 
 	@Override
@@ -103,7 +104,9 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 	public void updateEntity() {
 
 		if(!worldObj.isRemote && !updateLock()) {
-			xenon *= 0.9995D;
+			//xenon *= 0.9995D;
+			//xenon decay should happen only while off
+
 			boolean turnedOn = worldObj.getBlock(xCoord, yCoord + 3, zCoord) == ModBlocks.watz_pump && worldObj.getIndirectPowerLevelTo(xCoord, yCoord + 5, zCoord, 0) > 0;
 			List<TileEntityWatz> segments = new ArrayList();
 			segments.add(this);
@@ -120,14 +123,23 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 			}
 
 			/* set up shared tanks */
-			FluidTank[] sharedTanks = new FluidTank[3];
-			for(int i = 0; i < 3; i++) sharedTanks[i] = new FluidTank(tanks[i].getTankType(), 0);
+			FluidTank[] sharedTanks = new FluidTank[tanks.length];
+
+			for(int i = 0; i < tanks.length; i++) sharedTanks[i] = new FluidTank(tanks[i].getTankType(), 0);
 
 			for(TileEntityWatz segment : segments) {
-				segment.setupCoolant(); //crashed here
-				for(int i = 0; i < 3; i++) {
-					sharedTanks[i].changeTankSize(sharedTanks[i].getMaxFill() + segment.tanks[i].getMaxFill());
-					sharedTanks[i].setFill(sharedTanks[i].getFill() + segment.tanks[i].getFill());
+				segment.setupCoolant();
+
+				for(int i = 0; i < tanks.length; i++) {
+					sharedTanks[i].changeTankSize(
+						sharedTanks[i].getMaxFill() +
+							segment.tanks[i].getMaxFill()
+					);
+
+					sharedTanks[i].setFill(
+						sharedTanks[i].getFill() +
+							segment.tanks[i].getFill()
+					);
 				}
 			}
 
@@ -159,7 +171,7 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 			/* re-distribute fluid from shared tanks back into actual tanks, bottom to top */
 			for(int i = segments.size() - 1; i >= 0; i--) {
 				TileEntityWatz segment = segments.get(i);
-				for(int j = 0; j < 3; j++) {
+				for(int j = 0; j < tanks.length; j++) {
 					int min = Math.min(segment.tanks[j].getMaxFill(), sharedTanks[j].getFill());
 					sharedTanks[j].setFill(sharedTanks[j].getFill() - min);
 					segment.tanks[j].setFill(min);
@@ -231,7 +243,7 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 	/** basic sanity checking, usually wouldn't do anything except when NBT loading borks */
 	public void setupCoolant() {
 		tanks[0].setTankType(Fluids.HELIUM4);
-		tanks[1].setTankType(tanks[0].getTankType().getTrait(FT_Heatable.class).getFirstStep().typeProduced); //crashed here
+		tanks[1].setTankType(tanks[0].getTankType().getTrait(FT_Heatable.class).getFirstStep().typeProduced);
 	}
 
 	public void updateCoolant(FluidTank[] tanks) {
@@ -270,6 +282,18 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 	/** enforces strict top to bottom update order (instead of semi-random based on placement) */
 	public void updateReaction(TileEntityWatz above, FluidTank[] tanks, boolean turnedOn) {
 
+		/* iodine -> xenon decay */
+		double iodineDecay =
+			iodine * 0.00015D;
+
+		/* xenon natural decay */
+		double xenonDecay =
+			xenon * 0.00002D;
+
+		iodine -= iodineDecay;
+		xenon += iodineDecay;
+		xenon -= xenonDecay;
+
 		if(turnedOn) {
 			List<ItemStack> pellets = new ArrayList();
 
@@ -305,7 +329,7 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 			}
 
 			double xenonPenalty =
-				1D / (1D + xenon);
+				1D / (1D + xenon * 0.35D);
 
 			/* graphite moderation bonus */
 			double graphiteBonus = 1D;
@@ -339,6 +363,15 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 					* xenonPenalty
 					* graphiteBonus;
 
+			/* neutron burnoff of xenon */
+			double xenonBurn =
+				Math.min(
+					xenon,
+					inputFlux * 0.00008D
+				);
+
+			xenon -= xenonBurn;
+
 			double addedFlux = 0D;
 			double addedHeat = 0D;
 
@@ -370,8 +403,8 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 					addedHeat +=
 						type.heatEmission *
 							burn;
-					tanks[2].setFill(tanks[2].getFill() + (int) Math.round(type.mudContent * burn));
-					xenon += burn * 0.0005D;
+					//tanks[2].setFill(tanks[2].getFill() + (int) Math.round(type.xenonProduction * burn));
+					iodine += burn * type.xenonProduction;
 				}
 			}
 
@@ -398,7 +431,7 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 						) * weight;
 					addedHeat += absorb;
 					ItemWatzPellet.setYield(stack, ItemWatzPellet.getYield(stack) - absorb);
-					tanks[2].setFill(tanks[2].getFill() + (int) Math.round(type.mudContent * absorb));
+					//tanks[2].setFill(tanks[2].getFill() + (int) Math.round(type.xenonProduction * absorb));
 				}
 			}
 
@@ -412,6 +445,7 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 			this.fluxLastReaction = addedFlux;
 
 		} else {
+			xenon *= 0.9995D;
 			this.fluxLastBase = 0;
 			this.fluxLastReaction = 0;
 
@@ -461,7 +495,9 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 		data.setBoolean("lock", isLocked);
 		data.setDouble("flux", this.fluxLastReaction + this.fluxLastBase);
 		for(int i = 0; i < tanks.length; i++) {
-			tanks[i].writeToNBT(data, "t" + i);
+			if(tanks[i] != null) {
+				tanks[i].writeToNBT(data, "t" + i);
+			}
 		}
 		this.networkPack(data, 25);
 	}
@@ -475,7 +511,9 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 		this.isLocked = nbt.getBoolean("lock");
 		this.fluxDisplay = nbt.getDouble("flux");
 		for(int i = 0; i < tanks.length; i++) {
-			tanks[i].readFromNBT(nbt, "t" + i);
+			if(tanks[i] != null) {
+				tanks[i].readFromNBT(nbt, "t" + i);
+			}
 		}
 	}
 
@@ -496,7 +534,7 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 
 		for(DirPos pos : getSendingPos()) {
 			if(tanks[1].getFill() > 0) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			if(tanks[2].getFill() > 0) this.sendFluid(tanks[2], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			//if(tanks[2].getFill() > 0) this.sendFluid(tanks[2], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
 	}
 
@@ -524,12 +562,17 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 			}
 		}
 
-		for(int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "t" + i);
+		for(int i = 0; i < tanks.length; i++) {
+			if(tanks[i] != null) {
+				tanks[i].readFromNBT(nbt, "t" + i);
+			}
+		}
 		this.heat = nbt.getInteger("heat");
 		this.fluxLastBase = nbt.getDouble("lastFluxB");
 		this.fluxLastReaction = nbt.getDouble("lastFluxR");
 
 		this.isLocked = nbt.getBoolean("isLocked");
+		this.iodine = nbt.getDouble("iodine");
 		this.xenon = nbt.getDouble("xenon");
 	}
 
@@ -549,12 +592,17 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 		}
 		nbt.setTag("locks", list);
 
-		for(int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(nbt, "t" + i);
+		for(int i = 0; i < tanks.length; i++) {
+			if(tanks[i] != null) {
+				tanks[i].writeToNBT(nbt, "t" + i);
+			}
+		}
 		nbt.setInteger("heat", this.heat);
 		nbt.setDouble("lastFluxB", fluxLastBase);
 		nbt.setDouble("lastFluxR", fluxLastReaction);
 
 		nbt.setBoolean("isLocked", isLocked);
+		nbt.setDouble("iodine", iodine);
 		nbt.setDouble("xenon", xenon);
 	}
 
@@ -719,8 +767,8 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 
 	@Override
 	public FluidTank[] getSendingTanks() {
-		return new FluidTank[] { tanks[1], tanks[2] };
-	}
+		return new FluidTank[] { tanks[1] };
+	} //, tanks[2]
 
 	@Override
 	public FluidTank[] getReceivingTanks() {

@@ -111,6 +111,8 @@ public class ItemWatzPellet extends ItemEnumMulti {
 		LEAD(			0xA6A6B2, 0x03030F, 0,		0,		0.0025D,	null, null, new FunctionSqrt(10)), //standard absorber, negative coefficient
 		BORON(			0xBDC8D2, 0x29343E, 0,		0,		0.0025D,	null, null, new FunctionLinear(10)), //improved absorber, linear
 		DU(				0xC1C7BD, 0x2B3227, 0,		0,		0.0025D,	null, null, new FunctionQuadratic(1D, 1D).withDiv(100)), //absorber with positive coefficient
+
+		//non craftable:
 		NQD(			0x4B4B4B, 0x121212, 2_000,	20,		0.01D,		new FunctionLinear(2D), new FunctionSqrt(1D/25D).withOff(25D * 25D), null),
 		NQR(			0x2D2D2D, 0x0B0B0B, 2_500,	30,		0.01D,		new FunctionLinear(1.5D), new FunctionSqrt(1D/25D).withOff(25D * 25D), null),
 		//PU241(			0x78817E, 394240, 1_950,	25,		0.0025D,		new FunctionLinear(1.30D), new FunctionSqrt(2.66D/18D).withOff(24D * 24D), null),
@@ -138,19 +140,31 @@ public class ItemWatzPellet extends ItemEnumMulti {
 		public double yield = 1_000_000_000;
 		public int colorLight;
 		public int colorDark;
-		public double mudContent;	//how much mud per reaction flux should be produced
+		public double xenonProduction;	//xenon production per flux, for poisoning.
 		public double passive;		//base flux emission
 		public double heatEmission;	//reactivity(1) to heat (heat per outgoing flux)
 		public Function burnFunc;	//flux to reactivity(0) (classic reactivity)
 		public Function heatDiv;	//reactivity(0) to reactivity(1) based on heat (temperature coefficient)
 		public Function absorbFunc;	//flux to heat (flux absobtion for non-active component)
 
-		private EnumWatzType(int colorLight, int colorDark, double passive, double heatEmission, double mudContent, Function burnFunction, Function heatDivisor, Function absorbFunction) {
+		private EnumWatzType(
+			int colorLight,
+			int colorDark,
+			double passive,
+			double heatEmission,
+			double xenonProduction,
+			Function burnFunction,
+			Function heatDivisor,
+			Function absorbFunction
+		) {
 			this.colorLight = colorLight;
 			this.colorDark = colorDark;
 			this.passive = passive;
 			this.heatEmission = heatEmission;
-			this.mudContent = mudContent / 2D;
+
+			this.xenonProduction =
+				xenonProduction / 2D;
+
 			this.burnFunc = burnFunction;
 			this.heatDiv = heatDivisor;
 			this.absorbFunc = absorbFunction;
@@ -210,25 +224,116 @@ public class ItemWatzPellet extends ItemEnumMulti {
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean bool) {
 
-		if(this != ModItems.watz_pellet) return;
+		if(this != ModItems.watz_pellet)
+			return;
 
-		EnumWatzType num = EnumUtil.grabEnumSafely(EnumWatzType.class, stack.getItemDamage());
+		EnumWatzType num =
+			EnumUtil.grabEnumSafely(
+				EnumWatzType.class,
+				stack.getItemDamage()
+			);
 
-		list.add(EnumChatFormatting.GREEN + "Depletion: " + String.format(Locale.US, "%.1f", getDurabilityForDisplay(stack) * 100D) + "%");
+		list.add(
+			EnumChatFormatting.GREEN +
+				"Depletion: " +
+				String.format(
+					Locale.US,
+					"%.1f",
+					getDurabilityForDisplay(stack) * 100D
+				) +
+				"%"
+		);
 
-		String color = EnumChatFormatting.GOLD + "";
-		String reset = EnumChatFormatting.RESET + "";
+		String color =
+			EnumChatFormatting.GOLD + "";
 
-		if(num.passive > 0){
-			list.add(color + "Neutron response: " + reset + num.passive);
+		String reset =
+			EnumChatFormatting.RESET + "";
+
+		if(num.passive > 0) {
+			list.add(
+				color +
+					"Passive neutron flux: " +
+					reset +
+					num.passive
+			);
 		}
-		if(num.heatEmission > 0) list.add(color + "Heat per flux: " + reset + num.heatEmission + " TU");
+
+		if(num.heatEmission > 0) {
+			list.add(
+				color +
+					"Heat per flux: " +
+					reset +
+					num.heatEmission +
+					" TU"
+			);
+		}
+
+		if(num.xenonProduction > 0) {
+			list.add(
+				EnumChatFormatting.DARK_PURPLE +
+					"Xenon poisoning: " +
+					reset +
+					String.format(
+						Locale.US,
+						"%.5f",
+						num.xenonProduction
+					) +
+					"/flux"
+			);
+		}
+
 		if(num.burnFunc != null) {
-			list.add(color + "Reaction function: " + reset + num.burnFunc.getLabelForFuel());
-			list.add(color + "Fuel type: " + reset + num.burnFunc.getDangerFromFuel());
+			list.add(
+				color +
+					"Reaction function: " +
+					reset +
+					num.burnFunc.getLabelForFuel()
+			);
+
+			list.add(
+				color +
+					"Fuel behavior: " +
+					reset +
+					num.burnFunc.getDangerFromFuel()
+			);
+
+			list.add(
+				EnumChatFormatting.RED +
+					"Fissile Fuel"
+			);
 		}
-		if(num.heatDiv != null) list.add(color + "Thermal multiplier: " + reset + num.heatDiv.getLabelForFuel() + " TU⁻¹");
-		if(num.absorbFunc != null) list.add(color + "Flux capture: " + reset + num.absorbFunc.getLabelForFuel());
+
+		if(num.heatDiv != null) {
+			list.add(
+				color +
+					"Thermal coefficient: " +
+					reset +
+					num.heatDiv.getLabelForFuel() +
+					" TU⁻¹"
+			);
+		}
+
+		if(num.absorbFunc != null) {
+			list.add(
+				color +
+					"Neutron absorption: " +
+					reset +
+					num.absorbFunc.getLabelForFuel()
+			);
+
+			list.add(
+				EnumChatFormatting.AQUA +
+					"Control Material"
+			);
+		}
+
+		if(num == EnumWatzType.GRAPHITE) {
+			list.add(
+				EnumChatFormatting.GRAY +
+					"Moderator Material"
+			);
+		}
 	}
 
 	@Override

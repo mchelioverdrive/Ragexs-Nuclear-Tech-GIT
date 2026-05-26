@@ -122,27 +122,7 @@ public class TurretCIWS extends TurretBase {
 		}
 	}
 
-	//@Override
-	//public void addInformation(
-	//	ItemStack stack,
-	//	EntityPlayer player,
-	//	List list,
-	//	boolean ext
-	//) {
-	//	this.addStandardInfo(stack, player, list, ext);
-//
-	//	list.add("Requires power");
-	//	list.add("Uses 20×102 mm ammunition");
-	//	list.add("Intercepts incoming missiles");
-	//}
 
-	//@Override
-	//public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
-	//	//super.addInformation(stack, player, list, ext);
-	//	list.add(EnumChatFormatting.YELLOW + "Requires power");
-	//	list.add(EnumChatFormatting.YELLOW + "Uses 20×102 mm ammunition");
-	//	list.add(EnumChatFormatting.YELLOW + "Intercepts incoming missiles");
-	//}
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		list.add(EnumChatFormatting.YELLOW + "Requires power");

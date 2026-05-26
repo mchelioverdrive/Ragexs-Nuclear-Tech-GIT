@@ -1290,7 +1290,7 @@ flare.valve=Flow Valve
 
 fluid.acid_fluid=Acid
 fluid.corium_fluid=Corium
-fluid.mud_fluid=TRISO Waste
+fluid.mud_fluid=Xenon Waste
 fluid.rad_lava_fluid=Volcanic Lava
 fluid.schrabidic_fluid=Schrabidic Acid
 fluid.toxic_fluid=Stereotypical Green Ooze

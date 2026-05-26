@@ -148,7 +148,50 @@ public class RodRecipes {
 		//addPellet(ModItems.ingot_hes,				EnumWatzType.HES);
 		//addPellet(ModItems.ingot_schrabidium_fuel,	EnumWatzType.MES);
 		//addPellet(ModItems.ingot_les,				EnumWatzType.LES);
-		addPellet(TH232,							EnumWatzType.TH232);
+
+		//needs at least u235 nuggets in the recipe
+		//addPellet(TH232,							EnumWatzType.TH232);
+
+		// LEU5 (~5% style, mostly fertile uranium)
+		CraftingManager.addRecipeAuto(
+			new ItemStack(ModItems.watz_pellet, 1, EnumWatzType.LEU5.ordinal()),
+			new Object[] {
+				"238",
+				"2G2",
+				"222",
+				'2', U238.billet(),
+				'3', U235.billet(),
+				'8', GRAPHITE.ingot(),
+				'G', GRAPHITE.ingot()
+			}
+		);
+
+		// HALEU15 (~15% style)
+		CraftingManager.addRecipeAuto(
+			new ItemStack(ModItems.watz_pellet, 1, EnumWatzType.HALEU15.ordinal()),
+			new Object[] {
+				"323",
+				"2G2",
+				"323",
+				'2', U238.billet(),
+				'3', U235.billet(),
+				'G', GRAPHITE.ingot()
+			}
+		);
+
+		// HALEU1975 (~19.75%, high-end fuel)
+		CraftingManager.addRecipeAuto(
+			new ItemStack(ModItems.watz_pellet, 1, EnumWatzType.HALEU1975.ordinal()),
+			new Object[] {
+				"323",
+				"3G3",
+				"232",
+				'2', U238.billet(),
+				'3', U235.billet(),
+				'G', GRAPHITE.ingot()
+			}
+		);
+
 		addPellet(ModItems.billet_u233,		EnumWatzType.U233);
 		addPellet(ModItems.ingot_mox_fuel,			EnumWatzType.MOX241);
 		addPellet(PB,								EnumWatzType.LEAD);
