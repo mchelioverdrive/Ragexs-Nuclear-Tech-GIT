@@ -22,10 +22,6 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.Packet;
-import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
-
 public abstract class TileEntityTurretBase extends TileEntity {
 
 	public double rotationYaw;
@@ -45,66 +41,20 @@ public abstract class TileEntityTurretBase extends TileEntity {
 	}
 
 	@Override
-	public Packet getDescriptionPacket() {
-
-		System.out.println("SENDING DESCRIPTION PACKET");
-
-		NBTTagCompound nbt = new NBTTagCompound();
-		writeToNBT(nbt);
-
-		System.out.println(
-			"Yaw=" + rotationYaw +
-				" Pitch=" + rotationPitch
-		);
-
-		return new S35PacketUpdateTileEntity(
-			xCoord,
-			yCoord,
-			zCoord,
-			0,
-			nbt
-		);
-	}
-
-	@Override
-	public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
-
-		System.out.println("RECEIVED DESCRIPTION PACKET");
-
-		readFromNBT(pkt.func_148857_g());
-
-		System.out.println(
-			"CLIENT APPLIED yaw=" + rotationYaw +
-				" pitch=" + rotationPitch
-		);
-	}
-
-	@Override
 	public void updateEntity() {
 
-		//if(this instanceof TileEntityTurretCIWS) {
-		//	System.out.println("Power: " + ((TileEntityTurretCIWS)this).getPower());
-		//}
+		if(this instanceof TileEntityTurretCIWS) {
+			System.out.println("Power: " + ((TileEntityTurretCIWS)this).getPower());
+		}
 
 
 		//TODOne if you do not power turret, it will not shoot and rotate.
-
-		System.out.println(
-			"AI=" + isAI +
-				" remote=" + worldObj.isRemote +
-				" hasPower=" +
-				(this instanceof TileEntityTurretCIWS
-					? ((TileEntityTurretCIWS)this).hasPower()
-					: "N/A")
-		);
 
 		if(isAI && (
 			worldObj.isRemote
 				|| !(this instanceof TileEntityTurretCIWS)
 				|| ((TileEntityTurretCIWS)this).hasPower()
 		)) {
-
-			System.out.println("ENTERED AI BLOCK");
 
 
 			//&& canOperate()) bricks turret rotation even when having power so we cannot do that here
@@ -133,8 +83,6 @@ public abstract class TileEntityTurretBase extends TileEntity {
 			if(target != null ) { //&& canOperate() we also cannot do that here.
 				//I wanna try && te.getPower() but te isn't defined here. Let's try something else.
 
-				System.out.println("TARGET = " + target);
-
 				Vec3 turret = Vec3.createVectorHelper(target.posX - (xCoord + 0.5), target.posY + target.getEyeHeight() - (yCoord + 1), target.posZ - (zCoord + 0.5));
 
 				if(this instanceof TileEntityTurretCIWS ) {
@@ -148,10 +96,6 @@ public abstract class TileEntityTurretBase extends TileEntity {
 					rotationPitch = -60;
 				if(rotationPitch > 30)
 					rotationPitch = 30;
-
-				if(!worldObj.isRemote) {
-					worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
-				}
 
 				if(!worldObj.isRemote) {
 					PacketDispatcher.wrapper.sendToAll(
@@ -168,11 +112,6 @@ public abstract class TileEntityTurretBase extends TileEntity {
 				use++;
 
 				if(worldObj.getBlock(xCoord, yCoord, zCoord) instanceof TurretBase && ammo > 0) {
-					System.out.println(
-						"SHOOT CHECK ammo=" + ammo +
-							" yaw=" + rotationYaw +
-							" pitch=" + rotationPitch
-					);
 					if(((TurretBase)worldObj.getBlock(xCoord, yCoord, zCoord)).executeHoldAction(worldObj, use, rotationYaw, rotationPitch, xCoord, yCoord, zCoord))
 						ammo--;
 				}
@@ -231,10 +170,6 @@ public abstract class TileEntityTurretBase extends TileEntity {
 		super.readFromNBT(nbt);
 		rotationYaw = nbt.getDouble("yaw");
 		rotationPitch = nbt.getDouble("pitch");
-		System.out.println(
-			"NBT READ yaw=" + rotationYaw +
-				" pitch=" + rotationPitch
-		);
 		isAI = nbt.getBoolean("AI");
 		uuid = nbt.getString("player");
 		ammo = nbt.getInteger("ammo");

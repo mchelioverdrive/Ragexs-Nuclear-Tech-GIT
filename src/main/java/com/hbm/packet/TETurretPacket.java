@@ -3,7 +3,6 @@ package com.hbm.packet;
 import com.hbm.tileentity.bomb.TileEntityTurretBase;
 
 
-import com.hbm.tileentity.bomb.TileEntityTurretCIWS;
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
@@ -56,34 +55,16 @@ public class TETurretPacket implements IMessage {
 		@Override
 		public IMessage onMessage(TETurretPacket m, MessageContext ctx) {
 			try {
+				TileEntity te = Minecraft.getMinecraft().theWorld.getTileEntity(m.x, m.y, m.z);
 
-				System.out.println("PACKET RECEIVED");
+				if (te != null && te instanceof TileEntityTurretBase) {
 
-				TileEntity te =
-					Minecraft.getMinecraft()
-						.theWorld
-						.getTileEntity(m.x, m.y, m.z);
-
-				System.out.println("TE = " + te);
-
-				if(te instanceof TileEntityTurretBase) {
-
-					TileEntityTurretBase turret =
-						(TileEntityTurretBase) te;
-
+					TileEntityTurretBase turret = (TileEntityTurretBase) te;
 					turret.rotationYaw = m.yaw;
 					turret.rotationPitch = m.pitch;
-
-					System.out.println(
-						"Applied yaw=" + turret.rotationYaw +
-							" pitch=" + turret.rotationPitch
-					);
 				}
-
 			} catch(Exception ex) {
 
-				ex.printStackTrace();
-				System.out.println("Error handling TETurretPacket: " + ex.getMessage());
 			}
 			return null;
 		}

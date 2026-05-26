@@ -26,11 +26,8 @@ public class RenderCIWSTurret extends TileEntitySpecialRenderer {
 		double pitch = 0;
 
 		if(tileEntity instanceof TileEntityTurretBase) {
-			if(tileEntity instanceof TileEntityTurretCIWS) {
-				TileEntityTurretCIWS te = (TileEntityTurretCIWS) tileEntity;
-				yaw = te.renderYaw;
-				pitch = te.renderPitch;
-			}
+			yaw = ((TileEntityTurretBase)tileEntity).rotationYaw;
+			pitch = ((TileEntityTurretBase)tileEntity).rotationPitch;
 		}
 
 		this.bindTexture(ResourceManager.universal);
