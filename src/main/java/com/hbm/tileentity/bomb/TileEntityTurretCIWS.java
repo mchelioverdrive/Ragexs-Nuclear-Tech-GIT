@@ -29,6 +29,12 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 	//				net.minecraftforge.common.util.ForgeDirection.UP
 	//			);
 
+
+	@Override
+	protected boolean canOperate() {
+		return hasPower();
+	}
+
 	@Override
 	public void updateEntity() {
 
@@ -111,7 +117,7 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 	}
 
 	public boolean hasPower() {
-		return power > 0;
+		return power >= consumption;
 	}
 
 	@Override
