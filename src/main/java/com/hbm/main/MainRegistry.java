@@ -192,6 +192,7 @@ public class MainRegistry {
 	//public static Achievement achTOB;
 	//public static Achievement achFreytag;
 	public static Achievement achPotato;
+	public static Achievement achHelenKeller;
 	//public static Achievement achC44;
 	//public static Achievement achC20_5;
 	//public static Achievement achFiend;
@@ -776,6 +777,7 @@ public class MainRegistry {
 		achMeltdown = new Achievement("achievement.meltdown", "meltdown", 15, -7, ModItems.powder_balefire, achFusion).initIndependentStat().setSpecial().registerStat();
 		achRedBalloons = new Achievement("achievement.redBalloons", "redBalloons", 11, 0, ModItems.missile_nuclear, achPolymer).initIndependentStat().setSpecial().registerStat();
 		achManhattan = new Achievement("achievement.manhattan", "manhattan", 11, -4, new ItemStack(ModBlocks.nuke_boy), achPolymer).initIndependentStat().setSpecial().registerStat();
+		achHelenKeller = new Achievement("achievement.helenKeller", "helenKeller", 10, -2, new ItemStack(ModItems.crystal_meth), achChemplant).initIndependentStat().setSpecial().registerStat();
 
 		AchievementPage.registerAchievementPage(new AchievementPage("Nuclear Tech", new Achievement[] {
 				//achSacrifice,
@@ -846,6 +848,7 @@ public class MainRegistry {
 				achMeltdown,
 				achRedBalloons,
 				achManhattan,
+				achHelenKeller
 		}
 		));
 

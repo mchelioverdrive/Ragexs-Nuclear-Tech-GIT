@@ -27,23 +27,51 @@ public class TileEntityDecon extends TileEntity {
 			List<EntityLivingBase> entities = this.worldObj.getEntitiesWithinAABB(EntityLivingBase.class, AxisAlignedBB.getBoundingBox(this.xCoord - 0.5, this.yCoord, this.zCoord - 0.5, this.xCoord + 1.5, this.yCoord + 2, this.zCoord + 1.5));
 			if(!entities.isEmpty()) {
 				for(EntityLivingBase e : entities) {
-					float ambientDoseRate = HbmLivingProps.getDoseRate(e); // mSv/s equivalent internal field
-					float deconEfficiency = 0.85F; // 85% shielding equivalent
+					float doseRate = HbmLivingProps.getDoseRate(e); // mSv/s equivalent
+					float threshold = 0.05F; // 50 µSv/s residual contamination floor
 
-					float reducedDose = ambientDoseRate * (1.0F - deconEfficiency);
+					if(doseRate > threshold) {
 
-					// apply only net reduction over time step
-					HbmLivingProps.incrementRadiation(e, -reducedDose * 1F / 20F);
-					e.removePotionEffect(HbmPotion.radiation.id);
+						// logarithmic falloff
+						float normalized =
+							Math.min(doseRate / 50F, 1F);
+
+						float efficiency =
+							0.35F + (normalized * 0.55F);
+
+						float reduction =
+							(doseRate * efficiency) / 20F;
+
+						HbmLivingProps.incrementRadiation(
+							e,
+							-reduction
+						);
+					}
+					if(HbmLivingProps.getDoseRate(e) < 5F) {
+						e.removePotionEffect(HbmPotion.radiation.id);
+					}
 					float washChance = 0.25F; // per tick exposure inside decon
 
-					for(ContaminationType type : ContaminationType.values()) {
-						float current = HbmLivingProps.getCont(e).get(type);
+					List<HbmLivingProps.ContaminationEffect> contamination =
+						HbmLivingProps.getCont(e);
 
-						if(current > 0) {
-							float removed = current * washChance;
+					for(int i = contamination.size() - 1; i >= 0; i--) {
 
-							HbmLivingProps.getCont(e).add(type, -removed);
+						HbmLivingProps.ContaminationEffect effect =
+							contamination.get(i);
+
+						if(effect == null)
+							continue;
+
+						// shorten remaining contamination duration
+						effect.time -= Math.max(
+							1,
+							(int)(effect.time * washChance)
+						);
+
+						// remove fully cleaned contamination
+						if(effect.time <= 0) {
+							contamination.remove(i);
 						}
 					}
 				}
@@ -77,7 +105,7 @@ public class TileEntityDecon extends TileEntity {
 
 			if(e instanceof EntityPlayer) {
 				EntityPlayer player = (EntityPlayer) e;
-				
+
 					for(ItemStack stack : player.inventory.mainInventory) {
 						if(stack != null) {
 							HazardTypeNeutron.decay(stack, 0.02F); // 2% per tick exposure wash

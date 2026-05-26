@@ -245,6 +245,7 @@ public class TileMappings {
 		put(TileEntityAtmosphereEditor.class, "tileentity_atmosphere_editor");
 
 		put(TileEntityData.class, "tileentity_data");
+		put(TileEntityAbsorber.class, "tileentity_absorber");
 
 		putNetwork();
 		putBombs();

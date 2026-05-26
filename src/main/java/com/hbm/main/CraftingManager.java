@@ -910,11 +910,83 @@ public class CraftingManager {
 		addRecipeAuto(new ItemStack(ModBlocks.machine_controller, 1), new Object[] { "TDT", "DCD", "TDT", 'T', ANY_RESISTANTALLOY.ingot(), 'D', ModItems.crt_display, 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.ADVANCED) });
 		addRecipeAuto(new ItemStack(ModItems.containment_box, 1), new Object[] { "LUL", "UCU", "LUL", 'L', PB.plate(), 'U', U238.billet(), 'C', ModBlocks.crate_steel });
 
-		addRecipeAuto(new ItemStack(ModBlocks.absorber, 1), new Object[] { "ICI", "CPC", "ICI", 'I', CU.ingot(), 'C', COKE.dust(), 'P', PB.dust() });
-		addRecipeAuto(new ItemStack(ModBlocks.absorber_red, 1), new Object[] { "ICI", "CPC", "ICI", 'I', TI.ingot(), 'C', COKE.dust(), 'P', ModBlocks.absorber });
-		addRecipeAuto(new ItemStack(ModBlocks.absorber_green, 1), new Object[] { "ICI", "CPC", "ICI", 'I', ANY_PLASTIC.ingot(), 'C', ModBlocks.block_lead, 'P', ModBlocks.absorber_red });
-		//addRecipeAuto(new ItemStack(ModBlocks.absorber_pink, 1), new Object[] { "ICI", "CPC", "ICI", 'I', BIGMT.ingot(), 'C', ModItems.powder_nitan_mix, 'P', ModBlocks.absorber_green });
-		addRecipeAuto(new ItemStack(ModBlocks.decon, 1), new Object[] { "BGB", "SAS", "BSB", 'B', BE.ingot(), 'G', Blocks.iron_bars, 'S', STEEL.ingot(), 'A', ModBlocks.absorber });
+		addRecipeAuto(new ItemStack(ModBlocks.absorber, 1),
+					  new Object[] {
+						  "CLC",
+						  "LPL",
+						  "CLC",
+						  'C', COKE.dust(),
+						  'L', PB.ingot(),
+						  'P', ANY_PLASTIC.ingot()
+					  });
+		addRecipeAuto(new ItemStack(ModBlocks.absorber_red, 1),
+					  new Object[] {
+						  "SBS",
+						  "BAB",
+						  "SBS",
+						  'S', Items.iron_ingot,
+						  'B', ModItems.powder_boron,
+						  'A', ModBlocks.absorber
+					  });
+		addRecipeAuto(new ItemStack(ModBlocks.absorber_green, 1),
+					  new Object[] {
+						  "PLP",
+						  "LAL",
+						  "PLP",
+						  'P', ANY_PLASTIC.ingot(),
+						  'L', ModBlocks.block_lead,
+						  'A', ModBlocks.absorber_red
+					  });
+		//addRecipeAuto(new ItemStack(ModBlocks.absorber_pink, 1),
+		//			  new Object[] {
+		//				  "NBN",
+		//				  "BAB",
+		//				  "NBN",
+		//				  'N', ModItems.powder_nitan_mix,
+		//				  'B', ModItems.powder_boron,
+		//				  'A', ModBlocks.absorber_green
+		//			  }); //TODOne zeolite (silicon + alo2 (aluminum oxide so just powder for sanity), prussian blue, iodine powder, more boron
+
+		addRecipeAuto(new ItemStack(ModBlocks.absorber_pink, 1),
+					  new Object[] {
+						  "ZBS",
+						  "PAN",
+						  "IBI",
+
+						  'Z', ModItems.powder_aluminium,
+						  'S', ModItems.nugget_silicon, //zeolite is represented by al+si (def not me just being lazy)
+						  'B', ModItems.powder_boron,
+						  'P', ModItems.prussian_blue_powder,
+						  'I', ModItems.powder_iodine,
+						  'A', ModBlocks.absorber_green,
+						  'N', ModItems.powder_iron
+					  });
+
+		addRecipeAuto(
+			new ItemStack(ModBlocks.absorber_red),
+			new Object[] {
+				"BBB",
+				"BSB",
+				"BBB",
+				'B', ModItems.powder_boron,
+				'S', ModBlocks.absorber_spent
+			}
+		);
+
+		addRecipeAuto(new ItemStack(ModBlocks.decon, 1),
+					  new Object[] {
+						  "IBI",
+						  "SAS",
+						  "PGP",
+
+						  'I', Blocks.iron_bars,
+						  'B', ModItems.powder_boron,
+						  'S', STEEL.ingot(),
+						  'A', ModBlocks.absorber,
+						  'P', CU.pipe(), // or copper/steel pipe analogue
+						  'G', Blocks.heavy_weighted_pressure_plate
+					  });
+
 		addRecipeAuto(new ItemStack(ModBlocks.machine_geo, 1), new Object[] { "ITI", "PCP", "ITI", 'I', DURA.ingot(), 'T', ModItems.thermo_element, 'P', CU.plateCast(), 'C', ModBlocks.red_wire_coated });
 		addRecipeAuto(new ItemStack(ModBlocks.machine_minirtg, 1), new Object[] { "LLL", "PPP", "TRT", 'L', PB.plate(), 'P', PU238.billet(), 'T', ModItems.thermo_element, 'R', ModItems.rtg_unit });
 		addRecipeAuto(new ItemStack(ModBlocks.machine_minirtg, 1), new Object[] { "LLL", "PPP", "TRT", 'L', PB.plate(), 'P', TM170.billet(), 'T', ModItems.thermo_element, 'R', ModItems.rtg_unit });

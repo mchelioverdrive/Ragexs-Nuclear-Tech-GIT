@@ -188,6 +188,14 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 
 			if(coolantLost && overheated) {
 
+				//give an achievement for the idiot who somehow manages to do this
+				List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class,
+																			AxisAlignedBB.getBoundingBox(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5).expand(50, 50, 50));
+
+				for(EntityPlayer player : players) {
+					player.triggerAchievement(MainRegistry.achHelenKeller);
+				}
+
 				// reactor damage
 				this.disassemble();
 

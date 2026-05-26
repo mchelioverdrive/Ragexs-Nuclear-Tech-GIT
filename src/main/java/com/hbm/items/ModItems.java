@@ -1377,6 +1377,7 @@ public class ModItems {
 	//public static Item iv_xp_empty;
 	//public static Item iv_xp;
 	public static Item radaway;
+	public static Item prussian_blue_powder;
 	public static Item radaway_strong;
 	public static Item radaway_flush;
 	public static Item radx;
@@ -4410,6 +4411,11 @@ public class ModItems {
 			ItemSimpleConsumable.giveSoundAndDecrement(stack, user, "hbm:item.radaway", new ItemStack(ModItems.iv_empty));
 			ItemSimpleConsumable.addPotionEffect(user, HbmPotion.radaway, 140, 0);
 		}).setUnlocalizedName("radaway").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":radaway");
+
+		prussian_blue_powder = new ItemSimpleConsumable().setUseActionServer((stack, user) -> {
+			ItemSimpleConsumable.giveSoundAndDecrement(stack, user, "hbm:item.radaway", new ItemStack(ModItems.iv_empty));
+			ItemSimpleConsumable.addPotionEffect(user, HbmPotion.radaway, 400, 0);
+		}).setUnlocalizedName("prussian_blue_powder").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":powder_lapis");
 
 		radaway_strong = new ItemSimpleConsumable().setUseActionServer((stack, user) -> {
 			ItemSimpleConsumable.giveSoundAndDecrement(stack, user, "hbm:item.radaway", new ItemStack(ModItems.iv_empty));
@@ -9277,6 +9283,7 @@ public class ModItems {
 		//GameRegistry.registerItem(iv_xp_empty, iv_xp_empty.getUnlocalizedName());
 		//GameRegistry.registerItem(iv_xp, iv_xp.getUnlocalizedName());
 		GameRegistry.registerItem(radaway, radaway.getUnlocalizedName());
+		GameRegistry.registerItem(prussian_blue_powder, prussian_blue_powder.getUnlocalizedName());
 		GameRegistry.registerItem(radaway_strong, radaway_strong.getUnlocalizedName());
 		GameRegistry.registerItem(radaway_flush, radaway_flush.getUnlocalizedName());
 		GameRegistry.registerItem(radx, radx.getUnlocalizedName());

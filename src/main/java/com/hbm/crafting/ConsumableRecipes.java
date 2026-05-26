@@ -2,6 +2,7 @@ package com.hbm.crafting;
 
 import com.hbm.blocks.ModBlocks;
 import com.hbm.config.GeneralConfig;
+import com.hbm.inventory.OreDictManager;
 import com.hbm.inventory.OreDictManager.DictFrame;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.material.Mats;
@@ -207,11 +208,47 @@ public class ConsumableRecipes {
 
 		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.iv_xp_empty, 1), new Object[] { ModItems.iv_empty, ModItems.powder_magic });
 
+		//ok let's add prussian blue powder taken orally too
+		CraftingManager.addShapelessAuto(
+			new ItemStack(ModItems.prussian_blue_powder, 1),
+			new Object[] {
+				IRON.dust(),
+				KEY_BLUE,
+				ModItems.sulfur,
+				Items.coal
+			} //Prussian blue is a medication used to treat certain types of heavy metal poisoning, such as thallium or radioactive cesium. It works by binding to the metals and preventing their absorption in the body.
+		);
+
+
 		//Radaway you mean prussian blue idiot
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.radaway, 1), new Object[] { ModItems.iv_blood, IRON.dust(), Items.pumpkin_seeds, ModItems.sulfur });
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.radaway, 1), new Object[] { ModItems.iv_blood, IRON.dust(), Items.potato, ModItems.sulfur });
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.radaway_strong, 1), new Object[] { ModItems.radaway, ModItems.powder_copper });
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.radaway_flush, 1), new Object[] { ModItems.radaway_strong, I.dust() });
+		CraftingManager.addShapelessAuto(
+			new ItemStack(ModItems.radaway, 1),
+			new Object[] {
+				IRON.dust(),
+				KEY_BLUE,
+				ModItems.sulfur,
+				Items.coal,
+				ModItems.iv_empty
+			} //Prussian blue nanoparticles are sometimes tested via intravenous injection.
+			// However, this is strictly experimental and not standard clinical practice.
+		);
+		CraftingManager.addShapelessAuto(
+			new ItemStack(ModItems.radaway_strong, 1),
+			new Object[] {
+				ModItems.radaway,
+				ModItems.iv_blood,
+				ModItems.powder_copper,
+				ModItems.powder_iodine
+			}
+		);
+		CraftingManager.addShapelessAuto(
+			new ItemStack(ModItems.radaway_flush, 1),
+			new Object[] {
+				ModItems.radaway_strong,
+				I.dust(),
+				ModItems.syringe_antidote
+			}
+		);
 
 		//Cladding
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.cladding_paint, 1), new Object[] { PB.nugget(), PB.nugget(), PB.nugget(), PB.nugget(), Items.clay_ball, Items.glass_bottle });

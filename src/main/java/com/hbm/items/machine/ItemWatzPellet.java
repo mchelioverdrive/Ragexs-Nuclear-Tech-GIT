@@ -112,7 +112,7 @@ public class ItemWatzPellet extends ItemEnumMulti {
 		BORON(			0xBDC8D2, 0x29343E, 0,		0,		0.0025D,	null, null, new FunctionLinear(10)), //improved absorber, linear
 		DU(				0xC1C7BD, 0x2B3227, 0,		0,		0.0025D,	null, null, new FunctionQuadratic(1D, 1D).withDiv(100)), //absorber with positive coefficient
 
-		//non craftable:
+		//non craftable/gt6 compat crap:
 		NQD(			0x4B4B4B, 0x121212, 2_000,	20,		0.01D,		new FunctionLinear(2D), new FunctionSqrt(1D/25D).withOff(25D * 25D), null),
 		NQR(			0x2D2D2D, 0x0B0B0B, 2_500,	30,		0.01D,		new FunctionLinear(1.5D), new FunctionSqrt(1D/25D).withOff(25D * 25D), null),
 		//PU241(			0x78817E, 394240, 1_950,	25,		0.0025D,		new FunctionLinear(1.30D), new FunctionSqrt(2.66D/18D).withOff(24D * 24D), null),

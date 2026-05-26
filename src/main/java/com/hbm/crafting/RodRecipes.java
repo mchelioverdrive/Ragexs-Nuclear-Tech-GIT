@@ -192,11 +192,25 @@ public class RodRecipes {
 			}
 		);
 
+		//TH232, needs at least 1 u235 nugget in the recipe
+		 CraftingManager.addRecipeAuto(
+			new ItemStack(ModItems.watz_pellet, 1, EnumWatzType.TH232.ordinal()),
+			new Object[] {
+				"282",
+				"8G8",
+				"282",
+				'2', U235.nugget(),
+				'8', TH232.billet(),
+				'G', GRAPHITE.ingot()
+			}
+		);
+
 		addPellet(ModItems.billet_u233,		EnumWatzType.U233);
 		addPellet(ModItems.ingot_mox_fuel,			EnumWatzType.MOX241);
 		addPellet(PB,								EnumWatzType.LEAD);
 		addPellet(B,								EnumWatzType.BORON);
 		addPellet(U238,								EnumWatzType.DU);
+		addPellet(GRAPHITE,								EnumWatzType.GRAPHITE);
 		//addPellet(PU241,							EnumWatzType.PU241);
 		//addPellet(AMF,								EnumWatzType.AMF);
 		//addPellet(AMRG,								EnumWatzType.AMRG);

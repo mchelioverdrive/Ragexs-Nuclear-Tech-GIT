@@ -186,33 +186,34 @@ public class ModEventHandler {
 
 	private boolean wasGuiOpen = false;
 
-	@SubscribeEvent
-	public void onClientTick(TickEvent.ClientTickEvent event) {
-		try {
-			Minecraft mc = Minecraft.getMinecraft();
-			if (mc.currentScreen != null && mc.currentScreen.getClass().getName().contains("GuiAchievements")) {
-				if (!wasGuiOpen) {
-					System.out.println("[DEBUG] === Achievements GUI Opened ===");
-					wasGuiOpen = true;
-				}
-				for (Object obj : AchievementList.achievementList) {
-					Achievement a = (Achievement) obj;
-					String iconStr = (a.theItemStack == null) ? "null"
-						: (a.theItemStack.getItem() == null ? "null item"
-						: a.theItemStack.getItem().getUnlocalizedName());
-					System.out.println("[DEBUG] Achievement: " + a.statId
-						+ " | Icon: " + iconStr
-						+ " | ItemStack: " + a.theItemStack
-						+ " | Parent: " + (a.parentAchievement != null ? a.parentAchievement.statId : "none"));
-				}
-			} else {
-				wasGuiOpen = false;
-			}
-		} catch (Exception e) {
-			System.out.println("[DEBUG] Exception in DebugAchievementTicker: " + e);
-			e.printStackTrace();
-		}
-	}
+	//@SubscribeEvent
+	//public void onClientTick(TickEvent.ClientTickEvent event) {
+	//	try {
+	//		Minecraft mc = Minecraft.getMinecraft();
+	//		if (mc.currentScreen != null && mc.currentScreen.getClass().getName().contains("GuiAchievements")) {
+	//			if (!wasGuiOpen) {
+	//				System.out.println("[DEBUG] === Achievements GUI Opened ===");
+	//				wasGuiOpen = true;
+	//			}
+	//			for (Object obj : AchievementList.achievementList) {
+	//				Achievement a = (Achievement) obj;
+	//				String iconStr = (a.theItemStack == null) ? "null"
+	//					: (a.theItemStack.getItem() == null ? "null item"
+	//					: a.theItemStack.getItem().getUnlocalizedName());
+	//				System.out.println("[DEBUG] Achievement: " + a.statId
+	//					+ " | Icon: " + iconStr
+	//					+ " | ItemStack: " + a.theItemStack
+	//					+ " | Parent: " + (a.parentAchievement != null ? a.parentAchievement.statId : "none"));
+	//			}
+	//		} else {
+	//			wasGuiOpen = false;
+	//		}
+	//	} catch (Exception e) {
+	//		System.out.println("[DEBUG] Exception in DebugAchievementTicker: " + e);
+	//		e.printStackTrace();
+	//	}
+	//}
+	//oh my god shaddap
 
 	@SubscribeEvent
 	public void onDeath(LivingDeathEvent event) {
