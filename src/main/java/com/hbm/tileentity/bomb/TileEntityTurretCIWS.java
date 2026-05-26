@@ -103,7 +103,15 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 	}
 
 	public boolean hasPower() {
-		return power > 0;
+		return power >= consumption;
+	}
+
+	public boolean hasPowerForShot() {
+		return power >= POWER_PER_SHOT;
+	}
+
+	public void consumeShotPower() {
+		consumePower(POWER_PER_SHOT);
 	}
 
 	public boolean hasPowerForShot() {
