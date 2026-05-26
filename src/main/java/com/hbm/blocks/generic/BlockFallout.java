@@ -45,13 +45,46 @@ public class BlockFallout extends Block {
 	}
 
 	@Override
-	public int onBlockPlaced(World world, int x, int y, int z, int side, float hitX, float hitY, float hitZ, int metadata) {
-		// Check if there's already a fallout block
-		if (world.getBlock(x, y, z) == this) {
-			int currentMetadata = world.getBlockMetadata(x, y, z);
-			return Math.min(currentMetadata + 1, 7); // Increment metadata if already exists
+	public int onBlockPlaced(World world, int x, int y, int z,
+							 int side, float hitX, float hitY, float hitZ, int meta) {
+
+		Block block = world.getBlock(x, y, z);
+
+		// If fallout already exists here, increase layers
+		if(block == this) {
+
+			int currentMeta = world.getBlockMetadata(x, y, z);
+
+			if(currentMeta < 7) {
+
+				world.setBlockMetadataWithNotify(
+					x, y, z,
+					currentMeta + 1,
+					3
+				);
+
+				// Prevent replacing with new block
+				return currentMeta + 1;
+			}
 		}
-		return 0; // Place as a new block
+
+		return 0;
+	}
+
+	@Override
+	public boolean canPlaceBlockOnSide(World world, int x, int y, int z, int side) {
+
+		Block block = world.getBlock(x, y, z);
+
+		// If placing onto existing fallout, allow stacking
+		if(block == this) {
+			int meta = world.getBlockMetadata(x, y, z);
+
+			// Only allow if not already max height
+			return meta < 7;
+		}
+
+		return super.canPlaceBlockOnSide(world, x, y, z, side);
 	}
 
 

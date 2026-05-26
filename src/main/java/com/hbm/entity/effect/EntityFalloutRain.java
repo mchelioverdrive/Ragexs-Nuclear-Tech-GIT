@@ -36,6 +36,8 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 		this.isImmuneToFire = true;
 	}
 
+	//TODO idea: weather2 compat - spread fallout based on wind and actual fallout rain mechanic
+
 	public EntityFalloutRain(World p_i1582_1_, int maxAge) {
 		super(p_i1582_1_);
 		this.setSize(4, 20);
@@ -179,6 +181,32 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 		Collections.reverse(outerChunksToProcess);
 	}
 
+	private void placeFallout(int x, int y, int z, Block falloutBlock) {
+
+		Block existing = worldObj.getBlock(x, y, z);
+
+		// Stack onto existing fallout
+		if(existing == falloutBlock) {
+
+			int meta = worldObj.getBlockMetadata(x, y, z);
+
+			if(meta < 7) {
+				worldObj.setBlockMetadataWithNotify(
+					x, y, z,
+					meta + 1,
+					3
+				);
+			}
+
+			return;
+		}
+
+		// Place new fallout
+		if(falloutBlock.canPlaceBlockAt(worldObj, x, y, z)) {
+			worldObj.setBlock(x, y, z, falloutBlock, 0, 3);
+		}
+	}
+
 	private void stomp(int x, int z, double dist) {
 
 		int depth = 0;
@@ -216,11 +244,12 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
 				if(rand.nextDouble() < chance) {
 
-					if(this.salted) {
-						setBlock(x, y + 1, z, ModBlocks.salted_fallout);
-					} else {
-						setBlock(x, y + 1, z, ModBlocks.fallout);
-					}
+					placeFallout(
+						x,
+						y + 1,
+						z,
+						this.salted ? ModBlocks.salted_fallout : ModBlocks.fallout
+					);
 				}
 			}
 

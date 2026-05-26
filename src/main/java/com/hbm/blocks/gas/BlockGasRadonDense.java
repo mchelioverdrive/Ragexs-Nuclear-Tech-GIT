@@ -14,6 +14,7 @@ import com.hbm.util.ContaminationUtil.HazardType;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.Blocks;
@@ -75,11 +76,28 @@ public class BlockGasRadonDense extends BlockGasBase {
 					world.setBlock(x, y - 1, z, ModBlocks.waste_earth);
 			}
 
-			if(rand.nextInt(30) == 0 && !(world.getBlock(x, y, z) == ModBlocks.fallout)) {
+			if(rand.nextInt(30) == 0) {
+
+				Block existing = world.getBlock(x, y, z);
+				int meta = world.getBlockMetadata(x, y, z);
+
 				world.setBlockToAir(x, y, z);
 
+				// Existing fallout -> stack it
+				if(existing == ModBlocks.fallout) {
+
+					if(meta < 7) {
+						world.setBlock(x, y, z, ModBlocks.fallout, meta + 1, 3);
+					} else {
+						world.setBlock(x, y, z, ModBlocks.fallout, 7, 3);
+					}
+
+					return;
+				}
+
+				// New fallout
 				if(ModBlocks.fallout.canPlaceBlockAt(world, x, y, z)) {
-					world.setBlock(x, y, z, ModBlocks.fallout);
+					world.setBlock(x, y, z, ModBlocks.fallout, 0, 3);
 				}
 
 				return;
@@ -88,4 +106,8 @@ public class BlockGasRadonDense extends BlockGasBase {
 
 		super.updateTick(world, x, y, z, rand);
 	}
+
+
+
+
 }
