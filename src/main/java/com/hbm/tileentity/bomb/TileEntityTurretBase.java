@@ -51,8 +51,7 @@ public abstract class TileEntityTurretBase extends TileEntity {
 		//TODOne if you do not power turret, it will not shoot and rotate.
 
 		if(isAI && (
-			worldObj.isRemote
-				|| !(this instanceof TileEntityTurretCIWS)
+			!(this instanceof TileEntityTurretCIWS)
 				|| ((TileEntityTurretCIWS)this).hasPower()
 		)) {
 
