@@ -141,7 +141,7 @@ public class HbmPotion extends Potion {
 		if(this == radiation) {
 			ContaminationUtil.contaminate(entity, HazardType.RADIATION, ContaminationType.CREATIVE, (float)(level + 1F) * 0.05F);
 		}
-		if(this == radaway) {
+		if(this == radaway) { //radiation curing, should probably be a slow over time thing
 			HbmLivingProps.incrementRadiation(entity, -(level + 1));
 
 		}

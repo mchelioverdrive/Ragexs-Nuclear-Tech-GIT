@@ -229,9 +229,19 @@ public class ConsumableRecipes {
 				ModItems.sulfur,
 				Items.coal,
 				ModItems.iv_empty
+			}
+		);
+
+		CraftingManager.addShapelessAuto(
+			new ItemStack(ModItems.radaway, 1),
+			new Object[] {
+				ModItems.prussian_blue_powder,
+				ModItems.iv_empty
 			} //Prussian blue nanoparticles are sometimes tested via intravenous injection.
 			// However, this is strictly experimental and not standard clinical practice.
 		);
+
+
 		CraftingManager.addShapelessAuto(
 			new ItemStack(ModItems.radaway_strong, 1),
 			new Object[] {

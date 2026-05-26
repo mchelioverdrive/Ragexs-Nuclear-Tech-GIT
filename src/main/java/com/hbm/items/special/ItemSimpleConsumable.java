@@ -38,15 +38,15 @@ public class ItemSimpleConsumable extends ItemCustomLore {
 	public void addInformation(ItemStack itemstack, EntityPlayer player, List list, boolean bool) {
 		if (this == ModItems.radaway) {
 			list.add("You're probably looking for Radaway");
-			list.add("Removes 140 RAD");
+			list.add("Removes 140 MsV");
 		}
 		if (this == ModItems.radaway_strong) {
 			list.add("Radaway, but stronger");
-			list.add("Removes 350 RAD");
+			list.add("Removes 350 MsV");
 		}
 		if (this == ModItems.radaway_flush) {
 			list.add("Radaway maxxing");
-			list.add("Removes 1000 RAD");
+			list.add("Removes 1000 MsV");
 			list.add("FUCK FALLOUT FANS YOU WOULD DIE IN A NUCLEAR EXPLOSION");
 		}
 		// bobcat is a STUPID FUCKING CUNT

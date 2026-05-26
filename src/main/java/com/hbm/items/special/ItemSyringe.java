@@ -212,7 +212,7 @@ public class ItemSyringe extends Item {
 				player.removePotionEffect(Potion.poison.id);
 				player.removePotionEffect(Potion.weakness.id);
 				player.removePotionEffect(Potion.wither.id);
-				player.removePotionEffect(HbmPotion.radiation.id);
+				//player.removePotionEffect(HbmPotion.radiation.id);
 
 				VersatileConfig.applyPotionSickness(player, 15);
 
@@ -220,17 +220,31 @@ public class ItemSyringe extends Item {
 			}
 		}
 
-		if(this == ModItems.radaway) {
+		//TODO realistify
+
+		if(this == ModItems.radaway) { //currently 140MsV
 			if(!world.isRemote) {
 				player.addPotionEffect(new PotionEffect(HbmPotion.radaway.id, 14, 9));
+				VersatileConfig.applyPotionSickness(player, 5);
+
+				stack.stackSize--;
+				world.playSoundAtEntity(player, "hbm:item.radaway", 1.0F, 1.0F);
+			}
+		}
+		
+		if(this == ModItems.prussian_blue_powder) { //copied stats (assume this is like shittier desprate pill form, I'll add a pill soon.
+			if(!world.isRemote) {
+				player.addPotionEffect(new PotionEffect(HbmPotion.radaway.id, 14, 9));
+				//no cooldown if pill form, IVs are annoying lol
 
 				stack.stackSize--;
 				world.playSoundAtEntity(player, "hbm:item.radaway", 1.0F, 1.0F);
 			}
 		}
 
-		if(this == ModItems.radaway_strong) {
+		if(this == ModItems.radaway_strong) { //350 MsV placeholder
 			if(!world.isRemote) {
+				VersatileConfig.applyPotionSickness(player, 5);
 				int duration = 35;
 				int level = 9;
 
@@ -247,7 +261,8 @@ public class ItemSyringe extends Item {
 			}
 		}
 
-		if(this == ModItems.radaway_flush) {
+		if(this == ModItems.radaway_flush) { //placeholder value is 1000 Msv
+			VersatileConfig.applyPotionSickness(player, 5);
 			if(!world.isRemote) {
 				player.addPotionEffect(new PotionEffect(HbmPotion.radaway.id, 50, 19));
 
