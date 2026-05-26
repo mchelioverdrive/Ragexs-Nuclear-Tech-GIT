@@ -88,9 +88,6 @@ public class TurretCIWS extends TurretBase implements ITooltipProvider {
 	}
 
 	private void rayShot(World world, Vec3 vec, double posX, double posY, double posZ, int range, float damage, int hitPercent) {
-		List<Entity> entities = world.getLoadedEntityList();
-
-
 		for(float i = 0; i < range; i += 0.25F) {
 			double pX = posX + vec.xCoord * i;
 			double pY = posY + vec.yCoord * i;
