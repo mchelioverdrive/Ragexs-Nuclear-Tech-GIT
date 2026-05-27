@@ -4379,6 +4379,12 @@ public class ModItems {
 					long current = player.worldObj.getTotalWorldTime();
 
 					if (current - lastUse >= cooldownTicks) {
+						ItemSimpleConsumable.addPotionEffect(
+							user,
+							HbmPotion.radaway,
+							10,
+							0
+						);
 						// Cooldown has passed, allow use
 						player.getEntityData().setLong(tagKey, current);
 
@@ -4396,6 +4402,9 @@ public class ModItems {
 			.setTextureName(RefStrings.MODID + ":iv_blood");
 
 		radaway = new ItemSimpleConsumable().setUseActionServer((stack, user) -> {
+
+			if (!VersatileConfig.hasPotionSickness(user)) {
+
 				ItemSimpleConsumable.giveSoundAndDecrement(
 					stack,
 					user,
@@ -4403,7 +4412,7 @@ public class ModItems {
 					new ItemStack(ModItems.iv_empty)
 				);
 
-				// Standard anti-rad IV
+				// Standard IV anti-rad treatment
 				ItemSimpleConsumable.addPotionEffect(
 					user,
 					HbmPotion.radaway,
@@ -4411,20 +4420,31 @@ public class ModItems {
 					0
 				);
 
+				user.addPotionEffect(
+					new PotionEffect(Potion.hunger.id,
+									 20 * 15,
+									 0)
+				);
+
+				VersatileConfig.applyPotionSickness(user,
+													1);
+			}
+
 			}).setUnlocalizedName("radaway")
 			.setCreativeTab(MainRegistry.consumableTab)
 			.setTextureName(RefStrings.MODID + ":radaway");
 
 
 		prussian_blue_powder = new ItemSimpleConsumable().setUseActionServer((stack, user) -> {
+
 				ItemSimpleConsumable.giveSoundAndDecrement(
 					stack,
 					user,
 					"hbm:item.radaway",
-					null // or remove if no empty returned
+					null
 				);
 
-				// Weak oral fallout treatment
+				// Weak oral contamination treatment
 				ItemSimpleConsumable.addPotionEffect(
 					user,
 					HbmPotion.radaway,
@@ -4432,12 +4452,17 @@ public class ModItems {
 					0
 				);
 
+				// No IV sickness; pill form
+
 			}).setUnlocalizedName("prussian_blue_powder")
 			.setCreativeTab(MainRegistry.consumableTab)
 			.setTextureName(RefStrings.MODID + ":powder_lapis");
 
 
 		radaway_strong = new ItemSimpleConsumable().setUseActionServer((stack, user) -> {
+
+			if (!VersatileConfig.hasPotionSickness(user)) {
+
 				ItemSimpleConsumable.giveSoundAndDecrement(
 					stack,
 					user,
@@ -4445,7 +4470,7 @@ public class ModItems {
 					new ItemStack(ModItems.iv_empty)
 				);
 
-				// Hospital-grade treatment
+				// Stronger hospital-grade treatment
 				ItemSimpleConsumable.addPotionEffect(
 					user,
 					HbmPotion.radaway,
@@ -4453,12 +4478,25 @@ public class ModItems {
 					0
 				);
 
+				user.addPotionEffect(
+					new PotionEffect(Potion.weakness.id,
+									 20 * 10,
+									 0)
+				);
+
+				VersatileConfig.applyPotionSickness(user,
+													1);
+
+			}
 			}).setUnlocalizedName("radaway_strong")
 			.setCreativeTab(MainRegistry.consumableTab)
 			.setTextureName(RefStrings.MODID + ":radaway_strong");
 
 
 		radaway_flush = new ItemSimpleConsumable().setUseActionServer((stack, user) -> {
+
+			if (!VersatileConfig.hasPotionSickness(user)) {
+
 				ItemSimpleConsumable.giveSoundAndDecrement(
 					stack,
 					user,
@@ -4466,13 +4504,29 @@ public class ModItems {
 					new ItemStack(ModItems.iv_empty)
 				);
 
-				// Emergency radiological intervention
-				ItemSimpleConsumable.addPotionEffect(
-					user,
-					HbmPotion.radaway,
-					500,
-					1
-				);
+			// Emergency decon / aggressive treatment
+			ItemSimpleConsumable.addPotionEffect(
+				user,
+				HbmPotion.radaway,
+				500,
+				1
+			);
+
+			user.addPotionEffect(
+				new PotionEffect(Potion.hunger.id,
+								 20 * 15,
+								 1)
+			);
+
+			user.addPotionEffect(
+				new PotionEffect(Potion.weakness.id,
+								 20 * 12,
+								 1)
+			);
+
+			VersatileConfig.applyPotionSickness(user,
+												1);
+		}
 
 			}).setUnlocalizedName("radaway_flush")
 			.setCreativeTab(MainRegistry.consumableTab)
