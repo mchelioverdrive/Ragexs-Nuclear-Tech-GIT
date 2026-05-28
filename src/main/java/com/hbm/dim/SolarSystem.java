@@ -66,6 +66,7 @@ public class SolarSystem {
 				new CelestialBody("moho", SpaceConfig.mohoDimension, Body.MOHO)
 					.withMassRadius(3.301e23F, 2_440)
 					.withSemiMajorAxis(57_909_050D)
+					.withInitialOrbitalAngle(252.25D)
 					.withRotationalPeriod(5_067_072) // 58.646 Earth days
 					.withColor(0.4863F, 0.4F, 0.3456F)
 					.withBlockTextures(RefStrings.MODID + ":textures/blocks/moho_stone.png", RefStrings.MODID + ":textures/blocks/moho_regolith.png")
@@ -77,6 +78,7 @@ public class SolarSystem {
 				new CelestialBody("eve", SpaceConfig.eveDimension, Body.EVE)
 					.withMassRadius(4.867e24F, 6_052)
 					.withSemiMajorAxis(108_208_000D)
+					.withInitialOrbitalAngle(181.98D)
 					.withRotationalPeriod(-20_996_640) // -243.025 Earth days
 					.withColor(0.408F, 0.298F, 0.553F)
 					.withBlockTextures(RefStrings.MODID + ":textures/blocks/eve_stone_2.png", RefStrings.MODID + ":textures/blocks/eve_silt.png")
@@ -102,6 +104,7 @@ public class SolarSystem {
 				new CelestialBody("kerbin", 0, Body.KERBIN) // overworld
 					.withMassRadius(5.972e24F, 6_371)
 					.withSemiMajorAxis(149_598_023D)
+					.withInitialOrbitalAngle(100.46D)
 					.withRotationalPeriod(86_164) // sidereal day
 					.withAxialTilt(23.44F)
 					.withBlockTextures("textures/blocks/stone.png", "textures/blocks/dirt.png")
@@ -148,6 +151,7 @@ public class SolarSystem {
 				new CelestialBody("duna", SpaceConfig.dunaDimension, Body.DUNA)
 					.withMassRadius(6.417e23F, 3_390)
 					.withSemiMajorAxis(227_943_824D)
+					.withInitialOrbitalAngle(355.43D)
 					.withRotationalPeriod(88_775) // 24h 37m 22s
 					.withAxialTilt(25.19F)
 					//.withTidalLockingTo("ike") //??? literally fucking what
@@ -199,6 +203,7 @@ public class SolarSystem {
 				new CelestialBody("dres", SpaceConfig.dresDimension, Body.DRES)
 					.withMassRadius(9.393e20F, 469)
 					.withSemiMajorAxis(413_700_000D)
+					.withInitialOrbitalAngle(80.30D)
 					.withRotationalPeriod(32_673)
 					.withBlockTextures(RefStrings.MODID + ":textures/blocks/dresbase.png", RefStrings.MODID + ":textures/blocks/sellafield_slaked.png")
 					.withTraits(new CBT_Temperature(-105))
@@ -215,6 +220,7 @@ public class SolarSystem {
 
 					//skibidi mode: on
 					.withSemiMajorAxis(778_547_200D)
+					.withInitialOrbitalAngle(34.35D)
 					.withRotationalPeriod(35_730) // System III rotation
 					//.withColor(0.4588f, 0.6784f, 0.3059f)
 					//was neptune/uranus color?
@@ -283,6 +289,7 @@ public class SolarSystem {
 				new CelestialBody("sarnus")
 					.withMassRadius(5.683e26F, 58_232)
 					.withSemiMajorAxis(1_433_530_000D)
+					.withInitialOrbitalAngle(50.08D)
 					.withRotationalPeriod(38_362)
 					.withColor(1f, 0.6862f, 0.5882f)
 					.withAxialTilt(26.73F)
@@ -344,6 +351,7 @@ public class SolarSystem {
 				new CelestialBody("uranus")
 					.withMassRadius(8.681e25F, 25_362)
 					.withSemiMajorAxis(2_872_463_000D)
+					.withInitialOrbitalAngle(314.06D)
 					.withRotationalPeriod(-62_064)
 					.withColor(0.4F, 0.6F, 0.8F)
 					.withAxialTilt(97.77F)
@@ -388,6 +396,7 @@ public class SolarSystem {
 				new CelestialBody("neptune")
 					.withMassRadius(1.024e26F, 24_622)
 					.withSemiMajorAxis(4_495_060_000D)
+					.withInitialOrbitalAngle(304.35D)
 					.withRotationalPeriod(57_996)
 					.withColor(0.2F, 0.4F, 0.6F)
 					.withAxialTilt(28.32F)
@@ -429,6 +438,7 @@ public class SolarSystem {
 					// but god only knows how many fucking times in this code it's referenced
 					.withMassRadius(1.309e22F, 1_188)
 					.withSemiMajorAxis(5_906_380_000D)
+					.withInitialOrbitalAngle(238.93D)
 					.withRotationalPeriod(-551_857) // retrograde
 					.withAxialTilt(122.53F)
 					.withTraits(new CBT_Temperature(-229))
@@ -649,7 +659,7 @@ public class SolarSystem {
 	private static Vec3 calculatePosition(CelestialBody body, double ticks) {
 		// Get how far (in radians) a planet has gone around its parent
 		double yearTicks = body.getOrbitalPeriod() * (double)AstronomyUtil.TICKS_IN_DAY;
-		double angleRadians = 2 * Math.PI * (ticks / yearTicks);
+		double angleRadians = 2 * Math.PI * (ticks / yearTicks) + Math.toRadians(body.initialOrbitalAngle);
 
 		double x = body.semiMajorAxisKm * Math.cos(angleRadians);
 		double y = body.semiMajorAxisKm * Math.sin(angleRadians);
