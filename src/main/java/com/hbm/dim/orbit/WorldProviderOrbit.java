@@ -35,28 +35,39 @@ import java.util.Random;
 
 public class WorldProviderOrbit extends WorldProvider {
 
+	// How fast orbital simulation runs relative to real seconds
+	public static final double ORBIT_SCALE = 1.0 / 100000.0;
+
 	//todo spawn our FRIEND here when there's an atmosphere, it's breathable, and there's a door. then our friend can KNOCK.
 
 	// Orbit at an altitude that provides an hour-long realtime orbit (game time is fast so we go slow)
 	// We want a consistent orbital period to prevent orbiting too slow or fast (both for player comfort and feel)
-	private static final float ORBITAL_PERIOD = 7200;
+	//private static final double ORBIT_PERIOD_SECONDS = AstronomyUtil.SECONDS_IN_MC_DAY * 5; // 5 MC days per orbit
+	private static final double ORBIT_PERIOD_SECONDS = 60 * 60 * 2; // 2 real hours per orbit
 
 	protected float getOrbitalAltitude(CelestialBody body) {
-		return getAltitudeForPeriod(body.massKg, ORBITAL_PERIOD);
+		return (float) getAltitudeForPeriod(body.massKg,
+											(float) ORBIT_PERIOD_SECONDS);
 	}
 
 	// r = ∛[(G x Me x T2) / (4π2)]
-	private float getAltitudeForPeriod(float massKg, float period) {
-		return (float)Math.cbrt((AstronomyUtil.GRAVITATIONAL_CONSTANT * massKg * (period * period)) / (4 * Math.PI * Math.PI));
+	private double getAltitudeForPeriod(double massKg, double periodSeconds) {
+
+		double G = AstronomyUtil.GRAVITATIONAL_CONSTANT;
+
+		return Math.cbrt(
+			(G * massKg * periodSeconds * periodSeconds)
+				/ (4.0 * Math.PI * Math.PI)
+		);
 	}
 
 	public float getSunPower() {
-		double progress = OrbitalStation.clientStation.getTransferProgress(0);
-		float sunPower = OrbitalStation.clientStation.orbiting.getSunPower();
-		if(progress > 0) {
-			return (float)BobMathUtil.lerp(progress, sunPower, OrbitalStation.clientStation.target.getSunPower());
-		}
-		return sunPower;
+
+		CelestialBody body = OrbitalStation.clientStation.orbiting;
+
+		double rAU = body.getPlanet().semiMajorAxisKm / AstronomyUtil.KM_IN_AU;
+
+		return (float)(1.0 / (rAU * rAU));
 	}
 
 	@Override
@@ -84,7 +95,7 @@ public class WorldProviderOrbit extends WorldProvider {
 		if (atm == null || atm.fluids == null) return false;
 
 		for (CBT_Atmosphere.FluidEntry entry : atm.fluids) {
-			if (entry.pressure > 0.01) {
+			if (entry.pressure > 0.02) {
 				return true;
 			}
 		}
@@ -151,21 +162,29 @@ public class WorldProviderOrbit extends WorldProvider {
 	public float getStarBrightness(float par1) {
 		// Stars look cool in orbit, but obvs at Moho we don't want the big fuckoff sun to not extinguish
 		// Stars become visible during the day part of orbit just before Earth
-		// And are fully visible during the day beyond the orbit of Duna
+		// And are fully visible during the day beyond the orbit of Duna (mars)
 		float distanceStart = 9_000_000;
 		float distanceEnd = 30_000_000;
 
 		double progress = OrbitalStation.clientStation.getTransferProgress(par1);
-		float semiMajorAxisKm = OrbitalStation.clientStation.orbiting.getPlanet().semiMajorAxisKm;
+		double semiMajorAxisKm = OrbitalStation.clientStation.orbiting.getPlanet().semiMajorAxisKm;
 		if(progress > 0) {
 			semiMajorAxisKm = (float)BobMathUtil.lerp(progress, semiMajorAxisKm, OrbitalStation.clientStation.target.getPlanet().semiMajorAxisKm);
 		}
 
-		float distanceFactor = MathHelper.clamp_float((semiMajorAxisKm - distanceStart) / (distanceEnd - distanceStart), 0F, 1F);
+		float distanceFactor = MathHelper.clamp_float((float) ((semiMajorAxisKm - distanceStart) / (distanceEnd - distanceStart)), 0F, 1F);
 
-		float celestialAngle = worldObj.getCelestialAngle(par1);
-		float celestialPhase = (1 - (celestialAngle + 0.5F) % 1) * 2 - 1;
-		float starBrightness = (float)Library.smoothstep(Math.abs(celestialPhase), 0.6, 0.75);
+		//float celestialAngle = worldObj.getCelestialAngle(par1);
+		//float celestialPhase = (1 - (celestialAngle + 0.5F) % 1) * 2 - 1;
+		//float starBrightness = (float)Library.smoothstep(Math.abs(celestialPhase), 0.6, 0.75);
+		float angle = worldObj.getCelestialAngle(par1);
+
+		// convert to night factor
+		float night = Math.abs(angle - 0.5F) * 2.0F;
+		night = MathHelper.clamp_float(night, 0F, 1F);
+
+		// smooth curve
+		float starBrightness = night * night;
 
 		return MathHelper.clamp_float(starBrightness, distanceFactor, 1F);
 	}
@@ -213,7 +232,7 @@ public class WorldProviderOrbit extends WorldProvider {
 		if(progress > 0) {
 			angle = (float)BobMathUtil.lerp(progress, angle, (float)SolarSystem.calculateSingleAngle(worldObj, partialTicks, target, getOrbitalAltitude(target)));
 		}
-		return 0.5F - (angle / 360.0F);
+		return (float)(angle / 360.0);
 	}
 
 	// Same shit as in Celestial

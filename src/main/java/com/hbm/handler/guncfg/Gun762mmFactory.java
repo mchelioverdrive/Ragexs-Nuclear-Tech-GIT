@@ -26,9 +26,9 @@ import net.minecraft.util.ResourceLocation;
 import static com.hbm.handler.GunConfiguration.RELOAD_FULL;
 
 public class Gun762mmFactory {
-	
+
 	public static final ResourceLocation scope_bolt = new ResourceLocation(RefStrings.MODID, "textures/misc/scope_bolt.png");
-	
+
 	private static final CasingEjector EJECTOR_RIFLE;
 	private static final CasingEjector EJECTOR_BOLT;
 	private static final SpentCasing CASING762NATO;
@@ -38,11 +38,11 @@ public class Gun762mmFactory {
 		EJECTOR_BOLT = new CasingEjector().setMotion(-0.35, 0.6, 0).setOffset(-0.35, 0, 0.35).setAngleRange(0.01F, 0.03F).setDelay(15);
 		CASING762NATO = new SpentCasing(CasingType.BOTTLENECK).setScale(1.7F).setBounceMotion(0.01F, 0.05F).setColor(SpentCasing.COLOR_CASE_BRASS);
 	}
-	
+
 	public static GunConfiguration getCalamityConfig() {
-		
+
 		GunConfiguration config = new GunConfiguration();
-		
+
 		config.rateOfFire = 1;
 		config.roundsPerCycle = 1;
 		config.gunMode = GunConfiguration.MODE_NORMAL;
@@ -57,31 +57,31 @@ public class Gun762mmFactory {
 		config.reloadSound = GunConfiguration.RSOUND_MAG;
 		config.firingSound = "hbm:weapon.calShoot";
 		config.reloadSoundEnd = false;
-		
+
 		config.animations.put(AnimType.CYCLE, new BusAnimation()
 				.addBus("RECOIL", new BusAnimationSequence()
 						.addKeyframePosition(1, 0, 0, 25)
 						.addKeyframePosition(0, 0, 0, 75)
 						)
 				);
-		
+
 		config.animations.put(AnimType.RELOAD, new BusAnimation()
 				.addBus("MAG", new BusAnimationSequence()
 						.addKeyframePosition(0, -1, 0, 500)
 						.addKeyframePosition(0, 0, 0, 500)
 						)
 				);
-		
+
 		config.name = "mg3";
 		config.manufacturer = EnumGunManufacturer.WGW;
-		
+
 		config.config = HbmCollection.r762;
-		
+
 		config.ejector = EJECTOR_RIFLE;
-		
+
 		return config;
 	}
-	
+
 	public static GunConfiguration getUACDMRConfig() {
 		final GunConfiguration config = new GunConfiguration();
 
@@ -105,7 +105,7 @@ public class Gun762mmFactory {
 		config.manufacturer = EnumGunManufacturer.UAC;
 
 		config.config.addAll(HbmCollection.r762);
-		
+
 		config.ejector = EJECTOR_RIFLE;
 
 		return config;
@@ -160,12 +160,12 @@ public class Gun762mmFactory {
 		config.comment.add("\"Get some!\"");
 		config.comment.add(" ~ Stuart Brown (aka Ahoy)");
 		config.config.addAll(HbmCollection.r762);
-		
+
 		config.ejector = EJECTOR_RIFLE;
 
 		return config;
 	}
-	
+
 	public static GunConfiguration getBoltConfig() {
 
 		GunConfiguration config = Gun20GaugeFactory.getShotgunConfig();
@@ -176,7 +176,7 @@ public class Gun762mmFactory {
 		config.firingSound = "hbm:weapon.revolverShoot";
 		config.firingPitch = 0.75F;
 		config.crosshair = Crosshair.CIRCLE;
-		
+
 		config.animations.put(AnimType.CYCLE, new BusAnimation()
 				.addBus("RECOIL", new BusAnimationSequence()
 						.addKeyframePosition(1, 0, 0, 25)
@@ -194,17 +194,17 @@ public class Gun762mmFactory {
 						.addKeyframePosition(0, 0, 0, 125) //flick down lever again
 						)
 				);
-		
+
 		config.name = "win20Inox";
 		config.manufacturer = EnumGunManufacturer.WINCHESTER;
-		
+
 		config.ejector = EJECTOR_BOLT;
-		
+
 		config.config = HbmCollection.r762;
-		
+
 		return config;
 	}
-	
+
 	public static GunConfiguration getBoltGreenConfig() {
 
 		GunConfiguration config = Gun20GaugeFactory.getShotgunConfig();
@@ -215,7 +215,7 @@ public class Gun762mmFactory {
 		config.firingSound = "hbm:weapon.revolverShoot";
 		config.firingPitch = 0.75F;
 		config.crosshair = Crosshair.CIRCLE;
-		
+
 		config.animations.put(AnimType.CYCLE, new BusAnimation()
 				.addBus("RECOIL", new BusAnimationSequence()
 						.addKeyframePosition(1, 0, 0, 25)
@@ -233,21 +233,21 @@ public class Gun762mmFactory {
 						.addKeyframePosition(0, 0, 0, 125) //flick down lever again
 						)
 				);
-		
+
 		config.name = "win20Poly";
 		config.manufacturer = EnumGunManufacturer.WINCHESTER;
-		
+
 		config.ejector = EJECTOR_BOLT;
-		
+
 		config.config = HbmCollection.r762;
-		
+
 		return config;
 	}
-	
+
 	public static GunConfiguration getBoltSaturniteConfig() {
-		
+
 		GunConfiguration config = Gun20GaugeFactory.getShotgunConfig();
-		
+
 		config.ammoCap = 5;
 		config.durability = 4000;
 		config.reloadSound = GunConfiguration.RSOUND_SHOTGUN;
@@ -258,7 +258,7 @@ public class Gun762mmFactory {
 		config.zoomFOV = 0.25F;
 		config.scopeTexture = scope_bolt;
 		config.crosshair = Crosshair.CIRCLE;
-		
+
 		config.animations.put(AnimType.CYCLE, new BusAnimation()
 				.addBus("RECOIL", new BusAnimationSequence()
 						.addKeyframePosition(1, 0, 0, 25)
@@ -276,17 +276,17 @@ public class Gun762mmFactory {
 						.addKeyframePosition(0, 0, 0, 125) //flick down lever again
 						)
 				);
-		
+
 		config.name = "win20Satur";
 		config.manufacturer = EnumGunManufacturer.WINCHESTER_BIGMT;
-		
+
 		config.ejector = EJECTOR_BOLT;
-		
+
 		config.config = HbmCollection.r762;
-		
+
 		return config;
 	}
-	
+
 
 
 	public static BulletConfiguration get762NATOConfig() {
@@ -294,12 +294,12 @@ public class Gun762mmFactory {
 
 		bullet.ammo = new ComparableStack(ModItems.ammo_762.stackFromEnum(Ammo762NATO.STOCK));
 
-		bullet.dmgMax = 20;
-		bullet.dmgMin = 24;
+		bullet.dmgMax = 10;
+		bullet.dmgMin = 7;
 		bullet.velocity *= 2.5;
 		bullet.maxAge *= 2;
 		bullet.spread /= 2;
-		
+
 		bullet.spentCasing = CASING762NATO.clone().register("762NATOStock");
 
 		return bullet;
@@ -313,7 +313,7 @@ public class Gun762mmFactory {
 
 		bullet.dmgMax = 24;
 		bullet.dmgMin = 28;
-		
+
 		bullet.spentCasing = CASING762NATO.clone().register("762NATOAP");
 
 		return bullet;
@@ -336,7 +336,7 @@ public class Gun762mmFactory {
 
 		bullet.ammo = new ComparableStack(ModItems.ammo_762.stackFromEnum(Ammo762NATO.TRACER));
 		bullet.vPFX = "reddust";
-		
+
 		bullet.spentCasing = CASING762NATO.clone().register("762NATOTrac");
 
 		return bullet;
@@ -352,7 +352,7 @@ public class Gun762mmFactory {
 		eff.getCurativeItems().clear();
 		bullet.effects = new ArrayList<>();
 		bullet.effects.add(new PotionEffect(eff));
-		
+
 		bullet.spentCasing = CASING762NATO.clone().register("762NATOPhos");
 
 		return bullet;
@@ -365,7 +365,7 @@ public class Gun762mmFactory {
 		bullet.dmgMax = 0;
 		bullet.dmgMin = 0;
 		bullet.maxAge = 0;
-		
+
 		bullet.spentCasing = CASING762NATO.clone().register("762NATOK");
 
 		return bullet;

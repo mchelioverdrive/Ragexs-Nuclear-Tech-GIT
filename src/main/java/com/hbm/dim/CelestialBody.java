@@ -41,9 +41,11 @@ public class CelestialBody {
 
 	public boolean canLand = false; // does this body have an associated dimension and a solid surface?
 
+	public static final double TIME_SCALE = 1.0 / 30.0;
+
 	public float massKg = 0;
 	public float radiusKm = 0;
-	public float semiMajorAxisKm = 0; // Distance to the parent body
+	public double semiMajorAxisKm = 0; // Distance to the parent body
 	private int rotationalPeriod = 6 * 60 * 60; // Day length in seconds
 
 	public float axialTilt = 0;
@@ -112,7 +114,7 @@ public class CelestialBody {
 		return this;
 	}
 
-	public CelestialBody withSemiMajorAxis(float km) {
+	public CelestialBody withSemiMajorAxis(double km) {
 		this.semiMajorAxisKm = km;
 		return this;
 	}
@@ -425,6 +427,10 @@ public class CelestialBody {
 	public static CelestialBody getPlanet(World world) {
 		return getBody(world).getPlanet();
 	}
+	public CelestialBody getParentSafe() {
+		return parent != null ? parent : this;
+	}
+
 
 	public static boolean inOrbit(World world) {
 		return world.provider.dimensionId == SpaceConfig.orbitDimension;
@@ -489,32 +495,44 @@ public class CelestialBody {
 
 	// Returns the day length in ticks, adjusted for the 20 minute minecraft day
 	public double getRotationalPeriod() {
-		return (double)rotationalPeriod * (AstronomyUtil.DAY_FACTOR / (double)AstronomyUtil.TIME_MULTIPLIER) * 20;
+		return rotationalPeriod * 20.0 * TIME_SCALE;
+	}
+
+	public static final double ORBIT_TIME_SCALE = 1.0 / 100000.0;
+
+	//this isn't used, why did we add it
+	public double getOrbitalPeriodMinecraftTicks() {
+		return getOrbitalPeriod() * ORBIT_TIME_SCALE * 20.0;
 	}
 
 	// Returns the year length in days, derived from semi-major axis
 
 	//oh cock
 	public double getOrbitalPeriod() {
-		double semiMajorAxis = semiMajorAxisKm * 1_000;
-		double orbitalPeriod = 2 * Math.PI * Math.sqrt((semiMajorAxis * semiMajorAxis * semiMajorAxis) /
-			(AstronomyUtil.GRAVITATIONAL_CONSTANT * parent.massKg));
+		if(parent == null)
+			return Double.POSITIVE_INFINITY;
 
-		// Convert to KSP days, then scale up to pseudo-realistic
-		return (orbitalPeriod / (double)AstronomyUtil.SECONDS_IN_KSP_DAY) * 10;
+		double G = AstronomyUtil.GRAVITATIONAL_CONSTANT;
+
+		double a = semiMajorAxisKm * 1000D;
+		double M = getParentSafe().massKg;
+
+		return 2D * Math.PI * Math.sqrt((a * a * a) / (G * M));
 	}
 	//oh cock it did not work
 
 	// Get the gravitational force at the surface, derived from mass and radius
 	public float getSurfaceGravity() {
 		float radius = radiusKm * 1000;
-		return AstronomyUtil.GRAVITATIONAL_CONSTANT * massKg / (radius * radius);
+		return (float) (AstronomyUtil.GRAVITATIONAL_CONSTANT * massKg / (radius * radius));
 	}
 
 	// Get the power multiplier for sun based machines
 	public float getSunPower() {
-		float distanceAU = getPlanet().semiMajorAxisKm / AstronomyUtil.KM_IN_AU;
-		return 1 / (distanceAU /10 * distanceAU /10);
+
+		double r = getPlanet().semiMajorAxisKm / AstronomyUtil.KM_IN_AU;
+
+		return (float)(1.0 / (r * r));
 	}
 
 

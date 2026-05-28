@@ -37,7 +37,7 @@ public class TileEntityTurretSentry extends TileEntityTurretBaseNT implements IG
 	static List<Integer> configs = new ArrayList();
 
 	static {
-		configs.add(BulletConfigSyncingUtil.R5_NORMAL);
+		configs.add(BulletConfigSyncingUtil.R762_NORMAL);
 		//configs.add(BulletConfigSyncingUtil.R5_EXPLOSIVE);
 		//configs.add(BulletConfigSyncingUtil.R5_DU);
 		//configs.add(BulletConfigSyncingUtil.R5_STAR);

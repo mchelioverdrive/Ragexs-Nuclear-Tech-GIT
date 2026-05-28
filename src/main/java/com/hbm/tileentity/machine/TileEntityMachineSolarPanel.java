@@ -19,40 +19,63 @@ public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements
 
 	@Override
 	public void updateEntity() {
-		
+
 		if(!worldObj.isRemote) {
-			
-			// Sun power ranges from 1-4
-			int sun = worldObj.getSavedLightValue(EnumSkyBlock.Sky, xCoord, yCoord, zCoord) - worldObj.skylightSubtracted - 11;
 
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
 				tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 			}
-			
-			if(sun <= 0 || !worldObj.canBlockSeeTheSky(xCoord, yCoord + 1, zCoord)) {
-				return;
-			}
-			
-			power += getOutput(sun);
-			
-			if(power > getMaxPower())
-				power = getMaxPower();
+
+			power += getOutput();
+
+			if(power > maxpwr)
+				power = maxpwr;
 		}
 	}
 
-	// Balanced around 100he/t on Earth
-	public long getOutput(int sun) {
+	private boolean isSunVisible() {
+
+		if(worldObj.provider instanceof WorldProviderOrbit) {
+			return true; // orbit handles lighting differently (or should later use eclipse system)
+		}
+
+		// must have open sky
+		if(!worldObj.canBlockSeeTheSky(xCoord, yCoord + 1, zCoord))
+			return false;
+
+		// must be daytime AND sun above horizon
+		float angle = worldObj.getCelestialAngle(1.0F);
+
+		return angle > 0.25F && angle < 0.75F;
+	}
+
+	// was? Balanced around 100he/t on Earth
+	//now just randomly gives solar power?
+	public long getOutput() {
+
+		if(!isSunVisible())
+			return 0;
+
 		float sunPower = worldObj.provider instanceof WorldProviderOrbit
-			? ((WorldProviderOrbit)worldObj.provider).getSunPower()
+			? ((WorldProviderOrbit) worldObj.provider).getSunPower()
 			: CelestialBody.getBody(worldObj).getSunPower();
-		return MathHelper.ceiling_float_int(sun * 25 * sunPower);
+
+		float angle = worldObj.getCelestialAngle(1.0F);
+
+		// proper daylight curve (0 at night, 1 at noon)
+		float daylight = 1.0F - Math.abs(angle - 0.5F) * 2.0F;
+		daylight = MathHelper.clamp_float(daylight, 0.0F, 1.0F);
+
+		float base = 100.0F;
+
+		return (long)(base * daylight * daylight * sunPower);
 	}
 
 	@Override
 	public long getPower() {
 		return power;
 	}
-	
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
 		return TileEntity.INFINITE_EXTENT_AABB;
@@ -60,7 +83,7 @@ public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements
 
 	@Override
 	public void setPower(long power) {
-		this.power = power;		
+		this.power = power;
 	}
 
 	@Override
@@ -78,7 +101,7 @@ public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		
+
 		nbt.setLong("power", power);
 		nbt.setLong("maxpwr", maxpwr);
 	}

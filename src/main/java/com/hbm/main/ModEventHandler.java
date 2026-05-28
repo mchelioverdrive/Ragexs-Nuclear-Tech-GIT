@@ -746,7 +746,7 @@ public class ModEventHandler {
 				event.entityLiving.motionY *= gravity == 0 ? 0.91F : 0.98F;
 			} else {
 				CelestialBody body = CelestialBody.getBody(event.entity.worldObj);
-				float gravity = body.getSurfaceGravity() * AstronomyUtil.PLAYER_GRAVITY_MODIFIER;
+				float gravity = (float) (body.getSurfaceGravity() * AstronomyUtil.PLAYER_GRAVITY_MODIFIER);
 
 				// If gravity is basically the same as normal, do nothing
 				// Also do nothing in water, or if we've been alive less than a second (so we don't glitch into the ground)
@@ -1291,7 +1291,7 @@ public class ModEventHandler {
 			event.distance = 0;
 		} else {
 			CelestialBody body = CelestialBody.getBody(event.entity.worldObj);
-			float gravity = body.getSurfaceGravity() * AstronomyUtil.PLAYER_GRAVITY_MODIFIER;
+			float gravity = (float) (body.getSurfaceGravity() * AstronomyUtil.PLAYER_GRAVITY_MODIFIER);
 
 			// Reduce fall damage on low gravity bodies
 			if(gravity < 0.3F) {

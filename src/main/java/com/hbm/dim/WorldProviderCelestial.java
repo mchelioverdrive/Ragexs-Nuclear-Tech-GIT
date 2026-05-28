@@ -352,12 +352,13 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 		float distanceStart = 20_000_000;
 		float distanceEnd = 80_000_000;
 
-		float semiMajorAxisKm = CelestialBody.getPlanet(worldObj).semiMajorAxisKm;
-		float distanceFactor = MathHelper.clamp_float((semiMajorAxisKm - distanceStart) / (distanceEnd - distanceStart), 0F, 1F);
+		double semiMajorAxisKm = CelestialBody.getPlanet(worldObj).semiMajorAxisKm;
+		double distanceFactor = MathHelper.clamp_double((semiMajorAxisKm - distanceStart) / (distanceEnd - distanceStart), 0F, 1F);
 
-		float starBrightness = super.getStarBrightness(par1);
+		double starBrightness = super.getStarBrightness(par1);
 
-		return MathHelper.clamp_float(starBrightness, distanceFactor, 1F);
+		return MathHelper.clamp_float((float) starBrightness,
+									  (float) distanceFactor, 1F);
 	}
 
 	@Override
