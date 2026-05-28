@@ -42,10 +42,13 @@ public class CelestialBody {
 	public boolean canLand = false; // does this body have an associated dimension and a solid surface?
 
 	public static final double TIME_SCALE = 1.0 / 30.0;
+	public static final double EARTH_DAY_SECONDS = 86_164.0D;
+	public static final double VANILLA_DAY_TICKS = 24_000.0D;
 
 	public float massKg = 0;
 	public float radiusKm = 0;
 	public double semiMajorAxisKm = 0; // Distance to the parent body
+	public double initialOrbitalAngle = 0; // Mean longitude offset in degrees
 	private int rotationalPeriod = 6 * 60 * 60; // Day length in seconds
 
 	public float axialTilt = 0;
@@ -123,6 +126,11 @@ public class CelestialBody {
 
 	public CelestialBody withRotationalPeriod(int seconds) {
 		this.rotationalPeriod = seconds;
+		return this;
+	}
+
+	public CelestialBody withInitialOrbitalAngle(double degrees) {
+		this.initialOrbitalAngle = degrees;
 		return this;
 	}
 
@@ -496,9 +504,20 @@ public class CelestialBody {
 		return body;
 	}
 
-	// Returns the day length in ticks, adjusted for the 20 minute minecraft day
+	// Returns the sidereal day length in vanilla ticks, with Earth as the
+	// canonical baseline: 24,000 ticks equals one Earth day. The magnitude is
+	// always positive; use getRotationDirection() to preserve retrograde bodies
+	// such as Venus, Uranus and Pluto.
 	public double getRotationalPeriod() {
-		return rotationalPeriod * 20.0 * TIME_SCALE;
+		return secondsToVanillaTicks(Math.abs(rotationalPeriod));
+	}
+
+	public static double secondsToVanillaTicks(double seconds) {
+		return seconds / EARTH_DAY_SECONDS * VANILLA_DAY_TICKS;
+	}
+
+	public int getRotationDirection() {
+		return rotationalPeriod < 0 ? -1 : 1;
 	}
 
 	public static final double ORBIT_TIME_SCALE = 1.0 / 100000.0;
