@@ -154,7 +154,6 @@ public class SolarSystem {
 					.withInitialOrbitalAngle(355.43D)
 					.withRotationalPeriod(88_775) // 24h 37m 22s
 					.withAxialTilt(25.19F)
-					//.withTidalLockingTo("ike") //??? literally fucking what
 					.withColor(0.6471f, 0.2824f, 0.1608f)
 					.withBlockTextures(RefStrings.MODID + ":textures/blocks/duna_rock.png", RefStrings.MODID + ":textures/blocks/duna_sands.png")
 					.withProcessingLevel(1)
@@ -172,9 +171,10 @@ public class SolarSystem {
 							.withRotationalPeriod(27_553) // tidally locked
 							.withBlockTextures(RefStrings.MODID + ":textures/blocks/ike_stone.png", RefStrings.MODID + ":textures/blocks/ike_regolith.png")
 							.withProcessingLevel(1)
-							.withTidalLockingTo("duna")
+							.withTidalLockingTo("duna"),
 							//.withProcessingLevel(1) already set
-							.withTraits(new CBT_Water(Fluids.BROMINE)),
+							//.withTraits(new CBT_Water(Fluids.BROMINE)),
+							//phobos doesn't have confirmed bromine on it, nor does it have an atmosphere
 
 						//RTM changes: Adding rest of moons/planets for realism WIP
 
@@ -214,7 +214,7 @@ public class SolarSystem {
 
 				//jupiter
 				new CelestialBody("jool")
-					.withMassRadius(1.898e27F, 69_911) // was radius 6_000 but that just rendered too large, so density is currently incorrect
+					.withMassRadius(1.898e27F, 69_911)
 
 					//69_911
 
@@ -222,8 +222,7 @@ public class SolarSystem {
 					.withSemiMajorAxis(778_547_200D)
 					.withInitialOrbitalAngle(34.35D)
 					.withRotationalPeriod(35_730) // System III rotation
-					//.withColor(0.4588f, 0.6784f, 0.3059f)
-					//was neptune/uranus color?
+
 					.withColor(1.0f, 0.5f, 0.0f)
 					.withAxialTilt(3.13F)
 					.withTraits(
