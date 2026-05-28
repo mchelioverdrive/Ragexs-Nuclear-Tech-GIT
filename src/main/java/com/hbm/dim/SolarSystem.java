@@ -537,7 +537,7 @@ public class SolarSystem {
 		// You know not the horrors I have suffered through, in order to fix tidal locking
 		double offset = (double)body.getRotationalPeriod() * (longitude / 360.0);
 
-		double ticks = ((double)world.getTotalWorldTime() + offset + partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
+		double ticks = (getCelestialTicks(world, partialTicks) + offset) * (double)AstronomyUtil.TIME_MULTIPLIER;
 
 		// Get our XYZ coordinates of all bodies
 		calculatePositionsRecursive(metrics, null, body.getStar(), ticks);
@@ -556,7 +556,7 @@ public class SolarSystem {
 	public static List<AstroMetric> calculateMetricsFromSatellite(World world, float partialTicks, CelestialBody orbiting, double altitude) {
 		List<AstroMetric> metrics = new ArrayList<AstroMetric>();
 
-		double ticks = ((double)world.getTotalWorldTime() + partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
+		double ticks = getCelestialTicks(world, partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
 
 		// Get our XYZ coordinates of all bodies
 		calculatePositionsRecursive(metrics, null, orbiting.getStar(), ticks);
@@ -584,7 +584,7 @@ public class SolarSystem {
 	public static List<AstroMetric> calculateMetricsBetweenSatelliteOrbits(World world, float partialTicks, CelestialBody from, CelestialBody to, double fromAltitude, double toAltitude, double t) {
 		List<AstroMetric> metrics = new ArrayList<AstroMetric>();
 
-		double ticks = ((double)world.getTotalWorldTime() + partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
+		double ticks = getCelestialTicks(world, partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
 
 		// Get our XYZ coordinates of all bodies
 		calculatePositionsRecursive(metrics, null, from.getStar(), ticks);
@@ -618,7 +618,7 @@ public class SolarSystem {
 	public static double calculateDistanceBetweenTwoBodies(World world, CelestialBody from, CelestialBody to) {
 		List<AstroMetric> metrics = new ArrayList<AstroMetric>();
 
-		double ticks = (double)world.getTotalWorldTime() * (double)AstronomyUtil.TIME_MULTIPLIER;
+		double ticks = getCelestialTicks(world, 0.0F) * (double)AstronomyUtil.TIME_MULTIPLIER;
 
 		// Get our XYZ coordinates of all bodies
 		calculatePositionsRecursive(metrics, null, from.getStar(), ticks);
@@ -641,6 +641,10 @@ public class SolarSystem {
 		return Vec3.createVectorHelper(x, y, z);
 	}
 
+	private static double getCelestialTicks(World world, float partialTicks) {
+		return (double)WorldProviderCelestial.getMasterWorldTime(world) + partialTicks;
+	}
+
 	// Recursively calculate the XYZ position of all planets from polar coordinates + time
 	private static void calculatePositionsRecursive(List<AstroMetric> metrics, AstroMetric parentMetric, CelestialBody body, double ticks) {
 		Vec3 parentPosition = parentMetric != null ? parentMetric.position : Vec3.createVectorHelper(0, 0, 0);
@@ -657,8 +661,8 @@ public class SolarSystem {
 
 	// Calculates the position of the body around its parent
 	private static Vec3 calculatePosition(CelestialBody body, double ticks) {
-		// Get how far (in radians) a planet has gone around its parent
-		double yearTicks = body.getOrbitalPeriod() * (double)AstronomyUtil.TICKS_IN_DAY;
+		// Get how far (in radians) a planet has gone around its parent.
+		double yearTicks = CelestialBody.secondsToVanillaTicks(body.getOrbitalPeriod());
 		double angleRadians = 2 * Math.PI * (ticks / yearTicks) + Math.toRadians(body.initialOrbitalAngle);
 
 		double x = body.semiMajorAxisKm * Math.cos(angleRadians);
@@ -678,8 +682,7 @@ public class SolarSystem {
 					(orbitalRadiusMeters * orbitalRadiusMeters * orbitalRadiusMeters) /
 						(AstronomyUtil.GRAVITATIONAL_CONSTANT * body.massKg)
 				);
-		orbitalPeriod /= (double)AstronomyUtil.SECONDS_IN_MC_DAY;
-		double orbitTicks = orbitalPeriod * (double)AstronomyUtil.TICKS_IN_DAY;
+		double orbitTicks = CelestialBody.secondsToVanillaTicks(orbitalPeriod);
 		double angleRadians = 2 * Math.PI * (ticks / orbitTicks);
 
 		double x = (body.radiusKm + altitude)
@@ -770,7 +773,7 @@ public class SolarSystem {
 	public static double calculateSingleAngle(World world, float partialTicks, CelestialBody from, CelestialBody to) {
 		List<AstroMetric> metrics = new ArrayList<AstroMetric>();
 
-		double ticks = ((double)world.getTotalWorldTime() + partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
+		double ticks = getCelestialTicks(world, partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
 
 		// Get our XYZ coordinates of all bodies
 		calculatePositionsRecursive(metrics, null, from.getStar(), ticks);
@@ -792,7 +795,7 @@ public class SolarSystem {
 	public static double calculateSingleAngle(World world, float partialTicks, CelestialBody orbiting, double altitude) {
 		List<AstroMetric> metrics = new ArrayList<AstroMetric>();
 
-		double ticks = ((double)world.getTotalWorldTime() + partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
+		double ticks = getCelestialTicks(world, partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
 
 		// Get our XYZ coordinates of all bodies
 		calculatePositionsRecursive(metrics, null, orbiting.getStar(), ticks);

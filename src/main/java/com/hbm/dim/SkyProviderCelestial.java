@@ -438,7 +438,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 
 			shader.use();
 
-			float time = ((float)world.getWorldTime() + partialTicks) / 20.0F;
+			float time = ((float)WorldProviderCelestial.getMasterWorldTime(world) + partialTicks) / 20.0F;
 			int textureUnit = 0;
 
 			mc.renderEngine.bindTexture(noise);
@@ -508,7 +508,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 
 			boolean orbitingThis = metric.body == orbiting;
 
-			double uvOffset = orbitingThis ? 1 - ((((double)world.getWorldTime() + partialTicks) / 1024) % 1) : 0;
+			double uvOffset = orbitingThis ? 1 - ((((double)WorldProviderCelestial.getMasterWorldTime(world) + partialTicks) / 1024) % 1) : 0;
 			float axialTilt = orbitingThis ? 0 : metric.body.axialTilt;
 
 			GL11.glPushMatrix();

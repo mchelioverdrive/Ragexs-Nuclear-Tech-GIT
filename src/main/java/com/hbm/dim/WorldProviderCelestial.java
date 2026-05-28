@@ -24,14 +24,15 @@ import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import net.minecraft.util.WeightedRandomFishable;
+import net.minecraft.world.World;
 import net.minecraft.world.WorldProvider;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.client.IRenderHandler;
 
 public abstract class WorldProviderCelestial extends WorldProvider {
 
-	private long localTime = -1;
-	private long clientLocalTimeSyncTick = -1;
+	private long syncedMasterTime = -1;
+	private long clientMasterTimeSyncTick = -1;
 
 	@Override
 	public abstract void registerWorldChunkManager();
@@ -53,17 +54,8 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 	@Override
 	public void updateWeather() {
 
-		// Advance local planetary time
-		if(!worldObj.isRemote &&
-			worldObj.getGameRules().getGameRuleBooleanValue("doDaylightCycle")) {
-
-			CelestialBodyWorldSavedData data =
-				CelestialBodyWorldSavedData.get(this);
-
-			long current = data.getLocalTime();
-			data.setLocalTime(current + 1);
-
-			localTime = current + 1;
+		if(!worldObj.isRemote) {
+			CelestialBodyWorldSavedData.get(this).markDirty();
 		}
 
 		CBT_Atmosphere atmosphere =
@@ -105,7 +97,7 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 	 * Read/write for weather data and anything else you wanna store that is per planet and not for every body
 	 * the serialization function synchronizes weather data to the player
 	 *
-	 * also we don't need to mark the WorldSavedData as dirty because the world time is updated every tick and marks it as such
+	 * provider-specific data is marked dirty from updateWeather; celestial time itself is derived from vanilla world time
 	 */
 	public void writeToNBT(NBTTagCompound nbt) {
 
@@ -116,23 +108,20 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 	}
 
 	public void serialize(ByteBuf buf) {
-		buf.writeLong(getLocalTime());
+		buf.writeLong(getMasterWorldTime());
 	}
 
 	public void deserialize(ByteBuf buf) {
 		long time = buf.readLong();
+		long currentTime = getMasterWorldTime();
 
-		// The packet carries the planet's raw local tick counter, not the
-		// 0-24000 vanilla day value returned by getWorldTime(). Comparing
-		// against getWorldTime() made clients reject almost every sync once a
-		// planet's local clock exceeded a single vanilla day, leaving non-Earth
-		// skies apparently frozen between occasional full resyncs.
-		if(Math.abs(time - getLocalTime()) > 10) {
-			localTime = time;
+		syncedMasterTime = time;
+		if(worldObj != null) {
+			clientMasterTimeSyncTick = worldObj.getTotalWorldTime();
 		}
 
-		if(worldObj != null) {
-			clientLocalTimeSyncTick = worldObj.getTotalWorldTime();
+		if(Math.abs(time - currentTime) > 10) {
+			super.setWorldTime(time);
 		}
 	}
 
@@ -431,7 +420,7 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 	}
 
 	// Another AWFULLY named deobfuscation function, this one is called when players have all slept,
-	// which means we can set the time of day to local morning safely here!
+	// which means we can set the master clock to the next local morning safely here!
 	@Override
 	public void resetRainAndThunder() {
 		super.resetRainAndThunder();
@@ -439,81 +428,80 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 		if(dimensionId == 0) return;
 		if(!worldObj.getGameRules().getGameRuleBooleanValue("doDaylightCycle")) return;
 
-		long current = getWorldTime();
-		long nextMorning = (current / 24000L + 1L) * 24000L;
-
-		setWorldTime(nextMorning);
+		setWorldTime(getNextLocalMorningTime(getMasterWorldTime()));
 	}
 
 	@Override
 	public long getWorldTime() {
-
-		if(dimensionId == 0) {
-			return super.getWorldTime();
-		}
-
-		long time = getLocalTime();
-		double dayLength = getDayLength();
-		double normalized = normalizeDayTime(time, dayLength);
-
-		if(CelestialBody.getBody(worldObj).getRotationDirection() < 0) {
-			normalized = normalizeDayTime(-time, dayLength);
-		}
-
-		return (long)(normalized * 24000L);
+		return getMasterWorldTime();
 	}
 
 	public long getLocalTime() {
-		if(dimensionId == 0) {
-			return super.getWorldTime();
-		}
+		return getLocalTime(getMasterWorldTime());
+	}
 
-		if(worldObj == null) {
-			return localTime;
-		}
+	public long getLocalTime(long masterTime) {
+		double dayLength = getDayLength();
+		if(dayLength <= 0.0D) return masterTime;
 
-		if(!worldObj.isRemote) {
-			localTime = CelestialBodyWorldSavedData.get(this).getLocalTime();
-			return localTime;
-		}
-
-		if(localTime < 0 || clientLocalTimeSyncTick < 0) {
-			return worldObj.getWorldTime();
-		}
-
-		if(!worldObj.getGameRules().getGameRuleBooleanValue("doDaylightCycle")) {
-			return localTime;
-		}
-
-		return localTime + worldObj.getTotalWorldTime() - clientLocalTimeSyncTick;
+		double direction = CelestialBody.getBody(worldObj).getRotationDirection();
+		return (long)(masterTime * direction * CelestialBody.VANILLA_DAY_TICKS / dayLength);
 	}
 
 	@Override
 	public void setWorldTime(long time) {
-
-		if(dimensionId == 0) {
-			super.setWorldTime(time);
-			return;
-		}
-
-		double dayLength = getDayLength();
-		double normalized = time / 24000.0D;
-
-		if(CelestialBody.getBody(worldObj).getRotationDirection() < 0) {
-			normalized = -normalized;
-		}
-
-		long local = (long)(normalized * dayLength);
-
-		if(!worldObj.isRemote) {
-			CelestialBodyWorldSavedData.get(this)
-				.setLocalTime(local);
-		}
-
-		localTime = local;
+		super.setWorldTime(time);
+		syncedMasterTime = time;
 		if(worldObj != null && worldObj.isRemote) {
-			clientLocalTimeSyncTick = worldObj.getTotalWorldTime();
+			clientMasterTimeSyncTick = worldObj.getTotalWorldTime();
 		}
+	}
+
+	private long getNextLocalMorningTime(long masterTime) {
+		double dayLength = getDayLength();
+		if(dayLength <= 0.0D) return masterTime;
+
+		double direction = CelestialBody.getBody(worldObj).getRotationDirection();
+		double localCycle = normalizeDayTime(masterTime * direction, dayLength);
+		double ticksUntilMorning = (1.0D - localCycle) * dayLength;
+
+		if(direction < 0.0D) {
+			ticksUntilMorning = localCycle * dayLength;
+		}
+
+		if(ticksUntilMorning < 1.0D) {
+			ticksUntilMorning += dayLength;
+		}
+
+		return masterTime + MathHelper.ceiling_double_int(ticksUntilMorning);
+	}
+
+	protected long getMasterWorldTime() {
+		if(worldObj == null) {
+			return syncedMasterTime >= 0 ? syncedMasterTime : 0;
+		}
+
+		long masterTime = super.getWorldTime();
+		if(worldObj.isRemote && syncedMasterTime >= 0 && clientMasterTimeSyncTick >= 0) {
+			long syncedTime = syncedMasterTime;
+			if(worldObj.getGameRules().getGameRuleBooleanValue("doDaylightCycle")) {
+				syncedTime += worldObj.getTotalWorldTime() - clientMasterTimeSyncTick;
+			}
+
+			if(Math.abs(masterTime - syncedTime) > 10) {
+				masterTime = syncedTime;
+			}
+		}
+
+		return masterTime;
+	}
+
+	public static long getMasterWorldTime(World world) {
+		if(world != null && world.provider instanceof WorldProviderCelestial) {
+			return ((WorldProviderCelestial)world.provider).getMasterWorldTime();
+		}
+
+		return world != null ? world.getWorldTime() : 0;
 	}
 
 	@Override
@@ -553,12 +541,12 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 		return skyProvider;
 	}
 
-	//protected double getDayLength() {
-	//	CelestialBody body = CelestialBody.getBody(worldObj);
-	//	return body.getRotationalPeriod() / (1 - (1 / body.getPlanet().getOrbitalPeriod()));
-	//}
 	protected double getDayLength() {
 		CelestialBody body = CelestialBody.getBody(worldObj);
+		if(body.dimensionId == 0) {
+			return CelestialBody.VANILLA_DAY_TICKS;
+		}
+
 		double siderealDay = body.getRotationalPeriod();
 		double year = getSolarYearLength(body);
 
@@ -566,13 +554,12 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 			return Math.max(1.0D, siderealDay);
 		}
 
-		// Convert sidereal rotation into the local solar day. This is what the
-		// sky renderer needs: noon-to-noon, not fixed-star rotation. It makes
-		// Mercury's long day and Venus' retrograde day behave much closer to
-		// reality while preserving the existing compressed time scale.
+		// Convert sidereal rotation into local apparent solar-day length, still
+		// measured in vanilla master ticks. This keeps Earth at exactly vanilla
+		// 24,000-tick days while proportionally scaling every other body.
 		double solarFrequency = (body.getRotationDirection() / siderealDay) - (1.0D / year);
 		if(Math.abs(solarFrequency) < 1.0E-9D) {
-			return siderealDay;
+			return Math.max(1.0D, siderealDay);
 		}
 
 		return Math.max(1.0D, Math.abs(1.0D / solarFrequency));
@@ -586,49 +573,34 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 			return Double.POSITIVE_INFINITY;
 		}
 
-		return orbitalPeriod * 20.0D * CelestialBody.TIME_SCALE;
+		return CelestialBody.secondsToVanillaTicks(orbitalPeriod);
 	}
 
 	public float getNormalizedDayTime() {
-		double dayLength = getDayLength();
-
-		return (float)normalizeDayTime(getLocalTime(), dayLength);
+		return (float)normalizeDayTime(getLocalTime(), CelestialBody.VANILLA_DAY_TICKS);
 	}
 
 	@Override
 	public float calculateCelestialAngle(long worldTime, float partialTicks) {
+		double localTime = getLocalTime(worldTime) + partialTicks * CelestialBody.VANILLA_DAY_TICKS / getDayLength();
+		return calculateVanillaCelestialAngle(localTime);
+	}
 
-		double dayLength = getDayLength();
-
-		double localTicks =
-			(worldTime / 24000.0D) * dayLength;
-
-		double f1 =
-			(localTicks + partialTicks)
-				/ dayLength
-				- 0.25F;
-
-		if(f1 < 0.0F) {
-			++f1;
-		}
-
-		if(f1 > 1.0F) {
-			--f1;
-		}
+	private float calculateVanillaCelestialAngle(double localTime) {
+		double f1 = normalizeDayTime(localTime, CelestialBody.VANILLA_DAY_TICKS) - 0.25F;
+		if(f1 < 0.0F) ++f1;
+		if(f1 > 1.0F) --f1;
 
 		double f2 = f1;
+		f1 = 0.5F - Math.cos(f1 * Math.PI) / 2.0F;
 
-		f1 =
-			0.5F
-				- Math.cos(
-				f1 * Math.PI
-			) / 2.0F;
+		return (float)(f2 + (f1 - f2) / 3.0D);
+	}
 
-		return (float)(
-			f2 +
-				(f1 - f2)
-					/ 3.0D
-		);
+	private double normalizeDayTime(double time, double dayLength) {
+		double normalized = time % dayLength;
+		if(normalized < 0.0D) normalized += dayLength;
+		return normalized / dayLength;
 	}
 
 	private double normalizeDayTime(double time, double dayLength) {
@@ -648,11 +620,9 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 		if(body.satellites.size() == 0) return 2;
 
 		// Determine difficulty phase from closest moon
-		float angle = (float) SolarSystem.calculateSingleAngle(worldObj, worldTime, body, body.satellites.get(0));
-		int phase = (int) Math.floor(((angle % 360.0F) / 45.0F)) % 8;
-		if(phase >= 8) return 0;
-		System.out.println("MOON ANGLE: " + angle + " PHASE: " + phase + " TIME: " + worldTime);
-		return phase;
+		float angle = (float)SolarSystem.calculateSingleAngle(worldObj, 0.0F, body, body.satellites.get(0));
+		double normalizedAngle = ((angle % 360.0D) + 360.0D) % 360.0D;
+		return (int)Math.floor(normalizedAngle / 45.0D) % 8;
 	}
 
 	// This is the vanilla junk table, for replacing fish on dead worlds

@@ -42,6 +42,8 @@ public class CelestialBody {
 	public boolean canLand = false; // does this body have an associated dimension and a solid surface?
 
 	public static final double TIME_SCALE = 1.0 / 30.0;
+	public static final double EARTH_DAY_SECONDS = 86_164.0D;
+	public static final double VANILLA_DAY_TICKS = 24_000.0D;
 
 	public float massKg = 0;
 	public float radiusKm = 0;
@@ -502,11 +504,16 @@ public class CelestialBody {
 		return body;
 	}
 
-	// Returns the day length in ticks, adjusted for the configured Minecraft time compression.
-	// The magnitude is always positive; use getRotationDirection() to preserve
-	// retrograde bodies such as Venus, Uranus and Pluto.
+	// Returns the sidereal day length in vanilla ticks, with Earth as the
+	// canonical baseline: 24,000 ticks equals one Earth day. The magnitude is
+	// always positive; use getRotationDirection() to preserve retrograde bodies
+	// such as Venus, Uranus and Pluto.
 	public double getRotationalPeriod() {
-		return Math.abs(rotationalPeriod) * 20.0 * TIME_SCALE;
+		return secondsToVanillaTicks(Math.abs(rotationalPeriod));
+	}
+
+	public static double secondsToVanillaTicks(double seconds) {
+		return seconds / EARTH_DAY_SECONDS * VANILLA_DAY_TICKS;
 	}
 
 	public int getRotationDirection() {
