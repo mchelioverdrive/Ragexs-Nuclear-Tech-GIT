@@ -36,7 +36,8 @@ import java.util.Random;
 public class WorldProviderOrbit extends WorldProvider {
 
 	// How fast orbital simulation runs relative to real seconds
-	public static final double ORBIT_SCALE = 1.0 / 100000.0;
+	//unused
+	//public static final double ORBIT_SCALE = 1.0 / 100000.0;
 
 	//todo spawn our FRIEND here when there's an atmosphere, it's breathable, and there's a door. then our friend can KNOCK.
 

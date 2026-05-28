@@ -2,6 +2,7 @@ package com.hbm.dim;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -532,9 +533,9 @@ public class SolarSystem {
 		calculateMetricsFromBody(metrics, body);
 
 		// Sort by increasing distance
-		metrics.sort((a, b) -> {
-			return (int)(b.distance - a.distance);
-		});
+		metrics.sort(
+			Comparator.comparingDouble(a -> -a.distance)
+		);
 
 		return metrics;
 	}
@@ -655,13 +656,23 @@ public class SolarSystem {
 
 	// Same but for an arbitrary satellite around a body
 	private static Vec3 calculatePosition(CelestialBody body, double altitude, double ticks) {
-		double orbitalPeriod = 2 * Math.PI * Math.sqrt((altitude * altitude * altitude) / (AstronomyUtil.GRAVITATIONAL_CONSTANT * body.massKg));
+		double orbitalRadiusMeters =
+			(body.radiusKm + altitude) * 1000.0;
+
+		double orbitalPeriod =
+			2 * Math.PI *
+				Math.sqrt(
+					(orbitalRadiusMeters * orbitalRadiusMeters * orbitalRadiusMeters) /
+						(AstronomyUtil.GRAVITATIONAL_CONSTANT * body.massKg)
+				);
 		orbitalPeriod /= (double)AstronomyUtil.SECONDS_IN_MC_DAY;
 		double orbitTicks = orbitalPeriod * (double)AstronomyUtil.TICKS_IN_DAY;
 		double angleRadians = 2 * Math.PI * (ticks / orbitTicks);
 
-		double x = altitude / 1000 * Math.cos(angleRadians);
-		double y = altitude / 1000 * Math.sin(angleRadians);
+		double x = (body.radiusKm + altitude)
+			* Math.cos(angleRadians);
+		double y = (body.radiusKm + altitude)
+			* Math.sin(angleRadians);
 
 		return Vec3.createVectorHelper(x, y, 0);
 	}
@@ -700,7 +711,26 @@ public class SolarSystem {
 		// Get angle in relation to 0, 0 (sun position, origin)
 		metric.angle = getApparentAngleDegrees(position, metric.position);
 
-		metric.phase = getApparentAngleDegrees(metric.position, position) / 180.0;
+		Vec3 toSun =
+			Vec3.createVectorHelper(
+				-metric.position.xCoord,
+				-metric.position.yCoord,
+				-metric.position.zCoord
+			);
+
+		Vec3 toObserver =
+			Vec3.createVectorHelper(
+				position.xCoord - metric.position.xCoord,
+				position.yCoord - metric.position.yCoord,
+				position.zCoord - metric.position.zCoord
+			);
+
+		double dot =
+			toSun.normalize().dotProduct(
+				toObserver.normalize()
+			);
+
+		metric.phase = (1 + dot) * 0.5;
 	}
 
 	private static double getApparentSize(double radius, double distance) {
@@ -838,7 +868,7 @@ public class SolarSystem {
 		// Shorter burns have less gravity losses, meaning higher thrust is desirable
 		double acceleration = (thrustToWeightRatio - 1) * gravity;
 		double timeToOrbit = orbitalDeltaV / acceleration;
-		double gravityLosses = gravity * timeToOrbit * 2; // No perfect burns
+		double gravityLosses = gravity * timeToOrbit * 1.4; // 1.2–1.5 km/s losses est
 
 		if(lossesOnly)
 			return gravityLosses * (1 - atmosphericDrag); // drag helps on the way down
