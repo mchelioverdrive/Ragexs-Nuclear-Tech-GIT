@@ -50,6 +50,7 @@ public class RenderInfoSystem {
 		if(event.type != ElementType.CROSSHAIRS)
 			return;
 
+		//wtf does this do, I'm going to uncomment and see what happens
 		//this.messages.put(-666, new InfoEntry(Minecraft.getMinecraft().theWorld.getCelestialAngle(0) + "", 666_666));
 		//this.messages.put(-665, new InfoEntry(Minecraft.getMinecraft().theWorld.getMoonPhase() + "", 666_666));
 

@@ -497,7 +497,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 
 	protected void renderCelestials(float partialTicks, WorldClient world, Minecraft mc, List<AstroMetric> metrics, float celestialAngle, CelestialBody tidalLockedBody, Vec3 planetTint, float visibility, float blendAmount, CelestialBody orbiting, float maxSize) {
 		Tessellator tessellator = Tessellator.instance;
-		double minSize = 1D;
+		double minSize = 0.35D;
 		float blendDarken = 0.1F;
 
 		for(AstroMetric metric : metrics) {
@@ -514,8 +514,9 @@ public class SkyProviderCelestial extends IRenderHandler {
 			GL11.glPushMatrix();
 			{
 
-				double size = MathHelper.clamp_double(metric.apparentSize, 0, maxSize);
-				boolean renderAsPoint = size < minSize;
+				double size = metric.apparentSize * 2.5D;
+				size = MathHelper.clamp_double(size, 0.2D, maxSize);
+				boolean renderAsPoint = size < 0.15D;
 
 				if(renderAsPoint) {
 					float alpha = MathHelper.clamp_float((float)size * 100.0F, 0.0F, 1.0F);
@@ -529,7 +530,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 					mc.renderEngine.bindTexture(metric.body.texture);
 				}
 
-				if(metric.body == tidalLockedBody) {
+				if(tidalLockedBody != null && metric.body == tidalLockedBody) {
 					GL11.glRotated(celestialAngle * -360.0 - 60.0, 1.0, 0.0, 0.0);
 				} else {
 					GL11.glRotated(metric.angle, 1.0, 0.0, 0.0);

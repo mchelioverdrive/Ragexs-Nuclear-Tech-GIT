@@ -51,18 +51,34 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 	// Runs every tick, use it to decrement timers and run effects
 	@Override
 	public void updateWeather() {
-		CBT_Atmosphere atmosphere = CelestialBody.getTrait(worldObj, CBT_Atmosphere.class);
+
+		// Advance local planetary time
+		if(!worldObj.isRemote &&
+			worldObj.getGameRules().getGameRuleBooleanValue("doDaylightCycle")) {
+
+			CelestialBodyWorldSavedData data =
+				CelestialBodyWorldSavedData.get(this);
+
+			long current = data.getLocalTime();
+			data.setLocalTime(current + 1);
+
+			localTime = current + 1;
+		}
+
+		CBT_Atmosphere atmosphere =
+			CelestialBody.getTrait(worldObj, CBT_Atmosphere.class);
+
 		if(atmosphere != null && atmosphere.getPressure() > 0.5F) {
 			super.updateWeather();
 			return;
 		}
 
-		this.worldObj.getWorldInfo().setRainTime(0);
-		this.worldObj.getWorldInfo().setRaining(false);
-		this.worldObj.getWorldInfo().setThunderTime(0);
-		this.worldObj.getWorldInfo().setThundering(false);
-		this.worldObj.rainingStrength = 0.0F;
-		this.worldObj.thunderingStrength = 0.0F;
+		worldObj.getWorldInfo().setRainTime(0);
+		worldObj.getWorldInfo().setRaining(false);
+		worldObj.getWorldInfo().setThunderTime(0);
+		worldObj.getWorldInfo().setThundering(false);
+		worldObj.rainingStrength = 0.0F;
+		worldObj.thunderingStrength = 0.0F;
 	}
 
 	// Can be overridden to provide fog changing events based on weather
@@ -99,7 +115,7 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 	}
 
 	public void serialize(ByteBuf buf) {
-		buf.writeLong(getWorldTime());
+		buf.writeLong(getLocalTime());
 	}
 
 	public void deserialize(ByteBuf buf) {
@@ -415,35 +431,60 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 		if(!worldObj.getGameRules().getGameRuleBooleanValue("doDaylightCycle")) return;
 
 		long dayLength = (long)getDayLength();
-		long i = getWorldTime() % dayLength;
-		setWorldTime(i - i % dayLength);
+		long current = getWorldTime();
+
+		long nextMorning =
+			(current / dayLength + 1) * dayLength;
+
+		setWorldTime(nextMorning);
 	}
 
 	@Override
 	public long getWorldTime() {
+
 		if(dimensionId == 0) {
 			return super.getWorldTime();
 		}
 
 		if(!worldObj.isRemote) {
-			localTime = CelestialBodyWorldSavedData.get(this).getLocalTime();
+			localTime =
+				CelestialBodyWorldSavedData
+					.get(this)
+					.getLocalTime();
 		}
 
+		double dayLength = getDayLength();
+
+		double normalized =
+			(localTime % dayLength)
+				/ dayLength;
+
+		return (long)(normalized * 24000L);
+	}
+
+	public long getLocalTime() {
 		return localTime;
 	}
 
 	@Override
 	public void setWorldTime(long time) {
+
 		if(dimensionId == 0) {
 			super.setWorldTime(time);
 			return;
 		}
 
+		double dayLength = getDayLength();
+
+		long local =
+			(long)((time / 24000.0D) * dayLength);
+
 		if(!worldObj.isRemote) {
-			CelestialBodyWorldSavedData.get(this).setLocalTime(time);
+			CelestialBodyWorldSavedData.get(this)
+				.setLocalTime(local);
 		}
 
-		localTime = time;
+		localTime = local;
 	}
 
 	@Override
@@ -483,17 +524,36 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 		return skyProvider;
 	}
 
+	//protected double getDayLength() {
+	//	CelestialBody body = CelestialBody.getBody(worldObj);
+	//	return body.getRotationalPeriod() / (1 - (1 / body.getPlanet().getOrbitalPeriod()));
+	//}
 	protected double getDayLength() {
-		CelestialBody body = CelestialBody.getBody(worldObj);
-		return body.getRotationalPeriod() / (1 - (1 / body.getPlanet().getOrbitalPeriod()));
+		return CelestialBody.getBody(worldObj).getRotationalPeriod();
+	}
+
+	public float getNormalizedDayTime() {
+		double dayLength = getDayLength();
+
+		return (float)(
+			(getLocalTime() % dayLength)
+				/ dayLength
+		);
 	}
 
 	@Override
 	public float calculateCelestialAngle(long worldTime, float partialTicks) {
-		worldTime = getWorldTime(); // the worldtime passed in is from the fucking overworld
+
 		double dayLength = getDayLength();
-		double j = worldTime % dayLength;
-		double f1 = (j + partialTicks) / dayLength - 0.25F;
+
+		//TODO possibly blame
+		double j =
+			(worldTime / 24000.0D) * dayLength;
+
+		double f1 =
+			(j + partialTicks)
+				/ dayLength
+				- 0.25F;
 
 		if(f1 < 0.0F) {
 			++f1;
@@ -504,12 +564,22 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 		}
 
 		double f2 = f1;
-		f1 = 0.5F - Math.cos(f1 * Math.PI) / 2.0F;
-		return (float)(f2 + (f1 - f2) / 3.0D);
+
+		f1 =
+			0.5F
+				- Math.cos(
+				f1 * Math.PI
+			) / 2.0F;
+
+		return (float)(
+			f2 +
+				(f1 - f2)
+					/ 3.0D
+		);
 	}
 
 	@Override
-	public int getMoonPhase(long worldTime) {
+	public int getMoonPhase(long worldTime) { //where is it wtf - this shit doesn't even work
 		// Uncomment this line as well to return moon phase difficulty calcs to vanilla
 		// if(dimensionId == 0) return super.getMoonPhase(worldTime);
 
@@ -519,8 +589,10 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 		if(body.satellites.size() == 0) return 2;
 
 		// Determine difficulty phase from closest moon
-		int phase = Math.round(8 - ((float)SolarSystem.calculateSingleAngle(worldObj, 0, body, body.satellites.get(0)) / 45 + 4));
+		float angle = (float) SolarSystem.calculateSingleAngle(worldObj, worldTime, body, body.satellites.get(0));
+		int phase = (int) Math.floor(((angle % 360.0F) / 45.0F)) % 8;
 		if(phase >= 8) return 0;
+		System.out.println("MOON ANGLE: " + angle + " PHASE: " + phase + " TIME: " + worldTime);
 		return phase;
 	}
 

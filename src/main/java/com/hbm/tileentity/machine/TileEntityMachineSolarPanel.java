@@ -1,6 +1,7 @@
 package com.hbm.tileentity.machine;
 
 import com.hbm.dim.CelestialBody;
+import com.hbm.dim.WorldProviderCelestial;
 import com.hbm.dim.orbit.WorldProviderOrbit;
 import com.hbm.tileentity.TileEntityLoadedBase;
 
@@ -36,17 +37,22 @@ public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements
 	private boolean isSunVisible() {
 
 		if(worldObj.provider instanceof WorldProviderOrbit) {
-			return true; // orbit handles lighting differently (or should later use eclipse system)
+			return true;
 		}
 
-		// must have open sky
 		if(!worldObj.canBlockSeeTheSky(xCoord, yCoord + 1, zCoord))
 			return false;
 
-		// must be daytime AND sun above horizon
-		float angle = worldObj.getCelestialAngle(1.0F);
+		if(!(worldObj.provider instanceof WorldProviderCelestial)) {
+			long time = worldObj.getWorldTime() % 24000L;
+			return time >= 0 && time < 12000;
+		}
 
-		return angle > 0.25F && angle < 0.75F;
+		float time =
+			((WorldProviderCelestial) worldObj.provider)
+				.getNormalizedDayTime();
+
+		return time > 0.25F && time < 0.75F;
 	}
 
 	// was? Balanced around 100he/t on Earth
@@ -60,10 +66,17 @@ public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements
 			? ((WorldProviderOrbit) worldObj.provider).getSunPower()
 			: CelestialBody.getBody(worldObj).getSunPower();
 
-		float angle = worldObj.getCelestialAngle(1.0F);
+		float time;
 
-		// proper daylight curve (0 at night, 1 at noon)
-		float daylight = 1.0F - Math.abs(angle - 0.5F) * 2.0F;
+		if(worldObj.provider instanceof WorldProviderCelestial) {
+			time = ((WorldProviderCelestial) worldObj.provider)
+				.getNormalizedDayTime();
+		} else {
+			time = worldObj.getCelestialAngle(1.0F);
+		}
+
+		// Convert sunrise->sunset (0 -> 0.5) into a noon peak
+		float daylight = (float)Math.sin(time * Math.PI * 2.0F);
 		daylight = MathHelper.clamp_float(daylight, 0.0F, 1.0F);
 
 		float base = 100.0F;
