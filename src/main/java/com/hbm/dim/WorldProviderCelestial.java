@@ -603,12 +603,6 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 		return normalized / dayLength;
 	}
 
-	private double normalizeDayTime(double time, double dayLength) {
-		double normalized = time % dayLength;
-		if(normalized < 0.0D) normalized += dayLength;
-		return normalized / dayLength;
-	}
-
 	@Override
 	public int getMoonPhase(long worldTime) { //where is it wtf - this shit doesn't even work
 		// Uncomment this line as well to return moon phase difficulty calcs to vanilla
