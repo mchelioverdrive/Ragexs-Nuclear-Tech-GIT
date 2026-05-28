@@ -68,7 +68,7 @@ public class SolarSystem {
 					.withSemiMajorAxis(57_909_050D)
 					.withRotationalPeriod(5_067_072) // 58.646 Earth days
 					.withColor(0.4863F, 0.4F, 0.3456F)
-					.withBlockTextures(RefStrings.MODID + ":moho_stone", "", "", "")
+					.withBlockTextures(RefStrings.MODID + ":textures/blocks/moho_stone.png", RefStrings.MODID + ":textures/blocks/moho_regolith.png")
 					.withAxialTilt(0.03F)
 					.withProcessingLevel(1)
 					.withTraits(new CBT_Temperature(167)),
@@ -79,7 +79,7 @@ public class SolarSystem {
 					.withSemiMajorAxis(108_208_000D)
 					.withRotationalPeriod(-20_996_640) // -243.025 Earth days
 					.withColor(0.408F, 0.298F, 0.553F)
-					.withBlockTextures(RefStrings.MODID + ":eve_stone_2", "", "", "")
+					.withBlockTextures(RefStrings.MODID + ":textures/blocks/eve_stone_2.png", RefStrings.MODID + ":textures/blocks/eve_silt.png")
 					.withProcessingLevel(2)
 					.withTraits(new CBT_Atmosphere(Fluids.EVEAIR, 92D), new CBT_Temperature(464), new CBT_Water(Fluids.MERCURY)),
 					//alright you win this time retarded ass system
@@ -104,6 +104,7 @@ public class SolarSystem {
 					.withSemiMajorAxis(149_598_023D)
 					.withRotationalPeriod(86_164) // sidereal day
 					.withAxialTilt(23.44F)
+					.withBlockTextures("textures/blocks/stone.png", "textures/blocks/dirt.png")
 					//by default, minecraft has a day lasting 20 minutes. That's retarded.
 					//I'm gonna make it an hour
 					.withColor(0.608F, 0.914F, 1.0F)
@@ -126,7 +127,9 @@ public class SolarSystem {
 							//but then minecraft scaling and shit so 655_719
 							//that dont work
 							.withTidalLockingTo("kerbin")
-							.withBlockTextures(RefStrings.MODID + ":moon_rock", "", "", "")
+							//.withBlockTextures(RefStrings.MODID + ":moon_rock", "", "", "")
+							.withBlockTextures(RefStrings.MODID + ":textures/blocks/moon_rock.png", RefStrings.MODID + ":textures/blocks/moon_turf.png")
+
 							//.getOrbitalAngle()
 							//.getAngle("kerbin")
 							//.
@@ -149,7 +152,7 @@ public class SolarSystem {
 					.withAxialTilt(25.19F)
 					//.withTidalLockingTo("ike") //??? literally fucking what
 					.withColor(0.6471f, 0.2824f, 0.1608f)
-					.withBlockTextures(RefStrings.MODID + ":duna_rock", "", "", "")
+					.withBlockTextures(RefStrings.MODID + ":textures/blocks/duna_rock.png", RefStrings.MODID + ":textures/blocks/duna_sands.png")
 					.withProcessingLevel(1)
 					.withTraits(
 						new CBT_Atmosphere(Fluids.DUNAAIR, 0.006D),
@@ -163,7 +166,7 @@ public class SolarSystem {
 							.withMassRadius(1.0659e16F, 11)
 							.withSemiMajorAxis(9_376D)
 							.withRotationalPeriod(27_553) // tidally locked
-							.withBlockTextures(RefStrings.MODID + ":ike_stone", "", "", "")
+							.withBlockTextures(RefStrings.MODID + ":textures/blocks/ike_stone.png", RefStrings.MODID + ":textures/blocks/ike_regolith.png")
 							.withProcessingLevel(1)
 							.withTidalLockingTo("duna")
 							//.withProcessingLevel(1) already set
@@ -180,7 +183,7 @@ public class SolarSystem {
 							.withSemiMajorAxis(23_463D)
 							.withRotationalPeriod(109_123) // tidally locked
 							//todo change block textures
-							.withBlockTextures(RefStrings.MODID + ":ike_stone", "", "", "")
+							.withBlockTextures(RefStrings.MODID + ":textures/blocks/ike_stone.png", RefStrings.MODID + ":textures/blocks/ike_regolith.png")
 							//this is probably fine
 							.withTexture("hbm:textures/misc/space/planet.png")
 							//todo add new bullshit
@@ -197,7 +200,7 @@ public class SolarSystem {
 					.withMassRadius(9.393e20F, 469)
 					.withSemiMajorAxis(413_700_000D)
 					.withRotationalPeriod(32_673)
-					.withBlockTextures(RefStrings.MODID + ":dresbase", "", "", "")
+					.withBlockTextures(RefStrings.MODID + ":textures/blocks/dresbase.png", RefStrings.MODID + ":textures/blocks/sellafield_slaked.png")
 					.withTraits(new CBT_Temperature(-105))
 					.withProcessingLevel(2),
 
@@ -482,7 +485,7 @@ public class SolarSystem {
 			return getBody().processingLevel;
 		}
 
-		public String getStoneTexture() {
+		public ResourceLocation getStoneTexture() {
 			if(this == ORBIT) return null;
 			return getBody().stoneTexture;
 		}

@@ -62,7 +62,9 @@ public class CelestialBody {
 
 	private HashMap<Class<? extends CelestialBodyTrait>, CelestialBodyTrait> traits = new HashMap<Class<? extends CelestialBodyTrait>, CelestialBodyTrait>();
 
-	public String stoneTexture = "stone";
+	//public String stoneTexture = "stone";
+	public ResourceLocation stoneTexture;
+	public ResourceLocation surfaceTexture;
 	public SolarSystem.Body type;
 
 	@SideOnly(Side.CLIENT)
@@ -139,8 +141,9 @@ public class CelestialBody {
 		return this;
 	}
 
-	public CelestialBody withBlockTextures(String stone, String sand, String silt, String sravel) {
-		this.stoneTexture = stone;
+	public CelestialBody withBlockTextures(String stone, String surface) {
+		this.stoneTexture = new ResourceLocation(stone);
+		this.surfaceTexture = new ResourceLocation(surface);
 		return this;
 	}
 
