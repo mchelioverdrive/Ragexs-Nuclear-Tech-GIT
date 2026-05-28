@@ -3016,7 +3016,7 @@ public class ModItems {
 		ingot_cf248 = new Item().setUnlocalizedName("ingot_cf248").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_cf252");
 		ingot_yb170 = new Item().setUnlocalizedName("ingot_yb170").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_titanium");
 
-		turret_light_ammo = new ItemTurretAmmo(ModBlocks.turret_ciws, 25).setUnlocalizedName("turret_light_ammo").setCreativeTab(MainRegistry.weaponTab).setTextureName(RefStrings.MODID + ":turret_light_ammo");
+		turret_light_ammo = new ItemTurretAmmo(ModBlocks.turret_ciws, 1550).setUnlocalizedName("turret_light_ammo").setCreativeTab(MainRegistry.weaponTab).setTextureName(RefStrings.MODID + ":ammo_dgk");
 
 
 		ingot_es253 = new Item().setUnlocalizedName("ingot_es253").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_es253");

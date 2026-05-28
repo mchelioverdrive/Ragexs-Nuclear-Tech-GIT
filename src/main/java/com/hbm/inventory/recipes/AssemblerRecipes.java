@@ -3528,12 +3528,65 @@ public class AssemblerRecipes extends SerializableRecipe {
 										15),
 					   new ComparableStack(ModItems.mechanism_rifle_2,
 										   6),
-					   new ComparableStack(ModBlocks.crate_steel,
-										   1),
 					   new ComparableStack(ModItems.crt_display,
 										   1)
 				   },
 				   1200);
+
+
+		makeRecipe(new ComparableStack(ModItems.turret_light_ammo, 1),
+				   new AStack[] {
+					   //1550 rnds
+					   new ComparableStack(ModItems.ballistite, 2), // smokeless propellant
+					   new ComparableStack(ModItems.cordite), // supplemental propellant chemistry
+					   new OreDictStack(STEEL.ingot(), 2), // projectile/case hardware
+					   new ComparableStack(ModBlocks.block_copper), // brass cartridge material
+					   new ComparableStack(ModItems.ingot_tungsten) // penetrator
+				   }, 1000
+		); //whatever whatever not adding multi ammo types just yet
+
+		makeRecipe(new ComparableStack(ModBlocks.mine_fat, 1),
+					  new AStack[] {
+						  new OreDictStack(STEEL.plate(), 2),
+						  new OreDictStack(ANY_HIGHEXPLOSIVE.ingot()),
+						  new ComparableStack(ModItems.circuit,
+											  2,
+											  EnumCircuitType.ADVANCED),
+						  new ComparableStack(ModItems.ammo_nuke),
+						  new OreDictStack(PB.plate(), 3)
+					  }, 1900
+					  );
+
+		//CraftingManager.addRecipeAuto(new ItemStack(ModBlocks.mine_ap, 4), new Object[] { "C", "P", "T", 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC), 'P', IRON.plate(), 'T', ANY_PLASTICEXPLOSIVE.ingot() });
+
+		makeRecipe(new ComparableStack(ModBlocks.mine_ap, 8), new AStack[] {
+			new ComparableStack(ModItems.circuit, 1, EnumCircuitType.BASIC),
+			new OreDictStack(STEEL.plate()),
+			new OreDictStack(ANY_PLASTICEXPLOSIVE.ingot())
+
+		}, 1200
+		);
+		//		CraftingManager.addRecipeAuto(new ItemStack(ModBlocks.mine_he, 1), new Object[] { " C ", "PTP", 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC), 'P', STEEL.plate(), 'T', ANY_HIGHEXPLOSIVE.ingot() });
+		//copies but more yield:
+		makeRecipe(new ComparableStack(ModBlocks.mine_he, 2), new AStack[] {
+					   new ComparableStack(ModItems.circuit, 1, EnumCircuitType.BASIC),
+					   new OreDictStack(STEEL.plate(), 2),
+					   new OreDictStack(ANY_HIGHEXPLOSIVE.ingot())
+
+				   }, 1200
+		);
+
+		//		CraftingManager.addRecipeAuto(new ItemStack(ModBlocks.mine_shrap, 2), new Object[] { "LLL", " C ", "PTP", 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC), 'P', STEEL.plate(), 'T', ModBlocks.det_cord, 'L', ModItems.pellet_buckshot });
+		makeRecipe(new ComparableStack(ModBlocks.mine_shrap, 4), new AStack[] {
+					   new ComparableStack(ModItems.circuit, 1, EnumCircuitType.BASIC),
+					   new OreDictStack(STEEL.plate(), 2),
+					   new ComparableStack(ModBlocks.det_cord),
+					   new ComparableStack(ModItems.pellet_buckshot, 3)
+
+				   }, 1200
+		);
+
+
 		//makeRecipe(new ComparableStack(ModBlocks.turret_maxwell, 1), new AStack[] {
 		//		new ComparableStack(ModBlocks.machine_lithium_battery, 1),
 		//		new OreDictStack(STEEL.ingot(), 24),

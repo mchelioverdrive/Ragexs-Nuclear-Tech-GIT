@@ -34,6 +34,13 @@ public class SolarSystem {
 	public static void init() {
 		// All values pulled directly from KSP, most values are auto-converted to MC friendly ones
 		// Then selectively lobotomized to realistic standards by ragex
+		//TODO: FIX VALUES GOING OVER LIMIT
+		// ALSO FIX ISSUE MENTIONED HERE BY COMMENT FROM MELLOW:
+		// tip: Rotational period is the sidereal rotation period of the body, not the orbital period!
+		// Orbital period is derived from the bodies semi-major axis (the average orbital distance from the parent body)
+		// and the mass of the parent,
+		// it is not entered manually! In fact most values are not entered manually,
+		// since we can use real-world orbital mechanics to derive them.
 		//the sun
 		kerbol = new CelestialBody("kerbol")
 			.withMassRadius(1.989e30F, 696_340) //testing irl values
@@ -207,8 +214,8 @@ public class SolarSystem {
 							.withRotationalPeriod(306_822)
 							.withTidalLockingTo("jool")
 							.withProcessingLevel(3)
-							//not accurate, I'll see about changing it later
-							.withTraits(new CBT_Atmosphere(Fluids.AIR, 0.45D).and(Fluids.XENON, 0.15D), new CBT_Water()),
+							//xenon -> hydrogen for realism
+							.withTraits(new CBT_Atmosphere(Fluids.AIR, 0.45D).and(Fluids.HYDROGEN, 0.15D), new CBT_Water()),
 
 						//Ganymede
 						new CelestialBody("vall") //probably
