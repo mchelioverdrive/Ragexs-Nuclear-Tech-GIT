@@ -1378,6 +1378,7 @@ public class ModItems {
 	//public static Item iv_xp;
 	public static Item radaway;
 	public static Item prussian_blue_powder;
+	public static Item prussian_blue_pill;
 	public static Item radaway_strong;
 	public static Item radaway_flush;
 	public static Item radx;
@@ -4440,7 +4441,7 @@ public class ModItems {
 				ItemSimpleConsumable.giveSoundAndDecrement(
 					stack,
 					user,
-					"hbm:item.radaway",
+					"hbm:player.cough",
 					null
 				);
 
@@ -4452,11 +4453,37 @@ public class ModItems {
 					0
 				);
 
-				// No IV sickness; pill form
+				// No IV sickness for pill form, give hunger instead (you just ate raw powder)
+				user.addPotionEffect(
+					new PotionEffect(Potion.hunger.id,
+									 20 * 20,
+									 0)
+				);
 
 			}).setUnlocalizedName("prussian_blue_powder")
 			.setCreativeTab(MainRegistry.consumableTab)
 			.setTextureName(RefStrings.MODID + ":powder_lapis");
+
+		prussian_blue_pill = new ItemSimpleConsumable().setUseActionServer((stack, user) -> {
+
+				ItemSimpleConsumable.giveSoundAndDecrement(
+					stack,
+					user,
+					"hbm:player.gulp",
+					null
+				);
+
+				// Stronger oral contamination treatment
+				ItemSimpleConsumable.addPotionEffect(
+					user,
+					HbmPotion.radaway,
+					200,
+					0
+				);
+
+			}).setUnlocalizedName("prussian_blue_pill")
+			.setCreativeTab(MainRegistry.consumableTab)
+			.setTextureName(RefStrings.MODID + ":pill_prussianblue");
 
 
 		radaway_strong = new ItemSimpleConsumable().setUseActionServer((stack, user) -> {
@@ -4485,7 +4512,7 @@ public class ModItems {
 				);
 
 				VersatileConfig.applyPotionSickness(user,
-													1);
+													2);
 
 			}
 			}).setUnlocalizedName("radaway_strong")
@@ -9389,6 +9416,7 @@ public class ModItems {
 		//GameRegistry.registerItem(iv_xp, iv_xp.getUnlocalizedName());
 		GameRegistry.registerItem(radaway, radaway.getUnlocalizedName());
 		GameRegistry.registerItem(prussian_blue_powder, prussian_blue_powder.getUnlocalizedName());
+		GameRegistry.registerItem(prussian_blue_pill, prussian_blue_pill.getUnlocalizedName());
 		GameRegistry.registerItem(radaway_strong, radaway_strong.getUnlocalizedName());
 		GameRegistry.registerItem(radaway_flush, radaway_flush.getUnlocalizedName());
 		GameRegistry.registerItem(radx, radx.getUnlocalizedName());

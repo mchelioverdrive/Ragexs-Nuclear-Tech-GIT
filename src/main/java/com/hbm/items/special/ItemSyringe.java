@@ -220,6 +220,8 @@ public class ItemSyringe extends Item {
 			}
 		}
 
+
+		//I'm not sure that this class even influences these things.
 		//TODOne realistify
 
 		if(this == ModItems.radaway) { //2400
@@ -242,6 +244,16 @@ public class ItemSyringe extends Item {
 		}
 
 		if(this == ModItems.prussian_blue_powder) { //copied stats (assume this is like shittier desprate pill form, I'll add a pill soon.
+			if(!world.isRemote) {
+				player.addPotionEffect(new PotionEffect(HbmPotion.radaway.id, 14, 3));
+				//no cooldown if pill form, IVs are annoying lol
+
+				stack.stackSize--;
+				world.playSoundAtEntity(player, "hbm:item.radaway", 1.0F, 1.0F);
+			}
+		}
+
+		if(this == ModItems.prussian_blue_pill) { //copied stats (assume this is like shittier desprate pill form, I'll add a pill soon.
 			if(!world.isRemote) {
 				player.addPotionEffect(new PotionEffect(HbmPotion.radaway.id, 14, 3));
 				//no cooldown if pill form, IVs are annoying lol
