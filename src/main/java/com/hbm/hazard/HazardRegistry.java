@@ -2109,31 +2109,80 @@ public class HazardRegistry {
 		//	public static Item powder_boron_spent;
 		//	public static Item powder_du_spent;
 
+		// =====================================================================================
+		// SPENT PBR FUEL POWDERS
+		// Powdered = worse handling risk than intact pellets
+		// Add nausea/toxic dust for pulverized fuel
+		// =====================================================================================
+
+		HazardSystem.register(
+			ModItems.powder_spent_haleu,
+			makeData()
+				.addEntry(RADIATION, u235 * ingot * 4.0F)
+				.addEntry(AUTISM, 2.0F)
+		);
+
+		HazardSystem.register(
+			ModItems.powder_spent_leu,
+			makeData()
+				.addEntry(RADIATION, u238 * ingot * 2.0F)
+				.addEntry(AUTISM, 1.5F)
+		);
+
+		HazardSystem.register(
+			ModItems.powder_spent_thorium,
+			makeData()
+				.addEntry(RADIATION, th232 * ingot * 2.5F)
+				.addEntry(AUTISM, 2.0F)
+		);
+
+		HazardSystem.register(
+			ModItems.powder_spent_u233,
+			makeData()
+				.addEntry(RADIATION, u233 * ingot * 5.0F)
+				.addEntry(AUTISM, 3.0F)
+		);
+
+		HazardSystem.register(
+			ModItems.powder_spent_mox,
+			makeData()
+				.addEntry(RADIATION, pu239 * ingot * 8.0F)
+				.addEntry(AUTISM, 5.0F)
+		);
+
+		// =====================================================================================
+		// SPENT ABSORBER / MODERATOR POWDERS
+		// Mostly neutron activation products
+		// =====================================================================================
+
 		HazardSystem.register(
 			ModItems.dust_graphite,
-			makeData(RADIATION,ingot * 0.3F)
+			makeData()
+				.addEntry(RADIATION, ingot * 0.35F)
+				.addEntry(AUTISM, 0.5F)
 		);
 
 		HazardSystem.register(
 			ModItems.powder_lead_irradiated,
-			makeData(RADIATION, u238 * nugget * 0.25F)
+			makeData()
+				.addEntry(RADIATION, u238 * nugget * 0.25F)
+				.addEntry(AUTISM, 3.0F)
 		);
 
+		// Boron-10 -> neutron capture products
 		HazardSystem.register(
 			ModItems.powder_boron_spent,
-			makeData(RADIATION, u238 * nugget * 0.5F)
+			makeData()
+				.addEntry(RADIATION, nugget * 0.15F)
+				.addEntry(AUTISM, 1.0F)
 		);
+
+		// Activated DU absorber
 		HazardSystem.register(
 			ModItems.powder_du_spent,
-			makeData(RADIATION, pu239 * ingot * 1.2F)
-		);
-		HazardSystem.register(
-			ModItems.powder_spent_mox,
 			makeData()
-				.addEntry(RADIATION, purg * ingot * 10F)
-				.addEntry(AUTISM, 5F)
-				.addEntry(ASBESTOS, 5F)
-
+				.addEntry(RADIATION, u238 * ingot * 2.5F)
+				.addEntry(AUTISM, 2.0F)
 		);
 
 
