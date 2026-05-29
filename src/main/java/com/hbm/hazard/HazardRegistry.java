@@ -1888,32 +1888,121 @@ public class HazardRegistry {
 			wst * billet * 6.0F
 		);
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.HALEU1975),
-							  makeData(RADIATION, saf * ingot * 0.3F));
+		// =====================================================================
+		// PBR FRESH FUEL PELLETS
+		// realistic external radiation profile
+		// =====================================================================
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.HALEU15),
-							  makeData(RADIATION, saf * ingot * 0.6F));
+		// HALEU 19.75%
+		// more U-235 than LEU, still mostly U-238
+		HazardSystem.register(
+			DictFrame.fromOne(
+				ModItems.watz_pellet,
+				EnumWatzType.HALEU1975
+			),
+			makeData(
+				RADIATION,
+				u235 * ingot * 0.35F
+			)
+		);
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.LEU5),
-							  makeData(RADIATION, saf * ingot * 1.0F));
+		// HALEU 15%
+		HazardSystem.register(
+			DictFrame.fromOne(
+				ModItems.watz_pellet,
+				EnumWatzType.HALEU15
+			),
+			makeData(
+				RADIATION,
+				u235 * ingot * 0.28F
+			)
+		);
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.TH232),
-							  makeData(RADIATION, np237 * ingot * 1.5F));   // high alpha emitter, weak external gamma
+		// LEU 5%
+		HazardSystem.register(
+			DictFrame.fromOne(
+				ModItems.watz_pellet,
+				EnumWatzType.LEU5
+			),
+			makeData(
+				RADIATION,
+				u238 * ingot * 0.20F
+			)
+		);
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.U233),
-							  makeData(RADIATION, uf * ingot * 0.4F));      // low-grade uranium fuel
+		// TH232 fertile pellet
+		// thorium is weak externally
+		HazardSystem.register(
+			DictFrame.fromOne(
+				ModItems.watz_pellet,
+				EnumWatzType.TH232
+			),
+			makeData(
+				RADIATION,
+				th232 * ingot * 0.18F
+			)
+		);
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.MOX241),
-							  makeData(RADIATION, purg * ingot * 0.8F));    // “purified” intermediate waste
+		// U-233 fuel
+		// hotter than uranium fuel because of U232 contamination
+		HazardSystem.register(
+			DictFrame.fromOne(
+				ModItems.watz_pellet,
+				EnumWatzType.U233
+			),
+			makeData(
+				RADIATION,
+				u233 * ingot * 0.65F
+			)
+		);
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.DU),
-							  makeData(RADIATION, u238 * ingot * 0.15F));   // depleted uranium baseline
+		// MOX (Pu-bearing fuel)
+		// hotter than uranium fuel
+		HazardSystem.register(
+			DictFrame.fromOne(
+				ModItems.watz_pellet,
+				EnumWatzType.MOX241
+			),
+			makeData(
+				RADIATION,
+				pu239 * ingot * 0.90F
+			)
+		);
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.NQD),
-							  makeData(RADIATION, u235 * ingot * 0.5F));    // low-enriched fuel
+		// DU absorber
+		HazardSystem.register(
+			DictFrame.fromOne(
+				ModItems.watz_pellet,
+				EnumWatzType.DU
+			),
+			makeData(
+				RADIATION,
+				u238 * ingot * 0.10F
+			)
+		);
 
-		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.NQR),
-							  makeData(RADIATION, pu239 * ingot * 1.2F));   // weapon-grade plutonium equivalent
+		// GT6 compatibility weirdos
+		HazardSystem.register(
+			DictFrame.fromOne(
+				ModItems.watz_pellet,
+				EnumWatzType.NQD
+			),
+			makeData(
+				RADIATION,
+				u235 * ingot * 0.75F
+			)
+		);
+
+		HazardSystem.register(
+			DictFrame.fromOne(
+				ModItems.watz_pellet,
+				EnumWatzType.NQR
+			),
+			makeData(
+				RADIATION,
+				pu239 * ingot * 1.5F
+			)
+		);
 
 		//TODOne do all watz_pellet_depleted too
 
