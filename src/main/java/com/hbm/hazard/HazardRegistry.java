@@ -1915,6 +1915,91 @@ public class HazardRegistry {
 		HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.NQR),
 							  makeData(RADIATION, pu239 * ingot * 1.2F));   // weapon-grade plutonium equivalent
 
+		//TODOne do all watz_pellet_depleted too
+
+		//spent fuel = hot as hell
+
+		HazardSystem.register(
+			DictFrame.fromOne(ModItems.watz_pellet_depleted,
+							  EnumWatzType.HALEU1975),
+			makeData(RADIATION, saf * ingot * 5.0F)
+		);
+
+		HazardSystem.register(
+			DictFrame.fromOne(ModItems.watz_pellet_depleted,
+							  EnumWatzType.HALEU15),
+			makeData(RADIATION, saf * ingot * 4.0F)
+		);
+
+		HazardSystem.register(
+			DictFrame.fromOne(ModItems.watz_pellet_depleted,
+							  EnumWatzType.LEU5),
+			makeData(RADIATION, saf * ingot * 3.5F)
+		);
+
+		HazardSystem.register(
+			DictFrame.fromOne(ModItems.watz_pellet_depleted,
+							  EnumWatzType.TH232),
+			makeData(RADIATION, np237 * ingot * 4.5F)
+		);
+
+		HazardSystem.register(
+			DictFrame.fromOne(ModItems.watz_pellet_depleted,
+							  EnumWatzType.U233),
+			makeData(RADIATION, uf * ingot * 6.0F)
+		);
+
+		HazardSystem.register(
+			DictFrame.fromOne(ModItems.watz_pellet_depleted,
+							  EnumWatzType.MOX241),
+			makeData(RADIATION, purg * ingot * 8.0F)
+		);
+
+
+		//powders
+		//public static Item powder_spent_haleu;
+		//	public static Item powder_spent_leu;
+		//	public static Item powder_spent_thorium;
+		//	public static Item powder_spent_u233;
+		//	public static Item powder_spent_mox;
+		//
+		//	public static Item dust_graphite;
+		//	public static Item powder_lead_irradiated;
+		//	public static Item powder_boron_spent;
+		//	public static Item powder_du_spent;
+
+		HazardSystem.register(
+			ModItems.dust_graphite,
+			makeData(RADIATION,ingot * 0.3F)
+		);
+
+		HazardSystem.register(
+			ModItems.powder_lead_irradiated,
+			makeData(RADIATION, u238 * nugget * 0.25F)
+		);
+
+		HazardSystem.register(
+			ModItems.powder_boron_spent,
+			makeData(RADIATION, u238 * nugget * 0.5F)
+		);
+		HazardSystem.register(
+			ModItems.powder_du_spent,
+			makeData(RADIATION, pu239 * ingot * 1.2F)
+		);
+		HazardSystem.register(
+			ModItems.powder_spent_mox,
+			makeData()
+				.addEntry(RADIATION, purg * ingot * 10F)
+				.addEntry(AUTISM, 5F)
+				.addEntry(ASBESTOS, 5F)
+
+		);
+
+
+
+
+
+
 		//HazardSystem.register(DictFrame.fromOne(ModItems.watz_pellet, EnumWatzType.PU241),
 		//					  makeData(RADIATION, pu241 * ingot * 2.5F));   // higher gamma contributor
 
@@ -1996,7 +2081,12 @@ public class HazardRegistry {
 		HazardSystem.register(arsenic_trioxide, makeData().addEntry(ASBESTOS, as * powder * 3.5F).addEntry(BLINDING, as * powder * 2.0F).addEntry(AUTISM, as * powder * 2.0F).addEntry(COAL, as * powder * 2.5F));
 		HazardSystem.register(ingot_arsenic, makeData().addEntry(ASBESTOS, as * ingot * 1.2F).addEntry(BLINDING, as * ingot * 0.8F).addEntry(AUTISM, as * ingot * 0.8F).addEntry(COAL, as * ingot * 1.0F));
 		HazardSystem.register(nugget_arsenic, makeData().addEntry(ASBESTOS, as * nugget * 1.2F).addEntry(BLINDING, as * nugget * 0.8F).addEntry(AUTISM, as * nugget * 0.8F).addEntry(COAL, as * nugget * 1.0F));
-		HazardSystem.register(ingot_arsenic_bronze, makeData().addEntry(ASBESTOS, as * ingot * 0.25F).addEntry(BLINDING, as * ingot * 0.1F).addEntry(AUTISM, as * ingot * 0.1F).addEntry(COAL, as * ingot * 0.15F));
+		HazardSystem.register(ingot_arsenic_bronze,
+							  makeData()
+								  .addEntry(ASBESTOS, as * ingot * 0.25F)
+								  .addEntry(BLINDING, as * ingot * 0.1F)
+								  .addEntry(AUTISM, as * ingot * 0.1F)
+								  .addEntry(COAL, as * ingot * 0.15F));
 		HazardSystem.register(ingot_gaas, makeData().addEntry(ASBESTOS, as * ingot * 0.35F).addEntry(BLINDING, as * ingot * 0.15F).addEntry(AUTISM, as * ingot * 0.15F).addEntry(COAL, as * ingot * 0.2F));
 		HazardSystem.register(silver_gallium_arsenide, makeData().addEntry(ASBESTOS, as * ingot * 0.35F).addEntry(BLINDING, as * ingot * 0.15F).addEntry(AUTISM, as * ingot * 0.15F).addEntry(COAL, as * ingot * 0.2F));
 		HazardSystem.register(billet_gaas, makeData().addEntry(ASBESTOS, as * billet * 0.35F).addEntry(BLINDING, as * billet * 0.15F).addEntry(AUTISM, as * billet * 0.15F).addEntry(COAL, as * billet * 0.2F));

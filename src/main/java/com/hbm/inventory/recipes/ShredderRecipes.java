@@ -18,6 +18,7 @@ import com.hbm.inventory.RecipesCommon.ComparableStack;
 import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.ItemEnums.EnumChunkType;
 import com.hbm.items.ModItems;
+import com.hbm.items.machine.ItemWatzPellet;
 import com.hbm.items.special.ItemBedrockOre.EnumBedrockOre;
 import com.hbm.main.MainRegistry;
 import com.hbm.util.Compat;
@@ -251,6 +252,59 @@ public class ShredderRecipes extends SerializableRecipe {
 		ShredderRecipes.setRecipe(ModItems.fragment_ytterbium, new ItemStack(ModItems.powder_ytterbium_tiny, 1));
 		ShredderRecipes.setRecipe(ModItems.fragment_lutetium, new ItemStack(ModItems.powder_lutetium_tiny, 1));
 		ShredderRecipes.setRecipe(ModItems.fragment_thulium, new ItemStack(ModItems.powder_thulium_tiny, 1));
+
+		//PBR fuel pellets
+		// fissile fuel
+		ShredderRecipes.setRecipe(
+			new ItemStack(ModItems.watz_pellet_depleted, 1, ItemWatzPellet.EnumWatzType.HALEU1975.ordinal()),
+			new ItemStack(ModItems.powder_spent_haleu, 2)
+		);
+
+		ShredderRecipes.setRecipe(
+			new ItemStack(ModItems.watz_pellet_depleted, 1, ItemWatzPellet.EnumWatzType.HALEU15.ordinal()),
+			new ItemStack(ModItems.powder_spent_haleu, 1)
+		);
+
+		ShredderRecipes.setRecipe(
+			new ItemStack(ModItems.watz_pellet_depleted, 1, ItemWatzPellet.EnumWatzType.LEU5.ordinal()),
+			new ItemStack(ModItems.powder_spent_leu, 1)
+		);
+
+		ShredderRecipes.setRecipe(
+			new ItemStack(ModItems.watz_pellet_depleted, 1, ItemWatzPellet.EnumWatzType.TH232.ordinal()),
+			new ItemStack(ModItems.powder_spent_thorium, 1)
+		);
+
+		ShredderRecipes.setRecipe(
+			new ItemStack(ModItems.watz_pellet_depleted, 1, ItemWatzPellet.EnumWatzType.U233.ordinal()),
+			new ItemStack(ModItems.powder_spent_u233, 1)
+		);
+
+		ShredderRecipes.setRecipe(
+			new ItemStack(ModItems.watz_pellet_depleted, 1, ItemWatzPellet.EnumWatzType.MOX241.ordinal()),
+			new ItemStack(ModItems.powder_spent_mox, 1)
+		);
+
+		// moderator / absorbers
+		ShredderRecipes.setRecipe(
+			new ItemStack(ModItems.watz_pellet_depleted, 1, ItemWatzPellet.EnumWatzType.GRAPHITE.ordinal()),
+			new ItemStack(ModItems.dust_graphite, 1)
+		);
+
+		ShredderRecipes.setRecipe(
+			new ItemStack(ModItems.watz_pellet_depleted, 1, ItemWatzPellet.EnumWatzType.LEAD.ordinal()),
+			new ItemStack(ModItems.powder_lead_irradiated, 1)
+		);
+
+		ShredderRecipes.setRecipe(
+			new ItemStack(ModItems.watz_pellet_depleted, 1, ItemWatzPellet.EnumWatzType.BORON.ordinal()),
+			new ItemStack(ModItems.powder_boron_spent, 1)
+		);
+
+		ShredderRecipes.setRecipe(
+			new ItemStack(ModItems.watz_pellet_depleted, 1, ItemWatzPellet.EnumWatzType.DU.ordinal()),
+			new ItemStack(ModItems.powder_du_spent, 1)
+		);
 
 
 

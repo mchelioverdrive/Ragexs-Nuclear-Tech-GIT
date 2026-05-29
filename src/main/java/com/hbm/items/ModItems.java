@@ -1648,6 +1648,17 @@ public class ModItems {
 	public static Item watz_pellet;
 	public static Item watz_pellet_depleted;
 
+	public static Item powder_spent_haleu;
+	public static Item powder_spent_leu;
+	public static Item powder_spent_thorium;
+	public static Item powder_spent_u233;
+	public static Item powder_spent_mox;
+
+	public static Item dust_graphite;
+	public static Item powder_lead_irradiated;
+	public static Item powder_boron_spent;
+	public static Item powder_du_spent;
+
 	public static Item icf_pellet_empty;
 	public static Item icf_pellet;
 	public static Item icf_pellet_depleted;
@@ -4383,8 +4394,8 @@ public class ModItems {
 						ItemSimpleConsumable.addPotionEffect(
 							user,
 							HbmPotion.radaway,
-							10,
-							0
+							10, //msv
+							0 //amplifier
 						);
 						// Cooldown has passed, allow use
 						player.getEntityData().setLong(tagKey, current);
@@ -5376,6 +5387,16 @@ public class ModItems {
 
 		watz_pellet = new ItemWatzPellet().setUnlocalizedName("watz_pellet").setTextureName(RefStrings.MODID + ":watz_pellet");
 		watz_pellet_depleted = new ItemWatzPellet().setUnlocalizedName("watz_pellet_depleted").setTextureName(RefStrings.MODID + ":watz_pellet");
+		powder_spent_haleu = new Item().setUnlocalizedName("powder_spent_haleu").setTextureName(RefStrings.MODID + ":powder_uranium");
+		powder_spent_leu = new Item().setUnlocalizedName("powder_spent_leu").setTextureName(RefStrings.MODID + ":powder_uranium");
+		powder_spent_thorium = new Item().setUnlocalizedName("powder_spent_thorium").setTextureName(RefStrings.MODID + ":powder_thorium");
+		powder_spent_u233 = new Item().setUnlocalizedName("powder_spent_u233").setTextureName(RefStrings.MODID + ":powder_uranium");
+		powder_spent_mox = new Item().setUnlocalizedName("powder_spent_mox").setTextureName(RefStrings.MODID + ":powder_uranium");
+
+		dust_graphite = new Item().setUnlocalizedName("dust_graphite").setTextureName(RefStrings.MODID + ":powder_coal");
+		powder_lead_irradiated = new Item().setUnlocalizedName("powder_lead_irradiated").setTextureName(RefStrings.MODID + ":powder_lead");
+		powder_boron_spent = new Item().setUnlocalizedName("powder_boron_spent").setTextureName(RefStrings.MODID + ":powder_boron");
+		powder_du_spent = new Item().setUnlocalizedName("powder_du_spent").setTextureName(RefStrings.MODID + ":powder_uranium");
 
 		icf_pellet_empty = new Item().setUnlocalizedName("icf_pellet_empty").setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":icf_pellet_empty");
 		icf_pellet = new ItemICFPellet().setUnlocalizedName("icf_pellet").setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":icf_pellet");
@@ -8749,6 +8770,16 @@ public class ModItems {
 
 		GameRegistry.registerItem(watz_pellet, watz_pellet.getUnlocalizedName());
 		GameRegistry.registerItem(watz_pellet_depleted, watz_pellet_depleted.getUnlocalizedName());
+		GameRegistry.registerItem(powder_spent_haleu, powder_spent_haleu.getUnlocalizedName());
+		GameRegistry.registerItem(powder_spent_leu, powder_spent_leu.getUnlocalizedName());
+		GameRegistry.registerItem(powder_spent_thorium, powder_spent_thorium.getUnlocalizedName());
+		GameRegistry.registerItem(powder_spent_u233, powder_spent_u233.getUnlocalizedName());
+		GameRegistry.registerItem(powder_spent_mox, powder_spent_mox.getUnlocalizedName());
+
+		GameRegistry.registerItem(dust_graphite, dust_graphite.getUnlocalizedName());
+		GameRegistry.registerItem(powder_lead_irradiated, powder_lead_irradiated.getUnlocalizedName());
+		GameRegistry.registerItem(powder_boron_spent, powder_boron_spent.getUnlocalizedName());
+		GameRegistry.registerItem(powder_du_spent, powder_du_spent.getUnlocalizedName());
 
 		GameRegistry.registerItem(icf_pellet_empty, icf_pellet_empty.getUnlocalizedName());
 		GameRegistry.registerItem(icf_pellet, icf_pellet.getUnlocalizedName());

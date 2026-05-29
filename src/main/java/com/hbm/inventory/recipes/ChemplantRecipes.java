@@ -1755,6 +1755,214 @@ public class ChemplantRecipes extends SerializableRecipe {
 						)
 		);
 
+		//HALEU1975 / HALEU15 / LEU5
+		//
+		//uranium/plutonium mix
+		//trace transuranics
+		//fission waste
+		//maybe krypton/xenon byproduct fluid later
+		recipes.add(new ChemRecipe(1108, "PBR_URAN_REPROCESS", 400)
+						.inputItems(
+							new ComparableStack(ModItems.powder_spent_haleu, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.nugget_u235, 2),
+							new ItemStack(ModItems.powder_plutonium, 1),
+							new ItemStack(ModItems.nugget_neptunium),
+							new ItemStack(ModItems.nuclear_waste, 2)
+						)
+						.outputFluids(
+							new FluidStack(Fluids.XENON, 100),
+							new FluidStack(Fluids.KRYPTON, 50)
+
+						)
+		);
+
+		//powder_spent_leu
+		recipes.add(new ChemRecipe(1109, "LEU_REPROCESS", 400)
+						.inputItems(
+							new ComparableStack(ModItems.powder_spent_leu, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.powder_uranium, 1),
+							new ItemStack(ModItems.nugget_u235),
+							new ItemStack(ModItems.nugget_neptunium),
+							new ItemStack(ModItems.nuclear_waste)
+						)
+						.outputFluids(
+							new FluidStack(Fluids.XENON, 100),
+							new FluidStack(Fluids.KRYPTON, 50)
+
+						)
+		);
+
+		//TH232
+		//
+		//mostly thorium left
+		//bred U-233 traces
+		//some waste
+		recipes.add(new ChemRecipe(1110, "THORIUM_REPROCESS", 400)
+						.inputItems(
+							new ComparableStack(ModItems.powder_spent_thorium, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.powder_thorium, 1),
+							new ItemStack(ModItems.nugget_u233, 2),
+							//new ItemStack(ModItems.nugget_americium_fuel),
+							new ItemStack(ModItems.nuclear_waste, 2)
+						)
+						.outputFluids(
+							new FluidStack(Fluids.XENON, 100),
+							new FluidStack(Fluids.KRYPTON, 50)
+
+						)
+		);
+
+		//U233
+		//
+		//recovered U-233
+		//nasty fission products
+		//high rad value
+		recipes.add(new ChemRecipe(1111, "U233_REPROCESS", 400)
+						.inputItems(
+							new ComparableStack(ModItems.powder_spent_u233, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.nugget_u233, 1),
+							new ItemStack(ModItems.nugget_neptunium),
+							//new ItemStack(ModItems.nugget_americium_fuel),
+							new ItemStack(ModItems.nuclear_waste, 3)
+						)
+						.outputFluids(
+							new FluidStack(Fluids.XENON, 100),
+							new FluidStack(Fluids.KRYPTON, 50)
+						)
+		);
+
+		//MOX241
+		//
+		//plutonium-rich recycle stream
+		//americium traces
+		//very radioactive waste
+		recipes.add(new ChemRecipe(1112, "MOX_REPROCESS", 400)
+						.inputItems(
+							new ComparableStack(ModItems.powder_spent_mox, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.powder_plutonium, 2),
+							new ItemStack(ModItems.nugget_americium_fuel, 2),
+							new ItemStack(ModItems.nugget_neptunium),
+							new ItemStack(ModItems.nuclear_waste)
+						)
+						.outputFluids(
+							new FluidStack(Fluids.XENON, 150),
+							new FluidStack(Fluids.KRYPTON, 50)
+
+						)
+		);
+
+
+		//non fuel pellets
+		//Graphite
+		//
+		//irradiated graphite dust
+		//maybe carbon-14 contamination
+		//low-level waste or graphite recycle
+		recipes.add(new ChemRecipe(1113, "GRAPHITE_REPROCESS", 400)
+						.inputItems(
+							new ComparableStack(ModItems.dust_graphite, 1)
+						)
+						//.inputFluids(
+						//	new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
+						//)
+						.outputItems(
+							new ItemStack(ModItems.ingot_graphite, 1),
+							new ItemStack(ModItems.nuclear_waste)
+						)
+						//.outputFluids(
+						//	new FluidStack(Fluids.XENON, 200)
+						//)
+		);
+
+		//Lead absorber
+		//
+		//lead dust + contaminated waste
+		recipes.add(new ChemRecipe(1114, "LEAD_ABSORBER_REPROCESS", 400)
+						.inputItems(
+							new ComparableStack(ModItems.powder_lead_irradiated, 1)
+						)
+						//.inputFluids(
+						//	new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
+						//)
+						.outputItems(
+							new ItemStack(ModItems.powder_lead, 1),
+							new ItemStack(ModItems.nuclear_waste, 2)
+						)
+						//.outputFluids(
+						//	new FluidStack(Fluids.XENON, 200)
+						//)
+		);
+
+		//Boron absorber
+		//
+		//borated waste dust
+		//neutron-poisoned absorber scrap
+
+		recipes.add(new ChemRecipe(1115, "BORON_ABSORBER_REPROCESS", 400)
+						.inputItems(
+							new ComparableStack(ModItems.powder_boron_spent, 1)
+						)
+						//.inputFluids(
+						//	new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
+						//)
+						.outputItems(
+							new ItemStack(ModItems.ingot_boron, 1),
+							new ItemStack(ModItems.powder_lithium),
+							new ItemStack(ModItems.nuclear_waste)
+						)
+						//.outputFluids(
+						//	new FluidStack(Fluids.XENON, 200)
+						//)
+		);
+
+		//DU absorber
+		//
+		//depleted uranium powder
+		//maybe slightly “activated” DU
+		recipes.add(new ChemRecipe(1116, "DU_ABSORBER_REPROCESS", 400)
+						.inputItems(
+							new ComparableStack(ModItems.powder_du_spent, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.HYDROFLUORIC_ACID, 500)
+						)
+						.outputItems(
+							new ItemStack(ModItems.nugget_u238, 8),
+							new ItemStack(ModItems.nugget_plutonium),
+							new ItemStack(ModItems.nugget_neptunium),
+							new ItemStack(ModItems.nuclear_waste)
+						)
+						//.outputFluids(
+						//	new FluidStack(Fluids.XENON, 200)
+						//)
+		);
+
+
 
 
 
