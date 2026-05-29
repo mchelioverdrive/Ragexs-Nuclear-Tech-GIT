@@ -23,7 +23,7 @@ public class MapgenRavineButBased extends MapGenRavine {
 
 		if(block == stoneBlock || block == filler || block == top) {
 			if(y < 10) {
-				data[index] = Blocks.flowing_lava;
+				data[index] = Blocks.lava;
 			} else {
 				data[index] = null;
 

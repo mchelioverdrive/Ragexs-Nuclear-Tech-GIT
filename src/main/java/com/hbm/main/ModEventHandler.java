@@ -820,6 +820,32 @@ public class ModEventHandler {
 			}
 		}
 
+		if(!event.entity.worldObj.isRemote
+			&& event.entity.dimension
+			== SpaceConfig.sunDimension) {
+
+			// permanent fire
+			event.entityLiving.setFire(200);
+
+			// melt armor
+			for(int i = 1; i < 5; i++) {
+
+				ItemStack armor =
+					event.entityLiving
+						.getEquipmentInSlot(i);
+
+				if(armor != null) {
+
+					System.out.println("armor damage test sun");
+
+					armor.damageItem(
+						5,
+						event.entityLiving
+					);
+				}
+			}
+		}
+
 		EntityEffectHandler.onUpdate(event.entityLiving);
 		updateAsbestos(event.entityLiving);
 

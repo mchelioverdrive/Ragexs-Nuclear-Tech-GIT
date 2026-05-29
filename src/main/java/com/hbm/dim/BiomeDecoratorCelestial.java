@@ -25,7 +25,7 @@ public class BiomeDecoratorCelestial extends BiomeDecorator {
 	// honestly MCP couldja give things better names pls?
 	public int lakeChancePerChunk = 0;
 	public Block lakeBlock = Blocks.water;
-	
+
 	private final Block stoneBlock;
 
 	public BiomeDecoratorCelestial(Block stoneBlock) {
@@ -44,7 +44,7 @@ public class BiomeDecoratorCelestial extends BiomeDecorator {
 				int x = this.chunk_X + this.randomGenerator.nextInt(16) + 8;
 				int y = this.randomGenerator.nextInt(this.randomGenerator.nextInt(this.randomGenerator.nextInt(240) + 8) + 8);
 				int z = this.chunk_Z + this.randomGenerator.nextInt(16) + 8;
-				(new WorldGenLiquidsCelestial(Blocks.flowing_lava, stoneBlock)).generate(this.currentWorld, this.randomGenerator, x, y, z);
+				(new WorldGenLiquidsCelestial(Blocks.lava, stoneBlock)).generate(this.currentWorld, this.randomGenerator, x, y, z);
 			}
 		}
 

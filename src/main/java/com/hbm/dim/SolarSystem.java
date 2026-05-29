@@ -44,7 +44,7 @@ public class SolarSystem {
 		// it is not entered manually! In fact most values are not entered manually,
 		// since we can use real-world orbital mechanics to derive them.
 		//the sun
-		kerbol = new CelestialBody("kerbol")
+		kerbol = new CelestialBody("kerbol", SpaceConfig.sunDimension, Body.SUN)
 			.withMassRadius(1.989e30F, 696_340) //testing irl values
 			.withRotationalPeriod(2_199_040) // ~25.45 Earth days
 			.withTexture("textures/environment/sun.png")
@@ -182,7 +182,6 @@ public class SolarSystem {
 						//Deimos
 						new CelestialBody("deimos")
 							//, SpaceConfig.deimosDimension, Body.DEI
-							//we got DEI planets before gta 6
 							.withMassRadius(1.4762e15F, 6)
 							.withSemiMajorAxis(23_463D)
 							.withRotationalPeriod(109_123) // tidally locked
@@ -468,7 +467,8 @@ public class SolarSystem {
 		DRES("dres"),
 		EVE("eve"),
 		IKE("ike"),
-		LAYTHE("laythe");
+		LAYTHE("laythe"),
+		SUN("kerbol"); //God I really need to change this to real names
 		// TEKTO("tekto");
 
 		public String name;
@@ -694,12 +694,27 @@ public class SolarSystem {
 
 	// Calculates the metrics for a given body in the system
 	private static void calculateMetricsFromBody(List<AstroMetric> metrics, CelestialBody body) {
+
 		AstroMetric from = null;
+
 		for(AstroMetric metric : metrics) {
 			if(metric.body == body) {
 				from = metric;
 				break;
 			}
+		}
+
+		// We are on the system star (Kerbol/Sun)
+		// The star itself isn't in metrics because only satellites are added
+		if(from == null) {
+
+			Vec3 origin = Vec3.createVectorHelper(0, 0, 0);
+
+			for(AstroMetric to : metrics) {
+				calculateMetric(to, origin);
+			}
+
+			return;
 		}
 
 		for(AstroMetric to : metrics) {

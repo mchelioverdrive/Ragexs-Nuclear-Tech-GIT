@@ -16,7 +16,7 @@ import net.minecraft.world.gen.NoiseGeneratorOctaves;
 public class MapGenGreg extends MapGenCaves {
 
 	public Block stoneBlock = Blocks.stone;
-	
+
 	private double[] caveNoise;
 	private float[] biomeWeightTable;
 	private NoiseCaveGenerator noiseCaves;
@@ -243,7 +243,7 @@ public class MapGenGreg extends MapGenCaves {
 
 		if (block == stoneBlock || block == filler || block == top) {
 			if (y < 2) {
-				data[index] = Blocks.flowing_lava;
+				data[index] = Blocks.lava;
 			} else {
 				data[index] = null;
 				if (foundTop && data[index - 1] == filler) {

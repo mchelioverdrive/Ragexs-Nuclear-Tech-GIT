@@ -109,7 +109,7 @@ public class WorldGeneratorEve implements IWorldGenerator {
 					Block b = world.getBlock(ox, y, oz);
 
 					if(b == Blocks.lava && world.getBlock(ox, y - 1, oz) == Blocks.air) {
-						world.setBlock(ox, y - 1, oz, Blocks.flowing_lava, 0, 0);
+						world.setBlock(ox, y - 1, oz, Blocks.lava, 0, 0);
 						world.markBlockForUpdate(ox, y - 1, oz);
 					} else if(b == ModBlocks.volcano_core) {
 						world.setBlock(ox, y, oz, ModBlocks.volcano_core, BlockVolcano.META_STATIC_EXTINGUISHING, 0);

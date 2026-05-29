@@ -58,10 +58,12 @@ public class SpaceConfig {
 	public static int laythePolarBiome = 126;
 
 	public static int ikeBiome = 127;
+	public static int sunBiome = 104;
 
 	public static int tektoPolyvinyl = 100;
 	public static int HalogenHill = 101;
 	public static int TektoRiver = 102;
+	public static int sunDimension = 103;
 
 
 
@@ -92,6 +94,13 @@ public class SpaceConfig {
 		laytheDimension = CommonConfig.createConfigInt(config, CATEGORY_DIM, "17.08_laytheDimension", "Laythe dimension ID", laytheDimension);
 		orbitDimension = CommonConfig.createConfigInt(config, CATEGORY_DIM, "17.09_orbitDimension", "Orbital dimension ID", orbitDimension);
 		tektoDimension = CommonConfig.createConfigInt(config, CATEGORY_DIM, "17.10_tektoDimension", "Tekto dimension ID", tektoDimension);
+		sunDimension = CommonConfig.createConfigInt(
+			config,
+			CATEGORY_DIM,
+			"17.11_sunDimension",
+			"Sun dimension ID",
+			sunDimension
+		);
 
 		final String CATEGORY_GENERAL = CommonConfig.CATEGORY_GENERAL;
 		maxProbeDistance = CommonConfig.createConfigInt(config, CATEGORY_GENERAL, "1.90_maxProbeDistance", "How far from the center of the dimension can probes generate landing coordinates", maxProbeDistance);
@@ -120,6 +129,13 @@ public class SpaceConfig {
 		dresBasins = CommonConfig.createConfigInt(config, CATEGORY_BIOME, "16.21_dresBasinsBiome", "Dres Basins Biome ID", dresBasins);
 		mohoBasaltBiome = CommonConfig.createConfigInt(config, CATEGORY_BIOME, "16.22_mohoBasaltBiome", "Moho Basalt Biome ID", mohoBasaltBiome);
 		orbitBiome = CommonConfig.createConfigInt(config, CATEGORY_BIOME, "16.23_orbitBiome", "Space Biome ID", orbitBiome);
+		sunBiome = CommonConfig.createConfigInt(
+			config,
+			CATEGORY_BIOME,
+			"16.25_sunBiome",
+			"Sun Biome ID",
+			sunBiome
+		);
 	}
 
 }
