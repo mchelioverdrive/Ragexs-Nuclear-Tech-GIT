@@ -2044,6 +2044,58 @@ public class HazardRegistry {
 			makeData(RADIATION, purg * ingot * 8.0F)
 		);
 
+		// GRAPHITE MODERATOR
+		// activated graphite (C-14, impurities)
+		HazardSystem.register(
+			DictFrame.fromOne(
+				ModItems.watz_pellet_depleted,
+				EnumWatzType.GRAPHITE
+			),
+			makeData(
+				RADIATION,
+				ingot * 0.35F
+			)
+		);
+
+		// LEAD ABSORBER
+		// mild neutron activation + contamination
+		HazardSystem.register(
+			DictFrame.fromOne(
+				ModItems.watz_pellet_depleted,
+				EnumWatzType.LEAD
+			),
+			makeData(
+				RADIATION,
+				u238 * ingot * 0.20F
+			)
+		);
+
+		// BORON ABSORBER
+		// neutron poisoned absorber material
+		HazardSystem.register(
+			DictFrame.fromOne(
+				ModItems.watz_pellet_depleted,
+				EnumWatzType.BORON
+			),
+			makeData(
+				RADIATION,
+				u238 * ingot * 0.40F
+			)
+		);
+
+		// DEPLETED URANIUM ABSORBER
+		// bred transuranics present (Np/Pu traces)
+		HazardSystem.register(
+			DictFrame.fromOne(
+				ModItems.watz_pellet_depleted,
+				EnumWatzType.DU
+			),
+			makeData(
+				RADIATION,
+				pu239 * ingot * 0.85F
+			)
+		);
+
 
 		//powders
 		//public static Item powder_spent_haleu;
@@ -2083,6 +2135,8 @@ public class HazardRegistry {
 				.addEntry(ASBESTOS, 5F)
 
 		);
+
+
 
 
 
