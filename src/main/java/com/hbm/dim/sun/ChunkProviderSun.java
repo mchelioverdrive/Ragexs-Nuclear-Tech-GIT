@@ -33,48 +33,84 @@ public class ChunkProviderSun extends ChunkProviderCelestial {
 
 				int columnIndexBase = (bx * 16 + bz) * 256;
 
-				// =========================
-				// CORE + TRANSITION LAYERS
-				// (ONLY GENERATE WHERE NEEDED)
-				// =========================
+				// ==========================================
+				// SUN LAYER MODEL (DISTANCE FROM SURFACE)
+				// ==========================================
 
-				int minY = Math.max(0, surface - 30);
-				int maxY = Math.min(255, surface + 40);
-
-				for(int y = minY; y <= maxY; y++) {
+				for(int y = 0; y < 256; y++) {
 
 					int index = columnIndexBase + y;
+					int dist = y - surface;
 
-					if(y < surface - 10) {
-						// core mass
+					// =========================
+					// CORE (fusion region)
+					// =========================
+					if(dist < -25) {
 						buffer.blocks[index] = ModBlocks.basalt;
 					}
-					else if(y < surface) {
-						// transition crust
-						buffer.blocks[index] = ModBlocks.basalt;
 
-						// rare “hot pocket” visual variation (no extra block types needed)
-						if((worldX ^ worldZ ^ y) % 97 == 0) {
+					// =========================
+					// RADIATIVE ZONE
+					// =========================
+					else if(dist < -10) {
+						buffer.blocks[index] = ModBlocks.basalt;
+					}
+
+					// =========================
+					// CONVECTIVE ZONE
+					// =========================
+					else if(dist < 5) {
+
+						if(rand.nextInt(10) == 0) {
+							buffer.blocks[index] = ModBlocks.solar_plasma;
+						} else {
 							buffer.blocks[index] = ModBlocks.basalt;
 						}
 					}
+
+					// =========================
+					// PHOTOSPHERE (visible surface)
+					// =========================
+					else if(dist < 12) {
+
+						if(rand.nextInt(3) == 0) {
+							buffer.blocks[index] = ModBlocks.basalt;
+						} else {
+							buffer.blocks[index] = ModBlocks.solar_plasma;
+						}
+					}
+
+					// =========================
+					// CHROMOSPHERE
+					// =========================
+					else if(dist < 30) {
+
+						if(rand.nextInt(2) == 0) {
+							buffer.blocks[index] = ModBlocks.solar_plasma;
+						} else {
+							buffer.blocks[index] = Blocks.air;
+						}
+					}
+
+					// =========================
+					// CORONA
+					// =========================
 					else {
-						// corona empty space
 						buffer.blocks[index] = Blocks.air;
 					}
 				}
 
-				// =========================
-				// FLARE SYSTEM (SAFE SPAWNING)
-				// =========================
+				// ==========================================
+				// FLARE SYSTEM (ONLY FROM PHOTOSPHERE)
+				// ==========================================
 
-				if(rand.nextInt(45) == 0) {
+				int flareRoll = rand.nextInt(55);
 
-					int flareHeight = 8 + rand.nextInt(18);
+				if(flareRoll == 0) {
 
-					// step to reduce block spam massively
-					for(int fy = 0; fy < flareHeight; fy += 1) {
-						//for(int fy = 0; fy < flareHeight; fy++) old
+					int flareHeight = 10 + rand.nextInt(25);
+
+					for(int fy = 0; fy < flareHeight; fy++) {
 
 						int y = surface + fy;
 						if(y >= 256) break;
@@ -83,8 +119,8 @@ public class ChunkProviderSun extends ChunkProviderCelestial {
 
 						buffer.blocks[index] = ModBlocks.solar_plasma;
 
-						// tiny branching (very reduced frequency)
-						if(rand.nextInt(10) == 0) {
+						// reduced branching (coronal loops)
+						if(fy > 2 && rand.nextInt(8) == 0) {
 
 							int bxOff = bx + rand.nextInt(3) - 1;
 							int bzOff = bz + rand.nextInt(3) - 1;
