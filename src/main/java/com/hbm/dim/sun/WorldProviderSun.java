@@ -72,12 +72,12 @@ public class WorldProviderSun extends WorldProviderCelestial {
 						(int)player.posY,
 						(int)player.posZ)) {
 
-						// extreme radiation
+						// background radiation, the real danger is literally just exposure
 						player.addPotionEffect(
 							new PotionEffect(
 								HbmPotion.radiation.id,
 								40,
-								1000
+								1
 							)
 						);
 
@@ -106,7 +106,7 @@ public class WorldProviderSun extends WorldProviderCelestial {
 								100
 							)
 						);
-						//slowness
+						//slowness from being literally smelted alive
 						player.addPotionEffect(
 							new PotionEffect(
 								Potion.moveSlowdown.id,
@@ -118,7 +118,7 @@ public class WorldProviderSun extends WorldProviderCelestial {
 						player.addPotionEffect(
 							new PotionEffect(
 								Potion.blindness.id,
-								40,
+								80,
 								100
 							)
 						);

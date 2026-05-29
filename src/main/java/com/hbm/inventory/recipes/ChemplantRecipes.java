@@ -1741,6 +1741,20 @@ public class ChemplantRecipes extends SerializableRecipe {
 						)
 		); //WILL BE USED IN NUCLEAR FUSION!!!
 
+		//zircon into hafnium + zirconium
+		recipes.add(new ChemRecipe(1107, "ZIRCONIUM_HAFNIUM_SEPARATION", 400)
+						.inputItems(
+							new ComparableStack(ModItems.powder_zircon, 1)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.nugget_hafnium, 1),
+							new ItemStack(ModItems.powder_zirconium, 1)
+						)
+		);
+
 
 
 

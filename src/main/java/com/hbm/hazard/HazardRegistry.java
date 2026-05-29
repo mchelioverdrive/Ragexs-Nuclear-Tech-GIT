@@ -1998,6 +1998,7 @@ public class HazardRegistry {
 		HazardSystem.register(nugget_arsenic, makeData().addEntry(ASBESTOS, as * nugget * 1.2F).addEntry(BLINDING, as * nugget * 0.8F).addEntry(AUTISM, as * nugget * 0.8F).addEntry(COAL, as * nugget * 1.0F));
 		HazardSystem.register(ingot_arsenic_bronze, makeData().addEntry(ASBESTOS, as * ingot * 0.25F).addEntry(BLINDING, as * ingot * 0.1F).addEntry(AUTISM, as * ingot * 0.1F).addEntry(COAL, as * ingot * 0.15F));
 		HazardSystem.register(ingot_gaas, makeData().addEntry(ASBESTOS, as * ingot * 0.35F).addEntry(BLINDING, as * ingot * 0.15F).addEntry(AUTISM, as * ingot * 0.15F).addEntry(COAL, as * ingot * 0.2F));
+		HazardSystem.register(silver_gallium_arsenide, makeData().addEntry(ASBESTOS, as * ingot * 0.35F).addEntry(BLINDING, as * ingot * 0.15F).addEntry(AUTISM, as * ingot * 0.15F).addEntry(COAL, as * ingot * 0.2F));
 		HazardSystem.register(billet_gaas, makeData().addEntry(ASBESTOS, as * billet * 0.35F).addEntry(BLINDING, as * billet * 0.15F).addEntry(AUTISM, as * billet * 0.15F).addEntry(COAL, as * billet * 0.2F));
 		HazardSystem.register(nugget_gaas, makeData().addEntry(ASBESTOS, as * nugget * 0.35F).addEntry(BLINDING, as * nugget * 0.15F).addEntry(AUTISM, as * nugget * 0.15F).addEntry(COAL, as * nugget * 0.2F));
 		HazardSystem.register(circuit_arsenic, makeData().addEntry(ASBESTOS, as * nugget * 0.08F).addEntry(BLINDING, as * nugget * 0.04F).addEntry(AUTISM, as * nugget * 0.04F).addEntry(COAL, as * nugget * 0.05F));
