@@ -74,7 +74,7 @@ public class ChunkProviderSun extends ChunkProviderCelestial {
 
 					// step to reduce block spam massively
 					for(int fy = 0; fy < flareHeight; fy += 1) {
-						//for(int fy = 0; fy < flareHeight; fy++)
+						//for(int fy = 0; fy < flareHeight; fy++) old
 
 						int y = surface + fy;
 						if(y >= 256) break;

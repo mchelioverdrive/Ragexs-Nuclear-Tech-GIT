@@ -1,7 +1,5 @@
 package com.hbm.blocks.fluid;
 
-import java.util.Random;
-
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
@@ -9,66 +7,53 @@ import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.init.Blocks;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.DamageSource;
-import net.minecraft.world.IBlockAccess;
+import net.minecraft.util.IIcon;
 import net.minecraft.world.World;
 
 public class BlockSolarPlasma extends Block {
 
 	public BlockSolarPlasma() {
-		super(Material.air);
+		super(Material.lava);
 
 		this.setBlockName("solar_plasma");
 		this.setLightLevel(1.0F);
-		this.setHardness(-1.0F);
-		this.setResistance(6000000.0F);
+
+		this.setHardness(0.0F);   // behaves like fluid, not a solid block
+		this.setResistance(6000.0F);
+
+		this.setLightOpacity(0);  // IMPORTANT: prevents full block light blocking
 	}
 
+	// NOT SOLID
 	@Override
-	public void onNeighborBlockChange(World world, int x, int y, int z, Block block) {
-		// do nothing (prevents cascade updates)
-	}
-
-	@Override
-	public void updateTick(World world, int x, int y, int z, Random rand) {
-		// do nothing (no flow, no logic)
-	}
-
-	@SideOnly(Side.CLIENT)
-	@Override
-	public void registerBlockIcons(IIconRegister reg) {
-		this.blockIcon = Blocks.lava.getIcon(0, 0);
-	}
-
-	@Override
-	public boolean isCollidable() {
-		return true;
+	public boolean isOpaqueCube() {
+		return false;
 	}
 
 	@Override
 	public boolean renderAsNormalBlock() {
 		return false;
 	}
+
+	// NO FULL BLOCK COLLISION
 	@Override
 	public AxisAlignedBB getCollisionBoundingBoxFromPool(World world, int x, int y, int z) {
-		return AxisAlignedBB.getBoundingBox(x, y, z, x + 1, y + 1, z + 1);
+		return null;
 	}
+
+	// ENTITY INTERACTION STILL WORKS
 	@Override
 	public void onEntityCollidedWithBlock(World world, int x, int y, int z, Entity entity) {
 
-		// lava-like drag
 		entity.motionX *= 0.5;
 		entity.motionZ *= 0.5;
+		entity.motionY += 0.02;
 
-		// buoyancy (hot plasma rises)
-		entity.motionY += 0.03;
-
-		// burn
 		entity.setFire(10);
 
-		if(entity instanceof EntityLivingBase) {
+		if (entity instanceof EntityLivingBase) {
 			((EntityLivingBase) entity).attackEntityFrom(
 				DamageSource.inFire,
 				6.0F
@@ -76,19 +61,27 @@ public class BlockSolarPlasma extends Block {
 		}
 	}
 
+	@Override
+	public boolean canCollideCheck(int meta, boolean hitIfLiquid) {
+		return false;
+	}
 
-	//@Override
-		//public boolean isReplaceable(IBlockAccess world, int x, int y, int z) {
-		//	return false;
-		//}
+	// ===== LAVA-LIKE TEXTURE =====
+	@SideOnly(Side.CLIENT)
+	protected IIcon stillIcon;
+	@SideOnly(Side.CLIENT)
+	protected IIcon flowingIcon;
 
+	@SideOnly(Side.CLIENT)
+	@Override
+	public void registerBlockIcons(IIconRegister reg) {
+		this.stillIcon = reg.registerIcon("lava_still");
+		this.flowingIcon = reg.registerIcon("lava_flow");
+	}
 
-	//@Override
-	//public boolean isBlockNormalCube() {
-	//	return false;
-	//}
-	//@Override
-	//public boolean getBlocksMovement(IBlockAccess world, int x, int y, int z) {
-	//	return false;
-	//}
+	@SideOnly(Side.CLIENT)
+	@Override
+	public IIcon getIcon(int side, int meta) {
+		return (side == 0 || side == 1) ? stillIcon : flowingIcon;
+	}
 }
