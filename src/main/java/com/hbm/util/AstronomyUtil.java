@@ -1,5 +1,7 @@
 package com.hbm.util;
 
+import com.hbm.dim.CelestialBody;
+
 public class AstronomyUtil {
 
 	// Compress the solar system into Minecraft space
@@ -40,5 +42,20 @@ public class AstronomyUtil {
 	// 1 atmosphere is 1 gigabucket
 	public static final double MB_PER_ATM = 1_000_000_000D * 1_000D;
 	//for atmosphere editor
+
+	public static boolean canEscapeSolarGravity(double vesselDeltaV, CelestialBody solar) {
+		double solarRadiusKm = solar.radiusKm;
+
+		// escape velocity from surface (simplified classical approximation)
+		double escapeVelocity = Math.sqrt(
+			2.0 * GRAVITATIONAL_CONSTANT * solar.massKg / (solarRadiusKm * 1000.0)
+		);
+
+		// convert to "game delta-v equivalent scaling"
+		// (you can tune this factor based on your mod’s velocity scale)
+		double requiredDeltaV = escapeVelocity * ORBIT_SCALE;
+
+		return vesselDeltaV >= requiredDeltaV;
+	}
 
 }

@@ -824,6 +824,16 @@ public class ModEventHandler {
 			&& event.entity.dimension
 			== SpaceConfig.sunDimension) {
 
+			if(event.entityLiving instanceof EntityLivingBase) {
+				EntityLivingBase living = (EntityLivingBase) event.entityLiving;
+
+				living.setAir(0); // optional pressure failure logic
+
+				if(living.ticksExisted % 10 == 0) {
+					living.attackEntityFrom(DamageSource.generic, 2.0F);
+				}
+			}
+
 			// permanent fire
 			event.entityLiving.setFire(200);
 
@@ -836,7 +846,7 @@ public class ModEventHandler {
 
 				if(armor != null) {
 
-					System.out.println("armor damage test sun");
+					//System.out.println("armor damage test sun");
 
 					armor.damageItem(
 						5,

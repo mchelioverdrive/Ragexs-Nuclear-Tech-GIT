@@ -54,6 +54,7 @@ public class WorldProviderSun extends WorldProviderCelestial {
 		this.worldObj.getWorldInfo().setThundering(false);
 
 		if(!worldObj.isRemote) {
+			//the key idea is you shouldn't come here
 
 			for(Object obj : worldObj.playerEntities) {
 
@@ -76,7 +77,7 @@ public class WorldProviderSun extends WorldProviderCelestial {
 							new PotionEffect(
 								HbmPotion.radiation.id,
 								40,
-								100
+								1000
 							)
 						);
 
@@ -85,7 +86,7 @@ public class WorldProviderSun extends WorldProviderCelestial {
 							new PotionEffect(
 								Potion.hunger.id,
 								60,
-								2
+								200
 							)
 						);
 
@@ -93,7 +94,32 @@ public class WorldProviderSun extends WorldProviderCelestial {
 							new PotionEffect(
 								Potion.weakness.id,
 								40,
-								1
+								100
+							)
+						);
+
+						//mining fatigue
+						player.addPotionEffect(
+							new PotionEffect(
+								Potion.digSlowdown.id,
+								40,
+								100
+							)
+						);
+						//slowness
+						player.addPotionEffect(
+							new PotionEffect(
+								Potion.moveSlowdown.id,
+								40,
+								100
+							)
+						);
+						// blindness
+						player.addPotionEffect(
+							new PotionEffect(
+								Potion.blindness.id,
+								40,
+								100
 							)
 						);
 					}

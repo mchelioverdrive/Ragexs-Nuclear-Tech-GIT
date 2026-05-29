@@ -919,8 +919,55 @@ public class SolarSystem {
 			// Transfer to self, ignore
 
 			return 0;
-		} else if(start.parent == null || end.parent == null) {
-			throw new NotImplementedException("Transfers to and from solar bodies not supported");
+		} else if (start.parent == null || end.parent == null) {
+			// One of the bodies is a solar body (root)
+
+			CelestialBody solar = (start.parent == null) ? start : end;
+			CelestialBody other = (start.parent == null) ? end : start;
+
+			boolean fromSolar = (start.parent == null);
+
+			double solarOrbitRadius = solar.radiusKm + AstronomyUtil.DEFAULT_ALTITUDE_KM;
+
+			if (!fromSolar) {
+				// Traveling TO the sun: treat as direct fall / capture trajectory
+				// No need for interplanetary transfer complexity
+				return calculateSingleHohmannTransfer(
+					other.parent.massKg,
+					other.semiMajorAxisKm,
+					solarOrbitRadius,
+					other.massKg,
+					other.radiusKm + AstronomyUtil.DEFAULT_ALTITUDE_KM
+				);
+			} else {
+				// Traveling FROM the sun: require extreme capability
+
+				// "realistic bullshit gate"
+				if (!AstronomyUtil.canEscapeSolarGravity(Double.MAX_VALUE, solar)) {
+					return Double.POSITIVE_INFINITY; // effectively impossible without special tech
+				}
+
+				// escape burn from solar surface orbit to target orbit
+				double escapeBurn = calculateSingleHohmannTransfer(
+					solar.massKg,
+					solarOrbitRadius,
+					other.semiMajorAxisKm,
+					solar.massKg,
+					solarOrbitRadius
+				);
+
+				// then standard insertion around destination body
+				double insertionBurn = calculateSingleHohmannTransfer(
+					other.parent.massKg,
+					other.semiMajorAxisKm,
+					solarOrbitRadius,
+					other.massKg,
+					other.radiusKm + AstronomyUtil.DEFAULT_ALTITUDE_KM
+				);
+
+				// make it intentionally punishing but still physically grounded
+				return escapeBurn * 1.5 + insertionBurn;
+			}
 		} else if(start.parent == end.parent) {
 			// Intersystem transfer
 
