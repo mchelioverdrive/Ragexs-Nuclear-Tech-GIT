@@ -31,57 +31,69 @@ public class ChunkProviderSun extends ChunkProviderCelestial {
 						(int)(Math.sin(worldX * 0.04D) * 8) +
 						(int)(Math.cos(worldZ * 0.04D) * 8);
 
-				for(int y = 0; y < 256; y++) {
+				int columnIndexBase = (bx * 16 + bz) * 256;
 
-					int index = (bx * 16 + bz) * 256 + y;
+				// =========================
+				// CORE + TRANSITION LAYERS
+				// (ONLY GENERATE WHERE NEEDED)
+				// =========================
 
-					// === CORE SUN MASS (NO LAVA) ===
+				int minY = Math.max(0, surface - 30);
+				int maxY = Math.min(255, surface + 40);
+
+				for(int y = minY; y <= maxY; y++) {
+
+					int index = columnIndexBase + y;
+
 					if(y < surface - 10) {
-
-						// mostly solid hot material
+						// core mass
 						buffer.blocks[index] = ModBlocks.basalt;
-
-						// rare molten pockets (visual only)
-						if(rand.nextInt(400) == 0) {
-							buffer.blocks[index] = ModBlocks.basalt; // later replace with emissive variant
-						}
-
 					}
-
-					// === TRANSITION LAYER (NO FLUIDS) ===
 					else if(y < surface) {
-
-						// mixed hot crust
+						// transition crust
 						buffer.blocks[index] = ModBlocks.basalt;
 
-						// optional glow variant later
-						if(rand.nextInt(120) == 0) {
+						// rare “hot pocket” visual variation (no extra block types needed)
+						if((worldX ^ worldZ ^ y) % 97 == 0) {
 							buffer.blocks[index] = ModBlocks.basalt;
 						}
-
 					}
-
-					// === CORONA (AIR ONLY) ===
 					else {
-
+						// corona empty space
 						buffer.blocks[index] = Blocks.air;
 					}
 				}
 
-				// === SPARSE FLARE STRUCTURES (NO LAVA) ===
-				if(rand.nextInt(30) == 0) {
+				// =========================
+				// FLARE SYSTEM (SAFE SPAWNING)
+				// =========================
 
-					int flareHeight = 10 + rand.nextInt(25);
+				if(rand.nextInt(45) == 0) {
 
-					for(int fy = 0; fy < flareHeight; fy++) {
+					int flareHeight = 8 + rand.nextInt(18);
+
+					// step to reduce block spam massively
+					for(int fy = 0; fy < flareHeight; fy += 1) {
+						//for(int fy = 0; fy < flareHeight; fy++)
 
 						int y = surface + fy;
 						if(y >= 256) break;
 
-						int index = (bx * 16 + bz) * 256 + y;
+						int index = columnIndexBase + y;
 
-						// solid flare column (not fluid!)
-						buffer.blocks[index] = ModBlocks.plasma;
+						buffer.blocks[index] = ModBlocks.solar_plasma;
+
+						// tiny branching (very reduced frequency)
+						if(rand.nextInt(10) == 0) {
+
+							int bxOff = bx + rand.nextInt(3) - 1;
+							int bzOff = bz + rand.nextInt(3) - 1;
+
+							if(bxOff >= 0 && bxOff < 16 && bzOff >= 0 && bzOff < 16) {
+								int sideIndex = (bxOff * 16 + bzOff) * 256 + y;
+								buffer.blocks[sideIndex] = ModBlocks.solar_plasma;
+							}
+						}
 					}
 				}
 			}

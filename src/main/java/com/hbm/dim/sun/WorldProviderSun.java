@@ -76,7 +76,7 @@ public class WorldProviderSun extends WorldProviderCelestial {
 							new PotionEffect(
 								HbmPotion.radiation.id,
 								40,
-								4
+								100
 							)
 						);
 
