@@ -228,6 +228,7 @@ public class ConsumableRecipes {
 				KEY_BLUE,
 				ModItems.sulfur,
 				Items.coal,
+				ModItems.magnesium_chloride,
 				ModItems.iv_empty
 			}
 		);
@@ -236,6 +237,7 @@ public class ConsumableRecipes {
 			new ItemStack(ModItems.radaway, 1),
 			new Object[] {
 				ModItems.prussian_blue_powder,
+				ModItems.magnesium_chloride,
 				ModItems.iv_empty
 			} //Prussian blue nanoparticles are sometimes tested via intravenous injection.
 			// However, this is strictly experimental and not standard clinical practice.

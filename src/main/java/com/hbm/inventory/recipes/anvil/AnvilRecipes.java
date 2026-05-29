@@ -848,7 +848,8 @@ public class AnvilRecipes {
 				new AnvilOutput(new ItemStack(ModItems.osmiridium, 1), 0.05F),
 				//rhodium?
 				//new AnvilOutput(new ItemStack(ModItems.rhodium, 1), 0.02F)
-				new AnvilOutput(new ItemStack(ModItems.pgm_residue, 1), 0.03F) // rhodium lives here
+				new AnvilOutput(new ItemStack(ModItems.pgm_residue, 1), 0.03F), // rhodium lives here
+				new AnvilOutput(new ItemStack(ModItems.fragment_cobalt), 0.25F)
 
 			}
 		).setTier(2));

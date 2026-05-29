@@ -36,6 +36,7 @@ public class PowderRecipes {
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_cement, 8), new Object[] { LIMESTONE.dust(), Items.clay_ball, Items.clay_ball, Items.clay_ball });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_cement, 6), new Object[] { ModItems.gypsum, Items.clay_ball, Items.clay_ball, Items.clay_ball });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_cement, 4), new Object[] { CA.dust(), KEY_SAND, Items.clay_ball, Items.clay_ball }); // Alite cement recipe
+		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_cement, 4), new Object[] { CA.dust(), KEY_SAND, ModItems.magnesium_chloride });
 
 
 		//HSS

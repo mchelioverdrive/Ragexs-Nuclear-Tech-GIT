@@ -169,6 +169,7 @@ public class CraftingManager {
 		addRecipeAuto(new ItemStack(ModItems.hazmat_cloth_red, 1), new Object[] { "C", "R", "C", 'C', ModItems.hazmat_cloth, 'R', REDSTONE.dust() });
 		addRecipeAuto(new ItemStack(ModItems.hazmat_cloth_grey, 1), new Object[] { " P ", "ICI", " L ", 'C', ModItems.hazmat_cloth_red, 'P', IRON.plate(), 'L', PB.plate(), 'I', ANY_RUBBER.ingot() });
 		addRecipeAuto(new ItemStack(ModItems.asbestos_cloth, 8), new Object[] { "SCS", "CPC", "SCS", 'S', Items.string, 'P', BR.dust(), 'C', Blocks.wool });
+		addRecipeAuto(new ItemStack(ModItems.asbestos_cloth, 2), new Object[] { "SCS", "CPC", "SCS", 'S', Items.string, 'P', ModItems.magnesium_chloride, 'C', Blocks.wool });
 		addRecipeAuto(Mats.MAT_TUNGSTEN.make(ModItems.bolt, 16), new Object[] { "D", "D", 'D', W.ingot()});
 		addRecipeAuto(Mats.MAT_STEEL.make(ModItems.bolt, 16), new Object[] { "D", "D", 'D', STEEL.ingot()});
 		addRecipeAuto(Mats.MAT_DURA.make(ModItems.bolt, 16), new Object[] { "D", "D", 'D', DURA.ingot()});
@@ -340,6 +341,7 @@ public class CraftingManager {
 		addRecipeAuto(DictFrame.fromOne(ModItems.plant_item, EnumPlantType.ROPE, 4), new Object[] { "W", "W", "W", 'W', DictFrame.fromOne(ModBlocks.plant_flower, EnumFlowerType.WEED) });
 		addShapelessAuto(new ItemStack(Items.string, 3), new Object[] { DictFrame.fromOne(ModBlocks.plant_flower, EnumFlowerType.WEED) });
 		addRecipeAuto(new ItemStack(Items.paper, 3), new Object[] { "SSS", 'S', ModItems.powder_sawdust });
+		addRecipeAuto(new ItemStack(Items.paper, 6), new Object[] { "SSS", 'S', ModItems.magnesium_chloride });
 
 		//hey so this doesn't actually work when it's a wire and FUCK YOU DO YOU WANT A CHICKEN NUGGET?
 		addShapelessAuto(new ItemStack(Items.redstone, 1), new Object[] { ModItems.ingot_copper });

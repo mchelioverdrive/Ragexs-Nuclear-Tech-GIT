@@ -62,6 +62,8 @@ public class MiningConfig {
 			"hbm:tile.ore_pollucite 0 0 2",
 
 			// Quartz
-			"minecraft:quartz 0 1 5"
+			"minecraft:quartz 0 1 5",
+			//lapis
+			"minecraft:lapis_ore 0 0 4"
 		));
 }
