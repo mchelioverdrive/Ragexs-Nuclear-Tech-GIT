@@ -24,16 +24,21 @@ public class MapGenEuropaFractures {
 		int baseX = chunkX * 16;
 		int baseZ = chunkZ * 16;
 
+		// FIX: stable global fracture set (NOT re-rolled per chunk call)
 		for (int i = 0; i < FRACTURE_COUNT; i++) {
 
-			Random rand = new Random(seed ^ (i * 0x5DEECE66DL));
+			long s =
+				seed
+					^ (i * 0x9E3779B97F4A7C15L);
 
-			// FIX: global line endpoints (NOT chunk-based origins)
-			double ax = rand.nextDouble() * 8000 - 4000;
-			double az = rand.nextDouble() * 8000 - 4000;
+			Random rand = new Random(s);
 
-			double bx = rand.nextDouble() * 8000 - 4000;
-			double bz = rand.nextDouble() * 8000 - 4000;
+			// FIX: TRUE global endpoints (deterministic world-space lines)
+			double ax = rand.nextDouble() * 16000 - 8000;
+			double az = rand.nextDouble() * 16000 - 8000;
+
+			double bx = rand.nextDouble() * 16000 - 8000;
+			double bz = rand.nextDouble() * 16000 - 8000;
 
 			applyFractureLine(blocks, baseX, baseZ, ax, az, bx, bz);
 		}
@@ -52,9 +57,9 @@ public class MapGenEuropaFractures {
 				double dist = pointLineDistance(worldX, worldZ, ax, az, bx, bz);
 
 				// width controls crack thickness
-				double width = 18.0;
+				double width = 26.0;
 
-				if (dist > width)
+				if (dist > width * 1.25)
 					continue;
 
 				double t = 1.0 - (dist / width);
@@ -79,9 +84,9 @@ public class MapGenEuropaFractures {
 
 				// ridge shoulders
 				if (t > 0.72 && t < 0.88) {
-					if (surfaceY + 1 < 255) {
-						setBlock(blocks, x, surfaceY + 1, z, ridgeBlock);
-					}
+
+					// ONLY place on surface, never above it
+					setBlock(blocks, x, surfaceY, z, ridgeBlock);
 				}
 			}
 		}
@@ -128,7 +133,7 @@ public class MapGenEuropaFractures {
 			}
 		}
 
-		return SEA_LEVEL;
+		return 80;
 	}
 
 	private void setBlock(Block[] blocks, int x, int y, int z, Block block) {
