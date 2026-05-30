@@ -5,8 +5,6 @@ import com.hbm.dim.WorldChunkManagerCelestial;
 import com.hbm.dim.WorldProviderCelestial;
 import com.hbm.dim.laythe.GenLayerLaythe.GenLayerDiversifyLaythe;
 import com.hbm.dim.laythe.GenLayerLaythe.GenLayerLaytheBiomes;
-import com.hbm.dim.laythe.GenLayerLaythe.GenLayerLaytheIslands;
-import com.hbm.dim.laythe.GenLayerLaythe.GenLayerLaytheOceans;
 import com.hbm.dim.laythe.GenLayerLaythe.GenLayerLaythePolar;
 
 import com.hbm.entity.mob.EntityFRIEND;
@@ -121,42 +119,45 @@ public class WorldProviderLaythe extends WorldProviderCelestial {
 
 
 	private static BiomeGenLayers createBiomeGenerators(long seed) {
-		GenLayer biomes = new GenLayerLaytheBiomes(seed);
-		GenLayer polar = new GenLayerLaythePolar(1000L, biomes);
 
+		GenLayer biomes =
+			new GenLayerLaytheBiomes(seed);
 
+		// make biome regions larger
+		biomes =
+			GenLayerZoom.magnify(
+				1000L,
+				biomes,
+				3);
 
-		biomes = new GenLayerFuzzyZoom(2000L, biomes);
+		// add diversification
+		biomes =
+			new GenLayerDiversifyLaythe(
+				2000L,
+				biomes);
 
-		biomes = new GenLayerZoom(2001L, biomes);
+		// polar shaping
+		biomes =
+			new GenLayerLaythePolar(
+				3000L,
+				biomes);
 
+		// soften edges
+		biomes =
+			new GenLayerSmooth(
+				700L,
+				biomes);
 
-		polar = new GenLayerZoom(1000L, polar);
-		GenLayer polarmag = GenLayerZoom.magnify(1000L, polar, 1);
-		biomes = new GenLayerLaythePolar(1000L, polarmag);
+		GenLayer voronoi =
+			new GenLayerVoronoiZoom(
+				10L,
+				biomes);
 
-		biomes = new GenLayerDiversifyLaythe(1000L, biomes);
-
-		biomes = new GenLayerZoom(1000L, biomes);
-		biomes = new GenLayerZoom(1001L, biomes);
-
-		biomes = new GenLayerLaytheOceans(4000L, biomes);
-		biomes = new GenLayerLaytheOceans(4000L, biomes);
-		biomes = new GenLayerLaytheOceans(4000L, biomes);
-		biomes = new GenLayerLaytheOceans(4000L, biomes);
-
-		GenLayer oceanGenLayer = new GenLayerLaytheOceans(4000L, biomes);
-		oceanGenLayer = GenLayerZoom.magnify(4000L, biomes, 0);
-
-		biomes = new GenLayerZoom(1003L, biomes);
-		biomes = new GenLayerSmooth(700L, biomes);
-		biomes = new GenLayerLaytheIslands(200L, biomes);
-
-		biomes = new GenLayerZoom(1006L, biomes);
-
-		GenLayer genLayerVoronoiZoom = new GenLayerVoronoiZoom(10L, biomes);
-
-		return new BiomeGenLayers(biomes, genLayerVoronoiZoom, seed);
+		return new BiomeGenLayers(
+			biomes,
+			voronoi,
+			seed
+		);
 	}
 
 }

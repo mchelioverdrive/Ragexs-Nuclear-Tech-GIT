@@ -20,18 +20,35 @@ public class MapGenPhobosTerrain extends MapGenBase {
 	public int seaLevel = 72;
 
 	@Override
-	public void func_151539_a(IChunkProvider provider, World world,
-							  int chunkX, int chunkZ, Block[] blocks) {
+	public void func_151539_a(
+		IChunkProvider provider,
+		World world,
+		int chunkX,
+		int chunkZ,
+		Block[] blocks) {
 
-		if(worldObj != world) {
+		this.worldObj = world;
 
-			Random seedRand = new Random(world.getSeed());
+		if(terrainNoise == null) {
+
+			Random seedRand =
+				new Random(world.getSeed());
 
 			terrainNoise =
-				DoublePerlinNoiseSampler.create(seedRand, -6, 1.0D, 2.0D);
+				DoublePerlinNoiseSampler.create(
+					seedRand,
+					-6,
+					1.0D,
+					2.0D
+				);
 
 			detailNoise =
-				DoublePerlinNoiseSampler.create(seedRand, -2, 1.0D, 2.0D);
+				DoublePerlinNoiseSampler.create(
+					seedRand,
+					-2,
+					1.0D,
+					2.0D
+				);
 		}
 
 		generateTerrain(chunkX, chunkZ, blocks);
@@ -43,6 +60,7 @@ public class MapGenPhobosTerrain extends MapGenBase {
 		Block[] blocks) {
 
 		Random craterRand = new Random(
+			//crashed here
 			worldObj.getSeed()
 				^ (chunkX * 341873128712L)
 				^ (chunkZ * 132897987541L)
@@ -50,6 +68,9 @@ public class MapGenPhobosTerrain extends MapGenBase {
 
 		for(int x = 0; x < 16; x++) {
 			for(int z = 0; z < 16; z++) {
+
+				int regolithDepth =
+					2 + craterRand.nextInt(4);
 
 				int worldX = chunkX * 16 + x;
 				int worldZ = chunkZ * 16 + z;
@@ -79,8 +100,7 @@ public class MapGenPhobosTerrain extends MapGenBase {
 					int index =
 						(x * 16 + z) * 256 + y;
 
-					int regolithDepth =
-						2 + craterRand.nextInt(4);
+
 
 					if(y >= height - regolithDepth) {
 						blocks[index] = regolith;
@@ -137,7 +157,10 @@ public class MapGenPhobosTerrain extends MapGenBase {
 
 						for(int d = 0; d < depth; d++) {
 
-							int removeIndex = index - d;
+							int removeIndex =
+								(localX * 16 + localZ)
+									* 256
+									+ (y - d);
 
 							if(removeIndex >= 0)
 								blocks[removeIndex] = null;

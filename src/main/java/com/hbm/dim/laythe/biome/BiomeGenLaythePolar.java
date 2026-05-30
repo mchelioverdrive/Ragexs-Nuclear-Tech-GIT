@@ -19,8 +19,8 @@ public class BiomeGenLaythePolar extends BiomeGenBaseLaythe {
 
         this.setHeight(height);
 
-        this.topBlock = Blocks.snow;
-        this.fillerBlock = Blocks.ice;
+		this.topBlock = Blocks.packed_ice;
+		this.fillerBlock = Blocks.packed_ice;
 	}
 
 	@Override

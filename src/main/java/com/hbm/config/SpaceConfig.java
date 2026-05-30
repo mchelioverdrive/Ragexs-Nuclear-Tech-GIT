@@ -55,6 +55,7 @@ public class SpaceConfig {
 	public static int ikeBiome = 127;
 	public static int sunBiome = 104;
 	public static int jupiterBiome = 105;
+	public static int laytheFractureBiome = 106;
 
 
 
@@ -143,6 +144,13 @@ public class SpaceConfig {
 			"16.26_jupiterBiome",
 			"Jupiter Biome ID",
 			jupiterBiome
+		);
+		laytheFractureBiome = CommonConfig.createConfigInt(
+			config,
+			CATEGORY_BIOME,
+			"16.26_laytheFractureBiome",
+			"Europa Fracture Biome ID",
+			laytheFractureBiome
 		);
 	}
 

@@ -20,27 +20,41 @@ import net.minecraftforge.common.BiomeDictionary;
 
 public abstract class BiomeGenBaseLaythe extends BiomeGenBaseCelestial {
 
-	public static final BiomeGenBase laytheIsland = new BiomeGenLaytheIslands(SpaceConfig.laytheBiome).setTemperatureRainfall(0.2F, 0.2F);
-	public static final BiomeGenBase laytheOcean = new BiomeGenLaytheOcean(SpaceConfig.laytheOceanBiome).setTemperatureRainfall(0.2F, 0.2F);
+
+	//REPLACE WITH:
+	//europaIcePlains
+	//europaChaosTerrain
+	//europaFractureZone
+	//europaCryovolcanicRegion
+	//europaImpactField
+	//europaPolarFrost
+
+	public static final BiomeGenBase europaPlains =
+		new BiomeGenEuropaPlains(SpaceConfig.laytheBiome);
+
+	public static final BiomeGenBase europaChaos =
+		new BiomeGenEuropaChaos(SpaceConfig.laytheOceanBiome);
+
+	public static final BiomeGenBase europaFracture =
+		new BiomeGenEuropaFracture(SpaceConfig.laytheFractureBiome);
+
+	public static final BiomeGenBase europaPolar =
+		new BiomeGenLaythePolar(SpaceConfig.laythePolarBiome);
 	public static final BiomeGenBase laythePolar = new BiomeGenLaythePolar(SpaceConfig.laythePolarBiome).setTemperatureRainfall(0.2F, 0.2F);
 
 	public BiomeGenBaseLaythe(int id) {
 		super(id);
 		this.waterColorMultiplier = 0x5b009a;
 
-        //this.waterCreatures.add(new BiomeGenBase.SpawnListEntry(EntityScutterfish.class, 3, 1, 4));
-		//this.monsters.add(new BiomeGenBase.SpawnListEntry(EntityFRIEND.class, 1, 1, 1));
-		//todo debug, if this works decrease to 3 scratch that 1
-
 		//annoying
 
-		BiomeDecoratorCelestial decorator = new BiomeDecoratorCelestial(Blocks.stone);
-		decorator.waterPlantsPerChunk = 32;
-		this.theBiomeDecorator = decorator;
+		//BiomeDecoratorCelestial decorator = new BiomeDecoratorCelestial(Blocks.packed_ice);
+		//decorator.waterPlantsPerChunk = 32;
+		//this.theBiomeDecorator = decorator;
 		this.theBiomeDecorator.generateLakes = false;
 
-        this.topBlock = ModBlocks.laythe_silt;
-        this.fillerBlock = ModBlocks.laythe_silt;
+		this.topBlock = Blocks.packed_ice;
+		this.fillerBlock = Blocks.packed_ice;
 		BiomeDictionary.registerBiomeType(this, BiomeDictionary.Type.COLD, BiomeDictionary.Type.WET, BiomeDictionary.Type.DENSE, BiomeDictionary.Type.SPOOKY);
 	}
 }

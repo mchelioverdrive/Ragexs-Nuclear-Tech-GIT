@@ -5,7 +5,7 @@ import java.util.List;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.dim.ChunkProviderCelestial;
 import com.hbm.dim.mapgen.MapGenPhobosTerrain;
-import com.hbm.dim.mapgen.MapGenTiltedSpires;
+
 
 import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.world.World;
@@ -35,6 +35,7 @@ public class ChunkProviderIke extends ChunkProviderCelestial {
 		BlockMetaBuffer buffer = super.getChunkPrimer(x, z);
 
 		//spires.func_151539_a(this, worldObj, x, z, buffer.blocks);
+		//crashed here
 		terrain.func_151539_a(this, worldObj, x, z, buffer.blocks);
 		caveGenerator.func_151539_a(this, worldObj, x, z, buffer.blocks);
 
