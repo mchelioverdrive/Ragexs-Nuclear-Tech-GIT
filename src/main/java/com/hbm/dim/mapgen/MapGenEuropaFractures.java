@@ -53,4 +53,46 @@ public class MapGenEuropaFractures extends MapGenRavine {
 			verticalScale
 		);
 	}
+
+	@Override
+	public void func_151539_a(
+		net.minecraft.world.chunk.IChunkProvider provider,
+		net.minecraft.world.World world,
+		int chunkX,
+		int chunkZ,
+		Block[] blocks) {
+
+		/*
+		 * Vanilla ravine pass
+		 */
+		super.func_151539_a(
+			provider,
+			world,
+			chunkX,
+			chunkZ,
+			blocks
+		);
+
+		/*
+		 * Extra ravine passes
+		 *
+		 * Each pass rerolls vanilla
+		 * generation chance.
+		 *
+		 * Safe because we're using
+		 * vanilla code paths.
+		 */
+
+		for(int i = 0; i < 3; i++) {
+
+			super.func_151539_a(
+				provider,
+				world,
+				chunkX,
+				chunkZ,
+				blocks
+			);
+		}
+	}
+
 }
