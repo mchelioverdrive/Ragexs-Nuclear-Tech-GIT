@@ -14,43 +14,6 @@ public class MapGenEuropaFractures {
 
 	private static final int SEA_LEVEL = 63;
 
-	private long hash(long seed, int id) {
-		return seed ^ (id * 341873128712L);
-	}
-	private static class FractureLine {
-		double originX, originZ;
-		double dirX, dirZ;
-		double width;
-	}
-
-	private FractureLine[] fractures;
-
-	public void init(World world) {
-
-		Random rand = new Random(world.getSeed());
-
-		int count = 6 + rand.nextInt(4);
-
-		fractures = new FractureLine[count];
-
-		for(int i = 0; i < count; i++) {
-
-			FractureLine f = new FractureLine();
-
-			f.originX = rand.nextInt(8000) - 4000;
-			f.originZ = rand.nextInt(8000) - 4000;
-
-			double angle = rand.nextDouble() * Math.PI * 2;
-
-			f.dirX = Math.cos(angle);
-			f.dirZ = Math.sin(angle);
-
-			f.width = 8 + rand.nextDouble() * 14;
-
-			fractures[i] = f;
-		}
-	}
-
 	public void func_151539_a(
 		IChunkProvider provider,
 		World world,
