@@ -128,7 +128,7 @@ public class ChunkProviderLaythe extends ChunkProviderCelestial {
 		}
 
 		//spires.func_151539_a(this, worldObj, x, z, buffer.blocks);
-		caveGenV3.func_151539_a(this, worldObj, x, z, buffer.blocks);
+		//caveGenV3.func_151539_a(this, worldObj, x, z, buffer.blocks);
 		//if(biomesForGeneration[0] == BiomeGenBaseLaythe.laythePolar) {
 		//	snowires.func_151539_a(this, worldObj, x, z, buffer.blocks);
 		//}

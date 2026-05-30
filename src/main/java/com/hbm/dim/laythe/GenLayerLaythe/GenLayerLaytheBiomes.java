@@ -26,50 +26,10 @@ public class GenLayerLaytheBiomes extends GenLayer {
 				dx < width;
 				dx++) {
 
-				initChunkSeed(
-					x + dx,
-					z + dz);
-
-				int roll =
-					nextInt(100);
-
-				/*
-				 * Weighted Europa biome distribution
-				 *
-				 * 70% Plains
-				 * 18% Fractures
-				 * 10% Chaos
-				 * 2% Polar
-				 */
-
-				if(roll < 70) {
-
-					dest[dx + dz * width] =
-						BiomeGenBaseLaythe
-							.europaPlains
-							.biomeID;
-				}
-				else if(roll < 88) {
-
-					dest[dx + dz * width] =
-						BiomeGenBaseLaythe
-							.europaFracture
-							.biomeID;
-				}
-				else if(roll < 98) {
-
-					dest[dx + dz * width] =
-						BiomeGenBaseLaythe
-							.europaChaos
-							.biomeID;
-				}
-				else {
-
-					dest[dx + dz * width] =
-						BiomeGenBaseLaythe
-							.laythePolar
-							.biomeID;
-				}
+				dest[dx + dz * width] =
+					BiomeGenBaseLaythe
+						.europaPlains
+						.biomeID;
 			}
 		}
 

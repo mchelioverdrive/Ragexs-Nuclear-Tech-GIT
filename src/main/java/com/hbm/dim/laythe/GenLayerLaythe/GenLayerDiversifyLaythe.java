@@ -15,10 +15,11 @@ public class GenLayerDiversifyLaythe extends GenLayer {
 	}
 
 	@Override
-	public int[] getInts(int x,
-						 int z,
-						 int width,
-						 int depth) {
+	public int[] getInts(
+		int x,
+		int z,
+		int width,
+		int depth) {
 
 		int[] input =
 			this.parent.getInts(
@@ -42,40 +43,44 @@ public class GenLayerDiversifyLaythe extends GenLayer {
 				int index =
 					xOut + zOut * width;
 
-				initChunkSeed(
-					xOut + x,
-					zOut + z);
+				int worldX =
+					x + xOut;
 
-				int roll =
-					nextInt(100);
+				int worldZ =
+					z + zOut;
 
-				// Weighted Europa biomes
-				if(roll < 70) {
+				double fractureNoise =
+					Math.abs(
+						Math.sin(
+							worldX * 0.004
+								+ worldZ * 0.0015));
 
-					output[index] =
-						BiomeGenBaseLaythe
-							.europaPlains
-							.biomeID;
-				}
-				else if(roll < 88) {
+				double chaosNoise =
+					Math.abs(
+						Math.sin(
+							worldX * 0.0012
+								- worldZ * 0.003));
+
+				output[index] =
+					BiomeGenBaseLaythe
+						.europaPlains
+						.biomeID;
+
+				// fracture belts
+				if(fractureNoise > 0.985) {
 
 					output[index] =
 						BiomeGenBaseLaythe
 							.europaFracture
 							.biomeID;
 				}
-				else if(roll < 98) {
+
+				// chaos blobs
+				if(chaosNoise > 0.996) {
 
 					output[index] =
 						BiomeGenBaseLaythe
 							.europaChaos
-							.biomeID;
-				}
-				else {
-
-					output[index] =
-						BiomeGenBaseLaythe
-							.laythePolar
 							.biomeID;
 				}
 			}
