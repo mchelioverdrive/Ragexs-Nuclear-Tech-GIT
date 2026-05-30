@@ -11,15 +11,46 @@ public class MapGenEuropaFractures extends MapGenRavine {
 
 	public MapGenEuropaFractures() {
 
-		// exact vanilla behavior first
 		this.range = 8;
 	}
 
-	//@Override
-	//protected boolean func_151538_a(
-	//	// REMOVE THIS ENTIRE OVERRIDE
-	//) {
-	//	return false;
-	//}
-	//you CANNOT do this. cannot override superclass. STOP TRYING THIS.
+	@Override
+	protected void func_151540_a(
+		long seed,
+		int chunkX,
+		int chunkZ,
+		Block[] blocks,
+		double x,
+		double y,
+		double z,
+		float width,
+		float yaw,
+		float pitch,
+		int startStep,
+		int endStep,
+		double verticalScale) {
+
+		/*
+		 * Vanilla ravines work.
+		 * Just widen them.
+		 */
+
+		width *= 2.2F;
+
+		super.func_151540_a(
+			seed,
+			chunkX,
+			chunkZ,
+			blocks,
+			x,
+			y,
+			z,
+			width,
+			yaw,
+			pitch,
+			startStep,
+			endStep,
+			verticalScale
+		);
+	}
 }
