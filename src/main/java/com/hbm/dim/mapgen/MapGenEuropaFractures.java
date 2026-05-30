@@ -2,6 +2,7 @@ package com.hbm.dim.mapgen;
 
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
+import net.minecraft.world.World;
 import net.minecraft.world.gen.MapGenRavine;
 
 public class MapGenEuropaFractures extends MapGenRavine {
@@ -59,54 +60,108 @@ public class MapGenEuropaFractures extends MapGenRavine {
 	}
 
 	@Override
-	public void func_151539_a(
-		net.minecraft.world.chunk.IChunkProvider provider,
-		net.minecraft.world.World world,
+	protected void func_151538_a(
+		World world,
+		int originChunkX,
+		int originChunkZ,
 		int chunkX,
 		int chunkZ,
 		Block[] blocks) {
 
 		/*
-		 * Stable regional clustering.
+		 * Stable regional fracture belts
 		 *
-		 * Large fracture belts where
-		 * ravines become extremely
-		 * common and bunched.
+		 * Europa-style bands where
+		 * ravines become extremely common.
 		 */
-
 		double fractureField =
-			Math.sin(chunkX * 0.045D)
-				+ Math.cos(chunkZ * 0.045D);
+			Math.sin(originChunkX * 0.025D)
+				+ Math.cos(originChunkZ * 0.025D);
 
 		/*
-		 * Normal Europa terrain
+		 * Vanilla rarity = 1/50
 		 */
-		int passes = 1;
+		int chance = 50;
 
 		/*
 		 * Fracture zone
 		 */
-		if(fractureField > 0.6D) {
+		if(fractureField > 0.4D) {
 
-			passes = 18;
+			chance = 14;
 		}
 
 		/*
-		 * Dense core region
+		 * Dense fracture core
 		 */
-		if(fractureField > 1.2D) {
+		if(fractureField > 1.0D) {
 
-			passes = 35;
+			chance = 5;
 		}
 
-		for(int i = 0; i < passes; i++) {
+		if(this.rand.nextInt(chance) != 0)
+			return;
 
-			super.func_151539_a(
-				provider,
-				world,
+		double x =
+			(originChunkX * 16)
+				+ this.rand.nextInt(16);
+
+		double y =
+			this.rand.nextInt(
+				this.rand.nextInt(40) + 8
+			) + 20;
+
+		double z =
+			(originChunkZ * 16)
+				+ this.rand.nextInt(16);
+
+		/*
+		 * Multiple overlapping ravines
+		 * in fracture regions.
+		 */
+		int ravines = 1;
+
+		if(fractureField > 0.4D)
+			ravines = 3;
+
+		if(fractureField > 1.0D)
+			ravines = 6;
+
+		float baseYaw =
+			this.rand.nextFloat()
+				* (float)Math.PI * 2F;
+
+		for(int i = 0; i < ravines; i++) {
+
+			float yaw =
+				baseYaw
+					+ (this.rand.nextFloat() - 0.5F)
+					* 0.45F;
+
+			float pitch =
+				(this.rand.nextFloat() - 0.5F)
+					* 0.12F;
+
+			float width =
+				(this.rand.nextFloat()
+					* 2.0F
+					+ this.rand.nextFloat())
+					* 2.0F;
+
+			func_151540_a(
+				this.rand.nextLong(),
 				chunkX,
 				chunkZ,
-				blocks
+				blocks,
+				x + this.rand.nextInt(12) - 6,
+				y,
+				z + this.rand.nextInt(12) - 6,
+				width,
+				yaw,
+				pitch,
+				0,
+				0,
+				3.0D
 			);
 		}
 	}
