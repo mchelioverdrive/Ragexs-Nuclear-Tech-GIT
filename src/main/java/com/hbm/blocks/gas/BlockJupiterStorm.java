@@ -14,6 +14,9 @@ public class BlockJupiterStorm extends BlockGasBase {
 		super(0.72F, 0.58F, 0.42F);
 
 		this.setBlockName("jupiter_storm");
+		this.setBlockTextureName(
+			"hbm:jupiter_storm"
+		);
 	}
 
 	@Override

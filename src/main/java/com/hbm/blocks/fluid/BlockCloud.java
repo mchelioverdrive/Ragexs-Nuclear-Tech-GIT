@@ -12,6 +12,9 @@ public class BlockCloud extends BlockGasBase {
 
 		this.setBlockName("cloud");
 		this.setLightOpacity(0);
+		this.setBlockTextureName(
+			"hbm:stormcloud"
+		);
 	}
 
 	@Override

@@ -11,6 +11,9 @@ public class BlockDenseCloud extends BlockGasBase {
 		super(0.85F, 0.78F, 0.68F);
 
 		this.setBlockName("cloud_dense");
+		this.setBlockTextureName(
+			"hbm:dense_stormcloud"
+		);
 	}
 
 	@Override
