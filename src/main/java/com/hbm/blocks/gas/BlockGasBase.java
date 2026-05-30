@@ -3,6 +3,7 @@ package com.hbm.blocks.gas;
 import java.util.Random;
 
 import com.hbm.blocks.ModBlocks;
+import com.hbm.config.SpaceConfig;
 import com.hbm.items.ModItems;
 import com.hbm.main.MainRegistry;
 import com.hbm.util.ArmorUtil;
@@ -244,6 +245,10 @@ public abstract class BlockGasBase extends Block {
 		int z,
 		Random rand
 	) {
+
+		if(world.provider.dimensionId
+			== SpaceConfig.jupiterDimension)
+			return;
 
 		if(rand.nextInt(25) != 0)
 			return;

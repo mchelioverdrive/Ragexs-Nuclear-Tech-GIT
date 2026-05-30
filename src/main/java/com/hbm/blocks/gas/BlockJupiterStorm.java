@@ -4,6 +4,7 @@ import java.util.Random;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.DamageSource;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -52,27 +53,52 @@ public class BlockJupiterStorm extends BlockGasBase {
 		Entity entity
 	) {
 
-		// turbulence
+		// dense atmosphere drag
+		entity.motionX *= 0.92D;
+		entity.motionY *= 0.95D;
+		entity.motionZ *= 0.92D;
+
+		// violent horizontal gusts
 		entity.motionX +=
-			(world.rand.nextDouble() - 0.5D) * 0.2D;
+			(world.rand.nextDouble() - 0.5D)
+				* 0.8D;
 
 		entity.motionZ +=
-			(world.rand.nextDouble() - 0.5D) * 0.2D;
+			(world.rand.nextDouble() - 0.5D)
+				* 0.8D;
 
+		// turbulent vertical motion
 		entity.motionY +=
-			(world.rand.nextDouble() - 0.5D) * 0.08D;
+			(world.rand.nextDouble() - 0.35D)
+				* 0.25D;
 
-		// occasional electrical discharge
-		if(entity instanceof EntityLivingBase) {
+		// prevent normal falling
+		entity.fallDistance = 0F;
 
-			if(world.rand.nextInt(45) == 0) {
+		if(world.rand.nextInt(50) == 0) {
 
-				((EntityLivingBase)entity)
-					.attackEntityFrom(
-						DamageSource.magic,
-						2.0F
-					);
-			}
+			entity.motionX +=
+				(world.rand.nextDouble() - 0.5D)
+					* 3.0D;
+
+			entity.motionY +=
+				world.rand.nextDouble()
+					* 1.2D;
+
+			entity.motionZ +=
+				(world.rand.nextDouble() - 0.5D)
+					* 3.0D;
+		}
+
+		// lightning / electrical discharge
+		if(entity instanceof EntityLivingBase
+			&& world.rand.nextInt(35) == 0) {
+
+			((EntityLivingBase)entity)
+				.attackEntityFrom(
+					DamageSource.magic,
+					2.0F
+				);
 		}
 	}
 
@@ -93,8 +119,19 @@ public class BlockJupiterStorm extends BlockGasBase {
 			rand
 		);
 
+		EntityPlayer p =
+			world.getClosestPlayer(
+				x + 0.5,
+				y + 0.5,
+				z + 0.5,
+				16
+			);
+
+		if(p == null)
+			return;
+
 		// electric storm particles
-		if(rand.nextInt(10) == 0) {
+		if(rand.nextInt(120) == 0) {
 
 			world.spawnParticle(
 				"reddust",

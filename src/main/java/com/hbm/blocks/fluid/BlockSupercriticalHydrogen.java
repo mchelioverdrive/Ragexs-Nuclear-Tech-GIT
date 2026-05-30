@@ -32,16 +32,17 @@ public class BlockSupercriticalHydrogen extends Block {
 
 	@Override
 	public boolean isOpaqueCube() {
-		return false;
+		return true;
 	}
 
 	@Override
 	public boolean renderAsNormalBlock() {
-		return false;
+		return true;
 	}
 
 	@Override
-	public AxisAlignedBB getCollisionBoundingBoxFromPool(
+	public AxisAlignedBB
+	getCollisionBoundingBoxFromPool(
 		World world,
 		int x,
 		int y,
@@ -60,9 +61,9 @@ public class BlockSupercriticalHydrogen extends Block {
 	) {
 
 		// movement nearly impossible
-		entity.motionX *= 0.15D;
-		entity.motionY *= 0.15D;
-		entity.motionZ *= 0.15D;
+		entity.motionX *= 0.05D;
+		entity.motionY *= 0.05D;
+		entity.motionZ *= 0.05D;
 
 		entity.fallDistance = 0F;
 

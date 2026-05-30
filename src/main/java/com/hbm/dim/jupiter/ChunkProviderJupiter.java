@@ -99,8 +99,13 @@ public class ChunkProviderJupiter extends ChunkProviderCelestial {
 
 						} else {
 
-							buffer.blocks[index] =
-								ModBlocks.cloud_dense;
+							if(rand.nextInt(3) == 0) {
+								buffer.blocks[index] =
+									ModBlocks.cloud_dense;
+							} else {
+								buffer.blocks[index] =
+									Blocks.air;
+							}
 						}
 					}
 
@@ -130,7 +135,7 @@ public class ChunkProviderJupiter extends ChunkProviderCelestial {
 				// Jupiter turbulence
 				// ====================================
 
-				if(rand.nextInt(35) == 0) {
+				if(rand.nextInt(90) == 0) {
 
 					int stormHeight =
 						20 + rand.nextInt(40);

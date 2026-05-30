@@ -4,9 +4,12 @@ import com.hbm.dim.WorldChunkManagerCelestial;
 import com.hbm.dim.WorldProviderCelestial;
 import com.hbm.dim.jupiter.GenLayerJupiter.GenLayerJupiterBiomes;
 import com.hbm.dim.sun.ChunkProviderSun;
+import com.hbm.potion.HbmPotion;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.layer.GenLayer;
@@ -38,8 +41,84 @@ public class WorldProviderJupiter extends WorldProviderCelestial {
 		this.worldObj.rainingStrength = 0.0F;
 		this.worldObj.thunderingStrength = 1.0F;
 
-		this.worldObj.getWorldInfo().setRaining(false);
-		this.worldObj.getWorldInfo().setThundering(true);
+		this.worldObj
+			.getWorldInfo()
+			.setRaining(false);
+
+		this.worldObj
+			.getWorldInfo()
+			.setThundering(true);
+
+		if(worldObj.isRemote)
+			return;
+
+		for(Object obj :
+			worldObj.playerEntities) {
+
+			if(!(obj instanceof EntityPlayer))
+				continue;
+
+			EntityPlayer player =
+				(EntityPlayer)obj;
+
+			int amp = 0;
+
+			// =================================
+			// UPPER ATMOSPHERE
+			// magnetosphere hell
+			// =================================
+			if(player.posY > 220) {
+
+				amp = 140;
+			}
+
+			// =================================
+			// CLOUD TOPS
+			// still horrible
+			// =================================
+			else if(player.posY > 170) {
+
+				amp = 45;
+			}
+
+			// =================================
+			// DEEP STORMS
+			// atmosphere shielding
+			// =================================
+			else if(player.posY > 100) {
+
+				amp = 12;
+			}
+
+			// =================================
+			// SUPERCRITICAL HYDROGEN
+			// mostly pressure danger now
+			// =================================
+			else if(player.posY > 50) {
+
+				amp = 2;
+			}
+
+			// =================================
+			// METALLIC HYDROGEN
+			// radiation shielded
+			// =================================
+			else {
+
+				amp = 0;
+			}
+
+			if(amp > 0) {
+
+				player.addPotionEffect(
+					new PotionEffect(
+						HbmPotion.radiation.id,
+						20,
+						amp
+					)
+				);
+			}
+		}
 	}
 
 	private static WorldChunkManagerCelestial.BiomeGenLayers createGigaHell(long seed) {
