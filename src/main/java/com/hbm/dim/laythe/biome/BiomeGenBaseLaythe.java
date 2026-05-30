@@ -35,8 +35,8 @@ public abstract class BiomeGenBaseLaythe extends BiomeGenBaseCelestial {
 	public static final BiomeGenBase europaChaos =
 		new BiomeGenEuropaChaos(SpaceConfig.laytheOceanBiome);
 
-	public static final BiomeGenBase europaFracture =
-		new BiomeGenEuropaFracture(SpaceConfig.laytheFractureBiome);
+	//public static final BiomeGenBase europaFracture =
+	//	new BiomeGenEuropaFracture(SpaceConfig.laytheFractureBiome);
 
 	public static final BiomeGenBase europaPolar =
 		new BiomeGenLaythePolar(SpaceConfig.laythePolarBiome);

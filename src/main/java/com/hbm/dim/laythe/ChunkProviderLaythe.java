@@ -33,8 +33,8 @@ public class ChunkProviderLaythe extends ChunkProviderCelestial {
 		fractures.crackBlock =
 			ModBlocks.laythe_silt;
 
-		fractures.ridgeBlock =
-			Blocks.packed_ice;
+		//fractures.ridgeBlock =
+		//	Blocks.packed_ice;
 
 		//spires.rock = Blocks.stone;
 		//spires.regolith = ModBlocks.laythe_silt;
@@ -67,11 +67,11 @@ public class ChunkProviderLaythe extends ChunkProviderCelestial {
 				// thinner crust in fracture regions
 				int crustBottom = 35;
 
-				if(biomesForGeneration[0] == BiomeGenBaseLaythe.europaFracture
-					|| biomesForGeneration[0] == BiomeGenBaseLaythe.europaChaos) {
-
-					crustBottom = 24;
-				}
+				//if(biomesForGeneration[0] == BiomeGenBaseLaythe.europaFracture
+				//	|| biomesForGeneration[0] == BiomeGenBaseLaythe.europaChaos) {
+//
+				//	crustBottom = 24;
+				//}
 
 				// ocean layer
 				for(int y = crustBottom; y > 18; y--) {
@@ -115,17 +115,13 @@ public class ChunkProviderLaythe extends ChunkProviderCelestial {
 		BiomeGenBaseLaythe biome =
 			(BiomeGenBaseLaythe) biomesForGeneration[0];
 
-		if(biome == BiomeGenBaseLaythe.europaFracture
-			|| biome == BiomeGenBaseLaythe.europaChaos) {
-
-			fractures.func_151539_a(
-				this,
-				worldObj,
-				x,
-				z,
-				buffer.blocks
-			);
-		}
+		fractures.func_151539_a(
+			this,
+			worldObj,
+			x,
+			z,
+			buffer.blocks
+		);
 
 		//spires.func_151539_a(this, worldObj, x, z, buffer.blocks);
 		//caveGenV3.func_151539_a(this, worldObj, x, z, buffer.blocks);

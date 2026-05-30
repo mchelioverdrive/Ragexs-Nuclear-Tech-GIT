@@ -67,13 +67,13 @@ public class GenLayerDiversifyLaythe extends GenLayer {
 						.biomeID;
 
 				// fracture belts
-				if(fractureNoise > 0.985) {
-
-					output[index] =
-						BiomeGenBaseLaythe
-							.europaFracture
-							.biomeID;
-				}
+				//if(fractureNoise > 0.985) {
+//
+				//	output[index] =
+				//		BiomeGenBaseLaythe
+				//			.europaFracture
+				//			.biomeID;
+				//}
 
 				// chaos blobs
 				if(chaosNoise > 0.996) {
