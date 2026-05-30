@@ -3,8 +3,11 @@ package com.hbm.dim.jupiter;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.dim.ChunkProviderCelestial;
 
+import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.init.Blocks;
 import net.minecraft.world.World;
+
+import java.util.List;
 
 public class ChunkProviderJupiter extends ChunkProviderCelestial {
 
@@ -13,6 +16,11 @@ public class ChunkProviderJupiter extends ChunkProviderCelestial {
 
 		stoneBlock = Blocks.hardened_clay;
 		seaBlock = Blocks.air;
+	}
+
+	@Override
+	public List getPossibleCreatures(EnumCreatureType creatureType, int x, int y, int z) {
+		return null;
 	}
 
 	@Override
