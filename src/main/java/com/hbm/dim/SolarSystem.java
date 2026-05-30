@@ -49,16 +49,12 @@ public class SolarSystem {
 			.withRotationalPeriod(2_199_040) // ~25.45 Earth days
 			.withTexture("textures/environment/sun.png")
 			.withShader(new ResourceLocation(RefStrings.MODID, "shaders/blackhole.frag"), 3) // Only shows when CBT_Destroyed
+			.withTraits(
+				new CBT_Temperature(5505) // photosphere temperature
+			)
 			.withSatellites(
 
-				//alright, we're gonna do some math here
-				//basically this shit is not actually kilometers, if it was it would look right, so we're gonna assume:
-				// A. KSP values are being used (1/10th) so divided by 10, but I scaled the actual space objects down
-				// from 180 to 90 so
-				// that'd be
-				// B. I'm not gonna do the stupid fucking time scale shit mainly because this is minecraft
-				// and that ruins the game
-				//My current understanding of this system is that Semi Major Axis just means distance from the sun basically
+
 
 				//yk what nah just gonna put irl values in
 
@@ -84,21 +80,7 @@ public class SolarSystem {
 					.withBlockTextures(RefStrings.MODID + ":textures/blocks/eve_stone_2.png", RefStrings.MODID + ":textures/blocks/eve_silt.png")
 					.withProcessingLevel(2)
 					.withTraits(new CBT_Atmosphere(Fluids.EVEAIR, 92D), new CBT_Temperature(464), new CBT_Water(Fluids.MERCURY)),
-					//alright you win this time retarded ass system
-					//92 did something ODD
-					//I don't think pressure is calculated properly bc it should not make visibility go down, if anything up
-					//fixed stupid fucking pressure rendering system
-					//.withSatellites(
 
-					//	new CelestialBody("gilly")
-					//		.withMassRadius(1.242e17F, 13)
-					//		.withSemiMajorAxis(31_500)
-					//		.withRotationalPeriod(28_255)
-					//		.withTexture("hbm:textures/misc/space/planet.png")
-
-					//),
-					//venus has no moons.
-					//this should be Deimos (Mars’s other moon).
 
 				//earth
 				new CelestialBody("kerbin", 0, Body.KERBIN) // overworld
@@ -171,14 +153,13 @@ public class SolarSystem {
 							.withRotationalPeriod(27_553) // tidally locked
 							.withBlockTextures(RefStrings.MODID + ":textures/blocks/ike_stone.png", RefStrings.MODID + ":textures/blocks/ike_regolith.png")
 							.withProcessingLevel(1)
+							.withTraits(
+								new CBT_Temperature(-40)
+							)
 							.withTidalLockingTo("duna"),
-							//.withProcessingLevel(1) already set
-							//.withTraits(new CBT_Water(Fluids.BROMINE)),
-							//phobos doesn't have confirmed bromine on it, nor does it have an atmosphere
 
 						//RTM changes: Adding rest of moons/planets for realism WIP
 
-						//fuck your ksp bullshit, I'm calling it what it is,
 						//Deimos
 						new CelestialBody("deimos")
 							//, SpaceConfig.deimosDimension, Body.DEI
@@ -192,9 +173,7 @@ public class SolarSystem {
 							//todo add new bullshit
 							.withProcessingLevel(1)
 							.withTidalLockingTo("duna")
-							//idk what processinglevel even does
-							//oh it's technology lock
-							//.withTraits(new CBT_Water(Fluids.BROMINE))
+							//processing level is tech progression
 
 					),
 
@@ -212,7 +191,7 @@ public class SolarSystem {
 
 
 				//jupiter
-				new CelestialBody("jool")
+				new CelestialBody("jool", SpaceConfig.jupiterDimension, Body.JOOL)
 					.withMassRadius(1.898e27F, 69_911)
 
 					//69_911
@@ -240,8 +219,7 @@ public class SolarSystem {
 							.withRotationalPeriod(306_806)
 							.withTidalLockingTo("jool")
 							.withProcessingLevel(3)
-							//xenon -> hydrogen for realism
-							.withTraits(new CBT_Atmosphere(Fluids.AIR, 0.45D).and(Fluids.HYDROGEN, 0.15D), new CBT_Water()),
+							.withTraits(new CBT_Atmosphere(Fluids.AIR, 0.12D).and(Fluids.HYDROGEN, 0.15D), new CBT_Water()),
 
 						//Ganymede
 						new CelestialBody("vall") //probably
@@ -468,7 +446,8 @@ public class SolarSystem {
 		EVE("eve"),
 		IKE("ike"),
 		LAYTHE("laythe"),
-		SUN("kerbol"); //God I really need to change this to real names
+		SUN("kerbol"), //God I really need to change this to real names
+		JOOL("jool"); //pain
 		// TEKTO("tekto");
 
 		public String name;

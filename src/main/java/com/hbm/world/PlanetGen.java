@@ -10,6 +10,7 @@ import com.hbm.dim.duna.WorldGeneratorDuna;
 import com.hbm.dim.duna.WorldProviderDuna;
 import com.hbm.dim.eve.WorldGeneratorEve;
 import com.hbm.dim.eve.WorldProviderEve;
+import com.hbm.dim.jupiter.WorldProviderJupiter;
 import com.hbm.dim.laythe.WorldGeneratorLaythe;
 import com.hbm.dim.laythe.WorldProviderLaythe;
 import com.hbm.dim.minmus.WorldGeneratorMinmus;
@@ -57,6 +58,7 @@ public class PlanetGen {
 		registerDimension(SpaceConfig.orbitDimension, WorldProviderOrbit.class);
 		registerDimension(SpaceConfig.tektoDimension, WorldProviderTekto.class);
 		registerDimension(SpaceConfig.sunDimension, WorldProviderSun.class);
+		registerDimension(SpaceConfig.jupiterDimension, WorldProviderJupiter.class);
 
     }
 

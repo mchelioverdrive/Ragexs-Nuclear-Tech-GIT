@@ -17,53 +17,47 @@ public class SpaceConfig {
 	//some idiot somehow managed to fuck this up, I don't know how, I don't know why, I don't even know when
 	//If you can't figure out how to change a dimension ID via config you're absolutely tiktok rotmaxxing
 	//seek fucking help
+
+	//DIM:
 	public static int moonDimension = 16;
 	public static int dunaDimension = 17;
 	public static int ikeDimension = 18;
 	public static int eveDimension = 19;
 	public static int dresDimension = 20;
 	public static int mohoDimension = 21;
-	//public static int minmusDimension = 22;
 	public static int laytheDimension = 23;
 	public static int orbitDimension = 24;
 	public static int tektoDimension = 25;
+	public static int jupiterDimension = 22;
+	public static int sunDimension = 103;
 
+
+	//BIOME:
 	public static int orbitBiome = 42;
-
-	//public static int minmusBiome = 40;
-	//public static int minmusBasins = 41;
-
 	public static int moonBiome = 111;
-
 	public static int dunaBiome = 112;
 	public static int dunaLowlandsBiome = 113;
 	public static int dunaPolarBiome = 114;
 	public static int dunaHillsBiome = 115;
 	public static int dunaPolarHillsBiome = 116;
-
 	public static int eveBiome = 117;
 	public static int eveMountainsBiome = 118;
 	public static int eveOceanBiome = 119;
 	public static int eveSeismicBiome = 125;
 	public static int eveRiverBiome = 110;
-
 	public static int dresBiome = 120;
 	public static int dresBasins = 121;
-
 	public static int mohoBiome = 122;
 	public static int mohoBasaltBiome = 43;
-
 	public static int laytheBiome = 123;
 	public static int laytheOceanBiome = 124;
 	public static int laythePolarBiome = 126;
-
 	public static int ikeBiome = 127;
 	public static int sunBiome = 104;
+	public static int jupiterBiome = 105;
 
-	public static int tektoPolyvinyl = 100;
-	public static int HalogenHill = 101;
-	public static int TektoRiver = 102;
-	public static int sunDimension = 103;
+
+
 
 
 
@@ -100,6 +94,13 @@ public class SpaceConfig {
 			"17.11_sunDimension",
 			"Sun dimension ID",
 			sunDimension
+		);
+		jupiterDimension = CommonConfig.createConfigInt(
+			config,
+			CATEGORY_DIM,
+			"17.12_jupiterDimension",
+			"Jupiter dimension ID",
+			jupiterDimension
 		);
 
 		final String CATEGORY_GENERAL = CommonConfig.CATEGORY_GENERAL;

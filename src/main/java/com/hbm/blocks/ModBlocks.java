@@ -1317,7 +1317,19 @@ public class ModBlocks {
 
 	public static Block volcanic_lava_block;
 	public static Fluid volcanic_lava_fluid;
+
+	//the SUN
 	public static Block solar_plasma;
+
+
+	//JUPITER
+	public static Block cloud;
+	public static Block cloud_dense;
+	public static Block jupiter_storm;
+	public static Block supercritical_hydrogen;
+	public static Block metallic_hydrogen;
+
+
 	public static Block rad_lava_block;
 	public static Fluid rad_lava_fluid;
 
@@ -2598,7 +2610,15 @@ public class ModBlocks {
 		volcanic_lava_block = new VolcanicBlock(volcanic_lava_fluid, Material.lava).setBlockName("volcanic_lava_block").setResistance(500F);
 
 
+		//SUN
 		solar_plasma = new BlockSolarPlasma(); //.setBlockTextureName("minecraft:lava")
+
+
+		cloud = new BlockCloud();
+		cloud_dense = new BlockDenseCloud();
+		jupiter_storm = new BlockJupiterStorm();
+		supercritical_hydrogen = new BlockSupercriticalHydrogen();
+		metallic_hydrogen = new BlockMetallicHydrogen();
 
 
 		rad_lava_fluid = new RadFluid().setLuminosity(15).setDensity(3000).setViscosity(3000).setTemperature(1300).setUnlocalizedName("rad_lava_fluid");
@@ -3860,7 +3880,17 @@ public class ModBlocks {
 		GameRegistry.registerBlock(acid_block, acid_block.getUnlocalizedName());
 		GameRegistry.registerBlock(toxic_block, toxic_block.getUnlocalizedName());
 		GameRegistry.registerBlock(schrabidic_block, schrabidic_block.getUnlocalizedName());
+
+		//SUN
 		GameRegistry.registerBlock(solar_plasma, "solar_plasma");
+
+		//JUPITER
+		GameRegistry.registerBlock(cloud, "cloud");
+		GameRegistry.registerBlock(cloud_dense, "cloud_dense");
+		GameRegistry.registerBlock(jupiter_storm, "jupiter_storm");
+		GameRegistry.registerBlock(supercritical_hydrogen, "supercritical_hydrogen");
+		GameRegistry.registerBlock(metallic_hydrogen, "metallic_hydrogen");
+
 		GameRegistry.registerBlock(corium_block, corium_block.getUnlocalizedName());
 		GameRegistry.registerBlock(volcanic_lava_block, volcanic_lava_block.getUnlocalizedName());
 		GameRegistry.registerBlock(rad_lava_block, rad_lava_block.getUnlocalizedName());

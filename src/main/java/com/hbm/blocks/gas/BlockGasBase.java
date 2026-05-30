@@ -20,7 +20,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public abstract class BlockGasBase extends Block {
-	
+
 	float red;
 	float green;
 	float blue;
@@ -39,7 +39,7 @@ public abstract class BlockGasBase extends Block {
 	public boolean isOpaqueCube() {
 		return false;
 	}
-	
+
 	@Override
 	public int getRenderType() {
 		return -1;
@@ -77,15 +77,26 @@ public abstract class BlockGasBase extends Block {
 	}
 
 	@Override
-	public void onBlockAdded(World world, int x, int y, int z) {
+	public void onBlockAdded(
+		World world,
+		int x,
+		int y,
+		int z
+	) {
 
-		if(!world.isRemote) {
-			
-			if(world.getBlockMetadata(x, y, z) == 0)
-				world.scheduleBlockUpdate(x, y, z, this, 10);
-		}
+		if(world.isRemote
+			|| isStaticGas())
+			return;
+
+		world.scheduleBlockUpdate(
+			x,
+			y,
+			z,
+			this,
+			8 + world.rand.nextInt(16)
+		);
 	}
-	
+
 	@Override
 	public void onNeighborBlockChange(World world, int x, int y, int z, Block block) {
 		if(world.getBlockMetadata(x, y, z) != 0) {
@@ -95,15 +106,67 @@ public abstract class BlockGasBase extends Block {
 	}
 
 	@Override
-	public void updateTick(World world, int x, int y, int z, Random rand) {
+	public void updateTick(
+		World world,
+		int x,
+		int y,
+		int z,
+		Random rand
+	) {
 
-		if(!world.isRemote) {
-			
-			world.scheduledUpdatesAreImmediate = false; //prevent recursive loop when some dumbass forgets to clean up immediate updating
+		if(world.isRemote)
+			return;
 
-			if(!tryMove(world, x, y, z, getFirstDirection(world, x, y, z)))
-				if(!tryMove(world, x, y, z, getSecondDirection(world, x, y, z)))
-					world.scheduleBlockUpdate(x, y, z, this, getDelay(world));
+		world.scheduledUpdatesAreImmediate =
+			false;
+
+		ForgeDirection dir =
+			getFirstDirection(
+				world,
+				x,
+				y,
+				z
+			);
+
+		boolean moved =
+			tryMove(
+				world,
+				x,
+				y,
+				z,
+				dir
+			);
+
+		if(!moved) {
+
+			dir =
+				getSecondDirection(
+					world,
+					x,
+					y,
+					z
+				);
+
+			moved =
+				tryMove(
+					world,
+					x,
+					y,
+					z,
+					dir
+				);
+		}
+
+		// random throttling
+		if(rand.nextInt(3) == 0) {
+
+			world.scheduleBlockUpdate(
+				x,
+				y,
+				z,
+				this,
+				getDelay(world)
+			);
 		}
 	}
 
@@ -113,12 +176,47 @@ public abstract class BlockGasBase extends Block {
 		return getFirstDirection(world, x, y, z);
 	}
 
-	public boolean tryMove(World world, int x, int y, int z, ForgeDirection dir) {
+	public boolean tryMove(
+		World world,
+		int x,
+		int y,
+		int z,
+		ForgeDirection dir
+	) {
 
-		if(world.getBlock(x + dir.offsetX, y + dir.offsetY, z + dir.offsetZ) == Blocks.air) {
-			world.setBlockToAir(x, y, z);
-			world.setBlock(x + dir.offsetX, y + dir.offsetY, z + dir.offsetZ, this);
-			world.scheduleBlockUpdate(x + dir.offsetX, y + dir.offsetY, z + dir.offsetZ, this, getDelay(world));
+		if(dir == ForgeDirection.UNKNOWN)
+			return false;
+
+		int nx = x + dir.offsetX;
+		int ny = y + dir.offsetY;
+		int nz = z + dir.offsetZ;
+
+		Block block =
+			world.getBlock(nx, ny, nz);
+
+		if(block == Blocks.air
+			|| block.isReplaceable(
+			world,
+			nx,
+			ny,
+			nz
+		)) {
+
+			world.setBlock(
+				nx,
+				ny,
+				nz,
+				this,
+				0,
+				2
+			);
+
+			world.setBlockToAir(
+				x,
+				y,
+				z
+			);
+
 			return true;
 		}
 
@@ -133,26 +231,73 @@ public abstract class BlockGasBase extends Block {
 		return ForgeDirection.getOrientation(world.rand.nextInt(4) + 2);
 	}
 
+	public boolean isStaticGas() {
+		return false;
+	}
+
 	@Override
 	@SideOnly(Side.CLIENT)
-	public void randomDisplayTick(World world, int x, int y, int z, Random rand) {
-		super.randomDisplayTick(world, x, y, z, rand);
-		
-		EntityPlayer p = MainRegistry.proxy.me();
-		if(ArmorUtil.checkArmorPiece(p, ModItems.ashglasses, 3) && this != ModBlocks.vacuum) {
-			if(rand.nextInt(9)==1)
-			{
-				NBTTagCompound data = new NBTTagCompound();
-				data.setString("type", "vanillaExt");
-				data.setString("mode", "cloud");
-				data.setDouble("posX", x + 0.5);
-				data.setDouble("posY", y + 0.5);
-				data.setDouble("posZ", z + 0.5);
-				data.setFloat("r", red);
-				data.setFloat("g", green);
-				data.setFloat("b", blue);
-				MainRegistry.proxy.effectNT(data);
-			}
+	public void randomDisplayTick(
+		World world,
+		int x,
+		int y,
+		int z,
+		Random rand
+	) {
+
+		if(rand.nextInt(25) != 0)
+			return;
+
+		EntityPlayer p =
+			MainRegistry.proxy.me();
+
+		if(p == null)
+			return;
+
+		if(
+			ArmorUtil.checkArmorPiece(
+				p,
+				ModItems.ashglasses,
+				3
+			)
+				&& this != ModBlocks.vacuum
+		) {
+
+			NBTTagCompound data =
+				new NBTTagCompound();
+
+			data.setString(
+				"type",
+				"vanillaExt"
+			);
+
+			data.setString(
+				"mode",
+				"cloud"
+			);
+
+			data.setDouble(
+				"posX",
+				x + 0.5
+			);
+
+			data.setDouble(
+				"posY",
+				y + 0.5
+			);
+
+			data.setDouble(
+				"posZ",
+				z + 0.5
+			);
+
+			data.setFloat("r", red);
+			data.setFloat("g", green);
+			data.setFloat("b", blue);
+
+			MainRegistry.proxy.effectNT(
+				data
+			);
 		}
 	}
 }
