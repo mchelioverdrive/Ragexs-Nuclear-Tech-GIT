@@ -194,13 +194,11 @@ public class SolarSystem {
 				new CelestialBody("jool", SpaceConfig.jupiterDimension, Body.JOOL)
 					.withMassRadius(1.898e27F, 69_911)
 
-					//69_911
 
-					//skibidi mode: on
 					.withSemiMajorAxis(778_547_200D)
 					.withInitialOrbitalAngle(34.35D)
 					.withRotationalPeriod(35_730) // System III rotation
-
+					.withProcessingLevel(3)
 					.withColor(1.0f, 0.5f, 0.0f)
 					.withAxialTilt(3.13F)
 					.withTraits(
@@ -208,6 +206,7 @@ public class SolarSystem {
 							.and(Fluids.HELIUM4, 150D),
 						new CBT_Temperature(-145)
 					)
+
 					//hopefully orange?
 					//OH ITS BECAUSE THIS ISNT AN OVERLAY, THIS MOD ACTUALLY USES A TEXTURE FOR UP CLOSE SHIT AMAZING
 					.withSatellites(

@@ -137,6 +137,13 @@ public class SpaceConfig {
 			"Sun Biome ID",
 			sunBiome
 		);
+		jupiterBiome = CommonConfig.createConfigInt(
+			config,
+			CATEGORY_BIOME,
+			"16.26_jupiterBiome",
+			"Jupiter Biome ID",
+			jupiterBiome
+		);
 	}
 
 }

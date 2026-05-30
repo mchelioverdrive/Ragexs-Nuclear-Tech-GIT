@@ -226,6 +226,7 @@ body.eve=Venus
 body.laythe=Europa
 body.ike=Phobos
 body.dres=Ceres
+body.jool=Jupiter
 
 bomb.detonated=Detonated successfully!
 bomb.incompatible=Device can not be triggered!
