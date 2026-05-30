@@ -17,28 +17,44 @@ public class MapGenEuropaFractures {
 	// FIX: global deterministic fracture set (NOT per chunk)
 	private static final int FRACTURE_COUNT = 28;
 
+	// ADD THIS RIGHT AFTER YOUR FIELDS
+
+	private long worldSeedCache = -1;
+	private double[][] lines = null;
+
+	private void init(World world) {
+
+		if (lines != null && worldSeedCache == world.getSeed())
+			return;
+
+		worldSeedCache = world.getSeed();
+
+		Random rand = new Random(worldSeedCache);
+
+		lines = new double[FRACTURE_COUNT][4];
+
+		for (int i = 0; i < FRACTURE_COUNT; i++) {
+
+			lines[i][0] = rand.nextDouble() * 16000 - 8000; // ax
+			lines[i][1] = rand.nextDouble() * 16000 - 8000; // az
+			lines[i][2] = rand.nextDouble() * 16000 - 8000; // bx
+			lines[i][3] = rand.nextDouble() * 16000 - 8000; // bz
+		}
+	}
+
 	public void func_151539_a(IChunkProvider provider, World world, int chunkX, int chunkZ, Block[] blocks) {
 
-		long seed = world.getSeed();
+		init(world);
 
 		int baseX = chunkX * 16;
 		int baseZ = chunkZ * 16;
 
-		// FIX: stable global fracture set (NOT re-rolled per chunk call)
 		for (int i = 0; i < FRACTURE_COUNT; i++) {
 
-			long s =
-				seed
-					^ (i * 0x9E3779B97F4A7C15L);
-
-			Random rand = new Random(s);
-
-			// FIX: TRUE global endpoints (deterministic world-space lines)
-			double ax = rand.nextDouble() * 16000 - 8000;
-			double az = rand.nextDouble() * 16000 - 8000;
-
-			double bx = rand.nextDouble() * 16000 - 8000;
-			double bz = rand.nextDouble() * 16000 - 8000;
+			double ax = lines[i][0];
+			double az = lines[i][1];
+			double bx = lines[i][2];
+			double bz = lines[i][3];
 
 			applyFractureLine(blocks, baseX, baseZ, ax, az, bx, bz);
 		}
@@ -64,7 +80,7 @@ public class MapGenEuropaFractures {
 
 				double t = 1.0 - (dist / width);
 
-				int surfaceY = getSurfaceYSafe(x, z, blocks);
+				int surfaceY = getSurfaceYSafe(worldX & 15, worldZ & 15, blocks);
 				if (surfaceY <= 1)
 					continue;
 
@@ -73,10 +89,12 @@ public class MapGenEuropaFractures {
 				int bottom = surfaceY - depth;
 				if (bottom < 1)
 					bottom = 1;
+				int localX = worldX & 15;
+				int localZ = worldZ & 15;
 
 				// carve ravine
 				for (int y = surfaceY; y > bottom; y--) {
-					setBlock(blocks, x, y, z, Blocks.air);
+					setBlock(blocks, localX, y, localZ, Blocks.air);
 				}
 
 				// floor ice
