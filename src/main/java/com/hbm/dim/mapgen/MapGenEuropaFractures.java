@@ -37,6 +37,10 @@ public class MapGenEuropaFractures extends MapGenRavine {
 
 		width *= 2.2F;
 
+		//TODO test
+		//pitch *= 0.35F;
+		//verticalScale *= 0.7D;
+
 		super.func_151540_a(
 			seed,
 			chunkX,
@@ -63,27 +67,39 @@ public class MapGenEuropaFractures extends MapGenRavine {
 		Block[] blocks) {
 
 		/*
-		 * Vanilla ravine pass
+		 * Stable regional clustering.
+		 *
+		 * Large fracture belts where
+		 * ravines become extremely
+		 * common and bunched.
 		 */
-		super.func_151539_a(
-			provider,
-			world,
-			chunkX,
-			chunkZ,
-			blocks
-		);
+
+		double fractureField =
+			Math.sin(chunkX * 0.045D)
+				+ Math.cos(chunkZ * 0.045D);
 
 		/*
-		 * Extra ravine passes
-		 *
-		 * Each pass rerolls vanilla
-		 * generation chance.
-		 *
-		 * Safe because we're using
-		 * vanilla code paths.
+		 * Normal Europa terrain
 		 */
+		int passes = 1;
 
-		for(int i = 0; i < 3; i++) {
+		/*
+		 * Fracture zone
+		 */
+		if(fractureField > 0.6D) {
+
+			passes = 18;
+		}
+
+		/*
+		 * Dense core region
+		 */
+		if(fractureField > 1.2D) {
+
+			passes = 35;
+		}
+
+		for(int i = 0; i < passes; i++) {
 
 			super.func_151539_a(
 				provider,
