@@ -13,20 +13,10 @@ public class BlockSaturnStorm extends BlockGasBase {
 
 	public BlockSaturnStorm() {
 
-		// pale yellow-beige
-		super(
-			0.90F,
-			0.84F,
-			0.62F
-		);
+		super(0.90F, 0.84F, 0.62F);
 
-		this.setBlockName(
-			"saturn_storm"
-		);
-
-		this.setBlockTextureName(
-			"hbm:saturn_storm"
-		);
+		this.setBlockName("saturn_storm");
+		this.setBlockTextureName("hbm:saturn_storm");
 	}
 
 	@Override
@@ -35,45 +25,25 @@ public class BlockSaturnStorm extends BlockGasBase {
 	}
 
 	@Override
-	public ForgeDirection getFirstDirection(
-		World world,
-		int x,
-		int y,
-		int z
-	) {
-
-		// calmer atmospheric flow
-		return randomHorizontal(
-			world
-		);
+	public ForgeDirection getFirstDirection(World world, int x, int y, int z) {
+		return randomHorizontal(world);
 	}
 
 	@Override
-	public ForgeDirection getSecondDirection(
-		World world,
-		int x,
-		int y,
-		int z
-	) {
+	public ForgeDirection getSecondDirection(World world, int x, int y, int z) {
 
-		// slight vertical instability
-		//SHOULD BE EXTREME 1,100 MPH WINDS.
-		if(world.rand.nextInt(5) == 0) {
-
+		// mostly horizontal jet flow with slight instability
+		if(world.rand.nextInt(6) == 0) {
 			return world.rand.nextBoolean()
 				? ForgeDirection.UP
 				: ForgeDirection.DOWN;
 		}
 
-		return randomHorizontal(
-			world
-		);
+		return randomHorizontal(world);
 	}
 
 	@Override
 	public int getDelay(World world) {
-
-		// slower movement than Jupiter
 		return 2;
 	}
 
@@ -86,49 +56,47 @@ public class BlockSaturnStorm extends BlockGasBase {
 		Entity entity
 	) {
 
-		// stronger atmospheric drag (denser gas = harder to correct motion)
-		entity.motionX *= 0.96D;
-		entity.motionY *= 0.985D;
-		entity.motionZ *= 0.96D;
+		// =========================
+		// BASE ATMOSPHERIC DRAG
+		// =========================
+		entity.motionX *= 0.97D;
+		entity.motionY *= 0.99D;
+		entity.motionZ *= 0.97D;
 
-		// ==============================
-		// SATURN JET STREAM FORCE
-		// consistent high-speed push
-		// ==============================
-		double windX =
-			(world.rand.nextDouble() - 0.5D) * 1.2D;
+		// =========================
+		// SATURN JET STREAM (MAIN FORCE)
+		// smooth, continuous flow
+		// =========================
+		double angle = (x * 0.01D) + (z * 0.01D);
 
-		double windZ =
-			(world.rand.nextDouble() - 0.5D) * 1.2D;
+		double jetStrength = 0.12D;
 
-		// apply stronger but smoother horizontal flow
-		entity.motionX += windX * 0.35D;
-		entity.motionZ += windZ * 0.35D;
+		entity.motionX += Math.cos(angle) * jetStrength;
+		entity.motionZ += Math.sin(angle) * jetStrength;
 
-		// very mild vertical shear
-		entity.motionY +=
-			(world.rand.nextDouble() - 0.5D)
-				* 0.04D;
+		// =========================
+		// SMALL TURBULENCE
+		// =========================
+		entity.motionX += (world.rand.nextDouble() - 0.5D) * 0.03D;
+		entity.motionZ += (world.rand.nextDouble() - 0.5D) * 0.03D;
+
+		entity.motionY += (world.rand.nextDouble() - 0.5D) * 0.02D;
 
 		entity.fallDistance = 0F;
 
-		// ==============================
-		// RARE STORM BURST (NOT COMMON)
-		// ==============================
-		if(world.rand.nextInt(180) == 0) {
+		// =========================
+		// RARE STORM BURST
+		// =========================
+		if(world.rand.nextInt(200) == 0) {
 
-			entity.motionX += windX * 1.5D;
-			entity.motionZ += windZ * 1.5D;
-			entity.motionY += 0.3D;
+			entity.motionX += Math.cos(angle) * 0.35D;
+			entity.motionZ += Math.sin(angle) * 0.35D;
+			entity.motionY += 0.15D;
 		}
 
-		double windAngle = Math.sin((x * 0.01) + (z * 0.01));
-		entity.motionX += Math.cos(windAngle) * 5;
-		entity.motionZ += Math.sin(windAngle) * 5;
-
-		// ==============================
-		// LIGHT DAMAGE = cold + pressure
-		// ==============================
+		// =========================
+		// COLD / PRESSURE DAMAGE
+		// =========================
 		if(entity instanceof EntityLivingBase
 			&& world.rand.nextInt(120) == 0) {
 
@@ -139,7 +107,9 @@ public class BlockSaturnStorm extends BlockGasBase {
 				);
 		}
 
-		// extremely rare electrical discharge
+		// =========================
+		// VERY RARE ELECTRICAL DISCHARGE
+		// =========================
 		if(entity instanceof EntityLivingBase
 			&& world.rand.nextInt(300) == 0) {
 
@@ -160,13 +130,7 @@ public class BlockSaturnStorm extends BlockGasBase {
 		Random rand
 	) {
 
-		super.randomDisplayTick(
-			world,
-			x,
-			y,
-			z,
-			rand
-		);
+		super.randomDisplayTick(world, x, y, z, rand);
 
 		EntityPlayer p =
 			world.getClosestPlayer(
@@ -179,7 +143,7 @@ public class BlockSaturnStorm extends BlockGasBase {
 		if(p == null)
 			return;
 
-		// pale atmospheric haze
+		// faint haze
 		if(rand.nextInt(60) == 0) {
 
 			world.spawnParticle(
@@ -193,7 +157,7 @@ public class BlockSaturnStorm extends BlockGasBase {
 			);
 		}
 
-		// occasional faint static spark
+		// rare static
 		if(rand.nextInt(240) == 0) {
 
 			world.spawnParticle(
