@@ -1329,6 +1329,10 @@ public class ModBlocks {
 	public static Block supercritical_hydrogen;
 	public static Block metallic_hydrogen;
 
+	//SATURN
+
+	public static Block saturn_storm;
+
 
 	public static Block rad_lava_block;
 	public static Fluid rad_lava_fluid;
@@ -2617,6 +2621,7 @@ public class ModBlocks {
 		cloud = new BlockCloud();
 		cloud_dense = new BlockDenseCloud();
 		jupiter_storm = new BlockJupiterStorm();
+		saturn_storm = new BlockSaturnStorm();
 		supercritical_hydrogen = new BlockSupercriticalHydrogen();
 		metallic_hydrogen = new BlockMetallicHydrogen();
 
@@ -3888,6 +3893,7 @@ public class ModBlocks {
 		GameRegistry.registerBlock(cloud, "cloud");
 		GameRegistry.registerBlock(cloud_dense, "cloud_dense");
 		GameRegistry.registerBlock(jupiter_storm, "jupiter_storm");
+		GameRegistry.registerBlock(saturn_storm, "saturn_storm");
 		GameRegistry.registerBlock(supercritical_hydrogen, "supercritical_hydrogen");
 		GameRegistry.registerBlock(metallic_hydrogen, "metallic_hydrogen");
 

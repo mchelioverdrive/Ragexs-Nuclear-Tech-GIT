@@ -261,7 +261,7 @@ public class SolarSystem {
 					),
 
 				//saturn
-				new CelestialBody("sarnus")
+				new CelestialBody("sarnus", SpaceConfig.saturnDimension, Body.SARNUS)
 					.withMassRadius(5.683e26F, 58_232)
 					.withSemiMajorAxis(1_433_530_000D)
 					.withInitialOrbitalAngle(50.08D)
@@ -446,7 +446,8 @@ public class SolarSystem {
 		IKE("ike"),
 		LAYTHE("laythe"),
 		SUN("kerbol"), //God I really need to change this to real names
-		JOOL("jool"); //pain
+		JOOL("jool"), //pain
+		SARNUS("sarnus");
 		// TEKTO("tekto");
 
 		public String name;

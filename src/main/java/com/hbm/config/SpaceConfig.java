@@ -30,6 +30,7 @@ public class SpaceConfig {
 	public static int tektoDimension = 25;
 	public static int jupiterDimension = 22;
 	public static int sunDimension = 103;
+	public static int saturnDimension = 102;
 
 
 	//BIOME:
@@ -55,6 +56,7 @@ public class SpaceConfig {
 	public static int ikeBiome = 127;
 	public static int sunBiome = 104;
 	public static int jupiterBiome = 105;
+	public static int saturnBiome = 106;
 	//public static int laytheFractureBiome = 106;
 
 
@@ -103,6 +105,13 @@ public class SpaceConfig {
 			"Jupiter dimension ID",
 			jupiterDimension
 		);
+		saturnDimension = CommonConfig.createConfigInt(
+			config,
+			CATEGORY_DIM,
+			"17.13_saturnDimension",
+			"Saturn dimension ID",
+			saturnDimension
+		);
 
 		final String CATEGORY_GENERAL = CommonConfig.CATEGORY_GENERAL;
 		maxProbeDistance = CommonConfig.createConfigInt(config, CATEGORY_GENERAL, "1.90_maxProbeDistance", "How far from the center of the dimension can probes generate landing coordinates", maxProbeDistance);
@@ -145,6 +154,13 @@ public class SpaceConfig {
 			"Jupiter Biome ID",
 			jupiterBiome
 		);
+		saturnBiome = CommonConfig.createConfigInt(
+			config,
+			CATEGORY_BIOME,
+			"16.27_saturnBiome",
+			"Saturn Biome ID",
+			saturnBiome
+		);
 		//laytheFractureBiome = CommonConfig.createConfigInt(
 		//	config,
 		//	CATEGORY_BIOME,
@@ -152,6 +168,104 @@ public class SpaceConfig {
 		//	"Europa Fracture Biome ID",
 		//	laytheFractureBiome
 		//);
+
+		java.util.Set<Integer> used =
+			new java.util.HashSet<Integer>();
+
+		moonDimension =
+			findFreeDimensionId(
+				moonDimension,
+				used
+			);
+
+		dunaDimension =
+			findFreeDimensionId(
+				dunaDimension,
+				used
+			);
+
+		ikeDimension =
+			findFreeDimensionId(
+				ikeDimension,
+				used
+			);
+
+		eveDimension =
+			findFreeDimensionId(
+				eveDimension,
+				used
+			);
+
+		dresDimension =
+			findFreeDimensionId(
+				dresDimension,
+				used
+			);
+
+		mohoDimension =
+			findFreeDimensionId(
+				mohoDimension,
+				used
+			);
+
+		laytheDimension =
+			findFreeDimensionId(
+				laytheDimension,
+				used
+			);
+
+		orbitDimension =
+			findFreeDimensionId(
+				orbitDimension,
+				used
+			);
+
+		tektoDimension =
+			findFreeDimensionId(
+				tektoDimension,
+				used
+			);
+
+		jupiterDimension =
+			findFreeDimensionId(
+				jupiterDimension,
+				used
+			);
+
+		sunDimension =
+			findFreeDimensionId(
+				sunDimension,
+				used
+			);
+
+		saturnDimension =
+			findFreeDimensionId(
+				saturnDimension,
+				used
+			);
+
+	}
+
+	public static int findFreeDimensionId(
+		int preferredId,
+		java.util.Set<Integer> used
+	) {
+
+		int id =
+			preferredId;
+
+		while(
+			used.contains(id)
+				||
+				net.minecraftforge.common.DimensionManager
+					.isDimensionRegistered(id)
+		) {
+			id++;
+		}
+
+		used.add(id);
+
+		return id;
 	}
 
 }
