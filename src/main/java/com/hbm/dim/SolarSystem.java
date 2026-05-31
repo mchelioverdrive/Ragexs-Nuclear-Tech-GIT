@@ -268,6 +268,7 @@ public class SolarSystem {
 					.withRotationalPeriod(38_362)
 					.withColor(1f, 0.6862f, 0.5882f)
 					.withAxialTilt(26.73F)
+					.withProcessingLevel(3)
 					.withTraits(
 						new CBT_Atmosphere(Fluids.HYDROGEN, 500D)
 							.and(Fluids.HELIUM4, 100D),
@@ -323,7 +324,7 @@ public class SolarSystem {
 				),
 
 				//Uranus (retrograde)
-				new CelestialBody("uranus")
+				new CelestialBody("uranus", SpaceConfig.uranusDimension, Body.URANUS)
 					.withMassRadius(8.681e25F, 25_362)
 					.withSemiMajorAxis(2_872_463_000D)
 					.withInitialOrbitalAngle(314.06D)
@@ -447,7 +448,8 @@ public class SolarSystem {
 		LAYTHE("laythe"),
 		SUN("kerbol"), //God I really need to change this to real names
 		JOOL("jool"), //pain
-		SARNUS("sarnus");
+		SARNUS("sarnus"),
+		URANUS("uranus");
 		// TEKTO("tekto");
 
 		public String name;

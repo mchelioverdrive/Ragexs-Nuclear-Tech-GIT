@@ -26,6 +26,7 @@ import com.hbm.dim.sun.WorldProviderSun;
 import com.hbm.dim.tekto.WorldGeneratorTekto;
 import com.hbm.dim.tekto.WorldProviderTekto;
 
+import com.hbm.dim.uranus.WorldProviderUranus;
 import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.world.WorldProvider;
 import net.minecraftforge.common.DimensionManager;
@@ -61,6 +62,7 @@ public class PlanetGen {
 		registerDimension(SpaceConfig.sunDimension, WorldProviderSun.class);
 		registerDimension(SpaceConfig.jupiterDimension, WorldProviderJupiter.class);
 		registerDimension(SpaceConfig.saturnDimension, WorldProviderSaturn.class);
+		registerDimension(SpaceConfig.uranusDimension, WorldProviderUranus.class);
 
     }
 

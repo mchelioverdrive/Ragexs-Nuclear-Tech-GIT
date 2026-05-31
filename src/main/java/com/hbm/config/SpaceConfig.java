@@ -31,6 +31,7 @@ public class SpaceConfig {
 	public static int jupiterDimension = 22;
 	public static int sunDimension = 103;
 	public static int saturnDimension = 102;
+	public static int uranusDimension = 107;
 
 
 	//BIOME:
@@ -57,6 +58,7 @@ public class SpaceConfig {
 	public static int sunBiome = 104;
 	public static int jupiterBiome = 105;
 	public static int saturnBiome = 106;
+	public static int uranusBiome = 108;
 	//public static int laytheFractureBiome = 106;
 
 
@@ -111,6 +113,13 @@ public class SpaceConfig {
 			"17.13_saturnDimension",
 			"Saturn dimension ID",
 			saturnDimension
+		);
+		uranusDimension = CommonConfig.createConfigInt(
+			config,
+			CATEGORY_DIM,
+			"17.14_uranusDimension",
+			"Uranus dimension ID",
+			uranusDimension
 		);
 
 		final String CATEGORY_GENERAL = CommonConfig.CATEGORY_GENERAL;
@@ -241,6 +250,12 @@ public class SpaceConfig {
 		saturnDimension =
 			findFreeDimensionId(
 				saturnDimension,
+				used
+			);
+
+		uranusDimension =
+			findFreeDimensionId(
+				uranusDimension,
 				used
 			);
 
