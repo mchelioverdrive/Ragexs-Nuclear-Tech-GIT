@@ -1336,6 +1336,9 @@ public class ModBlocks {
 	//URANUS
 	public static Block supercritical_water;
 	public static Block ammonia_water;
+	public static Block uranus_cloud;
+	public static Block uranus_cloud_dense;
+	public static Block uranus_atmosphere;
 
 
 
@@ -2634,6 +2637,12 @@ public class ModBlocks {
 			new BlockSupercriticalWater();
 		ammonia_water =
 			new BlockAmmoniaWater();
+		uranus_cloud =
+			new BlockUranusCloud();
+		uranus_cloud_dense =
+			new BlockUranusCloudDense();
+		uranus_atmosphere =
+			new BlockUranusAtmosphere();
 
 
 		rad_lava_fluid = new RadFluid().setLuminosity(15).setDensity(3000).setViscosity(3000).setTemperature(1300).setUnlocalizedName("rad_lava_fluid");
@@ -3915,6 +3924,18 @@ public class ModBlocks {
 		GameRegistry.registerBlock(
 			ammonia_water,
 			"ammonia_water"
+		);
+		GameRegistry.registerBlock(
+			uranus_cloud,
+			"uranus_cloud"
+		);
+		GameRegistry.registerBlock(
+			uranus_cloud_dense,
+			"uranus_cloud_dense"
+		);
+		GameRegistry.registerBlock(
+			uranus_atmosphere,
+			"uranus_atmosphere"
 		);
 
 		GameRegistry.registerBlock(corium_block, corium_block.getUnlocalizedName());

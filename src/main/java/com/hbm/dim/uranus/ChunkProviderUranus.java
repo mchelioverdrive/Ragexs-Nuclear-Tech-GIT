@@ -91,7 +91,7 @@ public class ChunkProviderUranus extends ChunkProviderCelestial {
 						if(hazeBand > 0.65D) {
 
 							buffer.blocks[index] =
-								Blocks.ice;
+								ModBlocks.uranus_cloud;
 
 						} else {
 
@@ -113,12 +113,12 @@ public class ChunkProviderUranus extends ChunkProviderCelestial {
 						if(cloudBand > 0.2D) {
 
 							buffer.blocks[index] =
-								Blocks.packed_ice;
+								ModBlocks.uranus_cloud_dense;
 
 						} else if(cloudBand > -0.4D) {
 
 							buffer.blocks[index] =
-								Blocks.ice;
+								ModBlocks.uranus_cloud;
 
 						} else {
 
@@ -134,7 +134,7 @@ public class ChunkProviderUranus extends ChunkProviderCelestial {
 					else if(y > 90) {
 
 						buffer.blocks[index] =
-							Blocks.packed_ice;
+							ModBlocks.uranus_atmosphere;
 					}
 
 					// ==========================
@@ -177,7 +177,7 @@ public class ChunkProviderUranus extends ChunkProviderCelestial {
 						} else {
 
 							buffer.blocks[index] =
-								Blocks.packed_ice;
+								ModBlocks.supercritical_water;
 						}
 					}
 
@@ -220,7 +220,7 @@ public class ChunkProviderUranus extends ChunkProviderCelestial {
 							columnIndexBase + y;
 
 						buffer.blocks[index] =
-							Blocks.ice;
+							ModBlocks.uranus_cloud_dense;
 					}
 				}
 			}
