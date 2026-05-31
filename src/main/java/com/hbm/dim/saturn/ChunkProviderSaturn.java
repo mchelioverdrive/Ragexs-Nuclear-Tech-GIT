@@ -38,12 +38,11 @@ public class ChunkProviderSaturn extends ChunkProviderCelestial {
 				int worldZ =
 					z * 16 + bz;
 
-				// Uranus is smooth and calm
-				// subtle waviness only
+				// smoother, calmer cloud variation
 				int cloudTop =
-					170 +
-						(int)(Math.sin(worldX * 0.003D) * 4) +
-						(int)(Math.cos(worldZ * 0.0035D) * 5);
+					185 +
+						(int)(Math.sin(worldZ * 0.004D) * 6) +
+						(int)(Math.cos(worldX * 0.005D) * 5);
 
 				int columnIndexBase =
 					(bx * 16 + bz) * 256;
@@ -54,36 +53,30 @@ public class ChunkProviderSaturn extends ChunkProviderCelestial {
 						columnIndexBase + y;
 
 					// ==========================
-					// THIN UPPER HAZE
-					// methane haze
+					// THIN UPPER ATMOSPHERE
+					// sparse haze
 					// ==========================
-					if(y > cloudTop + 40) {
+					if(y > cloudTop + 35) {
 
-						if(rand.nextInt(18) == 0) {
-
+						if(rand.nextInt(20) == 0) {
 							buffer.blocks[index] =
-								Blocks.ice;
-
+								ModBlocks.cloud;
 						} else {
-
 							buffer.blocks[index] =
 								Blocks.air;
 						}
 					}
 
 					// ==========================
-					// UPPER CLOUD LAYER
-					// sparse wispy clouds
+					// AMMONIA ICE CLOUDS
+					// pale upper deck
 					// ==========================
-					else if(y > cloudTop + 15) {
+					else if(y > cloudTop + 10) {
 
-						if(rand.nextInt(5) == 0) {
-
+						if(rand.nextInt(4) == 0) {
 							buffer.blocks[index] =
-								Blocks.ice;
-
+								ModBlocks.cloud;
 						} else {
-
 							buffer.blocks[index] =
 								Blocks.air;
 						}
@@ -91,71 +84,67 @@ public class ChunkProviderSaturn extends ChunkProviderCelestial {
 
 					// ==========================
 					// MAIN CLOUD DECK
-					// calm methane atmosphere
+					// thick but softer than Jupiter
 					// ==========================
-					else if(y > cloudTop - 12) {
+					else if(y > cloudTop - 15) {
 
-						if(rand.nextInt(7) == 0) {
-
+						if(rand.nextInt(6) == 0) {
 							buffer.blocks[index] =
-								Blocks.ice;
-
+								ModBlocks.cloud;
 						} else {
-
 							buffer.blocks[index] =
-								Blocks.packed_ice;
+								ModBlocks.cloud_dense;
 						}
 					}
 
 					// ==========================
 					// DEEP ATMOSPHERE
-					// compressed volatile fluids
+					// dense hydrogen/helium
 					// ==========================
-					else if(y > 85) {
-
-						buffer.blocks[index] =
-							Blocks.packed_ice;
-					}
-
-					// ==========================
-					// SUPERCRITICAL ICY MANTLE
-					// water/ammonia/methane
-					// "ice giant" interior
-					// ==========================
-					else if(y > 35) {
+					else if(y > 120) {
 
 						if(rand.nextInt(8) == 0) {
 
 							buffer.blocks[index] =
-								Blocks.ice;
+								ModBlocks.saturn_storm;
 
 						} else {
 
 							buffer.blocks[index] =
-								Blocks.packed_ice;
+								ModBlocks.cloud_dense;
 						}
 					}
 
 					// ==========================
-					// COMPRESSED CORE
-					// dense deep interior
+					// HELIUM RAIN ZONE
+					// speculative layer
+					// ==========================
+					else if(y > 60) {
+
+						buffer.blocks[index] =
+							ModBlocks.supercritical_hydrogen;
+					}
+
+					// ==========================
+					// METALLIC HYDROGEN
+					// deep interior
 					// ==========================
 					else {
 
 						buffer.blocks[index] =
-							Blocks.packed_ice;
+							ModBlocks.metallic_hydrogen;
 					}
 				}
 
 				// ==========================
-				// RARE STORM COLUMNS
-				// Uranus is very quiet
+				// OCCASIONAL STORM COLUMNS
+				// MUCH rarer than Jupiter
 				// ==========================
 
-				if(rand.nextInt(700) == 0) {
+				if(rand.nextInt(350) == 0) {
 
 					int stormHeight =
-						10 + rand.nextInt(25);
+						15 + rand.nextInt(30);
 
 					for(int sy = 0; sy < stormHeight; sy++) {
 
@@ -169,7 +158,7 @@ public class ChunkProviderSaturn extends ChunkProviderCelestial {
 							columnIndexBase + y;
 
 						buffer.blocks[index] =
-							Blocks.ice;
+							ModBlocks.saturn_storm;
 					}
 				}
 			}
