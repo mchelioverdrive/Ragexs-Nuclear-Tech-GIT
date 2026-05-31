@@ -86,58 +86,62 @@ public class BlockSaturnStorm extends BlockGasBase {
 		Entity entity
 	) {
 
-		// thick atmospheric drag
-		entity.motionX *= 0.95D;
-		entity.motionY *= 0.97D;
-		entity.motionZ *= 0.95D;
+		// stronger atmospheric drag (denser gas = harder to correct motion)
+		entity.motionX *= 0.96D;
+		entity.motionY *= 0.985D;
+		entity.motionZ *= 0.96D;
 
-		// softer wind shear
-		entity.motionX +=
-			(world.rand.nextDouble() - 0.5D)
-				* 0.22D;
+		// ==============================
+		// SATURN JET STREAM FORCE
+		// consistent high-speed push
+		// ==============================
+		double windX =
+			(world.rand.nextDouble() - 0.5D) * 1.2D;
 
-		entity.motionZ +=
-			(world.rand.nextDouble() - 0.5D)
-				* 0.22D;
+		double windZ =
+			(world.rand.nextDouble() - 0.5D) * 1.2D;
 
-		// slight buoyancy/turbulence
+		// apply stronger but smoother horizontal flow
+		entity.motionX += windX * 0.35D;
+		entity.motionZ += windZ * 0.35D;
+
+		// very mild vertical shear
 		entity.motionY +=
-			(world.rand.nextDouble() - 0.45D)
-				* 0.08D;
+			(world.rand.nextDouble() - 0.5D)
+				* 0.04D;
 
-		entity.fallDistance =
-			0F;
+		entity.fallDistance = 0F;
 
-		// rare strong gust
-		if(world.rand.nextInt(120) == 0) {
+		// ==============================
+		// RARE STORM BURST (NOT COMMON)
+		// ==============================
+		if(world.rand.nextInt(180) == 0) {
 
-			entity.motionX +=
-				(world.rand.nextDouble() - 0.5D)
-					* 1.4D;
-
-			entity.motionY +=
-				world.rand.nextDouble()
-					* 0.4D;
-
-			entity.motionZ +=
-				(world.rand.nextDouble() - 0.5D)
-					* 1.4D;
+			entity.motionX += windX * 1.5D;
+			entity.motionZ += windZ * 1.5D;
+			entity.motionY += 0.3D;
 		}
 
-		// freezing damage
+		double windAngle = Math.sin((x * 0.01) + (z * 0.01));
+		entity.motionX += Math.cos(windAngle) * 5;
+		entity.motionZ += Math.sin(windAngle) * 5;
+
+		// ==============================
+		// LIGHT DAMAGE = cold + pressure
+		// ==============================
 		if(entity instanceof EntityLivingBase
-			&& world.rand.nextInt(80) == 0) {
+			&& world.rand.nextInt(120) == 0) {
 
 			((EntityLivingBase)entity)
 				.attackEntityFrom(
-					DamageSource.drown, //freezing
+					DamageSource.drown,
 					1.0F
 				);
 		}
 
 		// extremely rare electrical discharge
 		if(entity instanceof EntityLivingBase
-			&& world.rand.nextInt(250) == 0) {
+			&& world.rand.nextInt(300) == 0) {
 
 			((EntityLivingBase)entity)
 				.attackEntityFrom(
