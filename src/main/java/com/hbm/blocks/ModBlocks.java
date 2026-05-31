@@ -1333,6 +1333,11 @@ public class ModBlocks {
 
 	public static Block saturn_storm;
 
+	//URANUS
+	public static Block supercritical_water;
+	public static Block ammonia_water;
+
+
 
 	public static Block rad_lava_block;
 	public static Fluid rad_lava_fluid;
@@ -2625,6 +2630,11 @@ public class ModBlocks {
 		supercritical_hydrogen = new BlockSupercriticalHydrogen();
 		metallic_hydrogen = new BlockMetallicHydrogen();
 
+		supercritical_water =
+			new BlockSupercriticalWater();
+		ammonia_water =
+			new BlockAmmoniaWater();
+
 
 		rad_lava_fluid = new RadFluid().setLuminosity(15).setDensity(3000).setViscosity(3000).setTemperature(1300).setUnlocalizedName("rad_lava_fluid");
 		FluidRegistry.registerFluid(rad_lava_fluid);
@@ -3896,6 +3906,16 @@ public class ModBlocks {
 		GameRegistry.registerBlock(saturn_storm, "saturn_storm");
 		GameRegistry.registerBlock(supercritical_hydrogen, "supercritical_hydrogen");
 		GameRegistry.registerBlock(metallic_hydrogen, "metallic_hydrogen");
+
+		//URANUS
+		GameRegistry.registerBlock(
+			supercritical_water,
+			"supercritical_water"
+		);
+		GameRegistry.registerBlock(
+			ammonia_water,
+			"ammonia_water"
+		);
 
 		GameRegistry.registerBlock(corium_block, corium_block.getUnlocalizedName());
 		GameRegistry.registerBlock(volcanic_lava_block, volcanic_lava_block.getUnlocalizedName());
