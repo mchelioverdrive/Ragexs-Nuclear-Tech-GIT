@@ -201,45 +201,38 @@ public class WorldProviderOrbit extends WorldProvider {
 	public float getSunBrightness(float partialTicks) {
 
 		CelestialBody orbiting = OrbitalStation.clientStation.orbiting;
-
 		float solarPower = getSunPower();
 
-		// orbiting star → full direct exposure
 		if (orbiting.parent == null) {
 			return MathHelper.clamp_float(solarPower, 0F, 1F);
 		}
 
-		List<SolarSystem.AstroMetric> metrics =
-			SolarSystem.calculateMetricsFromSatellite(
-				worldObj,
-				partialTicks,
-				orbiting,
-				0
-			);
+		CelestialBody star = orbiting.getStar();
 
-		// find ANY body that represents the star influence
-		SolarSystem.AstroMetric bestSun = null;
-		double bestDist = Double.MAX_VALUE;
+		// get system-space position of observer (NOT metrics)
+		Vec3 observerPos = SolarSystem.calculatePosition(orbiting, 0, SolarSystem.getCelestialTicks(worldObj, partialTicks));
 
-		for (SolarSystem.AstroMetric m : metrics) {
+		// star is always at origin in your system model
+		Vec3 toSun = Vec3.createVectorHelper(
+			-observerPos.xCoord,
+			-observerPos.yCoord,
+			-observerPos.zCoord
+		);
 
-			if (m.body != orbiting.getStar())
-				continue;
+		double dist = toSun.lengthVector();
 
-			if (m.distance < bestDist) {
-				bestDist = m.distance;
-				bestSun = m;
-			}
+		if (dist < 1e-6) {
+			return solarPower;
 		}
 
-		if (bestSun == null) {
-			return solarPower; // safe fallback (NOT 0)
-		}
+		toSun = toSun.normalize();
 
-		// THIS is the only meaningful value in your system
-		float phase = (float) bestSun.phase;
+		// up vector assumption (orbital plane normal)
+		Vec3 up = Vec3.createVectorHelper(0, 0, 1);
 
-		float brightness = solarPower * (1.0F - phase);
+		double dot = Math.max(0.0, toSun.dotProduct(up));
+
+		float brightness = (float)(solarPower * dot);
 
 		return MathHelper.clamp_float(brightness, 0F, 1F);
 	}

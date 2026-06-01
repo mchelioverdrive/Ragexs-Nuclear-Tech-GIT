@@ -681,7 +681,7 @@ public class SolarSystem {
 		return Vec3.createVectorHelper(x, y, z);
 	}
 
-	private static double getCelestialTicks(World world, float partialTicks) {
+	public static double getCelestialTicks(World world, float partialTicks) {
 		return (double)WorldProviderCelestial.getMasterWorldTime(world) + partialTicks;
 	}
 
@@ -712,7 +712,7 @@ public class SolarSystem {
 	}
 
 	// Same but for an arbitrary satellite around a body
-	private static Vec3 calculatePosition(CelestialBody body, double altitude, double ticks) {
+	public static Vec3 calculatePosition(CelestialBody body, double altitude, double ticks) {
 		double orbitalRadiusMeters =
 			(body.radiusKm + altitude) * 1000.0;
 
