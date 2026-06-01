@@ -6,6 +6,7 @@ import com.hbm.explosion.vanillant.ExplosionVNT;
 import com.hbm.explosion.vanillant.standard.BlockAllocatorStandard;
 import com.hbm.explosion.vanillant.standard.BlockProcessorStandard;
 import com.hbm.main.MainRegistry;
+import com.hbm.saveddata.BombSiteSavedData;
 import com.hbm.tileentity.bomb.TileEntityCharge;
 import cpw.mods.fml.client.registry.RenderingRegistry;
 import net.minecraft.entity.EntityLivingBase;
@@ -13,11 +14,30 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
+import net.minecraftforge.common.util.ForgeDirection;
 import org.apache.logging.log4j.Level;
 
 import java.util.List;
 
 public class BlockChargeC4CSGO extends BlockChargeC4 {
+
+	@Override
+	public boolean canPlaceBlockOnSide(World world, int x, int y, int z, int side) {
+		return isInBombSiteForSide(world, x, y, z, side) && super.canPlaceBlockOnSide(world, x, y, z, side);
+	}
+
+	private boolean isInBombSiteForSide(World world, int x, int y, int z, int side) {
+		if(world.isRemote) {
+			return true;
+		}
+
+		if(BombSiteSavedData.isBombSite(world, x, y, z)) {
+			return true;
+		}
+
+		ForgeDirection dir = ForgeDirection.getOrientation(side);
+		return BombSiteSavedData.isBombSite(world, x - dir.offsetX, y - dir.offsetY, z - dir.offsetZ);
+	}
 
 	@Override
 	public BombReturnCode explode(World world, int x, int y, int z) {
@@ -50,6 +70,7 @@ public class BlockChargeC4CSGO extends BlockChargeC4 {
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		super.addInformation(stack, player, list, ext);
 		list.add(EnumChatFormatting.BLUE + "Does not drop blocks.");
+		list.add(EnumChatFormatting.RED + "Can only be placed inside defined bomb sites.");
 	}
 	@Override
 	public void onBlockPlacedBy(World world, int x, int y, int z, EntityLivingBase player, ItemStack itemStack) {
