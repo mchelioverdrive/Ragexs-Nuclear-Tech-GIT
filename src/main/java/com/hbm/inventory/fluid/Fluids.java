@@ -915,57 +915,154 @@ public class Fluids {
 		HOTCRACKOIL_DS.addTraits(new FT_Coolable(CRACKOIL_DS, 1, 1, 10).setEff(CoolingType.HEATEXCHANGER, 1.0D));
 
 		// Generic reactor coolant is treated as borated light water: strong moderation, good heat transfer, and a realistic PWR outlet temperature.
-		COOLANT.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, 0.75D).setEff(HeatingType.HEATEXCHANGER, 0.85D).setEff(HeatingType.PWR, 0.90D).setEff(HeatingType.ICF, 0.60D).addStep(320, 1, COOLANT_HOT, 1), new FT_PWRModerator(1.08D));
-		COOLANT_HOT.addTraits(new FT_Coolable(COOLANT, 1, 1, 320).setEff(CoolingType.HEATEXCHANGER, 0.85D));
+		COOLANT.addTraits(
+			new FT_Heatable()
+				.setEff(HeatingType.BOILER, 0.75D)
+				.setEff(HeatingType.HEATEXCHANGER, 0.85D)
+				.setEff(HeatingType.PWR, 0.90D)
+				.setEff(HeatingType.ICF, 0.60D)
+				.addStep(320, 1, COOLANT_HOT, 1),
+			new FT_PWRModerator(1.08D)
+		);
 
-		MUG.addTraits(new FT_Heatable().setEff(HeatingType.HEATEXCHANGER, 1.0D).setEff(HeatingType.PWR, 1.0D).setEff(HeatingType.ICF, 1.25D).addStep(400, 1, MUG_HOT, 1), new FT_PWRModerator(1.15D));
-		MUG_HOT.addTraits(new FT_Coolable(MUG, 1, 1, 400).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+		COOLANT_HOT.addTraits(
+			new FT_Coolable(COOLANT, 1, 1, 320)
+				.setEff(CoolingType.HEATEXCHANGER, 0.85D)
+		);
 
-		BLOOD.addTraits(new FT_Heatable().setEff(HeatingType.HEATEXCHANGER, 1.0D).setEff(HeatingType.ICF, 1.25D).addStep(500, 1, BLOOD_HOT, 1));
-		BLOOD_HOT.addTraits(new FT_Coolable(BLOOD, 1, 1, 500).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+		MUG.addTraits(
+			new FT_Heatable()
+				.setEff(HeatingType.HEATEXCHANGER, 0.02D)
+				.setEff(HeatingType.PWR, 0.0D)
+				.addStep(100, 1, MUG_HOT, 1),
 
-		HYDROGEN.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 1.0D).addStep(300, 1, SUPERHEATED_HYDROGEN, 1));
+			new FT_PWRModerator(-0.25D)
+		);
+		MUG_HOT.addTraits(
+			new FT_Coolable(MUG, 1, 1, 400)
+				.setEff(CoolingType.HEATEXCHANGER, 0.02D)
+		);
+		//bazinga HAHAHAHAHAHA YOUNG SHELDON IS SO FUCKING FUNNY HAHHAHAHAHAHA HE SAID THE LINE FOR THE 8000TH TIME!!
+
+		BLOOD.addTraits(
+			new FT_Heatable()
+				.setEff(HeatingType.HEATEXCHANGER, 0.15D)
+				.setEff(HeatingType.ICF, 0.0D)
+				.addStep(315, 1, BLOOD_HOT, 1)
+		);
+
+		BLOOD_HOT.addTraits(
+			new FT_Coolable(BLOOD, 1, 1, 500)
+				.setEff(CoolingType.HEATEXCHANGER, 0.05D)
+		);
+
+		HYDROGEN.addTraits(
+			new FT_Heatable()
+				.setEff(HeatingType.PWR, 0.0D)
+				.addStep(300, 1, SUPERHEATED_HYDROGEN, 1)
+		);
 		SUPERHEATED_HYDROGEN.addTraits(new FT_Coolable(HYDROGEN, 1, 1, 300));
 
-		WATZ.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 1.0D).addStep(300, 1, GAS_WATZ, 1), new FT_PWRModerator(1.40D));
-		GAS_WATZ.addTraits(new FT_Coolable(WATZ, 1, 1, 300));
+		WATZ.addTraits(
+			new FT_Heatable()
+				.setEff(HeatingType.PWR, 0.0D)
+				.addStep(300, 1, GAS_WATZ, 1),
+			new FT_PWRModerator(0.0D)
+		);
+		WASTEGAS.addTraits(new FT_Coolable(WASTEFLUID, 1, 1, 300));
 
 		//raffinate?
 
-		WASTEFLUID.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 1.0D).addStep(300, 1, WASTEGAS, 1), new FT_PWRModerator(1.20D));
-		WASTEGAS.addTraits(new FT_Coolable(WATZ, 1, 1, 300));
+		WASTEFLUID.addTraits(
+			new FT_Heatable()
+				.setEff(HeatingType.PWR, 0.0D)
+				.addStep(300, 1, WASTEGAS, 1),
+			new FT_PWRModerator(-0.25D)
+		);
+		//WASTEGAS.addTraits(new FT_Coolable(WATZ, 1, 1, 300));
 
-		URANIUM_BROMIDE.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 1.0D).addStep(300, 1, GASEOUS_URANIUM_BROMIDE, 1), new FT_PWRModerator(1.75D));
-		GASEOUS_URANIUM_BROMIDE.addTraits(new FT_Coolable(URANIUM_BROMIDE, 1, 1, 300));
+		URANIUM_BROMIDE.addTraits(
+			new FT_Heatable().setEff(HeatingType.PWR, 0.0D).addStep(800, 1, GASEOUS_URANIUM_BROMIDE, 1),
+			new FT_PWRModerator(-0.50D)
+		);
+		GASEOUS_URANIUM_BROMIDE.addTraits(new FT_Coolable(URANIUM_BROMIDE, 1, 1, 800));
 
-		PLUTONIUM_BROMIDE.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 1.0D).addStep(300, 1, GASEOUS_PLUTONIUM_BROMIDE, 1), new FT_PWRModerator(2.0D));
-		GASEOUS_PLUTONIUM_BROMIDE.addTraits(new FT_Coolable(PLUTONIUM_BROMIDE, 1, 1, 300));
 
+		PLUTONIUM_BROMIDE.addTraits(
+			new FT_Heatable().setEff(HeatingType.PWR, 0.0D).addStep(800, 1, GASEOUS_PLUTONIUM_BROMIDE, 1),
+			new FT_PWRModerator(-0.75D)
+		);
+		GASEOUS_PLUTONIUM_BROMIDE.addTraits(new FT_Coolable(PLUTONIUM_BROMIDE, 1, 1, 800));
+
+		//get the fuck out of this mod plz kthx
 		SCHRABIDIUM_BROMIDE.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 1.0D).addStep(300, 1, GASEOUS_SCHRABIDIUM_BROMIDE, 1), new FT_PWRModerator(2.50D));
 		GASEOUS_SCHRABIDIUM_BROMIDE.addTraits(new FT_Coolable(SCHRABIDIUM_BROMIDE, 1, 1, 300));
 
-		THORIUM_BROMIDE.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 1.0D).addStep(300, 1, GASEOUS_THORIUM_BROMIDE, 1), new FT_PWRModerator(1.50D));
-		GASEOUS_THORIUM_BROMIDE.addTraits(new FT_Coolable(THORIUM_BROMIDE, 1, 1, 300));
+		THORIUM_BROMIDE.addTraits(
+			new FT_Heatable().setEff(HeatingType.PWR, 0.0D).addStep(800, 1, GASEOUS_THORIUM_BROMIDE, 1),
+			new FT_PWRModerator(-0.35D)
+		);
+		GASEOUS_THORIUM_BROMIDE.addTraits(new FT_Coolable(THORIUM_BROMIDE, 1, 1, 800));
 
-		HEAVYWATER.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 0.80D).addStep(320, 1, HEAVYWATER_HOT, 1), new FT_PWRModerator(1.35D));
-		HEAVYWATER_HOT.addTraits(new FT_Coolable(HEAVYWATER, 1, 1, 320).setEff(CoolingType.HEATEXCHANGER, 0.80D));
+		HEAVYWATER.addTraits(
+			new FT_Heatable()
+				.setEff(HeatingType.PWR, 0.75D)
+				.addStep(320, 1, HEAVYWATER_HOT, 1),
+			new FT_PWRModerator(1.35D)
+		);
+		HEAVYWATER_HOT.addTraits(
+			new FT_Coolable(HEAVYWATER, 1, 1, 320)
+				.setEff(CoolingType.HEATEXCHANGER, 0.75D)
+		);
 
 		// Helium is the PBR gas loop: chemically inert but volumetrically weaker than liquid coolants, so the PBR has to move a lot of it.
-		HELIUM4.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 0.45D).addStep(700, 1, HELIUM4_HOT, 1));
-		HELIUM4_HOT.addTraits(new FT_Coolable(HELIUM4, 1, 1, 700).setEff(CoolingType.HEATEXCHANGER, 0.45D));
+		HELIUM4.addTraits(
+			new FT_Heatable()
+				.setEff(HeatingType.PWR, 0.0D)
+				.addStep(900, 1, HELIUM4_HOT, 1)
+		);
+		HELIUM4_HOT.addTraits(
+			new FT_Coolable(HELIUM4, 1, 1, 900)
+				.setEff(CoolingType.HEATEXCHANGER, 0.35D)
+		);
 
-		SODIUM.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 2.0D).setEff(HeatingType.ICF, 2.5D).addStep(180, 1, SODIUM_HOT, 1));
-		//SODIUM_HYDROXIDE.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 1.0D).addStep(400, 1, SODIUM_HOT, 1));
-		//idk shit about the PWR so I'm gonna leave this alone for now
-		SODIUM_HOT.addTraits(new FT_Coolable(SODIUM, 1, 1, 180).setEff(CoolingType.HEATEXCHANGER, 1.0D));
-		/* Fuck you, this is final now. If you had any concerns, you could have told me like a normal person instead of shitting on in-dev values that change every other day */
-		LEAD.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 0.65D).setEff(HeatingType.ICF, 3.5D).addStep(320, 1, LEAD_HOT, 1), new FT_PWRModerator(0.72D));
-		/* schizo rambles to himself and seethes at the walls around him or something  */
-		LEAD_HOT.addTraits(new FT_Coolable(LEAD, 1, 1, 320).setEff(CoolingType.HEATEXCHANGER, 0.9D));
-		/* Maybe shittalking me in some corner where you thought I wouldn't listen was not that bright of an idea afterall? */
+		SODIUM.addTraits(
+			new FT_Heatable()
+				.setEff(HeatingType.PWR, 0.0D)
+				.setEff(HeatingType.ICF, 1.0D)
+				.addStep(500, 1, SODIUM_HOT, 1)
+		);
 
-		THORIUM_SALT.addTraits(new FT_Heatable().setEff(HeatingType.PWR, 1.0D).addStep(400, 1, THORIUM_SALT_HOT, 1), new FT_PWRModerator(2.5D));
-		THORIUM_SALT_HOT.addTraits(new FT_Coolable(THORIUM_SALT_DEPLETED, 1, 1, 400).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+		SODIUM_HOT.addTraits(
+			new FT_Coolable(SODIUM, 1, 1, 500)
+				.setEff(CoolingType.HEATEXCHANGER, 1.6D)
+		);
+		//wa wa wa someone asked me for a feature t.bobcat 2016 whenever I asked him about mcheli compat, no FUCK you.
+		LEAD.addTraits(
+			new FT_Heatable()
+				.setEff(HeatingType.PWR, 0.0D)
+				.setEff(HeatingType.ICF, 1.5D)
+				.addStep(550, 1, LEAD_HOT, 1),
+			new FT_PWRModerator(0.0D)
+		);
+
+		LEAD_HOT.addTraits(
+			new FT_Coolable(LEAD, 1, 1, 550)
+				.setEff(CoolingType.HEATEXCHANGER, 1.2D)
+		);
+
+		THORIUM_SALT.addTraits(
+			new FT_Heatable()
+				.setEff(HeatingType.PWR, 0.0D)
+				.addStep(900, 1, THORIUM_SALT_HOT, 1),
+			new FT_PWRModerator(-0.25D)
+		);
+		THORIUM_SALT_HOT.addTraits(
+			new FT_Coolable(THORIUM_SALT_DEPLETED, 1, 1, 900)
+				.setEff(CoolingType.HEATEXCHANGER, 1.1D)
+		);
+		//how about we stop being a crybaby ass motherfucker and actually develop the NUCLEAR TECH MOD yeah?
+
 
 		if(idMapping.size() != metaOrder.size()) {
 			throw new IllegalStateException("A severe error has occoured during NTM's fluid registering process! The MetaOrder and Mappings are inconsistent! Mapping size: " + idMapping.size()+ " / MetaOrder size: " + metaOrder.size());
