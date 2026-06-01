@@ -31,20 +31,22 @@ public class ItemICFPellet extends Item {
 	
 	public static enum EnumICFFuel {
 
-		HYDROGEN(	0x4040FF,	1.00D,	0.85D,	1.00D),
-		DEUTERIUM(	0x2828CB,	1.25D,	1.00D,	1.00D),
-		TRITIUM(	0x000092,	1.50D,	1.00D,	1.05D),
-		HELIUM3(	0xFFF09F,	1.75D,	1.00D,	1.25D),
-		HELIUM4(	0xFF9B60,	2.00D,	1.00D,	1.50D),
-		LITHIUM(	0xE9E9E9,	1.25D,	0.85D,	2.00D),
-		BERYLLIUM(	0xA79D80,	2.00D,	1.00D,	2.50D),
-		BORON(		0x697F89,	3.00D,	0.50D,	3.50D),
-		CARBON(		0x454545,	2.00D,	1.00D,	5.00D),
-		OXYGEN(		0xB4E2FF,	1.25D,	1.50D,	7.50D),
-		SODIUM(		0xDFE4E7,	3.00D,	0.75D,	8.75D),
+		// Values are gamified around actual fusion pain points: D-T is the easiest high-yield pellet,
+		// D-D / D-He3 need more driver energy, and heavier aneutronic fuels are intentionally punishing.
+		HYDROGEN(	0x4040FF,	0.25D,	0.65D,	6.00D),
+		DEUTERIUM(	0x2828CB,	1.10D,	1.00D,	1.35D),
+		TRITIUM(	0x000092,	2.40D,	1.20D,	0.80D),
+		HELIUM3(	0xFFF09F,	1.85D,	1.00D,	2.75D),
+		HELIUM4(	0xFF9B60,	0.35D,	0.80D,	8.00D),
+		LITHIUM(	0xE9E9E9,	0.80D,	0.85D,	4.00D),
+		BERYLLIUM(	0xA79D80,	0.70D,	0.90D,	5.00D),
+		BORON(		0x697F89,	1.60D,	0.55D,	9.00D),
+		CARBON(		0x454545,	0.45D,	0.80D,	11.0D),
+		OXYGEN(		0xB4E2FF,	0.35D,	1.25D,	13.0D),
+		SODIUM(		0xDFE4E7,	0.25D,	0.70D,	15.0D),
 		//aluminium, silicon, phosphorus
-		CHLORINE(	0xDAE598,	2.50D,	1.00D,	10.0D),
-		CALCIUM(	0xD2C7A9,	3.00D,	1.00D,	12.5D),
+		CHLORINE(	0xDAE598,	0.20D,	0.75D,	17.0D),
+		CALCIUM(	0xD2C7A9,	0.18D,	0.80D,	20.0D),
 		//titanium
 		;
 		

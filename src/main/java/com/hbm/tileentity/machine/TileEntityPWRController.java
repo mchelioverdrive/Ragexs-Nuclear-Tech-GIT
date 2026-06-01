@@ -47,10 +47,10 @@ public class TileEntityPWRController extends TileEntityMachineBase implements IG
 
 	public FluidTank[] tanks;
 	public long coreHeat;
-	public static final long coreHeatCapacityBase = 10_000_000;
-	public long coreHeatCapacity = 10_000_000;
+	public static final long coreHeatCapacityBase = 12_000_000;
+	public long coreHeatCapacity = 12_000_000;
 	public long hullHeat;
-	public static final long hullHeatCapacityBase = 10_000_000;
+	public static final long hullHeatCapacityBase = 12_000_000;
 	public double flux;
 
 	public double rodLevel = 100;
@@ -206,8 +206,9 @@ public class TileEntityPWRController extends TileEntityMachineBase implements IG
 					}
 					double diff = this.rodLevel - this.rodTarget;
 					if(diff < 1 && diff > -1) this.rodLevel = this.rodTarget;
-					if(this.rodTarget > this.rodLevel) this.rodLevel++;
-					if(this.rodTarget < this.rodLevel) this.rodLevel--;
+					// PWR control banks move deliberately; slower motion gives coolant/flux transients time to matter.
+					if(this.rodTarget > this.rodLevel) this.rodLevel += 0.5D;
+					if(this.rodTarget < this.rodLevel) this.rodLevel -= 0.5D;
 
 					int newFlux = this.sourceCount * 20;
 
@@ -253,6 +254,11 @@ public class TileEntityPWRController extends TileEntityMachineBase implements IG
 					this.hullHeat -= (hullHeat - averageCoreHeat) * coreCoolingApproachNum;
 
 					updateCoolant();
+
+					// A pressurized core without coolant keeps heating the hull; leave a small passive loss for gameplay stability.
+					if(tanks[0].getFill() <= 0) {
+						this.hullHeat += this.coreHeat * 0.002D;
+					}
 
 					this.coreHeat *= 0.999D;
 					this.hullHeat *= 0.999D;

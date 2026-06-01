@@ -53,6 +53,7 @@ public class ItemPWRFuel extends ItemEnumMulti {
 		private EnumPWRFuel(double heatEmission, Function function, double yield) {
 			this.heatEmission = heatEmission;
 			this.function = function;
+			this.yield = yield;
 		}
 
 		private EnumPWRFuel(double heatEmission, Function function) {
