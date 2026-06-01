@@ -2,8 +2,6 @@ package com.hbm.dim.saturn;
 
 import com.hbm.dim.WorldChunkManagerCelestial;
 import com.hbm.dim.WorldProviderCelestial;
-import com.hbm.dim.jupiter.ChunkProviderJupiter;
-import com.hbm.dim.jupiter.GenLayerJupiter.GenLayerJupiterBiomes;
 import com.hbm.dim.saturn.GenLayerSaturn.GenLayerSaturnBiomes;
 import com.hbm.potion.HbmPotion;
 import cpw.mods.fml.relauncher.Side;
@@ -11,6 +9,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.layer.GenLayer;
@@ -86,15 +85,33 @@ public class WorldProviderSaturn extends WorldProviderCelestial {
 				amp = 0;
 			}
 
-			if(amp > 0) {
+			if(amp > 0 && player.ticksExisted % 20 == 0) {
 
 				player.addPotionEffect(
 					new PotionEffect(
 						HbmPotion.radiation.id,
-						20,
+						40,
 						amp
 					)
 				);
+			}
+
+			if(player.ticksExisted % 20 == 0) {
+
+				if(player.posY <= 58) {
+
+					player.attackEntityFrom(DamageSource.generic, 8.0F);
+				}
+
+				else if(player.posY <= 118) {
+
+					player.attackEntityFrom(DamageSource.generic, 3.0F);
+				}
+
+				else if(player.posY <= 170) {
+
+					player.attackEntityFrom(DamageSource.drown, 1.0F);
+				}
 			}
 		}
 	}
@@ -136,15 +153,15 @@ public class WorldProviderSaturn extends WorldProviderCelestial {
 		);
 	}
 	@Override
-	@SideOnly(Side.CLIENT) //TODO check if right
+	@SideOnly(Side.CLIENT)
 	public float getSunBrightness(float partialTicks) {
-		return 0.08F;
+		return 0.014F;
 	}
 
 	@Override
 	public float calculateCelestialAngle(long worldTime, float partialTicks) {
 
-		long dayLength = 10500L;
+		long dayLength = 10700L;
 
 		long time =
 			worldTime % dayLength;

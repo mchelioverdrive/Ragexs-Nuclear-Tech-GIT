@@ -5,7 +5,6 @@ import com.hbm.dim.BiomeGenBaseCelestial;
 public class BiomeGenSaturn extends BiomeGenBaseCelestial {
 	public BiomeGenSaturn(int id) {
 		super(id);
-		//TODO check if right
 
 		this.rootHeight = 8.0F;
 		this.heightVariation = 0.0F;
@@ -14,6 +13,8 @@ public class BiomeGenSaturn extends BiomeGenBaseCelestial {
 		this.temperature = 0.0F;
 
 		this.enableRain = false;
+
+		theBiomeDecorator.generateLakes = false;
 
 		this.theBiomeDecorator.treesPerChunk = 0;
 		this.theBiomeDecorator.flowersPerChunk = 0;

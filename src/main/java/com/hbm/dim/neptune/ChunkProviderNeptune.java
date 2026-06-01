@@ -2,6 +2,7 @@ package com.hbm.dim.neptune;
 
 import com.hbm.blocks.ModBlocks;
 import com.hbm.dim.ChunkProviderCelestial;
+import com.hbm.dim.GasGiantChunkUtil;
 import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.init.Blocks;
 import net.minecraft.world.World;
@@ -26,7 +27,16 @@ public class ChunkProviderNeptune extends ChunkProviderCelestial {
 	public BlockMetaBuffer getChunkPrimer(int x, int z) {
 
 		BlockMetaBuffer buffer =
-			super.getChunkPrimer(x, z);
+			new BlockMetaBuffer();
+
+		this.biomesForGeneration =
+			this.worldObj.getWorldChunkManager().loadBlockGeneratorData(
+				this.biomesForGeneration,
+				x * 16,
+				z * 16,
+				16,
+				16
+			);
 
 		for(int bx = 0; bx < 16; bx++) {
 			for(int bz = 0; bz < 16; bz++) {
@@ -37,15 +47,18 @@ public class ChunkProviderNeptune extends ChunkProviderCelestial {
 				int worldZ =
 					z * 16 + bz;
 
-				// Neptune is turbulent but smoother than Jupiter
-				int cloudTop =
-					185 +
-						(int)(Math.sin(worldX * 0.007D) * 7) +
-						(int)(Math.cos(worldZ * 0.006D) * 6);
+				// Neptune's high clouds are dark, methane-rich and wind-sheared.
+				double band =
+					Math.sin(worldX * 0.007D) * 7.0D +
+					Math.cos(worldZ * 0.006D) * 6.0D +
+					Math.sin((worldX + worldZ) * 0.018D) * 3.0D;
 
-				double stormNoise =
-					Math.sin(worldX * 0.03D) *
-						Math.cos(worldZ * 0.03D);
+				int cloudTop =
+					184 + (int)band;
+
+				double darkSpot =
+					Math.sin(worldX * 0.024D + worldZ * 0.006D) *
+					Math.cos(worldZ * 0.028D);
 
 				int columnIndexBase =
 					(bx * 16 + bz) * 256;
@@ -55,103 +68,59 @@ public class ChunkProviderNeptune extends ChunkProviderCelestial {
 					int index =
 						columnIndexBase + y;
 
-					// ==========================
-					// THIN UPPER HAZE
-					// methane haze
-					// ==========================
-					if(y > cloudTop + 35) {
+					if(y > cloudTop + 38) {
 
-						if(rand.nextInt(18) == 0) {
-
-							buffer.blocks[index] =
-								ModBlocks.neptune_cloud_thin;
-
-						} else {
-
-							buffer.blocks[index] =
-								Blocks.air;
-						}
+						buffer.blocks[index] =
+							GasGiantChunkUtil.chance(worldX, y, worldZ, 20)
+								? ModBlocks.neptune_cloud_thin
+								: Blocks.air;
 					}
 
-					// ==========================
-					// HIGH METHANE CLOUDS
-					// wispy upper clouds
-					// ==========================
-					else if(y > cloudTop + 10) {
+					// Thin upper methane haze.
+					else if(y > cloudTop + 12) {
 
-						if(rand.nextInt(4) == 0) {
-
-							buffer.blocks[index] =
-								ModBlocks.neptune_cloud_thin;
-
-						} else {
-
-							buffer.blocks[index] =
-								Blocks.air;
-						}
+						buffer.blocks[index] =
+							GasGiantChunkUtil.chance(worldX, y, worldZ, 4)
+								? ModBlocks.neptune_cloud_thin
+								: Blocks.air;
 					}
 
-					// ==========================
-					// MAIN CLOUD DECK
-					// thicker blue clouds
-					// ==========================
+					// Main methane cloud deck.
 					else if(y > cloudTop - 15) {
 
-						if(rand.nextInt(5) == 0) {
-
-							buffer.blocks[index] =
-								ModBlocks.neptune_cloud;
-
-						} else {
-
-							buffer.blocks[index] =
-								ModBlocks.neptune_cloud_dense;
-						}
+						buffer.blocks[index] =
+							GasGiantChunkUtil.chance(worldX, y, worldZ, 5)
+								? ModBlocks.neptune_cloud
+								: ModBlocks.neptune_cloud_dense;
 					}
 
-					// ==========================
-					// DEEP ATMOSPHERE
-					// violent storm region
-					// ==========================
+					// Deep high-speed storm layer.
 					else if(y > 100) {
 
-						if(stormNoise > 0.65D
-							&& rand.nextInt(7) == 0) {
+						boolean storm =
+							darkSpot > 0.62D
+								|| GasGiantChunkUtil.chance(worldX, y, worldZ, 13);
 
-							buffer.blocks[index] =
-								ModBlocks.neptune_storm;
-
-						} else {
-
-							buffer.blocks[index] =
-								ModBlocks.neptune_atmosphere_dense;
-						}
+						buffer.blocks[index] =
+							storm
+								? ModBlocks.neptune_storm
+								: ModBlocks.neptune_atmosphere_dense;
 					}
 
-					// ==========================
-					// SUPERCRITICAL OCEAN
-					// water/ammonia/methane soup
-					// ==========================
+					// Supercritical water/ammonia/methane mantle.
 					else if(y > 35) {
 
 						buffer.blocks[index] =
 							ModBlocks.supercritical_water;
 					}
 
-					// ==========================
-					// ICE MANTLE
-					// compressed exotic ice
-					// ==========================
+					// Compressed exotic ice mantle.
 					else if(y > 6) {
 
 						buffer.blocks[index] =
 							Blocks.packed_ice;
 					}
 
-					// ==========================
-					// CORE
-					// placeholder
-					// ==========================
 					else {
 
 						buffer.blocks[index] =
@@ -159,29 +128,23 @@ public class ChunkProviderNeptune extends ChunkProviderCelestial {
 					}
 				}
 
-				// ==========================
-				// MASSIVE STORM COLUMNS
-				// rarer but stronger than Uranus
-				// ==========================
-
-				if(rand.nextInt(180) == 0) {
+				if(GasGiantChunkUtil.chance(worldX, 23, worldZ, 150)) {
 
 					int stormHeight =
-						25 + rand.nextInt(45);
+						GasGiantChunkUtil.range(worldX, 29, worldZ, 25, 45);
 
 					for(int sy = 0; sy < stormHeight; sy++) {
 
 						int y =
-							cloudTop + sy;
+							cloudTop - 8 + sy;
 
 						if(y >= 256)
 							break;
 
-						int index =
-							columnIndexBase + y;
-
-						buffer.blocks[index] =
-							ModBlocks.neptune_storm;
+						if(y > 0) {
+							buffer.blocks[columnIndexBase + y] =
+								ModBlocks.neptune_storm;
+						}
 					}
 				}
 			}
@@ -189,6 +152,4 @@ public class ChunkProviderNeptune extends ChunkProviderCelestial {
 
 		return buffer;
 	}
-
-
 }

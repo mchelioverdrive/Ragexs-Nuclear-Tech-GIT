@@ -9,7 +9,6 @@ public class BiomeGenUranus extends BiomeGenBaseCelestial {
 
 	public BiomeGenUranus(int id) {
 		super(id);
-		//TODO check if right
 
 		this.rootHeight = 8.0F;
 		this.heightVariation = 0.0F;

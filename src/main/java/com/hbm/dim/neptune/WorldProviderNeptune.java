@@ -9,6 +9,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.layer.GenLayer;
@@ -91,15 +92,33 @@ public class WorldProviderNeptune extends WorldProviderCelestial {
 				amp = 0;
 			}
 
-			if(amp > 0) {
+			if(amp > 0 && player.ticksExisted % 20 == 0) {
 
 				player.addPotionEffect(
 					new PotionEffect(
 						HbmPotion.radiation.id,
-						20,
+						40,
 						amp
 					)
 				);
+			}
+
+			if(player.ticksExisted % 20 == 0) {
+
+				if(player.posY <= 35) {
+
+					player.attackEntityFrom(DamageSource.generic, 9.0F);
+				}
+
+				else if(player.posY <= 100) {
+
+					player.attackEntityFrom(DamageSource.generic, 3.0F);
+				}
+
+				else if(player.posY <= 170) {
+
+					player.attackEntityFrom(DamageSource.drown, 1.0F);
+				}
 			}
 		}
 	}
@@ -150,7 +169,7 @@ public class WorldProviderNeptune extends WorldProviderCelestial {
 	public float getSunBrightness(float partialTicks) {
 
 		// About thirty astronomical units from the Sun.
-		return 0.012F;
+		return 0.002F;
 	}
 
 	@Override
@@ -158,7 +177,7 @@ public class WorldProviderNeptune extends WorldProviderCelestial {
 
 		// Neptune rotates in about 16.1 Earth hours.
 		long dayLength =
-			19360L;
+			16100L;
 
 		long time =
 			worldTime % dayLength;

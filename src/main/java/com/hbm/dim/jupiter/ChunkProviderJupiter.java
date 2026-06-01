@@ -2,6 +2,7 @@ package com.hbm.dim.jupiter;
 
 import com.hbm.blocks.ModBlocks;
 import com.hbm.dim.ChunkProviderCelestial;
+import com.hbm.dim.GasGiantChunkUtil;
 
 import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.init.Blocks;
@@ -26,7 +27,17 @@ public class ChunkProviderJupiter extends ChunkProviderCelestial {
 	@Override
 	public BlockMetaBuffer getChunkPrimer(int x, int z) {
 
-		BlockMetaBuffer buffer = super.getChunkPrimer(x, z);
+		BlockMetaBuffer buffer =
+			new BlockMetaBuffer();
+
+		this.biomesForGeneration =
+			this.worldObj.getWorldChunkManager().loadBlockGeneratorData(
+				this.biomesForGeneration,
+				x * 16,
+				z * 16,
+				16,
+				16
+			);
 
 		for(int bx = 0; bx < 16; bx++) {
 			for(int bz = 0; bz < 16; bz++) {
@@ -34,11 +45,18 @@ public class ChunkProviderJupiter extends ChunkProviderCelestial {
 				int worldX = x * 16 + bx;
 				int worldZ = z * 16 + bz;
 
-				// turbulent cloud-top variation
+				// Jupiter has strong east-west belts with high turbulent relief.
+				double belt =
+					Math.sin(worldZ * 0.010D) * 13.0D +
+					Math.sin(worldZ * 0.031D) * 4.0D +
+					Math.cos(worldX * 0.006D) * 5.0D;
+
 				int cloudTop =
-					190 +
-						(int)(Math.sin(worldZ * 0.01D) * 12) +
-						(int)(Math.cos(worldX * 0.008D) * 8);
+					190 + (int)belt;
+
+				double ovalStorm =
+					Math.sin(worldX * 0.018D + worldZ * 0.004D) *
+					Math.cos(worldZ * 0.022D);
 
 				int columnIndexBase =
 					(bx * 16 + bz) * 256;
@@ -48,89 +66,51 @@ public class ChunkProviderJupiter extends ChunkProviderCelestial {
 					int index =
 						columnIndexBase + y;
 
-					// ====================================
-					// UPPER ATMOSPHERE
-					// thin gas
-					// ====================================
-					if(y > cloudTop + 35) {
+					if(y > cloudTop + 42) {
 
 						buffer.blocks[index] =
 							Blocks.air;
 					}
 
-					// ====================================
-					// AMMONIA CLOUDS
-					// first "landing" layer
-					// ====================================
-					else if(y > cloudTop + 10) {
+					// Thin ammonia haze at the very top.
+					else if(y > cloudTop + 16) {
 
-						if(rand.nextInt(3) == 0) {
-
-							buffer.blocks[index] =
-								ModBlocks.cloud;
-
-						} else {
-
-							buffer.blocks[index] =
-								Blocks.air;
-						}
+						buffer.blocks[index] =
+							GasGiantChunkUtil.chance(worldX, y, worldZ, 4)
+								? ModBlocks.cloud
+								: Blocks.air;
 					}
 
-					// ====================================
-					// CLOUD DECK
-					// closest thing to surface
-					// ====================================
-					else if(y > cloudTop - 10) {
+					// Bright ammonia cloud deck.
+					else if(y > cloudTop - 12) {
 
-						if(rand.nextInt(4) == 0) {
-
-							buffer.blocks[index] =
-								ModBlocks.cloud;
-
-						} else {
-
-							buffer.blocks[index] =
-								ModBlocks.cloud_dense;
-						}
+						buffer.blocks[index] =
+							GasGiantChunkUtil.chance(worldX, y, worldZ, 5)
+								? ModBlocks.cloud
+								: ModBlocks.cloud_dense;
 					}
 
-					// ====================================
-					// STORM ATMOSPHERE
-					// dense gases
-					// ====================================
-					else if(y > 120) {
+					// Darker ammonium/sulfide cloud and storm belt region.
+					else if(y > 118) {
 
-						if(rand.nextInt(6) == 0) {
+						boolean storm =
+							ovalStorm > 0.58D
+								|| GasGiantChunkUtil.chance(worldX, y, worldZ, 11);
 
-							buffer.blocks[index] =
-								ModBlocks.jupiter_storm;
-
-						} else {
-
-							if(rand.nextInt(3) == 0) {
-								buffer.blocks[index] =
-									ModBlocks.cloud_dense;
-							} else {
-								buffer.blocks[index] =
-									Blocks.air;
-							}
-						}
+						buffer.blocks[index] =
+							storm
+								? ModBlocks.jupiter_storm
+								: ModBlocks.cloud_dense;
 					}
 
-					// ====================================
-					// SUPERCRITICAL HYDROGEN
-					// liquid-like gas
-					// ====================================
-					else if(y > 50) {
+					// Molecular hydrogen/helium becomes liquid-like under pressure.
+					else if(y > 48) {
 
 						buffer.blocks[index] =
 							ModBlocks.supercritical_hydrogen;
 					}
 
-					// ====================================
-					// METALLIC HYDROGEN OCEAN
-					// absurd pressure
-					// ====================================
+					// Metallic hydrogen layer: no solid surface.
 					else {
 
 						buffer.blocks[index] =
@@ -138,29 +118,23 @@ public class ChunkProviderJupiter extends ChunkProviderCelestial {
 					}
 				}
 
-				// ====================================
-				// STORM COLUMNS
-				// Jupiter turbulence
-				// ====================================
-
-				if(rand.nextInt(90) == 0) {
+				if(GasGiantChunkUtil.chance(worldX, 31, worldZ, 72)) {
 
 					int stormHeight =
-						20 + rand.nextInt(40);
+						GasGiantChunkUtil.range(worldX, 37, worldZ, 24, 42);
 
 					for(int sy = 0; sy < stormHeight; sy++) {
 
 						int y =
-							cloudTop + sy;
+							cloudTop - 8 + sy;
 
 						if(y >= 256)
 							break;
 
-						int index =
-							columnIndexBase + y;
-
-						buffer.blocks[index] =
-							ModBlocks.jupiter_storm;
+						if(y > 0) {
+							buffer.blocks[columnIndexBase + y] =
+								ModBlocks.jupiter_storm;
+						}
 					}
 				}
 			}
