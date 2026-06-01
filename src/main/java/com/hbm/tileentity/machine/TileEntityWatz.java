@@ -46,7 +46,8 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityWatz extends TileEntityMachineBase implements IFluidStandardTransceiver, IControlReceiver, IGUIProvider, IFluidCopiable {
 
-	//TODO realistify to PBR reactor
+	// Pebble-bed reactor model: graphite moderated TRISO pebbles, helium primary loop,
+	// xenon/iodine poisoning, center-weighted flux, and a gamified overheat failure.
 
 	public FluidTank[] tanks;
 	public int heat;
@@ -162,8 +163,8 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 				segment.isOn = turnedOn;
 				segment.sendPacket(sharedTanks);
 				double passiveCooling =
-					Math.max(0.05,
-							 segment.heat * 0.0015);
+					Math.max(0.02,
+							 segment.heat * 0.0008);
 
 				segment.heat -= passiveCooling;
 			}
@@ -184,7 +185,7 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 				tanks[0].getFill() < 1000;
 
 			boolean overheated =
-				this.heat > 6000;
+				this.heat > 7500;
 
 			if(coolantLost && overheated) {
 
@@ -401,7 +402,7 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 				if(burnFunc != null) {
 					double div = heatDiv != null ? heatDiv.effonix(heat) : 1D;
 					double thermalPenalty =
-						1D + Math.pow(heat / 6000D, 1.25D);
+						1D + Math.pow(heat / 7500D, 1.25D);
 
 					double burn =
 						(burnFunc.effonix(inputFlux) * weight) /

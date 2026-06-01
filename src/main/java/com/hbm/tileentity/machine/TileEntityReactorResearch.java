@@ -84,8 +84,8 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 
 	@Override
 	public boolean isItemValidForSlot(int i, ItemStack itemStack) {
-		if(i < 12 && i <= 0)
-			if(itemStack.getItem().getClass() == ItemPlateFuel.class)
+		if(i >= 0 && i < 12)
+			if(itemStack.getItem() instanceof ItemPlateFuel)
 				return true;
 		return false;
 	}
@@ -317,7 +317,9 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 				ItemPlateFuel rod = (ItemPlateFuel) slots[i].getItem();
 
 				int outFlux = rod.react(worldObj, slots[i], slotFlux[i]);
-				this.heat += outFlux * 2;
+				// Research plate reactors are low-power neutron sources; they run hot enough to punish poor shielding,
+				// but they should not behave like power-reactor fuel channels.
+				this.heat += (int) Math.ceil(outFlux * 1.35D);
 				slotFlux[i] = 0;
 				totalFlux += outFlux;
 
