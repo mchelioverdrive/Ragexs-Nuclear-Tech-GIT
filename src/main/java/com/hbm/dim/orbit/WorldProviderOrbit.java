@@ -199,6 +199,15 @@ public class WorldProviderOrbit extends WorldProvider {
 
 	@Override
 	public float getSunBrightness(float partialTicks) {
+		//this is currently bugged and everytime I tried to fix it to adjust brightness to whether or not the sun was visible
+		//it would either
+		//A. make everything bright regardless of if the sun is visible
+		//or
+		//B. make everything dark regardless of if the sun is visible
+		//so for now I'm leaving it like this where it's only slightly dark, however distance from the sun still affects brightness... I think.
+		//or at least it did? Nevermind. It now does not. But it SHOULD.
+		//basically from my shitty understanding this affects the brightness of the orbital station...
+		//todo: fix crap
 
 		CelestialBody orbiting = OrbitalStation.clientStation.orbiting;
 		float solarPower = getSunPower();
