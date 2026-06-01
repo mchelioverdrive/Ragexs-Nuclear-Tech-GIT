@@ -1340,6 +1340,13 @@ public class ModBlocks {
 	public static Block uranus_cloud_dense;
 	public static Block uranus_atmosphere;
 
+	//NEPTUNE
+	public static Block neptune_cloud_thin;
+	public static Block neptune_cloud;
+	public static Block neptune_cloud_dense;
+	public static Block neptune_atmosphere_dense;
+	public static Block neptune_storm;
+
 
 
 	public static Block rad_lava_block;
@@ -2644,6 +2651,17 @@ public class ModBlocks {
 		uranus_atmosphere =
 			new BlockUranusAtmosphere();
 
+		neptune_cloud_thin =
+			new BlockNeptuneCloudThin();
+		neptune_cloud =
+			new BlockNeptuneCloud();
+		neptune_cloud_dense =
+			new BlockNeptuneCloudDense();
+		neptune_atmosphere_dense =
+			new BlockNeptuneAtmosphereDense();
+		neptune_storm =
+			new BlockNeptuneStorm();
+
 
 		rad_lava_fluid = new RadFluid().setLuminosity(15).setDensity(3000).setViscosity(3000).setTemperature(1300).setUnlocalizedName("rad_lava_fluid");
 		FluidRegistry.registerFluid(rad_lava_fluid);
@@ -3936,6 +3954,28 @@ public class ModBlocks {
 		GameRegistry.registerBlock(
 			uranus_atmosphere,
 			"uranus_atmosphere"
+		);
+
+		//NEPTUNE
+		GameRegistry.registerBlock(
+			neptune_cloud_thin,
+			"neptune_cloud_thin"
+		);
+		GameRegistry.registerBlock(
+			neptune_cloud,
+			"neptune_cloud"
+		);
+		GameRegistry.registerBlock(
+			neptune_cloud_dense,
+			"neptune_cloud_dense"
+		);
+		GameRegistry.registerBlock(
+			neptune_atmosphere_dense,
+			"neptune_atmosphere_dense"
+		);
+		GameRegistry.registerBlock(
+			neptune_storm,
+			"neptune_storm"
 		);
 
 		GameRegistry.registerBlock(corium_block, corium_block.getUnlocalizedName());

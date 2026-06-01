@@ -19,6 +19,7 @@ import com.hbm.dim.moho.WorldGeneratorMoho;
 import com.hbm.dim.moho.WorldProviderMoho;
 import com.hbm.dim.moon.WorldGeneratorMoon;
 import com.hbm.dim.moon.WorldProviderMoon;
+import com.hbm.dim.neptune.WorldProviderNeptune;
 import com.hbm.dim.orbit.WorldProviderOrbit;
 import com.hbm.dim.saturn.WorldProviderSaturn;
 import com.hbm.dim.sun.WorldGeneratorSun;
@@ -63,6 +64,7 @@ public class PlanetGen {
 		registerDimension(SpaceConfig.jupiterDimension, WorldProviderJupiter.class);
 		registerDimension(SpaceConfig.saturnDimension, WorldProviderSaturn.class);
 		registerDimension(SpaceConfig.uranusDimension, WorldProviderUranus.class);
+		registerDimension(SpaceConfig.neptuneDimension, WorldProviderNeptune.class);
 
     }
 

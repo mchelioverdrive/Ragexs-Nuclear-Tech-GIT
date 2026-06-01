@@ -187,8 +187,8 @@ public class Fluids {
 	//public static FluidType LAYTHEAIR;
 	public static FluidType JOOLGAS;
 	public static FluidType SARNUSGAS;
-	public static FluidType UGAS; //urlum
-	public static FluidType NGAS;//neidon
+	public static FluidType UGAS; // Uranus atmosphere
+	public static FluidType NGAS; // Neptune atmosphere
 	public static FluidType MILK;
 	public static FluidType SMILK;
 	public static FluidType XYLENE;				//BTX: benzene, terephthalate and xylene
@@ -504,10 +504,10 @@ public class Fluids {
 		SMOKE =					new FluidType("SMOKE",				0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(GASEOUS, NOID, NOCON);
 		SMOKE_LEADED =			new FluidType(151, "SMOKE_LEADED",		0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(GASEOUS, NOID, NOCON);
 		SMOKE_POISON =			new FluidType("SMOKE_POISON",		0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(GASEOUS, NOID, NOCON);
-		JOOLGAS =				new FluidType("JOOLGAS",		0x829F82, 0, 0, 0, EnumSymbol.ASPHYXIANT).addTraits(GASEOUS);
-		SARNUSGAS =				new FluidType("SARNUSGAS",		0xE47D5C, 0, 0, 0, EnumSymbol.ASPHYXIANT).addTraits(GASEOUS);
-		UGAS =					new FluidType("UGAS",		0x718C9A, 0, 0, 0, EnumSymbol.ASPHYXIANT).addTraits(GASEOUS);
-		NGAS =					new FluidType("NGAS",		0x8A668A, 0, 0, 0, EnumSymbol.ASPHYXIANT).addTraits(GASEOUS);
+		JOOLGAS =				new FluidType("JOOLGAS",		0xC9A56B, 0, 0, 0, EnumSymbol.ASPHYXIANT).addTraits(GASEOUS);
+		SARNUSGAS =				new FluidType("SARNUSGAS",		0xE5D7A8, 0, 0, 0, EnumSymbol.ASPHYXIANT).addTraits(GASEOUS);
+		UGAS =					new FluidType("UGAS",		0x86C6CF, 0, 0, 0, EnumSymbol.ASPHYXIANT).addTraits(GASEOUS);
+		NGAS =					new FluidType("NGAS",		0x244C9A, 0, 0, 0, EnumSymbol.ASPHYXIANT).addTraits(GASEOUS);
 		EMILK =					new FluidType("EMILK",				0xCFCFCF, 0, 0, 0, EnumSymbol.NONE).addTraits(DELICIOUS, LIQUID);//F5DEE4
 		CMILK =					new FluidType("CMILK",				0xCFCFCF, 0, 0, 0, EnumSymbol.NONE).addTraits(DELICIOUS, LIQUID);//F5DEE4
 		CREAM =					new FluidType("CREAM",				0xCFCFCF, 0, 0, 0, EnumSymbol.NONE).addTraits(DELICIOUS, LIQUID);//F5DEE4

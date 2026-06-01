@@ -2,6 +2,7 @@ package com.hbm.dim.saturn;
 
 import com.hbm.blocks.ModBlocks;
 import com.hbm.dim.ChunkProviderCelestial;
+import com.hbm.dim.GasGiantChunkUtil;
 import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.init.Blocks;
 import net.minecraft.world.World;
@@ -16,18 +17,26 @@ public class ChunkProviderSaturn extends ChunkProviderCelestial {
 		stoneBlock = Blocks.hardened_clay;
 		seaBlock = Blocks.air;
 	}
+
 	@Override
 	public List getPossibleCreatures(EnumCreatureType creatureType, int x, int y, int z) {
 		return null;
 	}
 
-	//TODO the hexagon storm thing also rings?
-
 	@Override
 	public BlockMetaBuffer getChunkPrimer(int x, int z) {
 
 		BlockMetaBuffer buffer =
-			super.getChunkPrimer(x, z);
+			new BlockMetaBuffer();
+
+		this.biomesForGeneration =
+			this.worldObj.getWorldChunkManager().loadBlockGeneratorData(
+				this.biomesForGeneration,
+				x * 16,
+				z * 16,
+				16,
+				16
+			);
 
 		for(int bx = 0; bx < 16; bx++) {
 			for(int bz = 0; bz < 16; bz++) {
@@ -38,11 +47,25 @@ public class ChunkProviderSaturn extends ChunkProviderCelestial {
 				int worldZ =
 					z * 16 + bz;
 
-				// smoother, calmer cloud variation
+				// Saturn is paler and smoother, but still organized into jet bands.
+				double band =
+					Math.sin(worldZ * 0.006D) * 7.0D +
+					Math.sin(worldZ * 0.018D) * 2.5D +
+					Math.cos(worldX * 0.004D) * 3.5D;
+
 				int cloudTop =
-					185 +
-						(int)(Math.sin(worldZ * 0.004D) * 6) +
-						(int)(Math.cos(worldX * 0.005D) * 5);
+					184 + (int)band;
+
+				double polarRadius =
+					Math.sqrt(worldX * worldX + worldZ * worldZ);
+
+				double polarAngle =
+					Math.atan2(worldZ, worldX);
+
+				boolean hexagonWall =
+					polarRadius < 190.0D
+						&& polarRadius > 120.0D
+						&& Math.cos(polarAngle * 6.0D) > 0.72D;
 
 				int columnIndexBase =
 					(bx * 16 + bz) * 256;
@@ -52,83 +75,53 @@ public class ChunkProviderSaturn extends ChunkProviderCelestial {
 					int index =
 						columnIndexBase + y;
 
-					// ==========================
-					// THIN UPPER ATMOSPHERE
-					// sparse haze
-					// ==========================
-					if(y > cloudTop + 35) {
+					if(y > cloudTop + 40) {
 
-						if(rand.nextInt(20) == 0) {
-							buffer.blocks[index] =
-								ModBlocks.cloud;
-						} else {
-							buffer.blocks[index] =
-								Blocks.air;
-						}
+						buffer.blocks[index] =
+							GasGiantChunkUtil.chance(worldX, y, worldZ, 24)
+								? ModBlocks.cloud
+								: Blocks.air;
 					}
 
-					// ==========================
-					// AMMONIA ICE CLOUDS
-					// pale upper deck
-					// ==========================
-					else if(y > cloudTop + 10) {
+					// Thin ammonia haze.
+					else if(y > cloudTop + 12) {
 
-						if(rand.nextInt(4) == 0) {
-							buffer.blocks[index] =
-								ModBlocks.cloud;
-						} else {
-							buffer.blocks[index] =
-								Blocks.air;
-						}
+						buffer.blocks[index] =
+							GasGiantChunkUtil.chance(worldX, y, worldZ, 5)
+								? ModBlocks.cloud
+								: Blocks.air;
 					}
 
-					// ==========================
-					// MAIN CLOUD DECK
-					// thick but softer than Jupiter
-					// ==========================
-					else if(y > cloudTop - 15) {
+					// Broad pale cloud deck.
+					else if(y > cloudTop - 16) {
 
-						if(rand.nextInt(6) == 0) {
-							buffer.blocks[index] =
-								ModBlocks.cloud;
-						} else {
-							buffer.blocks[index] =
-								ModBlocks.cloud_dense;
-						}
+						buffer.blocks[index] =
+							GasGiantChunkUtil.chance(worldX, y, worldZ, 7)
+								? ModBlocks.cloud
+								: ModBlocks.cloud_dense;
 					}
 
-					// ==========================
-					// DEEP ATMOSPHERE
-					// dense hydrogen/helium
-					// ==========================
-					else if(y > 120) {
+					// Hydrogen/helium storm layer with rare lightning cells.
+					else if(y > 118) {
 
-						if(rand.nextInt(8) == 0) {
+						boolean storm =
+							hexagonWall
+								|| GasGiantChunkUtil.chance(worldX, y, worldZ, 18);
 
-							buffer.blocks[index] =
-								ModBlocks.saturn_storm;
-
-						} else {
-
-							buffer.blocks[index] =
-								ModBlocks.cloud_dense;
-						}
+						buffer.blocks[index] =
+							storm
+								? ModBlocks.saturn_storm
+								: ModBlocks.cloud_dense;
 					}
 
-					// ==========================
-					// HELIUM RAIN ZONE
-					// speculative layer
-					// ==========================
-					else if(y > 60) {
+					// Helium rain / supercritical hydrogen interior.
+					else if(y > 58) {
 
 						buffer.blocks[index] =
 							ModBlocks.supercritical_hydrogen;
 					}
 
-					// ==========================
-					// METALLIC HYDROGEN
-					// deep interior
-					// ==========================
+					// Deep metallic hydrogen.
 					else {
 
 						buffer.blocks[index] =
@@ -136,29 +129,23 @@ public class ChunkProviderSaturn extends ChunkProviderCelestial {
 					}
 				}
 
-				// ==========================
-				// OCCASIONAL STORM COLUMNS
-				// MUCH rarer than Jupiter
-				// ==========================
-
-				if(rand.nextInt(350) == 0) {
+				if(GasGiantChunkUtil.chance(worldX, 13, worldZ, 260)) {
 
 					int stormHeight =
-						15 + rand.nextInt(30);
+						GasGiantChunkUtil.range(worldX, 17, worldZ, 14, 28);
 
 					for(int sy = 0; sy < stormHeight; sy++) {
 
 						int y =
-							cloudTop + sy;
+							cloudTop - 4 + sy;
 
 						if(y >= 256)
 							break;
 
-						int index =
-							columnIndexBase + y;
-
-						buffer.blocks[index] =
-							ModBlocks.saturn_storm;
+						if(y > 0) {
+							buffer.blocks[columnIndexBase + y] =
+								ModBlocks.saturn_storm;
+						}
 					}
 				}
 			}
@@ -166,6 +153,4 @@ public class ChunkProviderSaturn extends ChunkProviderCelestial {
 
 		return buffer;
 	}
-
-
 }

@@ -1,7 +1,6 @@
 package com.hbm.dim.jupiter.biome;
 
 import com.hbm.dim.BiomeGenBaseCelestial;
-import net.minecraft.world.biome.BiomeGenBase;
 
 public class BiomeGenJupiter extends BiomeGenBaseCelestial {
 
@@ -15,6 +14,8 @@ public class BiomeGenJupiter extends BiomeGenBaseCelestial {
 		this.temperature = 10.0F;
 
 		this.enableRain = false;
+
+		theBiomeDecorator.generateLakes = false;
 
 		this.theBiomeDecorator.treesPerChunk = 0;
 		this.theBiomeDecorator.flowersPerChunk = 0;

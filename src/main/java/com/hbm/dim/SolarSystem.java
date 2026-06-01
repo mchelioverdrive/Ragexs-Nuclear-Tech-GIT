@@ -202,8 +202,9 @@ public class SolarSystem {
 					.withColor(1.0f, 0.5f, 0.0f)
 					.withAxialTilt(3.13F)
 					.withTraits(
-						new CBT_Atmosphere(Fluids.HYDROGEN, 1000D)
-							.and(Fluids.HELIUM4, 150D),
+						new CBT_Atmosphere(Fluids.HYDROGEN, 89D)
+							.and(Fluids.HELIUM4, 10D)
+							.and(Fluids.GAS, 1D),
 						new CBT_Temperature(-145)
 					)
 
@@ -270,8 +271,9 @@ public class SolarSystem {
 					.withAxialTilt(26.73F)
 					.withProcessingLevel(3)
 					.withTraits(
-						new CBT_Atmosphere(Fluids.HYDROGEN, 500D)
-							.and(Fluids.HELIUM4, 100D),
+						new CBT_Atmosphere(Fluids.HYDROGEN, 96D)
+							.and(Fluids.HELIUM4, 3D)
+							.and(Fluids.GAS, 1D),
 						new CBT_Temperature(-178)
 					)
 					.withSatellites(
@@ -333,8 +335,9 @@ public class SolarSystem {
 					.withAxialTilt(97.77F)
 					.withProcessingLevel(3)
 					.withTraits(
-						new CBT_Atmosphere(Fluids.HYDROGEN, 100D)
-							.and(Fluids.GAS, 5D), //methane
+						new CBT_Atmosphere(Fluids.HYDROGEN, 82D)
+							.and(Fluids.HELIUM4, 15D)
+							.and(Fluids.GAS, 3D), // methane
 						new CBT_Temperature(-224)
 					)
 					.withSatellites(
@@ -370,7 +373,7 @@ public class SolarSystem {
 					),
 
 				//neptune
-				new CelestialBody("neptune")
+				new CelestialBody("neptune", SpaceConfig.neptuneDimension, Body.NEPTUNE)
 					.withMassRadius(1.024e26F, 24_622)
 					.withSemiMajorAxis(4_495_060_000D)
 					.withInitialOrbitalAngle(304.35D)
@@ -378,8 +381,9 @@ public class SolarSystem {
 					.withColor(0.2F, 0.4F, 0.6F)
 					.withAxialTilt(28.32F)
 					.withTraits(
-						new CBT_Atmosphere(Fluids.HYDROGEN, 100D)
-							.and(Fluids.GAS, 10D),
+						new CBT_Atmosphere(Fluids.HYDROGEN, 80D)
+							.and(Fluids.HELIUM4, 19D)
+							.and(Fluids.GAS, 1D), // methane
 						new CBT_Temperature(-214)
 					)
 					.withSatellites(
@@ -450,7 +454,8 @@ public class SolarSystem {
 		SUN("kerbol"), //God I really need to change this to real names
 		JOOL("jool"), //pain
 		SARNUS("sarnus"),
-		URANUS("uranus");
+		URANUS("uranus"),
+		NEPTUNE("neptune");
 		// TEKTO("tekto");
 
 		public String name;

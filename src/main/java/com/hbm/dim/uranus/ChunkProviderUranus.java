@@ -2,6 +2,7 @@ package com.hbm.dim.uranus;
 
 import com.hbm.blocks.ModBlocks;
 import com.hbm.dim.ChunkProviderCelestial;
+import com.hbm.dim.GasGiantChunkUtil;
 import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.init.Blocks;
 import net.minecraft.world.World;
@@ -20,13 +21,22 @@ public class ChunkProviderUranus extends ChunkProviderCelestial {
 	@Override
 	public List getPossibleCreatures(EnumCreatureType creatureType, int x, int y, int z) {
 		return null;
-	} //hmm, maybe change later as water world hellscape basically
+	}
 
 	@Override
 	public BlockMetaBuffer getChunkPrimer(int x, int z) {
 
 		BlockMetaBuffer buffer =
-			super.getChunkPrimer(x, z);
+			new BlockMetaBuffer();
+
+		this.biomesForGeneration =
+			this.worldObj.getWorldChunkManager().loadBlockGeneratorData(
+				this.biomesForGeneration,
+				x * 16,
+				z * 16,
+				16,
+				16
+			);
 
 		for(int bx = 0; bx < 16; bx++) {
 			for(int bz = 0; bz < 16; bz++) {
@@ -40,15 +50,11 @@ public class ChunkProviderUranus extends ChunkProviderCelestial {
 				int columnIndexBase =
 					(bx * 16 + bz) * 256;
 
-				// ====================================
-				// SMOOTH URANUS ATMOSPHERIC BANDS
-				// Uranus is calm + layered
-				// ====================================
-
+				// Uranus has muted, high-altitude methane bands and weak storms.
 				double bandNoise =
 					Math.sin(worldZ * 0.0025D) * 0.6D +
-						Math.cos(worldX * 0.002D) * 0.4D +
-						Math.sin(worldX * 0.0008D) * 0.2D;
+					Math.cos(worldX * 0.002D) * 0.4D +
+					Math.sin(worldX * 0.0008D) * 0.2D;
 
 				int cloudTop =
 					165 + (int)(bandNoise * 8D);
@@ -64,126 +70,80 @@ public class ChunkProviderUranus extends ChunkProviderCelestial {
 					int index =
 						columnIndexBase + y;
 
-					// ==========================
-					// EMPTY UPPER ATMOSPHERE
-					// almost entirely empty
-					// ==========================
-					// ==========================
-					// EMPTY UPPER ATMOSPHERE
-					// ==========================
 					if(y > hazeTop) {
 
 						buffer.blocks[index] =
 							Blocks.air;
 					}
 
-					// ==========================
-					// THIN METHANE HAZE
-					// ==========================
+					// Pale methane haze.
 					else if(y > upperCloudTop) {
 
 						double hazeBand =
-							Math.sin(
-								worldZ * 0.008D
-									+ y * 0.12D
-							);
+							Math.sin(worldZ * 0.008D + y * 0.12D);
 
-						if(hazeBand > 0.65D) {
-
-							buffer.blocks[index] =
-								ModBlocks.uranus_cloud;
-
-						} else {
-
-							buffer.blocks[index] =
-								Blocks.air;
-						}
+						buffer.blocks[index] =
+							hazeBand > 0.65D
+								? ModBlocks.uranus_cloud
+								: Blocks.air;
 					}
 
-					// ==========================
-					// MAIN CLOUD DECK
-					// visible Uranus bands
-					// ==========================
+					// Smooth visible methane cloud deck.
 					else if(y > cloudTop - 10) {
 
 						double cloudBand =
-							Math.sin(worldZ * 0.015D)
-								+ Math.cos(worldX * 0.008D);
+							Math.sin(worldZ * 0.015D) +
+							Math.cos(worldX * 0.008D);
 
 						if(cloudBand > 0.2D) {
 
 							buffer.blocks[index] =
 								ModBlocks.uranus_cloud_dense;
+						}
 
-						} else if(cloudBand > -0.4D) {
+						else if(cloudBand > -0.4D) {
 
 							buffer.blocks[index] =
 								ModBlocks.uranus_cloud;
+						}
 
-						} else {
+						else {
 
 							buffer.blocks[index] =
 								Blocks.air;
 						}
 					}
 
-					// ==========================
-					// DENSE ATMOSPHERE
-					// compressed gases
-					// ==========================
+					// Dense hydrogen/helium/methane atmosphere.
 					else if(y > 90) {
 
 						buffer.blocks[index] =
 							ModBlocks.uranus_atmosphere;
 					}
 
-					// ==========================
-					// ICY MANTLE
-					// water/ammonia/methane
-					// ==========================
+					// Ice giant mantle: water, ammonia and methane slurry.
 					else if(y > 45) {
 
 						buffer.blocks[index] =
 							ModBlocks.ammonia_water;
 					}
 
-					// ==========================
-					// SUPERCRITICAL WATER
-					// dense fluid region
-					// ==========================
+					// Supercritical water/ammonia ocean.
 					else if(y > 18) {
 
 						buffer.blocks[index] =
 							ModBlocks.supercritical_water;
 					}
 
-					// ==========================
-					// DIAMOND ZONE
-					// methane compression
-					// ==========================
+					// Sparse diamond-rain inclusions in the compressed methane zone.
 					else if(y > 8) {
 
-						if(
-							Math.abs(
-								worldX * 31
-									+ worldZ * 17
-									+ y
-							) % 90 == 0
-						) {
-
-							buffer.blocks[index] =
-								Blocks.diamond_ore;
-
-						} else {
-
-							buffer.blocks[index] =
-								ModBlocks.supercritical_water;
-						}
+						buffer.blocks[index] =
+							GasGiantChunkUtil.chance(worldX, y, worldZ, 90)
+								? Blocks.diamond_ore
+								: ModBlocks.supercritical_water;
 					}
 
-					// ==========================
-					// COMPRESSED CORE
-					// ==========================
 					else {
 
 						buffer.blocks[index] =
@@ -191,22 +151,10 @@ public class ChunkProviderUranus extends ChunkProviderCelestial {
 					}
 				}
 
-				// ==========================
-				// EXTREMELY RARE STORMS
-				// Uranus is quiet
-				// ==========================
-				long stormSeed =
-					(worldX * 341873128712L)
-						^ (worldZ * 132897987541L);
-
-				if((stormSeed & 1023L) == 0L) {
+				if(GasGiantChunkUtil.chance(worldX, 5, worldZ, 1024)) {
 
 					int stormHeight =
-						10 + (int)(
-							Math.abs(
-								Math.sin(worldX)
-							) * 16
-						);
+						GasGiantChunkUtil.range(worldX, 7, worldZ, 10, 16);
 
 					for(int sy = 0; sy < stormHeight; sy++) {
 
@@ -216,11 +164,10 @@ public class ChunkProviderUranus extends ChunkProviderCelestial {
 						if(y >= 256)
 							break;
 
-						int index =
-							columnIndexBase + y;
-
-						buffer.blocks[index] =
-							ModBlocks.uranus_cloud_dense;
+						if(y > 0) {
+							buffer.blocks[columnIndexBase + y] =
+								ModBlocks.uranus_cloud_dense;
+						}
 					}
 				}
 			}
@@ -228,5 +175,4 @@ public class ChunkProviderUranus extends ChunkProviderCelestial {
 
 		return buffer;
 	}
-
 }

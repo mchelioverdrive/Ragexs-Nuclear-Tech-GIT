@@ -6,6 +6,9 @@ import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
@@ -25,15 +28,13 @@ public class BlockSupercriticalWater extends Block {
 
 		this.setHardness(-1.0F);
 		this.setResistance(6000000F);
-
-		this.setLightOpacity(2);
-
+		this.setLightOpacity(4);
 		this.setTickRandomly(false);
 	}
 
 	@Override
 	public int getRenderType() {
-		return 4; // vanilla liquid renderer
+		return 4;
 	}
 
 	@Override
@@ -52,6 +53,16 @@ public class BlockSupercriticalWater extends Block {
 	}
 
 	@Override
+	public AxisAlignedBB getCollisionBoundingBoxFromPool(
+		World world,
+		int x,
+		int y,
+		int z
+	) {
+		return null;
+	}
+
+	@Override
 	public void onEntityCollidedWithBlock(
 		World world,
 		int x,
@@ -60,10 +71,20 @@ public class BlockSupercriticalWater extends Block {
 		Entity entity
 	) {
 
-		// heavy dense fluid feeling
-		entity.motionX *= 0.75D;
-		entity.motionY *= 0.75D;
-		entity.motionZ *= 0.75D;
+		// Supercritical water has gas-like diffusivity but liquid-like density.
+		entity.motionX *= 0.58D;
+		entity.motionY *= 0.58D;
+		entity.motionZ *= 0.58D;
+		entity.motionY -= 0.012D;
+		entity.fallDistance = 0F;
+
+		if(entity instanceof EntityLivingBase) {
+
+			((EntityLivingBase)entity).attackEntityFrom(
+				DamageSource.generic,
+				2.0F
+			);
+		}
 	}
 
 	@Override
