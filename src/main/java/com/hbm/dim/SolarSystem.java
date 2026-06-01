@@ -204,7 +204,7 @@ public class SolarSystem {
 					.withTraits(
 						new CBT_Atmosphere(Fluids.HYDROGEN, 89D)
 							.and(Fluids.HELIUM4, 10D)
-							.and(Fluids.AMMONIA, 1D),
+							.and(Fluids.GAS, 1D),
 						new CBT_Temperature(-145)
 					)
 
@@ -273,7 +273,7 @@ public class SolarSystem {
 					.withTraits(
 						new CBT_Atmosphere(Fluids.HYDROGEN, 96D)
 							.and(Fluids.HELIUM4, 3D)
-							.and(Fluids.AMMONIA, 1D),
+							.and(Fluids.GAS, 1D),
 						new CBT_Temperature(-178)
 					)
 					.withSatellites(
@@ -337,8 +337,7 @@ public class SolarSystem {
 					.withTraits(
 						new CBT_Atmosphere(Fluids.HYDROGEN, 82D)
 							.and(Fluids.HELIUM4, 15D)
-							.and(Fluids.GAS, 3D) // methane
-							.and(Fluids.AMMONIA, 1D),
+							.and(Fluids.GAS, 3D), // methane
 						new CBT_Temperature(-224)
 					)
 					.withSatellites(
@@ -385,8 +384,7 @@ public class SolarSystem {
 					.withTraits(
 						new CBT_Atmosphere(Fluids.HYDROGEN, 80D)
 							.and(Fluids.HELIUM4, 19D)
-							.and(Fluids.GAS, 3D) // methane
-							.and(Fluids.AMMONIA, 1D),
+							.and(Fluids.GAS, 1D), // methane
 						new CBT_Temperature(-214)
 					)
 					.withSatellites(

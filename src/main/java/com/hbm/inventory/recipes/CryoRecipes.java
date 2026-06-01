@@ -51,38 +51,39 @@ public class CryoRecipes extends SerializableRecipe {
 		));
 
 		//Jupiter
-		//mostly hydrogen and helium
+		//H2/He with trace methane; ammonia is a cloud condensate, not bulk gas.
 		recipes.put(Fluids.JOOLGAS, new Quartet<>(
 			new FluidStack(Fluids.HYDROGEN, 89),
 			new FluidStack(Fluids.HELIUM4, 10),
-			new FluidStack(Fluids.AMMONIA, 1),
-			new FluidStack(Fluids.NEON, 1)
+			new FluidStack(Fluids.GAS, 1),
+			new FluidStack(Fluids.NONE, 0)
 		));
 
 		//Neptune
-		//hydrogen helium methane ice giant
+		//H2/He with methane enrichment; deeper ammonia/water ices are not upper atmosphere.
 		recipes.put(Fluids.NGAS, new Quartet<>(
 			new FluidStack(Fluids.HYDROGEN, 80),
 			new FluidStack(Fluids.HELIUM4, 19),
-			new FluidStack(Fluids.GAS, 5),
-			new FluidStack(Fluids.AMMONIA, 1)
+			new FluidStack(Fluids.GAS, 1),
+			new FluidStack(Fluids.NONE, 0)
 		));
 
 		//Uranus
-		//very similar to Neptune
+		//H2/He with methane enrichment.
 		recipes.put(Fluids.UGAS, new Quartet<>(
 			new FluidStack(Fluids.HYDROGEN, 82),
 			new FluidStack(Fluids.HELIUM4, 15),
-			new FluidStack(Fluids.GAS, 5),
-			new FluidStack(Fluids.AMMONIA, 1)
+			new FluidStack(Fluids.GAS, 3),
+			new FluidStack(Fluids.NONE, 0)
 		));
 
 		//Saturn
+		//H2/He with trace methane; depleted He compared to Jupiter.
 		recipes.put(Fluids.SARNUSGAS, new Quartet<>(
 			new FluidStack(Fluids.HYDROGEN, 96),
 			new FluidStack(Fluids.HELIUM4, 3),
-			new FluidStack(Fluids.AMMONIA, 1),
-			new FluidStack(Fluids.NEON, 1)
+			new FluidStack(Fluids.GAS, 1),
+			new FluidStack(Fluids.NONE, 0)
 		));
 
 		//Venus

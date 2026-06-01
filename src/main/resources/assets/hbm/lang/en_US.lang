@@ -7061,3 +7061,8 @@ tile.neptune_cloud.name=Neptune Methane Cloud
 tile.neptune_cloud_dense.name=Dense Neptune Cloud
 tile.neptune_atmosphere_dense.name=Dense Neptune Atmosphere
 tile.neptune_storm.name=Neptune Storm Cell
+
+tile.supercritical_hydrogen.name=Supercritical Hydrogen
+tile.metallic_hydrogen.name=Metallic Hydrogen Fluid
+tile.supercritical_water.name=Supercritical Water
+tile.ammonia_water.name=Water-Ammonia Slurry

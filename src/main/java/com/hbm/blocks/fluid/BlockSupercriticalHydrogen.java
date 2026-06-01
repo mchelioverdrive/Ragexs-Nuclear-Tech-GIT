@@ -10,6 +10,7 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.IIcon;
+import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
 public class BlockSupercriticalHydrogen extends Block {
@@ -25,24 +26,34 @@ public class BlockSupercriticalHydrogen extends Block {
 			"supercritical_hydrogen"
 		);
 
-		this.setHardness(100F);
-		this.setResistance(999999F);
-		this.setLightOpacity(1);
+		this.setHardness(-1.0F);
+		this.setResistance(6000000F);
+		this.setLightOpacity(2);
+		this.setTickRandomly(false);
+	}
+
+	@Override
+	public int getRenderType() {
+		return 4;
 	}
 
 	@Override
 	public boolean isOpaqueCube() {
-		return true;
+		return false;
 	}
 
 	@Override
 	public boolean renderAsNormalBlock() {
-		return true;
+		return false;
 	}
 
 	@Override
-	public AxisAlignedBB
-	getCollisionBoundingBoxFromPool(
+	public int getRenderBlockPass() {
+		return 1;
+	}
+
+	@Override
+	public AxisAlignedBB getCollisionBoundingBoxFromPool(
 		World world,
 		int x,
 		int y,
@@ -60,22 +71,35 @@ public class BlockSupercriticalHydrogen extends Block {
 		Entity entity
 	) {
 
-		// movement nearly impossible in the crushing liquid-like layer
-		entity.motionX *= 0.05D;
-		entity.motionY *= 0.05D;
-		entity.motionZ *= 0.05D;
-		entity.motionY -= 0.01D;
-
+		// Dense nonpolar fluid: very low viscosity chemically, but crushing pressure dominates here.
+		entity.motionX *= 0.08D;
+		entity.motionY *= 0.08D;
+		entity.motionZ *= 0.08D;
+		entity.motionY -= 0.008D;
 		entity.fallDistance = 0F;
 
 		if(entity instanceof EntityLivingBase) {
 
-			((EntityLivingBase) entity)
-				.attackEntityFrom(
-					DamageSource.drown,
-					4.0F
-				);
+			((EntityLivingBase)entity).attackEntityFrom(
+				DamageSource.generic,
+				4.0F
+			);
 		}
+	}
+
+	@Override
+	public boolean shouldSideBeRendered(
+		IBlockAccess world,
+		int x,
+		int y,
+		int z,
+		int side
+	) {
+
+		Block adjacent =
+			world.getBlock(x, y, z);
+
+		return adjacent != this;
 	}
 
 	@Override
@@ -92,7 +116,7 @@ public class BlockSupercriticalHydrogen extends Block {
 		IIconRegister reg
 	) {
 		icon = reg.registerIcon(
-			"lava_still"
+			"minecraft:water_still"
 		);
 	}
 

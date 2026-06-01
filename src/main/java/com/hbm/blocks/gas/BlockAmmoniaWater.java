@@ -28,17 +28,13 @@ public class BlockAmmoniaWater extends Block {
 
 		this.setHardness(-1.0F);
 		this.setResistance(6000000F);
-
-		// slightly darker / denser looking
 		this.setLightOpacity(3);
-
-		// no fluid updates
 		this.setTickRandomly(false);
 	}
 
 	@Override
 	public int getRenderType() {
-		return 4; // vanilla liquid renderer
+		return 4;
 	}
 
 	@Override
@@ -65,30 +61,16 @@ public class BlockAmmoniaWater extends Block {
 		Entity entity
 	) {
 
-		// Dense slushy mantle feel
+		// Water-ammonia mixtures stay liquid/slushy far below water's freezing point.
+		entity.motionX *= 0.70D;
+		entity.motionY *= 0.70D;
+		entity.motionZ *= 0.70D;
+		entity.motionY -= 0.015D;
+		entity.fallDistance = 0F;
 
-		// heavy horizontal resistance
-		entity.motionX *= 0.88D;
-		entity.motionZ *= 0.88D;
+		if(entity instanceof EntityLivingBase) {
 
-		// vertical resistance
-		entity.motionY *= 0.92D;
-
-		// gentle sinking
-		entity.motionY -= 0.02D;
-
-		// convection / turbulence
-		entity.motionY +=
-			(world.rand.nextDouble() - 0.5D)
-				* 0.015D;
-
-		// pressure damage if submerged
-		if(
-			entity instanceof EntityLivingBase
-				&& world.rand.nextInt(60) == 0
-		) {
-
-			entity.attackEntityFrom(
+			((EntityLivingBase)entity).attackEntityFrom(
 				DamageSource.generic,
 				1.0F
 			);
@@ -116,7 +98,6 @@ public class BlockAmmoniaWater extends Block {
 		IIconRegister reg
 	) {
 
-		// temporary texture
 		this.icon =
 			reg.registerIcon(
 				"minecraft:water_still"

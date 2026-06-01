@@ -12,24 +12,68 @@ public class BlockMetallicHydrogen extends Block {
 
 	public BlockMetallicHydrogen() {
 
-		super(Material.iron);
+		super(Material.water);
 
 		this.setBlockName(
 			"metallic_hydrogen"
 		);
 
 		this.setBlockTextureName(
-			"hbm:block_lead"
+			"minecraft:water_still"
 		);
 
-		this.setHardness(250F);
+		this.setHardness(-1.0F);
 		this.setResistance(
 			999999F
 		);
 
 		this.setLightLevel(
-			0.15F
+			0.05F
 		);
+		this.setLightOpacity(10);
+	}
+
+	@Override
+	public AxisAlignedBB getCollisionBoundingBoxFromPool(
+		World world,
+		int x,
+		int y,
+		int z
+	) {
+		return null;
+	}
+
+	@Override
+	public boolean canCollideCheck(
+		int meta,
+		boolean hitIfLiquid
+	) {
+		return false;
+	}
+
+	@Override
+	public void onEntityCollidedWithBlock(
+		World world,
+		int x,
+		int y,
+		int z,
+		Entity entity
+	) {
+
+		// Metallic hydrogen is a conductive degenerate fluid under extreme pressure.
+		entity.motionX *= 0.02D;
+		entity.motionY *= 0.02D;
+		entity.motionZ *= 0.02D;
+		entity.motionY -= 0.02D;
+		entity.fallDistance = 0F;
+
+		if(entity instanceof EntityLivingBase) {
+
+			((EntityLivingBase)entity).attackEntityFrom(
+				DamageSource.generic,
+				20.0F
+			);
+		}
 	}
 
 	@Override
