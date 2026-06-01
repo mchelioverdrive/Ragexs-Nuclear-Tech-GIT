@@ -47,8 +47,14 @@ public class WorldProviderOrbit extends WorldProvider {
 	private static final double ORBIT_PERIOD_SECONDS = 60 * 60 * 2; // 2 real hours per orbit
 
 	protected float getOrbitalAltitude(CelestialBody body) {
-		return (float) getAltitudeForPeriod(body.massKg,
-											(float) ORBIT_PERIOD_SECONDS);
+
+		if(body.parent == null) {
+			// stars
+			return (float)(body.radiusKm * 0.03D);
+		}
+
+		// planets/moons
+		return (float)(body.radiusKm * 0.08D);
 	}
 
 	// r = ∛[(G x Me x T2) / (4π2)]

@@ -83,7 +83,7 @@ public class SkyProviderOrbit extends SkyProviderCelestial {
 				if(progress > 0.5) orbiting = station.target;
 			}
 
-			renderCelestials(partialTicks, world, mc, metrics, celestialAngle, null, Vec3.createVectorHelper(0, 0, 0), 1, 1, orbiting, 160);
+			renderCelestials(partialTicks, world, mc, metrics, celestialAngle, orbiting, Vec3.createVectorHelper(0, 0, 0), 1, 1, orbiting, 160);
 
 		}
 		GL11.glPopMatrix();

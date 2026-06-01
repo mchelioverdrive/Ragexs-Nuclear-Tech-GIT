@@ -331,6 +331,7 @@ public class SolarSystem {
 					.withRotationalPeriod(-62_064)
 					.withColor(0.4F, 0.6F, 0.8F)
 					.withAxialTilt(97.77F)
+					.withProcessingLevel(3)
 					.withTraits(
 						new CBT_Atmosphere(Fluids.HYDROGEN, 100D)
 							.and(Fluids.GAS, 5D), //methane
@@ -533,30 +534,83 @@ public class SolarSystem {
 		return metrics;
 	}
 
-	public static List<AstroMetric> calculateMetricsFromSatellite(World world, float partialTicks, CelestialBody orbiting, double altitude) {
+	public static List<AstroMetric> calculateMetricsFromSatellite(
+		World world,
+		float partialTicks,
+		CelestialBody orbiting,
+		double altitude
+	) {
+
 		List<AstroMetric> metrics = new ArrayList<AstroMetric>();
 
-		double ticks = getCelestialTicks(world, partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
+		double ticks =
+			getCelestialTicks(world, partialTicks)
+				* (double)AstronomyUtil.TIME_MULTIPLIER;
 
-		// Get our XYZ coordinates of all bodies
-		calculatePositionsRecursive(metrics, null, orbiting.getStar(), ticks);
+		// Determine root body
+		CelestialBody root =
+			orbiting.parent == null
+				? orbiting
+				: orbiting.getStar();
 
-		// Add our orbiting satellite position
-		Vec3 position = calculatePosition(orbiting, altitude, ticks);
-		for(AstroMetric metric : metrics) {
-			if(metric.body == orbiting) {
-				position = position.addVector(metric.position.xCoord, metric.position.yCoord, metric.position.zCoord);
-				break;
+		// Get coordinates of all bodies
+		calculatePositionsRecursive(
+			metrics,
+			null,
+			root,
+			ticks
+		);
+
+		// Observer position (station orbit)
+		Vec3 position;
+
+		// Orbiting the root star
+		if(orbiting.parent == null) {
+
+			position = calculatePosition(
+				orbiting,
+				altitude,
+				ticks
+			);
+
+		} else {
+
+			position = calculatePosition(
+				orbiting,
+				altitude,
+				ticks
+			);
+
+			// offset by body's real position
+			for(AstroMetric metric : metrics) {
+
+				if(metric.body == orbiting) {
+
+					position =
+						position.addVector(
+							metric.position.xCoord,
+							metric.position.yCoord,
+							metric.position.zCoord
+						);
+
+					break;
+				}
 			}
 		}
 
-		// Get the metrics from the orbiting position
-		calculateMetricsFromPosition(metrics, position);
+		// Convert all bodies to observer-relative metrics
+		calculateMetricsFromPosition(
+			metrics,
+			position
+		);
 
-		// Sort by increasing distance
-		metrics.sort((a, b) -> {
-			return (int)(b.distance - a.distance);
-		});
+		// Sort farthest first
+		metrics.sort((a, b) ->
+						 Double.compare(
+							 b.distance,
+							 a.distance
+						 )
+		);
 
 		return metrics;
 	}
@@ -567,7 +621,13 @@ public class SolarSystem {
 		double ticks = getCelestialTicks(world, partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
 
 		// Get our XYZ coordinates of all bodies
-		calculatePositionsRecursive(metrics, null, from.getStar(), ticks);
+		//calculatePositionsRecursive(metrics, null, from.getStar(), ticks);
+		calculatePositionsRecursive(
+			metrics,
+			null,
+			from.parent == null ? from : from.getStar(),
+			ticks
+		);
 
 		// Add our orbiting satellite position
 		Vec3 fromPos = calculatePosition(from, fromAltitude, ticks);
@@ -712,16 +772,91 @@ public class SolarSystem {
 		}
 	}
 
-	private static void calculateMetric(AstroMetric metric, Vec3 position) {
-		// Calculate distance between bodies, for sorting
-		metric.distance = position.distanceTo(metric.position);
+	private static void calculateMetric(
+		AstroMetric metric,
+		Vec3 position
+	) {
 
-		// Calculate apparent size, for scaling in render
-		metric.apparentSize = getApparentSize(metric.body.radiusKm, metric.distance);
+		// relative vector observer -> body
+		Vec3 relative =
+			Vec3.createVectorHelper(
+				metric.position.xCoord - position.xCoord,
+				metric.position.yCoord - position.yCoord,
+				metric.position.zCoord - position.zCoord
+			);
 
-		// Get angle in relation to 0, 0 (sun position, origin)
-		metric.angle = getApparentAngleDegrees(position, metric.position);
+		// distance for sorting
+		metric.distance =
+			relative.lengthVector();
 
+		// apparent size
+		metric.apparentSize =
+			getApparentSize(
+				metric.body.radiusKm,
+				metric.distance
+			);
+
+		// angle relative to observer
+		metric.angle =
+			getApparentAngleDegrees(
+				Vec3.createVectorHelper(0,0,0),
+				relative
+			);
+
+		// ---------- SOLAR OCCLUSION FIX ----------
+		// if a planet is visually behind the Sun,
+		// make it effectively invisible
+
+		if(metric.body.parent != null) {
+
+			Vec3 toSun =
+				Vec3.createVectorHelper(
+					-position.xCoord,
+					-position.yCoord,
+					-position.zCoord
+				).normalize();
+
+			Vec3 toPlanet =
+				relative.normalize();
+
+			double alignment =
+				toSun.dotProduct(toPlanet);
+
+			// nearly same direction as sun
+			if(alignment > 0.9995D) {
+
+				double sunDistance =
+					position.lengthVector();
+
+				double sunAngularRadius =
+					Math.atan(
+						SolarSystem.kerbol.radiusKm /
+							sunDistance
+					);
+
+				double planetAngularOffset =
+					Math.acos(
+						MathHelper.clamp_double(
+							alignment,
+							-1D,
+							1D
+						)
+					);
+
+				// behind solar disc
+				if(planetAngularOffset <
+					sunAngularRadius) {
+					//System.out.println(
+					//	"OCCLUDED: " +
+					//		metric.body.name
+					//);
+
+					metric.apparentSize = 0;
+				}
+			}
+		}
+
+		// phase calculation
 		Vec3 toSun =
 			Vec3.createVectorHelper(
 				-metric.position.xCoord,
@@ -741,7 +876,8 @@ public class SolarSystem {
 				toObserver.normalize()
 			);
 
-		metric.phase = (1 + dot) * 0.5;
+		metric.phase =
+			(1 + dot) * 0.5;
 	}
 
 	private static double getApparentSize(double radius, double distance) {
@@ -759,32 +895,87 @@ public class SolarSystem {
 
 	// Calculates how large to render the sun in the sky from a given vantage point
 	public static double calculateSunSize(CelestialBody from) {
-		if(from.parent == null) return 0;
-		if(from.parent.parent != null) return calculateSunSize(from.parent);
-		return getApparentSize(from.parent.radiusKm, from.semiMajorAxisKm) * SUN_RENDER_SCALE;
+
+		// Orbiting the system star itself
+		if(from.parent == null) {
+
+			// fake observer altitude near photosphere
+			double distance =
+				from.radiusKm * 1.03D;
+
+			return getApparentSize(
+				from.radiusKm,
+				distance
+			) * SUN_RENDER_SCALE;
+		}
+
+		// orbiting a moon -> recurse upward
+		if(from.parent.parent != null) {
+			return calculateSunSize(from.parent);
+		}
+
+		// orbiting a planet
+		return getApparentSize(
+			from.parent.radiusKm,
+			from.semiMajorAxisKm
+		) * SUN_RENDER_SCALE;
 	}
 
 	// Gets angle for a single planet, good for locking tidal bodies
 	public static double calculateSingleAngle(World world, float partialTicks, CelestialBody from, CelestialBody to) {
+
 		List<AstroMetric> metrics = new ArrayList<AstroMetric>();
 
-		double ticks = getCelestialTicks(world, partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
+		double ticks =
+			getCelestialTicks(world, partialTicks)
+				* (double) AstronomyUtil.TIME_MULTIPLIER;
 
-		// Get our XYZ coordinates of all bodies
-		calculatePositionsRecursive(metrics, null, from.getStar(), ticks);
+		// Start from system root
+		CelestialBody root =
+			from.parent == null ? from : from.getStar();
 
-		AstroMetric metricFrom = null;
-		AstroMetric metricTo = null;
+		calculatePositionsRecursive(metrics, null, root, ticks);
+
+		Vec3 fromPos = Vec3.createVectorHelper(0, 0, 0);
+		Vec3 toPos = Vec3.createVectorHelper(0, 0, 0);
+
+		boolean foundFrom = false;
+		boolean foundTo = false;
+
+		// Sun/root body lives at origin
+		if(from.parent == null) {
+			foundFrom = true;
+		}
+
+		if(to.parent == null) {
+			foundTo = true;
+		}
 
 		for(AstroMetric metric : metrics) {
+
 			if(metric.body == from) {
-				metricFrom = metric;
-			} else if(metric.body == to) {
-				metricTo = metric;
+				fromPos = metric.position;
+				foundFrom = true;
+			}
+
+			if(metric.body == to) {
+				toPos = metric.position;
+				foundTo = true;
 			}
 		}
 
-		return getApparentAngleDegrees(metricFrom.position, metricTo.position);
+		if(!foundFrom || !foundTo) {
+			throw new IllegalStateException(
+				"Missing celestial metric! from=" +
+					(from != null ? from.name : "null") +
+					" to=" +
+					(to != null ? to.name : "null") +
+					" foundFrom=" + foundFrom +
+					" foundTo=" + foundTo
+			);
+		}
+
+		return getApparentAngleDegrees(fromPos, toPos);
 	}
 
 	public static double calculateSingleAngle(World world, float partialTicks, CelestialBody orbiting, double altitude) {

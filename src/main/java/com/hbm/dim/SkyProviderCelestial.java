@@ -508,6 +508,16 @@ public class SkyProviderCelestial extends IRenderHandler {
 
 			boolean orbitingThis = metric.body == orbiting;
 
+			// When orbiting the sun, never render planets
+			// closer than the sun visually
+			if(orbiting != null && orbiting.parent == null) {
+
+				// farther objects than our orbit are behind the sun
+				if(metric.distance > orbiting.radiusKm * 5D) {
+					continue;
+				}
+			}
+
 			double uvOffset = orbitingThis ? 1 - ((((double)WorldProviderCelestial.getMasterWorldTime(world) + partialTicks) / 1024) % 1) : 0;
 			float axialTilt = orbitingThis ? 0 : metric.body.axialTilt;
 
@@ -515,6 +525,10 @@ public class SkyProviderCelestial extends IRenderHandler {
 			{
 
 				double size = metric.apparentSize * 2.5D;
+				if(metric.apparentSize <= 0D) {
+					GL11.glPopMatrix();
+					continue;
+				}
 				size = MathHelper.clamp_double(size, 0.2D, maxSize);
 				boolean renderAsPoint = size < 0.15D;
 
