@@ -9,6 +9,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.layer.GenLayer;
@@ -93,15 +94,33 @@ public class WorldProviderUranus extends WorldProviderCelestial {
 				amp = 0;
 			}
 
-			if(amp > 0) {
+			if(amp > 0 && player.ticksExisted % 20 == 0) {
 
 				player.addPotionEffect(
 					new PotionEffect(
 						HbmPotion.radiation.id,
-						20,
+						40,
 						amp
 					)
 				);
+			}
+
+			if(player.ticksExisted % 20 == 0) {
+
+				if(player.posY <= 45) {
+
+					player.attackEntityFrom(DamageSource.generic, 7.0F);
+				}
+
+				else if(player.posY <= 90) {
+
+					player.attackEntityFrom(DamageSource.generic, 2.0F);
+				}
+
+				else if(player.posY <= 170) {
+
+					player.attackEntityFrom(DamageSource.drown, 1.0F);
+				}
 			}
 		}
 	}
@@ -161,7 +180,7 @@ public class WorldProviderUranus extends WorldProviderCelestial {
 	) {
 
 		// sunlight is weak at Uranus
-		return 0.035F;
+		return 0.004F;
 	}
 
 	@Override
@@ -175,7 +194,7 @@ public class WorldProviderUranus extends WorldProviderCelestial {
 		// slightly slower than Saturn
 
 		long dayLength =
-			20600L;
+			17200L;
 
 		long time =
 			worldTime % dayLength;

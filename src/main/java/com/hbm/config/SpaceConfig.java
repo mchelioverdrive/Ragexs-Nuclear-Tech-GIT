@@ -32,6 +32,7 @@ public class SpaceConfig {
 	public static int sunDimension = 103;
 	public static int saturnDimension = 102;
 	public static int uranusDimension = 107;
+	public static int neptuneDimension = 108;
 
 
 	//BIOME:
@@ -122,6 +123,13 @@ public class SpaceConfig {
 			"Uranus dimension ID",
 			uranusDimension
 		);
+		neptuneDimension = CommonConfig.createConfigInt(
+			config,
+			CATEGORY_DIM,
+			"17.15_neptuneDimension",
+			"Neptune dimension ID",
+			neptuneDimension
+		);
 
 		final String CATEGORY_GENERAL = CommonConfig.CATEGORY_GENERAL;
 		maxProbeDistance = CommonConfig.createConfigInt(config, CATEGORY_GENERAL, "1.90_maxProbeDistance", "How far from the center of the dimension can probes generate landing coordinates", maxProbeDistance);
@@ -170,6 +178,20 @@ public class SpaceConfig {
 			"16.27_saturnBiome",
 			"Saturn Biome ID",
 			saturnBiome
+		);
+		uranusBiome = CommonConfig.createConfigInt(
+			config,
+			CATEGORY_BIOME,
+			"16.28_uranusBiome",
+			"Uranus Biome ID",
+			uranusBiome
+		);
+		neptuneBiome = CommonConfig.createConfigInt(
+			config,
+			CATEGORY_BIOME,
+			"16.29_neptuneBiome",
+			"Neptune Biome ID",
+			neptuneBiome
 		);
 		//laytheFractureBiome = CommonConfig.createConfigInt(
 		//	config,
@@ -257,6 +279,12 @@ public class SpaceConfig {
 		uranusDimension =
 			findFreeDimensionId(
 				uranusDimension,
+				used
+			);
+
+		neptuneDimension =
+			findFreeDimensionId(
+				neptuneDimension,
 				used
 			);
 

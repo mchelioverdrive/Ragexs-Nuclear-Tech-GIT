@@ -60,14 +60,13 @@ public class BlockSupercriticalHydrogen extends Block {
 		Entity entity
 	) {
 
-		// movement nearly impossible
+		// movement nearly impossible in the crushing liquid-like layer
 		entity.motionX *= 0.05D;
 		entity.motionY *= 0.05D;
 		entity.motionZ *= 0.05D;
+		entity.motionY -= 0.01D;
 
 		entity.fallDistance = 0F;
-
-		entity.setFire(1);
 
 		if(entity instanceof EntityLivingBase) {
 

@@ -2,6 +2,11 @@ package com.hbm.blocks;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.DamageSource;
+import net.minecraft.world.World;
 
 public class BlockMetallicHydrogen extends Block {
 
@@ -25,5 +30,46 @@ public class BlockMetallicHydrogen extends Block {
 		this.setLightLevel(
 			0.15F
 		);
+	}
+
+	@Override
+	public AxisAlignedBB getCollisionBoundingBoxFromPool(
+		World world,
+		int x,
+		int y,
+		int z
+	) {
+		return null;
+	}
+
+	@Override
+	public boolean canCollideCheck(
+		int meta,
+		boolean hitIfLiquid
+	) {
+		return false;
+	}
+
+	@Override
+	public void onEntityCollidedWithBlock(
+		World world,
+		int x,
+		int y,
+		int z,
+		Entity entity
+	) {
+
+		entity.motionX *= 0.02D;
+		entity.motionY *= 0.02D;
+		entity.motionZ *= 0.02D;
+		entity.fallDistance = 0F;
+
+		if(entity instanceof EntityLivingBase) {
+
+			((EntityLivingBase)entity).attackEntityFrom(
+				DamageSource.generic,
+				20.0F
+			);
+		}
 	}
 }

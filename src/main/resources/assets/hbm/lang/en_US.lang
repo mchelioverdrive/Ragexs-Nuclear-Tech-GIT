@@ -229,6 +229,7 @@ body.dres=Ceres
 body.jool=Jupiter
 body.sarnus=Saturn
 body.uranus=Uranus
+body.neptune=Neptune
 
 bomb.detonated=Detonated successfully!
 bomb.incompatible=Device can not be triggered!
@@ -7055,3 +7056,8 @@ item.powder_spent_mox.name=Spent MOX-241 Pellet Powder
 item.powder_lead_irradiated.name=Spent Lead Absorber Pellet Powder
 item.dust_graphite.name=Spent Graphite Moderator Pellet Powder
 item.powder_spent_leu.name=Spent Low Enriched Uranium Pellet Powder
+tile.neptune_cloud_thin.name=Thin Neptune Methane Haze
+tile.neptune_cloud.name=Neptune Methane Cloud
+tile.neptune_cloud_dense.name=Dense Neptune Cloud
+tile.neptune_atmosphere_dense.name=Dense Neptune Atmosphere
+tile.neptune_storm.name=Neptune Storm Cell

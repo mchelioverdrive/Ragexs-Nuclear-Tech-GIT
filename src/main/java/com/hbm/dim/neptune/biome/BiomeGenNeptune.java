@@ -1,12 +1,14 @@
 package com.hbm.dim.neptune.biome;
 
 import com.hbm.dim.BiomeGenBaseCelestial;
+import net.minecraft.world.World;
+
+import java.util.Random;
 
 public class BiomeGenNeptune extends BiomeGenBaseCelestial {
 
 	public BiomeGenNeptune(int id) {
 		super(id);
-		//TODO check if right
 
 		this.rootHeight = 8.0F;
 		this.heightVariation = 0.0F;
@@ -16,6 +18,7 @@ public class BiomeGenNeptune extends BiomeGenBaseCelestial {
 
 		this.enableRain = false;
 
+		theBiomeDecorator.generateLakes = false;
 		this.theBiomeDecorator.treesPerChunk = 0;
 		this.theBiomeDecorator.flowersPerChunk = 0;
 		this.theBiomeDecorator.grassPerChunk = 0;
@@ -26,6 +29,7 @@ public class BiomeGenNeptune extends BiomeGenBaseCelestial {
 		this.theBiomeDecorator.sandPerChunk = 0;
 		this.theBiomeDecorator.sandPerChunk2 = 0;
 		this.theBiomeDecorator.clayPerChunk = 0;
+		this.theBiomeDecorator.bigMushroomsPerChunk = 0;
 
 		this.spawnableCreatureList.clear();
 		this.spawnableMonsterList.clear();
@@ -33,4 +37,13 @@ public class BiomeGenNeptune extends BiomeGenBaseCelestial {
 		this.spawnableCaveCreatureList.clear();
 	}
 
+	@Override
+	public void decorate(
+		World world,
+		Random rand,
+		int x,
+		int z
+	) {
+		// no vanilla surface features in a gas giant atmosphere
+	}
 }
