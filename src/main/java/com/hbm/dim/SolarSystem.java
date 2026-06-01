@@ -933,6 +933,8 @@ public class SolarSystem {
 		CelestialBody root =
 			from.parent == null ? from : from.getStar();
 
+		Vec3 rootPos = Vec3.createVectorHelper(0, 0, 0);
+		metrics.add(new AstroMetric(root, rootPos));
 		calculatePositionsRecursive(metrics, null, root, ticks);
 
 		Vec3 fromPos = Vec3.createVectorHelper(0, 0, 0);

@@ -31,6 +31,7 @@ import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraftforge.client.IRenderHandler;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class WorldProviderOrbit extends WorldProvider {
@@ -199,42 +200,46 @@ public class WorldProviderOrbit extends WorldProvider {
 	@Override
 	public float getSunBrightness(float partialTicks) {
 
-		CelestialBody orbiting =
-			OrbitalStation.clientStation.orbiting;
+		CelestialBody orbiting = OrbitalStation.clientStation.orbiting;
 
 		float solarPower = getSunPower();
 
-		// orbiting a star
+		// orbiting star → full direct exposure
 		if (orbiting.parent == null) {
-
-			// direct sunlight, no eclipse logic needed
-			float brightness = MathHelper.clamp_float(solarPower, 0F, 1F);
-
-			return brightness;
+			return MathHelper.clamp_float(solarPower, 0F, 1F);
 		}
 
-		// angular visibility (eclipse factor)
-		double angle =
-			Math.abs(
-				MathHelper.wrapAngleTo180_double(
-					SolarSystem.calculateSingleAngle(
-						worldObj,
-						partialTicks,
-						orbiting,
-						orbiting.getStar()
-					)
-				)
+		List<SolarSystem.AstroMetric> metrics =
+			SolarSystem.calculateMetricsFromSatellite(
+				worldObj,
+				partialTicks,
+				orbiting,
+				0
 			);
 
-		float visibility =
-			(float)MathHelper.clamp_double(
-				(angle - 8D) / 20D,
-				0D,
-				1D
-			);
+		// find ANY body that represents the star influence
+		SolarSystem.AstroMetric bestSun = null;
+		double bestDist = Double.MAX_VALUE;
 
-		// final physically correct brightness
-		float brightness = solarPower * visibility;
+		for (SolarSystem.AstroMetric m : metrics) {
+
+			if (m.body != orbiting.getStar())
+				continue;
+
+			if (m.distance < bestDist) {
+				bestDist = m.distance;
+				bestSun = m;
+			}
+		}
+
+		if (bestSun == null) {
+			return solarPower; // safe fallback (NOT 0)
+		}
+
+		// THIS is the only meaningful value in your system
+		float phase = (float) bestSun.phase;
+
+		float brightness = solarPower * (1.0F - phase);
 
 		return MathHelper.clamp_float(brightness, 0F, 1F);
 	}
