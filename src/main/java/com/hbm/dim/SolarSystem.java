@@ -370,7 +370,7 @@ public class SolarSystem {
 					),
 
 				//neptune
-				new CelestialBody("neptune")
+				new CelestialBody("neptune", SpaceConfig.neptuneDimension, Body.NEPTUNE)
 					.withMassRadius(1.024e26F, 24_622)
 					.withSemiMajorAxis(4_495_060_000D)
 					.withInitialOrbitalAngle(304.35D)
@@ -379,7 +379,8 @@ public class SolarSystem {
 					.withAxialTilt(28.32F)
 					.withTraits(
 						new CBT_Atmosphere(Fluids.HYDROGEN, 100D)
-							.and(Fluids.GAS, 10D),
+							.and(Fluids.HELIUM4, 18D)
+							.and(Fluids.NGAS, 3D),
 						new CBT_Temperature(-214)
 					)
 					.withSatellites(
@@ -450,7 +451,8 @@ public class SolarSystem {
 		SUN("kerbol"), //God I really need to change this to real names
 		JOOL("jool"), //pain
 		SARNUS("sarnus"),
-		URANUS("uranus");
+		URANUS("uranus"),
+		NEPTUNE("neptune");
 		// TEKTO("tekto");
 
 		public String name;
