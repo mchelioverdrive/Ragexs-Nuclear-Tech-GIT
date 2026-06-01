@@ -7067,3 +7067,6 @@ tile.supercritical_hydrogen.name=Supercritical Hydrogen
 tile.metallic_hydrogen.name=Metallic Hydrogen Fluid
 tile.supercritical_water.name=Supercritical Water
 tile.ammonia_water.name=Water-Ammonia Slurry
+
+tile.machine_molten_salt_reactor.name=Molten Salt Reactor
+container.moltenSaltReactor=Molten Salt Reactor
