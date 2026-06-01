@@ -199,20 +199,12 @@ public class WorldProviderOrbit extends WorldProvider {
 
 	@Override
 	public float getSunBrightness(float partialTicks) {
-		//this is currently bugged and everytime I tried to fix it to adjust brightness to whether or not the sun was visible
-		//it would either
-		//A. make everything bright regardless of if the sun is visible
-		//or
-		//B. make everything dark regardless of if the sun is visible
-		//so for now I'm leaving it like this where it's only slightly dark, however distance from the sun still affects brightness... I think.
-		//or at least it did? Nevermind. It now does not. But it SHOULD.
-		//basically from my shitty understanding this affects the brightness of the orbital station...
-		//todo: fix crap
 
 		CelestialBody orbiting = OrbitalStation.clientStation.orbiting;
 		float solarPower = getSunPower();
 
-		if (orbiting.parent == null) {
+		// no parent = star system body
+		if(orbiting.parent == null) {
 			return MathHelper.clamp_float(solarPower, 0F, 1F);
 		}
 
@@ -220,34 +212,64 @@ public class WorldProviderOrbit extends WorldProvider {
 			SolarSystem.getCelestialTicks(worldObj, partialTicks)
 				* AstronomyUtil.TIME_MULTIPLIER;
 
-		// observer position in system space
+		// station/body position
 		Vec3 observer =
 			SolarSystem.calculatePosition(orbiting, 0, ticks);
 
-		// SUN IS ALWAYS ORIGIN IN YOUR MODEL
+		// sun is origin
 		Vec3 toSun = Vec3.createVectorHelper(
 			-observer.xCoord,
 			-observer.yCoord,
 			-observer.zCoord
 		);
 
-		double dist = toSun.lengthVector();
+		double sunDist = toSun.lengthVector();
 
-		if (dist < 1e-6) {
+		if(sunDist < 1e-6) {
 			return solarPower;
 		}
 
 		toSun = toSun.normalize();
 
-		// IMPORTANT: use orbital plane normal (your system is 2D XY)
-		Vec3 normal = Vec3.createVectorHelper(0, 0, 1);
+		// parent body position (planet we're orbiting)
+		Vec3 parentPos =
+			SolarSystem.calculatePosition(
+				orbiting.parent,
+				0,
+				ticks
+			);
 
-		double dot = Math.max(0.0, toSun.dotProduct(normal));
+		Vec3 toPlanet = Vec3.createVectorHelper(
+			parentPos.xCoord - observer.xCoord,
+			parentPos.yCoord - observer.yCoord,
+			parentPos.zCoord - observer.zCoord
+		);
 
-		// optional: soften curve so it doesn't clamp instantly
-		float brightness = (float)(solarPower * Math.pow(dot, 1.2));
+		double planetDist = toPlanet.lengthVector();
 
-		return MathHelper.clamp_float(brightness, 0F, 1F);
+		if(planetDist > 1e-6) {
+
+			Vec3 planetDir = toPlanet.normalize();
+
+			// angle between planet and sun
+			double alignment =
+				toSun.dotProduct(planetDir);
+
+			// eclipse threshold
+			// tweak 0.995 → 0.999 depending on feel
+			if(alignment > 0.998) {
+
+				// in shadow
+				return solarPower * 0.05F;
+			}
+		}
+
+		// fully sunlit
+		return MathHelper.clamp_float(
+			solarPower,
+			0F,
+			1F
+		);
 	}
 
 	@Override

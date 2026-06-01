@@ -1,19 +1,16 @@
-package com.hbm.dim.saturn.GenLayerSaturn;
+package com.hbm.dim.neptune.GenLayerNeptune;
 
-import com.hbm.dim.saturn.biome.BiomeGenBaseSaturn;
+import com.hbm.dim.neptune.biome.BiomeGenBaseNeptune;
 import net.minecraft.world.gen.layer.GenLayer;
 
-public class GenLayerSaturnBiomes extends GenLayer {
+public class GenLayerNeptuneBiomes extends GenLayer {
 
-	public GenLayerSaturnBiomes(long seed) {
+	public GenLayerNeptuneBiomes(long seed) {
 		super(seed);
 	}
 
 	@Override
 	public int[] getInts(int x, int z, int width, int depth) {
-
-		//where evil ass hexagon?
-
 		int[] dest = new int[width * depth];
 
 		for(int k = 0; k < depth; ++k) {
@@ -21,14 +18,16 @@ public class GenLayerSaturnBiomes extends GenLayer {
 
 				initChunkSeed(x + i, z + k);
 
-				// one biome forever
+				// one biome forever?
 				dest[i + k * width] =
-					BiomeGenBaseSaturn.saturnCore.biomeID;
+					BiomeGenBaseNeptune.neptune.biomeID;
 			}
 		}
 
 		return dest;
 	}
+
+
 
 
 }

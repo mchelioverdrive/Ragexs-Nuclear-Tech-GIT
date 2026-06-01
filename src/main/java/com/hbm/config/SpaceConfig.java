@@ -59,6 +59,7 @@ public class SpaceConfig {
 	public static int jupiterBiome = 105;
 	public static int saturnBiome = 106;
 	public static int uranusBiome = 108;
+	public static int neptuneBiome = 109;
 	//public static int laytheFractureBiome = 106;
 
 
