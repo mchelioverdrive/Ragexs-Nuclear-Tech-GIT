@@ -75,4 +75,45 @@ public class BlockMetallicHydrogen extends Block {
 			);
 		}
 	}
+
+	@Override
+	public AxisAlignedBB getCollisionBoundingBoxFromPool(
+		World world,
+		int x,
+		int y,
+		int z
+	) {
+		return null;
+	}
+
+	@Override
+	public boolean canCollideCheck(
+		int meta,
+		boolean hitIfLiquid
+	) {
+		return false;
+	}
+
+	@Override
+	public void onEntityCollidedWithBlock(
+		World world,
+		int x,
+		int y,
+		int z,
+		Entity entity
+	) {
+
+		entity.motionX *= 0.02D;
+		entity.motionY *= 0.02D;
+		entity.motionZ *= 0.02D;
+		entity.fallDistance = 0F;
+
+		if(entity instanceof EntityLivingBase) {
+
+			((EntityLivingBase)entity).attackEntityFrom(
+				DamageSource.generic,
+				20.0F
+			);
+		}
+	}
 }

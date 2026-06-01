@@ -380,6 +380,7 @@ public class SolarSystem {
 					.withRotationalPeriod(57_996)
 					.withColor(0.2F, 0.4F, 0.6F)
 					.withAxialTilt(28.32F)
+					.withProcessingLevel(3)
 					.withTraits(
 						new CBT_Atmosphere(Fluids.HYDROGEN, 80D)
 							.and(Fluids.HELIUM4, 19D)
