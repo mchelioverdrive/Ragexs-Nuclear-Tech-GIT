@@ -201,43 +201,44 @@ public class WorldProviderOrbit extends WorldProvider {
 	public float getSunBrightness(float partialTicks) {
 
 		CelestialBody orbiting = OrbitalStation.clientStation.orbiting;
-
 		float solarPower = getSunPower();
 
 		if (orbiting.parent == null) {
 			return MathHelper.clamp_float(solarPower, 0F, 1F);
 		}
 
-		List<SolarSystem.AstroMetric> metrics =
-			SolarSystem.calculateMetricsFromSatellite(
-				worldObj,
-				partialTicks,
-				orbiting,
-				0
-			);
+		double ticks =
+			SolarSystem.getCelestialTicks(worldObj, partialTicks)
+				* AstronomyUtil.TIME_MULTIPLIER;
 
-		// DO NOT recompute positions, DO NOT use calculatePosition
-		SolarSystem.AstroMetric best = null;
-		double bestDist = Double.MAX_VALUE;
+		// observer position in system space
+		Vec3 observer =
+			SolarSystem.calculatePosition(orbiting, 0, ticks);
 
-		for (SolarSystem.AstroMetric m : metrics) {
+		// SUN IS ALWAYS ORIGIN IN YOUR MODEL
+		Vec3 toSun = Vec3.createVectorHelper(
+			-observer.xCoord,
+			-observer.yCoord,
+			-observer.zCoord
+		);
 
-			if (m.body != orbiting.getStar())
-				continue;
+		double dist = toSun.lengthVector();
 
-			if (m.distance < bestDist) {
-				bestDist = m.distance;
-				best = m;
-			}
-		}
-
-		if (best == null) {
+		if (dist < 1e-6) {
 			return solarPower;
 		}
 
-		float phase = (float)best.phase;
+		toSun = toSun.normalize();
 
-		return MathHelper.clamp_float(solarPower * (1.0F - phase), 0F, 1F);
+		// IMPORTANT: use orbital plane normal (your system is 2D XY)
+		Vec3 normal = Vec3.createVectorHelper(0, 0, 1);
+
+		double dot = Math.max(0.0, toSun.dotProduct(normal));
+
+		// optional: soften curve so it doesn't clamp instantly
+		float brightness = (float)(solarPower * Math.pow(dot, 1.2));
+
+		return MathHelper.clamp_float(brightness, 0F, 1F);
 	}
 
 	@Override
