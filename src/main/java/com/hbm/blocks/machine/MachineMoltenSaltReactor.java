@@ -31,12 +31,12 @@ public class MachineMoltenSaltReactor extends BlockMachineBase implements IToolt
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		list.add(EnumChatFormatting.YELLOW + "Heats liquid thorium salt into hot salt.");
-<<<<<<< codex/add-molten-salt-reactor-ekdzn0
+
 		list.add(EnumChatFormatting.YELLOW + "All six sides need shielding: lead, boron, radiation-resistant concrete,");
 		list.add(EnumChatFormatting.YELLOW + "or MSR inlet/outlet ports for pipe access through the shield.");
-=======
+
 		list.add(EnumChatFormatting.YELLOW + "Surround with radiation shielding to prevent leakage.");
->>>>>>> unironicpain
+
 		list.add(EnumChatFormatting.GOLD + "Corrodes while processing; corrosion causes salt loss.");
 	}
 
@@ -53,10 +53,9 @@ public class MachineMoltenSaltReactor extends BlockMachineBase implements IToolt
 			text.add("Rate: " + reactor.output + " mB/t");
 			text.add("Corrosion: " + reactor.corrosion + "%");
 			text.add(reactor.isShielded() ? "Shielding: OK" : "&[16733525&]Shielding: LEAKING");
-<<<<<<< codex/add-molten-salt-reactor-ekdzn0
+
 			text.add("Use lead/boron/concrete or MSR ports on all sides.");
-=======
->>>>>>> unironicpain
+
 		} else {
 			text.add("Pipe liquid thorium salt in.");
 			text.add("Pipe hot thorium salt out.");
