@@ -207,10 +207,13 @@ public class WorldProviderOrbit extends WorldProvider {
 		// orbiting a star
 		if (orbiting.parent == null) {
 
-			// allow full lighting near stars (your intended behavior)
-			return MathHelper.clamp_float(solarPower, 0F, 1F);
+			// direct sunlight, no eclipse logic needed
+			float brightness = MathHelper.clamp_float(solarPower, 0F, 1F);
+
+			return brightness;
 		}
 
+		// angular visibility (eclipse factor)
 		double angle =
 			Math.abs(
 				MathHelper.wrapAngleTo180_double(
@@ -230,12 +233,10 @@ public class WorldProviderOrbit extends WorldProvider {
 				1D
 			);
 
+		// final physically correct brightness
 		float brightness = solarPower * visibility;
 
-		// 🔥 KEY FIX: prevent absolute darkness in artificial/no-sky environments
-		float ambientFloor = 0.05F;
-
-		return MathHelper.clamp_float(brightness + ambientFloor, 0F, 1F);
+		return MathHelper.clamp_float(brightness, 0F, 1F);
 	}
 
 	@Override
