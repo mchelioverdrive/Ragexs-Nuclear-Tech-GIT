@@ -197,15 +197,40 @@ public class WorldProviderOrbit extends WorldProvider {
 	}
 
 	@Override
-	@SideOnly(Side.CLIENT)
-	public float getSunBrightness(float par1) {
-		if(SolarSystem.kerbol.hasTrait(CBT_Destroyed.class))
-			return 0;
+	public float getSunBrightness(float partialTicks) {
 
-		float celestialAngle = worldObj.getCelestialAngle(par1);
-		float celestialPhase = (1 - (celestialAngle + 0.5F) % 1) * 2 - 1;
+		CelestialBody orbiting =
+			OrbitalStation.clientStation.orbiting;
 
-		return 1 - (float)Library.smoothstep(Math.abs(celestialPhase), 0.6, 0.8);
+		// orbiting the sun = always bright
+		if(orbiting.parent == null) {
+			return 1F;
+		}
+
+		double angle =
+			SolarSystem.calculateSingleAngle(
+				worldObj,
+				partialTicks,
+				orbiting,
+				orbiting.getStar()
+			);
+
+		angle =
+			Math.abs(
+				MathHelper.wrapAngleTo180_double(
+					angle
+				)
+			);
+
+		// eclipse threshold
+		float brightness =
+			(float)MathHelper.clamp_double(
+				(angle - 8D) / 20D,
+				0D,
+				1D
+			);
+
+		return brightness;
 	}
 
 	@Override

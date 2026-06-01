@@ -876,8 +876,7 @@ public class SolarSystem {
 				toObserver.normalize()
 			);
 
-		metric.phase =
-			(1 + dot) * 0.5;
+		metric.phase = (1 - dot) * 0.5;
 	}
 
 	private static double getApparentSize(double radius, double distance) {
