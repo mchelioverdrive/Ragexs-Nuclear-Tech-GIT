@@ -5050,6 +5050,7 @@ item.volcanic_axe.name=Molten Axe
 item.volcanic_pickaxe.name=Molten Pickaxe
 item.wand_d.name=Debug Wand
 item.wand_k.name=Construction Wand
+item.bomb_site_wand.name=Bomb Site Wand
 item.wand_s.name=Structure Wand
 item.structure_custommachine.name=Custom Machine Structure Output Wand
 item.warhead_buster_large.name=Large Bunker Buster Warhead
