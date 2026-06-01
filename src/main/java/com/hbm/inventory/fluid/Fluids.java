@@ -880,39 +880,66 @@ public class Fluids {
 		double eff_steam_boil = 1.0D;
 		double eff_steam_heatex = 0.25D;
 
-		WATER.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, eff_steam_boil).setEff(HeatingType.HEATEXCHANGER, eff_steam_heatex)
-			.addStep(200, 1, STEAM, 100)
-			.addStep(220, 1, HOTSTEAM, 10)
-			.addStep(238, 1, SUPERHOTSTEAM, 1)
-			.addStep(2500, 10, ULTRAHOTSTEAM, 1));
+		WATER.addTraits(new FT_Heatable()
+							.setEff(HeatingType.BOILER, eff_steam_boil)
+							.setEff(HeatingType.HEATEXCHANGER, eff_steam_heatex)
+							.addStep(100, 1, STEAM, 100)
+							.addStep(250, 1, HOTSTEAM, 10)
+							.addStep(500, 1, SUPERHOTSTEAM, 1)
+							.addStep(900, 10, ULTRAHOTSTEAM, 1)
+		);
 		BRINE.addTraits(
 			LIQUID,
 			new FT_Heatable()
 				.setEff(HeatingType.BOILER, 1.0D)
 				.setEff(HeatingType.HEATEXCHANGER, 1.0D)
-				.addStep(10, 1, BITTERN, 1)
+				.addStep(105, 1, BITTERN, 1)
 		);
 
-		STEAM.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, eff_steam_boil).setEff(HeatingType.HEATEXCHANGER, eff_steam_heatex).addStep(2, 10, HOTSTEAM, 1));
-		HOTSTEAM.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, eff_steam_boil).setEff(HeatingType.HEATEXCHANGER, eff_steam_heatex).addStep(18, 10, SUPERHOTSTEAM, 1));
-		SUPERHOTSTEAM.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, eff_steam_boil).setEff(HeatingType.HEATEXCHANGER, eff_steam_heatex).addStep(120, 10, ULTRAHOTSTEAM, 1));
+		STEAM.addTraits(new FT_Heatable()
+							.setEff(HeatingType.BOILER, eff_steam_boil)
+							.setEff(HeatingType.HEATEXCHANGER, eff_steam_heatex)
+							.addStep(150, 10, HOTSTEAM, 1));
+
+		HOTSTEAM.addTraits(new FT_Heatable()
+							   .setEff(HeatingType.BOILER, eff_steam_boil)
+							   .setEff(HeatingType.HEATEXCHANGER, eff_steam_heatex)
+							   .addStep(250, 10, SUPERHOTSTEAM, 1));
+
+		SUPERHOTSTEAM.addTraits(new FT_Heatable()
+									.setEff(HeatingType.BOILER, eff_steam_boil)
+									.setEff(HeatingType.HEATEXCHANGER, eff_steam_heatex)
+									.addStep(400, 10, ULTRAHOTSTEAM, 1));
+
 
 		double eff_steam_turbine = 1.0D;
 		double eff_steam_cool = 0.5D;
-		STEAM.addTraits(new FT_Coolable(SPENTSTEAM, 100, 1, 200).setEff(CoolingType.TURBINE, eff_steam_turbine).setEff(CoolingType.HEATEXCHANGER, eff_steam_cool));
-		HOTSTEAM.addTraits(new FT_Coolable(STEAM, 1, 10, 2).setEff(CoolingType.TURBINE, eff_steam_turbine).setEff(CoolingType.HEATEXCHANGER, eff_steam_cool));
-		SUPERHOTSTEAM.addTraits(new FT_Coolable(HOTSTEAM, 1, 10, 18).setEff(CoolingType.TURBINE, eff_steam_turbine).setEff(CoolingType.HEATEXCHANGER, eff_steam_cool));
-		ULTRAHOTSTEAM.addTraits(new FT_Coolable(SUPERHOTSTEAM, 1, 10, 120).setEff(CoolingType.TURBINE, eff_steam_turbine).setEff(CoolingType.HEATEXCHANGER, eff_steam_cool));
+		STEAM.addTraits(new FT_Coolable(SPENTSTEAM, 100, 1, 100)
+							.setEff(CoolingType.TURBINE, eff_steam_turbine)
+							.setEff(CoolingType.HEATEXCHANGER, eff_steam_cool));
 
-		OIL.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, 1.0D).setEff(HeatingType.HEATEXCHANGER, 1.0D).addStep(10, 1, HOTOIL, 1));
-		OIL_DS.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, 1.0D).setEff(HeatingType.HEATEXCHANGER, 1.0D).addStep(10, 1, HOTOIL_DS, 1));
-		CRACKOIL.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, 1.0D).setEff(HeatingType.HEATEXCHANGER, 1.0D).addStep(10, 1, HOTCRACKOIL, 1));
-		CRACKOIL_DS.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, 1.0D).setEff(HeatingType.HEATEXCHANGER, 1.0D).addStep(10, 1, HOTCRACKOIL_DS, 1));
+		HOTSTEAM.addTraits(new FT_Coolable(STEAM, 1, 10, 150)
+							   .setEff(CoolingType.TURBINE, eff_steam_turbine)
+							   .setEff(CoolingType.HEATEXCHANGER, eff_steam_cool));
 
-		HOTOIL.addTraits(new FT_Coolable(OIL, 1, 1, 10).setEff(CoolingType.HEATEXCHANGER, 1.0D));
-		HOTOIL_DS.addTraits(new FT_Coolable(OIL_DS, 1, 1, 10).setEff(CoolingType.HEATEXCHANGER, 1.0D));
-		HOTCRACKOIL.addTraits(new FT_Coolable(CRACKOIL, 1, 1, 10).setEff(CoolingType.HEATEXCHANGER, 1.0D));
-		HOTCRACKOIL_DS.addTraits(new FT_Coolable(CRACKOIL_DS, 1, 1, 10).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+		SUPERHOTSTEAM.addTraits(new FT_Coolable(HOTSTEAM, 1, 10, 250)
+									.setEff(CoolingType.TURBINE, eff_steam_turbine)
+									.setEff(CoolingType.HEATEXCHANGER, eff_steam_cool));
+
+		ULTRAHOTSTEAM.addTraits(new FT_Coolable(SUPERHOTSTEAM, 1, 10, 400)
+									.setEff(CoolingType.TURBINE, eff_steam_turbine)
+									.setEff(CoolingType.HEATEXCHANGER, eff_steam_cool));
+
+
+		OIL.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, 1.0D).setEff(HeatingType.HEATEXCHANGER, 1.0D).addStep(200, 1, HOTOIL, 1));
+		OIL_DS.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, 1.0D).setEff(HeatingType.HEATEXCHANGER, 1.0D).addStep(200, 1, HOTOIL_DS, 1));
+		CRACKOIL.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, 1.0D).setEff(HeatingType.HEATEXCHANGER, 1.0D).addStep(200, 1, HOTCRACKOIL, 1));
+		CRACKOIL_DS.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, 1.0D).setEff(HeatingType.HEATEXCHANGER, 1.0D).addStep(200, 1, HOTCRACKOIL_DS, 1));
+
+		HOTOIL.addTraits(new FT_Coolable(OIL, 1, 1, 200).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+		HOTOIL_DS.addTraits(new FT_Coolable(OIL_DS, 1, 1, 200).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+		HOTCRACKOIL.addTraits(new FT_Coolable(CRACKOIL, 1, 1, 200).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+		HOTCRACKOIL_DS.addTraits(new FT_Coolable(CRACKOIL_DS, 1, 1, 200).setEff(CoolingType.HEATEXCHANGER, 1.0D));
 
 		// Generic reactor coolant is treated as borated light water: strong moderation, good heat transfer, and a realistic PWR outlet temperature.
 		COOLANT.addTraits(
