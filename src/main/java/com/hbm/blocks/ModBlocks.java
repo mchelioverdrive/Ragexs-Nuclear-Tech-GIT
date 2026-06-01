@@ -1034,6 +1034,8 @@ public class ModBlocks {
 	public static Block machine_amgen;
 	public static Block machine_geo;
 	public static Block machine_molten_salt_reactor;
+	public static Block machine_msr_input;
+	public static Block machine_msr_output;
 	public static Block machine_minirtg;
 	public static Block machine_powerrtg;
 	public static Block machine_radiolysis;
@@ -2136,6 +2138,8 @@ public class ModBlocks {
 		machine_amgen = new MachineAmgen(Material.iron).setBlockName("machine_amgen").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab);
 		machine_geo = new MachineAmgen(Material.iron).setBlockName("machine_geo").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab);
 		machine_molten_salt_reactor = new MachineMoltenSaltReactor(Material.iron).setBlockName("machine_molten_salt_reactor").setHardness(5.0F).setResistance(100.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":block_steel_machine");
+		machine_msr_input = new MachineMoltenSaltReactorPort(Material.iron, true).setBlockName("machine_msr_input").setHardness(5.0F).setResistance(100.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":block_steel_machine");
+		machine_msr_output = new MachineMoltenSaltReactorPort(Material.iron, false).setBlockName("machine_msr_output").setHardness(5.0F).setResistance(100.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":block_steel_machine");
 		machine_minirtg = new MachineMiniRTG(Material.iron).setBlockName("machine_minirtg").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":rtg_cell");
 		machine_powerrtg = new MachineMiniRTG(Material.iron).setBlockName("machine_powerrtg").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":rtg_polonium");
 		machine_radiolysis = new MachineRadiolysis(Material.iron).setBlockName("machine_radiolysis").setHardness(10.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":block_steel_machine");
@@ -3525,6 +3529,8 @@ public class ModBlocks {
 		GameRegistry.registerBlock(machine_rtg_grey, machine_rtg_grey.getUnlocalizedName());
 		GameRegistry.registerBlock(machine_geo, machine_geo.getUnlocalizedName());
 		register(machine_molten_salt_reactor);
+		register(machine_msr_input);
+		register(machine_msr_output);
 		GameRegistry.registerBlock(machine_amgen, machine_amgen.getUnlocalizedName());
 		GameRegistry.registerBlock(machine_minirtg, machine_minirtg.getUnlocalizedName());
 		GameRegistry.registerBlock(machine_powerrtg, machine_powerrtg.getUnlocalizedName());

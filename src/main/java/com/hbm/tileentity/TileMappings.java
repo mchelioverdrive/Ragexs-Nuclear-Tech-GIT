@@ -148,6 +148,10 @@ public class TileMappings {
 		put(TileEntityMachineArcFurnace.class, "tileentity_arc_furnace");
 		put(TileEntityMachineAmgen.class, "tileentity_amgen");
 		put(TileEntityMoltenSaltReactor.class, "tileentity_molten_salt_reactor");
+<<<<<<< codex/add-molten-salt-reactor-ekdzn0
+		put(TileEntityMoltenSaltReactorPort.class, "tileentity_msr_port");
+=======
+>>>>>>> unironicpain
 		put(TileEntityGeysir.class, "tileentity_geysir");
 		put(TileEntityMachineMissileAssembly.class, "tileentity_missile_assembly");
 		put(TileEntityMachineRocketAssembly.class, "tileentity_rocket_assembly");

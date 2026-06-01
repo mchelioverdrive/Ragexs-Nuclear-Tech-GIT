@@ -101,7 +101,6 @@ public class TileEntityMoltenSaltReactor extends TileEntityMachineBase implement
 
 	public boolean isShielded() {
 		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-			//if it's completely covered up, how are we supposed to get fluid in or out?
 			Block block = worldObj.getBlock(xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ);
 			if(!isShieldBlock(block)) return false;
 		}
@@ -112,8 +111,10 @@ public class TileEntityMoltenSaltReactor extends TileEntityMachineBase implement
 		return block instanceof IRadResistantBlock ||
 				block == ModBlocks.block_lead ||
 				block == ModBlocks.block_boron ||
-				block == ModBlocks.brick_concrete ||
-				block == ModBlocks.concrete_asbestos;
+				block == ModBlocks.concrete_super ||
+				block == ModBlocks.concrete_asbestos ||
+				block == ModBlocks.machine_msr_input ||
+				block == ModBlocks.machine_msr_output;
 	}
 
 	@Override
