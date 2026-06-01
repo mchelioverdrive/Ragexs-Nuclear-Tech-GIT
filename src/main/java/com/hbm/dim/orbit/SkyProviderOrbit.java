@@ -67,7 +67,8 @@ public class SkyProviderOrbit extends SkyProviderCelestial {
 			}
 			double coronaSize = sunSize * (3 - Library.smoothstep(Math.abs(celestialPhase), 0.7, 0.8));
 
-			renderSun(partialTicks, world, mc, sunSize, coronaSize, 1, 0);
+			float sunGlare = provider.getSunBrightness(partialTicks);
+			renderSun(partialTicks, world, mc, sunSize, coronaSize, 1, 0, sunGlare);
 
 			CelestialBody orbiting = station.orbiting;
 

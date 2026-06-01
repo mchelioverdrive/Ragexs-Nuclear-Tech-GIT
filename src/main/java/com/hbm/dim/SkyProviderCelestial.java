@@ -424,6 +424,10 @@ public class SkyProviderCelestial extends IRenderHandler {
 	}
 
 	protected void renderSun(float partialTicks, WorldClient world, Minecraft mc, double sunSize, double coronaSize, float visibility, float pressure) {
+		renderSun(partialTicks, world, mc, sunSize, coronaSize, visibility, pressure, 1.0F);
+	}
+
+	protected void renderSun(float partialTicks, WorldClient world, Minecraft mc, double sunSize, double coronaSize, float visibility, float pressure, float glareBrightness) {
 		Tessellator tessellator = Tessellator.instance;
 
 		if(SolarSystem.kerbol.shader != null && SolarSystem.kerbol.hasTrait(CBT_Destroyed.class)) {
@@ -481,8 +485,10 @@ public class SkyProviderCelestial extends IRenderHandler {
 			tessellator.addVertexWithUV(-sunSize, 100.0D, sunSize, 0.0D, 1.0D);
 			tessellator.draw();
 
-			// Draw a big ol' spiky flare! Less so when there is an atmosphere
-			GL11.glColor4f(1.0F, 1.0F, 1.0F, 1 - MathHelper.clamp_float(pressure, 0.0F, 1.0F) * 0.75F);
+			// Draw a big ol' spiky flare! Less so when there is an atmosphere,
+			// and scale the glare by irradiance for vacuum/orbital views.
+			float flareAlpha = MathHelper.clamp_float(glareBrightness, 0.0F, 1.0F) * (1 - MathHelper.clamp_float(pressure, 0.0F, 1.0F) * 0.75F);
+			GL11.glColor4f(1.0F, 1.0F, 1.0F, flareAlpha);
 
 			mc.renderEngine.bindTexture(flareTexture);
 
