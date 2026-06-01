@@ -1,51 +1,36 @@
 package com.hbm.tileentity.machine;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.hbm.inventory.container.ContainerMoltenSaltReactor;
+import com.hbm.blocks.IRadResistantBlock;
+import com.hbm.blocks.ModBlocks;
+import com.hbm.handler.radiation.ChunkRadiationManager;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
-import com.hbm.inventory.gui.GUIMoltenSaltReactor;
 import com.hbm.tileentity.IFluidCopiable;
-import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.CompatEnergyControl;
-import com.hbm.util.fauxpointtwelve.BlockPos;
 
 import api.hbm.fluid.IFluidStandardTransceiver;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 import api.hbm.tile.IInfoProviderEC;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.Container;
+import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraftforge.common.util.Constants.NBT;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMoltenSaltReactor extends TileEntityMachineBase implements IFluidStandardTransceiver, IFluidCopiable, IInfoProviderEC, IGUIProvider {
+public class TileEntityMoltenSaltReactor extends TileEntityMachineBase implements IFluidStandardTransceiver, IFluidCopiable, IInfoProviderEC {
 
-	public static final int SALT_CAPACITY_BASE = 16_000;
-	public static final int SALT_CAPACITY_PER_BLOCK = 250;
-	public static final int SALT_PER_CHANNEL = 2;
+	public static final int SALT_CAPACITY = 16_000;
+	public static final int HOT_SALT_CAPACITY = 16_000;
+	public static final int SALT_PER_TICK = 4;
+	public static final int MAX_CORROSION = 100;
 
 	public FluidTank[] tanks;
 	public int output;
-	public boolean assembled;
-	public int reactorBlocks;
-	public int portCount;
-	public int channelCount;
-	public int heatExchangerCount;
-	public int sourceCount;
-
-	protected List<BlockPos> ports = new ArrayList<BlockPos>();
+	public int corrosion;
 
 	public TileEntityMoltenSaltReactor() {
 		super(0);
 		tanks = new FluidTank[2];
-		tanks[0] = new FluidTank(Fluids.THORIUM_SALT, SALT_CAPACITY_BASE);
-		tanks[1] = new FluidTank(Fluids.THORIUM_SALT_HOT, SALT_CAPACITY_BASE);
+		tanks[0] = new FluidTank(Fluids.THORIUM_SALT, SALT_CAPACITY);
+		tanks[1] = new FluidTank(Fluids.THORIUM_SALT_HOT, HOT_SALT_CAPACITY);
 	}
 
 	@Override
@@ -53,49 +38,32 @@ public class TileEntityMoltenSaltReactor extends TileEntityMachineBase implement
 		return "container.moltenSaltReactor";
 	}
 
-	public void setup(int reactorBlocks, int portCount, int channelCount, int heatExchangerCount, int sourceCount, List<BlockPos> ports) {
-		this.assembled = true;
-		this.reactorBlocks = reactorBlocks;
-		this.portCount = portCount;
-		this.channelCount = channelCount;
-		this.heatExchangerCount = heatExchangerCount;
-		this.sourceCount = sourceCount;
-		this.ports.clear();
-		this.ports.addAll(ports);
-
-		int capacity = this.getTankCapacity();
-		tanks[0].changeTankSize(capacity);
-		tanks[1].changeTankSize(capacity);
-		this.markDirty();
-	}
-
 	@Override
 	public void updateEntity() {
 		if(!worldObj.isRemote) {
 			this.output = 0;
-
-			if(this.assembled) {
-				this.updateConnections();
-				this.processSalt();
-				this.sendFluid();
-			}
+			this.updateConnections();
+			this.processSalt();
+			this.updateCorrosionAndRadiation();
+			this.sendFluidToAll(tanks[1], this);
 
 			NBTTagCompound data = new NBTTagCompound();
 			data.setInteger("output", output);
-			data.setBoolean("assembled", assembled);
-			data.setInteger("reactorBlocks", reactorBlocks);
-			data.setInteger("portCount", portCount);
-			data.setInteger("channelCount", channelCount);
-			data.setInteger("heatExchangerCount", heatExchangerCount);
-			data.setInteger("sourceCount", sourceCount);
+			data.setInteger("corrosion", corrosion);
 			tanks[0].writeToNBT(data, "salt");
 			tanks[1].writeToNBT(data, "hotSalt");
 			this.networkPack(data, 50);
 		}
 	}
 
+	protected void updateConnections() {
+		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
+			this.trySubscribe(tanks[0].getTankType(), worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
+		}
+	}
+
 	protected void processSalt() {
-		int operations = Math.min(this.getMaxProcessRate(), tanks[0].getFill());
+		int operations = Math.min(SALT_PER_TICK, tanks[0].getFill());
 		operations = Math.min(operations, tanks[1].getMaxFill() - tanks[1].getFill());
 
 		if(operations > 0) {
@@ -105,43 +73,53 @@ public class TileEntityMoltenSaltReactor extends TileEntityMachineBase implement
 		}
 	}
 
-	public int getMaxProcessRate() {
-		if(!assembled) return 0;
-		return Math.max(1, Math.min(channelCount, heatExchangerCount) * Math.max(1, sourceCount) * SALT_PER_CHANNEL);
-	}
+	protected void updateCorrosionAndRadiation() {
+		boolean active = this.output > 0 || tanks[1].getFill() > 0;
+		if(!active) return;
 
-	public int getTankCapacity() {
-		return SALT_CAPACITY_BASE + reactorBlocks * SALT_CAPACITY_PER_BLOCK;
-	}
+		boolean shielded = this.isShielded();
+		if(this.output > 0 && worldObj.getTotalWorldTime() % (shielded ? 200 : 40) == 0 && corrosion < MAX_CORROSION) {
+			corrosion++;
+		}
 
-	protected void updateConnections() {
-		for(BlockPos port : ports) {
-			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-				this.trySubscribe(tanks[0].getTankType(), worldObj, port.getX() + dir.offsetX, port.getY() + dir.offsetY, port.getZ() + dir.offsetZ, dir);
-			}
+		if(!shielded && worldObj.getTotalWorldTime() % 20 == 0) {
+			float rad = 0.25F + corrosion * 0.05F + tanks[1].getFill() / 16_000F;
+			ChunkRadiationManager.proxy.incrementRad(worldObj, xCoord, yCoord, zCoord, rad);
+		}
+
+		if(corrosion > 0 && worldObj.getTotalWorldTime() % Math.max(20, 220 - corrosion * 2) == 0) {
+			this.leakSalt(shielded ? 1 : 2);
 		}
 	}
 
-	protected void sendFluid() {
-		for(BlockPos port : ports) {
-			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-				this.sendFluid(tanks[1], worldObj, port.getX() + dir.offsetX, port.getY() + dir.offsetY, port.getZ() + dir.offsetZ, dir);
-			}
+	protected void leakSalt(int amount) {
+		int hotLeak = Math.min(amount, tanks[1].getFill());
+		tanks[1].setFill(tanks[1].getFill() - hotLeak);
+		int coldLeak = Math.min(amount - hotLeak, tanks[0].getFill());
+		tanks[0].setFill(tanks[0].getFill() - coldLeak);
+	}
+
+	public boolean isShielded() {
+		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
+			Block block = worldObj.getBlock(xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ);
+			if(!isShieldBlock(block)) return false;
 		}
+		return true;
+	}
+
+	protected boolean isShieldBlock(Block block) {
+		return block instanceof IRadResistantBlock ||
+				block == ModBlocks.block_lead ||
+				block == ModBlocks.block_boron ||
+				block == ModBlocks.concrete_super ||
+				block == ModBlocks.concrete_asbestos;
 	}
 
 	@Override
 	public void networkUnpack(NBTTagCompound data) {
 		super.networkUnpack(data);
 		this.output = data.getInteger("output");
-		this.assembled = data.getBoolean("assembled");
-		this.reactorBlocks = data.getInteger("reactorBlocks");
-		this.portCount = data.getInteger("portCount");
-		this.channelCount = data.getInteger("channelCount");
-		this.heatExchangerCount = data.getInteger("heatExchangerCount");
-		this.sourceCount = data.getInteger("sourceCount");
-		tanks[0].changeTankSize(this.getTankCapacity());
-		tanks[1].changeTankSize(this.getTankCapacity());
+		this.corrosion = data.getInteger("corrosion");
 		tanks[0].readFromNBT(data, "salt");
 		tanks[1].readFromNBT(data, "hotSalt");
 	}
@@ -150,53 +128,18 @@ public class TileEntityMoltenSaltReactor extends TileEntityMachineBase implement
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		this.output = nbt.getInteger("output");
-		this.assembled = nbt.getBoolean("assembled");
-		this.reactorBlocks = nbt.getInteger("reactorBlocks");
-		this.portCount = nbt.getInteger("portCount");
-		this.channelCount = nbt.getInteger("channelCount");
-		this.heatExchangerCount = nbt.getInteger("heatExchangerCount");
-		this.sourceCount = nbt.getInteger("sourceCount");
-		tanks[0].changeTankSize(this.getTankCapacity());
-		tanks[1].changeTankSize(this.getTankCapacity());
+		this.corrosion = nbt.getInteger("corrosion");
 		tanks[0].readFromNBT(nbt, "salt");
 		tanks[1].readFromNBT(nbt, "hotSalt");
-		this.readPorts(nbt);
 	}
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		nbt.setInteger("output", output);
-		nbt.setBoolean("assembled", assembled);
-		nbt.setInteger("reactorBlocks", reactorBlocks);
-		nbt.setInteger("portCount", portCount);
-		nbt.setInteger("channelCount", channelCount);
-		nbt.setInteger("heatExchangerCount", heatExchangerCount);
-		nbt.setInteger("sourceCount", sourceCount);
+		nbt.setInteger("corrosion", corrosion);
 		tanks[0].writeToNBT(nbt, "salt");
 		tanks[1].writeToNBT(nbt, "hotSalt");
-		this.writePorts(nbt);
-	}
-
-	protected void readPorts(NBTTagCompound nbt) {
-		this.ports.clear();
-		NBTTagList list = nbt.getTagList("ports", NBT.TAG_COMPOUND);
-		for(int i = 0; i < list.tagCount(); i++) {
-			NBTTagCompound tag = list.getCompoundTagAt(i);
-			this.ports.add(new BlockPos(tag.getInteger("x"), tag.getInteger("y"), tag.getInteger("z")));
-		}
-	}
-
-	protected void writePorts(NBTTagCompound nbt) {
-		NBTTagList list = new NBTTagList();
-		for(BlockPos port : ports) {
-			NBTTagCompound tag = new NBTTagCompound();
-			tag.setInteger("x", port.getX());
-			tag.setInteger("y", port.getY());
-			tag.setInteger("z", port.getZ());
-			list.appendTag(tag);
-		}
-		nbt.setTag("ports", list);
 	}
 
 	@Override
@@ -217,17 +160,6 @@ public class TileEntityMoltenSaltReactor extends TileEntityMachineBase implement
 	@Override
 	public FluidTank getTankToPaste() {
 		return tanks[0];
-	}
-
-	@Override
-	public Container provideContainer(int ID, EntityPlayer player, net.minecraft.world.World world, int x, int y, int z) {
-		return new ContainerMoltenSaltReactor(this);
-	}
-
-	@Override
-	@SideOnly(Side.CLIENT)
-	public Object provideGUI(int ID, EntityPlayer player, net.minecraft.world.World world, int x, int y, int z) {
-		return new GUIMoltenSaltReactor(this);
 	}
 
 	@Override

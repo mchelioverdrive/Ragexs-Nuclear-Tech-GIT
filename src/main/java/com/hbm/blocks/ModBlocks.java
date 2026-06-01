@@ -3524,7 +3524,7 @@ public class ModBlocks {
 		GameRegistry.registerBlock(machine_exposure_chamber, machine_exposure_chamber.getUnlocalizedName());
 		GameRegistry.registerBlock(machine_rtg_grey, machine_rtg_grey.getUnlocalizedName());
 		GameRegistry.registerBlock(machine_geo, machine_geo.getUnlocalizedName());
-		GameRegistry.registerBlock(machine_molten_salt_reactor, machine_molten_salt_reactor.getUnlocalizedName());
+		register(machine_molten_salt_reactor);
 		GameRegistry.registerBlock(machine_amgen, machine_amgen.getUnlocalizedName());
 		GameRegistry.registerBlock(machine_minirtg, machine_minirtg.getUnlocalizedName());
 		GameRegistry.registerBlock(machine_powerrtg, machine_powerrtg.getUnlocalizedName());
