@@ -2,12 +2,17 @@ package com.hbm.dim.neptune;
 
 import com.hbm.dim.WorldChunkManagerCelestial;
 import com.hbm.dim.WorldProviderCelestial;
-import com.hbm.dim.saturn.ChunkProviderSaturn;
+import com.hbm.dim.neptune.GenLayerNeptune.GenLayerNeptuneBiomes;
+import com.hbm.potion.HbmPotion;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.chunk.IChunkProvider;
+import net.minecraft.world.gen.layer.GenLayer;
+import net.minecraft.world.gen.layer.GenLayerVoronoiZoom;
 
 public class WorldProviderNeptune extends WorldProviderCelestial {
 
@@ -19,24 +24,103 @@ public class WorldProviderNeptune extends WorldProviderCelestial {
 				createNeptune(worldObj.getSeed())
 			);
 	}
+
 	@Override
 	public String getDimensionName() {
 		return "Neptune";
 	}
+
 	@Override
 	public IChunkProvider createChunkGenerator() {
-		return new ChunkProviderNeptune(this.worldObj, this.getSeed(), false);
+		return new ChunkProviderNeptune(
+			this.worldObj,
+			this.getSeed(),
+			false
+		);
 	}
 
 	@Override
 	public void updateWeather() {
 
-		worldObj.getWorldInfo().setRaining(true);
-		worldObj.getWorldInfo().setThundering(true);
+		// Neptune has no surface rain, but it does have persistent deep storms.
+		this.worldObj.rainingStrength = 0.0F;
+		this.worldObj.thunderingStrength = 0.7F;
+
+		this.worldObj
+			.getWorldInfo()
+			.setRaining(false);
+
+		this.worldObj
+			.getWorldInfo()
+			.setThundering(true);
+
+		if(worldObj.isRemote)
+			return;
+
+		for(Object obj :
+			worldObj.playerEntities) {
+
+			if(!(obj instanceof EntityPlayer))
+				continue;
+
+			EntityPlayer player =
+				(EntityPlayer)obj;
+
+			int amp;
+
+			// exposed upper methane haze
+			if(player.posY > 220) {
+
+				amp = 12;
+			}
+
+			// cold cloud tops and charged storm bands
+			else if(player.posY > 170) {
+
+				amp = 6;
+			}
+
+			// deeper atmosphere provides more shielding
+			else if(player.posY > 100) {
+
+				amp = 2;
+			}
+
+			else {
+
+				amp = 0;
+			}
+
+			if(amp > 0) {
+
+				player.addPotionEffect(
+					new PotionEffect(
+						HbmPotion.radiation.id,
+						20,
+						amp
+					)
+				);
+			}
+		}
 	}
 
 	private static WorldChunkManagerCelestial.BiomeGenLayers createNeptune(long seed) {
-		//TODO
+
+		// One planet-wide cold methane/hydrogen atmosphere biome.
+		GenLayer genlayerBiomes =
+			new GenLayerNeptuneBiomes(seed);
+
+		GenLayerVoronoiZoom genlayerVoronoi =
+			new GenLayerVoronoiZoom(
+				10L,
+				genlayerBiomes
+			);
+
+		return new WorldChunkManagerCelestial.BiomeGenLayers(
+			genlayerBiomes,
+			genlayerVoronoi,
+			seed
+		);
 	}
 
 	@Override
@@ -44,9 +128,9 @@ public class WorldProviderNeptune extends WorldProviderCelestial {
 	public Vec3 getSkyColor(Entity camera, float partialTicks) {
 
 		return Vec3.createVectorHelper(
-			0.08,
-			0.20,
-			0.45
+			0.06,
+			0.18,
+			0.48
 		);
 	}
 
@@ -55,9 +139,9 @@ public class WorldProviderNeptune extends WorldProviderCelestial {
 	public Vec3 getFogColor(float celestialAngle, float partialTicks) {
 
 		return Vec3.createVectorHelper(
-			0.03,
-			0.09,
-			0.20
+			0.02,
+			0.07,
+			0.18
 		);
 	}
 
@@ -65,13 +149,16 @@ public class WorldProviderNeptune extends WorldProviderCelestial {
 	@SideOnly(Side.CLIENT)
 	public float getSunBrightness(float partialTicks) {
 
-		return 0.06F;
+		// About thirty astronomical units from the Sun.
+		return 0.012F;
 	}
 
 	@Override
 	public float calculateCelestialAngle(long worldTime, float partialTicks) {
 
-		int dayLength = 16000;
+		// Neptune rotates in about 16.1 Earth hours.
+		long dayLength =
+			19360L;
 
 		long time =
 			worldTime % dayLength;
@@ -79,7 +166,6 @@ public class WorldProviderNeptune extends WorldProviderCelestial {
 		return ((float)time + partialTicks)
 			/ (float)dayLength - 0.25F;
 	}
-
 
 	@Override
 	public boolean isSurfaceWorld() {
@@ -95,9 +181,4 @@ public class WorldProviderNeptune extends WorldProviderCelestial {
 	public boolean canCoordinateBeSpawn(int x, int z) {
 		return false;
 	}
-
-
-
-
-
 }
