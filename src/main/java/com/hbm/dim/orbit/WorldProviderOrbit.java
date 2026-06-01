@@ -202,35 +202,41 @@ public class WorldProviderOrbit extends WorldProvider {
 		CelestialBody orbiting =
 			OrbitalStation.clientStation.orbiting;
 
-		// orbiting the sun = always bright
-		if(orbiting.parent == null) {
-			return 1F;
+		float solarPower = getSunPower();
+
+		// orbiting a star
+		if (orbiting.parent == null) {
+
+			// direct sunlight, no eclipse logic needed
+			float brightness = MathHelper.clamp_float(solarPower, 0F, 1F);
+
+			return brightness;
 		}
 
+		// angular visibility (eclipse factor)
 		double angle =
-			SolarSystem.calculateSingleAngle(
-				worldObj,
-				partialTicks,
-				orbiting,
-				orbiting.getStar()
-			);
-
-		angle =
 			Math.abs(
 				MathHelper.wrapAngleTo180_double(
-					angle
+					SolarSystem.calculateSingleAngle(
+						worldObj,
+						partialTicks,
+						orbiting,
+						orbiting.getStar()
+					)
 				)
 			);
 
-		// eclipse threshold
-		float brightness =
+		float visibility =
 			(float)MathHelper.clamp_double(
 				(angle - 8D) / 20D,
 				0D,
 				1D
 			);
 
-		return brightness;
+		// final physically correct brightness
+		float brightness = solarPower * visibility;
+
+		return MathHelper.clamp_float(brightness, 0F, 1F);
 	}
 
 	@Override
