@@ -198,78 +198,105 @@ public class WorldProviderOrbit extends WorldProvider {
 	}
 
 	@Override
+	public float getSunBrightnessFactor(float partialTicks) {
+		return getSunBrightness(partialTicks);
+	}
+
+	@Override
 	public float getSunBrightness(float partialTicks) {
+		OrbitalStation station = OrbitalStation.clientStation;
+		CelestialBody orbiting = station.orbiting;
 
-		CelestialBody orbiting = OrbitalStation.clientStation.orbiting;
-		float solarPower = getSunPower();
-
-		// no parent = star system body
-		if(orbiting.parent == null) {
-			return MathHelper.clamp_float(solarPower, 0F, 1F);
-		}
+		if(orbiting.getStar().hasTrait(CBT_Destroyed.class))
+			return 0;
 
 		double ticks =
 			SolarSystem.getCelestialTicks(worldObj, partialTicks)
 				* AstronomyUtil.TIME_MULTIPLIER;
 
-		// station/body position
-		Vec3 observer =
-			SolarSystem.calculatePosition(orbiting, 0, ticks);
+		double progress = station.getTransferProgress(partialTicks);
+		Vec3 observer = getObserverPosition(station, progress, ticks);
 
-		// sun is origin
-		Vec3 toSun = Vec3.createVectorHelper(
-			-observer.xCoord,
-			-observer.yCoord,
-			-observer.zCoord
+		float solarPower = getSolarPower(observer);
+		CelestialBody eclipsingBody = progress > 0.5D ? station.target : orbiting;
+
+		if(isEclipsedBy(observer, eclipsingBody, ticks))
+			return solarPower * 0.05F;
+
+		return solarPower;
+	}
+
+	private Vec3 getObserverPosition(OrbitalStation station, double progress, double ticks) {
+		Vec3 from = getSatellitePosition(station.orbiting, getOrbitalAltitude(station.orbiting), ticks);
+
+		if(progress <= 0.0D)
+			return from;
+
+		Vec3 to = getSatellitePosition(station.target, getOrbitalAltitude(station.target), ticks);
+
+		return Vec3.createVectorHelper(
+			BobMathUtil.clampedLerp(from.xCoord, to.xCoord, progress),
+			BobMathUtil.clampedLerp(from.yCoord, to.yCoord, progress),
+			BobMathUtil.clampedLerp(from.zCoord, to.zCoord, progress)
+		);
+	}
+
+	private Vec3 getSatellitePosition(CelestialBody body, double altitude, double ticks) {
+		Vec3 bodyPosition = getBodyPosition(body, ticks);
+		Vec3 localOrbit = SolarSystem.calculatePosition(body, altitude, ticks);
+
+		return bodyPosition.addVector(localOrbit.xCoord, localOrbit.yCoord, localOrbit.zCoord);
+	}
+
+	private Vec3 getBodyPosition(CelestialBody body, double ticks) {
+		if(body.parent == null)
+			return Vec3.createVectorHelper(0, 0, 0);
+
+		Vec3 parentPosition = getBodyPosition(body.parent, ticks);
+		double yearTicks = CelestialBody.secondsToVanillaTicks(body.getOrbitalPeriod());
+		double angleRadians = 2.0D * Math.PI * (ticks / yearTicks) + Math.toRadians(body.initialOrbitalAngle);
+
+		return parentPosition.addVector(
+			body.semiMajorAxisKm * Math.cos(angleRadians),
+			body.semiMajorAxisKm * Math.sin(angleRadians),
+			0
+		);
+	}
+
+	private float getSolarPower(Vec3 observer) {
+		double sunDistanceKm = observer.lengthVector();
+
+		if(sunDistanceKm < 1.0D)
+			return 1.0F;
+
+		double distanceAU = sunDistanceKm / AstronomyUtil.KM_IN_AU;
+		return MathHelper.clamp_float((float)(1.0D / (distanceAU * distanceAU)), 0F, 1F);
+	}
+
+	private boolean isEclipsedBy(Vec3 observer, CelestialBody body, double ticks) {
+		if(body.parent == null)
+			return false;
+
+		Vec3 bodyPosition = getBodyPosition(body, ticks);
+		Vec3 toSun = Vec3.createVectorHelper(-observer.xCoord, -observer.yCoord, -observer.zCoord);
+		Vec3 toBody = Vec3.createVectorHelper(
+			bodyPosition.xCoord - observer.xCoord,
+			bodyPosition.yCoord - observer.yCoord,
+			bodyPosition.zCoord - observer.zCoord
 		);
 
-		double sunDist = toSun.lengthVector();
+		double sunDistance = toSun.lengthVector();
+		double bodyDistance = toBody.lengthVector();
 
-		if(sunDist < 1e-6) {
-			return solarPower;
-		}
+		if(sunDistance < 1.0D || bodyDistance < 1.0D || bodyDistance >= sunDistance)
+			return false;
 
-		toSun = toSun.normalize();
+		double alignment = toSun.normalize().dotProduct(toBody.normalize());
+		double angularSeparation = Math.acos(MathHelper.clamp_double(alignment, -1.0D, 1.0D));
+		double sunAngularRadius = Math.atan(SolarSystem.kerbol.radiusKm / sunDistance);
+		double bodyAngularRadius = Math.atan(body.radiusKm / bodyDistance);
 
-		// parent body position (planet we're orbiting)
-		Vec3 parentPos =
-			SolarSystem.calculatePosition(
-				orbiting.parent,
-				0,
-				ticks
-			);
-
-		Vec3 toPlanet = Vec3.createVectorHelper(
-			parentPos.xCoord - observer.xCoord,
-			parentPos.yCoord - observer.yCoord,
-			parentPos.zCoord - observer.zCoord
-		);
-
-		double planetDist = toPlanet.lengthVector();
-
-		if(planetDist > 1e-6) {
-
-			Vec3 planetDir = toPlanet.normalize();
-
-			// angle between planet and sun
-			double alignment =
-				toSun.dotProduct(planetDir);
-
-			// eclipse threshold
-			// tweak 0.995 → 0.999 depending on feel
-			if(alignment > 0.998) {
-
-				// in shadow
-				return solarPower * 0.05F;
-			}
-		}
-
-		// fully sunlit
-		return MathHelper.clamp_float(
-			solarPower,
-			0F,
-			1F
-		);
+		return angularSeparation < bodyAngularRadius + sunAngularRadius;
 	}
 
 	@Override
