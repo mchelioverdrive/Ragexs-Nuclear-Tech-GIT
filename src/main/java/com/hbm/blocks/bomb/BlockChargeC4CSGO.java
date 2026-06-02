@@ -69,7 +69,7 @@ public class BlockChargeC4CSGO extends BlockChargeC4 {
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		super.addInformation(stack, player, list, ext);
-		list.add(EnumChatFormatting.BLUE + "Does not drop blocks.");
+		//list.add(EnumChatFormatting.BLUE + "Does not drop blocks.");
 		list.add(EnumChatFormatting.RED + "Can only be placed inside defined bomb sites.");
 	}
 	@Override
