@@ -3171,6 +3171,43 @@ public class AssemblerRecipes extends SerializableRecipe {
 				   },
 				   600);
 
+		makeRecipe(new ComparableStack(ModBlocks.machine_molten_salt_reactor,
+									   1),
+				   new AStack[]{
+					   new OreDictStack(DURA.pipe(),
+										4),
+					   new OreDictStack(TH232.ingot(),
+										2),
+					   new OreDictStack(BIGMT.plateCast(),
+										2),
+					   new ComparableStack(ModBlocks.machine_geo)
+				   },
+				   600);
+
+		makeRecipe(new ComparableStack(ModBlocks.machine_msr_input,
+									   2),
+				   new AStack[]{
+					   new OreDictStack(BIGMT.plateCast(),
+										4),
+					   new OreDictStack(DURA.pipe(),
+										4),
+					   new OreDictStack(TH232.ingot(),
+										1)
+				   },
+				   400);
+
+		makeRecipe(new ComparableStack(ModBlocks.machine_msr_output,
+									   2),
+				   new AStack[]{
+					   new OreDictStack(BIGMT.plateCast(),
+										4),
+					   new OreDictStack(DURA.pipe(),
+										4),
+					   new OreDictStack(TH232.ingot(),
+										1)
+				   },
+				   400);
+
 		//makeRecipe(new ComparableStack(ModItems.gun_zomg, 1), new AStack[] {
 		//		new ComparableStack(ModItems.crystal_xen, 2),
 		//		new ComparableStack(ModItems.singularity_counter_resonant, 1),
