@@ -2465,6 +2465,14 @@ public class AssemblerRecipes extends SerializableRecipe {
 					   new OreDictStack(OreDictManager.getReflector(),
 										96)},
 				   600);
+		makeRecipe(new ComparableStack(ModItems.fusion_shield_beryllium,
+									   1),
+				   new AStack[]{
+					   new OreDictStack(BE.block(),
+										32),
+					   new OreDictStack(OreDictManager.getReflector(),
+										96)},
+				   600);
 		makeRecipe(new ComparableStack(ModItems.fusion_shield_desh,
 									   1),
 				   new AStack[]{

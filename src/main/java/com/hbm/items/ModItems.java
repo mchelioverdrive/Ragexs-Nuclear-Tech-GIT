@@ -1283,6 +1283,7 @@ public class ModItems {
 	public static Item ams_core_thingy;
 
 	public static Item fusion_shield_tungsten;
+	public static Item fusion_shield_beryllium;
 	public static Item fusion_shield_desh;
 	public static Item fusion_shield_chlorophyte;
 	public static Item fusion_shield_vaporwave;
@@ -6044,10 +6045,60 @@ public class ModItems {
 		ams_core_eyeofharmony = new ItemAMSCore(2500000000L, 300, 10).setUnlocalizedName("ams_core_eyeofharmony").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":ams_core_eyeofharmony");
 		ams_core_thingy = new ItemAMSCore(5000000000L, 250, 5).setUnlocalizedName("ams_core_thingy").setMaxStackSize(1).setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ams_core_thingy");
 
-		fusion_shield_tungsten = new ItemFusionShield(60 * 60 * 60 * 5, 3500).setUnlocalizedName("fusion_shield_tungsten").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":fusion_shield_tungsten");
-		fusion_shield_desh = new ItemFusionShield(60 * 60 * 60 * 10, 4500).setUnlocalizedName("fusion_shield_desh").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":fusion_shield_desh");
-		fusion_shield_chlorophyte = new ItemFusionShield(60 * 60 * 60 * 15, 9000).setUnlocalizedName("fusion_shield_chlorophyte").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":fusion_shield_chlorophyte");
-		fusion_shield_vaporwave = new ItemFusionShield(60 * 60 * 60 * 10, 1916169).setUnlocalizedName("fusion_shield_vaporwave").setMaxStackSize(1).setCreativeTab(MainRegistry.controlTab).setTextureName(RefStrings.MODID + ":fusion_shield_vaporwave");
+		fusion_shield_tungsten = new ItemFusionShield(
+			60L * 60L * 60L * 5L,
+			3500,
+			1.00D,
+			1.00D,
+			1.00D
+		).setUnlocalizedName("fusion_shield_tungsten")
+			.setMaxStackSize(1)
+			.setCreativeTab(MainRegistry.controlTab)
+			.setTextureName(RefStrings.MODID + ":fusion_shield_tungsten");
+
+		fusion_shield_beryllium = new ItemFusionShield(
+			60L * 60L * 60L * 4L,
+			1287,
+			1.15D,
+			1.50D,
+			0.85D
+		).setUnlocalizedName("fusion_shield_beryllium")
+			.setMaxStackSize(1)
+			.setCreativeTab(MainRegistry.controlTab)
+			.setTextureName(RefStrings.MODID + ":fusion_shield_beryllium");
+
+		fusion_shield_desh = new ItemFusionShield(
+			60L * 60L * 60L * 8L,
+			1800,
+			0.90D,
+			0.80D,
+			1.10D
+		).setUnlocalizedName("fusion_shield_desh")
+			.setMaxStackSize(1)
+			.setCreativeTab(MainRegistry.controlTab)
+			.setTextureName(RefStrings.MODID + ":fusion_shield_desh");
+
+		fusion_shield_chlorophyte = new ItemFusionShield(
+			60L * 60L * 60L * 15L,
+			9000,
+			1.35D,
+			1.25D,
+			0.70D
+		).setUnlocalizedName("fusion_shield_chlorophyte")
+			.setMaxStackSize(1)
+			.setCreativeTab(MainRegistry.controlTab)
+			.setTextureName(RefStrings.MODID + ":fusion_shield_chlorophyte");
+
+		fusion_shield_vaporwave = new ItemFusionShield(
+			60L * 60L * 60L * 10L,
+			1916169,
+			19.16D,
+			16.16D,
+			0.25D
+		).setUnlocalizedName("fusion_shield_vaporwave")
+			.setMaxStackSize(1)
+			.setCreativeTab(MainRegistry.controlTab)
+			.setTextureName(RefStrings.MODID + ":fusion_shield_vaporwave");
 
 		upgrade_muffler = new ItemMuffler().setUnlocalizedName("upgrade_muffler").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":upgrade_muffler");
 
@@ -8613,6 +8664,7 @@ public class ModItems {
 
 		//Fusion Shields
 		GameRegistry.registerItem(fusion_shield_tungsten, fusion_shield_tungsten.getUnlocalizedName());
+		GameRegistry.registerItem(fusion_shield_beryllium, fusion_shield_beryllium.getUnlocalizedName());
 		GameRegistry.registerItem(fusion_shield_desh, fusion_shield_desh.getUnlocalizedName());
 		GameRegistry.registerItem(fusion_shield_chlorophyte, fusion_shield_chlorophyte.getUnlocalizedName());
 		GameRegistry.registerItem(fusion_shield_vaporwave, fusion_shield_vaporwave.getUnlocalizedName());

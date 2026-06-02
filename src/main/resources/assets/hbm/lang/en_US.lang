@@ -3120,6 +3120,7 @@ item.fusion_core.name=Fusion Core
 item.fusion_core_infinite.name=Infinite Fusion Core
 item.fusion_shield_chlorophyte.name=Chlorophyte-Metallized Fusion Reactor Blanket
 item.fusion_shield_desh.name=Tool Steel Fusion Reactor Blanket
+item.fusion_shield_beryllium.name=Beryllium Fusion Reactor Blanket
 item.fusion_shield_tungsten.name=Tungsten Fusion Reactor Blanket
 item.fusion_shield_vaporwave.name=Vaporwave Fusion Reactor Blanket
 item.gadget_core.name=Large Plutonium Core
