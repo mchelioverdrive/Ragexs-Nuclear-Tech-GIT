@@ -3,13 +3,20 @@ package com.hbm.render.block;
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.blocks.machine.MachineMoltenSaltReactorPort;
+import com.hbm.inventory.fluid.FluidType;
+import com.hbm.inventory.fluid.Fluids;
+import com.hbm.tileentity.machine.TileEntityMoltenSaltReactor;
+import com.hbm.tileentity.machine.TileEntityMoltenSaltReactorPort;
 
+import api.hbm.fluid.IFluidConnector;
 import cpw.mods.fml.client.registry.ISimpleBlockRenderingHandler;
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
+import net.minecraftforge.common.util.ForgeDirection;
 
 public class RenderMSRPort implements ISimpleBlockRenderingHandler {
 
@@ -46,14 +53,46 @@ public class RenderMSRPort implements ISimpleBlockRenderingHandler {
 	public boolean renderWorldBlock(IBlockAccess world, int x, int y, int z, Block block, int modelId, RenderBlocks renderer) {
 		renderer.setRenderBounds(0.0D, 0.0D, 0.0D, 1.0D, 1.0D, 1.0D);
 		renderer.renderStandardBlock(block, x, y, z);
-		renderer.setRenderBounds(0.25D, 0.25D, -0.125D, 0.75D, 0.75D, 1.125D);
-		renderer.renderStandardBlock(block, x, y, z);
-		renderer.setRenderBounds(0.1875D, 0.1875D, 0.0D, 0.8125D, 0.8125D, 0.1875D);
-		renderer.renderStandardBlock(block, x, y, z);
-		renderer.setRenderBounds(0.1875D, 0.1875D, 0.8125D, 0.8125D, 0.8125D, 1.0D);
-		renderer.renderStandardBlock(block, x, y, z);
+
+		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
+			if(canRenderPipeConnection(world, x, y, z, block, dir)) {
+				renderPipeConnection(block, x, y, z, renderer, dir);
+			}
+		}
+
 		renderer.setRenderBounds(0.0D, 0.0D, 0.0D, 1.0D, 1.0D, 1.0D);
 		return true;
+	}
+
+	private boolean canRenderPipeConnection(IBlockAccess world, int x, int y, int z, Block block, ForgeDirection dir) {
+		TileEntity tile = world.getTileEntity(x + dir.offsetX, y + dir.offsetY, z + dir.offsetZ);
+		if(!(tile instanceof IFluidConnector) || tile instanceof TileEntityMoltenSaltReactor) return false;
+
+		FluidType type = Fluids.THORIUM_SALT;
+		if(block instanceof MachineMoltenSaltReactorPort && !((MachineMoltenSaltReactorPort) block).isInput()) type = Fluids.THORIUM_SALT_HOT;
+		TileEntity here = world.getTileEntity(x, y, z);
+		if(here instanceof TileEntityMoltenSaltReactorPort) type = ((TileEntityMoltenSaltReactorPort) here).tank.getTankType();
+
+		return ((IFluidConnector) tile).canConnect(type, dir.getOpposite());
+	}
+
+	private void renderPipeConnection(Block block, int x, int y, int z, RenderBlocks renderer, ForgeDirection dir) {
+		double minX = 0.25D;
+		double minY = 0.25D;
+		double minZ = 0.25D;
+		double maxX = 0.75D;
+		double maxY = 0.75D;
+		double maxZ = 0.75D;
+
+		if(dir == ForgeDirection.DOWN) minY = -0.125D;
+		if(dir == ForgeDirection.UP) maxY = 1.125D;
+		if(dir == ForgeDirection.NORTH) minZ = -0.125D;
+		if(dir == ForgeDirection.SOUTH) maxZ = 1.125D;
+		if(dir == ForgeDirection.WEST) minX = -0.125D;
+		if(dir == ForgeDirection.EAST) maxX = 1.125D;
+
+		renderer.setRenderBounds(minX, minY, minZ, maxX, maxY, maxZ);
+		renderer.renderStandardBlock(block, x, y, z);
 	}
 
 	@Override
