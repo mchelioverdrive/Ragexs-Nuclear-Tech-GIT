@@ -990,9 +990,10 @@ public class CraftingManager {
 					  });
 
 		addRecipeAuto(new ItemStack(ModBlocks.machine_geo, 1), new Object[] { "ITI", "PCP", "ITI", 'I', DURA.ingot(), 'T', ModItems.thermo_element, 'P', CU.plateCast(), 'C', ModBlocks.red_wire_coated });
-		addRecipeAuto(new ItemStack(ModBlocks.machine_molten_salt_reactor, 1), new Object[] { "PTP", "SCS", "PTP", 'P', STEEL.pipe(), 'T', TH232.ingot(), 'S', STEEL.plate(), 'C', ModBlocks.machine_geo });
-		addRecipeAuto(new ItemStack(ModBlocks.machine_msr_input, 2), new Object[] { "SPS", "PTP", "SPS", 'S', STEEL.plate(), 'P', STEEL.pipe(), 'T', TH232.ingot() });
-		addRecipeAuto(new ItemStack(ModBlocks.machine_msr_output, 2), new Object[] { "SPS", "PTP", "SPS", 'S', STEEL.plate(), 'P', CU.pipe(), 'T', TH232.ingot() });
+		//msrs corrode easily so steel alloy (saturnite) is used to make them.
+		addRecipeAuto(new ItemStack(ModBlocks.machine_molten_salt_reactor, 1), new Object[] { "PTP", "SCS", "PTP", 'P', DURA.pipe(), 'T', TH232.ingot(), 'S', BIGMT.plateCast(), 'C', ModBlocks.machine_geo });
+		addRecipeAuto(new ItemStack(ModBlocks.machine_msr_input, 2), new Object[] { "SPS", "PTP", "SPS", 'S', BIGMT.plateCast(), 'P', DURA.pipe(), 'T', TH232.ingot() });
+		addRecipeAuto(new ItemStack(ModBlocks.machine_msr_output, 2), new Object[] { "SPS", "PTP", "SPS", 'S', BIGMT.plateCast(), 'P', DURA.pipe(), 'T', TH232.ingot() });
 		addRecipeAuto(new ItemStack(ModBlocks.machine_minirtg, 1), new Object[] { "LLL", "PPP", "TRT", 'L', PB.plate(), 'P', PU238.billet(), 'T', ModItems.thermo_element, 'R', ModItems.rtg_unit });
 		addRecipeAuto(new ItemStack(ModBlocks.machine_minirtg, 1), new Object[] { "LLL", "PPP", "TRT", 'L', PB.plate(), 'P', TM170.billet(), 'T', ModItems.thermo_element, 'R', ModItems.rtg_unit });
 		//addRecipeAuto(new ItemStack(ModBlocks.machine_minirtg, 1), new Object[] { "LLL", " P ", "TRT", 'L', PB.plate(), 'P', ModItems.ingot_thulium170, 'T', ModItems.thermo_element, 'R', ModItems.rtg_unit });
