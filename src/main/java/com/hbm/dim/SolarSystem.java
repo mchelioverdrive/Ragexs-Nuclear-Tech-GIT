@@ -48,6 +48,11 @@ public class SolarSystem {
 			.withMassRadius(1.989e30F, 696_340) //testing irl values
 			.withRotationalPeriod(2_199_040) // ~25.45 Earth days
 			.withTexture("textures/environment/sun.png")
+			//lava ore texutres
+			.withBlockTextures(
+				"minecraft:textures/blocks/lava_still.png",
+				"minecraft:textures/blocks/lava_flow.png"
+			)
 			.withShader(new ResourceLocation(RefStrings.MODID, "shaders/blackhole.frag"), 3) // Only shows when CBT_Destroyed
 			.withTraits(
 				new CBT_Temperature(5505) // photosphere temperature
@@ -193,7 +198,7 @@ public class SolarSystem {
 				//jupiter
 				new CelestialBody("jool", SpaceConfig.jupiterDimension, Body.JOOL)
 					.withMassRadius(1.898e27F, 69_911)
-
+					.withBlockTextures(RefStrings.MODID + ":textures/blocks/jupiter_storm.png", RefStrings.MODID + ":textures/blocks/jupiter_storm.png")
 
 					.withSemiMajorAxis(778_547_200D)
 					.withInitialOrbitalAngle(34.35D)
@@ -214,6 +219,7 @@ public class SolarSystem {
 
 						//europa
 						new CelestialBody("laythe", SpaceConfig.laytheDimension, Body.LAYTHE)
+							.withBlockTextures(RefStrings.MODID + ":textures/blocks/laythe_silt", "textures/blocks/stone.png")
 							.withMassRadius(4.7998e22F, 1_560)
 							.withSemiMajorAxis(671_100D)
 							.withRotationalPeriod(306_806)
@@ -263,6 +269,7 @@ public class SolarSystem {
 
 				//saturn
 				new CelestialBody("sarnus", SpaceConfig.saturnDimension, Body.SARNUS)
+					.withBlockTextures(RefStrings.MODID + ":textures/blocks/stormcloud.png", RefStrings.MODID + ":textures/blocks/stormcloud.png")
 					.withMassRadius(5.683e26F, 58_232)
 					.withSemiMajorAxis(1_433_530_000D)
 					.withInitialOrbitalAngle(50.08D)
@@ -327,6 +334,7 @@ public class SolarSystem {
 
 				//Uranus (retrograde)
 				new CelestialBody("uranus", SpaceConfig.uranusDimension, Body.URANUS)
+					.withBlockTextures("textures/blocks/water_still.png", "textures/blocks/water_flowing.png")
 					.withMassRadius(8.681e25F, 25_362)
 					.withSemiMajorAxis(2_872_463_000D)
 					.withInitialOrbitalAngle(314.06D)
@@ -374,6 +382,7 @@ public class SolarSystem {
 
 				//neptune
 				new CelestialBody("neptune", SpaceConfig.neptuneDimension, Body.NEPTUNE)
+					.withBlockTextures(RefStrings.MODID + ":textures/blocks/water_still.png", RefStrings.MODID + ":textures/blocks/water_flowing.png")
 					.withMassRadius(1.024e26F, 24_622)
 					.withSemiMajorAxis(4_495_060_000D)
 					.withInitialOrbitalAngle(304.35D)
