@@ -1092,100 +1092,189 @@ public class Fluids {
 		}
 
 
-		/// FINAL ///
+		/// FINAL - REALISTIC-ISH FUEL HEAT VALUES ///
+		//
+		// Realistification rule:
+		// Heat energy should represent chemical burn energy, NOT market demand, recipe difficulty,
+		// refinery complexity, or scarcity.
+		//
+		// Demand/yield/complexity should ideally affect recipes and production rates.
+		// Since this code only registers flammable traits, the multipliers here are kept small.
+		// Refined fuels are close together in energy density: gasoline, diesel, kerosene,
+		// heating oil, heavy oil, etc. should NOT differ by 3x-10x.
+		//
 
-		long baseline = 100_000L; //we do not know
-		double demandVeryLow = 0.5D; //for waste gasses
-		double demandLow = 1.0D; //for fuel oils
-		double demandMedium = 1.5D; //for processing oils like petroleum and BTX
-		double demandHigh = 2.0D; //kerosene and jet fuels
-		double complexityRefinery = 1.1D;
-		double complexityFraction = 1.05D;
-		double complexityCracking = 1.25D;
-		double complexityCoker = 1.25D;
-		double complexityChemplant = 1.1D;
-		double complexityLubed = 1.15D;
-		double complexityLeaded = 1.5D;
-		double complexityVacuum = 3.0D;
-		double complexityReform = 2.5D;
-		double complexityHydro = 2.0D;
-		double flammabilityLow = 0.25D; //unrefined or low refined oils
-		double flammabilityNormal = 1.0D; //refined oils
-		double flammabilityHigh = 2.0D; //satan's asshole
+		// Keep this as the tuning anchor.
+		// 550k-ish diesel keeps your old diesel balance close while making the rest realistic.
+		double dieselHeat = 550_000D;
 
-		/// the almighty excel spreadsheet has spoken! ///
-		registerCalculatedFuel(OIL, (baseline / 1D * flammabilityLow * demandLow), 0, null);
-		registerCalculatedFuel(OIL_DS, (baseline / 1D * flammabilityLow * demandLow * complexityHydro), 0, null);
-		registerCalculatedFuel(CRACKOIL, (baseline / 1D * flammabilityLow * demandLow * complexityCracking), 0, null);
-		registerCalculatedFuel(CRACKOIL_DS, (baseline / 1D * flammabilityLow * demandLow * complexityCracking * complexityHydro), 0, null);
-		registerCalculatedFuel(OIL_COKER, (baseline / 1D * flammabilityLow * demandLow * complexityCoker), 0, null);
-		registerCalculatedFuel(GAS, (baseline / 1D * flammabilityNormal * demandVeryLow), 1.5, FuelGrade.GAS);
-		registerCalculatedFuel(GAS_COKER, (baseline / 1D * flammabilityNormal * demandVeryLow * complexityCoker), 1.5, FuelGrade.GAS);
-		registerCalculatedFuel(HEAVYOIL, (baseline / 0.5 * flammabilityLow * demandLow * complexityRefinery), 1.25D, FuelGrade.LOW);
-		registerCalculatedFuel(SMEAR, (baseline / 0.35 * flammabilityLow * demandLow * complexityRefinery * complexityFraction), 1.25D, FuelGrade.LOW);
-		registerCalculatedFuel(RECLAIMED, (baseline / 0.28 * flammabilityLow * demandLow * complexityRefinery * complexityFraction * complexityChemplant), 1.25D, FuelGrade.LOW);
-		registerCalculatedFuel(PETROIL, (baseline / 0.28 * flammabilityLow * demandLow * complexityRefinery * complexityFraction * complexityChemplant * complexityLubed), 1.5D, FuelGrade.MEDIUM);
-		registerCalculatedFuel(PETROIL_LEADED, (baseline / 0.28 * flammabilityLow * demandLow * complexityRefinery * complexityFraction * complexityChemplant * complexityLubed * complexityLeaded), 1.5D, FuelGrade.MEDIUM);
-		registerCalculatedFuel(HEATINGOIL, (baseline / 0.31 * flammabilityNormal * demandLow * complexityRefinery * complexityFraction * complexityFraction), 1.25D, FuelGrade.LOW);
-		registerCalculatedFuel(NAPHTHA, (baseline / 0.25 * flammabilityLow * demandLow * complexityRefinery), 1.5D, FuelGrade.MEDIUM);
-		registerCalculatedFuel(NAPHTHA_DS, (baseline / 0.25 * flammabilityLow * demandLow * complexityRefinery * complexityHydro), 1.5D, FuelGrade.MEDIUM);
-		registerCalculatedFuel(NAPHTHA_CRACK, (baseline / 0.40 * flammabilityLow * demandLow * complexityRefinery * complexityCracking), 1.5D, FuelGrade.MEDIUM);
-		registerCalculatedFuel(NAPHTHA_COKER, (baseline / 0.25 * flammabilityLow * demandLow * complexityCoker), 1.5D, FuelGrade.MEDIUM);
-		registerCalculatedFuel(GASOLINE, (baseline / 0.20 * flammabilityNormal * demandLow * complexityRefinery * complexityChemplant), 2.5D, FuelGrade.HIGH);
-		registerCalculatedFuel(GASOLINE_LEADED, (baseline / 0.20 * flammabilityNormal * demandLow * complexityRefinery * complexityChemplant * complexityLeaded), 2.5D, FuelGrade.HIGH);
-		registerCalculatedFuel(DIESEL, (baseline / 0.21 * flammabilityNormal * demandLow * complexityRefinery * complexityFraction), 2.5D, FuelGrade.HIGH);
-		registerCalculatedFuel(DIESEL_CRACK, (baseline / 0.28 * flammabilityNormal * demandLow * complexityRefinery * complexityCracking * complexityFraction), 2.5D, FuelGrade.HIGH);
-		registerCalculatedFuel(LIGHTOIL, (baseline / 0.15 * flammabilityNormal * demandHigh * complexityRefinery), 1.5D, FuelGrade.MEDIUM);
-		registerCalculatedFuel(LIGHTOIL_DS, (baseline / 0.15 * flammabilityNormal * demandHigh * complexityRefinery * complexityHydro), 1.5D, FuelGrade.MEDIUM);
-		registerCalculatedFuel(LIGHTOIL_CRACK, (baseline / 0.30 * flammabilityNormal * demandHigh * complexityRefinery * complexityCracking), 1.5D, FuelGrade.MEDIUM);
-		registerCalculatedFuel(KEROSENE, (baseline / 0.09 * flammabilityNormal * demandHigh * complexityRefinery * complexityFraction), 1.5D, FuelGrade.AERO);
-		registerCalculatedFuel(PETROLEUM, (baseline / 0.10 * flammabilityNormal * demandMedium * complexityRefinery), 1.5, FuelGrade.GAS);
-		registerCalculatedFuel(AROMATICS, (baseline / 0.15 * flammabilityLow * demandHigh * complexityRefinery * complexityCracking), 0, null);
-		registerCalculatedFuel(UNSATURATEDS, (baseline / 0.15 * flammabilityHigh * demandHigh * complexityRefinery * complexityCracking), 0, null);
-		registerCalculatedFuel(LPG, (baseline / 0.1 * flammabilityNormal * demandMedium * complexityRefinery * complexityChemplant), 2.5, FuelGrade.HIGH);
-		registerCalculatedFuel(NITAN, KEROSENE.getTrait(FT_Flammable.class).getHeatEnergy() * 25L, 2.5, FuelGrade.HIGH);
-		registerCalculatedFuel(BALEFIRE, KEROSENE.getTrait(FT_Flammable.class).getHeatEnergy() * 100L, 2.5, FuelGrade.HIGH);
-		registerCalculatedFuel(BLOODGAS, KEROSENE.getTrait(FT_Flammable.class).getHeatEnergy() * 0.8, 2.5, FuelGrade.AERO); //0.8
-		registerCalculatedFuel(HEAVYOIL_VACUUM, (baseline / 0.4 * flammabilityLow * demandLow * complexityVacuum), 1.25D, FuelGrade.LOW);
-		registerCalculatedFuel(REFORMATE, (baseline / 0.25 * flammabilityNormal * demandHigh * complexityVacuum), 2.5D, FuelGrade.HIGH);
-		registerCalculatedFuel(LIGHTOIL_VACUUM, (baseline / 0.20 * flammabilityNormal * demandHigh * complexityVacuum), 1.5D, FuelGrade.MEDIUM);
-		registerCalculatedFuel(SOURGAS, (baseline / 0.15 * flammabilityLow * demandVeryLow * complexityVacuum), 0, null);
-		registerCalculatedFuel(XYLENE, (baseline / 0.15 * flammabilityNormal * demandMedium * complexityVacuum * complexityFraction), 2.5D, FuelGrade.HIGH);
-		registerCalculatedFuel(HEATINGOIL_VACUUM, (baseline / 0.24 * flammabilityNormal * demandLow * complexityVacuum * complexityFraction), 1.25D, FuelGrade.LOW);
-		registerCalculatedFuel(DIESEL_REFORM, DIESEL.getTrait(FT_Flammable.class).getHeatEnergy() * complexityReform, 2.5D, FuelGrade.HIGH);
-		registerCalculatedFuel(DIESEL_CRACK_REFORM, DIESEL_CRACK.getTrait(FT_Flammable.class).getHeatEnergy() * complexityReform, 2.5D, FuelGrade.HIGH);
-		registerCalculatedFuel(KEROSENE_REFORM, KEROSENE.getTrait(FT_Flammable.class).getHeatEnergy() * complexityReform, 1.5D, FuelGrade.AERO);
-		registerCalculatedFuel(NMASSTETRANOL, BALEFIRE.getTrait(FT_Flammable.class).getHeatEnergy() * 1000, 10.5, FuelGrade.HIGH); //0.8
-		registerCalculatedFuel(DICYANOACETYLENE, (baseline / 0.15 * flammabilityHigh * demandHigh * complexityRefinery * complexityCracking) + UNSATURATEDS.getTrait(FT_Flammable.class).getHeatEnergy(), 0, null);
+		// Main petroleum heat values.
+		// These are bucket-equivalent gameplay values, not exact real-world joules.
+		double heatCrudeOil     = dieselHeat * 0.95D; // crude has plenty of energy, but poor usability
+		double heatHeavyOil     = dieselHeat * 1.05D; // dense residual/heavy oils can be very energy-rich
+		double heatHeatingOil   = dieselHeat * 1.01D; // very close to diesel
+		double heatDiesel       = dieselHeat * 1.00D;
+		double heatKerosene     = dieselHeat * 0.97D; // close to diesel, slightly lighter
+		double heatGasoline     = dieselHeat * 0.88D; // lower per volume than diesel
+		double heatLightOil     = dieselHeat * 0.90D;
+		double heatNaphtha      = dieselHeat * 0.82D;
+		double heatLPG          = dieselHeat * 0.67D;
+		double heatGas          = dieselHeat * 0.65D;
 
-		registerCalculatedFuel(REFORMGAS, (baseline / 0.06 * flammabilityHigh * demandLow * complexityVacuum * complexityFraction), 1.5D, FuelGrade.GAS);
+		// Realistic small process modifiers.
+		// These should not be huge. Processing mostly changes purity, grade, yield,
+		// sulfur, octane/cetane, and engine compatibility, not raw burn energy.
+		double bonusHydro       = 1.02D; // hydrotreated / desulfurized: cleaner, tiny bonus
+		double bonusCracking    = 1.03D; // cracked product: more useful fraction, tiny bonus
+		double bonusCoker       = 1.02D; // coker product: tiny bonus
+		double bonusVacuum      = 1.05D; // vacuum-separated heavy/light fractions, small bump
+		double bonusReform      = 1.08D; // reforming improves octane/aromatic quality, modest bonus
+		double bonusLeaded      = 1.03D; // lead mostly improves octane, not heat
+		double penaltyDirty     = 0.85D; // dirty/poorly usable fuel
+		double penaltyReclaimed = 0.80D; // reclaimed junk oil
+		double penaltyLube      = 0.95D; // lubricants burn, but are not ideal engine fuel
 
-		//all hail the spreadsheet
-		//the spreadsheet must not be questioned
-		//none may enter the orb- i mean the spreadsheet
+		/// crude / early refinery products ///
+		registerCalculatedFuel(OIL, heatCrudeOil, 0, null);
+		registerCalculatedFuel(OIL_DS, heatCrudeOil * bonusHydro, 0, null);
+		registerCalculatedFuel(CRACKOIL, heatCrudeOil * bonusCracking, 0, null);
+		registerCalculatedFuel(CRACKOIL_DS, heatCrudeOil * bonusCracking * bonusHydro, 0, null);
+		registerCalculatedFuel(OIL_COKER, heatCrudeOil * bonusCoker, 0, null);
+
+		/// refinery gases ///
+		registerCalculatedFuel(GAS, heatGas, 1.5D, FuelGrade.GAS);
+		registerCalculatedFuel(GAS_COKER, heatGas * bonusCoker, 1.5D, FuelGrade.GAS);
+
+		/// heavy / dirty oils ///
+		registerCalculatedFuel(HEAVYOIL, heatHeavyOil, 1.25D, FuelGrade.LOW);
+		registerCalculatedFuel(SMEAR, heatHeavyOil * penaltyDirty, 1.25D, FuelGrade.LOW);
+		registerCalculatedFuel(RECLAIMED, heatHeavyOil * penaltyReclaimed, 1.25D, FuelGrade.LOW);
+
+		/// lubricant / petroleum oil products ///
+		registerCalculatedFuel(PETROIL, heatHeavyOil * penaltyLube, 1.5D, FuelGrade.MEDIUM);
+		registerCalculatedFuel(PETROIL_LEADED, heatHeavyOil * penaltyLube * bonusLeaded, 1.5D, FuelGrade.MEDIUM);
+
+		/// heating oil ///
+		registerCalculatedFuel(HEATINGOIL, heatHeatingOil, 1.25D, FuelGrade.LOW);
+
+		/// naphtha products ///
+		registerCalculatedFuel(NAPHTHA, heatNaphtha, 1.5D, FuelGrade.MEDIUM);
+		registerCalculatedFuel(NAPHTHA_DS, heatNaphtha * bonusHydro, 1.5D, FuelGrade.MEDIUM);
+		registerCalculatedFuel(NAPHTHA_CRACK, heatNaphtha * bonusCracking, 1.5D, FuelGrade.MEDIUM);
+		registerCalculatedFuel(NAPHTHA_COKER, heatNaphtha * bonusCoker, 1.5D, FuelGrade.MEDIUM);
+
+		/// gasoline ///
+		registerCalculatedFuel(GASOLINE, heatGasoline, 2.5D, FuelGrade.HIGH);
+		registerCalculatedFuel(GASOLINE_LEADED, heatGasoline * bonusLeaded, 2.5D, FuelGrade.HIGH);
+
+		/// diesel ///
+		registerCalculatedFuel(DIESEL, heatDiesel, 2.5D, FuelGrade.HIGH);
+		registerCalculatedFuel(DIESEL_CRACK, heatDiesel * bonusCracking, 2.5D, FuelGrade.HIGH);
+
+		/// light oil ///
+		registerCalculatedFuel(LIGHTOIL, heatLightOil, 1.5D, FuelGrade.MEDIUM);
+		registerCalculatedFuel(LIGHTOIL_DS, heatLightOil * bonusHydro, 1.5D, FuelGrade.MEDIUM);
+		registerCalculatedFuel(LIGHTOIL_CRACK, heatLightOil * bonusCracking, 1.5D, FuelGrade.MEDIUM);
+
+		/// kerosene / jet fuel ///
+		registerCalculatedFuel(KEROSENE, heatKerosene, 1.5D, FuelGrade.AERO);
+
+		/// petroleum gas / LPG ///
+		registerCalculatedFuel(PETROLEUM, heatGas, 1.5D, FuelGrade.GAS);
+		registerCalculatedFuel(LPG, heatLPG, 2.5D, FuelGrade.HIGH);
+
+		/// chemical intermediates ///
+		//
+		// These are flammable, but they are not necessarily good engine fuels.
+		// Keep grade null unless you want engines to accept them.
+		registerCalculatedFuel(AROMATICS, dieselHeat * 0.90D, 0, null);
+		registerCalculatedFuel(UNSATURATEDS, dieselHeat * 0.95D, 0, null);
+
+		/// fantasy / exotic fuels ///
+		//
+		// These are intentionally not realistic.
+		// They are allowed to be insane because they are fictional HBM-style fuels.
+		registerCalculatedFuel(NITAN, KEROSENE.getTrait(FT_Flammable.class).getHeatEnergy() * 25L, 2.5D, FuelGrade.HIGH);
+		registerCalculatedFuel(BALEFIRE, KEROSENE.getTrait(FT_Flammable.class).getHeatEnergy() * 100L, 2.5D, FuelGrade.HIGH);
+		registerCalculatedFuel(BLOODGAS, KEROSENE.getTrait(FT_Flammable.class).getHeatEnergy() * 0.8D, 2.5D, FuelGrade.AERO);
+
+		/// vacuum distillation products ///
+		//
+		// Vacuum distillation separates fractions. It should not magically triple energy.
+		registerCalculatedFuel(HEAVYOIL_VACUUM, heatHeavyOil * bonusVacuum, 1.25D, FuelGrade.LOW);
+		registerCalculatedFuel(REFORMATE, heatGasoline * bonusReform, 2.5D, FuelGrade.HIGH);
+		registerCalculatedFuel(LIGHTOIL_VACUUM, heatLightOil * bonusVacuum, 1.5D, FuelGrade.MEDIUM);
+		registerCalculatedFuel(SOURGAS, heatGas * 0.45D, 0, null);
+		registerCalculatedFuel(XYLENE, dieselHeat * 0.95D, 2.5D, FuelGrade.HIGH);
+		registerCalculatedFuel(HEATINGOIL_VACUUM, heatHeatingOil * bonusVacuum, 1.25D, FuelGrade.LOW);
+
+		/// reformed fuels ///
+		//
+		// Reforming mainly improves fuel quality/octane, not raw heat.
+		// Keep the boost modest.
+		registerCalculatedFuel(DIESEL_REFORM, DIESEL.getTrait(FT_Flammable.class).getHeatEnergy() * bonusReform, 2.5D, FuelGrade.HIGH);
+		registerCalculatedFuel(DIESEL_CRACK_REFORM, DIESEL_CRACK.getTrait(FT_Flammable.class).getHeatEnergy() * bonusReform, 2.5D, FuelGrade.HIGH);
+		registerCalculatedFuel(KEROSENE_REFORM, KEROSENE.getTrait(FT_Flammable.class).getHeatEnergy() * bonusReform, 1.5D, FuelGrade.AERO);
+
+		/// ultra-fantasy / special chemicals ///
+		registerCalculatedFuel(NMASSTETRANOL, BALEFIRE.getTrait(FT_Flammable.class).getHeatEnergy() * 1000D, 10.5D, FuelGrade.HIGH);
+
+		// Dicyanoacetylene is a real extremely hot-burning compound, but not normal engine fuel.
+		// Give it high heat, but do not make it a usable fuel grade unless intentionally desired.
+		registerCalculatedFuel(DICYANOACETYLENE, dieselHeat * 1.25D, 0, null);
+
+		registerCalculatedFuel(REFORMGAS, heatGas * bonusReform, 1.5D, FuelGrade.GAS);
+
+		/// coal-derived fuels ///
 
 		int coalHeat = 400_000; // 200TU/t for 2000 ticks
-		registerCalculatedFuel(COALOIL, (coalHeat * (1000 /* bucket */ / 100 /* mB per coal */) * flammabilityLow * demandLow * complexityChemplant), 0, null);
+
+		// Coal oil is not just "low flammability crude"; it is a dirty liquid fuel.
+		// Set it near heavy/dirty oil instead of basing it on demand/complexity.
+		registerCalculatedFuel(COALOIL, dieselHeat * 0.80D, 0, null);
+
 		long coaloil = COALOIL.getTrait(FT_Flammable.class).getHeatEnergy();
-		registerCalculatedFuel(COALGAS, (coaloil / 0.3 * flammabilityNormal * demandMedium * complexityChemplant * complexityFraction), 1.5, FuelGrade.MEDIUM);
-		registerCalculatedFuel(COALGAS_LEADED, (coaloil / 0.3 * flammabilityNormal * demandMedium * complexityChemplant * complexityFraction * complexityLeaded), 1.5, FuelGrade.MEDIUM);
 
-		registerCalculatedFuel(ETHANOL, 275_000D /* diesel / 2 */, 2.5D, FuelGrade.HIGH);
-		registerCalculatedFuel(METHANOL, 375_000D /* diesel / 2 */, 2.5D, FuelGrade.HIGH);
+		// Coal gas/synthetic gas should be below liquid diesel-equivalent fuels per bucket,
+		// but still useful as a gas fuel.
+		registerCalculatedFuel(COALGAS, coaloil * 0.75D, 1.5D, FuelGrade.MEDIUM);
+		registerCalculatedFuel(COALGAS_LEADED, coaloil * 0.75D * bonusLeaded, 1.5D, FuelGrade.MEDIUM);
 
-		registerCalculatedFuel(BIOGAS, 250_000D * flammabilityLow /* biofuel with half compression, terrible flammability */, 1.25, FuelGrade.GAS);
-		registerCalculatedFuel(BIOFUEL, 500_000D /* slightly below diesel */, 2.5D, FuelGrade.HIGH);
+		/// alcohol fuels ///
+		//
+		// Ethanol has less energy than gasoline/diesel per volume.
+		// Methanol is lower than ethanol.
+		// The old code had methanol higher than ethanol, which was backwards.
+		registerCalculatedFuel(ETHANOL, DIESEL.getTrait(FT_Flammable.class).getHeatEnergy() * 0.55D, 2.5D, FuelGrade.HIGH);
+		registerCalculatedFuel(METHANOL, DIESEL.getTrait(FT_Flammable.class).getHeatEnergy() * 0.41D, 2.5D, FuelGrade.HIGH);
 
-		registerCalculatedFuel(WOODOIL, 110_000 /* 20_000 TU per 250mB + a bonus */, 0, null);
-		registerCalculatedFuel(COALCREOSOTE, 250_000 /* 20_000 TU per 100mB + a bonus */, 0, null);
-		registerCalculatedFuel(FISHOIL, 75_000, 0, null);
-		registerCalculatedFuel(SUNFLOWEROIL, 50_000, 0, null);
+		/// biofuels ///
+		registerCalculatedFuel(BIOGAS, heatGas * 0.55D, 1.25D, FuelGrade.GAS);
+		registerCalculatedFuel(BIOFUEL, dieselHeat * 0.93D, 2.5D, FuelGrade.HIGH);
 
-		registerCalculatedFuel(SOLVENT, 100_000, 0, null); // flammable, sure, but not combustable
-		registerCalculatedFuel(RADIOSOLVENT, 150_000, 0, null);
+		/// organic oils / tar oils ///
+		//
+		// These should not be absurdly low if measured per bucket.
+		// They are bad engine fuels because they are dirty/viscous, not because they contain no energy.
+		registerCalculatedFuel(WOODOIL, dieselHeat * 0.45D, 0, null);
+		registerCalculatedFuel(COALCREOSOTE, dieselHeat * 0.70D, 0, null);
+		registerCalculatedFuel(FISHOIL, dieselHeat * 0.75D, 0, null);
+		registerCalculatedFuel(SUNFLOWEROIL, dieselHeat * 0.80D, 0, null);
 
-		registerCalculatedFuel(SYNGAS, (coalHeat * (1000 /* bucket */ / 100 /* mB per coal */) * flammabilityLow * demandLow * complexityChemplant) * 2.5, 2.25, FuelGrade.GAS); //same as coal oil, +50% bonus
-		registerCalculatedFuel(OXYHYDROGEN, 5_000, 3, FuelGrade.GAS); // whatever
+		/// solvents ///
+		//
+		// Flammable, but not good combustion fuels.
+		// Keep ungraded so engines do not treat them like normal fuels.
+		registerCalculatedFuel(SOLVENT, dieselHeat * 0.45D, 0, null);
+		registerCalculatedFuel(RADIOSOLVENT, dieselHeat * 0.55D, 0, null);
+
+		/// synthetic gas / oxyhydrogen ///
+		//
+		// Syngas should be useful, but not magically better than refined liquid fuel per bucket.
+		// Oxyhydrogen is low because it is usually generated and immediately burned;
+		// also the oxygen is already included, so per stored volume it should be poor.
+		registerCalculatedFuel(SYNGAS, heatGas * 0.85D, 2.25D, FuelGrade.GAS);
+		registerCalculatedFuel(OXYHYDROGEN, 5_000D, 3D, FuelGrade.GAS);
 
 		File config = new File(folder.getAbsolutePath() + File.separatorChar + "hbmFluidTraits.json");
 		File template = new File(folder.getAbsolutePath() + File.separatorChar + "_hbmFluidTraits.json");
