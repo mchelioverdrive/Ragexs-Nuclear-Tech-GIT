@@ -3,8 +3,6 @@ package com.hbm.blocks.bomb;
 import com.hbm.config.GeneralConfig;
 import com.hbm.explosion.ExplosionLarge;
 import com.hbm.explosion.vanillant.ExplosionVNT;
-import com.hbm.explosion.vanillant.standard.BlockAllocatorStandard;
-import com.hbm.explosion.vanillant.standard.BlockProcessorStandard;
 import com.hbm.main.MainRegistry;
 import com.hbm.saveddata.BombSiteSavedData;
 import com.hbm.tileentity.bomb.TileEntityCharge;
@@ -48,10 +46,10 @@ public class BlockChargeC4CSGO extends BlockChargeC4 {
 			safe = false;
 
 			ExplosionVNT xnt = new ExplosionVNT(world, x + 0.5, y + 0.5, z + 0.5, 30F).makeStandard();
-			xnt.setBlockAllocator(new BlockAllocatorStandard(32));
-			xnt.setBlockProcessor(new BlockProcessorStandard().setNoDrop());
+			xnt.setBlockAllocator(null);
+			xnt.setBlockProcessor(null);
 			xnt.explode();
-			ExplosionLarge.spawnParticles(world, x + 0.5, y + 0.5, z + 0.5, 50);
+			ExplosionLarge.spawnParticles(world, x + 0.5, y + 0.5, z + 0.5, 250);
 
 			return BombReturnCode.DETONATED;
 		}
