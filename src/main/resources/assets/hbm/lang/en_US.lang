@@ -1949,6 +1949,7 @@ hbmmat.tin=Tin
 hbmmat.magnesium=Magnesium
 hbmmat.polycarbonate=Polycarbonate
 hbmmat.pvc=PVC
+hbmmat.cdolomite=Calcined Dolomite
 
 matshape.block=%s Block
 matshape.blocks=%s Blocks
