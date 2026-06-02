@@ -3185,7 +3185,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 				   600);
 
 		makeRecipe(new ComparableStack(ModBlocks.machine_msr_input,
-									   2),
+									   1),
 				   new AStack[]{
 					   new OreDictStack(BIGMT.plateCast(),
 										4),
@@ -3197,7 +3197,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 				   400);
 
 		makeRecipe(new ComparableStack(ModBlocks.machine_msr_output,
-									   2),
+									   1),
 				   new AStack[]{
 					   new OreDictStack(BIGMT.plateCast(),
 										4),
