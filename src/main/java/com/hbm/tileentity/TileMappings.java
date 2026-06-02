@@ -149,7 +149,6 @@ public class TileMappings {
 		put(TileEntityMachineAmgen.class, "tileentity_amgen");
 		put(TileEntityMoltenSaltReactor.class, "tileentity_molten_salt_reactor");
 		put(TileEntityMoltenSaltReactorPort.class, "tileentity_msr_port");
-
 		put(TileEntityGeysir.class, "tileentity_geysir");
 		put(TileEntityMachineMissileAssembly.class, "tileentity_missile_assembly");
 		put(TileEntityMachineRocketAssembly.class, "tileentity_rocket_assembly");

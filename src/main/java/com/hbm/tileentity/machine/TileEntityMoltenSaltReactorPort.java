@@ -25,6 +25,19 @@ public class TileEntityMoltenSaltReactorPort extends TileEntityLoadedBase implem
 		this.tank = new FluidTank(input ? Fluids.THORIUM_SALT : Fluids.THORIUM_SALT_HOT, 16_000);
 	}
 
+	public boolean isInput() {
+		return input;
+	}
+
+	public TileEntityMoltenSaltReactor getReactor() {
+		if(worldObj == null) return null;
+		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
+			TileEntity tile = worldObj.getTileEntity(xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ);
+			if(tile instanceof TileEntityMoltenSaltReactor) return (TileEntityMoltenSaltReactor) tile;
+		}
+		return null;
+	}
+
 	@Override
 	public void updateEntity() {
 		if(!worldObj.isRemote) {
@@ -39,30 +52,22 @@ public class TileEntityMoltenSaltReactorPort extends TileEntityLoadedBase implem
 	}
 
 	protected void pushInputToReactor() {
-		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-			TileEntity tile = worldObj.getTileEntity(xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ);
-			if(tile instanceof TileEntityMoltenSaltReactor) {
-				TileEntityMoltenSaltReactor reactor = (TileEntityMoltenSaltReactor) tile;
-				int fill = tank.getFill();
-				long overshoot = reactor.transferFluid(tank.getTankType(), tank.getPressure(), fill);
-				tank.setFill((int) overshoot);
-				return;
-			}
+		TileEntityMoltenSaltReactor reactor = this.getReactor();
+		if(reactor != null) {
+			int fill = tank.getFill();
+			long overshoot = reactor.transferFluid(tank.getTankType(), tank.getPressure(), fill);
+			tank.setFill((int) overshoot);
 		}
 	}
 
 	protected void pullOutputFromReactor() {
-		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-			TileEntity tile = worldObj.getTileEntity(xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ);
-			if(tile instanceof TileEntityMoltenSaltReactor) {
-				TileEntityMoltenSaltReactor reactor = (TileEntityMoltenSaltReactor) tile;
-				FluidTank hotTank = reactor.tanks[1];
-				int transfer = Math.min(tank.getMaxFill() - tank.getFill(), hotTank.getFill());
-				if(transfer > 0) {
-					hotTank.setFill(hotTank.getFill() - transfer);
-					tank.setFill(tank.getFill() + transfer);
-				}
-				return;
+		TileEntityMoltenSaltReactor reactor = this.getReactor();
+		if(reactor != null) {
+			FluidTank hotTank = reactor.tanks[1];
+			int transfer = Math.min(tank.getMaxFill() - tank.getFill(), hotTank.getFill());
+			if(transfer > 0) {
+				hotTank.setFill(hotTank.getFill() - transfer);
+				tank.setFill(tank.getFill() + transfer);
 			}
 		}
 	}

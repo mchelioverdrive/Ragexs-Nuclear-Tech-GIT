@@ -1,4 +1,4 @@
-﻿achievement.acidizer.desc=oof ow my skin
+achievement.acidizer.desc=oof ow my skin
 achievement.acidizer=Acidic
 achievement.assembly.desc=J*b havers
 achievement.assembly=WOWZERS FACTORIO IS SO HECKIN COOL DOOD!!!
@@ -7070,8 +7070,7 @@ tile.ammonia_water.name=Water-Ammonia Slurry
 
 tile.machine_molten_salt_reactor.name=Molten Salt Reactor
 container.moltenSaltReactor=Molten Salt Reactor
-<<<<<<< codex/add-molten-salt-reactor-ekdzn0
 tile.machine_msr_input.name=Molten Salt Reactor Inlet
 tile.machine_msr_output.name=Molten Salt Reactor Outlet
-=======
->>>>>>> unironicpain
+tile.machine_msr_input.name=Molten Salt Reactor Inlet
+tile.machine_msr_output.name=Molten Salt Reactor Outlet
