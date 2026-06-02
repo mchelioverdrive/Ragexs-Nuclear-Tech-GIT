@@ -5,9 +5,6 @@ import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.machine.MachineITER;
-import com.hbm.explosion.ExplosionLarge;
-import com.hbm.explosion.ExplosionNT;
-import com.hbm.explosion.ExplosionNT.ExAttrib;
 import com.hbm.handler.CompatHandler;
 import com.hbm.inventory.container.ContainerITER;
 import com.hbm.inventory.fluid.FluidType;
@@ -23,8 +20,6 @@ import com.hbm.items.ModItems;
 import com.hbm.items.special.ItemFusionShield;
 import com.hbm.lib.Library;
 import com.hbm.main.MainRegistry;
-import com.hbm.packet.PacketDispatcher;
-import com.hbm.packet.toclient.AuxParticlePacketNT;
 import com.hbm.sound.AudioWrapper;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
@@ -44,7 +39,6 @@ import li.cil.oc.api.machine.Callback;
 import li.cil.oc.api.machine.Context;
 import li.cil.oc.api.network.SimpleComponent;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -53,19 +47,45 @@ import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-@Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
+@Optional.InterfaceList({
+	@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")
+})
 public class TileEntityITER extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IInfoProviderEC, SimpleComponent, CompatHandler.OCComponent, IFluidCopiable {
 
 	public long power;
 	public static final long maxPower = 10000000;
 	public static final int powerReq = 100000;
+
 	public FluidTank[] tanks;
 	public FluidTank plasma;
+
 	public static final int CoolReq = 1;
 
 	public int progress;
 	public static final int duration = 100;
 	public long totalRuntime;
+
+	/*
+	 * Realism changes:
+	 *
+	 * - Magnet/power loss causes plasma disruption, not an instant nuclear explosion.
+	 * - No shield causes plasma loss/shutdown, not a magic plasma bomb.
+	 * - Coolant failure builds heat stress and damages the blanket/first wall.
+	 * - Actual explosion only happens from sustained structural/coolant failure.
+	 * - ITER outputs hot coolant as the primary thermal product.
+	 * - It no longer creates free water/coolant when output tanks are full.
+	 */
+	private int heatStress;
+
+	private static final int MAX_HEAT_STRESS = 600;
+	private static final int HEAT_STRESS_PER_FAILED_COOLING = 20;
+	private static final int HEAT_STRESS_DECAY = 4;
+
+	private static final int BASE_SHIELD_DAMAGE_PER_TICK = 1;
+	private static final int DISRUPTION_SHIELD_DAMAGE = 75;
+	private static final int OVERHEAT_SHIELD_DAMAGE = 25;
+
+	private static final int MAX_PLASMA_BURN_PER_TICK = 20;
 
 	@SideOnly(Side.CLIENT)
 	public int blanket;
@@ -79,14 +99,27 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 	private AudioWrapper audio;
 
 	public TileEntityITER() {
+
 		super(6);
+
 		tanks = new FluidTank[4];
+
+		/*
+		 * Tank 0 remains WATER for compatibility/input UI, but this reactor no longer
+		 * directly boils water. Realistic fusion heat should go through coolant/blanket.
+		 */
 		tanks[0] = new FluidTank(Fluids.WATER, 1280000);
+
+		/*
+		 * Tank 1 remains ULTRAHOTSTEAM for old compatibility, but normal operation will
+		 * not fill it anymore. Use a heat exchanger/turbine chain from hot coolant.
+		 */
 		tanks[1] = new FluidTank(Fluids.ULTRAHOTSTEAM, 128000);
+
 		tanks[2] = new FluidTank(Fluids.COOLANT, 16_000);
 		tanks[3] = new FluidTank(Fluids.COOLANT_HOT, 16_000);
-		plasma = new FluidTank(Fluids.PLASMA_DT, 16000);
 
+		plasma = new FluidTank(Fluids.PLASMA_DT, 16000);
 	}
 
 	@Override
@@ -100,101 +133,97 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 		if(!worldObj.isRemote) {
 
 			this.updateConnections();
+
 			power = Library.chargeTEFromItems(slots, 0, power, maxPower);
-			if(tanks[2].getTankType().hasTrait(FT_Heatable.class)) {
-				FT_Heatable trait = tanks[2].getTankType().getTrait(FT_Heatable.class);
-				HeatingStep step = trait.getFirstStep();
-				tanks[3].setTankType(step.typeProduced);
-			}
-			else {
-				tanks[2].setTankType(Fluids.NONE);
-				tanks[3].setTankType(Fluids.NONE);
-			}
+
+			updateHotCoolantType();
+
 			/// START Processing part ///
 
-			if(!isOn) {
-				plasma.setFill(0);	//jettison plasma if the thing is turned off
+			if(!isOn && plasma.getFill() > 0) {
+				disruptPlasma(false, 0.75F);
 			}
 
-			//explode either if there's plasma that is too hot or if the reactor is turned on but the magnets have no power
-			if(plasma.getFill() > 0 && (this.plasma.getTankType().temperature >= this.getShield() || (this.isOn && this.power < this.powerReq || tanks[2].getFill() == 0 || tanks[3].getFill() == tanks[3].getMaxFill()))) {
-				this.explode();
+			if(plasma.getFill() > 0 && getShield() <= 0) {
+				disruptPlasma(false, 0.5F);
 			}
 
-			if(isOn && power >= powerReq) {
-				power -= powerReq;
+			if(plasma.getFill() > 0 && plasma.getTankType().temperature > getShield()) {
+				damageShield(OVERHEAT_SHIELD_DAMAGE);
+				heatStress += HEAT_STRESS_PER_FAILED_COOLING;
 
-				if(plasma.getFill() > 0) {
-					this.totalRuntime++;
-					int delay = FusionRecipes.getByproductDelay(plasma.getTankType());
-					if(delay > 0 && totalRuntime % delay == 0) produceByproduct();
+				if(heatStress >= MAX_HEAT_STRESS) {
+					structuralFailure();
+					return;
 				}
+			}
 
-				if(plasma.getFill() > 0 && this.getShield() != 0) {
+			if(isOn) {
 
-					ItemFusionShield.setShieldDamage(slots[3], ItemFusionShield.getShieldDamage(slots[3]) + 1);
+				if(power < powerReq) {
 
-					if(ItemFusionShield.getShieldDamage(slots[3]) > ((ItemFusionShield)slots[3].getItem()).maxDamage) {
-						slots[3] = null;
-						worldObj.playSoundEffect(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, "hbm:block.shutdown", 5F, 1F);
-						this.isOn = false;
-						this.markDirty();
+					/*
+					 * Realistic behavior:
+					 * loss of magnet/auxiliary power kills confinement. The plasma dumps
+					 * into the wall and quenches. It damages the machine, but it is not a
+					 * nuclear explosion.
+					 */
+					if(plasma.getFill() > 0) {
+						disruptPlasma(true, 0.65F);
 					}
-				}
 
-				int prod = FusionRecipes.getSteamProduction(plasma.getTankType());
-				int lod = FusionRecipes.getCoolant(plasma.getTankType());
+					isOn = false;
+				} else {
 
-				for(int i = 0; i < 20; i++) {
+					power -= powerReq;
 
 					if(plasma.getFill() > 0) {
 
-						if(tanks[0].getFill() >= prod * 10) {
-							tanks[0].setFill(tanks[0].getFill() - prod * 10);
-							tanks[1].setFill(tanks[1].getFill() + prod);
+						this.totalRuntime++;
 
-						}
-						if(tanks[1].getFill() > tanks[1].getMaxFill()) {
-							tanks[1].setFill(tanks[1].getMaxFill());
-							tanks[0].setFill(tanks[0].getMaxFill()); //this should stop it from eating fluids when buffers are full
+						int delay = FusionRecipes.getByproductDelay(plasma.getTankType());
+
+						if(delay > 0 && totalRuntime % delay == 0) {
+							produceByproduct();
 						}
 
-						if(tanks[2].getFill() >= lod) {
-							int coolantToDrain = (int) (Math.min(tanks[3].getMaxFill(), tanks[2].getFill()));
-							coolantToDrain = Math.min(lod, tanks[1].getMaxFill() - tanks[1].getFill());
-							tanks[2].setFill(tanks[2].getFill() - coolantToDrain);
-							tanks[3].setFill(tanks[3].getFill() + coolantToDrain);
-
-						}
-						if(tanks[3].getFill() > tanks[3].getMaxFill()) {
-							tanks[3].setFill(tanks[3].getMaxFill());
-							tanks[2].setFill(tanks[2].getMaxFill());
-						}
-
-						plasma.setFill(plasma.getFill() - 1);
+						runFusionTick();
+					} else {
+						coolDownHeatStress();
 					}
 				}
+			} else {
+				coolDownHeatStress();
 			}
 
 			doBreederStuff();
 
 			/// END Processing part ///
 
-			/// START Notif packets ///
+			/// START Fluid output ///
 
 			for(DirPos pos : getConPos()) {
+
 				if(tanks[1].getFill() > 0) {
 					this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				}
+
 				if(tanks[3].getFill() > 0) {
 					this.sendFluid(tanks[3], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				}
 			}
 
+			/// END Fluid output ///
+
+			/// START Notif packets ///
+
 			NBTTagCompound data = new NBTTagCompound();
+
 			data.setBoolean("isOn", isOn);
 			data.setLong("power", power);
 			data.setInteger("progress", progress);
+			data.setInteger("heatStress", heatStress);
+
 			tanks[0].writeToNBT(data, "water");
 			tanks[1].writeToNBT(data, "steam");
 			tanks[2].writeToNBT(data, "coolant");
@@ -214,6 +243,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 			}
 
 			this.networkPack(data, 250);
+
 			/// END Notif packets ///
 
 		} else {
@@ -227,6 +257,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 			}
 
 			if(this.isOn && this.power >= powerReq) {
+
 				this.rotorSpeed = Math.max(0F, Math.min(15F, this.rotorSpeed + 0.05F));
 
 				if(audio == null) {
@@ -235,17 +266,23 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 				}
 
 				float rotorSpeed = this.rotorSpeed / 15F;
-				audio.updateVolume(getVolume(0.5f * rotorSpeed));
+				audio.updateVolume(getVolume(0.5F * rotorSpeed));
 				audio.updatePitch(0.25F + 0.75F * rotorSpeed);
+
 			} else {
+
 				this.rotorSpeed = Math.max(0F, Math.min(15F, this.rotorSpeed - 0.1F));
 
 				if(audio != null) {
+
 					if(this.rotorSpeed > 0) {
+
 						float rotorSpeed = this.rotorSpeed / 15F;
-						audio.updateVolume(getVolume(0.5f * rotorSpeed));
+						audio.updateVolume(getVolume(0.5F * rotorSpeed));
 						audio.updatePitch(0.25F + 0.75F * rotorSpeed);
+
 					} else {
+
 						audio.stopSound();
 						audio = null;
 					}
@@ -254,23 +291,223 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 		}
 	}
 
+	private void updateHotCoolantType() {
+
+		if(tanks[2].getTankType().hasTrait(FT_Heatable.class)) {
+
+			FT_Heatable trait = tanks[2].getTankType().getTrait(FT_Heatable.class);
+			HeatingStep step = trait.getFirstStep();
+
+			if(step != null && step.typeProduced != null) {
+				tanks[3].setTankType(step.typeProduced);
+			}
+
+		} else {
+
+			tanks[2].setTankType(Fluids.NONE);
+			tanks[3].setTankType(Fluids.NONE);
+		}
+	}
+
+	private void runFusionTick() {
+
+		if(plasma.getFill() <= 0) {
+			return;
+		}
+
+		if(getShield() <= 0) {
+			disruptPlasma(false, 0.5F);
+			return;
+		}
+
+		/*
+		 * FusionRecipes.getSteamProduction is reused as the reaction heat scale.
+		 * This keeps your recipe balance intact, but output is now coolant heating,
+		 * not direct steam generation.
+		 */
+		int heat = FusionRecipes.getSteamProduction(plasma.getTankType());
+		int coolantReq = FusionRecipes.getCoolant(plasma.getTankType());
+
+		if(heat <= 0) {
+			heat = 1;
+		}
+
+		if(coolantReq <= 0) {
+			coolantReq = 1;
+		}
+
+		int operations = Math.min(MAX_PLASMA_BURN_PER_TICK, plasma.getFill());
+
+		for(int i = 0; i < operations; i++) {
+
+			if(plasma.getFill() <= 0) {
+				break;
+			}
+
+			if(tanks[2].getFill() < coolantReq || tanks[3].getFill() >= tanks[3].getMaxFill()) {
+
+				/*
+				 * No instant boom. Coolant starvation or full hot-coolant output causes
+				 * heat to build up in the first wall/blanket. Sustained neglect breaks it.
+				 */
+				heatStress += HEAT_STRESS_PER_FAILED_COOLING;
+				damageShield(OVERHEAT_SHIELD_DAMAGE);
+
+				if(heatStress >= MAX_HEAT_STRESS) {
+					structuralFailure();
+					return;
+				}
+
+				break;
+			}
+
+			int coolantToHeat = Math.min(coolantReq, tanks[2].getFill());
+			coolantToHeat = Math.min(coolantToHeat, tanks[3].getMaxFill() - tanks[3].getFill());
+
+			if(coolantToHeat <= 0) {
+				heatStress += HEAT_STRESS_PER_FAILED_COOLING;
+				damageShield(OVERHEAT_SHIELD_DAMAGE);
+
+				if(heatStress >= MAX_HEAT_STRESS) {
+					structuralFailure();
+					return;
+				}
+
+				break;
+			}
+
+			tanks[2].setFill(tanks[2].getFill() - coolantToHeat);
+			tanks[3].setFill(tanks[3].getFill() + coolantToHeat);
+
+			plasma.setFill(plasma.getFill() - 1);
+
+			damageShield(BASE_SHIELD_DAMAGE_PER_TICK);
+
+			/*
+			 * Successful cooling slowly removes accumulated thermal stress.
+			 */
+			coolDownHeatStress();
+		}
+	}
+
+	private void coolDownHeatStress() {
+
+		if(heatStress > 0) {
+			heatStress -= HEAT_STRESS_DECAY;
+
+			if(heatStress < 0) {
+				heatStress = 0;
+			}
+		}
+	}
+
+	private void damageShield(int amount) {
+
+		if(amount <= 0) {
+			return;
+		}
+
+		if(slots[3] == null || !(slots[3].getItem() instanceof ItemFusionShield)) {
+			return;
+		}
+
+		ItemFusionShield shield = (ItemFusionShield) slots[3].getItem();
+
+		ItemFusionShield.setShieldDamage(
+			slots[3],
+			ItemFusionShield.getShieldDamage(slots[3]) + amount
+		);
+
+		if(ItemFusionShield.getShieldDamage(slots[3]) > shield.maxDamage) {
+
+			slots[3] = null;
+
+			worldObj.playSoundEffect(
+				xCoord + 0.5,
+				yCoord + 0.5,
+				zCoord + 0.5,
+				"hbm:block.shutdown",
+				5F,
+				1F
+			);
+
+			this.isOn = false;
+			this.markDirty();
+		}
+	}
+
+	private void disruptPlasma(boolean major, float pitch) {
+
+		if(plasma.getFill() <= 0) {
+			return;
+		}
+
+		int damage = major ? DISRUPTION_SHIELD_DAMAGE : DISRUPTION_SHIELD_DAMAGE / 3;
+
+		damageShield(damage);
+
+		heatStress += major ? 120 : 40;
+
+		plasma.setFill(0);
+		isOn = false;
+
+		worldObj.playSoundEffect(
+			xCoord + 0.5,
+			yCoord + 0.5,
+			zCoord + 0.5,
+			"hbm:block.shutdown",
+			5F,
+			pitch
+		);
+
+		if(heatStress >= MAX_HEAT_STRESS) {
+			structuralFailure();
+		}
+	}
+
+	private void structuralFailure() {
+
+		this.disassemble();
+
+		Vec3 vec = Vec3.createVectorHelper(5.5, 0, 0);
+		vec.rotateAroundY(worldObj.rand.nextFloat() * (float) Math.PI * 2F);
+
+		/*
+		 * This is no longer treated as "fusion plasma exploded".
+		 * It represents coolant/steam/structural failure after the first wall or
+		 * blanket is cooked past safe limits.
+		 */
+		worldObj.newExplosion(
+			null,
+			xCoord + 0.5 + vec.xCoord,
+			yCoord + 0.5 + worldObj.rand.nextGaussian() * 1.5D,
+			zCoord + 0.5 + vec.zCoord,
+			2.5F,
+			true,
+			true
+		);
+	}
 
 	protected List<DirPos> connections;
 
 	private void updateConnections() {
 
 		for(DirPos pos : getConPos()) {
+
 			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+
 			this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			this.trySubscribe(tanks[2].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
 	}
 
 	protected List<DirPos> getConPos() {
-		if(connections != null && !connections.isEmpty())
-			return connections;
 
-		connections = new ArrayList();
+		if(connections != null && !connections.isEmpty()) {
+			return connections;
+		}
+
+		connections = new ArrayList<DirPos>();
 
 		connections.add(new DirPos(xCoord, yCoord + 3, zCoord, ForgeDirection.UP));
 		connections.add(new DirPos(xCoord, yCoord - 3, zCoord, ForgeDirection.DOWN));
@@ -278,22 +515,14 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 		Vec3 vec = Vec3.createVectorHelper(5.75, 0, 0);
 
 		for(int i = 0; i < 16; i++) {
+
 			vec.rotateAroundY((float) (Math.PI / 8));
-			connections.add(new DirPos(xCoord + (int)vec.xCoord, yCoord + 3, zCoord + (int)vec.zCoord, ForgeDirection.UP));
-			connections.add(new DirPos(xCoord + (int)vec.xCoord, yCoord - 3, zCoord + (int)vec.zCoord, ForgeDirection.DOWN));
+
+			connections.add(new DirPos(xCoord + (int) vec.xCoord, yCoord + 3, zCoord + (int) vec.zCoord, ForgeDirection.UP));
+			connections.add(new DirPos(xCoord + (int) vec.xCoord, yCoord - 3, zCoord + (int) vec.zCoord, ForgeDirection.DOWN));
 		}
 
 		return connections;
-	}
-
-	private void explode() {
-		this.disassemble();
-			Vec3 vec = Vec3.createVectorHelper(5.5, 0, 0);
-			vec.rotateAroundY(worldObj.rand.nextFloat() * (float)Math.PI * 2F);
-
-			worldObj.newExplosion(null, xCoord + 0.5 + vec.xCoord, yCoord + 0.5 + worldObj.rand.nextGaussian() * 1.5D, zCoord + 0.5 + vec.zCoord, 2.5F, true, true);
-
-
 	}
 
 	private void doBreederStuff() {
@@ -312,9 +541,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 			return;
 		}
 
-		if(slots[2] != null &&
-			slots[2].stackSize >= slots[2].getMaxStackSize()) {
-
+		if(slots[2] != null && slots[2].stackSize >= slots[2].getMaxStackSize()) {
 			this.progress = 0;
 			return;
 		}
@@ -333,8 +560,9 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 
 			slots[1].stackSize--;
 
-			if(slots[1].stackSize <= 0)
+			if(slots[1].stackSize <= 0) {
 				slots[1] = null;
+			}
 
 			this.markDirty();
 		}
@@ -353,8 +581,9 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 	@Override
 	public boolean isItemValidForSlot(int i, ItemStack itemStack) {
 
-		if(i == 1 && BreederRecipes.hasRecipe(itemStack))
+		if(i == 1 && BreederRecipes.hasRecipe(itemStack)) {
 			return true;
+		}
 
 		return false;
 	}
@@ -363,11 +592,12 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 
 		ItemStack by = FusionRecipes.getByproduct(plasma.getTankType());
 
-		if(by == null)
+		if(by == null) {
 			return;
+		}
 
 		if(slots[4] == null) {
-			slots[4] = by;
+			slots[4] = by.copy();
 			return;
 		}
 
@@ -378,20 +608,24 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 
 	public int getShield() {
 
-		if(slots[3] == null || !(slots[3].getItem() instanceof ItemFusionShield))
+		if(slots[3] == null || !(slots[3].getItem() instanceof ItemFusionShield)) {
 			return 0;
+		}
 
-		return ((ItemFusionShield)slots[3].getItem()).maxTemp;
+		return ((ItemFusionShield) slots[3].getItem()).maxTemp;
 	}
 
 	@Override
 	public void networkUnpack(NBTTagCompound data) {
+
 		super.networkUnpack(data);
 
 		this.isOn = data.getBoolean("isOn");
 		this.power = data.getLong("power");
 		this.blanket = data.getInteger("blanket");
-		this.progress = data.getInteger("progress"); //
+		this.progress = data.getInteger("progress");
+		this.heatStress = data.getInteger("heatStress");
+
 		tanks[0].readFromNBT(data, "water");
 		tanks[1].readFromNBT(data, "steam");
 		tanks[2].readFromNBT(data, "coolant");
@@ -401,17 +635,62 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 
 	@Override
 	public void handleButtonPacket(int value, int meta) {
-		if(meta == 0) this.isOn = !this.isOn;
+
+		if(meta == 0) {
+
+			if(!this.isOn) {
+
+				/*
+				 * Refuse startup without a valid first wall/blanket.
+				 * This avoids shieldless plasma causing instant weird explosions.
+				 */
+				if(getShield() <= 0) {
+					worldObj.playSoundEffect(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, "hbm:block.shutdown", 5F, 0.5F);
+					this.isOn = false;
+					return;
+				}
+
+				if(tanks[2].getFill() <= 0 || tanks[3].getFill() >= tanks[3].getMaxFill()) {
+					worldObj.playSoundEffect(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, "hbm:block.shutdown", 5F, 0.5F);
+					this.isOn = false;
+					return;
+				}
+			}
+
+			this.isOn = !this.isOn;
+		}
 	}
 
-	public long getPowerScaled(long i) { return (power * i) / maxPower; }
-	public long getProgressScaled(long i) { return (progress * i) / duration; }
-	@Override public void setPower(long i) { this.power = i; }
-	@Override public long getPower() { return power; }
-	@Override public long getMaxPower() { return maxPower; }
+	public long getPowerScaled(long i) {
+		return (power * i) / maxPower;
+	}
+
+	public long getProgressScaled(long i) {
+		return (progress * i) / duration;
+	}
+
+	public long getHeatStressScaled(long i) {
+		return (heatStress * i) / MAX_HEAT_STRESS;
+	}
+
+	@Override
+	public void setPower(long i) {
+		this.power = i;
+	}
+
+	@Override
+	public long getPower() {
+		return power;
+	}
+
+	@Override
+	public long getMaxPower() {
+		return maxPower;
+	}
 
 	@Override
 	public void onChunkUnload() {
+
 		super.onChunkUnload();
 
 		if(audio != null) {
@@ -422,6 +701,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 
 	@Override
 	public void invalidate() {
+
 		super.invalidate();
 
 		if(audio != null) {
@@ -432,11 +712,13 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
+
 		super.readFromNBT(nbt);
 
 		this.power = nbt.getLong("power");
 		this.isOn = nbt.getBoolean("isOn");
 		this.totalRuntime = nbt.getLong("totalRuntime");
+		this.heatStress = nbt.getInteger("heatStress");
 
 		tanks[0].readFromNBT(nbt, "water");
 		tanks[1].readFromNBT(nbt, "steam");
@@ -445,14 +727,15 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 		plasma.readFromNBT(nbt, "plasma");
 	}
 
-
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+
 		super.writeToNBT(nbt);
 
 		nbt.setLong("power", this.power);
 		nbt.setBoolean("isOn", isOn);
 		nbt.setLong("totalRuntime", this.totalRuntime);
+		nbt.setInteger("heatStress", this.heatStress);
 
 		tanks[0].writeToNBT(nbt, "water");
 		tanks[1].writeToNBT(nbt, "steam");
@@ -467,14 +750,15 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 	public AxisAlignedBB getRenderBoundingBox() {
 
 		if(bb == null) {
+
 			bb = AxisAlignedBB.getBoundingBox(
-					xCoord + 0.5 - 8,
-					yCoord + 0.5 - 3,
-					zCoord + 0.5 - 8,
-					xCoord + 0.5 + 8,
-					yCoord + 0.5 + 3,
-					zCoord + 0.5 + 8
-					);
+				xCoord + 0.5 - 8,
+				yCoord + 0.5 - 3,
+				zCoord + 0.5 - 8,
+				xCoord + 0.5 + 8,
+				yCoord + 0.5 + 3,
+				zCoord + 0.5 + 8
+			);
 		}
 
 		return bb;
@@ -500,16 +784,25 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 
 					int width = 7;
 
-					if(x == width && y == 0 && z == width)
+					if(x == width && y == 0 && z == width) {
 						continue;
+					}
 
 					int b = layout[ly][x][z];
 
 					switch(b) {
-					case 1: worldObj.setBlock(xCoord - width + x, yCoord + y - 2, zCoord - width + z, ModBlocks.fusion_conductor, 1, 3); break;
-					case 2: worldObj.setBlock(xCoord - width + x, yCoord + y - 2, zCoord - width + z, ModBlocks.fusion_center); break;
-					case 3: worldObj.setBlock(xCoord - width + x, yCoord + y - 2, zCoord - width + z, ModBlocks.fusion_motor); break;
-					case 4: worldObj.setBlock(xCoord - width + x, yCoord + y - 2, zCoord - width + z, ModBlocks.reinforced_glass); break;
+						case 1:
+							worldObj.setBlock(xCoord - width + x, yCoord + y - 2, zCoord - width + z, ModBlocks.fusion_conductor, 1, 3);
+							break;
+						case 2:
+							worldObj.setBlock(xCoord - width + x, yCoord + y - 2, zCoord - width + z, ModBlocks.fusion_center);
+							break;
+						case 3:
+							worldObj.setBlock(xCoord - width + x, yCoord + y - 2, zCoord - width + z, ModBlocks.fusion_motor);
+							break;
+						case 4:
+							worldObj.setBlock(xCoord - width + x, yCoord + y - 2, zCoord - width + z, ModBlocks.reinforced_glass);
+							break;
 					}
 				}
 			}
@@ -519,8 +812,17 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 
 		MachineITER.drop = true;
 
-		List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class,
-				AxisAlignedBB.getBoundingBox(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5).expand(50, 10, 50));
+		List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(
+			EntityPlayer.class,
+			AxisAlignedBB.getBoundingBox(
+				xCoord + 0.5,
+				yCoord + 0.5,
+				zCoord + 0.5,
+				xCoord + 0.5,
+				yCoord + 0.5,
+				zCoord + 0.5
+			).expand(50, 10, 50)
+		);
 
 		for(EntityPlayer player : players) {
 			player.triggerAchievement(MainRegistry.achMeltdown);
@@ -529,12 +831,12 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 
 	@Override
 	public FluidTank[] getSendingTanks() {
-		return new FluidTank[] {tanks[1], tanks[3]};
+		return new FluidTank[] { tanks[1], tanks[3] };
 	}
 
 	@Override
 	public FluidTank[] getReceivingTanks() {
-		return new FluidTank[] {tanks[0], tanks[2]};
+		return new FluidTank[] { tanks[0], tanks[2] };
 	}
 
 	@Override
@@ -565,12 +867,17 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
-		data.setBoolean(CompatEnergyControl.B_ACTIVE, this.isOn && plasma.getFill() > 0);
-		int output = FusionRecipes.getSteamProduction(plasma.getTankType());
-		data.setDouble("consumption", output * 10);
-		data.setDouble("outputmb", output);
-	}
 
+		data.setBoolean(CompatEnergyControl.B_ACTIVE, this.isOn && plasma.getFill() > 0);
+
+		int heat = FusionRecipes.getSteamProduction(plasma.getTankType());
+		int coolant = FusionRecipes.getCoolant(plasma.getTankType());
+
+		data.setDouble("consumption", coolant);
+		data.setDouble("outputmb", coolant);
+		data.setInteger("heatStress", heatStress);
+		data.setInteger("reactionHeat", heat);
+	}
 
 	@Override
 	@Optional.Method(modid = "OpenComputers")
@@ -581,87 +888,143 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getEnergyInfo(Context context, Arguments args) {
-		return new Object[] {getPower(), getMaxPower()};
+		return new Object[] { getPower(), getMaxPower() };
 	}
 
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] isActive(Context context, Arguments args) {
-		return new Object[] {isOn};
+		return new Object[] { isOn };
 	}
 
 	@Callback(direct = true, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setActive(Context context, Arguments args) {
-		isOn = args.checkBoolean(0);
-		return new Object[] {};
+
+		boolean state = args.checkBoolean(0);
+
+		if(state) {
+
+			if(getShield() <= 0) {
+				return new Object[] { false };
+			}
+
+			if(tanks[2].getFill() <= 0 || tanks[3].getFill() >= tanks[3].getMaxFill()) {
+				return new Object[] { false };
+			}
+		}
+
+		isOn = state;
+
+		return new Object[] { true };
 	}
 
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getFluid(Context context, Arguments args) {
 		return new Object[] {
-				tanks[0].getFill(), tanks[0].getMaxFill(),
-				tanks[1].getFill(), tanks[1].getMaxFill(),
-				plasma.getFill(), plasma.getMaxFill(), plasma.getTankType().getUnlocalizedName()
+			tanks[0].getFill(),
+			tanks[0].getMaxFill(),
+			tanks[1].getFill(),
+			tanks[1].getMaxFill(),
+			tanks[2].getFill(),
+			tanks[2].getMaxFill(),
+			tanks[3].getFill(),
+			tanks[3].getMaxFill(),
+			plasma.getFill(),
+			plasma.getMaxFill(),
+			plasma.getTankType().getUnlocalizedName()
 		};
 	}
 
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getPlasmaTemp(Context context, Arguments args) {
-		return new Object[] {plasma.getTankType().temperature};
+		return new Object[] { plasma.getTankType().temperature };
 	}
 
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getMaxTemp(Context context, Arguments args) {
-		if (slots[3] != null && (slots[3].getItem() instanceof ItemFusionShield))
-			return new Object[] {((ItemFusionShield) slots[3].getItem()).maxTemp};
-		return new Object[] {"N/A"};
+
+		if(slots[3] != null && slots[3].getItem() instanceof ItemFusionShield) {
+			return new Object[] { ((ItemFusionShield) slots[3].getItem()).maxTemp };
+		}
+
+		return new Object[] { "N/A" };
 	}
 
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getBlanketDamage(Context context, Arguments args) {
-		if (slots[3] != null && (slots[3].getItem() instanceof ItemFusionShield))
-			return new Object[]{ItemFusionShield.getShieldDamage(slots[3]), ((ItemFusionShield)slots[3].getItem()).maxDamage};
-		return new Object[] {"N/A", "N/A"};
+
+		if(slots[3] != null && slots[3].getItem() instanceof ItemFusionShield) {
+			return new Object[] {
+				ItemFusionShield.getShieldDamage(slots[3]),
+				((ItemFusionShield) slots[3].getItem()).maxDamage
+			};
+		}
+
+		return new Object[] { "N/A", "N/A" };
+	}
+
+	@Callback(direct = true)
+	@Optional.Method(modid = "OpenComputers")
+	public Object[] getHeatStress(Context context, Arguments args) {
+		return new Object[] { heatStress, MAX_HEAT_STRESS };
 	}
 
 	@Override
 	@Optional.Method(modid = "OpenComputers")
 	public String[] methods() {
 		return new String[] {
-				"getEnergyInfo",
-				"isActive",
-				"setActive",
-				"getFluid",
-				"getPlasmaTemp",
-				"getMaxTemp",
-				"getBlanketDamage"
+			"getEnergyInfo",
+			"isActive",
+			"setActive",
+			"getFluid",
+			"getPlasmaTemp",
+			"getMaxTemp",
+			"getBlanketDamage",
+			"getHeatStress"
 		};
 	}
 
 	@Override
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] invoke(String method, Context context, Arguments args) throws Exception {
-		switch (method) {
-			case ("getEnergyInfo"):
-				return getEnergyInfo(context, args);
-			case ("isActive"):
-				return isActive(context, args);
-			case ("setActive"):
-				return setActive(context, args);
-			case ("getFluid"):
-				return getFluid(context, args);
-			case ("getPlasmaTemp"):
-				return getPlasmaTemp(context, args);
-			case ("getMaxTemp"):
-				return getMaxTemp(context, args);
-			case ("getBlanketDamage"):
-				return getBlanketDamage(context, args);
+
+		if(method.equals("getEnergyInfo")) {
+			return getEnergyInfo(context, args);
 		}
+
+		if(method.equals("isActive")) {
+			return isActive(context, args);
+		}
+
+		if(method.equals("setActive")) {
+			return setActive(context, args);
+		}
+
+		if(method.equals("getFluid")) {
+			return getFluid(context, args);
+		}
+
+		if(method.equals("getPlasmaTemp")) {
+			return getPlasmaTemp(context, args);
+		}
+
+		if(method.equals("getMaxTemp")) {
+			return getMaxTemp(context, args);
+		}
+
+		if(method.equals("getBlanketDamage")) {
+			return getBlanketDamage(context, args);
+		}
+
+		if(method.equals("getHeatStress")) {
+			return getHeatStress(context, args);
+		}
+
 		throw new NoSuchMethodException();
 	}
 

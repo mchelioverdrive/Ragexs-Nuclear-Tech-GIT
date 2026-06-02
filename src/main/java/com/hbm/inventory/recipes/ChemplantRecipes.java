@@ -275,16 +275,16 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//		.inputFluids(new FluidStack(Fluids.KEROSENE, 6000))
 		//		.outputItems(new ItemStack(ModItems.powder_balefire))
 		//		.outputFluids(new FluidStack(Fluids.BALEFIRE, 8000)));
-		recipes.add(new ChemRecipe(63, "SCHRABIDIC", 100)
-				.inputItems(new ComparableStack(ModItems.pellet_charged))
-				.inputFluids(
-						new FluidStack(Fluids.SAS3, 8000),
-						new FluidStack(Fluids.PEROXIDE, 6000))
-				.outputFluids(new FluidStack(Fluids.SCHRABIDIC, 16000)));
-		recipes.add(new ChemRecipe(64, "SCHRABIDATE", 150)
-				.inputItems(new OreDictStack(IRON.dust()))
-				.inputFluids(new FluidStack(Fluids.SCHRABIDIC, 250))
-				.outputItems(new ItemStack(ModItems.powder_schrabidate)));
+		//recipes.add(new ChemRecipe(63, "SCHRABIDIC", 100)
+		//		.inputItems(new ComparableStack(ModItems.pellet_charged))
+		//		.inputFluids(
+		//				new FluidStack(Fluids.SAS3, 8000),
+		//				new FluidStack(Fluids.PEROXIDE, 6000))
+		//		.outputFluids(new FluidStack(Fluids.SCHRABIDIC, 16000)));
+		//recipes.add(new ChemRecipe(64, "SCHRABIDATE", 150)
+		//		.inputItems(new OreDictStack(IRON.dust()))
+		//		.inputFluids(new FluidStack(Fluids.SCHRABIDIC, 250))
+		//		.outputItems(new ItemStack(ModItems.powder_schrabidate)));
 		recipes.add(new ChemRecipe(65, "COLTAN_CLEANING", 60)
 				.inputItems(
 						new OreDictStack(COLTAN.dust(), 2))
@@ -355,9 +355,6 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputFluids(new FluidStack(Fluids.NAPHTHA, 1000))
 				.outputFluids(new FluidStack(Fluids.GASOLINE, 800)));
 
-		//WHY THE FUCK DOES LEADED FUCKING GASOLINE EXIST IF WE AREN'T GOING TO GIVE IT A USE BOB?
-		// HUH? MAYBE WE COULD USE IT TO RUN OUR FUCKING ENGINES HOTTER IN RETURN FOR MORE POLLUTION?
-		// NO LET'S JUST MAKE IT BE USED IN LITERALLY ONLY THE TOSSABLE GAS CAN FOR SOME REASON!!!
 		recipes.add(new ChemRecipe(85, "GASOLINE_LEADED", 40)
 				.inputItems(new ComparableStack(ModItems.fuel_additive))
 				.inputFluids(new FluidStack(Fluids.GASOLINE, 10_000))

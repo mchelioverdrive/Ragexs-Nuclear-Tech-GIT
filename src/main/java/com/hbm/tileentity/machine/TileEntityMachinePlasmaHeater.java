@@ -1,12 +1,9 @@
 package com.hbm.tileentity.machine;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.blocks.ModBlocks;
-import com.hbm.blocks.machine.MachineITER;
 import com.hbm.blocks.machine.MachineHTRF4;
+import com.hbm.blocks.machine.MachineITER;
 import com.hbm.inventory.container.ContainerPlasmaHeater;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
@@ -37,12 +34,62 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 	public FluidTank[] tanks;
 	public FluidTank plasma;
 
+	/*
+	 * Realistic low-refactor interpretation:
+	 *
+	 * This machine does not store plasma as a bulk fluid.
+	 * It only holds one tiny unstable magnetic plasma packet.
+	 *
+	 * The plasma packet should be injected into ITER/HTRF almost immediately.
+	 * If it sits around without containment power, it dissipates.
+	 */
+	private static final int PLASMA_BUFFER = 1;
+
+	/*
+	 * Startup energy: represents ionization + RF/microwave/neutral beam heating
+	 * before a stable-enough plasma packet can be formed.
+	 */
+	private static final int STARTUP_POWER_REQUIRED = 500000;
+
+	/*
+	 * Power consumed to produce one unstable plasma packet.
+	 */
+	private static final int OPERATING_POWER_PER_PACKET = 50000;
+
+	/*
+	 * Power consumed every tick while plasma exists in the heater.
+	 * This represents magnetic containment / active field maintenance.
+	 */
+	private static final int CONTAINMENT_POWER_PER_TICK = 10000;
+
+	/*
+	 * If the machine has plasma but cannot inject it, it only survives for a few ticks.
+	 */
+	private static final int MAX_PLASMA_AGE = 5;
+
+	/*
+	 * One packet per tick. This keeps the machine acting like an injector,
+	 * not a plasma tank or boiler.
+	 */
+	private static final int MAX_CONVERT_PER_TICK = 1;
+
+	private int startupCharge;
+	private int plasmaAge;
+
 	public TileEntityMachinePlasmaHeater() {
+
 		super(5);
+
 		tanks = new FluidTank[2];
+
 		tanks[0] = new FluidTank(Fluids.DEUTERIUM, 16_000);
 		tanks[1] = new FluidTank(Fluids.TRITIUM, 16_000);
-		plasma = new FluidTank(Fluids.PLASMA_DT, 64_000);
+
+		/*
+		 * This is the main realism fix.
+		 * Plasma is not stockpiled. It is only a 1 mB unstable injection buffer.
+		 */
+		plasma = new FluidTank(Fluids.PLASMA_DT, PLASMA_BUFFER);
 	}
 
 	@Override
@@ -55,113 +102,304 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 
 		if(!worldObj.isRemote) {
 
-			if(this.worldObj.getTotalWorldTime() % 20 == 0)
+			if(this.worldObj.getTotalWorldTime() % 20 == 0) {
 				this.updateConnections();
+			}
 
 			/// START Managing all the internal stuff ///
+
 			power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+
 			tanks[0].setType(1, 2, slots);
 			tanks[1].setType(3, 4, slots);
 
-			updateType();
+			FluidType plasmaType = getPlasmaTypeFromInputs();
 
-			int maxConv = 50;
-			int powerReq = 10000;
+			if(plasma.getFill() <= 0) {
 
-			int convert = Math.min(tanks[0].getFill(), tanks[1].getFill());
-			convert = Math.min(convert, (plasma.getMaxFill() - plasma.getFill()) / 2);
-			convert = Math.min(convert, maxConv);
-			convert = (int) Math.min(convert, power / powerReq);
-			convert = Math.max(0, convert);
+				plasma.setFill(0);
+				plasmaAge = 0;
 
-			if(convert > 0 && plasma.getTankType() != Fluids.NONE) {
+				if(plasmaType != Fluids.NONE) {
+					plasma.setTankType(plasmaType);
+				} else {
+					plasma.setTankType(Fluids.NONE);
+					startupCharge = 0;
+				}
 
-				tanks[0].setFill(tanks[0].getFill() - convert);
-				tanks[1].setFill(tanks[1].getFill() - convert);
+			} else {
 
-				plasma.setFill(plasma.getFill() + convert * 2);
-				power -= convert * powerReq;
-
-				this.markDirty();
+				/*
+				 * Existing plasma keeps its type until injected or dissipated.
+				 * Do not switch the plasma type while an unstable packet exists.
+				 */
+				handlePlasmaContainment();
 			}
+
+			if(plasmaType != Fluids.NONE && plasma.getFill() < plasma.getMaxFill()) {
+				runIonizationCycle(plasmaType);
+			} else if(plasmaType == Fluids.NONE) {
+				startupCharge = 0;
+			}
+
 			/// END Managing all the internal stuff ///
 
-			/// START Loading plasma into the ITER ///
+			/// START Loading plasma into the ITER / HTRF ///
 
 			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset).getOpposite();
 			int dist = 11;
 
-			if(worldObj.getBlock(xCoord + dir.offsetX * dist, yCoord + 1, zCoord + dir.offsetZ * dist) == ModBlocks.machine_htrf4) {
-				int[] pos = ((MachineHTRF4)ModBlocks.machine_htrf4).findCore(worldObj, xCoord + dir.offsetX * dist, yCoord + 1, zCoord + dir.offsetZ * dist);
+			boolean injected = false;
 
-				if(pos != null) {
-					TileEntity te = worldObj.getTileEntity(pos[0], pos[1], pos[2]);
+			injected = tryInjectHTRF(dir, dist) || injected;
+			injected = tryInjectITER(dir, dist) || injected;
 
-					if(te instanceof TileEntityMachineHTRF4) {
-						TileEntityMachineHTRF4 htrf = (TileEntityMachineHTRF4)te;
-
-						if(htrf.tanks[0].getFill() == 0 && this.plasma.getTankType() != Fluids.NONE) {
-							htrf.tanks[0].setTankType(this.plasma.getTankType());
-						}
-						{
-							if(htrf.tanks[0].getTankType() == this.plasma.getTankType()) {
-
-								int toLoad = Math.min(htrf.tanks[0].getMaxFill() - htrf.tanks[0].getFill(), this.plasma.getFill());
-								toLoad = Math.min(toLoad, 40);
-								this.plasma.setFill(this.plasma.getFill() - toLoad);
-								htrf.tanks[0].setFill(htrf.tanks[0].getFill() + toLoad);
-								this.markDirty();
-								htrf.markDirty();
-							}
-						}
-					}
-				}
+			if(injected) {
+				plasmaAge = 0;
 			}
 
-			if(worldObj.getBlock(xCoord + dir.offsetX * dist, yCoord + 2, zCoord + dir.offsetZ * dist) == ModBlocks.iter) {
-				int[] pos = ((MachineITER)ModBlocks.iter).findCore(worldObj, xCoord + dir.offsetX * dist, yCoord + 2, zCoord + dir.offsetZ * dist);
-
-				if(pos != null) {
-					TileEntity te = worldObj.getTileEntity(pos[0], pos[1], pos[2]);
-
-					if(te instanceof TileEntityITER) {
-						TileEntityITER iter = (TileEntityITER)te;
-
-						if(iter.plasma.getFill() == 0 && this.plasma.getTankType() != Fluids.NONE) {
-							iter.plasma.setTankType(this.plasma.getTankType());
-						}
-
-						if(iter.isOn) {
-
-							if(iter.plasma.getTankType() == this.plasma.getTankType()) {
-
-								int toLoad = Math.min(iter.plasma.getMaxFill() - iter.plasma.getFill(), this.plasma.getFill());
-								toLoad = Math.min(toLoad, 40);
-								this.plasma.setFill(this.plasma.getFill() - toLoad);
-								iter.plasma.setFill(iter.plasma.getFill() + toLoad);
-								this.markDirty();
-								iter.markDirty();
-							}
-						}
-					}
-				}
-			}
-
-			/// END Loading plasma into the ITER ///
+			/// END Loading plasma into the ITER / HTRF ///
 
 			/// START Notif packets ///
 
 			NBTTagCompound data = new NBTTagCompound();
+
 			data.setLong("power", power);
+			data.setInteger("startupCharge", startupCharge);
+			data.setInteger("plasmaAge", plasmaAge);
+
 			tanks[0].writeToNBT(data, "t0");
 			tanks[1].writeToNBT(data, "t1");
 			plasma.writeToNBT(data, "t2");
+
 			this.networkPack(data, 50);
+
 			/// END Notif packets ///
 		}
 	}
 
-	private void updateConnections()  {
+	private void runIonizationCycle(FluidType plasmaType) {
+
+		if(plasmaType == Fluids.NONE) {
+			startupCharge = 0;
+			return;
+		}
+
+		if(tanks[0].getFill() <= 0 || tanks[1].getFill() <= 0) {
+			return;
+		}
+
+		if(power <= 0) {
+			return;
+		}
+
+		/*
+		 * Charge the ionization/startup stage first.
+		 * This avoids instant cold-fluid-to-plasma conversion.
+		 */
+		if(startupCharge < STARTUP_POWER_REQUIRED) {
+
+			int charge = (int) Math.min(power, STARTUP_POWER_REQUIRED - startupCharge);
+
+			startupCharge += charge;
+			power -= charge;
+
+			return;
+		}
+
+		int convert = Math.min(tanks[0].getFill(), tanks[1].getFill());
+		convert = Math.min(convert, plasma.getMaxFill() - plasma.getFill());
+		convert = Math.min(convert, MAX_CONVERT_PER_TICK);
+		convert = Math.min(convert, (int) (power / OPERATING_POWER_PER_PACKET));
+		convert = Math.max(0, convert);
+
+		if(convert <= 0) {
+			return;
+		}
+
+		plasma.setTankType(plasmaType);
+
+		/*
+		 * Low-refactor realistic compromise:
+		 *
+		 * 1 mB fuel A + 1 mB fuel B -> 1 mB unstable plasma packet
+		 *
+		 * Not volume-conserving, but better represents that this is an energetic
+		 * reaction state/injection packet, not a stored liquid mixture.
+		 */
+		tanks[0].setFill(tanks[0].getFill() - convert);
+		tanks[1].setFill(tanks[1].getFill() - convert);
+
+		plasma.setFill(plasma.getFill() + convert);
+
+		power -= convert * OPERATING_POWER_PER_PACKET;
+
+		plasmaAge = 0;
+
+		this.markDirty();
+	}
+
+	private void handlePlasmaContainment() {
+
+		if(plasma.getFill() <= 0) {
+			plasmaAge = 0;
+			return;
+		}
+
+		if(power >= CONTAINMENT_POWER_PER_TICK) {
+
+			power -= CONTAINMENT_POWER_PER_TICK;
+			plasmaAge++;
+
+			if(plasmaAge > MAX_PLASMA_AGE) {
+				dissipatePlasma();
+			}
+
+		} else {
+
+			/*
+			 * No containment power: plasma immediately dissipates instead of
+			 * sitting around like a normal tank fluid.
+			 */
+			dissipatePlasma();
+		}
+	}
+
+	private void dissipatePlasma() {
+
+		plasma.setFill(0);
+		plasmaAge = 0;
+
+		if(getPlasmaTypeFromInputs() == Fluids.NONE) {
+			plasma.setTankType(Fluids.NONE);
+		}
+
+		this.markDirty();
+	}
+
+	private boolean tryInjectITER(ForgeDirection dir, int dist) {
+
+		if(plasma.getFill() <= 0 || plasma.getTankType() == Fluids.NONE) {
+			return false;
+		}
+
+		if(worldObj.getBlock(xCoord + dir.offsetX * dist, yCoord + 2, zCoord + dir.offsetZ * dist) != ModBlocks.iter) {
+			return false;
+		}
+
+		int[] pos = ((MachineITER) ModBlocks.iter).findCore(
+			worldObj,
+			xCoord + dir.offsetX * dist,
+			yCoord + 2,
+			zCoord + dir.offsetZ * dist
+		);
+
+		if(pos == null) {
+			return false;
+		}
+
+		TileEntity te = worldObj.getTileEntity(pos[0], pos[1], pos[2]);
+
+		if(!(te instanceof TileEntityITER)) {
+			return false;
+		}
+
+		TileEntityITER iter = (TileEntityITER) te;
+
+		/*
+		 * This part is realistic enough:
+		 * plasma can only be injected into an active/magnetized reactor.
+		 */
+		if(!iter.isOn) {
+			return false;
+		}
+
+		if(iter.plasma.getFill() == 0 && this.plasma.getTankType() != Fluids.NONE) {
+			iter.plasma.setTankType(this.plasma.getTankType());
+		}
+
+		if(iter.plasma.getTankType() != this.plasma.getTankType()) {
+			return false;
+		}
+
+		int toLoad = Math.min(iter.plasma.getMaxFill() - iter.plasma.getFill(), this.plasma.getFill());
+		toLoad = Math.min(toLoad, PLASMA_BUFFER);
+
+		if(toLoad <= 0) {
+			return false;
+		}
+
+		this.plasma.setFill(this.plasma.getFill() - toLoad);
+		iter.plasma.setFill(iter.plasma.getFill() + toLoad);
+
+		if(this.plasma.getFill() <= 0) {
+			this.plasmaAge = 0;
+		}
+
+		this.markDirty();
+		iter.markDirty();
+
+		return true;
+	}
+
+	private boolean tryInjectHTRF(ForgeDirection dir, int dist) {
+
+		if(plasma.getFill() <= 0 || plasma.getTankType() == Fluids.NONE) {
+			return false;
+		}
+
+		if(worldObj.getBlock(xCoord + dir.offsetX * dist, yCoord + 1, zCoord + dir.offsetZ * dist) != ModBlocks.machine_htrf4) {
+			return false;
+		}
+
+		int[] pos = ((MachineHTRF4) ModBlocks.machine_htrf4).findCore(
+			worldObj,
+			xCoord + dir.offsetX * dist,
+			yCoord + 1,
+			zCoord + dir.offsetZ * dist
+		);
+
+		if(pos == null) {
+			return false;
+		}
+
+		TileEntity te = worldObj.getTileEntity(pos[0], pos[1], pos[2]);
+
+		if(!(te instanceof TileEntityMachineHTRF4)) {
+			return false;
+		}
+
+		TileEntityMachineHTRF4 htrf = (TileEntityMachineHTRF4) te;
+
+		if(htrf.tanks[0].getFill() == 0 && this.plasma.getTankType() != Fluids.NONE) {
+			htrf.tanks[0].setTankType(this.plasma.getTankType());
+		}
+
+		if(htrf.tanks[0].getTankType() != this.plasma.getTankType()) {
+			return false;
+		}
+
+		int toLoad = Math.min(htrf.tanks[0].getMaxFill() - htrf.tanks[0].getFill(), this.plasma.getFill());
+		toLoad = Math.min(toLoad, PLASMA_BUFFER);
+
+		if(toLoad <= 0) {
+			return false;
+		}
+
+		this.plasma.setFill(this.plasma.getFill() - toLoad);
+		htrf.tanks[0].setFill(htrf.tanks[0].getFill() + toLoad);
+
+		if(this.plasma.getFill() <= 0) {
+			this.plasmaAge = 0;
+		}
+
+		this.markDirty();
+		htrf.markDirty();
+
+		return true;
+	}
+
+	private void updateConnections() {
 
 		this.getBlockMetadata();
 
@@ -170,73 +408,124 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 
 		for(int i = 1; i < 4; i++) {
 			for(int j = -1; j < 2; j++) {
-				this.trySubscribe(worldObj, xCoord + side.offsetX * j + dir.offsetX * 2, yCoord + i, zCoord + side.offsetZ * j + dir.offsetZ * 2, j < 0 ? ForgeDirection.DOWN : ForgeDirection.UP);
-				this.trySubscribe(tanks[0].getTankType(), worldObj, xCoord + side.offsetX * j + dir.offsetX * 2, yCoord + i, zCoord + side.offsetZ * j + dir.offsetZ * 2, j < 0 ? ForgeDirection.DOWN : ForgeDirection.UP);
-				this.trySubscribe(tanks[1].getTankType(), worldObj, xCoord + side.offsetX * j + dir.offsetX * 2, yCoord + i, zCoord + side.offsetZ * j + dir.offsetZ * 2, j < 0 ? ForgeDirection.DOWN : ForgeDirection.UP);
+
+				this.trySubscribe(
+					worldObj,
+					xCoord + side.offsetX * j + dir.offsetX * 2,
+					yCoord + i,
+					zCoord + side.offsetZ * j + dir.offsetZ * 2,
+					j < 0 ? ForgeDirection.DOWN : ForgeDirection.UP
+				);
+
+				this.trySubscribe(
+					tanks[0].getTankType(),
+					worldObj,
+					xCoord + side.offsetX * j + dir.offsetX * 2,
+					yCoord + i,
+					zCoord + side.offsetZ * j + dir.offsetZ * 2,
+					j < 0 ? ForgeDirection.DOWN : ForgeDirection.UP
+				);
+
+				this.trySubscribe(
+					tanks[1].getTankType(),
+					worldObj,
+					xCoord + side.offsetX * j + dir.offsetX * 2,
+					yCoord + i,
+					zCoord + side.offsetZ * j + dir.offsetZ * 2,
+					j < 0 ? ForgeDirection.DOWN : ForgeDirection.UP
+				);
 			}
 		}
 	}
 
 	public void networkUnpack(NBTTagCompound nbt) {
+
 		super.networkUnpack(nbt);
 
 		this.power = nbt.getLong("power");
+		this.startupCharge = nbt.getInteger("startupCharge");
+		this.plasmaAge = nbt.getInteger("plasmaAge");
+
 		tanks[0].readFromNBT(nbt, "t0");
 		tanks[1].readFromNBT(nbt, "t1");
 		plasma.readFromNBT(nbt, "t2");
 	}
 
-	private void updateType() {
+	private FluidType getPlasmaTypeFromInputs() {
 
-		List<FluidType> types = new ArrayList() {{ add(tanks[0].getTankType()); add(tanks[1].getTankType()); }};
+		FluidType a = tanks[0].getTankType();
+		FluidType b = tanks[1].getTankType();
 
-		if(types.contains(Fluids.DEUTERIUM) && types.contains(Fluids.TRITIUM)) {
-			plasma.setTankType(Fluids.PLASMA_DT);
-			return;
-		}
-		if(types.contains(Fluids.DEUTERIUM) && types.contains(Fluids.HELIUM3)) {
-			plasma.setTankType(Fluids.PLASMA_DH3);
-			return;
-		}
-		if(types.contains(Fluids.DEUTERIUM) && types.contains(Fluids.HYDROGEN)) {
-			plasma.setTankType(Fluids.PLASMA_HD);
-			return;
-		}
-		if(types.contains(Fluids.HYDROGEN) && types.contains(Fluids.TRITIUM)) {
-			plasma.setTankType(Fluids.PLASMA_HT);
-			return;
-		}
-		if(types.contains(Fluids.HELIUM4) && types.contains(Fluids.OXYGEN)) {
-			plasma.setTankType(Fluids.PLASMA_XM);
-			return;
-		}
-		if(types.contains(Fluids.BALEFIRE) && types.contains(Fluids.AMAT)) {
-			plasma.setTankType(Fluids.PLASMA_BF);
-			return;
+		if(isPair(a, b, Fluids.DEUTERIUM, Fluids.TRITIUM)) {
+			return Fluids.PLASMA_DT;
 		}
 
-		plasma.setTankType(Fluids.NONE);
+		if(isPair(a, b, Fluids.DEUTERIUM, Fluids.HELIUM3)) {
+			return Fluids.PLASMA_DH3;
+		}
+
+		if(isPair(a, b, Fluids.DEUTERIUM, Fluids.HYDROGEN)) {
+			return Fluids.PLASMA_HD;
+		}
+
+		if(isPair(a, b, Fluids.HYDROGEN, Fluids.TRITIUM)) {
+			return Fluids.PLASMA_HT;
+		}
+
+		/*
+		 * These are fantasy/HBM-special fuels.
+		 * Kept for compatibility.
+		 */
+		if(isPair(a, b, Fluids.HELIUM4, Fluids.OXYGEN)) {
+			return Fluids.PLASMA_XM;
+		}
+
+		if(isPair(a, b, Fluids.BALEFIRE, Fluids.AMAT)) {
+			return Fluids.PLASMA_BF;
+		}
+
+		return Fluids.NONE;
+	}
+
+	private boolean isPair(FluidType a, FluidType b, FluidType x, FluidType y) {
+		return (a == x && b == y) || (a == y && b == x);
 	}
 
 	public long getPowerScaled(int i) {
 		return (power * i) / maxPower;
 	}
 
+	public long getStartupScaled(int i) {
+		return (startupCharge * i) / STARTUP_POWER_REQUIRED;
+	}
+
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
+
 		super.readFromNBT(nbt);
 
 		this.power = nbt.getLong("power");
+		this.startupCharge = nbt.getInteger("startupCharge");
+		this.plasmaAge = nbt.getInteger("plasmaAge");
+
 		tanks[0].readFromNBT(nbt, "fuel_1");
 		tanks[1].readFromNBT(nbt, "fuel_2");
 		plasma.readFromNBT(nbt, "plasma");
+
+		if(plasma.getFill() > plasma.getMaxFill()) {
+			plasma.setFill(plasma.getMaxFill());
+		}
 	}
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+
 		super.writeToNBT(nbt);
 
 		nbt.setLong("power", power);
+		nbt.setInteger("startupCharge", startupCharge);
+		nbt.setInteger("plasmaAge", plasmaAge);
+
 		tanks[0].writeToNBT(nbt, "fuel_1");
 		tanks[1].writeToNBT(nbt, "fuel_2");
 		plasma.writeToNBT(nbt, "plasma");
@@ -270,7 +559,7 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 
 	@Override
 	public FluidTank[] getAllTanks() {
-		return new FluidTank[] {tanks[0], tanks[1], plasma};
+		return new FluidTank[] { tanks[0], tanks[1], plasma };
 	}
 
 	@Override
@@ -287,5 +576,10 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 	@SideOnly(Side.CLIENT)
 	public Object provideGUI(int ID, EntityPlayer player, World world, int x, int y, int z) {
 		return new GUIPlasmaHeater(player.inventory, this);
+	}
+
+	@Override
+	public FluidTank getTankToPaste() {
+		return null;
 	}
 }
