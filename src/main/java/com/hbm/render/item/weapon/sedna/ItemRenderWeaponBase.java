@@ -5,6 +5,7 @@ import org.lwjgl.opengl.GL12;
 import org.lwjgl.util.glu.Project;
 
 import com.hbm.items.weapon.sedna.ItemGunBaseNT;
+import com.hbm.render.RenderStateGuard;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -48,34 +49,51 @@ public abstract class ItemRenderWeaponBase implements IItemRenderer {
 	}
 
 	public void setPerspectiveAndRender(ItemStack stack, float interp) {
-		
-		this.interp = interp;
-		
-		Minecraft mc = Minecraft.getMinecraft();
-		EntityRenderer entityRenderer = mc.entityRenderer;
-		float farPlaneDistance = mc.gameSettings.renderDistanceChunks * 16;
-
-		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+		RenderStateGuard.push("ItemRenderWeaponBase.setPerspectiveAndRender");
 		GL11.glMatrixMode(GL11.GL_PROJECTION);
-		GL11.glLoadIdentity();
-
-		Project.gluPerspective(this.getFOVModifier(interp, false), (float) mc.displayWidth / (float) mc.displayHeight, 0.05F, farPlaneDistance * 2.0F);
-
-		GL11.glMatrixMode(GL11.GL_MODELVIEW);
-		GL11.glLoadIdentity();
-
 		GL11.glPushMatrix();
+		GL11.glMatrixMode(GL11.GL_MODELVIEW);
+		GL11.glPushMatrix();
+		try {
+			this.interp = interp;
 
-		if(mc.gameSettings.thirdPersonView == 0 && !mc.renderViewEntity.isPlayerSleeping() && !mc.gameSettings.hideGUI && !mc.playerController.enableEverythingIsScrewedUpMode()) {
-			entityRenderer.enableLightmap(interp);
-			this.setupTransformsAndRender(stack);
-			entityRenderer.disableLightmap(interp);
-		}
+			Minecraft mc = Minecraft.getMinecraft();
+			EntityRenderer entityRenderer = mc.entityRenderer;
+			float farPlaneDistance = mc.gameSettings.renderDistanceChunks * 16;
 
-		GL11.glPopMatrix();
+			GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+			GL11.glMatrixMode(GL11.GL_PROJECTION);
+			GL11.glLoadIdentity();
+			Project.gluPerspective(this.getFOVModifier(interp, false), (float) mc.displayWidth / (float) mc.displayHeight, 0.05F, farPlaneDistance * 2.0F);
 
-		if(mc.gameSettings.thirdPersonView == 0 && !mc.renderViewEntity.isPlayerSleeping()) {
-			entityRenderer.itemRenderer.renderOverlays(interp);
+			GL11.glMatrixMode(GL11.GL_MODELVIEW);
+			GL11.glLoadIdentity();
+			GL11.glPushMatrix();
+
+			if(mc.gameSettings.thirdPersonView == 0 && !mc.renderViewEntity.isPlayerSleeping() && !mc.gameSettings.hideGUI && !mc.playerController.enableEverythingIsScrewedUpMode()) {
+				entityRenderer.enableLightmap(interp);
+				try {
+					this.setupTransformsAndRender(stack);
+				} finally {
+					entityRenderer.disableLightmap(interp);
+				}
+			}
+
+			GL11.glPopMatrix();
+
+			if(mc.gameSettings.thirdPersonView == 0 && !mc.renderViewEntity.isPlayerSleeping()) {
+				entityRenderer.itemRenderer.renderOverlays(interp);
+			}
+		} finally {
+			// The custom hand FOV must never replace the world projection used by later passes.
+			GL11.glMatrixMode(GL11.GL_MODELVIEW);
+			GL11.glPopMatrix();
+			GL11.glMatrixMode(GL11.GL_PROJECTION);
+			GL11.glPopMatrix();
+			GL11.glMatrixMode(GL11.GL_MODELVIEW);
+			RenderStateGuard.pop("ItemRenderWeaponBase.setPerspectiveAndRender");
+			RenderStateGuard.resetColor();
+			RenderStateGuard.safeDefaultItemState();
 		}
 	}
 

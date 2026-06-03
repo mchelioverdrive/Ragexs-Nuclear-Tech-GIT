@@ -89,6 +89,7 @@ public class ItemRenderWeaponMiniFEL implements IItemRenderer {
                     break;
             }
 
+            GL11.glPopMatrix();
         }
 
     }

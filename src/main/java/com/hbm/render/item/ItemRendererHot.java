@@ -3,6 +3,7 @@ package com.hbm.render.item;
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.items.special.ItemHot;
+import com.hbm.render.RenderStateGuard;
 import com.hbm.render.util.RenderItemStack;
 
 import net.minecraft.client.Minecraft;
@@ -26,7 +27,9 @@ public class ItemRendererHot implements IItemRenderer {
 
 	@Override
 	public void renderItem(ItemRenderType type, ItemStack item, Object... data) {
-		GL11.glPushMatrix();
+		RenderStateGuard.push("ItemRendererHot");
+		try {
+			GL11.glPushMatrix();
 		RenderHelper.enableGUIStandardItemLighting();
 		
 		Minecraft mc = Minecraft.getMinecraft();
@@ -44,6 +47,11 @@ public class ItemRendererHot implements IItemRenderer {
             GL11.glDisable(GL11.GL_BLEND);
 		}
 		
-		GL11.glPopMatrix();
+			GL11.glPopMatrix();
+		} finally {
+			RenderStateGuard.pop("ItemRendererHot");
+			RenderStateGuard.resetColor();
+			RenderStateGuard.safeDefaultItemState();
+		}
 	}
 }

@@ -118,8 +118,6 @@ public class RenderScreenOverlay {
 		GL11.glDisable(GL11.GL_BLEND);
 		GL11.glPopMatrix();
 		Minecraft.getMinecraft().renderEngine.bindTexture(Gui.icons);
-		GL11.glPopMatrix();
-		Minecraft.getMinecraft().renderEngine.bindTexture(Gui.icons);
 	}
 
 	public static void renderAmmo(ScaledResolution resolution, Gui gui, ItemStack ammo, int count, int max, int dura, boolean renderCount) {

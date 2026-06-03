@@ -6,6 +6,7 @@ import java.util.Random;
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.main.ResourceManager;
+import com.hbm.render.RenderStateGuard;
 import com.hbm.render.util.RenderSparks;
 import com.hbm.tileentity.machine.TileEntityCore;
 
@@ -207,9 +208,10 @@ public class RenderCore extends TileEntitySpecialRenderer {
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 	}
 	
-    public void renderVoid(TileEntity tile, double x, double y, double z) {
-        
-        TileEntityCore core = (TileEntityCore)tile;
+	    public void renderVoid(TileEntity tile, double x, double y, double z) {
+		RenderStateGuard.push("RenderCore.renderVoid");
+		try {
+	        TileEntityCore core = (TileEntityCore)tile;
 
 		World world = tile.getWorldObj();
         GL11.glPushMatrix();
@@ -358,7 +360,12 @@ public class RenderCore extends TileEntitySpecialRenderer {
 		GL11.glDisable(GL11.GL_TEXTURE_GEN_R);
 		GL11.glDisable(GL11.GL_TEXTURE_GEN_Q);
 		GL11.glEnable(GL11.GL_LIGHTING);
-		GL11.glPopMatrix();
+			GL11.glPopMatrix();
+		} finally {
+			RenderStateGuard.pop("RenderCore.renderVoid");
+			RenderStateGuard.resetColor();
+			RenderStateGuard.safeDefaultTESRState();
+		}
     }
 
     private FloatBuffer func_147525_a(float x, float y, float z, float w) {

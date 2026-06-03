@@ -4,6 +4,7 @@ import org.lwjgl.opengl.GL11;
 
 import com.hbm.blocks.ModBlocks;
 import com.hbm.lib.RefStrings;
+import com.hbm.render.RenderStateGuard;
 
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderBlocks;
@@ -19,8 +20,9 @@ public class RenderSoyuzMultiblock extends TileEntitySpecialRenderer {
 
 	@Override
 	public void renderTileEntityAt(TileEntity te, double x, double y, double z, float f) {
-
-		GL11.glPushMatrix();
+		RenderStateGuard.push("RenderSoyuzMultiblock");
+		try {
+			GL11.glPushMatrix();
 		
 		GL11.glTranslatef((float)x + 1, (float)y + 1, (float)z);
 
@@ -108,8 +110,13 @@ public class RenderSoyuzMultiblock extends TileEntitySpecialRenderer {
 		GL11.glDisable(GL11.GL_BLEND);
         GL11.glEnable(GL11.GL_ALPHA_TEST);
 		
-		GL11.glPopMatrix();
-	}
+			GL11.glPopMatrix();
+		} finally {
+			RenderStateGuard.pop("RenderSoyuzMultiblock");
+			RenderStateGuard.resetColor();
+			RenderStateGuard.safeDefaultTESRState();
+		}
+		}
 	
 	public void renderSmolBlockAt(ResourceLocation loc, int x, int y, int z) {
 		GL11.glPushMatrix();
