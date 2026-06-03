@@ -88,6 +88,7 @@ public class SmallBlockPronter {
 		GL11.glEnable(GL11.GL_ALPHA_TEST);
 		GL11.glDepthMask(true);
 		GL11.glEnable(GL11.GL_LIGHTING);
+		GL11.glColor4f(1F, 1F, 1F, 1F);
 	}
 	
 	public static void drawSmolBlockAt(Block b, int meta, float x, float y, float z) {

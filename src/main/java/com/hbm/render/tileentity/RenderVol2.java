@@ -3,6 +3,7 @@ package com.hbm.render.tileentity;
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.blocks.BlockVolcanoV2.TileEntityLightningVolcano;
+import com.hbm.render.RenderStateGuard;
 import com.hbm.render.util.BeamPronter;
 import com.hbm.render.util.BeamPronter.EnumBeamType;
 import com.hbm.render.util.BeamPronter.EnumWaveType;
@@ -15,8 +16,9 @@ public class RenderVol2 extends TileEntitySpecialRenderer {
 
 	@Override
 	public void renderTileEntityAt(TileEntity tileEntity, double x, double y, double z, float f) {
-		
-		GL11.glPushMatrix();
+		RenderStateGuard.push("RenderVol2");
+		try {
+			GL11.glPushMatrix();
 		GL11.glTranslated(x + 0.5, y, z + 0.5);
 		GL11.glEnable(GL11.GL_LIGHTING);
 		GL11.glEnable(GL11.GL_CULL_FACE);
@@ -54,6 +56,11 @@ public class RenderVol2 extends TileEntitySpecialRenderer {
 
 		GL11.glEnable(GL11.GL_LIGHTING);
 
-		GL11.glPopMatrix();
+			GL11.glPopMatrix();
+		} finally {
+			RenderStateGuard.pop("RenderVol2");
+			RenderStateGuard.resetColor();
+			RenderStateGuard.safeDefaultTESRState();
+		}
 	}
 }

@@ -3,6 +3,7 @@ package com.hbm.render.tileentity;
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.blocks.ModBlocks;
+import com.hbm.render.RenderStateGuard;
 import com.hbm.render.util.IconUtil;
 import com.hbm.render.util.SmallBlockPronter;
 
@@ -15,8 +16,9 @@ public class RenderPlasmaMultiblock extends TileEntitySpecialRenderer {
 
 	@Override
 	public void renderTileEntityAt(TileEntity te, double x, double y, double z, float f) {
-
-		GL11.glPushMatrix();
+		RenderStateGuard.push("RenderPlasmaMultiblock");
+		try {
+			GL11.glPushMatrix();
 		
 		GL11.glTranslatef((float)x + 0.5F, (float)y, (float)z + 0.5F);
 		
@@ -62,6 +64,11 @@ public class RenderPlasmaMultiblock extends TileEntitySpecialRenderer {
         GL11.glDepthMask(true);
 
         GL11.glEnable(GL11.GL_LIGHTING);
-		GL11.glPopMatrix();
+			GL11.glPopMatrix();
+		} finally {
+			RenderStateGuard.pop("RenderPlasmaMultiblock");
+			RenderStateGuard.resetColor();
+			RenderStateGuard.safeDefaultTESRState();
+		}
 	}
 }

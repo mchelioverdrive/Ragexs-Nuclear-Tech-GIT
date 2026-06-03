@@ -7,6 +7,7 @@ import org.lwjgl.opengl.GL12;
 
 import com.hbm.entity.particle.EntityModFX;
 import com.hbm.lib.RefStrings;
+import com.hbm.render.RenderStateGuard;
 
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.Tessellator;
@@ -19,8 +20,9 @@ public class FogRenderer extends Render {
 	@Override
 	public void doRender(Entity p_76986_1_, double p_76986_2_, double p_76986_4_, double p_76986_6_, float p_76986_8_,
 			float p_76986_9_) {
-		
-		GL11.glPushMatrix();
+		RenderStateGuard.push("FogRenderer");
+		try {
+			GL11.glPushMatrix();
 		GL11.glTranslatef((float) p_76986_2_, (float) p_76986_4_, (float) p_76986_6_);
 		GL11.glEnable(GL12.GL_RESCALE_NORMAL);
 		GL11.glDisable(GL11.GL_LIGHTING);
@@ -87,7 +89,12 @@ public class FogRenderer extends Render {
         //GL11.glEnable(GL11.GL_DEPTH_TEST);
         GL11.glDepthMask(true);
         
-		GL11.glPopMatrix();
+			GL11.glPopMatrix();
+		} finally {
+			RenderStateGuard.pop("FogRenderer");
+			RenderStateGuard.resetColor();
+			RenderStateGuard.safeDefaultTESRState();
+		}
 	}
 
 	@Override

@@ -40,6 +40,7 @@ public class ClientConfig {
 	public static ConfigWrapper<Boolean> NUKE_HUD_FLASH =					new ConfigWrapper(true);
 	public static ConfigWrapper<Boolean> NUKE_HUD_SHAKE =					new ConfigWrapper(true);
 	public static ConfigWrapper<Boolean> RENDER_REEDS =						new ConfigWrapper(!Compat.isModLoaded(Compat.MOD_ANG));
+	public static ConfigWrapper<Boolean> DEBUG_RENDER_GL_ERRORS =			new ConfigWrapper(false);
 
 	private static void initDefaults() {
 		configMap.put("GEIGER_OFFSET_HORIZONTAL", GEIGER_OFFSET_HORIZONTAL);
@@ -58,6 +59,7 @@ public class ClientConfig {
 		configMap.put("NUKE_HUD_FLASH", NUKE_HUD_FLASH);
 		configMap.put("NUKE_HUD_SHAKE", NUKE_HUD_SHAKE);
 		configMap.put("RENDER_REEDS", RENDER_REEDS);
+		configMap.put("DEBUG_RENDER_GL_ERRORS", DEBUG_RENDER_GL_ERRORS);
 	}
 
 	/** Initializes defaults, then reads the config file if it exists, then writes the config file. */

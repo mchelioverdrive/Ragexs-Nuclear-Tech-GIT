@@ -4,6 +4,7 @@ import org.lwjgl.opengl.GL11;
 
 import com.hbm.entity.effect.EntityCloudTom;
 import com.hbm.main.ResourceManager;
+import com.hbm.render.RenderStateGuard;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.OpenGlHelper;
@@ -17,8 +18,9 @@ public class RenderCloudTom extends Render {
 
 	@Override
 	public void doRender(Entity entity, double x, double y, double z, float f0, float f1) {
-		
-		GL11.glPushMatrix();
+		RenderStateGuard.push("RenderCloudTom");
+		try {
+			GL11.glPushMatrix();
 		GL11.glTranslated(x, y, z);
         GL11.glDisable(GL11.GL_LIGHTING);
         GL11.glEnable(GL11.GL_BLEND);
@@ -92,7 +94,12 @@ public class RenderCloudTom extends Render {
         GL11.glEnable(GL11.GL_CULL_FACE);
         GL11.glDisable(GL11.GL_BLEND);
         GL11.glEnable(GL11.GL_LIGHTING);
-		GL11.glPopMatrix();
+			GL11.glPopMatrix();
+		} finally {
+			RenderStateGuard.pop("RenderCloudTom");
+			RenderStateGuard.resetColor();
+			RenderStateGuard.safeDefaultTESRState();
+		}
 	}
 
 	@Override
