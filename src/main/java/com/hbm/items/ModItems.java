@@ -7432,6 +7432,7 @@ public class ModItems {
 		GameRegistry.registerItem(ingot_fiberglass, ingot_fiberglass.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_asbestos, ingot_asbestos.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_raw, ingot_raw.getUnlocalizedName());
+		GameRegistry.registerItem(casing, casing.getUnlocalizedName());
 
 		//Billets
 		GameRegistry.registerItem(billet_uranium, billet_uranium.getUnlocalizedName());
