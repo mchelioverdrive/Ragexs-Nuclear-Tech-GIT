@@ -22,6 +22,7 @@ import net.minecraft.util.Vec3;
 public class SkyProviderOrbit extends SkyProviderCelestial {
 
 	private static CelestialBody lastBody;
+	private float currentSunGlare = 1.0F;
 
 	@Override
 	public void render(float partialTicks, WorldClient world, Minecraft mc) {
@@ -67,8 +68,8 @@ public class SkyProviderOrbit extends SkyProviderCelestial {
 			}
 			double coronaSize = sunSize * (3 - Library.smoothstep(Math.abs(celestialPhase), 0.7, 0.8));
 
-			float sunGlare = provider.getSunBrightness(partialTicks);
-			renderSun(partialTicks, world, mc, sunSize, coronaSize, 1, 0, sunGlare);
+			currentSunGlare = provider.getSunBrightness(partialTicks);
+			renderSun(partialTicks, world, mc, SolarSystem.kerbol, sunSize, coronaSize, 1, 0);
 
 			CelestialBody orbiting = station.orbiting;
 
@@ -97,6 +98,13 @@ public class SkyProviderOrbit extends SkyProviderCelestial {
 
 		GL11.glEnable(GL11.GL_TEXTURE_2D);
 		GL11.glDepthMask(true);
+	}
+
+	@Override
+	protected void renderSun(float partialTicks, WorldClient world, Minecraft mc, CelestialBody sun, double sunSize, double coronaSize, float visibility, float pressure) {
+		// Modern Angelica targets this legacy HBM owner/signature directly. Declare the bridge on
+		// RTM's orbit provider as well so the optional mixin can resolve without loading failures.
+		super.renderSun(partialTicks, world, mc, sunSize, coronaSize, visibility, pressure, currentSunGlare);
 	}
 
 	// All angles within are normalized to -180/180

@@ -190,7 +190,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 			double sunSize = SolarSystem.calculateSunSize(body);
 			double coronaSize = sunSize * (3 - MathHelper.clamp_float(pressure, 0.0F, 1.0F));
 
-			renderSun(partialTicks, world, mc, sunSize, coronaSize, visibility, pressure);
+			renderSun(partialTicks, world, mc, SolarSystem.kerbol, sunSize, coronaSize, visibility, pressure);
 
 			float blendAmount = hasAtmosphere ? MathHelper.clamp_float(1 - world.getSunBrightnessFactor(partialTicks), 0.25F, 1F) : 1F;
 
@@ -289,6 +289,17 @@ public class SkyProviderCelestial extends IRenderHandler {
 		}
 		GL11.glPopMatrix();
 
+		renderAtmosphereGlow(partialTicks, world, mc, body, pos);
+
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
+		GL11.glDepthMask(true);
+
+	}
+
+	protected void renderAtmosphereGlow(float partialTicks, WorldClient world, Minecraft mc, CelestialBody body, Vec3 pos) {
+		// Modern Angelica's optional NTM:Space compatibility mixin names this newer HBM hook.
+		// RTM used to inline the glow rendering in render(), so keep the hook local and dependency-free.
+		Tessellator tessellator = Tessellator.instance;
 		double sc = 4.0; // scale? probably. I love magic numbers and schizophrenic bullshit.
 		// AT LEAST ITS NOT MCHELI SCHIZOPHRENIC BULLSHIT!!!
 		double uvOffset = (pos.xCoord / 1024) % 1;
@@ -325,10 +336,6 @@ public class SkyProviderCelestial extends IRenderHandler {
 
 		}
 		GL11.glPopMatrix();
-
-		GL11.glEnable(GL11.GL_TEXTURE_2D);
-		GL11.glDepthMask(true);
-
 	}
 
 	protected void renderSunset(float partialTicks, WorldClient world, Minecraft mc) {
@@ -421,6 +428,13 @@ public class SkyProviderCelestial extends IRenderHandler {
 			}
 			GL11.glPopMatrix();
 		}
+	}
+
+	protected void renderSun(float partialTicks, WorldClient world, Minecraft mc, CelestialBody sun, double sunSize, double coronaSize, float visibility, float pressure) {
+		// Modern Angelica's optional NTM:Space mixin was written against a newer HBM hook with this
+		// CelestialBody parameter. RTM still renders Kerbol internally, so keep this bridge as a
+		// soft compatibility entry point instead of adding Angelica as a hard dependency.
+		renderSun(partialTicks, world, mc, sunSize, coronaSize, visibility, pressure);
 	}
 
 	protected void renderSun(float partialTicks, WorldClient world, Minecraft mc, double sunSize, double coronaSize, float visibility, float pressure) {
@@ -623,18 +637,18 @@ public class SkyProviderCelestial extends IRenderHandler {
 			GL11.glRotatef(140.0F, 1.0F, 0.0F, 0.0F);
 			GL11.glRotatef(-40.0F, 0.0F, 0.0F, 1.0F);
 
-		//	mc.renderEngine.bindTexture(digammaStar);
+			//	mc.renderEngine.bindTexture(digammaStar);
 
 			//float digamma = HbmLivingProps.getDigamma(Minecraft.getMinecraft().thePlayer);
-		//	float var12 = 1F * (1 + digamma * 0.25F);
+			//	float var12 = 1F * (1 + digamma * 0.25F);
 			//double dist = 100D - digamma * 2.5;
 
-		//	tessellator.startDrawingQuads();
-		//	tessellator.addVertexWithUV(-var12, dist, -var12, 0.0D, 0.0D);
-		//	tessellator.addVertexWithUV(var12, dist, -var12, 0.0D, 1.0D);
-		//	tessellator.addVertexWithUV(var12, dist, var12, 1.0D, 1.0D);
-		//	tessellator.addVertexWithUV(-var12, dist, var12, 1.0D, 0.0D);
-		//	tessellator.draw();
+			//	tessellator.startDrawingQuads();
+			//	tessellator.addVertexWithUV(-var12, dist, -var12, 0.0D, 0.0D);
+			//	tessellator.addVertexWithUV(var12, dist, -var12, 0.0D, 1.0D);
+			//	tessellator.addVertexWithUV(var12, dist, var12, 1.0D, 1.0D);
+			//	tessellator.addVertexWithUV(-var12, dist, var12, 1.0D, 0.0D);
+			//	tessellator.draw();
 
 		}
 		GL11.glPopMatrix();
