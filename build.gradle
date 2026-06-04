@@ -30,7 +30,7 @@ if(!mod_build_number.isEmpty()) {
 	version = "[${version_name}]"
 }
 group = "com.hbm" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "HBM-NTM"
+archivesBaseName = "RX-RNTM"
 compileJava.options.encoding = 'UTF-8'
 
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
