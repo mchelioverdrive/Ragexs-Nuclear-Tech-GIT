@@ -5378,8 +5378,23 @@ public class AssemblerRecipes extends SerializableRecipe {
 			List<Object> value = new ArrayList();
 			AssemblerRecipe recipe = entry.getValue();
 
-			for (AStack o : recipe.ingredients) {
-				value.add(o.extractForNEI());
+			for (AStack ingredient : recipe.ingredients) {
+				List<ItemStack> extracted = ingredient.extractForNEI();
+				List<ItemStack> valid = new ArrayList();
+
+				if (extracted != null) {
+					for (ItemStack stack : extracted) {
+						if (stack != null && stack.getItem() != null) valid.add(stack);
+					}
+				}
+
+				if (valid.isEmpty()) {
+					ItemStack missing = new ItemStack(ModItems.nothing).setStackDisplayName("Missing assembler ingredient; check the console.");
+					valid.add(missing);
+					MainRegistry.logger.error("Assembler cannot compile an ingredient for NEI in recipe for: " + entry.getKey().toStack().getDisplayName());
+				}
+
+				value.add(valid);
 			}
 
 			recipes.put(entry.getKey()
