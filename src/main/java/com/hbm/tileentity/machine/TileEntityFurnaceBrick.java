@@ -10,6 +10,7 @@ import com.hbm.items.ModItems;
 import com.hbm.items.ItemEnums.EnumAshType;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
+import com.hbm.util.FurnaceGasEmission;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -70,6 +71,7 @@ public class TileEntityFurnaceBrick extends TileEntityMachineBase implements IGU
 			boolean markDirty = false;
 	
 			if(this.burnTime > 0) {
+				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
 				this.burnTime--;
 			}
 	
