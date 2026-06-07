@@ -5860,6 +5860,7 @@ tile.gas_explosive.name=Explosive Gas
 tile.gas_flammable.name=Flammable Gas
 tile.gas_meltdown.name=Meltdown Gas
 tile.gas_monoxide.name=Carbon Monoxide
+tooltip.furnace.monoxide=Slowly produces carbon monoxide while burning fuel.
 tile.gas_radon.name=Radon Gas
 tile.gas_radon_dense.name=Dense Radon Gas
 tile.gas_radon_tomb.name=Tomb Gas

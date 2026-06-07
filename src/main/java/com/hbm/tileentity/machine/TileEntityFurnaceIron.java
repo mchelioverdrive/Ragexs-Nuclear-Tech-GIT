@@ -13,6 +13,7 @@ import com.hbm.module.ModuleBurnTime;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
+import com.hbm.util.FurnaceGasEmission;
 import com.hbm.util.I18nUtil;
 
 import cpw.mods.fml.relauncher.Side;
@@ -89,6 +90,7 @@ public class TileEntityFurnaceIron extends TileEntityMachineBase implements IGUI
 			
 			if(canSmelt() && breatheAir(worldObj.getTotalWorldTime() % 5 == 0 ? 1 : 0)) {
 				wasOn = true;
+				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
 				this.progress++;
 				this.burnTime--;
 				

@@ -135,6 +135,8 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.tileentity.TileEntityFurnace;
 import net.minecraft.tileentity.TileEntitySign;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ChatStyle;
@@ -921,6 +923,15 @@ public class ModEventHandler {
 
 
 		if(event.world != null && !event.world.isRemote) {
+
+			if(event.phase == Phase.END && event.world.getTotalWorldTime() % 20 == 0) {
+				for(Object object : event.world.loadedTileEntityList) {
+					if(object instanceof TileEntityFurnace && ((TileEntityFurnace) object).isBurning()) {
+						TileEntity furnace = (TileEntity) object;
+						FurnaceGasEmission.emitCarbonMonoxide(event.world, furnace.xCoord, furnace.yCoord, furnace.zCoord, 30);
+					}
+				}
+			}
 
 			if(reference != null) {
 				for(Object player : event.world.playerEntities) {

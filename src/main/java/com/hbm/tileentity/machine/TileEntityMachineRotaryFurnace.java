@@ -23,6 +23,7 @@ import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachinePolluting;
 import com.hbm.util.CrucibleUtil;
+import com.hbm.util.FurnaceGasEmission;
 import com.hbm.util.fauxpointtwelve.BlockPos;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
@@ -146,6 +147,7 @@ public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting i
 
 			this.isVenting = false;
 			if(this.burnTime > 0) {
+				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
 				this.pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND / 10F);
 				this.burnTime--;
 			}
