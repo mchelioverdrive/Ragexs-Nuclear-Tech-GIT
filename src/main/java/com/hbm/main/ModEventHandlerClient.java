@@ -769,6 +769,15 @@ public class ModEventHandlerClient {
 		ItemStack stack = event.itemStack;
 		List<String> list = event.toolTip;
 
+		Item item = stack.getItem();
+		if(item == Item.getItemFromBlock(Blocks.furnace)
+				|| item == Item.getItemFromBlock(ModBlocks.machine_furnace_brick_off)
+				|| item == Item.getItemFromBlock(ModBlocks.furnace_iron)
+				|| item == Item.getItemFromBlock(ModBlocks.machine_difurnace_off)
+				|| item == Item.getItemFromBlock(ModBlocks.machine_rotary_furnace)) {
+			list.add(EnumChatFormatting.DARK_RED + I18nUtil.resolveKey("tooltip.furnace.monoxide"));
+		}
+
 		/// DAMAGE RESISTANCE ///
 		DamageResistanceHandler.addInfo(stack, list);
 
