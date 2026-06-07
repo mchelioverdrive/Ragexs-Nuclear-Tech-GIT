@@ -23,7 +23,7 @@ import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.ItemStack;
 
-public class HadronRecipeHandler extends TemplateRecipeHandler implements ICompatNHNEI {
+public class HadronRecipeHandler extends SafeTemplateRecipeHandler implements ICompatNHNEI {
 
 	@Override
 	public ItemStack[] getMachinesForRecipe() {
@@ -50,22 +50,22 @@ public class HadronRecipeHandler extends TemplateRecipeHandler implements ICompa
 
 		public RecipeSet(HadronRecipe recipe) {
 
-			this.input1 = new PositionedStack(recipe.in1.toStack(), 12, 24);
-			this.input2 = new PositionedStack(recipe.in2.toStack(), 30, 24);
-			this.output1 = new PositionedStack(recipe.out1, 84, 24);
-			this.output2 = new PositionedStack(recipe.out2, 102, 24);
+			this.input1 = NEISafe.positionedStack(recipe.in1.toStack(), 12, 24);
+			this.input2 = NEISafe.positionedStack(recipe.in2.toStack(), 30, 24);
+			this.output1 = NEISafe.positionedStack(recipe.out1, 84, 24);
+			this.output2 = NEISafe.positionedStack(recipe.out2, 102, 24);
 			this.momentum = recipe.momentum;
 			this.analysisOnly = recipe.analysisOnly;
 		}
 
 		@Override
 		public List<PositionedStack> getIngredients() {
-			return Arrays.asList(new PositionedStack[] { input1, input2 });
+			return NEISafe.positionedList(input1, input2);
 		}
 
 		@Override
 		public List<PositionedStack> getOtherStacks() {
-			return Arrays.asList(new PositionedStack[] { output1, output2 });
+			return NEISafe.positionedList(output1, output2);
 		}
 
 		@Override

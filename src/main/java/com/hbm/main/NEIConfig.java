@@ -8,6 +8,7 @@ import com.hbm.blocks.generic.BlockMotherOfAllOres.TileEntityRandomOre;
 import com.hbm.blocks.generic.BlockPlushie.TileEntityPlushie;
 import com.hbm.config.CustomMachineConfigJSON;
 import com.hbm.handler.nei.CustomMachineHandler;
+import com.hbm.handler.nei.NEISafe;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemBattery;
 import com.hbm.lib.RefStrings;
@@ -132,12 +133,18 @@ public class NEIConfig implements IConfigureNEI {
 	public static void registerHandler(Object o) {
 		API.registerRecipeHandler((ICraftingHandler) o);
 		API.registerUsageHandler((IUsageHandler) o);
+		if(Boolean.getBoolean("hbm.nei.validate") && o instanceof TemplateRecipeHandler) {
+			NEISafe.validateCachedRecipes((TemplateRecipeHandler)o);
+		}
 	}
 
 	/** Bypasses the utterly useless restriction of one registered handler per class */
 	public static void registerHandlerBypass(Object o) {
 		GuiCraftingRecipe.craftinghandlers.add((ICraftingHandler) o);
 		GuiUsageRecipe.usagehandlers.add((IUsageHandler) o);
+		if(Boolean.getBoolean("hbm.nei.validate") && o instanceof TemplateRecipeHandler) {
+			NEISafe.validateCachedRecipes((TemplateRecipeHandler)o);
+		}
 	}
 
 	@Override

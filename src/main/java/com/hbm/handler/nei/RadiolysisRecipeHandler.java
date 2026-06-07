@@ -19,7 +19,7 @@ import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.ItemStack;
 
-public class RadiolysisRecipeHandler extends TemplateRecipeHandler implements ICompatNHNEI {
+public class RadiolysisRecipeHandler extends SafeTemplateRecipeHandler implements ICompatNHNEI {
 
 	@Override
 	public ItemStack[] getMachinesForRecipe() {
@@ -34,34 +34,35 @@ public class RadiolysisRecipeHandler extends TemplateRecipeHandler implements IC
 	public LinkedList<RecipeTransferRect> transferRectsGui = new LinkedList<RecipeTransferRect>();
 	public LinkedList<Class<? extends GuiContainer>> guiRec = new LinkedList<Class<? extends GuiContainer>>();
 	public LinkedList<Class<? extends GuiContainer>> guiGui = new LinkedList<Class<? extends GuiContainer>>();
-		
+
 	public class RecipeSet extends TemplateRecipeHandler.CachedRecipe {
 		PositionedStack input;
 		PositionedStack output1;
 		PositionedStack output2;
-		
+
 		public RecipeSet(ItemStack input, ItemStack output1, ItemStack output2) {
-			input.stackSize = 1;
-			this.input = new PositionedStack(input, 34, 25);
-			this.output1 = new PositionedStack(output1, 118, 16);
-			this.output2 = new PositionedStack(output2, 118, 34);
+			input = NEISafe.copy(input);
+			if(input != null) input.stackSize = 1;
+			this.input = NEISafe.positionedStack(input, 34, 25);
+			this.output1 = NEISafe.positionedStack(output1, 118, 16);
+			this.output2 = NEISafe.positionedStack(output2, 118, 34);
 		}
-		
+
 		@Override
 		public List<PositionedStack> getIngredients() {
-			return getCycledIngredients(cycleticks / 20, Arrays.asList(input));
+			return NEISafe.getCycledIngredients(this, cycleticks / 20, Arrays.asList(input));
 		}
-		
+
 		@Override
 		public PositionedStack getResult() {
 			return output1;
 		}
-		
+
 		@Override
 		public List<PositionedStack> getOtherStacks() {
 			List<PositionedStack> stacks = new ArrayList<PositionedStack>();
 			stacks.add(output2);
-			return stacks;
+			return NEISafe.cleanPositionedList(stacks);
 		}
 	}
 
@@ -74,13 +75,13 @@ public class RadiolysisRecipeHandler extends TemplateRecipeHandler implements IC
 	public String getGuiTexture() {
 		return RefStrings.MODID + ":textures/gui/nei/gui_nei_radiolysis.png";
 	}
-	
+
 	@Override
 	public void loadCraftingRecipes(String outputId, Object... results) {
-		
+
 		if(outputId.equals("ntmRadiolysis")) {
 			HashMap<Object, Object[]> recipes = (HashMap<Object, Object[]>) RadiolysisRecipes.getRecipesForNEI();
-			
+
 			for(Entry<Object, Object[]> recipe : recipes.entrySet()) {
 				this.arecipes.add(new RecipeSet((ItemStack)recipe.getKey(), (ItemStack)recipe.getValue()[0], (ItemStack)recipe.getValue()[1]));
 			}
@@ -88,31 +89,31 @@ public class RadiolysisRecipeHandler extends TemplateRecipeHandler implements IC
 			super.loadCraftingRecipes(outputId, results);
 		}
 	}
-	
+
 	@Override
 	public void loadCraftingRecipes(ItemStack result) {
 		HashMap<Object, Object[]> recipes = (HashMap<Object, Object[]>) RadiolysisRecipes.getRecipesForNEI();
-		
+
 		for(Entry<Object, Object[]> recipe : recipes.entrySet()) {
 			if(compareFluidStacks((ItemStack)recipe.getValue()[0], result) || compareFluidStacks((ItemStack)recipe.getValue()[1], result))
 				this.arecipes.add(new RecipeSet((ItemStack)recipe.getKey(), (ItemStack)recipe.getValue()[0], (ItemStack)recipe.getValue()[1]));
 		}
 	}
-	
+
 	@Override
 	public void loadUsageRecipes(String inputId, Object... ingredients) {
-		
+
 		if(inputId.equals("ntmRadiolysis")) {
 			loadCraftingRecipes("ntmRadiolysis", new Object[0]);
 		} else {
 			super.loadUsageRecipes(inputId, ingredients);
 		}
 	}
-	
+
 	@Override
 	public void loadUsageRecipes(ItemStack ingredient) {
 		HashMap<Object, Object[]> recipes = (HashMap<Object, Object[]>) RadiolysisRecipes.getRecipesForNEI();
-		
+
 		for(Entry<Object, Object[]> recipe : recipes.entrySet()) {
 			if(compareFluidStacks((ItemStack)recipe.getKey(), ingredient))
 				this.arecipes.add(new RecipeSet((ItemStack)recipe.getKey(), (ItemStack)recipe.getValue()[0], (ItemStack)recipe.getValue()[1]));
@@ -120,24 +121,24 @@ public class RadiolysisRecipeHandler extends TemplateRecipeHandler implements IC
 	}
 
 	private boolean compareFluidStacks(ItemStack sta1, ItemStack sta2) {
-		return sta1.getItem() == sta2.getItem() && sta1.getItemDamage() == sta2.getItemDamage();
+		return NEISafe.isValid(sta1) && NEISafe.isValid(sta2) && sta1.getItem() == sta2.getItem() && sta1.getItemDamage() == sta2.getItemDamage();
 	}
-	
+
 	@Override
 	public void drawExtras(int recipe) {
 		drawProgressBar(52, 19, 5, 87, 64, 28, 60, 0);
 	}
-	
+
 	@Override
 	public void loadTransferRects() {
 		transferRectsGui = new LinkedList<RecipeTransferRect>();
 		guiGui = new LinkedList<Class<? extends GuiContainer>>();
-		
+
 		transferRects.add(new RecipeTransferRect(new Rectangle(52, 19, 64, 27), "ntmRadiolysis"));
 		transferRectsGui.add(new RecipeTransferRect(new Rectangle(66, 25, 25, 14), "ntmRadiolysis"));
 		guiGui.add(GUIRadiolysis.class);
 		RecipeTransferRectHandler.registerRectsToGuis(getRecipeTransferRectGuis(), transferRects);
 		RecipeTransferRectHandler.registerRectsToGuis(guiGui, transferRectsGui);
 	}
-	
+
 }

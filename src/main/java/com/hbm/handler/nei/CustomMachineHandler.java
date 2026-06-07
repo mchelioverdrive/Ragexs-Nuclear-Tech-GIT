@@ -25,7 +25,7 @@ import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 
-public class CustomMachineHandler extends TemplateRecipeHandler {
+public class CustomMachineHandler extends SafeTemplateRecipeHandler {
 
 	public LinkedList<RecipeTransferRect> transferRectsRec = new LinkedList<RecipeTransferRect>();
 	public LinkedList<Class<? extends GuiContainer>> guiRec = new LinkedList<Class<? extends GuiContainer>>();
@@ -61,47 +61,49 @@ public class CustomMachineHandler extends TemplateRecipeHandler {
 
 		public RecipeSet(CustomMachineRecipe recipe) {
 
-			for(int i = 0; i < 3; i++) if(recipe.inputFluids.length > i) inputs.add(new PositionedStack(ItemFluidIcon.make(recipe.inputFluids[i]), 12 + i * 18, 6));
-			for(int i = 0; i < 3; i++) if(recipe.inputItems.length > i) inputs.add(new PositionedStack(recipe.inputItems[i].extractForNEI(), 12 + i * 18, 24));
-			for(int i = 3; i < 6; i++) if(recipe.inputItems.length > i) inputs.add(new PositionedStack(recipe.inputItems[i].extractForNEI(), 12 + (i - 3) * 18, 42));
+			for(int i = 0; i < 3; i++) if(recipe.inputFluids.length > i) inputs.add(NEISafe.positionedStack(ItemFluidIcon.make(recipe.inputFluids[i]), 12 + i * 18, 6));
+			for(int i = 0; i < 3; i++) if(recipe.inputItems.length > i) inputs.add(NEISafe.positionedStack(recipe.inputItems[i].extractForNEI(), 12 + i * 18, 24));
+			for(int i = 3; i < 6; i++) if(recipe.inputItems.length > i) inputs.add(NEISafe.positionedStack(recipe.inputItems[i].extractForNEI(), 12 + (i - 3) * 18, 42));
 
-			for(int i = 0; i < 3; i++) if(recipe.outputFluids.length > i) outputs.add(new PositionedStack(ItemFluidIcon.make(recipe.outputFluids[i]), 102 + i * 18, 6));
+			for(int i = 0; i < 3; i++) if(recipe.outputFluids.length > i) outputs.add(NEISafe.positionedStack(ItemFluidIcon.make(recipe.outputFluids[i]), 102 + i * 18, 6));
 
 			for(int i = 0; i < 3; i++) if(recipe.outputItems.length > i) {
 				Pair<ItemStack, Float> pair = recipe.outputItems[i];
-				ItemStack out = pair.getKey().copy();
+				ItemStack out = pair == null ? null : NEISafe.copy(pair.getKey());
+				if(out == null) continue;
 				if(pair.getValue() != 1) {
 					ItemStackUtil.addTooltipToStack(out, EnumChatFormatting.RED + "" + (((int)(pair.getValue() * 1000)) / 10D) + "%");
 				}
-				outputs.add(new PositionedStack(out, 102 + i * 18, 24));
+				outputs.add(NEISafe.positionedStack(out, 102 + i * 18, 24));
 			}
 
 			for(int i = 3; i < 6; i++) if(recipe.outputItems.length > i) {
 				Pair<ItemStack, Float> pair = recipe.outputItems[i];
-				ItemStack out = pair.getKey().copy();
+				ItemStack out = pair == null ? null : NEISafe.copy(pair.getKey());
+				if(out == null) continue;
 				if(pair.getValue() != 1) {
 					ItemStackUtil.addTooltipToStack(out, EnumChatFormatting.RED + "" + (((int)(pair.getValue() * 1000)) / 10D) + "%");
 				}
-				outputs.add(new PositionedStack(out, 102 + (i - 3) * 18, 42));
+				outputs.add(NEISafe.positionedStack(out, 102 + (i - 3) * 18, 42));
 			}
-			
+
 			this.pollutionType = recipe.pollutionType;
 			this.pollutionAmount = recipe.pollutionAmount;
 			this.radiationAmount = recipe.radiationAmount;
 			if(conf.fluxMode) this.flux = recipe.flux;
 			if(conf.maxHeat > 0 && recipe.heat > 0) this.heat = recipe.heat;
-			
-			this.machine = new PositionedStack(new ItemStack(ModBlocks.custom_machine, 1, 100 + CustomMachineConfigJSON.niceList.indexOf(conf)), 75, 42);
+
+			this.machine = NEISafe.positionedStack(new ItemStack(ModBlocks.custom_machine, 1, 100 + CustomMachineConfigJSON.niceList.indexOf(conf)), 75, 42);
 		}
 
 		@Override
 		public List<PositionedStack> getIngredients() {
-			return getCycledIngredients(cycleticks / 20, inputs);
+			return NEISafe.getCycledIngredients(this, cycleticks / 20, inputs);
 		}
 
 		@Override
 		public PositionedStack getResult() {
-			return outputs.get(0);
+			return NEISafe.firstValid(outputs);
 		}
 
 		@Override
@@ -110,7 +112,7 @@ public class CustomMachineHandler extends TemplateRecipeHandler {
 			other.addAll(inputs);
 			other.add(machine);
 			other.addAll(outputs);
-			return getCycledIngredients(cycleticks / 20, other);
+			return NEISafe.getCycledIngredients(this, cycleticks / 20, other);
 		}
 	}
 
@@ -206,7 +208,7 @@ public class CustomMachineHandler extends TemplateRecipeHandler {
 	}
 
 	public static boolean compareFluidStacks(ItemStack sta1, ItemStack sta2) {
-		return sta1.getItem() == sta2.getItem() && sta1.getItemDamage() == sta2.getItemDamage();
+		return NEISafe.isValid(sta1) && NEISafe.isValid(sta2) && sta1.getItem() == sta2.getItem() && sta1.getItemDamage() == sta2.getItemDamage();
 	}
 
 	@Override

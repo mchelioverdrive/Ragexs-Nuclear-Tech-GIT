@@ -21,8 +21,8 @@ import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.ItemStack;
 
-public class AssemblerRecipeHandler extends TemplateRecipeHandler implements ICompatNHNEI {
-	
+public class AssemblerRecipeHandler extends SafeTemplateRecipeHandler implements ICompatNHNEI {
+
     public LinkedList<RecipeTransferRect> transferRectsRec = new LinkedList<RecipeTransferRect>();
     public LinkedList<RecipeTransferRect> transferRectsGui = new LinkedList<RecipeTransferRect>();
     public LinkedList<Class<? extends GuiContainer>> guiRec = new LinkedList<Class<? extends GuiContainer>>();
@@ -41,28 +41,28 @@ public class AssemblerRecipeHandler extends TemplateRecipeHandler implements ICo
 	}
 
     public class SmeltingSet extends TemplateRecipeHandler.CachedRecipe {
-    	
+
 		List<PositionedStack> input;
         PositionedStack result;
-    	
+
         public SmeltingSet(List<Object> in, ItemStack result) {
-        	
-        	input = new ArrayList();
-        	
-        	ComparableStack comp = new ComparableStack(result);
-        	ItemStack template = ItemAssemblyTemplate.writeType(new ItemStack(ModItems.assembly_template), comp);
-        	
-        	for(int i = 0; i < Math.min(in.size(), 12); i++) {
-        		input.add(new PositionedStack(in.get(i), 30 + (i % 4) * 18, 6 + (i / 4) * 18));
-        	}
-            
-            input.add(new PositionedStack(template, 66 + 45, 6));
-            this.result = new PositionedStack(result, 138, 24);
+
+	input = new ArrayList();
+
+	ComparableStack comp = new ComparableStack(result);
+	ItemStack template = ItemAssemblyTemplate.writeType(new ItemStack(ModItems.assembly_template), comp);
+
+	for(int i = 0; i < Math.min(in.size(), 12); i++) {
+		input.add(NEISafe.positionedStack(in.get(i), 30 + (i % 4) * 18, 6 + (i / 4) * 18));
+	}
+
+            input.add(NEISafe.positionedStack(template, 66 + 45, 6));
+            this.result = NEISafe.positionedStack(result, 138, 24);
         }
 
         @Override
 		public List<PositionedStack> getIngredients() {
-            return getCycledIngredients(cycleticks / 48, input);
+            return NEISafe.getCycledIngredients(this, cycleticks / 48, input);
         }
 
         @Override
@@ -70,7 +70,7 @@ public class AssemblerRecipeHandler extends TemplateRecipeHandler implements ICo
             return result;
         }
     }
-    
+
 	@Override
 	public String getRecipeName() {
 		return "Assembly Machine";
@@ -80,14 +80,14 @@ public class AssemblerRecipeHandler extends TemplateRecipeHandler implements ICo
 	public String getGuiTexture() {
 		return RefStrings.MODID + ":textures/gui/nei/gui_nei_assembler.png";
 	}
-	
+
 	@Override
 	public void loadCraftingRecipes(String outputId, Object... results) {
-		
+
 		if ((outputId.equals("assembly")) && getClass() == AssemblerRecipeHandler.class) {
-			
+
 			Map<ItemStack, List<Object>> recipes = AssemblerRecipes.getRecipes();
-			
+
 			for (Map.Entry<ItemStack, List<Object>> recipe : recipes.entrySet()) {
 				this.arecipes.add(new SmeltingSet(recipe.getValue(), recipe.getKey()));
 			}
@@ -98,11 +98,11 @@ public class AssemblerRecipeHandler extends TemplateRecipeHandler implements ICo
 
 	@Override
 	public void loadCraftingRecipes(ItemStack result) {
-		
+
 		Map<ItemStack, List<Object>> recipes = AssemblerRecipes.getRecipes();
-		
+
 		for (Map.Entry<ItemStack, List<Object>> recipe : recipes.entrySet()) {
-			
+
 			if (NEIServerUtils.areStacksSameTypeCrafting(recipe.getKey(), result))
 				this.arecipes.add(new SmeltingSet(recipe.getValue(), recipe.getKey()));
 		}
@@ -110,7 +110,7 @@ public class AssemblerRecipeHandler extends TemplateRecipeHandler implements ICo
 
 	@Override
 	public void loadUsageRecipes(String inputId, Object... ingredients) {
-		
+
 		if ((inputId.equals("assembly")) && getClass() == AssemblerRecipeHandler.class) {
 			loadCraftingRecipes("assembly", new Object[0]);
 		} else {
@@ -120,20 +120,20 @@ public class AssemblerRecipeHandler extends TemplateRecipeHandler implements ICo
 
 	@Override
 	public void loadUsageRecipes(ItemStack ingredient) {
-		
+
 		Map<ItemStack, List<Object>> recipes = AssemblerRecipes.getRecipes();
-		
+
 		for (Map.Entry<ItemStack, List<Object>> recipe : recipes.entrySet()) {
-			
+
 			for(Object o : recipe.getValue()) {
-				
+
 				if(o instanceof ItemStack && NEIServerUtils.areStacksSameTypeCrafting((ItemStack)o, ingredient)) {
 					this.arecipes.add(new SmeltingSet(recipe.getValue(), recipe.getKey()));
-					
+
 				} else if(o instanceof List) {
-					
+
 					for(Object obj : (List)o) {
-						
+
 						if(obj instanceof ItemStack && NEIServerUtils.areStacksSameTypeCrafting((ItemStack)obj, ingredient)) {
 							this.arecipes.add(new SmeltingSet(recipe.getValue(), recipe.getKey()));
 						}
@@ -145,9 +145,9 @@ public class AssemblerRecipeHandler extends TemplateRecipeHandler implements ICo
 
     @Override
     public Class<? extends GuiContainer> getGuiClass() {
-    	return null;
+	return null;
     }
-    
+
     @Override
     public void loadTransferRects() {
         transferRectsGui = new LinkedList<RecipeTransferRect>();
@@ -164,7 +164,7 @@ public class AssemblerRecipeHandler extends TemplateRecipeHandler implements ICo
     public void drawExtras(int recipe) {
 
         drawProgressBar(83 - (18 * 4) - 9 + 1, 6, 0, 86, 16, 18 * 3 - 2, 480, 7);
-        
+
         drawProgressBar(83 - 3 + 16 + 5, 5 + 18, 16, 86, 36, 18, 48, 0);
     }
 

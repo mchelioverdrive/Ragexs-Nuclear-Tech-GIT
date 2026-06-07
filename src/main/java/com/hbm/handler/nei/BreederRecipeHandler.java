@@ -18,7 +18,7 @@ import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.ItemStack;
 
-public class BreederRecipeHandler extends TemplateRecipeHandler implements ICompatNHNEI {
+public class BreederRecipeHandler extends SafeTemplateRecipeHandler implements ICompatNHNEI {
 
 	@Override
 	public ItemStack[] getMachinesForRecipe() {
@@ -37,15 +37,16 @@ public class BreederRecipeHandler extends TemplateRecipeHandler implements IComp
 		public int flux;
 
 		public BreedingSet(ItemStack input, ItemStack result, int flux) {
-			input.stackSize = 1;
-			this.input = new PositionedStack(input, 30, 24);
-			this.result = new PositionedStack(result, 120, 24);
+			input = NEISafe.copy(input);
+			if(input != null) input.stackSize = 1;
+			this.input = NEISafe.positionedStack(input, 30, 24);
+			this.result = NEISafe.positionedStack(result, 120, 24);
 			this.flux = flux;
 		}
 
 		@Override
 		public List<PositionedStack> getIngredients() {
-			return getCycledIngredients(cycleticks / 48, Arrays.asList(new PositionedStack[] { input }));
+			return NEISafe.getCycledIngredients(this, cycleticks / 48, Arrays.asList(new PositionedStack[] { input }));
 		}
 
 		@Override

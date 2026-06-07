@@ -21,7 +21,7 @@ import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.ItemStack;
 
-public class ShredderRecipeHandler extends TemplateRecipeHandler implements ICompatNHNEI {
+public class ShredderRecipeHandler extends SafeTemplateRecipeHandler implements ICompatNHNEI {
 
 	@Override
 	public ItemStack[] getMachinesForRecipe() {
@@ -44,14 +44,15 @@ public class ShredderRecipeHandler extends TemplateRecipeHandler implements ICom
 		PositionedStack result;
 
 		public SmeltingSet(ItemStack input, ItemStack result) {
-			input.stackSize = 1;
-			this.input = new PositionedStack(input, 83 - 27 - 18 + 1, 5 + 18 + 1);
-			this.result = new PositionedStack(result, 83 + 27 + 18 + 1, 5 + 18 + 1);
+			input = NEISafe.copy(input);
+			if(input != null) input.stackSize = 1;
+			this.input = NEISafe.positionedStack(input, 83 - 27 - 18 + 1, 5 + 18 + 1);
+			this.result = NEISafe.positionedStack(result, 83 + 27 + 18 + 1, 5 + 18 + 1);
 		}
 
 		@Override
 		public List<PositionedStack> getIngredients() {
-			return getCycledIngredients(cycleticks / 48, Arrays.asList(new PositionedStack[] { input }));
+			return NEISafe.getCycledIngredients(this, cycleticks / 48, Arrays.asList(new PositionedStack[] { input }));
 		}
 
 		@Override
@@ -59,7 +60,7 @@ public class ShredderRecipeHandler extends TemplateRecipeHandler implements ICom
 			List<PositionedStack> stacks = new ArrayList<PositionedStack>();
 			stacks.add(fuels.get((cycleticks / 24) % fuels.size()).stack0);
 			stacks.add(fuels.get((cycleticks / 24) % fuels.size()).stack1);
-			return stacks;
+			return NEISafe.cleanPositionedList(stacks);
 		}
 
 		@Override
@@ -71,8 +72,8 @@ public class ShredderRecipeHandler extends TemplateRecipeHandler implements ICom
 	public static class Fuel {
 		public Fuel(ItemStack ingred) {
 
-			this.stack0 = new PositionedStack(ingred, 83 + 1, 5 + 1, false);
-			this.stack1 = new PositionedStack(ingred, 83 + 1, 5 + 36 + 1, false);
+			this.stack0 = NEISafe.positionedStack(ingred, 83 + 1, 5 + 1, false);
+			this.stack1 = NEISafe.positionedStack(ingred, 83 + 1, 5 + 36 + 1, false);
 		}
 
 		public PositionedStack stack0;

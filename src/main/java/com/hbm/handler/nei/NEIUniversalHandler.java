@@ -23,7 +23,7 @@ import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
-public abstract class NEIUniversalHandler extends TemplateRecipeHandler implements ICompatNHNEI {
+public abstract class NEIUniversalHandler extends SafeTemplateRecipeHandler implements ICompatNHNEI {
 
 	@Override
 	public ItemStack[] getMachinesForRecipe() {
@@ -34,7 +34,7 @@ public abstract class NEIUniversalHandler extends TemplateRecipeHandler implemen
 	public LinkedList<RecipeTransferRect> transferRectsGui = new LinkedList<RecipeTransferRect>();
 	public LinkedList<Class<? extends GuiContainer>> guiRec = new LinkedList<Class<? extends GuiContainer>>();
 	public LinkedList<Class<? extends GuiContainer>> guiGui = new LinkedList<Class<? extends GuiContainer>>();
-	
+
 	/// SETUP ///
 	public final String display;
 	public final ItemStack[] machine;
@@ -47,7 +47,7 @@ public abstract class NEIUniversalHandler extends TemplateRecipeHandler implemen
 		this.recipes = recipes;
 		this.machineOverrides = null;
 	}
-	
+
 	public NEIUniversalHandler(String display, HashMap recipes, HashMap machines) {
 		this(display, (ItemStack[]) null, recipes);
 		this.machineOverrides = machines;
@@ -58,7 +58,7 @@ public abstract class NEIUniversalHandler extends TemplateRecipeHandler implemen
 	public NEIUniversalHandler(String display, Block machine, HashMap recipes) {		this(display, new ItemStack(machine), recipes); }
 
 	public class RecipeSet extends TemplateRecipeHandler.CachedRecipe {
-		
+
 		PositionedStack[] input;
 		PositionedStack[] output;
 		PositionedStack machinePositioned;
@@ -66,36 +66,36 @@ public abstract class NEIUniversalHandler extends TemplateRecipeHandler implemen
 
 		public RecipeSet(ItemStack[][] in, ItemStack[][] out, Object originalInputInstance /* for custom machine lookup */) {
 			this.originalInputInstance = originalInputInstance;
-			
+
 			input = new PositionedStack[in.length];
 			int[][] inPos = NEIUniversalHandler.getInputCoords(in.length);
 			for(int i = 0; i < in.length; i++) {
 				ItemStack[] sub = in[i];
-				this.input[i] = new PositionedStack(sub, inPos[i][0], inPos[i][1]);
+				this.input[i] = NEISafe.positionedStack(sub, inPos[i][0], inPos[i][1]);
 			}
 			output = new PositionedStack[out.length];
 			int[][] outPos = NEIUniversalHandler.getOutputCoords(out.length);
 			for(int i = 0; i < out.length; i++) {
 				ItemStack[] sub = out[i];
-				this.output[i] = new PositionedStack(sub, outPos[i][0], outPos[i][1]);
+				this.output[i] = NEISafe.positionedStack(sub, outPos[i][0], outPos[i][1]);
 			}
-			
+
 			ItemStack[] m = machine;
-			
+
 			if(NEIUniversalHandler.this.machineOverrides != null) {
 				Object key = NEIUniversalHandler.this.machineOverrides.get(originalInputInstance);
-				
+
 				if(key != null) {
-					this.machinePositioned = new PositionedStack(key, 75, 31);
+					this.machinePositioned = NEISafe.positionedStack(key, 75, 31);
 				}
 			}
-			
-			if(machinePositioned == null) this.machinePositioned = new PositionedStack(m, 75, 31);
+
+			if(machinePositioned == null) this.machinePositioned = NEISafe.positionedStack(m, 75, 31);
 		}
 
 		@Override
 		public List<PositionedStack> getIngredients() {
-			return getCycledIngredients(cycleticks / 20, Arrays.asList(input));
+			return NEISafe.getCycledIngredients(this, cycleticks / 20, Arrays.asList(input));
 		}
 
 		@Override
@@ -110,7 +110,7 @@ public abstract class NEIUniversalHandler extends TemplateRecipeHandler implemen
 				other.add(pos);
 			}
 			other.add(machinePositioned);
-			return getCycledIngredients(cycleticks / 20, other);
+			return NEISafe.getCycledIngredients(this, cycleticks / 20, other);
 		}
 	}
 
@@ -127,7 +127,7 @@ public abstract class NEIUniversalHandler extends TemplateRecipeHandler implemen
 	@Override
 	public void drawBackground(int recipe) {
 		super.drawBackground(recipe);
-		
+
 		RecipeSet rec = (RecipeSet) this.arecipes.get(recipe);
 
 		int[][] inPos = NEIUniversalHandler.getInputCoords(rec.input.length);
@@ -138,12 +138,12 @@ public abstract class NEIUniversalHandler extends TemplateRecipeHandler implemen
 		for(int[] pos : outPos) {
 			drawTexturedModalRect(pos[0] - 1, pos[1] - 1, 5, 87, 18, 18);
 		}
-		
+
 		drawTexturedModalRect(74, 14, 59, 87, 18, 36);
 	}
-	
+
 	public static int[][] getInputCoords(int count) {
-		
+
 		switch(count) {
 		case 1: return new int[][] {
 			{48, 24}
@@ -209,12 +209,12 @@ public abstract class NEIUniversalHandler extends TemplateRecipeHandler implemen
 			{12, 24 + 18}
 		};
 		}
-		
+
 		return new int[count][2];
 	}
-	
+
 	public static int[][] getOutputCoords(int count) {
-		
+
 		switch(count) {
 		case 1: return new int[][] {
 			{102, 24}
@@ -257,25 +257,26 @@ public abstract class NEIUniversalHandler extends TemplateRecipeHandler implemen
 			{138, 24}, {138, 32},
 		};
 		}
-		
+
 		return new int[count][2];
 	}
 
 	@Override
 	public void loadCraftingRecipes(String outputId, Object... results) {
-		
+
 		if(outputId.equals(getKey())) {
-			
+
 			outer: for(Entry<Object, Object> recipe : recipes.entrySet()) {
-				ItemStack[][] ins = InventoryUtil.extractObject(recipe.getKey());
-				ItemStack[][] outs = InventoryUtil.extractObject(recipe.getValue());
-				
-				for(ItemStack[] array : ins) for(ItemStack stack : array) if(stack.getItem() == ModItems.item_secret) continue outer;
-				for(ItemStack[] array : outs) for(ItemStack stack : array) if(stack.getItem() == ModItems.item_secret) continue outer;
-				
+				ItemStack[][] ins = NEISafe.copyValid2D(InventoryUtil.extractObject(recipe.getKey()));
+				ItemStack[][] outs = NEISafe.copyValid2D(InventoryUtil.extractObject(recipe.getValue()));
+				if(ins == null || outs == null) continue;
+
+				for(ItemStack[] array : ins) for(ItemStack stack : array) if(NEISafe.isValid(stack) && stack.getItem() == ModItems.item_secret) continue outer;
+				for(ItemStack[] array : outs) for(ItemStack stack : array) if(NEISafe.isValid(stack) && stack.getItem() == ModItems.item_secret) continue outer;
+
 				this.arecipes.add(new RecipeSet(ins, outs, recipe.getKey()));
 			}
-			
+
 		} else {
 			super.loadCraftingRecipes(outputId, results);
 		}
@@ -283,14 +284,15 @@ public abstract class NEIUniversalHandler extends TemplateRecipeHandler implemen
 
 	@Override
 	public void loadCraftingRecipes(ItemStack result) {
-		
+
 		outer: for(Entry<Object, Object> recipe : recipes.entrySet()) {
-			ItemStack[][] ins = InventoryUtil.extractObject(recipe.getKey());
-			ItemStack[][] outs = InventoryUtil.extractObject(recipe.getValue());
-			
-			for(ItemStack[] array : ins) for(ItemStack stack : array) if(stack.getItem() == ModItems.item_secret) continue outer;
-			for(ItemStack[] array : outs) for(ItemStack stack : array) if(stack.getItem() == ModItems.item_secret) continue outer;
-			
+			ItemStack[][] ins = NEISafe.copyValid2D(InventoryUtil.extractObject(recipe.getKey()));
+			ItemStack[][] outs = NEISafe.copyValid2D(InventoryUtil.extractObject(recipe.getValue()));
+			if(ins == null || outs == null) continue;
+
+			for(ItemStack[] array : ins) for(ItemStack stack : array) if(NEISafe.isValid(stack) && stack.getItem() == ModItems.item_secret) continue outer;
+			for(ItemStack[] array : outs) for(ItemStack stack : array) if(NEISafe.isValid(stack) && stack.getItem() == ModItems.item_secret) continue outer;
+
 			match:
 			for(ItemStack[] array : outs) {
 				for(ItemStack stack : array) {
@@ -314,14 +316,15 @@ public abstract class NEIUniversalHandler extends TemplateRecipeHandler implemen
 
 	@Override
 	public void loadUsageRecipes(ItemStack ingredient) {
-		
+
 		outer: for(Entry<Object, Object> recipe : recipes.entrySet()) {
-			ItemStack[][] ins = InventoryUtil.extractObject(recipe.getKey());
-			ItemStack[][] outs = InventoryUtil.extractObject(recipe.getValue());
-			
-			for(ItemStack[] array : ins) for(ItemStack stack : array) if(stack.getItem() == ModItems.item_secret) continue outer;
-			for(ItemStack[] array : outs) for(ItemStack stack : array) if(stack.getItem() == ModItems.item_secret) continue outer;
-			
+			ItemStack[][] ins = NEISafe.copyValid2D(InventoryUtil.extractObject(recipe.getKey()));
+			ItemStack[][] outs = NEISafe.copyValid2D(InventoryUtil.extractObject(recipe.getValue()));
+			if(ins == null || outs == null) continue;
+
+			for(ItemStack[] array : ins) for(ItemStack stack : array) if(NEISafe.isValid(stack) && stack.getItem() == ModItems.item_secret) continue outer;
+			for(ItemStack[] array : outs) for(ItemStack stack : array) if(NEISafe.isValid(stack) && stack.getItem() == ModItems.item_secret) continue outer;
+
 			match:
 			for(ItemStack[] array : ins) {
 				for(ItemStack stack : array) {
@@ -333,7 +336,7 @@ public abstract class NEIUniversalHandler extends TemplateRecipeHandler implemen
 			}
 		}
 	}
-	
+
 	@Override
 	public void loadTransferRects() {
 		transferRectsGui = new LinkedList<RecipeTransferRect>();
@@ -341,7 +344,7 @@ public abstract class NEIUniversalHandler extends TemplateRecipeHandler implemen
 		transferRects.add(new RecipeTransferRect(new Rectangle(147, 1, 18, 18), getKey()));
 		RecipeTransferRectHandler.registerRectsToGuis(getRecipeTransferRectGuis(), transferRects);
 	}
-	
+
 	public abstract String getKey();
 
 	@Override

@@ -20,7 +20,7 @@ import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.ItemStack;
 
-public class SmithingRecipeHandler extends TemplateRecipeHandler implements ICompatNHNEI {
+public class SmithingRecipeHandler extends SafeTemplateRecipeHandler implements ICompatNHNEI {
 
 	@Override
 	public ItemStack[] getMachinesForRecipe() {
@@ -55,15 +55,15 @@ public class SmithingRecipeHandler extends TemplateRecipeHandler implements ICom
 		int tier;
 
 		public RecipeSet(AnvilSmithingRecipe recipe) {
-			this.input1 = new PositionedStack(recipe.getLeft(), 39, 24);
-			this.input2 = new PositionedStack(recipe.getRight(), 75, 24);
-			this.output = new PositionedStack(recipe.getOutput(input1.item, input2.item), 111, 24);
+			this.input1 = NEISafe.positionedStack(recipe.getLeft(), 39, 24);
+			this.input2 = NEISafe.positionedStack(recipe.getRight(), 75, 24);
+			this.output = NEISafe.positionedStack(recipe.getOutput(NEISafe.firstStack(input1), NEISafe.firstStack(input2)), 111, 24);
 			this.tier = recipe.tier;
 		}
 
 		@Override
 		public List<PositionedStack> getIngredients() {
-			return getCycledIngredients(cycleticks / 48, Arrays.asList(input1, input2));
+			return NEISafe.getCycledIngredients(this, cycleticks / 48, Arrays.asList(input1, input2));
 		}
 
 		@Override
@@ -79,10 +79,10 @@ public class SmithingRecipeHandler extends TemplateRecipeHandler implements ICom
 
 	@Override
 	public void loadCraftingRecipes(String outputId, Object... results) {
-		
+
 		if(outputId.equals("ntmSmithing")) {
 			List<AnvilSmithingRecipe> recipes = AnvilRecipes.getSmithing();
-			
+
 			for(AnvilSmithingRecipe recipe : recipes) {
 				this.arecipes.add(new RecipeSet(recipe));
 			}
@@ -95,7 +95,7 @@ public class SmithingRecipeHandler extends TemplateRecipeHandler implements ICom
 	public void loadCraftingRecipes(ItemStack result) {
 
 		List<AnvilSmithingRecipe> recipes = AnvilRecipes.getSmithing();
-		
+
 		for(AnvilSmithingRecipe recipe : recipes) {
 			if(NEIServerUtils.areStacksSameTypeCrafting(recipe.getSimpleOutput(), result)) {
 				this.arecipes.add(new RecipeSet(recipe));
@@ -105,7 +105,7 @@ public class SmithingRecipeHandler extends TemplateRecipeHandler implements ICom
 
 	@Override
 	public void loadUsageRecipes(String inputId, Object... ingredients) {
-		
+
 		if(inputId.equals("ntmSmithing")) {
 			loadCraftingRecipes("ntmSmithing", new Object[0]);
 		} else {
@@ -117,17 +117,17 @@ public class SmithingRecipeHandler extends TemplateRecipeHandler implements ICom
 	public void loadUsageRecipes(ItemStack ingredient) {
 
 		List<AnvilSmithingRecipe> recipes = AnvilRecipes.getSmithing();
-		
+
 		outer:
 		for(AnvilSmithingRecipe recipe : recipes) {
-			
+
 			for(ItemStack left : recipe.getLeft()) {
 				if(NEIServerUtils.areStacksSameTypeCrafting(left, ingredient)) {
 					this.arecipes.add(new RecipeSet(recipe));
 					continue outer;
 				}
 			}
-			
+
 			for(ItemStack right : recipe.getRight()) {
 				if(NEIServerUtils.areStacksSameTypeCrafting(right, ingredient)) {
 					this.arecipes.add(new RecipeSet(recipe));
