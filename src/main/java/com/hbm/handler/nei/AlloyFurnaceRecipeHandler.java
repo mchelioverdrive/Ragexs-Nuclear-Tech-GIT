@@ -19,7 +19,7 @@ import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.ItemStack;
 
-public class AlloyFurnaceRecipeHandler extends TemplateRecipeHandler implements ICompatNHNEI {
+public class AlloyFurnaceRecipeHandler extends SafeTemplateRecipeHandler implements ICompatNHNEI {
 
 	public static ArrayList<Fuel> fuels;
 
@@ -41,14 +41,14 @@ public class AlloyFurnaceRecipeHandler extends TemplateRecipeHandler implements 
 		PositionedStack result;
 
 		public SmeltingSet(List<ItemStack> list, List<ItemStack> list2, ItemStack result) {
-			this.input1 = new PositionedStack(list, 75, 7);
-			this.input2 = new PositionedStack(list2, 75, 43);
-			this.result = new PositionedStack(result, 129, 25);
+			this.input1 = NEISafe.positionedStack(list, 75, 7);
+			this.input2 = NEISafe.positionedStack(list2, 75, 43);
+			this.result = NEISafe.positionedStack(result, 129, 25);
 		}
 
 		@Override
 		public List<PositionedStack> getIngredients() {
-			return getCycledIngredients(cycleticks / 48, Arrays.asList(new PositionedStack[] { input1, input2 }));
+			return NEISafe.getCycledIngredients(this, cycleticks / 48, Arrays.asList(new PositionedStack[] { input1, input2 }));
 		}
 
 		@Override
@@ -65,7 +65,7 @@ public class AlloyFurnaceRecipeHandler extends TemplateRecipeHandler implements 
 	public static class Fuel {
 		public Fuel(ItemStack ingred) {
 
-			this.stack = new PositionedStack(ingred, 3, 25, false);
+			this.stack = NEISafe.positionedStack(ingred, 3, 25, false);
 		}
 
 		public PositionedStack stack;

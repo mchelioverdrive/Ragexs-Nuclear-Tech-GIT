@@ -26,7 +26,7 @@ import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 
-public class AnvilRecipeHandler extends TemplateRecipeHandler implements ICompatNHNEI {
+public class AnvilRecipeHandler extends SafeTemplateRecipeHandler implements ICompatNHNEI {
 
 	@Override
 	public ItemStack[] getMachinesForRecipe() {
@@ -56,7 +56,7 @@ public class AnvilRecipeHandler extends TemplateRecipeHandler implements ICompat
 	public LinkedList<Class<? extends GuiContainer>> guiGui = new LinkedList<Class<? extends GuiContainer>>();
 
 	public class RecipeSet extends TemplateRecipeHandler.CachedRecipe {
-		
+
 		List<PositionedStack> input = new ArrayList();
 		List<PositionedStack> output = new ArrayList();
 		PositionedStack anvil;
@@ -74,7 +74,7 @@ public class AnvilRecipeHandler extends TemplateRecipeHandler implements ICompat
 			int outOY = 0;
 			int anvX = 0;
 			int anvY = 31;
-			
+
 			if(in.size() == 1 && out.size() == 1) {
 				shape = OverlayType.SMITHING;
 				inOX = 48;
@@ -108,28 +108,28 @@ public class AnvilRecipeHandler extends TemplateRecipeHandler implements ICompat
 				outOY = 6;
 				anvX = 75;
 			}
-			
+
 			for(int i = 0; i < in.size(); i++) {
-				this.input.add(new PositionedStack(in.get(i), inOX + 18 * (i % inLine), inOY + 18 * (i / inLine)));
+				this.input.add(NEISafe.positionedStack(in.get(i), inOX + 18 * (i % inLine), inOY + 18 * (i / inLine)));
 			}
-			
+
 			for(int i = 0; i < out.size(); i++) {
-				this.output.add(new PositionedStack(out.get(i), outOX + 18 * (i % outLine), outOY + 18 * (i / outLine)));
+				this.output.add(NEISafe.positionedStack(out.get(i), outOX + 18 * (i % outLine), outOY + 18 * (i / outLine)));
 			}
-			
-			this.anvil = new PositionedStack(NTMAnvil.getAnvilsFromTier(tier), anvX, anvY);
-			
+
+			this.anvil = NEISafe.positionedStack(NTMAnvil.getAnvilsFromTier(tier), anvX, anvY);
+
 			this.tier = tier;
 		}
 
 		@Override
 		public List<PositionedStack> getIngredients() {
-			return getCycledIngredients(cycleticks / 20, input);
+			return NEISafe.getCycledIngredients(this, cycleticks / 20, input);
 		}
 
 		@Override
 		public PositionedStack getResult() {
-			return output.get(0);
+			return NEISafe.firstValid(output);
 		}
 
 		@Override
@@ -137,7 +137,7 @@ public class AnvilRecipeHandler extends TemplateRecipeHandler implements ICompat
 			List<PositionedStack> other = new ArrayList();
 			other.addAll(output);
 			other.add(anvil);
-			return getCycledIngredients(cycleticks / 20, other);
+			return NEISafe.getCycledIngredients(this, cycleticks / 20, other);
 		}
 	}
 
@@ -148,10 +148,10 @@ public class AnvilRecipeHandler extends TemplateRecipeHandler implements ICompat
 
 	@Override
 	public void loadCraftingRecipes(String outputId, Object... results) {
-		
+
 		if(outputId.equals("ntmAnvil")) {
 			List<AnvilConstructionRecipe> recipes = AnvilRecipes.getConstruction();
-			
+
 			for(AnvilConstructionRecipe recipe : recipes) {
 				this.addRecipeToList(recipe);
 			}
@@ -164,9 +164,9 @@ public class AnvilRecipeHandler extends TemplateRecipeHandler implements ICompat
 	public void loadCraftingRecipes(ItemStack result) {
 
 		List<AnvilConstructionRecipe> recipes = AnvilRecipes.getConstruction();
-		
+
 		for(AnvilConstructionRecipe recipe : recipes) {
-			
+
 			for(AnvilOutput out : recipe.output) {
 				if(NEIServerUtils.areStacksSameTypeCrafting(out.stack, result)) {
 					this.addRecipeToList(recipe);
@@ -178,7 +178,7 @@ public class AnvilRecipeHandler extends TemplateRecipeHandler implements ICompat
 
 	@Override
 	public void loadUsageRecipes(String inputId, Object... ingredients) {
-		
+
 		if(inputId.equals("ntmAnvil")) {
 			loadCraftingRecipes("ntmAnvil", new Object[0]);
 		} else {
@@ -190,12 +190,12 @@ public class AnvilRecipeHandler extends TemplateRecipeHandler implements ICompat
 	public void loadUsageRecipes(ItemStack ingredient) {
 
 		List<AnvilConstructionRecipe> recipes = AnvilRecipes.getConstruction();
-		
+
 		for(AnvilConstructionRecipe recipe : recipes) {
-			
+
 			outer:
 			for(AStack in : recipe.input) {
-				
+
 				List<ItemStack> stacks = in.extractForNEI();
 				for(ItemStack stack : stacks) {
 					if(NEIServerUtils.areStacksSameTypeCrafting(stack, ingredient)) {
@@ -206,38 +206,39 @@ public class AnvilRecipeHandler extends TemplateRecipeHandler implements ICompat
 			}
 		}
 	}
-	
+
 	private void addRecipeToList(AnvilConstructionRecipe recipe) {
-		
+
 		List<Object> ins = new ArrayList();
 		for(AStack input : recipe.input) {
 			ins.add(input.extractForNEI());
 		}
-		
+
 		List<Object> outs = new ArrayList();
 		for(AnvilOutput output : recipe.output) {
-			
-			ItemStack stack = output.stack.copy();
+
+			ItemStack stack = output == null ? null : NEISafe.copy(output.stack);
+			if(stack == null) continue;
 			if(output.chance != 1) {
 				ItemStackUtil.addTooltipToStack(stack, EnumChatFormatting.RED + "" + (((int)(output.chance * 1000)) / 10D) + "%");
 			}
-			
+
 			outs.add(stack);
 		}
-		
+
 		this.arecipes.add(new RecipeSet(ins, outs, recipe.tierLower));
 	}
 
 	@Override
 	public void loadTransferRects() {
-		
+
 		//hey asshole, stop nulling my fucking lists
 		transferRectsGui = new LinkedList<RecipeTransferRect>();
 		guiGui = new LinkedList<Class<? extends GuiContainer>>();
 
 		transferRectsGui.add(new RecipeTransferRect(new Rectangle(11, 42, 36, 18), "ntmAnvil"));
 		transferRectsGui.add(new RecipeTransferRect(new Rectangle(65, 42, 36, 18), "ntmAnvil"));
-		
+
 		guiGui.add(GUIAnvil.class);
 		RecipeTransferRectHandler.registerRectsToGuis(guiGui, transferRectsGui);
 	}
@@ -250,9 +251,9 @@ public class AnvilRecipeHandler extends TemplateRecipeHandler implements ICompat
 	@Override
 	public void drawBackground(int recipe) {
 		super.drawBackground(recipe);
-		
+
 		RecipeSet set = (RecipeSet) this.arecipes.get(recipe);
-		
+
 		switch(set.shape) {
 		case NONE:
 			drawTexturedModalRect(2, 5, 5, 87, 72, 54);			//in

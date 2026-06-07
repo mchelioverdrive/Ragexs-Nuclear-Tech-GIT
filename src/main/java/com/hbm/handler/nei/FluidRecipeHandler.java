@@ -16,7 +16,7 @@ import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.ItemStack;
 
-public class FluidRecipeHandler extends TemplateRecipeHandler implements ICompatNHNEI {
+public class FluidRecipeHandler extends SafeTemplateRecipeHandler implements ICompatNHNEI {
 	@Override
 	public ItemStack[] getMachinesForRecipe() {
 		return new ItemStack[]{
@@ -36,18 +36,19 @@ public class FluidRecipeHandler extends TemplateRecipeHandler implements ICompat
 
     public class SmeltingSet extends TemplateRecipeHandler.CachedRecipe
     {
-    	PositionedStack input;
+	PositionedStack input;
         PositionedStack result;
 
         public SmeltingSet(ItemStack input, ItemStack result) {
-        	input.stackSize = 1;
-            this.input = new PositionedStack(input, 83 - 27 - 18 + 1, 5 + 18 + 1);
-            this.result = new PositionedStack(result, 83 + 27 + 18 + 1 - 18, 5 + 18 + 1);
+	input = NEISafe.copy(input);
+	if(input != null) input.stackSize = 1;
+            this.input = NEISafe.positionedStack(input, 83 - 27 - 18 + 1, 5 + 18 + 1);
+            this.result = NEISafe.positionedStack(result, 83 + 27 + 18 + 1 - 18, 5 + 18 + 1);
         }
 
         @Override
 		public List<PositionedStack> getIngredients() {
-            return getCycledIngredients(cycleticks / 48, Arrays.asList(new PositionedStack[] {input}));
+            return NEISafe.getCycledIngredients(this, cycleticks / 48, Arrays.asList(new PositionedStack[] {input}));
         }
 
         @Override
@@ -106,13 +107,13 @@ public class FluidRecipeHandler extends TemplateRecipeHandler implements ICompat
 	}
 
 	private boolean compareFluidStacks(ItemStack sta1, ItemStack sta2) {
-		return sta1.getItem() == sta2.getItem() && sta1.getItemDamage() == sta2.getItemDamage();
+		return NEISafe.isValid(sta1) && NEISafe.isValid(sta2) && sta1.getItem() == sta2.getItem() && sta1.getItemDamage() == sta2.getItemDamage();
 	}
 
     @Override
     public Class<? extends GuiContainer> getGuiClass() {
         //return GUIMachineShredder.class;
-    	return null;
+	return null;
     }
 
     @Override

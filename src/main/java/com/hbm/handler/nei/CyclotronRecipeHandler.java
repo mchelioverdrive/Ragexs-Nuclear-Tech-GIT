@@ -18,7 +18,7 @@ import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.ItemStack;
 
-public class CyclotronRecipeHandler extends TemplateRecipeHandler implements ICompatNHNEI {
+public class CyclotronRecipeHandler extends SafeTemplateRecipeHandler implements ICompatNHNEI {
 	@Override
 	public ItemStack[] getMachinesForRecipe() {
 		return new ItemStack[]{
@@ -36,21 +36,23 @@ public class CyclotronRecipeHandler extends TemplateRecipeHandler implements ICo
 
     public class SmeltingSet extends TemplateRecipeHandler.CachedRecipe
     {
-    	PositionedStack input1;
+	PositionedStack input1;
 		PositionedStack input2;
         PositionedStack result;
 
         public SmeltingSet(ItemStack input1, ItemStack input2, ItemStack result) {
-        	input1.stackSize = 1;
-        	input2.stackSize = 1;
-            this.input1 = new PositionedStack(input1, 66 - 45, 6 + 18);
-            this.input2 = new PositionedStack(input2, 66 + 9, 42 - 18);
-            this.result = new PositionedStack(result, 129, 24);
+	input1 = NEISafe.copy(input1);
+	input2 = NEISafe.copy(input2);
+	if(input1 != null) input1.stackSize = 1;
+	if(input2 != null) input2.stackSize = 1;
+            this.input1 = NEISafe.positionedStack(input1, 66 - 45, 6 + 18);
+            this.input2 = NEISafe.positionedStack(input2, 66 + 9, 42 - 18);
+            this.result = NEISafe.positionedStack(result, 129, 24);
         }
 
         @Override
 		public List<PositionedStack> getIngredients() {
-            return getCycledIngredients(cycleticks / 48, Arrays.asList(new PositionedStack[] {input1, input2}));
+            return NEISafe.getCycledIngredients(this, cycleticks / 48, Arrays.asList(new PositionedStack[] {input1, input2}));
         }
 
         @Override
@@ -127,7 +129,7 @@ public class CyclotronRecipeHandler extends TemplateRecipeHandler implements ICo
     @Override
     public Class<? extends GuiContainer> getGuiClass() {
         //return GUITestDiFurnace.class;
-    	return null;
+	return null;
     }
 
     @Override

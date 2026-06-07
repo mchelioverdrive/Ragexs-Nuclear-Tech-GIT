@@ -22,7 +22,7 @@ import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.ItemStack;
 
-public class ChemplantRecipeHandler extends TemplateRecipeHandler implements ICompatNHNEI {
+public class ChemplantRecipeHandler extends SafeTemplateRecipeHandler implements ICompatNHNEI {
 
 	public LinkedList<RecipeTransferRect> transferRectsRec = new LinkedList<RecipeTransferRect>();
 	public LinkedList<RecipeTransferRect> transferRectsGui = new LinkedList<RecipeTransferRect>();
@@ -49,60 +49,62 @@ public class ChemplantRecipeHandler extends TemplateRecipeHandler implements ICo
 		PositionedStack template;
 
 		public RecipeSet(ChemRecipe recipe) {
-			
+
 			for(int i = 0; i < recipe.inputs.length; i++) {
 				AStack in = recipe.inputs[i];
 				if(in == null) continue;
-				this.itemIn[i] = new PositionedStack(in.extractForNEI(), 30 + (i % 2) * 18, 24 + (i / 2) * 18);
+				this.itemIn[i] = NEISafe.positionedStack(in.extractForNEI(), 30 + (i % 2) * 18, 24 + (i / 2) * 18);
 			}
-			
+
 			for(int i = 0; i < recipe.inputFluids.length; i++) {
 				FluidStack in = recipe.inputFluids[i];
 				if(in == null) continue;
 				ItemStack drop = ItemFluidIcon.make(in);
-				this.fluidIn[i] = new PositionedStack(drop, 30 + (i % 2) * 18, 6);
+				this.fluidIn[i] = NEISafe.positionedStack(drop, 30 + (i % 2) * 18, 6);
 			}
-			
+
 			for(int i = 0; i < recipe.outputs.length; i++) {
 				ItemStack out = recipe.outputs[i];
 				if(out == null) continue;
-				this.itemOut[i] = new PositionedStack(out, 120 + (i % 2) * 18, 24 + (i / 2) * 18);
+				this.itemOut[i] = NEISafe.positionedStack(out, 120 + (i % 2) * 18, 24 + (i / 2) * 18);
 			}
-			
+
 			for(int i = 0; i < recipe.outputFluids.length; i++) {
 				FluidStack out = recipe.outputFluids[i];
 				if(out == null) continue;
 				ItemStack drop = ItemFluidIcon.make(out);
-				this.fluidOut[i] = new PositionedStack(drop, 120 + (i % 2) * 18, 6);
+				this.fluidOut[i] = NEISafe.positionedStack(drop, 120 + (i % 2) * 18, 6);
 			}
-			
-			this.template = new PositionedStack(new ItemStack(ModItems.chemistry_template, 1, recipe.getId()), 84, 6);
+
+			this.template = NEISafe.positionedStack(new ItemStack(ModItems.chemistry_template, 1, recipe.getId()), 84, 6);
 		}
 
 		@Override
 		public List<PositionedStack> getIngredients() {
 			List<PositionedStack> stacks = new ArrayList<PositionedStack>();
-			
+
 			for(PositionedStack stack : itemIn) if(stack != null) stacks.add(stack);
 			for(PositionedStack stack : fluidIn) if(stack != null) stacks.add(stack);
 			stacks.add(template);
-			
-			return getCycledIngredients(cycleticks / 20, stacks);
+
+			return NEISafe.getCycledIngredients(this, cycleticks / 20, stacks);
 		}
 
 		@Override
 		public List<PositionedStack> getOtherStacks() {
 			List<PositionedStack> stacks = new ArrayList<PositionedStack>();
-			
+
 			for(PositionedStack stack : itemOut) if(stack != null) stacks.add(stack);
 			for(PositionedStack stack : fluidOut) if(stack != null) stacks.add(stack);
 			stacks.add(template);
-			
-			return stacks;
+
+			return NEISafe.cleanPositionedList(stacks);
 		}
 
 		@Override
 		public PositionedStack getResult() {
+			for(PositionedStack stack : itemOut) if(NEISafe.isValid(stack)) return stack;
+			for(PositionedStack stack : fluidOut) if(NEISafe.isValid(stack)) return stack;
 			return null;
 		}
 	}
@@ -119,9 +121,9 @@ public class ChemplantRecipeHandler extends TemplateRecipeHandler implements ICo
 
 	@Override
 	public void loadCraftingRecipes(String outputId, Object... results) {
-		
+
 		if((outputId.equals("chemistry")) && getClass() == ChemplantRecipeHandler.class) {
-			
+
 			for(ChemRecipe recipe : ChemplantRecipes.recipes) {
 				this.arecipes.add(new RecipeSet(recipe));
 			}
@@ -135,20 +137,20 @@ public class ChemplantRecipeHandler extends TemplateRecipeHandler implements ICo
 
 		outer:
 		for(ChemRecipe recipe : ChemplantRecipes.recipes) {
-			
+
 			for(ItemStack out : recipe.outputs) {
-				
+
 				if(out != null && NEIServerUtils.areStacksSameTypeCrafting(result, out)) {
 					this.arecipes.add(new RecipeSet(recipe));
 					continue outer;
 				}
 			}
-			
+
 			for(FluidStack out : recipe.outputFluids) {
-				
+
 				if(out != null) {
 					ItemStack drop = ItemFluidIcon.make(out.type, out.fill);
-					
+
 					if(compareFluidStacks(result, drop)) {
 						this.arecipes.add(new RecipeSet(recipe));
 						continue outer;
@@ -172,12 +174,12 @@ public class ChemplantRecipeHandler extends TemplateRecipeHandler implements ICo
 
 		outer:
 		for(ChemRecipe recipe : ChemplantRecipes.recipes) {
-			
+
 			for(AStack in : recipe.inputs) {
-				
+
 				if(in != null) {
 					List<ItemStack> stacks = in.extractForNEI();
-					
+
 					for(ItemStack stack : stacks) {
 						if(NEIServerUtils.areStacksSameTypeCrafting(ingredient, stack)) {
 							this.arecipes.add(new RecipeSet(recipe));
@@ -186,12 +188,12 @@ public class ChemplantRecipeHandler extends TemplateRecipeHandler implements ICo
 					}
 				}
 			}
-			
+
 			for(FluidStack in : recipe.inputFluids) {
-				
+
 				if(in != null) {
 					ItemStack drop = ItemFluidIcon.make(in.type, in.fill);
-					
+
 					if(compareFluidStacks(ingredient, drop)) {
 						this.arecipes.add(new RecipeSet(recipe));
 						continue outer;
@@ -202,7 +204,7 @@ public class ChemplantRecipeHandler extends TemplateRecipeHandler implements ICo
 	}
 
 	private boolean compareFluidStacks(ItemStack sta1, ItemStack sta2) {
-		return sta1.getItem() == sta2.getItem() && sta1.getItemDamage() == sta2.getItemDamage();
+		return NEISafe.isValid(sta1) && NEISafe.isValid(sta2) && sta1.getItem() == sta2.getItem() && sta1.getItemDamage() == sta2.getItemDamage();
 	}
 
 	@Override

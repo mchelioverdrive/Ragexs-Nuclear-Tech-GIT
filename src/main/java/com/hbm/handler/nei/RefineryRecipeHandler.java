@@ -18,7 +18,7 @@ import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.ItemStack;
 
-public class RefineryRecipeHandler extends TemplateRecipeHandler implements ICompatNHNEI {
+public class RefineryRecipeHandler extends SafeTemplateRecipeHandler implements ICompatNHNEI {
 
 	@Override
 	public ItemStack[] getMachinesForRecipe() {
@@ -43,18 +43,19 @@ public class RefineryRecipeHandler extends TemplateRecipeHandler implements ICom
 		PositionedStack result5;
 
 		public SmeltingSet(ItemStack input, ItemStack result1, ItemStack result2, ItemStack result3, ItemStack result4, ItemStack result5) {
-			input.stackSize = 1;
-			this.input = new PositionedStack(input, 21 + 27, 6 + 18);
-			this.result1 = new PositionedStack(result1, 129 - 18, 6);
-			this.result2 = new PositionedStack(result2, 147 - 18, 6 + 9);
-			this.result3 = new PositionedStack(result3, 129 - 18, 42 - 18);
-			this.result4 = new PositionedStack(result4, 147 - 18, 42 - 9);
-			this.result5 = new PositionedStack(result5, 147 - 36, 42);
+			input = NEISafe.copy(input);
+			if(input != null) input.stackSize = 1;
+			this.input = NEISafe.positionedStack(input, 21 + 27, 6 + 18);
+			this.result1 = NEISafe.positionedStack(result1, 129 - 18, 6);
+			this.result2 = NEISafe.positionedStack(result2, 147 - 18, 6 + 9);
+			this.result3 = NEISafe.positionedStack(result3, 129 - 18, 42 - 18);
+			this.result4 = NEISafe.positionedStack(result4, 147 - 18, 42 - 9);
+			this.result5 = NEISafe.positionedStack(result5, 147 - 36, 42);
 		}
 
 		@Override
 		public List<PositionedStack> getIngredients() {
-			return getCycledIngredients(cycleticks / 48, Arrays.asList(new PositionedStack[] { input }));
+			return NEISafe.getCycledIngredients(this, cycleticks / 48, Arrays.asList(new PositionedStack[] { input }));
 		}
 
 		@Override
@@ -64,7 +65,7 @@ public class RefineryRecipeHandler extends TemplateRecipeHandler implements ICom
 			stacks.add(result3);
 			stacks.add(result4);
 			stacks.add(result5);
-			return stacks;
+			return NEISafe.cleanPositionedList(stacks);
 		}
 
 		@Override
@@ -72,7 +73,7 @@ public class RefineryRecipeHandler extends TemplateRecipeHandler implements ICom
 			return result1;
 		}
 	}
-    
+
 	@Override
 	public String getRecipeName() {
 		return "Refinery";
@@ -92,15 +93,15 @@ public class RefineryRecipeHandler extends TemplateRecipeHandler implements ICom
 	public TemplateRecipeHandler newInstance() {
 		return super.newInstance();
 	}
-	
+
 	@Override
 	public void loadCraftingRecipes(String outputId, Object... results) {
 		if ((outputId.equals("refinery")) && getClass() == RefineryRecipeHandler.class) {
 			Map<Object, Object[]> recipes = RefineryRecipes.getRefineryRecipe();
 			for (Map.Entry<Object, Object[]> recipe : recipes.entrySet()) {
-				this.arecipes.add(new SmeltingSet((ItemStack)recipe.getKey(), 
-						(ItemStack)recipe.getValue()[0], (ItemStack)recipe.getValue()[1], 
-						(ItemStack)recipe.getValue()[2], (ItemStack)recipe.getValue()[3], 
+				this.arecipes.add(new SmeltingSet((ItemStack)recipe.getKey(),
+						(ItemStack)recipe.getValue()[0], (ItemStack)recipe.getValue()[1],
+						(ItemStack)recipe.getValue()[2], (ItemStack)recipe.getValue()[3],
 						(ItemStack)recipe.getValue()[4]));
 			}
 		} else {
@@ -112,14 +113,14 @@ public class RefineryRecipeHandler extends TemplateRecipeHandler implements ICom
 	public void loadCraftingRecipes(ItemStack result) {
 		Map<Object, Object[]> recipes = RefineryRecipes.getRefineryRecipe();
 		for (Map.Entry<Object, Object[]> recipe : recipes.entrySet()) {
-			if (compareFluidStacks((ItemStack)recipe.getValue()[0], result) || 
-					compareFluidStacks((ItemStack)recipe.getValue()[1], result) || 
-					compareFluidStacks((ItemStack)recipe.getValue()[2], result) || 
-					compareFluidStacks((ItemStack)recipe.getValue()[3], result) || 
+			if (compareFluidStacks((ItemStack)recipe.getValue()[0], result) ||
+					compareFluidStacks((ItemStack)recipe.getValue()[1], result) ||
+					compareFluidStacks((ItemStack)recipe.getValue()[2], result) ||
+					compareFluidStacks((ItemStack)recipe.getValue()[3], result) ||
 					compareFluidStacks((ItemStack)recipe.getValue()[4], result))
-				this.arecipes.add(new SmeltingSet((ItemStack)recipe.getKey(), 
-						(ItemStack)recipe.getValue()[0], (ItemStack)recipe.getValue()[1], 
-						(ItemStack)recipe.getValue()[2], (ItemStack)recipe.getValue()[3], 
+				this.arecipes.add(new SmeltingSet((ItemStack)recipe.getKey(),
+						(ItemStack)recipe.getValue()[0], (ItemStack)recipe.getValue()[1],
+						(ItemStack)recipe.getValue()[2], (ItemStack)recipe.getValue()[3],
 						(ItemStack)recipe.getValue()[4]));
 		}
 	}
@@ -138,15 +139,15 @@ public class RefineryRecipeHandler extends TemplateRecipeHandler implements ICom
 		Map<Object, Object[]> recipes = RefineryRecipes.getRefineryRecipe();
 		for (Map.Entry<Object, Object[]> recipe : recipes.entrySet()) {
 			if (compareFluidStacks(ingredient, (ItemStack)recipe.getKey()))
-				this.arecipes.add(new SmeltingSet((ItemStack)recipe.getKey(), 
-						(ItemStack)recipe.getValue()[0], (ItemStack)recipe.getValue()[1], 
-						(ItemStack)recipe.getValue()[2], (ItemStack)recipe.getValue()[3], 
-						(ItemStack)recipe.getValue()[4]));				
+				this.arecipes.add(new SmeltingSet((ItemStack)recipe.getKey(),
+						(ItemStack)recipe.getValue()[0], (ItemStack)recipe.getValue()[1],
+						(ItemStack)recipe.getValue()[2], (ItemStack)recipe.getValue()[3],
+						(ItemStack)recipe.getValue()[4]));
 		}
 	}
-	
+
 	private boolean compareFluidStacks(ItemStack sta1, ItemStack sta2) {
-		return sta1.getItem() == sta2.getItem() && sta1.getItemDamage() == sta2.getItemDamage();
+		return NEISafe.isValid(sta1) && NEISafe.isValid(sta2) && sta1.getItem() == sta2.getItem() && sta1.getItemDamage() == sta2.getItemDamage();
 	}
 
 	@Override
