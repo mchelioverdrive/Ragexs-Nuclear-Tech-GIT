@@ -13,6 +13,7 @@ import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.INBTPacketReceiver;
 import com.hbm.tileentity.TileEntityMachinePolluting;
 import com.hbm.util.CompatEnergyControl;
+import com.hbm.util.FurnaceGasEmission;
 
 import api.hbm.fluid.IFluidStandardSender;
 import api.hbm.tile.IInfoProviderEC;
@@ -200,6 +201,7 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 
 			if(canProcess()) {
 
+				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
 				//fuel -= extension ? 2 : 1;
 				fuel -= 1; //switch it up on me, fuel efficiency, on fumes i'm running - running - running - running
 				progress += extension ? 3 : 1;
