@@ -13,6 +13,7 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -22,6 +23,12 @@ public class BlockGasMonoxide extends BlockGasBase {
 	private static final String LAST_EXPOSURE_KEY = "hbmMonoxideLastExposure";
 	private static final int VENT_SEARCH_RANGE = 5;
 	private static final int VENT_SEARCH_LIMIT = 128;
+	private static final int EXPOSURE_PER_TICK = 3;
+	private static final int CONFUSION_THRESHOLD = 40;
+	private static final int WEAKNESS_THRESHOLD = 100;
+	private static final int DAMAGE_THRESHOLD = 160;
+	private static final int SEVERE_DAMAGE_THRESHOLD = 360;
+	private static final int MAX_EXPOSURE = 1200;
 
 	public BlockGasMonoxide() {
 		super(0.1F, 0.1F, 0.1F);
@@ -41,7 +48,7 @@ public class BlockGasMonoxide extends BlockGasBase {
 		if(lastExposure == now) return;
 
 		if(lastExposure > 0 && now - lastExposure > 5) {
-			exposure = Math.max(0, exposure - (int) Math.min(now - lastExposure, Integer.MAX_VALUE));
+			exposure = Math.max(0, exposure - (int) Math.min((now - lastExposure) / 2, Integer.MAX_VALUE));
 		}
 
 		data.setLong(LAST_EXPOSURE_KEY, now);
@@ -52,12 +59,14 @@ public class BlockGasMonoxide extends BlockGasBase {
 			return;
 		}
 
-		exposure = Math.min(exposure + 1, 600);
+		exposure = Math.min(exposure + EXPOSURE_PER_TICK, MAX_EXPOSURE);
 		data.setInteger(EXPOSURE_KEY, exposure);
 
-		if(exposure >= 100) living.addPotionEffect(new PotionEffect(Potion.confusion.id, 60, 0));
-		if(exposure >= 180) living.addPotionEffect(new PotionEffect(Potion.weakness.id, 60, 0));
-		if(exposure >= 240 && exposure % 40 == 0) living.attackEntityFrom(ModDamageSource.monoxide, 1);
+		if(exposure >= CONFUSION_THRESHOLD) living.addPotionEffect(new PotionEffect(Potion.confusion.id, 200, 0));
+		if(exposure >= WEAKNESS_THRESHOLD) living.addPotionEffect(new PotionEffect(Potion.weakness.id, 120, MathHelper.clamp_int(exposure / 300, 0, 2)));
+		if(exposure >= DAMAGE_THRESHOLD && exposure % 20 < EXPOSURE_PER_TICK) {
+			living.attackEntityFrom(ModDamageSource.monoxide, exposure >= SEVERE_DAMAGE_THRESHOLD ? 2 : 1);
+		}
 	}
 
 	@Override
