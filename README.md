@@ -1,207 +1,232 @@
-# Ragex's Nuclear Tech Mod for Minecraft 1.7.10
+# Ragex's Nuclear Tech Mod
 
-(RTM)
+Ragex's Nuclear Tech Mod (RNTM) is a Minecraft Forge 1.7.10 fork of HBM's Nuclear Tech Mod rebuilt around a more grounded nuclear-technology fantasy. The project goal is not simply to add more late-game content: it removes or de-emphasizes unrealistic/fantasy material from the original project and replaces it with real-world counterparts, plausible industrial processes, or grounded science-fiction systems.
 
-Hi, i am memeing things into existence, dont mind me! im just the bent fork at the end of the table -JamesH_2
+RNTM is intended for players, pack makers, and server operators who want NTM-style scale with a stronger focus on realistic nuclear engineering, chemistry, radiation, ore/oil geology, space environments, and configurable server warfare. Expect more involved processing chains, more reactor and hazard management, and fewer joke/fantasy shortcuts than upstream NTM.
 
-Hello I am RagexPrince683. You may know me from such fantastical tales such as 'the antagonist of NTM' 'ragex broke his pc by sticking his dick in the ram slot' or some other made up nonsense that the absolute super dense black hole that plagues the original HBM's 'nuclear tech' mods 'community' and I put those quotes for good reason. How are you going to label yourself as a nuclear tech mod if there is 0 focus on nuclear tech, and just more ripping from other games? I'm not insulting HBM with this repo, I'm not insulting James with this repo. I like both of their works. However, if you're going to come on this repo and act like a jackass you're not welcome here. I'm not gonna even acknowledge your emotionally charged dick riding for a meme mod that has the capability to simulate legitimate real world technology inside of minecraft. Just because you don't like it doesn't matter. If you're really going to come here and waste your fucking time typing up a wall of shit all day over a mod you didn't make, you deserve to be mad. Infact, how about you get mad at mojang for adding real life animals to the game? or Microsoft for ruining the minecraft scene outside of Java? You come in here and you're mad at me telling me to in essence 'go outside' my friend I am not the one so worked up over a mod you do not own.
+> **Minecraft version:** 1.7.10 only. This project does not target modern Minecraft versions.
 
-I do not care if you don't like realism.
+## Project goals
 
-I don't care if you think my efforts are in vain.
+- **Ground the mod in real or plausible technology.** Fantasy or heavily unrealistic systems from the original project are removed, renamed, reworked, or replaced where practical.
+- **Make nuclear engineering the core identity.** Reactors, radiation, isotopes, fallout, enrichment, treatment, and contamination cleanup are central progression and server systems.
+- **Expand chemistry and industry.** RNTM emphasizes large chemical process chains, periodic-table materials, isotope separation, blast-furnace progression, distillation, and fluid handling.
+- **Make worlds and space feel physical.** Planetary bodies, gas giants, the Sun, orbits, bedrock oil, and bedrock ore deposits are treated as gameplay systems rather than purely decorative dimensions.
+- **Keep dangerous systems configurable.** Server owners can tune or disable nukes, missiles, radiation, worldgen, mobs, dimensions, recipes, and client presentation.
 
-I don't even care how many more commits behind this repo is. I am going to be tweaking things to my liking/for external use.
+## What changed from original HBM's Nuclear Tech Mod
 
-THIS FORK'S DL LINKS: 
+Highlights from the RTM-era direction include:
 
-[RTM MODRINTH](https://modrinth.com/mod/ragexs-nuclear-tech)
+- **Nuclear and radiation overhaul:** reactor systems were reworked, a Molten Salt Reactor was added, WATZ was converted into a Pebble Bed Reactor (PBR), radiation treatment was updated around items such as Prussian Blue IVs, fallout stacking/cleanup became harsher, and more hazard sources were added.
+- **Chemistry expansion:** the fork adds many new chemical processes, expands periodic-table coverage, reworks distillation and isotope separation, improves SILEX enrichment realism, and adds numerous industrial production chains.
+- **World and space rework:** planetary bodies were reworked, gas giant dimensions and Sun travel were added, orbit/time calculations were fixed, and oil/ore deposits were moved toward bedrock-based generation.
+- **Industry and progression rebalance:** steam and fluid systems were rebalanced, blast-furnace usage is emphasized earlier, furnace smelting was adjusted, extra RTG variants were added, the Nuclear Furnace recipe was removed, and research reactors were re-enabled in 528 mode.
+- **Weapons and warfare changes:** CIWS support was re-added/reworked, bombsite support for CSGO Charge was added, and server-side nuclear/missile timing controls exist for admins.
+- **Gameplay and compatibility cleanup:** unrealistic features and recipes such as Power Fist recipes were removed or reduced, while grounded science-fiction content was preserved; Angelica/GTNH NEI compatibility and many rendering/crash fixes were added.
 
-[RTM CF](https://www.curseforge.com/minecraft/mc-mods/ragexs-nuclear-tech)
+See [docs/upstream-changes.md](docs/upstream-changes.md) for a more focused comparison against the original project.
 
-ORIGINAL MOD LINKS:
+## Major feature areas
 
-[NTM Space on Modrinth](https://modrinth.com/mod/ntmspace)
+- **Realism-focused nuclear technology:** MSR, PBR, RBMK/PWR-style systems, research reactors, nuclear fuels, waste handling, meltdowns, fallout, radiation, and nuclear explosions.
+- **Industrial chemistry:** large chemical production chains, isotope work, distillation, SILEX enrichment, acids, fuels, fluids, and periodic-table-driven materials.
+- **Grounded resources:** realistic ore and oil deposit concepts, bedrock extraction, expanded ore processing, metallurgy, and blast-furnace-centered progression.
+- **Power and fluids:** mod-native energy networks, RF-compatible APIs, fluid tanks, fluid traits, gases, fuels, coolants, corrosion, pollution, and radioactive fluid behavior.
+- **Space and celestial bodies:** revised planetary bodies, gas giants, Sun travel, orbital stations, satellites, atmosphere and water-table logic, and station administration commands.
+- **Weapons, hazards, and warfare controls:** guns, explosives, missiles, CIWS, fallout rain, biome damage from detonations, radiation hotspots, scheduled nuke toggles, and server moderation commands.
+- **Configuration and pack tooling:** JSON recipe overrides, custom machines, fluid traits, loot pools, machine-value JSONs, and extensive Forge config categories.
+- **Legacy 1.7.10 compatibility:** NotEnoughItems integration at build/runtime, GTNH NEI fork compatibility notes, OpenComputers API support, Inventory Tweaks compile-time support, Angelica rendering compatibility hooks, and selected legacy-mod compatibility hooks.
 
-[NTM on CurseForge](https://minecraft.curseforge.com/projects/hbms-nuclear-tech-mod?gameCategorySlug=mc-mods&projectID=235439)
+## Download links and resources
 
-[Official NTM Wiki](https://nucleartech.wiki/wiki/Main_Page)
+- **Modrinth:** <https://modrinth.com/mod/ragexs-nuclear-tech>
+- **CurseForge:** <https://www.curseforge.com/minecraft/mc-mods/ragexs-nuclear-tech>
+- **GitHub:** use this repository for source, issues, and development builds.
+- **Original NTM wiki:** <https://nucleartech.wiki/wiki/Main_Page>
+- **Original NTM / related projects:** see [docs/getting-started.md](docs/getting-started.md#related-projects).
 
-**This is for 1.7.10!** For 1.12, check out these projects:
+The original NTM wiki is useful for inherited mechanics, but RNTM intentionally changes progression, names, recipes, radiation behavior, reactors, space, and some item availability. Prefer this repository's docs and generated configs for RNTM-specific behavior.
 
-* NTM Reloaded: https://github.com/TheOriginalGolem/Hbm-s-Nuclear-Tech-GIT/releases
-* NTM Extended Edition (Alcater): https://github.com/Alcatergit/Hbm-s-Nuclear-Tech-GIT/releases
+## Screenshots
 
-For 1.18, try Martin's remake: https://codeberg.org/MartinTheDragon/Nuclear-Tech-Mod-Remake/releases
+Screenshots are not currently stored in this repository. Suggested placeholders for future documentation:
 
-## Downloading pre-compiled versions from GitHub
+| System | Suggested screenshot |
+| --- | --- |
+| Early industry | Starter ore processing and first machines |
+| Nuclear power | Safe reactor layout with control and cooling systems |
+| Space | Orbital station or planetary surface |
+| Hazards | Radiation/fallout or meteor impact example |
 
-Simply navigate to "Releases" on the right side of the page, download links for the compiled JAR as well as the corresponding source code are under the "Assets" category below the changelog. Make sure to review all changelogs when updating!
+## Installation
+
+### Client installation
+
+1. Install **Minecraft 1.7.10**.
+2. Install **Minecraft Forge 1.7.10-10.13.4.1614** or a compatible Forge 1.7.10 build.
+3. Download the RNTM jar from Modrinth, CurseForge, or a GitHub release.
+4. Put the jar in your `.minecraft/mods` folder.
+5. Start the game once so configuration files can generate.
+6. Optional but recommended: install NotEnoughItems for recipe browsing.
+
+### Dedicated server installation
+
+1. Install a Forge 1.7.10 dedicated server.
+2. Put the same RNTM jar in the server `mods` folder.
+3. Start the server once, then stop it after configuration files generate.
+4. Review `config/hbm.cfg`, `config/hbmConfig/*.json`, and `config/hbmRecipes/` templates before opening the world to players.
+5. Restart the server after changing startup-only configuration values.
+
+### Updating an existing world
+
+1. Back up the world, `config/hbm.cfg`, `config/hbmConfig/`, and `config/hbmRecipes/`.
+2. Read the changelog for world generation, dimension, recipe, machine, and registry changes.
+3. Replace the jar.
+4. Start once in a test copy and check the log for missing mappings or config errors.
+5. Only update the production world after the test copy loads correctly.
+
+## Dependencies and compatibility
+
+### Required
+
+- Minecraft **1.7.10**
+- Minecraft Forge **1.7.10-10.13.4.1614** or compatible Forge 1.7.10 runtime
+- Java **8**
+
+### Included or build-time APIs
+
+The source build declares CodeChickenCore, CodeChickenLib, NotEnoughItems, Inventory Tweaks, and OpenComputers API dependencies. Pack authors should test their exact modpack combination because legacy 1.7.10 dependency resolution can vary by launcher and repository availability.
+
+### Client and server requirements
+
+- The mod must be installed on **both client and server** for multiplayer.
+- Clients need the same mod jar as the server unless the server explicitly documents otherwise.
+- Client-only commands and visual configuration are only available on clients.
+- Server-side configuration, world generation, recipes, dimensions, and commands are controlled by the server.
+
+### Known platform warning
+
+The code contains a startup guard for Thermos/fork servers because Thermos tile-entity optimizations can break machine ticking. If you intentionally run Thermos, review the generated `hbm.cfg` Thermos option and the server's `tileentities.yml` before disabling the guard.
+
+## Configuration overview
+
+RNTM generates several configuration locations after first launch:
+
+| Path | Purpose |
+| --- | --- |
+| `config/hbm.cfg` | Main Forge configuration for general toggles, worldgen, nukes, machines, mobs, radiation, dimensions, pollution, and weapons. |
+| `config/hbmConfig/hbmClient.json` | Client display, HUD, tooltip, recoil, render, and debug options. Can be edited in game with `/ntmclient`. |
+| `config/hbmConfig/hbmMachines.json` | Dynamically generated machine values for configurable tile entities. |
+| `config/hbmConfig/hbmCustomMachines.json` | Custom multiblock machine definitions. |
+| `config/hbmConfig/hbmFluidTraits.json` | Fluid behavior traits such as heat, cooling, pollution, radiation, corrosion, and fuel behavior. |
+| `config/hbmConfig/hbmFallout.json` | Fallout block-transformation rules. A `_hbmFallout.json` template is generated until enabled. |
+| `config/hbmConfig/hbmItemPools.json` | Loot/item pool overrides. A `_hbmItemPools.json` template is generated until enabled. |
+| `config/hbmRecipes/` | JSON recipe templates and optional recipe overrides. Remove the leading underscore from a template filename to make it active. |
+
+Important gameplay toggles include:
+
+- `2.0RTM` in `hbm.cfg`: enables or disables nuclear warfare, primarily useful for servers.
+- `enable528Mode`: enables the current 528 progression/balance mode.
+- `enableLessBullshitMode`: easier progression mode; forced off when 528 mode is enabled.
+- `1.42_threadedAtmospheres`: moves atmosphere processing to a separate thread for performance.
+- `6.XX_enableChunkLoading`: allows procedural explosions to keep the central chunk loaded.
+- Dimension IDs and biome IDs in the dimensions/biome categories.
+
+See [docs/configuration.md](docs/configuration.md) for a fuller configuration guide.
+
+## Commands
+
+The server registers these commands:
+
+| Command | Purpose |
+| --- | --- |
+| `/ntmreload` | Reloads serializable recipes and item pools. |
+| `/ntmloadchunk <x> <z>` | Debugs tile entities in an unloaded chunk using block coordinates. |
+| `/ntmsatellites orbit|descend|list` | Manages launched satellites. |
+| `/ntmrad clear` and `/ntmrad set <amount>` | Clears or sets chunk radiation. |
+| `/ntmstations launch|tp|list|fetch` | Manages orbital station drives and station teleportation. |
+| `/ntmenablenukes true|false` | Enables or disables nuclear warfare at runtime. |
+| `/ntmenablenukes schedule true|false yyyy-MM-dd HH:mm` | Schedules a nuke toggle for a local server time. |
+| `/hbmbedrockdrop add|remove|list|clear` | Edits the in-memory bedrock excavator drop list. |
+
+Clients also register:
+
+| Command | Purpose |
+| --- | --- |
+| `/ntmclient help|list|reload|get|set` | Views and edits client JSON variables. |
+| `/dumpthreadsandcrashgame dump|crash` | Logs a thread dump and optionally exits the client. Debug use only. |
+
+See [docs/commands.md](docs/commands.md) for syntax, examples, and cautions.
+
+## Getting started
+
+New players should start with [docs/getting-started.md](docs/getting-started.md). In short:
+
+1. Use JEI/NEI-style recipe lookup where available, because the mod has many machines and intermediate materials.
+2. Explore for ores and early structures, then build a basic ore-processing line.
+3. Learn radiation protection before handling fuels, waste, and reactor components.
+4. Treat nuclear devices, high-radiation materials, and space systems as late-game content.
+5. Server operators should review configs before generating a long-term world.
+
+## Troubleshooting and FAQ
+
+### The game crashes or hangs on first launch.
+
+Confirm you are using Minecraft 1.7.10, Java 8, and a compatible Forge 1.7.10 runtime. If running a legacy server fork such as Thermos, review the Thermos warning above.
+
+### Recipes or loot edits are ignored.
+
+Recipe templates in `config/hbmRecipes/` are written with a leading underscore. Remove the underscore from the filename to enable that file. Item pools and fallout rules also use underscore-prefixed templates until you create the active JSON file.
+
+### Clients cannot join my server.
+
+Make sure all clients and the server use the same RNTM jar and compatible dependencies. Config differences that change registries, dimensions, or recipes can also cause issues.
+
+### How do I disable nukes on a server?
+
+Set `2.0RTM=false` in `config/hbm.cfg` before startup, or use `/ntmenablenukes false` at runtime. Use `/ntmenablenukes schedule false yyyy-MM-dd HH:mm` for a scheduled runtime change.
+
+### Can I remove worldgen after a world already exists?
+
+You can disable future generation, but already-generated chunks keep their blocks and structures. For major worldgen changes, start a new world or pre-generate carefully.
 
 ## Building from source
 
-Tired of waiting until the next version comes out? Here is a tutorial on how to compile the very newest version yourself:
-Please note that these installation instructions are assuming you're running Microsoft Windows operating system. Linux users should know what to do by looking at the same guide.
+Requirements:
 
- 1. Make sure you have JDK8 installed. If not, download it from [adoptium.net](https://adoptium.net/?variant=openjdk8&jvmVariant=hotspot)
- 2. If you don't have git installed, download&install it from [here](https://git-scm.com/downloads).
- 3. Open up "Git Bash":
-    * Press Windows Button, type "Git Bash" and press ENTER
- 4. Enter the directory where you would like the sources to be (advanced users can use any directory)
- ```bash
-     cd $HOME/Downloads
- ```
- 5. Download the source code:
- ```bash
-     git clone https://github.com/HbmMods/Hbm-s-Nuclear-Tech-GIT.git
- ```
- 4. Enter the source code directory
- ```bash
-     cd Hbm-s-Nuclear-Tech-GIT
- ```
- 5. Build the mod
- ```bash
-     ./gradlew build
- ```
- 6. Locate the mod file.
-    1. Open up your file explorer.
-    2. Navigate to the location where you downloaded the sources.
-       * If you exactly followed step 1, it should be `C:/Users/%USER%/Downloads`.
-    3. Enter the downloaded source tree.
-    4. Navigate to `build/libs`.
-    5. Grab the "HBM-NTM-<version>.jar" one.
-        * This is your mod file. You can install it like any other mod by putting it into your mods directory.
+- Java 8 JDK
+- Git
+- Network access to ForgeGradle and legacy Maven repositories
+
+```bash
+git clone <this-repository-url>
+cd Ragexs-Nuclear-Tech-GIT
+./gradlew build
+```
+
+The built jar is written to `build/libs/` with the `RX-RNTM` archive base name.
+
+For an IDE workspace:
+
+```bash
+./gradlew setupDecompWorkspace
+./gradlew eclipse
+```
+
+## Documentation map
+
+- [Getting Started](docs/getting-started.md)
+- [What Changed from Original NTM](docs/upstream-changes.md)
+- [Configuration Guide](docs/configuration.md)
+- [Command Reference](docs/commands.md)
+- [Server Administration Guide](docs/server-admin.md)
+- [Documentation Audit](docs/documentation-audit.md)
 
 ## Contributing
-If you want to make some changes to the mod, follow this guide:
-1. Follow steps 1-2 from *Building from source* section
-2. Create a directory where the repository will reside, using a name that is not "Hbm-s-Nuclear-Tech-GIT"
-3. Download the forge src from [here](https://files.minecraftforge.net/net/minecraftforge/forge/index_1.7.10.html) and extract it into the directory.
-4. Download the source code:
-  * Using Git Bash, enter wherever your directory is located:
-```bash
-    cd $HOME/Downloads
-```
-   * Download the source code:
-```bash
-    git clone https://github.com/HbmMods/Hbm-s-Nuclear-Tech-GIT.git
- ```
-   * Move or copy every file within the new folder into your directory, making sure to overwrite any files.
-   * Feel free to delete the remaining folder and rename your directory (such as "Hbm-s-Nuclear-Tech-GIT")
-5. Enter the source directory
-```bash
-    cd Hbm-s-Nuclear-Tech-GIT
-```
-6. Setup forge decompilation workspace
-```bash
-    ./gradlew setupDecompWorkspace
-```
-### Necessary for Eclipse users
-7. Generate eclipse files
-```bash
-    ./gradlew eclipse
-```
-8. Switch to the **eclipse** folder inside your directory as a workspace.
-9. If necessary, make sure that Eclipse is using the JDK8.
-   * On Linux, enter Windows>Preferences>Java>Installed JREs.
-      * Click search to navigate to /usr/lib/jvm and open it. Select the Java 8 JDK (e.g., java-8-openjdk).
-      * Afterwards, enter Execution Environment, select JavaSE-1.8, and select the jre listed as a **[perfect match]**
-   * On Windows, you may need to set your JAVA_HOME.
-      * Search for Environment Variables and click Edit the System Environment Variables.
-      * Click Environment Variables. Click new under System Variables.
-      * Enter **JAVA_HOME** under Variable Name and enter the path to your JDK 8 under Variable Value (e.g., C:\Program-Files\Java\jdk1.8.0_102).
-      * In Eclipse, now enter Windows>Preferences>Java>Installed JREs.
-      * Click **Add Standard VM**; in the JRE home, navigate to the directory where the JDK is installed, then click finish and select it.
-10. Code!
 
-## Compatibility notice
-NTM has certain behaviors intended to fix vanilla code or to increase compatibility in certain cases where it otherwise would not be possible. These behaviors have the potential of not playing well with other mods, and while no such cases are currently known, here's a list of them.
+Contributions should keep documentation aligned with source code. Before documenting a command, config key, or feature, verify it in the current codebase. For code changes, use Java 8-compatible syntax and test with the Gradle build where possible.
 
-### Thermos
-Thermos servers (along with its forks such as Crucible) have a "performance" feature that causes all tile entity ticking to slow down if there's no player present in the same chunk. For obvious reasons, this will heavily impact machines and cause phantom issues that, not having knowledge of this "performance" feature, are near impossible to diagnose. By default, NTM will crash on servers running the Thermos base code and print a lengthy message informing server owners about this "performance" feature as well as how to fix the issues it causes. The error message is printed in plain English on the top of the crash log, failure to read (as well as understand) it will leave the server inoperable.
+## License and credits
 
-### Optifine
-One of the most common "performance" mods on 1.7.10, Optifine, achieves an increase in performance by breaking small things in spots that are usually hard to notice, although this can cause severe issues with NTM. A short list of problems, along with some solutions, follows:
-* Get rid of Optifine and use one of the many [other, less intrusive performance mods](https://gist.github.com/makamys/7cb74cd71d93a4332d2891db2624e17c).
-* Blocks with connected textures may become invisible. This can be fixed by toggling triangulation (I do not know what or where this setting is, I just have been told that it exists and that it can fix the problem) or multicore chunk rendering (same here).
-* Entity "optimization" has a tendency to break chunkloading, this is especially noticeable with missiles which rely heavily on chunkloading to work, causing them to freeze mid-air. It's unclear what setting might fix this, and analysis of Optifine's source code (or rather, lack thereof) has not proven useful either.
-   * This issue will also cause orbital stations to never reach orbit, I can't emphasize enough how much pain and misery this "performance" mod will cause you, use Angelica instead.
-
-### Angelica
-In older versions, Angelica caused issues regarding model rendering, often times making 3D models transparent. Ever since the switch to VBOs, models work fine. Another issue was blocks with connected textures not rendering at all, but this too was fixed, meaning as of time of writing there are no major incompatibilities known with Angelica. However there a few minor issues that persist, but those can be fixed:
-* Often times when making a new world, all items appear as white squares. Somehow, scrolling though the NEI pages fixes this permanently
-* Reeds will render weirdly, this is an incompatibility with the "Compact Vertex Format" feature. Disabling it will make reeds look normal
-
-### Skybox chainloader
-NTM adds a few small things to the skybox using a custom skybox renderer. Minecraft can only have a single skybox renderer loaded, so setting the skybox to the NTM custom one would break compatibility with other mods' skyboxes. To mend this, NTM employs a **chainloader**. This chainloader will detect if a different skybox is loaded, save a reference to that skybox and then use NTM's skybox, which when used will also make sure to run the previous modded skybox renderer. In the event that NTM's skybox were to cause trouble, it can be disabled with the config option `1.31_enableSkyboxes`.
-
-### Custom world provider
-A world provider is a piece of code that minecraft can load to determine certain aspects of how the world should be handled, like light levels, sky color, day/night cycle, etc. In order for the Tom impact effects to work, NTM employs such a world provider, although this is known to cause issues with Hardcore Darkness. The world provider can be disabled with the config option `1.32_enableImpactWorldProvider`.
-
-### Stat re-registering
-An often overlooked aspect of Minecraft is its stats, the game keeps track of how many of an item were crafted, placed, broken, etc. By default, Minecraft can only handle vanilla items, modded items would not show up in the stats window. Forge does little to fix this, and since NTM has to keep track of certain things (such as the use of an acidizer for spawning Mask Man) it will run its own code which re-registers all stats for all modded items. In the event that re-registering causes issues, or another mod already does this better already, this behavior can be disabled with the config option `1.33_enableStatReRegistering`.
-
-### Keybind overlap
-An often annoying aspect of modded Minecraft is its keybinds. Even though multiple binds can be assigned the same key, all but one will show up as "conflicting" and only the non-conflicting one will work. Which one this is is usually arbitrary, and there is no reason to have such limitation. Often times keybinds are only applicable in certain scenarios, and a commonly found degree of overlap is within reason. Therefore, NTM will run its own key handling code which allows conflicting keybinds to work. If there should be any issues with this behavior, it can be disabled with the config option `1.34_enableKeybindOverlap`.
-
-### Render distance capping
-There is a common crash caused by Minecraft's render distance slider going out of bounds, this usually happens when uninstalling a mod that extends the render distance (like Optifine) or when downgrading the Minecraft version (newer versions have higher render distance caps). To prevent crashes, the mod will attempt to decrease the render distance if it's above 16 unless Optifine is installed. If this behavior is not desired (for example, because another mod that allows higher render distance is being used), it can be disabled with the config option `1.25_enableRenderDistCheck`.
-
-### Log spam caused by ComparableStack
-In some modpacks (exact mods needed to replicate this are unknown), it's possible that invalid registered items may cause problems for NEI handlers. To prevent crashes, the ComparableStack class used to represent stacks will default to a safe registered item, and print a log message. In certain situations, this may cause dozens of errors to be printed at once, potentially even lagging the game. If that happens, the log message (but not the error handling) can be disabled with the config option `1.28_enableSilentCompStackErrors`.
-
-### Sound system limit
-By default, the sound system only allows a limited amount of sounds to run at once (28 regular sounds and 4 streaming sounds), this causes issues when there's many machines running at once, since their looped sounds will constantly interrupt each other, causing them to immediately restart, which in some isolated cases has proven to cause massive lagspikes. To prevent this, NTM will increase the sound limit to 1000 regular sounds and 50 streaming sounds, this can be disabled with the config option `1.39_enableSoundExtension`.
-
-# License
-This software is licensed under the GNU Lesser General Public License version 3. In short: This software is free, you may run the software freely, create modified versions, distribute this software and distribute modified versions, as long as the modified software too has a free software license (with an exception for linking to this software, as stated by the "Lesser" part of the LGPL, where this may not be required). You win this round, Stallman. The full license can be found in the `LICENSE` and `LICENSE.LESSER` files.
-
-
-
-
-Glad it looks solid — definitely better than "Bob's instinctual detonation™" 😆
-
-Here's what I based the scaling on:
-Core principle:
-
-Blast radius ≈ cube root of yield, because explosive energy expands spherically in 3D space.
-
-🔧 Specifically, I used:
-Tsar Bomba = 50 Mt → scaled to your 500 block radius
-
-Everything else scaled using the cube root law:
-
-radius𝑋=500×(yield𝑋/50 Mt)^1/3
- 
-Then rounded to clean numbers for game use.
-
-📏 What kind of “radius”?
-It's loosely modeled on blast/fireball radius in meters, but abstracted for gameplay, so:
-
-Not exact fireball size (which is smaller than blast damage radius).
-
-Closer to severe blast damage range — where buildings are destroyed and death is near-certain.
-
-Example real-world:
-
-Little Boy (15 kt) had:
-
-~250 m fireball
-
-~1.5 km severe blast radius
-
-In-game, we picked ~40–45 blocks to feel meaningful but not insane.
-
-Why not use real meter-to-block conversion?
-Because Minecraft terrain and scale are abstract:
-
-1 block = 1 meter technically, but terrain is dense, and players move fast.
-
-A literal 2 km radius explosion in MC (2000 blocks) would be unplayable and dumb.
-
-So we strike a balance between:
-
-Realistic relative scaling (cube root of yields)
-
-Playable scale (500 max radius)
-
-Let me know if you want fallout area, airburst vs groundburst effects, or pressure estimates for lore.
+See [LICENSE](LICENSE), [LICENSE.LESSER](LICENSE.LESSER), Forge license files, and [gradle.properties](gradle.properties) credits for licensing and contributor information.
