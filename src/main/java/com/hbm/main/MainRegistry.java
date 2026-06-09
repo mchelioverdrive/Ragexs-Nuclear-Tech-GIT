@@ -23,7 +23,6 @@ import com.hbm.handler.imc.IMCHandler;
 import com.hbm.handler.pollution.PollutionHandler;
 import com.hbm.handler.radiation.ChunkRadiationManager;
 import com.hbm.hazard.HazardRegistry;
-import com.hbm.integration.guideapi.RTMGuideAPIIntegration;
 import com.hbm.inventory.FluidContainerRegistry;
 import com.hbm.inventory.OreDictManager;
 import com.hbm.inventory.OreDictManager.DictFrame;
@@ -994,7 +993,6 @@ public class MainRegistry {
 		BedrockOre.init();
 
 		Compat.handleRailcraftNonsense();
-		RTMGuideAPIIntegration.registerManual();
 		SuicideThreadDump.register();
 		CommandReloadClient.register();
 
