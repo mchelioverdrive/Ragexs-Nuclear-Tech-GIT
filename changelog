@@ -1,3 +1,12 @@
+## Documentation
+* Refocused the README and docs on Ragex's Nuclear Tech's purpose as a realism-oriented fork of original NTM.
+* Added a dedicated upstream comparison guide covering removed/reworked fantasy elements, nuclear/radiation changes, chemistry expansion, space/world changes, progression rebalances, warfare controls, and compatibility cleanup.
+
+## Documentation
+* Rewrote the README with a clearer project overview, installation instructions, dependency and compatibility notes, configuration overview, command summary, troubleshooting, and resource links.
+* Added documentation under `docs/` for getting started, configuration, commands, server administration, and documentation audit findings.
+* Documented discovered commands, config files, JSON template behavior, server safety notes, and remaining documentation gaps.
+
 ## Added
 * Mun cows! These rare cows are found on the Mun, they moonwalk and drop cheese. Directly inspired by the 2023 April Fools update
 * Basic atmospheric chemistry
