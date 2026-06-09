@@ -48,17 +48,6 @@ See [docs/upstream-changes.md](docs/upstream-changes.md) for a more focused comp
 
 The original NTM wiki is useful for inherited mechanics, but RNTM intentionally changes progression, names, recipes, radiation behavior, reactors, space, and some item availability. Prefer this repository's docs and generated configs for RNTM-specific behavior.
 
-## Screenshots
-
-Screenshots are not currently stored in this repository. Suggested placeholders for future documentation:
-
-| System | Suggested screenshot |
-| --- | --- |
-| Early industry | Starter ore processing and first machines |
-| Nuclear power | Safe reactor layout with control and cooling systems |
-| Space | Orbital station or planetary surface |
-| Hazards | Radiation/fallout or meteor impact example |
-
 ## Installation
 
 ### Client installation
