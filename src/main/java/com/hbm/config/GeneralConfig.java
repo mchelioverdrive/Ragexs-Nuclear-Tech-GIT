@@ -37,6 +37,7 @@ public class GeneralConfig {
 	public static boolean enableFluidContainerCompat = true;
 	public static boolean enableMOTD = true;
 	public static boolean enableGuideBook = true;
+	public static boolean enableRTMGuideBook = true;
 	public static boolean enableSteamParticles = true;
 	public static boolean enableSoundExtension = true;
 	public static boolean enableMekanismChanges = true;
@@ -116,6 +117,7 @@ public class GeneralConfig {
 		enableFluidContainerCompat = config.get(CATEGORY_GENERAL, "1.35_enableFluidContainerCompat", true, "If enabled, fluid containers will be oredicted and interchangable in recipes with other mods' containers, as well as TrainCraft's diesel being considered a valid diesel canister.").getBoolean(true);
 		enableMOTD = config.get(CATEGORY_GENERAL, "1.36_enableMOTD", true, "If enabled, shows the 'Loaded mod!' chat message as well as update notifications when joining a world").getBoolean(true);
 		enableGuideBook = config.get(CATEGORY_GENERAL, "1.37_enableGuideBook", true, "If enabled, gives players the guide book when joining the world for the first time").getBoolean(true);
+		enableRTMGuideBook = config.get(CATEGORY_GENERAL, "1.37a_enableRTMGuideAPIManual", true, "If enabled, registers the optional RTM Manual / Railcraft Technical Manual when Guide-API is installed.").getBoolean(true);
 		enableSteamParticles = config.get(CATEGORY_GENERAL, "1.38_enableSteamParticles", true, "If disabled, auxiliary cooling towers and large cooling towers will not emit steam particles when in use.").getBoolean(true);
 		enableSoundExtension = config.get(CATEGORY_GENERAL, "1.39_enableSoundExtension", true, "If enabled, will change the limit for how many sounds can play at once.").getBoolean(true);
 		enableMekanismChanges = config.get(CATEGORY_GENERAL, "1.40_enableMekanismChanges", true, "If enabled, will change some of Mekanism's recipes.").getBoolean(true);
