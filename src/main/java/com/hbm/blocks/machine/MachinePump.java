@@ -100,7 +100,10 @@ public class MachinePump extends BlockDummyable implements ITooltipProvider, ILo
 		//}
 
 		if(!((TileEntityMachinePumpBase) te).onGround) {
-			text.add("&[" + (BobMathUtil.getBlink() ? 0xff0000 : 0xffff00) + "&]! ! ! NO VALID SURFACE 3x3x3 GROUND NEEDED ! ! !");
+			text.add("&[" + (BobMathUtil.getBlink() ? 0xff0000 : 0xffff00) + "&]! ! ! NO VALID SURFACE 3x3x3 DIRT/STONE/GROUND NEEDED ! ! !");
+			//hey, so when we refer to GROUND we should probably
+			//have some way to convey what the fuck GROUND means to the player.
+			//then again I'm not some fucking ESL who crashes out after feature requests.
 		}
 
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);

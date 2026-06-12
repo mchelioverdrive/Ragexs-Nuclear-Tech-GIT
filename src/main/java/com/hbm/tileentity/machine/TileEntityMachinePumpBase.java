@@ -29,10 +29,13 @@ import net.minecraft.util.AxisAlignedBB;
 public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase implements IFluidStandardTransceiver, INBTPacketReceiver, IConfigurableMachine, IFluidCopiable {
 
 	public static final HashSet<Block> validBlocks = new HashSet();
-	
+
 	static {
 		validBlocks.add(Blocks.grass);
 		validBlocks.add(Blocks.dirt);
+		validBlocks.add(Blocks.stone); //why was this not here before. it's GROUND WATER.
+		// Are you a dumbass?
+		// Are you ESL?
 		validBlocks.add(Blocks.sand);
 		validBlocks.add(Blocks.mycelium);
 		validBlocks.add(ModBlocks.waste_earth);
@@ -40,6 +43,7 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 		validBlocks.add(ModBlocks.dirt_oily);
 		validBlocks.add(ModBlocks.sand_dirty);
 		validBlocks.add(ModBlocks.sand_dirty_red);
+		//if it's dirty shouldn't it pollute the water? Why did this idiot add glyphids?
 		validBlocks.add(ModBlocks.eve_silt);
 		validBlocks.add(ModBlocks.eve_rock);
 		validBlocks.add(ModBlocks.ike_regolith);
@@ -50,7 +54,7 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 		validBlocks.add(ModBlocks.moho_regolith);
 		validBlocks.add(ModBlocks.minmus_smooth);
 	}
-	
+
 	public FluidTank water;
 
 	public boolean isOn = false;
@@ -64,7 +68,7 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 	public static int steamSpeed = 1_000;
 	public static int electricSpeed = 10_000;
 	public static int nonWaterDebuff = 100;
-	
+
 	@Override
 	public String getConfigName() {
 		return "waterpump";
@@ -85,74 +89,74 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 		writer.name("I:steamSpeed").value(steamSpeed);
 		writer.name("I:electricSpeed").value(electricSpeed);
 	}
-	
+
 	public void updateEntity() {
-		
+
 		if(!worldObj.isRemote) {
-			
+
 			for(DirPos pos : getConPos()) {
 				if(water.getFill() > 0) this.sendFluid(water, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
-			
+
 			if(groundCheckDelay > 0) {
 				groundCheckDelay--;
 			} else {
 				onGround = this.checkGround();
 			}
-			
+
 			this.isOn = false;
 			if(this.canOperate() && yCoord <= groundHeight && onGround) {
 				this.isOn = true;
 				this.operate();
 			}
-			
+
 			NBTTagCompound data = this.getSync();
 			INBTPacketReceiver.networkPack(this, data, 150);
-			
+
 		} else {
-			
+
 			this.lastRotor = this.rotor;
 			if(this.isOn) this.rotor += 10F;
-			
+
 			if(this.rotor >= 360F) {
 				this.rotor -= 360F;
 				this.lastRotor -= 360F;
-				
+
 				MainRegistry.proxy.playSoundClient(xCoord, yCoord, zCoord, "hbm:block.steamEngineOperate", 0.5F, 0.75F);
 				MainRegistry.proxy.playSoundClient(xCoord, yCoord, zCoord, "game.neutral.swim.splash", 1F, 0.5F);
 			}
 		}
 	}
-	
+
 	protected boolean checkGround() {
-		
+
 		if(worldObj.provider.hasNoSky) return false;
 		if(worldObj.provider instanceof WorldProviderOrbit) return false;
 		CBT_Water table = CelestialBody.getTrait(worldObj, CBT_Water.class);
 		if(table == null) return false;
 
 		water.setTankType(table.fluid);
-		
+
 		int validBlocks = 0;
 		int invalidBlocks = 0;
-		
+
 		for(int x = -1; x <= 1; x++) {
 			for(int y = -1; y >= -groundDepth; y--) {
 				for(int z = -1; z <= 1; z++) {
-					
+
 					Block b = worldObj.getBlock(xCoord + x, yCoord + y, zCoord + z);
-					
+
 					if(y == -1 && !b.isNormalCube()) return false; // first layer has to be full solid
-					
+
 					if(this.validBlocks.contains(b)) validBlocks++;
 					else invalidBlocks ++;
 				}
 			}
 		}
-		
+
 		return validBlocks >= invalidBlocks; // valid block count has to be at least 50%
 	}
-	
+
 	protected NBTTagCompound getSync() {
 		NBTTagCompound data = new NBTTagCompound();
 		data.setBoolean("isOn", isOn);
@@ -170,7 +174,7 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 
 	protected abstract boolean canOperate();
 	protected abstract void operate();
-	
+
 	protected DirPos[] getConPos() {
 		return new DirPos[] {
 				new DirPos(xCoord + 2, yCoord, zCoord, Library.POS_X),
@@ -194,12 +198,12 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 	public FluidTank[] getReceivingTanks() {
 		return new FluidTank[0];
 	}
-	
+
 	AxisAlignedBB bb = null;
-	
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
-		
+
 		if(bb == null) {
 			bb = AxisAlignedBB.getBoundingBox(
 					xCoord - 1,
@@ -210,10 +214,10 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 					zCoord + 2
 					);
 		}
-		
+
 		return bb;
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public double getMaxRenderDistanceSquared() {
