@@ -46,6 +46,8 @@ import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
+//Realistification: Magnox Nuclear Reactor
+
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityReactorZirnox extends TileEntityMachineBase implements IControlReceiver, IFluidStandardTransceiver, SimpleComponent, IGUIProvider, IInfoProviderEC, CompatHandler.OCComponent {
 
