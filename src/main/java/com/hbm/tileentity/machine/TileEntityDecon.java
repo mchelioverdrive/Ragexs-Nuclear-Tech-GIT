@@ -3,14 +3,12 @@ package com.hbm.tileentity.machine;
 import java.util.List;
 import java.util.Random;
 
+import com.hbm.config.GeneralConfig;
 import com.hbm.config.RadiationConfig;
 import com.hbm.extprop.HbmLivingProps;
 import com.hbm.hazard.type.HazardTypeNeutron;
 import com.hbm.main.MainRegistry;
 import com.hbm.potion.HbmPotion;
-import com.hbm.util.ContaminationUtil;
-import com.hbm.util.ContaminationUtil.ContaminationType;
-import com.hbm.util.ContaminationUtil.HazardType;
 
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -21,59 +19,37 @@ import net.minecraft.util.AxisAlignedBB;
 
 public class TileEntityDecon extends TileEntity {
 
+	private static final float RADIATION_WASH_PER_TICK = 0.25F;
+	private static final float NEUTRON_WASH_FACTOR = 0.899916F;
+	private static final float MAIN_INV_NEUTRON_WASH_FACTOR = 0.02F;
+	private static final float ARMOR_NEUTRON_WASH_FACTOR = 0.03F;
+
 	@Override
 	public void updateEntity() {
 		if(!this.worldObj.isRemote) {
-			List<EntityLivingBase> entities = this.worldObj.getEntitiesWithinAABB(EntityLivingBase.class, AxisAlignedBB.getBoundingBox(this.xCoord - 0.5, this.yCoord, this.zCoord - 0.5, this.xCoord + 1.5, this.yCoord + 2, this.zCoord + 1.5));
+			AxisAlignedBB box = AxisAlignedBB.getBoundingBox(this.xCoord, this.yCoord, this.zCoord, this.xCoord + 1, this.yCoord + 2, this.zCoord + 1).expand(0.25D, 0.0D, 0.25D);
+			List<EntityLivingBase> entities = this.worldObj.getEntitiesWithinAABB(EntityLivingBase.class, box);
+
+			debugTick(entities);
+
 			if(!entities.isEmpty()) {
 				for(EntityLivingBase e : entities) {
-					float doseRate = HbmLivingProps.getDoseRate(e); // mSv/s equivalent
-					float threshold = 0.05F; // 50 µSv/s residual contamination floor
-
-					if(doseRate > threshold) {
-
-						// logarithmic falloff
-						float normalized =
-							Math.min(doseRate / 50F, 1F);
-
-						float efficiency =
-							0.35F + (normalized * 0.55F);
-
-						float reduction =
-							(doseRate * efficiency) / 20F;
-
-						HbmLivingProps.incrementRadiation(
-							e,
-							-reduction
-						);
+					/*
+					 * Stored radiation is HbmLivingProps.radiation. Dose rate is only the
+					 * current incoming exposure from environment, timed contamination effects,
+					 * and neutron activation, so do not use dose rate as the condition for
+					 * washing accumulated player/entity radiation.
+					 */
+					float rad = HbmLivingProps.getRadiation(e);
+					if(rad > 0) {
+						HbmLivingProps.incrementRadiation(e, -Math.min(rad, RADIATION_WASH_PER_TICK));
 					}
-					if(HbmLivingProps.getDoseRate(e) < 5F) {
+
+					if(HbmLivingProps.getRadiation(e) <= 0 && HbmLivingProps.getDoseRate(e) < 5F) {
 						e.removePotionEffect(HbmPotion.radiation.id);
 					}
-					float washChance = 0.25F; // per tick exposure inside decon
 
-					List<HbmLivingProps.ContaminationEffect> contamination =
-						HbmLivingProps.getCont(e);
-
-					for(int i = contamination.size() - 1; i >= 0; i--) {
-
-						HbmLivingProps.ContaminationEffect effect =
-							contamination.get(i);
-
-						if(effect == null)
-							continue;
-
-						// shorten remaining contamination duration
-						effect.time -= Math.max(
-							1,
-							(int)(effect.time * washChance)
-						);
-
-						// remove fully cleaned contamination
-						if(effect.time <= 0) {
-							contamination.remove(i);
-						}
-					}
+					deconContamination(e);
 				}
 
 				deconNeutron(entities);
@@ -94,28 +70,70 @@ public class TileEntityDecon extends TileEntity {
 		}
 	}
 
+	private void deconContamination(EntityLivingBase e) {
+		float washChance = 0.25F;
+		List<HbmLivingProps.ContaminationEffect> contamination = HbmLivingProps.getCont(e);
+
+		for(int i = contamination.size() - 1; i >= 0; i--) {
+			HbmLivingProps.ContaminationEffect effect = contamination.get(i);
+
+			if(effect == null)
+				continue;
+
+			effect.time -= Math.max(1, (int)(effect.time * washChance));
+
+			if(effect.time <= 0) {
+				contamination.remove(i);
+			}
+		}
+	}
+
 	private void deconNeutron(List<EntityLivingBase> entities) {
 		for(EntityLivingBase e : entities) {
 			float neut = HbmLivingProps.getNeutronActivation(e);
 
 			if(neut > 0 && !RadiationConfig.disableNeutron) {
-				ContaminationUtil.contaminate(e, HazardType.RADIATION, ContaminationType.RAD_BYPASS, neut / 20F);
-				HbmLivingProps.setNeutronActivation(e, neut * 0.899916F);// 20 minute half life not  really
+				// The normal entity tick converts activation into radiation over time.
+				// Decon should remove activation, not call contaminate and add dose.
+				HbmLivingProps.setNeutronActivation(e, neut * NEUTRON_WASH_FACTOR);
+				if(HbmLivingProps.getNeutronActivation(e) < 1e-5F)
+					HbmLivingProps.setNeutronActivation(e, 0);
 			}
 
 			if(e instanceof EntityPlayer) {
 				EntityPlayer player = (EntityPlayer) e;
+				boolean inventoryChanged = false;
 
-					for(ItemStack stack : player.inventory.mainInventory) {
-						if(stack != null) {
-							HazardTypeNeutron.decay(stack, 0.02F); // 2% per tick exposure wash
-						}
+				for(ItemStack stack : player.inventory.mainInventory) {
+					if(stack != null) {
+						HazardTypeNeutron.decay(stack, MAIN_INV_NEUTRON_WASH_FACTOR);
+						inventoryChanged = true;
 					}
+				}
 
 				for(int i = 0; i < player.inventory.armorInventory.length; i++) {
-					HazardTypeNeutron.decay(player.inventory.armorItemInSlot(i), 0.03F); // higher exposure cleaning
+					ItemStack stack = player.inventory.armorItemInSlot(i);
+					if(stack != null) {
+						HazardTypeNeutron.decay(stack, ARMOR_NEUTRON_WASH_FACTOR);
+						inventoryChanged = true;
+					}
 				}
+
+				if(inventoryChanged)
+					player.inventory.markDirty();
 			}
+		}
+	}
+
+	private void debugTick(List<EntityLivingBase> entities) {
+		if(!GeneralConfig.enableDebugMode || this.worldObj.getTotalWorldTime() % 20 != 0)
+			return;
+
+		MainRegistry.logger.info("[DECON] ticking at " + this.xCoord + "," + this.yCoord + "," + this.zCoord);
+		MainRegistry.logger.info("[DECON] found entities=" + entities.size());
+		for(EntityLivingBase e : entities) {
+			String name = e.getCommandSenderName();
+			MainRegistry.logger.info("[DECON] entity=" + name + " class=" + e.getClass().getName() + " rad=" + HbmLivingProps.getRadiation(e) + " doseRate=" + HbmLivingProps.getDoseRate(e) + " neutron=" + HbmLivingProps.getNeutronActivation(e) + " contamination=" + HbmLivingProps.getCont(e).size());
 		}
 	}
 }

@@ -94,8 +94,8 @@ public class HazardTypeNeutron extends HazardTypeBase {
 		if(stack == null) return;
 		if(!stack.hasTagCompound()) return;
 
-		float activation = stack.stackTagCompound.getFloat(NEUTRON_KEY);
-		stack.stackTagCompound.setFloat(NEUTRON_KEY, activation * factor);
+		float activation = stack.stackTagCompound.getFloat(NEUTRON_KEY) * factor;
+		stack.stackTagCompound.setFloat(NEUTRON_KEY, activation);
 
 		if(activation < 1e-5)
 			stack.stackTagCompound.removeTag(NEUTRON_KEY);
