@@ -218,7 +218,7 @@ public class TileEntityHeatBoiler extends TileEntityLoadedBase implements INBTPa
 					this.isOn = true;
 				}
 				
-				if(outputOps == 0 && canExplode) {
+				if(inputOps > 0 && heatOps > 0 && outputOps == 0 && canExplode) {
 					this.hasExploded = true;
 					BlockDummyable.safeRem = true;
 					for(int x = xCoord - 1; x <= xCoord + 1; x++) {

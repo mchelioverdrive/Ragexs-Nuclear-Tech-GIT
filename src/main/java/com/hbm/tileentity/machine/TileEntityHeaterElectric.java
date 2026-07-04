@@ -26,6 +26,7 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 	public int heatEnergy;
 	public boolean isOn;
 	protected int setting = 0;
+	public static final int maxHeatEnergy = 500_000;
 
 	private AudioWrapper audio;
 
@@ -39,14 +40,14 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 				this.trySubscribe(worldObj, xCoord + dir.offsetX * 3, yCoord, zCoord + dir.offsetZ * 3, dir);
 			}
 
-			this.heatEnergy *= 0.999;
+			this.heatEnergy = Math.min((int) (this.heatEnergy * 0.999D), maxHeatEnergy);
 
 			this.tryPullHeat();
 
 			this.isOn = false;
-			if(setting > 0 && this.power >= this.getConsumption()) {
+			if(setting > 0 && this.power >= this.getConsumption() && this.heatEnergy < maxHeatEnergy) {
 				this.power -= this.getConsumption();
-				this.heatEnergy += getHeatGen();
+				this.heatEnergy = Math.min(this.heatEnergy + getHeatGen(), maxHeatEnergy);
 				this.isOn = true;
 			}
 
@@ -136,8 +137,9 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 
 		if(con instanceof IHeatSource) {
 			IHeatSource source = (IHeatSource) con;
-			this.heatEnergy += source.getHeatStored() * 0.85;
-			source.useUpHeat(source.getHeatStored());
+			int toPull = Math.max(Math.min(source.getHeatStored(), maxHeatEnergy - this.heatEnergy), 0);
+			this.heatEnergy += toPull * 0.85D;
+			source.useUpHeat(toPull);
 		}
 	}
 
