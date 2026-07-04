@@ -89,7 +89,7 @@ public class BlockGasMonoxide extends BlockGasBase {
 		if(world.isRemote) return;
 
 		boolean ventilated = isVentilated(world, x, y, z);
-		if((ventilated && rand.nextInt(4) != 0) || (!ventilated && rand.nextInt(160) == 0)) {
+		if(ventilated && rand.nextInt(4) != 0) {
 			world.setBlockToAir(x, y, z);
 			return;
 		}
@@ -102,8 +102,8 @@ public class BlockGasMonoxide extends BlockGasBase {
 
 	/**
 	 * Treats a gas pocket as ventilated when air can reach a sky-exposed block through a
-	 * short open path. This catches outdoor furnaces, awnings, and nearby open wall or roof gaps
-	 * without making gas disappear from sealed rooms or deep underground spaces.
+	 * short open path. Ventilated pockets dissipate quickly, while sealed pockets do not
+	 * decay on their own so carbon monoxide can build up in concealed or unventilated rooms.
 	 */
 	private boolean isVentilated(World world, int x, int y, int z) {
 		int[] queueX = new int[VENT_SEARCH_LIMIT];
