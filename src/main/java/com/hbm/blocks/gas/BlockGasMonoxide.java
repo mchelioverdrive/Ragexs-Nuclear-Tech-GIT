@@ -67,7 +67,9 @@ public class BlockGasMonoxide extends BlockGasBase {
 		if(exposure >= CONFUSION_THRESHOLD) living.addPotionEffect(new PotionEffect(Potion.confusion.id, 200, 0));
 		if(exposure >= WEAKNESS_THRESHOLD) living.addPotionEffect(new PotionEffect(Potion.weakness.id, 120, MathHelper.clamp_int(exposure / 300, 0, 2)));
 		if(exposure >= DAMAGE_THRESHOLD && exposure % 20 < EXPOSURE_PER_TICK) {
-			living.attackEntityFrom(ModDamageSource.monoxide, exposure >= SEVERE_DAMAGE_THRESHOLD ? 2 : 1);
+			//blindness for blurred vision
+			living.addPotionEffect(new PotionEffect(Potion.blindness.id, 120, MathHelper.clamp_int(exposure / 300, 0, 2)));
+			living.attackEntityFrom(ModDamageSource.monoxide, exposure >= SEVERE_DAMAGE_THRESHOLD ? 6 : 4);
 		}
 	}
 
@@ -103,7 +105,7 @@ public class BlockGasMonoxide extends BlockGasBase {
 
 		if(tryMove(world, x, y, z, ventDirection)) return;
 
-		if(rand.nextInt(4) != 0) {
+		if(rand.nextInt(16) != 0) {
 			world.setBlockToAir(x, y, z);
 			return;
 		}
