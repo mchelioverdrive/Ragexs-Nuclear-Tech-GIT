@@ -1,6 +1,7 @@
 package com.hbm.tileentity.machine.oil;
 
 import com.hbm.handler.pollution.PollutionHandler;
+import com.hbm.handler.pollution.MachineEmissionHelper;
 import com.hbm.handler.pollution.PollutionHandler.PollutionType;
 import com.hbm.inventory.FluidStack;
 import com.hbm.inventory.container.ContainerMachineCoker;
@@ -101,7 +102,10 @@ public class TileEntityMachineCoker extends TileEntityMachineBase implements IFl
 					}
 				}
 
-				if(wasOn && worldObj.getTotalWorldTime() % 5 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 5);
+				if(wasOn && worldObj.getTotalWorldTime() % 5 == 0) {
+					PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 5);
+					MachineEmissionHelper.emitCombustion(worldObj, xCoord, yCoord, zCoord, MachineEmissionHelper.COKER, 1D);
+				}
 			}
 			
 			for(DirPos pos : getConPos()) {

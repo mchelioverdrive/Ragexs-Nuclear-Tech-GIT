@@ -5,6 +5,7 @@ import java.util.List;
 import com.hbm.handler.ThreeInts;
 import com.hbm.handler.atmosphere.AtmosphereBlob;
 import com.hbm.handler.atmosphere.ChunkAtmosphereManager;
+import com.hbm.handler.pollution.MachineEmissionHelper;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.tileentity.TileEntityMachineBase;
@@ -43,6 +44,11 @@ public class TileEntityAirScrubber extends TileEntityMachineBase implements IFlu
 		if(!worldObj.isRemote) {
 
 			if(canOperate()) {
+				if(worldObj.getTotalWorldTime() % 20 == 0) {
+					MachineEmissionHelper.scrubCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 0.75F);
+					power -= 50;
+				}
+
 				// Fetch a new pump to scrub CO2 from
 				if(worldObj.getTotalWorldTime() % 5 == 0 && (pump == null || pump.getFluidPressure() == 0 || !pump.registerScrubber(this))) {
 					pump = null;
