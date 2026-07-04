@@ -92,7 +92,7 @@ public class BlockGasMonoxide extends BlockGasBase {
 
 		ForgeDirection ventDirection = findVentDirection(world, x, y, z);
 		if(ventDirection == ForgeDirection.UNKNOWN) {
-			world.scheduleBlockUpdate(x, y, z, this, getDelay(world));
+			tryDriftTowardExit(world, x, y, z);
 			return;
 		}
 
@@ -111,6 +111,18 @@ public class BlockGasMonoxide extends BlockGasBase {
 		ForgeDirection first = getFirstDirection(world, x, y, z);
 		boolean moved = tryMove(world, x, y, z, first);
 		if(!moved) moved = tryMove(world, x, y, z, first == ForgeDirection.UP ? randomHorizontal(world) : ForgeDirection.UP);
+		if(!moved) world.scheduleBlockUpdate(x, y, z, this, getDelay(world));
+	}
+
+	/**
+	 * Without a known vent path, allow carbon monoxide to seep horizontally toward
+	 * doorways and corridors without preferentially lifting the entire cloud to the
+	 * ceiling. Sealed rooms should still be able to fill with gas properly.
+	 */
+	private void tryDriftTowardExit(World world, int x, int y, int z) {
+		ForgeDirection first = randomHorizontal(world);
+		boolean moved = tryMove(world, x, y, z, first);
+		if(!moved) moved = tryMove(world, x, y, z, randomHorizontal(world));
 		if(!moved) world.scheduleBlockUpdate(x, y, z, this, getDelay(world));
 	}
 
