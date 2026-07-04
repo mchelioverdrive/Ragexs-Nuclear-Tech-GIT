@@ -88,7 +88,6 @@ public class PollutionHandler {
 	private static final float POISON_SPREAD_PER_NEIGHBOR = 0.02F;
 	private static final float HEAVY_METAL_SPREAD_PER_NEIGHBOR = 0.0025F;
 	private static final float FALLOUT_SPREAD_PER_NEIGHBOR = 0.005F;
-	private static final float CARBON_MONOXIDE_SPREAD_PER_NEIGHBOR = 0.06F;
 
 	/*
 	 * Per-update decay.
@@ -105,7 +104,6 @@ public class PollutionHandler {
 	private static final float POISON_DECAY = 0.9975F;
 	private static final float HEAVY_METAL_DECAY = 0.999995F;
 	private static final float FALLOUT_DECAY = 0.9999F;
-	private static final float CARBON_MONOXIDE_DECAY = 0.96F;
 
 	/*
 	 * Terrain damage threshold.
@@ -125,9 +123,6 @@ public class PollutionHandler {
 
 	/** Baserate for poison when spilled */
 	public static final float POISON_PER_SECOND = 1F / 50F;
-
-	/** Baserate for invisible carbon monoxide from incomplete combustion per second. */
-	public static final float CARBON_MONOXIDE_PER_SECOND = 1F / 20F;
 
 	public static Vec3 targetCoords;
 
@@ -392,7 +387,6 @@ public class PollutionHandler {
 				int P = PollutionType.POISON.ordinal();
 				int H = PollutionType.HEAVYMETAL.ordinal();
 				int F = PollutionType.FALLOUT.ordinal();
-				int C = PollutionType.CARBON_MONOXIDE.ordinal();
 
 				/*
 				 * Weather abstraction:
@@ -502,25 +496,6 @@ public class PollutionHandler {
 					data.pollution[F] *= 0.995F;
 				}
 
-				////////////////////////////
-				/// CARBON MONOXIDE     ///
-				////////////////////////////
-
-				/*
-				 * Carbon monoxide is an invisible combustion gas. It is deliberately
-				 * modeled as a fast-spreading, fast-decaying sector pollutant instead of
-				 * visible smoke. Outdoor/high-altitude sectors clear faster so exhaust
-				 * stacks disperse danger instead of creating permanent sky columns.
-				 */
-				if(data.pollution[C] > 5F) {
-					float exported = data.pollution[C] * CARBON_MONOXIDE_SPREAD_PER_NEIGHBOR;
-					spread[C] = exported;
-					data.pollution[C] -= exported * 4F;
-				}
-
-				data.pollution[C] *= CARBON_MONOXIDE_DECAY;
-
-
 				//////////////////////
 				/// CLEANUP/CLAMP  ///
 				//////////////////////
@@ -605,7 +580,6 @@ public class PollutionHandler {
 				float poison = data.pollution[PollutionType.POISON.ordinal()];
 				float heavy = data.pollution[PollutionType.HEAVYMETAL.ordinal()];
 				float fallout = data.pollution[PollutionType.FALLOUT.ordinal()];
-				float carbonMonoxide = data.pollution[PollutionType.CARBON_MONOXIDE.ordinal()];
 
 				/*
 				 * Terrain damage weighting.
@@ -619,8 +593,7 @@ public class PollutionHandler {
 					poison * 1.0F +
 						fallout * 0.75F +
 						heavy * 0.5F +
-						soot * 0.25F +
-						carbonMonoxide * 0.05F;
+						soot * 0.25F;
 
 				if(damage < DESTRUCTION_THRESHOLD) continue;
 
@@ -780,8 +753,7 @@ public class PollutionHandler {
 		SOOT,
 		POISON,
 		HEAVYMETAL,
-		FALLOUT,
-		CARBON_MONOXIDE;
+		FALLOUT;
 	}
 
 	///////////////////
