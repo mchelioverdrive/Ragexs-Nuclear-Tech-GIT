@@ -7,6 +7,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 import com.hbm.inventory.FluidContainerRegistry;
+import com.hbm.handler.pollution.MachineEmissionHelper;
 import com.hbm.inventory.container.ContainerMachineDiesel;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
@@ -211,6 +212,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 				
 				if(worldObj.getTotalWorldTime() % 5 == 0) {
 					super.pollute(tank.getTankType(), FluidReleaseType.BURN, 5F);
+					MachineEmissionHelper.emitCombustion(worldObj, xCoord, yCoord, zCoord, MachineEmissionHelper.DIESEL_GENERATOR, 0.25D, tank.getTankType(), ForgeDirection.UP);
 				}
 
 				if(power + getHEFromFuel() <= powerCap) {

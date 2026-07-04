@@ -1,6 +1,7 @@
 package com.hbm.tileentity.machine;
 
 import com.hbm.blocks.BlockDummyable;
+import com.hbm.handler.pollution.MachineEmissionHelper;
 import com.hbm.interfaces.IControlReceiver;
 import com.hbm.inventory.container.ContainerCombustionEngine;
 import com.hbm.inventory.fluid.FluidType;
@@ -88,6 +89,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 	
 						if(worldObj.getTotalWorldTime() % 5 == 0 && toBurn > 0) {
 							super.pollute(tank.getTankType(), FluidReleaseType.BURN, toBurn * 0.5F);
+							MachineEmissionHelper.emitCombustion(worldObj, xCoord, yCoord, zCoord, MachineEmissionHelper.INDUSTRIAL_COMBUSTION_ENGINE, toBurn / 10D, tank.getTankType(), ForgeDirection.UP);
 						}
 						
 						if(toBurn > 0) {
