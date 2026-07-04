@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
 import com.hbm.handler.pollution.PollutionHandler;
+import com.hbm.handler.pollution.MachineEmissionHelper;
 import com.hbm.handler.pollution.PollutionHandler.PollutionType;
 import com.hbm.inventory.UpgradeManager;
 import com.hbm.inventory.container.ContainerPyroOven;
@@ -115,6 +116,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 				}
 
 				this.pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND);
+				MachineEmissionHelper.emitCombustion(worldObj, xCoord, yCoord + 3, zCoord, MachineEmissionHelper.PYROLYSIS, 0.2D);
 
 			} else {
 				this.progress = 0F;
