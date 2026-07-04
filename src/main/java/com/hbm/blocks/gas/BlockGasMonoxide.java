@@ -26,11 +26,11 @@ public class BlockGasMonoxide extends BlockGasBase {
 	private static final int VENT_SEARCH_LIMIT = 128;
 	private static final int VENT_BLOCK_DISSIPATION_CHANCE = 2;
 	private static final int EXPOSURE_PER_TICK = 3;
-	private static final int CONFUSION_THRESHOLD = 40;
-	private static final int WEAKNESS_THRESHOLD = 100;
-	private static final int DAMAGE_THRESHOLD = 160;
-	private static final int SEVERE_DAMAGE_THRESHOLD = 360;
-	private static final int MAX_EXPOSURE = 1200;
+	private static final int CONFUSION_THRESHOLD = 160;
+	private static final int WEAKNESS_THRESHOLD = 280;
+	private static final int DAMAGE_THRESHOLD = 360;
+	private static final int SEVERE_DAMAGE_THRESHOLD = 720;
+	private static final int MAX_EXPOSURE = 2400;
 
 	public BlockGasMonoxide() {
 		super(0.1F, 0.1F, 0.1F);
