@@ -90,13 +90,20 @@ public class BlockGasMonoxide extends BlockGasBase {
 	public void updateTick(World world, int x, int y, int z, Random rand) {
 		if(world.isRemote) return;
 
-		boolean ventilated = isVentilated(world, x, y, z);
-		if(!ventilated) {
+		ForgeDirection ventDirection = findVentDirection(world, x, y, z);
+		if(ventDirection == ForgeDirection.UNKNOWN) {
 			world.scheduleBlockUpdate(x, y, z, this, getDelay(world));
 			return;
 		}
 
-		if(rand.nextInt(isVentBlockNearby(world, x, y, z) ? VENT_BLOCK_DISSIPATION_CHANCE : 4) != 0) {
+		if(isVentBlockNearby(world, x, y, z) && rand.nextInt(VENT_BLOCK_DISSIPATION_CHANCE) != 0) {
+			world.setBlockToAir(x, y, z);
+			return;
+		}
+
+		if(tryMove(world, x, y, z, ventDirection)) return;
+
+		if(rand.nextInt(4) != 0) {
 			world.setBlockToAir(x, y, z);
 			return;
 		}
@@ -113,20 +120,27 @@ public class BlockGasMonoxide extends BlockGasBase {
 	 * stay in place so local detector readings do not drop just because gas drifted away.
 	 */
 	private boolean isVentilated(World world, int x, int y, int z) {
+		return findVentDirection(world, x, y, z) != ForgeDirection.UNKNOWN;
+	}
+
+	private ForgeDirection findVentDirection(World world, int x, int y, int z) {
 		int[] queueX = new int[VENT_SEARCH_LIMIT];
 		int[] queueY = new int[VENT_SEARCH_LIMIT];
 		int[] queueZ = new int[VENT_SEARCH_LIMIT];
+		int[] firstDirections = new int[VENT_SEARCH_LIMIT];
 		int read = 0;
 		int write = 1;
 		queueX[0] = x;
 		queueY[0] = y;
 		queueZ[0] = z;
+		firstDirections[0] = ForgeDirection.UNKNOWN.ordinal();
 
 		while(read < write) {
 			int currentX = queueX[read];
 			int currentY = queueY[read];
-			int currentZ = queueZ[read++];
-			if(hasOpenSkyColumn(world, currentX, currentY, currentZ)) return true;
+			int currentZ = queueZ[read];
+			int firstDirection = firstDirections[read++];
+			if(hasOpenSkyColumn(world, currentX, currentY, currentZ)) return firstDirection == ForgeDirection.UNKNOWN.ordinal() ? ForgeDirection.UP : ForgeDirection.getOrientation(firstDirection);
 
 			for(ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
 				int nextX = currentX + direction.offsetX;
@@ -135,7 +149,8 @@ public class BlockGasMonoxide extends BlockGasBase {
 				if(Math.abs(nextX - x) > VENT_SEARCH_RANGE || Math.abs(nextY - y) > VENT_SEARCH_RANGE || Math.abs(nextZ - z) > VENT_SEARCH_RANGE) continue;
 
 				Block block = world.getBlock(nextX, nextY, nextZ);
-				if(isVentBlock(block)) return true;
+				int nextFirstDirection = firstDirection == ForgeDirection.UNKNOWN.ordinal() ? direction.ordinal() : firstDirection;
+				if(isVentBlock(block)) return ForgeDirection.getOrientation(nextFirstDirection);
 				if(!world.isAirBlock(nextX, nextY, nextZ) && block != this && !isPermeableVentBlock(block)) continue;
 
 				boolean visited = false;
@@ -149,12 +164,13 @@ public class BlockGasMonoxide extends BlockGasBase {
 				if(!visited && write < VENT_SEARCH_LIMIT) {
 					queueX[write] = nextX;
 					queueY[write] = nextY;
-					queueZ[write++] = nextZ;
+					queueZ[write] = nextZ;
+					firstDirections[write++] = nextFirstDirection;
 				}
 			}
 		}
 
-		return false;
+		return ForgeDirection.UNKNOWN;
 	}
 
 	/**
