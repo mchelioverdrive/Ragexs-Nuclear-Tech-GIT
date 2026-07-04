@@ -1,5 +1,6 @@
 package com.hbm.handler.pollution;
 
+import com.hbm.blocks.ModBlocks;
 import com.hbm.handler.pollution.PollutionHandler.PollutionType;
 import com.hbm.inventory.FluidStack;
 import com.hbm.inventory.fluid.FluidType;
@@ -13,9 +14,10 @@ import net.minecraftforge.common.util.ForgeDirection;
 /**
  * Central server-side entry point for machine exhaust.
  *
- * CO is invisible and tracked separately from SOOT/smog. This helper keeps the
- * realism policy in one place so machines only report actual fuel/recipe
- * activity instead of copy-pasting gas rules.
+ * Carbon monoxide already exists as {@link ModBlocks#gas_monoxide}; this helper
+ * reuses that invisible gas block and keeps visible SOOT/smog in the pollution
+ * sector system. Machines only report actual fuel/recipe activity here instead
+ * of copy-pasting emission rules.
  */
 public final class MachineEmissionHelper {
 
@@ -47,7 +49,15 @@ public final class MachineEmissionHelper {
 
 	public static void emitCarbonMonoxide(World world, int x, int y, int z, double amount) {
 		if(world == null || world.isRemote || amount <= 0) return;
-		PollutionHandler.incrementPollution(world, x, y, z, PollutionType.CARBON_MONOXIDE, (float) amount * PollutionHandler.CARBON_MONOXIDE_PER_SECOND);
+
+		int attempts = Math.min(3, (int) Math.floor(amount));
+		double fractional = amount - attempts;
+		if(fractional > 0 && world.rand.nextDouble() < fractional) attempts++;
+		if(attempts <= 0 && world.rand.nextInt(Math.max(1, (int) Math.ceil(1D / amount))) == 0) attempts = 1;
+
+		for(int i = 0; i < attempts; i++) {
+			placeCarbonMonoxide(world, x, y, z);
+		}
 	}
 
 	public static void emitSmog(World world, int x, int y, int z, double amount) {
@@ -64,8 +74,33 @@ public final class MachineEmissionHelper {
 
 	public static void scrubCarbonMonoxide(World world, int x, int y, int z, float amount) {
 		if(world == null || world.isRemote || amount <= 0) return;
-		PollutionHandler.decrementPollution(world, x, y, z, PollutionType.CARBON_MONOXIDE, amount);
-		PollutionHandler.incrementPollution(world, x, y, z, PollutionType.POISON, amount * 0.02F);
+
+		int remaining = Math.max(1, (int) amount);
+		int range = 4;
+		for(int dy = -range; dy <= range && remaining > 0; dy++) {
+			for(int dx = -range; dx <= range && remaining > 0; dx++) {
+				for(int dz = -range; dz <= range && remaining > 0; dz++) {
+					if(world.getBlock(x + dx, y + dy, z + dz) == ModBlocks.gas_monoxide) {
+						world.setBlockToAir(x + dx, y + dy, z + dz);
+						remaining--;
+					}
+				}
+			}
+		}
+	}
+
+	private static void placeCarbonMonoxide(World world, int x, int y, int z) {
+		ForgeDirection start = ForgeDirection.getOrientation(world.rand.nextInt(ForgeDirection.VALID_DIRECTIONS.length));
+		for(int i = 0; i < ForgeDirection.VALID_DIRECTIONS.length; i++) {
+			ForgeDirection dir = ForgeDirection.VALID_DIRECTIONS[(start.ordinal() + i) % ForgeDirection.VALID_DIRECTIONS.length];
+			int gasX = x + dir.offsetX;
+			int gasY = y + dir.offsetY;
+			int gasZ = z + dir.offsetZ;
+			if(world.isAirBlock(gasX, gasY, gasZ)) {
+				world.setBlock(gasX, gasY, gasZ, ModBlocks.gas_monoxide);
+				return;
+			}
+		}
 	}
 
 	private static int[] getExhaustPosition(World world, int x, int y, int z, int rise, ForgeDirection exhaust) {
