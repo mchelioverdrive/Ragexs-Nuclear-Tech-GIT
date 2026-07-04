@@ -126,7 +126,7 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 	}
 	
 	public int maxHeat() {
-		return this.getBlockType() == ModBlocks.machine_stirling ? 300 : 1500;
+		return this.getBlockType() == ModBlocks.machine_stirling ? maxHeatNormal : maxHeatSteel;
 	}
 	
 	public boolean isCreative() {
