@@ -2,6 +2,7 @@ package com.hbm.blocks.gas;
 
 import java.util.Random;
 
+import com.hbm.blocks.ModBlocks;
 import com.hbm.lib.ModDamageSource;
 import com.hbm.util.ArmorRegistry;
 import com.hbm.util.ArmorRegistry.HazardClass;
@@ -23,6 +24,7 @@ public class BlockGasMonoxide extends BlockGasBase {
 	private static final String LAST_EXPOSURE_KEY = "hbmMonoxideLastExposure";
 	private static final int VENT_SEARCH_RANGE = 5;
 	private static final int VENT_SEARCH_LIMIT = 128;
+	private static final int VENT_BLOCK_DISSIPATION_CHANCE = 2;
 	private static final int EXPOSURE_PER_TICK = 3;
 	private static final int CONFUSION_THRESHOLD = 40;
 	private static final int WEAKNESS_THRESHOLD = 100;
@@ -88,11 +90,18 @@ public class BlockGasMonoxide extends BlockGasBase {
 	public void updateTick(World world, int x, int y, int z, Random rand) {
 		if(world.isRemote) return;
 
-		boolean ventilated = isVentilated(world, x, y, z);
-		if(!ventilated) {
+		ForgeDirection ventDirection = findVentDirection(world, x, y, z);
+		if(ventDirection == ForgeDirection.UNKNOWN) {
 			world.scheduleBlockUpdate(x, y, z, this, getDelay(world));
 			return;
 		}
+
+		if(isVentBlockNearby(world, x, y, z) && rand.nextInt(VENT_BLOCK_DISSIPATION_CHANCE) != 0) {
+			world.setBlockToAir(x, y, z);
+			return;
+		}
+
+		if(tryMove(world, x, y, z, ventDirection)) return;
 
 		if(rand.nextInt(4) != 0) {
 			world.setBlockToAir(x, y, z);
@@ -111,20 +120,27 @@ public class BlockGasMonoxide extends BlockGasBase {
 	 * stay in place so local detector readings do not drop just because gas drifted away.
 	 */
 	private boolean isVentilated(World world, int x, int y, int z) {
+		return findVentDirection(world, x, y, z) != ForgeDirection.UNKNOWN;
+	}
+
+	private ForgeDirection findVentDirection(World world, int x, int y, int z) {
 		int[] queueX = new int[VENT_SEARCH_LIMIT];
 		int[] queueY = new int[VENT_SEARCH_LIMIT];
 		int[] queueZ = new int[VENT_SEARCH_LIMIT];
+		int[] firstDirections = new int[VENT_SEARCH_LIMIT];
 		int read = 0;
 		int write = 1;
 		queueX[0] = x;
 		queueY[0] = y;
 		queueZ[0] = z;
+		firstDirections[0] = ForgeDirection.UNKNOWN.ordinal();
 
 		while(read < write) {
 			int currentX = queueX[read];
 			int currentY = queueY[read];
-			int currentZ = queueZ[read++];
-			if(hasOpenSkyColumn(world, currentX, currentY, currentZ)) return true;
+			int currentZ = queueZ[read];
+			int firstDirection = firstDirections[read++];
+			if(hasOpenSkyColumn(world, currentX, currentY, currentZ)) return firstDirection == ForgeDirection.UNKNOWN.ordinal() ? ForgeDirection.UP : ForgeDirection.getOrientation(firstDirection);
 
 			for(ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
 				int nextX = currentX + direction.offsetX;
@@ -133,7 +149,9 @@ public class BlockGasMonoxide extends BlockGasBase {
 				if(Math.abs(nextX - x) > VENT_SEARCH_RANGE || Math.abs(nextY - y) > VENT_SEARCH_RANGE || Math.abs(nextZ - z) > VENT_SEARCH_RANGE) continue;
 
 				Block block = world.getBlock(nextX, nextY, nextZ);
-				if(!world.isAirBlock(nextX, nextY, nextZ) && block != this) continue;
+				int nextFirstDirection = firstDirection == ForgeDirection.UNKNOWN.ordinal() ? direction.ordinal() : firstDirection;
+				if(isVentBlock(block)) return ForgeDirection.getOrientation(nextFirstDirection);
+				if(!world.isAirBlock(nextX, nextY, nextZ) && block != this && !isPermeableVentBlock(block)) continue;
 
 				boolean visited = false;
 				for(int i = 0; i < write; i++) {
@@ -146,12 +164,13 @@ public class BlockGasMonoxide extends BlockGasBase {
 				if(!visited && write < VENT_SEARCH_LIMIT) {
 					queueX[write] = nextX;
 					queueY[write] = nextY;
-					queueZ[write++] = nextZ;
+					queueZ[write] = nextZ;
+					firstDirections[write++] = nextFirstDirection;
 				}
 			}
 		}
 
-		return false;
+		return ForgeDirection.UNKNOWN;
 	}
 
 	/**
@@ -161,9 +180,25 @@ public class BlockGasMonoxide extends BlockGasBase {
 	private boolean hasOpenSkyColumn(World world, int x, int y, int z) {
 		for(int checkY = y + 1; checkY < world.getHeight(); checkY++) {
 			Block block = world.getBlock(x, checkY, z);
-			if(!world.isAirBlock(x, checkY, z) && block != this) return false;
+			if(!world.isAirBlock(x, checkY, z) && block != this && !isPermeableVentBlock(block)) return false;
 		}
 
 		return true;
+	}
+
+	private boolean isVentBlockNearby(World world, int x, int y, int z) {
+		for(ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
+			if(isVentBlock(world.getBlock(x + direction.offsetX, y + direction.offsetY, z + direction.offsetZ))) return true;
+		}
+
+		return false;
+	}
+
+	private boolean isVentBlock(Block block) {
+		return block == ModBlocks.air_vent || isPermeableVentBlock(block);
+	}
+
+	private boolean isPermeableVentBlock(Block block) {
+		return block == ModBlocks.steel_grate || block == ModBlocks.steel_grate_wide;
 	}
 }
