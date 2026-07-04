@@ -26,6 +26,7 @@ import com.hbm.tileentity.IMetalCopiable;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.BobMathUtil;
 import com.hbm.util.CrucibleUtil;
+import com.hbm.util.FurnaceGasEmission;
 
 import api.hbm.block.ICrucibleAcceptor;
 import api.hbm.tile.IHeatSource;
@@ -152,6 +153,7 @@ public class TileEntityCrucible extends TileEntityMachineBase implements IGUIPro
 			if(!trySmelt()) {
 				this.progress = 0;
 			}
+			FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 900);
 			
 			tryRecipe();
 			

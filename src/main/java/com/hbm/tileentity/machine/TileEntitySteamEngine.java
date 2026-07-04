@@ -10,6 +10,7 @@ import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.fluid.trait.FT_Coolable;
 import com.hbm.inventory.fluid.trait.FT_Coolable.CoolingType;
 import com.hbm.tileentity.IConfigurableMachine;
+import com.hbm.util.FurnaceGasEmission;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.INBTPacketReceiver;
 import com.hbm.tileentity.TileEntityLoadedBase;
@@ -92,6 +93,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 			this.powerBuffer += (ops * trait.heatEnergy * eff);
 			
 			if(ops > 0) {
+				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1200);
 				this.acceleration += 0.1F;
 			} else {
 				this.acceleration -= 0.1F;

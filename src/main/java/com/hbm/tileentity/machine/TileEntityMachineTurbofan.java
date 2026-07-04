@@ -26,6 +26,7 @@ import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.tileentity.TileEntityMachinePolluting;
 import com.hbm.util.CompatEnergyControl;
+import com.hbm.util.FurnaceGasEmission;
 import com.hbm.util.I18nUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
@@ -172,6 +173,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 				this.consumption = amountToBurn;
 				
 				if(worldObj.getTotalWorldTime() % 20 == 0) super.pollute(tank.getTankType(), FluidTrait.FluidReleaseType.BURN, amountToBurn * 5);;
+				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, Math.max(120, 700 / Math.max(amountToBurn, 1)));
 			}
 			
 			power = Library.chargeItemsFromTE(slots, 3, power, power);

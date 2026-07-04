@@ -23,6 +23,7 @@ import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachinePolluting;
 import com.hbm.util.CompatEnergyControl;
+import com.hbm.util.FurnaceGasEmission;
 
 import api.hbm.energymk2.IBatteryItem;
 import api.hbm.energymk2.IEnergyProviderMK2;
@@ -212,6 +213,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 				if(worldObj.getTotalWorldTime() % 5 == 0) {
 					super.pollute(tank.getTankType(), FluidReleaseType.BURN, 5F);
 				}
+				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 900);
 
 				if(power + getHEFromFuel() <= powerCap) {
 					power += getHEFromFuel();

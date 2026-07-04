@@ -19,6 +19,7 @@ import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachinePolluting;
 import com.hbm.util.EnumUtil;
+import com.hbm.util.FurnaceGasEmission;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyProviderMK2;
@@ -92,6 +93,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 						
 						if(toBurn > 0) {
 							wasOn = true;
+							FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, Math.max(150, 900 / Math.max(toBurn, 1)));
 						}
 						
 						tank.setFill(fill / 10);

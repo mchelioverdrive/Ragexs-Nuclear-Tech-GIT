@@ -23,6 +23,7 @@ import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.tileentity.TileEntityMachinePolluting;
 import com.hbm.util.BobMathUtil;
 import com.hbm.util.I18nUtil;
+import com.hbm.util.FurnaceGasEmission;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
@@ -115,6 +116,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 				}
 
 				this.pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND);
+				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 500);
 
 			} else {
 				this.progress = 0F;

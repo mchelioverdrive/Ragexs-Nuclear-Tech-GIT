@@ -23,6 +23,7 @@ import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.CompatEnergyControl;
+import com.hbm.util.FurnaceGasEmission;
 import com.hbm.util.I18nUtil;
 import com.hbm.util.ParticleUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
@@ -176,6 +177,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 						if(worldObj.getTotalWorldTime() % 5 == 0 && eject > 0) {
 							FT_Polluting.pollute(worldObj, xCoord, yCoord, zCoord, tank.getTankType(), FluidReleaseType.BURN, eject * 5);
 						}
+						FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord + 11, zCoord, Math.max(100, 600 / Math.max(eject, 1)));
 					}
 				}
 			}
