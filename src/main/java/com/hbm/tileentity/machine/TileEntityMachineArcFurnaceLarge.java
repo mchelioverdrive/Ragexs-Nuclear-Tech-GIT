@@ -28,6 +28,7 @@ import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.CrucibleUtil;
+import com.hbm.util.FurnaceGasEmission;
 import com.hbm.util.I18nUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
@@ -128,6 +129,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 							this.progress += 1F / duration;
 							this.isProgressing = true;
 							this.power -= consumption;
+							FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1000);
 							if(this.progress >= 1F) {
 								this.process();
 								this.progress = 0;

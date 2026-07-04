@@ -18,6 +18,7 @@ import com.hbm.packet.PacketDispatcher;
 import com.hbm.tileentity.*;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
 import com.hbm.util.I18nUtil;
+import com.hbm.util.FurnaceGasEmission;
 import com.hbm.util.fauxpointtwelve.BlockPos;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
@@ -98,6 +99,7 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 				if(canProcess(recipe)) {
 					this.progress++;
 					this.power -= this.consumption;
+					FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1200);
 					
 					if(progress >= processTime) {
 						this.progress = 0;

@@ -14,6 +14,7 @@ import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachinePolluting;
 import com.hbm.util.Tuple.Pair;
+import com.hbm.util.FurnaceGasEmission;
 
 import api.hbm.fluid.IFluidStandardSender;
 import api.hbm.tile.IHeatSource;
@@ -124,6 +125,7 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 					
 					if(worldObj.getTotalWorldTime() % 10 == 0) this.worldObj.playSoundEffect(this.xCoord, this.yCoord + 1, this.zCoord, "hbm:weapon.flamethrowerShoot", 0.25F, 0.5F);
 					if(worldObj.getTotalWorldTime() % 20 == 0) this.pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 3);
+					FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 400);
 				}
 			} else {
 				this.progress = 0;
