@@ -632,6 +632,25 @@ public class EntityEffectHandler {
 			}
 		}
 
+		if(!ArmorRegistry.hasProtection(entity, 3, HazardClass.GAS_MONOXIDE) && entity.ticksExisted % 40 == 0) {
+
+			float co = PollutionHandler.getPollution(entity.worldObj, (int) Math.floor(entity.posX), (int) Math.floor(entity.posY + entity.getEyeHeight()), (int) Math.floor(entity.posZ), PollutionType.CARBON_MONOXIDE);
+
+			if(co > 8) {
+				entity.addPotionEffect(new PotionEffect(Potion.confusion.id, 120, co > 60 ? 1 : 0));
+				entity.addPotionEffect(new PotionEffect(Potion.weakness.id, 120, co > 40 ? 1 : 0));
+
+				if(co > 25) entity.addPotionEffect(new PotionEffect(Potion.digSlowdown.id, 120, 0));
+				if(co > 60) entity.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 120, 0));
+				if(co > 90) entity.addPotionEffect(new PotionEffect(Potion.blindness.id, 80, 0));
+
+				if(co > 45) {
+					float damage = co > 100 ? 4F : co > 70 ? 2F : 1F;
+					entity.attackEntityFrom(DamageSource.drown, damage);
+				}
+			}
+		}
+
 		if(RadiationConfig.enableLeadPoisoning && !ArmorRegistry.hasProtection(entity, 3, HazardClass.PARTICLE_FINE) && entity.ticksExisted % 60 == 0) {
 
 			float poison = PollutionHandler.getPollution(entity.worldObj, (int) Math.floor(entity.posX), (int) Math.floor(entity.posY + entity.getEyeHeight()), (int) Math.floor(entity.posZ), PollutionType.HEAVYMETAL);
