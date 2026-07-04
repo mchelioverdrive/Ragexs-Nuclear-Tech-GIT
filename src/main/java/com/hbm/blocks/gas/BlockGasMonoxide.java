@@ -92,7 +92,7 @@ public class BlockGasMonoxide extends BlockGasBase {
 
 		ForgeDirection ventDirection = findVentDirection(world, x, y, z);
 		if(ventDirection == ForgeDirection.UNKNOWN) {
-			world.scheduleBlockUpdate(x, y, z, this, getDelay(world));
+			tryDriftTowardExit(world, x, y, z);
 			return;
 		}
 
@@ -111,6 +111,19 @@ public class BlockGasMonoxide extends BlockGasBase {
 		ForgeDirection first = getFirstDirection(world, x, y, z);
 		boolean moved = tryMove(world, x, y, z, first);
 		if(!moved) moved = tryMove(world, x, y, z, first == ForgeDirection.UP ? randomHorizontal(world) : ForgeDirection.UP);
+		if(!moved) world.scheduleBlockUpdate(x, y, z, this, getDelay(world));
+	}
+
+	/**
+	 * Without a known vent path, keep carbon monoxide mobile instead of pinning it in
+	 * place. This lets gas clouds in rooms and corridors eventually find doorways or
+	 * other exits that are outside the short ventilation search window.
+	 */
+	private void tryDriftTowardExit(World world, int x, int y, int z) {
+		ForgeDirection first = getFirstDirection(world, x, y, z);
+		boolean moved = tryMove(world, x, y, z, first);
+		if(!moved) moved = tryMove(world, x, y, z, getSecondDirection(world, x, y, z));
+		if(!moved) moved = tryMove(world, x, y, z, ForgeDirection.UP);
 		if(!moved) world.scheduleBlockUpdate(x, y, z, this, getDelay(world));
 	}
 
