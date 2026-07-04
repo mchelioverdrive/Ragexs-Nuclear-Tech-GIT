@@ -89,7 +89,12 @@ public class BlockGasMonoxide extends BlockGasBase {
 		if(world.isRemote) return;
 
 		boolean ventilated = isVentilated(world, x, y, z);
-		if(ventilated && rand.nextInt(4) != 0) {
+		if(!ventilated) {
+			world.scheduleBlockUpdate(x, y, z, this, getDelay(world));
+			return;
+		}
+
+		if(rand.nextInt(4) != 0) {
 			world.setBlockToAir(x, y, z);
 			return;
 		}
@@ -103,7 +108,7 @@ public class BlockGasMonoxide extends BlockGasBase {
 	/**
 	 * Treats a gas pocket as ventilated when air can reach an actually open sky column
 	 * through a short open path. Ventilated pockets dissipate quickly, while sealed pockets
-	 * do not decay on their own so carbon monoxide can build up in concealed or unventilated rooms.
+	 * stay in place so local detector readings do not drop just because gas drifted away.
 	 */
 	private boolean isVentilated(World world, int x, int y, int z) {
 		int[] queueX = new int[VENT_SEARCH_LIMIT];
