@@ -101,9 +101,9 @@ public class BlockGasMonoxide extends BlockGasBase {
 	}
 
 	/**
-	 * Treats a gas pocket as ventilated when air can reach a sky-exposed block through a
-	 * short open path. Ventilated pockets dissipate quickly, while sealed pockets do not
-	 * decay on their own so carbon monoxide can build up in concealed or unventilated rooms.
+	 * Treats a gas pocket as ventilated when air can reach an actually open sky column
+	 * through a short open path. Ventilated pockets dissipate quickly, while sealed pockets
+	 * do not decay on their own so carbon monoxide can build up in concealed or unventilated rooms.
 	 */
 	private boolean isVentilated(World world, int x, int y, int z) {
 		int[] queueX = new int[VENT_SEARCH_LIMIT];
@@ -119,7 +119,7 @@ public class BlockGasMonoxide extends BlockGasBase {
 			int currentX = queueX[read];
 			int currentY = queueY[read];
 			int currentZ = queueZ[read++];
-			if(world.canBlockSeeTheSky(currentX, currentY, currentZ)) return true;
+			if(hasOpenSkyColumn(world, currentX, currentY, currentZ)) return true;
 
 			for(ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
 				int nextX = currentX + direction.offsetX;
@@ -147,5 +147,18 @@ public class BlockGasMonoxide extends BlockGasBase {
 		}
 
 		return false;
+	}
+
+	/**
+	 * World.canBlockSeeTheSky also succeeds through transparent sealed blocks such as glass.
+	 * For ventilation, require the path above the candidate pocket to be physically open.
+	 */
+	private boolean hasOpenSkyColumn(World world, int x, int y, int z) {
+		for(int checkY = y + 1; checkY < world.getHeight(); checkY++) {
+			Block block = world.getBlock(x, checkY, z);
+			if(!world.isAirBlock(x, checkY, z) && block != this) return false;
+		}
+
+		return true;
 	}
 }
