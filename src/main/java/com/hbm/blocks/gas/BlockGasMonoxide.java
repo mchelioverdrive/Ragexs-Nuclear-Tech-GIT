@@ -115,15 +115,14 @@ public class BlockGasMonoxide extends BlockGasBase {
 	}
 
 	/**
-	 * Without a known vent path, keep carbon monoxide mobile instead of pinning it in
-	 * place. This lets gas clouds in rooms and corridors eventually find doorways or
-	 * other exits that are outside the short ventilation search window.
+	 * Without a known vent path, allow carbon monoxide to seep horizontally toward
+	 * doorways and corridors without preferentially lifting the entire cloud to the
+	 * ceiling. Sealed rooms should still be able to fill with gas properly.
 	 */
 	private void tryDriftTowardExit(World world, int x, int y, int z) {
-		ForgeDirection first = getFirstDirection(world, x, y, z);
+		ForgeDirection first = randomHorizontal(world);
 		boolean moved = tryMove(world, x, y, z, first);
-		if(!moved) moved = tryMove(world, x, y, z, getSecondDirection(world, x, y, z));
-		if(!moved) moved = tryMove(world, x, y, z, ForgeDirection.UP);
+		if(!moved) moved = tryMove(world, x, y, z, randomHorizontal(world));
 		if(!moved) world.scheduleBlockUpdate(x, y, z, this, getDelay(world));
 	}
 
