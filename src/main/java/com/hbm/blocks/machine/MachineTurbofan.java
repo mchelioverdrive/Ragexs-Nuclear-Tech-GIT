@@ -15,6 +15,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -79,5 +80,6 @@ public class MachineTurbofan extends BlockDummyable implements ITooltipProvider 
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		list.add(EnumChatFormatting.YELLOW + "Fuel efficiency:");
 		list.add(EnumChatFormatting.YELLOW + "-" + FuelGrade.AERO.getGrade() + ": " + EnumChatFormatting.RED + "100%");
+		list.add(StatCollector.translateToLocal("tooltip.furnace.monoxide"));
 	}
 }

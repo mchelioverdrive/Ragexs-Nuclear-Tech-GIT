@@ -1,16 +1,21 @@
 package com.hbm.blocks.machine;
 
+import java.util.List;
+
 import com.hbm.blocks.BlockDummyable;
+import com.hbm.blocks.ITooltipProvider;
 import com.hbm.tileentity.TileEntityProxyCombo;
 import com.hbm.tileentity.machine.oil.TileEntityMachinePyroOven;
 
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
+import net.minecraft.util.StatCollector;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class MachinePyroOven extends BlockDummyable {
+public class MachinePyroOven extends BlockDummyable implements ITooltipProvider {
 
 	public MachinePyroOven(Material mat) {
 		super(mat);
@@ -51,5 +56,10 @@ public class MachinePyroOven extends BlockDummyable {
 		}
 		
 		this.makeExtra(world, x - rot.offsetX, y + 2, z - rot.offsetZ);
+	}
+	@Override
+	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
+		this.addStandardInfo(stack, player, list, ext);
+		list.add(StatCollector.translateToLocal("tooltip.furnace.monoxide"));
 	}
 }

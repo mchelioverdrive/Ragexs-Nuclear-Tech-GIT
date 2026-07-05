@@ -74,6 +74,7 @@ public class MachineDiesel extends BlockMachineBase implements ITooltipProvider,
 				list.add(EnumChatFormatting.YELLOW + "-" + grade.getGrade() + ": " + EnumChatFormatting.RED + "" + eff + "%");
 			}
 		}
+		list.add(StatCollector.translateToLocal("tooltip.furnace.monoxide"));
 	}
 
 	@Override

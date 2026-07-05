@@ -13,6 +13,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -70,5 +71,6 @@ public class MachineGasFlare extends BlockDummyable implements ITooltipProvider 
 		list.add(EnumChatFormatting.YELLOW + "Fuel efficiency:");
 		list.add(EnumChatFormatting.YELLOW + "-Flammable Gasses: " + EnumChatFormatting.RED + "20%");
 		list.add(EnumChatFormatting.YELLOW + "-Flammable Liquids: " + EnumChatFormatting.RED + "10%");
+		list.add(StatCollector.translateToLocal("tooltip.furnace.monoxide"));
 	}
 }

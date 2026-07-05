@@ -1,6 +1,9 @@
 package com.hbm.blocks.machine;
 
+import java.util.List;
+
 import com.hbm.blocks.BlockDummyable;
+import com.hbm.blocks.ITooltipProvider;
 import com.hbm.handler.MultiblockHandlerXR;
 import com.hbm.inventory.material.Mats.MaterialStack;
 import com.hbm.items.machine.ItemScraps;
@@ -16,9 +19,10 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemTool;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
+import net.minecraft.util.StatCollector;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class MachineArcFurnaceLarge extends BlockDummyable {
+public class MachineArcFurnaceLarge extends BlockDummyable implements ITooltipProvider {
 
 	public MachineArcFurnaceLarge() {
 		super(Material.iron);
@@ -97,5 +101,10 @@ public class MachineArcFurnaceLarge extends BlockDummyable {
 		} else {
 			return true;
 		}
+	}
+	@Override
+	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
+		this.addStandardInfo(stack, player, list, ext);
+		list.add(StatCollector.translateToLocal("tooltip.furnace.monoxide"));
 	}
 }

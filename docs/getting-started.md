@@ -80,3 +80,7 @@ For other Minecraft versions, use separate projects rather than this repository:
 - NTM Extended Edition for 1.12: <https://github.com/Alcatergit/Hbm-s-Nuclear-Tech-GIT/releases>
 - Nuclear Tech Mod Remake for 1.18: <https://codeberg.org/MartinTheDragon/Nuclear-Tech-Mod-Remake/releases>
 
+
+## Carbon monoxide warnings
+
+Machines that burn fuel or handle exhaust can produce carbon monoxide while running. Read machine tooltips for the carbon monoxide warning and ventilate enclosed work areas before operating those machines.
