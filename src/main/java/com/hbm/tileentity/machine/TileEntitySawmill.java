@@ -508,6 +508,9 @@ public class TileEntitySawmill extends TileEntityMachineBase {
 
 			IHeatSource source = (IHeatSource) con;
 			int heatSrc = (int)(source.getHeatStored() * diffusion);
+			int heatDemand = getHeatDemand();
+
+			heatSrc = Math.min(heatSrc, heatDemand);
 
 			if(heatSrc > MAX_HEAT_DRAW)
 				heatSrc = MAX_HEAT_DRAW;
@@ -521,6 +524,34 @@ public class TileEntitySawmill extends TileEntityMachineBase {
 
 		this.heat = 0;
 		return 0;
+	}
+
+	protected int getHeatDemand() {
+
+		/*
+		 * The sawmill is a Stirling-driven machine, not a raw heat dump.
+		 * Large heat buffers from fireboxes, ovens, and electric heaters used to
+		 * force the saw to pull the full transfer cap every tick. Even the lowest
+		 * electric heater setting could therefore push the blade past failure speed
+		 * after it had warmed the heater buffer for a short time.
+		 *
+		 * Pull only the heat needed to approach the useful operating band. Cutting
+		 * load still makes the saw draw more heat, but idle or lightly-loaded saws
+		 * stop accepting heat before overspeeding.
+		 */
+		double targetSpeed = NOMINAL_CUT_SPEED;
+
+		if(slots[0] != null && getOutput(slots[0]) != null)
+			targetSpeed = MAX_SAFE_SPEED - 20.0D;
+
+		double speedDeficit = targetSpeed - bladeSpeed;
+
+		if(speedDeficit <= 0.0D)
+			return 0;
+
+		int demand = (int)Math.ceil(speedDeficit / HEAT_TO_BLADE_SPEED);
+
+		return Math.min(demand, MAX_HEAT_DRAW);
 	}
 
 	protected void sendSyncPacket(boolean forceFull) {
