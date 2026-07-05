@@ -1,6 +1,7 @@
 package com.hbm.main;
 
 import com.google.common.collect.ImmutableList;
+import com.hbm.api.RTMApi;
 import com.hbm.blocks.BlockEnums.EnumStoneType;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.generic.BlockMotherOfAllOres;
@@ -278,6 +279,7 @@ public class MainRegistry {
 		if(!configHbmDir.exists()) configHbmDir.mkdir();
 
 		logger.info("THE LOGGER FUCKING WORKS GODDAMMIT");
+		logger.info("{} identity API present: variant={}, apiVersion={}", RTMApi.MOD_NAME, RTMApi.getVariant(), RTMApi.getApiVersion());
 
 		// Reroll Polaroid
 		//if(generalOverride > 0 && generalOverride < 19) {
