@@ -8,17 +8,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm.blocks.BlockDummyable;
+import com.hbm.blocks.ITooltipProvider;
 import com.hbm.blocks.ILookOverlay;
 
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
+import net.minecraft.util.StatCollector;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.Pre;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class MachineTurbineGas extends BlockDummyable implements ILookOverlay {
+public class MachineTurbineGas extends BlockDummyable implements ILookOverlay, ITooltipProvider {
 	
 	public MachineTurbineGas(Material mat) {
 		super(mat);
@@ -115,5 +118,10 @@ public class MachineTurbineGas extends BlockDummyable implements ILookOverlay {
 		int iZ = coreZ + dir.offsetZ * exDir + turn.offsetZ * exRot;
 		
 		return iX == hitX && iZ == hitZ && iY == hitY;
+	}
+	@Override
+	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
+		this.addStandardInfo(stack, player, list, ext);
+		list.add(StatCollector.translateToLocal("tooltip.furnace.monoxide"));
 	}
 }

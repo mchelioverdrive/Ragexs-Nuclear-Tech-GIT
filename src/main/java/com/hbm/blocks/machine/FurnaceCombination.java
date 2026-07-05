@@ -12,6 +12,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
+import net.minecraft.util.StatCollector;
 
 public class FurnaceCombination extends BlockDummyable implements ITooltipProvider {
 
@@ -44,5 +45,6 @@ public class FurnaceCombination extends BlockDummyable implements ITooltipProvid
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		this.addStandardInfo(stack, player, list, ext);
+		list.add(StatCollector.translateToLocal("tooltip.furnace.monoxide"));
 	}
 }

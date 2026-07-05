@@ -1,8 +1,11 @@
 package com.hbm.blocks.machine;
 
+import java.util.List;
+
 import java.util.Random;
 
 import com.hbm.blocks.ModBlocks;
+import com.hbm.blocks.ITooltipProvider;
 import com.hbm.handler.atmosphere.IBlockSealable;
 import com.hbm.lib.RefStrings;
 import com.hbm.main.MainRegistry;
@@ -26,8 +29,9 @@ import net.minecraft.util.IIcon;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraft.util.StatCollector;
 
-public class MachineDiFurnace extends BlockContainer implements IBlockSealable {
+public class MachineDiFurnace extends BlockContainer implements IBlockSealable, ITooltipProvider {
 
     private final Random rand = new Random();
 	private final boolean isActive;
@@ -211,5 +215,10 @@ public class MachineDiFurnace extends BlockContainer implements IBlockSealable {
 	@Override
 	public boolean isSealed(World world, int x, int y, int z) {
 		return false;
+	}
+	@Override
+	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
+		this.addStandardInfo(stack, player, list, ext);
+		list.add(StatCollector.translateToLocal("tooltip.furnace.monoxide"));
 	}
 }
