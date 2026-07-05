@@ -1,3 +1,7 @@
+## Runtime Identity API
+* Added `com.hbm.api.RTMApi` so integration mods can distinguish Ragex Nuclear Tech / RTM from regular HBM via stable constants and simple static methods.
+* Logged the RTM identity API once during startup and documented reflective integration usage in the README.
+
 ## Documentation
 * Refocused the README and docs on Ragex's Nuclear Tech's purpose as a realism-oriented fork of original NTM.
 * Added a dedicated upstream comparison guide covering removed/reworked fantasy elements, nuclear/radiation changes, chemistry expansion, space/world changes, progression rebalances, warfare controls, and compatibility cleanup.

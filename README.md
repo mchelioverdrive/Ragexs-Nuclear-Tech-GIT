@@ -87,6 +87,10 @@ The original NTM wiki is useful for inherited mechanics, but RNTM intentionally 
 
 The source build declares CodeChickenCore, CodeChickenLib, NotEnoughItems, Inventory Tweaks, and OpenComputers API dependencies. Pack authors should test their exact modpack combination because legacy 1.7.10 dependency resolution can vary by launcher and repository availability.
 
+### Runtime identity API
+
+Integration mods can distinguish Ragex Nuclear Tech from regular HBM by reflectively checking for `com.hbm.api.RTMApi`. This stable, server-safe API does not depend on client-only code or initialize RTM internals just to read identity constants. It exposes `MOD_FAMILY = "HBM"`, `MOD_VARIANT = "RTM"`, `MOD_NAME = "Ragex Nuclear Tech"`, `API_VERSION = 1`, and simple `isRTM()`, `getVariant()`, and `getApiVersion()` methods.
+
 ### Client and server requirements
 
 - The mod must be installed on **both client and server** for multiplayer.
