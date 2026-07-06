@@ -1,3 +1,9 @@
+# Rebalance orbital station thrusters
+
+- Made LPW-3N, LPW-2, HTR-F4, and Xenon Station Thruster construction substantially more expensive and progression-gated.
+- Rebalanced station thruster recipes around real station-propulsion needs: refractory nozzles, feed plumbing, propellant tankage, motors/coils, avionics, and xenon ion-thruster hardware.
+- Documented the new station thruster balance rationale in the space travel documentation.
+
 # Add space travel guidebook
 
 - Added a new in-game space travel guide book with pages for rocket planning, destination drives, survival, orbit, stations, satellites, and return logistics.
