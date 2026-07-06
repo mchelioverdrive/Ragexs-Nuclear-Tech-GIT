@@ -129,7 +129,10 @@ public class ArcWelderRecipes extends SerializableRecipe {
 		//recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.sat_laser), 600, 50_000L, new ComparableStack(ModItems.sat_base), new ComparableStack(ModItems.sat_head_laser)));
 		//recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.sat_resonator), 600, 50_000L, new ComparableStack(ModItems.sat_base), new ComparableStack(ModItems.sat_head_resonator)));
 
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModBlocks.machine_xenon_thruster), 600, 50_000L, new FluidStack(Fluids.ARGON, 1_000), new OreDictStack(W.plateWelded(), 2), new ComparableStack(ModItems.plate_stainless, 6), new ComparableStack(ModItems.arc_electrode, 1, EnumElectrodeType.GRAPHITE)));
+		recipes.add(new ArcWelderRecipe(new ItemStack(ModBlocks.machine_xenon_thruster), 2400, 5_000_000L, new FluidStack(Fluids.XENON, 8_000),
+				new OreDictStack(W.plateWelded(), 8), new OreDictStack(NB.plateWelded(), 4),
+				new ComparableStack(ModItems.circuit, 4, EnumCircuitType.AVIONICS),
+				new ComparableStack(ModItems.arc_electrode, 2, EnumElectrodeType.SATURNITE)));
 
 		//krypton + silicon wafer = printed silicon wafer
 		recipes.add(new ArcWelderRecipe(DictFrame.fromOne(ModItems.circuit, EnumCircuitType.SILICON), 30, 1_000L, new FluidStack(Fluids.KRYPTON, 400), new ComparableStack(ModItems.billet_silicon)));

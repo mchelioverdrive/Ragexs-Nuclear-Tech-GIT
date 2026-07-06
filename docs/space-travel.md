@@ -28,3 +28,12 @@ Orbit is useful for staging transfers, deploying satellites, and creating orbita
 ## Server notes
 
 Server owners should review dimension IDs and space-related configuration before a long-term world starts. Avoid changing orbit or celestial dimension IDs after stations, satellites, or player bases exist.
+
+## Orbital station thruster balancing
+
+Station propulsion is now balanced as full spacecraft propulsion hardware rather than simple nozzle blocks. The LPW-3N, LPW-2, HTR-F4, and Xenon Station Thruster recipes ask for more refractory metals, feed plumbing, tanks, high-grade motors/coils, and avionics to reflect the way real station propulsion combines thrust hardware with propellant storage, valve regulation, thermal control, and guidance/control systems.
+
+- **LPW-3N Station Thruster:** baseline nuclear/thermal station thruster package using refractory chambers, durable plumbing, tankage, tungsten coils, and avionics.
+- **LPW-2 Station Thruster:** upgraded chemical station thruster assembly that now depends on an LPW-3N core plus extra pumps, tanks, titanium shelling, and advanced-alloy coils.
+- **HTR-F4 Station Thruster:** high-end plasma-heater station thruster with two LPW-3N cores, expanded tungsten/resistant-alloy structure, extra durable feed lines, and more avionics.
+- **Xenon Station Thruster:** ion station thruster fabrication now consumes xenon working gas, high arc-welder energy, tungsten/niobium welded plates, avionics, and Saturnite electrodes to represent grids, discharge chambers, neutralizers, and precision feed hardware.
