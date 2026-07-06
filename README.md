@@ -31,7 +31,7 @@ See [docs/upstream-changes.md](docs/upstream-changes.md) for a more focused comp
 
 - **Realism-focused nuclear technology:** MSR, PBR, RBMK/PWR-style systems, research reactors, nuclear fuels, waste handling, meltdowns, fallout, radiation, and nuclear explosions.
 - **Industrial chemistry:** large chemical production chains, isotope work, distillation, SILEX enrichment, acids, fuels, fluids, and periodic-table-driven materials.
-- **Grounded resources:** realistic ore and oil deposit concepts, bedrock extraction, expanded ore processing, metallurgy, and blast-furnace-centered progression.
+- **Grounded resources:** realistic ore and oil deposit concepts, renewable bedrock oil/gas fallback extraction for custom maps, bedrock resource drilling, expanded ore processing, metallurgy, and blast-furnace-centered progression.
 - **Power and fluids:** mod-native energy networks, RF-compatible APIs, fluid tanks, fluid traits, gases, fuels, coolants, corrosion, pollution, and radioactive fluid behavior.
 - **Space and celestial bodies:** revised planetary bodies, gas giants, Sun travel, orbital stations, satellites, atmosphere and water-table logic, and station administration commands.
 - **Weapons, hazards, and warfare controls:** guns, explosives, missiles, CIWS, fallout rain, biome damage from detonations, radiation hotspots, scheduled nuke toggles, and server moderation commands.

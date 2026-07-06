@@ -50,8 +50,8 @@ RNTM treats space and geology as part of the realism pass:
 - Gas giant dimensions were added.
 - Travel to the Sun was added.
 - Planetary orbit calculations and broken time progression were fixed.
-- Oil deposits were moved toward bedrock-generated deposits.
-- Ore deposits were moved toward bedrock-generated deposits.
+- Oil deposits were moved toward bedrock-generated deposits, and drills can fall back to slow renewable oil/gas from bedrock for custom or WorldPainter-style maps.
+- Ore deposits were moved toward bedrock-generated deposits, with the Large Mining Drill able to extract configured bedrock resources.
 - Atmosphere and water-table behavior are important gameplay rules, especially for space and planetary bodies.
 
 ## Industry and progression
