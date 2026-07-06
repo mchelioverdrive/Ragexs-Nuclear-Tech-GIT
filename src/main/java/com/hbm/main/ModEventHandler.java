@@ -1459,7 +1459,7 @@ public class ModEventHandler {
 						OrbitalStation station = OrbitalStation.getStationFromPosition((int) player.posX, (int) player.posZ);
 						DebugTeleporter.teleport(player, station.orbiting.dimensionId,
 							rand.nextInt(SpaceConfig.maxProbeDistance * 2) - SpaceConfig.maxProbeDistance,
-							800,
+							8000, //theres air here
 							rand.nextInt(SpaceConfig.maxProbeDistance * 2) - SpaceConfig.maxProbeDistance,
 							false
 						);

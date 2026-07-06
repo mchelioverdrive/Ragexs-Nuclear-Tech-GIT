@@ -273,17 +273,35 @@ public class EntityRideableRocket extends EntityMissileBaseNT implements ILookOv
 			}
 
 			if(state == RocketState.LAUNCHING) {
-				Vec3 motion = BobMathUtil.getDirectionFromAxisAngle(rotationPitch - 90.0F, 180.0F - rotationYaw, rocketVelocity);
-				motionX = motion.xCoord;
-				motionY = motion.yCoord;
-				motionZ = motion.zCoord;
+
+				if(posY > 8000) {
+
+					rotationPitch = 0F;
+
+					// HARD LOCK vertical ascent
+					motionX = 0;
+					motionZ = 0;
+					motionY = rocketVelocity;
+
+				} else {
+
+					Vec3 motion = BobMathUtil.getDirectionFromAxisAngle(
+						rotationPitch - 90.0F,
+						180.0F - rotationYaw,
+						rocketVelocity
+					);
+
+					motionX = motion.xCoord;
+					motionY = motion.yCoord;
+					motionZ = motion.zCoord;
+				}
 			} else {
 				motionX = 0;
 				motionY = rocketVelocity;
 				motionZ = 0;
 			}
 
-			if((state == RocketState.LAUNCHING && posY > 900) || (state == RocketState.UNDOCKING && posY < 32)) {
+			if((state == RocketState.LAUNCHING && posY > 80000) || (state == RocketState.UNDOCKING && posY < 32)) {
 				beginLandingSequence();
 				RocketStruct rocket = getRocket();
 
@@ -291,7 +309,7 @@ public class EntityRideableRocket extends EntityMissileBaseNT implements ILookOv
 					Destination destination = ItemVOTVdrive.getDestination(navDrive);
 
 					int x = destination.x;
-					int y = 800;
+					int y = 8000;
 					int z = destination.z;
 
 					int targetDimensionId = destination.body.getDimensionId();
