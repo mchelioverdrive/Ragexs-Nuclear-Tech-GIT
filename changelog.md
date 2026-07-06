@@ -1,3 +1,15 @@
+# Refine guide book bedrock extraction notes
+
+- Updated the starter guide oil section to describe renewable bedrock oil/gas fallback behavior for custom map compatibility.
+- Added guide text calling out the Industrial Mining Drill line and Large Mining Drill bedrock resource extraction.
+- Updated player-facing docs to mention bedrock pumping and configured bedrock resource drilling.
+
+# Update guide book accuracy
+
+- Audited the starter guide book text against the current localized block and item names.
+- Updated early progression, petrochemical, radiation treatment, uranium processing, and MAGNOX reactor guidance to match the realistified terminology.
+- Fixed stale ZIRNOX, Rad-Away, Rad-X, pumpjack, tool steel formatting, condenser, and auxiliary cooling references in the guide book.
+
 # Add carbon monoxide ventilation tooltips
 
 - Added inventory tooltips for steel grates, item grates, and air vents noting that they can vent carbon monoxide from enclosed spaces.

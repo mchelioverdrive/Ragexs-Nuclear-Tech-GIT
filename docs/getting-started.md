@@ -25,7 +25,7 @@ Recommended setup:
 
 RNTM progression is less about a single linear quest and more about connected real-industry systems:
 
-- **Ore processing and bedrock resources** feed metallurgy and machine crafting.
+- **Ore processing and bedrock resources** feed metallurgy and machine crafting; bedrock pumping provides a fallback renewable oil/gas trickle for custom maps, while the Large Mining Drill can extract configured resources from bedrock.
 - **Blast furnace work** matters earlier than many original-NTM players may expect.
 - **Chemistry and refining** unlock fuels, acids, plastics, isotope work, and advanced materials.
 - **Power generation** scales from basic generators toward reworked nuclear options such as MSR, PBR, RBMK/PWR-style systems, and research reactors.
