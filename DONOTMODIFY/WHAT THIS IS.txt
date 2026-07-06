@@ -1,0 +1,5 @@
+This folder is for backporting any new NTM space features that I want to cherry pick without
+causing massive issues for RNT/RTM. It is also for adding the WAR TEC missiles/additions to RTM/RNT.
+DO NOT MODIFY ANYTHING IN HERE. IT IS FOR RESEARCH/BACKPORTING/CHERRY PICKING REALISTIC/REAL FEATURES
+OR CODE OPTIMIZATIONS/BUG FIXES TO ADD. NOTHING ELSE. DO NOT MODIFY, CHANGE, OR ATTEMPT TO COMPILE
+ANYTHING IN THIS FOLDER OR SUB FOLDERS.

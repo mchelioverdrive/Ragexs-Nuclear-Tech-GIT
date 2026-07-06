@@ -1,0 +1,76 @@
+package com.hbm.dim.tekto;
+
+import com.hbm.blocks.ModBlocks;
+import com.hbm.config.WorldConfig;
+import com.hbm.dim.CelestialBody;
+import com.hbm.dim.ChunkProviderCelestial;
+import com.hbm.dim.SolarSystem;
+import com.hbm.dim.mapgen.MapGenGreg;
+import com.hbm.dim.mapgen.MapGenVolcano;
+import com.hbm.dim.tekto.biome.BiomeGenBaseTekto;
+import com.hbm.world.gen.terrain.MapGenBedrockOil;
+import com.hbm.world.gen.terrain.MapGenBubble;
+
+import net.minecraft.block.Block;
+import net.minecraft.init.Blocks;
+import net.minecraft.world.World;
+
+public class ChunkProviderTekto extends ChunkProviderCelestial {
+
+	private MapGenGreg caveGenV3 = new MapGenGreg();
+	private MapGenVolcano volcano = new MapGenVolcano(12);
+
+	private MapGenBubble tektonic = new MapGenBubble(WorldConfig.tektoOilSpawn);
+	private MapGenBedrockOil bedtonic = new MapGenBedrockOil(WorldConfig.tektoBedrockOilSpawn);
+
+	public ChunkProviderTekto(World world, long seed) {
+		super(world, seed);
+		reclamp = false; // please kill this, we spend more time calculating perlin noise than anything then skip two whole octaves of it!
+		caveGenV3.stoneBlock = ModBlocks.basalt;
+
+		volcano.setSize(8, 16);
+		volcano.setMaterial(ModBlocks.geysir_chloric, ModBlocks.vinyl_sand);
+
+		tektonic.block = ModBlocks.ore_tekto;
+		tektonic.meta = (byte)CelestialBody.getMeta(world);
+		tektonic.replace = ModBlocks.basalt;
+		tektonic.setSize(8, 16);
+
+		bedtonic.replace = ModBlocks.basalt;
+		bedtonic.meta = (byte)SolarSystem.Body.TEKTO.ordinal();
+
+		stoneBlock = ModBlocks.basalt;
+		seaBlock = ModBlocks.ccl_block;
+	}
+
+	@Override
+	protected Block getFlatWorldBlock(Block block) {
+		if(block == Blocks.water || block == Blocks.flowing_water) return ModBlocks.ccl_block;
+		if(block == Blocks.grass) return ModBlocks.rubber_grass;
+		if(block == Blocks.sand) return ModBlocks.vinyl_sand;
+		if(block == Blocks.dirt) return ModBlocks.rubber_silt;
+		if(block == Blocks.stone || block == Blocks.sandstone) return ModBlocks.basalt;
+		if(block == Blocks.snow_layer) return Blocks.air;
+		return block;
+	}
+
+	@Override
+	public BlockMetaBuffer getChunkPrimer(int x, int z) {
+		BlockMetaBuffer buffer = super.getChunkPrimer(x, z);
+		tektonic.setMetas(buffer.metas);
+		bedtonic.setMetas(buffer.metas);
+
+		if(biomesForGeneration[0] == BiomeGenBaseTekto.vinylsands) {
+			volcano.func_151539_a(this, worldObj, x, z, buffer.blocks);
+		}
+
+		caveGenV3.func_151539_a(this, worldObj, x, z, buffer.blocks);
+
+		tektonic.func_151539_a(this, worldObj, x, z, buffer.blocks);
+		bedtonic.func_151539_a(this, worldObj, x, z, buffer.blocks);
+
+		// how many times do I gotta say BEEEEG
+		return buffer;
+	}
+
+}

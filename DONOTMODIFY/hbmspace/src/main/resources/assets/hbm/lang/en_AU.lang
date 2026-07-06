@@ -1,0 +1,75 @@
+achievement.driveFail.desc=Fail to clone an orbital station drive before launching the station
+achievement.driveFail=DARREN YOU FUCKHEAD WHADDYAMEAN YOU DIDN'T COPY IT??
+achievement.breeding.desc=Thank you, god bless you, and god bless the fucken yanks
+achievement.breeding=Ironic
+
+body.kerbin=Bottle-O
+body.mun=Humpty-Doo
+body.minmus=Cold Rock Ice Creamery
+body.duna=Windorah
+body.moho=Alice Springs
+body.eve=Wollongong
+body.laythe=Gold Coast
+body.ike=Pine Gap
+body.dres=Shithole
+
+entity.entity_elder_one.name=Massive Dickhead
+entity.entity_glyphid_brenda.name=Shiela
+entity.entity_ntm_fbi.name=Border Force
+entity.entity_ntm_fbi_drone.name=Border Force Drone
+entity.entity_mob_hunter_chopper.name=Appropriate Defense Spending
+entity.entity_mob_mask_man.name=Ned Kelly
+entity.entity_pigeon.name=Bin Chicken
+entity.entity_plastic_bag.name=Reusable Woolies Bag
+entity.entity_scutterfish.name=Platypus
+entity.entity_moon_cow.name=Dumb Cunt
+
+generator.martian=The Outback
+
+container.bat9000=Fuck-Off Huge Tank 9000
+container.electricFurnace=Electric Barbie
+container.zirnox=BEERNOX Nuclear Reactor
+
+tile.machine_bat9000.name=Fuck-Off Huge Tank 9000
+tile.machine_electric_furnace_off.name=Electric Barbie
+tile.machine_electric_furnace_on.name=Electric Barbie
+tile.deco_loot.name=Free Shit
+tile.plant_flower.weed.name=Bush Bud
+tile.plant_tall.weed.name=Bush Bud
+tile.pink_log.name=Hello Kitty Log
+tile.pink_planks.name=Hello Kitty Planks
+tile.pink_slab.name=Hello Kitty Slab
+tile.pink_stairs.name=Hello Kitty Stairs
+tile.snowglobe.name=Souvenir
+tile.tumor.name=Old Mate
+tile.tnt_ntm.name=Legit TNT
+tile.skeleton_holder.name=Fucken hell Darren I told you not to ride the jet powered swing
+tile.machine_zirnox.name=BEERNOX Nuclear Reactor
+tile.zirnox_destroyed.name=Destroyed BEERNOX
+
+item.debris_element.name=Broken BEERNOX Fuel Element
+item.rod_zirnox_empty.name=Empty BEERNOX Bottle
+item.rod_zirnox_natural_uranium_fuel.name=BEERNOX Natural Uranium Fuel Bottle
+item.rod_zirnox_uranium_fuel.name=BEERNOX Uranium Fuel Bottle
+item.rod_zirnox_th232.name=BEERNOX VB Bottle
+item.rod_zirnox_thorium_fuel.name=BEERNOX XXXX Gold Bottle
+item.rod_zirnox_mox_fuel.name=BEERNOX MOX Fuel Bottle
+item.rod_zirnox_plutonium_fuel.name=BEERNOX Plutonium Fuel Bottle
+item.rod_zirnox_u233_fuel.name=BEERNOX Uranium-233 Fuel Bottle
+item.rod_zirnox_u235_fuel.name=BEERNOX Uranium-235 Fuel Bottle
+item.rod_zirnox_les_fuel.name=BEERNOX LES Fuel Bottle
+item.rod_zirnox_lithium.name=BEERNOX Lithium Bottle
+item.rod_zirnox_tritium.name=BEERNOX Tritium Bottle
+item.rod_zirnox_zfb_mox.name=BEERNOX ZFB MOX Fuel Bottle
+item.rod_zirnox_natural_uranium_fuel_depleted.name=Depleted BEERNOX Natural Uranium Fuel Bottle
+item.rod_zirnox_uranium_fuel_depleted.name= Depleted BEERNOX Uranium Fuel Bottle
+item.rod_zirnox_thorium_fuel_depleted.name= Depleted BEERNOX Thorium Fuel Bottle
+item.rod_zirnox_mox_fuel_depleted.name=Depleted BEERNOX MOX Fuel Bottle
+item.rod_zirnox_plutonium_fuel_depleted.name=Depleted BEERNOX Plutonium Fuel Bottle
+item.rod_zirnox_u233_fuel_depleted.name=Depleted BEERNOX Uranium-233 Fuel Bottle
+item.rod_zirnox_u235_fuel_depleted.name=Depleted BEERNOX Uranium-235 Fuel Bottle
+item.rod_zirnox_les_fuel_depleted.name=Depleted BEERNOX LES Fuel Bottle
+item.rod_zirnox_zfb_mox_depleted.name=Depleted BEERNOX ZFB MOX Fuel Bottle
+
+desc.item.zirnoxBreedingRod=§2[BEERNOX Breeding Rod]$§ePlace next to fuel rods to breed$§eLasts %d ticks
+desc.item.zirnoxRod=§a[BEERNOX Fuel Rod]$§eGenerates %1$d heat per tick$§eLasts %2$d ticks
