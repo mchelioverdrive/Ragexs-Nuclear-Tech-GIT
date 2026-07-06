@@ -21,6 +21,10 @@ import net.minecraft.world.ChunkPosition;
  * @author hbm
  *
  */
+
+//this, this is why I made RTM.
+//ExplosionVanillaNewTechnologyCompressedAffectedBlockPositionDataForClientEffectsAndParticleHandlingPacket
+//breaks fucking github thanks bob
 @NotableComments
 public class ExplosionVanillaNewTechnologyCompressedAffectedBlockPositionDataForClientEffectsAndParticleHandlingPacket implements IMessage {
 
