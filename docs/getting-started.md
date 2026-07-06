@@ -83,4 +83,4 @@ For other Minecraft versions, use separate projects rather than this repository:
 
 ## Carbon monoxide warnings
 
-Machines that burn fuel or handle exhaust can produce carbon monoxide while running. Read machine tooltips for the carbon monoxide warning and ventilate enclosed work areas before operating those machines.
+Machines that burn fuel or handle exhaust can produce carbon monoxide while running. Read machine tooltips for the carbon monoxide warning and ventilate enclosed work areas before operating those machines. Steel grates, item grates, and air vents can help vent carbon monoxide from enclosed spaces.
