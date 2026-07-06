@@ -60,6 +60,7 @@ The mod includes celestial bodies, orbit logic, satellites, and orbital stations
 - Confirm the server's configured dimension IDs before adding other dimension mods.
 - Use station/satellite commands only if you are an operator or the server rules allow it.
 - Keep backup travel items or admin support available when testing station teleportation.
+- Read the dedicated [Space Travel Guide](space-travel.md) before committing rare rocket hardware to a launch.
 - Remember that atmosphere and water-table behavior can differ by body.
 
 ## Multiplayer etiquette

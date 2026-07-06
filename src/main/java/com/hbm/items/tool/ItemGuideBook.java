@@ -52,7 +52,8 @@ public class ItemGuideBook extends Item implements IGUIProvider {
 		TEST("book.test.cover", 2F, statFacTest()),
 		RBMK("book.rbmk.cover", 1.5F, statFacRBMK()),
 		HADRON("book.error.cover", 1.5F, statFacHadron()),
-		STARTER("book.starter.cover", 1.5F, statFacStarter());
+		STARTER("book.starter.cover", 1.5F, statFacStarter()),
+		SPACE("book.space.cover", 1.5F, statFacSpace());
 		
 		public List<GuidePage> pages;
 		public float titleScale;
@@ -70,9 +71,9 @@ public class ItemGuideBook extends Item implements IGUIProvider {
 	}
 	
 	public static List<GuidePage> statFacTest() {
-		
+
 		List<GuidePage> pages = new ArrayList();
-		
+
 		pages.add(new GuidePage().addTitle("Title LMAO", 0x800000, 1F)
 				.addText("book.test.page1", 2F)
 				.addImage(new ResourceLocation(RefStrings.MODID + ":textures/gui/book/smileman.png"), 100, 40, 40));
@@ -84,10 +85,10 @@ public class ItemGuideBook extends Item implements IGUIProvider {
 		pages.add(new GuidePage().addText("test test"));
 		pages.add(new GuidePage().addText("test test test"));
 		pages.add(new GuidePage().addText("test test"));
-		
+
 		return pages;
 	}
-	
+
 	//TODO: Make sure this is all correct
 	public static List<GuidePage> statFacRBMK() {
 		
@@ -143,28 +144,28 @@ public class ItemGuideBook extends Item implements IGUIProvider {
 				.addText("book.rbmk.page17", 2F));
 		pages.add(new GuidePage().addTitle("book.rbmk.title18", 0x800000, 1F)
 				.addText("book.rbmk.page18", 2F));
-		
+
 		return pages;
 	}
-	
+
 	public static List<GuidePage> statFacHadron() {
-		
+
 		List<GuidePage> pages = new ArrayList();
-		
+
 		for(int i = 1; i <= 9; i++) {
 			pages.add(new GuidePage().addTitle("book.error.title" + i, 0x800000, 1F).addText("book.error.page" + i, 2F));
 		}
-		
+
 		return pages;
 	}
-	
+
 	/* Mmm, maybe I should include something that allows you to have variable textures for the gui + item
 	   That would be something to do after the book is done though (nah, fuck that)
 	 */
 	public static List<GuidePage> statFacStarter() {
-		
+
 		List<GuidePage> pages = new ArrayList();
-		
+
 		pages.add(new GuidePage().addTitle("book.starter.title1", 0x800000, 1F)
 				.addText("book.starter.page1", 2F)
 				.addImage(new ResourceLocation(RefStrings.MODID + ":textures/gui/book/starter1.png"), 96, 101, 56));
@@ -225,10 +226,34 @@ public class ItemGuideBook extends Item implements IGUIProvider {
 		pages.add(new GuidePage().addTitle("book.starter.title18", 0x800000, 1F)
 				.addText("book.starter.page18", 2F)
 				.addImage(new ResourceLocation(RefStrings.MODID + ":textures/gui/book/starter18.png"), 10, 69, 100, 100));
-		
+
 		return pages;
 	}
-	
+
+	public static List<GuidePage> statFacSpace() {
+
+		List<GuidePage> pages = new ArrayList();
+
+		pages.add(new GuidePage().addTitle("book.space.title1", 0x1f3c88, 1F)
+				.addText("book.space.page1", 2F));
+		pages.add(new GuidePage().addTitle("book.space.title2", 0x1f3c88, 1F)
+				.addText("book.space.page2", 2F));
+		pages.add(new GuidePage().addTitle("book.space.title3", 0x1f3c88, 1F)
+				.addText("book.space.page3", 2F));
+		pages.add(new GuidePage().addTitle("book.space.title4", 0x1f3c88, 1F)
+				.addText("book.space.page4", 2F));
+		pages.add(new GuidePage().addTitle("book.space.title5", 0x1f3c88, 1F)
+				.addText("book.space.page5", 2F));
+		pages.add(new GuidePage().addTitle("book.space.title6", 0x1f3c88, 1F)
+				.addText("book.space.page6", 2F));
+		pages.add(new GuidePage().addTitle("book.space.title7", 0x1f3c88, 1F)
+				.addText("book.space.page7", 2F));
+		pages.add(new GuidePage().addTitle("book.space.title8", 0x1f3c88, 1F)
+				.addText("book.space.page8", 2F));
+
+		return pages;
+	}
+
 	public static class GuidePage {
 		
 		public String title;
