@@ -339,6 +339,24 @@ book.starter.page16=If you've reached this far, you're on track to helping rebui
 book.starter.title18=About the Author
 book.starter.page18=vær is just a guy who has been trapped in the grey void featured in the Talking Head's §oOnce In A Lifetime§r for too long. He once found a studio door, but to his dismay found out it was a cardboard cut-out.
 
+book.space.cover=A Practical$Guide to$Space Travel
+book.space.title1=Before You Launch
+book.space.page1=Space travel is late-game infrastructure, not a shortcut. Build stable power, petrochemicals, precision manufacturing, radiation protection, and enough spare parts before committing rare rocket hardware to a launch.
+book.space.title2=Rocket Hardware
+book.space.page2=Construct an §lOrbital Rocket§r through the §lVehicle Assembly Base§r, then move it to a §lRocket Launch Pad§r. A useful vehicle needs a capsule or payload, fuel tanks, stability hardware, and enough fuel capacity for the selected destination.
+book.space.title3=Fuel and Delta-V
+book.space.page3=Different trips demand different fuel margins. Fill tanks completely, check the destination drive, and do not assume a rocket that reaches low orbit can also land, return, or carry a heavy station payload.
+book.space.title4=Navigation Drives
+book.space.page4=Program the correct destination before launch. Orbit, planetary landings, satellite deployment, and station cores all use destination data differently, so confirm the drive and payload before pressing launch.
+book.space.title5=Personal Survival
+book.space.page5=Vacuum, hostile atmospheres, heat, radiation, and pressure can kill faster than mobs. Wear sealable armor with PLSS support where required, bring oxygen and power reserves, and scout new bodies before unpacking machinery.
+book.space.title6=Orbit and Stations
+book.space.page6=Orbit is a staging area for satellites, station cores, and transfers. Station drives can create and revisit orbital stations; keep named spare drives safe so you can recover access if one is lost.
+book.space.title7=Satellites
+book.space.page7=Satellite payloads are launched from rockets and then managed by frequency. Server operators can list or deorbit satellites, so record frequencies and follow server rules before filling orbit with hardware.
+book.space.title8=Return Planning
+book.space.page8=Never launch with a one-way plan unless that is intentional. Carry backup drives, extra fuel, repair materials, food, medical supplies, radiation treatment, and a way for an operator or teammate to recover you if travel fails.
+
 #book.rbmk.cover=HOW 2 RBMK:$The Basics$of Reactor$Construction
 #book.rbmk.title1=Introduction
 #book.rbmk.page1=The §lRBMK§r is a fully modular nuclear reactor. Unlike most other reactors, there is no "core", and no size limitations, rather, the behavior and efficiency of the reactor comes from how it is built and how the different pieces interact with each other.

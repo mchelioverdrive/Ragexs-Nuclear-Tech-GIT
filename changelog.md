@@ -1,3 +1,9 @@
+# Add space travel guidebook
+
+- Added a new in-game space travel guide book with pages for rocket planning, destination drives, survival, orbit, stations, satellites, and return logistics.
+- Added a crafting recipe for the space travel guide book using a book and a 1m rocket fuel tank.
+- Added repository documentation for space travel preparation and linked it from the README and getting-started guide.
+
 # Update RBMK guidebook for ReaSim defaults
 
 - Revised the RBMK guidebook introduction, fuel, cooling, and fuel behavior pages to describe RTM's default ReaSim RBMK design instead of only the legacy straight-line RBMK behavior.

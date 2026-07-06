@@ -210,6 +210,7 @@ For an IDE workspace:
 ## Documentation map
 
 - [Getting Started](docs/getting-started.md)
+- [Space Travel Guide](docs/space-travel.md)
 - [What Changed from Original NTM](docs/upstream-changes.md)
 - [Configuration Guide](docs/configuration.md)
 - [Command Reference](docs/commands.md)
