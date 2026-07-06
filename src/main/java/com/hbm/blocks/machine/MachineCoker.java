@@ -8,10 +8,12 @@ import com.hbm.handler.MultiblockHandlerXR;
 import com.hbm.tileentity.TileEntityProxyCombo;
 import com.hbm.tileentity.machine.oil.TileEntityMachineCoker;
 
+import com.hbm.util.I18nUtil;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraft.util.StatCollector;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -24,12 +26,12 @@ public class MachineCoker extends BlockDummyable implements ITooltipProvider {
 
 	@Override
 	public TileEntity createNewTileEntity(World world, int meta) {
-		
+
 		if(meta >= 12) return new TileEntityMachineCoker();
 		if(meta >= extra) return new TileEntityProxyCombo().inventory().fluid();
 		return null;
 	}
-	
+
 	@Override
 	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
 		return standardOpenBehavior(world, x, y, z, player, side);
@@ -51,14 +53,14 @@ public class MachineCoker extends BlockDummyable implements ITooltipProvider {
 
 			x += dir.offsetX * o;
 			z += dir.offsetZ * o;
-			
+
 			return MultiblockHandlerXR.checkSpace(world, x, y + 1, z, new int[] {5, 0, 2, 2, 2, 2}, x, y, z, ForgeDirection.NORTH) &&
 					MultiblockHandlerXR.checkSpace(world, x + 2, y + 1, z + 2, new int[] {0, 1, 0, 0, 0, 0}, x, y, z, ForgeDirection.NORTH) &&
 					MultiblockHandlerXR.checkSpace(world, x + 2, y + 1, z - 2, new int[] {0, 1, 0, 0, 0, 0}, x, y, z, ForgeDirection.NORTH) &&
 					MultiblockHandlerXR.checkSpace(world, x - 2, y + 1, z + 2, new int[] {0, 1, 0, 0, 0, 0}, x, y, z, ForgeDirection.NORTH) &&
 					MultiblockHandlerXR.checkSpace(world, x - 2, y + 1, z - 2, new int[] {0, 1, 0, 0, 0, 0}, x, y, z, ForgeDirection.NORTH);
 		}
-		
+
 		return false;
 	}
 
@@ -84,6 +86,6 @@ public class MachineCoker extends BlockDummyable implements ITooltipProvider {
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		this.addStandardInfo(stack, player, list, ext);
-		list.add(StatCollector.translateToLocal("tooltip.furnace.monoxide"));
+		list.add(EnumChatFormatting.DARK_RED + I18nUtil.resolveKey("tooltip.furnace.monoxide"));
 	}
 }

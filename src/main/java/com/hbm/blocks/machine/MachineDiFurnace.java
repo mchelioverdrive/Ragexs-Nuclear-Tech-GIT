@@ -11,6 +11,7 @@ import com.hbm.lib.RefStrings;
 import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.machine.TileEntityDiFurnace;
 
+import com.hbm.util.I18nUtil;
 import cpw.mods.fml.common.network.internal.FMLNetworkHandler;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -25,6 +26,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IIcon;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.IBlockAccess;
@@ -52,7 +54,7 @@ public class MachineDiFurnace extends BlockContainer implements IBlockSealable, 
 	public TileEntity createNewTileEntity(World p_149915_1_, int p_149915_2_) {
 		return new TileEntityDiFurnace();
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public void registerBlockIcons(IIconRegister iconRegister) {
@@ -67,38 +69,38 @@ public class MachineDiFurnace extends BlockContainer implements IBlockSealable, 
 	@SideOnly(Side.CLIENT)
 	public IIcon getIcon(IBlockAccess world, int x, int y, int z, int side) {
 		int meta = world.getBlockMetadata(x, y, z);
-		
+
 		boolean covered = world.getBlock(x, y + 1, z) == ModBlocks.machine_difurnace_extension;
-		
+
 		if(side == 0) return iconBottom;
-		
+
 		if(covered) return meta == 0 && side == 3 ? this.iconFrontCovered : (side == meta ? this.iconFrontCovered : (side == 1 ? this.iconBottom : this.blockIconCovered));
 		return meta == 0 && side == 3 ? this.iconFront : (side == meta ? this.iconFront : (side == 1 ? this.iconTop : this.blockIcon));
 	}
-	
+
 	@SideOnly(Side.CLIENT)
 	public IIcon getIcon(int side, int meta) {
 		return meta == 0 && side == 3 ? this.iconFront : (side == meta ? this.iconFront : (side == 1 ? this.iconTop : this.blockIcon));
 	}
-	
+
 	@Override
 	public Item getItemDropped(int p_149650_1_, Random p_149650_2_, int p_149650_3_) {
 		return Item.getItemFromBlock(ModBlocks.machine_difurnace_off);
 	}
-	
+
 	@Override
 	public void onBlockPlacedBy(World world, int x, int y, int z, EntityLivingBase player, ItemStack itemStack) {
 		int i = MathHelper.floor_double(player.rotationYaw * 4.0F / 360.0F + 0.5D) & 3;
-		
+
 		if(i == 0) world.setBlockMetadataWithNotify(x, y, z, 2, 2);
 		if(i == 1) world.setBlockMetadataWithNotify(x, y, z, 5, 2);
 		if(i == 2) world.setBlockMetadataWithNotify(x, y, z, 3, 2);
 		if(i == 3) world.setBlockMetadataWithNotify(x, y, z, 4, 2);
-		
+
 		if(itemStack.hasDisplayName())
 			((TileEntityDiFurnace)world.getTileEntity(x, y, z)).setCustomName(itemStack.getDisplayName());
 	}
-	
+
 	@Override
 	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
 		if(world.isRemote) {
@@ -118,24 +120,24 @@ public class MachineDiFurnace extends BlockContainer implements IBlockSealable, 
 		int i = world.getBlockMetadata(x, y, z);
 		TileEntity entity = world.getTileEntity(x, y, z);
 		keepInventory = true;
-		
+
 		if(isProcessing)
 			world.setBlock(x, y, z, ModBlocks.machine_difurnace_on);
 		else
 			world.setBlock(x, y, z, ModBlocks.machine_difurnace_off);
-		
+
 		keepInventory = false;
 		world.setBlockMetadataWithNotify(x, y, z, i, 2);
-		
+
 		if(entity != null) {
 			entity.validate();
 			world.setTileEntity(x, y, z, entity);
 		}
 	}
-	
+
 	@Override
 	public void breakBlock(World world, int x, int y, int z, Block block, int meta) {
-		
+
 		if(!keepInventory) {
 			TileEntityDiFurnace tileentityfurnace = (TileEntityDiFurnace) world.getTileEntity(x, y, z);
 
@@ -177,11 +179,11 @@ public class MachineDiFurnace extends BlockContainer implements IBlockSealable, 
 
 		super.breakBlock(world, x, y, z, block, meta);
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public void randomDisplayTick(World world, int x, int y, int z, Random rand) {
-		
+
 		if(isActive) {
 			int meta = world.getBlockMetadata(x, y, z);
 			float x0 = x + 0.5F;
@@ -191,7 +193,7 @@ public class MachineDiFurnace extends BlockContainer implements IBlockSealable, 
 			float sideRand = rand.nextFloat() * 0.5F - 0.25F;
 			float xOff = rand.nextFloat() * 0.375F + 0.3125F;
 			float zOff = rand.nextFloat() * 0.375F + 0.3125F;
-			
+
 			if(world.getBlock(x, y + 1, z) == ModBlocks.machine_difurnace_extension) {
 				y += 1;
 			}
@@ -219,6 +221,6 @@ public class MachineDiFurnace extends BlockContainer implements IBlockSealable, 
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		this.addStandardInfo(stack, player, list, ext);
-		list.add(StatCollector.translateToLocal("tooltip.furnace.monoxide"));
+		list.add(EnumChatFormatting.DARK_RED + I18nUtil.resolveKey("tooltip.furnace.monoxide"));
 	}
 }

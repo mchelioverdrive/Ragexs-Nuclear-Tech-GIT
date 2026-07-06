@@ -7,10 +7,12 @@ import com.hbm.blocks.ITooltipProvider;
 import com.hbm.tileentity.TileEntityProxyCombo;
 import com.hbm.tileentity.machine.oil.TileEntityMachinePyroOven;
 
+import com.hbm.util.I18nUtil;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraft.util.StatCollector;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -27,7 +29,7 @@ public class MachinePyroOven extends BlockDummyable implements ITooltipProvider 
 		if(meta >= 6) return new TileEntityProxyCombo().inventory().power().fluid();
 		return null;
 	}
-	
+
 	@Override
 	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
 		return this.standardOpenBehavior(world, x, y, z, player, 0);
@@ -48,18 +50,18 @@ public class MachinePyroOven extends BlockDummyable implements ITooltipProvider 
 		super.fillSpace(world, x, y, z, dir, o);
 		x += dir.offsetX * o;
 		z += dir.offsetZ * o;
-		
+
 		ForgeDirection rot = dir.getRotation(ForgeDirection.DOWN);
-		
+
 		for(int i = -2; i <= 2; i++) {
 			this.makeExtra(world, x + dir.offsetX * i + rot.offsetX * 2, y, z + dir.offsetZ * i + rot.offsetZ * 2);
 		}
-		
+
 		this.makeExtra(world, x - rot.offsetX, y + 2, z - rot.offsetZ);
 	}
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		this.addStandardInfo(stack, player, list, ext);
-		list.add(StatCollector.translateToLocal("tooltip.furnace.monoxide"));
+		list.add(EnumChatFormatting.DARK_RED + I18nUtil.resolveKey("tooltip.furnace.monoxide"));
 	}
 }

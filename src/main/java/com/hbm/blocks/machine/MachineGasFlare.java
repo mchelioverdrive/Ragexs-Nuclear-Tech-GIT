@@ -7,6 +7,7 @@ import com.hbm.blocks.ITooltipProvider;
 import com.hbm.tileentity.TileEntityProxyCombo;
 import com.hbm.tileentity.machine.oil.TileEntityMachineGasFlare;
 
+import com.hbm.util.I18nUtil;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -31,12 +32,12 @@ public class MachineGasFlare extends BlockDummyable implements ITooltipProvider 
 
 	@Override
 	public TileEntity createNewTileEntity(World world, int meta) {
-		
+
 		if(meta >= 12) return new TileEntityMachineGasFlare();
 		if(meta >= 6) return new TileEntityProxyCombo(false, true, true);
 		return null;
 	}
-	
+
 	@Override
 	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
 		return this.standardOpenBehavior(world, x, y, z, player, 0);
@@ -71,6 +72,6 @@ public class MachineGasFlare extends BlockDummyable implements ITooltipProvider 
 		list.add(EnumChatFormatting.YELLOW + "Fuel efficiency:");
 		list.add(EnumChatFormatting.YELLOW + "-Flammable Gasses: " + EnumChatFormatting.RED + "20%");
 		list.add(EnumChatFormatting.YELLOW + "-Flammable Liquids: " + EnumChatFormatting.RED + "10%");
-		list.add(StatCollector.translateToLocal("tooltip.furnace.monoxide"));
+		list.add(EnumChatFormatting.DARK_RED + I18nUtil.resolveKey("tooltip.furnace.monoxide"));
 	}
 }
