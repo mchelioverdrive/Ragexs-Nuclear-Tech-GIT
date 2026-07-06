@@ -1,3 +1,8 @@
+# Update RBMK guidebook for ReaSim defaults
+
+- Revised the RBMK guidebook introduction, fuel, cooling, and fuel behavior pages to describe RTM's default ReaSim RBMK design instead of only the legacy straight-line RBMK behavior.
+- Added new guidebook pages covering ReaSim RBMK construction and operating notes, including ReaSim rods, inlet/outlet plumbing, randomized neutron streams, and safer startup guidance.
+
 # Refine guide book bedrock extraction notes
 
 - Updated the starter guide oil section to describe renewable bedrock oil/gas fallback behavior for custom map compatibility.

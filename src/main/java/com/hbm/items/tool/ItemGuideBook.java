@@ -139,6 +139,10 @@ public class ItemGuideBook extends Item implements IGUIProvider {
 		pages.add(new GuidePage().addTitle("book.rbmk.title16", 0x800000, 1F)
 				.addText("book.rbmk.page16", 2F)
 				.addImage(new ResourceLocation(RefStrings.MODID + ":textures/gui/book/rbmk16.png"), 50, 70, 100));
+		pages.add(new GuidePage().addTitle("book.rbmk.title17", 0x800000, 1F)
+				.addText("book.rbmk.page17", 2F));
+		pages.add(new GuidePage().addTitle("book.rbmk.title18", 0x800000, 1F)
+				.addText("book.rbmk.page18", 2F));
 		
 		return pages;
 	}
