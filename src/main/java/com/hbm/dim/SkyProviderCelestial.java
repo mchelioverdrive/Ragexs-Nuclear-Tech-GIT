@@ -298,31 +298,46 @@ public class SkyProviderCelestial extends IRenderHandler {
 
 	protected void renderRings(Tessellator tessellator, CelestialBody body, double size, float visibility) {
 		double outer = size * body.ringSize;
-		double inner = size * Math.max(1.08F, body.ringSize * 0.62F);
+		double inner = size * Math.max(1.08F, 1.0F + (body.ringSize - 1.0F) * 0.35F);
 		float red = body.ringColor.length > 0 ? body.ringColor[0] : 0.5F;
 		float green = body.ringColor.length > 1 ? body.ringColor[1] : red;
 		float blue = body.ringColor.length > 2 ? body.ringColor[2] : green;
 
 		GL11.glPushMatrix();
-		GL11.glRotatef(body.ringTilt - body.axialTilt, 0.0F, 1.0F, 0.0F);
+		GL11.glRotatef(body.ringTilt - body.axialTilt, 1.0F, 0.0F, 0.0F);
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
 		GL11.glEnable(GL11.GL_BLEND);
 		OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
-		GL11.glColor4f(red, green, blue, 0.45F * visibility);
 
-		tessellator.startDrawingQuads();
-		tessellator.addVertex(-outer, 99.99D, -outer, 0.0D, 0.0D);
-		tessellator.addVertex(outer, 99.99D, -outer, 1.0D, 0.0D);
-		tessellator.addVertex(inner, 99.99D, -inner, 1.0D, 1.0D);
-		tessellator.addVertex(-inner, 99.99D, -inner, 0.0D, 1.0D);
-		tessellator.addVertex(outer, 99.99D, outer, 0.0D, 0.0D);
-		tessellator.addVertex(-outer, 99.99D, outer, 1.0D, 0.0D);
-		tessellator.addVertex(-inner, 99.99D, inner, 1.0D, 1.0D);
-		tessellator.addVertex(inner, 99.99D, inner, 0.0D, 1.0D);
-		tessellator.draw();
+		renderRingBand(tessellator, inner, inner + (outer - inner) * 0.28D, red, green, blue, 0.28F * visibility);
+		renderRingBand(tessellator, inner + (outer - inner) * 0.36D, inner + (outer - inner) * 0.74D, red, green, blue, 0.38F * visibility);
+		renderRingBand(tessellator, inner + (outer - inner) * 0.82D, outer, red, green, blue, 0.22F * visibility);
 
 		GL11.glEnable(GL11.GL_TEXTURE_2D);
 		GL11.glPopMatrix();
+	}
+
+	private void renderRingBand(Tessellator tessellator, double inner, double outer, float red, float green, float blue, float alpha) {
+		int segments = 96;
+
+		GL11.glColor4f(red, green, blue, alpha);
+		tessellator.startDrawingQuads();
+
+		for(int i = 0; i < segments; i++) {
+			double angle = Math.PI * 2.0D * i / segments;
+			double nextAngle = Math.PI * 2.0D * (i + 1) / segments;
+			double sin = Math.sin(angle);
+			double cos = Math.cos(angle);
+			double nextSin = Math.sin(nextAngle);
+			double nextCos = Math.cos(nextAngle);
+
+			tessellator.addVertex(cos * outer, 99.99D, sin * outer);
+			tessellator.addVertex(nextCos * outer, 99.99D, nextSin * outer);
+			tessellator.addVertex(nextCos * inner, 99.99D, nextSin * inner);
+			tessellator.addVertex(cos * inner, 99.99D, sin * inner);
+		}
+
+		tessellator.draw();
 	}
 
 	protected void renderAtmosphereGlow(float partialTicks, WorldClient world, Minecraft mc, CelestialBody body, Vec3 pos) {

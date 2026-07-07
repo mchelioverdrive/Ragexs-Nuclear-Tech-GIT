@@ -1,3 +1,9 @@
+# Fix planetary ring sky rendering
+
+- Replaced the temporary two-quad gas-giant ring render with segmented annular bands so rings render as continuous discs around planets instead of only appearing as oversized upper/lower bars.
+- Tilted sky rings in the screen-facing plane used by RTM's celestial renderer and kept ring sizing relative to each body's already-clamped apparent size, avoiding direct reuse of regular NTM:Space scaling assumptions.
+- Documented the RTM-specific planetary ring rendering behavior in the space travel notes.
+
 # Backport local stardar processing logic
 
 - Backported the newer space project's relative stardar processing-tier model while preserving this fork's realistic orbital values.
