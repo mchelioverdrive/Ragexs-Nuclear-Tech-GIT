@@ -60,6 +60,11 @@ public class CelestialBody {
 
 	public String tidallyLockedTo = null;
 
+	public boolean hasRings = false; // enables sky/orbit ring rendering for realistic gas giants
+	public float ringTilt = 0;
+	public float ringSize = 2;
+	public float[] ringColor = new float[] {0.5F, 0.5F, 0.5F};
+
 	public List<CelestialBody> satellites = new ArrayList<CelestialBody>(); // moon boyes
 	public CelestialBody parent = null;
 
@@ -162,6 +167,14 @@ public class CelestialBody {
 
 	public CelestialBody withTidalLockingTo(String name) {
 		tidallyLockedTo = name;
+		return this;
+	}
+
+	public CelestialBody withRings(float tilt, float size, float... color) {
+		this.hasRings = true;
+		this.ringTilt = tilt;
+		this.ringSize = size;
+		this.ringColor = color;
 		return this;
 	}
 

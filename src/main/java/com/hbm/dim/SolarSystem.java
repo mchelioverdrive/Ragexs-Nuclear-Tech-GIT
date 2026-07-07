@@ -206,6 +206,7 @@ public class SolarSystem {
 					.withProcessingLevel(3)
 					.withColor(1.0f, 0.5f, 0.0f)
 					.withAxialTilt(3.13F)
+					.withRings(3.13F, 1.55F, 0.55F, 0.45F, 0.34F)
 					.withTraits(
 						new CBT_Atmosphere(Fluids.HYDROGEN, 89D)
 							.and(Fluids.HELIUM4, 10D)
@@ -276,6 +277,7 @@ public class SolarSystem {
 					.withRotationalPeriod(38_362)
 					.withColor(1f, 0.6862f, 0.5882f)
 					.withAxialTilt(26.73F)
+					.withRings(26.73F, 2.35F, 0.78F, 0.68F, 0.52F)
 					.withProcessingLevel(3)
 					.withTraits(
 						new CBT_Atmosphere(Fluids.HYDROGEN, 96D)
@@ -341,6 +343,7 @@ public class SolarSystem {
 					.withRotationalPeriod(-62_064)
 					.withColor(0.4F, 0.6F, 0.8F)
 					.withAxialTilt(97.77F)
+					.withRings(97.77F, 1.85F, 0.55F, 0.70F, 0.78F)
 					.withProcessingLevel(3)
 					.withTraits(
 						new CBT_Atmosphere(Fluids.HYDROGEN, 82D)
@@ -389,6 +392,7 @@ public class SolarSystem {
 					.withRotationalPeriod(57_996)
 					.withColor(0.2F, 0.4F, 0.6F)
 					.withAxialTilt(28.32F)
+					.withRings(28.32F, 1.7F, 0.32F, 0.46F, 0.62F)
 					.withProcessingLevel(3)
 					.withTraits(
 						new CBT_Atmosphere(Fluids.HYDROGEN, 80D)
