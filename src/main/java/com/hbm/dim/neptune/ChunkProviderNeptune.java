@@ -107,7 +107,7 @@ public class ChunkProviderNeptune extends ChunkProviderCelestial {
 								: ModBlocks.neptune_atmosphere_dense;
 					}
 
-					// Supercritical water/ammonia/methane mantle.
+					// Deep supercritical water/ammonia/methane mantle under extreme pressure; not a surface ocean.
 					else if(y > 35) {
 
 						buffer.blocks[index] =
