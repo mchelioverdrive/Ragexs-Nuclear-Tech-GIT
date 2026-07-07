@@ -1,3 +1,8 @@
+## Backport HBM Space 3D Celestial Rendering
+
+- Backported the visible celestial body rendering path from HBM Space so planets and moons render as textured 3D spheres instead of flat legacy billboards.
+- Kept the existing RTM/RNT phase-shadow and atmosphere blending passes on top of the new sphere geometry to avoid changing orbital mechanics or asset formats.
+
 # Fix planetary ring sky rendering
 
 - Replaced the temporary two-quad gas-giant ring render with segmented annular bands so rings render as continuous discs around planets instead of only appearing as oversized upper/lower bars.
