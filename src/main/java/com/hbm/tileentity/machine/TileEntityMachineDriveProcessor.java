@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import com.hbm.dim.CelestialBody;
 import com.hbm.interfaces.IControlReceiver;
 import com.hbm.inventory.container.ContainerDriveProcessor;
 import com.hbm.inventory.gui.GUIMachineDriveProcessor;
@@ -57,7 +58,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 			} else if(slots[0] == null || slots[0].getItem() != ModItems.full_drive) {
 				isProcessing = false;
 				status = "";
-			} else if(getProcessingTier() < ItemVOTVdrive.getProcessingTier(slots[0])) {
+			} else if(getProcessingTier() < ItemVOTVdrive.getProcessingTier(slots[0], CelestialBody.getBody(worldObj))) {
 				isProcessing = false;
 				status = EnumChatFormatting.RED + "Low tier ";
 			}
@@ -164,7 +165,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 		if(ItemVOTVdrive.getProcessed(slots[0])) return;
 
 		// Check that our installed upgrade is a high enough tier
-		if(getProcessingTier() >= ItemVOTVdrive.getProcessingTier(slots[0])) {
+		if(getProcessingTier() >= ItemVOTVdrive.getProcessingTier(slots[0], CelestialBody.getBody(worldObj))) {
 			isProcessing = true;
 		}
 	}

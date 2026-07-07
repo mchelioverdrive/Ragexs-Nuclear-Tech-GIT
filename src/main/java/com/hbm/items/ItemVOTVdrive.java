@@ -53,7 +53,7 @@ public class ItemVOTVdrive extends ItemEnumMulti {
 			return;
 		}
 
-		int processingLevel = destination.body.getProcessingLevel();
+		int processingLevel = destination.body.getBody().getProcessingLevel(CelestialBody.getBody(player.worldObj));
 
 		list.add("Destination: " + EnumChatFormatting.AQUA + I18nUtil.resolveKey("body." + destination.body.name));
 
@@ -175,8 +175,12 @@ public class ItemVOTVdrive extends ItemEnumMulti {
 	}
 
 	public static int getProcessingTier(ItemStack stack) {
+		return getProcessingTier(stack, CelestialBody.getBody(0));
+	}
+
+	public static int getProcessingTier(ItemStack stack, CelestialBody from) {
 		SolarSystem.Body body = SolarSystem.Body.values()[stack.getItemDamage()];
-		return body.getProcessingLevel();
+		return body == SolarSystem.Body.ORBIT ? 0 : body.getBody().getProcessingLevel(from);
 	}
 
 	public static boolean getProcessed(ItemStack stack) {
