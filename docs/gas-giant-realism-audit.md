@@ -13,6 +13,7 @@ This audit covers the parent giant planet definitions for Jupiter (`jool`), Satu
 
 - Jupiter, Saturn, Uranus, and Neptune now explicitly use `CBT_Water(Fluids.NONE)` so groundwater/infinite-water systems cannot treat missing water-table metadata as normal water. Explicit `Fluids.NONE` data survives serialization; missing legacy water-table data still defaults to water for compatibility on non-audited bodies.
 - Startup diagnostics now warn if any audited parent giant has a harvestable surface-liquid water-table trait.
+- Solar-system saved data now repairs stale or legacy normal-water entries for parent giant planets whose default water trait is explicitly `Fluids.NONE`, so existing worlds do not keep Jupiter/Jool water after the default definitions were corrected.
 - Uranus and Neptune no longer advertise vanilla water texture assets in solar-system metadata.
 
 ## Intentionally unchanged
