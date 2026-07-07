@@ -296,6 +296,35 @@ public class SkyProviderCelestial extends IRenderHandler {
 
 	}
 
+	protected void renderRings(Tessellator tessellator, CelestialBody body, double size, float visibility) {
+		double outer = size * body.ringSize;
+		double inner = size * Math.max(1.08F, body.ringSize * 0.62F);
+		float red = body.ringColor.length > 0 ? body.ringColor[0] : 0.5F;
+		float green = body.ringColor.length > 1 ? body.ringColor[1] : red;
+		float blue = body.ringColor.length > 2 ? body.ringColor[2] : green;
+
+		GL11.glPushMatrix();
+		GL11.glRotatef(body.ringTilt - body.axialTilt, 0.0F, 1.0F, 0.0F);
+		GL11.glDisable(GL11.GL_TEXTURE_2D);
+		GL11.glEnable(GL11.GL_BLEND);
+		OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
+		GL11.glColor4f(red, green, blue, 0.45F * visibility);
+
+		tessellator.startDrawingQuads();
+		tessellator.addVertex(-outer, 99.99D, -outer, 0.0D, 0.0D);
+		tessellator.addVertex(outer, 99.99D, -outer, 1.0D, 0.0D);
+		tessellator.addVertex(inner, 99.99D, -inner, 1.0D, 1.0D);
+		tessellator.addVertex(-inner, 99.99D, -inner, 0.0D, 1.0D);
+		tessellator.addVertex(outer, 99.99D, outer, 0.0D, 0.0D);
+		tessellator.addVertex(-outer, 99.99D, outer, 1.0D, 0.0D);
+		tessellator.addVertex(-inner, 99.99D, inner, 1.0D, 1.0D);
+		tessellator.addVertex(inner, 99.99D, inner, 0.0D, 1.0D);
+		tessellator.draw();
+
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
+		GL11.glPopMatrix();
+	}
+
 	protected void renderAtmosphereGlow(float partialTicks, WorldClient world, Minecraft mc, CelestialBody body, Vec3 pos) {
 		// Modern Angelica's optional NTM:Space compatibility mixin names this newer HBM hook.
 		// RTM used to inline the glow rendering in render(), so keep the hook local and dependency-free.
@@ -570,6 +599,10 @@ public class SkyProviderCelestial extends IRenderHandler {
 					GL11.glRotated(metric.angle, 1.0, 0.0, 0.0);
 				}
 				GL11.glRotatef(axialTilt + 90.0F, 0.0F, 1.0F, 0.0F);
+
+				if(!renderAsPoint && metric.body.hasRings) {
+					renderRings(tessellator, metric.body, size, visibility);
+				}
 
 				tessellator.startDrawingQuads();
 				tessellator.addVertexWithUV(-size, 100.0D, -size, 0.0D + uvOffset, 0.0D);

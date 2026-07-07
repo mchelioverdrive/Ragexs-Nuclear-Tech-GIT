@@ -1,3 +1,8 @@
+## Backport realistic space display and rocket safety changes
+
+- Backported realistic gas-giant ring metadata and sky rendering support from the newer space project, tuned for the realistification solar-system scale rather than upstream KSP-scale values.
+- Added ring display parameters to Jupiter/Jool, Saturn/Sarnus, Uranus, and Neptune so their space displays better match real planetary features.
+- Restored strict custom rocket fuel sufficiency checks and added a safe fallback capsule for legacy or malformed rocket NBT.
 # Rebalance orbital station thrusters
 
 - Made LPW-3N, LPW-2, HTR-F4, and Xenon Station Thruster construction substantially more expensive and progression-gated.
