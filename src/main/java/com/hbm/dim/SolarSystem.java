@@ -211,7 +211,9 @@ public class SolarSystem {
 						new CBT_Atmosphere(Fluids.HYDROGEN, 89D)
 							.and(Fluids.HELIUM4, 10D)
 							.and(Fluids.GAS, 1D),
-						new CBT_Temperature(-145)
+						new CBT_Temperature(-145),
+						// Jupiter may have trace/deep atmospheric water, but no harvestable surface liquid.
+						new CBT_Water(Fluids.NONE)
 					)
 
 					//hopefully orange?
@@ -283,7 +285,9 @@ public class SolarSystem {
 						new CBT_Atmosphere(Fluids.HYDROGEN, 96D)
 							.and(Fluids.HELIUM4, 3D)
 							.and(Fluids.GAS, 1D),
-						new CBT_Temperature(-178)
+						new CBT_Temperature(-178),
+						// Saturn has no normal water ocean, lake, rain, or groundwater table.
+						new CBT_Water(Fluids.NONE)
 					)
 					.withSatellites(
 
@@ -349,7 +353,9 @@ public class SolarSystem {
 						new CBT_Atmosphere(Fluids.HYDROGEN, 82D)
 							.and(Fluids.HELIUM4, 15D)
 							.and(Fluids.GAS, 3D), // methane
-						new CBT_Temperature(-224)
+						new CBT_Temperature(-224),
+						// Ice-giant water belongs to the deep hot mantle, not a surface table.
+						new CBT_Water(Fluids.NONE)
 					)
 					.withSatellites(
 
@@ -398,7 +404,9 @@ public class SolarSystem {
 						new CBT_Atmosphere(Fluids.HYDROGEN, 80D)
 							.and(Fluids.HELIUM4, 19D)
 							.and(Fluids.GAS, 1D), // methane
-						new CBT_Temperature(-214)
+						new CBT_Temperature(-214),
+						// Deep supercritical water is interior-only; no surface liquid table.
+						new CBT_Water(Fluids.NONE)
 					)
 					.withSatellites(
 

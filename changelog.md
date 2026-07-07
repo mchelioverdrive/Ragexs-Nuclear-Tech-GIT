@@ -52,3 +52,4 @@
 - Removed misleading vanilla water display/fallback behavior from Uranus and Neptune while preserving scientifically plausible deep high-pressure water-ammonia-methane interior layers.
 - Added startup diagnostics for giant planets with harvestable surface-liquid traits and fixed explicit `Fluids.NONE` water-table serialization so no-surface-liquid settings do not silently become water.
 - Documented the planet-by-planet audit in `docs/gas-giant-realism-audit.md`.
+- Explicitly set Jupiter/Jool, Saturn/Sarnus, Uranus, and Neptune to `CBT_Water(Fluids.NONE)` so parent giant planets cannot inherit normal water-table behavior.
