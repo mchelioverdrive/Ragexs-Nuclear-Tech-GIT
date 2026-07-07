@@ -1,3 +1,10 @@
+# Backport local stardar processing logic
+
+- Backported the newer space project's relative stardar processing-tier model while preserving this fork's realistic orbital values.
+- Destination drives, drive processors, stardar GUI icons/tooltips, and OpenComputers planet stats now rate nearby parent/moon targets as local instead of always using an absolute Earth-centric tier.
+- Fixed stardar OpenComputers lookups so unknown body names return an error instead of silently reporting Kerbin/Earth, stars no longer dereference a null parent, and satellite lists return all moons instead of only the first.
+- Removed a duplicate world trait-data lookup in celestial trait saving.
+
 ## Backport realistic space display and rocket safety changes
 
 - Backported realistic gas-giant ring metadata and sky rendering support from the newer space project, tuned for the realistification solar-system scale rather than upstream KSP-scale values.

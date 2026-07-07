@@ -258,24 +258,26 @@ public class TileEntityMachineStardar extends TileEntityMachineBase implements I
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getPlanetStats(Context context, Arguments args) {
-		CelestialBody body = CelestialBody.getBody(args.checkString(0));
+		CelestialBody body = CelestialBody.getBodyOrNull(args.checkString(0));
 		if (body != null) {
+			String parentName = body.parent != null ? body.parent.name : null;
+			double orbitalPeriod = body.parent != null ? body.getOrbitalPeriod() : 0.0D;
 			return new Object[]{
 				// wow, that's a lot (basically give a bunch of info about the planet/body specified)
 				body.name,
-				body.parent.name,
+				parentName,
 				body.getStar().name,
 				body.tidallyLockedTo,
 				body.axialTilt,
 				body.canLand,
 				body.massKg,
-				body.processingLevel,
+				body.getProcessingLevel(CelestialBody.getBody(worldObj)),
 				body.radiusKm,
 				body.semiMajorAxisKm,
 				body.getSunPower(),
 				body.getSurfaceGravity(),
 				body.getRotationalPeriod(),
-				body.getOrbitalPeriod()
+				orbitalPeriod
 			};
 		}
 		return new Object[] {null, "No body with that name found."};
@@ -293,13 +295,13 @@ public class TileEntityMachineStardar extends TileEntityMachineBase implements I
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getSatellites(Context context, Arguments args) {
-		CelestialBody body = CelestialBody.getBody(args.checkString(0));
+		CelestialBody body = CelestialBody.getBodyOrNull(args.checkString(0));
 		if (body != null) {
 			List<String> returnValues = new ArrayList<>();
 			for (CelestialBody planet : body.satellites) {
 				returnValues.add(planet.name);
-				return returnValues.toArray();
 			}
+			return returnValues.toArray();
 		}
 		return new Object[]{null, "No body with that name found."};
 	}

@@ -37,3 +37,7 @@ Station propulsion is now balanced as full spacecraft propulsion hardware rather
 - **LPW-2 Station Thruster:** upgraded chemical station thruster assembly that now depends on an LPW-3N core plus extra pumps, tanks, titanium shelling, and advanced-alloy coils.
 - **HTR-F4 Station Thruster:** high-end plasma-heater station thruster with two LPW-3N cores, expanded tungsten/resistant-alloy structure, extra durable feed lines, and more avionics.
 - **Xenon Station Thruster:** ion station thruster fabrication now consumes xenon working gas, high arc-welder energy, tungsten/niobium welded plates, avionics, and Saturnite electrodes to represent grids, discharge chambers, neutralizers, and precision feed hardware.
+
+## Destination drive processing range
+
+Stardar and drive processor tiers are now evaluated relative to the body where the machine is being used. A planet, its moons, and its parent body are treated as local navigation targets, while unrelated planets still require interplanetary processing capability and any configured minimum tier. This keeps local moon operations practical without weakening long-range mission planning.
