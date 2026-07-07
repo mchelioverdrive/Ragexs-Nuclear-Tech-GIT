@@ -1,3 +1,7 @@
+# Move planetary rings away from planet discs
+
+- Expanded celestial ring altitude offsets by 4x during sky rendering, with a sky-radius cap to stop direct-view culling, so Uranus and other ringed planets no longer clip their rings into the planet disc under RTM's 1:1 scale.
+
 # Fix planetary ring planet occlusion
 
 - Changed celestial ring rendering so the far side of a ring is drawn before the planet disc, allowing the planet to hide ring segments that are behind it.

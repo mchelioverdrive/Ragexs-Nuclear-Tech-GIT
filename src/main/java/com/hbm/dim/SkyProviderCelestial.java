@@ -43,6 +43,9 @@ public class SkyProviderCelestial extends IRenderHandler {
 	private static final String[] GL_SKY_LIST = new String[] { "glSkyList", "field_72771_w", "G" };
 	private static final String[] GL_SKY_LIST2 = new String[] { "glSkyList2", "field_72781_x", "H" };
 
+	private static final double RING_DISTANCE_SCALE = 4.0D;
+	private static final double MAX_RING_SKY_RADIUS = 96.0D;
+
 	public static boolean displayListsInitialized = false;
 	public static int glSkyList;
 	public static int glSkyList2;
@@ -646,8 +649,19 @@ public class SkyProviderCelestial extends IRenderHandler {
 		OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
 		GL11.glColor4f(body.ringColor[0], body.ringColor[1], body.ringColor[2], MathHelper.clamp_float(visibility * 0.8F, 0.0F, 1.0F));
 
-		double innerSize = size * 1.15D;
-		double outerSize = size * body.ringSize;
+		// Ring radii were imported from NTMspace/KSP-style presentation values,
+		// but RTM renders planet discs at 1:1 sky scale. Treat ringSize as an
+		// altitude above the planet surface and expand that altitude so close,
+		// faint systems like Uranus no longer clip into the body. Cap the final
+		// sky radius so expanded rings stay inside the sky render volume instead
+		// of vanishing when the player looks directly at the ring plane.
+		double innerSize = size * (1.0D + (1.15D - 1.0D) * RING_DISTANCE_SCALE);
+		double outerSize = size * (1.0D + (body.ringSize - 1.0D) * RING_DISTANCE_SCALE);
+		if(outerSize > MAX_RING_SKY_RADIUS) {
+			double skyScale = MAX_RING_SKY_RADIUS / outerSize;
+			innerSize *= skyScale;
+			outerSize = MAX_RING_SKY_RADIUS;
+		}
 		double start = backHalf ? Math.PI : 0.0D;
 		double end = backHalf ? Math.PI * 2.0D : Math.PI;
 		int segments = 48;
