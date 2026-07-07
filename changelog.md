@@ -1,7 +1,7 @@
-## Backport HBM Space 3D Celestial Rendering
+## Correct HBM Space Celestial Rendering Backport
 
-- Backported the visible celestial body rendering path from HBM Space so planets and moons render as textured 3D spheres instead of flat legacy billboards.
-- Kept the existing RTM/RNT phase-shadow and atmosphere blending passes on top of the new sphere geometry to avoid changing orbital mechanics or asset formats.
+- Reverted the incorrect tessellated sphere attempt and restored the HBM Space-style square celestial body rendering used by the upstream space renderer.
+- Kept the existing RTM/RNT phase and atmosphere overlay passes aligned to the square planet/moon billboard so orbital stations are no longer visually encased by sphere geometry.
 
 # Fix planetary ring sky rendering
 

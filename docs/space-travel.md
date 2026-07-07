@@ -48,4 +48,4 @@ Stardar and drive processor tiers are now evaluated relative to the body where t
 
 ## Celestial Rendering
 
-Planets and moons in the sky renderer now use textured sphere geometry backported from HBM Space rather than the legacy flat sprite quad for the primary body pass. Existing RTM/RNT phase-shadow, tint, and atmosphere blending overlays remain layered over that sphere render, so this is a visual backport and does not change orbit calculations or travel mechanics.
+Planets and moons in the sky renderer use the HBM Space-style square textured billboard for the primary body pass. Existing RTM/RNT phase-shadow, tint, and atmosphere blending overlays remain layered over that square render, so this is a visual backport and does not change orbit calculations or travel mechanics.
