@@ -193,8 +193,7 @@ public class RocketStruct {
 		int fuelRequirement = getFuelRequired(0, from, to, fromOrbit, toOrbit);
 		int fuelCapacity = getFuelCapacity(0);
 
-		return fuelCapacity >= fuelRequirement /10;
-		//thank fucking god
+		return fuelCapacity >= fuelRequirement;
 	}
 
 	private int getFuelCapacity(int stageNum) {
@@ -219,6 +218,10 @@ public class RocketStruct {
 		int isp = getISP(stage);
 
 		return SolarSystem.getCostBetween(from, to, rocketMass, thrust, isp, fromOrbit, toOrbit);
+	}
+
+	public int getThrust() {
+		return stages.isEmpty() ? 0 : getThrust(stages.get(0));
 	}
 
 	private int getThrust(RocketStage stage) {
@@ -369,6 +372,9 @@ public class RocketStruct {
 	public static RocketStruct readFromNBT(NBTTagCompound nbt) {
 		RocketStruct rocket = new RocketStruct();
 		rocket.capsule = MissilePart.getPart(nbt.getInteger("capsule"));
+		if(rocket.capsule == null) {
+			rocket.capsule = MissilePart.getPart(ModItems.rp_capsule_20);
+		}
 
 		NBTTagList stagesTag = nbt.getTagList("stages", Constants.NBT.TAG_COMPOUND);
 		for(int i = 0; i < stagesTag.tagCount(); i++) {
@@ -410,6 +416,9 @@ public class RocketStruct {
 		RocketStruct rocket = new RocketStruct();
 
 		rocket.capsule = MissilePart.getPart(watcher.getWatchableObjectInt(start));
+		if(rocket.capsule == null) {
+			rocket.capsule = MissilePart.getPart(ModItems.rp_capsule_20);
+		}
 
 		int count = watcher.getWatchableObjectInt(start + 1);
 		for(int i = 0; i < count; i++) {
