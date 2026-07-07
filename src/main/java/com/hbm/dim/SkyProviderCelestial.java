@@ -650,7 +650,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 		// but RTM renders planet discs at 1:1 sky scale. Treat ringSize as an
 		// altitude above the planet surface and expand that altitude so close,
 		// faint systems like Uranus no longer clip into the body.
-		double ringDistanceScale = 20.0D;
+		double ringDistanceScale = 3.0D;
 		double innerSize = size * (1.0D + (1.15D - 1.0D) * ringDistanceScale);
 		double outerSize = size * (1.0D + (body.ringSize - 1.0D) * ringDistanceScale);
 		double start = backHalf ? Math.PI : 0.0D;
