@@ -58,6 +58,11 @@ public class CelestialBody {
 	public ResourceLocation texture = null;
 	public float[] color = new float[] {0.4F, 0.4F, 0.4F}; // When too small to render the texture
 
+	public boolean hasRings = false; // Presentation-only ring metadata for client sky rendering
+	public float ringTilt = 0.0F;
+	public float ringSize = 2.0F;
+	public float[] ringColor = new float[] {0.5F, 0.5F, 0.5F};
+
 	public String tidallyLockedTo = null;
 
 	public List<CelestialBody> satellites = new ArrayList<CelestialBody>(); // moon boyes
@@ -157,6 +162,14 @@ public class CelestialBody {
 
 	public CelestialBody withColor(float... color) {
 		this.color = color;
+		return this;
+	}
+
+	public CelestialBody withRings(float tilt, float size, float... color) {
+		this.hasRings = true;
+		this.ringTilt = tilt;
+		this.ringSize = size;
+		this.ringColor = color != null && color.length >= 3 ? color : this.ringColor;
 		return this;
 	}
 
