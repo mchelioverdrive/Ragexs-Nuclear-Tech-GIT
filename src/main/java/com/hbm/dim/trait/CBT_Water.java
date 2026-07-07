@@ -30,8 +30,14 @@ public class CBT_Water extends CelestialBodyTrait {
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
+		// Missing legacy data means an Earth-like water table; an explicit NONE
+		// means no harvestable surface liquid and must not silently become water.
+		if(!nbt.hasKey("fluid")) {
+			fluid = Fluids.WATER;
+			return;
+		}
+
 		fluid = Fluids.fromID(nbt.getInteger("fluid"));
-        if(fluid == Fluids.NONE) fluid = Fluids.WATER;
 	}
 
 	// These methods are for client syncing, the precision loss is intentional

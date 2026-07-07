@@ -15,7 +15,7 @@ public class ChunkProviderUranus extends ChunkProviderCelestial {
 		super(world, seed, hasMapFeatures);
 
 		stoneBlock = Blocks.packed_ice;
-		seaBlock = Blocks.ice;
+		seaBlock = Blocks.air;
 	}
 
 	@Override
@@ -121,14 +121,14 @@ public class ChunkProviderUranus extends ChunkProviderCelestial {
 							ModBlocks.uranus_atmosphere;
 					}
 
-					// Ice giant mantle: water, ammonia and methane slurry.
+					// Ice giant mantle: hot dense water-ammonia-methane fluid, not accessible surface water.
 					else if(y > 45) {
 
 						buffer.blocks[index] =
 							ModBlocks.ammonia_water;
 					}
 
-					// Supercritical water/ammonia ocean.
+					// Supercritical water/ammonia layer under extreme pressure; not a surface ocean.
 					else if(y > 18) {
 
 						buffer.blocks[index] =

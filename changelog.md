@@ -39,3 +39,10 @@
 - Updated getting-started documentation to call out grates and air vents as carbon monoxide ventilation options.
 - NTM Extended Edition for 1.12: <https://github.com/Alcatergit/Hbm-s-Nuclear-Tech-GIT/releases>
 - Nuclear Tech Mod Remake for 1.18: <https://codeberg.org/MartinTheDragon/Nuclear-Tech-Mod-Remake/releases>
+
+## Gas Giant / Ice Giant Water Realism Audit
+- Audited Jupiter/Jool, Saturn/Sarnus, Uranus, and Neptune planet definitions for normal water oceans, lakes, rain, water-table traits, fallback sea blocks, atmosphere/resource definitions, and display textures.
+- Removed misleading vanilla water display/fallback behavior from Uranus and Neptune while preserving scientifically plausible deep high-pressure water-ammonia-methane interior layers.
+- Added startup diagnostics for giant planets with harvestable surface-liquid traits and fixed explicit `Fluids.NONE` water-table serialization so no-surface-liquid settings do not silently become water.
+- Documented the planet-by-planet audit in `docs/gas-giant-realism-audit.md`.
+- Explicitly set Jupiter/Jool, Saturn/Sarnus, Uranus, and Neptune to `CBT_Water(Fluids.NONE)` so parent giant planets cannot inherit normal water-table behavior.

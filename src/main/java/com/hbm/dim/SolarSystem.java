@@ -211,7 +211,9 @@ public class SolarSystem {
 						new CBT_Atmosphere(Fluids.HYDROGEN, 89D)
 							.and(Fluids.HELIUM4, 10D)
 							.and(Fluids.GAS, 1D),
-						new CBT_Temperature(-145)
+						new CBT_Temperature(-145),
+						// Jupiter may have trace/deep atmospheric water, but no harvestable surface liquid.
+						new CBT_Water(Fluids.NONE)
 					)
 
 					//hopefully orange?
@@ -283,7 +285,9 @@ public class SolarSystem {
 						new CBT_Atmosphere(Fluids.HYDROGEN, 96D)
 							.and(Fluids.HELIUM4, 3D)
 							.and(Fluids.GAS, 1D),
-						new CBT_Temperature(-178)
+						new CBT_Temperature(-178),
+						// Saturn has no normal water ocean, lake, rain, or groundwater table.
+						new CBT_Water(Fluids.NONE)
 					)
 					.withSatellites(
 
@@ -336,7 +340,7 @@ public class SolarSystem {
 
 				//Uranus (retrograde)
 				new CelestialBody("uranus", SpaceConfig.uranusDimension, Body.URANUS)
-					.withBlockTextures("textures/blocks/water_still.png", "textures/blocks/water_flowing.png")
+					.withBlockTextures(RefStrings.MODID + ":textures/misc/space/uranus.png", RefStrings.MODID + ":textures/misc/space/uranus.png")
 					.withMassRadius(8.681e25F, 25_362)
 					.withSemiMajorAxis(2_872_463_000D)
 					.withInitialOrbitalAngle(314.06D)
@@ -349,7 +353,9 @@ public class SolarSystem {
 						new CBT_Atmosphere(Fluids.HYDROGEN, 82D)
 							.and(Fluids.HELIUM4, 15D)
 							.and(Fluids.GAS, 3D), // methane
-						new CBT_Temperature(-224)
+						new CBT_Temperature(-224),
+						// Ice-giant water belongs to the deep hot mantle, not a surface table.
+						new CBT_Water(Fluids.NONE)
 					)
 					.withSatellites(
 
@@ -385,7 +391,7 @@ public class SolarSystem {
 
 				//neptune
 				new CelestialBody("neptune", SpaceConfig.neptuneDimension, Body.NEPTUNE)
-					.withBlockTextures(RefStrings.MODID + ":textures/blocks/water_still.png", RefStrings.MODID + ":textures/blocks/water_flowing.png")
+					.withBlockTextures(RefStrings.MODID + ":textures/misc/space/neptune.png", RefStrings.MODID + ":textures/misc/space/neptune.png")
 					.withMassRadius(1.024e26F, 24_622)
 					.withSemiMajorAxis(4_495_060_000D)
 					.withInitialOrbitalAngle(304.35D)
@@ -398,7 +404,9 @@ public class SolarSystem {
 						new CBT_Atmosphere(Fluids.HYDROGEN, 80D)
 							.and(Fluids.HELIUM4, 19D)
 							.and(Fluids.GAS, 1D), // methane
-						new CBT_Temperature(-214)
+						new CBT_Temperature(-214),
+						// Deep supercritical water is interior-only; no surface liquid table.
+						new CBT_Water(Fluids.NONE)
 					)
 					.withSatellites(
 
@@ -1306,9 +1314,28 @@ public class SolarSystem {
 		//MainRegistry.logger.info("Minmus -> Kerbin cost: " + getDeltaVBetween(minmus, kerbin) + " - should be: " + (930+160));
 		//MainRegistry.logger.info("Minmus -> Ike cost: " + getDeltaVBetween(minmus, ike));
 
+		auditGiantSurfaceLiquids();
+
 		MainRegistry.logger.info("Kerbin orbital period: " + kerbin.getOrbitalPeriod() + " - should be: " + 426);
 		MainRegistry.logger.info("Eve orbital period: " + eve.getOrbitalPeriod() + " - should be: " + 261);
 		MainRegistry.logger.info("Mun orbital period: " + mun.getOrbitalPeriod() + " - should be: " + 6);
+	}
+
+	private static void auditGiantSurfaceLiquids() {
+		auditGiantSurfaceLiquid("jool", "gas giant");
+		auditGiantSurfaceLiquid("sarnus", "gas giant");
+		auditGiantSurfaceLiquid("uranus", "ice giant");
+		auditGiantSurfaceLiquid("neptune", "ice giant");
+	}
+
+	private static void auditGiantSurfaceLiquid(String bodyName, String giantType) {
+		CelestialBody body = CelestialBody.getBody(bodyName);
+		if(body == null) return;
+
+		CBT_Water water = body.getTrait(CBT_Water.class);
+		if(water != null && water.fluid != Fluids.NONE) {
+			MainRegistry.logger.warn("Realism audit: " + bodyName + " is tagged as a " + giantType + " but has harvestable surface liquid " + water.fluid.getName() + "; gas/ice giants should only expose water as clouds, vapor, or deep interior metadata.");
+		}
 	}
 
 }
