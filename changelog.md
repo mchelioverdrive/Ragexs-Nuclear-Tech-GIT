@@ -34,3 +34,10 @@
 - Updated getting-started documentation to call out grates and air vents as carbon monoxide ventilation options.
 - NTM Extended Edition for 1.12: <https://github.com/Alcatergit/Hbm-s-Nuclear-Tech-GIT/releases>
 - Nuclear Tech Mod Remake for 1.18: <https://codeberg.org/MartinTheDragon/Nuclear-Tech-Mod-Remake/releases>
+
+## NTM Space selective backport audit - planet rings and environment tooltips
+
+- Audited newer NTM Space celestial rendering and data classes for small RTM-safe backports.
+- Added presentation-only ring metadata and client-side ring rendering for ringed gas giants, guarded by `enablePlanetRingRendering`.
+- Added VOTV destination drive tooltip environment summaries using existing RTM celestial data.
+- Documented rejected categories: KSP-style orbital simulation, major propulsion/traversal rewrites, resource-generation balance changes, and exaggerated sci-fi systems.

@@ -16,6 +16,7 @@ import java.util.Map;
 
 import org.lwjgl.opengl.GL11;
 
+import com.hbm.config.SpaceConfig;
 import com.hbm.dim.SolarSystem.AstroMetric;
 import com.hbm.dim.trait.CBT_Atmosphere;
 import com.hbm.dim.trait.CelestialBodyTrait.CBT_Destroyed;
@@ -579,6 +580,10 @@ public class SkyProviderCelestial extends IRenderHandler {
 				tessellator.draw();
 
 				if(!renderAsPoint) {
+					if(SpaceConfig.enablePlanetRingRendering && metric.body.hasRings) {
+						renderBodyRings(mc, tessellator, metric.body, size, visibility, true);
+					}
+
 					GL11.glEnable(GL11.GL_BLEND);
 
 					// Draw a shader on top to render celestial phase
@@ -614,11 +619,46 @@ public class SkyProviderCelestial extends IRenderHandler {
 					tessellator.draw();
 
 					GL11.glEnable(GL11.GL_TEXTURE_2D);
+
+					if(SpaceConfig.enablePlanetRingRendering && metric.body.hasRings) {
+						renderBodyRings(mc, tessellator, metric.body, size, visibility, false);
+					}
 				}
 
 			}
 			GL11.glPopMatrix();
 		}
+	}
+
+	protected void renderBodyRings(Minecraft mc, Tessellator tessellator, CelestialBody body, double size, float visibility, boolean backHalf) {
+		if(body == null || body.ringColor == null || body.ringColor.length < 3 || body.ringSize <= 1.0F) return;
+
+		GL11.glDisable(GL11.GL_TEXTURE_2D);
+		GL11.glEnable(GL11.GL_BLEND);
+		OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
+		GL11.glColor4f(body.ringColor[0], body.ringColor[1], body.ringColor[2], MathHelper.clamp_float(visibility * 0.65F, 0.0F, 1.0F));
+
+		double innerSize = size * 1.15D;
+		double outerSize = size * body.ringSize;
+		double start = backHalf ? Math.PI : 0.0D;
+		double end = backHalf ? Math.PI * 2.0D : Math.PI;
+		int segments = 32;
+
+		GL11.glPushMatrix();
+		{
+			GL11.glRotatef(90.0F - body.ringTilt, 1.0F, 0.0F, 0.0F);
+			tessellator.startDrawing(GL11.GL_QUAD_STRIP);
+			for(int i = 0; i <= segments; i++) {
+				double angle = start + (end - start) * i / segments;
+				double sin = Math.sin(angle);
+				double cos = Math.cos(angle);
+				tessellator.addVertex(cos * outerSize, 100.0D, sin * outerSize);
+				tessellator.addVertex(cos * innerSize, 100.0D, sin * innerSize);
+			}
+			tessellator.draw();
+		}
+		GL11.glPopMatrix();
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
 	}
 
 	protected void renderDigamma(float partialTicks, WorldClient world, Minecraft mc, float celestialAngle) {

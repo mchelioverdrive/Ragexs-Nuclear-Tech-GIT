@@ -6,6 +6,8 @@ import com.hbm.config.SpaceConfig;
 import com.hbm.dim.CelestialBody;
 import com.hbm.dim.SolarSystem;
 import com.hbm.dim.orbit.OrbitalStation;
+import com.hbm.dim.trait.CBT_Atmosphere;
+import com.hbm.dim.trait.CBT_Temperature;
 import com.hbm.entity.missile.EntityRideableRocket;
 import com.hbm.entity.missile.EntityRideableRocket.RocketState;
 import com.hbm.lib.RefStrings;
@@ -22,6 +24,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IIcon;
+import net.minecraft.util.StatCollector;
 import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
 
@@ -54,8 +57,10 @@ public class ItemVOTVdrive extends ItemEnumMulti {
 		}
 
 		int processingLevel = destination.body.getProcessingLevel();
+		CelestialBody body = destination.body.getBody();
 
 		list.add("Destination: " + EnumChatFormatting.AQUA + I18nUtil.resolveKey("body." + destination.body.name));
+		addEnvironmentTooltip(body, list);
 
 		if(destination.x == 0 && destination.z == 0) {
 			list.add(EnumChatFormatting.GOLD + "Needs destination coordinates!");
@@ -69,6 +74,43 @@ public class ItemVOTVdrive extends ItemEnumMulti {
 			list.add(EnumChatFormatting.GREEN + "Processed!");
 			list.add("Target coordinates: " + destination.x + ", " + destination.z);
 		}
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private void addEnvironmentTooltip(CelestialBody body, List list) {
+		if(body == null) return;
+
+		list.add(EnumChatFormatting.DARK_GRAY + "Dimension: " + body.dimensionId + (body.canLand ? " (surface)" : " (flyby/orbit only)"));
+		if(body.parent != null) {
+			list.add(EnumChatFormatting.DARK_GRAY + "Orbits: " + displayBodyName(body.parent));
+		}
+
+		CBT_Atmosphere atmosphere = body.getTrait(CBT_Atmosphere.class);
+		if(atmosphere != null) {
+			list.add(EnumChatFormatting.GRAY + String.format(java.util.Locale.US, "Pressure: %.3f atm", atmosphere.getPressure()));
+			try {
+				list.add(EnumChatFormatting.GRAY + "Main atmosphere: " + atmosphere.getMainFluid().getLocalizedName());
+			} catch(Exception ignored) {
+				list.add(EnumChatFormatting.GRAY + "Main atmosphere: unknown");
+			}
+		} else {
+			list.add(EnumChatFormatting.GRAY + "Pressure: vacuum/trace");
+		}
+
+		CBT_Temperature temperature = body.getTrait(CBT_Temperature.class);
+		if(temperature != null) {
+			list.add(EnumChatFormatting.GRAY + String.format(java.util.Locale.US, "Mean temperature: %.0f C", temperature.degrees));
+		}
+
+		if(body.hasRings) {
+			list.add(EnumChatFormatting.GRAY + "Visible ring system");
+		}
+	}
+
+	private String displayBodyName(CelestialBody body) {
+		if(body == null) return "unknown";
+		String key = "body." + body.name;
+		return StatCollector.canTranslate(key) ? StatCollector.translateToLocal(key) : body.name;
 	}
 
 	@Override
