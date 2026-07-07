@@ -633,16 +633,19 @@ public class SkyProviderCelestial extends IRenderHandler {
 	protected void renderBodyRings(Minecraft mc, Tessellator tessellator, CelestialBody body, double size, float visibility, boolean backHalf) {
 		if(body == null || body.ringColor == null || body.ringColor.length < 3 || body.ringSize <= 1.0F) return;
 
+		boolean cullWasEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
+		GL11.glDisable(GL11.GL_CULL_FACE);
 		GL11.glEnable(GL11.GL_BLEND);
 		OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
-		GL11.glColor4f(body.ringColor[0], body.ringColor[1], body.ringColor[2], MathHelper.clamp_float(visibility * 0.65F, 0.0F, 1.0F));
+		GL11.glColor4f(body.ringColor[0], body.ringColor[1], body.ringColor[2], MathHelper.clamp_float(visibility * 0.8F, 0.0F, 1.0F));
 
 		double innerSize = size * 1.15D;
 		double outerSize = size * body.ringSize;
 		double start = backHalf ? Math.PI : 0.0D;
 		double end = backHalf ? Math.PI * 2.0D : Math.PI;
-		int segments = 32;
+		int segments = 48;
 
 		GL11.glPushMatrix();
 		{
@@ -650,19 +653,31 @@ public class SkyProviderCelestial extends IRenderHandler {
 			// Rotating vertices at y=100 around the world origin moves the ring out of
 			// the sky plane, which can make all ring geometry disappear. Translate to
 			// the body center first, then draw local ring vertices around y=0.
+			// Use explicit quads instead of a quad strip so old/compatibility renderers
+			// do not discard the whole annulus if strip winding is interpreted poorly.
 			GL11.glTranslated(0.0D, 100.0D, 0.0D);
 			GL11.glRotatef(90.0F - body.ringTilt, 1.0F, 0.0F, 0.0F);
-			tessellator.startDrawing(GL11.GL_QUAD_STRIP);
-			for(int i = 0; i <= segments; i++) {
-				double angle = start + (end - start) * i / segments;
-				double sin = Math.sin(angle);
-				double cos = Math.cos(angle);
-				tessellator.addVertex(cos * outerSize, 0.0D, sin * outerSize);
-				tessellator.addVertex(cos * innerSize, 0.0D, sin * innerSize);
+			tessellator.startDrawingQuads();
+			for(int i = 0; i < segments; i++) {
+				double angleA = start + (end - start) * i / segments;
+				double angleB = start + (end - start) * (i + 1) / segments;
+				double sinA = Math.sin(angleA);
+				double cosA = Math.cos(angleA);
+				double sinB = Math.sin(angleB);
+				double cosB = Math.cos(angleB);
+
+				tessellator.addVertex(cosA * outerSize, 0.0D, sinA * outerSize);
+				tessellator.addVertex(cosB * outerSize, 0.0D, sinB * outerSize);
+				tessellator.addVertex(cosB * innerSize, 0.0D, sinB * innerSize);
+				tessellator.addVertex(cosA * innerSize, 0.0D, sinA * innerSize);
 			}
 			tessellator.draw();
 		}
 		GL11.glPopMatrix();
+
+		if(cullWasEnabled) {
+			GL11.glEnable(GL11.GL_CULL_FACE);
+		}
 		GL11.glEnable(GL11.GL_TEXTURE_2D);
 	}
 

@@ -1,3 +1,8 @@
+# Fix planetary ring compatibility rendering
+
+- Reworked celestial ring drawing to disable face culling and emit explicit ring quads instead of a quad strip, avoiding compatibility renderers dropping the annulus.
+- Increased ring tessellation/alpha slightly so Sarnus and Uranus rings remain visible after the planet and phase overlays render.
+
 # Fix planetary ring rendering
 
 - Fixed celestial ring geometry so ring quads rotate around the planet center instead of the world origin, restoring visible rings for ringed planets.
