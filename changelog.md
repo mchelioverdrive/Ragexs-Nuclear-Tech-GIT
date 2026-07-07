@@ -1,3 +1,8 @@
+## Correct HBM Space Celestial Rendering Backport
+
+- Reverted the incorrect tessellated sphere attempt and restored the HBM Space-style square celestial body rendering used by the upstream space renderer.
+- Kept the existing RTM/RNT phase and atmosphere overlay passes aligned to the square planet/moon billboard so orbital stations are no longer visually encased by sphere geometry.
+
 # Fix planetary ring sky rendering
 
 - Replaced the temporary two-quad gas-giant ring render with segmented annular bands so rings render as continuous discs around planets instead of only appearing as oversized upper/lower bars.

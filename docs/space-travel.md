@@ -45,3 +45,7 @@ Station propulsion is now balanced as full spacecraft propulsion hardware rather
 ## Destination drive processing range
 
 Stardar and drive processor tiers are now evaluated relative to the body where the machine is being used. A planet, its moons, and its parent body are treated as local navigation targets, while unrelated planets still require interplanetary processing capability and any configured minimum tier. This keeps local moon operations practical without weakening long-range mission planning.
+
+## Celestial Rendering
+
+Planets and moons in the sky renderer use the HBM Space-style square textured billboard for the primary body pass. Existing RTM/RNT phase-shadow, tint, and atmosphere blending overlays remain layered over that square render, so this is a visual backport and does not change orbit calculations or travel mechanics.
