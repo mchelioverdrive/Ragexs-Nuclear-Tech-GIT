@@ -619,12 +619,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 					renderRings(tessellator, metric.body, size, visibility);
 				}
 
-				tessellator.startDrawingQuads();
-				tessellator.addVertexWithUV(-size, 100.0D, -size, 0.0D + uvOffset, 0.0D);
-				tessellator.addVertexWithUV(size, 100.0D, -size, 1.0D + uvOffset, 0.0D);
-				tessellator.addVertexWithUV(size, 100.0D, size, 1.0D + uvOffset, 1.0D);
-				tessellator.addVertexWithUV(-size, 100.0D, size, 0.0D + uvOffset, 1.0D);
-				tessellator.draw();
+				renderTexturedSphere(tessellator, size, uvOffset);
 
 				if(!renderAsPoint) {
 					GL11.glEnable(GL11.GL_BLEND);
@@ -667,6 +662,52 @@ public class SkyProviderCelestial extends IRenderHandler {
 			}
 			GL11.glPopMatrix();
 		}
+	}
+
+	private void renderTexturedSphere(Tessellator tessellator, double radius, double uvOffset) {
+		GL11.glPushAttrib(GL11.GL_ENABLE_BIT);
+		GL11.glDisable(GL11.GL_CULL_FACE);
+
+		int latitudeSegments = 24;
+		int longitudeSegments = 48;
+
+		for(int lat = 0; lat < latitudeSegments; lat++) {
+			double theta1 = Math.PI * lat / latitudeSegments;
+			double theta2 = Math.PI * (lat + 1) / latitudeSegments;
+			double y1 = Math.cos(theta1) * radius;
+			double y2 = Math.cos(theta2) * radius;
+			double ring1 = Math.sin(theta1) * radius;
+			double ring2 = Math.sin(theta2) * radius;
+			double v1 = (double)lat / latitudeSegments;
+			double v2 = (double)(lat + 1) / latitudeSegments;
+
+			tessellator.startDrawingQuads();
+
+			for(int lon = 0; lon < longitudeSegments; lon++) {
+				double phi1 = Math.PI * 2.0D * lon / longitudeSegments;
+				double phi2 = Math.PI * 2.0D * (lon + 1) / longitudeSegments;
+				double u1 = uvOffset + (double)lon / longitudeSegments;
+				double u2 = uvOffset + (double)(lon + 1) / longitudeSegments;
+
+				double x11 = Math.sin(phi1) * ring1;
+				double z11 = Math.cos(phi1) * ring1;
+				double x12 = Math.sin(phi2) * ring1;
+				double z12 = Math.cos(phi2) * ring1;
+				double x21 = Math.sin(phi1) * ring2;
+				double z21 = Math.cos(phi1) * ring2;
+				double x22 = Math.sin(phi2) * ring2;
+				double z22 = Math.cos(phi2) * ring2;
+
+				tessellator.addVertexWithUV(x11, 100.0D + y1, z11, u1, v1);
+				tessellator.addVertexWithUV(x12, 100.0D + y1, z12, u2, v1);
+				tessellator.addVertexWithUV(x22, 100.0D + y2, z22, u2, v2);
+				tessellator.addVertexWithUV(x21, 100.0D + y2, z21, u1, v2);
+			}
+
+			tessellator.draw();
+		}
+
+		GL11.glPopAttrib();
 	}
 
 	protected void renderDigamma(float partialTicks, WorldClient world, Minecraft mc, float celestialAngle) {
