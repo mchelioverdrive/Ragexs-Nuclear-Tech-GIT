@@ -646,8 +646,13 @@ public class SkyProviderCelestial extends IRenderHandler {
 		OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
 		GL11.glColor4f(body.ringColor[0], body.ringColor[1], body.ringColor[2], MathHelper.clamp_float(visibility * 0.8F, 0.0F, 1.0F));
 
-		double innerSize = size * 1.15D;
-		double outerSize = size * body.ringSize;
+		// Ring radii were imported from NTMspace/KSP-style presentation values,
+		// but RTM renders planet discs at 1:1 sky scale. Treat ringSize as an
+		// altitude above the planet surface and expand that altitude so close,
+		// faint systems like Uranus no longer clip into the body.
+		double ringDistanceScale = 20.0D;
+		double innerSize = size * (1.0D + (1.15D - 1.0D) * ringDistanceScale);
+		double outerSize = size * (1.0D + (body.ringSize - 1.0D) * ringDistanceScale);
 		double start = backHalf ? Math.PI : 0.0D;
 		double end = backHalf ? Math.PI * 2.0D : Math.PI;
 		int segments = 48;
