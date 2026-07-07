@@ -4,7 +4,7 @@
 
 - `com.hbm.dim.CelestialBody` ring metadata (`withRings`, ring color, ring size, ring tilt): presentation-only data attached to existing celestial definitions. Dependencies: existing `CelestialBody` construction and `SkyProviderCelestial` rendering only.
 - `com.hbm.dim.SkyProviderCelestial` ring quad rendering: client-only rendering polish for bodies that opt into ring metadata. Dependencies: existing Minecraft/Forge client render classes, `SpaceConfig`, and the existing celestial render loop.
-  - Compatibility note: rings are emitted as explicit untextured quads with face culling disabled around the draw call so legacy OpenGL/Angelica-style render paths do not drop the annulus.
+  - Compatibility note: rings are emitted as explicit untextured quads with face culling disabled around the draw call so legacy OpenGL/Angelica-style render paths do not drop the annulus. The far ring half renders before the planet disc and the near half renders after planet overlays, allowing the planet to mask ring sections behind it without a depth-buffer dependency.
 - Planet/environment tooltip summaries on VOTV destination drives: read-only display of existing body dimension, orbit, atmosphere, temperature, and ring metadata. Dependencies: existing `CelestialBody`, `CBT_Atmosphere`, `CBT_Temperature`, and `I18nUtil`.
 
 ## Maybe backport with review

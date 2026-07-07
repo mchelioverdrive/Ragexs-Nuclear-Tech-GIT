@@ -572,6 +572,15 @@ public class SkyProviderCelestial extends IRenderHandler {
 				}
 				GL11.glRotatef(axialTilt + 90.0F, 0.0F, 1.0F, 0.0F);
 
+				if(!renderAsPoint && SpaceConfig.enablePlanetRingRendering && metric.body.hasRings) {
+					// Draw the far side of the rings before the planet disc so the planet
+					// naturally masks ring geometry that should be behind it.
+					renderBodyRings(mc, tessellator, metric.body, size, visibility, true);
+					GL11.glDisable(GL11.GL_BLEND);
+					GL11.glColor4f(1.0F, 1.0F, 1.0F, visibility);
+					mc.renderEngine.bindTexture(metric.body.texture);
+				}
+
 				tessellator.startDrawingQuads();
 				tessellator.addVertexWithUV(-size, 100.0D, -size, 0.0D + uvOffset, 0.0D);
 				tessellator.addVertexWithUV(size, 100.0D, -size, 1.0D + uvOffset, 0.0D);
@@ -580,10 +589,6 @@ public class SkyProviderCelestial extends IRenderHandler {
 				tessellator.draw();
 
 				if(!renderAsPoint) {
-					if(SpaceConfig.enablePlanetRingRendering && metric.body.hasRings) {
-						renderBodyRings(mc, tessellator, metric.body, size, visibility, true);
-					}
-
 					GL11.glEnable(GL11.GL_BLEND);
 
 					// Draw a shader on top to render celestial phase

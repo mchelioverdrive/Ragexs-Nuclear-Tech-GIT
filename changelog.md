@@ -1,3 +1,8 @@
+# Fix planetary ring planet occlusion
+
+- Changed celestial ring rendering so the far side of a ring is drawn before the planet disc, allowing the planet to hide ring segments that are behind it.
+- Rebound planet textures after the far ring pass so the planet and phase overlays continue to render correctly.
+
 # Fix planetary ring compatibility rendering
 
 - Reworked celestial ring drawing to disable face culling and emit explicit ring quads instead of a quad strip, avoiding compatibility renderers dropping the annulus.
