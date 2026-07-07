@@ -45,6 +45,3 @@ Station propulsion is now balanced as full spacecraft propulsion hardware rather
 ## Destination drive processing range
 
 Stardar and drive processor tiers are now evaluated relative to the body where the machine is being used. A planet, its moons, and its parent body are treated as local navigation targets, while unrelated planets still require interplanetary processing capability and any configured minimum tier. This keeps local moon operations practical without weakening long-range mission planning.
-### Orbit sky rendering parity
-
-Orbit sky rendering intentionally follows the HBM Space reference under `DONOTMODIFY/hbmspace`. Planet visuals in orbit are square billboard-style celestial renders driven by the provider's orbital metrics, not spherical geometry around the station.
