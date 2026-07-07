@@ -1,3 +1,8 @@
+# Fix legacy gas-giant water trait repair
+
+- Fixed loaded solar-system saved data so Jupiter/Jool and the other parent giant planets that explicitly define `CBT_Water(Fluids.NONE)` cannot keep stale or legacy normal-water traits.
+- Documented that the gas giant water audit now covers saved world trait data as well as default planet definitions.
+
 # Backport local stardar processing logic
 
 - Backported the newer space project's relative stardar processing-tier model while preserving this fork's realistic orbital values.
