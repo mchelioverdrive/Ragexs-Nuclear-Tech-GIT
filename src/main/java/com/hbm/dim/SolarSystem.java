@@ -500,7 +500,7 @@ public class SolarSystem {
 
 		public int getProcessingLevel() {
 			if(this == ORBIT) return 0;
-			return getBody().processingLevel;
+			return getBody().getProcessingLevel();
 		}
 
 		public ResourceLocation getStoneTexture() {

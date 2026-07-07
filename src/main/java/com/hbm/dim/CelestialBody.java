@@ -53,7 +53,7 @@ public class CelestialBody {
 
 	public float axialTilt = 0;
 
-	public int processingLevel = 0; // What level of technology can locate this body?
+	private int minProcessingLevel = 0; // Minimum technology level needed to locate this body from distant systems
 
 	public ResourceLocation texture = null;
 	public float[] color = new float[] {0.4F, 0.4F, 0.4F}; // When too small to render the texture
@@ -145,7 +145,12 @@ public class CelestialBody {
 	}
 
 	public CelestialBody withProcessingLevel(int level) {
-		this.processingLevel = level;
+		this.minProcessingLevel = level;
+		return this;
+	}
+
+	public CelestialBody withMinProcessingLevel(int level) {
+		this.minProcessingLevel = level;
 		return this;
 	}
 
@@ -427,6 +432,10 @@ public class CelestialBody {
 	}
 
 	// bit of a dumb one but the other function is already used widely
+	public static CelestialBody getBodyOrNull(String name) {
+		return nameToBodyMap.get(name);
+	}
+
 	public static CelestialBody getBodyOrNull(int id) {
 		return dimToBodyMap.get(id);
 	}
@@ -436,7 +445,7 @@ public class CelestialBody {
 	}
 
 	public static Target getTarget(World world, int x, int z) {
-		if(world.provider.dimensionId == SpaceConfig.orbitDimension) {
+		if(inOrbit(world)) {
 			OrbitalStation station = !world.isRemote ? OrbitalStation.getStationFromPosition(x, z) : OrbitalStation.clientStation;
 			return new Target(station.orbiting, true, station.hasStation);
 		}
@@ -570,6 +579,23 @@ public class CelestialBody {
 		return (float)(1.0 / (r * r));
 	}
 
+	// Processing tier is relative to the stardar/processor location: nearby moons and their parent bodies are local targets.
+	public int getProcessingLevel(CelestialBody from) {
+		if(from == null) return minProcessingLevel;
+
+		int relativeLevel;
+		if(this == from || this == from.parent || this.parent == from) {
+			relativeLevel = 0;
+		} else {
+			relativeLevel = 1;
+		}
+
+		return Math.max(relativeLevel, minProcessingLevel);
+	}
+
+	public int getProcessingLevel() {
+		return getProcessingLevel(CelestialBody.getBody(0));
+	}
 
 	public boolean hasTrait(Class<? extends CelestialBodyTrait> trait) {
 		return getTraitsUnsafe().containsKey(trait);

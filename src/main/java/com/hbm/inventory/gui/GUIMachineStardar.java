@@ -136,7 +136,7 @@ public class GUIMachineStardar extends GuiInfoContainer {
 				int px = (int) (guiLeft + starX + peepee.offsetX);
 				int py = (int) (guiTop + starY + peepee.offsetY);
 
-				drawTexturedModalRect(px, py, xSize + peepee.getBody().processingLevel * 8, 0, 8, 8);
+				drawTexturedModalRect(px, py, xSize + peepee.getBody().getProcessingLevel(CelestialBody.getBody(mc.theWorld)) * 8, 0, 8, 8);
 			}
 		} else {
 			if(star.updateHeightmap) {
@@ -174,7 +174,7 @@ public class GUIMachineStardar extends GuiInfoContainer {
 					int py = (int) (starY + poi.offsetY);
 		
 					// Has a small buffer area around the POI to improve click targeting
-					drawCustomInfoStat(mx - guiLeft, my - guiTop, px - 2, py - 2, 12, 12, px + 8, py + 10, I18nUtil.resolveKey("body." + poi.body.name), "Processing Tier: " + poi.body.processingLevel);
+					drawCustomInfoStat(mx - guiLeft, my - guiTop, px - 2, py - 2, 12, 12, px + 8, py + 10, I18nUtil.resolveKey("body." + poi.body.name), "Processing Tier: " + poi.body.getProcessingLevel(CelestialBody.getBody(mc.theWorld)));
 				}
 			} else {
 				pushScissor(9, 9, 158, 108);
