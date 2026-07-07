@@ -31,6 +31,8 @@ public class SolarSystem {
 	//nerfed for irl values
 	public static final double SUN_RENDER_SCALE = 16F;
 
+	public static final float MAX_APPARENT_SIZE_SURFACE = 24;
+	public static final float MAX_APPARENT_SIZE_ORBIT = 160;
 
 	public static void init() {
 		// All values WERE pulled directly from KSP, most values WERE auto-converted to MC friendly ones
@@ -932,7 +934,7 @@ public class SolarSystem {
 			return getApparentSize(
 				from.radiusKm,
 				distance
-			) * SUN_RENDER_SCALE;
+			);
 		}
 
 		// orbiting a moon -> recurse upward
@@ -944,10 +946,43 @@ public class SolarSystem {
 		return getApparentSize(
 			from.parent.radiusKm,
 			from.semiMajorAxisKm
-		) * SUN_RENDER_SCALE;
+		);
 	}
 
 	// Gets angle for a single planet, good for locking tidal bodies
+	public static double calculateSingleAngle(List<AstroMetric> metrics, CelestialBody from, CelestialBody to) {
+		AstroMetric metricFrom = null;
+		AstroMetric metricTo = null;
+
+		for(AstroMetric metric : metrics) {
+			if(metric.body == from) {
+				metricFrom = metric;
+			} else if(metric.body == to) {
+				metricTo = metric;
+			}
+		}
+
+		if(metricFrom == null || metricTo == null) return 0;
+
+		return getApparentAngleDegrees(metricFrom.position, metricTo.position);
+	}
+
+	public static double calculateSingleAngle(World world, float partialTicks, List<AstroMetric> metrics, CelestialBody orbiting, double altitude) {
+		double ticks = getCelestialTicks(world, partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
+
+		Vec3 from = calculatePosition(orbiting, altitude, ticks);
+		Vec3 to = Vec3.createVectorHelper(0, 0, 0);
+		for(AstroMetric metric : metrics) {
+			if(metric.body == orbiting) {
+				to = metric.position;
+				from = from.addVector(to.xCoord, to.yCoord, to.zCoord);
+				break;
+			}
+		}
+
+		return getApparentAngleDegrees(from, to);
+	}
+
 	public static double calculateSingleAngle(World world, float partialTicks, CelestialBody from, CelestialBody to) {
 
 		List<AstroMetric> metrics = new ArrayList<AstroMetric>();
@@ -1026,6 +1061,20 @@ public class SolarSystem {
 		}
 
 		return getApparentAngleDegrees(from, to);
+	}
+
+	public static double calculateSiderealAngle(World world, float partialTicks, CelestialBody body) {
+		double ticks = getCelestialTicks(world, partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
+
+		return calculateSiderealAngle(body, ticks);
+	}
+
+	public static double calculateSiderealAngle(CelestialBody body, double ticks) {
+		body = body.getPlanet();
+
+		Vec3 position = calculatePosition(body, ticks);
+
+		return Math.toDegrees(Math.atan2(position.yCoord, position.xCoord));
 	}
 
 

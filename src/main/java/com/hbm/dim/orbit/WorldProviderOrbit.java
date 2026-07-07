@@ -3,6 +3,7 @@ package com.hbm.dim.orbit;
 import com.hbm.config.SpaceConfig;
 import com.hbm.dim.CelestialBody;
 import com.hbm.dim.SolarSystem;
+import com.hbm.dim.SolarSystem.AstroMetric;
 import com.hbm.dim.WorldProviderCelestial;
 import com.hbm.dim.trait.CBT_Atmosphere;
 import com.hbm.dim.trait.CelestialBodyTrait.CBT_Destroyed;
@@ -46,6 +47,8 @@ public class WorldProviderOrbit extends WorldProvider {
 	// We want a consistent orbital period to prevent orbiting too slow or fast (both for player comfort and feel)
 	//private static final double ORBIT_PERIOD_SECONDS = AstronomyUtil.SECONDS_IN_MC_DAY * 5; // 5 MC days per orbit
 	private static final double ORBIT_PERIOD_SECONDS = 60 * 60 * 2; // 2 real hours per orbit
+
+	public List<AstroMetric> metrics;
 
 	protected float getOrbitalAltitude(CelestialBody body) {
 
@@ -147,6 +150,23 @@ public class WorldProviderOrbit extends WorldProvider {
 		}
 	}
 
+	// This is called once at the beginning of every client sky frame so orbit metrics are
+	// memoized for both vanilla sky brightness hooks and the HBM Space-compatible renderer.
+	@SideOnly(Side.CLIENT)
+	protected void updateSky(float partialTicks) {
+		OrbitalStation station = OrbitalStation.clientStation;
+		double progress = station.getTransferProgress(partialTicks);
+
+		if(station.state == OrbitalStation.StationState.ORBIT) {
+			double altitude = getOrbitalAltitude(station.orbiting);
+			metrics = SolarSystem.calculateMetricsFromSatellite(worldObj, partialTicks, station.orbiting, altitude);
+		} else {
+			double fromAlt = getOrbitalAltitude(station.orbiting);
+			double toAlt = getOrbitalAltitude(station.target);
+			metrics = SolarSystem.calculateMetricsBetweenSatelliteOrbits(worldObj, partialTicks, station.orbiting, station.target, fromAlt, toAlt, progress);
+		}
+	}
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public Vec3 getFogColor(float x, float y) {
@@ -156,6 +176,8 @@ public class WorldProviderOrbit extends WorldProvider {
 	@Override
 	@SideOnly(Side.CLIENT)
 	public Vec3 getSkyColor(Entity camera, float partialTicks) {
+		updateSky(partialTicks);
+
 		return Vec3.createVectorHelper(0, 0, 0);
 	}
 

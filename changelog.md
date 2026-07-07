@@ -63,4 +63,7 @@
 - Restored orbit sky planet rendering to match the HBM Space implementation in `DONOTMODIFY/hbmspace`, including square apparent planet billboards, branch-local satellite metrics, compatible transfer-angle helpers, and correct sun sizing.
 
 ## Fix orbit planet sky rendering parity compile follow-up
-- Adapted the orbit sky rendering parity fix to the RTM branch APIs by calculating satellite metrics locally, using the available single-angle helper, and keeping square planet billboard rendering without unavailable HBM Space fields/constants.
+- Added the missing HBM Space-compatible orbit rendering APIs to RNT and restored the orbit sky renderer to use provider-cached metrics, sidereal angle helpers, max apparent-size constants, and metrics-based single-angle helpers directly.
+
+## Restore HBM Space orbit rendering APIs in RNT
+- Added RNT implementations of the HBM Space orbit sky APIs instead of working around them, including cached orbit metrics on `WorldProviderOrbit`, apparent-size constants, sidereal angle helpers, and metrics-based single-angle helpers.
