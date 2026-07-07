@@ -59,3 +59,5 @@
 - Added startup diagnostics for giant planets with harvestable surface-liquid traits and fixed explicit `Fluids.NONE` water-table serialization so no-surface-liquid settings do not silently become water.
 - Documented the planet-by-planet audit in `docs/gas-giant-realism-audit.md`.
 - Explicitly set Jupiter/Jool, Saturn/Sarnus, Uranus, and Neptune to `CBT_Water(Fluids.NONE)` so parent giant planets cannot inherit normal water-table behavior.
+## Orbit Planet Rendering Parity
+- Restored orbit sky planet rendering to match the HBM Space implementation in `DONOTMODIFY/hbmspace`, including square apparent planet billboards, provider metrics, sidereal star offset, and orbit-scale sun sizing.
