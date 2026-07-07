@@ -25,6 +25,10 @@ Space and planetary bodies can differ in atmosphere, pressure, water-table behav
 
 Orbit is useful for staging transfers, deploying satellites, and creating orbital stations. Station drives can revisit known stations, so name stations clearly and keep spare programmed drives. Satellite payloads should be tracked by frequency; server operators can use station and satellite commands for recovery or cleanup.
 
+## Planetary ring rendering
+
+Gas-giant and ice-giant rings are rendered by the RTM celestial sky provider as local annular bands around the apparent planet disc. The ring dimensions are intentionally derived from the already-clamped sky size of each visible body instead of from regular NTM:Space distances, because RTM's realistified solar-system scale uses much larger real-world radii and orbital distances.
+
 ## Server notes
 
 Server owners should review dimension IDs and space-related configuration before a long-term world starts. Avoid changing orbit or celestial dimension IDs after stations, satellites, or player bases exist.
