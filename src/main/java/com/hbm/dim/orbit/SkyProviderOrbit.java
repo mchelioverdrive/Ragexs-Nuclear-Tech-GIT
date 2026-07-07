@@ -41,23 +41,19 @@ public class SkyProviderOrbit extends SkyProviderCelestial {
 
 		OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
 
-		float celestialAngle = getCelestialAngle(world, partialTicks, station);
-		float celestialPhase = (1 - (celestialAngle + 0.5F) % 1) * 2 - 1;
+		float solarAngle = getCelestialAngle(world, partialTicks, station);
+		float celestialPhase = (1 - (solarAngle + 0.5F) % 1) * 2 - 1;
 
 		float starBrightness = world.getStarBrightness(partialTicks);
 
-		renderStars(partialTicks, world, mc, starBrightness, celestialAngle, orbitalTilt);
+		renderStars(partialTicks, world, mc, starBrightness, solarAngle, orbitalTilt);
 
 		GL11.glPushMatrix();
 		{
 
 			GL11.glRotatef(orbitalTilt, 1.0F, 0.0F, 0.0F);
 			GL11.glRotatef(-90.0F, 0.0F, 1.0F, 0.0F);
-			GL11.glRotatef(celestialAngle * 360.0F, 1.0F, 0.0F, 0.0F);
-
-			// digma balls
-			//renderDigamma(partialTicks, world, mc, celestialAngle);
-			//no
+			GL11.glRotatef(solarAngle * 360.0F, 1.0F, 0.0F, 0.0F);
 
 			OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ONE, GL11.GL_ZERO);
 
@@ -69,10 +65,9 @@ public class SkyProviderOrbit extends SkyProviderCelestial {
 			double coronaSize = sunSize * (3 - Library.smoothstep(Math.abs(celestialPhase), 0.7, 0.8));
 
 			currentSunGlare = provider.getSunBrightness(partialTicks);
-			renderSun(partialTicks, world, mc, SolarSystem.kerbol, sunSize, coronaSize, 1, 0);
+			renderSun(partialTicks, world, mc, station.orbiting.getStar(), sunSize, coronaSize, 1, 0);
 
 			CelestialBody orbiting = station.orbiting;
-
 			List<AstroMetric> metrics;
 			if(station.state == StationState.ORBIT) {
 				double altitude = provider.getOrbitalAltitude(station.orbiting);
@@ -85,7 +80,7 @@ public class SkyProviderOrbit extends SkyProviderCelestial {
 				if(progress > 0.5) orbiting = station.target;
 			}
 
-			renderCelestials(partialTicks, world, mc, metrics, celestialAngle, orbiting, Vec3.createVectorHelper(0, 0, 0), 1, 1, orbiting, 160);
+			renderCelestials(partialTicks, world, mc, metrics, solarAngle, null, Vec3.createVectorHelper(0, 0, 0), 1, 1, orbiting, 160);
 
 		}
 		GL11.glPopMatrix();
@@ -109,10 +104,10 @@ public class SkyProviderOrbit extends SkyProviderCelestial {
 
 	// All angles within are normalized to -180/180
 	private float getCelestialAngle(WorldClient world, float partialTicks, OrbitalStation station) {
-		float celestialAngle = world.getCelestialAngle(partialTicks);
-		if(station.state == StationState.ORBIT) return celestialAngle;
+		float solarAngle = world.getCelestialAngle(partialTicks);
+		if(station.state == StationState.ORBIT) return solarAngle;
 
-		celestialAngle = celestialAngle * 360.0F - 180.0F;
+		solarAngle = solarAngle * 360.0F - 180.0F;
 
 		if(station.state != StationState.ARRIVING) lastBody = station.orbiting;
 
@@ -123,9 +118,9 @@ public class SkyProviderOrbit extends SkyProviderCelestial {
 		if(station.state == StationState.TRANSFER) {
 			return (travelAngle + 180.0F) / 360.0F;
 		} else if(station.state == StationState.LEAVING) {
-			return ((float)BobMathUtil.clerp(progress, celestialAngle, travelAngle) + 180.0F) / 360.0F;
+			return ((float)BobMathUtil.clerp(progress, solarAngle, travelAngle) + 180.0F) / 360.0F;
 		} else {
-			return ((float)BobMathUtil.clerp(progress, travelAngle, celestialAngle) + 180.0F) / 360.0F;
+			return ((float)BobMathUtil.clerp(progress, travelAngle, solarAngle) + 180.0F) / 360.0F;
 		}
 	}
 
