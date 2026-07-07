@@ -1,3 +1,7 @@
+# Fix planetary ring rendering
+
+- Fixed celestial ring geometry so ring quads rotate around the planet center instead of the world origin, restoring visible rings for ringed planets.
+
 # Rebalance orbital station thrusters
 
 - Made LPW-3N, LPW-2, HTR-F4, and Xenon Station Thruster construction substantially more expensive and progression-gated.

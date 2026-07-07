@@ -646,14 +646,19 @@ public class SkyProviderCelestial extends IRenderHandler {
 
 		GL11.glPushMatrix();
 		{
+			// Keep the ring transform centered on the already-oriented body quad.
+			// Rotating vertices at y=100 around the world origin moves the ring out of
+			// the sky plane, which can make all ring geometry disappear. Translate to
+			// the body center first, then draw local ring vertices around y=0.
+			GL11.glTranslated(0.0D, 100.0D, 0.0D);
 			GL11.glRotatef(90.0F - body.ringTilt, 1.0F, 0.0F, 0.0F);
 			tessellator.startDrawing(GL11.GL_QUAD_STRIP);
 			for(int i = 0; i <= segments; i++) {
 				double angle = start + (end - start) * i / segments;
 				double sin = Math.sin(angle);
 				double cos = Math.cos(angle);
-				tessellator.addVertex(cos * outerSize, 100.0D, sin * outerSize);
-				tessellator.addVertex(cos * innerSize, 100.0D, sin * innerSize);
+				tessellator.addVertex(cos * outerSize, 0.0D, sin * outerSize);
+				tessellator.addVertex(cos * innerSize, 0.0D, sin * innerSize);
 			}
 			tessellator.draw();
 		}
