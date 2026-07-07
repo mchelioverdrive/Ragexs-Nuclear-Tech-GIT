@@ -7,9 +7,7 @@ import java.util.Map.Entry;
 import com.hbm.config.SpaceConfig;
 import com.hbm.dim.orbit.OrbitalStation;
 import com.hbm.dim.orbit.OrbitalStation.StationState;
-import com.hbm.dim.trait.CBT_Water;
 import com.hbm.dim.trait.CelestialBodyTrait;
-import com.hbm.inventory.fluid.Fluids;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -67,14 +65,6 @@ public class SolarSystemWorldSavedData extends WorldSavedData {
 							trait.readFromNBT(data.getCompoundTag(entry.getKey()));
 							traits.put(trait.getClass(), trait);
 						} catch (Exception ex) {}
-					}
-				}
-
-				CBT_Water defaultWater = body.getDefaultTrait(CBT_Water.class);
-				if(defaultWater != null && defaultWater.fluid == Fluids.NONE) {
-					CBT_Water water = (CBT_Water) traits.get(CBT_Water.class);
-					if(water == null || water.fluid == Fluids.WATER) {
-						traits.put(CBT_Water.class, new CBT_Water(Fluids.NONE));
 					}
 				}
 
