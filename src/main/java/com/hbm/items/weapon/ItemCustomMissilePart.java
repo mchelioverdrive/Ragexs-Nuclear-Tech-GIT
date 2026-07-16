@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
+import com.hbm.config.BombConfig;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.items.ModItems;
@@ -232,7 +233,9 @@ public class ItemCustomMissilePart extends Item {
 			case WARHEAD:
 				list.add(EnumChatFormatting.BOLD + "Size: " + EnumChatFormatting.GRAY + getSize(bottom));
 				list.add(EnumChatFormatting.BOLD + "Type: " + EnumChatFormatting.GRAY + getWarhead());
-				if(attributes[0] != WarheadType.APOLLO && attributes[0] != WarheadType.SATELLITE)
+				if(attributes[0] == WarheadType.NUCLEAR || attributes[0] == WarheadType.TX)
+					list.add(EnumChatFormatting.BOLD + "Yield: " + EnumChatFormatting.GRAY + getYieldKt((Float)attributes[1]));
+				else if(attributes[0] != WarheadType.APOLLO && attributes[0] != WarheadType.SATELLITE)
 					list.add(EnumChatFormatting.BOLD + "Strength: " + EnumChatFormatting.GRAY + (Float)attributes[1]);
 				list.add(EnumChatFormatting.BOLD + "Mass: " + EnumChatFormatting.GRAY + mass + "kg");
 				break;
@@ -270,6 +273,12 @@ public class ItemCustomMissilePart extends Item {
 			list.add(EnumChatFormatting.WHITE + "   by " + author);
 		if(witty != null)
 			list.add(EnumChatFormatting.GOLD + "   " + EnumChatFormatting.ITALIC + "\"" + witty + "\"");
+	}
+
+	public String getYieldKt(float radius) {
+		float kt = BombConfig.ktFromRadius(radius);
+		if(kt < 10F) return String.format("%.1f kt", kt);
+		return Math.round(kt) + " kt";
 	}
 
 	public String getSize(PartSize size) {

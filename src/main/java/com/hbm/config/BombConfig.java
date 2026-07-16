@@ -5,19 +5,17 @@ import net.minecraftforge.common.config.Property;
 
 public class BombConfig {
 
-	//my current formula is just divide by 2 and that's the full crater radius in meters
-	public static int gadgetRadius = 53;
-	//remathed
-	public static int boyRadius = 48;
-	public static int manRadius = 53;
-	public static int mikeRadius = 418;
-	//should be 800 or 1,450 (larger est) bc apparently the radius is fucking 2900 and we div by 2 because bob has autism
-	//literal server ending event above apparently mike was just so juicy and fragrant he gerald sigma maxxed servers
-	public static int shrimpRadius = 475;
-	//I don't even care anymore enjoy your 1400m crater game
-	public static int tsarlegitrad = 708;
-	//was used irl
-	public static int tsarRadius = 893;
+	public static final float KT_RADIUS_BASE_YIELD = 15F;
+	public static final float KT_RADIUS_BASE_RADIUS = 48F;
+
+	// Nuclear radii are balanced from kiloton yield by cube-root destructiveness.
+	public static int gadgetRadius = radiusFromKt(22F);
+	public static int boyRadius = radiusFromKt(15F);
+	public static int manRadius = radiusFromKt(21F);
+	public static int mikeRadius = radiusFromKt(10_400F);
+	public static int shrimpRadius = radiusFromKt(15_000F);
+	public static int tsarlegitrad = radiusFromKt(50_000F);
+	public static int tsarRadius = radiusFromKt(100_000F);
 	//note: most fake bullshit anime bronie nukes are FUCKING REMOVED FROM THIS FORK. GET THAT SHIT OUT OF THE NUCLEAR TECH MOD
 	public static int prototypeRadius = 150;
 	public static int fleijaRadius = 50;
@@ -27,14 +25,11 @@ public class BombConfig {
 	//ammonium nitrate drum, was heckin evangelon unemployed thing, soon to be just literally an ammonium nitrate canister/ beirut explosion.
 	public static int n2Radius = 25;
 
-	public static int missileRadius = 90;
-	//150kt 'generic?' nuke
-	public static int mirvRadius = 90;
+	public static int missileRadius = radiusFromKt(100F);
+	public static int mirvRadius = radiusFromKt(150F);
 
-	//duplicate for some reason, probably not needed given I destroyed every last gun from this mod
-	//but eh I'm sure it might be used somewhere important.
-	public static int fatmanRadius = 53;
-	public static int nukaRadius = 25;
+	public static int fatmanRadius = radiusFromKt(0.25F);
+	public static int nukaRadius = radiusFromKt(0.05F);
 	public static int aSchrabRadius = 20;
 
 	public static int mk5 = 50;
@@ -46,22 +41,30 @@ public class BombConfig {
 	public static int cont = 0;
 	public static boolean chunkloading = true;
 
+	public static int radiusFromKt(float kilotons) {
+		return Math.max(1, Math.round(KT_RADIUS_BASE_RADIUS * (float) Math.cbrt(kilotons / KT_RADIUS_BASE_YIELD)));
+	}
+
+	public static float ktFromRadius(float radius) {
+		return KT_RADIUS_BASE_YIELD * (float) Math.pow(radius / KT_RADIUS_BASE_RADIUS, 3);
+	}
+
 	public static void loadFromConfig(Configuration config) {
 
 		final String CATEGORY_NUKES = CommonConfig.CATEGORY_NUKES;
-		Property propGadget = config.get(CATEGORY_NUKES, "3.00_gadgetRadius", 53);
+		Property propGadget = config.get(CATEGORY_NUKES, "3.00_gadgetRadius", radiusFromKt(22F));
 		propGadget.comment = "Radius of the Gadget";
 		gadgetRadius = propGadget.getInt();
-		Property propBoy = config.get(CATEGORY_NUKES, "3.01_boyRadius", 48);
+		Property propBoy = config.get(CATEGORY_NUKES, "3.01_boyRadius", radiusFromKt(15F));
 		propBoy.comment = "Radius of Little Boy";
 		boyRadius = propBoy.getInt();
-		Property propMan = config.get(CATEGORY_NUKES, "3.02_manRadius", 53);
+		Property propMan = config.get(CATEGORY_NUKES, "3.02_manRadius", radiusFromKt(21F));
 		propMan.comment = "Radius of Fat Man";
 		manRadius = propMan.getInt();
-		Property propMike = config.get(CATEGORY_NUKES, "3.03_mikeRadius", 418);
+		Property propMike = config.get(CATEGORY_NUKES, "3.03_mikeRadius", radiusFromKt(10_400F));
 		propMike.comment = "Radius of Ivy Mike";
 		mikeRadius = propMike.getInt();
-		Property propTsar = config.get(CATEGORY_NUKES, "3.04_tsarRadius", 893);
+		Property propTsar = config.get(CATEGORY_NUKES, "3.04_tsarRadius", radiusFromKt(100_000F));
 		propTsar.comment = "Radius of the FULL Tsar Bomba";
 		tsarRadius = propTsar.getInt();
 
@@ -73,16 +76,16 @@ public class BombConfig {
 		Property propFleija = config.get(CATEGORY_NUKES, "3.06_fleijaRadius", 50);
 		propFleija.comment = "Radius of F.L.E.I.J.A.";
 		fleijaRadius = propFleija.getInt();
-		Property propMissile = config.get(CATEGORY_NUKES, "3.07_missileRadius", 90);
+		Property propMissile = config.get(CATEGORY_NUKES, "3.07_missileRadius", radiusFromKt(100F));
 		propMissile.comment = "Radius of the nuclear missile";
 		missileRadius = propMissile.getInt();
-		Property propMirv = config.get(CATEGORY_NUKES, "3.08_mirvRadius", 90);
+		Property propMirv = config.get(CATEGORY_NUKES, "3.08_mirvRadius", radiusFromKt(150F));
 		propMirv.comment = "Radius of a MIRV";
 		mirvRadius = propMirv.getInt();
-		Property propFatman = config.get(CATEGORY_NUKES, "3.09_fatmanRadius", 53);
+		Property propFatman = config.get(CATEGORY_NUKES, "3.09_fatmanRadius", radiusFromKt(0.25F));
 		propFatman.comment = "Radius of the Fatman Launcher";
 		fatmanRadius = propFatman.getInt();
-		Property propNuka = config.get(CATEGORY_NUKES, "3.10_nukaRadius", 25);
+		Property propNuka = config.get(CATEGORY_NUKES, "3.10_nukaRadius", radiusFromKt(0.05F));
 		propNuka.comment = "Radius of the nuka grenade";
 		nukaRadius = propNuka.getInt();
 		Property propASchrab = config.get(CATEGORY_NUKES, "3.11_aSchrabRadius", 20);
@@ -96,7 +99,7 @@ public class BombConfig {
 		n2Radius = propN2.getInt();
 
 		//FUN
-		Property propTsar2 = config.get(CATEGORY_NUKES, "3.14_tsarlegitRadius", 708);
+		Property propTsar2 = config.get(CATEGORY_NUKES, "3.14_tsarlegitRadius", radiusFromKt(50_000F));
 		propTsar2.comment = "Radius of the 50MT Tsar Bomba";
 		tsarlegitrad = propTsar2.getInt();
 

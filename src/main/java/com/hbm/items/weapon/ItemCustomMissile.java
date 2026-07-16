@@ -64,7 +64,10 @@ public class ItemCustomMissile extends Item {
 			ItemCustomMissilePart thruster = (ItemCustomMissilePart) Item.getItemById(readFromNBT(stack, "thruster"));
 	
 			list.add(EnumChatFormatting.BOLD + "Warhead: " + EnumChatFormatting.GRAY + warhead.getWarhead());
-			list.add(EnumChatFormatting.BOLD + "Strength: " + EnumChatFormatting.GRAY + (Float)warhead.attributes[1]);
+			if(warhead.attributes[0] == WarheadType.NUCLEAR || warhead.attributes[0] == WarheadType.TX)
+				list.add(EnumChatFormatting.BOLD + "Yield: " + EnumChatFormatting.GRAY + warhead.getYieldKt((Float)warhead.attributes[1]));
+			else
+				list.add(EnumChatFormatting.BOLD + "Strength: " + EnumChatFormatting.GRAY + (Float)warhead.attributes[1]);
 			list.add(EnumChatFormatting.BOLD + "Fuel Type: " + EnumChatFormatting.GRAY + fuselage.getFuelName());
 			list.add(EnumChatFormatting.BOLD + "Fuel amount: " + EnumChatFormatting.GRAY + fuselage.getTankSize() + "l");
 			list.add(EnumChatFormatting.BOLD + "Chip inaccuracy: " + EnumChatFormatting.GRAY + (Float)chip.attributes[0] * 100 + "%");
