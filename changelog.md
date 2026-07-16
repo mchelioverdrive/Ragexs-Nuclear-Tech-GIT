@@ -1,3 +1,9 @@
+# Rebalance nuclear weapons by kiloton yield
+
+- Rebalanced nuclear blast radii around kiloton yield, warhead size, and cube-root destructiveness scaling.
+- Updated nuclear missile warhead tooltips and assembled missile tooltips to show KT yield instead of generic strength.
+- Added yield tooltips for placeable historical nuclear weapon blocks and documented the balance model.
+
 # Move planetary rings away from planet discs
 
 - Expanded celestial ring altitude offsets by 20x during sky rendering so Uranus and other ringed planets no longer clip their rings into the planet disc under RTM's 1:1 scale.

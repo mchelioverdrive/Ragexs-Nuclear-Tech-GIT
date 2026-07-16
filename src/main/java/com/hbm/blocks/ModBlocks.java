@@ -3301,12 +3301,12 @@ public class ModBlocks {
 		GameRegistry.registerBlock(geysir_electric, geysir_electric.getUnlocalizedName());
 
 		//Nukes
-		GameRegistry.registerBlock(nuke_gadget, nuke_gadget.getUnlocalizedName());
-		GameRegistry.registerBlock(nuke_boy, nuke_boy.getUnlocalizedName());
-		GameRegistry.registerBlock(nuke_man, nuke_man.getUnlocalizedName());
-		GameRegistry.registerBlock(nuke_mike, nuke_mike.getUnlocalizedName());
-		GameRegistry.registerBlock(nuke_shrimp, nuke_shrimp.getUnlocalizedName());
-		GameRegistry.registerBlock(nuke_tsar, nuke_tsar.getUnlocalizedName());
+		GameRegistry.registerBlock(nuke_gadget, ItemBlockNukeInfo.class, nuke_gadget.getUnlocalizedName());
+		GameRegistry.registerBlock(nuke_boy, ItemBlockNukeInfo.class, nuke_boy.getUnlocalizedName());
+		GameRegistry.registerBlock(nuke_man, ItemBlockNukeInfo.class, nuke_man.getUnlocalizedName());
+		GameRegistry.registerBlock(nuke_mike, ItemBlockNukeInfo.class, nuke_mike.getUnlocalizedName());
+		GameRegistry.registerBlock(nuke_shrimp, ItemBlockNukeInfo.class, nuke_shrimp.getUnlocalizedName());
+		GameRegistry.registerBlock(nuke_tsar, ItemBlockNukeInfo.class, nuke_tsar.getUnlocalizedName());
 		//GameRegistry.registerBlock(nuke_prototype, ItemPrototypeBlock.class, nuke_prototype.getUnlocalizedName());
 		//GameRegistry.registerBlock(nuke_fleija, nuke_fleija.getUnlocalizedName());
 		//GameRegistry.registerBlock(nuke_solinium, nuke_solinium.getUnlocalizedName());
