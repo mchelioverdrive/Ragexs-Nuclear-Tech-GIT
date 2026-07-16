@@ -278,7 +278,7 @@ public class MainRegistry {
 
 		if(!configHbmDir.exists()) configHbmDir.mkdir();
 
-		logger.info("THE LOGGER FUCKING WORKS GODDAMMIT");
+		logger.info("NO MORE FEMBOY BULLSHIT LEARN WHAT A PERIODIC TABLE IS");
 		logger.info("{} identity API present: variant={}, apiVersion={}", RTMApi.MOD_NAME, RTMApi.getVariant(), RTMApi.getApiVersion());
 
 		// Reroll Polaroid

@@ -21,7 +21,7 @@ import net.minecraft.util.StatCollector;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.Pre;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class MachineSteamEngine extends BlockDummyable implements ILookOverlay, ITooltipProvider {
+public class MachineSteamEngine extends BlockDummyable implements ILookOverlay {
 
 	public MachineSteamEngine() {
 		super(Material.iron);
@@ -80,9 +80,9 @@ public class MachineSteamEngine extends BlockDummyable implements ILookOverlay, 
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 
-	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
-		this.addStandardInfo(stack, player, list, ext);
-		list.add(EnumChatFormatting.DARK_RED + I18nUtil.resolveKey("tooltip.furnace.monoxide"));
-	}
+	//@Override
+	//public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
+	//	this.addStandardInfo(stack, player, list, ext);
+	//	list.add(EnumChatFormatting.DARK_RED + I18nUtil.resolveKey("tooltip.furnace.monoxide"));
+	//} //the firebox should have this tooltip
 }

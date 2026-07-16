@@ -37,14 +37,14 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 
 	private int turnProgress;
 	private float acceleration = 0F;
-	
+
 	/* CONFIGURABLE */
 	private static int steamCap = 2_000;
 	private static int ldsCap = 20;
 	private static double efficiency = 0.85D;
-	
+
 	public TileEntitySteamEngine() {
-		
+
 		tanks = new FluidTank[2];
 		tanks[0] = new FluidTank(Fluids.STEAM, steamCap);
 		tanks[1] = new FluidTank(Fluids.SPENTSTEAM, ldsCap);
@@ -68,46 +68,47 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 		writer.name("I:ldsCap").value(ldsCap);
 		writer.name("D:efficiency").value(efficiency);
 	}
-	
+
 	@Override
 	public void updateEntity() {
-		
+
 		if(!worldObj.isRemote) {
-			
+
 			this.powerBuffer = 0;
 
 			tanks[0].setTankType(Fluids.STEAM);
 			tanks[1].setTankType(Fluids.SPENTSTEAM);
-			
+
 			NBTTagCompound data = new NBTTagCompound();
 			tanks[0].writeToNBT(data, "s");
 
 			FT_Coolable trait = tanks[0].getTankType().getTrait(FT_Coolable.class);
 			double eff = trait.getEfficiency(CoolingType.TURBINE) * efficiency;
-			
+
 			int inputOps = tanks[0].getFill() / trait.amountReq;
 			int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
 			int ops = Math.min(inputOps, outputOps);
 			tanks[0].setFill(tanks[0].getFill() - ops * trait.amountReq);
 			tanks[1].setFill(tanks[1].getFill() + ops * trait.amountProduced);
 			this.powerBuffer += (ops * trait.heatEnergy * eff);
-			
+
 			if(ops > 0) {
-				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1200);
+				//FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1200);
+				//do that for the firebox/coal using crap
 				this.acceleration += 0.1F;
 			} else {
 				this.acceleration -= 0.1F;
 			}
-			
+
 			this.acceleration = MathHelper.clamp_float(this.acceleration, 0F, 40F);
 			this.rotor += this.acceleration;
-			
+
 			if(this.rotor >= 360D) {
 				this.rotor -= 360D;
-				
+
 				this.worldObj.playSoundEffect(xCoord, yCoord, zCoord, "hbm:block.steamEngineOperate", getVolume(1.0F), 0.5F + (acceleration / 80F));
 			}
-			
+
 			data.setLong("power", this.powerBuffer);
 			data.setFloat("rotor", this.rotor);
 			tanks[1].writeToNBT(data, "w");
@@ -117,11 +118,11 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 				this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
-			
+
 			INBTPacketReceiver.networkPack(this, data, 150);
 		} else {
 			this.lastRotor = this.rotor;
-			
+
 			if(this.turnProgress > 0) {
 				double d = MathHelper.wrapAngleTo180_double(this.syncRotor - (double) this.rotor);
 				this.rotor = (float) ((double) this.rotor + d / (double) this.turnProgress);
@@ -131,18 +132,18 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 			}
 		}
 	}
-	
+
 	protected DirPos[] getConPos() {
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
-		
+
 		return new DirPos[] {
 				new DirPos(xCoord + rot.offsetX * 2, yCoord + 1, zCoord + rot.offsetZ * 2, rot),
 				new DirPos(xCoord + rot.offsetX * 2 + dir.offsetX, yCoord + 1, zCoord + rot.offsetZ * 2 + dir.offsetZ, rot),
 				new DirPos(xCoord + rot.offsetX * 2 - dir.offsetX, yCoord + 1, zCoord + rot.offsetZ * 2 - dir.offsetZ, rot)
 		};
 	}
-	
+
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
@@ -152,7 +153,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 		this.tanks[0].readFromNBT(nbt, "s");
 		this.tanks[1].readFromNBT(nbt, "w");
 	}
-	
+
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
@@ -162,12 +163,12 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 		tanks[0].writeToNBT(nbt, "s");
 		tanks[1].writeToNBT(nbt, "w");
 	}
-	
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
 		return TileEntity.INFINITE_EXTENT_AABB;
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public double getMaxRenderDistanceSquared() {
