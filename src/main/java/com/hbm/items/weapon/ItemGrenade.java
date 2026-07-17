@@ -20,7 +20,7 @@ public class ItemGrenade extends Item {
 
 	protected static final float MAX_DRAW_TIME = 20.0F;
 	protected static final float MIN_DRAW_POWER = 0.1F;
-	protected static final float FULL_DRAW_VELOCITY = 1.5F;
+	protected static final float FULL_DRAW_VELOCITY = 1.25F;
 	protected static final float DEFAULT_GRENADE_VELOCITY = 1.5F;
 
 	public ItemGrenade(int fuse) {
