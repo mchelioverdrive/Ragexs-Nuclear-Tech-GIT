@@ -1,3 +1,8 @@
+# Charge grenade throws
+
+- Changed all throwable grenades to single-item stacks.
+- Made grenade throws charge and release using the standard bow draw curve, increasing throw distance with draw time.
+
 # Rebalance nuclear weapons by kiloton yield
 
 - Rebalanced nuclear blast radii around kiloton yield, warhead size, and cube-root destructiveness scaling.

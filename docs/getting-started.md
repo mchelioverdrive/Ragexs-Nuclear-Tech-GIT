@@ -43,6 +43,10 @@ Radiation is a persistent environmental and item hazard. Practical rules:
 - Do not store radioactive materials in common player inventory unless you know the shielding behavior.
 - Server administrators can clear or set chunk radiation with `/ntmrad`, but players should assume radiation is persistent unless cleaned up.
 
+## Grenade use
+
+Grenades are single-item stacks. Hold the use button to draw back a throw, then release it: throw power follows the standard bow draw curve, so a longer hold produces a faster, farther throw. Very brief taps do not release a grenade.
+
 ## Nuclear safety basics
 
 Nuclear systems are powerful but punishing:
