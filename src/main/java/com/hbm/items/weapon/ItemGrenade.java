@@ -5,6 +5,7 @@ import java.util.List;
 import com.hbm.entity.grenade.*;
 import com.hbm.items.ModItems;
 
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.EnumRarity;
 import net.minecraft.item.Item;
@@ -16,18 +17,44 @@ public class ItemGrenade extends Item {
 
 	public int fuse = 4;
 
+	protected static final float MAX_DRAW_TIME = 20.0F;
+	protected static final float MIN_DRAW_POWER = 0.1F;
+	protected static final float FULL_DRAW_VELOCITY = 3.0F;
+	protected static final float DEFAULT_GRENADE_VELOCITY = 1.5F;
+
 	public ItemGrenade(int fuse) {
-		this.maxStackSize = 16;
+		this.maxStackSize = 1;
 		this.fuse = fuse;
 	}
 
 	@Override
-	public ItemStack onItemRightClick(ItemStack p_77659_1_, World p_77659_2_, EntityPlayer p_77659_3_) {
-		if (!p_77659_3_.capabilities.isCreativeMode) {
-			--p_77659_1_.stackSize;
+	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
+		player.setItemInUse(stack, this.getMaxItemUseDuration(stack));
+		return stack;
+	}
+
+	@Override
+	public int getMaxItemUseDuration(ItemStack stack) {
+		return 72000;
+	}
+
+	@Override
+	public void onPlayerStoppedUsing(ItemStack stack, World world, EntityPlayer player, int timeLeft) {
+		int charge = this.getMaxItemUseDuration(stack) - timeLeft;
+		float power = charge / MAX_DRAW_TIME;
+		power = (power * power + power * 2.0F) / 3.0F;
+
+		if (power < MIN_DRAW_POWER) {
+			return;
 		}
 
-		p_77659_2_.playSoundAtEntity(p_77659_3_, "random.bow", 0.5F, 0.4F / (itemRand.nextFloat() * 0.4F + 0.8F));
+		power = Math.min(power, 1.0F);
+
+		if (!player.capabilities.isCreativeMode) {
+			--stack.stackSize;
+		}
+
+		world.playSoundAtEntity(player, "random.bow", 0.5F, 0.4F / (itemRand.nextFloat() * 0.4F + 0.8F));
 
 		//TODO:
 		/*
@@ -37,144 +64,150 @@ public class ItemGrenade extends Item {
 		 * register explosion effects with some lambdas to save on LOC
 		 * jesus christ why do i keep doing this
 		 */
-		if (!p_77659_2_.isRemote) {
+		if (!world.isRemote) {
 			if (this == ModItems.grenade_generic) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeGeneric(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeGeneric(world, player), power);
 			}
 			if (this == ModItems.grenade_strong) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeStrong(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeStrong(world, player), power);
 			}
 			if (this == ModItems.grenade_frag) {
-				EntityGrenadeFrag frag = new EntityGrenadeFrag(p_77659_2_, p_77659_3_);
-				frag.shooter = p_77659_3_;
-				p_77659_2_.spawnEntityInWorld(frag);
+				EntityGrenadeFrag frag = new EntityGrenadeFrag(world, player);
+				frag.shooter = player;
+				spawnGrenade(world, frag, power);
 			}
 			if (this == ModItems.grenade_fire) {
-				EntityGrenadeFire fire = new EntityGrenadeFire(p_77659_2_, p_77659_3_);
-				fire.shooter = p_77659_3_;
-				p_77659_2_.spawnEntityInWorld(fire);
+				EntityGrenadeFire fire = new EntityGrenadeFire(world, player);
+				fire.shooter = player;
+				spawnGrenade(world, fire, power);
 			}
 			if (this == ModItems.grenade_cluster) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeCluster(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeCluster(world, player), power);
 			}
 			if (this == ModItems.grenade_flare) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeFlare(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeFlare(world, player), power);
 			}
 			if (this == ModItems.grenade_electric) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeElectric(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeElectric(world, player), power);
 			}
 			if (this == ModItems.grenade_poison) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadePoison(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadePoison(world, player), power);
 			}
 			if (this == ModItems.grenade_gas) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeGas(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeGas(world, player), power);
 			}
 			if (this == ModItems.grenade_schrabidium) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeSchrabidium(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeSchrabidium(world, player), power);
 			}
 			if (this == ModItems.grenade_nuke) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeNuke(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeNuke(world, player), power);
 			}
 			if (this == ModItems.grenade_nuclear) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeNuclear(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeNuclear(world, player), power);
 			}
 			if (this == ModItems.grenade_pulse) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadePulse(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadePulse(world, player), power);
 			}
 			if (this == ModItems.grenade_plasma) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadePlasma(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadePlasma(world, player), power);
 			}
 			if (this == ModItems.grenade_tau) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeTau(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeTau(world, player), power);
 			}
 			//if (this == ModItems.grenade_lemon) {
-			//	p_77659_2_.spawnEntityInWorld(new EntityGrenadeLemon(p_77659_2_, p_77659_3_));
+			//	spawnGrenade(world, new EntityGrenadeLemon(world, player), power);
 			//}
 			if (this == ModItems.grenade_mk2) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeMk2(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeMk2(world, player), power);
 			}
 			if (this == ModItems.grenade_aschrab) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeASchrab(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeASchrab(world, player), power);
 			}
 			if (this == ModItems.grenade_zomg) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeZOMG(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeZOMG(world, player), power);
 			}
 			if (this == ModItems.grenade_shrapnel) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeShrapnel(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeShrapnel(world, player), power);
 			}
 			if (this == ModItems.grenade_black_hole) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeBlackHole(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeBlackHole(world, player), power);
 			}
 			if (this == ModItems.grenade_gascan) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeGascan(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeGascan(world, player), power);
 			}
 			if (this == ModItems.grenade_cloud) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeCloud(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeCloud(world, player), power);
 			}
 			if (this == ModItems.grenade_pink_cloud) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadePC(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadePC(world, player), power);
 			}
 			if (this == ModItems.grenade_smart) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeSmart(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeSmart(world, player), power);
 			}
 			if (this == ModItems.grenade_mirv) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeMIRV(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeMIRV(world, player), power);
 			}
 			if (this == ModItems.grenade_breach) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeBreach(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeBreach(world, player), power);
 			}
 			if (this == ModItems.grenade_burst) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeBurst(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeBurst(world, player), power);
 			}
 
 			if (this == ModItems.grenade_if_generic) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFGeneric(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeIFGeneric(world, player), power);
 			}
 			if (this == ModItems.grenade_if_he) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFHE(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeIFHE(world, player), power);
 			}
 			if (this == ModItems.grenade_if_bouncy) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFBouncy(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeIFBouncy(world, player), power);
 			}
 			if (this == ModItems.grenade_if_sticky) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFSticky(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeIFSticky(world, player), power);
 			}
 			if (this == ModItems.grenade_if_impact) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFImpact(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeIFImpact(world, player), power);
 			}
 			if (this == ModItems.grenade_if_incendiary) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFIncendiary(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeIFIncendiary(world, player), power);
 			}
 			if (this == ModItems.grenade_if_toxic) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFToxic(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeIFToxic(world, player), power);
 			}
 			if (this == ModItems.grenade_if_concussion) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFConcussion(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeIFConcussion(world, player), power);
 			}
 			if (this == ModItems.grenade_if_brimstone) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFBrimstone(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeIFBrimstone(world, player), power);
 			}
 			if (this == ModItems.grenade_if_mystery) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFMystery(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeIFMystery(world, player), power);
 			}
 			if (this == ModItems.grenade_if_spark) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFSpark(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeIFSpark(world, player), power);
 			}
 			if (this == ModItems.grenade_if_hopwire) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFHopwire(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeIFHopwire(world, player), power);
 			}
 			if (this == ModItems.grenade_if_null) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeIFNull(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeIFNull(world, player), power);
 			}
 			//if (this == ModItems.nuclear_waste_pearl) {
-			//	p_77659_2_.spawnEntityInWorld(new EntityWastePearl(p_77659_2_, p_77659_3_));
+			//	spawnGrenade(world, new EntityWastePearl(world, player), power);
 			//}
 			if (this == ModItems.stick_dynamite) {
-				p_77659_2_.spawnEntityInWorld(new EntityGrenadeDynamite(p_77659_2_, p_77659_3_));
+				spawnGrenade(world, new EntityGrenadeDynamite(world, player), power);
 			}
 		}
+	}
 
-		return p_77659_1_;
+	protected void spawnGrenade(World world, Entity grenade, float drawPower) {
+		float velocityMultiplier = drawPower * FULL_DRAW_VELOCITY / DEFAULT_GRENADE_VELOCITY;
+		grenade.motionX *= velocityMultiplier;
+		grenade.motionY *= velocityMultiplier;
+		grenade.motionZ *= velocityMultiplier;
+		world.spawnEntityInWorld(grenade);
 	}
 
 	@Override
