@@ -45,7 +45,7 @@ Radiation is a persistent environmental and item hazard. Practical rules:
 
 ## Grenade use
 
-Grenades are single-item stacks. Hold the use button to draw back a throw, then release it: throw power follows the standard bow draw curve, so a longer hold produces a faster, farther throw. Very brief taps do not release a grenade.
+Grenades are single-item stacks. Hold the use button to draw back a throw—the same pullback animation used by bows appears while charging—then release it. Throw power follows the standard bow draw curve, so a longer hold produces a faster, farther throw up to the normal grenade throw speed. Very brief taps do not release a grenade.
 
 ## Nuclear safety basics
 

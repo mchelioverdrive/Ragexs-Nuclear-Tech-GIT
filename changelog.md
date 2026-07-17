@@ -1,3 +1,9 @@
+# Lower grenade throw speed and restore pullback animation
+
+- Reduced fully charged grenade throws to the normal grenade velocity while retaining bow-style charge scaling.
+- Added the bow use action to all throwable grenades so players see the pullback animation before release.
+- Updated the getting-started guide with the pullback animation and throw-speed behavior.
+
 # Charge grenade throws
 
 - Changed all throwable grenades to single-item stacks.
