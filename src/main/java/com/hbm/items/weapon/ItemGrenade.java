@@ -7,6 +7,7 @@ import com.hbm.items.ModItems;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.EnumAction;
 import net.minecraft.item.EnumRarity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -19,7 +20,7 @@ public class ItemGrenade extends Item {
 
 	protected static final float MAX_DRAW_TIME = 20.0F;
 	protected static final float MIN_DRAW_POWER = 0.1F;
-	protected static final float FULL_DRAW_VELOCITY = 3.0F;
+	protected static final float FULL_DRAW_VELOCITY = 1.5F;
 	protected static final float DEFAULT_GRENADE_VELOCITY = 1.5F;
 
 	public ItemGrenade(int fuse) {
@@ -36,6 +37,11 @@ public class ItemGrenade extends Item {
 	@Override
 	public int getMaxItemUseDuration(ItemStack stack) {
 		return 72000;
+	}
+
+	@Override
+	public EnumAction getItemUseAction(ItemStack stack) {
+		return EnumAction.bow;
 	}
 
 	@Override
