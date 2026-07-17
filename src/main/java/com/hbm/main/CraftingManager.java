@@ -748,7 +748,17 @@ public class CraftingManager {
 		addRecipeAuto(new ItemStack(ModBlocks.det_cord, 4), new Object[] { " P ", "PGP", " P ", 'P', Items.paper, 'G', Items.gunpowder });
 		addRecipeAuto(new ItemStack(ModBlocks.det_charge, 1), new Object[] { "PDP", "DTD", "PDP", 'P', STEEL.plate(), 'D', ModBlocks.det_cord, 'T', ANY_PLASTICEXPLOSIVE.ingot() });
 		addRecipeAuto(new ItemStack(ModBlocks.det_nuke, 1), new Object[] { "PFP", "DCD", "PFP", 'P', STEEL.plateCast(), 'D', ModBlocks.det_charge, 'C', ModItems.man_core, 'F', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.CONTROLLER) });
-		addRecipeAuto(new ItemStack(ModBlocks.det_salt, 1), new Object[] { "PIP", "DCD", "PIP", 'P', ModItems.ingot_cobalt, 'D', ModItems.billet_au198, 'C', ModBlocks.det_nuke, 'I', ModItems.ingot_zinc}); //Mats.MAT_TCALLOY.make(ModItems.plate_cast)
+		addRecipeAuto(new ItemStack(ModBlocks.det_salt, 1), new Object[] {
+			"PIP",
+			"DCD",
+			"POP",
+			'P', ModItems.ingot_cobalt,
+			'D', ModItems.billet_au198,
+			'C', ModBlocks.det_nuke,
+			'I', ModItems.ingot_zinc,
+			'O', ModItems.ingot_tantalium
+
+		});
 		addRecipeAuto(new ItemStack(ModBlocks.det_miner, 4), new Object[] { "FFF", "ITI", "ITI", 'F', Items.flint, 'I', IRON.plate(), 'T', ModItems.ball_dynamite });
 		addRecipeAuto(new ItemStack(ModBlocks.det_miner, 12), new Object[] { "FFF", "ITI", "ITI", 'F', Items.flint, 'I', STEEL.plate(), 'T', ANY_PLASTICEXPLOSIVE.ingot() });
 		//addRecipeAuto(new ItemStack(ModBlocks.emp_bomb, 1), new Object[] { "LML", "LCL", "LML", 'L', PB.plate(), 'M', ModItems.magnetron, 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.ADVANCED) });
