@@ -159,3 +159,14 @@ The command edits the runtime list; persistence depends on implementation detail
 5. Edit recipes, fluid traits, fallout, item pools, and custom machines as needed.
 6. Test with representative players and machines.
 7. Back up the final config set before opening the long-term world.
+
+### Turbine pressure safety
+
+Steam turbines now model pressure ratings in the dynamic machine JSON:
+
+| Machine key | Field | Default | Behavior |
+| --- | --- | ---: | --- |
+| `steamturbine` | `I:maxSafePressure` | `1` | Accepts steam at PU 0-1. PU 1 gives a small throughput/efficiency gain; higher pressure ruptures the turbine. |
+| `steamturbineIndustrial` | `I:maxSafePressure` | `2` | Accepts steam at PU 0-2. Higher safe pressure improves flow share/efficiency; higher pressure ruptures the turbine with a larger blast. |
+
+Gas turbines do not accept pressurized steam input, but their internal steam chest can rupture if the turbine remains hot and above half throttle while the hot-steam output tank is nearly full. Keep hot-steam pipes and consumers clear before raising throttle.
