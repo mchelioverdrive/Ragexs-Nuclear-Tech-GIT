@@ -1,3 +1,7 @@
+# Fix sandbag inventory stack overflow
+
+- Fixed sandbag inventory rendering to draw its bounded cuboid directly instead of recursively invoking the block item renderer.
+
 # Lower grenade throw speed and restore pullback animation
 
 - Reduced fully charged grenade throws to the normal grenade velocity while retaining bow-style charge scaling.
