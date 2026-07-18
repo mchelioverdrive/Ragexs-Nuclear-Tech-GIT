@@ -114,6 +114,10 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 				FT_Coolable trait = in.getTrait(FT_Coolable.class);
 				double eff = trait.getEfficiency(CoolingType.TURBINE) * efficiency * getPressureEfficiency(); //85% efficiency by default
 				if(eff > 0) {
+					if(shouldBurstFromSteamDensity(in)) {
+						burstFromSteamDensity(in);
+						return;
+					}
 					tanks[1].setTankType(trait.coolsTo);
 					int inputOps = tanks[0].getFill() / trait.amountReq;
 					int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;

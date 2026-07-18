@@ -289,6 +289,10 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 				FT_Coolable trait = in.getTrait(FT_Coolable.class);
 				double eff = trait.getEfficiency(CoolingType.TURBINE) * efficiency * getPressureEfficiency(); //small turbine is only 85% efficient by default
 				if(eff > 0) {
+					if(shouldBurstFromSteamDensity(in)) {
+						burstFromSteamDensity(in);
+						return;
+					}
 					tanks[1].setTankType(trait.coolsTo);
 					int inputOps = tanks[0].getFill() / trait.amountReq;
 					int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
