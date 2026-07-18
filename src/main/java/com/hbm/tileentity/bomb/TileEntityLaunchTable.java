@@ -18,6 +18,7 @@ import com.hbm.items.weapon.ItemCustomMissilePart.PartSize;
 import com.hbm.lib.Library;
 import com.hbm.main.MainRegistry;
 import com.hbm.packet.PacketDispatcher;
+import com.hbm.packet.toclient.BufPacket;
 import com.hbm.packet.toclient.TEMissileMultipartPacket;
 import com.hbm.tileentity.IBufPacketReceiver;
 import com.hbm.tileentity.IGUIProvider;
@@ -25,7 +26,7 @@ import com.hbm.tileentity.IRadarCommandReceiver;
 import com.hbm.tileentity.TileEntityLoadedBase;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
+import api.hbm.fluid.IFluidStandardReceiver;
 import api.hbm.item.IDesignatorItem;
 import cpw.mods.fml.common.Optional;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
@@ -50,7 +51,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
-public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISidedInventory, IEnergyReceiverMK2, IFluidStandardReceiverMK2, IGUIProvider, IBufPacketReceiver, IRadarCommandReceiver, CompatHandler.OCComponent {
+public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISidedInventory, IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IBufPacketReceiver, IRadarCommandReceiver, CompatHandler.OCComponent {
 
 	private ItemStack slots[];
 
@@ -118,7 +119,6 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 
 	public void setCustomName(String name) {
 		this.customName = name;
-		markDirty();
 	}
 
 	@Override
@@ -197,7 +197,7 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 				solid += 250;
 			}
 
-			networkPackNT(50);
+			PacketDispatcher.wrapper.sendToAllAround(new BufPacket(xCoord, yCoord, zCoord, this), new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
 
 			MissileStruct multipart = getStruct(slots[0]);
 
@@ -227,15 +227,7 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 					float moX = (float) (dir ? 0 : worldObj.rand.nextGaussian() * 0.65F);
 					float moZ = (float) (!dir ? 0 : worldObj.rand.nextGaussian() * 0.65F);
 
-					NBTTagCompound data = new NBTTagCompound();
-					data.setDouble("posX", xCoord + 0.5);
-					data.setDouble("posY", yCoord + 0.25);
-					data.setDouble("posZ", zCoord + 0.5);
-					data.setString("type", "launchSmoke");
-					data.setDouble("moX", moX);
-					data.setDouble("moY", 0);
-					data.setDouble("moZ", moZ);
-					MainRegistry.proxy.effectNT(data);
+					MainRegistry.proxy.spawnParticle(xCoord + 0.5, yCoord + 0.25, zCoord + 0.5, "launchsmoke", new float[] {moX, 0, moZ});
 				}
 			}
 		}
@@ -364,10 +356,10 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 			case XENON:
 				tanks[0].setFill(tanks[0].getFill() - fuel);
 				break;
-			case BALEFIRE:
-				tanks[0].setFill(tanks[0].getFill() - fuel);
-				tanks[1].setFill(tanks[1].getFill() - fuel);
-				break;
+			//case BALEFIRE:
+			//	tanks[0].setFill(tanks[0].getFill() - fuel);
+			//	tanks[1].setFill(tanks[1].getFill() - fuel);
+			//	break;
 			case SOLID:
 				this.solid -= fuel; break;
 			default: break;
@@ -435,12 +427,12 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 			case KEROSENE:
 			case HYDROGEN:
 			case XENON:
-			case BALEFIRE:
-
-				if(tanks[0].getFill() >= (int)fuselage.attributes[1])
-					return 1;
-				else
-					return 0;
+			//case BALEFIRE:
+			//
+			//	if(tanks[0].getFill() >= (int)fuselage.attributes[1])
+			//		return 1;
+			//	else
+			//		return 0;
 			default: break;
 		}
 
@@ -459,12 +451,12 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 		switch((FuelType)fuselage.attributes[0]) {
 			case KEROSENE:
 			case HYDROGEN:
-			case BALEFIRE:
-
-				if(tanks[1].getFill() >= (int)fuselage.attributes[1])
-					return 1;
-				else
-					return 0;
+			//case BALEFIRE:
+			//
+			//	if(tanks[1].getFill() >= (int)fuselage.attributes[1])
+			//		return 1;
+			//	else
+			//		return 0;
 			default: break;
 		}
 
@@ -492,10 +484,10 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 			case XENON:
 				tanks[0].setTankType(Fluids.XENON);
 				break;
-			case BALEFIRE:
-				tanks[0].setTankType(Fluids.BALEFIRE);
-				tanks[1].setTankType(Fluids.PEROXIDE);
-				break;
+			//case BALEFIRE:
+			//	tanks[0].setTankType(Fluids.BALEFIRE);
+			//	tanks[1].setTankType(Fluids.PEROXIDE);
+			//	break;
 			default: break;
 		}
 	}
@@ -520,8 +512,6 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 				slots[b0] = ItemStack.loadItemStackFromNBT(nbt1);
 			}
 		}
-
-		customName = nbt.getString("name");
 	}
 
 	@Override
@@ -545,10 +535,6 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 			}
 		}
 		nbt.setTag("items", list);
-
-		if (customName != null) {
-			nbt.setString("name", customName);
-		}
 	}
 
 	@Override

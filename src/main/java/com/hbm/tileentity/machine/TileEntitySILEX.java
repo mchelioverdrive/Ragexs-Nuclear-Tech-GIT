@@ -19,7 +19,7 @@ import com.hbm.util.CompatEnergyControl;
 import com.hbm.util.InventoryUtil;
 import com.hbm.util.WeightedRandomObject;
 
-import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
+import api.hbm.fluid.IFluidStandardReceiver;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -33,7 +33,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntitySILEX extends TileEntityMachineBase implements IFluidStandardReceiverMK2, IGUIProvider, IInfoProviderEC {
+public class TileEntitySILEX extends TileEntityMachineBase implements IFluidStandardReceiver, IGUIProvider, IInfoProviderEC {
 
 	public EnumWavelengths mode = EnumWavelengths.NULL;
 	public boolean hasLaser;
@@ -143,7 +143,7 @@ public class TileEntitySILEX extends TileEntityMachineBase implements IFluidStan
 	static {
 		putFluid(Fluids.UF6);
 		putFluid(Fluids.PUF6);
-		putFluid(Fluids.DEATH);
+		putFluid(Fluids.OSMIRIDIUM_SOLUTION);
 	}
 
 	private static void putFluid(FluidType fluid) {

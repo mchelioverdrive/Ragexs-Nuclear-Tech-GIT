@@ -1,9 +1,3 @@
-# Port UniNodespace, PowerNet MK3, and FluidNet MK2
-
-- Migrated the shared node lifecycle to UniNodespace/NodeNet, including common provider/subscriber expiry, unloaded-tile rejection, invalid tile rejection, network reaping, and removal of the redundant recently-changed reconnect workaround.
-- Ported the MK2 fluid API and FluidNet MK2 transfer flow, replacing old PipeNet conductors/subscribers with fluid network providers, nodes, and MK2 provider/receiver registration.
-- Migrated fluid users, connectors, block connectors, fillable items, proxy/debug integrations, and pipe tiles to the MK2 interface names and lifecycle calls while retaining deprecated API shims only for external compatibility.
-
 # Port worldgen cascade and UniNodespace backports
 
 - Backported the vanilla +8 decoration offset for upstream-selected world-generation entries that perform height lookups or can spill outside their origin, including flower, depth-deposit, and Eve spike/volcano starts.

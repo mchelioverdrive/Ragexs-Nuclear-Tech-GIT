@@ -5,12 +5,12 @@ import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.tileentity.TileEntityMachineBase;
 
-import api.hbm.fluidmk2.IFluidStandardTransceiverMK2;
+import api.hbm.fluid.IFluidStandardTransceiver;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityAlgaeFilm extends TileEntityMachineBase implements IFluidStandardTransceiverMK2 {
+public class TileEntityAlgaeFilm extends TileEntityMachineBase implements IFluidStandardTransceiver {
 
 	public FluidTank[] tanks;
 	public boolean canOperate;
@@ -44,7 +44,7 @@ public class TileEntityAlgaeFilm extends TileEntityMachineBase implements IFluid
 
 			for(ForgeDirection dir : dirs) {
 				trySubscribe(tanks[0].getTankType(), worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-				tryProvide(tanks[1], worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
+				sendFluid(tanks[1], worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 			}
 
 			networkPackNT(20);
@@ -91,5 +91,5 @@ public class TileEntityAlgaeFilm extends TileEntityMachineBase implements IFluid
 	public FluidTank[] getReceivingTanks() {
 		return new FluidTank[] { tanks[0] };
 	}
-
+	
 }

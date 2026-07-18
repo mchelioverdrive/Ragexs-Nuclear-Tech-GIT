@@ -10,14 +10,14 @@ import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.tileentity.TileEntityMachineBase;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluidmk2.IFluidStandardSenderMK2;
+import api.hbm.fluid.IFluidStandardSender;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityAirScrubber extends TileEntityMachineBase implements IFluidStandardSenderMK2, IEnergyReceiverMK2 {
+public class TileEntityAirScrubber extends TileEntityMachineBase implements IFluidStandardSender, IEnergyReceiverMK2 {
 
 	private TileEntityAirPump pump;
 	public FluidTank tank;
@@ -46,9 +46,9 @@ public class TileEntityAirScrubber extends TileEntityMachineBase implements IFlu
 				// Fetch a new pump to scrub CO2 from
 				if(worldObj.getTotalWorldTime() % 5 == 0 && (pump == null || pump.getFluidPressure() == 0 || !pump.registerScrubber(this))) {
 					pump = null;
-
+	
 					List<AtmosphereBlob> blobs = ChunkAtmosphereManager.proxy.getBlobs(worldObj, xCoord, yCoord, zCoord);
-
+	
 					for(AtmosphereBlob blob : blobs) {
 						if(blob != null) {
 							ThreeInts pos = blob.getRootPosition();
@@ -68,13 +68,13 @@ public class TileEntityAirScrubber extends TileEntityMachineBase implements IFlu
 
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
 				trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-				if(tank.getFill() > 0) tryProvide(tank, worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
+				if(tank.getFill() > 0) sendFluid(tank, worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 			}
 
 			networkPackNT(20);
 		} else {
 			float maxSpeed = 30F;
-
+			
 			if(canOperate()) {
 				rotSpeed += 0.2;
 				if(rotSpeed > maxSpeed) rotSpeed = maxSpeed;
@@ -82,11 +82,11 @@ public class TileEntityAirScrubber extends TileEntityMachineBase implements IFlu
 				rotSpeed -= 0.1;
 				if(rotSpeed < 0) rotSpeed = 0;
 			}
-
+			
 			prevRot = rot;
-
+			
 			rot += rotSpeed;
-
+			
 			if(rot >= 360) {
 				rot -= 360;
 				prevRot -= 360;
@@ -98,12 +98,11 @@ public class TileEntityAirScrubber extends TileEntityMachineBase implements IFlu
 		return power > 200;
 	}
 
-	public int scrub(int amount) {
-		if(!canOperate()) return 0;
+	public void scrub(int amount) {
+		if(!canOperate()) return;
 		int add = Math.min(tank.getMaxFill() - tank.getFill(), amount);
 		tank.setFill(tank.getFill() + add);
 		power -= add * 10;
-		return add;
 	}
 
 	@Override
@@ -160,7 +159,7 @@ public class TileEntityAirScrubber extends TileEntityMachineBase implements IFlu
 	}
 
 	AxisAlignedBB bb = null;
-
+	
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
 		if(bb == null) {
@@ -173,8 +172,8 @@ public class TileEntityAirScrubber extends TileEntityMachineBase implements IFlu
 				zCoord + 1
 			);
 		}
-
+		
 		return bb;
 	}
-
+	
 }

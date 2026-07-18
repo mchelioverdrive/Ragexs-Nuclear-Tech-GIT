@@ -5,21 +5,20 @@ import com.hbm.inventory.FluidStack;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.recipes.CrackingRecipes;
-import com.hbm.tileentity.IBufPacketReceiver;
 import com.hbm.tileentity.IFluidCopiable;
+import com.hbm.tileentity.INBTPacketReceiver;
 import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.Tuple.Pair;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
-import api.hbm.fluidmk2.IFluidStandardTransceiverMK2;
+import api.hbm.fluid.IFluidStandardTransceiver;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineCatalyticCracker extends TileEntityLoadedBase implements IBufPacketReceiver, IFluidStandardTransceiverMK2, IFluidCopiable {
+public class TileEntityMachineCatalyticCracker extends TileEntityLoadedBase implements INBTPacketReceiver, IFluidStandardTransceiver, IFluidCopiable {
 
 	public FluidTank[] tanks;
 
@@ -51,26 +50,25 @@ public class TileEntityMachineCatalyticCracker extends TileEntityLoadedBase impl
 
 				for(DirPos pos : getConPos()) {
 					for(int i = 2; i <= 4; i++) {
-						if(tanks[i].getFill() > 0) this.tryProvide(tanks[i], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+						if(tanks[i].getFill() > 0) this.sendFluid(tanks[i], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 					}
 				}
 
+				NBTTagCompound data = new NBTTagCompound();
+
+				for(int i = 0; i < 5; i++)
+					tanks[i].writeToNBT(data, "tank" + i);
+
+				INBTPacketReceiver.networkPack(this, data, 50);
 			}
 			this.worldObj.theProfiler.endSection();
-			networkPackNT(25);
 		}
 	}
 
 	@Override
-	public void serialize(ByteBuf buf) {
-		for(FluidTank tank : tanks)
-			tank.serialize(buf);
-	}
-
-	@Override
-	public void deserialize(ByteBuf buf) {
-		for(FluidTank tank : tanks)
-			tank.deserialize(buf);
+	public void networkUnpack(NBTTagCompound nbt) {
+		for(int i = 0; i < 5; i++)
+			tanks[i].readFromNBT(nbt, "tank" + i);
 	}
 
 	private void updateConnections() {
@@ -116,6 +114,8 @@ public class TileEntityMachineCatalyticCracker extends TileEntityLoadedBase impl
 			tanks[3].setTankType(quart.getValue().type);
 			tanks[4].setTankType(Fluids.SPENTSTEAM);
 		} else {
+			//tanks[0].setTankType(Fluids.NONE);
+			//tanks[1].setTankType(Fluids.NONE);
 			tanks[2].setTankType(Fluids.NONE);
 			tanks[3].setTankType(Fluids.NONE);
 			tanks[4].setTankType(Fluids.NONE);

@@ -28,11 +28,10 @@ import com.hbm.util.EnumUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 import com.hbm.util.function.Function;
 
-import api.hbm.fluidmk2.IFluidStandardTransceiverMK2;
+import api.hbm.fluid.IFluidStandardTransceiver;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
@@ -45,10 +44,12 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityWatz extends TileEntityMachineBase implements IFluidStandardTransceiverMK2, IControlReceiver, IGUIProvider, IFluidCopiable {
+public class TileEntityWatz extends TileEntityMachineBase implements IFluidStandardTransceiver, IControlReceiver, IGUIProvider, IFluidCopiable {
+
+	// Pebble-bed reactor model: graphite moderated TRISO pebbles, helium primary loop,
+	// xenon/iodine poisoning, center-weighted flux, and a gamified overheat failure.
 
 	public FluidTank[] tanks;
-	public FluidTank[] sharedTanks;
 	public int heat;
 	public double fluxLastBase;		//flux created by the previous passive emission, only used for display
 	public double fluxLastReaction;	//flux created by the previous reaction, used for the next reaction
@@ -59,14 +60,40 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 	public boolean isLocked = false;
 	public ItemStack[] locks;
 
+	//TODOne xenon poisoning
+	public double xenon;
+	public double iodine;
+
+	private static final double[] SLOT_WEIGHTS = {
+
+		// top
+		0.85D, 0.85D,
+
+		// upper ring
+		0.95D, 1.10D, 1.10D, 0.95D,
+
+		// core rows
+		0.95D, 1.10D, 1.20D, 1.20D, 1.10D, 0.95D,
+		0.95D, 1.10D, 1.20D, 1.20D, 1.10D, 0.95D,
+
+		// lower ring
+		0.95D, 1.10D, 1.10D, 0.95D,
+
+		// bottom
+		0.85D, 0.85D
+	};
+
+	private double getSlotWeight(int slot) {
+		return SLOT_WEIGHTS[slot];
+	}
+
 	public TileEntityWatz() {
 		super(24);
 		this.locks = new ItemStack[slots.length];
-		this.tanks = new FluidTank[3];
-		this.tanks[0] = new FluidTank(Fluids.COOLANT, 64_000);
-		this.tanks[1] = new FluidTank(Fluids.COOLANT_HOT, 64_000);
-		this.tanks[2] = new FluidTank(Fluids.WATZ, 64_000);
-		resetSharedTanks();
+		this.tanks = new FluidTank[2];
+		this.tanks[0] = new FluidTank(Fluids.HELIUM4, 64_000);
+		this.tanks[1] = new FluidTank(Fluids.HELIUM4_HOT, 64_000);
+		//this.tanks[2] = new FluidTank(Fluids.WATZ, 64_000); //shouldn't this be xenon or something?
 	}
 
 	@Override
@@ -74,22 +101,12 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 		return "container.watz";
 	}
 
-	protected void resetSharedTanks() {
-		this.sharedTanks = new FluidTank[3];
-		this.sharedTanks[0] = new FluidTank(Fluids.COOLANT, 64_000);
-		this.sharedTanks[1] = new FluidTank(Fluids.COOLANT_HOT, 64_000);
-		this.sharedTanks[2] = new FluidTank(Fluids.WATZ, 64_000);
-		this.sharedTanks[0].setFill(tanks[0].getFill());
-		this.sharedTanks[1].setFill(tanks[1].getFill());
-		this.sharedTanks[2].setFill(tanks[2].getFill());
-	}
-
 	@Override
 	public void updateEntity() {
 
-		if(!worldObj.isRemote) resetSharedTanks();
-
 		if(!worldObj.isRemote && !updateLock()) {
+			//xenon *= 0.9995D;
+			//xenon decay should happen only while off
 
 			boolean turnedOn = worldObj.getBlock(xCoord, yCoord + 3, zCoord) == ModBlocks.watz_pump && worldObj.getIndirectPowerLevelTo(xCoord, yCoord + 5, zCoord, 0) > 0;
 			List<TileEntityWatz> segments = new ArrayList();
@@ -107,14 +124,23 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 			}
 
 			/* set up shared tanks */
-			FluidTank[] sharedTanks = new FluidTank[3];
-			for(int i = 0; i < 3; i++) sharedTanks[i] = new FluidTank(tanks[i].getTankType(), 0);
+			FluidTank[] sharedTanks = new FluidTank[tanks.length];
+
+			for(int i = 0; i < tanks.length; i++) sharedTanks[i] = new FluidTank(tanks[i].getTankType(), 0);
 
 			for(TileEntityWatz segment : segments) {
 				segment.setupCoolant();
-				for(int i = 0; i < 3; i++) {
-					sharedTanks[i].changeTankSize(sharedTanks[i].getMaxFill() + segment.tanks[i].getMaxFill());
-					sharedTanks[i].setFill(sharedTanks[i].getFill() + segment.tanks[i].getFill());
+
+				for(int i = 0; i < tanks.length; i++) {
+					sharedTanks[i].changeTankSize(
+						sharedTanks[i].getMaxFill() +
+							segment.tanks[i].getMaxFill()
+					);
+
+					sharedTanks[i].setFill(
+						sharedTanks[i].getFill() +
+							segment.tanks[i].getFill()
+					);
 				}
 			}
 
@@ -134,18 +160,19 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 
 			/* send sync packets (order doesn't matter) */
 			for(TileEntityWatz segment : segments) {
-				segment.sharedTanks[0] = sharedTanks[0];
-				segment.sharedTanks[1] = sharedTanks[1];
-				segment.sharedTanks[2] = sharedTanks[2];
 				segment.isOn = turnedOn;
-				segment.networkPackNT(25);
-				segment.heat *= 0.99; //cool 1% per tick
+				segment.sendPacket(sharedTanks);
+				double passiveCooling =
+					Math.max(0.02,
+							 segment.heat * 0.0008);
+
+				segment.heat -= passiveCooling;
 			}
 
 			/* re-distribute fluid from shared tanks back into actual tanks, bottom to top */
 			for(int i = segments.size() - 1; i >= 0; i--) {
 				TileEntityWatz segment = segments.get(i);
-				for(int j = 0; j < 3; j++) {
+				for(int j = 0; j < tanks.length; j++) {
 					int min = Math.min(segment.tanks[j].getMaxFill(), sharedTanks[j].getFill());
 					sharedTanks[j].setFill(sharedTanks[j].getFill() - min);
 					segment.tanks[j].setFill(min);
@@ -154,25 +181,68 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 
 			segments.get(segments.size() - 1).sendOutBottom();
 
-			/* explode on mud overflow */
-			if(sharedTanks[2].getFill() > 0) {
-				for(int x = -3; x <= 3; x++) {
-					for(int y = 3; y < 6; y++) {
-						for(int z = -3; z <= 3; z++) {
-							worldObj.setBlock(xCoord + x, yCoord + y, zCoord + z, Blocks.air);
-						}
-					}
+			boolean coolantLost =
+				tanks[0].getFill() < 1000;
+
+			boolean overheated =
+				this.heat > 7500;
+
+			if(coolantLost && overheated) {
+
+				//give an achievement for the idiot who somehow manages to do this
+				List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class,
+																			AxisAlignedBB.getBoundingBox(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5).expand(50, 50, 50));
+
+				for(EntityPlayer player : players) {
+					player.triggerAchievement(MainRegistry.achHelenKeller);
 				}
+
+				// reactor damage
 				this.disassemble();
 
-				ChunkRadiationManager.proxy.incrementRad(worldObj, xCoord, yCoord + 1, zCoord, 1_000F);
+				// severe contamination
+				ChunkRadiationManager.proxy.incrementRad(
+					worldObj,
+					xCoord,
+					yCoord + 1,
+					zCoord,
+					25000F
+				);
 
-				worldObj.playSoundEffect(xCoord + 0.5, yCoord + 2, zCoord + 0.5, "hbm:block.rbmk_explosion", 50.0F, 1.0F);
-				NBTTagCompound data = new NBTTagCompound();
-				data.setString("type", "rbmkmush");
-				data.setFloat("scale", 5);
-				PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(data, xCoord + 0.5, yCoord + 2, zCoord + 0.5), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 250));
-				MainRegistry.proxy.effectNT(data);
+				// vent hot radioactive gas
+				for(int i = 0; i < 20; i++) {
+
+					NBTTagCompound data =
+						new NBTTagCompound();
+
+					data.setString("type", "smoke");
+					data.setFloat("scale", 2F);
+
+					PacketDispatcher.wrapper.sendToAllAround(
+						new AuxParticlePacketNT(
+							data,
+							xCoord + worldObj.rand.nextGaussian(),
+							yCoord + 2,
+							zCoord + worldObj.rand.nextGaussian()
+						),
+						new TargetPoint(
+							worldObj.provider.dimensionId,
+							xCoord,
+							yCoord,
+							zCoord,
+							100
+						)
+					);
+				}
+
+				worldObj.playSoundEffect(
+					xCoord + 0.5,
+					yCoord + 1,
+					zCoord + 0.5,
+					"random.fizz",
+					8F,
+					0.6F
+				);
 
 				return;
 			}
@@ -181,14 +251,21 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 
 	/** basic sanity checking, usually wouldn't do anything except when NBT loading borks */
 	public void setupCoolant() {
-		tanks[0].setTankType(Fluids.COOLANT);
+		tanks[0].setTankType(Fluids.HELIUM4);
 		tanks[1].setTankType(tanks[0].getTankType().getTrait(FT_Heatable.class).getFirstStep().typeProduced);
 	}
 
 	public void updateCoolant(FluidTank[] tanks) {
 
-		double coolingFactor = 0.2D; //20% per tick
-		double heatToUse = this.heat * coolingFactor;
+		double coolantFraction =
+			Math.min(1D,
+					 tanks[0].getFill() / 16000D);
+
+		double coolingFactor =
+			0.03D + coolantFraction * 0.12D;
+
+		double heatToUse =
+			this.heat * coolingFactor;
 
 		FT_Heatable trait = tanks[0].getTankType().getTrait(FT_Heatable.class);
 		HeatingStep step = trait.getFirstStep();
@@ -203,8 +280,28 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 		tanks[1].setFill(tanks[1].getFill() + cycles * step.amountProduced);
 	}
 
+	//TODO: slot weighting Center slots:
+	//
+	//1.15x reaction
+	//
+	//Outer:
+	//
+	//0.85x
+
 	/** enforces strict top to bottom update order (instead of semi-random based on placement) */
 	public void updateReaction(TileEntityWatz above, FluidTank[] tanks, boolean turnedOn) {
+
+		/* iodine -> xenon decay */
+		double iodineDecay =
+			iodine * 0.00015D;
+
+		/* xenon natural decay */
+		double xenonDecay =
+			xenon * 0.00002D;
+
+		iodine -= iodineDecay;
+		xenon += iodineDecay;
+		xenon -= xenonDecay;
 
 		if(turnedOn) {
 			List<ItemStack> pellets = new ArrayList();
@@ -219,47 +316,145 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 			double baseFlux = 0D;
 
 			/* init base flux */
-			for(ItemStack stack : pellets) {
-				EnumWatzType type = EnumUtil.grabEnumSafely(EnumWatzType.class, stack.getItemDamage());
-				baseFlux += type.passive;
+			for(int i = 0; i < 24; i++) {
+
+				ItemStack stack = slots[i];
+
+				if(stack == null ||
+					stack.getItem() != ModItems.watz_pellet)
+					continue;
+
+				double weight =
+					getSlotWeight(i);
+
+				EnumWatzType type =
+					EnumUtil.grabEnumSafely(
+						EnumWatzType.class,
+						stack.getItemDamage()
+					);
+
+				baseFlux +=
+					type.passive * weight;
 			}
 
-			double inputFlux = baseFlux + fluxLastReaction;
+			double xenonPenalty =
+				1D / (1D + xenon * 0.35D);
+
+			/* graphite moderation bonus */
+			double graphiteBonus = 1D;
+
+			for(int i = 0; i < 24; i++) {
+
+				ItemStack stack = slots[i];
+
+				if(stack == null ||
+					stack.getItem() != ModItems.watz_pellet)
+					continue;
+
+				EnumWatzType type =
+					EnumUtil.grabEnumSafely(
+						EnumWatzType.class,
+						stack.getItemDamage()
+					);
+
+				if(type == EnumWatzType.GRAPHITE) {
+
+					double weight =
+						getSlotWeight(i);
+
+					graphiteBonus +=
+						0.025D * weight;
+				}
+			}
+
+			double inputFlux =
+				(baseFlux + fluxLastReaction)
+					* xenonPenalty
+					* graphiteBonus;
+
+			/* neutron burnoff of xenon */
+			double xenonBurn =
+				Math.min(
+					xenon,
+					inputFlux * 0.00008D
+				);
+
+			xenon -= xenonBurn;
+
 			double addedFlux = 0D;
 			double addedHeat = 0D;
 
-			for(ItemStack stack : pellets) {
+			for(int i = 0; i < 24; i++) {
+
+				ItemStack stack =
+					slots[i];
+
+				if(stack == null ||
+					stack.getItem() != ModItems.watz_pellet)
+					continue;
+
+				double weight =
+					getSlotWeight(i);
 				EnumWatzType type = EnumUtil.grabEnumSafely(EnumWatzType.class, stack.getItemDamage());
 				Function burnFunc = type.burnFunc;
 				Function heatDiv = type.heatDiv;
 
 				if(burnFunc != null) {
 					double div = heatDiv != null ? heatDiv.effonix(heat) : 1D;
-					double burn = burnFunc.effonix(inputFlux) / div;
+					double thermalPenalty =
+						1D + Math.pow(heat / 7500D, 1.25D);
+
+					double burn =
+						(burnFunc.effonix(inputFlux) * weight) /
+							(div * thermalPenalty);
 					ItemWatzPellet.setYield(stack, ItemWatzPellet.getYield(stack) - burn);
 					addedFlux += burn;
-					addedHeat += type.heatEmission * burn;
-					tanks[2].setFill(tanks[2].getFill() + (int) Math.round(type.mudContent * burn));
+					addedHeat +=
+						type.heatEmission *
+							burn;
+					//tanks[2].setFill(tanks[2].getFill() + (int) Math.round(type.xenonProduction * burn));
+					iodine += burn * type.xenonProduction;
 				}
 			}
 
-			for(ItemStack stack : pellets) {
+			for(int i = 0; i < 24; i++) {
+
+				ItemStack stack =
+					slots[i];
+
+				if(stack == null ||
+					stack.getItem() != ModItems.watz_pellet)
+					continue;
+
+				double weight =
+					getSlotWeight(i);
 				EnumWatzType type = EnumUtil.grabEnumSafely(EnumWatzType.class, stack.getItemDamage());
 				Function absorbFunc = type.absorbFunc;
 
 				if(absorbFunc != null) {
-					double absorb = absorbFunc.effonix(baseFlux + fluxLastReaction);
+
+					double absorb =
+						absorbFunc.effonix(
+							baseFlux +
+								fluxLastReaction
+						) * weight;
 					addedHeat += absorb;
 					ItemWatzPellet.setYield(stack, ItemWatzPellet.getYield(stack) - absorb);
-					tanks[2].setFill(tanks[2].getFill() + (int) Math.round(type.mudContent * absorb));
+					//tanks[2].setFill(tanks[2].getFill() + (int) Math.round(type.xenonProduction * absorb));
 				}
 			}
 
 			this.heat += addedHeat;
+
+			/* prevent negative heat / NaN chain reactions */
+			if(this.heat < 0)
+				this.heat = 0;
+
 			this.fluxLastBase = baseFlux;
 			this.fluxLastReaction = addedFlux;
 
 		} else {
+			xenon *= 0.9995D;
 			this.fluxLastBase = 0;
 			this.fluxLastReaction = 0;
 
@@ -276,6 +471,11 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 		}
 
 		if(above != null) {
+			int diff =
+				(above.heat - this.heat) / 35;
+
+			this.heat += diff;
+			above.heat -= diff;
 			for(int i = 0; i < 24; i++) {
 				ItemStack stackBottom = slots[i];
 				ItemStack stackTop = above.slots[i];
@@ -296,27 +496,33 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 		}
 	}
 
-	@Override
-	public void serialize(ByteBuf buf) {
-		super.serialize(buf);
-		buf.writeInt(this.heat);
-		buf.writeBoolean(isOn);
-		buf.writeBoolean(isLocked);
-		buf.writeDouble(this.fluxLastReaction + this.fluxLastBase);
-		for(FluidTank tank : sharedTanks) {
-			tank.serialize(buf);
+	public void sendPacket(FluidTank[] tanks) {
+
+		NBTTagCompound data = new NBTTagCompound();
+		data.setInteger("heat", this.heat);
+		data.setBoolean("isOn", isOn);
+		data.setBoolean("lock", isLocked);
+		data.setDouble("flux", this.fluxLastReaction + this.fluxLastBase);
+		for(int i = 0; i < tanks.length; i++) {
+			if(tanks[i] != null) {
+				tanks[i].writeToNBT(data, "t" + i);
+			}
 		}
+		this.networkPack(data, 25);
 	}
 
 	@Override
-	public void deserialize(ByteBuf buf) {
-		super.deserialize(buf);
-		this.heat = buf.readInt();
-		this.isOn = buf.readBoolean();
-		this.isLocked = buf.readBoolean();
-		this.fluxDisplay = buf.readDouble();
-		for(FluidTank tank : tanks) {
-			tank.deserialize(buf);
+	public void networkUnpack(NBTTagCompound nbt) {
+		super.networkUnpack(nbt);
+
+		this.heat = nbt.getInteger("heat");
+		this.isOn = nbt.getBoolean("isOn");
+		this.isLocked = nbt.getBoolean("lock");
+		this.fluxDisplay = nbt.getDouble("flux");
+		for(int i = 0; i < tanks.length; i++) {
+			if(tanks[i] != null) {
+				tanks[i].readFromNBT(nbt, "t" + i);
+			}
 		}
 	}
 
@@ -336,8 +542,8 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 	protected void sendOutBottom() {
 
 		for(DirPos pos : getSendingPos()) {
-			if(tanks[1].getFill() > 0) this.tryProvide(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			if(tanks[2].getFill() > 0) this.tryProvide(tanks[2], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			if(tanks[1].getFill() > 0) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			//if(tanks[2].getFill() > 0) this.sendFluid(tanks[2], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
 	}
 
@@ -365,12 +571,18 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 			}
 		}
 
-		for(int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "t" + i);
+		for(int i = 0; i < tanks.length; i++) {
+			if(tanks[i] != null) {
+				tanks[i].readFromNBT(nbt, "t" + i);
+			}
+		}
 		this.heat = nbt.getInteger("heat");
 		this.fluxLastBase = nbt.getDouble("lastFluxB");
 		this.fluxLastReaction = nbt.getDouble("lastFluxR");
 
 		this.isLocked = nbt.getBoolean("isLocked");
+		this.iodine = nbt.getDouble("iodine");
+		this.xenon = nbt.getDouble("xenon");
 	}
 
 	@Override
@@ -389,12 +601,18 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 		}
 		nbt.setTag("locks", list);
 
-		for(int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(nbt, "t" + i);
+		for(int i = 0; i < tanks.length; i++) {
+			if(tanks[i] != null) {
+				tanks[i].writeToNBT(nbt, "t" + i);
+			}
+		}
 		nbt.setInteger("heat", this.heat);
 		nbt.setDouble("lastFluxB", fluxLastBase);
 		nbt.setDouble("lastFluxR", fluxLastReaction);
 
 		nbt.setBoolean("isLocked", isLocked);
+		nbt.setDouble("iodine", iodine);
+		nbt.setDouble("xenon", xenon);
 	}
 
 	@Override
@@ -483,9 +701,9 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 			worldObj.spawnEntityInWorld(shrapnel);
 		}
 
-		worldObj.setBlock(xCoord, yCoord, zCoord, ModBlocks.mud_block);
-		worldObj.setBlock(xCoord, yCoord + 1, zCoord, ModBlocks.mud_block);
-		worldObj.setBlock(xCoord, yCoord + 2, zCoord, ModBlocks.mud_block);
+		//worldObj.setBlock(xCoord, yCoord, zCoord, ModBlocks.mud_block);
+		//worldObj.setBlock(xCoord, yCoord + 1, zCoord, ModBlocks.mud_block);
+		//worldObj.setBlock(xCoord, yCoord + 2, zCoord, ModBlocks.mud_block);
 
 		setBrokenColumn(0, ModBlocks.watz_element, 0, 1, 0);
 		setBrokenColumn(0, ModBlocks.watz_element, 0, 2, 0);
@@ -519,11 +737,11 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 		setBrokenColumn(1, ModBlocks.watz_end, 1, -2, 2);
 		setBrokenColumn(1, ModBlocks.watz_end, 1, -2, -2);
 
-		List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, AxisAlignedBB.getBoundingBox(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5).expand(50, 50, 50));
+		//List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, AxisAlignedBB.getBoundingBox(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5).expand(50, 50, 50));
 
-		for(EntityPlayer player : players) {
-			player.triggerAchievement(MainRegistry.achWatzBoom);
-		}
+		//for(EntityPlayer player : players) {
+		//	player.triggerAchievement(MainRegistry.achWatzBoom);
+		//}
 	}
 
 	private void setBrokenColumn(int minHeight, Block b, int meta, int x, int z) {
@@ -535,7 +753,7 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 			if(i <= height) {
 				worldObj.setBlock(xCoord + x, yCoord + i, zCoord + z, b, meta, 3);
 			} else {
-				worldObj.setBlock(xCoord + x, yCoord + i, zCoord + z, ModBlocks.mud_block);
+				worldObj.setBlock(xCoord + x, yCoord + i, zCoord + z, ModBlocks.block_waste);
 			}
 		}
 	}
@@ -558,8 +776,8 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 
 	@Override
 	public FluidTank[] getSendingTanks() {
-		return new FluidTank[] { tanks[1], tanks[2] };
-	}
+		return new FluidTank[] { tanks[1] };
+	} //, tanks[2]
 
 	@Override
 	public FluidTank[] getReceivingTanks() {

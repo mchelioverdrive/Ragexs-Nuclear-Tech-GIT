@@ -1,17 +1,21 @@
 package com.hbm.lib;
 
-import api.hbm.energymk2.IBatteryItem;
-import api.hbm.energymk2.IEnergyConnectorBlock;
-import api.hbm.energymk2.IEnergyConnectorMK2;
-import api.hbm.fluidmk2.IFluidConnectorMK2BlockMK2;
-import api.hbm.fluidmk2.IFluidConnectorMK2;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 import com.hbm.blocks.ModBlocks;
-import com.hbm.entity.mob.EntityHunterChopper;
+//import com.hbm.entity.mob.EntityHunterChopper;
 import com.hbm.entity.projectile.EntityChopperMine;
 import com.hbm.interfaces.Spaghetti;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.items.ModItems;
+
+import api.hbm.energymk2.IBatteryItem;
+import api.hbm.energymk2.IEnergyConnectorBlock;
+import api.hbm.energymk2.IEnergyConnectorMK2;
+import api.hbm.fluid.IFluidConnector;
+import api.hbm.fluid.IFluidConnectorBlock;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -25,10 +29,6 @@ import net.minecraft.util.Vec3;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 
 @Spaghetti("this whole class")
 public class Library {
@@ -84,8 +84,8 @@ public class Library {
 
 		Block b = world.getBlock(x, y, z);
 
-		if(b instanceof IFluidConnectorMK2BlockMK2) {
-			IFluidConnectorMK2BlockMK2 con = (IFluidConnectorMK2BlockMK2) b;
+		if(b instanceof IFluidConnectorBlock) {
+			IFluidConnectorBlock con = (IFluidConnectorBlock) b;
 
 			if(con.canConnect(type, world, x, y, z, dir.getOpposite() /* machine's connecting side */))
 				return true;
@@ -93,8 +93,8 @@ public class Library {
 
 		TileEntity te = world.getTileEntity(x, y, z);
 
-		if(te instanceof IFluidConnectorMK2) {
-			IFluidConnectorMK2 con = (IFluidConnectorMK2) te;
+		if(te instanceof IFluidConnector) {
+			IFluidConnector con = (IFluidConnector) te;
 
 			if(con.canConnect(type, dir.getOpposite() /* machine's connecting side */))
 				return true;
@@ -107,25 +107,25 @@ public class Library {
 		double d4 = -1.0D;
 		EntityLivingBase entityplayer = null;
 
-		for (int i = 0; i < world.loadedEntityList.size(); ++i) {
-			if (world.loadedEntityList.get(i) instanceof EntityLivingBase && !(world.loadedEntityList.get(i) instanceof EntityHunterChopper)) {
-				EntityLivingBase entityplayer1 = (EntityLivingBase) world.loadedEntityList.get(i);
-
-				if (entityplayer1.isEntityAlive() && !(entityplayer1 instanceof EntityPlayer && ((EntityPlayer)entityplayer1).capabilities.disableDamage)) {
-					double d5 = entityplayer1.getDistanceSq(x, y, z);
-					double d6 = radius;
-
-					if (entityplayer1.isSneaking()) {
-						d6 = radius * 0.800000011920929D;
-					}
-
-					if ((radius < 0.0D || d5 < d6 * d6) && (d4 == -1.0D || d5 < d4)) {
-						d4 = d5;
-						entityplayer = entityplayer1;
-					}
-				}
-			}
-		}
+		//for (int i = 0; i < world.loadedEntityList.size(); ++i) {
+		//	//if (world.loadedEntityList.get(i) instanceof EntityLivingBase && !(world.loadedEntityList.get(i) instanceof EntityHunterChopper)) {
+		//	//	EntityLivingBase entityplayer1 = (EntityLivingBase) world.loadedEntityList.get(i);
+////
+		//	//	if (entityplayer1.isEntityAlive() && !(entityplayer1 instanceof EntityPlayer && ((EntityPlayer)entityplayer1).capabilities.disableDamage)) {
+		//	//		double d5 = entityplayer1.getDistanceSq(x, y, z);
+		//	//		double d6 = radius;
+////
+		//	//		if (entityplayer1.isSneaking()) {
+		//	//			d6 = radius * 0.800000011920929D;
+		//	//		}
+////
+		//	//		if ((radius < 0.0D || d5 < d6 * d6) && (d4 == -1.0D || d5 < d4)) {
+		//	//			d4 = d5;
+		//	//			entityplayer = entityplayer1;
+		//	//		}
+		//	//	}
+		//	//}
+		//}
 
 		return entityplayer;
 	}
@@ -151,26 +151,26 @@ public class Library {
 		return entity;
 	}
 
-	public static EntityHunterChopper getClosestChopperForSound(World world, double x, double y, double z, double radius) {
-		double d4 = -1.0D;
-		EntityHunterChopper entity = null;
-
-		for (int i = 0; i < world.loadedEntityList.size(); ++i) {
-				Entity entityplayer1 = (Entity)world.loadedEntityList.get(i);
-
-				if (entityplayer1.isEntityAlive() && entityplayer1 instanceof EntityHunterChopper) {
-					double d5 = entityplayer1.getDistanceSq(x, y, z);
-					double d6 = radius;
-
-					if ((radius < 0.0D || d5 < d6 * d6) && (d4 == -1.0D || d5 < d4)) {
-						d4 = d5;
-						entity = (EntityHunterChopper)entityplayer1;
-					}
-			}
-		}
-
-		return entity;
-	}
+	//public static EntityHunterChopper getClosestChopperForSound(World world, double x, double y, double z, double radius) {
+	//	double d4 = -1.0D;
+	//	EntityHunterChopper entity = null;
+//
+	//	for (int i = 0; i < world.loadedEntityList.size(); ++i) {
+	//			Entity entityplayer1 = (Entity)world.loadedEntityList.get(i);
+//
+	//			if (entityplayer1.isEntityAlive() && entityplayer1 instanceof EntityHunterChopper) {
+	//				double d5 = entityplayer1.getDistanceSq(x, y, z);
+	//				double d6 = radius;
+//
+	//				if ((radius < 0.0D || d5 < d6 * d6) && (d4 == -1.0D || d5 < d4)) {
+	//					d4 = d5;
+	//					entity = (EntityHunterChopper)entityplayer1;
+	//				}
+	//		}
+	//	}
+//
+	//	return entity;
+	//}
 
 	public static EntityChopperMine getClosestMineForSound(World world, double x, double y, double z, double radius) {
 		double d4 = -1.0D;
@@ -233,10 +233,11 @@ public class Library {
 	//not great either but certainly better
 	public static long chargeItemsFromTE(ItemStack[] slots, int index, long power, long maxPower) {
 
-		if(power < 0) return 0;
-		if(power > maxPower) return maxPower;
+		if(power < 0)
+			return 0;
 
-		if(slots[index] != null && slots[index].getItem() == ModItems.battery_creative) return 0;
+		if(power > maxPower)
+			return maxPower;
 
 		if(slots[index] != null && slots[index].getItem() instanceof IBatteryItem) {
 
@@ -244,7 +245,7 @@ public class Library {
 
 			long batMax = battery.getMaxCharge(slots[index]);
 			long batCharge = battery.getCharge(slots[index]);
-			long batRate = battery.getChargeRate(slots[index]);
+			long batRate = battery.getChargeRate();
 			long toCharge = Math.min(Math.min(power, batRate), batMax - batCharge);
 
 			power -= toCharge;
@@ -257,14 +258,20 @@ public class Library {
 
 	public static long chargeTEFromItems(ItemStack[] slots, int index, long power, long maxPower) {
 
-		if(slots[index] != null && slots[index].getItem() == ModItems.battery_creative) return maxPower;
+		if(slots[index] != null && slots[index].getItem() == ModItems.battery_creative) {
+			return maxPower;
+		}
+
+		if(slots[index] != null && slots[index].getItem() == ModItems.fusion_core_infinite) {
+			return maxPower;
+		}
 
 		if(slots[index] != null && slots[index].getItem() instanceof IBatteryItem) {
 
 			IBatteryItem battery = (IBatteryItem) slots[index].getItem();
 
 			long batCharge = battery.getCharge(slots[index]);
-			long batRate = battery.getDischargeRate(slots[index]);
+			long batRate = battery.getDischargeRate();
 			long toDischarge = Math.min(Math.min((maxPower - power), batRate), batCharge);
 
 			battery.dischargeBattery(slots[index], toDischarge);

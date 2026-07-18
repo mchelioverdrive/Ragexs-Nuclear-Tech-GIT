@@ -26,11 +26,6 @@ public interface IFluidStandardSenderMK2 extends IFluidProviderMK2 {
 
 	public default void tryProvide(FluidTank tank, World world, int x, int y, int z, ForgeDirection dir) { tryProvide(tank.getTankType(), tank.getPressure(), world, x, y, z, dir); }
 	public default void tryProvide(FluidType type, World world, int x, int y, int z, ForgeDirection dir) { tryProvide(type, 0, world, x, y, z, dir); }
-	public default void tryProvideToAll(FluidTank tank, TileEntity tile) {
-		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-			tryProvide(tank, tile.getWorldObj(), tile.xCoord + dir.offsetX, tile.yCoord + dir.offsetY, tile.zCoord + dir.offsetZ, dir);
-		}
-	}
 
 	public default void tryProvide(FluidType type, int pressure, World world, int x, int y, int z, ForgeDirection dir) {
 

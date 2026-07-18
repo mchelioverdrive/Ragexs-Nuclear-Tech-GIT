@@ -20,45 +20,28 @@ public interface IFluidReceiverMK2 extends IFluidUserMK2 {
 	public long transferFluid(FluidType type, int pressure, long amount);
 	public default long getReceiverSpeed(FluidType type, int pressure) { return 1_000_000_000; }
 	public long getDemand(FluidType type, int pressure);
-
+	
 	public default int[] getReceivingPressureRange(FluidType type) { return DEFAULT_PRESSURE_RANGE; }
-
+	
 	public default void trySubscribe(FluidType type, World world, DirPos pos) { trySubscribe(type, world, pos.getX(), pos.getY(), pos.getZ(), pos.getDir()); }
-	public default void trySubscribeToAllAround(FluidType type, TileEntity tile) {
-		trySubscribeToAllAround(type, tile.getWorldObj(), tile.xCoord, tile.yCoord, tile.zCoord);
-	}
-	public default void trySubscribeToAllAround(FluidType type, World world, int x, int y, int z) {
-		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-			trySubscribe(type, world, x + dir.offsetX, y + dir.offsetY, z + dir.offsetZ, dir);
-		}
-	}
-	public default void tryUnsubscribe(FluidType type, World world, int x, int y, int z) {
-		GenNode node = UniNodespace.getNode(world, x, y, z, type.getNetworkProvider());
-		if(node != null && node.net != null) node.net.removeReceiver(this);
-	}
-	public default void tryUnsubscribeFromAllAround(FluidType type, TileEntity tile) {
-		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-			tryUnsubscribe(type, tile.getWorldObj(), tile.xCoord + dir.offsetX, tile.yCoord + dir.offsetY, tile.zCoord + dir.offsetZ);
-		}
-	}
-
+	
 	public default void trySubscribe(FluidType type, World world, int x, int y, int z, ForgeDirection dir) {
 
 		TileEntity te = TileAccessCache.getTileOrCache(world, x, y, z);
 		boolean red = false;
-
+		
 		if(te instanceof IFluidConnectorMK2) {
 			IFluidConnectorMK2 con = (IFluidConnectorMK2) te;
 			if(!con.canConnect(type, dir.getOpposite())) return;
-
+			
 			GenNode node = UniNodespace.getNode(world, x, y, z, type.getNetworkProvider());
-
+			
 			if(node != null && node.net != null) {
 				node.net.addReceiver(this);
 				red = true;
 			}
 		}
-
+		
 		if(particleDebug) {
 			NBTTagCompound data = new NBTTagCompound();
 			data.setString("type", "network");
@@ -73,7 +56,7 @@ public interface IFluidReceiverMK2 extends IFluidUserMK2 {
 			PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(data, posX, posY, posZ), new TargetPoint(world.provider.dimensionId, posX, posY, posZ, 25));
 		}
 	}
-
+	
 	public default ConnectionPriority getFluidPriority() {
 		return ConnectionPriority.NORMAL;
 	}

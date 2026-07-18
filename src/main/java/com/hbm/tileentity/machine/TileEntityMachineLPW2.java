@@ -11,9 +11,10 @@ import com.hbm.inventory.fluid.trait.FT_Rocket;
 import com.hbm.main.MainRegistry;
 import com.hbm.sound.AudioWrapper;
 import com.hbm.tileentity.TileEntityMachineBase;
+import com.hbm.util.I18nUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
-import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
+import api.hbm.fluid.IFluidStandardReceiver;
 import api.hbm.tile.IPropulsion;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -24,7 +25,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineLPW2 extends TileEntityMachineBase implements IPropulsion, IFluidStandardReceiverMK2 {
+public class TileEntityMachineLPW2 extends TileEntityMachineBase implements IPropulsion, IFluidStandardReceiver {
 
 	public FluidTank[] tanks;
 
@@ -48,13 +49,10 @@ public class TileEntityMachineLPW2 extends TileEntityMachineBase implements IPro
 
 	@Override
 	public void updateEntity() {
-		if(!CelestialBody.inOrbit(worldObj)) return;
-
-		if(!worldObj.isRemote) {
+		if(!worldObj.isRemote && CelestialBody.inOrbit(worldObj)) {
 			if(!hasRegistered) {
 				if(isFacingPrograde()) registerPropulsion();
 				hasRegistered = true;
-				isOn = false;
 			}
 
 			for(DirPos pos : getConPos()) {
@@ -71,7 +69,7 @@ public class TileEntityMachineLPW2 extends TileEntityMachineBase implements IPro
 				} else if(soundtime > 20) {
 					soundtime = 20;
 				}
-			} else {
+			}else {
 				soundtime--;
 
 				if(soundtime == 19) {
@@ -101,9 +99,9 @@ public class TileEntityMachineLPW2 extends TileEntityMachineBase implements IPro
 					ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset).getRotation(ForgeDirection.UP);
 
 					NBTTagCompound data = new NBTTagCompound();
-					data.setDouble("posX", xCoord + dir.offsetX * 8.5);
-					data.setDouble("posY", yCoord + 4.5);
-					data.setDouble("posZ", zCoord + dir.offsetZ * 8.5);
+					data.setDouble("posX", xCoord + dir.offsetX * 8);
+					data.setDouble("posY", yCoord + 4);
+					data.setDouble("posZ", zCoord + dir.offsetZ * 8);
 					data.setString("type", "missileContrail");
 					data.setFloat("scale", 3);
 					data.setDouble("moX", dir.offsetX * 10);
@@ -115,7 +113,7 @@ public class TileEntityMachineLPW2 extends TileEntityMachineBase implements IPro
 			} else {
 				speed -= 0.05D;
 				if(speed < 0) speed = 0;
-
+				
 				if(audio != null) {
 					audio.stopSound();
 					audio = null;
@@ -131,13 +129,13 @@ public class TileEntityMachineLPW2 extends TileEntityMachineBase implements IPro
 	private DirPos[] getConPos() {
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
-
+		
 		return new DirPos[] {
 			new DirPos(xCoord + dir.offsetX * 4 - rot.offsetX, yCoord + 3, zCoord + dir.offsetZ * 4 - rot.offsetZ, rot),
 			new DirPos(xCoord - dir.offsetX * 4 - rot.offsetX, yCoord + 3, zCoord - dir.offsetZ * 4 - rot.offsetZ, rot.getOpposite())
 		};
 	}
-
+	
 	@Override
 	public AudioWrapper createAudioLoop() {
 		return MainRegistry.proxy.getLoopedSound("hbm:misc.lpwloop", xCoord, yCoord, zCoord, 0.25F, 27.5F, 1.0F, 20);
@@ -181,7 +179,7 @@ public class TileEntityMachineLPW2 extends TileEntityMachineBase implements IPro
 		buf.writeInt(fuelCost);
 		for(int i = 0; i < tanks.length; i++) tanks[i].serialize(buf);
 	}
-
+	
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
@@ -208,15 +206,15 @@ public class TileEntityMachineLPW2 extends TileEntityMachineBase implements IPro
 	public boolean isFacingPrograde() {
 		return ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset) == ForgeDirection.SOUTH;
 	}
-
+	
 	AxisAlignedBB bb = null;
-
+	
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
 		if(bb == null) bb = AxisAlignedBB.getBoundingBox(xCoord - 10, yCoord, zCoord - 10, xCoord + 11, yCoord + 7, zCoord + 11);
 		return bb;
 	}
-
+	
 	@Override
 	@SideOnly(Side.CLIENT)
 	public double getMaxRenderDistanceSquared() {
@@ -246,7 +244,7 @@ public class TileEntityMachineLPW2 extends TileEntityMachineBase implements IPro
 	public void addErrors(List<String> errors) {
 		for(FluidTank tank : tanks) {
 			if(tank.getFill() < fuelCost) {
-				errors.add(EnumChatFormatting.RED + " - Insufficient fuel: needs " + fuelCost + "mB");
+				errors.add(EnumChatFormatting.RED + I18nUtil.resolveKey(getBlockType().getUnlocalizedName() + ".name") + " - Insufficient fuel: needs " + fuelCost + "mB");
 			}
 		}
 	}
@@ -262,13 +260,13 @@ public class TileEntityMachineLPW2 extends TileEntityMachineBase implements IPro
 		for(FluidTank tank : tanks) {
 			tank.setFill(tank.getFill() - fuelCost);
 		}
-		return 120;
+		return 20;
 	}
 
 	@Override
 	public int endBurn() {
 		isOn = false;
-		return 120; // Cooldown
+		return 20; // Cooldown
 	}
 
 	@Override

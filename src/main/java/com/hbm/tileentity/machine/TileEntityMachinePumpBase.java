@@ -12,24 +12,30 @@ import com.hbm.dim.trait.CBT_Water;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.lib.Library;
 import com.hbm.main.MainRegistry;
-import com.hbm.tileentity.*;
+import com.hbm.tileentity.IConfigurableMachine;
+import com.hbm.tileentity.IFluidCopiable;
+import com.hbm.tileentity.INBTPacketReceiver;
+import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
-import api.hbm.fluidmk2.IFluidStandardTransceiverMK2;
+import api.hbm.fluid.IFluidStandardTransceiver;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 
-public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase implements IFluidStandardTransceiverMK2, IConfigurableMachine, IFluidCopiable {
+public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase implements IFluidStandardTransceiver, INBTPacketReceiver, IConfigurableMachine, IFluidCopiable {
 
-	public static final HashSet<Block> validBlocks = new HashSet<>();
+	public static final HashSet<Block> validBlocks = new HashSet();
 
 	static {
 		validBlocks.add(Blocks.grass);
 		validBlocks.add(Blocks.dirt);
+		validBlocks.add(Blocks.stone); //why was this not here before. it's GROUND WATER.
+		// Are you a dumbass?
+		// Are you ESL?
 		validBlocks.add(Blocks.sand);
 		validBlocks.add(Blocks.mycelium);
 		validBlocks.add(ModBlocks.waste_earth);
@@ -37,6 +43,7 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 		validBlocks.add(ModBlocks.dirt_oily);
 		validBlocks.add(ModBlocks.sand_dirty);
 		validBlocks.add(ModBlocks.sand_dirty_red);
+		//if it's dirty shouldn't it pollute the water? Why did this idiot add glyphids?
 		validBlocks.add(ModBlocks.eve_silt);
 		validBlocks.add(ModBlocks.eve_rock);
 		validBlocks.add(ModBlocks.ike_regolith);
@@ -46,9 +53,6 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 		validBlocks.add(ModBlocks.laythe_silt);
 		validBlocks.add(ModBlocks.moho_regolith);
 		validBlocks.add(ModBlocks.minmus_smooth);
-		validBlocks.add(ModBlocks.vinyl_sand);
-		validBlocks.add(ModBlocks.rubber_silt);
-		validBlocks.add(ModBlocks.rubber_grass);
 	}
 
 	public FluidTank water;
@@ -91,7 +95,7 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 		if(!worldObj.isRemote) {
 
 			for(DirPos pos : getConPos()) {
-				if(water.getFill() > 0) this.tryProvide(water, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+				if(water.getFill() > 0) this.sendFluid(water, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 
 			if(groundCheckDelay > 0) {
@@ -106,7 +110,8 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 				this.operate();
 			}
 
-			networkPackNT(150);
+			NBTTagCompound data = this.getSync();
+			INBTPacketReceiver.networkPack(this, data, 150);
 
 		} else {
 
@@ -143,7 +148,7 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 
 					if(y == -1 && !b.isNormalCube()) return false; // first layer has to be full solid
 
-					if(TileEntityMachinePumpBase.validBlocks.contains(b)) validBlocks++;
+					if(this.validBlocks.contains(b)) validBlocks++;
 					else invalidBlocks ++;
 				}
 			}
@@ -152,18 +157,19 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 		return validBlocks >= invalidBlocks; // valid block count has to be at least 50%
 	}
 
-	@Override
-	public void serialize(ByteBuf buf) {
-		buf.writeBoolean(this.isOn);
-		buf.writeBoolean(this.onGround);
-		water.serialize(buf);
+	protected NBTTagCompound getSync() {
+		NBTTagCompound data = new NBTTagCompound();
+		data.setBoolean("isOn", isOn);
+		data.setBoolean("onGround", onGround);
+		water.writeToNBT(data, "w");
+		return data;
 	}
 
 	@Override
-	public void deserialize(ByteBuf buf) {
-		this.isOn = buf.readBoolean();
-		this.onGround = buf.readBoolean();
-		water.deserialize(buf);
+	public void networkUnpack(NBTTagCompound nbt) {
+		this.isOn = nbt.getBoolean("isOn");
+		this.onGround = nbt.getBoolean("onGround");
+		water.readFromNBT(nbt, "w");
 	}
 
 	protected abstract boolean canOperate();

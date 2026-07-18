@@ -26,7 +26,7 @@ import com.hbm.util.InventoryUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluidmk2.IFluidStandardTransceiverMK2;
+import api.hbm.fluid.IFluidStandardTransceiver;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
@@ -42,7 +42,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineChemplant extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiverMK2, IGUIProvider, IUpgradeInfoProvider {
+public class TileEntityMachineChemplant extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
@@ -126,8 +126,8 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 			}
 
 			for(DirPos pos : getConPos()) {
-				if(tanks[2].getFill() > 0) this.tryProvide(tanks[2], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				if(tanks[3].getFill() > 0) this.tryProvide(tanks[3], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+				if(tanks[2].getFill() > 0) this.sendFluid(tanks[2], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+				if(tanks[3].getFill() > 0) this.sendFluid(tanks[3], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 
 			this.upgradeManager.checkSlots(slots, 1, 3);

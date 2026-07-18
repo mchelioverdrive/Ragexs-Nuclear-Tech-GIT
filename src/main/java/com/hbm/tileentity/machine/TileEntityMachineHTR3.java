@@ -1,20 +1,22 @@
 package com.hbm.tileentity.machine;
 
 import java.util.List;
+import java.util.ArrayList;
 
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.dim.CelestialBody;
 import com.hbm.dim.SolarSystem;
-import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
+import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.fluid.trait.FT_Rocket;
 import com.hbm.main.MainRegistry;
 import com.hbm.sound.AudioWrapper;
 import com.hbm.tileentity.TileEntityMachineBase;
+import com.hbm.util.I18nUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
-import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
+import api.hbm.fluid.IFluidStandardReceiver;
 import api.hbm.tile.IPropulsion;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -25,7 +27,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineHTR3 extends TileEntityMachineBase implements IPropulsion, IFluidStandardReceiverMK2 {
+public class TileEntityMachineHTR3 extends TileEntityMachineBase implements IPropulsion, IFluidStandardReceiver {
 
 	public FluidTank[] tanks;
 
@@ -41,25 +43,29 @@ public class TileEntityMachineHTR3 extends TileEntityMachineBase implements IPro
 	private int fuelCost;
 
 	public TileEntityMachineHTR3() {
-		super(0);
+		super(7);
 		tanks = new FluidTank[1];
+		tanks[0] = new FluidTank(Fluids.WASTEGAS, 1_280_000);
+		tanks[0] = new FluidTank(Fluids.GAS_WATZ, 1_280_000);
+		tanks[0] = new FluidTank(Fluids.GASEOUS_URANIUM_BROMIDE, 1_280_000);
+		tanks[0] = new FluidTank(Fluids.GASEOUS_PLUTONIUM_BROMIDE, 1_280_000);
+		tanks[0] = new FluidTank(Fluids.GASEOUS_THORIUM_BROMIDE, 1_280_000);
+		tanks[0] = new FluidTank(Fluids.GASEOUS_SCHRABIDIUM_BROMIDE, 1_280_000);
 		tanks[0] = new FluidTank(Fluids.SUPERHEATED_HYDROGEN, 1_280_000);
+		tanks[0] = new FluidTank(Fluids.NONE, 1_280_000);
 	}
 
 	@Override
 	public void updateEntity() {
-		if(!CelestialBody.inOrbit(worldObj)) return;
-
-		if(!worldObj.isRemote) {
+		if(!worldObj.isRemote && CelestialBody.inOrbit(worldObj)) {
 			if(!hasRegistered) {
 				if(isFacingPrograde()) registerPropulsion();
 				hasRegistered = true;
-				isOn = false;
 			}
 
 			for(DirPos pos : getConPos()) {
 				for(FluidTank tank : tanks) {
-					trySubscribe(tank.getTankType(), worldObj, pos);
+					trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				}
 			}
 
@@ -71,7 +77,7 @@ public class TileEntityMachineHTR3 extends TileEntityMachineBase implements IPro
 				} else if(soundtime > 20) {
 					soundtime = 20;
 				}
-			} else {
+			}else {
 				soundtime--;
 
 				if(soundtime == 19) {
@@ -98,19 +104,93 @@ public class TileEntityMachineHTR3 extends TileEntityMachineBase implements IPro
 					audio.updateVolume(getVolume(1F));
 					audio.keepAlive();
 
-					ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset).getRotation(ForgeDirection.UP);
+					{
+						List<FluidType> types = new ArrayList() {{ add(tanks[0].getTankType()); }};
 
-					NBTTagCompound data = new NBTTagCompound();
-					data.setDouble("posX", xCoord + dir.offsetX * 7);
-					data.setDouble("posY", yCoord + 1);
-					data.setDouble("posZ", zCoord + dir.offsetZ * 7);
-					data.setString("type", getContrailType(tanks[0].getTankType()));
-					data.setFloat("scale", 3);
-					data.setDouble("moX", dir.offsetX * 10);
-					data.setDouble("moY", 0);
-					data.setDouble("moZ", dir.offsetZ * 10);
-					data.setInteger("maxAge", 40 + worldObj.rand.nextInt(40));
-					MainRegistry.proxy.effectNT(data);
+						if(types.contains(Fluids.SUPERHEATED_HYDROGEN)) {
+
+							ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset).getRotation(ForgeDirection.UP);
+
+							NBTTagCompound data = new NBTTagCompound();
+							data.setDouble("posX", xCoord + dir.offsetX * 12);
+							data.setDouble("posY", yCoord + 4);
+							data.setDouble("posZ", zCoord + dir.offsetZ * 12);
+							data.setString("type", "missileContrail");
+							data.setFloat("scale", 3);
+							data.setDouble("moX", dir.offsetX * 10);
+							data.setDouble("moY", 0);
+							data.setDouble("moZ", dir.offsetZ * 10);
+							data.setInteger("maxAge", 40 + worldObj.rand.nextInt(40));
+							MainRegistry.proxy.effectNT(data);
+							return;
+						}
+					}
+
+					{
+						List<FluidType> types = new ArrayList() {{ add(tanks[0].getTankType()); }};
+
+						if(types.contains(Fluids.GAS_WATZ) || types.contains(Fluids.WASTEGAS) || types.contains(Fluids.GASEOUS_THORIUM_BROMIDE)) {
+
+							ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset).getRotation(ForgeDirection.UP);
+
+							NBTTagCompound data = new NBTTagCompound();
+							data.setDouble("posX", xCoord + dir.offsetX * 12);
+							data.setDouble("posY", yCoord + 4);
+							data.setDouble("posZ", zCoord + dir.offsetZ * 12);
+							data.setString("type", "missileContrailMUD");
+							data.setFloat("scale", 3);
+							data.setDouble("moX", dir.offsetX * 10);
+							data.setDouble("moY", 0);
+							data.setDouble("moZ", dir.offsetZ * 10);
+							data.setInteger("maxAge", 40 + worldObj.rand.nextInt(40));
+							MainRegistry.proxy.effectNT(data);
+							return;
+						}
+					}
+
+					{
+						List<FluidType> types = new ArrayList() {{ add(tanks[0].getTankType()); }};
+
+						if(types.contains(Fluids.GASEOUS_SCHRABIDIUM_BROMIDE)) {
+
+							ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset).getRotation(ForgeDirection.UP);
+
+							NBTTagCompound data = new NBTTagCompound();
+							data.setDouble("posX", xCoord + dir.offsetX * 12);
+							data.setDouble("posY", yCoord + 4);
+							data.setDouble("posZ", zCoord + dir.offsetZ * 12);
+							data.setString("type", "missileContrailSCH");
+							data.setFloat("scale", 3);
+							data.setDouble("moX", dir.offsetX * 10);
+							data.setDouble("moY", 0);
+							data.setDouble("moZ", dir.offsetZ * 10);
+							data.setInteger("maxAge", 40 + worldObj.rand.nextInt(40));
+							MainRegistry.proxy.effectNT(data);
+							return;
+						}
+					}
+
+					{
+						List<FluidType> types = new ArrayList() {{ add(tanks[0].getTankType()); }};
+
+						if(types.contains(Fluids.GASEOUS_URANIUM_BROMIDE) || types.contains(Fluids.GASEOUS_PLUTONIUM_BROMIDE)) {
+
+							ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset).getRotation(ForgeDirection.UP);
+
+							NBTTagCompound data = new NBTTagCompound();
+							data.setDouble("posX", xCoord + dir.offsetX * 12);
+							data.setDouble("posY", yCoord + 4);
+							data.setDouble("posZ", zCoord + dir.offsetZ * 12);
+							data.setString("type", "missileContrailUP");
+							data.setFloat("scale", 3);
+							data.setDouble("moX", dir.offsetX * 10);
+							data.setDouble("moY", 0);
+							data.setDouble("moZ", dir.offsetZ * 10);
+							data.setInteger("maxAge", 40 + worldObj.rand.nextInt(40));
+							MainRegistry.proxy.effectNT(data);
+							return;
+						}
+					}
 				}
 			} else {
 				speed -= 0.05D;
@@ -128,18 +208,13 @@ public class TileEntityMachineHTR3 extends TileEntityMachineBase implements IPro
 		time += speed;
 	}
 
-	private String getContrailType(FluidType type) {
-		if(type == Fluids.GAS_WATZ || type == Fluids.WASTEGAS || type == Fluids.GASEOUS_THORIUM_BROMIDE) return "missileContrailMUD";
-		if(type == Fluids.GASEOUS_SCHRABIDIUM_BROMIDE) return "missileContrailSCH";
-		if(type == Fluids.GASEOUS_URANIUM_BROMIDE || type == Fluids.GASEOUS_PLUTONIUM_BROMIDE) return "missileContrailUP";
-		return "missileContrail";
-	}
-
 	private DirPos[] getConPos() {
-		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset).getRotation(ForgeDirection.UP);
+		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
+		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
 
 		return new DirPos[] {
-			new DirPos(xCoord - dir.offsetX * 6, yCoord, zCoord - dir.offsetZ * 6, dir)
+			new DirPos(xCoord + 6, yCoord + 3, zCoord + 0, rot),
+			new DirPos(xCoord + 6, yCoord + 3, zCoord + 0, rot.getOpposite())
 		};
 	}
 
@@ -218,7 +293,7 @@ public class TileEntityMachineHTR3 extends TileEntityMachineBase implements IPro
 
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
-		if(bb == null) bb = AxisAlignedBB.getBoundingBox(xCoord - 10, yCoord - 3, zCoord - 10, xCoord + 11, yCoord + 4, zCoord + 11);
+		if(bb == null) bb = AxisAlignedBB.getBoundingBox(xCoord - 10, yCoord, zCoord - 10, xCoord + 11, yCoord + 7, zCoord + 11);
 		return bb;
 	}
 
@@ -251,7 +326,7 @@ public class TileEntityMachineHTR3 extends TileEntityMachineBase implements IPro
 	public void addErrors(List<String> errors) {
 		for(FluidTank tank : tanks) {
 			if(tank.getFill() < fuelCost) {
-				errors.add(EnumChatFormatting.RED + " - Insufficient fuel: needs " + fuelCost + "mB");
+				errors.add(EnumChatFormatting.RED + I18nUtil.resolveKey(getBlockType().getUnlocalizedName() + ".name") + " - Insufficient fuel: needs " + fuelCost + "mB");
 			}
 		}
 	}
@@ -267,13 +342,13 @@ public class TileEntityMachineHTR3 extends TileEntityMachineBase implements IPro
 		for(FluidTank tank : tanks) {
 			tank.setFill(tank.getFill() - fuelCost);
 		}
-		return 80;
+		return 20;
 	}
 
 	@Override
 	public int endBurn() {
 		isOn = false;
-		return 80; // Cooldown
+		return 20; // Cooldown
 	}
 
 	@Override

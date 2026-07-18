@@ -1,21 +1,24 @@
 package com.hbm.tileentity.machine;
 
 import java.util.List;
+import java.util.ArrayList;
 
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.dim.CelestialBody;
 import com.hbm.dim.SolarSystem;
 import com.hbm.inventory.fluid.Fluids;
+import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.fluid.trait.FT_Rocket;
 import com.hbm.main.MainRegistry;
 import com.hbm.sound.AudioWrapper;
 import com.hbm.tileentity.TileEntityMachineBase;
-import com.hbm.util.BobMathUtil;
+import com.hbm.util.I18nUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
+import com.hbm.util.BobMathUtil;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
+import api.hbm.fluid.IFluidStandardReceiver;
 import api.hbm.tile.IPropulsion;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -26,14 +29,14 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPropulsion, IFluidStandardReceiverMK2, IEnergyReceiverMK2 {
+public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPropulsion, IFluidStandardReceiver, IEnergyReceiverMK2 {
 
 	public FluidTank[] tanks;
 
 	public long power;
 	public static long maxPower = 1_000_000_000;
 
-	private static final int POWER_COST_MULTIPLIER = 250_000;
+	private static final int POWER_COST_MULTIPLIER = 1_000_000;
 
 	private boolean isOn;
 	private float speed;
@@ -50,22 +53,26 @@ public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPr
 		super(0);
 		tanks = new FluidTank[1];
 		tanks[0] = new FluidTank(Fluids.PLASMA_DT, 64000);
+		tanks[0] = new FluidTank(Fluids.PLASMA_HD, 64000);
+		tanks[0] = new FluidTank(Fluids.PLASMA_HT, 64000);
+		tanks[0] = new FluidTank(Fluids.PLASMA_DH3, 64000);
+		tanks[0] = new FluidTank(Fluids.PLASMA_XM, 64000);
+		tanks[0] = new FluidTank(Fluids.PLASMA_BF, 64000);
 	}
 
 	@Override
 	public void updateEntity() {
-		if(!CelestialBody.inOrbit(worldObj)) return;
-
-		if(!worldObj.isRemote) {
+		if(!worldObj.isRemote && CelestialBody.inOrbit(worldObj)) {
 			if(!hasRegistered) {
 				if(isFacingPrograde()) registerPropulsion();
 				hasRegistered = true;
-				isOn = false;
 			}
 
-			// Only fill power, plasma heater filling handled separately
 			for(DirPos pos : getConPos()) {
-				trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+				for(FluidTank tank : tanks) {
+					trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+					trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+				}
 			}
 
 			if(isOn) {
@@ -76,7 +83,7 @@ public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPr
 				} else if(soundtime > 20) {
 					soundtime = 20;
 				}
-			} else {
+			}else {
 				soundtime--;
 
 				if(soundtime == 19) {
@@ -103,13 +110,35 @@ public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPr
 					audio.updateVolume(getVolume(1F));
 					audio.keepAlive();
 
+					{
+						List<FluidType> types = new ArrayList() {{ add(tanks[0].getTankType()); }};
+
+						if(types.contains(Fluids.PLASMA_BF)) {
+
+							ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset).getRotation(ForgeDirection.UP);
+
+							NBTTagCompound data = new NBTTagCompound();
+							data.setDouble("posX", xCoord + dir.offsetX * 12);
+							data.setDouble("posY", yCoord + 4);
+							data.setDouble("posZ", zCoord + dir.offsetZ * 12);
+							data.setString("type", "missileContrailbf");
+							data.setFloat("scale", 3);
+							data.setDouble("moX", dir.offsetX * 10);
+							data.setDouble("moY", 0);
+							data.setDouble("moZ", dir.offsetZ * 10);
+							data.setInteger("maxAge", 40 + worldObj.rand.nextInt(40));
+							MainRegistry.proxy.effectNT(data);
+							return;
+						}
+					}
+
 					ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset).getRotation(ForgeDirection.UP);
 
 					NBTTagCompound data = new NBTTagCompound();
 					data.setDouble("posX", xCoord + dir.offsetX * 12);
-					data.setDouble("posY", yCoord + 1);
+					data.setDouble("posY", yCoord + 4);
 					data.setDouble("posZ", zCoord + dir.offsetZ * 12);
-					data.setString("type", tanks[0].getTankType() == Fluids.PLASMA_BF ? "missileContrailbf" :"missileContrailf");
+					data.setString("type", "missileContrailf");
 					data.setFloat("scale", 3);
 					data.setDouble("moX", dir.offsetX * 10);
 					data.setDouble("moY", 0);
@@ -126,10 +155,32 @@ public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPr
 					audio = null;
 				}
 			}
+
 		}
 
 		lastTime = time;
 		time += speed;
+	}
+
+	private void updateType() {
+
+		List<FluidType> types = new ArrayList() {{ add(tanks[0].getTankType()); }};
+
+		if(types.contains(Fluids.PLASMA_BF)) {
+			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset).getRotation(ForgeDirection.UP);
+			NBTTagCompound data = new NBTTagCompound();
+			data.setDouble("posX", xCoord + dir.offsetX * 12);
+			data.setDouble("posY", yCoord + 4);
+			data.setDouble("posZ", zCoord + dir.offsetZ * 12);
+			data.setString("type", "missileContrailbf");
+			data.setFloat("scale", 3);
+			data.setDouble("moX", dir.offsetX * 10);
+			data.setDouble("moY", 0);
+			data.setDouble("moZ", dir.offsetZ * 10);
+			data.setInteger("maxAge", 20 + worldObj.rand.nextInt(20));
+			MainRegistry.proxy.effectNT(data);
+			return;
+		}
 	}
 
 	private DirPos[] getConPos() {
@@ -137,8 +188,8 @@ public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPr
 		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
 
 		return new DirPos[] {
-			new DirPos(xCoord - rot.offsetX * 10 + dir.offsetX, yCoord, zCoord - rot.offsetZ * 10 + dir.offsetZ, rot),
-			new DirPos(xCoord - rot.offsetX * 10 - dir.offsetX, yCoord, zCoord - rot.offsetZ * 10 - dir.offsetZ, rot),
+			new DirPos(xCoord + 10, yCoord + 2, zCoord - 1, rot.getOpposite()),
+			new DirPos(xCoord + 10, yCoord + 2, zCoord + 1, rot.getOpposite())
 		};
 	}
 
@@ -221,8 +272,7 @@ public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPr
 
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
-		if(bb == null) bb = AxisAlignedBB.getBoundingBox(xCoord - 11, yCoord - 2, zCoord - 11, xCoord + 12, yCoord + 3, zCoord + 12);
-		return bb;
+		return TileEntity.INFINITE_EXTENT_AABB;
 	}
 
 	@Override
@@ -255,12 +305,12 @@ public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPr
 	@Override
 	public void addErrors(List<String> errors) {
 		if(power < fuelCost * POWER_COST_MULTIPLIER) {
-			errors.add(EnumChatFormatting.RED + " - Insufficient power: needs " + BobMathUtil.getShortNumber(fuelCost * POWER_COST_MULTIPLIER) + "HE");
+			errors.add(EnumChatFormatting.RED + I18nUtil.resolveKey(getBlockType().getUnlocalizedName() + ".name") + " - Insufficient power: needs " + BobMathUtil.getShortNumber(fuelCost * POWER_COST_MULTIPLIER) + "HE");
 		}
 
 		for(FluidTank tank : tanks) {
 			if(tank.getFill() < fuelCost) {
-				errors.add(EnumChatFormatting.RED + " - Insufficient fuel: needs " + fuelCost + "mB");
+				errors.add(EnumChatFormatting.RED + I18nUtil.resolveKey(getBlockType().getUnlocalizedName() + ".name") + " - Insufficient fuel: needs " + fuelCost + "mB");
 			}
 		}
 	}
@@ -277,13 +327,13 @@ public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPr
 		for(FluidTank tank : tanks) {
 			tank.setFill(tank.getFill() - fuelCost);
 		}
-		return 180;
+		return 20;
 	}
 
 	@Override
 	public int endBurn() {
 		isOn = false;
-		return 180; // Cooldown
+		return 20; // Cooldown
 	}
 
 	@Override

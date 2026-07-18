@@ -12,12 +12,11 @@ import com.hbm.entity.missile.EntityRideableRocket.RocketState;
 import com.hbm.handler.RocketStruct;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
-import com.hbm.inventory.fluid.trait.FT_Rocket;
 import com.hbm.items.weapon.ItemCustomRocket;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
-import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
+import api.hbm.fluid.IFluidStandardReceiver;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
@@ -28,7 +27,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityOrbitalStation extends TileEntityMachineBase implements IFluidStandardReceiverMK2 {
+public class TileEntityOrbitalStation extends TileEntityMachineBase implements IFluidStandardReceiver {
 
 	private OrbitalStation station;
 	private EntityRideableRocket docked;
@@ -48,8 +47,9 @@ public class TileEntityOrbitalStation extends TileEntityMachineBase implements I
 
 	public TileEntityOrbitalStation() {
 		super(16);
-		tanks = new FluidTank[1];
-		tanks[0] = new FluidTank(Fluids.HYDRAZINE, 16_000);
+		tanks = new FluidTank[2];
+		tanks[0] = new FluidTank(Fluids.HYDROGEN, 16_000);
+		tanks[1] = new FluidTank(Fluids.OXYGEN, 16_000);
 	}
 
 	@Override
@@ -91,14 +91,14 @@ public class TileEntityOrbitalStation extends TileEntityMachineBase implements I
 					boolean toOrbit = docked.getTarget().inOrbit;
 					for(FluidTank tank : tanks) tank.changeTankSize(Math.max(0, tank.getFill() - getFillRequirement(toOrbit)));
 				}
-
+				
 				undockRocket();
 			}
 
 			// if we have enough fuel, transition to ready to launch
 			if(docked != null && docked.isReusable()) {
 				boolean hasFuel = hasSufficientFuel(docked.getTarget().inOrbit);
-
+				
 				if(hasFuel && docked.getState() == RocketState.NEEDSFUEL) {
 					docked.setState(docked.navDrive != null ? RocketState.AWAITING : RocketState.LANDED);
 				} else if (!hasFuel && docked.getState() != RocketState.NEEDSFUEL) {
@@ -131,7 +131,7 @@ public class TileEntityOrbitalStation extends TileEntityMachineBase implements I
 	@Override
 	public void invalidate() {
 		super.invalidate();
-
+		
 		if(!worldObj.isRemote && station != null) {
 			if(!isCore()) station.removePort(this);
 			if(docked != null) docked.dropNDie(null);
@@ -215,15 +215,11 @@ public class TileEntityOrbitalStation extends TileEntityMachineBase implements I
 		dockRocket(rocket);
 	}
 
-	public EntityRideableRocket getDocked() {
-		return docked;
-	}
-
 	public boolean hasStoredItems() {
 		for(ItemStack stack : slots) {
 			if(stack != null) return true;
 		}
-
+		
 		return false;
 	}
 
@@ -251,21 +247,15 @@ public class TileEntityOrbitalStation extends TileEntityMachineBase implements I
 
 	public int getFillRequirement(boolean toOrbit) {
 		if(toOrbit) return 500; // Transferring between stations is much cheaper
-
 		int mass = docked != null ? docked.getRocket().getLaunchMass() : 4_000;
-
-		FT_Rocket fuelTrait = tanks[0].getTankType().getTrait(FT_Rocket.class);
-		int thrust = fuelTrait != null ? (int)fuelTrait.getThrust() : 600_000;
-		int isp = fuelTrait != null ? fuelTrait.getISP() : 300;
-
-		return SolarSystem.getCostBetween(station.orbiting, station.orbiting, mass, thrust, isp, false, true);
+		return SolarSystem.getCostBetween(station.orbiting, station.orbiting, mass, 600_000, 350, false, true);
 	}
 
 	@Override
 	public boolean canExtractItem(int i, ItemStack itemStack, int j) {
 		return true;
 	}
-
+	
 	@Override
 	public int[] getAccessibleSlotsFromSide(int side) {
 		return IntStream.range(0, slots.length).toArray();
@@ -326,13 +316,10 @@ public class TileEntityOrbitalStation extends TileEntityMachineBase implements I
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		for(int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "t" + i);
-
-		// Migrate old hydrogen tanks
-		tanks[0].setTankType(Fluids.HYDRAZINE);
 	}
 
 	AxisAlignedBB bb = null;
-
+	
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
 		if(bb == null) {
@@ -345,7 +332,7 @@ public class TileEntityOrbitalStation extends TileEntityMachineBase implements I
 				zCoord + 3
 			);
 		}
-
+		
 		return bb;
 	}
 
@@ -364,5 +351,5 @@ public class TileEntityOrbitalStation extends TileEntityMachineBase implements I
 	public FluidTank[] getReceivingTanks() {
 		return tanks;
 	}
-
+	
 }

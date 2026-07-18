@@ -17,8 +17,7 @@ import com.hbm.util.InventoryUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluidmk2.IFluidReceiverMK2;
-import api.hbm.fluidmk2.IFluidProviderMK2;
+import api.hbm.fluid.IFluidUser;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.item.ItemStack;
@@ -33,7 +32,7 @@ import net.minecraft.tileentity.TileEntity;
  * Tanks follow the order R1(I1, I2, O1, O2), R2(I1, I2, O1, O2) ...
  * @author hbm
  */
-public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidReceiverMK2, IFluidProviderMK2, IGUIProvider {
+public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidUser, IGUIProvider {
 
 	public long power;
 	public int[] progress;
@@ -560,12 +559,12 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	}
 
 	@Override
-	public long getFluidAvailable(FluidType type, int pressure) {
+	public long getTotalFluidForSend(FluidType type, int pressure) {
 		return getFluidFillForTransfer(type, pressure);
 	}
 
 	@Override
-	public void useUpFluid(FluidType type, int pressure, long amount) {
+	public void removeFluidForTransfer(FluidType type, int pressure, long amount) {
 		this.transferFluid((int) amount, type, pressure);
 	}
 

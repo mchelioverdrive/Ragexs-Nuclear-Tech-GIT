@@ -16,7 +16,7 @@ import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 
-import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
+import api.hbm.fluid.IFluidStandardReceiver;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
@@ -26,7 +26,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 
-public class TileEntityICFPress extends TileEntityMachineBase implements IFluidStandardReceiverMK2, IGUIProvider, IFluidCopiable {
+public class TileEntityICFPress extends TileEntityMachineBase implements IFluidStandardReceiver, IGUIProvider, IFluidCopiable {
 
 	public FluidTank[] tanks;
 	public int muon;
@@ -53,8 +53,8 @@ public class TileEntityICFPress extends TileEntityMachineBase implements IFluidS
 			this.tanks[1].setType(7, slots);
 
 			if(worldObj.getTotalWorldTime() % 20 == 0) {
-				this.trySubscribeToAllAround(tanks[0].getTankType(), this);
-				this.trySubscribeToAllAround(tanks[1].getTankType(), this);
+				this.subscribeToAllAround(tanks[0].getTankType(), this);
+				this.subscribeToAllAround(tanks[1].getTankType(), this);
 			}
 
 			if(muon <= 0 && slots[2] != null && slots[2].getItem() == ModItems.particle_muon) {

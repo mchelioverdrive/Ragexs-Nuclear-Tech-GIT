@@ -39,7 +39,7 @@ import com.hbm.util.fauxpointtwelve.BlockPos;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
+import api.hbm.fluid.IFluidStandardReceiver;
 import api.hbm.item.IDesignatorItem;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -56,7 +56,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
-public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiverMK2, IGUIProvider, IRadarCommandReceiver, SimpleComponent, CompatHandler.OCComponent, IFluidCopiable {
+public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IRadarCommandReceiver, SimpleComponent, CompatHandler.OCComponent, IFluidCopiable {
 
 	/** Automatic instantiation of generic missiles, i.e. everything that both extends EntityMissileBaseNT and needs a designator */
 	public static final HashMap<ComparableStack, Class<? extends EntityMissileBaseNT>> missiles = new HashMap();
@@ -66,9 +66,9 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 		//Tier 0
 		missiles.put(new ComparableStack(ModItems.missile_test), EntityMissileTest.class);
 		missiles.put(new ComparableStack(ModItems.missile_micro), EntityMissileMicro.class);
-		missiles.put(new ComparableStack(ModItems.missile_schrabidium), EntityMissileSchrabidium.class);
-		missiles.put(new ComparableStack(ModItems.missile_bhole), EntityMissileBHole.class);
-		missiles.put(new ComparableStack(ModItems.missile_taint), EntityMissileTaint.class);
+		//missiles.put(new ComparableStack(ModItems.missile_schrabidium), EntityMissileSchrabidium.class);
+		//missiles.put(new ComparableStack(ModItems.missile_bhole), EntityMissileBHole.class);
+		//missiles.put(new ComparableStack(ModItems.missile_taint), EntityMissileTaint.class);
 		missiles.put(new ComparableStack(ModItems.missile_emp), EntityMissileEMP.class);
 		//Tier 1
 		missiles.put(new ComparableStack(ModItems.missile_generic), EntityMissileGeneric.class);
@@ -91,7 +91,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 		//Tier 4
 		missiles.put(new ComparableStack(ModItems.missile_nuclear), EntityMissileNuclear.class);
 		missiles.put(new ComparableStack(ModItems.missile_nuclear_cluster), EntityMissileMirv.class);
-		missiles.put(new ComparableStack(ModItems.missile_volcano), EntityMissileVolcano.class);
+		//missiles.put(new ComparableStack(ModItems.missile_volcano), EntityMissileVolcano.class);
 		missiles.put(new ComparableStack(ModItems.missile_doomsday), EntityMissileDoomsday.class);
 
 		missiles.put(new ComparableStack(ModItems.missile_stealth), EntityMissileStealth.class);
@@ -374,32 +374,35 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 	}
 
 	public BombReturnCode launchFromDesignator() {
+		if (GeneralConfig.enableNuking) {
 		if(!canLaunch()) return BombReturnCode.ERROR_MISSING_COMPONENT;
 
 		boolean needsDesignator = needsDesignator(slots[0].getItem());
 
-		int targetX = xCoord;
-		int targetZ = zCoord;
+		int targetX = 0;
+		int targetZ = 0;
 
 		if(slots[1] != null && slots[1].getItem() instanceof IDesignatorItem) {
 			IDesignatorItem designator = (IDesignatorItem) slots[1].getItem();
 
-			if(needsDesignator) {
-				if(!designator.isReady(worldObj, slots[1], xCoord, yCoord, zCoord)) return BombReturnCode.ERROR_MISSING_COMPONENT;
+			if(!designator.isReady(worldObj, slots[1], xCoord, yCoord, zCoord) && needsDesignator) return BombReturnCode.ERROR_MISSING_COMPONENT;
 
-				Vec3 coords = designator.getCoords(worldObj, slots[1], xCoord, yCoord, zCoord);
-				targetX = (int) Math.floor(coords.xCoord);
-				targetZ = (int) Math.floor(coords.zCoord);
-			}
+			Vec3 coords = designator.getCoords(worldObj, slots[1], xCoord, yCoord, zCoord);
+			targetX = (int) Math.floor(coords.xCoord);
+			targetZ = (int) Math.floor(coords.zCoord);
 
 		} else {
 			if(needsDesignator) return BombReturnCode.ERROR_MISSING_COMPONENT;
 		}
 
 		return this.launchToCoordinate(targetX, targetZ);
+
+		}
+		return BombReturnCode.ERROR_DISABLED;
 	}
 
 	public BombReturnCode launchToEntity(Entity entity) {
+		if (GeneralConfig.enableNuking) {
 		if(!canLaunch()) return BombReturnCode.ERROR_MISSING_COMPONENT;
 
 		Entity e = instantiateMissile((int) Math.floor(entity.posX), (int) Math.floor(entity.posZ));
@@ -414,9 +417,12 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 			return BombReturnCode.LAUNCHED;
 		}
 		return BombReturnCode.ERROR_MISSING_COMPONENT;
+		}
+		return BombReturnCode.ERROR_DISABLED;
 	}
 
 	public BombReturnCode launchToCoordinate(int targetX, int targetZ) {
+		if (GeneralConfig.enableNuking) {
 		if(!canLaunch()) return BombReturnCode.ERROR_MISSING_COMPONENT;
 
 		Entity e = instantiateMissile(targetX, targetZ);
@@ -425,6 +431,8 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 			return BombReturnCode.LAUNCHED;
 		}
 		return BombReturnCode.ERROR_MISSING_COMPONENT;
+		}
+		return BombReturnCode.ERROR_DISABLED;
 	}
 
 	@Override
@@ -528,12 +536,6 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 		return new Object[] {false};
 	}
 
-	@Callback(direct = true)
-	@Optional.Method(modid = "OpenComputers")
-	public Object[] getPos(Context context, Arguments args) {
-		return new Object[] {xCoord, yCoord, zCoord};
-	}
-
 	@Override
 	@Optional.Method(modid = "OpenComputers")
 	public String[] methods() {
@@ -542,8 +544,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 				"getFluid",
 				"canLaunch",
 				"getTier",
-				"launch",
-				"getPos"
+				"launch"
 		};
 	}
 
@@ -561,8 +562,6 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 				return getTier(context, args);
 			case ("launch"):
 				return launch(context, args);
-			case ("getPos"):
-				return getPos(context, args);
 		}
 	throw new NoSuchMethodException();
 	}

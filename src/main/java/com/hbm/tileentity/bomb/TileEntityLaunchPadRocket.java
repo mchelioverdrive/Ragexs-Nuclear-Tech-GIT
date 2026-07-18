@@ -30,7 +30,7 @@ import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IBatteryItem;
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
+import api.hbm.fluid.IFluidStandardReceiver;
 import cpw.mods.fml.common.Optional;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -38,7 +38,6 @@ import io.netty.buffer.ByteBuf;
 import li.cil.oc.api.machine.Arguments;
 import li.cil.oc.api.machine.Callback;
 import li.cil.oc.api.machine.Context;
-import li.cil.oc.api.network.SimpleComponent;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
@@ -50,16 +49,13 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
-public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements IControlReceiver, IEnergyReceiverMK2, IFluidStandardReceiverMK2, IGUIProvider, SimpleComponent, CompatHandler.OCComponent {
+public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements IControlReceiver, IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, CompatHandler.OCComponent {
 
 	public long power;
 	public final long maxPower = 100_000;
 
-	public static class SolidFuelTank {
-		public int level = 0;
-		public int max = 0;
-	}
-	public SolidFuelTank solidFuel = new SolidFuelTank();
+	public int solidFuel = 0;
+	public int maxSolidFuel = 0;
 
 	public FluidTank[] tanks;
 
@@ -107,10 +103,10 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 			// Fills, note that the liquid input also takes solid fuel
 			power = Library.chargeTEFromItems(slots, 2, power, maxPower);
 			for(FluidTank tank : tanks) tank.loadTank(3, 4, slots);
-			if(slots[3] != null && slots[3].getItem() == ModItems.rocket_fuel && solidFuel.level < solidFuel.max) {
+			if(slots[3] != null && slots[3].getItem() == ModItems.rocket_fuel && solidFuel < maxSolidFuel) {
 				decrStackSize(3, 1);
-				solidFuel.level += 250;
-				if(solidFuel.level > solidFuel.max) solidFuel.level = solidFuel.max;
+				solidFuel += 250;
+				if(solidFuel > maxSolidFuel) solidFuel = maxSolidFuel;
 			}
 
 			rocket = ItemCustomRocket.get(slots[0]);
@@ -273,7 +269,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 
 		// Deplete all fills
 		for(int i = 0; i < tanks.length; i++) tanks[i] = new FluidTank(Fluids.NONE, 64_000);
-		solidFuel.level = solidFuel.max = 0;
+		solidFuel = maxSolidFuel = 0;
 
 		power -= maxPower * 0.75;
 
@@ -291,7 +287,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 
 	private boolean areTanksFull() {
 		for(FluidTank tank : tanks) if(tank.getTankType() != Fluids.NONE && tank.getFill() < tank.getMaxFill()) return false;
-		if(solidFuel.level < solidFuel.max) return false;
+		if(solidFuel < maxSolidFuel) return false;
 		return true;
 	}
 
@@ -325,24 +321,19 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		if(!hasRocket()) return;
 
 		RocketStruct rocket = ItemCustomRocket.get(slots[0]);
+		Map<FluidType, Integer> fuels = rocket.getFillRequirement();
 
 		// If the rocket is already fueled, unmark it and fill the tanks
 		boolean hasFuel = ItemCustomRocket.hasFuel(slots[0]);
 		if(hasFuel) ItemCustomRocket.setFuel(slots[0], false);
 
-		updateStorageTanks(rocket, tanks, solidFuel, hasFuel);
-	}
-
-	public static void updateStorageTanks(RocketStruct rocket, FluidTank[] tanks, SolidFuelTank solidFuel, boolean hasFuel) {
-		Map<FluidType, Integer> fuels = rocket.getFillRequirement();
-
 		// Remove solid fuels (listed as NONE fluid) from tank updates
 		if(fuels.containsKey(Fluids.NONE)) {
-			solidFuel.max = fuels.get(Fluids.NONE);
-			if(hasFuel) solidFuel.level = solidFuel.max;
+			maxSolidFuel = fuels.get(Fluids.NONE);
+			if(hasFuel) solidFuel = maxSolidFuel;
 			fuels.remove(Fluids.NONE);
 		} else {
-			solidFuel.max = 0;
+			maxSolidFuel = 0;
 		}
 
 		// Check to see if any of the current tanks already fulfil fuelling requirements
@@ -373,70 +364,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 			keepTanks.add(new FluidTank(Fluids.NONE, 64_000));
 		}
 
-		FluidTank[] newTankArray = keepTanks.toArray(new FluidTank[RocketStruct.MAX_STAGES * 2]);
-		for(int i = 0; i < tanks.length; i++) {
-			tanks[i] = newTankArray[i];
-		}
-	}
-
-	public static void findTankIssues(List<String> issues, FluidTank[] tanks, SolidFuelTank solidFuel) {
-		for(FluidTank tank : tanks) {
-			if(tank.getTankType() == Fluids.NONE) continue;
-			int fill = tank.getFill();
-			int maxFill = tank.getMaxFill();
-			String tankName = tank.getTankType().getLocalizedName();
-			if(tankName.contains(" ")) {
-				String[] split = tankName.split(" ");
-				tankName = split[split.length - 1];
-			}
-			if(fill < maxFill) {
-				issues.add(EnumChatFormatting.YELLOW + "" + fill + "/" + maxFill + "mB " + tankName);
-			} else {
-				issues.add(EnumChatFormatting.GREEN + "" + fill + "/" + maxFill + "mB " + tankName);
-			}
-		}
-
-		if(solidFuel.max > 0) {
-			if(solidFuel.level < solidFuel.max) {
-				issues.add(EnumChatFormatting.YELLOW + "" + solidFuel.level + "/" + solidFuel.max + "kg Solid Fuel");
-			} else {
-				issues.add(EnumChatFormatting.GREEN + "" + solidFuel.level + "/" + solidFuel.max + "kg Solid Fuel");
-			}
-		}
-	}
-
-	public static boolean findDriveIssues(List<String> issues, RocketStruct rocket, ItemStack drive) {
-		if(drive == null || !(drive.getItem() instanceof ItemVOTVdrive)) {
-			issues.add(EnumChatFormatting.YELLOW + "No destination drive installed");
-			return true;
-		}
-
-		if(!ItemVOTVdrive.getProcessed(drive)) {
-			issues.add(EnumChatFormatting.RED + "Destination drive needs processing");
-			return true;
-		}
-
-		SolarSystem.Body target = ItemVOTVdrive.getDestination(drive).body;
-		if(target == SolarSystem.Body.ORBIT && rocket.capsule.part != ModItems.rp_capsule_20 && rocket.capsule.part != ModItems.rp_station_core_20) {
-			issues.add(EnumChatFormatting.RED + "Satellite target must be a planet");
-			return true;
-		}
-
-		return false;
-	}
-
-	public static void findTravelIssues(List<String> issues, RocketStruct rocket, Target from, Target to) {
-		if(to.inOrbit && !to.isValid && rocket.capsule.part != ModItems.rp_station_core_20) {
-			issues.add(EnumChatFormatting.RED + "Station not yet launched");
-		}
-
-		if(to.inOrbit && to.isValid && rocket.capsule.part == ModItems.rp_station_core_20) {
-			issues.add(EnumChatFormatting.RED + "Station already launched");
-		}
-
-		if(!rocket.hasSufficientFuel(from.body, to.body, from.inOrbit, to.inOrbit)) {
-			issues.add(EnumChatFormatting.RED + "Rocket can't reach destination");
-		}
+		tanks = keepTanks.toArray(new FluidTank[RocketStruct.MAX_STAGES * 2]);
 	}
 
 	public List<String> findIssues() {
@@ -455,14 +383,61 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 			issues.add(EnumChatFormatting.RED + "Insufficient power");
 		}
 
-		findTankIssues(issues, tanks, solidFuel);
-		if(findDriveIssues(issues, rocket, slots[1])) return issues;
+		for(FluidTank tank : tanks) {
+			if(tank.getTankType() == Fluids.NONE) continue;
+			int fill = tank.getFill();
+			int maxFill = tank.getMaxFill();
+			String tankName = tank.getTankType().getLocalizedName();
+			if(tankName.contains(" ")) {
+				String[] split = tankName.split(" ");
+				tankName = split[split.length - 1];
+			}
+			if(fill < maxFill) {
+				issues.add(EnumChatFormatting.YELLOW + "" + fill + "/" + maxFill + "mB " + tankName);
+			} else {
+				issues.add(EnumChatFormatting.GREEN + "" + fill + "/" + maxFill + "mB " + tankName);
+			}
+		}
+
+		if(maxSolidFuel > 0) {
+			if(solidFuel < maxSolidFuel) {
+				issues.add(EnumChatFormatting.YELLOW + "" + solidFuel + "/" + maxSolidFuel + "kg Solid Fuel");
+			} else {
+				issues.add(EnumChatFormatting.GREEN + "" + solidFuel + "/" + maxSolidFuel + "kg Solid Fuel");
+			}
+		}
+
+		if(!hasDrive()) {
+			issues.add(EnumChatFormatting.YELLOW + "No destination drive installed");
+			return issues;
+		}
+
+		if(!ItemVOTVdrive.getProcessed(slots[1])) {
+			issues.add(EnumChatFormatting.RED + "Destination drive needs processing");
+			return issues;
+		}
+
+		SolarSystem.Body target = ItemVOTVdrive.getDestination(slots[1]).body;
+		if(target == SolarSystem.Body.ORBIT && rocket.capsule.part != ModItems.rp_capsule_20 && rocket.capsule.part != ModItems.rp_station_core_20) {
+			issues.add(EnumChatFormatting.RED + "Satellite target must be a planet");
+			return issues;
+		}
 
 		// Check that the rocket is actually capable of reaching our destination
 		Target from = CelestialBody.getTarget(worldObj, xCoord, zCoord);
 		Target to = ItemVOTVdrive.getTarget(slots[1], worldObj);
 
-		findTravelIssues(issues, rocket, from, to);
+		if(to.inOrbit && !to.isValid && rocket.capsule.part != ModItems.rp_station_core_20) {
+			issues.add(EnumChatFormatting.RED + "Station not yet launched");
+		}
+
+		if(to.inOrbit && to.isValid && rocket.capsule.part == ModItems.rp_station_core_20) {
+			issues.add(EnumChatFormatting.RED + "Station already launched");
+		}
+
+		if(!rocket.hasSufficientFuel(from.body, to.body, from.inOrbit, to.inOrbit)) {
+			issues.add(EnumChatFormatting.RED + "Rocket can't reach destination");
+		}
 
 		return issues;
 	}
@@ -473,7 +448,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		if(index == 0 && !(stack.getItem() instanceof ItemCustomRocket)) return false;
 		if(index == 1 && !(stack.getItem() instanceof ItemVOTVdrive)) return false;
 		if(index == 2 && !(stack.getItem() instanceof IBatteryItem) && stack.getItem() != ModItems.battery_creative) return false;
-		if(index == 3 && stack.getItem() != ModItems.rocket_fuel) return false;
 		return true;
 	}
 
@@ -482,8 +456,8 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		super.serialize(buf);
 
 		buf.writeLong(power);
-		buf.writeInt(solidFuel.level);
-		buf.writeInt(solidFuel.max);
+		buf.writeInt(solidFuel);
+		buf.writeInt(maxSolidFuel);
 
 		buf.writeInt(height);
 		buf.writeBoolean(canSeeSky);
@@ -503,8 +477,8 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		super.deserialize(buf);
 
 		power = buf.readLong();
-		solidFuel.level = buf.readInt();
-		solidFuel.max = buf.readInt();
+		solidFuel = buf.readInt();
+		maxSolidFuel = buf.readInt();
 
 		height = buf.readInt();
 		canSeeSky = buf.readBoolean();
@@ -522,8 +496,8 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		nbt.setLong("power", power);
-		nbt.setInteger("solid", solidFuel.level);
-		nbt.setInteger("maxSolid", solidFuel.max);
+		nbt.setInteger("solid", solidFuel);
+		nbt.setInteger("maxSolid", maxSolidFuel);
 		nbt.setInteger("height", height);
 		nbt.setBoolean("sky", canSeeSky);
 		for(int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(nbt, "t" + i);
@@ -533,8 +507,8 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		power = nbt.getLong("power");
-		solidFuel.level = nbt.getInteger("solid");
-		solidFuel.max = nbt.getInteger("maxSolid");
+		solidFuel = nbt.getInteger("solid");
+		maxSolidFuel = nbt.getInteger("maxSolid");
 		height = nbt.getInteger("height");
 		canSeeSky = nbt.getBoolean("sky");
 		for(int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "t" + i);
@@ -591,7 +565,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 	@Callback(direct = true) // this doesn't return a set amount of tanks sadly
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getSolidFuel(Context context, Arguments args) {
-		return new Object[] {solidFuel.level, solidFuel.max};
+		return new Object[] {solidFuel, maxSolidFuel};
 	}
 
 	@Callback(direct = true)
@@ -633,6 +607,15 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 			return new Object[] {target.body.name.toLowerCase()};
 		}
 		return new Object[] {null, "Drive has no destination."};
+	}
+
+	@Override
+	@Optional.Method(modid = "OpenComputers")
+	public boolean canConnectNode(ForgeDirection side) {
+		// Get direction of ports.
+		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
+		// Only connect if port is facing outwards, mainly to prevent component clutter with the ports connecting to eachother.
+		return side == dir;
 	}
 
 	@Override

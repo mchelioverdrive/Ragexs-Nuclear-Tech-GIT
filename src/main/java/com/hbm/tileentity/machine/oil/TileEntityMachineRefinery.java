@@ -20,21 +20,19 @@ import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.gui.GUIMachineRefinery;
 import com.hbm.inventory.recipes.RefineryRecipes;
-import com.hbm.inventory.recipes.RefineryRecipes.RefineryRecipe;
 import com.hbm.items.ModItems;
 import com.hbm.lib.Library;
 import com.hbm.main.MainRegistry;
 import com.hbm.sound.AudioWrapper;
 import com.hbm.tileentity.*;
 import com.hbm.util.ParticleUtil;
-import com.hbm.util.fauxpointtwelve.BlockPos;
+import com.hbm.util.Tuple.Quintet;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluidmk2.IFluidStandardTransceiverMK2;
+import api.hbm.fluid.IFluidStandardTransceiver;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
@@ -46,11 +44,11 @@ import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineRefinery extends TileEntityMachineBase implements IEnergyReceiverMK2, IOverpressurable, IPersistentNBT, IRepairable, IFluidStandardTransceiverMK2, IGUIProvider, IFluidCopiable {
+public class TileEntityMachineRefinery extends TileEntityMachineBase implements IEnergyReceiverMK2, IOverpressurable, IPersistentNBT, IRepairable, IFluidStandardTransceiver, IGUIProvider, IFluidCopiable {
 
 	public long power = 0;
 	public int sulfur = 0;
-	public static final int maxSulfur = 10;
+	public static final int maxSulfur = 100;
 	public static final long maxPower = 1000;
 	public FluidTank[] tanks;
 
@@ -133,7 +131,6 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 	public void updateEntity() {
 
 		if(!worldObj.isRemote) {
-			this.checkTilt(TiltType.CONFIG, false);
 
 			this.isOn = false;
 
@@ -166,7 +163,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 				for(DirPos pos : getConPos()) {
 					for(int i = 1; i < 5; i++) {
 						if(tanks[i].getFill() > 0) {
-							this.tryProvide(tanks[i], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+							this.sendFluid(tanks[i], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 						}
 					}
 				}
@@ -187,13 +184,18 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 					ParticleUtil.spawnGasFlame(worldObj, xCoord + rand.nextDouble(), yCoord + 1.5 + rand.nextDouble() * 3, zCoord + rand.nextDouble(), rand.nextGaussian() * 0.05, 0.1, rand.nextGaussian() * 0.05);
 
 					if(worldObj.getTotalWorldTime() % 20 == 0) {
-						PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 70);
+						PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 3);
 					}
 				}
 			}
 
-			this.networkPackNT(150);
-
+			NBTTagCompound data = new NBTTagCompound();
+			data.setLong("power", this.power);
+			for(int i = 0; i < 5; i++) tanks[i].writeToNBT(data, "" + i);
+			data.setBoolean("exploded", hasExploded);
+			data.setBoolean("onFire", onFire);
+			data.setBoolean("isOn", this.isOn);
+			this.networkPack(data, 150);
 		} else {
 
 			if(this.isOn) audioTime = 20;
@@ -222,9 +224,6 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 		}
 	}
 
-	@Override public int getFloorCount() { return 2 * 2; }
-	@Override public BlockPos getFloorPosFromIndex(int index) { return this.standardFloor3x3(index); }
-
 	@Override
 	public AudioWrapper createAudioLoop() {
 		return MainRegistry.proxy.getLoopedSound("hbm:block.boiler", xCoord, yCoord, zCoord, 0.25F, 15F, 1.0F, 20);
@@ -251,33 +250,24 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 	}
 
 	@Override
-	public void serialize(ByteBuf buf) {
-		super.serialize(buf);
-		buf.writeLong(this.power);
-		for(int i = 0; i < 5; i++) tanks[i].serialize(buf);
-		buf.writeBoolean(this.hasExploded);
-		buf.writeBoolean(this.onFire);
-		buf.writeBoolean(this.isOn);
-	}
+	public void networkUnpack(NBTTagCompound nbt) {
+		super.networkUnpack(nbt);
 
-	@Override
-	public void deserialize(ByteBuf buf) {
-		super.deserialize(buf);
-		this.power = buf.readLong();
-		for(int i = 0; i < 5; i++) tanks[i].deserialize(buf);
-		this.hasExploded = buf.readBoolean();
-		this.onFire = buf.readBoolean();
-		this.isOn = buf.readBoolean();
+		this.power = nbt.getLong("power");
+		for(int i = 0; i < 5; i++) tanks[i].readFromNBT(nbt, "" + i);
+		this.hasExploded = nbt.getBoolean("exploded");
+		this.onFire = nbt.getBoolean("onFire");
+		this.isOn = nbt.getBoolean("isOn");
 	}
 
 	private void refine() {
-		RefineryRecipe refinery = RefineryRecipes.getRefinery(tanks[0].getTankType());
+		Quintet<FluidStack, FluidStack, FluidStack, FluidStack, ItemStack> refinery = RefineryRecipes.getRefinery(tanks[0].getTankType());
 		if(refinery == null) {
 			for(int i = 1; i < 5; i++) tanks[i].setTankType(Fluids.NONE);
 			return;
 		}
 
-		FluidStack[] stacks = refinery.outputs;
+		FluidStack[] stacks = new FluidStack[] {refinery.getV(), refinery.getW(), refinery.getX(), refinery.getY()};
 
 		for(int i = 0; i < stacks.length; i++) tanks[i + 1].setTankType(stacks[i].type);
 
@@ -299,7 +289,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 		if(this.sulfur >= maxSulfur) {
 			this.sulfur -= maxSulfur;
 
-			ItemStack out = refinery.solid;
+			ItemStack out = refinery.getZ();
 
 			if(out != null) {
 

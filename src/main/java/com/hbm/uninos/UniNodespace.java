@@ -66,8 +66,9 @@ public class UniNodespace {
 			for(Entry<Pair<BlockPos, INetworkProvider>, GenNode> entry : nodeWorld.nodes.entrySet()) {
 				GenNode node = entry.getValue();
 				INetworkProvider provider = entry.getKey().getValue();
-				if(!node.hasValidNet()) {
+				if(!node.hasValidNet() || node.recentlyChanged) {
 					checkNodeConnection(world, node, provider);
+					node.recentlyChanged = false;
 				}
 			}
 		}
@@ -80,15 +81,15 @@ public class UniNodespace {
 
 		for(NodeNet net : activeNodeNets) net.resetTrackers(); //reset has to be done before everything else
 		for(NodeNet net : activeNodeNets) net.update();
-
+		
 		if(reapTimer <= 0) {
 			activeNodeNets.forEach((net) -> { net.links.removeIf((link) -> { return ((GenNode) link).expired; }); });
 			activeNodeNets.removeIf((net) -> { return net.links.size() <= 0; }); // reap empty networks
 		}
 	}
-
+	
 	private static void updateReapTimer() {
-		if(reapTimer <= 0) reapTimer = 5 * 60 * 20; // 5 minutes is more than plenty
+		if(reapTimer <= 0) reapTimer = 5 * 60 * 20; // 5 minutes is more than plenty 
 		else reapTimer--;
 	}
 

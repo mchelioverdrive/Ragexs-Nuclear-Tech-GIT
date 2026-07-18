@@ -10,14 +10,15 @@ import com.hbm.inventory.gui.GUIDiFurnace;
 import com.hbm.inventory.recipes.BlastFurnaceRecipes;
 import com.hbm.items.ModItems;
 import com.hbm.tileentity.IGUIProvider;
+import com.hbm.tileentity.INBTPacketReceiver;
 import com.hbm.tileentity.TileEntityMachinePolluting;
 import com.hbm.util.CompatEnergyControl;
+import com.hbm.util.FurnaceGasEmission;
 
-import api.hbm.fluidmk2.IFluidStandardSenderMK2;
+import api.hbm.fluid.IFluidStandardSender;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
@@ -28,7 +29,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityDiFurnace extends TileEntityMachinePolluting implements IFluidStandardSenderMK2, IGUIProvider, IInfoProviderEC {
+public class TileEntityDiFurnace extends TileEntityMachinePolluting implements IFluidStandardSender, IGUIProvider, IInfoProviderEC {
 
 	public int progress;
 	public int fuel;
@@ -89,7 +90,7 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 
 		this.fuel = nbt.getInteger("powerTime");
 		this.progress = nbt.getShort("cookTime");
-
+		
 		byte[] modes = nbt.getByteArray("modes");
 		this.sideFuel = modes[0];
 		this.sideUpper = modes[1];
@@ -116,7 +117,7 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 		if(i == 1 && this.sideLower != j) return false;
 		if(i == 2 && this.sideFuel != j) return false;
 		if(i == 3) return false;
-
+		
 		return this.isItemValidForSlot(i, itemStack);
 	}
 
@@ -136,7 +137,7 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 	public boolean canProcess() {
 		if(slots[0] == null || slots[1] == null) return false;
 		if(!this.hasPower()) return false;
-
+		
 		ItemStack output = BlastFurnaceRecipes.getOutput(slots[0], slots[1]);
 		if(output == null) return false;
 		if(slots[3] == null) return true;
@@ -145,7 +146,7 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 		if(slots[3].stackSize + output.stackSize <= slots[3].getMaxStackSize()) {
 			return true;
 		}
-
+		
 		return false;
 	}
 
@@ -175,18 +176,18 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 	public void updateEntity() {
 
 		if(!worldObj.isRemote) {
-
+			
 			boolean extension = worldObj.getBlock(xCoord, yCoord + 1, zCoord) == ModBlocks.machine_difurnace_extension;
-
+			
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
 				this.sendSmoke(xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 			}
-
+			
 			if(extension) this.sendSmoke(xCoord, yCoord + 2, zCoord, ForgeDirection.UP);
 
 			boolean markDirty = false;
 			boolean canOperate = breatheAir(0); // checks breathable but doesn't consume air
-
+			
 			if(this.hasItemPower(this.slots[2], canOperate) && this.fuel <= (TileEntityDiFurnace.maxFuel - getItemPower(this.slots[2], canOperate))) {
 				this.fuel += getItemPower(this.slots[2], canOperate);
 				if(this.slots[2] != null) {
@@ -200,22 +201,23 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 
 			if(canProcess()) {
 
+				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
 				//fuel -= extension ? 2 : 1;
 				fuel -= 1; //switch it up on me, fuel efficiency, on fumes i'm running - running - running - running
 				progress += extension ? 3 : 1;
 
 				if(this.progress >= TileEntityDiFurnace.processingSpeed) {
-					this.progress -= TileEntityDiFurnace.processingSpeed; // look mom, ive finally added something to a popular project
+					this.progress = 0;
 					this.processItem();
 					markDirty = true;
 				}
-
+				
 				if(fuel < 0) {
 					fuel = 0;
 				}
 
 				if(worldObj.getTotalWorldTime() % 20 == 0) this.pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * (extension ? 3 : 1));
-
+				
 			} else {
 				progress = 0;
 			}
@@ -231,7 +233,11 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 				MachineDiFurnace.updateBlockState(this.progress > 0, this.worldObj, this.xCoord, this.yCoord, this.zCoord);
 			}
 
-			networkPackNT(15);
+			NBTTagCompound data = new NBTTagCompound();
+			data.setShort("time", (short) this.progress);
+			data.setShort("fuel", (short) this.fuel);
+			data.setByteArray("modes", new byte[] { (byte) sideFuel, (byte) sideUpper, (byte) sideLower });
+			INBTPacketReceiver.networkPack(this, data, 15);
 
 			if(markDirty) {
 				this.markDirty();
@@ -240,21 +246,10 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 	}
 
 	@Override
-	public void serialize(ByteBuf buf) {
-		buf.writeShort(this.progress);
-		buf.writeShort(this.fuel);
-		buf.writeBytes(new byte[] {
-				this.sideFuel,
-				this.sideUpper,
-				this.sideLower});
-	}
-
-	@Override
-	public void deserialize(ByteBuf buf) {
-		this.progress = buf.readShort();
-		this.fuel = buf.readShort();
-		byte[] modes = new byte[3];
-		buf.readBytes(modes);
+	public void networkUnpack(NBTTagCompound nbt) {
+		this.progress = nbt.getShort("time");
+		this.fuel = nbt.getShort("fuel");
+		byte[] modes = nbt.getByteArray("modes");
 		this.sideFuel = modes[0];
 		this.sideUpper = modes[1];
 		this.sideLower = modes[2];

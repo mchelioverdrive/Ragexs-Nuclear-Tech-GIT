@@ -9,26 +9,24 @@ import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.fluid.trait.FT_Coolable;
 import com.hbm.inventory.fluid.trait.FT_Coolable.CoolingType;
-import com.hbm.main.NTMSounds;
-import com.hbm.tileentity.IBufPacketReceiver;
 import com.hbm.tileentity.IConfigurableMachine;
+import com.hbm.util.FurnaceGasEmission;
 import com.hbm.tileentity.IFluidCopiable;
+import com.hbm.tileentity.INBTPacketReceiver;
 import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyProviderMK2;
-import api.hbm.fluidmk2.IFluidStandardTransceiverMK2;
+import api.hbm.fluid.IFluidStandardTransceiver;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MathHelper;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEnergyProviderMK2, IFluidStandardTransceiverMK2, IBufPacketReceiver, IConfigurableMachine, IFluidCopiable {
+public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEnergyProviderMK2, IFluidStandardTransceiver, INBTPacketReceiver, IConfigurableMachine, IFluidCopiable {
 
 	public long powerBuffer;
 
@@ -71,23 +69,18 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 		writer.name("D:efficiency").value(efficiency);
 	}
 
-	protected ByteBuf buf;
-
 	@Override
 	public void updateEntity() {
 
 		if(!worldObj.isRemote) {
-
-			if(this.buf != null)
-				this.buf.release();
-			this.buf = Unpooled.buffer();
 
 			this.powerBuffer = 0;
 
 			tanks[0].setTankType(Fluids.STEAM);
 			tanks[1].setTankType(Fluids.SPENTSTEAM);
 
-			tanks[0].serialize(buf);
+			NBTTagCompound data = new NBTTagCompound();
+			tanks[0].writeToNBT(data, "s");
 
 			FT_Coolable trait = tanks[0].getTankType().getTrait(FT_Coolable.class);
 			double eff = trait.getEfficiency(CoolingType.TURBINE) * efficiency;
@@ -100,6 +93,8 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 			this.powerBuffer += (ops * trait.heatEnergy * eff);
 
 			if(ops > 0) {
+				//FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1200);
+				//do that for the firebox/coal using crap
 				this.acceleration += 0.1F;
 			} else {
 				this.acceleration -= 0.1F;
@@ -111,20 +106,20 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 			if(this.rotor >= 360D) {
 				this.rotor -= 360D;
 
-				this.worldObj.playSoundEffect(xCoord, yCoord, zCoord, NTMSounds.STEAM_ENGINE_HIT, getVolume(1.0F), 0.5F + (acceleration / 80F));
+				this.worldObj.playSoundEffect(xCoord, yCoord, zCoord, "hbm:block.steamEngineOperate", getVolume(1.0F), 0.5F + (acceleration / 80F));
 			}
 
-			buf.writeLong(this.powerBuffer);
-			buf.writeFloat(this.rotor);
-			tanks[1].serialize(buf);
+			data.setLong("power", this.powerBuffer);
+			data.setFloat("rotor", this.rotor);
+			tanks[1].writeToNBT(data, "w");
 
 			for(DirPos pos : getConPos()) {
 				if(this.powerBuffer > 0) this.tryProvide(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				this.tryProvide(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+				this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 
-			networkPackNT(150);
+			INBTPacketReceiver.networkPack(this, data, 150);
 		} else {
 			this.lastRotor = this.rotor;
 
@@ -216,17 +211,12 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 	}
 
 	@Override
-	public void serialize(ByteBuf buf) {
-		buf.writeBytes(this.buf);
-	}
-
-	@Override
-	public void deserialize(ByteBuf buf) {
-		this.tanks[0].deserialize(buf);
-		this.powerBuffer = buf.readLong();
-		this.syncRotor = buf.readFloat();
-		this.tanks[1].deserialize(buf);
+	public void networkUnpack(NBTTagCompound nbt) {
+		this.powerBuffer = nbt.getLong("power");
+		this.syncRotor = nbt.getFloat("rotor");
 		this.turnProgress = 3; //use 3-ply for extra smoothness
+		this.tanks[0].readFromNBT(nbt, "s");
+		this.tanks[1].readFromNBT(nbt, "w");
 	}
 
 	@Override

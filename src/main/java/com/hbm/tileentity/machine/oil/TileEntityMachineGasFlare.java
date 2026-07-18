@@ -1,6 +1,5 @@
 package com.hbm.tileentity.machine.oil;
 
-import java.util.HashMap;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
@@ -24,18 +23,16 @@ import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.CompatEnergyControl;
+import com.hbm.util.FurnaceGasEmission;
+import com.hbm.util.I18nUtil;
 import com.hbm.util.ParticleUtil;
-import com.hbm.util.fauxpointtwelve.BlockPos;
 import com.hbm.util.fauxpointtwelve.DirPos;
-import com.hbm.util.i18n.I18nUtil;
 
 import api.hbm.energymk2.IEnergyProviderMK2;
-import api.hbm.energymk2.IEnergyReceiverMK2.ConnectionPriority;
-import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
+import api.hbm.fluid.IFluidStandardReceiver;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
@@ -46,7 +43,9 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
-public class TileEntityMachineGasFlare extends TileEntityMachineBase implements IEnergyProviderMK2, IFluidStandardReceiverMK2, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable {
+public class TileEntityMachineGasFlare extends TileEntityMachineBase implements IEnergyProviderMK2, IFluidStandardReceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 
 	public long power;
 	public static final long maxPower = 100000;
@@ -55,8 +54,6 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 	public boolean doesBurn = false;
 	protected int fluidUsed = 0;
 	protected int output = 0;
-
-	public UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	public TileEntityMachineGasFlare() {
 		super(6);
@@ -106,7 +103,6 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 	public void updateEntity() {
 
 		if(!worldObj.isRemote) {
-			this.checkTilt(TiltType.CONFIG, false);
 
 			this.fluidUsed = 0;
 			this.output = 0;
@@ -122,11 +118,11 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 			int maxVent = 50;
 			int maxBurn = 10;
 
-			if(isOn && tank.getFill() > 0 && !this.tilted) {
+			if(isOn && tank.getFill() > 0) {
 
-				upgradeManager.checkSlots(this, slots, 4, 5);
-				int burn = upgradeManager.getLevel(UpgradeType.SPEED);
-				int yield = upgradeManager.getLevel(UpgradeType.EFFECT);
+				this.upgradeManager.checkSlots(slots, 4, 5);
+				int burn = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+				int yield = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
 
 				maxVent += maxVent * burn;
 				maxBurn += maxBurn * burn;
@@ -183,13 +179,19 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 						if(worldObj.getTotalWorldTime() % 5 == 0 && eject > 0) {
 							FT_Polluting.pollute(worldObj, xCoord, yCoord, zCoord, tank.getTankType(), FluidReleaseType.BURN, eject * 5);
 						}
+						FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord + 11, zCoord, Math.max(100, 600 / Math.max(eject, 1)));
 					}
 				}
 			}
 
 			power = Library.chargeItemsFromTE(slots, 0, power, maxPower);
 
-			this.networkPackNT(50);
+			NBTTagCompound data = new NBTTagCompound();
+			data.setLong("power", this.power);
+			data.setBoolean("isOn", isOn);
+			data.setBoolean("doesBurn", doesBurn);
+			tank.writeToNBT(data, "t");
+			this.networkPack(data, 50);
 
 		} else {
 
@@ -232,54 +234,28 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 					}
 
 					MainRegistry.proxy.effectNT(data);
-
-					/*NBTTagCompound smokeData = new NBTTagCompound();
-					smokeData.setString("type", "tower");
-					smokeData.setFloat("lift", 2F);
-					smokeData.setFloat("base", 0.5F);
-					smokeData.setFloat("max", 2F);
-					smokeData.setFloat("strafe", 0.025F);
-					smokeData.setInteger("life", 150 + worldObj.rand.nextInt(20));
-					smokeData.setInteger("color", 0x202020);
-
-					smokeData.setDouble("posX", xCoord + 0.5);
-					smokeData.setDouble("posZ", zCoord + 0.5);
-					smokeData.setDouble("posY", yCoord + 11);
-
-					MainRegistry.proxy.effectNT(smokeData);*/
 				}
 			}
 		}
 	}
 
-	@Override public int getFloorCount() { return 2 * 2; }
-	@Override public BlockPos getFloorPosFromIndex(int index) { return this.standardFloor3x3(index); }
-
 	public DirPos[] getConPos() {
 		return new DirPos[] {
-				new DirPos(xCoord + 2, yCoord, zCoord, Library.POS_X),
-				new DirPos(xCoord - 2, yCoord, zCoord, Library.NEG_X),
-				new DirPos(xCoord, yCoord, zCoord + 2, Library.POS_Z),
-				new DirPos(xCoord, yCoord, zCoord - 2, Library.NEG_Z)
+			new DirPos(xCoord + 2, yCoord, zCoord, Library.POS_X),
+			new DirPos(xCoord - 2, yCoord, zCoord, Library.NEG_X),
+			new DirPos(xCoord, yCoord, zCoord + 2, Library.POS_Z),
+			new DirPos(xCoord, yCoord, zCoord - 2, Library.NEG_Z)
 		};
 	}
 
 	@Override
-	public void serialize(ByteBuf buf) {
-		super.serialize(buf);
-		buf.writeLong(this.power);
-		buf.writeBoolean(this.isOn);
-		buf.writeBoolean(this.doesBurn);
-		tank.serialize(buf);
-	}
+	public void networkUnpack(NBTTagCompound nbt) {
+		super.networkUnpack(nbt);
 
-	@Override
-	public void deserialize(ByteBuf buf) {
-		super.deserialize(buf);
-		this.power = buf.readLong();
-		this.isOn = buf.readBoolean();
-		this.doesBurn = buf.readBoolean();
-		tank.deserialize(buf);
+		this.power = nbt.getLong("power");
+		this.isOn = nbt.getBoolean("isOn");
+		this.doesBurn = nbt.getBoolean("doesBurn");
+		tank.readFromNBT(nbt, "t");
 	}
 
 	@Override
@@ -319,11 +295,6 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 	}
 
 	@Override
-	public ConnectionPriority getFluidPriority() {
-		return ConnectionPriority.LOW;
-	}
-
-	@Override
 	public Container provideContainer(int ID, EntityPlayer player, World world, int x, int y, int z) {
 		return new ContainerMachineGasFlare(player.inventory, this);
 	}
@@ -351,11 +322,10 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 	}
 
 	@Override
-	public HashMap<UpgradeType, Integer> getValidUpgrades() {
-		HashMap<UpgradeType, Integer> upgrades = new HashMap<>();
-		upgrades.put(UpgradeType.SPEED, 3);
-		upgrades.put(UpgradeType.EFFECT, 3);
-		return upgrades;
+	public int getMaxLevel(UpgradeType type) {
+		if(type == UpgradeType.SPEED) return 3;
+		if(type == UpgradeType.EFFECT) return 3;
+		return 0;
 	}
 
 	@Override

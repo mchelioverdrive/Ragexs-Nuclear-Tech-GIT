@@ -6,13 +6,12 @@ import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.TileEntityMachineBase;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluidmk2.IFluidStandardTransceiverMK2;
-import io.netty.buffer.ByteBuf;
+import api.hbm.fluid.IFluidStandardTransceiver;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiverMK2, IFluidCopiable {
-
+public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IFluidCopiable {
+	
 	public long power = 0;
 	public FluidTank[] tanks;
 
@@ -30,47 +29,44 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 
 	@Override
 	public void updateEntity() {
-
+		
 		if(!worldObj.isRemote) {
-
+			
 			this.updateConnections();
-
+			
 			if(hasPower()&& this.power > 200 && hasEnoughWater() && tanks[1].getMaxFill() > tanks[1].getFill()) {
 				int convert = Math.min(tanks[1].getMaxFill(), tanks[0].getFill()) / 50;
 				convert = Math.min(convert, tanks[1].getMaxFill() - tanks[1].getFill());
-
+				
 				tanks[0].setFill(tanks[0].getFill() - convert * 50); //dividing first, then multiplying, will remove any rounding issues
 				tanks[1].setFill(tanks[1].getFill() + convert);
 				power -= this.getMaxPower() / 100;
 			}
+			
+			this.subscribeToAllAround(tanks[0].getTankType(), this);
+			this.sendFluidToAll(tanks[1], this);
 
-			this.trySubscribeToAllAround(tanks[0].getTankType(), this);
-			this.tryProvideToAll(tanks[1], this);
-
-			this.networkPackNT(50);
+			NBTTagCompound data = new NBTTagCompound();
+			data.setLong("power", power);
+			tanks[0].writeToNBT(data, "water");
+			tanks[1].writeToNBT(data, "heavyWater");
+			
+			this.networkPack(data, 50);
 		}
 	}
-
+	
 	protected void updateConnections() {
-
+		
 		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
 			this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 	}
 
-	@Override
-	public void serialize(ByteBuf buf) {
-		super.serialize(buf);
-		buf.writeLong(power);
-		tanks[0].serialize(buf);
-		tanks[1].serialize(buf);
-	}
-
-	@Override
-	public void deserialize(ByteBuf buf) {
-		super.deserialize(buf);
-		this.power = buf.readLong();
-		tanks[0].deserialize(buf);
-		tanks[1].deserialize(buf);
+	public void networkUnpack(NBTTagCompound data) {
+		super.networkUnpack(data);
+		
+		this.power = data.getLong("power");
+		tanks[0].readFromNBT(data, "water");
+		tanks[1].readFromNBT(data, "heavyWater");
 	}
 
 	public boolean hasPower() {
