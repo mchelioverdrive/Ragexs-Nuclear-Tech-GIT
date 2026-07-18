@@ -1,7 +1,3 @@
-## Fix neighbor tile cache API name conflict
-- Renamed the MK2 neighbor lookup cache to avoid colliding with the inherited `ILoadedTile.TileAccessCache` nested type during interface compilation.
-- Switched cached tile world validation to the public `getWorldObj()` accessor.
-
 ## Safe neighbor tile-entity lookup cache
 - Added a short-lived per-world weak cache for MK2 energy neighbor tile lookups, caching null results for 20 ticks and non-null tiles for 60 ticks.
 - Invalid, moved, or unloaded tile entries are discarded immediately, and each world cache is explicitly cleared on `WorldEvent.Unload`.

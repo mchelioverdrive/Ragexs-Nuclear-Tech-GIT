@@ -30,7 +30,7 @@ public interface IEnergyReceiverMK2 extends IEnergyHandlerMK2 {
 
 	public default void trySubscribe(World world, int x, int y, int z, ForgeDirection dir) {
 
-		TileEntity te = NeighborTileAccessCache.getTile(world, x, y, z);
+		TileEntity te = TileAccessCache.getTile(world, x, y, z);
 		boolean red = false;
 
 		if(te instanceof IEnergyConductorMK2) {
