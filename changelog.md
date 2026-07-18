@@ -1,3 +1,9 @@
+# Remove PipeNet transfer debug hot-path work
+
+- Removed active PipeNet fluid-transfer debug tracking, string/date formatting, BigInteger transfer accounting, and per-delivery chunk-dirty calls from production transfers.
+- Reworked fair fluid distribution to avoid boxed demand weights while preserving the two-pass demand and transfer behavior.
+- Trimmed fluid duct diagnostics and gauge transfer reporting that depended on removed PipeNet transfer counters.
+
 # Port HFR VBO model backend
 
 - Added reloadable HFR OBJ VBO buffers that upload triangle vertices, UVs, and normals with `GL_STATIC_DRAW` and render with `glDrawArrays`.

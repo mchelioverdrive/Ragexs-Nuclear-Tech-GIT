@@ -1,6 +1,5 @@
 package com.hbm.blocks.network;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -9,14 +8,12 @@ import com.hbm.blocks.IBlockMultiPass;
 import com.hbm.blocks.ILookOverlay;
 import com.hbm.blocks.ITooltipProvider;
 import com.hbm.handler.CompatHandler;
-import com.hbm.inventory.fluid.Fluids;
 import com.hbm.lib.RefStrings;
 import com.hbm.render.block.RenderBlockMultipass;
 import com.hbm.tileentity.INBTPacketReceiver;
 import com.hbm.tileentity.network.TileEntityPipeBaseNT;
 import com.hbm.util.I18nUtil;
 
-import api.hbm.fluid.IPipeNet;
 import cpw.mods.fml.common.Optional;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -111,7 +108,6 @@ public class FluidDuctGauge extends FluidDuctBase implements IBlockMultiPass, IL
 	@Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 	public static class TileEntityPipeGauge extends TileEntityPipeBaseNT implements INBTPacketReceiver, SimpleComponent, CompatHandler.OCComponent {
 
-		private BigInteger lastMeasurement = BigInteger.valueOf(10);
 		private long deltaTick = 0;
 		private long deltaSecond = 0;
 		private long deltaLastSecond = 0;
@@ -122,22 +118,10 @@ public class FluidDuctGauge extends FluidDuctBase implements IBlockMultiPass, IL
 
 			if(!worldObj.isRemote) {
 
-				IPipeNet net = this.getPipeNet(this.getType());
-				
-				if(net != null && this.getType() != Fluids.NONE) {
-					BigInteger total = net.getTotalTransfer();
-					BigInteger delta = total.subtract(this.lastMeasurement);
-					this.lastMeasurement = total;
-					
-					try {
-						this.deltaTick = delta.longValueExact();
-						if(worldObj.getTotalWorldTime() % 20 == 0) {
-							this.deltaLastSecond = this.deltaSecond;
-							this.deltaSecond = 0;
-						}
-						this.deltaSecond += deltaTick;
-						
-					} catch(Exception ex) { }
+				this.deltaTick = 0;
+				if(worldObj.getTotalWorldTime() % 20 == 0) {
+					this.deltaLastSecond = this.deltaSecond;
+					this.deltaSecond = 0;
 				}
 				
 				NBTTagCompound data = new NBTTagCompound();
