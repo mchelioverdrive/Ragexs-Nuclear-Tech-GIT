@@ -1,3 +1,9 @@
+# Port worldgen cascade and UniNodespace backports
+
+- Backported the vanilla +8 decoration offset for upstream-selected world-generation entries that perform height lookups or can spill outside their origin, including flower, depth-deposit, and Eve spike/volcano starts.
+- Added upstream UniNodespace, network providers, FluidNet MK2 API, PowerNet MK2, and the ILoadedTile lifecycle guard used by shared node-network cleanup.
+- Followed up the UniNodespace backport with compatibility fixes for RNT's current codebase: restored the legacy Nodespace tick hook, added FluidType network-provider access, added tuple cache helpers, and kept the unported pneumatic provider compiling as a lifecycle-only placeholder until its tile subsystem is migrated.
+
 # Cache machine upgrades and ore layers
 
 - Replaced the shared static upgrade cache with per-machine `UpgradeManagerNT` instances backed by content-aware ItemStack signatures.

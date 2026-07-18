@@ -63,8 +63,8 @@ public class WorldGeneratorEve implements IWorldGenerator {
 			OilBubble.spawnOil(world, randPosX, randPosY, randPosZ, 10 + rand.nextInt(7), ModBlocks.ore_gas, meta, ModBlocks.eve_rock);
 		}
 
-		int x = i + rand.nextInt(16);
-		int z = j + rand.nextInt(16);
+		int x = i + rand.nextInt(16) + 8;
+		int z = j + rand.nextInt(16) + 8;
 		int y = world.getHeightValue(x, z);
 
 		BiomeGenBase biome = world.getBiomeGenForCoords(x, z);
