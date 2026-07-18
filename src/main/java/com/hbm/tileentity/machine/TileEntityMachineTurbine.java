@@ -63,6 +63,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 	public static int outputTankSize = 128_000;
 	public static int maxSteamPerTick = 6_000;
 	public static double efficiency = 0.85D;
+	public static int maxSafePressure = 1;
 
 	public TileEntityMachineTurbine() {
 		slots = new ItemStack[7];
@@ -82,6 +83,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 		outputTankSize = IConfigurableMachine.grab(obj, "I:outputTankSize", outputTankSize);
 		maxSteamPerTick = IConfigurableMachine.grab(obj, "I:maxSteamPerTick", maxSteamPerTick);
 		efficiency = IConfigurableMachine.grab(obj, "D:efficiency", efficiency);
+		maxSafePressure = IConfigurableMachine.grab(obj, "I:maxSafePressure", maxSafePressure);
 	}
 
 	@Override
@@ -91,6 +93,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 		writer.name("I:outputTankSize").value(outputTankSize);
 		writer.name("I:maxSteamPerTick").value(maxSteamPerTick);
 		writer.name("D:efficiency").value(efficiency);
+		writer.name("I:maxSafePressure").value(maxSafePressure);
 	}
 
 	@Override
@@ -280,12 +283,12 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 			boolean valid = false;
 			if(in.hasTrait(FT_Coolable.class)) {
 				FT_Coolable trait = in.getTrait(FT_Coolable.class);
-				double eff = trait.getEfficiency(CoolingType.TURBINE) * efficiency; //small turbine is only 85% efficient by default
+				double eff = trait.getEfficiency(CoolingType.TURBINE) * efficiency * getPressureEfficiency(); //small turbine is only 85% efficient by default
 				if(eff > 0) {
 					tanks[1].setTankType(trait.coolsTo);
 					int inputOps = tanks[0].getFill() / trait.amountReq;
 					int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
-					int cap = maxSteamPerTick / trait.amountReq;
+					int cap = getPressureLimitedSteamPerTick() / trait.amountReq;
 					int ops = Math.min(inputOps, Math.min(outputOps, cap));
 					tanks[0].setFill(tanks[0].getFill() - ops * trait.amountReq);
 					tanks[1].setFill(tanks[1].getFill() + ops * trait.amountProduced);
@@ -305,6 +308,42 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 			
 			this.sendStandard(25);
 		}
+	}
+
+	private double getPressureEfficiency() {
+		return 1D + tanks[0].getPressure() * 0.15D;
+	}
+
+	private int getPressureLimitedSteamPerTick() {
+		return (int) Math.floor(maxSteamPerTick * getPressureEfficiency());
+	}
+
+	private void burstFromOverpressure(int pressure, long amount) {
+		if(worldObj == null || worldObj.isRemote) return;
+		worldObj.setBlockToAir(xCoord, yCoord, zCoord);
+		float strength = Math.min(8F, 2.5F + pressure * 1.25F + Math.min(amount, inputTankSize) / (float) inputTankSize);
+		worldObj.newExplosion(null, xCoord + 0.5D, yCoord + 0.5D, zCoord + 0.5D, strength, false, true);
+	}
+
+	@Override
+	public long getDemand(FluidType type, int pressure) {
+		if(type == tanks[0].getTankType() && type.hasTrait(FT_Coolable.class)) {
+			return tanks[0].getMaxFill() - tanks[0].getFill();
+		}
+		return IFluidStandardTransceiver.super.getDemand(type, pressure);
+	}
+
+	@Override
+	public long transferFluid(FluidType type, int pressure, long amount) {
+		if(type == tanks[0].getTankType() && type.hasTrait(FT_Coolable.class)) {
+			if(pressure > maxSafePressure) {
+				burstFromOverpressure(pressure, amount);
+				return 0;
+			}
+			tanks[0].withPressure(pressure);
+			return IFluidStandardTransceiver.super.transferFluid(type, pressure, amount);
+		}
+		return IFluidStandardTransceiver.super.transferFluid(type, pressure, amount);
 	}
 
 	@Override public void serialize(ByteBuf buf) {
