@@ -1,7 +1,3 @@
-## Safe neighbor tile-entity lookup cache
-- Added a short-lived per-world weak cache for MK2 energy neighbor tile lookups, caching null results for 20 ticks and non-null tiles for 60 ticks.
-- Invalid, moved, or unloaded tile entries are discarded immediately, and each world cache is explicitly cleared on `WorldEvent.Unload`.
-
 # Port worldgen cascade and UniNodespace backports
 
 - Backported the vanilla +8 decoration offset for upstream-selected world-generation entries that perform height lookups or can spill outside their origin, including flower, depth-deposit, and Eve spike/volcano starts.
