@@ -228,6 +228,12 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 		//Pyrometallurgy of chalcopyrite
 		addRecipe(new ComparableStack(ModItems.chalcopyrite, 1), COAL, new ItemStack(ModBlocks.ore_copper, 2));
 
+		addRecipe( //ultra high strength steel alt recipe in case you don't like bobcat CBT
+			new ComparableStack(ModItems.ingot_steel_dusted, 4),
+			B.block(),
+			new ItemStack(ModItems.ingot_chainsteel, 1)
+		);
+
 		//hiddenRecipes.add(new ComparableStack(ModItems.meteorite_sword_alloyed));
 	}
 

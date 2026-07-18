@@ -102,6 +102,9 @@ public class ArcFurnaceRecipes extends SerializableRecipe {
 		//powder_thulium into thulium ingot
 		recipes.put(new ComparableStack(ModItems.powder_thulium), new ArcFurnaceRecipe().solid(new ItemStack(ModItems.ingot_thulium, 1)).fluid(new MaterialStack(Mats.MAT_THULIUM, MaterialShapes.INGOT.q(1))));
 
+		//electric arc furnaces are the most efficient way to make steel.
+		recipes.put(new ComparableStack(ModItems.powder_steel_dusted), new ArcFurnaceRecipe().solid(new ItemStack(ModBlocks.block_steel, 1)).fluid(new MaterialStack(Mats.MAT_STEEL, MaterialShapes.BLOCK.q(1))));
+
 
 		for(BedrockOreType type : BedrockOreType.values()) {
 			recipes.put(new ComparableStack(ItemBedrockOreNew.make(BedrockOreGrade.SULFURIC_BYPRODUCT, type)), new ArcFurnaceRecipe().solid(ItemBedrockOreNew.make(BedrockOreGrade.SULFURIC_ARC, type, 2)));

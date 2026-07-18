@@ -162,7 +162,7 @@ public class Mats {
 	public static final NTMMaterial MAT_ALLOY		= makeSmeltable(_AS + 2,	ALLOY,			0xFF8330, 0x700000, 0xFF7318).setAutogen(WIRE, DUST, DENSEWIRE, PLATE, CASTPLATE, BLOCK, HEAVY_COMPONENT).m();
 	public static final NTMMaterial MAT_CALCINED_DOLOMITE = makeSmeltable(_AS + 14,	CDOLOMITE,		0xCFCFA6, 0x747F6E, 0xB7B784).setAutogen(DUST).m();
 	public static final NTMMaterial MAT_DURA		= makeSmeltable(_AS + 3,	DURA,			0x183039, 0x030B0B, 0x376373).setAutogen(BOLT, DUST, PIPE, BLOCK, LIGHTBARREL, HEAVYBARREL, LIGHTRECEIVER, HEAVYRECEIVER, GRIP).m();
-	public static final NTMMaterial MAT_DESH		= makeSmeltable(_AS + 12,	DESH,			0xFF6D6D, 0x720000, 0xF22929).setAutogen(DUST, CASTPLATE, BLOCK, HEAVY_COMPONENT, LIGHTBARREL, HEAVYBARREL, LIGHTRECEIVER, STOCK, GRIP).m();
+	public static final NTMMaterial MAT_DESH		= makeSmeltable(_AS + 12,	DESH,			0x72787E, 0x2D3136, 0xFFC04A).setAutogen(DUST, CASTPLATE, BLOCK, HEAVY_COMPONENT, LIGHTBARREL, HEAVYBARREL, LIGHTRECEIVER, STOCK, GRIP).m();
 	public static final NTMMaterial MAT_STAR		= makeSmeltable(_AS + 5,	STAR,			0xCCCCEA, 0x11111A, 0xA5A5D3).setAutogen(DUST, DENSEWIRE, BLOCK).m();
 	public static final NTMMaterial MAT_FERRO		= makeSmeltable(_AS + 7,	FERRO,			0xB7B7C9, 0x101022, 0x6B6B8B).setAutogen(HEAVYBARREL, HEAVYRECEIVER).m();
 	public static final NTMMaterial MAT_TCALLOY		= makeSmeltable(_AS + 6,	TCALLOY,		0xD4D6D6, 0x323D3D, 0x9CA6A6).setAutogen(DUST, CASTPLATE, WELDEDPLATE, HEAVY_COMPONENT, LIGHTBARREL, HEAVYBARREL, LIGHTRECEIVER, HEAVYRECEIVER).m();
@@ -178,7 +178,8 @@ public class Mats {
 	//public static final NTMMaterial MAT_MUD			= makeSmeltable(_AS + 14,	MUD,			0xBCB5A9, 0x481213, 0x96783B).n();
 	public static final NTMMaterial MAT_GUNMETAL	= makeSmeltable(_AS + 19,	GUNMETAL,		0xFFEF3F, 0xAD3600, 0xF9C62C).setAutogen(LIGHTBARREL, HEAVYBARREL, LIGHTRECEIVER, HEAVYRECEIVER, MECHANISM, STOCK, GRIP).n();
 	public static final NTMMaterial MAT_WEAPONSTEEL	= makeSmeltable(_AS + 20,	WEAPONSTEEL,	0xA0A0A0, 0x000000, 0x808080).setAutogen(SHELL, LIGHTBARREL, HEAVYBARREL, LIGHTRECEIVER, HEAVYRECEIVER, MECHANISM, STOCK, GRIP).n();
-	public static final NTMMaterial MAT_SATURN		= makeSmeltable(_AS + 4,	BIGMT,			0x3AC4DA, 0x09282C, 0x30A4B7).setAutogen(PLATE, CASTPLATE, SHELL, BLOCK, LIGHTBARREL, HEAVYBARREL, LIGHTRECEIVER, HEAVYRECEIVER, MECHANISM, STOCK, GRIP).m();
+	//saturnite is now extremely high strength steel alloy
+	public static final NTMMaterial MAT_SATURN		= makeSmeltable(_AS + 4,	BIGMT,			0x7A8088, 0x31343A, 0xFFD15A).setAutogen(PLATE, CASTPLATE, SHELL, BLOCK, LIGHTBARREL, HEAVYBARREL, LIGHTRECEIVER, HEAVYRECEIVER, MECHANISM, STOCK, GRIP).m();
 
 	//Space extension alloys
 	public static final NTMMaterial MAT_GAAS		= makeSmeltable(_EX + 0,	GAAS,		0x6F4A57, 0x6F4A57, 0x6F4A57).setAutogen(NUGGET, BILLET).m();

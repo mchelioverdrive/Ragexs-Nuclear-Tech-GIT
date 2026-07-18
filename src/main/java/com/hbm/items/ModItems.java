@@ -891,6 +891,7 @@ public class ModItems {
 	public static Item nugget_praseodymium;
 	public static Item powder_praseodymium;
 	public static Item chunk_ore;
+	public static Item powder_steel_dusted;
 
 
 	public static Item chunk_ironoxide;
@@ -3793,6 +3794,8 @@ public class ModItems {
 		nugget_praseodymium = new Item().setUnlocalizedName("nugget_praseodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_lead");
 		powder_praseodymium = new Item().setUnlocalizedName("powder_praseodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_praseodymium");
 		chunk_ore = new ItemEnumMulti(EnumChunkType.class, true, true).setUnlocalizedName("chunk_ore").setCreativeTab(MainRegistry.partsTab);
+		//FUCK BOBCAT AND HIS GODDAMN ENUM BULLSHIT
+		powder_steel_dusted = new Item().setUnlocalizedName("powder_steel_dusted").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_steel");
 
 		//why the fuck did you need enums... bobcat moment!
 		chunk_ironoxide = new Item().setUnlocalizedName("chunk_ironoxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_iron");
@@ -7875,6 +7878,7 @@ public class ModItems {
 		GameRegistry.registerItem(nugget_praseodymium, nugget_praseodymium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_praseodymium, powder_praseodymium.getUnlocalizedName());
 		GameRegistry.registerItem(chunk_ore, chunk_ore.getUnlocalizedName());
+		GameRegistry.registerItem(powder_steel_dusted, powder_steel_dusted.getUnlocalizedName());
 
 		//anti retard logic for ores
 		GameRegistry.registerItem(chunk_ironoxide, chunk_ironoxide.getUnlocalizedName());
