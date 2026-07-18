@@ -3,7 +3,7 @@ package com.hbm.tileentity.machine;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerMachineExposureChamber;
 import com.hbm.inventory.gui.GUIMachineExposureChamber;
 import com.hbm.inventory.recipes.ExposureChamberRecipes;
@@ -31,6 +31,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineExposureChamber extends TileEntityMachineBase implements IGUIProvider, IEnergyReceiverMK2, IUpgradeInfoProvider {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 	
 	public long power;
 	public static final long maxPower = 1_000_000;
@@ -92,10 +94,10 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 				for(DirPos pos : getConPos()) this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 			
-			UpgradeManager.eval(slots, 6, 7);
-			int speedLevel = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int powerLevel = Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 3);
-			int overdriveLevel = Math.min(UpgradeManager.getLevel(UpgradeType.OVERDRIVE), 3);
+			this.upgradeManager.checkSlots(slots, 6, 7);
+			int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+			int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+			int overdriveLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3);
 			
 			this.consumption = this.consumptionBase;
 			

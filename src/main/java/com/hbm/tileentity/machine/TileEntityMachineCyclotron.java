@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import com.hbm.blocks.ModBlocks;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.RecipesCommon.AStack;
 import com.hbm.inventory.RecipesCommon.ComparableStack;
 import com.hbm.inventory.container.ContainerMachineCyclotron;
@@ -39,6 +39,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineCyclotron extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IConditionalInvAccess, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 
 	public long power;
 	public static final long maxPower = 100000000;
@@ -74,7 +76,7 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 
 			this.power = Library.chargeTEFromItems(slots, 9, power, maxPower);
 
-			UpgradeManager.eval(slots, 10, 11);
+			this.upgradeManager.checkSlots(slots, 10, 11);
 
 			if(canProcess()) {
 				progress += getSpeed();
@@ -227,17 +229,17 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 	}
 
 	public int getSpeed() {
-		return Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3) + 1;
+		return Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3) + 1;
 	}
 
 	public int getConsumption() {
-		int efficiency = Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 3);
+		int efficiency = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
 
 		return consumption - 100_000 * efficiency;
 	}
 
 	public int getCoolantConsumption() {
-		int efficiency = Math.min(UpgradeManager.getLevel(UpgradeType.EFFECT), 3);
+		int efficiency = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
 		//half a small tower's worth
 		return 500 / (efficiency + 1) * getSpeed();
 	}

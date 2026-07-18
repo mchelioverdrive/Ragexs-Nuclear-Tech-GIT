@@ -13,7 +13,7 @@ import com.hbm.blocks.network.CraneInserter;
 import com.hbm.config.MiningConfig;
 import com.hbm.entity.item.EntityMovingItem;
 import com.hbm.interfaces.IControlReceiver;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerMachineExcavator;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
@@ -62,6 +62,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineExcavator extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 
 	public static final long maxPower = 1_000_000;
 	public long power;
@@ -105,9 +107,9 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 	public void updateEntity() {
 
 		//needs to happen on client too for GUI rendering
-		UpgradeManager.eval(slots, 2, 3);
-		int speedLevel = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
-		int powerLevel = Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 3);
+		this.upgradeManager.checkSlots(slots, 2, 3);
+		int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+		int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
 
 		consumption = baseConsumption * (1 + speedLevel);
 		consumption /= (1 + powerLevel);
@@ -129,7 +131,7 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 
 			this.power = Library.chargeTEFromItems(slots, 0, this.getPower(), this.getMaxPower());
 			this.operational = false;
-			int radiusLevel = Math.min(UpgradeManager.getLevel(UpgradeType.EFFECT), 3);
+			int radiusLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
 
 			EnumDrillType type = this.getInstalledDrill();
 			if(this.enableDrill && type != null && this.power >= this.getPowerConsumption()) {

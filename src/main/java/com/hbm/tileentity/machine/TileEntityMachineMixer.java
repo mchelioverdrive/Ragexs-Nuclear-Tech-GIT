@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
 import com.hbm.interfaces.IControlReceiver;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerMixer;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
@@ -32,6 +32,8 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
 public class TileEntityMachineMixer extends TileEntityMachineBase implements INBTPacketReceiver, IControlReceiver, IGUIProvider, IEnergyReceiverMK2, IFluidStandardTransceiver, IUpgradeInfoProvider, IFluidCopiable {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 	
 	public long power;
 	public static final long maxPower = 10_000;
@@ -68,10 +70,10 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 			this.power = Library.chargeTEFromItems(slots, 0, power, maxPower);
 			tanks[2].setType(2, slots);
 			
-			UpgradeManager.eval(slots, 3, 4);
-			int speedLevel = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int powerLevel = Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 3);
-			int overLevel = UpgradeManager.getLevel(UpgradeType.OVERDRIVE);
+			this.upgradeManager.checkSlots(slots, 3, 4);
+			int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+			int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+			int overLevel = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
 			
 			this.consumption = 50;
 

@@ -3,7 +3,7 @@ package com.hbm.tileentity.machine;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerOreSlopper;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
@@ -47,6 +47,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineOreSlopper extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 	
 	public long power;
 	public static final long maxPower = 100_000;
@@ -110,9 +112,9 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 			
 			this.processing = false;
 			
-			UpgradeManager.eval(slots, 9, 10);
-			int speed = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int efficiency = Math.min(UpgradeManager.getLevel(UpgradeType.EFFECT), 3);
+			this.upgradeManager.checkSlots(slots, 9, 10);
+			int speed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+			int efficiency = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
 			
 			this.consumption = this.consumptionBase + (this.consumptionBase * speed) / 2 + (this.consumptionBase * efficiency);
 			

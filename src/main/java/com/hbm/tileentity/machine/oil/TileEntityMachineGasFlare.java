@@ -5,7 +5,7 @@ import java.util.List;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.dim.CelestialBody;
 import com.hbm.interfaces.IControlReceiver;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerMachineGasFlare;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
@@ -44,6 +44,8 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
 public class TileEntityMachineGasFlare extends TileEntityMachineBase implements IEnergyProviderMK2, IFluidStandardReceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 
 	public long power;
 	public static final long maxPower = 100000;
@@ -118,9 +120,9 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 
 			if(isOn && tank.getFill() > 0) {
 
-				UpgradeManager.eval(slots, 4, 5);
-				int burn = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
-				int yield = Math.min(UpgradeManager.getLevel(UpgradeType.EFFECT), 3);
+				this.upgradeManager.checkSlots(slots, 4, 5);
+				int burn = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+				int yield = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
 
 				maxVent += maxVent * burn;
 				maxBurn += maxBurn * burn;

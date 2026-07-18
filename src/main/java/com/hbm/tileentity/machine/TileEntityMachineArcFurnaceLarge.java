@@ -7,7 +7,7 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.handler.pollution.PollutionHandler;
 import com.hbm.handler.pollution.PollutionHandler.PollutionType;
 import com.hbm.interfaces.IControlReceiver;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerMachineArcFurnaceLarge;
 import com.hbm.inventory.gui.GUIMachineArcFurnaceLarge;
 import com.hbm.inventory.material.MaterialShapes;
@@ -48,6 +48,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase implements IEnergyReceiverMK2, IControlReceiver, IGUIProvider, IUpgradeInfoProvider {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 	
 	public long power;
 	public static final long maxPower = 2_500_000;
@@ -100,8 +102,8 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	@Override
 	public void updateEntity() {
 		
-		UpgradeManager.eval(slots, 4, 4);
-		this.upgrade = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
+		this.upgradeManager.checkSlots(slots, 4, 4);
+		this.upgrade = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
 		
 		if(!worldObj.isRemote) {
 			

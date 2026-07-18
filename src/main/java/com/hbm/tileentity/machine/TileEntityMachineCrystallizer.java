@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
 import com.hbm.extprop.HbmPlayerProps;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerCrystallizer;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
@@ -40,6 +40,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineCrystallizer extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 	
 	public long power;
 	public static final long maxPower = 1000000;
@@ -76,7 +78,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 			tank.setType(7, slots);
 			tank.loadTank(3, 4, slots);
 			
-			UpgradeManager.eval(slots, 5, 6);
+			this.upgradeManager.checkSlots(slots, 5, 6);
 			
 			for(int i = 0; i < getCycleCount(); i++) {
 				
@@ -226,7 +228,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	}
 	
 	public int getRequiredAcid(int base) {
-		int efficiency = Math.min(UpgradeManager.getLevel(UpgradeType.EFFECT), 3);
+		int efficiency = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
 		if(efficiency > 0) {
 			return base * (efficiency + 2);
 		}
@@ -234,7 +236,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	}
 	
 	public float getFreeChance() {
-		int efficiency = Math.min(UpgradeManager.getLevel(UpgradeType.EFFECT), 3);
+		int efficiency = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
 		if(efficiency > 0) {
 			return Math.min(efficiency * 0.05F, 0.15F);
 		}
@@ -244,7 +246,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	public short getDuration() {
 		CrystallizerRecipe result = CrystallizerRecipes.getOutput(slots[0], tank.getTankType());
 		int base = result != null ? result.duration : 600;
-		int speed = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
+		int speed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
 		if(speed > 0) {
 			return (short) Math.ceil((base * Math.max(1F - 0.25F * speed, 0.25F)));
 		}
@@ -252,12 +254,12 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	}
 	
 	public int getPowerRequired() {
-		int speed = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
+		int speed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
 		return (int) (demand + Math.min(speed * 1000, 3000));
 	}
 	
 	public float getCycleCount() {
-		int speed = UpgradeManager.getLevel(UpgradeType.OVERDRIVE);
+		int speed = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
 		return Math.min(1 + speed * 2, 7);
 	}
 	

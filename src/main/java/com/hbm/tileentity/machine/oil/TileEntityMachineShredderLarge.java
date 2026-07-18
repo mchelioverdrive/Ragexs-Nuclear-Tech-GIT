@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm.inventory.FluidStack;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
@@ -29,6 +29,8 @@ import net.minecraft.world.World;
 
  
 public class TileEntityMachineShredderLarge extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardSender {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 
 
 
@@ -60,9 +62,9 @@ public class TileEntityMachineShredderLarge extends TileEntityMachineBase implem
 			
 			this.updateConnections();
 
-			UpgradeManager.eval(slots, 2, 3);
-			int speed = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int power = Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 3);
+			this.upgradeManager.checkSlots(slots, 2, 3);
+			int speed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+			int power = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
 
 			this.processTime = processTimeBase - (processTimeBase / 4) * speed;
 			this.usage = (usageBase + (usageBase * speed))  / (power + 1);

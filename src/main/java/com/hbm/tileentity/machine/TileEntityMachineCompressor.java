@@ -5,7 +5,7 @@ import java.util.List;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.interfaces.IControlReceiver;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerCompressor;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
@@ -38,6 +38,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineCompressor extends TileEntityMachineBase implements IGUIProvider, IControlReceiver, IEnergyReceiverMK2, IFluidStandardTransceiver, IUpgradeInfoProvider, IFluidCopiable {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 	
 	public FluidTank[] tanks;
 	public long power;
@@ -80,11 +82,11 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 			this.tanks[0].setType(0, slots);
 			this.setupTanks();
 			
-			UpgradeManager.eval(slots, 1, 3);
+			this.upgradeManager.checkSlots(slots, 1, 3);
 
-			int speedLevel = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int powerLevel = Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 3);
-			int overLevel = UpgradeManager.getLevel(UpgradeType.OVERDRIVE);
+			int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+			int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+			int overLevel = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
 			
 			CompressorRecipe rec = CompressorRecipes.recipes.get(new Pair(tanks[0].getTankType(), tanks[0].getPressure()));
 			int timeBase = this.processTimeBase;

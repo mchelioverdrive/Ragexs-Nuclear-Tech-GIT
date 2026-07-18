@@ -6,7 +6,7 @@ import java.util.Random;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.handler.MultiblockHandlerXR;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerMachineAssembler;
 import com.hbm.inventory.gui.GUIMachineAssembler;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
@@ -31,6 +31,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase implements IUpgradeInfoProvider {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 	
 	public int recipe = -1;
 
@@ -89,11 +91,11 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 			this.consumption = 100;
 			this.speed = 100;
 			
-			UpgradeManager.eval(slots, 1, 3);
+			this.upgradeManager.checkSlots(slots, 1, 3);
 
-			int speedLevel = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int powerLevel = Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 3);
-			int overLevel = UpgradeManager.getLevel(UpgradeType.OVERDRIVE);
+			int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+			int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+			int overLevel = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
 			
 			speed -= speedLevel * 25;
 			consumption += speedLevel * 300;

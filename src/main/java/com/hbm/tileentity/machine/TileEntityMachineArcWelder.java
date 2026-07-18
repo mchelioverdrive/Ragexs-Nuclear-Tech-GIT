@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.hbm.inventory.RecipesCommon.AStack;
 import com.hbm.blocks.ModBlocks;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerMachineArcWelder;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
@@ -39,6 +39,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineArcWelder extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IConditionalInvAccess, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 	
 	public long power;
 	public long maxPower = 2_000;
@@ -87,9 +89,9 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 			ArcWelderRecipe recipe = ArcWelderRecipes.getRecipe(slots[0], slots[1], slots[2]);
 			long intendedMaxPower;
 			
-			UpgradeManager.eval(slots, 6, 7);
-			int redLevel = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int blueLevel = Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 3);
+			this.upgradeManager.checkSlots(slots, 6, 7);
+			int redLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+			int blueLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
 			
 			if(recipe != null) {
 				this.processTime = recipe.duration - (recipe.duration * redLevel / 6) + (recipe.duration * blueLevel / 3);

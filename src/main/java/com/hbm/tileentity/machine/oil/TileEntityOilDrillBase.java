@@ -3,7 +3,7 @@ package com.hbm.tileentity.machine.oil;
 import java.util.HashSet;
 
 import com.hbm.blocks.ModBlocks;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.items.machine.ItemMachineUpgrade;
@@ -28,6 +28,8 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public abstract class TileEntityOilDrillBase extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IConfigurableMachine, IPersistentNBT, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 
 	public int indicator = 0;
 
@@ -95,11 +97,11 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 			this.tanks[0].unloadTank(1, 2, slots);
 			this.tanks[1].unloadTank(3, 4, slots);
 
-			UpgradeManager.eval(slots, 5, 7);
-			this.speedLevel = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
-			this.energyLevel = Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 3);
-			this.overLevel = Math.min(UpgradeManager.getLevel(UpgradeType.OVERDRIVE), 3) + 1;
-			int abLevel = Math.min(UpgradeManager.getLevel(UpgradeType.AFTERBURN), 3);
+			this.upgradeManager.checkSlots(slots, 5, 7);
+			this.speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+			this.energyLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+			this.overLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3) + 1;
+			int abLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.AFTERBURN), 3);
 
 			int toBurn = Math.min(tanks[1].getFill(), abLevel * 10);
 

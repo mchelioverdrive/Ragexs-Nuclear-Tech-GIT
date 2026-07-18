@@ -6,7 +6,7 @@ import java.util.Set;
 import com.google.common.collect.Sets;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.dim.SolarSystem;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerMiningLaser;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
@@ -51,6 +51,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineMiningLaser extends TileEntityMachineBase implements IEnergyReceiverMK2, IMiningDrill, IFluidStandardSender, IGUIProvider, IUpgradeInfoProvider {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 	
 	public long power;
 	public int age = 0;
@@ -112,14 +114,14 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 			
 			if(isOn) {
 				
-				UpgradeManager.eval(slots, 1, 8);
-				int cycles = 1 + UpgradeManager.getLevel(UpgradeType.OVERDRIVE);
-				int speed = 1 + Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 12);
-				int range = 1 + Math.min(UpgradeManager.getLevel(UpgradeType.EFFECT) * 2, 24);
-				int fortune = Math.min(UpgradeManager.getLevel(UpgradeType.FORTUNE), 3);
+				this.upgradeManager.checkSlots(slots, 1, 8);
+				int cycles = 1 + this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
+				int speed = 1 + Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 12);
+				int range = 1 + Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT) * 2, 24);
+				int fortune = Math.min(this.upgradeManager.getLevel(UpgradeType.FORTUNE), 3);
 				int consumption = this.consumption
-						- (this.consumption * Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 12) / 16)
-						+ (this.consumption * Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 12) / 16);
+						- (this.consumption * Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 12) / 16)
+						+ (this.consumption * Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 12) / 16);
 				
 				for(int i = 0; i < cycles; i++) {
 					

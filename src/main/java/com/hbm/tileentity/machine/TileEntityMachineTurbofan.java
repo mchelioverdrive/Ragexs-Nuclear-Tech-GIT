@@ -5,7 +5,7 @@ import java.util.List;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.handler.MultiblockHandlerXR;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerMachineTurbofan;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
@@ -49,6 +49,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implements IEnergyProviderMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 
 	public long power;
 	public static final long maxPower = 1_000_000;
@@ -150,8 +152,8 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 			
 			this.wasOn = false;
 			
-			UpgradeManager.eval(slots, 2, 2);
-			this.afterburner = UpgradeManager.getLevel(UpgradeType.AFTERBURN);
+			this.upgradeManager.checkSlots(slots, 2, 2);
+			this.afterburner = this.upgradeManager.getLevel(UpgradeType.AFTERBURN);
 			
 			if(slots[2] != null && slots[2].getItem() == ModItems.flame_pony)
 				this.afterburner = 100;

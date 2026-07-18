@@ -5,7 +5,7 @@ import java.util.List;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.handler.pollution.PollutionHandler;
 import com.hbm.handler.pollution.PollutionHandler.PollutionType;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerFurnaceIron;
 import com.hbm.inventory.gui.GUIFurnaceIron;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
@@ -29,6 +29,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityFurnaceIron extends TileEntityMachineBase implements IGUIProvider, IUpgradeInfoProvider {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 	
 	public int maxBurnTime;
 	public int burnTime;
@@ -62,8 +64,8 @@ public class TileEntityFurnaceIron extends TileEntityMachineBase implements IGUI
 		
 		if(!worldObj.isRemote) {
 
-			UpgradeManager.eval(slots, 4, 4);
-			this.processingTime = baseTime - ((baseTime / 2) * Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3) / 3);
+			this.upgradeManager.checkSlots(slots, 4, 4);
+			this.processingTime = baseTime - ((baseTime / 2) * Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3) / 3);
 			
 			wasOn = false;
 			

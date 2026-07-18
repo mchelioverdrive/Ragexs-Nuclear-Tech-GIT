@@ -6,7 +6,7 @@ import java.util.List;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.interfaces.IControlReceiver;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerElectrolyserFluid;
 import com.hbm.inventory.container.ContainerElectrolyserMetal;
 import com.hbm.inventory.fluid.Fluids;
@@ -48,6 +48,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityElectrolyser extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable, IMetalCopiable {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 
 	public long power;
 	public static final long maxPower = 20000000;
@@ -128,9 +130,9 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 				}
 			}
 
-			UpgradeManager.eval(slots, 1, 2);
-			int speedLevel = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int powerLevel = Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 3);
+			this.upgradeManager.checkSlots(slots, 1, 2);
+			int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+			int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
 
 			usageOre = usageOreBase - usageOreBase * powerLevel / 4 + usageOreBase * speedLevel;
 			usageFluid = usageFluidBase - usageFluidBase * powerLevel / 4 + usageFluidBase * speedLevel;
@@ -380,19 +382,19 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 	public int getDurationMetal() {
 		ElectrolysisMetalRecipe result = ElectrolyserMetalRecipes.getRecipe(slots[14]);
 		int base = result != null ? result.duration : 600;
-		int speed = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3) - Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 1);
+		int speed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3) - Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 1);
 		return (int) Math.ceil((base * Math.max(1F - 0.25F * speed, 0.2)));
 	}
 	public int getDurationFluid() {
 		ElectrolysisRecipe result = ElectrolyserFluidRecipes.getRecipe(tanks[0].getTankType());
 		int base = result != null ? result.duration : 100;
-		int speed = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3) - Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 1);
+		int speed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3) - Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 1);
 		return (int) Math.ceil((base * Math.max(1F - 0.25F * speed, 0.2)));
 
 	}
 
 	public int getCycleCount() {
-		int speed = UpgradeManager.getLevel(UpgradeType.OVERDRIVE);
+		int speed = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
 		return Math.min(1 + speed * 2, 7);
 	}
 
