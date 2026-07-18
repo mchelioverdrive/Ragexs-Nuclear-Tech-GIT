@@ -1,6 +1,5 @@
 # Port direct ByteBuf serialization and precompiled packets
 
-- Fixed the RNT compatibility import for legacy `TileEntityTickingBase.networkPack` so the precompiled packet backport keeps the existing `NBTPacket` path compiling.
 - Added precompiled packet wrappers and converted BufPacket tile sync to compile once, retain a comparison copy, send the compiled payload, and release temporary buffers.
 - Moved common ByteBuf tile sync duplicate-suppression into TileEntityLoadedBase for machine and ticking tile entities.
 - Reworked ExtPropPacket to serialize HbmLivingProps and HbmPlayerProps directly into ByteBuf payloads without the intermediate NBTTagCompound/PacketBuffer copy path.
