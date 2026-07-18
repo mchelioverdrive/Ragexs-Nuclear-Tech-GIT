@@ -116,3 +116,11 @@
 ## Backport compile fixes: Fluid pump, sandbags, wooden barrier
 - Fixed backported fluid pump compatibility with this codebase's tile sync base class, localization helper, number formatting helper, and removed the unavailable NBT transform dependency.
 - Fixed sandbags and wooden barrier inventory rendering calls for this codebase's RenderBlocksNT API and restored block declarations.
+
+# Realistify turbine pressure handling
+
+- Added pressure-aware steam turbine behavior: modest safe pressure increases turbine throughput/efficiency, while overpressure ruptures the turbine with an explosion.
+- Added steam-density overload rules that increase blocked-exhaust rupture stress only when turbines are actually full/backed up, so identifiers or empty turbines do not explode.
+- Added blocked-exhaust stress to steam turbines so full input plus full/no outlet output eventually ruptures under load instead of silently doing nothing.
+- Added gas turbine steam chest rupture behavior when high throttle/temperature keeps producing steam into a nearly full output tank.
+- Documented the new turbine pressure/density ratings and `hbmMachines.json` tuning keys.
