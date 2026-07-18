@@ -324,6 +324,8 @@ public class ModBlocks {
 
 	public static Block gravel_obsidian;
 	public static Block gravel_diamond;
+	public static Block sandbags;
+	public static Block wood_barrier;
 	public static Block asphalt;
 	public static Block asphalt_light;
 
@@ -864,6 +866,7 @@ public class ModBlocks {
 	public static Block cable_detector;
 	public static Block cable_diode;
 	public static Block machine_detector;
+	public static Block fluid_pump;
 	public static Block fluid_duct_neo;
 	public static Block fluid_duct_box;
 	public static Block fluid_duct_paintable;
@@ -1683,6 +1686,8 @@ public class ModBlocks {
 
 		gravel_obsidian = new BlockFalling(Material.iron).setBlockName("gravel_obsidian").setCreativeTab(MainRegistry.blockTab).setStepSound(Block.soundTypeGravel).setHardness(5.0F).setResistance(240.0F).setBlockTextureName(RefStrings.MODID + ":gravel_obsidian");
 		gravel_diamond = new BlockFalling(Material.sand).setBlockName("gravel_diamond").setCreativeTab(MainRegistry.blockTab).setStepSound(Block.soundTypeGravel).setHardness(0.6F).setBlockTextureName(RefStrings.MODID + ":gravel_diamond");
+		sandbags = new BlockSandbags(Material.ground).setBlockName("sandbags").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(30.0F).setBlockTextureName(RefStrings.MODID + ":sandbags");
+		wood_barrier = new BlockBarrier(Material.wood).setStepSound(Block.soundTypeWood).setBlockName("wood_barrier").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(15.0F).setBlockTextureName(RefStrings.MODID + ":wood_barrier");
 		asphalt = new BlockSpeedy(Material.rock, 1.5).setBlockName("asphalt").setCreativeTab(MainRegistry.blockTab).setHardness(15.0F).setResistance(120.0F).setBlockTextureName(RefStrings.MODID + ":asphalt");
 		asphalt_light = new BlockSpeedy(Material.rock, 1.5).setBlockName("asphalt_light").setCreativeTab(MainRegistry.blockTab).setLightLevel(1F).setHardness(15.0F).setResistance(120.0F).setBlockTextureName(RefStrings.MODID + ":asphalt_light");
 
@@ -2166,6 +2171,7 @@ public class ModBlocks {
 		cable_detector = new CableDetector(Material.iron).setBlockName("cable_detector").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab);
 		cable_diode = new CableDiode(Material.iron).setBlockName("cable_diode").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":cable_diode");
 		machine_detector = new PowerDetector(Material.iron).setBlockName("machine_detector").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":machine_detector_off");
+		fluid_pump = new FluidPump(Material.iron).setBlockName("fluid_pump").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":block_steel");
 		fluid_duct_neo = new FluidDuctStandard(Material.iron).setBlockName("fluid_duct_neo").setStepSound(ModSoundTypes.pipe).setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":pipe_neo");
 		fluid_duct_box = new FluidDuctBox(Material.iron).setBlockName("fluid_duct_box").setStepSound(ModSoundTypes.pipe).setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":fluid_duct_box");
 		fluid_duct_exhaust = new FluidDuctBoxExhaust(Material.iron).setBlockName("fluid_duct_exhaust").setStepSound(ModSoundTypes.pipe).setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":fluid_duct_box");
@@ -3027,6 +3033,8 @@ public class ModBlocks {
 		//Gravel
 		GameRegistry.registerBlock(gravel_obsidian, ItemBlockBlastInfo.class, gravel_obsidian.getUnlocalizedName());
 		GameRegistry.registerBlock(gravel_diamond, ItemBlockLore.class, gravel_diamond.getUnlocalizedName());
+		register(sandbags);
+		register(wood_barrier);
 
 		//Lamps
 		GameRegistry.registerBlock(lamp_tritium_green_off, lamp_tritium_green_off.getUnlocalizedName());
@@ -3614,6 +3622,7 @@ public class ModBlocks {
 		GameRegistry.registerBlock(cable_detector, cable_detector.getUnlocalizedName());
 		GameRegistry.registerBlock(cable_diode, ItemBlockBase.class, cable_diode.getUnlocalizedName());
 		GameRegistry.registerBlock(machine_detector, machine_detector.getUnlocalizedName());
+		register(fluid_pump);
 		register(fluid_duct_neo);
 		register(fluid_duct_box);
 		register(fluid_duct_exhaust);
