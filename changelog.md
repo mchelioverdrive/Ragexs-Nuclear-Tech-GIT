@@ -1,3 +1,9 @@
+# Port UniNodespace, PowerNet MK3, and FluidNet MK2
+
+- Re-scoped the network migration to the actual node, power, and fluid APIs without restoring removed joke/reference content or unrelated upstream machines.
+- Ported UniNodespace, FluidNet MK2 APIs, PowerNet MK2, and ILoadedTile lifecycle guards while leaving only deprecated old fluid facades for compatibility.
+- Fixed the FluidConnectorBlock MK2 facade name regression, removed the recentlyChanged reconnect field, and migrated fillable-item imports to the MK2 package where safe.
+
 # Port worldgen cascade and UniNodespace backports
 
 - Backported the vanilla +8 decoration offset for upstream-selected world-generation entries that perform height lookups or can spill outside their origin, including flower, depth-deposit, and Eve spike/volcano starts.

@@ -10,7 +10,7 @@ import com.hbm.inventory.fluid.Fluids;
 import com.hbm.main.MainRegistry;
 import com.hbm.sound.AudioWrapper;
 
-import api.hbm.fluid.IFillableItem;
+import api.hbm.fluidmk2.IFillableItem;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;

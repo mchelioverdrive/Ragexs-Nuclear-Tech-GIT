@@ -66,9 +66,8 @@ public class UniNodespace {
 			for(Entry<Pair<BlockPos, INetworkProvider>, GenNode> entry : nodeWorld.nodes.entrySet()) {
 				GenNode node = entry.getValue();
 				INetworkProvider provider = entry.getKey().getValue();
-				if(!node.hasValidNet() || node.recentlyChanged) {
+				if(!node.hasValidNet()) {
 					checkNodeConnection(world, node, provider);
-					node.recentlyChanged = false;
 				}
 			}
 		}

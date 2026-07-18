@@ -11,7 +11,7 @@ import com.hbm.tileentity.IBufPacketReceiver;
 import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.BobMathUtil;
 
-import api.hbm.fluid.IFillableItem;
+import api.hbm.fluidmk2.IFillableItem;
 import api.hbm.fluid.IFluidStandardReceiver;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayer;

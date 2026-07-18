@@ -78,8 +78,8 @@ public abstract class TileEntityPylonBase extends TileEntityCableBaseNT {
 		connected.add(new int[] {x, y, z});
 		
 		PowerNode node = Nodespace.getNode(worldObj, xCoord, yCoord, zCoord);
-		node.recentlyChanged = true;
 		node.addConnection(new DirPos(x, y, z, ForgeDirection.UNKNOWN));
+		if(node.net != null) node.net.destroy();
 		
 		this.markDirty();
 		

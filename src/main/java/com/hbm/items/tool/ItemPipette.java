@@ -1,6 +1,6 @@
 package com.hbm.items.tool;
 
-import api.hbm.fluid.IFillableItem;
+import api.hbm.fluidmk2.IFillableItem;
 
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;

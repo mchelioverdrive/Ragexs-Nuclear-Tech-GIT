@@ -7,7 +7,7 @@ import com.hbm.inventory.fluid.FluidType;
 import com.hbm.render.model.ModelJetPack;
 import com.hbm.util.ArmorUtil;
 
-import api.hbm.fluid.IFillableItem;
+import api.hbm.fluidmk2.IFillableItem;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.Minecraft;

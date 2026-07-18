@@ -12,7 +12,6 @@ public class GenNode<N extends NodeNet> {
 	 * and the nodepsace update loop establishing a network. always check hasValidNet beforehand! */
 	public N net;
 	public boolean expired = false;
-	public boolean recentlyChanged = true;
 	/** Used for distinguishing the node type when saving it to UNINOS' node map */
 	public INetworkProvider networkProvider;
 	
@@ -50,6 +49,5 @@ public class GenNode<N extends NodeNet> {
 	
 	public void setNet(N net) {
 		this.net = net;
-		this.recentlyChanged = true;
 	}
 }
