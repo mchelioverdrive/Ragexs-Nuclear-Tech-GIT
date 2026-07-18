@@ -17,6 +17,7 @@ import com.hbm.packet.toclient.PlayerInformPacket;
 import com.hbm.util.ChatBuilder;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import io.netty.buffer.ByteBuf;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
@@ -458,6 +459,49 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 		return getData(entity).gravity;
 	}
 
+	public void serialize(ByteBuf buf) {
+		buf.writeFloat(radiation);
+		buf.writeFloat(digamma);
+		buf.writeInt(asbestos);
+		buf.writeInt(bombTimer);
+		buf.writeInt(contagion);
+		buf.writeInt(blacklung);
+		buf.writeInt(oil);
+		buf.writeInt(oxygen);
+		buf.writeFloat(activation);
+		buf.writeBoolean(gravity);
+		buf.writeInt(fire);
+		buf.writeInt(phosphorus);
+		buf.writeInt(balefire);
+		buf.writeInt(this.contamination.size());
+
+		for(ContaminationEffect effect : this.contamination) {
+			effect.serialize(buf);
+		}
+	}
+
+	public void deserialize(ByteBuf buf) {
+		radiation = buf.readFloat();
+		digamma = buf.readFloat();
+		asbestos = buf.readInt();
+		bombTimer = buf.readInt();
+		contagion = buf.readInt();
+		blacklung = buf.readInt();
+		oil = buf.readInt();
+		oxygen = buf.readInt();
+		activation = buf.readFloat();
+		gravity = buf.readBoolean();
+		fire = buf.readInt();
+		phosphorus = buf.readInt();
+		balefire = buf.readInt();
+		this.contamination.clear();
+		int cont = buf.readInt();
+
+		for(int i = 0; i < cont; i++) {
+			this.contamination.add(ContaminationEffect.deserialize(buf));
+		}
+	}
+
 	@Override
 	public void init(Entity entity, World world) { }
 
@@ -532,6 +576,20 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 
 		public float getRad() {
 			return maxRad * ((float)time / (float)maxTime);
+		}
+
+		public void serialize(ByteBuf buf) {
+			buf.writeFloat(this.maxRad);
+			buf.writeInt(this.maxTime);
+			buf.writeInt(this.time);
+			buf.writeBoolean(ignoreArmor);
+		}
+
+		public static ContaminationEffect deserialize(ByteBuf buf) {
+			ContaminationEffect effect = new ContaminationEffect(buf.readFloat(), buf.readInt(), false);
+			effect.time = buf.readInt();
+			effect.ignoreArmor = buf.readBoolean();
+			return effect;
 		}
 
 		public void save(NBTTagCompound nbt, int index) {
