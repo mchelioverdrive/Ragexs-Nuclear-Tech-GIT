@@ -133,6 +133,10 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 				FT_Coolable trait = in.getTrait(FT_Coolable.class);
 				double eff = trait.getEfficiency(CoolingType.TURBINE) * efficiency * getPressureEfficiency(); //100% efficiency by default
 				if(eff > 0) {
+					if(shouldBurstFromSteamDensity(in)) {
+						burstFromSteamDensity(in);
+						return;
+					}
 					tanks[1].setTankType(trait.coolsTo);
 					int inputOps = (int) Math.floor(tanks[0].getFill() / trait.amountReq); //amount of cycles possible with the entire input buffer
 					int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced; //amount of cycles possible with the output buffer's remaining space
