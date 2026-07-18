@@ -37,6 +37,11 @@ public class RenderFan extends TileEntitySpecialRenderer implements IItemRendere
 		bindTexture(ResourceManager.fan_tex);
 		ResourceManager.fan.renderPart("Frame");
 
+		if(!TESRDistanceUtil.shouldRenderDetails(tile)) {
+			GL11.glPopMatrix();
+			return;
+		}
+
 		TileEntityFan fan = (TileEntityFan) tile;
 		float rot = fan.prevSpin + (fan.spin - fan.prevSpin) * interp;
 		GL11.glRotated(-rot, 0, 1, 0);

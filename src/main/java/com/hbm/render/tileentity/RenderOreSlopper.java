@@ -49,6 +49,13 @@ public class RenderOreSlopper extends TileEntitySpecialRenderer implements IItem
 		GL11.glTranslated(0, 0, slide * -3);
 		ResourceManager.ore_slopper.renderPart("Slider");
 
+		if(!TESRDistanceUtil.shouldRenderDetails(tile)) {
+			GL11.glShadeModel(GL11.GL_FLAT);
+			GL11.glPopMatrix();
+			GL11.glPopMatrix();
+			return;
+		}
+
 		GL11.glPushMatrix();
 		double extend = (slopper.prevBucket + (slopper.bucket - slopper.prevBucket) * interp) * 1.5;
 		GL11.glTranslated(0, -MathHelper.clamp_double(extend - 0.25, 0, 1.25), 0);

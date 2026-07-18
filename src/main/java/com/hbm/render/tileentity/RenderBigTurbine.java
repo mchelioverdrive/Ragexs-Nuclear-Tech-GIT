@@ -37,6 +37,12 @@ public class RenderBigTurbine extends TileEntitySpecialRenderer {
         ResourceManager.turbine.renderPart("Body");
         GL11.glShadeModel(GL11.GL_FLAT);
         
+        if(!TESRDistanceUtil.shouldRenderDetails(tile)) {
+            GL11.glEnable(GL11.GL_CULL_FACE);
+            GL11.glPopMatrix();
+            return;
+        }
+
         TileEntityMachineLargeTurbine turbine = (TileEntityMachineLargeTurbine) tile;
 
         GL11.glTranslated(0, 1, 0);

@@ -52,7 +52,7 @@ public class RenderAssembler extends TileEntitySpecialRenderer {
         
         TileEntityMachineAssembler assembler = (TileEntityMachineAssembler) tileEntity;
 
-        if(assembler.recipe != -1) {
+        if(assembler.recipe != -1 && TESRDistanceUtil.shouldRenderDetails(tileEntity)) {
 			itemRenderer = new RenderDecoItem(this);
 			itemRenderer.setRenderManager(renderManager);
 			GL11.glPushMatrix();
@@ -87,7 +87,9 @@ public class RenderAssembler extends TileEntitySpecialRenderer {
     	GL11.glPopMatrix();
 		RenderHelper.enableStandardItemLighting();
         
-        renderSlider(tileEntity, x, y, z, f);
+        if(TESRDistanceUtil.shouldRenderDetails(tileEntity)) {
+            renderSlider(tileEntity, x, y, z, f);
+        }
     }
     
 	public void renderSlider(TileEntity tileEntity, double x, double y, double z, float f)

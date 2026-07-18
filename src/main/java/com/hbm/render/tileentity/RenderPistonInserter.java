@@ -44,6 +44,11 @@ public class RenderPistonInserter extends TileEntitySpecialRenderer implements I
 			bindTexture(ResourceManager.piston_inserter_tex);
 			ResourceManager.piston_inserter.renderPart("Frame");
 			
+			if(!TESRDistanceUtil.shouldRenderDetails(tile)) {
+				GL11.glPopMatrix();
+				return;
+			}
+
 			TileEntityPistonInserter piston = (TileEntityPistonInserter)tile;
 			double e = (piston.lastExtend + (piston.renderExtend - piston.lastExtend) * interp) / (double) piston.maxExtend;
 			GL11.glTranslated(0, e * 0.9375D, 0);

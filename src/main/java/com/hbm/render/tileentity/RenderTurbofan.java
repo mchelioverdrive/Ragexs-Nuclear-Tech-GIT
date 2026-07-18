@@ -27,6 +27,11 @@ public class RenderTurbofan extends TileEntitySpecialRenderer {
 		case 5: GL11.glRotatef(0, 0F, 1F, 0F); break;
 		}
 		
+		if(!TESRDistanceUtil.shouldRenderDetails(tileEntity)) {
+			GL11.glPopMatrix();
+			return;
+		}
+
 		TileEntityMachineTurbofan turbo = (TileEntityMachineTurbofan) tileEntity;
 		
 		float spin = turbo.lastSpin + (turbo.spin - turbo.lastSpin) * interp; 

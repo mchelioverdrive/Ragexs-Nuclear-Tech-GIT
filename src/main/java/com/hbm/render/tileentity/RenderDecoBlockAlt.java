@@ -36,6 +36,8 @@ private static final ResourceLocation gunTexture = new ResourceLocation(RefStrin
 	
 	@Override
 	public void renderTileEntityAt(TileEntity tileentity, double x, double y, double z, float f) {
+		if(!TESRDistanceUtil.shouldRenderDetails(tileentity)) return;
+
 		itemRenderer = new RenderDecoItem(this);
 		itemRenderer.setRenderManager(renderManager);
 		GL11.glPushMatrix();

@@ -28,7 +28,7 @@ public class RenderPedestalTile extends TileEntitySpecialRenderer {
 		
 		TileEntityPedestal pedestal = (TileEntityPedestal) te;
 		
-		if(pedestal.item != null) {
+		if(pedestal.item != null && TESRDistanceUtil.shouldRenderDetails(te)) {
 
 			EntityPlayer player = Minecraft.getMinecraft().thePlayer;
 			ItemStack stack = pedestal.item.copy();
