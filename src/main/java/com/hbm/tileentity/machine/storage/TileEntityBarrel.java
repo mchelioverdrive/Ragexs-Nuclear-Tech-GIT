@@ -190,15 +190,6 @@ public class TileEntityBarrel extends TileEntityMachineBase implements SimpleCom
 
 			con.removeIf(x -> x == null || !(x instanceof TileEntity) || ((TileEntity)x).isInvalid());
 			
-			if(PipeNet.trackingInstances == null) {
-				PipeNet.trackingInstances = new ArrayList<>();
-			}
-			
-			PipeNet.trackingInstances.clear();
-			nets.forEach(x -> {
-				if(x instanceof PipeNet) PipeNet.trackingInstances.add((PipeNet) x);
-			});
-			
 			fill = (int) PipeNet.fairTransfer(con, type, pressure, fill);
 		}
 		

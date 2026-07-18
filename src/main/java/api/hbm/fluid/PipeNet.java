@@ -1,12 +1,8 @@
 package api.hbm.fluid;
 
-import java.math.BigInteger;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.TimeZone;
 
 import com.hbm.inventory.fluid.FluidType;
 
@@ -18,10 +14,6 @@ public class PipeNet implements IPipeNet {
 	private FluidType type;
 	private List<IFluidConductor> links = new ArrayList();
 	private HashSet<IFluidConnector> subscribers = new HashSet();
-	
-	public static List<PipeNet> trackingInstances = null;
-	protected BigInteger totalTransfer = BigInteger.ZERO;
-	public List<String> debug = new ArrayList();
 	
 	public PipeNet(FluidType type) {
 		this.type = type;
@@ -98,8 +90,6 @@ public class PipeNet implements IPipeNet {
 		if(this.subscribers.isEmpty())
 			return fill;
 		
-		trackingInstances = new ArrayList();
-		trackingInstances.add(this);
 		List<IFluidConnector> subList = new ArrayList(subscribers);
 		return fairTransfer(subList, type, pressure, fill);
 	}
@@ -108,13 +98,10 @@ public class PipeNet implements IPipeNet {
 		
 		if(fill <= 0) return 0;
 		
-		List<Long> weight = new ArrayList();
 		long totalReq = 0;
 		
 		for(IFluidConnector con : subList) {
-			long req = con.getDemand(type, pressure);
-			weight.add(req);
-			totalReq += req;
+			totalReq += con.getDemand(type, pressure);
 		}
 		
 		if(totalReq == 0)
@@ -122,38 +109,14 @@ public class PipeNet implements IPipeNet {
 		
 		long totalGiven = 0;
 		
-		for(int i = 0; i < subList.size(); i++) {
-			IFluidConnector con = subList.get(i);
-			long req = weight.get(i);
+		for(IFluidConnector con : subList) {
+			long req = con.getDemand(type, pressure);
 			double fraction = (double)req / (double)totalReq;
 			
 			long given = (long) Math.floor(fraction * fill);
 			
 			if(given > 0) {
-				
 				totalGiven += (given - con.transferFluid(type, pressure, given));
-				
-				if(con instanceof TileEntity) {
-					TileEntity tile = (TileEntity) con;
-					tile.getWorldObj().markTileEntityChunkModified(tile.xCoord, tile.yCoord, tile.zCoord, tile);
-				}
-	
-				if(trackingInstances != null) {
-					for(int j = 0; j < trackingInstances.size(); j++) {
-						PipeNet net = trackingInstances.get(j);
-						SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss:SSS");
-						sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-						log(net, sdf.format(new Date(System.currentTimeMillis())) + " Sending " + given + "mB to " + conToString(con));
-					}
-				}
-			}
-		}
-		
-		if(trackingInstances != null) {
-			
-			for(int i = 0; i < trackingInstances.size(); i++) {
-				PipeNet net = trackingInstances.get(i);
-				net.totalTransfer = net.totalTransfer.add(BigInteger.valueOf(totalGiven));
 			}
 		}
 		
@@ -179,28 +142,5 @@ public class PipeNet implements IPipeNet {
 	@Override
 	public boolean isValid() {
 		return this.valid;
-	}
-
-	@Override
-	public BigInteger getTotalTransfer() {
-		return this.totalTransfer;
-	}
-	
-	public static void log(PipeNet net, String msg) {
-		net.debug.add(msg);
-		
-		while(net.debug.size() > 50) {
-			net.debug.remove(0);
-		}
-	}
-	
-	public static String conToString(IFluidConnector con) {
-		
-		if(con instanceof TileEntity) {
-			TileEntity tile = (TileEntity) con;
-			return tile.getClass().getSimpleName() + " @ " + tile.xCoord + "/" + tile.yCoord + "/" + tile.zCoord;
-		}
-		
-		return "" + con;
 	}
 }
