@@ -883,6 +883,7 @@ public class ClientProxy extends ServerProxy {
 	public void registerBlockRenderer() {
 
 		//RenderingRegistry.registerBlockHandler(new RenderTaintBlock());
+		RenderingRegistry.registerBlockHandler(new RenderISBRHUniversal());
 		RenderingRegistry.registerBlockHandler(new RenderScaffoldBlock());
 		RenderingRegistry.registerBlockHandler(new RenderTapeBlock());
 		RenderingRegistry.registerBlockHandler(new RenderSteelBeam());

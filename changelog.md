@@ -76,3 +76,7 @@
 - Added presentation-only ring metadata and client-side ring rendering for ringed gas giants, guarded by `enablePlanetRingRendering`.
 - Added VOTV destination drive tooltip environment summaries using existing RTM celestial data.
 - Documented rejected categories: KSP-style orbital simulation, major propulsion/traversal rewrites, resource-generation balance changes, and exaggerated sci-fi systems.
+
+## Backport: Fluid pump, sandbags, wooden barrier
+- Backported the fluid pump, sandbags, and wooden barrier from DONOTMODIFY spacefork HBM.
+- Registered the new blocks, fluid pump tile entity, GUI, recipes, render handler, and English names.
