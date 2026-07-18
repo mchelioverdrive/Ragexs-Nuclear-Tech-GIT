@@ -88,8 +88,8 @@ public class DungeonToolbox {
 
 	private static WorldGenFlowers genFlowers = new WorldGenFlowers(null);
 	public static void generateFlowers(World world, Random rand, int chunkX, int chunkZ, Block flower, int meta) {
-		int x = chunkX + rand.nextInt(16);
-		int z = chunkZ + rand.nextInt(16);
+		int x = chunkX + rand.nextInt(16) + 8;
+		int z = chunkZ + rand.nextInt(16) + 8;
 		int y = world.getHeightValue(x, z);
 		genFlowers.func_150550_a(flower, meta);
 		genFlowers.generate(world, rand, x, y, z);
