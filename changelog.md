@@ -1,6 +1,6 @@
-# Fix sandbag inventory stack overflow
+# Fix generic block inventory stack overflows
 
-- Fixed sandbag inventory rendering to draw its bounded cuboid directly instead of recursively invoking the block item renderer.
+- Fixed sandbag and barrier inventory rendering to draw their bounded cuboids directly instead of recursively invoking the block item renderer.
 
 # Lower grenade throw speed and restore pullback animation
 
