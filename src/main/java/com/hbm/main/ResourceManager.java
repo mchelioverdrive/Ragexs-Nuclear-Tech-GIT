@@ -133,6 +133,8 @@ public class ResourceManager {
 	public static final IModelCustom condenser = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/condenser.obj")).asVBO();
 	public static final IModelCustom radiator = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/radiator.obj")).asVBO();
 
+
+
 	//Wood burner
 	public static final IModelCustom wood_burner = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/wood_burner.obj"));
 
@@ -1557,6 +1559,7 @@ public class ResourceManager {
 	public static final IModelCustom barrel = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/blocks/barrel.obj"));
 	public static final IModelCustom pole = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/blocks/pole.obj"));
 	public static final IModelCustom barbed_wire = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/blocks/barbed_wire.obj"));
+	//todo go back to old barbed wire model since this one is laggy as shit, thanks bob jfl
 	public static final IModelCustom spikes = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/blocks/spikes.obj"));
 	public static final IModelCustom antenna_top = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/blocks/antenna_top.obj"));
 	public static final IModelCustom conservecrate = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/blocks/conservecrate.obj"));
@@ -1567,6 +1570,14 @@ public class ResourceManager {
 	public static final IModelCustom rtty = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/blocks/rtty.obj"));
 	public static final IModelCustom crt = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/blocks/crt.obj"));
 	public static final IModelCustom toaster = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/blocks/toaster.obj"));
+
+	//pipes
+	public static final ResourceLocation fluid_pump_tex = new ResourceLocation(RefStrings.MODID, "textures/models/network/fluid_diode.png");
+	//public static final IModelCustom fluid_pump = new HFRWavefrontObject("models/network/fluid_diode.obj").asVBO();
+	//TODO hmm yeah maybe we SHOULD like backport VBO shit
+	public static final IModelCustom fluid_pump = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID,"models/network/fluid_diode.obj"));
+
+
 
 	public static final IModelCustom deco_computer = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/blocks/puter.obj"));
 
