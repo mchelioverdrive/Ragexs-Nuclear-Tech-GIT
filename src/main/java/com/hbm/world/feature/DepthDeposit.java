@@ -14,19 +14,19 @@ public class DepthDeposit {
 	public static void generateConditionOverworld(World world, int x, int yMin, int yDev, int z, int size, double fill, Block block, Random rand, int chance) {
 		
 		if(rand.nextInt(chance) == 0)
-			generate(world, x + rand.nextInt(16), yMin + rand.nextInt(yDev), z + rand.nextInt(16), size, fill, block, rand, Blocks.stone, ModBlocks.stone_depth);
+			generate(world, x + rand.nextInt(16) + 8, yMin + rand.nextInt(yDev), z + rand.nextInt(16) + 8, size, fill, block, rand, Blocks.stone, ModBlocks.stone_depth);
 	}
 
 	public static void generateConditionNether(World world, int x, int yMin, int yDev, int z, int size, double fill, Block block, Random rand, int chance) {
 		
 		if(rand.nextInt(chance) == 0)
-			generate(world, x + rand.nextInt(16), yMin + rand.nextInt(yDev), z + rand.nextInt(16), size, fill, block, rand, Blocks.netherrack, ModBlocks.stone_depth_nether);
+			generate(world, x + rand.nextInt(16) + 8, yMin + rand.nextInt(yDev), z + rand.nextInt(16) + 8, size, fill, block, rand, Blocks.netherrack, ModBlocks.stone_depth_nether);
 	}
 
 	public static void generateCondition(World world, int x, int yMin, int yDev, int z, int size, double fill, Block block, Random rand, int chance, Block genTarget, Block filler) {
 		
 		if(rand.nextInt(chance) == 0)
-			generate(world, x + rand.nextInt(16), yMin + rand.nextInt(yDev), z + rand.nextInt(16), size, fill, block, rand, genTarget, filler);
+			generate(world, x + rand.nextInt(16) + 8, yMin + rand.nextInt(yDev), z + rand.nextInt(16) + 8, size, fill, block, rand, genTarget, filler);
 	}
 
 	public static void generate(World world, int x, int y, int z, int size, double fill, Block block, Random rand, Block genTarget, Block filler) {
