@@ -1,8 +1,8 @@
 # Port UniNodespace, PowerNet MK3, and FluidNet MK2
 
-- Migrated the shared node lifecycle to UniNodespace/NodeNet, including common provider/subscriber expiry, unloaded-tile rejection, invalid tile rejection, network reaping, and removal of the redundant recently-changed reconnect workaround.
-- Ported the MK2 fluid API and FluidNet MK2 transfer flow, replacing old PipeNet conductors/subscribers with fluid network providers, nodes, and MK2 provider/receiver registration.
-- Migrated fluid users, connectors, block connectors, fillable items, proxy/debug integrations, and pipe tiles to the MK2 interface names and lifecycle calls while retaining deprecated API shims only for external compatibility.
+- Re-scoped the network migration to the actual node, power, and fluid APIs without restoring removed joke/reference content or unrelated upstream machines.
+- Ported UniNodespace, FluidNet MK2 APIs, PowerNet MK2, and ILoadedTile lifecycle guards while leaving only deprecated old fluid facades for compatibility.
+- Fixed the FluidConnectorBlock MK2 facade name regression, removed the recentlyChanged reconnect field, and migrated fillable-item imports to the MK2 package where safe.
 
 # Port worldgen cascade and UniNodespace backports
 

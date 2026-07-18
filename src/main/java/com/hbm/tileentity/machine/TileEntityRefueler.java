@@ -10,8 +10,8 @@ import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.BobMathUtil;
 
-import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
 import api.hbm.fluidmk2.IFillableItem;
+import api.hbm.fluid.IFluidStandardReceiver;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemArmor;
