@@ -5,7 +5,7 @@ import java.util.List;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.handler.pollution.PollutionHandler;
 import com.hbm.handler.pollution.PollutionHandler.PollutionType;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerPyroOven;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
@@ -41,6 +41,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 
 	public long power;
 	public static final long maxPower = 10_000_000;
@@ -95,10 +97,10 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 			ForgeDirection rot = dir.getRotation(ForgeDirection.DOWN);
 			if(smoke.getFill() > 0) this.sendFluid(smoke, worldObj, xCoord - rot.offsetX, yCoord + 3, zCoord - rot.offsetZ, Library.POS_Y);
 
-			UpgradeManager.eval(slots, 4, 5);
-			int speed = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int powerSaving = Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 3);
-			int overdrive = Math.min(UpgradeManager.getLevel(UpgradeType.OVERDRIVE), 3);
+			this.upgradeManager.checkSlots(slots, 4, 5);
+			int speed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+			int powerSaving = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+			int overdrive = Math.min(this.upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3);
 
 			this.isProgressing = false;
 			this.isVenting = false;
@@ -212,8 +214,8 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 	}
 
 	public boolean canProcess() {
-		int speed = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
-		int powerSaving = Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 3);
+		int speed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+		int powerSaving = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
 		if(power < this.getConsumption(speed, powerSaving)) return false; // not enough power
 
 		PyroOvenRecipe recipe = this.getMatchingRecipe();

@@ -6,7 +6,7 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.dim.trait.CBT_Atmosphere;
 import com.hbm.handler.atmosphere.ChunkAtmosphereManager;
 import com.hbm.inventory.RecipesCommon.AStack;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerVacuumCircuit;
 import com.hbm.inventory.gui.GUIVacuumCircuit;
 import com.hbm.inventory.recipes.VacuumCircuitRecipes;
@@ -34,6 +34,8 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
 public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implements IEnergyReceiverMK2, IGUIProvider, IUpgradeInfoProvider {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 
 	public long power;
 	public long maxPower = 2_000;
@@ -78,9 +80,9 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 			recipe = VacuumCircuitRecipes.getRecipe(new ItemStack[] {slots[0], slots[1], slots[2], slots[3]});
 			long intendedMaxPower;
 			
-			UpgradeManager.eval(slots, 6, 7);
-			int redLevel = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int blueLevel = Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 3);
+			this.upgradeManager.checkSlots(slots, 6, 7);
+			int redLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+			int blueLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
 			
 			if(recipe != null) {
 				this.processTime = recipe.duration - (recipe.duration * redLevel / 6) + (recipe.duration * blueLevel / 3);

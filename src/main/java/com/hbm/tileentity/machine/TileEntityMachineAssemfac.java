@@ -5,7 +5,7 @@ import java.util.Random;
 
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.blocks.ModBlocks;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerAssemfac;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
@@ -32,6 +32,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase implements IFluidStandardTransceiver, IUpgradeInfoProvider, IFluidCopiable {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 	
 	public AssemblerArm[] arms;
 
@@ -77,11 +79,11 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 			this.speed = 100;
 			this.consumption = 100;
 			
-			UpgradeManager.eval(slots, 1, 4);
+			this.upgradeManager.checkSlots(slots, 1, 4);
 
-			int speedLevel = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 6);
-			int powerLevel = Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 3);
-			int overLevel = UpgradeManager.getLevel(UpgradeType.OVERDRIVE);
+			int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 6);
+			int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+			int overLevel = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
 			
 			this.speed -= speedLevel * 15;
 			this.consumption += speedLevel * 300;

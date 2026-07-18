@@ -3,7 +3,7 @@ package com.hbm.tileentity.machine;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerMachineEPress;
 import com.hbm.inventory.gui.GUIMachineEPress;
 import com.hbm.inventory.recipes.PressRecipes;
@@ -33,6 +33,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineEPress extends TileEntityMachineBase implements IEnergyReceiverMK2, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 
 	public long power = 0;
 	public final static long maxPower = 50000;
@@ -73,8 +75,8 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 				
 				if(delay <= 0) {
 					
-					UpgradeManager.eval(slots, 4, 4);
-					int speed = 1 + Math.min(3, UpgradeManager.getLevel(UpgradeType.SPEED));
+					this.upgradeManager.checkSlots(slots, 4, 4);
+					int speed = 1 + Math.min(3, this.upgradeManager.getLevel(UpgradeType.SPEED));
 					
 					int stampSpeed = this.isRetracting ? 20 : 45;
 					stampSpeed *= (1D + (double) speed / 4D);

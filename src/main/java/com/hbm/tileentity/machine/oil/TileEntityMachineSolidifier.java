@@ -3,7 +3,7 @@ package com.hbm.tileentity.machine.oil;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
-import com.hbm.inventory.UpgradeManager;
+import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerSolidifier;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
@@ -34,6 +34,8 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
 public class TileEntityMachineSolidifier extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable {
+	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+
 
 	public long power;
 	public static final long maxPower = 100000;
@@ -64,9 +66,9 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
 
 			this.updateConnections();
 
-			UpgradeManager.eval(slots, 2, 3);
-			int speed = Math.min(UpgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int power = Math.min(UpgradeManager.getLevel(UpgradeType.POWER), 3);
+			this.upgradeManager.checkSlots(slots, 2, 3);
+			int speed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+			int power = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
 
 			this.processTime = processTimeBase - (processTimeBase / 4) * speed;
 			this.usage = (usageBase + (usageBase * speed))  / (power + 1);

@@ -1,3 +1,8 @@
+# Cache machine upgrades and ore layers
+
+- Replaced the shared static upgrade cache with per-machine `UpgradeManagerNT` instances backed by content-aware ItemStack signatures.
+- Cached OreLayer3D X/Z noise columns, kept celestial stone replacement support, and skipped chunks that were already decorated per dimension.
+
 # Remove PipeNet transfer debug hot-path work
 
 - Removed active PipeNet fluid-transfer debug tracking, string/date formatting, BigInteger transfer accounting, and per-delivery chunk-dirty calls from production transfers.
