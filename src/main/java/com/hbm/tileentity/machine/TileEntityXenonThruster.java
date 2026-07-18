@@ -10,11 +10,10 @@ import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.fluid.trait.FT_Rocket;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.BobMathUtil;
-import com.hbm.util.I18nUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluid.IFluidStandardReceiver;
+import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
 import api.hbm.tile.IPropulsion;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -25,7 +24,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityXenonThruster extends TileEntityMachineBase implements IPropulsion, IFluidStandardReceiver, IEnergyReceiverMK2 {
+public class TileEntityXenonThruster extends TileEntityMachineBase implements IPropulsion, IFluidStandardReceiverMK2, IEnergyReceiverMK2 {
 
 	public FluidTank[] tanks;
 
@@ -36,7 +35,7 @@ public class TileEntityXenonThruster extends TileEntityMachineBase implements IP
 
 	private boolean isOn;
 	public float thrustAmount;
-	
+
 	private boolean hasRegistered;
 
 	private int fuelCost;
@@ -54,10 +53,13 @@ public class TileEntityXenonThruster extends TileEntityMachineBase implements IP
 
 	@Override
 	public void updateEntity() {
-		if(!worldObj.isRemote && CelestialBody.inOrbit(worldObj)) {
+		if(!CelestialBody.inOrbit(worldObj)) return;
+
+		if(!worldObj.isRemote) {
 			if(!hasRegistered) {
 				if(isFacingPrograde()) registerPropulsion();
 				hasRegistered = true;
+				isOn = false;
 			}
 
 			for(DirPos pos : getConPos()) {
@@ -82,7 +84,7 @@ public class TileEntityXenonThruster extends TileEntityMachineBase implements IP
 	private DirPos[] getConPos() {
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
-		
+
 		return new DirPos[] {
 			new DirPos(xCoord - dir.offsetX - rot.offsetX, yCoord, zCoord - dir.offsetZ - rot.offsetZ, dir),
 			new DirPos(xCoord - dir.offsetX, yCoord, zCoord - dir.offsetZ, dir),
@@ -118,7 +120,7 @@ public class TileEntityXenonThruster extends TileEntityMachineBase implements IP
 		buf.writeInt(fuelCost);
 		for(int i = 0; i < tanks.length; i++) tanks[i].serialize(buf);
 	}
-	
+
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
@@ -147,15 +149,15 @@ public class TileEntityXenonThruster extends TileEntityMachineBase implements IP
 	public boolean isFacingPrograde() {
 		return ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset) == ForgeDirection.WEST;
 	}
-	
+
 	AxisAlignedBB bb = null;
-	
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
 		if(bb == null) bb = AxisAlignedBB.getBoundingBox(xCoord - 2, yCoord - 1, zCoord - 2, xCoord + 3, yCoord + 2, zCoord + 3);
 		return bb;
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public double getMaxRenderDistanceSquared() {
@@ -186,12 +188,12 @@ public class TileEntityXenonThruster extends TileEntityMachineBase implements IP
 	@Override
 	public void addErrors(List<String> errors) {
 		if(power < fuelCost * POWER_COST_MULTIPLIER) {
-			errors.add(EnumChatFormatting.RED + I18nUtil.resolveKey(getBlockType().getUnlocalizedName() + ".name") + " - Insufficient power: needs " + BobMathUtil.getShortNumber(fuelCost * POWER_COST_MULTIPLIER) + "HE");
+			errors.add(EnumChatFormatting.RED + " - Insufficient power: needs " + BobMathUtil.getShortNumber(fuelCost * POWER_COST_MULTIPLIER) + "HE");
 		}
 
 		for(FluidTank tank : tanks) {
 			if(tank.getFill() < fuelCost) {
-				errors.add(EnumChatFormatting.RED + I18nUtil.resolveKey(getBlockType().getUnlocalizedName() + ".name") + " - Insufficient fuel: needs " + fuelCost + "mB");
+				errors.add(EnumChatFormatting.RED + " - Insufficient fuel: needs " + fuelCost + "mB");
 			}
 		}
 	}
@@ -199,7 +201,7 @@ public class TileEntityXenonThruster extends TileEntityMachineBase implements IP
 	@Override
 	public float getThrust() {
 		// but le realisme :((((
-		// do not speak to me of realisme, mr I can carry 2,880,000kg of dirt in my fucking pocket
+		// do not speak to me of realisme, miss I can carry 2,880,000kg of dirt in my fucking pocket
 		return 1_400_000;
 	}
 
@@ -243,5 +245,5 @@ public class TileEntityXenonThruster extends TileEntityMachineBase implements IP
 	public long getMaxPower() {
 		return maxPower;
 	}
-	
+
 }

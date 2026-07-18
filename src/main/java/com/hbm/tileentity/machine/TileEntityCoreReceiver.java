@@ -11,11 +11,12 @@ import com.hbm.util.CompatEnergyControl;
 
 import api.hbm.block.ILaserable;
 import api.hbm.energymk2.IEnergyProviderMK2;
-import api.hbm.fluid.IFluidStandardReceiver;
+import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.common.Optional;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import io.netty.buffer.ByteBuf;
 import li.cil.oc.api.machine.Arguments;
 import li.cil.oc.api.machine.Callback;
 import li.cil.oc.api.machine.Context;
@@ -30,8 +31,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
-public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEnergyProviderMK2, ILaserable, IFluidStandardReceiver, SimpleComponent, IGUIProvider, IInfoProviderEC, CompatHandler.OCComponent {
-	
+public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEnergyProviderMK2, ILaserable, IFluidStandardReceiverMK2, SimpleComponent, IGUIProvider, IInfoProviderEC, CompatHandler.OCComponent {
+
 	public long power;
 	public long joules;
 	public FluidTank tank;
@@ -50,14 +51,14 @@ public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEn
 	public void updateEntity() {
 
 		if (!worldObj.isRemote) {
-			
-			this.subscribeToAllAround(tank.getTankType(), this);
-			
+
+			this.trySubscribeToAllAround(tank.getTankType(), this);
+
 			power = joules * 5000;
-			
+
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
 				this.tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-			
+
 			if(joules > 0) {
 
 				if(tank.getFill() >= 20) {
@@ -68,19 +69,26 @@ public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEn
 				}
 			}
 
-			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("joules", joules);
-			tank.writeToNBT(data, "t");
-			this.networkPack(data, 50);
-			
+			this.networkPackNT(50);
+
 			joules = 0;
 		}
 	}
-	
-	public void networkUnpack(NBTTagCompound data) {
-		super.networkUnpack(data);
-		joules = data.getLong("joules");
-		tank.readFromNBT(data, "t");
+
+	@Override
+	public void serialize(ByteBuf buf) {
+		super.serialize(buf);
+
+		buf.writeLong(joules);
+		tank.serialize(buf);
+	}
+
+	@Override
+	public void deserialize(ByteBuf buf) {
+		super.deserialize(buf);
+
+		joules = buf.readLong();
+		tank.deserialize(buf);
 	}
 
 	@Override
@@ -105,7 +113,7 @@ public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEn
 
 	@Override
 	public void addEnergy(World world, int x, int y, int z, long energy, ForgeDirection dir) {
-		
+
 		//only accept lasers from the front
 		if(dir.getOpposite().ordinal() == this.getBlockMetadata()) {
 			joules += energy;
@@ -114,31 +122,31 @@ public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEn
 			worldObj.createExplosion(null, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, 2.5F, true);
 		}
 	}
-	
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
 		return TileEntity.INFINITE_EXTENT_AABB;
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public double getMaxRenderDistanceSquared() {
 		return 65536.0D;
 	}
-	
+
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		
+
 		power = nbt.getLong("power");
 		joules = nbt.getLong("joules");
 		tank.readFromNBT(nbt, "tank");
 	}
-	
+
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		
+
 		nbt.setLong("power", power);
 		nbt.setLong("joules", joules);
 		tank.writeToNBT(nbt, "tank");

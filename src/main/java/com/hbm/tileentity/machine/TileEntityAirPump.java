@@ -16,17 +16,19 @@ import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.TileEntityMachineBase;
 
-import api.hbm.fluid.IFluidStandardReceiver;
+import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
 import cpw.mods.fml.common.Optional;
 import io.netty.buffer.ByteBuf;
 import li.cil.oc.api.machine.Arguments;
 import li.cil.oc.api.machine.Callback;
 import li.cil.oc.api.machine.Context;
+import li.cil.oc.api.network.SimpleComponent;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
-public class TileEntityAirPump extends TileEntityMachineBase implements IFluidStandardReceiver, IAtmosphereProvider, CompatHandler.OCComponent {
+public class TileEntityAirPump extends TileEntityMachineBase implements IFluidStandardReceiverMK2, IAtmosphereProvider, SimpleComponent, CompatHandler.OCComponent {
 
 	private int onTicks = 0;
 	private boolean registered = false;
@@ -38,7 +40,9 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 	private int registerWait = 10;
 
 	private AtmosphereBlob currentBlob;
-	private int blobFillAmount = 0;
+	private int airFill = 0; // How many blocks are filled with air in the blob
+	private int wasteFill = 0; // How many air blocks worth of waste gas has been produced
+	private int bonusFill = 0; // How much waste gas has been returned, is consumed before the tank
 
 	public FluidTank tank;
 
@@ -68,7 +72,7 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 			data.setFloat("base", 0.3F);
 			data.setFloat("max", 1F);
 			data.setInteger("life", 20 + worldObj.rand.nextInt(20));
-			data.setInteger("color",0x98bdf9);
+			data.setInteger("color",tank.getTankType().getColor());
 
 			data.setDouble("posX", xCoord + 0.5 + worldObj.rand.nextDouble() - 0.5);
 			data.setDouble("posZ", zCoord + 0.5 + worldObj.rand.nextDouble() -0.5);
@@ -85,7 +89,7 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 			if(onTicks > 0) onTicks--;
 			if(registerWait > 0) registerWait--;
 
-			if(tank.getFill() >= 20) {
+			if(tank.getFill() + bonusFill >= 20) {
 				onTicks = 20;
 
 				if(registerWait > 0) {
@@ -94,7 +98,7 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 					ChunkAtmosphereManager.proxy.registerAtmosphere(this);
 					registered = true;
 
-					if(blobFillAmount > 1) {
+					if(airFill > 1) {
 						recovering = 100;
 					}
 				} else if(recovering > 0) {
@@ -106,19 +110,26 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 					if(currentBlob != null) {
 						int size = currentBlob.getBlobSize();
 						if(size != 0) {
-							if(blobFillAmount > size)
-								blobFillAmount = size;
+							if(airFill > size) airFill = size;
+							if(wasteFill > size) wasteFill = size;
 
 							// Fill the blob from the tank, 1mB per block
-							int toFill = Math.min(size - blobFillAmount, 20);
-							blobFillAmount += toFill;
+							int toFill = Math.min(size - airFill, 20);
+							airFill += toFill;
 
 							// Fill to the brim, and then trickle randomly afterwards
 							if(toFill > 0) {
-								tank.setFill(tank.getFill() - toFill);
+								consumeFromTank(toFill);
 							} else if(rand.nextBoolean()) {
-								tank.setFill(tank.getFill() - 1);
-								scrub(1);
+								consumeFromTank(1);
+								wasteFill++;
+							}
+
+							// Fill scrubbers with waste gas
+							if(scrubber != null && scrubber.isLoaded && !scrubber.isInvalid()) {
+								int toScrub = MathHelper.clamp_int(wasteFill, 0, 20);
+								int scrubbed = scrubber.scrub(toScrub);
+								wasteFill -= scrubbed;
 							}
 						} else {
 							currentBlob = null;
@@ -127,8 +138,9 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 
 					if(currentBlob == null) {
 						// Venting to vacuum
-						tank.setFill(tank.getFill() - 20);
-						blobFillAmount = 0;
+						consumeFromTank(20);
+						airFill = 0;
+						wasteFill = 0;
 					}
 				}
 			} else {
@@ -136,7 +148,8 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 					ChunkAtmosphereManager.proxy.unregisterAtmosphere(this);
 					registered = false;
 					currentBlob = null;
-					blobFillAmount = 0;
+					airFill = 0;
+					wasteFill = 0;
 				}
 			}
 
@@ -144,7 +157,7 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 				currentAtmosphere = ChunkAtmosphereManager.proxy.getAtmosphere(worldObj, xCoord, yCoord, zCoord);
 			}
 
-			subscribeToAllAround(tank.getTankType(), this);
+			trySubscribeToAllAround(tank.getTankType(), this);
 
 			this.networkPackNT(100);
 
@@ -153,6 +166,14 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 				this.spawnParticles();
 			}
 		}
+	}
+
+	private void consumeFromTank(int amount) {
+		int bonusConsumption = MathHelper.clamp_int(amount, 0, bonusFill);
+		bonusFill -= bonusConsumption;
+		amount -= bonusConsumption;
+
+		tank.setFill(tank.getFill() - amount);
 	}
 
 	@Override
@@ -169,7 +190,9 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
 		buf.writeInt(onTicks);
-		buf.writeInt(blobFillAmount);
+		buf.writeInt(airFill);
+		buf.writeInt(wasteFill);
+		buf.writeInt(bonusFill);
 		tank.serialize(buf);
 
 		if(currentAtmosphere != null) {
@@ -184,7 +207,9 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
 		onTicks = buf.readInt();
-		blobFillAmount = buf.readInt();
+		airFill = buf.readInt();
+		wasteFill = buf.readInt();
+		bonusFill = buf.readInt();
 		tank.deserialize(buf);
 
 		if(buf.readBoolean()) {
@@ -240,14 +265,18 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		tank.readFromNBT(nbt, "at");
-		blobFillAmount = nbt.getInteger("fill");
+		airFill = nbt.getInteger("fill");
+		wasteFill = nbt.getInteger("waste");
+		bonusFill = nbt.getInteger("bonus");
 	}
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		tank.writeToNBT(nbt, "at");
-		nbt.setInteger("fill", blobFillAmount);
+		nbt.setInteger("fill", airFill);
+		nbt.setInteger("waste", wasteFill);
+		nbt.setInteger("bonus", bonusFill);
 	}
 
 	@Override
@@ -284,11 +313,11 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 	public double getFluidPressure() {
 		if(currentBlob == null || currentBlob.getBlobSize() == 0) return 0;
 
-		return ((double)blobFillAmount / (double)currentBlob.getBlobSize()) * 0.2;
+		return ((double)airFill / (double)currentBlob.getBlobSize()) * 0.2;
 	}
 
 	public boolean hasSeal() {
-		return blobFillAmount > 1;
+		return airFill > 1;
 	}
 
 	@Override
@@ -298,23 +327,29 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 
 	@Override
 	public void consume(int amount) {
-		blobFillAmount -= amount;
-		if(blobFillAmount < 1) blobFillAmount = 1;
-		scrub(amount);
+		airFill -= amount;
+		wasteFill += amount;
+		if(airFill < 1) airFill = 1;
+	}
+
+	@Override
+	public void produce(int amount) {
+		int produced = MathHelper.clamp_int(amount, 0, wasteFill);
+		bonusFill += produced;
+		wasteFill -= produced;
+	}
+
+	public boolean isRecycling() {
+		return bonusFill > 0;
 	}
 
 	public boolean registerScrubber(TileEntityAirScrubber scrubber) {
 		if(!this.isLoaded || this.isInvalid()) return false;
+		if(tank.getTankType() != Fluids.OXYGEN) return false;
 		if(this.scrubber == scrubber) return true;
 		if(this.scrubber != null && this.scrubber.isLoaded && !this.scrubber.isInvalid() && this.scrubber.canOperate()) return false;
 		this.scrubber = scrubber;
 		return true;
-	}
-
-	private void scrub(int amount) {
-		if(scrubber != null && scrubber.isLoaded && !scrubber.isInvalid()) {
-			scrubber.scrub(amount);
-		}
 	}
 
 }

@@ -9,13 +9,13 @@ import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.CompatEnergyControl;
 
-import api.hbm.fluid.IFluidStandardTransceiver;
+import api.hbm.fluidmk2.IFluidStandardTransceiverMK2;
 import api.hbm.tile.IInfoProviderEC;
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMoltenSaltReactor extends TileEntityMachineBase implements IFluidStandardTransceiver, IFluidCopiable, IInfoProviderEC {
+public class TileEntityMoltenSaltReactor extends TileEntityMachineBase implements IFluidStandardTransceiverMK2, IFluidCopiable, IInfoProviderEC {
 
 	public static final int SALT_CAPACITY = 16_000;
 	public static final int HOT_SALT_CAPACITY = 16_000;
@@ -45,7 +45,7 @@ public class TileEntityMoltenSaltReactor extends TileEntityMachineBase implement
 			this.updateConnections();
 			this.processSalt();
 			this.updateCorrosionAndRadiation();
-			this.sendFluidToAll(tanks[1], this);
+			this.tryProvideToAll(tanks[1], this);
 
 			NBTTagCompound data = new NBTTagCompound();
 			data.setInteger("output", output);

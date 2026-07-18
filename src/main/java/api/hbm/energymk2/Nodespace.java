@@ -33,10 +33,6 @@ public class Nodespace {
 		UniNodespace.destroyNode(world, x, y, z, THE_POWER_PROVIDER);
 	}
 
-	@Deprecated public static void updateNodespace() {
-		UniNodespace.updateNodespace();
-	}
-
 	@NotableComments
 	public static class PowerNode extends GenNode<PowerNetMK2> {
 

@@ -6,13 +6,12 @@ import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.fluid.trait.FT_Flammable;
-import com.hbm.inventory.gui.GUIIGenerator;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.CompatEnergyControl;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
-import api.hbm.fluid.IFluidStandardReceiver;
+import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -26,8 +25,8 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineIGenerator extends TileEntityMachineBase implements IFluidStandardReceiver, IGUIProvider, IInfoProviderEC {
-	
+public class TileEntityMachineIGenerator extends TileEntityMachineBase implements IFluidStandardReceiverMK2, IGUIProvider, IInfoProviderEC {
+
 	public long power;
 	public int spin;
 	public int[] burn = new int[4];
@@ -38,13 +37,13 @@ public class TileEntityMachineIGenerator extends TileEntityMachineBase implement
 	public float rotation;
 	@SideOnly(Side.CLIENT)
 	public float prevRotation;
-	
+
 	public FluidTank[] tanks;
-	
+
 	public int age = 0;
-	
+
 	public static final int coalConRate = 75;
-	
+
 	/* CONFIGURABLE */
 	public static long maxPower = 1_000_000;
 	public static int waterCap = 16000;
@@ -55,7 +54,7 @@ public class TileEntityMachineIGenerator extends TileEntityMachineBase implement
 	public static int waterRate = 10;
 	public static int lubeRate = 1;
 	public static long fluidHeatDiv = 1_000L;
-	
+
 	protected long output;
 
 	public TileEntityMachineIGenerator() {
@@ -70,7 +69,7 @@ public class TileEntityMachineIGenerator extends TileEntityMachineBase implement
 	public String getName() {
 		return "container.iGenerator";
 	}
-	
+
 	protected DirPos[] getConPos() {
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 		return new DirPos[] {
@@ -84,56 +83,56 @@ public class TileEntityMachineIGenerator extends TileEntityMachineBase implement
 
 	@Override
 	public void updateEntity() {
-		
+
 		/*if(!worldObj.isRemote) {
-			
+
 			boolean con = GeneralConfig.enableLBSM && GeneralConfig.enableLBSMIGen;
-			
+
 			power = Library.chargeItemsFromTE(slots, 0, power, maxPower);
-			
+
 			for(DirPos dir : getConPos()) {
 				this.sendPower(worldObj, dir.getX(), dir.getY(), dir.getZ(), dir.getDir());
-				
+
 				for(FluidTank tank : tanks) {
 					this.trySubscribe(tank.getTankType(), worldObj, dir.getX(), dir.getY(), dir.getZ(), dir.getDir());
 				}
 			}
-			
+
 			tanks[1].setType(9, 10, slots);
 			tanks[0].loadTank(1, 2, slots);
 			tanks[1].loadTank(9, 10, slots);
 			tanks[2].loadTank(7, 8, slots);
-			
+
 			this.spin = 0;
-			
+
 			/// LIQUID FUEL ///
 			if(tanks[1].getFill() > 0) {
 				int pow = this.getPowerFromFuel(con);
-				
+
 				if(pow > 0) {
 					tanks[1].setFill(tanks[1].getFill() - 1);
 					this.spin += pow;
 				}
 			}
-			
+
 			///SOLID FUEL ///
 			for(int i = 0; i < 4; i++) {
-				
+
 				// POWER GEN //
 				if(burn[i] > 0) {
 					burn[i]--;
 					this.spin += con ? coalConRate : coalGenRate;
-					
+
 				// REFUELING //
 				} else {
 					int slot = i + 3;
-					
+
 					if(slots[slot] != null) {
 						ItemStack fuel = slots[slot];
 						int burnTime = TileEntityFurnace.getItemBurnTime(fuel) / 2;
-						
+
 						if(burnTime > 0) {
-							
+
 							if(fuel.getItem() == Items.coal) //1200 (1600)
 								burnTime *= con ? 1.5 : 1.1;
 							if(fuel.getItem() == ModItems.solid_fuel) //3200 (3200)
@@ -142,13 +141,13 @@ public class TileEntityMachineIGenerator extends TileEntityMachineBase implement
 								burnTime *= con ? 4 : 1.1;
 							if(fuel.getItem() == ModItems.solid_fuel_presto_triplet) //80000 (40000)
 								burnTime *= con ? 4 : 1.1;
-							
+
 							burn[i] = burnTime;
-							
+
 							slots[slot].stackSize--;
-							
+
 							if(slots[slot].stackSize <= 0) {
-								
+
 								if(slots[slot].getItem().hasContainerItem(slots[slot])) {
 									slots[slot] = slots[slot].getItem().getContainerItem(slots[slot]);
 								} else {
@@ -159,51 +158,51 @@ public class TileEntityMachineIGenerator extends TileEntityMachineBase implement
 					}
 				}
 			}
-			
+
 			// RTG ///
 			this.hasRTG = RTGUtil.hasHeat(slots, RTGSlots);
 			this.spin += RTGUtil.updateRTGs(slots, RTGSlots) * (con ? 0.2 : rtgHeatMult);
-			
+
 			if(this.spin > 0) {
-				
+
 				double genMult = 0.5D;
-				
-				
+
+
 				if(this.tanks[0].getFill() >= 10) {
 					genMult += 0.5D;
 					this.tanks[0].setFill(this.tanks[0].getFill() - waterRate);
 				}
-				
+
 				if(this.tanks[2].getFill() >= 1) {
 					genMult += 0.25D;
 					this.tanks[2].setFill(this.tanks[2].getFill() - lubeRate);
 				}
-				
+
 				this.output = (long) (this.spin * genMult);
 				this.power += this.output;
-				
+
 				if(this.power > this.maxPower)
 					this.power = this.maxPower;
 			}
-			
+
 			NBTTagCompound data = new NBTTagCompound();
 			data.setLong("power", power);
 			data.setInteger("spin", spin);
 			data.setIntArray("burn", burn);
 			data.setBoolean("hasRTG", hasRTG);
 			this.networkPack(data, 150);
-			
+
 			for(int i = 0; i < 3; i++)
 				tanks[i].updateTank(xCoord, yCoord, zCoord, this.worldObj.provider.dimensionId);
-			
+
 		} else {
-			
+
 			this.prevRotation = this.rotation;
-			
+
 			if(this.spin > 0) {
 				this.rotation += 15;
 			}
-			
+
 			if(this.rotation >= 360) {
 				this.rotation -= 360;
 				this.prevRotation -= 360;
@@ -221,48 +220,51 @@ public class TileEntityMachineIGenerator extends TileEntityMachineBase implement
 		return new int[] { 3, 4, 5, 6 };
 	}
 
+	// o7
+	/*
 	@Override
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
-		
+
 		this.power = nbt.getLong("power");
 		this.spin = nbt.getInteger("spin");
 		this.burn = nbt.getIntArray("burn");
 		this.hasRTG = nbt.getBoolean("hasRTG");
 	}
-	
+	*/
+
 	public int getPowerFromFuel(boolean con) {
 		FluidType type = tanks[1].getTankType();
 		return type.hasTrait(FT_Flammable.class) ? (int)(type.getTrait(FT_Flammable.class).getHeatEnergy() / (con ? 5000L : fluidHeatDiv)) : 0;
 	}
-	
+
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		
+
 		for(int i = 0; i < 3; i++)
 			tanks[i].readFromNBT(nbt, "tank_" + i);
-		
+
 		this.power = nbt.getLong("power");
 		this.burn = nbt.getIntArray("burn");
 	}
-	
+
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		
+
 		for(int i = 0; i < 3; i++)
 			tanks[i].writeToNBT(nbt, "tank_" + i);
-		
+
 		nbt.setLong("power", power);
 		nbt.setIntArray("burn", burn);
 	}
-	
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
 		return TileEntity.INFINITE_EXTENT_AABB;
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public double getMaxRenderDistanceSquared() {
@@ -287,7 +289,7 @@ public class TileEntityMachineIGenerator extends TileEntityMachineBase implement
 	@Override
 	@SideOnly(Side.CLIENT)
 	public Object provideGUI(int ID, EntityPlayer player, World world, int x, int y, int z) {
-		return new GUIIGenerator(player.inventory, this);
+		return null;
 	}
 
 	@Override

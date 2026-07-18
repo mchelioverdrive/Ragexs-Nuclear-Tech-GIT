@@ -8,10 +8,11 @@ import com.hbm.inventory.gui.GUICoreInjector;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 
-import api.hbm.fluid.IFluidStandardReceiver;
+import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
 import cpw.mods.fml.common.Optional;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import io.netty.buffer.ByteBuf;
 import li.cil.oc.api.machine.Arguments;
 import li.cil.oc.api.machine.Callback;
 import li.cil.oc.api.machine.Context;
@@ -25,8 +26,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
-public class TileEntityCoreInjector extends TileEntityMachineBase implements IFluidStandardReceiver, SimpleComponent, IGUIProvider, CompatHandler.OCComponent {
-	
+public class TileEntityCoreInjector extends TileEntityMachineBase implements IFluidStandardReceiverMK2, SimpleComponent, IGUIProvider, CompatHandler.OCComponent {
+
 	public FluidTank[] tanks;
 	public static final int range = 15;
 	public int beam;
@@ -45,42 +46,42 @@ public class TileEntityCoreInjector extends TileEntityMachineBase implements IFl
 
 	@Override
 	public void updateEntity() {
-		
+
 		if(!worldObj.isRemote) {
-			
-			this.subscribeToAllAround(tanks[0].getTankType(), this);
-			this.subscribeToAllAround(tanks[1].getTankType(), this);
+
+			this.trySubscribeToAllAround(tanks[0].getTankType(), this);
+			this.trySubscribeToAllAround(tanks[1].getTankType(), this);
 
 			tanks[0].setType(0, 1, slots);
 			tanks[1].setType(2, 3, slots);
-			
+
 			beam = 0;
-			
+
 			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata());
 			for(int i = 1; i <= range; i++) {
 
 				int x = xCoord + dir.offsetX * i;
 				int y = yCoord + dir.offsetY * i;
 				int z = zCoord + dir.offsetZ * i;
-				
+
 				TileEntity te = worldObj.getTileEntity(x, y, z);
-				
+
 				if(te instanceof TileEntityCore) {
-					
+
 					TileEntityCore core = (TileEntityCore)te;
-					
+
 					for(int t = 0; t < 2; t++) {
-						
+
 						if(core.tanks[t].getTankType() == tanks[t].getTankType()) {
-							
+
 							int f = Math.min(tanks[t].getFill(), core.tanks[t].getMaxFill() - core.tanks[t].getFill());
 
 							tanks[t].setFill(tanks[t].getFill() - f);
 							core.tanks[t].setFill(core.tanks[t].getFill() + f);
 							core.markDirty();
-							
+
 						} else if(core.tanks[t].getFill() == 0) {
-							
+
 							core.tanks[t].setTankType(tanks[t].getTankType());
 							int f = Math.min(tanks[t].getFill(), core.tanks[t].getMaxFill() - core.tanks[t].getFill());
 
@@ -89,32 +90,39 @@ public class TileEntityCoreInjector extends TileEntityMachineBase implements IFl
 							core.markDirty();
 						}
 					}
-					
+
 					beam = i;
 					break;
 				}
-				
+
 				if(!worldObj.getBlock(x, y, z).isAir(worldObj, x, y, z))
 					break;
 			}
-			
+
 			this.markDirty();
 
-			NBTTagCompound data = new NBTTagCompound();
-			data.setInteger("beam", beam);
-			tanks[0].writeToNBT(data, "t0");
-			tanks[1].writeToNBT(data, "t1");
-			this.networkPack(data, 250);
+			this.networkPackNT(250);
 		}
 	}
 
-	public void networkUnpack(NBTTagCompound data) {
-		super.networkUnpack(data);
-		beam = data.getInteger("beam");
-		tanks[0].readFromNBT(data, "t0");
-		tanks[1].readFromNBT(data, "t1");
+	@Override
+	public void serialize(ByteBuf buf) {
+		super.serialize(buf);
+
+		buf.writeInt(beam);
+		tanks[0].serialize(buf);
+		tanks[1].serialize(buf);
 	}
-	
+
+	@Override
+	public void deserialize(ByteBuf buf) {
+		super.deserialize(buf);
+
+		this.beam = buf.readInt();
+		tanks[0].deserialize(buf);
+		tanks[1].deserialize(buf);
+	}
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
 		return TileEntity.INFINITE_EXTENT_AABB;
@@ -125,7 +133,7 @@ public class TileEntityCoreInjector extends TileEntityMachineBase implements IFl
 	public double getMaxRenderDistanceSquared() {
 		return 65536.0D;
 	}
-	
+
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
@@ -133,7 +141,7 @@ public class TileEntityCoreInjector extends TileEntityMachineBase implements IFl
 		tanks[0].readFromNBT(nbt, "fuel1");
 		tanks[1].readFromNBT(nbt, "fuel2");
 	}
-	
+
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
@@ -151,7 +159,7 @@ public class TileEntityCoreInjector extends TileEntityMachineBase implements IFl
 	public FluidTank[] getAllTanks() {
 		return tanks;
 	}
-	
+
 	// do some opencomputer stuff
 	@Override
 	@Optional.Method(modid = "OpenComputers")
