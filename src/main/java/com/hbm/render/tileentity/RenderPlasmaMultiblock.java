@@ -16,6 +16,8 @@ public class RenderPlasmaMultiblock extends TileEntitySpecialRenderer {
 
 	@Override
 	public void renderTileEntityAt(TileEntity te, double x, double y, double z, float f) {
+		if(!TESRDistanceUtil.shouldRenderDetails(te)) return;
+
 		RenderStateGuard.push("RenderPlasmaMultiblock");
 		try {
 			GL11.glPushMatrix();

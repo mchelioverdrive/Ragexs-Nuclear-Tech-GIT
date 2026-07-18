@@ -41,7 +41,7 @@ public class RenderArcWelder extends TileEntitySpecialRenderer implements IItemR
 		ResourceManager.arc_welder.renderAll();
 		
 		TileEntityMachineArcWelder welder = (TileEntityMachineArcWelder) tile;
-		if(welder.display != null) {
+		if(welder.display != null && TESRDistanceUtil.shouldRenderDetails(tile)) {
 			GL11.glPushMatrix();
 			GL11.glTranslated(0.0625D * 2.5D, 1.125D, 0D);
 			GL11.glEnable(GL11.GL_LIGHTING);

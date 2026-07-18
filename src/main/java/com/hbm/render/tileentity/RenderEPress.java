@@ -41,7 +41,9 @@ public class RenderEPress extends TileEntitySpecialRenderer {
 				
 		GL11.glPopMatrix();
 		
-		renderTileEntityAt2(tileentity, x, y, z, f);
+		if(TESRDistanceUtil.shouldRenderDetails(tileentity)) {
+			renderTileEntityAt2(tileentity, x, y, z, f);
+		}
 	}
 
 	public void renderTileEntityAt2(TileEntity tileentity, double x, double y, double z, float f) {

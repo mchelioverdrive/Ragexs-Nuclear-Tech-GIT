@@ -28,6 +28,8 @@ public class RenderLoot extends TileEntitySpecialRenderer {
 
 	@Override
 	public void renderTileEntityAt(TileEntity te, double x, double y, double z, float interp) {
+		if(!TESRDistanceUtil.shouldRenderDetails(te)) return;
+
 		GL11.glPushMatrix();
 		GL11.glTranslated(x, y, z);
 		GL11.glEnable(GL11.GL_LIGHTING);

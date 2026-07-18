@@ -22,6 +22,13 @@ public class RenderAutosaw extends TileEntitySpecialRenderer implements IItemRen
 		GL11.glEnable(GL11.GL_LIGHTING);
 		GL11.glEnable(GL11.GL_CULL_FACE);
 
+		if(!TESRDistanceUtil.shouldRenderDetails(tile)) {
+			bindTexture(ResourceManager.autosaw_tex);
+			ResourceManager.autosaw.renderPart("Base");
+			GL11.glPopMatrix();
+			return;
+		}
+
 		TileEntityMachineAutosaw saw = (TileEntityMachineAutosaw) tile;
 
 		double turn = saw.prevRotationYaw + (saw.rotationYaw - saw.prevRotationYaw) * interp;

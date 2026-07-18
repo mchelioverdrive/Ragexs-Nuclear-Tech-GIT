@@ -33,7 +33,7 @@ public class RenderFurnaceCombination extends TileEntitySpecialRenderer implemen
 		
 		TileEntityFurnaceCombination furnace = (TileEntityFurnaceCombination) tileEntity;
 		
-		if(furnace.wasOn) {
+		if(furnace.wasOn && TESRDistanceUtil.shouldRenderDetails(tileEntity)) {
 
 			bindTexture(texture);
 

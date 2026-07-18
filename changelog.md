@@ -1,3 +1,8 @@
+# Render-distance gates for TESR details
+
+- Added a shared 35-block TESR detail distance helper, matching the upstream assembly-factory item-display gate.
+- Gated expensive machine item displays, EntityItem/RenderManager-backed renders, animated blades/sliders, plasma/transparent overlays, and other close-range TESR details while leaving static machine bodies visible at distance.
+
 # Port worldgen cascade and UniNodespace backports
 
 - Backported the vanilla +8 decoration offset for upstream-selected world-generation entries that perform height lookups or can spill outside their origin, including flower, depth-deposit, and Eve spike/volcano starts.
