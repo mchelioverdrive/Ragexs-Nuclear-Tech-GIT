@@ -19,13 +19,14 @@ import com.hbm.inventory.gui.GUIPump;
 import com.hbm.items.machine.IItemFluidIdentifier;
 import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.IGUIProvider;
-import com.hbm.tileentity.TileEntityMachineBase;
+import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.BobMathUtil;
 import com.hbm.util.EnumUtil;
-import com.hbm.util.I18nUtil;
+import com.hbm.util.i18n.I18nUtil;
+import com.hbm.world.gen.nbt.INBTBlockTransformable;
 
 import api.hbm.energymk2.IEnergyReceiverMK2.ConnectionPriority;
-import api.hbm.fluid.IFluidStandardTransceiver;
+import api.hbm.fluidmk2.IFluidStandardTransceiverMK2;
 import cpw.mods.fml.common.network.internal.FMLNetworkHandler;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -47,7 +48,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.Pre;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class FluidPump extends BlockContainer implements ILookOverlay, IGUIProvider {
+public class FluidPump extends BlockContainer implements INBTBlockTransformable, ILookOverlay, IGUIProvider {
 
 	public FluidPump(Material mat) {
 		super(mat);
@@ -111,14 +112,19 @@ public class FluidPump extends BlockContainer implements ILookOverlay, IGUIProvi
 		TileEntityFluidPump pump = (TileEntityFluidPump) tile;
 
 		List<String> text = new ArrayList();
-		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + pump.tank[0].getTankType().getLocalizedName() + " (" + pump.tank[0].getPressure() + " PU): " + BobMathUtil.getShortNumber(pump.bufferSize) + "mB/t" + EnumChatFormatting.RED + " ->");
+		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + pump.tank[0].getTankType().getLocalizedName() + " (" + pump.tank[0].getPressure() + " PU): " + BobMathUtil.format(pump.bufferSize) + "mB/t" + EnumChatFormatting.RED + " ->");
 		text.add("Priority: " + EnumChatFormatting.YELLOW + pump.priority.name());
-		if(pump.tank[0].getFill() > 0) text.add(BobMathUtil.getShortNumber(pump.tank[0].getFill()) + "mB buffered");
+		if(pump.tank[0].getFill() > 0) text.add(BobMathUtil.format(pump.tank[0].getFill()) + "mB buffered");
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 
+	@Override
+	public int transformMeta(int meta, int coordBaseMode) {
+		return INBTBlockTransformable.transformMetaDeco(meta, coordBaseMode);
+	}
+
 	@Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
-	public static class TileEntityFluidPump extends TileEntityMachineBase implements IFluidStandardTransceiver, IControlReceiver, SimpleComponent, CompatHandler.OCComponent {
+	public static class TileEntityFluidPump extends TileEntityLoadedBase implements IFluidStandardTransceiverMK2, IControlReceiver, SimpleComponent, CompatHandler.OCComponent {
 
 		public int bufferSize = 100;
 		public FluidTank[] tank;
@@ -126,14 +132,8 @@ public class FluidPump extends BlockContainer implements ILookOverlay, IGUIProvi
 		public boolean redstone = false;
 
 		public TileEntityFluidPump() {
-			super(0);
 			this.tank = new FluidTank[1];
 			this.tank[0] = new FluidTank(Fluids.NONE, bufferSize);
-		}
-
-		@Override
-		public String getName() {
-			return "container.fluidPump";
 		}
 
 		@Override
@@ -155,7 +155,7 @@ public class FluidPump extends BlockContainer implements ILookOverlay, IGUIProvi
 				ForgeDirection out = in.getOpposite();
 
 				this.trySubscribe(tank[0].getTankType(), worldObj, xCoord + in.offsetX, yCoord, zCoord + in.offsetZ, in);
-				if(!redstone) this.sendFluid(tank[0], worldObj, xCoord + out.offsetX, yCoord, zCoord + out.offsetZ, out);
+				if(!redstone) this.tryProvide(tank[0], worldObj, xCoord + out.offsetX, yCoord, zCoord + out.offsetZ, out);
 
 				this.networkPackNT(15);
 			}
@@ -193,6 +193,7 @@ public class FluidPump extends BlockContainer implements ILookOverlay, IGUIProvi
 			bufferSize = buf.readInt();
 		}
 
+		@Override public ConnectionPriority getFluidPriority() { return priority; }
 		@Override public FluidTank[] getSendingTanks() { return redstone ? new FluidTank[0] : tank; }
 		@Override public FluidTank[] getReceivingTanks() { return this.bufferSize < this.tank[0].getFill() ? new FluidTank[0] : tank; }
 		@Override public FluidTank[] getAllTanks() { return tank; }
@@ -251,7 +252,7 @@ public class FluidPump extends BlockContainer implements ILookOverlay, IGUIProvi
 		@Optional.Method(modid = "OpenComputers")
 		public Object[] getPriority(Context context, Arguments args) {
 			return new Object[] {
-				priority
+				getFluidPriority()
 			};
 		}
 
@@ -262,7 +263,7 @@ public class FluidPump extends BlockContainer implements ILookOverlay, IGUIProvi
 				tank[0].getTankType().getUnlocalizedName(),
 				tank[0].getPressure(),
 				bufferSize,
-				priority
+				getFluidPriority()
 			};
 		}
 

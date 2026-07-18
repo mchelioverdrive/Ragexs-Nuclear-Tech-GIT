@@ -16,8 +16,8 @@ import com.hbm.util.fauxpointtwelve.DirPos;
 import com.hbm.dim.orbit.WorldProviderOrbit;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluid.IFluidStandardReceiver;
-import api.hbm.fluid.IFluidStandardSender;
+import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
+import api.hbm.fluidmk2.IFluidStandardSenderMK2;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
@@ -25,7 +25,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardSender {
+public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardSenderMK2 {
 
 	int consumption = 200;
 	public float rot;
@@ -33,7 +33,7 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 	private float rotSpeed;
 	public long power = 0;
 	public FluidTank tank;
-	public List<IFluidStandardReceiver> list = new ArrayList<>();
+	public List<IFluidStandardReceiverMK2> list = new ArrayList<>();
 
 	public TileEntityAtmoExtractor() {
 		super(0);
@@ -121,7 +121,7 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 	protected void updateConnections() {
 		for(DirPos pos : getConPos()) {
 			trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			sendFluid(tank, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			tryProvide(tank, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
 	}
 

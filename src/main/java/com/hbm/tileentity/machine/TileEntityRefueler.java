@@ -7,7 +7,6 @@ import com.hbm.handler.ArmorModHandler;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.main.MainRegistry;
-import com.hbm.tileentity.IBufPacketReceiver;
 import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.BobMathUtil;
 
@@ -21,7 +20,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityRefueler extends TileEntityLoadedBase implements IFluidStandardReceiver, IBufPacketReceiver {
+public class TileEntityRefueler extends TileEntityLoadedBase implements IFluidStandardReceiverMK2 {
 
 	public double fillLevel;
 	public double prevFillLevel;
@@ -81,7 +80,7 @@ public class TileEntityRefueler extends TileEntityLoadedBase implements IFluidSt
 				operatingTime = 0;
 			}
 
-			sendStandard(150);
+			networkPackNT(150);
 		} else {
 			if(isOperating) {
 				Random rand = worldObj.rand;
@@ -102,7 +101,7 @@ public class TileEntityRefueler extends TileEntityLoadedBase implements IFluidSt
 			prevFillLevel = fillLevel;
 
 			double targetFill = (double)tank.getFill() / (double)tank.getMaxFill();
-			fillLevel = BobMathUtil.lerp(targetFill > fillLevel || !isOperating ? 0.1 : 0.01, fillLevel, targetFill);
+			fillLevel = BobMathUtil.interp(fillLevel, targetFill, targetFill > fillLevel || !isOperating ? 0.1F : 0.01F);
 		}
 
 
@@ -154,5 +153,4 @@ public class TileEntityRefueler extends TileEntityLoadedBase implements IFluidSt
 	public FluidTank[] getReceivingTanks() {
 		return new FluidTank[] { tank };
 	}
-
 }

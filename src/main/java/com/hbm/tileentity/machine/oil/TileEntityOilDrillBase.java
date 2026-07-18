@@ -1,8 +1,10 @@
 package com.hbm.tileentity.machine.oil;
 
+import java.util.HashMap;
 import java.util.HashSet;
 
 import com.hbm.blocks.ModBlocks;
+import com.hbm.blocks.generic.BlockOreFluid;
 import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
@@ -16,26 +18,26 @@ import com.hbm.util.Tuple.Triplet;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluid.IFluidStandardTransceiver;
+import api.hbm.fluidmk2.IFluidStandardTransceiverMK2;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public abstract class TileEntityOilDrillBase extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IConfigurableMachine, IPersistentNBT, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
-	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
-
+public abstract class TileEntityOilDrillBase extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiverMK2, IConfigurableMachine, IPersistentNBT, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
 
 	public int indicator = 0;
 
 	public long power;
 
 	public FluidTank[] tanks;
+
+	public UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	public TileEntityOilDrillBase() {
 		super(8);
@@ -90,48 +92,50 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 	@Override
 	public void updateEntity() {
 
-		if(!worldObj.isRemote) {
+		if (!worldObj.isRemote) {
 
 			this.updateConnections();
 
 			this.tanks[0].unloadTank(1, 2, slots);
 			this.tanks[1].unloadTank(3, 4, slots);
 
-			this.upgradeManager.checkSlots(slots, 5, 7);
-			this.speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-			this.energyLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
-			this.overLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3) + 1;
-			int abLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.AFTERBURN), 3);
+			upgradeManager.checkSlots(this, slots, 5, 7);
+			this.speedLevel = upgradeManager.getLevel(UpgradeType.SPEED);
+			this.energyLevel = upgradeManager.getLevel(UpgradeType.POWER);
+			this.overLevel = upgradeManager.getLevel(UpgradeType.OVERDRIVE) + 1;
+			int abLevel = upgradeManager.getLevel(UpgradeType.AFTERBURN);
 
 			int toBurn = Math.min(tanks[1].getFill(), abLevel * 10);
 
-			if(toBurn > 0) {
+			if (toBurn > 0) {
 				tanks[1].setFill(tanks[1].getFill() - toBurn);
 				this.power += toBurn * 5;
 
-				if(this.power > this.getMaxPower())
+				if (this.power > this.getMaxPower())
 					this.power = this.getMaxPower();
 			}
 
 			power = Library.chargeTEFromItems(slots, 0, power, this.getMaxPower());
 
-			for(DirPos pos : getConPos()) {
-				if(tanks[0].getFill() > 0) this.sendFluid(tanks[0], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				if(tanks[1].getFill() > 0) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			for (DirPos pos : getConPos()) {
+				if (tanks[0].getFill() > 0)
+					this.tryProvide(tanks[0], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+				if (tanks[1].getFill() > 0)
+					this.tryProvide(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 
-			if(this.power >= this.getPowerReqEff() && this.tanks[0].getFill() < this.tanks[0].getMaxFill() && this.tanks[1].getFill() < this.tanks[1].getMaxFill()) {
+			if (this.power >= this.getPowerReqEff() && this.tanks[0].getFill() < this.tanks[0].getMaxFill() && this.tanks[1].getFill() < this.tanks[1].getMaxFill()) {
 
 				this.power -= this.getPowerReqEff();
 
-				if(worldObj.getTotalWorldTime() % getDelayEff() == 0) {
+				if (worldObj.getTotalWorldTime() % getDelayEff() == 0) {
 					this.indicator = 0;
 
-					for(int y = yCoord - 1; y >= getDrillDepth(); y--) {
+					for (int y = yCoord - 1; y >= getDrillDepth(); y--) {
 
-						if(worldObj.getBlock(xCoord, y, zCoord) != ModBlocks.oil_pipe) {
+						if (worldObj.getBlock(xCoord, y, zCoord) != ModBlocks.oil_pipe) {
 
-							if(trySuck(y)) {
+							if (trySuck(y)) {
 								break;
 							} else {
 								tryDrill(y);
@@ -139,7 +143,7 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 							}
 						}
 
-						if(y == getDrillDepth())
+						if (y == getDrillDepth())
 							this.indicator = 1;
 					}
 				}
@@ -148,24 +152,26 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 				this.indicator = 2;
 			}
 
-			this.sendUpdate();
+			this.networkPackNT(25);
 		}
 	}
 
-	public void sendUpdate() {
-		NBTTagCompound data = new NBTTagCompound();
-		data.setLong("power", power);
-		data.setInteger("indicator", this.indicator);
-		for(int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(data, "t" + i);
-		this.networkPack(data, 25);
+	@Override
+	public void serialize(ByteBuf buf) {
+		super.serialize(buf);
+
+		buf.writeLong(this.power);
+		buf.writeInt(this.indicator);
+		for (FluidTank tank : tanks) tank.serialize(buf);
 	}
 
-	public void networkUnpack(NBTTagCompound nbt) {
-		super.networkUnpack(nbt);
+	@Override
+	public void deserialize(ByteBuf buf) {
+		super.deserialize(buf);
 
-		this.power = nbt.getLong("power");
-		this.indicator = nbt.getInteger("indicator");
-		for(int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "t" + i);
+		this.power = buf.readLong();
+		this.indicator = buf.readInt();
+		for (FluidTank tank : tanks) tank.deserialize(buf);
 	}
 
 	public boolean canPump() {
@@ -196,11 +202,6 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 	public void tryDrill(int y) {
 		Block b = worldObj.getBlock(xCoord, y, zCoord);
 
-		if(b == Blocks.bedrock) {
-			this.indicator = 0;
-			return;
-		}
-
 		if(b.getExplosionResistance(null) < 1000) {
 			onDrill(y);
 			worldObj.setBlock(xCoord, y, zCoord, ModBlocks.oil_pipe);
@@ -212,9 +213,7 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 	public void onDrill(int y) { }
 
 	public int getDrillDepth() {
-		//tiering shit so ores have to be enabled award
-		//fuck you we milk regular bedrock here sir
-		return 0;
+		return 5;
 	}
 
 	public boolean trySuck(int y) {
@@ -233,14 +232,14 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 	}
 
 	public boolean canSuckBlock(Block b) {
-		return b == ModBlocks.ore_oil || b == ModBlocks.ore_oil_empty || b == ModBlocks.ore_gas || b == ModBlocks.ore_gas_empty || b == Blocks.bedrock;
+		return (b instanceof BlockOreFluid && b != ModBlocks.ore_bedrock_oil) || BlockOreFluid.getFullBlock(b) != null;
 	}
 
-	protected HashSet<Tuple.Triplet<Integer, Integer, Integer>> trace = new HashSet();
+	protected HashSet<Tuple.Triplet<Integer, Integer, Integer>> trace = new HashSet<>();
 
 	public boolean suckRec(int x, int y, int z, int layer) {
 
-		Triplet<Integer, Integer, Integer> pos = new Triplet(x, y, z);
+		Triplet<Integer, Integer, Integer> pos = new Triplet<>(x, y, z);
 
 		if(trace.contains(pos))
 			return false;
@@ -252,12 +251,12 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 
 		Block b = worldObj.getBlock(x, y, z);
 
-		if(b == ModBlocks.ore_oil || b == Blocks.bedrock || b == ModBlocks.ore_gas) {
-			doSuck(x, y, z);
+		if(b instanceof BlockOreFluid) {
+			onSuck((BlockOreFluid) b, x, y, z);
 			return true;
 		}
 
-		if(b == ModBlocks.ore_oil_empty || b == ModBlocks.ore_gas_empty) {
+		if(BlockOreFluid.getFullBlock(b) != null) {
 			ForgeDirection[] dirs = BobMathUtil.getShuffledDirs();
 
 			for(ForgeDirection dir : dirs) {
@@ -269,15 +268,30 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 		return false;
 	}
 
-	public void doSuck(int x, int y, int z) {
-		Block b = worldObj.getBlock(x, y, z);
+	public void onSuck(BlockOreFluid block, int x, int y, int z) {
+		int meta = worldObj.getBlockMetadata(x, y, z);
 
-		if(b == ModBlocks.ore_oil || b == ModBlocks.ore_gas || b == Blocks.bedrock) {
-			onSuck(x, y, z);
-		}
+		tanks[0].setTankType(block.getPrimaryFluid(meta));
+		tanks[1].setTankType(block.getSecondaryFluid(meta));
+
+		tanks[0].setFill(Math.min(tanks[0].getFill() + getPrimaryFluidAmount(block, meta), tanks[0].getMaxFill()));
+		if(tanks[1].getTankType() != Fluids.NONE)
+			tanks[1].setFill(Math.min(tanks[1].getFill() + getSecondaryFluidAmount(block, meta), tanks[1].getMaxFill()));
+
+		attemptDrain(block, x, y, z, meta);
 	}
 
-	public abstract void onSuck(int x, int y, int z);
+	protected int getPrimaryFluidAmount(BlockOreFluid block, int meta) {
+		return block.getPrimaryFluidAmount(meta);
+	}
+
+	protected int getSecondaryFluidAmount(BlockOreFluid block, int meta) {
+		return block.getSecondaryFluidAmount(meta);
+	}
+
+	protected void attemptDrain(BlockOreFluid block, int x, int y, int z, int meta) {
+		block.drain(worldObj, x, y, z, meta, 1);
+	}
 
 	@Override
 	public void setPower(long i) {
@@ -329,12 +343,13 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 	}
 
 	@Override
-	public int getMaxLevel(UpgradeType type) {
-		if(type == UpgradeType.SPEED) return 3;
-		if(type == UpgradeType.POWER) return 3;
-		if(type == UpgradeType.AFTERBURN) return 3;
-		if(type == UpgradeType.OVERDRIVE) return 3;
-		return 0;
+	public HashMap<UpgradeType, Integer> getValidUpgrades() {
+		HashMap<UpgradeType, Integer> upgrades = new HashMap<>();
+		upgrades.put(UpgradeType.SPEED, 3);
+		upgrades.put(UpgradeType.POWER, 3);
+		upgrades.put(UpgradeType.AFTERBURN, 3);
+		upgrades.put(UpgradeType.OVERDRIVE, 3);
+		return upgrades;
 	}
 
 	@Override

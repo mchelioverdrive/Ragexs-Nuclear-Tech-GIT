@@ -8,7 +8,7 @@ import com.hbm.inventory.fluid.Fluids;
 import com.hbm.tileentity.machine.TileEntityMoltenSaltReactor;
 import com.hbm.tileentity.machine.TileEntityMoltenSaltReactorPort;
 
-import api.hbm.fluid.IFluidConnector;
+import api.hbm.fluidmk2.IFluidConnectorMK2;
 import cpw.mods.fml.client.registry.ISimpleBlockRenderingHandler;
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.RenderBlocks;
@@ -66,14 +66,14 @@ public class RenderMSRPort implements ISimpleBlockRenderingHandler {
 
 	private boolean canRenderPipeConnection(IBlockAccess world, int x, int y, int z, Block block, ForgeDirection dir) {
 		TileEntity tile = world.getTileEntity(x + dir.offsetX, y + dir.offsetY, z + dir.offsetZ);
-		if(!(tile instanceof IFluidConnector) || tile instanceof TileEntityMoltenSaltReactor) return false;
+		if(!(tile instanceof IFluidConnectorMK2) || tile instanceof TileEntityMoltenSaltReactor) return false;
 
 		FluidType type = Fluids.THORIUM_SALT;
 		if(block instanceof MachineMoltenSaltReactorPort && !((MachineMoltenSaltReactorPort) block).isInput()) type = Fluids.THORIUM_SALT_HOT;
 		TileEntity here = world.getTileEntity(x, y, z);
 		if(here instanceof TileEntityMoltenSaltReactorPort) type = ((TileEntityMoltenSaltReactorPort) here).tank.getTankType();
 
-		return ((IFluidConnector) tile).canConnect(type, dir.getOpposite());
+		return ((IFluidConnectorMK2) tile).canConnect(type, dir.getOpposite());
 	}
 
 	private void renderPipeConnection(Block block, int x, int y, int z, RenderBlocks renderer, ForgeDirection dir) {

@@ -1,8 +1,10 @@
 package com.hbm.tileentity.machine;
 
+import java.util.HashMap;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
+import com.hbm.handler.threading.PacketThreading;
 import com.hbm.interfaces.IControlReceiver;
 import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.RecipesCommon.AStack;
@@ -15,20 +17,21 @@ import com.hbm.inventory.recipes.SolderingRecipes.SolderingRecipe;
 import com.hbm.items.machine.ItemMachineUpgrade;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
 import com.hbm.lib.Library;
-import com.hbm.packet.PacketDispatcher;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
-import com.hbm.util.I18nUtil;
+import com.hbm.util.BobMathUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
+import com.hbm.util.i18n.I18nUtil;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluid.IFluidStandardReceiver;
+import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.Item;
@@ -39,9 +42,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineSolderingStation extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
-	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
-
+public class TileEntityMachineSolderingStation extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiverMK2, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
 
 	public long power;
 	public long maxPower = 2_000;
@@ -53,6 +54,8 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 
 	public FluidTank tank;
 	public ItemStack display;
+
+	public UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	public TileEntityMachineSolderingStation() {
 		super(11);
@@ -73,6 +76,8 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 		}
 	}
 
+	private SolderingRecipe recipe;
+
 	@Override
 	public void updateEntity() {
 
@@ -88,20 +93,22 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 				}
 			}
 
-			SolderingRecipe recipe = SolderingRecipes.getRecipe(new ItemStack[] {slots[0], slots[1], slots[2], slots[3], slots[4], slots[5]});
+			recipe = SolderingRecipes.getRecipe(new ItemStack[] {slots[0], slots[1], slots[2], slots[3], slots[4], slots[5]});
 			long intendedMaxPower;
 
-			this.upgradeManager.checkSlots(slots, 9, 10);
-			int redLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int blueLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+			upgradeManager.checkSlots(this, slots, 9, 10);
+			int redLevel = upgradeManager.getLevel(UpgradeType.SPEED);
+			int blueLevel = upgradeManager.getLevel(UpgradeType.POWER);
+			int blackLevel = upgradeManager.getLevel(UpgradeType.OVERDRIVE);
 
 			if(recipe != null) {
 				this.processTime = recipe.duration - (recipe.duration * redLevel / 6) + (recipe.duration * blueLevel / 3);
 				this.consumption = recipe.consumption + (recipe.consumption * redLevel) - (recipe.consumption * blueLevel / 6);
-				intendedMaxPower = recipe.consumption * 20;
+				this.consumption *= Math.pow(2, blackLevel);
+				intendedMaxPower = consumption * 20;
 
 				if(canProcess(recipe)) {
-					this.progress++;
+					this.progress += (1 + blackLevel);
 					this.power -= this.consumption;
 
 					if(progress >= processTime) {
@@ -123,7 +130,7 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 						NBTTagCompound dPart = new NBTTagCompound();
 						dPart.setString("type", "tau");
 						dPart.setByte("count", (byte) 3);
-						PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(dPart, xCoord + 0.5 - dir.offsetX * 0.5 + rot.offsetX * 0.5, yCoord + 1.125, zCoord + 0.5 - dir.offsetZ * 0.5 + rot.offsetZ * 0.5), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 25));
+						PacketThreading.createAllAroundThreadedPacket(new AuxParticlePacketNT(dPart, xCoord + 0.5 - dir.offsetX * 0.5 + rot.offsetX * 0.5, yCoord + 1.125, zCoord + 0.5 - dir.offsetZ * 0.5 + rot.offsetZ * 0.5), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 25));
 					}
 
 				} else {
@@ -138,19 +145,7 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 
 			this.maxPower = Math.max(intendedMaxPower, power);
 
-			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", power);
-			data.setLong("maxPower", maxPower);
-			data.setLong("consumption", consumption);
-			data.setInteger("progress", progress);
-			data.setInteger("processTime", processTime);
-			data.setBoolean("collisionPrevention", collisionPrevention);
-			if(recipe != null) {
-				data.setInteger("display", Item.getIdFromItem(recipe.output.getItem()));
-				data.setInteger("displayMeta", recipe.output.getItemDamage());
-			}
-			this.tank.writeToNBT(data, "t");
-			this.networkPack(data, 25);
+			this.networkPackNT(25);
 		}
 	}
 
@@ -233,35 +228,52 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
 
 		return new DirPos[] {
-			new DirPos(xCoord + dir.offsetX, yCoord, zCoord + dir.offsetZ, dir),
-			new DirPos(xCoord + dir.offsetX + rot.offsetX, yCoord, zCoord + dir.offsetZ + rot.offsetZ, dir),
-			new DirPos(xCoord - dir.offsetX * 2, yCoord, zCoord - dir.offsetZ * 2, dir.getOpposite()),
-			new DirPos(xCoord - dir.offsetX * 2 + rot.offsetX, yCoord, zCoord - dir.offsetZ * 2 + rot.offsetZ, dir.getOpposite()),
-			new DirPos(xCoord - rot.offsetX, yCoord, zCoord - rot.offsetZ, rot.getOpposite()),
-			new DirPos(xCoord - dir.offsetX - rot.offsetX, yCoord, zCoord - dir.offsetZ - rot.offsetZ, rot.getOpposite()),
-			new DirPos(xCoord + rot.offsetX * 2, yCoord, zCoord + rot.offsetZ * 2, rot),
-			new DirPos(xCoord - dir.offsetX + rot.offsetX * 2, yCoord, zCoord - dir.offsetZ + rot.offsetZ * 2, rot),
+				new DirPos(xCoord + dir.offsetX, yCoord, zCoord + dir.offsetZ, dir),
+				new DirPos(xCoord + dir.offsetX + rot.offsetX, yCoord, zCoord + dir.offsetZ + rot.offsetZ, dir),
+				new DirPos(xCoord - dir.offsetX * 2, yCoord, zCoord - dir.offsetZ * 2, dir.getOpposite()),
+				new DirPos(xCoord - dir.offsetX * 2 + rot.offsetX, yCoord, zCoord - dir.offsetZ * 2 + rot.offsetZ, dir.getOpposite()),
+				new DirPos(xCoord - rot.offsetX, yCoord, zCoord - rot.offsetZ, rot.getOpposite()),
+				new DirPos(xCoord - dir.offsetX - rot.offsetX, yCoord, zCoord - dir.offsetZ - rot.offsetZ, rot.getOpposite()),
+				new DirPos(xCoord + rot.offsetX * 2, yCoord, zCoord + rot.offsetZ * 2, rot),
+				new DirPos(xCoord - dir.offsetX + rot.offsetX * 2, yCoord, zCoord - dir.offsetZ + rot.offsetZ * 2, rot),
 		};
 	}
 
 	@Override
-	public void networkUnpack(NBTTagCompound nbt) {
-		super.networkUnpack(nbt);
+	public void serialize(ByteBuf buf) {
+		super.serialize(buf);
+		buf.writeLong(this.power);
+		buf.writeLong(this.maxPower);
+		buf.writeLong(this.consumption);
+		buf.writeInt(this.progress);
+		buf.writeInt(this.processTime);
+		buf.writeBoolean(this.collisionPrevention);
+		buf.writeBoolean(recipe != null);
+		if(recipe != null) {
+			buf.writeInt(Item.getIdFromItem(recipe.output.getItem()));
+			buf.writeInt(recipe.output.getItemDamage());
+		}
+		this.tank.serialize(buf);
+	}
 
-		this.power = nbt.getLong("power");
-		this.maxPower = nbt.getLong("maxPower");
-		this.consumption = nbt.getLong("consumption");
-		this.progress = nbt.getInteger("progress");
-		this.processTime = nbt.getInteger("processTime");
-		this.collisionPrevention = nbt.getBoolean("collisionPrevention");
+	@Override
+	public void deserialize(ByteBuf buf) {
+		super.deserialize(buf);
+		this.power = buf.readLong();
+		this.maxPower = buf.readLong();
+		this.consumption = buf.readLong();
+		this.progress = buf.readInt();
+		this.processTime = buf.readInt();
+		this.collisionPrevention = buf.readBoolean();
 
-		if(nbt.hasKey("display")) {
-			this.display = new ItemStack(Item.getItemById(nbt.getInteger("display")), 1, nbt.getInteger("displayMeta"));
+		if(buf.readBoolean()) {
+			int id = buf.readInt();
+			this.display = new ItemStack(Item.getItemById(id), 1, buf.readInt());
 		} else {
 			this.display = null;
 		}
 
-		this.tank.readFromNBT(nbt, "t");
+		this.tank.deserialize(buf);
 	}
 
 	@Override
@@ -331,13 +343,13 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 
 		if(bb == null) {
 			bb = AxisAlignedBB.getBoundingBox(
-				xCoord - 1,
-				yCoord,
-				zCoord - 1,
-				xCoord + 2,
-				yCoord + 3,
-				zCoord + 2
-			);
+					xCoord - 1,
+					yCoord,
+					zCoord - 1,
+					xCoord + 2,
+					yCoord + 3,
+					zCoord + 2
+					);
 		}
 
 		return bb;
@@ -351,7 +363,7 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 
 	@Override
 	public boolean canProvideInfo(UpgradeType type, int level, boolean extendedInfo) {
-		return type == UpgradeType.SPEED || type == UpgradeType.POWER;
+		return type == UpgradeType.SPEED || type == UpgradeType.POWER || type == UpgradeType.OVERDRIVE;
 	}
 
 	@Override
@@ -365,13 +377,18 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "-" + (level * 100 / 6) + "%"));
 			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_DELAY, "+" + (level * 100 / 3) + "%"));
 		}
+		if(type == UpgradeType.OVERDRIVE) {
+			info.add((BobMathUtil.getBlink() ? EnumChatFormatting.RED : EnumChatFormatting.DARK_GRAY) + "YES");
+		}
 	}
 
 	@Override
-	public int getMaxLevel(UpgradeType type) {
-		if(type == UpgradeType.SPEED) return 3;
-		if(type == UpgradeType.POWER) return 3;
-		return 0;
+	public HashMap<UpgradeType, Integer> getValidUpgrades() {
+		HashMap<UpgradeType, Integer> upgrades = new HashMap<>();
+		upgrades.put(UpgradeType.SPEED, 3);
+		upgrades.put(UpgradeType.POWER, 3);
+		upgrades.put(UpgradeType.OVERDRIVE, 3);
+		return upgrades;
 	}
 
 	@Override

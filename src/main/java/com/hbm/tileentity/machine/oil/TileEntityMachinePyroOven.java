@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine.oil;
 
+import java.util.HashMap;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
@@ -22,12 +23,11 @@ import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.tileentity.TileEntityMachinePolluting;
 import com.hbm.util.BobMathUtil;
-import com.hbm.util.I18nUtil;
-import com.hbm.util.FurnaceGasEmission;
 import com.hbm.util.fauxpointtwelve.DirPos;
+import com.hbm.util.i18n.I18nUtil;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluid.IFluidStandardTransceiver;
+import api.hbm.fluidmk2.IFluidStandardTransceiverMK2;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
@@ -40,9 +40,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
-	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
-
+public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implements IEnergyReceiverMK2, IFluidStandardTransceiverMK2, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
 
 	public long power;
 	public static final long maxPower = 10_000_000;
@@ -57,6 +55,8 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 	public FluidTank[] tanks;
 
 	private AudioWrapper audio;
+
+	public UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	public TileEntityMachinePyroOven() {
 		super(6, 50);
@@ -90,17 +90,17 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 			for(DirPos pos : getConPos()) {
 				this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				if(tanks[0].getTankType() != Fluids.NONE) this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				if(tanks[1].getFill() > 0) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+				if(tanks[1].getFill() > 0) this.tryProvide(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 
 			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
 			ForgeDirection rot = dir.getRotation(ForgeDirection.DOWN);
-			if(smoke.getFill() > 0) this.sendFluid(smoke, worldObj, xCoord - rot.offsetX, yCoord + 3, zCoord - rot.offsetZ, Library.POS_Y);
+			if(smoke.getFill() > 0) this.tryProvide(smoke, worldObj, xCoord - rot.offsetX, yCoord + 3, zCoord - rot.offsetZ, Library.POS_Y);
 
-			this.upgradeManager.checkSlots(slots, 4, 5);
-			int speed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int powerSaving = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
-			int overdrive = Math.min(this.upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3);
+			upgradeManager.checkSlots(this, slots, 4, 5);
+			int speed = upgradeManager.getLevel(UpgradeType.SPEED);
+			int powerSaving = upgradeManager.getLevel(UpgradeType.POWER);
+			int overdrive = upgradeManager.getLevel(UpgradeType.OVERDRIVE);
 
 			this.isProgressing = false;
 			this.isVenting = false;
@@ -118,7 +118,6 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 				}
 
 				this.pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND);
-				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 500);
 
 			} else {
 				this.progress = 0F;
@@ -214,8 +213,8 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 	}
 
 	public boolean canProcess() {
-		int speed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-		int powerSaving = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+		int speed = upgradeManager.getLevel(UpgradeType.SPEED);
+		int powerSaving = upgradeManager.getLevel(UpgradeType.POWER);
 		if(power < this.getConsumption(speed, powerSaving)) return false; // not enough power
 
 		PyroOvenRecipe recipe = this.getMatchingRecipe();
@@ -255,11 +254,11 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 		ForgeDirection rot = dir.getRotation(ForgeDirection.DOWN);
 
 		return new DirPos[] {
-			new DirPos(xCoord + dir.offsetX * 2 + rot.offsetX * 3, yCoord, zCoord + dir.offsetZ * 2 + rot.offsetZ * 3, rot),
-			new DirPos(xCoord + dir.offsetX * 1 + rot.offsetX * 3, yCoord, zCoord + dir.offsetZ * 1 + rot.offsetZ * 3, rot),
-			new DirPos(xCoord + rot.offsetX * 3, yCoord, zCoord + rot.offsetZ * 3, rot),
-			new DirPos(xCoord - dir.offsetX * 1 + rot.offsetX * 3, yCoord, zCoord - dir.offsetZ * 1 + rot.offsetZ * 3, rot),
-			new DirPos(xCoord - dir.offsetX * 2 + rot.offsetX * 3, yCoord, zCoord - dir.offsetZ * 2 + rot.offsetZ * 3, rot),
+				new DirPos(xCoord + dir.offsetX * 2 + rot.offsetX * 3, yCoord, zCoord + dir.offsetZ * 2 + rot.offsetZ * 3, rot),
+				new DirPos(xCoord + dir.offsetX * 1 + rot.offsetX * 3, yCoord, zCoord + dir.offsetZ * 1 + rot.offsetZ * 3, rot),
+				new DirPos(xCoord + rot.offsetX * 3, yCoord, zCoord + rot.offsetZ * 3, rot),
+				new DirPos(xCoord - dir.offsetX * 1 + rot.offsetX * 3, yCoord, zCoord - dir.offsetZ * 1 + rot.offsetZ * 3, rot),
+				new DirPos(xCoord - dir.offsetX * 2 + rot.offsetX * 3, yCoord, zCoord - dir.offsetZ * 2 + rot.offsetZ * 3, rot),
 		};
 	}
 
@@ -379,10 +378,11 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 	}
 
 	@Override
-	public int getMaxLevel(UpgradeType type) {
-		if(type == UpgradeType.SPEED) return 3;
-		if(type == UpgradeType.POWER) return 3;
-		if(type == UpgradeType.OVERDRIVE) return 3;
-		return 0;
+	public HashMap<UpgradeType, Integer> getValidUpgrades() {
+		HashMap<UpgradeType, Integer> upgrades = new HashMap<>();
+		upgrades.put(UpgradeType.SPEED, 3);
+		upgrades.put(UpgradeType.POWER, 3);
+		upgrades.put(UpgradeType.OVERDRIVE, 3);
+		return upgrades;
 	}
 }

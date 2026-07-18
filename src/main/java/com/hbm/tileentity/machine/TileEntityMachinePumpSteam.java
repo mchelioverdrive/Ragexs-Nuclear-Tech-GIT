@@ -10,26 +10,26 @@ public class TileEntityMachinePumpSteam extends TileEntityMachinePumpBase {
 
 	public FluidTank steam;
 	public FluidTank lps;
-	
+
 	public TileEntityMachinePumpSteam() {
 		super();
 		water = new FluidTank(Fluids.WATER, steamSpeed * 100);
 		steam = new FluidTank(Fluids.STEAM, 1_000);
 		lps = new FluidTank(Fluids.SPENTSTEAM, 10);
 	}
-	
+
 	public void updateEntity() {
-		
+
 		if(!worldObj.isRemote) {
-			
+
 			for(DirPos pos : getConPos()) {
 				this.trySubscribe(steam.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				if(lps.getFill() > 0) {
-					this.sendFluid(lps, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+					this.tryProvide(lps, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				}
 			}
 		}
-		
+
 		super.updateEntity();
 	}
 
@@ -47,7 +47,7 @@ public class TileEntityMachinePumpSteam extends TileEntityMachinePumpBase {
 	public FluidTank[] getReceivingTanks() {
 		return new FluidTank[] {steam};
 	}
-	
+
 	protected NBTTagCompound getSync() {
 		NBTTagCompound data = super.getSync();
 		steam.writeToNBT(data, "s");

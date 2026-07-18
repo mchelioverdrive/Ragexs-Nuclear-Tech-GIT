@@ -5,13 +5,13 @@ import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.tileentity.TileEntityLoadedBase;
 
-import api.hbm.fluid.IFluidStandardReceiver;
-import api.hbm.fluid.IFluidStandardSender;
+import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
+import api.hbm.fluidmk2.IFluidStandardSenderMK2;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMoltenSaltReactorPort extends TileEntityLoadedBase implements IFluidStandardReceiver, IFluidStandardSender {
+public class TileEntityMoltenSaltReactorPort extends TileEntityLoadedBase implements IFluidStandardReceiverMK2, IFluidStandardSenderMK2 {
 
 	private boolean input;
 	public FluidTank tank;
@@ -42,11 +42,11 @@ public class TileEntityMoltenSaltReactorPort extends TileEntityLoadedBase implem
 	public void updateEntity() {
 		if(!worldObj.isRemote) {
 			if(input) {
-				this.subscribeToAllAround(tank.getTankType(), this);
+				this.trySubscribeToAllAround(tank.getTankType(), this);
 				this.pushInputToReactor();
 			} else {
 				this.pullOutputFromReactor();
-				this.sendFluidToAll(tank, this);
+				this.tryProvideToAll(tank, this);
 			}
 		}
 	}

@@ -2,7 +2,7 @@ package com.hbm.tileentity.machine.rbmk;
 
 import java.util.List;
 
-import api.hbm.fluid.IFluidStandardReceiver;
+import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
@@ -17,21 +17,21 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.DamageSource;
 import net.minecraft.world.World;
 
-public class TileEntityRBMKBurner extends TileEntityRBMKBase implements IFluidStandardReceiver {
-	
+public class TileEntityRBMKBurner extends TileEntityRBMKBase implements IFluidStandardReceiverMK2 {
+
 	public FluidTank tank;
 	private int lastHot;
 	public TileEntityRBMKBurner() {
 		super();
-		
+
 		this.tank = new FluidTank(Fluids.GASOLINE, 8000);
 	}
-	
+
 	@Override
 	public void updateEntity() {
 		int maxBurn = 10;
 		if(!worldObj.isRemote) {
-			
+
 			if(this.worldObj.getTotalWorldTime() % 20 == 0)
 				this.trySubscribe(tank.getTankType(), worldObj, xCoord, yCoord - 1, zCoord, Library.NEG_Y);
 			maxBurn += maxBurn;
@@ -47,10 +47,10 @@ public class TileEntityRBMKBurner extends TileEntityRBMKBase implements IFluidSt
 					}
 					this.lastHot = heating;
 				}
-				
+
 				if(lastHot > 0) {
 					List<Entity> entities = worldObj.getEntitiesWithinAABB(Entity.class, AxisAlignedBB.getBoundingBox(xCoord, yCoord + 4, zCoord, xCoord + 1, yCoord + 8, zCoord + 1));
-					
+
 					for(Entity e : entities) {
 						e.setFire(5);
 						e.attackEntityFrom(DamageSource.inFire, 10);
@@ -59,16 +59,16 @@ public class TileEntityRBMKBurner extends TileEntityRBMKBase implements IFluidSt
 			} else {
 				this.lastHot = 0;
 			}
-			
+
 		} else {
-			
+
 			if(this.lastHot > 100) {
 				for(int i = 0; i < 2; i++) {
 					worldObj.spawnParticle("flame", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
 					worldObj.spawnParticle("smoke", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
 					ParticleUtil.spawnGasFlame(worldObj, xCoord + worldObj.rand.nextDouble(), yCoord + 3.5 + worldObj.rand.nextDouble(), zCoord + worldObj.rand.nextDouble(), worldObj.rand.nextGaussian() * 0.2, 0.1, worldObj.rand.nextGaussian() * 0.2);
 				}
-				
+
 				if(worldObj.rand.nextInt(20) == 0)
 					worldObj.spawnParticle("lava", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.0, 0);
 			} else if(this.lastHot > 50) {
@@ -79,20 +79,20 @@ public class TileEntityRBMKBurner extends TileEntityRBMKBase implements IFluidSt
 					ParticleUtil.spawnGasFlame(worldObj, xCoord + worldObj.rand.nextDouble(), yCoord + 3.5 + worldObj.rand.nextDouble(), zCoord + worldObj.rand.nextDouble(), worldObj.rand.nextGaussian() * 0.2, 0.1, worldObj.rand.nextGaussian() * 0.2);
 				}
 			} else if(this.lastHot > 0) {
-				
+
 				if(worldObj.getTotalWorldTime() % 2 == 0)
 					worldObj.spawnParticle("flame", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
 					worldObj.spawnParticle("smoke", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
 					ParticleUtil.spawnGasFlame(worldObj, xCoord + worldObj.rand.nextDouble(), yCoord + 3.5 + worldObj.rand.nextDouble(), zCoord + worldObj.rand.nextDouble(), worldObj.rand.nextGaussian() * 0.2, 0.1, worldObj.rand.nextGaussian() * 0.2);
-				
+
 			}
-			
+
 		}
-		
+
 		super.updateEntity();
-		
+
 	}
-	
+
 	private int[] findCore(World world, int x, int y, int z) {
 		// TODO Auto-generated method stub
 		return null;
@@ -101,15 +101,15 @@ public class TileEntityRBMKBurner extends TileEntityRBMKBase implements IFluidSt
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		
+
 		tank.readFromNBT(nbt, "fuel");
 		this.lastHot = nbt.getInteger("burned");
 	}
-	
+
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		
+
 		tank.writeToNBT(nbt, "fuel");
 		nbt.setInteger("burned", this.lastHot);
 	}

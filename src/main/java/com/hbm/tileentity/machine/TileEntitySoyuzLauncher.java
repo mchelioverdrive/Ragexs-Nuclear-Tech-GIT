@@ -20,10 +20,11 @@ import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluid.IFluidStandardReceiver;
+import api.hbm.fluidmk2.IFluidStandardReceiverMK2;
 import api.hbm.item.IDesignatorItem;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.ISidedInventory;
@@ -36,7 +37,7 @@ import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements ISidedInventory, IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IFluidCopiable {
+public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements ISidedInventory, IEnergyReceiverMK2, IFluidStandardReceiverMK2, IGUIProvider, IFluidCopiable {
 
 	public long power;
 	public static final long maxPower = 1000000;
@@ -95,14 +96,7 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 				liftOff();
 			}
 
-			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", power);
-			data.setByte("mode", mode);
-			data.setBoolean("starting", starting);
-			data.setByte("type", this.getType());
-			tanks[0].writeToNBT(data, "t0");
-			tanks[1].writeToNBT(data, "t1");
-			networkPack(data, 250);
+			networkPackNT(250);
 		}
 
 		if(worldObj.isRemote) {
@@ -190,15 +184,26 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 		}
 	}
 
-	public void networkUnpack(NBTTagCompound data) {
-		super.networkUnpack(data);
+	@Override
+	public void serialize(ByteBuf buf) {
+		super.serialize(buf);
+		buf.writeLong(power);
+		buf.writeByte(mode);
+		buf.writeBoolean(starting);
+		buf.writeByte(this.getType());
+		tanks[0].serialize(buf);
+		tanks[1].serialize(buf);
+	}
 
-		power = data.getLong("power");
-		mode = data.getByte("mode");
-		starting = data.getBoolean("starting");
-		rocketType = data.getByte("type");
-		tanks[0].readFromNBT(data, "t0");
-		tanks[1].readFromNBT(data, "t1");
+	@Override
+	public void deserialize(ByteBuf buf) {
+		super.deserialize(buf);
+		power = buf.readLong();
+		mode = buf.readByte();
+		starting = buf.readBoolean();
+		rocketType = buf.readByte();
+		tanks[0].deserialize(buf);
+		tanks[1].deserialize(buf);
 	}
 
 	public void startCountdown() {
@@ -349,11 +354,11 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 		if(mode == 1)
 			return 0;
 
-		//if(slots[2] != null && (slots[2].getItem() == ModItems.sat_gerald || slots[2].getItem() == ModItems.sat_lunar_miner)) {
-		//	if(slots[3] != null && slots[3].getItem() == ModItems.missile_soyuz_lander)
-		//		return 2;
-		//	return 1;
-		//}
+		if(slots[2] != null && (slots[2].getItem() == ModItems.sat_gerald || slots[2].getItem() == ModItems.sat_lunar_miner)) {
+			if(slots[3] != null && slots[3].getItem() == ModItems.missile_soyuz_lander)
+				return 2;
+			return 1;
+		}
 		return 0;
 	}
 

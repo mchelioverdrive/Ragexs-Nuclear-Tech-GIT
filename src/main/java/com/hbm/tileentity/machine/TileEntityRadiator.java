@@ -17,7 +17,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityRadiator extends TileEntityCondenser {
-	
+
 	public static int inputTankSize = 500;
 	public static int outputTankSize = 500;
 
@@ -46,7 +46,7 @@ public class TileEntityRadiator extends TileEntityCondenser {
 	}
 
 	@Override
-	public void subscribeToAllAround(FluidType type, TileEntity te) {
+	public void trySubscribeToAllAround(FluidType type, TileEntity te) {
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
 
@@ -57,21 +57,21 @@ public class TileEntityRadiator extends TileEntityCondenser {
 	}
 
 	@Override
-	public void sendFluidToAll(FluidTank tank, TileEntity te) {
+	public void tryProvideToAll(FluidTank tank, TileEntity te) {
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
 
-		this.sendFluid(this.tanks[1], worldObj, xCoord - dir.offsetX + rot.offsetX, yCoord + 1, zCoord - dir.offsetZ + rot.offsetZ, dir);
-		this.sendFluid(this.tanks[1], worldObj, xCoord - dir.offsetX + rot.offsetX, yCoord - 1, zCoord - dir.offsetZ + rot.offsetZ, dir);
-		this.sendFluid(this.tanks[1], worldObj, xCoord - dir.offsetX - rot.offsetX, yCoord + 1, zCoord - dir.offsetZ - rot.offsetZ, dir);
-		this.sendFluid(this.tanks[1], worldObj, xCoord - dir.offsetX - rot.offsetX, yCoord - 1, zCoord - dir.offsetZ - rot.offsetZ, dir);
+		this.tryProvide(this.tanks[1], worldObj, xCoord - dir.offsetX + rot.offsetX, yCoord + 1, zCoord - dir.offsetZ + rot.offsetZ, dir);
+		this.tryProvide(this.tanks[1], worldObj, xCoord - dir.offsetX + rot.offsetX, yCoord - 1, zCoord - dir.offsetZ + rot.offsetZ, dir);
+		this.tryProvide(this.tanks[1], worldObj, xCoord - dir.offsetX - rot.offsetX, yCoord + 1, zCoord - dir.offsetZ - rot.offsetZ, dir);
+		this.tryProvide(this.tanks[1], worldObj, xCoord - dir.offsetX - rot.offsetX, yCoord - 1, zCoord - dir.offsetZ - rot.offsetZ, dir);
 	}
-	
+
 	AxisAlignedBB bb = null;
-	
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
-		
+
 		if(bb == null) {
 			bb = AxisAlignedBB.getBoundingBox(
 				xCoord - 20,
@@ -82,14 +82,14 @@ public class TileEntityRadiator extends TileEntityCondenser {
 				zCoord + 21
 			);
 		}
-		
+
 		return bb;
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public double getMaxRenderDistanceSquared() {
 		return 65536.0D;
 	}
-	
+
 }

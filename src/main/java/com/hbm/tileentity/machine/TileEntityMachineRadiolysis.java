@@ -20,10 +20,11 @@ import com.hbm.util.Tuple.Pair;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyProviderMK2;
-import api.hbm.fluid.IFluidStandardTransceiver;
+import api.hbm.fluidmk2.IFluidStandardTransceiverMK2;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemFood;
@@ -33,7 +34,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineRadiolysis extends TileEntityMachineBase implements IEnergyProviderMK2, IFluidStandardTransceiver, IGUIProvider, IInfoProviderEC, IFluidCopiable {
+public class TileEntityMachineRadiolysis extends TileEntityMachineBase implements IEnergyProviderMK2, IFluidStandardTransceiverMK2, IGUIProvider, IInfoProviderEC, IFluidCopiable {
 
 	public long power;
 	public static final int maxPower = 1000000;
@@ -98,16 +99,6 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 		tanks[2].writeToNBT(nbt, "output2");
 	}
 
-	public void networkUnpack(NBTTagCompound data) {
-		super.networkUnpack(data);
-
-		this.power = data.getLong("power");
-		this.heat = data.getInteger("heat");
-		tanks[0].readFromNBT(data, "t0");
-		tanks[1].readFromNBT(data, "t1");
-		tanks[2].readFromNBT(data, "t2");
-	}
-
 	@Override
 	public void updateEntity() {
 
@@ -136,18 +127,32 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 			for(DirPos pos : getConPos()) {
 				this.tryProvide(worldObj, pos.getX(), pos.getY(),pos.getZ(), pos.getDir());
 				this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(),pos.getZ(), pos.getDir());
-				if(tanks[1].getFill() > 0) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(),pos.getZ(), pos.getDir());
-				if(tanks[2].getFill() > 0) this.sendFluid(tanks[2], worldObj, pos.getX(), pos.getY(),pos.getZ(), pos.getDir());
+				if(tanks[1].getFill() > 0) this.tryProvide(tanks[1], worldObj, pos.getX(), pos.getY(),pos.getZ(), pos.getDir());
+				if(tanks[2].getFill() > 0) this.tryProvide(tanks[2], worldObj, pos.getX(), pos.getY(),pos.getZ(), pos.getDir());
 			}
 
-			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", power);
-			data.setInteger("heat", heat);
-			tanks[0].writeToNBT(data, "t0");
-			tanks[1].writeToNBT(data, "t1");
-			tanks[2].writeToNBT(data, "t2");
-			this.networkPack(data, 50);
+			this.networkPackNT(50);
 		}
+	}
+
+	@Override
+	public void serialize(ByteBuf buf) {
+		super.serialize(buf);
+		buf.writeLong(this.power);
+		buf.writeInt(this.heat);
+		tanks[0].serialize(buf);
+		tanks[1].serialize(buf);
+		tanks[2].serialize(buf);
+	}
+
+	@Override
+	public void deserialize(ByteBuf buf) {
+		super.deserialize(buf);
+		this.power = buf.readLong();
+		this.heat = buf.readInt();
+		tanks[0].deserialize(buf);
+		tanks[1].deserialize(buf);
+		tanks[2].deserialize(buf);
 	}
 
 	protected DirPos[] getConPos() {
@@ -199,9 +204,9 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 	// Code: pressure, sword, sterilize.
 	private void sterilize() {
 		if(slots[12] != null) {
-			//if(slots[12].getItem() instanceof ItemFood && !(slots[12].getItem() == ModItems.pancake)) {
-			//	this.decrStackSize(12, 1);
-			//}
+			if(slots[12].getItem() instanceof ItemFood && !(slots[12].getItem() == ModItems.pancake)) {
+				this.decrStackSize(12, 1);
+			}
 
 			if(!checkIfValid()) return;
 

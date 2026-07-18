@@ -37,7 +37,7 @@ public class ArmorFSBFueled extends ArmorFSB implements IFillableItem {
 			setFill(stack, maxFuel);
 			return maxFuel;
 		}
-		
+
 		return stack.stackTagCompound.getInteger("fuel");
 	}
 
@@ -45,7 +45,7 @@ public class ArmorFSBFueled extends ArmorFSB implements IFillableItem {
 		if(stack.stackTagCompound == null) {
 			stack.stackTagCompound = new NBTTagCompound();
 		}
-		
+
 		stack.stackTagCompound.setInteger("fuel", fill);
 	}
 
@@ -104,14 +104,14 @@ public class ArmorFSBFueled extends ArmorFSB implements IFillableItem {
 
 	@Override
 	public int tryFill(FluidType type, int amount, ItemStack stack) {
-		
+
 		if(!acceptsFluid(type, stack))
 			return amount;
-		
+
 		int toFill = Math.min(amount, this.fillRate);
 		toFill = Math.min(toFill, this.maxFuel - this.getFill(stack));
 		this.setFill(stack, this.getFill(stack) + toFill);
-		
+
 		return amount - toFill;
 	}
 
