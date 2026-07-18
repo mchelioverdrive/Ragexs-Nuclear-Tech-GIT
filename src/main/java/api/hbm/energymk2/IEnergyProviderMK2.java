@@ -24,7 +24,7 @@ public interface IEnergyProviderMK2 extends IEnergyHandlerMK2 {
 	
 	public default void tryProvide(World world, int x, int y, int z, ForgeDirection dir) {
 
-		TileEntity te = TileAccessCache.getTile(world, x, y, z);
+		TileEntity te = NeighborTileAccessCache.getTile(world, x, y, z);
 		boolean red = false;
 		
 		if(te instanceof IEnergyConductorMK2) {
