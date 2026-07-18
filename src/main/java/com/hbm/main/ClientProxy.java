@@ -4,6 +4,7 @@
 import com.hbm.blocks.network.FluidPump;
 import com.hbm.explosion.ExplosionNukeSmall;
 import com.hbm.handler.imc.IMCHandlerNHNEI;
+import com.hbm.render.loader.HFRModelReloader;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
@@ -20,6 +21,7 @@ import net.minecraft.client.renderer.entity.RenderMinecart;
 import net.minecraft.client.renderer.entity.RenderSnowball;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
+import net.minecraft.client.resources.IReloadableResourceManager;
 import net.minecraft.client.resources.Language;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -158,6 +160,8 @@ public class ClientProxy extends ServerProxy {
 		registerClientEventHandler(theInfoSystem);
 
 		AdvancedModelLoader.registerModelHandler(new HmfModelLoader());
+		IReloadableResourceManager resourceMan = (IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager();
+		resourceMan.registerReloadListener(new HFRModelReloader());
 
 		registerTileEntitySpecialRenderer();
 		registerItemRenderer();
