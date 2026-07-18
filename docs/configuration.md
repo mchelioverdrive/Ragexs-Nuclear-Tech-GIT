@@ -159,3 +159,17 @@ The command edits the runtime list; persistence depends on implementation detail
 5. Edit recipes, fluid traits, fallout, item pools, and custom machines as needed.
 6. Test with representative players and machines.
 7. Back up the final config set before opening the long-term world.
+
+### Turbine pressure safety
+
+Steam turbines now model pressure ratings in the dynamic machine JSON:
+
+| Machine key | Pressure field | Default | Steam-density field | Default | Behavior |
+| --- | --- | ---: | --- | ---: | --- |
+| `steamturbine` | `I:maxSafePressure` | `1` | `I:maxSafeSteamTier` | `0` | Accepts normal steam by density. PU 1 gives a small throughput/efficiency gain; higher PU is refused unless the turbine is already full and backed up, and hot/dense steam increases blocked-exhaust rupture stress. |
+| `steamturbineIndustrial` | `I:maxSafePressure` | `2` | `I:maxSafeSteamTier` | `1` | Accepts normal and hot steam. Higher safe pressure improves flow share/efficiency; superhot or denser steam increases blocked-exhaust rupture stress, and higher PU is refused unless the turbine is already full and backed up. |
+| `steamturbineLeviathan` | `I:maxSafePressure` | `3` | `I:maxSafeSteamTier` | `3` | Accepts the full normal/hot/superhot/ultrahot steam chain by default, but can still rupture when full input and full output create blocked-exhaust stress. |
+
+Steam-density tiers are: `0` normal steam, `1` hot/dense steam, `2` superhot/super-dense steam, and `3` ultrahot/ultra-dense steam. All steam turbines now build exhaust stress only when their input buffer is full and their output buffer has no output capacity, so inserting a dense-steam identifier alone does not explode the turbine. A turbine with both a full input and blocked/full outlet can rupture under load instead of silently sitting full.
+
+Gas turbines do not accept pressurized steam input, but their internal steam chest can rupture if the turbine remains hot and above half throttle while the hot-steam output tank is nearly full. Keep hot-steam pipes and consumers clear before raising throttle.
