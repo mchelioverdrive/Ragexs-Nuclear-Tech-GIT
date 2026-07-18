@@ -1573,9 +1573,7 @@ public class ResourceManager {
 
 	//pipes
 	public static final ResourceLocation fluid_pump_tex = new ResourceLocation(RefStrings.MODID, "textures/models/network/fluid_diode.png");
-	//public static final IModelCustom fluid_pump = new HFRWavefrontObject("models/network/fluid_diode.obj").asVBO();
-	//TODO hmm yeah maybe we SHOULD like backport VBO shit
-	public static final IModelCustom fluid_pump = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID,"models/network/fluid_diode.obj"));
+	public static final IModelCustom fluid_pump = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/network/fluid_diode.obj")).asVBO();
 
 
 

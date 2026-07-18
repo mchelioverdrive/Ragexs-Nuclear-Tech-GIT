@@ -39,11 +39,13 @@ public class HFRWavefrontObject implements IModelCustomNamed {
 	public ArrayList<Vertex> vertexNormals = new ArrayList<Vertex>();
 	public ArrayList<TextureCoordinate> textureCoordinates = new ArrayList<TextureCoordinate>();
 	public ArrayList<S_GroupObject> groupObjects = new ArrayList<S_GroupObject>();
+	private final ResourceLocation resource;
 	private S_GroupObject currentGroupObject;
 	private String fileName;
 	private boolean smoothing = true;
 
 	public HFRWavefrontObject(ResourceLocation resource) throws ModelFormatException {
+		this.resource = resource;
 		this.fileName = resource.toString();
 
 		try {
@@ -55,16 +57,43 @@ public class HFRWavefrontObject implements IModelCustomNamed {
 	}
 
 	public HFRWavefrontObject(ResourceLocation resource, boolean smoothing) throws ModelFormatException {
-		this(resource);
+		this.resource = resource;
+		this.fileName = resource.toString();
 		this.smoothing = smoothing;
+
+		try {
+			IResource res = Minecraft.getMinecraft().getResourceManager().getResource(resource);
+			loadObjModel(res.getInputStream());
+		} catch(IOException e) {
+			throw new ModelFormatException("IO Exception reading model format", e);
+		}
 	}
 
 	public HFRWavefrontObject(String filename, InputStream inputStream) throws ModelFormatException {
+		this.resource = null;
 		this.fileName = filename;
 		loadObjModel(inputStream);
 	}
 
+	public void reload() throws ModelFormatException {
+		if(this.resource == null) {
+			throw new ModelFormatException("Cannot reload model without a resource location: " + this.fileName);
+		}
+
+		try {
+			IResource res = Minecraft.getMinecraft().getResourceManager().getResource(this.resource);
+			loadObjModel(res.getInputStream());
+		} catch(IOException e) {
+			throw new ModelFormatException("IO Exception reading model format", e);
+		}
+	}
+
 	private void loadObjModel(InputStream inputStream) throws ModelFormatException {
+		vertices.clear();
+		vertexNormals.clear();
+		textureCoordinates.clear();
+		groupObjects.clear();
+		currentGroupObject = null;
 		BufferedReader reader = null;
 
 		String currentLine = null;
@@ -108,17 +137,17 @@ public class HFRWavefrontObject implements IModelCustomNamed {
 				} else if(currentLine.startsWith("g ") | currentLine.startsWith("o ")) {
 					S_GroupObject group = parseGroupObject(currentLine, lineCount);
 
-					if(group != null) {
-						if(currentGroupObject != null) {
-							groupObjects.add(currentGroupObject);
-						}
+					if(group != null && currentGroupObject != null) {
+						groupObjects.add(currentGroupObject);
 					}
 
 					currentGroupObject = group;
 				}
 			}
 
-			groupObjects.add(currentGroupObject);
+			if(currentGroupObject != null) {
+				groupObjects.add(currentGroupObject);
+			}
 		} catch(IOException e) {
 			throw new ModelFormatException("IO Exception reading model format", e);
 		} finally {
@@ -493,8 +522,12 @@ public class HFRWavefrontObject implements IModelCustomNamed {
 		return names;
 	}
 
-	public WavefrontObjVBO asVBO() {
-		return new WavefrontObjVBO(this);
+	public HFRWavefrontObjectVBO asVBO() {
+		return new HFRWavefrontObjectVBO(this);
+	}
+
+	public String getFileName() {
+		return this.fileName;
 	}
 	
 	public WavefrontObjDisplayList asDisplayList() {

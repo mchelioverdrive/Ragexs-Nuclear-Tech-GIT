@@ -74,6 +74,16 @@ public class S_Face {
 		}
 	}
 
+	public Vertex getNormal(int vertexIndex) {
+		if(this.smoothing && this.vertexNormals != null && vertexIndex < this.vertexNormals.length) {
+			return this.vertexNormals[vertexIndex];
+		}
+		if(this.faceNormal == null) {
+			this.faceNormal = calculateFaceNormal();
+		}
+		return this.faceNormal;
+	}
+
 	public Vertex calculateFaceNormal() {
 		
 		Vec3 v1 = Vec3.createVectorHelper(this.vertices[1].x - this.vertices[0].x, this.vertices[1].y - this.vertices[0].y, this.vertices[1].z - this.vertices[0].z);

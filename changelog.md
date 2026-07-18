@@ -1,3 +1,9 @@
+# Port HFR VBO model backend
+
+- Added reloadable HFR OBJ VBO buffers that upload triangle vertices, UVs, and normals with `GL_STATIC_DRAW` and render with `glDrawArrays`.
+- Registered the client model reloader so resource reloads rebuild tracked VBO buffers.
+- Switched the fluid pump model to the HFR VBO path while leaving broader model conversion selective.
+
 # Fix generic block inventory stack overflows
 
 - Fixed sandbag and barrier inventory rendering to draw their bounded cuboids directly instead of recursively invoking the block item renderer.
