@@ -1,3 +1,7 @@
+# Fix generic block inventory stack overflows
+
+- Fixed sandbag and barrier inventory rendering to draw their bounded cuboids directly instead of recursively invoking the block item renderer.
+
 # Lower grenade throw speed and restore pullback animation
 
 - Reduced fully charged grenade throws to the normal grenade velocity while retaining bow-style charge scaling.

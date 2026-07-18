@@ -100,10 +100,29 @@ public class BlockBarrier extends Block implements ISBRHUniversal {
 		GL11.glRotatef(90.0F, 0.0F, 1.0F, 0.0F);
 		GL11.glTranslatef(-0.5F, -0.5F, -0.5F);
 
-		renderer.setRenderBounds(0.4375, 0D, 0.4375D, 0.5625D, 1D, 0.5625D); renderer.renderBlockAsItem(block, meta, 1.0F);
-		renderer.setRenderBounds(0.5D, 0.0625D, 0D, 0.5625D, 0.4725, 1D); renderer.renderBlockAsItem(block, meta, 1.0F);
-		renderer.setRenderBounds(0.5D, 0.5625D, 0D, 0.5625D, 0.9375, 1D); renderer.renderBlockAsItem(block, meta, 1.0F);
+		renderer.setRenderBounds(0.4375, 0D, 0.4375D, 0.5625D, 1D, 0.5625D); renderInventoryCuboid(block, meta, renderer);
+		renderer.setRenderBounds(0.5D, 0.0625D, 0D, 0.5625D, 0.4725, 1D); renderInventoryCuboid(block, meta, renderer);
+		renderer.setRenderBounds(0.5D, 0.5625D, 0D, 0.5625D, 0.9375, 1D); renderInventoryCuboid(block, meta, renderer);
 		GL11.glPopMatrix();
+	}
+
+	private void renderInventoryCuboid(Block block, int meta, RenderBlocks renderer) {
+
+		Tessellator tessellator = Tessellator.instance;
+		tessellator.startDrawingQuads();
+		tessellator.setNormal(0.0F, -1.0F, 0.0F);
+		renderer.renderFaceYNeg(block, 0.0D, 0.0D, 0.0D, renderer.getBlockIconFromSideAndMetadata(block, 0, meta));
+		tessellator.setNormal(0.0F, 1.0F, 0.0F);
+		renderer.renderFaceYPos(block, 0.0D, 0.0D, 0.0D, renderer.getBlockIconFromSideAndMetadata(block, 1, meta));
+		tessellator.setNormal(0.0F, 0.0F, -1.0F);
+		renderer.renderFaceZNeg(block, 0.0D, 0.0D, 0.0D, renderer.getBlockIconFromSideAndMetadata(block, 2, meta));
+		tessellator.setNormal(0.0F, 0.0F, 1.0F);
+		renderer.renderFaceZPos(block, 0.0D, 0.0D, 0.0D, renderer.getBlockIconFromSideAndMetadata(block, 3, meta));
+		tessellator.setNormal(-1.0F, 0.0F, 0.0F);
+		renderer.renderFaceXNeg(block, 0.0D, 0.0D, 0.0D, renderer.getBlockIconFromSideAndMetadata(block, 4, meta));
+		tessellator.setNormal(1.0F, 0.0F, 0.0F);
+		renderer.renderFaceXPos(block, 0.0D, 0.0D, 0.0D, renderer.getBlockIconFromSideAndMetadata(block, 5, meta));
+		tessellator.draw();
 	}
 
 	@Override
