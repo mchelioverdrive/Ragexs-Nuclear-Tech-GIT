@@ -298,6 +298,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 					int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
 					int cap = getPressureLimitedSteamPerTick() / trait.amountReq;
 					int ops = Math.min(inputOps, Math.min(outputOps, cap));
+					// Steam density alone must not rupture an empty turbine; only a full input and blocked output build stress.
 					if(tanks[0].getFill() >= tanks[0].getMaxFill() && outputOps <= 0) {
 						if(++exhaustStress >= getExhaustStressLimit(in)) {
 							burstFromBlockedExhaust(in);
