@@ -8,6 +8,7 @@ import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.IGUIProvider;
 
 import cpw.mods.fml.common.network.internal.FMLNetworkHandler;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -166,6 +167,32 @@ public class HbmPlayerProps implements IExtendedEntityProperties {
 		}
 		
 		return max;
+	}
+
+	public void serialize(ByteBuf buf) {
+		buf.writeBoolean(hasReceivedBook);
+		buf.writeFloat(shield);
+		buf.writeFloat(maxShield);
+		buf.writeInt(nitanCount);
+		buf.writeBoolean(enableBackpack);
+		buf.writeBoolean(enableHUD);
+		buf.writeInt(reputation);
+		buf.writeBoolean(isOnLadder);
+		buf.writeBoolean(hasWarped);
+		buf.writeInt(lastDimension);
+	}
+
+	public void deserialize(ByteBuf buf) {
+		this.hasReceivedBook = buf.readBoolean();
+		this.shield = buf.readFloat();
+		this.maxShield = buf.readFloat();
+		this.nitanCount = buf.readInt();
+		this.enableBackpack = buf.readBoolean();
+		this.enableHUD = buf.readBoolean();
+		this.reputation = buf.readInt();
+		this.isOnLadder = buf.readBoolean();
+		this.hasWarped = buf.readBoolean();
+		this.lastDimension = buf.readInt();
 	}
 
 	@Override

@@ -1,3 +1,9 @@
+# Port direct ByteBuf serialization and precompiled packets
+
+- Added precompiled packet wrappers and converted BufPacket tile sync to compile once, retain a comparison copy, send the compiled payload, and release temporary buffers.
+- Moved common ByteBuf tile sync duplicate-suppression into TileEntityLoadedBase for machine and ticking tile entities.
+- Reworked ExtPropPacket to serialize HbmLivingProps and HbmPlayerProps directly into ByteBuf payloads without the intermediate NBTTagCompound/PacketBuffer copy path.
+
 # Port worldgen cascade and UniNodespace backports
 
 - Backported the vanilla +8 decoration offset for upstream-selected world-generation entries that perform height lookups or can spill outside their origin, including flower, depth-deposit, and Eve spike/volcano starts.
