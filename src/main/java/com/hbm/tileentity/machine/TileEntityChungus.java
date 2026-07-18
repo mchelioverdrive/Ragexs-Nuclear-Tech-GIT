@@ -122,8 +122,8 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 					int inputOps = tanks[0].getFill() / trait.amountReq;
 					int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
 					int ops = Math.min(inputOps, outputOps);
-					if(tanks[0].getFill() >= tanks[0].getMaxFill() && outputOps <= 0) {
-						if(++exhaustStress >= getExhaustStressLimit(in)) {
+					if(inputOps > 0 && outputOps <= 0) {
+						if(++exhaustStress >= 100) {
 							burstFromBlockedExhaust(in);
 							return;
 						}
@@ -232,8 +232,12 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 		return 0;
 	}
 
-	private int getExhaustStressLimit(FluidType type) {
-		return getSteamTier(type) > maxSafeSteamTier ? 20 : 100;
+	private boolean shouldBurstFromSteamDensity(FluidType type) {
+		return getSteamTier(type) > maxSafeSteamTier;
+	}
+
+	private void burstFromSteamDensity(FluidType type) {
+		burstFromOverload(getSteamTier(type), tanks[0].getFill());
 	}
 
 	private void burstFromBlockedExhaust(FluidType type) {
@@ -263,11 +267,8 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 	public long transferFluid(FluidType type, int pressure, long amount) {
 		if(isSteamType(type) && (tanks[0].getFill() == 0 || type == tanks[0].getTankType())) {
 			if(pressure > maxSafePressure) {
-				if(tanks[0].getFill() >= tanks[0].getMaxFill() && tanks[1].getFill() >= tanks[1].getMaxFill()) {
-					burstFromOverpressure(pressure, amount);
-					return 0;
-				}
-				return amount;
+				burstFromOverpressure(pressure, amount);
+				return 0;
 			}
 			tanks[0].setTankType(type);
 			tanks[0].withPressure(pressure);
