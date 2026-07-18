@@ -142,7 +142,6 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 					int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced; //amount of cycles possible with the output buffer's remaining space
 					int cap = (int) Math.ceil(tanks[0].getFill() / trait.amountReq * getPressureThroughputShare()); //amount of cycles by the pressure assisted flow rule
 					int ops = Math.min(inputOps, Math.min(outputOps, cap)); //defacto amount of cycles
-					// Steam density alone must not rupture an empty turbine; only a full input and blocked output build stress.
 					if(tanks[0].getFill() >= tanks[0].getMaxFill() && outputOps <= 0) {
 						if(++exhaustStress >= getExhaustStressLimit(in)) {
 							burstFromBlockedExhaust(in);

@@ -122,7 +122,6 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 					int inputOps = tanks[0].getFill() / trait.amountReq;
 					int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
 					int ops = Math.min(inputOps, outputOps);
-					// Steam density alone must not rupture an empty turbine; only a full input and blocked output build stress.
 					if(tanks[0].getFill() >= tanks[0].getMaxFill() && outputOps <= 0) {
 						if(++exhaustStress >= getExhaustStressLimit(in)) {
 							burstFromBlockedExhaust(in);

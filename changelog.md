@@ -121,7 +121,6 @@
 
 - Added pressure-aware steam turbine behavior: modest safe pressure increases turbine throughput/efficiency, while overpressure ruptures the turbine with an explosion.
 - Added steam-density overload rules that increase blocked-exhaust rupture stress only when turbines are actually full/backed up, so identifiers or empty turbines do not explode.
-- Removed direct steam-density rupture calls from turbine update paths to fix stale compile failures and enforce full-input/full-output rupture semantics.
 - Added blocked-exhaust stress to steam turbines so full input plus full/no outlet output eventually ruptures under load instead of silently doing nothing.
 - Added gas turbine steam chest rupture behavior when high throttle/temperature keeps producing steam into a nearly full output tank.
 - Documented the new turbine pressure/density ratings and `hbmMachines.json` tuning keys.
