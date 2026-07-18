@@ -83,7 +83,6 @@ public class EntityEffectHandler {
 		if(entity instanceof EntityPlayerMP) {
 			HbmLivingProps props = HbmLivingProps.getData(entity);
 			HbmPlayerProps pprps = HbmPlayerProps.getData((EntityPlayerMP) entity);
-			NBTTagCompound data = new NBTTagCompound();
 
 			if(pprps.shield < pprps.getEffectiveMaxShield() && entity.ticksExisted > pprps.lastDamage + 60) {
 				int tsd = entity.ticksExisted - (pprps.lastDamage + 60);
@@ -93,9 +92,7 @@ public class EntityEffectHandler {
 			if(pprps.shield > pprps.getEffectiveMaxShield())
 				pprps.shield = pprps.getEffectiveMaxShield();
 
-			props.saveNBTData(data);
-			pprps.saveNBTData(data);
-			PacketDispatcher.wrapper.sendTo(new ExtPropPacket(data), (EntityPlayerMP) entity);
+			PacketDispatcher.wrapper.sendTo(new ExtPropPacket(props, pprps), (EntityPlayerMP) entity);
 		}
 
 		if(!entity.worldObj.isRemote) {

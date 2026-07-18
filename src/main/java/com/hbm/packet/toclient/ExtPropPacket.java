@@ -1,7 +1,5 @@
 package com.hbm.packet.toclient;
 
-import java.io.IOException;
-
 import com.hbm.extprop.HbmLivingProps;
 import com.hbm.extprop.HbmPlayerProps;
 
@@ -13,66 +11,57 @@ import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import net.minecraft.client.Minecraft;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.entity.player.EntityPlayer;
 
 public class ExtPropPacket implements IMessage {
-	
-	PacketBuffer buffer;
+
+	private ByteBuf buffer;
 
 	public ExtPropPacket() { }
 
-	public ExtPropPacket(NBTTagCompound nbt) {
-		
-		this.buffer = new PacketBuffer(Unpooled.buffer());
-		
-		try {
-			buffer.writeNBTTagCompoundToBuffer(nbt);
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	public ExtPropPacket(HbmLivingProps props, HbmPlayerProps pprps) {
+		this.buffer = Unpooled.buffer();
+		props.serialize(this.buffer);
+		pprps.serialize(this.buffer);
 	}
 
 	@Override
 	public void fromBytes(ByteBuf buf) {
-		
-		if (buffer == null) {
-			buffer = new PacketBuffer(Unpooled.buffer());
-		}
-		buffer.writeBytes(buf);
+		this.buffer = Unpooled.copiedBuffer(buf);
 	}
-
 	@Override
 	public void toBytes(ByteBuf buf) {
-		
-		if (buffer == null) {
-			buffer = new PacketBuffer(Unpooled.buffer());
+		if(this.buffer != null) {
+			try {
+				buf.writeBytes(this.buffer, this.buffer.readerIndex(), this.buffer.readableBytes());
+			} finally {
+				this.buffer.release();
+				this.buffer = null;
+			}
 		}
-		buf.writeBytes(buffer);
 	}
 
 	public static class Handler implements IMessageHandler<ExtPropPacket, IMessage> {
-		
+
 		@Override
 		@SideOnly(Side.CLIENT)
 		public IMessage onMessage(ExtPropPacket m, MessageContext ctx) {
-			
-			if(Minecraft.getMinecraft().theWorld == null)
+
+			if(Minecraft.getMinecraft().theWorld == null) {
+				m.buffer.release();
 				return null;
-			
-			try {
-				
-				NBTTagCompound nbt = m.buffer.readNBTTagCompoundFromBuffer();
-				HbmLivingProps props = HbmLivingProps.getData(Minecraft.getMinecraft().thePlayer);
-				HbmPlayerProps pprps = HbmPlayerProps.getData(Minecraft.getMinecraft().thePlayer);
-				props.loadNBTData(nbt);
-				pprps.loadNBTData(nbt);
-				
-			} catch (IOException e) {
-				e.printStackTrace();
 			}
-			
+
+			EntityPlayer player = Minecraft.getMinecraft().thePlayer;
+			HbmLivingProps props = HbmLivingProps.getData(player);
+			HbmPlayerProps pprps = HbmPlayerProps.getData(player);
+			try {
+				props.deserialize(m.buffer);
+				pprps.deserialize(m.buffer);
+			} finally {
+				m.buffer.release();
+			}
+
 			return null;
 		}
 	}
