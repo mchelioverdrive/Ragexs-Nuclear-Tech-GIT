@@ -16,7 +16,7 @@ import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluid.IFluidStandardSender;
+import api.hbm.fluidmk2.IFluidStandardSenderMK2;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.gui.GuiScreen;
@@ -27,8 +27,8 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 
 
- 
-public class TileEntityMachineShredderLarge extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardSender {
+
+public class TileEntityMachineShredderLarge extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardSenderMK2 {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
@@ -41,9 +41,9 @@ public class TileEntityMachineShredderLarge extends TileEntityMachineBase implem
 	public int progress;
 	public static final int processTimeBase = 200;
 	public int processTime;
-	
+
 	public FluidTank tank;
-	
+
 	public TileEntityMachineShredderLarge() {
 		super(4);
 		tank = new FluidTank(Fluids.BLOOD, 24000);
@@ -56,10 +56,10 @@ public class TileEntityMachineShredderLarge extends TileEntityMachineBase implem
 
 	@Override
 	public void updateEntity() {
-		
+
 		if(!worldObj.isRemote) {
 			this.power = Library.chargeTEFromItems(slots, 1, power, maxPower);
-			
+
 			this.updateConnections();
 
 			this.upgradeManager.checkSlots(slots, 2, 3);
@@ -68,15 +68,15 @@ public class TileEntityMachineShredderLarge extends TileEntityMachineBase implem
 
 			this.processTime = processTimeBase - (processTimeBase / 4) * speed;
 			this.usage = (usageBase + (usageBase * speed))  / (power + 1);
-			
+
 			if(this.canProcess())
 				this.process();
 			else
 				this.progress = 0;
-			
-			
-			this.sendFluid();
-			
+
+
+			this.tryProvide();
+
 			NBTTagCompound data = new NBTTagCompound();
 			data.setLong("power", this.power);
 			data.setInteger("progress", this.progress);
@@ -86,19 +86,19 @@ public class TileEntityMachineShredderLarge extends TileEntityMachineBase implem
 			this.networkPack(data, 50);
 		}
 	}
-	
+
 	private void updateConnections() {
 		for(DirPos pos : getConPos()) {
 			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
 	}
-	
-	private void sendFluid() {
+
+	private void tryProvide() {
 		for(DirPos pos : getConPos()) {
-			this.sendFluid(tank.getTankType(), 1 ,worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			this.tryProvide(tank.getTankType(), 1 ,worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
 	}
-	
+
 	private DirPos[] getConPos() {
 		return new DirPos[] {
 			new DirPos(xCoord, yCoord + 4, zCoord, Library.POS_Y),
@@ -119,44 +119,44 @@ public class TileEntityMachineShredderLarge extends TileEntityMachineBase implem
 	public int[] getAccessibleSlotsFromSide(int side) {
 		return new int[] { 0 };
 	}
-	
+
 	public boolean canProcess() {
-		
+
 		if(this.power < usage)
 			return false;
-		
+
 		if(slots[0] == null)
 			return false;
-		
+
 		FluidStack out = LiquefactionRecipes.getOutput(slots[0]);
-		
+
 		if(out == null)
 			return false;
-		
+
 		if(out.type != tank.getTankType() && tank.getFill() > 0)
 			return false;
-		
+
 		if(out.fill + tank.getFill() > tank.getMaxFill())
 			return false;
-		
+
 		return true;
 	}
-	
+
 	public void process() {
-		
+
 		this.power -= usage;
-		
+
 		progress++;
-		
+
 		if(progress >= processTime) {
-			
+
 			FluidStack out = LiquefactionRecipes.getOutput(slots[0]);
 			tank.setTankType(out.type);
 			tank.setFill(tank.getFill() + out.fill);
 			this.decrStackSize(0, 1);
-			
+
 			progress = 0;
-			
+
 			this.markDirty();
 		}
 	}
@@ -169,13 +169,13 @@ public class TileEntityMachineShredderLarge extends TileEntityMachineBase implem
 		this.processTime = nbt.getInteger("processTime");
 		this.tank.readFromNBT(nbt, "t0");
 	}
-	
+
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		tank.readFromNBT(nbt, "tank");
 	}
-	
+
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
@@ -186,7 +186,7 @@ public class TileEntityMachineShredderLarge extends TileEntityMachineBase implem
 	public void setPower(long power) {
 		this.power = power;
 	}
-	
+
 	public long getPowerScaled(long i) {
 		return (power * i) / maxPower;
 	}
@@ -201,12 +201,12 @@ public class TileEntityMachineShredderLarge extends TileEntityMachineBase implem
 	}
 
 
-	
+
 	AxisAlignedBB bb = null;
-	
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
-		
+
 		if(bb == null) {
 			bb = AxisAlignedBB.getBoundingBox(
 					xCoord - 1,
@@ -217,16 +217,16 @@ public class TileEntityMachineShredderLarge extends TileEntityMachineBase implem
 					zCoord + 2
 					);
 		}
-		
+
 		return bb;
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public double getMaxRenderDistanceSquared() {
 		return 65536.0D;
 	}
-	
+
 	@SideOnly(Side.CLIENT)
 	public Object provideGUI(int ID, EntityPlayer player, World world, int x, int y, int z) {
 		return new GUIMachineShredderLarge(player.inventory, this);

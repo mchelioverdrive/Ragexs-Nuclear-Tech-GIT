@@ -1,6 +1,8 @@
 package com.hbm.tileentity.machine.rbmk;
 
-import api.hbm.fluid.IFluidStandardTransceiver;
+import api.hbm.fluidmk2.IFluidStandardTransceiverMK2;
+import api.hbm.redstoneoverradio.IRORValueProvider;
+
 import com.hbm.blocks.ModBlocks;
 import com.hbm.entity.projectile.EntityRBMKDebris.DebrisType;
 import com.hbm.handler.CompatHandler;
@@ -17,6 +19,7 @@ import com.hbm.util.fauxpointtwelve.DirPos;
 import cpw.mods.fml.common.Optional;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import io.netty.buffer.ByteBuf;
 import li.cil.oc.api.machine.Arguments;
 import li.cil.oc.api.machine.Callback;
 import li.cil.oc.api.machine.Context;
@@ -27,11 +30,11 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "opencomputers")})
-public class TileEntityRBMKHeater extends TileEntityRBMKSlottedBase implements IFluidStandardTransceiver, SimpleComponent, CompatHandler.OCComponent {
+public class TileEntityRBMKHeater extends TileEntityRBMKSlottedBase implements IFluidStandardTransceiverMK2, IRORValueProvider, SimpleComponent, CompatHandler.OCComponent {
 
 	public FluidTank feed;
 	public FluidTank steam;
-	
+
 	public TileEntityRBMKHeater() {
 		super(1);
 		this.feed = new FluidTank(Fluids.COOLANT, 16_000);
@@ -42,21 +45,21 @@ public class TileEntityRBMKHeater extends TileEntityRBMKSlottedBase implements I
 	public String getName() {
 		return "container.rbmkHeater";
 	}
-	
+
 	@Override
 	public void updateEntity() {
-		
+
 		if(!worldObj.isRemote) {
-			
+
 			feed.setType(0, slots);
-			
+
 			if(feed.getTankType().hasTrait(FT_Heatable.class)) {
 				FT_Heatable trait = feed.getTankType().getTrait(FT_Heatable.class);
 				HeatingStep step = trait.getFirstStep();
 				steam.setTankType(step.typeProduced);
 				double tempRange = this.heat - steam.getTankType().temperature;
 				double eff = trait.getEfficiency(HeatingType.HEATEXCHANGER);
-				
+
 				if(tempRange > 0 && eff > 0) {
 					double TU_PER_DEGREE = 2_000D * eff; //based on 1mB of water absorbing 200 TU as well as 0.1°C from an RBMK column
 					int inputOps = feed.getFill() / step.amountReq;
@@ -68,22 +71,28 @@ public class TileEntityRBMKHeater extends TileEntityRBMKSlottedBase implements I
 					steam.setFill(steam.getFill() + step.amountProduced * ops);
 					this.heat -= (step.heatReq * ops / TU_PER_DEGREE) * trait.getEfficiency(HeatingType.HEATEXCHANGER);
 				}
-				
+
+				if(eff <= 0) {
+					feed.setTankType(Fluids.NONE);
+					steam.setTankType(Fluids.NONE);
+				}
+
 			} else {
+				feed.setTankType(Fluids.NONE);
 				steam.setTankType(Fluids.NONE);
 			}
-			
+
 			this.trySubscribe(feed.getTankType(), worldObj, xCoord, yCoord - 1, zCoord, Library.NEG_Y);
 			for(DirPos pos : getOutputPos()) {
-				if(this.steam.getFill() > 0) this.sendFluid(steam, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+				if(this.steam.getFill() > 0) this.tryProvide(steam, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 		}
-		
+
 		super.updateEntity();
 	}
-	
+
 	protected DirPos[] getOutputPos() {
-		
+
 		if(worldObj.getBlock(xCoord, yCoord - 1, zCoord) == ModBlocks.rbmk_loader) {
 			return new DirPos[] {
 					new DirPos(this.xCoord, this.yCoord + RBMKDials.getColumnHeight(worldObj) + 1, this.zCoord, Library.POS_Y),
@@ -108,32 +117,46 @@ public class TileEntityRBMKHeater extends TileEntityRBMKSlottedBase implements I
 			};
 		}
 	}
-	
+
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		
+
 		feed.readFromNBT(nbt, "feed");
 		steam.readFromNBT(nbt, "steam");
 	}
-	
+
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		
+
 		feed.writeToNBT(nbt, "feed");
 		steam.writeToNBT(nbt, "steam");
 	}
-	
+
+	@Override
+	public void serialize(ByteBuf buf) {
+		super.serialize(buf);
+		this.feed.serialize(buf);
+		this.steam.serialize(buf);
+	}
+
+	@Override
+	public void deserialize(ByteBuf buf) {
+		super.deserialize(buf);
+		this.feed.deserialize(buf);
+		this.steam.deserialize(buf);
+	}
+
 	@Override
 	public void onMelt(int reduce) {
-		
+
 		int count = 1 + worldObj.rand.nextInt(2);
-		
+
 		for(int i = 0; i < count; i++) {
 			spawnDebris(DebrisType.BLANK);
 		}
-		
+
 		super.onMelt(reduce);
 	}
 
@@ -239,5 +262,20 @@ public class TileEntityRBMKHeater extends TileEntityRBMKSlottedBase implements I
 	@SideOnly(Side.CLIENT)
 	public Object provideGUI(int ID, EntityPlayer player, World world, int x, int y, int z) {
 		return new GUIRBMKHeater(player.inventory, this);
+	}
+
+	@Override
+	public String[] getFunctionInfo() {
+		return new String[] {
+				PREFIX_VALUE + "in",
+				PREFIX_VALUE + "out"
+		};
+	}
+
+	@Override
+	public String provideRORValue(String name) {
+		if((PREFIX_VALUE + "in").equals(name))		return "" + this.feed.getFill();
+		if((PREFIX_VALUE + "out").equals(name))		return "" + this.steam.getFill();
+		return null;
 	}
 }

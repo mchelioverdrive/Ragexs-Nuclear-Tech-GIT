@@ -17,7 +17,7 @@ import com.hbm.util.Tuple.Triplet;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluid.IFluidStandardTransceiver;
+import api.hbm.fluidmk2.IFluidStandardTransceiverMK2;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
@@ -28,16 +28,16 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineHydrotreater extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IPersistentNBT, IGUIProvider, IFluidCopiable {
-	
+public class TileEntityMachineHydrotreater extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiverMK2, IPersistentNBT, IGUIProvider, IFluidCopiable {
+
 	public long power;
 	public static final long maxPower = 1_000_000;
-	
+
 	public FluidTank[] tanks;
 
 	public TileEntityMachineHydrotreater() {
 		super(11);
-		
+
 		this.tanks = new FluidTank[4];
 		this.tanks[0] = new FluidTank(Fluids.OIL, 64_000);
 		this.tanks[1] = new FluidTank(Fluids.HYDROGEN, 64_000).withPressure(1);
@@ -52,29 +52,29 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 
 	@Override
 	public void updateEntity() {
-		
+
 		if(!worldObj.isRemote) {
-			
+
 			if(this.worldObj.getTotalWorldTime() % 20 == 0) this.updateConnections();
 			power = Library.chargeTEFromItems(slots, 0, power, maxPower);
 			tanks[0].setType(9, slots);
-			
+
 			tanks[0].loadTank(1, 2, slots);
 			tanks[1].loadTank(3, 4, slots);
-			
+
 			if(worldObj.getTotalWorldTime() % 2 == 0) reform();
 
 			tanks[2].unloadTank(5, 6, slots);
 			tanks[3].unloadTank(7, 8, slots);
-			
+
 			for(DirPos pos : getConPos()) {
 				for(int i = 2; i < 4; i++) {
 					if(tanks[i].getFill() > 0) {
-						this.sendFluid(tanks[i], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+						this.tryProvide(tanks[i], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 					}
 				}
 			}
-			
+
 			this.networkPackNT(25);
 		}
 	}
@@ -85,16 +85,16 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 		buf.writeLong(power);
 		for(int i = 0; i < 4; i++) tanks[i].serialize(buf);
 	}
-	
+
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
 		this.power = buf.readLong();
 		for(int i = 0; i < 4; i++) tanks[i].deserialize(buf);
 	}
-	
+
 	private void reform() {
-		
+
 		Triplet<FluidStack, FluidStack, FluidStack> out = HydrotreatingRecipes.getOutput(tanks[0].getTankType());
 		if(out == null) {
 			tanks[2].setTankType(Fluids.NONE);
@@ -105,7 +105,7 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 		tanks[1].withPressure(out.getX().pressure).setTankType(out.getX().type);
 		tanks[2].setTankType(out.getY().type);
 		tanks[3].setTankType(out.getZ().type);
-		
+
 		if(power < 20_000) return;
 		if(tanks[0].getFill() < 100) return;
 		if(tanks[1].getFill() < out.getX().fill) return;
@@ -118,10 +118,10 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 		tanks[1].setFill(tanks[1].getFill() - out.getX().fill);
 		tanks[2].setFill(tanks[2].getFill() + out.getY().fill);
 		tanks[3].setFill(tanks[3].getFill() + out.getZ().fill);
-		
+
 		power -= 20_000;
 	}
-	
+
 	private void updateConnections() {
 		for(DirPos pos : getConPos()) {
 			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
@@ -129,9 +129,9 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 			this.trySubscribe(tanks[1].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
 	}
-	
+
 	public DirPos[] getConPos() {
-		
+
 		return new DirPos[] {
 				new DirPos(xCoord + 2, yCoord, zCoord + 1, Library.POS_X),
 				new DirPos(xCoord + 2, yCoord, zCoord - 1, Library.POS_X),
@@ -143,7 +143,7 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 				new DirPos(xCoord - 1, yCoord, zCoord - 2, Library.NEG_Z)
 		};
 	}
-	
+
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
@@ -153,7 +153,7 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 		tanks[2].readFromNBT(nbt, "t2");
 		tanks[3].readFromNBT(nbt, "t3");
 	}
-	
+
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
@@ -163,12 +163,12 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 		tanks[2].writeToNBT(nbt, "t2");
 		tanks[3].writeToNBT(nbt, "t3");
 	}
-	
+
 	AxisAlignedBB bb = null;
-	
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
-		
+
 		if(bb == null) {
 			bb = AxisAlignedBB.getBoundingBox(
 					xCoord - 1,
@@ -179,10 +179,10 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 					zCoord + 2
 					);
 		}
-		
+
 		return bb;
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public double getMaxRenderDistanceSquared() {

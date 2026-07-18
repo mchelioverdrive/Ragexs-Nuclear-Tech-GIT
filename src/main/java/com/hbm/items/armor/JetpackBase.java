@@ -7,7 +7,7 @@ import com.hbm.inventory.fluid.FluidType;
 import com.hbm.render.model.ModelJetPack;
 import com.hbm.util.ArmorUtil;
 
-import api.hbm.fluid.IFillableItem;
+import api.hbm.fluidmk2.IFillableItem;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.Minecraft;
@@ -34,7 +34,7 @@ public abstract class JetpackBase extends ItemArmorMod implements IFillableItem 
 		this.fuel = fuel;
 		this.maxFuel = maxFuel;
 	}
-	
+
 	@Override
 	public void addInformation(ItemStack itemstack, EntityPlayer player, List list, boolean bool) {
 		list.add(EnumChatFormatting.LIGHT_PURPLE + fuel.getLocalizedName() + ": " + this.getFuel(itemstack) + "mB / " + this.maxFuel + "mB");
@@ -42,32 +42,32 @@ public abstract class JetpackBase extends ItemArmorMod implements IFillableItem 
 		super.addInformation(itemstack, player, list, bool);
 		list.add(EnumChatFormatting.GOLD + "Can be worn on its own!");
 	}
-	
+
 	@Override
 	public void addDesc(List list, ItemStack stack, ItemStack armor) {
-		
+
 		ItemStack jetpack = ArmorModHandler.pryMods(armor)[ArmorModHandler.plate_only];
-		
+
 		if(jetpack == null)
 			return;
-		
+
 		list.add(EnumChatFormatting.RED + "  " + stack.getDisplayName() + " (" + fuel.getLocalizedName() + ": " + this.getFuel(jetpack) + "mB / " + this.maxFuel + "mB");
 	}
-	
+
 	@Override
 	public void modUpdate(EntityLivingBase entity, ItemStack armor) {
-		
+
 		if(!(entity instanceof EntityPlayer))
 			return;
-		
+
 		ItemStack jetpack = ArmorModHandler.pryMods(armor)[ArmorModHandler.plate_only];
-		
+
 		if(jetpack == null)
 			return;
-				
+
 		onArmorTick(entity.worldObj, (EntityPlayer)entity, jetpack);
 		ArmorUtil.resetFlightTime((EntityPlayer)entity);
-		
+
 		ArmorModHandler.applyMod(armor, jetpack);
 	}
 
@@ -76,20 +76,20 @@ public abstract class JetpackBase extends ItemArmorMod implements IFillableItem 
 	public void modRender(RenderPlayerEvent.SetArmorModel event, ItemStack armor) {
 
 		ModelBiped modelJetpack = getArmorModel(event.entityLiving, null, 1);
-		
+
 		RenderPlayer renderer = event.renderer;
 		ModelBiped model = renderer.modelArmor;
 		EntityPlayer player = event.entityPlayer;
 
 		modelJetpack.isSneak = model.isSneak;
-		
+
 		float interp = event.partialRenderTick;
 		float yawHead = player.prevRotationYawHead + (player.rotationYawHead - player.prevRotationYawHead) * interp;
 		float yawOffset = player.prevRenderYawOffset + (player.renderYawOffset - player.prevRenderYawOffset) * interp;
 		float yaw = yawHead - yawOffset;
 		float yawWrapped = MathHelper.wrapAngleTo180_float(yawHead - yawOffset);
 		float pitch = player.rotationPitch;
-		
+
 		Minecraft.getMinecraft().renderEngine.bindTexture(new ResourceLocation(this.getArmorTexture(armor, event.entity, 1, null)));
 		modelJetpack.render(event.entityPlayer, 0.0F, 0.0F, yawWrapped, yaw, pitch, 0.0625F);
 	}
@@ -108,33 +108,33 @@ public abstract class JetpackBase extends ItemArmorMod implements IFillableItem 
 			}
 			return this.model;
 		}
-		
+
 		return null;
 	}
-	
+
 	protected void useUpFuel(EntityPlayer player, ItemStack stack, int rate) {
 
 		if(player.ticksExisted % rate == 0)
 			this.setFuel(stack, this.getFuel(stack) - 1);
 	}
-	
+
     public static int getFuel(ItemStack stack) {
 		if(stack.stackTagCompound == null) {
 			stack.stackTagCompound = new NBTTagCompound();
 			return 0;
 		}
-		
+
 		return stack.stackTagCompound.getInteger("fuel");
-		
+
 	}
-	
+
 	public static void setFuel(ItemStack stack, int i) {
 		if(stack.stackTagCompound == null) {
 			stack.stackTagCompound = new NBTTagCompound();
 		}
-		
+
 		stack.stackTagCompound.setInteger("fuel", i);
-		
+
 	}
 
 	public int getMaxFill(ItemStack stack) {
@@ -152,18 +152,18 @@ public abstract class JetpackBase extends ItemArmorMod implements IFillableItem 
 
 	@Override
 	public int tryFill(FluidType type, int amount, ItemStack stack) {
-		
+
 		if(!acceptsFluid(type, stack))
 			return amount;
-		
+
 		int fill = this.getFuel(stack);
 		int req = maxFuel - fill;
-		
+
 		int toFill = Math.min(amount, req);
 		//toFill = Math.min(toFill, getLoadSpeed(stack));
-		
+
 		this.setFuel(stack, fill + toFill);
-		
+
 		return amount - toFill;
 	}
 

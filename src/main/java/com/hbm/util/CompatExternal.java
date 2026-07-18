@@ -18,7 +18,7 @@ import com.hbm.tileentity.turret.TileEntityTurretSentry;
 
 import api.hbm.energymk2.IEnergyHandlerMK2;
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluid.IFluidUser;
+import api.hbm.fluidmk2.IFluidUserMK2;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.passive.EntityChicken;
@@ -109,7 +109,7 @@ public class CompatExternal {
 	}
 
 	/**
-	 * Returns a list of tank definitions from the supplied tile entity. Uses IFluidUser, if the tile is incompatible it returns an empty list.
+	 * Returns a list of tank definitions from the supplied tile entity. Uses IFluidUserMK2, if the tile is incompatible it returns an empty list.
 	 * @param tile
 	 * @return an ArrayList of Object arrays with each array representing a fluid tank.<br>
 	 * [0]: STRING - unlocalized name of the fluid, simply use I18n to get the translated name<br>
@@ -121,11 +121,11 @@ public class CompatExternal {
 	public static ArrayList<Object[]> getFluidInfoFromTile(TileEntity tile) {
 		ArrayList<Object[]> list = new ArrayList();
 
-		if(!(tile instanceof IFluidUser)) {
+		if(!(tile instanceof IFluidUserMK2)) {
 			return list;
 		}
 
-		IFluidUser container = (IFluidUser) tile;
+		IFluidUserMK2 container = (IFluidUserMK2) tile;
 
 		for(FluidTank tank : container.getAllTanks()) {
 			FluidType type = tank.getTankType();
