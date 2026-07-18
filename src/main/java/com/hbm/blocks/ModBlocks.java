@@ -324,6 +324,8 @@ public class ModBlocks {
 
 	public static Block gravel_obsidian;
 	public static Block gravel_diamond;
+	public static Block sandbags;
+	public static Block wood_barrier;
 	public static Block asphalt;
 	public static Block asphalt_light;
 

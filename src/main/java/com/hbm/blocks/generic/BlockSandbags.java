@@ -65,7 +65,7 @@ public class BlockSandbags extends Block implements ISBRHUniversal {
 		GL11.glRotatef(90.0F, 0.0F, 1.0F, 0.0F);
 		GL11.glTranslatef(-0.5F, -0.5F, -0.5F);
 		renderer.setRenderBounds(0.125D, 0D, 0.125D, 0.875D, 1D, 0.875D);
-		RenderBlocksNT.renderStandardInventoryBlock(block, meta, renderer);
+		renderer.renderBlockAsItem(block, meta, 1.0F);
 		GL11.glPopMatrix();
 	}
 

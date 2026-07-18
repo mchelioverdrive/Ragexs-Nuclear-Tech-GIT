@@ -19,11 +19,10 @@ import com.hbm.inventory.gui.GUIPump;
 import com.hbm.items.machine.IItemFluidIdentifier;
 import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.IGUIProvider;
-import com.hbm.tileentity.TileEntityLoadedBase;
+import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.BobMathUtil;
 import com.hbm.util.EnumUtil;
-import com.hbm.util.i18n.I18nUtil;
-import com.hbm.world.gen.nbt.INBTBlockTransformable;
+import com.hbm.util.I18nUtil;
 
 import api.hbm.energymk2.IEnergyReceiverMK2.ConnectionPriority;
 import api.hbm.fluid.IFluidStandardTransceiver;
@@ -48,7 +47,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.Pre;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class FluidPump extends BlockContainer implements INBTBlockTransformable, ILookOverlay, IGUIProvider {
+public class FluidPump extends BlockContainer implements ILookOverlay, IGUIProvider {
 
 	public FluidPump(Material mat) {
 		super(mat);
@@ -112,19 +111,14 @@ public class FluidPump extends BlockContainer implements INBTBlockTransformable,
 		TileEntityFluidPump pump = (TileEntityFluidPump) tile;
 
 		List<String> text = new ArrayList();
-		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + pump.tank[0].getTankType().getLocalizedName() + " (" + pump.tank[0].getPressure() + " PU): " + BobMathUtil.format(pump.bufferSize) + "mB/t" + EnumChatFormatting.RED + " ->");
+		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + pump.tank[0].getTankType().getLocalizedName() + " (" + pump.tank[0].getPressure() + " PU): " + BobMathUtil.getShortNumber(pump.bufferSize) + "mB/t" + EnumChatFormatting.RED + " ->");
 		text.add("Priority: " + EnumChatFormatting.YELLOW + pump.priority.name());
-		if(pump.tank[0].getFill() > 0) text.add(BobMathUtil.format(pump.tank[0].getFill()) + "mB buffered");
+		if(pump.tank[0].getFill() > 0) text.add(BobMathUtil.getShortNumber(pump.tank[0].getFill()) + "mB buffered");
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 
-	@Override
-	public int transformMeta(int meta, int coordBaseMode) {
-		return INBTBlockTransformable.transformMetaDeco(meta, coordBaseMode);
-	}
-
 	@Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
-	public static class TileEntityFluidPump extends TileEntityLoadedBase implements IFluidStandardTransceiver, IControlReceiver, SimpleComponent, CompatHandler.OCComponent {
+	public static class TileEntityFluidPump extends TileEntityMachineBase implements IFluidStandardTransceiver, IControlReceiver, SimpleComponent, CompatHandler.OCComponent {
 
 		public int bufferSize = 100;
 		public FluidTank[] tank;
@@ -132,8 +126,14 @@ public class FluidPump extends BlockContainer implements INBTBlockTransformable,
 		public boolean redstone = false;
 
 		public TileEntityFluidPump() {
+			super(0);
 			this.tank = new FluidTank[1];
 			this.tank[0] = new FluidTank(Fluids.NONE, bufferSize);
+		}
+
+		@Override
+		public String getName() {
+			return "container.fluidPump";
 		}
 
 		@Override

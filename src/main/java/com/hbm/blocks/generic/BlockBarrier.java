@@ -100,9 +100,9 @@ public class BlockBarrier extends Block implements ISBRHUniversal {
 		GL11.glRotatef(90.0F, 0.0F, 1.0F, 0.0F);
 		GL11.glTranslatef(-0.5F, -0.5F, -0.5F);
 
-		renderer.setRenderBounds(0.4375, 0D, 0.4375D, 0.5625D, 1D, 0.5625D); RenderBlocksNT.renderStandardInventoryBlock(block, meta, renderer);
-		renderer.setRenderBounds(0.5D, 0.0625D, 0D, 0.5625D, 0.4725, 1D); RenderBlocksNT.renderStandardInventoryBlock(block, meta, renderer);
-		renderer.setRenderBounds(0.5D, 0.5625D, 0D, 0.5625D, 0.9375, 1D); RenderBlocksNT.renderStandardInventoryBlock(block, meta, renderer);
+		renderer.setRenderBounds(0.4375, 0D, 0.4375D, 0.5625D, 1D, 0.5625D); renderer.renderBlockAsItem(block, meta, 1.0F);
+		renderer.setRenderBounds(0.5D, 0.0625D, 0D, 0.5625D, 0.4725, 1D); renderer.renderBlockAsItem(block, meta, 1.0F);
+		renderer.setRenderBounds(0.5D, 0.5625D, 0D, 0.5625D, 0.9375, 1D); renderer.renderBlockAsItem(block, meta, 1.0F);
 		GL11.glPopMatrix();
 	}
 
