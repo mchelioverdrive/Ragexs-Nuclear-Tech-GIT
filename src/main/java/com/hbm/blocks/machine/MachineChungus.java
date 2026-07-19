@@ -146,7 +146,7 @@ public class MachineChungus extends BlockDummyable implements ILookOverlay, IToo
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		this.addStandardInfo(stack, player, list, ext);
-		list.add(EnumChatFormatting.YELLOW + "Trip valves automatically shut down on overpressure or overspeed.");
+		list.add(EnumChatFormatting.YELLOW + "Trip valves automatically shut down on overpressure.");
 		list.add(EnumChatFormatting.GRAY + "Reset a trip with the turbine lever or a redstone signal.");
 	}
 

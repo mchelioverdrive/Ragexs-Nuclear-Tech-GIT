@@ -290,7 +290,8 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 					int inputOps = tanks[0].getFill() / trait.amountReq;
 					int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
 					int cap = maxSteamPerTick / trait.amountReq;
-					int ops = Math.min(inputOps, Math.min(outputOps, cap));
+					int powerOps = getAvailablePowerOperations(trait.heatEnergy * eff);
+					int ops = Math.min(inputOps, Math.min(outputOps, Math.min(cap, powerOps)));
 					tanks[0].setFill(tanks[0].getFill() - ops * trait.amountReq);
 					tanks[1].setFill(tanks[1].getFill() + ops * trait.amountProduced);
 					this.power += (ops * trait.heatEnergy * eff);
@@ -309,6 +310,16 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 			
 			this.sendStandard(25);
 		}
+	}
+
+	/**
+	 * Do not consume steam unless the generated power fits in the internal buffer.
+	 * This prevents a full buffer from silently discarding energy while the turbine
+	 * continues to run.
+	 */
+	private int getAvailablePowerOperations(double energyPerOperation) {
+		if(power >= maxPower || energyPerOperation <= 0) return 0;
+		return (int) Math.min(Integer.MAX_VALUE, Math.floor((maxPower - power) / energyPerOperation));
 	}
 
 	/**
