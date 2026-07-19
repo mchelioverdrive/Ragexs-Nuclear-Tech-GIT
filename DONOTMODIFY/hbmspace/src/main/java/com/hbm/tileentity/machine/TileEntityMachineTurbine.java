@@ -63,6 +63,9 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 	public static int outputTankSize = 128_000;
 	public static int maxSteamPerTick = 6_000;
 	public static double efficiency = 0.85D;
+	private static final int OVERSPEED_FAILURE_TICKS = 20;
+
+	private int overspeedTicks;
 
 	public TileEntityMachineTurbine() {
 		slots = new ItemStack[7];
@@ -200,6 +203,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 		tanks[0].readFromNBT(nbt, "water");
 		tanks[1].readFromNBT(nbt, "steam");
 		power = nbt.getLong("power");
+		overspeedTicks = nbt.getInteger("overspeedTicks");
 
 		slots = new ItemStack[getSizeInventory()];
 
@@ -222,6 +226,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 		tanks[0].writeToNBT(nbt, "water");
 		tanks[1].writeToNBT(nbt, "steam");
 		nbt.setLong("power", power);
+		nbt.setInteger("overspeedTicks", overspeedTicks);
 
 		NBTTagList list = new NBTTagList();
 
@@ -268,6 +273,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 		if(!worldObj.isRemote) {
 
 			this.info = new double[3];
+			boolean wasAtMaximumPower = power >= maxPower;
 
 			age++;
 			if(age >= 2) {
@@ -308,6 +314,16 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 			if(!valid) tanks[1].setTankType(Fluids.NONE);
 			if(power > maxPower) power = maxPower;
 
+			if(wasAtMaximumPower && power >= maxPower && info[2] > 0) {
+				overspeedTicks++;
+				if(overspeedTicks >= OVERSPEED_FAILURE_TICKS) {
+					worldObj.newExplosion(null, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, 5F, true, true);
+					return;
+				}
+			} else {
+				overspeedTicks = 0;
+			}
+
 			this.sendFluidToAll(tanks[1], this);
 
 			tanks[1].unloadTank(5, 6, slots);
@@ -318,14 +334,20 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 
 	@Override public void serialize(ByteBuf buf) {
 		buf.writeLong(power);
+		buf.writeBoolean(isOverspeeding());
 		tanks[0].serialize(buf);
 		tanks[1].serialize(buf);
 	}
 
 	@Override public void deserialize(ByteBuf buf) {
 		this.power = buf.readLong();
+		this.overspeedTicks = buf.readBoolean() ? 1 : 0;
 		tanks[0].deserialize(buf);
 		tanks[1].deserialize(buf);
+	}
+
+	public boolean isOverspeeding() {
+		return overspeedTicks > 0;
 	}
 
 	@Override

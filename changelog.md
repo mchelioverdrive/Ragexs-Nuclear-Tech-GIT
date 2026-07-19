@@ -1,3 +1,8 @@
+# Add steam turbine overspeed events
+
+- Standard Steam Turbines now enter a one-second overspeed warning and explode if they continue to process steam while their power buffer is full and no electrical load exports that power.
+- Added a turbine look-overlay warning and steam-turbine safety documentation explaining how to avoid an overspeed failure.
+
 # Add steam turbine overpressure explosions
 
 - Standard Steam Turbines now rupture in a destructive explosion when both their input and spent-steam output tanks are full, preventing permanently blocked steam systems from silently remaining safe.
