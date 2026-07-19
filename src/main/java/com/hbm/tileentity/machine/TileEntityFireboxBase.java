@@ -11,6 +11,7 @@ import com.hbm.items.ItemEnums.EnumAshType;
 import com.hbm.module.ModuleBurnTime;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachinePolluting;
+import com.hbm.util.FurnaceGasEmission;
 import com.hbm.util.ItemStackUtil;
 
 import api.hbm.fluid.IFluidStandardSender;
@@ -111,6 +112,7 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 
 					if(canOperate) {
 						burnTime--;
+						FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
 						if(worldObj.getTotalWorldTime() % 20 == 0) this.pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 3);
 					}
 				} else {

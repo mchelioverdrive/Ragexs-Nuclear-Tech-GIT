@@ -6,11 +6,13 @@ import com.hbm.blocks.BlockDummyable;
 import com.hbm.blocks.ITooltipProvider;
 import com.hbm.tileentity.TileEntityProxyCombo;
 import com.hbm.tileentity.machine.TileEntityHeaterFirebox;
+import com.hbm.util.I18nUtil;
 
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
 public class HeaterFirebox extends BlockDummyable implements ITooltipProvider {
@@ -50,5 +52,6 @@ public class HeaterFirebox extends BlockDummyable implements ITooltipProvider {
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		this.addStandardInfo(stack, player, list, ext);
+		list.add(EnumChatFormatting.DARK_RED + I18nUtil.resolveKey("tooltip.furnace.monoxide"));
 	}
 }

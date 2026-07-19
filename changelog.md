@@ -1,3 +1,9 @@
+## Add carbon monoxide emissions to heat burners
+
+* Fireboxes and heating ovens now probabilistically emit carbon monoxide while they actively burn solid fuel.
+* Fluid burners now probabilistically emit carbon monoxide while consuming flammable fluid.
+* Added carbon monoxide warning tooltips for all three heat burners and documented the ventilation requirement in the getting-started guide.
+
 ## Fix Leviathan turbine trip status and redstone reset
 
 * Added an always-visible `READY` or `TRIPPED` trip-valve status line to the Leviathan Steam Turbine's look overlay.
