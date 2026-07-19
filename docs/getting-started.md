@@ -59,7 +59,7 @@ Nuclear systems are powerful but punishing:
 
 ## Steam turbine safety
 
-Steam turbines require a clear route for both incoming steam and spent-steam exhaust. A standard Steam Turbine ruptures in a destructive overpressure explosion if its input and output tanks are both completely full. Keep the exhaust connected to a condenser, cooling tower, or sufficient storage, and do not allow the steam supply to keep filling a blocked turbine.
+Steam turbines require a clear route for both incoming steam and spent-steam exhaust. Both standard and Industrial Steam Turbines rupture in a destructive overpressure explosion if their input and output tanks are both completely full. Keep the exhaust connected to a condenser, cooling tower, or sufficient storage, and do not allow the steam supply to keep filling a blocked turbine.
 
 ## Space basics
 
