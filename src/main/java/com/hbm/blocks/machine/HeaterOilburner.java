@@ -76,6 +76,7 @@ public class HeaterOilburner extends BlockDummyable implements ILookOverlay, ITo
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		this.addStandardInfo(stack, player, list, ext);
+		list.add(EnumChatFormatting.DARK_RED + I18nUtil.resolveKey("tooltip.furnace.monoxide"));
 	}
 
 	@Override

@@ -11,6 +11,7 @@ import com.hbm.lib.Library;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachinePolluting;
+import com.hbm.util.FurnaceGasEmission;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.fluid.IFluidStandardTransceiver;
@@ -80,6 +81,7 @@ public class TileEntityHeaterOilburner extends TileEntityMachinePolluting implem
 						int heat = (int)(type.getHeatEnergy() / 1000);
 						
 						this.heatEnergy += heat * toBurn;
+						if(toBurn > 0) FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
 	
 						if(worldObj.getTotalWorldTime() % 5 == 0 && toBurn > 0) {
 							super.pollute(tank.getTankType(), FluidReleaseType.BURN, toBurn * 5);
