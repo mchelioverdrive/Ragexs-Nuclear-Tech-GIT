@@ -1,9 +1,12 @@
 package com.hbm.blocks.machine;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import com.hbm.blocks.ILookOverlay;
 import com.hbm.blocks.ITooltipProvider;
+import com.hbm.util.i18n.I18nUtil;
 import com.hbm.lib.RefStrings;
 import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.machine.TileEntityMachineTurbine;
@@ -22,9 +25,11 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.IIcon;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
+import net.minecraftforge.client.event.RenderGameOverlayEvent.Pre;
 
-public class MachineTurbine extends BlockContainer implements ITooltipProvider {
+public class MachineTurbine extends BlockContainer implements ITooltipProvider, ILookOverlay {
 
 	private final Random field_149933_a = new Random();
 	@SideOnly(Side.CLIENT)
@@ -127,5 +132,18 @@ public class MachineTurbine extends BlockContainer implements ITooltipProvider {
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		this.addStandardInfo(stack, player, list, ext);
+	}
+
+	@Override
+	public void printHook(Pre event, World world, int x, int y, int z) {
+		TileEntity te = world.getTileEntity(x, y, z);
+		if(!(te instanceof TileEntityMachineTurbine)) return;
+
+		TileEntityMachineTurbine turbine = (TileEntityMachineTurbine) te;
+		List<String> text = new ArrayList<String>();
+		if(turbine.isOverspeeding()) {
+			text.add(EnumChatFormatting.RED + "OVERSPEEDING - EXPORT POWER NOW!");
+		}
+		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 }

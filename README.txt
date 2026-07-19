@@ -39,3 +39,4 @@ http://www.minecraftforge.net/forum/index.php/topic,14048.0.html
 Project documentation
 =====================
 - Nuclear weapon balance: docs/nuclear-weapon-balance.md
+- Steam turbine safety and overspeed protection: docs/steam-turbines.md
