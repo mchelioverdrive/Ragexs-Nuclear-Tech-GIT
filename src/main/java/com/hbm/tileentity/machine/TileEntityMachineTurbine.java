@@ -259,6 +259,10 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 	public void updateEntity() {
 		
 		if(!worldObj.isRemote) {
+			if(isOverpressurized()) {
+				explodeFromOverpressure();
+				return;
+			}
 			
 			this.info = new double[3];
 			
@@ -305,6 +309,19 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 			
 			this.sendStandard(25);
 		}
+	}
+
+	/**
+	 * A turbine cannot accept more steam when both its inlet and exhaust buffers
+	 * are full. Rupture it instead of allowing a permanently blocked steam path.
+	 */
+	private boolean isOverpressurized() {
+		return tanks[0].getFill() >= tanks[0].getMaxFill() && tanks[1].getFill() >= tanks[1].getMaxFill();
+	}
+
+	private void explodeFromOverpressure() {
+		worldObj.setBlockToAir(xCoord, yCoord, zCoord);
+		worldObj.newExplosion(null, xCoord + 0.5D, yCoord + 0.5D, zCoord + 0.5D, 4.0F, false, true);
 	}
 
 	@Override public void serialize(ByteBuf buf) {
