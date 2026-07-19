@@ -120,7 +120,6 @@
 # Realistify turbine pressure handling
 
 - Added pressure-aware steam turbine behavior: modest safe pressure increases turbine throughput/efficiency, while overpressure ruptures the turbine with an explosion.
-- Added steam-density overload rules: early turbines rupture on dense steam, industrial turbines tolerate hot steam but rupture on denser steam, and leviathan turbines tolerate the full vanilla steam-density chain by default.
-- Added blocked-exhaust stress to steam turbines so filled output buffers/no outlet eventually rupture under load instead of silently doing nothing.
+- Added pressure-aware industrial steam turbine behavior with a higher pressure rating, stronger assisted flow, and larger rupture explosions.
 - Added gas turbine steam chest rupture behavior when high throttle/temperature keeps producing steam into a nearly full output tank.
-- Documented the new turbine pressure/density ratings and `hbmMachines.json` tuning keys.
+- Documented the new turbine pressure ratings and `hbmMachines.json` tuning keys.
