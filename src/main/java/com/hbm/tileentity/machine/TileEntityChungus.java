@@ -42,7 +42,14 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyProviderMK2, INBTPacketReceiver, IFluidStandardTransceiver, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IConfigurableMachine, IFluidCopiable {
+	public static final int TRIP_NONE = 0;
+	public static final int TRIP_OVERPRESSURE = 1;
+	public static final int TRIP_OVERSPEED = 2;
+
 	public long power;
+	/** The trip valves are closed while this is set, preventing any more steam admission. */
+	private boolean tripped;
+	private int tripCause = TRIP_NONE;
 	private int turnTimer;
 	public float rotor;
 	public float lastRotor;
@@ -97,13 +104,24 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 	public void updateEntity() {
 		
 		if(!worldObj.isRemote) {
+			// A powered controller is an intentional remote reset for the trip valves.
+			if(tripped && worldObj.isBlockIndirectlyGettingPowered(xCoord, yCoord, zCoord)) {
+				resetTrip();
+			}
 			
 			this.info = new double[3];
 			
 			boolean operational = false;
-			FluidType in = tanks[0].getTankType();
 			boolean valid = false;
-			if(in.hasTrait(FT_Coolable.class)) {
+			FluidType in = tanks[0].getTankType();
+
+			if(!tripped && isOverpressurized()) {
+				trip(TRIP_OVERPRESSURE);
+			} else if(!tripped && isOverspeeding()) {
+				trip(TRIP_OVERSPEED);
+			}
+
+			if(!tripped && in.hasTrait(FT_Coolable.class)) {
 				FT_Coolable trait = in.getTrait(FT_Coolable.class);
 				double eff = trait.getEfficiency(CoolingType.TURBINE) * efficiency; //85% efficiency by default
 				if(eff > 0) {
@@ -130,7 +148,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 			
 			for(DirPos pos : this.getConPos()) {
 				this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+				if(!tripped) this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 			
 			if(power > maxPower)
@@ -144,6 +162,8 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 			data.setLong("power", power);
 			data.setInteger("type", tanks[0].getTankType().getID());
 			data.setInteger("operational", turnTimer);
+			data.setBoolean("tripped", tripped);
+			data.setInteger("tripCause", tripCause);
 			this.networkPack(data, 150);
 			
 		} else {
@@ -203,6 +223,38 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 			this.tryUnsubscribe(previous, worldObj, pos.getX(), pos.getY(), pos.getZ());
 		}
 	}
+
+	/** Reset the closed trip valves. This is deliberately separate from fluid-stage selection. */
+	public void resetTrip() {
+		this.tripped = false;
+		this.tripCause = TRIP_NONE;
+		this.markDirty();
+	}
+
+	private void trip(int cause) {
+		this.tripped = true;
+		this.tripCause = cause;
+		this.turnTimer = 0;
+		onLeverPull(tanks[0].getTankType());
+		this.markDirty();
+	}
+
+	private boolean isOverpressurized() {
+		return tanks[0].getFill() >= tanks[0].getMaxFill() && tanks[1].getFill() >= tanks[1].getMaxFill();
+	}
+
+	/** A full electrical buffer while steam remains admitted is an overspeed condition. */
+	private boolean isOverspeeding() {
+		return power >= maxPower && tanks[0].getFill() > 0;
+	}
+
+	public boolean isTripped() {
+		return tripped;
+	}
+
+	public int getTripCause() {
+		return tripCause;
+	}
 	
 	public DirPos[] getConPos() {
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
@@ -223,6 +275,8 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 		this.power = data.getLong("power");
 		this.turnTimer = data.getInteger("operational");
 		this.tanks[0].setTankType(Fluids.fromID(data.getInteger("type")));
+		this.tripped = data.getBoolean("tripped");
+		this.tripCause = data.getInteger("tripCause");
 	}
 	
 	@Override
@@ -231,6 +285,8 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 		tanks[0].readFromNBT(nbt, "water");
 		tanks[1].readFromNBT(nbt, "steam");
 		power = nbt.getLong("power");
+		tripped = nbt.getBoolean("tripped");
+		tripCause = nbt.getInteger("tripCause");
 	}
 	
 	@Override
@@ -239,6 +295,8 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 		tanks[0].writeToNBT(nbt, "water");
 		tanks[1].writeToNBT(nbt, "steam");
 		nbt.setLong("power", power);
+		nbt.setBoolean("tripped", tripped);
+		nbt.setInteger("tripCause", tripCause);
 	}
 	
 	@Override

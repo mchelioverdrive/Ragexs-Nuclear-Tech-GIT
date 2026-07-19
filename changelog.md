@@ -1,3 +1,9 @@
+## Leviathan Steam Turbine trip protection
+
+* Added automatic overpressure and overspeed shutdown protection to the Leviathan Steam Turbine (`chungus`) through steam trip valves.
+* Added the dangerous-trip status and reset instructions to the turbine's block tooltip and look overlay.
+* Added lever and redstone trip-valve reset controls, and documented the protection behavior in `docs/steam-turbines.md`.
+
 # Add steam turbine overspeed events
 
 - Standard Steam Turbines now enter a one-second overspeed warning and explode if they continue to process steam while their power buffer is full and no electrical load exports that power.
