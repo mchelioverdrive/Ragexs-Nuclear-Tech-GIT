@@ -1,3 +1,8 @@
+# Add steam turbine overpressure explosions
+
+- Standard Steam Turbines now rupture in a destructive explosion when both their input and spent-steam output tanks are full, preventing permanently blocked steam systems from silently remaining safe.
+- Documented the required steam-turbine input and exhaust path safety practice in the getting-started guide.
+
 # Render-distance gates for TESR details
 
 - Added a shared 35-block TESR detail distance helper, matching the upstream assembly-factory item-display gate.
