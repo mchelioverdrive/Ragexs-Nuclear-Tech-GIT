@@ -1,3 +1,9 @@
+## Fix Leviathan turbine trip status and redstone reset
+
+* Added an always-visible `READY` or `TRIPPED` trip-valve status line to the Leviathan Steam Turbine's look overlay.
+* Exported stored power before evaluating Leviathan trip resets and overspeed protection, allowing a redstone reset to clear once a connected power load drains the buffer.
+* Documented the trip-status overlay and the electrical-load requirement for redstone resets.
+
 ## Fix Leviathan Steam Turbine status and overspeed trips
 
 * Synced the Leviathan Steam Turbine's input and output tank contents to clients so its look overlay no longer reports `0/max` for both steam tanks.

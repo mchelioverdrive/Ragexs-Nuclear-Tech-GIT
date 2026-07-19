@@ -104,6 +104,12 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 	public void updateEntity() {
 		
 		if(!worldObj.isRemote) {
+			// Export stored power before evaluating a reset or an overspeed trip. This
+			// lets a newly connected load drain a full buffer so redstone can reset an
+			// overspeed trip instead of immediately latching it again.
+			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
+			this.tryProvide(worldObj, xCoord - dir.offsetX * 11, yCoord, zCoord - dir.offsetZ * 11, dir.getOpposite());
+
 			// A powered controller is an intentional remote reset for the trip valves.
 			if(tripped && worldObj.isBlockIndirectlyGettingPowered(xCoord, yCoord, zCoord)) {
 				resetTrip();
@@ -144,7 +150,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 			if(!valid && tanks[1].getFill() <= 0) tanks[1].setTankType(Fluids.NONE);
 			if(power > maxPower) power = maxPower;
 			
-			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
+			// Export power produced during this tick as well as the stored power above.
 			this.tryProvide(worldObj, xCoord - dir.offsetX * 11, yCoord, zCoord - dir.offsetZ * 11, dir.getOpposite());
 			
 			for(DirPos pos : this.getConPos()) {

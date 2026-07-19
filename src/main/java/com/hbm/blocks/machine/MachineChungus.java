@@ -162,6 +162,7 @@ public class MachineChungus extends BlockDummyable implements ILookOverlay, IToo
 		List<String> text = new ArrayList<String>();
 		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + turbine.tanks[0].getTankType().getLocalizedName() + ": " + turbine.tanks[0].getFill() + "/" + turbine.tanks[0].getMaxFill() + "mB");
 		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + turbine.tanks[1].getTankType().getLocalizedName() + ": " + turbine.tanks[1].getFill() + "/" + turbine.tanks[1].getMaxFill() + "mB");
+		text.add(EnumChatFormatting.YELLOW + "Trip valves: " + (turbine.isTripped() ? EnumChatFormatting.RED + "TRIPPED" : EnumChatFormatting.GREEN + "READY"));
 
 		if(turbine.isTripped()) {
 			String cause = turbine.getTripCause() == TileEntityChungus.TRIP_OVERPRESSURE ? "OVERPRESSURE" : "OVERSPEED";
