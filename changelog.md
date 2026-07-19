@@ -1,3 +1,9 @@
+## Fix Leviathan Steam Turbine status and overspeed trips
+
+* Synced the Leviathan Steam Turbine's input and output tank contents to clients so its look overlay no longer reports `0/max` for both steam tanks.
+* Restored the Leviathan's internal HE-buffer overspeed trip: if its buffer fills while steam remains admitted because power is not exported, it shuts down and closes its trip valves until reset.
+* Updated the steam-turbine safety guide with the Leviathan overspeed behavior and its electrical-load requirement.
+
 ## Pause steam turbines when their power buffers are full
 
 * Updated the Standard, Industrial, and Leviathan Steam Turbines to stop consuming steam and generating power when their internal HE buffers cannot fit another generation operation.
