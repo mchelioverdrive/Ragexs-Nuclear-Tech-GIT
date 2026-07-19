@@ -1,3 +1,7 @@
+## Fix Industrial Steam Turbine overpressure explosions
+
+* Fixed the Industrial Steam Turbine so it ruptures when both its steam inlet and spent-steam exhaust tanks are full, matching the documented overpressure behavior.
+
 ## Leviathan Steam Turbine trip protection
 
 * Added automatic overpressure and overspeed shutdown protection to the Leviathan Steam Turbine (`chungus`) through steam trip valves.

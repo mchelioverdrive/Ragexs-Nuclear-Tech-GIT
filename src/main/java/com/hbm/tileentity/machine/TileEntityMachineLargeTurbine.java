@@ -106,6 +106,10 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 	public void updateEntity() {
 		
 		if(!worldObj.isRemote) {
+			if(isOverpressurized()) {
+				explodeFromOverpressure();
+				return;
+			}
 			
 			this.info = new double[3];
 			
@@ -188,6 +192,20 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 				}
 			}
 		}
+	}
+
+	/**
+	 * A turbine cannot safely accept more steam when its inlet and exhaust
+	 * buffers are both full. Rupture it instead of allowing a permanently
+	 * blocked industrial steam system to remain safe.
+	 */
+	private boolean isOverpressurized() {
+		return tanks[0].getFill() >= tanks[0].getMaxFill() && tanks[1].getFill() >= tanks[1].getMaxFill();
+	}
+
+	private void explodeFromOverpressure() {
+		worldObj.setBlockToAir(xCoord, yCoord, zCoord);
+		worldObj.newExplosion(null, xCoord + 0.5D, yCoord + 0.5D, zCoord + 0.5D, 4.0F, false, true);
 	}
 	
 	protected DirPos[] getConPos() {
