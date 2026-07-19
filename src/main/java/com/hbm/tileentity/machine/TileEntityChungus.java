@@ -117,6 +117,8 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 
 			if(!tripped && isOverpressurized()) {
 				trip(TRIP_OVERPRESSURE);
+			} else if(!tripped && isOverspeeding()) {
+				trip(TRIP_OVERSPEED);
 			}
 
 			if(!tripped && in.hasTrait(FT_Coolable.class)) {
@@ -139,7 +141,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 				}
 			}
 			
-			if(!valid) tanks[1].setTankType(Fluids.NONE);
+			if(!valid && tanks[1].getFill() <= 0) tanks[1].setTankType(Fluids.NONE);
 			if(power > maxPower) power = maxPower;
 			
 			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
@@ -159,10 +161,11 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 			
 			NBTTagCompound data = new NBTTagCompound();
 			data.setLong("power", power);
-			data.setInteger("type", tanks[0].getTankType().getID());
 			data.setInteger("operational", turnTimer);
 			data.setBoolean("tripped", tripped);
 			data.setInteger("tripCause", tripCause);
+			tanks[0].writeToNBT(data, "inputTank");
+			tanks[1].writeToNBT(data, "outputTank");
 			this.networkPack(data, 150);
 			
 		} else {
@@ -242,6 +245,15 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 		return tanks[0].getFill() >= tanks[0].getMaxFill() && tanks[1].getFill() >= tanks[1].getMaxFill();
 	}
 
+	/**
+	 * Steam admission must be closed when the generator's internal HE buffer is
+	 * full and no connected consumer is exporting energy from it. Continuing to
+	 * admit steam in this state would overspeed the turbine.
+	 */
+	private boolean isOverspeeding() {
+		return power >= maxPower && tanks[0].getFill() > 0;
+	}
+
 	/** Stops the rotor when there is no room for another generated power operation. */
 	private int getAvailablePowerOperations(double energyPerOperation) {
 		if(power >= maxPower || energyPerOperation <= 0) return 0;
@@ -274,9 +286,10 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 	public void networkUnpack(NBTTagCompound data) {
 		this.power = data.getLong("power");
 		this.turnTimer = data.getInteger("operational");
-		this.tanks[0].setTankType(Fluids.fromID(data.getInteger("type")));
 		this.tripped = data.getBoolean("tripped");
 		this.tripCause = data.getInteger("tripCause");
+		tanks[0].readFromNBT(data, "inputTank");
+		tanks[1].readFromNBT(data, "outputTank");
 	}
 	
 	@Override
