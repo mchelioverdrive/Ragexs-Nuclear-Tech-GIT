@@ -24,7 +24,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.Pre;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class MachineChungus extends BlockDummyable implements ITooltipProvider {
+public class MachineChungus extends BlockDummyable implements ILookOverlay, ITooltipProvider {
 
 	public MachineChungus(Material mat) {
 		super(mat);
@@ -67,6 +67,11 @@ public class MachineChungus extends BlockDummyable implements ITooltipProvider {
 					world.playSoundEffect(x + 0.5, y + 0.5, z + 0.5, "hbm:block.chungusLever", 1.5F, 1.0F);
 					
 					if(!world.isRemote) {
+						if(entity.isTripped()) {
+							entity.resetTrip();
+							return true;
+						}
+
 						FluidType type = entity.tanks[0].getTankType();
 						entity.onLeverPull(type);
 						
@@ -141,5 +146,30 @@ public class MachineChungus extends BlockDummyable implements ITooltipProvider {
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		this.addStandardInfo(stack, player, list, ext);
+		list.add(EnumChatFormatting.YELLOW + "Trip valves automatically shut down on overpressure or overspeed.");
+		list.add(EnumChatFormatting.GRAY + "Reset a trip with the turbine lever or a redstone signal.");
+	}
+
+	@Override
+	public void printHook(Pre event, World world, int x, int y, int z) {
+		int[] pos = this.findCore(world, x, y, z);
+		if(pos == null) return;
+
+		TileEntity te = world.getTileEntity(pos[0], pos[1], pos[2]);
+		if(!(te instanceof TileEntityChungus)) return;
+
+		TileEntityChungus turbine = (TileEntityChungus) te;
+		List<String> text = new ArrayList<String>();
+		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + turbine.tanks[0].getTankType().getLocalizedName() + ": " + turbine.tanks[0].getFill() + "/" + turbine.tanks[0].getMaxFill() + "mB");
+		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + turbine.tanks[1].getTankType().getLocalizedName() + ": " + turbine.tanks[1].getFill() + "/" + turbine.tanks[1].getMaxFill() + "mB");
+
+		if(turbine.isTripped()) {
+			String cause = turbine.getTripCause() == TileEntityChungus.TRIP_OVERPRESSURE ? "OVERPRESSURE" : "OVERSPEED";
+			text.add("&[" + 0xff0000 + "&]DANGEROUS " + cause + " TRIP EVENT!");
+			text.add("&[" + 0xff0000 + "&]Turbine auto-shutdown; trip valves are closed.");
+			text.add(EnumChatFormatting.YELLOW + "Reset with the lever or a redstone signal.");
+		}
+
+		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 }
