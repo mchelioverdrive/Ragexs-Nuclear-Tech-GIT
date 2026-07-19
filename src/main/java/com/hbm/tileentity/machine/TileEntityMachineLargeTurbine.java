@@ -62,7 +62,6 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 	public static int inputTankSize = 512_000;
 	public static int outputTankSize = 10_240_000;
 	public static double efficiency = 1.0;
-	public static int maxSafePressure = 2;
 
 
 	public TileEntityMachineLargeTurbine() {
@@ -87,7 +86,6 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 		inputTankSize = IConfigurableMachine.grab(obj, "I:inputTankSize", inputTankSize);
 		outputTankSize = IConfigurableMachine.grab(obj, "I:outputTankSize", outputTankSize);
 		efficiency = IConfigurableMachine.grab(obj, "D:efficiency", efficiency);
-		maxSafePressure = IConfigurableMachine.grab(obj, "I:maxSafePressure", maxSafePressure);
 	}
 
 	@Override
@@ -97,7 +95,6 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 		writer.name("I:inputTankSize").value(inputTankSize);
 		writer.name("I:outputTankSize").value(outputTankSize);
 		writer.name("D:efficiency").value(efficiency);
-		writer.name("I:maxSafePressure").value(maxSafePressure);
 	}
 
 	@Override
@@ -127,12 +124,12 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 			boolean valid = false;
 			if(in.hasTrait(FT_Coolable.class)) {
 				FT_Coolable trait = in.getTrait(FT_Coolable.class);
-				double eff = trait.getEfficiency(CoolingType.TURBINE) * efficiency * getPressureEfficiency(); //100% efficiency by default
+				double eff = trait.getEfficiency(CoolingType.TURBINE) * efficiency; //100% efficiency by default
 				if(eff > 0) {
 					tanks[1].setTankType(trait.coolsTo);
 					int inputOps = (int) Math.floor(tanks[0].getFill() / trait.amountReq); //amount of cycles possible with the entire input buffer
 					int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced; //amount of cycles possible with the output buffer's remaining space
-					int cap = (int) Math.ceil(tanks[0].getFill() / trait.amountReq * getPressureThroughputShare()); //amount of cycles by the pressure assisted flow rule
+					int cap = (int) Math.ceil(tanks[0].getFill() / trait.amountReq / 5F); //amount of cycles by the "at least 20%" rule
 					int ops = Math.min(inputOps, Math.min(outputOps, cap)); //defacto amount of cycles
 					tanks[0].setFill(tanks[0].getFill() - ops * trait.amountReq);
 					tanks[1].setFill(tanks[1].getFill() + ops * trait.amountProduced);
@@ -193,42 +190,6 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 		}
 	}
 	
-	private double getPressureEfficiency() {
-		return 1D + tanks[0].getPressure() * 0.1D;
-	}
-
-	private float getPressureThroughputShare() {
-		return Math.min(0.75F, 0.2F + tanks[0].getPressure() * 0.1F);
-	}
-
-	private void burstFromOverpressure(int pressure, long amount) {
-		if(worldObj == null || worldObj.isRemote) return;
-		worldObj.setBlockToAir(xCoord, yCoord, zCoord);
-		float strength = Math.min(14F, 4F + pressure * 1.75F + Math.min(amount, inputTankSize) / (float) inputTankSize * 2F);
-		worldObj.newExplosion(null, xCoord + 0.5D, yCoord + 1.5D, zCoord + 0.5D, strength, false, true);
-	}
-
-	@Override
-	public long getDemand(FluidType type, int pressure) {
-		if(type == tanks[0].getTankType() && type.hasTrait(FT_Coolable.class)) {
-			return tanks[0].getMaxFill() - tanks[0].getFill();
-		}
-		return IFluidStandardTransceiver.super.getDemand(type, pressure);
-	}
-
-	@Override
-	public long transferFluid(FluidType type, int pressure, long amount) {
-		if(type == tanks[0].getTankType() && type.hasTrait(FT_Coolable.class)) {
-			if(pressure > maxSafePressure) {
-				burstFromOverpressure(pressure, amount);
-				return 0;
-			}
-			tanks[0].withPressure(pressure);
-			return IFluidStandardTransceiver.super.transferFluid(type, pressure, amount);
-		}
-		return IFluidStandardTransceiver.super.transferFluid(type, pressure, amount);
-	}
-
 	protected DirPos[] getConPos() {
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);

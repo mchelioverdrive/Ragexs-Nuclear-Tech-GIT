@@ -47,7 +47,6 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	
 	public long power;
 	public static final long maxPower = 1000000L;
-	public static final int steamBurstThreshold = 150000;
 	
 	public int rpm; //0-100, crescent moon gauge, used for calculating the amount of power generated, starts past 10%
 	public int temp; //0-800, used for figuring out how much water to boil, starts boiling at 300°C
@@ -371,11 +370,6 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 			
 			waterToBoil += waterPerTick;
 			
-			if(tanks[3].getFill() > steamBurstThreshold && throttle > 50 && temp > tempIdle + 150) {
-				burstSteamChest();
-				return;
-			}
-
 			if(tanks[3].getFill() <= 160000 - waterToBoil * 10) { //checks if there's room for steam in the tank
 				
 				tanks[2].setFill(tanks[2].getFill() - (int) Math.floor(waterToBoil));
@@ -385,12 +379,6 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		}
 	}
 	
-	private void burstSteamChest() {
-		if(worldObj == null || worldObj.isRemote) return;
-		worldObj.setBlockToAir(xCoord, yCoord, zCoord);
-		worldObj.newExplosion(null, xCoord + 0.5D, yCoord + 1.5D, zCoord + 0.5D, 6F, false, true);
-	}
-
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	@Override
