@@ -117,8 +117,6 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 
 			if(!tripped && isOverpressurized()) {
 				trip(TRIP_OVERPRESSURE);
-			} else if(!tripped && isOverspeeding()) {
-				trip(TRIP_OVERSPEED);
 			}
 
 			if(!tripped && in.hasTrait(FT_Coolable.class)) {
@@ -128,7 +126,8 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 					tanks[1].setTankType(trait.coolsTo);
 					int inputOps = tanks[0].getFill() / trait.amountReq;
 					int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
-					int ops = Math.min(inputOps, outputOps);
+					int powerOps = getAvailablePowerOperations(trait.heatEnergy * eff);
+					int ops = Math.min(inputOps, Math.min(outputOps, powerOps));
 					tanks[0].setFill(tanks[0].getFill() - ops * trait.amountReq);
 					tanks[1].setFill(tanks[1].getFill() + ops * trait.amountProduced);
 					this.power += (ops * trait.heatEnergy * eff);
@@ -243,9 +242,10 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 		return tanks[0].getFill() >= tanks[0].getMaxFill() && tanks[1].getFill() >= tanks[1].getMaxFill();
 	}
 
-	/** A full electrical buffer while steam remains admitted is an overspeed condition. */
-	private boolean isOverspeeding() {
-		return power >= maxPower && tanks[0].getFill() > 0;
+	/** Stops the rotor when there is no room for another generated power operation. */
+	private int getAvailablePowerOperations(double energyPerOperation) {
+		if(power >= maxPower || energyPerOperation <= 0) return 0;
+		return (int) Math.min(Integer.MAX_VALUE, Math.floor((maxPower - power) / energyPerOperation));
 	}
 
 	public boolean isTripped() {

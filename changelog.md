@@ -1,3 +1,9 @@
+## Pause steam turbines when their power buffers are full
+
+* Updated the Standard, Industrial, and Leviathan Steam Turbines to stop consuming steam and generating power when their internal HE buffers cannot fit another generation operation.
+* Turbines now resume automatically after connected power consumers, batteries, or chargeable items free enough buffer capacity; the Leviathan no longer trips solely because its power buffer is full.
+* Updated the steam-turbine safety documentation to describe the safe power-buffer pause behavior.
+
 ## Fix Industrial Steam Turbine overpressure explosions
 
 * Fixed the Industrial Steam Turbine so it ruptures when both its steam inlet and spent-steam exhaust tanks are full, matching the documented overpressure behavior.
