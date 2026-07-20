@@ -193,7 +193,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 
 	public void generate() {
 		
-		if(hasAcceptableFuel()) {
+		if(!isWaterlogged() && hasAcceptableFuel()) {
 			if (tank.getFill() > 0 && breatheAir(1)) {
 				
 				if(!shutUp) {

@@ -61,5 +61,6 @@ public class MachineCombustionEngine extends BlockDummyable implements ITooltipP
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		this.addStandardInfo(stack, player, list, ext);
 		list.add(EnumChatFormatting.DARK_RED + I18nUtil.resolveKey("tooltip.furnace.monoxide"));
+		list.add(EnumChatFormatting.AQUA + I18nUtil.resolveKey("tooltip.machine.waterlogging"));
 	}
 }
