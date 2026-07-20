@@ -254,7 +254,8 @@ public abstract class WeaponAbility {
 					int count = Math.min((int)Math.ceil(living.getMaxHealth() / divider), 250); //safeguard to prevent funnies from bosses with obscene health
 
 					for(int i = 0; i < count; i++) {
-						living.entityDropItem(new ItemStack(ModItems.nitra_small), 1);
+						living.entityDropItem(new ItemStack(ModItems.flesh_wafer), 1);
+						//ted bundy would be proud
 						world.spawnEntityInWorld(new EntityXPOrb(world, living.posX, living.posY, living.posZ, 1));
 					}
 

@@ -6691,7 +6691,11 @@ public class ModItems {
 		//LightweightAbility
 		//CorrosionResistantAbility
 		//ChemicalToolAbility or some stand in for those abilities
-		titanium_pickaxe = new ItemToolAbility(4.5F, 0, MainRegistry.tMatTitan, EnumToolType.PICKAXE).setUnlocalizedName("titanium_pickaxe").setTextureName(RefStrings.MODID + ":titanium_pickaxe");
+		titanium_pickaxe = new ItemToolAbility(4.5F, 0, MainRegistry.tMatTitan, EnumToolType.PICKAXE)
+			//.addToolTrait(ToolTrait.LIGHTWEIGHT)
+			//.addToolTrait(ToolTrait.CORROSION_RESISTANT)
+			//if you are going to suggest adding these at least fucking implement them when you do a refactor of ToolAbility.java.
+			.setUnlocalizedName("titanium_pickaxe").setTextureName(RefStrings.MODID + ":titanium_pickaxe");
 		titanium_axe = new ItemToolAbility(5.5F, 0, MainRegistry.tMatTitan, EnumToolType.AXE)
 				.addBreakAbility(new ToolAbility.RecursionAbility(12))
 				.addHitAbility(new WeaponAbility.BeheaderAbility()).setUnlocalizedName("titanium_axe").setTextureName(RefStrings.MODID + ":titanium_axe");
