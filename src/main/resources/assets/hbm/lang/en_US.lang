@@ -5888,6 +5888,7 @@ tile.gas_flammable.name=Flammable Gas
 tile.gas_meltdown.name=Meltdown Gas
 tile.gas_monoxide.name=Carbon Monoxide
 tooltip.furnace.monoxide=Produces carbon monoxide while burning fuel. Ventilate enclosed spaces.
+tooltip.machine.waterlogging=Stops operating when water touches its sides or top.
 tile.gas_radon.name=Radon Gas
 tile.gas_radon_dense.name=Dense Radon Gas
 tile.gas_radon_tomb.name=Tomb Gas

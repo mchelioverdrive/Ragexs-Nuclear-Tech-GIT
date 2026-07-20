@@ -1,3 +1,8 @@
+## Waterlog combustible machines
+
+* Combustion generators, turbofans, fireboxes, heating ovens, and oil burners now stop consuming fuel while water touches one of their sides or top faces.
+* Added water-shutdown notices to their item tooltips and documented the placement requirement in the getting-started guide.
+
 ## Add carbon monoxide emissions to heat burners
 
 * Fireboxes and heating ovens now probabilistically emit carbon monoxide while they actively burn solid fuel.
