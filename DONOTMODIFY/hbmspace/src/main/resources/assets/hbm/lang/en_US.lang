@@ -4181,6 +4181,7 @@ item.pellet_rtg_radium.name=Radium-226 RTG Pellet
 item.pellet_rtg_radium.desc=Great starter pellet, sourced from all-natural radium!
 item.pellet_rtg_weak.name=Weak Uranium RTG Pellet
 item.pellet_rtg_weak.desc=Cheaper and weaker pellet, now with more U238!
+item.pellet_rtg_tm170.desc=IOU 1 reddit reference if you wait this long
 item.pellet_schrabidium.name=Pure Schrabidium Watz Pellet
 item.photo_panel.name=Photovoltaic Panel
 item.pile_rod_boron.name=Chicago Pile Control Rod
