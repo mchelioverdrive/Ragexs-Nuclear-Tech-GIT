@@ -343,7 +343,7 @@ public class MainRegistry {
 		tMatChainsaw.setRepairItem(new ItemStack(ModItems.ingot_steel));
 		tMatTitan.setRepairItem(new ItemStack(ModItems.ingot_titanium));
 		tMatSteel.setRepairItem(new ItemStack(ModItems.ingot_steel));
-		tMatAlloy.setRepairItem(new ItemStack(ModItems.ingot_advanced_alloy));
+		tMatAlloy.setRepairItem(new ItemStack(ModItems.ingot_starmetal));
 		tMatCMB.setRepairItem(new ItemStack(ModItems.ingot_combine_steel));
 		enumToolMaterialBottleOpener.setRepairItem(new ItemStack(ModItems.plate_steel));
 		tMatDesh.setRepairItem(new ItemStack(ModItems.ingot_desh));
