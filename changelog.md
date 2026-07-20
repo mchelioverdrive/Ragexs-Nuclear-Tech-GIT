@@ -1,5 +1,6 @@
 ## Waterlog combustible machines
 
+* Fixed water shutdown checks for dummyable combustion multiblocks so water touching the sides or top of any part stops the machine, rather than only water next to the controller block.
 * Combustion generators, turbofans, fireboxes, heating ovens, and oil burners now stop consuming fuel while water touches one of their sides or top faces.
 * Added water-shutdown notices to their item tooltips and documented the placement requirement in the getting-started guide.
 
