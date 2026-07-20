@@ -73,7 +73,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 			wasOn = false;
 
 			int fill = tank.getFill() * 10 + tenth;
-			if(isOn && setting > 0 && slots[2] != null && slots[2].getItem() == ModItems.piston_set && fill > 0 && tank.getTankType().hasTrait(FT_Combustible.class)) {
+			if(!isWaterlogged() && isOn && setting > 0 && slots[2] != null && slots[2].getItem() == ModItems.piston_set && fill > 0 && tank.getTankType().hasTrait(FT_Combustible.class)) {
 				EnumPistonType piston = EnumUtil.grabEnumSafely(EnumPistonType.class, slots[2].getItemDamage());
 				FT_Combustible trait = tank.getTankType().getTrait(FT_Combustible.class);
 				

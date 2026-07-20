@@ -71,7 +71,7 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 			
 			wasOn = false;
 			
-			if(burnTime <= 0) {
+			if(burnTime <= 0 && !isWaterlogged()) {
 				canOperate = breatheAir(0);
 				
 				for(int i = 0; i < 2; i++) {
@@ -105,7 +105,7 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 						}
 					}
 				} 
-			} else {
+			} else if(!isWaterlogged()) {
 				if(this.heatEnergy < getMaxHeat()) {
 					// firebox consumes 1mB every 5 ticks, heating oven every tick
 					canOperate = breatheAir(worldObj.getTotalWorldTime() % (500 / getBaseHeat()) == 0 ? 1 : 0);

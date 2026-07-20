@@ -77,6 +77,7 @@ public class MachineDiesel extends BlockMachineBase implements ITooltipProvider,
 			}
 		}
 		list.add(EnumChatFormatting.DARK_RED + I18nUtil.resolveKey("tooltip.furnace.monoxide"));
+		list.add(EnumChatFormatting.AQUA + I18nUtil.resolveKey("tooltip.machine.waterlogging"));
 	}
 
 	@Override

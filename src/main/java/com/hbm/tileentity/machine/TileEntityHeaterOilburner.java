@@ -68,7 +68,7 @@ public class TileEntityHeaterOilburner extends TileEntityMachinePolluting implem
 			
 			boolean shouldCool = true;
 			
-			if(this.isOn && this.heatEnergy < maxHeatEnergy) {
+			if(!isWaterlogged() && this.isOn && this.heatEnergy < maxHeatEnergy) {
 				if(breatheAir(setting)) {
 					if(tank.getTankType().hasTrait(FT_Flammable.class)) {
 						FT_Flammable type = tank.getTankType().getTrait(FT_Flammable.class);

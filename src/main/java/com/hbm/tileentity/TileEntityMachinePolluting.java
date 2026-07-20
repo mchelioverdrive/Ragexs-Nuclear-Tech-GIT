@@ -10,6 +10,7 @@ import api.hbm.fluid.IFluidUser;
 import com.hbm.inventory.fluid.trait.FT_Polluting;
 import com.hbm.inventory.fluid.trait.FluidTrait;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.block.material.Material;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import java.util.HashMap;
@@ -75,6 +76,19 @@ public abstract class TileEntityMachinePolluting extends TileEntityMachineBase i
 
 	public FluidTank[] getSmokeTanks() {
 		return new FluidTank[] {smoke, smoke_leaded, smoke_poison};
+	}
+
+	/**
+	 * Returns whether water is touching an exposed side or the top of this machine.
+	 * The underside is deliberately excluded so machines can still sit above water.
+	 */
+	protected boolean isWaterlogged() {
+		for(ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
+			if(direction == ForgeDirection.DOWN) continue;
+			if(worldObj.getBlock(xCoord + direction.offsetX, yCoord + direction.offsetY, zCoord + direction.offsetZ).getMaterial() == Material.water) return true;
+		}
+
+		return false;
 	}
 
 	@Override
