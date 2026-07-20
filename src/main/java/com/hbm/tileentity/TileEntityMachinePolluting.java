@@ -1,5 +1,7 @@
 package com.hbm.tileentity;
 
+import com.hbm.blocks.BlockDummyable;
+import com.hbm.handler.ThreeInts;
 import com.hbm.handler.pollution.PollutionHandler;
 import com.hbm.handler.pollution.PollutionHandler.PollutionType;
 import com.hbm.inventory.fluid.FluidType;
@@ -10,11 +12,15 @@ import api.hbm.fluid.IFluidUser;
 import com.hbm.inventory.fluid.trait.FT_Polluting;
 import com.hbm.inventory.fluid.trait.FluidTrait;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import java.util.ArrayDeque;
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class TileEntityMachinePolluting extends TileEntityMachineBase implements IFluidUser {
 
@@ -79,13 +85,45 @@ public abstract class TileEntityMachinePolluting extends TileEntityMachineBase i
 	}
 
 	/**
-	 * Returns whether water is touching an exposed side or the top of this machine.
-	 * The underside is deliberately excluded so machines can still sit above water.
+	 * Returns whether water is touching an exposed side or top of this machine.
+	 * For dummyable multiblocks, every part belonging to this core is checked. The
+	 * underside is deliberately excluded so machines can still sit above water.
 	 */
 	protected boolean isWaterlogged() {
+		Block block = getBlockType();
+		if(!(block instanceof BlockDummyable)) return isWaterTouching(xCoord, yCoord, zCoord);
+
+		BlockDummyable dummyable = (BlockDummyable) block;
+		ArrayDeque<int[]> partsToCheck = new ArrayDeque<int[]>();
+		Set<ThreeInts> checkedParts = new HashSet<ThreeInts>();
+		partsToCheck.add(new int[] {xCoord, yCoord, zCoord});
+
+		while(!partsToCheck.isEmpty()) {
+			int[] part = partsToCheck.removeFirst();
+			if(!checkedParts.add(new ThreeInts(part[0], part[1], part[2]))) continue;
+
+			if(isWaterTouching(part[0], part[1], part[2])) return true;
+
+			for(ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
+				int x = part[0] + direction.offsetX;
+				int y = part[1] + direction.offsetY;
+				int z = part[2] + direction.offsetZ;
+				if(worldObj.getBlock(x, y, z) != block) continue;
+
+				int[] core = dummyable.findCore(worldObj, x, y, z);
+				if(core != null && core[0] == xCoord && core[1] == yCoord && core[2] == zCoord) {
+					partsToCheck.add(new int[] {x, y, z});
+				}
+			}
+		}
+
+		return false;
+	}
+
+	private boolean isWaterTouching(int x, int y, int z) {
 		for(ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
 			if(direction == ForgeDirection.DOWN) continue;
-			if(worldObj.getBlock(xCoord + direction.offsetX, yCoord + direction.offsetY, zCoord + direction.offsetZ).getMaterial() == Material.water) return true;
+			if(worldObj.getBlock(x + direction.offsetX, y + direction.offsetY, z + direction.offsetZ).getMaterial() == Material.water) return true;
 		}
 
 		return false;
