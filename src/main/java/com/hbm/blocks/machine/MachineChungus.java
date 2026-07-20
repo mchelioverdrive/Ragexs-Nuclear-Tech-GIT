@@ -32,21 +32,21 @@ public class MachineChungus extends BlockDummyable implements ILookOverlay, IToo
 
 	@Override
 	public TileEntity createNewTileEntity(World world, int meta) {
-		
+
 		if(meta >= 12)
 			return new TileEntityChungus();
-		
+
 		if(meta >= 6)
 			return new TileEntityProxyCombo(false, true, true);
-		
+
 		return null;
 	}
-	
+
 	@Override
 	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
-		
+
 		if(!player.isSneaking()) {
-			
+
 			int[] pos = this.findCore(world, x, y, z);
 
 			if(pos == null)
@@ -54,7 +54,7 @@ public class MachineChungus extends BlockDummyable implements ILookOverlay, IToo
 
 			TileEntityChungus entity = (TileEntityChungus) world.getTileEntity(pos[0], pos[1], pos[2]);
 			if(entity != null) {
-				
+
 				ForgeDirection dir = ForgeDirection.getOrientation(entity.getBlockMetadata() - this.offset);
 				ForgeDirection turn = dir.getRotation(ForgeDirection.DOWN);
 
@@ -62,10 +62,10 @@ public class MachineChungus extends BlockDummyable implements ILookOverlay, IToo
 				int iX2 = entity.xCoord + dir.offsetX * 2 + turn.offsetX * 2;
 				int iZ = entity.zCoord + dir.offsetZ + turn.offsetZ * 2;
 				int iZ2 = entity.zCoord + dir.offsetZ * 2 + turn.offsetZ * 2;
-				
+
 				if((x == iX || x == iX2) && (z == iZ || z == iZ2) && y < entity.yCoord + 2) {
 					world.playSoundEffect(x + 0.5, y + 0.5, z + 0.5, "hbm:block.chungusLever", 1.5F, 1.0F);
-					
+
 					if(!world.isRemote) {
 						if(entity.isTripped()) {
 							entity.resetTrip();
@@ -74,7 +74,7 @@ public class MachineChungus extends BlockDummyable implements ILookOverlay, IToo
 
 						FluidType type = entity.tanks[0].getTankType();
 						entity.onLeverPull(type);
-						
+
 						if(type == Fluids.STEAM) {
 							entity.tanks[0].setTankType(Fluids.HOTSTEAM);
 							entity.tanks[1].setTankType(Fluids.STEAM);
@@ -98,12 +98,12 @@ public class MachineChungus extends BlockDummyable implements ILookOverlay, IToo
 						}
 						entity.markDirty();
 					}
-					
+
 					return true;
 				}
 			}
 		}
-		
+
 		return false;
 	}
 
@@ -139,7 +139,7 @@ public class MachineChungus extends BlockDummyable implements ILookOverlay, IToo
 		if(!MultiblockHandlerXR.checkSpace(world, x + dir.offsetX * o , y + dir.offsetY * o, z + dir.offsetZ * o, new int[] {3, 0, 6, -1, 1, 1}, x, y, z, dir)) return false;
 		if(!MultiblockHandlerXR.checkSpace(world, x + dir.offsetX * o , y + dir.offsetY * o, z + dir.offsetZ * o, new int[] {2, 0, 10, -7, 1, 1}, x, y, z, dir)) return false;
 		if(!world.getBlock(x + dir.offsetX, y + 2, z + dir.offsetZ).canPlaceBlockAt(world, x + dir.offsetX, y + 2, z + dir.offsetZ)) return false;
-		
+
 		return true;
 	}
 
@@ -147,7 +147,7 @@ public class MachineChungus extends BlockDummyable implements ILookOverlay, IToo
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		this.addStandardInfo(stack, player, list, ext);
 		list.add(EnumChatFormatting.YELLOW + "Trip valves automatically shut down on overpressure.");
-		list.add(EnumChatFormatting.GRAY + "Reset a trip with the turbine lever or a redstone signal.");
+		list.add(EnumChatFormatting.GRAY + "Reset a trip with the turbine lever."); //or a redstone signal EXCEPT WE CANT DO THAT LOLLLL I DONT CARE ENOUGH TO FIX IT IDC
 	}
 
 	@Override
@@ -168,7 +168,7 @@ public class MachineChungus extends BlockDummyable implements ILookOverlay, IToo
 			String cause = turbine.getTripCause() == TileEntityChungus.TRIP_OVERPRESSURE ? "OVERPRESSURE" : "OVERSPEED";
 			text.add("&[" + 0xff0000 + "&]DANGEROUS " + cause + " TRIP EVENT!");
 			text.add("&[" + 0xff0000 + "&]Turbine auto-shutdown; trip valves are closed.");
-			text.add(EnumChatFormatting.YELLOW + "Reset with the lever or a redstone signal.");
+			text.add(EnumChatFormatting.YELLOW + "Reset with the lever."); //or a redstone signal LARP!!!
 		}
 
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);

@@ -54,10 +54,10 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 	public float rotor;
 	public float lastRotor;
 	public float fanAcceleration = 0F;
-	
+
 	public FluidTank[] tanks;
 	protected double[] info = new double[3];
-	
+
 	private AudioWrapper audio;
 	private float audioDesync;
 
@@ -66,7 +66,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 	public static int inputTankSize = 1_000_000_000;
 	public static int outputTankSize = 1_000_000_000;
 	public static double efficiency = 0.85D;
-	
+
 	public TileEntityChungus() {
 		tanks = new FluidTank[2];
 		tanks[0] = new FluidTank(Fluids.STEAM, inputTankSize);
@@ -102,10 +102,11 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 
 	@Override
 	public void updateEntity() {
-		
+
 		if(!worldObj.isRemote) {
 			// Export stored power before evaluating a reset or an overspeed trip. This
-			// lets a newly connected load drain a full buffer so redstone can reset an
+			// DOES NOT : lets a newly connected load drain a full buffer so redstone can reset an
+			//basically redstone shit still doesn't work because FUCK YOU it's a multi block cry about it!!!!!
 			// overspeed trip instead of immediately latching it again.
 			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 			this.tryProvide(worldObj, xCoord - dir.offsetX * 11, yCoord, zCoord - dir.offsetZ * 11, dir.getOpposite());
@@ -114,9 +115,9 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 			if(tripped && worldObj.isBlockIndirectlyGettingPowered(xCoord, yCoord, zCoord)) {
 				resetTrip();
 			}
-			
+
 			this.info = new double[3];
-			
+
 			boolean operational = false;
 			boolean valid = false;
 			FluidType in = tanks[0].getTankType();
@@ -146,25 +147,25 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 					operational = ops > 0;
 				}
 			}
-			
+
 			if(!valid && tanks[1].getFill() <= 0) tanks[1].setTankType(Fluids.NONE);
 			if(power > maxPower) power = maxPower;
-			
+
 			// Export power produced during this tick as well as the stored power above.
 			this.tryProvide(worldObj, xCoord - dir.offsetX * 11, yCoord, zCoord - dir.offsetZ * 11, dir.getOpposite());
-			
+
 			for(DirPos pos : this.getConPos()) {
 				this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				if(!tripped) this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
-			
+
 			if(power > maxPower)
 				power = maxPower;
-			
+
 			turnTimer--;
-			
+
 			if(operational) turnTimer = 25;
-			
+
 			NBTTagCompound data = new NBTTagCompound();
 			data.setLong("power", power);
 			data.setInteger("operational", turnTimer);
@@ -173,25 +174,25 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 			tanks[0].writeToNBT(data, "inputTank");
 			tanks[1].writeToNBT(data, "outputTank");
 			this.networkPack(data, 150);
-			
+
 		} else {
-			
+
 			this.lastRotor = this.rotor;
 			this.rotor += this.fanAcceleration;
-				
+
 			if(this.rotor >= 360) {
 				this.rotor -= 360;
 				this.lastRotor -= 360;
 			}
-			
+
 			if(turnTimer > 0) {
 				// Fan accelerates with a random offset to ensure the audio doesn't perfectly align, makes for a more pleasant hum
 				this.fanAcceleration = Math.max(0F, Math.min(25F, this.fanAcceleration += 0.075F + audioDesync));
-				
+
 				Random rand = worldObj.rand;
 				ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 				ForgeDirection side = dir.getRotation(ForgeDirection.UP);
-				
+
 				for(int i = 0; i < 10; i++) {
 					worldObj.spawnParticle("cloud",
 							xCoord + 0.5 + dir.offsetX * (rand.nextDouble() + 1.25) + rand.nextGaussian() * side.offsetX * 0.65,
@@ -200,7 +201,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 							-dir.offsetX * 0.2, 0, -dir.offsetZ * 0.2);
 				}
 
-				
+
 				if(audio == null) {
 					audio = MainRegistry.proxy.getLoopedSound("hbm:block.chungusTurbineRunning", xCoord, yCoord, zCoord, 1.0F, 20F, 1.0F);
 					audio.startSound();
@@ -211,7 +212,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 				audio.updatePitch(0.25F + 0.75F * turbineSpeed);
 			} else {
 				this.fanAcceleration = Math.max(0F, Math.min(25F, this.fanAcceleration -= 0.1F));
-				
+
 				if(audio != null) {
 					if(this.fanAcceleration > 0) {
 						float turbineSpeed = this.fanAcceleration / 25F;
@@ -222,10 +223,10 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 						audio = null;
 					}
 				}
-			}	
+			}
 		}
 	}
-	
+
 	public void onLeverPull(FluidType previous) {
 		for(BlockPos pos : getConPos()) {
 			this.tryUnsubscribe(previous, worldObj, pos.getX(), pos.getY(), pos.getZ());
@@ -273,7 +274,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 	public int getTripCause() {
 		return tripCause;
 	}
-	
+
 	public DirPos[] getConPos() {
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
@@ -283,7 +284,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 				new DirPos(xCoord - rot.offsetX * 3, yCoord, zCoord - rot.offsetZ * 3, rot.getOpposite())
 		};
 	}
-	
+
 	public void networkPack(NBTTagCompound nbt, int range) {
 		PacketDispatcher.wrapper.sendToAllAround(new NBTPacket(nbt, xCoord, yCoord, zCoord), new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, range));
 	}
@@ -297,7 +298,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 		tanks[0].readFromNBT(data, "inputTank");
 		tanks[1].readFromNBT(data, "outputTank");
 	}
-	
+
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
@@ -307,7 +308,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 		tripped = nbt.getBoolean("tripped");
 		tripCause = nbt.getInteger("tripCause");
 	}
-	
+
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
@@ -317,12 +318,12 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 		nbt.setBoolean("tripped", tripped);
 		nbt.setInteger("tripCause", tripCause);
 	}
-	
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
 		return TileEntity.INFINITE_EXTENT_AABB;
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public double getMaxRenderDistanceSquared() {
@@ -354,7 +355,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 	public String getComponentName() {
 		return "ntm_turbine";
 	}
-	
+
 	@Override
 	public void onChunkUnload() {
 		super.onChunkUnload();
