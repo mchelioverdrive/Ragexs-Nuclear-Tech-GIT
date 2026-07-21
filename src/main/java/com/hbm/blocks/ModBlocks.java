@@ -24,6 +24,7 @@ import com.hbm.lib.RefStrings;
 import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.DoorDecl;
 import com.hbm.tileentity.machine.storage.TileEntityFileCabinet;
+import com.hbm.items.tool.ItemToolAbility;
 import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFalling;
@@ -43,6 +44,21 @@ public class ModBlocks {
 	public static void mainRegistry() {
 		initializeBlock();
 		registerBlock();
+		registerToolEnvironmentBlocks();
+	}
+
+	private static void registerToolEnvironmentBlocks() {
+
+		ItemToolAbility.registerHotBlocks(
+			ore_nether_smoldering,
+			ore_coal_oil_burning,
+			block_meteor_molten,
+			pribris_burning,
+			block_polonium,
+			block_pu238,
+			block_pu239,
+			block_white_phosphorus
+		);
 	}
 
 	public static Block event_tester;
