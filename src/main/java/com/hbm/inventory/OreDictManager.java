@@ -553,7 +553,7 @@ public class OreDictManager {
 		PC																	.ingot(ingot_pc);
 		PVC																	.ingot(ingot_pvc);
 		MAGTUNG																.ingot(ingot_magnetized_tungsten)									.dust(powder_magnetized_tungsten)								.block(block_magnetized_tungsten);
-		CMB																	.ingot(ingot_combine_steel)											.dust(powder_combine_steel)		.plate(plate_combine_steel)		.block(block_combine_steel);
+		CMB			.nugget(fragment_alien)														.ingot(ingot_combine_steel)											.dust(powder_combine_steel)		.plate(plate_combine_steel)		.block(block_combine_steel);
 		DESH		.nugget(nugget_desh)									.ingot(ingot_desh)													.dust(powder_desh)												.block(block_desh);
 		STAR																.ingot(ingot_chainsteel)																												.block(block_starmetal);
 		GUNMETAL															.ingot(ingot_gunmetal)																				.plate(plate_gunmetal);

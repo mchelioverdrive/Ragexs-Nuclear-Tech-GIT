@@ -770,6 +770,7 @@ public class ModItems {
 	public static Item titanium_trace_metals_slurry;
 	public static Item powder_neodymium_tiny;
 	public static Item powder_cobalt_tiny;
+	public static Item powder_alien_tiny;
 	public static Item powder_niobium_tiny;
 	public static Item powder_cerium_tiny;
 	public static Item powder_lanthanium_tiny;
@@ -814,6 +815,7 @@ public class ModItems {
 	public static Item fragment_neodymium;
 	public static Item ingot_neodymium;
 	public static Item fragment_cobalt;
+	public static Item fragment_alien;
 	public static Item fragment_niobium;
 	public static Item fragment_cerium;
 	public static Item fragment_lanthanium;
@@ -3685,6 +3687,7 @@ public class ModItems {
 		titanium_trace_metals_slurry = new Item().setUnlocalizedName("titanium_trace_metals_slurry").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":titanium_trace_metals_slurry");
 		powder_neodymium_tiny = new Item().setUnlocalizedName("powder_neodymium_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_neodymium_tiny");
 		powder_cobalt_tiny = new Item().setUnlocalizedName("powder_cobalt_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_cobalt_tiny");
+		powder_alien_tiny = new Item().setUnlocalizedName("powder_alien_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_cobalt_tiny");
 		powder_niobium_tiny = new Item().setUnlocalizedName("powder_niobium_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_niobium_tiny");
 		powder_cerium_tiny = new Item().setUnlocalizedName("powder_cerium_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_cerium_tiny");
 		powder_lanthanium_tiny = new Item().setUnlocalizedName("powder_lanthanium_tiny").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lanthanium_tiny");
@@ -3717,6 +3720,7 @@ public class ModItems {
 		fragment_neodymium = new Item().setUnlocalizedName("fragment_neodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_neodymium");
 		ingot_neodymium = new Item().setUnlocalizedName("ingot_neodymium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_neodymium");
 		fragment_cobalt = new Item().setUnlocalizedName("fragment_cobalt").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_cobalt");
+		fragment_alien = new Item().setUnlocalizedName("fragment_alien").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_cobalt");
 		fragment_niobium = new Item().setUnlocalizedName("fragment_niobium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_niobium");
 		fragment_cerium = new Item().setUnlocalizedName("fragment_cerium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_cerium");
 		fragment_lanthanium = new Item().setUnlocalizedName("fragment_lanthanium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fragment_lanthanium");
@@ -7684,6 +7688,7 @@ public class ModItems {
 		GameRegistry.registerItem(powder_strontium, powder_strontium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_cobalt, powder_cobalt.getUnlocalizedName());
 		GameRegistry.registerItem(powder_cobalt_tiny, powder_cobalt_tiny.getUnlocalizedName());
+		GameRegistry.registerItem(powder_alien_tiny, powder_alien_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(powder_bromine, powder_bromine.getUnlocalizedName());
 		GameRegistry.registerItem(powder_niobium, powder_niobium.getUnlocalizedName());
 		GameRegistry.registerItem(powder_niobium_tiny, powder_niobium_tiny.getUnlocalizedName());
@@ -7836,6 +7841,7 @@ public class ModItems {
 		GameRegistry.registerItem(fragment_neodymium, fragment_neodymium.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_neodymium, ingot_neodymium.getUnlocalizedName());
 		GameRegistry.registerItem(fragment_cobalt, fragment_cobalt.getUnlocalizedName());
+		GameRegistry.registerItem(fragment_alien, fragment_alien.getUnlocalizedName());
 		GameRegistry.registerItem(fragment_niobium, fragment_niobium.getUnlocalizedName());
 		GameRegistry.registerItem(fragment_cerium, fragment_cerium.getUnlocalizedName());
 		GameRegistry.registerItem(fragment_lanthanium, fragment_lanthanium.getUnlocalizedName());

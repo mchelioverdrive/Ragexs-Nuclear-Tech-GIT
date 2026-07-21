@@ -70,6 +70,9 @@ public class BlockOre extends Block implements IBlockMultiPass, IBlockMulti {
 		if(this == ModBlocks.ore_cobalt) {
 			return ModItems.fragment_cobalt;
 		}
+		if(this == ModBlocks.ore_alien) {
+			return ModItems.fragment_alien;
+		}
 		// Vanilla reproduction
 		if(this == ModBlocks.ore_redstone) {
 			return Items.redstone;
