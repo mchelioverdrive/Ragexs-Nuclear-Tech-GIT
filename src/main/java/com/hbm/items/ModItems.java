@@ -43,6 +43,7 @@ import com.hbm.main.MainRegistry;
 import com.hbm.potion.HbmPotion;
 import com.hbm.tileentity.machine.rbmk.IRBMKFluxReceiver.NType;
 import com.hbm.util.RTGUtil;
+import com.hbm.handler.ToolAbility;
 
 import api.hbm.block.IToolable.ToolType;
 import cpw.mods.fml.common.registry.GameRegistry;
@@ -6648,9 +6649,12 @@ public class ModItems {
 				//Fluids.DIESEL, Fluids.DIESEL_CRACK, Fluids.KEROSENE, don't make much sense to me
 				Fluids.BIOFUEL, Fluids.GASOLINE, Fluids.GASOLINE_LEADED, Fluids.PETROIL, Fluids.PETROIL_LEADED, Fluids.COALGAS, Fluids.COALGAS_LEADED)
 				.addBreakAbility(new ToolAbility.SilkAbility())
+				.addBreakAbility(new ToolAbility.FellingAbility(4, 32, 192))
 				.addBreakAbility(new ToolAbility.RecursionAbility(15))
 				.addHitAbility(new WeaponAbility.ChainsawAbility(10))
-				.addHitAbility(new WeaponAbility.BeheaderAbility()).setShears().setUnlocalizedName("chainsaw").setTextureName(RefStrings.MODID + ":chainsaw");
+				.addHitAbility(new WeaponAbility.BeheaderAbility())
+				.setShears()
+				.setUnlocalizedName("chainsaw").setTextureName(RefStrings.MODID + ":chainsaw");
 
 		//bullshit
 		schrabidium_pickaxe = new ItemToolAbility(4, 0, MainRegistry.tMatSchrab, EnumToolType.PICKAXE)
@@ -6692,14 +6696,19 @@ public class ModItems {
 		//CorrosionResistantAbility
 		//ChemicalToolAbility or some stand in for those abilities
 		titanium_pickaxe = new ItemToolAbility(4.5F, 0, MainRegistry.tMatTitan, EnumToolType.PICKAXE)
-			//.addToolTrait(ToolTrait.LIGHTWEIGHT)
-			//.addToolTrait(ToolTrait.CORROSION_RESISTANT)
+			.addToolTrait(ToolAbility.ToolTrait.LIGHTWEIGHT)
+			.addToolTrait(ToolAbility.ToolTrait.CORROSION_RESISTANT)
 			//if you are going to suggest adding these at least fucking implement them when you do a refactor of ToolAbility.java.
 			.setUnlocalizedName("titanium_pickaxe").setTextureName(RefStrings.MODID + ":titanium_pickaxe");
 		titanium_axe = new ItemToolAbility(5.5F, 0, MainRegistry.tMatTitan, EnumToolType.AXE)
+			.addToolTrait(ToolAbility.ToolTrait.LIGHTWEIGHT)
+			.addToolTrait(ToolAbility.ToolTrait.CORROSION_RESISTANT)
 				.addBreakAbility(new ToolAbility.RecursionAbility(12))
 				.addHitAbility(new WeaponAbility.BeheaderAbility()).setUnlocalizedName("titanium_axe").setTextureName(RefStrings.MODID + ":titanium_axe");
-		titanium_shovel = new ItemToolAbility(3.5F, 0, MainRegistry.tMatTitan, EnumToolType.SHOVEL).setUnlocalizedName("titanium_shovel").setTextureName(RefStrings.MODID + ":titanium_shovel");
+		titanium_shovel = new ItemToolAbility(3.5F, 0, MainRegistry.tMatTitan, EnumToolType.SHOVEL)
+			.addToolTrait(ToolAbility.ToolTrait.LIGHTWEIGHT)
+			.addToolTrait(ToolAbility.ToolTrait.CORROSION_RESISTANT)
+			.setUnlocalizedName("titanium_shovel").setTextureName(RefStrings.MODID + ":titanium_shovel");
 		titanium_hoe = new ModHoe(MainRegistry.tMatTitan).setUnlocalizedName("titanium_hoe").setTextureName(RefStrings.MODID + ":titanium_hoe");
 
 		//steel
@@ -6719,16 +6728,22 @@ public class ModItems {
 		//bronze
 		alloy_pickaxe = new ItemToolAbility(4F, 0, MainRegistry.tMatAlloy, EnumToolType.PICKAXE)
 				//silk touch represents the non-sparking ability of bronze.
+				.addToolTrait(ToolAbility.ToolTrait.NON_SPARKING)
+				.addToolTrait(ToolAbility.ToolTrait.CORROSION_RESISTANT)
 				.addBreakAbility(new ToolAbility.SilkAbility())
 				.addBreakAbility(new ToolAbility.RecursionAbility(2)).setUnlocalizedName("alloy_pickaxe").setTextureName(RefStrings.MODID + ":alloy_pickaxe");
 
 
 		alloy_axe = new ItemToolAbility(5F, 0, MainRegistry.tMatAlloy, EnumToolType.AXE)
+			.addToolTrait(ToolAbility.ToolTrait.NON_SPARKING)
+			.addToolTrait(ToolAbility.ToolTrait.CORROSION_RESISTANT)
 				.addBreakAbility(new ToolAbility.SilkAbility())
 				.addBreakAbility(new ToolAbility.RecursionAbility(2))
 				.addHitAbility(new WeaponAbility.BeheaderAbility()).setUnlocalizedName("alloy_axe").setTextureName(RefStrings.MODID + ":alloy_axe");
 
 		alloy_shovel = new ItemToolAbility(3F, 0, MainRegistry.tMatAlloy, EnumToolType.SHOVEL)
+			.addToolTrait(ToolAbility.ToolTrait.NON_SPARKING)
+			.addToolTrait(ToolAbility.ToolTrait.CORROSION_RESISTANT)
 				.addBreakAbility(new ToolAbility.SilkAbility())
 				.addBreakAbility(new ToolAbility.RecursionAbility(2)).setUnlocalizedName("alloy_shovel").setTextureName(RefStrings.MODID + ":alloy_shovel");
 
@@ -6828,17 +6843,26 @@ public class ModItems {
 		// cemented-carbide-tipped tool.
 		ToolMaterial matDecCobalt = EnumHelper.addToolMaterial("HBM_COBALT2", 3, 2500, 15.0F, 2.5F, 75).setRepairItem(new ItemStack(ModItems.ingot_cobalt));
 		cobalt_decorated_pickaxe = new ItemToolAbility(4F, 0, matDecCobalt, EnumToolType.PICKAXE)
+			.addToolTrait(ToolAbility.ToolTrait.WEAR_RESISTANT)
+			.addToolTrait(ToolAbility.ToolTrait.CARBIDE_EDGE)
+			.addToolTrait(ToolAbility.ToolTrait.BRITTLE_EDGE)
 				.addBreakAbility(new ToolAbility.RecursionAbility(4))
 				.addBreakAbility(new ToolAbility.HammerAbility(1))
 				//.addBreakAbility(new ToolAbility.SilkAbility())
 				.addBreakAbility(new LuckAbility(3)).setUnlocalizedName("cobalt_decorated_pickaxe").setTextureName(RefStrings.MODID + ":cobalt_decorated_pickaxe");
 		cobalt_decorated_axe = new ItemToolAbility(5F, 0, matDecCobalt, EnumToolType.AXE)
+			.addToolTrait(ToolAbility.ToolTrait.WEAR_RESISTANT)
+			.addToolTrait(ToolAbility.ToolTrait.CARBIDE_EDGE)
+			.addToolTrait(ToolAbility.ToolTrait.BRITTLE_EDGE)
 				.addBreakAbility(new ToolAbility.RecursionAbility(4))
 				.addBreakAbility(new ToolAbility.HammerAbility(1))
 				//.addBreakAbility(new ToolAbility.SilkAbility())
 				.addBreakAbility(new LuckAbility(3))
 				.addHitAbility(new WeaponAbility.BeheaderAbility()).setUnlocalizedName("cobalt_decorated_axe").setTextureName(RefStrings.MODID + ":cobalt_decorated_axe");
 		cobalt_decorated_shovel = new ItemToolAbility(3F, 0, matDecCobalt, EnumToolType.SHOVEL)
+			.addToolTrait(ToolAbility.ToolTrait.WEAR_RESISTANT)
+			.addToolTrait(ToolAbility.ToolTrait.CARBIDE_EDGE)
+			.addToolTrait(ToolAbility.ToolTrait.BRITTLE_EDGE)
 				.addBreakAbility(new ToolAbility.RecursionAbility(4))
 				.addBreakAbility(new ToolAbility.HammerAbility(1))
 				//.addBreakAbility(new ToolAbility.SilkAbility())

@@ -7116,3 +7116,11 @@ tile.machine_molten_salt_reactor.name=Molten Salt Reactor
 container.moltenSaltReactor=Molten Salt Reactor
 tile.machine_msr_input.name=Molten Salt Reactor Inlet
 tile.machine_msr_output.name=Molten Salt Reactor Outlet
+
+tool.trait.lightweight=Light Weight
+tool.trait.corrosionresistant=Corrosion Resistant
+tool.trait.wearresistant=Wear Resistant
+tool.trait.carbideedge=Carbide Edge
+tool.trait.brittleedge=Brittle Edge
+tool.trait.nonsparking=Non-Sparking
+tool.ability.felling=Felling
