@@ -113,6 +113,13 @@ public class TileEntityMoltenSaltReactor extends TileEntityMachineBase implement
 				block == ModBlocks.block_boron ||
 				block == ModBlocks.concrete_super ||
 				block == ModBlocks.concrete_asbestos ||
+				block == ModBlocks.brick_concrete ||
+				block == ModBlocks.brick_ducrete ||
+				//block == ModBlocks.brick_concrete_cracked ||
+				block == ModBlocks.concrete_colored ||
+				block == ModBlocks.concrete_colored_ext ||
+				block == ModBlocks.brick_concrete_mossy ||
+				block == ModBlocks.concrete_pillar ||
 				block == ModBlocks.machine_msr_input ||
 				block == ModBlocks.machine_msr_output;
 	}
