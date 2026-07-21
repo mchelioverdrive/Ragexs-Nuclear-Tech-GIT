@@ -8,6 +8,10 @@ import com.hbm.blocks.machine.rbmk.RBMKBase;
 //import com.hbm.entity.effect.EntitySpear;
 import com.hbm.entity.projectile.EntityRBMKDebris;
 import com.hbm.entity.projectile.EntityRBMKDebris.DebrisType;
+import com.hbm.dim.trait.CBT_Atmosphere;
+import com.hbm.handler.atmosphere.AtmosphereBlob;
+import com.hbm.handler.atmosphere.ChunkAtmosphereManager;
+import com.hbm.inventory.fluid.Fluids;
 import com.hbm.main.MainRegistry;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
@@ -81,6 +85,35 @@ public abstract class TileEntityRBMKBase extends TileEntityLoadedBase implements
 	 */
 	public double passiveCooling() {
 		return RBMKDials.getPassiveCooling(worldObj); //default: 1.0D
+	}
+
+	/**
+	 * RBMK fuel channels need a pressurized working environment. This also permits
+	 * an enclosed, pressurized base to operate on otherwise airless celestial bodies.
+	 */
+	protected boolean hasAtmosphere() {
+		CBT_Atmosphere atmosphere = ChunkAtmosphereManager.proxy.getAtmosphere(worldObj, xCoord, yCoord, zCoord);
+		return atmosphere != null && atmosphere.getPressure() > 0.01D;
+	}
+
+	/**
+	 * Used by RBMK components that burn fuel rather than merely exchange reactor heat.
+	 */
+	protected boolean breatheAir(int amount) {
+		CBT_Atmosphere atmosphere = ChunkAtmosphereManager.proxy.getAtmosphere(worldObj, xCoord, yCoord, zCoord);
+		if(atmosphere != null && (atmosphere.hasFluid(Fluids.AIR, 0.19) || atmosphere.hasFluid(Fluids.OXYGEN, 0.09))) {
+			return true;
+		}
+
+		List<AtmosphereBlob> blobs = ChunkAtmosphereManager.proxy.getBlobs(worldObj, xCoord, yCoord, zCoord);
+		for(AtmosphereBlob blob : blobs) {
+			if(blob.hasFluid(Fluids.AIR, 0.19) || blob.hasFluid(Fluids.OXYGEN, 0.09)) {
+				blob.consume(amount);
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	//necessary checks to figure out whether players are close enough to ensure that the reactor can be safely used

@@ -95,3 +95,7 @@ For other Minecraft versions, use separate projects rather than this repository:
 Machines that burn fuel or handle exhaust can produce carbon monoxide while running. This includes fireboxes, heating ovens, and fluid burners when they are consuming fuel. Read machine tooltips for the carbon monoxide warning and ventilate enclosed work areas before operating those machines. Steel grates, item grates, and air vents can help vent carbon monoxide from enclosed spaces.
 
 Combustion machines also stop operating while water touches a side or top of any part of their multiblock. Keep every exposed multiblock face dry; water directly below a machine does not trigger this shutdown.
+
+## Atmosphere-dependent machinery
+
+Fuel-burning machinery needs breathable air to run. This includes the RBMK burner and rotary furnace, so build them inside a pressurized habitat when working on an airless body. RBMK fuel rods also require a pressurized atmosphere to sustain their reaction; their remaining heat can still cool down after the atmosphere is lost. Electric, nuclear, and heat-exchange machinery is not subject to this combustion rule unless its individual design requires an atmosphere.
