@@ -76,6 +76,14 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 	public void updateEntity() {
 
 		if(!worldObj.isRemote) {
+			if(!hasAtmosphere()) {
+				// Keep residual heat cooling, but do not burn fuel or propagate neutrons in a vacuum.
+				this.fluxFast = 0;
+				this.fluxSlow = 0;
+				this.hasRod = false;
+				super.updateEntity();
+				return;
+			}
 
 			if(slots[0] != null && slots[0].getItem() instanceof ItemRBMKRod) {
 

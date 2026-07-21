@@ -1,3 +1,9 @@
+## Require atmospheres for RBMK and combustion machinery
+
+* RBMK fuel rods now halt fuel burn and neutron propagation in near-vacuum conditions while allowing residual reactor heat to cool normally.
+* RBMK burners and rotary furnaces now require breathable air before consuming fuel or processing materials, including on airless celestial bodies.
+* Documented the atmosphere requirements and the distinction between combustion, reactor, electric, and heat-exchange machinery.
+
 ## Waterlog combustible machines
 
 * Fixed water shutdown checks for dummyable combustion multiblocks so water touching the sides or top of any part stops the machine, rather than only water next to the controller block.

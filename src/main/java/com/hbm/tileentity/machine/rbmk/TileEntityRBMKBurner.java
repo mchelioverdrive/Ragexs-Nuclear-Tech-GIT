@@ -37,7 +37,7 @@ public class TileEntityRBMKBurner extends TileEntityRBMKBase implements IFluidSt
 			maxBurn += maxBurn;
 
 			if((int)(this.heat) > 19) {
-				if(tank.getTankType().hasTrait(FT_Flammable.class)){
+				if(tank.getFill() > 0 && tank.getTankType().hasTrait(FT_Flammable.class) && breatheAir(1)){
 					int heating = Math.min(maxBurn, tank.getFill());
 					{
 						tank.setFill(tank.getFill() - heating );
@@ -46,6 +46,8 @@ public class TileEntityRBMKBurner extends TileEntityRBMKBase implements IFluidSt
 						this.heat += powerProd;
 					}
 					this.lastHot = heating;
+				} else {
+					this.lastHot = 0;
 				}
 				
 				if(lastHot > 0) {

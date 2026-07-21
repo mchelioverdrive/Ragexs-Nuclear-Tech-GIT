@@ -112,7 +112,8 @@ public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting i
 			RotaryFurnaceRecipe recipe = RotaryFurnaceRecipes.getRecipe(slots[0], slots[1], slots[2]);
 			this.isProgressing = false;
 
-			if(recipe != null) {
+			boolean hasAir = breatheAir(0);
+			if(recipe != null && hasAir) {
 
 				if(this.burnTime <= 0 && slots[4] != null && TileEntityFurnace.isItemFuel(slots[4])) {
 					this.maxBurnTime = this.burnTime = TileEntityFurnace.getItemBurnTime(slots[4]) / 2;
@@ -146,7 +147,7 @@ public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting i
 			}
 
 			this.isVenting = false;
-			if(this.burnTime > 0) {
+			if(this.burnTime > 0 && breatheAir(1)) {
 				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
 				this.pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND / 10F);
 				this.burnTime--;
