@@ -66,7 +66,7 @@ public class SolderingRecipes extends SerializableRecipe {
 		));
 
 		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.ADVANCED.ordinal()), 300, 1_000,
-				new FluidStack(Fluids.SULFURIC_ACID, 1_000),
+				new FluidStack(Fluids.SOLVENT, 250),
 				new AStack[] {
 						new ComparableStack(ModItems.circuit, lbsm ? 4 : 16, EnumCircuitType.CHIP),
 						new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CAPACITOR)},
@@ -78,7 +78,7 @@ public class SolderingRecipes extends SerializableRecipe {
 		));
 
 		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.ADVANCED.ordinal()), 100, 1_000,
-										new FluidStack(Fluids.SULFURIC_ACID, 1_000),
+										new FluidStack(Fluids.SOLVENT, 250),
 										new AStack[] {
 											new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CHIP),
 											new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CAPACITOR)},
@@ -89,8 +89,9 @@ public class SolderingRecipes extends SerializableRecipe {
 											new OreDictStack(PB.wireFine(), 4)}
 		));
 
-		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 4, EnumCircuitType.ADVANCED.ordinal()), 100, 1_000,
-										new FluidStack(Fluids.SULFURIC_ACID, 1_000),
+		// Terbium may stand in for specialized contacts, not a multiplier for complete boards.
+		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.ADVANCED.ordinal()), 100, 1_000,
+										new FluidStack(Fluids.SOLVENT, 250),
 										new AStack[] {
 											new ComparableStack(ModItems.circuit, 2, EnumCircuitType.CHIP),
 											new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CAPACITOR)},
@@ -103,7 +104,7 @@ public class SolderingRecipes extends SerializableRecipe {
 
 
 		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.CAPACITOR_BOARD.ordinal()), 200, 300,
-				new FluidStack(Fluids.PEROXIDE, 250),
+				new FluidStack(Fluids.SOLVENT, 250),
 				new AStack[] {
 						new ComparableStack(ModItems.circuit, 3, EnumCircuitType.CAPACITOR_TANTALIUM)},
 				new AStack[] {
@@ -112,15 +113,11 @@ public class SolderingRecipes extends SerializableRecipe {
 						new OreDictStack(PB.wireFine(), 3)}
 		));
 
-		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 16, EnumCircuitType.CAPACITOR_BOARD.ordinal()), 200, 300,
-				new FluidStack(Fluids.PEROXIDE, 250),
-				new AStack[] {
-						new ComparableStack(ModItems.ingot_terbium)},
-				new AStack[] {
-						new ComparableStack(ModItems.circuit, 1, EnumCircuitType.PCB)},
-				new AStack[] {
-						new OreDictStack(PB.wireFine(), 3)}
-		));
+		// Disabled: one terbium ingot and one PCB cannot credibly yield sixteen populated
+		// capacitor boards. The tantalium-capacitor route above remains the available route.
+		// recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 16, EnumCircuitType.CAPACITOR_BOARD.ordinal()), 200, 300,
+		// 		new FluidStack(Fluids.PEROXIDE, 250), new AStack[] {new ComparableStack(ModItems.ingot_terbium)},
+		// 		new AStack[] {new ComparableStack(ModItems.circuit, 1, EnumCircuitType.PCB)}, new AStack[] {new OreDictStack(PB.wireFine(), 3)}));
 
 		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.BISMOID.ordinal()), 400, 10_000,
 				new FluidStack(Fluids.SOLVENT, 1_000),
@@ -135,7 +132,8 @@ public class SolderingRecipes extends SerializableRecipe {
 						new OreDictStack(PB.wireFine(), 12)}
 		));
 
-		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 32, EnumCircuitType.BISMOID.ordinal()), 400, 10_000,
+		// Specialized terbium contacts remain an alternative route, but do not multiply boards.
+		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.BISMOID.ordinal()), 400, 10_000,
 				new FluidStack(Fluids.SOLVENT, 1_000),
 				new AStack[] {
 						new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CHIP_BISMOID),
@@ -161,9 +159,8 @@ public class SolderingRecipes extends SerializableRecipe {
 											new OreDictStack(PB.wireFine(), 12)}
 		));
 
-		//osmium makes a lot of these since it's hard to get and gives players a incentive to make osmium and is used for
-		//highly advanced electronics
-		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 12, EnumCircuitType.BISMOID.ordinal()), 300, 5_000,
+		// Osmiridium represents durable specialty contacts; it does not duplicate populated boards.
+		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.BISMOID.ordinal()), 300, 5_000,
 										new FluidStack(Fluids.SOLVENT, 500),
 										new AStack[] {
 											new ComparableStack(ModItems.ingot_osmiridium),
@@ -176,8 +173,8 @@ public class SolderingRecipes extends SerializableRecipe {
 											new OreDictStack(PB.wireFine(), 8)}
 		));
 
-		//rhodium electronics gigachad gif
-		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 32, EnumCircuitType.BISMOID.ordinal()), 500, 15_000,
+		// Rhodium remains a late-game contact-material alternative without a board multiplier.
+		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.BISMOID.ordinal()), 500, 15_000,
 										new FluidStack(Fluids.SOLVENT, 500),
 										new AStack[] {
 											new ComparableStack(ModItems.ingot_rhodium),

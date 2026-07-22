@@ -61,6 +61,20 @@ public class AssemblerRecipes extends SerializableRecipe {
 
 		boolean exp = GeneralConfig.enableExpensiveMode;
 
+		// Final motor integration: steel represents the ferromagnetic housing/stator and
+		// shaft hardware, the two coils represent windings and a wound core, and rubber
+		// represents insulation and bearing seals. One recipe intentionally yields one motor.
+		makeRecipe(new ComparableStack(ModItems.motor, 1), new AStack[]{
+				new OreDictStack(STEEL.plate(), 2), new ComparableStack(ModItems.coil_copper),
+				new ComparableStack(ModItems.coil_copper_torus), new OreDictStack(STEEL.bolt(), 4),
+				new OreDictStack(ANY_RUBBER.ingot(), 1)}, 100);
+
+		// Dense wire is a cable-bundling operation, not an arc-welded structural assembly.
+		makeRecipe(new ComparableStack(ModItems.wire_dense, 1, Mats.MAT_ALLOY.id), new AStack[]{
+				new OreDictStack(ALLOY.wireFine(), 8), new OreDictStack(ANY_HARDPLASTIC.ingot(), 1)}, 100);
+		makeRecipe(new ComparableStack(ModItems.wire_dense, 1, Mats.MAT_GOLD.id), new AStack[]{
+				new OreDictStack(GOLD.wireFine(), 8), new OreDictStack(ANY_HARDPLASTIC.ingot(), 1)}, 100);
+
 		//why were these 2 for 3... It's for mass production, why are we punishing the player for technological progression?
 		makeRecipe(new ComparableStack(ModItems.plate_iron,
 									   3),
@@ -275,8 +289,9 @@ public class AssemblerRecipes extends SerializableRecipe {
 										8),
 					   new OreDictStack(ANY_PLASTIC.ingot(),
 										8),
-					   new ComparableStack(ModItems.rocket_fuel,
-										   8),
+					   // Empty airframes do not contain loose propellant; tanks retain that abstraction.
+					   new OreDictStack(CU.wireFine(),
+											8),
 					   new ComparableStack(ModItems.circuit,
 										   1,
 										   EnumCircuitType.BASIC),},
