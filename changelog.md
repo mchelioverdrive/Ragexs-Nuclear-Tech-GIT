@@ -1,3 +1,11 @@
+# Restore grounded petrochemical and biomass processing
+
+**Tracker:** `Restore grounded petrochemical and biomass processing`
+
+* Restored a coal-tar coker-gas route and a cracked-light-oil fractionation route to the existing cracked-diesel/hydrotreating chain.
+* Added compact chemical-plant abstractions for coal-derived gasoline, syngas-to-methanol synthesis, and olefin-to-polyethylene polymerization.
+* Added the four-flesh-to-biomass crafting route and documented the new industrial chains and their gameplay-scale abstractions.
+
 ## Realistify RNT’s Nuclear Fuel Cycle and Spent-Fuel Processing
 
 * Uranium ore is leached to yellowcake, fluorinated to UF6, and enriched through the existing gas-centrifuge cascade with explicit depleted-uranium tails; the terminal LEU stream is deconverted into fuel-grade uranium feed rather than a finished fuel rod.

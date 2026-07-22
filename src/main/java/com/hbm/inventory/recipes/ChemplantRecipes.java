@@ -1963,6 +1963,25 @@ public class ChemplantRecipes extends SerializableRecipe {
 		registerPwrReprocessing(1127, "PWR_AM242_REPROCESS", EnumPWRFuel.HEA242, 0, 0, false);
 
 
+		// Compact CO + 2H2 -> CH3OH synthesis: SYNGAS represents the conditioned CO/H2 feed.
+		recipes.add(new ChemRecipe(1128, "METHANOL_SYNTHESIS", 120)
+				.inputFluids(new FluidStack(Fluids.SYNGAS, 1_000), new FluidStack(Fluids.HYDROGEN, 1_000))
+				.outputFluids(new FluidStack(Fluids.METHANOL, 1_000)));
+
+		// Coal-to-liquids is represented as hydrogenation over an iron catalyst. The recipe
+		// deliberately compresses gasification, cleanup, and Fischer-Tropsch upgrading.
+		recipes.add(new ChemRecipe(1129, "COAL_GASOLINE", 240)
+				.inputItems(new OreDictStack(COAL.dust(), 8), new ComparableStack(ModItems.powder_iron))
+				.inputFluids(new FluidStack(Fluids.HYDROGEN, 4_000))
+				.outputFluids(new FluidStack(Fluids.COALGAS, 2_000)));
+
+		// UNSATURATEDS is the game's mixed light-olefin stream; this is an intentionally
+		// compact ethylene-polymerization route rather than a claim that every component polymerizes.
+		recipes.add(new ChemRecipe(1130, "POLYETHYLENE", 100)
+				.inputFluids(new FluidStack(Fluids.UNSATURATEDS, 1_000))
+				.outputFluids(new FluidStack(Fluids.POLYTHYLENE, 1_000)));
+
+
 
 
 

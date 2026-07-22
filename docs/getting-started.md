@@ -34,6 +34,12 @@ RNTM progression is less about a single linear quest and more about connected re
 
 Use recipe lookup to work backward from a target machine or item. When a material is unfamiliar, search for both its item form and its ore/fluid equivalents.
 
+## Petrochemical and biomass routes
+
+Coal processing now has a deliberately compact but connected chain. Coking coal tar/creosote produces petroleum coke and **coker gas**; fractionating cracked light oil produces **cracked diesel**, which needs hydrotreating before it becomes normal diesel. The chemical plant can hydrogenate coal with an iron-catalyst abstraction into the existing coal-gasoline fuel, synthesize methanol from conditioned syngas plus hydrogen, and polymerize the mixed light-olefin stream into the existing **POLYTHYLENE** fluid. These recipes compress real multistage plants into the available machine slots, so treat the quantities as gameplay batches rather than plant-scale mass balances.
+
+Four units of the mod's `flesh` item can be crafted into one biomass item. This represents rendering/grinding organic waste; biomass remains useful as feedstock for the existing biogas and syngas routes.
+
 ## Radiation basics
 
 Radiation is a persistent environmental and item hazard. Practical rules:

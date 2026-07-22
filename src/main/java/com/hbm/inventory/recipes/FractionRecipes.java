@@ -29,6 +29,9 @@ public class FractionRecipes extends SerializableRecipe {
 		fractions.put(Fluids.SMEAR,				new Pair(new FluidStack(Fluids.HEATINGOIL,				60),		new FluidStack(Fluids.LUBRICANT,			40)));
 		fractions.put(Fluids.LIGHTOIL,			new Pair(new FluidStack(Fluids.DIESEL,					55),		new FluidStack(Fluids.KEROSENE,				45)));
 		fractions.put(Fluids.LIGHTOIL_DS,		new Pair(new FluidStack(Fluids.DIESEL,					55),		new FluidStack(Fluids.KEROSENE,				45)));
+		// Cracked light distillate retains the same gameplay cut points, but yields the
+		// unsaturated diesel stream that must be hydrotreated before normal diesel use.
+		fractions.put(Fluids.LIGHTOIL_CRACK,	new Pair(new FluidStack(Fluids.DIESEL_CRACK,			55),	new FluidStack(Fluids.KEROSENE,				45)));
 		fractions.put(Fluids.COALOIL,			new Pair(new FluidStack(Fluids.OIL,					70),		new FluidStack(Fluids.COALCREOSOTE,			30)));
 		fractions.put(Fluids.COALCREOSOTE,		new Pair(new FluidStack(Fluids.COALOIL,					10),		new FluidStack(Fluids.BITUMEN,				90)));
 		fractions.put(Fluids.REFORMATE,			new Pair(new FluidStack(Fluids.AROMATICS,				40),		new FluidStack(Fluids.XYLENE,				60)));

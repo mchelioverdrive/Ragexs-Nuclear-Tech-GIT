@@ -37,7 +37,8 @@ public class CokerRecipes extends SerializableRecipe {
 		registerRecipe(HEAVYOIL, 12_000, DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), new FluidStack(OIL_COKER, 1_200));
 		registerRecipe(HEAVYOIL_VACUUM, 12_000, DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), new FluidStack(OIL_COKER, 1_200));
 		registerRecipe(SMEAR, 10_000, DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), new FluidStack(OIL_COKER, 1_000));
-		registerRecipe(COALCREOSOTE, 10_000, DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), new FluidStack(NAPHTHA_COKER, 1_000));
+		// Coal-tar residues are coked into a petroleum-coke abstraction plus light coke-oven gas.
+		registerRecipe(COALCREOSOTE, 10_000, DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), new FluidStack(GAS_COKER, 1_000));
 		registerRecipe(RECLAIMED, 10_000, DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), new FluidStack(NAPHTHA_COKER, 1_000));
 		registerRecipe(BITUMEN, 16_000, DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), new FluidStack(OIL_COKER, 1_600));
 		if(false) { // legacy non-coker conversions retained for JSON compatibility, never registered by default
