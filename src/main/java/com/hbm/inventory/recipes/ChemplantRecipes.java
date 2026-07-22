@@ -776,7 +776,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				new FluidStack(Fluids.HCL, 200) // 2x ratio
 			)
 			.outputFluids(
-				new FluidStack(Fluids.CACL2, 1000),
+				new FluidStack(Fluids.CALCIUM_CHLORIDE, 1000), //Fluids.CACL2 is redundant
 				new FluidStack(Fluids.WATER, 200)
 			)
 		);
