@@ -91,10 +91,12 @@ public class PressRecipes extends SerializableRecipe {
 		makeRecipe(StampType.PLATE, new OreDictStack(BIGMT.ingot()),		ModItems.plate_saturnite);
 		makeRecipe(StampType.PLATE, new OreDictStack(DURA.ingot()),			ModItems.plate_dura_steel);
 
-		makeRecipe(StampType.C9, 	new OreDictStack(GUNMETAL.plate()),		DictFrame.fromOne(ModItems.casing, EnumCasingType.SMALL, 4));
-		makeRecipe(StampType.C50, 	new OreDictStack(GUNMETAL.plate()),		DictFrame.fromOne(ModItems.casing, EnumCasingType.LARGE, 2));
-		makeRecipe(StampType.C9, 	new OreDictStack(WEAPONSTEEL.plate()),	DictFrame.fromOne(ModItems.casing, EnumCasingType.SMALL_STEEL, 4));
-		makeRecipe(StampType.C50, 	new OreDictStack(WEAPONSTEEL.plate()),	DictFrame.fromOne(ModItems.casing, EnumCasingType.LARGE_STEEL, 2));
+		//makeRecipe(StampType.C9, 	new OreDictStack(GUNMETAL.plate()),		DictFrame.fromOne(ModItems.casing, EnumCasingType.SMALL, 4));
+		//makeRecipe(StampType.C50, 	new OreDictStack(GUNMETAL.plate()),		DictFrame.fromOne(ModItems.casing, EnumCasingType.LARGE, 2));
+		//makeRecipe(StampType.C9, 	new OreDictStack(WEAPONSTEEL.plate()),	DictFrame.fromOne(ModItems.casing, EnumCasingType.SMALL_STEEL, 4));
+		//makeRecipe(StampType.C50, 	new OreDictStack(WEAPONSTEEL.plate()),	DictFrame.fromOne(ModItems.casing, EnumCasingType.LARGE_STEEL, 2));
+
+		//we don't use those here
 
 		for(NTMMaterial mat : Mats.orderedList) {
 			if(mat.autogen.contains(MaterialShapes.WIRE) && OreDictionary.doesOreNameExist(MaterialShapes.INGOT.make(mat))) {
