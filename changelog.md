@@ -1,3 +1,10 @@
+## Realistify General Industrial Assembler Recipes
+
+* Updated the general assembler bills of materials for ordinary refinery, chemical, pumping, heating, power, mining, storage, shredding, and battery machines.
+* Made machine recipes represent their main fabricated vessel or frame, fluid routing, drive, thermal, electrical, sealing, and control systems rather than generic raw-metal bundles.
+* Preserved the existing progression and expensive-mode branches while removing the pumpjack's unrelated titanium drill requirement and replacing the pyro oven's internal hard-plastic ingredient with refractory firebrick.
+* Left already coherent advanced refinery trains, the ore slopper, electric press, chemical factory, and mining laser recipe structures unchanged; excluded nuclear, fuel-cycle, exotic, and portable-power content from this pass.
+
 ## Realistify electrochemical and process-machine recipes
 
 * Moved direct water and brine electrolysis out of the chemical plant into the fluid electrolyser, corrected water and heavy-water gas ratios, and retained fluorine as a coarse nonaqueous fluoride-electrolyte abstraction.
