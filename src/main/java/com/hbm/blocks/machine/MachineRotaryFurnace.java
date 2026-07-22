@@ -66,7 +66,7 @@ public class MachineRotaryFurnace extends BlockDummyable implements ITooltipProv
 	}
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
-		this.addStandardInfo(stack, player, list, ext);
+		//this.addStandardInfo(stack, player, list, ext);
 		list.add(EnumChatFormatting.DARK_RED + I18nUtil.resolveKey("tooltip.furnace.monoxide"));
 	}
 }
