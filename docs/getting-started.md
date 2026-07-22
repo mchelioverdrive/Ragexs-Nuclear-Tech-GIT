@@ -57,6 +57,12 @@ Nuclear systems are powerful but punishing:
 - Put reactors away from bases and spawn until the design is proven.
 - Treat meltdown, blast, fallout, and biome damage as real world-changing risks.
 
+## Uranium fuel cycle
+
+RNTM keeps the nuclear fuel cycle compact, but its order matters. Process uranium-bearing ore in the chemical plant into yellowcake, then fluorinate the concentrate to UF6. Feed UF6 into the **gas centrifuge** cascade: each enrichment stage produces usable depleted-uranium tails as well as a smaller enriched stream. The terminal LEU output is fuel-grade uranium feed, which still has to be made into the existing fuel material and cladded fuel rod; enrichment does not produce a ready-to-load assembly.
+
+After a PWR discharges hot fuel, place it in the **fuel pool** before handling it further. Cooling retains the fuel variant and radioactivity while producing cooled spent fuel. Cooled ordinary PWR and MOX fuel is reprocessed in the **chemical plant** with nitric acid, not the ordinary centrifuge. That compact process recovers limited bulk uranium/plutonium material and zirconium cladding while producing nuclear waste and radioactive liquid raffinate. Combine the raffinate with the existing leaded glass-forming input in the chemical plant to make vitrified waste for storage; conditioning does not make the waste harmless.
+
 ## Steam turbine safety
 
 Steam turbines require a clear route for both incoming steam and spent-steam exhaust. Both standard and Industrial Steam Turbines rupture in a destructive overpressure explosion if their input and output tanks are both completely full. Keep the exhaust connected to a condenser, cooling tower, or sufficient storage, and do not allow the steam supply to keep filling a blocked turbine.

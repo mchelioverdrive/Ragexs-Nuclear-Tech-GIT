@@ -24,7 +24,6 @@ import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.ItemEnums.EnumAshType;
 import com.hbm.items.ItemEnums.EnumChunkType;
 import com.hbm.items.ModItems;
-import com.hbm.items.machine.ItemPWRFuel.EnumPWRFuel;
 import com.hbm.items.special.ItemBedrockOreNew;
 import com.hbm.items.special.ItemBedrockOre.EnumBedrockOre;
 import com.hbm.items.special.ItemBedrockOreNew.BedrockOreGrade;
@@ -147,61 +146,10 @@ public class CentrifugeRecipes extends SerializableRecipe {
 
 
 
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.MEU)), new ItemStack[] {
-				new ItemStack(ModItems.nugget_u238, 3),
-				new ItemStack(ModItems.nugget_plutonium, 4),
-				new ItemStack(ModItems.nugget_technetium, 2),
-				new ItemStack(ModItems.nuclear_waste_tiny, 3) });
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.HEU233)), new ItemStack[] {
-				new ItemStack(ModItems.nugget_u235, 3),
-				new ItemStack(ModItems.nugget_pu238, 3),
-				new ItemStack(ModItems.nugget_technetium, 1),
-				new ItemStack(ModItems.nuclear_waste_tiny, 5) });
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.HEU235)), new ItemStack[] {
-				new ItemStack(ModItems.nugget_neptunium, 3),
-				new ItemStack(ModItems.nugget_pu238, 3),
-				new ItemStack(ModItems.nugget_technetium, 1),
-				new ItemStack(ModItems.nuclear_waste_tiny, 5) });
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.MEN)), new ItemStack[] {
-				new ItemStack(ModItems.nugget_u238, 3),
-				new ItemStack(ModItems.nugget_pu239, 4),
-				new ItemStack(ModItems.nugget_technetium, 2),
-				new ItemStack(ModItems.nuclear_waste_tiny, 3) });
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.HEN237)), new ItemStack[] {
-				new ItemStack(ModItems.nugget_pu238, 2),
-				new ItemStack(ModItems.nugget_pu239, 4),
-				new ItemStack(ModItems.nugget_technetium, 1),
-				new ItemStack(ModItems.nuclear_waste_tiny, 5) });
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.MOX)), new ItemStack[] {
-				new ItemStack(ModItems.nugget_u238, 3),
-				new ItemStack(ModItems.nugget_pu240, 4),
-				new ItemStack(ModItems.nugget_technetium, 2),
-				new ItemStack(ModItems.nuclear_waste_tiny, 3) });
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.MEP)), new ItemStack[] {
-				new ItemStack(ModItems.nugget_lead, 2),
-				new ItemStack(ModItems.nugget_pu_mix, 4),
-				new ItemStack(ModItems.nugget_technetium, 2),
-				new ItemStack(ModItems.nuclear_waste_tiny, 3) });
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.HEP239)), new ItemStack[] {
-				new ItemStack(ModItems.nugget_pu_mix, 2),
-				new ItemStack(ModItems.nugget_pu240, 4),
-				new ItemStack(ModItems.nugget_technetium, 1),
-				new ItemStack(ModItems.nuclear_waste_tiny, 5) });
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.HEP241)), new ItemStack[] {
-				new ItemStack(ModItems.nugget_lead, 3),
-				new ItemStack(ModItems.nugget_zirconium, 2),
-				new ItemStack(ModItems.nugget_technetium, 1),
-				new ItemStack(ModItems.nuclear_waste_tiny, 6) });
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.MEA)), new ItemStack[] {
-				new ItemStack(ModItems.nugget_lead, 3),
-				new ItemStack(ModItems.nugget_zirconium, 2),
-				new ItemStack(ModItems.nugget_technetium, 1),
-				new ItemStack(ModItems.nuclear_waste_tiny, 6) });
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.HEA242)), new ItemStack[] {
-				new ItemStack(ModItems.nugget_lead, 3),
-				new ItemStack(ModItems.nugget_zirconium, 2),
-				new ItemStack(ModItems.nugget_technetium, 1),
-				new ItemStack(ModItems.nuclear_waste_tiny, 6) });
+		// Cooled PWR fuel is deliberately not an ordinary-centrifuge input.  It must
+		// be dissolved and separated in the chemical plant (PWR_*_REPROCESS), which
+		// keeps bulk recovery and high-level raffinate together rather than creating
+		// a set of implausibly pure isotope nuggets from an intact fuel rod.
 		//recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.HES326)), new ItemStack[] {
 		//		new ItemStack(ModItems.nugget_solinium, 3),
 		//		new ItemStack(ModItems.nugget_lead, 2),
@@ -212,16 +160,6 @@ public class CentrifugeRecipes extends SerializableRecipe {
 		//		new ItemStack(ModItems.nugget_lead, 1),
 		//		new ItemStack(ModItems.nugget_euphemium, 1),
 		//		new ItemStack(ModItems.nuclear_waste_tiny, 6) });
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.BFB_AM_MIX)), new ItemStack[] {
-				new ItemStack(ModItems.nugget_am_mix, 9),
-				new ItemStack(ModItems.nugget_pu_mix, 2),
-				new ItemStack(ModItems.nugget_bismuth, 6),
-				new ItemStack(ModItems.nuclear_waste_tiny, 1) });
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.pwr_fuel_depleted, EnumPWRFuel.BFB_PU241)), new ItemStack[] {
-				new ItemStack(ModItems.nugget_pu241, 9),
-				new ItemStack(ModItems.nugget_pu_mix, 2),
-				new ItemStack(ModItems.nugget_bismuth, 6),
-				new ItemStack(ModItems.nuclear_waste_tiny, 1) });
 
 		recipes.put(new ComparableStack(ModItems.icf_pellet_depleted), new ItemStack[] {
 				new ItemStack(ModItems.icf_pellet_empty, 1),

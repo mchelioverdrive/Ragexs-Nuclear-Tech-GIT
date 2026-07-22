@@ -1,3 +1,11 @@
+## Realistify RNT’s Nuclear Fuel Cycle and Spent-Fuel Processing
+
+* Uranium ore is leached to yellowcake, fluorinated to UF6, and enriched through the existing gas-centrifuge cascade with explicit depleted-uranium tails; the terminal LEU stream is deconverted into fuel-grade uranium feed rather than a finished fuel rod.
+* Moved cooled PWR-fuel recovery out of the ordinary mechanical centrifuge. Chemical-plant reprocessing now consumes nitric acid and returns limited bulk uranium/plutonium-bearing material, recoverable zirconium cladding, solid nuclear waste, and radioactive liquid raffinate for the existing vitrification recipes.
+* Preserved fuel-pool metadata cooling for every PWR fuel variant and the existing waste-fluid-to-vitrified-waste route. Existing machine and item formats intentionally keep UF6 enrichment stages as internal pseudo-fluids and represent chemical separation as a single compact chemical-plant operation.
+* Removed impossible direct cooled-fuel isotope-nugget recipes and non-defensible U-238-to-Np-237 and direct Pu/Cm-to-fermium breeder shortcuts. Retained lithium-to-tritium, cobalt activation, U-238-to-Pu-239 (compressed capture and beta decays), and the incremental actinide chain.
+* Compatibility: existing item metadata, fuel enum ordering, recipe JSON formats, and the intentionally disabled schrabidium PWR recipes remain unchanged. New chemical recipe IDs are 1117 through 1127.
+
 ## Realistify General Industrial Assembler Recipes
 
 * Updated the general assembler bills of materials for ordinary refinery, chemical, pumping, heating, power, mining, storage, shredding, and battery machines.

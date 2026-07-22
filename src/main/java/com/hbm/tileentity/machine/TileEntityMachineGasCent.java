@@ -212,7 +212,9 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 				
 				//*AT THE MOMENT*, there's not really any need for a dedicated method for this. Yet.
 				if(!attemptTransfer(te) && this.inputTank.getTankType() == PseudoFluidType.LEUF6) {
-					ItemStack[] converted = new ItemStack[] { new ItemStack(ModItems.nugget_uranium_fuel, 6), new ItemStack(ModItems.fluorite) };
+					// Terminal LEUF6 deconversion is compressed into the existing cascade:
+					// it yields fuel-grade uranium feed, not a finished rod or fluorine loop.
+					ItemStack[] converted = new ItemStack[] { new ItemStack(ModItems.nugget_uranium_fuel, 6) };
 					
 					if(this.outputTank.getFill() >= 600 && InventoryUtil.doesArrayHaveSpace(slots, 0, 3, converted)) {
 						this.outputTank.setFill(this.outputTank.getFill() - 600);
