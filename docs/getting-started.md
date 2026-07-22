@@ -105,3 +105,9 @@ Combustion machines also stop operating while water touches a side or top of any
 ## Atmosphere-dependent machinery
 
 Fuel-burning machinery needs breathable air to run. This includes the RBMK burner and rotary furnace, so build them inside a pressurized habitat when working on an airless body. RBMK fuel rods also require a pressurized atmosphere to sustain their reaction; their remaining heat can still cool down after the atmosphere is lost. Electric, nuclear, and heat-exchange machinery is not subject to this combustion rule unless its individual design requires an atmosphere.
+
+## Accelerator, irradiation, and cryogenic processing
+
+The **exposure chamber** is RNTM's compact neutron-irradiation abstraction: use neutron capsules for cobalt activation, lithium breeding, and incremental actinide captures. Its uranium-238-to-plutonium-239 and thorium-232-to-uranium-233 recipes intentionally fold the short-lived beta-decay intermediates into one gameplay operation; this is breeding, not enrichment.
+
+The **cyclotron** uses the legacy charged-ion parts, while the **hadron accelerator** is the high-energy collision machine. The bismuth-plus-helium route is a trace astatine-production abstraction. Its tungsten collision route deliberately produces fictional, gameplay-scale exotic capsules and must not be read as a real bulk antimatter process. The cryogenic distiller separates a fixed 100 mB feed into phase/separation fractions; it cools and separates fluids but does not transmute elements or remove radioactivity.

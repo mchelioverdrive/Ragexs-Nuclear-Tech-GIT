@@ -7,13 +7,11 @@ import java.util.List;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
-import com.hbm.blocks.ModBlocks;
 import com.hbm.inventory.RecipesCommon.ComparableStack;
 import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.ModItems;
 import com.hbm.tileentity.machine.TileEntityHadron.EnumHadronState;
 
-import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 
 public class HadronRecipes extends SerializableRecipe {
@@ -37,7 +35,8 @@ public class HadronRecipes extends SerializableRecipe {
 	@Override
 	public void registerDefaults() {
 
-		//209Bi + 4He -> 211At + 2n
+		// 209Bi(alpha,2n)211At. The bismuth ingot is the natural-target
+		// abstraction; the astatine capsule represents a trace accelerator yield.
 		recipes.add(new HadronRecipe(
 			new ItemStack(ModItems.ingot_bismuth),
 			new ItemStack(ModItems.particle_helium),
@@ -47,15 +46,11 @@ public class HadronRecipes extends SerializableRecipe {
 			false
 		));
 
-		recipes.add(new HadronRecipe(
-			new ItemStack(ModItems.powder_lithium),
-			new ItemStack(ModItems.particle_hydrogen),
-			20000,
-			new ItemStack(ModItems.particle_neutron, 2),
-			new ItemStack(ModItems.particle_empty),
-			true
-		));
-
+		/*
+		 * Fictional collider extension: a tungsten target is used as a high-Z
+		 * conversion target. Antimatter and muon capsules are gameplay-scale
+		 * collision products, not a claim of practical bulk production.
+		 */
 		recipes.add(new HadronRecipe(
 			new ItemStack(ModItems.ingot_tungsten),
 			new ItemStack(ModItems.particle_hydrogen),
@@ -64,160 +59,8 @@ public class HadronRecipes extends SerializableRecipe {
 			new ItemStack(ModItems.particle_muon),
 			false
 		));
-
-		recipes.add(new HadronRecipe(
-			new ItemStack(Items.coal),
-			new ItemStack(ModItems.particle_hydrogen),
-			50000,
-			new ItemStack(ModItems.particle_muon),
-			new ItemStack(ModItems.particle_neutron),
-			true
-		));
-
-		recipes.add(new HadronRecipe(
-			new ItemStack(ModItems.ingot_cobalt),
-			new ItemStack(ModItems.particle_neutron),
-			25000,
-			new ItemStack(ModItems.ingot_co60),
-			new ItemStack(ModItems.particle_empty),
-			true
-		));
-
-		recipes.add(new HadronRecipe(
-			new ItemStack(Items.gold_ingot),
-			new ItemStack(ModItems.particle_neutron),
-			30000,
-			new ItemStack(ModItems.nugget_au198),
-			new ItemStack(ModItems.particle_empty),
-			true
-		));
-
-		recipes.add(new HadronRecipe(
-			new ItemStack(ModItems.ingot_u238),
-			new ItemStack(ModItems.particle_neutron),
-			80000,
-			new ItemStack(ModItems.ingot_pu239),
-			new ItemStack(ModItems.particle_beta),
-			false
-		));
-		recipes.add(new HadronRecipe(
-			new ItemStack(ModItems.ingot_th232),
-			new ItemStack(ModItems.particle_neutron),
-			70000,
-			new ItemStack(ModItems.ingot_u233),
-			new ItemStack(ModItems.particle_beta),
-			false
-		));
-
-		//bullshit below
-
-		//recipes.add(new HadronRecipe(
-		//		new ItemStack(ModItems.particle_amat),
-		//		new ItemStack(ModItems.particle_amat),
-		//		900,
-		//		new ItemStack(ModItems.particle_aschrab),
-		//		new ItemStack(ModItems.particle_empty),
-		//		false
-		//		));
-		//recipes.add(new HadronRecipe(
-		//		new ItemStack(ModItems.particle_aschrab),
-		//		new ItemStack(ModItems.particle_aschrab),
-		//		100000,
-		//		new ItemStack(ModItems.particle_dark),
-		//		new ItemStack(ModItems.particle_empty),
-		//		false
-		//		));
-		//recipes.add(new HadronRecipe(
-		//		new ItemStack(ModItems.particle_hydrogen),
-		//		new ItemStack(ModItems.particle_amat),
-		//		2000,
-		//		new ItemStack(ModItems.particle_muon),
-		//		new ItemStack(ModItems.particle_empty),
-		//		true
-		//		));
-
-		//recipes.add(new HadronRecipe(
-		//		new ItemStack(ModItems.particle_aproton),
-		//		new ItemStack(ModItems.particle_lead),
-		//		5000,
-		//		new ItemStack(ModItems.particle_higgs),
-		//		new ItemStack(ModItems.particle_empty),
-		//		false
-		//		)); //PROTON+PROTON AT INSANE ENERGIES, WTF IS THIS SHIT
-		//recipes.add(new HadronRecipe(
-		//		new ItemStack(ModItems.particle_muon),
-		//		new ItemStack(ModItems.particle_higgs),
-		//		2000,
-		//		new ItemStack(ModItems.particle_tachyon),
-		//		new ItemStack(ModItems.particle_empty),
-		//		true
-		//		));
-		//recipes.add(new HadronRecipe(
-		//		new ItemStack(ModItems.particle_muon),
-		//		new ItemStack(ModItems.particle_dark),
-		//		100000,
-		//		new ItemStack(ModItems.particle_strange),
-		//		new ItemStack(ModItems.particle_empty),
-		//		false
-		//		));
-		//recipes.add(new HadronRecipe(
-		//		new ItemStack(ModItems.particle_strange),
-		//		new ItemStack(ModItems.powder_magic),
-		//		500000,
-		//		new ItemStack(ModItems.particle_sparkticle),
-		//		new ItemStack(ModItems.dust),
-		//		false
-		//		));
-		//recipes.add(new HadronRecipe(
-		//		new ItemStack(ModItems.particle_sparkticle),
-		//		new ItemStack(ModItems.particle_higgs),
-		//		1000000,
-		//		//new ItemStack(ModItems.particle_digamma),
-		//		new ItemStack(ModItems.particle_empty),
-		//		false
-		//		));
-		//recipes.add(new HadronRecipe(
-		//		new ItemStack(Items.chicken),
-		//		new ItemStack(Items.chicken),
-		//		100,
-		//		new ItemStack(ModItems.nugget),
-		//		new ItemStack(ModItems.nugget),
-		//		false
-		//		));
-		//recipes.add(new HadronRecipe(
-		//		new ItemStack(Items.chicken),
-		//		new ItemStack(Items.chicken),
-		//		100,
-		//		new ItemStack(ModItems.nugget),
-		//		new ItemStack(ModItems.nugget),
-		//		false
-		//		));
-		//recipes.add(new HadronRecipe(
-		//		new ItemStack(ModBlocks.waste_log),
-		//		new ItemStack(ModItems.particle_strange),
-		//		500000,
-		//		new ItemStack(ModItems.burnt_bark),
-		//		new ItemStack(ModItems.nugget_au198),
-		//		false
-		//		));
-		//recipes.add(new HadronRecipe(
-		//		new ItemStack(ModBlocks.primed_log),
-		//		new ItemStack(ModItems.particle_aproton),
-		//		100000,
-		//		new ItemStack(ModBlocks.lattice_log),
-		//		new ItemStack(ModItems.fallout),
-		//		false
-		//		));
-		//recipes.add(new HadronRecipe(
-		//		new ItemStack(ModBlocks.eu_log, 5),
-		//		new ItemStack(ModItems.particle_digamma),
-		//		1000000,
-		//		new ItemStack(ModItems.powder_wd2004_tiny),
-		//		new ItemStack(ModItems.fallout),
-		//		false
-		//		));
-
 	}
+
 
 	public static EnumHadronState returnCode = EnumHadronState.NORESULT;
 

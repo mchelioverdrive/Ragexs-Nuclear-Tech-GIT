@@ -219,3 +219,11 @@
 * Reworked the UF6 gas-centrifuge module and cascade around titanium rotors, stainless vacuum containment, steel tank headers, seals, and advanced monitoring rather than fictional structural metal and unrelated coils.
 * Reworked the molten-salt-reactor vessel and inlet port around corrosion-resistant salt piping, high-temperature casing, tankage, seals, a circulation drive, and basic process control; removed thorium metal and the unrelated geothermal machine from their construction bills.
 * Kept the audited ZIRNOX reactor, fusion, accelerator, radiation, cryogenic, and orbital-system recipes unchanged where the existing bill already maps to actual in-game operation or represents a multiblock segment rather than a complete machine.
+
+## Realistify accelerator, irradiation, and cryogenic processing
+
+* Reassigned neutron-capture and reactor-breeding abstractions from the cyclotron and hadron collider to the exposure chamber, including cobalt-60, lithium breeding, uranium-238 to plutonium-239, and thorium-232 to uranium-233. The latter two intentionally compress the short beta-decay intermediates that RNT does not model as items.
+* Restricted the cyclotron to its supported legacy heavy-ion input and a trace-scale californium-249 plus carbon-12 rutherfordium synthesis abstraction. Retained bismuth alpha bombardment in the hadron collider and explicitly marked its tungsten collision products as fictional gameplay-scale collider output.
+* Removed generic electron exposure, enrichment-by-irradiation, and arbitrary low-mass collider conversions that had no compatible radiation or target pathway.
+* Balanced every cryogenic-distillation batch to its 100 mB feed and made noble-gas trace separation argon-dominant while retaining small neon, krypton, and xenon outputs for progression.
+* Compatibility: no item IDs, metadata, machine slots, JSON schemas, GUI/container behavior, or `MatDistribution` registrations changed. Existing actinide capture chains and fictional collider products remain available through their appropriate machine roles.
