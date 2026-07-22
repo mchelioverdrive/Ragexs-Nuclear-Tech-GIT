@@ -222,13 +222,13 @@ public class RodRecipes {
 		//addPellet(CF251,							EnumWatzType.CF251);
 		//addPellet(ES253,							EnumWatzType.ES253);
 
-		//PWR fuel
-		CraftingManager.addRecipeAuto(DictFrame.fromOne(ModItems.pwr_fuel, EnumPWRFuel.MEU), new Object[] { "F", "I", "F", 'F', ModItems.billet_uranium_fuel, 'I', ModItems.plate_polymer });
-		CraftingManager.addRecipeAuto(DictFrame.fromOne(ModItems.pwr_fuel, EnumPWRFuel.HEU233), new Object[] { "F", "I", "F", 'F', U233.billet(), 'I', ModItems.plate_polymer });
-		CraftingManager.addRecipeAuto(DictFrame.fromOne(ModItems.pwr_fuel, EnumPWRFuel.HEU235), new Object[] { "F", "I", "F", 'F', U235.billet(), 'I', ModItems.plate_polymer });
+		// PWR rods use existing zirconium-alloy plate as cladding; the fuel billet remains the fuel-material stage.
+		CraftingManager.addRecipeAuto(DictFrame.fromOne(ModItems.pwr_fuel, EnumPWRFuel.MEU), new Object[] { "F", "I", "F", 'F', ModItems.billet_uranium_fuel, 'I', ZR.plateWelded() });
+		CraftingManager.addRecipeAuto(DictFrame.fromOne(ModItems.pwr_fuel, EnumPWRFuel.HEU233), new Object[] { "F", "I", "F", 'F', U233.billet(), 'I', ZR.plateWelded() });
+		CraftingManager.addRecipeAuto(DictFrame.fromOne(ModItems.pwr_fuel, EnumPWRFuel.HEU235), new Object[] { "F", "I", "F", 'F', U235.billet(), 'I', ZR.plateWelded() });
 		CraftingManager.addRecipeAuto(DictFrame.fromOne(ModItems.pwr_fuel, EnumPWRFuel.MEN), new Object[] { "F", "I", "F", 'F', ModItems.billet_neptunium_fuel, 'I', ModItems.plate_polymer });
 		CraftingManager.addRecipeAuto(DictFrame.fromOne(ModItems.pwr_fuel, EnumPWRFuel.HEN237), new Object[] { "F", "I", "F", 'F', NP237.billet(), 'I', ModItems.plate_polymer });
-		CraftingManager.addRecipeAuto(DictFrame.fromOne(ModItems.pwr_fuel, EnumPWRFuel.MOX), new Object[] { "F", "I", "F", 'F', ModItems.billet_mox_fuel, 'I', ModItems.plate_polymer });
+		CraftingManager.addRecipeAuto(DictFrame.fromOne(ModItems.pwr_fuel, EnumPWRFuel.MOX), new Object[] { "F", "I", "F", 'F', ModItems.billet_mox_fuel, 'I', ZR.plateWelded() });
 		CraftingManager.addRecipeAuto(DictFrame.fromOne(ModItems.pwr_fuel, EnumPWRFuel.MEP), new Object[] { "F", "I", "F", 'F', ModItems.billet_pu_mix, 'I', ModItems.plate_polymer });
 		CraftingManager.addRecipeAuto(DictFrame.fromOne(ModItems.pwr_fuel, EnumPWRFuel.HEP239), new Object[] { "F", "I", "F", 'F', PU239.billet(), 'I', ModItems.plate_polymer });
 		CraftingManager.addRecipeAuto(DictFrame.fromOne(ModItems.pwr_fuel, EnumPWRFuel.HEP241), new Object[] { "F", "I", "F", 'F', PU241.billet(), 'I', ModItems.plate_polymer });

@@ -23,6 +23,7 @@ import com.hbm.items.ItemEnums;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemArcElectrode;
 import com.hbm.items.machine.ItemCircuit;
+import com.hbm.items.machine.ItemPWRFuel.EnumPWRFuel;
 import com.hbm.main.MainRegistry;
 
 
@@ -1944,6 +1945,23 @@ public class ChemplantRecipes extends SerializableRecipe {
 						//)
 		);
 
+		// Cooled PWR fuel is dissolved and separated here rather than being magically
+		// isotope-sorted by the mechanical centrifuge.  These are deliberately bulk
+		// recovery streams: uranium/plutonium-bearing material, recoverable zirconium
+		// cladding, and radioactive raffinate for vitrification.  The small recovery
+		// quantities leave a material loss in the high-level waste.
+		registerPwrReprocessing(1117, "PWR_URANIUM_REPROCESS", EnumPWRFuel.MEU, 1, 1, true);
+		registerPwrReprocessing(1118, "PWR_U233_REPROCESS", EnumPWRFuel.HEU233, 1, 0, true);
+		registerPwrReprocessing(1119, "PWR_U235_REPROCESS", EnumPWRFuel.HEU235, 1, 1, true);
+		registerPwrReprocessing(1120, "PWR_NEPTUNIUM_REPROCESS", EnumPWRFuel.MEN, 0, 1, false);
+		registerPwrReprocessing(1121, "PWR_NP237_REPROCESS", EnumPWRFuel.HEN237, 0, 1, false);
+		registerPwrReprocessing(1122, "PWR_MOX_REPROCESS", EnumPWRFuel.MOX, 1, 1, true);
+		registerPwrReprocessing(1123, "PWR_PLUTONIUM_REPROCESS", EnumPWRFuel.MEP, 0, 1, false);
+		registerPwrReprocessing(1124, "PWR_PU239_REPROCESS", EnumPWRFuel.HEP239, 0, 1, false);
+		registerPwrReprocessing(1125, "PWR_PU241_REPROCESS", EnumPWRFuel.HEP241, 0, 1, false);
+		registerPwrReprocessing(1126, "PWR_AMERICIUM_REPROCESS", EnumPWRFuel.MEA, 0, 0, false);
+		registerPwrReprocessing(1127, "PWR_AM242_REPROCESS", EnumPWRFuel.HEA242, 0, 0, false);
+
 
 
 
@@ -1953,6 +1971,20 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//thanks for the very legal autofill ai anyway to the chemical reactor *bat man noise
 
 
+	}
+
+	private static void registerPwrReprocessing(int id, String name, EnumPWRFuel fuel, int uranium, int plutonium, boolean zirconiumCladding) {
+		List<ItemStack> outputs = new ArrayList<ItemStack>();
+		if(uranium > 0) outputs.add(new ItemStack(ModItems.powder_uranium, uranium));
+		if(plutonium > 0) outputs.add(new ItemStack(ModItems.powder_plutonium, plutonium));
+		if(zirconiumCladding) outputs.add(new ItemStack(ModItems.nugget_zirconium, 1));
+		outputs.add(new ItemStack(ModItems.nuclear_waste, 2));
+
+		recipes.add(new ChemRecipe(id, name, 500)
+				.inputItems(new ComparableStack(ModItems.pwr_fuel_depleted, 1, fuel.ordinal()))
+				.inputFluids(new FluidStack(Fluids.NITRIC_ACID, 1_000))
+				.outputItems(outputs.toArray(new ItemStack[outputs.size()]))
+				.outputFluids(new FluidStack(Fluids.WASTEFLUID, 1_000)));
 	}
 
 	public static void registerOtherOil() {

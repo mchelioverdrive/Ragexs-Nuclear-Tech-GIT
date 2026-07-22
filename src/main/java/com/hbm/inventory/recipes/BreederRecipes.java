@@ -26,6 +26,7 @@ public class BreederRecipes extends SerializableRecipe {
 		setRecipe(BreedingRodType.LITHIUM, BreedingRodType.TRITIUM, 200);
 		setRecipe(BreedingRodType.CO, BreedingRodType.CO60, 100);
 
+		// THF is the irradiated thorium-fuel intermediate, not immediately recovered U-233.
 		setRecipe(BreedingRodType.TH232, BreedingRodType.THF, 500);
 
 		setRecipe(BreedingRodType.URANIUM, BreedingRodType.RGP, 200);
@@ -33,10 +34,12 @@ public class BreederRecipes extends SerializableRecipe {
 		setRecipe(BreedingRodType.U235, BreedingRodType.WASTE, 300); //not neptunium thats for sure
 		setRecipe(BreedingRodType.NP237, BreedingRodType.PU238, 200);
 
-		setRecipe(BreedingRodType.U238, BreedingRodType.NP237, 500); //better
+		// U-238 capture followed by beta decays is compressed to Pu-239.  Direct
+		// U-238-to-Np-237 was removed: that nuclide is not the one-capture product.
 		setRecipe(BreedingRodType.U238, BreedingRodType.PU239, 1000);
 		setRecipe(BreedingRodType.U238, BreedingRodType.RGP, 300);
 
+		// Direct neutron capture; retained as an advanced isotope-production route.
 		setRecipe(BreedingRodType.PU238, BreedingRodType.PU239, 1000);
 
 		setRecipe(BreedingRodType.RGP, BreedingRodType.WASTE, 200);
@@ -65,9 +68,8 @@ public class BreederRecipes extends SerializableRecipe {
 		//CM247 -> BK247   (2000)
 		setRecipe(BreedingRodType.CM247, BreedingRodType.BK247, 2000);
 
-		//fermium from plutonium-239 or curium 244
-		setRecipe(BreedingRodType.PU239, BreedingRodType.FM255, 5000);
-		setRecipe(BreedingRodType.CM244, BreedingRodType.FM257, 5000);
+		// Do not collapse many captures and decays from Pu/Cm directly to fermium.
+		// The available incremental actinide chain remains the intended progression.
 
 		//thulium normal into tm-170
 		//setRecipe(BreedingRodType.THULIUM, BreedingRodType.TM170, 200);

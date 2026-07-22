@@ -39,6 +39,8 @@ public class FuelPoolRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(ModItems.waste_plate_ra226be, 1, 1), new ItemStack(ModItems.waste_plate_ra226be));
 		recipes.put(new ComparableStack(ModItems.waste_plate_pu238be, 1, 1), new ItemStack(ModItems.waste_plate_pu238be));
 
+		// Cooling is a one-for-one metadata-preserving decay-heat/storage step; it
+		// intentionally creates no recovered uranium, plutonium, or fission products.
 		for(EnumPWRFuel pwr : EnumPWRFuel.values()) recipes.put(new ComparableStack(ModItems.pwr_fuel_hot, 1, pwr.ordinal()), new ItemStack(ModItems.pwr_fuel_depleted, 1, pwr.ordinal()));
 	}
 
