@@ -240,6 +240,14 @@ public class ChemplantRecipes extends SerializableRecipe {
 						new FluidStack(Fluids.PETROLEUM, 200, GeneralConfig.enable528 ? 1 : 0),
 						new FluidStack(Fluids.NITRIC_ACID, 100))
 				.outputItems(new ItemStack(ModItems.rocket_fuel, 4)));
+
+		//do not remove this I know it's redundant but the electrolysis machine sucks and is late game for some fucking reason
+		recipes.add(new ChemRecipe(58, "ELECTROLYSIS", 150)
+						.inputFluids(new FluidStack(Fluids.WATER, 4000))
+						.outputFluids(
+							new FluidStack(Fluids.HYDROGEN, 400),
+							new FluidStack(Fluids.OXYGEN, 400)));
+
 		recipes.add(new ChemRecipe(59, "XENON", 250, 1)
 				.inputFluids(new FluidStack(Fluids.NONE, 0))
 				.outputFluids(new FluidStack(Fluids.XENON, 50)));
