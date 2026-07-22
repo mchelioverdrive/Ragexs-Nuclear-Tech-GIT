@@ -36,10 +36,10 @@ public class ArcWelderRecipes extends SerializableRecipe {
 	public void registerDefaults() {
 
 		//Parts
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.motor, 2), 100, 200L,
-				new OreDictStack(IRON.plate(), 2), new ComparableStack(ModItems.coil_copper), new ComparableStack(ModItems.coil_copper_torus)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.motor, 2), 100, 400L,
-				new OreDictStack(STEEL.plate(), 1), new ComparableStack(ModItems.coil_copper), new ComparableStack(ModItems.coil_copper_torus)));
+		// Motors are retained in the assembler: welding can make their housings, but it cannot
+		// place the rotor, bearings, insulated windings, and end hardware represented by the part.
+		// recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.motor, 2), 100, 400L,
+		// 		new OreDictStack(STEEL.plate(), 1), new ComparableStack(ModItems.coil_copper), new ComparableStack(ModItems.coil_copper_torus)));
 		recipes.add(new ArcWelderRecipe(DictFrame.fromOne(ModItems.part_generic, EnumPartType.LDE), 200, 5_000L,
 				new OreDictStack(AL.plate(), 4), new OreDictStack(FIBER.ingot(), 4), new OreDictStack(ANY_HARDPLASTIC.ingot())));
 		recipes.add(new ArcWelderRecipe(DictFrame.fromOne(ModItems.part_generic, EnumPartType.LDE), 200, 10_000L,
@@ -48,10 +48,9 @@ public class ArcWelderRecipes extends SerializableRecipe {
 				new OreDictStack(ANY_BISMOIDBRONZE.plateCast(), 2), new OreDictStack(CMB.plateWelded(), 1), new ComparableStack(ModItems.ingot_cft)));
 
 		//Dense Wires
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.wire_dense, 1, Mats.MAT_ALLOY.id), 100, 10_000L,
-				new OreDictStack(ALLOY.wireFine(), 8)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.wire_dense, 1, Mats.MAT_GOLD.id), 100, 10_000L,
-				new OreDictStack(GOLD.wireFine(), 8)));
+		// Dense wire is bundled and insulated in the assembler rather than structurally welded.
+		// recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.wire_dense, 1, Mats.MAT_ALLOY.id), 100, 10_000L,
+		// 		new OreDictStack(ALLOY.wireFine(), 8)));
 
 		//earlygame welded parts
 		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.plate_welded, 1, Mats.MAT_IRON.id), 100, 100L,
@@ -88,9 +87,9 @@ public class ArcWelderRecipes extends SerializableRecipe {
 		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.thruster_medium), 200, 20_000L, new OreDictStack(STEEL.plate(), 8), new ComparableStack(ModItems.motor, 1), new OreDictStack(GRAPHITE.ingot(), 8)));
 		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.thruster_large), 300, 50_000L, new OreDictStack(DURA.ingot(), 10), new ComparableStack(ModItems.motor, 1), new OreDictStack(OreDictManager.getReflector(), 12)));
 
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.fuel_tank_small), 160, 1_000L, new OreDictStack(AL.plate(), 6), new OreDictStack(CU.plate(), 4), new ComparableStack(ModBlocks.steel_scaffold, 4)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.fuel_tank_medium), 200, 2_000L, new OreDictStack(AL.plateCast(), 4), new OreDictStack(TI.plate(), 8), new ComparableStack(ModBlocks.steel_scaffold, 12)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.fuel_tank_large), 300, 5_000L, new OreDictStack(AL.plateWelded(), 8), new OreDictStack(BIGMT.plate(), 12), new ComparableStack(ModBlocks.steel_scaffold, 16)));
+		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.fuel_tank_small), 160, 1_000L, new OreDictStack(AL.plate(), 6), new ComparableStack(ModBlocks.steel_scaffold, 4), new OreDictStack(ANY_RUBBER.ingot(), 2)));
+		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.fuel_tank_medium), 200, 2_000L, new OreDictStack(AL.plateCast(), 4), new OreDictStack(TI.plate(), 8), new ComparableStack(ModBlocks.steel_scaffold, 12), new OreDictStack(ANY_RUBBER.ingot(), 4)));
+		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.fuel_tank_large), 300, 5_000L, new OreDictStack(AL.plateWelded(), 8), new OreDictStack(BIGMT.plate(), 12), new ComparableStack(ModBlocks.steel_scaffold, 16), new OreDictStack(ANY_RUBBER.ingot(), 6)));
 
 		//Missiles
 

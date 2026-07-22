@@ -191,3 +191,8 @@
 * Restricted reforming to naphtha-derived feeds, added naphtha hydrotreating, and removed the refinery-gas-to-petroleum shortcut.
 * Replaced alkylation's halogenation/peroxide recipes with an olefin-plus-LPG alkylate abstraction.
 * Limited delayed coking to heavy residues, removed coal-as-meltable-oil recipes, and eliminated duplicated pyro-oven liquid-to-solid-fuel registrations.
+## Realistify manufactured component recipes
+
+* Moved basic motor final assembly and dense-wire bundling from the arc welder to the assembler, preserving one motor per set of housing, winding, hardware, and insulation abstractions.
+* Made missile fuel tanks use structural shell, scaffold reinforcement, and rubber seal abstractions; empty missile assemblies now use wiring rather than loose rocket fuel.
+* Replaced acid and peroxide final-board fluids with the existing solvent cleaning abstraction, removed the unsupported terbium-to-sixteen-capacitor-board route, and stopped rare-metal alternatives from multiplying assembled circuit boards.
