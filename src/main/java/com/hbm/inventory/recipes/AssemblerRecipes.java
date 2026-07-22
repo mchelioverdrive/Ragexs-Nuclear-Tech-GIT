@@ -193,15 +193,14 @@ public class AssemblerRecipes extends SerializableRecipe {
 					   new ComparableStack(Items.paper,
 										   1),},
 				   50);
+		// UF6 centrifuge module: titanium rotor, stainless vacuum housing, drive, and elastomer seals.
 		makeRecipe(new ComparableStack(ModItems.centrifuge_element,
 									   1),
 				   new AStack[]{
-					   new OreDictStack(STEEL.plate528(),
-										4),
-					   new OreDictStack(TI.plate528(),
-										4),
-					   new ComparableStack(ModItems.motor,
-										   1),},
+					   new OreDictStack(TI.plate528(), 4),
+					   new OreDictStack(STAINLESS.plate528(), 2),
+					   new ComparableStack(ModItems.motor, 1),
+					   new OreDictStack(RUBBER.ingot(), 2),},
 				   100);
 		makeRecipe(new ComparableStack(ModItems.magnet_circular,
 									   1),
@@ -737,22 +736,15 @@ public class AssemblerRecipes extends SerializableRecipe {
 										   1,
 										   EnumCircuitType.ANALOG),},
 				   200);
+		// Cascade housing supplies UF6-compatible containment, common vacuum headers, and monitored rotor control.
 		makeRecipe(new ComparableStack(ModBlocks.machine_gascent,
 									   1),
 				   new AStack[]{
-					   new ComparableStack(ModItems.centrifuge_element,
-										   4),
-					   new OreDictStack(ANY_PLASTIC.ingot(),
-										4),
-					   new OreDictStack(DESH.ingot(),
-										2),
-					   new OreDictStack(STEEL.plate528(),
-										8),
-					   new ComparableStack(ModItems.coil_tungsten,
-										   4),
-					   new ComparableStack(ModItems.circuit,
-										   1,
-										   EnumCircuitType.ADVANCED.ordinal())},
+					   new ComparableStack(ModItems.centrifuge_element, 4),
+					   new OreDictStack(STAINLESS.plate528(), 8),
+					   new ComparableStack(ModItems.tank_steel, 2),
+					   new OreDictStack(RUBBER.ingot(), 4),
+					   new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ADVANCED.ordinal())},
 				   300);
 		makeRecipe(new ComparableStack(ModBlocks.machine_diesel,
 									   1),
@@ -3254,28 +3246,25 @@ public class AssemblerRecipes extends SerializableRecipe {
 				   },
 				   600);
 
+		// This is the salt vessel, not a fuel item: corrosion-resistant plumbing, heat transfer, and flow control are installed hardware.
 		makeRecipe(new ComparableStack(ModBlocks.machine_molten_salt_reactor,
 									   1),
 				   new AStack[]{
-					   new OreDictStack(DURA.pipe(),
-										4),
-					   new OreDictStack(TH232.ingot(),
-										2),
-					   new OreDictStack(BIGMT.plateCast(),
-										2),
-					   new ComparableStack(ModBlocks.machine_geo)
+					   new OreDictStack(DURA.pipe(), 4),
+					   new OreDictStack(BIGMT.plateCast(), 4),
+					   new ComparableStack(ModItems.tank_steel, 2),
+					   new ComparableStack(ModItems.motor, 1),
+					   new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ANALOG.ordinal())
 				   },
 				   600);
 
 		makeRecipe(new ComparableStack(ModBlocks.machine_msr_input,
 									   1),
 				   new AStack[]{
-					   new OreDictStack(BIGMT.plateCast(),
-										4),
-					   new OreDictStack(DURA.pipe(),
-										4),
-					   new OreDictStack(TH232.ingot(),
-										1)
+					   new OreDictStack(BIGMT.plateCast(), 4),
+					   new OreDictStack(DURA.pipe(), 4),
+					   new ComparableStack(ModItems.tank_steel, 1),
+					   new OreDictStack(RUBBER.ingot(), 2)
 				   },
 				   400);
 

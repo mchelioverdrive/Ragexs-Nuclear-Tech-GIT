@@ -203,3 +203,11 @@
 * Moved basic motor final assembly and dense-wire bundling from the arc welder to the assembler, preserving one motor per set of housing, winding, hardware, and insulation abstractions.
 * Made missile fuel tanks use structural shell, scaffold reinforcement, and rubber seal abstractions; empty missile assemblies now use wiring rather than loose rocket fuel.
 * Replaced acid and peroxide final-board fluids with the existing solvent cleaning abstraction, removed the unsupported terbium-to-sixteen-capacitor-board route, and stopped rare-metal alternatives from multiplying assembled circuit boards.
+
+## Realistify advanced nuclear assembly recipes
+
+**Tracker:** `Realistify advanced nuclear assembly recipes`
+
+* Reworked the UF6 gas-centrifuge module and cascade around titanium rotors, stainless vacuum containment, steel tank headers, seals, and advanced monitoring rather than fictional structural metal and unrelated coils.
+* Reworked the molten-salt-reactor vessel and inlet port around corrosion-resistant salt piping, high-temperature casing, tankage, seals, a circulation drive, and basic process control; removed thorium metal and the unrelated geothermal machine from their construction bills.
+* Kept the audited ZIRNOX reactor, fusion, accelerator, radiation, cryogenic, and orbital-system recipes unchanged where the existing bill already maps to actual in-game operation or represents a multiblock segment rather than a complete machine.
