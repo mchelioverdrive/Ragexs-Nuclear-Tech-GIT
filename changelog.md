@@ -172,3 +172,8 @@
 ## Backport compile fixes: Fluid pump, sandbags, wooden barrier
 - Fixed backported fluid pump compatibility with this codebase's tile sync base class, localization helper, number formatting helper, and removed the unavailable NBT transform dependency.
 - Fixed sandbags and wooden barrier inventory rendering calls for this codebase's RenderBlocksNT API and restored block declarations.
+## Realistify chemical plant recipes
+
+* Reworked the chemical plant's core oxidizer, acid/base, polymer, uranium-conversion, and coltan recipes so their feeds represent the relevant material families and their major ratios are coherent.
+* Removed duplicate water and heavy-water electrolysis recipes from the chemical plant; the dedicated electrolyser remains the production route.
+* Documented the deliberately compressed yellowcake-to-UF6, hydrazine, Kevlar, and coltan abstractions while preserving recipe IDs and the existing two-fluid/four-item machine limits.

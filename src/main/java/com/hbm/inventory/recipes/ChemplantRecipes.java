@@ -82,11 +82,11 @@ public class ChemplantRecipes extends SerializableRecipe {
 						new FluidStack(Fluids.KEROSENE, 600),
 						new FluidStack(Fluids.MERCURY, 200))
 				.outputFluids(new FluidStack(Fluids.NITAN, 1000)));
+		// Simplified anthraquinone loop: the plant abstracts the recycled organic working solution.
 		recipes.add(new ChemRecipe(40, "PEROXIDE", 50)
 				.inputFluids(
-					new FluidStack(Fluids.WATER, 1000)
-					//new FluidStack(Fluids.OXYGEN, 500)
-					//well I mean it's like everywhere but at the same time the like chemical process or something
+					new FluidStack(Fluids.HYDROGEN, 500),
+					new FluidStack(Fluids.OXYGEN, 500)
 				)
 				.outputFluids(new FluidStack(Fluids.PEROXIDE, 1000)));
 		recipes.add(new ChemRecipe(90, "SULFURIC_ACID", 50)
@@ -99,19 +99,13 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputFluids(new FluidStack(Fluids.NAPHTHA, 500), new FluidStack(Fluids.AROMATICS, 500))
 				.outputFluids(new FluidStack(Fluids.SOLVENT, 1000)));
 		recipes.add(new ChemRecipe(43, "POLYMER", 100)
-				.inputItems(
-						new OreDictStack(COKE.dust(), 2),
-						new OreDictStack(F.dust()))
 				.inputFluids(new FluidStack(Fluids.PETROLEUM, 500, GeneralConfig.enable528 ? 1 : 0))
-				.outputItems(new ItemStack(ModItems.ingot_polymer, 16)));
+				.outputItems(new ItemStack(ModItems.ingot_polymer, 4)));
 
 		//but synthetic polymers exist
 		recipes.add(new ChemRecipe(44, "SYN_POLYMER", 180)
-				.inputItems(
-						new OreDictStack(COKE.dust(), 2),
-						new OreDictStack(F.dust()))
-				.inputFluids(new FluidStack(Fluids.BIOFUEL, 1500))
-				.outputItems(new ItemStack(ModItems.ingot_polymer)));
+				.inputFluids(new FluidStack(Fluids.UNSATURATEDS, 1_000, GeneralConfig.enable528 ? 2 : 0))
+				.outputItems(new ItemStack(ModItems.ingot_polymer, 2)));
 
 
 
@@ -122,8 +116,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.outputItems(new ItemStack(ModItems.ingot_bakelite)));
 		recipes.add(new ChemRecipe(82, "RUBBER", 100)
 						.inputItems(
-						new OreDictStack(S.dust()),
-						new OreDictStack(ZI.dust()))
+						new OreDictStack(S.dust()))
 				.inputFluids(new FluidStack(Fluids.UNSATURATEDS, 500, GeneralConfig.enable528 ? 2 : 0))
 				.outputItems(new ItemStack(ModItems.ingot_rubber)));
 		/*recipes.add(new ChemRecipe(94, "PET", 100)
@@ -150,7 +143,6 @@ public class ChemplantRecipes extends SerializableRecipe {
 						new FluidStack(Fluids.PHOSGENE, 500, GeneralConfig.enable528 ? 2 : 0))
 				.outputItems(new ItemStack(ModItems.ingot_pc)));
 		recipes.add(new ChemRecipe(96, "PVC", 100)
-				.inputItems(new OreDictStack(CD.dust()))
 				.inputFluids(
 						new FluidStack(Fluids.UNSATURATEDS, 250, GeneralConfig.enable528 ? 2 : 0),
 						new FluidStack(Fluids.CHLORINE, 250, GeneralConfig.enable528 ? 2 : 0))
@@ -175,14 +167,14 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.outputItems(new ItemStack(ModItems.ingot_c4, 4)));
 		//44, formerly deuterium
 		//45, formerly steam
+		// Compressed leach and precipitation: peroxide oxidizes the uranium-bearing ore and acid represents the leach liquor.
 		recipes.add(new ChemRecipe(46, "YELLOWCAKE", 250)
 				.inputItems(
-						new OreDictStack(U.billet(), 2), //12 nuggets: the numbers do match up :)
-						new OreDictStack(S.dust(), 2))
-				.inputFluids(new FluidStack(Fluids.PEROXIDE, 500))
+						new ComparableStack(ModBlocks.ore_uranium, 4))
+				.inputFluids(new FluidStack(Fluids.SULFURIC_ACID, 1_000), new FluidStack(Fluids.PEROXIDE, 250))
 				.outputFluids(new FluidStack(Fluids.RAFFINATE, 1000))
-				.outputItems(new ItemStack(ModItems.powder_yellowcake)));
-		//what is this mickey mouse shit
+				.outputItems(new ItemStack(ModItems.powder_yellowcake, 2)));
+		// Yellowcake-to-UF6 compresses oxide conversion and fluorination; enrichment remains in the gas centrifuge.
 		recipes.add(new ChemRecipe(47, "UF6", 800)
 				.inputItems(
 						new ComparableStack(ModItems.powder_yellowcake, 4))
@@ -213,14 +205,10 @@ public class ChemplantRecipes extends SerializableRecipe {
 								new FluidStack(Fluids.HEATINGOIL, 200) :
 								new FluidStack(Fluids.GAS, 200))
 				.outputItems(new ItemStack(ModItems.cordite, 4)));
-		//and then the chemists arrived
+		// Aromatics and phosgene stand in for the aromatic diamine and acid-chloride monomer families.
 		recipes.add(new ChemRecipe(54, "KEVLAR", 40)
-				.inputItems(
-						new OreDictStack(KNO.dust(), 2),
-						new ComparableStack(Items.brick),
-						new OreDictStack(COAL.dust()))
-				.inputFluids(new FluidStack(Fluids.OXYHYDROGEN, 100), new FluidStack(Fluids.AMMONIA, 100))
-				.outputItems(new ItemStack(ModItems.plate_kevlar, 4)));
+				.inputFluids(new FluidStack(Fluids.AROMATICS, 500), new FluidStack(Fluids.PHOSGENE, 500))
+				.outputItems(new ItemStack(ModItems.plate_kevlar, 2)));
 		recipes.add(new ChemRecipe(55, "CONCRETE", 100)
 				.inputItems(
 						new ComparableStack(ModItems.powder_cement, 1),
@@ -252,11 +240,6 @@ public class ChemplantRecipes extends SerializableRecipe {
 						new FluidStack(Fluids.PETROLEUM, 200, GeneralConfig.enable528 ? 1 : 0),
 						new FluidStack(Fluids.NITRIC_ACID, 100))
 				.outputItems(new ItemStack(ModItems.rocket_fuel, 4)));
-		recipes.add(new ChemRecipe(58, "ELECTROLYSIS", 150)
-				.inputFluids(new FluidStack(Fluids.WATER, 4000))
-				.outputFluids(
-						new FluidStack(Fluids.HYDROGEN, 400),
-						new FluidStack(Fluids.OXYGEN, 400)));
 		recipes.add(new ChemRecipe(59, "XENON", 250, 1)
 				.inputFluids(new FluidStack(Fluids.NONE, 0))
 				.outputFluids(new FluidStack(Fluids.XENON, 50)));
@@ -288,36 +271,20 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(65, "COLTAN_CLEANING", 60)
 				.inputItems(
 						new OreDictStack(COLTAN.dust(), 2))
-							//,
-						//new OreDictStack(ANY_COAL_COKE.dust()))
 				.inputFluids(
-						new FluidStack(Fluids.PEROXIDE, 250),
-						new FluidStack(Fluids.HYDROGEN, 500))
+						new FluidStack(Fluids.SULFURIC_ACID, 500),
+						new FluidStack(Fluids.WATER, 500))
 				.outputItems(
-						new ItemStack(ModItems.powder_coltan),
-						new ItemStack(ModItems.powder_niobium),
-						new ItemStack(ModItems.powder_tantalium))
-						//BOB YOU'RE A FUCKING RETARD LEARN CHEMISTRY
-				.outputFluids(new FluidStack(Fluids.WATER, 500)));
-		//pls die in a fire kthx
-		//recipes.add(new ChemRecipe(66, "COLTAN_PAIN", 120)
-		//		.inputItems(
-		//				new ComparableStack(ModItems.powder_coltan),
-		//				new OreDictStack(F.dust()))
-		//		.inputFluids(
-		//				new FluidStack(Fluids.GAS, 1000),
-		//				new FluidStack(Fluids.OXYGEN, 500))
-		//		.outputFluids(new FluidStack(Fluids.PAIN, 1000)));
-
-		//HAHA 67 HAHAHA 67 67 67
+						new ItemStack(ModItems.powder_coltan))
+				.outputFluids(new FluidStack(Fluids.ACIDWASTE, 500)));
+		// Acid leaching and separation are compressed into a concentrate; tantalum crystallization has no dedicated machine.
 		recipes.add(new ChemRecipe(67, "COLTAN_CRYSTAL", 80)
-				.inputFluids(
-						new FluidStack(Fluids.PAIN, 1000),
-						new FluidStack(Fluids.PEROXIDE, 500))
+				.inputItems(new ComparableStack(ModItems.powder_coltan))
+				.inputFluids(new FluidStack(Fluids.HYDROFLUORIC_ACID, 500), new FluidStack(Fluids.WATER, 500))
 				.outputItems(
 						new ItemStack(ModItems.gem_tantalium),
-						new ItemStack(ModItems.dust, 3))
-				.outputFluids(new FluidStack(Fluids.WATER, 250)));
+						new ItemStack(ModItems.powder_niobium))
+				.outputFluids(new FluidStack(Fluids.ACIDWASTE, 500)));
 		recipes.add(new ChemRecipe(68, "VIT_LIQUID", 100)
 				.inputItems(new ComparableStack(ModBlocks.sand_lead))
 				.inputFluids(new FluidStack(Fluids.WASTEFLUID, 1000))
@@ -391,11 +358,6 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(77, "CO2", 60)
 				.inputFluids(new FluidStack(Fluids.GAS, 1000))
 				.outputFluids(new FluidStack(Fluids.CARBONDIOXIDE, 1000)));
-		recipes.add(new ChemRecipe(78, "HEAVY_ELECTROLYSIS", 150)
-				.inputFluids(new FluidStack(Fluids.HEAVYWATER, 2000))
-				.outputFluids(
-						new FluidStack(Fluids.DEUTERIUM, 200),
-						new FluidStack(Fluids.OXYGEN, 200)));
 		//recipes.add(new ChemRecipe(80, "EPEARL", 100)
 		//		.inputItems(new OreDictStack(DIAMOND.dust(), 1))
 		//		.inputFluids(new FluidStack(Fluids.XPJUICE, 500))
@@ -405,24 +367,25 @@ public class ChemplantRecipes extends SerializableRecipe {
 				//.inputFluids(new FluidStack(Fluids.BLOOD, 1000))
 				//.outputItems(new ItemStack(Blocks.sand, 4))
 				//.outputFluids(new FluidStack(Fluids.NITROGEN, 1000)));
+		// Ammonia oxidation and aqueous absorption are represented as one plant operation.
 		recipes.add(new ChemRecipe(99, "NITROACID", 180)
 			.inputFluids(
 				new FluidStack(Fluids.AMMONIA, 1000),
-				//new FluidStack(Fluids.OXYGEN, 1000),
-				new FluidStack(Fluids.WATER, 500))
+				new FluidStack(Fluids.OXYGEN, 1250))
 			.outputFluids(new FluidStack(Fluids.NITRIC_ACID, 1000)));
+		// The plant abstracts chloramine formation and ammonia coupling; nitric acid is not a hydrazine precursor.
 		recipes.add(new ChemRecipe(100, "HYDRAZINE", 250)
-				.inputFluids(new FluidStack(Fluids.NITRIC_ACID, 2000), new FluidStack(Fluids.AMMONIA, 1000))
+				.inputFluids(new FluidStack(Fluids.AMMONIA, 1000), new FluidStack(Fluids.CHLORINE, 500))
 				.outputFluids(new FluidStack(Fluids.HYDRAZINE, 800)));
 		//ammonia
 		recipes.add(new ChemRecipe(101, "AMONGUS", 250)
-				.inputFluids(new FluidStack(Fluids.NITROGEN, 600), new FluidStack(Fluids.HYDROGEN, 1000))
-				.outputFluids(new FluidStack(Fluids.AMMONIA, 800)));
+				.inputFluids(new FluidStack(Fluids.NITROGEN, 300), new FluidStack(Fluids.HYDROGEN, 900))
+				.outputFluids(new FluidStack(Fluids.AMMONIA, 600)));
 		recipes.add(new ChemRecipe(103, "HCL", 250)
-				.inputFluids(new FluidStack(Fluids.HYDROGEN, 300), new FluidStack(Fluids.CHLORINE, 1000))
-				.outputFluids(new FluidStack(Fluids.HCL, 400)));
+				.inputFluids(new FluidStack(Fluids.HYDROGEN, 500), new FluidStack(Fluids.CHLORINE, 500))
+				.outputFluids(new FluidStack(Fluids.HCL, 1000)));
 		recipes.add(new ChemRecipe(104, "AMMONIUM", 250)
-				.inputFluids(new FluidStack(Fluids.AMMONIA, 500), new FluidStack(Fluids.NITRIC_ACID, 1000))
+				.inputFluids(new FluidStack(Fluids.AMMONIA, 500), new FluidStack(Fluids.NITRIC_ACID, 500))
 				.outputItems(new ItemStack(ModItems.ammonium_nitrate, 4)));
 		recipes.add(new ChemRecipe(105, "ARSENIDE", 250)
 				.inputFluids(new FluidStack(Fluids.WATER, 500), new FluidStack(Fluids.LIGHTOIL, 900))
