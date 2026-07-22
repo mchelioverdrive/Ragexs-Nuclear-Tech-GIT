@@ -1,3 +1,11 @@
+# Move Magnox fuel fabrication to the Chemical Plant
+
+**Tracker:** `Move Magnox fuel fabrication to the Chemical Plant`
+
+* Moved Magnox fuel fabrication from hand crafting to the Chemical Plant for every fuel variant.
+* Chemical Plant fabrication consumes 10 mB of helium to represent industrial helium backfilling before the fuel rod is sealed.
+* Gameplay balance is intentionally unchanged: fuel behavior, burn time, depleted outputs, waste recipes, metadata, enum values, and item IDs are preserved.
+
 # Restore grounded petrochemical and biomass processing
 
 **Tracker:** `Restore grounded petrochemical and biomass processing`

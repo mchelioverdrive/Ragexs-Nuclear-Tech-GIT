@@ -24,6 +24,7 @@ import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemArcElectrode;
 import com.hbm.items.machine.ItemCircuit;
 import com.hbm.items.machine.ItemPWRFuel.EnumPWRFuel;
+import com.hbm.items.machine.ItemZirnoxRod.EnumZirnoxType;
 import com.hbm.main.MainRegistry;
 
 
@@ -1962,6 +1963,19 @@ public class ChemplantRecipes extends SerializableRecipe {
 		registerPwrReprocessing(1126, "PWR_AMERICIUM_REPROCESS", EnumPWRFuel.MEA, 0, 0, false);
 		registerPwrReprocessing(1127, "PWR_AM242_REPROCESS", EnumPWRFuel.HEA242, 0, 0, false);
 
+		// Magnox rods are helium-backfilled and sealed fuel assemblies, not hand-crafted items.
+		registerMagnoxFuelRod(1131, "MAGNOX_NATURAL_URANIUM", EnumZirnoxType.NATURAL_URANIUM_FUEL, new OreDictStack(U.billet(), 2));
+		registerMagnoxFuelRod(1132, "MAGNOX_URANIUM", EnumZirnoxType.URANIUM_FUEL, new ComparableStack(ModItems.billet_uranium_fuel, 2));
+		registerMagnoxFuelRod(1133, "MAGNOX_THORIUM", EnumZirnoxType.TH232, new OreDictStack(TH232.billet(), 2));
+		registerMagnoxFuelRod(1134, "MAGNOX_THORIUM_FUEL", EnumZirnoxType.THORIUM_FUEL, new ComparableStack(ModItems.billet_thorium_fuel, 2));
+		registerMagnoxFuelRod(1135, "MAGNOX_MOX", EnumZirnoxType.MOX_FUEL, new ComparableStack(ModItems.billet_mox_fuel, 2));
+		registerMagnoxFuelRod(1136, "MAGNOX_PLUTONIUM", EnumZirnoxType.PLUTONIUM_FUEL, new ComparableStack(ModItems.billet_plutonium_fuel, 2));
+		registerMagnoxFuelRod(1137, "MAGNOX_U233", EnumZirnoxType.U233_FUEL, new OreDictStack(U233.billet(), 2));
+		registerMagnoxFuelRod(1138, "MAGNOX_U235", EnumZirnoxType.U235_FUEL, new OreDictStack(U235.billet(), 2));
+		registerMagnoxFuelRod(1139, "MAGNOX_LES", EnumZirnoxType.LES_FUEL, new ComparableStack(ModItems.billet_les, 2));
+		registerMagnoxFuelRod(1140, "MAGNOX_LITHIUM", EnumZirnoxType.LITHIUM, new OreDictStack(LI.ingot(), 2));
+		registerMagnoxFuelRod(1141, "MAGNOX_ZFB_MOX", EnumZirnoxType.ZFB_MOX, new ComparableStack(ModItems.billet_mox_fuel), new OreDictStack(ZR.billet()));
+
 
 		// Compact CO + 2H2 -> CH3OH synthesis: SYNGAS represents the conditioned CO/H2 feed.
 		recipes.add(new ChemRecipe(1128, "METHANOL_SYNTHESIS", 120)
@@ -2004,6 +2018,17 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputFluids(new FluidStack(Fluids.NITRIC_ACID, 1_000))
 				.outputItems(outputs.toArray(new ItemStack[outputs.size()]))
 				.outputFluids(new FluidStack(Fluids.WASTEFLUID, 1_000)));
+	}
+
+	private static void registerMagnoxFuelRod(int id, String name, EnumZirnoxType fuel, AStack... fuelInputs) {
+		AStack[] inputs = new AStack[fuelInputs.length + 1];
+		inputs[0] = new ComparableStack(ModItems.rod_zirnox_empty);
+		System.arraycopy(fuelInputs, 0, inputs, 1, fuelInputs.length);
+
+		recipes.add(new ChemRecipe(id, name, 50)
+				.inputItems(inputs)
+				.inputFluids(new FluidStack(Fluids.HELIUM4, 10))
+				.outputItems(new ItemStack(ModItems.rod_zirnox, 1, fuel.ordinal())));
 	}
 
 	public static void registerOtherOil() {
