@@ -26,6 +26,7 @@ public class RodRecipes {
 
 		//~~Zirnox~~ MAGNOX Fuel
 		GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModItems.rod_zirnox_empty, 4), new Object[] { "Z Z", "ZBZ", "ZAZ", 'Z', MG.nugget(), 'B', BE.ingot(), 'A', AL.dust() }));
+		//TODO since zirconium can be used for experimental fuel rods we should add back zirnox rods but make them experimental
 		addZIRNOXRod(U, EnumZirnoxType.NATURAL_URANIUM_FUEL);
 		addZIRNOXRod(ModItems.billet_uranium_fuel, EnumZirnoxType.URANIUM_FUEL);
 		addZIRNOXRod(TH232, EnumZirnoxType.TH232);
