@@ -92,7 +92,7 @@ public class CryoRecipes extends SerializableRecipe {
 			new FluidStack(Fluids.CARBONDIOXIDE, 96),
 			new FluidStack(Fluids.NITROGEN, 3),
 			new FluidStack(Fluids.SOURGAS, 1), // sulfur-bearing trace-gas abstraction
-			new FluidStack(Fluids.NONE, 0)
+			new FluidStack(Fluids.ARGON, 1) //trace
 		));
 
 		//Mars
@@ -100,7 +100,7 @@ public class CryoRecipes extends SerializableRecipe {
 			new FluidStack(Fluids.CARBONDIOXIDE, 95),
 			new FluidStack(Fluids.NITROGEN, 3),
 			new FluidStack(Fluids.ARGON, 2),
-			new FluidStack(Fluids.NONE, 0)
+			new FluidStack(Fluids.OXYGEN, 1) //trace amounts do not remove
 		));
 
 		//brine -> iodine brine + salt water (which is just brine...)
