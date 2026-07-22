@@ -198,7 +198,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 									   1),
 				   new AStack[]{
 					   new OreDictStack(TI.plate528(), 4),
-					   new OreDictStack(STAINLESS.plate528(), 2),
+					   new OreDictStack(STAINLESS.plate(), 2), //STAINLESS.plate528() does not exist and I do not care enough to add it.
 					   new ComparableStack(ModItems.motor, 1),
 					   new OreDictStack(RUBBER.ingot(), 2),},
 				   100);
@@ -741,7 +741,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 									   1),
 				   new AStack[]{
 					   new ComparableStack(ModItems.centrifuge_element, 4),
-					   new OreDictStack(STAINLESS.plate528(), 8),
+					   new OreDictStack(STAINLESS.plate(), 8), //STAINLESS.plate528 does not exist and I don't care enough to add it
 					   new ComparableStack(ModItems.tank_steel, 2),
 					   new OreDictStack(RUBBER.ingot(), 4),
 					   new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ADVANCED.ordinal())},
