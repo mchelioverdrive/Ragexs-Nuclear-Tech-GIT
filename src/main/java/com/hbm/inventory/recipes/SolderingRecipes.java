@@ -89,8 +89,8 @@ public class SolderingRecipes extends SerializableRecipe {
 											new OreDictStack(PB.wireFine(), 4)}
 		));
 
-		// Terbium may stand in for specialized contacts, not a multiplier for complete boards.
-		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.ADVANCED.ordinal()), 100, 1_000,
+		// Terbium may stand in for specialized contacts, not a multiplier for complete boards. OK BUT FOR GAMEPLAY REASONS WE WILL BE MULTIPLYING THE BOARDS TO GIVE PLAYERS AN INCENTIVE TO GO THROUGH HELL
+		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 4, EnumCircuitType.ADVANCED.ordinal()), 100, 1_000,
 										new FluidStack(Fluids.SOLVENT, 250),
 										new AStack[] {
 											new ComparableStack(ModItems.circuit, 2, EnumCircuitType.CHIP),
@@ -113,11 +113,23 @@ public class SolderingRecipes extends SerializableRecipe {
 						new OreDictStack(PB.wireFine(), 3)}
 		));
 
+		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 4, EnumCircuitType.CAPACITOR_BOARD.ordinal()), 200, 300,
+										new FluidStack(Fluids.SOLVENT, 250),
+										new AStack[] {
+											new ComparableStack(ModItems.ingot_terbium)},
+										new AStack[] {
+											new ComparableStack(ModItems.circuit, 1, EnumCircuitType.PCB)},
+										new AStack[] {
+											new OreDictStack(PB.wireFine(), 3)}
+		));
+
 		// Disabled: one terbium ingot and one PCB cannot credibly yield sixteen populated
 		// capacitor boards. The tantalium-capacitor route above remains the available route.
 		// recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 16, EnumCircuitType.CAPACITOR_BOARD.ordinal()), 200, 300,
 		// 		new FluidStack(Fluids.PEROXIDE, 250), new AStack[] {new ComparableStack(ModItems.ingot_terbium)},
 		// 		new AStack[] {new ComparableStack(ModItems.circuit, 1, EnumCircuitType.PCB)}, new AStack[] {new OreDictStack(PB.wireFine(), 3)}));
+
+		//UNDISABLED and nerfed: reasoning: gameplay abstraction + this is minecraft and I don't want to force people through complete fucking hell
 
 		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.BISMOID.ordinal()), 400, 10_000,
 				new FluidStack(Fluids.SOLVENT, 1_000),
@@ -133,7 +145,8 @@ public class SolderingRecipes extends SerializableRecipe {
 		));
 
 		// Specialized terbium contacts remain an alternative route, but do not multiply boards.
-		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.BISMOID.ordinal()), 400, 10_000,
+		// You know what I'm gonna say right...
+		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 4, EnumCircuitType.BISMOID.ordinal()), 400, 10_000,
 				new FluidStack(Fluids.SOLVENT, 1_000),
 				new AStack[] {
 						new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CHIP_BISMOID),
@@ -159,8 +172,9 @@ public class SolderingRecipes extends SerializableRecipe {
 											new OreDictStack(PB.wireFine(), 12)}
 		));
 
-		// Osmiridium represents durable specialty contacts; it does not duplicate populated boards.
-		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.BISMOID.ordinal()), 300, 5_000,
+		// Osmiridium *osmiridium ingot is actually osmium since I had to unfuck bobcat schizophrenia bullshit but yeah represents durable specialty contacts; it does not duplicate populated boards.
+		//anyway since osmiridium is maximum pain to produce I think 4-8 boards is a reasonable amount.
+		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 8, EnumCircuitType.BISMOID.ordinal()), 300, 5_000,
 										new FluidStack(Fluids.SOLVENT, 500),
 										new AStack[] {
 											new ComparableStack(ModItems.ingot_osmiridium),
@@ -174,7 +188,8 @@ public class SolderingRecipes extends SerializableRecipe {
 		));
 
 		// Rhodium remains a late-game contact-material alternative without a board multiplier.
-		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.BISMOID.ordinal()), 500, 15_000,
+		// yet again we are not 1:1 reality because that's infinite pain as if making some of these elements aren't pain already
+		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 8, EnumCircuitType.BISMOID.ordinal()), 500, 15_000,
 										new FluidStack(Fluids.SOLVENT, 500),
 										new AStack[] {
 											new ComparableStack(ModItems.ingot_rhodium),
