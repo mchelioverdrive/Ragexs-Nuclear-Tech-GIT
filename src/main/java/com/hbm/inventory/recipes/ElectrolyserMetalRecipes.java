@@ -132,11 +132,7 @@ public class ElectrolyserMetalRecipes extends SerializableRecipe {
 		//		new MaterialStack(Mats.MAT_STRONTIUM, MaterialShapes.INGOT.q(2)),
 		//		new ItemStack(ModItems.powder_lithium_tiny, 3)));
 
-		//tin
-		recipes.put(new ComparableStack(ModBlocks.ore_tin), new ElectrolysisMetalRecipe(
-				new MaterialStack(Mats.MAT_TIN, MaterialShapes.INGOT.q(6)),
-				new MaterialStack(Mats.MAT_IRON, MaterialShapes.NUGGET.q(2)),
-				new ItemStack(ModItems.powder_copper, 1)));
+		// Raw tin ore is smelted through the existing furnace chain; electrorefining begins with the concentrated crystal feeds above.
 
 		for(BedrockOreType type : BedrockOreType.values()) {
 			ArrayList<Pair<Object, Integer>> productsF = new ArrayList<>();

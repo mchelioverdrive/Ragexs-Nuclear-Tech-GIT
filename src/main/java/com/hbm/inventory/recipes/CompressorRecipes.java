@@ -24,9 +24,8 @@ public class CompressorRecipes extends SerializableRecipe {
 		recipes.put(new Pair(Fluids.SUPERHOTSTEAM, 0), new CompressorRecipe(1_000, new FluidStack(Fluids.ULTRAHOTSTEAM, 100)));
 
 		recipes.put(new Pair(Fluids.PETROLEUM, 0), new CompressorRecipe(2_000, new FluidStack(Fluids.PETROLEUM, 2_000, 1), 20));
-		recipes.put(new Pair(Fluids.PETROLEUM, 1), new CompressorRecipe(2_000, new FluidStack(Fluids.LPG, 1_000, 0), 20));
+		// LPG recovery and blood-to-oil conversion are separation/chemical processes, not compression recipes.
 
-		recipes.put(new Pair(Fluids.BLOOD, 3), new CompressorRecipe(1_000, new FluidStack(Fluids.HEAVYOIL, 250, 0), 200));
 	}
 	
 	public static class CompressorRecipe {

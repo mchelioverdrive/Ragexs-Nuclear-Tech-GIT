@@ -8,7 +8,6 @@ import java.util.Map.Entry;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
-import com.hbm.blocks.ModBlocks;
 import com.hbm.inventory.FluidStack;
 import static com.hbm.inventory.OreDictManager.*;
 import com.hbm.inventory.RecipesCommon.AStack;
@@ -21,8 +20,6 @@ import com.hbm.items.ItemEnums.EnumTarType;
 import com.hbm.items.machine.ItemFluidIcon;
 import com.hbm.util.Tuple.Pair;
 
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 
 public class OutgasserRecipes extends SerializableRecipe {
@@ -60,16 +57,13 @@ public class OutgasserRecipes extends SerializableRecipe {
 		recipes.put(new OreDictStack(TH232.nugget()),	new Pair(new ItemStack(ModItems.nugget_thorium_fuel), null));
 		recipes.put(new OreDictStack(TH232.billet()),	new Pair(new ItemStack(ModItems.billet_thorium_fuel), null));
 
-		/* mushrooms to glowing mushrooms */
-		recipes.put(new ComparableStack(Blocks.brown_mushroom),	new Pair(new ItemStack(ModBlocks.mush), null));
-		recipes.put(new ComparableStack(Blocks.red_mushroom),	new Pair(new ItemStack(ModBlocks.mush), null));
-		//recipes.put(new ComparableStack(Items.mushroom_stew),	new Pair(new ItemStack(ModItems.glowing_stew), null));
+		// This is an RBMK irradiation channel despite its legacy outgasser name; do not use it for unrelated biological conversion.
 
 		recipes.put(new OreDictStack(COAL.gem()),		new Pair(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.COAL, 1), new FluidStack(Fluids.SYNGAS, 50)));
 		recipes.put(new OreDictStack(COAL.dust()),		new Pair(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.COAL, 1), new FluidStack(Fluids.SYNGAS, 50)));
 		recipes.put(new OreDictStack(COAL.block()),		new Pair(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.COAL, 9), new FluidStack(Fluids.SYNGAS, 500)));
 
-		recipes.put(new OreDictStack(PVC.ingot()),		new Pair(new ItemStack(ModItems.ingot_c4), new FluidStack(Fluids.COLLOID, 250)));
+		// C4 synthesis is available in the chemical plant; irradiating PVC must not manufacture explosives or colloid.
 
 		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.COAL)),	new Pair(null, new FluidStack(Fluids.COALOIL, 100)));
 		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.WAX)),	new Pair(null, new FluidStack(Fluids.RADIOSOLVENT, 100)));

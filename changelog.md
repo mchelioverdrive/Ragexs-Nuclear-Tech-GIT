@@ -1,3 +1,9 @@
+## Realistify electrochemical and process-machine recipes
+
+* Moved direct water and brine electrolysis out of the chemical plant into the fluid electrolyser, corrected water and heavy-water gas ratios, and retained fluorine as a coarse nonaqueous fluoride-electrolyte abstraction.
+* Removed compressor conversions that changed petroleum into LPG or blood into heavy oil, and made oxyhydrogen require its hydrogen and oxygen constituents at a 2:1 ratio.
+* Removed raw-ore electrolysis and non-irradiation recipes from the RBMK irradiation channel; clarified the crystallizer's acid-assisted concentrate-recovery abstraction.
+
 ## Require atmospheres for RBMK and combustion machinery
 
 * RBMK fuel rods now halt fuel burn and neutron propagation in near-vacuum conditions while allowing residual reactor heat to cool normally.
