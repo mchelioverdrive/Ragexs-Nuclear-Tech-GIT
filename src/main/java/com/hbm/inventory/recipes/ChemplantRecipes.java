@@ -241,7 +241,20 @@ public class ChemplantRecipes extends SerializableRecipe {
 						new FluidStack(Fluids.NITRIC_ACID, 100))
 				.outputItems(new ItemStack(ModItems.rocket_fuel, 4)));
 
+		//if something says do not remove do not remove it
+
+		//do not remove this I know it's redundant but the electrolysis machine sucks and is late game for some fucking reason
+		recipes.add(new ChemRecipe(58, "ELECTROLYSIS", 150)
+						.inputFluids(new FluidStack(Fluids.WATER, 4000))
+						.outputFluids(
+							new FluidStack(Fluids.HYDROGEN, 40),
+							new FluidStack(Fluids.OXYGEN, 20)));
+		//this is here for early game hydrogen/compat. DO NOT REMOVE IT. I don't want to have to come back in this class and be like
+		// "oh, a realistification broke progression because these fucking guys gated electrolysis behind a big ass machine or something"
+		// SO DO NOT REMOVE IT! You can nerf shit like this, or fix it if it's chemically imbalanced but don't just FUCKING REMOVE IT!
+
 		// Recipe 58 was direct water electrolysis and is intentionally retired: use the fluid electrolyser.
+		//DO NOT DO THIS!!^
 
 		recipes.add(new ChemRecipe(59, "XENON", 250, 1)
 				.inputFluids(new FluidStack(Fluids.NONE, 0))
@@ -1051,7 +1064,28 @@ public class ChemplantRecipes extends SerializableRecipe {
 						.outputItems(new ItemStack(ModItems.gypsum, 4)) //should be calcium sulfate/gypsum? idk I'm just autofilling for now.
 		);
 
+
+		//DO NOT REMOVE DO NOT REMOVE DO NOT REMOVE
+		//salt + water + power → chlorine + hydrogen + lye
+		recipes.add(new ChemRecipe(1063, "CHLORINE_PRODUCTION", 130)
+						.inputItems(new ComparableStack(ModItems.itemsalt, 1))
+						.inputFluids(
+							new FluidStack(Fluids.WATER, 1000),
+							new FluidStack(Fluids.OXYGEN, 500)
+						)
+						//.oxygenConsumption = 500 // consumes oxygen from the atmosphere to prevent infinite loops with water electrolysis
+						//that's great gpt but I'm not doing allat I'm just adding oxygen fluid in input
+						.outputFluids(
+							new FluidStack(Fluids.CHLORINE, 1000),
+							new FluidStack(Fluids.HYDROGEN, 1000)
+							//new FluidStack(Fluids.SODIUM_HYDROXIDE, 1000)
+						)
+					//.outputItems(new ItemStack(ModItems.sodium_hydroxide, 1))
+		);
+
 		// Recipe 1063 was direct chlor-alkali electrolysis and is intentionally retired: use brine in the fluid electrolyser.
+		//ok but the electrolyser is a fucking energy sponge so early game that's a nightmare so DO NOT DO THAT.
+		//... And Considering you can do electrolysis in your back yard, LETS KEEP THE RECIPE YEAH?
 
 		//chlorocalcite from calcium chloride and potassium chloride
 		recipes.add(new ChemRecipe(1064, "CHLOROCALCITE", 100)
