@@ -96,6 +96,7 @@ public class ModItems {
 	public static Item strontium_chloride;
 	public static Item ingot_gunmetal;
 	public static Item magnesium_ingot;
+	public static Item magnesium_nugget;
 	public static Item slagingot;
 	public static Item plate_gunmetal;
 	public static Item ingot_weaponsteel;
@@ -3196,6 +3197,7 @@ public class ModItems {
 		powder_strontium_oxide = new Item().setUnlocalizedName("powder_strontium_oxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		strontium_chloride = new Item().setUnlocalizedName("strontium_chloride").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 		magnesium_ingot = new Item().setUnlocalizedName("magnesium_ingot").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_magnesium");
+		magnesium_nugget = new Item().setUnlocalizedName("magnesium_nugget").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":nugget_magnesium");
 		slagingot = new Item().setUnlocalizedName("slagingot").setCreativeTab(MainRegistry.partsTab).setTextureName("minecraft" + ":netherbrick");
 		plate_gunmetal = new Item().setUnlocalizedName("plate_gunmetal").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_gunmetal");
 		ingot_weaponsteel = new Item().setUnlocalizedName("ingot_weaponsteel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_gunsteel");
@@ -7446,6 +7448,7 @@ public class ModItems {
 		GameRegistry.registerItem(powder_strontium_oxide, powder_strontium_oxide.getUnlocalizedName());
 		GameRegistry.registerItem(strontium_chloride, strontium_chloride.getUnlocalizedName());
 		GameRegistry.registerItem(magnesium_ingot, magnesium_ingot.getUnlocalizedName());
+		GameRegistry.registerItem(magnesium_nugget, magnesium_nugget.getUnlocalizedName());
 		GameRegistry.registerItem(slagingot, slagingot.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_weaponsteel, ingot_weaponsteel.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_saturnite, ingot_saturnite.getUnlocalizedName());

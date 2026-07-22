@@ -116,6 +116,9 @@ public class MineralRecipes {
 		//thallium
 		add1To9Pair(ModItems.powder_thallium, ModItems.nugget_thallium);
 
+		//magnesium
+		add1To9Pair(ModItems.magnesium_ingot, ModItems.magnesium_nugget);
+
 		//californium
 		add1To9Pair(ModItems.ingot_cf251, ModItems.nugget_cf251);
 		add1To9Pair(ModItems.ingot_cf252, ModItems.nugget_cf252);

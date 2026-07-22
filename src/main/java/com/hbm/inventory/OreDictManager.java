@@ -533,7 +533,7 @@ public class OreDictManager {
 		CO			.nugget(fragment_cobalt)	.nugget(nugget_cobalt)		.billet(billet_cobalt)			.ingot(ingot_cobalt)				.dust(powder_cobalt)			.dustSmall(powder_cobalt_tiny)	.block(block_cobalt)		.ore(ore_nether_cobalt)	.oreAll(ore_cobalt);
 		B			.nugget(fragment_boron)									.ingot(ingot_boron)				.dustSmall(powder_boron_tiny)		.dust(powder_boron)												.block(block_boron);
 		SI			.nugget(nugget_silicon)		.billet(billet_silicon)		.ingot(ingot_silicon);
-		MG			.ingot(magnesium_ingot);	//.billet(billet_magnesium)	.ingot(ingot_magnesium)												.dust(powder_magnesium)											.block(block_magnesium)		.oreAll(ore_magnesium);
+		MG			.ingot(magnesium_ingot)     .nugget(magnesium_nugget);	//.billet(billet_magnesium)	.ingot(ingot_magnesium)												.dust(powder_magnesium)											.block(block_magnesium)		.oreAll(ore_magnesium);
 		Mn .dust(manganese_powder);
 		Rh  .ingot(ingot_rhodium); //.dust(powder_rhodium) don't do that because we want to gate rh to the arc furnace
 		Tl .ingot(ingot_thallium) .dust(powder_thallium) .nugget(nugget_thallium);

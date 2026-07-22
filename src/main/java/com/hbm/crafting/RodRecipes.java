@@ -25,7 +25,7 @@ public class RodRecipes {
 	public static void register() {
 
 		//~~Zirnox~~ MAGNOX Fuel
-		GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModItems.rod_zirnox_empty, 4), new Object[] { "Z Z", "ZBZ", "Z Z", 'Z', ZR.nugget(), 'B', BE.ingot() }));
+		GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModItems.rod_zirnox_empty, 4), new Object[] { "Z Z", "ZBZ", "ZAZ", 'Z', MG.nugget(), 'B', BE.ingot(), 'A', AL.dust() }));
 		addZIRNOXRod(U, EnumZirnoxType.NATURAL_URANIUM_FUEL);
 		addZIRNOXRod(ModItems.billet_uranium_fuel, EnumZirnoxType.URANIUM_FUEL);
 		addZIRNOXRod(TH232, EnumZirnoxType.TH232);
