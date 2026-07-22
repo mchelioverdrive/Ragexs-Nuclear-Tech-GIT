@@ -34,6 +34,7 @@ public class BreederRecipes extends SerializableRecipe {
 		setRecipe(BreedingRodType.U235, BreedingRodType.WASTE, 300); //not neptunium thats for sure
 		setRecipe(BreedingRodType.NP237, BreedingRodType.PU238, 200);
 
+		//setRecipe(BreedingRodType.U238, BreedingRodType.NP237, 500);
 		// U-238 capture followed by beta decays is compressed to Pu-239.  Direct
 		// U-238-to-Np-237 was removed: that nuclide is not the one-capture product.
 		setRecipe(BreedingRodType.U238, BreedingRodType.PU239, 1000);
@@ -68,8 +69,28 @@ public class BreederRecipes extends SerializableRecipe {
 		//CM247 -> BK247   (2000)
 		setRecipe(BreedingRodType.CM247, BreedingRodType.BK247, 2000);
 
+		//TODO should be:
+
+		// BK247 -> CF251 (Californium)
+		//setRecipe(BreedingRodType.BK247, BreedingRodType.CF251, 3000);
+
+		// CF251 -> ES253 (Einsteinium)
+		//setRecipe(BreedingRodType.CF251, BreedingRodType.ES253, 4000);
+
+		// ES253 -> FM255 (Fermium!) - The ultimate endgame reward
+		//setRecipe(BreedingRodType.ES253, BreedingRodType.FM255, 50000);
+
+
+		//Current (for my fucking mental sanity):
+		//fermium from plutonium-239 or curium 244
+		setRecipe(BreedingRodType.PU239, BreedingRodType.FM255, 100000);
+		setRecipe(BreedingRodType.CM244, BreedingRodType.FM257, 50000);
+		//Codex crying:
 		// Do not collapse many captures and decays from Pu/Cm directly to fermium.
 		// The available incremental actinide chain remains the intended progression.
+		//me crying:
+		//BROTHER. THIS IS THE ONLY SANE WAY TO EVEN ADD THESE INTO THE GAME. I AM LEAVING THEM IN....?????
+
 
 		//thulium normal into tm-170
 		//setRecipe(BreedingRodType.THULIUM, BreedingRodType.TM170, 200);
