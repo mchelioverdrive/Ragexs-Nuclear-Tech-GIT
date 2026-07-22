@@ -6,7 +6,6 @@ import com.hbm.items.machine.ItemBreedingRod.*;
 import com.hbm.items.machine.ItemCircuit.EnumCircuitType;
 import com.hbm.items.machine.ItemPWRFuel.EnumPWRFuel;
 import com.hbm.items.machine.ItemWatzPellet.EnumWatzType;
-import com.hbm.items.machine.ItemZirnoxRod.EnumZirnoxType;
 import com.hbm.main.CraftingManager;
 
 import cpw.mods.fml.common.registry.GameRegistry;
@@ -26,18 +25,6 @@ public class RodRecipes {
 
 		//~~Zirnox~~ MAGNOX Fuel
 		GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModItems.rod_zirnox_empty, 4), new Object[] { "Z Z", "ZBZ", "ZAZ", 'Z', MG.nugget(), 'B', BE.ingot(), 'A', AL.dust() }));
-		//TODO since zirconium can be used for experimental fuel rods we should add back zirnox rods but make them experimental
-		addZIRNOXRod(U, EnumZirnoxType.NATURAL_URANIUM_FUEL);
-		addZIRNOXRod(ModItems.billet_uranium_fuel, EnumZirnoxType.URANIUM_FUEL);
-		addZIRNOXRod(TH232, EnumZirnoxType.TH232);
-		addZIRNOXRod(ModItems.billet_thorium_fuel, EnumZirnoxType.THORIUM_FUEL);
-		addZIRNOXRod(ModItems.billet_mox_fuel, EnumZirnoxType.MOX_FUEL);
-		addZIRNOXRod(ModItems.billet_plutonium_fuel, EnumZirnoxType.PLUTONIUM_FUEL);
-		addZIRNOXRod(U233, EnumZirnoxType.U233_FUEL);
-		addZIRNOXRod(U235, EnumZirnoxType.U235_FUEL);
-		addZIRNOXRod(ModItems.billet_les, EnumZirnoxType.LES_FUEL);
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.rod_zirnox, 1, EnumZirnoxType.LITHIUM.ordinal()), new Object[] { ModItems.rod_zirnox_empty, LI.ingot(), LI.ingot() });
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.rod_zirnox, 1, EnumZirnoxType.ZFB_MOX.ordinal()), new Object[] { ModItems.rod_zirnox_empty, ModItems.billet_mox_fuel, ZR.billet() });
 
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.waste_natural_uranium, 2, 1), new Object[] { ModItems.rod_zirnox_natural_uranium_fuel_depleted });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.waste_uranium, 2, 1), new Object[] { ModItems.rod_zirnox_uranium_fuel_depleted });
@@ -337,16 +324,6 @@ public class RodRecipes {
 	}
 	public static void addRBMKRod(Item billet, Item out) {
 		CraftingManager.addShapelessAuto(new ItemStack(out), new Object[] { ModItems.rbmk_fuel_empty, billet, billet, billet, billet, billet, billet, billet, billet });
-	}
-
-	/** Fill ZIRNOX rod with two billets **/
-	public static void addZIRNOXRod(Item billet, EnumZirnoxType num) {
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.rod_zirnox, 1, num.ordinal()), new Object[] { ModItems.rod_zirnox_empty, billet, billet });
-	}
-
-	/** Fill ZIRNOX rod with two billets with OreDict **/
-	public static void addZIRNOXRod(DictFrame mat, EnumZirnoxType num) {
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.rod_zirnox, 1, num.ordinal()), new Object[] { ModItems.rod_zirnox_empty, mat.billet(), mat.billet() });
 	}
 
 	/** Watz pellet crafting **/
