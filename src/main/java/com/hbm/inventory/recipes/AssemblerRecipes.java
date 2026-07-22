@@ -1045,6 +1045,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModBlocks.machine_mining_laser,
 									   1),
 				   new AStack[]{
+					   new ComparableStack(ModItems.circuit, 2, EnumCircuitType.CONTROLLER_QUANTUM.ordinal()),
 					   new ComparableStack(ModItems.tank_steel,
 										   3),
 					   !exp ? new OreDictStack(STEEL.plate528(),
@@ -1065,7 +1066,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 										8),
 					   new ComparableStack(ModBlocks.machine_battery,
 										   3),},
-				   400);
+				   1400);
 		makeRecipe(new ComparableStack(ModBlocks.machine_turbofan,
 									   1),
 				   new AStack[]{
@@ -5048,6 +5049,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModBlocks.machine_htr3,
 									   1),
 				   new AStack[]{
+					   new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CONTROLLER_QUANTUM.ordinal()),
 					   new OreDictStack(ANY_RESISTANTALLOY.plateWelded(),
 										12),
 					   new OreDictStack(DURA.bolt(),
@@ -5072,6 +5074,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModBlocks.machine_lpw2,
 									   1),
 				   new AStack[]{
+					   new ComparableStack(ModItems.circuit, 8, EnumCircuitType.CONTROLLER_QUANTUM.ordinal()),
 					   new OreDictStack(STEEL.plateWelded(),
 										24),
 					   new OreDictStack(STEEL.bolt(),
@@ -5098,6 +5101,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModBlocks.machine_htrf4,
 									   1),
 				   new AStack[]{
+					   new ComparableStack(ModItems.circuit, 16, EnumCircuitType.CONTROLLER_QUANTUM.ordinal()),
 					   new ComparableStack(ModBlocks.machine_htr3,
 										   2),
 					   new OreDictStack(W.plateWelded(),
