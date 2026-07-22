@@ -73,7 +73,7 @@ public class AssemblerRecipeHandler extends SafeTemplateRecipeHandler implements
 
 	@Override
 	public String getRecipeName() {
-		return "Assembly Machine";
+		return "Fabrication Machine";
 	}
 
 	@Override
