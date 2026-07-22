@@ -30,118 +30,19 @@ public class CyclotronRecipes extends SerializableRecipe {
 	public static HashMap<Pair<ComparableStack, AStack>, Pair<ItemStack, Integer>> recipes = new HashMap();
 
 
-	//francium
-	//makeRecipe(new ComparableStack(ModItems.nugget_th232), new ComparableStack(ModItems.ingot_actinium), new ItemStack(ModItems.francium_ingot), coA);
-
-
-
 	@Override
 	public void registerDefaults() {
 
-		/// LITHIUM START ///
-		int liA = 50;
+		/*
+		 * The cyclotron accepts the legacy ion-part items, not neutron capsules.
+		 * Keep neutron captures in the exposure chamber, whose capsule input is
+		 * consumed as an irradiation source.
+		 */
 
-		/// TODO Actual Lithium reactions (light element reactions)
-		//makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack("dustLithium"), new ItemStack(ModItems.powder_helium), 50); // Li → He
-		//helium... powder?
-		makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack("dustBeryllium"), new ItemStack(ModItems.part_carbon), 6); // Li + Be → C (simplified)
-
-
-		/// LITHIUM END ///
-
-		/// BERYLLIUM START ///
-		int beA = 25;
-
-		/// TODO Beryllium reactions
-
-		/// BERYLLIUM END ///
-
-		/// CARBON START ///
-		int caA = 10;
-
-
-
-		/// CARBON END ///
-
-		/// COPPER START ///
-		int coA = 15;
-
-		/// Copper reactions (medium-heavy element)
-		makeRecipe(new ComparableStack(ModItems.part_copper), new OreDictStack("dustNickel"), new ItemStack(ModItems.powder_cobalt), 1);
-		makeRecipe(new ComparableStack(ModItems.part_copper), new OreDictStack("dustZinc"), new ItemStack(ModItems.powder_gallium), 1);
-
-
-
-		makeRecipe(new ComparableStack(ModItems.neutron_reflector), new OreDictStack("dustBismuth"), new ItemStack(ModItems.powder_polonium), coA);
-
-		//actinium is made via uranium decay...
-		//makeRecipe(new ComparableStack(ModItems.part_copper), new ComparableStack(ModItems.powder_uranium), new ItemStack(ModItems.powder_actinium), coA);
-
-		//bobshart didn't add null support so I'm trying this...
-		//makeRecipe(new ComparableStack(ModItems.powder_uranium), new EmptyAStack(), new ItemStack(ModItems.powder_actinium), 200);
-		//I give up. Fuck you and your entire shitty ass cyclotron system.
-		makeRecipe(
-			new ComparableStack(ModItems.powder_uranium),
-			new ComparableStack(Items.redstone),
-			new ItemStack(ModItems.powder_actinium),
-			2
-		);
-
-		/// COPPER END ///
-
-		/// PLUTONIUM START ///
-		int plA = 100;
-
-		/// Plutonium production via decay chain
-		makeRecipe(new ComparableStack(ModItems.powder_uranium), new OreDictStack("nuggetUranium238"), new ItemStack(ModItems.nugget_pu239), 5);
-
-		/// PLUTONIUM END ///
-
-		///TODO: fictional elements
-		//not sure how thorium doesn't make sense here but ok sure gpt
-		/// Francium production (realistic parent: Actinium)
-		makeRecipe(new ComparableStack(ModItems.ingot_actinium), new OreDictStack("dustActinium227"), new ItemStack(ModItems.francium_ingot), 3);
-
-		//rutherfordium
-		//graphite is our stand in for carbon-12
-		//makeRecipe(new ComparableStack(ModItems.nugget_cf249), new ComparableStack(ModItems.ingot_graphite), new ItemStack(ModItems.rutherfordium_nugget), 4);
-
-		//all neutron capture reactions moved to exposure chamber bc cyclotron doesn't preserve particle containers
-		// Cm-248 neutron activation -> Cf-249 (simplified breeder path)
-		//makeRecipe(new ComparableStack(ModItems.ingot_cm247), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_cm248), 5);
-		//makeRecipe(new ComparableStack(ModItems.ingot_cm248), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_cf249), 5);
-		// Californium breeding chain
-		//makeRecipe(new ComparableStack(ModItems.nugget_cf249),
-		//		   new ComparableStack(ModItems.particle_neutron),
-		//		   new ItemStack(ModItems.nugget_cf250), 5);
-		//makeRecipe(new ComparableStack(ModItems.nugget_cf250),
-		//		   new ComparableStack(ModItems.particle_neutron),
-		//		   new ItemStack(ModItems.nugget_cf251), 6);
-		//makeRecipe(new ComparableStack(ModItems.nugget_cf251),
-		//		   new ComparableStack(ModItems.particle_neutron),
-		//		   new ItemStack(ModItems.nugget_cf252), 7);
-		////plutonium 239 to 240 via neutron capture
-		//makeRecipe(new ComparableStack(ModItems.nugget_pu239), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_pu240), 3);
-		////plutonium 240 to 241 via neutron capture
-		//makeRecipe(new ComparableStack(ModItems.nugget_pu240), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_pu241), 4);
-		//am 242 from am241
-		//makeRecipe(new ComparableStack(ModItems.nugget_am241), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_am242), 4);
-		//Cf-252 + neutron -> Es-253
-		//makeRecipe(new ComparableStack(ModItems.nugget_cf252), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_es253), 8);
-
-		//dubnium
-		//poison powder is made from nitrogen, so it's almost accurate. I'll add solid nitrogen later.
-		makeRecipe(new ComparableStack(ModItems.nugget_cf249), new ComparableStack(ModItems.powder_poison), new ItemStack(ModItems.dubnium_nugget), 6);
-
-		//americium 241 from plutonium 241
-		//should be decay but thats pain
-		makeRecipe(new ComparableStack(ModItems.nugget_pu241), new ComparableStack(Items.redstone), new ItemStack(ModItems.nugget_am241), 4);
-
+		// Cf-249 + C-12 -> Rf + xn. Carbon is the existing C-12 ion abstraction.
+		// The nugget output represents the very small heavy-ion fusion yield.
 		makeRecipe(new ComparableStack(ModItems.part_carbon), new ComparableStack(ModItems.nugget_cf249),
-				   new ItemStack(ModItems.rutherfordium_nugget), 4);
-
-		//TODO gold -> more anti matter than all other reactions (the final number is antimatter fluid amount)
-
+				new ItemStack(ModItems.rutherfordium_nugget), 4);
 	}
 
 	private static void makeRecipe(ComparableStack part, AStack in, ItemStack out, int amat) {

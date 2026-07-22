@@ -23,28 +23,28 @@ public class CryoRecipes extends SerializableRecipe {
 	@Override
 	public void registerDefaults() {
 
-		//assume there's a 0 after all these numbers because that's how this works for some reason (in mb)
+		// Each operation consumes 100 mB; output fills below are fixed batch fractions.
 
 		//Earth
 		recipes.put(Fluids.AIR, new Quartet<>(
-			new FluidStack(Fluids.NITROGEN, 78),
+			new FluidStack(Fluids.NITROGEN, 77),
 			new FluidStack(Fluids.OXYGEN, 21),
 			new FluidStack(Fluids.ARGON, 1),
 			new FluidStack(Fluids.NOBLE_GAS_MIX, 1)
 		));
 
-		//trace atmospheric noble gases
+		//Enriched noble-gas tail from air separation; argon remains dominant.
 		recipes.put(Fluids.NOBLE_GAS_MIX, new Quartet<>(
-			new FluidStack(Fluids.NEON, 60),
-			new FluidStack(Fluids.KRYPTON, 20),
-			new FluidStack(Fluids.XENON, 5),
-			new FluidStack(Fluids.ARGON, 15)
+			new FluidStack(Fluids.ARGON, 96),
+			new FluidStack(Fluids.NEON, 2),
+			new FluidStack(Fluids.KRYPTON, 1),
+			new FluidStack(Fluids.XENON, 1)
 		));
 
 		//Titan
 		//mostly nitrogen with methane hydrocarbons
 		recipes.put(Fluids.TEKTOAIR, new Quartet<>(
-			new FluidStack(Fluids.NITROGEN, 90),
+			new FluidStack(Fluids.NITROGEN, 89),
 			new FluidStack(Fluids.GAS, 8),
 			new FluidStack(Fluids.UNSATURATEDS, 2),
 			new FluidStack(Fluids.HYDROGEN, 1)
@@ -91,8 +91,8 @@ public class CryoRecipes extends SerializableRecipe {
 		recipes.put(Fluids.EVEAIR, new Quartet<>(
 			new FluidStack(Fluids.CARBONDIOXIDE, 96),
 			new FluidStack(Fluids.NITROGEN, 3),
-			new FluidStack(Fluids.SOURGAS, 1), //I'll add SULFUR_DIOXIDE later
-			new FluidStack(Fluids.ARGON, 1)
+			new FluidStack(Fluids.SOURGAS, 1), // sulfur-bearing trace-gas abstraction
+			new FluidStack(Fluids.NONE, 0)
 		));
 
 		//Mars
@@ -100,26 +100,20 @@ public class CryoRecipes extends SerializableRecipe {
 			new FluidStack(Fluids.CARBONDIOXIDE, 95),
 			new FluidStack(Fluids.NITROGEN, 3),
 			new FluidStack(Fluids.ARGON, 2),
-			new FluidStack(Fluids.OXYGEN, 1)
+			new FluidStack(Fluids.NONE, 0)
 		));
 
 		//brine -> iodine brine + salt water (which is just brine...)
 		recipes.put(Fluids.BRINE, new Quartet<>(
-			new FluidStack(Fluids.WATER, 70),
+			new FluidStack(Fluids.WATER, 69),
 			new FluidStack(Fluids.IODINE_BRINE, 10),
 			new FluidStack(Fluids.BRINE, 20), //salt water = brine
 			new FluidStack(Fluids.BROMINE, 1)
 		));
 
-		//helium 4 production non retarded:
-		//recipes.put(Fluids.GAS, new Quartet<>(
-		//	new FluidStack(Fluids.GAS, 10),
-		//	new FluidStack(Fluids.HELIUM4, 1),
-		//	new FluidStack(Fluids.GAS, 70), //methane
-		//	new FluidStack(Fluids.HYDROGEN, 27)
-		//	//new FluidStack(Fluids.PROPANE, 100),
-		//	//new FluidStack(Fluids.BUTANE, 50) //DAMMIT BOBBY I DONT FEEL LIKE ADDING ALL THAT RIGHT NOW
-		//));
+
+		// Natural-gas fractionation abstraction; helium is a trace recovery stream.
+
 		recipes.put(Fluids.GAS, new Quartet<>(
 			new FluidStack(Fluids.GAS, 85),
 			new FluidStack(Fluids.HYDROGEN, 10),

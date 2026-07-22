@@ -27,110 +27,48 @@ public class ExposureChamberRecipes extends SerializableRecipe {
 
 	@Override
 	public void registerDefaults() {
-		//recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_higgs), new OreDictStack(U.ingot()), new ItemStack(ModItems.ingot_schraranium)));
-		//recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_higgs), new OreDictStack(U238.ingot()), new ItemStack(ModItems.ingot_schrabidium)));
-		//die; oh this machine no longer has a use. Great so what are exposure chambers used for in real life?
-		//recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_dark), new OreDictStack(PU.ingot()), new ItemStack(ModItems.ingot_euphemium)));
-		//recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_sparkticle), new OreDictStack(SBD.ingot()), new ItemStack(ModItems.ingot_dineutronium)));
+		/* The chamber consumes particle capsules as an irradiation source. */
 
-		//item.particle_aelectron.name=Positron Capsule
-		//item.particle_amat.name=Antimatter Capsule
-		//item.particle_aproton.name=Antiproton Capsule
-		//item.particle_aschrab.name=Anti Unbihexium Capsule
-		//item.particle_copper.name=Copper Ion Capsule
-		//item.particle_dark.name=Dark Matter Capsule
-		//item.particle_digamma.name=§cThe Digamma Particle§r
-		//item.particle_empty.name=Empty Particle Capsule
-		//item.particle_higgs.name=Higgs Boson Capsule
-		//item.particle_hydrogen.name=Hydrogen Ion Capsule
-		//item.particle_lead.name=Lead Ion Capsule
-		//item.particle_lutece.name=Lutece Quasiparticle
-		//item.particle_muon.name=Muon Capsule
-		//item.particle_sparkticle.name=Sparkticle Capsule
-		//item.particle_strange.name=Strange Quark Capsule
-		//item.particle_tachyon.name=Tachyon Capsule
-
-		//particle_neutron + cobalt_ingot → cobalt_60_ingot
-		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_aelectron), new OreDictStack(CO.ingot()), new ItemStack(ModItems.ingot_co60)));
-
-		//particle_neutron + uranium_ingot → enriched_uranium
-		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_aelectron), new OreDictStack(U.ingot()), new ItemStack(ModItems.ingot_uranium_fuel)));
-
-		//Semiconductor doping
-		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_copper), new OreDictStack(SI.nugget()),
-											  new ComparableStack(ModItems.circuit, 8, ItemCircuit.EnumCircuitType.CHIP_BISMOID).toStack()));
-
-		//particle_neutron + lithium → tritium
-		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_aelectron),
-											  new ComparableStack(new ItemStack(ModItems.rod_quad, 1,
-																				ItemBreedingRod.BreedingRodType.LITHIUM.ordinal())),
-											  new ItemStack(ModItems.rod_quad, 1,
-															ItemBreedingRod.BreedingRodType.TRITIUM.ordinal())));
-
-		////am 242 from am241
-		//		makeRecipe(new ComparableStack(ModItems.nugget_am241), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_am242), 4);
-		//
-		//		//Cf-252 + neutron -> Es-253
-		//		makeRecipe(new ComparableStack(ModItems.nugget_cf252), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_es253), 8);
-		//TODO transfer particle recipes from cyclotron to exposure chamber
+		// 59Co(n,gamma)60Co: natural cobalt stands in for its stable Co-59 isotope.
 		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
-											  new ComparableStack(ModItems.nugget_am241),
-											  new ItemStack(ModItems.nugget_am242)));
-		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
-											  new ComparableStack(ModItems.nugget_cf252),
-											  new ItemStack(ModItems.nugget_es253)));
+				new OreDictStack(CO.ingot()), new ItemStack(ModItems.ingot_co60)));
 
-		////plutonium 239 to 240 via neutron capture
-		//		makeRecipe(new ComparableStack(ModItems.nugget_pu239), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_pu240), 3);
-		//
-		//		//plutonium 240 to 241 via neutron capture
-		//		makeRecipe(new ComparableStack(ModItems.nugget_pu240), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_pu241), 4);
+		// 6Li(n,alpha)3H; the breeding-rod conversion abstracts retained tritium.
 		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
-											  new ComparableStack(ModItems.nugget_pu239),
-											  new ItemStack(ModItems.nugget_pu240)));
-		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
-											  new ComparableStack(ModItems.nugget_pu240),
-											  new ItemStack(ModItems.nugget_pu241)));
+				new ComparableStack(new ItemStack(ModItems.rod_quad, 1,
+						ItemBreedingRod.BreedingRodType.LITHIUM.ordinal())),
+				new ItemStack(ModItems.rod_quad, 1, ItemBreedingRod.BreedingRodType.TRITIUM.ordinal())));
 
-		//// Californium breeding chain
-		//		makeRecipe(new ComparableStack(ModItems.nugget_cf249),
-		//				   new ComparableStack(ModItems.particle_neutron),
-		//				   new ItemStack(ModItems.nugget_cf250), 5);
-		//
-		//		makeRecipe(new ComparableStack(ModItems.nugget_cf250),
-		//				   new ComparableStack(ModItems.particle_neutron),
-		//				   new ItemStack(ModItems.nugget_cf251), 6);
-		//
-		//		makeRecipe(new ComparableStack(ModItems.nugget_cf251),
-		//				   new ComparableStack(ModItems.particle_neutron),
-		//				   new ItemStack(ModItems.nugget_cf252), 7);
+		// U-238(n,gamma)U-239 -> Np-239 -> Pu-239 (compressed beta-decay chain).
 		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
-											  new ComparableStack(ModItems.nugget_cf249),
-											  new ItemStack(ModItems.nugget_cf250)));
+				new ComparableStack(ModItems.ingot_u238), new ItemStack(ModItems.ingot_pu239)));
+		// Th-232(n,gamma)Th-233 -> Pa-233 -> U-233 (compressed beta-decay chain).
 		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
-											  new ComparableStack(ModItems.nugget_cf250),
-											  new ItemStack(ModItems.nugget_cf251)));
-		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
-											  new ComparableStack(ModItems.nugget_cf251),
-											  new ItemStack(ModItems.nugget_cf252)));
+				new ComparableStack(ModItems.ingot_th232), new ItemStack(ModItems.ingot_u233)));
 
-		//// Cm-248 neutron activation -> Cf-249 (simplified breeder path)
-		//		makeRecipe(new ComparableStack(ModItems.ingot_cm247), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_cm248), 5);
-		//		makeRecipe(new ComparableStack(ModItems.ingot_cm248), new ComparableStack(ModItems.particle_neutron), new ItemStack(ModItems.nugget_cf249), 5);
+		// Incremental neutron-capture activation chains.
 		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
-											  new ComparableStack(ModItems.ingot_cm247),
-											  new ItemStack(ModItems.nugget_cm248)));
+				new ComparableStack(ModItems.nugget_am241), new ItemStack(ModItems.nugget_am242)));
 		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
-											  new ComparableStack(ModItems.ingot_cm248),
-											  new ItemStack(ModItems.nugget_cf249)));
-
-		//		makeRecipe(new ComparableStack(ModItems.neutron_reflector), new OreDictStack("dustBismuth"), new ItemStack(ModItems.powder_polonium), coA);
+				new ComparableStack(ModItems.nugget_cf252), new ItemStack(ModItems.nugget_es253)));
 		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
-											  new OreDictStack("dustBismuth"),
-											  new ItemStack(ModItems.powder_polonium)));
-
-
-
+				new ComparableStack(ModItems.nugget_pu239), new ItemStack(ModItems.nugget_pu240)));
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
+				new ComparableStack(ModItems.nugget_pu240), new ItemStack(ModItems.nugget_pu241)));
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
+				new ComparableStack(ModItems.nugget_cf249), new ItemStack(ModItems.nugget_cf250)));
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
+				new ComparableStack(ModItems.nugget_cf250), new ItemStack(ModItems.nugget_cf251)));
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
+				new ComparableStack(ModItems.nugget_cf251), new ItemStack(ModItems.nugget_cf252)));
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
+				new ComparableStack(ModItems.ingot_cm247), new ItemStack(ModItems.ingot_cm248)));
+		// Cm-248 capture followed by short beta decays is compressed to Cf-249.
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
+				new ComparableStack(ModItems.ingot_cm248), new ItemStack(ModItems.nugget_cf249)));
+		// 209Bi(n,gamma)210Bi -> 210Po; natural bismuth is the target abstraction.
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
+				new OreDictStack("dustBismuth"), new ItemStack(ModItems.powder_polonium)));
 	}
 
 	public static ExposureChamberRecipe getRecipe(ItemStack particle, ItemStack input) {
