@@ -48,7 +48,8 @@ import net.minecraftforge.oredict.OreDictionary;
 //...right?
 public class CrystallizerRecipes extends SerializableRecipe {
 
-	//ORE ACIDIZER/LEACHING REACTOR
+	// This implementation accepts one solid and one process fluid and returns one solid.
+	// It therefore abstracts acid-assisted leaching followed by crystallized concentrate recovery, not generic casting.
 
 	//'Object' is either a ComparableStack or the key for the ore dict
 	private static HashMap<Pair<Object, FluidType>, CrystallizerRecipe> recipes = new HashMap();
@@ -72,7 +73,7 @@ public class CrystallizerRecipes extends SerializableRecipe {
 		FluidStack ammonia = new FluidStack(Fluids.AMMONIA, 500);
 
 
-		//real bullshit:
+		// Acid-assisted mineral recovery abstractions: the output ore is a recoverable mineral concentrate, not newly-created metal.
 
 		//Hydrometallurgy:
 		//chalcopyrite

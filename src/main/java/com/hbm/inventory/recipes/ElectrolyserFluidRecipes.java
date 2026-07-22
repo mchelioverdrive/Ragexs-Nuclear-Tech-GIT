@@ -24,26 +24,21 @@ public class ElectrolyserFluidRecipes extends SerializableRecipe {
 
 	@Override
 	public void registerDefaults() {
-		recipes.put(Fluids.WATER, new ElectrolysisRecipe(2_000, new FluidStack(Fluids.HYDROGEN, 200), new FluidStack(Fluids.OXYGEN, 200), 10));
-		recipes.put(Fluids.HEAVYWATER, new ElectrolysisRecipe(2_000, new FluidStack(Fluids.DEUTERIUM, 200), new FluidStack(Fluids.OXYGEN, 200), 10));
+		// Gas fluid units are volume-like batches: electrolysis therefore keeps the 2:1 hydrogen/deuterium to oxygen ratio.
+		recipes.put(Fluids.WATER, new ElectrolysisRecipe(2_000, new FluidStack(Fluids.HYDROGEN, 400), new FluidStack(Fluids.OXYGEN, 200), 10));
+		recipes.put(Fluids.HEAVYWATER, new ElectrolysisRecipe(2_000, new FluidStack(Fluids.DEUTERIUM, 400), new FluidStack(Fluids.OXYGEN, 200), 10));
 		recipes.put(Fluids.VITRIOL, new ElectrolysisRecipe(1_000, new FluidStack(Fluids.SULFURIC_ACID, 500), new FluidStack(Fluids.CHLORINE, 500), new ItemStack(ModItems.powder_iron), new ItemStack(ModItems.ingot_mercury)));
 		recipes.put(Fluids.SLOP, new ElectrolysisRecipe(1_000, new FluidStack(Fluids.MERCURY, 250), new FluidStack(Fluids.NONE, 0), new ItemStack(ModItems.niter, 2), new ItemStack(ModItems.powder_limestone, 2), new ItemStack(ModItems.sulfur)));
 
-		//recipes.put(Fluids.POTASSIUM_CHLORIDE, new ElectrolysisRecipe(250, new FluidStack(Fluids.CHLORINE, 125), new FluidStack(Fluids.HYDROGEN, 50)));
-		//JUST FUCKING KIDDING LOOOLLLL IT'S ACTUALLY POTASSIUM HYDROXIDE AND ???????????????????????????? I DONT EVEN FUCKING KNOW ANYMORE THIS IS CANCER
-		recipes.put(Fluids.POTASSIUM_CHLORIDE, new ElectrolysisRecipe(250, new FluidStack(Fluids.CHLORINE, 125), new FluidStack(Fluids.POTASSIUM_HYDROXIDE, 125)));
-		recipes.put(Fluids.CALCIUM_CHLORIDE, new ElectrolysisRecipe(250, new FluidStack(Fluids.CHLORINE, 125), new FluidStack(Fluids.CALCIUM_SOLUTION, 125)));
+		// Aqueous chloride electrolysis releases chlorine and hydrogen. The two-output machine cannot also retain lye;
+		// sodium hydroxide remains a separate chemical-plant product rather than incorrectly yielding alkali metal here.
+		recipes.put(Fluids.BRINE, new ElectrolysisRecipe(1_000, new FluidStack(Fluids.CHLORINE, 250), new FluidStack(Fluids.HYDROGEN, 250)));
+		recipes.put(Fluids.POTASSIUM_CHLORIDE, new ElectrolysisRecipe(1_000, new FluidStack(Fluids.CHLORINE, 250), new FluidStack(Fluids.HYDROGEN, 250)));
 
 		//molten salt -> 2sodium and 2chlorine
 		recipes.put(Fluids.MOLTEN_SALT, new ElectrolysisRecipe(1_000, new FluidStack(Fluids.SODIUM, 500), new FluidStack(Fluids.CHLORINE, 500)));
 
-		//CACL2 -> 2Ca + Cl2
-		recipes.put(Fluids.CACL2, new ElectrolysisRecipe(
-			250,
-			new FluidStack(Fluids.CHLORINE, 500), // fluid output 1
-			new FluidStack(Fluids.NONE, 0),       // fluid output 2 (unused)
-			new ItemStack(ModItems.ingot_calcium, 1) // item output 1
-		));
+		// CACL2 is an aqueous processing liquor, not a molten calcium-metal feed; calcium remains supplied by its existing thermal route.
 
 		recipes.put(Fluids.MOLTEN_STRONTIUM_CHLORIDE,
 			new ElectrolysisRecipe(
@@ -53,7 +48,7 @@ public class ElectrolyserFluidRecipes extends SerializableRecipe {
 				new ItemStack(ModItems.powder_strontium, 1)
 			));
 
-		//RHODIUM_SOLUTION -> rhodium
+		// Electrochemical recovery from chloride-bearing refinery solutions.
 		recipes.put(Fluids.RHODIUM_SOLUTION,
 					new ElectrolysisRecipe(
 						1000,
@@ -70,6 +65,7 @@ public class ElectrolyserFluidRecipes extends SerializableRecipe {
 						new ItemStack(ModItems.powder_iridium, 1)
 					));
 
+		// This is the mod's coarse anhydrous fluoride-electrolyte abstraction. It deliberately is not a water electrolysis recipe.
 		recipes.put(Fluids.HYDROFLUORIC_ACID,
 					new ElectrolysisRecipe(
 						1000,
@@ -140,7 +136,7 @@ public class ElectrolyserFluidRecipes extends SerializableRecipe {
 		FluidStack output2 = this.readFluidStack(obj.get("output2").getAsJsonArray());
 
 		int duration = 20;
-		if(obj.has("duraion")) duration = obj.get("duration").getAsInt();
+		if(obj.has("duration")) duration = obj.get("duration").getAsInt();
 
 		ItemStack[] byproducts = new ItemStack[0];
 		if(obj.has("byproducts")) byproducts = this.readItemStackArray(obj.get("byproducts").getAsJsonArray());

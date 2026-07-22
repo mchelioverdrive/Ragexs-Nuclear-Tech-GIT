@@ -241,12 +241,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 						new FluidStack(Fluids.NITRIC_ACID, 100))
 				.outputItems(new ItemStack(ModItems.rocket_fuel, 4)));
 
-		//do not remove this I know it's redundant but the electrolysis machine sucks and is late game for some fucking reason
-		recipes.add(new ChemRecipe(58, "ELECTROLYSIS", 150)
-						.inputFluids(new FluidStack(Fluids.WATER, 4000))
-						.outputFluids(
-							new FluidStack(Fluids.HYDROGEN, 400),
-							new FluidStack(Fluids.OXYGEN, 400)));
+		// Recipe 58 was direct water electrolysis and is intentionally retired: use the fluid electrolyser.
 
 		recipes.add(new ChemRecipe(59, "XENON", 250, 1)
 				.inputFluids(new FluidStack(Fluids.NONE, 0))
@@ -1056,22 +1051,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 						.outputItems(new ItemStack(ModItems.gypsum, 4)) //should be calcium sulfate/gypsum? idk I'm just autofilling for now.
 		);
 
-		//salt + water + power → chlorine + hydrogen + lye
-		recipes.add(new ChemRecipe(1063, "CHLORINE_PRODUCTION", 130)
-						.inputItems(new ComparableStack(ModItems.itemsalt, 1))
-						.inputFluids(
-							new FluidStack(Fluids.WATER, 1000),
-							new FluidStack(Fluids.OXYGEN, 500)
-						)
-						//.oxygenConsumption = 500 // consumes oxygen from the atmosphere to prevent infinite loops with water electrolysis
-						//that's great gpt but I'm not doing allat I'm just adding oxygen fluid in input
-						.outputFluids(
-							new FluidStack(Fluids.CHLORINE, 1000),
-							new FluidStack(Fluids.HYDROGEN, 1000)
-							//new FluidStack(Fluids.SODIUM_HYDROXIDE, 1000)
-						)
-						//.outputItems(new ItemStack(ModItems.sodium_hydroxide, 1))
-		);
+		// Recipe 1063 was direct chlor-alkali electrolysis and is intentionally retired: use brine in the fluid electrolyser.
 
 		//chlorocalcite from calcium chloride and potassium chloride
 		recipes.add(new ChemRecipe(1064, "CHLOROCALCITE", 100)
