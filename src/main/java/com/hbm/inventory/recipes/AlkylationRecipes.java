@@ -22,28 +22,11 @@ public class AlkylationRecipes extends SerializableRecipe {
 
 	@Override
 	public void registerDefaults() {
-		// Useful halogenation recipes
-		recipes.put(Fluids.CHLOROMETHANE, new Triplet<>( // Alkylation via halogenated methane
-			new FluidStack(Fluids.NONE, 0),
-			new FluidStack(Fluids.UNSATURATEDS, 75),
-			new FluidStack(Fluids.CHLORINE, 25)
-		));
-		recipes.put(Fluids.UNSATURATEDS, new Triplet<>( // iron oxide catalyst in the unit + heat produces cyclic chains
-			new FluidStack(Fluids.NONE, 0),
-			new FluidStack(Fluids.AROMATICS, 70),
-			new FluidStack(Fluids.PETROLEUM, 30)
-		));
-		recipes.put(Fluids.AROMATICS, new Triplet<>( // Dichloromethane triggers a further alkylation process, creating high-octane aromatics!
-			new FluidStack(Fluids.RADIOSOLVENT, 40),
-			new FluidStack(Fluids.XYLENE, 100),
-			new FluidStack(Fluids.CHLORINE, 10) // Chlorine is preserved in all, but you'll need to re-irradiate here 
-		));
-		
-		// Real world alkylation unit recipes
-		recipes.put(Fluids.PETROLEUM, new Triplet<>( // Alkys are generally used to turn isobutane into gasoline
-			new FluidStack(Fluids.SULFURIC_ACID, 50), // "significant volumes" of sulfuric acid are required
-			new FluidStack(Fluids.LIGHTOIL, 50), // but the output is highly useful!
-			new FluidStack(Fluids.PEROXIDE, 20) // "dehydrogenated sulfuric acid", aka we don't have that so sulfuric precursor, add water and sulfur to get a full loop
+		// The two input tanks model olefin feed plus LPG-range isobutane; the unit makes alkylate.
+		recipes.put(Fluids.UNSATURATEDS, new Triplet<>(
+			new FluidStack(Fluids.LPG, 100),
+			new FluidStack(Fluids.REFORMATE, 170),
+			new FluidStack(Fluids.SOURGAS, 10)
 		));
 	}
 	

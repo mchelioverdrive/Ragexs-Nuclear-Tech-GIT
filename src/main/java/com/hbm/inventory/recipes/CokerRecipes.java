@@ -29,6 +29,18 @@ public class CokerRecipes extends SerializableRecipe {
 
 	@Override
 	public void registerDefaults() {
+		/*
+		 * Keep delayed coking a residue conversion. The legacy auto-registration below
+		 * is intentionally disabled: it accepted finished fuels based only on heat value.
+		 */
+		recipes.clear();
+		registerRecipe(HEAVYOIL, 12_000, DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), new FluidStack(OIL_COKER, 1_200));
+		registerRecipe(HEAVYOIL_VACUUM, 12_000, DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), new FluidStack(OIL_COKER, 1_200));
+		registerRecipe(SMEAR, 10_000, DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), new FluidStack(OIL_COKER, 1_000));
+		registerRecipe(COALCREOSOTE, 10_000, DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), new FluidStack(NAPHTHA_COKER, 1_000));
+		registerRecipe(RECLAIMED, 10_000, DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), new FluidStack(NAPHTHA_COKER, 1_000));
+		registerRecipe(BITUMEN, 16_000, DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), new FluidStack(OIL_COKER, 1_600));
+		if(false) { // legacy non-coker conversions retained for JSON compatibility, never registered by default
 
 		registerAuto(HEAVYOIL,				OIL_COKER);
 		registerAuto(HEAVYOIL_VACUUM,		REFORMATE);
@@ -68,6 +80,7 @@ public class CokerRecipes extends SerializableRecipe {
 		registerRecipe(VITRIOL, 4000, new ItemStack(ModItems.powder_iron), new FluidStack(SULFURIC_ACID, 500));
 		registerRecipe(BROMINE, 1_000, new ItemStack(ModItems.powder_bromine, 1), new FluidStack(GAS, 500));
 		registerRecipe(SCUTTERBLOOD, 32_000, DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), new FluidStack(GAS_COKER, 3_200));
+		}
 	}
 
 	private static void registerAuto(FluidType fluid, FluidType type) {

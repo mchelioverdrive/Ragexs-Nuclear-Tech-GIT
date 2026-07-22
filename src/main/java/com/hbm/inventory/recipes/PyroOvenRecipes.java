@@ -36,9 +36,11 @@ public class PyroOvenRecipes extends SerializableRecipe {
 
 	@Override
 	public void registerDefaults() {
+		/* Pyrolysis handles solid feed decomposition. Do not also register it as a
+		 * universal liquid-to-solid-fuel press; that fallback belongs to the solidifier. */
 
 		//solid fuel
-		registerSFAuto(SMEAR);
+		/*registerSFAuto(SMEAR);
 		registerSFAuto(HEATINGOIL);
 		registerSFAuto(HEATINGOIL_VACUUM);
 		registerSFAuto(RECLAIMED);
@@ -64,7 +66,7 @@ public class PyroOvenRecipes extends SerializableRecipe {
 		registerSFAuto(UNSATURATEDS);
 		registerSFAuto(REFORMATE);
 		registerSFAuto(XYLENE);
-		registerSFAuto(BALEFIRE, 24_000_000L, ModItems.solid_fuel_bf);
+		registerSFAuto(BALEFIRE, 24_000_000L, ModItems.solid_fuel_bf);*/
 
 		//bedrock ores
 
@@ -104,7 +106,7 @@ public class PyroOvenRecipes extends SerializableRecipe {
 		recipes.add(new PyroOvenRecipe(100)
 				.in(new FluidStack(Fluids.HYDROGEN, 250)).in(new OreDictStack(ANY_COKE.gem()))
 				.out(new FluidStack(Fluids.HEAVYOIL, 1_000)));
-		//coalgas from coal
+		/* coal gas used to consume heavy oil and coal, creating a backwards heavy-oil-to-gas shortcut.
 		recipes.add(new PyroOvenRecipe(50)
 				.in(new FluidStack(Fluids.HEAVYOIL, 500)).in(new OreDictStack(COAL.gem()))
 				.out(new FluidStack(Fluids.COALGAS, 1_000)));
@@ -113,7 +115,7 @@ public class PyroOvenRecipes extends SerializableRecipe {
 				.out(new FluidStack(Fluids.COALGAS, 1_000)));
 		recipes.add(new PyroOvenRecipe(50)
 				.in(new FluidStack(Fluids.HEAVYOIL, 500)).in(new OreDictStack(ANY_COKE.gem()))
-				.out(new FluidStack(Fluids.COALGAS, 1_000)));
+				.out(new FluidStack(Fluids.COALGAS, 1_000)));*/
 		//refgas from coker gas
 		recipes.add(new PyroOvenRecipe(60)
 				.in(new FluidStack(GAS_COKER, 4_000))

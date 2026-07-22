@@ -22,45 +22,20 @@ public class ReformingRecipes extends SerializableRecipe {
 
 	@Override
 	public void registerDefaults() {
-		recipes.put(Fluids.HEATINGOIL, new Triplet(
-				new FluidStack(Fluids.NAPHTHA, 50),
-				new FluidStack(Fluids.PETROLEUM, 15),
-				new FluidStack(Fluids.HYDROGEN, 10)
-				));
 		recipes.put(Fluids.NAPHTHA, new Triplet(
-				new FluidStack(Fluids.REFORMATE, 50),
-				new FluidStack(Fluids.PETROLEUM, 15),
+				new FluidStack(Fluids.REFORMATE, 75),
+				new FluidStack(Fluids.REFORMGAS, 15),
 				new FluidStack(Fluids.HYDROGEN, 10)
 				));
 		recipes.put(Fluids.NAPHTHA_CRACK, new Triplet(
-				new FluidStack(Fluids.REFORMATE, 50),
-				new FluidStack(Fluids.AROMATICS, 10),
+				new FluidStack(Fluids.REFORMATE, 70),
+				new FluidStack(Fluids.REFORMGAS, 20),
 				new FluidStack(Fluids.HYDROGEN, 5)
 				));
 		recipes.put(Fluids.NAPHTHA_COKER, new Triplet(
-				new FluidStack(Fluids.REFORMATE, 50),
+				new FluidStack(Fluids.REFORMATE, 70),
 				new FluidStack(Fluids.REFORMGAS, 10),
 				new FluidStack(Fluids.HYDROGEN, 5)
-				));
-		recipes.put(Fluids.LIGHTOIL, new Triplet(
-				new FluidStack(Fluids.AROMATICS, 50),
-				new FluidStack(Fluids.REFORMGAS, 10),
-				new FluidStack(Fluids.HYDROGEN, 15)
-				));
-		recipes.put(Fluids.LIGHTOIL_CRACK, new Triplet(
-				new FluidStack(Fluids.AROMATICS, 50),
-				new FluidStack(Fluids.REFORMGAS, 5),
-				new FluidStack(Fluids.HYDROGEN, 20)
-				));
-		recipes.put(Fluids.PETROLEUM, new Triplet(
-				new FluidStack(Fluids.UNSATURATEDS, 85),
-				new FluidStack(Fluids.REFORMGAS, 10),
-				new FluidStack(Fluids.HYDROGEN, 5)
-				));
-		recipes.put(Fluids.SOURGAS, new Triplet(
-				new FluidStack(Fluids.SULFURIC_ACID, 75),
-				new FluidStack(Fluids.PETROLEUM, 10),
-				new FluidStack(Fluids.HYDROGEN, 15)
 				));
 		//recipes.put(Fluids.BIOFUEL, new Triplet(
 		//		new FluidStack(Fluids.TEA, 50),

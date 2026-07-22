@@ -93,34 +93,35 @@ public class SolidificationRecipes extends SerializableRecipe {
 
 		registerRecipe(BALEFIRE,		250,			ModItems.solid_fuel_bf);
 
+		// Manufactured solid fuel is a residue-disposal route, not literal freezing of light fuels or gases.
 		registerSFAuto(SMEAR);
-		registerSFAuto(HEATINGOIL);
+		// registerSFAuto(HEATINGOIL); // retain heating oil as a finished liquid fuel
 		registerSFAuto(HEATINGOIL_VACUUM);
 		registerSFAuto(RECLAIMED);
-		registerSFAuto(PETROIL);
-		registerSFAuto(NAPHTHA);
-		registerSFAuto(NAPHTHA_CRACK);
-		registerSFAuto(DIESEL);
+		// registerSFAuto(PETROIL);
+		// registerSFAuto(NAPHTHA);
+		// registerSFAuto(NAPHTHA_CRACK);
+		// registerSFAuto(DIESEL);
 		registerSFAuto(DIESEL_REFORM);
 		registerSFAuto(DIESEL_CRACK);
 		registerSFAuto(DIESEL_CRACK_REFORM);
 		registerSFAuto(LIGHTOIL);
 		registerSFAuto(LIGHTOIL_CRACK);
 		registerSFAuto(LIGHTOIL_VACUUM);
-		registerSFAuto(KEROSENE);
+		// registerSFAuto(KEROSENE);
 		registerSFAuto(KEROSENE_REFORM);
 		//registerSFAuto(GAS);
-		registerSFAuto(SOURGAS);
-		registerSFAuto(REFORMGAS);
-		registerSFAuto(SYNGAS);
-		registerSFAuto(PETROLEUM);
-		registerSFAuto(LPG);
+		// registerSFAuto(SOURGAS);
+		// registerSFAuto(REFORMGAS);
+		// registerSFAuto(SYNGAS);
+		// registerSFAuto(PETROLEUM);
+		// registerSFAuto(LPG);
 		//registerSFAuto(BIOGAS);
 		registerSFAuto(BIOFUEL);
-		registerSFAuto(AROMATICS);
-		registerSFAuto(UNSATURATEDS);
-		registerSFAuto(REFORMATE);
-		registerSFAuto(XYLENE);
+		// registerSFAuto(AROMATICS);
+		// registerSFAuto(UNSATURATEDS);
+		// registerSFAuto(REFORMATE);
+		// registerSFAuto(XYLENE);
 		registerSFAuto(BALEFIRE, 24_000_000L, ModItems.solid_fuel_bf); //holy shit this is energy dense*/
 
 		//todo: potassium powder
