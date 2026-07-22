@@ -12,6 +12,7 @@ import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.ModItems;
 import com.hbm.tileentity.machine.TileEntityHadron.EnumHadronState;
 
+import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 
 public class HadronRecipes extends SerializableRecipe {
@@ -35,12 +36,14 @@ public class HadronRecipes extends SerializableRecipe {
 	@Override
 	public void registerDefaults() {
 
+		//okay I don't know why we nuked the fucking recipes out of here, it's still a particle accelerator so we should be able to use it as such.
+
 		// 209Bi(alpha,2n)211At. The bismuth ingot is the natural-target
 		// abstraction; the astatine capsule represents a trace accelerator yield.
 		recipes.add(new HadronRecipe(
 			new ItemStack(ModItems.ingot_bismuth),
 			new ItemStack(ModItems.particle_helium),
-			100000,
+			225000,
 			new ItemStack(ModItems.particle_astatine),
 			new ItemStack(ModItems.particle_neutron, 2),
 			false
@@ -51,14 +54,84 @@ public class HadronRecipes extends SerializableRecipe {
 		 * conversion target. Antimatter and muon capsules are gameplay-scale
 		 * collision products, not a claim of practical bulk production.
 		 */
+		//recipes.add(new HadronRecipe(
+		//	new ItemStack(ModItems.ingot_tungsten),
+		//	new ItemStack(ModItems.particle_hydrogen),
+		//	150000,
+		//	new ItemStack(ModItems.particle_amat),
+		//	new ItemStack(ModItems.particle_muon),
+		//	false
+		//));
+		//if it's fictional why the fuck did you add it????
+
+		recipes.add(new HadronRecipe(
+			new ItemStack(ModItems.powder_lithium),
+			new ItemStack(ModItems.particle_hydrogen),
+			140000,
+			new ItemStack(ModItems.particle_neutron, 2),
+			new ItemStack(ModItems.particle_empty),
+			true
+		));
+
+		//recipes.add(new HadronRecipe(
+		//	new ItemStack(Items.coal),
+		//	new ItemStack(ModItems.particle_hydrogen),
+		//	50000,
+		//	new ItemStack(ModItems.particle_muon),
+		//	new ItemStack(ModItems.particle_neutron),
+		//	true
+		//));
+		//apparently this isn't physically valid
+
+		// High-energy proton spallation target.
+		// Represents pion production followed by pion decay into a muon.
 		recipes.add(new HadronRecipe(
 			new ItemStack(ModItems.ingot_tungsten),
 			new ItemStack(ModItems.particle_hydrogen),
-			150000,
-			new ItemStack(ModItems.particle_amat),
+			3000000,
 			new ItemStack(ModItems.particle_muon),
+			new ItemStack(ModItems.particle_neutron),
 			false
 		));
+
+		recipes.add(new HadronRecipe(
+			new ItemStack(ModItems.ingot_cobalt),
+			new ItemStack(ModItems.particle_neutron),
+			12000,
+			new ItemStack(ModItems.ingot_co60),
+			new ItemStack(ModItems.particle_empty),
+			true
+		));
+
+		recipes.add(new HadronRecipe(
+			new ItemStack(Items.gold_ingot),
+			new ItemStack(ModItems.particle_neutron),
+			15000,
+			new ItemStack(ModItems.nugget_au198),
+			new ItemStack(ModItems.particle_empty),
+			true
+		));
+
+		//I do not care enough to add intermediate decay bullshit
+		recipes.add(new HadronRecipe(
+			new ItemStack(ModItems.ingot_u238),
+			new ItemStack(ModItems.particle_neutron),
+			25000,
+			new ItemStack(ModItems.ingot_pu239),
+			new ItemStack(ModItems.particle_beta, 2),
+			false
+		));
+
+		//I do not care enough to add intermediate decay bullshitx2
+		recipes.add(new HadronRecipe(
+			new ItemStack(ModItems.ingot_th232),
+			new ItemStack(ModItems.particle_neutron),
+			25000,
+			new ItemStack(ModItems.ingot_u233),
+			new ItemStack(ModItems.particle_beta, 2),
+			false
+		));
+
 	}
 
 

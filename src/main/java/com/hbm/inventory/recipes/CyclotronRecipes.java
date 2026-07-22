@@ -39,10 +39,28 @@ public class CyclotronRecipes extends SerializableRecipe {
 		 * consumed as an irradiation source.
 		 */
 
+		//hey how about we stop removing shit without a good replacement yeah
+		makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack("dustBeryllium"), new ItemStack(ModItems.part_carbon), 6); // Li + Be → C (simplified)
+		makeRecipe(new ComparableStack(ModItems.part_copper), new OreDictStack("dustNickel"), new ItemStack(ModItems.powder_cobalt), 1);
+		makeRecipe(new ComparableStack(ModItems.part_copper), new OreDictStack("dustZinc"), new ItemStack(ModItems.powder_gallium), 1);
+		makeRecipe(new ComparableStack(ModItems.neutron_reflector), new OreDictStack("dustBismuth"), new ItemStack(ModItems.powder_polonium), 1);
+		makeRecipe(
+			new ComparableStack(ModItems.powder_uranium),
+			new ComparableStack(Items.redstone),
+			new ItemStack(ModItems.powder_actinium),
+			2
+		);
+		makeRecipe(new ComparableStack(ModItems.powder_uranium), new OreDictStack("nuggetUranium238"), new ItemStack(ModItems.nugget_pu239), 5);
+		makeRecipe(new ComparableStack(ModItems.ingot_actinium), new OreDictStack("dustActinium227"), new ItemStack(ModItems.francium_ingot), 3);
+		makeRecipe(new ComparableStack(ModItems.nugget_cf249), new ComparableStack(ModItems.powder_poison), new ItemStack(ModItems.dubnium_nugget), 6);
+		makeRecipe(new ComparableStack(ModItems.nugget_pu241), new ComparableStack(Items.redstone), new ItemStack(ModItems.nugget_am241), 4);
+
+
 		// Cf-249 + C-12 -> Rf + xn. Carbon is the existing C-12 ion abstraction.
 		// The nugget output represents the very small heavy-ion fusion yield.
 		makeRecipe(new ComparableStack(ModItems.part_carbon), new ComparableStack(ModItems.nugget_cf249),
 				new ItemStack(ModItems.rutherfordium_nugget), 4);
+		//so I guess the cyclotron just doesn't have a use anymore according to codex?
 	}
 
 	private static void makeRecipe(ComparableStack part, AStack in, ItemStack out, int amat) {

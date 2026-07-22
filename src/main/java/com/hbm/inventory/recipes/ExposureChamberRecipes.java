@@ -69,6 +69,14 @@ public class ExposureChamberRecipes extends SerializableRecipe {
 		// 209Bi(n,gamma)210Bi -> 210Po; natural bismuth is the target abstraction.
 		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_neutron),
 				new OreDictStack("dustBismuth"), new ItemStack(ModItems.powder_polonium)));
+
+		//why were these removed???
+		//this is scientifically possible and highly researched
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_aelectron), new OreDictStack(U.ingot()), new ItemStack(ModItems.ingot_uranium_fuel)));
+		//Semiconductor doping (THIS IS A REAL PROCESS!!!)
+		recipes.add(new ExposureChamberRecipe(new ComparableStack(ModItems.particle_copper), new OreDictStack(SI.nugget()),
+											  new ComparableStack(ModItems.circuit, 8, ItemCircuit.EnumCircuitType.CHIP_BISMOID).toStack()));
+
 	}
 
 	public static ExposureChamberRecipe getRecipe(ItemStack particle, ItemStack input) {
