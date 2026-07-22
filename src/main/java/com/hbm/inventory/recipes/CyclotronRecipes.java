@@ -29,63 +29,6 @@ public class CyclotronRecipes extends SerializableRecipe {
 
 	public static HashMap<Pair<ComparableStack, AStack>, Pair<ItemStack, Integer>> recipes = new HashMap();
 
-	//pre existing unrealistic dogshit A:
-
-	//makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack("dustLithium"), new ItemStack(ModItems.powder_beryllium), liA);
-	//makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack("dustBeryllium"), new ItemStack(ModItems.powder_boron), liA);
-	//makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack("dustBoron"), new ItemStack(ModItems.powder_coal), liA);
-	//makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack("dustNetherQuartz"), new ItemStack(ModItems.powder_fire), liA);
-	//makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack("dustPhosphorus"), new ItemStack(ModItems.sulfur), liA);
-	//makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack("dustIron"), new ItemStack(ModItems.powder_cobalt), liA);
-	//makeRecipe(new ComparableStack(ModItems.part_lithium), new ComparableStack(ModItems.powder_strontium), new ItemStack(ModItems.powder_zirconium), liA);
-	//makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack("dustGold"), new ItemStack(ModItems.ingot_mercury), liA);
-	//makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack("dustPolonium"), new ItemStack(ModItems.powder_astatine), liA);
-	//makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack("dustLanthanium"), new ItemStack(ModItems.powder_cerium), liA);
-	//makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack("dustActinium"), new ItemStack(ModItems.powder_thorium), liA);
-	//makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack(U.dust()), new ItemStack(ModItems.powder_neptunium), liA);
-	//makeRecipe(new ComparableStack(ModItems.part_lithium), new OreDictStack(NP237.dust()), new ItemStack(ModItems.powder_plutonium), liA);
-	//makeRecipe(new ComparableStack(ModItems.part_lithium), new ComparableStack(ModItems.powder_reiium), new ItemStack(ModItems.powder_weidanium), liA);
-
-	//makeRecipe(new ComparableStack(ModItems.part_beryllium), new OreDictStack("dustCarbon"), new ItemStack(ModItems.powder_oxygen), 75); // Be + C → O
-	//makeRecipe(new ComparableStack(ModItems.part_beryllium), new OreDictStack("dustNitrogen"), new ItemStack(ModItems.powder_fluorine), 80); // Be + N → F
-
-	//pre existing unrealistic dogshit B:
-
-	//makeRecipe(new ComparableStack(ModItems.part_beryllium), new OreDictStack("dustLithium"), new ItemStack(ModItems.powder_boron), beA);
-	//makeRecipe(new ComparableStack(ModItems.part_beryllium), new OreDictStack("dustNetherQuartz"), new ItemStack(ModItems.sulfur), beA);
-	//makeRecipe(new ComparableStack(ModItems.part_beryllium), new OreDictStack("dustTitanium"), new ItemStack(ModItems.powder_iron), beA);
-	//makeRecipe(new ComparableStack(ModItems.part_beryllium), new OreDictStack("dustCobalt"), new ItemStack(ModItems.powder_copper), beA);
-	//makeRecipe(new ComparableStack(ModItems.part_beryllium), new ComparableStack(ModItems.powder_strontium), new ItemStack(ModItems.powder_niobium), beA);
-	//makeRecipe(new ComparableStack(ModItems.part_beryllium), new ComparableStack(ModItems.powder_cerium), new ItemStack(ModItems.powder_neodymium), beA);
-	//makeRecipe(new ComparableStack(ModItems.part_beryllium), new OreDictStack("dustThorium"), new ItemStack(ModItems.powder_uranium), beA);
-//pre existing unrealistic dogshit C:
-
-	//makeRecipe(new ComparableStack(ModItems.part_carbon), new OreDictStack("dustBoron"), new ItemStack(ModItems.powder_aluminium), caA);
-	//makeRecipe(new ComparableStack(ModItems.part_carbon), new OreDictStack("dustSulfur"), new ItemStack(ModItems.powder_titanium), caA);
-	//makeRecipe(new ComparableStack(ModItems.part_carbon), new OreDictStack("dustTitanium"), new ItemStack(ModItems.powder_cobalt), caA);
-	//makeRecipe(new ComparableStack(ModItems.part_carbon), new ComparableStack(ModItems.powder_caesium), new ItemStack(ModItems.powder_lanthanium), caA);
-	//makeRecipe(new ComparableStack(ModItems.part_carbon), new ComparableStack(ModItems.powder_neodymium), new ItemStack(ModItems.powder_gold), caA);
-	//makeRecipe(new ComparableStack(ModItems.part_carbon), new ComparableStack(ModItems.ingot_mercury), new ItemStack(ModItems.powder_polonium), caA);
-	//makeRecipe(new ComparableStack(ModItems.part_carbon), new OreDictStack(PB.dust()), new ItemStack(ModItems.powder_ra226),caA);
-	//makeRecipe(new ComparableStack(ModItems.part_carbon), new ComparableStack(ModItems.powder_astatine), new ItemStack(ModItems.powder_actinium), caA);
-//pre existing unrealistic dogshit D:
-
-	//makeRecipe(new ComparableStack(ModItems.part_copper), new OreDictStack("dustBeryllium"), new ItemStack(ModItems.powder_quartz), coA);
-	//makeRecipe(new ComparableStack(ModItems.part_copper), new OreDictStack("dustCoal"), new ItemStack(ModItems.powder_bromine), coA);
-	//makeRecipe(new ComparableStack(ModItems.part_copper), new OreDictStack("dustTitanium"), new ItemStack(ModItems.powder_strontium), coA);
-	//makeRecipe(new ComparableStack(ModItems.part_copper), new OreDictStack("dustIron"), new ItemStack(ModItems.powder_niobium), coA);
-	//makeRecipe(new ComparableStack(ModItems.part_copper), new ComparableStack(ModItems.powder_bromine), new ItemStack(ModItems.powder_iodine), coA);
-	//makeRecipe(new ComparableStack(ModItems.part_copper), new ComparableStack(ModItems.powder_strontium), new ItemStack(ModItems.powder_neodymium), coA);
-
-	//absolute nonsense dreampt up by the utterly insane
-	//makeRecipe(new ComparableStack(ModItems.part_copper), new ComparableStack(ModItems.powder_niobium), new ItemStack(ModItems.powder_caesium), coA);
-//this is just not fucking possible
-	//makeRecipe(new ComparableStack(ModItems.part_copper), new OreDictStack("dustGold"), new ItemStack(ModItems.powder_uranium), coA);
-//pre existing unrealistic dogshit E:
-
-	//makeRecipe(new ComparableStack(ModItems.part_plutonium), new OreDictStack("dustPhosphorus"), new ItemStack(ModItems.powder_tennessine), plA);
-	//makeRecipe(new ComparableStack(ModItems.part_plutonium), new OreDictStack(PU.dust()), new ItemStack(ModItems.powder_tennessine), plA);
-	//makeRecipe(new ComparableStack(ModItems.part_plutonium), new ComparableStack(ModItems.powder_tennessine), new ItemStack(ModItems.powder_reiium), plA);
 
 	//francium
 	//makeRecipe(new ComparableStack(ModItems.nugget_th232), new ComparableStack(ModItems.ingot_actinium), new ItemStack(ModItems.francium_ingot), coA);
@@ -161,7 +104,7 @@ public class CyclotronRecipes extends SerializableRecipe {
 
 		//rutherfordium
 		//graphite is our stand in for carbon-12
-		makeRecipe(new ComparableStack(ModItems.nugget_cf249), new ComparableStack(ModItems.ingot_graphite), new ItemStack(ModItems.rutherfordium_nugget), 4);
+		//makeRecipe(new ComparableStack(ModItems.nugget_cf249), new ComparableStack(ModItems.ingot_graphite), new ItemStack(ModItems.rutherfordium_nugget), 4);
 
 		//all neutron capture reactions moved to exposure chamber bc cyclotron doesn't preserve particle containers
 		// Cm-248 neutron activation -> Cf-249 (simplified breeder path)
@@ -193,6 +136,9 @@ public class CyclotronRecipes extends SerializableRecipe {
 		//americium 241 from plutonium 241
 		//should be decay but thats pain
 		makeRecipe(new ComparableStack(ModItems.nugget_pu241), new ComparableStack(Items.redstone), new ItemStack(ModItems.nugget_am241), 4);
+
+		makeRecipe(new ComparableStack(ModItems.part_carbon), new ComparableStack(ModItems.nugget_cf249),
+				   new ItemStack(ModItems.rutherfordium_nugget), 4);
 
 		//TODO gold -> more anti matter than all other reactions (the final number is antimatter fluid amount)
 
