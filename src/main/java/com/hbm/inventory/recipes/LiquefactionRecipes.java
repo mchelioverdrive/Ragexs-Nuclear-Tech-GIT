@@ -33,10 +33,8 @@ public class LiquefactionRecipes extends SerializableRecipe {
 	public void registerDefaults() {
 
 		//oil processing
-		recipes.put(COAL.gem(),										new FluidStack(100, Fluids.COALOIL));
-		recipes.put(COAL.dust(),									new FluidStack(100, Fluids.COALOIL));
-		recipes.put(LIGNITE.gem(),									new FluidStack(50, Fluids.COALOIL));
-		recipes.put(LIGNITE.dust(),									new FluidStack(50, Fluids.COALOIL));
+		// Coal is not a meltable crude-oil feed. Direct coal liquefaction is represented
+		// by the hydrogen-fed pyro-oven recipes, while this machine remains a physical liquefactor.
 		recipes.put(KEY_OIL_TAR,									new FluidStack(75, Fluids.BITUMEN));
 		recipes.put(KEY_CRACK_TAR,									new FluidStack(100, Fluids.BITUMEN));
 		recipes.put(KEY_COAL_TAR,									new FluidStack(50, Fluids.BITUMEN));

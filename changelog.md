@@ -183,3 +183,11 @@
 * Reworked the chemical plant's core oxidizer, acid/base, polymer, uranium-conversion, and coltan recipes so their feeds represent the relevant material families and their major ratios are coherent.
 * Removed duplicate water and heavy-water electrolysis recipes from the chemical plant; the dedicated electrolyser remains the production route.
 * Documented the deliberately compressed yellowcake-to-UF6, hydrazine, Kevlar, and coltan abstractions while preserving recipe IDs and the existing two-fluid/four-item machine limits.
+# Refinery recipe realism pass
+
+**Tracker:** `unironicpain` — petroleum and petrochemical processing audit
+
+* Made fractionation a boiling-range separation pass: heavy oil now supplies vacuum feed and residue, while naphtha is reserved for upgrading rather than being split into diesel and heating oil.
+* Restricted reforming to naphtha-derived feeds, added naphtha hydrotreating, and removed the refinery-gas-to-petroleum shortcut.
+* Replaced alkylation's halogenation/peroxide recipes with an olefin-plus-LPG alkylate abstraction.
+* Limited delayed coking to heavy residues, removed coal-as-meltable-oil recipes, and eliminated duplicated pyro-oven liquid-to-solid-fuel registrations.

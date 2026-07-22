@@ -35,16 +35,16 @@ public class HydrotreatingRecipes extends SerializableRecipe {
 			new FluidStack(Fluids.SOURGAS, 15)
 		));
 		
-		recipes.put(Fluids.GAS, new Triplet(
+		recipes.put(Fluids.NAPHTHA, new Triplet(
 			new FluidStack(Fluids.HYDROGEN, 5, 1),
-			new FluidStack(Fluids.PETROLEUM, 80),
-			new FluidStack(Fluids.SOURGAS, 15)
+			new FluidStack(Fluids.NAPHTHA_DS, 95),
+			new FluidStack(Fluids.SOURGAS, 5)
 		));
 		
 		recipes.put(Fluids.DIESEL_CRACK, new Triplet(
 			new FluidStack(Fluids.HYDROGEN, 10, 1),
-			new FluidStack(Fluids.DIESEL, 80),
-			new FluidStack(Fluids.SOURGAS, 30)
+			new FluidStack(Fluids.DIESEL, 90),
+			new FluidStack(Fluids.SOURGAS, 10)
 		));
 		
 		recipes.put(Fluids.DIESEL_CRACK_REFORM, new Triplet(
@@ -55,7 +55,7 @@ public class HydrotreatingRecipes extends SerializableRecipe {
 		
 		recipes.put(Fluids.COALOIL, new Triplet(
 			new FluidStack(Fluids.HYDROGEN, 10, 1),
-			new FluidStack(Fluids.COALGAS, 80),
+			new FluidStack(Fluids.OIL_DS, 85),
 			new FluidStack(Fluids.SOURGAS, 15)
 		));
 	}

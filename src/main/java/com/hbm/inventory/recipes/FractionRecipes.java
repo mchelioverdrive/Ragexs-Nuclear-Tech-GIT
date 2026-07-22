@@ -23,25 +23,21 @@ public class FractionRecipes extends SerializableRecipe {
 
 	@Override
 	public void registerDefaults() {
-		fractions.put(Fluids.HEAVYOIL,			new Pair(new FluidStack(Fluids.BITUMEN,					30),		new FluidStack(Fluids.SMEAR,				70)));
-		fractions.put(Fluids.HEAVYOIL_VACUUM,	new Pair(new FluidStack(Fluids.SMEAR,					40),		new FluidStack(Fluids.HEATINGOIL_VACUUM,	60)));
+		// Atmospheric and vacuum separation only split adjacent boiling ranges; liquid outputs total 100 mB.
+		fractions.put(Fluids.HEAVYOIL,			new Pair(new FluidStack(Fluids.HEAVYOIL_VACUUM,	70),	new FluidStack(Fluids.SMEAR,				30)));
+		fractions.put(Fluids.HEAVYOIL_VACUUM,	new Pair(new FluidStack(Fluids.HEATINGOIL_VACUUM,	60),	new FluidStack(Fluids.BITUMEN,			40)));
 		fractions.put(Fluids.SMEAR,				new Pair(new FluidStack(Fluids.HEATINGOIL,				60),		new FluidStack(Fluids.LUBRICANT,			40)));
-		fractions.put(Fluids.NAPHTHA,			new Pair(new FluidStack(Fluids.HEATINGOIL,				40),		new FluidStack(Fluids.DIESEL,				60)));
-		fractions.put(Fluids.NAPHTHA_DS,		new Pair(new FluidStack(Fluids.XYLENE,					60),		new FluidStack(Fluids.DIESEL_REFORM,		40)));
-		fractions.put(Fluids.NAPHTHA_CRACK,		new Pair(new FluidStack(Fluids.HEATINGOIL,				30),		new FluidStack(Fluids.DIESEL_CRACK,			70)));
-		fractions.put(Fluids.LIGHTOIL,			new Pair(new FluidStack(Fluids.DIESEL,					40),		new FluidStack(Fluids.KEROSENE,				60)));
-		fractions.put(Fluids.LIGHTOIL_DS,		new Pair(new FluidStack(Fluids.DIESEL_REFORM,			60),		new FluidStack(Fluids.KEROSENE_REFORM,		40)));
-		fractions.put(Fluids.LIGHTOIL_CRACK,	new Pair(new FluidStack(Fluids.KEROSENE,				70),		new FluidStack(Fluids.PETROLEUM,			30)));
-		fractions.put(Fluids.COALOIL,			new Pair(new FluidStack(Fluids.COALGAS,					30),		new FluidStack(Fluids.OIL,					70)));
+		fractions.put(Fluids.LIGHTOIL,			new Pair(new FluidStack(Fluids.DIESEL,					55),		new FluidStack(Fluids.KEROSENE,				45)));
+		fractions.put(Fluids.LIGHTOIL_DS,		new Pair(new FluidStack(Fluids.DIESEL,					55),		new FluidStack(Fluids.KEROSENE,				45)));
+		fractions.put(Fluids.COALOIL,			new Pair(new FluidStack(Fluids.OIL,					70),		new FluidStack(Fluids.COALCREOSOTE,			30)));
 		fractions.put(Fluids.COALCREOSOTE,		new Pair(new FluidStack(Fluids.COALOIL,					10),		new FluidStack(Fluids.BITUMEN,				90)));
 		fractions.put(Fluids.REFORMATE,			new Pair(new FluidStack(Fluids.AROMATICS,				40),		new FluidStack(Fluids.XYLENE,				60)));
 		fractions.put(Fluids.LIGHTOIL_VACUUM,	new Pair(new FluidStack(Fluids.KEROSENE,				70),		new FluidStack(Fluids.REFORMGAS,			30)));
 		fractions.put(Fluids.EGG,				new Pair(new FluidStack(Fluids.CHOLESTEROL,				50),		new FluidStack(Fluids.RADIOSOLVENT,			50)));
 		fractions.put(Fluids.OIL_COKER,			new Pair(new FluidStack(Fluids.CRACKOIL,				30),		new FluidStack(Fluids.HEATINGOIL,			70)));
 		fractions.put(Fluids.NAPHTHA_COKER,		new Pair(new FluidStack(Fluids.NAPHTHA_CRACK,			75),		new FluidStack(Fluids.LIGHTOIL_CRACK,		25)));
-		fractions.put(Fluids.GAS_COKER,			new Pair(new FluidStack(Fluids.AROMATICS,				25),		new FluidStack(Fluids.CARBONDIOXIDE,		75)));
 		fractions.put(Fluids.CHLOROCALCITE_MIX, new Pair(new FluidStack(Fluids.CHLOROCALCITE_CLEANED,	50),		new FluidStack(Fluids.COLLOID,				50)));
-		fractions.put(Fluids.METHYLENE,			new Pair(new FluidStack(Fluids.GAS,						70),		new FluidStack(Fluids.CARBONDIOXIDE,		45)));
+		fractions.put(Fluids.METHYLENE,			new Pair(new FluidStack(Fluids.GAS,						70),		new FluidStack(Fluids.CARBONDIOXIDE,		30)));
 		//fractions.put(Fluids.MORKINE,			new Pair(new FluidStack(Fluids.UNSATURATEDS,			40),		new FluidStack(Fluids.HYDROGEN,				25)));
 
 	}
