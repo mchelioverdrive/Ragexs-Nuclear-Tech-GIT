@@ -365,7 +365,6 @@ public class Fluids {
 		DIESEL =				new FluidType("DIESEL",				0xf2eed5, 1, 2, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0xFF2C2C)).addTraits(new FT_Flammable(200_000), new FT_Combustible(FuelGrade.HIGH, 500_000), LIQUID, P_FUEL);
 		LIGHTOIL =				new FluidType("LIGHTOIL",			0x8c7451, 1, 2, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0xB46B52)).addTraits(new FT_Flammable(200_000), new FT_Combustible(FuelGrade.MEDIUM, 500_000), LIQUID, P_FUEL);
 		KEROSENE =				new FluidType("KEROSENE",			0xffa5d2, 1, 2, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0xFF377D)).addTraits(new FT_Flammable(300_000), new FT_Combustible(FuelGrade.AERO, 1_250_000), LIQUID, P_FUEL, new FT_Rocket(301, 981000));
-		ROCKET_FUEL =			new FluidType("ROCKET_FUEL",		0x74633B, 1, 2, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0x74633B)).addTraits(new FT_Flammable(300_000), LIQUID);
 		GAS =					new FluidType("GAS",				0xfffeed, 1, 4, 1, EnumSymbol.NONE).addContainers(new CD_Gastank(0xFF4545, 0xFFE97F)).addTraits(new FT_Flammable(10_000), GASEOUS, P_GAS);
 		PETROLEUM = 			new FluidType("PETROLEUM",			0x7cb7c9, 1, 4, 1, EnumSymbol.NONE).addContainers(new CD_Gastank(0x5E7CFF, 0xFFE97F)).addTraits(new FT_Flammable(25_000), GASEOUS, P_GAS);
 		LPG =					new FluidType("LPG",				0x4747EA, 1, 3, 1, EnumSymbol.NONE).addTraits(new FT_Flammable(200_000), new FT_Combustible(FuelGrade.HIGH, 400_000), LIQUID, P_LIQUID_GAS);
@@ -583,6 +582,7 @@ public class Fluids {
 		KRYPTON_FLUORINE = new FluidType("KRYPTON_FLUORINE", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(GASEOUS, NOCON);
 		XENON_CHLORINE = new FluidType("XENON_CHLORINE", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(GASEOUS, NOCON);
 		HELIUM4_HOT =			new FluidType("HELIUM4_HOT", 0x99525E, 1, 0, 0, EnumSymbol.NONE).setTemp(750).addTraits(GASEOUS);
+		ROCKET_FUEL =			new FluidType("ROCKET_FUEL",		0x74633B, 1, 2, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0x74633B)).addTraits(new FT_Flammable(300_000), LIQUID);
 
 
 //I am getting really sick and tired of this retarded ass fluid system
@@ -853,6 +853,7 @@ public class Fluids {
 		metaOrder.add(KRYPTON_FLUORINE);
 		metaOrder.add(XENON_CHLORINE);
 		metaOrder.add(HELIUM4_HOT);
+		metaOrder.add(ROCKET_FUEL);
 
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!
