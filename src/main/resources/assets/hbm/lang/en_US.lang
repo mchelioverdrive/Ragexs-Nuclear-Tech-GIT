@@ -1616,6 +1616,7 @@ hbmfluid.air=Compressed Air
 hbmfluid.aromatics=Aromatic Hydrocarbons
 hbmfluid.aschrab=Antischrabidium
 hbmfluid.balefire=BF Rocket Fuel
+hbmfluid.rocket_fuel=Solid Rocket Fuel
 hbmfluid.blood=Blood
 hbmfluid.bloodgas=Blood Fuel
 hbmfluid.biofuel=Biofuel

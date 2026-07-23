@@ -241,7 +241,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputFluids(
 						new FluidStack(Fluids.PETROLEUM, 200, GeneralConfig.enable528 ? 1 : 0),
 						new FluidStack(Fluids.NITRIC_ACID, 100))
-				.outputItems(new ItemStack(ModItems.rocket_fuel, 4)));
+				.outputFluids(new FluidStack(Fluids.ROCKET_FUEL, 1_000)));
 
 		//if something says do not remove do not remove it
 
