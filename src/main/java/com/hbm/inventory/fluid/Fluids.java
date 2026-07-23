@@ -584,13 +584,12 @@ public class Fluids {
 		HELIUM4_HOT =			new FluidType("HELIUM4_HOT", 0x99525E, 1, 0, 0, EnumSymbol.NONE).setTemp(750).addTraits(GASEOUS);
 		ROCKET_FUEL =			new FluidType("ROCKET_FUEL",		0x74633B, 1, 2, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0x74633B)).addTraits(new FT_Flammable(300_000), LIQUID);
 
-
 //I am getting really sick and tired of this retarded ass fluid system
 
 
 		// ^ ^ ^ ^ ^ ^ ^ ^
 		//ADD NEW FLUIDS HERE
-		ROCKET_FUEL =			new FluidType("ROCKET_FUEL",		0x74633B, 1, 2, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0x74633B)).addTraits(new FT_Flammable(300_000), LIQUID);
+
 
 		File folder = MainRegistry.configHbmDir;
 		File customTypes = new File(folder.getAbsolutePath() + File.separatorChar + "hbmFluidTypes.json");
@@ -696,7 +695,6 @@ public class Fluids {
 		metaOrder.add(DIESEL_CRACK);
 		metaOrder.add(DIESEL_CRACK_REFORM);
 		metaOrder.add(KEROSENE);
-		metaOrder.add(ROCKET_FUEL);
 		metaOrder.add(KEROSENE_REFORM);
 		metaOrder.add(PETROIL);
 		metaOrder.add(PETROIL_LEADED);
