@@ -387,7 +387,7 @@ public class ItemCustomMissilePart extends Item {
 		case HYDRAZINE:
 			return Fluids.HYDRAZINE;
 		case SOLID:
-			return Fluids.NONE; // Requires non-fluid fuel
+			return Fluids.ROCKET_FUEL;
 		default:
 			return null;
 		}

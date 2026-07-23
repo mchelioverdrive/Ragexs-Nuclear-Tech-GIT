@@ -103,10 +103,6 @@ public class LaunchPadRocket extends BlockDummyable implements ILookOverlay, ITo
 			text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + tank.getTankType().getLocalizedName() + ": " + tank.getFill() + "/" + tank.getMaxFill() + "mB");
 		}
 
-		if(pad.maxSolidFuel > 0) {
-			text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + I18nUtil.resolveKey(ModItems.rocket_fuel.getUnlocalizedName() + ".name") + ": " + pad.solidFuel + "/" + pad.maxSolidFuel + "kg");
-		}
-
 		if(text.size() <= 1) return;
 
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);

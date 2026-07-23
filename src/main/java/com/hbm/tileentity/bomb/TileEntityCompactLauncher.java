@@ -52,8 +52,8 @@ public class TileEntityCompactLauncher extends TileEntityLoadedBase implements I
 
 	public long power;
 	public static final long maxPower = 100000;
-	public int solid;
-	public static final int maxSolid = 25000;
+	/** Legacy NBT migration only; solid propellant is now stored in tanks[0]. */
+	private int legacySolidFuel;
 	public FluidTank[] tanks;
 
 	public MissileStruct load;
@@ -163,9 +163,6 @@ public class TileEntityCompactLauncher extends TileEntityLoadedBase implements I
 		return (power * i) / maxPower;
 	}
 
-	public int getSolidScaled(int i) {
-		return (solid * i) / maxSolid;
-	}
 
 	@Override
 	public void updateEntity() {
@@ -174,16 +171,18 @@ public class TileEntityCompactLauncher extends TileEntityLoadedBase implements I
 
 			updateTypes();
 
+			MissileStruct loadedMissile = getStruct(slots[0]);
+			if(legacySolidFuel > 0 && loadedMissile != null && loadedMissile.fuselage != null &&
+					(FuelType) ((ItemCustomMissilePart) loadedMissile.fuselage).attributes[0] == FuelType.SOLID) {
+				tanks[0].setFill(Math.min(legacySolidFuel, tanks[0].getMaxFill()));
+			}
+			legacySolidFuel = 0;
+
 			tanks[0].loadTank(2, 6, slots);
 			tanks[1].loadTank(3, 7, slots);
 
 			power = Library.chargeTEFromItems(slots, 5, power, maxPower);
 
-			if(slots[4] != null && slots[4].getItem() == ModItems.rocket_fuel && solid + 250 <= maxSolid) {
-
-				this.decrStackSize(4, 1);
-				solid += 250;
-			}
 
 			if(worldObj.getTotalWorldTime() % 20 == 0)
 				this.updateConnections();
@@ -232,14 +231,12 @@ public class TileEntityCompactLauncher extends TileEntityLoadedBase implements I
 
 	@Override public void serialize(ByteBuf buf) {
 		buf.writeLong(power);
-		buf.writeInt(solid);
 		tanks[0].serialize(buf);
 		tanks[1].serialize(buf);
 	}
 
 	@Override public void deserialize(ByteBuf buf) {
 		this.power = buf.readLong();
-		this.solid = buf.readInt();
 		tanks[0].deserialize(buf);
 		tanks[1].deserialize(buf);
 	}
@@ -342,7 +339,7 @@ public class TileEntityCompactLauncher extends TileEntityLoadedBase implements I
 
 	private boolean hasFuel() {
 
-		return solidState() != 0 && liquidState() != 0 && oxidizerState() != 0;
+		return liquidState() != 0 && oxidizerState() != 0;
 	}
 
 	private void subtractFuel() {
@@ -376,7 +373,7 @@ public class TileEntityCompactLauncher extends TileEntityLoadedBase implements I
 				tanks[0].setFill(tanks[0].getFill() - fuel);
 				break;
 			case SOLID:
-				this.solid -= fuel; break;
+				tanks[0].setFill(tanks[0].getFill() - fuel); break;
 			default: break;
 		}
 
@@ -414,26 +411,6 @@ public class TileEntityCompactLauncher extends TileEntityLoadedBase implements I
 		return false;
 	}
 
-	public int solidState() {
-
-		MissileStruct multipart = getStruct(slots[0]);
-
-		if(multipart == null || multipart.fuselage == null)
-			return -1;
-
-		ItemCustomMissilePart fuselage = (ItemCustomMissilePart)multipart.fuselage;
-
-		if((FuelType)fuselage.attributes[0] == FuelType.SOLID) {
-
-			if(solid >= fuselage.getTankSize())
-				return 1;
-			else
-				return 0;
-		}
-
-		return -1;
-	}
-
 	public int liquidState() {
 
 		MissileStruct multipart = getStruct(slots[0]);
@@ -447,6 +424,7 @@ public class TileEntityCompactLauncher extends TileEntityLoadedBase implements I
 			case KEROSENE:
 			case HYDROGEN:
 			case XENON:
+			case SOLID:
 			//case BALEFIRE:
 			case HYDRAZINE:
 
@@ -505,6 +483,10 @@ public class TileEntityCompactLauncher extends TileEntityLoadedBase implements I
 			case XENON:
 				tanks[0].setTankType(Fluids.XENON);
 				break;
+			case SOLID:
+				tanks[0].setTankType(Fluids.ROCKET_FUEL);
+				tanks[1].setTankType(Fluids.NONE);
+				break;
 			//case BALEFIRE:
 			//	tanks[0].setTankType(Fluids.BALEFIRE);
 			//	tanks[1].setTankType(Fluids.PEROXIDE);
@@ -523,7 +505,7 @@ public class TileEntityCompactLauncher extends TileEntityLoadedBase implements I
 
 		tanks[0].readFromNBT(nbt, "fuel");
 		tanks[1].readFromNBT(nbt, "oxidizer");
-		solid = nbt.getInteger("solidfuel");
+		legacySolidFuel = nbt.getInteger("solidfuel");
 		power = nbt.getLong("power");
 
 		slots = new ItemStack[getSizeInventory()];
@@ -545,7 +527,6 @@ public class TileEntityCompactLauncher extends TileEntityLoadedBase implements I
 
 		tanks[0].writeToNBT(nbt, "fuel");
 		tanks[1].writeToNBT(nbt, "oxidizer");
-		nbt.setInteger("solidfuel", solid);
 		nbt.setLong("power", power);
 
 		for (int i = 0; i < slots.length; i++) {
