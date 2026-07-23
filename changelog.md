@@ -1,3 +1,11 @@
+# Fix infinite solid rocket fuel in launch pads
+
+**Tracker:** `Fix infinite solid rocket fuel in launch pads`
+
+* Added Solid Rocket Fuel as a fluid propellant and made solid-fueled custom rockets request it through their normal tank requirements.
+* Rocket Launch Pads now accept, display, and consume Solid Rocket Fuel from fluid storage instead of converting the legacy item into a separate, non-fluid buffer.
+* Existing Rocket Launch Pad saves migrate any stored legacy solid-fuel buffer into the new propellant tank.
+
 # Move Magnox fuel fabrication to the Chemical Plant
 
 **Tracker:** `Move Magnox fuel fabrication to the Chemical Plant`

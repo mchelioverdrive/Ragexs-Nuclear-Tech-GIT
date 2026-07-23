@@ -100,14 +100,9 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 				}
 			}
 
-			// Fills, note that the liquid input also takes solid fuel
+			// All propellant, including solid rocket fuel, is supplied through fluid tanks.
 			power = Library.chargeTEFromItems(slots, 2, power, maxPower);
 			for(FluidTank tank : tanks) tank.loadTank(3, 4, slots);
-			if(slots[3] != null && slots[3].getItem() == ModItems.rocket_fuel && solidFuel < maxSolidFuel) {
-				decrStackSize(3, 1);
-				solidFuel += 250;
-				if(solidFuel > maxSolidFuel) solidFuel = maxSolidFuel;
-			}
 
 			rocket = ItemCustomRocket.get(slots[0]);
 			if(rocket != null) {
@@ -269,7 +264,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 
 		// Deplete all fills
 		for(int i = 0; i < tanks.length; i++) tanks[i] = new FluidTank(Fluids.NONE, 64_000);
-		solidFuel = maxSolidFuel = 0;
 
 		power -= maxPower * 0.75;
 
@@ -287,7 +281,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 
 	private boolean areTanksFull() {
 		for(FluidTank tank : tanks) if(tank.getTankType() != Fluids.NONE && tank.getFill() < tank.getMaxFill()) return false;
-		if(solidFuel < maxSolidFuel) return false;
 		return true;
 	}
 
@@ -327,14 +320,11 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		boolean hasFuel = ItemCustomRocket.hasFuel(slots[0]);
 		if(hasFuel) ItemCustomRocket.setFuel(slots[0], false);
 
-		// Remove solid fuels (listed as NONE fluid) from tank updates
-		if(fuels.containsKey(Fluids.NONE)) {
-			maxSolidFuel = fuels.get(Fluids.NONE);
-			if(hasFuel) solidFuel = maxSolidFuel;
-			fuels.remove(Fluids.NONE);
-		} else {
-			maxSolidFuel = 0;
-		}
+		// Migrate the pre-fluid solid-fuel buffer from existing worlds once. New rockets
+		// include ROCKET_FUEL in their normal fill requirements and cannot receive free fuel.
+		int legacySolidFuel = solidFuel;
+		solidFuel = 0;
+		maxSolidFuel = 0;
 
 		// Check to see if any of the current tanks already fulfil fuelling requirements
 		List<FluidTank> keepTanks = new ArrayList<FluidTank>();
@@ -355,6 +345,13 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		if(hasFuel) {
 			for(FluidTank tank : keepTanks) {
 				tank.setFill(tank.getMaxFill());
+			}
+		} else if(legacySolidFuel > 0) {
+			for(FluidTank tank : keepTanks) {
+				if(tank.getTankType() == Fluids.ROCKET_FUEL) {
+					tank.setFill(Math.min(legacySolidFuel, tank.getMaxFill()));
+					break;
+				}
 			}
 		}
 
@@ -396,14 +393,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 				issues.add(EnumChatFormatting.YELLOW + "" + fill + "/" + maxFill + "mB " + tankName);
 			} else {
 				issues.add(EnumChatFormatting.GREEN + "" + fill + "/" + maxFill + "mB " + tankName);
-			}
-		}
-
-		if(maxSolidFuel > 0) {
-			if(solidFuel < maxSolidFuel) {
-				issues.add(EnumChatFormatting.YELLOW + "" + solidFuel + "/" + maxSolidFuel + "kg Solid Fuel");
-			} else {
-				issues.add(EnumChatFormatting.GREEN + "" + solidFuel + "/" + maxSolidFuel + "kg Solid Fuel");
 			}
 		}
 
