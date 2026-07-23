@@ -40,6 +40,7 @@ import com.hbm.items.weapon.ItemMissile.MissileTier;
 import com.hbm.items.weapon.sedna.factory.GunFactory;
 import com.hbm.lib.RefStrings;
 import com.hbm.main.MainRegistry;
+import com.hbm.main.RegistrationDiagnostics;
 import com.hbm.potion.HbmPotion;
 import com.hbm.tileentity.machine.rbmk.IRBMKFluxReceiver.NType;
 import com.hbm.util.RTGUtil;
@@ -72,7 +73,13 @@ public class ModItems {
 	public static void mainRegistry()
 	{
 		initializeItem();
-		registerItem();
+		try {
+			registerItem();
+		} catch(RuntimeException e) {
+			RegistrationDiagnostics.failedRegistryEntry("item", "ModItems registration batch", "ModItems", e);
+			throw e;
+		}
+		RegistrationDiagnostics.validateDeclaredEntries(ModItems.class, Item.class, "item");
 	}
 
 

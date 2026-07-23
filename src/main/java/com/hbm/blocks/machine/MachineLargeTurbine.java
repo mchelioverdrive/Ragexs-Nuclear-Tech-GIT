@@ -103,9 +103,11 @@ public class MachineLargeTurbine extends BlockDummyable {
 		this.makeExtra(world, xc - dir2.offsetX, y, zc - dir2.offsetZ);
 	}
 
-	//@Override
-	//public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
-	//	this.addStandardInfo(stack, player, list, ext);
-	//	list.add(EnumChatFormatting.DARK_RED + I18nUtil.resolveKey("tooltip.furnace.monoxide"));
-	//} ????? ai perc fent moment fucking RESEARCH the machine
+	@Override
+	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
+		this.addStandardInfo(stack, player, list, ext);
+		list.add(EnumChatFormatting.RED + "Explosion risk: inlet AND exhaust tanks full.");
+		list.add(EnumChatFormatting.GRAY + "Keep steam input and spent-steam output flowing.");
+		list.add(EnumChatFormatting.GRAY + "A full power buffer safely pauses generation; export power to resume.");
+	}
 }

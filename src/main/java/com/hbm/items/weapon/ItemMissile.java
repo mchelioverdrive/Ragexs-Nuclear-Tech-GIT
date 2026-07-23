@@ -81,7 +81,7 @@ public class ItemMissile extends ItemCustomLore {
 	}
 	
 	public enum MissileFuel {
-		SOLID(EnumChatFormatting.GOLD + "Solid Fuel (pre-fueled)", 0),
+		SOLID(EnumChatFormatting.GOLD + "Solid Rocket Fuel", 250),
 		ETHANOL_PEROXIDE(EnumChatFormatting.AQUA + "Ethanol / Hydrogen Peroxide", 4_000),
 		KEROSENE_PEROXIDE(EnumChatFormatting.BLUE + "Kerosene / Hydrogen Peroxide", 8_000),
 		KEROSENE_LOXY(EnumChatFormatting.LIGHT_PURPLE + "Kerosene / Liquid Oxygen", 12_000),
