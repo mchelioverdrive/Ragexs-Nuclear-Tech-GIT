@@ -227,9 +227,9 @@ public class WeaponSpecial extends ItemSword {
 		//if(this == ModItems.shimmer_sledge || this == ModItems.shimmer_axe) {
 		//	multimap.put(SharedMonsterAttributes.movementSpeed.getAttributeUnlocalizedName(), new AttributeModifier(field_111210_e, "Weapon modifier", -0.2, 1));
 		//}
-		if(this == ModItems.wrench || this == ModItems.wrench_flipped) {
-			multimap.put(SharedMonsterAttributes.movementSpeed.getAttributeUnlocalizedName(), new AttributeModifier(field_111210_e, "Weapon modifier", -0.1, 1));
-		}
+		//if(this == ModItems.wrench || this == ModItems.wrench_flipped) {
+		//	multimap.put(SharedMonsterAttributes.movementSpeed.getAttributeUnlocalizedName(), new AttributeModifier(field_111210_e, "Weapon modifier", -0.1, 1));
+		//}
         return multimap;
     }
 
@@ -281,9 +281,9 @@ public class WeaponSpecial extends ItemSword {
 		if(this == ModItems.wrench) {
 			list.add("Mechanic Richard");
 		}
-		if(this == ModItems.wrench_flipped) {
-			list.add("Wrench 2: The Wrenchening");
-		}
+		//if(this == ModItems.wrench_flipped) {
+		//	list.add("Wrench 2: The Wrenchening");
+		//}
 		if(this == ModItems.memespoon) {
 			list.add(EnumChatFormatting.DARK_GRAY + "Level 10 Shovel");
 			list.add(EnumChatFormatting.AQUA + "Deals crits while the wielder is rocket jumping");

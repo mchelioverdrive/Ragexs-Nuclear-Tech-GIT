@@ -169,7 +169,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.outputItems(new ItemStack(ModItems.ingot_c4, 4)));
 		//44, formerly deuterium
 		//45, formerly steam
-		
+
 		recipes.add(new ChemRecipe(46, "YELLOWCAKE", 250)
 				.inputItems(
 						new ComparableStack(ModItems.powder_uranium, 4)) //this should use URANIUM POWDER. NOT ORE, NOT ANYTHING ELSE.

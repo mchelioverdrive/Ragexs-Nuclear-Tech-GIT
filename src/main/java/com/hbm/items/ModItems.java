@@ -2632,7 +2632,7 @@ public class ModItems {
 	public static Item crowbar;
 
 	public static Item wrench;
-	public static Item wrench_flipped;
+	//public static Item wrench_flipped;
 	public static Item memespoon;
 
 	public static Item multitool_hit;

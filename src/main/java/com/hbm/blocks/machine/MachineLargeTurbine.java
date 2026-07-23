@@ -21,7 +21,7 @@ import net.minecraft.world.World;
 import net.minecraft.util.StatCollector;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class MachineLargeTurbine extends BlockDummyable {
+public class MachineLargeTurbine extends BlockDummyable implements ITooltipProvider {
 
 	public MachineLargeTurbine(Material mat) {
 		super(mat);
@@ -105,7 +105,6 @@ public class MachineLargeTurbine extends BlockDummyable {
 
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
-		this.addStandardInfo(stack, player, list, ext);
 		list.add(EnumChatFormatting.RED + "Explosion risk: inlet AND exhaust tanks full.");
 		list.add(EnumChatFormatting.GRAY + "Keep steam input and spent-steam output flowing.");
 		list.add(EnumChatFormatting.GRAY + "A full power buffer safely pauses generation; export power to resume.");
