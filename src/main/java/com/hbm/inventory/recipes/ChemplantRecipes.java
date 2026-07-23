@@ -169,10 +169,10 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.outputItems(new ItemStack(ModItems.ingot_c4, 4)));
 		//44, formerly deuterium
 		//45, formerly steam
-		// Compressed leach and precipitation: peroxide oxidizes the uranium-bearing ore and acid represents the leach liquor.
+		
 		recipes.add(new ChemRecipe(46, "YELLOWCAKE", 250)
 				.inputItems(
-						new ComparableStack(ModBlocks.ore_uranium, 4))
+						new ComparableStack(ModItems.powder_uranium, 4)) //this should use URANIUM POWDER. NOT ORE, NOT ANYTHING ELSE.
 				.inputFluids(new FluidStack(Fluids.SULFURIC_ACID, 1_000), new FluidStack(Fluids.PEROXIDE, 250))
 				.outputFluids(new FluidStack(Fluids.RAFFINATE, 1000))
 				.outputItems(new ItemStack(ModItems.powder_yellowcake, 2)));
