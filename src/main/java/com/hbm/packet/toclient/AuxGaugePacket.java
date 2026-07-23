@@ -3,7 +3,6 @@ package com.hbm.packet.toclient;
 import com.hbm.interfaces.Spaghetti;
 import com.hbm.items.weapon.ItemCustomMissilePart.PartSize;
 import com.hbm.tileentity.TileEntityMachineBase;
-import com.hbm.tileentity.bomb.TileEntityCompactLauncher;
 import com.hbm.tileentity.bomb.TileEntityLaunchTable;
 import com.hbm.tileentity.bomb.TileEntityTurretCIWS;
 import com.hbm.tileentity.machine.TileEntityMachineArcFurnace;
@@ -73,16 +72,9 @@ public class AuxGaugePacket implements IMessage {
 					if(m.id == 0)
 						furn.dualCookTime = m.value;
 				}
-				if (te instanceof TileEntityCompactLauncher) {
-					TileEntityCompactLauncher launcher = (TileEntityCompactLauncher)te;
-
-					launcher.solid = m.value;
-				}
 				if (te instanceof TileEntityLaunchTable) {
 					TileEntityLaunchTable launcher = (TileEntityLaunchTable)te;
 
-					if(m.id == 0)
-						launcher.solid = m.value;
 					if(m.id == 1)
 						launcher.padSize = PartSize.values()[m.value];
 				}

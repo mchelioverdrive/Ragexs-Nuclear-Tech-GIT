@@ -44,7 +44,6 @@ public class GUILaunchPadLarge extends GuiInfoContainer {
 		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 107, guiTop + 88 - 52, 16, 52, launchpad.power, launchpad.maxPower);
 		launchpad.tanks[0].renderTankInfo(this, mouseX, mouseY, guiLeft + 125, guiTop + 88 - 52, 16, 52);
 		launchpad.tanks[1].renderTankInfo(this, mouseX, mouseY, guiLeft + 143, guiTop + 88 - 52, 16, 52);
-		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 125, guiTop + 90, 16, 16, mouseX, mouseY, "Solid rocket fuel: " + launchpad.solidFuel + "/" + TileEntityLaunchPadBase.MAX_SOLID_FUEL);
 
 		if(this.mc.thePlayer.inventory.getItemStack() == null && this.isMouseOverSlot(this.inventorySlots.getSlot(1), mouseX, mouseY) && !this.inventorySlots.getSlot(1).getHasStack()) {
 			ItemStack[] list = new ItemStack[] { new ItemStack(ModItems.designator), new ItemStack(ModItems.designator_range), new ItemStack(ModItems.designator_manual) };

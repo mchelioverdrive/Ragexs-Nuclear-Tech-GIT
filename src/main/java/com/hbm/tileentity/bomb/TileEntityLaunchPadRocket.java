@@ -54,8 +54,8 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 	public long power;
 	public final long maxPower = 100_000;
 
-	public int solidFuel = 0;
-	public int maxSolidFuel = 0;
+	/** Legacy NBT migration only; new solid propellant is held in a ROCKET_FUEL tank. */
+	private int legacySolidFuel;
 
 	public FluidTank[] tanks;
 
@@ -100,14 +100,9 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 				}
 			}
 
-			// Fills, note that the liquid input also takes solid fuel
+			// All propellant, including solid rocket fuel, is supplied through fluid tanks.
 			power = Library.chargeTEFromItems(slots, 2, power, maxPower);
 			for(FluidTank tank : tanks) tank.loadTank(3, 4, slots);
-			if(slots[3] != null && slots[3].getItem() == ModItems.rocket_fuel && solidFuel < maxSolidFuel) {
-				decrStackSize(3, 1);
-				solidFuel += 250;
-				if(solidFuel > maxSolidFuel) solidFuel = maxSolidFuel;
-			}
 
 			rocket = ItemCustomRocket.get(slots[0]);
 			if(rocket != null) {
@@ -269,7 +264,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 
 		// Deplete all fills
 		for(int i = 0; i < tanks.length; i++) tanks[i] = new FluidTank(Fluids.NONE, 64_000);
-		solidFuel = maxSolidFuel = 0;
 
 		power -= maxPower * 0.75;
 
@@ -287,7 +281,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 
 	private boolean areTanksFull() {
 		for(FluidTank tank : tanks) if(tank.getTankType() != Fluids.NONE && tank.getFill() < tank.getMaxFill()) return false;
-		if(solidFuel < maxSolidFuel) return false;
 		return true;
 	}
 
@@ -327,14 +320,10 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		boolean hasFuel = ItemCustomRocket.hasFuel(slots[0]);
 		if(hasFuel) ItemCustomRocket.setFuel(slots[0], false);
 
-		// Remove solid fuels (listed as NONE fluid) from tank updates
-		if(fuels.containsKey(Fluids.NONE)) {
-			maxSolidFuel = fuels.get(Fluids.NONE);
-			if(hasFuel) solidFuel = maxSolidFuel;
-			fuels.remove(Fluids.NONE);
-		} else {
-			maxSolidFuel = 0;
-		}
+		// Migrate the pre-fluid solid-fuel buffer from existing worlds once. New rockets
+		// include ROCKET_FUEL in their normal fill requirements and cannot receive free fuel.
+		int storedLegacySolidFuel = legacySolidFuel;
+		legacySolidFuel = 0;
 
 		// Check to see if any of the current tanks already fulfil fuelling requirements
 		List<FluidTank> keepTanks = new ArrayList<FluidTank>();
@@ -355,6 +344,13 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		if(hasFuel) {
 			for(FluidTank tank : keepTanks) {
 				tank.setFill(tank.getMaxFill());
+			}
+		} else if(storedLegacySolidFuel > 0) {
+			for(FluidTank tank : keepTanks) {
+				if(tank.getTankType() == Fluids.ROCKET_FUEL) {
+					tank.setFill(Math.min(storedLegacySolidFuel, tank.getMaxFill()));
+					break;
+				}
 			}
 		}
 
@@ -396,14 +392,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 				issues.add(EnumChatFormatting.YELLOW + "" + fill + "/" + maxFill + "mB " + tankName);
 			} else {
 				issues.add(EnumChatFormatting.GREEN + "" + fill + "/" + maxFill + "mB " + tankName);
-			}
-		}
-
-		if(maxSolidFuel > 0) {
-			if(solidFuel < maxSolidFuel) {
-				issues.add(EnumChatFormatting.YELLOW + "" + solidFuel + "/" + maxSolidFuel + "kg Solid Fuel");
-			} else {
-				issues.add(EnumChatFormatting.GREEN + "" + solidFuel + "/" + maxSolidFuel + "kg Solid Fuel");
 			}
 		}
 
@@ -456,8 +444,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		super.serialize(buf);
 
 		buf.writeLong(power);
-		buf.writeInt(solidFuel);
-		buf.writeInt(maxSolidFuel);
 
 		buf.writeInt(height);
 		buf.writeBoolean(canSeeSky);
@@ -477,8 +463,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		super.deserialize(buf);
 
 		power = buf.readLong();
-		solidFuel = buf.readInt();
-		maxSolidFuel = buf.readInt();
 
 		height = buf.readInt();
 		canSeeSky = buf.readBoolean();
@@ -496,8 +480,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		nbt.setLong("power", power);
-		nbt.setInteger("solid", solidFuel);
-		nbt.setInteger("maxSolid", maxSolidFuel);
 		nbt.setInteger("height", height);
 		nbt.setBoolean("sky", canSeeSky);
 		for(int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(nbt, "t" + i);
@@ -507,8 +489,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		power = nbt.getLong("power");
-		solidFuel = nbt.getInteger("solid");
-		maxSolidFuel = nbt.getInteger("maxSolid");
+		legacySolidFuel = nbt.getInteger("solid");
 		height = nbt.getInteger("height");
 		canSeeSky = nbt.getBoolean("sky");
 		for(int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "t" + i);
@@ -560,12 +541,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 			{tank_2_fill, tank_2_max, tank_2_type}}
 		 */
 		return returnValues.toArray();
-	}
-
-	@Callback(direct = true) // this doesn't return a set amount of tanks sadly
-	@Optional.Method(modid = "OpenComputers")
-	public Object[] getSolidFuel(Context context, Arguments args) {
-		return new Object[] {solidFuel, maxSolidFuel};
 	}
 
 	@Callback(direct = true)
@@ -624,7 +599,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		return new String[] {
 				"getEnergyInfo",
 				"getFuel",
-				"getSolidFuel",
 				"canLaunch",
 				"getRocketStats",
 				"getDestination",
@@ -640,8 +614,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 				return getEnergyInfo(context, args);
 			case ("getFuel"):
 				return getFuel(context, args);
-			case ("getSolidFuel"):
-				return getSolidFuel(context, args);
 			case ("canLaunch"):
 				return canLaunch(context, args);
 			case ("getRocketStats"):

@@ -86,6 +86,7 @@ public class Fluids {
 	public static FluidType LIGHTOIL_CRACK;
 	public static FluidType LIGHTOIL_DS;
 	public static FluidType KEROSENE;
+	public static FluidType ROCKET_FUEL;
 	public static FluidType GAS;
 	public static FluidType PETROLEUM;
 	public static FluidType LPG;
@@ -588,6 +589,7 @@ public class Fluids {
 
 		// ^ ^ ^ ^ ^ ^ ^ ^
 		//ADD NEW FLUIDS HERE
+		ROCKET_FUEL =			new FluidType("ROCKET_FUEL",		0x74633B, 1, 2, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0x74633B)).addTraits(new FT_Flammable(300_000), LIQUID);
 
 		File folder = MainRegistry.configHbmDir;
 		File customTypes = new File(folder.getAbsolutePath() + File.separatorChar + "hbmFluidTypes.json");
@@ -693,6 +695,7 @@ public class Fluids {
 		metaOrder.add(DIESEL_CRACK);
 		metaOrder.add(DIESEL_CRACK_REFORM);
 		metaOrder.add(KEROSENE);
+		metaOrder.add(ROCKET_FUEL);
 		metaOrder.add(KEROSENE_REFORM);
 		metaOrder.add(PETROIL);
 		metaOrder.add(PETROIL_LEADED);
