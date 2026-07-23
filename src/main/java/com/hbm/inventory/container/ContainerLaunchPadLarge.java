@@ -70,6 +70,8 @@ public class ContainerLaunchPadLarge extends Container {
 					if(!this.mergeItemStack(var5, 0, 1, false)) {
 						return null;
 					}
+				} else if(var3.getItem() == ModItems.rocket_fuel) {
+					if(!this.mergeItemStack(var5, 3, 4, false)) return null;
 				} else if(var3.getItem() == ModItems.fluid_barrel_infinite) {
 					if(!this.mergeItemStack(var5, 3, 4, false)) if(!this.mergeItemStack(var5, 5, 6, false)) {
 						return null;

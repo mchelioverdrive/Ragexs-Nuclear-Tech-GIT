@@ -243,3 +243,10 @@
 * Removed generic electron exposure, enrichment-by-irradiation, and arbitrary low-mass collider conversions that had no compatible radiation or target pathway.
 * Balanced every cryogenic-distillation batch to its 100 mB feed and made noble-gas trace separation argon-dominant while retaining small neon, krypton, and xenon outputs for progression.
 * Compatibility: no item IDs, metadata, machine slots, JSON schemas, GUI/container behavior, or `MatDistribution` registrations changed. Existing actinide capture chains and fictional collider products remain available through their appropriate machine roles.
+# Turbine safety, registration diagnostics, and solid-fuel missiles
+
+**Tracker:** `Turbine safety, registration diagnostics, and solid-fuel missiles`
+
+* Added item tooltips that describe the Standard and Industrial Steam Turbines' actual overpressure explosion condition and their safe full-power pause behavior.
+* Added startup-only registration diagnostics for malformed crafting recipes, including null stacks, invalid metadata, missing inputs, unregistered references, and recipe-registration failures.
+* Converted ABM and micro missiles from incorrectly described pre-fueled items to solid-fuel missiles. Large launch pads now store, synchronize, persist, validate, and consume Rocket Fuel for them; the launcher GUI, item tooltip, and getting-started guide describe the requirement.

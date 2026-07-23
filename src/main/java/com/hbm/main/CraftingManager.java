@@ -1585,6 +1585,7 @@ public class CraftingManager {
 	//option 1: find every entry that needs to be ore dicted and change the recipe method by hand and commit to doing it right in the future
 	//option 2: just make the computer do all the stupid work for us
 	public static void addRecipeAuto(ItemStack result, Object... ins) {
+		if(!RegistrationDiagnostics.validateRecipe(result, ins, "shaped crafting recipe for " + RegistrationDiagnostics.describe(result))) return;
 
 		boolean shouldUseOD = false;
 		boolean engage = false;
@@ -1603,13 +1604,16 @@ public class CraftingManager {
 			}
 		}
 
-		if(shouldUseOD)
-			GameRegistry.addRecipe(new ShapedOreRecipe(result, ins));
-		else
-			GameRegistry.addRecipe(result, ins);
+		try {
+			if(shouldUseOD) GameRegistry.addRecipe(new ShapedOreRecipe(result, ins));
+			else GameRegistry.addRecipe(result, ins);
+		} catch(RuntimeException e) {
+			RegistrationDiagnostics.failedRecipe(result, ins, e);
+		}
 	}
 
 	public static void addShapelessAuto(ItemStack result, Object... ins) {
+		if(!RegistrationDiagnostics.validateRecipe(result, ins, "shapeless crafting recipe for " + RegistrationDiagnostics.describe(result))) return;
 
 		boolean shouldUseOD = false;
 
@@ -1622,9 +1626,11 @@ public class CraftingManager {
 			}
 		}
 
-		if(shouldUseOD)
-			GameRegistry.addRecipe(new ShapelessOreRecipe(result, ins));
-		else
-			GameRegistry.addShapelessRecipe(result, ins);
+		try {
+			if(shouldUseOD) GameRegistry.addRecipe(new ShapelessOreRecipe(result, ins));
+			else GameRegistry.addShapelessRecipe(result, ins);
+		} catch(RuntimeException e) {
+			RegistrationDiagnostics.failedRecipe(result, ins, e);
+		}
 	}
 }

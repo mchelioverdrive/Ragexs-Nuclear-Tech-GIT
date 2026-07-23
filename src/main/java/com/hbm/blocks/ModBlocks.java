@@ -22,6 +22,7 @@ import com.hbm.items.special.ItemOreBlock;
 import com.hbm.lib.ModDamageSource;
 import com.hbm.lib.RefStrings;
 import com.hbm.main.MainRegistry;
+import com.hbm.main.RegistrationDiagnostics;
 import com.hbm.tileentity.DoorDecl;
 import com.hbm.tileentity.machine.storage.TileEntityFileCabinet;
 import com.hbm.items.tool.ItemToolAbility;
@@ -43,7 +44,13 @@ public class ModBlocks {
 
 	public static void mainRegistry() {
 		initializeBlock();
-		registerBlock();
+		try {
+			registerBlock();
+		} catch(RuntimeException e) {
+			RegistrationDiagnostics.failedRegistryEntry("block", "ModBlocks registration batch", "ModBlocks", e);
+			throw e;
+		}
+		RegistrationDiagnostics.validateDeclaredEntries(ModBlocks.class, Block.class, "block");
 		registerToolEnvironmentBlocks();
 	}
 

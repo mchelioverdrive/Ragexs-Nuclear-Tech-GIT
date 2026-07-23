@@ -93,6 +93,10 @@ Because RNTM can damage worlds, ask before:
 - Creating large pollution/radiation sources.
 - Editing recipes, item pools, machine configs, or dimension IDs.
 
+## Solid-fuel missiles
+
+ABM and micro missiles are no longer pre-fueled. Load **Rocket Fuel** into the large launch pad's primary fuel-input slot; each item supplies 250 units of solid propellant. A solid-fuel missile requires its listed fuel capacity before launch, and that amount is consumed when it launches. Liquid-fuel missiles continue to use the launch pad's fuel and oxidizer tanks.
+
 ## Related projects
 
 For other Minecraft versions, use separate projects rather than this repository:

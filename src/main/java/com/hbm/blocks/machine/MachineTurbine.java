@@ -22,6 +22,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.IIcon;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
 public class MachineTurbine extends BlockContainer implements ITooltipProvider {
@@ -127,5 +128,8 @@ public class MachineTurbine extends BlockContainer implements ITooltipProvider {
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		this.addStandardInfo(stack, player, list, ext);
+		list.add(EnumChatFormatting.RED + "Explosion risk: inlet AND exhaust tanks full.");
+		list.add(EnumChatFormatting.GRAY + "Keep steam input and spent-steam output flowing.");
+		list.add(EnumChatFormatting.GRAY + "A full power buffer safely pauses generation; export power to resume.");
 	}
 }

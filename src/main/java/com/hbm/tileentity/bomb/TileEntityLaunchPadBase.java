@@ -112,6 +112,9 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 	public static final int STATE_READY = 2;
 
 	public FluidTank[] tanks;
+	/** Solid propellant is stored separately because it is supplied as rocket-fuel items. */
+	public int solidFuel;
+	public static final int MAX_SOLID_FUEL = 4_000;
 
 	public TileEntityLaunchPadBase() {
 		super(7);
@@ -162,6 +165,12 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 			this.prevRedstonePower = this.redstonePower;
 
 			this.power = Library.chargeTEFromItems(slots, 2, power, maxPower);
+			// Slot 3 doubles as the solid-fuel inlet for ABM and micro missiles. Liquid
+			// missiles continue to use it as their primary fluid-container inlet.
+			if(slots[3] != null && slots[3].getItem() == ModItems.rocket_fuel && solidFuel + 250 <= MAX_SOLID_FUEL) {
+				this.decrStackSize(3, 1);
+				solidFuel += 250;
+			}
 			tanks[0].loadTank(3, 4, slots);
 			tanks[1].loadTank(5, 6, slots);
 
@@ -182,6 +191,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 
 		buf.writeLong(this.power);
 		buf.writeInt(this.state);
+		buf.writeInt(this.solidFuel);
 		tanks[0].serialize(buf);
 		tanks[1].serialize(buf);
 
@@ -200,6 +210,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 
 		this.power = buf.readLong();
 		this.state = buf.readInt();
+		this.solidFuel = buf.readInt();
 		tanks[0].deserialize(buf);
 		tanks[1].deserialize(buf);
 
@@ -214,6 +225,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		power = nbt.getLong("power");
+		solidFuel = nbt.getInteger("solidFuel");
 		tanks[0].readFromNBT(nbt, "t0");
 		tanks[1].readFromNBT(nbt, "t1");
 
@@ -230,6 +242,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		nbt.setLong("power", power);
+		nbt.setInteger("solidFuel", solidFuel);
 		tanks[0].writeToNBT(nbt, "t0");
 		tanks[1].writeToNBT(nbt, "t1");
 
@@ -322,6 +335,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 
 		if(slots[0] != null && slots[0].getItem() instanceof ItemMissile) {
 			ItemMissile missile = (ItemMissile) slots[0].getItem();
+			if(missile.fuel == MissileFuel.SOLID) return solidFuel >= missile.fuelCap;
 			if(this.tanks[0].getFill() < missile.fuelCap) return false;
 			if(this.tanks[1].getFill() < missile.fuelCap) return false;
 
@@ -366,8 +380,11 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 
 		if(slots[0] != null && slots[0].getItem() instanceof ItemMissile) {
 			ItemMissile item = (ItemMissile) slots[0].getItem();
-			tanks[0].setFill(tanks[0].getFill() - item.fuelCap);
-			tanks[1].setFill(tanks[1].getFill() - item.fuelCap);
+			if(item.fuel == MissileFuel.SOLID) solidFuel -= item.fuelCap;
+			else {
+				tanks[0].setFill(tanks[0].getFill() - item.fuelCap);
+				tanks[1].setFill(tanks[1].getFill() - item.fuelCap);
+			}
 		}
 
 		this.decrStackSize(0, 1);
@@ -469,7 +486,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 			ItemMissile missile = (ItemMissile) slots[0].getItem();
 			MissileFuel fuel = missile.fuel;
 
-			if(fuel == MissileFuel.SOLID) return 0;
+			if(fuel == MissileFuel.SOLID) return solidFuel >= missile.fuelCap ? 1 : -1;
 			return tanks[tank].getFill() >= missile.fuelCap ? 1 : -1;
 		}
 
