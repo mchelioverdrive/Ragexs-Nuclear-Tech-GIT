@@ -4,7 +4,7 @@
 
 * Added Solid Rocket Fuel as a fluid propellant and made solid-fueled custom rockets request it through their normal tank requirements.
 * All launch-pad variants now accept and consume Solid Rocket Fuel from their normal fluid tanks instead of consuming the legacy item or using a separate buffer.
-* Removed the redundant solid-fuel GUI and overlay indicators; the normal fuel tank now presents the propellant state.
+* Removed the redundant solid-fuel GUI and overlay indicators; the normal fuel tank now presents the propellant state. Removed the obsolete client gauge synchronization for the deleted solid-fuel counters.
 * Existing launch-pad saves migrate stored legacy solid-fuel buffers into the new propellant tank when a solid-fueled rocket or missile is loaded.
 
 # Move Magnox fuel fabrication to the Chemical Plant
