@@ -57,8 +57,8 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 
 	public long power;
 	public static final long maxPower = 100000;
-	public int solid;
-	public static final int maxSolid = 100000;
+	/** Legacy NBT migration only; solid propellant is now stored in tanks[0]. */
+	private int legacySolidFuel;
 	public FluidTank[] tanks;
 	public PartSize padSize;
 	public int height;
@@ -172,9 +172,6 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 		return (power * i) / maxPower;
 	}
 
-	public int getSolidScaled(int i) {
-		return (solid * i) / maxSolid;
-	}
 
 	@Override
 	public void updateEntity() {
@@ -182,6 +179,13 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 		if (!worldObj.isRemote) {
 
 			updateTypes();
+
+			MissileStruct loadedMissile = getStruct(slots[0]);
+			if(legacySolidFuel > 0 && loadedMissile != null && loadedMissile.fuselage != null &&
+					(FuelType) ((ItemCustomMissilePart) loadedMissile.fuselage).attributes[0] == FuelType.SOLID) {
+				tanks[0].setFill(Math.min(legacySolidFuel, tanks[0].getMaxFill()));
+			}
+			legacySolidFuel = 0;
 
 			if(worldObj.getTotalWorldTime() % 20 == 0)
 				this.updateConnections();
@@ -191,11 +195,6 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 
 			power = Library.chargeTEFromItems(slots, 5, power, maxPower);
 
-			if(slots[4] != null && slots[4].getItem() == ModItems.rocket_fuel && solid + 250 <= maxSolid) {
-
-				this.decrStackSize(4, 1);
-				solid += 250;
-			}
 
 			PacketDispatcher.wrapper.sendToAllAround(new BufPacket(xCoord, yCoord, zCoord, this), new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
 
@@ -235,7 +234,6 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 
 	@Override public void serialize(ByteBuf buf) {
 		buf.writeLong(power);
-		buf.writeInt(solid);
 		buf.writeByte((byte) padSize.ordinal());
 		tanks[0].serialize(buf);
 		tanks[1].serialize(buf);
@@ -243,7 +241,6 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 
 	@Override public void deserialize(ByteBuf buf) {
 		this.power = buf.readLong();
-		this.solid = buf.readInt();
 		this.padSize = PartSize.values()[buf.readByte()];
 		tanks[0].deserialize(buf);
 		tanks[1].deserialize(buf);
@@ -330,7 +327,7 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 
 	private boolean hasFuel() {
 
-		return solidState() != 0 && liquidState() != 0 && oxidizerState() != 0;
+		return liquidState() != 0 && oxidizerState() != 0;
 	}
 
 	private void subtractFuel() {
@@ -361,7 +358,7 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 			//	tanks[1].setFill(tanks[1].getFill() - fuel);
 			//	break;
 			case SOLID:
-				this.solid -= fuel; break;
+				tanks[0].setFill(tanks[0].getFill() - fuel); break;
 			default: break;
 		}
 
@@ -394,26 +391,6 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 		return false;
 	}
 
-	public int solidState() {
-
-		MissileStruct multipart = getStruct(slots[0]);
-
-		if(multipart == null || multipart.fuselage == null)
-			return -1;
-
-		ItemCustomMissilePart fuselage = (ItemCustomMissilePart)multipart.fuselage;
-
-		if((FuelType)fuselage.attributes[0] == FuelType.SOLID) {
-
-			if(solid >= (int)fuselage.attributes[1])
-				return 1;
-			else
-				return 0;
-		}
-
-		return -1;
-	}
-
 	public int liquidState() {
 
 		MissileStruct multipart = getStruct(slots[0]);
@@ -427,12 +404,8 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 			case KEROSENE:
 			case HYDROGEN:
 			case XENON:
-			//case BALEFIRE:
-			//
-			//	if(tanks[0].getFill() >= (int)fuselage.attributes[1])
-			//		return 1;
-			//	else
-			//		return 0;
+			case SOLID:
+				return tanks[0].getFill() >= (int)fuselage.attributes[1] ? 1 : 0;
 			default: break;
 		}
 
@@ -484,6 +457,10 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 			case XENON:
 				tanks[0].setTankType(Fluids.XENON);
 				break;
+			case SOLID:
+				tanks[0].setTankType(Fluids.ROCKET_FUEL);
+				tanks[1].setTankType(Fluids.NONE);
+				break;
 			//case BALEFIRE:
 			//	tanks[0].setTankType(Fluids.BALEFIRE);
 			//	tanks[1].setTankType(Fluids.PEROXIDE);
@@ -499,7 +476,7 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 
 		tanks[0].readFromNBT(nbt, "fuel");
 		tanks[1].readFromNBT(nbt, "oxidizer");
-		solid = nbt.getInteger("solidfuel");
+		legacySolidFuel = nbt.getInteger("solidfuel");
 		power = nbt.getLong("power");
 		padSize = PartSize.values()[nbt.getInteger("padSize")];
 
@@ -522,7 +499,6 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 
 		tanks[0].writeToNBT(nbt, "fuel");
 		tanks[1].writeToNBT(nbt, "oxidizer");
-		nbt.setInteger("solidfuel", solid);
 		nbt.setLong("power", power);
 		nbt.setInteger("padSize", padSize.ordinal());
 
@@ -632,8 +608,7 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 	public Object[] getContents(Context context, Arguments args) {
 		return new Object[] {
 				tanks[0].getFill(), tanks[0].getMaxFill(), tanks[0].getTankType().getUnlocalizedName(),
-				tanks[1].getFill(), tanks[1].getMaxFill(), tanks[1].getTankType().getUnlocalizedName(),
-				solid, maxSolid
+				tanks[1].getFill(), tanks[1].getMaxFill(), tanks[1].getTankType().getUnlocalizedName()
 		};
 	}
 

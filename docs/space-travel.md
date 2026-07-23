@@ -12,7 +12,7 @@ Space systems in RNTM are late-game infrastructure. Before attempting launch, es
 
 ## Rocket planning
 
-- **Solid rocket fuel is handled as a liquid propellant:** supply it to a Rocket Launch Pad through its fluid input (for example, in compatible canisters or a fluid network). It is tracked and consumed from the pad tank just like other propellants; the legacy solid-fuel item is no longer accepted by that pad.
+- **Solid rocket fuel is handled as a liquid propellant:** supply it to the launch pad through its fluid input (for example, in compatible canisters or a fluid network). It is tracked and consumed from the pad tank just like other propellants; the legacy solid-fuel item is no longer accepted by launch pads.
 
 - Treat every launch as a logistics project: payload, capsule, fuel tanks, stability, destination, and return plan all matter.
 - Fill tanks completely and leave margin for destination changes or failed attempts.

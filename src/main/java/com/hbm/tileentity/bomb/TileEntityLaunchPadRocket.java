@@ -54,8 +54,8 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 	public long power;
 	public final long maxPower = 100_000;
 
-	public int solidFuel = 0;
-	public int maxSolidFuel = 0;
+	/** Legacy NBT migration only; new solid propellant is held in a ROCKET_FUEL tank. */
+	private int legacySolidFuel;
 
 	public FluidTank[] tanks;
 
@@ -322,9 +322,8 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 
 		// Migrate the pre-fluid solid-fuel buffer from existing worlds once. New rockets
 		// include ROCKET_FUEL in their normal fill requirements and cannot receive free fuel.
-		int legacySolidFuel = solidFuel;
-		solidFuel = 0;
-		maxSolidFuel = 0;
+		int storedLegacySolidFuel = legacySolidFuel;
+		legacySolidFuel = 0;
 
 		// Check to see if any of the current tanks already fulfil fuelling requirements
 		List<FluidTank> keepTanks = new ArrayList<FluidTank>();
@@ -346,10 +345,10 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 			for(FluidTank tank : keepTanks) {
 				tank.setFill(tank.getMaxFill());
 			}
-		} else if(legacySolidFuel > 0) {
+		} else if(storedLegacySolidFuel > 0) {
 			for(FluidTank tank : keepTanks) {
 				if(tank.getTankType() == Fluids.ROCKET_FUEL) {
-					tank.setFill(Math.min(legacySolidFuel, tank.getMaxFill()));
+					tank.setFill(Math.min(storedLegacySolidFuel, tank.getMaxFill()));
 					break;
 				}
 			}
@@ -445,8 +444,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		super.serialize(buf);
 
 		buf.writeLong(power);
-		buf.writeInt(solidFuel);
-		buf.writeInt(maxSolidFuel);
 
 		buf.writeInt(height);
 		buf.writeBoolean(canSeeSky);
@@ -466,8 +463,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		super.deserialize(buf);
 
 		power = buf.readLong();
-		solidFuel = buf.readInt();
-		maxSolidFuel = buf.readInt();
 
 		height = buf.readInt();
 		canSeeSky = buf.readBoolean();
@@ -485,8 +480,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		nbt.setLong("power", power);
-		nbt.setInteger("solid", solidFuel);
-		nbt.setInteger("maxSolid", maxSolidFuel);
 		nbt.setInteger("height", height);
 		nbt.setBoolean("sky", canSeeSky);
 		for(int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(nbt, "t" + i);
@@ -496,8 +489,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		power = nbt.getLong("power");
-		solidFuel = nbt.getInteger("solid");
-		maxSolidFuel = nbt.getInteger("maxSolid");
+		legacySolidFuel = nbt.getInteger("solid");
 		height = nbt.getInteger("height");
 		canSeeSky = nbt.getBoolean("sky");
 		for(int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "t" + i);
@@ -549,12 +541,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 			{tank_2_fill, tank_2_max, tank_2_type}}
 		 */
 		return returnValues.toArray();
-	}
-
-	@Callback(direct = true) // this doesn't return a set amount of tanks sadly
-	@Optional.Method(modid = "OpenComputers")
-	public Object[] getSolidFuel(Context context, Arguments args) {
-		return new Object[] {solidFuel, maxSolidFuel};
 	}
 
 	@Callback(direct = true)
@@ -613,7 +599,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		return new String[] {
 				"getEnergyInfo",
 				"getFuel",
-				"getSolidFuel",
 				"canLaunch",
 				"getRocketStats",
 				"getDestination",
@@ -629,8 +614,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 				return getEnergyInfo(context, args);
 			case ("getFuel"):
 				return getFuel(context, args);
-			case ("getSolidFuel"):
-				return getSolidFuel(context, args);
 			case ("canLaunch"):
 				return canLaunch(context, args);
 			case ("getRocketStats"):

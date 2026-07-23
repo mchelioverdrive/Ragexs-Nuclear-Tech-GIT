@@ -40,7 +40,6 @@ public class GUIMachineLaunchTable extends GuiInfoContainer {
 
 		launcher.tanks[0].renderTankInfo(this, mouseX, mouseY, guiLeft + 116, guiTop + 36, 16, 34);
 		launcher.tanks[1].renderTankInfo(this, mouseX, mouseY, guiLeft + 134, guiTop + 36, 16, 34);
-		this.drawCustomInfo(this, mouseX, mouseY, guiLeft + 152, guiTop + 88 - 52, 16, 52, new String[] { "Solid Fuel: " + launcher.solid + "l" });
 		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 134, guiTop + 113, 34, 6, launcher.power, launcher.maxPower);
 		this.drawCustomInfo(this, mouseX, mouseY, guiLeft + 7, guiTop + 98, 18, 18, new String[] { "Size 10 & 10/15" });
 		this.drawCustomInfo(this, mouseX, mouseY, guiLeft + 25, guiTop + 98, 18, 18, new String[] { "Size 15 & 15/20" });
@@ -92,8 +91,6 @@ public class GUIMachineLaunchTable extends GuiInfoContainer {
 		int i = (int)launcher.getPowerScaled(34);
 		drawTexturedModalRect(guiLeft + 134, guiTop + 113, 176, 96, i, 6);
 		
-		int j = (int)launcher.getSolidScaled(52);
-		drawTexturedModalRect(guiLeft + 152, guiTop + 88 - j, 176, 96 - j, 16, j);
 		
 		if(launcher.isMissileValid())
 			drawTexturedModalRect(guiLeft + 25, guiTop + 35, 176, 26, 18, 18);
@@ -111,10 +108,6 @@ public class GUIMachineLaunchTable extends GuiInfoContainer {
 		if(launcher.oxidizerState() == 0)
 			drawTexturedModalRect(guiLeft + 139, guiTop + 23, 182, 0, 6, 8);
 		
-		if(launcher.solidState() == 1)
-			drawTexturedModalRect(guiLeft + 157, guiTop + 23, 176, 0, 6, 8);
-		if(launcher.solidState() == 0)
-			drawTexturedModalRect(guiLeft + 157, guiTop + 23, 182, 0, 6, 8);
 		
 		switch(launcher.padSize) {
 		
