@@ -582,6 +582,7 @@ public class Fluids {
 		KRYPTON_FLUORINE = new FluidType("KRYPTON_FLUORINE", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(GASEOUS, NOCON);
 		XENON_CHLORINE = new FluidType("XENON_CHLORINE", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(GASEOUS, NOCON);
 		HELIUM4_HOT =			new FluidType("HELIUM4_HOT", 0x99525E, 1, 0, 0, EnumSymbol.NONE).setTemp(750).addTraits(GASEOUS);
+		ROCKET_FUEL =			new FluidType("ROCKET_FUEL",		0x74633B, 1, 2, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0x74633B)).addTraits(new FT_Flammable(300_000), LIQUID);
 
 
 //I am getting really sick and tired of this retarded ass fluid system
@@ -854,6 +855,7 @@ public class Fluids {
 		metaOrder.add(KRYPTON_FLUORINE);
 		metaOrder.add(XENON_CHLORINE);
 		metaOrder.add(HELIUM4_HOT);
+		metaOrder.add(ROCKET_FUEL);
 
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!
