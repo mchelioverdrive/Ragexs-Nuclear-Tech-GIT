@@ -8,6 +8,7 @@
 * Passed RNT's calculated fallout source multiplier into fallout rain so range, deposition probability, and deposited-layer cap scale with coupling instead of treating source strength as a boolean.
 * Corrected Ivy Mike's test-bomb helper to use its supplied radius for both independent MK5 and Torex calls. Updated the nuclear balance guide with the compatibility boundary, static resolver scenarios, and remaining legacy limitations.
 * Fixed the expanding pressure front's zero-distance shell check so entities directly under an airburst hypocenter receive atmospheric overpressure instead of being skipped permanently after the first shell.
+* Airbursts now retain a small atmospheric fallout source and apply one-shot fireball vaporization, severe thermal burns, flash blindness, and sampled exposed-ground ignition without restoring crater rays.
 
 # Modular nuclear-effects migration and MK5 correctness fixes
 

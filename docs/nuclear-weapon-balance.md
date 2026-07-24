@@ -19,22 +19,22 @@ Neither factory creates the other entity or requires the other call to have happ
 
 The resolver samples `world.getHeightValue` at the detonation column and converts the legacy radius through `BombConfig.ktFromRadius`. Its fireball radius is the converted base radius times 0.35. A burst is clean `AIR` only when that fireball is fully clear of terrain; otherwise coupling is the continuous fraction of fireball intersection. Vacuum/orbit, liquid at the detonation point, and below-surface positions classify `VACUUM`, `UNDERWATER`, and `SUBSURFACE` before normal air/surface classification.
 
-MK5 scales crater radius and fallout source by the resolved coupling. A clean airburst queues no crater rays, has no local fallout source, and finishes after its atmospheric shock front; it still applies thermal and prompt radiation. The first pressure shell explicitly includes the hypocenter, so targets directly beneath an airburst are not skipped by the expanding-front boundary. Vacuum removes atmospheric blast and fallout but retains prompt radiation. Underwater remains distinct from dry surface handling. The fallout entity now receives the calculated source multiplier, which scales its range, deposition chance, and maximum layer; this remains RNT-only.
+MK5 scales crater radius and fallout source by the resolved coupling. A clean airburst queues no crater rays, but retains an 8% atmospheric fallout source from fission products; it finishes after its atmospheric shock front while still applying fireball vaporization, thermal burns/ignition, flash blindness, and prompt radiation. The first pressure shell explicitly includes the hypocenter, so targets directly beneath an airburst are not skipped by the expanding-front boundary. Vacuum removes atmospheric blast and fallout but retains prompt radiation. Underwater remains distinct from dry surface handling. The fallout entity now receives the calculated source multiplier, which scales its range, deposition chance, and maximum layer; this remains RNT-only.
 
 Torex receives its resolved burst type, coupling, height, and fireball radius through its own data watchers. Airburst clouds begin at the detonation altitude and reduce ground-debris/stem behavior. Vacuum uses the no-atmosphere visual path without atmospheric nuclear sound. The existing cloud simulation remains gameplay-compressed.
 
 ## Static resolver scenarios
 
-The following are resolver calculations, not runtime measurements. “Clear” means a height strictly greater than the listed fireball radius. Crater radius is the current full crater coefficient (`legacy radius * 0.42`) multiplied by coupling; fallout multiplier is the same coupling (subject to fission/salted legacy settings).
+The following are resolver calculations, not runtime measurements. “Clear” means a height strictly greater than the listed fireball radius. Crater radius is the current full crater coefficient (`legacy radius * 0.42`) multiplied by coupling. A fully clear airburst has no crater but retains the 0.080 atmospheric fallout multiplier; surface fallout uses coupling (subject to fission/salted legacy settings).
 
 | Scenario | Legacy radius / converted yield | Burst height / fireball | Type / coupling | Crater / fallout | Torex mode |
 | --- | --- | --- | --- | --- | --- |
 | Little Boy at terrain level | 48 / 15.00 kt | 0 / 16.80 blocks | SURFACE / 1.000 | 20.16 / 1.000 | Ground-connected mushroom cloud |
-| Little Boy above clearance | 48 / 15.00 kt | 17 / 16.80 blocks | AIR / 0.000 | 0 / 0.000 | Altitude-origin atmospheric cloud |
+| Little Boy above clearance | 48 / 15.00 kt | 17 / 16.80 blocks | AIR / 0.000 | 0 / 0.080 | Altitude-origin atmospheric cloud |
 | Ivy Mike 20 blocks above terrain | 424 / 10,338.68 kt | 20 / 148.40 blocks | SURFACE / 0.865 | 154.08 / 0.865 | Partially coupled stem/cloud |
-| Ivy Mike fully clear | 424 / 10,338.68 kt | 150 / 148.40 blocks | AIR / 0.000 | 0 / 0.000 | Altitude-origin atmospheric cloud |
+| Ivy Mike fully clear | 424 / 10,338.68 kt | 150 / 148.40 blocks | AIR / 0.000 | 0 / 0.080 | Altitude-origin atmospheric cloud |
 | MCHeli weapon labelled 150 kt, `nukeYield = 90`, impact level | 90 / 98.88 kt | 0 / 31.50 blocks | SURFACE / 1.000 | 37.80 / 1.000 | Ground-connected mushroom cloud |
-| Same MCHeli weapon through `ExplosionAltitude` (40 blocks) | 90 / 98.88 kt | 40 / 31.50 blocks | AIR / 0.000 | 0 / 0.000 | Altitude-origin atmospheric cloud |
+| Same MCHeli weapon through `ExplosionAltitude` (40 blocks) | 90 / 98.88 kt | 40 / 31.50 blocks | AIR / 0.000 | 0 / 0.080 | Altitude-origin atmospheric cloud |
 | Same MCHeli weapon, `NukeEffectOnly = true` | 90 / 98.88 kt | coordinate-dependent / 31.50 blocks | independently resolved / coordinate-dependent | no MK5 crater or fallout / N/A | Torex-only matching the resolved mode |
 | Underwater detonation at terrain level | caller radius / converted compatibility yield | coordinate-dependent / radius × 0.35 | UNDERWATER / computed intersection | coupling-scaled / coupling-scaled | Underwater-resolved visual path |
 | Vacuum detonation | caller radius / converted compatibility yield | coordinate-dependent / radius × 0.35 | VACUUM / computed intersection | physical terrain coupling may exist; fallout 0 | No-atmosphere visual, no atmospheric sound |

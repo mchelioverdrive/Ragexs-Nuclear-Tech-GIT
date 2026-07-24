@@ -23,6 +23,8 @@ import com.hbm.util.ContaminationUtil.HazardType;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.potion.Potion;
+import net.minecraft.potion.PotionEffect;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.Vec3;
@@ -61,7 +63,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 		for(Object player : worldObj.playerEntities) ((EntityPlayer)player).triggerAchievement(MainRegistry.achManhattan);
 		ensureEffects();
 		if(!worldObj.isRemote) {
-			if(!thermalApplied) { applyThermalFlash(); thermalApplied = true; }
+			if(!thermalApplied) { applyThermalFlash(); applyThermalGroundIgnition(); thermalApplied = true; }
 			if(!promptApplied) { applyPromptRadiation(); promptApplied = true; }
 			advanceShockFront();
 		}
@@ -98,8 +100,29 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 			double distanceSq = Math.max(1D, dx * dx + dy * dy + dz * dz);
 			if(distanceSq > effects.thermalRadius * effects.thermalRadius || worldObj.rayTraceBlocks(Vec3.createVectorHelper(posX, posY, posZ), Vec3.createVectorHelper(entity.posX, entity.posY + entity.getEyeHeight(), entity.posZ)) != null) continue;
 			double fluence = spec.yieldKt * spec.thermalFraction * 50D / distanceSq;
-			if(fluence > 1D) entity.attackEntityFrom(com.hbm.lib.ModDamageSource.nuclearBlast, (float)Math.min(20D, fluence));
-			if(fluence > 8D) entity.setFire((int)Math.min(10D, fluence / 2D));
+			if(distanceSq <= effects.fireballRadius * effects.fireballRadius) {
+				entity.attackEntityFrom(com.hbm.lib.ModDamageSource.nuclearBlast, 1000F);
+				entity.setFire(20);
+			} else {
+				if(fluence > 1D) entity.attackEntityFrom(com.hbm.lib.ModDamageSource.nuclearBlast, (float)Math.min(100D, fluence));
+				if(fluence > 8D) entity.setFire((int)Math.min(20D, fluence / 2D));
+			}
+			if(fluence > 0.5D) entity.addPotionEffect(new PotionEffect(Potion.blindness.id, (int)Math.min(20 * 30, 20D + fluence * 20D), 0));
+		}
+	}
+
+	/** Ignites exposed flammables without creating a crater or terrain-ray workload. */
+	private void applyThermalGroundIgnition() {
+		if(spec.burstType == BurstType.UNDERWATER || spec.burstType == BurstType.VACUUM || effects.thermalRadius <= 0D) return;
+		int samples = Math.min(2048, Math.max(128, (int)Math.ceil(effects.thermalRadius * 12D)));
+		for(int i = 0; i < samples; i++) {
+			double distance = effects.thermalRadius * Math.sqrt(worldObj.rand.nextDouble());
+			double angle = worldObj.rand.nextDouble() * Math.PI * 2D;
+			int x = (int)Math.floor(posX + Math.cos(angle) * distance);
+			int z = (int)Math.floor(posZ + Math.sin(angle) * distance);
+			int y = worldObj.getHeightValue(x, z) - 1;
+			if(y < 0 || !worldObj.isAirBlock(x, y + 1, z)) continue;
+			if(worldObj.getBlock(x, y, z).isFlammable(worldObj, x, y, z, net.minecraftforge.common.util.ForgeDirection.UP)) worldObj.setBlock(x, y + 1, z, Blocks.fire, 0, 3);
 		}
 	}
 

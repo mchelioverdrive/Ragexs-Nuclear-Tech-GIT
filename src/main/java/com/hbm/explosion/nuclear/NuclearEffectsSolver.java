@@ -21,7 +21,13 @@ public final class NuclearEffectsSolver {
 		profile.falloutSourceStrength = spec.createsFallout ? spec.yieldKt * spec.fissionFraction * spec.groundCoupling : 0.0D;
 		profile.visualScale = Math.max(1.0D, base / 48.0D);
 		profile.cloudTopHeight = base * 2.5D;
-		if(spec.burstType == BurstType.AIR) { profile.craterRadius = 0; profile.craterDepth = 0; profile.falloutSourceStrength *= 0.08D; }
+		if(spec.burstType == BurstType.AIR) {
+			profile.craterRadius = 0;
+			profile.craterDepth = 0;
+			// Airbursts entrain far less soil than surface bursts, but atmospheric
+			// fission products still produce a deliberately small local fallout source.
+			profile.falloutSourceStrength = spec.createsFallout ? spec.yieldKt * spec.fissionFraction * 0.08D : 0.0D;
+		}
 		if(spec.burstType == BurstType.SUBSURFACE) { profile.thermalRadius *= 0.35D; profile.moderateBlastRadius *= 0.55D; }
 		if(spec.burstType == BurstType.UNDERWATER) { profile.thermalRadius *= 0.1D; profile.craterRadius *= 0.5D; }
 		if(spec.burstType == BurstType.VACUUM) { profile.severeBlastRadius = profile.moderateBlastRadius = profile.lightBlastRadius = 0; profile.falloutSourceStrength = 0; }
