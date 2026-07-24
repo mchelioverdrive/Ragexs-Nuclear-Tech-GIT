@@ -28,6 +28,8 @@ public class ExplosionNukeRayBatched {
 
 	int strength;
 	int length;
+	private boolean contained;
+	private int surfaceY = 256;
 
 	int gspNumMax;
 	int gspNum;
@@ -37,12 +39,18 @@ public class ExplosionNukeRayBatched {
 	public boolean isAusf3Complete = false;
 
 	public ExplosionNukeRayBatched(World world, int x, int y, int z, int strength, int speed, int length) {
+		this(world, x, y, z, strength, speed, length, false, 256);
+	}
+
+	public ExplosionNukeRayBatched(World world, int x, int y, int z, int strength, int speed, int length, boolean contained, int surfaceY) {
 		this.world = world;
 		this.posX = x;
 		this.posY = y;
 		this.posZ = z;
 		this.strength = strength;
 		this.length = length;
+		this.contained = contained;
+		this.surfaceY = surfaceY;
 
 		// Total number of points
 		this.gspNumMax = (int)(2.5 * Math.PI * Math.pow(this.strength,2));
@@ -101,6 +109,7 @@ public class ExplosionNukeRayBatched {
 				float x0 = (float) (posX + (vec.xCoord * i));
 				float y0 = (float) (posY + (vec.yCoord * i));
 				float z0 = (float) (posZ + (vec.zCoord * i));
+				if(contained && y0 >= surfaceY) break;
 
 				int iX = (int) Math.floor(x0);
 				int iY = (int) Math.floor(y0);
@@ -158,7 +167,7 @@ public class ExplosionNukeRayBatched {
 
 	/** Stores the incremental ray cursor and queued terrain work so reloads resume safely. */
 	public void writeToNBT(NBTTagCompound tag) {
-		tag.setInteger("gspNum", gspNum); tag.setDouble("gspX", gspX); tag.setDouble("gspY", gspY); tag.setBoolean("complete", isAusf3Complete);
+		tag.setInteger("gspNum", gspNum); tag.setDouble("gspX", gspX); tag.setDouble("gspY", gspY); tag.setBoolean("complete", isAusf3Complete); tag.setBoolean("contained", contained); tag.setInteger("surfaceY", surfaceY);
 		NBTTagList chunks = new NBTTagList();
 		for(ChunkCoordIntPair coord : perChunk.keySet()) {
 			NBTTagCompound chunk = new NBTTagCompound(); chunk.setInteger("x", coord.chunkXPos); chunk.setInteger("z", coord.chunkZPos);
@@ -167,7 +176,7 @@ public class ExplosionNukeRayBatched {
 		tag.setTag("chunks", chunks);
 	}
 	public void readFromNBT(NBTTagCompound tag) {
-		gspNum = tag.getInteger("gspNum"); gspX = tag.getDouble("gspX"); gspY = tag.getDouble("gspY"); isAusf3Complete = tag.getBoolean("complete"); perChunk.clear(); orderedChunks.clear();
+		gspNum = tag.getInteger("gspNum"); gspX = tag.getDouble("gspX"); gspY = tag.getDouble("gspY"); isAusf3Complete = tag.getBoolean("complete"); if(tag.hasKey("contained")) contained = tag.getBoolean("contained"); if(tag.hasKey("surfaceY")) surfaceY = tag.getInteger("surfaceY"); perChunk.clear(); orderedChunks.clear();
 		NBTTagList chunks = tag.getTagList("chunks", 10);
 		for(int i = 0; i < chunks.tagCount(); i++) { NBTTagCompound chunk = chunks.getCompoundTagAt(i); ChunkCoordIntPair coord = new ChunkCoordIntPair(chunk.getInteger("x"), chunk.getInteger("z")); List<FloatTriplet> points = new ArrayList<FloatTriplet>(); NBTTagList savedPoints = chunk.getTagList("points", 10); for(int j = 0; j < savedPoints.tagCount(); j++) { NBTTagCompound point = savedPoints.getCompoundTagAt(j); points.add(new FloatTriplet(point.getFloat("x"), point.getFloat("y"), point.getFloat("z"))); } perChunk.put(coord, points); }
 		if(isAusf3Complete) { orderedChunks.addAll(perChunk.keySet()); orderedChunks.sort(comparator); }

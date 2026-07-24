@@ -1,3 +1,12 @@
+# Fix contained underground nuclear detonations
+
+**Tracker:** `Fix deep underground nuclear detonations incorrectly behaving like airbursts or surface bursts in Ragex's Nuclear Tech`
+
+* Added yield-scaled, resistance-aware burial containment and venting resolution, persisted independently from ground coupling.
+* Contained shots retain underground cavity and ground-shock damage while suppressing surface thermal ignition, atmospheric blast, prompt surface radiation, mushroom clouds, craters, and fallout rain.
+* Shallow or shaft-vented shots scale breach-origin blast, fire, crater, prompt radiation, cloud, and fallout release by their surface-breakthrough factor.
+* Restricted terrain ignition to unobstructed thermal paths with combustible fuel instead of placing fire above arbitrary exposed stone or dirt.
+
 # Airburst thermal and prompt-radiation correction
 
 **Tracker:** `Airburst thermal and prompt-radiation correction`

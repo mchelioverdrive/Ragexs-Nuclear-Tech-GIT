@@ -104,6 +104,20 @@ public class ExplosionNukeGeneric {
 		}
 	}
 
+	/** Localized seismic damage for contained shots; it never projects an atmospheric front onto the surface. */
+	public static void dealGroundShock(World world, double x, double y, double z, double radius, double burialDepth) {
+		if(radius <= 0D) return;
+		double surfaceY = y + burialDepth;
+		List<Entity> list = world.getEntitiesWithinAABBExcludingEntity(null, AxisAlignedBB.getBoundingBox(x - radius, y - radius, z - radius, x + radius, Math.min(surfaceY - 1D, y + radius), z + radius));
+		for(Entity entity : list) {
+			if(isExplosionExempt(entity)) continue;
+			double distance = entity.getDistance(x, y, z);
+			if(distance > radius) continue;
+			float damage = (float)(30D * (1D - distance / radius));
+			if(damage > 0F) entity.attackEntityFrom(ModDamageSource.nuclearBlast, damage);
+		}
+	}
+
 	/** Piecewise log-friendly gameplay curve anchored at 50/20/5/2/1 psi. */
 	public static double getOverpressurePsi(double relativeDistance) {
 		final double[] distances = { 0.30D, 0.50D, 1.00D, 1.80D, 2.50D };
