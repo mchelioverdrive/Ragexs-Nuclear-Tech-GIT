@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import com.hbm.dim.CelestialBody;
 import com.hbm.dim.trait.CBT_Atmosphere;
 import com.hbm.main.MainRegistry;
+import com.hbm.explosion.nuclear.BurstType;
+import com.hbm.explosion.nuclear.NuclearBurstContext;
+import com.hbm.explosion.nuclear.NuclearBurstResolver;
 import com.hbm.util.BobMathUtil;
 import com.hbm.util.TrackerUtil;
 
@@ -36,6 +39,9 @@ public class EntityNukeTorex extends Entity {
 	public boolean didShake = false;
 
 	private boolean hasSufficientPressure = true;
+	private double resolvedBurstHeight;
+	private double resolvedFireballRadius;
+	private double resolvedGroundCoupling = 1D;
 
 	public EntityNukeTorex(World world) {
 		super(world);
@@ -53,6 +59,10 @@ public class EntityNukeTorex extends Entity {
 	protected void entityInit() {
 		this.dataWatcher.addObject(10, new Float(1));
 		this.dataWatcher.addObject(11, new Integer(0));
+		this.dataWatcher.addObject(12, new Integer(BurstType.SURFACE.ordinal()));
+		this.dataWatcher.addObject(13, new Float(1F));
+		this.dataWatcher.addObject(14, new Float(0F));
+		this.dataWatcher.addObject(15, new Float(0F));
 	}
 
 	@Override @SideOnly(Side.CLIENT) public int getBrightnessForRender(float interp) { return 15728880; }
@@ -69,14 +79,12 @@ public class EntityNukeTorex extends Entity {
 
 			if(ticksExisted == 1) this.setScale((float) s);
 
-			if(lastSpawnY == -1) {
-				lastSpawnY = posY - 3;
-			}
+			if(lastSpawnY == -1) lastSpawnY = isAirburstVisual() ? posY : posY - 3;
 
 			if(ticksExisted < 100) this.worldObj.lastLightningBolt = 2;
 
-			int spawnTarget = Math.max(worldObj.getHeightValue((int) Math.floor(posX), (int) Math.floor(posZ)) - 3, 1);
-			double moveSpeed = 0.5D;
+			int spawnTarget = isAirburstVisual() ? (int)Math.floor(posY) : Math.max(worldObj.getHeightValue((int) Math.floor(posX), (int) Math.floor(posZ)) - 3, 1);
+			double moveSpeed = isAirburstVisual() ? 0D : 0.5D;
 
 			if(Math.abs(spawnTarget - lastSpawnY) < moveSpeed) {
 				lastSpawnY = spawnTarget;
@@ -102,13 +110,6 @@ public class EntityNukeTorex extends Entity {
 					}
 				}
 
-				if(ticksExisted < 150 && !didPlaySound) {
-					if(MainRegistry.proxy.me() != null && MainRegistry.proxy.me().getDistanceToEntity(this) < (ticksExisted * 1.5 + 1) * 1.5) {
-						MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 10_000F, 1F);
-						didPlaySound = true;
-					}
-				}
-
 				for(Cloudlet cloud : cloudlets) cloud.update();
 				coreHeight += 0.15 / s;
 				torusWidth += 0.05 / s;
@@ -126,7 +127,7 @@ public class EntityNukeTorex extends Entity {
 			// spawn mush clouds
 			double range = (torusWidth - rollerSize) * 0.25;
 			double simSpeed = getSimulationSpeed();
-			int toSpawn = (int) Math.ceil(10 * simSpeed * simSpeed);
+			int toSpawn = (int) Math.ceil(10 * simSpeed * simSpeed * (isAirburstVisual() ? 0.35D + getGroundCoupling() * 0.65D : 1D));
 			int lifetime = Math.min((ticksExisted * ticksExisted) + 200, maxAge - ticksExisted + 200);
 
 			for(int i = 0; i < toSpawn; i++) {
@@ -147,7 +148,7 @@ public class EntityNukeTorex extends Entity {
 					Vec3 vec = Vec3.createVectorHelper((ticksExisted * 1.5 + rand.nextDouble()) * 1.5, 0, 0);
 					float rot = (float) (Math.PI * 2 * rand.nextDouble());
 					vec.rotateAroundY(rot);
-					this.cloudlets.add(new Cloudlet(vec.xCoord + posX, worldObj.getHeightValue((int) (vec.xCoord + posX) + 1, (int) (vec.zCoord + posZ)), vec.zCoord + posZ, rot, 0, shockLife, TorexType.SHOCK)
+					this.cloudlets.add(new Cloudlet(vec.xCoord + posX, isAirburstVisual() ? posY : worldObj.getHeightValue((int) (vec.xCoord + posX) + 1, (int) (vec.zCoord + posZ)), vec.zCoord + posZ, rot, 0, shockLife, TorexType.SHOCK)
 						.setScale(7F, 2F)
 						.setMotion(ticksExisted > 15 ? 0.75 : 0));
 				}
@@ -225,6 +226,17 @@ public class EntityNukeTorex extends Entity {
 		this.convectionHeight = this.convectionHeight / 1.5D * scale;
 		this.torusWidth = this.torusWidth / 1.5D * scale;
 		this.rollerSize = this.rollerSize / 1.5D * scale;
+		return this;
+	}
+
+	private boolean isAirburstVisual() { return getBurstType() == BurstType.AIR; }
+	private BurstType getBurstType() { int type = this.dataWatcher.getWatchableObjectInt(12); return type >= 0 && type < BurstType.values().length ? BurstType.values()[type] : BurstType.SURFACE; }
+	private double getGroundCoupling() { return this.dataWatcher.getWatchableObjectFloat(13); }
+
+	private EntityNukeTorex applyBurstContext(NuclearBurstContext context) {
+		this.resolvedBurstHeight = context.burstHeight; this.resolvedFireballRadius = context.fireballRadius; this.resolvedGroundCoupling = context.groundCoupling;
+		this.dataWatcher.updateObject(12, context.burstType.ordinal()); this.dataWatcher.updateObject(13, (float)context.groundCoupling); this.dataWatcher.updateObject(14, (float)context.burstHeight); this.dataWatcher.updateObject(15, (float)context.fireballRadius);
+		if(context.burstType == BurstType.VACUUM) this.hasSufficientPressure = false;
 		return this;
 	}
 
@@ -632,7 +644,8 @@ public class EntityNukeTorex extends Entity {
 	public static void statFacBale(World world, double x, double y, double z, float scale) { statFac(world, x, y, z, scale); }
 
 	public static void statFac(World world, double x, double y, double z, float scale) {
-		EntityNukeTorex torex = new EntityNukeTorex(world).setScale(MathHelper.clamp_float((float) BobMathUtil.squirt(scale * 0.01) * 1.5F, 0.5F, 5F));
+		NuclearBurstContext context = NuclearBurstResolver.resolve(world, x, y, z, Math.max(1, Math.round(scale)));
+		EntityNukeTorex torex = new EntityNukeTorex(world).applyBurstContext(context).setScale(MathHelper.clamp_float((float)context.effects.visualScale, 0.5F, 5F));
 		torex.setPosition(x, y, z);
 		torex.forceSpawn = true;
 		world.spawnEntityInWorld(torex);

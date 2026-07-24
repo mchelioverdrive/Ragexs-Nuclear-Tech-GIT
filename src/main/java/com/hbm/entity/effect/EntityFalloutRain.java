@@ -29,6 +29,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
 	private boolean firstTick = true; // Of course Vanilla has it private in Entity...
 	private boolean salted = false;
+	private double sourceMultiplier = 1D;
 	public EntityFalloutRain(World p_i1582_1_) {
 		super(p_i1582_1_);
 		this.setSize(4, 20);
@@ -190,7 +191,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
 			int meta = worldObj.getBlockMetadata(x, y, z);
 
-			if(meta < 7) {
+			if(meta < getMaximumDepositedLayer()) {
 				worldObj.setBlockMetadataWithNotify(
 					x, y, z,
 					meta + 1,
@@ -236,7 +237,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 				double normalized = dist / 100D;
 
 				// Peak fallout deposition farther away from hypocenter
-				double chance = 0.18D * Math.exp(-Math.pow((normalized - 0.72D) / 0.22D, 2));
+				double chance = 0.18D * sourceMultiplier * Math.exp(-Math.pow((normalized - 0.72D) / 0.22D, 2));
 
 				if(this.salted) {
 					chance *= 1.75D;
@@ -340,7 +341,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 	@Override
 	protected void readEntityFromNBT(NBTTagCompound tag) {
 		setScale(tag.getInteger("scale"));
-		this.salted = tag.getBoolean("salt");
+		this.salted = tag.getBoolean("salt"); sourceMultiplier = tag.hasKey("sourceMultiplier") ? tag.getDouble("sourceMultiplier") : 1D;
 		chunksToProcess.addAll(readChunksFromIntArray(tag.getIntArray("chunks")));
 		outerChunksToProcess.addAll(readChunksFromIntArray(tag.getIntArray("outerChunks")));
 	}
@@ -360,7 +361,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 	@Override
 	protected void writeEntityToNBT(NBTTagCompound tag) {
 		tag.setInteger("scale", getScale());
-		tag.setBoolean("salt", this.salted);
+		tag.setBoolean("salt", this.salted); tag.setDouble("sourceMultiplier", sourceMultiplier);
 		tag.setIntArray("chunks", writeChunksToIntArray(chunksToProcess));
 		tag.setIntArray("outerChunks", writeChunksToIntArray(outerChunksToProcess));
 	}
@@ -382,6 +383,10 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 		int scale = this.dataWatcher.getWatchableObjectInt(16);
 		return scale == 0 ? 1 : scale;
 	}
+	public void setSourceMultiplier(double multiplier) { sourceMultiplier = Math.max(0D, Math.min(1D, multiplier)); }
+	public double getSourceMultiplier() { return sourceMultiplier; }
+	private int getMaximumDepositedLayer() { return Math.max(0, Math.min(7, (int)Math.ceil(7D * sourceMultiplier))); }
+
 	public void setSalted(boolean salt) {
 		this.salted = salt;
 	}
