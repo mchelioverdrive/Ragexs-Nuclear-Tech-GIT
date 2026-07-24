@@ -12,6 +12,11 @@ public final class NuclearDetonationSpec {
 	public BurstType burstType = BurstType.SURFACE;
 	public double burstHeight;
 	public double groundCoupling = 1.0D;
+	public double burialDepth;
+	public double surfaceBreakthroughFactor = 1.0D;
+	public boolean contained;
+	public boolean vented;
+	public int breachX, breachY, breachZ;
 	public double thermalFraction = 0.35D;
 	public double promptGammaFraction = 0.05D;
 	public double promptNeutronFraction = 0.02D;

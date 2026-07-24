@@ -11,6 +11,8 @@ public final class NuclearEffectsSolver {
 		double base = BombConfig.radiusFromKt((float)Math.max(spec.yieldKt, 0.001D));
 		double atmosphere = spec.burstType == BurstType.VACUUM ? 0.0D : 1.0D;
 		profile.fireballRadius = base * 0.35D;
+		profile.cavityRadius = base * 0.42D * Math.max(0.35D, spec.groundCoupling);
+		profile.groundShockRadius = base * 0.9D * spec.groundCoupling;
 		profile.severeBlastRadius = base * 0.70D * atmosphere;
 		profile.moderateBlastRadius = base * (spec.burstType == BurstType.AIR ? 1.75D : 1.35D) * atmosphere;
 		profile.lightBlastRadius = base * 2.0D * atmosphere;
@@ -28,9 +30,19 @@ public final class NuclearEffectsSolver {
 			// fission products still produce a deliberately small local fallout source.
 			profile.falloutSourceStrength = spec.createsFallout ? spec.yieldKt * spec.fissionFraction * 0.08D : 0.0D;
 		}
-		if(spec.burstType == BurstType.SUBSURFACE) { profile.thermalRadius *= 0.35D; profile.moderateBlastRadius *= 0.55D; }
+		if(spec.burstType == BurstType.SUBSURFACE) {
+			double release = clamp(spec.surfaceBreakthroughFactor);
+			profile.severeBlastRadius *= release; profile.moderateBlastRadius *= release; profile.lightBlastRadius *= release;
+			profile.thermalRadius *= release * 0.35D;
+			profile.promptRadiationRadius *= release;
+			profile.craterRadius *= release;
+			profile.craterDepth *= release;
+			profile.falloutSourceStrength *= release;
+			profile.visualScale *= 0.2D + release * 0.8D;
+		}
 		if(spec.burstType == BurstType.UNDERWATER) { profile.thermalRadius *= 0.1D; profile.craterRadius *= 0.5D; }
 		if(spec.burstType == BurstType.VACUUM) { profile.severeBlastRadius = profile.moderateBlastRadius = profile.lightBlastRadius = 0; profile.falloutSourceStrength = 0; }
 		return profile;
 	}
+	private static double clamp(double value) { return Math.max(0D, Math.min(1D, value)); }
 }

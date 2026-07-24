@@ -5,6 +5,8 @@ public final class NuclearEffectsProfile {
 	public double fireballRadius;
 	public double craterRadius;
 	public double craterDepth;
+	public double cavityRadius;
+	public double groundShockRadius;
 	public double severeBlastRadius;
 	public double moderateBlastRadius;
 	public double lightBlastRadius;
