@@ -10,6 +10,8 @@ import com.hbm.util.fauxpointtwelve.BlockPos;
 
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
@@ -114,7 +116,7 @@ public class ExplosionNukeRayBatched {
 				//else
 				//	res -= Math.pow(Blocks.air.getExplosionResistance(null), 7.5D - fac); // air is 0, might want to raise that is necessary
 
-				if(res > 0 && block != Blocks.air || res > 0 && block != Blocks.water) { //|| res > 0 && block != Blocks.water
+				if(res > 0 && block != Blocks.air && !block.getMaterial().isLiquid()) {
 					//just chunk crap, should be fine but if it isn't I will add a fluid check.
 					lastPos = new FloatTriplet(x0, y0, z0);
 					//all-air chunks or water blocks don't need to be buffered at all
@@ -151,6 +153,24 @@ public class ExplosionNukeRayBatched {
 		orderedChunks.sort(comparator);
 
 		isAusf3Complete = true;
+	}
+
+
+	/** Stores the incremental ray cursor and queued terrain work so reloads resume safely. */
+	public void writeToNBT(NBTTagCompound tag) {
+		tag.setInteger("gspNum", gspNum); tag.setDouble("gspX", gspX); tag.setDouble("gspY", gspY); tag.setBoolean("complete", isAusf3Complete);
+		NBTTagList chunks = new NBTTagList();
+		for(ChunkCoordIntPair coord : perChunk.keySet()) {
+			NBTTagCompound chunk = new NBTTagCompound(); chunk.setInteger("x", coord.chunkXPos); chunk.setInteger("z", coord.chunkZPos);
+			NBTTagList points = new NBTTagList(); for(FloatTriplet point : perChunk.get(coord)) { NBTTagCompound p = new NBTTagCompound(); p.setFloat("x", point.xCoord); p.setFloat("y", point.yCoord); p.setFloat("z", point.zCoord); points.appendTag(p); } chunk.setTag("points", points); chunks.appendTag(chunk);
+		}
+		tag.setTag("chunks", chunks);
+	}
+	public void readFromNBT(NBTTagCompound tag) {
+		gspNum = tag.getInteger("gspNum"); gspX = tag.getDouble("gspX"); gspY = tag.getDouble("gspY"); isAusf3Complete = tag.getBoolean("complete"); perChunk.clear(); orderedChunks.clear();
+		NBTTagList chunks = tag.getTagList("chunks", 10);
+		for(int i = 0; i < chunks.tagCount(); i++) { NBTTagCompound chunk = chunks.getCompoundTagAt(i); ChunkCoordIntPair coord = new ChunkCoordIntPair(chunk.getInteger("x"), chunk.getInteger("z")); List<FloatTriplet> points = new ArrayList<FloatTriplet>(); NBTTagList savedPoints = chunk.getTagList("points", 10); for(int j = 0; j < savedPoints.tagCount(); j++) { NBTTagCompound point = savedPoints.getCompoundTagAt(j); points.add(new FloatTriplet(point.getFloat("x"), point.getFloat("y"), point.getFloat("z"))); } perChunk.put(coord, points); }
+		if(isAusf3Complete) { orderedChunks.addAll(perChunk.keySet()); orderedChunks.sort(comparator); }
 	}
 
 	public static float masqueradeResistance(Block block) {

@@ -73,45 +73,47 @@ public class ExplosionNukeGeneric {
 		dealDamage(world, x, y, z, radius, 250F);
 	}
 
+	/** Legacy immediate wrapper. MK5 uses dealDamageFront so terrain work cannot repeat exposure. */
 	public static void dealDamage(World world, double x, double y, double z, double radius, float maxDamage) {
+		dealDamageFront(world, x, y, z, 0.0D, radius, radius, maxDamage);
+	}
 
-		double heightAbove = getBlastHeightAbove(radius);
-		double heightBelow = getBlastHeightBelow(radius);
-		List<Entity> list = world.getEntitiesWithinAABBExcludingEntity(null, AxisAlignedBB.getBoundingBox(x - radius, y - heightBelow, z - radius, x + radius, y + heightAbove, z + radius));
-
+	/** Applies an expanding pressure front once. Radius is the 5-psi gameplay radius. */
+	public static void dealDamageFront(World world, double x, double y, double z, double previousRadius, double currentRadius, double fivePsiRadius, float maxDamage) {
+		if(currentRadius <= previousRadius || fivePsiRadius <= 0.0D) return;
+		double heightAbove = getBlastHeightAbove(currentRadius);
+		double heightBelow = getBlastHeightBelow(currentRadius);
+		List<Entity> list = world.getEntitiesWithinAABBExcludingEntity(null, AxisAlignedBB.getBoundingBox(x - currentRadius, y - heightBelow, z - currentRadius, x + currentRadius, y + heightAbove, z + currentRadius));
 		for(Entity e : list) {
-
 			double horizontalDistance = getHorizontalDistance(e, x, z);
 			double entityHeight = e.posY + e.getEyeHeight() - y;
+			if(horizontalDistance <= previousRadius || horizontalDistance > currentRadius || entityHeight < -heightBelow || entityHeight > heightAbove || isExplosionExempt(e)) continue;
+			double exposure = Library.isObstructed(world, x, y, z, e.posX, e.posY + e.getEyeHeight(), e.posZ) ? 0.20D : 1.0D;
+			double psi = getOverpressurePsi(horizontalDistance / fivePsiRadius) * exposure;
+			if(psi <= 0.0D) continue;
+			float damage = (float)Math.min(maxDamage, psi * 2.5D);
+			e.attackEntityFrom(ModDamageSource.nuclearBlast, damage);
+			Vec3 knock = Vec3.createVectorHelper(e.posX - x, e.posY + e.getEyeHeight() - y, e.posZ - z).normalize();
+			double impulse = Math.min(1.8D, psi * 0.035D) * exposure;
+			e.motionX += knock.xCoord * impulse;
+			e.motionY += knock.yCoord * impulse;
+			e.motionZ += knock.zCoord * impulse;
+		}
+	}
 
-			if(horizontalDistance <= radius && entityHeight >= -heightBelow && entityHeight <= heightAbove) {
-
-				double entX = e.posX;
-				double entY = e.posY + e.getEyeHeight();
-				double entZ = e.posZ;
-
-				if(!isExplosionExempt(e) && !Library.isObstructed(world, x, y, z, entX, entY, entZ)) {
-
-					// Use ground distance for blast intensity. This makes airbursts lethal
-					// to exposed entities below them instead of spending most of the damage
-					// budget on detonation altitude.
-					double damage = maxDamage * (radius - horizontalDistance) / radius;
-					e.attackEntityFrom(ModDamageSource.nuclearBlast, (float)damage);
-					e.setFire(BLAST_FIRE_SECONDS);
-
-					double knockX = e.posX - x;
-					double knockY = e.posY + e.getEyeHeight() - y;
-					double knockZ = e.posZ - z;
-
-					Vec3 knock = Vec3.createVectorHelper(knockX, knockY, knockZ);
-					knock = knock.normalize();
-
-					e.motionX += knock.xCoord * 0.2D;
-					e.motionY += knock.yCoord * 0.2D;
-					e.motionZ += knock.zCoord * 0.2D;
-				}
+	/** Piecewise log-friendly gameplay curve anchored at 50/20/5/2/1 psi. */
+	public static double getOverpressurePsi(double relativeDistance) {
+		final double[] distances = { 0.30D, 0.50D, 1.00D, 1.80D, 2.50D };
+		final double[] pressures = { 50.0D, 20.0D, 5.0D, 2.0D, 1.0D };
+		if(relativeDistance <= distances[0]) return pressures[0];
+		if(relativeDistance >= distances[distances.length - 1]) return 0.0D;
+		for(int i = 1; i < distances.length; i++) {
+			if(relativeDistance <= distances[i]) {
+				double t = (relativeDistance - distances[i - 1]) / (distances[i] - distances[i - 1]);
+				return pressures[i - 1] + (pressures[i] - pressures[i - 1]) * t;
 			}
 		}
+		return 0.0D;
 	}
 
 	public static double getBlastHeightAbove(double radius) {
