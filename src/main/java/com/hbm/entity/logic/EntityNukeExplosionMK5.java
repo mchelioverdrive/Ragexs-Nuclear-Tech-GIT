@@ -6,12 +6,12 @@ import org.apache.logging.log4j.Level;
 
 import com.hbm.config.BombConfig;
 import com.hbm.config.GeneralConfig;
-import com.hbm.dim.CelestialBody;
-import com.hbm.dim.trait.CBT_Atmosphere;
 import com.hbm.entity.effect.EntityFalloutRain;
 import com.hbm.explosion.ExplosionNukeGeneric;
 import com.hbm.explosion.ExplosionNukeRayBatched;
 import com.hbm.explosion.nuclear.BurstType;
+import com.hbm.explosion.nuclear.NuclearBurstContext;
+import com.hbm.explosion.nuclear.NuclearBurstResolver;
 import com.hbm.explosion.nuclear.NuclearDetonationSpec;
 import com.hbm.explosion.nuclear.NuclearEffectsProfile;
 import com.hbm.explosion.nuclear.NuclearEffectsSolver;
@@ -46,6 +46,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 	private boolean thermalApplied;
 	private NuclearDetonationSpec spec;
 	private NuclearEffectsProfile effects;
+	private NuclearBurstContext burstContext;
 	ExplosionNukeRayBatched explosion;
 	private NBTTagCompound pendingExplosionData;
 
@@ -64,31 +65,23 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 			if(!promptApplied) { applyPromptRadiation(); promptApplied = true; }
 			advanceShockFront();
 		}
-		if(explosion == null) { explosion = new ExplosionNukeRayBatched(worldObj, (int)posX, (int)posY, (int)posZ, strength, speed, length); if(pendingExplosionData != null) { explosion.readFromNBT(pendingExplosionData); pendingExplosionData = null; } }
-		if(!explosion.isAusf3Complete) explosion.collectTip(speed * 10);
-		else if(!explosion.perChunk.isEmpty()) {
-			long start = System.currentTimeMillis();
-			while(!explosion.perChunk.isEmpty() && System.currentTimeMillis() < start + BombConfig.mk5) explosion.processChunk();
-		} else finishDetonation();
+		if(effects.craterRadius > 0D) {
+			if(explosion == null) { explosion = new ExplosionNukeRayBatched(worldObj, (int)posX, (int)posY, (int)posZ, strength, speed, length); if(pendingExplosionData != null) { explosion.readFromNBT(pendingExplosionData); pendingExplosionData = null; } }
+			if(!explosion.isAusf3Complete) explosion.collectTip(speed * 10);
+			else if(!explosion.perChunk.isEmpty()) { long start = System.currentTimeMillis(); while(!explosion.perChunk.isEmpty() && System.currentTimeMillis() < start + BombConfig.mk5) explosion.processChunk(); }
+			else if(currentShockRadius >= effects.lightBlastRadius) finishDetonation();
+		} else if(currentShockRadius >= effects.lightBlastRadius) finishDetonation();
 	}
 
 	private void ensureEffects() {
 		if(spec == null) {
-			spec = NuclearDetonationSpec.fromLegacyRadius(Math.max(1, length));
-			spec.createsFallout = fallout; spec.salted = salted; spec.burstType = detectBurstType(worldObj, posX, posY, posZ);
+			burstContext = NuclearBurstResolver.resolve(worldObj, posX, posY, posZ, Math.max(1, length));
+			spec = NuclearDetonationSpec.fromLegacyRadius(burstContext.legacyRadius);
+			spec.createsFallout = fallout; spec.salted = salted; spec.burstType = burstContext.burstType; spec.burstHeight = burstContext.burstHeight; spec.groundCoupling = burstContext.groundCoupling;
 		}
 		if(effects == null) effects = NuclearEffectsSolver.solve(spec);
 	}
 
-	private static BurstType detectBurstType(World world, double x, double y, double z) {
-		CBT_Atmosphere atmosphere = CelestialBody.getTrait(world, CBT_Atmosphere.class);
-		if(CelestialBody.inOrbit(world) || atmosphere == null || atmosphere.getPressure() < 0.01D) return BurstType.VACUUM;
-		if(world.getBlock((int)Math.floor(x), (int)Math.floor(y), (int)Math.floor(z)).getMaterial().isLiquid()) return BurstType.UNDERWATER;
-		int ground = world.getHeightValue((int)Math.floor(x), (int)Math.floor(z));
-		if(y < ground - 3) return BurstType.SUBSURFACE;
-		return y - ground > effectsSafeFireballRadius() ? BurstType.AIR : BurstType.SURFACE;
-	}
-	private static double effectsSafeFireballRadius() { return 12D; }
 
 	private void advanceShockFront() {
 		if(effects.lightBlastRadius <= 0D) return;
@@ -111,7 +104,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 	}
 
 	private void applyPromptRadiation() {
-		if(effects.promptRadiationRadius <= 0D || spec.burstType == BurstType.VACUUM) return;
+		if(effects.promptRadiationRadius <= 0D) return;
 		radiate((float)(2500000F * spec.fissionFraction), effects.promptRadiationRadius);
 	}
 	private void radiate(float rads, double range) {
@@ -129,7 +122,8 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 		if(fallout && effects.falloutSourceStrength > 0D && spec.burstType != BurstType.VACUUM) {
 			EntityFalloutRain rain = new EntityFalloutRain(worldObj);
 			rain.setPosition(posX, posY, posZ); rain.setSalted(salted);
-			rain.setScale((int)(length * 2.5D + falloutAdd) * BombConfig.falloutRange / 100);
+			rain.setSourceMultiplier(effects.falloutSourceStrength / Math.max(0.001D, spec.yieldKt * spec.fissionFraction));
+			rain.setScale((int)((length * 2.5D + falloutAdd) * BombConfig.falloutRange / 100D * rain.getSourceMultiplier()));
 			worldObj.spawnEntityInWorld(rain);
 		}
 		clearChunkLoader(); setDead();
@@ -152,7 +146,8 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 	public static EntityNukeExplosionMK5 statFac(World world, int r, double x, double y, double z) {
 		if(GeneralConfig.enableExtendedLogging && !world.isRemote) MainRegistry.logger.log(Level.INFO, "[NUKE] Initialized explosion at " + x + " / " + y + " / " + z + " with legacy radius " + r + "!");
 		if(r == 0) r = 25;
-		EntityNukeExplosionMK5 mk5 = new EntityNukeExplosionMK5(world); mk5.length = Math.max(1, r); mk5.spec = NuclearDetonationSpec.fromLegacyRadius(mk5.length); mk5.spec.burstType = detectBurstType(world, x, y, z); mk5.effects = NuclearEffectsSolver.solve(mk5.spec);
+		NuclearBurstContext context = NuclearBurstResolver.resolve(world, x, y, z, Math.max(1, r));
+		EntityNukeExplosionMK5 mk5 = new EntityNukeExplosionMK5(world); mk5.length = context.legacyRadius; mk5.burstContext = context; mk5.spec = NuclearDetonationSpec.fromLegacyRadius(context.legacyRadius); mk5.spec.burstType = context.burstType; mk5.spec.burstHeight = context.burstHeight; mk5.spec.groundCoupling = context.groundCoupling; mk5.effects = NuclearEffectsSolver.solve(mk5.spec);
 		mk5.strength = Math.max(1, (int)Math.ceil(mk5.effects.craterRadius * 2D)); mk5.speed = Math.max(1, (int)Math.ceil(100000D / mk5.strength)); mk5.setPosition(x, y, z); return mk5;
 	}
 	public static EntityNukeExplosionMK5 statFacNoRad(World world, int r, double x, double y, double z) { EntityNukeExplosionMK5 mk5 = statFac(world, r, x, y, z); mk5.fallout = false; mk5.spec.createsFallout = false; return mk5; }
