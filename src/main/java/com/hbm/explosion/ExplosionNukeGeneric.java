@@ -87,7 +87,10 @@ public class ExplosionNukeGeneric {
 		for(Entity e : list) {
 			double horizontalDistance = getHorizontalDistance(e, x, z);
 			double entityHeight = e.posY + e.getEyeHeight() - y;
-			if(horizontalDistance <= previousRadius || horizontalDistance > currentRadius || entityHeight < -heightBelow || entityHeight > heightAbove || isExplosionExempt(e)) continue;
+			// The initial shell must include the hypocenter. Using <= here permanently
+			// excluded entities directly below an airburst because every later shell has
+			// already passed horizontal distance zero.
+			if(horizontalDistance < previousRadius || horizontalDistance > currentRadius || entityHeight < -heightBelow || entityHeight > heightAbove || isExplosionExempt(e)) continue;
 			double exposure = Library.isObstructed(world, x, y, z, e.posX, e.posY + e.getEyeHeight(), e.posZ) ? 0.20D : 1.0D;
 			double psi = getOverpressurePsi(horizontalDistance / fivePsiRadius) * exposure;
 			if(psi <= 0.0D) continue;
