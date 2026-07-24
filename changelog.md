@@ -1,3 +1,13 @@
+# Modular nuclear-effects migration and MK5 correctness fixes
+
+**Tracker:** `Modular nuclear-effects migration and MK5 correctness fixes`
+
+* Reviewed the prior height-only blast change and replaced its repeated, unconditional damage path with a separate expanding pressure front using interpolated 50/20/5/2/1 psi gameplay anchors. Thermal flash is now a distinct, line-of-sight effect with exposure-based ignition instead of setting every exposed entity on fire for 15 seconds.
+* Added compact `NuclearDetonationSpec`, `BurstType`, `NuclearEffectsProfile`, and solver classes. Legacy radius callers remain supported through `BombConfig.ktFromRadius`, while crater terrain work, blast, thermal, prompt radiation, fallout, and visuals now have separate calculated distances.
+* Added atmosphere-, water-, terrain-, and depth-aware surface, air, subsurface, underwater, and vacuum classifications. Vacuum suppresses atmospheric blast/fallout; airbursts greatly reduce crater/fallout coupling; terrain ray work uses the smaller crater distance rather than the universal damage distance.
+* Fixed MK5 salted fallout propagation, Ivy Mike's ignored radius parameter, and the batched ray collector's always-true air/water condition. Fallout salt state and queued rain work persist through save/load.
+* MK5 now saves its effect state and batched ray cursor/work queue, allowing a partially processed terrain detonation to resume after reload instead of silently restarting exposure processing. Documented the compatibility boundary and remaining fallout/EMP/visual migration work in `docs/nuclear-weapon-balance.md`.
+
 # Height-based nuclear blast lethality
 
 **Tracker:** `Height-based nuclear blast lethality`
