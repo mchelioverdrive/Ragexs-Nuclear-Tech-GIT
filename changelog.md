@@ -1,3 +1,9 @@
+# Finish PR #156 airburst implementation
+
+* Replaced the fixed 12-block burst test with fireball/terrain intersection and continuously persisted ground coupling; crater rays now skip clean airbursts and scale their legacy spherical range for coupled bursts.
+* Switched pressure-front exposure to three-dimensional slant distance, made fallout strength control radius, deposition chance, and layer cap, and added profile-driven elevated Torex setup for airbursts.
+* Restored Ivy Mike's supplied-radius behavior for both MK5 terrain and Torex calls. See `docs/nuclear-weapon-balance.md` for static airburst scenarios and legacy limitations.
+
 # Modular nuclear-effects migration and MK5 correctness fixes
 
 **Tracker:** `Modular nuclear-effects migration and MK5 correctness fixes`
