@@ -1,3 +1,11 @@
+# Height-based nuclear blast lethality
+
+**Tracker:** `Height-based nuclear blast lethality`
+
+* Changed nuclear entity damage from a spherical range check to a ground-facing lethal volume: effects extend one blast radius below a detonation and half a blast radius above it.
+* Nuclear damage now falls off by horizontal distance, making exposed entities below airbursts take the intended blast damage rather than losing it to vertical separation.
+* Exposed entities within a nuclear blast zone now burn for 15 seconds, and the nuclear weapon balance guide documents the vertical bounds, fire effect, and obstruction behavior.
+
 # Fix infinite solid rocket fuel in launch pads
 
 **Tracker:** `Fix infinite solid rocket fuel in launch pads`

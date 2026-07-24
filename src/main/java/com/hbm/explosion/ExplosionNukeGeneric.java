@@ -38,6 +38,15 @@ import cofh.api.energy.IEnergyProvider;
 public class ExplosionNukeGeneric {
 
 	private final static Random random = new Random();
+	/**
+	 * Nuclear blast effects spread primarily across the ground. Keeping the upper
+	 * edge below a full blast radius prevents aircraft from being damaged simply
+	 * because they are somewhere above a detonation, while the larger lower edge
+	 * still lets an airburst affect targets beneath it.
+	 */
+	private static final double BLAST_HEIGHT_ABOVE_FACTOR = 0.5D;
+	private static final double BLAST_HEIGHT_BELOW_FACTOR = 1.0D;
+	private static final int BLAST_FIRE_SECONDS = 15;
 
 	public static void empBlast(World world, int x, int y, int z, int bombStartStrength) {
 		int r = bombStartStrength;
@@ -66,13 +75,16 @@ public class ExplosionNukeGeneric {
 
 	public static void dealDamage(World world, double x, double y, double z, double radius, float maxDamage) {
 
-		List<Entity> list = world.getEntitiesWithinAABBExcludingEntity(null, AxisAlignedBB.getBoundingBox(x, y, z, x, y, z).expand(radius, radius, radius));
+		double heightAbove = getBlastHeightAbove(radius);
+		double heightBelow = getBlastHeightBelow(radius);
+		List<Entity> list = world.getEntitiesWithinAABBExcludingEntity(null, AxisAlignedBB.getBoundingBox(x - radius, y - heightBelow, z - radius, x + radius, y + heightAbove, z + radius));
 
 		for(Entity e : list) {
 
-			double dist = e.getDistance(x, y, z);
+			double horizontalDistance = getHorizontalDistance(e, x, z);
+			double entityHeight = e.posY + e.getEyeHeight() - y;
 
-			if(dist <= radius) {
+			if(horizontalDistance <= radius && entityHeight >= -heightBelow && entityHeight <= heightAbove) {
 
 				double entX = e.posX;
 				double entY = e.posY + e.getEyeHeight();
@@ -80,9 +92,12 @@ public class ExplosionNukeGeneric {
 
 				if(!isExplosionExempt(e) && !Library.isObstructed(world, x, y, z, entX, entY, entZ)) {
 
-					double damage = maxDamage * (radius - dist) / radius;
+					// Use ground distance for blast intensity. This makes airbursts lethal
+					// to exposed entities below them instead of spending most of the damage
+					// budget on detonation altitude.
+					double damage = maxDamage * (radius - horizontalDistance) / radius;
 					e.attackEntityFrom(ModDamageSource.nuclearBlast, (float)damage);
-					e.setFire(5);
+					e.setFire(BLAST_FIRE_SECONDS);
 
 					double knockX = e.posX - x;
 					double knockY = e.posY + e.getEyeHeight() - y;
@@ -97,6 +112,20 @@ public class ExplosionNukeGeneric {
 				}
 			}
 		}
+	}
+
+	public static double getBlastHeightAbove(double radius) {
+		return radius * BLAST_HEIGHT_ABOVE_FACTOR;
+	}
+
+	public static double getBlastHeightBelow(double radius) {
+		return radius * BLAST_HEIGHT_BELOW_FACTOR;
+	}
+
+	private static double getHorizontalDistance(Entity entity, double x, double z) {
+		double deltaX = entity.posX - x;
+		double deltaZ = entity.posZ - z;
+		return Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
 	}
 
 	@Spaghetti("just look at it")
