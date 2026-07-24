@@ -29,6 +29,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
 	private boolean firstTick = true; // Of course Vanilla has it private in Entity...
 	private boolean salted = false;
+	private double falloutStrength = 1.0D;
 	public EntityFalloutRain(World p_i1582_1_) {
 		super(p_i1582_1_);
 		this.setSize(4, 20);
@@ -190,7 +191,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
 			int meta = worldObj.getBlockMetadata(x, y, z);
 
-			if(meta < 7) {
+			if(meta < Math.max(0, (int)Math.ceil(7D * falloutStrength))) {
 				worldObj.setBlockMetadataWithNotify(
 					x, y, z,
 					meta + 1,
@@ -236,7 +237,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 				double normalized = dist / 100D;
 
 				// Peak fallout deposition farther away from hypocenter
-				double chance = 0.18D * Math.exp(-Math.pow((normalized - 0.72D) / 0.22D, 2));
+				double chance = falloutStrength * 0.18D * Math.exp(-Math.pow((normalized - 0.72D) / 0.22D, 2));
 
 				if(this.salted) {
 					chance *= 1.75D;
@@ -341,6 +342,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 	protected void readEntityFromNBT(NBTTagCompound tag) {
 		setScale(tag.getInteger("scale"));
 		this.salted = tag.getBoolean("salt");
+		this.falloutStrength = tag.hasKey("strength") ? tag.getDouble("strength") : 1.0D;
 		chunksToProcess.addAll(readChunksFromIntArray(tag.getIntArray("chunks")));
 		outerChunksToProcess.addAll(readChunksFromIntArray(tag.getIntArray("outerChunks")));
 	}
@@ -360,7 +362,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 	@Override
 	protected void writeEntityToNBT(NBTTagCompound tag) {
 		tag.setInteger("scale", getScale());
-		tag.setBoolean("salt", this.salted);
+		tag.setBoolean("salt", this.salted); tag.setDouble("strength", this.falloutStrength);
 		tag.setIntArray("chunks", writeChunksToIntArray(chunksToProcess));
 		tag.setIntArray("outerChunks", writeChunksToIntArray(outerChunksToProcess));
 	}
@@ -382,6 +384,8 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 		int scale = this.dataWatcher.getWatchableObjectInt(16);
 		return scale == 0 ? 1 : scale;
 	}
+	public void setFalloutStrength(double strength) { this.falloutStrength = Math.max(0D, Math.min(1D, strength)); }
+
 	public void setSalted(boolean salt) {
 		this.salted = salt;
 	}

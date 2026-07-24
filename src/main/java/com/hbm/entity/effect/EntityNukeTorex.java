@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import com.hbm.dim.CelestialBody;
 import com.hbm.dim.trait.CBT_Atmosphere;
 import com.hbm.main.MainRegistry;
+import com.hbm.explosion.nuclear.BurstType;
 import com.hbm.util.BobMathUtil;
 import com.hbm.util.TrackerUtil;
 
@@ -34,6 +35,9 @@ public class EntityNukeTorex extends Entity {
 
 	public boolean didPlaySound = false;
 	public boolean didShake = false;
+	/** Profile-driven visual mode; configured before spawning and used by the client simulation. */
+	private boolean airburstVisual;
+	private double groundCoupling = 1D;
 
 	private boolean hasSufficientPressure = true;
 
@@ -53,6 +57,9 @@ public class EntityNukeTorex extends Entity {
 	protected void entityInit() {
 		this.dataWatcher.addObject(10, new Float(1));
 		this.dataWatcher.addObject(11, new Integer(0));
+		this.dataWatcher.addObject(12, new Float(1F));
+		this.dataWatcher.addObject(13, new Integer(0));
+		this.dataWatcher.addObject(14, new Float(4F));
 	}
 
 	@Override @SideOnly(Side.CLIENT) public int getBrightnessForRender(float interp) { return 15728880; }
@@ -69,13 +76,12 @@ public class EntityNukeTorex extends Entity {
 
 			if(ticksExisted == 1) this.setScale((float) s);
 
-			if(lastSpawnY == -1) {
-				lastSpawnY = posY - 3;
-			}
+			airburstVisual = this.dataWatcher.getWatchableObjectInt(13) != 0; groundCoupling = this.dataWatcher.getWatchableObjectFloat(12);
+			if(lastSpawnY == -1) { lastSpawnY = airburstVisual ? posY - coreHeight : posY - 3; }
 
 			if(ticksExisted < 100) this.worldObj.lastLightningBolt = 2;
 
-			int spawnTarget = Math.max(worldObj.getHeightValue((int) Math.floor(posX), (int) Math.floor(posZ)) - 3, 1);
+			int spawnTarget = airburstVisual ? (int)Math.floor(posY - coreHeight) : Math.max(worldObj.getHeightValue((int) Math.floor(posX), (int) Math.floor(posZ)) - 3, 1);
 			double moveSpeed = 0.5D;
 
 			if(Math.abs(spawnTarget - lastSpawnY) < moveSpeed) {
@@ -103,7 +109,7 @@ public class EntityNukeTorex extends Entity {
 				}
 
 				if(ticksExisted < 150 && !didPlaySound) {
-					if(MainRegistry.proxy.me() != null && MainRegistry.proxy.me().getDistanceToEntity(this) < (ticksExisted * 1.5 + 1) * 1.5) {
+					if(MainRegistry.proxy.me() != null && MainRegistry.proxy.me().getDistanceToEntity(this) < ticksExisted * this.dataWatcher.getWatchableObjectFloat(14)) {
 						MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 10_000F, 1F);
 						didPlaySound = true;
 					}
@@ -140,7 +146,7 @@ public class EntityNukeTorex extends Entity {
 			// spawn shock clouds
 			if(ticksExisted < 150) {
 
-				int cloudCount = ticksExisted * 5;
+				int cloudCount = (int)(ticksExisted * 5 * groundCoupling);
 				int shockLife = Math.max(300 - ticksExisted * 20, 50);
 
 				for(int i = 0; i < cloudCount; i++) {
@@ -153,7 +159,7 @@ public class EntityNukeTorex extends Entity {
 				}
 
 				if(!didPlaySound) {
-					if(MainRegistry.proxy.me() != null && MainRegistry.proxy.me().getDistanceToEntity(this) < (ticksExisted * 1.5 + 1) * 1.5) {
+					if(MainRegistry.proxy.me() != null && MainRegistry.proxy.me().getDistanceToEntity(this) < ticksExisted * this.dataWatcher.getWatchableObjectFloat(14)) {
 						MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 10_000F, 1F);
 						didPlaySound = true;
 					}
@@ -630,6 +636,14 @@ public class EntityNukeTorex extends Entity {
 
 	public static void statFacStandard(World world, double x, double y, double z, float scale) { statFac(world, x, y, z, scale); }
 	public static void statFacBale(World world, double x, double y, double z, float scale) { statFac(world, x, y, z, scale); }
+
+	public static void statFac(World world, double x, double y, double z, BurstType burstType, double fireballRadius, double visualScale, double cloudTopHeight, double coupling, double burstHeight) {
+		EntityNukeTorex torex = new EntityNukeTorex(world).setScale((float)visualScale);
+		torex.airburstVisual = burstType == BurstType.AIR; torex.groundCoupling = coupling; torex.dataWatcher.updateObject(12, Float.valueOf((float)coupling)); torex.dataWatcher.updateObject(13, Integer.valueOf(torex.airburstVisual ? 1 : 0));
+		torex.dataWatcher.updateObject(14, Float.valueOf((float)Math.max(4D, fireballRadius * (2D / 0.35D) / 20D)));
+		torex.coreHeight = Math.max(3D, cloudTopHeight * 0.08D); torex.convectionHeight = torex.coreHeight + Math.max(1D, fireballRadius * 0.2D);
+		torex.setPosition(x, y, z); torex.forceSpawn = true; world.spawnEntityInWorld(torex); TrackerUtil.setTrackingRange(world, torex, 1000);
+	}
 
 	public static void statFac(World world, double x, double y, double z, float scale) {
 		EntityNukeTorex torex = new EntityNukeTorex(world).setScale(MathHelper.clamp_float((float) BobMathUtil.squirt(scale * 0.01) * 1.5F, 0.5F, 5F));

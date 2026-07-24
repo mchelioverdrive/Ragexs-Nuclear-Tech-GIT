@@ -81,23 +81,17 @@ public class ExplosionNukeGeneric {
 	/** Applies an expanding pressure front once. Radius is the 5-psi gameplay radius. */
 	public static void dealDamageFront(World world, double x, double y, double z, double previousRadius, double currentRadius, double fivePsiRadius, float maxDamage) {
 		if(currentRadius <= previousRadius || fivePsiRadius <= 0.0D) return;
-		double heightAbove = getBlastHeightAbove(currentRadius);
-		double heightBelow = getBlastHeightBelow(currentRadius);
-		List<Entity> list = world.getEntitiesWithinAABBExcludingEntity(null, AxisAlignedBB.getBoundingBox(x - currentRadius, y - heightBelow, z - currentRadius, x + currentRadius, y + heightAbove, z + currentRadius));
+		List<Entity> list = world.getEntitiesWithinAABBExcludingEntity(null, AxisAlignedBB.getBoundingBox(x - currentRadius, y - currentRadius, z - currentRadius, x + currentRadius, y + currentRadius, z + currentRadius));
 		for(Entity e : list) {
-			double horizontalDistance = getHorizontalDistance(e, x, z);
-			double entityHeight = e.posY + e.getEyeHeight() - y;
-			if(horizontalDistance <= previousRadius || horizontalDistance > currentRadius || entityHeight < -heightBelow || entityHeight > heightAbove || isExplosionExempt(e)) continue;
+			double dx = e.posX - x, dy = e.posY + e.getEyeHeight() - y, dz = e.posZ - z;
+			double slantDistance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+			if(slantDistance <= previousRadius || slantDistance > currentRadius || isExplosionExempt(e)) continue;
 			double exposure = Library.isObstructed(world, x, y, z, e.posX, e.posY + e.getEyeHeight(), e.posZ) ? 0.20D : 1.0D;
-			double psi = getOverpressurePsi(horizontalDistance / fivePsiRadius) * exposure;
+			double psi = getOverpressurePsi(slantDistance / fivePsiRadius) * exposure;
 			if(psi <= 0.0D) continue;
 			float damage = (float)Math.min(maxDamage, psi * 2.5D);
 			e.attackEntityFrom(ModDamageSource.nuclearBlast, damage);
-			Vec3 knock = Vec3.createVectorHelper(e.posX - x, e.posY + e.getEyeHeight() - y, e.posZ - z).normalize();
-			double impulse = Math.min(1.8D, psi * 0.035D) * exposure;
-			e.motionX += knock.xCoord * impulse;
-			e.motionY += knock.yCoord * impulse;
-			e.motionZ += knock.zCoord * impulse;
+			if(slantDistance > 0.001D) { Vec3 knock = Vec3.createVectorHelper(dx, dy, dz).normalize(); double impulse = Math.min(1.8D, psi * 0.035D) * exposure; e.motionX += knock.xCoord * impulse; e.motionY += knock.yCoord * impulse; e.motionZ += knock.zCoord * impulse; }
 		}
 	}
 
