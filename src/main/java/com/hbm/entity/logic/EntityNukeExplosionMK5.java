@@ -94,39 +94,46 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 
 	private void applyThermalFlash() {
 		if(effects.thermalRadius <= 0D || spec.burstType == BurstType.UNDERWATER || spec.burstType == BurstType.VACUUM) return;
-		List<EntityLivingBase> entities = worldObj.getEntitiesWithinAABB(EntityLivingBase.class, AxisAlignedBB.getBoundingBox(posX, posY, posZ, posX, posY, posZ).expand(effects.thermalRadius, effects.thermalRadius, effects.thermalRadius));
+		double ignitionRadius = spec.burstType == BurstType.AIR ? effects.lightBlastRadius : effects.thermalRadius;
+		double ignitionBelow = spec.burstType == BurstType.AIR ? ExplosionNukeGeneric.getBlastHeightBelow(ignitionRadius) : ignitionRadius;
+		double ignitionAbove = spec.burstType == BurstType.AIR ? ExplosionNukeGeneric.getBlastHeightAbove(ignitionRadius) : ignitionRadius;
+		List<EntityLivingBase> entities = worldObj.getEntitiesWithinAABB(EntityLivingBase.class, AxisAlignedBB.getBoundingBox(posX - ignitionRadius, posY - ignitionBelow, posZ - ignitionRadius, posX + ignitionRadius, posY + ignitionAbove, posZ + ignitionRadius));
 		for(EntityLivingBase entity : entities) {
 			double dx = entity.posX - posX, dy = entity.posY + entity.getEyeHeight() - posY, dz = entity.posZ - posZ;
 			double distanceSq = Math.max(1D, dx * dx + dy * dy + dz * dz);
-			if(distanceSq > effects.thermalRadius * effects.thermalRadius || worldObj.rayTraceBlocks(Vec3.createVectorHelper(posX, posY, posZ), Vec3.createVectorHelper(entity.posX, entity.posY + entity.getEyeHeight(), entity.posZ)) != null) continue;
+			double horizontalDistanceSq = dx * dx + dz * dz;
+			boolean thermalTarget = distanceSq <= effects.thermalRadius * effects.thermalRadius;
+			boolean airburstBlastTarget = spec.burstType == BurstType.AIR && horizontalDistanceSq <= ignitionRadius * ignitionRadius && dy >= -ignitionBelow && dy <= ignitionAbove;
+			if((!thermalTarget && !airburstBlastTarget) || worldObj.rayTraceBlocks(Vec3.createVectorHelper(posX, posY, posZ), Vec3.createVectorHelper(entity.posX, entity.posY + entity.getEyeHeight(), entity.posZ)) != null) continue;
 			double fluence = spec.yieldKt * spec.thermalFraction * 50D / distanceSq;
-			if(distanceSq <= effects.fireballRadius * effects.fireballRadius) {
+			if(thermalTarget && distanceSq <= effects.fireballRadius * effects.fireballRadius) {
 				entity.attackEntityFrom(com.hbm.lib.ModDamageSource.nuclearBlast, 1000F);
-			} else if(fluence > 1D) {
+			} else if(thermalTarget && fluence > 1D) {
 				entity.attackEntityFrom(com.hbm.lib.ModDamageSource.nuclearBlast, (float)Math.min(100D, fluence));
 			}
-			// A clear line of sight is an exposed target. An airburst's thermal pulse
-			// ignites every such target, rather than only targets past an arbitrary fluence cutoff.
+			// An unobstructed target inside the airburst blast footprint is exposed to the flash.
 			if(spec.burstType == BurstType.AIR) entity.setFire(20);
 			else if(fluence > 8D) entity.setFire((int)Math.min(20D, fluence / 2D));
-			if(fluence > 0.5D) entity.addPotionEffect(new PotionEffect(Potion.blindness.id, (int)Math.min(20 * 30, 20D + fluence * 20D), 0));
+			if(thermalTarget && fluence > 0.5D) entity.addPotionEffect(new PotionEffect(Potion.blindness.id, (int)Math.min(20 * 30, 20D + fluence * 20D), 0));
 		}
 	}
 
-	/** Ignites exposed flammables without creating a crater or terrain-ray workload. */
+	/** Ignites exposed surface terrain without creating a crater or terrain-ray workload. */
 	private void applyThermalGroundIgnition() {
 		if(spec.burstType == BurstType.UNDERWATER || spec.burstType == BurstType.VACUUM || effects.thermalRadius <= 0D) return;
-		// Airbursts have no crater pass to spread secondary fires, so sample enough
-		// exposed surface positions to create a dense thermal ignition footprint.
-		int samples = Math.min(16384, Math.max(1024, (int)Math.ceil(effects.thermalRadius * 96D)));
+		// Airbursts have no crater pass to spread secondary fires. Cover the entire
+		// blast footprint where practical and place fire on exposed solid terrain,
+		// not only on terrain whose block itself is flammable.
+		double ignitionRadius = effects.lightBlastRadius;
+		int samples = Math.min(65536, Math.max(4096, (int)Math.ceil(Math.PI * ignitionRadius * ignitionRadius)));
 		for(int i = 0; i < samples; i++) {
-			double distance = effects.thermalRadius * Math.sqrt(worldObj.rand.nextDouble());
+			double distance = ignitionRadius * Math.sqrt(worldObj.rand.nextDouble());
 			double angle = worldObj.rand.nextDouble() * Math.PI * 2D;
 			int x = (int)Math.floor(posX + Math.cos(angle) * distance);
 			int z = (int)Math.floor(posZ + Math.sin(angle) * distance);
 			int y = worldObj.getHeightValue(x, z) - 1;
-			if(y < 0 || !worldObj.isAirBlock(x, y + 1, z)) continue;
-			if(worldObj.getBlock(x, y, z).isFlammable(worldObj, x, y, z, net.minecraftforge.common.util.ForgeDirection.UP)) worldObj.setBlock(x, y + 1, z, Blocks.fire, 0, 3);
+			if(y < 0 || !worldObj.isAirBlock(x, y + 1, z) || worldObj.getBlock(x, y, z).getMaterial().isLiquid()) continue;
+			worldObj.setBlock(x, y + 1, z, Blocks.fire, 0, 3);
 		}
 	}
 
