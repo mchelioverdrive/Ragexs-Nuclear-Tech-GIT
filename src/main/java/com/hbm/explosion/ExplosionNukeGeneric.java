@@ -45,7 +45,7 @@ public class ExplosionNukeGeneric {
 	 * still lets an airburst affect targets beneath it.
 	 */
 	private static final double BLAST_HEIGHT_ABOVE_FACTOR = 0.5D;
-	private static final double BLAST_HEIGHT_BELOW_FACTOR = 1.0D;
+	private static final double BLAST_HEIGHT_BELOW_FACTOR = 10.0D;
 	private static final int BLAST_FIRE_SECONDS = 15;
 
 	public static void empBlast(World world, int x, int y, int z, int bombStartStrength) {
