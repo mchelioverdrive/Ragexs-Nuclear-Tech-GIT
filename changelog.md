@@ -1,3 +1,12 @@
+# Airburst thermal and prompt-radiation correction
+
+**Tracker:** `Airburst thermal and prompt-radiation correction`
+
+* Airbursts now ignite every living entity with an unobstructed thermal line of sight inside the calculated thermal radius for 20 seconds, rather than requiring a high fluence threshold.
+* Increased airburst secondary-fire surface sampling eightfold with a higher cap so exposed flammable terrain receives substantially denser ignition coverage without adding crater terrain work.
+* Prompt radiation now explicitly delivers both gamma dose and neutron activation, including at the hypocenter, independently of crater processing; solid terrain continues to attenuate the applied dose.
+* Updated the nuclear weapon balance guide to document exposed-target ignition, denser secondary fires, and prompt-radiation behavior.
+
 # Modular MCHeli-compatible nuclear burst resolution
 
 **Tracker:** `Modular MCHeli-compatible nuclear burst resolution`

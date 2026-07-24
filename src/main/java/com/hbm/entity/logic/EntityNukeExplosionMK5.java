@@ -102,11 +102,13 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 			double fluence = spec.yieldKt * spec.thermalFraction * 50D / distanceSq;
 			if(distanceSq <= effects.fireballRadius * effects.fireballRadius) {
 				entity.attackEntityFrom(com.hbm.lib.ModDamageSource.nuclearBlast, 1000F);
-				entity.setFire(20);
-			} else {
-				if(fluence > 1D) entity.attackEntityFrom(com.hbm.lib.ModDamageSource.nuclearBlast, (float)Math.min(100D, fluence));
-				if(fluence > 8D) entity.setFire((int)Math.min(20D, fluence / 2D));
+			} else if(fluence > 1D) {
+				entity.attackEntityFrom(com.hbm.lib.ModDamageSource.nuclearBlast, (float)Math.min(100D, fluence));
 			}
+			// A clear line of sight is an exposed target. An airburst's thermal pulse
+			// ignites every such target, rather than only targets past an arbitrary fluence cutoff.
+			if(spec.burstType == BurstType.AIR) entity.setFire(20);
+			else if(fluence > 8D) entity.setFire((int)Math.min(20D, fluence / 2D));
 			if(fluence > 0.5D) entity.addPotionEffect(new PotionEffect(Potion.blindness.id, (int)Math.min(20 * 30, 20D + fluence * 20D), 0));
 		}
 	}
@@ -114,7 +116,9 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 	/** Ignites exposed flammables without creating a crater or terrain-ray workload. */
 	private void applyThermalGroundIgnition() {
 		if(spec.burstType == BurstType.UNDERWATER || spec.burstType == BurstType.VACUUM || effects.thermalRadius <= 0D) return;
-		int samples = Math.min(2048, Math.max(128, (int)Math.ceil(effects.thermalRadius * 12D)));
+		// Airbursts have no crater pass to spread secondary fires, so sample enough
+		// exposed surface positions to create a dense thermal ignition footprint.
+		int samples = Math.min(16384, Math.max(1024, (int)Math.ceil(effects.thermalRadius * 96D)));
 		for(int i = 0; i < samples; i++) {
 			double distance = effects.thermalRadius * Math.sqrt(worldObj.rand.nextDouble());
 			double angle = worldObj.rand.nextDouble() * Math.PI * 2D;
@@ -128,16 +132,22 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 
 	private void applyPromptRadiation() {
 		if(effects.promptRadiationRadius <= 0D) return;
-		radiate((float)(2500000F * spec.fissionFraction), effects.promptRadiationRadius);
+		// Apply both prompt gamma dose and neutron activation. This happens independently
+		// of terrain processing, so a clean airburst cannot lose its initial radiation.
+		radiate(HazardType.RADIATION, (float)(2000000F * spec.fissionFraction * spec.promptGammaFraction / 0.05D), effects.promptRadiationRadius);
+		radiate(HazardType.NEUTRON, (float)(5000F * spec.fissionFraction * spec.promptNeutronFraction / 0.02D), effects.promptRadiationRadius);
 	}
-	private void radiate(float rads, double range) {
+	private void radiate(HazardType hazard, float rads, double range) {
 		List<EntityLivingBase> entities = worldObj.getEntitiesWithinAABB(EntityLivingBase.class, AxisAlignedBB.getBoundingBox(posX, posY, posZ, posX, posY, posZ).expand(range, range, range));
 		for(EntityLivingBase e : entities) {
 			Vec3 vec = Vec3.createVectorHelper(e.posX - posX, e.posY + e.getEyeHeight() - posY, e.posZ - posZ);
-			double len = vec.lengthVector(); if(len < 1D || len > range) continue; vec = vec.normalize();
+			double len = vec.lengthVector(); if(len > range) continue;
+			// Do not skip entities at the hypocenter: they still receive prompt radiation
+			// even though thermal damage will normally kill them first.
+			if(len < 1D) len = 1D; else vec = vec.normalize();
 			float attenuation = 1F;
 			for(int i = 1; i < len; i++) { if(worldObj.getBlock((int)Math.floor(posX + vec.xCoord * i), (int)Math.floor(posY + vec.yCoord * i), (int)Math.floor(posZ + vec.zCoord * i)) != Blocks.air) attenuation += 2F; }
-			ContaminationUtil.contaminate(e, HazardType.RADIATION, ContaminationType.RAD_BYPASS, rads / attenuation / (float)(len * len));
+			ContaminationUtil.contaminate(e, hazard, ContaminationType.RAD_BYPASS, rads / attenuation / (float)(len * len));
 		}
 	}
 
