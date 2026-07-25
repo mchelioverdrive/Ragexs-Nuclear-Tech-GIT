@@ -74,7 +74,7 @@ public class ToxicBlock extends BlockFluidClassic {
 	@Override
 	public void onEntityCollidedWithBlock(World world, int x, int y, int z, Entity entity) {
 		entity.setInWeb();
-		
+
 		if(entity instanceof EntityLivingBase)
 			ContaminationUtil.contaminate((EntityLivingBase)entity, HazardType.RADIATION, ContaminationType.CREATIVE, 1.0F);
 	}
@@ -83,21 +83,21 @@ public class ToxicBlock extends BlockFluidClassic {
 	public void onNeighborBlockChange(World world, int x, int y, int z, Block block)
     {
 		super.onNeighborBlockChange(world, x, y, z, block);
-		
+
 		if(reactToBlocks(world, x + 1, y, z))
-			world.setBlock(x, y, z, ModBlocks.sellafield_slaked);
+			world.setBlock(x, y, z, ModBlocks.scorched_stone);
 		if(reactToBlocks(world, x - 1, y, z))
-			world.setBlock(x, y, z, ModBlocks.sellafield_slaked);
+			world.setBlock(x, y, z, ModBlocks.scorched_stone);
 		if(reactToBlocks(world, x, y + 1, z))
-			world.setBlock(x, y, z, ModBlocks.sellafield_slaked);
+			world.setBlock(x, y, z, ModBlocks.scorched_stone);
 		if(reactToBlocks(world, x, y - 1, z))
-			world.setBlock(x, y, z, ModBlocks.sellafield_slaked);
+			world.setBlock(x, y, z, ModBlocks.scorched_stone);
 		if(reactToBlocks(world, x, y, z + 1))
-			world.setBlock(x, y, z, ModBlocks.sellafield_slaked);
+			world.setBlock(x, y, z, ModBlocks.scorched_stone);
 		if(reactToBlocks(world, x, y, z - 1))
-			world.setBlock(x, y, z, ModBlocks.sellafield_slaked);
+			world.setBlock(x, y, z, ModBlocks.scorched_stone);
     }
-	
+
 	public boolean reactToBlocks(World world, int x, int y, int z) {
 		if(world.getBlock(x, y, z).getMaterial() != ModBlocks.fluidtoxic) {
 			if(world.getBlock(x, y, z).getMaterial().isLiquid()) {

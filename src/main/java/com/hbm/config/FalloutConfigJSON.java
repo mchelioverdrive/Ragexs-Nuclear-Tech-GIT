@@ -191,7 +191,7 @@ public class FalloutConfigJSON {
 		/* metals oxidize/slag */
 		entries.add(new FalloutEntry()
 						.mMa(Material.iron)
-						.prim(new Triplet(ModBlocks.sellafield_slaked, 0, 1))
+						.prim(new Triplet(ModBlocks.block_slag, 0, 1))
 						.c(0.08));
 
 		/* coal seams can ignite/carbonize */
