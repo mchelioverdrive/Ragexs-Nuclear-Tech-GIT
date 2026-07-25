@@ -180,7 +180,6 @@ public class EntityMissileCustom extends EntityMissileBaseNT implements IChunkLo
 		case NUCLEAR:
 		case TX:
 			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, (int) strength, posX, posY, posZ));
-			EntityNukeTorex.statFac(worldObj, posX, posY, posZ, strength);
 			break;
 		//case BALEFIRE:
 		//	EntityBalefire bf = new EntityBalefire(worldObj);
@@ -193,7 +192,6 @@ public class EntityMissileCustom extends EntityMissileBaseNT implements IChunkLo
 		//	break;
 		case N2:
 			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFacNoRad(worldObj, (int) strength, posX, posY, posZ));
-			EntityNukeTorex.statFac(worldObj, posX, posY, posZ, strength);
 			break;
 		//case TAINT:
 		//	int r = (int) strength;

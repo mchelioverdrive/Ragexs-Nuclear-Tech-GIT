@@ -476,14 +476,17 @@ public class ModEventHandlerRenderer {
 	public void onRenderHUD(RenderGameOverlayEvent.Pre event) {
 		Tessellator tess = Tessellator.instance;
 		//if (!ExplosionNukeSmall.PARAMS_VISUALNOSHRAP.visual)
-		if(event.type == ElementType.HOTBAR && (ModEventHandlerClient.shakeTimestamp + ModEventHandlerClient.shakeDuration - System.currentTimeMillis()) > 0 && ClientConfig.NUKE_HUD_SHAKE.get()  ) {
+		long now = System.currentTimeMillis();
+		boolean seismic = ModEventHandlerClient.seismicTimestamp + ModEventHandlerClient.seismicDuration > now;
+		if(event.type == ElementType.HOTBAR && ((ModEventHandlerClient.shakeTimestamp + ModEventHandlerClient.shakeDuration > now) || seismic) && ClientConfig.NUKE_HUD_SHAKE.get()  ) {
 
 			//|| !ExplosionNukeSmall.PARAMS_VISUALNOSHRAP.visual
 			//FUCK WHY DOESNT THIS STOP IT FROM HAPPENING WHAT THE FUCKKKKK
 
-			double mult = (ModEventHandlerClient.shakeTimestamp + ModEventHandlerClient.shakeDuration - System.currentTimeMillis()) / (double) ModEventHandlerClient.shakeDuration * 2;
-			double horizontal = MathHelper.clamp_double(Math.sin(System.currentTimeMillis() * 0.02), -0.7, 0.7) * 15;
-			double vertical = MathHelper.clamp_double(Math.sin(System.currentTimeMillis() * 0.01 + 2), -0.7, 0.7) * 3;
+			double mult = seismic ? (ModEventHandlerClient.seismicTimestamp + ModEventHandlerClient.seismicDuration - now) / (double)ModEventHandlerClient.seismicDuration * ModEventHandlerClient.seismicIntensity : (ModEventHandlerClient.shakeTimestamp + ModEventHandlerClient.shakeDuration - now) / (double) ModEventHandlerClient.shakeDuration * 2;
+			double frequency = seismic ? 0.006D : 0.02D;
+			double horizontal = MathHelper.clamp_double(Math.sin(now * frequency), -0.7, 0.7) * 15;
+			double vertical = MathHelper.clamp_double(Math.sin(now * frequency * 0.55D + 2), -0.7, 0.7) * 3;
 			GL11.glTranslated(horizontal * mult, vertical * mult, 0);
 		} else if(event.type == ElementType.AIR) {
 			EntityPlayer player = Minecraft.getMinecraft().thePlayer;

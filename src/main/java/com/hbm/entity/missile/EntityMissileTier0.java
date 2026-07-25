@@ -84,7 +84,6 @@ public abstract class EntityMissileTier0 extends EntityMissileBaseNT {
 		@Override public void onImpact() {
 			//ExplosionNukeSmall.explode(worldObj, posX, posY + 0.5, posZ, ExplosionNukeSmall.PARAMS_HIGH);
 			this.worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, 16, posX, posY, posZ)); //31/2
-			EntityNukeTorex.statFac(worldObj, posX, posY, posZ, 16); //basing this off the north korean nuke test from 2006 on nukemap crater radius
 		}
 		//todo change to use mk5
 		//

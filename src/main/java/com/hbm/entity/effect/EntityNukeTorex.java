@@ -238,7 +238,7 @@ public class EntityNukeTorex extends Entity {
 
 	private EntityNukeTorex applyBurstContext(NuclearBurstContext context) {
 		this.resolvedBurstHeight = context.burstHeight; this.resolvedFireballRadius = context.fireballRadius; this.resolvedGroundCoupling = context.groundCoupling;
-		this.dataWatcher.updateObject(12, context.burstType.ordinal()); this.dataWatcher.updateObject(13, (float)context.groundCoupling); this.dataWatcher.updateObject(14, (float)context.burstHeight); this.dataWatcher.updateObject(15, (float)context.fireballRadius); this.dataWatcher.updateObject(16, (float)context.surfaceBreakthroughFactor);
+		this.dataWatcher.updateObject(12, context.burstType.ordinal()); this.dataWatcher.updateObject(13, (float)context.groundCoupling); this.dataWatcher.updateObject(14, (float)context.burstHeight); this.dataWatcher.updateObject(15, (float)context.fireballRadius); this.dataWatcher.updateObject(16, (float)context.atmosphericReleaseFactor);
 		if(context.burstType == BurstType.VACUUM) this.hasSufficientPressure = false;
 		return this;
 	}
@@ -269,6 +269,7 @@ public class EntityNukeTorex extends Entity {
 	public double getScale() {
 		return this.dataWatcher.getWatchableObjectFloat(10);
 	}
+	public double getAtmosphericReleaseFactor() { return this.dataWatcher.getWatchableObjectFloat(16); }
 
 	public double getSaturation() {
 		double d = (double) this.ticksExisted / (double) this.getMaxAge();
@@ -648,8 +649,12 @@ public class EntityNukeTorex extends Entity {
 
 	public static void statFac(World world, double x, double y, double z, float scale) {
 		NuclearBurstContext context = NuclearBurstResolver.resolve(world, x, y, z, Math.max(1, Math.round(scale)));
+		spawnForContext(world, context, x, y, z);
+	}
+	public static void spawnForContext(World world, NuclearBurstContext context, double x, double y, double z) {
+		if(context.burstType == BurstType.SUBSURFACE && !context.actualSurfaceBreach) return;
 		EntityNukeTorex torex = new EntityNukeTorex(world).applyBurstContext(context).setScale(MathHelper.clamp_float((float)context.effects.visualScale, 0.5F, 5F));
-		torex.setPosition(x, y, z);
+		torex.setPosition(context.burstType == BurstType.SUBSURFACE ? context.breachX + 0.5D : x, context.burstType == BurstType.SUBSURFACE ? context.breachY + 0.5D : y, context.burstType == BurstType.SUBSURFACE ? context.breachZ + 0.5D : z);
 		torex.forceSpawn = true;
 		world.spawnEntityInWorld(torex);
 		TrackerUtil.setTrackingRange(world, torex, 1000);

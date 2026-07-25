@@ -109,7 +109,9 @@ public class ExplosionNukeRayBatched {
 				float x0 = (float) (posX + (vec.xCoord * i));
 				float y0 = (float) (posY + (vec.yCoord * i));
 				float z0 = (float) (posZ + (vec.zCoord * i));
-				if(contained && y0 >= surfaceY) break;
+				// Do not project excavation above the original surface, but allow rays to
+				// remove the roof itself. A later bounded connectivity check decides venting.
+				if(y0 > surfaceY) break;
 
 				int iX = (int) Math.floor(x0);
 				int iY = (int) Math.floor(y0);

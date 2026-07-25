@@ -36,10 +36,13 @@ public class RenderTorex extends Render {
 		boolean fog = GL11.glIsEnabled(GL11.GL_FOG);
 		if (fog) GL11.glDisable(GL11.GL_FOG);
 		EntityNukeTorex cloud = (EntityNukeTorex) entity;
+		if(cloud.isDead) { GL11.glPopMatrix(); return; }
 		cloudletWrapper(cloud, interp);
 		if (cloud.ticksExisted < 101) flashWrapper(cloud, interp);
-		if (cloud.ticksExisted < 10 && System.currentTimeMillis() - ModEventHandlerClient.flashTimestamp > 1_000)
+		if (cloud.ticksExisted < 10 && System.currentTimeMillis() - ModEventHandlerClient.flashTimestamp > 1_000) {
+			ModEventHandlerClient.flashDuration = (int)(500D + 4_500D * cloud.getAtmosphericReleaseFactor());
 			ModEventHandlerClient.flashTimestamp = System.currentTimeMillis();
+		}
 
 		//if (!ExplosionNukeSmall.PARAMS_VISUALNOSHRAP.visual) { //please fucking work
 			if (cloud.didPlaySound && !cloud.didShake && System.currentTimeMillis() - ModEventHandlerClient.shakeTimestamp > 1_000) {

@@ -1,3 +1,25 @@
+# Fix and realistify subsurface nuclear detonations in Ragex’s Nuclear Tech
+
+**Tracker:** `Fix and realistify subsurface nuclear detonations in Ragex’s Nuclear Tech`
+
+* Made MK5 own one authoritative burst state: predicted excavation, confirmed atmospheric connectivity, atmospheric release, ground coupling, deformation potential, and breach coordinates are distinct and saved through terrain processing.
+* Increased the named subsurface cavity coefficient from 0.42 to 0.60, corrected the ray strength from an accidental diameter to a radius, retained chunk batching, and capped pathological ray radii at 512 blocks.
+* Added a 32,768-node bounded air-path search before and after excavation. Thin surviving rock remains contained; an excavated opening or existing open shaft vents at its confirmed coordinates.
+* Deferred buried thermal, plume, flash, blast, and fallout work until breach confirmation. Contained shots never spawn a client-visible Torex or fallout rain; vented effects originate at the breach and scale with atmospheric release.
+* Moved ordinary Torex creation into MK5 and removed independent visual factory calls from bombs, missiles, projectiles, commands, test tools, and weapons, eliminating coordinate/classification races.
+* Added a distance-scaled, LOS-independent seismic packet with lower-frequency, longer HUD motion and muffled sound. It respects the existing nuclear-shake toggle and does not fake player damage.
+* Persisted breach confirmation and one-shot shake, visual, thermal, prompt-radiation, and fallout flags so reloads cannot repeat them.
+
+## Manual validation matrix (source inspection)
+
+1. **Deep solid-stone shot:** 0.60 cavity and ground shock remain; the bounded path fails, so no flare, cloud, fire, fallout, or crater biome is authorized; seismic shake is sent by MK5.
+2. **Shallow shot with surviving roof:** predicted breakthrough alone authorizes nothing; only genuine collapse can deform/open the surface, while shake remains active.
+3. **Shallow breakthrough:** post-ray connectivity confirms the opening; reduced visuals, blast, heat, and fallout start at the breach and use atmospheric release.
+4. **Existing open shaft:** the initial bounded air search recognizes sky connectivity and records the shaft outlet.
+5. **Surface burst:** authoritative MK5 immediately retains normal atmospheric visuals, blast, crater, fire, and fallout.
+6. **Airburst:** atmospheric behavior remains enabled and crater terrain processing remains disabled.
+7. **Reload during excavation:** terrain cursor, burst fields, breach decision, and all one-shot event flags resume without duplication.
+
 # Fix contained underground nuclear detonations
 
 **Tracker:** `Fix deep underground nuclear detonations incorrectly behaving like airbursts or surface bursts in Ragex's Nuclear Tech`

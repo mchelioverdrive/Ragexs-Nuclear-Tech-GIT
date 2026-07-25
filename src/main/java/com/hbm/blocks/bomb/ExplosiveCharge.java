@@ -81,12 +81,10 @@ public class ExplosiveCharge extends BlockDetonatable implements IBomb, IDetConn
 			}
 			if(this == ModBlocks.det_nuke) {
 				world.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(world, 42, x + 0.5, y + 0.5, z + 0.5)); //HEU device nuclear terrorism, 10KT
-				EntityNukeTorex.statFac(world, x + 0.5, y + 0.5, z + 0.5, 42);
 			}
 			if(this == ModBlocks.det_salt) {
 				world.spawnEntityInWorld(EntityNukeExplosionMK5.statFacSalted(world, 50, x + 0.5, y + 0.5, z + 0.5));
 
-				EntityNukeTorex.statFac(world, x + 0.5, y + 0.5, z + 0.5, 80);
 			}
 		}
 

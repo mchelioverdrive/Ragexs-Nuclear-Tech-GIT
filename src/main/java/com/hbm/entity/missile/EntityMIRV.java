@@ -36,7 +36,6 @@ public class EntityMIRV extends EntityThrowable {
 		if(this.worldObj.getBlock((int) this.posX, (int) this.posY, (int) this.posZ) != Blocks.air) {
 			if(!this.worldObj.isRemote) {
 				worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, BombConfig.mirvRadius, posX, posY, posZ));
-				EntityNukeTorex.statFac(worldObj, posX, posY, posZ, BombConfig.mirvRadius);
 			}
 			this.setDead();
 		}

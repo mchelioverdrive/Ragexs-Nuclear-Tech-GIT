@@ -21,7 +21,6 @@ public class BlockFissureBomb extends BlockTNTBase {
 	@Override
 	public void explodeEntity(World world, double x, double y, double z, EntityTNTPrimedBase entity) {
 		world.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(world, 69, x, y, z)); //31/2
-		EntityNukeTorex.statFac(world, x, y, z, 69); //pakistani weapon 45kt
 
 		//int range = 5;
 

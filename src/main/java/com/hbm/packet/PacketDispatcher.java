@@ -80,6 +80,7 @@ public class PacketDispatcher {
 		wrapper.registerMessage(PermaSyncPacket.Handler.class, PermaSyncPacket.class, i++, Side.CLIENT);
 		//Syncs biome information for single positions or entire chunks
 		wrapper.registerMessage(BiomeSyncPacket.Handler.class, BiomeSyncPacket.class, i++, Side.CLIENT);
+		wrapper.registerMessage(NuclearSeismicPacket.Handler.class, NuclearSeismicPacket.class, i++, Side.CLIENT);
 
 		//Tile sync
 		wrapper.registerMessage(TETurretPacket.Handler.class, TETurretPacket.class, i++, Side.CLIENT);		//Legacy turret yaw/pitch sync (CIWS, etc.)

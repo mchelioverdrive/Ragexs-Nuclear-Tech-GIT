@@ -13,7 +13,13 @@ public final class NuclearDetonationSpec {
 	public double burstHeight;
 	public double groundCoupling = 1.0D;
 	public double burialDepth;
-	public double surfaceBreakthroughFactor = 1.0D;
+	/** Pre-excavation estimate only; never authorizes atmospheric effects. */
+	public double predictedBreakthroughFactor = 1.0D;
+	/** Confirmed, traversable connection from the cavity to exposed atmosphere. */
+	public boolean actualSurfaceBreach = true;
+	public double atmosphericReleaseFactor = 1.0D;
+	/** Mechanical roof-collapse/subsidence potential, independent of fallout. */
+	public double surfaceDeformationFactor = 1.0D;
 	public boolean contained;
 	public boolean vented;
 	public int breachX, breachY, breachZ;
