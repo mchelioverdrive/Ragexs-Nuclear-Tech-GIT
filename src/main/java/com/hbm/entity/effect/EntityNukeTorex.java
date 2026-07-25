@@ -232,13 +232,13 @@ public class EntityNukeTorex extends Entity {
 	}
 
 	private boolean isAirburstVisual() { return getBurstType() == BurstType.AIR; }
-	private boolean isContainedVisual() { return getBurstType() == BurstType.SUBSURFACE && this.dataWatcher.getWatchableObjectFloat(16) <= 0F; }
+	public boolean isContainedVisual() { return getBurstType() == BurstType.SUBSURFACE && this.dataWatcher.getWatchableObjectFloat(16) <= 0F; }
 	private BurstType getBurstType() { int type = this.dataWatcher.getWatchableObjectInt(12); return type >= 0 && type < BurstType.values().length ? BurstType.values()[type] : BurstType.SURFACE; }
 	private double getGroundCoupling() { return this.dataWatcher.getWatchableObjectFloat(13); }
 
 	private EntityNukeTorex applyBurstContext(NuclearBurstContext context) {
 		this.resolvedBurstHeight = context.burstHeight; this.resolvedFireballRadius = context.fireballRadius; this.resolvedGroundCoupling = context.groundCoupling;
-		this.dataWatcher.updateObject(12, context.burstType.ordinal()); this.dataWatcher.updateObject(13, (float)context.groundCoupling); this.dataWatcher.updateObject(14, (float)context.burstHeight); this.dataWatcher.updateObject(15, (float)context.fireballRadius); this.dataWatcher.updateObject(16, (float)context.surfaceBreakthroughFactor);
+		this.dataWatcher.updateObject(12, context.burstType.ordinal()); this.dataWatcher.updateObject(13, (float)context.groundCoupling); this.dataWatcher.updateObject(14, (float)context.burstHeight); this.dataWatcher.updateObject(15, (float)context.fireballRadius); this.dataWatcher.updateObject(16, (float)context.atmosphericReleaseFactor);
 		if(context.burstType == BurstType.VACUUM) this.hasSufficientPressure = false;
 		return this;
 	}

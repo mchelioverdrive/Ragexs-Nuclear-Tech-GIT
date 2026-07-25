@@ -1,3 +1,26 @@
+# Fix subsurface nuclear detonation behavior in Ragex’s Nuclear Tech
+
+**Tracker:** `Fix subsurface nuclear detonation behavior without centralizing nuclear visual call sites`
+
+* Split predicted breakthrough from confirmed surface breach, atmospheric release, ground coupling, and surface deformation. A bounded 16,384-node open-space search recognizes an existing shaft and is repeated only after incremental terrain work completes; surviving solid roofs remain contained and confirmed outlet coordinates are saved.
+* Increased the named subsurface cavity radius factor from 0.42 to 0.60 without changing the batched ray strength/radius semantics, incremental cursor, resistance budget, per-chunk work, or forcing a vertical tunnel.
+* Suppressed contained Torex flare, flash timestamp, mushroom cloud, and atmospheric sound before the first render while retaining independent Torex factories and visual-only behavior. Minor confirmed releases use the independently resolved atmospheric release watcher.
+* Added a distance-scaled, ground-coupled seismic packet and a slower, longer client shake that respects `NUKE_HUD_SHAKE`, never changes `hurtTime`, and blends by maximum strength with atmospheric shake.
+* Delayed subsurface atmospheric physical effects until an actual route is confirmed. Fallout rain requires a confirmed release of at least 0.10, is scaled by release, and originates at the recorded breach. One-shot breach, fallout, seismic, thermal, prompt-radiation, pressure-front, and terrain cursors persist without duplication.
+* Factory modifiers remain applied to the returned MK5 before its first update; `statFacNoRad`, salted fallout, and `moreFallout` signatures remain unchanged, and MK5 does not create a Torex.
+
+## Torex call-site compatibility audit
+
+No Torex call site was removed, relocated, normalized, or edited. The audit found and preserved: custom hydrogen/non-nuclear bomb visuals offset by +4.5 Y; the salted charge's visual scale 80 versus physical radius 50; the manually constructed Little Boy Torex with watcher scale 1.5; antimatter and balefire variants; non-radioactive N2/custom MK5 explosions with ordinary Torex visuals; and independent/effect-only Torex factory support. Each factory continues classifying its own supplied coordinates.
+
+## Manual source-validation matrix
+
+* **Deep stone / shallow surviving roof:** the 0.60 cavity and ground shock remain, while no confirmed open route means no flash, cloud, surface fire/blast, fallout, or radioactive crater conversion.
+* **Shallow excavated breach / existing shaft:** the bounded search records the outlet; post-excavation physical release and fallout eligibility use the release factor and breach coordinates. A narrow release below 0.10 does not start fallout rain.
+* **Surface / air / underwater / vacuum:** existing independent visual calls remain; ordinary surface and air atmospheric behavior is retained, while their established special environment rules remain independent of subsurface confirmation.
+* **Visual-only / non-radioactive / custom offset-scale:** Torex still works without MK5; no-radiation MK5 remains fallout-free; every supplied visual coordinate, type, and scale remains unchanged.
+* **Save during excavation:** batched ray state resumes, while saved one-shot flags prevent duplicate seismic, thermal, prompt radiation, pressure-front progress, and fallout.
+
 # Fix contained underground nuclear detonations
 
 **Tracker:** `Fix deep underground nuclear detonations incorrectly behaving like airbursts or surface bursts in Ragex's Nuclear Tech`

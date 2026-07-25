@@ -36,6 +36,7 @@ public class RenderTorex extends Render {
 		boolean fog = GL11.glIsEnabled(GL11.GL_FOG);
 		if (fog) GL11.glDisable(GL11.GL_FOG);
 		EntityNukeTorex cloud = (EntityNukeTorex) entity;
+		if(cloud.isContainedVisual()) { if(fog) GL11.glEnable(GL11.GL_FOG); GL11.glPopMatrix(); return; }
 		cloudletWrapper(cloud, interp);
 		if (cloud.ticksExisted < 101) flashWrapper(cloud, interp);
 		if (cloud.ticksExisted < 10 && System.currentTimeMillis() - ModEventHandlerClient.flashTimestamp > 1_000)
