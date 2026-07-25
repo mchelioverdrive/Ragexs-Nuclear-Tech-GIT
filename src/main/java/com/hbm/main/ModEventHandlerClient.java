@@ -165,6 +165,9 @@ public class ModEventHandlerClient {
 	public static long flashTimestamp;
 	public static final int shakeDuration = 1_500;
 	public static long shakeTimestamp;
+	public static long seismicTimestamp;
+	public static int seismicDuration;
+	public static float seismicIntensity;
 
 	@SubscribeEvent
 	public void onOverlayRender(RenderGameOverlayEvent.Pre event) {

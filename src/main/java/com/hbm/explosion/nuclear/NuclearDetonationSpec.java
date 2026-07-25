@@ -13,7 +13,13 @@ public final class NuclearDetonationSpec {
 	public double burstHeight;
 	public double groundCoupling = 1.0D;
 	public double burialDepth;
+	public double predictedBreakthroughFactor = 1.0D;
+	/** @deprecated compatibility alias; prediction never authorizes atmospheric effects. */
 	public double surfaceBreakthroughFactor = 1.0D;
+	public boolean actualSurfaceBreach;
+	public double atmosphericReleaseFactor = 1.0D;
+	public double surfaceDeformationFactor = 1.0D;
+	public boolean breachConfirmationComplete;
 	public boolean contained;
 	public boolean vented;
 	public int breachX, breachY, breachZ;

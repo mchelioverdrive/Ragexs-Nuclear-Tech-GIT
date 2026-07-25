@@ -4,6 +4,7 @@ import com.hbm.config.BombConfig;
 
 /** Separates gameplay effects while retaining BombConfig's cube-root baseline. */
 public final class NuclearEffectsSolver {
+	public static final double SUBSURFACE_CAVITY_RADIUS_FACTOR = 0.60D;
 	private NuclearEffectsSolver() { }
 
 	public static NuclearEffectsProfile solve(NuclearDetonationSpec spec) {
@@ -11,7 +12,7 @@ public final class NuclearEffectsSolver {
 		double base = BombConfig.radiusFromKt((float)Math.max(spec.yieldKt, 0.001D));
 		double atmosphere = spec.burstType == BurstType.VACUUM ? 0.0D : 1.0D;
 		profile.fireballRadius = base * 0.35D;
-		profile.cavityRadius = base * 0.42D * Math.max(0.35D, spec.groundCoupling);
+		profile.cavityRadius = base * SUBSURFACE_CAVITY_RADIUS_FACTOR * Math.max(0.35D, spec.groundCoupling);
 		profile.groundShockRadius = base * 0.9D * spec.groundCoupling;
 		profile.severeBlastRadius = base * 0.70D * atmosphere;
 		profile.moderateBlastRadius = base * (spec.burstType == BurstType.AIR ? 1.75D : 1.35D) * atmosphere;
@@ -31,7 +32,7 @@ public final class NuclearEffectsSolver {
 			profile.falloutSourceStrength = spec.createsFallout ? spec.yieldKt * spec.fissionFraction * 0.08D : 0.0D;
 		}
 		if(spec.burstType == BurstType.SUBSURFACE) {
-			double release = clamp(spec.surfaceBreakthroughFactor);
+			double release = spec.actualSurfaceBreach ? clamp(spec.atmosphericReleaseFactor) : 0D;
 			profile.severeBlastRadius *= release; profile.moderateBlastRadius *= release; profile.lightBlastRadius *= release;
 			profile.thermalRadius *= release * 0.35D;
 			profile.promptRadiationRadius *= release;

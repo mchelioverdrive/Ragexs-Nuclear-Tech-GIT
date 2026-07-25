@@ -476,12 +476,14 @@ public class ModEventHandlerRenderer {
 	public void onRenderHUD(RenderGameOverlayEvent.Pre event) {
 		Tessellator tess = Tessellator.instance;
 		//if (!ExplosionNukeSmall.PARAMS_VISUALNOSHRAP.visual)
-		if(event.type == ElementType.HOTBAR && (ModEventHandlerClient.shakeTimestamp + ModEventHandlerClient.shakeDuration - System.currentTimeMillis()) > 0 && ClientConfig.NUKE_HUD_SHAKE.get()  ) {
+		if(event.type == ElementType.HOTBAR && ((ModEventHandlerClient.shakeTimestamp + ModEventHandlerClient.shakeDuration - System.currentTimeMillis()) > 0 || (ModEventHandlerClient.seismicTimestamp + ModEventHandlerClient.seismicDuration - System.currentTimeMillis()) > 0) && ClientConfig.NUKE_HUD_SHAKE.get()  ) {
 
 			//|| !ExplosionNukeSmall.PARAMS_VISUALNOSHRAP.visual
 			//FUCK WHY DOESNT THIS STOP IT FROM HAPPENING WHAT THE FUCKKKKK
 
-			double mult = (ModEventHandlerClient.shakeTimestamp + ModEventHandlerClient.shakeDuration - System.currentTimeMillis()) / (double) ModEventHandlerClient.shakeDuration * 2;
+			double atmospheric = (ModEventHandlerClient.shakeTimestamp + ModEventHandlerClient.shakeDuration - System.currentTimeMillis()) / (double) ModEventHandlerClient.shakeDuration * 2;
+			double seismic = Math.max(0D, (ModEventHandlerClient.seismicTimestamp + ModEventHandlerClient.seismicDuration - System.currentTimeMillis()) / (double)Math.max(1, ModEventHandlerClient.seismicDuration)) * ModEventHandlerClient.seismicIntensity;
+			double mult = Math.max(atmospheric, seismic);
 			double horizontal = MathHelper.clamp_double(Math.sin(System.currentTimeMillis() * 0.02), -0.7, 0.7) * 15;
 			double vertical = MathHelper.clamp_double(Math.sin(System.currentTimeMillis() * 0.01 + 2), -0.7, 0.7) * 3;
 			GL11.glTranslated(horizontal * mult, vertical * mult, 0);

@@ -15,6 +15,7 @@ public class PacketDispatcher {
 
 	public static final void registerPackets() {
 		int i = 0;
+		wrapper.registerMessage(NuclearSeismicPacket.Handler.class, NuclearSeismicPacket.class, i++, Side.CLIENT);
 		
 		//Sound packet that keeps client and server separated
 		wrapper.registerMessage(LoopedSoundPacket.Handler.class, LoopedSoundPacket.class, i++, Side.CLIENT);
