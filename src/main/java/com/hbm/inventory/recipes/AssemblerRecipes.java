@@ -78,12 +78,12 @@ public class AssemblerRecipes extends SerializableRecipe {
 
 		//more efficient gunpowder crafting
 		makeRecipe(new ComparableStack(Items.gunpowder, 16), new AStack[]{
-				new OreDictStack(S.dust(), 1), new OreDictStack(CARBON.dust(), 1),
+				new OreDictStack(S.dust(), 1), new OreDictStack(COAL.dust(), 1),
 				new OreDictStack(KNO.dust(), 1)}, 30);
 
 		//even more efficient gunpowder crafting step 1
 		makeRecipe(new ComparableStack(ModItems.gpmix, 16), new AStack[]{
-				new OreDictStack(S.dust(), 4), new OreDictStack(CARBON.dust(), 1),
+				new OreDictStack(S.dust(), 4), new OreDictStack(COAL.dust(), 1),
 				new OreDictStack(KNO.dust(), 2), new ComparableStack(Items.gunpowder)}, 50);
 
 		//why were these 2 for 3... It's for mass production, why are we punishing the player for technological progression?
