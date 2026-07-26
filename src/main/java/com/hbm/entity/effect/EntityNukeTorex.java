@@ -64,7 +64,6 @@ public class EntityNukeTorex extends Entity {
 		this.dataWatcher.addObject(14, new Float(0F));
 		this.dataWatcher.addObject(15, new Float(0F));
 		this.dataWatcher.addObject(16, new Float(1F));
-		this.dataWatcher.addObject(17, new Byte((byte)0));
 	}
 
 	@Override @SideOnly(Side.CLIENT) public int getBrightnessForRender(float interp) { return 15728880; }
@@ -142,7 +141,7 @@ public class EntityNukeTorex extends Entity {
 			}
 
 			// spawn shock clouds
-			if(ticksExisted < 150 && !isSurfacePlume()) {
+			if(ticksExisted < 150) {
 
 				int cloudCount = ticksExisted * 5;
 				int shockLife = Math.max(300 - ticksExisted * 20, 50);
@@ -236,19 +235,12 @@ public class EntityNukeTorex extends Entity {
 	public boolean isContainedVisual() { return getBurstType() == BurstType.SUBSURFACE && this.dataWatcher.getWatchableObjectFloat(16) <= 0F; }
 	private BurstType getBurstType() { int type = this.dataWatcher.getWatchableObjectInt(12); return type >= 0 && type < BurstType.values().length ? BurstType.values()[type] : BurstType.SURFACE; }
 	private double getGroundCoupling() { return this.dataWatcher.getWatchableObjectFloat(13); }
-	private boolean isSurfacePlume() { return this.dataWatcher.getWatchableObjectByte(17) != 0; }
 
 	private EntityNukeTorex applyBurstContext(NuclearBurstContext context) {
 		this.resolvedBurstHeight = context.burstHeight; this.resolvedFireballRadius = context.fireballRadius; this.resolvedGroundCoupling = context.groundCoupling;
 		this.dataWatcher.updateObject(12, context.burstType.ordinal()); this.dataWatcher.updateObject(13, (float)context.groundCoupling); this.dataWatcher.updateObject(14, (float)context.burstHeight); this.dataWatcher.updateObject(15, (float)context.fireballRadius); this.dataWatcher.updateObject(16, (float)context.atmosphericReleaseFactor);
 		if(context.burstType == BurstType.VACUUM) this.hasSufficientPressure = false;
 		return this;
-	}
-
-	public static EntityNukeTorex fromBurstContext(World world, double x, double y, double z, NuclearBurstContext context, float scaleMultiplier, boolean surfacePlume) {
-		EntityNukeTorex torex = new EntityNukeTorex(world).applyBurstContext(context).setScale(MathHelper.clamp_float((float)context.effects.visualScale * scaleMultiplier, 0.25F, 5F));
-		torex.dataWatcher.updateObject(17, (byte)(surfacePlume ? 1 : 0));
-		torex.setPosition(x, y, z); torex.forceSpawn = true; world.spawnEntityInWorld(torex); TrackerUtil.setTrackingRange(world, torex, 1000); return torex;
 	}
 
 	public EntityNukeTorex setType(int type) {
@@ -656,7 +648,11 @@ public class EntityNukeTorex extends Entity {
 
 	public static void statFac(World world, double x, double y, double z, float scale) {
 		NuclearBurstContext context = NuclearBurstResolver.resolve(world, x, y, z, Math.max(1, Math.round(scale)));
-		fromBurstContext(world, x, y, z, context, 1F, false);
+		EntityNukeTorex torex = new EntityNukeTorex(world).applyBurstContext(context).setScale(MathHelper.clamp_float((float)context.effects.visualScale, 0.5F, 5F));
+		torex.setPosition(x, y, z);
+		torex.forceSpawn = true;
+		world.spawnEntityInWorld(torex);
+		TrackerUtil.setTrackingRange(world, torex, 1000);
 	}
 	public static void startFacAnti(World world, double x, double y, double z, float scale) {
 		EntityNukeTorex torex = new EntityNukeTorex(world).setScale(MathHelper.clamp_float(scale * 0.01F, 0.5F, 5F)).setType(2);

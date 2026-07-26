@@ -1,9 +1,7 @@
 package com.hbm.entity.projectile;
 
-import com.hbm.explosion.nuclear.NuclearDetonationFactory;
-import com.hbm.explosion.nuclear.NuclearDetonationOptions;
-
 import com.hbm.config.BombConfig;
+import com.hbm.entity.logic.EntityNukeExplosionMK5;
 import com.hbm.explosion.ExplosionChaos;
 import com.hbm.explosion.ExplosionLarge;
 import com.hbm.packet.PacketDispatcher;
@@ -65,7 +63,7 @@ public class EntityBombletZeta extends EntityThrowable {
     				ExplosionChaos.spawnChlorine(worldObj, this.posX + 0.5F - motionX, this.posY + 0.5F - motionY, this.posZ + 0.5F - motionZ, 75, 2, 0);
     			}
     			if(type == 4) {
-				NuclearDetonationFactory.detonate(worldObj, posX, posY, posZ, (int)(BombConfig.fatmanRadius * 1.5), NuclearDetonationOptions.standard());
+    				worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, (int) (BombConfig.fatmanRadius * 1.5), posX, posY, posZ));
     				
     				NBTTagCompound data = new NBTTagCompound();
     				data.setString("type", "muke");

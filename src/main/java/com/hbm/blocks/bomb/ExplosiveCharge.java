@@ -1,14 +1,13 @@
 package com.hbm.blocks.bomb;
 
-import com.hbm.explosion.nuclear.NuclearDetonationFactory;
-import com.hbm.explosion.nuclear.NuclearDetonationOptions;
-
 import org.apache.logging.log4j.Level;
 
 import com.hbm.blocks.ModBlocks;
 import com.hbm.config.BombConfig;
 import com.hbm.config.GeneralConfig;
+import com.hbm.entity.effect.EntityNukeTorex;
 import com.hbm.entity.item.EntityTNTPrimedBase;
+import com.hbm.entity.logic.EntityNukeExplosionMK5;
 import com.hbm.explosion.ExplosionLarge;
 import com.hbm.explosion.ExplosionNT;
 import com.hbm.interfaces.IBomb;
@@ -81,10 +80,13 @@ public class ExplosiveCharge extends BlockDetonatable implements IBomb, IDetConn
 				ExplosionLarge.spawnParticles(world, x, y, z, ExplosionLarge.cloudFunction(15));
 			}
 			if(this == ModBlocks.det_nuke) {
-				NuclearDetonationFactory.detonate(world, x + 0.5, y + 0.5, z + 0.5, 42, NuclearDetonationOptions.standard()); // HEU device, 10 kt
+				world.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(world, 42, x + 0.5, y + 0.5, z + 0.5)); //HEU device nuclear terrorism, 10KT
+				EntityNukeTorex.statFac(world, x + 0.5, y + 0.5, z + 0.5, 42);
 			}
 			if(this == ModBlocks.det_salt) {
-				NuclearDetonationFactory.detonate(world, x + 0.5, y + 0.5, z + 0.5, 50, NuclearDetonationOptions.standard().salted(true));
+				world.spawnEntityInWorld(EntityNukeExplosionMK5.statFacSalted(world, 50, x + 0.5, y + 0.5, z + 0.5));
+
+				EntityNukeTorex.statFac(world, x + 0.5, y + 0.5, z + 0.5, 80);
 			}
 		}
 

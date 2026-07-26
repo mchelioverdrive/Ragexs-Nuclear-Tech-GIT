@@ -1,17 +1,16 @@
 package com.hbm.entity.projectile;
 
-import com.hbm.explosion.nuclear.NuclearDetonationFactory;
-import com.hbm.explosion.nuclear.NuclearDetonationOptions;
-
 import java.util.List;
 
 import com.hbm.config.BombConfig;
 import com.hbm.entity.effect.EntityBlackHole;
 import com.hbm.entity.effect.EntityCloudFleijaRainbow;
+import com.hbm.entity.effect.EntityNukeTorex;
 import com.hbm.entity.effect.EntityRagingVortex;
 import com.hbm.entity.effect.EntityVortex;
 import com.hbm.entity.grenade.EntityGrenadeZOMG;
 import com.hbm.entity.logic.EntityNukeExplosionMK3;
+import com.hbm.entity.logic.EntityNukeExplosionMK5;
 import com.hbm.explosion.ExplosionLarge;
 import com.hbm.potion.HbmPotion;
 
@@ -490,7 +489,8 @@ public class EntityModBeam extends Entity implements IProjectile {
 			} else {
 				this.worldObj.playSoundEffect(this.posX, this.posY, this.posZ, "random.explode", 100.0f, this.worldObj.rand.nextFloat() * 0.1F + 0.9F);
 
-				NuclearDetonationFactory.detonate(worldObj, posX, posY, posZ, (int)(BombConfig.gadgetRadius), NuclearDetonationOptions.standard());
+				this.worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, BombConfig.gadgetRadius, posX, posY, posZ));
+				EntityNukeTorex.statFac(worldObj, posX, posY, posZ, BombConfig.gadgetRadius);
 			}
 		}
 	}

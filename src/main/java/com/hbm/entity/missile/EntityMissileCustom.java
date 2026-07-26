@@ -1,12 +1,10 @@
 package com.hbm.entity.missile;
 
-import com.hbm.explosion.nuclear.NuclearDetonationFactory;
-import com.hbm.explosion.nuclear.NuclearDetonationOptions;
-
 import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm.entity.effect.EntityNukeTorex;
+import com.hbm.entity.logic.EntityNukeExplosionMK5;
 import com.hbm.entity.logic.IChunkLoader;
 import com.hbm.entity.projectile.EntityBulletBaseNT;
 import com.hbm.explosion.ExplosionChaos;
@@ -181,7 +179,8 @@ public class EntityMissileCustom extends EntityMissileBaseNT implements IChunkLo
 			break;
 		case NUCLEAR:
 		case TX:
-			NuclearDetonationFactory.detonate(worldObj, posX, posY, posZ, (int)((int) strength), NuclearDetonationOptions.standard());
+			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, (int) strength, posX, posY, posZ));
+			EntityNukeTorex.statFac(worldObj, posX, posY, posZ, strength);
 			break;
 		//case BALEFIRE:
 		//	EntityBalefire bf = new EntityBalefire(worldObj);
@@ -193,7 +192,8 @@ public class EntityMissileCustom extends EntityMissileBaseNT implements IChunkLo
 		//	EntityNukeTorex.statFacBale(worldObj, posX, posY, posZ, strength);
 		//	break;
 		case N2:
-			NuclearDetonationFactory.detonate(worldObj, posX, posY, posZ, (int)((int) strength), NuclearDetonationOptions.standard().fallout(false).radiation(false));
+			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFacNoRad(worldObj, (int) strength, posX, posY, posZ));
+			EntityNukeTorex.statFac(worldObj, posX, posY, posZ, strength);
 			break;
 		//case TAINT:
 		//	int r = (int) strength;

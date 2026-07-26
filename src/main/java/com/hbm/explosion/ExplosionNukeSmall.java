@@ -1,9 +1,7 @@
 package com.hbm.explosion;
 
-import com.hbm.explosion.nuclear.NuclearDetonationFactory;
-import com.hbm.explosion.nuclear.NuclearDetonationOptions;
-
 import com.hbm.config.BombConfig;
+import com.hbm.entity.logic.EntityNukeExplosionMK5;
 import com.hbm.explosion.ExplosionNT.ExAttrib;
 import com.hbm.handler.radiation.ChunkRadiationManager;
 import com.hbm.main.MainRegistry;
@@ -38,7 +36,7 @@ public class ExplosionNukeSmall {
 		if(params.shrapnelCount > 0) ExplosionLarge.spawnShrapnels(world, posX, posY, posZ, params.shrapnelCount);
 		if(params.miniNuke && !params.safe) new ExplosionNT(world, null, posX, posY, posZ, params.blastRadius).addAllAttrib(params.explosionAttribs).overrideResolution(params.resolution).explode();
 		if(params.killRadius > 0) ExplosionNukeGeneric.dealDamage(world, posX, posY, posZ, params.killRadius);
-		if(!params.miniNuke) NuclearDetonationFactory.detonate(world, posX, posY, posZ, (int)params.blastRadius, NuclearDetonationOptions.standard());
+		if(!params.miniNuke) world.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(world, (int) params.blastRadius, posX, posY, posZ));
 
 		if(params.miniNuke) {
 			float radMod = params.radiationLevel / 3F;
