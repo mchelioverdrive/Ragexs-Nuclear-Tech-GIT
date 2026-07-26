@@ -232,7 +232,16 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 			 * Real fallout settles mostly in a ring outside the fireball,
 			 * not directly at ground zero.
 			 */
-			if(depth == 0 && (above == Blocks.air || above.isReplaceable(worldObj, x, y + 1, z))) {
+			if(
+				depth == 0 &&
+					(
+						above == Blocks.air ||
+							(
+								above.isReplaceable(worldObj, x, y + 1, z) &&
+									!above.getMaterial().isLiquid()
+							)
+					)
+			) {
 
 				double normalized = dist / 100D;
 

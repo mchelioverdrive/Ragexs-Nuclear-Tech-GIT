@@ -4869,25 +4869,25 @@ public class AssemblerRecipes extends SerializableRecipe {
 										4)
 				   },
 				   5000);
-		makeRecipe(new ComparableStack(ModBlocks.nuke_antimatter,
-									   1),
-				   new AStack[]{
-					   //new ComparableStack(ModItems.hull_big_steel, 3),
-					   new OreDictStack(STAINLESS.plate(),
-										16),
-					   new OreDictStack(MINGRADE.wireFine(),
-										32),
-					   new ComparableStack(ModItems.ingot_hafnium,
-										   2),
-					   new ComparableStack(ModItems.circuit,
-										   1,
-										   EnumCircuitType.ANALOG),
-					   new ComparableStack(ModItems.billet_gaas,
-										   1),
-					   new ComparableStack(ModItems.magnetron,
-										   4)
-				   },
-				   1200);
+		//makeRecipe(new ComparableStack(ModBlocks.nuke_antimatter,
+		//							   1),
+		//		   new AStack[]{
+		//			   //new ComparableStack(ModItems.hull_big_steel, 3),
+		//			   new OreDictStack(STAINLESS.plate(),
+		//								16),
+		//			   new OreDictStack(MINGRADE.wireFine(),
+		//								32),
+		//			   new ComparableStack(ModItems.ingot_hafnium,
+		//								   2),
+		//			   new ComparableStack(ModItems.circuit,
+		//								   1,
+		//								   EnumCircuitType.ANALOG),
+		//			   new ComparableStack(ModItems.billet_gaas,
+		//								   1),
+		//			   new ComparableStack(ModItems.magnetron,
+		//								   4)
+		//		   },
+		//		   1200);
 
 		makeRecipe(new ComparableStack(ModBlocks.sliding_blast_door,
 									   1),

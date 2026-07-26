@@ -1094,17 +1094,17 @@ public class ItemRenderLibrary {
 				bindTexture(ResourceManager.orbus_tex); ResourceManager.orbus.renderAll();
 				GL11.glShadeModel(GL11.GL_FLAT);
 			}});
-		renderers.put(Item.getItemFromBlock(ModBlocks.nuke_antimatter), new ItemRenderBase() {
-			public void renderInventory() {
-				GL11.glTranslated(0, 7, 0);
-				GL11.glScaled(3.25, 3.25, 3.25);
-				GL11.glRotatef(180, 90, 0, 0);
-			}
-			public void renderCommon() {
-				GL11.glShadeModel(GL11.GL_SMOOTH);
-				//bindTexture(ResourceManager.Antimatter_tex); ResourceManager.Antimatter.renderAll();
-				GL11.glShadeModel(GL11.GL_FLAT);
-			}});
+		//renderers.put(Item.getItemFromBlock(ModBlocks.nuke_antimatter), new ItemRenderBase() {
+		//	public void renderInventory() {
+		//		GL11.glTranslated(0, 7, 0);
+		//		GL11.glScaled(3.25, 3.25, 3.25);
+		//		GL11.glRotatef(180, 90, 0, 0);
+		//	}
+		//	public void renderCommon() {
+		//		GL11.glShadeModel(GL11.GL_SMOOTH);
+		//		//bindTexture(ResourceManager.Antimatter_tex); ResourceManager.Antimatter.renderAll();
+		//		GL11.glShadeModel(GL11.GL_FLAT);
+		//	}});
 
 		renderers.put(Item.getItemFromBlock(ModBlocks.watz), new ItemRenderBase() {
 			public void renderInventory() {

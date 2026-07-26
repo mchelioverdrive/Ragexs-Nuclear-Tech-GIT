@@ -742,13 +742,13 @@ public class ModBlocks {
 	public static Block nuke_mike;
 	public static Block nuke_shrimp;
 	public static Block nuke_tsar;
-	public static Block nuke_fleija;
+	//public static Block nuke_fleija;
 	public static Block nuke_prototype;
 	public static Block nuke_custom;
-	public static Block nuke_solinium;
+	//public static Block nuke_solinium;
 	public static Block nuke_n2;
 	//public static Block nuke_fstbmb;
-	public static Block nuke_antimatter;
+	//public static Block nuke_antimatter;
 	public static Block bomb_multi;
 
 	public static Block pump_steam;
@@ -1989,13 +1989,13 @@ public class ModBlocks {
 		nuke_shrimp = new NukeShrimp(Material.iron).setBlockName("nuke_shrimp").setCreativeTab(MainRegistry.nukeTab).setHardness(5.0F).setResistance(20.0F).setBlockTextureName(RefStrings.MODID + ":shrimp");
 
 		nuke_tsar = new NukeTsar(Material.iron).setBlockName("nuke_tsar").setCreativeTab(MainRegistry.nukeTab).setHardness(5.0F).setResistance(20.0F).setBlockTextureName(RefStrings.MODID + ":tsarBomba");
-		nuke_fleija = new NukeFleija(Material.iron).setBlockName("nuke_fleija").setCreativeTab(MainRegistry.nukeTab).setHardness(5.0F).setResistance(20.0F).setBlockTextureName(RefStrings.MODID + ":fleija");
+		//nuke_fleija = new NukeFleija(Material.iron).setBlockName("nuke_fleija").setCreativeTab(MainRegistry.nukeTab).setHardness(5.0F).setResistance(20.0F).setBlockTextureName(RefStrings.MODID + ":fleija");
 		nuke_prototype = new NukePrototype(Material.iron).setBlockName("nuke_prototype").setCreativeTab(MainRegistry.nukeTab).setHardness(5.0F).setResistance(20).setBlockTextureName(RefStrings.MODID + ":prototype");
 		nuke_custom = new NukeCustom(Material.iron).setBlockName("nuke_custom").setCreativeTab(MainRegistry.nukeTab).setHardness(5.0F).setResistance(20.0F).setBlockTextureName(RefStrings.MODID + ":custom");
-		nuke_solinium = new NukeSolinium(Material.iron).setBlockName("nuke_solinium").setCreativeTab(MainRegistry.nukeTab).setHardness(5.0F).setResistance(20.0F).setBlockTextureName(RefStrings.MODID + ":nuke_solinium");
+		//nuke_solinium = new NukeSolinium(Material.iron).setBlockName("nuke_solinium").setCreativeTab(MainRegistry.nukeTab).setHardness(5.0F).setResistance(20.0F).setBlockTextureName(RefStrings.MODID + ":nuke_solinium");
 		nuke_n2 = new NukeN2(Material.iron).setBlockName("nuke_n2").setCreativeTab(MainRegistry.nukeTab).setHardness(5.0F).setResistance(20.0F).setBlockTextureName(RefStrings.MODID + ":nuke_n2");
 		//nuke_fstbmb = new NukeBalefire(Material.iron).setBlockName("nuke_fstbmb").setCreativeTab(MainRegistry.nukeTab).setHardness(5.0F).setResistance(200.0F).setBlockTextureName(RefStrings.MODID + ":nuke_fstbmb");
-		nuke_antimatter = new NukeAntimatter(Material.iron).setBlockName("nuke_antimatter").setCreativeTab(MainRegistry.nukeTab).setHardness(5.0F).setResistance(20.0F).setBlockTextureName(RefStrings.MODID + ":nuke_antimatter");
+		//nuke_antimatter = new NukeAntimatter(Material.iron).setBlockName("nuke_antimatter").setCreativeTab(MainRegistry.nukeTab).setHardness(5.0F).setResistance(20.0F).setBlockTextureName(RefStrings.MODID + ":nuke_antimatter");
 
 		bomb_multi = new BombMulti(Material.iron).setBlockName("bomb_multi").setCreativeTab(MainRegistry.nukeTab).setResistance(20.0F).setBlockTextureName(RefStrings.MODID + ":bomb_multi1");
 
