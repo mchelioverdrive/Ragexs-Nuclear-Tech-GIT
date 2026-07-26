@@ -119,6 +119,10 @@ public class NukePrototype extends BlockContainer implements IBomb {
 
 	@Override
 	public void onNeighborBlockChange(World p_149695_1_, int x, int y, int z, Block p_149695_5_) {
+		if(!GeneralConfig.canRedstoneDetonateGroundNukes()) {
+			return;
+		}
+
 		TileEntityNukePrototype entity = (TileEntityNukePrototype) p_149695_1_.getTileEntity(x, y, z);
 		if(p_149695_1_.isBlockIndirectlyGettingPowered(x, y, z) && !p_149695_1_.isRemote) {
 			if(entity.isReady()) {

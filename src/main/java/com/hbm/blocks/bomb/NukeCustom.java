@@ -122,6 +122,10 @@ public class NukeCustom extends BlockContainer implements IBomb {
 
 	@Override
 	public void onNeighborBlockChange(World world, int x, int y, int z, Block p_149695_5_) {
+		if(!GeneralConfig.canRedstoneDetonateGroundNukes()) {
+			return;
+		}
+
 
 		if(world.isBlockIndirectlyGettingPowered(x, y, z)) {
 			this.explode(world, x, y, z);
