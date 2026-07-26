@@ -1,3 +1,11 @@
+# Celestial rendering — Saturn's rings
+
+**Tracker:** `Celestial rendering — Saturn's rings`
+
+* Gated planetary ring geometry on the body's unclamped apparent angular size and local sky visibility instead of a hardcoded Earth dimension check.
+* Prevented Saturn's rings from rendering from Earth's surface or atmosphere while retaining close-range, orbital, and magnified-view support.
+* Documented the celestial ring visibility behavior in the space travel guide.
+
 # Realistic darkness and human eye adaptation
 
 **Tracker:** `Implement realistic client-side darkness and human eye adaptation for RTM/Ragex's Nuclear Tech`

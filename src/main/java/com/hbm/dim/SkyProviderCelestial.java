@@ -30,6 +30,10 @@ import com.hbm.util.BobMathUtil;
 import cpw.mods.fml.relauncher.ReflectionHelper;
 
 public class SkyProviderCelestial extends IRenderHandler {
+	/** Rings below this apparent sky size are not resolvable without magnification. */
+	private static final double MIN_RING_APPARENT_SIZE = 0.05D;
+	/** Dense atmospheres and other visibility loss should obscure fine ring detail first. */
+	private static final float MIN_RING_VISIBILITY = 0.25F;
 
 	private static final ResourceLocation planetTexture = new ResourceLocation(RefStrings.MODID, "textures/misc/space/planet.png");
 	private static final ResourceLocation flareTexture = new ResourceLocation(RefStrings.MODID, "textures/misc/space/sunspike.png");
@@ -572,7 +576,8 @@ public class SkyProviderCelestial extends IRenderHandler {
 				}
 				GL11.glRotatef(axialTilt + 90.0F, 0.0F, 1.0F, 0.0F);
 
-				if(!renderAsPoint && SpaceConfig.enablePlanetRingRendering && metric.body.hasRings) {
+				boolean renderRings = !renderAsPoint && shouldRenderBodyRings(metric, visibility);
+				if(renderRings) {
 					// Draw the far side of the rings before the planet disc so the planet
 					// naturally masks ring geometry that should be behind it.
 					renderBodyRings(mc, tessellator, metric.body, size, visibility, true);
@@ -625,7 +630,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 
 					GL11.glEnable(GL11.GL_TEXTURE_2D);
 
-					if(SpaceConfig.enablePlanetRingRendering && metric.body.hasRings) {
+					if(renderRings) {
 						renderBodyRings(mc, tessellator, metric.body, size, visibility, false);
 					}
 				}
@@ -633,6 +638,21 @@ public class SkyProviderCelestial extends IRenderHandler {
 			}
 			GL11.glPopMatrix();
 		}
+	}
+
+	/**
+	 * Fine ring geometry is only useful when the body's unclamped angular size is
+	 * large enough to resolve. Using the metric rather than a dimension ID keeps
+	 * distant rings hidden from planetary surfaces while retaining them in nearby
+	 * and orbital views (and for callers which supply magnified metrics).
+	 */
+	protected boolean shouldRenderBodyRings(AstroMetric metric, float visibility) {
+		return SpaceConfig.enablePlanetRingRendering
+			&& metric != null
+			&& metric.body != null
+			&& metric.body.hasRings
+			&& metric.apparentSize >= MIN_RING_APPARENT_SIZE
+			&& visibility >= MIN_RING_VISIBILITY;
 	}
 
 	protected void renderBodyRings(Minecraft mc, Tessellator tessellator, CelestialBody body, double size, float visibility, boolean backHalf) {
