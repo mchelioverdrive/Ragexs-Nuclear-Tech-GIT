@@ -41,6 +41,13 @@ public class ClientConfig {
 	public static ConfigWrapper<Boolean> NUKE_HUD_SHAKE =					new ConfigWrapper(true);
 	public static ConfigWrapper<Boolean> RENDER_REEDS =						new ConfigWrapper(!Compat.isModLoaded(Compat.MOD_ANG));
 	public static ConfigWrapper<Boolean> DEBUG_RENDER_GL_ERRORS =			new ConfigWrapper(false);
+	public static ConfigWrapper<Boolean> DARK_ADAPTATION_ENABLED =			new ConfigWrapper(true);
+	public static ConfigWrapper<Float> DARK_ADAPTATION_STRENGTH =			new ConfigWrapper(1.0F);
+	public static ConfigWrapper<Float> DARK_ADAPTATION_ROD_SECONDS =		new ConfigWrapper(90.0F);
+	public static ConfigWrapper<Float> DARK_ADAPTATION_NOISE =			new ConfigWrapper(0.012F);
+	public static ConfigWrapper<Float> DARK_ADAPTATION_CENTER_LOSS =		new ConfigWrapper(0.15F);
+	public static ConfigWrapper<Integer> DARK_ADAPTATION_QUALITY =			new ConfigWrapper(1);
+	public static ConfigWrapper<Boolean> DARK_ADAPTATION_DEBUG =			new ConfigWrapper(false);
 
 	private static void initDefaults() {
 		configMap.put("GEIGER_OFFSET_HORIZONTAL", GEIGER_OFFSET_HORIZONTAL);
@@ -60,6 +67,13 @@ public class ClientConfig {
 		configMap.put("NUKE_HUD_SHAKE", NUKE_HUD_SHAKE);
 		configMap.put("RENDER_REEDS", RENDER_REEDS);
 		configMap.put("DEBUG_RENDER_GL_ERRORS", DEBUG_RENDER_GL_ERRORS);
+		configMap.put("DARK_ADAPTATION_ENABLED", DARK_ADAPTATION_ENABLED);
+		configMap.put("DARK_ADAPTATION_STRENGTH", DARK_ADAPTATION_STRENGTH);
+		configMap.put("DARK_ADAPTATION_ROD_SECONDS", DARK_ADAPTATION_ROD_SECONDS);
+		configMap.put("DARK_ADAPTATION_NOISE", DARK_ADAPTATION_NOISE);
+		configMap.put("DARK_ADAPTATION_CENTER_LOSS", DARK_ADAPTATION_CENTER_LOSS);
+		configMap.put("DARK_ADAPTATION_QUALITY", DARK_ADAPTATION_QUALITY);
+		configMap.put("DARK_ADAPTATION_DEBUG", DARK_ADAPTATION_DEBUG);
 	}
 
 	/** Initializes defaults, then reads the config file if it exists, then writes the config file. */

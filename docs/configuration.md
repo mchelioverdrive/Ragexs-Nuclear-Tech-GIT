@@ -77,8 +77,23 @@ Known keys include:
 | `NUKE_HUD_SHAKE` | `true` | Nuke HUD shake effect. |
 | `RENDER_REEDS` | depends on mod compatibility | Reeds render behavior. |
 | `DEBUG_RENDER_GL_ERRORS` | `false` | OpenGL render error debugging. |
+| `DARK_ADAPTATION_ENABLED` | `true` | Enables realistic client eye adaptation. |
+| `DARK_ADAPTATION_STRENGTH` | `1.0` | Scales shadow-only sensitivity loss/recovery (runtime-clamped to 0–2). |
+| `DARK_ADAPTATION_ROD_SECONDS` | `90.0` | Slow rod recovery time (runtime-clamped to 10–300 seconds). |
+| `DARK_ADAPTATION_NOISE` | `0.012` | Maximum intrinsic shadow-noise amplitude (runtime-clamped to 0–0.05). |
+| `DARK_ADAPTATION_CENTER_LOSS` | `0.15` | Weak central scotopic acuity/sensitivity penalty (runtime-clamped to 0–0.35). |
+| `DARK_ADAPTATION_QUALITY` | `1` | `0` disables the pass, `1` uses a five-tap blur, and `2` uses nine taps with more frequent exposure updates. |
+| `DARK_ADAPTATION_DEBUG` | `false` | Shows exposure, cone/rod state, path, FBO/shader status, and Angelica detection. |
 
 > Note: the current source maps `ITEM_TOOLTIP_SHOW_CUSTOM_NUKE` to the `ITEM_TOOLTIP_SHOW_OREDICT` key during default registration. Treat custom-nuke tooltip editing as a documentation gap until this is clarified or fixed in code.
+
+### Darkness and eye adaptation
+
+The client tracks a fast cone stage (4.5 seconds in darkness) and a slow rod stage (90 seconds by default). Bright exposure reverses these stages much faster (0.25 and 1.15 seconds). It never changes Minecraft's gamma option. Instead, only shadow pixels receive curved silhouette recovery, desaturation, local-contrast compression, spatial acuity loss, weak central-vision loss, and intrinsic noise. Mathematical black is not lifted into readable scenery.
+
+The pass runs at the `RenderGameOverlayEvent.Pre(ALL)` boundary, after the completed world and hand but before Forge draws HUD elements. Inventory, chat, crosshair, scope/equipment overlays, debug text, and menus therefore remain unprocessed. Vanilla night vision, blindness, and RTM thermal armor suppress the ordinary-eye pass rather than accidentally stacking visual modes.
+
+Exposure is updated every five frames (`quality=1`) or three frames (`quality=2`). The legacy/Angelica-safe path samples block and sky light around the eye, celestial brightness, and weather without any framebuffer CPU readback; RTM nuclear flashes are injected explicitly. The shader uses a reusable private framebuffer copy, queries/restores the previously bound framebuffer, and never samples an Angelica-owned attachment in place. Unsupported framebuffer hardware or shader compilation failure disables only this effect and leaves normal rendering intact.
 
 ## Dynamic machine JSON: `config/hbmConfig/hbmMachines.json`
 

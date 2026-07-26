@@ -5,6 +5,7 @@ import com.hbm.blocks.network.FluidPump;
 import com.hbm.explosion.ExplosionNukeSmall;
 import com.hbm.handler.imc.IMCHandlerNHNEI;
 import com.hbm.render.loader.HFRModelReloader;
+import com.hbm.render.postprocess.DarkAdaptationRenderer;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
@@ -158,10 +159,13 @@ public class ClientProxy extends ServerProxy {
 		registerClientEventHandler(new ModEventHandlerRenderer());
 		registerClientEventHandler(new EventHandlerParticleEngine());
 		registerClientEventHandler(theInfoSystem);
+		DarkAdaptationRenderer darkAdaptation = new DarkAdaptationRenderer();
+		registerClientEventHandler(darkAdaptation);
 
 		AdvancedModelLoader.registerModelHandler(new HmfModelLoader());
 		IReloadableResourceManager resourceMan = (IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager();
 		resourceMan.registerReloadListener(new HFRModelReloader());
+		resourceMan.registerReloadListener(darkAdaptation);
 
 		registerTileEntitySpecialRenderer();
 		registerItemRenderer();

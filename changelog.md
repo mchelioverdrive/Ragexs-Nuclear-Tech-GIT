@@ -1,3 +1,13 @@
+# Realistic darkness and human eye adaptation
+
+**Tracker:** `Implement realistic client-side darkness and human eye adaptation for RTM/Ragex's Nuclear Tech`
+
+* Added independent, asymmetric cone and rod adaptation with a fast 4.5-second cone stage, configurable 90-second rod stage, rapid bright-light disruption, pause-safe clamped deltas, and explicit nuclear-flash exposure.
+* Added a client-only GLSL 1.20 framebuffer post-process before HUD rendering. It recovers broad nonzero shadow signals while removing shadow color, contrast, and acuity; adds weak central scotopic loss and low intrinsic noise; and preserves bright pixels and mathematical black.
+* Added reusable framebuffer capture, resize/resource/world lifecycle handling, cached uniforms, five- and nine-tap quality modes, complete GL/FBO restoration, and a one-warning clean failure path.
+* Added an Angelica-safe no-readback exposure fallback based on eye-neighbour block/sky light, celestial brightness, and weather. The pass preserves the active framebuffer and uses a private source texture rather than modifying or sampling Angelica-owned attachments in place.
+* Added `/ntmclient`-compatible client JSON controls and an optional diagnostic readout. Vanilla night vision, blindness, and electronic thermal armor suppress ordinary eye adaptation to prevent accidental visual-mode stacking.
+
 # Control ground-nuke redstone detonation
 
 **Tracker:** `Prevent redstone from bypassing disabled nukes and add a ground-nuke redstone toggle`
