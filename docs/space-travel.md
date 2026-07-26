@@ -29,6 +29,8 @@ Orbit is useful for staging transfers, deploying satellites, and creating orbita
 
 Celestial rings are rendered only when the ringed body has enough apparent angular size and the local sky is clear enough to resolve them. This prevents Saturn's rings from appearing to the unaided eye at Earth's surface while preserving them in close planetary or orbital views; magnified celestial views can also opt in by supplying a sufficiently large apparent size.
 
+Star visibility follows local sky brightness rather than switching at sunrise and sunset. A clear Earth daytime sky washes the stars out smoothly, while night, heavy weather, solar eclipses, a destroyed or otherwise absent Sun, and ascent above most of an atmosphere allow them to return in proportion to the remaining scattered sunlight. Airless locations still retain some direct solar glare when looking under an illuminated sky.
+
 ## Server notes
 
 Server owners should review dimension IDs and space-related configuration before a long-term world starts. Avoid changing orbit or celestial dimension IDs after stations, satellites, or player bases exist.
