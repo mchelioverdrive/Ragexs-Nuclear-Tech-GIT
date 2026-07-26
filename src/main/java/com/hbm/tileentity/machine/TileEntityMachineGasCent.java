@@ -8,6 +8,9 @@ import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.gui.GUIMachineGasCent;
 import com.hbm.inventory.recipes.GasCentrifugeRecipes;
 import com.hbm.inventory.recipes.GasCentrifugeRecipes.PseudoFluidType;
+import com.hbm.inventory.recipes.GasCentrifugeRecipes.CampaignGrade;
+import com.hbm.inventory.recipes.GasCentrifugeRecipes.StageRecipe;
+import com.hbm.interfaces.IControlReceiver;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.IItemFluidIdentifier;
 import com.hbm.lib.Library;
@@ -37,13 +40,21 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 //epic!
-public class TileEntityMachineGasCent extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IInfoProviderEC {
+public class TileEntityMachineGasCent extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IInfoProviderEC, IControlReceiver {
 	
 	public long power;
 	public int progress;
 	public boolean isProgressing;
 	public static final int maxPower = 100000;
 	public static final int processingSpeed = 150;
+	public static final int ROTOR_MAINTENANCE = 10000;
+	public enum CampaignState { STOPPED, SPINNING_UP, RUNNING, PAUSED_OUTPUT, PAUSED_POWER, MAINTENANCE, COMPLETE }
+	public CampaignGrade selectedCampaign = CampaignGrade.CIVILIAN;
+	public CampaignState campaignState = CampaignState.STOPPED;
+	public String preparedBatch = "";
+	public int rotorWear;
+	public int spinup;
+	private boolean feedPrepared;
 	
 	public FluidTank tank;
 	public PseudoFluidTank inputTank;
@@ -52,7 +63,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 	private static final int[] slots_io = new int[] { 0, 1, 2, 3 };
 	
 	public TileEntityMachineGasCent() {
-		super(7); 
+		super(8);
 		tank = new FluidTank(Fluids.UF6, 2000);
 		inputTank = new PseudoFluidTank(PseudoFluidType.NUF6, 8000);
 		outputTank = new PseudoFluidTank(PseudoFluidType.LEUF6, 8000);
@@ -82,6 +93,14 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 		tank.readFromNBT(nbt, "tank");
 		inputTank.readFromNBT(nbt, "inputTank");
 		outputTank.readFromNBT(nbt, "outputTank");
+		selectedCampaign = nbt.hasKey("campaign") && "STRATEGIC".equals(nbt.getString("campaign")) ? CampaignGrade.STRATEGIC : CampaignGrade.CIVILIAN;
+		try { campaignState = CampaignState.valueOf(nbt.getString("campaignState")); } catch(Exception ex) { campaignState = CampaignState.STOPPED; }
+		preparedBatch = nbt.getString("preparedBatch");
+		rotorWear = Math.max(0, nbt.getInteger("rotorWear"));
+		spinup = nbt.getInteger("spinup");
+		feedPrepared = nbt.getBoolean("feedPrepared");
+		// Legacy progress was unreserved; preserve it and reserve its feed on the first resumed tick.
+		if(progress > 0 && preparedBatch.length() == 0) campaignState = CampaignState.STOPPED;
 	}
 	
 	@Override
@@ -92,47 +111,38 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 		tank.writeToNBT(nbt, "tank");
 		inputTank.writeToNBT(nbt, "inputTank");
 		outputTank.writeToNBT(nbt, "outputTank");
+		nbt.setString("campaign", selectedCampaign.name());
+		nbt.setString("campaignState", campaignState.name());
+		nbt.setString("preparedBatch", preparedBatch);
+		nbt.setInteger("rotorWear", rotorWear);
+		nbt.setInteger("spinup", spinup);
+		nbt.setBoolean("feedPrepared", feedPrepared);
 	}
 	
 	public int getCentrifugeProgressScaled(int i) {
-		return (progress * i) / getProcessingSpeed();
+		StageRecipe recipe = getCurrentRecipe();
+		return recipe == null ? 0 : (progress * i) / getDuration(recipe);
 	}
 	
 	public long getPowerRemainingScaled(int i) {
 		return (power * i) / maxPower;
 	}
 	
-	private boolean canEnrich() {
-		if(power > 0 && this.inputTank.getFill() >= inputTank.getTankType().getFluidConsumed() && this.outputTank.getFill() + this.inputTank.getTankType().getFluidProduced() <= outputTank.getMaxFill()) {
-			
-			ItemStack[] list = inputTank.getTankType().getOutput();
-			
-			if(this.inputTank.getTankType().getIfHighSpeed())
-				if(!(slots[6] != null && slots[6].getItem() == ModItems.upgrade_gc_speed))
-					return false;
-			
-			if(list == null)
-				return false;
-			
-			if(list.length < 1)
-				return false;
-			
-			if(InventoryUtil.doesArrayHaveSpace(slots, 0, 3, list))
-				return true;
-		}
-		
-		return false;
-	}
+	private StageRecipe getCurrentRecipe() { return GasCentrifugeRecipes.getStage(inputTank.getTankType(), selectedCampaign); }
+	private boolean hasRotor(StageRecipe r) { return slots[7] != null && slots[7].getItem() == ModItems.centrifuge_element && (!r.advancedRotor || slots[6] != null && slots[6].getItem() == ModItems.upgrade_gc_speed); }
+	private int getDuration(StageRecipe r) { return slots[6] != null && slots[6].getItem() == ModItems.upgrade_gc_speed ? (r.duration + 1) / 2 : r.duration; }
+	private int getEnergyPerTick(StageRecipe r) { return slots[6] != null && slots[6].getItem() == ModItems.upgrade_gc_speed ? r.energyPerTick * 2 : r.energyPerTick; }
+	private boolean outputClear(StageRecipe r) { return outputTank.getFill() + r.productAmount <= outputTank.getMaxFill() && InventoryUtil.doesArrayHaveSpace(slots, 0, 3, r.outputs); }
 	
-	private void enrich() {
-		ItemStack[] output = inputTank.getTankType().getOutput();
-		
-		this.progress = 0;
-		inputTank.setFill(inputTank.getFill() - inputTank.getTankType().getFluidConsumed()); 
-		outputTank.setFill(outputTank.getFill() + inputTank.getTankType().getFluidProduced()); 
+	private void enrich(StageRecipe recipe) {
+		ItemStack[] output = recipe.outputs;
+		outputTank.setFill(outputTank.getFill() + recipe.productAmount);
 		
 		for(byte i = 0; i < output.length; i++)
 			InventoryUtil.tryAddItemToInventory(slots, 0, 3, output[i].copy()); //reference types almost got me again
+		rotorWear += recipe.advancedRotor ? 450 : 250;
+		feedPrepared = false;
+		campaignState = CampaignState.COMPLETE;
 	}
 	
 	private void attemptConversion() {
@@ -147,11 +157,13 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 	private boolean attemptTransfer(TileEntity te) {
 		if(te instanceof TileEntityMachineGasCent) {
 			TileEntityMachineGasCent cent = (TileEntityMachineGasCent) te;
-			
-			if(cent.tank.getFill() == 0 && cent.tank.getTankType() == tank.getTankType()) {
+			if(cent == this || outputTank.getFill() <= 0 || outputTank.getTankType() == inputTank.getTankType()) return false;
+			if(cent.tank.getFill() == 0 && cent.tank.getTankType() == tank.getTankType() && !cent.feedPrepared && cent.progress == 0) {
 				if(cent.inputTank.getTankType() != outputTank.getTankType() && outputTank.getTankType() != PseudoFluidType.NONE) {
 					cent.inputTank.setTankType(outputTank.getTankType());
-					cent.outputTank.setTankType(outputTank.getTankType().getOutputType());
+					cent.selectedCampaign = selectedCampaign;
+					StageRecipe next = GasCentrifugeRecipes.getStage(outputTank.getTankType(), selectedCampaign);
+					cent.outputTank.setTankType(next == null ? PseudoFluidType.NONE : next.product);
 				}
 				
 				//God, why did I forget about the entirety of the fucking math library?
@@ -183,27 +195,32 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 				attemptConversion();
 			}
 			
-			if(canEnrich()) {
-				
-				isProgressing = true;
-				this.progress++;
-				
-				if(slots[6] != null && slots[6].getItem() == ModItems.upgrade_gc_speed)
-					this.power -= 300;
-				else
-					this.power -= 200;
-				
-				if(this.power < 0) {
-					power = 0;
-					this.progress = 0;
+			StageRecipe recipe = getCurrentRecipe();
+			isProgressing = false;
+			if(campaignState != CampaignState.STOPPED && campaignState != CampaignState.COMPLETE) {
+				if(recipe == null || !hasRotor(recipe) || rotorWear >= ROTOR_MAINTENANCE) {
+					campaignState = CampaignState.MAINTENANCE;
+				} else if(!feedPrepared) {
+					if(inputTank.getFill() >= recipe.feed) {
+						inputTank.setFill(inputTank.getFill() - recipe.feed);
+						feedPrepared = true;
+						preparedBatch = recipe.id + ":" + worldObj.getTotalWorldTime();
+						campaignState = CampaignState.SPINNING_UP;
+					}
+				} else if(!outputClear(recipe)) {
+					campaignState = CampaignState.PAUSED_OUTPUT;
+				} else if(power < getEnergyPerTick(recipe)) {
+					campaignState = CampaignState.PAUSED_POWER;
+				} else if(spinup < 100) {
+					campaignState = CampaignState.SPINNING_UP;
+					power -= getEnergyPerTick(recipe);
+					spinup++;
+				} else {
+					campaignState = CampaignState.RUNNING;
+					isProgressing = true;
+					power -= getEnergyPerTick(recipe);
+					if(++progress >= getDuration(recipe)) enrich(recipe);
 				}
-				
-				if(progress >= getProcessingSpeed())
-					enrich();
-				
-			} else {
-				isProgressing = false;
-				this.progress = 0;
 			}
 			
 			if(worldObj.getTotalWorldTime() % 10 == 0) {
@@ -211,17 +228,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 				TileEntity te = worldObj.getTileEntity(this.xCoord - dir.offsetX, this.yCoord, this.zCoord - dir.offsetZ);
 				
 				//*AT THE MOMENT*, there's not really any need for a dedicated method for this. Yet.
-				if(!attemptTransfer(te) && this.inputTank.getTankType() == PseudoFluidType.LEUF6) {
-					// Terminal LEUF6 deconversion is compressed into the existing cascade:
-					// it yields fuel-grade uranium feed, not a finished rod or fluorine loop.
-					ItemStack[] converted = new ItemStack[] { new ItemStack(ModItems.nugget_uranium_fuel, 6) };
-					
-					if(this.outputTank.getFill() >= 600 && InventoryUtil.doesArrayHaveSpace(slots, 0, 3, converted)) {
-						this.outputTank.setFill(this.outputTank.getFill() - 600);
-						for(ItemStack stack : converted)
-							InventoryUtil.tryAddItemToInventory(slots, 0, 3, stack);
-					}
-				}
+				attemptTransfer(te);
 			}
 			
 			this.networkPackNT(50);
@@ -236,6 +243,10 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 		buf.writeLong(power);
 		buf.writeInt(progress);
 		buf.writeBoolean(isProgressing);
+		buf.writeByte(selectedCampaign.ordinal());
+		buf.writeByte(campaignState.ordinal());
+		buf.writeInt(rotorWear);
+		BufferUtil.writeString(buf, preparedBatch);
 		//pseudofluids can be refactored another day
 		buf.writeInt(inputTank.getFill());
 		buf.writeInt(outputTank.getFill());
@@ -251,6 +262,10 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 		power = buf.readLong();
 		progress = buf.readInt();
 		isProgressing = buf.readBoolean();
+		selectedCampaign = CampaignGrade.values()[Math.min(buf.readByte(), CampaignGrade.values().length - 1)];
+		campaignState = CampaignState.values()[Math.min(buf.readByte(), CampaignState.values().length - 1)];
+		rotorWear = buf.readInt();
+		preparedBatch = BufferUtil.readString(buf);
 		
 		inputTank.setFill(buf.readInt());
 		outputTank.setFill(buf.readInt());
@@ -297,10 +312,28 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 	}
 	
 	public int getProcessingSpeed() {
-		if(slots[6] != null && slots[6].getItem() == ModItems.upgrade_gc_speed) {
-			return processingSpeed - 70;
+		StageRecipe recipe = getCurrentRecipe();
+		return recipe == null ? processingSpeed : getDuration(recipe);
+	}
+
+	public String getStopReason() { return "gascent.state." + campaignState.name().toLowerCase(); }
+	public StageRecipe getDisplayedRecipe() { return getCurrentRecipe(); }
+	@Override public boolean hasPermission(EntityPlayer player) { return player.getDistanceSq(xCoord, yCoord, zCoord) < 64; }
+	@Override public void receiveControl(NBTTagCompound data) {
+		if(data.hasKey("campaign") && preparedBatch.length() == 0 && campaignState == CampaignState.STOPPED)
+			selectedCampaign = data.getInteger("campaign") == 1 ? CampaignGrade.STRATEGIC : CampaignGrade.CIVILIAN;
+		if(data.getBoolean("start") && (campaignState == CampaignState.STOPPED || campaignState == CampaignState.COMPLETE)) {
+			if(campaignState == CampaignState.COMPLETE) { progress = 0; spinup = 0; preparedBatch = ""; }
+			campaignState = CampaignState.SPINNING_UP;
 		}
-		return processingSpeed;
+		if(data.getBoolean("stop")) {
+			campaignState = CampaignState.STOPPED; isProgressing = false;
+			// A controlled stop preserves reserved feed and progress, but a spun-down rotor must spin up again.
+			spinup = 0;
+		}
+		if(data.getBoolean("maintain") && campaignState == CampaignState.MAINTENANCE && slots[7] != null && slots[7].getItem() == ModItems.centrifuge_element) {
+			rotorWear = 0; slots[7].stackSize--; if(slots[7].stackSize <= 0) slots[7] = null; campaignState = CampaignState.STOPPED;
+		}
 	}
 	
 	public void setTankType(int in) {
@@ -309,12 +342,13 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 			IItemFluidIdentifier id = (IItemFluidIdentifier) slots[in].getItem();
 			FluidType newType = id.getType(worldObj, xCoord, yCoord, zCoord, slots[in]);
 			
-			if(tank.getTankType() != newType) {
+			if(tank.getTankType() != newType && !feedPrepared && progress == 0 && inputTank.getFill() == 0 && outputTank.getFill() == 0) {
 				PseudoFluidType pseudo = GasCentrifugeRecipes.fluidConversions.get(newType);
 				
 				if(pseudo != null) {
 					inputTank.setTankType(pseudo);
-					outputTank.setTankType(pseudo.getOutputType());
+					StageRecipe first = GasCentrifugeRecipes.getStage(pseudo, selectedCampaign);
+					outputTank.setTankType(first == null ? PseudoFluidType.NONE : first.product);
 					tank.setTankType(newType);
 				}
 			}
