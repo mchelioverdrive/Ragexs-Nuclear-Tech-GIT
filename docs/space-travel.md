@@ -27,6 +27,8 @@ Space and planetary bodies can differ in atmosphere, pressure, water-table behav
 
 Orbit is useful for staging transfers, deploying satellites, and creating orbital stations. Station drives can revisit known stations, so name stations clearly and keep spare programmed drives. Satellite payloads should be tracked by frequency; server operators can use station and satellite commands for recovery or cleanup.
 
+Celestial rings are rendered only when the ringed body has enough apparent angular size and the local sky is clear enough to resolve them. This prevents Saturn's rings from appearing to the unaided eye at Earth's surface while preserving them in close planetary or orbital views; magnified celestial views can also opt in by supplying a sufficiently large apparent size.
+
 ## Server notes
 
 Server owners should review dimension IDs and space-related configuration before a long-term world starts. Avoid changing orbit or celestial dimension IDs after stations, satellites, or player bases exist.
