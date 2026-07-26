@@ -64,6 +64,9 @@ public class EntityNukeTorex extends Entity {
 		this.dataWatcher.addObject(14, new Float(0F));
 		this.dataWatcher.addObject(15, new Float(0F));
 		this.dataWatcher.addObject(16, new Float(1F));
+		// EntityNukeTorex extends Entity directly; 10-18 are Torex-owned watcher IDs.
+		this.dataWatcher.addObject(17, new Float(1F));
+		this.dataWatcher.addObject(18, new Float(0F));
 	}
 
 	@Override @SideOnly(Side.CLIENT) public int getBrightnessForRender(float interp) { return 15728880; }
@@ -72,6 +75,11 @@ public class EntityNukeTorex extends Entity {
 	@Override
 	public void onUpdate() {
 		if(isContainedVisual()) { if(!worldObj.isRemote || ticksExisted > 2) setDead(); return; }
+		if(isUnderwaterVisual()) {
+			updateUnderwaterVisual();
+			if(!worldObj.isRemote && this.ticksExisted > getMaxAge()) this.setDead();
+			return;
+		}
 
 		double s = 1.5; //this.getScale();
 		double cs = 1.5;
@@ -234,13 +242,65 @@ public class EntityNukeTorex extends Entity {
 	private boolean isAirburstVisual() { return getBurstType() == BurstType.AIR; }
 	public boolean isContainedVisual() { return getBurstType() == BurstType.SUBSURFACE && this.dataWatcher.getWatchableObjectFloat(16) <= 0F; }
 	private BurstType getBurstType() { int type = this.dataWatcher.getWatchableObjectInt(12); return type >= 0 && type < BurstType.values().length ? BurstType.values()[type] : BurstType.SURFACE; }
+	public boolean isUnderwaterVisual() { return getBurstType() == BurstType.UNDERWATER; }
 	private double getGroundCoupling() { return this.dataWatcher.getWatchableObjectFloat(13); }
 
-	private EntityNukeTorex applyBurstContext(NuclearBurstContext context) {
+	public EntityNukeTorex applyBurstContext(NuclearBurstContext context) {
 		this.resolvedBurstHeight = context.burstHeight; this.resolvedFireballRadius = context.fireballRadius; this.resolvedGroundCoupling = context.groundCoupling;
 		this.dataWatcher.updateObject(12, context.burstType.ordinal()); this.dataWatcher.updateObject(13, (float)context.groundCoupling); this.dataWatcher.updateObject(14, (float)context.burstHeight); this.dataWatcher.updateObject(15, (float)context.fireballRadius); this.dataWatcher.updateObject(16, (float)context.atmosphericReleaseFactor);
+		this.dataWatcher.updateObject(17, (float)context.surfaceInteractionFactor);
+		this.dataWatcher.updateObject(18, (float)Math.max(0D, context.waterSurfaceY - context.surfaceY + context.burstHeight));
 		if(context.burstType == BurstType.VACUUM) this.hasSufficientPressure = false;
 		return this;
+	}
+
+	/**
+	 * Keeps the pressure bubble at the hypocenter. Surface interaction only adds a
+	 * separate vertical spray component; it never gates this local visual.
+	 */
+	private void updateUnderwaterVisual() {
+		if(!worldObj.isRemote) return;
+		double scale = getScale();
+		double age = ticksExisted;
+		double expansion = Math.min(1D, age / 45D);
+		double collapse = age < 90D ? 1D : Math.max(0D, 1D - (age - 90D) / 80D);
+		double bubbleRadius = scale * (2D + 18D * expansion) * collapse;
+		int bubbleCount = age < 170D ? Math.min(16, 4 + (int)Math.ceil(scale * 2D)) : 0;
+		for(int i = 0; i < bubbleCount; i++) {
+			double yaw = rand.nextDouble() * Math.PI * 2D;
+			double pitch = Math.acos(rand.nextDouble() * 2D - 1D);
+			double radius = bubbleRadius * (0.82D + rand.nextDouble() * 0.18D);
+			double sin = Math.sin(pitch);
+			Cloudlet bubble = new Cloudlet(posX + Math.cos(yaw) * sin * radius, posY + Math.cos(pitch) * radius, posZ + Math.sin(yaw) * sin * radius, (float)yaw, 0, 24, TorexType.CONDENSATION);
+			bubble.setScale((float)Math.max(1D, scale * 1.5D), (float)Math.max(2D, scale * 3D)).setMotion(0.01D);
+			cloudlets.add(bubble);
+		}
+		// Two fading pressure pulses make both expansion and the first bubble rebound legible.
+		if((ticksExisted < 70 || (ticksExisted > 90 && ticksExisted < 130)) && ticksExisted % 2 == 0) {
+			double pulseAge = ticksExisted < 90 ? ticksExisted : ticksExisted - 90;
+			for(int i = 0; i < Math.min(12, 4 + (int)scale); i++) {
+				double angle = rand.nextDouble() * Math.PI * 2D;
+				double radius = pulseAge * (0.35D + scale * 0.08D);
+				cloudlets.add(new Cloudlet(posX + Math.cos(angle) * radius, posY + rand.nextGaussian() * radius * 0.15D, posZ + Math.sin(angle) * radius, (float)angle, 0, 30, TorexType.SHOCK).setScale(2F, 2F).setMotion(0.04D));
+			}
+		}
+		double interaction = this.dataWatcher.getWatchableObjectFloat(17);
+		if(interaction > 0D && ticksExisted < 100) {
+			int sprayCount = Math.min(8, (int)Math.ceil(4D * interaction));
+			for(int i = 0; i < sprayCount; i++) {
+				double angle = rand.nextDouble() * Math.PI * 2D;
+				double surfaceY = posY + this.dataWatcher.getWatchableObjectFloat(18);
+				Cloudlet spray = new Cloudlet(posX + Math.cos(angle) * rand.nextDouble() * scale * 5D, surfaceY + rand.nextDouble() * scale * 12D, posZ + Math.sin(angle) * rand.nextDouble() * scale * 5D, (float)angle, 0, 60, TorexType.CONDENSATION);
+				spray.setScale(1.5F, (float)(3D + interaction * 4D)).setMotion(0.03D + interaction * 0.06D); cloudlets.add(spray);
+			}
+		}
+		if(!didPlaySound && MainRegistry.proxy.me() != null && MainRegistry.proxy.me().getDistanceToEntity(this) < (ticksExisted + 1D) * (1.2D + scale * 0.3D)) {
+			MainRegistry.proxy.playSoundClient(posX, posY, posZ, "hbm:weapon.nuclearExplosion", 2500F, 0.55F);
+			didPlaySound = true;
+		}
+		for(Cloudlet cloud : cloudlets) cloud.update();
+		cloudlets.removeIf(x -> x.isDead);
+		coreHeight = 0D; torusWidth = bubbleRadius; rollerSize = Math.max(1D, bubbleRadius); convectionHeight = bubbleRadius;
 	}
 
 	public EntityNukeTorex setType(int type) {
@@ -648,7 +708,12 @@ public class EntityNukeTorex extends Entity {
 
 	public static void statFac(World world, double x, double y, double z, float scale) {
 		NuclearBurstContext context = NuclearBurstResolver.resolve(world, x, y, z, Math.max(1, Math.round(scale)));
+		statFac(world, x, y, z, context);
+	}
+	public static void statFac(World world, double x, double y, double z, NuclearBurstContext context) {
 		EntityNukeTorex torex = new EntityNukeTorex(world).applyBurstContext(context).setScale(MathHelper.clamp_float((float)context.effects.visualScale, 0.5F, 5F));
+		// Regression eb13453 confused a depth-scaled surface plume with the whole
+		// explosion. The primary Torex always remains at the physical hypocenter.
 		torex.setPosition(x, y, z);
 		torex.forceSpawn = true;
 		world.spawnEntityInWorld(torex);

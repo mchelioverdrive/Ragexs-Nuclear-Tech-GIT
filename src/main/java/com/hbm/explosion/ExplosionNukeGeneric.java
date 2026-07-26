@@ -104,6 +104,24 @@ public class ExplosionNukeGeneric {
 		}
 	}
 
+	/** Bounded spherical water-pressure shell; liquids do not require a block scan. */
+	public static void dealUnderwaterDamageFront(World world, double x, double y, double z, double previousRadius, double currentRadius, double damageRadius, float maxDamage) {
+		if(currentRadius <= previousRadius || damageRadius <= 0D) return;
+		List<Entity> list = world.getEntitiesWithinAABBExcludingEntity(null, AxisAlignedBB.getBoundingBox(x - currentRadius, y - currentRadius, z - currentRadius, x + currentRadius, y + currentRadius, z + currentRadius));
+		for(Entity entity : list) {
+			if(isExplosionExempt(entity)) continue;
+			double dx = entity.posX - x, dy = entity.posY + entity.getEyeHeight() - y, dz = entity.posZ - z;
+			double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+			if(distance < previousRadius || distance > currentRadius) continue;
+			double exposure = Library.isObstructed(world, x, y, z, entity.posX, entity.posY + entity.getEyeHeight(), entity.posZ) ? 0.35D : 1D;
+			double psi = getOverpressurePsi(distance / damageRadius) * 1.5D * exposure;
+			if(psi <= 0D) continue;
+			entity.attackEntityFrom(ModDamageSource.nuclearBlast, (float)Math.min(maxDamage, psi * 3D));
+			double length = Math.max(0.001D, distance), impulse = Math.min(2D, psi * 0.04D) * exposure;
+			entity.motionX += dx / length * impulse; entity.motionY += dy / length * impulse; entity.motionZ += dz / length * impulse;
+		}
+	}
+
 	/** Localized seismic damage for contained shots; it never projects an atmospheric front onto the surface. */
 	public static void dealGroundShock(World world, double x, double y, double z, double radius, double burialDepth) {
 		if(radius <= 0D) return;

@@ -38,8 +38,9 @@ public class RenderTorex extends Render {
 		EntityNukeTorex cloud = (EntityNukeTorex) entity;
 		if(cloud.isContainedVisual()) { if(fog) GL11.glEnable(GL11.GL_FOG); GL11.glPopMatrix(); return; }
 		cloudletWrapper(cloud, interp);
-		if (cloud.ticksExisted < 101) flashWrapper(cloud, interp);
-		if (cloud.ticksExisted < 10 && System.currentTimeMillis() - ModEventHandlerClient.flashTimestamp > 1_000)
+		// Underwater shots retain a short local bubble flash, not the long atmospheric flare.
+		if (cloud.ticksExisted < (cloud.isUnderwaterVisual() ? 20 : 101)) flashWrapper(cloud, interp);
+		if (cloud.ticksExisted < 10 && !cloud.isUnderwaterVisual() && System.currentTimeMillis() - ModEventHandlerClient.flashTimestamp > 1_000)
 			ModEventHandlerClient.flashTimestamp = System.currentTimeMillis();
 
 		//if (!ExplosionNukeSmall.PARAMS_VISUALNOSHRAP.visual) { //please fucking work

@@ -13,6 +13,8 @@ import com.hbm.entity.logic.EntityNukeExplosionMK5;
 import com.hbm.entity.projectile.EntityFallingNuke;
 import com.hbm.explosion.ExplosionChaos;
 import com.hbm.explosion.ExplosionLarge;
+import com.hbm.explosion.nuclear.NuclearBurstContext;
+import com.hbm.explosion.nuclear.NuclearBurstResolver;
 import com.hbm.interfaces.IBomb;
 import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.bomb.TileEntityNukeCustom;
@@ -186,8 +188,10 @@ public class NukeCustom extends BlockContainer implements IBomb {
 			hydro = Math.min(hydro, maxHydro);
 			dirty *= 0.25F;
 
-			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, (int)hydro, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5).moreFallout((int)dirty));
-			EntityNukeTorex.statFac(worldObj, xCoord + 0.5, yCoord + 5, zCoord + 0.5, hydro);
+			double detonationX = xCoord + 0.5D, detonationY = yCoord + 0.5D, detonationZ = zCoord + 0.5D;
+			NuclearBurstContext context = NuclearBurstResolver.resolve(worldObj, detonationX, detonationY, detonationZ, Math.max(1, (int)hydro));
+			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, context, detonationX, detonationY, detonationZ).moreFallout((int)dirty));
+			EntityNukeTorex.statFac(worldObj, detonationX, detonationY, detonationZ, context);
 
 		/// NUCLEAR ///
 		} else if(nuke > 0) {
@@ -195,16 +199,20 @@ public class NukeCustom extends BlockContainer implements IBomb {
 			nuke += tnt / 2;
 			nuke = Math.min(nuke, maxNuke);
 
-			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, (int)nuke, xCoord + 0.5, yCoord + 5, zCoord + 0.5).moreFallout((int)dirty));
-			EntityNukeTorex.statFac(worldObj, xCoord + 0.5, yCoord + 5, zCoord + 0.5, nuke);
+			double detonationX = xCoord + 0.5D, detonationY = yCoord + 0.5D, detonationZ = zCoord + 0.5D;
+			NuclearBurstContext context = NuclearBurstResolver.resolve(worldObj, detonationX, detonationY, detonationZ, Math.max(1, (int)nuke));
+			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, context, detonationX, detonationY, detonationZ).moreFallout((int)dirty));
+			EntityNukeTorex.statFac(worldObj, detonationX, detonationY, detonationZ, context);
 
 		/// NON-NUCLEAR ///
 		} else if(tnt >= 75) {
 
 			tnt = Math.min(tnt, maxTnt);
 
-			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFacNoRad(worldObj, (int)tnt, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5));
-			EntityNukeTorex.statFac(worldObj, xCoord + 0.5, yCoord + 5, zCoord + 0.5, tnt);
+			double detonationX = xCoord + 0.5D, detonationY = yCoord + 0.5D, detonationZ = zCoord + 0.5D;
+			NuclearBurstContext context = NuclearBurstResolver.resolve(worldObj, detonationX, detonationY, detonationZ, Math.max(1, (int)tnt));
+			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFacNoRad(worldObj, context, detonationX, detonationY, detonationZ));
+			EntityNukeTorex.statFac(worldObj, detonationX, detonationY, detonationZ, context);
 		} else if(tnt > 0) {
 
 			ExplosionLarge.explode(worldObj, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, tnt, true, true, true);

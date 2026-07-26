@@ -382,3 +382,10 @@ No Torex call site was removed, relocated, normalized, or edited. The audit foun
 * Added item tooltips that describe the Standard and Industrial Steam Turbines' actual overpressure explosion condition and their safe full-power pause behavior.
 * Added startup-only registration diagnostics for malformed crafting recipes, including null stacks, invalid metadata, missing inputs, unregistered references, and recipe-registration failures.
 * Converted ABM and micro missiles from incorrectly described pre-fueled items to solid-fuel missiles. Large launch pads now store, synchronize, persist, validate, and consume Rocket Fuel for them; the launcher GUI, item tooltip, and getting-started guide describe the requirement.
+## Restore underwater nuclear detonation effects
+
+**Tracker:** `Restore underwater nuclear detonation effects`
+
+* Fixed the regression introduced by `eb13453cb66d568151ea17cf4a3c2e54dad4b95d`, which treated a depth-scaled surface plume as the entire underwater Torex and bypassed its normal lifetime, sound, and shake state.
+* Underwater detonations now always retain local expanding/collapsing bubble, spherical pressure damage, muffled sound, and camera-shake effects at the hypocenter, while surface spray and atmospheric fallout remain depth-scaled.
+* Added shared burst-context factory overloads, corrected custom-bomb coordinate mismatches and NukeBoy's unsynchronized direct Torex construction, suppressed only the atmospheric full-screen flash underwater, and removed the second ground-coupling multiplication from seabed crater sizing.
