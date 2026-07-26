@@ -1,3 +1,12 @@
+# Normalize workshop construction and component recipes
+
+**Tracker:** `Normalize workshop construction and component recipes`
+
+* Normalized steel, concrete, brick, tile, light, and decorative-pipe construction into palette-sized batches while retaining functional pressure, reactor, hot-process, and launch-infrastructure costs.
+* Standardized common steel pipes, tanks, motors, and generic pistons as reusable batches and documented the ingredient classifications and safety exceptions.
+* Added recipes for the existing computer, CRT, toaster, office door route, and green/steel filing-cabinet metadata; corrected marked-pipe paint and made ash-based weathering one-way.
+* Kept disabled power armour, fuel-pool cooling, machines, conveyors, and binary assets unchanged.
+
 # Earth stars — sunlight-aware visibility
 
 **Tracker:** `Earth stars`
