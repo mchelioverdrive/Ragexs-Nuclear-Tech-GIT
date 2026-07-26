@@ -1995,6 +1995,38 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputFluids(new FluidStack(Fluids.UNSATURATEDS, 1_000))
 				.outputFluids(new FluidStack(Fluids.POLYTHYLENE, 1_000)));
 
+		recipes.add(new ChemRecipe(1131, "CLAUS_PROCESS", 300)
+						.inputFluids(
+							new FluidStack(Fluids.SOURGAS, 2000), //why SOURGAS and not H2S?
+							new FluidStack(Fluids.OXYGEN, 500)
+						)
+						.outputItems(new ItemStack(ModBlocks.block_sulfur, 1))
+						//block justification:
+						//The Claus process makes the most recovered elemental sulfur today,
+						//accounting for roughly 90% to 95% of all global production.
+						.outputFluids(new FluidStack(Fluids.STEAM, 1000))
+		); //here's my tower of babbel
+		//I am losing my fucking sanity
+
+		recipes.add(new ChemRecipe(1132, "NITRE_BED", 1200)
+						.inputItems(
+							new OreDictStack("treeLeaves", 8),
+							new ComparableStack(ModItems.powder_fertilizer, 2)
+						)
+						.inputFluids(new FluidStack(Fluids.WATER, 1000))
+						.outputItems(new ItemStack(ModItems.niter, 8))
+		);
+
+
+		recipes.add(new ChemRecipe(1133, "NITRE_BED2", 1200)
+						.inputItems(
+							new ComparableStack(ModItems.biomass),
+							new ComparableStack(ModItems.powder_fertilizer, 2)
+						)
+						.inputFluids(new FluidStack(Fluids.WATER, 1000))
+						.outputItems(new ItemStack(ModItems.niter, 8))
+		);
+
 
 
 
