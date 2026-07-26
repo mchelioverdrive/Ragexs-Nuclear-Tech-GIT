@@ -24,6 +24,8 @@ public final class NuclearBurstResolver {
   if(CelestialBody.inOrbit(world)||atmosphere==null||atmosphere.getPressure()<0.01D) type=BurstType.VACUUM;
   else if(world.getBlock(bx,by,bz).getMaterial().isLiquid()) type=BurstType.UNDERWATER;
   else if(y<surface) type=BurstType.SUBSURFACE; else if(coupling==0D) type=BurstType.AIR; else type=BurstType.SURFACE;
+  double waterSurface=surface, waterDepth=0D, surfaceInteraction=0D;
+  if(type==BurstType.UNDERWATER) { int wy=by; while(wy<255&&world.getBlock(bx,wy,bz).getMaterial().isLiquid()) wy++; waterSurface=wy; waterDepth=Math.max(0D,waterSurface-y); surfaceInteraction=clamp(1D-waterDepth/Math.max(1D,fireball*2D)); }
   double burial=type==BurstType.SUBSURFACE?Math.max(0D,surface-y):0D;
   double predicted=type==BurstType.SUBSURFACE?calculateBreakthrough(world,bx,by,bz,(int)surface,base):(type==BurstType.SURFACE?1D:0D);
   int[] breach=type==BurstType.SUBSURFACE?findOpenRelease(world,bx,by,bz,Math.min(64,Math.max(8,(int)Math.ceil(base*.60D)))):new int[]{bx,(int)surface,bz};
@@ -31,7 +33,7 @@ public final class NuclearBurstResolver {
   double release=type==BurstType.SUBSURFACE?(actual?Math.max(.05D,predicted):0D):1D, deform=type==BurstType.SUBSURFACE?predicted:coupling;
   if(breach==null) breach=new int[]{bx,(int)surface,bz};
   NuclearDetonationSpec spec=NuclearDetonationSpec.fromLegacyRadius(radius); spec.burstType=type; spec.burstHeight=height; spec.groundCoupling=coupling; spec.burialDepth=burial; spec.predictedBreakthroughFactor=spec.surfaceBreakthroughFactor=predicted; spec.actualSurfaceBreach=actual; spec.atmosphericReleaseFactor=release; spec.surfaceDeformationFactor=deform; spec.breachConfirmationComplete=false; spec.contained=contained; spec.vented=vented; spec.breachX=breach[0]; spec.breachY=breach[1]; spec.breachZ=breach[2];
-  return new NuclearBurstContext(radius,yield,type,surface,height,fireball,coupling,burial,predicted,actual,release,deform,contained,vented,breach[0],breach[1],breach[2],NuclearEffectsSolver.solve(spec));
+  return new NuclearBurstContext(radius,yield,type,surface,waterSurface,waterDepth,surfaceInteraction,height,fireball,coupling,burial,predicted,actual,release,deform,contained,vented,breach[0],breach[1],breach[2],NuclearEffectsSolver.solve(spec));
  }
  /** Bounded air/replaceable-space search. Solids, including a one-block roof, terminate a route. */
  public static int[] findOpenRelease(World world,int x,int y,int z,int radius) {

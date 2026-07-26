@@ -1,5 +1,8 @@
 package com.hbm.blocks.bomb;
 
+import com.hbm.explosion.nuclear.NuclearDetonationFactory;
+import com.hbm.explosion.nuclear.NuclearDetonationOptions;
+
 import java.util.Random;
 
 import com.hbm.blocks.ModBlocks;
@@ -9,7 +12,6 @@ import com.hbm.entity.effect.EntityNukeTorex;
 import com.hbm.entity.grenade.EntityGrenadeZOMG;
 import com.hbm.entity.logic.EntityBalefire;
 import com.hbm.entity.logic.EntityNukeExplosionMK3;
-import com.hbm.entity.logic.EntityNukeExplosionMK5;
 import com.hbm.entity.projectile.EntityFallingNuke;
 import com.hbm.explosion.ExplosionChaos;
 import com.hbm.explosion.ExplosionLarge;
@@ -186,8 +188,7 @@ public class NukeCustom extends BlockContainer implements IBomb {
 			hydro = Math.min(hydro, maxHydro);
 			dirty *= 0.25F;
 
-			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, (int)hydro, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5).moreFallout((int)dirty));
-			EntityNukeTorex.statFac(worldObj, xCoord + 0.5, yCoord + 5, zCoord + 0.5, hydro);
+			NuclearDetonationFactory.detonate(worldObj, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, (int)hydro, NuclearDetonationOptions.standard().additionalFallout((int)dirty));
 
 		/// NUCLEAR ///
 		} else if(nuke > 0) {
@@ -195,16 +196,14 @@ public class NukeCustom extends BlockContainer implements IBomb {
 			nuke += tnt / 2;
 			nuke = Math.min(nuke, maxNuke);
 
-			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, (int)nuke, xCoord + 0.5, yCoord + 5, zCoord + 0.5).moreFallout((int)dirty));
-			EntityNukeTorex.statFac(worldObj, xCoord + 0.5, yCoord + 5, zCoord + 0.5, nuke);
+			NuclearDetonationFactory.detonate(worldObj, xCoord + 0.5, yCoord + 5, zCoord + 0.5, (int)nuke, NuclearDetonationOptions.standard().additionalFallout((int)dirty));
 
 		/// NON-NUCLEAR ///
 		} else if(tnt >= 75) {
 
 			tnt = Math.min(tnt, maxTnt);
 
-			worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFacNoRad(worldObj, (int)tnt, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5));
-			EntityNukeTorex.statFac(worldObj, xCoord + 0.5, yCoord + 5, zCoord + 0.5, tnt);
+			NuclearDetonationFactory.detonate(worldObj, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, (int)tnt, NuclearDetonationOptions.standard().fallout(false).radiation(false));
 		} else if(tnt > 0) {
 
 			ExplosionLarge.explode(worldObj, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, tnt, true, true, true);

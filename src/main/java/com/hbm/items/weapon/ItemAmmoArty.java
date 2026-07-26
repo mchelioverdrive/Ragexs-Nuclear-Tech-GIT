@@ -1,13 +1,14 @@
 package com.hbm.items.weapon;
 
+import com.hbm.explosion.nuclear.NuclearDetonationFactory;
+import com.hbm.explosion.nuclear.NuclearDetonationOptions;
+
 import java.util.List;
 import java.util.Random;
 
 import com.hbm.blocks.ModBlocks;
 import com.hbm.config.BombConfig;
 import com.hbm.entity.effect.EntityMist;
-import com.hbm.entity.effect.EntityNukeTorex;
-import com.hbm.entity.logic.EntityNukeExplosionMK5;
 import com.hbm.entity.projectile.EntityArtilleryShell;
 import com.hbm.explosion.ExplosionChaos;
 import com.hbm.explosion.ExplosionLarge;
@@ -261,8 +262,7 @@ public class ItemAmmoArty extends Item {
 		/* FULL NUKE */
 		this.itemTypes[NUKE] = new ArtilleryShell("ammo_arty_nuke", SpentCasing.COLOR_CASE_16INCH_NUKE) {
 			public void onImpact(EntityArtilleryShell shell, MovingObjectPosition mop) {
-				shell.worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(shell.worldObj, BombConfig.missileRadius, mop.hitVec.xCoord, mop.hitVec.yCoord, mop.hitVec.zCoord));
-				EntityNukeTorex.statFac(shell.worldObj, mop.hitVec.xCoord, mop.hitVec.yCoord, mop.hitVec.zCoord, BombConfig.missileRadius);
+				NuclearDetonationFactory.detonate(shell.worldObj, mop.hitVec.xCoord, mop.hitVec.yCoord, mop.hitVec.zCoord, (int)(BombConfig.missileRadius), NuclearDetonationOptions.standard());
 				shell.setDead();
 			}
 		};

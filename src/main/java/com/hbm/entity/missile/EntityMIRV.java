@@ -1,8 +1,9 @@
 package com.hbm.entity.missile;
 
+import com.hbm.explosion.nuclear.NuclearDetonationFactory;
+import com.hbm.explosion.nuclear.NuclearDetonationOptions;
+
 import com.hbm.config.BombConfig;
-import com.hbm.entity.effect.EntityNukeTorex;
-import com.hbm.entity.logic.EntityNukeExplosionMK5;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -35,8 +36,7 @@ public class EntityMIRV extends EntityThrowable {
 
 		if(this.worldObj.getBlock((int) this.posX, (int) this.posY, (int) this.posZ) != Blocks.air) {
 			if(!this.worldObj.isRemote) {
-				worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, BombConfig.mirvRadius, posX, posY, posZ));
-				EntityNukeTorex.statFac(worldObj, posX, posY, posZ, BombConfig.mirvRadius);
+				NuclearDetonationFactory.detonate(worldObj, posX, posY, posZ, (int)(BombConfig.mirvRadius), NuclearDetonationOptions.standard());
 			}
 			this.setDead();
 		}

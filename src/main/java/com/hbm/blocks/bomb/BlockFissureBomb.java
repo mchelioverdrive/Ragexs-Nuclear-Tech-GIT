@@ -1,7 +1,8 @@
 package com.hbm.blocks.bomb;
 
-import com.hbm.entity.effect.EntityNukeTorex;
-import com.hbm.entity.logic.EntityNukeExplosionMK5;
+import com.hbm.explosion.nuclear.NuclearDetonationFactory;
+import com.hbm.explosion.nuclear.NuclearDetonationOptions;
+
 import org.apache.logging.log4j.Level;
 
 import com.hbm.blocks.ModBlocks;
@@ -20,8 +21,7 @@ public class BlockFissureBomb extends BlockTNTBase {
 
 	@Override
 	public void explodeEntity(World world, double x, double y, double z, EntityTNTPrimedBase entity) {
-		world.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(world, 69, x, y, z)); //31/2
-		EntityNukeTorex.statFac(world, x, y, z, 69); //pakistani weapon 45kt
+		NuclearDetonationFactory.detonate(world, x, y, z, 69, NuclearDetonationOptions.standard()); // Pakistani weapon, 45 kt
 
 		//int range = 5;
 

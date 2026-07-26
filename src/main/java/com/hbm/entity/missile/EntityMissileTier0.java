@@ -1,5 +1,8 @@
 package com.hbm.entity.missile;
 
+import com.hbm.explosion.nuclear.NuclearDetonationFactory;
+import com.hbm.explosion.nuclear.NuclearDetonationOptions;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,9 +11,7 @@ import com.hbm.config.BombConfig;
 import com.hbm.entity.effect.EntityBlackHole;
 import com.hbm.entity.effect.EntityCloudFleija;
 import com.hbm.entity.effect.EntityEMPBlast;
-import com.hbm.entity.effect.EntityNukeTorex;
 import com.hbm.entity.logic.EntityNukeExplosionMK3;
-import com.hbm.entity.logic.EntityNukeExplosionMK5;
 import com.hbm.explosion.ExplosionNukeGeneric;
 import com.hbm.explosion.ExplosionNukeSmall;
 import com.hbm.inventory.material.Mats;
@@ -83,8 +84,7 @@ public abstract class EntityMissileTier0 extends EntityMissileBaseNT {
 		public EntityMissileMicro(World world, float x, float y, float z, int a, int b) { super(world, x, y, z, a, b); }
 		@Override public void onImpact() {
 			//ExplosionNukeSmall.explode(worldObj, posX, posY + 0.5, posZ, ExplosionNukeSmall.PARAMS_HIGH);
-			this.worldObj.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(worldObj, 16, posX, posY, posZ)); //31/2
-			EntityNukeTorex.statFac(worldObj, posX, posY, posZ, 16); //basing this off the north korean nuke test from 2006 on nukemap crater radius
+			NuclearDetonationFactory.detonate(worldObj, posX, posY, posZ, 16, NuclearDetonationOptions.standard()); // based on the 2006 North Korean test
 		}
 		//todo change to use mk5
 		//
