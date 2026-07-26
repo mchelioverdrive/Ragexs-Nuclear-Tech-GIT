@@ -1,3 +1,11 @@
+# Earth stars — sunlight-aware visibility
+
+**Tracker:** `Earth stars`
+
+* Replaced time-only celestial star opacity with a smooth sky-luminance and direct-sun washout model.
+* Added gradual star recovery during solar eclipses, strong weather occlusion, Sunless dimensions, and high-altitude atmospheric thinning while preserving full night visibility.
+* Documented sunlight-aware star visibility in the space travel guide.
+
 # Celestial rendering — Saturn's rings
 
 **Tracker:** `Celestial rendering — Saturn's rings`
