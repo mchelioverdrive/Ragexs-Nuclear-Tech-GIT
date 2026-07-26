@@ -5,6 +5,9 @@ import org.lwjgl.opengl.GL11;
 import com.hbm.inventory.container.ContainerMachineGasCent;
 import com.hbm.lib.RefStrings;
 import com.hbm.tileentity.machine.TileEntityMachineGasCent;
+import com.hbm.inventory.recipes.GasCentrifugeRecipes.StageRecipe;
+import com.hbm.packet.PacketDispatcher;
+import com.hbm.packet.toserver.NBTControlPacket;
 import com.hbm.util.I18nUtil;
 
 import net.minecraft.client.Minecraft;
@@ -13,6 +16,8 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.client.audio.PositionedSoundRecord;
 
 public class GUIMachineGasCent extends GuiInfoContainer {
 
@@ -56,7 +61,27 @@ public class GUIMachineGasCent extends GuiInfoContainer {
 	
 	@Override
 	protected void drawGuiContainerForegroundLayer(int i, int j) {
+		StageRecipe recipe = gasCent.getDisplayedRecipe();
+		fontRendererObj.drawString(I18n.format("gascent.grade") + ": " + gasCent.selectedCampaign.name(), 8, 88, 0x404040);
+		fontRendererObj.drawString(I18n.format(gasCent.getStopReason()), 8, 98, 0x404040);
+		if(recipe != null) {
+			fontRendererObj.drawString(recipe.feed + "mB -> " + recipe.productAmount + "mB; tails " + recipe.tails, 8, 108, 0x404040);
+			fontRendererObj.drawString(recipe.stages + " stages, " + recipe.energyPerTick + "HE/t, " + recipe.getTotalEnergy() + "HE", 8, 118, 0x404040);
+		}
+		fontRendererObj.drawString(I18n.format("gascent.rotor") + ": " + (100 - gasCent.rotorWear * 100 / gasCent.ROTOR_MAINTENANCE) + "%", 112, 88, 0x404040);
 		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96 + 2, 4210752);
+	}
+
+	@Override protected void mouseClicked(int x, int y, int button) {
+		super.mouseClicked(x, y, button);
+		NBTTagCompound data = new NBTTagCompound();
+		if(checkClick(x, y, 8, 86, 92, 12)) data.setInteger("campaign", gasCent.selectedCampaign.ordinal() == 0 ? 1 : 0);
+		else if(checkClick(x, y, 8, 98, 45, 12)) data.setBoolean("start", true);
+		else if(checkClick(x, y, 55, 98, 45, 12)) data.setBoolean("stop", true);
+		else if(checkClick(x, y, 102, 98, 70, 12)) data.setBoolean("maintain", true);
+		else return;
+		mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0F));
+		PacketDispatcher.wrapper.sendToServer(new NBTControlPacket(data, gasCent.xCoord, gasCent.yCoord, gasCent.zCoord));
 	}
 	
 	@Override

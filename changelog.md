@@ -382,3 +382,12 @@ No Torex call site was removed, relocated, normalized, or edited. The audit foun
 * Added item tooltips that describe the Standard and Industrial Steam Turbines' actual overpressure explosion condition and their safe full-power pause behavior.
 * Added startup-only registration diagnostics for malformed crafting recipes, including null stacks, invalid metadata, missing inputs, unregistered references, and recipe-registration failures.
 * Converted ABM and micro missiles from incorrectly described pre-fueled items to solid-fuel missiles. Large launch pads now store, synchronize, persist, validate, and consume Rocket Fuel for them; the launcher GUI, item tooltip, and getting-started guide describe the requirement.
+
+# Gas centrifuge campaign enrichment
+
+**Tracker:** `Gas centrifuge campaign enrichment`
+
+* Replaced duplicate UF6 display-map entries and parallel pseudo-fluid processing fields with explicit, uniquely identified stage and campaign recipes shared by the machine, GUI, and NEI.
+* Added a two-stage civilian LEU campaign producing existing uranium-fuel nuggets and a slower four-stage strategic HEU campaign producing existing U-235, with explicit feed, tails, duration, power, total-energy, and rotor requirements.
+* Added manually controlled, persistent campaign state, batch locking, pause/resume behavior, reusable centrifuge-element wear, maintenance, legacy-NBT migration, and speed hardware that doubles throughput without granting free efficiency.
+* Documented civilian and strategic cascade operation. Fuel-pool cooling is unchanged.
