@@ -1,3 +1,12 @@
+# Dedicated shredder recycling safety
+
+**Tracker:** `Dedicated shredder recycling safety`
+
+* Restricted ore-dictionary shredder generation to approved feedstock forms, deliberate RTM dust materials, and explicitly approved homogeneous storage materials.
+* Rejected tile entities, wildcard metadata, machines, multiblocks, vehicles, office equipment, construction pieces, lights, grates, decorative pipes, and oil/launch infrastructure from post generation.
+* Removed manufactured-object and constructed-block salvage routes, including boxcar and oil-well steel refunds, and removed matching anvil disassembly routes for office appliances and representative machines.
+* Added an opt-in development audit of final shredder inputs, ore names, and outputs. The shredder is for feedstock preparation, not universal salvage.
+
 # Normalize workshop construction and component recipes
 
 **Tracker:** `Normalize workshop construction and component recipes`

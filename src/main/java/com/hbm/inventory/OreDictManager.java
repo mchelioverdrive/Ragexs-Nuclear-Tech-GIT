@@ -57,6 +57,7 @@ public class OreDictManager {
 	 * Standard keys
 	 */
 	public static final String KEY_STICK = "stickWood";					//if there's no "any" or "<shape>Any" prefix required, simply use a String key instead of a DictFrame
+	// Recipe-substitution keys only. The "block" spelling must never imply storage-block salvage.
 	public static final String KEY_ANYGLASS = "blockGlass";
 	public static final String KEY_CLEARGLASS = "blockGlassColorless";
 	public static final String KEY_ANYPANE = "paneGlass";
@@ -830,6 +831,8 @@ public class OreDictManager {
 		OreDictionary.registerOre("dyeMagenta", fromOne(powder_ash, EnumAshType.FULLERENE));
 		OreDictionary.registerOre("dye", new ItemStack(powder_ash, 1, OreDictionary.WILDCARD_VALUE));
 
+		// These colored/technical glasses are interchangeable construction ingredients, not
+		// homogeneous material storage blocks. ShredderRecipes intentionally does not approve Glass.
 		OreDictionary.registerOre("blockGlass", glass_boron);
 		OreDictionary.registerOre("blockGlass", glass_lead);
 		OreDictionary.registerOre("blockGlass", glass_uranium);
