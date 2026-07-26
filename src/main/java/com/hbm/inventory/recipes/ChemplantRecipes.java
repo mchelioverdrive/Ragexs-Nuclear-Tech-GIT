@@ -736,7 +736,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//reinforced glass (silicate use
 		recipes.add(new ChemRecipe(1025, "REINFORCED_GLASS", 100)
 			.inputItems(new ComparableStack(ModItems.powder_sodium_silicate, 4), new ComparableStack(Blocks.sand, 8))
-			.outputItems(new ItemStack(ModBlocks.reinforced_glass, 8))
+			.outputItems(new ItemStack(ModBlocks.reinforced_glass, 16))
 		);
 
 		recipes.add(new ChemRecipe(1026, "CALCINED_DOLOMITE", 100)
