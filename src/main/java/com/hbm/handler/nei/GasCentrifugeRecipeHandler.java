@@ -7,12 +7,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import com.hbm.blocks.ModBlocks;
 import com.hbm.handler.imc.ICompatNHNEI;
 import com.hbm.inventory.gui.GUIMachineGasCent;
 import com.hbm.inventory.recipes.GasCentrifugeRecipes;
-import com.hbm.inventory.recipes.GasCentrifugeRecipes.CampaignRecipe;
 import com.hbm.inventory.recipes.MachineRecipes;
 import com.hbm.lib.RefStrings;
 
@@ -41,17 +41,13 @@ public class GasCentrifugeRecipeHandler extends SafeTemplateRecipeHandler implem
 		List<PositionedStack> output = new ArrayList();
 		boolean isHighSpeed;
 		int centNumber;
-		CampaignRecipe campaign;
 
-		public SmeltingSet(CampaignRecipe campaign) {
-			ItemStack input = campaign.getDisplayInput();
-			ItemStack[] results = campaign.products;
+		public SmeltingSet(ItemStack input, ItemStack[] results, boolean isHighSpeed, int centNumber) {
 			input = NEISafe.copy(input);
 			if(input != null) input.stackSize = 1;
 			this.input = NEISafe.positionedStack(input, 52 - 5, 35 - 11);
-			this.isHighSpeed = campaign.advancedRotor;
-			this.centNumber = campaign.stages;
-			this.campaign = campaign;
+			this.isHighSpeed = isHighSpeed;
+			this.centNumber = centNumber;
 
 			for(byte i = 0; i < results.length; i++) {
 				this.output.add(NEISafe.positionedStack(results[i], i % 2 == 0 ? 134 - 5 : 152 - 5, i < 2 ? 26 - 11 : 44 - 11 ));
@@ -109,7 +105,10 @@ public class GasCentrifugeRecipeHandler extends SafeTemplateRecipeHandler implem
 	@Override
 	public void loadCraftingRecipes(String outputId, Object... results) {
 		if((outputId.equals("gascentprocessing")) && getClass() == GasCentrifugeRecipeHandler.class) {
-			for(CampaignRecipe recipe : GasCentrifugeRecipes.getCampaigns()) this.arecipes.add(new SmeltingSet(recipe));
+			Map<Object, Object[]> recipes = GasCentrifugeRecipes.getGasCentrifugeRecipes();
+			for(Map.Entry<Object, Object[]> recipe : recipes.entrySet()) {
+				this.arecipes.add(new SmeltingSet((ItemStack) recipe.getKey(), (ItemStack[]) recipe.getValue()[0], (boolean) recipe.getValue()[1], (int) recipe.getValue()[2]));
+			}
 		} else {
 			super.loadCraftingRecipes(outputId, results);
 		}
@@ -117,8 +116,12 @@ public class GasCentrifugeRecipeHandler extends SafeTemplateRecipeHandler implem
 
 	@Override
 	public void loadCraftingRecipes(ItemStack result) {
-		for(CampaignRecipe recipe : GasCentrifugeRecipes.getCampaigns()) for(ItemStack output : recipe.products)
-			if(NEIServerUtils.areStacksSameType(output, result)) { this.arecipes.add(new SmeltingSet(recipe)); break; }
+		Map<Object, Object[]> recipes = GasCentrifugeRecipes.getGasCentrifugeRecipes();
+		for(Map.Entry<Object, Object[]> recipe : recipes.entrySet()) {
+			if(NEIServerUtils.areStacksSameType(((ItemStack[]) recipe.getValue()[0])[0], result) || NEIServerUtils.areStacksSameType(((ItemStack[]) recipe.getValue()[0])[1], result)
+					|| NEIServerUtils.areStacksSameType(((ItemStack[]) recipe.getValue()[0])[2], result) || NEIServerUtils.areStacksSameType(((ItemStack[]) recipe.getValue()[0])[3], result))
+				this.arecipes.add(new SmeltingSet((ItemStack) recipe.getKey(), (ItemStack[]) recipe.getValue()[0], (boolean) recipe.getValue()[1], (int) recipe.getValue()[2]));
+		}
 	}
 
 	@Override
@@ -132,7 +135,11 @@ public class GasCentrifugeRecipeHandler extends SafeTemplateRecipeHandler implem
 
 	@Override
 	public void loadUsageRecipes(ItemStack ingredient) {
-		for(CampaignRecipe recipe : GasCentrifugeRecipes.getCampaigns()) if(compareFluidStacks(ingredient, recipe.getDisplayInput())) this.arecipes.add(new SmeltingSet(recipe));
+		Map<Object, Object[]> recipes = GasCentrifugeRecipes.getGasCentrifugeRecipes();
+		for(Map.Entry<Object, Object[]> recipe : recipes.entrySet()) {
+			if(compareFluidStacks(ingredient, (ItemStack) recipe.getKey()))
+				this.arecipes.add(new SmeltingSet((ItemStack) recipe.getKey(), (ItemStack[]) recipe.getValue()[0], (boolean) recipe.getValue()[1], (int) recipe.getValue()[2]));
+		}
 	}
 
 	private boolean compareFluidStacks(ItemStack sta1, ItemStack sta2) {
@@ -151,12 +158,6 @@ public class GasCentrifugeRecipeHandler extends SafeTemplateRecipeHandler implem
 
 		String centrifuges = set.centNumber + " G. Cents";
 		fontRenderer.drawString(centrifuges, (50 - fontRenderer.getStringWidth(centrifuges) / 2), 21 - 11, 65280);
-		String grade = set.campaign.grade.name() + "  " + set.campaign.feed.fill + "mB";
-		fontRenderer.drawString(grade, 58, 58, 0x404040);
-		String energy = set.campaign.energyPerTick + "HE/t  " + set.campaign.getTotalEnergy() + "HE";
-		fontRenderer.drawString(energy, 58, 68, 0x404040);
-		fontRenderer.drawString(set.campaign.duration + "t total; tails " + set.campaign.tails, 58, 78, 0x404040);
-		fontRenderer.drawString(set.campaign.energyPerUF6 + "HE/mB UF6", 58, 88, 0x404040);
 	}
 
 	public LinkedList<RecipeTransferRect> transferRectsRec = new LinkedList<RecipeTransferRect>();

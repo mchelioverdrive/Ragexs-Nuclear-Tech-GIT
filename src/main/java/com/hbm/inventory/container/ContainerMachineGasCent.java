@@ -35,10 +35,6 @@ public class ContainerMachineGasCent extends Container {
 		this.addSlotToContainer(new Slot(tedf, 5, 91, 15));
 		//upgrade
 		this.addSlotToContainer(new Slot(tedf, 6, 69, 15));
-		//Manually installed centrifuge element; wear is held by the machine NBT.
-		this.addSlotToContainer(new Slot(tedf, 7, 109, 15) {
-			@Override public boolean isItemValid(ItemStack stack) { return stack != null && stack.getItem() == ModItems.centrifuge_element; }
-		});
 		
 		for(int i = 0; i < 3; i++) {
 			for(int j = 0; j < 9; j++) {
@@ -66,8 +62,8 @@ public class ContainerMachineGasCent extends Container {
 			ItemStack stack = slot.getStack();
 			rStack = stack.copy();
 			
-			if(index <= 7) {
-				if (!this.mergeItemStack(stack, 8, this.inventorySlots.size(), true)) {
+            if(index <= 6) {
+				if (!this.mergeItemStack(stack, 7, this.inventorySlots.size(), true)) {
 					return null;
 				}
 			} else {
@@ -78,8 +74,6 @@ public class ContainerMachineGasCent extends Container {
 					if(!this.mergeItemStack(stack, 5, 6, false)) return null;
 				} else if(rStack.getItem() instanceof ItemMachineUpgrade ) {
 					if(!this.mergeItemStack(stack, 6, 7, false)) return null;
-				} else if(rStack.getItem() == ModItems.centrifuge_element) {
-					if(!this.mergeItemStack(stack, 7, 8, false)) return null;
 				} else
 					return null;
 			}
