@@ -31,8 +31,8 @@ public class MiningConfig {
 			// Aluminum ore block
 			"hbm:tile.ore_aluminium 0 1 3",
 
-			// Rare ore chunk
-			"hbm:item.chunk_ore 0 0 2", // replace meta with actual rare enum meta
+			// Rare Earth Ore chunk
+			"hbm:item.chunk_ore 0 0 2",
 
 			// Lithium pegmatite
 			"hbm:item.chunk_lithiumpegmatite 0 1 2",
@@ -49,7 +49,7 @@ public class MiningConfig {
 			// Evaporite
 			"hbm:item.chunk_evaporite 0 1 4",
 
-			// Fire ore
+			// phosphorous
 			"hbm:tile.ore_fire 0 0 1",
 
 			// Carbon

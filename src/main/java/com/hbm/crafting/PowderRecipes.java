@@ -53,6 +53,8 @@ public class PowderRecipes {
 		CraftingManager.addShapelessAuto(new ItemStack(Items.gunpowder, 3), new Object[] { S.dust(), KNO.dust(), COAL.gem() });
 		CraftingManager.addShapelessAuto(new ItemStack(Items.gunpowder, 3), new Object[] { S.dust(), KNO.dust(), new ItemStack(Items.coal, 1, 1) });
 
+		CraftingManager.addShapelessAuto(new ItemStack(ModItems.gpmix, 9), new Object[] { S.dust(), KNO.dust(), new ItemStack(Items.coal, 1, 1), ModItems.chemistry_set });
+
 		//Blends
 		//*fake fucking bullshit
 		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_power, 3), new Object[] { "dustGlowstone", DIAMOND.dust(), MAGTUNG.dust() });
@@ -94,8 +96,8 @@ public class PowderRecipes {
 		CraftingManager.addShapelessAuto(ItemScraps.create(new MaterialStack(Mats.MAT_STEEL, MaterialShapes.INGOT.q(4))), new Object[] { IRON.dust(), IRON.dust(), IRON.dust(), IRON.dust(), COAL.dust(), COAL.dust(), COAL.dust(), COAL.dust() });
 
 		//BRO FUCK ITEMSCRAPS I ACTUALLY FUCKING HATE IT JUST USE A REGULAR FUCKING ITEM HOLY SHIT
-		//powder_steel_dusted from steel powder + coal powder
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_steel_dusted, 1), new Object[] { STEEL.dust(), STEEL.dust(), COAL.dust(), COAL.dust() });
+		//powder_steel_dusted from steel powder + coal powder + iron powder so we don't have a exploit
+		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_steel_dusted, 1), new Object[] { STEEL.dust(), STEEL.dust(), COAL.dust(), COAL.dust(), IRON.dust() });
 
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_flux, 1), new Object[] { new ItemStack(Items.coal, 1, 1), KEY_SAND });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_flux, 2), new Object[] { COAL.dust(), KEY_SAND });

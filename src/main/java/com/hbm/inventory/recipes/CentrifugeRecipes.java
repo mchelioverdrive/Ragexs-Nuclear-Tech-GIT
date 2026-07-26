@@ -144,6 +144,10 @@ public class CentrifugeRecipes extends SerializableRecipe {
 				new ItemStack(ModItems.nugget_technetium, 1),
 				new ItemStack(ModItems.nuclear_waste_tiny, 6) });
 
+		//even more efficient gunpowder crafting
+		recipes.put(new ComparableStack(ModItems.gpmix), new ItemStack[] {
+				new ItemStack(Items.gunpowder, 32) });
+
 
 
 		// Cooled PWR fuel is deliberately not an ordinary-centrifuge input.  It must

@@ -160,6 +160,8 @@ public class ModItems {
 
 	public static Item ingot_bk247;
 
+	public static Item gpmix;
+
 	public static Item ingot_cf251;
 	public static Item cf_light_fraction; //used in silex to get cf-249
 	public static Item ingot_cf249;
@@ -3042,6 +3044,7 @@ public class ModItems {
 		ingot_cf249 = new Item().setUnlocalizedName("ingot_cf249").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_cf252");
 		ingot_cf248 = new Item().setUnlocalizedName("ingot_cf248").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_cf252");
 		ingot_yb170 = new Item().setUnlocalizedName("ingot_yb170").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":ingot_titanium");
+		gpmix = new Item().setUnlocalizedName("gpmix").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 
 		turret_light_ammo = new ItemTurretAmmo(ModBlocks.turret_ciws, 1550).setUnlocalizedName("turret_light_ammo").setCreativeTab(MainRegistry.weaponTab).setTextureName(RefStrings.MODID + ":ammo_dgk");
 
@@ -7326,6 +7329,7 @@ public class ModItems {
 		GameRegistry.registerItem(rubidium_ingot, rubidium_ingot.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cm_mix, ingot_cm_mix.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_bk247, ingot_bk247.getUnlocalizedName());
+		GameRegistry.registerItem(gpmix, gpmix.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cf251, ingot_cf251.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cf252, ingot_cf252.getUnlocalizedName());
 		GameRegistry.registerItem(ingot_cf247, ingot_cf247.getUnlocalizedName());
