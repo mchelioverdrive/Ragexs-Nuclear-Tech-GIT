@@ -41,7 +41,15 @@ public final class NuclearEffectsSolver {
 			profile.falloutSourceStrength *= release;
 			profile.visualScale *= 0.2D + release * 0.8D;
 		}
-		if(spec.burstType == BurstType.UNDERWATER) { profile.thermalRadius *= 0.1D; profile.craterRadius *= 0.5D; }
+		if(spec.burstType == BurstType.UNDERWATER) {
+			// Water transmits a strong local pressure pulse but screens atmospheric blast,
+			// heat and fallout. Bottom distance has already been folded into coupling.
+			profile.severeBlastRadius *= 1.15D; profile.moderateBlastRadius *= 0.85D; profile.lightBlastRadius *= 0.55D;
+			profile.thermalRadius *= 0.05D;
+			profile.craterRadius *= spec.groundCoupling; profile.craterDepth *= spec.groundCoupling;
+			profile.falloutSourceStrength *= spec.surfaceInteractionFactor * 0.20D;
+			profile.visualScale *= 0.35D + spec.surfaceInteractionFactor * 0.40D; profile.cloudTopHeight *= 0.30D;
+		}
 		if(spec.burstType == BurstType.VACUUM) { profile.severeBlastRadius = profile.moderateBlastRadius = profile.lightBlastRadius = 0; profile.falloutSourceStrength = 0; }
 		return profile;
 	}
