@@ -185,7 +185,6 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 	private void placeFallout(int x, int y, int z, Block falloutBlock) {
 
 		Block existing = worldObj.getBlock(x, y, z);
-		if(existing.getMaterial().isLiquid() || worldObj.getBlock(x, y - 1, z).getMaterial().isLiquid()) return;
 
 		// Stack onto existing fallout
 		if(existing == falloutBlock) {
@@ -220,8 +219,6 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 				return;
 
 			Block b = worldObj.getBlock(x, y, z);
-			// An intact water column is not a fallout surface; do not descend to its seabed.
-			if(b.getMaterial().isLiquid()) return;
 
 			if(b.getMaterial() == Material.air || b == ModBlocks.fallout || b == ModBlocks.salted_fallout)
 				continue;

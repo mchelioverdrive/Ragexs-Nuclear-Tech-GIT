@@ -12,7 +12,6 @@ public final class NuclearDetonationSpec {
 	public BurstType burstType = BurstType.SURFACE;
 	public double burstHeight;
 	public double groundCoupling = 1.0D;
-	public double surfaceInteractionFactor = 1.0D;
 	public double burialDepth;
 	public double predictedBreakthroughFactor = 1.0D;
 	/** @deprecated compatibility alias; prediction never authorizes atmospheric effects. */

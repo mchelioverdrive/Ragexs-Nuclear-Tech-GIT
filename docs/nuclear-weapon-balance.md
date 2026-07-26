@@ -6,7 +6,7 @@ RNT retains the existing cube-root conversion as its compatibility baseline: the
 
 RNT now resolves a small immutable `NuclearBurstContext` from the world, detonation coordinates, and legacy radius. `NuclearBurstResolver` is deterministic, inexpensive, and internal to RNT; there is no pending-detonation registry and nothing new is reflected into MCHeli.
 
-The legacy factories retain their signatures. Same-tick physical and visual calls at identical coordinates reuse the resolver's cached immutable context, preventing world mutation between calls from changing classification:
+The legacy factories retain their signatures and independently resolve the same context:
 
 * `EntityNukeExplosionMK5.statFac(World, int, double, double, double)` owns physical blast, thermal, prompt-radiation, terrain, and fallout work only.
 * `EntityNukeTorex.statFac(World, double, double, double, float)` owns visual cloud/fireball state and delayed pressure-wave sound only.
@@ -30,12 +30,6 @@ Contained shots retain cavity excavation, ground shock, and distance-scaled seis
 MK5 sends a saved one-shot seismic cue carrying hypocenter, yield, coupling, burial depth, duration, and intensity. Clients attenuate it by distance, respect the HUD shake option, use slower and longer motion, and select the stronger active shake rather than stacking. Torex remains independent and visual-only-capable.
 
 
-### Underwater resolution
-
-Underwater classification uses a bounded vertical 3×3 sample rather than the ocean height map or only the origin block. Water must have an unobstructed vertical route to an open surface; lava and roofed flooded caves do not qualify. One solid origin layer is allowed so bombs removed before resolution and missiles embedded at the seabed remain underwater, while deeper geological overburden remains subsurface.
-
-The cached context records water-surface height, depth, seabed height, bottom distance, and a yield-scaled surface-interaction factor. Bottom distance controls ground coupling and cratering; water depth does not. Surface interaction controls the reduced white Torex steam/spray plume and radioactive mist/rainout. Deep shots retain local waterborne pressure but can have no atmospheric plume or fallout rain. Fallout deposition rejects liquid surfaces centrally and does not descend through an intact water column to the seabed.
-
 ## Static resolver scenarios
 
 The following are resolver calculations, not runtime measurements. “Clear” means a height strictly greater than the listed fireball radius. Crater radius is the current full crater coefficient (`legacy radius * 0.42`) multiplied by coupling. A fully clear airburst has no crater but retains the 0.080 atmospheric fallout multiplier; surface fallout uses coupling (subject to fission/salted legacy settings).
@@ -49,7 +43,7 @@ The following are resolver calculations, not runtime measurements. “Clear” m
 | MCHeli weapon labelled 150 kt, `nukeYield = 90`, impact level | 90 / 98.88 kt | 0 / 31.50 blocks | SURFACE / 1.000 | 37.80 / 1.000 | Ground-connected mushroom cloud |
 | Same MCHeli weapon through `ExplosionAltitude` (40 blocks) | 90 / 98.88 kt | 40 / 31.50 blocks | AIR / 0.000 | 0 / 0.080 | Altitude-origin atmospheric cloud |
 | Same MCHeli weapon, `NukeEffectOnly = true` | 90 / 98.88 kt | coordinate-dependent / 31.50 blocks | independently resolved / coordinate-dependent | no MK5 crater or fallout / N/A | Torex-only matching the resolved mode |
-| Open-water or seabed-contact detonation | caller radius / converted compatibility yield | water depth / radius × 0.35 | UNDERWATER / seabed-distance coupling | bottom-coupled crater / surface-interaction-scaled rainout | Depth-scaled white surface spray, or no atmospheric plume when deep |
+| Underwater detonation at terrain level | caller radius / converted compatibility yield | coordinate-dependent / radius × 0.35 | UNDERWATER / computed intersection | coupling-scaled / coupling-scaled | Underwater-resolved visual path |
 | Vacuum detonation | caller radius / converted compatibility yield | coordinate-dependent / radius × 0.35 | VACUUM / computed intersection | physical terrain coupling may exist; fallout 0 | No-atmosphere visual, no atmospheric sound |
 
 The MCHeli example intentionally demonstrates compatibility conversion: radius 90 converts to about 98.88 kt with the existing RNT curve, even if a weapon is described elsewhere as “150 kt.” RNT does not reinterpret that existing configuration value.

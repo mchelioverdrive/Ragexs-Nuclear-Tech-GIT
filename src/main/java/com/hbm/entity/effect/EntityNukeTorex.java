@@ -64,7 +64,6 @@ public class EntityNukeTorex extends Entity {
 		this.dataWatcher.addObject(14, new Float(0F));
 		this.dataWatcher.addObject(15, new Float(0F));
 		this.dataWatcher.addObject(16, new Float(1F));
-		this.dataWatcher.addObject(17, new Float(1F));
 	}
 
 	@Override @SideOnly(Side.CLIENT) public int getBrightnessForRender(float interp) { return 15728880; }
@@ -73,7 +72,6 @@ public class EntityNukeTorex extends Entity {
 	@Override
 	public void onUpdate() {
 		if(isContainedVisual()) { if(!worldObj.isRemote || ticksExisted > 2) setDead(); return; }
-		if(getBurstType() == BurstType.UNDERWATER) { updateUnderwaterVisual(); return; }
 
 		double s = 1.5; //this.getScale();
 		double cs = 1.5;
@@ -238,27 +236,11 @@ public class EntityNukeTorex extends Entity {
 	private BurstType getBurstType() { int type = this.dataWatcher.getWatchableObjectInt(12); return type >= 0 && type < BurstType.values().length ? BurstType.values()[type] : BurstType.SURFACE; }
 	private double getGroundCoupling() { return this.dataWatcher.getWatchableObjectFloat(13); }
 
-	public EntityNukeTorex applyBurstContext(NuclearBurstContext context) {
+	private EntityNukeTorex applyBurstContext(NuclearBurstContext context) {
 		this.resolvedBurstHeight = context.burstHeight; this.resolvedFireballRadius = context.fireballRadius; this.resolvedGroundCoupling = context.groundCoupling;
 		this.dataWatcher.updateObject(12, context.burstType.ordinal()); this.dataWatcher.updateObject(13, (float)context.groundCoupling); this.dataWatcher.updateObject(14, (float)context.burstHeight); this.dataWatcher.updateObject(15, (float)context.fireballRadius); this.dataWatcher.updateObject(16, (float)context.atmosphericReleaseFactor);
-		this.dataWatcher.updateObject(17, (float)context.surfaceInteractionFactor);
 		if(context.burstType == BurstType.VACUUM) this.hasSufficientPressure = false;
 		return this;
-	}
-
-	/** Short white surface spray and mist; no seabed shock clouds or orange fireball. */
-	private void updateUnderwaterVisual() {
-		double interaction = dataWatcher.getWatchableObjectFloat(17);
-		if(worldObj.isRemote && interaction >= 0.05D && ticksExisted < 120) {
-			int count = Math.max(1, (int)Math.ceil(6D * interaction));
-			for(int i=0;i<count;i++) {
-				double angle=rand.nextDouble()*Math.PI*2D, radius=(ticksExisted*0.12D+rand.nextDouble()*4D)*interaction;
-				Cloudlet spray=new Cloudlet(posX+Math.cos(angle)*radius,posY+rand.nextDouble()*(4D+12D*interaction),posZ+Math.sin(angle)*radius,(float)angle,0,80,TorexType.CONDENSATION);
-				spray.setScale(1.5F, (float)(3D+5D*interaction)).setMotion(0.03D+interaction*0.08D); cloudlets.add(spray);
-			}
-			for(Cloudlet cloud:cloudlets) cloud.update(); cloudlets.removeIf(x -> x.isDead);
-		}
-		if(!worldObj.isRemote && ticksExisted > 140) setDead();
 	}
 
 	public EntityNukeTorex setType(int type) {
@@ -666,12 +648,8 @@ public class EntityNukeTorex extends Entity {
 
 	public static void statFac(World world, double x, double y, double z, float scale) {
 		NuclearBurstContext context = NuclearBurstResolver.resolve(world, x, y, z, Math.max(1, Math.round(scale)));
-		statFac(world, x, y, z, context);
-	}
-	public static void statFac(World world, double x, double y, double z, NuclearBurstContext context) {
 		EntityNukeTorex torex = new EntityNukeTorex(world).applyBurstContext(context).setScale(MathHelper.clamp_float((float)context.effects.visualScale, 0.5F, 5F));
-		if(context.burstType == BurstType.UNDERWATER && context.surfaceInteractionFactor < 0.05D) return;
-		torex.setPosition(x, context.burstType == BurstType.UNDERWATER ? context.waterSurfaceY : y, z);
+		torex.setPosition(x, y, z);
 		torex.forceSpawn = true;
 		world.spawnEntityInWorld(torex);
 		TrackerUtil.setTrackingRange(world, torex, 1000);

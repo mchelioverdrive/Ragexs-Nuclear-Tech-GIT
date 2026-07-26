@@ -1,12 +1,3 @@
-# Fix underwater nuclear burst classification and effects
-
-**Tracker:** `Fix underwater nuclear burst classification and effects`
-
-* Distinguished open-water and seabed-contact detonations from genuinely buried subsurface shots with a bounded 3x3 vertical water-column test that excludes lava and roofed flooded caves.
-* Added cached water-surface, depth, seabed-distance, ground-coupling, and yield-scaled surface-interaction data shared by physical and Torex resolution.
-* Added depth-scaled white steam, spray, and low mist visuals at the water surface while suppressing the normal underwater land mushroom cloud and deep-water atmospheric plume.
-* Reduced underwater atmospheric blast, thermal ignition, and fallout rain; retained strong local pressure; limited seabed cratering to bottom-coupled shots; and prevented fallout layers from replacing water or reaching an intact submerged seabed.
-
 # Dedicated shredder recycling safety
 
 **Tracker:** `Dedicated shredder recycling safety`
