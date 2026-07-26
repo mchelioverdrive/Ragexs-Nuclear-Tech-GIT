@@ -139,6 +139,21 @@ Enables or disables the runtime nuclear warfare toggle.
 
 This changes the in-memory value of `GeneralConfig.enableNuking`; it is useful for event windows or emergency lockdowns.
 
+Disabling nuclear warfare also prevents redstone from detonating placed nuclear bomb blocks, regardless of the separate redstone toggle below.
+
+### `/ntmenableredstonegroundnukes true|false`
+
+Enables or disables redstone detonation for placed nuclear bomb blocks such as Fat Man and Tsar bombs.
+
+**Usage**
+
+```text
+/ntmenableredstonegroundnukes true
+/ntmenableredstonegroundnukes false
+```
+
+This is an in-memory server setting and defaults to enabled at startup. It applies only to nuclear bomb block classes; ordinary TNT, explosive charges, mines, and other non-nuclear explosives retain their normal redstone behavior. Redstone can detonate a ground nuke only when both this setting and `/ntmenablenukes` are enabled.
+
 ### `/ntmenablenukes schedule true|false yyyy-MM-dd HH:mm`
 
 Schedules a runtime nuclear warfare toggle.

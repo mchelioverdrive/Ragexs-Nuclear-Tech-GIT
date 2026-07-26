@@ -1,3 +1,11 @@
+# Control ground-nuke redstone detonation
+
+**Tracker:** `Prevent redstone from bypassing disabled nukes and add a ground-nuke redstone toggle`
+
+* Added `/ntmenableredstonegroundnukes true|false` as a runtime server control for redstone ignition of placed nuclear bomb blocks.
+* Prevented every `Nuke*` ground-bomb neighbor handler from responding to redstone when nuclear warfare is disabled or the new redstone setting is off.
+* Kept non-nuclear explosives outside the new logic so their existing redstone behavior is unchanged.
+
 # Fix subsurface nuclear detonation behavior in Ragex’s Nuclear Tech
 
 **Tracker:** `Fix subsurface nuclear detonation behavior without centralizing nuclear visual call sites`

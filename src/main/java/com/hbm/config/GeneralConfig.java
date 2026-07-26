@@ -79,6 +79,12 @@ public class GeneralConfig {
 	public static boolean enableThreadedAtmospheres = true;
 	public static boolean enableSacrilege = false;
 	public static boolean enableNuking = true;
+	/** Runtime server toggle for redstone ignition of placed nuclear bomb blocks. */
+	public static boolean enableRedstoneGroundNukes = true;
+
+	public static boolean canRedstoneDetonateGroundNukes() {
+		return enableNuking && enableRedstoneGroundNukes;
+	}
 
 	public static void loadFromConfig(Configuration config) {
 

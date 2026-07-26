@@ -45,6 +45,10 @@ public class NukeBalefire extends BlockMachineBase implements IBomb {
 
 	@Override
 	public void onNeighborBlockChange(World world, int x, int y, int z, Block b) {
+		if(!GeneralConfig.canRedstoneDetonateGroundNukes()) {
+			return;
+		}
+
 
 		if (world.isBlockIndirectlyGettingPowered(x, y, z)) {
 			explode(world, x, y, z);
