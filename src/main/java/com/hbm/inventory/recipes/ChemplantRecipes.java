@@ -1995,7 +1995,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputFluids(new FluidStack(Fluids.UNSATURATEDS, 1_000))
 				.outputFluids(new FluidStack(Fluids.POLYTHYLENE, 1_000)));
 
-		recipes.add(new ChemRecipe(1131, "CLAUS_PROCESS", 300)
+		recipes.add(new ChemRecipe(1142, "CLAUS_PROCESS", 300)
 						.inputFluids(
 							new FluidStack(Fluids.SOURGAS, 2000), //why SOURGAS and not H2S?
 							new FluidStack(Fluids.OXYGEN, 500)
@@ -2008,7 +2008,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		); //here's my tower of babbel
 		//I am losing my fucking sanity
 
-		recipes.add(new ChemRecipe(1132, "NITRE_BED", 1200)
+		recipes.add(new ChemRecipe(1143, "NITRE_BED", 1200)
 						.inputItems(
 							new OreDictStack("treeLeaves", 8),
 							new ComparableStack(ModItems.powder_fertilizer, 2)
@@ -2018,7 +2018,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		);
 
 
-		recipes.add(new ChemRecipe(1133, "NITRE_BED2", 1200)
+		recipes.add(new ChemRecipe(1144, "NITRE_BED2", 1200)
 						.inputItems(
 							new ComparableStack(ModItems.biomass),
 							new ComparableStack(ModItems.powder_fertilizer, 2)
