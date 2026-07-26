@@ -382,3 +382,11 @@ No Torex call site was removed, relocated, normalized, or edited. The audit foun
 * Added item tooltips that describe the Standard and Industrial Steam Turbines' actual overpressure explosion condition and their safe full-power pause behavior.
 * Added startup-only registration diagnostics for malformed crafting recipes, including null stacks, invalid metadata, missing inputs, unregistered references, and recipe-registration failures.
 * Converted ABM and micro missiles from incorrectly described pre-fueled items to solid-fuel missiles. Large launch pads now store, synchronize, persist, validate, and consume Rocket Fuel for them; the launcher GUI, item tooltip, and getting-started guide describe the requirement.
+
+## Centralized underwater nuclear detonations
+
+**Tracker:** `Fix the underwater nuclear detonation regression globally`
+
+* Added one authoritative MK5/Torex detonation coordinator which resolves a single burst context and carries fallout, salted, additional-fallout, radiation, visual, and surface-plume policy as options.
+* Routed ordinary bombs, missiles, MIRVs, falling bomblets, artillery, and compatible shared small-nuke effects through the coordinator while leaving balefire and other exotic or debug-only effects separate.
+* Added shared water-depth and surface-interaction resolution. Underwater bursts now retain their hypocenter effect and optionally produce a depth-scaled, sound-suppressed surface plume without weapon-specific water checks.

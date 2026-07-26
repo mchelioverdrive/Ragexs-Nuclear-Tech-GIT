@@ -1,10 +1,11 @@
 package com.hbm.blocks.test;
 
+import com.hbm.explosion.nuclear.NuclearDetonationFactory;
+import com.hbm.explosion.nuclear.NuclearDetonationOptions;
+
 import java.util.Random;
 
 import com.hbm.config.BombConfig;
-import com.hbm.entity.effect.EntityNukeTorex;
-import com.hbm.entity.logic.EntityNukeExplosionMK5;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -26,8 +27,7 @@ public class TestCore extends Block {
 			if(meta >= 6) {
 
 				world.setBlockToAir(x, y, z);
-				world.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(world, BombConfig.missileRadius, x + 0.5, y + 0.5, z + 0.5));
-				EntityNukeTorex.statFac(world, x + 0.5, y + 0.5, z + 0.5, BombConfig.missileRadius);
+				NuclearDetonationFactory.detonate(world, x + 0.5, y + 0.5, z + 0.5, (int)(BombConfig.missileRadius), NuclearDetonationOptions.standard());
 				
 			} else if(meta > 0) {
 				

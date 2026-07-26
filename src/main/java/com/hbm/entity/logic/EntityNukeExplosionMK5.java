@@ -229,14 +229,21 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 		if(GeneralConfig.enableExtendedLogging && !world.isRemote) MainRegistry.logger.log(Level.INFO, "[NUKE] Initialized explosion at " + x + " / " + y + " / " + z + " with legacy radius " + r + "!");
 		if(r == 0) r = 25;
 		NuclearBurstContext context = NuclearBurstResolver.resolve(world, x, y, z, Math.max(1, r));
+		EntityNukeExplosionMK5 mk5 = fromBurstContext(world, x, y, z, context);
+		if(GeneralConfig.enableExtendedLogging && !world.isRemote) MainRegistry.logger.log(Level.INFO, "[NUKE] type=" + context.burstType + " yieldKt=" + context.yieldKt + " surfaceY=" + context.surfaceY + " burialDepth=" + context.burialDepth + " coupling=" + context.groundCoupling + " predictedBreakthrough=" + context.predictedBreakthroughFactor + " confirmedBreach=" + context.actualSurfaceBreach + " atmosphericRelease=" + context.atmosphericReleaseFactor + " breach=" + context.breachX + "," + context.breachY + "," + context.breachZ + " contained=" + context.contained + " vented=" + context.vented + " thermal=" + mk5.effects.thermalRadius + " blast=" + mk5.effects.lightBlastRadius + " crater=" + mk5.effects.craterRadius + " fallout=" + mk5.effects.falloutSourceStrength);
+		return mk5;
+	}
+	public static EntityNukeExplosionMK5 fromBurstContext(World world, double x, double y, double z, NuclearBurstContext context) {
 		EntityNukeExplosionMK5 mk5 = new EntityNukeExplosionMK5(world); mk5.length = context.legacyRadius; mk5.burstContext = context; mk5.spec = NuclearDetonationSpec.fromLegacyRadius(context.legacyRadius); copyContext(mk5.spec, context); mk5.effects = NuclearEffectsSolver.solve(mk5.spec);
 		double terrainRadius = context.burstType == BurstType.SUBSURFACE ? mk5.effects.cavityRadius : mk5.effects.craterRadius;
 		mk5.strength = Math.max(1, (int)Math.ceil(terrainRadius * 2D)); mk5.speed = Math.max(1, (int)Math.ceil(100000D / mk5.strength)); mk5.setPosition(x, y, z);
-		if(GeneralConfig.enableExtendedLogging && !world.isRemote) MainRegistry.logger.log(Level.INFO, "[NUKE] type=" + context.burstType + " yieldKt=" + context.yieldKt + " surfaceY=" + context.surfaceY + " burialDepth=" + context.burialDepth + " coupling=" + context.groundCoupling + " predictedBreakthrough=" + context.predictedBreakthroughFactor + " confirmedBreach=" + context.actualSurfaceBreach + " atmosphericRelease=" + context.atmosphericReleaseFactor + " breach=" + context.breachX + "," + context.breachY + "," + context.breachZ + " contained=" + context.contained + " vented=" + context.vented + " thermal=" + mk5.effects.thermalRadius + " blast=" + mk5.effects.lightBlastRadius + " crater=" + mk5.effects.craterRadius + " fallout=" + mk5.effects.falloutSourceStrength);
 		return mk5;
 	}
 	private static void copyContext(NuclearDetonationSpec target, NuclearBurstContext context) { target.burstType = context.burstType; target.burstHeight = context.burstHeight; target.groundCoupling = context.groundCoupling; target.burialDepth = context.burialDepth; target.predictedBreakthroughFactor = target.surfaceBreakthroughFactor = context.predictedBreakthroughFactor; target.actualSurfaceBreach = context.actualSurfaceBreach; target.atmosphericReleaseFactor = context.atmosphericReleaseFactor; target.surfaceDeformationFactor = context.surfaceDeformationFactor; target.contained = context.contained; target.vented = context.vented; target.breachX = context.breachX; target.breachY = context.breachY; target.breachZ = context.breachZ; }
 	public static EntityNukeExplosionMK5 statFacNoRad(World world, int r, double x, double y, double z) { EntityNukeExplosionMK5 mk5 = statFac(world, r, x, y, z); mk5.fallout = false; mk5.spec.createsFallout = false; return mk5; }
 	public static EntityNukeExplosionMK5 statFacSalted(World world, int r, double x, double y, double z) { EntityNukeExplosionMK5 mk5 = statFac(world, r, x, y, z); mk5.salted = true; mk5.spec.salted = true; return mk5; }
 	public EntityNukeExplosionMK5 moreFallout(int fallout) { falloutAdd = fallout; return this; }
+	public EntityNukeExplosionMK5 setFallout(boolean enabled) { fallout = enabled; spec.createsFallout = enabled; effects = NuclearEffectsSolver.solve(spec); return this; }
+	public EntityNukeExplosionMK5 setSalted(boolean enabled) { salted = enabled; spec.salted = enabled; return this; }
+	public EntityNukeExplosionMK5 setRadiation(boolean enabled) { if(!enabled) { spec.promptGammaFraction = 0D; spec.promptNeutronFraction = 0D; } effects = NuclearEffectsSolver.solve(spec); return this; }
 }

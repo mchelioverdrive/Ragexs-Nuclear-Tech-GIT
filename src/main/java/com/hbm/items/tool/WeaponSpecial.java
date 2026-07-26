@@ -1,11 +1,12 @@
 package com.hbm.items.tool;
 
+import com.hbm.explosion.nuclear.NuclearDetonationFactory;
+import com.hbm.explosion.nuclear.NuclearDetonationOptions;
+
 import java.util.List;
 import java.util.Random;
 
 import com.google.common.collect.Multimap;
-import com.hbm.entity.effect.EntityNukeTorex;
-import com.hbm.entity.logic.EntityNukeExplosionMK5;
 import com.hbm.entity.projectile.EntityRubble;
 import com.hbm.items.ModItems;
 import com.hbm.main.MainRegistry;
@@ -151,8 +152,7 @@ public class WeaponSpecial extends ItemSword {
 
 			if(entityPlayer.fallDistance >= 20 && !((EntityPlayer)entityPlayer).capabilities.isCreativeMode) {
 				if(!world.isRemote) {
-					world.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(world, 100, entity.posX, entity.posY, entity.posZ));
-					EntityNukeTorex.statFac(world, entity.posX, entity.posY, entity.posZ, 100);
+					NuclearDetonationFactory.detonate(world, entity.posX, entity.posY, entity.posZ, (int)(100), NuclearDetonationOptions.standard());
 				}
 			}
 		}

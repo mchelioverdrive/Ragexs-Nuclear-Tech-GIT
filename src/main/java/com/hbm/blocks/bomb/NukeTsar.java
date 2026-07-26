@@ -1,5 +1,8 @@
 package com.hbm.blocks.bomb;
 
+import com.hbm.explosion.nuclear.NuclearDetonationFactory;
+import com.hbm.explosion.nuclear.NuclearDetonationOptions;
+
 import java.util.Random;
 
 import org.apache.logging.log4j.Level;
@@ -7,8 +10,6 @@ import org.apache.logging.log4j.Level;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.config.BombConfig;
 import com.hbm.config.GeneralConfig;
-import com.hbm.entity.effect.EntityNukeTorex;
-import com.hbm.entity.logic.EntityNukeExplosionMK5;
 import com.hbm.interfaces.IBomb;
 import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.bomb.TileEntityNukeTsar;
@@ -136,8 +137,7 @@ public class NukeTsar extends BlockContainer implements IBomb {
 		if(!world.isRemote) {
 			tetn.clearSlots();
 			world.playSoundEffect(x, y, z, "random.explode", 1.0f, world.rand.nextFloat() * 0.1F + 0.9F);
-			world.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(world, r, x + 0.5, y + 0.5, z + 0.5));
-			EntityNukeTorex.statFac(world, x + 0.5, y + 0.5, z + 0.5, r);
+			NuclearDetonationFactory.detonate(world, x + 0.5, y + 0.5, z + 0.5, (int)(r), NuclearDetonationOptions.standard());
 		}
 
 		return false;
