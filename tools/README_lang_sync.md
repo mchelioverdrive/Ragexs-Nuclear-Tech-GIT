@@ -1,126 +1,136 @@
-# RNT language audit and synchronization tool
+# RNT language synchronization tool — safe version
 
-`lang_sync.py` treats `en_US.lang` as the key schema for every RNT locale.
-It never changes a language file unless `--fix` is present.
-It uses only the Python standard library and does not run Gradle.
+This replacement is deliberately conservative. It does **not** reorder locale files, copy English comments, delete locale-only keys, process `test.lang`, or write `.bak` files into `src/main/resources`.
 
-## Requirements
+It also does not pretend to understand whether an arbitrary translated phrase is stale. To detect renamed fictional terms, compare current `en_US.lang` against a Git commit from before the English renames.
 
-- Python 3.8 or newer
-- Run the command from the RNT repository root
+## 1. Confirm the bad generated commit is reverted
 
-## Audit every locale
-
-Windows:
+The repository already contains a revert of commit `df8c34b3265812dce017ca95b605969f57bdac0a`. Pull it locally:
 
 ```bat
-py -3 tools\lang_sync.py
+git pull
 ```
 
-Linux or macOS:
-
-```bash
-python3 tools/lang_sync.py
-```
-
-The audit reports:
-
-- Missing keys
-- Obsolete keys
-- Duplicate keys
-- Malformed lines
-- Java format argument mismatches such as `%s`, `%d`, and `%1$s`
-- Minecraft formatting-code mismatches such as `§c`
-- Values that are identical to current English
-- English values that changed after a baseline was created
-- Translations that still contain the previous English value
-
-## Create the first English baseline
+Then confirm the working tree is clean:
 
 ```bat
-py -3 tools\lang_sync.py --update-baseline
+git status
 ```
 
-Commit `tools/lang_baseline.json` after reviewing it.
-Future audits will report keys whose English text changed.
+## 2. Replace the old script
 
-## Write a JSON report
+Copy this package's `tools\lang_sync.py` and `tools\test_lang_sync.py` into the repository's `tools` directory.
+
+## 3. Fix duplicate keys in English first
+
+Audit only:
 
 ```bat
-py -3 tools\lang_sync.py --json-report build\lang-audit.json
+python tools\lang_sync.py
 ```
 
-The `build` directory and report are local audit output and do not need to be committed.
+The script normally refuses to write while `en_US.lang` contains duplicate or malformed active entries. Resolve each duplicate intentionally. For an immediate controlled pass, `--allow-source-issues` uses the last duplicate value, matching the effective Java-properties behavior, without copying duplicate source lines into locales.
 
-## Synchronize every locale
+## 4. Find a Git commit from before the fake-to-real English renames
 
 ```bat
-py -3 tools\lang_sync.py --fix --backup
+git log --oneline -- src/main/resources/assets/hbm/lang/en_US.lang
 ```
 
-This action:
+Choose the commit immediately before the rename work. Call it `<OLD_COMMIT>` below.
 
-- Uses the key order and section comments from `en_US.lang`
-- Keeps existing translated values
-- Removes obsolete keys
-- Collapses duplicate keys using the last value
-- Drops malformed locale lines
-- Preserves locale-specific header comments
-- Leaves missing keys absent so Minecraft can use English fallback
+## 5. Preview stale-name replacement
 
-Each changed file receives a `.bak` copy when `--backup` is present.
-Review the diff before deleting the backup files.
-
-## Synchronize one locale
+This dry run replaces translations for English values changed since `<OLD_COMMIT>` with the current English value. That guarantees stale fictional names such as `Elite-RadAway` cannot override the current real-world terminology.
 
 ```bat
-py -3 tools\lang_sync.py --locale de_DE --fix --backup
+python tools\lang_sync.py --git-base <OLD_COMMIT> --changed-policy english --show-diff --report build\reports\lang-sync.json
 ```
 
-Repeat `--locale` to select more than one locale.
+Nothing is written during this command.
 
-## Missing translation modes
-
-The default is `--missing omit`.
-This keeps missing keys out of translated files and relies on English fallback.
-
-Copy the current English value:
+To preview only German:
 
 ```bat
-py -3 tools\lang_sync.py --fix --missing english
+python tools\lang_sync.py --locale de_DE --git-base <OLD_COMMIT> --changed-policy english --show-diff
 ```
 
-Copy English and add a marker comment:
+## 6. Apply after reviewing the diff
 
 ```bat
-py -3 tools\lang_sync.py --fix --missing marker
+python tools\lang_sync.py --git-base <OLD_COMMIT> --changed-policy english --apply
 ```
 
-Do not use copied English values as finished translations.
-
-## Strict validation
+If the 25 current English duplicates have not been cleaned yet, use:
 
 ```bat
-py -3 tools\lang_sync.py --strict
+python tools\lang_sync.py --git-base <OLD_COMMIT> --changed-policy english --allow-source-issues --apply
 ```
 
-Normal mode returns exit code `1` for dangerous problems such as duplicate keys,
-malformed lines, or format argument mismatches.
-Strict mode also fails for missing, obsolete, color-code, unchanged-English, and
-changed-English review items.
+Backups are stored under `build\lang-sync-backups\<timestamp>\...`, not beside resource files.
 
-## Run the unit tests
+If more than 500 entries in one locale would change, the tool stops. Review the dry run, then add `--allow-large` only when the scope is intentional.
 
-Windows:
+## Missing keys
+
+Leave missing translations absent and use Minecraft's English fallback:
+
+```bat
+python tools\lang_sync.py --git-base <OLD_COMMIT> --changed-policy english --apply
+```
+
+Or explicitly insert current English values with markers:
+
+```bat
+python tools\lang_sync.py --git-base <OLD_COMMIT> --changed-policy english --missing-policy marker --apply
+```
+
+## Deleted English keys
+
+The tool preserves extra locale keys by default because some are vanilla, Forge, compatibility, or special-locale entries. It removes only keys proven to have existed in the historical English source and later been deleted:
+
+```bat
+python tools\lang_sync.py --git-base <OLD_COMMIT> --changed-policy english --remove-deleted --apply
+```
+
+## RBMK guidebook issue
+
+Lines such as:
+
+```properties
+#book.rbmk.page1=...
+```
+
+are comments, not active localization entries. This tool reports them as commented property-like source lines but never copies them into other locales.
+
+To localize that guidebook:
+
+1. Uncomment the intended `book.rbmk.*` entries in `en_US.lang` so they become active keys.
+2. Add genuine translations to each supported locale.
+3. Leave untranslated keys absent, or insert marked English placeholders with `--missing-policy marker`.
+
+Synchronization cannot automatically produce trustworthy German, French, Italian, Polish, Russian, or Chinese prose translations.
+
+## Create a baseline for future changes
+
+After the English source is clean:
+
+```bat
+python tools\lang_sync.py --write-baseline tools\lang_baseline.json
+```
+
+For future English changes, use:
+
+```bat
+python tools\lang_sync.py --baseline tools\lang_baseline.json --changed-policy english --show-diff
+```
+
+Update the baseline only after translations have been reviewed.
+
+## Tests
 
 ```bat
 cd tools
-py -3 -m unittest -v test_lang_sync.py
-```
-
-Linux or macOS:
-
-```bash
-cd tools
-python3 -m unittest -v test_lang_sync.py
+python -m unittest -v test_lang_sync.py
 ```

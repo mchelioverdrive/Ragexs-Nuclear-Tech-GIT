@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
-"""Audit and synchronize Minecraft 1.7.10 .lang files.
+"""Safely audit and update RNT Minecraft .lang files.
 
-The English file is the source schema. Other locale files keep their translated
-values while their key order and section comments follow the English file.
+Design goals:
+- en_US.lang defines the current RNT key/value source of truth.
+- Existing translations are preserved unless the English source value changed.
+- Changed English values can replace stale translations with current English.
+- Locale-only/vanilla/special keys are preserved.
+- Source comments are never copied into other locale files.
+- Files are not reordered.
+- Dry-run is the default; --apply is required to write.
+- Backups and reports live outside src/main/resources.
 
-This script uses only the Python standard library.
+Python standard library only. No Gradle/build invocation.
 """
 
 from __future__ import annotations
@@ -12,23 +19,27 @@ from __future__ import annotations
 import argparse
 import collections
 import dataclasses
-import datetime as _datetime
+import datetime as dt
+import difflib
 import json
 import os
 from pathlib import Path
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
-from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Tuple
+from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
 
 DEFAULT_LANG_DIR = Path("src/main/resources/assets/hbm/lang")
 DEFAULT_SOURCE_NAME = "en_US.lang"
-DEFAULT_BASELINE = Path("tools/lang_baseline.json")
+DEFAULT_BACKUP_DIR = Path("build/lang-sync-backups")
+DEFAULT_REPORT = Path("build/reports/lang-sync.json")
+LOCALE_FILE_RE = re.compile(r"^[a-z]{2}_[A-Z]{2}\.lang$")
+COMMENTED_PROPERTY_RE = re.compile(r"^\s*[#!]\s*([^=\s]+)\s*=(.*)$")
 
-# Java Formatter conversions used by Minecraft localization calls.
-_FORMAT_RE = re.compile(
+FORMAT_RE = re.compile(
     r"%(?:(?P<index>\d+)\$)?"
     r"(?P<flags>[-#+0,(<]*)"
     r"(?P<width>\d+)?"
@@ -36,7 +47,7 @@ _FORMAT_RE = re.compile(
     r"(?P<date>[tT])?"
     r"(?P<conversion>[bBhHsScCdoxXeEfgGaA%n])"
 )
-_COLOR_RE = re.compile(r"(?:§|\\u00a7)([0-9A-FK-ORa-fk-or])")
+COLOR_RE = re.compile(r"(?:§|\\u00a7)([0-9A-FK-ORa-fk-or])")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -55,616 +66,582 @@ class ParsedLang:
     values: "collections.OrderedDict[str, str]"
     occurrences: Dict[str, List[int]]
     malformed: List[Tuple[int, str]]
+    commented_properties: Dict[str, List[int]]
     newline: str
     ended_with_newline: bool
-    preamble: List[str]
 
     @property
     def duplicate_keys(self) -> Dict[str, List[int]]:
-        return {
-            key: line_numbers
-            for key, line_numbers in self.occurrences.items()
-            if len(line_numbers) > 1
-        }
+        return {k: v for k, v in self.occurrences.items() if len(v) > 1}
+
+
+@dataclasses.dataclass
+class SourceDelta:
+    added: List[str]
+    changed: List[str]
+    deleted: List[str]
 
 
 @dataclasses.dataclass
 class LocaleAudit:
-    path: Path
     locale: str
-    translated_keys: int
-    missing_keys: List[str]
-    obsolete_keys: List[str]
-    duplicate_keys: Dict[str, List[int]]
-    malformed_lines: List[Tuple[int, str]]
+    path: Path
+    missing: List[str]
+    extra: List[str]
+    changed_source_present: List[str]
+    changed_source_missing: List[str]
+    deleted_source_present: List[str]
+    duplicates: Dict[str, List[int]]
+    malformed: List[Tuple[int, str]]
     format_mismatches: Dict[str, Dict[str, List[str]]]
     color_mismatches: Dict[str, Dict[str, List[str]]]
     same_as_english: List[str]
-    changed_english_keys: List[str]
-    stale_english_copies: List[str]
+    planned_changes: int = 0
     rewritten: bool = False
 
-    @property
-    def dangerous_issue_count(self) -> int:
-        return (
-            len(self.duplicate_keys)
-            + len(self.malformed_lines)
-            + len(self.format_mismatches)
-        )
 
-    @property
-    def review_issue_count(self) -> int:
-        return (
-            len(self.missing_keys)
-            + len(self.obsolete_keys)
-            + len(self.color_mismatches)
-            + len(self.same_as_english)
-            + len(self.changed_english_keys)
-        )
+class LangSyncError(RuntimeError):
+    pass
 
 
-def _read_text(path: Path) -> Tuple[str, str, bool]:
+def read_text(path: Path) -> Tuple[str, str, bool]:
     data = path.read_bytes()
     text = data.decode("utf-8-sig")
     newline = "\r\n" if b"\r\n" in data else "\n"
-    ended_with_newline = text.endswith("\n") or text.endswith("\r")
-    return text, newline, ended_with_newline
+    ended = text.endswith("\n") or text.endswith("\r")
+    return text, newline, ended
 
 
-def parse_lang(path: Path) -> ParsedLang:
-    text, newline, ended_with_newline = _read_text(path)
-    raw_lines = text.splitlines()
-    parsed_lines: List[Line] = []
+def parse_text(text: str, path: Path = Path("<memory>"), newline: str = "\n") -> ParsedLang:
+    lines: List[Line] = []
     values: "collections.OrderedDict[str, str]" = collections.OrderedDict()
     occurrences: Dict[str, List[int]] = collections.defaultdict(list)
     malformed: List[Tuple[int, str]] = []
-    preamble: List[str] = []
-    found_entry = False
+    commented: Dict[str, List[int]] = collections.defaultdict(list)
 
-    for number, raw in enumerate(raw_lines, start=1):
+    for number, raw in enumerate(text.splitlines(), 1):
         stripped = raw.strip()
         if not stripped:
-            parsed_lines.append(Line(number, "blank", raw))
-            if not found_entry:
-                preamble.append(raw)
+            lines.append(Line(number, "blank", raw))
             continue
-        if raw.lstrip().startswith("#"):
-            parsed_lines.append(Line(number, "comment", raw))
-            if not found_entry:
-                preamble.append(raw)
+        if raw.lstrip().startswith(("#", "!")):
+            lines.append(Line(number, "comment", raw))
+            match = COMMENTED_PROPERTY_RE.match(raw)
+            if match:
+                commented[match.group(1).strip()].append(number)
             continue
         if "=" not in raw:
-            parsed_lines.append(Line(number, "malformed", raw))
+            lines.append(Line(number, "malformed", raw))
             malformed.append((number, raw))
-            if not found_entry:
-                preamble.append(raw)
             continue
-
         key, value = raw.split("=", 1)
         key = key.strip()
         if not key:
-            parsed_lines.append(Line(number, "malformed", raw))
+            lines.append(Line(number, "malformed", raw))
             malformed.append((number, raw))
-            if not found_entry:
-                preamble.append(raw)
             continue
-
-        found_entry = True
-        parsed_lines.append(Line(number, "entry", raw, key, value))
+        lines.append(Line(number, "entry", raw, key, value))
         occurrences[key].append(number)
-        # Last assignment wins, matching Java Properties-style behavior.
+        # Java properties behavior is effectively last assignment wins.
         values[key] = value
 
     return ParsedLang(
         path=path,
-        lines=parsed_lines,
+        lines=lines,
         values=values,
         occurrences=dict(occurrences),
         malformed=malformed,
+        commented_properties=dict(commented),
         newline=newline,
-        ended_with_newline=ended_with_newline,
-        preamble=preamble,
+        ended_with_newline=text.endswith("\n") or text.endswith("\r"),
     )
 
 
-def _format_tokens(value: str) -> List[str]:
+def parse_file(path: Path) -> ParsedLang:
+    text, newline, ended = read_text(path)
+    parsed = parse_text(text, path, newline)
+    parsed.ended_with_newline = ended
+    return parsed
+
+
+def format_tokens(value: str) -> List[str]:
     tokens: List[str] = []
     implicit_index = 0
     previous_index: Optional[int] = None
-
-    for match in _FORMAT_RE.finditer(value):
+    for match in FORMAT_RE.finditer(value):
         conversion = match.group("conversion")
         if conversion in ("%", "n"):
             continue
-
         flags = match.group("flags") or ""
-        explicit_index = match.group("index")
-        if explicit_index is not None:
-            argument_index = int(explicit_index)
+        explicit = match.group("index")
+        if explicit is not None:
+            argument_index = int(explicit)
         elif "<" in flags and previous_index is not None:
             argument_index = previous_index
         else:
             implicit_index += 1
             argument_index = implicit_index
-
         previous_index = argument_index
         date_prefix = (match.group("date") or "").lower()
-        conversion_name = (date_prefix + conversion).lower()
-        tokens.append(f"{argument_index}:{conversion_name}")
-
+        tokens.append(f"{argument_index}:{date_prefix}{conversion.lower()}")
     return tokens
 
 
-def _color_tokens(value: str) -> List[str]:
-    return [match.group(1).lower() for match in _COLOR_RE.finditer(value)]
+def color_tokens(value: str) -> List[str]:
+    return [m.group(1).lower() for m in COLOR_RE.finditer(value)]
 
 
-def _load_baseline(path: Path) -> Dict[str, str]:
-    if not path.exists():
-        return {}
+def source_delta(previous: Mapping[str, str], current: Mapping[str, str]) -> SourceDelta:
+    previous_keys = set(previous)
+    current_keys = set(current)
+    return SourceDelta(
+        added=[k for k in current if k not in previous_keys],
+        changed=[k for k in current if k in previous and current[k] != previous[k]],
+        deleted=[k for k in previous if k not in current_keys],
+    )
+
+
+def audit_locale(source: ParsedLang, target: ParsedLang, delta: Optional[SourceDelta]) -> LocaleAudit:
+    source_keys = set(source.values)
+    target_keys = set(target.values)
+    common = source_keys & target_keys
+    fmt: Dict[str, Dict[str, List[str]]] = {}
+    colors: Dict[str, Dict[str, List[str]]] = {}
+    same: List[str] = []
+
+    for key in source.values:
+        if key not in common:
+            continue
+        src = source.values[key]
+        dst = target.values[key]
+        src_fmt = format_tokens(src)
+        dst_fmt = format_tokens(dst)
+        if collections.Counter(src_fmt) != collections.Counter(dst_fmt):
+            fmt[key] = {"source": src_fmt, "target": dst_fmt}
+        src_colors = color_tokens(src)
+        dst_colors = color_tokens(dst)
+        if src_colors != dst_colors:
+            colors[key] = {"source": src_colors, "target": dst_colors}
+        if src == dst and src.strip():
+            same.append(key)
+
+    changed = set(delta.changed) if delta else set()
+    deleted = set(delta.deleted) if delta else set()
+
+    return LocaleAudit(
+        locale=target.path.stem,
+        path=target.path,
+        missing=[k for k in source.values if k not in target_keys],
+        extra=[k for k in target.values if k not in source_keys],
+        changed_source_present=[k for k in source.values if k in changed and k in target_keys],
+        changed_source_missing=[k for k in source.values if k in changed and k not in target_keys],
+        deleted_source_present=[k for k in target.values if k in deleted],
+        duplicates=target.duplicate_keys,
+        malformed=target.malformed,
+        format_mismatches=fmt,
+        color_mismatches=colors,
+        same_as_english=same,
+    )
+
+
+def locate_repo_root(start: Path, lang_dir: Path, source_name: str) -> Path:
+    candidates = [start.resolve(), Path(__file__).resolve().parent]
+    checked: Set[Path] = set()
+    for candidate in candidates:
+        for root in (candidate, *candidate.parents):
+            if root in checked:
+                continue
+            checked.add(root)
+            if (root / lang_dir / source_name).is_file():
+                return root
+    raise LangSyncError(
+        f"Could not locate repository root containing {lang_dir / source_name}. "
+        "Run from the repository or pass --repo-root."
+    )
+
+
+def git_show_source(repo_root: Path, git_ref: str, source_rel_path: Path) -> ParsedLang:
+    command = ["git", "show", f"{git_ref}:{source_rel_path.as_posix()}"]
+    try:
+        result = subprocess.run(
+            command,
+            cwd=str(repo_root),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+    except OSError as exc:
+        raise LangSyncError(f"Could not execute git: {exc}") from exc
+    if result.returncode != 0:
+        stderr = result.stderr.decode("utf-8", errors="replace").strip()
+        raise LangSyncError(f"git show failed for {git_ref}: {stderr}")
+    text = result.stdout.decode("utf-8-sig")
+    return parse_text(text, Path(f"{git_ref}:{source_rel_path}"))
+
+
+def load_baseline(path: Path) -> ParsedLang:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        raise ValueError(f"Cannot read baseline {path}: {exc}")
-
+        raise LangSyncError(f"Cannot read baseline {path}: {exc}") from exc
     values = payload.get("values")
     if not isinstance(values, dict):
-        raise ValueError(f"Baseline {path} does not contain an object named 'values'.")
-    return {str(key): str(value) for key, value in values.items()}
+        raise LangSyncError(f"Baseline {path} must contain an object named 'values'.")
+    text = "\n".join(f"{k}={v}" for k, v in values.items()) + "\n"
+    return parse_text(text, path)
 
 
-def _write_baseline(path: Path, source_name: str, values: Mapping[str, str]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
+def write_baseline(path: Path, source: ParsedLang) -> None:
     payload = {
-        "version": 1,
-        "source": source_name,
-        "updated_utc": _datetime.datetime.now(_datetime.timezone.utc).isoformat(),
-        "values": dict(values),
+        "version": 2,
+        "source": source.path.name,
+        "updated_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "values": dict(source.values),
     }
-    _atomic_write_text(path, json.dumps(payload, indent=2, ensure_ascii=False) + "\n", "\n")
+    atomic_write(path, json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
 
 
-def audit_locale(
-    source: ParsedLang,
-    target: ParsedLang,
-    baseline: Mapping[str, str],
-) -> LocaleAudit:
-    source_keys = set(source.values)
-    target_keys = set(target.values)
-    common_keys = source_keys & target_keys
-
-    format_mismatches: Dict[str, Dict[str, List[str]]] = {}
-    color_mismatches: Dict[str, Dict[str, List[str]]] = {}
-    same_as_english: List[str] = []
-    changed_english_keys: List[str] = []
-    stale_english_copies: List[str] = []
-
-    for key in source.values:
-        if key not in common_keys:
-            continue
-        source_value = source.values[key]
-        target_value = target.values[key]
-
-        source_formats = _format_tokens(source_value)
-        target_formats = _format_tokens(target_value)
-        if collections.Counter(source_formats) != collections.Counter(target_formats):
-            format_mismatches[key] = {
-                "source": source_formats,
-                "target": target_formats,
-            }
-
-        source_colors = _color_tokens(source_value)
-        target_colors = _color_tokens(target_value)
-        if source_colors != target_colors:
-            color_mismatches[key] = {
-                "source": source_colors,
-                "target": target_colors,
-            }
-
-        if target_value == source_value and source_value.strip():
-            same_as_english.append(key)
-
-        old_english = baseline.get(key)
-        if old_english is not None and old_english != source_value:
-            changed_english_keys.append(key)
-            if target_value == old_english:
-                stale_english_copies.append(key)
-
-    return LocaleAudit(
-        path=target.path,
-        locale=target.path.stem,
-        translated_keys=len(common_keys),
-        missing_keys=[key for key in source.values if key not in target_keys],
-        obsolete_keys=[key for key in target.values if key not in source_keys],
-        duplicate_keys=target.duplicate_keys,
-        malformed_lines=target.malformed,
-        format_mismatches=format_mismatches,
-        color_mismatches=color_mismatches,
-        same_as_english=same_as_english,
-        changed_english_keys=changed_english_keys,
-        stale_english_copies=stale_english_copies,
-    )
-
-
-def _normalized_preamble(source: ParsedLang, target: ParsedLang) -> List[str]:
-    source_comments = {line.strip() for line in source.preamble if line.strip()}
-    result: List[str] = []
-    for raw in target.preamble:
-        stripped = raw.strip()
-        if not stripped:
-            if result and result[-1] != "":
-                result.append("")
-            continue
-        if stripped.startswith("#") and stripped not in source_comments:
-            result.append(raw)
-    while result and result[-1] == "":
-        result.pop()
-    return result
-
-
-def build_synced_text(
-    source: ParsedLang,
-    target: ParsedLang,
-    missing_mode: str,
-) -> str:
-    output: List[str] = []
-    locale_preamble = _normalized_preamble(source, target)
-    if locale_preamble:
-        output.extend(locale_preamble)
-        output.append("")
-
-    for line in source.lines:
-        if line.kind in ("blank", "comment"):
-            output.append(line.raw)
-            continue
-        if line.kind != "entry" or line.key is None or line.value is None:
-            # Invalid source lines are reported but never copied into every locale.
-            continue
-
-        if line.key in target.values:
-            output.append(f"{line.key}={target.values[line.key]}")
-        elif missing_mode == "english":
-            output.append(f"{line.key}={line.value}")
-        elif missing_mode == "marker":
-            output.append("# UNTRANSLATED")
-            output.append(f"{line.key}={line.value}")
-        elif missing_mode == "omit":
-            continue
-        else:
-            raise ValueError(f"Unsupported missing mode: {missing_mode}")
-
-    # Avoid excessive blank lines caused by omitted entries.
-    compacted: List[str] = []
-    blank_run = 0
-    for raw in output:
-        if raw.strip():
-            blank_run = 0
-            compacted.append(raw)
-        else:
-            blank_run += 1
-            if blank_run <= 2:
-                compacted.append("")
-    while compacted and compacted[-1] == "":
-        compacted.pop()
-
-    return target.newline.join(compacted) + target.newline
-
-
-def _atomic_write_text(path: Path, text: str, newline: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(
-        mode="w",
-        encoding="utf-8",
-        newline="",
-        dir=str(path.parent),
-        prefix=path.name + ".",
-        suffix=".tmp",
-        delete=False,
-    ) as handle:
-        temporary_path = Path(handle.name)
-        handle.write(text.replace("\n", newline) if newline != "\n" else text)
-    try:
-        os.replace(str(temporary_path), str(path))
-    except BaseException:
-        temporary_path.unlink(missing_ok=True)
-        raise
-
-
-def rewrite_locale(
-    source: ParsedLang,
-    target: ParsedLang,
-    missing_mode: str,
-    backup: bool,
-) -> bool:
-    new_text = build_synced_text(source, target, missing_mode)
-    old_text, _, _ = _read_text(target.path)
-    if new_text == old_text:
-        return False
-    if backup:
-        shutil.copy2(str(target.path), str(target.path) + ".bak")
-    _atomic_write_text(target.path, new_text, "\n")
-    return True
-
-
-def _issue_examples(items: Sequence[str], limit: int) -> str:
-    if not items:
-        return ""
-    shown = list(items[:limit])
-    suffix = "" if len(items) <= limit else f" (+{len(items) - limit} more)"
-    return ", ".join(shown) + suffix
-
-
-def print_report(
-    source: ParsedLang,
-    audits: Sequence[LocaleAudit],
-    baseline_exists: bool,
-    examples: int,
-) -> None:
-    print(f"Source: {source.path} ({len(source.values)} keys)")
-    print(
-        "Source issues: "
-        f"{len(source.duplicate_keys)} duplicate keys, "
-        f"{len(source.malformed)} malformed lines"
-    )
-    if not baseline_exists:
-        print("Baseline: not found; changed-English detection is disabled")
-    print()
-
-    for audit in audits:
-        changed = " [rewritten]" if audit.rewritten else ""
-        print(f"[{audit.locale}]{changed}")
-        print(
-            f"  translated={audit.translated_keys} "
-            f"missing={len(audit.missing_keys)} "
-            f"obsolete={len(audit.obsolete_keys)} "
-            f"duplicates={len(audit.duplicate_keys)} "
-            f"malformed={len(audit.malformed_lines)}"
-        )
-        print(
-            f"  format_mismatch={len(audit.format_mismatches)} "
-            f"color_mismatch={len(audit.color_mismatches)} "
-            f"same_as_english={len(audit.same_as_english)} "
-            f"english_changed={len(audit.changed_english_keys)} "
-            f"stale_english_copy={len(audit.stale_english_copies)}"
-        )
-
-        details = [
-            ("missing", audit.missing_keys),
-            ("obsolete", audit.obsolete_keys),
-            ("format mismatch", list(audit.format_mismatches)),
-            ("color mismatch", list(audit.color_mismatches)),
-            ("same as English", audit.same_as_english),
-            ("English changed", audit.changed_english_keys),
-            ("stale English copy", audit.stale_english_copies),
-        ]
-        for label, items in details:
-            example_text = _issue_examples(items, examples)
-            if example_text:
-                print(f"  {label}: {example_text}")
-        if audit.duplicate_keys:
-            duplicate_text = ", ".join(
-                f"{key}@{','.join(map(str, lines))}"
-                for key, lines in list(audit.duplicate_keys.items())[:examples]
-            )
-            print(f"  duplicate keys: {duplicate_text}")
-        if audit.malformed_lines:
-            malformed_text = ", ".join(
-                f"line {number}" for number, _ in audit.malformed_lines[:examples]
-            )
-            print(f"  malformed lines: {malformed_text}")
-        print()
-
-
-def _audit_to_dict(audit: LocaleAudit) -> Dict[str, object]:
-    return {
-        "path": str(audit.path),
-        "locale": audit.locale,
-        "translated_keys": audit.translated_keys,
-        "missing_keys": audit.missing_keys,
-        "obsolete_keys": audit.obsolete_keys,
-        "duplicate_keys": audit.duplicate_keys,
-        "malformed_lines": [
-            {"line": number, "text": text} for number, text in audit.malformed_lines
-        ],
-        "format_mismatches": audit.format_mismatches,
-        "color_mismatches": audit.color_mismatches,
-        "same_as_english": audit.same_as_english,
-        "changed_english_keys": audit.changed_english_keys,
-        "stale_english_copies": audit.stale_english_copies,
-        "rewritten": audit.rewritten,
-    }
-
-
-def write_json_report(
-    report_path: Path,
-    source: ParsedLang,
-    audits: Sequence[LocaleAudit],
-    baseline_path: Path,
-) -> None:
-    report_path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {
-        "generated_utc": _datetime.datetime.now(_datetime.timezone.utc).isoformat(),
-        "source": {
-            "path": str(source.path),
-            "key_count": len(source.values),
-            "duplicate_keys": source.duplicate_keys,
-            "malformed_lines": [
-                {"line": number, "text": text} for number, text in source.malformed
-            ],
-        },
-        "baseline": str(baseline_path),
-        "locales": [_audit_to_dict(audit) for audit in audits],
-    }
-    _atomic_write_text(
-        report_path,
-        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
-        "\n",
-    )
-
-
-def _resolve_path(repo_root: Path, path: Path) -> Path:
-    return path if path.is_absolute() else repo_root / path
-
-
-def build_argument_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description=(
-            "Audit Minecraft .lang files against en_US.lang and optionally "
-            "rewrite them in source-key order."
-        )
-    )
-    parser.add_argument(
-        "--repo-root",
-        type=Path,
-        default=Path.cwd(),
-        help="Repository root. Defaults to the current directory.",
-    )
-    parser.add_argument(
-        "--lang-dir",
-        type=Path,
-        default=DEFAULT_LANG_DIR,
-        help=f"Language directory relative to the repository root. Default: {DEFAULT_LANG_DIR}",
-    )
-    parser.add_argument(
-        "--source",
-        default=DEFAULT_SOURCE_NAME,
-        help=f"Source language file name. Default: {DEFAULT_SOURCE_NAME}",
-    )
-    parser.add_argument(
-        "--locale",
-        action="append",
-        default=[],
-        help="Only process this locale stem or file name. Repeat to select more than one.",
-    )
-    parser.add_argument(
-        "--fix",
-        action="store_true",
-        help="Rewrite locale files. Without this option, the command only audits.",
-    )
-    parser.add_argument(
-        "--missing",
-        choices=("omit", "english", "marker"),
-        default="omit",
-        help=(
-            "How --fix handles missing translations. 'omit' keeps normal English fallback; "
-            "'english' copies English; 'marker' adds '# UNTRANSLATED' before copied English."
-        ),
-    )
-    parser.add_argument(
-        "--backup",
-        action="store_true",
-        help="Create a .bak copy before each rewritten locale file.",
-    )
-    parser.add_argument(
-        "--baseline",
-        type=Path,
-        default=DEFAULT_BASELINE,
-        help=f"English baseline JSON path. Default: {DEFAULT_BASELINE}",
-    )
-    parser.add_argument(
-        "--update-baseline",
-        action="store_true",
-        help="Save the current English values after the audit.",
-    )
-    parser.add_argument(
-        "--json-report",
-        type=Path,
-        help="Write the full audit as JSON.",
-    )
-    parser.add_argument(
-        "--examples",
-        type=int,
-        default=5,
-        help="Maximum example keys shown for each issue type. Default: 5.",
-    )
-    parser.add_argument(
-        "--strict",
-        action="store_true",
-        help="Return exit code 1 for missing, obsolete, color, unchanged-English, or changed-English entries.",
-    )
-    return parser
-
-
-def _selected_locale_files(
-    lang_dir: Path,
-    source_name: str,
-    locale_filters: Sequence[str],
-) -> List[Path]:
-    files = sorted(
+def selected_locale_files(lang_dir: Path, source_name: str, filters: Sequence[str]) -> List[Path]:
+    files = [
         path
-        for path in lang_dir.glob("*.lang")
-        if path.name.lower() != source_name.lower()
-    )
-    if not locale_filters:
+        for path in sorted(lang_dir.iterdir())
+        if path.is_file()
+        and path.name != source_name
+        and LOCALE_FILE_RE.fullmatch(path.name)
+    ]
+    if not filters:
         return files
-
     normalized = {
-        item[:-5].lower() if item.lower().endswith(".lang") else item.lower()
-        for item in locale_filters
+        value[:-5] if value.lower().endswith(".lang") else value
+        for value in filters
     }
-    selected = [path for path in files if path.stem.lower() in normalized]
-    missing_filters = normalized - {path.stem.lower() for path in selected}
-    if missing_filters:
-        raise FileNotFoundError(
-            "No locale file matched: " + ", ".join(sorted(missing_filters))
-        )
+    selected = [p for p in files if p.stem in normalized]
+    missing = normalized - {p.stem for p in selected}
+    if missing:
+        raise LangSyncError("Unknown locale(s): " + ", ".join(sorted(missing)))
     return selected
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
-    parser = build_argument_parser()
-    args = parser.parse_args(argv)
+def build_updated_text(
+    source: ParsedLang,
+    target: ParsedLang,
+    delta: Optional[SourceDelta],
+    changed_policy: str,
+    missing_policy: str,
+    remove_deleted: bool,
+) -> Tuple[str, int]:
+    changed = set(delta.changed) if delta else set()
+    deleted = set(delta.deleted) if delta else set()
+    source_keys = set(source.values)
+    output: List[str] = []
+    modifications = 0
 
+    # Preserve the target's structure and comments. Never copy source comments.
+    for line in target.lines:
+        if line.kind != "entry" or line.key is None or line.value is None:
+            output.append(line.raw)
+            continue
+
+        key = line.key
+        if key in changed:
+            if changed_policy == "english":
+                replacement = f"{key}={source.values[key]}"
+                output.append(replacement)
+                if replacement != line.raw:
+                    modifications += 1
+                continue
+            if changed_policy == "omit":
+                modifications += 1
+                continue
+            if changed_policy != "keep":
+                raise LangSyncError(f"Unsupported changed policy: {changed_policy}")
+
+        if remove_deleted and key in deleted:
+            modifications += 1
+            continue
+
+        # Locale-only keys are intentionally retained.
+        output.append(line.raw)
+
+    target_keys = set(target.values)
+    missing = [key for key in source.values if key not in target_keys]
+    if missing_policy != "omit" and missing:
+        if output and output[-1].strip():
+            output.append("")
+        output.append("# Added by lang_sync.py; translate these values when practical.")
+        for key in missing:
+            if missing_policy == "english":
+                output.append(f"{key}={source.values[key]}")
+                modifications += 1
+            elif missing_policy == "marker":
+                output.append("# UNTRANSLATED")
+                output.append(f"{key}={source.values[key]}")
+                modifications += 1
+            else:
+                raise LangSyncError(f"Unsupported missing policy: {missing_policy}")
+
+    newline = target.newline
+    text = newline.join(output)
+    if target.ended_with_newline or output:
+        text += newline
+    return text, modifications
+
+
+def atomic_write(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8", newline="", dir=str(path.parent),
+        prefix=path.name + ".", suffix=".tmp", delete=False
+    ) as handle:
+        temp = Path(handle.name)
+        handle.write(text)
     try:
-        repo_root = args.repo_root.resolve()
-        lang_dir = _resolve_path(repo_root, args.lang_dir).resolve()
-        source_path = lang_dir / args.source
-        baseline_path = _resolve_path(repo_root, args.baseline).resolve()
-        report_path = (
-            _resolve_path(repo_root, args.json_report).resolve()
-            if args.json_report
-            else None
+        os.replace(str(temp), str(path))
+    except BaseException:
+        temp.unlink(missing_ok=True)
+        raise
+
+
+def backup_file(repo_root: Path, backup_root: Path, target: Path) -> Path:
+    timestamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    relative = target.resolve().relative_to(repo_root.resolve())
+    destination = backup_root / timestamp / relative
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(target, destination)
+    return destination
+
+
+def unified_diff(old: str, new: str, path: Path, limit: int = 240) -> List[str]:
+    lines = list(difflib.unified_diff(
+        old.splitlines(), new.splitlines(),
+        fromfile=str(path), tofile=str(path), lineterm=""
+    ))
+    if len(lines) > limit:
+        return lines[:limit] + [f"... diff truncated ({len(lines) - limit} more lines)"]
+    return lines
+
+
+def report_dict(
+    source: ParsedLang,
+    previous: Optional[ParsedLang],
+    delta: Optional[SourceDelta],
+    audits: Sequence[LocaleAudit],
+) -> Dict[str, object]:
+    return {
+        "generated_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "source": {
+            "path": str(source.path),
+            "keys": len(source.values),
+            "duplicates": source.duplicate_keys,
+            "malformed": [{"line": n, "text": t} for n, t in source.malformed],
+            "commented_property_keys": source.commented_properties,
+        },
+        "previous_source": str(previous.path) if previous else None,
+        "source_delta": dataclasses.asdict(delta) if delta else None,
+        "locales": [
+            {
+                **dataclasses.asdict(audit),
+                "path": str(audit.path),
+                "malformed": [{"line": n, "text": t} for n, t in audit.malformed],
+            }
+            for audit in audits
+        ],
+    }
+
+
+def print_examples(label: str, values: Sequence[str], limit: int) -> None:
+    if not values:
+        return
+    shown = ", ".join(values[:limit])
+    suffix = "" if len(values) <= limit else f" (+{len(values)-limit} more)"
+    print(f"  {label}: {shown}{suffix}")
+
+
+def print_audit(source: ParsedLang, delta: Optional[SourceDelta], audits: Sequence[LocaleAudit], examples: int) -> None:
+    print(f"Source: {source.path} ({len(source.values)} active keys)")
+    print(f"Source duplicates={len(source.duplicate_keys)} malformed={len(source.malformed)}")
+    print(f"Commented property-like source lines={sum(len(v) for v in source.commented_properties.values())}")
+    if delta:
+        print(f"Compared source: added={len(delta.added)} changed={len(delta.changed)} deleted={len(delta.deleted)}")
+    else:
+        print("Compared source: none; semantic rename detection is disabled")
+    print()
+
+    for audit in audits:
+        suffix = " [rewritten]" if audit.rewritten else ""
+        print(f"[{audit.locale}]{suffix}")
+        print(
+            f"  missing={len(audit.missing)} extra-preserved={len(audit.extra)} "
+            f"changed-present={len(audit.changed_source_present)} "
+            f"deleted-present={len(audit.deleted_source_present)} "
+            f"duplicates={len(audit.duplicates)} malformed={len(audit.malformed)}"
         )
+        print(
+            f"  format-mismatch={len(audit.format_mismatches)} "
+            f"color-mismatch={len(audit.color_mismatches)} "
+            f"same-as-English={len(audit.same_as_english)} "
+            f"planned-changes={audit.planned_changes}"
+        )
+        print_examples("changed English keys", audit.changed_source_present, examples)
+        print_examples("deleted English keys still present", audit.deleted_source_present, examples)
+        print_examples("missing", audit.missing, examples)
+        print_examples("extra keys retained", audit.extra, examples)
+        print_examples("format mismatch", list(audit.format_mismatches), examples)
+        if audit.duplicates:
+            text = ", ".join(
+                f"{k}@{','.join(map(str, v))}"
+                for k, v in list(audit.duplicates.items())[:examples]
+            )
+            print(f"  duplicate keys: {text}")
+        if audit.malformed:
+            print("  malformed lines: " + ", ".join(str(n) for n, _ in audit.malformed[:examples]))
+        print()
 
-        if not source_path.is_file():
-            raise FileNotFoundError(f"Source language file not found: {source_path}")
-        locale_paths = _selected_locale_files(lang_dir, args.source, args.locale)
+
+def parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(description="Safely audit/update RNT language files.")
+    p.add_argument("--repo-root", type=Path, help="Repository root; auto-detected by default.")
+    p.add_argument("--lang-dir", type=Path, default=DEFAULT_LANG_DIR)
+    p.add_argument("--source", default=DEFAULT_SOURCE_NAME)
+    p.add_argument("--locale", action="append", default=[], help="Process one locale; repeatable.")
+    compare = p.add_mutually_exclusive_group()
+    compare.add_argument(
+        "--git-base",
+        help="Git ref from before English renames; used to detect changed/deleted English values.",
+    )
+    compare.add_argument("--baseline", type=Path, help="Baseline JSON created by --write-baseline.")
+    p.add_argument("--write-baseline", type=Path, help="Write current English values and exit after audit.")
+    p.add_argument("--apply", action="store_true", help="Write changes. Default is dry-run.")
+    p.add_argument(
+        "--allow-source-issues", action="store_true",
+        help="Allow writes despite English duplicates/malformed lines; effective last duplicate value wins."
+    )
+    p.add_argument(
+        "--changed-policy", choices=("keep", "english", "omit"), default="keep",
+        help="Action for keys whose English value changed. Use 'english' to eliminate stale fictional names.",
+    )
+    p.add_argument(
+        "--missing-policy", choices=("omit", "english", "marker"), default="omit",
+        help="Action for current English keys missing from a locale.",
+    )
+    p.add_argument(
+        "--remove-deleted", action="store_true",
+        help="Remove locale entries only when comparison proves the English key was deleted.",
+    )
+    p.add_argument("--backup-dir", type=Path, default=DEFAULT_BACKUP_DIR)
+    p.add_argument("--report", type=Path, help="Write JSON report. Suggested: build/reports/lang-sync.json")
+    p.add_argument("--show-diff", action="store_true", help="Print dry-run unified diffs.")
+    p.add_argument("--max-changes", type=int, default=500, help="Safety limit per locale; default 500.")
+    p.add_argument("--allow-large", action="store_true", help="Override --max-changes.")
+    p.add_argument("--examples", type=int, default=5)
+    return p
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    args = parser().parse_args(argv)
+    try:
+        starting = args.repo_root.resolve() if args.repo_root else Path.cwd()
+        repo_root = (
+            args.repo_root.resolve()
+            if args.repo_root
+            else locate_repo_root(starting, args.lang_dir, args.source)
+        )
+        lang_dir = (repo_root / args.lang_dir).resolve()
+        source_path = lang_dir / args.source
+        source = parse_file(source_path)
+
+        if source.duplicate_keys or source.malformed:
+            message = (
+                f"English source has {len(source.duplicate_keys)} duplicate keys and "
+                f"{len(source.malformed)} malformed lines. The parser uses the last duplicate value, "
+                "matching effective Java-properties behavior."
+            )
+            if args.apply and not args.allow_source_issues:
+                raise LangSyncError(message + " Fix them first or explicitly pass --allow-source-issues.")
+            print("WARNING: " + message, file=sys.stderr)
+
+        previous: Optional[ParsedLang] = None
+        if args.git_base:
+            source_rel = source_path.resolve().relative_to(repo_root.resolve())
+            previous = git_show_source(repo_root, args.git_base, source_rel)
+        elif args.baseline:
+            baseline_path = args.baseline if args.baseline.is_absolute() else repo_root / args.baseline
+            previous = load_baseline(baseline_path.resolve())
+
+        delta = source_delta(previous.values, source.values) if previous else None
+        if args.apply and args.changed_policy != "keep" and delta is None:
+            raise LangSyncError(
+                "--changed-policy requires --git-base or --baseline. Without historical English, "
+                "the tool cannot distinguish a valid translation from a stale fictional name."
+            )
+        if args.apply and args.remove_deleted and delta is None:
+            raise LangSyncError("--remove-deleted requires --git-base or --baseline.")
+
+        locale_paths = selected_locale_files(lang_dir, args.source, args.locale)
         if not locale_paths:
-            raise FileNotFoundError(f"No non-source .lang files found in {lang_dir}")
+            raise LangSyncError(f"No locale files matching xx_YY.lang in {lang_dir}")
 
-        source = parse_lang(source_path)
-        baseline_exists = baseline_path.is_file()
-        baseline = _load_baseline(baseline_path)
         audits: List[LocaleAudit] = []
-
-        for locale_path in locale_paths:
-            target = parse_lang(locale_path)
-            audit = audit_locale(source, target, baseline)
-            if args.fix:
-                audit.rewritten = rewrite_locale(
-                    source=source,
-                    target=target,
-                    missing_mode=args.missing,
-                    backup=args.backup,
-                )
+        plans: List[Tuple[Path, str, str, int]] = []
+        for path in locale_paths:
+            target = parse_file(path)
+            audit = audit_locale(source, target, delta)
+            old_text, _, _ = read_text(path)
+            new_text, modifications = build_updated_text(
+                source, target, delta, args.changed_policy,
+                args.missing_policy, args.remove_deleted,
+            )
+            audit.planned_changes = modifications
             audits.append(audit)
+            if new_text != old_text:
+                if modifications > args.max_changes and not args.allow_large:
+                    raise LangSyncError(
+                        f"Refusing {modifications} changes in {path.name}; limit is {args.max_changes}. "
+                        "Review the dry run, then use --allow-large if intentional."
+                    )
+                plans.append((path, old_text, new_text, modifications))
 
-        print_report(source, audits, baseline_exists, max(0, args.examples))
+        print_audit(source, delta, audits, max(0, args.examples))
 
-        if report_path is not None:
-            write_json_report(report_path, source, audits, baseline_path)
-            print(f"JSON report: {report_path}")
+        if args.show_diff:
+            for path, old, new, modifications in plans:
+                print(f"--- Planned diff: {path.name} ({modifications} semantic changes) ---")
+                print("\n".join(unified_diff(old, new, path)))
+                print()
 
-        if args.update_baseline:
-            _write_baseline(baseline_path, args.source, source.values)
-            print(f"Baseline updated: {baseline_path}")
+        if args.apply:
+            backup_root = args.backup_dir if args.backup_dir.is_absolute() else repo_root / args.backup_dir
+            for path, _old, new, _modifications in plans:
+                backup = backup_file(repo_root, backup_root.resolve(), path)
+                atomic_write(path, new)
+                # Reparse and re-audit actual output rather than reporting stale pre-write state.
+                reparsed = parse_file(path)
+                new_audit = audit_locale(source, reparsed, delta)
+                new_audit.rewritten = True
+                new_audit.planned_changes = 0
+                index = next(i for i, a in enumerate(audits) if a.path == path)
+                audits[index] = new_audit
+                print(f"Updated {path.name}; backup: {backup}")
 
-        dangerous = len(source.duplicate_keys) + len(source.malformed)
-        dangerous += sum(audit.dangerous_issue_count for audit in audits)
-        review = sum(audit.review_issue_count for audit in audits)
-        return 1 if dangerous or (args.strict and review) else 0
+        if args.report:
+            report_path = args.report if args.report.is_absolute() else repo_root / args.report
+            atomic_write(report_path.resolve(), json.dumps(
+                report_dict(source, previous, delta, audits), ensure_ascii=False, indent=2
+            ) + "\n")
+            print(f"Report: {report_path.resolve()}")
 
-    except (OSError, ValueError) as exc:
+        if args.write_baseline:
+            baseline_path = args.write_baseline if args.write_baseline.is_absolute() else repo_root / args.write_baseline
+            write_baseline(baseline_path.resolve(), source)
+            print(f"Baseline: {baseline_path.resolve()}")
+
+        if not args.apply:
+            print(f"Dry run complete: {len(plans)} locale file(s) would change. Add --apply only after reviewing.")
+        else:
+            print(f"Applied changes to {len(plans)} locale file(s).")
+        return 0
+
+    except (OSError, ValueError, LangSyncError) as exc:
         print(f"lang_sync: error: {exc}", file=sys.stderr)
         return 2
 
