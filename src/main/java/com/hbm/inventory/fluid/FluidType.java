@@ -28,6 +28,10 @@ import net.minecraft.world.World;
 
 public class FluidType {
 
+	private static final String GUI_FLUID_TEXTURE_PATH = "textures/gui/fluids/";
+	private static final String GUI_FLUID_TEXTURE_RESOURCE_PATH = "/assets/" + RefStrings.MODID + "/" + GUI_FLUID_TEXTURE_PATH;
+	private static final ResourceLocation GUI_FLUID_FALLBACK_TEXTURE = new ResourceLocation(RefStrings.MODID + ":" + GUI_FLUID_TEXTURE_PATH + "water.png");
+
 	//The numeric ID of the fluid
 	private int id;
 	//The internal name
@@ -66,7 +70,7 @@ public class FluidType {
 		this.flammability = f;
 		this.reactivity = r;
 		this.symbol = symbol;
-		this.texture = new ResourceLocation(RefStrings.MODID + ":textures/gui/fluids/" + name.toLowerCase(Locale.US) + ".png");
+		this.setGuiTexture(name.toLowerCase(Locale.US), color);
 		
 		this.id = Fluids.registerSelf(this);
 	}
@@ -79,13 +83,29 @@ public class FluidType {
 		this.flammability = f;
 		this.reactivity = r;
 		this.symbol = symbol;
-		this.texture = new ResourceLocation(RefStrings.MODID + ":textures/gui/fluids/" + texName + ".png");
-		this.guiTint = tint;
+		if(this.setGuiTexture(texName, color)) this.guiTint = tint;
 		this.localizedOverride = displayName;
 		this.customFluid = true;
 
 		this.id = id;
 		Fluids.register(this, id);
+	}
+
+	/**
+	 * Uses the requested GUI art when it is bundled with the mod. Fluids without
+	 * bespoke art reuse water's shape and tint it with their identifying color,
+	 * rather than allowing Minecraft to render its missing-texture image.
+	 */
+	private boolean setGuiTexture(String textureName, int fallbackColor) {
+		String textureFile = textureName.toLowerCase(Locale.US) + ".png";
+		if(FluidType.class.getResource(GUI_FLUID_TEXTURE_RESOURCE_PATH + textureFile) != null) {
+			this.texture = new ResourceLocation(RefStrings.MODID + ":" + GUI_FLUID_TEXTURE_PATH + textureFile);
+			return true;
+		}
+
+		this.texture = GUI_FLUID_FALLBACK_TEXTURE;
+		this.guiTint = fallbackColor;
+		return false;
 	}
 	
 	public FluidType(int forcedId, String name, int color, int p, int f, int r, EnumSymbol symbol) {

@@ -1,3 +1,10 @@
+# Fluid texture color fallbacks
+
+**Tracker:** `Fluid texture color fallbacks`
+
+* Fluids without a bundled GUI texture now reuse the water texture instead of displaying Minecraft's missing-texture image.
+* Missing fluid textures are tinted with the hexadecimal identifier assigned to the fluid in `Fluids.java`, preserving a distinct and recognizable color without adding generated binary assets.
+
 # Chemical plant recipe icon fallbacks
 
 **Tracker:** `Chemical plant recipe icon fallbacks`
