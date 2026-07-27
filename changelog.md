@@ -1,3 +1,10 @@
+# Chemical plant recipe icon fallbacks
+
+**Tracker:** `Chemical plant recipe icon fallbacks`
+
+* Chemical plant recipes without a dedicated icon texture now display their first item product, or their first fluid product when no item is produced, instead of Minecraft's missing-texture image.
+* Fluid-product fallbacks inherit the product's tint so their substitute icons retain the expected color.
+
 # Creative-mode radiation immunity
 
 **Tracker:** `Creative-mode radiation immunity`
