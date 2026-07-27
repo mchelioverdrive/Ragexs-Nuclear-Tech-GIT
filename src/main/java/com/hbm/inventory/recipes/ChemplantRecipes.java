@@ -237,10 +237,14 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputFluids(new FluidStack(Fluids.WATER, 2000))
 				.outputItems(new ItemStack(ModBlocks.ducrete_smooth, 8)));
 		recipes.add(new ChemRecipe(57, "SOLID_FUEL", 200)
+				//legacy redditor shit
 				.inputItems(new ComparableStack(ModItems.solid_fuel, 2))
+				//actual chemical process
 				.inputFluids(
-						new FluidStack(Fluids.PETROLEUM, 200, GeneralConfig.enable528 ? 1 : 0),
-						new FluidStack(Fluids.NITRIC_ACID, 100))
+					new FluidStack(Fluids.HYDRAZINE, 500),
+					new FluidStack(Fluids.NITRIC_ACID, 500)
+				)
+				//rocket fuel shit
 				.outputFluids(new FluidStack(Fluids.ROCKET_FUEL, 1_000)));
 
 		//if something says do not remove do not remove it
