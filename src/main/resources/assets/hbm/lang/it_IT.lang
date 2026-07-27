@@ -118,7 +118,6 @@ achievement.sulfuric.desc=
 achievement.sulfuric=Non avrei dovuto immergere le mie palle nell'acido solforico.
 achievement.tantalum.desc=Un elemento sfuggente, ma necessario.
 achievement.tantalum="Tantalio"
-achievement.technetium.desc=E' medicinale, è medicinale!
 achievement.tasteofblood.desc=Non è parte di nessun test di protocollo.
 achievement.tasteofblood=Il sapore del sangue
 achievement.technetium.desc=E' medicinale, è medicinale!
@@ -131,7 +130,6 @@ achievement.witchtaunter.desc=Quelle stravaganti creature non hanno niente su di
 achievement.witchtaunter=Provocatore di streghe
 achievement.ZIRNOXBoom.desc=Far fronte, ribollire, cattivo
 achievement.ZIRNOXBoom=CIRNOX
-
 
 armor.blastProtection=Danno dalle esplosioni modificato del %s
 armor.cap=Limite di danno duro del %s
@@ -177,7 +175,6 @@ armorMod.type.leggings=Gambieri
 armorMod.type.servo=Servo
 armorMod.type.special=Speciale
 
-
 battery.mode.buffer=Modalità input/output
 battery.mode.input=Modalità input
 battery.mode.off=OffW
@@ -192,7 +189,6 @@ battery.priority.recommended=Raccomandato per:
 battery.redstone.off=Redstone OFF
 battery.redstone.on=Redstone ON
 
-
 bomb.detonated=Detonato con successo!
 bomb.incompatible=Il dispositivo non può essere attivato!
 bomb.launched=Lanciato con successo!
@@ -203,6 +199,25 @@ bomb.triggered=Attivato con successo!
 book.test.cover=COME FARE SESSO
 book.test.page1=PAGINA TEST 1
 
+book.error.cover=Collisore di ardoni:$Risoluzione dei problemi
+book.error.title1=Errore 0x01 [NC]
+book.error.page1=§lNome:§r "ERRORE_NO_CARICA" §lDescrizione:§r La particella ha raggiunto un segmento con insufficiente carica. §lPossibile soluzione:§r Sostituisci una delle spine che la particella supera con successo con quelli di livello superiore o aggiungi un altra spina leggermente prima del segmento in cui la particella scompare.
+book.error.title2=Errore 0x02 [NA]
+book.error.page2=§lNome:§r "ERRORE_NO_ANALISI" §lDescrizione:§r La particella a raggiunto il nucleo, nonstante non abbia raggiunto la camera d'analisi. §lPossibile soluzione:§r Assicurati che il tuo accelleratore abbia la camera d'analisi e ricontrolla la modalità d'operazione(lineare/circolare).
+book.error.title3=Errore 0x03 [OC]
+book.error.page3=§lNome:§r "ERRORE_CANALE_OSTRUITO" §lDescrizione:§r La particella si è schiantata su un blocco all'interno della canale di collisione. §lPossibile soluzione:§r Assicurati che dentro il collisore di partecelle sia libero senza ostruzioni, ad eccezzione dei diodo a particelle e dei blocchi centrali.
+book.error.title4=Errore 0x04 [EC]
+book.error.page4=§lNome:§r "ERRORE_BOBINA_PREVISTA" §lDescrizione:§r La particella ha passato un punto in cui manca una o più bobine. §lPossibile soluzione:§r Rimuovi tutte le piastre dell'acceleratore e controlla se tutte le bobine sono lì. Questo errore può anche accadere facendo il T-crossing, dove non c'è il diodo.
+book.error.title5=Errore 0x05 [MS]
+book.error.page5=§lNome:§r "ERRORE_SEGMENTO_MALFORMATO" §lDescrizione:§r La particella ha passato un punto costruito male (ma non ostruito o con bobine mancanti). §lPossibile soluzione:§r Assicurati che ci siano tutte le piastre e che tutte le bobine sono coperte da esse.
+book.error.title6=Errore 0x06 [ATL]
+book.error.page6=§lNome:§r "ERRORE_ANALISI_TROPPO_LUNGA" §lDescrizione:§r La particella ha passato più di tre blocchi richiesti per la camera d'analisi. §lPossibile soluzione:§r Assicurati che la camera d'analisi sia lunga 3 blocchi ne caso delle operazioni circolari e 2 per quelli lineari. Inoltre controlla che la particella non passi in più camere d'analisi.
+book.error.title7=Errore 0x07 [ATS]
+book.error.page7=§lNome:§r "ERRORE_ANALISI_TROPPO_CORTA" §lDescrizione:§r La particella a sorpassato la camera d'analisi, data la sua corta lunghezza. §lPossibile soluzione:§r Assicurati che la camera d'analisi sia lunga 3 blocchi ne caso delle operazioni circolari e 2 per quelli lineari. Le camere d'analisi non hanno le bobine e assicurati di usare le piastre e finestre per la camera d'analisi. Le camere d'analisi con le bobine dentro, contano come segmenti regolari.
+book.error.title8=Errore 0x08 [DC]
+book.error.page8=§lNome:§r "ERRORE_COLLISIONE_DIODO" §lDescrizione:§r La particella si è scontrata con con la parte non input del diodo. §lPossibile soluzione:§r Controlla che il diodo sia configurato correttamente. Le particelle possono entrare soltanto dalla parte con le frecce verdi che indicano dentro.
+book.error.title9=Errore 0x09 [BT]
+book.error.page9=§lNome:§r "ERRORE_RAMIFICAZIONE_CURVA" §lDescrizione:§r La particella ha raggiunto una curva con più uscite. §lPossibile soluzione:§r Se la curva è normale, controlla se ci sono tutte le bobine richieste (N.B. non ci dev'essere nessun buco che esponga le bobine). Se la curva dev'essere con più uscite, richiede un diodo a particelle schottky configurato correttamente.
 book.error.cover=Hadron Collider:$Troubleshooting
 book.error.title1=Error 0x01 [NC]
 book.error.page1=§lName:§r "ERROR_NO_CHARGE" §lDescription:§r The particle has reached a segment with insufficient charge. §lPotential fix:§r Either replace one of the plugs that the particle successfully passes with higher-tier ones or add another plug slightly before the segment where the particle expires.
@@ -257,6 +272,44 @@ book.rbmk.page15=La risposta del §lcombustibile nucleare§r dipende da molti fa
 book.rbmk.title16=Fusione
 book.rbmk.page16=§4§lEVITALA.
 
+book.starter.cover=$Guida su come ricostruore$una società industrializzata
+book.starter.title1=Introduzione
+book.starter.page1=Se stai leggendo questo libro, significa che molto probabilmente, in un modo o in un altro, la società è collassata. Governi, paesi e autorità sono concetti del passato - insieme ai servizi della vita civilizzata. Questa guida ti insegnerà a ricostruire la società e tutti la tecnologia e le macchine che ti cambieranno la vita.
+book.starter.title2=Carbone e gas mostarda
+book.starter.page2=Mentre è impossibile definire lo stato del mondo in un tempo post-apocalittico, non è improbabile che la guerra e l'industria siano finite. Per proteggere i tuoi polmoni, un modo efficace ed economico è quello di urinare sulla §lstoffa§r per creare una §lmaschera da trincea§r,per proteggerti dalla polvere di carbone e dal gas mostarda, se mai dovessi incontrarli.
+book.starter.title3=Incudini e presse
+book.starter.page3=La quintessenza per iniziare a revitalizzare l'industria, è un §lincudine§r e una §lpressa§r. L'incudine ti permette di creare machinnari iniziali come ad esempio l'asseblatore, mentre la pressa ti permette di creare piastre, fili e circuitit che non puoi assemblarli nell'incudine.
+book.starter.title4=Modelli
+book.starter.page4=In ordine per stampare i metalli in forme utili, assemblare macchinari ed eseguire reazioni chimiche, avrai bisogno di creare una §lcartella per modelli macchina§r per creare vari stampi e modelli.
+book.starter.title5=Scavo
+book.starter.page5=A seconda di quanto grave sia stato l'evento apocalittico iniziale per le strutture preesistenti del mondo, c'è una buona probabilità che pezzi e macchine possono essere riparati o salvati. Leghe metalliche come l'acciaio, parti come circuiti, e anche materiali fissili da centrali nucleari ti aspettano. Tuttavia, attenzione ad alcune rovine, ci puo essere un eccesso di pericolo come ad esempio un serpente nell'erba; pronto a mandarti K.O. con le radiazioni, trappole, o orrori indescrivibili...
+book.starter.title6=Primi macchinari
+book.starter.page6a=Due macchinari che dovresti assemblare subito sono l'§laltoforno§r l' §lassemblatore§r. L'altoforno ti permetterà di creare leghe come l'§lacciaio§r, §lrame di tipo minecraft§r e la §llega avanzata§r; tu avrai ne avrai bisogno per costruire i corpi delle macchine, i filamenti dei circuiti, elettromagneti avanzati e molto di più.
+book.starter.page6b=L'assemblatore serve per create praticamente tutte le macchine descritte in questa guida. Avrai bisogno di una risorsa energetica, come ad esempio un §lgeneratore§r a §lcombustione§r o di una §lcaldaia solare§r.
+book.starter.page7a=Il §ltrituratore§r, insieme ad un paio di lame, sarà molto utile per raddoppiare la resa del minerale, triturando in polveri fondibili. Queste polveri sono anche cruciali nella creazione di circuitit, come ad esempio i circuito §lmigliorato§r e l'§lovercloccatod§r.
+book.starter.page7b=Usando i tuoi macchinari, puoi creare §lImpianti chimici§r, usati per la sintetizzazione di circuiti migliori, cemento, il processo petrolchimico e di più.
+book.starter.title8=Oro nero
+book.starter.page8a=Usando un §lrilevatore di petrolio§r, puoi trovare depositi sotteranei, sopra i quali dovrai piazzare una §lpompa petrolifera§r o una §ltorre derrick§r. Ricordati che col tempo il deposito di petrolio finirà.
+book.starter.page8b=Prima che il petrolio possa essere raffinato e separato in una §lraffineria§r, lo devi riscaldare a 300°C in una §lcaldaia§r.
+book.starter.title9=Prodotti petrolchimici
+book.starter.page9=Usando un'§limpianti chimici§r, §ltorri di frazionamento§r e §ltorri di cracking catalitico§r, puoi trasformare i prodotti del petrolio raffinari in altri prodotti ancora più utili. Per esempio: §lPolimerir§r o §lBakelite§r, plastica flessibile e duratura; §lDesh§r, una lega metallica di terre rare molto resistente alle temperature; §lcombustibile solido§r, che può essere bruciato per l'energia; o anche §lcombustibile liquido§r, come §lgasolio§r, §ldiesel§r, §lkerosene§r e di più.
+book.starter.title10=Macchinari avanzari
+book.starter.page10=Con la lavorazione del petrolio nelle tue mani, puoi creare §lcentrifughe§r, che triplica la resa dei minerali; l'§lacidificatore§r, col quale cristallizzi i metalli, aumentando il tuo rendimento; e il §lSILEX + §lFEL§r, due meraviglie dell'ingegneria moderna che possono separare isotopi di materiali con sollievo. Avrai bisogno di più energia per alimentare questi nuovi macchinari; che può essere ottenuto da generatori come: §lgeneratori a diesel§r,§lgeneratori industriali§r, o anche reattori nucleari.
+book.starter.title11=Strati
+book.starter.page11=Sotto la terra in cui cammini, ci sono diversi §lStrati§r naturali, o minerali speciali e formazioni. Gli §lstrati di scisto§r sono blu, strati conteneti litio e riempiti di uranio, ferro, rame, amianto e altri minerali adatti al tuo uso. Le §lRoccie profonde§r contengono grandi quantita di minerali rari, come §lzirconio§r e §lboro§r, ma richiedono esplosivi per ottenerli.
+book.starter.title12=Radiazioni
+book.starter.page12a=§oIl resto del libro involverà materiali riguardanti le §oradiazioni. Per la tua sicurezza e degl'altri, ti darò §oconsigli su come mitigare e combattere le radiazioni.
+book.starter.page12b=Un alta esposizione alle radiazioni può e ti causera danni corporei. Il primo passo per la prevenzione; è di assicurarsi di limitare l'esposizione ed indossare indumenti protettivi, come la §lTuta hazmat§r, o applicare §lRivestimenti§r sui vestiti o armature; puoi anche prendere il §lRad-X§r per limitare assunzione. Grazie alla medicina moderna, il secondo step può essere rimosso in caso di necessità; per esempio, un §lDecontaminatore del §lplayer§r riduce lentamente le radiazioni assorbite dal tuo corpo. §lRad-Away§r può essere utilizzato anche come profilassi post-esposizione, riduce velocemente ed effettivamente il danno da esposizione da radiazioni.
+book.starter.title13=Arricchimento dell'uranio
+book.starter.page13=Ci sono alcuni metodi facili per alimentare un reattore nucleare; ad esempio, l'§luranio naturale§r o il §lcombustibile al torio§r. Tuttavia, se stai cercando per qualcosa di più potente, puoi creare una cascata di arricchimento di due §lcentrifughe a gas§r per produrre §lcombustibile all'uranio§r con uno scarto di §lUranio-238§r. Dovrai trasmutare l'uranio in §lpangaillo§r, poi in §lesafluoruro di §luranio§r.
+book.starter.title14=La pila Chicago
+book.starter.page14=Alternativamente, puoi generare il §lplutonio di grado reattore§r, un combustibile più potente, dall'uranio naturale usando la §lpila Chicago§r. Sovrapponendo blocchi di grafite e trivellandoli, puoi inserire barre di combustibile da riproduzione per generare plutonio e fonti di neutroni, come il §lRadio-Berillio§r, per iniziare la reazione. Assicurati di testare i tuoi design; potrebbe essere necessario distanziare o limitare la quantità di blocchi per evitare il surriscaldamento.
+book.starter.title15=ZIRNOX GCR
+book.starter.page15=Finalmente, puoi creare la tua prima §overa§r fonte di energia: Il reattore nucleare §lZIRNOX§r. I reattori nucleari richiedono una sistemazione maggiore rispetto alle altre fonti di energia; per primo, avrai bisogno di una buona risorsa d'aqua, come il §lSerbatoio dell'acqua infinito pesante§r. Per rimuovere calore da reattore e per far bollire l'acqua, avrai bisogno di §lmonossido di carbonio§r. Dovrai creare una forte pressione, ma non §otroppa§r. Avrai anche bisogno di 3 turbine a vapore per produrre energia dal vapore prodotto; le §lturbine a vapore§r o le §lturbine a vapore industriali§r saranno ottime. Infine, un §lCondensatore§r o una §ltorre di raffreddamento ausiliaria§r servirà per condensare il vapore rimasto in acqua, dove può essere eliminato o riciclato in un circuito di raffreddamento.
+book.starter.title16=Conclusione
+book.starter.page16=Se sei arrivato così lontano, sei sulla strada per la ricostruzione della civilizzazione. Hai ricreato macchinari avanzati pre-apocalittici - con energia nucleare, prodotti petrolchimici e di più. Non posso sapere §ocome§r utilizzerai questi nuovi vantaggi, ma è mia personale speranza che tu li usi per il bene tuo e degli altri - o almeno per legittima difesa. Au revoir!
+book.starter.title18=Qualcosa sull'autore
+book.starter.page18=vær è solo un ragazzo rimasto intrappolato nel vuoto grigio presente nei Talking Head §oUna volta nella vita§r molto a lungo. Una volta trovò la porta di uno studio, ma con suo sgomento scoprì che era un ritaglio di cartone.
 book.starter.cover=An Industrialist's$Guide to Rebuilding$Society
 book.starter.title1=Introduction
 book.starter.page1=If you're reading this, it's highly likely that society, in one way or another, has collapsed entirely. Governments, countries, and authority are a concept of the past - along with all of the amenities of civilized life. As such, this guide will inform you how to change that by recreating the industry and technology of the past for the improvement of your own life.
@@ -296,7 +349,6 @@ book.starter.page16=If you've reached this far, you're on track to helping rebui
 book.starter.title18=About the Author
 book.starter.page18=vær is just a guy who has been trapped in the grey void featured in the Talking Head's §oOnce In A Lifetime§r for too long. He once found a studio door, but to his dismay found out it was a cardboard cut-out.
 
-
 #book.rbmk.cover=HOW 2 RBMK:$The Basics$of Reactor$Construction
 #book.rbmk.title1=Introduction
 #book.rbmk.page1=The §lRBMK§r is a fully modular nuclear reactor. Unlike most other reactors, there is no "core", and no size limitations, rather, the behavior and efficiency of the reactor comes from how it is built and how the different pieces interact with each other.
@@ -330,6 +382,11 @@ book.starter.page18=vær is just a guy who has been trapped in the grey void fea
 #book.rbmk.title16=Meltdown
 #book.rbmk.page16=§4§lAvoid.
 
+book_lore.author=Di %s
+book_lore.test.name=questo libro non funziona...
+book_lore.test.author=io ti ho trollato eheh :3c
+book_lore.test.page.0=>ciao anonimi, prima di iniziare vorrei chiarire che non sono gay. >Sii me >Questa notte >18 > Uscendo con il mio migliore amico senza i miei genitori per alcuni giornis >Siamo migliori amici ormai da un anno >Abbiamo bevuto un po', giocato a molti videogiochi e ordinato una pizza >Ci stavamo divertendo molto >A un certo punto della notte, verso le 9:00, fa una cosa davvero divertente battuta che non ricordo ma so che ci ha fatto ridere tantissimo tutti e due > Senza pensarci passo la mano destra tra i suoi capelli neri semiricci e lo chiamo ragazzo simpatico > Lui arrossisce > Mi rendo conto che mi sento agitato >Siamo abbastanza vicini >All'improvviso lui mi bacia e per qualche motivo io lo bacio >Facciamo l'amore >Ci coccoliamo insieme e ci addormentiamo >Svegliarsi nel cuore della notte con la sua testa rannicchiata sul mio petto e zona del collo >È stato bello ma non sono omosessuale.
+book_lore.test.page.1=Lo scrivo mentre lui dorme tra le mie braccia. Come posso deludere bene il mio migliore amico? Non voglio essere un [censurato] /b/
 book_lore.author=By %s
 book_lore.test.name=this book doesn't work...
 book_lore.test.author=me i trolled you hehe :3c
@@ -341,6 +398,227 @@ book_lore.test.page.4=5
 
 book_lore.book_iodine.name=Note
 book_lore.book_iodine.author=Dave
+book_lore.book_iodine.page.0=non ci crederete a questo, ma il vecchio weathervane finalmente è riuscito a farsi vivo di nuovo da quando se n'è andato due settimane fa e la cosa più sorprendente è il fatto che in realtà abbia deciso di vuotare il sacco su quello che stavano facendo nel canyon:
+book_lore.book_iodine.page.1=apparentemente i deficienti della ricerca e sviluppo hanno scoperto un composto per la maggior parte inorganico, quasi come una tossina nella natura, ma senti questo: le cellule morenti riprodurranno detta tossina e la espelleranno attraverso la pelle, creando un'aereosol altamente contagioso.
+book_lore.book_iodine.page.2=è simile ad un virus, ma non è un virus. La composizione è strana, puoi mischiarlo in una qualsiasi bottiglia in casa ma devi fare nel giusto ordine. Il dottore mi ha detto che il primo ingrediente, che è la polvere di iodio, va nello slot %d
+
+book_lore.book_phosphorous.name=Note
+book_lore.book_phosphorous.author=Dave
+book_lore.book_phosphorous.page.0=ehi, sono io ancora. assumo che tu abbia preso l'ultimo memo, il dottore non era molto felice di questo. L'ho dovuto fare veloce, gli idioti della ricerca e sviluppo stanno ancora gemendo, probabilmente per mancanza di fondi; di nuovo. Comunque, doc Weathervane ha scoperto che il secondo
+book_lore.book_phosphorous.page.1=ingrediente è il fosforo rosso, che va mischiato nello slot %d
+
+book_lore.book_dust.name=Note
+book_lore.book_dust.author=Dave
+book_lore.book_dust.page.0=il dottore si è incazzato quando ha scoperto che gli idioti della ricerca e sviluppo si sono tenuti l'unico esemplare, inveendo di negligenza grave questo e di uno scenario apocalittico quello. Gli ho detto di freddarsi un minuto, arrabbiarsi a quella maniera non è buono per la sua pressione sanguignia, non
+book_lore.book_dust.page.1=che gli sia rimasto molto sangue per cominciare. uno dei deficienti della ricerca e sviluppo ha inserito qualche informazione in più nella circolare della scorsa settimana, chiamano il loro piccolo intruglio "MKU" qualunque cosa significhi, e che contenga vera lanugine domestica. Puoi crederci? una delle più
+book_lore.book_dust.page.2=loro invenzioni pericolose e contiene polvere. stranamente hanno mensionato che va messa nello slot %d
+
+book_lore.book_mercury.name=Note
+book_lore.book_mercury.author=Dave
+book_lore.book_mercury.page.0=beh, questo risolve il problema. Senza contare la parte dove si vomita sangue, i reperti tossicologici dichiarano che sia avvelenamento da mercurio. perchè? perchè il piccolo mix contiene mercurio! mi chiedo solo da dove venga tutta quella roba quando viene
+book_lore.book_mercury.page.1=replicata dal corpo? Comunque, il mercurio va nello slot %d
+
+book_lore.book_flower.name=Note
+book_lore.book_flower.author=Dave
+book_lore.book_flower.page.0=ricordi quando ho menzionato nel mio primo memo che il composto è per lo più inorganico? bene, indovina un po', il vecchio ci ha detto il 4° ingrediente: l'ipomoea nil, un genere di fiore. Gloria mattutina! potrebbe essere dovuto al suo basso contenuto di zolfo,qualunque sia il caso,
+book_lore.book_flower.page.1=non fuziona con gli altri fiori. La gloria mattutina va nello slot %d
+
+book_lore.book_syringe.name=Note
+book_lore.book_syringe.author=Dave
+book_lore.book_syringe.page.0=un piccolo addendum per il 5° memo, ovviamente il MKU va messo in un piccolo contenitore. i fanatici della ricerca e sviluppo utilizzavano normali siringhe metalliche ottenute dal settore medico. presumo che il materiale in eccedenza abbia migliaia di aghi in giro. Il metallo
+book_lore.book_syringe.page.1=metallica va nello slot %d
+
+book_lore.resignation_note.name=Lettera di dimissioni
+book_lore.resignation_note.author=Kosma
+book_lore.resignation_note.page.0=Ieri la direzione ha nuovamente ridimensionato il nostro dipartimento. Quegli idioti possono incolpare solo se stessi, non so cosa si aspettassero dopo quel fiasco. Chi diavolo fa trapelare questo tipo di informazioni? Stiamo perdendo milioni e
+book_lore.resignation_note.page.1=sono IO quello che se ne deve andare . Sono IO quello a cui viene chiesto di dimettersi. Spero che voi stronzi finalmente impariate dalla sovrabbondanza di errori e toglietevi quel bastone dal culo.
+book_lore.resignation_note.page.2=Non tornero venerdì. Mandatemi soltanto la bustapaga.
+
+book_lore.memo_stocks.name=Memorandum intrasocietario
+book_lore.memo_stocks.page.0=Relazioni con gli investitori - $ $ Ci sono state alcune evidenti discrepanze nelle cifre fornite per l'ultimo rapporto trimestrale. Sarebbe prudente che il dipartimento finanziario apportasse alcune modifiche, quindi non ci saranno preoccupazioni.
+
+book_lore.memo_schrab_gsa.name=Nota interna
+book_lore.memo_schrab_gsa.page.0=Gestione dei contratti - $ $ Legal ha fatto una svolta con la DLA. Ci hanno assegnato un programma di 45 MILIARDI di GSA per ulteriori acquisti e ricerche su saralloy. Secondo le stime attuali, sarebbe il minimo
+book_lore.memo_schrab_gsa.page.1=un profitto del 40%% sulle operazioni correlate, per non parlare della possibilità di contratti futuri. A causa della natura riservata, tutte le prove fiscali devono rimanere private.
+
+book_lore.memo_schrab_rd.name=Nota interna
+book_lore.memo_schrab_rd.page.0=Ricerca e sviluppo - $ $ Il nostro metodo principare per la produzione di saralloy è il nuovo accelleratore di partecelle. Nonostante ciò, i costi dell'energia sono altamente esorbitanti rispetto a quanto otteniamo.
+book_lore.memo_schrab_rd.page.1=Dottor Schrabauer, comunque, ha scoperto una nuova interazione - chiamata "Strana oscillazione leptonica" - che può ridurre significativamente i costi. Attraverso un processo non del tutto compreso, gli elettroni forniti vengono trasmutati in estremamente in
+book_lore.memo_schrab_rd.page.2=fotoni ad alta energia, attraverso uno strano fascino. Questa è un'eccezione estrema a molte leggi consolidate sulla conversione delle particelle, ma esperimenti preliminari hanno dimostrato che questi protoni si trasmutano in quark up e down, creando infine saralloy.
+book_lore.memo_schrab_rd.page.3=Stranamente, il prototipo richiede tungsteno legato con piccole quantità di saralloy. In aggiunta, uno speciale condensatore è richiesto per negare cariche positive.
+
+book_lore.memo_schrab_nuke.name=Rapporto di ricerca
+book_lore.memo_schrab_nuke.author=Doctor Schrabauer
+book_lore.memo_schrab_nuke.page.0=La nostra più recente ricerca riguarda gli effeti delle esplosioni nucleari sui materiali. Grazie al denaro della nostra sovvenzione, abbiamo testato *accidentalmente* la nostra teoria sulla sintesi diretta del saralloy dall'uranio.
+book_lore.memo_schrab_nuke.page.1=Solo il nostro ciclotrone ha effettivamente creato saralloy. Tuttavia, durante la nostra ripresa sotterranea a Everwerpen, miniscule tracc di saralloy sono state trovate sui minerali d'uranio, proprio sul sito della detonazione. Tutti puri, l'uranio metallico nelle vicinanze si era sottoposto a fissione.
+book_lore.memo_schrab_nuke.page.2=Pertanto, data una quantità sufficiente di minerale di uranio concentrato attorno a un esplosivo, o forse anche a una bomba sporca ricca di rifiuti contenenti materiale fissile, si potrebbe ipoteticamente creare abbastanza saralloy da raccogliere manualmente.
+
+book_lore.bf_bomb_1.name=Note private
+book_lore.bf_bomb_1.author=M. Porter
+book_lore.bf_bomb_1.page.0=Ci è voluto abbastanza tempo, ma il mio trasferimento è stato accettato. Quei neolaureati erano già difficili da gestire, per non parlare di tutta la mancanza di professionalità del protagonista. $ Non tutte buone notizie - questo laboratorio nascondeva ulteriori dettagli e non avevo bisogno di ulteriore caos per un'altra nuova, magica scoperta.
+book_lore.bf_bomb_1.page.1=di sicuro questo era il caso. Gli ex studenti avevano i loro dubbi (sorprendente, considerando quanto avevano gli occhi brillanti), ma l'unico... competente? il collega ha effettivamente messo le mani sul volantino del primer. Devono avere più connessioni di quanto pensassi. Il suo promemoria è scoraggiante:
+book_lore.bf_bomb_1.page.2=apparentemente, c'è ancora UN ALTRO materiale miracoloso che hanno ricavato da una miscela di antimateria e un isotopo marginale. La brochure lo chiama "SWIRLMAT" - diavolo se lo so - e basta. Non c'è da stupirsi che volessero un fisico teorico,
+book_lore.bf_bomb_1.page.3=non sanno nemmeno cosa sia ancora. In ogni caso, praticamente qualsiasi lavoro sarebbe migliore della mia vecchia posizione, quindi non posso lamentarmi molto della scarsa precisione.
+
+book_lore.bf_bomb_2.name=Note private
+book_lore.bf_bomb_2.author=M. Porter
+book_lore.bf_bomb_2.page.0=Nonostante l'assenza di informazioni in quel primer, Avevo ancora qualche speranza che sapessero qualcosa di più. Affatto. Tutti gli altri ricercatori senior hanno una fiducia cieca in questo materiale; le loro proposte erano praticamente bibliche. Ero quasi senza parole.
+book_lore.bf_bomb_2.page.1=Eppure non posso nemmeno biasimarli. Swirlmat non ha dannatamente senso: è completamente diverso da qualsiasi altra sostanza che abbia mai visto prima. Il suo aspetto era quasi spaventoso, letteralmente una massa di colori vorticosi, con linee più scure che permeavano la superficie verde neon.
+book_lore.bf_bomb_2.page.2=Ancora peggio, questa cosa è una fonte di energia. L'esistenza del nostro campione è una violazione dell'ALARA: il laboratorio è stato lasciato vuoto al suo arrivo e l'unica persona abbastanza coraggiosa (un certo dottor Melfyn) ha indossato un materiale ignifugo di livello A solo per trasportarlo per 20 metri.
+book_lore.bf_bomb_2.page.3=I dati empirici non sono migliori, poiché stiamo infrangendo la prima legge della termodinamica con quanta energia irradia. Trovarsi vicino a quella cosa, anche dietro un metro di piombo, era terrificante. Siamo corsi fuori dalla camera al termine della spettroscopia
+book_lore.bf_bomb_2.page.4=e non ne abbiamo ricavato nulla di nuovo. Quegli idioti del team scientifico, Dio, non hanno vacillato nemmeno dopo tutto quello. Assistere a quelle "discussioni" era orribile; quel ciarlatano del capo ricercatore diceva addirittura che il divieto di test sarebbe stato revocato, che avremmo potuto esserlo
+book_lore.bf_bomb_2.page.5=costruire bombe dalla merda nelle prossime settimane, chi sano di mente ci lavorerebbe? Diavolo, l'unico assistente sano di mente (un certo Andrew) l'ha soprannominato "balefire" - perché bruciare a morte su una pira funeraria sarebbe indolore in confronto. 
+
+book_lore.bf_bomb_3.name=Note private
+book_lore.bf_bomb_3.author=M. Porter
+book_lore.bf_bomb_3.page.0=Io e la squadra abbiamo fatto dei passi avanti. L'enfasi sulla separazione: isolarmi dai più devoti ha reso il lavoro lì molto più sopportabile. Anche se non abbiamo ancora idea delle effettive proprietà del balefire (è difficile da analizzare
+book_lore.bf_bomb_3.page.1=un campione che frigge la tua attrezzatura) le sue interazioni con altra materia si sono rivelate fruttuose. In particolare, hanno sintetizzato una forma "gassosa": Andrew, tra tutti, mi ha informato che si trattava in realtà di un colloide costituito da microscopiche particelle di fuoco funebre, sospese in alcuni
+book_lore.bf_bomb_3.page.2=gas nobile. Ogni particella è avvolta da una "bolla" di gas ionizzato carica positivamente, che ne impedisce la sedimentazione. Chi avrebbe potuto immaginare che le radiazioni gamma fatali avessero un beneficio? Non me. $ Scelgo di non pensare a come hanno trasformato il campione
+book_lore.bf_bomb_3.page.3=particolato, ma non posso sottovalutare l'utilità di questo fuoco gassoso: ha reso molto più sicuro fare esperimenti. $ A proposito di sicurezza, il capo ricercatore (in un atto di insensibile disprezzo) ha fatto una scoperta che gli ha quasi staccato la testa. 
+book_lore.bf_bomb_3.page.4=Decise di "sporcarsi" lasciando che una cellula del nostro nuovo colloide interagisse direttamente con un po' di antimateria molto costosa: l'esplosione risultante trasformò il tavolo su cui si trovava in un pezzo di scorie sbiancate dalle radiazioni, scolpito un emisfero quasi perfetto attraverso
+book_lore.bf_bomb_3.page.5=la parte superiore e ha dato alla testa una buona dose di ARS. Immagino che ora sappiamo come farlo esplodere, ma Dio, alcune persone...
+
+book_lore.bf_bomb_4.name=Note private
+book_lore.bf_bomb_4.author=M. Porter
+book_lore.bf_bomb_4.page.0=Non posso proprio sfuggire al mio vecchio lavoro. Sono l'unico posto che assume nonostante tutto questo tumulto dimenticato da Dio, ma non tornerò in quel buco. $ Mi hanno tentato solo perché ne avevo bisogno, in fretta. Ricordi quel trattato sui test atmosferici da cui ci siamo ritirati una settimana fa?
+book_lore.bf_bomb_4.page.1=Bene, per una volta lo stronzo responsabile del nostro laboratorio ha azzeccato la cosa. La denuncia è arrivata con una raffica di nuovi “scienziati” che si sono uniti, proprio per poter utilizzare come arma il balefire. La mancanza di pensiero critico qui è sinceramente sconcertante: Dio lo benedica, Andrew ha persino abbandonato la nave
+book_lore.bf_bomb_4.page.2=in secondo luogo è stato abbozzato il primo cazzo di BOMB DESIGN. Quel coglione di Melfyn sembrava così contento del suo piccolo meccanismo... forse gli sono venuti dei vermi cerebrali trasportando quel campione? - che prevedeva qualche stupida stronzata usando la base missilistica solidificata e una batteria
+book_lore.bf_bomb_4.page.3=AV. $ Apparentemente, la forma è importante per la produzione di energia e il metodo di attivazione o altro, un po' come l'uranio contro il plutonio nelle armi nucleari normali, ma il risultato finale è uno shock iniziale che innesca l'esplosione. Lo trovo divertente, addirittura esilarante.
+book_lore.bf_bomb_4.page.4=Tutti pongono tanta enfasi sull'attivazione; ignorano il meccanismo reale di tutto questo perché non hanno la minima idea di come funzioni! Potrebbe anche essere magico a questo punto, eppure stanno ancora cercando di torcerlo e piegarlo, solo per avere più armi da guerra.
+
+book_lore.bf_bomb_5.name=Note private
+book_lore.bf_bomb_5.author=M. Porter
+book_lore.bf_bomb_5.page.0=È solo che... non riesco a venirne a capo, nemmeno giorni dopo. Era una conclusione scontata, davvero, visto quanto il team scientifico fosse irriverente riguardo alla sicurezza. $ $ Il dottor Melfyn, M.S., se n'è andato. Morto, forse. L'ho visto accadere davanti ai miei occhi, nella loro camera di prova.
+book_lore.bf_bomb_5.page.1=Avevamo appena ricevuto un'altra dose di balefire puro e lui aveva recuperato apparecchiature elettriche e una fonte di energia per testare la sua proposta. Non so cosa lo abbia causato (era accesa la corrente? Si era avviata troppo presto?), ma sembrava progredire in modo agonizzante al rallentatore,
+book_lore.bf_bomb_5.page.2=mentre la luce verde consumava il tavolo, la batteria e il Dr. Melfyn era a solo un metro di distanza. Anche quando il tavolo si era ridotto a una pozza di metallo bollente sul pavimento, non bruciava. Non so cosa ho visto nei suoi occhi... $ $ Terrore, o stupore
+book_lore.bf_bomb_5.page.3=per la sua continua sopravvivenza, forse? Qualunque fosse il nostro materiale "miracoloso", non aveva importanza. Con un brillante lampo di luce, scomparve un attimo dopo. È evaporato? incenerito? annientato? mandato all'inferno stesso, non lo so più!
+book_lore.bf_bomb_5.page.4=Il capo ricercatore mi fa schifo. Ha detto che potevamo stare più attenti, continuare a trasportare, qualsiasi altra schifezza che migliorasse il morale avesse vomitato. Quello stronzo non capirà mai che giocare con il fuoco ti brucerà. $ Non mi sono preoccupato
+book_lore.bf_bomb_5.page.5=dimettendomi, ho semplicemente preso la mia merda e sono corso a gambe levate. Non che sia importante, comunque; considerando la mancanza di chiamate e il fungo atomico che si è sollevato sul mio (ormai ex) posto di lavoro, hanno fatto saltare tutto o sono entrati a pieno titolo nella giurisdizione militare.
+book_lore.bf_bomb_5.page.6=C'è una distinzione fondamentale da fare tra dissezione e VIVISEZIONE, una distinzione che è stata chiaramente persa da loro. Possono sezionare metalli o atomi quanto vogliono, ma penetrare e vivisezionare la realtà stessa porterà solo a qualcosa di più. Melfins. Chi lo sa!
+book_lore.bf_bomb_5.page.7=Dopotutto il governo vuole mettere questa merda nelle bombe, forse vedremo un altro paio di guerre, un altro paio di milioni di persone rassegnate a un destino peggiore della morte. Non possono nasconderlo per sempre. $ $ Non mi interessa. Non più. Per favore, Dio, lasciami tornare indietro
+book_lore.bf_bomb_5.page.8=alla scienza vera e propria. $ $ Maledizione, Mae, calmati...
+
+book_lore.beacon.name=Libretto di istruzioni del segnalatore luminoso
+book_lore.beacon.author=Industrie Flim Flam
+book_lore.beacon.page.0=Grazie per aver acquistato un segnalatore luminoso Mk.2 (rev. 1.3)! Questo piccolo opuscolo fornirà una breve introduzione al funzionamento del faro, nonché al suo funzionamento interno.
+book_lore.beacon.page.1=Capitolo 1: Architettura $ Ogni unità è composta da quattro parti principali: il circuito di controllo, una lanterna, un corno da nebbia e l'involucro che ospita le altre parti. Per una spiegazione dettagliata del circuito principale, per favore
+book_lore.beacon.page.2=fare riferimento allo schema elettrico che si trova all'interno del coperchio di manutenzione dell'involucro. La lanterna è composta da un involucro in policarbonato contenente una lampadina alogena bicolore da 250 Watt con attacco standard da 200mm, ricambi
+book_lore.beacon.page.3=per la lampadina può essere ordinata presso i nostri negozi. Le lampadine di terze parti non sono consigliate poiché non possiamo garantire un funzionamento sicuro. La cassa è realizzata in acciaio inossidabile zincato specializzato ed è resistente agli agenti atmosferici.
+book_lore.beacon.page.4=Capitolo 2: Lanterna $ Gli usi principali della lanterna sono fornire luce per facilitare la manutenzione in condizioni meteorologiche avverse, nonché un indicatore di stato. Se il test automatico all'accensione (POST) fallisce, il segnalatore lo farà
+book_lore.beacon.page.5=si accenderà di rosso, altrimenti si illuminerà di verde. Tieni presente che i colori possono variare a seconda della lampadina sostitutiva.
+book_lore.beacon.page.6=Capitolo 3: Corno da nebbia $ Il corno da nebbia è il dispositivo di comunicazione principale del faro. Il faro è progettato per la comunicazione peer-to-peer (P2P) e per la trasmissione di messaggi.
+book_lore.beacon.page.7=Capitolo 4: Peer-to-Peer $ Per i dettagli sulla comunicazione, fare riferimento al manuale delle comunicazioni. Segue un breve riassunto su come stabilire una connessione P2P: innanzitutto il beacon deve dare il segnale "AVVIA CONNESSIONE",
+book_lore.beacon.page.8=essendo un unico tono lungo. Anche tutti i peer disponibili dovrebbero rispondere con un unico tono lungo (ordine specificato in base alla vicinanza, nonché le linee guida di comunicazione delineate nel manuale, sezione "Risposta a una connessione")
+book_lore.beacon.page.9=Una volta che il peer desiderato ha risposto, dare il segnale "ACCETTA CONNESSIONE", ovvero due toni lunghi, anche il peer risponderà con due toni lunghi. Tutte le comunicazioni successive devono avvenire, nella maggior parte dei casi, utilizzando segnali prenegoziati
+book_lore.beacon.page.10=utilizzando lo standard FAR-5M. La comunicazione terminerà immediatamente se non è stato negoziato alcuno standard, fungendo da "ping". Se la comunicazione continua è possibile terminare la connessione utilizzando un altro tono singolo lungo "FINE CONNESSIONE".
+book_lore.beacon.page.11=Capitolo 5: Garanzia $ [pagina lasciata intenzionalmente vuota]
+
+cannery.f1=[ Premi F1 per aiuto ]
+
+cannery.centrifuge=Centrifuga a gas
+cannery.centrifuge.0=La centrifuga a gas può essere fornita di fluidi attraverso i condotti per fluidi.
+cannery.centrifuge.1=Molte ricette richiedono più centrifughe. I prodotti intermedi non possono essere trasportati via tubi.
+cannery.centrifuge.2=Questo lato funziona come un connettore che darà il prodotto intermedio alla centrifuga adiacente.
+cannery.centrifuge.3=L'esafluoruro di uranio può essere processato con due centrifughe, pero questo ti produrra solo combustibile d'uranio e uranio-238.
+cannery.centrifuge.4=Per il processo completo che ti da uranio-238 e uranio-235 richiede 4 centrifughe.
+cannery.centrifuge.5=Alcune ricette richiedono anche l'aggiornamento dell'overclocking della centrifuga.
+
+cannery.crucible=Crugiolo
+cannery.crucible.0=Il crogiolo è usato per fondere i mineali, lingotti o altri materiali metallici per leghe e di modellarli in forme diverse.
+cannery.crucible.1=Richiede una fonte di calore esterna che si deve collegare sotto, come un focolare.
+cannery.crucible.2=Una volta riscaldata, il crogiolo può essere usato in due modi differenti, con o senza il modello di ricetta.
+cannery.crucible.3=Il crogiolo ha due taniche per il materiale fuso:
+cannery.crucible.4=La tanica a sinistra è per i §asottoprodotti§r, tutti i materiasi fusi senza un modello di ricetta andranno lì.
+cannery.crucible.5=Se il modello di ricetta è installato, i materiali che non sono presenti nel modello saranno contenuti nella tanica a sinistra.
+cannery.crucible.6=I materiali in nella tanica di sinistra non reagiscono tra loro, possono essere colati solo dall'uscita verde per lo stampo.
+cannery.crucible.7=Il buffer a destra è per le §cricette§r, se il modello di ricetta è installato, tutti i materiali necessari andranno lì.
+cannery.crucible.8=I materiali si combineranno lentamente nel materiale in uscita che verrà automaticamente colato dall'uscita rossa.
+cannery.crucible.9=Tieni presente che solo questa tanica gestisce le ricette. Se un modello viene installato retroattivamente, i materiali nella tanica del sottoprodotto non verranno combinati, né trasferiti nella tanica della ricetta.
+cannery.crucible.10=L'uscita colerà il materiale automaticamente, se l'obiettivo è valido, ad esempio un canale di fonderia o uno stampo.
+cannery.crucible.11=Come per tutti i blocchi da fonderia, è possibile utilizzare una pala per rimuovere tutto il materiale dal crogiolo.
+
+cannery.fensu=FEnSU
+cannery.fensu.0=Il FEnSU è capace di contenere assurde quantita di energia, oltre 9EHE (è un 9 seguito da 18 zeri).
+cannery.fensu.1=C'è solo un connettore di energia che può essere trovato in basso al centro.
+cannery.fensu.2=E' anche l'unico punto in cui il FEnSU può riceve un segnale in redstone.
+
+cannery.firebox=Focolare
+cannery.firebox.0=Il focolare brucia oggetti infiammabili per generare calore.
+cannery.firebox.1=Può bruciare un qualsiasi oggetto infiammabile, sebbene combustibili di qualità superiore come carbone, coke e combustibili solidi brucino più a lungo e a temperature più elevate.
+cannery.firebox.2=Il calore è scambiato in cima, dove c'è il contatto in rame. Macchine con contatti identici in basso, possono ricevere calore dal focolare.
+cannery.firebox.3=Se il calore non viene utilizzato e il serbatoio di calore si riempie, il focolare si spegne per evitare sprechi di combustibile.
+cannery.firebox.4=Una di queste macchine è il motore Stirling, che trasforma il calore direttamente in energia.
+
+cannery.foundryChannel=Canale della fonderia
+cannery.foundryChannel.0=I canali della fonderia servono per trasportare i metalli fusi in una tanica o in uno stampo.
+cannery.foundryChannel.1=I canali possono ricevere il materiale sia versandolo dall'alto - tramite uno scarico o direttamente da un crogiolo - sia lateralmente da altri canali.
+cannery.foundryChannel.2=Durante il trasporto di materiali, i canali daranno la priorità a blocchi come sbocchi e stampi poco profondi.
+cannery.foundryChannel.3=Quando non può fornire uno sbocco o uno stampo, il materiale scorrerà in un canale vicino.
+cannery.foundryChannel.4=Il materiale rimasto può essere rimosso utilizzando una pala.
+
+cannery.silex=FEL & SILEX
+cannery.silex.0=Il laser a elettroni liberi (FEL) utilizza energia e un cristallo laser per creare un potente raggio laser.
+cannery.silex.1=Fai attenzione, il laser può bruciare/sciogliere i blocchi deboli...
+cannery.silex.2=...ma non quelli a prova di esplosione.
+cannery.silex.3=Il FEL viene utilizzato per alimentare la camera di separazione degli isotopi laser (SILEX). Il FEL e il SILEX devono essere ad almeno due isolati di distanza.
+cannery.silex.4=Il laser deve entrare attraverso le aperture di vetro del SILEX. Puntarlo male potrebbe distruggerlo.
+cannery.silex.5=Le aperture sui lati possono essere utilizzate per collegare i condotti dei fluidi al SILEX.
+cannery.silex.6=Oltre ai due connettori posti sui lati, è presente un terzo connettore nascosto nella parte inferiore da cui è possibile estrarre gli oggetti.
+cannery.silex.7=Ogni ricetta richiede un tipo di laser specifico. L'utilizzo di un tipo più forte di quello richiesto elaborerà gli elementi più velocemente.
+cannery.silex.8=Un FEL può alimentare fino a 5 SILEX. Ogni SILEX deve essere distante un blocco l'uno dall'altro.
+
+cannery.stirling=Motore Stirling
+cannery.stirling.0=Il motore Stirling trasforma il calore in energia elettrica.
+cannery.stirling.1=Deve essere posizionato sopra una macchina che produce calore, come il focolare.
+cannery.stirling.2=La quantità di calore che può utilizzare è tuttavia limitata, una rotazione eccessiva può portare a malfunzionamenti catastrofici.
+cannery.stirling.3=La versione aggiornata può sopportare molto più calore senza rompersi.
+
+cannery.willow=Salice Senape
+cannery.willow.0=Il salice senape è una pianta che permette la raccolta del cadmio metallico.
+cannery.willow.1=I salici possono essere posizionati su terra, erba o anche su terra morta/oleosa, ma richiedono acqua per crescere.
+cannery.willow.2=I salici possono essere concimati con farina d'ossa o fertilizzante industriale. Non hanno bisogno della luce per crescere.
+cannery.willow.3=Dopo la seconda fase di crescita, avranno bisogno di un ulteriore blocco di spazio sopra di loro per crescere ulteriormente.
+cannery.willow.4=Dopo la quarta fase di crescita, richiedono terra morta o oleosa sotto di loro.
+cannery.willow.5=Questo può essere fatto piantando manualmente salici su terreno morto/oleoso, oppure avendo nelle vicinanze una torre di fratturazione idraulica che contamina continuamente il terreno.
+cannery.willow.6=Dopo aver raggiunto la fase finale, il salice rimuoverà la contaminazione dal terreno, riconvertendo la terra morta/oleosa in terra normale.
+cannery.willow.7=Adesso si possono raccogliere le foglie del salice. Rompere il blocco superiore farà cadere una piccola pianta di salice, 3-6 foglie e manterrà intatta la parte inferiore della pianta.
+cannery.willow.8=Presto la pianta ricomincerà a crescere, producendo più foglie se la terra viene sostituita con terra oleosa. Le foglie possono essere trasformate in polvere di cadmio utilizzando un acidificantore.
+cannery.willow.9=La raccolta delle foglie di salice può essere automatizzata utilizzando la sega circolare automatica, che romperà solo le piante pronte per il raccolto.
+
+cannery.hadron=Acceleratore di Particelle
+cannery.hadron.0=Un Acceleratore di Particelle è composto da tre parti principali: un Nucleo, una Camera di Analisi e un set di Bobine Superconduttrici
+cannery.hadron.1=Questo è il Componente Nucleo dell'Acceleratore di Particelle, che spara particelle a velocità relativistiche lungo le bobine verso la Camera di Analisi
+cannery.hadron.2=Le particelle vengono espulse da qui
+cannery.hadron.3=E negli acceleratori circolari, ritornano qui
+cannery.hadron.4=Un segmento di bobina è costruito utilizzando 8 Bobine Dense con nulla (o il nucleo) al centro
+cannery.hadron.5=Questo segmento di bobina deve essere anch'esso racchiuso all'interno della Placcatura dell'Acceleratore di Particelle
+cannery.hadron.6=Per accedere al Componente Nucleo, sarà necessario aggiungere uno o più Terminali di Accesso
+cannery.hadron.7=Il Componente Nucleo richiederà anche energia per funzionare, aggiungere una presa di corrente su un bordo
+cannery.hadron.8=L'Acceleratore richiederà abbastanza Prese di Corrente per fornire almeno 10KHE di elettricità per unità di Forza della Bobina
+cannery.hadron.9=Nota che il segmento di bobina che avvolge il Componente Nucleo non viene considerato nel calcolo della Forza della Bobina
+cannery.hadron.10=Questo segmento di bobina non è necessario per gli acceleratori puramente lineari
+cannery.hadron.11=Per gli acceleratori circolari, sarà necessario aggiungere angoli per cambiare la direzione della particella
+cannery.hadron.12=Le bobine degli angoli esterni possono essere omesse completamente
+cannery.hadron.13=La parte finale del nostro Acceleratore è la Camera di Analisi, che è una camera vuota 3x3x3 circondata da blocchi della Camera di Analisi
+cannery.hadron.14=Il tuo Acceleratore di Particelle completo dovrebbe apparire qualcosa di simile!
+
+cannery.hadron.math.0=Forza della bobina in neodimio: 50
+cannery.hadron.math.1=50 x 8 x 10KHE = 400 x 10KHE = 4MHE
+cannery.hadron.math.2=Forza della Bobina di Metallo Stellare: 1,000
+cannery.hadron.math.3=1,000 x 8 x 10KHE = 8,000 x 10KHE = 80MHE
+
+cannery.schottky=Diodo di Particelle Schottky
+cannery.schottky.0=Questo è un Diodo di Particelle Schottky. Può consentire design più complessi degli acceleratori di particelle e risparmiare elettricità
+cannery.schottky.1=Per impostazione predefinita blocca tutte le particelle e deve essere configurato con un Cacciavite
+cannery.schottky.2=Questa faccia ora accetterà le particelle in ingresso
+cannery.schottky.3=E questa faccia espellerà le particelle che entrano
+cannery.schottky.4=Il diodo ora ha due uscite e si comporterà in maniera quantistica, creando particelle virtuali per ciascuna uscita
+cannery.schottky.5=Una volta che tutte le particelle virtuali hanno raggiunto una Camera di Analisi, viene scelta la particella con il momento più basso richiesto per la ricetta corrente
+cannery.schottky.6=La particella scelta subisce un collasso della funzione d'onda e diventa reale, consumando solo l'energia che la particella collassante richiede
+cannery.schottky.7=Se una qualsiasi particella virtuale incontra segmenti malformati, tutte le particelle virtuali verranno scartate e la particella che ha generato l'errore verrà collassata
+cannery.schottky.8=Nota che le particelle virtuali non utilizzeranno mai la stessa uscita del Diodo due volte. I loop infiniti falliranno, ma rientrare in un Diodo è comunque accettabile
+cannery.schottky.9=Il tuo Diodo di Particelle Schottky deve essere correttamente racchiuso, con percorsi liberi per ciascuna uscita dell'intersezione
+=======
 book_lore.book_iodine.page.0=alright you will not believe this, but old man weathervane finally managed to show up again since he left two weeks ago and what's more surprising is the fact that he actually decided to spill the beans on what they were doing in the canyon:
 book_lore.book_iodine.page.1=apparently the morons from R&D discovered a compound that is mostly inorganic, pretty much like a toxin in nature, but get this: the dying cells will reproduce said toxin and excrete it through the skin, creating an aerosol that is highly contagious.
 book_lore.book_iodine.page.2=it's just like a virus, but not a virus. the composition is weird, you can mix it in any household bottle but you do have to get the order right. the doc told me that the first ingredient which is just powdered iodine crystals goes into slot %d
@@ -516,7 +794,6 @@ cannery.stirling.1=It needs to be placed on top of a heat-producing machine, suc
 cannery.stirling.2=The amount of heat it can utilize however is limited, overspinning can lead to catastrophic malfunction.
 cannery.stirling.3=The upgraded version can take significantly more heat without breaking.
 
-
 cannery.willow=Mustard Willow
 cannery.willow.0=The mustard willow is a plant that allows cadmium metal to be harvested.
 cannery.willow.1=Willows can be placed on dirt, grass or even dead/oily dirt, but they require water to grow.
@@ -622,7 +899,9 @@ chem.LUBRICANT=Lubricant Mixing
 chem.METH=Methamphetamine Synthesis
 chem.MEAT_PROCESSING=Glyphid Meat Mineral Extraction
 chem.NITAN=NITAN Super Fuel Mixing
+chem.NITRIC_ACID=Nitric Acid Production
 chem.OIL_SAND=Tar Sand Extraction
+chem.OSMIRIDIUM_DEATH=Osmiridic Solution Production
 chem.PC=Polycarbonate Synthesis
 chem.PC_ELECTROLYSIS=Potassium Chloride Electrolysis
 chem.PEROXIDE=Hydrogen Peroxide Production
@@ -669,8 +948,6 @@ chem.VIT_LIQUID=Liquid Nuclear Waste Vitrification
 chem.XENON=Linde Xenon Cycle
 chem.XENON_OXY=Boosted Linde Xenon Cycle
 chem.YELLOWCAKE=Yellowcake Production
-chem.SOLVENT=Organic Solvent Mixing
-
 
 commands.satellite.no_satellite=No satellite using this frequency found!
 commands.satellite.not_a_satellite=The held item is not a satellite!
@@ -855,7 +1132,6 @@ container.wasteDrum=Spent Fuel Pool Drum
 container.watzPowerplant=Watz Power Plant
 container.zirnox=ZIRNOX Nuclear Reactor
 
-
 crucible.aa=Advanced Alloy Production
 crucible.abronze=Arsenic Bronze Production
 crucible.bbronze=Bismuth Bronze Production
@@ -872,7 +1148,6 @@ crucible.steelMeteoric=Steel Production from Meteoric Iron
 crucible.steelPig=Steel Production from Pig Iron
 crucible.steelWrought=Steel Production from Wrought Iron
 crucible.tcalloy=Technetium Steel Production
-
 
 death.attack.acid=%1$s fell into acid.
 death.attack.acidPlayer=%1$s was dissolved by %2$s.
@@ -1167,7 +1442,6 @@ geiger.playerRes=Player resistance:
 geiger.title=GEIGER COUNTER
 geiger.title.dosimeter=DOSIMETER
 
-
 gun.make.ARMALITE=Armalite
 gun.make.AUTO_ORDINANCE=Auto-Ordnance Corporation
 gun.make.BAE=BAE Systems plc
@@ -1355,7 +1629,6 @@ hbmfluid.amat=Antimatter
 hbmfluid.aromatics=Aromatic Hydrocarbons
 hbmfluid.aschrab=Antischrabidium
 hbmfluid.balefire=BF Rocket Fuel
-hbmfluid.blood=Blood
 hbmfluid.biofuel=Biofuel
 hbmfluid.biogas=Biogas
 hbmfluid.bitumen=Bitumen
@@ -1379,6 +1652,7 @@ hbmfluid.coolant_hot=Hot Coolant
 hbmfluid.crackoil=Cracked Oil
 hbmfluid.crackoil_ds=Desulfurized Cracked Oil
 hbmfluid.cryogel=Cryogel
+hbmfluid.death=Osmiridic Solution
 hbmfluid.deuterium=Deuterium
 hbmfluid.diesel=Diesel
 hbmfluid.diesel_crack=Cracked Diesel
@@ -1411,7 +1685,6 @@ hbmfluid.hotsteam=Dense Steam
 hbmfluid.hydrogen=Liquid Hydrogen
 hbmfluid.iongel=Ionic Gel
 hbmfluid.kerosene=Kerosene
-hbmfluid.kerosene_reform=Jet Fuel
 hbmfluid.kerosene_reform=Jet Fuel
 hbmfluid.lava=Lava
 hbmfluid.lightoil=Light Oil
@@ -1492,6 +1765,8 @@ hbmfluid.woodoil=Wood Oil
 hbmfluid.xenon=Xenon Gas
 hbmfluid.xpjuice=Experience Juice
 hbmfluid.xylene=BTX
+
+
 
 hbmpseudofluid.none=Empty
 hbmpseudofluid.heuf6=Highly Enriched UF6
@@ -1887,6 +2162,7 @@ item.arc_electrode_burnt.desh.name=Molten Desh Electrode
 item.arc_electrode_burnt.graphite.name=Molten Graphite Electrode
 item.arc_electrode_burnt.lanthanium.name=Molten Lanthanium Electrode
 item.arc_electrode_burnt.saturnite.name=Molten Saturnite Electrode
+item.arc_electrode_burnt.name=Molten Electrode
 item.arc_electrode_desh.name=Desh Electrode
 item.armor_polish.name=ShiningArmor™ Armor Polish
 item.asbestos_boots.name=Fire Proximity Boots
@@ -2089,6 +2365,7 @@ item.bottle_opener.name=Hbm's Own Self-Made Bottle Opener
 item.bottle_quantum.name=Bottle of Nuka Cola Quantum
 item.bottle_rad.name=Bottle of S~Cola RAD
 item.bottle_sparkle.name=Bottle of S~Cola
+item.bottled_cloud.name=Cloud in a Bottle
 item.boy_bullet.name=U235 Projectile
 item.boy_igniter.name=Bomb Igniter
 item.boy_kit.name=Little Boy Kit
@@ -2138,26 +2415,52 @@ item.canister_oil.name=Crude Oil Canister (LEGACY)
 item.canister_petroil.name=Petroil Canister (LEGACY)
 item.canister_reoil.name=Canister of Reclaimed Industrial Oil (LEGACY)
 item.canister_smear.name=Industrial Oil Canister (LEGACY)
+item.canned_asbestos.name=Canned Asbestos
+item.canned_asbestos.desc=TASTE the asbestosis!
+item.canned_ass.name=Canned Ass
+item.canned_ass.desc=100%% quality donkey meat!*
 item.canned_bark.name=Canned Pine Bark Jerky
 item.canned_bark.desc=Extra cronchy!
 item.canned_beef.name=Canned Beef
 item.canned_beef.desc=A few centuries ago, a cow died for this.
+item.canned_bhole.name=Canned Black Hole
+item.canned_bhole.desc=Singularity is yum yum in my tum tum!
 item.canned_cheese.name=Canned Melted Cheese
 item.canned_cheese.desc=Is it cheese? Is it rubber cement? Who knows, who cares.
 item.canned_chinese.name=Canned Chinese Food
 item.canned_chinese.desc=In China, Chinese food is just called food.
+item.canned_diesel.name=Canned Diesel
+item.canned_diesel.desc=I'm slowly running out of jokes for these.
+item.canned_fist.name=Canned Fist
+item.canned_fist.desc=Yowser!
+item.canned_fried.name=Canned Fried Chicken
+item.canned_fried.desc=Even the can is deep fried!
 item.canned_hotdogs.name=Canned Hotdogs
 item.canned_hotdogs.desc=Not to be confused with cool cats.
+item.canned_jizz.name=FlimFlam Industries Canned Stallion Milk™
+item.canned_jizz.desc=Wait wh-
+item.canned_kerosene.name=Canned Kerosene
+item.canned_kerosene.desc=Just imagine a witty line here.
+item.canned_leftovers.name=Leftover Conserve
+item.canned_leftovers.desc=ur 2 slow
 item.canned_milk.name=Canned Evaporated Milk
 item.canned_milk.desc=Milk 2: More solid than ever before!
 item.canned_mystery.name=Canned Mystery Meat
 item.canned_mystery.desc=What's inside? Only one way to find out!
+item.canned_napalm.name=Canned Napalm
+item.canned_napalm.desc=I love the smell of old memes in the morning!
+item.canned_oil.name=Canned Engine Oil
+item.canned_oil.desc=It makes motors go, so why not humans?
 item.canned_pashtet.name=Паштет
 item.canned_pashtet.desc=услуги перевода недоступны!
 item.canned_pizza.name=Canned Pepperoni Pizza
 item.canned_pizza.desc=A crime against humanity.
+item.canned_recursion.name=Canned Recursion
+item.canned_recursion.desc=Canned Recursion
 item.canned_spam.name=Canned Spam
 item.canned_spam.desc=The three-and-a-half-minute sketch is set in the fictional Green Midget Cafe in Bromley.$An argument develops between the waitress, who recites a menu in which nearly$every dish contains Spam, and Mrs. Bun, who does not like Spam. She asks for a$dish without Spam, much to the amazement of her Spam-loving husband. The waitress$responds to this request with disgust. Mr. Bun offers to take her Spam instead,$and asks for a dish containing a lot of Spam and baked beans. The waitress says$no since they are out of baked beans; when Mr. Bun asks for a substitution of Spam,$the waitress again responds with disgust. At several points, a group of Vikings in$the restaurant interrupts conversation by loudly singing about Spam.$The irate waitress orders them to shut up, but they resume singing more loudly.$A Hungarian tourist comes to the counter, trying to order by using a wholly$inaccurate Hungarian/English phrasebook (a reference to a previous sketch).$He is rapidly escorted away by a police constable. The sketch abruptly cuts to a$historian in a television studio talking about the origin of the Vikings in the café.$As he goes on, he begins to increasingly insert the word "Spam" into every$sentence, and the backdrop is raised to reveal the restaurant set behind.$The historian joins the Vikings in their song, and Mr. and Mrs. Bun are lifted by$wires out of the scene while the singing continues. In the original televised performance,$the closing credits begin to scroll with the singing still audible in the background.
+item.canned_stew.name=Canned "Mushroom Stew"
+item.canned_stew.desc=...
 item.canned_tomato.name=Canned Tomato Soup
 item.canned_tomato.desc=Who wants some thick red paste?
 item.canned_tube.name=Astronaut Food Tube
@@ -2166,20 +2469,6 @@ item.canned_tuna.name=Canned Tuna
 item.canned_tuna.desc=I can't tell if that's actually tuna or dried cement.
 item.canned_yogurt.name=Canned Yogurt
 item.canned_yogurt.desc=Probably spoiled, but whatever.
-item.canned_bark.name=Canned Pine Bark Jerky
-item.canned_beef.name=Canned Beef
-item.canned_cheese.name=Canned Melted Cheese
-item.canned_chinese.name=Canned Chinese Food
-item.canned_hotdogs.name=Canned Hotdogs
-item.canned_milk.name=Canned Evaporated Milk
-item.canned_mystery.name=Canned Mystery Meat
-item.canned_pashtet.name=Паштет
-item.canned_pizza.name=Canned Pepperoni Pizza
-item.canned_spam.name=Canned Spam
-item.canned_tomato.name=Canned Tomato Soup
-item.canned_tube.name=Astronaut Food Tube
-item.canned_tuna.name=Canned Tuna
-item.canned_yogurt.name=Canned Yogurt
 item.canteen_13.name=Vault 13 Canteen
 item.canteen_fab.name=Fabulous Vodka
 item.canteen_vodka.name=Stylish Flask
@@ -2912,6 +3201,7 @@ item.heart_booster.name=Heart Booster
 item.heart_container.name=Heart Container
 item.heart_fab.name=Fab Heart
 item.heart_piece.name=Heart Piece
+item.heavy_component.name=Heavy %s Component
 item.hev_battery.name=Suit Battery
 item.hev_boots.name=HEV Mark IV Boots
 item.hev_plate.name=HEV Mark IV Chestplate
@@ -3856,8 +4146,8 @@ item.pwr_fuel_hot.mox.name=Hot MOX PWR Fuel Rod
 item.quartz_plutonium.name=Plutonic Quartz
 item.radar_linker.name=Radar Linker
 item.radaway.name=RadAway
-item.radaway_strong.name=Strong RadAway
 item.radaway_flush.name=Elite RadAway
+item.radaway_strong.name=Strong RadAway
 item.radx.name=Rad-X
 item.radx.desc=Increases radiation resistance by 0.2 (37%%) for 3 minutes
 item.rag.name=Cloth
@@ -4611,11 +4901,11 @@ shape.plateTriple=Cast Plate
 shape.shell=Shell
 shape.stamp=Press Stamp
 shape.wireFine=Wires
+shape.wire=Wire
 shape.wireDense=Dense Wire
 shape.wiresDense=Dense Wires
 
 soundCategory.ntmMachines=NTM Machines
-
 
 tile.absorber.name=Radiation Absorber
 tile.absorber_green.name=Advanced Radiation Absorber
@@ -4921,6 +5211,7 @@ tile.concrete_colored_ext.purple.name=Builder's Choice Concrete - Mysterious Pur
 tile.concrete_colored_ext.sand.name=Builder's Choice Concrete - Desert Storm
 tile.concrete_pillar.name=Rebar Reinforced Concrete Pillar
 tile.concrete_slab.asphalt.name=Asphalt Slab
+tile.concrete_pillar.name=Rebar Reinforced Concrete Pillar
 tile.concrete_slab.concrete.name=Concrete Tile Slab
 tile.concrete_slab.concrete_asbestos.name=Asbestos Concrete Slab
 tile.concrete_slab.concrete_smooth.name=Concrete Slab
@@ -5068,7 +5359,6 @@ tile.fan.name=Fan
 tile.fan.desc=Activates using redstone$Will push entities up to 10 blocks$Right-click with screwdriver to flip
 tile.fence_metal.name=Chainlink Fence
 tile.fence_metal_post.name=Chainlink Fence Post
-item.heavy_component.name=Heavy %s Component
 tile.field_disturber.name=High Energy Field Jammer
 tile.filing_cabinet.green.name=Dusty Filing Cabinet
 tile.filing_cabinet.steel.name=Steel Filing Cabinet
