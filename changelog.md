@@ -1,3 +1,10 @@
+# Localize additional chemistry templates
+
+**Tracker:** `Localize additional chemistry templates`
+
+* Added English names for every PWR fuel reprocessing and MAGNOX fuel-rod chemistry template.
+* Added English names for the methanol, coal-gasoline, polyethylene, Claus-process, and both nitre-bed chemistry templates.
+
 # Fluid texture color fallbacks
 
 **Tracker:** `Fluid texture color fallbacks`
