@@ -82,6 +82,24 @@ public class ItemChemistryIcon extends Item {
 		return ModItems.nothing.getIconFromDamage(i);
 	}
 
+	/**
+	 * Returns the stack which should be rendered for a chemistry recipe. Rendering the
+	 * product stack itself is important for block outputs: block and item icons live on
+	 * different texture atlases, so borrowing a block's IIcon for this item makes the
+	 * renderer sample an unrelated part of the item atlas.
+	 */
+	@SideOnly(Side.CLIENT)
+	public ItemStack getDisplayStack(int damage) {
+		ChemRecipe recipe = ChemplantRecipes.indexMapping.get(damage);
+		if(recipe == null) return new ItemStack(ModItems.nothing, 1, damage);
+
+		IIcon icon = this.icons[recipe.listing % this.icons.length];
+		if(icon != null) return new ItemStack(this, 1, damage);
+
+		ItemStack product = getRecipeProduct(recipe);
+		return product != null ? product : new ItemStack(ModItems.nothing, 1, damage);
+	}
+
 	@SideOnly(Side.CLIENT)
 	private ItemStack getRecipeProduct(ChemRecipe recipe) {
 		for(ItemStack output : recipe.outputs) {
