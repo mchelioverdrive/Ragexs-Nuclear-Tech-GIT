@@ -1,5 +1,6 @@
 package com.hbm.items.machine;
 
+import java.io.IOException;
 import java.util.List;
 
 import com.hbm.inventory.recipes.ChemplantRecipes;
@@ -8,11 +9,13 @@ import com.hbm.items.ModItems;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.IIcon;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StatCollector;
 
 public class ItemChemistryIcon extends Item {
@@ -52,7 +55,13 @@ public class ItemChemistryIcon extends Item {
 		this.icons = new IIcon[ChemplantRecipes.recipes.size()];
 
 		for(int i = 0; i < icons.length; ++i) {
-			this.icons[i] = reg.registerIcon("hbm:chem_icon_" + ChemplantRecipes.recipes.get(i).name);
+			String iconName = "chem_icon_" + ChemplantRecipes.recipes.get(i).name;
+			try {
+				Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation("hbm", "textures/items/" + iconName + ".png"));
+				this.icons[i] = reg.registerIcon("hbm:" + iconName);
+			} catch(IOException ex) {
+				// Leave the entry empty so recipes without bespoke art use their product below.
+			}
 		}
 	}
 
@@ -61,9 +70,40 @@ public class ItemChemistryIcon extends Item {
 		ChemRecipe rec = ChemplantRecipes.indexMapping.get(i);
 		
 		if(rec != null) {
-			return this.icons[rec.listing % this.icons.length];
+			IIcon icon = this.icons[rec.listing % this.icons.length];
+			if(icon != null) return icon;
+
+			ItemStack product = getRecipeProduct(rec);
+			if(product != null) return product.getIconIndex();
 		} else {
 			return ModItems.nothing.getIconFromDamage(i);
 		}
+
+		return ModItems.nothing.getIconFromDamage(i);
+	}
+
+	@SideOnly(Side.CLIENT)
+	private ItemStack getRecipeProduct(ChemRecipe recipe) {
+		for(ItemStack output : recipe.outputs) {
+			if(output != null && output.getItem() != null) return output;
+		}
+
+		for(int i = 0; i < recipe.outputFluids.length; i++) {
+			if(recipe.outputFluids[i] != null) return ItemFluidIcon.make(recipe.outputFluids[i]);
+		}
+
+		return null;
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public int getColorFromItemStack(ItemStack stack, int renderPass) {
+		ChemRecipe recipe = ChemplantRecipes.indexMapping.get(stack.getItemDamage());
+		if(recipe != null && this.icons != null && this.icons[recipe.listing % this.icons.length] == null) {
+			ItemStack product = getRecipeProduct(recipe);
+			if(product != null) return product.getItem().getColorFromItemStack(product, renderPass);
+		}
+
+		return super.getColorFromItemStack(stack, renderPass);
 	}
 }
