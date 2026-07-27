@@ -323,6 +323,13 @@ No Torex call site was removed, relocated, normalized, or edited. The audit foun
 - Added a crafting recipe for the space travel guide book using a book and a 1m rocket fuel tank.
 - Added repository documentation for space travel preparation and linked it from the README and getting-started guide.
 
+# Show all blast furnace recipes in NEI
+
+**Tracker:** `Show all blast furnace recipes in NEI`
+
+* Expanded blast-furnace NEI ingredients across every valid ore-dictionary form, so ingots, plates, gems, and dusts accepted by a recipe are all visible and searchable instead of stopping at the first populated form.
+* Fixed blast-furnace usage lookup to add each matching recipe once and made every accepted alloy fuel lead to the complete blast-furnace recipe category.
+
 # Update RBMK guidebook for ReaSim defaults
 
 - Revised the RBMK guidebook introduction, fuel, cooling, and fuel behavior pages to describe RTM's default ReaSim RBMK design instead of only the legacy straight-line RBMK behavior.

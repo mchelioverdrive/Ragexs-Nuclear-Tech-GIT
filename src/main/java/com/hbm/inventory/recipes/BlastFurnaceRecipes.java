@@ -310,24 +310,20 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 				in2.add(nothing);
 
 				for(AStack stack : getRecipeStacks(recipe.getX())) {
-					if(stack.extractForNEI().isEmpty())
-						continue;
-					else {
+					List<ItemStack> variants = stack.extractForNEI();
+					if(!variants.isEmpty()) {
 						in1.remove(nothing);
-						in1.addAll(stack.extractForNEI());
-						break;
+						in1.addAll(variants);
 					}
 				}
 				if(in1.contains(nothing)) {
 					MainRegistry.logger.error("Blast furnace cannot compile recipes for NEI: apparent nonexistent item #1 in recipe for item: " + recipe.getZ().getDisplayName());
 				}
 				for(AStack stack : getRecipeStacks(recipe.getY())) {
-					if(stack.extractForNEI().isEmpty()) {
-						continue;
-					} else {
+					List<ItemStack> variants = stack.extractForNEI();
+					if(!variants.isEmpty()) {
 						in2.remove(nothing);
-						in2.addAll(stack.extractForNEI());
-						break;
+						in2.addAll(variants);
 					}
 				}
 				if(in2.contains(nothing)) {
