@@ -5,6 +5,13 @@
 * Fluids without a bundled GUI texture now reuse the water texture instead of displaying Minecraft's missing-texture image.
 * Missing fluid textures are tinted with the hexadecimal identifier assigned to the fluid in `Fluids.java`, preserving a distinct and recognizable color without adding generated binary assets.
 
+# Fix chemistry template product rendering
+
+**Tracker:** `Fix chemistry template product rendering`
+
+* Chemistry templates without dedicated artwork now render their actual item, block, or fluid product stack, ensuring the renderer selects the correct texture atlas and render passes.
+* Fixed the Claus process template displaying a corrupt item-atlas fragment instead of the sulfur block.
+
 # Chemical plant recipe icon fallbacks
 
 **Tracker:** `Chemical plant recipe icon fallbacks`

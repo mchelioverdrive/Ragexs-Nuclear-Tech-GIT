@@ -20,6 +20,7 @@ import com.hbm.inventory.recipes.CrucibleRecipes;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemAssemblyTemplate;
 import com.hbm.items.machine.ItemCassette;
+import com.hbm.items.machine.ItemChemistryIcon;
 import com.hbm.items.machine.ItemStamp;
 import com.hbm.items.machine.ItemStamp.StampType;
 import com.hbm.lib.RefStrings;
@@ -314,8 +315,10 @@ public class GUIScreenTemplateFolder extends GuiScreen {
 				if(stack != null) {
 					if(stack.getItem() == ModItems.assembly_template)
 						itemRender.renderItemAndEffectIntoGUI(fontRendererObj, mc.getTextureManager(), AssemblerRecipes.getOutputFromTempate(stack), xPos + 1, yPos + 1);
-					else if(stack.getItem() == ModItems.chemistry_template)
-						itemRender.renderItemAndEffectIntoGUI(fontRendererObj, mc.getTextureManager(), new ItemStack(ModItems.chemistry_icon, 1, stack.getItemDamage()), xPos + 1, yPos + 1);
+					else if(stack.getItem() == ModItems.chemistry_template) {
+						ItemStack display = ((ItemChemistryIcon) ModItems.chemistry_icon).getDisplayStack(stack.getItemDamage());
+						itemRender.renderItemAndEffectIntoGUI(fontRendererObj, mc.getTextureManager(), display, xPos + 1, yPos + 1);
+					}
 					else if(stack.getItem() == ModItems.crucible_template)
 						itemRender.renderItemAndEffectIntoGUI(fontRendererObj, mc.getTextureManager(), CrucibleRecipes.indexMapping.get(stack.getItemDamage()).icon, xPos + 1, yPos + 1);
 					else
