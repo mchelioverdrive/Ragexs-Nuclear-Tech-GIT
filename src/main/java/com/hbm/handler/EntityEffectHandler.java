@@ -63,6 +63,11 @@ import net.minecraft.world.biome.BiomeGenBase;
 public class EntityEffectHandler {
 
 	public static void onUpdate(EntityLivingBase entity) {
+		if(entity instanceof EntityPlayer && ((EntityPlayer) entity).capabilities.isCreativeMode) {
+			HbmLivingProps.clearRadiation(entity);
+			if(HbmPotion.radiation != null)
+				entity.removePotionEffect(HbmPotion.radiation.id);
+		}
 
 		if(entity.ticksExisted % 20 == 0) {
 			HbmLivingProps.setRadBuf(entity, HbmLivingProps.getRadEnv(entity));
