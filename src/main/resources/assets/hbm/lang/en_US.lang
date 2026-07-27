@@ -7159,3 +7159,16 @@ tile.machine_crucible.desc=Requires a heat source to operate.
 tile.machine_difurnace_off.desc=Can be sped up using an extension.
 tile.machine_combustion_engine.desc=Requires a piston set to operate.
 item.gpmix.name=Gun Powder Purity Mix
+
+tile.pvc_log.name=PVC Log
+tile.rubber_leaves.name=Rubber Leaves
+tile.slag.name=Slag?
+tile.flesh_block.name=Flesh Layer
+tile.charred_flesh_block.name=Charred Flesh Layer
+tile.carbonized_flesh_block.name=Carbonized Flesh Layer
+tile.ore_alien.name=Alien Ore
+item.mp_thruster_10_kerosene_tec.name=Size 10 Advanced Liquid Fuel Thruster
+item.mp_thruster_15_kerosene_tec.name=Size 15 Advanced Liquid Fuel Thruster
+item.mp_s_20.name=Size 20 Advanced Fins
+item.mp_w_20.name=Size 20 Advanced HE Warhead
+Size 20 Hydrazine Fuselage.name=Size 20 Hydrazine Fuselage
