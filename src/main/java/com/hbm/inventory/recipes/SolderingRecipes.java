@@ -263,6 +263,7 @@ public class SolderingRecipes extends SerializableRecipe {
 						new OreDictStack(PB.wireFine(), 24)}
 		));
 		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.CONTROLLER_QUANTUM.ordinal()), 600, 250_000,
+				new FluidStack(Fluids.HELIUM3, 15_000),
 				new AStack[] {
 						new ComparableStack(ModItems.circuit, lbsm ? 8 : 16, EnumCircuitType.CHIP_QUANTUM),
 						new ComparableStack(ModItems.circuit, lbsm ? 16 : 48, EnumCircuitType.CHIP_BISMOID),
@@ -272,6 +273,7 @@ public class SolderingRecipes extends SerializableRecipe {
 						new ComparableStack(ModItems.upgrade_overdrive_1)},
 				new AStack[] {
 						new OreDictStack(PB.wireFine(), 32)}
+
 		));
 
 
