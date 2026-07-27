@@ -113,14 +113,24 @@ public class AlloyFurnaceRecipeHandler extends SafeTemplateRecipeHandler impleme
 
 	@Override
 	public void loadUsageRecipes(ItemStack ingredient) {
+		for(ItemStack fuel : MachineRecipes.instance().getAlloyFuels()) {
+			if(NEIServerUtils.areStacksSameType(ingredient, fuel)) {
+				loadCraftingRecipes("alloysmelting");
+				return;
+			}
+		}
+
 		Map<List<ItemStack>[], ItemStack> recipes = BlastFurnaceRecipes.getRecipesForNEI();
 		for(Entry<List<ItemStack>[], ItemStack> recipe : recipes.entrySet()) {
 			List<ItemStack> combined = new ArrayList<ItemStack>();
 			combined.addAll(recipe.getKey()[0]);
 			combined.addAll(recipe.getKey()[1]);
-			for(ItemStack combinedStack : combined)
-				if(NEIServerUtils.areStacksSameType(ingredient, combinedStack) || NEIServerUtils.areStacksSameType(ingredient, combinedStack))
+			for(ItemStack combinedStack : combined) {
+				if(NEIServerUtils.areStacksSameType(ingredient, combinedStack)) {
 					this.arecipes.add(new SmeltingSet(recipe.getKey()[0], recipe.getKey()[1], recipe.getValue()));
+					break;
+				}
+			}
 		}
 	}
 
