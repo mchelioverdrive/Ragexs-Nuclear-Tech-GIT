@@ -100,26 +100,49 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 	}
 
 	/// RADIATION ///
+	private static boolean isCreativePlayer(EntityLivingBase entity) {
+		return entity instanceof EntityPlayer && ((EntityPlayer) entity).capabilities.isCreativeMode;
+	}
+
+	/**
+	 * Removes every persistent radiation burden carried by an entity. Creative players
+	 * are cleared every tick so exposure cannot be hidden and restored by a game-mode
+	 * change.
+	 */
+	public static void clearRadiation(EntityLivingBase entity) {
+		HbmLivingProps data = getData(entity);
+		data.radiation = 0;
+		data.activation = 0;
+		data.radEnv = 0;
+		data.radBuf = 0;
+		data.contamination.clear();
+		data.radDeathTimer = 0;
+	}
+
 	public static float getRadiation(EntityLivingBase entity) {
 		if(!RadiationConfig.enableContamination)
 			return 0;
 
-		if (entity instanceof EntityPlayer && ((EntityPlayer) entity).capabilities.isCreativeMode)
+		if(isCreativePlayer(entity)) {
+			clearRadiation(entity);
 			return 0;
+		}
 
 		return getData(entity).radiation;
 	}
 
 	public static void setRadiation(EntityLivingBase entity, float rad) {
-		if(RadiationConfig.enableContamination)
+		if(isCreativePlayer(entity)) {
+			getData(entity).radiation = 0;
+		} else if(RadiationConfig.enableContamination) {
 			getData(entity).radiation = rad;
-
+		}
 	}
 
 	public static void incrementRadiation(EntityLivingBase entity, float rad) {
 		if(!RadiationConfig.enableContamination)
 			return;
-		if (entity instanceof EntityPlayer && ((EntityPlayer) entity).capabilities.isCreativeMode)
+		if(isCreativePlayer(entity))
 			return;
 
 		if (entity.getCreatureAttribute()==EnumCreatureAttribute.UNDEAD)
@@ -142,17 +165,24 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 	public static float getNeutronActivation(EntityLivingBase entity) {
 		if(RadiationConfig.disableNeutron)
 			return 0;
+		if(isCreativePlayer(entity)) {
+			getData(entity).activation = 0;
+			return 0;
+		}
 
 		return getData(entity).activation;
 	}
 
 	public static void setNeutronActivation(EntityLivingBase entity, float rad) {
-		if(!RadiationConfig.disableNeutron)
+		if(isCreativePlayer(entity)) {
+			getData(entity).activation = 0;
+		} else if(!RadiationConfig.disableNeutron) {
 			getData(entity).activation = rad;
+		}
 	}
 
 	public static void incrementNeutronActivation(EntityLivingBase entity, float rad) {
-		if(RadiationConfig.disableNeutron)
+		if(RadiationConfig.disableNeutron || isCreativePlayer(entity))
 			return;
 
 		HbmLivingProps data = getData(entity);
@@ -188,6 +218,9 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 	}
 
 	public static float getDoseRate(EntityLivingBase entity) {
+		if(isCreativePlayer(entity))
+			return 0;
+
 		HbmLivingProps data = getData(entity);
 
 		float env = data.radEnv;
@@ -203,7 +236,8 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 	}
 
 	public static void addCont(EntityLivingBase entity, ContaminationEffect cont) {
-		getData(entity).contamination.add(cont);
+		if(!isCreativePlayer(entity))
+			getData(entity).contamination.add(cont);
 	}
 
 	/// DIGAMA ///

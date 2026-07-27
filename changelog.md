@@ -1,3 +1,10 @@
+# Creative-mode radiation immunity
+
+**Tracker:** `Creative-mode radiation immunity`
+
+* Creative players now continuously discard accumulated radiation, neutron activation, timed contamination, radiation-sickness progress, environmental dose state, and radiation potion effects.
+* Radiation setters and timed-contamination registration now reject new exposure for creative players, preventing hidden dose from appearing after a switch to survival mode.
+
 # Dedicated shredder recycling safety
 
 **Tracker:** `Dedicated shredder recycling safety`
