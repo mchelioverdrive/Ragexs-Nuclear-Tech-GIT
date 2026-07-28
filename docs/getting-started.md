@@ -112,7 +112,7 @@ For other Minecraft versions, use separate projects rather than this repository:
 
 ## Carbon monoxide warnings
 
-Machines that burn fuel or handle exhaust can produce carbon monoxide while running. This includes fireboxes, heating ovens, and fluid burners when they are consuming fuel. Read machine tooltips for the carbon monoxide warning and ventilate enclosed work areas before operating those machines. Steel grates, item grates, and air vents can help vent carbon monoxide from enclosed spaces.
+Machines that burn fuel or handle exhaust can produce carbon monoxide while running. This includes fireboxes, heating ovens, and fluid burners when they are consuming fuel. Ordinary fire also releases carbon monoxide near active players, so fireplaces and accidental indoor fires need ventilation too. Read machine tooltips for the carbon monoxide warning and ventilate enclosed work areas before operating those machines. Steel grates, item grates, and air vents can help vent carbon monoxide from enclosed spaces.
 
 Combustion machines also stop operating while water touches a side or top of any part of their multiblock. Keep every exposed multiblock face dry; water directly below a machine does not trigger this shutdown.
 
