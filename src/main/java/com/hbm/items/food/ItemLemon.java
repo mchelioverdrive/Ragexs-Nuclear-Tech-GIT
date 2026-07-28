@@ -112,9 +112,12 @@ public class ItemLemon extends ItemFood {
 	protected void onFoodEaten(ItemStack stack, World world, EntityPlayer player)
     {
 
-		if(this == ModItems.flesh) {
-			//hunger, side effects of cannibalism
+		if(this == ModItems.flesh || this == ModItems.squirrel) {
+			//hunger, side effects of cannibalism... or eating a squirrel
 			player.addPotionEffect(new PotionEffect(Potion.hunger.id, 20 * 30, 0));
+			if (this == ModItems.squirrel) {
+				world.playSoundEffect(player.posX, player.posY, player.posZ, "hbm:entity.chipmunkdeath", 1.0F, 1.0F);
+			}
 		}
 
 		if(this == ModItems.med_ipecac || this == ModItems.med_ptsd) {

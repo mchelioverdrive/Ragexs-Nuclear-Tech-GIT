@@ -287,6 +287,8 @@
 	"entity.rocketFlyLight": {"category": "player", "sounds": [{"name": "entity/rocketFlyLight", "stream": false}]},
 	"entity.rocketIgnition": {"category": "player", "sounds": [{"name": "entity/rocketIgnition", "stream": false}]},
 	"entity.pipefail": {"category": "player", "sounds": [{"name": "entity/pipefail", "stream": false}]},
+	"entity.chipmunkdeath": {"category": "player", "sounds": [{"name": "entity/chipmunkdeath", "stream": false}]},
+	"entity.alvinmicrowave": {"category": "player", "sounds": [{"name": "entity/alvinmicrowave", "stream": false}]},
 
 	"step.metal": {"category": "player", "sounds": [{"name": "footsteps/metal", "stream": false}]},
 	"step.iron_jump": {"category": "player", "sounds": [{"name": "footsteps/iron_jump", "stream": false}]},

@@ -222,6 +222,8 @@ public class ModItems {
 	public static Item powder_ash;
 	public static Item powder_limestone;
 	public static Item powder_cement;
+	public static Item squirrel;
+	public static Item cooked_squirrel;
 
 	public static Item potassium_iodide_powder;
 
@@ -3368,6 +3370,8 @@ public class ModItems {
 		powder_ash = new ItemEnumMulti(EnumAshType.class, true, true).setUnlocalizedName("powder_ash").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_ash");
 		powder_limestone = new Item().setUnlocalizedName("powder_limestone").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_limestone");
 		powder_cement = new Item().setUnlocalizedName("powder_cement").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_cement");
+		squirrel = new ItemLemon(1, 2F, false).setUnlocalizedName("squirrel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":squirreljak");
+		cooked_squirrel = new ItemLemon(4, 2F, false).setUnlocalizedName("cooked_squirrel").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":squirreljakcooked");
 
 		potassium_iodide_powder = new Item().setUnlocalizedName("potassium_iodide_powder").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_aluminium");
 		potassium_powder = new Item().setUnlocalizedName("potassium_powder").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_aluminium");
@@ -7746,6 +7750,8 @@ public class ModItems {
 		GameRegistry.registerItem(powder_ash, powder_ash.getUnlocalizedName());
 		GameRegistry.registerItem(powder_limestone, powder_limestone.getUnlocalizedName());
 		GameRegistry.registerItem(powder_cement, powder_cement.getUnlocalizedName());
+		GameRegistry.registerItem(squirrel, squirrel.getUnlocalizedName());
+		GameRegistry.registerItem(cooked_squirrel, cooked_squirrel.getUnlocalizedName());
 
 		GameRegistry.registerItem(potassium_iodide_powder, potassium_iodide_powder.getUnlocalizedName());
 		GameRegistry.registerItem(potassium_powder, potassium_powder.getUnlocalizedName());

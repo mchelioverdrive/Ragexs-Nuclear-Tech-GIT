@@ -7172,3 +7172,5 @@ item.mp_thruster_15_kerosene_tec.name=Size 15 Advanced Liquid Fuel Thruster
 item.mp_s_20.name=Size 20 Advanced Fins
 item.mp_w_20.name=Size 20 Advanced HE Warhead
 Size 20 Hydrazine Fuselage.name=Size 20 Hydrazine Fuselage
+item.squirrel.name=Squirrel
+item.cooked_squirrel.name=Cooked Squirrel

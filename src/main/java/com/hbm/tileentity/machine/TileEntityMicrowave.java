@@ -4,6 +4,7 @@ import com.hbm.handler.CompatHandler;
 import com.hbm.interfaces.ICopiable;
 import com.hbm.inventory.container.ContainerMicrowave;
 import com.hbm.inventory.gui.GUIMicrowave;
+import com.hbm.items.ModItems;
 import com.hbm.lib.Library;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
@@ -110,6 +111,17 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 	private void process() {
 
 		ItemStack stack = FurnaceRecipes.smelting().getSmeltingResult(slots[0]).copy();
+
+		if(slots[0].getItem() == ModItems.squirrel) {
+			worldObj.playSoundEffect(
+				xCoord + 0.5D,
+				yCoord + 0.5D,
+				zCoord + 0.5D,
+				"hbm:entity.alvinmicrowave",
+				1.0F,
+				1.0F
+			);
+		}
 
 		if(slots[1] == null) {
 			slots[1] = stack;
