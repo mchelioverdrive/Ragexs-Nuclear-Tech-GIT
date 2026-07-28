@@ -810,7 +810,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.outputFluids(new FluidStack(Fluids.HYDROGEN_SULFIDE, 1000))
 		);
 
-		//hydrogen sulfide synthesis
+		// Optional reverse synthesis route; this is not the normal sulfur-production route.
 		recipes.add(new ChemRecipe(1032, "HYDROGEN_SULFIDE", 50)
 			.inputItems(new ComparableStack(ModItems.sulfur, 1))
 			.inputFluids(new FluidStack(Fluids.HYDROGEN, 1000))
@@ -878,13 +878,15 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.outputFluids(new FluidStack(Fluids.HYDROGEN_SULFIDE, 1000))
 		);
 
-		recipes.add(new ChemRecipe(1037, "HYDROGEN_SULFIDE_OXIDATION", 100)
+		// Thermal stage: H2S + 1.5 O2 -> SO2 + H2O. Catalytic stage: 2 H2S + SO2 -> 3 S + 2 H2O.
+		// SO2 remains internal; the abstracted plant uses the net reaction 2 H2S + O2 -> 2 S + 2 H2O.
+		recipes.add(new ChemRecipe(1037, "CLAUS_PROCESS", 300)
 			.inputFluids(
-				new FluidStack(Fluids.HYDROGEN_SULFIDE, 2000),
-				new FluidStack(Fluids.OXYGEN, 1000)
+				new FluidStack(Fluids.HYDROGEN_SULFIDE, 2_000),
+				new FluidStack(Fluids.OXYGEN, 1_000)
 			)
 			.outputItems(new ItemStack(ModItems.sulfur, 2))
-			.outputFluids(new FluidStack(Fluids.STEAM, 2000))
+			.outputFluids(new FluidStack(Fluids.STEAM, 2_000))
 		);
 
 		recipes.add(new ChemRecipe(1038, "RARE_EARTH_ELEMENTS", 100)
@@ -1999,17 +2001,14 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputFluids(new FluidStack(Fluids.UNSATURATEDS, 1_000))
 				.outputFluids(new FluidStack(Fluids.POLYTHYLENE, 1_000)));
 
-		recipes.add(new ChemRecipe(1142, "CLAUS_PROCESS", 300)
-						.inputFluids(
-							new FluidStack(Fluids.SOURGAS, 2000), //why SOURGAS and not H2S?
-							new FluidStack(Fluids.OXYGEN, 500)
-						)
-						.outputItems(new ItemStack(ModBlocks.block_sulfur, 1))
-						//block justification:
-						//The Claus process makes the most recovered elemental sulfur today,
-						//accounting for roughly 90% to 95% of all global production.
-						.outputFluids(new FluidStack(Fluids.STEAM, 1000))
-		); //here's my tower of babbel
+		// Amine sweetening and regeneration are abstracted here; the amine solvent is recycled internally.
+		recipes.add(new ChemRecipe(1142, "SOUR_GAS_SWEETENING", 150)
+				.inputFluids(new FluidStack(Fluids.SOURGAS, 1_000))
+				.outputFluids(
+					new FluidStack(Fluids.HYDROGEN_SULFIDE, 500),
+					new FluidStack(Fluids.GAS, 500)
+				)
+		);
 		//I am losing my fucking sanity
 
 		recipes.add(new ChemRecipe(1143, "NITRE_BED", 1200)

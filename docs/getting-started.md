@@ -40,6 +40,8 @@ For early workshops, common steel and concrete construction now crafts in palett
 
 Coal processing now has a deliberately compact but connected chain. Coking coal tar/creosote produces petroleum coke and **coker gas**; fractionating cracked light oil produces **cracked diesel**, which needs hydrotreating before it becomes normal diesel. The chemical plant can hydrogenate coal with an iron-catalyst abstraction into the existing coal-gasoline fuel, synthesize methanol from conditioned syngas plus hydrogen, and polymerize the mixed light-olefin stream into the existing **POLYTHYLENE** fluid. These recipes compress real multistage plants into the available machine slots, so treat the quantities as gameplay batches rather than plant-scale mass balances.
 
+Sulfur-bearing oil follows a connected recovery chain: **Hydrotreater -> Sour Gas Sweetening -> Hydrogen Sulfide -> Claus Process -> Sulfur**. Hydrotreating produces mixed sour gas rather than pure hydrogen sulfide. In the chemical plant, sour-gas sweetening abstracts an internally recycled amine loop and splits that stream evenly into concentrated hydrogen sulfide and sweet refinery fuel gas. The Claus Process then abstracts partial combustion, catalytic conversion, sulfur condensation, and waste-heat recovery; it consumes hydrogen sulfide and oxygen and returns elemental sulfur and steam. The barium-sulfide and sodium-sulfide routes remain alternative hydrogen-sulfide sources, while direct sulfur-and-hydrogen synthesis is optional rather than the normal refinery sulfur route.
+
 Four units of the mod's `flesh` item can be crafted into one biomass item. This represents rendering/grinding organic waste; biomass remains useful as feedstock for the existing biogas and syngas routes.
 
 ## Radiation basics
