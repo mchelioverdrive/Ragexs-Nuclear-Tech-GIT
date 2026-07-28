@@ -1,3 +1,11 @@
+# Make fire emit carbon monoxide
+
+**Tracker:** `Make fire emit carbon monoxide`
+
+* Ordinary fire now has a periodic chance to release carbon monoxide into a nearby open block.
+* Limited fire sampling to loaded areas around players and de-duplicated overlapping player ranges to keep emissions consistent on populated servers.
+* Documented the ventilation hazard posed by fireplaces and accidental indoor fires.
+
 # Realistic Sour Gas and Claus Sulfur Recovery
 
 **Tracker:** `Realistic Sour Gas and Claus Sulfur Recovery`

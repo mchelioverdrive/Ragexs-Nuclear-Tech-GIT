@@ -2,11 +2,13 @@ package com.hbm.main;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 
 import com.hbm.dim.laythe.WorldProviderLaythe;
@@ -185,6 +187,9 @@ import static com.hbm.extprop.HbmLivingProps.updateAsbestos;
 public class ModEventHandler {
 
 	private static Random rand = new Random();
+	private static final int FIRE_MONOXIDE_HORIZONTAL_RANGE = 16;
+	private static final int FIRE_MONOXIDE_VERTICAL_RANGE = 8;
+	private static final int FIRE_MONOXIDE_CHANCE = 30;
 
 	private boolean wasGuiOpen = false;
 
@@ -931,6 +936,7 @@ public class ModEventHandler {
 						FurnaceGasEmission.emitCarbonMonoxide(event.world, furnace.xCoord, furnace.yCoord, furnace.zCoord, 30);
 					}
 				}
+				emitCarbonMonoxideFromNearbyFires(event.world);
 			}
 
 			if(reference != null) {
@@ -1150,6 +1156,38 @@ public class ModEventHandler {
 					item.motionX *= 0.9D;
 					item.motionY = 0.03999999910593033D; // when entity gravity is applied, this becomes exactly 0
 					item.motionZ *= 0.9D;
+				}
+			}
+		}
+	}
+
+
+	/**
+	 * Samples loaded fire around players once per second. Fire outside an active area
+	 * cannot affect players, and overlapping player search areas are de-duplicated so
+	 * a single flame retains the same emission chance on populated servers.
+	 */
+	private void emitCarbonMonoxideFromNearbyFires(World world) {
+		Set<Long> sampledFires = new HashSet<Long>();
+
+		for(Object object : world.playerEntities) {
+			EntityPlayer player = (EntityPlayer) object;
+			int playerX = MathHelper.floor_double(player.posX);
+			int playerY = MathHelper.floor_double(player.posY);
+			int playerZ = MathHelper.floor_double(player.posZ);
+			int minY = Math.max(0, playerY - FIRE_MONOXIDE_VERTICAL_RANGE);
+			int maxY = Math.min(world.getHeight() - 1, playerY + FIRE_MONOXIDE_VERTICAL_RANGE);
+
+			for(int x = playerX - FIRE_MONOXIDE_HORIZONTAL_RANGE; x <= playerX + FIRE_MONOXIDE_HORIZONTAL_RANGE; x++) {
+				for(int z = playerZ - FIRE_MONOXIDE_HORIZONTAL_RANGE; z <= playerZ + FIRE_MONOXIDE_HORIZONTAL_RANGE; z++) {
+					for(int y = minY; y <= maxY; y++) {
+						if(!world.blockExists(x, y, z) || world.getBlock(x, y, z) != Blocks.fire) continue;
+
+						long position = ((long) x & 0x3FFFFFFL) << 38 | ((long) z & 0x3FFFFFFL) << 12 | (long) y & 0xFFFL;
+						if(sampledFires.add(position)) {
+							FurnaceGasEmission.emitCarbonMonoxide(world, x, y, z, FIRE_MONOXIDE_CHANCE);
+						}
+					}
 				}
 			}
 		}
