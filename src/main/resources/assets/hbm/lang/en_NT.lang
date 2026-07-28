@@ -7162,7 +7162,7 @@ item.gpmix.name=Gun Powder Purity Mix
 
 tile.pvc_log.name=PVC Log
 tile.rubber_leaves.name=Rubber Leaves
-tile.slag.name=Slag?
+tile.slag.name=Slag
 tile.flesh_block.name=Flesh Layer
 tile.charred_flesh_block.name=Charred Flesh Layer
 tile.carbonized_flesh_block.name=Carbonized Flesh Layer

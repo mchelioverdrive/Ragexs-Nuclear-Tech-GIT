@@ -1,51 +1,57 @@
-# RNT language rebase
+# RNT language rebase translator
 
-This tool discards old locale contents and rebuilds each locale from `en_US.lang`.
+This tool rebuilds selected locale files from `en_US.lang` and translates their values while preserving keys, ordering, comments, blank lines, formatting codes, placeholders, URLs, and `$` page separators.
 
-## Run
+## Replace the files
 
-Open Command Prompt in the repository root:
+Copy these files into the repository's `tools` directory:
 
-```cmd
-python tools\lang_rebase_translate.py
+- `lang_rebase_translate.py`
+- `test_lang_rebase_translate.py`
+
+Keep the existing translation cache:
+
+```text
+build/lang-translation-cache.json
 ```
 
-That is the only normal command.
+Do not commit anything under `build/`.
 
-## What it does
+## Resume the unfinished real languages
 
-- Uses `en_US.lang` as the full template.
-- Keeps the same keys, comments, order, and blank lines.
-- Translates active `key=value` lines.
-- Translates commented guidebook entries such as `#book.rbmk.page1=...`.
-- Protects `%s`, `%1$s`, `§` formatting codes, `$`, escape sequences, and URLs.
-- Replaces old locale contents completely.
-- Skips `test.lang`.
-- Copies English into custom locales that have no real translation target.
-- Saves old files under `build/lang-rebase-backup/`.
-- Saves translation progress in `build/lang-translation-cache.json`.
-
-An internet connection is required. The translation cache lets the command resume after a failure or rate limit.
-
-## Files translated
-
-The current RNT languages are mapped as follows:
-
-- `de_DE` → German
-- `fr_FR` → French
-- `it_IT` → Italian
-- `pl_PL` → Polish
-- `ru_RU` → Russian
-- `zh_CN` → Simplified Chinese
-
-Custom locales such as `en_NT`, `ns_OC`, and `te_ST` are rebuilt with English text because they are not real machine-translation targets.
-
-## After it finishes
-
-Run:
+From the repository root:
 
 ```cmd
+python tools\lang_rebase_translate.py --locale fr_FR --locale it_IT --locale pl_PL --locale ru_RU --locale zh_CN
+```
+
+The `--locale` option is repeatable. This avoids rewriting German and custom English locales while finishing the remaining translations.
+
+## Rate limiting
+
+The undocumented Google endpoint may return HTTP 429. The replacement:
+
+- waits longer between requests;
+- honors `Retry-After` when present;
+- uses exponential backoff with jitter;
+- never turns a rate-limited batch into hundreds of individual requests;
+- saves cached progress and exits with code `2` if throttling persists;
+- resumes from `build/lang-translation-cache.json` on the next run.
+
+A locale file is only replaced after all its required translations are available. If throttling stops a locale halfway through, the old locale file remains intact while completed translations stay in the cache.
+
+## Run tests
+
+```cmd
+cd tools
+python -m unittest -v test_lang_rebase_translate.py
+```
+
+## Review before committing
+
+```cmd
+git status --short
+git diff --check
+git diff --stat
 git diff -- src/main/resources/assets/hbm/lang
 ```
-
-Do not commit files under `build/`.

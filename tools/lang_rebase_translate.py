@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 """
-Rebuild every locale from en_US.lang.
+Rebuild RNT locale files from en_US.lang.
 
 - en_US.lang is the only template.
 - Real locales are machine translated.
 - Custom locales are rebuilt with English text.
-- Existing locale contents are discarded.
+- Existing selected locale contents are discarded.
 - Backups are written under build/, not resources.
 - Translation progress is cached, so reruns resume.
+- HTTP 429 rate limits stop cleanly without causing an individual-request storm.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import random
 import re
 import shutil
 import sys
@@ -31,7 +33,7 @@ SOURCE_NAME = "en_US.lang"
 CACHE_PATH = Path("build/lang-translation-cache.json")
 REPORT_PATH = Path("build/lang-rebase-report.json")
 
-# Real languages supported by Google Translate.
+# Real languages supported by the translation endpoint.
 LOCALE_TARGETS = {
     "de_DE": "de",
     "fr_FR": "fr",
@@ -54,7 +56,7 @@ LOCALE_TARGETS = {
     "nb_NO": "no",
 }
 
-# These are custom or joke locales, not real Google Translate targets.
+# These are custom or joke locales, not real translation targets.
 # They are still fully rebased from en_US, but their values remain English.
 COPY_ENGLISH = {"en_NT", "ns_OC", "te_ST"}
 
@@ -89,6 +91,10 @@ class TemplateLine:
     @property
     def is_property(self) -> bool:
         return self.key is not None
+
+
+class TranslationRateLimit(RuntimeError):
+    """Raised when the translation service continues returning HTTP 429."""
 
 
 def fail(message: str) -> None:
@@ -196,11 +202,28 @@ class TranslationCache:
 
 
 class GoogleTranslator:
+    """
+    Small client for Google's undocumented public translation endpoint.
+
+    This endpoint may rate-limit bulk translation. The cache makes the operation
+    resumable, while conservative pacing and 429 handling prevent request storms.
+    """
+
     ENDPOINT = "https://translate.googleapis.com/translate_a/single"
 
-    def __init__(self, cache: TranslationCache, pause: float = 0.15) -> None:
+    def __init__(
+        self,
+        cache: TranslationCache,
+        pause: float = 2.0,
+        max_attempts: int = 5,
+    ) -> None:
+        if pause < 0:
+            raise ValueError("pause cannot be negative")
+        if max_attempts < 1:
+            raise ValueError("max_attempts must be at least 1")
         self.cache = cache
         self.pause = pause
+        self.max_attempts = max_attempts
 
     def _request(self, payload: str, target: str) -> str:
         encoded = urllib.parse.urlencode(
@@ -213,36 +236,94 @@ class GoogleTranslator:
             }
         ).encode("utf-8")
 
-        request = urllib.request.Request(
-            self.ENDPOINT,
-            data=encoded,
-            headers={
-                "User-Agent": "Mozilla/5.0",
-                "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-            },
-            method="POST",
-        )
-
         last_error: Exception | None = None
-        for attempt in range(5):
+
+        for attempt in range(self.max_attempts):
+            request = urllib.request.Request(
+                self.ENDPOINT,
+                data=encoded,
+                headers={
+                    "User-Agent": "Mozilla/5.0",
+                    "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+                },
+                method="POST",
+            )
+
             try:
                 with urllib.request.urlopen(request, timeout=45) as response:
                     data = json.loads(response.read().decode("utf-8"))
+
                 translated = "".join(
-                    part[0] for part in data[0] if part and part[0] is not None
+                    part[0]
+                    for part in data[0]
+                    if part and part[0] is not None
                 )
+
                 time.sleep(self.pause)
                 return translated
+
+            except urllib.error.HTTPError as exc:
+                last_error = exc
+
+                if exc.code == 429:
+                    retry_after = exc.headers.get("Retry-After")
+                    delay: float | None
+
+                    try:
+                        delay = float(retry_after) if retry_after else None
+                    except (TypeError, ValueError):
+                        delay = None
+
+                    if delay is None:
+                        delay = min(120.0, 10.0 * (2**attempt))
+
+                    delay += random.uniform(0.0, 3.0)
+                    print(
+                        "  Rate limited by translation service; "
+                        f"retrying after {delay:.1f} seconds "
+                        f"({attempt + 1}/{self.max_attempts})...",
+                        flush=True,
+                    )
+                    time.sleep(delay)
+                    continue
+
+                if 500 <= exc.code < 600:
+                    delay = min(60.0, 5.0 * (2**attempt))
+                    print(
+                        f"  Translation service returned HTTP {exc.code}; "
+                        f"retrying after {delay:.1f} seconds "
+                        f"({attempt + 1}/{self.max_attempts})...",
+                        flush=True,
+                    )
+                    time.sleep(delay)
+                    continue
+
+                raise RuntimeError(
+                    f"translation request failed: HTTP {exc.code} {exc.reason}"
+                ) from exc
+
             except (
                 urllib.error.URLError,
-                urllib.error.HTTPError,
                 TimeoutError,
                 json.JSONDecodeError,
                 IndexError,
                 TypeError,
             ) as exc:
                 last_error = exc
-                time.sleep(2 ** attempt)
+                delay = min(60.0, 2.0 * (2**attempt))
+                print(
+                    f"  Translation request failed ({exc}); "
+                    f"retrying after {delay:.1f} seconds "
+                    f"({attempt + 1}/{self.max_attempts})...",
+                    flush=True,
+                )
+                time.sleep(delay)
+
+        if isinstance(last_error, urllib.error.HTTPError) and last_error.code == 429:
+            raise TranslationRateLimit(
+                "Google Translate is still rate limiting requests. "
+                "Cached progress was preserved."
+            ) from last_error
 
         raise RuntimeError(f"translation request failed: {last_error}")
 
@@ -287,6 +368,9 @@ class GoogleTranslator:
         completed = 0
         index = 0
 
+        if total == 0:
+            print("  all translatable values already cached")
+
         while index < len(pending):
             batch: list[tuple[str, str, dict[str, str]]] = []
             char_count = 0
@@ -330,8 +414,15 @@ class GoogleTranslator:
 
                 self.cache.save()
 
+            except TranslationRateLimit:
+                # Never turn a rate-limited batch into hundreds of individual calls.
+                self.cache.save()
+                raise
+
             except Exception as exc:
-                print(f"  Batch failed ({exc}). Retrying entries one at a time.")
+                print(
+                    f"  Batch failed ({exc}). Retrying its entries one at a time."
+                )
                 for source, _, _ in batch:
                     translated = self._translate_one(source, target)
                     result[source] = translated
@@ -362,9 +453,9 @@ def render_template(
     return output
 
 
-def make_backup(targets: list[Path]) -> Path:
+def make_backup(repo_root: Path, targets: list[Path]) -> Path:
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    backup_dir = Path("build/lang-rebase-backup") / stamp
+    backup_dir = repo_root / "build/lang-rebase-backup" / stamp
 
     for target in targets:
         if not target.exists():
@@ -376,7 +467,7 @@ def make_backup(targets: list[Path]) -> Path:
     return backup_dir
 
 
-def find_targets(lang_dir: Path) -> list[Path]:
+def find_targets(lang_dir: Path, selected_locales: set[str] | None = None) -> list[Path]:
     targets: list[Path] = []
 
     for path in sorted(lang_dir.glob("*.lang")):
@@ -385,14 +476,27 @@ def find_targets(lang_dir: Path) -> list[Path]:
         if not LOCALE_FILE_RE.fullmatch(path.name):
             print(f"Skipping non-locale file: {path.name}")
             continue
+        if selected_locales is not None and path.stem not in selected_locales:
+            continue
         targets.append(path)
 
     return targets
 
 
+def write_report(repo_root: Path, report: dict[str, object]) -> Path:
+    report_path = repo_root / REPORT_PATH
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    return report_path
+
+
 def run(
     repo_root: Path,
     translator_factory: Callable[[TranslationCache], GoogleTranslator] = GoogleTranslator,
+    selected_locales: set[str] | None = None,
 ) -> int:
     lang_dir = repo_root / LANG_DIR
     source_path = lang_dir / SOURCE_NAME
@@ -403,12 +507,18 @@ def run(
     source_text, newline, has_final_newline = read_text_exact(source_path)
     template = parse_template(source_text)
     values = [line.value for line in template if line.value is not None]
-    targets = find_targets(lang_dir)
+    targets = find_targets(lang_dir, selected_locales)
+
+    if selected_locales:
+        existing = {path.stem for path in targets}
+        missing = sorted(selected_locales - existing)
+        if missing:
+            fail("unknown or missing locale file(s): " + ", ".join(missing))
 
     if not targets:
         fail(f"no locale files found in {lang_dir}")
 
-    backup_dir = make_backup(targets)
+    backup_dir = make_backup(repo_root, targets)
     cache = TranslationCache(repo_root / CACHE_PATH)
     translator = translator_factory(cache)
 
@@ -416,6 +526,7 @@ def run(
         "source": str(source_path),
         "source_property_lines": len(values),
         "backup": str(backup_dir),
+        "status": "running",
         "locales": {},
     }
 
@@ -431,7 +542,21 @@ def run(
             mode = "english-copy"
         else:
             print(f"  translating en_US -> {target_language}")
-            translated_values = translator.translate_many(values, target_language)
+            try:
+                translated_values = translator.translate_many(values, target_language)
+            except TranslationRateLimit as exc:
+                cache.save()
+                report["status"] = "rate-limited"
+                report["stopped_locale"] = locale
+                report["message"] = str(exc)
+                report_path = write_report(repo_root, report)
+
+                print(f"\nStopped: {exc}")
+                print(f"Cached progress: {repo_root / CACHE_PATH}")
+                print(f"Partial report:  {report_path}")
+                print("Run the same command again to resume from cached entries.")
+                return 2
+
             mode = f"translated:{target_language}"
 
         output_lines = render_template(template, translated_values)
@@ -448,14 +573,10 @@ def run(
             "properties": len(values),
         }
 
-    report_path = repo_root / REPORT_PATH
-    report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(
-        json.dumps(report, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    report["status"] = "complete"
+    report_path = write_report(repo_root, report)
 
-    print(f"\nDone.")
+    print("\nDone.")
     print(f"Backups: {backup_dir}")
     print(f"Report:  {report_path}")
     print("Review the Git diff before committing.")
@@ -464,7 +585,7 @@ def run(
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Rebuild and auto-translate all locale files from en_US.lang."
+        description="Rebuild and auto-translate locale files from en_US.lang."
     )
     parser.add_argument(
         "--repo-root",
@@ -472,8 +593,20 @@ def main() -> int:
         default=Path.cwd(),
         help="Repository root. Default: current directory.",
     )
+    parser.add_argument(
+        "--locale",
+        action="append",
+        default=[],
+        metavar="LOCALE",
+        help=(
+            "Only process this locale, such as fr_FR. "
+            "Repeat the option to select multiple locales."
+        ),
+    )
     args = parser.parse_args()
-    return run(args.repo_root.resolve())
+
+    selected_locales = set(args.locale) if args.locale else None
+    return run(args.repo_root.resolve(), selected_locales=selected_locales)
 
 
 if __name__ == "__main__":

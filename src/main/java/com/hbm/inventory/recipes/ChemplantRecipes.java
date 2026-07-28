@@ -2003,7 +2003,17 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 		// Amine sweetening and regeneration are abstracted here; the amine solvent is recycled internally.
 		recipes.add(new ChemRecipe(1142, "SOUR_GAS_SWEETENING", 150)
-				.inputFluids(new FluidStack(Fluids.SOURGAS, 1_000))
+				.inputFluids(new FluidStack(Fluids.SOURGAS, 1_000),
+							 //the water part
+							 new FluidStack(Fluids.WATER, 1_000)
+
+				)
+				//the ammonium part
+				.inputItems(
+					new ComparableStack(ModItems.ammonium_nitrate)
+				) //pen pineapple apple pen or something idfk god im tired
+				//I guess I could use nitric acid in place of amine solvent but that's different and I'm lazy
+				//TODO stop being lazy...
 				.outputFluids(
 					new FluidStack(Fluids.HYDROGEN_SULFIDE, 500),
 					new FluidStack(Fluids.GAS, 500)
@@ -2030,6 +2040,19 @@ public class ChemplantRecipes extends SerializableRecipe {
 						.outputItems(new ItemStack(ModItems.niter, 8))
 		);
 
+		//Methylamine (CH{3} NH{2})
+		//recipes.add(new ChemRecipe(1145, "METHYLAMINE", 1200)
+		//		.inputItems(
+		//			new ComparableStack(ModItems.powder_coal_tiny, 1) //1 carbon
+		//		)
+		//		.inputFluids(
+		//			new FluidStack(Fluids.HYDROGEN, 400), //3 hydrogen + 1 Hydrogen
+		//			new FluidStack(Fluids.NITROGEN, 100)
+		//		)
+		//		.outputFluids(new FluidStack(Fluids.METHYLAMINE, 1000))
+		//);
+
+		
 
 
 
