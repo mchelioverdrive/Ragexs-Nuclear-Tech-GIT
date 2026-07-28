@@ -2052,7 +2052,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//		.outputFluids(new FluidStack(Fluids.METHYLAMINE, 1000))
 		//);
 
-		
+
 
 
 
