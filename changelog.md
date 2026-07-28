@@ -1,3 +1,12 @@
+# Realistic Sour Gas and Claus Sulfur Recovery
+
+**Tracker:** `Realistic Sour Gas and Claus Sulfur Recovery`
+
+* Connected hydrotreater sour gas to an amine-sweetening abstraction that produces concentrated hydrogen sulfide and sweet refinery fuel gas, then feeds a single net-reaction Claus sulfur-recovery recipe.
+* Corrected the Claus inputs and outputs to a 2:1 hydrogen-sulfide/oxygen ratio, two sulfur items, and waste-heat steam; direct sour-gas-to-sulfur recovery remains disabled in the coker.
+* Made sour gas flammable and raised its poison hazard above ordinary refinery gas while retaining lower toxicity than pure hydrogen sulfide, corrosion, soot, and toxic-release pollution.
+* Preserved barium-sulfide carbonation, sodium-sulfide acidification, and optional reverse sulfur/hydrogen synthesis as alternative hydrogen-sulfide routes.
+
 # Localize additional chemistry templates
 
 **Tracker:** `Localize additional chemistry templates`

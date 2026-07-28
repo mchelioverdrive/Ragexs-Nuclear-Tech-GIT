@@ -22,7 +22,7 @@ public class HydrotreatingRecipes extends SerializableRecipe {
 
 	@Override
 	public void registerDefaults() {
-		
+		// Hydrodesulfurization yields a mixed sour-gas stream containing H2S, hydrocarbons, and other refinery gases.
 		recipes.put(Fluids.OIL, new Triplet(
 			new FluidStack(Fluids.HYDROGEN, 5, 1),
 			new FluidStack(Fluids.OIL_DS, 90),
