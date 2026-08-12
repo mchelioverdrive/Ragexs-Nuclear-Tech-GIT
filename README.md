@@ -224,3 +224,16 @@ Contributions should keep documentation aligned with source code. Before documen
 ## License and credits
 
 See [LICENSE](LICENSE), [LICENSE.LESSER](LICENSE.LESSER), Forge license files, and [gradle.properties](gradle.properties) credits for licensing and contributor information.
+
+# Development mods
+
+External mods used only while developing can be placed in `devmods/` instead of being copied to
+`eclipse/mods` manually:
+
+- Put ordinary production/SRG mod JARs in `devmods/`. The `prepareDevMods` task remaps them to MCP
+  names under `build/devmods/remapped/` before `runClient` starts.
+- Put JARs that are already built for an MCP development workspace in `devmods/deobf/`. They are
+  loaded directly and are not remapped again.
+
+Both locations are runtime-only and are excluded from the release JAR. Local JARs in these folders
+are ignored by Git; the tracked `.gitkeep` files preserve the directory layout.

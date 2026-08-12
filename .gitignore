@@ -24,6 +24,12 @@
 # other
 /run
 
+# Local development mods (keep the directory skeleton tracked)
+/devmods/*.jar
+/devmods/deobf/*.jar
+!/devmods/.gitkeep
+!/devmods/deobf/.gitkeep
+
 # CurseForge configuration
 /curseforge.properties
 

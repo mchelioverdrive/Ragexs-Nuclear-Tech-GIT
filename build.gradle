@@ -1,8 +1,59 @@
 import org.gradle.plugins.ide.eclipse.model.internal.FileReferenceFactory
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.FileCollection
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
+
+import net.md_5.specialsource.Jar
+import net.md_5.specialsource.JarMapping
+import net.md_5.specialsource.JarRemapper
+import net.md_5.specialsource.RemapperProcessor
+import net.md_5.specialsource.provider.JarProvider
+import net.md_5.specialsource.provider.JointProvider
 
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
+
+class PrepareDevMods extends DefaultTask {
+	@InputFiles
+	FileCollection productionMods
+
+	@InputFile
+	File srgToMcpMapping
+
+	@OutputDirectory
+	File outputDirectory
+
+	@TaskAction
+	void remap() {
+		project.delete(outputDirectory)
+		outputDirectory.mkdirs()
+
+		productionMods.files.sort { it.name }.each { File modJar ->
+			File remappedJar = new File(outputDirectory, modJar.name)
+			try {
+				JarMapping mapping = new JarMapping()
+				mapping.loadMappings(srgToMcpMapping)
+
+				Jar input = Jar.init(modJar)
+				JointProvider inheritance = new JointProvider()
+				inheritance.add(new JarProvider(input))
+				mapping.setFallbackInheritanceProvider(inheritance)
+
+				JarRemapper remapper = new JarRemapper(new RemapperProcessor(null, mapping, null), mapping, null)
+				remapper.remapJar(input, remappedJar)
+			} catch (Exception failure) {
+				throw new GradleException(
+						"Could not remap development mod '${modJar.name}' from SRG to MCP names. " +
+						"Production/SRG jars belong in devmods/; jars already built for an MCP workspace " +
+						"belong in devmods/deobf/.", failure)
+			}
+		}
+	}
+}
 
 buildscript {
 	repositories {
@@ -39,6 +90,20 @@ minecraft {
 	version = "1.7.10-10.13.4.1614-1.7.10"
 	runDir = "eclipse"
 }
+
+def productionDevMods = fileTree(dir: 'devmods', include: '*.jar')
+def deobfuscatedDevMods = fileTree(dir: 'devmods/deobf', include: '*.jar')
+def remappedDevModsDir = file("${buildDir}/devmods/remapped")
+
+task prepareDevMods(type: PrepareDevMods, dependsOn: 'genSrgs') {
+	group = 'forgegradle'
+	description = 'Remaps production development mods from SRG names to MCP names for runClient.'
+	productionMods = productionDevMods
+	srgToMcpMapping = tasks.genSrgs.srgToMcp
+	outputDirectory = remappedDevModsDir
+}
+
+runClient.dependsOn prepareDevMods
 
 // A little hack to fix codechicken's crazy maven structure (at least in 1.7.10)
 eclipse.classpath.file.whenMerged { cp ->
@@ -82,6 +147,10 @@ repositories {
 }
 
 dependencies {
+	// Development-only mods: remap production/SRG jars, but use MCP-ready jars directly.
+	runtimeOnly fileTree(dir: remappedDevModsDir, include: '*.jar')
+	runtimeOnly deobfuscatedDevMods
+
 	implementation 'codechicken:CodeChickenCore:1.7.10-1.0.4.29:dev'
 	compileOnly 'codechicken:CodeChickenCore:1.7.10-1.0.4.29:src'
 
