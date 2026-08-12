@@ -17,6 +17,7 @@
 # gradle
 /build
 /.gradle
+/mcp
 
 # vscode
 /.vscode

@@ -1,8 +1,9 @@
-# Pull Request: Add ForgeGradle 1.2 devmods workflow
+# Pull Request: Fix Hardcore Darkness in runClient
 
 ## Unreleased
 
-- Added a dedicated `devmods/` layout for local, development-only external mods.
-- Added ForgeGradle 1.2 SRG-to-MCP remapping for production mod JARs in `devmods/`.
-- Added direct runtime loading for MCP-ready mod JARs in `devmods/deobf/`.
-- Kept generated remapped JARs isolated under `build/devmods/remapped/` and out of release artifacts.
+- Added a `runClient` preparation task that exposes ForgeGradle's generated MCP field and method CSV
+  mappings at the location expected by legacy coremods.
+- Fixed Hardcore Darkness 1.7.10 failing to transform `WorldProviderHell` in the development client
+  with `Couldn't find MCP mappings`.
+- Documented the generated, development-only `mcp/` directory and excluded it from version control.

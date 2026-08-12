@@ -237,3 +237,8 @@ External mods used only while developing can be placed in `devmods/` instead of 
 
 Both locations are runtime-only and are excluded from the release JAR. Local JARs in these folders
 are ignored by Git; the tracked `.gitkeep` files preserve the directory layout.
+
+`runClient` also copies ForgeGradle's generated `fields.csv` and `methods.csv` into the repository's
+local `mcp/` directory. Legacy coremods such as Hardcore Darkness 1.7.10 look for those CSV files at
+`../mcp/` relative to the `eclipse` run directory. The generated directory is ignored by Git and is
+not included in release artifacts.
