@@ -94,6 +94,7 @@ minecraft {
 def productionDevMods = fileTree(dir: 'devmods', include: '*.jar')
 def deobfuscatedDevMods = fileTree(dir: 'devmods/deobf', include: '*.jar')
 def remappedDevModsDir = file("${buildDir}/devmods/remapped")
+def mcpMappingsDir = file('mcp')
 
 task prepareDevMods(type: PrepareDevMods, dependsOn: 'genSrgs') {
 	group = 'forgegradle'
@@ -103,7 +104,32 @@ task prepareDevMods(type: PrepareDevMods, dependsOn: 'genSrgs') {
 	outputDirectory = remappedDevModsDir
 }
 
-runClient.dependsOn prepareDevMods
+task prepareCoremodMappings(dependsOn: 'genSrgs') {
+	group = 'forgegradle'
+	description = 'Makes MCP CSV mappings available to legacy coremods during runClient.'
+	outputs.dir mcpMappingsDir
+
+	doLast {
+		File forgeGradleMappingsDir = file("${buildDir}/unpacked/conf")
+		List<String> mappingFiles = ['fields.csv', 'methods.csv']
+		List<File> missingMappings = mappingFiles.collect { new File(forgeGradleMappingsDir, it) }
+				.findAll { !it.isFile() }
+
+		if (!missingMappings.isEmpty()) {
+			throw new GradleException(
+					"ForgeGradle did not generate the MCP mappings required by legacy coremods: " +
+					missingMappings.join(', '))
+		}
+
+		project.copy {
+			from forgeGradleMappingsDir
+			include mappingFiles
+			into mcpMappingsDir
+		}
+	}
+}
+
+runClient.dependsOn prepareDevMods, prepareCoremodMappings
 
 // A little hack to fix codechicken's crazy maven structure (at least in 1.7.10)
 eclipse.classpath.file.whenMerged { cp ->
