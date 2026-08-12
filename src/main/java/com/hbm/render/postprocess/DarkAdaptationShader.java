@@ -19,7 +19,8 @@ final class DarkAdaptationShader {
 	private int program;
 	private int vertex;
 	private int fragment;
-	private int source, texel, adaptation, rod, strength, noise, centerLoss, quality, time;
+	private int source, depth, texel, adaptation, rod, strength, noise, centerLoss, quality, time, hasDepth;
+	private String failureReason = "none";
 
 	boolean load() {
 		destroy();
@@ -30,11 +31,13 @@ final class DarkAdaptationShader {
 			GL20.glAttachShader(program, vertex); GL20.glAttachShader(program, fragment); GL20.glLinkProgram(program);
 			if(GL20.glGetProgrami(program, GL20.GL_LINK_STATUS) == GL11.GL_FALSE)
 				throw new IllegalStateException("link: " + GL20.glGetProgramInfoLog(program, 4096));
-			source = uniform("source"); texel = uniform("texel"); adaptation = uniform("adaptation");
+			source = uniform("source"); depth = uniform("depthSource"); texel = uniform("texel"); adaptation = uniform("adaptation");
 			rod = uniform("rodAdaptation"); strength = uniform("strength"); noise = uniform("noiseAmount");
-			centerLoss = uniform("centerLoss"); quality = uniform("quality"); time = uniform("time");
+			centerLoss = uniform("centerLoss"); quality = uniform("quality"); time = uniform("time"); hasDepth = uniform("hasDepth");
+			failureReason = "none";
 			return true;
 		} catch(Exception ex) {
+			failureReason = "Shader load: " + ex.getMessage();
 			MainRegistry.logger.warn("Dark adaptation shader disabled (" + ex.getMessage() + ")");
 			destroy(); return false;
 		}
@@ -53,15 +56,16 @@ final class DarkAdaptationShader {
 	}
 
 	private int uniform(String name) { return GL20.glGetUniformLocation(program, name); }
-	void use(int width, int height, DarkAdaptationState state, float configuredStrength, float configuredNoise, float configuredCenter, int configuredQuality) {
+	void use(int width, int height, DarkAdaptationState state, float configuredStrength, float configuredNoise, float configuredCenter, int configuredQuality, boolean depthAvailable) {
 		GL20.glUseProgram(program);
-		GL20.glUniform1i(source, 0); GL20.glUniform2f(texel, 1F / width, 1F / height);
+		GL20.glUniform1i(source, 0); GL20.glUniform1i(depth, 1); GL20.glUniform1i(hasDepth, depthAvailable ? 1 : 0); GL20.glUniform2f(texel, 1F / width, 1F / height);
 		GL20.glUniform1f(adaptation, state.getEffectiveAdaptation()); GL20.glUniform1f(rod, state.getRodAdaptation());
 		GL20.glUniform1f(strength, configuredStrength); GL20.glUniform1f(noise, configuredNoise);
 		GL20.glUniform1f(centerLoss, configuredCenter); GL20.glUniform1i(quality, configuredQuality);
 		GL20.glUniform1f(time, (System.nanoTime() & 0xFFFFFFL) / 1000000F);
 	}
 	boolean isLoaded() { return program != 0; }
+	String getFailureReason() { return failureReason; }
 	void destroy() {
 		if(program != 0) { if(vertex != 0) GL20.glDetachShader(program, vertex); if(fragment != 0) GL20.glDetachShader(program, fragment); GL20.glDeleteProgram(program); }
 		if(vertex != 0) GL20.glDeleteShader(vertex); if(fragment != 0) GL20.glDeleteShader(fragment);

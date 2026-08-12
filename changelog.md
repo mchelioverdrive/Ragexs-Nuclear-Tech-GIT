@@ -1,3 +1,11 @@
+# Fix rendered-scene dark adaptation and mathematical-black recovery
+
+**Tracker:** `Fix rendered-scene dark adaptation and mathematical-black recovery`
+
+* Replaced world light-block sampling with a tiny pre-HUD rendered-scene meter whose trimmed result is resistant to isolated bright objects.
+* Added optional pre-HUD depth capture so strongly adapted rods can reveal extremely faint, desaturated geometry cues in mathematical black without lifting black sky or restoring ambient light.
+* Removed the blanket Minecraft-framebuffer gate, retained Angelica-safe private scene copies, strengthened OpenGL state restoration and failure diagnostics, and expanded the debug overlay.
+
 # Make fire emit carbon monoxide
 
 **Tracker:** `Make fire emit carbon monoxide`
