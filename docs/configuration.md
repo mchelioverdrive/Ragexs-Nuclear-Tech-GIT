@@ -83,17 +83,19 @@ Known keys include:
 | `DARK_ADAPTATION_NOISE` | `0.012` | Maximum intrinsic shadow-noise amplitude (runtime-clamped to 0–0.05). |
 | `DARK_ADAPTATION_CENTER_LOSS` | `0.15` | Weak central scotopic acuity/sensitivity penalty (runtime-clamped to 0–0.35). |
 | `DARK_ADAPTATION_QUALITY` | `1` | `0` disables the pass, `1` uses a five-tap blur, and `2` uses nine taps with more frequent exposure updates. |
-| `DARK_ADAPTATION_DEBUG` | `false` | Shows exposure, cone/rod state, path, FBO/shader status, and Angelica detection. |
+| `DARK_ADAPTATION_DEBUG` | `false` | Shows rendered-scene exposure, cone/rod state, the GPU metering path, shader/framebuffer/depth status, Angelica detection, and the latest failure. |
+
+Dark adaptation meters the completed world immediately before the HUD from a 16×12 GPU-downsampled image. The lower 85% trimmed mean prevents isolated torches and particles from controlling eye adaptation. When available, a copied pre-HUD depth buffer supplies extremely faint grayscale geometry cues for pixels rendered as absolute black; sky/void pixels at cleared depth remain black. Ordinary nonzero shadow recovery remains available if depth capture is unsupported, and the color-copy pass can operate on the normal backbuffer even when Minecraft's framebuffer setting is disabled.
 
 > Note: the current source maps `ITEM_TOOLTIP_SHOW_CUSTOM_NUKE` to the `ITEM_TOOLTIP_SHOW_OREDICT` key during default registration. Treat custom-nuke tooltip editing as a documentation gap until this is clarified or fixed in code.
 
 ### Darkness and eye adaptation
 
-The client tracks a fast cone stage (4.5 seconds in darkness) and a slow rod stage (90 seconds by default). Bright exposure reverses these stages much faster (0.25 and 1.15 seconds). It never changes Minecraft's gamma option. Instead, only shadow pixels receive curved silhouette recovery, desaturation, local-contrast compression, spatial acuity loss, weak central-vision loss, and intrinsic noise. Mathematical black is not lifted into readable scenery.
+The client tracks a fast cone stage (4.5 seconds in darkness) and a slow rod stage (90 seconds by default). Bright exposure reverses these stages much faster (0.25 and 1.15 seconds). It never changes Minecraft's gamma option. Instead, only shadow pixels receive curved silhouette recovery, desaturation, local-contrast compression, spatial acuity loss, weak central-vision loss, and intrinsic noise. Mathematical-black geometry receives only depth-derived grayscale edge and distance cues, not restored texture color or ambient illumination.
 
 The pass runs at the `RenderGameOverlayEvent.Pre(ALL)` boundary, after the completed world and hand but before Forge draws HUD elements. Inventory, chat, crosshair, scope/equipment overlays, debug text, and menus therefore remain unprocessed. Vanilla night vision, blindness, and RTM thermal armor suppress the ordinary-eye pass rather than accidentally stacking visual modes.
 
-Exposure is updated every five frames (`quality=1`) or three frames (`quality=2`). The legacy/Angelica-safe path samples block and sky light around the eye, celestial brightness, and weather without any framebuffer CPU readback; RTM nuclear flashes are injected explicitly. The shader uses a reusable private framebuffer copy, queries/restores the previously bound framebuffer, and never samples an Angelica-owned attachment in place. Unsupported framebuffer hardware or shader compilation failure disables only this effect and leaves normal rendering intact.
+Exposure is updated every five frames (`quality=1`) or three frames (`quality=2`) from the small rendered-scene target; RTM nuclear flashes are injected explicitly. The shader uses reusable private color and depth copies, queries/restores the previously bound framebuffer, and never samples an Angelica-owned attachment in place. If depth copying is unsupported, nonzero low-light recovery continues without mathematical-black geometry cues. Shader or color-capture failure remains nonfatal and leaves normal rendering intact.
 
 ## Dynamic machine JSON: `config/hbmConfig/hbmMachines.json`
 
