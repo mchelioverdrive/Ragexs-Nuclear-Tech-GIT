@@ -1,6 +1,10 @@
-# Pull Request: Fix Hardcore Darkness eye-adaptation visibility
+# Pull Request: Fix dark-adaptation world depth capture
 
 ## Unreleased
+
+- Capture reusable dark-adaptation world depth at `RenderWorldLastEvent` and accept it only for
+  the matching render generation, framebuffer, and display size.
+- Add debug geometry coverage and remapped linear-depth inspection without full-size CPU reads.
 
 - Fixed mathematical-black terrain recovery that previously multiplied several small linear factors and produced only about 1–3/255 display luminance (about 1.8/255 in the reported outdoor case).
 - Replaced linear environmental scaling with bounded perceptual scaling and a target display luminance, added both cone and rod recovery, linearized depth-based shape cues, safe effect weights, and geometry/recovery debug views.

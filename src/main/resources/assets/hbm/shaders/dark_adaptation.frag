@@ -49,9 +49,10 @@ void main() {
     float lifted = base + (sqrt(base) - base) * effect * 0.28 * (1.0 - centralPenalty);
     color *= lifted / max(base, 0.001);
 
-    // Cleared depth is exactly one. The narrow transition retains distant geometry despite nonlinear depth precision.
+    // A cleared 24-bit depth sample is exactly 1.0; the immediately preceding representable
+    // value is real far geometry and must remain usable.
     float d = texture2D(depthSource, uv).r;
-    float geometry = float(hasDepth) * (1.0 - smoothstep(0.9999990, 0.9999999, d));
+    float geometry = float(hasDepth) * (1.0 - step(1.0, d));
     float centerDepth = linearDepth(d);
     float leftDepth = linearDepth(texture2D(depthSource, uv - vec2(texel.x, 0.0)).r);
     float rightDepth = linearDepth(texture2D(depthSource, uv + vec2(texel.x, 0.0)).r);
@@ -71,6 +72,13 @@ void main() {
 
     if(debugView == 1) { gl_FragColor = vec4(vec3(geometry), 1.0); return; }
     if(debugView == 2) { gl_FragColor = vec4(vec3(blackRecovery), 1.0); return; }
+    if(debugView == 3) {
+        // Logarithmic linear-depth remapping keeps nearby and distant surfaces distinguishable;
+        // cleared sky/void remains black through the shared geometry mask.
+        float inspectedDepth = 1.0 - clamp(log(1.0 + centerDepth) / log(1.0 + farPlane), 0.0, 1.0);
+        gl_FragColor = vec4(vec3(geometry * (0.15 + inspectedDepth * 0.85)), 1.0);
+        return;
+    }
 
     color = max(color, vec3(blackRecovery));
     vec3 gray = vec3(lum(color));
