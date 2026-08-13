@@ -2,6 +2,7 @@
 uniform sampler2D source;
 uniform sampler2D depthSource;
 uniform vec2 texel;
+uniform vec2 projectionScale;
 uniform float adaptation;
 uniform float coneAdaptation;
 uniform float rodAdaptation;
@@ -55,37 +56,27 @@ void main() {
     float d = texture2D(depthSource, uv).r;
     float geometry = float(hasDepth) * (1.0 - step(1.0, d));
     float centerDepth = linearDepth(d);
+    vec2 ndc = uv * 2.0 - 1.0;
+    vec2 rayOffset = vec2(
+        ndc.x / max(abs(projectionScale.x), 0.0001),
+        ndc.y / max(abs(projectionScale.y), 0.0001)
+    );
+    float cameraDistance = centerDepth * length(vec3(rayOffset, 1.0));
 
     float scotopicSignal = clamp(perceivedAmbient * eyeRecovery, 0.0, 1.0);
-    // NEAR: best coarse perception, nominally ending between 3.5 and 5 blocks.
-    float nearEnd = mix(3.5, 5.0, scotopicSignal);
-    // MID: progressively reduced contrast and detail, ending between 12 and 20 blocks.
-    float midEnd = mix(12.0, 20.0, scotopicSignal);
-    // FAR: silhouettes remain useful out to between 28 and 55 blocks.
-    float farEnd = mix(28.0, 55.0, scotopicSignal);
-    // FADE: recovered scotopic visibility reaches darkness between 38 and 70 blocks.
-    float fadeEnd = mix(38.0, 70.0, scotopicSignal);
-
-    float nearProgress = smoothstep(0.0, nearEnd, centerDepth);
-    float midProgress = smoothstep(nearEnd, midEnd, centerDepth);
-    float farProgress = smoothstep(midEnd, farEnd, centerDepth);
-    float fadeProgress = smoothstep(farEnd, fadeEnd, centerDepth);
-    float nearFactor = 1.0 - smoothstep(nearEnd * 0.65, nearEnd, centerDepth);
-    float midFactor = smoothstep(nearEnd * 0.65, nearEnd, centerDepth) *
-        (1.0 - smoothstep(midEnd * 0.75, midEnd, centerDepth));
-    float farFactor = smoothstep(midEnd * 0.70, midEnd, centerDepth) * (1.0 - fadeProgress);
-    float factorTotal = max(nearFactor + midFactor + farFactor, 0.0001);
-    nearFactor /= factorTotal;
-    midFactor /= factorTotal;
-    farFactor /= factorTotal;
-    float visibilityDistance = 1.0 - fadeProgress;
-    float distanceDetailLoss = clamp(nearProgress * 0.25 + midProgress * 0.45 +
-        farProgress * 0.30, 0.0, 1.0);
+    float nearLoss = smoothstep(mix(3.0, 4.0, scotopicSignal),
+        mix(7.0, 9.0, scotopicSignal), cameraDistance);
+    float midLoss = smoothstep(mix(6.0, 8.0, scotopicSignal),
+        mix(18.0, 26.0, scotopicSignal), cameraDistance);
+    float farLoss = smoothstep(mix(16.0, 22.0, scotopicSignal),
+        mix(45.0, 65.0, scotopicSignal), cameraDistance);
+    float tailStart = mix(18.0, 30.0, scotopicSignal);
+    float tailScale = mix(16.0, 35.0, scotopicSignal);
+    float beyondTail = max(cameraDistance - tailStart, 0.0);
+    float visibilityTail = exp(-pow(beyondTail / max(tailScale, 0.001), 1.15));
 
     // The existing sample count is retained; only its radius grows continuously with distance.
-    float blurRadius = mix(1.0, 1.4, nearProgress);
-    blurRadius = mix(blurRadius, 2.5, midProgress);
-    blurRadius = mix(blurRadius, 4.0, farProgress);
+    float blurRadius = clamp(1.0 + nearLoss * 0.4 + midLoss * 1.1 + farLoss * 1.5, 1.0, 4.0);
     vec2 blurTexel = texel * blurRadius;
     vec3 blur = original;
     if(quality > 0) {
@@ -123,37 +114,32 @@ void main() {
     float blurredLum = lum(blur);
     float rodEffect = clamp(effect * rodAdaptation, 0.0, 1.0);
 
-    float nearBoost = 0.30 * geometry * nearFactor * scotopicSignal * recoveryStrength;
+    float nearScale = mix(4.0, 6.0, scotopicSignal);
+    float nearPerception = exp(-pow(cameraDistance / max(nearScale, 0.001), 2.0));
+    float nearBoost = 0.30 * geometry * nearPerception * scotopicSignal * recoveryStrength;
     float recoveredLum = recoverLowLightLuminance(sourceLum, perceivedAmbient, eyeRecovery,
         recoveryStrength, targetLuminance, nearBoost, centralPenalty);
     float recoveredBlurredLum = recoverLowLightLuminance(blurredLum, perceivedAmbient, eyeRecovery,
         recoveryStrength, targetLuminance, nearBoost, centralPenalty);
 
-    float regionRecovery = nearFactor + midFactor * mix(0.85, 0.60, midProgress) +
-        farFactor * mix(0.60, 0.28, farProgress);
-
     // Rod vision loses fine local contrast and spatial acuity. The center receives up to
     // another 15%, without changing the radial brightness enough to form a vignette.
-    float distanceAcuity = mix(0.25, 0.40, nearProgress);
-    distanceAcuity = mix(distanceAcuity, 0.65, midProgress);
-    distanceAcuity = mix(distanceAcuity, 0.82, farProgress);
-    distanceAcuity = max(distanceAcuity, mix(0.25, 0.82, distanceDetailLoss));
+    float distanceAcuity = clamp(0.25 + nearLoss * 0.15 + midLoss * 0.25 +
+        farLoss * 0.20, 0.25, 0.85);
     float acuityLoss = clamp(rodEffect * max(0.40 + centralPenalty * 0.75,
         distanceAcuity), 0.0, 0.85);
     if(quality > 0) recoveredLum = mix(recoveredLum, recoveredBlurredLum, acuityLoss);
 
-    float detailRetention = mix(0.78, 0.70, nearProgress);
-    detailRetention = mix(detailRetention, 0.50, midProgress);
-    detailRetention = mix(detailRetention, 0.25, farProgress);
+    float detailRetention = clamp(0.80 - nearLoss * 0.10 - midLoss * 0.25 -
+        farLoss * 0.30, 0.15, 0.80);
     float localMean = recoveredBlurredLum;
     float localDetail = recoveredLum - localMean;
     recoveredLum = localMean + localDetail * mix(1.0, detailRetention, rodEffect);
 
     // Distance attenuates only recovered shadow signal; the original framebuffer, including
     // distant photopic emitters, is never multiplied by the visibility envelope.
-    float rangeRecovery = mix(1.0, visibilityDistance, geometry * shadow);
-    float recoveryEnvelope = clamp(rangeRecovery * mix(1.0, regionRecovery, geometry), 0.0, 1.0);
-    recoveredLum = sourceLum + (recoveredLum - sourceLum) * recoveryEnvelope;
+    float recoveryInfluence = mix(1.0, shadow * visibilityTail, geometry);
+    recoveredLum = sourceLum + (recoveredLum - sourceLum) * recoveryInfluence;
 
     // Reconstruct RGB only after luminance recovery. Deep scotopic pixels are neutral;
     // mesopic pixels progressively regain source chroma and locally bright pixels keep it.
@@ -176,7 +162,7 @@ void main() {
     // effectively mathematical black rather than flattening dim real texture information.
     float blackBlend = 1.0 - smoothstep(0.00005, 0.00015, sourceLum);
     float blackRecovery = geometry * blackBlend * perceivedAmbient * eyeRecovery * targetLuminance *
-        shapeModulation * (1.0 - centralPenalty) * recoveryStrength * visibilityDistance * regionRecovery;
+        shapeModulation * (1.0 - centralPenalty) * recoveryStrength * visibilityTail;
 
     if(debugView == 1) { gl_FragColor = vec4(vec3(geometry), 1.0); return; }
     if(debugView == 2) { gl_FragColor = vec4(vec3(blackRecovery), 1.0); return; }

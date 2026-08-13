@@ -1,3 +1,11 @@
+# Pull Request: Remove the visible scotopic range boundary
+
+- Replaced the finite FAR/FADE visibility endpoint with a smooth exponential long-tail falloff, so recovered low-light signal becomes negligible gradually instead of stopping at one distance.
+- Reconstructed approximate camera-to-surface range from linearized forward depth and the active world projection matrix scales, removing the planar distance metric across the view.
+- Replaced normalized NEAR, MID, and FAR weights with overlapping loss curves for continuous blur, acuity, and local-detail degradation while preserving bright distant framebuffer objects.
+
+## Previous changes
+
 # Pull Request: Add distance-based RTM scotopic perception
 
 - Added continuous NEAR, MID, FAR, and final-fade ranges for distance-based scotopic acuity and visibility falloff.
