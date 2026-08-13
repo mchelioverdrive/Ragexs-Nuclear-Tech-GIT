@@ -1,3 +1,12 @@
+# Pull Request: Add distance-based RTM scotopic perception
+
+- Added continuous NEAR, MID, FAR, and final-fade ranges for distance-based scotopic acuity and visibility falloff.
+- Increased the existing blur radius and local-contrast compression smoothly with linearized distance while retaining the existing sample count.
+- Added inexpensive depth-aware blur weighting to reduce foreground/sky silhouette bleeding.
+- Limited distance falloff to synthetic low-light and exact-black recovery so original bright photopic signals remain visible.
+
+## Previous changes
+
 # Pull Request: Prevent stacked thunder darkness in RTM dark adaptation
 
 ## Unreleased
