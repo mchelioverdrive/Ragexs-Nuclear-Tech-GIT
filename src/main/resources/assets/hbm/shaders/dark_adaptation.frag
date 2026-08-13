@@ -46,14 +46,29 @@ void main() {
     float rodEffect = clamp(effect * rodAdaptation, 0.0, 1.0);
     vec3 color = mix(original, blur, clamp(rodEffect * (0.30 + centralPenalty * 0.45), 0.0, 1.0));
     float base = max(lum(color), 0.0);
-    float lifted = base + (sqrt(base) - base) * effect * 0.28 * (1.0 - centralPenalty);
-    color *= lifted / max(base, 0.001);
+
+    float perceivedAmbient = pow(clamp(ambientScotopic, 0.0, 1.0), 0.30);
+    float eyeRecovery = clamp(coneAdaptation * 0.25 + rodAdaptation * 0.75, 0.0, 1.0);
+    float recoveryStrength = clamp(strength, 0.0, 1.0);
+    float targetLuminance = clamp(scotopicFloor * 2.55, 0.0, 0.30);
+    float adaptedTarget = perceivedAmbient * eyeRecovery * targetLuminance *
+        (1.0 - centralPenalty) * recoveryStrength;
 
     // A cleared 24-bit depth sample is exactly 1.0; the immediately preceding representable
     // value is real far geometry and must remain usable.
     float d = texture2D(depthSource, uv).r;
     float geometry = float(hasDepth) * (1.0 - step(1.0, d));
     float centerDepth = linearDepth(d);
+    float nearVision = geometry * (1.0 - smoothstep(2.5, 4.0, centerDepth));
+    float nearBoost = 0.30 * nearVision * perceivedAmbient * eyeRecovery * recoveryStrength;
+    float darknessWeight = 1.0 - smoothstep(0.02, 0.18, base);
+    float scotopicGain = clamp(1.0 + 16.0 * perceivedAmbient * eyeRecovery *
+        darknessWeight * recoveryStrength * (1.0 + nearBoost), 1.0, 18.0);
+    float amplifiedLum = base * scotopicGain;
+    float adaptedCeiling = max(base, adaptedTarget * (1.0 + nearBoost));
+    float recoveredLum = max(base, min(amplifiedLum, adaptedCeiling));
+    if(base > 0.000001) color *= recoveredLum / base;
+
     float leftDepth = linearDepth(texture2D(depthSource, uv - vec2(texel.x, 0.0)).r);
     float rightDepth = linearDepth(texture2D(depthSource, uv + vec2(texel.x, 0.0)).r);
     float downDepth = linearDepth(texture2D(depthSource, uv - vec2(0.0, texel.y)).r);
@@ -63,12 +78,7 @@ void main() {
     float shapeModulation = mix(1.0, 1.20, depthShape);
     // Retained lightmap RGB is the primary terrain signal. Depth recovery is reserved for
     // effectively mathematical black rather than flattening dim real texture information.
-    float blackBlend = 1.0 - smoothstep(0.0001, 0.0010, l);
-    float perceivedAmbient = pow(clamp(ambientScotopic, 0.0, 1.0), 0.30);
-    float eyeRecovery = clamp(coneAdaptation * 0.25 + rodAdaptation * 0.75, 0.0, 1.0);
-    // Legacy 0.055 now describes the base of a bounded perceptual target (0.140 at the default).
-    float targetLuminance = clamp(scotopicFloor * 2.55, 0.0, 0.30);
-    float recoveryStrength = clamp(strength, 0.0, 1.0);
+    float blackBlend = 1.0 - smoothstep(0.00005, 0.00015, l);
     float blackRecovery = geometry * blackBlend * perceivedAmbient * eyeRecovery * targetLuminance *
         shapeModulation * (1.0 - centralPenalty) * recoveryStrength;
 

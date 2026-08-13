@@ -13,8 +13,8 @@ public final class DarkAdaptationState {
 		float target = 1F - smoothstep(0.055F, 0.38F, exposure);
 		if(nuclearFlash) target = 0F;
 		float dt = clamp(deltaSeconds, 0F, 0.1F); // lag, focus changes and alt-tab cannot skip adaptation
-		float coneSeconds = target < coneAdaptation ? 0.25F : 4.5F;
-		float rodSeconds = target < rodAdaptation ? 1.15F : clamp(ClientConfig.DARK_ADAPTATION_ROD_SECONDS.get(), 10F, 300F);
+		float coneSeconds = target < coneAdaptation ? 0.25F : durationToTimeConstant(4.5F);
+		float rodSeconds = target < rodAdaptation ? 1.15F : durationToTimeConstant(clamp(ClientConfig.DARK_ADAPTATION_ROD_SECONDS.get(), 10F, 300F));
 		coneAdaptation = approach(coneAdaptation, target, dt, coneSeconds);
 		rodAdaptation = approach(rodAdaptation, target, dt, rodSeconds);
 	}
@@ -22,6 +22,9 @@ public final class DarkAdaptationState {
 	private static float approach(float value, float target, float delta, float seconds) {
 		return value + (target - value) * (1F - (float)Math.exp(-delta / seconds));
 	}
+
+	/** Three exponential time constants reach approximately 95% of a requested transition. */
+	private static float durationToTimeConstant(float requestedSeconds) { return requestedSeconds / 3F; }
 
 	private static float smoothstep(float low, float high, float value) {
 		float x = clamp((value - low) / (high - low), 0F, 1F);
