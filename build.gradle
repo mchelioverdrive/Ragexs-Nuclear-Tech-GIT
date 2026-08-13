@@ -110,20 +110,24 @@ task prepareCoremodMappings(dependsOn: 'genSrgs') {
 	outputs.dir mcpMappingsDir
 
 	doLast {
-		File forgeGradleMappingsDir = file("${buildDir}/unpacked/conf")
-		List<String> mappingFiles = ['fields.csv', 'methods.csv']
-		List<File> missingMappings = mappingFiles.collect { new File(forgeGradleMappingsDir, it) }
-				.findAll { !it.isFile() }
+		File fieldsCsv = tasks.genSrgs.getFieldsCsv()
+		File methodsCsv = tasks.genSrgs.getMethodsCsv()
 
-		if (!missingMappings.isEmpty()) {
+		if (!fieldsCsv.isFile() || !methodsCsv.isFile()) {
 			throw new GradleException(
-					"ForgeGradle did not generate the MCP mappings required by legacy coremods: " +
-					missingMappings.join(', '))
+				"ForgeGradle MCP mappings are missing. " +
+					"fieldsCsv=${fieldsCsv}, methodsCsv=${methodsCsv}")
 		}
 
 		project.copy {
-			from forgeGradleMappingsDir
-			include mappingFiles
+			from(fieldsCsv) {
+				rename { 'fields.csv' }
+			}
+
+			from(methodsCsv) {
+				rename { 'methods.csv' }
+			}
+
 			into mcpMappingsDir
 		}
 	}
