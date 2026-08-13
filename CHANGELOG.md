@@ -2,9 +2,12 @@
 
 ## Unreleased
 
-- Capture reusable dark-adaptation world depth at `RenderWorldLastEvent` and accept it only for
-  the matching render generation, framebuffer, and display size.
-- Add debug geometry coverage and remapped linear-depth inspection without full-size CPU reads.
+- Moved dark-adaptation depth capture from the pre-HUD color-copy path to highest-priority
+  `RenderWorldLastEvent`, preserving completed world geometry without depending on hand or HUD depth.
+- Added current-render generation, active-framebuffer, size, copy-success, and debug-only 16×12
+  geometry-coverage validation so stale or cleared depth cannot be advertised to the shader.
+- Added exact geometry-mask and remapped linear-depth views plus active-framebuffer restoration for
+  vanilla and Angelica rendering.
 
 - Fixed mathematical-black terrain recovery that previously multiplied several small linear factors and produced only about 1–3/255 display luminance (about 1.8/255 in the reported outdoor case).
 - Replaced linear environmental scaling with bounded perceptual scaling and a target display luminance, added both cone and rod recovery, linearized depth-based shape cues, safe effect weights, and geometry/recovery debug views.
