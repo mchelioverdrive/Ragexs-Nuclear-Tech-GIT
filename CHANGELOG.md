@@ -1,7 +1,10 @@
-# Pull Request: Fix dark-adaptation world depth capture
+# Pull Request: Add Hardcore Darkness lightmap compatibility
 
 ## Unreleased
 
+- Preserved a configurable, sky-only carrier signal before Hardcore Darkness removes nighttime
+  texture information, while retaining its removed global RGB floor and RTM's final dark-adaptation
+  control.
 - Moved dark-adaptation depth capture from the pre-HUD color-copy path to highest-priority
   `RenderWorldLastEvent`, preserving completed world geometry without depending on hand or HUD depth.
 - Added current-render generation, active-framebuffer, size, copy-success, and debug-only 16×12

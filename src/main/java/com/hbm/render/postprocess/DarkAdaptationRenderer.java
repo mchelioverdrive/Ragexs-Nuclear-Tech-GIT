@@ -13,6 +13,7 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GLContext;
 
 import com.hbm.config.ClientConfig;
+import com.hbm.core.compat.HardcoreDarknessCompatHooks;
 import com.hbm.items.armor.ArmorFSB;
 import com.hbm.main.MainRegistry;
 import com.hbm.main.ModEventHandlerClient;
@@ -378,6 +379,8 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 		mc.fontRenderer.drawStringWithShadow("geometryCoverage " + (geometryCoverageValid ? String.format("%.3f", geometryCoverage) : "n/a") + " depthAvailableToShader " + worldDepthCurrent(), 4, 54, 0x909090);
 		mc.fontRenderer.drawStringWithShadow("shaderLoaded " + shader.isLoaded() + " framebuffer MC/EXT " + OpenGlHelper.isFramebufferEnabled() + "/" + fboSupported + " exposure " + exposurePath, 4, 64, 0x909090);
 		mc.fontRenderer.drawStringWithShadow("failureReason " + failureReason + " debugView " + debugView + " Angelica " + angelica, 4, 74, 0x909090);
+		mc.fontRenderer.drawStringWithShadow("hardcoreDarknessDetected " + HardcoreDarknessCompatHooks.isDetected() + " hardcoreDarknessCompatEnabled " + HardcoreDarknessCompatHooks.isCompatEnabled() + " hardcoreDarknessHookPatched " + HardcoreDarknessCompatHooks.isHookPatched(), 4, 84, 0x909090);
+		mc.fontRenderer.drawStringWithShadow(String.format("hdSkyCarrier %.3f hdSkyMultiplierOverride %.3f hdSkyMinimumOverride %.3f", HardcoreDarknessCompatHooks.getSkyCarrier(), HardcoreDarknessCompatHooks.getSkyMultiplierOverride(), HardcoreDarknessCompatHooks.getSkyMinimumOverride()), 4, 94, 0x909090);
 	}
 
 	private void failOnce(String operation, Throwable t, int kind) { if((kind == 0 && captureWarned) || (kind == 1 && depthWarned) || (kind == 2 && meterWarned)) return; if(kind == 0) captureWarned = true; else if(kind == 1) depthWarned = true; else meterWarned = true; recordFailure(operation + ": " + describe(t)); }
