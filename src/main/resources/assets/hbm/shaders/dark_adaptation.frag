@@ -5,6 +5,8 @@ uniform vec2 texel;
 uniform float adaptation;
 uniform float rodAdaptation;
 uniform float strength;
+uniform float ambientScotopic;
+uniform float scotopicFloor;
 uniform float noiseAmount;
 uniform float centerLoss;
 uniform float time;
@@ -38,21 +40,23 @@ void main() {
     float lifted = base + (sqrt(base) - base) * effect * 0.28 * (1.0 - centralPenalty);
     color *= lifted / max(base, 0.001);
 
-    // Depth is the only signal Hardcore Darkness cannot erase. Nearby valid geometry gets a
-    // tiny, achromatic edge/distance cue; depth-clear sky and void remain exactly black.
+    // Environmental photons provide a broad surface floor. Depth says where geometry exists
+    // and adds shape; it is deliberately not interpreted as linear distance.
     float d = texture2D(depthSource, uv).r;
     float dx = abs(d - texture2D(depthSource, uv + vec2(texel.x, 0.0)).r) + abs(d - texture2D(depthSource, uv - vec2(texel.x, 0.0)).r);
     float dy = abs(d - texture2D(depthSource, uv + vec2(0.0, texel.y)).r) + abs(d - texture2D(depthSource, uv - vec2(0.0, texel.y)).r);
-    float geometry = float(hasDepth) * (1.0 - smoothstep(0.9985, 0.9999, d));
-    float depthShape = clamp((dx + dy) * 42.0 + (1.0 - d) * 6.0, 0.0, 1.0);
+    float geometry = float(hasDepth) * (1.0 - smoothstep(0.99998, 0.999999, d));
+    float depthShape = smoothstep(0.000005, 0.0025, dx + dy);
     float blackBlend = 1.0 - smoothstep(0.0, 0.012, l);
-    float blackRecovery = geometry * depthShape * blackBlend * rodAdaptation * strength * 0.024 * (1.0 - centralPenalty);
+    float surfaceShape = mix(0.60, 1.0, depthShape);
+    float blackRecovery = geometry * blackBlend * ambientScotopic * rodAdaptation * strength * scotopicFloor * surfaceShape * (1.0 - centralPenalty);
     color = max(color, vec3(blackRecovery));
     vec3 gray = vec3(lum(color));
     color = mix(color, gray, effect * rodAdaptation * 0.88);
     color = mix(vec3(lum(color)), color, 1.0 - effect * rodAdaptation * 0.20); // shadow contrast compression
     float signalLoss = 1.0 - smoothstep(0.0, 0.06, l);
     float noise = (hash(gl_FragCoord.xy) - 0.5) * noiseAmount * shadow * (0.35 + signalLoss * 0.65) * strength;
-    color += vec3(noise) * max(smoothstep(0.0, 0.006, l), geometry);
+    float visibleSignal = max(smoothstep(0.0, 0.006, l), geometry * ambientScotopic * rodAdaptation);
+    color += vec3(noise) * visibleSignal;
     gl_FragColor = vec4(max(mix(original, color, shadow), vec3(0.0)), 1.0);
 }
