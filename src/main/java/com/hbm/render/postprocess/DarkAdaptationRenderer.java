@@ -39,7 +39,7 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 	private final DarkAdaptationState state = new DarkAdaptationState();
 	private final DarkAdaptationShader shader = new DarkAdaptationShader();
 	private final boolean angelica = Compat.isModLoaded(Compat.MOD_ANG);
-	private final IntBuffer viewportBuffer = BufferUtils.createIntBuffer(4);
+	private final IntBuffer viewportBuffer = BufferUtils.createIntBuffer(16);
 	private final ByteBuffer meterPixels = BufferUtils.createByteBuffer(METER_PIXELS * 4);
 	private final float[] meterLuminance = new float[METER_PIXELS];
 	private int sourceTexture, depthTexture, meterTexture, meterFramebuffer;
