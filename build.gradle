@@ -223,7 +223,11 @@ processResources {
 // add AT to meta-inf
 jar {
     manifest {
-        attributes 'FMLAT': 'HBM_at.cfg'
+        attributes(
+			'FMLAT': 'HBM_at.cfg',
+			'FMLCorePlugin': 'com.hbm.core.HbmLoadingPlugin',
+			'FMLCorePluginContainsFMLMod': 'true'
+		)
     }
 }
 

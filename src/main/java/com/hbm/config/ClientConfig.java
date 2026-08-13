@@ -15,6 +15,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 import com.hbm.main.MainRegistry;
+import com.hbm.core.compat.HardcoreDarknessCompatHooks;
 import com.hbm.util.Compat;
 
 
@@ -50,6 +51,8 @@ public class ClientConfig {
 	public static ConfigWrapper<Integer> DARK_ADAPTATION_QUALITY =			new ConfigWrapper(1);
 	public static ConfigWrapper<Boolean> DARK_ADAPTATION_DEBUG =			new ConfigWrapper(false);
 	public static ConfigWrapper<Integer> DARK_ADAPTATION_DEBUG_VIEW =		new ConfigWrapper(0);
+	public static ConfigWrapper<Boolean> DARK_ADAPTATION_HD_LIGHTMAP_COMPAT = new ConfigWrapper(true);
+	public static ConfigWrapper<Float> DARK_ADAPTATION_HD_SKY_CARRIER =	new ConfigWrapper(0.06F);
 
 	private static void initDefaults() {
 		configMap.put("GEIGER_OFFSET_HORIZONTAL", GEIGER_OFFSET_HORIZONTAL);
@@ -78,6 +81,8 @@ public class ClientConfig {
 		configMap.put("DARK_ADAPTATION_QUALITY", DARK_ADAPTATION_QUALITY);
 		configMap.put("DARK_ADAPTATION_DEBUG", DARK_ADAPTATION_DEBUG);
 		configMap.put("DARK_ADAPTATION_DEBUG_VIEW", DARK_ADAPTATION_DEBUG_VIEW);
+		configMap.put("DARK_ADAPTATION_HD_LIGHTMAP_COMPAT", DARK_ADAPTATION_HD_LIGHTMAP_COMPAT);
+		configMap.put("DARK_ADAPTATION_HD_SKY_CARRIER", DARK_ADAPTATION_HD_SKY_CARRIER);
 	}
 
 	/** Initializes defaults, then reads the config file if it exists, then writes the config file. */
@@ -91,6 +96,7 @@ public class ClientConfig {
 
 	/** Writes over the config file using the running config. */
 	public static void refresh() {
+		syncHardcoreDarknessCompat();
 		File folder = MainRegistry.configHbmDir;
 		File config = new File(folder.getAbsolutePath() + File.separatorChar + "hbmClient.json");
 		writeConfig(config);
@@ -101,6 +107,11 @@ public class ClientConfig {
 		File folder = MainRegistry.configHbmDir;
 		File config = new File(folder.getAbsolutePath() + File.separatorChar + "hbmClient.json");
 		if(config.exists()) readConfig(config);
+		syncHardcoreDarknessCompat();
+	}
+
+	private static void syncHardcoreDarknessCompat() {
+		HardcoreDarknessCompatHooks.configure(DARK_ADAPTATION_ENABLED.get() && DARK_ADAPTATION_HD_LIGHTMAP_COMPAT.get(), DARK_ADAPTATION_HD_SKY_CARRIER.get());
 	}
 
 	private static void readConfig(File config) {

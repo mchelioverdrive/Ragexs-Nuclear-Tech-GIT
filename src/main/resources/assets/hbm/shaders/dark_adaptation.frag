@@ -61,7 +61,9 @@ void main() {
     float relativeGradient = (abs(leftDepth - rightDepth) + abs(downDepth - upDepth)) / max(centerDepth, 1.0);
     float depthShape = smoothstep(0.015, 0.20, relativeGradient);
     float shapeModulation = mix(1.0, 1.20, depthShape);
-    float blackBlend = 1.0 - smoothstep(0.0, 0.012, l);
+    // Retained lightmap RGB is the primary terrain signal. Depth recovery is reserved for
+    // effectively mathematical black rather than flattening dim real texture information.
+    float blackBlend = 1.0 - smoothstep(0.0001, 0.0010, l);
     float perceivedAmbient = pow(clamp(ambientScotopic, 0.0, 1.0), 0.30);
     float eyeRecovery = clamp(coneAdaptation * 0.25 + rodAdaptation * 0.75, 0.0, 1.0);
     // Legacy 0.055 now describes the base of a bounded perceptual target (0.140 at the default).
