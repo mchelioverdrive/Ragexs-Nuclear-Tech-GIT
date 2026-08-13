@@ -1,12 +1,6 @@
-# Pull Request: Correct RTM scotopic color, acuity, and contrast
+# Pull Request: Recover RTM low-light terrain signal
 
 ## Unreleased
-
-- Corrected scotopic color perception by recovering bounded luminance before chroma reconstruction,
-  making deep rod vision nearly monochrome while preserving limited twilight color and locally bright color.
-- Replaced the false saturation-based contrast loss with blurred-neighborhood luminance detail loss,
-  strengthened rod-driven acuity loss in deep darkness, and added subtle extra central acuity loss.
-- Kept near-field and exact-black recovery achromatic and made scarcity-weighted visual noise monochrome.
 
 - Added a low-light signal-recovery and scotopic tone-mapping patch that dynamically raises Hardcore
   Darkness's sky-only information carrier as eyes adapt, amplifies retained dark terrain RGB with a
