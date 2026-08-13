@@ -32,6 +32,7 @@ import net.minecraft.potion.Potion;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.EnumSkyBlock;
 import net.minecraft.world.World;
+import net.minecraftforge.client.event.EntityViewRenderEvent.FogColors;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 
@@ -82,6 +83,29 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 		if(lastWorld != null && lastWorld != mc.theWorld) { state.reset(); deleteResources(); lastWorld = mc.theWorld; lastNanos = System.nanoTime(); }
 		try { copyWorldDepth(mc.displayWidth, mc.displayHeight); }
 		catch(Throwable t) { invalidateWorldDepth("capture failed"); failOnce("World depth capture", t, 1); }
+	}
+
+	/** Restores the fog color that vanilla had after rain, before its extra thunder multiplier. */
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
+	public void correctThunderFog(FogColors event) {
+		Minecraft mc = Minecraft.getMinecraft();
+		World world = mc.theWorld;
+		if(world == null || mc.thePlayer == null || world.provider.hasNoSky
+				|| !ClientConfig.DARK_ADAPTATION_ENABLED.get() || quality() <= 0
+				|| !HardcoreDarknessCompatHooks.isCompatEnabled() || suppressed(mc.thePlayer)
+				|| state.getEffectiveAdaptation() < 0.002F) return;
+
+		float partialTicks = (float)event.renderPartialTicks;
+		float angle = world.getCelestialAngle(partialTicks);
+		float night = clamp((-(float)Math.cos(angle * Math.PI * 2D) - 0.05F) / 0.95F, 0F, 1F);
+		if(night <= 0F) return;
+
+		float thunder = world.getWeightedThunderStrength(partialTicks);
+		if(thunder <= 0F) return;
+		float inverseThunderFactor = 1F / Math.max(0.5F, 1F - thunder * 0.5F);
+		event.red = clamp(event.red * inverseThunderFactor, 0F, 1F);
+		event.green = clamp(event.green * inverseThunderFactor, 0F, 1F);
+		event.blue = clamp(event.blue * inverseThunderFactor, 0F, 1F);
 	}
 
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -326,8 +350,8 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 		int phaseDistance = Math.min(phase, 8 - phase);
 		moonFactor = 1F - phaseDistance / 4F;
 		nightContribution = night * (0.22F + 0.78F * moonFactor * moonFactor);
-		float rain = world.getRainStrength(1F), thunder = world.getWeightedThunderStrength(1F);
-		weatherAttenuation = clamp(1F - rain * 0.35F - thunder * 0.35F, 0.30F, 1F);
+		float rain = world.getRainStrength(1F);
+		weatherAttenuation = clamp(1F - rain * 0.35F, 0.65F, 1F);
 		ambientScotopic = clamp(skyAvailability * nightContribution * weatherAttenuation, 0F, 1F);
 	}
 	private void readViewport() { viewportBuffer.clear(); GL11.glGetInteger(GL11.GL_VIEWPORT, viewportBuffer); }

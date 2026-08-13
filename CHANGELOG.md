@@ -1,6 +1,13 @@
-# Pull Request: Correct RTM scotopic color, acuity, and contrast
+# Pull Request: Prevent stacked thunder darkness in RTM dark adaptation
 
 ## Unreleased
+
+- Fixed stacked thunderstorm attenuation between Minecraft, Hardcore Darkness, and RTM by using
+  rain-level sustained low-light attenuation for both rain and thunderstorm cloud cover.
+- Corrected only vanilla's additional thunder fog multiplier during active nighttime RTM and
+  Hardcore Darkness adaptation; normal rain fog darkening remains intact.
+- Kept rendered lightning flashes in exposure metering, so a flash can still temporarily damage
+  dark adaptation before the normal cone and rod recovery resumes.
 
 - Corrected scotopic color perception by recovering bounded luminance before chroma reconstruction,
   making deep rod vision nearly monochrome while preserving limited twilight color and locally bright color.
