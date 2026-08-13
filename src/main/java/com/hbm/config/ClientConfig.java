@@ -49,6 +49,7 @@ public class ClientConfig {
 	public static ConfigWrapper<Float> DARK_ADAPTATION_CENTER_LOSS =		new ConfigWrapper(0.15F);
 	public static ConfigWrapper<Integer> DARK_ADAPTATION_QUALITY =			new ConfigWrapper(1);
 	public static ConfigWrapper<Boolean> DARK_ADAPTATION_DEBUG =			new ConfigWrapper(false);
+	public static ConfigWrapper<Integer> DARK_ADAPTATION_DEBUG_VIEW =		new ConfigWrapper(0);
 
 	private static void initDefaults() {
 		configMap.put("GEIGER_OFFSET_HORIZONTAL", GEIGER_OFFSET_HORIZONTAL);
@@ -76,6 +77,7 @@ public class ClientConfig {
 		configMap.put("DARK_ADAPTATION_CENTER_LOSS", DARK_ADAPTATION_CENTER_LOSS);
 		configMap.put("DARK_ADAPTATION_QUALITY", DARK_ADAPTATION_QUALITY);
 		configMap.put("DARK_ADAPTATION_DEBUG", DARK_ADAPTATION_DEBUG);
+		configMap.put("DARK_ADAPTATION_DEBUG_VIEW", DARK_ADAPTATION_DEBUG_VIEW);
 	}
 
 	/** Initializes defaults, then reads the config file if it exists, then writes the config file. */

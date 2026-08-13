@@ -57,6 +57,7 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 	private String failureReason = "none";
 	private boolean captureWarned, depthWarned, meterWarned;
 	private float ambientScotopic, skyAvailability, moonFactor, nightContribution, weatherAttenuation = 1F;
+	private float requestedStrength, usedStrength, perceivedAmbient, eyeRecovery, expectedBroadBlackLuma, expectedShapeBlackLuma;
 
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void beforeHud(RenderGameOverlayEvent.Pre event) {
@@ -71,6 +72,9 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 		float delta = lastNanos == 0L ? 0F : (now - lastNanos) * 0.000000001F;
 		lastNanos = now;
 		updateEnvironmentalScotopic(mc.theWorld, mc.thePlayer);
+		requestedStrength = ClientConfig.DARK_ADAPTATION_STRENGTH.get();
+		usedStrength = clamp(requestedStrength, 0F, 2F);
+		updateRecoveryDiagnostics(usedStrength);
 		boolean enabled = ClientConfig.DARK_ADAPTATION_ENABLED.get() && quality() > 0;
 		boolean captured = false;
 		if(enabled) {
@@ -83,7 +87,7 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 		} else state.update(state.getExposure(), delta, nuclearFlashActive());
 
 		if(!enabled || suppressed(mc.thePlayer) || !captured) return;
-		float configuredStrength = clamp(ClientConfig.DARK_ADAPTATION_STRENGTH.get(), 0F, 2F);
+		float configuredStrength = usedStrength;
 		if(configuredStrength < 0.001F || state.getEffectiveAdaptation() < 0.002F) return;
 		if(reloadPending) {
 			reloadPending = false;
@@ -195,8 +199,9 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 			GL11.glMatrixMode(GL11.GL_MODELVIEW); GL11.glPushMatrix(); modelview = true; GL11.glLoadIdentity(); GL11.glColor4f(1, 1, 1, 1);
 			GL13.glActiveTexture(GL13.GL_TEXTURE0); GL11.glBindTexture(GL11.GL_TEXTURE_2D, sourceTexture);
 			GL13.glActiveTexture(GL13.GL_TEXTURE1); GL11.glBindTexture(GL11.GL_TEXTURE_2D, depthTexture);
+			int debugView = ClientConfig.DARK_ADAPTATION_DEBUG.get() ? Math.max(0, Math.min(2, ClientConfig.DARK_ADAPTATION_DEBUG_VIEW.get())) : 0;
 			shader.use(width, height, state, configuredStrength, clamp(ClientConfig.DARK_ADAPTATION_SCOTOPIC_FLOOR.get(), 0F, 0.15F), ambientScotopic, clamp(ClientConfig.DARK_ADAPTATION_NOISE.get(), 0F, 0.05F),
-				clamp(ClientConfig.DARK_ADAPTATION_CENTER_LOSS.get(), 0F, 0.35F), quality(), depthAvailable);
+				clamp(ClientConfig.DARK_ADAPTATION_CENTER_LOSS.get(), 0F, 0.20F), quality(), depthAvailable, Math.max(16F, mc.gameSettings.renderDistanceChunks * 16F), debugView);
 			drawQuad();
 		} finally {
 			if(modelview) { GL11.glMatrixMode(GL11.GL_MODELVIEW); GL11.glPopMatrix(); }
@@ -257,14 +262,26 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 	private boolean nuclearFlashActive() { return System.currentTimeMillis() < ModEventHandlerClient.flashTimestamp + ModEventHandlerClient.flashDuration; }
 	private int quality() { return Math.max(0, Math.min(2, ClientConfig.DARK_ADAPTATION_QUALITY.get())); }
 	private static float clamp(float v, float lo, float hi) { return DarkAdaptationState.clamp(v, lo, hi); }
+	private void updateRecoveryDiagnostics(float strength) {
+		perceivedAmbient = (float)Math.pow(clamp(ambientScotopic, 0F, 1F), 0.30D);
+		eyeRecovery = clamp(state.getConeAdaptation() * 0.25F + state.getRodAdaptation() * 0.75F, 0F, 1F);
+		float target = clamp(ClientConfig.DARK_ADAPTATION_SCOTOPIC_FLOOR.get(), 0F, 0.15F) * 2.55F;
+		float recoveryStrength = clamp(strength, 0F, 1F);
+		expectedBroadBlackLuma = perceivedAmbient * eyeRecovery * target * recoveryStrength;
+		expectedShapeBlackLuma = expectedBroadBlackLuma * 1.20F;
+	}
 
 	@SubscribeEvent public void debug(RenderGameOverlayEvent.Post event) {
 		if(event.type != RenderGameOverlayEvent.ElementType.ALL || !ClientConfig.DARK_ADAPTATION_DEBUG.get()) return;
 		Minecraft mc = Minecraft.getMinecraft(); if(mc.theWorld == null) return;
-		mc.fontRenderer.drawStringWithShadow(String.format("Eye scene %.3f  cone %.3f  rod %.3f  effective %.3f", state.getExposure(), state.getConeAdaptation(), state.getRodAdaptation(), state.getEffectiveAdaptation()), 4, 4, 0xB0B0B0);
-		mc.fontRenderer.drawStringWithShadow("shader " + shader.isLoaded() + "  framebuffer MC/EXT " + OpenGlHelper.isFramebufferEnabled() + "/" + fboSupported + "  exposure " + exposurePath, 4, 14, 0x909090);
-		mc.fontRenderer.drawStringWithShadow("depth recovery " + depthAvailable + "  Angelica " + angelica + "  failure " + failureReason, 4, 24, 0x909090);
-		mc.fontRenderer.drawStringWithShadow(String.format("ambient %.3f  sky %.3f  night/moon %.3f/%.3f  weather %.3f", ambientScotopic, skyAvailability, nightContribution, moonFactor, weatherAttenuation), 4, 34, 0x909090);
+		updateRecoveryDiagnostics(usedStrength);
+		mc.fontRenderer.drawStringWithShadow(String.format("Eye scene %.3f cone %.3f rod %.3f effective %.3f", state.getExposure(), state.getConeAdaptation(), state.getRodAdaptation(), state.getEffectiveAdaptation()), 4, 4, 0xB0B0B0);
+		mc.fontRenderer.drawStringWithShadow(String.format("strength requested %.3f used %.3f  ambient %.3f perceived %.3f eye %.3f", requestedStrength, usedStrength, ambientScotopic, perceivedAmbient, eyeRecovery), 4, 14, 0x909090);
+		mc.fontRenderer.drawStringWithShadow(String.format("sky %.3f night %.3f moon %.3f weather %.3f  broad/shape %.3f/%.3f", skyAvailability, nightContribution, moonFactor, weatherAttenuation, expectedBroadBlackLuma, expectedShapeBlackLuma), 4, 24, 0x909090);
+		int debugView = Math.max(0, Math.min(2, ClientConfig.DARK_ADAPTATION_DEBUG_VIEW.get()));
+		mc.fontRenderer.drawStringWithShadow("depthAvailable " + depthAvailable + " depthGeometryValid " + (debugView == 1 ? "inspect white terrain" : "unverified (view 1)") + " Angelica " + angelica, 4, 34, 0x909090);
+		mc.fontRenderer.drawStringWithShadow("shaderLoaded " + shader.isLoaded() + " framebuffer MC/EXT " + OpenGlHelper.isFramebufferEnabled() + "/" + fboSupported + " exposure " + exposurePath, 4, 44, 0x909090);
+		mc.fontRenderer.drawStringWithShadow("failureReason " + failureReason + " debugView " + debugView, 4, 54, 0x909090);
 	}
 
 	private void failOnce(String operation, Throwable t, int kind) { if((kind == 0 && captureWarned) || (kind == 1 && depthWarned) || (kind == 2 && meterWarned)) return; if(kind == 0) captureWarned = true; else if(kind == 1) depthWarned = true; else meterWarned = true; recordFailure(operation + ": " + describe(t)); }

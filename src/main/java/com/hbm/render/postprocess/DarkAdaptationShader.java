@@ -19,7 +19,7 @@ final class DarkAdaptationShader {
 	private int program;
 	private int vertex;
 	private int fragment;
-	private int source, depth, texel, adaptation, rod, strength, ambientScotopic, scotopicFloor, noise, centerLoss, quality, time, hasDepth;
+	private int source, depth, texel, adaptation, cone, rod, strength, ambientScotopic, scotopicFloor, noise, centerLoss, quality, time, hasDepth, nearPlane, farPlane, debugView;
 	private String failureReason = "none";
 
 	boolean load() {
@@ -32,9 +32,10 @@ final class DarkAdaptationShader {
 			if(GL20.glGetProgrami(program, GL20.GL_LINK_STATUS) == GL11.GL_FALSE)
 				throw new IllegalStateException("link: " + GL20.glGetProgramInfoLog(program, 4096));
 			source = uniform("source"); depth = uniform("depthSource"); texel = uniform("texel"); adaptation = uniform("adaptation");
-			rod = uniform("rodAdaptation"); strength = uniform("strength"); noise = uniform("noiseAmount");
+			cone = uniform("coneAdaptation"); rod = uniform("rodAdaptation"); strength = uniform("strength"); noise = uniform("noiseAmount");
 			ambientScotopic = uniform("ambientScotopic"); scotopicFloor = uniform("scotopicFloor");
 			centerLoss = uniform("centerLoss"); quality = uniform("quality"); time = uniform("time"); hasDepth = uniform("hasDepth");
+			nearPlane = uniform("nearPlane"); farPlane = uniform("farPlane"); debugView = uniform("debugView");
 			failureReason = "none";
 			return true;
 		} catch(Exception ex) {
@@ -57,13 +58,14 @@ final class DarkAdaptationShader {
 	}
 
 	private int uniform(String name) { return GL20.glGetUniformLocation(program, name); }
-	void use(int width, int height, DarkAdaptationState state, float configuredStrength, float configuredScotopicFloor, float environmentalScotopic, float configuredNoise, float configuredCenter, int configuredQuality, boolean depthAvailable) {
+	void use(int width, int height, DarkAdaptationState state, float configuredStrength, float configuredScotopicFloor, float environmentalScotopic, float configuredNoise, float configuredCenter, int configuredQuality, boolean depthAvailable, float configuredFarPlane, int configuredDebugView) {
 		GL20.glUseProgram(program);
 		GL20.glUniform1i(source, 0); GL20.glUniform1i(depth, 1); GL20.glUniform1i(hasDepth, depthAvailable ? 1 : 0); GL20.glUniform2f(texel, 1F / width, 1F / height);
-		GL20.glUniform1f(adaptation, state.getEffectiveAdaptation()); GL20.glUniform1f(rod, state.getRodAdaptation());
+		GL20.glUniform1f(adaptation, state.getEffectiveAdaptation()); GL20.glUniform1f(cone, state.getConeAdaptation()); GL20.glUniform1f(rod, state.getRodAdaptation());
 		GL20.glUniform1f(strength, configuredStrength); GL20.glUniform1f(noise, configuredNoise);
 		GL20.glUniform1f(ambientScotopic, environmentalScotopic); GL20.glUniform1f(scotopicFloor, configuredScotopicFloor);
 		GL20.glUniform1f(centerLoss, configuredCenter); GL20.glUniform1i(quality, configuredQuality);
+		GL20.glUniform1f(nearPlane, 0.05F); GL20.glUniform1f(farPlane, configuredFarPlane); GL20.glUniform1i(debugView, configuredDebugView);
 		GL20.glUniform1f(time, (System.nanoTime() & 0xFFFFFFL) / 1000000F);
 	}
 	boolean isLoaded() { return program != 0; }
