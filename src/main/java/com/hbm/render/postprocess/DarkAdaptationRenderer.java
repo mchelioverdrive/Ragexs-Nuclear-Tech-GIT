@@ -1,6 +1,7 @@
 package com.hbm.render.postprocess;
 
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.Arrays;
 
@@ -45,6 +46,7 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 	private final DarkAdaptationShader shader = new DarkAdaptationShader();
 	private final boolean angelica = Compat.isModLoaded(Compat.MOD_ANG);
 	private final IntBuffer viewportBuffer = BufferUtils.createIntBuffer(16);
+	private final FloatBuffer projectionBuffer = BufferUtils.createFloatBuffer(16);
 	private final ByteBuffer meterPixels = BufferUtils.createByteBuffer(METER_PIXELS * 4);
 	private final float[] meterLuminance = new float[METER_PIXELS];
 	private int sourceTexture, depthTexture, meterTexture, meterFramebuffer;
@@ -59,6 +61,7 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 	private boolean geometryCoverageValid;
 	private float geometryCoverage;
 	private int worldDepthFramebuffer = -1;
+	private float projectionScaleX = 1F, projectionScaleY = 1F;
 	private int colorFramebuffer = -1;
 	private String worldDepthSource = "none";
 	private boolean fboSupported;
@@ -81,6 +84,7 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 		invalidateWorldDepth("capture pending");
 		if(mc.theWorld == null || mc.thePlayer == null || mc.displayWidth <= 0 || mc.displayHeight <= 0) return;
 		if(lastWorld != null && lastWorld != mc.theWorld) { state.reset(); deleteResources(); lastWorld = mc.theWorld; lastNanos = System.nanoTime(); }
+		captureProjectionScale();
 		try { copyWorldDepth(mc.displayWidth, mc.displayHeight); }
 		catch(Throwable t) { invalidateWorldDepth("capture failed"); failOnce("World depth capture", t, 1); }
 	}
@@ -195,6 +199,22 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 		}
 	}
 
+	/** Reads the column-major OpenGL projection's diagonal perspective scales for this depth frame. */
+	private void captureProjectionScale() {
+		projectionScaleX = projectionScaleY = 1F;
+		try {
+			projectionBuffer.clear();
+			GL11.glGetFloat(GL11.GL_PROJECTION_MATRIX, projectionBuffer);
+			float scaleX = projectionBuffer.get(0);
+			float scaleY = projectionBuffer.get(5);
+			if(!Float.isNaN(scaleX) && !Float.isInfinite(scaleX) && scaleX > 0.0001F
+					&& !Float.isNaN(scaleY) && !Float.isInfinite(scaleY) && scaleY > 0.0001F) {
+				projectionScaleX = scaleX;
+				projectionScaleY = scaleY;
+			}
+		} catch(Throwable ignored) { }
+	}
+
 	/** Debug-only 16x12 GPU downsample of the exact shader geometry mask. */
 	private void measureGeometryCoverage() {
 		geometryCoverageValid = false;
@@ -217,7 +237,7 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 			GL11.glMatrixMode(GL11.GL_MODELVIEW); GL11.glPushMatrix(); modelview = true; GL11.glLoadIdentity(); GL11.glColor4f(1, 1, 1, 1);
 			GL13.glActiveTexture(GL13.GL_TEXTURE0); GL11.glBindTexture(GL11.GL_TEXTURE_2D, sourceTexture);
 			GL13.glActiveTexture(GL13.GL_TEXTURE1); GL11.glBindTexture(GL11.GL_TEXTURE_2D, depthTexture);
-			shader.use(textureWidth, textureHeight, state, 0F, 0F, 0F, 0F, 0F, 0, true, cameraFarPlane(), 1);
+			shader.use(textureWidth, textureHeight, state, 0F, 0F, 0F, 0F, 0F, 0, true, cameraFarPlane(), projectionScaleX, projectionScaleY, 1);
 			drawQuad();
 			meterPixels.clear(); clearErrors();
 			GL11.glReadPixels(0, 0, METER_WIDTH, METER_HEIGHT, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, meterPixels);
@@ -310,7 +330,7 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 			int debugView = ClientConfig.DARK_ADAPTATION_DEBUG.get() ? Math.max(0, Math.min(3, ClientConfig.DARK_ADAPTATION_DEBUG_VIEW.get())) : 0;
 			boolean depthAvailableToShader = worldDepthCurrent();
 			shader.use(width, height, state, configuredStrength, clamp(ClientConfig.DARK_ADAPTATION_SCOTOPIC_FLOOR.get(), 0F, 0.15F), ambientScotopic, clamp(ClientConfig.DARK_ADAPTATION_NOISE.get(), 0F, 0.05F),
-				clamp(ClientConfig.DARK_ADAPTATION_CENTER_LOSS.get(), 0F, 0.20F), quality(), depthAvailableToShader, cameraFarPlane(), debugView);
+				clamp(ClientConfig.DARK_ADAPTATION_CENTER_LOSS.get(), 0F, 0.20F), quality(), depthAvailableToShader, cameraFarPlane(), projectionScaleX, projectionScaleY, debugView);
 			drawQuad();
 		} finally {
 			if(modelview) { GL11.glMatrixMode(GL11.GL_MODELVIEW); GL11.glPopMatrix(); }
@@ -334,6 +354,7 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 	private void invalidateWorldDepth(String source) {
 		depthCopySucceeded = false; geometryCoverageValid = false; geometryCoverage = 0F;
 		worldDepthFrameId = -1L; worldDepthFramebuffer = -1; worldDepthSource = source;
+		projectionScaleX = projectionScaleY = 1F;
 	}
 	/** Uses saved vanilla sky light and celestial state, not HD's patched final lightmap/brightness. */
 	private void updateEnvironmentalScotopic(World world, EntityPlayer player) {
