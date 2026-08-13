@@ -99,7 +99,6 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 		updateEnvironmentalScotopic(mc.theWorld, mc.thePlayer);
 		requestedStrength = ClientConfig.DARK_ADAPTATION_STRENGTH.get();
 		usedStrength = clamp(requestedStrength, 0F, 2F);
-		updateRecoveryDiagnostics(usedStrength);
 		boolean enabled = ClientConfig.DARK_ADAPTATION_ENABLED.get() && quality() > 0;
 		boolean captured = false;
 		if(enabled) {
@@ -110,6 +109,8 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 			exposureFrames = 0;
 			state.update(measureRenderedExposure(), delta, nuclearFlashActive());
 		} else state.update(state.getExposure(), delta, nuclearFlashActive());
+		updateRecoveryDiagnostics(usedStrength);
+		HardcoreDarknessCompatHooks.updateDarkAdaptation(state.getEffectiveAdaptation(), perceivedAmbient);
 
 		if(!enabled || suppressed(mc.thePlayer) || !captured) return;
 		float configuredStrength = usedStrength;

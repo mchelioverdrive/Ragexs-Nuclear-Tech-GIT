@@ -1,7 +1,13 @@
-# Pull Request: Add Hardcore Darkness lightmap compatibility
+# Pull Request: Recover RTM low-light terrain signal
 
 ## Unreleased
 
+- Added a low-light signal-recovery and scotopic tone-mapping patch that dynamically raises Hardcore
+  Darkness's sky-only information carrier as eyes adapt, amplifies retained dark terrain RGB with a
+  bounded gain, and reserves depth recovery for effectively black pixels.
+- Added a subtle depth-bounded near-field perception boost without creating a Minecraft light source,
+  and changed configured rod recovery time to mean approximately 95% adaptation instead of one time
+  constant.
 - Preserved a configurable, sky-only carrier signal before Hardcore Darkness removes nighttime
   texture information, while retaining its removed global RGB floor and RTM's final dark-adaptation
   control.
