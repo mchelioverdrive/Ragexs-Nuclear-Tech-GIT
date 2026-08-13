@@ -28,6 +28,8 @@ import net.minecraft.client.resources.IResourceManagerReloadListener;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Potion;
+import net.minecraft.util.MathHelper;
+import net.minecraft.world.EnumSkyBlock;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 
@@ -54,6 +56,7 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 	private String exposurePath = "not sampled";
 	private String failureReason = "none";
 	private boolean captureWarned, depthWarned, meterWarned;
+	private float ambientScotopic, skyAvailability, moonFactor, nightContribution, weatherAttenuation = 1F;
 
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void beforeHud(RenderGameOverlayEvent.Pre event) {
@@ -67,6 +70,7 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 		long now = System.nanoTime();
 		float delta = lastNanos == 0L ? 0F : (now - lastNanos) * 0.000000001F;
 		lastNanos = now;
+		updateEnvironmentalScotopic(mc.theWorld, mc.thePlayer);
 		boolean enabled = ClientConfig.DARK_ADAPTATION_ENABLED.get() && quality() > 0;
 		boolean captured = false;
 		if(enabled) {
@@ -191,7 +195,7 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 			GL11.glMatrixMode(GL11.GL_MODELVIEW); GL11.glPushMatrix(); modelview = true; GL11.glLoadIdentity(); GL11.glColor4f(1, 1, 1, 1);
 			GL13.glActiveTexture(GL13.GL_TEXTURE0); GL11.glBindTexture(GL11.GL_TEXTURE_2D, sourceTexture);
 			GL13.glActiveTexture(GL13.GL_TEXTURE1); GL11.glBindTexture(GL11.GL_TEXTURE_2D, depthTexture);
-			shader.use(width, height, state, configuredStrength, clamp(ClientConfig.DARK_ADAPTATION_NOISE.get(), 0F, 0.05F),
+			shader.use(width, height, state, configuredStrength, clamp(ClientConfig.DARK_ADAPTATION_SCOTOPIC_FLOOR.get(), 0F, 0.15F), ambientScotopic, clamp(ClientConfig.DARK_ADAPTATION_NOISE.get(), 0F, 0.05F),
 				clamp(ClientConfig.DARK_ADAPTATION_CENTER_LOSS.get(), 0F, 0.35F), quality(), depthAvailable);
 			drawQuad();
 		} finally {
@@ -207,6 +211,25 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 	}
 
 	private int textureBinding(int unit) { GL13.glActiveTexture(unit); return GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D); }
+	/** Uses saved vanilla sky light and celestial state, not HD's patched final lightmap/brightness. */
+	private void updateEnvironmentalScotopic(World world, EntityPlayer player) {
+		if(world.provider.hasNoSky) { ambientScotopic = skyAvailability = moonFactor = nightContribution = 0F; weatherAttenuation = 1F; return; }
+		int x = MathHelper.floor_double(player.posX), y = MathHelper.floor_double(player.posY + player.getEyeHeight()), z = MathHelper.floor_double(player.posZ);
+		float center = world.getSavedLightValue(EnumSkyBlock.Sky, x, y, z) / 15F;
+		float nearby = world.getSavedLightValue(EnumSkyBlock.Sky, x + 2, y, z) + world.getSavedLightValue(EnumSkyBlock.Sky, x - 2, y, z)
+			+ world.getSavedLightValue(EnumSkyBlock.Sky, x, y, z + 2) + world.getSavedLightValue(EnumSkyBlock.Sky, x, y, z - 2);
+		skyAvailability = clamp(center * 0.60F + nearby / 60F * 0.40F, 0F, 1F);
+		if(world.canBlockSeeTheSky(x, y, z)) skyAvailability = Math.max(skyAvailability, 0.95F);
+		float angle = world.getCelestialAngle(1F);
+		float night = clamp((-(float)Math.cos(angle * Math.PI * 2D) - 0.05F) / 0.95F, 0F, 1F);
+		int phase = world.getMoonPhase();
+		int phaseDistance = Math.min(phase, 8 - phase);
+		moonFactor = 1F - phaseDistance / 4F;
+		nightContribution = night * (0.22F + 0.78F * moonFactor * moonFactor);
+		float rain = world.getRainStrength(1F), thunder = world.getWeightedThunderStrength(1F);
+		weatherAttenuation = clamp(1F - rain * 0.35F - thunder * 0.35F, 0.30F, 1F);
+		ambientScotopic = clamp(skyAvailability * nightContribution * weatherAttenuation, 0F, 1F);
+	}
 	private void readViewport() { viewportBuffer.clear(); GL11.glGetInteger(GL11.GL_VIEWPORT, viewportBuffer); }
 	private static void drawQuad() { Tessellator t = Tessellator.instance; t.startDrawingQuads(); t.addVertexWithUV(0,0,0,0,0); t.addVertexWithUV(1,0,0,1,0); t.addVertexWithUV(1,1,0,1,1); t.addVertexWithUV(0,1,0,0,1); t.draw(); }
 
@@ -241,12 +264,13 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 		mc.fontRenderer.drawStringWithShadow(String.format("Eye scene %.3f  cone %.3f  rod %.3f  effective %.3f", state.getExposure(), state.getConeAdaptation(), state.getRodAdaptation(), state.getEffectiveAdaptation()), 4, 4, 0xB0B0B0);
 		mc.fontRenderer.drawStringWithShadow("shader " + shader.isLoaded() + "  framebuffer MC/EXT " + OpenGlHelper.isFramebufferEnabled() + "/" + fboSupported + "  exposure " + exposurePath, 4, 14, 0x909090);
 		mc.fontRenderer.drawStringWithShadow("depth recovery " + depthAvailable + "  Angelica " + angelica + "  failure " + failureReason, 4, 24, 0x909090);
+		mc.fontRenderer.drawStringWithShadow(String.format("ambient %.3f  sky %.3f  night/moon %.3f/%.3f  weather %.3f", ambientScotopic, skyAvailability, nightContribution, moonFactor, weatherAttenuation), 4, 34, 0x909090);
 	}
 
 	private void failOnce(String operation, Throwable t, int kind) { if((kind == 0 && captureWarned) || (kind == 1 && depthWarned) || (kind == 2 && meterWarned)) return; if(kind == 0) captureWarned = true; else if(kind == 1) depthWarned = true; else meterWarned = true; recordFailure(operation + ": " + describe(t)); }
 	private void recordFailure(String reason) { failureReason = reason == null ? "unknown failure" : reason; MainRegistry.logger.warn("Dark adaptation " + failureReason); }
 	private static String describe(Throwable t) { return t.getClass().getSimpleName() + (t.getMessage() == null ? "" : ": " + t.getMessage()); }
-	private void releaseWorld() { if(lastWorld != null) { state.reset(); lastWorld = null; } lastNanos = 0L; deleteResources(); }
+	private void releaseWorld() { if(lastWorld != null) { state.reset(); lastWorld = null; } ambientScotopic = skyAvailability = moonFactor = nightContribution = 0F; weatherAttenuation = 1F; lastNanos = 0L; deleteResources(); }
 	private void deleteResources() { if(sourceTexture != 0) GL11.glDeleteTextures(sourceTexture); if(depthTexture != 0) GL11.glDeleteTextures(depthTexture); if(meterTexture != 0) GL11.glDeleteTextures(meterTexture); if(meterFramebuffer != 0 && fboSupported) EXTFramebufferObject.glDeleteFramebuffersEXT(meterFramebuffer); sourceTexture = depthTexture = meterTexture = meterFramebuffer = textureWidth = textureHeight = 0; depthAvailable = false; }
 	@Override public void onResourceManagerReload(IResourceManager manager) { shader.destroy(); deleteResources(); reloadPending = true; captureWarned = depthWarned = meterWarned = false; failureReason = "none"; exposurePath = "not sampled"; }
 }
