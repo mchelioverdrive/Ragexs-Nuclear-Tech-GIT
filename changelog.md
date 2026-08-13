@@ -1,13 +1,9 @@
-# Pull Request: Add environmental scotopic dark recovery
-
-- Added a separate sky-light, starlight, moon-phase, and weather estimate for dark-adapted vision.
-- Changed Hardcore Darkness mathematical-black recovery from depth-edge-created light to environmentally gated dim grayscale geometry, keeping sealed zero-light spaces black.
-- Added a conservative scotopic-floor setting and expanded runtime adaptation diagnostics.
-
-## Pull Request: Fix Hardcore Darkness in runClient
+# Pull Request: Fix DarkAdaptationRenderer LWJGL crash
 
 ## Unreleased
 
+- Fixed the dark-adaptation viewport query crashing under LWJGL 2 by ensuring its reusable query
+  buffer meets LWJGL's required capacity.
 - Added a `runClient` preparation task that exposes ForgeGradle's generated MCP field and method CSV
   mappings at the location expected by legacy coremods.
 - Fixed Hardcore Darkness 1.7.10 failing to transform `WorldProviderHell` in the development client
