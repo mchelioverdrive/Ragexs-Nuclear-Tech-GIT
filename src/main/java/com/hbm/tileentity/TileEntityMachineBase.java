@@ -34,6 +34,7 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 
 	private NBTTagCompound lastPackedNBT = null;
 	private ByteBuf lastPackedBuf = null;
+	private boolean networkSyncDirty = true;
 
 	public TileEntityMachineBase(int slotCount) {
 		slots = new ItemStack[slotCount];
@@ -60,6 +61,7 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 		{
 			ItemStack itemStack = slots[i];
 			slots[i] = null;
+			onInventorySlotChanged(i);
 			return itemStack;
 		} else {
 			return null;
@@ -73,6 +75,7 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 		{
 			itemStack.stackSize = getInventoryStackLimit();
 		}
+		onInventorySlotChanged(i);
 	}
 
 	@Override
@@ -89,6 +92,7 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 
 	public void setCustomName(String name) {
 		this.customName = name;
+		this.markNetworkDirty();
 	}
 
 	@Override
@@ -122,6 +126,7 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 			if(slots[slot].stackSize <= amount) {
 				ItemStack itemStack = slots[slot];
 				slots[slot] = null;
+				onInventorySlotChanged(slot);
 				return itemStack;
 			}
 
@@ -129,6 +134,7 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 			if(slots[slot].stackSize == 0) {
 				slots[slot] = null;
 			}
+			onInventorySlotChanged(slot);
 
 			return itemStack1;
 		} else {
@@ -149,6 +155,16 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 	@Override
 	public int[] getAccessibleSlotsFromSide(int side) {
 		return new int[] { };
+	}
+
+	/** Called by the standard inventory mutation paths. Subclasses can invalidate local caches here. */
+	protected void onInventorySlotChanged(int slot) {
+		this.markNetworkDirty();
+	}
+
+	/** Marks client-visible machine state for the opt-in allocation-free sync path. */
+	public void markNetworkDirty() {
+		this.networkSyncDirty = true;
 	}
 
 	public int getGaugeScaled(int i, FluidTank tank) {
@@ -206,11 +222,43 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 		// I think it might be fixable by doing something with getDescriptionPacket() and onDataPacket(),
 		// but this sidesteps the problem for the mean time.
 		if (lastPackedBuf != null && buf.equals(lastPackedBuf) && worldObj.getWorldTime() % 20 != 0) {
+			buf.release();
 			return;
 		}
+		if(lastPackedBuf != null) lastPackedBuf.release();
 		this.lastPackedBuf = buf;
 
 		PacketDispatcher.wrapper.sendToAllAround(packet, new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, range));
+	}
+
+	/**
+	 * Opt-in sync path for machines whose client-visible mutations call markNetworkDirty().
+	 * A baseline packet is still sent once per second for clients that reload a chunk.
+	 */
+	public void networkPackNTIfDirty(int range) {
+		if(worldObj.isRemote || (!this.networkSyncDirty && worldObj.getWorldTime() % 20 != 0)) return;
+
+		PacketDispatcher.wrapper.sendToAllAround(new BufPacket(xCoord, yCoord, zCoord, this), new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, range));
+		this.networkSyncDirty = false;
+	}
+
+	private void releaseLastPackedBuf() {
+		if(this.lastPackedBuf != null) {
+			if(this.lastPackedBuf.refCnt() > 0) this.lastPackedBuf.release();
+			this.lastPackedBuf = null;
+		}
+	}
+
+	@Override
+	public void invalidate() {
+		releaseLastPackedBuf();
+		super.invalidate();
+	}
+
+	@Override
+	public void onChunkUnload() {
+		releaseLastPackedBuf();
+		super.onChunkUnload();
 	}
 
 	@Override public void serialize(ByteBuf buf) {

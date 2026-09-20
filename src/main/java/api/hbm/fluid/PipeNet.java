@@ -14,6 +14,8 @@ public class PipeNet implements IPipeNet {
 	private FluidType type;
 	private List<IFluidConductor> links = new ArrayList();
 	private HashSet<IFluidConnector> subscribers = new HashSet();
+	private final List<IFluidConnector> subscriberScratch = new ArrayList();
+	private long[] demandScratch = new long[0];
 	
 	public PipeNet(FluidType type) {
 		this.type = type;
@@ -90,18 +92,26 @@ public class PipeNet implements IPipeNet {
 		if(this.subscribers.isEmpty())
 			return fill;
 		
-		List<IFluidConnector> subList = new ArrayList(subscribers);
-		return fairTransfer(subList, type, pressure, fill);
+		this.subscriberScratch.clear();
+		this.subscriberScratch.addAll(this.subscribers);
+		if(this.demandScratch.length < this.subscriberScratch.size()) this.demandScratch = new long[this.subscriberScratch.size()];
+		return fairTransfer(this.subscriberScratch, type, pressure, fill, this.demandScratch);
 	}
 	
 	public static long fairTransfer(List<IFluidConnector> subList, FluidType type, int pressure, long fill) {
+		return fairTransfer(subList, type, pressure, fill, null);
+	}
+
+	private static long fairTransfer(List<IFluidConnector> subList, FluidType type, int pressure, long fill, long[] demandScratch) {
 		
 		if(fill <= 0) return 0;
 		
 		long totalReq = 0;
 		
-		for(IFluidConnector con : subList) {
-			totalReq += con.getDemand(type, pressure);
+		for(int i = 0; i < subList.size(); i++) {
+			long demand = subList.get(i).getDemand(type, pressure);
+			if(demandScratch != null) demandScratch[i] = demand;
+			totalReq += demand;
 		}
 		
 		if(totalReq == 0)
@@ -109,8 +119,9 @@ public class PipeNet implements IPipeNet {
 		
 		long totalGiven = 0;
 		
-		for(IFluidConnector con : subList) {
-			long req = con.getDemand(type, pressure);
+		for(int i = 0; i < subList.size(); i++) {
+			IFluidConnector con = subList.get(i);
+			long req = demandScratch != null ? demandScratch[i] : con.getDemand(type, pressure);
 			double fraction = (double)req / (double)totalReq;
 			
 			long given = (long) Math.floor(fraction * fill);
@@ -132,6 +143,7 @@ public class PipeNet implements IPipeNet {
 	public void destroy() {
 		this.valid = false;
 		this.subscribers.clear();
+		this.subscriberScratch.clear();
 		
 		for(IFluidConductor con : this.links)
 			con.setPipeNet(type, null);

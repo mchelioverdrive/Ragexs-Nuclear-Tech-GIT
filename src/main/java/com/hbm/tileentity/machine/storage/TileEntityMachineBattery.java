@@ -162,6 +162,11 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 	public void updateEntity() {
 		
 		if(!worldObj.isRemote && worldObj.getBlock(xCoord, yCoord, zCoord) instanceof MachineBattery) {
+			long syncPower = this.power;
+			long syncDelta = this.delta;
+			short syncRedLow = this.redLow;
+			short syncRedHigh = this.redHigh;
+			ConnectionPriority syncPriority = this.priority;
 			
 			if(priority == null || priority.ordinal() == 0 || priority.ordinal() == 4) {
 				priority = ConnectionPriority.LOW;
@@ -184,7 +189,7 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 			power = Library.chargeItemsFromTE(slots, 1, power, getMaxPower());
 			
 			if(mode == mode_output || mode == mode_buffer) {
-				this.tryProvide(worldObj, xCoord, yCoord, zCoord, ForgeDirection.UNKNOWN);
+				if(node != null && node.hasValidNet()) node.net.addProvider(this);
 			} else {
 				if(node != null && node.hasValidNet()) node.net.removeProvider(this);
 			}
@@ -213,7 +218,8 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 			
 			prevPowerState = power;
 			
-			this.networkPackNT(20);
+			if(syncPower != this.power || syncDelta != this.delta || syncRedLow != this.redLow || syncRedHigh != this.redHigh || syncPriority != this.priority) this.markNetworkDirty();
+			this.networkPackNTIfDirty(20);
 		}
 	}
 	
@@ -289,7 +295,10 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 	}
 
 	@Override public boolean canConnect(ForgeDirection dir) { return true; }
-	@Override public void setPower(long power) { this.power = power; }
+	@Override public void setPower(long power) {
+		if(this.power != power) this.markNetworkDirty();
+		this.power = power;
+	}
 	@Override public ConnectionPriority getPriority() { return this.priority; }
 	
 	// do some opencomputer stuff

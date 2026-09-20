@@ -38,6 +38,10 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	public int[] progress;
 	public int[] maxProgress;
 	public boolean isProgressing;
+	private final ItemStack[] cachedTemplateStacks;
+	private final int[] cachedTemplateMeta;
+	private final ChemRecipe[] cachedRecipes;
+	private final int[][] cachedSlotIndices;
 
 	public FluidTank[] tanks;
 
@@ -51,6 +55,10 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 		progress = new int[count];
 		maxProgress = new int[count];
+		cachedTemplateStacks = new ItemStack[count];
+		cachedTemplateMeta = new int[count];
+		cachedRecipes = new ChemRecipe[count];
+		cachedSlotIndices = new int[count][];
 
 		tanks = new FluidTank[4 * count];
 		for(int i = 0; i < 4 * count; i++) {
@@ -92,7 +100,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		if(slots[template] == null || slots[template].getItem() != ModItems.chemistry_template)
 			return false;
 
-		ChemRecipe recipe = ChemplantRecipes.indexMapping.get(slots[template].getItemDamage());
+		ChemRecipe recipe = this.resolveRecipe(index);
 
 		if(recipe == null)
 			return false;
@@ -132,12 +140,12 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	}
 
 	private boolean hasRequiredItems(ChemRecipe recipe, int index) {
-		int[] indices = getSlotIndicesFromIndex(index);
+		int[] indices = getCachedSlotIndicesFromIndex(index);
 		return InventoryUtil.doesArrayHaveIngredients(slots, indices[0], indices[1], recipe.inputs);
 	}
 
 	private boolean hasSpaceForItems(ChemRecipe recipe, int index) {
-		int[] indices = getSlotIndicesFromIndex(index);
+		int[] indices = getCachedSlotIndicesFromIndex(index);
 		return InventoryUtil.doesArrayHaveSpace(slots, indices[2], indices[3], recipe.outputs);
 	}
 
@@ -149,8 +157,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		//if(slots[0] != null && slots[0].getItem() == ModItems.meteorite_sword_machined)
 		//	slots[0] = new ItemStack(ModItems.meteorite_sword_treated); //fisfndmoivndlmgindgifgjfdnblfm
 
-		int template = getTemplateIndex(index);
-		ChemRecipe recipe = ChemplantRecipes.indexMapping.get(slots[template].getItemDamage());
+		ChemRecipe recipe = this.resolveRecipe(index);
 
 		this.maxProgress[index] = recipe.getDuration() * this.speed / 100;
 
@@ -178,7 +185,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 	private void consumeItems(ChemRecipe recipe, int index) {
 
-		int[] indices = getSlotIndicesFromIndex(index);
+		int[] indices = getCachedSlotIndicesFromIndex(index);
 
 		for(AStack in : recipe.inputs) {
 			if(in != null)
@@ -188,7 +195,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 	private void produceItems(ChemRecipe recipe, int index) {
 
-		int[] indices = getSlotIndicesFromIndex(index);
+		int[] indices = getCachedSlotIndicesFromIndex(index);
 
 		for(ItemStack out : recipe.outputs) {
 			if(out != null)
@@ -202,12 +209,12 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		if(slots[template] == null || slots[template].getItem() != ModItems.chemistry_template)
 			return;
 
-		ChemRecipe recipe = ChemplantRecipes.indexMapping.get(slots[template].getItemDamage());
+		ChemRecipe recipe = this.resolveRecipe(index);
 
 		if(recipe != null) {
 
 			DirPos[] positions = getInputPositions();
-			int[] indices = getSlotIndicesFromIndex(index);
+			int[] indices = getCachedSlotIndicesFromIndex(index);
 
 			for(DirPos coord : positions) {
 
@@ -264,7 +271,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	private void unloadItems(int index) {
 
 		DirPos[] positions = getOutputPositions();
-		int[] indices = getSlotIndicesFromIndex(index);
+		int[] indices = getCachedSlotIndicesFromIndex(index);
 
 		for(DirPos coord : positions) {
 
@@ -335,6 +342,26 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	@Override
 	public void setPower(long power) {
 		this.power = power;
+	}
+
+	private int[] getCachedSlotIndicesFromIndex(int index) {
+		int[] indices = this.cachedSlotIndices[index];
+		if(indices == null) {
+			indices = getSlotIndicesFromIndex(index);
+			this.cachedSlotIndices[index] = indices;
+		}
+		return indices;
+	}
+
+	private ChemRecipe resolveRecipe(int index) {
+		ItemStack template = this.slots[getTemplateIndex(index)];
+		int meta = template == null ? 0 : template.getItemDamage();
+		if(this.cachedTemplateStacks[index] != template || this.cachedTemplateMeta[index] != meta) {
+			this.cachedTemplateStacks[index] = template;
+			this.cachedTemplateMeta[index] = meta;
+			this.cachedRecipes[index] = template != null && template.getItem() == ModItems.chemistry_template ? ChemplantRecipes.indexMapping.get(meta) : null;
+		}
+		return this.cachedRecipes[index];
 	}
 
 	/*public int getFluidFill(FluidType type) {

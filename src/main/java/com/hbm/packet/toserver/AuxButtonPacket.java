@@ -142,6 +142,7 @@ public class AuxButtonPacket implements IMessage {
 						}
 						bat.markDirty();
 					}
+					bat.markNetworkDirty();
 				}
 
 				if (te instanceof TileEntitySoyuzLauncher) {

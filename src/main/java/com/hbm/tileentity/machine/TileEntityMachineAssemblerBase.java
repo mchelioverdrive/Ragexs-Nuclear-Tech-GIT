@@ -27,6 +27,14 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 	public int[] maxProgress;
 	public boolean isProgressing;
 	public boolean[] needsTemplateSwitch;
+	private final ItemStack[] cachedTemplateStacks;
+	private final int[] cachedTemplateMeta;
+	private final int[] cachedTemplateNbtHash;
+	private final AStack[][] cachedRecipes;
+	private final ItemStack[] cachedOutputs;
+	private final ItemStack[][] cachedOutputArrays;
+	private final int[] cachedProcessTimes;
+	private final int[][] cachedSlotIndices;
 
 	int consumption = 100;
 	int speed = 100;
@@ -39,6 +47,14 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 		progress = new int[count];
 		maxProgress = new int[count];
 		needsTemplateSwitch = new boolean[count];
+		cachedTemplateStacks = new ItemStack[count];
+		cachedTemplateMeta = new int[count];
+		cachedTemplateNbtHash = new int[count];
+		cachedRecipes = new AStack[count][];
+		cachedOutputs = new ItemStack[count];
+		cachedOutputArrays = new ItemStack[count][];
+		cachedProcessTimes = new int[count];
+		cachedSlotIndices = new int[count][];
 	}
 
 	@Override
@@ -75,8 +91,9 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 		if(slots[template] == null || slots[template].getItem() != ModItems.assembly_template)
 			return false;
 
-		List<AStack> recipe = AssemblerRecipes.getRecipeFromTempate(slots[template]);
-		ItemStack output = AssemblerRecipes.getOutputFromTempate(slots[template]);
+		this.resolveRecipe(index);
+		AStack[] recipe = this.cachedRecipes[index];
+		ItemStack output = this.cachedOutputs[index];
 
 		if(recipe == null)
 			return false;
@@ -88,14 +105,14 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 		return true;
 	}
 
-	private boolean hasRequiredItems(List<AStack> recipe, int index) {
-		int[] indices = getSlotIndicesFromIndex(index);
-		return InventoryUtil.doesArrayHaveIngredients(slots, indices[0], indices[1], recipe.toArray(new AStack[0]));
+	private boolean hasRequiredItems(AStack[] recipe, int index) {
+		int[] indices = getCachedSlotIndicesFromIndex(index);
+		return InventoryUtil.doesArrayHaveIngredients(slots, indices[0], indices[1], recipe);
 	}
 
 	private boolean hasSpaceForItems(ItemStack recipe, int index) {
-		int[] indices = getSlotIndicesFromIndex(index);
-		return InventoryUtil.doesArrayHaveSpace(slots, indices[2], indices[2], new ItemStack[] { recipe });
+		int[] indices = getCachedSlotIndicesFromIndex(index);
+		return InventoryUtil.doesArrayHaveSpace(slots, indices[2], indices[2], this.cachedOutputArrays[index]);
 	}
 
 	protected void process(int index) {
@@ -106,11 +123,10 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 		//if(slots[0] != null && slots[0].getItem() == ModItems.meteorite_sword_alloyed)
 		//	slots[0] = new ItemStack(ModItems.meteorite_sword_machined); //fisfndmoivndlmgindgifgjfdnblfm
 
-		int template = getTemplateIndex(index);
-
-		List<AStack> recipe = AssemblerRecipes.getRecipeFromTempate(slots[template]);
-		ItemStack output = AssemblerRecipes.getOutputFromTempate(slots[template]);
-		int time = ItemAssemblyTemplate.getProcessTime(slots[template]);
+		this.resolveRecipe(index);
+		AStack[] recipe = this.cachedRecipes[index];
+		ItemStack output = this.cachedOutputs[index];
+		int time = this.cachedProcessTimes[index];
 
 		this.maxProgress[index] = time * this.speed / 100;
 
@@ -123,9 +139,9 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 		}
 	}
 
-	private void consumeItems(List<AStack> recipe, int index) {
+	private void consumeItems(AStack[] recipe, int index) {
 
-		int[] indices = getSlotIndicesFromIndex(index);
+		int[] indices = getCachedSlotIndicesFromIndex(index);
 
 		for(AStack in : recipe) {
 			if(in != null)
@@ -135,7 +151,7 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 
 	private void produceItems(ItemStack out, int index) {
 
-		int[] indices = getSlotIndicesFromIndex(index);
+		int[] indices = getCachedSlotIndicesFromIndex(index);
 
 		if(out != null) {
 			InventoryUtil.tryAddItemToInventory(slots, indices[2], indices[2], out.copy());
@@ -147,7 +163,7 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 		int template = getTemplateIndex(index);
 
 		DirPos[] positions = getInputPositions();
-		int[] indices = getSlotIndicesFromIndex(index);
+		int[] indices = getCachedSlotIndicesFromIndex(index);
 
 		for(DirPos coord : positions) {
 
@@ -179,7 +195,8 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 
 				if(!noTemplate) {
 
-					List<AStack> recipe = AssemblerRecipes.getRecipeFromTempate(slots[template]);
+					this.resolveRecipe(index);
+					AStack[] recipe = this.cachedRecipes[index];
 
 					if(recipe != null) {
 
@@ -233,7 +250,7 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 	private void unloadItems(int index) {
 
 		DirPos[] positions = getOutputPositions();
-		int[] indices = getSlotIndicesFromIndex(index);
+		int[] indices = getCachedSlotIndicesFromIndex(index);
 
 		for(DirPos coord : positions) {
 
@@ -318,6 +335,38 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 	@Override
 	public void setPower(long power) {
 		this.power = power;
+	}
+
+	private int[] getCachedSlotIndicesFromIndex(int index) {
+		int[] indices = this.cachedSlotIndices[index];
+		if(indices == null) {
+			indices = getSlotIndicesFromIndex(index);
+			this.cachedSlotIndices[index] = indices;
+		}
+		return indices;
+	}
+
+	private void resolveRecipe(int index) {
+		ItemStack template = this.slots[getTemplateIndex(index)];
+		int meta = template == null ? 0 : template.getItemDamage();
+		int nbtHash = template == null || template.getTagCompound() == null ? 0 : template.getTagCompound().hashCode();
+		if(this.cachedTemplateStacks[index] == template && this.cachedTemplateMeta[index] == meta && this.cachedTemplateNbtHash[index] == nbtHash) return;
+
+		this.cachedTemplateStacks[index] = template;
+		this.cachedTemplateMeta[index] = meta;
+		this.cachedTemplateNbtHash[index] = nbtHash;
+		this.cachedRecipes[index] = null;
+		this.cachedOutputs[index] = null;
+		this.cachedOutputArrays[index] = null;
+		this.cachedProcessTimes[index] = 0;
+
+		if(template == null || template.getItem() != ModItems.assembly_template) return;
+		List<AStack> recipe = AssemblerRecipes.getRecipeFromTempate(template);
+		if(recipe == null) return;
+		this.cachedRecipes[index] = recipe.toArray(new AStack[recipe.size()]);
+		this.cachedOutputs[index] = AssemblerRecipes.getOutputFromTempate(template);
+		this.cachedOutputArrays[index] = new ItemStack[] { this.cachedOutputs[index] };
+		this.cachedProcessTimes[index] = ItemAssemblyTemplate.getProcessTime(template);
 	}
 
 	public abstract int getRecipeCount();

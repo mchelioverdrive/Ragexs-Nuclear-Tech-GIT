@@ -33,6 +33,7 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 	public final int heatMax = VersatileConfig.rtgDecay() ? 600 : 200;
 	public long power;
 	public final long powerMax = 100000;
+	private long lastSyncedPower = Long.MIN_VALUE;
 	
 	public static final int[] slot_io = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 };
 	
@@ -221,7 +222,10 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 			if(power > powerMax)
 				power = powerMax;
 			
-			PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, power), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
+			if(this.power != this.lastSyncedPower || worldObj.getWorldTime() % 20 == 0) {
+				PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, power), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
+				this.lastSyncedPower = this.power;
+			}
 		}
 	}
 

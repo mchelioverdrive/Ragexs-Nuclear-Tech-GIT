@@ -10,6 +10,8 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fluids.FluidTank;
 
 public abstract class TileEntityTickingBase extends TileEntityLoadedBase implements INBTPacketReceiver, IBufPacketReceiver {
+
+	private boolean networkSyncDirty = true;
 	
 	public TileEntityTickingBase() { }
 	
@@ -39,6 +41,17 @@ public abstract class TileEntityTickingBase extends TileEntityLoadedBase impleme
 	
 	public void networkPackNT(int range) {
 		if(!worldObj.isRemote) PacketDispatcher.wrapper.sendToAllAround(new BufPacket(xCoord, yCoord, zCoord, this), new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, range));
+	}
+
+	public void markNetworkDirty() {
+		this.networkSyncDirty = true;
+	}
+
+	/** Opt-in dirty sync with the same once-per-second baseline as machine tiles. */
+	public void networkPackNTIfDirty(int range) {
+		if(worldObj.isRemote || (!this.networkSyncDirty && worldObj.getWorldTime() % 20 != 0)) return;
+		this.networkPackNT(range);
+		this.networkSyncDirty = false;
 	}
 
 	@Override public void serialize(ByteBuf buf) {

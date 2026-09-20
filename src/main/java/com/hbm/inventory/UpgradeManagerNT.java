@@ -1,6 +1,5 @@
 package com.hbm.inventory;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,7 +18,13 @@ public class UpgradeManagerNT {
 
 	private final Map<UpgradeType, Integer> upgrades = new HashMap<UpgradeType, Integer>();
 	private UpgradeType mutexType = null;
-	private SlotSignature[] cachedSignature = null;
+	private ItemStack[] cachedStacks = new ItemStack[0];
+	private Item[] cachedItems = new Item[0];
+	private int[] cachedMeta = new int[0];
+	private int[] cachedCount = new int[0];
+	private int[] cachedNbtHash = new int[0];
+	private int cachedStart;
+	private int cachedEnd = -1;
 	private boolean invalidated = true;
 
 	public void invalidate() {
@@ -27,10 +32,21 @@ public class UpgradeManagerNT {
 	}
 
 	public void checkSlots(ItemStack[] slots, int start, int end) {
-		SlotSignature[] signature = buildSignature(slots, start, end);
-		if(!this.invalidated && Arrays.equals(signature, this.cachedSignature)) return;
+		if(!this.invalidated && signatureMatches(slots, start, end)) return;
+		recalculate(slots, start, end);
+	}
 
-		this.cachedSignature = signature;
+	/**
+	 * Strict invalidation path for inventories whose mutation methods call invalidate().
+	 * Unlike checkSlots(), the clean steady-state path does not even scan the slot range.
+	 */
+	public void checkSlotsIfDirty(ItemStack[] slots, int start, int end) {
+		if(!this.invalidated) return;
+		recalculate(slots, start, end);
+	}
+
+	private void recalculate(ItemStack[] slots, int start, int end) {
+		cacheSignature(slots, start, end);
 		this.invalidated = false;
 		this.upgrades.clear();
 		this.mutexType = null;
@@ -75,51 +91,49 @@ public class UpgradeManagerNT {
 		return this.mutexType;
 	}
 
-	private static SlotSignature[] buildSignature(ItemStack[] slots, int start, int end) {
-		if(slots == null || end < start) return new SlotSignature[0];
-		SlotSignature[] signature = new SlotSignature[end - start + 1];
-		for(int i = start; i <= end; i++) {
-			signature[i - start] = i >= 0 && i < slots.length ? SlotSignature.from(slots[i]) : SlotSignature.EMPTY;
+	private boolean signatureMatches(ItemStack[] slots, int start, int end) {
+		if(this.cachedStart != start || this.cachedEnd != end) return false;
+		int length = Math.max(0, end - start + 1);
+		if(this.cachedStacks.length != length) return false;
+
+		for(int i = 0; i < length; i++) {
+			ItemStack stack = slots != null && start + i >= 0 && start + i < slots.length ? slots[start + i] : null;
+			if(this.cachedStacks[i] != stack) return false;
+			if(stack != null) {
+				NBTTagCompound tag = stack.getTagCompound();
+				if(this.cachedItems[i] != stack.getItem() || this.cachedMeta[i] != stack.getItemDamage() || this.cachedCount[i] != stack.stackSize || this.cachedNbtHash[i] != (tag == null ? 0 : tag.hashCode())) return false;
+			}
 		}
-		return signature;
+		return true;
 	}
 
-	private static class SlotSignature {
-		private static final SlotSignature EMPTY = new SlotSignature(0, 0, 0, 0);
-
-		private final int itemId;
-		private final int meta;
-		private final int count;
-		private final int nbtHash;
-
-		private SlotSignature(int itemId, int meta, int count, int nbtHash) {
-			this.itemId = itemId;
-			this.meta = meta;
-			this.count = count;
-			this.nbtHash = nbtHash;
+	private void cacheSignature(ItemStack[] slots, int start, int end) {
+		int length = Math.max(0, end - start + 1);
+		if(this.cachedStacks.length != length) {
+			this.cachedStacks = new ItemStack[length];
+			this.cachedItems = new Item[length];
+			this.cachedMeta = new int[length];
+			this.cachedCount = new int[length];
+			this.cachedNbtHash = new int[length];
 		}
+		this.cachedStart = start;
+		this.cachedEnd = end;
 
-		private static SlotSignature from(ItemStack stack) {
-			if(stack == null) return EMPTY;
-			NBTTagCompound tag = stack.getTagCompound();
-			return new SlotSignature(Item.getIdFromItem(stack.getItem()), stack.getItemDamage(), stack.stackSize, tag == null ? 0 : tag.hashCode());
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if(this == obj) return true;
-			if(!(obj instanceof SlotSignature)) return false;
-			SlotSignature other = (SlotSignature) obj;
-			return this.itemId == other.itemId && this.meta == other.meta && this.count == other.count && this.nbtHash == other.nbtHash;
-		}
-
-		@Override
-		public int hashCode() {
-			int result = this.itemId;
-			result = 31 * result + this.meta;
-			result = 31 * result + this.count;
-			result = 31 * result + this.nbtHash;
-			return result;
+		for(int i = 0; i < length; i++) {
+			ItemStack stack = slots != null && start + i >= 0 && start + i < slots.length ? slots[start + i] : null;
+			this.cachedStacks[i] = stack;
+			if(stack != null) {
+				NBTTagCompound tag = stack.getTagCompound();
+				this.cachedItems[i] = stack.getItem();
+				this.cachedMeta[i] = stack.getItemDamage();
+				this.cachedCount[i] = stack.stackSize;
+				this.cachedNbtHash[i] = tag == null ? 0 : tag.hashCode();
+			} else {
+				this.cachedItems[i] = null;
+				this.cachedMeta[i] = 0;
+				this.cachedCount[i] = 0;
+				this.cachedNbtHash[i] = 0;
+			}
 		}
 	}
 }

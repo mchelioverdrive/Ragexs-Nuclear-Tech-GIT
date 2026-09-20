@@ -169,6 +169,9 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		boolean markDirty = false;
 
 		if(!worldObj.isRemote) {
+			long syncPower = this.power;
+			int syncMaxProgress = this.maxProgress;
+			int syncProgress = this.progress;
 
 			if(cooldown > 0) {
 				cooldown--;
@@ -181,7 +184,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 			this.consumption = 50;
 			this.maxProgress = 100;
 
-			this.upgradeManager.checkSlots(slots, 3, 3);
+			this.upgradeManager.checkSlotsIfDirty(slots, 3, 3);
 
 			int speedLevel = this.upgradeManager.getLevel(UpgradeType.SPEED);
 			int powerLevel = this.upgradeManager.getLevel(UpgradeType.POWER);
@@ -222,7 +225,8 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 				MachineElectricFurnace.updateBlockState(this.progress > 0, this.worldObj, this.xCoord, this.yCoord, this.zCoord);
 			}
 
-			this.networkPackNT(50);
+			if(syncPower != this.power || syncMaxProgress != this.maxProgress || syncProgress != this.progress) this.markNetworkDirty();
+			this.networkPackNTIfDirty(50);
 
 
 			if(markDirty) {
@@ -254,7 +258,14 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	}
 
 	@Override
+	protected void onInventorySlotChanged(int slot) {
+		super.onInventorySlotChanged(slot);
+		if(slot == 3) this.upgradeManager.invalidate();
+	}
+
+	@Override
 	public void setPower(long i) {
+		if(this.power != i) this.markNetworkDirty();
 		power = i;
 
 	}

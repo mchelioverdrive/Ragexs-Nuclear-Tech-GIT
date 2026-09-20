@@ -1,11 +1,12 @@
 package com.hbm.uninos;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.Map.Entry;
 
 import com.hbm.util.Tuple.Pair;
 import com.hbm.util.fauxpointtwelve.BlockPos;
@@ -63,14 +64,15 @@ public class UniNodespace {
 
 			if(nodeWorld == null) continue;
 
-			for(Entry<Pair<BlockPos, INetworkProvider>, GenNode> entry : nodeWorld.nodes.entrySet()) {
-				GenNode node = entry.getValue();
-				INetworkProvider provider = entry.getKey().getValue();
+			nodeWorld.updateScratch.clear();
+			for(GenNode node : nodeWorld.nodes.values()) {
+				if(!nodeWorld.updateScratch.add(node)) continue;
 				if(!node.hasValidNet() || node.recentlyChanged) {
-					checkNodeConnection(world, node, provider);
+					checkNodeConnection(world, node, node.networkProvider);
 					node.recentlyChanged = false;
 				}
 			}
+			nodeWorld.updateScratch.clear();
 		}
 
 		updateNetworks();
@@ -138,6 +140,7 @@ public class UniNodespace {
 	public static class UniNodeWorld {
 
 		public HashMap<Pair<BlockPos, INetworkProvider>, GenNode> nodes = new LinkedHashMap<>();
+		private final Set<GenNode> updateScratch = Collections.newSetFromMap(new IdentityHashMap<GenNode, Boolean>());
 
 		/** Adds a node at all its positions to the nodespace */
 		public void pushNode(GenNode node) {

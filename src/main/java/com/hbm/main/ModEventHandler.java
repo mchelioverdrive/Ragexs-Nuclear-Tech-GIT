@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.WeakHashMap;
 
 import com.hbm.dim.laythe.WorldProviderLaythe;
 import com.hbm.entity.mob.EntityFRIEND;
@@ -880,6 +881,7 @@ public class ModEventHandler {
 
 	public static boolean didSit = false;
 	public static Field reference = null;
+	private final Map<World, List<Object>> loadedEntityScratch = new WeakHashMap<World, List<Object>>();
 
 //	@SubscribeEvent
 //	public void onWorldTick(TickEvent.WorldTickEvent event) {
@@ -954,7 +956,12 @@ public class ModEventHandler {
 				AuxSavedData.setThunder(event.world, thunder - 1);
 
 			if(!event.world.loadedEntityList.isEmpty()) {
-				List<Object> oList = new ArrayList<Object>();
+				List<Object> oList = this.loadedEntityScratch.get(event.world);
+				if(oList == null) {
+					oList = new ArrayList<Object>();
+					this.loadedEntityScratch.put(event.world, oList);
+				}
+				oList.clear();
 				oList.addAll(event.world.loadedEntityList);
 				/**
 				 *  REMOVE THIS V V V
@@ -1117,6 +1124,7 @@ public class ModEventHandler {
 				/**
 				 * REMOVE THIS ^ ^ ^
 				 */
+				oList.clear();
 			}
 
 
