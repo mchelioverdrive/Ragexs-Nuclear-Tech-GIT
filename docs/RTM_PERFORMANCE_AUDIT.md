@@ -119,3 +119,49 @@ The next energy pass should introduce persistent endpoint state and explicit net
 - No Minecraft client, integrated server, dedicated server, or in-game runtime validation was performed.
 - `git diff --check` completed without whitespace errors.
 - `gradlew compileJava --offline --no-daemon` reached Gradle configuration but could not compile because the local offline cache lacks ForgeGradle `1.2-1.0.12` and `org.osgi.service.prefs 1.1.2`. This is an environment/dependency-cache failure, not a source compilation result.
+
+## 2026-09-21 14:44 — Event-driven MK2 power-network bridge
+
+### Confirmed previous behavior
+
+- `UniNodespace.updateNodespace()` traversed the global `activeNodeNets` set and called `update()` on every power network at the start of every server tick.
+- Most providers and receivers use `tryProvide()`, `trySubscribe()`, or direct `addProvider()` / `addReceiver()` calls as timestamp keepalives. Some endpoints refresh every tick while others refresh at machine-specific intervals.
+- A three-second wall-clock timeout and `ILoadedTile` / invalid-TileEntity checks remove stale endpoints. A full dirty-only cutover was therefore unsafe: many endpoints mutate stored energy or demand directly and have no complete lifecycle or mutation hook.
+- Node removal destroys the whole containing network. Remaining nodes are assigned new networks by the subsequent topology pass, so endpoint membership has to be reconstructed unless it is transferred during a merge.
+
+### Implemented scheduler bridge
+
+- Power networks now acquire their owning world from their first registered node and are tracked in a world-local registry.
+- Each world has a deduplicated dirty-power-network set. Topology, supply, demand, and compatibility causes coalesce into one redistribution per scheduler pass.
+- The queue is copied into reusable scratch storage before execution. A dirty signal raised during distribution enters the now-empty queue and is retained for the next tick; it cannot create a same-tick retry loop.
+- Removed, merged, destroyed, and world-unloaded networks are removed from all world-local runnable sets. World unload also destroys remaining node networks and clears endpoint membership indexes.
+- Non-power UNINOS networks retain their previous per-tick update path. This pass does not migrate fluid, pneumatic, or other network types.
+- Power-network trackers are still reset every tick so cable-gauge `HE/t` accounting keeps its established meaning, but clean power networks no longer run the distribution algorithm.
+
+### Dirty ownership
+
+- Node creation, joining, leaving, merge, and expired-link reaping mark topology dirty.
+- Endpoint registration/removal and default provider consumption or receiver transfer mark supply or demand dirty.
+- Battery/FEnSU stored-power and mode-facing membership changes explicitly dirty their attached network.
+- Diode transfer-limit and priority controls explicitly mark the receiver-side demand state dirty. Diode delivery also retains a next-pass demand invalidation after successful transfer.
+
+### Persistent membership and compatibility
+
+- `PowerNetMK2` now exposes persistent provider and receiver membership. Persistent entries do not require timestamp refreshes, remain deduplicated, transfer across network merges, and are cleared on network destruction.
+- Standard batteries use persistent provider and receiver membership. FEnSU uses persistent receiver membership; its unusual below-block provider discovery remains on the legacy path.
+- Battery chunk unload explicitly detaches both memberships without deleting the unloaded conductor node. Invalidation, block replacement, network rebuild, and world unload clear membership through the existing node/network lifecycle.
+- Unmigrated endpoints continue using timestamp refresh and timeout cleanup. Networks containing any legacy endpoint are kept in a world-local compatibility set and request a deduplicated compatibility update each tick, preserving direct-field mutation semantics without restoring a global all-power-network update loop.
+- Persistent-only networks receive a controlled once-per-second compatibility pass for stale loaded/invalid tile cleanup. This remains a temporary safety net while more endpoint lifecycle hooks are migrated.
+
+### Diagnostics
+
+- Diagnostics are disabled by default. Set `1.45_enablePowerNetDiagnostics=true` in `hbm.cfg` and restart the server.
+- Run `/ntmpowerstats` as an operator to read aggregate completed-tick counters: active/redistributed/skipped/compatibility networks, registrations and refreshes, timeout removals, topology/supply/demand invalidations, endpoint totals and maxima, and distribution nanoseconds.
+- Disabled diagnostics avoid per-event allocation and skip the nanosecond timer. The command allocates report strings only when invoked.
+
+### Preserved behavior and remaining gaps
+
+- Priority order, weighted distribution formulas, provider/receiver speed limits, diode routing, battery modes, energy tracking, remainder compensation, and server-thread authority remain in the existing distribution implementation.
+- Legacy endpoints still depend on refresh cadence and timeout cleanup. The next safe migrations should target high-frequency producers/consumers that can prove attach, detach, stored-energy, priority, and transfer-limit invalidation across chunk unload and tile replacement.
+- FEnSU's directional provider discovery and unusual endpoints that override `transferPower()` / `usePower()` need individual lifecycle review before persistent conversion.
+- Source inspection and static queue/lifecycle checks were performed, and `gradlew compileJava --offline --no-daemon` completed successfully. Dedicated-server and in-game tests are still required for large merges/splits, chunk unload/reload, block replacement, diode chains, cross-mod endpoints, and cable-gauge accounting.

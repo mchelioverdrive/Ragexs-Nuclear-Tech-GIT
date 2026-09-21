@@ -16,6 +16,7 @@ import api.hbm.energymk2.IEnergyConnectorMK2;
 import api.hbm.energymk2.IEnergyReceiverMK2;
 import api.hbm.energymk2.Nodespace;
 import api.hbm.energymk2.Nodespace.PowerNode;
+import api.hbm.energymk2.PowerNetMK2;
 import api.hbm.energymk2.IEnergyReceiverMK2.ConnectionPriority;
 import cpw.mods.fml.client.registry.RenderingRegistry;
 import cpw.mods.fml.relauncher.Side;
@@ -87,6 +88,7 @@ public class CableDiode extends BlockContainer implements IEnergyConnectorBlock,
 		if(tool == ToolType.SCREWDRIVER) {
 			if(te.level < 11)
 				te.level++;
+			PowerNetMK2.markReceiverDemandDirty(te);
 			te.markDirty();
 			world.markBlockForUpdate(x, y, z);
 			return true;
@@ -95,6 +97,7 @@ public class CableDiode extends BlockContainer implements IEnergyConnectorBlock,
 		if(tool == ToolType.HAND_DRILL) {
 			if(te.level > 1)
 				te.level--;
+			PowerNetMK2.markReceiverDemandDirty(te);
 			te.markDirty();
 			world.markBlockForUpdate(x, y, z);
 			return true;
@@ -104,6 +107,7 @@ public class CableDiode extends BlockContainer implements IEnergyConnectorBlock,
 			int p = te.priority.ordinal() + 1;
 			if(p > 4) p = 0;
 			te.priority = ConnectionPriority.values()[p];
+			PowerNetMK2.markReceiverDemandDirty(te);
 			te.markDirty();
 			world.markBlockForUpdate(x, y, z);
 			return true;

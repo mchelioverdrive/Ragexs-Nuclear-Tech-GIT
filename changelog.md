@@ -71,3 +71,10 @@
 - Fixed Hardcore Darkness 1.7.10 failing to transform `WorldProviderHell` in the development client
   with `Couldn't find MCP mappings`.
 - Documented the generated, development-only `mcp/` directory and excluded it from version control.
+
+2026-09-21 14:44 — Event-driven MK2 power-network bridge
+
+- Replaced unconditional per-tick `PowerNetMK2` redistribution with deduplicated world-scoped dirty queues while preserving per-tick tracker resets and existing distribution formulas.
+- Added explicit topology, supply, and demand invalidation, persistent battery/FEnSU receiver memberships, merge transfer, chunk/world unload cleanup, and legacy timeout-compatible fallback updates.
+- Added disabled-by-default aggregate power-network diagnostics, enabled by `1.45_enablePowerNetDiagnostics` and readable with `/ntmpowerstats`.
+- Retained per-tick compatibility updates only for networks with unmigrated refresh-based endpoints plus a once-per-second persistent-network cleanup pass; dedicated-server and in-game lifecycle validation remains outstanding.

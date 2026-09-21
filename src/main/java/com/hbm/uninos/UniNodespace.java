@@ -1,10 +1,13 @@
 package com.hbm.uninos;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -12,6 +15,8 @@ import com.hbm.util.Tuple.Pair;
 import com.hbm.util.fauxpointtwelve.BlockPos;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
+import api.hbm.energymk2.PowerNetDiagnostics;
+import api.hbm.energymk2.PowerNetMK2;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.World;
 
@@ -27,6 +32,7 @@ public class UniNodespace {
 
 	public static Map<World, UniNodeWorld> worlds = new HashMap();
 	public static Set<NodeNet> activeNodeNets = new HashSet();
+	private static final List<NodeNet> reapScratch = new ArrayList<NodeNet>();
 
 	public static GenNode getNode(World world, int x, int y, int z, INetworkProvider type) {
 		UniNodeWorld nodeWorld = worlds.get(world);
@@ -40,6 +46,7 @@ public class UniNodespace {
 			nodeWorld = new UniNodeWorld();
 			worlds.put(world, nodeWorld);
 		}
+		node.world = world;
 		nodeWorld.pushNode(node);
 	}
 
@@ -51,13 +58,29 @@ public class UniNodespace {
 	}
 
 	public static void destroyNode(World world, GenNode node) {
-		if(node != null) {
-			worlds.get(world).popNode(node);
+		UniNodeWorld nodeWorld = worlds.get(world);
+		if(node != null && nodeWorld != null) {
+			nodeWorld.popNode(node);
 		}
+	}
+
+	public static void unloadWorld(World world) {
+		UniNodeWorld nodeWorld = worlds.remove(world);
+		if(nodeWorld == null) return;
+
+		nodeWorld.updateScratch.clear();
+		nodeWorld.updateScratch.addAll(nodeWorld.nodes.values());
+		for(GenNode node : nodeWorld.updateScratch) {
+			if(node.net != null && node.net.isValid()) node.net.destroy();
+			node.world = null;
+			node.expired = true;
+		}
+		nodeWorld.clear();
 	}
 
 	private static int reapTimer = 0;
 	public static void updateNodespace() {
+		PowerNetDiagnostics.beginTick();
 
 		for(World world : MinecraftServer.getServer().worldServers) {
 			UniNodeWorld nodeWorld = worlds.get(world);
@@ -76,18 +99,61 @@ public class UniNodespace {
 		}
 
 		updateNetworks();
+		PowerNetDiagnostics.finishTick(countPowerNetworks());
 		updateReapTimer();
 	}
 
 	private static void updateNetworks() {
+		// Non-power UNINOS networks retain their established per-tick behavior.
+		for(NodeNet net : activeNodeNets) {
+			if(net instanceof PowerNetMK2) continue;
+			net.resetTrackers();
+			net.update();
+		}
 
-		for(NodeNet net : activeNodeNets) net.resetTrackers(); //reset has to be done before everything else
-		for(NodeNet net : activeNodeNets) net.update();
+		for(UniNodeWorld nodeWorld : worlds.values()) nodeWorld.updatePowerNetworks();
 		
 		if(reapTimer <= 0) {
-			activeNodeNets.forEach((net) -> { net.links.removeIf((link) -> { return ((GenNode) link).expired; }); });
-			activeNodeNets.removeIf((net) -> { return net.links.size() <= 0; }); // reap empty networks
+			reapScratch.clear();
+			for(NodeNet net : activeNodeNets) {
+				net.reapExpiredLinks();
+				if(net.links.size() <= 0) reapScratch.add(net);
+			}
+			for(NodeNet net : reapScratch) net.destroy();
+			reapScratch.clear();
 		}
+	}
+
+	private static int countPowerNetworks() {
+		int count = 0;
+		for(UniNodeWorld nodeWorld : worlds.values()) count += nodeWorld.powerNetworks.size();
+		return count;
+	}
+
+	static void registerNetwork(NodeNet network) {
+		if(!(network instanceof PowerNetMK2) || network.getWorld() == null) return;
+		UniNodeWorld nodeWorld = worlds.get(network.getWorld());
+		if(nodeWorld != null) nodeWorld.powerNetworks.add((PowerNetMK2) network);
+	}
+
+	static void unregisterNetwork(NodeNet network) {
+		if(!(network instanceof PowerNetMK2)) return;
+		UniNodeWorld nodeWorld = worlds.get(network.getWorld());
+		if(nodeWorld != null) nodeWorld.removePowerNetwork((PowerNetMK2) network);
+	}
+
+	public static void markPowerNetworkDirty(PowerNetMK2 network) {
+		if(network == null || !network.isValid() || network.getWorld() == null) return;
+		UniNodeWorld nodeWorld = worlds.get(network.getWorld());
+		if(nodeWorld != null) nodeWorld.dirtyPowerNetworks.add(network);
+	}
+
+	public static void setPowerNetworkLegacy(PowerNetMK2 network, boolean legacy) {
+		if(network == null || network.getWorld() == null) return;
+		UniNodeWorld nodeWorld = worlds.get(network.getWorld());
+		if(nodeWorld == null) return;
+		if(legacy) nodeWorld.legacyPowerNetworks.add(network);
+		else nodeWorld.legacyPowerNetworks.remove(network);
 	}
 	
 	private static void updateReapTimer() {
@@ -141,6 +207,11 @@ public class UniNodespace {
 
 		public HashMap<Pair<BlockPos, INetworkProvider>, GenNode> nodes = new LinkedHashMap<>();
 		private final Set<GenNode> updateScratch = Collections.newSetFromMap(new IdentityHashMap<GenNode, Boolean>());
+		private final Set<PowerNetMK2> powerNetworks = Collections.newSetFromMap(new IdentityHashMap<PowerNetMK2, Boolean>());
+		private final Set<PowerNetMK2> legacyPowerNetworks = Collections.newSetFromMap(new IdentityHashMap<PowerNetMK2, Boolean>());
+		private final Set<PowerNetMK2> dirtyPowerNetworks = new LinkedHashSet<PowerNetMK2>();
+		private final List<PowerNetMK2> powerUpdateScratch = new ArrayList<PowerNetMK2>();
+		private int compatibilitySweep;
 
 		/** Adds a node at all its positions to the nodespace */
 		public void pushNode(GenNode node) {
@@ -156,6 +227,48 @@ public class UniNodespace {
 				nodes.remove(new Pair(pos, node.networkProvider));
 			}
 			node.expired = true;
+		}
+
+		private void updatePowerNetworks() {
+			for(PowerNetMK2 network : this.powerNetworks) network.resetTrackers();
+
+			this.powerUpdateScratch.clear();
+			this.powerUpdateScratch.addAll(this.legacyPowerNetworks);
+			for(PowerNetMK2 network : this.powerUpdateScratch) network.markCompatibilityDirty();
+
+			if(++this.compatibilitySweep >= 20) {
+				this.compatibilitySweep = 0;
+				this.powerUpdateScratch.clear();
+				this.powerUpdateScratch.addAll(this.powerNetworks);
+				for(PowerNetMK2 network : this.powerUpdateScratch) network.markCompatibilityDirty();
+			}
+
+			this.powerUpdateScratch.clear();
+			this.powerUpdateScratch.addAll(this.dirtyPowerNetworks);
+			this.dirtyPowerNetworks.clear();
+			for(PowerNetMK2 network : this.powerUpdateScratch) {
+				if(!network.isValid()) continue;
+				int causes = network.consumeDirtyCauses();
+				if(causes == 0) continue;
+				network.update();
+				PowerNetDiagnostics.recordNetworkVisit(network.providerEntries.size(), network.receiverEntries.size(), causes);
+			}
+			this.powerUpdateScratch.clear();
+		}
+
+		private void removePowerNetwork(PowerNetMK2 network) {
+			this.powerNetworks.remove(network);
+			this.legacyPowerNetworks.remove(network);
+			this.dirtyPowerNetworks.remove(network);
+		}
+
+		private void clear() {
+			this.nodes.clear();
+			this.updateScratch.clear();
+			this.powerNetworks.clear();
+			this.legacyPowerNetworks.clear();
+			this.dirtyPowerNetworks.clear();
+			this.powerUpdateScratch.clear();
 		}
 	}
 }

@@ -15,13 +15,16 @@ import net.minecraftforge.common.util.ForgeDirection;
 public interface IEnergyReceiverMK2 extends IEnergyHandlerMK2 {
 
 	public default long transferPower(long power) {
+		long previous = this.getPower();
 		if(power + this.getPower() <= this.getMaxPower()) {
 			this.setPower(power + this.getPower());
+			if(this.getPower() != previous) PowerNetMK2.markReceiverDemandDirty(this);
 			return 0;
 		}
 		long capacity = this.getMaxPower() - this.getPower();
 		long overshoot = power - capacity;
 		this.setPower(this.getMaxPower());
+		if(this.getPower() != previous) PowerNetMK2.markReceiverDemandDirty(this);
 		return overshoot;
 	}
 

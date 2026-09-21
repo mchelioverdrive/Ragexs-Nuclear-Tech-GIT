@@ -16,7 +16,9 @@ public interface IEnergyProviderMK2 extends IEnergyHandlerMK2 {
 
 	/** Uses up available power, default implementation has no sanity checking, make sure that the requested power is lequal to the current power */
 	public default void usePower(long power) {
+		long previous = this.getPower();
 		this.setPower(this.getPower() - power);
+		if(this.getPower() != previous) PowerNetMK2.markProviderSupplyDirty(this);
 	}
 	
 	public default long getProviderSpeed() {

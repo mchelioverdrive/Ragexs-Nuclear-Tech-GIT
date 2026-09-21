@@ -1050,6 +1050,7 @@ public class MainRegistry {
 		RBMKDials.createDials(world);
 		event.registerServerCommand(new CommandReloadRecipes());
 		event.registerServerCommand(new CommandDebugChunkLoad());
+		event.registerServerCommand(new CommandPowerNetStats());
 		event.registerServerCommand(new CommandSatellites());
 		event.registerServerCommand(new CommandRadiation());
 		event.registerServerCommand(new CommandStations());

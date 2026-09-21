@@ -91,6 +91,7 @@ import com.hbm.world.generator.TimedGenerator;
 import com.hbm.util.ContaminationUtil.ContaminationType;
 import com.hbm.util.ContaminationUtil.HazardType;
 import api.hbm.energymk2.Nodespace;
+import com.hbm.uninos.UniNodespace;
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.eventhandler.Event.Result;
@@ -877,6 +878,11 @@ public class ModEventHandler {
 		BobmazonOfferFactory.init();
 
 		updateWaterOpacity(event.world);
+	}
+
+	@SubscribeEvent
+	public void onUnload(WorldEvent.Unload event) {
+		if(!event.world.isRemote) UniNodespace.unloadWorld(event.world);
 	}
 
 	public static boolean didSit = false;

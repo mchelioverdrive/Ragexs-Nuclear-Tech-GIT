@@ -4,6 +4,8 @@ import com.hbm.lib.Library;
 import com.hbm.util.fauxpointtwelve.BlockPos;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
+import net.minecraft.world.World;
+
 public class GenNode<N extends NodeNet> {
 	
 	public BlockPos[] positions;
@@ -13,6 +15,8 @@ public class GenNode<N extends NodeNet> {
 	public N net;
 	public boolean expired = false;
 	public boolean recentlyChanged = true;
+	/** Owning world, assigned by UniNodespace when the node is registered. */
+	public World world;
 	/** Used for distinguishing the node type when saving it to UNINOS' node map */
 	public INetworkProvider networkProvider;
 	

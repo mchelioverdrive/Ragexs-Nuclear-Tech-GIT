@@ -6,6 +6,7 @@ import api.hbm.energymk2.IEnergyProviderMK2;
 import api.hbm.energymk2.IEnergyReceiverMK2;
 import api.hbm.energymk2.Nodespace;
 import api.hbm.energymk2.Nodespace.PowerNode;
+import api.hbm.energymk2.PowerNetMK2;
 import api.hbm.tile.IInfoProviderEC;
 
 import com.hbm.blocks.machine.MachineBattery;
@@ -42,6 +43,8 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 	public long prevPowerState = 0;
 	
 	protected PowerNode node;
+	protected PowerNetMK2 persistentProviderNetwork;
+	protected PowerNetMK2 persistentReceiverNetwork;
 	
 	//0: input only
 	//1: buffer
@@ -188,22 +191,14 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 			
 			power = Library.chargeItemsFromTE(slots, 1, power, getMaxPower());
 			
-			if(mode == mode_output || mode == mode_buffer) {
-				if(node != null && node.hasValidNet()) node.net.addProvider(this);
-			} else {
-				if(node != null && node.hasValidNet()) node.net.removeProvider(this);
-			}
+			this.updatePersistentProvider(mode == mode_output || mode == mode_buffer);
 			
 			byte comp = this.getComparatorPower();
 			if(comp != this.lastRedstone)
 				this.markDirty();
 			this.lastRedstone = comp;
 			
-			if(mode == mode_input || mode == mode_buffer) {
-				if(node != null && node.hasValidNet()) node.net.addReceiver(this);
-			} else {
-				if(node != null && node.hasValidNet()) node.net.removeReceiver(this);
-			}
+			this.updatePersistentReceiver(mode == mode_input || mode == mode_buffer);
 			
 			power = Library.chargeTEFromItems(slots, 0, power, getMaxPower());
 
@@ -215,7 +210,8 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 			}
 			
 			this.log[19] = avg;
-			
+			if(this.power != prevPower) this.markPowerNetworkDirty();
+
 			prevPowerState = power;
 			
 			if(syncPower != this.power || syncDelta != this.delta || syncRedLow != this.redLow || syncRedHigh != this.redHigh || syncPriority != this.priority) this.markNetworkDirty();
@@ -227,6 +223,29 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 		this.node = null;
 	}
 
+	protected void updatePersistentProvider(boolean attached) {
+		PowerNetMK2 target = attached && this.node != null && this.node.hasValidNet() ? this.node.net : null;
+		if(this.persistentProviderNetwork == target) return;
+		if(this.persistentProviderNetwork != null && this.persistentProviderNetwork.isValid()) this.persistentProviderNetwork.removeProvider(this);
+		this.persistentProviderNetwork = target;
+		if(target != null) target.addProviderPersistent(this);
+	}
+
+	protected void updatePersistentReceiver(boolean attached) {
+		PowerNetMK2 target = attached && this.node != null && this.node.hasValidNet() ? this.node.net : null;
+		if(this.persistentReceiverNetwork == target) return;
+		if(this.persistentReceiverNetwork != null && this.persistentReceiverNetwork.isValid()) this.persistentReceiverNetwork.removeReceiver(this);
+		this.persistentReceiverNetwork = target;
+		if(target != null) target.addReceiverPersistent(this);
+	}
+
+	public void markPowerNetworkDirty() {
+		if(this.node != null && this.node.hasValidNet()) {
+			this.node.net.markSupplyDirty();
+			this.node.net.markDemandDirty();
+		}
+	}
+
 	@Override
 	public void invalidate() {
 		super.invalidate();
@@ -236,6 +255,8 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 				Nodespace.destroyNode(worldObj, xCoord, yCoord, zCoord);
 			}
 		}
+		this.persistentProviderNetwork = null;
+		this.persistentReceiverNetwork = null;
 	}
 
 	@Override public long getProviderSpeed() {
@@ -296,8 +317,19 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 
 	@Override public boolean canConnect(ForgeDirection dir) { return true; }
 	@Override public void setPower(long power) {
-		if(this.power != power) this.markNetworkDirty();
+		boolean changed = this.power != power;
+		if(changed) this.markNetworkDirty();
 		this.power = power;
+		if(changed) this.markPowerNetworkDirty();
+	}
+
+	@Override
+	public void onChunkUnload() {
+		if(!worldObj.isRemote) {
+			this.updatePersistentProvider(false);
+			this.updatePersistentReceiver(false);
+		}
+		super.onChunkUnload();
 	}
 	@Override public ConnectionPriority getPriority() { return this.priority; }
 	

@@ -61,11 +61,7 @@ public class TileEntityMachineFENSU extends TileEntityMachineBattery {
 				this.markDirty();
 			this.lastRedstone = comp;
 			
-			if(mode == mode_input || mode == mode_buffer) {
-				if(node != null && node.hasValidNet()) node.net.addReceiver(this);
-			} else {
-				if(node != null && node.hasValidNet()) node.net.removeReceiver(this);
-			}
+			this.updatePersistentReceiver(mode == mode_input || mode == mode_buffer);
 			
 			power = Library.chargeTEFromItems(slots, 0, power, getMaxPower());
 
@@ -77,6 +73,7 @@ public class TileEntityMachineFENSU extends TileEntityMachineBattery {
 			}
 			
 			this.log[19] = avg;
+			if(this.power != prevPower) this.markPowerNetworkDirty();
 			
 			this.networkPackNT(20);
 		}
@@ -147,5 +144,11 @@ public class TileEntityMachineFENSU extends TileEntityMachineBattery {
 		this.setPower(this.getPower() + power);
 		
 		return overshoot;
+	}
+
+	@Override
+	public void onChunkUnload() {
+		if(!worldObj.isRemote && this.node != null && this.node.hasValidNet()) this.node.net.removeProvider(this);
+		super.onChunkUnload();
 	}
 }

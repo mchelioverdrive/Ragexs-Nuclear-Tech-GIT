@@ -2,6 +2,7 @@ package com.hbm.uninos;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
@@ -9,6 +10,7 @@ import java.util.Set;
 
 import api.hbm.tile.ILoadedTile;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.World;
 
 public abstract class NodeNet<R, P, L extends GenNode> {
 	
@@ -17,6 +19,7 @@ public abstract class NodeNet<R, P, L extends GenNode> {
 	
 	public boolean valid = true;
 	public Set<L> links = new LinkedHashSet();
+	protected World world;
 
 	public HashMap<R, Long> receiverEntries = new HashMap();
 	public HashMap<P, Long> providerEntries = new HashMap();
@@ -58,8 +61,13 @@ public abstract class NodeNet<R, P, L extends GenNode> {
 
 	/** Adds the node as part of this network's links, skips the part about removing it from existing networks */
 	public NodeNet forceJoinLink(L node) {
+		if(this.world == null && node.world != null) {
+			this.world = node.world;
+			UniNodespace.registerNetwork(this);
+		}
 		this.links.add(node);
 		node.setNet(this);
+		this.onTopologyChanged();
 		return this;
 	}
 
@@ -67,13 +75,32 @@ public abstract class NodeNet<R, P, L extends GenNode> {
 	public void leaveLink(L node) {
 		node.setNet(null);
 		this.links.remove(node);
+		this.onTopologyChanged();
 	}
 	
 	/// GENERAL POWER NET CONTROL ///
-	public void invalidate() { this.valid = false; UniNodespace.activeNodeNets.remove(this); }
+	public void invalidate() {
+		this.valid = false;
+		UniNodespace.activeNodeNets.remove(this);
+		UniNodespace.unregisterNetwork(this);
+	}
 	public boolean isValid() { return this.valid; }
+	public World getWorld() { return this.world; }
 	public void resetTrackers() { }
 	public abstract void update();
+	protected void onTopologyChanged() { }
+
+	public void reapExpiredLinks() {
+		boolean changed = false;
+		Iterator<L> iterator = this.links.iterator();
+		while(iterator.hasNext()) {
+			L link = iterator.next();
+			if(!link.expired) continue;
+			iterator.remove();
+			changed = true;
+		}
+		if(changed) this.onTopologyChanged();
+	}
 	
 	public void destroy() {
 		this.invalidate();
