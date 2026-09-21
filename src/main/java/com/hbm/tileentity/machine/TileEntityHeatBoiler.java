@@ -52,7 +52,7 @@ public class TileEntityHeatBoiler extends TileEntityLoadedBase implements INBTPa
 	public TileEntityHeatBoiler() {
 		this.tanks = new FluidTank[2];
 
-		this.tanks[0] = new FluidTank(Fluids.WATER, 16_000);
+		this.tanks[0] = new FluidTank(Fluids.FRESH_WATER, 16_000).migrateFrom(Fluids.WATER);
 		this.tanks[1] = new FluidTank(Fluids.STEAM, 16_000 * 100);
 	}
 	

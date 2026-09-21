@@ -39,10 +39,23 @@ public class FluidTank {
 	int fluid;
 	int maxFluid;
 	int pressure = 0;
+	private FluidType legacyType;
+	private FluidType migrationTarget;
 
 	public FluidTank(FluidType type, int maxFluid) {
 		this.type = type;
 		this.maxFluid = maxFluid;
+	}
+
+	/**
+	 * Marks the fluid type used by older saves for this machine-specific tank.
+	 * The migration is deliberately attached to the tank instance so global tanks,
+	 * pipes and containers are never rewritten.
+	 */
+	public FluidTank migrateFrom(FluidType legacyType) {
+		this.legacyType = legacyType;
+		this.migrationTarget = this.type;
+		return this;
 	}
 
 	public FluidTank withPressure(int pressure) {
@@ -282,6 +295,26 @@ public class FluidTank {
 			type = Fluids.fromID(nbt.getInteger(s + "_type"));
 
 		this.pressure = nbt.getShort(s + "_p");
+
+		if(type == legacyType) {
+			type = this.typeForMigration();
+		}
+	}
+
+	private FluidType typeForMigration() {
+		// Constructors are run before NBT is loaded, so recover the configured
+		// destination from the legacy pair rather than clearing the stored amount.
+		if(legacyType == Fluids.WATER) {
+			return migrationTarget;
+		}
+		if(legacyType == Fluids.COOLANT) {
+			return Fluids.BORATED_WATER;
+		}
+		if(legacyType == Fluids.COOLANT_HOT) {
+			return Fluids.BORATED_WATER_HOT;
+		}
+		return type;
+
 	}
 
 	public void serialize(ByteBuf buf) {

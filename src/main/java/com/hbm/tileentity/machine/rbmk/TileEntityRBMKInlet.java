@@ -16,7 +16,7 @@ public class TileEntityRBMKInlet extends TileEntityLoadedBase implements IFluidS
 	public FluidTank water;
 	
 	public TileEntityRBMKInlet() {
-		water = new FluidTank(Fluids.WATER, 32000);
+		water = new FluidTank(Fluids.LIGHT_WATER, 32000).migrateFrom(Fluids.WATER);
 	}
 	
 	@Override

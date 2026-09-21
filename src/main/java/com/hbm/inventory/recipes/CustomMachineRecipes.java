@@ -30,7 +30,7 @@ public class CustomMachineRecipes extends SerializableRecipe {
 
 		recipes.put("paperPress", new ArrayList() {{
 			CustomMachineRecipe recipe = new CustomMachineRecipe();
-			recipe.inputFluids = new FluidStack[] {new FluidStack(Fluids.WATER, 250)};
+			recipe.inputFluids = new FluidStack[] {new FluidStack(Fluids.FRESH_WATER, 250)};
 			recipe.inputItems = new AStack[] {new ComparableStack(ModItems.powder_sawdust)};
 			recipe.outputFluids = new FluidStack[0];
 			recipe.outputItems = new Pair[] {new Pair(new ItemStack(Items.paper, 3), 1F)};

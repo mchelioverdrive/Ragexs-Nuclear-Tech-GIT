@@ -145,10 +145,10 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 		tanks = new FluidTank[4];
 
 		/*
-		 * Tank 0 remains WATER for compatibility/input UI, but this reactor no longer
+		 * Tank 0 uses reactor-grade light water and migrates legacy WATER saves, but this reactor no longer
 		 * directly boils water. Realistic fusion heat should go through coolant/blanket.
 		 */
-		tanks[0] = new FluidTank(Fluids.WATER, 1280000);
+		tanks[0] = new FluidTank(Fluids.LIGHT_WATER, 1280000).migrateFrom(Fluids.WATER);
 
 		/*
 		 * Tank 1 remains ULTRAHOTSTEAM for old compatibility, but normal operation will

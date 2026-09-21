@@ -284,6 +284,8 @@ public class Fluids {
 	public static FluidType FRESH_WATER;
 	public static FluidType LIGHT_WATER;
 	public static FluidType BORATED_WATER;
+	public static FluidType LIGHT_WATER_HOT;
+	public static FluidType BORATED_WATER_HOT;
 
 	public static final HashBiMap<String, FluidType> renameMapping = HashBiMap.create();
 
@@ -589,6 +591,8 @@ public class Fluids {
 		FRESH_WATER = new FluidType("FRESH_WATER", 0x55BDEB, 1, 0, 0, EnumSymbol.NONE).addTraits(LIQUID);
 		LIGHT_WATER = new FluidType("LIGHT_WATER", 0xBDEBFF, 1, 0, 0, EnumSymbol.NONE).addTraits(LIQUID);
 		BORATED_WATER = new FluidType("BORATED_WATER", 0x63C7B2, 1, 0, 0, EnumSymbol.NONE).addTraits(LIQUID);
+		LIGHT_WATER_HOT = new FluidType("LIGHT_WATER_HOT", 0x8BC4D9, 1, 0, 0, EnumSymbol.NONE).setTemp(325).addTraits(LIQUID);
+		BORATED_WATER_HOT = new FluidType("BORATED_WATER_HOT", 0x4F9E8F, 1, 0, 0, EnumSymbol.NONE).setTemp(325).addTraits(LIQUID);
 		
 //I am getting really sick and tired of this retarded ass fluid system
 
@@ -863,6 +867,8 @@ public class Fluids {
 		metaOrder.add(FRESH_WATER);
 		metaOrder.add(LIGHT_WATER);
 		metaOrder.add(BORATED_WATER);
+		metaOrder.add(LIGHT_WATER_HOT);
+		metaOrder.add(BORATED_WATER_HOT);
 
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!
@@ -888,7 +894,7 @@ public class Fluids {
 		double eff_steam_boil = 1.0D;
 		double eff_steam_heatex = 0.25D;
 
-		WATER.addTraits(new FT_Heatable()
+		FRESH_WATER.addTraits(new FT_Heatable()
 							.setEff(HeatingType.BOILER, eff_steam_boil)
 							.setEff(HeatingType.HEATEXCHANGER, eff_steam_heatex)
 							.addStep(100, 1, STEAM, 100)
@@ -962,6 +968,28 @@ public class Fluids {
 
 		COOLANT_HOT.addTraits(
 			new FT_Coolable(COOLANT, 1, 1, 320)
+				.setEff(CoolingType.HEATEXCHANGER, 0.85D)
+		);
+
+		LIGHT_WATER.addTraits(
+			new FT_Heatable()
+				.setEff(HeatingType.PWR, 0.90D)
+				.addStep(320, 1, LIGHT_WATER_HOT, 1),
+			new FT_PWRModerator(1.0D)
+		);
+		LIGHT_WATER_HOT.addTraits(
+			new FT_Coolable(LIGHT_WATER, 1, 1, 320)
+				.setEff(CoolingType.HEATEXCHANGER, 0.85D)
+		);
+
+		BORATED_WATER.addTraits(
+			new FT_Heatable()
+				.setEff(HeatingType.PWR, 0.90D)
+				.addStep(320, 1, BORATED_WATER_HOT, 1),
+			new FT_PWRModerator(1.0D)
+		);
+		BORATED_WATER_HOT.addTraits(
+			new FT_Coolable(BORATED_WATER, 1, 1, 320)
 				.setEff(CoolingType.HEATEXCHANGER, 0.85D)
 		);
 
@@ -1477,6 +1505,12 @@ public class Fluids {
 			fluid = Fluids.NONE;
 
 		return fluid;
+	}
+
+	/** Cold water-family fluids that can safely behave like extinguishing water. */
+	public static boolean isColdWater(FluidType type) {
+		return type == WATER || type == FRESH_WATER || type == LIGHT_WATER ||
+			type == BORATED_WATER || type == HEAVYWATER;
 	}
 
 	public static FluidType fromName(String name) {

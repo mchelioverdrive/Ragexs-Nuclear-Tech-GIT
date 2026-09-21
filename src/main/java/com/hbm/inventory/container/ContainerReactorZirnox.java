@@ -82,7 +82,7 @@ public class ContainerReactorZirnox extends Container {
 					if(!this.mergeItemStack(stack, 24, 26, false))
 						return null;
 
-				} else if(FluidContainerRegistry.getFluidContent(stack, Fluids.WATER) > 0) {
+				} else if(FluidContainerRegistry.getFluidContent(stack, Fluids.LIGHT_WATER) > 0) {
 					if(!this.mergeItemStack(stack, 26, 28, false))
 						return null;
 

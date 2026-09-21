@@ -42,7 +42,7 @@ public class TileEntityRBMKBoiler extends TileEntityRBMKSlottedBase implements I
 	public TileEntityRBMKBoiler() {
 		super(0);
 
-		feed = new FluidTank(Fluids.WATER, 10000);
+		feed = new FluidTank(Fluids.LIGHT_WATER, 10000).migrateFrom(Fluids.WATER);
 		steam = new FluidTank(Fluids.STEAM, 1000000);
 	}
 
