@@ -1,3 +1,11 @@
+# Water Tiering and Purification
+
+- Added raw, fresh, light, and borated water progression through Chemical Plant recipes.
+- Added matching hot light-water and borated-water PWR loops while retaining heavy water and engineered coolant compatibility.
+- Migrated industrial, direct-reactor, deuterium, and PWR machine tanks without losing stored amounts.
+- Updated industrial recipes, condensers, cooling towers, fluid labels, and cold-water extinguishing behavior.
+- Removed direct water-bucket salt crafting in favor of brine evaporation.
+
 # Pull Request: Remove the visible scotopic range boundary
 
 - Replaced the finite FAR/FADE visibility endpoint with a smooth exponential long-tail falloff, so recovered low-light signal becomes negligible gradually instead of stopping at one distance.

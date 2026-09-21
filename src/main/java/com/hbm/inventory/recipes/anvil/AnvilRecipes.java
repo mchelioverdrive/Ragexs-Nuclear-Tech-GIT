@@ -292,7 +292,7 @@ public class AnvilRecipes {
 						new OreDictStack(PB.pipe(), 4),
 						new ComparableStack(ModItems.motor, 2),
 						new ComparableStack(ModItems.circuit, 4, EnumCircuitType.VACUUM_TUBE.ordinal())
-				}, new AnvilOutput(new ItemStack(ModBlocks.pump_electric))).setTier(3));
+				}, new AnvilOutput(new ItemStack(ModBlocks.pump_electric))).setTier(2));
 
 		constructionRecipes.add(new AnvilConstructionRecipe(
 				new AStack[] {

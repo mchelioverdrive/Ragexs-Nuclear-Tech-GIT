@@ -593,7 +593,7 @@ public class Fluids {
 		BORATED_WATER = new FluidType("BORATED_WATER", 0x63C7B2, 1, 0, 0, EnumSymbol.NONE).addTraits(LIQUID);
 		LIGHT_WATER_HOT = new FluidType("LIGHT_WATER_HOT", 0x8BC4D9, 1, 0, 0, EnumSymbol.NONE).setTemp(325).addTraits(LIQUID);
 		BORATED_WATER_HOT = new FluidType("BORATED_WATER_HOT", 0x4F9E8F, 1, 0, 0, EnumSymbol.NONE).setTemp(325).addTraits(LIQUID);
-		
+
 //I am getting really sick and tired of this retarded ass fluid system
 
 
