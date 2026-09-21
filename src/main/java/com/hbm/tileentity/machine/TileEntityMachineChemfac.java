@@ -46,7 +46,7 @@ public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase imp
 	public TileEntityMachineChemfac() {
 		super(77);
 
-		water = new FluidTank(Fluids.WATER, 64_000);
+		water = new FluidTank(Fluids.FRESH_WATER, 64_000).migrateFrom(Fluids.WATER);
 		steam = new FluidTank(Fluids.SPENTSTEAM, 64_000);
 	}
 

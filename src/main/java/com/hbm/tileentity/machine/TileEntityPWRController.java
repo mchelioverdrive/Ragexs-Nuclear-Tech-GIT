@@ -81,8 +81,8 @@ public class TileEntityPWRController extends TileEntityMachineBase implements IG
 		super(3);
 
 		this.tanks = new FluidTank[2];
-		this.tanks[0] = new FluidTank(Fluids.COOLANT, 128_000);
-		this.tanks[1] = new FluidTank(Fluids.COOLANT_HOT, 128_000);
+		this.tanks[0] = new FluidTank(Fluids.BORATED_WATER, 128_000).migrateFrom(Fluids.COOLANT);
+		this.tanks[1] = new FluidTank(Fluids.BORATED_WATER_HOT, 128_000).migrateFrom(Fluids.COOLANT_HOT);
 	}
 
 	/** The initial creation of the reactor, does all the pre-calculation and whatnot */

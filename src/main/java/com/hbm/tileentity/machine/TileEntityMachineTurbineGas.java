@@ -83,7 +83,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		this.tanks = new FluidTank[4];
 		tanks[0] = new FluidTank(Fluids.GAS, 100000);
 		tanks[1] = new FluidTank(Fluids.LUBRICANT, 16000);
-		tanks[2] = new FluidTank(Fluids.WATER, 16000);
+		tanks[2] = new FluidTank(Fluids.FRESH_WATER, 16000).migrateFrom(Fluids.WATER);
 		tanks[3] = new FluidTank(Fluids.HOTSTEAM, 160000);
 	}
 	

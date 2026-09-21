@@ -44,7 +44,7 @@ public class TileEntityHeatBoilerIndustrial extends TileEntityLoadedBase impleme
 	public TileEntityHeatBoilerIndustrial() {
 		this.tanks = new FluidTank[2];
 
-		this.tanks[0] = new FluidTank(Fluids.WATER, 64_000);
+		this.tanks[0] = new FluidTank(Fluids.FRESH_WATER, 64_000).migrateFrom(Fluids.WATER);
 		this.tanks[1] = new FluidTank(Fluids.STEAM, 64_000 * 100);
 	}
 	

@@ -24,7 +24,7 @@ public class TileEntityRadiator extends TileEntityCondenser {
 	public TileEntityRadiator() {
 		tanks = new FluidTank[2];
 		tanks[0] = new FluidTank(Fluids.SPENTSTEAM, inputTankSize);
-		tanks[1] = new FluidTank(Fluids.WATER, outputTankSize);
+		tanks[1] = new FluidTank(Fluids.FRESH_WATER, outputTankSize).migrateFrom(Fluids.WATER);
 		vacuumOptimised = true;
 	}
 

@@ -48,7 +48,7 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 			arms[i] = new AssemblerArm(i % 3 == 1 ? 1 : 0); //the second of every group of three becomes a welder
 		}
 
-		water = new FluidTank(Fluids.WATER, 64_000);
+		water = new FluidTank(Fluids.FRESH_WATER, 64_000).migrateFrom(Fluids.WATER);
 		steam = new FluidTank(Fluids.SPENTSTEAM, 64_000);
 	}
 

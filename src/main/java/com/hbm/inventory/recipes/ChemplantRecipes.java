@@ -55,7 +55,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				//SUGAR, NOT NITER
 				//.inputItems(new OreDictStack(KNO.dust()))
 				//more bobcat crack rock chemistry
-				.inputFluids(new FluidStack(Fluids.WATER, 200), new FluidStack(Fluids.ETHANOL, 1800))
+				.inputFluids(new FluidStack(Fluids.FRESH_WATER, 200), new FluidStack(Fluids.ETHANOL, 1800))
 				.outputFluids(new FluidStack(Fluids.COOLANT, 2000)));
 		recipes.add(new ChemRecipe(37, "CRYOGEL", 50)
 				.inputItems(new ComparableStack(ModItems.powder_ice))
@@ -95,7 +95,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputItems(new OreDictStack(S.dust()))
 				.inputFluids(
 						new FluidStack(Fluids.PEROXIDE, 800),
-						new FluidStack(Fluids.WATER, 1_000))
+						new FluidStack(Fluids.FRESH_WATER, 1_000))
 				.outputFluids(new FluidStack(Fluids.SULFURIC_ACID, 2_000)));
 		recipes.add(new ChemRecipe(92, "SOLVENT", 50)
 				.inputFluids(new FluidStack(Fluids.NAPHTHA, 500), new FluidStack(Fluids.AROMATICS, 500))
@@ -251,7 +251,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 		//do not remove this I know it's redundant but the electrolysis machine sucks and is late game for some fucking reason
 		recipes.add(new ChemRecipe(58, "ELECTROLYSIS", 150)
-						.inputFluids(new FluidStack(Fluids.WATER, 4000))
+						.inputFluids(new FluidStack(Fluids.FRESH_WATER, 4000))
 						.outputFluids(
 							new FluidStack(Fluids.HYDROGEN, 40),
 							new FluidStack(Fluids.OXYGEN, 20)));
@@ -295,14 +295,14 @@ public class ChemplantRecipes extends SerializableRecipe {
 						new OreDictStack(COLTAN.dust(), 2))
 				.inputFluids(
 						new FluidStack(Fluids.SULFURIC_ACID, 500),
-						new FluidStack(Fluids.WATER, 500))
+						new FluidStack(Fluids.FRESH_WATER, 500))
 				.outputItems(
 						new ItemStack(ModItems.powder_coltan))
 				.outputFluids(new FluidStack(Fluids.ACIDWASTE, 500)));
 		// Acid leaching and separation are compressed into a concentrate; tantalum crystallization has no dedicated machine.
 		recipes.add(new ChemRecipe(67, "COLTAN_CRYSTAL", 80)
 				.inputItems(new ComparableStack(ModItems.powder_coltan))
-				.inputFluids(new FluidStack(Fluids.HYDROFLUORIC_ACID, 500), new FluidStack(Fluids.WATER, 500))
+				.inputFluids(new FluidStack(Fluids.HYDROFLUORIC_ACID, 500), new FluidStack(Fluids.FRESH_WATER, 500))
 				.outputItems(
 						new ItemStack(ModItems.gem_tantalium),
 						new ItemStack(ModItems.powder_niobium))
@@ -410,7 +410,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputFluids(new FluidStack(Fluids.AMMONIA, 500), new FluidStack(Fluids.NITRIC_ACID, 500))
 				.outputItems(new ItemStack(ModItems.ammonium_nitrate, 4)));
 		recipes.add(new ChemRecipe(105, "ARSENIDE", 250)
-				.inputFluids(new FluidStack(Fluids.WATER, 500), new FluidStack(Fluids.LIGHTOIL, 900))
+				.inputFluids(new FluidStack(Fluids.FRESH_WATER, 500), new FluidStack(Fluids.LIGHTOIL, 900))
 				.inputItems(
 						new ComparableStack(ModItems.nugget_gallium),
 						new ComparableStack(ModItems.nugget_arsenic))
@@ -492,7 +492,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.outputItems(new ItemStack(ModItems.powder_poison, 4)));
 
 		recipes.add(new ChemRecipe(1001, "SOIL", 100)
-				.inputFluids(new FluidStack(Fluids.WATER, 4000))
+				.inputFluids(new FluidStack(Fluids.FRESH_WATER, 4000))
 				.inputItems(
 						new ComparableStack(ModItems.ammonium_nitrate, 1),
 						new ComparableStack(Blocks.gravel, 8))
@@ -507,7 +507,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(1003, "Bayer Process", 50)
 			.inputItems(new ComparableStack(ModBlocks.ore_aluminium))
 			.inputFluids(
-				new FluidStack(Fluids.WATER, 600),
+				new FluidStack(Fluids.FRESH_WATER, 600),
 				new FluidStack(Fluids.SODIUM_HYDROXIDE, 200))
 			.outputFluids(new FluidStack(Fluids.REDMUD, 1000))
 			.outputItems(
@@ -619,7 +619,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 		//potassium hydroxide + water + Iodine (2) = potassium iodide
 		recipes.add(new ChemRecipe(1014, "POTASSIUM_IODIDE", 100)
-			.inputFluids(new FluidStack(Fluids.POTASSIUM_HYDROXIDE, 1000), new FluidStack(Fluids.WATER, 500))
+			.inputFluids(new FluidStack(Fluids.POTASSIUM_HYDROXIDE, 1000), new FluidStack(Fluids.FRESH_WATER, 500))
 			.inputItems(new ComparableStack(ModItems.powder_iodine, 2))
 
 
@@ -654,7 +654,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 		//sodium hydroxide
 		recipes.add(new ChemRecipe(1016, "SODIUM_HYDROXIDE", 50)
-			.inputFluids(new FluidStack(Fluids.SODIUM, 1000), new FluidStack(Fluids.WATER, 500))
+			.inputFluids(new FluidStack(Fluids.SODIUM, 1000), new FluidStack(Fluids.FRESH_WATER, 500))
 			.outputFluids(new FluidStack(Fluids.SODIUM_HYDROXIDE, 1000))
 		);
 
@@ -802,7 +802,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.inputItems(new ComparableStack(ModItems.barium_sulfide, 1))
 			.inputFluids(
 				new FluidStack(Fluids.CARBONDIOXIDE, 1000),
-				new FluidStack(Fluids.WATER, 500)
+				new FluidStack(Fluids.FRESH_WATER, 500)
 			)
 			.outputItems(new ItemStack(ModItems.barium_carbonate, 1)) //, new ItemStack(ModItems.sulfur)
 			//I literally cannot be bothered to add Hydrogen sulfide. cry about it...
@@ -917,7 +917,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 		//waste_water + lime → water + sludge
 		recipes.add(new ChemRecipe(1041, "WASTE_WATER_TREATMENT", 100)
-			.inputFluids(new FluidStack(Fluids.ACIDWASTE, 1000), new FluidStack(Fluids.WATER, 1000))
+			.inputFluids(new FluidStack(Fluids.ACIDWASTE, 1000), new FluidStack(Fluids.FRESH_WATER, 1000))
 			.inputItems(new ComparableStack(ModItems.quicklime, 1))
 			.outputFluids(new FluidStack(Fluids.WATER, 800), new FluidStack(Fluids.MINSOL, 250))
 			//.outputItems(new ItemStack(ModItems.slagingot, 1))
@@ -995,7 +995,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//carnallite + water -> potassium chloride + magnesium chloride + water
 		recipes.add(new ChemRecipe(1050, "CARNALLITE", 100)
 			.inputItems(new ComparableStack(ModItems.carnallite))
-			.inputFluids(new FluidStack(Fluids.WATER, 2000))
+			.inputFluids(new FluidStack(Fluids.FRESH_WATER, 2000))
 			.outputItems(
 				new ItemStack(ModItems.itemsalt, 1),
 				new ItemStack(ModItems.magnesium_chloride, 1)
@@ -1078,7 +1078,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(1063, "CHLORINE_PRODUCTION", 130)
 						.inputItems(new ComparableStack(ModItems.itemsalt, 1))
 						.inputFluids(
-							new FluidStack(Fluids.WATER, 1000),
+							new FluidStack(Fluids.FRESH_WATER, 1000),
 							new FluidStack(Fluids.OXYGEN, 500)
 						)
 						//.oxygenConsumption = 500 // consumes oxygen from the atmosphere to prevent infinite loops with water electrolysis
@@ -1541,7 +1541,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 							new ComparableStack(ModItems.ingot_phosphorus, 1)
 						)
 						.inputFluids(
-							new FluidStack(Fluids.WATER, 1000)
+							new FluidStack(Fluids.FRESH_WATER, 1000)
 						)
 						.outputItems(
 							new ItemStack(ModItems.KTP_crystal, 1)
@@ -1554,7 +1554,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 							new OreDictStack(B.ingot(), 2)
 						)
 						.inputFluids(
-							new FluidStack(Fluids.WATER, 1000)
+							new FluidStack(Fluids.FRESH_WATER, 1000)
 						)
 						.outputItems(
 							new ItemStack(ModItems.BBO_crystal, 1)
@@ -1567,7 +1567,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 							new ComparableStack(ModItems.ingot_titanium, 1)
 						)
 						.inputFluids(
-							new FluidStack(Fluids.WATER, 1000)
+							new FluidStack(Fluids.FRESH_WATER, 1000)
 						)
 						.outputItems(
 							new ItemStack(ModItems.titanium_sapphire_crystal, 1)
@@ -1580,7 +1580,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 							new ComparableStack(ModItems.ingot_niobium, 1)
 						)
 						.inputFluids(
-							new FluidStack(Fluids.WATER, 1000)
+							new FluidStack(Fluids.FRESH_WATER, 1000)
 						)
 						.outputItems(
 							new ItemStack(ModItems.lithium_niobate_crystal, 1)
@@ -1607,7 +1607,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 							new ComparableStack(ModItems.ingot_terbium, 1)
 						)
 						.inputFluids(
-							new FluidStack(Fluids.WATER, 1000)
+							new FluidStack(Fluids.FRESH_WATER, 1000)
 						)
 						.outputItems(
 							new ItemStack(ModItems.visible_dopant_crystal, 1)
@@ -1620,7 +1620,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 							new ComparableStack(ModBlocks.glass_quartz, 1)
 						)
 						.inputFluids(
-							new FluidStack(Fluids.WATER, 1000)
+							new FluidStack(Fluids.FRESH_WATER, 1000)
 						)
 						.outputItems(
 							new ItemStack(ModItems.cerium_crystal, 1)
@@ -1687,7 +1687,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 							new ComparableStack(ModItems.ingot_phosphorus, 1)
 						)
 						.inputFluids(
-							new FluidStack(Fluids.WATER, 1000)
+							new FluidStack(Fluids.FRESH_WATER, 1000)
 						)
 						.outputItems(
 							new ItemStack(ModItems.KDP_crystal, 1)
@@ -1701,7 +1701,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 							new ComparableStack(ModItems.powder_boron, 2)
 						)
 						.inputFluids(
-							new FluidStack(Fluids.WATER, 1000)
+							new FluidStack(Fluids.FRESH_WATER, 1000)
 						)
 						.outputItems(
 							new ItemStack(ModItems.CLBO_crystal, 1)
@@ -1714,7 +1714,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 							new ComparableStack(ModItems.powder_boron, 3)
 						)
 						.inputFluids(
-							new FluidStack(Fluids.WATER, 1000)
+							new FluidStack(Fluids.FRESH_WATER, 1000)
 						)
 						.outputItems(
 							new ItemStack(ModItems.LBO_crystal, 1)
@@ -2005,7 +2005,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(1142, "SOUR_GAS_SWEETENING", 150)
 				.inputFluids(new FluidStack(Fluids.SOURGAS, 1_000),
 							 //the water part
-							 new FluidStack(Fluids.WATER, 1_000)
+							 new FluidStack(Fluids.FRESH_WATER, 1_000)
 
 				)
 				//the ammonium part
@@ -2026,7 +2026,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 							new OreDictStack("treeLeaves", 8),
 							new ComparableStack(ModItems.powder_fertilizer, 2)
 						)
-						.inputFluids(new FluidStack(Fluids.WATER, 1000))
+						.inputFluids(new FluidStack(Fluids.FRESH_WATER, 1000))
 						.outputItems(new ItemStack(ModItems.niter, 8))
 		);
 
@@ -2036,7 +2036,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 							new ComparableStack(ModItems.biomass),
 							new ComparableStack(ModItems.powder_fertilizer, 2)
 						)
-						.inputFluids(new FluidStack(Fluids.WATER, 1000))
+						.inputFluids(new FluidStack(Fluids.FRESH_WATER, 1000))
 						.outputItems(new ItemStack(ModItems.niter, 8))
 		);
 
@@ -2061,14 +2061,22 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 		recipes.add(new ChemRecipe(1147, "BORATED_WATER", 100)
 						.inputItems(
-							new ComparableStack(ModItems.powder_borax) //for boric acid (I don't feel like adding it as a fluid yet)
+							new ComparableStack(ModItems.powder_boron)
 						)
 						.inputFluids(
-							new FluidStack(Fluids.HCL, 500), //for the boric acid
 							new FluidStack(Fluids.LIGHT_WATER, 1000)
 						)
 						.outputFluids(
 							new FluidStack(Fluids.BORATED_WATER, 1000)
+						)
+		);
+
+		recipes.add(new ChemRecipe(1148, "BRINE_EVAPORATION", 100)
+						.inputFluids(
+							new FluidStack(Fluids.BRINE, 1000)
+						)
+						.outputItems(
+							new ItemStack(ModItems.itemsalt, 16)
 						)
 		);
 

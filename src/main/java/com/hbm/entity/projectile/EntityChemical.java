@@ -310,7 +310,7 @@ public class EntityChemical extends EntityThrowableNT {
 
 	/* the extinguish type for burning multiblocks, roughly identical to the fire extinguisher */
 	protected EnumExtinguishType getExtinguishingType(FluidType type) {
-		return type == Fluids.CARBONDIOXIDE ? EnumExtinguishType.CO2 : type == Fluids.WATER || type == Fluids.HEAVYWATER || type == Fluids.COOLANT ? EnumExtinguishType.WATER : null;
+		return type == Fluids.CARBONDIOXIDE ? EnumExtinguishType.CO2 : Fluids.isColdWater(type) || type == Fluids.COOLANT ? EnumExtinguishType.WATER : null;
 	}
 
 	protected DamageSource getDamage(String name) {

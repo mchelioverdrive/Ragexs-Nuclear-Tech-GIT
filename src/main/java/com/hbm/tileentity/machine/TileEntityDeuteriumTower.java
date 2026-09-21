@@ -17,7 +17,7 @@ public class TileEntityDeuteriumTower extends TileEntityDeuteriumExtractor {
 
 	public TileEntityDeuteriumTower() {
 		super();
-		tanks[0] = new FluidTank(Fluids.WATER, 50000);
+		tanks[0] = new FluidTank(Fluids.LIGHT_WATER, 50000).migrateFrom(Fluids.WATER);
 		tanks[1] = new FluidTank(Fluids.HEAVYWATER, 5000);
 	}
 

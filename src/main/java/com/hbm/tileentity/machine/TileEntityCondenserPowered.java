@@ -33,7 +33,7 @@ public class TileEntityCondenserPowered extends TileEntityCondenser implements I
 	public TileEntityCondenserPowered() {
 		tanks = new FluidTank[2];
 		tanks[0] = new FluidTank(Fluids.SPENTSTEAM, inputTankSizeP);
-		tanks[1] = new FluidTank(Fluids.WATER, outputTankSizeP);
+		tanks[1] = new FluidTank(Fluids.FRESH_WATER, outputTankSizeP).migrateFrom(Fluids.WATER);
 		vacuumOptimised = true;
 	}
 	

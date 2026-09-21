@@ -48,7 +48,7 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 
 	public TileEntityMachineStrandCaster() {
 		super(7);
-		water = new FluidTank(Fluids.WATER, 64_000);
+		water = new FluidTank(Fluids.FRESH_WATER, 64_000).migrateFrom(Fluids.WATER);
 		steam = new FluidTank(Fluids.SPENTSTEAM, 64_000);
 	}
 

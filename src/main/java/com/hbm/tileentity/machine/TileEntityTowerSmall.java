@@ -27,7 +27,7 @@ public class TileEntityTowerSmall extends TileEntityCondenser {
 	public TileEntityTowerSmall() {
 		tanks = new FluidTank[2];
 		tanks[0] = new FluidTank(Fluids.SPENTSTEAM, inputTankSizeTS);
-		tanks[1] = new FluidTank(Fluids.WATER, outputTankSizeTS);
+		tanks[1] = new FluidTank(Fluids.FRESH_WATER, outputTankSizeTS).migrateFrom(Fluids.WATER);
 	}
 	
 	@Override
