@@ -1,3 +1,8 @@
+# Pull Request: Localize water-processing Chemical Plant recipes
+
+- Added localized Chemical Plant recipe names for water treatment, water demineralization, borated water production, and brine evaporation across all maintained full locales.
+- Updated the language synchronization baseline and water-tiering documentation for the new recipe labels.
+
 # Water Tiering and Purification
 
 - Added raw, fresh, light, and borated water progression through Chemical Plant recipes.
