@@ -2040,6 +2040,38 @@ public class ChemplantRecipes extends SerializableRecipe {
 						.outputItems(new ItemStack(ModItems.niter, 8))
 		);
 
+		recipes.add(new ChemRecipe(1145, "WATER_TREATMENT", 100)
+						.inputFluids(
+							new FluidStack(Fluids.WATER, 1000)
+						)
+						.outputFluids(
+							new FluidStack(Fluids.FRESH_WATER, 900),
+							new FluidStack(Fluids.BRINE, 100)
+						)
+		);
+
+		recipes.add(new ChemRecipe(1146, "WATER_DEMINERALIZATION", 100)
+						.inputFluids(
+							new FluidStack(Fluids.FRESH_WATER, 1000)
+						)
+						.outputFluids(
+							new FluidStack(Fluids.LIGHT_WATER, 1000)
+						)
+		);
+
+		recipes.add(new ChemRecipe(1147, "BORATED_WATER", 100)
+						.inputItems(
+							new ComparableStack(ModItems.powder_borax) //for boric acid (I don't feel like adding it as a fluid yet)
+						)
+						.inputFluids(
+							new FluidStack(Fluids.HCL, 500), //for the boric acid
+							new FluidStack(Fluids.LIGHT_WATER, 1000)
+						)
+						.outputFluids(
+							new FluidStack(Fluids.BORATED_WATER, 1000)
+						)
+		);
+
 		//Methylamine (CH{3} NH{2})
 		//recipes.add(new ChemRecipe(1145, "METHYLAMINE", 1200)
 		//		.inputItems(

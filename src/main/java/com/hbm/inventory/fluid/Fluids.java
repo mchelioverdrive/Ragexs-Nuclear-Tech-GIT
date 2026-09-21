@@ -281,6 +281,9 @@ public class Fluids {
 	public static FluidType NOBLE_GAS_MIX;
 	public static FluidType KRYPTON_FLUORINE;
 	public static FluidType XENON_CHLORINE;
+	public static FluidType FRESH_WATER;
+	public static FluidType LIGHT_WATER;
+	public static FluidType BORATED_WATER;
 
 	public static final HashBiMap<String, FluidType> renameMapping = HashBiMap.create();
 
@@ -583,6 +586,9 @@ public class Fluids {
 		XENON_CHLORINE = new FluidType("XENON_CHLORINE", 0xB9B9B9, 2, 0, 1, EnumSymbol.NONE).addTraits(GASEOUS, NOCON);
 		HELIUM4_HOT =			new FluidType("HELIUM4_HOT", 0x99525E, 1, 0, 0, EnumSymbol.NONE).setTemp(750).addTraits(GASEOUS);
 		ROCKET_FUEL =			new FluidType("ROCKET_FUEL",		0x74633B, 1, 2, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0x74633B)).addTraits(new FT_Flammable(300_000), LIQUID, new FT_Rocket(270, 700_000));
+		FRESH_WATER = new FluidType("FRESH_WATER", 0x3A7DFF, 1, 0, 0, EnumSymbol.NONE).addTraits(LIQUID);
+		LIGHT_WATER = new FluidType("LIGHT_WATER", 0x3A7DFF, 1, 0, 0, EnumSymbol.NONE).addTraits(LIQUID);
+		BORATED_WATER = new FluidType("BORATED_WATER", 0x3A7DFF, 1, 0, 0, EnumSymbol.NONE).addTraits(LIQUID);
 
 //I am getting really sick and tired of this retarded ass fluid system
 
@@ -854,6 +860,9 @@ public class Fluids {
 		metaOrder.add(XENON_CHLORINE);
 		metaOrder.add(HELIUM4_HOT);
 		metaOrder.add(ROCKET_FUEL);
+		metaOrder.add(FRESH_WATER);
+		metaOrder.add(LIGHT_WATER);
+		metaOrder.add(BORATED_WATER);
 
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!
