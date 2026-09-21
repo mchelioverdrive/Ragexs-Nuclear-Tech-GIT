@@ -1,5 +1,7 @@
 # Steam turbine safety
 
+For the Magnox steam source, see [Magnox heat removal and protection](MAGNOX.md). Blocked steam storage trips that reactor; its internal shutdown relief consumes feedwater without supplying useful steam to a turbine.
+
 A steam turbine must remain connected to an electrical load while it is processing steam. The Standard and Industrial Steam Turbines stop consuming steam and stop producing power whenever their internal power buffer has no room for another generation operation. They resume automatically after power is exported to a connected consumer, cable network, battery, or chargeable item.
 
 Design the electrical grid so a Standard or Industrial turbine can regularly export its stored power. Their full power buffers safely pause generation; they do not consume steam or discard generated energy while waiting for a load. The Leviathan instead closes its trip valves when its full power buffer indicates an overspeed condition.

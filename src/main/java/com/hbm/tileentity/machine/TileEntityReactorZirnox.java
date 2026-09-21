@@ -86,9 +86,18 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	// 0 = full power, 100 = fully shut down/SCRAM.
 	public int controlRodInsertion = 100;
 
-	// Hidden thermal mass representing the graphite moderator/core bulk.
-	// Uses the same scale as heat: 0..100000 = 20C..800C.
+	// Legacy temperature displays: 0..100000 = 20..800 C. Neither is an energy store.
 	public int graphiteHeat = 0;
+	// Thermal stores in gameplay heat units (HU), measured above 20 C.
+	private double coreEnergy;
+	private double primaryEnergy;
+	// Unreleased fission-product energy in HU; charged by operating history.
+	private double decayEnergy;
+	public boolean shutdownLatched;
+	public String shutdownReason = "none";
+	public int shutdownWaterUsed;
+	public int primaryGasVented;
+	private boolean terminalFailure;
 
 	// Residual decay heat. Stored as a double because it decays smoothly.
 	public double decayHeat = 0.0D;
@@ -97,8 +106,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	public int graphiteDamage = 0;
 	public int claddingDamage = 0;
 
-	// Represents oxygen/air contamination after hot venting or loss of CO2 cover.
-	// Air ingress makes hot graphite much more dangerous.
+	// Compatibility only. There is no represented ingress/oxidant source.
 	public int airIngress = 0;
 
 	// Debug/OC fields.
@@ -133,15 +141,34 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	private static final double CLADDING_DAMAGE_TEMP_C = 500.0D;
 	private static final double FUEL_DAMAGE_TEMP_C = 600.0D;
 	private static final double GRAPHITE_DAMAGE_TEMP_C = 600.0D;
-	private static final double GRAPHITE_FIRE_TEMP_C = 650.0D;
+	// Gameplay protection/thermal constants, not historical engineering limits.
+	private static final double CORE_CAPACITY = maxHeat / TEMP_RANGE_C;
+	private static final double PRIMARY_CAPACITY = CORE_CAPACITY / 4.0D;
+	private static final double DECAY_FRACTION = 0.055D;
+	private static final double DECAY_RELEASE_RATE = 0.0005D;
+	private static final int SUPPORTED_POWER = 3000;
+	private static final double TRIP_CORE_C = 450.0D;
+	private static final double RESTART_CORE_C = 350.0D;
+	private static final double TRIP_CO2_FRACTION = 0.8D;
+	private static final double RESTART_CO2_FRACTION = 0.9D;
+	private static final double TRIP_PRESSURE_BAR = 29.0D;
+	private static final double RESTART_PRESSURE_BAR = 27.0D;
+	private static final double RELIEF_PRESSURE_BAR = 30.0D;
+	private static final double RUPTURE_PRESSURE_BAR = 34.0D;
+	private static final int PRIMARY_RELIEF_MB = 100;
+	private static final int SHUTDOWN_TRANSFER_HU = 1200;
+	private static final int SHUTDOWN_WATER_MB = 60;
+	private static final double SHUTDOWN_BOILING_C = 100.0D;
+	// 1 water -> 1 superhot steam; ordinary steam has 1/5 its heat, 100x its volume.
+	private static final int SHUTDOWN_HEAT_PER_MB = HEAT_REMOVED_PER_MB_STEAM / 5;
+	private static final int RESTART_WATER_MARGIN = 2000;
+	private static final int RESTART_STEAM_ROOM = 1000;
 
 	private static final int MAX_GRAPHITE_DAMAGE = 100000;
 	private static final int MAX_CLADDING_DAMAGE = 100000;
 
 	private static final int MELTDOWN_OVERPRESSURE = 0;
 	private static final int MELTDOWN_OVERHEAT = 1;
-	private static final int MELTDOWN_GRAPHITE_FIRE = 2;
-	private static final int MELTDOWN_WATER_INGRESS = 3;
 
 	// Slot flux shaping.
 	// Center/near-center channels run hotter; edge channels are slightly weaker.
@@ -227,6 +254,36 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		steam.readFromNBT(nbt, "steam");
 		carbonDioxide.readFromNBT(nbt, "carbondioxide");
 		water.readFromNBT(nbt, "water");
+		readThermalState(nbt);
+	}
+
+	private void readThermalState(NBTTagCompound data) {
+		// Version 2 changes heat/graphiteHeat into displays. Old outlet temperature
+		// seeds the new primary store; old core temperature and decay rate survive.
+		boolean current = data.getInteger("thermalVersion") >= 2;
+		coreEnergy = Math.max(0, current ? data.getDouble("coreEnergy") : graphiteHeat);
+		primaryEnergy = Math.max(0, current ? data.getDouble("primaryEnergy") : heat * PRIMARY_CAPACITY / CORE_CAPACITY);
+		decayEnergy = Math.max(0, current ? data.getDouble("decayEnergy") : decayHeat / DECAY_RELEASE_RATE);
+		decayHeat = decayEnergy * DECAY_RELEASE_RATE;
+		shutdownLatched = current ? data.getBoolean("shutdownLatched") : true;
+		shutdownReason = current ? data.getString("shutdownReason") : "migration";
+		if(shutdownReason.isEmpty()) shutdownReason = shutdownLatched ? "manual" : "none";
+		shutdownWaterUsed = data.getInteger("shutdownWaterUsed");
+		primaryGasVented = data.getInteger("primaryGasVented");
+		airIngress = 0;
+		if(shutdownLatched) { isOn = false; controlRodInsertion = 100; }
+		updateThermalDisplays();
+	}
+
+	private void writeThermalState(NBTTagCompound data) {
+		data.setInteger("thermalVersion", 2);
+		data.setDouble("coreEnergy", coreEnergy);
+		data.setDouble("primaryEnergy", primaryEnergy);
+		data.setDouble("decayEnergy", decayEnergy);
+		data.setBoolean("shutdownLatched", shutdownLatched);
+		data.setString("shutdownReason", shutdownReason);
+		data.setInteger("shutdownWaterUsed", shutdownWaterUsed);
+		data.setInteger("primaryGasVented", primaryGasVented);
 	}
 
 	@Override
@@ -249,6 +306,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		steam.writeToNBT(nbt, "steam");
 		carbonDioxide.writeToNBT(nbt, "carbondioxide");
 		water.writeToNBT(nbt, "water");
+		writeThermalState(nbt);
 	}
 
 	public void networkUnpack(NBTTagCompound data) {
@@ -270,6 +328,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		steam.readFromNBT(data, "t0");
 		carbonDioxide.readFromNBT(data, "t1");
 		water.readFromNBT(data, "t2");
+		readThermalState(data);
 	}
 
 	public int getGaugeScaled(int i, int type) {
@@ -277,8 +336,8 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			case 0: return (steam.getFill() * i) / steam.getMaxFill();
 			case 1: return (carbonDioxide.getFill() * i) / carbonDioxide.getMaxFill();
 			case 2: return (water.getFill() * i) / water.getMaxFill();
-			case 3: return (this.heat * i) / maxHeat;
-			case 4: return (this.pressure * i) / maxPressure;
+			case 3: return clamp((this.heat * i) / maxHeat, 0, i);
+			case 4: return clamp((this.pressure * i) / maxPressure, 0, i);
 			default: return 1;
 		}
 	}
@@ -316,11 +375,13 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 
 	@Override
 	public void updateEntity() {
-		if(!worldObj.isRemote) {
+		if(!worldObj.isRemote && !terminalFailure) {
 
 			this.output = 0;
 			this.activePower = 0;
 			this.co2Cooling = 0;
+			this.shutdownWaterUsed = 0;
+			this.primaryGasVented = 0;
 
 			if(worldObj.getTotalWorldTime() % 20 == 0) {
 				this.updateConnections();
@@ -328,25 +389,32 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 
 			carbonDioxide.loadTank(24, 26, slots);
 			water.loadTank(25, 27, slots);
+			// Export first so a working outlet is not mistaken for blocked storage.
+			for(DirPos pos : getConPos()) {
+				this.sendFluid(steam, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			}
+			updatePressureFromCO2();
+			checkProtection();
+			if(checkIfMeltdown()) return;
 
 			this.activePower = runFuelCycle();
 			applyDecayHeat(this.activePower);
 
-			updatePressureFromCO2();
-
+			transferPrimaryHeat();
 			generateSteam();
 
 			applyPassiveCooling();
-			equalizeGraphiteAndOutletHeat();
+			updateThermalDisplays();
 
 			updatePressureFromCO2();
+			checkProtection();
+			// Rupture is checked before relief: a finite valve cannot undo a burst.
+			if(getPressureBar() >= RUPTURE_PRESSURE_BAR) { meltdown(MELTDOWN_OVERPRESSURE); return; }
+			if(getPressureBar() >= RELIEF_PRESSURE_BAR) ventCarbonDioxide(PRIMARY_RELIEF_MB);
 
 			applyDamageModel();
-			checkIfMeltdown();
-
-			for(DirPos pos : getConPos()) {
-				this.sendFluid(steam, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			}
+			if(checkIfMeltdown()) return;
+			markDirty();
 
 			NBTTagCompound data = new NBTTagCompound();
 
@@ -366,6 +434,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			steam.writeToNBT(data, "t0");
 			carbonDioxide.writeToNBT(data, "t1");
 			water.writeToNBT(data, "t2");
+			writeThermalState(data);
 
 			this.networkPack(data, 150);
 		}
@@ -387,210 +456,117 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	}
 
 	private void applyDecayHeat(int activePowerThisTick) {
+		// Fuel power is TOTAL recoverable heat: defer 5.5%, do not add it twice.
+		decayEnergy += activePowerThisTick * DECAY_FRACTION;
+		decayHeat = decayEnergy * DECAY_RELEASE_RATE;
+		decayEnergy -= decayHeat;
+		coreEnergy += activePowerThisTick * (1.0D - DECAY_FRACTION) + decayHeat;
+	}
 
-		// Fission-product decay heat is small compared to full power but persists
-		// after shutdown. This makes SCRAM useful, but not magic.
-		if(activePowerThisTick > 0) {
-			double target = activePowerThisTick * 0.055D;
-
-			if(decayHeat < target)
-				decayHeat = target;
-
-			// While running, keep decay heat near its generated value.
-			decayHeat *= 0.99995D;
-		} else {
-			// After shutdown, decay heat fades slowly.
-			decayHeat *= 0.9995D;
-		}
-
-		if(decayHeat < 0.05D)
-			decayHeat = 0.0D;
-
-		graphiteHeat += (int)Math.round(decayHeat);
+	private void updateThermalDisplays() {
+		graphiteHeat = (int)Math.round(coreEnergy);
+		heat = (int)Math.round(primaryEnergy * CORE_CAPACITY / PRIMARY_CAPACITY);
 	}
 
 	private void updatePressureFromCO2() {
-
-		double gasFrac = getCO2FillFraction();
 		double tempK = getHeatC() + 273.15D;
 		double nominalK = NOMINAL_CO2_OUTLET_C + 273.15D;
+		pressure = barToPressure(getCO2FillFraction() * NOMINAL_PRESSURE_BAR * tempK / nominalK);
+	}
 
-		// Closed gas loop approximation:
-		// more CO2 inventory = more pressure,
-		// hotter gas = higher pressure.
-		double pressureBar = gasFrac * NOMINAL_PRESSURE_BAR * (tempK / nominalK);
+	private void transferPrimaryHeat() {
+		// Primary store includes exchanger metal and gas. Circulation transports heat;
+		// it never removes it. Exchange cannot overshoot thermal equilibrium.
+		double fraction = Math.min(1.0D, getCO2FillFraction());
+		double difference = getGraphiteHeatC() - getHeatC();
+		double equilibrium = Math.abs(difference) / (1.0D / CORE_CAPACITY + 1.0D / PRIMARY_CAPACITY);
+		double capacity = (isOn ? MAX_STEAM_PER_TICK * HEAT_REMOVED_PER_MB_STEAM : SHUTDOWN_TRANSFER_HU) * fraction;
+		double exchange = Math.min(equilibrium, capacity);
+		if(difference >= 0) {
+			exchange = Math.min(exchange, coreEnergy);
+			coreEnergy -= exchange;
+			primaryEnergy += exchange;
+		} else {
+			exchange = Math.min(exchange, primaryEnergy);
+			primaryEnergy -= exchange;
+			coreEnergy += exchange;
+		}
+		co2Cooling = (int)Math.round(difference >= 0 ? exchange : -exchange);
+	}
 
-		this.pressure = barToPressure(pressureBar);
+	private int normalSteamCapacity() {
+		double factor = clampDouble((getHeatC() - STEAM_START_C) / (STEAM_FULL_C - STEAM_START_C), 0, 1);
+		return (int)Math.floor(MAX_STEAM_PER_TICK * factor);
 	}
 
 	private void generateSteam() {
-
-		if(this.heat <= 0)
-			return;
-
-		if(this.water.getFill() <= 0)
-			return;
-
-		if(this.carbonDioxide.getFill() <= 0)
-			return;
-
-		if(this.steam.getFill() >= this.steam.getMaxFill())
-			return;
-
-		double tempC = getHeatC();
-
-		if(tempC < STEAM_START_C)
-			return;
-
-		double tempFactor = clampDouble((tempC - STEAM_START_C) / (STEAM_FULL_C - STEAM_START_C), 0.0D, 1.0D);
-		double co2Factor = clampDouble((double)this.carbonDioxide.getFill() / (double)NOMINAL_CO2_FILL, 0.0D, 1.0D);
-		double pressureFactor = clampDouble(getPressureBar() / NOMINAL_PRESSURE_BAR, 0.0D, 1.0D);
-
-		int cycle = (int)Math.floor(tempFactor * co2Factor * pressureFactor * MAX_STEAM_PER_TICK);
-
-		if(cycle <= 0)
-			return;
-
-		int room = steam.getMaxFill() - steam.getFill();
-
-		cycle = Math.min(cycle, water.getFill());
-		cycle = Math.min(cycle, room);
-
-		if(cycle <= 0)
-			return;
-
-		this.output = cycle;
-
-		water.setFill(water.getFill() - cycle);
-		steam.setFill(steam.getFill() + cycle);
-
-		int removed = cycle * HEAT_REMOVED_PER_MB_STEAM;
-		this.co2Cooling = removed;
-
-		// The steam generator removes heat from the graphite/gas system.
-		// Direct outlet heat drops a little; most of the cooling hits the large
-		// graphite thermal mass.
-		graphiteHeat -= removed;
-		heat -= removed / 12;
-
-		if(graphiteHeat < 0)
-			graphiteHeat = 0;
-
-		if(heat < 0)
-			heat = 0;
+		if(water.getFill() <= 0) return;
+		// Normal steam carries 80 HU/mB out of the primary store. No second core sink.
+		int cycle = Math.min(normalSteamCapacity(), (int)(primaryEnergy / HEAT_REMOVED_PER_MB_STEAM));
+		cycle = Math.min(cycle, Math.min(water.getFill(), steam.getMaxFill() - steam.getFill()));
+		if(cycle > 0) {
+			water.setFill(water.getFill() - cycle);
+			steam.setFill(steam.getFill() + cycle);
+			primaryEnergy -= cycle * HEAT_REMOVED_PER_MB_STEAM;
+			output = cycle;
+		}
+		if(isOn || water.getFill() <= 0) return;
+		// Bounded low-pressure shutdown boiling, including the 100..300 C range
+		// where useful superhot steam is unavailable. Vent 100 mB ordinary steam
+		// per water mB, carrying 16 HU; no output/energy credit. Never cool below
+		// the boiling floor. Below 100 C only modest ambient loss remains.
+		double available = Math.max(0, primaryEnergy - (SHUTDOWN_BOILING_C - TEMP_BASE_C) * PRIMARY_CAPACITY);
+		int used = Math.min(SHUTDOWN_WATER_MB, Math.min(water.getFill(), (int)(available / SHUTDOWN_HEAT_PER_MB)));
+		water.setFill(water.getFill() - used);
+		primaryEnergy -= used * SHUTDOWN_HEAT_PER_MB;
+		shutdownWaterUsed = used;
 	}
 
 	private void applyPassiveCooling() {
-
-		// Small ambient/inertial loss. This is intentionally weak: Magnox-style
-		// graphite cores are massive and stay hot for a long time.
-		if(heat > 0) {
-			heat -= Math.max(1, heat / 15000);
-
-			if(heat < 0)
-				heat = 0;
-		}
-
-		if(graphiteHeat > 0) {
-			graphiteHeat -= Math.max(1, graphiteHeat / 25000);
-
-			if(graphiteHeat < 0)
-				graphiteHeat = 0;
-		}
+		// Only modest ambient loss; no water-independent emergency heat sink.
+		coreEnergy -= Math.min(coreEnergy, Math.max(1.0D, coreEnergy / 25000.0D));
+		primaryEnergy -= Math.min(primaryEnergy, Math.max(0.25D, primaryEnergy / 15000.0D));
 	}
 
-	private void equalizeGraphiteAndOutletHeat() {
+	public int getWaterReserve() {
+		// Size for <=3000 HU/t, core <=450 C, healthy barriers and >=80% nominal
+		// CO2. Include the entire remaining decay inventory, one full-power tick,
+		// 10% margin and 256 mB for quantization. Never cap an unsafe requirement.
+		double expectedDecay = Math.max(decayEnergy, SUPPORTED_POWER * DECAY_FRACTION / DECAY_RELEASE_RATE);
+		return (int)Math.ceil((coreEnergy + primaryEnergy + expectedDecay + SUPPORTED_POWER) * 1.1D / SHUTDOWN_HEAT_PER_MB) + 256;
+	}
 
-		// Slow outlet temperature response.
-		// The player sees heat lag behind the huge graphite moderator/core mass.
-		int delta = graphiteHeat - heat;
+	private String protectionReason(boolean restart) {
+		if(water.getFill() <= getWaterReserve() + (restart ? RESTART_WATER_MARGIN : 0)) return "water";
+		if(getCO2FillFraction() < (restart ? RESTART_CO2_FRACTION : TRIP_CO2_FRACTION)) return "co2";
+		if(getGraphiteHeatC() >= (restart ? RESTART_CORE_C : TRIP_CORE_C)) return "temperature";
+		if(getPressureBar() >= (restart ? RESTART_PRESSURE_BAR : TRIP_PRESSURE_BAR)) return "pressure";
+		int room = steam.getMaxFill() - steam.getFill();
+		if(room < (restart ? RESTART_STEAM_ROOM : MAX_STEAM_PER_TICK)) return "steam";
+		if(restart && (claddingDamage > 0 || graphiteDamage > 0)) return "damage";
+		return "none";
+	}
 
-		if(delta != 0) {
-			int exchange = delta / 24;
-
-			if(exchange == 0)
-				exchange = delta > 0 ? 1 : -1;
-
-			heat += exchange;
+	private void checkProtection() {
+		String reason = protectionReason(false);
+		if(!"none".equals(reason) && (!shutdownLatched || "manual".equals(shutdownReason))) trip(reason);
+		if(shutdownLatched) {
+			isOn = false;
+			controlRodInsertion = 100;
 		}
-
-		if(heat < 0)
-			heat = 0;
-
-		if(graphiteHeat < 0)
-			graphiteHeat = 0;
 	}
 
 	private void applyDamageModel() {
-
-		double tempC = getHeatC();
-		double co2Frac = getCO2FillFraction();
-		double instability = getCoreInstabilityMultiplier();
-
-		// Magnox/Zirnox cladding is the limiting material.
-		// Above roughly 500C, it starts taking accelerated damage.
-		if(tempC > CLADDING_DAMAGE_TEMP_C) {
-			int damage = (int)Math.ceil((tempC - CLADDING_DAMAGE_TEMP_C) / 8.0D);
-			damage = Math.max(1, damage);
-			damage = (int)Math.ceil(damage * instability);
-			claddingDamage += damage;
-		}
-
-		// Fuel damage region. This represents fuel swelling, failed cans,
-		// contamination of the CO2 loop, and general core ugliness.
-		if(tempC > FUEL_DAMAGE_TEMP_C) {
-			int damage = (int)Math.ceil((tempC - FUEL_DAMAGE_TEMP_C) / 5.0D);
-			damage = Math.max(1, damage);
-			claddingDamage += damage;
-			graphiteDamage += damage / 2;
-		}
-
-		// Graphite damage/oxidation risk. CO2 protects the graphite; loss of CO2
-		// and air ingress make the same temperature much more dangerous.
-		if(tempC > GRAPHITE_DAMAGE_TEMP_C) {
-			int damage = (int)Math.ceil((tempC - GRAPHITE_DAMAGE_TEMP_C) / 10.0D);
-			damage = Math.max(1, damage);
-
-			if(co2Frac < 0.35D)
-				damage *= 3;
-
-			if(airIngress > 0)
-				damage += Math.max(1, airIngress / 100);
-
-			graphiteDamage += damage;
-		}
-
-		// Air ingress model.
-		// Low CO2 cover at high temperature implies air/oxygen entering the core.
-		if(tempC > 450.0D && co2Frac < 0.20D) {
-			airIngress += co2Frac < 0.08D ? 6 : 2;
-		} else if(co2Frac > 0.70D && airIngress > 0) {
-			// Refilled/purged CO2 slowly suppresses the air-ingress condition.
-			airIngress--;
-		}
-
-		// Hot venting/loss of gas plus water on the secondary side can represent
-		// a damaged exchanger/water ingress event. It is not normal operation.
-		if(water.getFill() > 0 && tempC > 520.0D && co2Frac < 0.12D) {
-			int shock = (int)Math.ceil((tempC - 520.0D) / 8.0D);
-			shock = Math.max(1, shock);
-
-			claddingDamage += shock * 12;
-			graphiteDamage += shock * 4;
-			graphiteHeat += shock * 20;
-
-			// Steam/hot gas shock adds temporary pressure stress.
-			pressure += barToPressure(Math.min(3.0D, shock * 0.12D));
-		}
-
-		if(graphiteDamage < 0)
-			graphiteDamage = 0;
-
-		if(claddingDamage < 0)
-			claddingDamage = 0;
-
-		if(airIngress < 0)
-			airIngress = 0;
+		double tempC = getGraphiteHeatC();
+		if(tempC > CLADDING_DAMAGE_TEMP_C)
+			claddingDamage += (int)Math.ceil((tempC - CLADDING_DAMAGE_TEMP_C) / 8.0D * getCoreInstabilityMultiplier());
+		if(tempC > FUEL_DAMAGE_TEMP_C)
+			claddingDamage += (int)Math.ceil((tempC - FUEL_DAMAGE_TEMP_C) / 5.0D);
+		if(tempC > GRAPHITE_DAMAGE_TEMP_C)
+			graphiteDamage += (int)Math.ceil((tempC - GRAPHITE_DAMAGE_TEMP_C) / 10.0D);
+		claddingDamage = clamp(claddingDamage, 0, MAX_CLADDING_DAMAGE);
+		graphiteDamage = clamp(graphiteDamage, 0, MAX_GRAPHITE_DAMAGE);
+		airIngress = 0; // Low inventory is not evidence of an oxidant or water leak.
 	}
 
 	private boolean hasFuelRod(int id) {
@@ -687,7 +663,12 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		double slotFlux = getFluxFactor(id);
 		double fuelHeat = getFuelHeatMultiplier(num);
 
-		double effectiveFlux = neutronFlux * slotFlux * controlFactor;
+		// Reference-supported negative feedback for natural uranium only. Exotic
+		// fuel coefficients are unspecified, not asserted to match real Magnox fuel.
+		double temperatureRise = Math.max(0, getGraphiteHeatC() - 300.0D) / 250.0D;
+		double feedback = num == EnumZirnoxType.NATURAL_URANIUM_FUEL ?
+			0.5D + 0.5D / (1.0D + temperatureRise * temperatureRise) : 1.0D;
+		double effectiveFlux = neutronFlux * slotFlux * controlFactor * feedback;
 
 		if(effectiveFlux <= 0.0D)
 			return 0;
@@ -701,7 +682,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		if(heatAdded < 0)
 			heatAdded = 0;
 
-		graphiteHeat += heatAdded;
+		// Heat is credited once by applyDecayHeat after summing fuel power.
 
 		// Lifetime increment is now based on local neutron flux, not merely
 		// hard neighbor count. Natural uranium still burns through relatively
@@ -728,7 +709,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		}
 
 		// Exotic fuels are allowed, but punish hot operation.
-		if(heatAdded > 0 && getHeatC() > 450.0D) {
+		if(heatAdded > 0 && getGraphiteHeatC() > CLADDING_DAMAGE_TEMP_C) {
 			double instability = getFuelInstabilityMultiplier(num) - 1.0D;
 
 			if(instability > 0.0D) {
@@ -855,31 +836,16 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		return 1.0D + instability / count;
 	}
 
-	private void checkIfMeltdown() {
-
-		if(this.pressure > maxPressure) {
+	private boolean checkIfMeltdown() {
+		if(getPressureBar() >= RUPTURE_PRESSURE_BAR) {
 			meltdown(MELTDOWN_OVERPRESSURE);
-			return;
+			return true;
 		}
-
-		if(this.heat > maxHeat || this.graphiteHeat > maxHeat + 5000) {
+		if(getGraphiteHeatC() >= 800.0D || graphiteDamage >= MAX_GRAPHITE_DAMAGE || claddingDamage >= MAX_CLADDING_DAMAGE) {
 			meltdown(MELTDOWN_OVERHEAT);
-			return;
+			return true;
 		}
-
-		if(this.graphiteDamage >= MAX_GRAPHITE_DAMAGE) {
-			meltdown(MELTDOWN_GRAPHITE_FIRE);
-			return;
-		}
-
-		if(this.claddingDamage >= MAX_CLADDING_DAMAGE && getHeatC() > 620.0D) {
-			meltdown(MELTDOWN_WATER_INGRESS);
-			return;
-		}
-
-		if(getHeatC() > GRAPHITE_FIRE_TEMP_C && airIngress > 12000) {
-			meltdown(MELTDOWN_GRAPHITE_FIRE);
-		}
+		return false;
 	}
 
 	private void spawnDebris(DebrisType type) {
@@ -904,86 +870,54 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		worldObj.spawnEntityInWorld(debris);
 	}
 
-	private void zirnoxDebris(int type) {
-
-		for(int i = 0; i < 2; i++) {
-			spawnDebris(DebrisType.EXCHANGER);
-		}
-
+	private void zirnoxDebris(double contamination) {
+		for(int i = 0; i < 2; i++) spawnDebris(DebrisType.EXCHANGER);
 		for(int i = 0; i < 20; i++) {
 			spawnDebris(DebrisType.CONCRETE);
 			spawnDebris(DebrisType.BLANK);
 		}
-
-		for(int i = 0; i < 10; i++) {
+		for(int i = 0; i < 10; i++) spawnDebris(DebrisType.SHRAPNEL);
+		for(int i = 0; i < (int)Math.ceil(10 * contamination); i++) {
 			spawnDebris(DebrisType.ELEMENT);
 			spawnDebris(DebrisType.GRAPHITE);
-			spawnDebris(DebrisType.SHRAPNEL);
-		}
-
-		if(type == MELTDOWN_GRAPHITE_FIRE) {
-			for(int i = 0; i < 20; i++) {
-				spawnDebris(DebrisType.GRAPHITE);
-			}
 		}
 	}
 
 	private void meltdown(int type) {
-
-		for(int i = 0; i < slots.length; i++) {
-			this.slots[i] = null;
+		if(worldObj.isRemote || terminalFailure) return;
+		terminalFailure = true;
+		isOn = false;
+		int fuelCount = 0;
+		for(int i = 0; i < 24; i++) if(slots[i] != null) fuelCount++;
+		double fuelDamage = Math.max(claddingDamage / (double)MAX_CLADDING_DAMAGE,
+			clampDouble((getGraphiteHeatC() - FUEL_DAMAGE_TEMP_C) / 200.0D, 0, 1));
+		boolean rupture = type == MELTDOWN_OVERPRESSURE;
+		// A rupture breaches the pressure barrier even with intact fuel cans.
+		double contamination = fuelCount / 24.0D * (rupture ? 0.15D + 0.85D * fuelDamage : 0.4D * fuelDamage);
+		for(int i = 0; i < slots.length; i++) slots[i] = null;
+		int metadata = getBlockMetadata();
+		if(rupture) {
+			worldObj.playSoundEffect(xCoord, yCoord + 2, zCoord, "hbm:block.rbmk_explosion", 10.0F, 0.85F);
+			worldObj.createExplosion(null, xCoord, yCoord + 3, zCoord, 5.5F, true);
+			zirnoxDebris(contamination);
 		}
-
-		int[] dimensions = { 1, 0, 2, 2, 2, 2 };
-
-		worldObj.setBlock(this.xCoord, this.yCoord, this.zCoord, ModBlocks.zirnox_destroyed, this.getBlockMetadata(), 3);
-		MultiblockHandlerXR.fillSpace(worldObj, this.xCoord, this.yCoord, this.zCoord, dimensions, ModBlocks.zirnox_destroyed, ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset));
-
-		float blast = 3.0F;
-		int waste = 45;
-
-		switch(type) {
-			case MELTDOWN_OVERPRESSURE:
-				blast = 5.5F;
-				waste = 35;
-				break;
-			case MELTDOWN_OVERHEAT:
-				blast = 3.0F;
-				waste = 50;
-				break;
-			case MELTDOWN_GRAPHITE_FIRE:
-				blast = 2.5F;
-				waste = 60;
-				break;
-			case MELTDOWN_WATER_INGRESS:
-				blast = 6.0F;
-				waste = 50;
-				break;
-			default:
-				blast = 3.0F;
-				waste = 45;
-				break;
+		int wasteRadius = (int)Math.floor(35 * Math.sqrt(contamination));
+		if(wasteRadius >= 4) ExplosionNukeGeneric.waste(worldObj, xCoord, yCoord, zCoord, wasteRadius);
+		worldObj.setBlock(xCoord, yCoord, zCoord, ModBlocks.zirnox_destroyed, metadata, 3);
+		MultiblockHandlerXR.fillSpace(worldObj, xCoord, yCoord, zCoord, new int[] {1, 0, 2, 2, 2, 2},
+			ModBlocks.zirnox_destroyed, ForgeDirection.getOrientation(metadata - BlockDummyable.offset));
+		if(worldObj.getTileEntity(xCoord, yCoord, zCoord) instanceof TileEntityZirnoxDestroyed) {
+			TileEntityZirnoxDestroyed wreck = (TileEntityZirnoxDestroyed)worldObj.getTileEntity(xCoord, yCoord, zCoord);
+			wreck.onFire = false;
+			wreck.contaminationScale = contamination;
+			wreck.markDirty();
 		}
-
-		worldObj.playSoundEffect(xCoord, yCoord + 2, zCoord, "hbm:block.rbmk_explosion", 10.0F, 0.85F);
-		worldObj.createExplosion(null, this.xCoord, this.yCoord + 3, this.zCoord, blast, true);
-
-		zirnoxDebris(type);
-
-		// Dirty reactor failure. Lower blast than before, but greater radiological mess.
-		ExplosionNukeGeneric.waste(worldObj, this.xCoord, this.yCoord, this.zCoord, waste);
-
 		List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class,
-																	AxisAlignedBB.getBoundingBox(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5).expand(100, 100, 100));
-
+			AxisAlignedBB.getBoundingBox(xCoord, yCoord, zCoord, xCoord + 1, yCoord + 1, zCoord + 1).expand(100, 100, 100));
 		for(EntityPlayer player : players) {
-			player.triggerAchievement(MainRegistry.achZIRNOXBoom);
-		}
-
-		if(MobConfig.enableElementals) {
-			for(EntityPlayer player : players) {
+			if(rupture) player.triggerAchievement(MainRegistry.achZIRNOXBoom);
+			if(contamination > 0 && MobConfig.enableElementals)
 				player.getEntityData().getCompoundTag(EntityPlayer.PERSISTED_NBT_TAG).setBoolean("radMark", true);
-			}
 		}
 	}
 
@@ -1032,10 +966,10 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 
 	@Override
 	public void receiveControl(NBTTagCompound data) {
+		if(worldObj == null || worldObj.isRemote || terminalFailure) return;
 
 		if(data.hasKey("control")) {
-			this.isOn = !this.isOn;
-			this.controlRodInsertion = this.isOn ? 0 : 100;
+			setControlRodInsertion(isOn ? 100 : 0);
 		}
 
 		if(data.hasKey("scram")) {
@@ -1054,33 +988,46 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	}
 
 	private void ventCarbonDioxide(int amount) {
-
-		int fill = this.carbonDioxide.getFill();
-		this.carbonDioxide.setFill(fill - amount);
-
-		if(this.carbonDioxide.getFill() < 0)
-			this.carbonDioxide.setFill(0);
-
-		// Emergency venting saves pressure, but hot venting risks air ingress
-		// and contaminates the primary circuit.
-		double tempC = getHeatC();
-
-		if(tempC > 450.0D) {
-			airIngress += (int)Math.ceil((tempC - 400.0D) / 10.0D);
-			claddingDamage += (int)Math.ceil((tempC - 400.0D) / 15.0D);
-		}
-
+		if(worldObj == null || worldObj.isRemote || terminalFailure) return;
+		int fill = carbonDioxide.getFill();
+		int removed = Math.min(fill, Math.max(0, amount));
+		// The primary store includes fixed exchanger metal; assign only 1/4 of its
+		// energy to the gas at nominal inventory. Vent only that gas's enthalpy.
+		double gasShare = 0.25D * Math.min(1.0D, getCO2FillFraction());
+		if(fill > 0) primaryEnergy -= primaryEnergy * gasShare * removed / fill;
+		carbonDioxide.setFill(fill - removed);
+		primaryGasVented += removed;
+		updateThermalDisplays();
 		updatePressureFromCO2();
+		checkProtection();
+		markDirty();
+	}
+
+	private void trip(String reason) {
+		if(worldObj == null || worldObj.isRemote || terminalFailure) return;
+		shutdownLatched = true;
+		shutdownReason = reason;
+		controlRodInsertion = 100;
+		isOn = false;
+		markDirty();
 	}
 
 	private void scram() {
-		this.controlRodInsertion = 100;
-		this.isOn = false;
+		trip("manual");
 	}
 
 	private void setControlRodInsertion(int insertion) {
-		this.controlRodInsertion = clamp(insertion, 0, 100);
-		this.isOn = this.controlRodInsertion < 100;
+		if(worldObj == null || worldObj.isRemote || terminalFailure) return;
+		insertion = clamp(insertion, 0, 100);
+		if(insertion == 100) { scram(); return; }
+		updatePressureFromCO2();
+		String reason = protectionReason(!isOn || shutdownLatched);
+		if(!"none".equals(reason)) { trip(reason); return; }
+		shutdownLatched = false;
+		shutdownReason = "none";
+		controlRodInsertion = insertion;
+		isOn = true;
+		markDirty();
 	}
 
 	@Override
@@ -1103,11 +1050,11 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	// ==========================
 
 	private double getHeatC() {
-		return heat * 1.0E-5D * TEMP_RANGE_C + TEMP_BASE_C;
+		return primaryEnergy / PRIMARY_CAPACITY + TEMP_BASE_C;
 	}
 
 	private double getGraphiteHeatC() {
-		return graphiteHeat * 1.0E-5D * TEMP_RANGE_C + TEMP_BASE_C;
+		return coreEnergy / CORE_CAPACITY + TEMP_BASE_C;
 	}
 
 	private double getPressureBar() {
@@ -1122,7 +1069,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		if(carbonDioxide.getMaxFill() <= 0)
 			return 0.0D;
 
-		return clampDouble((double)carbonDioxide.getFill() / (double)carbonDioxide.getMaxFill(), 0.0D, 1.0D);
+		return Math.max(0.0D, (double)carbonDioxide.getFill() / NOMINAL_CO2_FILL);
 	}
 
 	private static int clamp(int value, int min, int max) {
@@ -1274,18 +1221,22 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			airIngress,
 			decayHeat,
 			activePower,
-			co2Cooling
+			co2Cooling,
+			shutdownLatched,
+			shutdownReason,
+			getWaterReserve(),
+			shutdownWaterUsed,
+			primaryGasVented
 		};
 	}
 
-	@Callback(direct = true, limit = 4)
+	@Callback(direct = false, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setActive(Context context, Arguments args) {
 		boolean active = args.checkBoolean(0);
 
 		if(active) {
-			this.controlRodInsertion = 0;
-			this.isOn = true;
+			setControlRodInsertion(0);
 		} else {
 			scram();
 		}
@@ -1293,18 +1244,24 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		return new Object[] {};
 	}
 
-	@Callback(direct = true, limit = 4)
+	@Callback(direct = false, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setControlRodInsertion(Context context, Arguments args) {
 		setControlRodInsertion(args.checkInteger(0));
 		return new Object[] { controlRodInsertion };
 	}
 
-	@Callback(direct = true, limit = 4)
+	@Callback(direct = false, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] scram(Context context, Arguments args) {
 		scram();
 		return new Object[] {};
+	}
+
+	@Callback(direct = true)
+	@Optional.Method(modid = "OpenComputers")
+	public Object[] getShutdownStatus(Context context, Arguments args) {
+		return new Object[] {shutdownLatched, shutdownReason, protectionReason(true), getWaterReserve()};
 	}
 
 	@Override
@@ -1331,7 +1288,8 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			"getInfo",
 			"setActive",
 			"setControlRodInsertion",
-			"scram"
+			"scram",
+			"getShutdownStatus"
 		};
 	}
 
@@ -1381,6 +1339,8 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 				return setControlRodInsertion(context, args);
 			case ("scram"):
 				return scram(context, args);
+			case ("getShutdownStatus"):
+				return getShutdownStatus(context, args);
 		}
 
 		throw new NoSuchMethodException();
@@ -1402,7 +1362,18 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		data.setDouble(CompatEnergyControl.D_HEAT_C, Math.round(heat * 1.0E-5D * TEMP_RANGE_C + TEMP_BASE_C));
 		data.setDouble(CompatEnergyControl.D_MAXHEAT_C, Math.round(maxHeat * 1.0E-5D * TEMP_RANGE_C + TEMP_BASE_C));
 		data.setLong(CompatEnergyControl.L_PRESSURE_BAR, Math.round(getPressureBar()));
-		data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, output);
+		data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, output + shutdownWaterUsed);
 		data.setDouble(CompatEnergyControl.D_OUTPUT_MB, output);
+		data.setBoolean(CompatEnergyControl.B_ACTIVE, isOn);
+		data.setDouble(CompatEnergyControl.D_CORE_C, getGraphiteHeatC());
+		// Standard tank text is rendered by existing EC versions; custom keys also
+		// expose machine-readable protection state without changing EC globally.
+		data.setString(CompatEnergyControl.S_TANK, "Magnox: " + (shutdownLatched ? shutdownReason : (isOn ? "running" : "off")));
+		data.setBoolean("shutdownLatched", shutdownLatched);
+		data.setString("shutdownReason", shutdownReason);
+		data.setString("restartBlocker", protectionReason(true));
+		data.setInteger("waterReserve", getWaterReserve());
+		data.setInteger("shutdownWaterUsed", shutdownWaterUsed);
+		data.setInteger("primaryGasVented", primaryGasVented);
 	}
 }

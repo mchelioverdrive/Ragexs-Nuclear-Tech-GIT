@@ -12,3 +12,5 @@ The Chemical Plant recipe names for water treatment, water demineralization, bor
 PWR heat converts light water, borated water, and heavy water into their matching hot fluids. A heat exchanger returns each hot fluid to its matching cold fluid. Direct-boiling steam condenses to fresh water, which must be demineralized again before reactor reuse.
 
 Existing machine saves migrate only the affected machine tanks: legacy water becomes the machine's required fresh or light water, and legacy PWR coolant becomes borated water. Standalone tanks, pipes, barrels, and held containers are not converted.
+
+The [Magnox reactor](MAGNOX.md) uses Light Water in its **secondary steam generator**, with graphite moderation and CO2 primary cooling. It shuts down at a calculated feedwater reserve and consumes that reserve for internal shutdown cooling. Refilling does not restart it automatically.
