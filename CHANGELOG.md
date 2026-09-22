@@ -1,3 +1,10 @@
+# Pull Request: Correct Magnox thermal inertia and protection
+
+- Added five-second target-based SCRAM rod travel, peak fuel-channel cladding temperatures, rapid pressure-loss protection, and version 3 thermal-store migration.
+- Separated operating trips from feedwater and steam-space startup interlocks and warnings, while conserving heat when useful steam output is blocked.
+- Increased core and primary thermal inertia, made CO2-dependent shutdown transport explicit, and made exotic-fuel combined-fault wreck and pressure-rupture paths reachable without forcing healthy natural uranium to fail.
+- Documented the NKS and IAEA design basis separately from gameplay balance values.
+
 # Pull Request: Rework Magnox thermal failure model
 
 - Replaced calculated-reserve protection with fixed 8,000 mB trip and 12,000 mB restart thresholds while retaining an advisory cooldown-water estimate.

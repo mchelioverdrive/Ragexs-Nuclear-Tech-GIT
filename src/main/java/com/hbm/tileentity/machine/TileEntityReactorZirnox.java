@@ -85,6 +85,12 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 
 	// 0 = full power, 100 = fully shut down/SCRAM.
 	public int controlRodInsertion = 100;
+	public int targetControlRodInsertion = 100;
+	public double peakCladdingTemperature = 20.0D;
+	private final double[] channelCladdingTemperature = new double[24];
+	private final int[] channelPower = new int[24];
+	private double previousPressureBar;
+	public String activeTripInput = "none";
 
 	// Legacy temperature displays: 0..100000 = 20..800 C. Neither is an energy store.
 	public int graphiteHeat = 0;
@@ -142,21 +148,23 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	private static final double FUEL_DAMAGE_TEMP_C = 600.0D;
 	private static final double GRAPHITE_DAMAGE_TEMP_C = 600.0D;
 	// Gameplay protection/thermal constants, not historical engineering limits.
-	private static final double CORE_CAPACITY = maxHeat / TEMP_RANGE_C;
-	private static final double PRIMARY_CAPACITY = CORE_CAPACITY / 4.0D;
+	public static final double CORE_CAPACITY = 2500.0D;
+	public static final double PRIMARY_CAPACITY = 600.0D;
 	private static final double DECAY_FRACTION = 0.055D;
 	private static final double DECAY_RELEASE_RATE = 0.0005D;
 	public static final int FEEDWATER_TRIP_MB = 8000;
 	public static final int FEEDWATER_RESTART_MB = 12000;
-	private static final double TRIP_CORE_C = 450.0D;
+	private static final double TRIP_CLADDING_C = 560.0D;
 	private static final double RESTART_CORE_C = 350.0D;
-	private static final double TRIP_CO2_FRACTION = 0.8D;
 	private static final double RESTART_CO2_FRACTION = 0.9D;
 	private static final double TRIP_PRESSURE_BAR = 29.0D;
 	private static final double RESTART_PRESSURE_BAR = 27.0D;
 	private static final double RELIEF_PRESSURE_BAR = 30.0D;
 	private static final double RUPTURE_PRESSURE_BAR = 34.0D;
-	private static final int PRIMARY_RELIEF_MB = 100;
+	public static final int PRIMARY_RELIEF_MB = 24;
+	private static final double RAPID_PRESSURE_LOSS_BAR = 1.5D;
+	private static final int ROD_TRAVEL_TICKS = 100;
+	private static final double CHANNEL_RESPONSE = 0.04D;
 	private static final int SHUTDOWN_TRANSFER_HU = 400;
 	private static final int SHUTDOWN_WATER_MB = 10;
 	private static final double SHUTDOWN_BOILING_C = 100.0D;
@@ -239,6 +247,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		} else {
 			controlRodInsertion = isOn ? 0 : 100;
 		}
+		targetControlRodInsertion = nbt.hasKey("targetControlRodInsertion") ? clamp(nbt.getInteger("targetControlRodInsertion"), 0, 100) : controlRodInsertion;
 
 		if(nbt.hasKey("graphiteHeat")) {
 			graphiteHeat = nbt.getInteger("graphiteHeat");
@@ -252,6 +261,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		airIngress = nbt.getInteger("airIngress");
 		activePower = nbt.getInteger("activePower");
 		co2Cooling = nbt.getInteger("co2Cooling");
+		activeTripInput = nbt.hasKey("activeTripInput") ? nbt.getString("activeTripInput") : "none";
 
 		steam.readFromNBT(nbt, "steam");
 		carbonDioxide.readFromNBT(nbt, "carbondioxide");
@@ -260,25 +270,39 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	}
 
 	private void readThermalState(NBTTagCompound data) {
-		// Version 2 changes heat/graphiteHeat into displays. Old outlet temperature
-		// seeds the new primary store; old core temperature and decay rate survive.
-		boolean current = data.getInteger("thermalVersion") >= 2;
-		coreEnergy = Math.max(0, current ? data.getDouble("coreEnergy") : graphiteHeat);
-		primaryEnergy = Math.max(0, current ? data.getDouble("primaryEnergy") : heat * PRIMARY_CAPACITY / CORE_CAPACITY);
-		decayEnergy = Math.max(0, current ? data.getDouble("decayEnergy") : decayHeat / DECAY_RELEASE_RATE);
+		int version = data.getInteger("thermalVersion");
+		if(version >= 3) {
+			coreEnergy = Math.max(0, data.getDouble("coreEnergy"));
+			primaryEnergy = Math.max(0, data.getDouble("primaryEnergy"));
+		} else {
+			// Version 2 energies used the legacy display scale as capacity. Migrate
+			// temperatures, rather than reinterpreting those values as version 3 HU.
+			coreEnergy = Math.max(0, (graphiteHeat * 1.0E-5D * TEMP_RANGE_C) * CORE_CAPACITY);
+			primaryEnergy = Math.max(0, (heat * 1.0E-5D * TEMP_RANGE_C) * PRIMARY_CAPACITY);
+		}
+		decayEnergy = Math.max(0, version >= 2 ? data.getDouble("decayEnergy") : decayHeat / DECAY_RELEASE_RATE);
 		decayHeat = decayEnergy * DECAY_RELEASE_RATE;
-		shutdownLatched = current ? data.getBoolean("shutdownLatched") : true;
-		shutdownReason = current ? data.getString("shutdownReason") : "migration";
+		shutdownLatched = version >= 2 ? data.getBoolean("shutdownLatched") : true;
+		shutdownReason = version >= 2 ? data.getString("shutdownReason") : "migration";
 		if(shutdownReason.isEmpty()) shutdownReason = shutdownLatched ? "manual" : "none";
 		shutdownWaterUsed = data.getInteger("shutdownWaterUsed");
 		primaryGasVented = data.getInteger("primaryGasVented");
 		airIngress = 0;
-		if(shutdownLatched) { isOn = false; controlRodInsertion = 100; }
+		for(int i = 0; i < channelCladdingTemperature.length; i++) {
+			String key = "channelCladding" + i;
+			channelCladdingTemperature[i] = version >= 3 && data.hasKey(key) ? data.getDouble(key) : getGraphiteHeatC();
+		}
+		updatePeakCladdingTemperature();
+		previousPressureBar = data.hasKey("previousPressureBar") ? data.getDouble("previousPressureBar") : 0.0D;
+		if(shutdownLatched) {
+			isOn = false;
+			targetControlRodInsertion = 100;
+		}
 		updateThermalDisplays();
 	}
 
 	private void writeThermalState(NBTTagCompound data) {
-		data.setInteger("thermalVersion", 2);
+		data.setInteger("thermalVersion", 3);
 		data.setDouble("coreEnergy", coreEnergy);
 		data.setDouble("primaryEnergy", primaryEnergy);
 		data.setDouble("decayEnergy", decayEnergy);
@@ -286,6 +310,8 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		data.setString("shutdownReason", shutdownReason);
 		data.setInteger("shutdownWaterUsed", shutdownWaterUsed);
 		data.setInteger("primaryGasVented", primaryGasVented);
+		data.setDouble("previousPressureBar", previousPressureBar);
+		for(int i = 0; i < channelCladdingTemperature.length; i++) data.setDouble("channelCladding" + i, channelCladdingTemperature[i]);
 	}
 
 	@Override
@@ -297,6 +323,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		nbt.setBoolean("isOn", isOn);
 
 		nbt.setInteger("controlRodInsertion", controlRodInsertion);
+		nbt.setInteger("targetControlRodInsertion", targetControlRodInsertion);
 		nbt.setInteger("graphiteHeat", graphiteHeat);
 		nbt.setDouble("decayHeat", decayHeat);
 		nbt.setInteger("graphiteDamage", graphiteDamage);
@@ -304,6 +331,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		nbt.setInteger("airIngress", airIngress);
 		nbt.setInteger("activePower", activePower);
 		nbt.setInteger("co2Cooling", co2Cooling);
+		nbt.setString("activeTripInput", activeTripInput);
 
 		steam.writeToNBT(nbt, "steam");
 		carbonDioxide.writeToNBT(nbt, "carbondioxide");
@@ -319,6 +347,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		this.isOn = data.getBoolean("isOn");
 
 		this.controlRodInsertion = data.hasKey("controlRodInsertion") ? clamp(data.getInteger("controlRodInsertion"), 0, 100) : (isOn ? 0 : 100);
+		this.targetControlRodInsertion = data.hasKey("targetControlRodInsertion") ? clamp(data.getInteger("targetControlRodInsertion"), 0, 100) : controlRodInsertion;
 		this.graphiteHeat = data.hasKey("graphiteHeat") ? data.getInteger("graphiteHeat") : heat;
 		this.decayHeat = data.getDouble("decayHeat");
 		this.graphiteDamage = data.getInteger("graphiteDamage");
@@ -326,6 +355,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		this.airIngress = data.getInteger("airIngress");
 		this.activePower = data.getInteger("activePower");
 		this.co2Cooling = data.getInteger("co2Cooling");
+		this.activeTripInput = data.hasKey("activeTripInput") ? data.getString("activeTripInput") : "none";
 
 		steam.readFromNBT(data, "t0");
 		carbonDioxide.readFromNBT(data, "t1");
@@ -398,9 +428,11 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			updatePressureFromCO2();
 			checkProtection();
 			if(checkIfMeltdown()) return;
+			moveControlRods();
 
 			this.activePower = runFuelCycle();
 			applyDecayHeat(this.activePower);
+			updateChannelThermals();
 
 			transferPrimaryHeat();
 			generateSteam();
@@ -416,6 +448,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 
 			applyDamageModel();
 			if(checkIfMeltdown()) return;
+			previousPressureBar = getPressureBar();
 			markDirty();
 
 			NBTTagCompound data = new NBTTagCompound();
@@ -425,6 +458,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			data.setBoolean("isOn", isOn);
 
 			data.setInteger("controlRodInsertion", controlRodInsertion);
+			data.setInteger("targetControlRodInsertion", targetControlRodInsertion);
 			data.setInteger("graphiteHeat", graphiteHeat);
 			data.setDouble("decayHeat", decayHeat);
 			data.setInteger("graphiteDamage", graphiteDamage);
@@ -432,6 +466,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			data.setInteger("airIngress", airIngress);
 			data.setInteger("activePower", activePower);
 			data.setInteger("co2Cooling", co2Cooling);
+			data.setString("activeTripInput", activeTripInput);
 
 			steam.writeToNBT(data, "t0");
 			carbonDioxide.writeToNBT(data, "t1");
@@ -443,18 +478,57 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	}
 
 	private int runFuelCycle() {
-		if(!isOn || controlRodInsertion >= 100)
-			return 0;
+		for(int i = 0; i < channelPower.length; i++) channelPower[i] = 0;
+		if(controlRodInsertion >= 100) return 0;
 
 		int power = 0;
 
 		for(int i = 0; i < 24; i++) {
 			if(slots[i] != null && slots[i].getItem() instanceof ItemZirnoxRod) {
-				power += decay(i);
+				channelPower[i] = decay(i);
+				power += channelPower[i];
 			}
 		}
 
 		return power;
+	}
+
+	private void moveControlRods() {
+		if(controlRodInsertion == targetControlRodInsertion) return;
+		int step = Math.max(1, 100 / ROD_TRAVEL_TICKS);
+		if(controlRodInsertion < targetControlRodInsertion) {
+			controlRodInsertion = Math.min(targetControlRodInsertion, controlRodInsertion + step);
+		} else {
+			controlRodInsertion = Math.max(targetControlRodInsertion, controlRodInsertion - step);
+		}
+		if(controlRodInsertion >= 100) isOn = false;
+	}
+
+	private void updateChannelThermals() {
+		double coreTemperature = getGraphiteHeatC();
+		double coolingFraction = clampDouble(getCO2FillFraction(), 0.0D, 1.0D);
+		for(int i = 0; i < channelCladdingTemperature.length; i++) {
+			double localPower = channelPower[i];
+			double neighborPower = 0.0D;
+			int[] neighbours = getNeighbouringSlots(i);
+			if(neighbours != null) {
+				for(int neighbour : neighbours) neighborPower += channelPower[neighbour];
+				if(neighbours.length > 0) neighborPower /= neighbours.length;
+			}
+			double localHeating = (localPower + neighborPower * 0.12D) * 0.30D;
+			double coolingDenominator = 0.05D + coolingFraction;
+			double targetTemperature = coreTemperature + localHeating / coolingDenominator;
+			channelCladdingTemperature[i] += (targetTemperature - channelCladdingTemperature[i]) * CHANNEL_RESPONSE;
+			channelCladdingTemperature[i] = Math.max(TEMP_BASE_C, channelCladdingTemperature[i]);
+		}
+		updatePeakCladdingTemperature();
+	}
+
+	private void updatePeakCladdingTemperature() {
+		peakCladdingTemperature = getGraphiteHeatC();
+		for(double temperature : channelCladdingTemperature) {
+			peakCladdingTemperature = Math.max(peakCladdingTemperature, temperature);
+		}
 	}
 
 	private void applyDecayHeat(int activePowerThisTick) {
@@ -466,8 +540,8 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	}
 
 	private void updateThermalDisplays() {
-		graphiteHeat = (int)Math.round(coreEnergy);
-		heat = (int)Math.round(primaryEnergy * CORE_CAPACITY / PRIMARY_CAPACITY);
+		graphiteHeat = clamp((int)Math.round((getGraphiteHeatC() - TEMP_BASE_C) / TEMP_RANGE_C * maxHeat), 0, maxHeat);
+		heat = clamp((int)Math.round((getHeatC() - TEMP_BASE_C) / TEMP_RANGE_C * maxHeat), 0, maxHeat);
 	}
 
 	private void updatePressureFromCO2() {
@@ -482,7 +556,8 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		double fraction = Math.min(1.0D, getCO2FillFraction());
 		double difference = getGraphiteHeatC() - getHeatC();
 		double equilibrium = Math.abs(difference) / (1.0D / CORE_CAPACITY + 1.0D / PRIMARY_CAPACITY);
-		double capacity = (isOn ? MAX_STEAM_PER_TICK * HEAT_REMOVED_PER_MB_STEAM : SHUTDOWN_TRANSFER_HU) * fraction;
+		boolean rodsMovingOrWithdrawn = controlRodInsertion < 100;
+		double capacity = (rodsMovingOrWithdrawn ? MAX_STEAM_PER_TICK * HEAT_REMOVED_PER_MB_STEAM : SHUTDOWN_TRANSFER_HU) * fraction;
 		double exchange = Math.min(equilibrium, capacity);
 		if(difference >= 0) {
 			exchange = Math.min(exchange, coreEnergy);
@@ -503,7 +578,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 
 	private void generateSteam() {
 		if(water.getFill() <= 0) return;
-		if(isOn) {
+		if(controlRodInsertion < 100) {
 			// Useful steam is the sole water-dependent sink while operating.
 			int cycle = Math.min(normalSteamCapacity(), (int)(primaryEnergy / HEAT_REMOVED_PER_MB_STEAM));
 			cycle = Math.min(cycle, Math.min(water.getFill(), steam.getMaxFill() - steam.getFill()));
@@ -543,39 +618,36 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	}
 
 	private String protectionReason(boolean restart) {
-		if(restart && water.getFill() < FEEDWATER_RESTART_MB)
-			return "water";
-
-		if(!restart && water.getFill() <= FEEDWATER_TRIP_MB)
-			return "water";
-		if(getCO2FillFraction() < (restart ? RESTART_CO2_FRACTION : TRIP_CO2_FRACTION)) return "co2";
-		if(getGraphiteHeatC() >= (restart ? RESTART_CORE_C : TRIP_CORE_C)) return "temperature";
-		if(getPressureBar() >= (restart ? RESTART_PRESSURE_BAR : TRIP_PRESSURE_BAR)) return "pressure";
-		int room = steam.getMaxFill() - steam.getFill();
-		if(room < (restart ? RESTART_STEAM_ROOM : MAX_STEAM_PER_TICK)) return "steam";
-		if(restart && (claddingDamage > 0 || graphiteDamage > 0)) return "damage";
+		if(restart) {
+			if(water.getFill() < FEEDWATER_RESTART_MB) return "water";
+			if(getCO2FillFraction() < RESTART_CO2_FRACTION) return "co2";
+			if(getGraphiteHeatC() >= RESTART_CORE_C) return "temperature";
+			if(getPressureBar() >= RESTART_PRESSURE_BAR) return "pressure";
+			if(steam.getMaxFill() - steam.getFill() < RESTART_STEAM_ROOM) return "steam";
+			if(claddingDamage > 0 || graphiteDamage > 0) return "damage";
+			return "none";
+		}
+		if(peakCladdingTemperature >= TRIP_CLADDING_C) return "temperature";
+		if(getPressureBar() >= TRIP_PRESSURE_BAR) return "pressure";
+		if(previousPressureBar > 0.0D && previousPressureBar - getPressureBar() >= RAPID_PRESSURE_LOSS_BAR) return "pressure_loss";
 		return "none";
 	}
 
 	private void checkProtection() {
 		String reason = protectionReason(false);
+		activeTripInput = reason;
 		if(!"none".equals(reason) && (!shutdownLatched || "manual".equals(shutdownReason))) trip(reason);
-		if(shutdownLatched) {
-			isOn = false;
-			controlRodInsertion = 100;
-		}
 	}
 
 	private void applyDamageModel() {
-		double tempC = getGraphiteHeatC();
+		double tempC = peakCladdingTemperature;
 		if(tempC > CLADDING_DAMAGE_TEMP_C) {
 			double severity = (tempC - CLADDING_DAMAGE_TEMP_C) / 200.0D;
 			claddingDamage += (int)Math.ceil(750.0D * severity * severity * getCoreInstabilityMultiplier());
 		}
-		if(tempC > GRAPHITE_DAMAGE_TEMP_C) {
-			double severity = (tempC - GRAPHITE_DAMAGE_TEMP_C) / 180.0D;
-			graphiteDamage += (int)Math.ceil(600.0D * severity * severity);
-		}
+		// Intact CO2 does not oxidize graphite. Structural damage is reserved for
+		// hard bulk-core overheating, not a hot fuel-can surface.
+		if(getGraphiteHeatC() > 760.0D) graphiteDamage += (int)Math.ceil((getGraphiteHeatC() - 760.0D) * 2.0D);
 		claddingDamage = clamp(claddingDamage, 0, MAX_CLADDING_DAMAGE);
 		graphiteDamage = clamp(graphiteDamage, 0, MAX_GRAPHITE_DAMAGE);
 		airIngress = 0; // Low inventory is not evidence of an oxidant or water leak.
@@ -1041,7 +1113,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		if(worldObj == null || worldObj.isRemote || terminalFailure) return;
 		shutdownLatched = true;
 		shutdownReason = reason;
-		controlRodInsertion = 100;
+		targetControlRodInsertion = 100;
 		isOn = false;
 		markDirty();
 	}
@@ -1059,7 +1131,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		if(!"none".equals(reason)) { trip(reason); return; }
 		shutdownLatched = false;
 		shutdownReason = "none";
-		controlRodInsertion = insertion;
+		targetControlRodInsertion = insertion;
 		isOn = true;
 		markDirty();
 	}
@@ -1260,7 +1332,10 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			shutdownReason,
 			getWaterReserve(),
 			shutdownWaterUsed,
-			primaryGasVented
+			primaryGasVented,
+			targetControlRodInsertion,
+			peakCladdingTemperature,
+			activeTripInput
 		};
 	}
 
