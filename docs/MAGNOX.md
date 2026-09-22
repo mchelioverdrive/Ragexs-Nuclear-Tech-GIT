@@ -1,82 +1,70 @@
-# Magnox heat removal and protection
+# Magnox thermal and protection model
 
-The existing Magnox multiblock includes its graphite core, CO2 primary circuit, steam generator, shutdown controls and relief equipment. Supply **Carbon Dioxide** and **Light Water** to the existing ports. Graphite is the moderator; secondary feedwater has no reactivity or water-void effect. No additional cooling machine or external loop is required by this model.
+## Historical design basis
 
-Physical reference: [NKS-2, *Description of the Magnox Type of Gas Cooled Reactor*, sections 4 and 5.5–5.7](https://www.nks.org/scripts/getdocument.php?file=111010111119675). Section 4 describes negative temperature feedback for the natural-uranium reactor. Section 5.5 describes CO2 heat transport to steam generators. Sections 5.6–5.7 route residual and emergency heat through those generators, including low-speed circulation and natural circulation. These support continued heat transport after shutdown, not indefinite operation without a heat sink. All numerical limits, equipment capacities and protection logic below are **gameplay choices**, not historical plant specifications or engineering safety claims.
+Magnox is modeled as a graphite-moderated, carbon-dioxide-cooled reactor whose primary gas transfers heat to water-fed steam generators. Water is not a core moderator, and this model therefore has no water-void reactivity term.
 
-## Operation and explicit restart
+The principal design source is the [NKS description of the Magnox reactor](https://www.nks.org/scripts/getdocument.php?file=111010111119675). It describes negative temperature feedback in the natural-uranium core, predicts a temporary 125 C fuel-temperature rise after coincident loss of circulators and trip circuits, and describes decay-heat removal through the main steam generators by low-speed and natural CO2 circulation.
 
-Keep feedwater supplied, maintain sufficient CO2, and export steam. The reactor checks protection **before adding new fuel heat**, and again after heat transfer. Trips insert all control rods and latch the reactor off. Restoring fluids never restarts it automatically. The GUI shows the latched reason beneath the fuel slots; hover over the control for reserve information. Use the existing on/off control, `setActive(true)`, or a rod-insertion command below 100 to request a restart.
+The protection and material-limit source is IAEA [GC(07)/INF/62](https://www.iaea.org/sites/default/files/gc/gc07inf-62_en.pdf). It describes triplicated fail-to-safety protection, rapid coolant-pressure loss and high fuel-cladding surface temperature trip inputs, roughly five seconds of shutdown-rod travel, an assumed 620 C Magnox cladding ignition limit, and analyses of blower loss, rod withdrawal, a single-channel fire, and combined pressure and blower loss.
 
-| Protection | Shutdown condition | Explicit restart requirement |
-| --- | --- | --- |
-| Feedwater | At or below 8,000 mB | At least 12,000 mB |
-| Primary CO2 | Below 11,200 mB | At least 12,600 mB |
-| Core temperature | At least 450 C | Below 350 C |
-| Primary pressure | At least 29 bar | Below 27 bar |
-| Steam storage | Less than 55 mB free after export | At least 1,000 mB free |
-| Existing core damage | Does not erase damage on shutdown | Both damage counters must be zero |
+Those facts identify the plant and motivate the model. The numerical heat capacities, transfer rates, thresholds, and damage rates below are gameplay balance values, not historical engineering claims.
 
-The first automatic trip reason remains visible. A rejected restart reports its current blocking condition. Manual SCRAM records `manual`; upgrading an old save records `migration`. Protection can trip a stopped reactor too. All start paths share the same checks; there is no bypass or random protection failure. Restarting with some steam space cannot prove that downstream pipes work; continued blockage trips it again before storage overflows.
+## Automatic protection and startup interlocks
 
-## Thermal accounting
+Enabled automatic protection has three operating trip inputs:
 
-Energy is measured in local gameplay heat units (HU), not joules or the global boiler energy unit. The implementation retains the existing fuel identities, metadata, base heat, lifetimes, flux layout, fuel multipliers, breeding and depleted outputs.
+* peak fuel-channel cladding temperature at or above **560 C**;
+* primary pressure at or above **29 bar**; and
+* primary pressure falling by at least **1.5 bar in one tick**.
 
-| State | Meaning |
+A SCRAM latches its first cause, targets 100% rod insertion, and moves the actual rods one percentage point per tick. Full travel from zero therefore takes 100 ticks, approximately five seconds. Fission follows the actual rod position during travel and stops only at full insertion. Rod insertion and manual SCRAM do not require external power.
+
+Feedwater, CO2 inventory, output space, temperature, pressure, and existing damage are checked separately when starting. Startup requires at least 12,000 mB feedwater, 90% of nominal CO2 inventory, at least 1,000 mB free steam space, core temperature below 350 C, primary pressure below 27 bar, and no accumulated damage. Feedwater quantity and steam-tank fullness are **not** automatic operating trip inputs. During operation they are warnings. A full steam tank is blocked output, not a boiler-pressure measurement.
+
+## Thermal stores and heat accounting
+
+`thermalVersion=3` uses independent energy stores above 20 C:
+
+| State | Gameplay meaning |
 | --- | --- |
-| `coreEnergy` | Stored thermal energy above 20 C; capacity 100000/780 HU per C. Lumps fuel and graphite together. |
-| `primaryEnergy` | Stored thermal energy above 20 C in primary gas and steam-generator metal; capacity one quarter of core capacity. |
-| `graphiteHeat` | Legacy core-temperature display: 0–100000 maps to 20–800 C. Numerically equals core HU because of the chosen capacity, but is not another store. |
-| `heat` | Legacy primary-temperature display on that same scale; not another store or an additional outlet heat inventory. |
-| `decayEnergy` | Remaining unreleased fission-product energy, separate from thermal energy. |
-| `decayHeat` | Decay heating rate in HU/t, independent of inserted control rods. |
-| `activePower` | Total recoverable fuel heat generated this tick, before splitting prompt and delayed heat. |
-| `co2Cooling` | Signed core-to-primary heat transport in HU/t; internal transport is not an environmental heat sink. |
+| `coreEnergy` | Fuel and graphite store, **2,500 HU/C**. |
+| `primaryEnergy` | CO2 circuit and steam-generator metal store, **600 HU/C**. |
+| `graphiteHeat` | Legacy 0–100000 core-temperature display (20–800 C), calculated from `coreEnergy`. |
+| `heat` | Legacy 0–100000 primary-temperature display, calculated from `primaryEnergy`. |
+| `decayEnergy` | Unreleased fission-product energy. |
+| `decayHeat` | Heat released from that inventory this tick. |
 
-Each fuel tick puts 94.5% of power into the core and 5.5% into `decayEnergy`. Each tick releases 0.0005 of the resulting decay inventory into the core. The old code instead credited full fuel heat and then added decay heat, including an immediate full operating decay rate after a single tick. The new recurrence conserves total generated energy: prompt heating + decay-inventory increase + released decay heating equals fuel power. At 3,000 HU/t, one operating tick leaves 164.9175 HU of unreleased energy, compared with 329,835 HU after long operation. The decay half-life is about 1,386 loaded ticks; this single exponential is a gameplay approximation.
+The larger capacities remove the prior numerical identity between core energy and the legacy gauge. A protected hot reactor cannot lose hundreds of degrees through that display conversion: at the maximum 400 HU/t shutdown transfer rate, cooling the core alone from 400 C to 100 C requires at least 1,875 ticks, before decay heat and transfer equilibrium are considered. Neither store is clamped to 100 C and changing operating state never deletes stored heat.
 
-CO2 transfers equal and opposite amounts between the thermal stores, limited by available energy, thermal equilibrium, and circulation capacity. Maximum transfer is 4,400 HU/t running or 400 HU/t stopped, multiplied by CO2 inventory / 14,000 mB, capped at one. A small remaining gas inventory cannot provide full transport. The stopped capacity represents internal low-speed/natural circulation and still needs secondary heat removal. Ambient loss is only max(1, coreEnergy/25000) and max(0.25, primaryEnergy/15000) HU/t, bounded by available energy.
+Fuel power assigns 5.5% to the delayed inventory and 94.5% directly to the core. Each tick releases 0.0005 of the delayed inventory. CO2 exchange is equal and opposite between the stores and is proportional to actual inventory; at zero CO2 it is exactly zero. Ambient losses are explicit and bounded. Venting removes CO2 and its modeled gas enthalpy. Every other removed HU is associated with useful steam, shutdown boiling and its water discharge, or ambient loss.
 
-Natural uranium uses a smooth bounded feedback factor: with `x = max(0, coreC - 300)/250`, power-producing flux is multiplied by `0.5 + 0.5/(1+x*x)`. It also affects fuel burn through the existing flux calculation. Exotic fuels retain a factor of one because the selected report does not establish their coefficients. Feedback is independent of protective shutdown. Exotic damage multipliers remain; their heat-related damage begins above the shared 500 C cladding threshold, above the shutdown limit.
+Version 2 saves migrate by reconstructing the saved core and primary temperatures on the new capacity scale. Their old energy numbers are never reinterpreted as version 3 HU, and `decayEnergy` is preserved.
 
-## Steam and finite shutdown cooling
+## Steam generation and shutdown cooling
 
-Normal production ramps from zero at 300 C to at most 55 mB/t at 450 C. One mB of Light Water makes one mB of Super Dense Steam (`SUPERHOTSTEAM`), preserving the existing reactor conversion and the water-to-superhot-steam volume ratio. Each mB exports exactly 80 HU from the primary store. Water, heat and available steam space limit production. Full steam storage stops useful production.
+Useful generation ramps between 300 C and 450 C, up to 55 mB/t. Each mB of Light Water produces one mB of Super Dense Steam and removes 80 HU from the primary store. Water, heat, and free output capacity all limit the cycle. When storage fills, production and useful heat removal stop; unmatched heat stays in the reactor.
 
-Stopped reactors additionally use an **internal secondary steam relief path**, bounded to 10 mB water/t and 160 HU/t. Above the 100 C low-pressure boiling floor this approximates venting ordinary steam: one water mB corresponds to 100 mB of ordinary steam and removes 16 HU, consistent with the ordinary/superhot steam heat ratio of 100/500 in the fluid definitions. Vented steam is not added to the output tank and earns no useful steam or electricity. The internal steam generator continues to accept Light Water; this does not change its global fluid traits or other machines' recipes.
+After shutdown, low-speed/natural CO2 circulation continues moving as much as 400 HU/t from core to primary, scaled by actual CO2 inventory. The water-dependent shutdown path consumes at most 10 mB/t and removes 16 HU per mB above its 100 C boiling floor. It creates no useful output credit. Zero feedwater stops it completely. Decay heat can consequently produce a post-SCRAM plateau or rise whenever release exceeds heat removal.
 
-This bounded low-pressure boiling approximation continues through the 100–300 C range even when useful superhot-steam generation has stopped. It removes only heat above the 100 C floor and consumes real tank water. Useful production and relief are mutually exclusive: a stopped reactor uses only relief, so the two paths can never remove the same heat in one tick. A full output tank does not block relief. Below 100 C (and for sub-mB residual boiling energy), only ambient heat loss remains. Remaining decay heat can maintain boiling near 100 C until it declines; it is never erased. When water is empty, all water-dependent heat removal stops. There is no hidden supply. Primary stored heat can still boil water after CO2 is lost, but the core no longer has that transport path.
-## Feedwater protection and advisory estimate
+Primary pressure is `26 * (CO2 mB / 14000) * (primaryC + 273.15)/(410 + 273.15)` bar. Relief begins at 30 bar and vents at most **24 mB/t**. This controls ordinary natural-uranium transients but is finite, so an extreme exotic-fuel heat-up can cross the 34 bar rupture threshold faster than relief can recover it.
 
-Feedwater protection uses fixed gameplay thresholds: the reactor trips at or below **8,000 mB** and cannot explicitly restart until it has at least **12,000 mB**. These thresholds preserve a useful operating buffer but do **not** guarantee complete cooldown. A disconnected supply eventually exhausts the finite internal tank because every water-dependent heat-removal tick consumes actual Light Water.
+## Fuel channels, feedback, and failures
 
-`getWaterReserve()` is advisory information only. It estimates the Light Water needed to remove the current combined thermal energy above the 100 C shutdown floor plus `decayEnergy` and a one-tick margin based on current fission and decay heat. The estimate has a small 16 mB discrete-tick allowance. It has no artificial cold-reactor floor, is not a trip or restart condition, and cannot promise cooldown when CO2 heat transport, feedwater, or other necessary capacity is unavailable.
+Each of the 24 existing fuel slots has a persistent cladding temperature. Its target uses local fuel power, neighboring-channel power, flux shape, actual rod insertion, bulk core temperature, and CO2 cooling. The model reports the hottest channel independently of graphite temperature and uses that peak for protection and cladding damage. Weak or absent CO2 cooling raises the local fuel-to-cladding temperature difference. Damage begins above 500 C and can progress to failure during sustained exposure near the IAEA's 620 C Magnox limit.
 
-Stopped CO2 circulation is limited to 400 HU/t and scales linearly with actual inventory up to nominal fill. At zero CO2, core-to-primary transport is zero. Shutdown boiling removes at most 160 HU/t, so cooling is gradual. Decay heat may hold the primary system near its 100 C boiling floor while water remains; the isolated core receives only its small ambient loss if CO2 is gone.
+Natural uranium retains strong negative temperature feedback. Its reactivity decreases smoothly as the graphite heats, and normal circulation keeps its channels inside the operating envelope. Loss of circulation therefore reduces its power rather than creating a prompt runaway; enabled peak-temperature and pressure protection then inserts the rods over five seconds. One ordinary mistake is not tuned to guarantee destruction of a healthy natural-uranium core.
 
-## Pressure, damage and contamination
+Exotic fuels do not receive an invented historical Magnox feedback coefficient. Their existing higher heat and instability multipliers remain, and a full ZFB MOX loading exceeds normal steam-generator capacity. Consequently blocked steam output plus lost feedwater can cause severe cladding damage, while CO2 loss during high-power operation can create a severe local temperature excursion during rod travel.
 
-Primary pressure is `26 * (CO2 mB / 14000) * (primaryC + 273.15)/(410 + 273.15)` bar. Nominal inventory is consistently 14,000 mB, not the tank's 16,000 mB capacity. Overfilling can cause an earlier pressure trip. The legacy gauge scale still maps 100000 to 30 bar.
+There are three terminal paths:
 
-Normal reference pressure is 26 bar, trip pressure 29, automatic primary relief 30, and rupture 34. Primary relief vents at most 100 mB/t; the manual vent remains 1,000 mB per command. Removed gas carries its modeled enthalpy away (a quarter of primary energy belongs to gas at nominal inventory, scaled down with inventory), reduces pressure, and weakens core heat transport. Secondary steam relief never removes primary gas. Rupture is checked before the finite relief valve can reduce an already excessive pressure.
+* accumulated peak-cladding damage produces a contaminated, nonexplosive wreck;
+* bulk core temperature reaching 800 C (or supported structural graphite damage reaching its limit) produces a contaminated, nonexplosive wreck; and
+* primary pressure reaching 34 bar mechanically ruptures the vessel, producing the only explosion and launched debris path.
 
-Cladding damage accumulates nonlinearly above 500 C and graphite structural damage accumulates nonlinearly above 600 C. On the retained 100,000-point scale, continuous exposure is deliberately slow near each threshold but reaches cladding failure in about 12 seconds at 650 C and graphite failure in about 27 seconds at 700 C (before fuel-specific cladding multipliers). A long-running reactor isolated from both feedwater and CO2 retains enough representative decay heat for cladding damage to reach its limit while the core climbs through the severe-exposure range, before the 800 C fallback. Reaching either damage limit or the hard core temperature of 800 C produces the existing destroyed-reactor structure **without a blast or launched debris**. Only a pressure rupture launches the existing debris and invokes an explosion. A destroyed reactor terminates the live tile update immediately.
+No thermal failure is a nuclear detonation. Low CO2 inventory is not evidence of air ingress. Intact CO2 does not oxidize graphite, and the model does not invent a graphite fire or random channel blockage.
 
-Contamination scales with occupied fuel channels, modeled cladding/fuel damage, and barrier failure: thermal wreck exposure uses 40% of the fuel-damage fraction; rupture uses 15% plus 85% of that fraction. This scales waste radius, wreck radiation, gas emission probability and radioactive debris count. Mechanical debris belongs only to rupture. Feedwater loss does not create a nuclear explosion; only primary pressure rupture invokes explosion and debris launching. Prolonged heat-sink loss can nevertheless cross a material limit or 800 C, destroy the reactor, and contaminate its surroundings. Wrecks do not ignite by default. Neither a low CO2 level nor a hot secondary tank proves ingress; the old inferred air/water ingress and graphite-fire failure classes have been removed. The `airIngress` automation position/key remains zero for compatibility.
+## Compatibility and automation
 
-## Saves and automation
-
-`thermalVersion=2` explicitly migrates old temperatures to the two energy stores. Legacy `decayHeat` is converted to remaining inventory by dividing by 0.0005, preserving its heating rate conservatively when operating history is unavailable. Old reactors are latched off for an explicit checked restart; heat and damage survive. Existing `heat`, `graphiteHeat`, `pressure`, controls, damage, tank and decay keys remain. All new energy, shutdown and discharge fields are saved and synchronized through the same NBT packet. Energy and decay pause while chunks are unloaded; reload does not clear them.
-
-The existing `FluidTank.migrateFrom(Fluids.WATER)` is unchanged: only the reactor's saved water tank becomes Light Water while retaining its amount. Ports and item loading accept Light Water; ordinary water containers and outside tanks are not rewritten.
-
-All existing OpenComputers method names and return types remain. `getInfo()` retains its first 14 positions and appends latch, reason, reserve, shutdown boiling water mB/t and primary gas vented mB/t. New `getShutdownStatus()` returns `(latched, reason, restartBlocker, reserve)`. Shutdown reason identifiers are `none`, `manual`, `migration`, `water`, `co2`, `temperature`, `pressure`, `steam`, and `damage`. Destroyed tiles separately retain `cladding_failure`, `graphite_failure`, `hard_overheating`, or `pressure_rupture`. Control callbacks are synchronized rather than direct. GUI packets, rod commands and OpenComputers activation use the same server-side gate.
-
-Energy Control receives standard active/core-temperature fields and a standard tank-text status, plus `shutdownLatched`, `shutdownReason`, `restartBlocker`, `waterReserve`, `shutdownWaterUsed`, and `primaryGasVented` extra data. Its consumption value includes useful-steam water plus shutdown discharge; output includes useful steam only. Custom-key display depends on the installed Energy Control version.
-
-## Original failure path and remaining limits
-
-The inspected June Magnox change (`85c752f7b`, following `530bf1cc1`) introduced a lagging outlet display that was also cooled as though it were a separate store, instant decay inventory, inferred ingress, and unconditional explosions for overheating and damage. The September water-tier change (`895f15de9`) migrated feedwater to Light Water. That migration and the existing multiblock, fuel tables and connections remain intact; the corrected behavior separates shutdown, heat transport, thermal damage and pressure rupture.
-
-This is a two-store gameplay model, not a validated reactor simulator. It has no resolved fuel channels, gas flow dynamics, real steam pressure, water outlet temperature, oxidant ingress, exchanger leaks, variable gas heat capacity, xenon or multi-isotope decay model. Relief equipment has fixed capacity and no random failures. Wreck radiation and environmental contamination retain coarse existing game mechanics and do not model isotope depletion; terminal wrecks do not continue the operating tile's thermal simulation. Fuel removed through inventory automation does not take away the reactor's accumulated decay inventory, a conservative simplification. There is no claim that every exotic fuel has real Magnox feedback or that a gas-cooled reactor can run indefinitely without heat removal.
+Existing tank, temperature, pressure, control, damage, and decay NBT keys remain. Target rod position, all 24 channel temperatures, the pressure history used for loss detection, and protection status are saved or synchronized in tile packets. Existing OpenComputers method names and return types remain, and the first 14 `getInfo()` values are unchanged. Energy Control integration remains on the existing fields. The GUI keeps its main gauge on `graphiteHeat` and separately displays core, primary, and peak-cladding temperature, actual/target rod position, SCRAM progress, decay heat, both damage counters, operating warnings, and the active trip input.

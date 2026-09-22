@@ -40,6 +40,9 @@ public class GUIReactorZirnox extends GuiInfoContainer {
 		this.drawCustomInfo(this, mouseX, mouseY, guiLeft + 160, guiTop + 33, 18, 17, new String[] {
 			I18n.format("desc.gui.zirnox.core_temperature", Math.round(zirnox.graphiteHeat * 0.00001D * 780.0D + 20.0D)),
 			I18n.format("desc.gui.zirnox.primary_temperature", Math.round(zirnox.heat * 0.00001D * 780.0D + 20.0D)),
+			I18n.format("desc.gui.zirnox.peak_cladding_temperature", Math.round(zirnox.peakCladdingTemperature)),
+			I18n.format("desc.gui.zirnox.rods", zirnox.controlRodInsertion, zirnox.targetControlRodInsertion),
+			I18n.format("desc.gui.zirnox.scram_progress", zirnox.controlRodInsertion),
 			I18n.format("desc.gui.zirnox.decay_heat", Math.round(zirnox.decayHeat)),
 			I18n.format("desc.gui.zirnox.cladding_damage", zirnox.claddingDamage, zirnox.claddingDamage / 1000.0D),
 			I18n.format("desc.gui.zirnox.graphite_damage", zirnox.graphiteDamage, zirnox.graphiteDamage / 1000.0D)
@@ -50,7 +53,7 @@ public class GUIReactorZirnox extends GuiInfoContainer {
 			I18n.format("desc.gui.zirnox.reserve", zirnox.getWaterReserve()),
 			I18n.format("desc.gui.zirnox.relief", zirnox.shutdownWaterUsed)
 		});
-		this.drawCustomInfo(this, mouseX, mouseY, guiLeft + 178, guiTop + 33, 18, 17, new String[] { "Pressure:", "   " + Math.round((zirnox.pressure) * 0.00001 * 30) + " bar" });
+		this.drawCustomInfo(this, mouseX, mouseY, guiLeft + 178, guiTop + 33, 18, 17, new String[] { I18n.format("desc.gui.zirnox.primary_pressure", Math.round((zirnox.pressure) * 0.00001 * 30)) });
 		
 		String[] coolantText = I18nUtil.resolveKeyArray("desc.gui.zirnox.coolant");
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 16, guiTop + 36, 16, 16, guiLeft - 8, guiTop + 36 + 16, coolantText);
@@ -66,6 +69,11 @@ public class GUIReactorZirnox extends GuiInfoContainer {
 		if(zirnox.carbonDioxide.getFill() < 11200) {
 			String[] warning2 = I18nUtil.resolveKeyArray("desc.gui.zirnox.warning2");
 			this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 16, guiTop + 36 + 32 + 16, 16, 16, guiLeft - 8, guiTop + 36 + 32 + 16 + 16, warning2);
+		}
+
+		if(zirnox.steam.getFill() >= zirnox.steam.getMaxFill()) {
+			String[] warning3 = I18nUtil.resolveKeyArray("desc.gui.zirnox.warning3");
+			this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 16, guiTop + 116, 16, 16, guiLeft - 8, guiTop + 132, warning3);
 		}
 
 	}
@@ -96,6 +104,7 @@ public class GUIReactorZirnox extends GuiInfoContainer {
 
 		this.fontRendererObj.drawString(name, this.xSize / 2 - this.fontRendererObj.getStringWidth(name) / 2, 6, 4210752);
 		this.fontRendererObj.drawString(I18n.format("desc.gui.zirnox.state." + zirnox.shutdownReason), 8, 151, zirnox.shutdownLatched ? 0xA02020 : 4210752);
+		this.fontRendererObj.drawString(I18n.format("desc.gui.zirnox.active_trip", I18n.format("desc.gui.zirnox.state." + zirnox.activeTripInput)), 8, 162, 0xA02020);
 		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96, 4210752);
 	}
 
@@ -138,6 +147,9 @@ public class GUIReactorZirnox extends GuiInfoContainer {
 
 		if(zirnox.carbonDioxide.getFill() < 11200)
 			this.drawInfoPanel(guiLeft - 16, guiTop + 36 + 32 + 16, 16, 16, 6);
+
+		if(zirnox.steam.getFill() >= zirnox.steam.getMaxFill())
+			this.drawInfoPanel(guiLeft - 16, guiTop + 116, 16, 16, 6);
 	}
 
 }
