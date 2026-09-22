@@ -1255,7 +1255,9 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		if(!hasPermission(player) || data == null) return;
 		data.setBoolean("zirnoxPlayerHandled", true);
 		String action = data.getString("zirnoxAction");
-		if("scram".equals(action)) {
+		if("legacyControlToggle".equals(action)) {
+			legacyControlToggle();
+		} else if("scram".equals(action)) {
 			scram();
 		} else if("controlledShutdown".equals(action)) {
 			controlledShutdown();
@@ -1360,6 +1362,26 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		targetControlRodInsertion = 100;
 		isOn = false;
 		markDirty();
+	}
+
+	private void legacyControlToggle() {
+		if(isOn) {
+			scram();
+			return;
+		}
+
+		restartBlocker = getRestartBlockers();
+		if(!"none".equals(restartBlocker)) {
+			markDirty();
+			return;
+		}
+
+		if(shutdownLatched) {
+			resetTrip();
+			if(shutdownLatched) return;
+		}
+
+		setControlRodInsertion(0);
 	}
 
 	private void resetTrip() {

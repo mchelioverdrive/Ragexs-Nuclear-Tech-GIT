@@ -7238,6 +7238,7 @@ desc.gui.zirnox.control.resetTrip=Reset the latched trip only after every restar
 desc.gui.zirnox.control.insert=Increase target insertion by 10%.$Hold Shift for 1% fine movement.
 desc.gui.zirnox.control.withdraw=Decrease target insertion by 10%.$Hold Shift for 1% fine movement.$Withdrawal is refused while a trip is latched.
 desc.gui.zirnox.control.vent=Manually discharge 1,000 mB of primary CO₂.$Its proportional contamination becomes environmental radiation.
+desc.gui.zirnox.control.legacyControlToggle=Original reactor control.$While running, demands shutdown and full rod insertion.$While stopped, starts only after trip reset and every restart interlock passes.
 desc.gui.zirnox.control.faultAutoTrips=Creative test fault: inhibit automatic trip latching.$Trip inputs remain visible; manual SCRAM remains available.
 desc.gui.zirnox.control.faultRodDrive=Creative test fault: jam the rod drive.$Targets change, but actual insertion is frozen.
 desc.gui.zirnox.control.faultReliefValve=Creative test fault: jam automatic pressure relief.

@@ -142,9 +142,35 @@ public class GUIReactorZirnox extends GuiInfoContainer {
 
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float p_146976_1_, int p_146976_2_, int p_146976_3_) {
-		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
+		bindGuiTexture();
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, 203, ySize);
+
+		int h = zirnox.getGaugeScaled(12, 3);
+		bindGuiTexture();
+		drawTexturedModalRect(guiLeft + 160, guiTop + 33, 220, 0 + 18 * h, 18, 17);
+
+		int p = zirnox.getGaugeScaled(12, 4);
+		drawTexturedModalRect(guiLeft + 178, guiTop + 33, 220, 0 + 18 * p, 18, 17);
+
+		int s = zirnox.getGaugeScaled(6, 0);
+		int c = zirnox.getGaugeScaled(6, 1);
+		int w = zirnox.getGaugeScaled(6, 2);
+		bindGuiTexture();
+		drawTexturedModalRect(guiLeft + 160, guiTop + 108, 238, 0 + 12 * s, 18, 12);
+		drawTexturedModalRect(guiLeft + 142, guiTop + 108, 238, 0 + 12 * c, 18, 12);
+		drawTexturedModalRect(guiLeft + 178, guiTop + 108, 238, 0 + 12 * w, 18, 12);
+
+		if(zirnox.isOn) {
+			bindGuiTexture();
+			for(int x = 0; x < 4; x++)
+				for(int y = 0; y < 4; y++)
+					drawTexturedModalRect(guiLeft + 7 + 36 * x, guiTop + 15 + 36 * y, 238, 238, 18, 18);
+			for(int x = 0; x < 3; x++)
+				for(int y = 0; y < 3; y++)
+					drawTexturedModalRect(guiLeft + 25 + 36 * x, guiTop + 33 + 36 * y, 238, 238, 18, 18);
+			drawTexturedModalRect(guiLeft + 142, guiTop + 15, 220, 238, 18, 18);
+		}
+
 		drawRect(guiLeft + 203, guiTop, guiLeft + xSize, guiTop + 205, 0xFFC6C6C6);
 		drawRect(guiLeft + 204, guiTop + 1, guiLeft + xSize - 1, guiTop + 204, 0xFF303030);
 		drawButton(207, 48, 96, 18, "SCRAM", 0xFF8C2020);
@@ -157,31 +183,6 @@ public class GUIReactorZirnox extends GuiInfoContainer {
 			drawButton(207, 188, 30, 14, "TRIP", zirnox.testAutoTripsInhibited ? 0xFF9C2020 : 0xFF555555);
 			drawButton(240, 188, 30, 14, "ROD", zirnox.testRodDriveJammed ? 0xFF9C2020 : 0xFF555555);
 			drawButton(273, 188, 30, 14, "REL", zirnox.testReliefValveJammed ? 0xFF9C2020 : 0xFF555555);
-		}
-
-		int s = zirnox.getGaugeScaled(6, 0);
-		drawTexturedModalRect(guiLeft + 160, guiTop + 108, 238, 0 + 12 * s, 18, 12);
-
-		int c = zirnox.getGaugeScaled(6, 1);
-		drawTexturedModalRect(guiLeft + 142, guiTop + 108, 238, 0 + 12 * c, 18, 12);
-
-		int w = zirnox.getGaugeScaled(6, 2);
-		drawTexturedModalRect(guiLeft + 178, guiTop + 108, 238, 0 + 12 * w, 18, 12);
-
-		int h = zirnox.getGaugeScaled(12, 3);
-		drawTexturedModalRect(guiLeft + 160, guiTop + 33, 220, 0 + 18 * h, 18, 17);
-
-		int p = zirnox.getGaugeScaled(12, 4);
-		drawTexturedModalRect(guiLeft + 178, guiTop + 33, 220, 0 + 18 * p, 18, 17);
-
-		if(zirnox.isOn) {
-			for(int x = 0; x < 4; x++)
-				for(int y = 0; y < 4; y++)
-					drawTexturedModalRect(guiLeft + 7 + 36 * x, guiTop + 15 + 36 * y, 238, 238, 18, 18);
-			for(int x = 0; x < 3; x++)
-				for(int y = 0; y < 3; y++)
-					drawTexturedModalRect(guiLeft + 25 + 36 * x, guiTop + 33 + 36 * y, 238, 238, 18, 18);
-			drawTexturedModalRect(guiLeft + 142, guiTop + 15, 220, 238, 18, 18);
 		}
 
 		this.drawInfoPanel(guiLeft - 16, guiTop + 36, 16, 16, 2);
@@ -201,6 +202,11 @@ public class GUIReactorZirnox extends GuiInfoContainer {
 
 		if(zirnox.radioactiveReleaseTicks > 0)
 			this.drawInfoPanel(guiLeft - 16, guiTop + 148, 16, 16, 6);
+	}
+
+	private void bindGuiTexture() {
+		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 	}
 
 	private String getCladdingCondition() {
@@ -223,6 +229,8 @@ public class GUIReactorZirnox extends GuiInfoContainer {
 	}
 
 	private String getControlAction(int x, int y) {
+		if(inBounds(x, y, 144, 35, 14, 14)) return "legacyControlToggle";
+		if(inBounds(x, y, 151, 51, 36, 36)) return "vent";
 		if(inBounds(x, y, 207, 48, 96, 18)) return "scram";
 		if(inBounds(x, y, 207, 70, 96, 18)) return "controlledShutdown";
 		if(inBounds(x, y, 207, 92, 96, 18)) return "resetTrip";

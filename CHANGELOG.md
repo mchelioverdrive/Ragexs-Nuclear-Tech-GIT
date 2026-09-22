@@ -1,3 +1,10 @@
+# Pull Request: Restore Magnox gauge pointers and original controls
+
+- Restored the temperature and pressure pointers by drawing all texture-atlas sprites before font-rendered control labels and explicitly rebinding the Magnox GUI texture for each sprite group.
+- Restored the original small reactor-control and CO2-valve hitboxes alongside the extended panel, with one packet and sound per click.
+- Routed the original reactor toggle through server-side trip-reset and restart-interlock validation, and routed its valve through the same authoritative vent action as the extended control.
+- Documented the restored legacy controls in the Magnox operator guidance.
+
 # Pull Request: Repair Magnox controls and cladding radiation
 
 - Added distinct server-authoritative SCRAM, controlled-shutdown, trip-reset, rod-target, vent, and creative-only fault controls with complete restart diagnostics.
