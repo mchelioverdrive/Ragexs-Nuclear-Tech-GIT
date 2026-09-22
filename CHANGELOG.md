@@ -1,3 +1,10 @@
+# Pull Request: Rework Magnox thermal failure model
+
+- Replaced calculated-reserve protection with fixed 8,000 mB trip and 12,000 mB restart thresholds while retaining an advisory cooldown-water estimate.
+- Made shutdown heat removal finite, gradual, exclusive of useful steam generation, and dependent on actual Light Water and CO2 inventories.
+- Rebalanced nonlinear cladding and graphite damage, preserved distinct nonexplosive wreck causes, and exposed core/primary temperatures, decay heat, and damage in the localized GUI.
+- Updated Magnox documentation to distinguish historical behavior from gameplay balance and describe credible loss-of-cooling outcomes.
+
 # Pull Request: Localize water-processing Chemical Plant recipes
 
 - Added localized Chemical Plant recipe names for water treatment, water demineralization, borated water production, and brine evaporation across all maintained full locales.

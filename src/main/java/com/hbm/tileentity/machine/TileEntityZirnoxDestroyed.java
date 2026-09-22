@@ -20,12 +20,14 @@ public class TileEntityZirnoxDestroyed extends TileEntity {
 	// Compatibility field only: no oxidant/fire simulation exists for this reactor.
 	public boolean onFire = false;
 	public double contaminationScale = 1.0D;
+	public String terminalReason = "legacy";
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		onFire = false;
 		contaminationScale = nbt.hasKey("contaminationScale") ? Math.max(0, Math.min(1, nbt.getDouble("contaminationScale"))) : 1.0D;
+		terminalReason = nbt.hasKey("terminalReason") ? nbt.getString("terminalReason") : "legacy";
 	}
 	
 	@Override
@@ -33,6 +35,7 @@ public class TileEntityZirnoxDestroyed extends TileEntity {
 		super.writeToNBT(nbt);
 		nbt.setBoolean("onFire", onFire);
 		nbt.setDouble("contaminationScale", contaminationScale);
+		nbt.setString("terminalReason", terminalReason);
 	}
 	
 	@Override
