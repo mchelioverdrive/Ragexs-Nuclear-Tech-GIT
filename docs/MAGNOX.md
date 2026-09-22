@@ -20,7 +20,7 @@ Enabled automatic protection has three operating trip inputs:
 
 A SCRAM latches its first cause, targets 100% rod insertion, and moves the actual rods one percentage point per tick. Full travel from zero therefore takes 100 ticks, approximately five seconds. Fission follows the actual rod position during travel and stops only at full insertion. Rod insertion and manual SCRAM do not require external power.
 
-Feedwater, CO2 inventory, output space, temperature, pressure, and existing damage are checked separately when starting. Startup requires at least 12,000 mB feedwater, 90% of nominal CO2 inventory, at least 1,000 mB free steam space, core temperature below 350 C, primary pressure below 27 bar, and no accumulated damage. Feedwater quantity and steam-tank fullness are **not** automatic operating trip inputs. During operation they are warnings. A full steam tank is blocked output, not a boiler-pressure measurement.
+Feedwater, CO2 inventory, output space, temperature, pressure, and failed cladding are checked separately when starting. Startup requires at least 12,000 mB feedwater, 90% of nominal CO2 inventory, at least 1,000 mB free steam space, core temperature below 350 C, primary pressure below 27 bar, cladding damage below 10,000, and no graphite damage. Harmless accumulated cladding heat stress below that leak threshold does not block restart. A rejected restart records a separate restart blocker without replacing the original latched SCRAM reason. Feedwater quantity and steam-tank fullness are **not** automatic operating trip inputs. During operation they are warnings. A full steam tank is blocked output, not a boiler-pressure measurement.
 
 ## Thermal stores and heat accounting
 
@@ -53,18 +53,22 @@ Primary pressure is `26 * (CO2 mB / 14000) * (primaryC + 273.15)/(410 + 273.15)`
 
 Each of the 24 existing fuel slots has a persistent cladding temperature. Its target uses local fuel power, neighboring-channel power, flux shape, actual rod insertion, bulk core temperature, and CO2 cooling. The model reports the hottest channel independently of graphite temperature and uses that peak for protection and cladding damage. Weak or absent CO2 cooling raises the local fuel-to-cladding temperature difference. Damage begins above 500 C and can progress to failure during sustained exposure near the IAEA's 620 C Magnox limit.
 
+Cladding damage is permanent heat-exposure history: cooldown neither adds damage below 500 C nor repairs existing damage. Below **10,000** it is heat stress without a confirmed leak. At **10,000** failed cladding begins leaking fission products into the primary CO2 circuit, at **50,000** the leak is severe, and **100,000** is complete cladding failure. Contamination growth scales with damage, occupied channels, and current fuel power; damaged irradiated fuel continues a low release after SCRAM. Installed damaged fuel makes the live reactor a comparatively weak, distance-squared and block-shielded radiation source. Removing every fuel element stops that live source but does not erase primary-circuit contamination.
+
+Fuel-channel servicing is automatic rather than a new machine or control. Once all 24 fuel slots are empty, the core is below **100 C**, primary pressure is below **1 bar**, and the rods are at **100% insertion**, accumulated cladding damage clears. Graphite damage and primary contamination do not clear. Venting CO2 releases the proportional share of contamination carried by the removed gas as a short-range, shieldable exposure; no CO2 movement means no release, and low inventory alone never creates contamination.
+
 Natural uranium retains strong negative temperature feedback. Its reactivity decreases smoothly as the graphite heats, and normal circulation keeps its channels inside the operating envelope. Loss of circulation therefore reduces its power rather than creating a prompt runaway; enabled peak-temperature and pressure protection then inserts the rods over five seconds. One ordinary mistake is not tuned to guarantee destruction of a healthy natural-uranium core.
 
 Exotic fuels do not receive an invented historical Magnox feedback coefficient. Their existing higher heat and instability multipliers remain, and a full ZFB MOX loading exceeds normal steam-generator capacity. Consequently blocked steam output plus lost feedwater can cause severe cladding damage, while CO2 loss during high-power operation can create a severe local temperature excursion during rod travel.
 
-There are three terminal paths:
+The outcomes are deliberately distinct:
 
-* accumulated peak-cladding damage produces a contaminated, nonexplosive wreck;
-* bulk core temperature reaching 800 C (or supported structural graphite damage reaching its limit) produces a contaminated, nonexplosive wreck; and
+* a partial live leak leaves the reactor present but disabled above its restart threshold, emitting only while damaged fuel remains installed;
+* complete cladding failure, bulk core temperature reaching 800 C, or structural graphite failure produces a contaminated, nonexplosive thermal wreck; and
 * primary pressure reaching 34 bar mechanically ruptures the vessel, producing the only explosion and launched debris path.
 
-No thermal failure is a nuclear detonation. Low CO2 inventory is not evidence of air ingress. Intact CO2 does not oxidize graphite, and the model does not invent a graphite fire or random channel blockage.
+Cladding damage cannot cause a nuclear explosion. Only pressure rupture calls the explosion path. Low CO2 inventory is not evidence of air ingress. Intact CO2 does not oxidize graphite, and the model does not invent a graphite fire or random channel blockage.
 
 ## Compatibility and automation
 
-Existing tank, temperature, pressure, control, damage, and decay NBT keys remain. Target rod position, all 24 channel temperatures, the pressure history used for loss detection, and protection status are saved or synchronized in tile packets. Existing OpenComputers method names and return types remain, and the first 14 `getInfo()` values are unchanged. Energy Control integration remains on the existing fields. The GUI keeps its main gauge on `graphiteHeat` and separately displays core, primary, and peak-cladding temperature, actual/target rod position, SCRAM progress, decay heat, both damage counters, operating warnings, and the active trip input.
+Existing tank, temperature, pressure, control, damage, and decay NBT keys remain. Target rod position, all 24 channel temperatures, the pressure history used for loss detection, the original shutdown reason, the restart blocker, and primary contamination are saved or synchronized in tile packets. Old saves derive initial contamination only from cladding damage above 10,000. Existing OpenComputers method names and return types remain, and the first 14 `getInfo()` values are unchanged; restart blocker and contamination are appended. Energy Control integration remains on the existing fields. The GUI keeps its main gauge on `graphiteHeat` and separately displays core, primary, and peak-cladding temperature, actual/target rod position, SCRAM progress, decay heat, both damage counters, cladding condition, primary contamination, the original trip reason, the restart blocker, and graded radiation warnings.

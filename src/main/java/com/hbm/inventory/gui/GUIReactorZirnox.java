@@ -44,7 +44,9 @@ public class GUIReactorZirnox extends GuiInfoContainer {
 			I18n.format("desc.gui.zirnox.rods", zirnox.controlRodInsertion, zirnox.targetControlRodInsertion),
 			I18n.format("desc.gui.zirnox.scram_progress", zirnox.controlRodInsertion),
 			I18n.format("desc.gui.zirnox.decay_heat", Math.round(zirnox.decayHeat)),
+			I18n.format("desc.gui.zirnox.primary_contamination", Math.round(zirnox.primaryContamination)),
 			I18n.format("desc.gui.zirnox.cladding_damage", zirnox.claddingDamage, zirnox.claddingDamage / 1000.0D),
+			I18n.format("desc.gui.zirnox.cladding_condition", I18n.format("desc.gui.zirnox.cladding." + getCladdingCondition())),
 			I18n.format("desc.gui.zirnox.graphite_damage", zirnox.graphiteDamage, zirnox.graphiteDamage / 1000.0D)
 		});
 		this.drawCustomInfo(this, mouseX, mouseY, guiLeft + 144, guiTop + 35, 14, 14, new String[] {
@@ -76,6 +78,13 @@ public class GUIReactorZirnox extends GuiInfoContainer {
 			this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 16, guiTop + 116, 16, 16, guiLeft - 8, guiTop + 132, warning3);
 		}
 
+		if(zirnox.claddingDamage >= TileEntityReactorZirnox.CLADDING_LEAK_DAMAGE) {
+			String warningKey = zirnox.claddingDamage >= TileEntityReactorZirnox.CLADDING_SEVERE_DAMAGE
+				? "desc.gui.zirnox.warning_radiation_severe" : "desc.gui.zirnox.warning_radiation";
+			this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 16, guiTop + 132, 16, 16,
+				guiLeft - 8, guiTop + 148, I18nUtil.resolveKeyArray(warningKey));
+		}
+
 	}
 
 	protected void mouseClicked(int x, int y, int i) {
@@ -103,8 +112,14 @@ public class GUIReactorZirnox extends GuiInfoContainer {
 		String name = this.zirnox.hasCustomInventoryName() ? this.zirnox.getInventoryName() : I18n.format(this.zirnox.getInventoryName());
 
 		this.fontRendererObj.drawString(name, this.xSize / 2 - this.fontRendererObj.getStringWidth(name) / 2, 6, 4210752);
-		this.fontRendererObj.drawString(I18n.format("desc.gui.zirnox.state." + zirnox.shutdownReason), 8, 151, zirnox.shutdownLatched ? 0xA02020 : 4210752);
-		this.fontRendererObj.drawString(I18n.format("desc.gui.zirnox.active_trip", I18n.format("desc.gui.zirnox.state." + zirnox.activeTripInput)), 8, 162, 0xA02020);
+		String shutdownText = zirnox.shutdownLatched
+			? I18n.format("desc.gui.zirnox.trip", I18n.format("desc.gui.zirnox.state." + zirnox.shutdownReason))
+			: I18n.format("desc.gui.zirnox.state.none");
+		this.fontRendererObj.drawString(shutdownText, 8, 151, zirnox.shutdownLatched ? 0xA02020 : 4210752);
+		if(!"none".equals(zirnox.restartBlocker)) {
+			this.fontRendererObj.drawString(I18n.format("desc.gui.zirnox.restart_blocked",
+				I18n.format("desc.gui.zirnox.state." + zirnox.restartBlocker)), 8, 162, 0xA02020);
+		}
 		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96, 4210752);
 	}
 
@@ -150,6 +165,16 @@ public class GUIReactorZirnox extends GuiInfoContainer {
 
 		if(zirnox.steam.getFill() >= zirnox.steam.getMaxFill())
 			this.drawInfoPanel(guiLeft - 16, guiTop + 116, 16, 16, 6);
+
+		if(zirnox.claddingDamage >= TileEntityReactorZirnox.CLADDING_LEAK_DAMAGE)
+			this.drawInfoPanel(guiLeft - 16, guiTop + 132, 16, 16, 6);
+	}
+
+	private String getCladdingCondition() {
+		if(zirnox.claddingDamage >= TileEntityReactorZirnox.MAX_CLADDING_DAMAGE) return "failed";
+		if(zirnox.claddingDamage >= TileEntityReactorZirnox.CLADDING_SEVERE_DAMAGE) return "severe";
+		if(zirnox.claddingDamage >= TileEntityReactorZirnox.CLADDING_LEAK_DAMAGE) return "leaking";
+		return "intact";
 	}
 
 }
