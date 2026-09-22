@@ -112,4 +112,8 @@ public class ContainerReactorZirnox extends Container {
 	public boolean canInteractWith(EntityPlayer player) {
 		return zirnox.isUseableByPlayer(player);
 	}
+
+	public boolean controls(TileEntityReactorZirnox tile) {
+		return tile != null && zirnox == tile;
+	}
 }

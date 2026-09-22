@@ -1,6 +1,7 @@
 package com.hbm.util;
 
 import java.util.HashSet;
+import java.util.Locale;
 
 import com.hbm.config.RadiationConfig;
 //import com.hbm.entity.mob.EntityDuck;
@@ -164,7 +165,7 @@ public class ContaminationUtil {
 		double neut = ((int)(HbmLivingProps.getNeutronActivation(player) * 10)) / 10D;
 
 		double rads = ((int)(ChunkRadiationManager.proxy.getRadiation(world, (int) Math.floor(player.posX), (int) Math.floor(player.posY), (int) Math.floor(player.posZ)) * 10)) / 10D;
-		double env = ((int)(HbmLivingProps.getRadBuf(player) * 10D)) / 10D;
+		double env = HbmLivingProps.getRadBuf(player);
 
 		double res = ((int)(10000D - ContaminationUtil.calculateRadiationMod(player) * 10000D)) / 100D;
 		double resKoeff = ((int)(HazmatRegistry.getResistance(player) * 100D)) / 100D;
@@ -195,10 +196,17 @@ public class ContaminationUtil {
 		//msv not Sv, sv would be gigafucked
 		player.addChatMessage(new ChatComponentText("===== ☢ ").appendSibling(new ChatComponentTranslation("geiger.title")).appendSibling(new ChatComponentText(" ☢ =====")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.GOLD)));
 		player.addChatMessage(new ChatComponentTranslation("geiger.chunkRad").appendSibling(new ChatComponentText(" " + chunkPrefix + rads + " mSv/s")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.YELLOW)));
-		player.addChatMessage(new ChatComponentTranslation("geiger.envRad").appendSibling(new ChatComponentText(" " + envPrefix + env + " mSv/s")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.YELLOW)));
+		player.addChatMessage(new ChatComponentTranslation("geiger.envRad").appendSibling(new ChatComponentText(" " + envPrefix + formatDoseRate(env) + " mSv/s")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.YELLOW)));
 		player.addChatMessage(new ChatComponentTranslation("geiger.playerRad").appendSibling(new ChatComponentText(" " + radPrefix + eRad + " mSv")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.YELLOW)));
 		player.addChatMessage(new ChatComponentTranslation("geiger.playerAct").appendSibling(new ChatComponentText(" " + envPrefix + neut + " mSv/s")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.YELLOW)));
 		player.addChatMessage(new ChatComponentTranslation("geiger.playerRes").appendSibling(new ChatComponentText(" " + resPrefix + res + "% (" + resKoeff + ")")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.YELLOW)));
+	}
+
+	private static String formatDoseRate(double doseRate) {
+		if(doseRate > 0.0D && doseRate < 0.1D) {
+			return String.format(Locale.US, "%.3f", doseRate);
+		}
+		return String.format(Locale.US, "%.1f", Math.floor(doseRate * 10.0D) / 10.0D);
 	}
 
 	public static void printDosimeterData(EntityPlayer player) {
