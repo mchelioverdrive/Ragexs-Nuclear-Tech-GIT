@@ -1,3 +1,10 @@
+# Pull Request: Repair Magnox controls and cladding radiation
+
+- Added distinct server-authoritative SCRAM, controlled-shutdown, trip-reset, rod-target, vent, and creative-only fault controls with complete restart diagnostics.
+- Made leaking installed fuel create a measurable shieldable local field and improved low-dose Geiger precision without creating contained chunk contamination.
+- Made every contaminated CO2 discharge transfer its proportional activity into environmental radiation, with a large pressure-rupture release and state-specific detector warnings.
+- Documented the IAEA and NKS design basis and separated cladding leakage, containment, local dose, environmental release, and mechanical rupture behavior.
+
 # Pull Request: Correct Magnox thermal inertia and protection
 
 - Added five-second target-based SCRAM rod travel, peak fuel-channel cladding temperatures, rapid pressure-loss protection, and version 3 thermal-store migration.
