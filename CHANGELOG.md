@@ -12,6 +12,13 @@
 - Rebalanced nonlinear cladding and graphite damage, preserved distinct nonexplosive wreck causes, and exposed core/primary temperatures, decay heat, and damage in the localized GUI.
 - Updated Magnox documentation to distinguish historical behavior from gameplay balance and describe credible loss-of-cooling outcomes.
 
+# Pull Request: Treat partial Magnox cladding damage as a radiological fault
+
+- Preserved the original Magnox SCRAM reason and reported rejected-start interlocks separately.
+- Added persistent primary-circuit contamination, shielded live-reactor leakage, and proportionate contaminated-CO2 vent exposure.
+- Made leaking cladding restart-blocking but nonexplosive, with automatic safe empty-channel servicing and nonexplosive terminal thermal wrecks.
+- Added localized cladding condition, contamination, restart-blocker, and radiation-warning GUI text and expanded the Magnox model documentation.
+
 # Pull Request: Localize water-processing Chemical Plant recipes
 
 - Added localized Chemical Plant recipe names for water treatment, water demineralization, borated water production, and brine evaporation across all maintained full locales.

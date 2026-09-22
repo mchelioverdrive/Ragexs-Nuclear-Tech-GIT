@@ -25,6 +25,9 @@ import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.CompatEnergyControl;
+import com.hbm.util.ContaminationUtil;
+import com.hbm.util.ContaminationUtil.ContaminationType;
+import com.hbm.util.ContaminationUtil.HazardType;
 import com.hbm.util.EnumUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
@@ -37,6 +40,7 @@ import li.cil.oc.api.machine.Arguments;
 import li.cil.oc.api.machine.Callback;
 import li.cil.oc.api.machine.Context;
 import li.cil.oc.api.network.SimpleComponent;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
@@ -101,6 +105,8 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	private double decayEnergy;
 	public boolean shutdownLatched;
 	public String shutdownReason = "none";
+	public String restartBlocker = "none";
+	public double primaryContamination;
 	public int shutdownWaterUsed;
 	public int primaryGasVented;
 	private boolean terminalFailure;
@@ -173,7 +179,11 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	private static final int RESTART_STEAM_ROOM = 1000;
 
 	private static final int MAX_GRAPHITE_DAMAGE = 100000;
-	private static final int MAX_CLADDING_DAMAGE = 100000;
+	public static final int CLADDING_LEAK_DAMAGE = 10000;
+	public static final int CLADDING_SEVERE_DAMAGE = 50000;
+	public static final int MAX_CLADDING_DAMAGE = 100000;
+	private static final double MAX_PRIMARY_CONTAMINATION = 1000000.0D;
+	private static final double LIVE_RADIATION_RANGE = 24.0D;
 
 	private static final int MELTDOWN_OVERPRESSURE = 0;
 	private static final int MELTDOWN_OVERHEAT = 1;
@@ -258,6 +268,9 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		decayHeat = nbt.getDouble("decayHeat");
 		graphiteDamage = nbt.getInteger("graphiteDamage");
 		claddingDamage = nbt.getInteger("claddingDamage");
+		primaryContamination = nbt.hasKey("primaryContamination") ? Math.max(0.0D, nbt.getDouble("primaryContamination"))
+			: Math.max(0, claddingDamage - CLADDING_LEAK_DAMAGE) * 10.0D;
+		restartBlocker = nbt.hasKey("restartBlocker") ? nbt.getString("restartBlocker") : "none";
 		airIngress = nbt.getInteger("airIngress");
 		activePower = nbt.getInteger("activePower");
 		co2Cooling = nbt.getInteger("co2Cooling");
@@ -308,6 +321,8 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		data.setDouble("decayEnergy", decayEnergy);
 		data.setBoolean("shutdownLatched", shutdownLatched);
 		data.setString("shutdownReason", shutdownReason);
+		data.setString("restartBlocker", restartBlocker);
+		data.setDouble("primaryContamination", primaryContamination);
 		data.setInteger("shutdownWaterUsed", shutdownWaterUsed);
 		data.setInteger("primaryGasVented", primaryGasVented);
 		data.setDouble("previousPressureBar", previousPressureBar);
@@ -328,6 +343,8 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		nbt.setDouble("decayHeat", decayHeat);
 		nbt.setInteger("graphiteDamage", graphiteDamage);
 		nbt.setInteger("claddingDamage", claddingDamage);
+		nbt.setDouble("primaryContamination", primaryContamination);
+		nbt.setString("restartBlocker", restartBlocker);
 		nbt.setInteger("airIngress", airIngress);
 		nbt.setInteger("activePower", activePower);
 		nbt.setInteger("co2Cooling", co2Cooling);
@@ -352,6 +369,8 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		this.decayHeat = data.getDouble("decayHeat");
 		this.graphiteDamage = data.getInteger("graphiteDamage");
 		this.claddingDamage = data.getInteger("claddingDamage");
+		this.primaryContamination = Math.max(0.0D, data.getDouble("primaryContamination"));
+		this.restartBlocker = data.hasKey("restartBlocker") ? data.getString("restartBlocker") : "none";
 		this.airIngress = data.getInteger("airIngress");
 		this.activePower = data.getInteger("activePower");
 		this.co2Cooling = data.getInteger("co2Cooling");
@@ -448,6 +467,9 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 
 			applyDamageModel();
 			if(checkIfMeltdown()) return;
+			updatePrimaryContamination();
+			radiateFromDamagedFuel();
+			serviceFuelChannelsIfSafe();
 			previousPressureBar = getPressureBar();
 			markDirty();
 
@@ -463,6 +485,8 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			data.setDouble("decayHeat", decayHeat);
 			data.setInteger("graphiteDamage", graphiteDamage);
 			data.setInteger("claddingDamage", claddingDamage);
+			data.setDouble("primaryContamination", primaryContamination);
+			data.setString("restartBlocker", restartBlocker);
 			data.setInteger("airIngress", airIngress);
 			data.setInteger("activePower", activePower);
 			data.setInteger("co2Cooling", co2Cooling);
@@ -624,7 +648,8 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			if(getGraphiteHeatC() >= RESTART_CORE_C) return "temperature";
 			if(getPressureBar() >= RESTART_PRESSURE_BAR) return "pressure";
 			if(steam.getMaxFill() - steam.getFill() < RESTART_STEAM_ROOM) return "steam";
-			if(claddingDamage > 0 || graphiteDamage > 0) return "damage";
+			if(claddingDamage >= CLADDING_LEAK_DAMAGE) return "cladding";
+			if(graphiteDamage > 0) return "graphite";
 			return "none";
 		}
 		if(peakCladdingTemperature >= TRIP_CLADDING_C) return "temperature";
@@ -636,7 +661,8 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	private void checkProtection() {
 		String reason = protectionReason(false);
 		activeTripInput = reason;
-		if(!"none".equals(reason) && (!shutdownLatched || "manual".equals(shutdownReason))) trip(reason);
+		if(!"none".equals(reason) && !shutdownLatched) trip(reason);
+		if("none".equals(protectionReason(true))) restartBlocker = "none";
 	}
 
 	private void applyDamageModel() {
@@ -651,6 +677,72 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		claddingDamage = clamp(claddingDamage, 0, MAX_CLADDING_DAMAGE);
 		graphiteDamage = clamp(graphiteDamage, 0, MAX_GRAPHITE_DAMAGE);
 		airIngress = 0; // Low inventory is not evidence of an oxidant or water leak.
+	}
+
+	private int getOccupiedFuelChannels() {
+		int occupied = 0;
+		for(int i = 0; i < 24; i++) {
+			if(slots[i] != null) occupied++;
+		}
+		return occupied;
+	}
+
+	private int getIrradiatedFuelChannels() {
+		int irradiated = 0;
+		for(int i = 0; i < 24; i++) {
+			if(slots[i] != null && slots[i].getItem() instanceof ItemZirnoxRod && ItemZirnoxRod.getLifeTime(slots[i]) > 0) {
+				irradiated++;
+			}
+		}
+		return irradiated;
+	}
+
+	private void updatePrimaryContamination() {
+		if(claddingDamage < CLADDING_LEAK_DAMAGE) return;
+		int occupied = getOccupiedFuelChannels();
+		if(occupied <= 0) return;
+		double damageFraction = (claddingDamage - CLADDING_LEAK_DAMAGE) / (double)(MAX_CLADDING_DAMAGE - CLADDING_LEAK_DAMAGE);
+		double residualPower = getIrradiatedFuelChannels() * 0.05D;
+		double growth = damageFraction * occupied / 24.0D * (activePower * 0.02D + residualPower);
+		primaryContamination = Math.min(MAX_PRIMARY_CONTAMINATION, primaryContamination + growth);
+	}
+
+	private void radiateFromDamagedFuel() {
+		int occupied = getOccupiedFuelChannels();
+		if(occupied <= 0 || claddingDamage < CLADDING_LEAK_DAMAGE || primaryContamination <= 0.0D) return;
+		double contaminationFraction = Math.min(1.0D, primaryContamination / MAX_PRIMARY_CONTAMINATION);
+		double damageFraction = claddingDamage / (double)MAX_CLADDING_DAMAGE;
+		float source = (float)(250.0D * contaminationFraction * damageFraction * occupied / 24.0D);
+		applyShieldedRadiation(source, LIVE_RADIATION_RANGE);
+	}
+
+	private void applyShieldedRadiation(float source, double range) {
+		if(worldObj == null || worldObj.isRemote || source <= 0.0F) return;
+		List<EntityLivingBase> entities = worldObj.getEntitiesWithinAABB(EntityLivingBase.class,
+			AxisAlignedBB.getBoundingBox(xCoord + 0.5D, yCoord + 0.5D, zCoord + 0.5D,
+			xCoord + 0.5D, yCoord + 0.5D, zCoord + 0.5D).expand(range, range, range));
+		for(EntityLivingBase entity : entities) {
+			Vec3 vector = Vec3.createVectorHelper(entity.posX - (xCoord + 0.5D),
+				(entity.posY + entity.getEyeHeight()) - (yCoord + 0.5D), entity.posZ - (zCoord + 0.5D));
+			double distance = vector.lengthVector();
+			vector = vector.normalize();
+			float resistance = 0.0F;
+			for(int i = 1; i < distance; i++) {
+				int x = (int)Math.floor(xCoord + 0.5D + vector.xCoord * i);
+				int y = (int)Math.floor(yCoord + 0.5D + vector.yCoord * i);
+				int z = (int)Math.floor(zCoord + 0.5D + vector.zCoord * i);
+				resistance += worldObj.getBlock(x, y, z).getExplosionResistance(null);
+			}
+			resistance = Math.max(1.0F, resistance);
+			float dose = source / resistance / (float)Math.max(1.0D, distance * distance);
+			ContaminationUtil.contaminate(entity, HazardType.RADIATION, ContaminationType.CREATIVE, dose);
+		}
+	}
+
+	private void serviceFuelChannelsIfSafe() {
+		if(getOccupiedFuelChannels() > 0) return;
+		if(getGraphiteHeatC() >= 100.0D || getPressureBar() >= 1.0D || controlRodInsertion < 100) return;
+		claddingDamage = 0;
 	}
 
 	private boolean hasFuelRod(int id) {
@@ -979,13 +1071,14 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		if(worldObj.isRemote || terminalFailure) return;
 		terminalFailure = true;
 		isOn = false;
-		int fuelCount = 0;
-		for(int i = 0; i < 24; i++) if(slots[i] != null) fuelCount++;
+		int fuelCount = getOccupiedFuelChannels();
 		double fuelDamage = Math.max(claddingDamage / (double)MAX_CLADDING_DAMAGE,
 			clampDouble((getGraphiteHeatC() - FUEL_DAMAGE_TEMP_C) / 200.0D, 0, 1));
 		boolean rupture = type == MELTDOWN_OVERPRESSURE;
 		// A rupture breaches the pressure barrier even with intact fuel cans.
-		double contamination = fuelCount / 24.0D * (rupture ? 0.15D + 0.85D * fuelDamage : 0.4D * fuelDamage);
+		double circuitContamination = Math.min(1.0D, primaryContamination / MAX_PRIMARY_CONTAMINATION);
+		double fuelContamination = fuelCount / 24.0D * (rupture ? 0.15D + 0.85D * fuelDamage : 0.1D + 0.4D * fuelDamage);
+		double contamination = Math.min(1.0D, fuelContamination + circuitContamination * 0.5D);
 		for(int i = 0; i < slots.length; i++) slots[i] = null;
 		int metadata = getBlockMetadata();
 		if(rupture) {
@@ -1097,11 +1190,15 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		if(worldObj == null || worldObj.isRemote || terminalFailure) return;
 		int fill = carbonDioxide.getFill();
 		int removed = Math.min(fill, Math.max(0, amount));
+		double releasedContamination = fill > 0 ? primaryContamination * removed / fill : 0.0D;
 		// The primary store includes fixed exchanger metal; assign only 1/4 of its
 		// energy to the gas at nominal inventory. Vent only that gas's enthalpy.
 		double gasShare = 0.25D * Math.min(1.0D, getCO2FillFraction());
 		if(fill > 0) primaryEnergy -= primaryEnergy * gasShare * removed / fill;
 		carbonDioxide.setFill(fill - removed);
+		primaryContamination = Math.max(0.0D, primaryContamination - releasedContamination);
+		// A vent is a short local exposure, not permanent chunk contamination.
+		applyShieldedRadiation((float)(releasedContamination * 0.002D), 12.0D);
 		primaryGasVented += removed;
 		updateThermalDisplays();
 		updatePressureFromCO2();
@@ -1128,9 +1225,14 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		if(insertion == 100) { scram(); return; }
 		updatePressureFromCO2();
 		String reason = protectionReason(!isOn || shutdownLatched);
-		if(!"none".equals(reason)) { trip(reason); return; }
+		if(!"none".equals(reason)) {
+			restartBlocker = reason;
+			markDirty();
+			return;
+		}
 		shutdownLatched = false;
 		shutdownReason = "none";
+		restartBlocker = "none";
 		targetControlRodInsertion = insertion;
 		isOn = true;
 		markDirty();
@@ -1335,7 +1437,9 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			primaryGasVented,
 			targetControlRodInsertion,
 			peakCladdingTemperature,
-			activeTripInput
+			activeTripInput,
+			restartBlocker,
+			primaryContamination
 		};
 	}
 
@@ -1370,7 +1474,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getShutdownStatus(Context context, Arguments args) {
-		return new Object[] {shutdownLatched, shutdownReason, protectionReason(true), getWaterReserve()};
+		return new Object[] {shutdownLatched, shutdownReason, restartBlocker, getWaterReserve()};
 	}
 
 	@Override
@@ -1480,7 +1584,8 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		data.setString(CompatEnergyControl.S_TANK, "Magnox: " + (shutdownLatched ? shutdownReason : (isOn ? "running" : "off")));
 		data.setBoolean("shutdownLatched", shutdownLatched);
 		data.setString("shutdownReason", shutdownReason);
-		data.setString("restartBlocker", protectionReason(true));
+		data.setString("restartBlocker", restartBlocker);
+		data.setDouble("primaryContamination", primaryContamination);
 		data.setInteger("waterReserve", getWaterReserve());
 		data.setInteger("shutdownWaterUsed", shutdownWaterUsed);
 		data.setInteger("primaryGasVented", primaryGasVented);
