@@ -146,7 +146,8 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	private static final double PRIMARY_CAPACITY = CORE_CAPACITY / 4.0D;
 	private static final double DECAY_FRACTION = 0.055D;
 	private static final double DECAY_RELEASE_RATE = 0.0005D;
-	private static final int SUPPORTED_POWER = 3000;
+	public static final int FEEDWATER_TRIP_MB = 8000;
+	public static final int FEEDWATER_RESTART_MB = 12000;
 	private static final double TRIP_CORE_C = 450.0D;
 	private static final double RESTART_CORE_C = 350.0D;
 	private static final double TRIP_CO2_FRACTION = 0.8D;
@@ -156,12 +157,11 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	private static final double RELIEF_PRESSURE_BAR = 30.0D;
 	private static final double RUPTURE_PRESSURE_BAR = 34.0D;
 	private static final int PRIMARY_RELIEF_MB = 100;
-	private static final int SHUTDOWN_TRANSFER_HU = 1200;
-	private static final int SHUTDOWN_WATER_MB = 60;
+	private static final int SHUTDOWN_TRANSFER_HU = 400;
+	private static final int SHUTDOWN_WATER_MB = 10;
 	private static final double SHUTDOWN_BOILING_C = 100.0D;
 	// 1 water -> 1 superhot steam; ordinary steam has 1/5 its heat, 100x its volume.
 	private static final int SHUTDOWN_HEAT_PER_MB = HEAT_REMOVED_PER_MB_STEAM / 5;
-	private static final int RESTART_WATER_MARGIN = 2000;
 	private static final int RESTART_STEAM_ROOM = 1000;
 
 	private static final int MAX_GRAPHITE_DAMAGE = 100000;
@@ -169,6 +169,8 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 
 	private static final int MELTDOWN_OVERPRESSURE = 0;
 	private static final int MELTDOWN_OVERHEAT = 1;
+	private static final int MELTDOWN_CLADDING = 2;
+	private static final int MELTDOWN_GRAPHITE = 3;
 
 	// Slot flux shaping.
 	// Center/near-center channels run hotter; edge channels are slightly weaker.
@@ -336,7 +338,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			case 0: return (steam.getFill() * i) / steam.getMaxFill();
 			case 1: return (carbonDioxide.getFill() * i) / carbonDioxide.getMaxFill();
 			case 2: return (water.getFill() * i) / water.getMaxFill();
-			case 3: return clamp((this.heat * i) / maxHeat, 0, i);
+			case 3: return clamp((this.graphiteHeat * i) / maxHeat, 0, i);
 			case 4: return clamp((this.pressure * i) / maxPressure, 0, i);
 			default: return 1;
 		}
@@ -501,16 +503,18 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 
 	private void generateSteam() {
 		if(water.getFill() <= 0) return;
-		// Normal steam carries 80 HU/mB out of the primary store. No second core sink.
-		int cycle = Math.min(normalSteamCapacity(), (int)(primaryEnergy / HEAT_REMOVED_PER_MB_STEAM));
-		cycle = Math.min(cycle, Math.min(water.getFill(), steam.getMaxFill() - steam.getFill()));
-		if(cycle > 0) {
-			water.setFill(water.getFill() - cycle);
-			steam.setFill(steam.getFill() + cycle);
-			primaryEnergy -= cycle * HEAT_REMOVED_PER_MB_STEAM;
-			output = cycle;
+		if(isOn) {
+			// Useful steam is the sole water-dependent sink while operating.
+			int cycle = Math.min(normalSteamCapacity(), (int)(primaryEnergy / HEAT_REMOVED_PER_MB_STEAM));
+			cycle = Math.min(cycle, Math.min(water.getFill(), steam.getMaxFill() - steam.getFill()));
+			if(cycle > 0) {
+				water.setFill(water.getFill() - cycle);
+				steam.setFill(steam.getFill() + cycle);
+				primaryEnergy -= cycle * HEAT_REMOVED_PER_MB_STEAM;
+				output = cycle;
+			}
+			return;
 		}
-		if(isOn || water.getFill() <= 0) return;
 		// Bounded low-pressure shutdown boiling, including the 100..300 C range
 		// where useful superhot steam is unavailable. Vent 100 mB ordinary steam
 		// per water mB, carrying 16 HU; no output/energy credit. Never cool below
@@ -529,15 +533,21 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	}
 
 	public int getWaterReserve() {
-		// Size for <=3000 HU/t, core <=450 C, healthy barriers and >=80% nominal
-		// CO2. Include the entire remaining decay inventory, one full-power tick,
-		// 10% margin and 256 mB for quantization. Never cap an unsafe requirement.
-		double expectedDecay = Math.max(decayEnergy, SUPPORTED_POWER * DECAY_FRACTION / DECAY_RELEASE_RATE);
-		return (int)Math.ceil((coreEnergy + primaryEnergy + expectedDecay + SUPPORTED_POWER) * 1.1D / SHUTDOWN_HEAT_PER_MB) + 256;
+		// Advisory only: removable heat above the shutdown boiling floor, remaining
+		// delayed heat, and one discrete tick of current heat input. This estimate
+		// neither trips the reactor nor promises that transport will remain available.
+		double floorEnergy = (SHUTDOWN_BOILING_C - TEMP_BASE_C) * (CORE_CAPACITY + PRIMARY_CAPACITY);
+		double removableThermalEnergy = Math.max(0.0D, coreEnergy + primaryEnergy - floorEnergy);
+		double discreteTickMargin = Math.max(0.0D, activePower) + decayHeat;
+		return (int)Math.ceil((removableThermalEnergy + decayEnergy + discreteTickMargin) / SHUTDOWN_HEAT_PER_MB) + 16;
 	}
 
 	private String protectionReason(boolean restart) {
-		if(water.getFill() <= getWaterReserve() + (restart ? RESTART_WATER_MARGIN : 0)) return "water";
+		if(restart && water.getFill() < FEEDWATER_RESTART_MB)
+			return "water";
+
+		if(!restart && water.getFill() <= FEEDWATER_TRIP_MB)
+			return "water";
 		if(getCO2FillFraction() < (restart ? RESTART_CO2_FRACTION : TRIP_CO2_FRACTION)) return "co2";
 		if(getGraphiteHeatC() >= (restart ? RESTART_CORE_C : TRIP_CORE_C)) return "temperature";
 		if(getPressureBar() >= (restart ? RESTART_PRESSURE_BAR : TRIP_PRESSURE_BAR)) return "pressure";
@@ -558,12 +568,14 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 
 	private void applyDamageModel() {
 		double tempC = getGraphiteHeatC();
-		if(tempC > CLADDING_DAMAGE_TEMP_C)
-			claddingDamage += (int)Math.ceil((tempC - CLADDING_DAMAGE_TEMP_C) / 8.0D * getCoreInstabilityMultiplier());
-		if(tempC > FUEL_DAMAGE_TEMP_C)
-			claddingDamage += (int)Math.ceil((tempC - FUEL_DAMAGE_TEMP_C) / 5.0D);
-		if(tempC > GRAPHITE_DAMAGE_TEMP_C)
-			graphiteDamage += (int)Math.ceil((tempC - GRAPHITE_DAMAGE_TEMP_C) / 10.0D);
+		if(tempC > CLADDING_DAMAGE_TEMP_C) {
+			double severity = (tempC - CLADDING_DAMAGE_TEMP_C) / 200.0D;
+			claddingDamage += (int)Math.ceil(750.0D * severity * severity * getCoreInstabilityMultiplier());
+		}
+		if(tempC > GRAPHITE_DAMAGE_TEMP_C) {
+			double severity = (tempC - GRAPHITE_DAMAGE_TEMP_C) / 180.0D;
+			graphiteDamage += (int)Math.ceil(600.0D * severity * severity);
+		}
 		claddingDamage = clamp(claddingDamage, 0, MAX_CLADDING_DAMAGE);
 		graphiteDamage = clamp(graphiteDamage, 0, MAX_GRAPHITE_DAMAGE);
 		airIngress = 0; // Low inventory is not evidence of an oxidant or water leak.
@@ -841,7 +853,15 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			meltdown(MELTDOWN_OVERPRESSURE);
 			return true;
 		}
-		if(getGraphiteHeatC() >= 800.0D || graphiteDamage >= MAX_GRAPHITE_DAMAGE || claddingDamage >= MAX_CLADDING_DAMAGE) {
+		if(claddingDamage >= MAX_CLADDING_DAMAGE) {
+			meltdown(MELTDOWN_CLADDING);
+			return true;
+		}
+		if(graphiteDamage >= MAX_GRAPHITE_DAMAGE) {
+			meltdown(MELTDOWN_GRAPHITE);
+			return true;
+		}
+		if(getGraphiteHeatC() >= 800.0D) {
 			meltdown(MELTDOWN_OVERHEAT);
 			return true;
 		}
@@ -910,6 +930,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			TileEntityZirnoxDestroyed wreck = (TileEntityZirnoxDestroyed)worldObj.getTileEntity(xCoord, yCoord, zCoord);
 			wreck.onFire = false;
 			wreck.contaminationScale = contamination;
+			wreck.terminalReason = getTerminalReason(type);
 			wreck.markDirty();
 		}
 		List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class,
@@ -918,6 +939,19 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			if(rupture) player.triggerAchievement(MainRegistry.achZIRNOXBoom);
 			if(contamination > 0 && MobConfig.enableElementals)
 				player.getEntityData().getCompoundTag(EntityPlayer.PERSISTED_NBT_TAG).setBoolean("radMark", true);
+		}
+	}
+
+	private String getTerminalReason(int type) {
+		switch(type) {
+			case MELTDOWN_OVERPRESSURE:
+				return "pressure_rupture";
+			case MELTDOWN_CLADDING:
+				return "cladding_failure";
+			case MELTDOWN_GRAPHITE:
+				return "graphite_failure";
+			default:
+				return "hard_overheating";
 		}
 	}
 

@@ -37,7 +37,13 @@ public class GUIReactorZirnox extends GuiInfoContainer {
 		zirnox.steam.renderTankInfo(this, mouseX, mouseY, guiLeft + 160, guiTop + 108, 18, 12);
 		zirnox.carbonDioxide.renderTankInfo(this, mouseX, mouseY, guiLeft + 142, guiTop + 108, 18, 12);
 		zirnox.water.renderTankInfo(this, mouseX, mouseY, guiLeft + 178, guiTop + 108, 18, 12);
-		this.drawCustomInfo(this, mouseX, mouseY, guiLeft + 160, guiTop + 33, 18, 17, new String[] { "Primary: " + Math.round(zirnox.heat * 0.00001 * 780 + 20) + "°C", "Core: " + Math.round(zirnox.graphiteHeat * 0.00001 * 780 + 20) + "°C" });
+		this.drawCustomInfo(this, mouseX, mouseY, guiLeft + 160, guiTop + 33, 18, 17, new String[] {
+			I18n.format("desc.gui.zirnox.core_temperature", Math.round(zirnox.graphiteHeat * 0.00001D * 780.0D + 20.0D)),
+			I18n.format("desc.gui.zirnox.primary_temperature", Math.round(zirnox.heat * 0.00001D * 780.0D + 20.0D)),
+			I18n.format("desc.gui.zirnox.decay_heat", Math.round(zirnox.decayHeat)),
+			I18n.format("desc.gui.zirnox.cladding_damage", zirnox.claddingDamage, zirnox.claddingDamage / 1000.0D),
+			I18n.format("desc.gui.zirnox.graphite_damage", zirnox.graphiteDamage, zirnox.graphiteDamage / 1000.0D)
+		});
 		this.drawCustomInfo(this, mouseX, mouseY, guiLeft + 144, guiTop + 35, 14, 14, new String[] {
 			I18n.format("desc.gui.zirnox.state." + zirnox.shutdownReason),
 			I18n.format("desc.gui.zirnox.restart"),
@@ -52,7 +58,7 @@ public class GUIReactorZirnox extends GuiInfoContainer {
 		String[] pressureText = I18nUtil.resolveKeyArray("desc.gui.zirnox.pressure");
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 16, guiTop + 36 + 16, 16, 16, guiLeft - 8, guiTop + 36 + 16 + 16, pressureText);
 
-		if(zirnox.water.getFill() <= zirnox.getWaterReserve()) {
+		if(zirnox.water.getFill() <= TileEntityReactorZirnox.FEEDWATER_TRIP_MB) {
 			String[] warning1 = I18nUtil.resolveKeyArray("desc.gui.zirnox.warning1");
 			this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 16, guiTop + 36 + 32, 16, 16, guiLeft - 8, guiTop + 36 + 32 + 16, warning1);
 		}
@@ -127,7 +133,7 @@ public class GUIReactorZirnox extends GuiInfoContainer {
 		this.drawInfoPanel(guiLeft - 16, guiTop + 36, 16, 16, 2);
 		this.drawInfoPanel(guiLeft - 16, guiTop + 36 + 16, 16, 16, 3);
 
-		if(zirnox.water.getFill() <= zirnox.getWaterReserve())
+		if(zirnox.water.getFill() <= TileEntityReactorZirnox.FEEDWATER_TRIP_MB)
 			this.drawInfoPanel(guiLeft - 16, guiTop + 36 + 32, 16, 16, 6);
 
 		if(zirnox.carbonDioxide.getFill() < 11200)
