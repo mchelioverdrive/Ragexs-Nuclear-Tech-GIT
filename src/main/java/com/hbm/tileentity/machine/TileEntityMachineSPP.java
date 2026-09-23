@@ -32,9 +32,9 @@ public class TileEntityMachineSPP extends TileEntityLoadedBase implements IEnerg
 				gen = checkStructure() * 15;
 			
 			if(gen > 0)
-				power += gen;
+				this.setPower(this.power + gen);
 			if(power > maxPower)
-				power = maxPower;
+				this.setPower(maxPower);
 		}
 		
 	}
@@ -81,7 +81,9 @@ public class TileEntityMachineSPP extends TileEntityLoadedBase implements IEnerg
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

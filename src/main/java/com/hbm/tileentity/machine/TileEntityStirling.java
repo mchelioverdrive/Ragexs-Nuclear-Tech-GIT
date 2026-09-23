@@ -46,10 +46,10 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 		if(!worldObj.isRemote) {
 
 			if(hasCog) {
-				this.powerBuffer = 0;
+				this.setPower(0);
 				tryPullHeat();
 
-				this.powerBuffer = (long) (this.heat * (this.isCreative() ? 1 : this.efficiency));
+				this.setPower((long) (this.heat * (this.isCreative() ? 1 : this.efficiency)));
 
 				if(warnCooldown > 0)
 					warnCooldown--;
@@ -65,7 +65,7 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 					}
 
 					if(overspeed > overspeedLimit) {
-						this.hasCog = false;
+						this.setHasCog(false);
 						this.worldObj.newExplosion(null, xCoord + 0.5, yCoord + 1, zCoord + 0.5, 5F, false, false);
 
 						int orientation = this.getBlockMetadata() - BlockDummyable.offset;
@@ -102,7 +102,7 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 			} else {
 
 				if(this.powerBuffer > 0)
-					this.powerBuffer--;
+					this.setPower(this.powerBuffer - 1);
 			}
 
 			this.heat = 0;
@@ -187,7 +187,15 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 
 	@Override
 	public void setPower(long power) {
+		if(this.powerBuffer == power) return;
 		this.powerBuffer = power;
+		this.markPowerNetDirty();
+	}
+
+	public void setHasCog(boolean hasCog) {
+		if(this.hasCog == hasCog) return;
+		this.hasCog = hasCog;
+		this.markPowerNetDirty();
 	}
 
 	@Override
@@ -198,6 +206,11 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 	@Override
 	public long getMaxPower() {
 		return powerBuffer;
+	}
+
+	@Override
+	public long getProviderSpeed() {
+		return this.hasCog ? this.getMaxPower() : 0;
 	}
 
 	AxisAlignedBB bb = null;

@@ -74,7 +74,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 			int count = this.getRecipeCount();
 
 			this.isProgressing = false;
-			this.power = Library.chargeTEFromItems(slots, 0, power, this.getMaxPower());
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, this.getMaxPower()));
 
 			for(int i = 0; i < count; i++) {
 				loadItems(i);
@@ -151,7 +151,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 	protected void process(int index) {
 
-		this.power -= this.consumption;
+		this.setPower(this.power - this.consumption);
 		this.progress[index]++;
 
 		//if(slots[0] != null && slots[0].getItem() == ModItems.meteorite_sword_machined)
@@ -341,7 +341,9 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	private int[] getCachedSlotIndicesFromIndex(int index) {

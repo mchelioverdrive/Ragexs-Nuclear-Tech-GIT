@@ -4,7 +4,6 @@ import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
 import com.hbm.util.Compat;
 
-import api.hbm.energymk2.Nodespace.PowerNode;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -34,20 +33,7 @@ public interface IEnergyReceiverMK2 extends IEnergyHandlerMK2 {
 
 	public default void trySubscribe(World world, int x, int y, int z, ForgeDirection dir) {
 
-		TileEntity te = Compat.getTileStandard(world, x, y, z);
-		boolean red = false;
-
-		if(te instanceof IEnergyConductorMK2) {
-			IEnergyConductorMK2 con = (IEnergyConductorMK2) te;
-			if(!con.canConnect(dir.getOpposite())) return;
-
-			PowerNode node = Nodespace.getNode(world, x, y, z);
-
-			if(node != null && node.net != null) {
-				node.net.addReceiver(this);
-				red = true;
-			}
-		}
+		boolean red = PowerNetEndpointRegistry.attachReceiver(this, world, x, y, z, dir);
 
 		if(particleDebug) {
 			NBTTagCompound data = new NBTTagCompound();
@@ -65,16 +51,7 @@ public interface IEnergyReceiverMK2 extends IEnergyHandlerMK2 {
 
 	public default void tryUnsubscribe(World world, int x, int y, int z) {
 
-		TileEntity te = world.getTileEntity(x, y, z);
-
-		if(te instanceof IEnergyConductorMK2) {
-			IEnergyConductorMK2 con = (IEnergyConductorMK2) te;
-			PowerNode node = con.createNode();
-
-			if(node != null && node.net != null) {
-				node.net.removeReceiver(this);
-			}
-		}
+		PowerNetEndpointRegistry.unsubscribeReceiver(this, world, x, y, z);
 	}
 
 	/**

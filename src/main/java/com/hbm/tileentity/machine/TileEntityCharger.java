@@ -31,6 +31,8 @@ public class TileEntityCharger extends TileEntityLoadedBase implements IEnergyRe
 	public void updateEntity() {
 		
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata()).getOpposite();
+		long previousCharge = this.charge;
+		boolean previouslyReady = this.usingTicks >= delay;
 		
 		if(!worldObj.isRemote) {
 			this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord, zCoord + dir.offsetZ, dir);
@@ -80,6 +82,7 @@ public class TileEntityCharger extends TileEntityLoadedBase implements IEnergyRe
 			if(usingTicks == 4)
 				worldObj.playSoundEffect(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, "tile.piston.in", 0.5F, 0.5F);
 		}
+		if(!worldObj.isRemote && (this.charge != previousCharge || previouslyReady != (this.usingTicks >= delay))) this.markPowerNetDirty();
 		
 		if(particles) {
 			Random rand = worldObj.rand;
@@ -114,6 +117,7 @@ public class TileEntityCharger extends TileEntityLoadedBase implements IEnergyRe
 	
 	@Override
 	public long transferPower(long power) {
+		long offered = power;
 		
 		if(this.usingTicks < delay || power == 0)
 			return power;
@@ -137,6 +141,7 @@ public class TileEntityCharger extends TileEntityLoadedBase implements IEnergyRe
 			}
 		}
 		
+		if(power != offered) this.markPowerNetDirty();
 		return power;
 	}
 }

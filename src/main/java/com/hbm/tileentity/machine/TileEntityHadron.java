@@ -104,7 +104,7 @@ public class TileEntityHadron extends TileEntityMachineBase implements IEnergyRe
 
 		if(!worldObj.isRemote) {
 
-			power = Library.chargeTEFromItems(slots, 4, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 4, power, maxPower));
 			drawPower();
 
 			particles.addAll(particlesToAdd);
@@ -117,7 +117,7 @@ public class TileEntityHadron extends TileEntityMachineBase implements IEnergyRe
 					particles.add(new Particle(slots[0], slots[1], dir, xCoord, yCoord, zCoord));
 					this.decrStackSize(0, 1);
 					this.decrStackSize(1, 1);
-					power -= maxPower * 0.75;
+					this.setPower((long) (this.power - maxPower * 0.75));
 					this.state = EnumHadronState.PROGRESS;
 				}
 			}
@@ -315,8 +315,10 @@ public class TileEntityHadron extends TileEntityMachineBase implements IEnergyRe
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
 		this.markDirty();
+		this.markPowerNetDirty();
 	}
 
 	@Override

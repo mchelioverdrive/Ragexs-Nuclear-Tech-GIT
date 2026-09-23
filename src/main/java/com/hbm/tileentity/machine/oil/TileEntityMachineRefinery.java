@@ -149,7 +149,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 
 				this.updateConnections();
 
-				power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+				this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
 				tanks[0].setType(12, slots);
 				tanks[0].loadTank(1, 2, slots);
 
@@ -231,6 +231,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 
 	@Override
 	public void onChunkUnload() {
+		super.onChunkUnload();
 
 		if(audio != null) {
 			audio.stopSound();
@@ -307,7 +308,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 		}
 
 		if(worldObj.getTotalWorldTime() % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 5);
-		this.power -= 5;
+		this.setPower(this.power - 5);
 	}
 
 	private void updateConnections() {
@@ -336,7 +337,9 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

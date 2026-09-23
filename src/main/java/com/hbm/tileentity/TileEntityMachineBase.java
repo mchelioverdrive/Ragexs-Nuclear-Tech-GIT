@@ -14,6 +14,7 @@ import com.hbm.packet.toclient.BufPacket;
 import com.hbm.packet.toclient.NBTPacket;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
+import api.hbm.energymk2.IEnergyHandlerMK2;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -160,6 +161,7 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 	/** Called by the standard inventory mutation paths. Subclasses can invalidate local caches here. */
 	protected void onInventorySlotChanged(int slot) {
 		this.markNetworkDirty();
+		if(this instanceof IEnergyHandlerMK2) ((IEnergyHandlerMK2) this).markPowerNetDirty();
 	}
 
 	/** Marks client-visible machine state for the opt-in allocation-free sync path. */

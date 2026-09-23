@@ -76,7 +76,7 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 		
 		if(!worldObj.isRemote) {
 			
-			this.power = Library.chargeTEFromItems(slots, 4, this.getPower(), this.getMaxPower());
+			this.setPower(Library.chargeTEFromItems(slots, 4, this.getPower(), this.getMaxPower()));
 			this.tank.setType(5, slots);
 			
 			if(worldObj.getTotalWorldTime() % 20 == 0) {
@@ -100,7 +100,7 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 				
 				if(canProcess(recipe)) {
 					this.progress++;
-					this.power -= this.consumption;
+					this.setPower(this.power - this.consumption);
 					FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1200);
 					
 					if(progress >= processTime) {
@@ -262,7 +262,9 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

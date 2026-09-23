@@ -34,7 +34,9 @@ public class TileEntityMachineFENSU extends TileEntityMachineBattery {
 		
 		if(!worldObj.isRemote) {
 
+			short previousMode = this.modeCache;
 			int mode = this.getRelevantMode(false);
+			if(previousMode != mode) this.markPowerNetworkDirty();
 			
 			if(this.node == null || this.node.expired) {
 				
@@ -48,12 +50,10 @@ public class TileEntityMachineFENSU extends TileEntityMachineBattery {
 			
 			long prevPower = this.power;
 			
-			power = Library.chargeItemsFromTE(slots, 1, power, getMaxPower());
+			this.setPower(Library.chargeItemsFromTE(slots, 1, power, getMaxPower()));
 			
 			if(mode == mode_output || mode == mode_buffer) {
 				this.tryProvide(worldObj, xCoord, yCoord - 1, zCoord, ForgeDirection.DOWN);
-			} else {
-				if(node != null && node.hasValidNet()) node.net.removeProvider(this);
 			}
 			
 			byte comp = this.getComparatorPower();
@@ -63,7 +63,7 @@ public class TileEntityMachineFENSU extends TileEntityMachineBattery {
 			
 			this.updatePersistentReceiver(mode == mode_input || mode == mode_buffer);
 			
-			power = Library.chargeTEFromItems(slots, 0, power, getMaxPower());
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, getMaxPower()));
 
 			long avg = (power / 2 + prevPower / 2);
 			this.delta = avg - this.log[0];

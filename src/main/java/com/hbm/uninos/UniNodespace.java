@@ -65,6 +65,7 @@ public class UniNodespace {
 	}
 
 	public static void unloadWorld(World world) {
+		PowerNetMK2.detachWorldEndpoints(world);
 		UniNodeWorld nodeWorld = worlds.remove(world);
 		if(nodeWorld == null) return;
 
@@ -96,6 +97,7 @@ public class UniNodespace {
 				}
 			}
 			nodeWorld.updateScratch.clear();
+			PowerNetMK2.reconcileWorldEndpoints(world);
 		}
 
 		updateNetworks();
@@ -111,7 +113,7 @@ public class UniNodespace {
 			net.update();
 		}
 
-		for(UniNodeWorld nodeWorld : worlds.values()) nodeWorld.updatePowerNetworks();
+		for(Map.Entry<World, UniNodeWorld> entry : worlds.entrySet()) entry.getValue().updatePowerNetworks(entry.getKey());
 		
 		if(reapTimer <= 0) {
 			reapScratch.clear();
@@ -148,14 +150,6 @@ public class UniNodespace {
 		if(nodeWorld != null) nodeWorld.dirtyPowerNetworks.add(network);
 	}
 
-	public static void setPowerNetworkLegacy(PowerNetMK2 network, boolean legacy) {
-		if(network == null || network.getWorld() == null) return;
-		UniNodeWorld nodeWorld = worlds.get(network.getWorld());
-		if(nodeWorld == null) return;
-		if(legacy) nodeWorld.legacyPowerNetworks.add(network);
-		else nodeWorld.legacyPowerNetworks.remove(network);
-	}
-	
 	private static void updateReapTimer() {
 		if(reapTimer <= 0) reapTimer = 5 * 60 * 20; // 5 minutes is more than plenty 
 		else reapTimer--;
@@ -208,10 +202,9 @@ public class UniNodespace {
 		public HashMap<Pair<BlockPos, INetworkProvider>, GenNode> nodes = new LinkedHashMap<>();
 		private final Set<GenNode> updateScratch = Collections.newSetFromMap(new IdentityHashMap<GenNode, Boolean>());
 		private final Set<PowerNetMK2> powerNetworks = Collections.newSetFromMap(new IdentityHashMap<PowerNetMK2, Boolean>());
-		private final Set<PowerNetMK2> legacyPowerNetworks = Collections.newSetFromMap(new IdentityHashMap<PowerNetMK2, Boolean>());
 		private final Set<PowerNetMK2> dirtyPowerNetworks = new LinkedHashSet<PowerNetMK2>();
 		private final List<PowerNetMK2> powerUpdateScratch = new ArrayList<PowerNetMK2>();
-		private int compatibilitySweep;
+		private int integrityAudit;
 
 		/** Adds a node at all its positions to the nodespace */
 		public void pushNode(GenNode node) {
@@ -222,25 +215,28 @@ public class UniNodespace {
 
 		/** Removes the specified node from all positions from nodespace */
 		public void popNode(GenNode node) {
-			if(node.net != null) node.net.destroy();
+			if(node.net != null) {
+				if(node.net instanceof PowerNetMK2 && node.net.links.size() > 1) PowerNetDiagnostics.recordSplit();
+				node.net.destroy();
+			}
 			for(BlockPos pos : node.positions) {
 				nodes.remove(new Pair(pos, node.networkProvider));
 			}
 			node.expired = true;
 		}
 
-		private void updatePowerNetworks() {
-			for(PowerNetMK2 network : this.powerNetworks) network.resetTrackers();
+		private void updatePowerNetworks(World world) {
+			for(PowerNetMK2 network : this.powerNetworks) {
+				network.resetTrackers();
+				PowerNetDiagnostics.recordNetworkInventory(network.providerEntries.size(), network.receiverEntries.size());
+			}
 
-			this.powerUpdateScratch.clear();
-			this.powerUpdateScratch.addAll(this.legacyPowerNetworks);
-			for(PowerNetMK2 network : this.powerUpdateScratch) network.markCompatibilityDirty();
-
-			if(++this.compatibilitySweep >= 20) {
-				this.compatibilitySweep = 0;
+			if(++this.integrityAudit >= 100) {
+				this.integrityAudit = 0;
+				PowerNetMK2.auditWorldEndpoints(world);
 				this.powerUpdateScratch.clear();
 				this.powerUpdateScratch.addAll(this.powerNetworks);
-				for(PowerNetMK2 network : this.powerUpdateScratch) network.markCompatibilityDirty();
+				for(PowerNetMK2 network : this.powerUpdateScratch) network.auditInvalidEndpoints();
 			}
 
 			this.powerUpdateScratch.clear();
@@ -258,7 +254,6 @@ public class UniNodespace {
 
 		private void removePowerNetwork(PowerNetMK2 network) {
 			this.powerNetworks.remove(network);
-			this.legacyPowerNetworks.remove(network);
 			this.dirtyPowerNetworks.remove(network);
 		}
 
@@ -266,7 +261,6 @@ public class UniNodespace {
 			this.nodes.clear();
 			this.updateScratch.clear();
 			this.powerNetworks.clear();
-			this.legacyPowerNetworks.clear();
 			this.dirtyPowerNetworks.clear();
 			this.powerUpdateScratch.clear();
 		}

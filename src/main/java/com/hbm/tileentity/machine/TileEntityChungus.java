@@ -139,7 +139,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 					int ops = Math.min(inputOps, Math.min(outputOps, powerOps));
 					tanks[0].setFill(tanks[0].getFill() - ops * trait.amountReq);
 					tanks[1].setFill(tanks[1].getFill() + ops * trait.amountProduced);
-					this.power += (ops * trait.heatEnergy * eff);
+					this.setPower(this.power + (long) (ops * trait.heatEnergy * eff));
 					info[0] = ops * trait.amountReq;
 					info[1] = ops * trait.amountProduced;
 					info[2] = ops * trait.heatEnergy * eff;
@@ -149,7 +149,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 			}
 
 			if(!valid && tanks[1].getFill() <= 0) tanks[1].setTankType(Fluids.NONE);
-			if(power > maxPower) power = maxPower;
+			if(power > maxPower) this.setPower(maxPower);
 
 			// Export power produced during this tick as well as the stored power above.
 			this.tryProvide(worldObj, xCoord - dir.offsetX * 11, yCoord, zCoord - dir.offsetZ * 11, dir.getOpposite());
@@ -160,7 +160,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 			}
 
 			if(power > maxPower)
-				power = maxPower;
+				this.setPower(maxPower);
 
 			turnTimer--;
 
@@ -347,7 +347,9 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

@@ -101,7 +101,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 			}
 
 			// All propellant, including solid rocket fuel, is supplied through fluid tanks.
-			power = Library.chargeTEFromItems(slots, 2, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 2, power, maxPower));
 			for(FluidTank tank : tanks) tank.loadTank(3, 4, slots);
 
 			rocket = ItemCustomRocket.get(slots[0]);
@@ -265,7 +265,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		// Deplete all fills
 		for(int i = 0; i < tanks.length; i++) tanks[i] = new FluidTank(Fluids.NONE, 64_000);
 
-		power -= maxPower * 0.75;
+		this.setPower((long) (this.power - maxPower * 0.75));
 
 		slots[0] = null;
 		slots[1] = null;
@@ -627,7 +627,11 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 	}
 
 	@Override public long getPower() { return power; }
-	@Override public void setPower(long power) { this.power = power; }
+	@Override public void setPower(long power) {
+		if(this.power == power) return;
+		this.power = power;
+		this.markPowerNetDirty();
+	}
 	@Override public long getMaxPower() { return maxPower; }
 	@Override public FluidTank[] getAllTanks() { return this.tanks; }
 	@Override public FluidTank[] getReceivingTanks() { return this.tanks; }

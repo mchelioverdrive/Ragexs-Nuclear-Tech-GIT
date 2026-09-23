@@ -137,12 +137,12 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 			data.setLong("power", Math.min(this.power, this.maxPower)); //set first to get an unmodified view of how much power was generated before deductions from the net
 			
 			//do net/battery deductions first...
-			power = Library.chargeItemsFromTE(slots, 0, power, maxPower);
+			this.setPower(Library.chargeItemsFromTE(slots, 0, power, maxPower));
 			this.tryProvide(worldObj, xCoord - dir.offsetZ * 5, yCoord + 1, zCoord + dir.offsetX * 5, rot); //sends out power
 			
 			//...and then cap it. Prevents potential future cases where power would be limited due to the fuel being too strong and the buffer too small.
 			if(this.power > this.maxPower)
-				this.power = this.maxPower;
+				this.setPower(this.maxPower);
 			
 			for(int i = 0; i < 2; i++) { //fuel and lube
 				this.trySubscribe(tanks[i].getTankType(), worldObj, xCoord - dir.offsetX * 2 + rot.offsetX, yCoord, zCoord - dir.offsetZ * 2 + rot.offsetZ, dir.getOpposite());
@@ -362,7 +362,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 			if(instantPowerOutput < (consMax * energy * rpmEff / 90))
 				instantPowerOutput = (int) (consMax * energy * rpmEff / 90);
 		}
-		this.power += instantPowerOutput;
+		this.setPower(this.power + instantPowerOutput);
 		
 		waterPerTick = (consMax * energy * (temp - tempIdle) / 220000); //it just works fuck you
 		
@@ -470,6 +470,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	
 	@Override
 	public void onChunkUnload() {
+		super.onChunkUnload();
 
 		if(audio != null) {
 			audio.stopSound();
@@ -490,7 +491,9 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

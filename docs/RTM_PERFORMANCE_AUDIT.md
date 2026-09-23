@@ -120,7 +120,9 @@ The next energy pass should introduce persistent endpoint state and explicit net
 - `git diff --check` completed without whitespace errors.
 - `gradlew compileJava --offline --no-daemon` reached Gradle configuration but could not compile because the local offline cache lacks ForgeGradle `1.2-1.0.12` and `org.osgi.service.prefs 1.1.2`. This is an environment/dependency-cache failure, not a source compilation result.
 
-## 2026-09-21 14:44 — Event-driven MK2 power-network bridge
+## 2026-09-21 14:44 — Event-driven MK2 power-network bridge (superseded interim state)
+
+> This section records the first bridge implementation. The completed architecture and current diagnostics are documented in the 2026-09-22 section below.
 
 ### Confirmed previous behavior
 
@@ -165,3 +167,36 @@ The next energy pass should introduce persistent endpoint state and explicit net
 - Legacy endpoints still depend on refresh cadence and timeout cleanup. The next safe migrations should target high-frequency producers/consumers that can prove attach, detach, stored-energy, priority, and transfer-limit invalidation across chunk unload and tile replacement.
 - FEnSU's directional provider discovery and unusual endpoints that override `transferPower()` / `usePower()` need individual lifecycle review before persistent conversion.
 - Source inspection and static queue/lifecycle checks were performed, and `gradlew compileJava --offline --no-daemon` completed successfully. Dedicated-server and in-game tests are still required for large merges/splits, chunk unload/reload, block replacement, diode chains, cross-mod endpoints, and cable-gauge accounting.
+
+## 2026-09-22 23:32 — Completed persistent MK2 endpoint migration
+
+### Final membership architecture
+
+- MK2 provider and receiver registrations are now persistent and idempotent. Normal endpoints no longer refresh wall-clock timestamps and no longer expire after three seconds.
+- Connection descriptors retain the conductor coordinate, direction, role, endpoint identity, and owning world needed to reconstruct membership after node-network destruction, merge, and split. Topology reconciliation runs after the normal UNINOS node pass, on the owning server thread.
+- Common `TileEntityLoadedBase` invalidation and chunk-unload paths detach energy endpoints. Previously bypassing audio-cleanup overrides now call their superclass, and the two plain-`TileEntity` endpoints have equivalent explicit cleanup. World unload removes descriptor and membership references before destroying the node world.
+- Batteries retain their node-owned bidirectional membership, including explicit mode-based role attachment. FEnSU keeps its directional below-block provider descriptor while a disabled output role advertises zero provider speed. Capacitor bus endpoints replace their descriptors only when orientation or the resolved bus target changes.
+- Multiblock controllers remain the logical endpoints; proxy ports delegate transfer to the controller and invalidate the proxy-facing network after accepted delivery. This avoids registering the controller and proxy as duplicate storage.
+
+### Explicit invalidation coverage
+
+- Provider generation, item discharge, decay, internal storage caps, cross-mod conversion, and distribution withdrawals route through notifying energy setters and raise supply invalidation.
+- Receiver item charging, machine consumption, forced drains/resets, launcher/turret use, conversion, and distribution delivery route through the same notifying setters and raise demand invalidation.
+- Standard inventory mutations invalidate endpoint state through `TileEntityMachineBase`. Battery mode and priority controls, diode priority and transfer-level controls, Stirling cog state, charger readiness/capacity, and ICF assembly/capacity changes have dedicated invalidation hooks.
+- Topology invalidation covers node creation, join, leave, merge, destruction, expired-link reaping, capacitor-bus target changes, and world cleanup. A dirty signal raised during redistribution remains queued for the following scheduler pass.
+
+### Removed transitional behavior
+
+- Removed the per-tick legacy-network set, compatibility dirty cause, compatibility refresh scheduling, once-per-second all-network sweep, registration refresh counters, endpoint timestamps, and timeout-based normal cleanup.
+- Clean power networks now skip redistribution. A 100-tick integrity audit only removes invalid endpoints or stale inconsistent memberships; it never attaches or reconstructs normal endpoints, does not redistribute clean networks, and does not serve as a keepalive. Descriptor reconstruction is confined to explicit topology reconciliation.
+- No separate cross-mod polling fallback remains. The existing HE/RF boundary adapters notify the MK2 side when conversion changes stored HE; their external RF API remains governed by the adapter's normal tile tick.
+
+### Diagnostics and validation
+
+- `/ntmpowerstats` now reports active networks; dirty processed and clean skipped networks; topology, supply, and demand invalidations; endpoint attachments and detachments; merges and splits; integrity removals; active endpoint totals and maxima; and redistribution time. Diagnostics remain disabled by default and allocation-free per event.
+- The targeted offline `compileJava` task completed successfully. Source searches confirmed removal of the compatibility set, timestamp refresh, and timeout cleanup from MK2 power code. Minecraft was not launched.
+- Runtime validation is still required for dedicated-server chunk unload/reload, block replacement, world unload, large conductor merge/split cycles, capacitor-bus edits, battery/FEnSU redstone modes, diode chains, multiblock proxy ports, HE/RF adapters, and cable-gauge accounting.
+
+### Next phase
+
+- The next performance phase should migrate selected high-cost machines to the existing dirty synchronization API and then design the separate machine scheduler. It should not be folded back into power-network membership or described as asynchronous work.

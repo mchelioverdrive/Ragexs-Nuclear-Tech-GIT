@@ -218,9 +218,9 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 			if(heat > heatMax)
 				heat = heatMax;
 			
-			power += heat * 5;
+			this.setPower(this.power + heat * 5);
 			if(power > powerMax)
-				power = powerMax;
+				this.setPower(powerMax);
 			
 			if(this.power != this.lastSyncedPower || worldObj.getWorldTime() % 20 == 0) {
 				PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, power), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
@@ -241,7 +241,9 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

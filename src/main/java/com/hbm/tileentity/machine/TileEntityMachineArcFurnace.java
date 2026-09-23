@@ -314,10 +314,10 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 			{
 				dualCookTime++;
 				
-				power -= 250;
+				this.setPower(this.power - 250);
 				
 				if(power < 0)
-					power = 0;
+					this.setPower(0);
 				
 				if(this.dualCookTime == processingSpeed)
 				{
@@ -354,7 +354,7 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 				}
 			}
 			
-			power = Library.chargeTEFromItems(slots, 5, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 5, power, maxPower));
 
 			PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, power), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
 			PacketDispatcher.wrapper.sendToAllAround(new AuxGaugePacket(xCoord, yCoord, zCoord, dualCookTime, 0), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
@@ -369,8 +369,9 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 
 	@Override
 	public void setPower(long i) {
-		power = i;
-		
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

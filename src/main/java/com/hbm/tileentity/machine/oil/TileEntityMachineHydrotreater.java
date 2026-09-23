@@ -56,7 +56,7 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 		if(!worldObj.isRemote) {
 			
 			if(this.worldObj.getTotalWorldTime() % 20 == 0) this.updateConnections();
-			power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
 			tanks[0].setType(9, slots);
 			
 			tanks[0].loadTank(1, 2, slots);
@@ -119,7 +119,7 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 		tanks[2].setFill(tanks[2].getFill() + out.getY().fill);
 		tanks[3].setFill(tanks[3].getFill() + out.getZ().fill);
 		
-		power -= 20_000;
+		this.setPower(this.power - 20_000);
 	}
 	
 	private void updateConnections() {
@@ -190,7 +190,11 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 	}
 
 	@Override public long getPower() { return power; }
-	@Override public void setPower(long power) { this.power = power; }
+	@Override public void setPower(long power) {
+		if(this.power == power) return;
+		this.power = power;
+		this.markPowerNetDirty();
+	}
 	@Override public long getMaxPower() { return maxPower; }
 	@Override public FluidTank[] getAllTanks() { return tanks; }
 	@Override public FluidTank[] getSendingTanks() { return new FluidTank[] {tanks[2], tanks[3]}; }

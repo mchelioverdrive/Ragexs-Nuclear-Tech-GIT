@@ -160,10 +160,10 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 						powerProd += powerProd * yield / 3;
 
 						this.output = (int) powerProd;
-						power += powerProd;
+						this.setPower(this.power + (long) powerProd);
 
 						if(power > maxPower)
-							power = maxPower;
+							this.setPower(maxPower);
 
 						ParticleUtil.spawnGasFlame(worldObj, this.xCoord + 0.5F, this.yCoord + 11.75F, this.zCoord + 0.5F, worldObj.rand.nextGaussian() * 0.15, 0.2, worldObj.rand.nextGaussian() * 0.15);
 
@@ -184,7 +184,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 				}
 			}
 
-			power = Library.chargeItemsFromTE(slots, 0, power, maxPower);
+			this.setPower(Library.chargeItemsFromTE(slots, 0, power, maxPower));
 
 			NBTTagCompound data = new NBTTagCompound();
 			data.setLong("power", this.power);
@@ -281,7 +281,9 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

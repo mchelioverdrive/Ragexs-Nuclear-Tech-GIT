@@ -7,6 +7,7 @@ import com.hbm.util.fauxpointtwelve.BlockPos;
 
 import api.hbm.block.IToolable;
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.PowerNetMK2;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
@@ -108,7 +109,7 @@ public class Floodlight extends BlockContainer implements IToolable {
 				}
 				
 				if(power >= 100) {
-					power -= 100;
+					this.setPower(this.power - 100);
 					
 					if(!isOn) {
 						this.isOn = true;
@@ -262,12 +263,24 @@ public class Floodlight extends BlockContainer implements IToolable {
 		}
 
 		@Override public long getPower() { return power; }
-		@Override public void setPower(long power) { this.power = power; }
+		@Override public void setPower(long power) {
+			if(this.power == power) return;
+			this.power = power;
+			this.markPowerNetDirty();
+		}
 		@Override public long getMaxPower() { return maxPower; }
 
 		private boolean isLoaded = true;
 		@Override public boolean isLoaded() { return isLoaded; }
-		@Override public void onChunkUnload() { this.isLoaded = false; }
+		@Override public void onChunkUnload() {
+			if(!this.worldObj.isRemote) PowerNetMK2.detachEndpoint(this);
+			this.isLoaded = false;
+			super.onChunkUnload();
+		}
+		@Override public void invalidate() {
+			if(this.worldObj != null && !this.worldObj.isRemote) PowerNetMK2.detachEndpoint(this);
+			super.invalidate();
+		}
 		
 		AxisAlignedBB bb = null;
 		

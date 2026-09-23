@@ -98,7 +98,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 		
 		if(!worldObj.isRemote) {
 			
-			this.power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
 			
 			tanks[0].setType(1, slots);
 			FluidType conversion = this.getFluidOutput(tanks[0].getTankType());
@@ -119,7 +119,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 			this.consumption = this.consumptionBase + (this.consumptionBase * speed) / 2 + (this.consumptionBase * efficiency);
 			
 			if(canSlop()) {
-				this.power -= this.consumption;
+				this.setPower(this.power - this.consumption);
 				this.progress += 1F / (600 - speed * 150);
 				this.processing = true;
 				boolean markDirty = false;
@@ -339,7 +339,11 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 	}
 
 	@Override public long getPower() { return power; }
-	@Override public void setPower(long power) { this.power = power; }
+	@Override public void setPower(long power) {
+		if(this.power == power) return;
+		this.power = power;
+		this.markPowerNetDirty();
+	}
 	@Override public long getMaxPower() { return maxPower; }
 
 	@Override public FluidTank[] getAllTanks() { return tanks; }

@@ -73,7 +73,7 @@ public class TileEntityCoreStabilizer extends TileEntityMachineBase implements I
 						
 						TileEntityCore core = (TileEntityCore)te;
 						core.field = Math.max(core.field, watts);
-						this.power -= demand;
+						this.setPower(this.power - demand);
 						beam = i;
 						
 						long dmg = ItemLens.getLensDamage(slots[0]);
@@ -124,7 +124,9 @@ public class TileEntityCoreStabilizer extends TileEntityMachineBase implements I
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

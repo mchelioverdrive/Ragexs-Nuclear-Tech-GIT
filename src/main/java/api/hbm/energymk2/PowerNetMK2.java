@@ -14,6 +14,7 @@ import java.util.Map.Entry;
 
 import api.hbm.energymk2.IEnergyReceiverMK2.ConnectionPriority;
 import api.hbm.energymk2.Nodespace.PowerNode;
+import net.minecraft.world.World;
 
 /**
  * Technically MK3 since it's now UNINOS compatible, although UNINOS was build out of 95% nodespace code
@@ -25,11 +26,9 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 	public static final int DIRTY_TOPOLOGY = 1;
 	public static final int DIRTY_SUPPLY = 2;
 	public static final int DIRTY_DEMAND = 4;
-	public static final int DIRTY_COMPATIBILITY = 8;
 
 	public long energyTracker = 0L;
 
-	protected static int timeout = 3_000;
 	private static final ConnectionPriority[] PRIORITIES = ConnectionPriority.values();
 
 	private final EndpointScratch<IEnergyProviderMK2> providerScratch = new EndpointScratch<IEnergyProviderMK2>();
@@ -37,8 +36,6 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 	private final EndpointScratch<IEnergyReceiverMK2>[] diodeReceiverScratch = createReceiverScratch();
 	private final long[] demandScratch = new long[PRIORITIES.length];
 	private final long[] diodeDemandScratch = new long[PRIORITIES.length];
-	private final Set<IEnergyProviderMK2> persistentProviders = Collections.newSetFromMap(new IdentityHashMap<IEnergyProviderMK2, Boolean>());
-	private final Set<IEnergyReceiverMK2> persistentReceivers = Collections.newSetFromMap(new IdentityHashMap<IEnergyReceiverMK2, Boolean>());
 	private int dirtyCauses;
 
 	private static final IdentityHashMap<IEnergyProviderMK2, Set<PowerNetMK2>> providerMemberships = new IdentityHashMap<IEnergyProviderMK2, Set<PowerNetMK2>>();
@@ -46,65 +43,43 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 
 	@Override
 	public void addReceiver(IEnergyReceiverMK2 receiver) {
-		boolean registered = this.receiverEntries.containsKey(receiver);
-		this.receiverEntries.put(receiver, System.currentTimeMillis());
-		this.persistentReceivers.remove(receiver);
+		if(this.receiverEntries.containsKey(receiver)) return;
+		this.receiverEntries.put(receiver, 0L);
 		trackReceiver(receiver, this);
-		if(registered) PowerNetDiagnostics.recordRefresh();
-		else PowerNetDiagnostics.recordRegistration();
-		this.refreshLegacyStatus();
+		PowerNetDiagnostics.recordAttachment();
 		this.markDemandDirty();
 	}
 
 	public void addReceiverPersistent(IEnergyReceiverMK2 receiver) {
-		boolean registered = this.receiverEntries.containsKey(receiver);
-		if(!registered) {
-			this.receiverEntries.put(receiver, System.currentTimeMillis());
-			trackReceiver(receiver, this);
-			PowerNetDiagnostics.recordRegistration();
-		}
-		if(this.persistentReceivers.add(receiver) || !registered) this.markDemandDirty();
-		this.refreshLegacyStatus();
+		this.addReceiver(receiver);
 	}
 
 	@Override
 	public void removeReceiver(IEnergyReceiverMK2 receiver) {
 		if(this.receiverEntries.remove(receiver) == null) return;
-		this.persistentReceivers.remove(receiver);
 		untrackReceiver(receiver, this);
-		this.refreshLegacyStatus();
+		PowerNetDiagnostics.recordDetachment();
 		this.markDemandDirty();
 	}
 
 	@Override
 	public void addProvider(IEnergyProviderMK2 provider) {
-		boolean registered = this.providerEntries.containsKey(provider);
-		this.providerEntries.put(provider, System.currentTimeMillis());
-		this.persistentProviders.remove(provider);
+		if(this.providerEntries.containsKey(provider)) return;
+		this.providerEntries.put(provider, 0L);
 		trackProvider(provider, this);
-		if(registered) PowerNetDiagnostics.recordRefresh();
-		else PowerNetDiagnostics.recordRegistration();
-		this.refreshLegacyStatus();
+		PowerNetDiagnostics.recordAttachment();
 		this.markSupplyDirty();
 	}
 
 	public void addProviderPersistent(IEnergyProviderMK2 provider) {
-		boolean registered = this.providerEntries.containsKey(provider);
-		if(!registered) {
-			this.providerEntries.put(provider, System.currentTimeMillis());
-			trackProvider(provider, this);
-			PowerNetDiagnostics.recordRegistration();
-		}
-		if(this.persistentProviders.add(provider) || !registered) this.markSupplyDirty();
-		this.refreshLegacyStatus();
+		this.addProvider(provider);
 	}
 
 	@Override
 	public void removeProvider(IEnergyProviderMK2 provider) {
 		if(this.providerEntries.remove(provider) == null) return;
-		this.persistentProviders.remove(provider);
 		untrackProvider(provider, this);
-		this.refreshLegacyStatus();
+		PowerNetDiagnostics.recordDetachment();
 		this.markSupplyDirty();
 	}
 
@@ -120,15 +95,10 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 		for(PowerNode conductor : oldNodes) this.forceJoinLink(conductor);
 		powerNetwork.links.clear();
 
-		for(IEnergyReceiverMK2 receiver : powerNetwork.receiverEntries.keySet()) {
-			if(powerNetwork.persistentReceivers.contains(receiver)) this.addReceiverPersistent(receiver);
-			else this.addReceiver(receiver);
-		}
-		for(IEnergyProviderMK2 provider : powerNetwork.providerEntries.keySet()) {
-			if(powerNetwork.persistentProviders.contains(provider)) this.addProviderPersistent(provider);
-			else this.addProvider(provider);
-		}
+		for(IEnergyReceiverMK2 receiver : powerNetwork.receiverEntries.keySet()) this.addReceiver(receiver);
+		for(IEnergyProviderMK2 provider : powerNetwork.providerEntries.keySet()) this.addProvider(provider);
 		powerNetwork.destroy();
+		PowerNetDiagnostics.recordMerge();
 		this.markTopologyDirty();
 	}
 
@@ -137,15 +107,18 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 		this.markTopologyDirty();
 	}
 
-	public void markTopologyDirty() { this.markDirty(DIRTY_TOPOLOGY); }
+	public void markTopologyDirty() {
+		PowerNetEndpointRegistry.markTopologyDirty(this.getWorld());
+		this.markDirty(DIRTY_TOPOLOGY);
+	}
 	public void markSupplyDirty() { this.markDirty(DIRTY_SUPPLY); }
 	public void markDemandDirty() { this.markDirty(DIRTY_DEMAND); }
-	public void markCompatibilityDirty() { this.markDirty(DIRTY_COMPATIBILITY); }
 
 	private void markDirty(int cause) {
 		if(!this.isValid()) return;
+		boolean newlyDirty = (this.dirtyCauses & cause) != cause;
 		this.dirtyCauses |= cause;
-		if(cause != DIRTY_COMPATIBILITY) PowerNetDiagnostics.recordInvalidation(cause);
+		if(newlyDirty) PowerNetDiagnostics.recordInvalidation(cause);
 		UniNodespace.markPowerNetworkDirty(this);
 	}
 
@@ -153,11 +126,6 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 		int causes = this.dirtyCauses;
 		this.dirtyCauses = 0;
 		return causes;
-	}
-
-	private void refreshLegacyStatus() {
-		boolean legacy = this.receiverEntries.size() > this.persistentReceivers.size() || this.providerEntries.size() > this.persistentProviders.size();
-		UniNodespace.setPowerNetworkLegacy(this, legacy);
 	}
 
 	public static void markReceiverDemandDirty(IEnergyReceiverMK2 receiver) {
@@ -170,6 +138,71 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 		Set<PowerNetMK2> networks = providerMemberships.get(provider);
 		if(networks == null) return;
 		for(PowerNetMK2 network : networks) network.markSupplyDirty();
+	}
+
+	public static void markEndpointStateDirty(IEnergyHandlerMK2 endpoint) {
+		if(endpoint instanceof IEnergyProviderMK2) markProviderSupplyDirty((IEnergyProviderMK2) endpoint);
+		if(endpoint instanceof IEnergyReceiverMK2) markReceiverDemandDirty((IEnergyReceiverMK2) endpoint);
+	}
+
+	public static void detachEndpoint(IEnergyHandlerMK2 endpoint) {
+		PowerNetEndpointRegistry.detach(endpoint);
+	}
+
+	static void detachEndpointMemberships(IEnergyHandlerMK2 endpoint) {
+		if(endpoint instanceof IEnergyReceiverMK2) {
+			Set<PowerNetMK2> networks = receiverMemberships.get((IEnergyReceiverMK2) endpoint);
+			if(networks != null) {
+				List<PowerNetMK2> copy = new ArrayList<PowerNetMK2>(networks);
+				for(PowerNetMK2 network : copy) network.removeReceiver((IEnergyReceiverMK2) endpoint);
+			}
+		}
+		if(endpoint instanceof IEnergyProviderMK2) {
+			Set<PowerNetMK2> networks = providerMemberships.get((IEnergyProviderMK2) endpoint);
+			if(networks != null) {
+				List<PowerNetMK2> copy = new ArrayList<PowerNetMK2>(networks);
+				for(PowerNetMK2 network : copy) network.removeProvider((IEnergyProviderMK2) endpoint);
+			}
+		}
+	}
+
+	public static void reconcileWorldEndpoints(World world) {
+		PowerNetEndpointRegistry.reconcileWorldIfDirty(world);
+	}
+
+	public static void auditWorldEndpoints(World world) {
+		PowerNetEndpointRegistry.auditWorld(world);
+	}
+
+	public static void detachWorldEndpoints(World world) {
+		PowerNetEndpointRegistry.detachWorld(world);
+	}
+
+	public void auditInvalidEndpoints() {
+		boolean supplyRemoved = false;
+		boolean demandRemoved = false;
+		Iterator<Entry<IEnergyProviderMK2, Long>> providers = this.providerEntries.entrySet().iterator();
+		while(providers.hasNext()) {
+			IEnergyProviderMK2 provider = providers.next().getKey();
+			if(!isBadLink(provider)) continue;
+			providers.remove();
+			untrackProvider(provider, this);
+			PowerNetDiagnostics.recordDetachment();
+			PowerNetDiagnostics.recordIntegrityRemoval();
+			supplyRemoved = true;
+		}
+		Iterator<Entry<IEnergyReceiverMK2, Long>> receivers = this.receiverEntries.entrySet().iterator();
+		while(receivers.hasNext()) {
+			IEnergyReceiverMK2 receiver = receivers.next().getKey();
+			if(!isBadLink(receiver)) continue;
+			receivers.remove();
+			untrackReceiver(receiver, this);
+			PowerNetDiagnostics.recordDetachment();
+			PowerNetDiagnostics.recordIntegrityRemoval();
+			demandRemoved = true;
+		}
+		if(supplyRemoved) this.markSupplyDirty();
+		if(demandRemoved) this.markDemandDirty();
 	}
 
 	@Override public void resetTrackers() { this.energyTracker = 0; }
@@ -185,22 +218,12 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 			return;
 		}
 
-		long timestamp = System.currentTimeMillis();
-
 		long powerAvailable = 0;
 
 		// sum up available power
 		Iterator<Entry<IEnergyProviderMK2, Long>> provIt = providerEntries.entrySet().iterator();
 		while(provIt.hasNext()) {
 			Entry<IEnergyProviderMK2, Long> entry = provIt.next();
-			boolean timedOut = !this.persistentProviders.contains(entry.getKey()) && timestamp - entry.getValue() > timeout;
-			if(timedOut || isBadLink(entry.getKey())) {
-				provIt.remove();
-				this.persistentProviders.remove(entry.getKey());
-				untrackProvider(entry.getKey(), this);
-				if(timedOut) PowerNetDiagnostics.recordTimeoutRemoval();
-				continue;
-			}
 			IEnergyProviderMK2 provider = entry.getKey();
 			long src = Math.min(provider.getPower(), provider.getProviderSpeed());
 			if(src > 0) {
@@ -216,14 +239,6 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 
 		while(recIt.hasNext()) {
 			Entry<IEnergyReceiverMK2, Long> entry = recIt.next();
-			boolean timedOut = !this.persistentReceivers.contains(entry.getKey()) && timestamp - entry.getValue() > timeout;
-			if(timedOut || isBadLink(entry.getKey())) {
-				recIt.remove();
-				this.persistentReceivers.remove(entry.getKey());
-				untrackReceiver(entry.getKey(), this);
-				if(timedOut) PowerNetDiagnostics.recordTimeoutRemoval();
-				continue;
-			}
 			IEnergyReceiverMK2 receiver = entry.getKey();
 			long rec = Math.min(receiver.getMaxPower() - receiver.getPower(), receiver.getReceiverSpeed());
 			if(rec > 0) {
@@ -233,8 +248,6 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 				totalDemand += rec;
 			}
 		}
-		this.refreshLegacyStatus();
-
 		long toTransfer = Math.min(powerAvailable, totalDemand);
 		long energyUsed = 0;
 
@@ -287,22 +300,12 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 			return power;
 		}
 
-		long timestamp = System.currentTimeMillis();
-
 		long totalDemand = 0;
 
 		Iterator<Entry<IEnergyReceiverMK2, Long>> recIt = receiverEntries.entrySet().iterator();
 
 		while(recIt.hasNext()) {
 			Entry<IEnergyReceiverMK2, Long> entry = recIt.next();
-			boolean timedOut = !this.persistentReceivers.contains(entry.getKey()) && timestamp - entry.getValue() > timeout;
-			if(timedOut || isBadLink(entry.getKey())) {
-				recIt.remove();
-				this.persistentReceivers.remove(entry.getKey());
-				untrackReceiver(entry.getKey(), this);
-				if(timedOut) PowerNetDiagnostics.recordTimeoutRemoval();
-				continue;
-			}
 			IEnergyReceiverMK2 receiver = entry.getKey();
 			long rec = Math.min(receiver.getMaxPower() - receiver.getPower(), receiver.getReceiverSpeed());
 			int p = receiver.getPriority().ordinal();
@@ -310,8 +313,6 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 			this.diodeDemandScratch[p] += rec;
 			totalDemand += rec;
 		}
-		this.refreshLegacyStatus();
-
 		long toTransfer = Math.min(power, totalDemand);
 		long energyUsed = 0;
 
@@ -338,10 +339,15 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 
 	@Override
 	public void destroy() {
-		for(IEnergyReceiverMK2 receiver : this.receiverEntries.keySet()) untrackReceiver(receiver, this);
-		for(IEnergyProviderMK2 provider : this.providerEntries.keySet()) untrackProvider(provider, this);
-		this.persistentReceivers.clear();
-		this.persistentProviders.clear();
+		PowerNetEndpointRegistry.markTopologyDirty(this.getWorld());
+		for(IEnergyReceiverMK2 receiver : this.receiverEntries.keySet()) {
+			untrackReceiver(receiver, this);
+			PowerNetDiagnostics.recordDetachment();
+		}
+		for(IEnergyProviderMK2 provider : this.providerEntries.keySet()) {
+			untrackProvider(provider, this);
+			PowerNetDiagnostics.recordDetachment();
+		}
 		this.dirtyCauses = 0;
 		super.destroy();
 	}

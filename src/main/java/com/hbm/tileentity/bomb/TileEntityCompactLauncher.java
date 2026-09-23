@@ -181,7 +181,7 @@ public class TileEntityCompactLauncher extends TileEntityLoadedBase implements I
 			tanks[0].loadTank(2, 6, slots);
 			tanks[1].loadTank(3, 7, slots);
 
-			power = Library.chargeTEFromItems(slots, 5, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 5, power, maxPower));
 
 
 			if(worldObj.getTotalWorldTime() % 20 == 0)
@@ -377,7 +377,7 @@ public class TileEntityCompactLauncher extends TileEntityLoadedBase implements I
 			default: break;
 		}
 
-		this.power -= maxPower * 0.75;
+		this.setPower((long) (this.power - maxPower * 0.75));
 	}
 
 	public static MissileStruct getStruct(ItemStack stack) {
@@ -569,7 +569,9 @@ public class TileEntityCompactLauncher extends TileEntityLoadedBase implements I
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override
@@ -585,12 +587,12 @@ public class TileEntityCompactLauncher extends TileEntityLoadedBase implements I
 	@Override
 	public long transferPower(long power) {
 
-		this.power += power;
+		this.setPower(this.power + power);
 
 		if(this.power > this.getMaxPower()) {
 
 			long overshoot = this.power - this.getMaxPower();
-			this.power = this.getMaxPower();
+			this.setPower(this.getMaxPower());
 			return overshoot;
 		}
 

@@ -119,3 +119,11 @@
 - Added explicit topology, supply, and demand invalidation, persistent battery/FEnSU receiver memberships, merge transfer, chunk/world unload cleanup, and legacy timeout-compatible fallback updates.
 - Added disabled-by-default aggregate power-network diagnostics, enabled by `1.45_enablePowerNetDiagnostics` and readable with `/ntmpowerstats`.
 - Retained per-tick compatibility updates only for networks with unmigrated refresh-based endpoints plus a once-per-second persistent-network cleanup pass; dedicated-server and in-game lifecycle validation remains outstanding.
+
+2026-09-22 23:32 — Complete persistent MK2 energy endpoint migration
+
+- Replaced timestamp-refresh registration with persistent endpoint descriptors, deterministic topology replay, explicit chunk/tile/world detachment, and dirty-only redistribution.
+- Migrated generator, consumer, storage, diode, converter, directional, multiblock, proxy, charger, and ICF state changes to explicit supply, demand, or topology invalidation while preserving distribution formulas and transfer limits.
+- Removed the per-tick legacy compatibility set, compatibility dirty scheduling, timestamp keepalive, three-second expiry, and all-network compatibility sweep; retained only a 100-tick invalid-endpoint integrity audit that does not redistribute clean networks.
+- Updated `/ntmpowerstats` for final-architecture attachment, detachment, merge, split, invalidation, integrity, endpoint, skip, and redistribution-time counters.
+- Targeted offline Java compilation completed successfully. Dedicated-server and in-game lifecycle, topology, diode, storage-mode, proxy, converter, and accounting scenarios remain to be tested.

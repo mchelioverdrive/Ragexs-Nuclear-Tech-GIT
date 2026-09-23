@@ -70,7 +70,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 
 			this.tank.setType(2, slots);
 			this.tank.loadTank(3, 4, slots);
-			this.power = Library.chargeItemsFromTE(slots, 5, power, maxPower);
+			this.setPower(Library.chargeItemsFromTE(slots, 5, power, maxPower));
 
 			for(DirPos pos : getConPos()) {
 				if(power > 0) this.tryProvide(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
@@ -125,8 +125,8 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 				}
 			}
 
-			this.power += this.powerGen;
-			if(this.power > maxPower) this.power = maxPower;
+			this.setPower(this.power + this.powerGen);
+			if(this.power > maxPower) this.setPower(maxPower);
 
 			this.networkPackNT(25);
 		} else {
@@ -256,7 +256,9 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

@@ -100,7 +100,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 			this.consumption = 100;
 
 			this.isProgressing = false;
-			this.power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
 
 			int fluidDelay = 40;
 
@@ -221,6 +221,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 
 	@Override
 	public void onChunkUnload() {
+		super.onChunkUnload();
 
 		if(audio != null) {
 			audio.stopSound();
@@ -315,7 +316,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 
 	private void process() {
 
-		this.power -= this.consumption;
+		this.setPower(this.power - this.consumption);
 		this.progress++;
 
 		//if(slots[0] != null && slots[0].getItem() == ModItems.meteorite_sword_machined)
@@ -502,7 +503,9 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

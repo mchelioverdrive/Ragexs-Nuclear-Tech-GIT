@@ -78,7 +78,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 				this.updateConnections();
 			}
 			
-			this.power = Library.chargeTEFromItems(slots, 1, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 1, power, maxPower));
 			this.tanks[0].setType(0, slots);
 			this.setupTanks();
 			
@@ -105,7 +105,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 			if(canProcess()) {
 				this.progress++;
 				this.isOn = true;
-				this.power -= powerRequirement;
+				this.setPower(this.power - powerRequirement);
 				
 				if(progress >= this.processTime) {
 					progress = 0;
@@ -293,7 +293,9 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

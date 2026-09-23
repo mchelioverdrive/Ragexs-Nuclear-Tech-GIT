@@ -189,7 +189,7 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 			
 			long prevPower = this.power;
 			
-			power = Library.chargeItemsFromTE(slots, 1, power, getMaxPower());
+			this.setPower(Library.chargeItemsFromTE(slots, 1, power, getMaxPower()));
 			
 			this.updatePersistentProvider(mode == mode_output || mode == mode_buffer);
 			
@@ -200,7 +200,7 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 			
 			this.updatePersistentReceiver(mode == mode_input || mode == mode_buffer);
 			
-			power = Library.chargeTEFromItems(slots, 0, power, getMaxPower());
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, getMaxPower()));
 
 			long avg = (power + prevPower) / 2;
 			this.delta = avg - this.log[0];
@@ -296,7 +296,7 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 		return power;
 	}
 	
-	private short modeCache = 0;
+	protected short modeCache = 0;
 	public short getRelevantMode(boolean useCache) {
 		if(useCache) return this.modeCache;
 		this.modeCache = worldObj.isBlockIndirectlyGettingPowered(xCoord, yCoord, zCoord) ? this.redHigh : this.redLow;

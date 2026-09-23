@@ -94,8 +94,8 @@ public class TileEntityCondenserPowered extends TileEntityCondenser implements I
 
 	@Override
 	public void postConvert(int convert) {
-		this.power -= convert * powerConsumption;
-		if(this.power < 0) this.power = 0;
+		this.setPower(this.power - convert * powerConsumption);
+		if(this.power < 0) this.setPower(0);
 	}
 
 	@Override
@@ -184,7 +184,9 @@ public class TileEntityCondenserPowered extends TileEntityCondenser implements I
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

@@ -57,10 +57,10 @@ public class TileEntityTesla extends TileEntityMachineBase implements IEnergyRec
 			this.targets.clear();
 
 			if(worldObj.getBlock(xCoord, yCoord - 1, zCoord) == ModBlocks.meteor_battery)
-				power = maxPower;
+				this.setPower(maxPower);
 
 			if(power >= 5000) {
-				power -= 5000;
+				this.setPower(this.power - 5000);
 
 				double dx = xCoord + 0.5;
 				double dy = yCoord + offset;
@@ -163,7 +163,9 @@ public class TileEntityTesla extends TileEntityMachineBase implements IEnergyRec
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

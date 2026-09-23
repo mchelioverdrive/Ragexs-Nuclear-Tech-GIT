@@ -108,7 +108,7 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 
 			/// START Managing all the internal stuff ///
 
-			power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
 
 			tanks[0].setType(1, 2, slots);
 			tanks[1].setType(3, 4, slots);
@@ -202,7 +202,7 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 			int charge = (int) Math.min(power, STARTUP_POWER_REQUIRED - startupCharge);
 
 			startupCharge += charge;
-			power -= charge;
+			this.setPower(this.power - charge);
 
 			return;
 		}
@@ -232,7 +232,7 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 
 		plasma.setFill(plasma.getFill() + convert);
 
-		power -= convert * OPERATING_POWER_PER_PACKET;
+		this.setPower(this.power - convert * OPERATING_POWER_PER_PACKET);
 
 		plasmaAge = 0;
 
@@ -248,7 +248,7 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 
 		if(power >= CONTAINMENT_POWER_PER_TICK) {
 
-			power -= CONTAINMENT_POWER_PER_TICK;
+			this.setPower(this.power - CONTAINMENT_POWER_PER_TICK);
 			plasmaAge++;
 
 			if(plasmaAge > MAX_PLASMA_AGE) {
@@ -533,7 +533,9 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

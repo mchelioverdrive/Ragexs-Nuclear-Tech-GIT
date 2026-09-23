@@ -78,7 +78,7 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 
 		if(!worldObj.isRemote) {
 
-			this.power = Library.chargeTEFromItems(slots, 7, this.getPower(), this.getMaxPower());
+			this.setPower(Library.chargeTEFromItems(slots, 7, this.getPower(), this.getMaxPower()));
 			this.tank.setType(8, slots);
 
 			if(worldObj.getTotalWorldTime() % 20 == 0) {
@@ -102,7 +102,7 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 
 				if(canProcess(recipe)) {
 					this.progress++;
-					this.power -= this.consumption;
+					this.setPower(this.power - this.consumption);
 
 					if(progress >= processTime) {
 						this.progress = 0;
@@ -295,7 +295,9 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

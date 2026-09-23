@@ -229,7 +229,7 @@ public abstract class TileEntityTurretBaseNT extends TileEntityMachineBase imple
 				this.updateFiringTick();
 			}
 
-			this.power = Library.chargeTEFromItems(slots, 10, this.power, this.getMaxPower());
+			this.setPower(Library.chargeTEFromItems(slots, 10, this.power, this.getMaxPower()));
 
 			NBTTagCompound data = this.writePacket();
 			this.networkPack(data, 250);
@@ -841,7 +841,9 @@ public abstract class TileEntityTurretBaseNT extends TileEntityMachineBase imple
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

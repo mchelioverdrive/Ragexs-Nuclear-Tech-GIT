@@ -107,13 +107,13 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 
 			if(toBurn > 0) {
 				tanks[1].setFill(tanks[1].getFill() - toBurn);
-				this.power += toBurn * 5;
+				this.setPower(this.power + toBurn * 5);
 
 				if(this.power > this.getMaxPower())
-					this.power = this.getMaxPower();
+					this.setPower(this.getMaxPower());
 			}
 
-			power = Library.chargeTEFromItems(slots, 0, power, this.getMaxPower());
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, this.getMaxPower()));
 
 			for(DirPos pos : getConPos()) {
 				if(tanks[0].getFill() > 0) this.sendFluid(tanks[0], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
@@ -122,7 +122,7 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 
 			if(this.power >= this.getPowerReqEff() && this.tanks[0].getFill() < this.tanks[0].getMaxFill() && this.tanks[1].getFill() < this.tanks[1].getMaxFill()) {
 
-				this.power -= this.getPowerReqEff();
+				this.setPower(this.power - this.getPowerReqEff());
 
 				if(worldObj.getTotalWorldTime() % getDelayEff() == 0) {
 					this.indicator = 0;
@@ -281,7 +281,9 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

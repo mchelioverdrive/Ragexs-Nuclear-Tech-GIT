@@ -33,9 +33,9 @@ public class TileEntityConverterHeRf extends TileEntityLoadedBase implements IEn
 		if (!worldObj.isRemote) {
 			
 			long rfCreated = Math.min(storage.getMaxEnergyStored() - storage.getEnergyStored(), power / heInput * rfOutput);
-			this.power -= rfCreated * heInput / rfOutput;
+			this.setPower(this.power - rfCreated * heInput / rfOutput);
 			this.storage.setEnergyStored((int) (storage.getEnergyStored() + rfCreated));
-			if(power > 0) this.power *= (1D - inputDecay);
+			if(power > 0) this.setPower((long) (this.power * (1D - inputDecay)));
 			if(rfCreated > 0) this.worldObj.markTileEntityChunkModified(this.xCoord, this.yCoord, this.zCoord, this);
 			
 			for (ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
@@ -63,7 +63,11 @@ public class TileEntityConverterHeRf extends TileEntityLoadedBase implements IEn
 	@Override public int getEnergyStored(ForgeDirection from) { return storage.getEnergyStored(); }
 	@Override public int getMaxEnergyStored(ForgeDirection from) { return storage.getMaxEnergyStored(); }
 
-	@Override public void setPower(long i) { power = i; }
+	@Override public void setPower(long i) {
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
+	}
 	@Override public long getPower() { return power; }
 	@Override public long getMaxPower() { return maxPower; }
 	@Override public ConnectionPriority getPriority() { return ConnectionPriority.LOW; }

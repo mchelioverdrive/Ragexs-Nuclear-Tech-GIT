@@ -247,7 +247,7 @@ public class TileEntityTurretHIMARS extends TileEntityTurretBaseArtillery implem
 				this.updateFiringTick();
 			}
 
-			this.power = Library.chargeTEFromItems(slots, 10, this.power, this.getMaxPower());
+			this.setPower(Library.chargeTEFromItems(slots, 10, this.power, this.getMaxPower()));
 
 			NBTTagCompound data = this.writePacket();
 			this.networkPack(data, 250);

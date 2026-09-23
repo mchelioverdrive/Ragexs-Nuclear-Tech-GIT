@@ -146,7 +146,7 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 
 		if(!worldObj.isRemote) {
 
-			this.power = Library.chargeTEFromItems(slots, 9, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 9, power, maxPower));
 
 			if(worldObj.getTotalWorldTime() % 20 == 0) {
 				for(DirPos pos : getConPos()) {
@@ -154,7 +154,7 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 				}
 			}
 
-			this.power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
 			this.jammed = false;
 			allocateTargets();
 
@@ -336,7 +336,7 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 
 		if(this.yCoord < radarAltitude) return;
 		if(this.power < consumption) return;
-		this.power -= consumption;
+		this.setPower(this.power - consumption);
 
 		int scan = this.getRange();
 
@@ -407,7 +407,9 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

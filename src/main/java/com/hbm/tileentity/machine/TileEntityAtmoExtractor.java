@@ -68,7 +68,7 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 
 			if(hasPower() && tank.getFill() + 100 <= tank.getMaxFill()) {
 				tank.setFill(tank.getFill() + 100);
-				power -= this.getMaxPower() / 100;
+				this.setPower(this.power - this.getMaxPower() / 100);
 
 				FT_Gaseous.capture(worldObj, tank.getTankType(), 100);
 			}
@@ -161,7 +161,9 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

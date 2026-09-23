@@ -227,7 +227,7 @@ public class CableDiode extends BlockContainer implements IEnergyConnectorBlock,
 				long toTransfer = Math.min(power, this.getReceiverSpeed());
 				long remainder = node.net.sendPowerDiode(toTransfer);
 				long transferred = (toTransfer - remainder);
-				this.power += transferred;
+				this.setPower(this.power + transferred);
 				power -= transferred;
 				
 			} else if(te instanceof IEnergyReceiverMK2 && te != this) {
@@ -262,7 +262,9 @@ public class CableDiode extends BlockContainer implements IEnergyConnectorBlock,
 		
 		@Override
 		public void setPower(long power) {
+			if(this.power == power) return;
 			this.power = power;
+			this.markPowerNetDirty();
 		}
 
 		@Override

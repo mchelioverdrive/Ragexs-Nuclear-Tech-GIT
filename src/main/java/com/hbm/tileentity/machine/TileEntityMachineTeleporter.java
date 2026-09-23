@@ -170,7 +170,7 @@ public class TileEntityMachineTeleporter extends TileEntityLoadedBase implements
 		
 		worldObj.playSoundEffect(entity.posX, entity.posY, entity.posZ, "mob.endermen.portal", 1.0F, 1.0F);
 		
-		this.power -= consumption;
+		this.setPower(this.power - consumption);
 		this.markDirty();
 	}
 	
@@ -245,7 +245,9 @@ public class TileEntityMachineTeleporter extends TileEntityLoadedBase implements
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

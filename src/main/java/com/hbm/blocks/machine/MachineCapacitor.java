@@ -21,6 +21,7 @@ import com.hbm.util.fauxpointtwelve.BlockPos;
 
 import api.hbm.energymk2.IEnergyProviderMK2;
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.PowerNetMK2;
 import cpw.mods.fml.client.registry.RenderingRegistry;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import cpw.mods.fml.relauncher.Side;
@@ -166,6 +167,11 @@ public class MachineCapacitor extends BlockContainer implements ILookOverlay, IP
 		protected long maxPower;
 		public long powerReceived;
 		public long powerSent;
+		private int connectionMetadata = Integer.MIN_VALUE;
+		private int providerX;
+		private int providerY;
+		private int providerZ;
+		private ForgeDirection providerDirection = ForgeDirection.UNKNOWN;
 		
 		public TileEntityCapacitor() { }
 		
@@ -178,7 +184,8 @@ public class MachineCapacitor extends BlockContainer implements ILookOverlay, IP
 			
 			if(!worldObj.isRemote) {
 				
-				ForgeDirection opp = ForgeDirection.getOrientation(this.getBlockMetadata());
+				int metadata = this.getBlockMetadata();
+				ForgeDirection opp = ForgeDirection.getOrientation(metadata);
 				ForgeDirection dir = opp.getOpposite();
 				
 				BlockPos pos = new BlockPos(xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ);
@@ -197,6 +204,19 @@ public class MachineCapacitor extends BlockContainer implements ILookOverlay, IP
 					}
 					
 					pos = pos.offset(current);
+				}
+
+				int targetX = pos != null && last != null ? pos.getX() : 0;
+				int targetY = pos != null && last != null ? pos.getY() : 0;
+				int targetZ = pos != null && last != null ? pos.getZ() : 0;
+				ForgeDirection targetDirection = pos != null && last != null ? last : ForgeDirection.UNKNOWN;
+				if(this.connectionMetadata != metadata || this.providerX != targetX || this.providerY != targetY || this.providerZ != targetZ || this.providerDirection != targetDirection) {
+					PowerNetMK2.detachEndpoint(this);
+					this.connectionMetadata = metadata;
+					this.providerX = targetX;
+					this.providerY = targetY;
+					this.providerZ = targetZ;
+					this.providerDirection = targetDirection;
 				}
 				
 				if(pos != null && last != null) {
@@ -274,7 +294,9 @@ public class MachineCapacitor extends BlockContainer implements ILookOverlay, IP
 
 		@Override
 		public void setPower(long power) {
+			if(this.power == power) return;
 			this.power = power;
+			this.markPowerNetDirty();
 		}
 		
 		@Override

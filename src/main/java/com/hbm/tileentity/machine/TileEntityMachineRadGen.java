@@ -85,7 +85,7 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 				if(processing[i] != null) {
 					
 					this.isOn = true;
-					this.power += production[i];
+					this.setPower(this.power + production[i]);
 					this.output += production[i];
 					progress[i]++;
 					
@@ -109,7 +109,7 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 			}
 			
 			if(this.power > maxPower)
-				this.power = maxPower;
+				this.setPower(maxPower);
 			
 			NBTTagCompound data = new NBTTagCompound();
 			data.setIntArray("progress", this.progress);
@@ -271,7 +271,9 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
+		this.markPowerNetDirty();
 	}
 	
 	@Override

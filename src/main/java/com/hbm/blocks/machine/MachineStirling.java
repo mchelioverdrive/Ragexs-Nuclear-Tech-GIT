@@ -83,7 +83,7 @@ public class MachineStirling extends BlockDummyable implements ILookOverlay, ITo
 			
 			if(!stirling.hasCog && player.getHeldItem() != null && player.getHeldItem().getItem() == ModItems.gear_large && player.getHeldItem().getItemDamage() == meta) {
 				player.getHeldItem().stackSize--;
-				stirling.hasCog = true;
+				stirling.setHasCog(true);
 				stirling.markDirty();
 				world.playSoundEffect(x + 0.5, y + 0.5, z + 0.5, "hbm:item.upgradePlug", 1.5F, 0.75F);
 				return true;
@@ -113,7 +113,7 @@ public class MachineStirling extends BlockDummyable implements ILookOverlay, ITo
 			TileEntity te = world.getTileEntity(x + dir.offsetX * o, y + dir.offsetY * o, z + dir.offsetZ * o);
 			
 			if(te instanceof TileEntityStirling) {
-				((TileEntityStirling) te).hasCog = false;
+				((TileEntityStirling) te).setHasCog(false);
 			}
 		}
 	}

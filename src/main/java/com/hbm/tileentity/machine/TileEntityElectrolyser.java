@@ -113,7 +113,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 
 		if(!worldObj.isRemote) {
 
-			this.power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
 			this.tanks[0].setType(3, 4, slots);
 			this.tanks[0].loadTank(5, 6, slots);
 			this.tanks[1].unloadTank(7, 8, slots);
@@ -140,7 +140,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 			for(int i = 0; i < getCycleCount(); i++) {
 				if (this.canProcessFluid()) {
 					this.progressFluid++;
-					this.power -= this.usageFluid;
+					this.setPower(this.power - this.usageFluid);
 
 					if (this.progressFluid >= this.getDurationFluid()) {
 						this.processFluids();
@@ -151,7 +151,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 
 				if (this.canProcessMetal()) {
 					this.progressOre++;
-					this.power -= this.usageOre;
+					this.setPower(this.power - this.usageOre);
 
 					if (this.progressOre >= this.getDurationMetal()) {
 						this.processMetal();
@@ -472,7 +472,9 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

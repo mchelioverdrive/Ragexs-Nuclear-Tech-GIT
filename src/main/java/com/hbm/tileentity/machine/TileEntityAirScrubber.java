@@ -102,7 +102,7 @@ public class TileEntityAirScrubber extends TileEntityMachineBase implements IFlu
 		if(!canOperate()) return;
 		int add = Math.min(tank.getMaxFill() - tank.getFill(), amount);
 		tank.setFill(tank.getFill() + add);
-		power -= add * 10;
+		this.setPower(this.power - add * 10);
 	}
 
 	@Override
@@ -150,7 +150,9 @@ public class TileEntityAirScrubber extends TileEntityMachineBase implements IFlu
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

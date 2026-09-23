@@ -130,7 +130,7 @@ public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineB
 
 		if (process >= processSpeed) {
 
-			power = 0;
+			this.setPower(0);
 			process = 0;
 
 			slots[0].stackSize--;
@@ -159,7 +159,7 @@ public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineB
 			
 			this.updateConnections();
 			
-			power = Library.chargeTEFromItems(slots, 3, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 3, power, maxPower));
 
 			if(canProcess()) {
 				process();
@@ -206,6 +206,7 @@ public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineB
 
 	@Override
 	public void onChunkUnload() {
+		super.onChunkUnload();
 
 		if(audio != null) {
 			audio.stopSound();
@@ -234,7 +235,9 @@ public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineB
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

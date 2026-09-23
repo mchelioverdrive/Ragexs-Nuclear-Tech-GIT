@@ -171,14 +171,14 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 				this.wasOn = true;
 				this.tank.setFill(this.tank.getFill() - amountToBurn);
 				this.output = (int) (burnValue * amountToBurn * (1 + Math.min(this.afterburner / 3D, 4)));
-				this.power += this.output;
+				this.setPower(this.power + this.output);
 				this.consumption = amountToBurn;
 				
 				if(worldObj.getTotalWorldTime() % 20 == 0) super.pollute(tank.getTankType(), FluidTrait.FluidReleaseType.BURN, amountToBurn * 5);;
 				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, Math.max(120, 700 / Math.max(amountToBurn, 1)));
 			}
 			
-			power = Library.chargeItemsFromTE(slots, 3, power, power);
+			this.setPower(Library.chargeItemsFromTE(slots, 3, power, power));
 			
 			for(DirPos pos : getConPos()) {
 				this.tryProvide(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
@@ -285,7 +285,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 			}
 			
 			if(this.power > this.maxPower) {
-				this.power = this.maxPower;
+				this.setPower(this.maxPower);
 			}
 			
 			NBTTagCompound data = new NBTTagCompound();
@@ -406,6 +406,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 
 	@Override
 	public void onChunkUnload() {
+		super.onChunkUnload();
 
 		if(audio != null) {
 			audio.stopSound();
@@ -436,7 +437,9 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
+		this.markPowerNetDirty();
 	}
 	
 	@Override

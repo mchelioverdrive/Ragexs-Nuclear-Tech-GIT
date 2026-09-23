@@ -176,7 +176,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 			
 			updateConnections();
 
-			power = Library.chargeTEFromItems(slots, 4, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 4, power, maxPower));
 			setTankType(5);
 			
 			if(GasCentrifugeRecipes.fluidConversions.containsValue(inputTank.getTankType())) {
@@ -189,12 +189,12 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 				this.progress++;
 				
 				if(slots[6] != null && slots[6].getItem() == ModItems.upgrade_gc_speed)
-					this.power -= 300;
+					this.setPower(this.power - 300);
 				else
-					this.power -= 200;
+					this.setPower(this.power - 200);
 				
 				if(this.power < 0) {
-					power = 0;
+					this.setPower(0);
 					this.progress = 0;
 				}
 				
@@ -282,7 +282,9 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

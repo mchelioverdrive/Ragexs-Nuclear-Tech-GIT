@@ -144,7 +144,7 @@ public class MachineICFController extends BlockContainer implements ILookOverlay
 			controller.setup(ports, cells, emitters, capacitors, turbochargers);
 			controller.markDirty();
 		}
-		controller.assembled = !errored;
+		controller.setAssembled(!errored);
 		
 		assembly.clear();
 		casings.clear();

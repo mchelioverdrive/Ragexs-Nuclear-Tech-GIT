@@ -46,8 +46,10 @@ public class TileEntityHadronPower extends TileEntityLoadedBase implements IEner
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
 		this.worldObj.markTileEntityChunkModified(this.xCoord, this.yCoord, this.zCoord, this);
+		this.markPowerNetDirty();
 	}
 
 	@Override

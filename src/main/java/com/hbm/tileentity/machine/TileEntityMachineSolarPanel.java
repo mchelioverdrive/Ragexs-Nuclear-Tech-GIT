@@ -27,10 +27,10 @@ public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements
 				tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 			}
 
-			power += getOutput();
+			this.setPower(this.power + getOutput());
 
 			if(power > maxpwr)
-				power = maxpwr;
+				this.setPower(maxpwr);
 		}
 	}
 
@@ -96,7 +96,9 @@ public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

@@ -315,7 +315,7 @@ public class TileEntityTurretArty extends TileEntityTurretBaseArtillery implemen
 				this.updateFiringTick();
 			}
 			
-			this.power = Library.chargeTEFromItems(slots, 10, this.power, this.getMaxPower());
+			this.setPower(Library.chargeTEFromItems(slots, 10, this.power, this.getMaxPower()));
 			
 			NBTTagCompound data = this.writePacket();
 			this.networkPack(data, 250);

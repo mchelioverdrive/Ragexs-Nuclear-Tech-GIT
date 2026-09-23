@@ -62,7 +62,9 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override
@@ -92,7 +94,7 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 		if(!worldObj.isRemote) {
 			
 			this.updateConnections();
-			power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
 			tanks[0].loadTank(1, 2, slots);
 			
 			refine();
@@ -135,7 +137,7 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 		if(tanks[2].getFill() + 35 > tanks[2].getMaxFill()) return;
 		if(tanks[3].getFill() + 15 > tanks[3].getMaxFill()) return;
 
-		power -= 10_000;
+		this.setPower(this.power - 10_000);
 		tanks[0].setFill(tanks[0].getFill() - 100);
 		tanks[1].setFill(tanks[1].getFill() + 50);
 		tanks[2].setFill(tanks[2].getFill() + 35);

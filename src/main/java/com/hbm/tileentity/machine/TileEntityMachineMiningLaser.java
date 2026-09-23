@@ -97,7 +97,7 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 			this.sendFluid(tank, worldObj, xCoord, yCoord + 2, zCoord, Library.POS_Z);
 			this.sendFluid(tank, worldObj, xCoord, yCoord - 2, zCoord, Library.NEG_Z);
 			
-			power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
 			
 			//reset progress if the position changes
 			if(lastTargetX != targetX ||
@@ -130,7 +130,7 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 						break;
 					}
 					
-					power -= consumption;
+					this.setPower(this.power - consumption);
 					
 					if(targetY <= 0)
 						targetY = yCoord - 2;
@@ -607,7 +607,9 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

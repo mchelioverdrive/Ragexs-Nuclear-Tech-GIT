@@ -33,6 +33,7 @@ public class TileEntityICFController extends TileEntityTickingBase implements IE
 	public boolean assembled;
 	
 	public void setup(HashSet<BlockPos> ports, HashSet<BlockPos> cells, HashSet<BlockPos> emitters, HashSet<BlockPos> capacitors, HashSet<BlockPos> turbochargers) {
+		long previousCapacity = this.getMaxPower();
 
 		this.cellCount = 0;
 		this.emitterCount = 0;
@@ -76,6 +77,13 @@ public class TileEntityICFController extends TileEntityTickingBase implements IE
 		}
 		
 		this.ports.addAll(ports);
+		if(this.getMaxPower() != previousCapacity) this.markPowerNetDirty();
+	}
+
+	public void setAssembled(boolean assembled) {
+		if(this.assembled == assembled) return;
+		this.assembled = assembled;
+		this.markPowerNetDirty();
 	}
 
 	@Override
@@ -220,12 +228,19 @@ public class TileEntityICFController extends TileEntityTickingBase implements IE
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override
 	public long getMaxPower() {
 		return (long) (Math.sqrt(capacitorCount) * 2_500_000 + Math.sqrt(Math.min(turbochargerCount, capacitorCount)) * 5_000_000);
+	}
+
+	@Override
+	public long getReceiverSpeed() {
+		return this.assembled ? this.getMaxPower() : 0;
 	}
 	
 	AxisAlignedBB bb = null;

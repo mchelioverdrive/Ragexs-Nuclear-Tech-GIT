@@ -80,7 +80,7 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 			tanks[0].loadTank(4, 5, slots);
 			tanks[1].loadTank(6, 7, slots);
 
-			power = Library.chargeTEFromItems(slots, 8, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 8, power, maxPower));
 
 			if(!starting || !canLaunch()) {
 				countdown = maxCount;
@@ -173,6 +173,7 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 
 	@Override
 	public void onChunkUnload() {
+		super.onChunkUnload();
 
 		if(audio != null) {
 			audio.stopSound();
@@ -224,7 +225,7 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 
 		tanks[0].setFill(tanks[0].getFill() - req);
 		tanks[1].setFill(tanks[1].getFill() - req);
-		power -= pow;
+		this.setPower(this.power - pow);
 
 		if(mode == 0) {
 			soyuz.setSat(slots[2]);
@@ -414,7 +415,9 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

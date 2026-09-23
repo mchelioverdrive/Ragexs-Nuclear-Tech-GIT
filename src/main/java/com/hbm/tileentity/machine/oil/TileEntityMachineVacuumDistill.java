@@ -63,7 +63,7 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 			this.isOn = false;
 			
 			this.updateConnections();
-			power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
 			tanks[0].setType(11, slots);
 			tanks[0].loadTank(1, 2, slots);
 			
@@ -122,6 +122,7 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 
 	@Override
 	public void onChunkUnload() {
+		super.onChunkUnload();
 
 		if(audio != null) {
 			audio.stopSound();
@@ -164,7 +165,7 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 		for(int i = 0; i < stacks.length; i++) if(tanks[i + 1].getFill() + stacks[i].fill > tanks[i + 1].getMaxFill()) return;
 
 		this.isOn = true;
-		power -= 10_000;
+		this.setPower(this.power - 10_000);
 		tanks[0].setFill(tanks[0].getFill() - 100);
 		
 		for(int i = 0; i < stacks.length; i++) tanks[i + 1].setFill(tanks[i + 1].getFill() + stacks[i].fill);
@@ -246,7 +247,9 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

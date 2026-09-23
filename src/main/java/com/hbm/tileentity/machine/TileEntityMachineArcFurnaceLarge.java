@@ -107,7 +107,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		
 		if(!worldObj.isRemote) {
 			
-			this.power = Library.chargeTEFromItems(slots, 3, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 3, power, maxPower));
 			this.isProgressing = false;
 			
 			for(DirPos pos : getConPos()) this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
@@ -130,7 +130,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 							int duration = 400 / (upgrade * 2 + 1);
 							this.progress += 1F / duration;
 							this.isProgressing = true;
-							this.power -= consumption;
+							this.setPower(this.power - consumption);
 							FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1000);
 							if(this.progress >= 1F) {
 								this.process();
@@ -512,7 +512,9 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

@@ -21,7 +21,7 @@ public class TileEntityMachineDetector extends TileEntityLoadedBase implements I
 			
 			if(power > 0) {
 				state = 1;
-				power--;
+				this.setPower(this.power - 1);
 			}
 			
 			if(meta != state) {
@@ -39,7 +39,9 @@ public class TileEntityMachineDetector extends TileEntityLoadedBase implements I
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

@@ -2,6 +2,8 @@ package com.hbm.tileentity;
 
 import com.hbm.sound.AudioWrapper;
 
+import api.hbm.energymk2.IEnergyHandlerMK2;
+import api.hbm.energymk2.PowerNetMK2;
 import api.hbm.tile.ILoadedTile;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -18,8 +20,15 @@ public class TileEntityLoadedBase extends TileEntity implements ILoadedTile {
 
 	@Override
 	public void onChunkUnload() {
+		if(this.worldObj != null && !this.worldObj.isRemote && this instanceof IEnergyHandlerMK2) PowerNetMK2.detachEndpoint((IEnergyHandlerMK2) this);
 		super.onChunkUnload();
 		this.isLoaded = false;
+	}
+
+	@Override
+	public void invalidate() {
+		if(this.worldObj != null && !this.worldObj.isRemote && this instanceof IEnergyHandlerMK2) PowerNetMK2.detachEndpoint((IEnergyHandlerMK2) this);
+		super.invalidate();
 	}
 	
 	public AudioWrapper createAudioLoop() { return null; }

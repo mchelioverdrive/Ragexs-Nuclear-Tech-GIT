@@ -19,10 +19,10 @@ public class TileEntityMachineMiniRTG extends TileEntityLoadedBase implements IE
 		
 		if(!worldObj.isRemote) {
 
-			power += this.getOutput();
+			this.setPower(this.power + this.getOutput());
 			
 			if(power > getMaxPower())
-				power = getMaxPower();
+				this.setPower(getMaxPower());
 
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
 				this.tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
@@ -48,7 +48,9 @@ public class TileEntityMachineMiniRTG extends TileEntityLoadedBase implements IE
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 

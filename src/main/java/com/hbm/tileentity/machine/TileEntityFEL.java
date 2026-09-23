@@ -74,7 +74,7 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 			
 			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 			this.trySubscribe(worldObj, xCoord + dir.offsetX * -5, yCoord + 1, zCoord + dir.offsetZ  * -5, dir.getOpposite());
-			this.power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
 			
 			if(this.isOn && !(this.slots[1] == null)) {
 				
@@ -93,7 +93,7 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 			int req = (int) (powerReq * ((mode.ordinal() == 0) ? 0 : Math.pow(3, mode.ordinal())));
 			
 			if(this.isOn && this.mode != EnumWavelengths.NULL && power < req) {
-				this.power = 0;
+				this.setPower(0);
 			}
 			
 			if(this.isOn && power >= req && this.mode != EnumWavelengths.NULL) {
@@ -118,7 +118,7 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 					}
 				}
 				
-				power -= req;
+				this.setPower(this.power - req);
 				for(int i = 3; i < range; i++) {
 				
 					int x = xCoord + dir.offsetX * i;
@@ -292,7 +292,9 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

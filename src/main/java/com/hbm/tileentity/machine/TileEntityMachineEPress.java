@@ -65,13 +65,13 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 		if(!worldObj.isRemote) {
 			
 			this.updateConnections();
-			power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
 			
 			boolean canProcess = this.canProcess();
 			
 			if((canProcess || this.isRetracting || this.delay > 0) && power >= 100) {
 				
-				power -= 100;
+				this.setPower(this.power - 100);
 				
 				if(delay <= 0) {
 					
@@ -226,8 +226,9 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 
 	@Override
 	public void setPower(long i) {
-		power = i;
-		
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

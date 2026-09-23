@@ -278,7 +278,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 
 			tanks[0].setType(0, 1, slots);
 			tanks[0].loadTank(2, 3, slots);
-			power = Library.chargeItemsFromTE(slots, 4, power, maxPower);
+			this.setPower(Library.chargeItemsFromTE(slots, 4, power, maxPower));
 			
 			FluidType in = tanks[0].getTankType();
 			boolean valid = false;
@@ -294,7 +294,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 					int ops = Math.min(inputOps, Math.min(outputOps, Math.min(cap, powerOps)));
 					tanks[0].setFill(tanks[0].getFill() - ops * trait.amountReq);
 					tanks[1].setFill(tanks[1].getFill() + ops * trait.amountProduced);
-					this.power += (ops * trait.heatEnergy * eff);
+					this.setPower(this.power + (long) (ops * trait.heatEnergy * eff));
 					info[0] = ops * trait.amountReq;
 					info[1] = ops * trait.amountProduced;
 					info[2] = ops * trait.heatEnergy * eff;
@@ -302,7 +302,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 				}
 			}
 			if(!valid) tanks[1].setTankType(Fluids.NONE);
-			if(power > maxPower) power = maxPower;
+			if(power > maxPower) this.setPower(maxPower);
 			
 			this.sendFluidToAll(tanks[1], this);
 			
@@ -359,7 +359,9 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

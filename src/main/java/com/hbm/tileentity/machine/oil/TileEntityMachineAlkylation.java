@@ -93,7 +93,7 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 		tanks[2].setFill(tanks[2].getFill() + out.getY().fill);
 		tanks[3].setFill(tanks[3].getFill() + out.getZ().fill);
 		
-		power -= 4_000;
+		this.setPower(this.power - 4_000);
 	}
 	
 	private void updateConnections() {
@@ -164,7 +164,11 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 	}
 
 	@Override public long getPower() { return power; }
-	@Override public void setPower(long power) { this.power = power; }
+	@Override public void setPower(long power) {
+		if(this.power == power) return;
+		this.power = power;
+		this.markPowerNetDirty();
+	}
 	@Override public long getMaxPower() { return maxPower; }
 	@Override public FluidTank[] getAllTanks() { return tanks; }
 	@Override public FluidTank[] getSendingTanks() { return new FluidTank[] {tanks[2], tanks[3]}; }

@@ -74,13 +74,13 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 
 			this.updateConnections();
 
-			this.power = Library.chargeTEFromItems(slots, 9, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 9, power, maxPower));
 
 			this.upgradeManager.checkSlots(slots, 10, 11);
 
 			if(canProcess()) {
 				progress += getSpeed();
-				power -= getConsumption();
+				this.setPower(this.power - getConsumption());
 
 				int convert = getCoolantConsumption();
 				tanks[0].setFill(tanks[0].getFill() - convert);
@@ -319,7 +319,9 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

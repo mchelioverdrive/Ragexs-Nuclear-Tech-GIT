@@ -177,7 +177,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 				cooldown--;
 			}
 
-			power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
 
 			if(worldObj.getTotalWorldTime() % 40 == 0) this.updateConnections();
 
@@ -201,7 +201,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 			if(hasPower() && canProcess()) {
 				progress++;
 
-				power -= consumption;
+				this.setPower(this.power - consumption);
 
 				if(worldObj.getTotalWorldTime() % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND);
 
@@ -265,8 +265,10 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 
 	@Override
 	public void setPower(long i) {
-		if(this.power != i) this.markNetworkDirty();
-		power = i;
+		if(this.power == i) return;
+		this.markNetworkDirty();
+		this.power = i;
+		this.markPowerNetDirty();
 
 	}
 

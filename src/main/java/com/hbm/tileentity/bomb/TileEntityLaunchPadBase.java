@@ -163,7 +163,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 
 			this.prevRedstonePower = this.redstonePower;
 
-			this.power = Library.chargeTEFromItems(slots, 2, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 2, power, maxPower));
 			tanks[0].loadTank(3, 4, slots);
 			tanks[1].loadTank(5, 6, slots);
 
@@ -273,7 +273,11 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 	}
 
 	@Override public long getPower() { return power; }
-	@Override public void setPower(long power) { this.power = power; }
+	@Override public void setPower(long power) {
+		if(this.power == power) return;
+		this.power = power;
+		this.markPowerNetDirty();
+	}
 	@Override public long getMaxPower() { return maxPower; }
 	@Override public FluidTank[] getAllTanks() { return this.tanks; }
 	@Override public FluidTank[] getReceivingTanks() { return this.tanks; }
@@ -374,7 +378,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 		TrackerUtil.setTrackingRange(worldObj, missile, 500);
 		worldObj.playSoundEffect(xCoord + 0.5, yCoord, zCoord + 0.5, "hbm:weapon.missileTakeOff", 2.0F, 1.0F);
 
-		this.power -= 75_000;
+		this.setPower(this.power - 75_000);
 
 		if(slots[0] != null && slots[0].getItem() instanceof ItemMissile) {
 			ItemMissile item = (ItemMissile) slots[0].getItem();

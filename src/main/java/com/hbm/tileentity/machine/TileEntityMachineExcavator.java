@@ -129,7 +129,7 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 
 			if(chuteTimer > 0) chuteTimer--;
 
-			this.power = Library.chargeTEFromItems(slots, 0, this.getPower(), this.getMaxPower());
+			this.setPower(Library.chargeTEFromItems(slots, 0, this.getPower(), this.getMaxPower()));
 			this.operational = false;
 			int radiusLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
 
@@ -137,7 +137,7 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 			if(this.enableDrill && type != null && this.power >= this.getPowerConsumption()) {
 
 				operational = true;
-				this.power -= this.getPowerConsumption();
+				this.setPower(this.power - this.getPowerConsumption());
 
 				this.speed = type.speed;
 				this.speed *= (1 + speedLevel / 2D);
@@ -965,7 +965,9 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

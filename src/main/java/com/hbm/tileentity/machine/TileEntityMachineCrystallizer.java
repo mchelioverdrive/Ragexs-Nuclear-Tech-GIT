@@ -74,7 +74,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 			
 			this.updateConnections();
 			
-			power = Library.chargeTEFromItems(slots, 1, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 1, power, maxPower));
 			tank.setType(7, slots);
 			tank.loadTank(3, 4, slots);
 			
@@ -85,7 +85,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 				if(canProcess()) {
 					
 					progress++;
-					power -= getPowerRequired();
+					this.setPower(this.power - getPowerRequired());
 					isOn = true;
 					
 					if(progress > getDuration()) {
@@ -273,7 +273,9 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

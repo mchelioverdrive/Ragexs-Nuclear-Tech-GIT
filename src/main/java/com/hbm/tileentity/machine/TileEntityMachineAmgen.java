@@ -31,9 +31,9 @@ public class TileEntityMachineAmgen extends TileEntityLoadedBase implements IEne
 				this.checkGeoInteraction(xCoord, yCoord - 1, zCoord);
 			}
 			
-			this.power += this.output;
+			this.setPower(this.power + this.output);
 			if(power > maxPower)
-				power = maxPower;
+				this.setPower(maxPower);
 			
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
 				this.tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
@@ -74,7 +74,9 @@ public class TileEntityMachineAmgen extends TileEntityLoadedBase implements IEne
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

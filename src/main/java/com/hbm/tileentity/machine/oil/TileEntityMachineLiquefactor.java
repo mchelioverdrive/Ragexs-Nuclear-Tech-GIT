@@ -62,7 +62,7 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 	public void updateEntity() {
 		
 		if(!worldObj.isRemote) {
-			this.power = Library.chargeTEFromItems(slots, 1, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 1, power, maxPower));
 			
 			this.updateConnections();
 
@@ -139,7 +139,7 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 	
 	public void process() {
 		
-		this.power -= usage;
+		this.setPower(this.power - usage);
 		
 		progress++;
 		
@@ -181,7 +181,9 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

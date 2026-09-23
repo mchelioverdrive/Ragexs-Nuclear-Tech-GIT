@@ -4,7 +4,6 @@ import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
 import com.hbm.util.Compat;
 
-import api.hbm.energymk2.Nodespace.PowerNode;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -28,20 +27,7 @@ public interface IEnergyProviderMK2 extends IEnergyHandlerMK2 {
 	public default void tryProvide(World world, int x, int y, int z, ForgeDirection dir) {
 
 		TileEntity te = Compat.getTileStandard(world, x, y, z);
-		boolean red = false;
-		
-		if(te instanceof IEnergyConductorMK2) {
-			IEnergyConductorMK2 con = (IEnergyConductorMK2) te;
-			if(con.canConnect(dir.getOpposite())) {
-				
-				PowerNode node = Nodespace.getNode(world, x, y, z);
-				
-				if(node != null && node.net != null) {
-					node.net.addProvider(this);
-					red = true;
-				}
-			}
-		}
+		boolean red = PowerNetEndpointRegistry.attachProvider(this, world, x, y, z, dir);
 		
 		if(te instanceof IEnergyReceiverMK2 && te != this) {
 			IEnergyReceiverMK2 rec = (IEnergyReceiverMK2) te;

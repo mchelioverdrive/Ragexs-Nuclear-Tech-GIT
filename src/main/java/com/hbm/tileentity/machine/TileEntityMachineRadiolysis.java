@@ -112,13 +112,13 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 	public void updateEntity() {
 
 		if(!worldObj.isRemote) {
-			power = Library.chargeItemsFromTE(slots, 14, power, maxPower);
+			this.setPower(Library.chargeItemsFromTE(slots, 14, power, maxPower));
 
 			heat = RTGUtil.updateRTGs(slots, slot_rtg);
-			power += heat * 10;
+			this.setPower(this.power + heat * 10);
 
 			if(power > maxPower)
-				power = maxPower;
+				this.setPower(maxPower);
 
 			tanks[0].setType(10, 11, slots);
 			setupTanks();
@@ -238,7 +238,9 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 	/* Power methods */
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

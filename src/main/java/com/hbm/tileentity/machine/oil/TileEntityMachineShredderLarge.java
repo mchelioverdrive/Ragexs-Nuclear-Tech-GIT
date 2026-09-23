@@ -58,7 +58,7 @@ public class TileEntityMachineShredderLarge extends TileEntityMachineBase implem
 	public void updateEntity() {
 		
 		if(!worldObj.isRemote) {
-			this.power = Library.chargeTEFromItems(slots, 1, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 1, power, maxPower));
 			
 			this.updateConnections();
 
@@ -144,7 +144,7 @@ public class TileEntityMachineShredderLarge extends TileEntityMachineBase implem
 	
 	public void process() {
 		
-		this.power -= usage;
+		this.setPower(this.power - usage);
 		
 		progress++;
 		
@@ -184,7 +184,9 @@ public class TileEntityMachineShredderLarge extends TileEntityMachineBase implem
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 	
 	public long getPowerScaled(long i) {

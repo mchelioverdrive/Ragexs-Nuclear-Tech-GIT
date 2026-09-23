@@ -259,7 +259,7 @@ public class TileEntityTurretMaxwell extends TileEntityTurretBaseNT implements I
 					worldObj.playSoundEffect(this.target.posX, this.target.posY, this.target.posZ, "mob.zombie.woodbreak", 2.0F, 0.95F + worldObj.rand.nextFloat() * 0.2F);
 			}
 
-			this.power -= demand;
+			this.setPower(this.power - demand);
 
 			NBTTagCompound data = new NBTTagCompound();
 			data.setBoolean("shot", true);

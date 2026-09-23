@@ -40,7 +40,7 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 				
 				tanks[0].setFill(tanks[0].getFill() - convert * 50); //dividing first, then multiplying, will remove any rounding issues
 				tanks[1].setFill(tanks[1].getFill() + convert);
-				power -= this.getMaxPower() / 100;
+				this.setPower(this.power - this.getMaxPower() / 100);
 			}
 			
 			this.subscribeToAllAround(tanks[0].getTankType(), this);
@@ -95,7 +95,9 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

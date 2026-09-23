@@ -148,7 +148,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 				powerCap = maxPower;
 			
 			// Battery Item
-			power = Library.chargeItemsFromTE(slots, 2, power, powerCap);
+			this.setPower(Library.chargeItemsFromTE(slots, 2, power, powerCap));
 
 			generate();
 
@@ -216,9 +216,9 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 900);
 
 				if(power + getHEFromFuel() <= powerCap) {
-					power += getHEFromFuel();
+					this.setPower(this.power + getHEFromFuel());
 				} else {
-					power = powerCap;
+					this.setPower(powerCap);
 				}
 			}
 		}
@@ -231,7 +231,9 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

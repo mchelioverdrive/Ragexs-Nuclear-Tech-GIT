@@ -10,6 +10,7 @@ import com.hbm.render.block.ct.IBlockCT;
 import com.hbm.tileentity.machine.TileEntityICFController;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.PowerNetMK2;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
@@ -84,7 +85,7 @@ public class BlockICF extends BlockContainer implements IBlockCT {
 				TileEntity controller = world.getTileEntity(icf.coreX, icf.coreY, icf.coreZ);
 				
 				if(controller instanceof TileEntityICFController) {
-					((TileEntityICFController) controller).assembled = false;
+					((TileEntityICFController) controller).setAssembled(false);
 				}
 			}
 		} else {
@@ -209,8 +210,15 @@ public class BlockICF extends BlockContainer implements IBlockCT {
 
 		@Override
 		public void onChunkUnload() {
+			if(!this.worldObj.isRemote) PowerNetMK2.detachEndpoint(this);
 			super.onChunkUnload();
 			this.isLoaded = false;
+		}
+
+		@Override
+		public void invalidate() {
+			if(this.worldObj != null && !this.worldObj.isRemote) PowerNetMK2.detachEndpoint(this);
+			super.invalidate();
 		}
 		
 		@Override

@@ -30,7 +30,7 @@ public class TileEntityConverterRfHe extends TileEntityLoadedBase implements IEn
 			
 			long rfCreated = Math.min(storage.getEnergyStored(), (maxPower - power) * rfInput / heOutput);
 			storage.setEnergyStored((int) (storage.getEnergyStored() - rfCreated));
-			power += rfCreated * heOutput / rfInput;
+			this.setPower(this.power + rfCreated * heOutput / rfInput);
 			if(storage.getEnergyStored() > 0) storage.extractEnergy((int) Math.ceil(storage.getEnergyStored() * inputDecay), false);
 			if(rfCreated > 0) this.worldObj.markTileEntityChunkModified(this.xCoord, this.yCoord, this.zCoord, this);
 			
@@ -47,7 +47,11 @@ public class TileEntityConverterRfHe extends TileEntityLoadedBase implements IEn
 	@Override public int extractEnergy(ForgeDirection from, int maxExtract, boolean simulate) { return 0; }
 
 	@Override public long getPower() { return power; }
-	@Override public void setPower(long power) { this.power = power; }
+	@Override public void setPower(long power) {
+		if(this.power == power) return;
+		this.power = power;
+		this.markPowerNetDirty();
+	}
 	@Override public long getMaxPower() { return maxPower; }
 	
 	@Override

@@ -13,6 +13,10 @@ public interface IEnergyHandlerMK2 extends IEnergyConnectorMK2, ILoadedTile {
 	public long getPower();
 	public void setPower(long power);
 	public long getMaxPower();
+
+	public default void markPowerNetDirty() {
+		PowerNetMK2.markEndpointStateDirty(this);
+	}
 	
 	public static final boolean particleDebug = false;
 	

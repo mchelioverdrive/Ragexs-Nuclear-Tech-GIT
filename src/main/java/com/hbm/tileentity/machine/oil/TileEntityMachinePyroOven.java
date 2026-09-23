@@ -84,7 +84,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 
 		if(!worldObj.isRemote) {
 
-			this.power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
 			tanks[0].setType(3, slots);
 
 			for(DirPos pos : getConPos()) {
@@ -109,7 +109,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 				PyroOvenRecipe recipe = getMatchingRecipe();
 				this.progress += 1F / Math.max((recipe.duration - speed * (recipe.duration / 4)) / (overdrive * 2 + 1), 1);
 				this.isProgressing = true;
-				this.power -= this.getConsumption(speed + overdrive * 2, powerSaving);
+				this.setPower(this.power - this.getConsumption(speed + overdrive * 2, powerSaving));
 
 				if(progress >= 1F) {
 					this.progress = 0F;
@@ -325,6 +325,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 	}
 
 	@Override public void onChunkUnload() {
+		super.onChunkUnload();
 		if(audio != null) { audio.stopSound(); audio = null; }
 	}
 
@@ -348,7 +349,11 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 	}
 
 	@Override public long getPower() { return power; }
-	@Override public void setPower(long power) { this.power = power; }
+	@Override public void setPower(long power) {
+		if(this.power == power) return;
+		this.power = power;
+		this.markPowerNetDirty();
+	}
 	@Override public long getMaxPower() { return maxPower; }
 
 	@Override public FluidTank[] getAllTanks() { return new FluidTank[] { tanks[0], tanks[1], smoke }; }

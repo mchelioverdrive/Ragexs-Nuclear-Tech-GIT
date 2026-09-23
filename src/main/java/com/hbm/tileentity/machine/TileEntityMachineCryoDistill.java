@@ -55,7 +55,7 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 	public void updateEntity() {
 		
 		if(!worldObj.isRemote) {
-			power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
 			tanks[0].setType(7, slots);
 
 			DirPos[] con = getConPos();
@@ -129,7 +129,7 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 		tanks[4].setFill(tanks[4].getFill() + out.getZ().fill);
 
 		
-		power -= 20_000;
+		this.setPower(this.power - 20_000);
 	}
 	
 	public DirPos[] getConPos() {
@@ -206,7 +206,9 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

@@ -74,7 +74,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 
 		if(!worldObj.isRemote) {
 
-			this.powerBuffer = 0;
+			this.setPower(0);
 
 			tanks[0].setTankType(Fluids.STEAM);
 			tanks[1].setTankType(Fluids.SPENTSTEAM);
@@ -90,7 +90,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 			int ops = Math.min(inputOps, outputOps);
 			tanks[0].setFill(tanks[0].getFill() - ops * trait.amountReq);
 			tanks[1].setFill(tanks[1].getFill() + ops * trait.amountProduced);
-			this.powerBuffer += (ops * trait.heatEnergy * eff);
+			this.setPower(this.powerBuffer + (long) (ops * trait.heatEnergy * eff));
 
 			if(ops > 0) {
 				//FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1200);
@@ -192,7 +192,9 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 
 	@Override
 	public void setPower(long power) {
+		if(this.powerBuffer == power) return;
 		this.powerBuffer = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

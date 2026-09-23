@@ -300,7 +300,7 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 
 			this.powerCons = baseCon + rStack * radCon + hStack * shCon;
 
-			power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
 
 			if(blink > 0) {
 				blink--;
@@ -324,7 +324,7 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 			doField(radius);
 
 			if(!worldObj.isRemote) {
-				power -= powerCons;
+				this.setPower(this.power - powerCons);
 			}
 		} else {
 			this.outside.clear();
@@ -333,7 +333,7 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 
 		if(!worldObj.isRemote) {
 			if(power < powerCons)
-				power = 0;
+				this.setPower(0);
 		}
 
 		if(!worldObj.isRemote) {
@@ -484,7 +484,9 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

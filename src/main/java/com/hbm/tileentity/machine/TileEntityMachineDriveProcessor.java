@@ -47,7 +47,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 	public void updateEntity() {
 		if(!worldObj.isRemote) {
 
-			power = Library.chargeTEFromItems(slots, 3, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 3, power, maxPower));
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
 				trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 
@@ -67,7 +67,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 			}
 
 			if(isProcessing) {
-				power -= 200;
+				this.setPower(this.power - 200);
 
 				status = EnumChatFormatting.GREEN + "" + EnumChatFormatting.ITALIC + "Processing  ";
 				progress++;
@@ -235,7 +235,11 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 	}
 
 	@Override public long getPower() { return power; }
-	@Override public void setPower(long power) { this.power = power; }
+	@Override public void setPower(long power) {
+		if(this.power == power) return;
+		this.power = power;
+		this.markPowerNetDirty();
+	}
 	@Override public long getMaxPower() { return maxPower; }
 	
 }

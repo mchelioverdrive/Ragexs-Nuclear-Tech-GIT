@@ -56,7 +56,7 @@ public class TileEntityConveyorPress extends TileEntityMachineBase implements IE
 					
 					if(this.canRetract()) {
 						this.press -= speed;
-						this.power -= this.usage;
+						this.setPower(this.power - this.usage);
 						
 						if(press <= 0) {
 							press = 0;
@@ -69,7 +69,7 @@ public class TileEntityConveyorPress extends TileEntityMachineBase implements IE
 					
 					if(this.canExtend()) {
 						this.press += speed;
-						this.power -= this.usage;
+						this.setPower(this.power - this.usage);
 						
 						if(press >= 1) {
 							press = 1;
@@ -221,7 +221,9 @@ public class TileEntityConveyorPress extends TileEntityMachineBase implements IE
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

@@ -110,7 +110,7 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 				return;
 			}
 
-			this.power = Library.chargeTEFromItems(slots, 0, power, this.config.maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, this.config.maxPower));
 
 			if (this.inputTanks.length > 0) this.inputTanks[0].setType(1, slots);
 			if (this.inputTanks.length > 1) this.inputTanks[1].setType(2, slots);
@@ -178,9 +178,9 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 						int powerReq = (int) Math.max(cachedRecipe.consumptionPerTick * this.config.recipeConsumptionMult, 1);
 
 						this.progress++;
-						this.power += powerReq;
+						this.setPower(this.power + powerReq);
 						this.heat -= cachedRecipe.heat;
-						if (power > config.maxPower) power = config.maxPower;
+						if (power > config.maxPower) this.setPower(config.maxPower);
 						if (worldObj.getTotalWorldTime() % 20 == 0) {
 							pollution(cachedRecipe);
 							radiation(cachedRecipe);
@@ -201,7 +201,7 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 
 						if (this.power >= powerReq && this.hasRequiredQuantities(recipe) && this.hasSpace(recipe)) {
 							this.progress++;
-							this.power -= powerReq;
+							this.setPower(this.power - powerReq);
 							this.heat -= recipe.heat;
 							if (worldObj.getTotalWorldTime() % 20 == 0) {
 								pollution(recipe);
@@ -574,7 +574,9 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

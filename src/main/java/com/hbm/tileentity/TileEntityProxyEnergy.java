@@ -49,7 +49,9 @@ public class TileEntityProxyEnergy extends TileEntityProxyBase implements IEnerg
 	public long transferPower(long power) {
 		
 		if(getTE() instanceof IEnergyReceiverMK2) {
-			return ((IEnergyReceiverMK2)getTE()).transferPower(power);
+			long remainder = ((IEnergyReceiverMK2)getTE()).transferPower(power);
+			if(remainder != power) this.markPowerNetDirty();
+			return remainder;
 		}
 		
 		return 0;

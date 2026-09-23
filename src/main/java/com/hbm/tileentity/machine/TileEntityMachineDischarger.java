@@ -176,7 +176,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 
 			slots[0].stackSize--;
 			if (slots[0].stackSize <= 0 && slots[0].getItem() == ModItems.ingot_u233) {
-				power += Gen * 0.8;
+				this.setPower(this.power + (long) (Gen * 0.8));
 				slots[0] = null;
 				slots[0] = new ItemStack(ModItems.ingot_titanium);
 			}
@@ -189,7 +189,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 			//	//}
 			//}
 			if (slots[0].stackSize <= 0 && slots[0].getItem() == ModItems.ingot_electronium) {
-				power += Gen * 4;
+				this.setPower(this.power + Gen * 4);
 				slots[0] = null;
 				slots[0] = new ItemStack(ModItems.ingot_dineutronium);
 			}
@@ -214,7 +214,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 
 		if (!worldObj.isRemote) {
 
-			power = Library.chargeItemsFromTE(slots, 1, power, maxPower);
+			this.setPower(Library.chargeItemsFromTE(slots, 1, power, maxPower));
 
 			if(canProcess()) {
 				process();
@@ -282,6 +282,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 
 
 	public void onChunkUnload() {
+		super.onChunkUnload();
 
 		if(audio != null) {
 			audio.stopSound();
@@ -309,7 +310,9 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

@@ -273,7 +273,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 
 			this.updateConnections();
 
-			power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
 
 			updateHotCoolantType();
 
@@ -316,7 +316,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 					isOn = false;
 				} else {
 
-					power -= actualPowerReq;
+					this.setPower(this.power - actualPowerReq);
 
 					if(plasma.getFill() > 0) {
 
@@ -846,7 +846,9 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

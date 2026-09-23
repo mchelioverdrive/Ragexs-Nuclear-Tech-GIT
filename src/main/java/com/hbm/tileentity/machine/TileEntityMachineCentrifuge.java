@@ -185,7 +185,7 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 
-			power = Library.chargeTEFromItems(slots, 1, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 1, power, maxPower));
 
 			int consumption = baseConsumption;
 			int speed = 1;
@@ -200,10 +200,10 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 			consumption /= (1 + Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3));
 
 			if(hasPower() && isProcessing()) {
-				this.power -= consumption;
+				this.setPower(this.power - consumption);
 
 				if(this.power < 0) {
-					this.power = 0;
+					this.setPower(0);
 				}
 			}
 
@@ -280,6 +280,7 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 
 	@Override
 	public void onChunkUnload() {
+		super.onChunkUnload();
 
 		if(audio != null) {
 			audio.stopSound();
@@ -325,7 +326,9 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

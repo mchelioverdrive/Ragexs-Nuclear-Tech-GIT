@@ -193,7 +193,7 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 			tanks[0].loadTank(2, 6, slots);
 			tanks[1].loadTank(3, 7, slots);
 
-			power = Library.chargeTEFromItems(slots, 5, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 5, power, maxPower));
 
 
 			PacketDispatcher.wrapper.sendToAllAround(new BufPacket(xCoord, yCoord, zCoord, this), new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
@@ -362,7 +362,7 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 			default: break;
 		}
 
-		this.power -= maxPower * 0.75;
+		this.setPower((long) (this.power - maxPower * 0.75));
 	}
 
 	public static MissileStruct getStruct(ItemStack stack) {
@@ -542,7 +542,9 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override
@@ -558,12 +560,12 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 	@Override
 	public long transferPower(long power) {
 
-		this.power += power;
+		this.setPower(this.power + power);
 
 		if(this.power > this.getMaxPower()) {
 
 			long overshoot = this.power - this.getMaxPower();
-			this.power = this.getMaxPower();
+			this.setPower(this.getMaxPower());
 			return overshoot;
 		}
 

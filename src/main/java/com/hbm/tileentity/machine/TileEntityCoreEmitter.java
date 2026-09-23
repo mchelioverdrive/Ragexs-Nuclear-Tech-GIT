@@ -88,7 +88,7 @@ public class TileEntityCoreEmitter extends TileEntityMachineBase implements IEne
 				//1 SPK = 5,000HE
 
 				if(power >= demand) {
-					power -= demand;
+					this.setPower(this.power - demand);
 					long add = watts * 100;
 					joules += add;
 				}
@@ -189,7 +189,9 @@ public class TileEntityCoreEmitter extends TileEntityMachineBase implements IEne
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

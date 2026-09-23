@@ -88,7 +88,7 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 		if(!worldObj.isRemote) {
 			
 			this.isOn = false;
-			this.power = Library.chargeTEFromItems(slots, 5, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 5, power, maxPower));
 			
 			if(worldObj.getTotalWorldTime() % 20 == 0) {
 				for(DirPos pos : getConPos()) this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
@@ -141,7 +141,7 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 				
 				if(recipe != null && (slots[4] == null || (slots[4].getItem() == recipe.output.getItem() && slots[4].getItemDamage() == recipe.output.getItemDamage() && slots[4].stackSize + recipe.output.stackSize <= slots[4].getMaxStackSize()))) {
 					this.progress++;
-					this.power -= this.consumption;
+					this.setPower(this.power - this.consumption);
 					this.isOn = true;
 					
 					if(this.progress >= this.processTime) {
@@ -273,7 +273,9 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

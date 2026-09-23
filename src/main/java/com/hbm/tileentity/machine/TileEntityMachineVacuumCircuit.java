@@ -75,7 +75,7 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 			CBT_Atmosphere atmosphere = ChunkAtmosphereManager.proxy.getAtmosphere(worldObj, xCoord, yCoord, zCoord);
 			canOperate = atmosphere == null || atmosphere.getPressure() <= 0.001;
 
-			this.power = Library.chargeTEFromItems(slots, 5, this.getPower(), this.getMaxPower());
+			this.setPower(Library.chargeTEFromItems(slots, 5, this.getPower(), this.getMaxPower()));
 			this.updateConnections();
 			recipe = VacuumCircuitRecipes.getRecipe(new ItemStack[] {slots[0], slots[1], slots[2], slots[3]});
 			long intendedMaxPower;
@@ -91,7 +91,7 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 				
 				if(canProcess(recipe)) {
 					this.progress++;
-					this.power -= this.consumption;
+					this.setPower(this.power - this.consumption);
 					
 					if(progress >= processTime) {
 						this.progress = 0;
@@ -261,7 +261,9 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

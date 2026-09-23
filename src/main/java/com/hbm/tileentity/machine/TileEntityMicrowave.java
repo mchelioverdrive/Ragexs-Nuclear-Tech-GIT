@@ -56,7 +56,7 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 
-			this.power = Library.chargeTEFromItems(slots, 2, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 2, power, maxPower));
 
 			if(canProcess()) {
 
@@ -72,7 +72,7 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 				}
 
 				if(canProcess()) {
-					power -= consumption;
+					this.setPower(this.power - consumption);
 					time += speed * 2;
 				}
 			}
@@ -202,7 +202,9 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

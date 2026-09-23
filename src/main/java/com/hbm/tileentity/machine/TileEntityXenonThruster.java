@@ -206,7 +206,7 @@ public class TileEntityXenonThruster extends TileEntityMachineBase implements IP
 	@Override
 	public int startBurn() {
 		isOn = true;
-		power -= fuelCost * POWER_COST_MULTIPLIER;
+		this.setPower(this.power - fuelCost * POWER_COST_MULTIPLIER);
 		for(FluidTank tank : tanks) {
 			tank.setFill(tank.getFill() - fuelCost);
 		}
@@ -236,7 +236,9 @@ public class TileEntityXenonThruster extends TileEntityMachineBase implements IP
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

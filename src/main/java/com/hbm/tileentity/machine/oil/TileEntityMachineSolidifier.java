@@ -61,7 +61,7 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
 	public void updateEntity() {
 		
 		if(!worldObj.isRemote) {
-			this.power = Library.chargeTEFromItems(slots, 1, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 1, power, maxPower));
 			tank.setType(4, slots);
 
 			this.updateConnections();
@@ -149,7 +149,7 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
 	
 	public void process() {
 		
-		this.power -= usage;
+		this.setPower(this.power - usage);
 		
 		progress++;
 		
@@ -197,7 +197,9 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

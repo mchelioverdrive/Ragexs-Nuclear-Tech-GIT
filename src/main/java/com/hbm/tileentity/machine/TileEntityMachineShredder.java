@@ -242,7 +242,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 			{
 				progress++;
 				
-				power -= 5;
+				this.setPower(this.power - 5);
 				
 				if(this.progress == TileEntityMachineShredder.processingSpeed)
 				{
@@ -276,7 +276,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
                 flag1 = true;
             }
 			
-			power = Library.chargeTEFromItems(slots, 29, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 29, power, maxPower));
 			
 			PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, power), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
 		}
@@ -380,8 +380,9 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 
 	@Override
 	public void setPower(long i) {
+		if(this.power == i) return;
 		this.power = i;
-		
+		this.markPowerNetDirty();
 	}
 	
 	public long getPowerScaled(long i) {

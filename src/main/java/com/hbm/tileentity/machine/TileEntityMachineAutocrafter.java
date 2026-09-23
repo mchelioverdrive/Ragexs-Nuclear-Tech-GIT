@@ -75,7 +75,7 @@ public class TileEntityMachineAutocrafter extends TileEntityMachineBase implemen
 		
 		if(!worldObj.isRemote) {
 			
-			this.power = Library.chargeTEFromItems(slots, 20, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 20, power, maxPower));
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 			
 			if(!this.recipes.isEmpty() && this.power >= this.consumption) {
@@ -116,7 +116,7 @@ public class TileEntityMachineAutocrafter extends TileEntityMachineBase implemen
 								}
 							}
 							
-							this.power -= this.consumption;
+							this.setPower(this.power - this.consumption);
 						}
 					}
 				}
@@ -303,7 +303,9 @@ public class TileEntityMachineAutocrafter extends TileEntityMachineBase implemen
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 	
 	@Override

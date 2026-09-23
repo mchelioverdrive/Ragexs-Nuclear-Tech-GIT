@@ -36,7 +36,7 @@ public class TileEntityRadiobox extends TileEntityLoadedBase implements IEnergyR
 		if(!worldObj.isRemote && this.getBlockMetadata() > 5 && (power >= 25000 || infinite)) {
 			
 			if(!infinite) {
-				power -= 25000;
+				this.setPower(this.power - 25000);
 				this.markDirty();
 			}
 			
@@ -77,7 +77,9 @@ public class TileEntityRadiobox extends TileEntityLoadedBase implements IEnergyR
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 
 	@Override

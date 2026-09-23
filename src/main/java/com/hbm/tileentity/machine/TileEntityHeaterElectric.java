@@ -46,7 +46,7 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 
 			this.isOn = false;
 			if(setting > 0 && this.power >= this.getConsumption() && this.heatEnergy < maxHeatEnergy) {
-				this.power -= this.getConsumption();
+				this.setPower(this.power - this.getConsumption());
 				this.heatEnergy = Math.min(this.heatEnergy + getHeatGen(), maxHeatEnergy);
 				this.isOn = true;
 			}
@@ -88,6 +88,7 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 
 	@Override
 	public void onChunkUnload() {
+		super.onChunkUnload();
 
 		if(audio != null) {
 			audio.stopSound();
@@ -170,7 +171,9 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

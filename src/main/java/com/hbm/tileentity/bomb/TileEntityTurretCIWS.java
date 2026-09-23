@@ -73,7 +73,7 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 	}
 
 	public void consumePower(long amount) {
-		power = Math.max(0, power - amount);
+		this.setPower(Math.max(0, power - amount));
 	}
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
@@ -116,6 +116,8 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 
 	@Override
 	public void setPower(long i) {
-		power = i;
+		if(this.power == i) return;
+		this.power = i;
+		this.markPowerNetDirty();
 	}
 }

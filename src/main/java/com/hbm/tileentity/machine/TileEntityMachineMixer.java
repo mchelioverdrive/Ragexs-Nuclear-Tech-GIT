@@ -67,7 +67,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 		
 		if(!worldObj.isRemote) {
 			
-			this.power = Library.chargeTEFromItems(slots, 0, power, maxPower);
+			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
 			tanks[2].setType(2, slots);
 			
 			this.upgradeManager.checkSlots(slots, 3, 4);
@@ -91,7 +91,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 			
 			if(this.wasOn) {
 				this.progress++;
-				this.power -= this.getConsumption();
+				this.setPower(this.power - this.getConsumption());
 				
 				this.processTime -= this.processTime * speedLevel / 4;
 				this.processTime /= (overLevel + 1);
@@ -283,7 +283,9 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override

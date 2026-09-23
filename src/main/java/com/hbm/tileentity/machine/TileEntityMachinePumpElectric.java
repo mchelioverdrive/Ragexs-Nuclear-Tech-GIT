@@ -48,7 +48,7 @@ public class TileEntityMachinePumpElectric extends TileEntityMachinePumpBase imp
 
 	@Override
 	protected void operate() {
-		this.power -= 1_000;
+		this.setPower(this.power - 1_000);
 		int pumpSpeed = water.getTankType() == Fluids.WATER ? electricSpeed : electricSpeed / nonWaterDebuff;
 		water.setFill(Math.min(water.getFill() + pumpSpeed, water.getMaxFill()));
 	}
@@ -65,6 +65,8 @@ public class TileEntityMachinePumpElectric extends TileEntityMachinePumpBase imp
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 }

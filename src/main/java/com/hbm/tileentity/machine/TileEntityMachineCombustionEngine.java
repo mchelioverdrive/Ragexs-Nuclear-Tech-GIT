@@ -84,7 +84,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 						int speed = setting * 2;
 						
 						int toBurn = Math.min(fill, speed);
-						this.power += toBurn * (trait.getCombustionEnergy() / 10_000D) * eff;
+						this.setPower(this.power + (long) (toBurn * (trait.getCombustionEnergy() / 10_000D) * eff));
 						fill -= toBurn;
 	
 						if(worldObj.getTotalWorldTime() % 5 == 0 && toBurn > 0) {
@@ -105,7 +105,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 			NBTTagCompound data = new NBTTagCompound();
 			data.setLong("power", Math.min(power, maxPower));
 			
-			this.power = Library.chargeItemsFromTE(slots, 3, power, power);
+			this.setPower(Library.chargeItemsFromTE(slots, 3, power, power));
 			
 			for(DirPos pos : getConPos()) {
 				this.tryProvide(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
@@ -114,7 +114,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 			}
 			
 			if(power > maxPower)
-				power = maxPower;
+				this.setPower(maxPower);
 			
 			data.setInteger("playersUsing", playersUsing);
 			data.setInteger("setting", setting);
@@ -176,6 +176,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 
 	@Override
 	public void onChunkUnload() {
+		super.onChunkUnload();
 
 		if(audio != null) {
 			audio.stopSound();
@@ -246,7 +247,9 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 
 	@Override
 	public void setPower(long power) {
+		if(this.power == power) return;
 		this.power = power;
+		this.markPowerNetDirty();
 	}
 
 	@Override
