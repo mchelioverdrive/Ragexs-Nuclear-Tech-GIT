@@ -1,3 +1,9 @@
+# Pull Request: Separate Magnox collapse and pressure-rupture debris
+
+- Added a slow, local debris profile for nonexplosive overheating, cladding, and graphite collapse failures, with no exchanger debris or high-speed shrapnel.
+- Kept the 34 bar CO2 pressure-boundary rupture as the sole local mechanical explosion while separating light debris from heavy reactor components.
+- Limited heavy rupture debris to realistic nearby motion so pressure rupture remains destructive without launching reactor components across the surrounding area.
+
 # Pull Request: Restore Magnox gauge pointers and original controls
 
 - Restored the temperature and pressure pointers by drawing all texture-atlas sprites before font-rendered control labels and explicitly rebinding the Magnox GUI texture for each sprite group.
