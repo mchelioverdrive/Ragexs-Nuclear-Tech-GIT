@@ -3,6 +3,7 @@ package com.hbm.tileentity.network;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.uninos.UniNodespace;
+import com.hbm.uninos.IDeferredConductor;
 
 import api.hbm.fluid.IFluidConductor;
 import api.hbm.fluidmk2.FluidNetMK2;
@@ -13,7 +14,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.util.ForgeDirection;
 
 /** Non-ticking multi-fluid exhaust conductor backed by three compact UNINOS nodes. */
-public class TileEntityPipeExhaust extends TileEntity implements IFluidConductor, IFluidPipeMK2 {
+public class TileEntityPipeExhaust extends TileEntity implements IFluidConductor, IFluidPipeMK2, IDeferredConductor {
 
 	private final FluidNode[] nodes = new FluidNode[3];
 	private boolean loaded;
@@ -28,13 +29,14 @@ public class TileEntityPipeExhaust extends TileEntity implements IFluidConductor
 		super.validate();
 		if(this.worldObj != null && !this.worldObj.isRemote && !this.loaded) PowerNetDiagnostics.recordChunkAttachment();
 		this.loaded = true;
-		this.attachNodes();
+		UniNodespace.queueConductor(this.worldObj, this.xCoord, this.yCoord, this.zCoord);
 	}
 
 	@Override
-	public void updateEntity() { this.attachNodes(); }
+	public void updateEntity() { UniNodespace.queueConductor(this.worldObj, this.xCoord, this.yCoord, this.zCoord); }
 
-	private void attachNodes() {
+	@Override
+	public void reconcileConductorNode() {
 		if(this.worldObj == null || this.worldObj.isRemote || this.isInvalid()) return;
 		FluidType[] types = this.getSmokes();
 		for(int i = 0; i < types.length; i++) {

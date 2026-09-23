@@ -20,13 +20,18 @@ import api.hbm.energymk2.PowerNetMK2;
 import api.hbm.fluidmk2.FluidNetEndpointRegistry;
 import api.hbm.fluidmk2.FluidNetMK2;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
+import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.common.util.ForgeDirection;
 
 /** Unified Nodespace with bounded, event-driven topology processing. */
 public class UniNodespace {
 
 	private static final int TOPOLOGY_WORK_BUDGET = 4096;
+	private static final int PENDING_CONDUCTOR_BUDGET = 1024;
+	private static final int NETWORK_WORK_BUDGET = 4096;
 	private static final ForgeDirection[] STANDARD_DIRECTIONS = ForgeDirection.VALID_DIRECTIONS;
 
 	public static Map<World, UniNodeWorld> worlds = new HashMap<World, UniNodeWorld>();
@@ -48,6 +53,17 @@ public class UniNodespace {
 		node.world = world;
 		node.expired = false;
 		nodeWorld.pushNode(node);
+	}
+
+	/** Queues a coordinate, rather than a TileEntity reference, for loaded-only reconciliation. */
+	public static void queueConductor(World world, int x, int y, int z) {
+		if(world == null || world.isRemote) return;
+		UniNodeWorld nodeWorld = worlds.get(world);
+		if(nodeWorld == null) {
+			nodeWorld = new UniNodeWorld();
+			worlds.put(world, nodeWorld);
+		}
+		nodeWorld.pendingConductors.add(pack(x, y, z));
 	}
 
 	public static void destroyNode(World world, int x, int y, int z, INetworkProvider type) {
@@ -241,6 +257,7 @@ public class UniNodespace {
 		private final IdentityHashMap<INetworkProvider, HashMap<Long, GenNode>> nodesByProvider = new IdentityHashMap<INetworkProvider, HashMap<Long, GenNode>>();
 		private final Set<GenNode> allNodes = Collections.newSetFromMap(new IdentityHashMap<GenNode, Boolean>());
 		private final LinkedHashSet<GenNode> dirtyTopology = new LinkedHashSet<GenNode>();
+		private final LinkedHashSet<Long> pendingConductors = new LinkedHashSet<Long>();
 		private final Deque<SplitTask> splitTasks = new ArrayDeque<SplitTask>();
 		private final IdentityHashMap<NodeNet, SplitTask> splitByNetwork = new IdentityHashMap<NodeNet, SplitTask>();
 		private final Deque<MergeTask> mergeTasks = new ArrayDeque<MergeTask>();
@@ -327,7 +344,7 @@ public class UniNodespace {
 
 		private void processTopology(World world, int budget) {
 			long started = PowerNetDiagnostics.startTopology();
-			int processed = 0;
+			int processed = this.processPendingConductors(world, Math.min(budget, PENDING_CONDUCTOR_BUDGET));
 			while(processed < budget && !this.splitTasks.isEmpty()) {
 				SplitTask task = this.splitTasks.peek();
 				int used = task.process(world, budget - processed);
@@ -360,6 +377,31 @@ public class UniNodespace {
 			PowerNetDiagnostics.finishTopology(started);
 		}
 
+		private int processPendingConductors(World world, int budget) {
+			if(!(world instanceof WorldServer) || budget <= 0 || this.pendingConductors.isEmpty()) return 0;
+			int availableAtStart = this.pendingConductors.size();
+			int processed = 0;
+			while(processed < budget && processed < availableAtStart && !this.pendingConductors.isEmpty()) {
+				long packed = this.pendingConductors.iterator().next();
+				this.pendingConductors.remove(packed);
+				int x = unpackX(packed);
+				int y = unpackY(packed);
+				int z = unpackZ(packed);
+				if(!world.getChunkProvider().chunkExists(x >> 4, z >> 4)) {
+					this.pendingConductors.add(packed);
+					processed++;
+					continue;
+				}
+				Chunk chunk = world.getChunkFromChunkCoords(x >> 4, z >> 4);
+				TileEntity tile = chunk.func_150806_e(x & 15, y, z & 15);
+				if(tile instanceof IDeferredConductor && !tile.isInvalid()) {
+					((IDeferredConductor) tile).reconcileConductorNode();
+				}
+				processed++;
+			}
+			return processed;
+		}
+
 		private void updatePowerNetworks(World world) {
 			for(PowerNetMK2 network : this.powerNetworks) {
 				network.resetTrackers();
@@ -376,7 +418,12 @@ public class UniNodespace {
 			this.powerUpdateScratch.clear();
 			this.powerUpdateScratch.addAll(this.dirtyPowerNetworks);
 			this.dirtyPowerNetworks.clear();
+			int visitedNetworks = 0;
 			for(PowerNetMK2 network : this.powerUpdateScratch) {
+				if(visitedNetworks++ >= NETWORK_WORK_BUDGET) {
+					this.dirtyPowerNetworks.add(network);
+					continue;
+				}
 				if(!network.isValid()) continue;
 				if(network.isTopologyRepairing()) {
 					this.dirtyPowerNetworks.add(network);
@@ -393,10 +440,15 @@ public class UniNodespace {
 
 		private void updateFluidNetworks() {
 			int processed = 0;
+			int visited = 0;
 			this.fluidUpdateScratch.clear();
 			this.fluidUpdateScratch.addAll(this.dirtyFluidNetworks);
 			this.dirtyFluidNetworks.clear();
 			for(FluidNetMK2 network : this.fluidUpdateScratch) {
+				if(visited++ >= NETWORK_WORK_BUDGET) {
+					this.dirtyFluidNetworks.add(network);
+					continue;
+				}
 				if(!network.isValid()) continue;
 				if(network.isTopologyRepairing()) {
 					this.dirtyFluidNetworks.add(network);
@@ -426,6 +478,7 @@ public class UniNodespace {
 			this.nodesByProvider.clear();
 			this.allNodes.clear();
 			this.dirtyTopology.clear();
+			this.pendingConductors.clear();
 			this.splitTasks.clear();
 			this.splitByNetwork.clear();
 			for(MergeTask task : this.mergeTasks) {
@@ -441,6 +494,10 @@ public class UniNodespace {
 			this.fluidUpdateScratch.clear();
 		}
 	}
+
+	private static int unpackX(long packed) { return (int) (packed << 0 >> 38); }
+	private static int unpackY(long packed) { return (int) (packed & 0xFFFL); }
+	private static int unpackZ(long packed) { return (int) (packed << 26 >> 38); }
 
 	private static class MergeTask {
 
