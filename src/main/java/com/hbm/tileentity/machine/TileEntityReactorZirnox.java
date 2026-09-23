@@ -197,6 +197,40 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	private static final int MELTDOWN_OVERHEAT = 1;
 	private static final int MELTDOWN_CLADDING = 2;
 	private static final int MELTDOWN_GRAPHITE = 3;
+	private static final double COLLAPSE_MIN_HORIZONTAL_SPEED = 0.0D;
+	private static final double COLLAPSE_MAX_HORIZONTAL_SPEED = 0.10D;
+	private static final double COLLAPSE_MIN_VERTICAL_SPEED = 0.02D;
+	private static final double COLLAPSE_MAX_VERTICAL_SPEED = 0.08D;
+	private static final double RUPTURE_HEAVY_MIN_HORIZONTAL_SPEED = 0.0D;
+	private static final double RUPTURE_HEAVY_MAX_HORIZONTAL_SPEED = 0.20D;
+	private static final double RUPTURE_HEAVY_MIN_VERTICAL_SPEED = 0.05D;
+	private static final double RUPTURE_HEAVY_MAX_VERTICAL_SPEED = 0.20D;
+	private static final double RUPTURE_LIGHT_MIN_HORIZONTAL_SPEED = 0.15D;
+	private static final double RUPTURE_LIGHT_MAX_HORIZONTAL_SPEED = 0.45D;
+	private static final double RUPTURE_LIGHT_MIN_VERTICAL_SPEED = 0.10D;
+	private static final double RUPTURE_LIGHT_MAX_VERTICAL_SPEED = 0.30D;
+
+	private static enum DebrisMotionProfile {
+		COLLAPSE(COLLAPSE_MIN_HORIZONTAL_SPEED, COLLAPSE_MAX_HORIZONTAL_SPEED,
+			COLLAPSE_MIN_VERTICAL_SPEED, COLLAPSE_MAX_VERTICAL_SPEED),
+		RUPTURE_HEAVY(RUPTURE_HEAVY_MIN_HORIZONTAL_SPEED, RUPTURE_HEAVY_MAX_HORIZONTAL_SPEED,
+			RUPTURE_HEAVY_MIN_VERTICAL_SPEED, RUPTURE_HEAVY_MAX_VERTICAL_SPEED),
+		RUPTURE_LIGHT(RUPTURE_LIGHT_MIN_HORIZONTAL_SPEED, RUPTURE_LIGHT_MAX_HORIZONTAL_SPEED,
+			RUPTURE_LIGHT_MIN_VERTICAL_SPEED, RUPTURE_LIGHT_MAX_VERTICAL_SPEED);
+
+		private final double minimumHorizontalSpeed;
+		private final double maximumHorizontalSpeed;
+		private final double minimumVerticalSpeed;
+		private final double maximumVerticalSpeed;
+
+		private DebrisMotionProfile(double minimumHorizontalSpeed, double maximumHorizontalSpeed,
+				double minimumVerticalSpeed, double maximumVerticalSpeed) {
+			this.minimumHorizontalSpeed = minimumHorizontalSpeed;
+			this.maximumHorizontalSpeed = maximumHorizontalSpeed;
+			this.minimumVerticalSpeed = minimumVerticalSpeed;
+			this.maximumVerticalSpeed = maximumVerticalSpeed;
+		}
+	}
 
 	// Slot flux shaping.
 	// Center/near-center channels run hotter; edge channels are slightly weaker.
@@ -1112,38 +1146,55 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		return false;
 	}
 
-	private void spawnDebris(DebrisType type) {
+	private void spawnDebris(DebrisType type, DebrisMotionProfile profile) {
 
 		EntityZirnoxDebris debris = new EntityZirnoxDebris(worldObj, xCoord + 0.5D, yCoord + 4D, zCoord + 0.5D, type);
-		debris.motionX = worldObj.rand.nextGaussian() * 0.75D;
-		debris.motionZ = worldObj.rand.nextGaussian() * 0.75D;
-		debris.motionY = 0.01D + worldObj.rand.nextDouble() * 1.25D;
-
-		if(type == DebrisType.CONCRETE) {
-			debris.motionX *= 0.25D;
-			debris.motionY += worldObj.rand.nextDouble();
-			debris.motionZ *= 0.25D;
-		}
-
-		if(type == DebrisType.EXCHANGER) {
-			debris.motionX += 0.5D;
-			debris.motionY *= 0.1D;
-			debris.motionZ += 0.5D;
-		}
+		double angle = worldObj.rand.nextDouble() * Math.PI * 2.0D;
+		double horizontalSpeed = randomBetween(profile.minimumHorizontalSpeed, profile.maximumHorizontalSpeed);
+		debris.motionX = Math.cos(angle) * horizontalSpeed;
+		debris.motionZ = Math.sin(angle) * horizontalSpeed;
+		debris.motionY = randomBetween(profile.minimumVerticalSpeed, profile.maximumVerticalSpeed);
+		debris.velocityChanged = true;
 
 		worldObj.spawnEntityInWorld(debris);
 	}
 
-	private void zirnoxDebris(double contamination) {
-		for(int i = 0; i < 2; i++) spawnDebris(DebrisType.EXCHANGER);
-		for(int i = 0; i < 20; i++) {
-			spawnDebris(DebrisType.CONCRETE);
-			spawnDebris(DebrisType.BLANK);
+	private double randomBetween(double minimum, double maximum) {
+		return minimum + worldObj.rand.nextDouble() * (maximum - minimum);
+	}
+
+	private DebrisMotionProfile getRuptureProfile(DebrisType type) {
+		if(type == DebrisType.SHRAPNEL || type == DebrisType.BLANK) {
+			return DebrisMotionProfile.RUPTURE_LIGHT;
 		}
-		for(int i = 0; i < 10; i++) spawnDebris(DebrisType.SHRAPNEL);
+		return DebrisMotionProfile.RUPTURE_HEAVY;
+	}
+
+	private void spawnRuptureDebris(DebrisType type) {
+		spawnDebris(type, getRuptureProfile(type));
+	}
+
+	private void spawnRuptureDebris(double contamination) {
+		for(int i = 0; i < 2; i++) spawnRuptureDebris(DebrisType.EXCHANGER);
+		for(int i = 0; i < 20; i++) {
+			spawnRuptureDebris(DebrisType.CONCRETE);
+			spawnRuptureDebris(DebrisType.BLANK);
+		}
+		for(int i = 0; i < 10; i++) spawnRuptureDebris(DebrisType.SHRAPNEL);
 		for(int i = 0; i < (int)Math.ceil(10 * contamination); i++) {
-			spawnDebris(DebrisType.ELEMENT);
-			spawnDebris(DebrisType.GRAPHITE);
+			spawnRuptureDebris(DebrisType.ELEMENT);
+			spawnRuptureDebris(DebrisType.GRAPHITE);
+		}
+	}
+
+	private void spawnCollapseDebris(double contamination) {
+		for(int i = 0; i < 4; i++) {
+			spawnDebris(DebrisType.CONCRETE, DebrisMotionProfile.COLLAPSE);
+			spawnDebris(DebrisType.BLANK, DebrisMotionProfile.COLLAPSE);
+		}
+		for(int i = 0; i < (int)Math.ceil(2 * contamination); i++) {
+			spawnDebris(DebrisType.ELEMENT, DebrisMotionProfile.COLLAPSE);
+			spawnDebris(DebrisType.GRAPHITE, DebrisMotionProfile.COLLAPSE);
 		}
 	}
 
@@ -1168,7 +1219,9 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		if(rupture) {
 			worldObj.playSoundEffect(xCoord, yCoord + 2, zCoord, "hbm:block.rbmk_explosion", 10.0F, 0.85F);
 			worldObj.createExplosion(null, xCoord, yCoord + 3, zCoord, 5.5F, true);
-			zirnoxDebris(contamination);
+			spawnRuptureDebris(contamination);
+		} else {
+			spawnCollapseDebris(contamination);
 		}
 		int wasteRadius = (int)Math.floor(35 * Math.sqrt(contamination));
 		if(wasteRadius >= 4) ExplosionNukeGeneric.waste(worldObj, xCoord, yCoord, zCoord, wasteRadius);

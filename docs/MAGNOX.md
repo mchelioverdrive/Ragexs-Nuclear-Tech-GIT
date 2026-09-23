@@ -84,10 +84,10 @@ Exotic fuels do not receive an invented historical Magnox feedback coefficient. 
 The outcomes are deliberately distinct:
 
 * a partial live leak leaves the reactor present but disabled above its restart threshold, emitting only while damaged fuel remains installed;
-* complete cladding failure, bulk core temperature reaching 800 C, or structural graphite failure produces a contaminated, nonexplosive thermal wreck; and
-* primary pressure reaching 34 bar mechanically ruptures the vessel, producing the only explosion and launched debris path.
+* complete cladding failure, bulk core temperature reaching 800 C, or structural graphite failure produces a contaminated, nonexplosive thermal wreck with a small, slow-moving set of local core and structural debris; and
+* primary pressure reaching 34 bar mechanically ruptures the local CO2 pressure boundary, producing the only conventional explosion and a larger debris field. Heavy concrete, exchanger, graphite, and fuel-element pieces remain close to the reactor, while only light metal and walkway shrapnel can reach the field's outer area.
 
-Cladding damage cannot cause a nuclear explosion. Only pressure rupture calls the explosion path. Low CO2 inventory is not evidence of air ingress. Intact CO2 does not oxidize graphite, and the model does not invent a graphite fire or random channel blockage.
+Collapse debris is no more than one quarter of the corresponding pressure-rupture debris count and contains no exchanger pieces or high-speed shrapnel. Spawning it does not add another contamination calculation or alter the existing total wreck source. Cladding damage cannot cause a nuclear explosion. Only pressure rupture calls the local mechanical explosion path. Low CO2 inventory is not evidence of air ingress. Intact CO2 does not oxidize graphite, and the model does not invent a graphite fire or random channel blockage.
 
 ## Compatibility and automation
 
