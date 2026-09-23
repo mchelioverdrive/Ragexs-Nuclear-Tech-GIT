@@ -16,6 +16,7 @@ import api.hbm.fluidmk2.FluidNode;
 import api.hbm.fluidmk2.IFluidPipeMK2;
 import api.hbm.energymk2.PowerNetDiagnostics;
 import com.hbm.uninos.UniNodespace;
+import com.hbm.uninos.IDeferredConductor;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
@@ -27,7 +28,7 @@ import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.util.ForgeDirection;
 
 /** Save-compatible, non-ticking state container for an event-driven UNINOS fluid node. */
-public class TileEntityPipeBaseNT extends TileEntity implements IFluidConductor, IFluidPipeMK2, IFluidCopiable {
+public class TileEntityPipeBaseNT extends TileEntity implements IFluidConductor, IFluidPipeMK2, IFluidCopiable, IDeferredConductor {
 
 	protected FluidNode node;
 	protected FluidType type = Fluids.NONE;
@@ -41,22 +42,33 @@ public class TileEntityPipeBaseNT extends TileEntity implements IFluidConductor,
 		super.validate();
 		if(this.worldObj != null && !this.worldObj.isRemote && !this.isLoaded) PowerNetDiagnostics.recordChunkAttachment();
 		this.isLoaded = true;
-		this.attachNode();
+		this.queueNodeReconciliation();
 	}
 
 	@Override
 	public void updateEntity() {
-		this.attachNode();
+		this.queueNodeReconciliation();
 	}
 
-	protected void attachNode() {
-		if(this.worldObj == null || this.worldObj.isRemote || this.isInvalid() || !this.shouldCreateNode()) return;
+	@Override
+	public void reconcileConductorNode() {
+		if(this.worldObj == null || this.worldObj.isRemote || this.isInvalid()) return;
+		if(!this.shouldCreateNode()) {
+			FluidNode registered = (FluidNode) UniNodespace.getNode(this.worldObj, this.xCoord, this.yCoord, this.zCoord, this.type.getNetworkProvider());
+			if(registered != null) UniNodespace.destroyNode(this.worldObj, registered);
+			this.node = null;
+			return;
+		}
 		if(this.node != null && !this.node.expired) return;
 		this.node = (FluidNode) UniNodespace.getNode(this.worldObj, this.xCoord, this.yCoord, this.zCoord, this.type.getNetworkProvider());
 		if(this.node == null || this.node.expired) {
 			this.node = this.createNode(this.type);
 			UniNodespace.createNode(this.worldObj, this.node);
 		}
+	}
+
+	protected final void queueNodeReconciliation() {
+		UniNodespace.queueConductor(this.worldObj, this.xCoord, this.yCoord, this.zCoord);
 	}
 
 	protected boolean shouldCreateNode() { return true; }
@@ -70,7 +82,7 @@ public class TileEntityPipeBaseNT extends TileEntity implements IFluidConductor,
 		this.type = nextType;
 		this.markDirty();
 		if(this.worldObj instanceof WorldServer) ((WorldServer) this.worldObj).getPlayerManager().markBlockForUpdate(this.xCoord, this.yCoord, this.zCoord);
-		this.attachNode();
+		this.queueNodeReconciliation();
 		api.hbm.fluidmk2.FluidNetEndpointRegistry.markTopologyDirty(this.worldObj);
 	}
 

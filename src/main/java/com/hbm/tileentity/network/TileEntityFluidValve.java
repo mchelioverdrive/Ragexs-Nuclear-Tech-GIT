@@ -19,7 +19,7 @@ public class TileEntityFluidValve extends TileEntityPipeBaseNT {
 			UniNodespace.destroyNode(this.worldObj, this.node);
 			this.node = null;
 		}
-		if(this.getBlockMetadata() == 1) this.attachNode();
+		this.queueNodeReconciliation();
 	}
 	
 	@Override

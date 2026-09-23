@@ -145,3 +145,13 @@ INCOMPLETE:
 - Remaining legacy `PipeNet` call sites and compatibility boundaries still need cleanup.
 - Provider/receiver lifecycle handling and unload/reload behavior still need final verification.
 - Full compile cleanup and final diff review were not completed before this work session ended.
+
+2026-09-23 05:42 - Complete deferred conductor topology lifecycle
+
+- Fixed the recursive server chunk-load crash by replacing synchronous cable, switch, duct, valve, and exhaust node attachment during `validate()` with a deduplicated packed-coordinate UNINOS queue.
+- Added bounded loaded-only conductor reconciliation. Deferred entries are inspected only after their chunks are available, unavailable coordinates are retained once per pass without loading them, and the current tile at the coordinate is resolved before mutation so stale lifecycle events cannot register replacement tiles.
+- Preserved switch and valve metadata semantics: enabled state `1` attaches after safe reconciliation, disabled state `0` removes the live node, and state changes enqueue topology work without conductor update ticks.
+- Made conductor invalidation remove only the exact registered node instance and clear local references, while chunk unload drops TileEntity references and leaves compact world-owned topology available for safe reload reconciliation.
+- Applied the same deferred lifecycle to authoritative `FluidNode`/`FluidNetMK2` conductors, including multi-fluid exhaust nodes, without returning topology ownership to the legacy `PipeNet` adapter.
+- Bounded dirty power and fluid network visits per server tick and retained overflow or repair-blocked entries for later processing.
+- Completed compile-oriented cleanup of the conductor lifecycle transition; dedicated-server runtime merge, split, border-unload, and rapid-switch scenarios remain to be exercised in game.
