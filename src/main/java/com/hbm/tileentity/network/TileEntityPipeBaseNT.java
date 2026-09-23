@@ -5,14 +5,17 @@ import com.hbm.extprop.HbmPlayerProps;
 import com.hbm.handler.HbmKeybinds;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
+import com.hbm.inventory.fluid.tank.FluidTank;
+import com.hbm.tileentity.IFluidCopiable;
 
 import api.hbm.fluid.IFluidConductor;
 import api.hbm.fluid.IPipeNet;
 import api.hbm.fluid.PipeNet;
-import com.hbm.inventory.fluid.tank.FluidTank;
-import com.hbm.tileentity.IFluidCopiable;
-import com.hbm.util.Compat;
-
+import api.hbm.fluidmk2.FluidNetMK2;
+import api.hbm.fluidmk2.FluidNode;
+import api.hbm.fluidmk2.IFluidPipeMK2;
+import api.hbm.energymk2.PowerNetDiagnostics;
+import com.hbm.uninos.UniNodespace;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
@@ -23,120 +26,108 @@ import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityPipeBaseNT extends TileEntity implements IFluidConductor, IFluidCopiable {
+/** Save-compatible, non-ticking state container for an event-driven UNINOS fluid node. */
+public class TileEntityPipeBaseNT extends TileEntity implements IFluidConductor, IFluidPipeMK2, IFluidCopiable {
 
-	protected IPipeNet network;
+	protected FluidNode node;
 	protected FluidType type = Fluids.NONE;
-	protected FluidType lastType = Fluids.NONE;
+	public boolean isLoaded;
+
+	@Override
+	public boolean canUpdate() { return false; }
+
+	@Override
+	public void validate() {
+		super.validate();
+		if(this.worldObj != null && !this.worldObj.isRemote && !this.isLoaded) PowerNetDiagnostics.recordChunkAttachment();
+		this.isLoaded = true;
+		this.attachNode();
+	}
 
 	@Override
 	public void updateEntity() {
+		this.attachNode();
+	}
 
-		if(worldObj.isRemote && lastType != type) {
-			worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
-			lastType = type;
-		}
-
-		if(!worldObj.isRemote && shouldConnect()) {
-
-			//we got here either because the net doesn't exist or because it's not valid, so that's safe to assume
-			this.setPipeNet(type, null);
-
-			this.connect();
-
-			if(this.getPipeNet(type) == null) {
-				this.setPipeNet(type, new PipeNet(type).joinLink(this));
-			}
+	protected void attachNode() {
+		if(this.worldObj == null || this.worldObj.isRemote || this.isInvalid() || !this.shouldCreateNode()) return;
+		if(this.node != null && !this.node.expired) return;
+		this.node = (FluidNode) UniNodespace.getNode(this.worldObj, this.xCoord, this.yCoord, this.zCoord, this.type.getNetworkProvider());
+		if(this.node == null || this.node.expired) {
+			this.node = this.createNode(this.type);
+			UniNodespace.createNode(this.worldObj, this.node);
 		}
 	}
 
-	public FluidType getType() {
-		return this.type;
-	}
+	protected boolean shouldCreateNode() { return true; }
 
-	public void setType(FluidType type) {
-		this.type = type;
+	public FluidType getType() { return this.type; }
+
+	public void setType(FluidType nextType) {
+		if(nextType == null || nextType == this.type) return;
+		if(this.worldObj != null && !this.worldObj.isRemote && this.node != null) UniNodespace.destroyNode(this.worldObj, this.node);
+		this.node = null;
+		this.type = nextType;
 		this.markDirty();
+		if(this.worldObj instanceof WorldServer) ((WorldServer) this.worldObj).getPlayerManager().markBlockForUpdate(this.xCoord, this.yCoord, this.zCoord);
+		this.attachNode();
+		api.hbm.fluidmk2.FluidNetEndpointRegistry.markTopologyDirty(this.worldObj);
+	}
 
-		if(worldObj instanceof WorldServer) {
-			WorldServer world = (WorldServer) worldObj;
-			world.getPlayerManager().markBlockForUpdate(xCoord, yCoord, zCoord);
-		}
-
-		if(this.network != null)
-			this.network.destroy();
+	public FluidNetMK2 getFluidNet() {
+		return this.node != null && this.node.hasValidNet() ? this.node.net : null;
 	}
 
 	@Override
-	public boolean canConnect(FluidType type, ForgeDirection dir) {
-		return dir != ForgeDirection.UNKNOWN && type == this.type;
-	}
+	public FluidNetMK2 getFluidNet(FluidType fluid) { return fluid == this.type ? this.getFluidNet() : null; }
 
-	protected void connect() {
-
-		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-
-			TileEntity te = Compat.getTileStandard(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ);
-
-			if(te instanceof IFluidConductor) {
-
-				IFluidConductor conductor = (IFluidConductor) te;
-
-				if(!conductor.canConnect(type, dir.getOpposite()))
-					continue;
-
-				if(this.getPipeNet(type) == null && conductor.getPipeNet(type) != null) {
-					conductor.getPipeNet(type).joinLink(this);
-				}
-
-				if(this.getPipeNet(type) != null && conductor.getPipeNet(type) != null && this.getPipeNet(type) != conductor.getPipeNet(type)) {
-					conductor.getPipeNet(type).joinNetworks(this.getPipeNet(type));
-				}
-			}
-		}
+	@Override
+	public long transferFluid(FluidType fluid, int pressure, long amount) {
+		FluidNetMK2 network = this.getFluidNet();
+		return network != null ? network.transferFluidExternal(fluid, pressure, amount, null) : amount;
 	}
 
 	@Override
-	public void invalidate() {
-		super.invalidate();
-
-		if(!worldObj.isRemote) {
-			if(this.network != null) {
-				this.network.destroy();
-			}
-		}
-	}
-
-	/**
-	 * Only update until a power net is formed, in >99% of the cases it should be the first tick. Everything else is handled by neighbors and the net itself.
-	 */
-	public boolean shouldConnect() {
-		return (this.network == null || !this.network.isValid()) && !this.isInvalid();
-	}
+	public long getDemand(FluidType type, int pressure) { return 0; }
 
 	@Override
-	public long transferFluid(FluidType type, int pressure, long fluid) {
-
-		if(this.network == null)
-			return fluid;
-
-		return this.network.transferFluid(fluid, pressure);
-	}
-
-	@Override
-	public long getDemand(FluidType type, int pressure) {
-		return 0;
-	}
-
-	@Override
-	public IPipeNet getPipeNet(FluidType type) {
-		return type == this.type ? this.network : null;
+	public IPipeNet getPipeNet(FluidType fluid) {
+		return fluid == this.type ? PipeNet.forNetwork(this.getFluidNet()) : null;
 	}
 
 	@Override
 	public void setPipeNet(FluidType type, IPipeNet network) {
-		this.network = network;
+		// Compatibility no-op: FluidNode/FluidNetMK2 own topology.
 	}
+
+	@Override
+	public boolean canConnect(FluidType fluid, ForgeDirection direction) {
+		return direction != ForgeDirection.UNKNOWN && fluid == this.type;
+	}
+
+	@Override
+	public void invalidate() {
+		this.recordUnload();
+		if(this.worldObj != null && !this.worldObj.isRemote && this.node != null) UniNodespace.destroyNode(this.worldObj, this.node);
+		this.node = null;
+		super.invalidate();
+	}
+
+	@Override
+	public void onChunkUnload() {
+		this.recordUnload();
+		super.onChunkUnload();
+		// Logical conductor topology is compact, world-owned, and dormant while unloaded.
+		this.node = null;
+	}
+
+	private void recordUnload() {
+		if(this.worldObj != null && !this.worldObj.isRemote && this.isLoaded) PowerNetDiagnostics.recordChunkDetachment();
+		this.isLoaded = false;
+	}
+
+	@Override
+	public boolean isLoaded() { return this.isLoaded; }
 
 	@Override
 	public Packet getDescriptionPacket() {
@@ -146,8 +137,9 @@ public class TileEntityPipeBaseNT extends TileEntity implements IFluidConductor,
 	}
 
 	@Override
-	public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
-		this.readFromNBT(pkt.func_148857_g());
+	public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity packet) {
+		this.readFromNBT(packet.func_148857_g());
+		if(this.worldObj != null) this.worldObj.markBlockForUpdate(this.xCoord, this.yCoord, this.zCoord);
 	}
 
 	@Override
@@ -162,48 +154,20 @@ public class TileEntityPipeBaseNT extends TileEntity implements IFluidConductor,
 		nbt.setInteger("type", this.type.getID());
 	}
 
-	public boolean isLoaded = true;
+	@Override
+	public int[] getFluidIDToCopy() { return new int[] {this.type.getID()}; }
 
 	@Override
-	public boolean isLoaded() {
-		return isLoaded;
-	}
-
-	@Override
-	public void onChunkUnload() {
-		super.onChunkUnload();
-		this.isLoaded = false;
-	}
-
-	@Override
-	public int[] getFluidIDToCopy() {
-		return new int[]{ type.getID() };
-	}
-
-	@Override
-	public FluidTank getTankToPaste() {
-		return null;
-	}
+	public FluidTank getTankToPaste() { return null; }
 
 	@Override
 	public void pasteSettings(NBTTagCompound nbt, int index, World world, EntityPlayer player, int x, int y, int z) {
 		int[] ids = nbt.getIntArray("fluidID");
-		if(ids.length > 0) {
-			int id;
-			if (index < ids.length)
-				id = ids[index];
-			else
-				id = 0;
-
-			FluidType fluid = Fluids.fromID(id);
-
-			if(HbmPlayerProps.getData(player).getKeyPressed(HbmKeybinds.EnumKeybind.TOOL_CTRL)){
-				IBlockFluidDuct pipe = (IBlockFluidDuct)world.getBlock(x, y, z);
-				pipe.changeTypeRecursively(world, x, y, z, getType(), fluid, 64);
-			} else {
-				this.setType(fluid);
-			}
-		}
-
+		if(ids.length == 0) return;
+		int id = index < ids.length ? ids[index] : 0;
+		FluidType fluid = Fluids.fromID(id);
+		if(HbmPlayerProps.getData(player).getKeyPressed(HbmKeybinds.EnumKeybind.TOOL_CTRL)) {
+			((IBlockFluidDuct) world.getBlock(x, y, z)).changeTypeRecursively(world, x, y, z, getType(), fluid, 64);
+		} else this.setType(fluid);
 	}
 }

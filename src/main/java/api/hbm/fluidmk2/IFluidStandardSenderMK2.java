@@ -4,8 +4,6 @@ import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
-import com.hbm.uninos.GenNode;
-import com.hbm.uninos.UniNodespace;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
@@ -32,18 +30,7 @@ public interface IFluidStandardSenderMK2 extends IFluidProviderMK2 {
 		TileEntity te = TileAccessCache.getTileOrCache(world, x, y, z);
 		boolean red = false;
 
-		if(te instanceof IFluidConnectorMK2) {
-			IFluidConnectorMK2 con = (IFluidConnectorMK2) te;
-			if(con.canConnect(type, dir.getOpposite())) {
-
-				GenNode<FluidNetMK2> node = UniNodespace.getNode(world, x, y, z, type.getNetworkProvider());
-
-				if(node != null && node.net != null) {
-					node.net.addProvider(this);
-					red = true;
-				}
-			}
-		}
+		red = FluidNetEndpointRegistry.attachProvider(this, type, world, x, y, z, dir);
 
 		if(te != this && te instanceof IFluidReceiverMK2) {
 			IFluidReceiverMK2 rec = (IFluidReceiverMK2) te;
@@ -84,6 +71,7 @@ public interface IFluidStandardSenderMK2 extends IFluidProviderMK2 {
 
 	@Override
 	public default void useUpFluid(FluidType type, int pressure, long amount) {
+		long requested = amount;
 		int tanks = 0;
 		for(FluidTank tank : getSendingTanks()) {
 			if(tank.getTankType() == type && tank.getPressure() == pressure) tanks++;
@@ -105,6 +93,7 @@ public interface IFluidStandardSenderMK2 extends IFluidProviderMK2 {
 				amount -= toRem;
 			}
 		}
+		if(amount != requested) FluidNetMK2.markProviderSupplyDirty(this);
 	}
 
 	@Override

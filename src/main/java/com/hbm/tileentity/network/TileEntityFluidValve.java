@@ -1,32 +1,25 @@
 package com.hbm.tileentity.network;
 
-import api.hbm.fluid.PipeNet;
+import com.hbm.uninos.UniNodespace;
 import net.minecraft.block.Block;
 import net.minecraft.world.World;
 
 public class TileEntityFluidValve extends TileEntityPipeBaseNT {
 	
 	@Override
-	public boolean shouldConnect() {
-		return this.worldObj != null && this.getBlockMetadata() == 1 && super.canUpdate();
+	protected boolean shouldCreateNode() {
+		return this.worldObj != null && this.getBlockMetadata() == 1 && !this.isInvalid();
 	}
 
 	public void updateState() {
 		
 		this.blockMetadata = -1; // delete cache
 		
-		if(this.getBlockMetadata() == 0 && this.network != null) {
-			this.network.destroy();
-			this.network = null;
+		if(this.getBlockMetadata() == 0 && this.node != null) {
+			UniNodespace.destroyNode(this.worldObj, this.node);
+			this.node = null;
 		}
-		
-		if(this.getBlockMetadata() == 1) {
-			this.connect();
-			
-			if(this.getPipeNet(type) == null) {
-				new PipeNet(type).joinLink(this);
-			}
-		}
+		if(this.getBlockMetadata() == 1) this.attachNode();
 	}
 	
 	@Override

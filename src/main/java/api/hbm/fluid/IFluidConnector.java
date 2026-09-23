@@ -3,12 +3,10 @@ package api.hbm.fluid;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
-import com.hbm.util.Compat;
-
+import api.hbm.fluidmk2.FluidNetEndpointRegistry;
 import api.hbm.tile.ILoadedTile;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -46,21 +44,7 @@ public interface IFluidConnector extends ILoadedTile {
 	 */
 	public default void trySubscribe(FluidType type, World world, int x, int y, int z, ForgeDirection dir) {
 
-		TileEntity te = Compat.getTileStandard(world, x, y, z);
-		boolean red = false;
-		
-		if(te instanceof IFluidConductor) {
-			IFluidConductor con = (IFluidConductor) te;
-			
-			if(!con.canConnect(type, dir))
-				return;
-			
-			if(con.getPipeNet(type) != null && !con.getPipeNet(type).isSubscribed(this))
-				con.getPipeNet(type).subscribe(this);
-			
-			if(con.getPipeNet(type) != null)
-				red = true;
-		}
+		boolean red = FluidNetEndpointRegistry.attachReceiver(this, type, world, x, y, z, dir);
 		
 		if(particleDebug) {
 			NBTTagCompound data = new NBTTagCompound();
@@ -79,14 +63,7 @@ public interface IFluidConnector extends ILoadedTile {
 	
 	public default void tryUnsubscribe(FluidType type, World world, int x, int y, int z) {
 
-		TileEntity te = world.getTileEntity(x, y, z);
-		
-		if(te instanceof IFluidConductor) {
-			IFluidConductor con = (IFluidConductor) te;
-			
-			if(con.getPipeNet(type) != null && con.getPipeNet(type).isSubscribed(this))
-				con.getPipeNet(type).unsubscribe(this);
-		}
+		FluidNetEndpointRegistry.detachConnection(this, type, world, x, y, z);
 	}
 	
 	public static final boolean particleDebug = false;

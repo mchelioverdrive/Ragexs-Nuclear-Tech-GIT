@@ -110,6 +110,11 @@ public class BlockCableGauge extends BlockContainer implements IBlockMultiPass, 
 		private long deltaTick = 0;
 		private long deltaSecond = 0;
 		private long deltaLastSecond = 0;
+
+		@Override
+		public boolean canUpdate() {
+			return true;
+		}
 		
 		@Override
 		public void updateEntity() {

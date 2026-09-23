@@ -111,6 +111,9 @@ public class FluidDuctGauge extends FluidDuctBase implements IBlockMultiPass, IL
 		private long deltaTick = 0;
 		private long deltaSecond = 0;
 		private long deltaLastSecond = 0;
+
+		@Override
+		public boolean canUpdate() { return true; }
 		
 		@Override
 		public void updateEntity() {
@@ -118,7 +121,7 @@ public class FluidDuctGauge extends FluidDuctBase implements IBlockMultiPass, IL
 
 			if(!worldObj.isRemote) {
 
-				this.deltaTick = 0;
+				this.deltaTick = this.getFluidNet() != null ? this.getFluidNet().fluidTracker : 0;
 				if(worldObj.getTotalWorldTime() % 20 == 0) {
 					this.deltaLastSecond = this.deltaSecond;
 					this.deltaSecond = 0;

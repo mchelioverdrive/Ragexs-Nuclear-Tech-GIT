@@ -318,6 +318,12 @@ public class BlockPWR extends BlockContainer implements IBlockCT {
 		}
 
 		public boolean isLoaded = true;
+
+		@Override
+		public void validate() {
+			super.validate();
+			this.isLoaded = true;
+		}
 		
 		@Override
 		public boolean isLoaded() {
@@ -326,8 +332,15 @@ public class BlockPWR extends BlockContainer implements IBlockCT {
 
 		@Override
 		public void onChunkUnload() {
+			if(this.worldObj != null && !this.worldObj.isRemote) api.hbm.fluidmk2.FluidNetEndpointRegistry.detach(this);
 			super.onChunkUnload();
 			this.isLoaded = false;
+		}
+
+		@Override
+		public void invalidate() {
+			if(this.worldObj != null && !this.worldObj.isRemote) api.hbm.fluidmk2.FluidNetEndpointRegistry.detach(this);
+			super.invalidate();
 		}
 	}
 }

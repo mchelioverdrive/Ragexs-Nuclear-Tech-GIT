@@ -95,8 +95,18 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 		for(PowerNode conductor : oldNodes) this.forceJoinLink(conductor);
 		powerNetwork.links.clear();
 
-		for(IEnergyReceiverMK2 receiver : powerNetwork.receiverEntries.keySet()) this.addReceiver(receiver);
-		for(IEnergyProviderMK2 provider : powerNetwork.providerEntries.keySet()) this.addProvider(provider);
+		this.completeMergeFrom(powerNetwork);
+	}
+
+	@Override
+	public void completeMergeFrom(NodeNet network) {
+		if(!(network instanceof PowerNetMK2)) {
+			super.completeMergeFrom(network);
+			return;
+		}
+		PowerNetMK2 powerNetwork = (PowerNetMK2) network;
+		for(IEnergyReceiverMK2 receiver : new ArrayList<IEnergyReceiverMK2>(powerNetwork.receiverEntries.keySet())) this.addReceiver(receiver);
+		for(IEnergyProviderMK2 provider : new ArrayList<IEnergyProviderMK2>(powerNetwork.providerEntries.keySet())) this.addProvider(provider);
 		powerNetwork.destroy();
 		PowerNetDiagnostics.recordMerge();
 		this.markTopologyDirty();

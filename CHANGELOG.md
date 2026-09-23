@@ -127,3 +127,21 @@
 - Removed the per-tick legacy compatibility set, compatibility dirty scheduling, timestamp keepalive, three-second expiry, and all-network compatibility sweep; retained only a 100-tick invalid-endpoint integrity audit that does not redistribute clean networks.
 - Updated `/ntmpowerstats` for final-architecture attachment, detachment, merge, split, invalidation, integrity, endpoint, skip, and redistribution-time counters.
 - Targeted offline Java compilation completed successfully. Dedicated-server and in-game lifecycle, topology, diode, storage-mode, proxy, converter, and accounting scenarios remain to be tested.
+
+2026-09-23 — WIP: Rework conductor topology and fluid networking
+
+- Reworked UNINOS conductor topology around packed coordinate lookup and bounded dirty processing instead of broad stored-node scans. Ordinary six-way power nodes now avoid allocating temporary directional position objects during connectivity work.
+- Continued moving power conductor ownership out of loaded TileEntities and into persistent network state. Cable lifecycle paths now register topology changes with UNINOS rather than relying on conductor-side network maintenance.
+- Replaced the live legacy fluid-network path with the MK2/UNINOS model. `FluidNode` and `FluidNetMK2` are now being used as the authoritative fluid topology instead of `PipeNet`.
+- Reduced the old `PipeNet` implementation to a compatibility-facing layer rather than allowing it to own conductor topology or loaded TileEntities.
+- Reworked ordinary fluid ducts so they no longer tick solely to maintain network connectivity. Pipe TileEntities now retain only the state still required by the block while topology is handled by the persistent network layer.
+- Added persistent fluid endpoint registration for both providers and receivers so supply/demand membership follows the same lifecycle-driven model as conductor topology.
+- Updated fluid connector, conductor, sender, receiver, and user interfaces to bridge existing machine code into the new fluid-network implementation.
+- Updated fluid valves, exhaust pipes, duct gauges, base ducts, and shared loaded-TileEntity lifecycle handling for the new topology ownership model.
+- Removed an earlier transitional fluid endpoint implementation after the fluid rewrite was redirected fully onto `FluidNetMK2`.
+
+INCOMPLETE:
+- Final merge/split and dirty-topology behavior still needs review.
+- Remaining legacy `PipeNet` call sites and compatibility boundaries still need cleanup.
+- Provider/receiver lifecycle handling and unload/reload behavior still need final verification.
+- Full compile cleanup and final diff review were not completed before this work session ended.

@@ -4,6 +4,9 @@ import com.hbm.sound.AudioWrapper;
 
 import api.hbm.energymk2.IEnergyHandlerMK2;
 import api.hbm.energymk2.PowerNetMK2;
+import api.hbm.fluid.IFluidConnector;
+import api.hbm.fluidmk2.FluidNetEndpointRegistry;
+import api.hbm.fluidmk2.IFluidProviderMK2;
 import api.hbm.tile.ILoadedTile;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -21,6 +24,7 @@ public class TileEntityLoadedBase extends TileEntity implements ILoadedTile {
 	@Override
 	public void onChunkUnload() {
 		if(this.worldObj != null && !this.worldObj.isRemote && this instanceof IEnergyHandlerMK2) PowerNetMK2.detachEndpoint((IEnergyHandlerMK2) this);
+		if(this.worldObj != null && !this.worldObj.isRemote && (this instanceof IFluidConnector || this instanceof IFluidProviderMK2)) FluidNetEndpointRegistry.detach(this);
 		super.onChunkUnload();
 		this.isLoaded = false;
 	}
@@ -28,6 +32,7 @@ public class TileEntityLoadedBase extends TileEntity implements ILoadedTile {
 	@Override
 	public void invalidate() {
 		if(this.worldObj != null && !this.worldObj.isRemote && this instanceof IEnergyHandlerMK2) PowerNetMK2.detachEndpoint((IEnergyHandlerMK2) this);
+		if(this.worldObj != null && !this.worldObj.isRemote && (this instanceof IFluidConnector || this instanceof IFluidProviderMK2)) FluidNetEndpointRegistry.detach(this);
 		super.invalidate();
 	}
 	

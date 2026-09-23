@@ -1,158 +1,65 @@
 package api.hbm.fluid;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 
 import com.hbm.inventory.fluid.FluidType;
 
-import net.minecraft.tileentity.TileEntity;
+import api.hbm.fluidmk2.FluidNetMK2;
 
-public class PipeNet implements IPipeNet {
+/**
+ * Compatibility view for old callers. Conductor topology and endpoint ownership
+ * belong exclusively to FluidNetMK2; this class stores no TileEntities.
+ */
+public final class PipeNet implements IPipeNet {
 
-	private boolean valid = true;
-	private FluidType type;
-	private List<IFluidConductor> links = new ArrayList();
-	private HashSet<IFluidConnector> subscribers = new HashSet();
-	private final List<IFluidConnector> subscriberScratch = new ArrayList();
-	private long[] demandScratch = new long[0];
-	
-	public PipeNet(FluidType type) {
-		this.type = type;
-	}
+	private static final IdentityHashMap<FluidNetMK2, PipeNet> adapters = new IdentityHashMap<FluidNetMK2, PipeNet>();
+	private final FluidNetMK2 network;
 
-	@Override
-	public void joinNetworks(IPipeNet network) {
-		
-		if(network == this)
-			return;
+	private PipeNet(FluidNetMK2 network) { this.network = network; }
 
-		for(IFluidConductor conductor : network.getLinks()) {
-			conductor.setPipeNet(type, this);
-			this.getLinks().add(conductor);
+	public static PipeNet forNetwork(FluidNetMK2 network) {
+		if(network == null || !network.isValid()) return null;
+		PipeNet adapter = adapters.get(network);
+		if(adapter == null) {
+			adapter = new PipeNet(network);
+			adapters.put(network, adapter);
 		}
-		network.getLinks().clear();
-		
-		for(IFluidConnector connector : network.getSubscribers()) {
-			this.subscribe(connector);
+		return adapter;
+	}
+
+	public static void release(FluidNetMK2 network) { adapters.remove(network); }
+
+	@Override public void joinNetworks(IPipeNet network) { }
+	@Override public List<IFluidConductor> getLinks() { return Collections.emptyList(); }
+	@Override public HashSet<IFluidConnector> getSubscribers() { return new HashSet<IFluidConnector>(this.network.receiverEntries.keySet()); }
+	@Override public IPipeNet joinLink(IFluidConductor conductor) { return this; }
+	@Override public void leaveLink(IFluidConductor conductor) { }
+	@Override public void subscribe(IFluidConnector connector) { this.network.addReceiver(connector); }
+	@Override public void unsubscribe(IFluidConnector connector) { this.network.removeReceiver(connector); }
+	@Override public boolean isSubscribed(IFluidConnector connector) { return this.network.isSubscribed(connector); }
+	@Override public void destroy() { this.network.destroy(); }
+	@Override public boolean isValid() { return this.network.isValid(); }
+	@Override public long transferFluid(long fill, int pressure) { return this.network.transferFluidExternal(this.network.getType(), pressure, fill, null); }
+	@Override public FluidType getType() { return this.network.getType(); }
+
+	public static long fairTransfer(List<IFluidConnector> subscribers, FluidType type, int pressure, long fill) {
+		if(fill <= 0 || subscribers.isEmpty()) return fill;
+		long totalDemand = 0;
+		long[] demand = new long[subscribers.size()];
+		for(int i = 0; i < subscribers.size(); i++) {
+			demand[i] = subscribers.get(i).getDemand(type, pressure);
+			totalDemand += demand[i];
 		}
-		
-		network.destroy();
-	}
-
-	@Override
-	public List<IFluidConductor> getLinks() {
-		return links;
-	}
-
-	@Override
-	public HashSet<IFluidConnector> getSubscribers() {
-		return subscribers;
-	}
-
-	@Override
-	public IPipeNet joinLink(IFluidConductor conductor) {
-		
-		if(conductor.getPipeNet(type) != null)
-			conductor.getPipeNet(type).leaveLink(conductor);
-		
-		conductor.setPipeNet(type, this);
-		this.links.add(conductor);
-		return this;
-	}
-
-	@Override
-	public void leaveLink(IFluidConductor conductor) {
-		conductor.setPipeNet(type, null);
-		this.links.remove(conductor);
-	}
-
-	@Override
-	public void subscribe(IFluidConnector connector) {
-		this.subscribers.add(connector);
-	}
-
-	@Override
-	public void unsubscribe(IFluidConnector connector) {
-		this.subscribers.remove(connector);
-	}
-
-	@Override
-	public boolean isSubscribed(IFluidConnector connector) {
-		return this.subscribers.contains(connector);
-	}
-
-	@Override
-	public long transferFluid(long fill, int pressure) {
-
-		subscribers.removeIf(x -> 
-			x == null || !(x instanceof TileEntity) || ((TileEntity)x).isInvalid() || !x.isLoaded()
-		);
-		
-		if(this.subscribers.isEmpty())
-			return fill;
-		
-		this.subscriberScratch.clear();
-		this.subscriberScratch.addAll(this.subscribers);
-		if(this.demandScratch.length < this.subscriberScratch.size()) this.demandScratch = new long[this.subscriberScratch.size()];
-		return fairTransfer(this.subscriberScratch, type, pressure, fill, this.demandScratch);
-	}
-	
-	public static long fairTransfer(List<IFluidConnector> subList, FluidType type, int pressure, long fill) {
-		return fairTransfer(subList, type, pressure, fill, null);
-	}
-
-	private static long fairTransfer(List<IFluidConnector> subList, FluidType type, int pressure, long fill, long[] demandScratch) {
-		
-		if(fill <= 0) return 0;
-		
-		long totalReq = 0;
-		
-		for(int i = 0; i < subList.size(); i++) {
-			long demand = subList.get(i).getDemand(type, pressure);
-			if(demandScratch != null) demandScratch[i] = demand;
-			totalReq += demand;
+		if(totalDemand <= 0) return fill;
+		long transferred = 0;
+		for(int i = 0; i < subscribers.size(); i++) {
+			long amount = (long) Math.floor((double) demand[i] / (double) totalDemand * fill);
+			if(amount > 0) transferred += amount - subscribers.get(i).transferFluid(type, pressure, amount);
 		}
-		
-		if(totalReq == 0)
-			return fill;
-		
-		long totalGiven = 0;
-		
-		for(int i = 0; i < subList.size(); i++) {
-			IFluidConnector con = subList.get(i);
-			long req = demandScratch != null ? demandScratch[i] : con.getDemand(type, pressure);
-			double fraction = (double)req / (double)totalReq;
-			
-			long given = (long) Math.floor(fraction * fill);
-			
-			if(given > 0) {
-				totalGiven += (given - con.transferFluid(type, pressure, given));
-			}
-		}
-		
-		return fill - totalGiven;
-	}
-
-	@Override
-	public FluidType getType() {
-		return type;
-	}
-
-	@Override
-	public void destroy() {
-		this.valid = false;
-		this.subscribers.clear();
-		this.subscriberScratch.clear();
-		
-		for(IFluidConductor con : this.links)
-			con.setPipeNet(type, null);
-		
-		this.links.clear();
-	}
-
-	@Override
-	public boolean isValid() {
-		return this.valid;
+		return fill - transferred;
 	}
 }

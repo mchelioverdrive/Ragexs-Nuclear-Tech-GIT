@@ -22,6 +22,7 @@ public interface IFluidStandardReceiverMK2 extends IFluidReceiverMK2 {
 
 	@Override
 	public default long transferFluid(FluidType type, int pressure, long amount) {
+		long requested = amount;
 		int tanks = 0;
 		for(FluidTank tank : getReceivingTanks()) {
 			if(tank.getTankType() == type && tank.getPressure() == pressure) tanks++;
@@ -43,6 +44,7 @@ public interface IFluidStandardReceiverMK2 extends IFluidReceiverMK2 {
 				amount -= toAdd;
 			}
 		}
+		if(amount != requested) FluidNetMK2.markReceiverDemandDirty(this);
 		return amount;
 	}
 

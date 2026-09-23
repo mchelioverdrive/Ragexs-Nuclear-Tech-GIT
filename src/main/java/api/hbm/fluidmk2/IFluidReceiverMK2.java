@@ -3,8 +3,6 @@ package api.hbm.fluidmk2;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
-import com.hbm.uninos.GenNode;
-import com.hbm.uninos.UniNodespace;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2.ConnectionPriority;
@@ -14,7 +12,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public interface IFluidReceiverMK2 extends IFluidUserMK2 {
+public interface IFluidReceiverMK2 extends IFluidUserMK2, api.hbm.fluid.IFluidConnector {
 
 	/** Sends fluid of the desired type and pressure to the receiver, returns the remainder */
 	public long transferFluid(FluidType type, int pressure, long amount);
@@ -22,27 +20,17 @@ public interface IFluidReceiverMK2 extends IFluidUserMK2 {
 	public long getDemand(FluidType type, int pressure);
 	
 	public default int[] getReceivingPressureRange(FluidType type) { return DEFAULT_PRESSURE_RANGE; }
+
+	@Override
+	public default boolean canConnect(FluidType type, ForgeDirection dir) { return dir != ForgeDirection.UNKNOWN; }
 	
 	public default void trySubscribe(FluidType type, World world, DirPos pos) { trySubscribe(type, world, pos.getX(), pos.getY(), pos.getZ(), pos.getDir()); }
 	
 	public default void trySubscribe(FluidType type, World world, int x, int y, int z, ForgeDirection dir) {
 
-		TileEntity te = TileAccessCache.getTileOrCache(world, x, y, z);
-		boolean red = false;
+		boolean red = FluidNetEndpointRegistry.attachReceiver(this, type, world, x, y, z, dir);
 		
-		if(te instanceof IFluidConnectorMK2) {
-			IFluidConnectorMK2 con = (IFluidConnectorMK2) te;
-			if(!con.canConnect(type, dir.getOpposite())) return;
-			
-			GenNode node = UniNodespace.getNode(world, x, y, z, type.getNetworkProvider());
-			
-			if(node != null && node.net != null) {
-				node.net.addReceiver(this);
-				red = true;
-			}
-		}
-		
-		if(particleDebug) {
+		if(IFluidUserMK2.particleDebug) {
 			NBTTagCompound data = new NBTTagCompound();
 			data.setString("type", "network");
 			data.setString("mode", "fluid");

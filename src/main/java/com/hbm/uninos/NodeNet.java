@@ -18,6 +18,8 @@ public abstract class NodeNet<R, P, L extends GenNode> {
 	public static Random rand = new Random();
 	
 	public boolean valid = true;
+	/** True while a bounded topology repair owns this network. Distribution waits until repair completes. */
+	public boolean topologyRepairing;
 	public Set<L> links = new LinkedHashSet();
 	protected World world;
 
@@ -48,9 +50,15 @@ public abstract class NodeNet<R, P, L extends GenNode> {
 		for(L conductor : oldNodes) forceJoinLink(conductor);
 		network.links.clear();
 
-		for(Object /*this is bullshit*/ connector : network.receiverEntries.keySet()) this.addReceiver((R) connector);
-		for(Object /*this is bullshit*/ connector : network.providerEntries.keySet()) this.addProvider((P) connector);
+		this.completeMergeFrom(network);
+	}
+
+	/** Finalizes endpoint ownership after a synchronous or bounded link merge. */
+	public void completeMergeFrom(NodeNet network) {
+		for(Object connector : new ArrayList(network.receiverEntries.keySet())) this.addReceiver((R) connector);
+		for(Object connector : new ArrayList(network.providerEntries.keySet())) this.addProvider((P) connector);
 		network.destroy();
+		this.onTopologyChanged();
 	}
 
 	/** Adds the node as part of this network's links */
@@ -85,10 +93,12 @@ public abstract class NodeNet<R, P, L extends GenNode> {
 		UniNodespace.unregisterNetwork(this);
 	}
 	public boolean isValid() { return this.valid; }
+	public boolean isTopologyRepairing() { return this.topologyRepairing; }
 	public World getWorld() { return this.world; }
 	public void resetTrackers() { }
 	public abstract void update();
 	protected void onTopologyChanged() { }
+	public void topologyChanged() { this.onTopologyChanged(); }
 
 	public void reapExpiredLinks() {
 		boolean changed = false;

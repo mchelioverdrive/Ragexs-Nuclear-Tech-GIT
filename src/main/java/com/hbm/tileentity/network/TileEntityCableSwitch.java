@@ -17,6 +17,7 @@ public class TileEntityCableSwitch extends TileEntityCableBaseNT {
 			Nodespace.destroyNode(worldObj, xCoord, yCoord, zCoord);
 			this.node = null;
 		}
+		if(this.getBlockMetadata() == 1) this.attachNode();
 	}
 	
 	@Override

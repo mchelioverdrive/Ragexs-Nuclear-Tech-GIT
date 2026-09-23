@@ -1,6 +1,5 @@
 package com.hbm.uninos;
 
-import com.hbm.lib.Library;
 import com.hbm.util.fauxpointtwelve.BlockPos;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
@@ -9,7 +8,11 @@ import net.minecraft.world.World;
 public class GenNode<N extends NodeNet> {
 	
 	public BlockPos[] positions;
-	public DirPos[] connections;
+	public DirPos[] connections = new DirPos[0];
+	private boolean standardConnections;
+	private int standardX;
+	private int standardY;
+	private int standardZ;
 	/** Quick reminder that this CAN and WILL be null for the first tick between the node being created
 	 * and the nodepsace update loop establishing a network. always check hasValidNet beforehand! */
 	public N net;
@@ -26,21 +29,27 @@ public class GenNode<N extends NodeNet> {
 	}
 	
 	public GenNode<N> setConnections(DirPos... connections) {
-		this.connections = connections;
+		this.standardConnections = false;
+		this.connections = connections != null ? connections : new DirPos[0];
 		return this;
 	}
 	
 	public GenNode<N> setStandardConnections(int xCoord, int yCoord, int zCoord) {
-		return this.setConnections(
-			new DirPos(xCoord + 1, yCoord, zCoord, Library.POS_X),
-			new DirPos(xCoord - 1, yCoord, zCoord, Library.NEG_X),
-			new DirPos(xCoord, yCoord + 1, zCoord, Library.POS_Y),
-			new DirPos(xCoord, yCoord - 1, zCoord, Library.NEG_Y),
-			new DirPos(xCoord, yCoord, zCoord + 1, Library.POS_Z),
-			new DirPos(xCoord, yCoord, zCoord - 1, Library.NEG_Z));
+		this.standardConnections = true;
+		this.standardX = xCoord;
+		this.standardY = yCoord;
+		this.standardZ = zCoord;
+		this.connections = new DirPos[0];
+		return this;
 	}
+
+	public boolean hasStandardConnections() { return this.standardConnections; }
+	public int getStandardX() { return this.standardX; }
+	public int getStandardY() { return this.standardY; }
+	public int getStandardZ() { return this.standardZ; }
 	
 	public GenNode<N> addConnection(DirPos connection) {
+		if(this.standardConnections) throw new IllegalStateException("Cannot append an exceptional connection to a compact standard node");
 		DirPos[] newCons = new DirPos[this.connections.length + 1];
 		for(int i = 0; i < this.connections.length; i++) newCons[i] = this.connections[i];
 		newCons[newCons.length - 1] = connection;

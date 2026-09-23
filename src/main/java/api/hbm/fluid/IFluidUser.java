@@ -21,19 +21,18 @@ public interface IFluidUser extends IFluidConnector {
 	public default void sendFluid(FluidType type, int pressure, World world, int x, int y, int z, ForgeDirection dir) {
 		
 		TileEntity te = world.getTileEntity(x, y, z);
-		boolean wasSubscribed = false;
 		boolean red = false;
-		
+
 		if(te instanceof IFluidConductor) {
-			IFluidConductor con = (IFluidConductor) te;
-			
-			if(con.getPipeNet(type) != null && con.getPipeNet(type).isSubscribed(this)) {
-				con.getPipeNet(type).unsubscribe(this);
-				wasSubscribed = true;
+			IFluidConductor conductor = (IFluidConductor) te;
+			api.hbm.fluidmk2.FluidNetMK2 network = conductor.getFluidNet(type);
+			if(network != null && conductor.canConnect(type, dir.getOpposite())) {
+				long available = this.getTotalFluidForSend(type, pressure);
+				long remainder = network.transferFluidExternal(type, pressure, available, this);
+				this.removeFluidForTransfer(type, pressure, available - remainder);
+				red = true;
 			}
-		}
-		
-		if(te instanceof IFluidConnector) {
+		} else if(te instanceof IFluidConnector) {
 			IFluidConnector con = (IFluidConnector) te;
 			
 			if(con.canConnect(type, dir.getOpposite())) {
@@ -44,14 +43,6 @@ public interface IFluidUser extends IFluidConnector {
 					this.removeFluidForTransfer(type, pressure, transfer);
 				}
 				red = true;
-			}
-		}
-		
-		if(wasSubscribed && te instanceof IFluidConductor) {
-			IFluidConductor con = (IFluidConductor) te;
-			
-			if(con.getPipeNet(type) != null && !con.getPipeNet(type).isSubscribed(this)) {
-				con.getPipeNet(type).subscribe(this);
 			}
 		}
 		
@@ -77,9 +68,7 @@ public interface IFluidUser extends IFluidConnector {
 		if(te instanceof IFluidConductor) {
 			IFluidConductor con = (IFluidConductor) te;
 			
-			if(con.getPipeNet(type) != null) {
-				return con.getPipeNet(type);
-			}
+			return PipeNet.forNetwork(con.getFluidNet(type));
 		}
 		
 		return null;

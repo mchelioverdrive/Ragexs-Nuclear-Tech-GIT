@@ -125,14 +125,12 @@ public class FluidDuctBase extends BlockContainer implements IBlockFluidDuct, IA
 			
 			if(type != null) {
 				
-				IPipeNet net = pipe.getPipeNet(type);
+				api.hbm.fluidmk2.FluidNetMK2 net = pipe.getFluidNet(type);
 				
-				if(net instanceof PipeNet) {
-					PipeNet pipeNet = (PipeNet) net;
-					
+				if(net != null) {
 					List<String> debug = new ArrayList();
-					debug.add("Links: " + pipeNet.getLinks().size());
-					debug.add("Subscribers: " + pipeNet.getSubscribers().size());
+					debug.add("Links: " + net.links.size());
+					debug.add("Subscribers: " + net.receiverEntries.size());
 					return debug;
 				}
 			}

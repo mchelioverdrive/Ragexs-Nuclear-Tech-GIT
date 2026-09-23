@@ -9,6 +9,7 @@ import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.Nodespace;
 import api.hbm.energymk2.Nodespace.PowerNode;
+import com.hbm.uninos.UniNodespace;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.item.ItemStack;
@@ -78,8 +79,8 @@ public abstract class TileEntityPylonBase extends TileEntityCableBaseNT {
 		connected.add(new int[] {x, y, z});
 		
 		PowerNode node = Nodespace.getNode(worldObj, xCoord, yCoord, zCoord);
-		node.recentlyChanged = true;
 		node.addConnection(new DirPos(x, y, z, ForgeDirection.UNKNOWN));
+		UniNodespace.markNodeDirty(this.worldObj, node);
 		
 		this.markDirty();
 		

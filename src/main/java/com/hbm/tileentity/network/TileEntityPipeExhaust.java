@@ -2,127 +2,86 @@ package com.hbm.tileentity.network;
 
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
-import com.hbm.util.Compat;
+import com.hbm.uninos.UniNodespace;
 
 import api.hbm.fluid.IFluidConductor;
-import api.hbm.fluid.IPipeNet;
-import api.hbm.fluid.PipeNet;
+import api.hbm.fluidmk2.FluidNetMK2;
+import api.hbm.fluidmk2.FluidNode;
+import api.hbm.fluidmk2.IFluidPipeMK2;
+import api.hbm.energymk2.PowerNetDiagnostics;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityPipeExhaust extends TileEntity implements IFluidConductor {
-	
-	public IPipeNet[] nets = new IPipeNet[3];
-	
-	public FluidType[] getSmokes() {
-		return new FluidType[] {Fluids.SMOKE, Fluids.SMOKE_LEADED, Fluids.SMOKE_POISON};
+/** Non-ticking multi-fluid exhaust conductor backed by three compact UNINOS nodes. */
+public class TileEntityPipeExhaust extends TileEntity implements IFluidConductor, IFluidPipeMK2 {
+
+	private final FluidNode[] nodes = new FluidNode[3];
+	private boolean loaded;
+
+	public FluidType[] getSmokes() { return new FluidType[] {Fluids.SMOKE, Fluids.SMOKE_LEADED, Fluids.SMOKE_POISON}; }
+
+	@Override
+	public boolean canUpdate() { return false; }
+
+	@Override
+	public void validate() {
+		super.validate();
+		if(this.worldObj != null && !this.worldObj.isRemote && !this.loaded) PowerNetDiagnostics.recordChunkAttachment();
+		this.loaded = true;
+		this.attachNodes();
 	}
 
 	@Override
-	public void updateEntity() {
-		
-		if(!worldObj.isRemote && canUpdate()) {
-			
-			for(int i = 0; i < 3; i++) nets[i] = null;
+	public void updateEntity() { this.attachNodes(); }
 
-			for(FluidType type : getSmokes()) {
-				this.connect(type);
-				
-				if(this.getPipeNet(type) == null) {
-					this.setPipeNet(type, new PipeNet(type).joinLink(this));
-				}
-			}
-		}
-	}
-	
-	protected void connect(FluidType type) {
-		
-		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-			
-			TileEntity te = Compat.getTileStandard(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ);
-			
-			if(te instanceof IFluidConductor) {
-				
-				IFluidConductor conductor = (IFluidConductor) te;
-				
-				if(!conductor.canConnect(type, dir.getOpposite()))
-					continue;
-				
-				if(this.getPipeNet(type) == null && conductor.getPipeNet(type) != null) {
-					conductor.getPipeNet(type).joinLink(this);
-				}
-				
-				if(this.getPipeNet(type) != null && conductor.getPipeNet(type) != null && this.getPipeNet(type) != conductor.getPipeNet(type)) {
-					conductor.getPipeNet(type).joinNetworks(this.getPipeNet(type));
-				}
+	private void attachNodes() {
+		if(this.worldObj == null || this.worldObj.isRemote || this.isInvalid()) return;
+		FluidType[] types = this.getSmokes();
+		for(int i = 0; i < types.length; i++) {
+			if(this.nodes[i] != null && !this.nodes[i].expired) continue;
+			this.nodes[i] = (FluidNode) UniNodespace.getNode(this.worldObj, this.xCoord, this.yCoord, this.zCoord, types[i].getNetworkProvider());
+			if(this.nodes[i] == null || this.nodes[i].expired) {
+				this.nodes[i] = this.createNode(types[i]);
+				UniNodespace.createNode(this.worldObj, this.nodes[i]);
 			}
 		}
 	}
 
 	@Override
-	public void invalidate() {
-		super.invalidate();
-		
-		if(!worldObj.isRemote) {
-			
-			for(int i = 0; i < 3; i++) {
-				if(nets[i] != null) {
-					nets[i].destroy();
-				}
-			}
-		}
-	}
-	@Override
-	public boolean canUpdate() {
-		
-		if(this.isInvalid()) return false;
-		
-		for(IPipeNet net : nets) {
-			if(net == null || !net.isValid()) {
-				return true;
-			}
-		}
-		
-		return false;
-	}
-	
-	@Override
-	public boolean canConnect(FluidType type, ForgeDirection dir) {
-		return dir != ForgeDirection.UNKNOWN && (type == Fluids.SMOKE || type == Fluids.SMOKE_LEADED || type == Fluids.SMOKE_POISON);
-	}
-
-	@Override
-	public long getDemand(FluidType type, int pressure) {
-		return 0;
-	}
-
-	@Override
-	public IPipeNet getPipeNet(FluidType type) {
-
-		if(type == Fluids.SMOKE) return nets[0];
-		if(type == Fluids.SMOKE_LEADED) return nets[1];
-		if(type == Fluids.SMOKE_POISON) return nets[2];
+	public FluidNetMK2 getFluidNet(FluidType type) {
+		FluidType[] types = this.getSmokes();
+		for(int i = 0; i < types.length; i++) if(type == types[i] && this.nodes[i] != null && this.nodes[i].hasValidNet()) return this.nodes[i].net;
 		return null;
 	}
 
 	@Override
-	public void setPipeNet(FluidType type, IPipeNet network) {
-
-		if(type == Fluids.SMOKE) nets[0] = network;
-		if(type == Fluids.SMOKE_LEADED) nets[1] = network;
-		if(type == Fluids.SMOKE_POISON) nets[2] = network;
+	public boolean canConnect(FluidType type, ForgeDirection direction) {
+		return direction != ForgeDirection.UNKNOWN && (type == Fluids.SMOKE || type == Fluids.SMOKE_LEADED || type == Fluids.SMOKE_POISON);
 	}
 
-	public boolean isLoaded = true;
-	
 	@Override
-	public boolean isLoaded() {
-		return isLoaded;
+	public long getDemand(FluidType type, int pressure) { return 0; }
+
+	@Override
+	public void invalidate() {
+		this.recordUnload();
+		if(this.worldObj != null && !this.worldObj.isRemote) for(FluidNode node : this.nodes) if(node != null) UniNodespace.destroyNode(this.worldObj, node);
+		for(int i = 0; i < this.nodes.length; i++) this.nodes[i] = null;
+		super.invalidate();
 	}
+
+	@Override
+	public boolean isLoaded() { return this.loaded; }
 
 	@Override
 	public void onChunkUnload() {
+		this.recordUnload();
 		super.onChunkUnload();
-		this.isLoaded = false;
+		for(int i = 0; i < this.nodes.length; i++) this.nodes[i] = null;
+	}
+
+	private void recordUnload() {
+		if(this.worldObj != null && !this.worldObj.isRemote && this.loaded) PowerNetDiagnostics.recordChunkDetachment();
+		this.loaded = false;
 	}
 }
