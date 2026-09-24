@@ -58,8 +58,7 @@ public class ResourceManager {
 	public static final IModelCustom hephaestus = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/hephaestus.obj")).asVBO();
 
 	//Caster o' Strands
-	// Keep animated named groups on the CPU path: Angelica 2.1.31 can miss model-view changes on direct VBO draws.
-	public static final IModelCustom strand_caster = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/strand_caster.obj"));
+	public static final IModelCustom strand_caster = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/strand_caster.obj")).asVBO();
 
 	//Furnaces
 	public static final IModelCustom furnace_iron = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/machines/furnace_iron.obj"));
@@ -140,7 +139,7 @@ public class ResourceManager {
 	public static final IModelCustom wood_burner = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/wood_burner.obj"));
 
 	//IGen
-	public static final IModelCustom igen = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/igen.obj"));
+	public static final IModelCustom igen = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/igen.obj")).asVBO();
 
 	//Combustion Engine
 	public static final IModelCustom dieselgen = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/dieselgen.obj"));
@@ -158,7 +157,7 @@ public class ResourceManager {
 	public static final IModelCustom assembler_cog = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/assembler_new_cog.obj"));
 	public static final IModelCustom assembler_slider = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/assembler_new_slider.obj"));
 	public static final IModelCustom assembler_arm = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/assembler_new_arm.obj"));
-	public static final IModelCustom assemfac = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/assemfac.obj"));
+	public static final IModelCustom assemfac = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/assemfac.obj")).asVBO();
 
 	//Chemplant
 	public static final IModelCustom chemplant_body = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/chemplant_new_body.obj")).asVBO();
@@ -166,10 +165,10 @@ public class ResourceManager {
 	public static final IModelCustom chemplant_piston = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/chemplant_new_piston.obj"));
 	public static final IModelCustom chemplant_fluid = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/chemplant_new_fluid.hmf"));
 	public static final IModelCustom chemplant_fluidcap = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/chemplant_new_fluidcap.hmf"));
-	public static final IModelCustom chemfac = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/chemfac.obj"));
+	public static final IModelCustom chemfac = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/chemfac.obj")).asVBO();
 
 	//Mixer
-	public static final IModelCustom mixer = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/mixer.obj"));
+	public static final IModelCustom mixer = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/mixer.obj")).asVBO();
 
 	//Arc Welder
 	public static final IModelCustom arc_welder = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/arc_welder.obj"), false).asVBO();
@@ -244,7 +243,7 @@ public class ResourceManager {
 	public static final IModelCustom meteor = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/weapons/meteor.obj"));
 
 	//Radgen
-	public static final IModelCustom radgen = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/radgen.obj"));
+	public static final IModelCustom radgen = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/machines/radgen.obj")).asVBO();
 
 	//Small Reactor
 	public static final IModelCustom reactor_small_base = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/reactors/reactor_small_base.obj"));
@@ -428,7 +427,7 @@ public class ResourceManager {
 	//Charging Station
 	public static final IModelCustom charger = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/blocks/charger.obj"));
 
-	public static final IModelCustom refueler = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/blocks/refueler.obj"));
+	public static final IModelCustom refueler = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/blocks/refueler.obj")).asVBO();
 
 	//DecoContainer (File Cabinet for now)
 	public static final IModelCustom file_cabinet = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/file_cabinet.obj"));
