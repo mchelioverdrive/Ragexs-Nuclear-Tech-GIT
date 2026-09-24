@@ -496,27 +496,20 @@ public class SkyProviderCelestial extends IRenderHandler {
 		}
 	}
 
+	/**
+	 * Angelica's NTM:Space mixin injects into the blanking draw inside this exact method.
+	 * Keep the colour/draw sequence here rather than behind another renderSun overload.
+	 */
 	protected void renderSun(float partialTicks, WorldClient world, Minecraft mc, CelestialBody sun, double sunSize, double coronaSize, float visibility, float pressure) {
-		// Modern Angelica's optional NTM:Space mixin was written against a newer HBM hook with this
-		// CelestialBody parameter. RTM still renders Kerbol internally, so keep this bridge as a
-		// soft compatibility entry point instead of adding Angelica as a hard dependency.
-		renderSun(partialTicks, world, mc, sunSize, coronaSize, visibility, pressure);
-	}
-
-	protected void renderSun(float partialTicks, WorldClient world, Minecraft mc, double sunSize, double coronaSize, float visibility, float pressure) {
-		renderSun(partialTicks, world, mc, sunSize, coronaSize, visibility, pressure, 1.0F);
-	}
-
-	protected void renderSun(float partialTicks, WorldClient world, Minecraft mc, double sunSize, double coronaSize, float visibility, float pressure, float glareBrightness) {
 		Tessellator tessellator = Tessellator.instance;
 
-		if(SolarSystem.kerbol.shader != null && SolarSystem.kerbol.hasTrait(CBT_Destroyed.class)) {
+		if(sun.shader != null && sun.hasTrait(CBT_Destroyed.class)) {
 			// BLACK HOLE SUN
 			// WON'T YOU COME
 			// AND WASH AWAY THE RAIN
 
-			Shader shader = SolarSystem.kerbol.shader;
-			double shaderSize = sunSize * SolarSystem.kerbol.shaderScale;
+			Shader shader = sun.shader;
+			double shaderSize = sunSize * sun.shaderScale;
 
 			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 
@@ -556,7 +549,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 			GL11.glEnable(GL11.GL_TEXTURE_2D);
 			GL11.glColor4f(1.0F, 1.0F, 1.0F, visibility);
 
-			mc.renderEngine.bindTexture(SolarSystem.kerbol.texture);
+			mc.renderEngine.bindTexture(sun.texture);
 
 			tessellator.startDrawingQuads();
 			tessellator.addVertexWithUV(-sunSize, 100.0D, -sunSize, 0.0D, 0.0D);
@@ -567,7 +560,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 
 			// Draw a big ol' spiky flare! Less so when there is an atmosphere,
 			// and scale the glare by irradiance for vacuum/orbital views.
-			float flareAlpha = MathHelper.clamp_float(glareBrightness, 0.0F, 1.0F) * (1 - MathHelper.clamp_float(pressure, 0.0F, 1.0F) * 0.75F);
+			float flareAlpha = MathHelper.clamp_float(getSunGlareBrightness(), 0.0F, 1.0F) * (1 - MathHelper.clamp_float(pressure, 0.0F, 1.0F) * 0.75F);
 			GL11.glColor4f(1.0F, 1.0F, 1.0F, flareAlpha);
 
 			mc.renderEngine.bindTexture(flareTexture);
@@ -579,6 +572,10 @@ public class SkyProviderCelestial extends IRenderHandler {
 			tessellator.addVertexWithUV(-coronaSize, 100.0D, coronaSize, 0.0D, 1.0D);
 			tessellator.draw();
 		}
+	}
+
+	protected float getSunGlareBrightness() {
+		return 1.0F;
 	}
 
 	protected void renderCelestials(float partialTicks, WorldClient world, Minecraft mc, List<AstroMetric> metrics, float celestialAngle, CelestialBody tidalLockedBody, Vec3 planetTint, float visibility, float blendAmount, CelestialBody orbiting, float maxSize) {

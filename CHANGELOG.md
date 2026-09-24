@@ -179,3 +179,10 @@ INCOMPLETE:
 - Reused decorative item renderers and dummy item entities across assembler, press, inserter, ore-slopper, welding, and soldering frames, and reused the foundry item renderer.
 - Removed per-frame color objects, fluid-tank texture identifiers, clip-plane arrays, and pumpjack rotation vectors from prioritized machine TESRs.
 - Targeted offline Java compilation completed successfully. Minecraft was not launched; visual parity, animation, clipping, fluid/item rendering, resource reload, and measured performance still require in-game validation.
+
+2026-09-24 02:30 — Restore Angelica celestial-sky mixin target
+
+- Restored the complete sun-rendering body to the `SkyProviderCelestial.renderSun` signature targeted by Angelica 2.1.31 instead of leaving that signature as a forwarding bridge to a different overload.
+- Preserved orbital irradiance-based glare through an overridable brightness hook while retaining the exact `glColor4f`/blanking `Tessellator.draw`/`glColor4f` bytecode slice Angelica uses to suppress the blanking quad.
+- Removed the now-unneeded overloaded sun-render helpers so Angelica's name-only callback target is unambiguous; the direct call from `render` and the orbit override retain the descriptor expected by Angelica's wrapper.
+- Targeted offline Java compilation completed successfully. Static bytecode inspection confirmed one matching `renderSun` descriptor and one `Tessellator.draw()` call between the first two `GL11.glColor4f` invocations; Minecraft was not launched.

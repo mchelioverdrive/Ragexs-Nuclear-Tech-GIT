@@ -102,9 +102,12 @@ public class SkyProviderOrbit extends SkyProviderCelestial {
 
 	@Override
 	protected void renderSun(float partialTicks, WorldClient world, Minecraft mc, CelestialBody sun, double sunSize, double coronaSize, float visibility, float pressure) {
-		// Modern Angelica targets this legacy HBM owner/signature directly. Declare the bridge on
-		// RTM's orbit provider as well so the optional mixin can resolve without loading failures.
-		super.renderSun(partialTicks, world, mc, sunSize, coronaSize, visibility, pressure, currentSunGlare);
+		super.renderSun(partialTicks, world, mc, sun, sunSize, coronaSize, visibility, pressure);
+	}
+
+	@Override
+	protected float getSunGlareBrightness() {
+		return currentSunGlare;
 	}
 
 	// All angles within are normalized to -180/180
