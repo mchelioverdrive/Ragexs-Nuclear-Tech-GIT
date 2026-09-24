@@ -221,8 +221,8 @@ This confirms category 1, model loading/parsing, as the lifecycle responsible fo
 | --- | ---: | --- |
 | `ResourceManager`: Forge OBJ | 218 | Eager static objects shared by block, item, entity, and TESR renderers |
 | `ResourceManager`: HMF | 4 | Eager static CPU-tessellated objects |
-| `ResourceManager`: raw HFR | 94 | Eager static CPU-tessellated objects |
-| `ResourceManager`: HFR VBO | 148 | Eager static parsed objects plus uploaded VBOs |
+| `ResourceManager`: raw HFR | 101 | Eager static CPU-tessellated objects |
+| `ResourceManager`: HFR VBO | 141 | Eager static parsed objects plus uploaded VBOs |
 | Renderer-local: Forge OBJ | 9 | Static or renderer-construction lifetime; one resource per remaining owner |
 | Renderer-local: raw HFR | 5 | Static renderer lifetime |
 | Renderer-local: HFR VBO | 3 | Static renderer lifetime and included in VBO reload tracking |
@@ -250,16 +250,16 @@ The shared objects are read-only by convention, not by type: Forge exposes mutab
 
 - Forge OBJ and HMF objects have no RTM cache or reload hook. The current shared instances live for the client class-loader lifetime and remain unchanged after a resource-pack reload.
 - Raw HFR objects also have no reload registration and remain unchanged after a resource-pack reload.
-- HFR VBO wrappers register themselves in a static strong list. The resource reload listener reparses all 151 VBO-backed resources, deletes their old GPU buffers, and uploads replacements. Those resources contain 229,268 faces and recreate 458,472 `Vertex[]` arrays on every full reload.
+- HFR VBO wrappers register themselves in a static strong list. The resource reload listener reparses all 144 VBO-backed resources, deletes their old GPU buffers, and uploads replacements. Those resources contain 217,888 faces and recreate about 435,712 `Vertex[]` arrays on every full reload.
 - Minecraft invokes a newly registered reload listener immediately. In the normal `ClientProxy` order the listener is registered before renderer registration and before the obvious `ResourceManager` consumers, so its first callback normally sees no VBO wrappers. If another path initializes them earlier, that callback reparses the already-created wrappers.
-- Reload coverage is therefore internally inconsistent: the VBO subset refreshes, while 227 Forge OBJ, four HMF, and 109 raw-HFR instances retain pre-reload geometry. A future shared cache cannot safely fix this by clearing a map because renderers hold long-lived object references; it needs stable handles or in-place/atomic replacement.
+- Reload coverage is therefore internally inconsistent: the VBO subset refreshes, while 227 Forge OBJ, four HMF, and 106 raw-HFR instances retain pre-reload geometry. A future shared cache cannot safely fix this by clearing a map because renderers hold long-lived object references; it needs stable handles or in-place/atomic replacement.
 
 ### Current conductor and machine rendering architecture
 
 - Ordinary power cables use `RenderCable` or `RenderCableClassic`; ordinary fluid ducts use `RenderTestPipe` or `RenderBoxDuct`. These are `ISimpleBlockRenderingHandler` chunk/block renderers, not TESRs.
 - Connectivity is read while the chunk render is built. `RenderCable` and `RenderTestPipe` select groups from shared `ResourceManager` models; the classic cable and box duct emit primitive cuboids. Minecraft's chunk display-list/render-chunk cache retains the result until block or neighbor invalidation.
 - No conductor renderer creates connection `Face`, `Vertex`, `Vertex[]`, model, list, or topology-helper objects. A separate 64-mask geometry cache would duplicate the existing chunk cache and is not justified by this allocation class.
-- HFR-backed machine models are generally VBO compiled. TESRs apply transforms and draw named groups without rebuilding geometry. Legacy Forge machine models remain CPU-tessellated, but their static face arrays are parsed once and reused; any conversion should be selected by render self-time rather than the startup allocation capture.
+- HFR-backed machine models are generally VBO compiled, except where Angelica compatibility requires per-group transforms to remain on raw HFR submission. Legacy Forge and raw-HFR machine models remain CPU-tessellated, but their static face arrays are parsed once and reused; any conversion should be selected by render self-time and compatibility rather than the startup allocation capture.
 - `TileEntityPipeBaseNT` is not constructed by a block renderer or TESR. Its separate profiler count still needs its own allocation call tree and is not explained by model parsing.
 
 ### Implemented changes
@@ -274,14 +274,14 @@ The shared objects are read-only by convention, not by type: Forge exposes mutab
 
 Not as a response to per-frame garbage: the `Vertex[]` allocations occur during parsing and reload, and ordinary draws reuse them. A prepared layer may be justified if startup pause, resource-reload pause, or retained heap remains important after measuring those phases separately.
 
-The highest-value candidate is the HFR VBO path. It currently retains the complete CPU face graph after uploading 151 immutable GPU models so that it can reparse/rebuild on reload. A deliberate replacement could parse once into immutable packed primitive arrays plus group ranges, upload from that representation, and retain only resource identity/options and the prepared data required for reload. A shared cache key must include parser semantics such as HFR smoothing, not just the `ResourceLocation`, unless a common raw parse can derive those variants.
+The highest-value candidate is the HFR VBO path. It currently retains the complete CPU face graph after uploading 144 immutable GPU models so that it can reparse/rebuild on reload. A deliberate replacement could parse once into immutable packed primitive arrays plus group ranges, upload from that representation, and retain only resource identity/options and the prepared data required for reload. A shared cache key must include parser semantics such as HFR smoothing, not just the `ResourceLocation`, unless a common raw parse can derive those variants.
 
 Such a layer should expose stable reloadable handles and atomically replace prepared contents so existing renderers remain valid. It must preserve named groups, triangle/quad rules, smoothing normals, UV conventions, icon-remapped Forge consumers, and custom HMF UV behavior. The current evidence supports designing and profiling that layer, but not replacing all three loaders in this pass.
 
 ### Remaining measurements and next steps
 
 1. Record an allocation profile that starts after client initialization. `Vertex[]` should disappear from the steady-state top list unless a reload or unexpected constructor runs.
-2. Profile one explicit resource reload. Expect the HFR VBO registry to recreate approximately 458,472 arrays after the targeted machine-model promotions; verify pause time and retained-heap behavior before changing representation.
+2. Profile one explicit resource reload. Expect the HFR VBO registry to recreate approximately 435,712 arrays after the Angelica compatibility correction; verify pause time and retained-heap behavior before changing representation.
 3. Capture retained heap by loader/owner, especially the parsed HFR graphs retained behind VBO wrappers. Allocation volume alone does not show whether compact prepared storage will materially reduce live heap.
 4. Add loader instrumentation only if runtime evidence is still ambiguous: count parses by resource and loader at startup and reload, then remove or gate the instrumentation after measurement.
 5. Treat resource-reload consistency as a correctness prerequisite for any general shared cache. Use stable references rather than cache eviction that leaves renderers pointing at stale objects.
@@ -361,18 +361,18 @@ The implemented cache therefore stores immutable geometry selection for each pos
 | Renderer / shared model | Static sections | Genuinely dynamic sections | Confirmed pre-pass cost and result |
 | --- | --- | --- | --- |
 | `RenderCryoDistill` / `cryo_distill` | Entire 4,418-face model | None | Raw HFR replayed the whole model each frame; now one shared VBO-backed model |
-| `RenderChemfac` / `chemfac` | `Main` (3,074 faces) | `Fan1`, `Fan2` (46 faces each) | All 3,166 faces were CPU-submitted each frame; named groups are now shared VBO draws with fan matrices only |
-| `RenderAssemfac` / `assemfac` | `Factory` (1,542 faces) | Six each of pivot, arm, piston, and striker groups (1,248 faces total) | 25 raw-HFR group traversals per frame are now VBO group draws; arm interpolation and transforms are unchanged |
+| `RenderChemfac` / `chemfac` | `Main` (3,074 faces) | `Fan1`, `Fan2` (46 faces each) | Raw HFR retained because Angelica 2.1.31 can miss the fan matrices on direct VBO group draws |
+| `RenderAssemfac` / `assemfac` | `Factory` (1,542 faces) | Six each of pivot, arm, piston, and striker groups (1,248 faces total) | Raw HFR retained so all 24 animated named groups use the current per-draw matrix under Angelica |
 | `RenderElectrolyser` / `electrolyser` | Entire 2,524-face model | None | Whole-model raw-HFR replay replaced by one shared VBO representation |
-| `RenderRadGen` / `radgen` | `Base` (1,532 faces) | `Rotor` (768), emissive `Light` (64), translucent `Glass` (104, intentionally drawn twice) | Geometry is now compiled per group; rotation, lightmap, blend, color, and the two glass passes remain dynamic |
-| `RenderIGenerator` / `igen` | `Body` (1,128 faces) | `Rotor` (486) | Shared VBO groups replace raw face traversal; only rotor interpolation remains dynamic |
-| `RenderMixer` / `mixer` | `Main` (434 faces) | mixer blade (4) and scaled/colorized fluid (22) | Shared VBO groups preserve current color and fill-height state; the per-frame `Color` object was removed |
+| `RenderRadGen` / `radgen` | `Base` (1,532 faces) | `Rotor` (768), emissive `Light` (64), translucent `Glass` (104, intentionally drawn twice) | Raw HFR restored for reliable rotor transforms; the lightmap, blend, color, and two glass passes remain unchanged |
+| `RenderIGenerator` / `igen` | `Body` (1,128 faces) | `Rotor` (486) | Raw HFR restored so Angelica applies the interpolated rotor matrix |
+| `RenderMixer` / `mixer` | `Main` (434 faces) | mixer blade (4) and scaled/colorized fluid (22) | Raw HFR restored for blade and fill-height transforms; the per-frame `Color` allocation remains removed |
 | `RenderChemplant` | body (406 faces) | two spinners, piston, variable fluid layers/caps and UV modulation | Body moved from raw HFR to VBO. Animated Forge/HMF pieces remain dynamic because the HMF fluid path uses `HmfController` UV modulation |
-| `RenderStrandCaster` / `strand_caster` | caster (384 faces) | clipped plate (10) and scalar fluid quad | Both groups now use the shared VBO; clip plane and fill surface remain dynamic, and clip-plane array creation was removed |
-| `RenderRefueler` / `refueler` | fueler (466 faces) | clipped/colorized fluid (22) | Both groups now use the shared VBO; clip/color state remains dynamic without temporary `Color` or array objects |
+| `RenderStrandCaster` / `strand_caster` | caster (384 faces) | clipped plate (10) and scalar fluid quad | Raw HFR restored for the translated clipped plate; clip-plane array creation remains removed |
+| `RenderRefueler` / `refueler` | fueler (466 faces) | clipped/colorized fluid (22) | Raw HFR restored for the translated fluid group; temporary `Color` and clip-array allocations remain removed |
 | `RenderPumpjack` / `pumpjack` | `Base` (846 faces) | rotor, head, carriage, rods and changing rope curve | Model groups were already VBO-backed. Six per-detail-frame `Vec3` objects used only as rotation scratch were replaced with equivalent scalar rotation math; the changing rope remains direct tessellation |
 
-The ten HFR models promoted in this pass contain 18,728 triangle faces. They use the same HFR parse, group names, normals, UVs, textures, transforms, color, blend, and clip state as before; only their draw representation changed from repeated face traversal to RTM's existing reloadable VBO wrapper. Every promoted resource was checked to contain triangles only, which is required by that wrapper.
+The original pass selected ten triangle-only HFR models containing 18,728 faces. After the Angelica compatibility correction, only the three static whole-model portions—`cryo_distill`, `electrolyser`, and `chemplant_body`, totaling 7,348 faces—use the reloadable VBO wrapper. The seven models with per-group matrix changes retain raw HFR submission.
 
 ### Confirmed per-frame allocation sources and fixes
 
@@ -390,17 +390,27 @@ The ten HFR models promoted in this pass contain 18,728 triangle faces. They use
 - Visible item machines still create or copy `ItemStack` data per frame (`toStack()`, `copy()`, or a fixed display stack) even though their renderer and entity shells are now reused. Safely removing that cost needs invalidation keyed to recipe/display-stack item, metadata, and NBT changes; retaining stale per-TileEntity copies would be incorrect.
 - Foundry molten/output quads, mixer/refueler/strand-caster fluids, solar beams, pumpjack ropes, and similar surfaces are genuinely state-dependent scalar geometry. Their renderers should remain dynamic, but allocation profiles can still identify avoidable helper objects around the tessellation.
 - Beam-heavy machines and special effects still pass newly created `Vec3` endpoints into `BeamPronter`; launch-pad renderers still create topology/name arrays or lookup keys. Those are separate lower-volume paths and were not changed without a steady-state allocation call tree proving priority.
-- VBO promotion improves repeated drawing but increases the resource-reload subset. The 151 current VBO wrappers now reparse 229,268 faces and recreate about 458,472 parser `Vertex[]` arrays on a full reload. A compact prepared representation remains justified only if startup/reload pause or retained HFR face graphs measure as material.
+- VBO promotion improves repeated drawing but increases the resource-reload subset. After the Angelica correction, the 144 current VBO wrappers reparse 217,888 faces and recreate about 435,712 parser `Vertex[]` arrays on a full reload. A compact prepared representation remains justified only if startup/reload pause or retained HFR face graphs measure as material.
 
 ### Recommended next measurements
 
-1. Profile a dense factory after client initialization, separating allocation rate from TESR CPU/GPU self-time. The promoted models should disappear from tessellator face submission, while displayed-stack copies and genuinely dynamic surfaces remain visible.
-2. Visually compare the promoted static and animated groups under normal lighting, colored/translucent fluid states, refueler/strand-caster clipping, and a resource reload. No in-game renderer validation was performed in this pass.
+1. Profile a dense factory after client initialization, separating allocation rate from TESR CPU/GPU self-time. The three retained static VBO models should disappear from tessellator face submission, while the seven Angelica-compatible raw models, displayed-stack copies, and genuinely dynamic surfaces remain visible.
+2. Visually compare the retained static VBO models and the restored raw animated groups under normal lighting, colored/translucent fluid states, refueler/strand-caster clipping, and a resource reload. No in-game renderer validation was performed in this pass.
 3. Rank the remaining Forge/raw-HFR machine models by rendered instance count multiplied by face submissions. Start with assembler, Stirling, sawmill, and autosaw rather than converting every legacy model wholesale.
 4. If displayed-item stack copies remain material, add renderer-level stack snapshots invalidated by exact item, damage, and NBT changes; do not attach parsed models or renderer caches to TileEntities.
 
 ### Validation status
 
 - Source inspection covered shared ownership, renderer registration, inventory/world consumers, named group boundaries, face/group counts, per-render constructors, temporary arrays/vectors/colors/texture identifiers, clipping, and resource-reload behavior for the prioritized machine classes.
-- All ten promoted HFR resources were verified to be triangle-only. Targeted offline `compileJava` completed successfully after the model and allocation changes.
+- All ten originally selected HFR resources were verified to be triangle-only. Targeted offline `compileJava` completed successfully after the model/allocation pass and again after the Angelica compatibility correction.
 - Minecraft was not launched. Visual parity, GL-state interaction, animation, clipping, fluid color/fill, item display, resource reload, and measured frame/allocation improvement still require in-game validation.
+
+## 2026-09-23 20:52 — Angelica animated-VBO compatibility correction
+
+The original machine-VBO pass assumed that the existing direct VBO wrapper preserved every model-view change made between named-group draws. That assumption is valid in vanilla Forge but is not reliable with Angelica 2.1.31: its fixed-function emulation can render a direct `glDrawArrays` group without the translation or rotation applied immediately before that draw. This is the same failure class independently reproduced with dynamically transformed MCHeli VBO groups.
+
+Seven of the ten promoted models depend on changing model-view state between group draws. `assemfac`, `chemfac`, `igen`, `mixer`, `radgen`, `strand_caster`, and `refueler` therefore use raw HFR rendering again. This preserves their animated pivots, rotors, fans, scaled or translated fluids, and clipped moving sections under both vanilla Forge and Angelica. `cryo_distill`, `electrolyser`, and `chemplant_body` remain VBO-backed because each promoted portion is submitted as a static whole-model section without an intervening per-group transform.
+
+The conductor optimization is independent of this correction. Ordinary cables and ducts still append OBJ vertices to the active chunk Tessellator, and their immutable 64-mask tables only preselect existing groups. The box-duct render-scoped mask remains serialized in Angelica 2.1.31 because the renderer is not marked thread-safe and is deferred to the main render queue. It should still be converted away from static mutable state before any future opt-in to worker-thread ISBRH rendering.
+
+Targeted offline Java compilation completed after this correction. Minecraft was not launched; vanilla and Angelica rendering of every affected animation, clipped fluid section, inventory model, and resource reload still requires in-game validation.

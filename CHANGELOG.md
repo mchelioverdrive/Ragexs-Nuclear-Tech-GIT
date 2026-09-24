@@ -179,3 +179,11 @@ INCOMPLETE:
 - Reused decorative item renderers and dummy item entities across assembler, press, inserter, ore-slopper, welding, and soldering frames, and reused the foundry item renderer.
 - Removed per-frame color objects, fluid-tank texture identifiers, clip-plane arrays, and pumpjack rotation vectors from prioritized machine TESRs.
 - Targeted offline Java compilation completed successfully. Minecraft was not launched; visual parity, animation, clipping, fluid/item rendering, resource reload, and measured performance still require in-game validation.
+
+2026-09-23 20:52 — Restore Angelica-compatible animated machine rendering
+
+- Restored CPU-tessellated HFR rendering for the seven newly VBO-promoted machine models whose named groups receive per-draw translation, rotation, scaling, or clipping: the assembly factory, chemical factory, industrial generator, mixer, rad generator, strand caster, and refueler.
+- Kept the cryogenic distiller, electrolyser, and chemplant body VBO promotions because those models are drawn as static whole-model sections and do not depend on changing model-view state between named-group draws.
+- Confirmed that the ordinary cable and duct 64-mask caches retain their prior Tessellator submission path. Angelica 2.1.31 keeps these unannotated ISBRHs on its main render queue, so the conductor cache was not the source of the VBO transform failure.
+- This is an RTM-side compatibility workaround for Angelica 2.1.31's unresolved direct-VBO/model-view behavior; vanilla rendering retains the same machine appearance and animation contract at the cost of restoring CPU face submission for the affected models.
+- Source inspection and targeted offline Java compilation were completed. Minecraft was not launched; animated group placement, clipping, fluid fill transforms, and vanilla/Angelica visual parity still require in-game validation.
