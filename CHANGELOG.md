@@ -186,3 +186,9 @@ INCOMPLETE:
 - Preserved orbital irradiance-based glare through an overridable brightness hook while retaining the exact `glColor4f`/blanking `Tessellator.draw`/`glColor4f` bytecode slice Angelica uses to suppress the blanking quad.
 - Removed the now-unneeded overloaded sun-render helpers so Angelica's name-only callback target is unambiguous; the direct call from `render` and the orbit override retain the descriptor expected by Angelica's wrapper.
 - Targeted offline Java compilation completed successfully. Static bytecode inspection confirmed one matching `renderSun` descriptor and one `Tessellator.draw()` call between the first two `GL11.glColor4f` invocations; Minecraft was not launched.
+
+2026-09-24 14:24 - Synchronize loaded machine state with chunk data
+
+- Added an initial chunk-data snapshot for shared machine and ticking tile entities by reusing their existing byte-buffer serializers, so client machines no longer wait for a later range broadcast after relogging or chunk reload.
+- Made buffer packet payloads independently owned, applied them on the Minecraft client thread, and rejected missing chunks, replaced tiles, and mismatched receiver types while releasing copied buffers after every outcome.
+- Preserved the existing range-based update path, fluid serialization order, persistence keys, capacities, modes, and fluid-network topology.

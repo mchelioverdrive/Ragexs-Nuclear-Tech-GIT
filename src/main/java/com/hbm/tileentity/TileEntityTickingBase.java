@@ -7,6 +7,9 @@ import com.hbm.packet.toclient.NBTPacket;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.Packet;
+import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraftforge.fluids.FluidTank;
 
 public abstract class TileEntityTickingBase extends TileEntityLoadedBase implements INBTPacketReceiver, IBufPacketReceiver {
@@ -52,6 +55,16 @@ public abstract class TileEntityTickingBase extends TileEntityLoadedBase impleme
 		if(worldObj.isRemote || (!this.networkSyncDirty && worldObj.getWorldTime() % 20 != 0)) return;
 		this.networkPackNT(range);
 		this.networkSyncDirty = false;
+	}
+
+	@Override
+	public Packet getDescriptionPacket() {
+		return BufPacketTileEntitySync.createDescriptionPacket(this, this);
+	}
+
+	@Override
+	public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity packet) {
+		BufPacketTileEntitySync.applyOnClientThread(packet.func_148857_g(), this);
 	}
 
 	@Override public void serialize(ByteBuf buf) {

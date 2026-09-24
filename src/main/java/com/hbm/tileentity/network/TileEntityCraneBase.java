@@ -2,6 +2,7 @@ package com.hbm.tileentity.network;
 
 import com.hbm.interfaces.ICopiable;
 import com.hbm.tileentity.IControlReceiverFilter;
+import com.hbm.tileentity.BufPacketTileEntitySync;
 import com.hbm.tileentity.TileEntityMachineBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
@@ -88,12 +89,14 @@ public abstract class TileEntityCraneBase extends TileEntityMachineBase implemen
 	public Packet getDescriptionPacket() {
 		NBTTagCompound nbt = new NBTTagCompound();
 		writeToNBT(nbt);
+		BufPacketTileEntitySync.writeToNBT(nbt, this);
 		return new S35PacketUpdateTileEntity(xCoord, yCoord, zCoord, 0, nbt);
 	}
 
 	@Override
 	public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
 		readFromNBT(pkt.func_148857_g());
+		BufPacketTileEntitySync.applyOnClientThread(pkt.func_148857_g(), this);
 	}
 
 	@Override
