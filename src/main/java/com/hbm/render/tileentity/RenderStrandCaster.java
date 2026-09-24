@@ -66,7 +66,8 @@ public class RenderStrandCaster extends TileEntitySpecialRenderer implements IIt
 			GL11.glPushMatrix();
 			GL11.glColor3f( r/ 255F,  g/ 255F, b/ 255F);
 			GL11.glEnable(GL11.GL_CLIP_PLANE0);
-			buf.put(new double[] { 0, 0, -1, 0.5} );
+			buf.clear();
+			buf.put(0).put(0).put(-1).put(0.5);
 			buf.rewind();
 			GL11.glClipPlane(GL11.GL_CLIP_PLANE0, buf);
 			GL11.glTranslated(0,0,Math.max(-offset + 3.4, 0));

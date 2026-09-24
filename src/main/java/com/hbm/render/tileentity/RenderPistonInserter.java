@@ -19,6 +19,8 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.client.IItemRenderer;
 
 public class RenderPistonInserter extends TileEntitySpecialRenderer implements IItemRendererProvider {
+
+	private final RenderDecoItem itemRenderer = new RenderDecoItem(this);
 	
 	@Override
 	public void renderTileEntityAt(TileEntity tile, double x, double y, double z, float interp) {
@@ -54,15 +56,10 @@ public class RenderPistonInserter extends TileEntitySpecialRenderer implements I
 			GL11.glTranslated(0, e * 0.9375D, 0);
 			ResourceManager.piston_inserter.renderPart("Piston");
 			
-			RenderItem itemRenderer = new RenderDecoItem(this);
-			itemRenderer.setRenderManager(RenderManager.instance);
-			
 			if(piston.slot != null) {
 				ItemStack stack = piston.slot.copy();
 				
-				EntityItem item = new EntityItem(null, 0.0D, 0.0D, 0.0D, stack);
-				item.getEntityItem().stackSize = 1;
-				item.hoverStart = 0.0F;
+				EntityItem item = this.itemRenderer.getRenderEntity(stack);
 				
 				if(stack.getItem() instanceof ItemBlock) {
 					GL11.glTranslated(0.0D, 1.125D, 0.0D);

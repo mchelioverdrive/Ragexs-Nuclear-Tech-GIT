@@ -7,22 +7,20 @@ import net.minecraft.entity.item.EntityMinecart;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Vec3;
-import net.minecraftforge.client.model.AdvancedModelLoader;
 import net.minecraftforge.client.model.IModelCustom;
 
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.entity.item.EntityMinecartTest;
 import com.hbm.lib.RefStrings;
+import com.hbm.main.ResourceManager;
 
 public class RenderMinecartTest extends RenderMinecart
 {
 	
-	private static final ResourceLocation objTesterModelRL = new ResourceLocation(/*"/assets/" + */RefStrings.MODID, "models/LilBoy1.obj");
-	private IModelCustom boyModel;
+	private IModelCustom boyModel = ResourceManager.bomb_boy;
     private ResourceLocation boyTexture;
     public RenderMinecartTest() {
-		boyModel = AdvancedModelLoader.loadModel(objTesterModelRL);
 		boyTexture = new ResourceLocation(RefStrings.MODID, "textures/models/LilBoy2.png");
     }
     @Override

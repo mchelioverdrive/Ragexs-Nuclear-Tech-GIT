@@ -3,7 +3,7 @@ package com.hbm.render.entity.effect;
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.entity.logic.EntityDeathBlast;
-import com.hbm.lib.RefStrings;
+import com.hbm.main.ResourceManager;
 
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
@@ -12,12 +12,11 @@ import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Vec3;
-import net.minecraftforge.client.model.AdvancedModelLoader;
 import net.minecraftforge.client.model.IModelCustom;
 
 public class RenderDeathBlast extends Render {
 	
-	private static final IModelCustom sphere = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/Sphere.obj"));
+	private static final IModelCustom sphere = ResourceManager.sphere;
 
 	@Override
 	public void doRender(Entity entity, double x, double y, double z, float p_76986_8_, float p_76986_9_) {

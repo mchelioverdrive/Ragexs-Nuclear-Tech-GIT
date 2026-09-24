@@ -7,7 +7,6 @@ import com.hbm.render.util.RenderDecoItem;
 import com.hbm.tileentity.machine.TileEntityMachineEPress;
 
 import net.minecraft.client.renderer.entity.RenderItem;
-import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.item.ItemStack;
@@ -16,8 +15,7 @@ import net.minecraft.util.MathHelper;
 
 public class RenderEPress extends TileEntitySpecialRenderer {
 	
-	private RenderItem itemRenderer;
-	private RenderManager renderManager = RenderManager.instance;
+	private final RenderDecoItem itemRenderer = new RenderDecoItem(this);
 	
 	public RenderEPress() { }
 	
@@ -73,8 +71,6 @@ public class RenderEPress extends TileEntitySpecialRenderer {
 	}
 
 	public void renderTileEntityAt3(TileEntity tileentity, double x, double y, double z, float f) {
-		itemRenderer = new RenderDecoItem(this);
-		itemRenderer.setRenderManager(renderManager);
 		GL11.glPushMatrix();
 			GL11.glTranslated(x + 0.5D, y + 1, z + 0.5);
 			GL11.glEnable(GL11.GL_LIGHTING);
@@ -100,9 +96,7 @@ public class RenderEPress extends TileEntitySpecialRenderer {
 			if(press.syncStack != null) {
 				ItemStack stack = press.syncStack.copy();
 				
-				EntityItem item = new EntityItem(null, 0.0D, 0.0D, 0.0D, stack);
-				item.getEntityItem().stackSize = 1;
-				item.hoverStart = 0.0F;
+				EntityItem item = this.itemRenderer.getRenderEntity(stack);
 							
 				RenderItem.renderInFrame = true;
 				this.itemRenderer.doRender(item, 0.0D, 0.0D, 0.0D, 0.0F, 0.0F);

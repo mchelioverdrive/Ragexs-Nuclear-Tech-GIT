@@ -1,7 +1,5 @@
 package com.hbm.render.tileentity;
 
-import java.awt.Color;
-
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.lib.RefStrings;
@@ -30,10 +28,10 @@ import net.minecraftforge.client.ForgeHooksClient;
 public class RenderFoundry extends TileEntitySpecialRenderer implements ITileActorRenderer {
 	
 	public static final ResourceLocation lava = new ResourceLocation(RefStrings.MODID, "textures/models/machines/lava_gray.png");
+	private final RenderItem itemRenderer = new RenderItem();
 	
 	private void drawItem(ItemStack stack, double height) {
 		GL11.glPushMatrix();
-		RenderItem render = new RenderItem();
 		GL11.glTranslated(0.125D, height, 0.125D);
 		
 		double scale = 0.0625D * 12D / 16D;
@@ -42,7 +40,7 @@ public class RenderFoundry extends TileEntitySpecialRenderer implements ITileAct
 		GL11.glRotated(90, 1, 0, 0);
 		RenderHelper.enableGUIStandardItemLighting();
 		if(!ForgeHooksClient.renderInventoryItem(RenderBlocks.getInstance(), Minecraft.getMinecraft().getTextureManager(), stack, true, 0.0F, 1.0F, 0.0F)) {
-			render.renderItemIntoGUI(Minecraft.getMinecraft().fontRenderer, Minecraft.getMinecraft().getTextureManager(), stack, 0, 0);
+			this.itemRenderer.renderItemIntoGUI(Minecraft.getMinecraft().fontRenderer, Minecraft.getMinecraft().getTextureManager(), stack, 0, 0);
 		}
 		GL11.glPopMatrix();
 		RenderHelper.enableStandardItemLighting();
@@ -96,8 +94,7 @@ public class RenderFoundry extends TileEntitySpecialRenderer implements ITileAct
 			
 			ITileActorRenderer.bindTexture(lava);
 			
-			int hex = foundry.getMat().moltenColor;
-			Color color = new Color(hex);
+			int color = foundry.getMat().moltenColor;
 	
 			GL11.glPushMatrix();
 			GL11.glPushAttrib(GL11.GL_LIGHTING_BIT);
@@ -108,7 +105,7 @@ public class RenderFoundry extends TileEntitySpecialRenderer implements ITileAct
 	
 			tess.startDrawingQuads();
 			tess.setNormal(0F, 1F, 0F);
-			tess.setColorRGBA_F(color.getRed() / 255F, color.getGreen() / 255F, color.getBlue() / 255F, 1F);
+			tess.setColorRGBA_F((color >> 16 & 0xFF) / 255F, (color >> 8 & 0xFF) / 255F, (color & 0xFF) / 255F, 1F);
 			tess.addVertexWithUV(foundry.minX(), foundry.getLevel(), foundry.minZ(), foundry.minZ(), foundry.maxX());
 			tess.addVertexWithUV(foundry.minX(), foundry.getLevel(), foundry.maxZ(), foundry.maxZ(), foundry.maxX());
 			tess.addVertexWithUV(foundry.maxX(), foundry.getLevel(), foundry.maxZ(), foundry.maxZ(), foundry.minX());

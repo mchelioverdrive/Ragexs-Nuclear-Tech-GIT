@@ -19,7 +19,7 @@ import net.minecraftforge.client.IItemRenderer;
 
 public class RenderArcWelder extends TileEntitySpecialRenderer implements IItemRendererProvider {
 	
-	private RenderItem itemRenderer = new RenderDecoItem(this);
+	private final RenderDecoItem itemRenderer = new RenderDecoItem(this);
 	
 	@Override
 	public void renderTileEntityAt(TileEntity tile, double x, double y, double z, float interp) {
@@ -51,9 +51,7 @@ public class RenderArcWelder extends TileEntitySpecialRenderer implements IItemR
 			if(welder.display != null) {
 				ItemStack stack = welder.display.copy();
 				
-				EntityItem item = new EntityItem(null, 0.0D, 0.0D, 0.0D, stack);
-				item.getEntityItem().stackSize = 1;
-				item.hoverStart = 0.0F;
+				EntityItem item = this.itemRenderer.getRenderEntity(stack);
 				
 				RenderItem.renderInFrame = true;
 				GL11.glScaled(1.5, 1.5, 1.5);

@@ -71,19 +71,27 @@ public class FluidDuctBox extends FluidDuctBase implements IBlockMulti, ILookOve
 	@SideOnly(Side.CLIENT)
 	public IIcon getIcon(IBlockAccess world, int x, int y, int z, int side) {
 
-		TileEntity te = world.getTileEntity(x, y, z);
+		int mask = cachedConnectionMask;
+		if(mask < 0) {
+			TileEntity te = world.getTileEntity(x, y, z);
+			boolean renderNX = canConnectTo(world, x, y, z, Library.NEG_X, te);
+			boolean renderPX = canConnectTo(world, x, y, z, Library.POS_X, te);
+			boolean renderNY = canConnectTo(world, x, y, z, Library.NEG_Y, te);
+			boolean renderPY = canConnectTo(world, x, y, z, Library.POS_Y, te);
+			boolean renderNZ = canConnectTo(world, x, y, z, Library.NEG_Z, te);
+			boolean renderPZ = canConnectTo(world, x, y, z, Library.POS_Z, te);
+			mask = 0 + (renderPX ? 32 : 0) + (renderNX ? 16 : 0) + (renderPY ? 8 : 0) + (renderNY ? 4 : 0) + (renderPZ ? 2 : 0) + (renderNZ ? 1 : 0);
+		}
 
-		boolean nX = canConnectTo(world, x, y, z, Library.NEG_X, te);
-		boolean pX = canConnectTo(world, x, y, z, Library.POS_X, te);
-		boolean nY = canConnectTo(world, x, y, z, Library.NEG_Y, te);
-		boolean pY = canConnectTo(world, x, y, z, Library.POS_Y, te);
-		boolean nZ = canConnectTo(world, x, y, z, Library.NEG_Z, te);
-		boolean pZ = canConnectTo(world, x, y, z, Library.POS_Z, te);
+		boolean pX = (mask & 32) != 0;
+		boolean nX = (mask & 16) != 0;
+		boolean pY = (mask & 8) != 0;
+		boolean nY = (mask & 4) != 0;
+		boolean pZ = (mask & 2) != 0;
+		boolean nZ = (mask & 1) != 0;
+		int count = Integer.bitCount(mask);
 		
-		int mask = 0 + (pX ? 32 : 0) + (nX ? 16 : 0) + (pY ? 8 : 0) + (nY ? 4 : 0) + (pZ ? 2 : 0) + (nZ ? 1 : 0);
-		int count = 0 + (pX ? 1 : 0) + (nX ? 1 : 0) + (pY ? 1 : 0) + (nY ? 1 : 0) + (pZ ? 1 : 0) + (nZ ? 1 : 0);
-		
-		int meta = world.getBlockMetadata(x, y, z);
+		int meta = cachedMetadata >= 0 ? cachedMetadata : world.getBlockMetadata(x, y, z);
 		int m = rectify(meta);
 		
 		if((mask & 0b001111) == 0 && mask > 0) {
@@ -317,6 +325,10 @@ public class FluidDuctBox extends FluidDuctBase implements IBlockMulti, ILookOve
 	}
 	
 	public static int cachedColor = 0xffffff;
+	/** Render-scoped topology state; -1 keeps direct icon queries live and uncached. */
+	public static int cachedConnectionMask = -1;
+	/** Render-scoped metadata paired with cachedConnectionMask. */
+	public static int cachedMetadata = -1;
 	
 	@Override
 	@SideOnly(Side.CLIENT)

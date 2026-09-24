@@ -3,6 +3,7 @@ package com.hbm.render.util;
 import net.minecraft.client.renderer.entity.RenderItem;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
+import net.minecraft.entity.item.EntityItem;
 import net.minecraft.item.ItemStack;
 
 /**
@@ -10,9 +11,23 @@ import net.minecraft.item.ItemStack;
  * @author hbm
  */
 public class RenderDecoItem extends RenderItem {
+
+	private EntityItem renderEntity;
 	
 	public RenderDecoItem(TileEntitySpecialRenderer render) {
 		this.setRenderManager(RenderManager.instance);
+	}
+
+	public EntityItem getRenderEntity(ItemStack stack) {
+		if(this.renderEntity == null) {
+			this.renderEntity = new EntityItem(null, 0.0D, 0.0D, 0.0D, stack);
+		} else {
+			this.renderEntity.setEntityItemStack(stack);
+		}
+
+		stack.stackSize = 1;
+		this.renderEntity.hoverStart = 0.0F;
+		return this.renderEntity;
 	}
 
 	@Override

@@ -95,6 +95,8 @@ public class RenderBoxDuct implements ISimpleBlockRenderingHandler {
 
 		int mask = 0 + (pX ? 32 : 0) + (nX ? 16 : 0) + (pY ? 8 : 0) + (nY ? 4 : 0) + (pZ ? 2 : 0) + (nZ ? 1 : 0);
 		int count = 0 + (pX ? 1 : 0) + (nX ? 1 : 0) + (pY ? 1 : 0) + (nY ? 1 : 0) + (pZ ? 1 : 0) + (nZ ? 1 : 0);
+		FluidDuctBox.cachedConnectionMask = mask;
+		FluidDuctBox.cachedMetadata = meta;
 
 		double lower = 0.125D;
 		double upper = 0.875D;
@@ -217,6 +219,8 @@ public class RenderBoxDuct implements ISimpleBlockRenderingHandler {
 		renderer.uvRotateSouth = 0;
 		renderer.uvRotateEast = 0;
 		renderer.uvRotateWest = 0;
+		FluidDuctBox.cachedConnectionMask = -1;
+		FluidDuctBox.cachedMetadata = -1;
 		
 		return true;
 	}

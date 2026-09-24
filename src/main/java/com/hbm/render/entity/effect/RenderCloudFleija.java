@@ -4,24 +4,22 @@ import org.lwjgl.opengl.GL11;
 
 import com.hbm.entity.effect.EntityCloudFleija;
 import com.hbm.lib.RefStrings;
+import com.hbm.main.ResourceManager;
 
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.client.model.AdvancedModelLoader;
 import net.minecraftforge.client.model.IModelCustom;
 
 public class RenderCloudFleija extends Render {
 
-	private static final ResourceLocation objTesterModelRL = new ResourceLocation(/*"/assets/" + */RefStrings.MODID, "models/Sphere.obj");
-	private IModelCustom blastModel;
+	private IModelCustom blastModel = ResourceManager.sphere;
     private ResourceLocation blastTexture;
     public float scale = 0;
     public float ring = 0;
     
-    public RenderCloudFleija() {
-    	blastModel = AdvancedModelLoader.loadModel(objTesterModelRL);
-    	blastTexture = new ResourceLocation(RefStrings.MODID, "textures/models/BlastFleija.png");
+	public RenderCloudFleija() {
+		blastTexture = new ResourceLocation(RefStrings.MODID, "textures/models/BlastFleija.png");
     	scale = 0;
     }
 

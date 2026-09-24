@@ -89,7 +89,7 @@ public class HFRWavefrontObjectVBO implements IModelCustomNamed {
 
 				for(int i = 0; i < face.vertices.length; i++) {
 					Vertex vert = face.vertices[i];
-					TextureCoordinate tex = new TextureCoordinate(0, 0);
+					TextureCoordinate tex = null;
 					Vertex normal = face.getNormal(i);
 
 					if(face.textureCoordinates != null && face.textureCoordinates.length > i) {
@@ -97,9 +97,13 @@ public class HFRWavefrontObjectVBO implements IModelCustomNamed {
 					}
 
 					data.vertices++;
-					vertexData.put(new float[] { vert.x, vert.y, vert.z });
-					uvData.put(new float[] { tex.u, tex.v, tex.w });
-					normalData.put(new float[] { normal.x, normal.y, normal.z });
+					vertexData.put(vert.x).put(vert.y).put(vert.z);
+					if(tex != null) {
+						uvData.put(tex.u).put(tex.v).put(tex.w);
+					} else {
+						uvData.put(0F).put(0F).put(0F);
+					}
+					normalData.put(normal.x).put(normal.y).put(normal.z);
 				}
 			}
 

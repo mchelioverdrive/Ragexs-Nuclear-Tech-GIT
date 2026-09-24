@@ -1,5 +1,8 @@
 package com.hbm.render.tileentity;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
+
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.blocks.ModBlocks;
@@ -24,6 +27,10 @@ import net.minecraftforge.client.IItemRenderer;
 
 public class RenderFluidTank extends TileEntitySpecialRenderer implements IItemRendererProvider {
 
+	private static final ResourceLocation TANK_NONE = new ResourceLocation(RefStrings.MODID, "textures/models/tank/tank_NONE.png");
+	private static final ResourceLocation TANK_DANGER = new ResourceLocation(RefStrings.MODID, "textures/models/tank/tank_DANGER.png");
+	private static final Map<FluidType, ResourceLocation> TANK_TEXTURES = new IdentityHashMap<FluidType, ResourceLocation>();
+
 	@Override
 	public void renderTileEntityAt(TileEntity tileEntity, double x, double y, double z, float f) {
 		GL11.glPushMatrix();
@@ -46,13 +53,13 @@ public class RenderFluidTank extends TileEntitySpecialRenderer implements IItemR
 		
 		if(!tank.hasExploded) {
 			ResourceManager.fluidtank.renderPart("Frame");
-			bindTexture(new ResourceLocation(RefStrings.MODID, getTextureFromType(tank.tank.getTankType())));
+			bindTexture(getTextureLocationFromType(tank.tank.getTankType()));
 			ResourceManager.fluidtank.renderPart("Tank");
 		} else {
 			ResourceManager.fluidtank_exploded.renderPart("Frame");
 			bindTexture(ResourceManager.tank_inner_tex);
 			ResourceManager.fluidtank_exploded.renderPart("TankInner");
-			bindTexture(new ResourceLocation(RefStrings.MODID, getTextureFromType(tank.tank.getTankType())));
+			bindTexture(getTextureLocationFromType(tank.tank.getTankType()));
 			ResourceManager.fluidtank_exploded.renderPart("Tank");
 		}
 
@@ -100,6 +107,24 @@ public class RenderFluidTank extends TileEntitySpecialRenderer implements IItemR
 		return "textures/models/tank/tank_" + s + ".png";
 	}
 
+	private ResourceLocation getTextureLocationFromType(FluidType type) {
+		if(type.customFluid) {
+			getTextureFromType(type);
+			return TANK_NONE;
+		}
+
+		if(type.isAntimatter() || (type.hasTrait(FT_Corrosive.class) && type.getTrait(FT_Corrosive.class).isHighlyCorrosive())) {
+			return TANK_DANGER;
+		}
+
+		ResourceLocation texture = TANK_TEXTURES.get(type);
+		if(texture == null) {
+			texture = new ResourceLocation(RefStrings.MODID, getTextureFromType(type));
+			TANK_TEXTURES.put(type, texture);
+		}
+		return texture;
+	}
+
 	@Override
 	public Item getItemForRenderer() {
 		return Item.getItemFromBlock(ModBlocks.machine_fluidtank);
@@ -129,12 +154,12 @@ public class RenderFluidTank extends TileEntitySpecialRenderer implements IItemR
 				
 				if(!exploded) {
 					bindTexture(ResourceManager.tank_tex); ResourceManager.fluidtank.renderPart("Frame");
-					bindTexture(new ResourceLocation(RefStrings.MODID, getTextureFromType(tank.getTankType())));
+					bindTexture(getTextureLocationFromType(tank.getTankType()));
 					ResourceManager.fluidtank.renderPart("Tank");
 				} else {
 					bindTexture(ResourceManager.tank_tex); ResourceManager.fluidtank_exploded.renderPart("Frame");
 					bindTexture(ResourceManager.tank_inner_tex); ResourceManager.fluidtank_exploded.renderPart("TankInner");
-					bindTexture(new ResourceLocation(RefStrings.MODID, getTextureFromType(tank.getTankType())));
+					bindTexture(getTextureLocationFromType(tank.getTankType()));
 					ResourceManager.fluidtank_exploded.renderPart("Tank");
 				}
 				GL11.glEnable(GL11.GL_CULL_FACE);

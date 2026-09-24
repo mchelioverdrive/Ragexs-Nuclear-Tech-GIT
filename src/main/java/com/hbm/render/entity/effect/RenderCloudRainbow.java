@@ -3,24 +3,21 @@ package com.hbm.render.entity.effect;
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.entity.effect.EntityCloudFleijaRainbow;
-import com.hbm.lib.RefStrings;
+import com.hbm.main.ResourceManager;
 
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.client.model.AdvancedModelLoader;
 import net.minecraftforge.client.model.IModelCustom;
 
 public class RenderCloudRainbow extends Render {
 
-	private static final ResourceLocation objTesterModelRL = new ResourceLocation(/*"/assets/" + */RefStrings.MODID, "models/Sphere.obj");
-	private IModelCustom blastModel;
+	private IModelCustom blastModel = ResourceManager.sphere;
     public float scale = 0;
     public float ring = 0;
     
-    public RenderCloudRainbow() {
-    	blastModel = AdvancedModelLoader.loadModel(objTesterModelRL);
-    	scale = 0;
+	public RenderCloudRainbow() {
+		scale = 0;
     }
 
 	@Override

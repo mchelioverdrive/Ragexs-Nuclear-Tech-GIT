@@ -155,3 +155,27 @@ INCOMPLETE:
 - Applied the same deferred lifecycle to authoritative `FluidNode`/`FluidNetMK2` conductors, including multi-fluid exhaust nodes, without returning topology ownership to the legacy `PipeNet` adapter.
 - Bounded dirty power and fluid network visits per server tick and retained overflow or repair-blocked entries for later processing.
 - Completed compile-oriented cleanup of the conductor lifecycle transition; dedicated-server runtime merge, split, border-unload, and rapid-switch scenarios remain to be exercised in game.
+
+2026-09-23 19:21 — Reduce OBJ rendering and VBO-build garbage
+
+- Confirmed that the profiled approximately 770,000 `Vertex[]` allocations match the 770,318 face and vertex-normal arrays created while the client's current referenced OBJ/HMF resources are parsed, rather than per-frame geometry reconstruction.
+- Consolidated eight registered `Sphere.obj` owners and three `LilBoy1.obj` owners onto shared `ResourceManager` models, removing nine redundant parses and 2,232 parser-array allocations during client renderer initialization.
+- Removed per-face and per-vertex temporary `Vec3` objects from shared icon-remapped OBJ rendering, including pipe and cable chunk builds, while preserving the existing rotation and lighting behavior.
+- Removed temporary three-float arrays and placeholder UV objects from HFR VBO buffer construction.
+- Documented exact model ownership, duplicate-load cases, cache/reload lifetime, conductor chunk rendering, remaining legacy TESR paths, and prepared-geometry criteria in `docs/RTM_PERFORMANCE_AUDIT.md`.
+
+2026-09-23 20:00 — Cache ordinary conductor render topology
+
+- Added lazy immutable 64-mask group-selection tables for ordinary round cables and fluid ducts, referencing shared OBJ groups without copying faces or vertices.
+- Added an allocation-free untransformed OBJ group path that skips repeated name scans, trigonometry, and identity vertex transforms while preserving icon remapping, lighting, and fluid overlay tint.
+- Reduced box-duct connectivity checks from repeated per-face/per-cuboid queries to one six-neighbor calculation per chunk build by reusing render-scoped mask and metadata state.
+- Kept ordinary conductors in chunk/block rendering, retained live connector-based mask calculation and every material/fluid/paint/special-conductor path, and made no network-topology changes.
+- Targeted offline Java compilation completed successfully; visual mask, chunk-border, texture-override, fluid/color, and special-conductor behavior still requires in-game validation.
+
+2026-09-23 20:16 — Compile shared machine geometry and reduce TESR garbage
+
+- Promoted ten high-use, triangle-only HFR machine models to the existing per-group VBO representation, including the assembly and chemical factories, cryogenic distiller, electrolyser, industrial generator, rad generator, mixer, chemplant body, strand caster, and refueler.
+- Kept static bodies and animated rotors, fans, arms, pistons, fluids, clipping, color, texture, blend, and lightmap behavior in their existing named groups and render passes; no TileEntity owns model data.
+- Reused decorative item renderers and dummy item entities across assembler, press, inserter, ore-slopper, welding, and soldering frames, and reused the foundry item renderer.
+- Removed per-frame color objects, fluid-tank texture identifiers, clip-plane arrays, and pumpjack rotation vectors from prioritized machine TESRs.
+- Targeted offline Java compilation completed successfully. Minecraft was not launched; visual parity, animation, clipping, fluid/item rendering, resource reload, and measured performance still require in-game validation.

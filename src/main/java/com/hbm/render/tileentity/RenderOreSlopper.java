@@ -21,7 +21,7 @@ import net.minecraftforge.client.IItemRenderer;
 
 public class RenderOreSlopper extends TileEntitySpecialRenderer implements IItemRendererProvider {
 	
-	private RenderItem itemRenderer = new RenderDecoItem(this);
+	private final RenderDecoItem itemRenderer = new RenderDecoItem(this);
 
 	@Override
 	public void renderTileEntityAt(TileEntity tile, double x, double y, double z, float interp) {
@@ -69,9 +69,7 @@ public class RenderOreSlopper extends TileEntitySpecialRenderer implements IItem
 			GL11.glRotatef(90, 0F, 1F, 0F);
 			GL11.glRotatef(-90, 1F, 0F, 0F);
 			ItemStack stack = new ItemStack(ModItems.bedrock_ore, 1, 0);
-			EntityItem item = new EntityItem(null, 0.0D, 0.0D, 0.0D, stack);
-			item.getEntityItem().stackSize = 1;
-			item.hoverStart = 0.0F;
+			EntityItem item = this.itemRenderer.getRenderEntity(stack);
 			RenderItem.renderInFrame = true;
 			GL11.glScaled(1.75, 1.75, 1.75);
 			itemRenderer.doRender(item, 0.0D, 0.0D, 0.0D, 0.0F, 0.0F);

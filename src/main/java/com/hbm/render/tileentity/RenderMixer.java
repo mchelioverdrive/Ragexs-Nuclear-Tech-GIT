@@ -1,7 +1,5 @@
 package com.hbm.render.tileentity;
 
-import java.awt.Color;
-
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.blocks.ModBlocks;
@@ -54,8 +52,8 @@ public class RenderMixer extends TileEntitySpecialRenderer implements IItemRende
 			GL11.glAlphaFunc(GL11.GL_GREATER, 0);
 			OpenGlHelper.glBlendFunc(770, 771, 1, 0);
 			
-			Color color = new Color(mixer.tanks[2].getTankType().getColor());
-			GL11.glColor4f(color.getRed() / 255F, color.getGreen() / 255F, color.getBlue() / 255F, 0.75F);
+			int color = mixer.tanks[2].getTankType().getColor();
+			GL11.glColor4f((color >> 16 & 0xFF) / 255F, (color >> 8 & 0xFF) / 255F, (color & 0xFF) / 255F, 0.75F);
 			GL11.glTranslated(0, 1, 0);
 			
 			GL11.glScaled(1, (double) totalFill / (double) totalMax * 0.99, 1);

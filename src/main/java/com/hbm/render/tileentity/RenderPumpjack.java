@@ -9,7 +9,7 @@ import com.hbm.tileentity.machine.oil.TileEntityMachinePumpjack;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Vec3;
+import net.minecraft.util.MathHelper;
 
 public class RenderPumpjack extends TileEntitySpecialRenderer {
 
@@ -55,11 +55,17 @@ public class RenderPumpjack extends TileEntitySpecialRenderer {
 		ResourceManager.pumpjack.renderPart("Carriage");
 		GL11.glPopMatrix();
 		
-		Vec3 backPos = Vec3.createVectorHelper(0, 0, -2);
-		backPos.rotateAroundX(-(float)Math.sin(Math.toRadians(rotation)) * 0.25F);
-		
-		Vec3 rot = Vec3.createVectorHelper(0, 0.5, 0);
-		rot.rotateAroundX(-(float)Math.toRadians(rotation - 90));
+		double pumpAngle = Math.toRadians(rotation);
+		double pumpSin = Math.sin(pumpAngle);
+		float headAngle = -(float) pumpSin * 0.25F;
+		float headSin = MathHelper.sin(headAngle);
+		float headCos = MathHelper.cos(headAngle);
+		double backY = -2D * headSin;
+		double backZ = -2D * headCos;
+
+		float rotorAngle = -(float) Math.toRadians(rotation - 90);
+		double rotorY = 0.5D * MathHelper.cos(rotorAngle);
+		double rotorZ = -0.5D * MathHelper.sin(rotorAngle);
 
 		GL11.glDisable(GL11.GL_LIGHTING);
 		GL11.glDisable(GL11.GL_CULL_FACE);
@@ -71,11 +77,11 @@ public class RenderPumpjack extends TileEntitySpecialRenderer {
 		
 		for(int i = -1; i <= 1; i += 2) {
 
-			tess.addVertex(0.53125 * i, 1.5 + rot.yCoord, -5.5 + rot.zCoord - 0.0625D);
-			tess.addVertex(0.53125 * i, 1.5 + rot.yCoord, -5.5 + rot.zCoord + 0.0625D);
+			tess.addVertex(0.53125 * i, 1.5 + rotorY, -5.5 + rotorZ - 0.0625D);
+			tess.addVertex(0.53125 * i, 1.5 + rotorY, -5.5 + rotorZ + 0.0625D);
 
-			tess.addVertex(0.53125 * i, 3.5 + backPos.yCoord, -3.5 + backPos.zCoord + 0.0625D);
-			tess.addVertex(0.53125 * i, 3.5 + backPos.yCoord, -3.5 + backPos.zCoord - 0.0625D);
+			tess.addVertex(0.53125 * i, 3.5 + backY, -3.5 + backZ + 0.0625D);
+			tess.addVertex(0.53125 * i, 3.5 + backY, -3.5 + backZ - 0.0625D);
 		}
 		
 		tess.setColorRGBA_F(0.2F, 0.2F, 0.2F, 1F);
@@ -83,43 +89,49 @@ public class RenderPumpjack extends TileEntitySpecialRenderer {
 		double pd = 0.03125D;
 		double width = 0.25D;
 
-		double height = -Math.sin(Math.toRadians(rotation));
+		double height = -pumpSin;
+		double frontY = headSin;
+		double frontZ = headCos;
+		double dist = 0.03125D;
+		double cutlet = 360D / 32D;
+		float initialRopeAngle = (float) Math.toRadians(cutlet * 3D);
+		float ropeStepAngle = -(float) Math.toRadians(cutlet);
+		float initialRopeSin = MathHelper.sin(initialRopeAngle);
+		float initialRopeCos = MathHelper.cos(initialRopeAngle);
+		float ropeStepSin = MathHelper.sin(ropeStepAngle);
+		float ropeStepCos = MathHelper.cos(ropeStepAngle);
 		
 		for(int i = -1; i <= 1; i += 2) {
-
-			float pRot = -(float)(Math.sin(Math.toRadians(rotation)) * 0.25);
-			
-			Vec3 frontPos = Vec3.createVectorHelper(0, 0, 1);
-			frontPos.rotateAroundX(pRot);
-
-			double dist = 0.03125D;
-			Vec3 frontRad = Vec3.createVectorHelper(0, 0, 2.5 + dist);
-			double cutlet = 360D / 32D;
-			frontRad.rotateAroundX(pRot);
-			frontRad.rotateAroundX(-(float)Math.toRadians(cutlet * -3));
+			double frontRadY = (2.5D + dist) * headSin;
+			double frontRadZ = (2.5D + dist) * headCos;
+			double rotatedY = frontRadY * initialRopeCos + frontRadZ * initialRopeSin;
+			frontRadZ = frontRadZ * initialRopeCos - frontRadY * initialRopeSin;
+			frontRadY = rotatedY;
 			
 			for(int j = 0; j < 4; j++) {
 
-				double sumY = frontPos.yCoord + frontRad.yCoord;
-				double sumZ = frontPos.zCoord + frontRad.zCoord;
-				if(frontRad.yCoord < 0) sumZ = 3.5 + dist * 0.5;
+				double sumY = frontY + frontRadY;
+				double sumZ = frontZ + frontRadZ;
+				if(frontRadY < 0) sumZ = 3.5 + dist * 0.5;
 	
 				tess.addVertex((width - pd) * i, 3.5 + sumY, -3.5 + sumZ);
 				tess.addVertex((width + pd) * i, 3.5 + sumY, -3.5 + sumZ);
 
-				frontRad.rotateAroundX(-(float)Math.toRadians(cutlet));
+				rotatedY = frontRadY * ropeStepCos + frontRadZ * ropeStepSin;
+				frontRadZ = frontRadZ * ropeStepCos - frontRadY * ropeStepSin;
+				frontRadY = rotatedY;
 
-				sumY = frontPos.yCoord + frontRad.yCoord;
-				sumZ = frontPos.zCoord + frontRad.zCoord;
-				if(frontRad.yCoord < 0) sumZ = 3.5 + dist * 0.5;
+				sumY = frontY + frontRadY;
+				sumZ = frontZ + frontRadZ;
+				if(frontRadY < 0) sumZ = 3.5 + dist * 0.5;
 	
 				tess.addVertex((width + pd) * i, 3.5 + sumY, -3.5 + sumZ);
 				tess.addVertex((width - pd) * i, 3.5 + sumY, -3.5 + sumZ);
 			}
 
-			double sumY = frontPos.yCoord + frontRad.yCoord;
-			double sumZ = frontPos.zCoord + frontRad.zCoord;
-			if(frontRad.yCoord < 0) sumZ = 3.5 + dist * 0.5;
+			double sumY = frontY + frontRadY;
+			double sumZ = frontZ + frontRadZ;
+			if(frontRadY < 0) sumZ = 3.5 + dist * 0.5;
 			
 			tess.addVertex((width + pd) * i, 3.5 + sumY, -3.5 + sumZ);
 			tess.addVertex((width - pd) * i, 3.5 + sumY, -3.5 + sumZ);

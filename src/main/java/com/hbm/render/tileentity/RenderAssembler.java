@@ -9,7 +9,6 @@ import com.hbm.tileentity.machine.TileEntityMachineAssembler;
 
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.entity.RenderItem;
-import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.item.ItemBlock;
@@ -18,8 +17,7 @@ import net.minecraft.tileentity.TileEntity;
 
 public class RenderAssembler extends TileEntitySpecialRenderer {
 	
-	private RenderItem itemRenderer;
-	private RenderManager renderManager = RenderManager.instance;
+	private final RenderDecoItem itemRenderer = new RenderDecoItem(this);
 	
 	public RenderAssembler() { }
 
@@ -53,8 +51,6 @@ public class RenderAssembler extends TileEntitySpecialRenderer {
         TileEntityMachineAssembler assembler = (TileEntityMachineAssembler) tileEntity;
 
         if(assembler.recipe != -1 && TESRDistanceUtil.shouldRenderDetails(tileEntity)) {
-			itemRenderer = new RenderDecoItem(this);
-			itemRenderer.setRenderManager(renderManager);
 			GL11.glPushMatrix();
 				GL11.glTranslated(-1, 0.875, 0);
 	        	
@@ -70,9 +66,7 @@ public class RenderAssembler extends TileEntitySpecialRenderer {
 						GL11.glTranslated(0, -0.875, -2);
 					}
 					
-					EntityItem item = new EntityItem(null, 0.0D, 0.0D, 0.0D, stack);
-					item.getEntityItem().stackSize = 1;
-					item.hoverStart = 0.0F;
+					EntityItem item = this.itemRenderer.getRenderEntity(stack);
 					
 					RenderItem.renderInFrame = true;
 					GL11.glTranslatef(0.0F, 1.0F - 0.0625F * 165/100, 0.0F);

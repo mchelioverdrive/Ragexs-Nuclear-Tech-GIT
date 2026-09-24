@@ -4,24 +4,22 @@ import org.lwjgl.opengl.GL11;
 
 import com.hbm.entity.effect.EntityCloudSolinium;
 import com.hbm.lib.RefStrings;
+import com.hbm.main.ResourceManager;
 
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.client.model.AdvancedModelLoader;
 import net.minecraftforge.client.model.IModelCustom;
 
 public class RenderCloudSolinium extends Render {
 
-	private static final ResourceLocation objTesterModelRL = new ResourceLocation(/*"/assets/" + */RefStrings.MODID, "models/Sphere.obj");
-	private IModelCustom blastModel;
+	private IModelCustom blastModel = ResourceManager.sphere;
     private ResourceLocation blastTexture;
     public float scale = 0;
     public float ring = 0;
     
-    public RenderCloudSolinium() {
-    	blastModel = AdvancedModelLoader.loadModel(objTesterModelRL);
-    	blastTexture = new ResourceLocation(RefStrings.MODID, "textures/models/BlastSolinium.png");
+	public RenderCloudSolinium() {
+		blastTexture = new ResourceLocation(RefStrings.MODID, "textures/models/BlastSolinium.png");
     	scale = 0;
     }
 

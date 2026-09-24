@@ -1,6 +1,5 @@
 package com.hbm.render.tileentity;
 
-import java.awt.Color;
 import java.nio.DoubleBuffer;
 
 import org.lwjgl.opengl.GL11;
@@ -46,7 +45,7 @@ public class RenderRefueler extends TileEntitySpecialRenderer implements IItemRe
 
 			if(clip == null) {
 				clip = GLAllocation.createDirectByteBuffer(8*4).asDoubleBuffer();
-				clip.put(new double[] {0, 1, 0, -0.125 });
+				clip.put(0).put(1).put(0).put(-0.125);
 				clip.rewind();
 			}
 
@@ -61,8 +60,8 @@ public class RenderRefueler extends TileEntitySpecialRenderer implements IItemRe
 			double fillLevel = refueler.prevFillLevel + (refueler.fillLevel - refueler.prevFillLevel) * interp;
 			GL11.glTranslated(0, (1 - fillLevel) * -0.625, 0);
 
-			Color color = new Color(refueler.tank.getTankType().getColor());
-			GL11.glColor4f(color.getRed() / 255F, color.getGreen() / 255F, color.getBlue() / 255F, 0.75F);
+			int color = refueler.tank.getTankType().getColor();
+			GL11.glColor4f((color >> 16 & 0xFF) / 255F, (color >> 8 & 0xFF) / 255F, (color & 0xFF) / 255F, 0.75F);
 			ResourceManager.refueler.renderPart("Fluid");
 			GL11.glColor4f(1, 1, 1, 1);
 
