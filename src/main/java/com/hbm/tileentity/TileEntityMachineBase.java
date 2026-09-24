@@ -24,6 +24,9 @@ import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.Packet;
+import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.fluids.FluidTank;
 
@@ -217,12 +220,8 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 		packet.toBytes(buf);
 
 		// Don't send unnecessary packets, except for maybe one every second or so.
-		// If we stop sending duplicate packets entirely, this causes issues when
-		// a client unloads and then loads back a chunk with an unchanged tile entity.
-		// For that client, the tile entity will appear default until anything changes about it.
-		// In my testing, this can be reliably reproduced with a full fluid barrel, for instance.
-		// I think it might be fixable by doing something with getDescriptionPacket() and onDataPacket(),
-		// but this sidesteps the problem for the mean time.
+		// Retain the periodic duplicate as a fallback for later packet loss. Initial chunk state
+		// is delivered independently by getDescriptionPacket() and onDataPacket().
 		if (lastPackedBuf != null && buf.equals(lastPackedBuf) && worldObj.getWorldTime() % 20 != 0) {
 			buf.release();
 			return;
@@ -242,6 +241,16 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 
 		PacketDispatcher.wrapper.sendToAllAround(new BufPacket(xCoord, yCoord, zCoord, this), new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, range));
 		this.networkSyncDirty = false;
+	}
+
+	@Override
+	public Packet getDescriptionPacket() {
+		return BufPacketTileEntitySync.createDescriptionPacket(this, this);
+	}
+
+	@Override
+	public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity packet) {
+		BufPacketTileEntitySync.applyOnClientThread(packet.func_148857_g(), this);
 	}
 
 	private void releaseLastPackedBuf() {
