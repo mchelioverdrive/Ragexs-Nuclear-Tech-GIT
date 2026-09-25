@@ -5263,6 +5263,18 @@ public class AssemblerRecipes extends SerializableRecipe {
 										8)},
 				   200);
 
+
+		//drilling of graphite blocks... Yeah bro I really wanna hand drill graphite blocks for 10 minutes just for it to fucking explode
+		makeRecipe(new ComparableStack(ModBlocks.block_graphite_drilled, 1),
+			new AStack[]{
+				new OreDictStack(GRAPHITE.block(),
+								 1),
+				//new ComparableStack(ModItems.drill_titanium,
+				//					1)
+			},
+			200);
+
+
 		if (GeneralConfig.enableMekanismChanges && Loader.isModLoaded("Mekanism")) {
 
 			Block mb = (Block) Block.blockRegistry.getObject("Mekanism:MachineBlock");
@@ -5294,6 +5306,8 @@ public class AssemblerRecipes extends SerializableRecipe {
 						   1200);
 			}
 		}
+
+
 
 		//add to lang
 		//for(NTMMaterial mat : Mats.orderedList) {
