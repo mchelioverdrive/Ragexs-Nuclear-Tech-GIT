@@ -21,14 +21,13 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.IIcon;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.client.model.AdvancedModelLoader;
 import net.minecraftforge.client.model.IModelCustom;
 
 public class RenderBobble extends TileEntitySpecialRenderer {
 
 	public static RenderBobble instance = new RenderBobble();
 
-	public static final IModelCustom bobble = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/trinkets/bobble.obj"));
+	public static final IModelCustom bobble = com.hbm.render.loader.prepared.PreparedModelCache.get(new ResourceLocation(RefStrings.MODID, "models/trinkets/bobble.obj"), false, true);
 	public static final ResourceLocation socket = new ResourceLocation(RefStrings.MODID, "textures/models/trinkets/socket.png");
 	public static final ResourceLocation glow = new ResourceLocation(RefStrings.MODID, "textures/models/trinkets/glow.png");
 	public static final ResourceLocation lamp = new ResourceLocation(RefStrings.MODID, "textures/blocks/fluorescent_lamp.png");

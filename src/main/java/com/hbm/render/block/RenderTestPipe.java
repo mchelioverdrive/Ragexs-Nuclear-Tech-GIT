@@ -7,6 +7,7 @@ import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.main.ResourceManager;
 import com.hbm.render.util.ObjUtil;
+import com.hbm.render.loader.prepared.PreparedModelHandle;
 import com.hbm.tileentity.network.TileEntityPipeBaseNT;
 
 import cpw.mods.fml.client.registry.ISimpleBlockRenderingHandler;
@@ -16,15 +17,13 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.client.model.obj.GroupObject;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 
 public class RenderTestPipe implements ISimpleBlockRenderingHandler {
 
 	private static class Geometry {
-		private static final WavefrontObject MODEL = (WavefrontObject) ResourceManager.pipe_neo;
-		private static final GroupObject[][] SHAPES = ConductorRenderCache.buildPipeShapes(MODEL);
-		private static final GroupObject[] INVENTORY = ConductorRenderCache.groups(MODEL, "pX", "nX", "pZ", "nZ");
+		private static final PreparedModelHandle MODEL = (PreparedModelHandle) ResourceManager.pipe_neo;
+		private static final String[][] SHAPES = ConductorRenderCache.buildPipeShapes(MODEL);
+		private static final String[] INVENTORY = ConductorRenderCache.groups(MODEL, "pX", "nX", "pZ", "nZ");
 	}
 
 	@Override
@@ -43,11 +42,11 @@ public class RenderTestPipe implements ISimpleBlockRenderingHandler {
 		GL11.glRotated(180, 0, 1, 0);
 		GL11.glScaled(1.25D, 1.25D, 1.25D);
 		tessellator.startDrawingQuads();
-		ObjUtil.renderGroupsWithIcon(Geometry.INVENTORY, iicon, tessellator, false);
+		ObjUtil.renderGroupsWithIcon(Geometry.MODEL, Geometry.INVENTORY, iicon, tessellator, false);
 		tessellator.draw();
 		tessellator.startDrawingQuads();
 		ObjUtil.setColor(Fluids.NONE.getColor());
-		ObjUtil.renderGroupsWithIcon(Geometry.INVENTORY, overlay, tessellator, false);
+		ObjUtil.renderGroupsWithIcon(Geometry.MODEL, Geometry.INVENTORY, overlay, tessellator, false);
 		ObjUtil.clearColor();
 		tessellator.draw();
 
@@ -92,10 +91,10 @@ public class RenderTestPipe implements ISimpleBlockRenderingHandler {
 		return true;
 	}
 	
-	private void renderDuct(IIcon iicon, IIcon overlay, int color, Tessellator tessellator, GroupObject[] groups) {
-		ObjUtil.renderGroupsWithIcon(groups, iicon, tessellator, true);
+	private void renderDuct(IIcon iicon, IIcon overlay, int color, Tessellator tessellator, String[] groups) {
+		ObjUtil.renderGroupsWithIcon(Geometry.MODEL, groups, iicon, tessellator, true);
 		ObjUtil.setColor(color);
-		ObjUtil.renderGroupsWithIcon(groups, overlay, tessellator, true);
+		ObjUtil.renderGroupsWithIcon(Geometry.MODEL, groups, overlay, tessellator, true);
 		ObjUtil.clearColor();
 	}
 

@@ -7,7 +7,6 @@ import com.hbm.lib.RefStrings;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.client.model.AdvancedModelLoader;
 import net.minecraftforge.client.model.IModelCustom;
 
 public class RenderBombMultiLarge extends TileEntitySpecialRenderer {
@@ -18,7 +17,7 @@ public class RenderBombMultiLarge extends TileEntitySpecialRenderer {
 	
 	public RenderBombMultiLarge()
     {
-		bombModelC = AdvancedModelLoader.loadModel(bombModel);
+		bombModelC = com.hbm.render.loader.prepared.PreparedModelCache.get(bombModel, false, true);
 		bombTexture = new ResourceLocation(RefStrings.MODID, "textures/models/BombGenericLargeLayout.png");
     }
 

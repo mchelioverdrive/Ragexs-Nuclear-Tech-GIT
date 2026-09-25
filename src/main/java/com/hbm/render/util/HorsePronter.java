@@ -3,7 +3,6 @@ package com.hbm.render.util;
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.lib.RefStrings;
-import com.hbm.render.loader.HFRWavefrontObject;
 
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Vec3;
@@ -11,7 +10,7 @@ import net.minecraftforge.client.model.IModelCustom;
 
 public class HorsePronter {
 	
-	public static final IModelCustom horse = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/mobs/horse.obj"), false).asVBO();
+	public static final IModelCustom horse = com.hbm.render.loader.prepared.PreparedModelCache.getHfr(new ResourceLocation(RefStrings.MODID, "models/mobs/horse.obj"), false, true);
 
 	public static final ResourceLocation tex_demohorse = new ResourceLocation(RefStrings.MODID, "textures/models/horse/horse_demo.png");
 

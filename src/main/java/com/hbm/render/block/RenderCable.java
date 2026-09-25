@@ -5,6 +5,7 @@ import org.lwjgl.opengl.GL11;
 import com.hbm.blocks.network.BlockCable;
 import com.hbm.main.ResourceManager;
 import com.hbm.render.util.ObjUtil;
+import com.hbm.render.loader.prepared.PreparedModelHandle;
 
 import cpw.mods.fml.client.registry.ISimpleBlockRenderingHandler;
 import net.minecraft.block.Block;
@@ -12,15 +13,13 @@ import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.client.model.obj.GroupObject;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 
 public class RenderCable implements ISimpleBlockRenderingHandler {
 
 	private static class Geometry {
-		private static final WavefrontObject MODEL = (WavefrontObject) ResourceManager.cable_neo;
-		private static final GroupObject[][] SHAPES = ConductorRenderCache.buildCableShapes(MODEL);
-		private static final GroupObject[] INVENTORY = ConductorRenderCache.groups(MODEL, "Core", "posX", "negX", "posZ", "negZ");
+		private static final PreparedModelHandle MODEL = (PreparedModelHandle) ResourceManager.cable_neo;
+		private static final String[][] SHAPES = ConductorRenderCache.buildCableShapes(MODEL);
+		private static final String[] INVENTORY = ConductorRenderCache.groups(MODEL, "Core", "posX", "negX", "posZ", "negZ");
 	}
 
 	@Override
@@ -38,7 +37,7 @@ public class RenderCable implements ISimpleBlockRenderingHandler {
 		GL11.glRotated(180, 0, 1, 0);
 		GL11.glScaled(1.25D, 1.25D, 1.25D);
 		tessellator.startDrawingQuads();
-		ObjUtil.renderGroupsWithIcon(Geometry.INVENTORY, iicon, tessellator, false);
+		ObjUtil.renderGroupsWithIcon(Geometry.MODEL, Geometry.INVENTORY, iicon, tessellator, false);
 		tessellator.draw();
 
 		GL11.glPopMatrix();
@@ -61,7 +60,7 @@ public class RenderCable implements ISimpleBlockRenderingHandler {
 		int mask = ConductorRenderCache.getCableMask(world, x, y, z);
 		
 		tessellator.addTranslation(x + 0.5F, y + 0.5F, z + 0.5F);
-		ObjUtil.renderGroupsWithIcon(Geometry.SHAPES[mask], iicon, tessellator, true);
+		ObjUtil.renderGroupsWithIcon(Geometry.MODEL, Geometry.SHAPES[mask], iicon, tessellator, true);
 		
 		tessellator.addTranslation(-x - 0.5F, -y - 0.5F, -z - 0.5F);
 

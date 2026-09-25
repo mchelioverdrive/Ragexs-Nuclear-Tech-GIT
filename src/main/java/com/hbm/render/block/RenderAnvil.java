@@ -11,7 +11,6 @@ import net.minecraft.block.Block;
 import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 
 public class RenderAnvil implements ISimpleBlockRenderingHandler {
 
@@ -24,12 +23,12 @@ public class RenderAnvil implements ISimpleBlockRenderingHandler {
 		GL11.glTranslated(0, -0.5, 0);
 		GL11.glRotated(180, 0, 1, 0);
 		tessellator.startDrawingQuads();
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.anvil, "Top", block.getIcon(1, 0), tessellator, 0, false);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.anvil, "Bottom", block.getIcon(0, 0), tessellator, 0, false);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.anvil, "Front", block.getIcon(0, 0), tessellator, 0, false);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.anvil, "Back", block.getIcon(0, 0), tessellator, 0, false);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.anvil, "Left", block.getIcon(0, 0), tessellator, 0, false);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.anvil, "Right", block.getIcon(0, 0), tessellator, 0, false);
+		ObjUtil.renderPartWithIcon(ResourceManager.anvil, "Top", block.getIcon(1, 0), tessellator, 0, false);
+		ObjUtil.renderPartWithIcon(ResourceManager.anvil, "Bottom", block.getIcon(0, 0), tessellator, 0, false);
+		ObjUtil.renderPartWithIcon(ResourceManager.anvil, "Front", block.getIcon(0, 0), tessellator, 0, false);
+		ObjUtil.renderPartWithIcon(ResourceManager.anvil, "Back", block.getIcon(0, 0), tessellator, 0, false);
+		ObjUtil.renderPartWithIcon(ResourceManager.anvil, "Left", block.getIcon(0, 0), tessellator, 0, false);
+		ObjUtil.renderPartWithIcon(ResourceManager.anvil, "Right", block.getIcon(0, 0), tessellator, 0, false);
 		tessellator.draw();
 
 		GL11.glPopMatrix();
@@ -55,12 +54,12 @@ public class RenderAnvil implements ISimpleBlockRenderingHandler {
 			rotation = 180F / 180F * (float)Math.PI;
 
 		tessellator.addTranslation(x + 0.5F, y, z + 0.5F);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.anvil, "Top", block.getIcon(1, 0), tessellator, rotation, true);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.anvil, "Bottom", block.getIcon(0, 0), tessellator, rotation, true);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.anvil, "Front", block.getIcon(0, 0), tessellator, rotation, true);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.anvil, "Back", block.getIcon(0, 0), tessellator, rotation, true);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.anvil, "Left", block.getIcon(0, 0), tessellator, rotation, true);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.anvil, "Right", block.getIcon(0, 0), tessellator, rotation, true);
+		ObjUtil.renderPartWithIcon(ResourceManager.anvil, "Top", block.getIcon(1, 0), tessellator, rotation, true);
+		ObjUtil.renderPartWithIcon(ResourceManager.anvil, "Bottom", block.getIcon(0, 0), tessellator, rotation, true);
+		ObjUtil.renderPartWithIcon(ResourceManager.anvil, "Front", block.getIcon(0, 0), tessellator, rotation, true);
+		ObjUtil.renderPartWithIcon(ResourceManager.anvil, "Back", block.getIcon(0, 0), tessellator, rotation, true);
+		ObjUtil.renderPartWithIcon(ResourceManager.anvil, "Left", block.getIcon(0, 0), tessellator, rotation, true);
+		ObjUtil.renderPartWithIcon(ResourceManager.anvil, "Right", block.getIcon(0, 0), tessellator, rotation, true);
 		tessellator.addTranslation(-x - 0.5F, -y, -z - 0.5F);
 
 		return true;

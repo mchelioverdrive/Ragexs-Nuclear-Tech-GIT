@@ -8,7 +8,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.IItemRenderer;
-import net.minecraftforge.client.model.AdvancedModelLoader;
 import net.minecraftforge.client.model.IModelCustom;
 
 public class ItemRenderNukeGadget implements IItemRenderer {
@@ -18,7 +17,7 @@ public class ItemRenderNukeGadget implements IItemRenderer {
     float f = -1;
 	
 	public ItemRenderNukeGadget() {
-		gadgetModel = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/TheGadget3.obj"));
+		gadgetModel = com.hbm.render.loader.prepared.PreparedModelCache.get(new ResourceLocation(RefStrings.MODID, "models/TheGadget3.obj"), false, true);
 		gadgetTexture = new ResourceLocation(RefStrings.MODID, "textures/models/TheGadget3_.png");
 	}
 

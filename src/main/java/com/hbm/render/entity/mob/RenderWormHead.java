@@ -4,7 +4,6 @@ import org.lwjgl.opengl.GL11;
 
 import com.hbm.entity.mob.botprime.EntityBOTPrimeHead;
 import com.hbm.lib.RefStrings;
-import com.hbm.render.loader.HFRWavefrontObject;
 
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.entity.Entity;
@@ -18,7 +17,7 @@ public class RenderWormHead extends Render {
 		this.shadowOpaque = 0.0F;
 	}
 
-	public static final IModelCustom body = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/mobs/bot_prime_head.obj"));
+	public static final IModelCustom body = com.hbm.render.loader.prepared.PreparedModelCache.getHfr(new ResourceLocation(RefStrings.MODID, "models/mobs/bot_prime_head.obj"), true, true);
 	public static final ResourceLocation texture = new ResourceLocation(RefStrings.MODID, "textures/entity/mark_zero_head.png");
 
 	@Override

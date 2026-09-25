@@ -1,5 +1,7 @@
 package com.hbm.render.util;
 
+import com.hbm.render.loader.prepared.PreparedModelHandle;
+
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.IIcon;
 import net.minecraft.util.MathHelper;
@@ -8,9 +10,64 @@ import net.minecraftforge.client.model.obj.GroupObject;
 import net.minecraftforge.client.model.obj.TextureCoordinate;
 import net.minecraftforge.client.model.obj.Vertex;
 import net.minecraftforge.client.model.obj.WavefrontObject;
+import net.minecraftforge.client.model.IModelCustom;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class ObjUtil {
+
+	public static void renderWithIcon(IModelCustom model, IIcon icon, Tessellator tes, float rot, boolean shadow) {
+		if(model instanceof PreparedModelHandle) renderWithIcon((PreparedModelHandle) model, icon, tes, rot, shadow);
+		else renderWithIcon((WavefrontObject) model, icon, tes, rot, shadow);
+	}
+
+	public static void renderWithIcon(IModelCustom model, IIcon icon, Tessellator tes, float rot, float pitch, boolean shadow) {
+		if(model instanceof PreparedModelHandle) renderWithIcon((PreparedModelHandle) model, icon, tes, rot, pitch, shadow);
+		else renderWithIcon((WavefrontObject) model, icon, tes, rot, pitch, shadow);
+	}
+
+	public static void renderWithIcon(IModelCustom model, IIcon icon, Tessellator tes, float rot, float pitch, float roll, boolean shadow) {
+		if(model instanceof PreparedModelHandle) renderWithIcon((PreparedModelHandle) model, icon, tes, rot, pitch, roll, shadow);
+		else renderWithIcon((WavefrontObject) model, icon, tes, rot, pitch, roll, shadow);
+	}
+
+	public static void renderPartWithIcon(IModelCustom model, String name, IIcon icon, Tessellator tes, float rot, boolean shadow) {
+		if(model instanceof PreparedModelHandle) renderPartWithIcon((PreparedModelHandle) model, name, icon, tes, rot, shadow);
+		else renderPartWithIcon((WavefrontObject) model, name, icon, tes, rot, shadow);
+	}
+
+	public static void renderPartWithIcon(IModelCustom model, String name, IIcon icon, Tessellator tes, float rot, float pitch, boolean shadow) {
+		if(model instanceof PreparedModelHandle) renderPartWithIcon((PreparedModelHandle) model, name, icon, tes, rot, pitch, shadow);
+		else renderPartWithIcon((WavefrontObject) model, name, icon, tes, rot, pitch, shadow);
+	}
+
+	public static void renderPartWithIcon(IModelCustom model, String name, IIcon icon, Tessellator tes, float rot, float pitch, float roll, boolean shadow) {
+		if(model instanceof PreparedModelHandle) renderPartWithIcon((PreparedModelHandle) model, name, icon, tes, rot, pitch, roll, shadow);
+		else renderPartWithIcon((WavefrontObject) model, name, icon, tes, rot, pitch, roll, shadow);
+	}
+
+	public static void renderWithIcon(PreparedModelHandle model, IIcon icon, Tessellator tes, float rot, boolean shadow) {
+		model.tessellateWithIcon(icon, tes, rot, 0F, 0F, shadow, null, hasColor, red, green, blue);
+	}
+
+	public static void renderWithIcon(PreparedModelHandle model, IIcon icon, Tessellator tes, float rot, float pitch, boolean shadow) {
+		model.tessellateWithIcon(icon, tes, rot, pitch, 0F, shadow, null, hasColor, red, green, blue);
+	}
+
+	public static void renderWithIcon(PreparedModelHandle model, IIcon icon, Tessellator tes, float rot, float pitch, float roll, boolean shadow) {
+		model.tessellateWithIcon(icon, tes, rot, pitch, roll, shadow, null, hasColor, red, green, blue);
+	}
+
+	public static void renderPartWithIcon(PreparedModelHandle model, String name, IIcon icon, Tessellator tes, float rot, boolean shadow) {
+		model.tessellateWithIcon(icon, tes, rot, 0F, 0F, shadow, name, hasColor, red, green, blue);
+	}
+
+	public static void renderPartWithIcon(PreparedModelHandle model, String name, IIcon icon, Tessellator tes, float rot, float pitch, boolean shadow) {
+		model.tessellateWithIcon(icon, tes, rot, pitch, 0F, shadow, name, hasColor, red, green, blue);
+	}
+
+	public static void renderPartWithIcon(PreparedModelHandle model, String name, IIcon icon, Tessellator tes, float rot, float pitch, float roll, boolean shadow) {
+		model.tessellateWithIcon(icon, tes, rot, pitch, roll, shadow, name, hasColor, red, green, blue);
+	}
 
 	public static void renderWithIcon(WavefrontObject model, IIcon icon, Tessellator tes, float rot, boolean shadow) {
 		renderWithIcon(model, icon, tes, rot, 0, 0, shadow);
@@ -181,6 +238,10 @@ public class ObjUtil {
 				}
 			}
 		}
+	}
+
+	public static void renderGroupsWithIcon(PreparedModelHandle model, String[] groups, IIcon icon, Tessellator tes, boolean shadow) {
+		model.tessellateGroupsWithIcon(groups, icon, tes, shadow, hasColor, red, green, blue);
 	}
 	
 	private static int red;

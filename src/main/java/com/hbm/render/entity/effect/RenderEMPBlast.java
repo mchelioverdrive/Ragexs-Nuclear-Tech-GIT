@@ -7,7 +7,6 @@ import com.hbm.lib.RefStrings;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.client.model.AdvancedModelLoader;
 import net.minecraftforge.client.model.IModelCustom;
 
 public class RenderEMPBlast extends Render {
@@ -17,7 +16,7 @@ public class RenderEMPBlast extends Render {
     private ResourceLocation ringTexture;
     
     public RenderEMPBlast() {
-    	ringModel = AdvancedModelLoader.loadModel(ringModelRL);
+		ringModel = com.hbm.render.loader.prepared.PreparedModelCache.get(ringModelRL, false, true);
     	ringTexture = new ResourceLocation(RefStrings.MODID, "textures/models/EMPBlast.png");
     }
 

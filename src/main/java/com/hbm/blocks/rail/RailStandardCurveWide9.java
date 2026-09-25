@@ -12,7 +12,6 @@ import net.minecraft.block.Block;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class RailStandardCurveWide9 extends RailStandardCurveBase {
@@ -129,7 +128,7 @@ public class RailStandardCurveWide9 extends RailStandardCurveBase {
 		GL11.glRotated(60, 1, 0, 0);
 		GL11.glTranslated(4, 0, 4);
 		tessellator.startDrawingQuads();
-		ObjUtil.renderWithIcon((WavefrontObject) ResourceManager.rail_standard_curve_wide9, block.getIcon(1, 0), tessellator, 0, false);
+		ObjUtil.renderWithIcon(ResourceManager.rail_standard_curve_wide9, block.getIcon(1, 0), tessellator, 0, false);
 		tessellator.draw();
 	}
 
@@ -142,7 +141,7 @@ public class RailStandardCurveWide9 extends RailStandardCurveBase {
 		if(meta == 12) rotation = 180F / 180F * (float) Math.PI;
 		if(meta == 14) rotation = 270F / 180F * (float) Math.PI;
 		tessellator.addTranslation(x + 0.5F, y, z + 0.5F);
-		ObjUtil.renderWithIcon((WavefrontObject) ResourceManager.rail_standard_curve_wide9, block.getIcon(1, 0), tessellator, rotation, true);
+		ObjUtil.renderWithIcon(ResourceManager.rail_standard_curve_wide9, block.getIcon(1, 0), tessellator, rotation, true);
 		tessellator.addTranslation(-x - 0.5F, -y, -z - 0.5F);
 	}
 }

@@ -12,7 +12,6 @@ import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 
 public class RenderBarbedWire implements ISimpleBlockRenderingHandler {
 
@@ -31,7 +30,7 @@ public class RenderBarbedWire implements ISimpleBlockRenderingHandler {
         
         GL11.glTranslated(0, -0.5, 0);
         tessellator.startDrawingQuads();
-		ObjUtil.renderWithIcon((WavefrontObject) ResourceManager.barbed_wire, iicon, tessellator, 0, false);
+		ObjUtil.renderWithIcon(ResourceManager.barbed_wire, iicon, tessellator, 0, false);
 		tessellator.draw();
 		
         GL11.glPopMatrix();
@@ -57,7 +56,7 @@ public class RenderBarbedWire implements ISimpleBlockRenderingHandler {
         	rotation = -90F / 180F * (float)Math.PI;
         
         tessellator.addTranslation(x + 0.5F, y, z + 0.5F);
-		ObjUtil.renderWithIcon((WavefrontObject) ResourceManager.barbed_wire, iicon, tessellator, rotation, true);
+		ObjUtil.renderWithIcon(ResourceManager.barbed_wire, iicon, tessellator, rotation, true);
         tessellator.addTranslation(-x - 0.5F, -y, -z - 0.5F);
         
 		return true;

@@ -5,10 +5,9 @@ import java.util.List;
 
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.lib.Library;
+import com.hbm.render.loader.prepared.PreparedModelHandle;
 
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.client.model.obj.GroupObject;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 
 /** Immutable render-shape selection for ordinary six-direction conductors. */
 final class ConductorRenderCache {
@@ -44,10 +43,10 @@ final class ConductorRenderCache {
 		return mask;
 	}
 
-	static GroupObject[][] buildCableShapes(WavefrontObject model) {
-		GroupObject[][] shapes = new GroupObject[64][];
+	static String[][] buildCableShapes(PreparedModelHandle model) {
+		String[][] shapes = new String[64][];
 		for(int mask = 0; mask < shapes.length; mask++) {
-			List<GroupObject> groups = new ArrayList<GroupObject>(7);
+			List<String> groups = new ArrayList<String>(7);
 			if(mask == (POS_X | NEG_X)) {
 				add(model, groups, "CX");
 			} else if(mask == (POS_Y | NEG_Y)) {
@@ -63,15 +62,15 @@ final class ConductorRenderCache {
 				if((mask & NEG_Z) != 0) add(model, groups, "posZ");
 				if((mask & POS_Z) != 0) add(model, groups, "negZ");
 			}
-			shapes[mask] = groups.toArray(new GroupObject[groups.size()]);
+			shapes[mask] = groups.toArray(new String[groups.size()]);
 		}
 		return shapes;
 	}
 
-	static GroupObject[][] buildPipeShapes(WavefrontObject model) {
-		GroupObject[][] shapes = new GroupObject[64][];
+	static String[][] buildPipeShapes(PreparedModelHandle model) {
+		String[][] shapes = new String[64][];
 		for(int mask = 0; mask < shapes.length; mask++) {
-			List<GroupObject> groups = new ArrayList<GroupObject>(14);
+			List<String> groups = new ArrayList<String>(14);
 			boolean pX = (mask & POS_X) != 0;
 			boolean nX = (mask & NEG_X) != 0;
 			boolean pY = (mask & POS_Y) != 0;
@@ -104,21 +103,21 @@ final class ConductorRenderCache {
 				if(!nX && !nY && !pZ) add(model, groups, "nnn");
 				if(!nX && !nY && !nZ) add(model, groups, "nnp");
 			}
-			shapes[mask] = groups.toArray(new GroupObject[groups.size()]);
+			shapes[mask] = groups.toArray(new String[groups.size()]);
 		}
 		return shapes;
 	}
 
-	static GroupObject[] groups(WavefrontObject model, String... names) {
-		List<GroupObject> groups = new ArrayList<GroupObject>(names.length);
+	static String[] groups(PreparedModelHandle model, String... names) {
+		List<String> groups = new ArrayList<String>(names.length);
 		add(model, groups, names);
-		return groups.toArray(new GroupObject[groups.size()]);
+		return groups.toArray(new String[groups.size()]);
 	}
 
-	private static void add(WavefrontObject model, List<GroupObject> groups, String... names) {
+	private static void add(PreparedModelHandle model, List<String> groups, String... names) {
 		for(String name : names) {
-			for(GroupObject group : model.groupObjects) {
-				if(group.name.equals(name)) {
+			for(String group : model.getPartNames()) {
+				if(group.equals(name)) {
 					groups.add(group);
 					break;
 				}

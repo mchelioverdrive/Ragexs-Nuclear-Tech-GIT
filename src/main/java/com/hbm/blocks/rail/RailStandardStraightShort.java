@@ -19,7 +19,6 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class RailStandardStraightShort extends BlockDummyable implements IRailNTM, IRenderBlock {
@@ -127,7 +126,7 @@ public class RailStandardStraightShort extends BlockDummyable implements IRailNT
 		GL11.glRotated(90, 0, 1, 0);
 		GL11.glScaled(0.7, 0.7, 0.7);
 		tessellator.startDrawingQuads();
-		ObjUtil.renderWithIcon((WavefrontObject) ResourceManager.rail_standard_straight_short, block.getIcon(1, 0), tessellator, 0, false);
+		ObjUtil.renderWithIcon(ResourceManager.rail_standard_straight_short, block.getIcon(1, 0), tessellator, 0, false);
 		tessellator.draw();
 	}
 
@@ -142,7 +141,7 @@ public class RailStandardStraightShort extends BlockDummyable implements IRailNT
 		if(meta == 14) tessellator.addTranslation(0F, 0F, -0.5F);
 		if(meta == 15) tessellator.addTranslation(0F, 0F, 0.5F);
 		tessellator.addTranslation(x + 0.5F, y, z + 0.5F);
-		ObjUtil.renderWithIcon((WavefrontObject) ResourceManager.rail_standard_straight_short, block.getIcon(1, 0), tessellator, rotation, true);
+		ObjUtil.renderWithIcon(ResourceManager.rail_standard_straight_short, block.getIcon(1, 0), tessellator, rotation, true);
 		tessellator.addTranslation(-x - 0.5F, -y, -z - 0.5F);
 		if(meta == 12) tessellator.addTranslation(-0.5F, 0F, 0F);
 		if(meta == 13) tessellator.addTranslation(0.5F, 0F, 0F);

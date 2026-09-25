@@ -12,7 +12,6 @@ import net.minecraft.block.Block;
 import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 
 public class RenderDiFurnaceExtension implements ISimpleBlockRenderingHandler {
 
@@ -25,9 +24,9 @@ public class RenderDiFurnaceExtension implements ISimpleBlockRenderingHandler {
 		
 		GL11.glTranslatef(0F, -0.5F, 0F);
 		tessellator.startDrawingQuads();
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.difurnace_extension, "Top", ModBlocks.machine_difurnace_extension.getIcon(1, 0), tessellator, 0, false);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.difurnace_extension, "Bottom", ModBlocks.machine_difurnace_extension.getIcon(0, 0), tessellator, 0, false);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.difurnace_extension, "Side", ModBlocks.machine_difurnace_extension.getIcon(3, 0), tessellator, 0, false);
+		ObjUtil.renderPartWithIcon(ResourceManager.difurnace_extension, "Top", ModBlocks.machine_difurnace_extension.getIcon(1, 0), tessellator, 0, false);
+		ObjUtil.renderPartWithIcon(ResourceManager.difurnace_extension, "Bottom", ModBlocks.machine_difurnace_extension.getIcon(0, 0), tessellator, 0, false);
+		ObjUtil.renderPartWithIcon(ResourceManager.difurnace_extension, "Side", ModBlocks.machine_difurnace_extension.getIcon(3, 0), tessellator, 0, false);
 		tessellator.draw();
 
 		GL11.glPopMatrix();
@@ -43,9 +42,9 @@ public class RenderDiFurnaceExtension implements ISimpleBlockRenderingHandler {
 		
 		tessellator.addTranslation(x + 0.5F, y, z + 0.5F);
 		
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.difurnace_extension, "Top", ModBlocks.machine_difurnace_extension.getIcon(1, 0), tessellator, 0, true);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.difurnace_extension, "Bottom", ModBlocks.machine_difurnace_extension.getIcon(0, 0), tessellator, 0, true);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.difurnace_extension, "Side", ModBlocks.machine_difurnace_extension.getIcon(3, 0), tessellator, 0, true);
+		ObjUtil.renderPartWithIcon(ResourceManager.difurnace_extension, "Top", ModBlocks.machine_difurnace_extension.getIcon(1, 0), tessellator, 0, true);
+		ObjUtil.renderPartWithIcon(ResourceManager.difurnace_extension, "Bottom", ModBlocks.machine_difurnace_extension.getIcon(0, 0), tessellator, 0, true);
+		ObjUtil.renderPartWithIcon(ResourceManager.difurnace_extension, "Side", ModBlocks.machine_difurnace_extension.getIcon(3, 0), tessellator, 0, true);
 		
 		tessellator.addTranslation(-x - 0.5F, -y, -z - 0.5F);
 

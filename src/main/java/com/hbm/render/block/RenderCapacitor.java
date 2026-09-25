@@ -11,7 +11,6 @@ import net.minecraft.block.Block;
 import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 
 public class RenderCapacitor implements ISimpleBlockRenderingHandler {
 
@@ -25,11 +24,11 @@ public class RenderCapacitor implements ISimpleBlockRenderingHandler {
 		MachineCapacitor capacitor = (MachineCapacitor) block;
 		
 		tessellator.startDrawingQuads();
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.capacitor, "Top", capacitor.iconTop, tessellator, 0, false);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.capacitor, "Side", capacitor.iconSide, tessellator, 0, false);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.capacitor, "Bottom", capacitor.iconBottom, tessellator, 0, false);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.capacitor, "InnerTop", capacitor.iconInnerTop, tessellator, 0, false);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.capacitor, "InnerSide", capacitor.iconInnerSide, tessellator, 0, false);
+		ObjUtil.renderPartWithIcon(ResourceManager.capacitor, "Top", capacitor.iconTop, tessellator, 0, false);
+		ObjUtil.renderPartWithIcon(ResourceManager.capacitor, "Side", capacitor.iconSide, tessellator, 0, false);
+		ObjUtil.renderPartWithIcon(ResourceManager.capacitor, "Bottom", capacitor.iconBottom, tessellator, 0, false);
+		ObjUtil.renderPartWithIcon(ResourceManager.capacitor, "InnerTop", capacitor.iconInnerTop, tessellator, 0, false);
+		ObjUtil.renderPartWithIcon(ResourceManager.capacitor, "InnerSide", capacitor.iconInnerSide, tessellator, 0, false);
 		tessellator.draw();
 
 		GL11.glPopMatrix();
@@ -66,11 +65,11 @@ public class RenderCapacitor implements ISimpleBlockRenderingHandler {
 
 		tessellator.addTranslation(x + 0.5F, y + 0.5F, z + 0.5F);
 
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.capacitor, "Top", capacitor.iconTop, tessellator, rotation, flip, true);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.capacitor, "Side", capacitor.iconSide, tessellator, rotation, flip, true);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.capacitor, "Bottom", capacitor.iconBottom, tessellator, rotation, flip, true);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.capacitor, "InnerTop", capacitor.iconInnerTop, tessellator, rotation, flip, true);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.capacitor, "InnerSide", capacitor.iconInnerSide, tessellator, rotation, flip, true);
+		ObjUtil.renderPartWithIcon(ResourceManager.capacitor, "Top", capacitor.iconTop, tessellator, rotation, flip, true);
+		ObjUtil.renderPartWithIcon(ResourceManager.capacitor, "Side", capacitor.iconSide, tessellator, rotation, flip, true);
+		ObjUtil.renderPartWithIcon(ResourceManager.capacitor, "Bottom", capacitor.iconBottom, tessellator, rotation, flip, true);
+		ObjUtil.renderPartWithIcon(ResourceManager.capacitor, "InnerTop", capacitor.iconInnerTop, tessellator, rotation, flip, true);
+		ObjUtil.renderPartWithIcon(ResourceManager.capacitor, "InnerSide", capacitor.iconInnerSide, tessellator, rotation, flip, true);
 		
 		tessellator.addTranslation(-x - 0.5F, -y - 0.5F, -z - 0.5F);
 

@@ -42,6 +42,7 @@ public class ClientConfig {
 	public static ConfigWrapper<Boolean> NUKE_HUD_SHAKE =					new ConfigWrapper(true);
 	public static ConfigWrapper<Boolean> RENDER_REEDS =						new ConfigWrapper(!Compat.isModLoaded(Compat.MOD_ANG));
 	public static ConfigWrapper<Boolean> DEBUG_RENDER_GL_ERRORS =			new ConfigWrapper(false);
+	public static ConfigWrapper<Boolean> DEBUG_PREPARED_MODEL_METRICS =	new ConfigWrapper(false);
 	public static ConfigWrapper<Boolean> DARK_ADAPTATION_ENABLED =			new ConfigWrapper(true);
 	public static ConfigWrapper<Float> DARK_ADAPTATION_STRENGTH =			new ConfigWrapper(1.0F);
 	public static ConfigWrapper<Float> DARK_ADAPTATION_SCOTOPIC_FLOOR =	new ConfigWrapper(0.055F);
@@ -72,6 +73,7 @@ public class ClientConfig {
 		configMap.put("NUKE_HUD_SHAKE", NUKE_HUD_SHAKE);
 		configMap.put("RENDER_REEDS", RENDER_REEDS);
 		configMap.put("DEBUG_RENDER_GL_ERRORS", DEBUG_RENDER_GL_ERRORS);
+		configMap.put("DEBUG_PREPARED_MODEL_METRICS", DEBUG_PREPARED_MODEL_METRICS);
 		configMap.put("DARK_ADAPTATION_ENABLED", DARK_ADAPTATION_ENABLED);
 		configMap.put("DARK_ADAPTATION_STRENGTH", DARK_ADAPTATION_STRENGTH);
 		configMap.put("DARK_ADAPTATION_SCOTOPIC_FLOOR", DARK_ADAPTATION_SCOTOPIC_FLOOR);

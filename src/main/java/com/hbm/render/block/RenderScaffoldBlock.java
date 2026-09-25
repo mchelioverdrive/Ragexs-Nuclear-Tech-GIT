@@ -12,7 +12,6 @@ import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 
 public class RenderScaffoldBlock implements ISimpleBlockRenderingHandler {
 
@@ -30,7 +29,7 @@ public class RenderScaffoldBlock implements ISimpleBlockRenderingHandler {
 
 		GL11.glTranslated(0, -0.5, 0);
 		tessellator.startDrawingQuads();
-		ObjUtil.renderWithIcon((WavefrontObject) ResourceManager.scaffold, iicon, tessellator, 0, false);
+		ObjUtil.renderWithIcon(ResourceManager.scaffold, iicon, tessellator, 0, false);
 		tessellator.draw();
 
 		GL11.glPopMatrix();
@@ -72,7 +71,7 @@ public class RenderScaffoldBlock implements ISimpleBlockRenderingHandler {
 		}
 
 		tessellator.addTranslation(ox, oy, oz);
-		ObjUtil.renderWithIcon((WavefrontObject) ResourceManager.scaffold, iicon, tessellator, rotation, pitch, true);
+		ObjUtil.renderWithIcon(ResourceManager.scaffold, iicon, tessellator, rotation, pitch, true);
 		tessellator.addTranslation(-ox, -oy, -oz);
 
 		return true;

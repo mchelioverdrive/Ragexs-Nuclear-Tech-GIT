@@ -192,3 +192,17 @@ INCOMPLETE:
 - Added an initial chunk-data snapshot for shared machine and ticking tile entities by reusing their existing byte-buffer serializers, so client machines no longer wait for a later range broadcast after relogging or chunk reload.
 - Made buffer packet payloads independently owned, applied them on the Minecraft client thread, and rejected missing chunks, replaced tiles, and mismatched receiver types while releasing copied buffers after every outcome.
 - Preserved the existing range-based update path, fluid serialization order, persistence keys, capacities, modes, and fluid-network topology.
+
+2026-09-24 22:42 — Replace legacy model graphs with shared prepared geometry
+
+- Replaced active Forge OBJ, HFR, HFR-VBO, and HMF loading with a resource/options-keyed prepared-model cache, compact immutable primitive geometry, named/material range metadata, and stable handles that atomically replace state on resource reload.
+- Consolidated 485 in-tree load sites into 479 unique prepared keys, removed retained per-face `Face`/`Vertex[]` graphs from active loaders, and changed eligible non-Angelica models to one interleaved VBO per model with range draws.
+- Preserved Forge flat normals and atlas-bleed UV inset, HFR smoothing and exact UVs, triangle/quad modes, named groups, HMF UV modulation, icon/atlas remapping, tints, texture overrides, clipping, animation matrices, and inventory rendering through explicit GPU and compact CPU paths.
+- Disabled prepared VBO upload under Angelica and retained compact CPU submission there, including dynamically transformed named groups.
+- Added disabled-by-default prepared-model parse/cache/CPU/GPU/reload/upload diagnostics. Static inspection covered 479 bundled keys and 385,859 faces; targeted offline Java compilation completed successfully. Minecraft was not launched, so visual, reload, Angelica, HMF, and render-state validation remains outstanding.
+
+2026-09-24 23:18 — Enable prepared-model acceleration with Angelica
+
+- Added an optional Angelica GLSM backend for prepared-model buffer upload, client-array setup, drawing, and resource-reload cleanup while keeping Angelica a soft dependency.
+- Restored one-time VBO acceleration for eligible static and animated named model groups under Angelica, including live RTM/HBM matrix transforms, without duplicating model parsing or uploads.
+- Kept dynamic HMF and icon-remapped geometry on their existing compact CPU paths and added prepared-model backend selection to the opt-in diagnostics.

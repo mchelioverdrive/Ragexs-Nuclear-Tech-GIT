@@ -12,7 +12,6 @@ import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 
 public class RenderSpikeBlock implements ISimpleBlockRenderingHandler {
 
@@ -31,7 +30,7 @@ public class RenderSpikeBlock implements ISimpleBlockRenderingHandler {
         
         GL11.glTranslated(0, -0.5, 0);
         tessellator.startDrawingQuads();
-		ObjUtil.renderWithIcon((WavefrontObject) ResourceManager.spikes, iicon, tessellator, 0, false);
+		ObjUtil.renderWithIcon(ResourceManager.spikes, iicon, tessellator, 0, false);
 		tessellator.draw();
 		
         GL11.glPopMatrix();
@@ -52,7 +51,7 @@ public class RenderSpikeBlock implements ISimpleBlockRenderingHandler {
         }
         
         tessellator.addTranslation(x + 0.5F, y, z + 0.5F);
-		ObjUtil.renderWithIcon((WavefrontObject) ResourceManager.spikes, iicon, tessellator, 0, true);
+		ObjUtil.renderWithIcon(ResourceManager.spikes, iicon, tessellator, 0, true);
         tessellator.addTranslation(-x - 0.5F, -y, -z - 0.5F);
         
 		return true;

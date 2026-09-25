@@ -13,7 +13,6 @@ import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 
 public class RenderTapeBlock implements ISimpleBlockRenderingHandler {
 
@@ -32,10 +31,10 @@ public class RenderTapeBlock implements ISimpleBlockRenderingHandler {
         
         GL11.glTranslated(0, -0.5, 0);
         tessellator.startDrawingQuads();
-        if(block == ModBlocks.tape_recorder)
-        	ObjUtil.renderWithIcon((WavefrontObject) ResourceManager.taperecorder, iicon, tessellator, 0, false);
-        if(block == ModBlocks.steel_poles)
-        	ObjUtil.renderWithIcon((WavefrontObject) ResourceManager.pole, iicon, tessellator, 0, false);
+		if(block == ModBlocks.tape_recorder)
+			ObjUtil.renderWithIcon(ResourceManager.taperecorder, iicon, tessellator, 0, false);
+		if(block == ModBlocks.steel_poles)
+			ObjUtil.renderWithIcon(ResourceManager.pole, iicon, tessellator, 0, false);
 		tessellator.draw();
 		
         GL11.glPopMatrix();
@@ -67,10 +66,10 @@ public class RenderTapeBlock implements ISimpleBlockRenderingHandler {
         	rotation = 180F / 180F * (float)Math.PI;
         
         tessellator.addTranslation(x + 0.5F, y, z + 0.5F);
-        if(block == ModBlocks.tape_recorder)
-        	ObjUtil.renderWithIcon((WavefrontObject) ResourceManager.taperecorder, iicon, tessellator, rotation, true);
-        if(block == ModBlocks.steel_poles)
-        	ObjUtil.renderWithIcon((WavefrontObject) ResourceManager.pole, iicon, tessellator, rotation - 90F / 180F * (float)Math.PI, true);
+		if(block == ModBlocks.tape_recorder)
+			ObjUtil.renderWithIcon(ResourceManager.taperecorder, iicon, tessellator, rotation, true);
+		if(block == ModBlocks.steel_poles)
+			ObjUtil.renderWithIcon(ResourceManager.pole, iicon, tessellator, rotation - 90F / 180F * (float)Math.PI, true);
         tessellator.addTranslation(-x - 0.5F, -y, -z - 0.5F);
         
 		return true;

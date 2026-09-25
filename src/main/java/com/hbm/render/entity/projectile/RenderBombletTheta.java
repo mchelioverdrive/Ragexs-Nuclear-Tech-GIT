@@ -8,7 +8,6 @@ import com.hbm.lib.RefStrings;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.client.model.AdvancedModelLoader;
 import net.minecraftforge.client.model.IModelCustom;
 
 public class RenderBombletTheta extends Render {
@@ -18,7 +17,7 @@ public class RenderBombletTheta extends Render {
     private ResourceLocation boyTexture;
 	
 	public RenderBombletTheta() {
-		boyModel = AdvancedModelLoader.loadModel(objTesterModelRL);
+		boyModel = com.hbm.render.loader.prepared.PreparedModelCache.get(objTesterModelRL, false, true);
 		boyTexture = new ResourceLocation(RefStrings.MODID, "textures/models/bombletThetaTexture.png");
 	}
 

@@ -5,7 +5,6 @@ import org.lwjgl.opengl.GL11;
 import com.hbm.entity.mob.siege.EntitySiegeTunneler;
 import com.hbm.entity.mob.siege.SiegeTier;
 import com.hbm.lib.RefStrings;
-import com.hbm.render.loader.HFRWavefrontObject;
 
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.entity.Entity;
@@ -18,7 +17,7 @@ public class RenderSiegeTunneler extends Render {
 		this.shadowOpaque = 0.0F;
 	}
 
-	public static final IModelCustom body = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/mobs/tunneler.obj"));
+	public static final IModelCustom body = com.hbm.render.loader.prepared.PreparedModelCache.getHfr(new ResourceLocation(RefStrings.MODID, "models/mobs/tunneler.obj"), true, true);
 
 	@Override
 	public void doRender(Entity entity, double x, double y, double z, float f0, float f1) {

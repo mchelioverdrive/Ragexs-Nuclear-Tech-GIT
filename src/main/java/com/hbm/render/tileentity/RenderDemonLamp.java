@@ -3,7 +3,6 @@ package com.hbm.render.tileentity;
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.lib.RefStrings;
-import com.hbm.render.loader.HFRWavefrontObject;
 
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
@@ -14,7 +13,7 @@ import net.minecraftforge.client.model.IModelCustom;
 
 public class RenderDemonLamp extends TileEntitySpecialRenderer {
 	
-	public static final IModelCustom demon_lamp = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/blocks/demon_lamp.obj"));
+	public static final IModelCustom demon_lamp = com.hbm.render.loader.prepared.PreparedModelCache.getHfr(new ResourceLocation(RefStrings.MODID, "models/blocks/demon_lamp.obj"), true, true);
 	public static final ResourceLocation tex = new ResourceLocation(RefStrings.MODID, "textures/models/machines/demon_lamp.png");
 
 	@Override

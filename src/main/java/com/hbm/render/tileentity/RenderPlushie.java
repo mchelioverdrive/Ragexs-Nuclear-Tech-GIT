@@ -10,7 +10,6 @@ import com.hbm.items.ModItems;
 import com.hbm.lib.RefStrings;
 import com.hbm.main.ResourceManager;
 import com.hbm.render.item.ItemRenderBase;
-import com.hbm.render.loader.HFRWavefrontObject;
 import com.hbm.render.util.HorsePronter;
 import com.hbm.util.EnumUtil;
 
@@ -29,7 +28,7 @@ import net.minecraftforge.client.model.IModelCustom;
 
 public class RenderPlushie extends TileEntitySpecialRenderer implements IItemRendererProvider {
 	
-	public static final IModelCustom yomiModel = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/trinkets/yomi.obj"), false).asVBO();
+	public static final IModelCustom yomiModel = com.hbm.render.loader.prepared.PreparedModelCache.getHfr(new ResourceLocation(RefStrings.MODID, "models/trinkets/yomi.obj"), false, true);
 	public static final ResourceLocation yomiTex = new ResourceLocation(RefStrings.MODID, "textures/models/trinkets/yomi.png");
 	public static final ResourceLocation numbernineTex = new ResourceLocation(RefStrings.MODID, "textures/models/horse/numbernine.png");
 

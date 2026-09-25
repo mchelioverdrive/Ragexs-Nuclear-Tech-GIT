@@ -19,7 +19,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraftforge.client.model.obj.WavefrontObject;
+import net.minecraftforge.client.model.IModelCustom;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class Spotlight extends Block implements ISpotlight {
@@ -51,11 +51,11 @@ public class Spotlight extends Block implements ISpotlight {
 		return renderID;
 	}
 
-	public WavefrontObject getModel() {
+	public IModelCustom getModel() {
 		switch(type) {
-		case FLUORESCENT: return (WavefrontObject) ResourceManager.fluorescent_lamp;
-		case HALOGEN: return (WavefrontObject) ResourceManager.flood_lamp;
-		default: return (WavefrontObject) ResourceManager.cage_lamp;
+		case FLUORESCENT: return ResourceManager.fluorescent_lamp;
+		case HALOGEN: return ResourceManager.flood_lamp;
+		default: return ResourceManager.cage_lamp;
 		}
 	}
 

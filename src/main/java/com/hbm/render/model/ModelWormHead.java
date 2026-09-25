@@ -7,12 +7,11 @@ import com.hbm.lib.RefStrings;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.client.model.AdvancedModelLoader;
 import net.minecraftforge.client.model.IModelCustom;
 
 public class ModelWormHead extends ModelBase {
 	
-	public static final IModelCustom head = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/mobs/bot_prime_head.obj"));
+	public static final IModelCustom head = com.hbm.render.loader.prepared.PreparedModelCache.get(new ResourceLocation(RefStrings.MODID, "models/mobs/bot_prime_head.obj"), false, true);
 
 	@Override
 	public void render(Entity entity, float x, float y, float z, float f3, float f4, float f5) {

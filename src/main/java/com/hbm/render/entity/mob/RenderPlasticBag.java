@@ -7,12 +7,11 @@ import com.hbm.lib.RefStrings;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.client.model.AdvancedModelLoader;
 import net.minecraftforge.client.model.IModelCustom;
 
 public class RenderPlasticBag extends Render {
 	
-	private static final IModelCustom model = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/mobs/plasticbag.obj"));
+	private static final IModelCustom model = com.hbm.render.loader.prepared.PreparedModelCache.get(new ResourceLocation(RefStrings.MODID, "models/mobs/plasticbag.obj"), false, true);
 	private static final ResourceLocation texture = new ResourceLocation(RefStrings.MODID, "textures/entity/plasticbag.png");
 
 	public RenderPlasticBag() {

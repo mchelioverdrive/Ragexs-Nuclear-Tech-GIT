@@ -57,23 +57,23 @@ public class RenderAssemfac extends TileEntitySpecialRenderer {
 			GL11.glTranslated(sOff, hOff, sOff);
 			GL11.glRotated(pivotRot * side, 1, 0, 0);
 			GL11.glTranslated(-sOff, -hOff, -sOff);
-			ResourceManager.assemfac.renderPart("Pivot" + index);
+			ResourceManager.assemfac.renderPartDynamic("Pivot" + index);
 
 			hOff = 3.375D;
 			sOff = 2D * side;
 			GL11.glTranslated(sOff, hOff, sOff);
 			GL11.glRotated(armRot * side, 1, 0, 0);
 			GL11.glTranslated(-sOff, -hOff, -sOff);
-			ResourceManager.assemfac.renderPart("Arm" + index);
+			ResourceManager.assemfac.renderPartDynamic("Arm" + index);
 
 			hOff = 3.375D;
 			sOff = 0.625D * side;
 			GL11.glTranslated(sOff, hOff, sOff);
 			GL11.glRotated(pistonRot * side, 1, 0, 0);
 			GL11.glTranslated(-sOff, -hOff, -sOff);
-			ResourceManager.assemfac.renderPart("Piston" + index);
+			ResourceManager.assemfac.renderPartDynamic("Piston" + index);
 			GL11.glTranslated(0, -striker, 0);
-			ResourceManager.assemfac.renderPart("Striker" + index);
+			ResourceManager.assemfac.renderPartDynamic("Striker" + index);
 			
 			GL11.glPopMatrix();
 		}

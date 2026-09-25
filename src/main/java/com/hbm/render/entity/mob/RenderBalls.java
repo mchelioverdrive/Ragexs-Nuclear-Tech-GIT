@@ -8,7 +8,6 @@ import com.hbm.main.ResourceManager;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.client.model.AdvancedModelLoader;
 import net.minecraftforge.client.model.IModelCustom;
 
 public class RenderBalls extends Render {
@@ -17,7 +16,7 @@ public class RenderBalls extends Render {
 		this.shadowOpaque = 0.0F;
 	}
 	
-	public static final IModelCustom capsule = AdvancedModelLoader.loadModel(new ResourceLocation(RefStrings.MODID, "models/mobs/capsule.obj"));
+	public static final IModelCustom capsule = com.hbm.render.loader.prepared.PreparedModelCache.get(new ResourceLocation(RefStrings.MODID, "models/mobs/capsule.obj"), false, true);
 
 	@Override
 	public void doRender(Entity entity, double x, double y, double z, float f0, float f1) {

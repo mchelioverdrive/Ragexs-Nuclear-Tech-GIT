@@ -8,7 +8,6 @@ import com.hbm.blocks.generic.BlockSnowglobe.SnowglobeType;
 import com.hbm.blocks.generic.BlockSnowglobe.TileEntitySnowglobe;
 import com.hbm.lib.RefStrings;
 import com.hbm.render.item.ItemRenderBase;
-import com.hbm.render.loader.HFRWavefrontObject;
 import com.hbm.util.EnumUtil;
 
 import net.minecraft.client.Minecraft;
@@ -23,7 +22,7 @@ import net.minecraftforge.client.model.IModelCustom;
 
 public class RenderSnowglobe extends TileEntitySpecialRenderer implements IItemRendererProvider {
 	
-	public static final IModelCustom snowglobe = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/trinkets/snowglobe.obj"), false).asVBO();
+	public static final IModelCustom snowglobe = com.hbm.render.loader.prepared.PreparedModelCache.getHfr(new ResourceLocation(RefStrings.MODID, "models/trinkets/snowglobe.obj"), false, true);
 	public static final ResourceLocation socket = new ResourceLocation(RefStrings.MODID, "textures/models/trinkets/snowglobe.png");
 	public static final ResourceLocation glass = new ResourceLocation(RefStrings.MODID, "textures/models/trinkets/snowglobe_glass.png");
 	public static final ResourceLocation features = new ResourceLocation(RefStrings.MODID, "textures/models/trinkets/snowglobe_features.png");

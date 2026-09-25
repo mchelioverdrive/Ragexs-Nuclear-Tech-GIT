@@ -12,7 +12,6 @@ import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 
 public class RenderPipe implements ISimpleBlockRenderingHandler {
 
@@ -33,25 +32,25 @@ public class RenderPipe implements ISimpleBlockRenderingHandler {
 		tessellator.startDrawingQuads();
 		
 		if(pipe.rType == 0) {
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe, "Top", iiconTop, tessellator, 0, false);
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe, "Side", iiconSide, tessellator, 0, false);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe, "Top", iiconTop, tessellator, 0, false);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe, "Side", iiconSide, tessellator, 0, false);
 		}
 
 		if(pipe.rType == 1) {
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe_rim, "Top", iiconTop, tessellator, 0, false);
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe_rim, "Side", iiconSide, tessellator, 0, false);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe_rim, "Top", iiconTop, tessellator, 0, false);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe_rim, "Side", iiconSide, tessellator, 0, false);
 		}
 
 		if(pipe.rType == 2) {
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe_quad, "Top", iiconTop, tessellator, 0, false);
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe_quad, "Side", iiconSide, tessellator, 0, false);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe_quad, "Top", iiconTop, tessellator, 0, false);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe_quad, "Side", iiconSide, tessellator, 0, false);
 		}
 		
 		if(pipe.rType == 3) {
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe_rim, "Top", iiconTop, tessellator, 0, false);
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe_rim, "Side", iiconSide, tessellator, 0, false);
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe_frame, "Frame", pipe.frameIcon, tessellator, 0, false);
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe_frame, "Mesh", pipe.meshIcon, tessellator, 0, false);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe_rim, "Top", iiconTop, tessellator, 0, false);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe_rim, "Side", iiconSide, tessellator, 0, false);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe_frame, "Frame", pipe.frameIcon, tessellator, 0, false);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe_frame, "Mesh", pipe.meshIcon, tessellator, 0, false);
 		}
 		
 		tessellator.draw();
@@ -90,25 +89,25 @@ public class RenderPipe implements ISimpleBlockRenderingHandler {
 		}
 
 		if(pipe.rType == 0) {
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe, "Top", iiconTop, tessellator, rot, pitch, true);
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe, "Side", iiconSide, tessellator, rot, pitch, true);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe, "Top", iiconTop, tessellator, rot, pitch, true);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe, "Side", iiconSide, tessellator, rot, pitch, true);
 		}
 
 		if(pipe.rType == 1) {
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe_rim, "Top", iiconTop, tessellator, rot, pitch, true);
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe_rim, "Side", iiconSide, tessellator, rot, pitch, true);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe_rim, "Top", iiconTop, tessellator, rot, pitch, true);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe_rim, "Side", iiconSide, tessellator, rot, pitch, true);
 		}
 
 		if(pipe.rType == 2) {
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe_quad, "Top", iiconTop, tessellator, rot, pitch, true);
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe_quad, "Side", iiconSide, tessellator, rot, pitch, true);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe_quad, "Top", iiconTop, tessellator, rot, pitch, true);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe_quad, "Side", iiconSide, tessellator, rot, pitch, true);
 		}
 
 		if(pipe.rType == 3) {
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe_rim, "Top", iiconTop, tessellator, rot, pitch, true);
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe_rim, "Side", iiconSide, tessellator, rot, pitch, true);
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe_frame, "Frame", pipe.frameIcon, tessellator, rot, pitch, true);
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.pipe_frame, "Mesh", pipe.meshIcon, tessellator, rot, pitch, true);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe_rim, "Top", iiconTop, tessellator, rot, pitch, true);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe_rim, "Side", iiconSide, tessellator, rot, pitch, true);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe_frame, "Frame", pipe.frameIcon, tessellator, rot, pitch, true);
+			ObjUtil.renderPartWithIcon(ResourceManager.pipe_frame, "Mesh", pipe.meshIcon, tessellator, rot, pitch, true);
 		}
 		
 		tessellator.addTranslation(-x - 0.5F, -y - 0.5F, -z - 0.5F);

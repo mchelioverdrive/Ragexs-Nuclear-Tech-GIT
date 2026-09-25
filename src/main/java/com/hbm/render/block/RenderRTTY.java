@@ -13,7 +13,6 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 
 public class RenderRTTY implements ISimpleBlockRenderingHandler {
 
@@ -70,7 +69,7 @@ public class RenderRTTY implements ISimpleBlockRenderingHandler {
 		//using OBJ here because vanilla's block renderer is so broken it's not even funny anymore
 		//mojang genuinely doesn't know how on earth UVs work
 		tessellator.addTranslation(x + 0.5F, y + 0.5F, z + 0.5F);
-		ObjUtil.renderWithIcon((WavefrontObject) ResourceManager.rtty, icon, tessellator, rotation, flip, false);
+		ObjUtil.renderWithIcon(ResourceManager.rtty, icon, tessellator, rotation, flip, false);
 		tessellator.addTranslation(-x - 0.5F, -y - 0.5F, -z - 0.5F);
 		
 		return true;

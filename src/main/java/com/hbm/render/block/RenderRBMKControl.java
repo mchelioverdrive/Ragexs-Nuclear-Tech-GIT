@@ -13,7 +13,6 @@ import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 
 public class RenderRBMKControl implements ISimpleBlockRenderingHandler {
 
@@ -34,7 +33,7 @@ public class RenderRBMKControl implements ISimpleBlockRenderingHandler {
 		
 		for(int i = 0; i < 4; i++) {
 			tessellator.startDrawingQuads();
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.rbmk_rods, "Column", iicon, tessellator, 0, false);
+			ObjUtil.renderPartWithIcon(ResourceManager.rbmk_rods, "Column", iicon, tessellator, 0, false);
 			tessellator.draw();
 			
 			if(i < 3)
@@ -43,7 +42,7 @@ public class RenderRBMKControl implements ISimpleBlockRenderingHandler {
 
 		if(block != ModBlocks.rbmk_boiler) {
 			tessellator.startDrawingQuads();
-			ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.rbmk_rods, "Lid", iicon, tessellator, 0, true);
+			ObjUtil.renderPartWithIcon(ResourceManager.rbmk_rods, "Lid", iicon, tessellator, 0, true);
 			tessellator.draw();
 		}
 
@@ -64,7 +63,7 @@ public class RenderRBMKControl implements ISimpleBlockRenderingHandler {
 		}
 
 		tessellator.addTranslation(x + 0.5F, y, z + 0.5F);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.rbmk_rods, "Column", iicon, tessellator, 0, true);
+		ObjUtil.renderPartWithIcon(ResourceManager.rbmk_rods, "Column", iicon, tessellator, 0, true);
 		
 		tessellator.addTranslation(-x - 0.5F, -y, -z - 0.5F);
 

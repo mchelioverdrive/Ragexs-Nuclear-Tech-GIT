@@ -12,7 +12,6 @@ import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 
 public class RenderRTGBlock implements ISimpleBlockRenderingHandler {
 
@@ -31,7 +30,7 @@ public class RenderRTGBlock implements ISimpleBlockRenderingHandler {
         
         GL11.glTranslated(0, -0.5, 0);
         tessellator.startDrawingQuads();
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.rtg, "Gen", iicon, tessellator, 0, false);
+		ObjUtil.renderPartWithIcon(ResourceManager.rtg, "Gen", iicon, tessellator, 0, false);
 		tessellator.draw();
 		
         GL11.glPopMatrix();

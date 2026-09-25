@@ -11,7 +11,6 @@ import net.minecraft.block.Block;
 import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 
 public class RenderSplitter implements ISimpleBlockRenderingHandler {
 
@@ -60,17 +59,17 @@ public class RenderSplitter implements ISimpleBlockRenderingHandler {
 	
 	private static void drawSplitter(Tessellator tessellator, Block block, boolean isLeft, float rotation, boolean shadeNormals) {
 		CraneSplitter splitter = (CraneSplitter) block;
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.splitter, "Top", isLeft ? splitter.iconTopLeft : splitter.iconTopRight, tessellator, rotation, shadeNormals);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.splitter, "Bottom", isLeft ? splitter.iconTopRight : splitter.iconTopLeft , tessellator, rotation, shadeNormals);
-		if(isLeft) ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.splitter, "Left", splitter.iconLeft, tessellator, rotation, shadeNormals);
-		if(!isLeft) ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.splitter, "Right", splitter.iconRight, tessellator, rotation, shadeNormals);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.splitter, "Back", isLeft ? splitter.iconBackLeft : splitter.iconBackRight, tessellator, rotation, shadeNormals);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.splitter, "Front", isLeft ? splitter.iconFrontLeft : splitter.iconFrontRight, tessellator, rotation, shadeNormals);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.splitter, "Inner", splitter.iconInner, tessellator, rotation, shadeNormals);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.splitter, "InnerLeft", splitter.iconInnerSide, tessellator, rotation, shadeNormals);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.splitter, "InnerRight", splitter.iconInnerSide, tessellator, rotation, shadeNormals);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.splitter, "InnerTop", splitter.iconInnerSide, tessellator, rotation, shadeNormals);
-		ObjUtil.renderPartWithIcon((WavefrontObject) ResourceManager.splitter, "InnerBottom", splitter.iconBelt, tessellator, rotation, shadeNormals);
+		ObjUtil.renderPartWithIcon(ResourceManager.splitter, "Top", isLeft ? splitter.iconTopLeft : splitter.iconTopRight, tessellator, rotation, shadeNormals);
+		ObjUtil.renderPartWithIcon(ResourceManager.splitter, "Bottom", isLeft ? splitter.iconTopRight : splitter.iconTopLeft , tessellator, rotation, shadeNormals);
+		if(isLeft) ObjUtil.renderPartWithIcon(ResourceManager.splitter, "Left", splitter.iconLeft, tessellator, rotation, shadeNormals);
+		if(!isLeft) ObjUtil.renderPartWithIcon(ResourceManager.splitter, "Right", splitter.iconRight, tessellator, rotation, shadeNormals);
+		ObjUtil.renderPartWithIcon(ResourceManager.splitter, "Back", isLeft ? splitter.iconBackLeft : splitter.iconBackRight, tessellator, rotation, shadeNormals);
+		ObjUtil.renderPartWithIcon(ResourceManager.splitter, "Front", isLeft ? splitter.iconFrontLeft : splitter.iconFrontRight, tessellator, rotation, shadeNormals);
+		ObjUtil.renderPartWithIcon(ResourceManager.splitter, "Inner", splitter.iconInner, tessellator, rotation, shadeNormals);
+		ObjUtil.renderPartWithIcon(ResourceManager.splitter, "InnerLeft", splitter.iconInnerSide, tessellator, rotation, shadeNormals);
+		ObjUtil.renderPartWithIcon(ResourceManager.splitter, "InnerRight", splitter.iconInnerSide, tessellator, rotation, shadeNormals);
+		ObjUtil.renderPartWithIcon(ResourceManager.splitter, "InnerTop", splitter.iconInnerSide, tessellator, rotation, shadeNormals);
+		ObjUtil.renderPartWithIcon(ResourceManager.splitter, "InnerBottom", splitter.iconBelt, tessellator, rotation, shadeNormals);
 	}
 
 	@Override

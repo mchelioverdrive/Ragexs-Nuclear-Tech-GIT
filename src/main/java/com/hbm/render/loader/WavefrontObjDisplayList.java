@@ -29,12 +29,12 @@ public class WavefrontObjDisplayList implements IModelCustomNamed {
 	}
 	
 	public WavefrontObjDisplayList(HFRWavefrontObject obj) {
-		for(S_GroupObject g : obj.groupObjects){
+		for(String name : obj.getPartNames()){
 			int list = GL11.glGenLists(1);
 			GL11.glNewList(list, GL11.GL_COMPILE);
-			g.render();
+			obj.renderPart(name);
 			GL11.glEndList();
-			nameToCallList.add(Pair.of(g.name, list));
+			nameToCallList.add(Pair.of(name, list));
 		}
 	}
 

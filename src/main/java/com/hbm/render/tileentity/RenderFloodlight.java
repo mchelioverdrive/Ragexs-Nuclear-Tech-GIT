@@ -6,7 +6,6 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.machine.Floodlight.TileEntityFloodlight;
 import com.hbm.lib.RefStrings;
 import com.hbm.render.item.ItemRenderBase;
-import com.hbm.render.loader.HFRWavefrontObject;
 
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.item.Item;
@@ -17,7 +16,7 @@ import net.minecraftforge.client.model.IModelCustom;
 
 public class RenderFloodlight extends TileEntitySpecialRenderer implements IItemRendererProvider {
 	
-	public static final IModelCustom floodlight = new HFRWavefrontObject(new ResourceLocation(RefStrings.MODID, "models/blocks/floodlight.obj"));
+	public static final IModelCustom floodlight = com.hbm.render.loader.prepared.PreparedModelCache.getHfr(new ResourceLocation(RefStrings.MODID, "models/blocks/floodlight.obj"), true, true);
 	public static final ResourceLocation tex = new ResourceLocation(RefStrings.MODID, "textures/models/machines/floodlight.png");
 
 	@Override
