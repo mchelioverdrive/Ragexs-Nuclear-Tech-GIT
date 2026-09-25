@@ -206,3 +206,8 @@ INCOMPLETE:
 - Added an optional Angelica GLSM backend for prepared-model buffer upload, client-array setup, drawing, and resource-reload cleanup while keeping Angelica a soft dependency.
 - Restored one-time VBO acceleration for eligible static and animated named model groups under Angelica, including live RTM/HBM matrix transforms, without duplicating model parsing or uploads.
 - Kept dynamic HMF and icon-remapped geometry on their existing compact CPU paths and added prepared-model backend selection to the opt-in diagnostics.
+
+2026-09-25 09:06 — Fix prepared block-model rendering
+
+- Fixed decorative computers, dynamite charges, C4, and CSGO charges crashing when their prepared models were rendered in the world or inventory.
+- Preserved block-atlas textures, override textures, orientation, brightness, shading, and resource-reload behavior without restoring legacy OBJ model graphs.

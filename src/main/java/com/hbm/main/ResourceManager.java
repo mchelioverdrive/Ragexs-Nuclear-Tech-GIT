@@ -1578,7 +1578,7 @@ public class ResourceManager {
 
 
 
-	public static final IModelCustom deco_computer = PreparedModelCache.get(new ResourceLocation(RefStrings.MODID, "models/blocks/puter.obj"), false, true);
+	public static final PreparedModelHandle deco_computer = PreparedModelCache.get(new ResourceLocation(RefStrings.MODID, "models/blocks/puter.obj"), false, true);
 
 	// Some RBMK elements are loaded twice due to VBOs not supporting tessellation
 	public static final IModelCustom rbmk_element = PreparedModelCache.get(new ResourceLocation(RefStrings.MODID, "models/rbmk/rbmk_element.obj"), false, true);
@@ -1619,8 +1619,8 @@ public class ResourceManager {
 	public static final IModelCustom funnel = PreparedModelCache.get(new ResourceLocation(RefStrings.MODID, "models/blocks/funnel.obj"), false, true);
 	public static final IModelCustom algae_film = PreparedModelCache.get(new ResourceLocation(RefStrings.MODID, "models/blocks/algae_film.obj"), false, true);
 
-	public static final IModelCustom charge_dynamite = PreparedModelCache.get(new ResourceLocation(RefStrings.MODID, "models/blocks/charge_dynamite.obj"), false, true);
-	public static final IModelCustom charge_c4 = PreparedModelCache.get(new ResourceLocation(RefStrings.MODID, "models/blocks/charge_c4.obj"), false, true);
+	public static final PreparedModelHandle charge_dynamite = PreparedModelCache.get(new ResourceLocation(RefStrings.MODID, "models/blocks/charge_dynamite.obj"), false, true);
+	public static final PreparedModelHandle charge_c4 = PreparedModelCache.get(new ResourceLocation(RefStrings.MODID, "models/blocks/charge_c4.obj"), false, true);
 
 	//RBMK DEBRIS
 	public static final IModelCustom deb_blank = PreparedModelCache.get(new ResourceLocation(RefStrings.MODID, "models/projectiles/deb_blank.obj"), false, true);

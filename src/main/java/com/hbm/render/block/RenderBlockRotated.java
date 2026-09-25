@@ -2,6 +2,7 @@ package com.hbm.render.block;
 
 import org.lwjgl.opengl.GL11;
 
+import com.hbm.render.loader.prepared.PreparedModelHandle;
 import com.hbm.render.util.ObjUtil;
 
 import cpw.mods.fml.client.registry.ISimpleBlockRenderingHandler;
@@ -10,17 +11,15 @@ import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.client.model.IModelCustom;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 
 public class RenderBlockRotated implements ISimpleBlockRenderingHandler {
 
 	private int renderID;
-	private IModelCustom model;
+	private PreparedModelHandle model;
 	
-	public RenderBlockRotated(int renderType, IModelCustom IModelCustom) {
+	public RenderBlockRotated(int renderType, PreparedModelHandle model) {
 		this.renderID = renderType;
-		this.model = IModelCustom;
+		this.model = model;
 	}
 
 	@Override
@@ -39,7 +38,7 @@ public class RenderBlockRotated implements ISimpleBlockRenderingHandler {
 		GL11.glRotated(-90, 0, 0, 1);
 		GL11.glTranslated(0, 0.375, 0);
 		tessellator.startDrawingQuads();
-		ObjUtil.renderWithIcon((WavefrontObject) model, iicon, tessellator, 0, false);
+		ObjUtil.renderWithIcon(model, iicon, tessellator, 0, false);
 		tessellator.draw();
 
 		GL11.glPopMatrix();
@@ -80,7 +79,7 @@ public class RenderBlockRotated implements ISimpleBlockRenderingHandler {
 			flip = (float)Math.PI * 0.5F;
 
 		tessellator.addTranslation(x + 0.5F, y + 0.5F, z + 0.5F);
-		ObjUtil.renderWithIcon((WavefrontObject) model, iicon, tessellator, rotation, flip, true);
+		ObjUtil.renderWithIcon(model, iicon, tessellator, rotation, flip, true);
 		tessellator.addTranslation(-x - 0.5F, -y - 0.5F, -z - 0.5F);
 
 		return true;

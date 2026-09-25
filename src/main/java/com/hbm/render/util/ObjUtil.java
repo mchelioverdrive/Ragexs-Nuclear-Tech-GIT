@@ -17,32 +17,38 @@ public class ObjUtil {
 
 	public static void renderWithIcon(IModelCustom model, IIcon icon, Tessellator tes, float rot, boolean shadow) {
 		if(model instanceof PreparedModelHandle) renderWithIcon((PreparedModelHandle) model, icon, tes, rot, shadow);
-		else renderWithIcon((WavefrontObject) model, icon, tes, rot, shadow);
+		else renderWithIcon(requireLegacyWavefront(model), icon, tes, rot, shadow);
 	}
 
 	public static void renderWithIcon(IModelCustom model, IIcon icon, Tessellator tes, float rot, float pitch, boolean shadow) {
 		if(model instanceof PreparedModelHandle) renderWithIcon((PreparedModelHandle) model, icon, tes, rot, pitch, shadow);
-		else renderWithIcon((WavefrontObject) model, icon, tes, rot, pitch, shadow);
+		else renderWithIcon(requireLegacyWavefront(model), icon, tes, rot, pitch, shadow);
 	}
 
 	public static void renderWithIcon(IModelCustom model, IIcon icon, Tessellator tes, float rot, float pitch, float roll, boolean shadow) {
 		if(model instanceof PreparedModelHandle) renderWithIcon((PreparedModelHandle) model, icon, tes, rot, pitch, roll, shadow);
-		else renderWithIcon((WavefrontObject) model, icon, tes, rot, pitch, roll, shadow);
+		else renderWithIcon(requireLegacyWavefront(model), icon, tes, rot, pitch, roll, shadow);
 	}
 
 	public static void renderPartWithIcon(IModelCustom model, String name, IIcon icon, Tessellator tes, float rot, boolean shadow) {
 		if(model instanceof PreparedModelHandle) renderPartWithIcon((PreparedModelHandle) model, name, icon, tes, rot, shadow);
-		else renderPartWithIcon((WavefrontObject) model, name, icon, tes, rot, shadow);
+		else renderPartWithIcon(requireLegacyWavefront(model), name, icon, tes, rot, shadow);
 	}
 
 	public static void renderPartWithIcon(IModelCustom model, String name, IIcon icon, Tessellator tes, float rot, float pitch, boolean shadow) {
 		if(model instanceof PreparedModelHandle) renderPartWithIcon((PreparedModelHandle) model, name, icon, tes, rot, pitch, shadow);
-		else renderPartWithIcon((WavefrontObject) model, name, icon, tes, rot, pitch, shadow);
+		else renderPartWithIcon(requireLegacyWavefront(model), name, icon, tes, rot, pitch, shadow);
 	}
 
 	public static void renderPartWithIcon(IModelCustom model, String name, IIcon icon, Tessellator tes, float rot, float pitch, float roll, boolean shadow) {
 		if(model instanceof PreparedModelHandle) renderPartWithIcon((PreparedModelHandle) model, name, icon, tes, rot, pitch, roll, shadow);
-		else renderPartWithIcon((WavefrontObject) model, name, icon, tes, rot, pitch, roll, shadow);
+		else renderPartWithIcon(requireLegacyWavefront(model), name, icon, tes, rot, pitch, roll, shadow);
+	}
+
+	private static WavefrontObject requireLegacyWavefront(IModelCustom model) {
+		if(model instanceof WavefrontObject) return (WavefrontObject) model;
+		throw new IllegalArgumentException("Unsupported icon-remapped model implementation: "
+				+ (model == null ? "null" : model.getClass().getName()));
 	}
 
 	public static void renderWithIcon(PreparedModelHandle model, IIcon icon, Tessellator tes, float rot, boolean shadow) {

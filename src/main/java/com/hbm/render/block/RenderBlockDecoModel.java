@@ -2,6 +2,7 @@ package com.hbm.render.block;
 
 import org.lwjgl.opengl.GL11;
 
+import com.hbm.render.loader.prepared.PreparedModelHandle;
 import com.hbm.render.util.ObjUtil;
 
 import cpw.mods.fml.client.registry.ISimpleBlockRenderingHandler;
@@ -10,17 +11,15 @@ import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.client.model.IModelCustom;
-import net.minecraftforge.client.model.obj.WavefrontObject;
 
 public class RenderBlockDecoModel implements ISimpleBlockRenderingHandler {
 	
 	private int renderID;
-	private IModelCustom model;
+	private PreparedModelHandle model;
 	
-	public RenderBlockDecoModel(int renderType, IModelCustom IModelCustom) {
+	public RenderBlockDecoModel(int renderType, PreparedModelHandle model) {
 		renderID = renderType;
-		model = IModelCustom;
+		this.model = model;
 	}
 	
 	@Override
@@ -38,7 +37,7 @@ public class RenderBlockDecoModel implements ISimpleBlockRenderingHandler {
 		GL11.glTranslated(0, 0.1D, 0);
 		GL11.glScaled(1.2D, 1.2D, 1.2D);
 		tessellator.startDrawingQuads();
-		ObjUtil.renderWithIcon((WavefrontObject) model, iicon, tessellator, 0, false);
+		ObjUtil.renderWithIcon(model, iicon, tessellator, 0, false);
 		
 		tessellator.draw();
 		
@@ -74,7 +73,7 @@ public class RenderBlockDecoModel implements ISimpleBlockRenderingHandler {
 		}
 		
 		tessellator.addTranslation(x + 0.5F, y + 0.5F, z + 0.5F);
-		ObjUtil.renderWithIcon((WavefrontObject) model, iicon, tessellator, rotation, true);
+		ObjUtil.renderWithIcon(model, iicon, tessellator, rotation, true);
 		tessellator.addTranslation(-x - 0.5F, -y - 0.5F, -z - 0.5F);
 		
 		return false;
