@@ -6,6 +6,7 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.lib.RefStrings;
 import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.machine.TileEntityMachineElectricFurnace;
+import com.hbm.tileentity.TileEntityLoadedBase;
 
 import cpw.mods.fml.common.network.internal.FMLNetworkHandler;
 import cpw.mods.fml.relauncher.Side;
@@ -154,6 +155,7 @@ public class MachineElectricFurnace extends BlockContainer {
 	public static void updateBlockState(boolean isProcessing, World world, int x, int y, int z) {
 		int i = world.getBlockMetadata(x, y, z);
 		TileEntity entity = world.getTileEntity(x, y, z);
+		if(entity instanceof TileEntityLoadedBase) ((TileEntityLoadedBase) entity).beginRetainedMachineBlockTransition();
 		keepInventory = true;
 		
 		if(isProcessing)
@@ -169,6 +171,7 @@ public class MachineElectricFurnace extends BlockContainer {
 		if(entity != null) {
 			entity.validate();
 			world.setTileEntity(x, y, z, entity);
+			if(entity instanceof TileEntityLoadedBase) ((TileEntityLoadedBase) entity).endRetainedMachineBlockTransition();
 		}
 	}
 	

@@ -1,5 +1,6 @@
 package com.hbm.dim.duna;
 
+import java.lang.ref.WeakReference;
 import java.util.Random;
 
 import com.hbm.blocks.BlockEnums;
@@ -9,21 +10,32 @@ import com.hbm.config.WorldConfig;
 import com.hbm.dim.CelestialBody;
 import com.hbm.dim.WorldTypeTeleport;
 import com.hbm.dim.moon.UndergroundLakeGenerator;
-import com.hbm.main.ResourceManager;
-import com.hbm.world.feature.OilBubble;
+import com.hbm.lib.RefStrings;
+import com.hbm.world.gen.NBTStructure;
+import com.hbm.world.gen.NBTStructure.MartianStructureGenerator;
 import com.hbm.world.generator.DungeonToolbox;
 
 import cpw.mods.fml.common.IWorldGenerator;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.IChunkProvider;
+import net.minecraft.util.ResourceLocation;
 
 public class WorldGeneratorDuna implements IWorldGenerator {
 
 	private final UndergroundLakeGenerator lakeGenerator = new UndergroundLakeGenerator();
+	private MartianStructureGenerator martianBase;
+	private WeakReference<World> martianWorld = new WeakReference<World>(null);
 
 	@Override
 	public void generate(Random random, int chunkX, int chunkZ, World world, IChunkProvider chunkGenerator, IChunkProvider chunkProvider) {
 		if(world.provider.dimensionId == SpaceConfig.dunaDimension) {
+			if(world.getWorldInfo().getTerrainType() == WorldTypeTeleport.martian) {
+				if(martianBase == null || martianWorld.get() != world) {
+					martianBase = new MartianStructureGenerator(NBTStructure.getOrLoad(new ResourceLocation(RefStrings.MODID, "structures/martian-base.nbt")));
+					martianWorld = new WeakReference<World>(world);
+				}
+				martianBase.generateStructures(world, random, chunkProvider, chunkX, chunkZ);
+			}
 			generateDuna(world, random, chunkX * 16, chunkZ * 16);
 		}
 	}
@@ -74,13 +86,6 @@ public class WorldGeneratorDuna implements IWorldGenerator {
 		DungeonToolbox.generateOre(world, rand, i, j, 6, 10, 0, 16, ModBlocks.ore_basalt, 4, ModBlocks.basalt);
 
 
-		if(i == 0 && j == 0 && world.getWorldInfo().getTerrainType() == WorldTypeTeleport.martian) {
-			int x = 0;
-			int z = 0;
-			int y = world.getHeightValue(x, z) - 1;
-
-			ResourceManager.martian.build(world, x, y, z);
-		}
 	}
 
 }

@@ -132,11 +132,10 @@ public class EntityArtilleryRocket extends EntityThrowableInterp implements IChu
 	@Override
 	public void init(Ticket ticket) {
 		if(!worldObj.isRemote && ticket != null) {
-			if(loaderTicket == null) {
-				loaderTicket = ticket;
-				loaderTicket.bindEntity(this);
-				loaderTicket.getModData();
-			}
+			if(loaderTicket != null && loaderTicket != ticket) ForgeChunkManager.releaseTicket(loaderTicket);
+			loaderTicket = ticket;
+			loaderTicket.bindEntity(this);
+			loaderTicket.getModData();
 			ForgeChunkManager.forceChunk(loaderTicket, new ChunkCoordIntPair(chunkCoordX, chunkCoordZ));
 		}
 	}
@@ -146,7 +145,7 @@ public class EntityArtilleryRocket extends EntityThrowableInterp implements IChu
 	public void loadNeighboringChunks(int newChunkX, int newChunkZ) {
 		if(!worldObj.isRemote && loaderTicket != null) {
 
-			clearChunkLoader();
+			unforceLoadedChunks();
 
 			loadedChunks.clear();
 			loadedChunks.add(new ChunkCoordIntPair(newChunkX, newChunkZ));
@@ -158,16 +157,27 @@ public class EntityArtilleryRocket extends EntityThrowableInterp implements IChu
 		}
 	}
 
+	private void unforceLoadedChunks() {
+		for(ChunkCoordIntPair chunk : loadedChunks) {
+			ForgeChunkManager.unforceChunk(loaderTicket, chunk);
+		}
+	}
+
 	public void killAndClear() {
 		this.setDead();
-		this.clearChunkLoader();
+	}
+
+	@Override
+	public void setDead() {
+		super.setDead();
+		clearChunkLoader();
 	}
 
 	public void clearChunkLoader() {
 		if(!worldObj.isRemote && loaderTicket != null) {
-			for(ChunkCoordIntPair chunk : loadedChunks) {
-				ForgeChunkManager.unforceChunk(loaderTicket, chunk);
-			}
+			ForgeChunkManager.releaseTicket(loaderTicket);
+			loaderTicket = null;
+			loadedChunks.clear();
 		}
 	}
 

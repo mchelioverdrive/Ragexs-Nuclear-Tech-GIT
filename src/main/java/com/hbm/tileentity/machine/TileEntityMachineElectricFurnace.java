@@ -269,6 +269,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		this.markNetworkDirty();
 		this.power = i;
 		this.markPowerNetDirty();
+		this.markMachineEnergyDirty();
 
 	}
 

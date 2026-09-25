@@ -70,6 +70,7 @@ public class EntityRideableRocket extends EntityMissileBaseNT implements ILookOv
 	private double rocketVelocity = 0;
 
 	private boolean sizeSet = false;
+	private boolean rocketConfigured;
 
 	private AudioWrapper audio;
 
@@ -363,8 +364,11 @@ public class EntityRideableRocket extends EntityMissileBaseNT implements ILookOv
 				}
 			}
 
-			if(state == RocketState.LANDING && worldObj.getBlock(MathHelper.floor_double(posX), MathHelper.floor_double(posY), MathHelper.floor_double(posZ)).getMaterial() == Material.water) {
-				setState(RocketState.TIPPING);
+			Material material = worldObj.getBlock(MathHelper.floor_double(posX), MathHelper.floor_double(posY), MathHelper.floor_double(posZ)).getMaterial();
+			if(state == RocketState.LANDING && material.isLiquid()) setState(RocketState.TIPPING);
+			if(material == Material.lava) {
+				setOnFireFromLava();
+				if(state == RocketState.TIPPING) willExplode = true;
 			}
 
 			if(height > 8) {
@@ -444,7 +448,8 @@ public class EntityRideableRocket extends EntityMissileBaseNT implements ILookOv
 
 	// Does this rocket accept passengers (is a capsule)
 	public boolean canRide() {
-		return getRocket().capsule.part.attributes[0] == WarheadType.APOLLO;
+		RocketStruct rocket = getRocket();
+		return rocket != null && rocket.capsule != null && rocket.capsule.part != null && rocket.capsule.part.attributes[0] == WarheadType.APOLLO;
 	}
 
 	public boolean isReusable() {
@@ -637,6 +642,8 @@ public class EntityRideableRocket extends EntityMissileBaseNT implements ILookOv
 
 	public void setRocket(RocketStruct rocket) {
 		rocket.writeToDataWatcher(dataWatcher, WATCHABLE_ROCKET);
+		rocketConfigured = true;
+		if(!worldObj.isRemote && canRide()) super.clearChunkLoader();
 	}
 
 	public RocketState getState() {
@@ -799,6 +806,7 @@ public class EntityRideableRocket extends EntityMissileBaseNT implements ILookOv
 	@Override
 	public void init(Ticket ticket) {
 		super.init(ticket);
+		if(!worldObj.isRemote && rocketConfigured && canRide()) super.clearChunkLoader();
 	}
 
 	@Override
@@ -809,8 +817,17 @@ public class EntityRideableRocket extends EntityMissileBaseNT implements ILookOv
 
 	@Override
 	public void clearChunkLoader() {
-		if(canRide()) return;
 		super.clearChunkLoader();
+	}
+
+	@Override
+	public boolean handleWaterMovement() {
+		return false;
+	}
+
+	@Override
+	public boolean handleLavaMovement() {
+		return false;
 	}
 
 	public static class EntityRideableRocketDummy extends Entity implements ILookOverlay {

@@ -9,7 +9,6 @@ import com.hbm.entity.mob.EntityFRIEND;
 import cpw.mods.fml.common.IWorldGenerator;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
-import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
@@ -69,9 +68,7 @@ public class NTMWorldGenerator implements IWorldGenerator {
 	}
 
 	protected void generateOverworldStructures(World world, IChunkProvider chunkProvider, int chunkX, int chunkZ) {
-		Block[] ablock = new Block[65536]; //ablock isn't actually used for anything in MapGenStructure
-
-		this.scatteredFeatureGen.func_151539_a(chunkProvider, world, chunkX, chunkZ, ablock);
+		this.scatteredFeatureGen.func_151539_a(chunkProvider, world, chunkX, chunkZ, null);
 		this.scatteredFeatureGen.generateStructuresInChunk(world, rand, chunkX, chunkZ);
 	}
 

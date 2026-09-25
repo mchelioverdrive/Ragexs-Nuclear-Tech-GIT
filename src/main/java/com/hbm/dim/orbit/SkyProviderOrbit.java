@@ -29,6 +29,7 @@ public class SkyProviderOrbit extends SkyProviderCelestial {
 		WorldProviderOrbit provider = (WorldProviderOrbit) world.provider;
 		OrbitalStation station = OrbitalStation.clientStation;
 		double progress = station.getTransferProgress(partialTicks);
+		List<AstroMetric> metrics = provider.getSkyMetrics(partialTicks);
 		float orbitalTilt = 80;
 
 		GL11.glDepthMask(false);
@@ -41,7 +42,7 @@ public class SkyProviderOrbit extends SkyProviderCelestial {
 
 		OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
 
-		float celestialAngle = getCelestialAngle(world, partialTicks, station);
+		float celestialAngle = getCelestialAngle(world, metrics, partialTicks, station);
 		float celestialPhase = (1 - (celestialAngle + 0.5F) % 1) * 2 - 1;
 
 		float starBrightness = world.getStarBrightness(partialTicks);
@@ -72,18 +73,7 @@ public class SkyProviderOrbit extends SkyProviderCelestial {
 			renderSun(partialTicks, world, mc, SolarSystem.kerbol, sunSize, coronaSize, 1, 0);
 
 			CelestialBody orbiting = station.orbiting;
-
-			List<AstroMetric> metrics;
-			if(station.state == StationState.ORBIT) {
-				double altitude = provider.getOrbitalAltitude(station.orbiting);
-				metrics = SolarSystem.calculateMetricsFromSatellite(world, partialTicks, station.orbiting, altitude);
-			} else {
-				double fromAlt = provider.getOrbitalAltitude(station.orbiting);
-				double toAlt = provider.getOrbitalAltitude(station.target);
-				metrics = SolarSystem.calculateMetricsBetweenSatelliteOrbits(world, partialTicks, station.orbiting, station.target, fromAlt, toAlt, progress);
-
-				if(progress > 0.5) orbiting = station.target;
-			}
+			if(station.state != StationState.ORBIT && progress > 0.5) orbiting = station.target;
 
 			renderCelestials(partialTicks, world, mc, metrics, celestialAngle, orbiting, Vec3.createVectorHelper(0, 0, 0), 1, 1, orbiting, 160);
 
@@ -111,7 +101,7 @@ public class SkyProviderOrbit extends SkyProviderCelestial {
 	}
 
 	// All angles within are normalized to -180/180
-	private float getCelestialAngle(WorldClient world, float partialTicks, OrbitalStation station) {
+	private float getCelestialAngle(WorldClient world, List<AstroMetric> metrics, float partialTicks, OrbitalStation station) {
 		float celestialAngle = world.getCelestialAngle(partialTicks);
 		if(station.state == StationState.ORBIT) return celestialAngle;
 
@@ -120,7 +110,7 @@ public class SkyProviderOrbit extends SkyProviderCelestial {
 		if(station.state != StationState.ARRIVING) lastBody = station.orbiting;
 
 		double progress = station.getUnscaledProgress(partialTicks);
-		float travelAngle = -(float)SolarSystem.calculateSingleAngle(world, partialTicks, lastBody, station.target);
+		float travelAngle = -(float)SolarSystem.calculateSingleAngle(metrics, lastBody, station.target);
 		travelAngle = MathHelper.wrapAngleTo180_float(travelAngle + 90.0F);
 
 		if(station.state == StationState.TRANSFER) {

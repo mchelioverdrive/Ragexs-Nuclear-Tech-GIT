@@ -181,12 +181,10 @@ public class EntityMissileAntiBallistic extends EntityThrowableInterp implements
 
 			if(ticket != null) {
 
-				if(loaderTicket == null) {
-
-					loaderTicket = ticket;
-					loaderTicket.bindEntity(this);
-					loaderTicket.getModData();
-				}
+				if(loaderTicket != null && loaderTicket != ticket) ForgeChunkManager.releaseTicket(loaderTicket);
+				loaderTicket = ticket;
+				loaderTicket.bindEntity(this);
+				loaderTicket.getModData();
 
 				ForgeChunkManager.forceChunk(loaderTicket, new ChunkCoordIntPair(chunkCoordX, chunkCoordZ));
 			}
@@ -197,8 +195,8 @@ public class EntityMissileAntiBallistic extends EntityThrowableInterp implements
 
 	public void loadNeighboringChunks(int newChunkX, int newChunkZ) {
 		if(!worldObj.isRemote && loaderTicket != null) {
-			
-			clearChunkLoader();
+
+			unforceLoadedChunks();
 
 			loadedChunks.clear();
 			for(int i = -1; i <= 1; i++) for(int j = -1; j <= 1; j++) loadedChunks.add(new ChunkCoordIntPair(newChunkX + i, newChunkZ + j));
@@ -206,6 +204,12 @@ public class EntityMissileAntiBallistic extends EntityThrowableInterp implements
 			for(ChunkCoordIntPair chunk : loadedChunks) {
 				ForgeChunkManager.forceChunk(loaderTicket, chunk);
 			}
+		}
+	}
+
+	private void unforceLoadedChunks() {
+		for(ChunkCoordIntPair chunk : loadedChunks) {
+			ForgeChunkManager.unforceChunk(loaderTicket, chunk);
 		}
 	}
 	
@@ -217,9 +221,9 @@ public class EntityMissileAntiBallistic extends EntityThrowableInterp implements
 	
 	public void clearChunkLoader() {
 		if(!worldObj.isRemote && loaderTicket != null) {
-			for(ChunkCoordIntPair chunk : loadedChunks) {
-				ForgeChunkManager.unforceChunk(loaderTicket, chunk);
-			}
+			ForgeChunkManager.releaseTicket(loaderTicket);
+			loaderTicket = null;
+			loadedChunks.clear();
 		}
 	}
 

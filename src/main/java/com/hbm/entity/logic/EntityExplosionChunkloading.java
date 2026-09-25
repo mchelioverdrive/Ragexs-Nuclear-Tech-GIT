@@ -26,26 +26,33 @@ public abstract class EntityExplosionChunkloading extends Entity implements IChu
 	@Override
 	public void init(Ticket ticket) {
 		if(!worldObj.isRemote && ticket != null) {
-			if(loaderTicket == null) {
-				loaderTicket = ticket;
-				loaderTicket.bindEntity(this);
-				loaderTicket.getModData();
-			}
+			if(loaderTicket != null && loaderTicket != ticket) ForgeChunkManager.releaseTicket(loaderTicket);
+			loaderTicket = ticket;
+			loaderTicket.bindEntity(this);
+			loaderTicket.getModData();
 			ForgeChunkManager.forceChunk(loaderTicket, new ChunkCoordIntPair(chunkCoordX, chunkCoordZ));
 		}
 	}
 
 	public void loadChunk(int x, int z) {
 		
-		if(this.loadedChunk == null) {
+		if(this.loadedChunk == null && loaderTicket != null) {
 			this.loadedChunk = new ChunkCoordIntPair(x, z);
 			ForgeChunkManager.forceChunk(loaderTicket, loadedChunk);
 		}
 	}
 	
 	public void clearChunkLoader() {
-		if(!worldObj.isRemote && loaderTicket != null && loadedChunk != null) {
-			ForgeChunkManager.unforceChunk(loaderTicket, loadedChunk);
+		if(!worldObj.isRemote && loaderTicket != null) {
+			ForgeChunkManager.releaseTicket(loaderTicket);
+			loaderTicket = null;
+			loadedChunk = null;
 		}
+	}
+
+	@Override
+	public void setDead() {
+		super.setDead();
+		clearChunkLoader();
 	}
 }

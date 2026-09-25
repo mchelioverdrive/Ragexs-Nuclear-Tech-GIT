@@ -937,45 +937,18 @@ public class SolarSystem {
 		) * SUN_RENDER_SCALE;
 	}
 
-	// Gets angle for a single planet, good for locking tidal bodies
-	public static double calculateSingleAngle(World world, float partialTicks, CelestialBody from, CelestialBody to) {
-
-		List<AstroMetric> metrics = new ArrayList<AstroMetric>();
-
-		double ticks =
-			getCelestialTicks(world, partialTicks)
-				* (double) AstronomyUtil.TIME_MULTIPLIER;
-
-		// Start from system root
-		CelestialBody root =
-			from.parent == null ? from : from.getStar();
-
-		Vec3 rootPos = Vec3.createVectorHelper(0, 0, 0);
-		metrics.add(new AstroMetric(root, rootPos));
-		calculatePositionsRecursive(metrics, null, root, ticks);
-
+	// Gets angle from an already-calculated system snapshot without rebuilding it.
+	public static double calculateSingleAngle(List<AstroMetric> metrics, CelestialBody from, CelestialBody to) {
 		Vec3 fromPos = Vec3.createVectorHelper(0, 0, 0);
 		Vec3 toPos = Vec3.createVectorHelper(0, 0, 0);
-
-		boolean foundFrom = false;
-		boolean foundTo = false;
-
-		// Sun/root body lives at origin
-		if(from.parent == null) {
-			foundFrom = true;
-		}
-
-		if(to.parent == null) {
-			foundTo = true;
-		}
+		boolean foundFrom = from.parent == null;
+		boolean foundTo = to.parent == null;
 
 		for(AstroMetric metric : metrics) {
-
 			if(metric.body == from) {
 				fromPos = metric.position;
 				foundFrom = true;
 			}
-
 			if(metric.body == to) {
 				toPos = metric.position;
 				foundTo = true;
@@ -983,39 +956,57 @@ public class SolarSystem {
 		}
 
 		if(!foundFrom || !foundTo) {
-			throw new IllegalStateException(
-				"Missing celestial metric! from=" +
-					(from != null ? from.name : "null") +
-					" to=" +
-					(to != null ? to.name : "null") +
-					" foundFrom=" + foundFrom +
-					" foundTo=" + foundTo
-			);
+			throw new IllegalStateException("Missing celestial metric! from=" + from.name + " to=" + to.name);
 		}
 
 		return getApparentAngleDegrees(fromPos, toPos);
 	}
 
-	public static double calculateSingleAngle(World world, float partialTicks, CelestialBody orbiting, double altitude) {
-		List<AstroMetric> metrics = new ArrayList<AstroMetric>();
+	// Used by server-side and tidal-lock callers without traversing unrelated bodies.
+	public static double calculateSingleAngle(World world, float partialTicks, CelestialBody from, CelestialBody to) {
+		double ticks =
+			getCelestialTicks(world, partialTicks)
+				* (double) AstronomyUtil.TIME_MULTIPLIER;
+		return getApparentAngleDegrees(getAbsoluteBodyPosition(from, ticks), getAbsoluteBodyPosition(to, ticks));
+	}
 
+	private static Vec3 getAbsoluteBodyPosition(CelestialBody body, double ticks) {
+		if(body.parent == null) return Vec3.createVectorHelper(0, 0, 0);
+		Vec3 parentPosition = getAbsoluteBodyPosition(body.parent, ticks);
+		Vec3 localPosition = calculatePosition(body, ticks);
+		return parentPosition.addVector(localPosition.xCoord, localPosition.yCoord, localPosition.zCoord);
+	}
+
+	public static double calculateSingleAngle(World world, float partialTicks, List<AstroMetric> metrics, CelestialBody orbiting, double altitude) {
 		double ticks = getCelestialTicks(world, partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
 
-		// Get our XYZ coordinates of all bodies
-		calculatePositionsRecursive(metrics, null, orbiting.getStar(), ticks);
-
 		// Add our orbiting satellite position
-		Vec3 from = calculatePosition(orbiting, altitude, ticks);
-		Vec3 to = Vec3.createVectorHelper(0, 0, 0);
-		for(AstroMetric metric : metrics) {
-			if(metric.body == orbiting) {
-				to = metric.position;
-				from = from.addVector(to.xCoord, to.yCoord, to.zCoord);
-				break;
-			}
-		}
+		Vec3 to = getBodyPosition(metrics, orbiting);
+		Vec3 from = calculatePosition(orbiting, altitude, ticks).addVector(to.xCoord, to.yCoord, to.zCoord);
 
 		return getApparentAngleDegrees(from, to);
+	}
+
+	public static Vec3 getBodyPosition(List<AstroMetric> metrics, CelestialBody body) {
+		if(body.parent == null) return Vec3.createVectorHelper(0, 0, 0);
+		for(AstroMetric metric : metrics) {
+			if(metric.body == body) return metric.position;
+		}
+		throw new IllegalStateException("Missing celestial metric for " + body.name);
+	}
+
+	public static Vec3 calculateSatellitePosition(World world, float partialTicks, List<AstroMetric> metrics, CelestialBody orbiting, double altitude) {
+		double ticks = getCelestialTicks(world, partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
+		Vec3 bodyPosition = getBodyPosition(metrics, orbiting);
+		Vec3 localPosition = calculatePosition(orbiting, altitude, ticks);
+		return bodyPosition.addVector(localPosition.xCoord, localPosition.yCoord, localPosition.zCoord);
+	}
+
+	public static double calculateSingleAngle(World world, float partialTicks, CelestialBody orbiting, double altitude) {
+		List<AstroMetric> metrics = new ArrayList<AstroMetric>();
+		double ticks = getCelestialTicks(world, partialTicks) * (double)AstronomyUtil.TIME_MULTIPLIER;
+		calculatePositionsRecursive(metrics, null, orbiting.getStar(), ticks);
+		return calculateSingleAngle(world, partialTicks, metrics, orbiting, altitude);
 	}
 
 

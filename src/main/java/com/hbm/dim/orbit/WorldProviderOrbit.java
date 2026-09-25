@@ -46,6 +46,15 @@ public class WorldProviderOrbit extends WorldProvider {
 	// We want a consistent orbital period to prevent orbiting too slow or fast (both for player comfort and feel)
 	//private static final double ORBIT_PERIOD_SECONDS = AstronomyUtil.SECONDS_IN_MC_DAY * 5; // 5 MC days per orbit
 	private static final double ORBIT_PERIOD_SECONDS = 60 * 60 * 2; // 2 real hours per orbit
+	private List<SolarSystem.AstroMetric> skyMetrics;
+	private long skyMetricsTick = Long.MIN_VALUE;
+	private int skyPartialTickBits;
+	private CelestialBody skyOrbiting;
+	private CelestialBody skyTarget;
+	private OrbitalStation.StationState skyStationState;
+	private double skyTransferProgress;
+	private float cachedCelestialAngle;
+	private float cachedSunBrightness = 1.0F;
 
 	protected float getOrbitalAltitude(CelestialBody body) {
 
@@ -156,7 +165,54 @@ public class WorldProviderOrbit extends WorldProvider {
 	@Override
 	@SideOnly(Side.CLIENT)
 	public Vec3 getSkyColor(Entity camera, float partialTicks) {
+		updateSky(partialTicks);
 		return Vec3.createVectorHelper(0, 0, 0);
+	}
+
+	public void updateSky(float partialTicks) {
+		OrbitalStation station = OrbitalStation.clientStation;
+		long tick = worldObj.getTotalWorldTime();
+		int partialBits = Float.floatToIntBits(partialTicks);
+		double progress = station.getTransferProgress(partialTicks);
+		if(skyMetrics != null && skyMetricsTick == tick && skyPartialTickBits == partialBits
+			&& skyOrbiting == station.orbiting && skyTarget == station.target && skyStationState == station.state
+			&& Double.doubleToLongBits(skyTransferProgress) == Double.doubleToLongBits(progress)) return;
+
+		if(station.state == OrbitalStation.StationState.ORBIT) {
+			skyMetrics = SolarSystem.calculateMetricsFromSatellite(worldObj, partialTicks, station.orbiting, getOrbitalAltitude(station.orbiting));
+		} else {
+			skyMetrics = SolarSystem.calculateMetricsBetweenSatelliteOrbits(worldObj, partialTicks, station.orbiting, station.target,
+				getOrbitalAltitude(station.orbiting), getOrbitalAltitude(station.target), progress);
+		}
+
+		float angle = (float)SolarSystem.calculateSingleAngle(worldObj, partialTicks, skyMetrics, station.orbiting, getOrbitalAltitude(station.orbiting));
+		if(progress > 0.0D) {
+			float targetAngle = (float)SolarSystem.calculateSingleAngle(worldObj, partialTicks, skyMetrics, station.target, getOrbitalAltitude(station.target));
+			angle = (float)BobMathUtil.lerp(progress, angle, targetAngle);
+		}
+		cachedCelestialAngle = angle / 360.0F;
+
+		if(station.orbiting.getStar().hasTrait(CBT_Destroyed.class)) {
+			cachedSunBrightness = 0.0F;
+		} else {
+			Vec3 observer = getObserverPosition(station, progress, partialTicks, skyMetrics);
+			cachedSunBrightness = getSolarPower(observer);
+			CelestialBody eclipsingBody = progress > 0.5D ? station.target : station.orbiting;
+			if(isEclipsedBy(observer, eclipsingBody, skyMetrics)) cachedSunBrightness *= 0.05F;
+		}
+
+		skyMetricsTick = tick;
+		skyPartialTickBits = partialBits;
+		skyOrbiting = station.orbiting;
+		skyTarget = station.target;
+		skyStationState = station.state;
+		skyTransferProgress = progress;
+	}
+
+	@SideOnly(Side.CLIENT)
+	public List<SolarSystem.AstroMetric> getSkyMetrics(float partialTicks) {
+		updateSky(partialTicks);
+		return skyMetrics;
 	}
 
 	@Override
@@ -204,62 +260,22 @@ public class WorldProviderOrbit extends WorldProvider {
 
 	@Override
 	public float getSunBrightness(float partialTicks) {
-		OrbitalStation station = OrbitalStation.clientStation;
-		CelestialBody orbiting = station.orbiting;
-
-		if(orbiting.getStar().hasTrait(CBT_Destroyed.class))
-			return 0;
-
-		double ticks =
-			SolarSystem.getCelestialTicks(worldObj, partialTicks)
-				* AstronomyUtil.TIME_MULTIPLIER;
-
-		double progress = station.getTransferProgress(partialTicks);
-		Vec3 observer = getObserverPosition(station, progress, ticks);
-
-		float solarPower = getSolarPower(observer);
-		CelestialBody eclipsingBody = progress > 0.5D ? station.target : orbiting;
-
-		if(isEclipsedBy(observer, eclipsingBody, ticks))
-			return solarPower * 0.05F;
-
-		return solarPower;
+		updateSky(partialTicks);
+		return cachedSunBrightness;
 	}
 
-	private Vec3 getObserverPosition(OrbitalStation station, double progress, double ticks) {
-		Vec3 from = getSatellitePosition(station.orbiting, getOrbitalAltitude(station.orbiting), ticks);
+	private Vec3 getObserverPosition(OrbitalStation station, double progress, float partialTicks, List<SolarSystem.AstroMetric> metrics) {
+		Vec3 from = SolarSystem.calculateSatellitePosition(worldObj, partialTicks, metrics, station.orbiting, getOrbitalAltitude(station.orbiting));
 
 		if(progress <= 0.0D)
 			return from;
 
-		Vec3 to = getSatellitePosition(station.target, getOrbitalAltitude(station.target), ticks);
+		Vec3 to = SolarSystem.calculateSatellitePosition(worldObj, partialTicks, metrics, station.target, getOrbitalAltitude(station.target));
 
 		return Vec3.createVectorHelper(
 			BobMathUtil.clampedLerp(from.xCoord, to.xCoord, progress),
 			BobMathUtil.clampedLerp(from.yCoord, to.yCoord, progress),
 			BobMathUtil.clampedLerp(from.zCoord, to.zCoord, progress)
-		);
-	}
-
-	private Vec3 getSatellitePosition(CelestialBody body, double altitude, double ticks) {
-		Vec3 bodyPosition = getBodyPosition(body, ticks);
-		Vec3 localOrbit = SolarSystem.calculatePosition(body, altitude, ticks);
-
-		return bodyPosition.addVector(localOrbit.xCoord, localOrbit.yCoord, localOrbit.zCoord);
-	}
-
-	private Vec3 getBodyPosition(CelestialBody body, double ticks) {
-		if(body.parent == null)
-			return Vec3.createVectorHelper(0, 0, 0);
-
-		Vec3 parentPosition = getBodyPosition(body.parent, ticks);
-		double yearTicks = CelestialBody.secondsToVanillaTicks(body.getOrbitalPeriod());
-		double angleRadians = 2.0D * Math.PI * (ticks / yearTicks) + Math.toRadians(body.initialOrbitalAngle);
-
-		return parentPosition.addVector(
-			body.semiMajorAxisKm * Math.cos(angleRadians),
-			body.semiMajorAxisKm * Math.sin(angleRadians),
-			0
 		);
 	}
 
@@ -273,11 +289,11 @@ public class WorldProviderOrbit extends WorldProvider {
 		return MathHelper.clamp_float((float)(1.0D / (distanceAU * distanceAU)), 0F, 1F);
 	}
 
-	private boolean isEclipsedBy(Vec3 observer, CelestialBody body, double ticks) {
+	private boolean isEclipsedBy(Vec3 observer, CelestialBody body, List<SolarSystem.AstroMetric> metrics) {
 		if(body.parent == null)
 			return false;
 
-		Vec3 bodyPosition = getBodyPosition(body, ticks);
+		Vec3 bodyPosition = SolarSystem.getBodyPosition(metrics, body);
 		Vec3 toSun = Vec3.createVectorHelper(-observer.xCoord, -observer.yCoord, -observer.zCoord);
 		Vec3 toBody = Vec3.createVectorHelper(
 			bodyPosition.xCoord - observer.xCoord,
@@ -323,14 +339,8 @@ public class WorldProviderOrbit extends WorldProvider {
 
 	@Override
 	public float calculateCelestialAngle(long worldTime, float partialTicks) {
-		CelestialBody orbiting = OrbitalStation.clientStation.orbiting;
-		CelestialBody target = OrbitalStation.clientStation.target;
-		double progress = OrbitalStation.clientStation.getTransferProgress(partialTicks);
-		float angle = (float)SolarSystem.calculateSingleAngle(worldObj, partialTicks, orbiting, getOrbitalAltitude(orbiting));
-		if(progress > 0) {
-			angle = (float)BobMathUtil.lerp(progress, angle, (float)SolarSystem.calculateSingleAngle(worldObj, partialTicks, target, getOrbitalAltitude(target)));
-		}
-		return (float)(angle / 360.0);
+		updateSky(partialTicks);
+		return cachedCelestialAngle;
 	}
 
 	// Same shit as in Celestial

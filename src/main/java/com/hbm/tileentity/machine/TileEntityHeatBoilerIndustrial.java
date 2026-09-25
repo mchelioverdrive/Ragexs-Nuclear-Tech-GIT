@@ -113,6 +113,7 @@ public class TileEntityHeatBoilerIndustrial extends TileEntityLoadedBase impleme
 
 	@Override
 	public void onChunkUnload() {
+		super.onChunkUnload();
 
 		if(audio != null) {
 			audio.stopSound();

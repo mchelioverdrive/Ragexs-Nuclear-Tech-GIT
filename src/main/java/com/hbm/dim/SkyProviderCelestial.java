@@ -70,6 +70,8 @@ public class SkyProviderCelestial extends IRenderHandler {
 	@Override
 	public void render(float partialTicks, WorldClient world, Minecraft mc) {
 		float fogIntensity = 0;
+		WorldProviderCelestial provider = (WorldProviderCelestial)world.provider;
+		List<AstroMetric> metrics = provider.getSkyMetrics(partialTicks);
 
 		if(world.provider instanceof WorldProviderCelestial) {
 			// Without mixins, we have to resort to some very wacky ways of checking that the lightmap needs to be updated
@@ -171,16 +173,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 		OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
 
 		float celestialAngle = world.getCelestialAngle(partialTicks);
-		double longitude = 0;
 		CelestialBody tidalLockedBody = body.tidallyLockedTo != null ? CelestialBody.getBody(body.tidallyLockedTo) : null;
-
-		if(tidalLockedBody != null) {
-			longitude = SolarSystem.calculateSingleAngle(world, partialTicks, body, tidalLockedBody) + celestialAngle * 360.0 + 60.0;
-		}
-
-		// Calculate the system before drawing the star field so sunlight can be
-		// reduced continuously when a nearer body crosses the solar disc.
-		List<AstroMetric> metrics = SolarSystem.calculateMetricsFromBody(world, partialTicks, longitude, body);
 		float starBrightness = calculateStarVisibility(partialTicks, world, mc, body, atmosphere, metrics);
 
 		// Handle any special per-body sunset rendering
@@ -311,7 +304,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 		float nightCurve = 1.0F - (MathHelper.cos(world.getCelestialAngle(partialTicks) * (float)Math.PI * 2.0F) * 2.0F + 0.25F);
 		nightCurve = MathHelper.clamp_float(nightCurve, 0.0F, 1.0F);
 		float nightVisibility = nightCurve * nightCurve;
-		float sunVisibility = body.getStar().hasTrait(CBT_Destroyed.class) ? 0.0F : calculateVisibleSunFraction(body, metrics);
+		float sunVisibility = body.getStar().hasTrait(CBT_Destroyed.class) ? 0.0F : ((WorldProviderCelestial)world.provider).getVisibleSunFraction(partialTicks);
 		float sunFactor = MathHelper.clamp_float((world.getSunBrightnessFactor(partialTicks) - 0.2F) / 0.8F, 0.0F, 1.0F);
 
 		Vec3 sky = world.getSkyColor(mc.renderViewEntity, partialTicks);
@@ -327,33 +320,6 @@ public class SkyProviderCelestial extends IRenderHandler {
 		float daylightVisibility = 1.0F - smoothstep(0.08F, 0.55F, washout);
 
 		return MathHelper.clamp_float(Math.max(nightVisibility, daylightVisibility), 0.0F, 1.0F);
-	}
-
-	protected float calculateVisibleSunFraction(CelestialBody observer, List<AstroMetric> metrics) {
-		AstroMetric observerMetric = null;
-		for(AstroMetric metric : metrics) {
-			if(metric.body == observer) {
-				observerMetric = metric;
-				break;
-			}
-		}
-		if(observerMetric == null || observerMetric.position.lengthVector() <= 0.0D) return 1.0F;
-
-		Vec3 toSun = Vec3.createVectorHelper(-observerMetric.position.xCoord, -observerMetric.position.yCoord, -observerMetric.position.zCoord);
-		double sunDistance = toSun.lengthVector();
-		double sunRadius = Math.atan(observer.getStar().radiusKm / sunDistance);
-		float visible = 1.0F;
-
-		for(AstroMetric metric : metrics) {
-			if(metric.body == observer || metric.body == observer.getStar() || metric.distance <= 0.0D || metric.distance >= sunDistance) continue;
-			Vec3 toBody = Vec3.createVectorHelper(metric.position.xCoord - observerMetric.position.xCoord, metric.position.yCoord - observerMetric.position.yCoord, metric.position.zCoord - observerMetric.position.zCoord);
-			double separation = Math.acos(MathHelper.clamp_double(toSun.normalize().dotProduct(toBody.normalize()), -1.0D, 1.0D));
-			double bodyRadius = Math.atan(metric.body.radiusKm / metric.distance);
-			double overlap = 1.0D - smoothstep((float)Math.abs(sunRadius - bodyRadius), (float)(sunRadius + bodyRadius), (float)separation);
-			double maximumCoverage = Math.min(1.0D, bodyRadius * bodyRadius / (sunRadius * sunRadius));
-			visible = Math.min(visible, (float)(1.0D - overlap * maximumCoverage));
-		}
-		return MathHelper.clamp_float(visible, 0.0F, 1.0F);
 	}
 
 	private static float smoothstep(float edge0, float edge1, float value) {

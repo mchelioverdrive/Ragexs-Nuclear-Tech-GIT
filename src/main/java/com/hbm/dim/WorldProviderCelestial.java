@@ -1,11 +1,13 @@
 package com.hbm.dim;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.hbm.config.GeneralConfig;
 import com.hbm.dim.trait.CBT_Atmosphere;
 import com.hbm.dim.trait.CBT_Atmosphere.FluidEntry;
 import com.hbm.dim.trait.CelestialBodyTrait.CBT_Destroyed;
+import com.hbm.dim.SolarSystem.AstroMetric;
 import com.hbm.handler.atmosphere.ChunkAtmosphereManager;
 import com.hbm.inventory.fluid.Fluids;
 
@@ -33,6 +35,11 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 
 	private long syncedMasterTime = -1;
 	private long clientMasterTimeSyncTick = -1;
+	private List<AstroMetric> skyMetrics;
+	private long skyMetricsTick = Long.MIN_VALUE;
+	private int skyPartialTickBits;
+	private CelestialBody skyMetricsBody;
+	private float visibleSunFraction = 1.0F;
 
 	@Override
 	public abstract void registerWorldChunkManager();
@@ -237,6 +244,7 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 	@Override
 	@SideOnly(Side.CLIENT)
 	public Vec3 getSkyColor(Entity camera, float partialTicks) {
+		updateSky(partialTicks);
 		CBT_Atmosphere atmosphere = CelestialBody.getTrait(worldObj, CBT_Atmosphere.class);
 
 		// The cold hard vacuum of space
@@ -279,6 +287,73 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 		color.zCoord *= pressureFactor;
 
 		return color;
+	}
+
+	/** Keeps one celestial-system snapshot for every rendered partial-tick frame. */
+	@SideOnly(Side.CLIENT)
+	public void updateSky(float partialTicks) {
+		CelestialBody body = CelestialBody.getBody(worldObj);
+		long tick = worldObj.getTotalWorldTime();
+		int partialBits = Float.floatToIntBits(partialTicks);
+		if(skyMetrics != null && skyMetricsTick == tick && skyPartialTickBits == partialBits && skyMetricsBody == body) return;
+
+		float celestialAngle = worldObj.getCelestialAngle(partialTicks);
+		double longitude = 0.0D;
+		CelestialBody tidalLockedBody = body.tidallyLockedTo != null ? CelestialBody.getBody(body.tidallyLockedTo) : null;
+		if(tidalLockedBody != null) {
+			longitude = SolarSystem.calculateSingleAngle(worldObj, partialTicks, body, tidalLockedBody) + celestialAngle * 360.0D + 60.0D;
+		}
+
+		skyMetrics = SolarSystem.calculateMetricsFromBody(worldObj, partialTicks, longitude, body);
+		visibleSunFraction = calculateVisibleSunFraction(body, skyMetrics);
+		skyMetricsTick = tick;
+		skyPartialTickBits = partialBits;
+		skyMetricsBody = body;
+	}
+
+	@SideOnly(Side.CLIENT)
+	public List<AstroMetric> getSkyMetrics(float partialTicks) {
+		updateSky(partialTicks);
+		return skyMetrics;
+	}
+
+	@SideOnly(Side.CLIENT)
+	public float getVisibleSunFraction(float partialTicks) {
+		updateSky(partialTicks);
+		return visibleSunFraction;
+	}
+
+	private static float calculateVisibleSunFraction(CelestialBody observer, List<AstroMetric> metrics) {
+		AstroMetric observerMetric = null;
+		for(AstroMetric metric : metrics) {
+			if(metric.body == observer) {
+				observerMetric = metric;
+				break;
+			}
+		}
+		if(observerMetric == null || observerMetric.position.lengthVector() <= 0.0D) return 1.0F;
+
+		Vec3 toSun = Vec3.createVectorHelper(-observerMetric.position.xCoord, -observerMetric.position.yCoord, -observerMetric.position.zCoord);
+		double sunDistance = toSun.lengthVector();
+		double sunRadius = Math.atan(observer.getStar().radiusKm / sunDistance);
+		float visible = 1.0F;
+
+		for(AstroMetric metric : metrics) {
+			if(metric.body == observer || metric.body == observer.getStar() || metric.distance <= 0.0D || metric.distance >= sunDistance) continue;
+			Vec3 toBody = Vec3.createVectorHelper(metric.position.xCoord - observerMetric.position.xCoord, metric.position.yCoord - observerMetric.position.yCoord, metric.position.zCoord - observerMetric.position.zCoord);
+			double separation = Math.acos(MathHelper.clamp_double(toSun.normalize().dotProduct(toBody.normalize()), -1.0D, 1.0D));
+			double bodyRadius = Math.atan(metric.body.radiusKm / metric.distance);
+			double overlap = 1.0D - smoothstep((float)Math.abs(sunRadius - bodyRadius), (float)(sunRadius + bodyRadius), (float)separation);
+			double maximumCoverage = Math.min(1.0D, bodyRadius * bodyRadius / (sunRadius * sunRadius));
+			visible = Math.min(visible, (float)(1.0D - overlap * maximumCoverage));
+		}
+		return MathHelper.clamp_float(visible, 0.0F, 1.0F);
+	}
+
+	private static float smoothstep(float edge0, float edge1, float value) {
+		if(edge1 <= edge0) return value < edge0 ? 0.0F : 1.0F;
+		float t = MathHelper.clamp_float((value - edge0) / (edge1 - edge0), 0.0F, 1.0F);
+		return t * t * (3.0F - 2.0F * t);
 	}
 
 	private Vec3 getColorFromHex(int hexColor) {

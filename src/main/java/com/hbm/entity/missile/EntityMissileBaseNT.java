@@ -311,12 +311,10 @@ public abstract class EntityMissileBaseNT extends EntityThrowableInterp implemen
 
 			if(ticket != null) {
 
-				if(loaderTicket == null) {
-
-					loaderTicket = ticket;
-					loaderTicket.bindEntity(this);
-					loaderTicket.getModData();
-				}
+				if(loaderTicket != null && loaderTicket != ticket) ForgeChunkManager.releaseTicket(loaderTicket);
+				loaderTicket = ticket;
+				loaderTicket.bindEntity(this);
+				loaderTicket.getModData();
 
 				ForgeChunkManager.forceChunk(loaderTicket, new ChunkCoordIntPair(chunkCoordX, chunkCoordZ));
 			}
@@ -328,7 +326,7 @@ public abstract class EntityMissileBaseNT extends EntityThrowableInterp implemen
 	public void loadNeighboringChunks(int newChunkX, int newChunkZ) {
 		if(!worldObj.isRemote && loaderTicket != null) {
 			
-			clearChunkLoader();
+			unforceLoadedChunks();
 
 			loadedChunks.clear();
 			loadedChunks.add(new ChunkCoordIntPair(newChunkX, newChunkZ));
@@ -337,6 +335,12 @@ public abstract class EntityMissileBaseNT extends EntityThrowableInterp implemen
 			for(ChunkCoordIntPair chunk : loadedChunks) {
 				ForgeChunkManager.forceChunk(loaderTicket, chunk);
 			}
+		}
+	}
+
+	private void unforceLoadedChunks() {
+		for(ChunkCoordIntPair chunk : loadedChunks) {
+			ForgeChunkManager.unforceChunk(loaderTicket, chunk);
 		}
 	}
 	
@@ -348,9 +352,9 @@ public abstract class EntityMissileBaseNT extends EntityThrowableInterp implemen
 	
 	public void clearChunkLoader() {
 		if(!worldObj.isRemote && loaderTicket != null) {
-			for(ChunkCoordIntPair chunk : loadedChunks) {
-				ForgeChunkManager.unforceChunk(loaderTicket, chunk);
-			}
+			ForgeChunkManager.releaseTicket(loaderTicket);
+			loaderTicket = null;
+			loadedChunks.clear();
 		}
 	}
 	

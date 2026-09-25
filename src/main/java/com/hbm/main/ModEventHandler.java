@@ -74,6 +74,7 @@ import com.hbm.items.weapon.ItemGunBase;
 import com.hbm.lib.HbmCollection;
 import com.hbm.lib.ModDamageSource;
 import com.hbm.lib.RefStrings;
+import com.hbm.machine.MachineRuntimeManager;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.PermaSyncPacket;
@@ -878,11 +879,15 @@ public class ModEventHandler {
 		BobmazonOfferFactory.init();
 
 		updateWaterOpacity(event.world);
+		if(!event.world.isRemote) MachineRuntimeManager.onWorldLoad(event.world);
 	}
 
 	@SubscribeEvent
 	public void onUnload(WorldEvent.Unload event) {
-		if(!event.world.isRemote) UniNodespace.unloadWorld(event.world);
+		if(!event.world.isRemote) {
+			MachineRuntimeManager.onWorldUnload(event.world);
+			UniNodespace.unloadWorld(event.world);
+		}
 	}
 
 	public static boolean didSit = false;
@@ -1173,6 +1178,9 @@ public class ModEventHandler {
 				}
 			}
 		}
+
+		// Opted-in machine work deliberately runs after vanilla/legacy TileEntity ticks.
+		if(event.phase == Phase.END && !event.world.isRemote) MachineRuntimeManager.tick(event.world);
 	}
 
 

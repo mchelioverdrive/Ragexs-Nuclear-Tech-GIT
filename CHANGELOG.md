@@ -211,3 +211,20 @@ INCOMPLETE:
 
 - Fixed decorative computers, dynamite charges, C4, and CSGO charges crashing when their prepared models were rendered in the world or inventory.
 - Preserved block-atlas textures, override textures, orientation, brightness, shading, and resource-reload behavior without restoring legacy OBJ model graphs.
+
+2026-09-25 09:43 — Add opt-in world-scoped machine runtime infrastructure
+
+- Added server-world logical machine registries with persistent generation identity, loaded/unloaded controller bindings, replacement-safe cleanup, and explicit world lifecycle ownership while leaving every existing machine on legacy ticking by default.
+- Added deduplicated cause-aware dirty processing, generation-safe typed multi-slot transition scheduling, deterministic shared 5/20/100-tick coarse polling buckets, and composable event/scheduled/coarse/realtime execution capabilities.
+- Added common inventory, fluid, energy, configuration, redstone, and topology invalidation seams without combining simulation dirtiness with client synchronization or PowerNet ownership.
+- Prepared the electric furnace's inventory, energy, and retained on/off block-swap lifecycle for its later migration; no progress, cooldown, recipe, charging, pollution, networking, or tick behavior was migrated.
+- Restored shared chunk-unload lifecycle calls in the assembler, heat boilers, and PWR controller, and added disabled-by-default `/ntmmachinestats` aggregate diagnostics.
+- Documented persistence, ordering, multiblock ownership, migration phases, and remaining direct-mutation/lifecycle hazards. Dedicated-server and in-game validation remains outstanding.
+
+2026-09-25 11:36 — Reduce space-rendering and chunk-generation overhead
+
+- Reused celestial calculations across sky, orbital transfer, eclipse, and sunlight rendering for smoother travel and planetary views.
+- Generated Eve gas, Laythe oil, and the Martian start base in chunk-sized portions to reduce neighboring chunk generation and worldgen hitching.
+- Removed an unused full-chunk worldgen allocation and kept structure templates parsed for reuse.
+- Released retired chunkloading tickets for moving entities and transporters, including redundant tickets after world reload.
+- Reduced rideable rocket update cost by replacing broad liquid scans with a local landing check while retaining lava hazards.

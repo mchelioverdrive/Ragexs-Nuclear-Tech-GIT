@@ -1636,6 +1636,6 @@ public class ResourceManager {
 	public static final IModelCustom deb_zirnox_exchanger = PreparedModelCache.get(new ResourceLocation(RefStrings.MODID, "models/zirnox/deb_exchanger.obj"), false, true);
 	public static final IModelCustom deb_zirnox_shrapnel = PreparedModelCache.get(new ResourceLocation(RefStrings.MODID, "models/zirnox/deb_shrapnel.obj"), false, true);
 
-	public static final NBTStructure martian = new NBTStructure(new ResourceLocation(RefStrings.MODID, "structures/martian-base.nbt"));
+	public static final NBTStructure martian = NBTStructure.getOrLoad(new ResourceLocation(RefStrings.MODID, "structures/martian-base.nbt"));
 
 }

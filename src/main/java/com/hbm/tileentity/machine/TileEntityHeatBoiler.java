@@ -125,6 +125,7 @@ public class TileEntityHeatBoiler extends TileEntityLoadedBase implements INBTPa
 
 	@Override
 	public void onChunkUnload() {
+		super.onChunkUnload();
 
 		if(audio != null) {
 			audio.stopSound();

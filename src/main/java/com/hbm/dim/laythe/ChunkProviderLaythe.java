@@ -4,11 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
+import com.hbm.config.WorldConfig;
+import com.hbm.dim.CelestialBody;
 import com.hbm.dim.ChunkProviderCelestial;
 import com.hbm.dim.laythe.biome.BiomeGenBaseLaythe;
 import com.hbm.dim.mapgen.MapGenEuropaFractures;
 import com.hbm.dim.mapgen.MapGenGreg;
 import com.hbm.entity.mob.EntityCreeperFlesh;
+import com.hbm.world.gen.terrain.MapGenBubble;
 
 import net.minecraft.block.Block;
 import net.minecraft.entity.EnumCreatureType;
@@ -24,6 +27,7 @@ public class ChunkProviderLaythe extends ChunkProviderCelestial {
 	//private MapGenTiltedSpires snowires = new MapGenTiltedSpires(2, 14, 0.8F);
 	private MapGenEuropaFractures fractures =
 		new MapGenEuropaFractures();
+	private final MapGenBubble oil = new MapGenBubble(WorldConfig.laytheOilSpawn);
 
 	private List<SpawnListEntry> spawnedOfFlesh = new ArrayList<SpawnListEntry>();
 
@@ -44,6 +48,11 @@ public class ChunkProviderLaythe extends ChunkProviderCelestial {
 
 
 		seaBlock = Blocks.packed_ice;
+
+		oil.block = ModBlocks.ore_oil;
+		oil.meta = (byte)CelestialBody.getMeta(world);
+		oil.replace = Blocks.stone;
+		oil.setSize(10, 17);
 
 		//todo change:
 		spawnedOfFlesh.add(new SpawnListEntry(EntityCreeperFlesh.class, 10, 4, 4));
@@ -122,6 +131,7 @@ public class ChunkProviderLaythe extends ChunkProviderCelestial {
 			z,
 			buffer.blocks
 		);
+		oil.generate(this, worldObj, x, z, buffer.blocks, buffer.metas);
 
 		//spires.func_151539_a(this, worldObj, x, z, buffer.blocks);
 		//caveGenV3.func_151539_a(this, worldObj, x, z, buffer.blocks);

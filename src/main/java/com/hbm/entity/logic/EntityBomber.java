@@ -514,12 +514,10 @@ public class EntityBomber extends Entity implements IChunkLoader {
 			
             if(ticket != null) {
             	
-                if(loaderTicket == null) {
-                	
-                	loaderTicket = ticket;
-                	loaderTicket.bindEntity(this);
-                	loaderTicket.getModData();
-                }
+				if(loaderTicket != null && loaderTicket != ticket) ForgeChunkManager.releaseTicket(loaderTicket);
+				loaderTicket = ticket;
+				loaderTicket.bindEntity(this);
+				loaderTicket.getModData();
                 
         		
                 ForgeChunkManager.forceChunk(loaderTicket, new ChunkCoordIntPair(chunkCoordX, chunkCoordZ));
@@ -552,7 +550,17 @@ public class EntityBomber extends Entity implements IChunkLoader {
             for(ChunkCoordIntPair chunk : loadedChunks)
             {
                 ForgeChunkManager.forceChunk(loaderTicket, chunk);
-            }
-        }
-    }
+			}
+		}
+	}
+
+	@Override
+	public void setDead() {
+		super.setDead();
+		if(!worldObj.isRemote && loaderTicket != null) {
+			ForgeChunkManager.releaseTicket(loaderTicket);
+			loaderTicket = null;
+			loadedChunks.clear();
+		}
+	}
 }

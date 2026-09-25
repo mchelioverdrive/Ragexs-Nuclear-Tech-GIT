@@ -390,11 +390,13 @@ public class MainRegistry {
 				for(Ticket ticket : tickets) {
 					if(ticket.getType() == ForgeChunkManager.Type.NORMAL) {
 						ChunkLoaderManager.loadTicket(world, ticket);
-						return;
+						continue;
 					}
 
 					if(ticket.getEntity() instanceof IChunkLoader) {
 						((IChunkLoader) ticket.getEntity()).init(ticket);
+					} else {
+						ForgeChunkManager.releaseTicket(ticket);
 					}
 				}
 			}
@@ -1051,6 +1053,7 @@ public class MainRegistry {
 		event.registerServerCommand(new CommandReloadRecipes());
 		event.registerServerCommand(new CommandDebugChunkLoad());
 		event.registerServerCommand(new CommandPowerNetStats());
+		event.registerServerCommand(new CommandMachineStats());
 		event.registerServerCommand(new CommandSatellites());
 		event.registerServerCommand(new CommandRadiation());
 		event.registerServerCommand(new CommandStations());

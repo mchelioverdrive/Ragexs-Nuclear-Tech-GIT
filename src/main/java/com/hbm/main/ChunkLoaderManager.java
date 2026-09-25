@@ -22,6 +22,15 @@ public class ChunkLoaderManager {
 	
 	public static void loadTicket(World world, Ticket ticket) {
 		ChunkWorldSavedData savedData = getSavedData(world, ticket);
+		if(savedData.ticket != ticket) {
+			ForgeChunkManager.releaseTicket(ticket);
+			return;
+		}
+		if(savedData.chunksForcedBy.isEmpty()) {
+			ForgeChunkManager.releaseTicket(ticket);
+			savedData.ticket = null;
+			return;
+		}
 
 		for(ChunkCoordIntPair chunk : savedData.chunksForcedBy.values()) {
 			ForgeChunkManager.forceChunk(ticket, chunk);
@@ -57,7 +66,9 @@ public class ChunkLoaderManager {
 	}
 
 	public static void forceChunk(World world, int x, int y, int z, ChunkCoordIntPair chunk) {
+		if(world.isRemote) return;
 		ChunkWorldSavedData savedData = getSavedData(world);
+		if(savedData.ticket == null) return;
 		savedData.chunksForcedBy.put(new ThreeInts(x, y, z), chunk);
 		savedData.markDirty();
 
@@ -69,12 +80,18 @@ public class ChunkLoaderManager {
 	}
 
 	public static void unforceChunk(World world, int x, int y, int z, ChunkCoordIntPair chunk) {
-		ChunkWorldSavedData savedData = getSavedData(world);
+		if(world.isRemote) return;
+		ChunkWorldSavedData savedData = (ChunkWorldSavedData)world.perWorldStorage.loadData(ChunkWorldSavedData.class, DATA_NAME);
+		if(savedData == null) return;
 		savedData.chunksForcedBy.remove(new ThreeInts(x, y, z));
 		savedData.markDirty();
 
-		if(!savedData.chunksForcedBy.containsValue(chunk)) {
+		if(savedData.ticket != null && !savedData.chunksForcedBy.containsValue(chunk)) {
 			ForgeChunkManager.unforceChunk(savedData.ticket, chunk);
+		}
+		if(savedData.chunksForcedBy.isEmpty() && savedData.ticket != null) {
+			ForgeChunkManager.releaseTicket(savedData.ticket);
+			savedData.ticket = null;
 		}
 	}
 

@@ -199,9 +199,15 @@ public class EntityDeliveryDrone extends EntityDroneBase implements IInventory, 
 
 	public void loadNeighboringChunks(int newChunkX, int newChunkZ) {
 		if(!worldObj.isRemote && loaderTicket != null) {
-			clearChunkLoader();
+			unforceLoadedChunks();
 			ForgeChunkManager.forceChunk(loaderTicket, new ChunkCoordIntPair(newChunkX, newChunkZ));
 			ForgeChunkManager.forceChunk(loaderTicket, new ChunkCoordIntPair(newChunkX + (int) Math.ceil((this.posX + this.motionX) / 16D), newChunkZ + (int) Math.ceil((this.posZ + this.motionZ) / 16D)));
+		}
+	}
+
+	private void unforceLoadedChunks() {
+		for(ChunkCoordIntPair chunk : loaderTicket.getChunkList()) {
+			ForgeChunkManager.unforceChunk(loaderTicket, chunk);
 		}
 	}
 	
@@ -213,20 +219,18 @@ public class EntityDeliveryDrone extends EntityDroneBase implements IInventory, 
 	
 	public void clearChunkLoader() {
 		if(!worldObj.isRemote && loaderTicket != null) {
-			for(ChunkCoordIntPair chunk : loaderTicket.getChunkList()) {
-				ForgeChunkManager.unforceChunk(loaderTicket, chunk);
-			}
+			ForgeChunkManager.releaseTicket(loaderTicket);
+			loaderTicket = null;
 		}
 	}
 
 	@Override
 	public void init(Ticket ticket) {
 		if(!worldObj.isRemote && ticket != null) {
-			if(loaderTicket == null) {
-				loaderTicket = ticket;
-				loaderTicket.bindEntity(this);
-				loaderTicket.getModData();
-			}
+			if(loaderTicket != null && loaderTicket != ticket) ForgeChunkManager.releaseTicket(loaderTicket);
+			loaderTicket = ticket;
+			loaderTicket.bindEntity(this);
+			loaderTicket.getModData();
 			ForgeChunkManager.forceChunk(loaderTicket, new ChunkCoordIntPair(chunkCoordX, chunkCoordZ));
 		}
 	}

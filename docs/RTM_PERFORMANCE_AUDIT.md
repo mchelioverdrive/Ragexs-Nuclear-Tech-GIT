@@ -112,6 +112,84 @@ Future work should keep immediate dirty work separate from scheduled future tran
 
 The next energy pass should introduce persistent endpoint state and explicit network dirtying while retaining a low-frequency timeout reaper as a compatibility fallback. Topology rebuilds should be isolated from energy distribution so stable networks do not pay both costs every tick.
 
+## 2026-09-25 09:43 — Phase 0 machine runtime infrastructure
+
+### Previous execution architecture
+
+Machine behavior remains primarily owned by loaded TileEntities and their `updateEntity()` methods. Inventory, energy, fluid, recipe, environment, connection, progress, and packet work are commonly interleaved in the same per-tick method. `TileEntityMachineBase` supplies inventory and network-sync helpers, `TileEntityTickingBase` supplies the common packet surface, and `TileEntityLoadedBase` supplies shared loaded-state plus power/fluid endpoint cleanup. None of those bases previously represented a logical machine after its TileEntity unloaded, and timers were generally TileEntity fields advanced once per tick.
+
+Phase 0 does not change that behavior. `LEGACY` is the default execution strategy, legacy `updateEntity()` methods still run, and no existing machine has been opted into runtime-driven simulation.
+
+### World ownership and logical machine graph
+
+`MachineRuntimeManager` owns exactly one server-side `MachineRuntime` for each loaded `World`. World load creates it, the `WorldTickEvent` end phase drives it, and world unload removes it and clears every binding and queue. The manager's world map is a lifecycle-bound lookup, not persistent ownership: world unload is the mandatory cleanup boundary. Client worlds never acquire a runtime and no worker thread or asynchronous simulation is used.
+
+Only TileEntities whose `getMachineExecutionStrategies()` returns a non-`LEGACY` capability set are registered. A logical entry contains its key, controller position, compatibility type, execution capabilities, dirty causes, typed scheduled-transition ownership, and an optional loaded binding. It contains no rendering state or migrated gameplay fields. Multiblock proxies remain unregistered by default; future migrations should opt in the controller and use the existing `TileEntityProxyBase.getTE()` / `BlockDummyable` / `IProxyController` resolution paths to delegate mutations to it.
+
+### Identity, persistence, and replacement safety
+
+A `MachineKey` is dimension + block position + a positive lifecycle generation. Coordinates locate an entry but do not identify its lifetime. Each opted-in controller stores `hbmMachineGeneration` in its existing TileEntity NBT. `MachineRuntimeSavedData` stores only the next generation counter in version-1 per-world saved data (`hbm_machine_runtime`). Old saves have neither value and allocate them lazily when a machine first opts in.
+
+Binding a TileEntity with no generation allocates a new one. Reloading the same TileEntity NBT reuses its generation and rebinds the existing unloaded entry when it is still present. A different generation or compatibility type at an occupied position removes the old entry and cancels all work it owns before the replacement binds. Scheduled entries retain the full key and type, so work cannot resolve against a later occupant at the same coordinates.
+
+The graph itself, loaded references, dirty buffers, polling buckets, scheduler heap, derived caches, and diagnostic counters are deliberately transient. The TileEntity generation preserves lifetime identity across saves. Scheduled operations are not serialized in Phase 0: a migrated machine must persist authoritative operation start/duration/due fields in its own NBT and reconstruct its typed schedule when it binds. This avoids two competing persistent copies of operation state.
+
+### Binding and destruction lifecycle
+
+`TileEntityLoadedBase.validate()` binds an opted-in controller. `onChunkUnload()` unbinds it but retains the logical entry, dirty causes, and scheduled ownership. `invalidate()` removes the logical machine, cancels its transitions, and clears the binding. World unload clears everything without retaining TileEntity references.
+
+The electric furnace switches between on/off block instances while deliberately preserving the same TileEntity. That path now brackets the block swap as a retained transition: its incidental `invalidate()` unbinds rather than destroys, and the same instance rebinds after `validate()`. A real block break still uses normal destruction and a newly placed furnace receives a new generation.
+
+The lifecycle inspection also found `TileEntityMachineAssembler`, `TileEntityHeatBoiler`, `TileEntityHeatBoilerIndustrial`, and `TileEntityPWRController` overriding `onChunkUnload()` only to stop audio without calling `super`. They now call the shared lifecycle first. Other classes that do not derive from `TileEntityLoadedBase`, and any optional/external subclass that overrides `validate()`, `invalidate()`, or `onChunkUnload()` without chaining to `super`, remain outside these guarantees until individually migrated.
+
+### Dirty reevaluation
+
+`MachineDirtyCause` defines infrastructure causes for inventory, fluid, energy, configuration, redstone, topology, recipe, environment, and lifecycle changes. Causes are bitwise-coalesced per logical machine. `MachineRuntime` uses two reusable deques: at pass start the public queue is swapped into execution storage, leaving an empty public queue. The entry is marked not queued and its accumulated causes are cleared immediately before its callback. A callback that dirties itself therefore enters the public queue for the next world-tick pass; it cannot recurse in the current pass.
+
+Dirty state survives a chunk unload and is queued when the controller rebinds. Unloaded machines are never evaluated. The standard `TileEntityMachineBase` inventory paths now issue inventory + recipe invalidation in addition to their separate network-sync and PowerNet behavior. Direct `slots[]` writes still bypass this hook and require per-machine coverage before migration. Common configuration, topology, redstone, energy, and fluid hook methods are prepared, but the shared `FluidTank` is intentionally not given an owner callback in this pass because it is widely constructed and directly mutated without reliable ownership information.
+
+Machine simulation dirtiness remains independent of `markNetworkDirty()`. PowerNet remains an independent authority and scheduler; the electric furnace's `setPower()` now exposes the future machine-energy invalidation seam while retaining its existing PowerNet invalidation. Since the furnace is still `LEGACY`, this has no runtime scheduling effect today.
+
+### Scheduled transitions
+
+The scheduler accepts primitive `taskType` and `taskSlot` identifiers plus an absolute world due tick. Ownership is `(MachineKey, taskType, taskSlot)`: scheduling the same pair replaces the prior transition, while different slots allow independent assembler or chemplant lanes. Cancellation, replacement, machine removal, and world unload invalidate ownership without arbitrary lambdas or captured TileEntity references.
+
+When due, a transition resolves the logical entry by full generation-bearing key, verifies its compatibility type and active ownership record, then calls the currently loaded controller. If the controller is unloaded at the boundary, the transition remains owned but dormant and is requeued on a later bind. Phase 0 does not simulate unloaded machines. Removed, replaced, cancelled, mismatched, or stale work cannot call a replacement TileEntity.
+
+### Coarse polling and execution classification
+
+Execution capabilities are composable: `EVENT_DRIVEN`, `SCHEDULED`, `COARSE_5`, `COARSE_20`, `COARSE_100`, and `REALTIME`. `LEGACY` is zero and remains the default. A future machine can combine event-driven eligibility, scheduled completion, and one coarse compatibility cadence without being forced into a single category.
+
+Coarse polling uses three world-owned cadence buckets rather than one timer per TileEntity. Each logical key is deterministically spread across the cadence's slots, preventing all machines from waking on the same tick. Only a valid loaded binding is called. Coarse polling is reserved for environment or compatibility checks that lack mutation events; ordinary recipe and inventory logic belongs in dirty reevaluation.
+
+`REALTIME` is an explicit classification only. It does not suppress `updateEntity()` and therefore cannot accidentally turn off existing simulation.
+
+### Server-thread ordering
+
+The existing order is preserved conservatively:
+
+1. At server-tick start, `Nodespace.updateNodespace()` performs bounded conductor topology reconciliation and dirty PowerNet/fluid work.
+2. Vanilla/Forge world ticking invokes legacy and realtime TileEntity `updateEntity()` methods. Existing machines also perform their current packet synchronization there.
+3. At `WorldTickEvent` end, after the existing HBM end-phase world work, `MachineRuntime` processes due scheduled transitions, then the swapped dirty queue, then the 5/20/100-tick coarse bucket for that world tick.
+
+Scheduled callbacks may dirty a machine and have that dirtiness handled in the following dirty pass. Dirtiness raised while the dirty pass itself is running is deferred to the next world tick. Coarse callbacks run last, so their dirtiness is also deferred. This ordering is explicit rather than an incidental server-tick side effect. No currently shipped machine behavior is reordered because all machines remain `LEGACY`.
+
+### Diagnostics
+
+`1.46_enableMachineRuntimeDiagnostics` is disabled by default. When disabled, event methods perform only the configuration branch and allocate no report strings, timers, or diagnostic event objects. `/ntmmachinestats` reports the sender's server world and includes logical/loaded/unloaded entries, opt-in strategy counts, dirty signals/processing/depth, scheduled active/created/executed/cancelled/stale counts, lifecycle counts, and coarse poll executions. Legacy machine counts are not collected because doing so would require registering or scanning every unmigrated TileEntity.
+
+### Migration probes and remaining hazards
+
+The electric furnace is prepared for Phase 1 through common inventory invalidation, an explicit energy invalidation seam, persistent logical identity support, typed scheduling APIs, and retained identity across its on/off block swap. It has not been opted in and its progress, cooldown, charging, pollution, connection polling, block-state changes, power use, and network synchronization are unchanged.
+
+The next electric-furnace pass should persist authoritative operation start/duration/due fields; override its strategy with event-driven + scheduled and only the coarse cadence genuinely needed for compatibility; reconstruct schedules from NBT on bind; reevaluate eligibility on input/output/upgrade and changed energy availability; schedule completion/cooldown boundaries; preserve pollution and block-state timing deliberately; and remove its per-tick progress advancement only after equivalent server behavior is verified.
+
+Assembler and chemplant can use `taskSlot` for independent lane transitions, but their direct slot and tank writes must be audited before opting in. Their cached recipe/lane data stays TileEntity-owned for now. The shared legacy `FluidTank` lacks a universal mutation callback, many machines write `slots[]` directly, redstone and neighbor changes are not centralized, external subclasses can bypass base lifecycle methods, and large multiblocks have family-specific proxy/controller rules. Those are known migration hazards, not reasons to broaden Phase 0 into a mass conversion.
+
+No machine gameplay loop, rendering state, PowerNet ownership, fluid-network ownership, external API, or legacy fallback was migrated or removed in this phase.
+
+Source inspection covered the shared TileEntity bases, world lifecycle and tick handlers, saved data, block-state replacement, proxy/controller multiblocks, inventory and fluid mutation surfaces, MK2 endpoint lifecycle, diagnostics, and lifecycle overrides. Targeted offline `compileJava` completed successfully. Minecraft was not launched; dedicated-server world/chunk lifecycle, save/reload generation continuity, rapid replacement, scheduler cancellation/rebind, multiblock delegation, and diagnostics still require runtime validation.
+
 ## Validation status
 
 - Source paths and mutation/lifecycle call sites were inspected against the active checkout.
@@ -472,3 +550,32 @@ The broader concrete-type audit separated the remaining references as follows:
 No model is reparsed, copied into a legacy graph, or attached to a block or TileEntity by this correction. Stable handle replacement and resource-reload visibility are preserved because the affected renderers retain the same prepared handles supplied by `ResourceManager`.
 
 Targeted offline `compileJava` completed successfully after the consumer correction. Minecraft was not launched; the decorative computer and three rotated charge variants still require world, inventory, metadata-orientation, override-texture, and resource-reload confirmation in game.
+
+## 2026-09-25 11:36 — Celestial, worldgen, ticket, and rocket performance pass
+
+### Celestial rendering
+
+`WorldProviderCelestial` now owns the body-sky metric snapshot and visible-sun fraction for a world tick, partial tick, and body. `SkyProviderCelestial` reuses that snapshot for body placement and star visibility. Tidal-lock longitude still evaluates its own observation time, but its angle now walks only the two bodies' parent chains instead of rebuilding the entire solar system. Server moon-phase calculations use that independent small path too.
+
+`WorldProviderOrbit` similarly owns one orbital metric snapshot per tick, partial tick, station state, orbit/target, and transfer progress. Its angle, solar brightness/eclipsing geometry, and `SkyProviderOrbit` body/transfer rendering all reuse those positions. The cache lives on each provider and is replaced when its frame inputs change; no static cache retains a world. RTM's existing sun-power and eclipse rules, orbital-angle convention, partial-tick interpolation, tidal-lock offset, and star-visibility calculation remain in place. These are source-level cost reductions; visual behavior still needs in-game comparison across day/night, eclipse, tidal locking, and station transfers.
+
+### Structure and world generation
+
+- The active bundled Martian NBT base now loads its palette and blocks once and is generated through a registered `MapGenStructure` start/component. Its component stores the template identifier and chosen height, survives save/reload through `MapGenStructureIO`, and writes only the X/Z slice intersecting the current population bounds. The original origin-only Martian world-type rule remains; the old whole-template population call was removed. Structure resources now load from the bundled classpath so this path does not invoke the client resource manager on a dedicated server. Existing worlds created before this migration may need an in-game check near the origin because legacy direct placement had no persisted mapgen start.
+- Eve gas and Laythe oil bubbles now run during chunk-primer generation. Their target/replacement blocks, celestial ore metadata, configured one-in-N frequency, Y range, and integer radius range of 10–16 are retained. Their exact seeded positions change because primer-time map generation uses a per-region random stream. The generator computes each source bubble's intersection with the current chunk and never reads or writes neighboring live chunks. Duna's oil bubble is commented out in RTM and remains disabled; there is no active celestial brine-bubble call site in this branch.
+- `NTMWorldGenerator` now passes `null` to the `MapGenStructure` primer parameter instead of allocating an unused 65,536-element `Block[]`. The remaining two 65,536-element block arrays are real chunk storage in `ChunkProviderCelestial` and `ChunkProviderOrbit`.
+- Flower placement already uses the safe population `+8` convention, while the HbmWorldGen meteor and spaceship population calls are disabled. Existing depth-deposit and OreLayer3D fixes were left intact.
+
+The overworld oil bubble, oil-sand bubble, oil spot, and several legacy schematic/dungeon generators still perform direct world access during population. The overworld uses vanilla's chunk provider, so the celestial primer hook cannot host them; `OilSandBubble` also uses an independent fuzz random stream and `OilSpot` changes surface plants/blocks. Moving those paths safely needs deterministic per-chunk slicing plus their existing biome, loot, and placement semantics. Eve's large electric volcano remains a direct cross-chunk generator as well. This pass did not claim those remaining cascades are eliminated.
+
+### Chunk tickets and rideable rockets
+
+Entity ticket owners now release tickets on permanent death/cleanup and clear local references. Their moving forced-chunk windows still unforce individual chunks without releasing the live ticket. Restored tickets replace redundant constructor-requested tickets; the Forge callback now processes all returned tickets and releases ones with no valid owner. The shared transporter ticket is released when its last saved forced-chunk owner is removed. Repeated cleanup is harmless. Save/reload, entity transfer, and forced-chunk restoration still require dedicated-server validation.
+
+Rideable rockets bypass the inherited whole-bounding-volume water/lava scans. A local block check now recognizes liquid materials for landing/tipping, while lava still ignites the rocket in any state and marks a tipping rocket to explode. The capsule's otherwise unnecessary entity ticket is released once its rocket type is known, including after restored-ticket adoption. In-game checks remain for water, lava, modded liquids, and capsule/missile variants.
+
+### Trait-map review
+
+`CelestialBody.traits` remains a `HashMap`. Per-body default maps are small; `getTrait`/`hasTrait` are key lookups, while live client/server overrides normally come from `SolarSystemWorldSavedData`'s own `HashMap` maps. Clone/copy paths also construct hash maps, and NBT serialization iterates trait registries rather than depending on default-trait insertion order. A `LinkedHashMap` change has no supported performance or ordering benefit here and would add entry overhead.
+
+Targeted offline `compileJava` completed successfully. Minecraft was not launched, and no frame-time, heap, worldgen, or ticket-count measurements were performed.

@@ -8,6 +8,7 @@ import com.hbm.dim.trait.CBT_Atmosphere;
 import com.hbm.handler.atmosphere.AtmosphereBlob;
 import com.hbm.handler.atmosphere.ChunkAtmosphereManager;
 import com.hbm.inventory.fluid.Fluids;
+import com.hbm.machine.MachineDirtyCause;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxGaugePacket;
 import com.hbm.packet.toclient.BufPacket;
@@ -97,6 +98,7 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 	public void setCustomName(String name) {
 		this.customName = name;
 		this.markNetworkDirty();
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 
 	@Override
@@ -164,7 +166,28 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 	/** Called by the standard inventory mutation paths. Subclasses can invalidate local caches here. */
 	protected void onInventorySlotChanged(int slot) {
 		this.markNetworkDirty();
+		this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
 		if(this instanceof IEnergyHandlerMK2) ((IEnergyHandlerMK2) this).markPowerNetDirty();
+	}
+
+	/** Future common hook for tank owners once a mutation path has reliable coverage. */
+	protected void onFluidStorageChanged() {
+		this.markMachineFluidDirty();
+	}
+
+	/** Future common hook for block/configuration mutations. */
+	protected void onMachineConfigurationChanged() {
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
+	}
+
+	/** Future common hook for neighbor/controller topology mutations. */
+	protected void onMachineTopologyChanged() {
+		this.markMachineDirty(MachineDirtyCause.TOPOLOGY);
+	}
+
+	/** Future common hook for redstone state changes. */
+	protected void onMachineRedstoneChanged() {
+		this.markMachineDirty(MachineDirtyCause.REDSTONE);
 	}
 
 	/** Marks client-visible machine state for the opt-in allocation-free sync path. */

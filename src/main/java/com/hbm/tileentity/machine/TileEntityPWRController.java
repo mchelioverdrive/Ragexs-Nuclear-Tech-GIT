@@ -349,6 +349,7 @@ public class TileEntityPWRController extends TileEntityMachineBase implements IG
 
 	@Override
 	public void onChunkUnload() {
+		super.onChunkUnload();
 
 		if(audio != null) {
 			audio.stopSound();

@@ -1,6 +1,7 @@
 package com.hbm.lib;
 
 import com.hbm.world.gen.MapGenNTMFeatures;
+import com.hbm.world.gen.NBTStructure;
 import com.hbm.world.gen.NTMWorldGenerator;
 import com.hbm.world.gen.component.BunkerComponents;
 import com.hbm.world.gen.component.BunkerComponents.BunkerStart;
@@ -28,6 +29,7 @@ public class HbmWorld {
 		//MapGenStructureIO.func_143031_a(StructureComponentTest.class, "HFR_COMPONENT");
 		MapGenStructureIO.registerStructure(MapGenNTMFeatures.Start.class, "NTMFeatures");
 		MapGenStructureIO.registerStructure(BunkerStart.class, "NTMBunker");
+		NBTStructure.register();
 		registerNTMFeatures();
 		
 		registerWorldGen(new HbmWorldGen(), 1);

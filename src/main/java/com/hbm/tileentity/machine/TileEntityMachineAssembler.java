@@ -189,6 +189,7 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 
 	@Override
 	public void onChunkUnload() {
+		super.onChunkUnload();
 
 		if(audio != null) {
 			audio.stopSound();
