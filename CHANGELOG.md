@@ -228,3 +228,15 @@ INCOMPLETE:
 - Removed an unused full-chunk worldgen allocation and kept structure templates parsed for reuse.
 - Released retired chunkloading tickets for moving entities and transporters, including redundant tickets after world reload.
 - Reduced rideable rocket update cost by replacing broad liquid scans with a local landing check while retaining lava hazards.
+
+2026-09-25 16:05 — Document proposed RealSim Production progression
+
+- Added a future-design proposal for capability-based fabrication progression using RTM's current player-facing machine names and existing process equipment.
+- Documented existing-machine reuse, tooling and intermediate-part criteria, recipe migration rules, bootstrap and compatibility constraints, performance boundaries, phased implementation, and candidate first changes.
+- Explicitly kept the proposal separate from implemented behavior; no recipes, machines, configuration formats, or progression rules changed.
+
+2026-09-25 16:37 — Finish chunk-safe large world generation
+
+- Moved overworld oil, oil sand, bedrock oil, radioactive craters, Moon ice pockets, and Eve volcanoes into chunk-owned generation to reduce neighboring-chunk generation and exploration stalls.
+- Large legacy buildings, vaults, tombs, and jungle dungeons now generate in saved, chunk-sized portions with consistent seeded layouts and loot.
+- Kept small geysers, spikes, and bedrock-ore clusters within safe generation boundaries; already-generated chunks remain unchanged.

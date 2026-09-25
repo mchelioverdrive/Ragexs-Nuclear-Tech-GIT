@@ -9,6 +9,9 @@ import com.hbm.world.gen.component.CivilianFeatures;
 import com.hbm.world.gen.component.OfficeFeatures;
 import com.hbm.world.gen.component.RuinFeatures;
 import com.hbm.world.gen.component.SiloComponent;
+import com.hbm.world.gen.terrain.OverworldLargeTerrain;
+import com.hbm.world.gen.terrain.BedrockOilSurface;
+import com.hbm.world.gen.structure.LegacyStructureGenerator;
 
 import cpw.mods.fml.common.IWorldGenerator;
 import cpw.mods.fml.common.registry.GameRegistry;
@@ -30,9 +33,13 @@ public class HbmWorld {
 		MapGenStructureIO.registerStructure(MapGenNTMFeatures.Start.class, "NTMFeatures");
 		MapGenStructureIO.registerStructure(BunkerStart.class, "NTMBunker");
 		NBTStructure.register();
+		LegacyStructureGenerator.register();
 		registerNTMFeatures();
 		
 		registerWorldGen(new HbmWorldGen(), 1);
+		registerWorldGen(new LegacyStructureGenerator(), 1);
+		registerWorldGen(new BedrockOilSurface(), 1);
+		MinecraftForge.EVENT_BUS.register(new OverworldLargeTerrain());
 		
 		worldGenerator = new NTMWorldGenerator();
 		registerWorldGen(worldGenerator, 1); //Ideally, move everything over from HbmWorldGen to NTMWorldGenerator

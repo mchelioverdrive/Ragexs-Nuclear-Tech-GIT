@@ -579,3 +579,32 @@ Rideable rockets bypass the inherited whole-bounding-volume water/lava scans. A 
 `CelestialBody.traits` remains a `HashMap`. Per-body default maps are small; `getTrait`/`hasTrait` are key lookups, while live client/server overrides normally come from `SolarSystemWorldSavedData`'s own `HashMap` maps. Clone/copy paths also construct hash maps, and NBT serialization iterates trait registries rather than depending on default-trait insertion order. A `LinkedHashMap` change has no supported performance or ordering benefit here and would add entry overhead.
 
 Targeted offline `compileJava` completed successfully. Minecraft was not launched, and no frame-time, heap, worldgen, or ticket-count measurements were performed.
+
+## 2026-09-25 — Follow-up world-generation migration
+
+### Large terrain
+
+| Feature | Previous path | Current path |
+| --- | --- | --- |
+| Ordinary overworld oil and desert oil sand | `OilBubble` / `OilSandBubble` live-world population writes | `MapGenBubble` region selection, writing only the target chunk's block storage before population |
+| Sellafield desert craters | direct `Sellafield.generate` | `MapGenSellafield` deterministic radial bands and crater depth in the target chunk's storage |
+| Bedrock oil and porous halo | direct radius-four world reads/writes plus `WorldGenMinable` | `MapGenBedrockOil` target-chunk storage; the eight-step porous ellipsoids are clipped to the target chunk |
+| Bedrock-oil surface damage | `OilSpot.generateOilSpot` with shared `world.rand` and unbounded cross-chunk samples | `BedrockOilSurface` reconstructs source-seeded points and applies each only in its owning safe population slice |
+| Eve electric volcano | direct `WorldGenElectricVolcano` with up-to-28-block radius | `MapGenEveVolcano` shapes the cone in each target chunk primer |
+| Moon ice pockets | direct `UndergroundLakeGenerator` world reads/writes | `MapGenUndergroundLake` operates on the Moon chunk primer after caves/craters |
+
+The Duna call to `UndergroundLakeGenerator` was removed because that generator replaced only Moon rock and therefore could not create a Duna lake. Large terrain randomness is now derived from world/source-chunk seeds, including oil-sand fuzz, crater edge noise, and ice-pocket composition. Worldgen oil-spot Gaussian offsets are capped at 32 blocks (more than six standard deviations) to make the finite four-chunk source search exact; runtime barrel/fracking spots retain their old unbounded behavior. The chunk-load hook skips already-populated saved chunks; it retains the old bedrock-oil opportunity in celestial dimensions while ordinary stone-targeted oil and desert-specific terrain remain overworld/custom-dimension paths. The Moon and Eve features use their providers' existing chunk-primer hooks. Surface-height-relative oil sand, Sellafield, and Eve volcanoes may differ in exact shape or placement from old direct generation. `MapGenSellafield` also avoids digging its own already-written crater columns if an unpopulated chunk is loaded again.
+
+### Structures
+
+`NBTStructure.Definition` registers an NBT resource with a persistent ID, dimension, rarity, biome and custom spawn rules, center offsets, and fixed or surface height strategy. One `RegisteredStructureGenerator` handles the start, persistence, and population-slice placement. The existing Martian base uses this registration; its `RTMMartianBase`, `RTMNBTStructure`, and `RTMNBTComponent` serialization IDs are unchanged. The bundled format records blocks and TileEntity NBT, not entities or rotation records, so those remain outside the current template contract.
+
+The eight active schematic-to-Java builders (`Radio01`, `Antenna`, `DesertAtom001`, `LibraryDungeon`, `Relay`, `Satellite`, `Factory`, and `Barrel`), plus `ArcticVault`, `AncientTomb`, and the three-level jungle cellular dungeon, no longer run against the live world from `HbmWorldGen`. One `RTMLegacyStructures` map generator selects starts with independent per-kind rarity and biome rules; its persisted component stores the kind, anchor, seed, and chosen terrain height. The builders run once against an isolated recording world, preserving block metadata, randomized block choices, TileEntity NBT, inventories, and loot. Their output is partitioned by population slice and only that slice is copied into the live world. A soft reference keeps the recorded layout available during neighboring chunk generation without retaining it permanently. If reclaimed, the saved seed and height reconstruct it identically. Jungle layout state is fresh per level/start, and its formerly deferred room jobs execute into the recording destination before slicing; the normal runtime `TimedGenerator` behavior is unchanged. Reproducible structure seeds replace the shared `world.rand` and unseeded concrete selections.
+
+These builders still use a representative sampled ground height in the recording world, not an exact unloaded-neighbor terrain simulation. The tomb's distant spikes therefore use that recorded height rather than querying neighboring chunks. This avoids generation-order-dependent chunk loads, but placement on strongly uneven terrain should be checked in-game. Structures selected in old already-populated chunks are not retroactively rebuilt; new mapgen starts are saved under a separate new ID.
+
+### Retained direct generation and inactive code
+
+The 5×5 and 9×9 geysers, Eve's small spike, and bedrock-ore clusters remain direct decorators with their centers constrained so their complete footprints stay inside the `+8` population region. Celestial bedrock-ore center selection received the same adjustment. Vanilla-style small ore veins, flowers, plants, one-block loot/machine markers, and small local decoration retain their existing paths. `NTMWorldGenerator` already owns the independent silo component; the old `Silo` call, spaceship/vertibird variants, `Radio02`, meteor calls, and Duna oil call are disabled and were not added as duplicate generators. `OilSpot` remains callable by runtime barrels/fracking; those effects are events/gameplay, not normal world generation. No active normal-worldgen call remains to the old full oil/sand bubble builders or the migrated large structure builders.
+
+Targeted offline `compileJava` succeeded after the source changes. Minecraft was not launched. In-game checks remain necessary for uneven-terrain placement, saved-start reload, TileEntity/loot behavior, and generation-order visual parity.

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import net.minecraft.world.World;
+import com.hbm.world.gen.structure.RecordingStructureWorld;
 
 public class TimedGenerator {
 	
@@ -31,6 +32,10 @@ public class TimedGenerator {
 	}
 	
 	public static void addOp(World world, ITimedJob job) {
+		if(world instanceof RecordingStructureWorld) {
+			((RecordingStructureWorld)world).queue(job);
+			return;
+		}
 		
 		ArrayList<ITimedJob> list = operations.get(world.provider.dimensionId);
 		

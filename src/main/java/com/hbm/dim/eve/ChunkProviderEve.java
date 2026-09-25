@@ -5,6 +5,7 @@ import com.hbm.config.WorldConfig;
 import com.hbm.dim.CelestialBody;
 import com.hbm.dim.ChunkProviderCelestial;
 import com.hbm.world.gen.terrain.MapGenBubble;
+import com.hbm.dim.eve.GenLayerEve.MapGenEveVolcano;
 
 import net.minecraft.init.Blocks;
 import net.minecraft.world.World;
@@ -13,6 +14,7 @@ import net.minecraft.world.World;
 public class ChunkProviderEve extends ChunkProviderCelestial {
 
 	private final MapGenBubble gas = new MapGenBubble(WorldConfig.eveGasSpawn);
+	private final MapGenEveVolcano volcano = new MapGenEveVolcano();
 
 	public ChunkProviderEve(World world, long seed, boolean hasMapFeatures) {
 		super(world, seed, hasMapFeatures);
@@ -30,6 +32,7 @@ public class ChunkProviderEve extends ChunkProviderCelestial {
 	public BlockMetaBuffer getChunkPrimer(int x, int z) {
 		BlockMetaBuffer buffer = super.getChunkPrimer(x, z);
 		gas.generate(this, worldObj, x, z, buffer.blocks, buffer.metas);
+		volcano.generate(this, worldObj, x, z, buffer.blocks, buffer.metas);
 
 		// how many times do I gotta say BEEEEG
 		return buffer;

@@ -9,10 +9,10 @@ import com.hbm.config.SpaceConfig;
 import com.hbm.config.WorldConfig;
 import com.hbm.dim.CelestialBody;
 import com.hbm.dim.WorldTypeTeleport;
-import com.hbm.dim.moon.UndergroundLakeGenerator;
 import com.hbm.lib.RefStrings;
-import com.hbm.world.gen.NBTStructure;
-import com.hbm.world.gen.NBTStructure.MartianStructureGenerator;
+import com.hbm.world.gen.NBTStructure.Definition;
+import com.hbm.world.gen.NBTStructure.HeightStrategy;
+import com.hbm.world.gen.NBTStructure.RegisteredStructureGenerator;
 import com.hbm.world.generator.DungeonToolbox;
 
 import cpw.mods.fml.common.IWorldGenerator;
@@ -22,8 +22,7 @@ import net.minecraft.util.ResourceLocation;
 
 public class WorldGeneratorDuna implements IWorldGenerator {
 
-	private final UndergroundLakeGenerator lakeGenerator = new UndergroundLakeGenerator();
-	private MartianStructureGenerator martianBase;
+	private RegisteredStructureGenerator martianBase;
 	private WeakReference<World> martianWorld = new WeakReference<World>(null);
 
 	@Override
@@ -31,7 +30,10 @@ public class WorldGeneratorDuna implements IWorldGenerator {
 		if(world.provider.dimensionId == SpaceConfig.dunaDimension) {
 			if(world.getWorldInfo().getTerrainType() == WorldTypeTeleport.martian) {
 				if(martianBase == null || martianWorld.get() != world) {
-					martianBase = new MartianStructureGenerator(NBTStructure.getOrLoad(new ResourceLocation(RefStrings.MODID, "structures/martian-base.nbt")));
+					Definition definition = new Definition("RTMMartianBase", new ResourceLocation(RefStrings.MODID, "structures/martian-base.nbt"),
+						SpaceConfig.dunaDimension, 1, 0, 0, HeightStrategy.AVERAGE_SURFACE, 0, null,
+						(w, x, z) -> x == 0 && z == 0 && w.getWorldInfo().getTerrainType() == WorldTypeTeleport.martian);
+					martianBase = new RegisteredStructureGenerator(definition);
 					martianWorld = new WeakReference<World>(world);
 				}
 				martianBase.generateStructures(world, random, chunkProvider, chunkX, chunkZ);
@@ -72,10 +74,6 @@ public class WorldGeneratorDuna implements IWorldGenerator {
 
 		//Hematite
 		DungeonToolbox.generateOre(world, rand, i, j, 16, 12, 25, 30, ModBlocks.stone_resource, BlockEnums.EnumStoneType.HEMATITE.ordinal(), ModBlocks.duna_rock);
-
-		if (rand.nextInt(10) < 2) { // Adjust frequency here
-			lakeGenerator.generate(world, rand, i, j);
-		}
 
 		// Basalt rich in minerals, but only in basaltic caves!
 		//THERES NO FUCKING FLUORITE OR ASBESTOS ON MARS YOU OAF

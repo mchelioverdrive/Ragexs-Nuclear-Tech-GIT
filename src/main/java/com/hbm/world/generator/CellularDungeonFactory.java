@@ -20,7 +20,12 @@ public class CellularDungeonFactory {
 		meteor.rooms.add(new TestDungeonRoom7(meteor));
 		meteor.rooms.add(new TestDungeonRoom8(meteor));
 		
-		jungle = new JungleDungeon(5, 5, 25, 25, 700, 6);
+		jungle = createJungle();
+	}
+
+	/** A dungeon layout belongs to one structure start, never to a shared generator. */
+	public static JungleDungeon createJungle() {
+		JungleDungeon jungle = new JungleDungeon(5, 5, 25, 25, 700, 6);
 		for(int i = 0; i < 10; i++) jungle.rooms.add(new JungleDungeonRoom(jungle));
 		jungle.rooms.add(new JungleDungeonRoomArrow(jungle));
 		jungle.rooms.add(new JungleDungeonRoomArrowFire(jungle));
@@ -37,6 +42,7 @@ public class CellularDungeonFactory {
 		jungle.rooms.add(new JungleDungeonRoomWeakness(jungle));
 		jungle.rooms.add(new JungleDungeonRoomWeb(jungle));
 		jungle.rooms.add(new JungleDungeonRoomZombie(jungle));
+		return jungle;
 	}
 
 }

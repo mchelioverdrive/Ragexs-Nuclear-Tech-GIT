@@ -215,6 +215,7 @@ For an IDE workspace:
 - [Configuration Guide](docs/configuration.md)
 - [Command Reference](docs/commands.md)
 - [Server Administration Guide](docs/server-admin.md)
+- [RealSim Production Future Design Proposal](docs/REALSIM_PRODUCTION.md)
 - [Documentation Audit](docs/documentation-audit.md)
 
 ## Contributing

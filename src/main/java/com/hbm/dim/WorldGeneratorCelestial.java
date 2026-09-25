@@ -127,8 +127,8 @@ public class WorldGeneratorCelestial implements IWorldGenerator {
             WeightedRandomGeneric<BedrockOreDefinition> item = (WeightedRandomGeneric<BedrockOreDefinition>) WeightedRandom.getRandomItem(rand, list);
             BedrockOreDefinition def = item.get();
 
-            int randPosX = x + rand.nextInt(2) + 8;
-            int randPosZ = z + rand.nextInt(2) + 8;
+            int randPosX = x + rand.nextInt(8) + 12;
+            int randPosZ = z + rand.nextInt(8) + 12;
             BedrockOre.generate(world, randPosX, randPosZ, def.stack, def.acid, def.color, def.tier, ModBlocks.stone_depth, planetStone);
         }
     }

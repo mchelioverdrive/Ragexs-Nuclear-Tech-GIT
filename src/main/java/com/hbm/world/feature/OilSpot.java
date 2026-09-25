@@ -1,5 +1,7 @@
 package com.hbm.world.feature;
 
+import java.util.Random;
+
 import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.generic.BlockDeadPlant.EnumDeadPlantType;
 import com.hbm.blocks.generic.BlockNTMFlower.EnumFlowerType;
@@ -23,6 +25,12 @@ public class OilSpot {
 		for(int i = 0; i < count; i++) {
 			int rX = x + (int)(world.rand.nextGaussian() * width);
 			int rZ = z + (int)(world.rand.nextGaussian() * width);
+			generatePoint(world, world.rand, rX, rZ);
+		}
+	}
+
+	/** One surface point, also used by the chunk-sliced world-generation path. */
+	public static void generatePoint(World world, Random random, int rX, int rZ) {
 			int rY = world.getHeightValue(rX, rZ);
 
 			for(int y = rY; y > rY - 4; y--) {
@@ -37,7 +45,7 @@ public class OilSpot {
 
 				if(below.isNormalCube() && ground != ModBlocks.plant_dead) {
 					if(ground instanceof BlockTallGrass) {
-						if(world.rand.nextInt(10) == 0) {
+						if(random.nextInt(10) == 0) {
 							if(world.getBlockMetadata(rX, y + 1, rZ) == 2) {
 								world.setBlock(rX, y, rZ, ModBlocks.plant_dead, EnumDeadPlantType.FERN.ordinal(), 3);
 							} else {
@@ -58,7 +66,7 @@ public class OilSpot {
 				}
 
 				if(ground == Blocks.grass || ground == Blocks.dirt) {
-					world.setBlock(rX, y, rZ, world.rand.nextInt(10) == 0 ? ModBlocks.dirt_oily : ModBlocks.dirt_dead);
+					world.setBlock(rX, y, rZ, random.nextInt(10) == 0 ? ModBlocks.dirt_oily : ModBlocks.dirt_dead);
 
 					//if(addWillows && world.rand.nextInt(50) == 0) {
 					//	if(ModBlocks.plant_flower.canPlaceBlockAt(world, rX, y + 1, rZ)) {
@@ -85,6 +93,5 @@ public class OilSpot {
 					break;
 				}
 			}
-		}
 	}
 }

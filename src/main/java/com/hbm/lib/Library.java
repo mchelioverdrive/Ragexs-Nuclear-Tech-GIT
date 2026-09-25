@@ -314,7 +314,11 @@ public class Library {
 	}
 
 	public static Block getRandomConcrete() {
-		int i = rand.nextInt(20);
+		return getRandomConcrete(rand);
+	}
+
+	public static Block getRandomConcrete(Random random) {
+		int i = random.nextInt(20);
 		if(i <= 1) return ModBlocks.brick_concrete_broken;
 		if(i <= 4) return ModBlocks.brick_concrete_cracked;
 		if(i <= 10) return ModBlocks.brick_concrete_mossy;

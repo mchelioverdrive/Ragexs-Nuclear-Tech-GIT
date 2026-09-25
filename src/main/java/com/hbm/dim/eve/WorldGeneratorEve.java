@@ -6,7 +6,6 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.bomb.BlockVolcano;
 import com.hbm.config.SpaceConfig;
 import com.hbm.dim.CelestialBody;
-import com.hbm.dim.eve.GenLayerEve.WorldGenElectricVolcano;
 import com.hbm.dim.eve.GenLayerEve.WorldGenEveSpike;
 import com.hbm.dim.eve.biome.BiomeGenBaseEve;
 import com.hbm.world.generator.DungeonToolbox;
@@ -20,7 +19,6 @@ import net.minecraft.world.chunk.IChunkProvider;
 
 public class WorldGeneratorEve implements IWorldGenerator {
 
-	WorldGenElectricVolcano volcano = new WorldGenElectricVolcano(30, 22, ModBlocks.eve_silt, ModBlocks.eve_rock);
 
 	@Override
 	public void generate(Random random, int chunkX, int chunkZ, World world, IChunkProvider chunkGenerator, IChunkProvider chunkProvider) {
@@ -53,18 +51,13 @@ public class WorldGeneratorEve implements IWorldGenerator {
 		DungeonToolbox.generateOre(world, rand, i, j, 12,  8, 1, 33, ModBlocks.ore_niobium, meta, ModBlocks.eve_rock);
 		DungeonToolbox.generateOre(world, rand, i, j, 8,  4, 5, 48, ModBlocks.ore_iodine, meta, ModBlocks.eve_rock);
 
-		int x = i + rand.nextInt(16) + 8;
-		int z = j + rand.nextInt(16) + 8;
+		int x = i + rand.nextInt(8) + 12;
+		int z = j + rand.nextInt(8) + 12;
 		int y = world.getHeightValue(x, z);
 
 		BiomeGenBase biome = world.getBiomeGenForCoords(x, z);
 		if(biome == BiomeGenBaseEve.eveSeismicPlains) {
 			new WorldGenEveSpike().generate(world, rand, x, y, z);
-		}
-
-		if(rand.nextInt(100) == 0) {
-			volcano.generate(world, rand, x, y, z);
-
 		}
 
 

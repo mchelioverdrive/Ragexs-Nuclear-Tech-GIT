@@ -15,6 +15,7 @@ public class ChunkProviderMoon extends ChunkProviderCelestial {
 
 	private MapGenCrater smallCrater = new MapGenCrater(6);
 	private MapGenCrater largeCrater = new MapGenCrater(64);
+	private final MapGenUndergroundLake icePockets = new MapGenUndergroundLake();
 
 	public ChunkProviderMoon(World world, long seed, boolean hasMapFeatures) {
 		super(world, seed, hasMapFeatures);
@@ -41,6 +42,7 @@ public class ChunkProviderMoon extends ChunkProviderCelestial {
 		rgen.func_151539_a(this, worldObj, x, z, buffer.blocks);
 		smallCrater.func_151539_a(this, worldObj, x, z, buffer.blocks);
 		largeCrater.func_151539_a(this, worldObj, x, z, buffer.blocks);
+		icePockets.generate(this, worldObj, x, z, buffer.blocks, buffer.metas);
 
 		return buffer;
 	}

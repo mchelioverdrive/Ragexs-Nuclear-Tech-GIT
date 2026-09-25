@@ -25,6 +25,7 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
+import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.structure.MapGenStructure;
 import net.minecraft.world.gen.structure.MapGenStructureIO;
@@ -36,6 +37,46 @@ import net.minecraftforge.common.util.Constants.NBT;
 public class NBTStructure {
 
 	private static final Map<String, NBTStructure> STRUCTURES = new HashMap<String, NBTStructure>();
+	private static final Map<String, Definition> DEFINITIONS = new HashMap<String, Definition>();
+
+	public interface SpawnRule {
+		boolean canSpawn(World world, int chunkX, int chunkZ);
+	}
+
+	public enum HeightStrategy {
+		AVERAGE_SURFACE,
+		FIXED
+	}
+
+	/** One registration supplies placement policy; the template holds block and TE data. */
+	public static class Definition {
+		public final String id;
+		public final NBTStructure structure;
+		public final int dimension;
+		public final int rarity;
+		public final int centerOffsetX;
+		public final int centerOffsetZ;
+		public final HeightStrategy heightStrategy;
+		public final int fixedHeight;
+		public final java.util.function.Predicate<BiomeGenBase> biomeRule;
+		public final SpawnRule spawnRule;
+
+		public Definition(String id, ResourceLocation resource, int dimension, int rarity, int centerOffsetX, int centerOffsetZ,
+			HeightStrategy heightStrategy, int fixedHeight, java.util.function.Predicate<BiomeGenBase> biomeRule, SpawnRule spawnRule) {
+			if(rarity < 1) throw new IllegalArgumentException("Structure rarity must be positive");
+			this.id = id;
+			this.structure = getOrLoad(resource);
+			this.dimension = dimension;
+			this.rarity = rarity;
+			this.centerOffsetX = centerOffsetX;
+			this.centerOffsetZ = centerOffsetZ;
+			this.heightStrategy = heightStrategy;
+			this.fixedHeight = fixedHeight;
+			this.biomeRule = biomeRule;
+			this.spawnRule = spawnRule;
+			DEFINITIONS.put(id, this);
+		}
+	}
 
 	private final String structureName;
 	private ThreeInts size;
@@ -335,26 +376,40 @@ public class NBTStructure {
 
 	public static class Component extends StructureComponent {
 		private NBTStructure structure;
+		private Definition definition;
 		private boolean heightSet;
 
 		public Component() { }
 
-		public Component(NBTStructure structure, int centerX, int centerZ) {
-			this.structure = structure;
+		public Component(Definition definition, int centerX, int centerZ) {
+			this.definition = definition;
+			this.structure = definition.structure;
 			int minX = centerX - structure.size.x / 2;
 			int minZ = centerZ - structure.size.z / 2;
 			boundingBox = new StructureBoundingBox(minX, 0, minZ, minX + structure.size.x - 1, 255, minZ + structure.size.z - 1);
+			if(definition.heightStrategy == HeightStrategy.FIXED) setHeight(definition.fixedHeight);
+		}
+
+		private void setHeight(int y) {
+			y = Math.max(1, Math.min(255 - structure.size.y, y));
+			boundingBox.minY = y;
+			boundingBox.maxY = y + structure.size.y - 1;
+			heightSet = true;
 		}
 
 		@Override
 		protected void func_143012_a(NBTTagCompound nbt) {
 			nbt.setString("structure", structure.structureName);
+			if(definition != null) nbt.setString("definition", definition.id);
 			nbt.setBoolean("heightSet", heightSet);
 		}
 
 		@Override
 		protected void func_143011_b(NBTTagCompound nbt) {
-			structure = STRUCTURES.get(nbt.getString("structure"));
+			String name = nbt.getString("structure");
+			structure = STRUCTURES.get(name);
+			if(structure == null) structure = getOrLoad(new ResourceLocation(name));
+			definition = DEFINITIONS.get(nbt.getString("definition"));
 			heightSet = nbt.getBoolean("heightSet");
 		}
 
@@ -370,10 +425,7 @@ public class NBTStructure {
 						samples++;
 					}
 				}
-				int y = Math.max(1, Math.min(255 - structure.size.y, (samples > 0 ? total / samples : 64) - 1));
-				boundingBox.minY = y;
-				boundingBox.maxY = y + structure.size.y - 1;
-				heightSet = true;
+				setHeight((samples > 0 ? total / samples : 64) - 1);
 			}
 			return structure.build(world, boundingBox, box);
 		}
@@ -383,18 +435,18 @@ public class NBTStructure {
 		public Start() { }
 
 		@SuppressWarnings("unchecked")
-		public Start(World world, Random rand, NBTStructure structure, int chunkX, int chunkZ) {
+		public Start(Definition definition, int chunkX, int chunkZ) {
 			super(chunkX, chunkZ);
-			components.add(new Component(structure, 0, 0));
+			components.add(new Component(definition, (chunkX << 4) + definition.centerOffsetX, (chunkZ << 4) + definition.centerOffsetZ));
 			updateBoundingBox();
 		}
 	}
 
-	public static class MartianStructureGenerator extends MapGenStructure {
-		private final NBTStructure structure;
+	public static class RegisteredStructureGenerator extends MapGenStructure {
+		private final Definition definition;
 
-		public MartianStructureGenerator(NBTStructure structure) {
-			this.structure = structure;
+		public RegisteredStructureGenerator(Definition definition) {
+			this.definition = definition;
 		}
 
 		public void generateStructures(World world, Random rand, IChunkProvider chunkProvider, int chunkX, int chunkZ) {
@@ -408,17 +460,20 @@ public class NBTStructure {
 
 		@Override
 		public String func_143025_a() {
-			return "RTMMartianBase";
+			return definition.id;
 		}
 
 		@Override
 		protected boolean canSpawnStructureAtCoords(int chunkX, int chunkZ) {
-			return chunkX == 0 && chunkZ == 0;
+			if(worldObj.provider.dimensionId != definition.dimension) return false;
+			if(definition.biomeRule != null && !definition.biomeRule.test(worldObj.getWorldChunkManager().getBiomeGenAt((chunkX << 4) + 8, (chunkZ << 4) + 8))) return false;
+			return (definition.rarity == 1 || rand.nextInt(definition.rarity) == 0)
+				&& (definition.spawnRule == null || definition.spawnRule.canSpawn(worldObj, chunkX, chunkZ));
 		}
 
 		@Override
 		protected StructureStart getStructureStart(int chunkX, int chunkZ) {
-			return new Start(worldObj, rand, structure, chunkX, chunkZ);
+			return new Start(definition, chunkX, chunkZ);
 		}
 	}
 

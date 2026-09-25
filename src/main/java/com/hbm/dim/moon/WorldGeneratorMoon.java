@@ -15,7 +15,6 @@ import net.minecraft.world.chunk.IChunkProvider;
 
 public class WorldGeneratorMoon implements IWorldGenerator {
 
-	private final UndergroundLakeGenerator lakeGenerator = new UndergroundLakeGenerator();
 
 	@Override
 	public void generate(Random random, int chunkX, int chunkZ, World world, IChunkProvider chunkGenerator, IChunkProvider chunkProvider) {
@@ -37,10 +36,6 @@ public class WorldGeneratorMoon implements IWorldGenerator {
         DungeonToolbox.generateOre(world, rand, i, j, 10, 13, 5, 64, ModBlocks.ore_quartz, meta, ModBlocks.moon_rock);
 
         DungeonToolbox.generateOre(world, rand, i, j, 1, 12, 8, 32, ModBlocks.ore_shale, meta, ModBlocks.moon_rock);
-
-		if (rand.nextInt(10) < 2) { // Adjust frequency here
-			lakeGenerator.generate(world, rand, i, j);
-		}
 
 	}
 }
