@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.inventory.FluidStack;
 import com.hbm.inventory.container.ContainerRadiolysis;
 import com.hbm.inventory.fluid.FluidType;
@@ -35,7 +36,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineRadiolysis extends TileEntityMachineBase implements IEnergyProviderMK2, IFluidStandardTransceiver, IGUIProvider, IInfoProviderEC, IFluidCopiable {
 
-	public long power;
+	public long energyQuanta;
 	public static final int maxPower = 1000000;
 	public int heat;
 
@@ -78,7 +79,7 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.heat = nbt.getInteger("heat");
 
 		tanks[0].readFromNBT(nbt, "input");
@@ -90,7 +91,7 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("heat", heat);
 
 		tanks[0].writeToNBT(nbt, "input");
@@ -101,7 +102,7 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 	public void networkUnpack(NBTTagCompound data) {
 		super.networkUnpack(data);
 
-		this.power = data.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		this.heat = data.getInteger("heat");
 		tanks[0].readFromNBT(data, "t0");
 		tanks[1].readFromNBT(data, "t1");
@@ -112,13 +113,13 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 	public void updateEntity() {
 
 		if(!worldObj.isRemote) {
-			this.setPower(Library.chargeItemsFromTE(slots, 14, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 14, energyQuanta, maxPower));
 
 			heat = RTGUtil.updateRTGs(slots, slot_rtg);
-			this.setPower(this.power + heat * 10);
+			this.setStoredEnergyQuanta(this.energyQuanta + heat * 10);
 
-			if(power > maxPower)
-				this.setPower(maxPower);
+			if(energyQuanta > maxPower)
+				this.setStoredEnergyQuanta(maxPower);
 
 			tanks[0].setType(10, 11, slots);
 			setupTanks();
@@ -141,7 +142,7 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 			}
 
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setInteger("heat", heat);
 			tanks[0].writeToNBT(data, "t0");
 			tanks[1].writeToNBT(data, "t1");
@@ -237,19 +238,19 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 
 	/* Power methods */
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
@@ -295,6 +296,6 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
-		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, this.heat * 10);
+		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(this.heat * 10));
 	}
 }

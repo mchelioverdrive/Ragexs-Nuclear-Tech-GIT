@@ -1,5 +1,6 @@
 package com.hbm.tileentity.bomb;
 
+import api.hbm.energymk2.EnergyUnits;
 import api.hbm.energymk2.IEnergyReceiverMK2;
 import com.hbm.inventory.recipes.GasCentrifugeRecipes;
 import com.hbm.lib.Library;
@@ -16,7 +17,7 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 
 	public int spin;
 	public int rotation;
-	private long power;
+	private long energyQuanta;
 	private static final long maxPower = 100_000;
 	private static final long POWER_PER_SHOT = 250;
 	public static final int consumption = 1000;
@@ -73,18 +74,18 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 	}
 
 	public void consumePower(long amount) {
-		this.setPower(Math.max(0, power - amount));
+		this.setStoredEnergyQuanta(Math.max(0, energyQuanta - amount));
 	}
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 	}
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 	}
 
 	@Override
@@ -93,21 +94,21 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
 	public boolean hasPower() {
-		return power >= consumption;
+		return energyQuanta >= consumption;
 	}
 
 	public boolean hasPowerForShot() {
-		return power >= POWER_PER_SHOT;
+		return energyQuanta >= POWER_PER_SHOT;
 	}
 
 	public void consumeShotPower() {
@@ -115,9 +116,9 @@ public class TileEntityTurretCIWS extends TileEntityTurretBase implements IEnerg
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 }

@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
@@ -50,7 +51,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 100_000;
 	
 	public static final int waterUsedBase = 1_000;
@@ -98,7 +99,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 		
 		if(!worldObj.isRemote) {
 			
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 			
 			tanks[0].setType(1, slots);
 			FluidType conversion = this.getFluidOutput(tanks[0].getTankType());
@@ -119,7 +120,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 			this.consumption = this.consumptionBase + (this.consumptionBase * speed) / 2 + (this.consumptionBase * efficiency);
 			
 			if(canSlop()) {
-				this.setPower(this.power - this.consumption);
+				this.setStoredEnergyQuanta(this.energyQuanta - this.consumption);
 				this.progress += 1F / (600 - speed * 150);
 				this.processing = true;
 				boolean markDirty = false;
@@ -288,7 +289,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 
 	@Override public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		buf.writeLong(consumption);
 		buf.writeFloat(progress);
 		buf.writeBoolean(processing);
@@ -298,7 +299,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 	
 	@Override public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		this.power = buf.readLong();
+		this.energyQuanta = buf.readLong();
 		this.consumption = buf.readLong();
 		this.progress = buf.readFloat();
 		this.processing = buf.readBoolean();
@@ -309,7 +310,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.progress = nbt.getFloat("progress");
 		tanks[0].readFromNBT(nbt, "water");
 		tanks[1].readFromNBT(nbt, "slop");
@@ -318,7 +319,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setFloat("progress", progress);
 		tanks[0].writeToNBT(nbt, "water");
 		tanks[1].writeToNBT(nbt, "slop");
@@ -328,7 +329,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 		if(this.getFluidOutput(tanks[0].getTankType()) == null) return false;
 		if(tanks[0].getFill() < waterUsed) return false;
 		if(tanks[1].getFill() + waterUsed > tanks[1].getMaxFill()) return false;
-		if(power < consumption) return false;
+		if(energyQuanta < consumption) return false;
 		
 		return slots[2] != null && slots[2].getItem() == ModItems.bedrock_ore_base;
 	}
@@ -338,13 +339,13 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 		return null;
 	}
 
-	@Override public long getPower() { return power; }
-	@Override public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	@Override public long getStoredEnergyQuanta() { return energyQuanta; }
+	@Override public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
-	@Override public long getMaxPower() { return maxPower; }
+	@Override public long getEnergyCapacityQuanta() { return maxPower; }
 
 	@Override public FluidTank[] getAllTanks() { return tanks; }
 	@Override public FluidTank[] getSendingTanks() { return new FluidTank[] {tanks[1]}; }

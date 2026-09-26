@@ -36,7 +36,7 @@ public class GUIMachineWoodBurner extends GuiInfoContainer {
 	@Override
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 143, guiTop + 18, 16, 34, burner.power, burner.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 143, guiTop + 18, 16, 34, burner.getStoredEnergyQuanta(), burner.maxPower);
 
 		if(this.mc.thePlayer.inventory.getItemStack() == null) {
 			
@@ -102,7 +102,7 @@ public class GUIMachineWoodBurner extends GuiInfoContainer {
 			drawTexturedModalRect(guiLeft + 53, guiTop + 17, 196, 0, 16, 15);
 		}
 		
-		int p = (int) (burner.power * 34 / burner.maxPower);
+		int p = (int) (burner.getStoredEnergyQuanta() * 34 / burner.maxPower);
 		drawTexturedModalRect(guiLeft + 143, guiTop + 52 - p, 176, 52 - p, 16, p);
 		
 		if(burner.maxBurnTime > 0 && !burner.liquidBurn) {

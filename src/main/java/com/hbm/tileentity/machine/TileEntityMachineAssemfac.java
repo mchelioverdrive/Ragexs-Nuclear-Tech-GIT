@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 import java.util.Random;
 
@@ -112,7 +113,7 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		for(int i = 0; i < getRecipeCount(); i++) {
 			buf.writeInt(progress[i]);
 			buf.writeInt(maxProgress[i]);
@@ -125,7 +126,7 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		for(int i = 0; i < getRecipeCount(); i++) {
 			progress[i] = buf.readInt();
 			maxProgress[i] = buf.readInt();
@@ -139,7 +140,7 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
 		
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.progress = nbt.getIntArray("progress");
 		this.maxProgress = nbt.getIntArray("maxProgress");
 		this.isProgressing = nbt.getBoolean("isProgressing");
@@ -359,7 +360,7 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return 10_000_000;
 	}
 

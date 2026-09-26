@@ -32,7 +32,7 @@ public class GUIAutocrafter extends GuiInfoContainer {
 	public void drawScreen(int x, int y, float interp) {
 		super.drawScreen(x, y, interp);
 		
-		this.drawElectricityInfo(this, x, y, guiLeft + 17, guiTop + 45, 16, 52, diFurnace.getPower(), diFurnace.getMaxPower());
+		this.drawElectricityInfo(this, x, y, guiLeft + 17, guiTop + 45, 16, 52, diFurnace.getStoredEnergyQuanta(), diFurnace.getEnergyCapacityQuanta());
 
 		if(this.mc.thePlayer.inventory.getItemStack() == null) {
 			for(int i = 0; i < 9; ++i) {
@@ -74,7 +74,7 @@ public class GUIAutocrafter extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
-		int i = (int)(diFurnace.getPower() * 52 / diFurnace.getMaxPower());
+		int i = (int)(diFurnace.getStoredEnergyQuanta() * 52 / diFurnace.getEnergyCapacityQuanta());
 		drawTexturedModalRect(guiLeft + 17, guiTop + 97 - i, 176, 52 - i, 16, i);
 		
 	}

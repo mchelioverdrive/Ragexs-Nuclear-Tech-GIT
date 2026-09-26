@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.CompatEnergyControl;
@@ -13,7 +14,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineAmgen extends TileEntityLoadedBase implements IEnergyProviderMK2, IInfoProviderEC {
 
-	public long power;
+	public long energyQuanta;
 	public long maxPower = 500;
 	protected long output = 0;
 	
@@ -31,9 +32,9 @@ public class TileEntityMachineAmgen extends TileEntityLoadedBase implements IEne
 				this.checkGeoInteraction(xCoord, yCoord - 1, zCoord);
 			}
 			
-			this.setPower(this.power + this.output);
-			if(power > maxPower)
-				this.setPower(maxPower);
+			this.setStoredEnergyQuanta(this.energyQuanta + this.output);
+			if(energyQuanta > maxPower)
+				this.setStoredEnergyQuanta(maxPower);
 			
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
 				this.tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
@@ -68,25 +69,25 @@ public class TileEntityMachineAmgen extends TileEntityLoadedBase implements IEne
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return this.maxPower;
 	}
 
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, this.output > 0);
-		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, this.output);
+		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(this.output));
 	}
 }

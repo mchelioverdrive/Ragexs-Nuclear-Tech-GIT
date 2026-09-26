@@ -1,5 +1,6 @@
 package com.hbm.handler.nei;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.awt.Rectangle;
 import java.util.Locale;
 
@@ -49,7 +50,7 @@ public class ArcWelderHandler extends NEIUniversalHandler {
 
 				FontRenderer fontRenderer = Minecraft.getMinecraft().fontRenderer;
 				String duration = String.format(Locale.US, "%,d", arc.duration) + " ticks";
-				String consumption = String.format(Locale.US, "%,d", arc.consumption) + " HE/t";
+				String consumption = EnergyUnits.formatQuantaPerTickAsWatts(arc.consumption);
 				int side = 160;
 				fontRenderer.drawString(duration, side - fontRenderer.getStringWidth(duration), 43, 0x404040);
 				fontRenderer.drawString(consumption, side - fontRenderer.getStringWidth(consumption), 55, 0x404040);

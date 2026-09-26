@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.handler.CompatHandler;
 import com.hbm.interfaces.ICopiable;
 import com.hbm.inventory.container.ContainerMicrowave;
@@ -32,7 +33,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityMicrowave extends TileEntityMachineBase implements IEnergyReceiverMK2, IGUIProvider, SimpleComponent, CompatHandler.OCComponent, ICopiable {
 
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 50000;
 	public static final int consumption = 50;
 	public static final int maxTime = 300;
@@ -56,7 +57,7 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 
-			this.setPower(Library.chargeTEFromItems(slots, 2, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 2, energyQuanta, maxPower));
 
 			if(canProcess()) {
 
@@ -72,13 +73,13 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 				}
 
 				if(canProcess()) {
-					this.setPower(this.power - consumption);
+					this.setStoredEnergyQuanta(this.energyQuanta - consumption);
 					time += speed * 2;
 				}
 			}
 
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setInteger("time", time);
 			data.setInteger("speed", speed);
 			networkPack(data, 50);
@@ -88,7 +89,7 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 	public void networkUnpack(NBTTagCompound data) {
 		super.networkUnpack(data);
 
-		power = data.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		time = data.getInteger("time");
 		speed = data.getInteger("speed");
 	}
@@ -139,7 +140,7 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 		if(speed  == 0)
 			return false;
 
-		if(power < consumption)
+		if(energyQuanta < consumption)
 			return false;
 
 		if(slots[0] != null && FurnaceRecipes.smelting().getSmeltingResult(slots[0]) != null) {
@@ -177,7 +178,7 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 	}
 
 	public long getPowerScaled(int i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 
 	public int getProgressScaled(int i) {
@@ -201,19 +202,19 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
@@ -221,7 +222,7 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		speed = nbt.getInteger("speed");
 	}
 
@@ -229,7 +230,7 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("speed", speed);
 	}
 

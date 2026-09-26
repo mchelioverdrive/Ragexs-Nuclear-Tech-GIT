@@ -1,5 +1,7 @@
 package com.hbm.blocks.network;
 
+import api.hbm.energymk2.EnergyUnits;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -135,7 +137,7 @@ public class CableDiode extends BlockContainer implements IEnergyConnectorBlock,
 		TileEntityDiode diode = (TileEntityDiode) te;
 		
 		List<String> text = new ArrayList();
-		text.add("Max.: " + BobMathUtil.getShortNumber(diode.getMaxPower()) + "HE/t");
+		text.add("Maximum Transfer: " + EnergyUnits.formatQuantaPerTickAsWatts(diode.getRatedTransferQuantaPerTick()));
 		text.add("Priority: " + diode.priority.name());
 		
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
@@ -193,7 +195,7 @@ public class CableDiode extends BlockContainer implements IEnergyConnectorBlock,
 				}
 				
 				pulses = 0;
-				this.setPower(0); //tick is over, reset our allowed transfe
+				this.setStoredEnergyQuanta(0); //tick is over, reset our allowed transfe
 			}
 		}
 
@@ -203,19 +205,19 @@ public class CableDiode extends BlockContainer implements IEnergyConnectorBlock,
 		}
 		
 		/** Used as an intra-tick tracker for how much energy has been transmitted, resets to 0 each tick and maxes out based on transfer */
-		private long power;
+		private long energyQuanta;
 		private boolean recursionBrake = false;
 		private int pulses = 0;
 		public ConnectionPriority priority = ConnectionPriority.NORMAL;
 
 		@Override
-		public long transferPower(long power) {
+		public long receiveEnergyQuanta(long energyQuanta) {
 
 			if(recursionBrake)
-				return power;
+				return energyQuanta;
 			
 			pulses++;
-			if(this.getPower() >= this.getMaxPower() || pulses > 10) return power; //if we have already maxed out transfer or max pulses, abort
+			if(this.getStoredEnergyQuanta() >= this.getEnergyCapacityQuanta() || pulses > 10) return energyQuanta; //if we have already maxed out transfer or max pulses, abort
 			
 			recursionBrake = true;
 			
@@ -224,46 +226,50 @@ public class CableDiode extends BlockContainer implements IEnergyConnectorBlock,
 			TileEntity te = Compat.getTileStandard(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ);
 			
 			if(node != null && !node.expired && node.hasValidNet() && te instanceof IEnergyConnectorMK2 && ((IEnergyConnectorMK2) te).canConnect(dir.getOpposite())) {
-				long toTransfer = Math.min(power, this.getReceiverSpeed());
-				long remainder = node.net.sendPowerDiode(toTransfer);
+				long toTransfer = Math.min(energyQuanta, this.getMaxInputQuantaPerTick());
+				long remainder = node.net.sendEnergyQuantaThroughDiode(toTransfer);
 				long transferred = (toTransfer - remainder);
-				this.setPower(this.power + transferred);
-				power -= transferred;
+				this.setStoredEnergyQuanta(this.energyQuanta + transferred);
+				energyQuanta -= transferred;
 				
 			} else if(te instanceof IEnergyReceiverMK2 && te != this) {
 				IEnergyReceiverMK2 rec = (IEnergyReceiverMK2) te;
 				if(rec.canConnect(dir.getOpposite())) {
-					long toTransfer = Math.min(power, rec.getReceiverSpeed());
-					long remainder = rec.transferPower(toTransfer);
-					power -= (toTransfer - remainder);
+					long toTransfer = Math.min(energyQuanta, rec.getMaxInputQuantaPerTick());
+					long remainder = rec.receiveEnergyQuanta(toTransfer);
+					energyQuanta -= (toTransfer - remainder);
 					recursionBrake = false;
-					return power;
+					return energyQuanta;
 				}
 			}
 			
 			recursionBrake = false;
-			return power;
+			return energyQuanta;
 		}
 
 		@Override
-		public long getReceiverSpeed() {
-			return this.getMaxPower() - this.getPower();
+		public long getMaxInputQuantaPerTick() {
+			return this.getEnergyCapacityQuanta() - this.getStoredEnergyQuanta();
 		}
 
-		@Override
-		public long getMaxPower() {
+		public long getRatedTransferQuantaPerTick() {
 			return (long) Math.pow(10, level);
 		}
 
 		@Override
-		public long getPower() {
-			return Math.min(power, this.getMaxPower());
+		public long getEnergyCapacityQuanta() {
+			return getRatedTransferQuantaPerTick();
+		}
+
+		@Override
+		public long getStoredEnergyQuanta() {
+			return Math.min(energyQuanta, this.getEnergyCapacityQuanta());
 		}
 		
 		@Override
-		public void setPower(long power) {
-			if(this.power == power) return;
-			this.power = power;
+		public void setStoredEnergyQuanta(long energyQuanta) {
+			if(this.energyQuanta == energyQuanta) return;
+			this.energyQuanta = energyQuanta;
 			this.markPowerNetDirty();
 		}
 

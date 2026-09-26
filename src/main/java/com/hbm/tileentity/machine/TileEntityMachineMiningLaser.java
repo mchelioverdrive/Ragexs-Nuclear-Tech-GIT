@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 import java.util.Set;
 
@@ -54,7 +55,7 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	
-	public long power;
+	public long energyQuanta;
 	public int age = 0;
 	public static final long maxPower = 100000000;
 	public static final int consumption = 10000;
@@ -97,7 +98,7 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 			this.sendFluid(tank, worldObj, xCoord, yCoord + 2, zCoord, Library.POS_Z);
 			this.sendFluid(tank, worldObj, xCoord, yCoord - 2, zCoord, Library.NEG_Z);
 			
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 			
 			//reset progress if the position changes
 			if(lastTargetX != targetX ||
@@ -125,12 +126,12 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 				
 				for(int i = 0; i < cycles; i++) {
 					
-					if(power < consumption) {
+					if(energyQuanta < consumption) {
 						beam = false;
 						break;
 					}
 					
-					this.setPower(this.power - consumption);
+					this.setStoredEnergyQuanta(this.energyQuanta - consumption);
 					
 					if(targetY <= 0)
 						targetY = yCoord - 2;
@@ -170,7 +171,7 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 			this.tryFillContainer(xCoord, yCoord, zCoord - 2);
 			
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setInteger("lastX", lastTargetX);
 			data.setInteger("lastY", lastTargetY);
 			data.setInteger("lastZ", lastTargetZ);
@@ -193,7 +194,7 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 	public void networkUnpack(NBTTagCompound data) {
 		super.networkUnpack(data);
 
-		this.power = data.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		this.lastTargetX = data.getInteger("lastX");
 		this.lastTargetY = data.getInteger("lastY");
 		this.lastTargetZ = data.getInteger("lastZ");
@@ -556,7 +557,7 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 	}
 
 	public int getPowerScaled(int i) {
-		return (int)((power * i) / maxPower);
+		return (int)((energyQuanta * i) / maxPower);
 	}
 
 	public int getProgressScaled(int i) {
@@ -606,26 +607,26 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		tank.readFromNBT(nbt, "oil");
 		isOn = nbt.getBoolean("isOn");
 	}
@@ -633,7 +634,7 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tank.writeToNBT(nbt, "oil");
 		nbt.setBoolean("isOn", isOn);
 	}

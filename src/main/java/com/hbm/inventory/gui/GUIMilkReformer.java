@@ -32,7 +32,7 @@ public class GUIMilkReformer extends GuiInfoContainer {
 		refinery.tanks[1].renderTankInfo(this, mouseX, mouseY, guiLeft + 90, guiTop + 70 - 15, 21, 10);
 		refinery.tanks[2].renderTankInfo(this, mouseX, mouseY, guiLeft + 117, guiTop + 70 - 15, 21, 10);
 		refinery.tanks[3].renderTankInfo(this, mouseX, mouseY, guiLeft + 143, guiTop + 70 - 15, 21, 10);
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 98,  guiTop + 60 - 52, 70, 20, refinery.power, TileEntityMachineMilkReformer.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 98,  guiTop + 60 - 52, 70, 20, refinery.getStoredEnergyQuanta(), TileEntityMachineMilkReformer.maxPower);
 	}
 	
 	@Override
@@ -46,7 +46,7 @@ public class GUIMilkReformer extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
-		int j = (int) (refinery.power * 63 / TileEntityMachineMilkReformer.maxPower);
+		int j = (int) (refinery.getStoredEnergyQuanta() * 63 / TileEntityMachineMilkReformer.maxPower);
 		drawTexturedModalRect(guiLeft + 98, guiTop + 13, 176, 6, j, 6);
 		
 		refinery.tanks[0].renderTank(guiLeft + 50, guiTop + 62, this.zLevel, 5, 30);

@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.config.VersatileConfig;
 import com.hbm.entity.effect.EntityCloudFleija;
 import com.hbm.entity.logic.EntityNukeExplosionMK3;
@@ -35,7 +36,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineDischarger extends TileEntityMachineBase implements IEnergyProviderMK2, IGUIProvider, IPersistentNBT {
 
-	public long power = 0;
+	public long energyQuanta = 0;
 	public int process = 0;
 	public int temp = 20;
 	public static final int maxtemp = 2000;
@@ -83,7 +84,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		process = nbt.getInteger("process");
 		temp = nbt.getInteger("temp");
 	}
@@ -91,7 +92,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("process", process);
 		nbt.setInteger("temp", temp);
 	}
@@ -120,7 +121,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 		}
 
 		if (i == 1) {
-			if (stack.getItem() instanceof IBatteryItem && ((IBatteryItem)stack.getItem()).getCharge(stack) == 0)
+			if (stack.getItem() instanceof IBatteryItem && ((IBatteryItem)stack.getItem()).getStoredEnergyQuanta(stack) == 0)
 				return true;
 		}
 
@@ -128,7 +129,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 	}
 
 	public long getPowerScaled(long i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 
 	public long getTempScaled(int i) {
@@ -176,7 +177,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 
 			slots[0].stackSize--;
 			if (slots[0].stackSize <= 0 && slots[0].getItem() == ModItems.ingot_u233) {
-				this.setPower(this.power + (long) (Gen * 0.8));
+				this.setStoredEnergyQuanta(this.energyQuanta + (long) (Gen * 0.8));
 				slots[0] = null;
 				slots[0] = new ItemStack(ModItems.ingot_titanium);
 			}
@@ -189,7 +190,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 			//	//}
 			//}
 			if (slots[0].stackSize <= 0 && slots[0].getItem() == ModItems.ingot_electronium) {
-				this.setPower(this.power + Gen * 4);
+				this.setStoredEnergyQuanta(this.energyQuanta + Gen * 4);
 				slots[0] = null;
 				slots[0] = new ItemStack(ModItems.ingot_dineutronium);
 			}
@@ -214,7 +215,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 
 		if (!worldObj.isRemote) {
 
-			this.setPower(Library.chargeItemsFromTE(slots, 1, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 1, energyQuanta, maxPower));
 
 			if(canProcess()) {
 				process();
@@ -233,11 +234,11 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 			}
 
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setInteger("progress", process);
 			data.setInteger("temp", temp);
 			this.networkPack(data, 50);
-			PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, power), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
+			PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, energyQuanta), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
 
 			if(temp > 20) {
 			if(worldObj.getTotalWorldTime() % 7 == 0)
@@ -303,25 +304,25 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 	@Override
 	public void networkUnpack(NBTTagCompound data) {
 
-		this.power = data.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		this.process = data.getInteger("progress");
 		this.temp = data.getInteger("temp");
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
@@ -339,7 +340,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 	@Override
 	public void writeNBT(NBTTagCompound nbt) {
 		NBTTagCompound data = new NBTTagCompound();
-		data.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 		data.setInteger("progress", process);
 		data.setInteger("temp", temp);
 		nbt.setTag(NBT_PERSISTENT_KEY, data);
@@ -348,7 +349,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 	@Override
 	public void readNBT(NBTTagCompound nbt) {
 		NBTTagCompound data = nbt.getCompoundTag(NBT_PERSISTENT_KEY);
-		this.power = data.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		this.temp = data.getInteger("temp");
 		this.process = data.getInteger("procsess");
 	}

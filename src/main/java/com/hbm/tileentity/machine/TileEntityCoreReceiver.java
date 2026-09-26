@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.handler.CompatHandler;
 import com.hbm.inventory.container.ContainerCoreReceiver;
 import com.hbm.inventory.fluid.Fluids;
@@ -32,7 +33,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEnergyProviderMK2, ILaserable, IFluidStandardReceiver, SimpleComponent, IGUIProvider, IInfoProviderEC, CompatHandler.OCComponent {
 	
-	public long power;
+	public long energyQuanta;
 	public long joules;
 	public FluidTank tank;
 
@@ -53,7 +54,7 @@ public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEn
 			
 			this.subscribeToAllAround(tank.getTankType(), this);
 			
-			this.setPower(joules * 5000);
+			this.setStoredEnergyQuanta(joules * 5000);
 			
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
 				this.tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
@@ -84,14 +85,14 @@ public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEn
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
@@ -101,8 +102,8 @@ public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEn
 	}
 
 	@Override
-	public long getMaxPower() {
-		return this.power;
+	public long getEnergyCapacityQuanta() {
+		return this.energyQuanta;
 	}
 
 	@Override
@@ -132,7 +133,7 @@ public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEn
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		joules = nbt.getLong("joules");
 		tank.readFromNBT(nbt, "tank");
 	}
@@ -141,7 +142,7 @@ public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEn
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setLong("joules", joules);
 		tank.writeToNBT(nbt, "tank");
 	}
@@ -166,7 +167,7 @@ public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEn
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getEnergyInfo(Context context, Arguments args) {
-		return new Object[] {joules, getPower()}; //literally only doing this for the consistency between components
+		return new Object[] {joules, getStoredEnergyQuanta()}; //literally only doing this for the consistency between components
 	}
 
 	@Callback(direct = true)
@@ -178,7 +179,7 @@ public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEn
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getInfo(Context context, Arguments args) {
-		return new Object[] {joules, getPower(), tank.getFill()};
+		return new Object[] {joules, getStoredEnergyQuanta(), tank.getFill()};
 	}
 
 	@Override
@@ -195,6 +196,6 @@ public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEn
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
 		data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, joules > 0 ? 20 : 0);
-		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, joules * 5000);
+		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(joules * 5000));
 	}
 }

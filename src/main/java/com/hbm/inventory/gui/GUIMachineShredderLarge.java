@@ -35,7 +35,7 @@ public class GUIMachineShredderLarge extends GuiInfoContainer {
 		super.drawScreen(mouseX, mouseY, f);
 		triFurnace.tank.renderTankInfo(this, mouseX, mouseY, guiLeft + 43, guiTop + 23, 7, 52);
 
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 106 - 88, 16, 88, triFurnace.power, triFurnace.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 106 - 88, 16, 88, triFurnace.getStoredEnergyQuanta(), triFurnace.maxPower);
 		
 	}
 	
@@ -53,7 +53,7 @@ public class GUIMachineShredderLarge extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
-		if(triFurnace.power > 0) {
+		if(triFurnace.getStoredEnergyQuanta() > 0) {
 			int i = (int)
 					triFurnace.getPowerScaled(88);
 			drawTexturedModalRect(guiLeft + 8, guiTop + 106 - i, 176, 160 - i, 16, i);

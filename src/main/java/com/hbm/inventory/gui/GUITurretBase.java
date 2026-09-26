@@ -55,7 +55,7 @@ public abstract class GUITurretBase extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 152, guiTop + 45, 16, 52, turret.power, turret.getMaxPower());
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 152, guiTop + 45, 16, 52, turret.getStoredEnergyQuanta(), turret.getEnergyCapacityQuanta());
 
 		String on = EnumChatFormatting.GREEN + I18nUtil.resolveKey("turret.on");
 		String off = EnumChatFormatting.RED + I18nUtil.resolveKey("turret.off");

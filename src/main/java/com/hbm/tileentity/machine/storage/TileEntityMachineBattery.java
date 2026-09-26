@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine.storage;
 
+import api.hbm.energymk2.EnergyUnits;
 import api.hbm.energymk2.IBatteryItem;
 import api.hbm.energymk2.IEnergyConductorMK2;
 import api.hbm.energymk2.IEnergyProviderMK2;
@@ -39,7 +40,7 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 	
 	public long[] log = new long[20];
 	public long delta = 0;
-	public long power = 0;
+	public long energyQuanta = 0;
 	public long prevPowerState = 0;
 	
 	protected PowerNode node;
@@ -108,7 +109,7 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.redLow = nbt.getShort("redLow");
 		this.redHigh = nbt.getShort("redHigh");
 		this.lastRedstone = nbt.getByte("lastRedstone");
@@ -119,7 +120,7 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setShort("redLow", redLow);
 		nbt.setShort("redHigh", redHigh);
 		nbt.setByte("lastRedstone", lastRedstone);
@@ -140,10 +141,10 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 	public boolean canExtractItem(int i, ItemStack itemStack, int j) {
 		
 		if(itemStack.getItem() instanceof IBatteryItem) {
-			if(i == 0 && ((IBatteryItem)itemStack.getItem()).getCharge(itemStack) == 0) {
+			if(i == 0 && ((IBatteryItem)itemStack.getItem()).getStoredEnergyQuanta(itemStack) == 0) {
 				return true;
 			}
-			if(i == 1 && ((IBatteryItem)itemStack.getItem()).getCharge(itemStack) == ((IBatteryItem)itemStack.getItem()).getMaxCharge(itemStack)) {
+			if(i == 1 && ((IBatteryItem)itemStack.getItem()).getStoredEnergyQuanta(itemStack) == ((IBatteryItem)itemStack.getItem()).getEnergyCapacityQuanta(itemStack)) {
 				return true;
 			}
 		}
@@ -152,12 +153,12 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 	}
 
 	public long getPowerRemainingScaled(long i) {
-		return (power * i) / this.getMaxPower();
+		return (energyQuanta * i) / this.getEnergyCapacityQuanta();
 	}
 	
 	public byte getComparatorPower() {
-		if(power == 0) return 0;
-		double frac = (double) this.power / (double) this.getMaxPower() * 15D;
+		if(energyQuanta == 0) return 0;
+		double frac = (double) this.energyQuanta / (double) this.getEnergyCapacityQuanta() * 15D;
 		return (byte) (MathHelper.clamp_int((int) frac + 1, 0, 15)); //to combat eventual rounding errors with the FEnSU's stupid maxPower
 	}
 	
@@ -165,7 +166,7 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 	public void updateEntity() {
 		
 		if(!worldObj.isRemote && worldObj.getBlock(xCoord, yCoord, zCoord) instanceof MachineBattery) {
-			long syncPower = this.power;
+			long syncPower = this.energyQuanta;
 			long syncDelta = this.delta;
 			short syncRedLow = this.redLow;
 			short syncRedHigh = this.redHigh;
@@ -187,9 +188,9 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 				}
 			}
 			
-			long prevPower = this.power;
+			long prevPower = this.energyQuanta;
 			
-			this.setPower(Library.chargeItemsFromTE(slots, 1, power, getMaxPower()));
+			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 1, energyQuanta, getEnergyCapacityQuanta()));
 			
 			this.updatePersistentProvider(mode == mode_output || mode == mode_buffer);
 			
@@ -200,9 +201,9 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 			
 			this.updatePersistentReceiver(mode == mode_input || mode == mode_buffer);
 			
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, getMaxPower()));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, getEnergyCapacityQuanta()));
 
-			long avg = (power + prevPower) / 2;
+			long avg = (energyQuanta + prevPower) / 2;
 			this.delta = avg - this.log[0];
 			
 			for(int i = 1; i < this.log.length; i++) {
@@ -210,11 +211,11 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 			}
 			
 			this.log[19] = avg;
-			if(this.power != prevPower) this.markPowerNetworkDirty();
+			if(this.energyQuanta != prevPower) this.markPowerNetworkDirty();
 
-			prevPowerState = power;
+			prevPowerState = energyQuanta;
 			
-			if(syncPower != this.power || syncDelta != this.delta || syncRedLow != this.redLow || syncRedHigh != this.redHigh || syncPriority != this.priority) this.markNetworkDirty();
+			if(syncPower != this.energyQuanta || syncDelta != this.delta || syncRedLow != this.redLow || syncRedHigh != this.redHigh || syncPriority != this.priority) this.markNetworkDirty();
 			this.networkPackNTIfDirty(20);
 		}
 	}
@@ -259,21 +260,21 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 		this.persistentReceiverNetwork = null;
 	}
 
-	@Override public long getProviderSpeed() {
+	@Override public long getMaxOutputQuantaPerTick() {
 		int mode = this.getRelevantMode(true);
-		return mode == mode_output || mode == mode_buffer ? this.getMaxPower() / 600 : 0;
+		return mode == mode_output || mode == mode_buffer ? this.getEnergyCapacityQuanta() / 600 : 0;
 	}
 	
-	@Override public long getReceiverSpeed() {
+	@Override public long getMaxInputQuantaPerTick() {
 		int mode = this.getRelevantMode(true);
-		return mode == mode_input || mode == mode_buffer ? this.getMaxPower() / 200 : 0;
+		return mode == mode_input || mode == mode_buffer ? this.getEnergyCapacityQuanta() / 200 : 0;
 	}
 
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
 
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		buf.writeLong(delta);
 		buf.writeShort(redLow);
 		buf.writeShort(redHigh);
@@ -284,7 +285,7 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
 
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		delta = buf.readLong();
 		redLow = buf.readShort();
 		redHigh = buf.readShort();
@@ -292,8 +293,8 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 	
 	protected short modeCache = 0;
@@ -306,7 +307,7 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 	private long bufferedMax;
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		
 		if(bufferedMax == 0) {
 			bufferedMax = ((MachineBattery)worldObj.getBlock(xCoord, yCoord, zCoord)).maxPower;
@@ -316,10 +317,10 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 	}
 
 	@Override public boolean canConnect(ForgeDirection dir) { return true; }
-	@Override public void setPower(long power) {
-		boolean changed = this.power != power;
+	@Override public void setStoredEnergyQuanta(long energyQuanta) {
+		boolean changed = this.energyQuanta != energyQuanta;
 		if(changed) this.markNetworkDirty();
-		this.power = power;
+		this.energyQuanta = energyQuanta;
 		if(changed) this.markPowerNetworkDirty();
 	}
 
@@ -343,19 +344,26 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getEnergyInfo(Context context, Arguments args) {
-		return new Object[] {getPower(), getMaxPower()};
+		return new Object[] {getStoredEnergyQuanta(), getEnergyCapacityQuanta()};
+	}
+
+	/** SI values for new computer programs; getEnergyInfo retains its legacy numeric contract. */
+	@Callback(direct = true)
+	@Optional.Method(modid = "OpenComputers")
+	public Object[] getEnergyJoules(Context context, Arguments args) {
+		return new Object[] {EnergyUnits.toJoules(getStoredEnergyQuanta()), EnergyUnits.toJoules(getEnergyCapacityQuanta())};
 	}
 
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getInfo(Context context, Arguments args) {
-		return new Object[] {getPower(), getMaxPower()};
+		return new Object[] {getStoredEnergyQuanta(), getEnergyCapacityQuanta()};
 	}
 
 	@Override
 	public void writeNBT(NBTTagCompound nbt) {
 		NBTTagCompound data = new NBTTagCompound();
-		data.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 		data.setLong("prevPowerState", prevPowerState);
 		data.setShort("redLow", redLow);
 		data.setShort("redHigh", redHigh);
@@ -366,7 +374,7 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 	@Override
 	public void readNBT(NBTTagCompound nbt) {
 		NBTTagCompound data = nbt.getCompoundTag(NBT_PERSISTENT_KEY);
-		this.power = data.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		this.prevPowerState = data.getLong("prevPowerState");
 		this.redLow = data.getShort("redLow");
 		this.redHigh = data.getShort("redHigh");
@@ -386,6 +394,6 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
-		data.setLong(CompatEnergyControl.L_DIFF_HE, (log[0] - log[19]) / 20L);
+		data.setLong(CompatEnergyControl.L_DIFF_HE, EnergyUnits.quantaToLegacyHe((log[0] - log[19]) / 20L));
 	}
 }

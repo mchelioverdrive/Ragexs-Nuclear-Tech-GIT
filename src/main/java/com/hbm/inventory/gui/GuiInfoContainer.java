@@ -1,5 +1,7 @@
 package com.hbm.inventory.gui;
 
+import api.hbm.energymk2.EnergyUnits;
+
 import java.util.*;
 
 import net.minecraft.client.audio.PositionedSoundRecord;
@@ -45,7 +47,7 @@ public abstract class GuiInfoContainer extends GuiContainer implements INEIGuiHa
 
 	public void drawElectricityInfo(GuiInfoContainer gui, int mouseX, int mouseY, int x, int y, int width, int height, long power, long maxPower) {
 		if(x <= mouseX && x + width > mouseX && y < mouseY && y + height >= mouseY)
-			gui.drawInfo(new String[] { BobMathUtil.getShortNumber(power) + "/" + BobMathUtil.getShortNumber(maxPower) + "HE" }, mouseX, mouseY);
+			gui.drawInfo(new String[] { EnergyUnits.formatJoules(power) + " / " + EnergyUnits.formatJoules(maxPower) }, mouseX, mouseY);
 	}
 
 	public void drawCustomInfoStat(int mouseX, int mouseY, int x, int y, int width, int height, int tPosX, int tPosY, String... text) { drawCustomInfoStat(mouseX, mouseY, x, y, width, height, tPosX, tPosY, Arrays.asList(text)); }

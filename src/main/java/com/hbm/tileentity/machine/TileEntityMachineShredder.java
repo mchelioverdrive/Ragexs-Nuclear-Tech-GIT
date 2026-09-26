@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.generic.BlockBobble;
 import com.hbm.blocks.generic.BlockBobble.BobbleType;
@@ -34,7 +35,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 
 	private ItemStack slots[];
 
-	public long power;
+	public long energyQuanta;
 	public int progress;
 	public int soundCycle = 0;
 	public static final long maxPower = 10000;
@@ -151,7 +152,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 		super.readFromNBT(nbt);
 		NBTTagList list = nbt.getTagList("items", 10);
 		
-		this.power = nbt.getLong("powerTime");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "powerTime");
 		slots = new ItemStack[getSizeInventory()];
 		
 		for(int i = 0; i < list.tagCount(); i++)
@@ -168,7 +169,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("powerTime", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		NBTTagList list = new NBTTagList();
 		
 		for(int i = 0; i < slots.length; i++)
@@ -223,7 +224,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 	}
 	
 	public boolean hasPower() {
-		return power > 0;
+		return energyQuanta > 0;
 	}
 	
 	public boolean isProcessing() {
@@ -242,7 +243,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 			{
 				progress++;
 				
-				this.setPower(this.power - 5);
+				this.setStoredEnergyQuanta(this.energyQuanta - 5);
 				
 				if(this.progress == TileEntityMachineShredder.processingSpeed)
 				{
@@ -276,9 +277,9 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
                 flag1 = true;
             }
 			
-			this.setPower(Library.chargeTEFromItems(slots, 29, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 29, energyQuanta, maxPower));
 			
-			PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, power), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
+			PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, energyQuanta), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
 		}
 		
 		if(flag1)
@@ -379,23 +380,23 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 	
 	public long getPowerScaled(long i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 
 	@Override
-	public long getPower() {
-		return this.power;
+	public long getStoredEnergyQuanta() {
+		return this.energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return TileEntityMachineShredder.maxPower;
 	}
 	

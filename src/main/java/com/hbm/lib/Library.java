@@ -243,14 +243,14 @@ public class Library {
 
 			IBatteryItem battery = (IBatteryItem) slots[index].getItem();
 
-			long batMax = battery.getMaxCharge(slots[index]);
-			long batCharge = battery.getCharge(slots[index]);
-			long batRate = battery.getChargeRate();
+			long batMax = battery.getEnergyCapacityQuanta(slots[index]);
+			long batCharge = battery.getStoredEnergyQuanta(slots[index]);
+			long batRate = battery.getMaxInputQuantaPerTick();
 			long toCharge = Math.min(Math.min(power, batRate), batMax - batCharge);
 
 			power -= toCharge;
 
-			battery.chargeBattery(slots[index], toCharge);
+			battery.receiveEnergyQuanta(slots[index], toCharge);
 		}
 
 		return power;
@@ -270,11 +270,11 @@ public class Library {
 
 			IBatteryItem battery = (IBatteryItem) slots[index].getItem();
 
-			long batCharge = battery.getCharge(slots[index]);
-			long batRate = battery.getDischargeRate();
+			long batCharge = battery.getStoredEnergyQuanta(slots[index]);
+			long batRate = battery.getMaxOutputQuantaPerTick();
 			long toDischarge = Math.min(Math.min((maxPower - power), batRate), batCharge);
 
-			battery.dischargeBattery(slots[index], toDischarge);
+			battery.extractEnergyQuanta(slots[index], toDischarge);
 			power += toDischarge;
 		}
 

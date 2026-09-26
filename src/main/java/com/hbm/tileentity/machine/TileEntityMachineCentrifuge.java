@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.io.IOException;
 import java.util.List;
 
@@ -42,7 +43,7 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 
 
 	public int progress;
-	public long power;
+	public long energyQuanta;
 	public boolean isProgressing;
 	private int audioDuration = 0;
 
@@ -58,13 +59,13 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 	}
 	/* reads the JSON object and sets the machine's parameters, use defaults and ignore if a value is not yet present */
 	public void readIfPresent(JsonObject obj) {
-		maxPower = IConfigurableMachine.grab(obj, "I:powerCap", maxPower);
+		maxPower = IConfigurableMachine.grabEnergyQuanta(obj, "I:energyCapacityQuanta", "I:powerCap", maxPower);
 		processingSpeed = IConfigurableMachine.grab(obj, "I:timeToProcess", processingSpeed);
 		baseConsumption = IConfigurableMachine.grab(obj, "I:consumption", baseConsumption);
 	}
 	/* writes the entire config for this machine using the relevant values */
 	public void writeConfig(JsonWriter writer) throws IOException {
-		writer.name("I:powerCap").value(maxPower);
+		writer.name("I:energyCapacityQuanta").value(maxPower);
 		writer.name("I:timeToProcess").value(processingSpeed);
 		writer.name("I:consumption").value(baseConsumption);
 	}
@@ -98,14 +99,14 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		progress = nbt.getShort("progress");
 	}
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setShort("progress", (short) progress);
 	}
 
@@ -119,7 +120,7 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 	}
 
 	public long getPowerRemainingScaled(int i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 
 	public boolean canProcess() {
@@ -171,7 +172,7 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 	}
 
 	public boolean hasPower() {
-		return power > 0;
+		return energyQuanta > 0;
 	}
 
 	public boolean isProcessing() {
@@ -185,7 +186,7 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 
-			this.setPower(Library.chargeTEFromItems(slots, 1, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 1, energyQuanta, maxPower));
 
 			int consumption = baseConsumption;
 			int speed = 1;
@@ -200,10 +201,10 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 			consumption /= (1 + Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3));
 
 			if(hasPower() && isProcessing()) {
-				this.setPower(this.power - consumption);
+				this.setStoredEnergyQuanta(this.energyQuanta - consumption);
 
-				if(this.power < 0) {
-					this.setPower(0);
+				if(this.energyQuanta < 0) {
+					this.setStoredEnergyQuanta(0);
 				}
 			}
 
@@ -260,7 +261,7 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		buf.writeInt(progress);
 		buf.writeBoolean(isProgressing);
 	}
@@ -268,7 +269,7 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		progress = buf.readInt();
 		isProgressing = buf.readBoolean();
 	}
@@ -325,20 +326,20 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

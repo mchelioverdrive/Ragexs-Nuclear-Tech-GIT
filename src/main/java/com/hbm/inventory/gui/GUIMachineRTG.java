@@ -1,5 +1,6 @@
 package com.hbm.inventory.gui;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import org.lwjgl.opengl.GL11;
@@ -32,7 +33,7 @@ public class GUIMachineRTG extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 152, guiTop + 69 - 52, 16, 52, rtg.power, rtg.powerMax);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 152, guiTop + 69 - 52, 16, 52, rtg.getStoredEnergyQuanta(), rtg.powerMax);
 		
 		String[] heatText = I18nUtil.resolveKeyArray("desc.gui.rtg.heat", rtg.heat);
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 134, guiTop + 17, 16, 52, mouseX, mouseY, heatText);
@@ -43,7 +44,7 @@ public class GUIMachineRTG extends GuiInfoContainer {
 		
 		for(int i = 0; i < pellets.size(); i++) {
 			ItemRTGPellet pellet = pellets.get(i);
-			pelletText[i + 1] = I18nUtil.resolveKey("desc.gui.rtg.pelletPower", I18nUtil.resolveKey(pellet.getUnlocalizedName() + ".name"), pellet.getHeat() * 5);
+			pelletText[i + 1] = I18nUtil.resolveKey("desc.gui.rtg.pelletPower", I18nUtil.resolveKey(pellet.getUnlocalizedName() + ".name"), EnergyUnits.formatQuantaPerTickAsWatts(pellet.getHeat() * 5));
 		}
 		
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 16, guiTop + 36, 16, 16, guiLeft - 8, guiTop + 36 + 16, pelletText);

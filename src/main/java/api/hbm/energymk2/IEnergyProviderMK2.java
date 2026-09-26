@@ -13,15 +13,23 @@ import net.minecraftforge.common.util.ForgeDirection;
 /** If it sends energy, use this */
 public interface IEnergyProviderMK2 extends IEnergyHandlerMK2 {
 
-	/** Uses up available power, default implementation has no sanity checking, make sure that the requested power is lequal to the current power */
-	public default void usePower(long power) {
-		long previous = this.getPower();
-		this.setPower(this.getPower() - power);
-		if(this.getPower() != previous) PowerNetMK2.markProviderSupplyDirty(this);
+	/** Extracts stored energy. Caller must not request more than is available. */
+	public default void extractEnergyQuanta(long energyQuanta) {
+		if(LegacyEnergyOverrides.of(this.getClass()).providerExtract) {
+			this.usePower(EnergyUnits.quantaToLegacyHe(energyQuanta));
+			return;
+		}
+		long previous = this.getStoredEnergyQuanta();
+		this.setStoredEnergyQuanta(this.getStoredEnergyQuanta() - energyQuanta);
+		if(this.getStoredEnergyQuanta() != previous) PowerNetMK2.markProviderSupplyDirty(this);
 	}
+
+	@Deprecated public default void usePower(long legacyHe) { extractEnergyQuanta(EnergyUnits.legacyHeToQuanta(legacyHe)); }
+	@Deprecated public default long getProviderSpeed() { return EnergyUnits.quantaToLegacyHe(getMaxOutputQuantaPerTick()); }
 	
-	public default long getProviderSpeed() {
-		return this.getMaxPower();
+	public default long getMaxOutputQuantaPerTick() {
+		if(LegacyEnergyOverrides.of(this.getClass()).providerSpeed) return EnergyUnits.legacyHeToQuanta(this.getProviderSpeed());
+		return this.getEnergyCapacityQuanta();
 	}
 	
 	public default void tryProvide(World world, int x, int y, int z, ForgeDirection dir) {
@@ -32,11 +40,11 @@ public interface IEnergyProviderMK2 extends IEnergyHandlerMK2 {
 		if(te instanceof IEnergyReceiverMK2 && te != this) {
 			IEnergyReceiverMK2 rec = (IEnergyReceiverMK2) te;
 			if(rec.canConnect(dir.getOpposite())) {
-				long provides = Math.min(this.getPower(), this.getProviderSpeed());
-				long receives = Math.min(rec.getMaxPower() - rec.getPower(), rec.getReceiverSpeed());
+				long provides = Math.min(this.getStoredEnergyQuanta(), this.getMaxOutputQuantaPerTick());
+				long receives = Math.min(rec.getEnergyCapacityQuanta() - rec.getStoredEnergyQuanta(), rec.getMaxInputQuantaPerTick());
 				long toTransfer = Math.min(provides, receives);
-				toTransfer -= rec.transferPower(toTransfer);
-				this.usePower(toTransfer);
+				toTransfer -= rec.receiveEnergyQuanta(toTransfer);
+				this.extractEnergyQuanta(toTransfer);
 			}
 		}
 		

@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -81,7 +82,7 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 	public float prevRotation;
 	public float rotation;
 
-	public long power = 0;
+	public long energyQuanta = 0;
 
 	protected int pingTimer = 0;
 	protected int lastPower;
@@ -107,7 +108,7 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 
 	@Override
 	public void readIfPresent(JsonObject obj) {
-		maxPower = IConfigurableMachine.grab(obj, "L:powerCap", maxPower);
+		maxPower = IConfigurableMachine.grabEnergyQuanta(obj, "L:energyCapacityQuanta", "L:powerCap", maxPower);
 		consumption = IConfigurableMachine.grab(obj, "L:consumption", consumption);
 		radarRange = IConfigurableMachine.grab(obj, "I:radarRange", radarRange);
 		radarBuffer = IConfigurableMachine.grab(obj, "I:radarBuffer", radarBuffer);
@@ -118,7 +119,7 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 
 	@Override
 	public void writeConfig(JsonWriter writer) throws IOException {
-		writer.name("L:powerCap").value(maxPower);
+		writer.name("L:energyCapacityQuanta").value(maxPower);
 		writer.name("L:consumption").value(consumption);
 		writer.name("I:radarRange").value(radarRange);
 		writer.name("I:radarBuffer").value(radarBuffer);
@@ -146,7 +147,7 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 
 		if(!worldObj.isRemote) {
 
-			this.setPower(Library.chargeTEFromItems(slots, 9, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 9, energyQuanta, maxPower));
 
 			if(worldObj.getTotalWorldTime() % 20 == 0) {
 				for(DirPos pos : getConPos()) {
@@ -154,7 +155,7 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 				}
 			}
 
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 			this.jammed = false;
 			allocateTargets();
 
@@ -168,7 +169,7 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 
 				pingTimer++;
 
-				if(power > 0 && pingTimer >= maxTimer) {
+				if(energyQuanta > 0 && pingTimer >= maxTimer) {
 					this.worldObj.playSoundEffect(this.xCoord, this.yCoord, this.zCoord, "hbm:block.sonarPing", 5.0F, 1.0F);
 					pingTimer = 0;
 				}
@@ -227,7 +228,7 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 			}
 		} else {
 			prevRotation = rotation;
-			if(power > 0) rotation += 5F;
+			if(energyQuanta > 0) rotation += 5F;
 
 			if(rotation >= 360) {
 				rotation -= 360F;
@@ -248,7 +249,7 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(this.power);
+		buf.writeLong(this.energyQuanta);
 		buf.writeBoolean(this.scanMissiles);
 		buf.writeBoolean(this.scanShells);
 		buf.writeBoolean(this.scanPlayers);
@@ -278,7 +279,7 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		this.power = buf.readLong();
+		this.energyQuanta = buf.readLong();
 		this.scanMissiles = buf.readBoolean();
 		this.scanShells = buf.readBoolean();
 		this.scanPlayers = buf.readBoolean();
@@ -308,7 +309,7 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.scanMissiles = nbt.getBoolean("scanMissiles");
 		this.scanShells = nbt.getBoolean("scanShells");
 		this.scanPlayers = nbt.getBoolean("scanPlayers");
@@ -321,7 +322,7 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setBoolean("scanMissiles", scanMissiles);
 		nbt.setBoolean("scanShells", scanShells);
 		nbt.setBoolean("scanPlayers", scanPlayers);
@@ -335,8 +336,8 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 		this.entries.clear();
 
 		if(this.yCoord < radarAltitude) return;
-		if(this.power < consumption) return;
-		this.setPower(this.power - consumption);
+		if(this.energyQuanta < consumption) return;
+		this.setStoredEnergyQuanta(this.energyQuanta - consumption);
 
 		int scan = this.getRange();
 
@@ -372,7 +373,7 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 			if(redMode) {
 
 				double maxRange = this.getRange() * Math.sqrt(2D);
-				int power = 0;
+				int energyQuanta = 0;
 
 				for(int i = 0; i < entries.size(); i++) {
 					RadarEntry e = entries.get(i);
@@ -380,25 +381,25 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 					double dist = Math.sqrt(Math.pow(e.posX - xCoord, 2) + Math.pow(e.posZ - zCoord, 2));
 					int p = 15 - (int)Math.floor(dist / maxRange * 15);
 
-					if(p > power) power = p;
+					if(p > energyQuanta) energyQuanta = p;
 				}
 
-				return power;
+				return energyQuanta;
 
 			/// TIER ///
 			} else {
 
-				int power = 0;
+				int energyQuanta = 0;
 
 				for(int i = 0; i < entries.size(); i++) {
 					RadarEntry e = entries.get(i);
 					if(!e.redstone) continue;
-					if(e.blipLevel + 1 > power) {
-						power = e.blipLevel + 1;
+					if(e.blipLevel + 1 > energyQuanta) {
+						energyQuanta = e.blipLevel + 1;
 					}
 				}
 
-				return power;
+				return energyQuanta;
 			}
 		}
 
@@ -406,19 +407,19 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
@@ -644,7 +645,7 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getEnergyInfo(Context context, Arguments args) {
-		return new Object[] {getPower(), getMaxPower()};
+		return new Object[] {getStoredEnergyQuanta(), getEnergyCapacityQuanta()};
 	}
 
 	@Callback(direct = true)

@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,7 +39,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityHadron extends TileEntityMachineBase implements IEnergyReceiverMK2, IGUIProvider {
 
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 10000000;
 
 	public boolean isOn = false;
@@ -104,20 +105,20 @@ public class TileEntityHadron extends TileEntityMachineBase implements IEnergyRe
 
 		if(!worldObj.isRemote) {
 
-			this.setPower(Library.chargeTEFromItems(slots, 4, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 4, energyQuanta, maxPower));
 			drawPower();
 
 			particles.addAll(particlesToAdd);
 			particlesToAdd.clear();
 
-			if(delay <= 0 && this.isOn && particles.size() < maxParticles && slots[0] != null && slots[1] != null && power >= maxPower * 0.75) {
+			if(delay <= 0 && this.isOn && particles.size() < maxParticles && slots[0] != null && slots[1] != null && energyQuanta >= maxPower * 0.75) {
 
 				if(ioMode != MODE_HOPPER || (slots[0].stackSize > 1 && slots[1].stackSize > 1)) {
 					ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata());
 					particles.add(new Particle(slots[0], slots[1], dir, xCoord, yCoord, zCoord));
 					this.decrStackSize(0, 1);
 					this.decrStackSize(1, 1);
-					this.setPower((long) (this.power - maxPower * 0.75));
+					this.setStoredEnergyQuanta((long) (this.energyQuanta - maxPower * 0.75));
 					this.state = EnumHadronState.PROGRESS;
 				}
 			}
@@ -158,7 +159,7 @@ public class TileEntityHadron extends TileEntityMachineBase implements IEnergyRe
 
 			NBTTagCompound data = new NBTTagCompound();
 			data.setBoolean("isOn", isOn);
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setBoolean("analysis", analysisOnly);
 			data.setInteger("ioMode", ioMode);
 			data.setByte("state", (byte) state.ordinal());
@@ -216,7 +217,7 @@ public class TileEntityHadron extends TileEntityMachineBase implements IEnergyRe
 		super.networkUnpack(data);
 
 		this.isOn = data.getBoolean("isOn");
-		this.power = data.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		this.analysisOnly = data.getBoolean("analysis");
 		this.ioMode = data.getInteger("ioMode");
 		this.state = EnumHadronState.values()[data.getByte("state")];
@@ -248,7 +249,7 @@ public class TileEntityHadron extends TileEntityMachineBase implements IEnergyRe
 
 		for(ForgeDirection dir : getRandomDirs()) {
 
-			if(power == maxPower)
+			if(energyQuanta == maxPower)
 				return;
 
 			int x = xCoord + dir.offsetX * 2;
@@ -261,9 +262,9 @@ public class TileEntityHadron extends TileEntityMachineBase implements IEnergyRe
 
 				TileEntityHadronPower plug = (TileEntityHadronPower)te;
 
-				long toDraw = Math.min(maxPower - power, plug.getPower());
-				this.setPower(power + toDraw);
-				plug.setPower(plug.getPower() - toDraw);
+				long toDraw = Math.min(maxPower - energyQuanta, plug.getStoredEnergyQuanta());
+				this.setStoredEnergyQuanta(energyQuanta + toDraw);
+				plug.setStoredEnergyQuanta(plug.getStoredEnergyQuanta() - toDraw);
 			}
 		}
 	}
@@ -294,7 +295,7 @@ public class TileEntityHadron extends TileEntityMachineBase implements IEnergyRe
 		super.readFromNBT(nbt);
 
 		this.isOn = nbt.getBoolean("isOn");
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.analysisOnly = nbt.getBoolean("analysis");
 		this.ioMode = nbt.getInteger("ioMode");
 	}
@@ -304,30 +305,30 @@ public class TileEntityHadron extends TileEntityMachineBase implements IEnergyRe
 		super.writeToNBT(nbt);
 
 		nbt.setBoolean("isOn", isOn);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setBoolean("analysis", analysisOnly);
 		nbt.setInteger("ioMode", ioMode);
 	}
 
 	public int getPowerScaled(int i) {
-		return (int)(power * i / maxPower);
+		return (int)(energyQuanta * i / maxPower);
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markDirty();
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
@@ -488,8 +489,8 @@ public class TileEntityHadron extends TileEntityMachineBase implements IEnergyRe
 		public void consumePower() {
 			for(TileEntityHadronPower plug : plugs) {
 				long bit = 10000;
-				int times = (int) (plug.getPower() / bit);
-				plug.setPower(plug.getPower() - times * bit);
+				int times = (int) (plug.getStoredEnergyQuanta() / bit);
+				plug.setStoredEnergyQuanta(plug.getStoredEnergyQuanta() - times * bit);
 			}
 		}
 	}
@@ -634,8 +635,8 @@ public class TileEntityHadron extends TileEntityMachineBase implements IEnergyRe
 
 							TileEntityHadronPower plug = (TileEntityHadronPower)te;
 
-							long bit = 10000;							//how much HE one "charge point" is
-							int times = (int) (plug.getPower() / bit);	//how many charges the plug has to offer
+						long bit = 10000;							//half-joule quanta per charge point
+							int times = (int) (plug.getStoredEnergyQuanta() / bit);	//how many charges the plug has to offer
 
 							p.charge += times;
 							p.plugs.add(plug);

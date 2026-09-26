@@ -1,5 +1,6 @@
 package com.hbm.blocks.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.machine.FloodlightBeam.TileEntityFloodlightBeam;
 import com.hbm.util.Compat;
@@ -90,7 +91,7 @@ public class Floodlight extends BlockContainer implements IToolable {
 		public float rotation;
 		protected BlockPos[] lightPos = new BlockPos[15];
 		public static final long maxPower = 5_000;
-		public long power;
+		public long energyQuanta;
 		
 		public int delay;
 		public boolean isOn;
@@ -108,8 +109,8 @@ public class Floodlight extends BlockContainer implements IToolable {
 					return;
 				}
 				
-				if(power >= 100) {
-					this.setPower(this.power - 100);
+				if(energyQuanta >= 100) {
+					this.setStoredEnergyQuanta(this.energyQuanta - 100);
 					
 					if(!isOn) {
 						this.isOn = true;
@@ -250,7 +251,7 @@ public class Floodlight extends BlockContainer implements IToolable {
 		public void readFromNBT(NBTTagCompound nbt) {
 			super.readFromNBT(nbt);
 			this.rotation = nbt.getFloat("rotation");
-			this.power = nbt.getLong("power");
+			this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 			this.isOn = nbt.getBoolean("isOn");
 		}
 
@@ -258,17 +259,17 @@ public class Floodlight extends BlockContainer implements IToolable {
 		public void writeToNBT(NBTTagCompound nbt) {
 			super.writeToNBT(nbt);
 			nbt.setFloat("rotation", rotation);
-			nbt.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 			nbt.setBoolean("isOn", isOn);
 		}
 
-		@Override public long getPower() { return power; }
-		@Override public void setPower(long power) {
-			if(this.power == power) return;
-			this.power = power;
+		@Override public long getStoredEnergyQuanta() { return energyQuanta; }
+		@Override public void setStoredEnergyQuanta(long energyQuanta) {
+			if(this.energyQuanta == energyQuanta) return;
+			this.energyQuanta = energyQuanta;
 			this.markPowerNetDirty();
 		}
-		@Override public long getMaxPower() { return maxPower; }
+		@Override public long getEnergyCapacityQuanta() { return maxPower; }
 
 		private boolean isLoaded = true;
 		@Override public boolean isLoaded() { return isLoaded; }

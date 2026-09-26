@@ -1,5 +1,7 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +42,7 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 
 	public int health = 100;
 	public int maxHealth = 100;
-	public long power;
+	public long energyQuanta;
 	public int powerCons;
 	public int cooldown = 0;
 	public int blink = 0;
@@ -72,7 +74,7 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 
 	@Override
 	public void readIfPresent(JsonObject obj) {
-		maxPower = IConfigurableMachine.grab(obj, "L:powerCap", maxPower);
+		maxPower = IConfigurableMachine.grabEnergyQuanta(obj, "L:energyCapacityQuanta", "L:powerCap", maxPower);
 		baseCon = IConfigurableMachine.grab(obj, "I:baseConsumption", baseCon);
 		radCon = IConfigurableMachine.grab(obj, "I:radiusConsumption", radCon);
 		shCon = IConfigurableMachine.grab(obj, "I:shieldConsumption", shCon);
@@ -85,7 +87,7 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 
 	@Override
 	public void writeConfig(JsonWriter writer) throws IOException {
-		writer.name("L:powerCap").value(maxPower);
+		writer.name("L:energyCapacityQuanta").value(maxPower);
 		writer.name("I:baseConsumption").value(baseCon);
 		writer.name("I:radiusConsumption").value(radCon);
 		writer.name("I:shieldConsumption").value(shCon);
@@ -205,7 +207,7 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 		super.readFromNBT(nbt);
 		NBTTagList list = nbt.getTagList("items", 10);
 
-		this.power = nbt.getLong("powerTime");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "powerTime");
 		this.health = nbt.getInteger("health");
 		this.maxHealth = nbt.getInteger("maxHealth");
 		this.cooldown = nbt.getInteger("cooldown");
@@ -229,7 +231,7 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("powerTime", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("health", health);
 		nbt.setInteger("maxHealth", maxHealth);
 		nbt.setInteger("cooldown", cooldown);
@@ -273,7 +275,7 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 	}
 
 	public long getPowerScaled(long i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 
 	@Override
@@ -300,7 +302,7 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 
 			this.powerCons = baseCon + rStack * radCon + hStack * shCon;
 
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 
 			if(blink > 0) {
 				blink--;
@@ -320,11 +322,11 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 				health = maxHealth;
 		}
 
-		if(isOn && cooldown == 0 && health > 0 && power >= powerCons) {
+		if(isOn && cooldown == 0 && health > 0 && energyQuanta >= powerCons) {
 			doField(radius);
 
 			if(!worldObj.isRemote) {
-				this.setPower(this.power - powerCons);
+				this.setStoredEnergyQuanta(this.energyQuanta - powerCons);
 			}
 		} else {
 			this.outside.clear();
@@ -332,12 +334,12 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 		}
 
 		if(!worldObj.isRemote) {
-			if(power < powerCons)
-				this.setPower(0);
+			if(energyQuanta < powerCons)
+				this.setStoredEnergyQuanta(0);
 		}
 
 		if(!worldObj.isRemote) {
-			PacketDispatcher.wrapper.sendToAllAround(new TEFFPacket(xCoord, yCoord, zCoord, radius, health, maxHealth, (int) power, isOn, color, cooldown), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 500));
+			PacketDispatcher.wrapper.sendToAllAround(new TEFFPacket(xCoord, yCoord, zCoord, radius, health, maxHealth, energyQuanta, isOn, color, cooldown), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 500));
 		}
 	}
 
@@ -483,20 +485,20 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

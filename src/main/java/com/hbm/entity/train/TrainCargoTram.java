@@ -58,7 +58,7 @@ public class TrainCargoTram extends EntityRailCarElectric implements IGUIProvide
 	//@Override public AxisAlignedBB getCollisionBox() { return AxisAlignedBB.getBoundingBox(renderX, renderY, renderZ, renderX, renderY + 1, renderZ).expand(4, 0, 4); }
 	@Override public double getCouplingDist(TrainCoupling coupling) { return coupling != null ? 2.75 : 0; }
 
-	@Override public int getMaxPower() { return this.getPowerConsumption() * 100; }
+	@Override public int getEnergyCapacityQuanta() { return this.getPowerConsumption() * 100; }
 	@Override public int getPowerConsumption() { return 10; }
 	@Override public boolean hasChargeSlot() { return true; }
 	@Override public int getChargeSlot() { return 28; }
@@ -186,7 +186,7 @@ public class TrainCargoTram extends EntityRailCarElectric implements IGUIProvide
 		@Override
 		public void drawScreen(int x, int y, float interp) {
 			super.drawScreen(x, y, interp);
-			this.drawElectricityInfo(this, x, y, guiLeft + 152, guiTop + 18, 16, 52, train.getPower(), train.getMaxPower());
+			this.drawElectricityInfo(this, x, y, guiLeft + 152, guiTop + 18, 16, 52, train.getStoredEnergyQuanta(), train.getEnergyCapacityQuanta());
 		}
 		
 		@Override
@@ -202,10 +202,10 @@ public class TrainCargoTram extends EntityRailCarElectric implements IGUIProvide
 			Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 			drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 			
-			int i = train.getPower() * 53 / train.getMaxPower();
+			int i = train.getStoredEnergyQuanta() * 53 / train.getEnergyCapacityQuanta();
 			drawTexturedModalRect(guiLeft + 152, guiTop + 70 - i, 176, 52 - i, 16, i);
 			
-			if(train.getPower() > train.getPowerConsumption()) {
+			if(train.getStoredEnergyQuanta() > train.getPowerConsumption()) {
 				drawTexturedModalRect(guiLeft + 156, guiTop + 4, 176, 52, 9, 12);
 			}
 		}

@@ -1,5 +1,6 @@
 package com.hbm.blocks.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,7 +75,7 @@ public class AtmoTower extends BlockDummyable implements ILookOverlay {
 		TileEntityAtmoTower tower = (TileEntityAtmoTower) te;
 
 		List<String> text = new ArrayList();
-		text.add((tower.power < tower.getMaxPower() / 20 ? EnumChatFormatting.RED : EnumChatFormatting.GREEN) + "Power: " + BobMathUtil.getShortNumber(tower.power) + "HE");
+		text.add((tower.getStoredEnergyQuanta() < tower.getEnergyCapacityQuanta() / 20 ? EnumChatFormatting.RED : EnumChatFormatting.GREEN) + "Stored Energy: " + EnergyUnits.formatJoules(tower.getStoredEnergyQuanta()));
 
 		for(int i = 0; i < tower.tanks.length; i++)
 			text.add((i < 1 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + I18nUtil.resolveKey("hbmfluid." + tower.tanks[i].getTankType().getName().toLowerCase()) + ": " + tower.tanks[i].getFill() + "/" + tower.tanks[i].getMaxFill() + "mB");

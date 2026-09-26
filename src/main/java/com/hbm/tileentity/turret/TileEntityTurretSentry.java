@@ -80,7 +80,7 @@ public class TileEntityTurretSentry extends TileEntityTurretBaseNT implements IG
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return 1_000;
 	}
 

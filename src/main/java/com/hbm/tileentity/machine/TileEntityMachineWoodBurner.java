@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.handler.pollution.PollutionHandler;
 import com.hbm.handler.pollution.PollutionHandler.PollutionType;
 import com.hbm.interfaces.IControlReceiver;
@@ -36,7 +37,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineWoodBurner extends TileEntityMachineBase implements IFluidStandardReceiver, IControlReceiver, IEnergyProviderMK2, IGUIProvider, IInfoProviderEC, IFluidCopiable {
 
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 100_000;
 	public int burnTime;
 	public int maxBurnTime;
@@ -70,10 +71,10 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 
 			this.tank.setType(2, slots);
 			this.tank.loadTank(3, 4, slots);
-			this.setPower(Library.chargeItemsFromTE(slots, 5, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 5, energyQuanta, maxPower));
 
 			for(DirPos pos : getConPos()) {
-				if(power > 0) this.tryProvide(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+				if(energyQuanta > 0) this.tryProvide(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				if(worldObj.getTotalWorldTime() % 20 == 0) this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 
@@ -101,7 +102,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 						}
 					}
 
-				} else if(this.power < maxPower && isOn && breatheAir(1)) {
+				} else if(this.energyQuanta < maxPower && isOn && breatheAir(1)) {
 					this.burnTime--;
 					this.powerGen += 100;
 					if(worldObj.getTotalWorldTime() % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND);
@@ -109,7 +110,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 
 			} else {
 
-				if(this.power < maxPower && tank.getFill() > 0 && isOn && breatheAir(1)) {
+				if(this.energyQuanta < maxPower && tank.getFill() > 0 && isOn && breatheAir(1)) {
 					FT_Flammable trait = tank.getTankType().getTrait(FT_Flammable.class);
 
 					if(trait != null) {
@@ -125,8 +126,8 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 				}
 			}
 
-			this.setPower(this.power + this.powerGen);
-			if(this.power > maxPower) this.setPower(maxPower);
+			this.setStoredEnergyQuanta(this.energyQuanta + this.powerGen);
+			if(this.energyQuanta > maxPower) this.setStoredEnergyQuanta(maxPower);
 
 			this.networkPackNT(25);
 		} else {
@@ -142,7 +143,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		buf.writeInt(burnTime);
 		buf.writeInt(powerGen);
 		buf.writeInt(maxBurnTime);
@@ -155,7 +156,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		burnTime = buf.readInt();
 		powerGen = buf.readInt();
 		maxBurnTime = buf.readInt();
@@ -177,7 +178,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.burnTime = nbt.getInteger("burnTime");
 		this.maxBurnTime = nbt.getInteger("maxBurnTime");
 		this.isOn = nbt.getBoolean("isOn");
@@ -188,7 +189,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("burnTime", burnTime);
 		nbt.setInteger("maxBurnTime", maxBurnTime);
 		nbt.setBoolean("isOn", isOn);
@@ -255,19 +256,19 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
@@ -322,7 +323,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 	public void provideExtraInfo(NBTTagCompound data) {
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, isOn);
 		if(this.liquidBurn) data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, 1D);
-		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, power);
+		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(energyQuanta));
 	}
 
 	@Override

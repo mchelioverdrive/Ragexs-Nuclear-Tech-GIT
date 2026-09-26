@@ -32,7 +32,7 @@ public class GUIMachineDriveProcessor extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 		
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 134, guiTop + 18, 16, 52, machine.power, machine.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 134, guiTop + 18, 16, 52, machine.getStoredEnergyQuanta(), machine.maxPower);
         
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 49, guiTop + 17, 18, 18, mouseX, mouseY, new String[] {"Clone drive"} );
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 38, guiTop + 61, 18, 18, mouseX, mouseY, new String[] {"Start drive processing"} );
@@ -48,7 +48,7 @@ public class GUIMachineDriveProcessor extends GuiInfoContainer {
 			drawTexturedModalRect(guiLeft + 38, guiTop + 61, 192, 28, 18, 18);
 		}
 
-		int p = (int) (machine.power * 52 / machine.maxPower);
+		int p = (int) (machine.getStoredEnergyQuanta() * 52 / machine.maxPower);
 		drawTexturedModalRect(guiLeft + 134, guiTop + 18 + 52 - p, xSize, 52 - p, 16, p);
 
 		if(machine.isProcessing) {

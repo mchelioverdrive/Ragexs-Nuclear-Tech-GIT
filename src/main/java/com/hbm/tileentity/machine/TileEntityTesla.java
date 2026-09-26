@@ -30,7 +30,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityTesla extends TileEntityMachineBase implements IEnergyReceiverMK2 {
 
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 100000;
 
 	public static int range = 10;
@@ -57,10 +57,10 @@ public class TileEntityTesla extends TileEntityMachineBase implements IEnergyRec
 			this.targets.clear();
 
 			if(worldObj.getBlock(xCoord, yCoord - 1, zCoord) == ModBlocks.meteor_battery)
-				this.setPower(maxPower);
+				this.setStoredEnergyQuanta(maxPower);
 
-			if(power >= 5000) {
-				this.setPower(this.power - 5000);
+			if(energyQuanta >= 5000) {
+				this.setStoredEnergyQuanta(this.energyQuanta - 5000);
 
 				double dx = xCoord + 0.5;
 				double dy = yCoord + offset;
@@ -162,19 +162,19 @@ public class TileEntityTesla extends TileEntityMachineBase implements IEnergyRec
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

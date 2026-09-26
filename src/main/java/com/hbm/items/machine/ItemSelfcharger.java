@@ -5,6 +5,7 @@ import java.util.List;
 import com.hbm.util.BobMathUtil;
 
 import api.hbm.energymk2.IBatteryItem;
+import api.hbm.energymk2.EnergyUnits;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -20,35 +21,35 @@ public class ItemSelfcharger extends Item implements IBatteryItem {
 
 	@Override
 	public void addInformation(ItemStack itemstack, EntityPlayer player, List list, boolean bool) {
-		list.add(EnumChatFormatting.YELLOW + "" + BobMathUtil.getShortNumber(charge) + "HE/t");
+		list.add(EnumChatFormatting.YELLOW + "Output: " + EnergyUnits.formatQuantaPerTickAsWatts(charge));
 	}
 
 	@Override
-	public void chargeBattery(ItemStack stack, long i) { }
+	public void receiveEnergyQuanta(ItemStack stack, long i) { }
 
 	@Override
-	public void setCharge(ItemStack stack, long i) { }
+	public void setStoredEnergyQuanta(ItemStack stack, long i) { }
 
 	@Override
-	public void dischargeBattery(ItemStack stack, long i) { }
+	public void extractEnergyQuanta(ItemStack stack, long i) { }
 
 	@Override
-	public long getCharge(ItemStack stack) {
+	public long getStoredEnergyQuanta(ItemStack stack) {
 		return charge;
 	}
 
 	@Override
-	public long getMaxCharge(ItemStack stack) {
+	public long getEnergyCapacityQuanta(ItemStack stack) {
 		return charge;
 	}
 
 	@Override
-	public long getChargeRate() {
+	public long getMaxInputQuantaPerTick() {
 		return 0;
 	}
 
 	@Override
-	public long getDischargeRate() {
+	public long getMaxOutputQuantaPerTick() {
 		return charge;
 	}
 

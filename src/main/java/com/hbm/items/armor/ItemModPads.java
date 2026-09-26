@@ -74,8 +74,8 @@ public class ItemModPads extends ItemArmorMod {
 	//	//					if(charge == 0)
 	//	//						charge = powered.consumption / 40;
 ////
-	//	//					long power = Math.min(powered.getMaxCharge(stack), powered.getCharge(stack) + charge);
-	//	//					powered.setCharge(stack, power);
+	//	//					long power = Math.min(powered.getEnergyCapacityQuanta(stack), powered.getStoredEnergyQuanta(stack) + charge);
+	//	//					powered.setStoredEnergyQuanta(stack, power);
 	//	//				}
 	//	//			}
 	//	//		}

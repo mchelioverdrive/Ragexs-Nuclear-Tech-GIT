@@ -1,5 +1,6 @@
 package com.hbm.inventory.gui;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import org.lwjgl.opengl.GL11;
@@ -36,7 +37,7 @@ public class GUIRadiolysis extends GuiInfoContainer {
 		radiolysis.tanks[1].renderTankInfo(this, mouseX, mouseY, guiLeft + 87, guiTop + 17, 12, 16);
 		radiolysis.tanks[2].renderTankInfo(this, mouseX, mouseY, guiLeft + 87, guiTop + 53, 12, 16);
 		
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 17, 16, 34, radiolysis.power, radiolysis.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 17, 16, 34, radiolysis.getStoredEnergyQuanta(), radiolysis.maxPower);
 		
 		String[] descText = I18nUtil.resolveKeyArray("desc.gui.radiolysis.desc");
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 16, guiTop + 16, 16, 16, guiLeft - 8, guiTop + 16 + 16, descText);
@@ -50,7 +51,7 @@ public class GUIRadiolysis extends GuiInfoContainer {
 		
 		for(int i = 0; i < pellets.size(); i++) {
 			ItemRTGPellet pellet = pellets.get(i);
-			pelletText[i + 1] = I18nUtil.resolveKey("desc.gui.rtg.pelletPower", I18nUtil.resolveKey(pellet.getUnlocalizedName() + ".name"), pellet.getHeat() * 10);
+			pelletText[i + 1] = I18nUtil.resolveKey("desc.gui.rtg.pelletPower", I18nUtil.resolveKey(pellet.getUnlocalizedName() + ".name"), EnergyUnits.formatQuantaPerTickAsWatts(pellet.getHeat() * 10));
 		}
 		
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 16, guiTop + 16 + 36, 16, 16, guiLeft - 8, guiTop + 16 + 36 + 16, pelletText);
@@ -71,7 +72,7 @@ public class GUIRadiolysis extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
-		int i = (int)(radiolysis.getPower() * 34 / radiolysis.getMaxPower());
+		int i = (int)(radiolysis.getStoredEnergyQuanta() * 34 / radiolysis.getEnergyCapacityQuanta());
 		drawTexturedModalRect(guiLeft + 8, guiTop + 51 - i, 240, 34 - i, 16, i);
 		
 		radiolysis.tanks[0].renderTank(guiLeft + 61, guiTop + 69, this.zLevel, 8, 52);

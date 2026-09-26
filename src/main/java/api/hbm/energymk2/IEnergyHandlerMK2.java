@@ -10,9 +10,15 @@ import net.minecraft.util.Vec3;
 /** DO NOT USE DIRECTLY! This is simply the common ancestor to providers and receivers, because all this behavior has to be excluded from conductors! */
 public interface IEnergyHandlerMK2 extends IEnergyConnectorMK2, ILoadedTile {
 
-	public long getPower();
-	public void setPower(long power);
-	public long getMaxPower();
+	/** SI-native path. Defaults adapt addons implementing only the former HE contract. */
+	public default long getStoredEnergyQuanta() { return EnergyUnits.legacyHeToQuanta(getPower()); }
+	public default void setStoredEnergyQuanta(long energyQuanta) { setPower(EnergyUnits.quantaToLegacyHe(energyQuanta)); }
+	public default long getEnergyCapacityQuanta() { return EnergyUnits.legacyHeToQuanta(getMaxPower()); }
+
+	/** Legacy HE API. One legacy HE is exactly one half-joule quantum. */
+	@Deprecated public default long getPower() { return getStoredEnergyQuanta(); }
+	@Deprecated public default void setPower(long legacyHe) { setStoredEnergyQuanta(EnergyUnits.legacyHeToQuanta(legacyHe)); }
+	@Deprecated public default long getMaxPower() { return EnergyUnits.quantaToLegacyHe(getEnergyCapacityQuanta()); }
 
 	public default void markPowerNetDirty() {
 		PowerNetMK2.markEndpointStateDirty(this);
@@ -27,7 +33,7 @@ public interface IEnergyHandlerMK2 extends IEnergyConnectorMK2, ILoadedTile {
 	}
 	
 	public default void provideInfoForECMK2(NBTTagCompound data) {
-		data.setLong(CompatEnergyControl.L_ENERGY_HE, this.getPower());
-		data.setLong(CompatEnergyControl.L_CAPACITY_HE, this.getMaxPower());
+		data.setLong(CompatEnergyControl.L_ENERGY_HE, EnergyUnits.quantaToLegacyHe(this.getStoredEnergyQuanta()));
+		data.setLong(CompatEnergyControl.L_CAPACITY_HE, EnergyUnits.quantaToLegacyHe(this.getEnergyCapacityQuanta()));
 	}
 }

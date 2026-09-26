@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.lib.Library;
 import com.hbm.tileentity.TileEntityLoadedBase;
@@ -12,7 +13,7 @@ import net.minecraft.nbt.NBTTagCompound;
 
 public class TileEntityMachineSPP extends TileEntityLoadedBase implements IEnergyProviderMK2, IInfoProviderEC {
 	
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 100000;
 	public int age = 0;
 	public int gen = 0;
@@ -32,9 +33,9 @@ public class TileEntityMachineSPP extends TileEntityLoadedBase implements IEnerg
 				gen = checkStructure() * 15;
 			
 			if(gen > 0)
-				this.setPower(this.power + gen);
-			if(power > maxPower)
-				this.setPower(maxPower);
+				this.setStoredEnergyQuanta(this.energyQuanta + gen);
+			if(energyQuanta > maxPower)
+				this.setStoredEnergyQuanta(maxPower);
 		}
 		
 	}
@@ -75,25 +76,25 @@ public class TileEntityMachineSPP extends TileEntityLoadedBase implements IEnerg
 	}
 
 	@Override
-	public long getPower() {
-		return this.power;
+	public long getStoredEnergyQuanta() {
+		return this.energyQuanta;
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return this.maxPower;
 	}
 
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, this.gen > 0);
-		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, this.gen);
+		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(this.gen));
 	}
 }

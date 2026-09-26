@@ -41,7 +41,7 @@ public class GUIMachineRefinery extends GuiInfoContainer {
 		refinery.tanks[2].renderTankInfo(this, mouseX, mouseY, guiLeft + 106, guiTop + 42, 16, 52);
 		refinery.tanks[3].renderTankInfo(this, mouseX, mouseY, guiLeft + 126, guiTop + 42, 16, 52);
 		refinery.tanks[4].renderTankInfo(this, mouseX, mouseY, guiLeft + 146, guiTop + 42, 16, 52);
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 186, guiTop + 18, 16, 52, refinery.power, refinery.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 186, guiTop + 18, 16, 52, refinery.getStoredEnergyQuanta(), refinery.maxPower);
 	}
 	
 	@Override

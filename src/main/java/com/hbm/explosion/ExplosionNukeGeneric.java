@@ -510,7 +510,7 @@ public class ExplosionNukeGeneric {
 			TileEntity te = world.getTileEntity(x, y, z);
 
 			if (te != null && te instanceof IEnergyHandlerMK2) {
-				((IEnergyHandlerMK2)te).setPower(0);
+				((IEnergyHandlerMK2)te).setStoredEnergyQuanta(0);
 				if(random.nextInt(5) < 1) world.setBlock(x, y, z, ModBlocks.block_electrical_scrap);
 			}
 			if (te != null && te instanceof IEnergyProvider) {

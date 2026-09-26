@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
@@ -36,7 +37,7 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
-	public long power = 0;
+	public long energyQuanta = 0;
 	public final static long maxPower = 50000;
 
 	public int press;
@@ -65,13 +66,13 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 		if(!worldObj.isRemote) {
 			
 			this.updateConnections();
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 			
 			boolean canProcess = this.canProcess();
 			
-			if((canProcess || this.isRetracting || this.delay > 0) && power >= 100) {
+			if((canProcess || this.isRetracting || this.delay > 0) && energyQuanta >= 100) {
 				
-				this.setPower(this.power - 100);
+				this.setStoredEnergyQuanta(this.energyQuanta - 100);
 				
 				if(delay <= 0) {
 					
@@ -122,7 +123,7 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 			}
 			
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setInteger("press", press);
 			if(slots[2] != null) {
 				NBTTagCompound stack = new NBTTagCompound();
@@ -150,7 +151,7 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
 		
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.syncPress = nbt.getInteger("press");
 		
 		if(nbt.hasKey("stack")) {
@@ -164,7 +165,7 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 	}
 	
 	public boolean canProcess() {
-		if(power < 100) return false;
+		if(energyQuanta < 100) return false;
 		if(slots[1] == null || slots[2] == null) return false;
 		
 		ItemStack output = PressRecipes.getOutput(slots[2], slots[1]);
@@ -211,7 +212,7 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 		super.readFromNBT(nbt);
 		
 		press = nbt.getInteger("press");
-		power = nbt.getInteger("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		isRetracting = nbt.getBoolean("ret");
 	}
 	
@@ -220,24 +221,24 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 		super.writeToNBT(nbt);
 
 		nbt.setInteger("press", press);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setBoolean("ret", isRetracting);
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 	

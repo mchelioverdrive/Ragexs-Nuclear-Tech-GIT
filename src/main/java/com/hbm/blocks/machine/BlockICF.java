@@ -176,27 +176,27 @@ public class BlockICF extends BlockContainer implements IBlockCT {
 			return null;
 		}
 
-		@Override public long getPower() {
+		@Override public long getStoredEnergyQuanta() {
 			if(this.getBlockMetadata() != 1) return 0;
 			if(block == null) return 0;
 			TileEntityICFController controller = this.getCore();
-			if(controller != null) return controller.getPower();
+			if(controller != null) return controller.getStoredEnergyQuanta();
 			
 			return 0;
 		}
 
-		@Override public void setPower(long power) {
+		@Override public void setStoredEnergyQuanta(long power) {
 			if(this.getBlockMetadata() != 1) return;
 			if(block == null) return;
 			TileEntityICFController controller = this.getCore();
-			if(controller != null) controller.setPower(power);
+			if(controller != null) controller.setStoredEnergyQuanta(power);
 		}
 
-		@Override public long getMaxPower() {
+		@Override public long getEnergyCapacityQuanta() {
 			if(this.getBlockMetadata() != 1) return 0;
 			if(block == null) return 0;
 			TileEntityICFController controller = this.getCore();
-			if(controller != null) return controller.getMaxPower();
+			if(controller != null) return controller.getEnergyCapacityQuanta();
 			
 			return 0;
 		}

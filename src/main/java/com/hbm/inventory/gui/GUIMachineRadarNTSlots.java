@@ -63,8 +63,8 @@ public class GUIMachineRadarNTSlots extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
-		if(radar.power > 0) {
-			int i = (int) (radar.power * 160 / radar.maxPower);
+		if(radar.getStoredEnergyQuanta() > 0) {
+			int i = (int) (radar.getStoredEnergyQuanta() * 160 / radar.maxPower);
 			drawTexturedModalRect(guiLeft + 8, guiTop + 64, 0, 185, i, 16);
 		}
 	}

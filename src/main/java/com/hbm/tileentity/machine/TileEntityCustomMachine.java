@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,7 +46,7 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 	public String machineType;
 	public MachineConfiguration config;
 
-	public long power;
+	public long energyQuanta;
 	public int flux;
 	public int heat;
 	public int maxHeat;
@@ -110,7 +111,7 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 				return;
 			}
 
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, this.config.maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, this.config.energyCapacityQuanta));
 
 			if (this.inputTanks.length > 0) this.inputTanks[0].setType(1, slots);
 			if (this.inputTanks.length > 1) this.inputTanks[1].setType(2, slots);
@@ -154,7 +155,7 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 			}
 
 			for (DirPos pos : this.connectionPos) {
-				if (config.generatorMode && power > 0)
+				if (config.generatorMode && energyQuanta > 0)
 					this.tryProvide(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				for (FluidTank tank : this.outputTanks)
 					if (tank.getFill() > 0)
@@ -178,9 +179,9 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 						int powerReq = (int) Math.max(cachedRecipe.consumptionPerTick * this.config.recipeConsumptionMult, 1);
 
 						this.progress++;
-						this.setPower(this.power + powerReq);
+						this.setStoredEnergyQuanta(this.energyQuanta + powerReq);
 						this.heat -= cachedRecipe.heat;
-						if (power > config.maxPower) this.setPower(config.maxPower);
+						if (energyQuanta > config.energyCapacityQuanta) this.setStoredEnergyQuanta(config.energyCapacityQuanta);
 						if (worldObj.getTotalWorldTime() % 20 == 0) {
 							pollution(cachedRecipe);
 							radiation(cachedRecipe);
@@ -199,9 +200,9 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 						this.maxProgress = (int) Math.max(recipe.duration / this.config.recipeSpeedMult, 1);
 						int powerReq = (int) Math.max(recipe.consumptionPerTick * this.config.recipeConsumptionMult, 1);
 
-						if (this.power >= powerReq && this.hasRequiredQuantities(recipe) && this.hasSpace(recipe)) {
+						if (this.energyQuanta >= powerReq && this.hasRequiredQuantities(recipe) && this.hasSpace(recipe)) {
 							this.progress++;
-							this.setPower(this.power - powerReq);
+							this.setStoredEnergyQuanta(this.energyQuanta - powerReq);
 							this.heat -= recipe.heat;
 							if (worldObj.getTotalWorldTime() % 20 == 0) {
 								pollution(recipe);
@@ -223,7 +224,7 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 
 			NBTTagCompound data = new NBTTagCompound();
 			data.setString("type", this.machineType);
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setBoolean("structureOK", structureOK);
 			data.setInteger("flux", flux);
 			data.setInteger("heat", heat);
@@ -465,7 +466,7 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 		this.machineType = nbt.getString("type");
 		if(this.config == null) this.init();
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.progress = nbt.getInteger("progress");
 		this.flux = nbt.getInteger("flux");
 		this.heat = nbt.getInteger("heat");
@@ -563,32 +564,32 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 	}
 
 	@Override
-	public long getPower() {
-		return this.power;
+	public long getStoredEnergyQuanta() {
+		return this.energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
-		return this.config != null ? this.config.maxPower : 1;
+	public long getEnergyCapacityQuanta() {
+		return this.config != null ? this.config.energyCapacityQuanta : 1;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long transferPower(long power) {
-		if(this.config != null && this.config.generatorMode) return power;
+	public long receiveEnergyQuanta(long energyQuanta) {
+		if(this.config != null && this.config.generatorMode) return energyQuanta;
 
-		this.setPower(this.getPower() + power);
+		this.setStoredEnergyQuanta(this.getStoredEnergyQuanta() + energyQuanta);
 
-		if(this.getPower() > this.getMaxPower()) {
+		if(this.getStoredEnergyQuanta() > this.getEnergyCapacityQuanta()) {
 
-			long overshoot = this.getPower() - this.getMaxPower();
-			this.setPower(this.getMaxPower());
+			long overshoot = this.getStoredEnergyQuanta() - this.getEnergyCapacityQuanta();
+			this.setStoredEnergyQuanta(this.getEnergyCapacityQuanta());
 			return overshoot;
 		}
 
@@ -596,14 +597,14 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 	}
 	
 	@Override
-	public long getReceiverSpeed() {
-		if(this.config != null && !this.config.generatorMode) return this.getMaxPower();
+	public long getMaxInputQuantaPerTick() {
+		if(this.config != null && !this.config.generatorMode) return this.getEnergyCapacityQuanta();
 		return 0;
 	}
 	
 	@Override
-	public long getProviderSpeed() {
-		if(this.config != null && this.config.generatorMode) return this.getMaxPower();
+	public long getMaxOutputQuantaPerTick() {
+		if(this.config != null && this.config.generatorMode) return this.getEnergyCapacityQuanta();
 		return 0;
 	}
 }

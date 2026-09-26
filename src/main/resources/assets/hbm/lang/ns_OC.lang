@@ -2824,8 +2824,8 @@ item.cape_dafnik.name=Dafnik's Cape
 item.cape_lpkukin.name=LPkukin's Cape
 item.cape_vertice.name=Lord Vertice's Cape
 
-tile.machine_converter_he_rf.name=HE to RF Converter
-tile.machine_converter_rf_he.name=RF to HE Converter
+tile.machine_converter_he_rf.name=J to RF Converter
+tile.machine_converter_rf_he.name=RF to J Converter
 
 item.schrabidium_hammer.name=Schrabidium Hammer
 item.euphemium_stopper.name=Stopper

@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
@@ -34,7 +35,7 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 1_000_000;
 	
 	public int progress;
@@ -52,7 +53,7 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		this.progress = nbt.getInteger("progress");
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.savedParticles = nbt.getInteger("savedParticles");
 	}
 	
@@ -60,7 +61,7 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		nbt.setInteger("progress", progress);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("savedParticles", savedParticles);
 	}
 
@@ -88,7 +89,7 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 		if(!worldObj.isRemote) {
 			
 			this.isOn = false;
-			this.setPower(Library.chargeTEFromItems(slots, 5, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 5, energyQuanta, maxPower));
 			
 			if(worldObj.getTotalWorldTime() % 20 == 0) {
 				for(DirPos pos : getConPos()) this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
@@ -136,12 +137,12 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 				}
 			}
 			
-			if(slots[1] != null && this.savedParticles > 0 && this.power >= this.consumption) {
+			if(slots[1] != null && this.savedParticles > 0 && this.energyQuanta >= this.consumption) {
 				ExposureChamberRecipe recipe = this.getRecipe(slots[1], slots[3]);
 				
 				if(recipe != null && (slots[4] == null || (slots[4].getItem() == recipe.output.getItem() && slots[4].getItemDamage() == recipe.output.getItemDamage() && slots[4].stackSize + recipe.output.stackSize <= slots[4].getMaxStackSize()))) {
 					this.progress++;
-					this.setPower(this.power - this.consumption);
+					this.setStoredEnergyQuanta(this.energyQuanta - this.consumption);
 					this.isOn = true;
 					
 					if(this.progress >= this.processTime) {
@@ -252,7 +253,7 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 		buf.writeInt(this.progress);
 		buf.writeInt(this.processTime);
 		buf.writeInt(this.consumption);
-		buf.writeLong(this.power);
+		buf.writeLong(this.energyQuanta);
 		buf.writeByte((byte) this.savedParticles);
 	}
 	
@@ -262,24 +263,24 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 		this.progress = buf.readInt();
 		this.processTime = buf.readInt();
 		this.consumption = buf.readInt();
-		this.power = buf.readLong();
+		this.energyQuanta = buf.readLong();
 		this.savedParticles = buf.readByte();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

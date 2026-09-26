@@ -151,7 +151,7 @@ public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase imp
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		for(int i = 0; i < getRecipeCount(); i++) {
 			buf.writeInt(progress[i]);
 			buf.writeInt(maxProgress[i]);
@@ -168,7 +168,7 @@ public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase imp
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		for(int i = 0; i < getRecipeCount(); i++) {
 			progress[i] = buf.readInt();
 			maxProgress[i] = buf.readInt();
@@ -200,7 +200,7 @@ public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase imp
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return 10_000_000;
 	}
 	

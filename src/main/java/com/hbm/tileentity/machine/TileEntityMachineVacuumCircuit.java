@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
@@ -37,7 +38,7 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
-	public long power;
+	public long energyQuanta;
 	public long maxPower = 2_000;
 	public long consumption;
 	
@@ -75,7 +76,7 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 			CBT_Atmosphere atmosphere = ChunkAtmosphereManager.proxy.getAtmosphere(worldObj, xCoord, yCoord, zCoord);
 			canOperate = atmosphere == null || atmosphere.getPressure() <= 0.001;
 
-			this.setPower(Library.chargeTEFromItems(slots, 5, this.getPower(), this.getMaxPower()));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 5, this.getStoredEnergyQuanta(), this.getEnergyCapacityQuanta()));
 			this.updateConnections();
 			recipe = VacuumCircuitRecipes.getRecipe(new ItemStack[] {slots[0], slots[1], slots[2], slots[3]});
 			long intendedMaxPower;
@@ -91,7 +92,7 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 				
 				if(canProcess(recipe)) {
 					this.progress++;
-					this.setPower(this.power - this.consumption);
+					this.setStoredEnergyQuanta(this.energyQuanta - this.consumption);
 					
 					if(progress >= processTime) {
 						this.progress = 0;
@@ -117,7 +118,7 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 				intendedMaxPower = 2000;
 			}
 			
-			this.maxPower = Math.max(intendedMaxPower, power);
+			this.maxPower = Math.max(intendedMaxPower, energyQuanta);
 			
 			this.networkPackNT(25);
 		}
@@ -126,7 +127,7 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 	public boolean canProcess(VacuumCircuitRecipe recipe) {
 		if(!canOperate) return false;
 		
-		if(this.power < this.consumption) return false;
+		if(this.energyQuanta < this.consumption) return false;
 
 		if(slots[4] != null) {
 			if(slots[4].getItem() != recipe.output.getItem()) return false;
@@ -198,7 +199,7 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
 
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		buf.writeLong(maxPower);
 		buf.writeLong(consumption);
 		buf.writeInt(progress);
@@ -218,7 +219,7 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
 
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		maxPower = buf.readLong();
 		consumption = buf.readLong();
 		progress = buf.readInt();
@@ -238,8 +239,8 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.power = nbt.getLong("power");
-		this.maxPower = nbt.getLong("maxPower");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
+		this.maxPower = EnergyUnits.readCapacityQuanta(nbt, "maxPower");
 		this.progress = nbt.getInteger("progress");
 		this.processTime = nbt.getInteger("processTime");
 	}
@@ -248,26 +249,26 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 
-		nbt.setLong("power", power);
-		nbt.setLong("maxPower", maxPower);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
+		EnergyUnits.writeCapacityQuanta(nbt, maxPower);
 		nbt.setInteger("progress", progress);
 		nbt.setInteger("processTime", processTime);
 	}
 
 	@Override
-	public long getPower() {
-		return Math.max(Math.min(power, maxPower), 0);
+	public long getStoredEnergyQuanta() {
+		return Math.max(Math.min(energyQuanta, maxPower), 0);
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

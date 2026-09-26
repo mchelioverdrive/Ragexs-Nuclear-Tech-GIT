@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.interfaces.IControlReceiver;
 import com.hbm.inventory.container.ContainerDriveProcessor;
 import com.hbm.inventory.gui.GUIMachineDriveProcessor;
@@ -27,7 +28,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineDriveProcessor extends TileEntityMachineBase implements IGUIProvider, IControlReceiver, IEnergyReceiverMK2 {
 
-	public long power;
+	public long energyQuanta;
 	public long maxPower = 2_000;
 
 	public boolean isProcessing;
@@ -47,11 +48,11 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 	public void updateEntity() {
 		if(!worldObj.isRemote) {
 
-			this.setPower(Library.chargeTEFromItems(slots, 3, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 3, energyQuanta, maxPower));
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
 				trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 
-			if(power < maxPower * 0.75) {
+			if(energyQuanta < maxPower * 0.75) {
 				isProcessing = false;
 				status = EnumChatFormatting.RED + "No power ";
 			} else if(slots[0] == null || slots[0].getItem() != ModItems.full_drive) {
@@ -67,7 +68,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 			}
 
 			if(isProcessing) {
-				this.setPower(this.power - 200);
+				this.setStoredEnergyQuanta(this.energyQuanta - 200);
 
 				status = EnumChatFormatting.GREEN + "" + EnumChatFormatting.ITALIC + "Processing  ";
 				progress++;
@@ -93,7 +94,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
 
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		buf.writeBoolean(isProcessing);
 		buf.writeInt(progress);
 		buf.writeBoolean(hasDrive);
@@ -105,7 +106,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
 
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		isProcessing = buf.readBoolean();
 		progress = buf.readInt();
 		hasDrive = buf.readBoolean();
@@ -117,7 +118,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setBoolean("isProcessing", isProcessing);
 		nbt.setInteger("progress", progress);
 		nbt.setString("status", status);
@@ -128,7 +129,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		isProcessing = nbt.getBoolean("isProcessing");
 		progress = nbt.getInteger("progress");
 		status = nbt.getString("status");
@@ -159,7 +160,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 			return;
 		}
 
-		if(power < maxPower * 0.75) return;
+		if(energyQuanta < maxPower * 0.75) return;
 		if(slots[0] == null || slots[0].getItem() != ModItems.full_drive) return;
 		if(ItemVOTVdrive.getProcessed(slots[0])) return;
 
@@ -170,7 +171,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 	}
 
 	private void cloneDrive() {
-		if(power < maxPower * 0.75) return;
+		if(energyQuanta < maxPower * 0.75) return;
 		if(slots[0] == null || slots[0].getItem() != ModItems.full_drive) return;
 		if(slots[1] == null || slots[1].getItem() != ModItems.hard_drive) {
 			status = EnumChatFormatting.RED + "No target ";
@@ -234,12 +235,12 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 		return bb;
 	}
 
-	@Override public long getPower() { return power; }
-	@Override public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	@Override public long getStoredEnergyQuanta() { return energyQuanta; }
+	@Override public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
-	@Override public long getMaxPower() { return maxPower; }
+	@Override public long getEnergyCapacityQuanta() { return maxPower; }
 	
 }

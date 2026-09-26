@@ -7,6 +7,8 @@ import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemBattery;
 import com.hbm.util.BobMathUtil;
 
+import api.hbm.energymk2.EnergyUnits;
+
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -24,17 +26,17 @@ public class ItemAnchorRemote extends ItemBattery {
 		long charge = maxCharge;
 		
 		if(itemstack.hasTagCompound())
-			charge = getCharge(itemstack);
+			charge = getStoredEnergyQuanta(itemstack);
 
 		if(itemstack.getItem() != ModItems.fusion_core && itemstack.getItem() != ModItems.energy_core) {
-			list.add("Energy stored: " + BobMathUtil.getShortNumber(charge) + "/" + BobMathUtil.getShortNumber(maxCharge) + "HE");
+			list.add("Stored Energy: " + EnergyUnits.formatJoules(charge) + " / " + EnergyUnits.formatJoules(maxCharge));
 		} else {
 			String charge1 = BobMathUtil.getShortNumber((charge * 100) / this.maxCharge);
 			list.add("Charge: " + charge1 + "%");
-			list.add("(" + BobMathUtil.getShortNumber(charge) + "/" + BobMathUtil.getShortNumber(maxCharge) + "HE)");
+			list.add("(" + EnergyUnits.formatJoules(charge) + " / " + EnergyUnits.formatJoules(maxCharge) + ")");
 		}
 		
-		list.add("Charge rate: " + BobMathUtil.getShortNumber(chargeRate) + "HE/t");
+		list.add("Maximum Input: " + EnergyUnits.formatQuantaPerTickAsWatts(chargeRate));
 	}
 
 	@Override
@@ -67,7 +69,7 @@ public class ItemAnchorRemote extends ItemBattery {
 			return stack;
 		}
 		
-		if(this.getCharge(stack) < 10_000) {
+		if(this.getStoredEnergyQuanta(stack) < 10_000) {
 			world.playSoundAtEntity(player, "random.orb", 0.25F, 0.75F);
 			return stack;
 		}
@@ -94,7 +96,7 @@ public class ItemAnchorRemote extends ItemBattery {
 				world.spawnParticle("portal", player.posX, player.posY + player.getRNG().nextDouble() * 2.0D, player.posZ, player.getRNG().nextGaussian(), 0.0D, player.getRNG().nextGaussian());
 			}
 			
-			this.dischargeBattery(stack, 10_000);
+			this.extractEnergyQuanta(stack, 10_000);
 			
 		} else {
 			world.playSoundAtEntity(player, "random.orb", 0.25F, 0.75F);

@@ -49,7 +49,7 @@ public class GUICoreStabilizer extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 35, guiTop + 17, 16, 52, stabilizer.power, stabilizer.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 35, guiTop + 17, 16, 52, stabilizer.getStoredEnergyQuanta(), stabilizer.maxPower);
 	}
 	
 	protected void mouseClicked(int x, int y, int i) {

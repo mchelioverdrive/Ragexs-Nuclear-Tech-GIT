@@ -1,5 +1,6 @@
 package com.hbm.items.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.items.ModItems;
@@ -31,17 +32,17 @@ public class ItemBattery extends Item implements IBatteryItem {
 	public void addInformation(ItemStack itemstack, EntityPlayer player, List list, boolean bool) {
 		long charge = maxCharge;
 		if(itemstack.hasTagCompound())
-			charge = getCharge(itemstack);
+			charge = getStoredEnergyQuanta(itemstack);
 
 		if(itemstack.getItem() != ModItems.fusion_core && itemstack.getItem() != ModItems.energy_core) {
-			list.add("Energy stored: " + BobMathUtil.getShortNumber(charge) + "/" + BobMathUtil.getShortNumber(maxCharge) + "HE");
+			list.add("Stored Energy: " + EnergyUnits.formatJoules(charge) + " / " + EnergyUnits.formatJoules(maxCharge));
 		} else {
 			String charge1 = BobMathUtil.getShortNumber((charge * 100) / this.maxCharge);
 			list.add("Charge: " + charge1 + "%");
-			list.add("(" + BobMathUtil.getShortNumber(charge) + "/" + BobMathUtil.getShortNumber(maxCharge) + "HE)");
+			list.add("(" + EnergyUnits.formatJoules(charge) + " / " + EnergyUnits.formatJoules(maxCharge) + ")");
 		}
-		list.add("Charge rate: " + BobMathUtil.getShortNumber(chargeRate) + "HE/t");
-		list.add("Discharge rate: " + BobMathUtil.getShortNumber(dischargeRate) + "HE/t");
+		list.add("Maximum Input: " + EnergyUnits.formatQuantaPerTickAsWatts(chargeRate));
+		list.add("Maximum Output: " + EnergyUnits.formatQuantaPerTickAsWatts(dischargeRate));
 	}
 
 	@Override
@@ -58,47 +59,47 @@ public class ItemBattery extends Item implements IBatteryItem {
 		return EnumRarity.common;
 	}
 
-	public void chargeBattery(ItemStack stack, long i) {
+	public void receiveEnergyQuanta(ItemStack stack, long i) {
 		if(stack.getItem() instanceof ItemBattery) {
 			if(stack.hasTagCompound()) {
-				stack.stackTagCompound.setLong("charge", stack.stackTagCompound.getLong("charge") + i);
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, EnergyUnits.readEnergyQuanta(stack.stackTagCompound, "charge") + i);
 			} else {
 				stack.stackTagCompound = new NBTTagCompound();
-				stack.stackTagCompound.setLong("charge", i);
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, i);
 			}
 		}
 	}
 
-	public void setCharge(ItemStack stack, long i) {
+	public void setStoredEnergyQuanta(ItemStack stack, long i) {
 		if(stack.getItem() instanceof ItemBattery) {
 			if(stack.hasTagCompound()) {
-				stack.stackTagCompound.setLong("charge", i);
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, i);
 			} else {
 				stack.stackTagCompound = new NBTTagCompound();
-				stack.stackTagCompound.setLong("charge", i);
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, i);
 			}
 		}
 	}
 
-	public void dischargeBattery(ItemStack stack, long i) {
+	public void extractEnergyQuanta(ItemStack stack, long i) {
 		if(stack.getItem() instanceof ItemBattery) {
 			if(stack.hasTagCompound()) {
-				stack.stackTagCompound.setLong("charge", stack.stackTagCompound.getLong("charge") - i);
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, EnergyUnits.readEnergyQuanta(stack.stackTagCompound, "charge") - i);
 			} else {
 				stack.stackTagCompound = new NBTTagCompound();
-				stack.stackTagCompound.setLong("charge", this.maxCharge - i);
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, this.maxCharge - i);
 			}
 		}
 	}
 
-	public long getCharge(ItemStack stack) {
+	public long getStoredEnergyQuanta(ItemStack stack) {
 		if(stack.getItem() instanceof ItemBattery) {
 			if(stack.hasTagCompound()) {
-				return stack.stackTagCompound.getLong("charge");
+				return EnergyUnits.readEnergyQuanta(stack.stackTagCompound, "charge");
 			} else {
 				stack.stackTagCompound = new NBTTagCompound();
-				stack.stackTagCompound.setLong("charge", ((ItemBattery) stack.getItem()).maxCharge);
-				return stack.stackTagCompound.getLong("charge");
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, ((ItemBattery) stack.getItem()).maxCharge);
+				return EnergyUnits.readEnergyQuanta(stack.stackTagCompound, "charge");
 			}
 		}
 
@@ -106,17 +107,17 @@ public class ItemBattery extends Item implements IBatteryItem {
 	}
 
 	@Override
-	public long getMaxCharge(ItemStack stack) {
+	public long getEnergyCapacityQuanta(ItemStack stack) {
 		return maxCharge;
 	}
 
 	@Override
-	public long getChargeRate() {
+	public long getMaxInputQuantaPerTick() {
 		return chargeRate;
 	}
 
 	@Override
-	public long getDischargeRate() {
+	public long getMaxOutputQuantaPerTick() {
 		return dischargeRate;
 	}
 
@@ -125,7 +126,7 @@ public class ItemBattery extends Item implements IBatteryItem {
 		if(item instanceof ItemBattery) {
 			ItemStack stack = new ItemStack(item);
 			stack.stackTagCompound = new NBTTagCompound();
-			stack.stackTagCompound.setLong("charge", 0);
+			EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, 0);
 			return stack.copy();
 		}
 
@@ -137,7 +138,7 @@ public class ItemBattery extends Item implements IBatteryItem {
 		if(item instanceof ItemBattery) {
 			ItemStack stack = new ItemStack(item);
 			stack.stackTagCompound = new NBTTagCompound();
-			stack.stackTagCompound.setLong("charge", ((ItemBattery) item).getMaxCharge(stack));
+			EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, ((ItemBattery) item).getEnergyCapacityQuanta(stack));
 			return stack.copy();
 		}
 
@@ -149,7 +150,7 @@ public class ItemBattery extends Item implements IBatteryItem {
 	}
 
 	public double getDurabilityForDisplay(ItemStack stack) {
-		return 1D - (double) getCharge(stack) / (double) getMaxCharge(stack);
+		return 1D - (double) getStoredEnergyQuanta(stack) / (double) getEnergyCapacityQuanta(stack);
 	}
 
 	@Override

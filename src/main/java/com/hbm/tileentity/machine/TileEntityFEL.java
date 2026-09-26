@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,7 +45,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityFEL extends TileEntityMachineBase implements IEnergyReceiverMK2, IGUIProvider {
 	
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 20000000;
 	public static final int powerReq = 1250;
 	public EnumWavelengths mode = EnumWavelengths.NULL;
@@ -74,7 +75,7 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 			
 			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 			this.trySubscribe(worldObj, xCoord + dir.offsetX * -5, yCoord + 1, zCoord + dir.offsetZ  * -5, dir.getOpposite());
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 			
 			if(this.isOn && !(this.slots[1] == null)) {
 				
@@ -92,11 +93,11 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 			
 			int req = (int) (powerReq * ((mode.ordinal() == 0) ? 0 : Math.pow(3, mode.ordinal())));
 			
-			if(this.isOn && this.mode != EnumWavelengths.NULL && power < req) {
-				this.setPower(0);
+			if(this.isOn && this.mode != EnumWavelengths.NULL && energyQuanta < req) {
+				this.setStoredEnergyQuanta(0);
 			}
 			
-			if(this.isOn && power >= req && this.mode != EnumWavelengths.NULL) {
+			if(this.isOn && energyQuanta >= req && this.mode != EnumWavelengths.NULL) {
 				
 				int distance = this.distance-1;
 				double blx = Math.min(xCoord, xCoord + dir.offsetX * distance) + 0.2;
@@ -118,7 +119,7 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 					}
 				}
 				
-				this.setPower(this.power - req);
+				this.setStoredEnergyQuanta(this.energyQuanta - req);
 				for(int i = 3; i < range; i++) {
 				
 					int x = xCoord + dir.offsetX * i;
@@ -180,7 +181,7 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 			this.networkPackNT(250);
 		} else {
 
-			if(power > powerReq * Math.pow(2, mode.ordinal()) && isOn && !(mode == EnumWavelengths.NULL) && distance - 3 > 0) {
+			if(energyQuanta > powerReq * Math.pow(2, mode.ordinal()) && isOn && !(mode == EnumWavelengths.NULL) && distance - 3 > 0) {
 				audioDuration += 2;
 			} else {
 				audioDuration -= 3;
@@ -223,7 +224,7 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		BufferUtil.writeString(buf, mode.toString());
 		buf.writeBoolean(isOn);
 		buf.writeBoolean(missingValidSilex);
@@ -233,7 +234,7 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		mode = EnumWavelengths.valueOf(BufferUtil.readString(buf));
 		isOn = buf.readBoolean();
 		missingValidSilex = buf.readBoolean();
@@ -249,14 +250,14 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 	}
 	
 	public long getPowerScaled(long i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		mode = EnumWavelengths.valueOf(nbt.getString("mode"));
 		isOn = nbt.getBoolean("isOn");
 		missingValidSilex = nbt.getBoolean("valid");
@@ -267,7 +268,7 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setString("mode", mode.toString());
 		nbt.setBoolean("isOn", isOn);
 		nbt.setBoolean("valid", missingValidSilex);
@@ -291,19 +292,19 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

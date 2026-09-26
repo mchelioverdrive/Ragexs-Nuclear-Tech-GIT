@@ -41,7 +41,7 @@ public class GUILaunchPadLarge extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 		
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 107, guiTop + 88 - 52, 16, 52, launchpad.power, launchpad.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 107, guiTop + 88 - 52, 16, 52, launchpad.getStoredEnergyQuanta(), launchpad.maxPower);
 		launchpad.tanks[0].renderTankInfo(this, mouseX, mouseY, guiLeft + 125, guiTop + 88 - 52, 16, 52);
 		launchpad.tanks[1].renderTankInfo(this, mouseX, mouseY, guiLeft + 143, guiTop + 88 - 52, 16, 52);
 
@@ -78,10 +78,10 @@ public class GUILaunchPadLarge extends GuiInfoContainer {
 		if(oxidizer == 1) drawTexturedModalRect(guiLeft + 148, guiTop + 23, 192, 0, 6, 8);
 		if(oxidizer == -1) drawTexturedModalRect(guiLeft + 148, guiTop + 23, 198, 0, 6, 8);
 		if(launchpad.isMissileValid()) {
-			drawTexturedModalRect(guiLeft + 112, guiTop + 23, launchpad.power >= 75_000 ? 192 : 198, 0, 6, 8);
+			drawTexturedModalRect(guiLeft + 112, guiTop + 23, launchpad.getStoredEnergyQuanta() >= 75_000 ? 192 : 198, 0, 6, 8);
 		}
 
-		int power = (int) (launchpad.power * 52 / launchpad.maxPower);
+		int power = (int) (launchpad.getStoredEnergyQuanta() * 52 / launchpad.maxPower);
 		drawTexturedModalRect(guiLeft + 107, guiTop + 88 - power, 176, 52 - power, 16, power);
 		launchpad.tanks[0].renderTank(guiLeft + 125, guiTop + 88,this.zLevel, 16, 52);
 		launchpad.tanks[1].renderTank(guiLeft + 143, guiTop + 88,this.zLevel, 16, 52);

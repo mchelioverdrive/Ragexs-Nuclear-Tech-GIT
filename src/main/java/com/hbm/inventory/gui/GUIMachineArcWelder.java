@@ -29,7 +29,7 @@ public class GUIMachineArcWelder extends GuiInfoContainer {
 		super.drawScreen(x, y, interp);
 
 		welder.tank.renderTankInfo(this, x, y, guiLeft + 35, guiTop + 63, 34, 16);
-		this.drawElectricityInfo(this, x, y, guiLeft + 152, guiTop + 18, 16, 52, welder.getPower(), welder.getMaxPower());
+		this.drawElectricityInfo(this, x, y, guiLeft + 152, guiTop + 18, 16, 52, welder.getStoredEnergyQuanta(), welder.getEnergyCapacityQuanta());
 		
 		this.drawCustomInfoStat(x, y, guiLeft + 78, guiTop + 67, 8, 8, guiLeft + 78, guiTop + 67, this.getUpgradeInfo(welder));
 	}
@@ -47,13 +47,13 @@ public class GUIMachineArcWelder extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
-		int p = (int) (welder.power * 52 / Math.max(welder.maxPower, 1));
+		int p = (int) (welder.getStoredEnergyQuanta() * 52 / Math.max(welder.maxPower, 1));
 		drawTexturedModalRect(guiLeft + 152, guiTop + 70 - p, 176, 52 - p, 16, p);
 		
 		int i = welder.progress * 33 / Math.max(welder.processTime, 1);
 		drawTexturedModalRect(guiLeft + 72, guiTop + 37, 192, 0, i, 14);
 		
-		if(welder.power >= welder.consumption) {
+		if(welder.getStoredEnergyQuanta() >= welder.consumption) {
 			drawTexturedModalRect(guiLeft + 156, guiTop + 4, 176, 52, 9, 12);
 		}
 

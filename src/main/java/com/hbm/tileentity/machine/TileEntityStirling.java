@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.io.IOException;
 
 import com.google.gson.JsonObject;
@@ -46,10 +47,10 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 		if(!worldObj.isRemote) {
 
 			if(hasCog) {
-				this.setPower(0);
+				this.setStoredEnergyQuanta(0);
 				tryPullHeat();
 
-				this.setPower((long) (this.heat * (this.isCreative() ? 1 : this.efficiency)));
+				this.setStoredEnergyQuanta((long) (this.heat * (this.isCreative() ? 1 : this.efficiency)));
 
 				if(warnCooldown > 0)
 					warnCooldown--;
@@ -90,7 +91,7 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 			}
 
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", powerBuffer);
+			EnergyUnits.writeEnergyQuanta(data, powerBuffer);
 			data.setInteger("heat", heat);
 			data.setBoolean("hasCog", hasCog);
 			INBTPacketReceiver.networkPack(this, data, 150);
@@ -102,7 +103,7 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 			} else {
 
 				if(this.powerBuffer > 0)
-					this.setPower(this.powerBuffer - 1);
+					this.setStoredEnergyQuanta(this.powerBuffer - 1);
 			}
 
 			this.heat = 0;
@@ -145,7 +146,7 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 
 	@Override
 	public void networkUnpack(NBTTagCompound nbt) {
-		this.powerBuffer = nbt.getLong("power");
+		this.powerBuffer = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.heat = nbt.getInteger("heat");
 		this.hasCog = nbt.getBoolean("hasCog");
 	}
@@ -171,7 +172,7 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.powerBuffer = nbt.getLong("powerBuffer");
+		this.powerBuffer = EnergyUnits.readEnergyQuanta(nbt, "powerBuffer");
 		this.hasCog = nbt.getBoolean("hasCog");
 		this.overspeed = nbt.getInteger("overspeed");
 	}
@@ -180,13 +181,13 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 
-		nbt.setLong("powerBuffer", powerBuffer);
+		EnergyUnits.writeEnergyQuanta(nbt, powerBuffer);
 		nbt.setBoolean("hasCog", hasCog);
 		nbt.setInteger("overspeed", overspeed);
 	}
 
 	@Override
-	public void setPower(long power) {
+	public void setStoredEnergyQuanta(long power) {
 		if(this.powerBuffer == power) return;
 		this.powerBuffer = power;
 		this.markPowerNetDirty();
@@ -199,18 +200,18 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 	}
 
 	@Override
-	public long getPower() {
+	public long getStoredEnergyQuanta() {
 		return powerBuffer;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return powerBuffer;
 	}
 
 	@Override
-	public long getProviderSpeed() {
-		return this.hasCog ? this.getMaxPower() : 0;
+	public long getMaxOutputQuantaPerTick() {
+		return this.hasCog ? this.getEnergyCapacityQuanta() : 0;
 	}
 
 	AxisAlignedBB bb = null;

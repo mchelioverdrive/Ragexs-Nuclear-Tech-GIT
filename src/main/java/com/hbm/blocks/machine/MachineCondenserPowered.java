@@ -1,5 +1,6 @@
 package com.hbm.blocks.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,7 +72,7 @@ public class MachineCondenserPowered extends BlockDummyable implements ILookOver
 		TileEntityCondenserPowered tower = (TileEntityCondenserPowered) te;
 		List<String> text = new ArrayList();
 		
-		text.add(BobMathUtil.getShortNumber(tower.power) + "HE / " + BobMathUtil.getShortNumber(tower.maxPower) + "HE");
+		text.add(EnergyUnits.formatJoules(tower.getStoredEnergyQuanta()) + " / " + EnergyUnits.formatJoules(tower.maxPower));
 
 		for(int i = 0; i < tower.tanks.length; i++)
 			text.add((i < 1 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + tower.tanks[i].getTankType().getLocalizedName() + ": " + tower.tanks[i].getFill() + "/" + tower.tanks[i].getMaxFill() + "mB");

@@ -1,5 +1,7 @@
 package com.hbm.inventory.gui;
 
+import api.hbm.energymk2.EnergyUnits;
+
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.inventory.container.ContainerMachineRadGen;
@@ -26,7 +28,7 @@ public class GUIMachineRadGen extends GuiInfoContainer {
 	@Override
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 64, guiTop + 83, 48, 4, radgen.power, radgen.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 64, guiTop + 83, 48, 4, radgen.getStoredEnergyQuanta(), radgen.maxPower);
 		
 		for(int i = 0; i < 12; i++) {
 			
@@ -35,7 +37,7 @@ public class GUIMachineRadGen extends GuiInfoContainer {
 			
 			this.drawCustomInfo(this, mouseX, mouseY, guiLeft + 65, guiTop + 18 + i * 5, 46, 5, new String[] {
 					"Slot " + (i + 1) + ":",
-					radgen.production[i] + "HE/t for",
+					EnergyUnits.formatQuantaPerTickAsWatts(radgen.production[i]) + " for",
 					(radgen.maxProgress[i] - radgen.progress[i]) + " ticks (" + ((radgen.maxProgress[i] - radgen.progress[i]) * 100 / radgen.maxProgress[i]) + "%)"
 			});
 		}
@@ -63,7 +65,7 @@ public class GUIMachineRadGen extends GuiInfoContainer {
 			drawTexturedModalRect(guiLeft + 66, guiTop + 19 + i * 5, 176, 0, j, 3);
 		}
 		
-		int j = (int)(radgen.power * 48 / radgen.maxPower);
+		int j = (int)(radgen.getStoredEnergyQuanta() * 48 / radgen.maxPower);
 		drawTexturedModalRect(guiLeft + 64, guiTop + 83, 176, 3, j, 4);
 	}
 }

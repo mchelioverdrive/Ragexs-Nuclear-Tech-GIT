@@ -12,6 +12,7 @@ import com.hbm.tileentity.machine.TileEntityMachineGasCent.PseudoFluidTank;
 import com.hbm.tileentity.machine.rbmk.TileEntityRBMKBase;
 
 import api.hbm.energymk2.IBatteryItem;
+import api.hbm.energymk2.EnergyUnits;
 import api.hbm.energymk2.IEnergyHandlerMK2;
 import api.hbm.fluid.IFluidUser;
 import api.hbm.tile.IInfoProviderEC;
@@ -37,8 +38,8 @@ public class CompatEnergyControl {
 	/** Standardized discharge for IBatteryItem, returns the amount that was removed */
 	public static double dischargeItem(ItemStack stack, double needed) {
 		IBatteryItem battery = (IBatteryItem) stack.getItem();
-		long toDischarge = Math.min(battery.getDischargeRate(), Math.min(battery.getCharge(stack), (long) needed));
-		battery.dischargeBattery(stack, toDischarge);
+		long toDischarge = Math.min(battery.getMaxOutputQuantaPerTick(), Math.min(battery.getStoredEnergyQuanta(stack), (long) needed));
+		battery.extractEnergyQuanta(stack, toDischarge);
 		return toDischarge;
 	}
 	
@@ -49,8 +50,8 @@ public class CompatEnergyControl {
 		
 		if(tile instanceof IEnergyHandlerMK2) {
 			IEnergyHandlerMK2 user = (IEnergyHandlerMK2) tile;
-			data.setDouble(L_ENERGY_HE, user.getPower());
-			data.setDouble(L_CAPACITY_HE, user.getMaxPower());
+			data.setDouble(L_ENERGY_HE, EnergyUnits.quantaToLegacyHe(user.getStoredEnergyQuanta()));
+			data.setDouble(L_CAPACITY_HE, EnergyUnits.quantaToLegacyHe(user.getEnergyCapacityQuanta()));
 		}
 	}
 	

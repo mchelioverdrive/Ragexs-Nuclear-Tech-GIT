@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
@@ -43,7 +44,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 1000000;
 	public static final int demand = 1000;
 	public short progress;
@@ -74,7 +75,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 			
 			this.updateConnections();
 			
-			this.setPower(Library.chargeTEFromItems(slots, 1, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 1, energyQuanta, maxPower));
 			tank.setType(7, slots);
 			tank.loadTank(3, 4, slots);
 			
@@ -85,7 +86,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 				if(canProcess()) {
 					
 					progress++;
-					this.setPower(this.power - getPowerRequired());
+					this.setStoredEnergyQuanta(this.energyQuanta - getPowerRequired());
 					isOn = true;
 					
 					if(progress > getDuration()) {
@@ -156,7 +157,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 		super.serialize(buf);
 		buf.writeShort(progress);
 		buf.writeShort(getDuration());
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		buf.writeBoolean(isOn);
 		tank.serialize(buf);
 	}
@@ -166,7 +167,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 		super.deserialize(buf);
 		progress = buf.readShort();
 		duration = buf.readShort();
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		isOn = buf.readBoolean();
 		tank.deserialize(buf);
 	}
@@ -199,7 +200,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 		if(slots[0] == null)
 			return false;
 		
-		if(power < getPowerRequired())
+		if(energyQuanta < getPowerRequired())
 			return false;
 		
 		CrystallizerRecipe result = CrystallizerRecipes.getOutput(slots[0], tank.getTankType());
@@ -264,7 +265,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	}
 	
 	public long getPowerScaled(int i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 	
 	public int getProgressScaled(int i) {
@@ -272,19 +273,19 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 	
@@ -292,7 +293,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		tank.readFromNBT(nbt, "tank");
 	}
 	
@@ -300,7 +301,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tank.writeToNBT(nbt, "tank");
 	}
 

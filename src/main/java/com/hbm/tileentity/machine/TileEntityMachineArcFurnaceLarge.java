@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,7 +52,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 2_500_000;
 	public boolean liquidMode = false;
 	public float progress;
@@ -107,12 +108,12 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		
 		if(!worldObj.isRemote) {
 			
-			this.setPower(Library.chargeTEFromItems(slots, 3, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 3, energyQuanta, maxPower));
 			this.isProgressing = false;
 			
 			for(DirPos pos : getConPos()) this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			
-			if(power > 0) {
+			if(energyQuanta > 0) {
 				
 				boolean ingredients = this.hasIngredients();
 				boolean electrodes = this.hasElectrodes();
@@ -126,11 +127,11 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 						this.progress = 0;
 					} else {
 						
-						if(power >= consumption) {
+						if(energyQuanta >= consumption) {
 							int duration = 400 / (upgrade * 2 + 1);
 							this.progress += 1F / duration;
 							this.isProgressing = true;
-							this.setPower(this.power - consumption);
+							this.setStoredEnergyQuanta(this.energyQuanta - consumption);
 							FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1000);
 							if(this.progress >= 1F) {
 								this.process();
@@ -430,7 +431,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		buf.writeFloat(progress);
 		buf.writeFloat(lid);
 		buf.writeBoolean(isProgressing);
@@ -450,7 +451,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		this.power = buf.readLong();
+		this.energyQuanta = buf.readLong();
 		this.progress = buf.readFloat();
 		this.syncLid = buf.readFloat();
 		this.isProgressing = buf.readBoolean();
@@ -473,7 +474,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.liquidMode = nbt.getBoolean("liquidMode");
 		this.progress = nbt.getFloat("progress");
 		this.lid = nbt.getFloat("lid");
@@ -490,7 +491,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setBoolean("liquidMode", liquidMode);
 		nbt.setFloat("progress", progress);
 		nbt.setFloat("lid", lid);
@@ -506,19 +507,19 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 	

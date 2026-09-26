@@ -28,7 +28,7 @@ public class GUIMachineShredder extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 106 - 88, 16, 88, diFurnace.power, diFurnace.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 106 - 88, 16, 88, diFurnace.getStoredEnergyQuanta(), diFurnace.maxPower);
 
 		boolean flag = false;
 
@@ -58,7 +58,7 @@ public class GUIMachineShredder extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 
-		if(diFurnace.power > 0) {
+		if(diFurnace.getStoredEnergyQuanta() > 0) {
 			int i = (int)diFurnace.getPowerScaled(88);
 			drawTexturedModalRect(guiLeft + 8, guiTop + 106 - i, 176, 160 - i, 16, i);
 		}

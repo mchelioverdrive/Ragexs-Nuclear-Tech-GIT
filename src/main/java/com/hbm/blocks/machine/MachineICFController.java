@@ -1,5 +1,6 @@
 package com.hbm.blocks.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -220,7 +221,7 @@ public class MachineICFController extends BlockContainer implements ILookOverlay
 		if(!(te instanceof TileEntityICFController)) return;
 		TileEntityICFController icf = (TileEntityICFController) te;
 		List<String> text = new ArrayList();
-		text.add(BobMathUtil.getShortNumber(icf.getPower()) + "/" + BobMathUtil.getShortNumber(icf.getMaxPower()) + "HE");
+		text.add(EnergyUnits.formatJoules(icf.getStoredEnergyQuanta()) + " / " + EnergyUnits.formatJoules(icf.getEnergyCapacityQuanta()));
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 }

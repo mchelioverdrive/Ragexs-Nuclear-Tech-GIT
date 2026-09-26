@@ -1,5 +1,6 @@
 package com.hbm.tileentity.bomb;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +52,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements IControlReceiver, IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, CompatHandler.OCComponent {
 
-	public long power;
+	public long energyQuanta;
 	public final long maxPower = 100_000;
 
 	/** Legacy NBT migration only; new solid propellant is held in a ROCKET_FUEL tank. */
@@ -101,7 +102,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 			}
 
 			// All propellant, including solid rocket fuel, is supplied through fluid tanks.
-			this.setPower(Library.chargeTEFromItems(slots, 2, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 2, energyQuanta, maxPower));
 			for(FluidTank tank : tanks) tank.loadTank(3, 4, slots);
 
 			rocket = ItemCustomRocket.get(slots[0]);
@@ -265,7 +266,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		// Deplete all fills
 		for(int i = 0; i < tanks.length; i++) tanks[i] = new FluidTank(Fluids.NONE, 64_000);
 
-		this.setPower((long) (this.power - maxPower * 0.75));
+		this.setStoredEnergyQuanta((long) (this.energyQuanta - maxPower * 0.75));
 
 		slots[0] = null;
 		slots[1] = null;
@@ -307,7 +308,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 	}
 
 	public boolean canLaunch() {
-		return hasRocket() && hasDrive() && power >= maxPower * 0.75 && areTanksFull() && canReachDestination();
+		return hasRocket() && hasDrive() && energyQuanta >= maxPower * 0.75 && areTanksFull() && canReachDestination();
 	}
 
 	private void updateTanks() {
@@ -375,7 +376,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 			issues.add(EnumChatFormatting.RED + "Pad is obstructed");
 		}
 
-		if(power < maxPower * 0.75) {
+		if(energyQuanta < maxPower * 0.75) {
 			issues.add(EnumChatFormatting.RED + "Insufficient power");
 		}
 
@@ -443,7 +444,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
 
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 
 		buf.writeInt(height);
 		buf.writeBoolean(canSeeSky);
@@ -462,7 +463,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
 
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 
 		height = buf.readInt();
 		canSeeSky = buf.readBoolean();
@@ -479,7 +480,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("height", height);
 		nbt.setBoolean("sky", canSeeSky);
 		for(int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(nbt, "t" + i);
@@ -488,7 +489,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		legacySolidFuel = nbt.getInteger("solid");
 		height = nbt.getInteger("height");
 		canSeeSky = nbt.getBoolean("sky");
@@ -520,7 +521,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getEnergyInfo(Context context, Arguments args) {
-		return new Object[] {getPower(), getMaxPower()};
+		return new Object[] {getStoredEnergyQuanta(), getEnergyCapacityQuanta()};
 	}
 
 	@Callback(direct = true) // this doesn't return a set amount of tanks sadly.
@@ -626,13 +627,13 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		throw new NoSuchMethodException();
 	}
 
-	@Override public long getPower() { return power; }
-	@Override public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	@Override public long getStoredEnergyQuanta() { return energyQuanta; }
+	@Override public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
-	@Override public long getMaxPower() { return maxPower; }
+	@Override public long getEnergyCapacityQuanta() { return maxPower; }
 	@Override public FluidTank[] getAllTanks() { return this.tanks; }
 	@Override public FluidTank[] getReceivingTanks() { return this.tanks; }
 

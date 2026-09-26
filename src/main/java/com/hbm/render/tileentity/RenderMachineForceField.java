@@ -35,7 +35,7 @@ public class RenderMachineForceField extends TileEntitySpecialRenderer {
         
         bindTexture(ResourceManager.forcefield_top_tex);
 
-        if(ff.isOn && ff.health > 0 && ff.power > 0 && ff.cooldown == 0) {
+        if(ff.isOn && ff.health > 0 && ff.getStoredEnergyQuanta() > 0 && ff.cooldown == 0) {
         	generateSphere(segments, segments * 2, ff.radius, ff.color);
             
             double rot = (System.currentTimeMillis() / 10D) % 360;

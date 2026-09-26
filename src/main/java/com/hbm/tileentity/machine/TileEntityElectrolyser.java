@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,7 +52,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 20000000;
 	public static final int usageOreBase = 10_000;
 	public static final int usageFluidBase = 10_000;
@@ -113,7 +114,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 
 		if(!worldObj.isRemote) {
 
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 			this.tanks[0].setType(3, 4, slots);
 			this.tanks[0].loadTank(5, 6, slots);
 			this.tanks[1].unloadTank(7, 8, slots);
@@ -140,7 +141,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 			for(int i = 0; i < getCycleCount(); i++) {
 				if (this.canProcessFluid()) {
 					this.progressFluid++;
-					this.setPower(this.power - this.usageFluid);
+					this.setStoredEnergyQuanta(this.energyQuanta - this.usageFluid);
 
 					if (this.progressFluid >= this.getDurationFluid()) {
 						this.processFluids();
@@ -151,7 +152,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 
 				if (this.canProcessMetal()) {
 					this.progressOre++;
-					this.setPower(this.power - this.usageOre);
+					this.setStoredEnergyQuanta(this.energyQuanta - this.usageOre);
 
 					if (this.progressOre >= this.getDurationMetal()) {
 						this.processMetal();
@@ -208,7 +209,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 			}
 
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", this.power);
+			EnergyUnits.writeEnergyQuanta(data, this.energyQuanta);
 			data.setInteger("progressFluid", this.progressFluid);
 			data.setInteger("progressOre", this.progressOre);
 			data.setInteger("usageOre", this.usageOre);
@@ -246,7 +247,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.progressFluid = nbt.getInteger("progressFluid");
 		this.progressOre = nbt.getInteger("progressOre");
 		this.usageOre = nbt.getInteger("usageOre");
@@ -262,7 +263,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 
 	public boolean canProcessFluid() {
 
-		if(this.power < usageFluid) return false;
+		if(this.energyQuanta < usageFluid) return false;
 
 		ElectrolysisRecipe recipe = ElectrolyserFluidRecipes.recipes.get(tanks[0].getTankType());
 
@@ -313,7 +314,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 	public boolean canProcessMetal() {
 
 		if(slots[14] == null) return false;
-		if(this.power < usageOre) return false;
+		if(this.energyQuanta < usageOre) return false;
 		if(this.tanks[3].getFill() < 100) return false;
 
 		ElectrolysisMetalRecipe recipe = ElectrolyserMetalRecipes.getRecipe(slots[14]);
@@ -402,7 +403,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.progressFluid = nbt.getInteger("progressFluid");
 		this.progressOre = nbt.getInteger("progressOre");
 		this.processFluidTime = nbt.getInteger("processFluidTime");
@@ -418,7 +419,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 
-		nbt.setLong("power", this.power);
+		EnergyUnits.writeEnergyQuanta(nbt, this.energyQuanta);
 		nbt.setInteger("progressFluid", this.progressFluid);
 		nbt.setInteger("progressOre", this.progressOre);
 		nbt.setInteger("processFluidTime", getDurationFluid());
@@ -461,19 +462,19 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 	}
 
 	@Override
-	public long getPower() {
-		return this.power;
+	public long getStoredEnergyQuanta() {
+		return this.energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 

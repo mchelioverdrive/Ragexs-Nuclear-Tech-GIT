@@ -30,7 +30,7 @@ public class GUIAssemfac extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 234, guiTop + 164, 16, 52, assemfac.power, assemfac.getMaxPower());
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 234, guiTop + 164, 16, 52, assemfac.getStoredEnergyQuanta(), assemfac.getEnergyCapacityQuanta());
 
 		assemfac.water.renderTankInfo(this, mouseX, mouseY, guiLeft + 209, guiTop + 181, 9, 54);
 		assemfac.steam.renderTankInfo(this, mouseX, mouseY, guiLeft + 218, guiTop + 181, 9, 54);
@@ -66,10 +66,10 @@ public class GUIAssemfac extends GuiInfoContainer {
 		
 		Minecraft.getMinecraft().getTextureManager().bindTexture(chemfac);
 		
-		int p = (int) (assemfac.power * 52 / assemfac.getMaxPower());
+		int p = (int) (assemfac.getStoredEnergyQuanta() * 52 / assemfac.getEnergyCapacityQuanta());
 		drawTexturedModalRect(guiLeft + 234, guiTop + 216 - p, 0, 219 - p, 16, p);
 		
-		if(assemfac.power > 0)
+		if(assemfac.getStoredEnergyQuanta() > 0)
 			drawTexturedModalRect(guiLeft + 238, guiTop + 150, 0, 219, 9, 12);
 
 		assemfac.water.renderTank(guiLeft + 210, guiTop + 234, this.zLevel, 7, 52);

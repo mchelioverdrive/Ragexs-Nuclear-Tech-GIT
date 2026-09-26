@@ -78,7 +78,7 @@ public class TileEntityLaunchPadLarge extends TileEntityLaunchPadBase {
 				delay = 20;
 			}
 			
-			if(this.power >= 75_000) {
+			if(this.energyQuanta >= 75_000) {
 				if(delay > 0) {
 					delay--;
 					

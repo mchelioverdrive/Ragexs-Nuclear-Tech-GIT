@@ -265,3 +265,10 @@ INCOMPLETE:
 - Added explicit inventory, power, and standard fluid-transfer invalidation plus a compact 20-tick item/tank audit for direct mutations; completion revalidates current shared resources before consumption and production.
 - Added Chemplant recipe generations for `/ntmreload` and saved the next accounting boundary and active presentation state beside existing progress, power, and tank NBT, without unloaded-time production.
 - Kept multi-recipe Chemplant variants and Assembly Factory on their legacy paths. In-game fluid, atmosphere, automation, reload, and lifecycle behavior remains to be validated.
+
+2026-09-26 01:28 — Convert electrical energy to joules and watts
+
+- Converted RTM electrical machines, item batteries, storage, and MK2 transfers to exact half-joule energy quanta; displayed energy and power now use SI joules and watts while preserving equivalent machine balance.
+- Added versioned energy NBT reads for existing HE-valued worlds and writes for new saves. Migrated relevant packets, capacity and machine configuration keys, converter behavior, and electrical displays.
+- Kept legacy HE APIs and configuration keys at compatibility boundaries. RF uses 2.5 J per RF; the existing default RF-to-RTM converter loss remains a separate efficiency behavior.
+- Offline Java compilation passed. Existing-world loading, RF exchange, addon behavior, dedicated-server operation, and in-game UI still require runtime checks.

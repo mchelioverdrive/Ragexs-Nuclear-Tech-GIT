@@ -66,7 +66,7 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 
 
 	public static final long maxPower = 1_000_000;
-	public long power;
+	public long energyQuanta;
 	public boolean operational = false;
 
 	public boolean enableDrill = false;
@@ -129,15 +129,15 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 
 			if(chuteTimer > 0) chuteTimer--;
 
-			this.setPower(Library.chargeTEFromItems(slots, 0, this.getPower(), this.getMaxPower()));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, this.getStoredEnergyQuanta(), this.getEnergyCapacityQuanta()));
 			this.operational = false;
 			int radiusLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
 
 			EnumDrillType type = this.getInstalledDrill();
-			if(this.enableDrill && type != null && this.power >= this.getPowerConsumption()) {
+			if(this.enableDrill && type != null && this.energyQuanta >= this.getPowerConsumption()) {
 
 				operational = true;
-				this.setPower(this.power - this.getPowerConsumption());
+				this.setStoredEnergyQuanta(this.energyQuanta - this.getPowerConsumption());
 
 				this.speed = type.speed;
 				this.speed *= (1 + speedLevel / 2D);
@@ -219,7 +219,7 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 		buf.writeBoolean(operational);
 		buf.writeInt(targetDepth);
 		buf.writeInt(chuteTimer);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		tank.serialize(buf);
 	}
 
@@ -234,7 +234,7 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 		operational = buf.readBoolean();
 		targetDepth = buf.readInt();
 		chuteTimer = buf.readInt();
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		tank.deserialize(buf);
 	}
 
@@ -899,7 +899,7 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 		this.enableVeinMiner = nbt.getBoolean("v");
 		this.enableSilkTouch = nbt.getBoolean("s");
 		this.targetDepth = nbt.getInteger("t");
-		this.power = nbt.getLong("p");
+		this.energyQuanta = nbt.getLong("p");
 		this.tank.readFromNBT(nbt, "tank");
 	}
 
@@ -913,7 +913,7 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 		nbt.setBoolean("v", enableVeinMiner);
 		nbt.setBoolean("s", enableSilkTouch);
 		nbt.setInteger("t", targetDepth);
-		nbt.setLong("p", power);
+		nbt.setLong("p", energyQuanta);
 		tank.writeToNBT(nbt, "tank");
 	}
 
@@ -959,19 +959,19 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 	}
 
 	@Override
-	public long getPower() {
-		return this.power;
+	public long getStoredEnergyQuanta() {
+		return this.energyQuanta;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

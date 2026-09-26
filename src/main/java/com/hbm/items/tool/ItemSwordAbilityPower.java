@@ -1,8 +1,8 @@
 package com.hbm.items.tool;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
-import com.hbm.util.BobMathUtil;
 
 import api.hbm.energymk2.IBatteryItem;
 import cpw.mods.fml.relauncher.Side;
@@ -26,53 +26,53 @@ public class ItemSwordAbilityPower extends ItemSwordAbility implements IBatteryI
 	}
 
 	@Override
-    public void chargeBattery(ItemStack stack, long i) {
+    public void receiveEnergyQuanta(ItemStack stack, long i) {
     	if(stack.getItem() instanceof ItemSwordAbilityPower) {
     		if(stack.hasTagCompound()) {
-    			stack.stackTagCompound.setLong("charge", stack.stackTagCompound.getLong("charge") + i);
+    			EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, EnergyUnits.readEnergyQuanta(stack.stackTagCompound, "charge") + i);
     		} else {
     			stack.stackTagCompound = new NBTTagCompound();
-    			stack.stackTagCompound.setLong("charge", i);
+    			EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, i);
     		}
     	}
     }
 
 	@Override
-    public void setCharge(ItemStack stack, long i) {
+    public void setStoredEnergyQuanta(ItemStack stack, long i) {
     	if(stack.getItem() instanceof ItemSwordAbilityPower) {
     		if(stack.hasTagCompound()) {
-    			stack.stackTagCompound.setLong("charge", i);
+    			EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, i);
     		} else {
     			stack.stackTagCompound = new NBTTagCompound();
-    			stack.stackTagCompound.setLong("charge", i);
+    			EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, i);
     		}
     	}
     }
 
 	@Override
-    public void dischargeBattery(ItemStack stack, long i) {
+    public void extractEnergyQuanta(ItemStack stack, long i) {
     	if(stack.getItem() instanceof ItemSwordAbilityPower) {
     		if(stack.hasTagCompound()) {
-    			stack.stackTagCompound.setLong("charge", stack.stackTagCompound.getLong("charge") - i);
+    			EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, EnergyUnits.readEnergyQuanta(stack.stackTagCompound, "charge") - i);
     		} else {
     			stack.stackTagCompound = new NBTTagCompound();
-    			stack.stackTagCompound.setLong("charge", this.maxPower - i);
+    			EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, this.maxPower - i);
     		}
     		
-    		if(stack.stackTagCompound.getLong("charge") < 0)
-    			stack.stackTagCompound.setLong("charge", 0);
+    		if(EnergyUnits.readEnergyQuanta(stack.stackTagCompound, "charge") < 0)
+    			EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, 0);
     	}
     }
 
 	@Override
-    public long getCharge(ItemStack stack) {
+    public long getStoredEnergyQuanta(ItemStack stack) {
     	if(stack.getItem() instanceof ItemSwordAbilityPower) {
     		if(stack.hasTagCompound()) {
-    			return stack.stackTagCompound.getLong("charge");
+    			return EnergyUnits.readEnergyQuanta(stack.stackTagCompound, "charge");
     		} else {
     			stack.stackTagCompound = new NBTTagCompound();
-    			stack.stackTagCompound.setLong("charge", ((ItemSwordAbilityPower)stack.getItem()).maxPower);
-    			return stack.stackTagCompound.getLong("charge");
+    			EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, ((ItemSwordAbilityPower)stack.getItem()).maxPower);
+    			return EnergyUnits.readEnergyQuanta(stack.stackTagCompound, "charge");
     		}
     	}
     	
@@ -82,7 +82,7 @@ public class ItemSwordAbilityPower extends ItemSwordAbility implements IBatteryI
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
     	
-    	list.add("Charge: " + BobMathUtil.getShortNumber(getCharge(stack)) + " / " + BobMathUtil.getShortNumber(maxPower));
+		list.add("Stored Energy: " + EnergyUnits.formatJoules(getStoredEnergyQuanta(stack)) + " / " + EnergyUnits.formatJoules(maxPower));
     	
     	super.addInformation(stack, player, list, ext);
     }
@@ -90,40 +90,40 @@ public class ItemSwordAbilityPower extends ItemSwordAbility implements IBatteryI
 	@Override
     public boolean showDurabilityBar(ItemStack stack) {
     	
-        return getCharge(stack) < maxPower;
+        return getStoredEnergyQuanta(stack) < maxPower;
     }
 
 	@Override
     public double getDurabilityForDisplay(ItemStack stack) {
     	
-        return 1 - (double)getCharge(stack) / (double)maxPower;
+        return 1 - (double)getStoredEnergyQuanta(stack) / (double)maxPower;
     }
 
 	@Override
     protected boolean canOperate(ItemStack stack) {
     	
-    	return getCharge(stack) >= this.consumption;
+    	return getStoredEnergyQuanta(stack) >= this.consumption;
     }
 
 	@Override
-    public long getMaxCharge(ItemStack stack) {
+    public long getEnergyCapacityQuanta(ItemStack stack) {
     	return maxPower;
     }
 
 	@Override
-    public long getChargeRate() {
+    public long getMaxInputQuantaPerTick() {
     	return chargeRate;
     }
 
 	@Override
-	public long getDischargeRate() {
+	public long getMaxOutputQuantaPerTick() {
 		return 0;
 	}
 
 	@Override
     public void setDamage(ItemStack stack, int damage)
     {
-        this.dischargeBattery(stack, damage * consumption);
+        this.extractEnergyQuanta(stack, damage * consumption);
     }
 
 	@Override

@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -42,7 +43,7 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 100000000;
 	public static int consumption = 1_000_000;
 
@@ -74,13 +75,13 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 
 			this.updateConnections();
 
-			this.setPower(Library.chargeTEFromItems(slots, 9, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 9, energyQuanta, maxPower));
 
 			this.upgradeManager.checkSlots(slots, 10, 11);
 
 			if(canProcess()) {
 				progress += getSpeed();
-				this.setPower(this.power - getConsumption());
+				this.setStoredEnergyQuanta(this.energyQuanta - getConsumption());
 
 				int convert = getCoolantConsumption();
 				tanks[0].setFill(tanks[0].getFill() - convert);
@@ -104,7 +105,7 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		buf.writeInt(progress);
 		buf.writeByte(plugs);
 
@@ -115,7 +116,7 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		progress = buf.readInt();
 		plugs = buf.readByte();
 
@@ -156,7 +157,7 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 
 	public boolean canProcess() {
 
-		if(power < getConsumption())
+		if(energyQuanta < getConsumption())
 			return false;
 
 		int convert = getCoolantConsumption();
@@ -245,7 +246,7 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 	}
 
 	public long getPowerScaled(long i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 
 	public int getProgressScaled(int i) {
@@ -271,7 +272,7 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 			tanks[i].readFromNBT(nbt, "t" + i);
 
 		this.progress = nbt.getInteger("progress");
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.plugs = nbt.getByte("plugs");
 	}
 
@@ -283,7 +284,7 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 			tanks[i].writeToNBT(nbt, "t" + i);
 
 		nbt.setInteger("progress", progress);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setByte("plugs", plugs);
 	}
 
@@ -318,19 +319,19 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return this.power;
+	public long getStoredEnergyQuanta() {
+		return this.energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return this.maxPower;
 	}
 
@@ -433,7 +434,7 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, this.progress > 0);
-		data.setDouble(CompatEnergyControl.D_CONSUMPTION_HE, this.progress > 0 ? getConsumption() : 0);
+		data.setDouble(CompatEnergyControl.D_CONSUMPTION_HE, EnergyUnits.quantaToLegacyHe(this.progress > 0 ? getConsumption() : 0));
 	}
 
 	@Override

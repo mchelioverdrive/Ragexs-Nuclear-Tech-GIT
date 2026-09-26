@@ -30,7 +30,7 @@ public class GUIMachineDischarger extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 106 - 88, 16, 88, diFurnace.power, diFurnace.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 106 - 88, 16, 88, diFurnace.getStoredEnergyQuanta(), diFurnace.maxPower);
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 30, guiTop + 25, 8, 80, mouseX, mouseY, new String[] {"Temperature: " + (diFurnace.temp) + "°C"});
 		String[] text = new String[] { "Accepted Fuels:",
 				"Uranium-233",
@@ -45,7 +45,6 @@ public class GUIMachineDischarger extends GuiInfoContainer {
 		String name = this.diFurnace.hasCustomInventoryName() ? this.diFurnace.getInventoryName() : I18n.format(this.diFurnace.getInventoryName());
 		
 		this.fontRendererObj.drawString(name, this.xSize / 2 - this.fontRendererObj.getStringWidth(name) / 2, 6, 4210752);
-		//this.fontRendererObj.drawString(I18n.format(String.valueOf(diFurnace.getPower()) + " HE"), this.xSize / 2 - this.fontRendererObj.getStringWidth(String.valueOf(diFurnace.getPower()) + " HE") / 2, 16, 4210752);
 		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96 + 2, 4210752);
 	}
 
@@ -59,7 +58,7 @@ public class GUIMachineDischarger extends GuiInfoContainer {
 
 	    drawTexturedModalRect(guiLeft -16, guiTop + 35, 176, 106, 16, 50);		    
 		//this.drawInfoPanel(guiLeft - 16, guiTop + 10, 16, 16, 2);
-	    if (diFurnace.getPower() > 0) {
+	    if (diFurnace.getStoredEnergyQuanta() > 0) {
 	        int i = (int) diFurnace.getPowerScaled(88);
 	        drawTexturedModalRect(guiLeft + 8, guiTop + 106 - i, 176, 88 - i, 16, i);
 

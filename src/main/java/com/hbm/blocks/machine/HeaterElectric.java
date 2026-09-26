@@ -1,5 +1,6 @@
 package com.hbm.blocks.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -77,7 +78,7 @@ public class HeaterElectric extends BlockDummyable implements ILookOverlay, IToo
 
 		List<String> text = new ArrayList();
 		text.add(String.format(Locale.US, "%,d", heater.heatEnergy) + " TU");
-		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + heater.getConsumption() + " HE/t");
+		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + EnergyUnits.formatQuantaPerTickAsWatts(heater.getConsumption()));
 		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + heater.getHeatGen() + " TU/t");
 		
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);

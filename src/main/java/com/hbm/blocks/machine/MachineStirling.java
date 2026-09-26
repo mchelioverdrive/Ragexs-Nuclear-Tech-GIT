@@ -1,5 +1,7 @@
 package com.hbm.blocks.machine;
 
+import api.hbm.energymk2.EnergyUnits;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -160,7 +162,7 @@ public class MachineStirling extends BlockDummyable implements ILookOverlay, ITo
 
 		List<String> text = new ArrayList();
 		text.add(stirling.heat + "TU/t");
-		text.add((stirling.hasCog ? stirling.powerBuffer : 0) + "HE/t");
+		text.add(EnergyUnits.formatQuantaPerTickAsWatts(stirling.hasCog ? stirling.powerBuffer : 0));
 
 		if(this != ModBlocks.machine_stirling_creative) {
 			int maxHeat = stirling.maxHeat();

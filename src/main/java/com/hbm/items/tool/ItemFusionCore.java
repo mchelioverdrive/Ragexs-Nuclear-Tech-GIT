@@ -7,6 +7,7 @@ import com.hbm.items.armor.ArmorFSBPowered;
 import com.hbm.util.BobMathUtil;
 
 import api.hbm.energymk2.IBatteryItem;
+import api.hbm.energymk2.EnergyUnits;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -33,11 +34,11 @@ public class ItemFusionCore extends Item {
 
 				if(st.getItem() instanceof IBatteryItem) {
 
-					long maxcharge = ((IBatteryItem) st.getItem()).getMaxCharge(st);
-					long charge = ((IBatteryItem) st.getItem()).getCharge(st);
+					long maxcharge = ((IBatteryItem) st.getItem()).getEnergyCapacityQuanta(st);
+					long charge = ((IBatteryItem) st.getItem()).getStoredEnergyQuanta(st);
 					long newcharge = Math.min(charge + this.charge, maxcharge);
 
-					((IBatteryItem) st.getItem()).setCharge(st, newcharge);
+					((IBatteryItem) st.getItem()).setStoredEnergyQuanta(st, newcharge);
 				}
 			}
 
@@ -52,7 +53,7 @@ public class ItemFusionCore extends Item {
 	@Override
 	public void addInformation(ItemStack itemstack, EntityPlayer player, List list, boolean bool) {
 		
-		list.add(EnumChatFormatting.YELLOW + "Charges all worn armor pieces by " + BobMathUtil.getShortNumber(charge) + "HE");
+		list.add(EnumChatFormatting.YELLOW + "Charges all worn armor pieces by " + EnergyUnits.formatJoules(charge));
 		list.add("[Requires full electric set to be worn]");
 	}
 }

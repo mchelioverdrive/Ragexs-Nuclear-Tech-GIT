@@ -1,5 +1,6 @@
 package com.hbm.tileentity.network;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 import com.hbm.calc.Location;
@@ -20,10 +21,10 @@ public class TileEntityConverterHeRf extends TileEntityLoadedBase implements IEn
 	
 	//Thanks to the great people of Fusion Warfare for helping me with the original implementation of the RF energy API
 	
-	public long power;
+	public long energyQuanta;
 	public final long maxPower = 5_000_000;
-	public static long heInput = 5;
-	public static long rfOutput = 1;
+	public static long inputQuantaPerBatch = 5;
+	public static long outputRfPerBatch = 1;
 	public static double inputDecay = 0.0;
 	public EnergyStorage storage = new EnergyStorage(1_000_000, 1_000_000, 1_000_000);
 
@@ -32,10 +33,15 @@ public class TileEntityConverterHeRf extends TileEntityLoadedBase implements IEn
 		
 		if (!worldObj.isRemote) {
 			
-			long rfCreated = Math.min(storage.getMaxEnergyStored() - storage.getEnergyStored(), power / heInput * rfOutput);
-			this.setPower(this.power - rfCreated * heInput / rfOutput);
+			// Legacy config specifies input quanta per RF output batch. The default 5:1 is lossless.
+			long outputRf = Math.max(outputRfPerBatch, 1);
+			long minimumInputQuanta = outputRf > Long.MAX_VALUE / EnergyUnits.QUANTA_PER_RF ? Long.MAX_VALUE : EnergyUnits.rfToQuanta(outputRf);
+			long inputQuanta = Math.max(inputQuantaPerBatch, minimumInputQuanta);
+			long batches = Math.min(this.energyQuanta / inputQuanta, (storage.getMaxEnergyStored() - storage.getEnergyStored()) / outputRf);
+			long rfCreated = batches * outputRf;
+			this.setStoredEnergyQuanta(this.energyQuanta - batches * inputQuanta);
 			this.storage.setEnergyStored((int) (storage.getEnergyStored() + rfCreated));
-			if(power > 0) this.setPower((long) (this.power * (1D - inputDecay)));
+			if(energyQuanta > 0) this.setStoredEnergyQuanta((long) (this.energyQuanta * (1D - inputDecay)));
 			if(rfCreated > 0) this.worldObj.markTileEntityChunkModified(this.xCoord, this.yCoord, this.zCoord, this);
 			
 			for (ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
@@ -63,20 +69,20 @@ public class TileEntityConverterHeRf extends TileEntityLoadedBase implements IEn
 	@Override public int getEnergyStored(ForgeDirection from) { return storage.getEnergyStored(); }
 	@Override public int getMaxEnergyStored(ForgeDirection from) { return storage.getMaxEnergyStored(); }
 
-	@Override public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	@Override public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
-	@Override public long getPower() { return power; }
-	@Override public long getMaxPower() { return maxPower; }
+	@Override public long getStoredEnergyQuanta() { return energyQuanta; }
+	@Override public long getEnergyCapacityQuanta() { return maxPower; }
 	@Override public ConnectionPriority getPriority() { return ConnectionPriority.LOW; }
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		storage.readFromNBT(nbt);
 	}
 	
@@ -84,7 +90,7 @@ public class TileEntityConverterHeRf extends TileEntityLoadedBase implements IEn
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		storage.writeToNBT(nbt);
 	}
 
@@ -95,15 +101,15 @@ public class TileEntityConverterHeRf extends TileEntityLoadedBase implements IEn
 
 	@Override
 	public void readIfPresent(JsonObject obj) {
-		heInput = IConfigurableMachine.grab(obj, "L:HE_Used", heInput);
-		rfOutput = IConfigurableMachine.grab(obj, "L:RF_Created", rfOutput);
+		inputQuantaPerBatch = IConfigurableMachine.grabEnergyQuanta(obj, "L:inputQuantaPerBatch", "L:HE_Used", inputQuantaPerBatch);
+		outputRfPerBatch = IConfigurableMachine.grab(obj, "L:outputRfPerBatch", IConfigurableMachine.grab(obj, "L:RF_Created", outputRfPerBatch));
 		inputDecay = IConfigurableMachine.grab(obj, "D:inputDecay2", inputDecay);
 	}
 
 	@Override
 	public void writeConfig(JsonWriter writer) throws IOException {
-		writer.name("L:HE_Used").value(heInput);
-		writer.name("L:RF_Created").value(rfOutput);
+		writer.name("L:inputQuantaPerBatch").value(inputQuantaPerBatch);
+		writer.name("L:outputRfPerBatch").value(outputRfPerBatch);
 		writer.name("D:inputDecay2").value(inputDecay);
 	}
 }

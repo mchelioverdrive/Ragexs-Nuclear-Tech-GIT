@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.inventory.container.ContainerIGenerator;
 import com.hbm.inventory.fluid.FluidType;
@@ -28,7 +29,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineIGenerator extends TileEntityMachineBase implements IFluidStandardReceiver, IGUIProvider, IInfoProviderEC {
 	
-	public long power;
+	public long energyQuanta;
 	public int spin;
 	public int[] burn = new int[4];
 	public boolean hasRTG = false;
@@ -187,7 +188,7 @@ public class TileEntityMachineIGenerator extends TileEntityMachineBase implement
 			}
 			
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, power);
 			data.setInteger("spin", spin);
 			data.setIntArray("burn", burn);
 			data.setBoolean("hasRTG", hasRTG);
@@ -225,7 +226,7 @@ public class TileEntityMachineIGenerator extends TileEntityMachineBase implement
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
 		
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.spin = nbt.getInteger("spin");
 		this.burn = nbt.getIntArray("burn");
 		this.hasRTG = nbt.getBoolean("hasRTG");
@@ -243,7 +244,7 @@ public class TileEntityMachineIGenerator extends TileEntityMachineBase implement
 		for(int i = 0; i < 3; i++)
 			tanks[i].readFromNBT(nbt, "tank_" + i);
 		
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.burn = nbt.getIntArray("burn");
 	}
 	
@@ -254,7 +255,7 @@ public class TileEntityMachineIGenerator extends TileEntityMachineBase implement
 		for(int i = 0; i < 3; i++)
 			tanks[i].writeToNBT(nbt, "tank_" + i);
 		
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setIntArray("burn", burn);
 	}
 	
@@ -293,6 +294,6 @@ public class TileEntityMachineIGenerator extends TileEntityMachineBase implement
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, this.output > 0);
-		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, this.output);
+		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(this.output));
 	}
 }

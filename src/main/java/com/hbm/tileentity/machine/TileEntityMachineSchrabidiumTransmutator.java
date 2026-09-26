@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.config.VersatileConfig;
 import com.hbm.inventory.OreDictManager;
 import com.hbm.inventory.container.ContainerMachineSchrabidiumTransmutator;
@@ -25,7 +26,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineBase implements IEnergyReceiverMK2, IGUIProvider {
 
-	public long power = 0;
+	public long energyQuanta = 0;
 	public int process = 0;
 	public static final long maxPower = 5000000;
 	public static final int processSpeed = 600;
@@ -66,14 +67,14 @@ public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineB
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		process = nbt.getInteger("process");
 	}
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("process", process);
 	}
 
@@ -96,7 +97,7 @@ public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineB
 		}
 
 		if(i == 3) {
-			if(stack.getItem() instanceof IBatteryItem && ((IBatteryItem) stack.getItem()).getCharge(stack) == 0)
+			if(stack.getItem() instanceof IBatteryItem && ((IBatteryItem) stack.getItem()).getStoredEnergyQuanta(stack) == 0)
 				return true;
 		}
 
@@ -104,7 +105,7 @@ public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineB
 	}
 
 	public long getPowerScaled(long i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 
 	public int getProgressScaled(int i) {
@@ -112,7 +113,7 @@ public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineB
 	}
 
 	public boolean canProcess() {
-		if (power >= 4990000 && slots[0] != null && MachineRecipes.mODE(slots[0], OreDictManager.U.ingot()) && slots[2] != null
+		if (energyQuanta >= 4990000 && slots[0] != null && MachineRecipes.mODE(slots[0], OreDictManager.U.ingot()) && slots[2] != null
 				&& (slots[2].getItem() == ModItems.redcoil_capacitor && slots[2].getItemDamage() < slots[2].getMaxDamage() || slots[2].getItem() == ModItems.euphemium_capacitor)
 				&& (slots[1] == null || (slots[1] != null && slots[1].getItem() == VersatileConfig.getTransmutatorItem()
 						&& slots[1].stackSize < slots[1].getMaxStackSize()))) {
@@ -130,7 +131,7 @@ public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineB
 
 		if (process >= processSpeed) {
 
-			this.setPower(0);
+			this.setStoredEnergyQuanta(0);
 			process = 0;
 
 			slots[0].stackSize--;
@@ -159,7 +160,7 @@ public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineB
 			
 			this.updateConnections();
 			
-			this.setPower(Library.chargeTEFromItems(slots, 3, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 3, energyQuanta, maxPower));
 
 			if(canProcess()) {
 				process();
@@ -168,7 +169,7 @@ public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineB
 			}
 			
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setInteger("progress", process);
 			this.networkPack(data, 50);
 			
@@ -229,24 +230,24 @@ public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineB
 	public void networkUnpack(NBTTagCompound data) {
 		super.networkUnpack(data);
 
-		this.power = data.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		this.process = data.getInteger("progress");
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

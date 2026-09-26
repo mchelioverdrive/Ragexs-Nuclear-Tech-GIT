@@ -38,7 +38,7 @@ public class GUIMixer extends GuiInfoContainer {
 	public void drawScreen(int x, int y, float interp) {
 		super.drawScreen(x, y, interp);
 		
-		this.drawElectricityInfo(this, x, y, guiLeft + 23, guiTop + 23, 16, 52, mixer.getPower(), mixer.getMaxPower());
+		this.drawElectricityInfo(this, x, y, guiLeft + 23, guiTop + 23, 16, 52, mixer.getStoredEnergyQuanta(), mixer.getEnergyCapacityQuanta());
 		
 		MixerRecipe[] recipes = MixerRecipes.getOutput(mixer.tanks[2].getTankType());
 		
@@ -85,7 +85,7 @@ public class GUIMixer extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
-		int i = (int) (mixer.getPower() * 53 / mixer.getMaxPower());
+		int i = (int) (mixer.getStoredEnergyQuanta() * 53 / mixer.getEnergyCapacityQuanta());
 		drawTexturedModalRect(guiLeft + 23, guiTop + 75 - i, 176, 52 - i, 16, i);
 		
 		if(mixer.processTime > 0 && mixer.progress > 0) {

@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,7 +32,7 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 	public float rot;
 	public float prevRot;
 	private float rotSpeed;
-	public long power = 0;
+	public long energyQuanta = 0;
 	public FluidTank tank;
 	public List<IFluidStandardReceiver> list = new ArrayList<>();
 
@@ -68,7 +69,7 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 
 			if(hasPower() && tank.getFill() + 100 <= tank.getMaxFill()) {
 				tank.setFill(tank.getFill() + 100);
-				this.setPower(this.power - this.getMaxPower() / 100);
+				this.setStoredEnergyQuanta(this.energyQuanta - this.getEnergyCapacityQuanta() / 100);
 
 				FT_Gaseous.capture(worldObj, tank.getTankType(), 100);
 			}
@@ -128,51 +129,51 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		tank.serialize(buf);
 	}
 
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		tank.deserialize(buf);
 	}
 
 	public boolean hasPower() {
-		return power >= this.getMaxPower() / 100;
+		return energyQuanta >= this.getEnergyCapacityQuanta() / 100;
 	}
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		tank.readFromNBT(nbt, "water");
 	}
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tank.writeToNBT(nbt, "water");
 	}
 
 
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return 1000000;
 	}
 

@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.entity.mob.EntityFBI;
@@ -23,7 +24,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityRadiobox extends TileEntityLoadedBase implements IEnergyReceiverMK2, IGUIProvider {
 	
-	long power;
+	long energyQuanta;
 	public static long maxPower = 500000;
 	public boolean infinite = false;
 	
@@ -33,10 +34,10 @@ public class TileEntityRadiobox extends TileEntityLoadedBase implements IEnergyR
 		if(!worldObj.isRemote)
 			this.updateConnections();
 
-		if(!worldObj.isRemote && this.getBlockMetadata() > 5 && (power >= 25000 || infinite)) {
+		if(!worldObj.isRemote && this.getBlockMetadata() > 5 && (energyQuanta >= 25000 || infinite)) {
 			
 			if(!infinite) {
-				this.setPower(this.power - 25000);
+				this.setStoredEnergyQuanta(this.energyQuanta - 25000);
 				this.markDirty();
 			}
 			
@@ -63,7 +64,7 @@ public class TileEntityRadiobox extends TileEntityLoadedBase implements IEnergyR
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		infinite = nbt.getBoolean("infinite");
 	}
 	
@@ -71,24 +72,24 @@ public class TileEntityRadiobox extends TileEntityLoadedBase implements IEnergyR
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setBoolean("infinite", infinite);
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 	

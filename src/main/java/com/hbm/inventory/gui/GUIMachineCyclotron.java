@@ -29,7 +29,7 @@ public class GUIMachineCyclotron extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 168, guiTop + 18, 16, 63, cyclotron.power, cyclotron.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 168, guiTop + 18, 16, 63, cyclotron.getStoredEnergyQuanta(), cyclotron.maxPower);
 
 		cyclotron.tanks[0].renderTankInfo(this, mouseX, mouseY, guiLeft + 11, guiTop + 81, 34, 7);
 		cyclotron.tanks[1].renderTankInfo(this, mouseX, mouseY, guiLeft + 11, guiTop + 90, 34, 7);

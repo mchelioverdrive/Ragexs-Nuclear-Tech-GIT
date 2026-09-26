@@ -51,7 +51,7 @@ public class GUICoreEmitter extends GuiInfoContainer {
 		super.drawScreen(mouseX, mouseY, f);
 
 		emitter.tank.renderTankInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 17, 16, 52);
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 26, guiTop + 17, 16, 52, emitter.power, emitter.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 26, guiTop + 17, 16, 52, emitter.getStoredEnergyQuanta(), emitter.maxPower);
 	}
 
 	protected void mouseClicked(int x, int y, int i) {

@@ -7,7 +7,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineDetector extends TileEntityLoadedBase implements IEnergyReceiverMK2 {
 	
-	long power;
+	long energyQuanta;
 
 	@Override
 	public void updateEntity() {
@@ -19,9 +19,9 @@ public class TileEntityMachineDetector extends TileEntityLoadedBase implements I
 			int meta = this.getBlockMetadata();
 			int state = 0;
 			
-			if(power > 0) {
+			if(energyQuanta > 0) {
 				state = 1;
-				this.setPower(this.power - 1);
+				this.setStoredEnergyQuanta(this.energyQuanta - 1);
 			}
 			
 			if(meta != state) {
@@ -38,19 +38,19 @@ public class TileEntityMachineDetector extends TileEntityLoadedBase implements I
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return 5;
 	}
 

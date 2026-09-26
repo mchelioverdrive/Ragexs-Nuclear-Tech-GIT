@@ -1,5 +1,6 @@
 package com.hbm.items.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -175,7 +176,7 @@ public class ItemRTGPellet extends Item {
 	}
 
 	public String getData() {
-		return String.format(Locale.US, "%s (%s HE/t) %s", I18nUtil.resolveKey(getUnlocalizedName().concat(".name")), getHeat(), (getDoesDecay() ? " (decays)" : ""));
+		return String.format(Locale.US, "%s (%s) %s", I18nUtil.resolveKey(getUnlocalizedName().concat(".name")), EnergyUnits.formatQuantaPerTickAsWatts(getHeat()), (getDoesDecay() ? " (decays)" : ""));
 	}
 
 	public static HashMap<ItemStack, ItemStack> getRecipeMap() {

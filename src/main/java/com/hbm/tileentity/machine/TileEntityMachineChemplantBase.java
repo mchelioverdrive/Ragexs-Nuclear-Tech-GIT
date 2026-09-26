@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,7 +35,7 @@ import net.minecraft.tileentity.TileEntity;
  */
 public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidUser, IGUIProvider {
 
-	public long power;
+	public long energyQuanta;
 	public int[] progress;
 	public int[] maxProgress;
 	public boolean isProgressing;
@@ -74,7 +75,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 			int count = this.getRecipeCount();
 
 			this.isProgressing = false;
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, this.getMaxPower()));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, this.getEnergyCapacityQuanta()));
 
 			for(int i = 0; i < count; i++) {
 				loadItems(i);
@@ -107,7 +108,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 		setupTanks(recipe, index);
 
-		if(this.power < this.consumption) return false;
+		if(this.energyQuanta < this.consumption) return false;
 		if(!hasRequiredFluids(recipe, index)) return false;
 		if(!hasSpaceForFluids(recipe, index)) return false;
 		if(!hasRequiredItems(recipe, index)) return false;
@@ -151,7 +152,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 	protected void process(int index) {
 
-		this.setPower(this.power - this.consumption);
+		this.setStoredEnergyQuanta(this.energyQuanta - this.consumption);
 		this.progress[index]++;
 
 		//if(slots[0] != null && slots[0].getItem() == ModItems.meteorite_sword_machined)
@@ -335,14 +336,14 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	}
 
 	@Override
-	public long getPower() {
-		return this.power;
+	public long getStoredEnergyQuanta() {
+		return this.energyQuanta;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
@@ -601,7 +602,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.progress = nbt.getIntArray("progress");
 
 		if(progress.length == 0)
@@ -616,7 +617,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setIntArray("progress", progress);
 
 		for(int i = 0; i < tanks.length; i++) {

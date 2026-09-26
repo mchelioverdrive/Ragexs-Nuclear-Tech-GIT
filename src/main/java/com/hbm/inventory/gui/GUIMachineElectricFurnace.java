@@ -30,7 +30,7 @@ public class GUIMachineElectricFurnace extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 20, guiTop + 69 - 52, 16, 52, diFurnace.power, diFurnace.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 20, guiTop + 69 - 52, 16, 52, diFurnace.getStoredEnergyQuanta(), diFurnace.maxPower);
 		
 		String[] upgradeText = new String[3];
 		upgradeText[0] = I18nUtil.resolveKey("desc.gui.upgrade");

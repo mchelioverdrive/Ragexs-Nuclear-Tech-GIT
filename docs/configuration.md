@@ -8,6 +8,14 @@ RNTM has three main configuration styles:
 
 Always stop the server before editing startup configuration unless a command explicitly supports runtime reloads.
 
+## Electrical energy settings
+
+RTM electrical energy is shown in joules (J), and power is shown in watts (W). Internally, one exact energy quantum is 0.5 J; one quantum transferred each tick is 10 W at 20 ticks per second. Existing numeric machine ratings retain their previous gameplay values, now interpreted as quanta or quanta per tick rather than HE or HE/t.
+
+Machine JSON configuration accepts the new `energyCapacityQuanta` key for migrated capacity settings. Old `maxPower` and `powerCap` keys remain loadable as legacy quantum counts. The powered condenser accepts `energyCostQuantaPerMb`, with its old `powerConsumption` key retained as a fallback. When editing these values, enter quanta; for example, 2,000 quanta is 1,000 J. RF converter settings are `inputRfPerBatch` and `outputQuantaPerBatch` for RF input, and `inputQuantaPerBatch` and `outputRfPerBatch` for RF output. Old keys (`RF_Used2`, `HE_Created2`, `HE_Used`, and `RF_Created`) remain loadable; their `HE_*` numbers are legacy HE counts, numerically identical to quanta. The RF conversion is always 5 quanta per RF; the default RF-to-RTM converter is 50% efficient and the default reverse converter is lossless. Configured outputs cannot exceed the energy represented by their inputs.
+
+Combustible fluid trait JSON writes `energyQuanta` for the energy available per bucket; older `energy` values still load as legacy HE counts. Existing OpenComputers numeric readings retain their old count for scripts. Storage offers `getEnergyJoules()` and the gas turbine offers `getStoredEnergyJoules()` for SI readings.
+
 ## Main Forge config: `config/hbm.cfg`
 
 The main config is generated from these source categories:

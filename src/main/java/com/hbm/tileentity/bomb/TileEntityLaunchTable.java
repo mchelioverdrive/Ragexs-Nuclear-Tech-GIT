@@ -1,5 +1,6 @@
 package com.hbm.tileentity.bomb;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.entity.missile.EntityMissileCustom;
@@ -55,7 +56,7 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 
 	private ItemStack slots[];
 
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 100000;
 	/** Legacy NBT migration only; solid propellant is now stored in tanks[0]. */
 	private int legacySolidFuel;
@@ -169,7 +170,7 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 	}
 
 	public long getPowerScaled(long i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 
 
@@ -193,7 +194,7 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 			tanks[0].loadTank(2, 6, slots);
 			tanks[1].loadTank(3, 7, slots);
 
-			this.setPower(Library.chargeTEFromItems(slots, 5, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 5, energyQuanta, maxPower));
 
 
 			PacketDispatcher.wrapper.sendToAllAround(new BufPacket(xCoord, yCoord, zCoord, this), new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
@@ -233,14 +234,14 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 	}
 
 	@Override public void serialize(ByteBuf buf) {
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		buf.writeByte((byte) padSize.ordinal());
 		tanks[0].serialize(buf);
 		tanks[1].serialize(buf);
 	}
 
 	@Override public void deserialize(ByteBuf buf) {
-		this.power = buf.readLong();
+		this.energyQuanta = buf.readLong();
 		this.padSize = PartSize.values()[buf.readByte()];
 		tanks[0].deserialize(buf);
 		tanks[1].deserialize(buf);
@@ -265,7 +266,7 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 
 	public boolean canLaunch() {
 
-		if(power >= maxPower * 0.75 && isMissileValid() && hasFuel())
+		if(energyQuanta >= maxPower * 0.75 && isMissileValid() && hasFuel())
 			return true;
 
 		return false;
@@ -362,7 +363,7 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 			default: break;
 		}
 
-		this.setPower((long) (this.power - maxPower * 0.75));
+		this.setStoredEnergyQuanta((long) (this.energyQuanta - maxPower * 0.75));
 	}
 
 	public static MissileStruct getStruct(ItemStack stack) {
@@ -477,7 +478,7 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 		tanks[0].readFromNBT(nbt, "fuel");
 		tanks[1].readFromNBT(nbt, "oxidizer");
 		legacySolidFuel = nbt.getInteger("solidfuel");
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		padSize = PartSize.values()[nbt.getInteger("padSize")];
 
 		slots = new ItemStack[getSizeInventory()];
@@ -499,7 +500,7 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 
 		tanks[0].writeToNBT(nbt, "fuel");
 		tanks[1].writeToNBT(nbt, "oxidizer");
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("padSize", padSize.ordinal());
 
 		for (int i = 0; i < slots.length; i++) {
@@ -541,31 +542,31 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return this.power;
+	public long getStoredEnergyQuanta() {
+		return this.energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return this.maxPower;
 	}
 
 	@Override
-	public long transferPower(long power) {
+	public long receiveEnergyQuanta(long energyQuanta) {
 
-		this.setPower(this.power + power);
+		this.setStoredEnergyQuanta(this.energyQuanta + energyQuanta);
 
-		if(this.power > this.getMaxPower()) {
+		if(this.energyQuanta > this.getEnergyCapacityQuanta()) {
 
-			long overshoot = this.power - this.getMaxPower();
-			this.setPower(this.getMaxPower());
+			long overshoot = this.energyQuanta - this.getEnergyCapacityQuanta();
+			this.setStoredEnergyQuanta(this.getEnergyCapacityQuanta());
 			return overshoot;
 		}
 
@@ -602,7 +603,7 @@ public class TileEntityLaunchTable extends TileEntityLoadedBase implements ISide
 	@Callback
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getEnergyInfo(Context context, Arguments args) {
-		return new Object[] {getPower(), getMaxPower()};
+		return new Object[] {getStoredEnergyQuanta(), getEnergyCapacityQuanta()};
 	}
 
 	@Callback

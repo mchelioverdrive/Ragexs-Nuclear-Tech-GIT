@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.config.VersatileConfig;
 import com.hbm.inventory.container.ContainerMachineRTG;
 import com.hbm.inventory.gui.GUIMachineRTG;
@@ -31,7 +32,7 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 	
 	public int heat;
 	public final int heatMax = VersatileConfig.rtgDecay() ? 600 : 200;
-	public long power;
+	public long energyQuanta;
 	public final long powerMax = 100000;
 	private long lastSyncedPower = Long.MIN_VALUE;
 	
@@ -141,7 +142,7 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 		super.readFromNBT(nbt);
 		NBTTagList list = nbt.getTagList("items", 10);
 
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		heat = nbt.getInteger("heat");
 		slots = new ItemStack[getSizeInventory()];
 		
@@ -159,7 +160,7 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("heat", heat);
 		NBTTagList list = new NBTTagList();
 		
@@ -190,7 +191,7 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 	}
 	
 	public long getPowerScaled(long i) {
-		return (power * i) / powerMax;
+		return (energyQuanta * i) / powerMax;
 	}
 	
 	public int getHeatScaled(int i) {
@@ -198,7 +199,7 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 	}
 	
 	public boolean hasPower() {
-		return power > 0;
+		return energyQuanta > 0;
 	}
 	
 	public boolean hasHeat() {
@@ -218,31 +219,31 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 			if(heat > heatMax)
 				heat = heatMax;
 			
-			this.setPower(this.power + heat * 5);
-			if(power > powerMax)
-				this.setPower(powerMax);
+			this.setStoredEnergyQuanta(this.energyQuanta + heat * 5);
+			if(energyQuanta > powerMax)
+				this.setStoredEnergyQuanta(powerMax);
 			
-			if(this.power != this.lastSyncedPower || worldObj.getWorldTime() % 20 == 0) {
-				PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, power), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
-				this.lastSyncedPower = this.power;
+			if(this.energyQuanta != this.lastSyncedPower || worldObj.getWorldTime() % 20 == 0) {
+				PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, energyQuanta), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
+				this.lastSyncedPower = this.energyQuanta;
 			}
 		}
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return powerMax;
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
@@ -260,6 +261,6 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, this.heat > 0);
-		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, heat * 5D);
+		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(heat * 5D));
 	}
 }

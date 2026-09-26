@@ -65,7 +65,7 @@ public class MachineForceField extends BlockContainer {
 	public void randomDisplayTick(World world, int x, int y, int z, Random rand) {
 		TileEntityForceField te = (TileEntityForceField) world.getTileEntity(x, y, z);
 
-		if(te.isOn && te.cooldown == 0 && te.power > 0) {
+		if(te.isOn && te.cooldown == 0 && te.getStoredEnergyQuanta() > 0) {
 			for(int i = 0; i < 4; i++) {
 				float f = x;
 				float f1 = y + 2F;

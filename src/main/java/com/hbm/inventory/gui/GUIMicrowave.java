@@ -30,7 +30,7 @@ public class GUIMicrowave extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 		
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 51 - 34, 16, 34, microwave.power, microwave.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 51 - 34, 16, 34, microwave.getStoredEnergyQuanta(), microwave.maxPower);
 	}
 
 	protected void mouseClicked(int x, int y, int i) {

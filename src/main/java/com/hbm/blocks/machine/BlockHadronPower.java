@@ -1,5 +1,6 @@
 package com.hbm.blocks.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,11 +17,11 @@ import net.minecraftforge.client.event.RenderGameOverlayEvent.Pre;
 
 public class BlockHadronPower extends BlockContainer implements ILookOverlay {
 	
-	public long power;
+	public long energyQuanta;
 
-	public BlockHadronPower(Material mat, long power) {
+	public BlockHadronPower(Material mat, long energyQuanta) {
 		super(mat);
-		this.power = power;
+		this.energyQuanta = energyQuanta;
 	}
 
 	@Override
@@ -39,9 +40,9 @@ public class BlockHadronPower extends BlockContainer implements ILookOverlay {
 		TileEntityHadronPower battery = (TileEntityHadronPower) te;
 		
 		List<String> text = new ArrayList();
-		text.add(BobMathUtil.getShortNumber(battery.getPower()) + " / " + BobMathUtil.getShortNumber(battery.getMaxPower()) + "HE");
+		text.add(EnergyUnits.formatJoules(battery.getStoredEnergyQuanta()) + " / " + EnergyUnits.formatJoules(battery.getEnergyCapacityQuanta()));
 		
-		double percent = (double) battery.getPower() / (double) battery.getMaxPower();
+		double percent = (double) battery.getStoredEnergyQuanta() / (double) battery.getEnergyCapacityQuanta();
 		int charge = (int) Math.floor(percent * 10_000D);
 		int color = ((int) (0xFF - 0xFF * percent)) << 16 | ((int)(0xFF * percent) << 8);
 		

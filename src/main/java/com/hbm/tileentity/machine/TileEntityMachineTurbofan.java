@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.blocks.BlockDummyable;
@@ -52,7 +53,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 1_000_000;
 	public FluidTank tank;
 	public FluidTank blood;
@@ -84,7 +85,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.power = nbt.getLong("powerTime");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "powerTime");
 		tank.readFromNBT(nbt, "fuel");
 		blood.readFromNBT(nbt, "blood");
 		this.showBlood = nbt.getBoolean("showBlood");
@@ -94,14 +95,14 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		
-		nbt.setLong("powerTime", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tank.writeToNBT(nbt, "fuel");
 		blood.writeToNBT(nbt, "blood");
 		nbt.setBoolean("showBlood", showBlood);
 	}
 
 	public long getPowerScaled(long i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 	
 	protected DirPos[] getConPos() {
@@ -162,7 +163,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 			int amount = 1 + this.afterburner;
 			
 			if(tank.getTankType().hasTrait(FT_Combustible.class) && tank.getTankType().getTrait(FT_Combustible.class).getGrade() == FuelGrade.AERO) {
-				burnValue = tank.getTankType().getTrait(FT_Combustible.class).getCombustionEnergy() / 1_000;
+				burnValue = tank.getTankType().getTrait(FT_Combustible.class).getCombustionEnergyQuanta() / 1_000;
 			}
 			
 			int amountToBurn = !isWaterlogged() && breatheAir(this.tank.getFill() > 0 ? amount : 0) ? Math.min(amount, this.tank.getFill()) : 0;
@@ -171,14 +172,14 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 				this.wasOn = true;
 				this.tank.setFill(this.tank.getFill() - amountToBurn);
 				this.output = (int) (burnValue * amountToBurn * (1 + Math.min(this.afterburner / 3D, 4)));
-				this.setPower(this.power + this.output);
+				this.setStoredEnergyQuanta(this.energyQuanta + this.output);
 				this.consumption = amountToBurn;
 				
 				if(worldObj.getTotalWorldTime() % 20 == 0) super.pollute(tank.getTankType(), FluidTrait.FluidReleaseType.BURN, amountToBurn * 5);;
 				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, Math.max(120, 700 / Math.max(amountToBurn, 1)));
 			}
 			
-			this.setPower(Library.chargeItemsFromTE(slots, 3, power, power));
+			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 3, energyQuanta, energyQuanta));
 			
 			for(DirPos pos : getConPos()) {
 				this.tryProvide(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
@@ -284,12 +285,12 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 				}
 			}
 			
-			if(this.power > this.maxPower) {
-				this.setPower(this.maxPower);
+			if(this.energyQuanta > this.maxPower) {
+				this.setStoredEnergyQuanta(this.maxPower);
 			}
 			
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setByte("after", (byte) afterburner);
 			data.setBoolean("wasOn", wasOn);
 			data.setBoolean("showBlood", showBlood);
@@ -392,7 +393,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
 		
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.afterburner = nbt.getByte("after");
 		this.wasOn = nbt.getBoolean("wasOn");
 		this.showBlood = nbt.getBoolean("showBlood");
@@ -426,19 +427,19 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 	
@@ -503,6 +504,6 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 	public void provideExtraInfo(NBTTagCompound data) {
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, this.output > 0);
 		data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, this.consumption);
-		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, this.output);
+		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(this.output));
 	}
 }

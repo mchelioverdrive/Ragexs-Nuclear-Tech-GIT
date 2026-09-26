@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.Iterator;
 import java.util.List;
 
@@ -39,7 +40,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineTeleporter extends TileEntityLoadedBase implements IEnergyReceiverMK2, IFluidStandardReceiver, INBTPacketReceiver {
 
-	public long power = 0;
+	public long energyQuanta = 0;
 	public int targetX = -1;
 	public int targetY = -1;
 	public int targetZ = -1;
@@ -75,13 +76,13 @@ public class TileEntityMachineTeleporter extends TileEntityLoadedBase implements
 			
 			NBTTagCompound data = new NBTTagCompound();
 			tank.writeToNBT(data, "t");
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setIntArray("target", new int[] {targetX, targetY, targetZ, targetDim});
 			INBTPacketReceiver.networkPack(this, data, 15);
 			
 		} else {
 
-			if(this.targetY != -1 && power >= consumption && this.tank.getFill() >= flucu) {
+			if(this.targetY != -1 && energyQuanta >= consumption && this.tank.getFill() >= flucu) {
 				double x = xCoord + 0.5 + worldObj.rand.nextGaussian() * 0.25D;
 				double y = yCoord + 1 + worldObj.rand.nextDouble() * 2D;
 				double z = zCoord + 0.5 + worldObj.rand.nextGaussian() * 0.25D;
@@ -92,7 +93,7 @@ public class TileEntityMachineTeleporter extends TileEntityLoadedBase implements
 
 	@Override
 	public void networkUnpack(NBTTagCompound nbt) {
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		int[] target = nbt.getIntArray("target");
 		this.targetX = target[0];
 		this.targetY = target[1];
@@ -106,7 +107,7 @@ public class TileEntityMachineTeleporter extends TileEntityLoadedBase implements
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		targetX = nbt.getInteger("x1");
 		targetY = nbt.getInteger("y1");
 		targetZ = nbt.getInteger("z1");
@@ -119,7 +120,7 @@ public class TileEntityMachineTeleporter extends TileEntityLoadedBase implements
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("x1", targetX);
 		nbt.setInteger("y1", targetY);
 		nbt.setInteger("z1", targetZ);
@@ -130,7 +131,7 @@ public class TileEntityMachineTeleporter extends TileEntityLoadedBase implements
 
 	public void teleport(Entity entity) {
 		
-		if(this.power < consumption) return;
+		if(this.energyQuanta < consumption) return;
 		if(entity.dimension != this.targetDim && tank.getFill() < flucu) return; // N-MASS is required for cross-dimension teleporting
 		worldObj.playSoundEffect(xCoord + 0.5, yCoord + 1.5, zCoord + 0.5, "mob.endermen.portal", 1.0F, 1.0F);
 
@@ -170,7 +171,7 @@ public class TileEntityMachineTeleporter extends TileEntityLoadedBase implements
 		
 		worldObj.playSoundEffect(entity.posX, entity.posY, entity.posZ, "mob.endermen.portal", 1.0F, 1.0F);
 		
-		this.setPower(this.power - consumption);
+		this.setStoredEnergyQuanta(this.energyQuanta - consumption);
 		this.markDirty();
 	}
 	
@@ -244,19 +245,19 @@ public class TileEntityMachineTeleporter extends TileEntityLoadedBase implements
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

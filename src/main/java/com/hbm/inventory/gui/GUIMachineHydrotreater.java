@@ -37,7 +37,7 @@ public class GUIMachineHydrotreater extends GuiInfoContainer {
 		hydrotreater.tanks[1].renderTankInfo(this, mouseX, mouseY, guiLeft + 53, guiTop + 70 - 52, 16, 52);
 		hydrotreater.tanks[2].renderTankInfo(this, mouseX, mouseY, guiLeft + 125, guiTop + 70 - 52, 16, 52);
 		hydrotreater.tanks[3].renderTankInfo(this, mouseX, mouseY, guiLeft + 143, guiTop + 70 - 52, 16, 52);
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 17, guiTop + 70 - 52, 16, 52, hydrotreater.power, hydrotreater.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 17, guiTop + 70 - 52, 16, 52, hydrotreater.getStoredEnergyQuanta(), hydrotreater.maxPower);
 
 		if(this.mc.thePlayer.inventory.getItemStack() == null && this.isMouseOverSlot(this.inventorySlots.getSlot(10), mouseX, mouseY) && !this.inventorySlots.getSlot(10).getHasStack()) {
 			List<Object[]> lines = new ArrayList();
@@ -62,7 +62,7 @@ public class GUIMachineHydrotreater extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
-		int j = (int) (hydrotreater.power * 54 / hydrotreater.maxPower);
+		int j = (int) (hydrotreater.getStoredEnergyQuanta() * 54 / hydrotreater.maxPower);
 		drawTexturedModalRect(guiLeft + 17, guiTop + 70 - j, 176, 52 - j, 16, j);
 		
 		hydrotreater.tanks[0].renderTank(guiLeft + 35, guiTop + 70, this.zLevel, 16, 52);

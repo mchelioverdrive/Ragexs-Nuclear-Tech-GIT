@@ -79,7 +79,7 @@ private TileEntityMachineDischarger nukeBoy;
 	public void updateProgressBar(int i, int j) {
 		if(i == 1)
 		{
-			nukeBoy.power = j;
+			nukeBoy.energyQuanta = j;
 		}
 	}
 }

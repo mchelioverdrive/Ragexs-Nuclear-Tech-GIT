@@ -18,7 +18,7 @@ public class TEFFPacket implements IMessage {
 	float rad;
 	int health;
 	int maxHealth;
-	int power;
+	long energyQuanta;
 	boolean isOn;
 	int color;
 	int cooldown;
@@ -27,14 +27,14 @@ public class TEFFPacket implements IMessage {
 
 	}
 
-	public TEFFPacket(int x, int y, int z, float rad, int health, int maxHealth, int power, boolean isOn, int color, int cooldown) {
+	public TEFFPacket(int x, int y, int z, float rad, int health, int maxHealth, long energyQuanta, boolean isOn, int color, int cooldown) {
 		this.x = x;
 		this.y = y;
 		this.z = z;
 		this.rad = rad;
 		this.health = health;
 		this.maxHealth = maxHealth;
-		this.power = power;
+		this.energyQuanta = energyQuanta;
 		this.isOn = isOn;
 		this.color = color;
 		this.cooldown = cooldown;
@@ -48,7 +48,7 @@ public class TEFFPacket implements IMessage {
 		rad = buf.readFloat();
 		health = buf.readInt();
 		maxHealth = buf.readInt();
-		power = buf.readInt();
+		energyQuanta = buf.readLong();
 		isOn = buf.readBoolean();
 		color = buf.readInt();
 		cooldown = buf.readInt();
@@ -62,7 +62,7 @@ public class TEFFPacket implements IMessage {
 		buf.writeFloat(rad);
 		buf.writeInt(health);
 		buf.writeInt(maxHealth);
-		buf.writeInt(power);
+		buf.writeLong(energyQuanta);
 		buf.writeBoolean(isOn);
 		buf.writeInt(color);
 		buf.writeInt(cooldown);
@@ -83,7 +83,7 @@ public class TEFFPacket implements IMessage {
 					ff.radius = m.rad;
 					ff.health = m.health;
 					ff.maxHealth = m.maxHealth;
-					ff.power = m.power;
+					ff.energyQuanta = m.energyQuanta;
 					ff.isOn = m.isOn;
 					ff.color = m.color;
 					ff.cooldown = m.cooldown;

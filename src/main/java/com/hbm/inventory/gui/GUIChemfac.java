@@ -29,7 +29,7 @@ public class GUIChemfac extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 234, guiTop + 25, 16, 52, chemfac.power, chemfac.getMaxPower());
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 234, guiTop + 25, 16, 52, chemfac.getStoredEnergyQuanta(), chemfac.getEnergyCapacityQuanta());
 		
 		for(int i = 0; i < 8; i ++) {
 
@@ -56,10 +56,10 @@ public class GUIChemfac extends GuiInfoContainer {
 		drawTexturedModalRect(guiLeft + 26, guiTop + 167, 26, 167, 230, 44);
 		drawTexturedModalRect(guiLeft + 26, guiTop + 211, 26, 211, 176, 45);
 		
-		int p = (int) (chemfac.power * 52 / chemfac.getMaxPower());
+		int p = (int) (chemfac.getStoredEnergyQuanta() * 52 / chemfac.getEnergyCapacityQuanta());
 		drawTexturedModalRect(guiLeft + 234, guiTop + 77 - p, 0, 219 - p, 16, p);
 		
-		if(chemfac.power > 0)
+		if(chemfac.getStoredEnergyQuanta() > 0)
 			drawTexturedModalRect(guiLeft + 238, guiTop + 11, 0, 219, 9, 12);
 		
 		for(int i = 0; i < 8; i ++) {

@@ -37,7 +37,7 @@ public class GUIMachineCatalyticReformer extends GuiInfoContainer {
 		refinery.tanks[1].renderTankInfo(this, mouseX, mouseY, guiLeft + 107, guiTop + 70 - 52, 16, 52);
 		refinery.tanks[2].renderTankInfo(this, mouseX, mouseY, guiLeft + 125, guiTop + 70 - 52, 16, 52);
 		refinery.tanks[3].renderTankInfo(this, mouseX, mouseY, guiLeft + 143, guiTop + 70 - 52, 16, 52);
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 17, guiTop + 70 - 52, 16, 52, refinery.power, refinery.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 17, guiTop + 70 - 52, 16, 52, refinery.getStoredEnergyQuanta(), refinery.maxPower);
 
 		if(this.mc.thePlayer.inventory.getItemStack() == null && this.isMouseOverSlot(this.inventorySlots.getSlot(10), mouseX, mouseY) && !this.inventorySlots.getSlot(10).getHasStack()) {
 			List<Object[]> lines = new ArrayList();
@@ -62,7 +62,7 @@ public class GUIMachineCatalyticReformer extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
-		int j = (int) (refinery.power * 54 / refinery.maxPower);
+		int j = (int) (refinery.getStoredEnergyQuanta() * 54 / refinery.maxPower);
 		drawTexturedModalRect(guiLeft + 17, guiTop + 70 - j, 176, 52 - j, 16, j);
 		
 		refinery.tanks[0].renderTank(guiLeft + 35, guiTop + 70, this.zLevel, 16, 52);

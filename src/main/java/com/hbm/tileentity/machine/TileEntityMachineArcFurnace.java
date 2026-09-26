@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.machine.MachineArcFurnace;
 import com.hbm.inventory.container.ContainerMachineArcFurnace;
@@ -33,7 +34,7 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 	private ItemStack slots[];
 	
 	public int dualCookTime;
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 50000;
 	public static final int processingSpeed = 20;
 	
@@ -156,7 +157,7 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 		super.readFromNBT(nbt);
 		NBTTagList list = nbt.getTagList("items", 10);
 		
-		this.power = nbt.getLong("powerTime");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "powerTime");
 		this.dualCookTime = nbt.getInteger("cookTime");
 		slots = new ItemStack[getSizeInventory()];
 		
@@ -174,7 +175,7 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("powerTime", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("cookTime", dualCookTime);
 		NBTTagList list = new NBTTagList();
 		
@@ -218,11 +219,11 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 	}
 	
 	public long getPowerRemainingScaled(long i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 	
 	public boolean hasPower() {
-		return power >= 250;
+		return energyQuanta >= 250;
 	}
 	
 	public boolean isProcessing() {
@@ -314,10 +315,10 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 			{
 				dualCookTime++;
 				
-				this.setPower(this.power - 250);
+				this.setStoredEnergyQuanta(this.energyQuanta - 250);
 				
-				if(power < 0)
-					this.setPower(0);
+				if(energyQuanta < 0)
+					this.setStoredEnergyQuanta(0);
 				
 				if(this.dualCookTime == processingSpeed)
 				{
@@ -354,9 +355,9 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 				}
 			}
 			
-			this.setPower(Library.chargeTEFromItems(slots, 5, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 5, energyQuanta, maxPower));
 
-			PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, power), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
+			PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, energyQuanta), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
 			PacketDispatcher.wrapper.sendToAllAround(new AuxGaugePacket(xCoord, yCoord, zCoord, dualCookTime, 0), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
 		}
 		
@@ -368,20 +369,20 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 		
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

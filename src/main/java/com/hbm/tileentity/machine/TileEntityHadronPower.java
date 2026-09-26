@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.machine.BlockHadronPower;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.BufPacket;
@@ -15,7 +16,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityHadronPower extends TileEntityLoadedBase implements IEnergyReceiverMK2, IBufPacketReceiver {
 
-	public long power;
+	public long energyQuanta;
 
 	@Override
 	public boolean canUpdate() {
@@ -36,34 +37,34 @@ public class TileEntityHadronPower extends TileEntityLoadedBase implements IEner
 
 	@Override
 	public void serialize(ByteBuf buf) {
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 	}
 
 	@Override
 	public void deserialize(ByteBuf buf) {
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.worldObj.markTileEntityChunkModified(this.xCoord, this.yCoord, this.zCoord, this);
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		
 		Block b = this.getBlockType();
 		
 		if(b instanceof BlockHadronPower) {
-			return ((BlockHadronPower)b).power;
+			return ((BlockHadronPower)b).energyQuanta;
 		}
 		
 		return 0;
@@ -72,12 +73,12 @@ public class TileEntityHadronPower extends TileEntityLoadedBase implements IEner
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 	}
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 	}
 }

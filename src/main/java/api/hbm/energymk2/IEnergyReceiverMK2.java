@@ -13,22 +13,29 @@ import net.minecraftforge.common.util.ForgeDirection;
 /** If it receives energy, use this */
 public interface IEnergyReceiverMK2 extends IEnergyHandlerMK2 {
 
-	public default long transferPower(long power) {
-		long previous = this.getPower();
-		if(power + this.getPower() <= this.getMaxPower()) {
-			this.setPower(power + this.getPower());
-			if(this.getPower() != previous) PowerNetMK2.markReceiverDemandDirty(this);
+	public default long receiveEnergyQuanta(long energyQuanta) {
+		if(LegacyEnergyOverrides.of(this.getClass()).receiverTransfer) {
+			return EnergyUnits.legacyHeToQuanta(this.transferPower(EnergyUnits.quantaToLegacyHe(energyQuanta)));
+		}
+		long previous = this.getStoredEnergyQuanta();
+		if(energyQuanta <= this.getEnergyCapacityQuanta() - this.getStoredEnergyQuanta()) {
+			this.setStoredEnergyQuanta(energyQuanta + this.getStoredEnergyQuanta());
+			if(this.getStoredEnergyQuanta() != previous) PowerNetMK2.markReceiverDemandDirty(this);
 			return 0;
 		}
-		long capacity = this.getMaxPower() - this.getPower();
-		long overshoot = power - capacity;
-		this.setPower(this.getMaxPower());
-		if(this.getPower() != previous) PowerNetMK2.markReceiverDemandDirty(this);
+		long capacity = this.getEnergyCapacityQuanta() - this.getStoredEnergyQuanta();
+		long overshoot = energyQuanta - capacity;
+		this.setStoredEnergyQuanta(this.getEnergyCapacityQuanta());
+		if(this.getStoredEnergyQuanta() != previous) PowerNetMK2.markReceiverDemandDirty(this);
 		return overshoot;
 	}
 
-	public default long getReceiverSpeed() {
-		return this.getMaxPower();
+	@Deprecated public default long transferPower(long legacyHe) { return EnergyUnits.quantaToLegacyHe(receiveEnergyQuanta(EnergyUnits.legacyHeToQuanta(legacyHe))); }
+	@Deprecated public default long getReceiverSpeed() { return EnergyUnits.quantaToLegacyHe(getMaxInputQuantaPerTick()); }
+
+	public default long getMaxInputQuantaPerTick() {
+		if(LegacyEnergyOverrides.of(this.getClass()).receiverSpeed) return EnergyUnits.legacyHeToQuanta(this.getReceiverSpeed());
+		return this.getEnergyCapacityQuanta();
 	}
 
 	public default void trySubscribe(World world, int x, int y, int z, ForgeDirection dir) {

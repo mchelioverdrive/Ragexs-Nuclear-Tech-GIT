@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.HashMap;
 
 import com.hbm.blocks.BlockDummyable;
@@ -45,7 +46,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityMachineTurbineGas extends TileEntityMachineBase implements IFluidStandardTransceiver, IEnergyProviderMK2, IControlReceiver, IGUIProvider, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IFluidCopiable {
 	
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 1000000L;
 	
 	public int rpm; //0-100, crescent moon gauge, used for calculating the amount of power generated, starts past 10%
@@ -104,7 +105,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 			if(autoMode) { //power production depending on power requirement
 				
 				//scales the slider proportionally to the power gauge
-				int powerSliderTarget = 60 - (int) (60 * power / maxPower);
+				int powerSliderTarget = 60 - (int) (60 * energyQuanta / maxPower);
 				
 				if(powerSliderTarget > powerSliderPos) { //makes the auto slider slide instead of snapping into position
 					powerSliderPos++;
@@ -134,15 +135,15 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 			ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
 			
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", Math.min(this.power, this.maxPower)); //set first to get an unmodified view of how much power was generated before deductions from the net
+			EnergyUnits.writeEnergyQuanta(data, Math.min(this.energyQuanta, this.maxPower)); //set first to get an unmodified view of how much power was generated before deductions from the net
 			
 			//do net/battery deductions first...
-			this.setPower(Library.chargeItemsFromTE(slots, 0, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 0, energyQuanta, maxPower));
 			this.tryProvide(worldObj, xCoord - dir.offsetZ * 5, yCoord + 1, zCoord + dir.offsetX * 5, rot); //sends out power
 			
 			//...and then cap it. Prevents potential future cases where power would be limited due to the fuel being too strong and the buffer too small.
-			if(this.power > this.maxPower)
-				this.setPower(this.maxPower);
+			if(this.energyQuanta > this.maxPower)
+				this.setStoredEnergyQuanta(this.maxPower);
 			
 			for(int i = 0; i < 2; i++) { //fuel and lube
 				this.trySubscribe(tanks[i].getTankType(), worldObj, xCoord - dir.offsetX * 2 + rot.offsetX, yCoord, zCoord - dir.offsetZ * 2 + rot.offsetZ, dir.getOpposite());
@@ -281,7 +282,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	
 	/** Dynamically calculates a (hopefully) sensible burn heat from the combustion energy, scales from 300°C - 800°C */
 	protected int getFluidBurnTemp(FluidType type) {
-		double dFuel = type.hasTrait(FT_Combustible.class) ? type.getTrait(FT_Combustible.class).getCombustionEnergy() : 0;
+		double dFuel = type.hasTrait(FT_Combustible.class) ? type.getTrait(FT_Combustible.class).getCombustionEnergyQuanta() : 0;
 		return (int) Math.floor(800D - (Math.pow(Math.E, -dFuel / 100_000D)) * 300D);
 	}
 	
@@ -346,13 +347,13 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		long energy = 0; //energy per mb of fuel
 		
 		if(tanks[0].getTankType().hasTrait(FT_Combustible.class)) {
-			energy = tanks[0].getTankType().getTrait(FT_Combustible.class).getCombustionEnergy() / 1000L;
+			energy = tanks[0].getTankType().getTrait(FT_Combustible.class).getCombustionEnergyQuanta() / 1000L;
 		}
 		
 		int rpmEff = rpm - rpmIdle; // RPM above idle level, 0-90
 		
 		//consMax*energy is equivalent to power production at 100%
-		if(instantPowerOutput < (consMax * energy * rpmEff / 90)) { //this shit avoids power rising in steps of 2000 or so HE at a time, instead it does it smoothly
+		if(instantPowerOutput < (consMax * energy * rpmEff / 90)) { // Smooth quantum output instead of increasing in large steps.
 			instantPowerOutput += Math.random() * 0.005 * consMax * energy;
 			if(instantPowerOutput > (consMax * energy * rpmEff / 90))
 				instantPowerOutput = (int) (consMax * energy * rpmEff / 90);
@@ -362,7 +363,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 			if(instantPowerOutput < (consMax * energy * rpmEff / 90))
 				instantPowerOutput = (int) (consMax * energy * rpmEff / 90);
 		}
-		this.setPower(this.power + instantPowerOutput);
+		this.setStoredEnergyQuanta(this.energyQuanta + instantPowerOutput);
 		
 		waterPerTick = (consMax * energy * (temp - tempIdle) / 220000); //it just works fuck you
 		
@@ -385,7 +386,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
 		
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.rpm = nbt.getInteger("rpm");
 		this.temp = nbt.getInteger("temp");
 		this.state = nbt.getInteger("state");
@@ -412,7 +413,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		this.tanks[2].readFromNBT(nbt, "water");
 		this.tanks[3].readFromNBT(nbt, "densesteam");
 		this.autoMode = nbt.getBoolean("automode");
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.state = nbt.getInteger("state");
 		this.rpm = nbt.getInteger("rpm");
 		this.temp = nbt.getInteger("temperature");
@@ -430,7 +431,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		tanks[2].writeToNBT(nbt, "water");
 		tanks[3].writeToNBT(nbt, "densesteam");
 		nbt.setBoolean("automode", autoMode);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		if(state == 1) {
 			nbt.setInteger("state", this.state);
 			nbt.setInteger("rpm", this.rpm);
@@ -490,19 +491,19 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return this.power;
+	public long getStoredEnergyQuanta() {
+		return this.energyQuanta;
 	}
 	
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return this.maxPower;
 	}
 	
@@ -587,7 +588,14 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getPower(Context context, Arguments args) {
-		return new Object[] {power};
+		return new Object[] {energyQuanta};
+	}
+
+	/** SI value for new computer programs; getPower retains its legacy numeric contract. */
+	@Callback(direct = true)
+	@Optional.Method(modid = "OpenComputers")
+	public Object[] getStoredEnergyJoules(Context context, Arguments args) {
+		return new Object[] {EnergyUnits.toJoules(energyQuanta)};
 	}
 
 	@Callback(direct = true)
@@ -653,6 +661,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 				"getFluid",
 				"getType",
 				"getPower",
+				"getStoredEnergyJoules",
 				"getThrottle",
 				"getState",
 				"getAuto",
@@ -674,6 +683,8 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 				return getType(context, args);
 			case ("getPower"):
 				return getPower(context, args);
+			case ("getStoredEnergyJoules"):
+				return getStoredEnergyJoules(context, args);
 			case ("getThrottle"):
 				return getThrottle(context, args);
 			case ("getState"):
@@ -711,7 +722,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		data.setDouble(CompatEnergyControl.D_HEAT_C, Math.max(20D, this.temp));
 		data.setDouble(CompatEnergyControl.D_TURBINE_PERCENT, this.powerSliderPos * 100D / 60D);
 		data.setInteger(CompatEnergyControl.I_TURBINE_SPEED, this.rpm);
-		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, this.instantPowerOutput);
+		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(this.instantPowerOutput));
 		data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, this.waterToBoil);
 		data.setDouble(CompatEnergyControl.D_OUTPUT_MB, this.waterToBoil * 10);
 	}

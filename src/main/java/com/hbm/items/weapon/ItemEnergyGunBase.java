@@ -1,5 +1,6 @@
 package com.hbm.items.weapon;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import org.lwjgl.input.Mouse;
@@ -45,8 +46,8 @@ public class ItemEnergyGunBase extends ItemGunBase implements IBatteryItem {
 	
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean bool) {
-		list.add("Energy Stored: " + BobMathUtil.getShortNumber(getCharge(stack)) + "/" + BobMathUtil.getShortNumber(mainConfig.maxCharge) + "HE");
-		list.add("Charge rate: " + BobMathUtil.getShortNumber(mainConfig.chargeRate) + "HE/t");
+		list.add("Stored Energy: " + EnergyUnits.formatJoules(getStoredEnergyQuanta(stack)) + " / " + EnergyUnits.formatJoules(mainConfig.maxCharge));
+		list.add("Maximum Input: " + EnergyUnits.formatQuantaPerTickAsWatts(mainConfig.chargeRate));
 		
 		addAdditionalInformation(stack, list);
 	}
@@ -109,7 +110,7 @@ public class ItemEnergyGunBase extends ItemGunBase implements IBatteryItem {
 	
 		
 		if(main && getDelay(stack) == 0) {
-			return getConfig(stack).dischargePerShot <= getCharge(stack);
+			return getConfig(stack).dischargePerShot <= getStoredEnergyQuanta(stack);
 		}
 	
 		return false;
@@ -133,7 +134,7 @@ public class ItemEnergyGunBase extends ItemGunBase implements IBatteryItem {
 			if(player instanceof EntityPlayerMP)
 				PacketDispatcher.wrapper.sendTo(new GunAnimationPacket(AnimType.CYCLE.ordinal()), (EntityPlayerMP) player);
 			
-			setCharge(stack, getCharge(stack) - config.dischargePerShot);;
+			setStoredEnergyQuanta(stack, getStoredEnergyQuanta(stack) - config.dischargePerShot);;
 		}
 		
 		world.playSoundAtEntity(player, mainConfig.firingSound, 1.0F, mainConfig.firingPitch);
@@ -180,54 +181,54 @@ public class ItemEnergyGunBase extends ItemGunBase implements IBatteryItem {
 	}
 
 	public double getDurabilityForDisplay(ItemStack stack) {
-		return 1D - (double) getCharge(stack) / (double) getMaxCharge(stack);
+		return 1D - (double) getStoredEnergyQuanta(stack) / (double) getEnergyCapacityQuanta(stack);
 	}
 
 	@Override
-	public void chargeBattery(ItemStack stack, long i) {
+	public void receiveEnergyQuanta(ItemStack stack, long i) {
 		if(stack.getItem() instanceof ItemEnergyGunBase) {
 			if(stack.hasTagCompound()) {
-				stack.stackTagCompound.setLong("charge", stack.stackTagCompound.getLong("charge") + i);
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, EnergyUnits.readEnergyQuanta(stack.stackTagCompound, "charge") + i);
 			} else {
 				stack.stackTagCompound = new NBTTagCompound();
-				stack.stackTagCompound.setLong("charge", i);
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, i);
 			}
 		}
 	}
 
 	@Override
-	public void setCharge(ItemStack stack, long i) {
+	public void setStoredEnergyQuanta(ItemStack stack, long i) {
 		if(stack.getItem() instanceof ItemEnergyGunBase) {
 			if(stack.hasTagCompound()) {
-				stack.stackTagCompound.setLong("charge", i);
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, i);
 			} else {
 				stack.stackTagCompound = new NBTTagCompound();
-				stack.stackTagCompound.setLong("charge", i);
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, i);
 			}
 		}
 	}
 
 	@Override
-	public void dischargeBattery(ItemStack stack, long i) {
+	public void extractEnergyQuanta(ItemStack stack, long i) {
 		if(stack.getItem() instanceof ItemEnergyGunBase) {
 			if(stack.hasTagCompound()) {
-				stack.stackTagCompound.setLong("charge", stack.stackTagCompound.getLong("charge") - i);
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, EnergyUnits.readEnergyQuanta(stack.stackTagCompound, "charge") - i);
 			} else {
 				stack.stackTagCompound = new NBTTagCompound();
-				stack.stackTagCompound.setLong("charge", ((ItemEnergyGunBase)stack.getItem()).mainConfig.maxCharge - i);
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, ((ItemEnergyGunBase)stack.getItem()).mainConfig.maxCharge - i);
 			}
 		}
 	}
 
 	@Override
-	public long getCharge(ItemStack stack) {
+	public long getStoredEnergyQuanta(ItemStack stack) {
 		if(stack.getItem() instanceof ItemEnergyGunBase) {
 			if(stack.hasTagCompound()) {
-				return stack.stackTagCompound.getLong("charge");
+				return EnergyUnits.readEnergyQuanta(stack.stackTagCompound, "charge");
 			} else {
 				stack.stackTagCompound = new NBTTagCompound();
-				stack.stackTagCompound.setLong("charge", ((ItemEnergyGunBase) stack.getItem()).mainConfig.maxCharge);
-				return stack.stackTagCompound.getLong("charge");
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, ((ItemEnergyGunBase) stack.getItem()).mainConfig.maxCharge);
+				return EnergyUnits.readEnergyQuanta(stack.stackTagCompound, "charge");
 			}
 		}
 
@@ -235,17 +236,17 @@ public class ItemEnergyGunBase extends ItemGunBase implements IBatteryItem {
 	}
 
 	@Override
-	public long getMaxCharge(ItemStack stack) {
+	public long getEnergyCapacityQuanta(ItemStack stack) {
 		return mainConfig.maxCharge;
 	}
 
 	@Override
-	public long getChargeRate() {
+	public long getMaxInputQuantaPerTick() {
 		return mainConfig.chargeRate;
 	}
 
 	@Override
-	public long getDischargeRate() {
+	public long getMaxOutputQuantaPerTick() {
 		return 0;
 	}
 	
@@ -265,7 +266,7 @@ public class ItemEnergyGunBase extends ItemGunBase implements IBatteryItem {
 
 		ItemStack stack = new ItemStack(item);
 		stack.stackTagCompound = new NBTTagCompound();
-		stack.stackTagCompound.setLong("charge", ((ItemEnergyGunBase) item).getMaxCharge(stack));
+		EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, ((ItemEnergyGunBase) item).getEnergyCapacityQuanta(stack));
 
 		list.add(stack);
 	}

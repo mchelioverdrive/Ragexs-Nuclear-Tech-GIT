@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine.oil;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.inventory.FluidStack;
 import com.hbm.inventory.container.ContainerMachineCatalyticReformer;
@@ -30,7 +31,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IPersistentNBT, IGUIProvider, IFluidCopiable {
 	
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 1_000_000;
 	
 	public FluidTank[] tanks;
@@ -56,7 +57,7 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 		if(!worldObj.isRemote) {
 			
 			if(this.worldObj.getTotalWorldTime() % 20 == 0) this.updateConnections();
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 			tanks[0].setType(9, slots);
 			tanks[0].loadTank(1, 2, slots);
 			
@@ -75,7 +76,7 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 			}
 			
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", this.power);
+			EnergyUnits.writeEnergyQuanta(data, this.energyQuanta);
 			for(int i = 0; i < 4; i++) tanks[i].writeToNBT(data, "" + i);
 			this.networkPack(data, 150);
 		}
@@ -85,7 +86,7 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
 		
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		for(int i = 0; i < 4; i++) tanks[i].readFromNBT(nbt, "" + i);
 	}
 	
@@ -103,7 +104,7 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 		tanks[2].setTankType(out.getY().type);
 		tanks[3].setTankType(out.getZ().type);
 		
-		if(power < 20_000) return;
+		if(energyQuanta < 20_000) return;
 		if(tanks[0].getFill() < 100) return;
 		if(slots[10] == null || slots[10].getItem() != ModItems.catalytic_converter) return;
 
@@ -116,7 +117,7 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 		tanks[2].setFill(tanks[2].getFill() + out.getY().fill);
 		tanks[3].setFill(tanks[3].getFill() + out.getZ().fill);
 		
-		this.setPower(this.power - 20_000);
+		this.setStoredEnergyQuanta(this.energyQuanta - 20_000);
 	}
 	
 	private void updateConnections() {
@@ -144,7 +145,7 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		tanks[0].readFromNBT(nbt, "input");
 		tanks[1].readFromNBT(nbt, "o1");
 		tanks[2].readFromNBT(nbt, "o2");
@@ -155,7 +156,7 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tanks[0].writeToNBT(nbt, "input");
 		tanks[1].writeToNBT(nbt, "o1");
 		tanks[2].writeToNBT(nbt, "o2");
@@ -188,19 +189,19 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

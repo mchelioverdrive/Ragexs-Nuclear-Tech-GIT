@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.interfaces.ICopiable;
 import com.hbm.main.MainRegistry;
@@ -22,7 +23,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IHeatSource, IEnergyReceiverMK2, INBTPacketReceiver, ICopiable, IInfoProviderEC {
 
-	public long power;
+	public long energyQuanta;
 	public int heatEnergy;
 	public boolean isOn;
 	protected int setting = 0;
@@ -45,8 +46,8 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 			this.tryPullHeat();
 
 			this.isOn = false;
-			if(setting > 0 && this.power >= this.getConsumption() && this.heatEnergy < maxHeatEnergy) {
-				this.setPower(this.power - this.getConsumption());
+			if(setting > 0 && this.energyQuanta >= this.getConsumption() && this.heatEnergy < maxHeatEnergy) {
+				this.setStoredEnergyQuanta(this.energyQuanta - this.getConsumption());
 				this.heatEnergy = Math.min(this.heatEnergy + getHeatGen(), maxHeatEnergy);
 				this.isOn = true;
 			}
@@ -119,7 +120,7 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.setting = nbt.getInteger("setting");
 		this.heatEnergy = nbt.getInteger("heatEnergy");
 	}
@@ -128,7 +129,7 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("setting", setting);
 		nbt.setInteger("heatEnergy", heatEnergy);
 	}
@@ -152,8 +153,8 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	public long getConsumption() {
@@ -161,7 +162,7 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return getConsumption() * 20;
 	}
 
@@ -170,9 +171,9 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
@@ -213,7 +214,7 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
-		data.setLong(CompatEnergyControl.D_CONSUMPTION_HE, getConsumption());
+		data.setLong(CompatEnergyControl.D_CONSUMPTION_HE, EnergyUnits.quantaToLegacyHe(getConsumption()));
 		data.setLong(CompatEnergyControl.L_ENERGY_TU, getHeatStored());
 		data.setLong(CompatEnergyControl.D_OUTPUT_TU, getHeatGen());
 	}

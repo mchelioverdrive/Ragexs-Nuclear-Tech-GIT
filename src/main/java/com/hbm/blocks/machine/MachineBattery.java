@@ -1,5 +1,6 @@
 package com.hbm.blocks.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -229,9 +230,9 @@ public class MachineBattery extends BlockContainer implements ILookOverlay, IPer
 		TileEntityMachineBattery battery = (TileEntityMachineBattery) te;
 		
 		List<String> text = new ArrayList();
-		text.add(BobMathUtil.getShortNumber(battery.getPower()) + " / " + BobMathUtil.getShortNumber(battery.getMaxPower()) + "HE");
+		text.add(EnergyUnits.formatJoules(battery.getStoredEnergyQuanta()) + " / " + EnergyUnits.formatJoules(battery.getEnergyCapacityQuanta()));
 		
-		double percent = (double) battery.getPower() / (double) battery.getMaxPower();
+		double percent = (double) battery.getStoredEnergyQuanta() / (double) battery.getEnergyCapacityQuanta();
 		int charge = (int) Math.floor(percent * 10_000D);
 		int color = ((int) (0xFF - 0xFF * percent)) << 16 | ((int)(0xFF * percent) << 8);
 		
@@ -280,9 +281,9 @@ public class MachineBattery extends BlockContainer implements ILookOverlay, IPer
 
 	@Override
 	public void addInformation(ItemStack stack, NBTTagCompound persistentTag, EntityPlayer player, List list, boolean ext) {
-		list.add(EnumChatFormatting.GOLD + "Stores up to "+ BobMathUtil.getShortNumber(this.maxPower) + "HE");
-		list.add(EnumChatFormatting.GOLD + "Charge speed: "+ BobMathUtil.getShortNumber(this.maxPower / 200) + "HE");
-		list.add(EnumChatFormatting.GOLD + "Discharge speed: "+ BobMathUtil.getShortNumber(this.maxPower / 600) + "HE");
-		list.add(EnumChatFormatting.YELLOW + "" + BobMathUtil.getShortNumber(persistentTag.getLong("power")) + "/" + BobMathUtil.getShortNumber(this.maxPower) + "HE");
+		list.add(EnumChatFormatting.GOLD + "Energy Capacity: " + EnergyUnits.formatJoules(this.maxPower));
+		list.add(EnumChatFormatting.GOLD + "Maximum Input: " + EnergyUnits.formatQuantaPerTickAsWatts(this.maxPower / 200));
+		list.add(EnumChatFormatting.GOLD + "Maximum Output: " + EnergyUnits.formatQuantaPerTickAsWatts(this.maxPower / 600));
+		list.add(EnumChatFormatting.YELLOW + EnergyUnits.formatJoules(EnergyUnits.readEnergyQuanta(persistentTag, "power")) + " / " + EnergyUnits.formatJoules(this.maxPower));
 	}
 }

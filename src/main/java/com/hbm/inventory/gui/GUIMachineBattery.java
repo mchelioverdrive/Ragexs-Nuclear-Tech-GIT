@@ -1,5 +1,7 @@
 package com.hbm.inventory.gui;
 
+import api.hbm.energymk2.EnergyUnits;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.resources.I18n;
@@ -38,15 +40,15 @@ public class GUIMachineBattery extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 62, guiTop + 69 - 52, 52, 52, battery.power, battery.getMaxPower());
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 62, guiTop + 69 - 52, 52, 52, battery.getStoredEnergyQuanta(), battery.getEnergyCapacityQuanta());
 
-		String deltaText = BobMathUtil.getShortNumber(Math.abs(battery.delta)) + "HE/s";
+		String deltaText = EnergyUnits.formatQuantaPerSecondAsWatts(Math.abs(battery.delta));
 
 		if(battery.delta > 0) deltaText = EnumChatFormatting.GREEN + "+" + deltaText;
 		else if(battery.delta < 0) deltaText = EnumChatFormatting.RED + "-" + deltaText;
 		else deltaText = EnumChatFormatting.YELLOW + "+" + deltaText;
 
-		String[] info = { BobMathUtil.getShortNumber(battery.power) + "/" + BobMathUtil.getShortNumber(battery.getMaxPower()) + "HE", deltaText };
+		String[] info = { EnergyUnits.formatJoules(battery.getStoredEnergyQuanta()) + " / " + EnergyUnits.formatJoules(battery.getEnergyCapacityQuanta()), deltaText };
 
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 62, guiTop + 69 - 52, 52, 52, mouseX, mouseY, info);
 		
@@ -88,7 +90,7 @@ public class GUIMachineBattery extends GuiInfoContainer {
 	@Override
 	protected void drawGuiContainerForegroundLayer(int i, int j) {
 		String name = this.battery.hasCustomInventoryName() ? this.battery.getInventoryName() : I18n.format(this.battery.getInventoryName());
-		name += (" (" + this.battery.power + " HE)");
+		name += (" (" + EnergyUnits.formatJoules(this.battery.getStoredEnergyQuanta()) + ")");
 
 		this.fontRendererObj.drawString(name, this.xSize / 2 - this.fontRendererObj.getStringWidth(name) / 2, 6, 4210752);
 		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96 + 2, 4210752);
@@ -100,7 +102,7 @@ public class GUIMachineBattery extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 
-		if(battery.power > 0) {
+		if(battery.getStoredEnergyQuanta() > 0) {
 			int i = (int) battery.getPowerRemainingScaled(52);
 			drawTexturedModalRect(guiLeft + 62, guiTop + 69 - i, 176, 52 - i, 52, i);
 		}

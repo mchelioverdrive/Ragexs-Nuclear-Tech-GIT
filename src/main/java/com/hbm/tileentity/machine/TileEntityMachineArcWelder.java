@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.inventory.RecipesCommon.AStack;
@@ -42,7 +43,7 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	
-	public long power;
+	public long energyQuanta;
 	public long maxPower = 2_000;
 	public long consumption;
 	
@@ -76,7 +77,7 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 		
 		if(!worldObj.isRemote) {
 			
-			this.setPower(Library.chargeTEFromItems(slots, 4, this.getPower(), this.getMaxPower()));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 4, this.getStoredEnergyQuanta(), this.getEnergyCapacityQuanta()));
 			this.tank.setType(5, slots);
 			
 			if(worldObj.getTotalWorldTime() % 20 == 0) {
@@ -100,7 +101,7 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 				
 				if(canProcess(recipe)) {
 					this.progress++;
-					this.setPower(this.power - this.consumption);
+					this.setStoredEnergyQuanta(this.energyQuanta - this.consumption);
 					FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1200);
 					
 					if(progress >= processTime) {
@@ -134,7 +135,7 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 				intendedMaxPower = 2000;
 			}
 			
-			this.maxPower = Math.max(intendedMaxPower, power);
+			this.maxPower = Math.max(intendedMaxPower, energyQuanta);
 			
 			this.networkPackNT(25);
 		}
@@ -143,7 +144,7 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		buf.writeLong(maxPower);
 		buf.writeLong(consumption);
 		buf.writeInt(progress);
@@ -164,7 +165,7 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		maxPower = buf.readLong();
 		consumption = buf.readLong();
 		progress = buf.readInt();
@@ -180,7 +181,7 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 	
 	public boolean canProcess(ArcWelderRecipe recipe) {
 		
-		if(this.power < this.consumption) return false;
+		if(this.energyQuanta < this.consumption) return false;
 		
 		if(recipe.fluid != null) {
 			if(this.tank.getTankType() != recipe.fluid.type) return false;
@@ -237,8 +238,8 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.power = nbt.getLong("power");
-		this.maxPower = nbt.getLong("maxPower");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
+		this.maxPower = EnergyUnits.readCapacityQuanta(nbt, "maxPower");
 		this.progress = nbt.getInteger("progress");
 		this.processTime = nbt.getInteger("processTime");
 		tank.readFromNBT(nbt, "t");
@@ -248,27 +249,27 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 
-		nbt.setLong("power", power);
-		nbt.setLong("maxPower", maxPower);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
+		EnergyUnits.writeCapacityQuanta(nbt, maxPower);
 		nbt.setInteger("progress", progress);
 		nbt.setInteger("processTime", processTime);
 		tank.writeToNBT(nbt, "t");
 	}
 
 	@Override
-	public long getPower() {
-		return Math.max(Math.min(power, maxPower), 0);
+	public long getStoredEnergyQuanta() {
+		return Math.max(Math.min(energyQuanta, maxPower), 0);
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

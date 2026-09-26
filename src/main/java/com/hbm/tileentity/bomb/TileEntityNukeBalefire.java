@@ -102,12 +102,12 @@ public class TileEntityNukeBalefire extends TileEntityMachineBase implements IGU
 	public int getBattery() {
 
 		if(slots[1] != null && slots[1].getItem() == ModItems.battery_spark &&
-				((IBatteryItem)ModItems.battery_spark).getCharge(slots[1]) == ((IBatteryItem)ModItems.battery_spark).getMaxCharge(slots[1])) {
+				((IBatteryItem)ModItems.battery_spark).getStoredEnergyQuanta(slots[1]) == ((IBatteryItem)ModItems.battery_spark).getEnergyCapacityQuanta(slots[1])) {
 			return 1;
 		}
 
 		if(slots[1] != null && slots[1].getItem() == ModItems.battery_trixite &&
-				((IBatteryItem)ModItems.battery_trixite).getCharge(slots[1]) == ((IBatteryItem)ModItems.battery_trixite).getMaxCharge(slots[1])) {
+				((IBatteryItem)ModItems.battery_trixite).getStoredEnergyQuanta(slots[1]) == ((IBatteryItem)ModItems.battery_trixite).getEnergyCapacityQuanta(slots[1])) {
 			return 2;
 		}
 

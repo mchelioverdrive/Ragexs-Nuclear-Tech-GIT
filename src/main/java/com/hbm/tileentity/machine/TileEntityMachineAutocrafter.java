@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -75,10 +76,10 @@ public class TileEntityMachineAutocrafter extends TileEntityMachineBase implemen
 		
 		if(!worldObj.isRemote) {
 			
-			this.setPower(Library.chargeTEFromItems(slots, 20, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 20, energyQuanta, maxPower));
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 			
-			if(!this.recipes.isEmpty() && this.power >= this.consumption) {
+			if(!this.recipes.isEmpty() && this.energyQuanta >= this.consumption) {
 				IRecipe recipe = this.recipes.get(recipeIndex);
 				
 				if(recipe.matches(this.getRecipeGrid(), this.worldObj)) {
@@ -116,7 +117,7 @@ public class TileEntityMachineAutocrafter extends TileEntityMachineBase implemen
 								}
 							}
 							
-							this.setPower(this.power - this.consumption);
+							this.setStoredEnergyQuanta(this.energyQuanta - this.consumption);
 						}
 					}
 				}
@@ -129,7 +130,7 @@ public class TileEntityMachineAutocrafter extends TileEntityMachineBase implemen
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		matcher.serialize(buf);
 		buf.writeInt(recipeCount);
 		buf.writeInt(recipeIndex);
@@ -138,7 +139,7 @@ public class TileEntityMachineAutocrafter extends TileEntityMachineBase implemen
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		matcher.deserialize(buf);
 		recipeCount = buf.readInt();
 		recipeIndex = buf.readInt();
@@ -289,29 +290,29 @@ public class TileEntityMachineAutocrafter extends TileEntityMachineBase implemen
 	
 	public static int consumption = 100;
 	public static long maxPower = consumption * 100;
-	public long power;
+	public long energyQuanta;
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		matcher.readFromNBT(nbt);
 		this.recipes = getMatchingRecipes(this.getTemplateGrid());
 		this.recipeCount = recipes.size();
@@ -327,7 +328,7 @@ public class TileEntityMachineAutocrafter extends TileEntityMachineBase implemen
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		matcher.writeToNBT(nbt);
 		nbt.setInteger("rec", this.recipeIndex);
 	}

@@ -28,7 +28,7 @@ public class GUIMachineExposureChamber extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 		
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 152, guiTop + 18, 16, 34, chamber.power, chamber.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 152, guiTop + 18, 16, 34, chamber.getStoredEnergyQuanta(), chamber.maxPower);
 		
 		drawCustomInfoStat(mouseX, mouseY, guiLeft + 26, guiTop + 36, 9, 16, mouseX, mouseY, chamber.savedParticles + " / " + chamber.maxParticles);
 	}
@@ -52,10 +52,10 @@ public class GUIMachineExposureChamber extends GuiInfoContainer {
 		int c = chamber.savedParticles * 16 / chamber.maxParticles;
 		drawTexturedModalRect(guiLeft + 26, guiTop + 52 - c, 192, 26 - c, 9, c);
 		
-		int e = (int) (chamber.power * 34 / chamber.maxPower);
+		int e = (int) (chamber.getStoredEnergyQuanta() * 34 / chamber.maxPower);
 		drawTexturedModalRect(guiLeft + 152, guiTop + 52 - e, 176, 34 - e, 16, e);
 		
-		if(chamber.consumption <= chamber.power) {
+		if(chamber.consumption <= chamber.getStoredEnergyQuanta()) {
 			drawTexturedModalRect(guiLeft + 156, guiTop + 4, 176, 34, 9, 12);
 		}
 	}

@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.inventory.FluidStack;
 import com.hbm.inventory.container.ContainerMachineCryoDistill;
@@ -30,7 +31,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineCryoDistill extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IPersistentNBT, IGUIProvider {
 	
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 1_000_000;
 	
 	public FluidTank[] tanks;
@@ -55,7 +56,7 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 	public void updateEntity() {
 		
 		if(!worldObj.isRemote) {
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 			tanks[0].setType(7, slots);
 
 			DirPos[] con = getConPos();
@@ -87,13 +88,13 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 
 	@Override
 	public void serialize(ByteBuf buf) {
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		for(int i = 0; i < 5; i++) tanks[i].serialize(buf);
 	}
 
 	@Override
 	public void deserialize(ByteBuf buf) {
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		for(int i = 0; i < 5; i++) tanks[i].deserialize(buf);
 	}
 	
@@ -113,7 +114,7 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 		tanks[3].setTankType(out.getY().type);
 		tanks[4].setTankType(out.getZ().type);
 		
-		if(power < 20_000) return;
+		if(energyQuanta < 20_000) return;
 		if(tanks[0].getFill() < 100) return;
 
 		if(tanks[1].getFill() + out.getW().fill > tanks[1].getMaxFill()) return;
@@ -129,7 +130,7 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 		tanks[4].setFill(tanks[4].getFill() + out.getZ().fill);
 
 		
-		this.setPower(this.power - 20_000);
+		this.setStoredEnergyQuanta(this.energyQuanta - 20_000);
 	}
 	
 	public DirPos[] getConPos() {
@@ -155,7 +156,7 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		tanks[0].readFromNBT(nbt, "input");
 		tanks[1].readFromNBT(nbt, "o1");
 		tanks[2].readFromNBT(nbt, "o2");
@@ -167,7 +168,7 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tanks[0].writeToNBT(nbt, "input");
 		tanks[1].writeToNBT(nbt, "o1");
 		tanks[2].writeToNBT(nbt, "o2");
@@ -200,19 +201,19 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

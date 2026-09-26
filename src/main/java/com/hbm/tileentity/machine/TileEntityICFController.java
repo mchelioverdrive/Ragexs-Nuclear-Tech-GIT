@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -20,7 +21,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityICFController extends TileEntityTickingBase implements IEnergyReceiverMK2 {
 	
-	public long power;
+	public long energyQuanta;
 	public int laserLength;
 	
 	public int cellCount;
@@ -33,7 +34,7 @@ public class TileEntityICFController extends TileEntityTickingBase implements IE
 	public boolean assembled;
 	
 	public void setup(HashSet<BlockPos> ports, HashSet<BlockPos> cells, HashSet<BlockPos> emitters, HashSet<BlockPos> capacitors, HashSet<BlockPos> turbochargers) {
-		long previousCapacity = this.getMaxPower();
+		long previousCapacity = this.getEnergyCapacityQuanta();
 
 		this.cellCount = 0;
 		this.emitterCount = 0;
@@ -77,7 +78,7 @@ public class TileEntityICFController extends TileEntityTickingBase implements IE
 		}
 		
 		this.ports.addAll(ports);
-		if(this.getMaxPower() != previousCapacity) this.markPowerNetDirty();
+		if(this.getEnergyCapacityQuanta() != previousCapacity) this.markPowerNetDirty();
 	}
 
 	public void setAssembled(boolean assembled) {
@@ -102,11 +103,11 @@ public class TileEntityICFController extends TileEntityTickingBase implements IE
 				for(BlockPos pos : ports) {
 					for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
 						BlockPos portPos = pos.offset(dir);
-						if(this.getMaxPower() > 0) this.trySubscribe(worldObj, portPos.getX(), portPos.getY(), portPos.getZ(), dir);
+						if(this.getEnergyCapacityQuanta() > 0) this.trySubscribe(worldObj, portPos.getX(), portPos.getY(), portPos.getZ(), dir);
 					}
 				}
 				
-				if(this.power > 0) {
+				if(this.energyQuanta > 0) {
 		
 					ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata());
 					
@@ -118,8 +119,8 @@ public class TileEntityICFController extends TileEntityTickingBase implements IE
 							TileEntity tile = worldObj.getTileEntity(xCoord + dir.offsetX * (i + 8), yCoord - 3, zCoord + dir.offsetZ * (i + 8));
 							if(tile instanceof TileEntityICF) {
 								TileEntityICF icf = (TileEntityICF) tile;
-								icf.laser += this.getPower();
-								icf.maxLaser += this.getMaxPower();
+								icf.laser += this.getStoredEnergyQuanta();
+								icf.maxLaser += this.getEnergyCapacityQuanta();
 								break;
 							}
 						}
@@ -145,7 +146,7 @@ public class TileEntityICFController extends TileEntityTickingBase implements IE
 						e.setFire(5);
 					}
 					
-					this.setPower(0);
+					this.setStoredEnergyQuanta(0);
 				} else {
 					this.laserLength = 0;
 				}
@@ -168,7 +169,7 @@ public class TileEntityICFController extends TileEntityTickingBase implements IE
 
 	@Override public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		buf.writeInt(capacitorCount);
 		buf.writeInt(turbochargerCount);
 		buf.writeInt(laserLength);
@@ -176,7 +177,7 @@ public class TileEntityICFController extends TileEntityTickingBase implements IE
 	
 	@Override public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		this.power = buf.readLong();
+		this.energyQuanta = buf.readLong();
 		this.capacitorCount = buf.readInt();
 		this.turbochargerCount = buf.readInt();
 		this.laserLength = buf.readInt();
@@ -186,7 +187,7 @@ public class TileEntityICFController extends TileEntityTickingBase implements IE
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		
 		this.assembled = nbt.getBoolean("assembled");
 		this.cellCount = nbt.getInteger("cellCount");
@@ -206,7 +207,7 @@ public class TileEntityICFController extends TileEntityTickingBase implements IE
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		
 		nbt.setBoolean("assembled", assembled);
 		nbt.setInteger("cellCount", cellCount);
@@ -222,25 +223,25 @@ public class TileEntityICFController extends TileEntityTickingBase implements IE
 	}
 
 	@Override
-	public long getPower() {
-		return Math.min(power, this.getMaxPower());
+	public long getStoredEnergyQuanta() {
+		return Math.min(energyQuanta, this.getEnergyCapacityQuanta());
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return (long) (Math.sqrt(capacitorCount) * 2_500_000 + Math.sqrt(Math.min(turbochargerCount, capacitorCount)) * 5_000_000);
 	}
 
 	@Override
-	public long getReceiverSpeed() {
-		return this.assembled ? this.getMaxPower() : 0;
+	public long getMaxInputQuantaPerTick() {
+		return this.assembled ? this.getEnergyCapacityQuanta() : 0;
 	}
 	
 	AxisAlignedBB bb = null;

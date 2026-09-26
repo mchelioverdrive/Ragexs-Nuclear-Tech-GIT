@@ -237,11 +237,11 @@ public class ItemGlitch extends Item implements IBatteryItem {
 	}
 
 
-	@Override public void chargeBattery(ItemStack stack, long i) { }
-	@Override public void setCharge(ItemStack stack, long i) { }
-	@Override public void dischargeBattery(ItemStack stack, long i) { }
-	@Override public long getCharge(ItemStack stack) { return 200; }
-	@Override public long getMaxCharge(ItemStack stack) { return 200; }
-	@Override public long getChargeRate() { return 0; }
-	@Override public long getDischargeRate() { return 200; }
+	@Override public void receiveEnergyQuanta(ItemStack stack, long i) { }
+	@Override public void setStoredEnergyQuanta(ItemStack stack, long i) { }
+	@Override public void extractEnergyQuanta(ItemStack stack, long i) { }
+	@Override public long getStoredEnergyQuanta(ItemStack stack) { return 200; }
+	@Override public long getEnergyCapacityQuanta(ItemStack stack) { return 200; }
+	@Override public long getMaxInputQuantaPerTick() { return 0; }
+	@Override public long getMaxOutputQuantaPerTick() { return 200; }
 }

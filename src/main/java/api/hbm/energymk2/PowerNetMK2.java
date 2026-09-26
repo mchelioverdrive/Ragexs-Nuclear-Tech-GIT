@@ -27,7 +27,7 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 	public static final int DIRTY_SUPPLY = 2;
 	public static final int DIRTY_DEMAND = 4;
 
-	public long energyTracker = 0L;
+	public long transferredEnergyQuantaThisTick = 0L;
 
 	private static final ConnectionPriority[] PRIORITIES = ConnectionPriority.values();
 
@@ -215,7 +215,7 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 		if(demandRemoved) this.markDemandDirty();
 	}
 
-	@Override public void resetTrackers() { this.energyTracker = 0; }
+	@Override public void resetTrackers() { this.transferredEnergyQuantaThisTick = 0; }
 
 	@Override
 	public void update() {
@@ -228,17 +228,17 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 			return;
 		}
 
-		long powerAvailable = 0;
+		long availableEnergyQuanta = 0;
 
-		// sum up available power
+		// Sum available energy quanta for this distribution pass.
 		Iterator<Entry<IEnergyProviderMK2, Long>> provIt = providerEntries.entrySet().iterator();
 		while(provIt.hasNext()) {
 			Entry<IEnergyProviderMK2, Long> entry = provIt.next();
 			IEnergyProviderMK2 provider = entry.getKey();
-			long src = Math.min(provider.getPower(), provider.getProviderSpeed());
+			long src = Math.min(provider.getStoredEnergyQuanta(), provider.getMaxOutputQuantaPerTick());
 			if(src > 0) {
 				this.providerScratch.add(provider, src);
-				powerAvailable += src;
+				availableEnergyQuanta += src;
 			}
 		}
 
@@ -250,7 +250,7 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 		while(recIt.hasNext()) {
 			Entry<IEnergyReceiverMK2, Long> entry = recIt.next();
 			IEnergyReceiverMK2 receiver = entry.getKey();
-			long rec = Math.min(receiver.getMaxPower() - receiver.getPower(), receiver.getReceiverSpeed());
+			long rec = Math.min(receiver.getEnergyCapacityQuanta() - receiver.getStoredEnergyQuanta(), receiver.getMaxInputQuantaPerTick());
 			if(rec > 0) {
 				int p = receiver.getPriority().ordinal();
 				this.receiverScratch[p].add(receiver, rec);
@@ -258,10 +258,10 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 				totalDemand += rec;
 			}
 		}
-		long toTransfer = Math.min(powerAvailable, totalDemand);
-		long energyUsed = 0;
+		long toTransfer = Math.min(availableEnergyQuanta, totalDemand);
+		long transferredEnergyQuanta = 0;
 
-		// add power to receivers, ordered by priority
+		// Distribute quanta to receivers, ordered by priority.
 		for(int i = PRIORITIES.length - 1; i >= 0; i--) {
 			EndpointScratch<IEnergyReceiverMK2> list = this.receiverScratch[i];
 			long priorityDemand = this.demandScratch[i];
@@ -270,20 +270,20 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 				long requested = list.amounts[j];
 				double weight = (double) requested / (double) priorityDemand;
 				long toSend = (long) Math.min(Math.max(toTransfer * weight, 0D), requested);
-				energyUsed += (toSend - list.get(j).transferPower(toSend)); //leftovers are subtracted from the intended amount to use up
+				transferredEnergyQuanta += (toSend - list.get(j).receiveEnergyQuanta(toSend)); //leftovers are subtracted from the intended amount to use up
 			}
 
-			toTransfer -= energyUsed;
+			toTransfer -= transferredEnergyQuanta;
 		}
 
-		this.energyTracker += energyUsed;
-		long leftover = energyUsed;
+		this.transferredEnergyQuantaThisTick += transferredEnergyQuanta;
+		long leftover = transferredEnergyQuanta;
 
-		// remove power from providers
+		// Extract the delivered quanta from providers.
 		for(int i = 0; i < this.providerScratch.size; i++) {
-			double weight = (double) this.providerScratch.amounts[i] / (double) powerAvailable;
-			long toUse = (long) Math.max(energyUsed * weight, 0D);
-			this.providerScratch.get(i).usePower(toUse);
+			double weight = (double) this.providerScratch.amounts[i] / (double) availableEnergyQuanta;
+			long toUse = (long) Math.max(transferredEnergyQuanta * weight, 0D);
+			this.providerScratch.get(i).extractEnergyQuanta(toUse);
 			leftover -= toUse;
 		}
 
@@ -294,20 +294,26 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 
 			IEnergyProviderMK2 scapegoat = this.providerScratch.get(rand.nextInt(this.providerScratch.size));
 
-			long toUse = Math.min(leftover, scapegoat.getPower());
-			scapegoat.usePower(toUse);
+			long toUse = Math.min(leftover, scapegoat.getStoredEnergyQuanta());
+			scapegoat.extractEnergyQuanta(toUse);
 			leftover -= toUse;
 		}
 		PowerNetDiagnostics.finishDistribution(diagnosticStart);
 	}
 
-	public long sendPowerDiode(long power) {
+	/** Legacy HE entry point for addons. */
+	@Deprecated
+	public long sendPowerDiode(long legacyHe) {
+		return EnergyUnits.quantaToLegacyHe(sendEnergyQuantaThroughDiode(EnergyUnits.legacyHeToQuanta(legacyHe)));
+	}
+
+	public long sendEnergyQuantaThroughDiode(long energyQuanta) {
 		long diagnosticStart = PowerNetDiagnostics.startDistribution();
 		clearReceiverScratch(this.diodeReceiverScratch, this.diodeDemandScratch);
 
 		if(receiverEntries.isEmpty()) {
 			PowerNetDiagnostics.finishDistribution(diagnosticStart);
-			return power;
+			return energyQuanta;
 		}
 
 		long totalDemand = 0;
@@ -317,14 +323,14 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 		while(recIt.hasNext()) {
 			Entry<IEnergyReceiverMK2, Long> entry = recIt.next();
 			IEnergyReceiverMK2 receiver = entry.getKey();
-			long rec = Math.min(receiver.getMaxPower() - receiver.getPower(), receiver.getReceiverSpeed());
+			long rec = Math.min(receiver.getEnergyCapacityQuanta() - receiver.getStoredEnergyQuanta(), receiver.getMaxInputQuantaPerTick());
 			int p = receiver.getPriority().ordinal();
 			this.diodeReceiverScratch[p].add(receiver, rec);
 			this.diodeDemandScratch[p] += rec;
 			totalDemand += rec;
 		}
-		long toTransfer = Math.min(power, totalDemand);
-		long energyUsed = 0;
+		long toTransfer = Math.min(energyQuanta, totalDemand);
+		long transferredEnergyQuanta = 0;
 
 		for(int i = PRIORITIES.length - 1; i >= 0; i--) {
 			EndpointScratch<IEnergyReceiverMK2> list = this.diodeReceiverScratch[i];
@@ -334,17 +340,17 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 				long requested = list.amounts[j];
 				double weight = (double) requested / (double) priorityDemand;
 				long toSend = (long) Math.max(toTransfer * weight, 0D);
-				energyUsed += (toSend - list.get(j).transferPower(toSend)); //leftovers are subtracted from the intended amount to use up
+				transferredEnergyQuanta += (toSend - list.get(j).receiveEnergyQuanta(toSend)); //leftovers are subtracted from the intended amount to use up
 			}
 
-			toTransfer -= energyUsed;
+			toTransfer -= transferredEnergyQuanta;
 		}
 
-		this.energyTracker += energyUsed;
-		if(energyUsed > 0) this.markDemandDirty();
+		this.transferredEnergyQuantaThisTick += transferredEnergyQuanta;
+		if(transferredEnergyQuanta > 0) this.markDemandDirty();
 		PowerNetDiagnostics.finishDistribution(diagnosticStart);
 
-		return power - energyUsed;
+		return energyQuanta - transferredEnergyQuanta;
 	}
 
 	@Override

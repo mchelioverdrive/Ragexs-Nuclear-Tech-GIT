@@ -1,5 +1,7 @@
 package com.hbm.blocks.network;
 
+import api.hbm.energymk2.EnergyUnits;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -94,8 +96,8 @@ public class BlockCableGauge extends BlockContainer implements IBlockMultiPass, 
 		TileEntityCableGauge duct = (TileEntityCableGauge) te;
 		
 		List<String> text = new ArrayList();
-		text.add(BobMathUtil.getShortNumber(duct.deltaTick) + "HE/t");
-		text.add(BobMathUtil.getShortNumber(duct.deltaLastSecond) + "HE/s");
+		text.add("Current Transfer: " + EnergyUnits.formatQuantaPerTickAsWatts(duct.deltaTick));
+		text.add("Last Second Average: " + EnergyUnits.formatQuantaPerSecondAsWatts(duct.deltaLastSecond));
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 	
@@ -126,7 +128,7 @@ public class BlockCableGauge extends BlockContainer implements IBlockMultiPass, 
 					
 					PowerNetMK2 net = this.node.net;
 					
-					this.deltaTick = net.energyTracker;
+					this.deltaTick = net.transferredEnergyQuantaThisTick;
 					if(worldObj.getTotalWorldTime() % 20 == 0) {
 						this.deltaLastSecond = this.deltaSecond;
 						this.deltaSecond = 0;

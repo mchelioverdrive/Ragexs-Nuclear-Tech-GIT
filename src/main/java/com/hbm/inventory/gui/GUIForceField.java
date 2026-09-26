@@ -31,7 +31,7 @@ public class GUIForceField extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 		
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 69 - 52, 16, 52, diFurnace.power, diFurnace.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 69 - 52, 16, 52, diFurnace.getStoredEnergyQuanta(), diFurnace.maxPower);
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 62, guiTop + 69 - 52, 16, 52, mouseX, mouseY, new String[]{ diFurnace.health + " / " + diFurnace.maxHealth + "HP"} );
 	}
 	

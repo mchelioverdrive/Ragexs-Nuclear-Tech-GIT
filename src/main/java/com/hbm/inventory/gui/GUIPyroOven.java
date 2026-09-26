@@ -30,7 +30,7 @@ public class GUIPyroOven extends GuiInfoContainer {
 
 		pyro.tanks[0].renderTankInfo(this, x, y, guiLeft + 8, guiTop + 18, 16, 52);
 		pyro.tanks[1].renderTankInfo(this, x, y, guiLeft + 116, guiTop + 18, 16, 52);
-		this.drawElectricityInfo(this, x, y, guiLeft + 152, guiTop + 18, 16, 52, pyro.getPower(), pyro.getMaxPower());
+		this.drawElectricityInfo(this, x, y, guiLeft + 152, guiTop + 18, 16, 52, pyro.getStoredEnergyQuanta(), pyro.getEnergyCapacityQuanta());
 		
 		this.drawCustomInfoStat(x, y, guiLeft + 108, guiTop + 76, 8, 8, guiLeft + 108, guiTop + 76, this.getUpgradeInfo(pyro));
 	}
@@ -48,7 +48,7 @@ public class GUIPyroOven extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 
-		int i = (int) (pyro.power * 52 / pyro.maxPower);
+		int i = (int) (pyro.getStoredEnergyQuanta() * 52 / pyro.maxPower);
 		drawTexturedModalRect(guiLeft + 152, guiTop + 70 - i, 176, 64 - i, 16, i);
 		
 		int p = (int) (pyro.progress * 27);

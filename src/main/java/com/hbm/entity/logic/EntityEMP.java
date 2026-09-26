@@ -92,7 +92,7 @@ public class EntityEMP extends Entity {
 		
 		if (te != null && te instanceof IEnergyHandlerMK2) {
 			
-			((IEnergyHandlerMK2)te).setPower(0);
+			((IEnergyHandlerMK2)te).setStoredEnergyQuanta(0);
 			flag = true;
 		}
 		if (te != null && te instanceof IEnergyProvider) {

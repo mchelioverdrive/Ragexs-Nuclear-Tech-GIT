@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
+import api.hbm.energymk2.EnergyUnits;
 
 public interface IConfigurableMachine {
 
@@ -24,6 +25,16 @@ public interface IConfigurableMachine {
 	
 	public static long grab(JsonObject obj, String name, long def) {
 		return obj.has(name) ? obj.get(name).getAsLong() : def;
+	}
+
+	/** New values are exact half-joule quanta; old HE values map one-to-one. */
+	public static long grabEnergyQuanta(JsonObject obj, String siName, String legacyName, long def) {
+		if(obj.has(siName)) return obj.get(siName).getAsLong();
+		return obj.has(legacyName) ? EnergyUnits.legacyHeToQuanta(obj.get(legacyName).getAsLong()) : def;
+	}
+
+	public static int grabEnergyQuanta(JsonObject obj, String siName, String legacyName, int def) {
+		return Math.toIntExact(grabEnergyQuanta(obj, siName, legacyName, (long) def));
 	}
 	
 	public static double grab(JsonObject obj, String name, double def) {

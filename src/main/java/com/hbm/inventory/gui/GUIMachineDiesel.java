@@ -29,7 +29,7 @@ public class GUIMachineDiesel extends GuiInfoContainer {
 		super.drawScreen(mouseX, mouseY, f);
 
 		diesel.tank.renderTankInfo(this, mouseX, mouseY, guiLeft + 80, guiTop + 69 - 52, 16, 52);
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 152, guiTop + 69 - 52, 16, 52, diesel.power, diesel.powerCap);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 152, guiTop + 69 - 52, 16, 52, diesel.getStoredEnergyQuanta(), diesel.powerCap);
 		
 		String[] text = new String[] { "Fuel consumption rate:",
 				"  1 mB/t",
@@ -59,7 +59,7 @@ public class GUIMachineDiesel extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
-		if(diesel.power > 0) {
+		if(diesel.getStoredEnergyQuanta() > 0) {
 			int i = (int)diesel.getPowerScaled(52);
 			drawTexturedModalRect(guiLeft + 152, guiTop + 69 - i, 176, 52 - i, 16, i);
 		}

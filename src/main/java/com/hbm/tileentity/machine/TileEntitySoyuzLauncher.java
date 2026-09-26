@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,7 +39,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements ISidedInventory, IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IFluidCopiable {
 
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 1000000;
 	public FluidTank[] tanks;
 	//0: sat, 1: cargo
@@ -80,7 +81,7 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 			tanks[0].loadTank(4, 5, slots);
 			tanks[1].loadTank(6, 7, slots);
 
-			this.setPower(Library.chargeTEFromItems(slots, 8, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 8, energyQuanta, maxPower));
 
 			if(!starting || !canLaunch()) {
 				countdown = maxCount;
@@ -96,7 +97,7 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 			}
 
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setByte("mode", mode);
 			data.setBoolean("starting", starting);
 			data.setByte("type", this.getType());
@@ -194,7 +195,7 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 	public void networkUnpack(NBTTagCompound data) {
 		super.networkUnpack(data);
 
-		power = data.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		mode = data.getByte("mode");
 		starting = data.getBoolean("starting");
 		rocketType = data.getByte("type");
@@ -225,7 +226,7 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 
 		tanks[0].setFill(tanks[0].getFill() - req);
 		tanks[1].setFill(tanks[1].getFill() - req);
-		this.setPower(this.power - pow);
+		this.setStoredEnergyQuanta(this.energyQuanta - pow);
 
 		if(mode == 0) {
 			soyuz.setSat(slots[2]);
@@ -289,7 +290,7 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 
 	public boolean hasPower() {
 
-		return power >= getPowerRequired();
+		return energyQuanta >= getPowerRequired();
 	}
 
 	public int getPowerRequired() {
@@ -306,7 +307,7 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 	}
 
 	public long getPowerScaled(long i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 
 	public boolean hasRocket() {
@@ -365,7 +366,7 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 
 		tanks[0].readFromNBT(nbt, "fuel");
 		tanks[1].readFromNBT(nbt, "oxidizer");
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		mode = nbt.getByte("mode");
 
 		slots = new ItemStack[getSizeInventory()];
@@ -387,7 +388,7 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 
 		tanks[0].writeToNBT(nbt, "fuel");
 		tanks[1].writeToNBT(nbt, "oxidizer");
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setByte("mode", mode);
 
 		for (int i = 0; i < slots.length; i++) {
@@ -414,19 +415,19 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return this.power;
+	public long getStoredEnergyQuanta() {
+		return this.energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return this.maxPower;
 	}
 

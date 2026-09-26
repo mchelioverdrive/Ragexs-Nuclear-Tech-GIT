@@ -76,7 +76,7 @@ public class CustomMachineConfigJSON {
 			writer.name("fluxMode").value(false);
 			writer.name("recipeSpeedMult").value(1.0D);
 			writer.name("recipeConsumptionMult").value(1.0D);
-			writer.name("maxPower").value(10_000L);
+			writer.name("energyCapacityQuanta").value(10_000L);
 			writer.name("maxHeat").value(0);
 
 			writer.name("recipeShape").beginArray();
@@ -175,7 +175,7 @@ public class CustomMachineConfigJSON {
 				if(machineObject.has("fluxMode")) configuration.fluxMode = machineObject.get("fluxMode").getAsBoolean();
 				configuration.recipeSpeedMult = machineObject.get("recipeSpeedMult").getAsDouble();
 				configuration.recipeConsumptionMult = machineObject.get("recipeConsumptionMult").getAsDouble();
-				configuration.maxPower = machineObject.get("maxPower").getAsLong();
+				configuration.energyCapacityQuanta = (machineObject.has("energyCapacityQuanta") ? machineObject.get("energyCapacityQuanta").getAsLong() : machineObject.get("maxPower").getAsLong());
 				if(machineObject.has("maxHeat")) configuration.maxHeat = machineObject.get("maxHeat").getAsInt();
 
 				if(machineObject.has("recipeShape") && machineObject.has("recipeParts")) {
@@ -266,7 +266,7 @@ public class CustomMachineConfigJSON {
 		public boolean fluxMode;
 		public double recipeSpeedMult = 1D;
 		public double recipeConsumptionMult = 1D;
-		public long maxPower;
+		public long energyCapacityQuanta;
 		public int maxHeat;
 
 

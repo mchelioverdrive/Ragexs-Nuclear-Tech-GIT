@@ -113,7 +113,7 @@ public class GUIMachineTurbineGas extends GuiInfoContainer {
 		
 		super.drawScreen(mouseX, mouseY, f);
 
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 26, guiTop + 108, 142, 16, turbinegas.power, turbinegas.getMaxPower());
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 26, guiTop + 108, 142, 16, turbinegas.getStoredEnergyQuanta(), turbinegas.getEnergyCapacityQuanta());
 		
 		if(turbinegas.powerSliderPos == 0)
 			this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 36, guiTop + 36, 16, 66, mouseX, mouseY, new String[] {"Turbine idle"});
@@ -177,7 +177,7 @@ public class GUIMachineTurbineGas extends GuiInfoContainer {
 		
 		drawTexturedModalRect(guiLeft + 36, guiTop + 97 - turbinegas.powerSliderPos, 178, 0, 16, 6); //power slider
 		
-		int power = (int) (turbinegas.power * 142 / turbinegas.maxPower); //power storage
+		int power = (int) (turbinegas.getStoredEnergyQuanta() * 142 / turbinegas.maxPower); //power storage
 		drawTexturedModalRect(guiLeft + 26, guiTop + 109, 0, 223, power, 16);
 		
 		drawRPMGauge(turbinegas.rpm);

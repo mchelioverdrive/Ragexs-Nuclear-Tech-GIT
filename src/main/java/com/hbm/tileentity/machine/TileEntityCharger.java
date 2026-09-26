@@ -49,7 +49,7 @@ public class TileEntityCharger extends TileEntityLoadedBase implements IEnergyRe
 					
 					if(stack != null && stack.getItem() instanceof IBatteryItem) {
 						IBatteryItem battery = (IBatteryItem) stack.getItem();
-						charge += Math.min(battery.getMaxCharge(stack) - battery.getCharge(stack), battery.getChargeRate());
+						charge += Math.min(battery.getEnergyCapacityQuanta(stack) - battery.getStoredEnergyQuanta(stack), battery.getMaxInputQuantaPerTick());
 					}
 				}
 			}
@@ -103,20 +103,20 @@ public class TileEntityCharger extends TileEntityLoadedBase implements IEnergyRe
 	}
 
 	@Override
-	public long getPower() {
+	public long getStoredEnergyQuanta() {
 		return 0;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return charge;
 	}
 
 	@Override
-	public void setPower(long power) { }
+	public void setStoredEnergyQuanta(long power) { }
 	
 	@Override
-	public long transferPower(long power) {
+	public long receiveEnergyQuanta(long power) {
 		long offered = power;
 		
 		if(this.usingTicks < delay || power == 0)
@@ -131,9 +131,9 @@ public class TileEntityCharger extends TileEntityLoadedBase implements IEnergyRe
 				if(stack != null && stack.getItem() instanceof IBatteryItem) {
 					IBatteryItem battery = (IBatteryItem) stack.getItem();
 					
-					long toCharge = Math.min(battery.getMaxCharge(stack) - battery.getCharge(stack), battery.getChargeRate());
+					long toCharge = Math.min(battery.getEnergyCapacityQuanta(stack) - battery.getStoredEnergyQuanta(stack), battery.getMaxInputQuantaPerTick());
 					toCharge = Math.min(toCharge, power / 5);
-					battery.chargeBattery(stack, toCharge);
+					battery.receiveEnergyQuanta(stack, toCharge);
 					power -= toCharge;
 					
 					lastOp = 4;

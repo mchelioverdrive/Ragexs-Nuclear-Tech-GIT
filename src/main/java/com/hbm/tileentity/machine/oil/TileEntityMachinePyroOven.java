@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine.oil;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
@@ -44,7 +45,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 10_000_000;
 	public boolean isVenting;
 	public boolean isProgressing;
@@ -84,7 +85,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 
 		if(!worldObj.isRemote) {
 
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 			tanks[0].setType(3, slots);
 
 			for(DirPos pos : getConPos()) {
@@ -109,7 +110,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 				PyroOvenRecipe recipe = getMatchingRecipe();
 				this.progress += 1F / Math.max((recipe.duration - speed * (recipe.duration / 4)) / (overdrive * 2 + 1), 1);
 				this.isProgressing = true;
-				this.setPower(this.power - this.getConsumption(speed + overdrive * 2, powerSaving));
+				this.setStoredEnergyQuanta(this.energyQuanta - this.getConsumption(speed + overdrive * 2, powerSaving));
 
 				if(progress >= 1F) {
 					this.progress = 0F;
@@ -216,7 +217,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 	public boolean canProcess() {
 		int speed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
 		int powerSaving = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
-		if(power < this.getConsumption(speed, powerSaving)) return false; // not enough power
+		if(energyQuanta < this.getConsumption(speed, powerSaving)) return false; // not enough power
 
 		PyroOvenRecipe recipe = this.getMatchingRecipe();
 		if(recipe == null) return false; // no matching recipe
@@ -267,7 +268,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 		super.serialize(buf);
 		tanks[0].serialize(buf);
 		tanks[1].serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		buf.writeBoolean(isVenting);
 		buf.writeBoolean(isProgressing);
 		buf.writeFloat(progress);
@@ -277,7 +278,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 		super.deserialize(buf);
 		tanks[0].deserialize(buf);
 		tanks[1].deserialize(buf);
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		isVenting = buf.readBoolean();
 		isProgressing = buf.readBoolean();
 		progress = buf.readFloat();
@@ -289,7 +290,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 		this.tanks[0].readFromNBT(nbt, "t0");
 		this.tanks[1].readFromNBT(nbt, "t1");
 		this.progress = nbt.getFloat("prog");
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 	}
 
 	@Override
@@ -298,7 +299,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 		this.tanks[0].writeToNBT(nbt, "t0");
 		this.tanks[1].writeToNBT(nbt, "t1");
 		nbt.setFloat("prog", progress);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 	}
 
 	@Override public int[] getAccessibleSlotsFromSide(int meta) { return new int[] { 1, 2 }; }
@@ -348,13 +349,13 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 		return 65536.0D;
 	}
 
-	@Override public long getPower() { return power; }
-	@Override public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	@Override public long getStoredEnergyQuanta() { return energyQuanta; }
+	@Override public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
-	@Override public long getMaxPower() { return maxPower; }
+	@Override public long getEnergyCapacityQuanta() { return maxPower; }
 
 	@Override public FluidTank[] getAllTanks() { return new FluidTank[] { tanks[0], tanks[1], smoke }; }
 	@Override public FluidTank[] getSendingTanks() { return new FluidTank[] { tanks[1], smoke }; }

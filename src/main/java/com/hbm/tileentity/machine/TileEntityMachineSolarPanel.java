@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.dim.CelestialBody;
 import com.hbm.dim.WorldProviderCelestial;
 import com.hbm.dim.orbit.WorldProviderOrbit;
@@ -15,7 +16,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements IEnergyProviderMK2 {
 
-	private long power;
+	private long energyQuanta;
 	private long maxpwr = 1_000;
 
 	@Override
@@ -27,10 +28,10 @@ public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements
 				tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 			}
 
-			this.setPower(this.power + getOutput());
+			this.setStoredEnergyQuanta(this.energyQuanta + getOutput());
 
-			if(power > maxpwr)
-				this.setPower(maxpwr);
+			if(energyQuanta > maxpwr)
+				this.setStoredEnergyQuanta(maxpwr);
 		}
 	}
 
@@ -85,8 +86,8 @@ public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
@@ -95,21 +96,21 @@ public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxpwr; //temp
 	}
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.maxpwr = nbt.getLong("maxpwr");
 	}
 
@@ -117,7 +118,7 @@ public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setLong("maxpwr", maxpwr);
 	}
 }

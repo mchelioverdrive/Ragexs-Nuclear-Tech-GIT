@@ -29,7 +29,7 @@ public class GUISolidifier extends GuiInfoContainer {
 		super.drawScreen(mouseX, mouseY, f);
 
 		solidifier.tank.renderTankInfo(this, mouseX, mouseY, guiLeft + 35, guiTop + 36, 16, 52);
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 134, guiTop + 18, 16, 52, solidifier.power, solidifier.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 134, guiTop + 18, 16, 52, solidifier.getStoredEnergyQuanta(), solidifier.maxPower);
 	}
 	
 	@Override
@@ -47,7 +47,7 @@ public class GUISolidifier extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 
-		int i = (int)(solidifier.getPower() * 52 / solidifier.getMaxPower());
+		int i = (int)(solidifier.getStoredEnergyQuanta() * 52 / solidifier.getEnergyCapacityQuanta());
 		drawTexturedModalRect(guiLeft + 134, guiTop + 70 - i, 176, 52 - i, 16, i);
 		
 		int j = solidifier.progress * 42 / solidifier.processTime;

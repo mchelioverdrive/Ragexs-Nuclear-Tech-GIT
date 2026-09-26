@@ -5,20 +5,20 @@ import java.util.List;
 
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
-import com.hbm.util.BobMathUtil;
+import api.hbm.energymk2.EnergyUnits;
 
 import net.minecraft.util.EnumChatFormatting;
 
 public class FT_Combustible extends FluidTrait {
 	
 	protected FuelGrade fuelGrade;
-	protected long combustionEnergy;
+	protected long combustionEnergyQuanta;
 	
 	public FT_Combustible() { }
 	
-	public FT_Combustible(FuelGrade grade, long energy) {
+	public FT_Combustible(FuelGrade grade, long energyQuanta) {
 		this.fuelGrade = grade;
-		this.combustionEnergy = energy;
+		this.combustionEnergyQuanta = energyQuanta;
 	}
 	
 	@Override
@@ -27,15 +27,17 @@ public class FT_Combustible extends FluidTrait {
 
 		info.add(EnumChatFormatting.GOLD + "[Combustible]");
 		
-		if(combustionEnergy > 0) {
-			info.add(EnumChatFormatting.GOLD + "Provides " + EnumChatFormatting.RED + "" + BobMathUtil.getShortNumber(combustionEnergy) + "HE " + EnumChatFormatting.GOLD + "per bucket");
+		if(combustionEnergyQuanta > 0) {
+			info.add(EnumChatFormatting.GOLD + "Provides " + EnumChatFormatting.RED + EnergyUnits.formatJoules(combustionEnergyQuanta) + " " + EnumChatFormatting.GOLD + "per bucket");
 			info.add(EnumChatFormatting.GOLD + "Fuel grade: " + EnumChatFormatting.RED + this.fuelGrade.getGrade());
 		}
 	}
 	
-	public long getCombustionEnergy() {
-		return this.combustionEnergy;
+	public long getCombustionEnergyQuanta() {
+		return this.combustionEnergyQuanta;
 	}
+
+	@Deprecated public long getCombustionEnergy() { return EnergyUnits.quantaToLegacyHe(getCombustionEnergyQuanta()); }
 	
 	public FuelGrade getGrade() {
 		return this.fuelGrade;
@@ -61,13 +63,13 @@ public class FT_Combustible extends FluidTrait {
 
 	@Override
 	public void serializeJSON(JsonWriter writer) throws IOException {
-		writer.name("energy").value(combustionEnergy);
+		writer.name("energyQuanta").value(combustionEnergyQuanta);
 		writer.name("grade").value(fuelGrade.name());
 	}
 	
 	@Override
 	public void deserializeJSON(JsonObject obj) {
-		this.combustionEnergy = obj.get("energy").getAsLong();
+		this.combustionEnergyQuanta = obj.has("energyQuanta") ? obj.get("energyQuanta").getAsLong() : EnergyUnits.legacyHeToQuanta(obj.get("energy").getAsLong());
 		this.fuelGrade = FuelGrade.valueOf(obj.get("grade").getAsString());
 	}
 }

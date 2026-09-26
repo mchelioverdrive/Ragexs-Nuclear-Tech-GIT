@@ -11,7 +11,7 @@ import net.minecraft.world.World;
 public class TileEntityTurretBrandon extends TileEntityTurretBaseNT {
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		// TODO Auto-generated method stub
 		return 0;
 	}

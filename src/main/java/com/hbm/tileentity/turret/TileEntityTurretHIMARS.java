@@ -66,7 +66,7 @@ public class TileEntityTurretHIMARS extends TileEntityTurretBaseArtillery implem
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return 1_000_000;
 	}
 
@@ -231,7 +231,7 @@ public class TileEntityTurretHIMARS extends TileEntityTurretBaseArtillery implem
 			if(isOn() && hasPower()) {
 				searchTimer--;
 
-				this.setPower(this.getPower() - this.getConsumption());
+				this.setStoredEnergyQuanta(this.getStoredEnergyQuanta() - this.getConsumption());
 
 				if(searchTimer <= 0) {
 					searchTimer = this.getDecetorInterval();
@@ -247,7 +247,7 @@ public class TileEntityTurretHIMARS extends TileEntityTurretBaseArtillery implem
 				this.updateFiringTick();
 			}
 
-			this.setPower(Library.chargeTEFromItems(slots, 10, this.power, this.getMaxPower()));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 10, this.energyQuanta, this.getEnergyCapacityQuanta()));
 
 			NBTTagCompound data = this.writePacket();
 			this.networkPack(data, 250);

@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine.oil;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.inventory.FluidStack;
 import com.hbm.inventory.container.ContainerMachineVacuumDistill;
 import com.hbm.inventory.fluid.FluidType;
@@ -30,7 +31,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IPersistentNBT, IGUIProvider, IFluidCopiable {
 	
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 1_000_000;
 	
 	public FluidTank[] tanks;
@@ -63,7 +64,7 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 			this.isOn = false;
 			
 			this.updateConnections();
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 			tanks[0].setType(11, slots);
 			tanks[0].loadTank(1, 2, slots);
 			
@@ -83,7 +84,7 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 			}
 			
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", this.power);
+			EnergyUnits.writeEnergyQuanta(data, this.energyQuanta);
 			data.setBoolean("isOn", this.isOn);
 			for(int i = 0; i < 5; i++) tanks[i].writeToNBT(data, "" + i);
 			this.networkPack(data, 150);
@@ -145,7 +146,7 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
 		
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.isOn = nbt.getBoolean("isOn");
 		for(int i = 0; i < 5; i++) tanks[i].readFromNBT(nbt, "" + i);
 	}
@@ -160,12 +161,12 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 		FluidStack[] stacks = new FluidStack[] {refinery.getW(), refinery.getX(), refinery.getY(), refinery.getZ()};
 		for(int i = 0; i < stacks.length; i++) tanks[i + 1].setTankType(stacks[i].type);
 		
-		if(power < 10_000) return;
+		if(energyQuanta < 10_000) return;
 		if(tanks[0].getFill() < 100) return;
 		for(int i = 0; i < stacks.length; i++) if(tanks[i + 1].getFill() + stacks[i].fill > tanks[i + 1].getMaxFill()) return;
 
 		this.isOn = true;
-		this.setPower(this.power - 10_000);
+		this.setStoredEnergyQuanta(this.energyQuanta - 10_000);
 		tanks[0].setFill(tanks[0].getFill() - 100);
 		
 		for(int i = 0; i < stacks.length; i++) tanks[i + 1].setFill(tanks[i + 1].getFill() + stacks[i].fill);
@@ -195,7 +196,7 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		tanks[0].readFromNBT(nbt, "input");
 		tanks[1].readFromNBT(nbt, "heavy");
 		tanks[2].readFromNBT(nbt, "reformate");
@@ -207,7 +208,7 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tanks[0].writeToNBT(nbt, "input");
 		tanks[1].writeToNBT(nbt, "heavy");
 		tanks[2].writeToNBT(nbt, "reformate");
@@ -241,19 +242,19 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

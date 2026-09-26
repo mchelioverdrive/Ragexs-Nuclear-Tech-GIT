@@ -52,7 +52,7 @@ public class GUIElectrolyserMetal extends GuiInfoContainer {
 			this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 96, guiTop + 18, 34, 42, mouseX, mouseY, EnumChatFormatting.RED + "Empty");
 		}
 		
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 186, guiTop + 18, 16, 89, electrolyser.power, electrolyser.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 186, guiTop + 18, 16, 89, electrolyser.getStoredEnergyQuanta(), electrolyser.maxPower);
 	}
 	
 	protected void mouseClicked(int x, int y, int i) {
@@ -96,10 +96,10 @@ public class GUIElectrolyserMetal extends GuiInfoContainer {
 
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 		
-		int p = (int) (electrolyser.power * 89 / electrolyser.maxPower);
+		int p = (int) (electrolyser.getStoredEnergyQuanta() * 89 / electrolyser.maxPower);
 		drawTexturedModalRect(guiLeft + 186, guiTop + 107 - p, 210, 89 - p, 16, p);
 		
-		if(electrolyser.power >= electrolyser.usageOre)
+		if(electrolyser.getStoredEnergyQuanta() >= electrolyser.usageOre)
 			drawTexturedModalRect(guiLeft + 190, guiTop + 4, 226, 25, 9, 12);
 		
 		int o = electrolyser.progressOre * 26 / electrolyser.processOreTime;

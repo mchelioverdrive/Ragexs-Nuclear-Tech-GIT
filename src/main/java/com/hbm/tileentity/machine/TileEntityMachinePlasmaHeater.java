@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.machine.MachineHTRF4;
@@ -28,7 +29,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IFluidCopiable {
 
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 100000000;
 
 	public FluidTank[] tanks;
@@ -108,7 +109,7 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 
 			/// START Managing all the internal stuff ///
 
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 
 			tanks[0].setType(1, 2, slots);
 			tanks[1].setType(3, 4, slots);
@@ -164,7 +165,7 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 
 			NBTTagCompound data = new NBTTagCompound();
 
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setInteger("startupCharge", startupCharge);
 			data.setInteger("plasmaAge", plasmaAge);
 
@@ -189,7 +190,7 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 			return;
 		}
 
-		if(power <= 0) {
+		if(energyQuanta <= 0) {
 			return;
 		}
 
@@ -199,10 +200,10 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 		 */
 		if(startupCharge < STARTUP_POWER_REQUIRED) {
 
-			int charge = (int) Math.min(power, STARTUP_POWER_REQUIRED - startupCharge);
+			int charge = (int) Math.min(energyQuanta, STARTUP_POWER_REQUIRED - startupCharge);
 
 			startupCharge += charge;
-			this.setPower(this.power - charge);
+			this.setStoredEnergyQuanta(this.energyQuanta - charge);
 
 			return;
 		}
@@ -210,7 +211,7 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 		int convert = Math.min(tanks[0].getFill(), tanks[1].getFill());
 		convert = Math.min(convert, plasma.getMaxFill() - plasma.getFill());
 		convert = Math.min(convert, MAX_CONVERT_PER_TICK);
-		convert = Math.min(convert, (int) (power / OPERATING_POWER_PER_PACKET));
+		convert = Math.min(convert, (int) (energyQuanta / OPERATING_POWER_PER_PACKET));
 		convert = Math.max(0, convert);
 
 		if(convert <= 0) {
@@ -232,7 +233,7 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 
 		plasma.setFill(plasma.getFill() + convert);
 
-		this.setPower(this.power - convert * OPERATING_POWER_PER_PACKET);
+		this.setStoredEnergyQuanta(this.energyQuanta - convert * OPERATING_POWER_PER_PACKET);
 
 		plasmaAge = 0;
 
@@ -246,9 +247,9 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 			return;
 		}
 
-		if(power >= CONTAINMENT_POWER_PER_TICK) {
+		if(energyQuanta >= CONTAINMENT_POWER_PER_TICK) {
 
-			this.setPower(this.power - CONTAINMENT_POWER_PER_TICK);
+			this.setStoredEnergyQuanta(this.energyQuanta - CONTAINMENT_POWER_PER_TICK);
 			plasmaAge++;
 
 			if(plasmaAge > MAX_PLASMA_AGE) {
@@ -442,7 +443,7 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 
 		super.networkUnpack(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.startupCharge = nbt.getInteger("startupCharge");
 		this.plasmaAge = nbt.getInteger("plasmaAge");
 
@@ -492,7 +493,7 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 	}
 
 	public long getPowerScaled(int i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 
 	public long getStartupScaled(int i) {
@@ -504,7 +505,7 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 
 		super.readFromNBT(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.startupCharge = nbt.getInteger("startupCharge");
 		this.plasmaAge = nbt.getInteger("plasmaAge");
 
@@ -522,7 +523,7 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 
 		super.writeToNBT(nbt);
 
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("startupCharge", startupCharge);
 		nbt.setInteger("plasmaAge", plasmaAge);
 
@@ -532,19 +533,19 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

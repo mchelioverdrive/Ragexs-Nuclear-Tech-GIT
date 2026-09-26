@@ -292,7 +292,7 @@ These are structural source observations, not measured performance or in-game va
 - The queue is copied into reusable scratch storage before execution. A dirty signal raised during distribution enters the now-empty queue and is retained for the next tick; it cannot create a same-tick retry loop.
 - Removed, merged, destroyed, and world-unloaded networks are removed from all world-local runnable sets. World unload also destroys remaining node networks and clears endpoint membership indexes.
 - Non-power UNINOS networks retain their previous per-tick update path. This pass does not migrate fluid, pneumatic, or other network types.
-- Power-network trackers are still reset every tick so cable-gauge `HE/t` accounting keeps its established meaning, but clean power networks no longer run the distribution algorithm.
+- Power-network trackers are still reset every tick so cable-gauge per-tick energy accounting remains accurate, but clean power networks no longer run the distribution algorithm.
 
 ### Dirty ownership
 
@@ -343,7 +343,7 @@ These are structural source observations, not measured performance or in-game va
 
 - Removed the per-tick legacy-network set, compatibility dirty cause, compatibility refresh scheduling, once-per-second all-network sweep, registration refresh counters, endpoint timestamps, and timeout-based normal cleanup.
 - Clean power networks now skip redistribution. A 100-tick integrity audit only removes invalid endpoints or stale inconsistent memberships; it never attaches or reconstructs normal endpoints, does not redistribute clean networks, and does not serve as a keepalive. Descriptor reconstruction is confined to explicit topology reconciliation.
-- No separate cross-mod polling fallback remains. The existing HE/RF boundary adapters notify the MK2 side when conversion changes stored HE; their external RF API remains governed by the adapter's normal tile tick.
+- No separate cross-mod polling fallback remains. The RF boundary adapters notify the MK2 side when conversion changes stored energy quanta; their external RF API remains governed by the adapter's normal tile tick.
 
 ### Diagnostics and validation
 
@@ -684,3 +684,13 @@ These builders still use a representative sampled ground height in the recording
 The 5×5 and 9×9 geysers, Eve's small spike, and bedrock-ore clusters remain direct decorators with their centers constrained so their complete footprints stay inside the `+8` population region. Celestial bedrock-ore center selection received the same adjustment. Vanilla-style small ore veins, flowers, plants, one-block loot/machine markers, and small local decoration retain their existing paths. `NTMWorldGenerator` already owns the independent silo component; the old `Silo` call, spaceship/vertibird variants, `Radio02`, meteor calls, and Duna oil call are disabled and were not added as duplicate generators. `OilSpot` remains callable by runtime barrels/fracking; those effects are events/gameplay, not normal world generation. No active normal-worldgen call remains to the old full oil/sand bubble builders or the migrated large structure builders.
 
 Targeted offline `compileJava` succeeded after the source changes. Minecraft was not launched. In-game checks remain necessary for uneven-terrain placement, saved-start reload, TileEntity/loot behavior, and generation-order visual parity.
+
+## 2026-09-26 01:28 — Electrical energy units
+
+RTM electrical storage, machine operations, item charge, and MK2 network transfers use exact `long` energy quanta. One quantum is 0.5 joule, so stored energy in joules is `energyQuanta / 2`. Joules (J) describe energy and watts (W) describe power. At the nominal 20 simulation ticks per second, one quantum transferred per tick is 10 W. An old 100 HE/t machine still transfers 100 quanta per tick, which is 50 J/t or 1 kW; its balance has not been changed by the unit migration. The centralized `EnergyUnits.PowerTickAccumulator` carries the remainder when a watt rating is not divisible into whole quanta per tick.
+
+Legacy HE is an interoperability unit only: 1 HE = 0.5 J = 1 quantum. RF and EU boundary conversions are 1 RF = 2.5 J = 5 quanta and 1 EU = 10 J = 20 quanta. Consequently, 1 HE/t = 10 W, 1 RF/t = 50 W, and 1 EU/t = 200 W. RTM-owned storage and transfers stay in quanta after a boundary conversion. The deprecated MK2 HE methods remain for addon source compatibility; cached override detection lets the quantum network call old addon transfer and rate overrides. New RTM call sites use explicit quantum methods. RF converters retain their configurable behavior separately from the physical RF conversion: the default RF-to-RTM direction consumes 2 RF to produce 5 quanta (50% efficiency), while the default RTM-to-RF direction consumes 5 quanta per RF (100% efficiency). Configured output is capped at the physical input energy.
+
+Electrical tile and item NBT now writes `energyFormatVersion = 1` and `energyQuanta`; saved capacities use `energyCapacityQuanta` where applicable. A missing version means a legacy HE-valued key such as `power`, `powerTime`, `powerBuffer`, or `charge`; the numeric count loads exactly as quanta and is written in the new format on the next save. The MK2 network itself does not persist a separate energy store. Packets owned by migrated electrical tiles carry the same quantum count. Names such as `power` in old historical sections of this audit describe the implementation at that time, not the current electrical unit contract.
+
+The existing dirty network topology and distribution scheduling remain in place. Display formatting is confined to GUI, tooltip, and overlay paths. Source compilation passed offline; save/reload, old-world migration, RF interaction, addon compatibility, dedicated-server behavior, and in-game displays still need runtime validation.

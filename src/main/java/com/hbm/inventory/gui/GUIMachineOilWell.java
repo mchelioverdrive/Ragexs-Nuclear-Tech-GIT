@@ -43,7 +43,7 @@ public class GUIMachineOilWell extends GuiInfoContainer {
 		upgradeText[3] = I18nUtil.resolveKey("desc.gui.upgrade.afterburner");
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 156, guiTop + 3, 8, 8, mouseX, mouseY, upgradeText);
 		
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 17, 16, 34, derrick.power, derrick.getMaxPower());
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 17, 16, 34, derrick.getStoredEnergyQuanta(), derrick.getEnergyCapacityQuanta());
 	}
 
 	@Override
@@ -60,7 +60,7 @@ public class GUIMachineOilWell extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
-		int i = (int)(derrick.getPower() * 34 / derrick.getMaxPower());
+		int i = (int)(derrick.getStoredEnergyQuanta() * 34 / derrick.getEnergyCapacityQuanta());
 		drawTexturedModalRect(guiLeft + 8, guiTop + 51 - i, 176, 34 - i, 16, i);
 		
 		int k = derrick.indicator;

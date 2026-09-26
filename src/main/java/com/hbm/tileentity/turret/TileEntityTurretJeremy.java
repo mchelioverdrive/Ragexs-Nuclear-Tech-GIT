@@ -51,7 +51,7 @@ public class TileEntityTurretJeremy extends TileEntityTurretBaseNT {
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return 10000;
 	}
 

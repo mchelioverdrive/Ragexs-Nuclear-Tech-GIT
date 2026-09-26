@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.tileentity.IFluidCopiable;
@@ -12,7 +13,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IFluidCopiable {
 	
-	public long power = 0;
+	public long energyQuanta = 0;
 	public FluidTank[] tanks;
 
 	public TileEntityDeuteriumExtractor() {
@@ -34,20 +35,20 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 			
 			this.updateConnections();
 			
-			if(hasPower()&& this.power > 200 && hasEnoughWater() && tanks[1].getMaxFill() > tanks[1].getFill()) {
+			if(hasPower()&& this.energyQuanta > 200 && hasEnoughWater() && tanks[1].getMaxFill() > tanks[1].getFill()) {
 				int convert = Math.min(tanks[1].getMaxFill(), tanks[0].getFill()) / 50;
 				convert = Math.min(convert, tanks[1].getMaxFill() - tanks[1].getFill());
 				
 				tanks[0].setFill(tanks[0].getFill() - convert * 50); //dividing first, then multiplying, will remove any rounding issues
 				tanks[1].setFill(tanks[1].getFill() + convert);
-				this.setPower(this.power - this.getMaxPower() / 100);
+				this.setStoredEnergyQuanta(this.energyQuanta - this.getEnergyCapacityQuanta() / 100);
 			}
 			
 			this.subscribeToAllAround(tanks[0].getTankType(), this);
 			this.sendFluidToAll(tanks[1], this);
 
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			tanks[0].writeToNBT(data, "water");
 			tanks[1].writeToNBT(data, "heavyWater");
 			
@@ -64,13 +65,13 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 	public void networkUnpack(NBTTagCompound data) {
 		super.networkUnpack(data);
 		
-		this.power = data.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		tanks[0].readFromNBT(data, "water");
 		tanks[1].readFromNBT(data, "heavyWater");
 	}
 
 	public boolean hasPower() {
-		return power >= this.getMaxPower() / 100;
+		return energyQuanta >= this.getEnergyCapacityQuanta() / 100;
 	}
 
 	public boolean hasEnoughWater() {
@@ -80,7 +81,7 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		tanks[0].readFromNBT(nbt, "water");
 		tanks[1].readFromNBT(nbt, "heavyWater");
 	}
@@ -88,25 +89,25 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tanks[0].writeToNBT(nbt, "water");
 		tanks[1].writeToNBT(nbt, "heavyWater");
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return 10_000;
 	}
 

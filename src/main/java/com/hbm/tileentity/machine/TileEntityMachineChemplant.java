@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.blocks.BlockDummyable;
@@ -70,7 +71,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	private DirPos[] cachedConnectionPositions;
 
 
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 100000;
 	public int progress;
 	public int maxProgress = 100;
@@ -202,7 +203,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		buf.writeInt(progress);
 		buf.writeInt(maxProgress);
 		buf.writeBoolean(isProgressing);
@@ -214,7 +215,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		progress = buf.readInt();
 		maxProgress = buf.readInt();
 		isProgressing = buf.readBoolean();
@@ -463,14 +464,14 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	}
 
 	@Override
-	public long getPower() {
-		return this.power;
+	public long getStoredEnergyQuanta() {
+		return this.energyQuanta;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 		this.markNetworkDirty();
 		if(!this.runtimeEnergyMutation) {
@@ -526,7 +527,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		this.refreshUpgrades(false);
 		this.runtimeStateInitialized = true;
 		long now = worldObj.getTotalWorldTime();
-		if((causes & MachineDirtyCause.LIFECYCLE) != 0 && this.nextRuntimeTick == now + 1L && this.progress > 0 && this.cachedEligible && this.power >= this.consumption) {
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0 && this.nextRuntimeTick == now + 1L && this.progress > 0 && this.cachedEligible && this.energyQuanta >= this.consumption) {
 			this.scheduleMachineTransition(this.nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_CHEMPLANT);
 		} else {
 			this.runAccountingTick(now);
@@ -551,7 +552,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 			this.markDirty();
 			this.markNetworkDirty();
 		}
-		if(recipeChanged || tanksChanged || itemsChanged || upgradesChanged || this.power != this.observedPower || this.hasBatteryWork() && this.nextRuntimeTick < 0L) {
+		if(recipeChanged || tanksChanged || itemsChanged || upgradesChanged || this.energyQuanta != this.observedPower || this.hasBatteryWork() && this.nextRuntimeTick < 0L) {
 			this.cancelAccountingTransition();
 			this.markMachineDirty((recipeChanged ? MachineDirtyCause.RECIPE : 0) | (tanksChanged ? MachineDirtyCause.FLUID : 0) | (itemsChanged ? MachineDirtyCause.INVENTORY : 0) | (upgradesChanged ? MachineDirtyCause.CONFIGURATION : 0) | MachineDirtyCause.ENERGY);
 		}
@@ -570,21 +571,21 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 			this.markDirty();
 		}
 		if(recipeChanged || this.tanksChanged()) this.refreshEligibility();
-		long oldPower = this.power;
+		long oldPower = this.energyQuanta;
 		int oldProgress = this.progress;
 		int oldMaxProgress = this.maxProgress;
 		boolean oldProgressing = this.isProgressing;
 		boolean completed = false;
 
 		this.isProgressing = false;
-		this.setPowerInternal(Library.chargeTEFromItems(slots, 0, power, maxPower));
-		if(this.cachedEligible && this.power >= this.consumption && this.cachedRecipe != null) {
+		this.setPowerInternal(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
+		if(this.cachedEligible && this.energyQuanta >= this.consumption && this.cachedRecipe != null) {
 			int duration = this.cachedRecipe.getDuration() * this.speed / 100;
 			if(duration <= 0) duration = 1;
 			if(this.progress + 1 >= duration) this.refreshEligibility();
 			if(this.cachedEligible && (this.cachedRecipe.oxygenConsumption <= 0 || this.breatheAir(this.cachedRecipe.oxygenConsumption))) {
 				this.isProgressing = true;
-				this.setPowerInternal(this.power - this.consumption);
+				this.setPowerInternal(this.energyQuanta - this.consumption);
 				this.progress++;
 				this.maxProgress = duration;
 				if(this.progress >= this.maxProgress) {
@@ -600,8 +601,8 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 			} else this.progress = 0;
 		} else this.progress = 0;
 
-		this.observedPower = this.power;
-		if(oldPower != this.power || oldProgress != this.progress || oldMaxProgress != this.maxProgress || oldProgressing != this.isProgressing || completed) {
+		this.observedPower = this.energyQuanta;
+		if(oldPower != this.energyQuanta || oldProgress != this.progress || oldMaxProgress != this.maxProgress || oldProgressing != this.isProgressing || completed) {
 			this.markDirty();
 			this.markNetworkDirty();
 		}
@@ -609,7 +610,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	}
 
 	private void scheduleNextTick(long now) {
-		if(this.cachedEligible && this.power >= this.consumption || this.hasBatteryWork() || this.progress > 0 || this.isProgressing) {
+		if(this.cachedEligible && this.energyQuanta >= this.consumption || this.hasBatteryWork() || this.progress > 0 || this.isProgressing) {
 			if(this.nextRuntimeTick == now + 1L) return;
 			this.nextRuntimeTick = now + 1L;
 			this.scheduleMachineTransition(this.nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_CHEMPLANT);
@@ -651,16 +652,16 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	}
 
 	private boolean hasBatteryWork() {
-		if(this.power >= maxPower || slots[0] == null) return false;
+		if(this.energyQuanta >= maxPower || slots[0] == null) return false;
 		if(slots[0].getItem() == ModItems.battery_creative || slots[0].getItem() == ModItems.fusion_core_infinite) return true;
 		if(!(slots[0].getItem() instanceof IBatteryItem)) return false;
 		IBatteryItem battery = (IBatteryItem) slots[0].getItem();
-		return battery.getDischargeRate() > 0 && battery.getCharge(slots[0]) > 0;
+		return battery.getMaxOutputQuantaPerTick() > 0 && battery.getStoredEnergyQuanta(slots[0]) > 0;
 	}
 
 	private void setPowerInternal(long value) {
 		this.runtimeEnergyMutation = true;
-		try { this.setPower(value); } finally { this.runtimeEnergyMutation = false; }
+		try { this.setStoredEnergyQuanta(value); } finally { this.runtimeEnergyMutation = false; }
 	}
 
 	private void cancelAccountingTransition() {
@@ -714,7 +715,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
@@ -722,7 +723,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.progress = nbt.getInteger("progress");
 		this.nextRuntimeTick = nbt.hasKey("runtimeChemplantNextTick") ? nbt.getLong("runtimeChemplantNextTick") : -1L;
 		this.isProgressing = nbt.hasKey("runtimeChemplantActive") ? nbt.getBoolean("runtimeChemplantActive") : this.progress > 0;
@@ -739,7 +740,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("progress", progress);
 		nbt.setLong("runtimeChemplantNextTick", this.nextRuntimeTick);
 		nbt.setBoolean("runtimeChemplantActive", this.isProgressing);

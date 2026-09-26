@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,7 +52,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 })
 public class TileEntityITER extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IInfoProviderEC, SimpleComponent, CompatHandler.OCComponent, IFluidCopiable {
 
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 10000000;
 	public static final int powerReq = 100000;
 
@@ -131,7 +132,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 	}
 
 	public boolean hasEnoughPowerForMagnets() {
-		return power >= getActualPowerReq();
+		return energyQuanta >= getActualPowerReq();
 	}
 
 	public boolean areMagnetsPowered() {
@@ -273,7 +274,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 
 			this.updateConnections();
 
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 
 			updateHotCoolantType();
 
@@ -301,7 +302,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 
 				int actualPowerReq = getActualPowerReq();
 
-				if(power < actualPowerReq) {
+				if(energyQuanta < actualPowerReq) {
 
 					/*
 					 * Realistic behavior:
@@ -316,7 +317,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 					isOn = false;
 				} else {
 
-					this.setPower(this.power - actualPowerReq);
+					this.setStoredEnergyQuanta(this.energyQuanta - actualPowerReq);
 
 					if(plasma.getFill() > 0) {
 
@@ -361,7 +362,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 			NBTTagCompound data = new NBTTagCompound();
 
 			data.setBoolean("isOn", isOn);
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setInteger("progress", progress);
 			data.setInteger("heatStress", heatStress);
 
@@ -400,7 +401,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 			}
 
 			//if(this.isOn && this.power >= powerReq) {
-			if(this.isOn && this.power >= getActualPowerReq()) {
+			if(this.isOn && this.energyQuanta >= getActualPowerReq()) {
 
 				this.rotorSpeed = Math.max(0F, Math.min(15F, this.rotorSpeed + 0.05F));
 
@@ -792,7 +793,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 		super.networkUnpack(data);
 
 		this.isOn = data.getBoolean("isOn");
-		this.power = data.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		this.blanket = data.getInteger("blanket");
 		this.progress = data.getInteger("progress");
 		this.heatStress = data.getInteger("heatStress");
@@ -833,7 +834,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 	}
 
 	public long getPowerScaled(long i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 
 	public long getProgressScaled(long i) {
@@ -845,19 +846,19 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
@@ -888,7 +889,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 
 		super.readFromNBT(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.isOn = nbt.getBoolean("isOn");
 		this.totalRuntime = nbt.getLong("totalRuntime");
 		this.heatStress = nbt.getInteger("heatStress");
@@ -906,7 +907,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 
 		super.writeToNBT(nbt);
 
-		nbt.setLong("power", this.power);
+		EnergyUnits.writeEnergyQuanta(nbt, this.energyQuanta);
 		nbt.setBoolean("isOn", isOn);
 		nbt.setLong("totalRuntime", this.totalRuntime);
 		nbt.setInteger("heatStress", this.heatStress);
@@ -1105,7 +1106,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getEnergyInfo(Context context, Arguments args) {
-		return new Object[] { getPower(), getMaxPower() };
+		return new Object[] { getStoredEnergyQuanta(), getEnergyCapacityQuanta() };
 	}
 
 	@Callback(direct = true)

@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine.oil;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -46,7 +47,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineRefinery extends TileEntityMachineBase implements IEnergyReceiverMK2, IOverpressurable, IPersistentNBT, IRepairable, IFluidStandardTransceiver, IGUIProvider, IFluidCopiable {
 
-	public long power = 0;
+	public long energyQuanta = 0;
 	public int sulfur = 0;
 	public static final int maxSulfur = 100;
 	public static final long maxPower = 1000;
@@ -86,7 +87,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		tanks[0].readFromNBT(nbt, "input");
 		tanks[1].readFromNBT(nbt, "heavy");
 		tanks[2].readFromNBT(nbt, "naphtha");
@@ -101,7 +102,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tanks[0].writeToNBT(nbt, "input");
 		tanks[1].writeToNBT(nbt, "heavy");
 		tanks[2].writeToNBT(nbt, "naphtha");
@@ -149,7 +150,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 
 				this.updateConnections();
 
-				this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
+				this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 				tanks[0].setType(12, slots);
 				tanks[0].loadTank(1, 2, slots);
 
@@ -190,7 +191,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 			}
 
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", this.power);
+			EnergyUnits.writeEnergyQuanta(data, this.energyQuanta);
 			for(int i = 0; i < 5; i++) tanks[i].writeToNBT(data, "" + i);
 			data.setBoolean("exploded", hasExploded);
 			data.setBoolean("onFire", onFire);
@@ -254,7 +255,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		for(int i = 0; i < 5; i++) tanks[i].readFromNBT(nbt, "" + i);
 		this.hasExploded = nbt.getBoolean("exploded");
 		this.onFire = nbt.getBoolean("onFire");
@@ -272,7 +273,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 
 		for(int i = 0; i < stacks.length; i++) tanks[i + 1].setTankType(stacks[i].type);
 
-		if(power < 5 || tanks[0].getFill() < 100) return;
+		if(energyQuanta < 5 || tanks[0].getFill() < 100) return;
 
 		for(int i = 0; i < stacks.length; i++) {
 			if(tanks[i + 1].getFill() + stacks[i].fill > tanks[i + 1].getMaxFill()) {
@@ -308,7 +309,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 		}
 
 		if(worldObj.getTotalWorldTime() % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 5);
-		this.setPower(this.power - 5);
+		this.setStoredEnergyQuanta(this.energyQuanta - 5);
 	}
 
 	private void updateConnections() {
@@ -332,24 +333,24 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 	}
 
 	public long getPowerScaled(long i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

@@ -29,7 +29,7 @@ public class GUILiquefactor extends GuiInfoContainer {
 		super.drawScreen(mouseX, mouseY, f);
 
 		liquefactor.tank.renderTankInfo(this, mouseX, mouseY, guiLeft + 71, guiTop + 36, 16, 52);
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 134, guiTop + 18, 16, 52, liquefactor.power, liquefactor.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 134, guiTop + 18, 16, 52, liquefactor.getStoredEnergyQuanta(), liquefactor.maxPower);
 	}
 
 	@Override
@@ -47,7 +47,7 @@ public class GUILiquefactor extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 
-		int i = (int)(liquefactor.getPower() * 52 / liquefactor.getMaxPower());
+		int i = (int)(liquefactor.getStoredEnergyQuanta() * 52 / liquefactor.getEnergyCapacityQuanta());
 		drawTexturedModalRect(guiLeft + 134, guiTop + 70 - i, 176, 52 - i, 16, i);
 
 		int j = 0;

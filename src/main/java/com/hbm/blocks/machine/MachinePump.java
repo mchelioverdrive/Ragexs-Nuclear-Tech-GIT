@@ -1,5 +1,6 @@
 package com.hbm.blocks.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -91,7 +92,7 @@ public class MachinePump extends BlockDummyable implements ITooltipProvider, ILo
 
 		if(te instanceof TileEntityMachinePumpElectric) {
 			TileEntityMachinePumpElectric pump = (TileEntityMachinePumpElectric) te;
-			text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + String.format(Locale.US, "%,d", pump.power) + " / " + String.format(Locale.US, "%,d", pump.maxPower) + "HE");
+			text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + EnergyUnits.formatJoules(pump.getStoredEnergyQuanta()) + " / " + EnergyUnits.formatJoules(pump.maxPower));
 			text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + pump.water.getTankType().getLocalizedName() + ": " + String.format(Locale.US, "%,d", pump.water.getFill()) + " / " + String.format(Locale.US, "%,d", pump.water.getMaxFill()) + "mB");
 		}
 

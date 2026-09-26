@@ -17,7 +17,7 @@ public class ItemPotatos extends ItemBattery {
     @Override
 	public void onUpdate(ItemStack stack, World world, Entity entity, int i, boolean b) {
     	
-    	if(getCharge(stack) == 0)
+    	if(getStoredEnergyQuanta(stack) == 0)
     		return;
     	
     	if(getTimer(stack) > 0) {
@@ -28,7 +28,7 @@ public class ItemPotatos extends ItemBattery {
     			
     			if(p.getHeldItem() == stack) {
     				
-    		    	float pitch = (float)getCharge(stack) / (float)this.getMaxCharge(stack) * 0.5F + 0.5F;
+    		    	float pitch = (float)getStoredEnergyQuanta(stack) / (float)this.getEnergyCapacityQuanta(stack) * 0.5F + 0.5F;
     		    	
     				world.playSoundAtEntity(p, "hbm:potatos.random", 1.0F, pitch);
     				setTimer(stack, 200 + itemRand.nextInt(100));

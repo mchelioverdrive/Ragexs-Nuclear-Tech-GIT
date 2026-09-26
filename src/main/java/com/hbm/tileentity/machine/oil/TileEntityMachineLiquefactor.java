@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine.oil;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
@@ -38,7 +39,7 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 
 
 
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 100000;
 	public static final int usageBase = 500;
 	public int usage;
@@ -62,16 +63,16 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 	public void updateEntity() {
 		
 		if(!worldObj.isRemote) {
-			this.setPower(Library.chargeTEFromItems(slots, 1, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 1, energyQuanta, maxPower));
 			
 			this.updateConnections();
 
 			this.upgradeManager.checkSlots(slots, 2, 3);
 			int speed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int power = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+			int energyQuanta = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
 
 			this.processTime = processTimeBase - (processTimeBase / 4) * speed;
-			this.usage = (usageBase + (usageBase * speed)) / (power + 1);
+			this.usage = (usageBase + (usageBase * speed)) / (energyQuanta + 1);
 			
 			if(this.canProcess())
 				this.process();
@@ -81,7 +82,7 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 			this.sendFluid();
 			
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", this.power);
+			EnergyUnits.writeEnergyQuanta(data, this.energyQuanta);
 			data.setInteger("progress", this.progress);
 			data.setInteger("usage", this.usage);
 			data.setInteger("processTime", this.processTime);
@@ -125,7 +126,7 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 	
 	public boolean canProcess() {
 		
-		if(this.power < usage) return false;
+		if(this.energyQuanta < usage) return false;
 		if(slots[0] == null) return false;
 		
 		FluidStack out = LiquefactionRecipes.getOutput(slots[0]);
@@ -139,7 +140,7 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 	
 	public void process() {
 		
-		this.setPower(this.power - usage);
+		this.setStoredEnergyQuanta(this.energyQuanta - usage);
 		
 		progress++;
 		
@@ -160,7 +161,7 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
 		
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.progress = nbt.getInteger("progress");
 		this.usage = nbt.getInteger("usage");
 		this.processTime = nbt.getInteger("processTime");
@@ -180,19 +181,19 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
@@ -269,6 +270,6 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, this.progress > 0);
-		data.setDouble(CompatEnergyControl.D_CONSUMPTION_HE, this.usage);
+		data.setDouble(CompatEnergyControl.D_CONSUMPTION_HE, EnergyUnits.quantaToLegacyHe(this.usage));
 	}
 }

@@ -1,5 +1,6 @@
 package com.hbm.tileentity.turret;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -101,7 +102,7 @@ public abstract class TileEntityTurretBaseNT extends TileEntityMachineBase imple
 	//how many ticks until the next check
 	public int searchTimer;
 
-	public long power;
+	public long energyQuanta;
 
 	public boolean targetPlayers = false;
 	public boolean targetAnimals = false;
@@ -136,7 +137,7 @@ public abstract class TileEntityTurretBaseNT extends TileEntityMachineBase imple
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.isOn = nbt.getBoolean("isOn");
 		this.targetPlayers = nbt.getBoolean("targetPlayers");
 		this.targetAnimals = nbt.getBoolean("targetAnimals");
@@ -149,7 +150,7 @@ public abstract class TileEntityTurretBaseNT extends TileEntityMachineBase imple
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 
-		nbt.setLong("power", this.power);
+		EnergyUnits.writeEnergyQuanta(nbt, this.energyQuanta);
 		nbt.setBoolean("isOn", this.isOn);
 		nbt.setBoolean("targetPlayers", this.targetPlayers);
 		nbt.setBoolean("targetAnimals", this.targetAnimals);
@@ -213,7 +214,7 @@ public abstract class TileEntityTurretBaseNT extends TileEntityMachineBase imple
 			if(isOn() && hasPower()) {
 				searchTimer--;
 
-				this.setPower(this.getPower() - this.getConsumption());
+				this.setStoredEnergyQuanta(this.getStoredEnergyQuanta() - this.getConsumption());
 
 				if(searchTimer <= 0) {
 					searchTimer = this.getDecetorInterval();
@@ -229,7 +230,7 @@ public abstract class TileEntityTurretBaseNT extends TileEntityMachineBase imple
 				this.updateFiringTick();
 			}
 
-			this.setPower(Library.chargeTEFromItems(slots, 10, this.power, this.getMaxPower()));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 10, this.energyQuanta, this.getEnergyCapacityQuanta()));
 
 			NBTTagCompound data = this.writePacket();
 			this.networkPack(data, 250);
@@ -265,7 +266,7 @@ public abstract class TileEntityTurretBaseNT extends TileEntityMachineBase imple
 		}
 		data.setDouble("pitch", this.rotationPitch);
 		data.setDouble("yaw", this.rotationYaw);
-		data.setLong("power", this.power);
+		EnergyUnits.writeEnergyQuanta(data, this.energyQuanta);
 		data.setBoolean("isOn", this.isOn);
 		data.setBoolean("targetPlayers", this.targetPlayers);
 		data.setBoolean("targetAnimals", this.targetAnimals);
@@ -301,7 +302,7 @@ public abstract class TileEntityTurretBaseNT extends TileEntityMachineBase imple
 		this.turnProgress = 2;
 		this.syncRotationPitch = nbt.getDouble("pitch");
 		this.syncRotationYaw = nbt.getDouble("yaw");
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.isOn = nbt.getBoolean("isOn");
 		this.targetPlayers = nbt.getBoolean("targetPlayers");
 		this.targetAnimals = nbt.getBoolean("targetAnimals");
@@ -832,7 +833,7 @@ public abstract class TileEntityTurretBaseNT extends TileEntityMachineBase imple
 	}
 
 	public boolean hasPower() {
-		return this.getPower() >= this.getConsumption();
+		return this.getStoredEnergyQuanta() >= this.getConsumption();
 	}
 
 	public boolean isOn() {
@@ -840,19 +841,19 @@ public abstract class TileEntityTurretBaseNT extends TileEntityMachineBase imple
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return this.power;
+	public long getStoredEnergyQuanta() {
+		return this.energyQuanta;
 	}
 
 	public int getPowerScaled(int scale) {
-		return (int)(power * scale / this.getMaxPower());
+		return (int)(energyQuanta * scale / this.getEnergyCapacityQuanta());
 	}
 
 	public long getConsumption() {
@@ -938,7 +939,7 @@ public abstract class TileEntityTurretBaseNT extends TileEntityMachineBase imple
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getEnergyInfo(Context context, Arguments args) {
-		return new Object[] {this.getPower(), this.getMaxPower()};
+		return new Object[] {this.getStoredEnergyQuanta(), this.getEnergyCapacityQuanta()};
 	}
 
 	///////////////////////

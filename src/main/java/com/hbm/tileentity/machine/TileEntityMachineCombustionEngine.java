@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.interfaces.IControlReceiver;
 import com.hbm.inventory.container.ContainerCombustionEngine;
@@ -38,7 +39,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 	
 	public boolean isOn = false;
 	public static long maxPower = 2_500_000;
-	public long power;
+	public long energyQuanta;
 	private int playersUsing = 0;
 	public int setting = 0;
 	public boolean wasOn = false;
@@ -84,7 +85,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 						int speed = setting * 2;
 						
 						int toBurn = Math.min(fill, speed);
-						this.setPower(this.power + (long) (toBurn * (trait.getCombustionEnergy() / 10_000D) * eff));
+						this.setStoredEnergyQuanta(this.energyQuanta + (long) (toBurn * (trait.getCombustionEnergyQuanta() / 10_000D) * eff));
 						fill -= toBurn;
 	
 						if(worldObj.getTotalWorldTime() % 5 == 0 && toBurn > 0) {
@@ -103,9 +104,9 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 			}
 			
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", Math.min(power, maxPower));
+			EnergyUnits.writeEnergyQuanta(data, Math.min(energyQuanta, maxPower));
 			
-			this.setPower(Library.chargeItemsFromTE(slots, 3, power, power));
+			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 3, energyQuanta, energyQuanta));
 			
 			for(DirPos pos : getConPos()) {
 				this.tryProvide(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
@@ -113,8 +114,8 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 				this.sendSmoke(pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 			
-			if(power > maxPower)
-				this.setPower(maxPower);
+			if(energyQuanta > maxPower)
+				this.setStoredEnergyQuanta(maxPower);
 			
 			data.setInteger("playersUsing", playersUsing);
 			data.setInteger("setting", setting);
@@ -209,7 +210,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 		super.networkUnpack(nbt);
 		this.playersUsing = nbt.getInteger("playersUsing");
 		this.setting = nbt.getInteger("setting");
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.isOn = nbt.getBoolean("isOn");
 		this.wasOn = nbt.getBoolean("wasOn");
 		this.tank.readFromNBT(nbt, "tank");
@@ -219,7 +220,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		this.setting = nbt.getInteger("setting");
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.isOn = nbt.getBoolean("isOn");
 		this.tank.readFromNBT(nbt, "tank");
 		this.tenth = nbt.getInteger("tenth");
@@ -229,7 +230,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		nbt.setInteger("setting", setting);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setBoolean("isOn", isOn);
 		tank.writeToNBT(nbt, "tank");
 		nbt.setInteger("tenth", tenth);
@@ -246,19 +247,19 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

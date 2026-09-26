@@ -1,5 +1,7 @@
 package com.hbm.inventory.gui;
 
+import api.hbm.energymk2.EnergyUnits;
+
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.inventory.container.ContainerMachineSchrabidiumTransmutator;
@@ -28,7 +30,7 @@ public class GUIMachineSchrabidiumTransmutator extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 106 - 88, 16, 88, diFurnace.power, diFurnace.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 106 - 88, 16, 88, diFurnace.getStoredEnergyQuanta(), diFurnace.maxPower);
 	}
 	
 	@Override
@@ -36,7 +38,8 @@ public class GUIMachineSchrabidiumTransmutator extends GuiInfoContainer {
 		String name = this.diFurnace.hasCustomInventoryName() ? this.diFurnace.getInventoryName() : I18n.format(this.diFurnace.getInventoryName());
 		
 		this.fontRendererObj.drawString(name, this.xSize / 2 - this.fontRendererObj.getStringWidth(name) / 2, 6, 4210752);
-		this.fontRendererObj.drawString(I18n.format(String.valueOf(diFurnace.getPower()) + " HE"), this.xSize / 2 - this.fontRendererObj.getStringWidth(String.valueOf(diFurnace.getPower()) + " HE") / 2, 16, 4210752);
+		String storedEnergy = EnergyUnits.formatJoules(diFurnace.getStoredEnergyQuanta());
+		this.fontRendererObj.drawString(storedEnergy, this.xSize / 2 - this.fontRendererObj.getStringWidth(storedEnergy) / 2, 16, 4210752);
 		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96 + 2, 4210752);
 	}
 
@@ -46,7 +49,7 @@ public class GUIMachineSchrabidiumTransmutator extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
-		if(diFurnace.getPower() > 0) {
+		if(diFurnace.getStoredEnergyQuanta() > 0) {
 			int i = (int)diFurnace.getPowerScaled(88);
 			drawTexturedModalRect(guiLeft + 8, guiTop + 106 - i, 176, 88 - i, 16, i);
 		}

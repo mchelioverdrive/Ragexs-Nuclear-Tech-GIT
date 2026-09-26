@@ -1,5 +1,7 @@
 package com.hbm.inventory.gui;
 
+import api.hbm.energymk2.EnergyUnits;
+
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.inventory.container.ContainerCoreReceiver;
@@ -40,7 +42,7 @@ public class GUICoreReceiver extends GuiInfoContainer {
 		this.fontRendererObj.drawString("Input:", 40, 25, 0xFF7F7F);
 		this.fontRendererObj.drawString(BobMathUtil.getShortNumber(receiver.joules) + "Spk", 50, 35, 0xFF7F7F);
 		this.fontRendererObj.drawString("Output:", 40, 45, 0xFF7F7F);
-		this.fontRendererObj.drawString(BobMathUtil.getShortNumber(receiver.joules * 5000) + "HE", 50, 55, 0xFF7F7F);
+		this.fontRendererObj.drawString(EnergyUnits.formatJoules(receiver.getStoredEnergyQuanta()), 50, 55, 0xFF7F7F);
 		
 		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96 + 2, 4210752);
 	}

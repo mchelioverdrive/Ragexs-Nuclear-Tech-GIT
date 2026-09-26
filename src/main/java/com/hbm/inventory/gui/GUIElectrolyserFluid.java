@@ -36,7 +36,7 @@ public class GUIElectrolyserFluid extends GuiInfoContainer {
 		electrolyser.tanks[1].renderTankInfo(this, mouseX, mouseY, guiLeft + 96, guiTop + 18, 16, 52);
 		electrolyser.tanks[2].renderTankInfo(this, mouseX, mouseY, guiLeft + 116, guiTop + 18, 16, 52);
 		
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 186, guiTop + 18, 16, 89, electrolyser.power, electrolyser.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 186, guiTop + 18, 16, 89, electrolyser.getStoredEnergyQuanta(), electrolyser.maxPower);
 	}
 	
 	protected void mouseClicked(int x, int y, int i) {
@@ -64,10 +64,10 @@ public class GUIElectrolyserFluid extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
-		int p = (int) (electrolyser.power * 89 / electrolyser.maxPower);
+		int p = (int) (electrolyser.getStoredEnergyQuanta() * 89 / electrolyser.maxPower);
 		drawTexturedModalRect(guiLeft + 186, guiTop + 107 - p, 210, 89 - p, 16, p);
 		
-		if(electrolyser.power >= electrolyser.usageFluid)
+		if(electrolyser.getStoredEnergyQuanta() >= electrolyser.usageFluid)
 			drawTexturedModalRect(guiLeft + 190, guiTop + 4, 226, 40, 9, 12);
 		
 		int e = electrolyser.progressFluid * 41 / electrolyser.processFluidTime;

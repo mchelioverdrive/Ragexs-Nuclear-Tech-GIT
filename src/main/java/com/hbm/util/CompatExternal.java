@@ -74,7 +74,7 @@ public class CompatExternal {
 	public static long getBufferedPowerFromTile(TileEntity tile) {
 
 		if(tile instanceof IEnergyHandlerMK2) {
-			return ((IEnergyHandlerMK2) tile).getPower();
+			return ((IEnergyHandlerMK2) tile).getStoredEnergyQuanta();
 		}
 
 		return 0L;
@@ -88,7 +88,7 @@ public class CompatExternal {
 	public static long getMaxPowerFromTile(TileEntity tile) {
 
 		if(tile instanceof IEnergyHandlerMK2) {
-			return ((IEnergyHandlerMK2) tile).getMaxPower();
+			return ((IEnergyHandlerMK2) tile).getEnergyCapacityQuanta();
 		}
 
 		return 0L;

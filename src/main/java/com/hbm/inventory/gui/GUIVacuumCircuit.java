@@ -29,7 +29,7 @@ public class GUIVacuumCircuit extends GuiInfoContainer {
 	public void drawScreen(int x, int y, float interp) {
 		super.drawScreen(x, y, interp);
 
-		this.drawElectricityInfo(this, x, y, guiLeft + 132, guiTop + 18, 16, 52, sucker.getPower(), sucker.getMaxPower());
+		this.drawElectricityInfo(this, x, y, guiLeft + 132, guiTop + 18, 16, 52, sucker.getStoredEnergyQuanta(), sucker.getEnergyCapacityQuanta());
 		
 		this.drawCustomInfoStat(x, y, guiLeft + 52, guiTop + 19, 8, 8, guiLeft + 52, guiTop + 19, this.getUpgradeInfo(sucker));
 	}
@@ -47,13 +47,13 @@ public class GUIVacuumCircuit extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 
-		int p = (int) (sucker.power * 52 / Math.max(sucker.maxPower, 1));
+		int p = (int) (sucker.getStoredEnergyQuanta() * 52 / Math.max(sucker.maxPower, 1));
 		drawTexturedModalRect(guiLeft + 132, guiTop + 70 - p, 176, 52 - p, 16, p);
 
 		int i = sucker.progress * 33 / Math.max(sucker.processTime, 1);
 		drawTexturedModalRect(guiLeft + 50, guiTop + 49, 192, 0, i, 14);
 		
-		if(sucker.power >= sucker.consumption) {
+		if(sucker.getStoredEnergyQuanta() >= sucker.consumption) {
 			drawTexturedModalRect(guiLeft + 135, guiTop + 4, 176, 52, 9, 12);
 		}
 

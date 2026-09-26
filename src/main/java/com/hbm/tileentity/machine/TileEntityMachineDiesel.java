@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.io.IOException;
 import java.util.HashMap;
 
@@ -40,7 +41,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineDiesel extends TileEntityMachinePolluting implements IEnergyProviderMK2, IFluidStandardTransceiver, IConfigurableMachine, IGUIProvider, IInfoProviderEC, IFluidCopiable {
 
-	public long power;
+	public long energyQuanta;
 	public int soundCycle = 0;
 	public long powerCap = maxPower;
 	public FluidTank tank;
@@ -86,8 +87,8 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.power = nbt.getLong("powerTime");
-		this.powerCap = nbt.getLong("powerCap");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "powerTime");
+		this.powerCap = EnergyUnits.readCapacityQuanta(nbt, "powerCap");
 		tank.readFromNBT(nbt, "fuel");
 	}
 
@@ -95,8 +96,8 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		
-		nbt.setLong("powerTime", power);
-		nbt.setLong("powerCap", powerCap);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
+		EnergyUnits.writeCapacityQuanta(nbt, powerCap);
 		tank.writeToNBT(nbt, "fuel");
 	}
 
@@ -113,7 +114,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 			}
 		}
 		if(i == 2) {
-			if(stack.getItem() instanceof IBatteryItem && ((IBatteryItem) stack.getItem()).getCharge(stack) == ((IBatteryItem) stack.getItem()).getMaxCharge(stack)) {
+			if(stack.getItem() instanceof IBatteryItem && ((IBatteryItem) stack.getItem()).getStoredEnergyQuanta(stack) == ((IBatteryItem) stack.getItem()).getEnergyCapacityQuanta(stack)) {
 				return true;
 			}
 		}
@@ -122,7 +123,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 	}
 
 	public long getPowerScaled(long i) {
-		return (power * i) / powerCap;
+		return (energyQuanta * i) / powerCap;
 	}
 
 	@Override
@@ -148,13 +149,13 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 				powerCap = maxPower;
 			
 			// Battery Item
-			this.setPower(Library.chargeItemsFromTE(slots, 2, power, powerCap));
+			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 2, energyQuanta, powerCap));
 
 			generate();
 
 			NBTTagCompound data = new NBTTagCompound();
-			data.setInteger("power", (int) power);
-			data.setInteger("powerCap", (int) powerCap);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+			EnergyUnits.writeCapacityQuanta(data, powerCap);
 			tank.writeToNBT(data, "t");
 			this.networkPack(data, 50);
 		}
@@ -163,20 +164,23 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 	public void networkUnpack(NBTTagCompound data) {
 		super.networkUnpack(data);
 
-		power = data.getInteger("power");
-		powerCap = data.getInteger("powerCap");
+		energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
+		powerCap = EnergyUnits.readCapacityQuanta(data, "powerCap");
 		tank.readFromNBT(data, "t");
 	}
 	
 	public boolean hasAcceptableFuel() {
-		return getHEFromFuel() > 0;
+		return getEnergyQuantaFromFuel() > 0;
 	}
 	
-	public long getHEFromFuel() {
-		return getHEFromFuel(tank.getTankType());
+	public long getEnergyQuantaFromFuel() {
+		return getEnergyQuantaFromFuel(tank.getTankType());
 	}
+
+	@Deprecated public long getHEFromFuel() { return EnergyUnits.quantaToLegacyHe(getEnergyQuantaFromFuel()); }
+	@Deprecated public static long getHEFromFuel(FluidType type) { return EnergyUnits.quantaToLegacyHe(getEnergyQuantaFromFuel(type)); }
 	
-	public static long getHEFromFuel(FluidType type) {
+	public static long getEnergyQuantaFromFuel(FluidType type) {
 		
 		if(type.hasTrait(FT_Combustible.class)) {
 			FT_Combustible fuel = type.getTrait(FT_Combustible.class);
@@ -184,7 +188,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 			double efficiency = fuelEfficiency.containsKey(grade) ? fuelEfficiency.get(grade) : 0;
 			
 			if(fuel.getGrade() != FuelGrade.LOW) {
-				return (long) (fuel.getCombustionEnergy() / 1000L * efficiency);
+				return (long) (fuel.getCombustionEnergyQuanta() / 1000L * efficiency);
 			}
 		}
 		
@@ -215,29 +219,29 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 				}
 				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 900);
 
-				if(power + getHEFromFuel() <= powerCap) {
-					this.setPower(this.power + getHEFromFuel());
+				if(energyQuanta + getEnergyQuantaFromFuel() <= powerCap) {
+					this.setStoredEnergyQuanta(this.energyQuanta + getEnergyQuantaFromFuel());
 				} else {
-					this.setPower(powerCap);
+					this.setStoredEnergyQuanta(powerCap);
 				}
 			}
 		}
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return this.maxPower;
 	}
 
@@ -258,7 +262,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 
 	@Override
 	public void readIfPresent(JsonObject obj) {
-		maxPower = IConfigurableMachine.grab(obj, "L:powerCap", maxPower);
+		maxPower = IConfigurableMachine.grabEnergyQuanta(obj, "L:energyCapacityQuanta", "L:powerCap", maxPower);
 		fluidCap = IConfigurableMachine.grab(obj, "I:fuelCap", fluidCap);
 		
 		if(obj.has("D[:efficiency")) {
@@ -272,7 +276,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 
 	@Override
 	public void writeConfig(JsonWriter writer) throws IOException {
-		writer.name("L:powerCap").value(maxPower);
+		writer.name("L:energyCapacityQuanta").value(maxPower);
 		writer.name("I:fuelCap").value(fluidCap);
 		
 		String info = "Fuel grades in order: ";
@@ -307,10 +311,10 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
-		long he = getHEFromFuel(tank.getTankType());
-		boolean active = tank.getFill() > 0 && he > 0;
+		long energyFromFuelQuanta = getEnergyQuantaFromFuel(tank.getTankType());
+		boolean active = tank.getFill() > 0 && energyFromFuelQuanta > 0;
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, active);
 		data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, active ? 1D : 0D);
-		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, he);
+		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(energyFromFuelQuanta));
 	}
 }

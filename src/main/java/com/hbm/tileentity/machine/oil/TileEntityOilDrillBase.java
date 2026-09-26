@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine.oil;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.HashSet;
 
 import com.hbm.blocks.ModBlocks;
@@ -33,7 +34,7 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 
 	public int indicator = 0;
 
-	public long power;
+	public long energyQuanta;
 
 	public FluidTank[] tanks;
 
@@ -48,7 +49,7 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		for(int i = 0; i < this.tanks.length; i++)
 			this.tanks[i].readFromNBT(nbt, "t" + i);
 	}
@@ -57,7 +58,7 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		for(int i = 0; i < this.tanks.length; i++)
 			this.tanks[i].writeToNBT(nbt, "t" + i);
 	}
@@ -65,11 +66,11 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 	@Override
 	public void writeNBT(NBTTagCompound nbt) {
 
-		boolean empty = power == 0;
+		boolean empty = energyQuanta == 0;
 		for(FluidTank tank : tanks) if(tank.getFill() > 0) empty = false;
 
 		if(!empty) {
-			nbt.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 			for(int i = 0; i < this.tanks.length; i++) {
 				this.tanks[i].writeToNBT(nbt, "t" + i);
 			}
@@ -78,7 +79,7 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 
 	@Override
 	public void readNBT(NBTTagCompound nbt) {
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		for(int i = 0; i < this.tanks.length; i++)
 			this.tanks[i].readFromNBT(nbt, "t" + i);
 	}
@@ -107,22 +108,22 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 
 			if(toBurn > 0) {
 				tanks[1].setFill(tanks[1].getFill() - toBurn);
-				this.setPower(this.power + toBurn * 5);
+				this.setStoredEnergyQuanta(this.energyQuanta + toBurn * 5);
 
-				if(this.power > this.getMaxPower())
-					this.setPower(this.getMaxPower());
+				if(this.energyQuanta > this.getEnergyCapacityQuanta())
+					this.setStoredEnergyQuanta(this.getEnergyCapacityQuanta());
 			}
 
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, this.getMaxPower()));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, this.getEnergyCapacityQuanta()));
 
 			for(DirPos pos : getConPos()) {
 				if(tanks[0].getFill() > 0) this.sendFluid(tanks[0], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				if(tanks[1].getFill() > 0) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 
-			if(this.power >= this.getPowerReqEff() && this.tanks[0].getFill() < this.tanks[0].getMaxFill() && this.tanks[1].getFill() < this.tanks[1].getMaxFill()) {
+			if(this.energyQuanta >= this.getPowerReqEff() && this.tanks[0].getFill() < this.tanks[0].getMaxFill() && this.tanks[1].getFill() < this.tanks[1].getMaxFill()) {
 
-				this.setPower(this.power - this.getPowerReqEff());
+				this.setStoredEnergyQuanta(this.energyQuanta - this.getPowerReqEff());
 
 				if(worldObj.getTotalWorldTime() % getDelayEff() == 0) {
 					this.indicator = 0;
@@ -154,7 +155,7 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 
 	public void sendUpdate() {
 		NBTTagCompound data = new NBTTagCompound();
-		data.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 		data.setInteger("indicator", this.indicator);
 		for(int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(data, "t" + i);
 		this.networkPack(data, 25);
@@ -163,7 +164,7 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.indicator = nbt.getInteger("indicator");
 		for(int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "t" + i);
 	}
@@ -280,15 +281,15 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 	public abstract void onSuck(int x, int y, int z);
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return this.power;
+	public long getStoredEnergyQuanta() {
+		return this.energyQuanta;
 	}
 
 	@Override

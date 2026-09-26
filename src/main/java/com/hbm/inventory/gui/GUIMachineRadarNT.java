@@ -1,5 +1,7 @@
 package com.hbm.inventory.gui;
 
+import api.hbm.energymk2.EnergyUnits;
+
 import java.util.Arrays;
 
 import org.lwjgl.opengl.GL11;
@@ -81,7 +83,7 @@ public class GUIMachineRadarNT extends GuiScreen {
 
 	private void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
 
-		if(checkClick(mouseX, mouseY, 8, 221, 200, 7)) this.func_146283_a(Arrays.asList(BobMathUtil.getShortNumber(radar.power) + "/" + BobMathUtil.getShortNumber(radar.maxPower) + "HE"), mouseX, mouseY);
+		if(checkClick(mouseX, mouseY, 8, 221, 200, 7)) this.func_146283_a(Arrays.asList(EnergyUnits.formatJoules(radar.getStoredEnergyQuanta()) + " / " + EnergyUnits.formatJoules(radar.maxPower)), mouseX, mouseY);
 		
 		if(checkClick(mouseX, mouseY, -10, 88, 8, 8)) this.func_146283_a(Arrays.asList(I18nUtil.resolveKeyArray("radar.detectMissiles")), mouseX, mouseY);
 		if(checkClick(mouseX, mouseY, -10, 98, 8, 8)) this.func_146283_a(Arrays.asList(I18nUtil.resolveKeyArray("radar.detectShells")), mouseX, mouseY);
@@ -120,8 +122,8 @@ public class GUIMachineRadarNT extends GuiScreen {
 		drawTexturedModalRect(guiLeft - 14, guiTop + 84, 224, 0, 14, 66);
 		drawTexturedModalRect(guiLeft - 14, guiTop + 154, 224, 66, 14, 36);
 		
-		if(radar.power > 0) {
-			int i = (int) (radar.power * 200 / radar.maxPower);
+		if(radar.getStoredEnergyQuanta() > 0) {
+			int i = (int) (radar.getStoredEnergyQuanta() * 200 / radar.maxPower);
 			drawTexturedModalRect(guiLeft + 8, guiTop + 221, 0, 234, i, 16);
 		}
 		
@@ -132,7 +134,7 @@ public class GUIMachineRadarNT extends GuiScreen {
 		if(radar.redMode ^ (radar.jammed && radar.getWorldObj().rand.nextBoolean())) drawTexturedModalRect(guiLeft - 10, guiTop + 128, 238, 44, 8, 8);
 		if(radar.showMap ^ (radar.jammed && radar.getWorldObj().rand.nextBoolean())) drawTexturedModalRect(guiLeft - 10, guiTop + 138, 238, 54, 8, 8);
 		
-		if(radar.power < radar.consumption) return;
+		if(radar.getStoredEnergyQuanta() < radar.consumption) return;
 		
 		if(radar.jammed) {
 			for(int i = 0; i < 5; i++) {

@@ -221,7 +221,7 @@ public class EntityChemical extends EntityThrowableNT {
 
 		if(style == ChemicalStyle.BURNING) {
 			FT_Combustible trait = type.getTrait(FT_Combustible.class);
-			EntityDamageUtil.attackEntityFromIgnoreIFrame(e, getDamage(ModDamageSource.s_flamethrower), 0.2F + (trait != null ? (trait.getCombustionEnergy() / 100_000F) : 0));
+			EntityDamageUtil.attackEntityFromIgnoreIFrame(e, getDamage(ModDamageSource.s_flamethrower), 0.2F + (trait != null ? (trait.getCombustionEnergyQuanta() / 100_000F) : 0));
 			e.setFire(5);
 		}
 
@@ -229,7 +229,7 @@ public class EntityChemical extends EntityThrowableNT {
 			FT_Flammable flammable = type.getTrait(FT_Flammable.class);
 			FT_Combustible combustible = type.getTrait(FT_Combustible.class);
 
-			float heat = Math.max(flammable != null ? flammable.getHeatEnergy() / 50_000F : 0, combustible != null ? combustible.getCombustionEnergy() / 100_000F : 0);
+			float heat = Math.max(flammable != null ? flammable.getHeatEnergy() / 50_000F : 0, combustible != null ? combustible.getCombustionEnergyQuanta() / 100_000F : 0);
 			heat *= intensity;
 			EntityDamageUtil.attackEntityFromIgnoreIFrame(e, getDamage(ModDamageSource.s_flamethrower), (0.2F + heat) * (float) intensity);
 			e.setFire((int) Math.ceil(5 * intensity));

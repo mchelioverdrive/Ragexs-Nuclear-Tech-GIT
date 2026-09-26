@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
@@ -41,7 +42,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	// HOLY FUCKING SHIT I SPENT 5 DAYS ON THIS SHITFUCK CLASS FILE
 	// thanks Martin, vaer and Bob for the help
 	public int progress;
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 100000;
 	public int maxProgress = 100;
 	public int consumption = 50;
@@ -84,7 +85,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.progress = nbt.getInteger("progress");
 		this.cooldown = nbt.getInteger("runtimeCooldown");
 		this.operationActive = nbt.hasKey("runtimeActive") ? nbt.getBoolean("runtimeActive") : this.progress > 0;
@@ -96,7 +97,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("progress", progress);
 		nbt.setInteger("runtimeCooldown", cooldown);
 		nbt.setBoolean("runtimeActive", operationActive);
@@ -113,7 +114,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	@Override
 	public boolean canExtractItem(int i, ItemStack itemStack, int j) {
 		if(i == 0)
-			if(itemStack.getItem() instanceof IBatteryItem && ((IBatteryItem) itemStack.getItem()).getCharge(itemStack) == 0)
+			if(itemStack.getItem() instanceof IBatteryItem && ((IBatteryItem) itemStack.getItem()).getStoredEnergyQuanta(itemStack) == 0)
 				return true;
 		if(i == 2)
 			return true;
@@ -126,11 +127,11 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	}
 
 	public long getPowerScaled(long i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 
 	public boolean hasPower() {
-		return power >= consumption;
+		return energyQuanta >= consumption;
 	}
 
 	public boolean isProcessing() {
@@ -245,13 +246,13 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		if(this.lastAccountingTick == now) return;
 		this.lastAccountingTick = now;
 
-		long oldPower = this.power;
+		long oldPower = this.energyQuanta;
 		int oldProgress = this.progress;
 		int oldCooldown = this.cooldown;
 		boolean oldActive = this.operationActive;
 
 		if(this.cooldown > 0) this.cooldown--;
-		this.setPowerInternal(Library.chargeTEFromItems(slots, 0, power, maxPower));
+		this.setPowerInternal(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 
 		if(!this.hasPower()) this.cooldown = 20;
 
@@ -259,7 +260,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		if(this.hasPower() && this.cooldown <= 0 && this.cachedRecipeEligible) {
 			this.progress++;
 			this.operationActive = true;
-			this.setPowerInternal(this.power - this.consumption);
+			this.setPowerInternal(this.energyQuanta - this.consumption);
 
 			if(now % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND);
 
@@ -279,7 +280,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		boolean keepLitAcrossRecipeBoundary = completed && this.hasPower() && this.cooldown <= 0 && this.cachedRecipeEligible;
 		this.setVisualActive(this.operationActive || keepLitAcrossRecipeBoundary);
 
-		boolean changed = oldPower != this.power || oldProgress != this.progress || oldCooldown != this.cooldown || oldActive != this.operationActive || completed;
+		boolean changed = oldPower != this.energyQuanta || oldProgress != this.progress || oldCooldown != this.cooldown || oldActive != this.operationActive || completed;
 		if(changed) {
 			this.markDirty();
 			this.markNetworkDirty();
@@ -316,17 +317,17 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	}
 
 	private boolean hasBatteryWork() {
-		if(this.power >= maxPower || slots[0] == null) return false;
+		if(this.energyQuanta >= maxPower || slots[0] == null) return false;
 		if(slots[0].getItem() == ModItems.battery_creative || slots[0].getItem() == ModItems.fusion_core_infinite) return true;
 		if(!(slots[0].getItem() instanceof IBatteryItem)) return false;
 		IBatteryItem battery = (IBatteryItem) slots[0].getItem();
-		return battery.getDischargeRate() > 0 && battery.getCharge(slots[0]) > 0;
+		return battery.getMaxOutputQuantaPerTick() > 0 && battery.getStoredEnergyQuanta(slots[0]) > 0;
 	}
 
 	private void setPowerInternal(long value) {
 		this.runtimeEnergyMutation = true;
 		try {
-			this.setPower(value);
+			this.setStoredEnergyQuanta(value);
 		} finally {
 			this.runtimeEnergyMutation = false;
 		}
@@ -347,7 +348,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		buf.writeInt(maxProgress);
 		buf.writeInt(progress);
 	}
@@ -355,7 +356,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		maxProgress = buf.readInt();
 		progress = buf.readInt();
 	}
@@ -374,10 +375,10 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
 		this.markNetworkDirty();
-		this.power = i;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 		if(!this.runtimeEnergyMutation) {
 			this.cancelAccountingTransition();
@@ -387,13 +388,13 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

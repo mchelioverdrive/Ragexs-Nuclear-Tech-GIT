@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import api.hbm.block.ILaserable;
 import api.hbm.energymk2.IEnergyReceiverMK2;
 import api.hbm.fluid.IFluidStandardReceiver;
@@ -39,7 +40,7 @@ import java.util.List;
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityCoreEmitter extends TileEntityMachineBase implements IEnergyReceiverMK2, ILaserable, IFluidStandardReceiver, SimpleComponent, IGUIProvider, IInfoProviderEC, CompatHandler.OCComponent {
 
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 1000000000L;
 	public int watts;
 	public int beam;
@@ -84,11 +85,11 @@ public class TileEntityCoreEmitter extends TileEntityMachineBase implements IEne
 
 			if(isOn) {
 
-				//i.e. 50,000,000 HE = 10,000 SPK
+				// i.e. 50,000,000 quanta = 25 MJ = 10,000 SPK
 				//1 SPK = 5,000HE
 
-				if(power >= demand) {
-					this.setPower(this.power - demand);
+				if(energyQuanta >= demand) {
+					this.setStoredEnergyQuanta(this.energyQuanta - demand);
 					long add = watts * 100;
 					joules += add;
 				}
@@ -158,7 +159,7 @@ public class TileEntityCoreEmitter extends TileEntityMachineBase implements IEne
 			this.markDirty();
 
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setInteger("watts", watts);
 			data.setLong("prev", prev);
 			data.setInteger("beam", beam);
@@ -171,7 +172,7 @@ public class TileEntityCoreEmitter extends TileEntityMachineBase implements IEne
 	public void networkUnpack(NBTTagCompound data) {
 		super.networkUnpack(data);
 
-		power = data.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		watts = data.getInteger("watts");
 		prev = data.getLong("prev");
 		beam = data.getInteger("beam");
@@ -180,7 +181,7 @@ public class TileEntityCoreEmitter extends TileEntityMachineBase implements IEne
 	}
 
 	public long getPowerScaled(long i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 
 	public int getWattsScaled(int i) {
@@ -188,19 +189,19 @@ public class TileEntityCoreEmitter extends TileEntityMachineBase implements IEne
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return this.power;
+	public long getStoredEnergyQuanta() {
+		return this.energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return this.maxPower;
 	}
 
@@ -233,7 +234,7 @@ public class TileEntityCoreEmitter extends TileEntityMachineBase implements IEne
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		watts = nbt.getInteger("watts");
 		joules = nbt.getLong("joules");
 		prev = nbt.getLong("prev");
@@ -245,7 +246,7 @@ public class TileEntityCoreEmitter extends TileEntityMachineBase implements IEne
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("watts", watts);
 		nbt.setLong("joules", joules);
 		nbt.setLong("prev", prev);
@@ -273,7 +274,7 @@ public class TileEntityCoreEmitter extends TileEntityMachineBase implements IEne
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getEnergyInfo(Context context, Arguments args) {
-		return new Object[] {getPower(), getMaxPower()};
+		return new Object[] {getStoredEnergyQuanta(), getEnergyCapacityQuanta()};
 	}
 
 	@Callback(direct = true)
@@ -291,7 +292,7 @@ public class TileEntityCoreEmitter extends TileEntityMachineBase implements IEne
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getInfo(Context context, Arguments args) {
-		return new Object[] {getPower(), getMaxPower(), tank.getFill(), watts, isOn};
+		return new Object[] {getStoredEnergyQuanta(), getEnergyCapacityQuanta(), tank.getFill(), watts, isOn};
 	}
 
 	@Callback(direct = true)
@@ -329,6 +330,6 @@ public class TileEntityCoreEmitter extends TileEntityMachineBase implements IEne
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
 		data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, joules > 0 || prev > 0 ? 20 : 0);
-		data.setDouble(CompatEnergyControl.D_CONSUMPTION_HE, maxPower * watts / 2000);
+		data.setDouble(CompatEnergyControl.D_CONSUMPTION_HE, EnergyUnits.quantaToLegacyHe(maxPower * watts / 2000));
 	}
 }

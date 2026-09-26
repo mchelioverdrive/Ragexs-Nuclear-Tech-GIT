@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine.oil;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
@@ -47,7 +48,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 100000;
 	public FluidTank tank;
 	public boolean isOn = false;
@@ -68,7 +69,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		this.power = nbt.getLong("powerTime");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "powerTime");
 		tank.readFromNBT(nbt, "gas");
 		isOn = nbt.getBoolean("isOn");
 		doesBurn = nbt.getBoolean("doesBurn");
@@ -77,14 +78,14 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("powerTime", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tank.writeToNBT(nbt, "gas");
 		nbt.setBoolean("isOn", isOn);
 		nbt.setBoolean("doesBurn", doesBurn);
 	}
 
 	public long getPowerScaled(long i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 
 	@Override
@@ -160,10 +161,10 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 						powerProd += powerProd * yield / 3;
 
 						this.output = (int) powerProd;
-						this.setPower(this.power + (long) powerProd);
+						this.setStoredEnergyQuanta(this.energyQuanta + (long) powerProd);
 
-						if(power > maxPower)
-							this.setPower(maxPower);
+						if(energyQuanta > maxPower)
+							this.setStoredEnergyQuanta(maxPower);
 
 						ParticleUtil.spawnGasFlame(worldObj, this.xCoord + 0.5F, this.yCoord + 11.75F, this.zCoord + 0.5F, worldObj.rand.nextGaussian() * 0.15, 0.2, worldObj.rand.nextGaussian() * 0.15);
 
@@ -184,10 +185,10 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 				}
 			}
 
-			this.setPower(Library.chargeItemsFromTE(slots, 0, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 0, energyQuanta, maxPower));
 
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", this.power);
+			EnergyUnits.writeEnergyQuanta(data, this.energyQuanta);
 			data.setBoolean("isOn", isOn);
 			data.setBoolean("doesBurn", doesBurn);
 			tank.writeToNBT(data, "t");
@@ -252,7 +253,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.isOn = nbt.getBoolean("isOn");
 		this.doesBurn = nbt.getBoolean("doesBurn");
 		tank.readFromNBT(nbt, "t");
@@ -270,19 +271,19 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 	}
 
 	@Override
-	public long getPower() {
-		return this.power;
+	public long getStoredEnergyQuanta() {
+		return this.energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return this.maxPower;
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
@@ -334,7 +335,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 	public void provideExtraInfo(NBTTagCompound data) {
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, this.fluidUsed > 0);
 		data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, this.fluidUsed);
-		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, this.output);
+		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(this.output));
 	}
 
 	@Override

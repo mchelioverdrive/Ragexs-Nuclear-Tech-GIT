@@ -28,7 +28,7 @@ public class GUIIGenerator extends GuiInfoContainer {
 	public void drawScreen(int x, int y, float f) {
 		super.drawScreen(x, y, f);
 
-		this.drawElectricityInfo(this, x, y, guiLeft + 26, guiTop + 134, 142, 16, igen.power, igen.maxPower);
+		this.drawElectricityInfo(this, x, y, guiLeft + 26, guiTop + 134, 142, 16, igen.energyQuanta, igen.maxPower);
 		
 		for(int i = 0; i < 4; i++) {
 			int fire = igen.burn[i];
@@ -66,7 +66,7 @@ public class GUIIGenerator extends GuiInfoContainer {
 		int water = igen.tanks[0].getFill() * 72 / igen.tanks[0].getMaxFill();
 		drawTexturedModalRect(guiLeft + 80, guiTop + 112, 184, 14, water, 16);
 
-		int power = (int) (igen.power * 142 / igen.maxPower);
+		int power = (int) (igen.energyQuanta * 142 / igen.maxPower);
 		drawTexturedModalRect(guiLeft + 26, guiTop + 134, 0, 237, power, 16);
 		
 		for(int i = 0; i < 4; i++) {

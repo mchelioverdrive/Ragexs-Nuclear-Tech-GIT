@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.io.IOException;
 
 import com.google.gson.JsonObject;
@@ -74,7 +75,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 
 		if(!worldObj.isRemote) {
 
-			this.setPower(0);
+			this.setStoredEnergyQuanta(0);
 
 			tanks[0].setTankType(Fluids.STEAM);
 			tanks[1].setTankType(Fluids.SPENTSTEAM);
@@ -90,7 +91,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 			int ops = Math.min(inputOps, outputOps);
 			tanks[0].setFill(tanks[0].getFill() - ops * trait.amountReq);
 			tanks[1].setFill(tanks[1].getFill() + ops * trait.amountProduced);
-			this.setPower(this.powerBuffer + (long) (ops * trait.heatEnergy * eff));
+			this.setStoredEnergyQuanta(this.powerBuffer + (long) (ops * trait.heatEnergy * eff));
 
 			if(ops > 0) {
 				//FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1200);
@@ -109,7 +110,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 				this.worldObj.playSoundEffect(xCoord, yCoord, zCoord, "hbm:block.steamEngineOperate", getVolume(1.0F), 0.5F + (acceleration / 80F));
 			}
 
-			data.setLong("power", this.powerBuffer);
+			EnergyUnits.writeEnergyQuanta(data, this.powerBuffer);
 			data.setFloat("rotor", this.rotor);
 			tanks[1].writeToNBT(data, "w");
 
@@ -148,7 +149,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.powerBuffer = nbt.getLong("powerBuffer");
+		this.powerBuffer = EnergyUnits.readEnergyQuanta(nbt, "powerBuffer");
 		this.acceleration = nbt.getFloat("acceleration");
 		this.tanks[0].readFromNBT(nbt, "s");
 		this.tanks[1].readFromNBT(nbt, "w");
@@ -158,7 +159,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 
-		nbt.setLong("powerBuffer", powerBuffer);
+		EnergyUnits.writeEnergyQuanta(nbt, powerBuffer);
 		nbt.setFloat("acceleration", acceleration);
 		tanks[0].writeToNBT(nbt, "s");
 		tanks[1].writeToNBT(nbt, "w");
@@ -181,17 +182,17 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 	}
 
 	@Override
-	public long getPower() {
+	public long getStoredEnergyQuanta() {
 		return powerBuffer;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return powerBuffer;
 	}
 
 	@Override
-	public void setPower(long power) {
+	public void setStoredEnergyQuanta(long power) {
 		if(this.powerBuffer == power) return;
 		this.powerBuffer = power;
 		this.markPowerNetDirty();
@@ -214,7 +215,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 
 	@Override
 	public void networkUnpack(NBTTagCompound nbt) {
-		this.powerBuffer = nbt.getLong("power");
+		this.powerBuffer = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.syncRotor = nbt.getFloat("rotor");
 		this.turnProgress = 3; //use 3-ply for extra smoothness
 		this.tanks[0].readFromNBT(nbt, "s");

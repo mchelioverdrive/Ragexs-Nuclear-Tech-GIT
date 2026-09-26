@@ -31,7 +31,7 @@ public class GUIMiningLaser extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 		
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 106 - 88, 16, 88, laser.power, laser.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 106 - 88, 16, 88, laser.getStoredEnergyQuanta(), laser.maxPower);
 
 		String[] text = new String[] { "Acceptable upgrades:",
 				" -Speed (stacks to level 12)",

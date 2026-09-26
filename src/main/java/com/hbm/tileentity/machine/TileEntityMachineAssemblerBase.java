@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.inventory.RecipesCommon.AStack;
@@ -23,7 +24,7 @@ import net.minecraft.tileentity.TileEntity;
 
 public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBase implements IEnergyReceiverMK2, IGUIProvider {
 
-	public long power;
+	public long energyQuanta;
 	public int[] progress;
 	public int[] maxProgress;
 	public boolean isProgressing;
@@ -70,7 +71,7 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 			int count = this.getRecipeCount();
 
 			this.isProgressing = false;
-			this.setPower(Library.chargeTEFromItems(slots, getPowerSlot(), power, this.getMaxPower()));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, getPowerSlot(), energyQuanta, this.getEnergyCapacityQuanta()));
 
 			for(int i = 0; i < count; i++) {
 				unloadItems(i);
@@ -94,7 +95,7 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 		if(slots[template] == null || slots[template].getItem() != ModItems.assembly_template) return false;
 		this.resolveRecipe(index);
 		AStack[] recipe = this.cachedRecipes[index];
-		if(recipe == null || this.power < this.consumption) return false;
+		if(recipe == null || this.energyQuanta < this.consumption) return false;
 		if(!hasRequiredItems(recipe, index)) return false;
 		return hasSpaceForItems(this.cachedOutputs[index], index);
 	}
@@ -143,7 +144,7 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 
 	protected void process(int index) {
 
-		this.setPower(this.power - this.consumption);
+		this.setStoredEnergyQuanta(this.energyQuanta - this.consumption);
 		this.progress[index]++;
 
 		//if(slots[0] != null && slots[0].getItem() == ModItems.meteorite_sword_alloyed)
@@ -349,7 +350,7 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		if(nbt.hasKey("progress")) this.progress = nbt.getIntArray("progress");
 		if(nbt.hasKey("maxProgress")) this.maxProgress = nbt.getIntArray("maxProgress");
 	}
@@ -358,20 +359,20 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setIntArray("progress", progress);
 		nbt.setIntArray("maxProgress", maxProgress);
 	}
 
 	@Override
-	public long getPower() {
-		return this.power;
+	public long getStoredEnergyQuanta() {
+		return this.energyQuanta;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 

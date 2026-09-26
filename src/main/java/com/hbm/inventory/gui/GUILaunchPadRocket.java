@@ -34,7 +34,7 @@ public class GUILaunchPadRocket extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 		
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 167, guiTop + 36, 16, 52, machine.power, machine.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 167, guiTop + 36, 16, 52, machine.getStoredEnergyQuanta(), machine.maxPower);
         
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 56, guiTop + 20, 18, 17, mouseX, mouseY, new String[]{"COMMIT TO LAUNCH"} );
 	}
@@ -45,14 +45,14 @@ public class GUILaunchPadRocket extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
-		int p = (int) (machine.power * 52 / machine.maxPower);
+		int p = (int) (machine.getStoredEnergyQuanta() * 52 / machine.maxPower);
 		drawTexturedModalRect(guiLeft + 167, guiTop + 36 + 52 - p, xSize, 8 + 52 - p, 16, p);
 
         if(machine.rocket != null) {
             int ox = machine.canLaunch() ? 12 : 0;
             drawTexturedModalRect(guiLeft + 59, guiTop + 43, xSize + ox, 0, 12, 8);
 
-            ox = machine.power > machine.maxPower * 0.75 ? 0 : 6;
+            ox = machine.getStoredEnergyQuanta() > machine.maxPower * 0.75 ? 0 : 6;
             drawTexturedModalRect(guiLeft + 172, guiTop + 23, xSize + 16 + ox, 8, 6, 8);
 
             GL11.glPushMatrix();

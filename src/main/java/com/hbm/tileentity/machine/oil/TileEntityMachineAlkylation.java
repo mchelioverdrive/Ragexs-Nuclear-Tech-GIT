@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine.oil;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.inventory.FluidStack;
 import com.hbm.inventory.fluid.FluidType;
@@ -22,7 +23,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineAlkylation extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IPersistentNBT {
 	
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 1_000_000;
 
 	public FluidTank[] tanks;
@@ -57,14 +58,14 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		for(int i = 0; i < tanks.length; i++) tanks[i].serialize(buf);
 	}
 	
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		this.power = buf.readLong();
+		this.energyQuanta = buf.readLong();
 		for(int i = 0; i < tanks.length; i++) tanks[i].deserialize(buf);
 	}
 	
@@ -81,7 +82,7 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 		tanks[2].setTankType(out.getY().type);
 		tanks[3].setTankType(out.getZ().type);
 		
-		if(power < 4_000) return; // 40 kHE/s
+		if(energyQuanta < 4_000) return; // 2 kJ stored
 		if(tanks[0].getFill() < 100) return;
 		if(tanks[1].getFill() < out.getX().fill) return;
 
@@ -93,7 +94,7 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 		tanks[2].setFill(tanks[2].getFill() + out.getY().fill);
 		tanks[3].setFill(tanks[3].getFill() + out.getZ().fill);
 		
-		this.setPower(this.power - 4_000);
+		this.setStoredEnergyQuanta(this.energyQuanta - 4_000);
 	}
 	
 	private void updateConnections() {
@@ -128,14 +129,14 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		for(int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "t" + i);
 	}
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		for(int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(nbt, "t" + i);
 	}
 	
@@ -163,13 +164,13 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 		return 65536.0D;
 	}
 
-	@Override public long getPower() { return power; }
-	@Override public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	@Override public long getStoredEnergyQuanta() { return energyQuanta; }
+	@Override public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
-	@Override public long getMaxPower() { return maxPower; }
+	@Override public long getEnergyCapacityQuanta() { return maxPower; }
 	@Override public FluidTank[] getAllTanks() { return tanks; }
 	@Override public FluidTank[] getSendingTanks() { return new FluidTank[] {tanks[2], tanks[3]}; }
 	@Override public FluidTank[] getReceivingTanks() { return new FluidTank[] {tanks[0], tanks[1]}; }

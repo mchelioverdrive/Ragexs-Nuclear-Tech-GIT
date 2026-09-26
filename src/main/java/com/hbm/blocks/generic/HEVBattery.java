@@ -67,11 +67,11 @@ public class HEVBattery extends Block {
 
 					if(st.getItem() instanceof IBatteryItem) {
 
-						long maxcharge = ((IBatteryItem) st.getItem()).getMaxCharge(st);
-						long charge = ((IBatteryItem) st.getItem()).getCharge(st);
+						long maxcharge = ((IBatteryItem) st.getItem()).getEnergyCapacityQuanta(st);
+						long charge = ((IBatteryItem) st.getItem()).getStoredEnergyQuanta(st);
 						long newcharge = Math.min(charge + 150000, maxcharge);
 
-						((IBatteryItem) st.getItem()).setCharge(st, newcharge);
+						((IBatteryItem) st.getItem()).setStoredEnergyQuanta(st, newcharge);
 					}
 				}
 

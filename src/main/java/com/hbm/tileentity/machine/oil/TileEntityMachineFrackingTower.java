@@ -60,7 +60,7 @@ public class TileEntityMachineFrackingTower extends TileEntityOilDrillBase {
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
@@ -199,7 +199,7 @@ public class TileEntityMachineFrackingTower extends TileEntityOilDrillBase {
 
 	@Override
 	public void readIfPresent(JsonObject obj) {
-		maxPower = IConfigurableMachine.grab(obj, "I:powerCap", maxPower);
+		maxPower = IConfigurableMachine.grabEnergyQuanta(obj, "I:energyCapacityQuanta", "I:powerCap", maxPower);
 		consumption = IConfigurableMachine.grab(obj, "I:consumption", consumption);
 		solutionRequired = IConfigurableMachine.grab(obj, "I:solutionRequired", solutionRequired);
 		delay = IConfigurableMachine.grab(obj, "I:delay", delay);
@@ -215,7 +215,7 @@ public class TileEntityMachineFrackingTower extends TileEntityOilDrillBase {
 
 	@Override
 	public void writeConfig(JsonWriter writer) throws IOException {
-		writer.name("I:powerCap").value(maxPower);
+		writer.name("I:energyCapacityQuanta").value(maxPower);
 		writer.name("I:consumption").value(consumption);
 		writer.name("I:solutionRequired").value(solutionRequired);
 		writer.name("I:delay").value(delay);

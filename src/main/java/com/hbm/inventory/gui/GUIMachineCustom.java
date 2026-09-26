@@ -36,7 +36,7 @@ public class GUIMachineCustom extends GuiInfoContainer {
 	public void drawScreen(int x, int y, float interp) {
 		super.drawScreen(x, y, interp);
 
-		this.drawElectricityInfo(this, x, y, guiLeft + 150, guiTop + 18, 16, 52, custom.power, custom.config.maxPower);
+		this.drawElectricityInfo(this, x, y, guiLeft + 150, guiTop + 18, 16, 52, custom.getStoredEnergyQuanta(), custom.config.energyCapacityQuanta);
 		if(custom.config.maxHeat>0) this.drawCustomInfoStat(x, y, guiLeft + 61, guiTop + 53, 18, 18, x, y, new String[] { "Heat:" + String.format(Locale.US, "%,d", custom.heat) + " / " + String.format(Locale.US, "%,d", custom.config.maxHeat)});
 		if(this.mc.thePlayer.inventory.getItemStack() == null) {
 			for(int i = 0; i < this.inventorySlots.inventorySlots.size(); ++i) {
@@ -96,7 +96,7 @@ public class GUIMachineCustom extends GuiInfoContainer {
 			drawTexturedModalRect(guiLeft + 78 + 44, guiTop + 119, 192, 16, p, 16);
 		}
 
-		int e = (int) (custom.power * 52 / custom.config.maxPower);
+		int e = (int) (custom.getStoredEnergyQuanta() * 52 / custom.config.energyCapacityQuanta);
 		drawTexturedModalRect(guiLeft + 150, guiTop + 70 - e, 176, 52 - e, 16, e);
 
 		for(int i = 0; i < 2; i++) {

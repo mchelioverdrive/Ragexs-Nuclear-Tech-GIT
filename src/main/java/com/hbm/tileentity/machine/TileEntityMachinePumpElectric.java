@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.util.fauxpointtwelve.DirPos;
@@ -9,7 +10,7 @@ import net.minecraft.nbt.NBTTagCompound;
 
 public class TileEntityMachinePumpElectric extends TileEntityMachinePumpBase implements IEnergyReceiverMK2 {
 	
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 10_000;
 	
 	public TileEntityMachinePumpElectric() {
@@ -31,42 +32,42 @@ public class TileEntityMachinePumpElectric extends TileEntityMachinePumpBase imp
 	
 	protected NBTTagCompound getSync() {
 		NBTTagCompound data = super.getSync();
-		data.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 		return data;
 	}
 
 	@Override
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 	}
 
 	@Override
 	protected boolean canOperate() {
-		return power >= 1_000 && water.getFill() < water.getMaxFill();
+		return energyQuanta >= 1_000 && water.getFill() < water.getMaxFill();
 	}
 
 	@Override
 	protected void operate() {
-		this.setPower(this.power - 1_000);
+		this.setStoredEnergyQuanta(this.energyQuanta - 1_000);
 		int pumpSpeed = water.getTankType() == Fluids.WATER ? electricSpeed : electricSpeed / nonWaterDebuff;
 		water.setFill(Math.min(water.getFill() + pumpSpeed, water.getMaxFill()));
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 }

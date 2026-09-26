@@ -141,7 +141,7 @@ public class TileEntityTurretMaxwell extends TileEntityTurretBaseNT implements I
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return 10000000;
 	}
 
@@ -235,7 +235,7 @@ public class TileEntityTurretMaxwell extends TileEntityTurretBaseNT implements I
 
 		long demand = this.getConsumption() * 10;
 
-		if(this.target != null && this.getPower() >= demand) {
+		if(this.target != null && this.getStoredEnergyQuanta() >= demand) {
 
 			//if(_5g && target instanceof EntityPlayer) {
 			//	EntityPlayer living = (EntityPlayer) target;
@@ -259,7 +259,7 @@ public class TileEntityTurretMaxwell extends TileEntityTurretBaseNT implements I
 					worldObj.playSoundEffect(this.target.posX, this.target.posY, this.target.posZ, "mob.zombie.woodbreak", 2.0F, 0.95F + worldObj.rand.nextFloat() * 0.2F);
 			}
 
-			this.setPower(this.power - demand);
+			this.setStoredEnergyQuanta(this.energyQuanta - demand);
 
 			NBTTagCompound data = new NBTTagCompound();
 			data.setBoolean("shot", true);

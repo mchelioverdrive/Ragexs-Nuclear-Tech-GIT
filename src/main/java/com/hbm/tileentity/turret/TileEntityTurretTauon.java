@@ -72,7 +72,7 @@ public class TileEntityTurretTauon extends TileEntityTurretBaseNT {
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return 100000;
 	}
 

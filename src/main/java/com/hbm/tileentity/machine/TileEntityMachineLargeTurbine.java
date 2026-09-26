@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.Random;
 import java.io.IOException;
 
@@ -45,7 +46,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityMachineLargeTurbine extends TileEntityMachineBase implements IEnergyProviderMK2, IFluidStandardTransceiver, IGUIProvider, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IConfigurableMachine, IFluidCopiable {
 
-	public long power;
+	public long energyQuanta;
 	public FluidTank[] tanks;
 	protected double[] info = new double[3];
 	
@@ -82,7 +83,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 
 	@Override
 	public void readIfPresent(JsonObject obj) {
-		maxPower = IConfigurableMachine.grab(obj, "L:maxPower", maxPower);
+		maxPower = IConfigurableMachine.grabEnergyQuanta(obj, "L:energyCapacityQuanta", "L:maxPower", maxPower);
 		inputTankSize = IConfigurableMachine.grab(obj, "I:inputTankSize", inputTankSize);
 		outputTankSize = IConfigurableMachine.grab(obj, "I:outputTankSize", outputTankSize);
 		efficiency = IConfigurableMachine.grab(obj, "D:efficiency", efficiency);
@@ -90,7 +91,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 
 	@Override
 	public void writeConfig(JsonWriter writer) throws IOException {
-		writer.name("L:maxPower").value(maxPower);
+		writer.name("L:energyCapacityQuanta").value(maxPower);
 		writer.name("INFO").value("industrial steam turbine consumes 20% of availible steam per tick");
 		writer.name("I:inputTankSize").value(inputTankSize);
 		writer.name("I:outputTankSize").value(outputTankSize);
@@ -120,7 +121,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 
 			tanks[0].setType(0, 1, slots);
 			tanks[0].loadTank(2, 3, slots);
-			this.setPower(Library.chargeItemsFromTE(slots, 4, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 4, energyQuanta, maxPower));
 			
 			boolean operational = false;
 			
@@ -138,7 +139,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 					int ops = Math.min(inputOps, Math.min(outputOps, Math.min(cap, powerOps))); //defacto amount of cycles
 					tanks[0].setFill(tanks[0].getFill() - ops * trait.amountReq);
 					tanks[1].setFill(tanks[1].getFill() + ops * trait.amountProduced);
-					this.setPower(this.power + (long) (ops * trait.heatEnergy * eff));
+					this.setStoredEnergyQuanta(this.energyQuanta + (long) (ops * trait.heatEnergy * eff));
 					info[0] = ops * trait.amountReq;
 					info[1] = ops * trait.amountProduced;
 					info[2] = ops * trait.heatEnergy * eff;
@@ -147,12 +148,12 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 				}
 			}
 			if(!valid) tanks[1].setTankType(Fluids.NONE);
-			if(power > maxPower) this.setPower(maxPower);
+			if(energyQuanta > maxPower) this.setStoredEnergyQuanta(maxPower);
 			
 			tanks[1].unloadTank(5, 6, slots);
 			
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setBoolean("operational", operational);
 			tanks[0].writeToNBT(data, "t0");
 			tanks[1].writeToNBT(data, "t1");
@@ -197,8 +198,8 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 
 	/** Stops the rotor when there is no room for another generated power operation. */
 	private int getAvailablePowerOperations(double energyPerOperation) {
-		if(power >= maxPower || energyPerOperation <= 0) return 0;
-		return (int) Math.min(Integer.MAX_VALUE, Math.floor((maxPower - power) / energyPerOperation));
+		if(energyQuanta >= maxPower || energyPerOperation <= 0) return 0;
+		return (int) Math.min(Integer.MAX_VALUE, Math.floor((maxPower - energyQuanta) / energyPerOperation));
 	}
 
 	/**
@@ -228,14 +229,14 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 	public void networkUnpack(NBTTagCompound data) {
 		super.networkUnpack(data);
 		
-		this.power = data.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		this.shouldTurn = data.getBoolean("operational");
 		tanks[0].readFromNBT(data, "t0");
 		tanks[1].readFromNBT(data, "t1");
 	}
 	
 	public long getPowerScaled(int i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 	
 	@Override
@@ -243,7 +244,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 		super.readFromNBT(nbt);
 		tanks[0].readFromNBT(nbt, "water");
 		tanks[1].readFromNBT(nbt, "steam");
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 	}
 	
 	@Override
@@ -251,23 +252,23 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 		super.writeToNBT(nbt);
 		tanks[0].writeToNBT(nbt, "water");
 		tanks[1].writeToNBT(nbt, "steam");
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return this.maxPower;
 	}
 	
@@ -391,6 +392,6 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, info[1] > 0);
 		data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, info[0]);
 		data.setDouble(CompatEnergyControl.D_OUTPUT_MB, info[1]);
-		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, info[2]);
+		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(info[2]));
 	}
 }

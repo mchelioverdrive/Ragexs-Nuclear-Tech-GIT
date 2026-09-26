@@ -88,7 +88,7 @@ public class TileEntityAtmoTower extends TileEntityDeuteriumTower {
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return 1000000;
 	}
 }

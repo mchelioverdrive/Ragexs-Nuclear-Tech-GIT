@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.io.IOException;
 
 import com.google.gson.JsonObject;
@@ -20,7 +21,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityCondenserPowered extends TileEntityCondenser implements IEnergyReceiverMK2 {
 	
-	public long power;
+	public long energyQuanta;
 	public float spin;
 	public float lastSpin;
 	
@@ -28,7 +29,7 @@ public class TileEntityCondenserPowered extends TileEntityCondenser implements I
 	public static long maxPower = 10_000_000;
 	public static int inputTankSizeP = 1_000_000;
 	public static int outputTankSizeP = 1_000_000;
-	public static int powerConsumption = 10;
+	public static int energyCostQuantaPerMb = 10;
 
 	public TileEntityCondenserPowered() {
 		tanks = new FluidTank[2];
@@ -43,18 +44,18 @@ public class TileEntityCondenserPowered extends TileEntityCondenser implements I
 	}
 	@Override
 	public void readIfPresent(JsonObject obj) {
-		maxPower = IConfigurableMachine.grab(obj, "L:maxPower", maxPower);
+		maxPower = IConfigurableMachine.grabEnergyQuanta(obj, "L:energyCapacityQuanta", "L:maxPower", maxPower);
 		inputTankSizeP = IConfigurableMachine.grab(obj, "I:inputTankSize", inputTankSizeP);
 		outputTankSizeP = IConfigurableMachine.grab(obj, "I:outputTankSize", outputTankSizeP);
-		powerConsumption = IConfigurableMachine.grab(obj, "I:powerConsumption", powerConsumption);
+		energyCostQuantaPerMb = IConfigurableMachine.grab(obj, "I:energyCostQuantaPerMb", IConfigurableMachine.grab(obj, "I:powerConsumption", energyCostQuantaPerMb));
 	}
 
 	@Override
 	public void writeConfig(JsonWriter writer) throws IOException {
-		writer.name("L:maxPower").value(maxPower);
+		writer.name("L:energyCapacityQuanta").value(maxPower);
 		writer.name("I:inputTankSize").value(inputTankSizeP);
 		writer.name("I:outputTankSize").value(outputTankSizeP);
-		writer.name("I:powerConsumption").value(powerConsumption);
+		writer.name("I:energyCostQuantaPerMb").value(energyCostQuantaPerMb);
 	}
 
 	@Override
@@ -84,23 +85,23 @@ public class TileEntityCondenserPowered extends TileEntityCondenser implements I
 
 	@Override
 	public void packExtra(NBTTagCompound data) {
-		data.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 	}
 	
 	@Override
 	public boolean extraCondition(int convert) {
-		return power >= convert * 10;
+		return energyQuanta >= convert * 10;
 	}
 
 	@Override
 	public void postConvert(int convert) {
-		this.setPower(this.power - convert * powerConsumption);
-		if(this.power < 0) this.setPower(0);
+		this.setStoredEnergyQuanta(this.energyQuanta - convert * energyCostQuantaPerMb);
+		if(this.energyQuanta < 0) this.setStoredEnergyQuanta(0);
 	}
 
 	@Override
 	public void networkUnpack(NBTTagCompound nbt) {
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.tanks[0].readFromNBT(nbt, "0");
 		this.tanks[1].readFromNBT(nbt, "1");
 		this.waterTimer = nbt.getByte("timer");
@@ -109,7 +110,7 @@ public class TileEntityCondenserPowered extends TileEntityCondenser implements I
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		tanks[0].readFromNBT(nbt, "water");
 		tanks[1].readFromNBT(nbt, "steam");
 	}
@@ -117,7 +118,7 @@ public class TileEntityCondenserPowered extends TileEntityCondenser implements I
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tanks[0].writeToNBT(nbt, "water");
 		tanks[1].writeToNBT(nbt, "steam");
 	}
@@ -178,19 +179,19 @@ public class TileEntityCondenserPowered extends TileEntityCondenser implements I
 	}
 
 	@Override
-	public long getPower() {
-		return this.power;
+	public long getStoredEnergyQuanta() {
+		return this.energyQuanta;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 }

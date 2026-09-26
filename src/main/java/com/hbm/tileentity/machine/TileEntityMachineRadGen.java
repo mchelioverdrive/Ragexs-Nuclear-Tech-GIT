@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.HashMap;
 
 import com.hbm.blocks.BlockDummyable;
@@ -37,7 +38,7 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 	public ItemStack[] processing = new ItemStack[12];
 	protected int output;
 	
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 1000000;
 	
 	public boolean isOn = false;
@@ -85,7 +86,7 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 				if(processing[i] != null) {
 					
 					this.isOn = true;
-					this.setPower(this.power + production[i]);
+					this.setStoredEnergyQuanta(this.energyQuanta + production[i]);
 					this.output += production[i];
 					progress[i]++;
 					
@@ -108,14 +109,14 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 				}
 			}
 			
-			if(this.power > maxPower)
-				this.setPower(maxPower);
+			if(this.energyQuanta > maxPower)
+				this.setStoredEnergyQuanta(maxPower);
 			
 			NBTTagCompound data = new NBTTagCompound();
 			data.setIntArray("progress", this.progress);
 			data.setIntArray("maxProgress", this.maxProgress);
 			data.setIntArray("production", this.production);
-			data.setLong("power", this.power);
+			EnergyUnits.writeEnergyQuanta(data, this.energyQuanta);
 			data.setBoolean("isOn", this.isOn);
 			this.networkPack(data, 50);
 		}
@@ -128,7 +129,7 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 		this.progress = nbt.getIntArray("progress");
 		this.maxProgress = nbt.getIntArray("maxProgress");
 		this.production = nbt.getIntArray("production");
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.isOn = nbt.getBoolean("isOn");
 	}
 	
@@ -144,7 +145,7 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 		
 		this.maxProgress = nbt.getIntArray("maxProgress");
 		this.production = nbt.getIntArray("production");
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.isOn = nbt.getBoolean("isOn");
 
 		NBTTagList list = nbt.getTagList("progressing", 10);
@@ -156,7 +157,7 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 			}
 		}
 		
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 	}
 	
 	@Override
@@ -165,7 +166,7 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 		nbt.setIntArray("progress", this.progress);
 		nbt.setIntArray("maxProgress", this.maxProgress);
 		nbt.setIntArray("production", this.production);
-		nbt.setLong("power", this.power);
+		EnergyUnits.writeEnergyQuanta(nbt, this.energyQuanta);
 		nbt.setBoolean("isOn", this.isOn);
 		
 		NBTTagList list = new NBTTagList();
@@ -179,7 +180,7 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 		}
 		nbt.setTag("progressing", list);
 		
-		nbt.setLong("power", this.power);
+		EnergyUnits.writeEnergyQuanta(nbt, this.energyQuanta);
 	}
 
 	@Override
@@ -260,19 +261,19 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 	
@@ -300,6 +301,6 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
-		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, output);
+		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(output));
 	}
 }

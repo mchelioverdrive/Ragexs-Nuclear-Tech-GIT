@@ -12,7 +12,7 @@ public abstract class EntityRailCarElectric extends EntityRailCarRidable {
 		super(world);
 	}
 
-	public abstract int getMaxPower();
+	public abstract int getEnergyCapacityQuanta();
 	public abstract int getPowerConsumption();
 	
 	public boolean hasChargeSlot() { return false; }
@@ -25,18 +25,18 @@ public abstract class EntityRailCarElectric extends EntityRailCarRidable {
 	
 	@Override public boolean canAccelerate() {
 		return true;
-		//return this.getPower() >= this.getPowerConsumption();
+		//return this.getStoredEnergyQuanta() >= this.getPowerConsumption();
 	}
 	
 	@Override public void consumeFuel() {
-		//this.setPower(this.getPower() - this.getPowerConsumption());
+		//this.setStoredEnergyQuanta(this.getStoredEnergyQuanta() - this.getPowerConsumption());
 	}
 	
-	public void setPower(int power) {
+	public void setStoredEnergyQuanta(int power) {
 		this.dataWatcher.updateObject(3, power);
 	}
 	
-	public int getPower() {
+	public int getStoredEnergyQuanta() {
 		return this.dataWatcher.getWatchableObjectInt(3);
 	}
 	
@@ -51,17 +51,17 @@ public abstract class EntityRailCarElectric extends EntityRailCarRidable {
 				
 				if(stack != null && stack.getItem() instanceof IBatteryItem) {
 					IBatteryItem battery = (IBatteryItem) stack.getItem();
-					int powerNeeded = this.getMaxPower() - this.getPower();
-					long powerProvided = Math.min(battery.getDischargeRate(), battery.getCharge(stack));
+					int powerNeeded = this.getEnergyCapacityQuanta() - this.getStoredEnergyQuanta();
+					long powerProvided = Math.min(battery.getMaxOutputQuantaPerTick(), battery.getStoredEnergyQuanta(stack));
 					int powerTransfered = (int) Math.min(powerNeeded, powerProvided);
 					
 					if(powerTransfered > 0) {
-						battery.dischargeBattery(stack, powerTransfered);
-						this.setPower(this.getPower() + powerTransfered);
+						battery.extractEnergyQuanta(stack, powerTransfered);
+						this.setStoredEnergyQuanta(this.getStoredEnergyQuanta() + powerTransfered);
 					}
 				} else if(stack != null) {
 					if(stack.getItem() == ModItems.battery_creative || stack.getItem() == ModItems.fusion_core_infinite) {
-						this.setPower(this.getMaxPower());
+						this.setStoredEnergyQuanta(this.getEnergyCapacityQuanta());
 					}
 				}
 			}

@@ -1,5 +1,6 @@
 package com.hbm.blocks.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -84,9 +85,9 @@ public class MachineFENSU extends BlockDummyable implements ILookOverlay, IPersi
 		TileEntityMachineBattery battery = (TileEntityMachineBattery) te;
 		
 		List<String> text = new ArrayList();
-		text.add(BobMathUtil.getShortNumber(battery.getPower()) + " / " + BobMathUtil.getShortNumber(battery.getMaxPower()) + "HE");
+		text.add(EnergyUnits.formatJoules(battery.getStoredEnergyQuanta()) + " / " + EnergyUnits.formatJoules(battery.getEnergyCapacityQuanta()));
 		
-		double percent = (double) battery.getPower() / (double) battery.getMaxPower();
+		double percent = (double) battery.getStoredEnergyQuanta() / (double) battery.getEnergyCapacityQuanta();
 		int charge = (int) Math.floor(percent * 10_000D);
 		int color = ((int) (0xFF - 0xFF * percent)) << 16 | ((int)(0xFF * percent) << 8);
 		
@@ -97,6 +98,6 @@ public class MachineFENSU extends BlockDummyable implements ILookOverlay, IPersi
 
 	@Override
 	public void addInformation(ItemStack stack, NBTTagCompound persistentTag, EntityPlayer player, List list, boolean ext) {
-		list.add(EnumChatFormatting.YELLOW + "" + BobMathUtil.getShortNumber(persistentTag.getLong("power")) + "/" + BobMathUtil.getShortNumber(Long.MAX_VALUE) + "HE");
+		list.add(EnumChatFormatting.YELLOW + EnergyUnits.formatJoules(EnergyUnits.readEnergyQuanta(persistentTag, "power")) + " / " + EnergyUnits.formatJoules(Long.MAX_VALUE));
 	}
 }

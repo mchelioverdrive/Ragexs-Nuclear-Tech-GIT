@@ -1,5 +1,7 @@
 package com.hbm.inventory.gui;
 
+import api.hbm.energymk2.EnergyUnits;
+
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.inventory.container.ContainerITER;
@@ -43,7 +45,7 @@ public class GUIITER extends GuiInfoContainer {
 			guiTop + 108,
 			34,
 			16,
-			iter.power,
+			iter.getStoredEnergyQuanta(),
 			iter.maxPower
 		);
 
@@ -57,7 +59,7 @@ public class GUIITER extends GuiInfoContainer {
 			"Magnets are " + (iter.areMagnetsPowered() ? "ON" : "OFF");
 
 		String powerText =
-			"Magnet draw: " + iter.getActualPowerReq() + " HE/t";
+			"Magnet draw: " + EnergyUnits.formatQuantaPerTickAsWatts(iter.getActualPowerReq());
 
 		String shieldText =
 			iter.hasValidShield()

@@ -1,5 +1,6 @@
 package com.hbm.blocks.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,7 +84,7 @@ public class MachineAlkylation extends BlockDummyable implements ILookOverlay {
 		
 		List<String> text = new ArrayList<>();
 		
-		text.add((alkylation.power < alkylation.getMaxPower() / 20 ? EnumChatFormatting.RED : EnumChatFormatting.GREEN) + "Power: " + BobMathUtil.getShortNumber(alkylation.power) + "HE");
+		text.add((alkylation.getStoredEnergyQuanta() < alkylation.getEnergyCapacityQuanta() / 20 ? EnumChatFormatting.RED : EnumChatFormatting.GREEN) + "Stored Energy: " + EnergyUnits.formatJoules(alkylation.getStoredEnergyQuanta()));
 
 		for(int i = 0; i < alkylation.tanks.length; i++) {
 			if(alkylation.tanks[i].getTankType() == Fluids.NONE) continue;

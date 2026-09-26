@@ -1,5 +1,6 @@
 package com.hbm.tileentity.bomb;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -99,7 +100,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 
 	public ItemStack toRender;
 
-	public long power;
+	public long energyQuanta;
 	public final long maxPower = 100_000;
 
 	public int prevRedstonePower;
@@ -163,7 +164,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 
 			this.prevRedstonePower = this.redstonePower;
 
-			this.setPower(Library.chargeTEFromItems(slots, 2, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 2, energyQuanta, maxPower));
 			tanks[0].loadTank(3, 4, slots);
 			tanks[1].loadTank(5, 6, slots);
 
@@ -186,7 +187,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
 
-		buf.writeLong(this.power);
+		buf.writeLong(this.energyQuanta);
 		buf.writeInt(this.state);
 		tanks[0].serialize(buf);
 		tanks[1].serialize(buf);
@@ -204,7 +205,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
 
-		this.power = buf.readLong();
+		this.energyQuanta = buf.readLong();
 		this.state = buf.readInt();
 		tanks[0].deserialize(buf);
 		tanks[1].deserialize(buf);
@@ -219,7 +220,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		legacySolidFuel = nbt.getInteger("solidFuel");
 		tanks[0].readFromNBT(nbt, "t0");
 		tanks[1].readFromNBT(nbt, "t1");
@@ -236,7 +237,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tanks[0].writeToNBT(nbt, "t0");
 		tanks[1].writeToNBT(nbt, "t1");
 
@@ -272,13 +273,13 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 		}
 	}
 
-	@Override public long getPower() { return power; }
-	@Override public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	@Override public long getStoredEnergyQuanta() { return energyQuanta; }
+	@Override public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
-	@Override public long getMaxPower() { return maxPower; }
+	@Override public long getEnergyCapacityQuanta() { return maxPower; }
 	@Override public FluidTank[] getAllTanks() { return this.tanks; }
 	@Override public FluidTank[] getReceivingTanks() { return this.tanks; }
 
@@ -333,7 +334,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 	}
 
 	public boolean hasFuel() {
-		if(this.power < 75_000) return false;
+		if(this.energyQuanta < 75_000) return false;
 
 		if(slots[0] != null && slots[0].getItem() instanceof ItemMissile) {
 			ItemMissile missile = (ItemMissile) slots[0].getItem();
@@ -378,7 +379,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 		TrackerUtil.setTrackingRange(worldObj, missile, 500);
 		worldObj.playSoundEffect(xCoord + 0.5, yCoord, zCoord + 0.5, "hbm:weapon.missileTakeOff", 2.0F, 1.0F);
 
-		this.setPower(this.power - 75_000);
+		this.setStoredEnergyQuanta(this.energyQuanta - 75_000);
 
 		if(slots[0] != null && slots[0].getItem() instanceof ItemMissile) {
 			ItemMissile item = (ItemMissile) slots[0].getItem();
@@ -509,7 +510,7 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getEnergyInfo(Context context, Arguments args) {
-		return new Object[] {getPower(), getMaxPower()};
+		return new Object[] {getStoredEnergyQuanta(), getEnergyCapacityQuanta()};
 	}
 
 	@Callback(direct = true)

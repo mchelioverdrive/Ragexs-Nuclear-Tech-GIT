@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -33,7 +34,7 @@ public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPr
 
 	public FluidTank[] tanks;
 
-	public long power;
+	public long energyQuanta;
 	public static long maxPower = 1_000_000_000;
 
 	private static final int POWER_COST_MULTIPLIER = 1_000_000;
@@ -234,7 +235,7 @@ public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPr
 		buf.writeBoolean(isOn);
 		buf.writeFloat(soundtime);
 		buf.writeInt(fuelCost);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		for(int i = 0; i < tanks.length; i++) tanks[i].serialize(buf);
 	}
 
@@ -244,7 +245,7 @@ public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPr
 		isOn = buf.readBoolean();
 		soundtime = buf.readFloat();
 		fuelCost = buf.readInt();
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		for(int i = 0; i < tanks.length; i++) tanks[i].deserialize(buf);
 	}
 
@@ -252,7 +253,7 @@ public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPr
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		nbt.setBoolean("on", isOn);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		for(int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(nbt, "t" + i);
 	}
 
@@ -260,7 +261,7 @@ public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPr
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		isOn = nbt.getBoolean("on");
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		for(int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "t" + i);
 	}
 
@@ -293,7 +294,7 @@ public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPr
 
 		fuelCost = SolarSystem.getFuelCost(deltaV, shipMass, isp);
 
-		if(power < fuelCost * POWER_COST_MULTIPLIER) return false;
+		if(energyQuanta < fuelCost * POWER_COST_MULTIPLIER) return false;
 
 		for(FluidTank tank : tanks) {
 			if(tank.getFill() < fuelCost) return false;
@@ -304,8 +305,8 @@ public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPr
 
 	@Override
 	public void addErrors(List<String> errors) {
-		if(power < fuelCost * POWER_COST_MULTIPLIER) {
-			errors.add(EnumChatFormatting.RED + I18nUtil.resolveKey(getBlockType().getUnlocalizedName() + ".name") + " - Insufficient power: needs " + BobMathUtil.getShortNumber(fuelCost * POWER_COST_MULTIPLIER) + "HE");
+		if(energyQuanta < fuelCost * POWER_COST_MULTIPLIER) {
+			errors.add(EnumChatFormatting.RED + I18nUtil.resolveKey(getBlockType().getUnlocalizedName() + ".name") + " - Insufficient energy: needs " + EnergyUnits.formatJoules(fuelCost * POWER_COST_MULTIPLIER));
 		}
 
 		for(FluidTank tank : tanks) {
@@ -323,7 +324,7 @@ public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPr
 	@Override
 	public int startBurn() {
 		isOn = true;
-		this.setPower(this.power - fuelCost * POWER_COST_MULTIPLIER);
+		this.setStoredEnergyQuanta(this.energyQuanta - fuelCost * POWER_COST_MULTIPLIER);
 		for(FluidTank tank : tanks) {
 			tank.setFill(tank.getFill() - fuelCost);
 		}
@@ -352,19 +353,19 @@ public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPr
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 }

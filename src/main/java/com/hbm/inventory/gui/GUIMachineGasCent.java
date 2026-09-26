@@ -45,7 +45,7 @@ public class GUIMachineGasCent extends GuiInfoContainer {
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 15, guiTop + 15, 24, 55, mouseX, mouseY, inTankInfo);
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 137, guiTop + 15, 25, 55, mouseX, mouseY, outTankInfo);
 		
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 182, guiTop + 69 - 52, 16, 52, gasCent.power, gasCent.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 182, guiTop + 69 - 52, 16, 52, gasCent.getStoredEnergyQuanta(), gasCent.maxPower);
 		
 		String[] enrichmentText = I18nUtil.resolveKeyArray("desc.gui.gasCent.enrichment");
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 12, guiTop + 16, 16, 16, guiLeft - 8, guiTop + 16 + 16, enrichmentText);

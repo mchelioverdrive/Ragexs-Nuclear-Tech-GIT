@@ -58,7 +58,7 @@ public class AuxElectricityPacket implements IMessage {
 				if (te instanceof IEnergyHandlerMK2) {
 						
 					IEnergyHandlerMK2 gen = (IEnergyHandlerMK2) te;
-					gen.setPower(m.charge);
+					gen.setStoredEnergyQuanta(m.charge);
 				}
 			} catch (Exception x) { }
 			return null;

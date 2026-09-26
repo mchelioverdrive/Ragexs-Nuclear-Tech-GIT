@@ -63,7 +63,7 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
@@ -242,7 +242,7 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 
 	@Override
 	public void readIfPresent(JsonObject obj) {
-		maxPower = IConfigurableMachine.grab(obj, "I:powerCap", maxPower);
+		maxPower = IConfigurableMachine.grabEnergyQuanta(obj, "I:energyCapacityQuanta", "I:powerCap", maxPower);
 		consumption = IConfigurableMachine.grab(obj, "I:consumption", consumption);
 		delay = IConfigurableMachine.grab(obj, "I:delay", delay);
 		oilPerDeposit = IConfigurableMachine.grab(obj, "I:oilPerDeposit", oilPerDeposit);
@@ -253,7 +253,7 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 
 	@Override
 	public void writeConfig(JsonWriter writer) throws IOException {
-		writer.name("I:powerCap").value(maxPower);
+		writer.name("I:energyCapacityQuanta").value(maxPower);
 		writer.name("I:consumption").value(consumption);
 		writer.name("I:delay").value(delay);
 		writer.name("I:oilPerDeposit").value(oilPerDeposit);

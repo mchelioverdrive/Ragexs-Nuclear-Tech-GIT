@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.blocks.BlockDummyable;
@@ -42,7 +43,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 
 	
 	public FluidTank[] tanks;
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 100_000;
 	public boolean isOn;
 	public int progress;
@@ -78,7 +79,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 				this.updateConnections();
 			}
 			
-			this.setPower(Library.chargeTEFromItems(slots, 1, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 1, energyQuanta, maxPower));
 			this.tanks[0].setType(0, slots);
 			this.setupTanks();
 			
@@ -105,7 +106,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 			if(canProcess()) {
 				this.progress++;
 				this.isOn = true;
-				this.setPower(this.power - powerRequirement);
+				this.setStoredEnergyQuanta(this.energyQuanta - powerRequirement);
 				
 				if(progress >= this.processTime) {
 					progress = 0;
@@ -126,7 +127,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 			data.setInteger("progress", progress);
 			data.setInteger("processTime", processTime);
 			data.setInteger("powerRequirement", powerRequirement);
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			tanks[0].writeToNBT(data, "0");
 			tanks[1].writeToNBT(data, "1");
 			data.setBoolean("isOn", isOn);
@@ -172,7 +173,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		this.progress = nbt.getInteger("progress");
 		this.processTime = nbt.getInteger("processTime");
 		this.powerRequirement = nbt.getInteger("powerRequirement");
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		tanks[0].readFromNBT(nbt, "0");
 		tanks[1].readFromNBT(nbt, "1");
 		this.isOn = nbt.getBoolean("isOn");
@@ -198,7 +199,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	
 	public boolean canProcess() {
 		
-		if(this.power <= powerRequirement) return false;
+		if(this.energyQuanta <= powerRequirement) return false;
 		
 		CompressorRecipe recipe = CompressorRecipes.recipes.get(new Pair(tanks[0].getTankType(), tanks[0].getPressure()));
 		
@@ -236,7 +237,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		progress = nbt.getInteger("progress");
 		tanks[0].readFromNBT(nbt, "0");
 		tanks[1].readFromNBT(nbt, "1");
@@ -245,7 +246,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("progress", progress);
 		tanks[0].writeToNBT(nbt, "0");
 		tanks[1].writeToNBT(nbt, "1");
@@ -287,19 +288,19 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

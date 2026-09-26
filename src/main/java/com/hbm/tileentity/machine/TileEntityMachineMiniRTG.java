@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.CompatEnergyControl;
@@ -11,7 +12,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineMiniRTG extends TileEntityLoadedBase implements IEnergyProviderMK2, IInfoProviderEC {
 
-	public long power;
+	public long energyQuanta;
 	boolean tact = false;
 	
 	@Override
@@ -19,10 +20,10 @@ public class TileEntityMachineMiniRTG extends TileEntityLoadedBase implements IE
 		
 		if(!worldObj.isRemote) {
 
-			this.setPower(this.power + this.getOutput());
+			this.setStoredEnergyQuanta(this.energyQuanta + this.getOutput());
 			
-			if(power > getMaxPower())
-				this.setPower(getMaxPower());
+			if(energyQuanta > getEnergyCapacityQuanta())
+				this.setStoredEnergyQuanta(getEnergyCapacityQuanta());
 
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
 				this.tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
@@ -36,20 +37,20 @@ public class TileEntityMachineMiniRTG extends TileEntityLoadedBase implements IE
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		if(this.getBlockType() == ModBlocks.machine_powerrtg) return 50_000;
 		return 1_400;
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
@@ -57,6 +58,6 @@ public class TileEntityMachineMiniRTG extends TileEntityLoadedBase implements IE
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, true);
-		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, this.getOutput());
+		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(this.getOutput()));
 	}
 }

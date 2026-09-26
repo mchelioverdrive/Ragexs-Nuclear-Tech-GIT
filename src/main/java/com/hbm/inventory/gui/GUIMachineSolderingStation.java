@@ -34,7 +34,7 @@ public class GUIMachineSolderingStation extends GuiInfoContainer {
 		super.drawScreen(x, y, interp);
 
 		solderer.tank.renderTankInfo(this, x, y, guiLeft + 35, guiTop + 63, 34, 16);
-		this.drawElectricityInfo(this, x, y, guiLeft + 152, guiTop + 18, 16, 52, solderer.getPower(), solderer.getMaxPower());
+		this.drawElectricityInfo(this, x, y, guiLeft + 152, guiTop + 18, 16, 52, solderer.getStoredEnergyQuanta(), solderer.getEnergyCapacityQuanta());
 
 		this.drawCustomInfoStat(x, y, guiLeft + 78, guiTop + 67, 8, 8, guiLeft + 78, guiTop + 67, this.getUpgradeInfo(solderer));
 
@@ -70,13 +70,13 @@ public class GUIMachineSolderingStation extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 
-		int p = (int) (solderer.power * 52 / Math.max(solderer.maxPower, 1));
+		int p = (int) (solderer.getStoredEnergyQuanta() * 52 / Math.max(solderer.maxPower, 1));
 		drawTexturedModalRect(guiLeft + 152, guiTop + 70 - p, 176, 52 - p, 16, p);
 
 		int i = solderer.progress * 33 / Math.max(solderer.processTime, 1);
 		drawTexturedModalRect(guiLeft + 72, guiTop + 28, 192, 0, i, 14);
 
-		if(solderer.power >= solderer.consumption) {
+		if(solderer.getStoredEnergyQuanta() >= solderer.consumption) {
 			drawTexturedModalRect(guiLeft + 156, guiTop + 4, 176, 52, 9, 12);
 		}
 

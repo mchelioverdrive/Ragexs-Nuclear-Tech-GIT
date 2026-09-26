@@ -81,50 +81,50 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	}
 
 	@Override
-	public void setPower(long i) {
+	public void setStoredEnergyQuanta(long i) {
 
 		if(!power)
 			return;
 
 		if(getTile() instanceof IEnergyReceiverMK2) {
-			((IEnergyReceiverMK2)getTile()).setPower(i);
+			((IEnergyReceiverMK2)getTile()).setStoredEnergyQuanta(i);
 		}
 	}
 
 	@Override
-	public long getPower() {
+	public long getStoredEnergyQuanta() {
 
 		if(!power)
 			return 0;
 
 		if(getTile() instanceof IEnergyReceiverMK2) {
-			return ((IEnergyReceiverMK2)getTile()).getPower();
+			return ((IEnergyReceiverMK2)getTile()).getStoredEnergyQuanta();
 		}
 
 		return 0;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 
 		if(!power)
 			return 0;
 
 		if(getTile() instanceof IEnergyReceiverMK2) {
-			return ((IEnergyReceiverMK2)getTile()).getMaxPower();
+			return ((IEnergyReceiverMK2)getTile()).getEnergyCapacityQuanta();
 		}
 
 		return 0;
 	}
 
 	@Override
-	public long transferPower(long power) {
+	public long receiveEnergyQuanta(long power) {
 
 		if(!this.power)
 			return power;
 
 		if(getTile() instanceof IEnergyReceiverMK2) {
-			long remainder = ((IEnergyReceiverMK2)getTile()).transferPower(power);
+			long remainder = ((IEnergyReceiverMK2)getTile()).receiveEnergyQuanta(power);
 			if(remainder != power) this.markPowerNetDirty();
 			return remainder;
 		}

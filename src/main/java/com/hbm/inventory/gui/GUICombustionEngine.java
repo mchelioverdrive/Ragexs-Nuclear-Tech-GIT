@@ -1,5 +1,7 @@
 package com.hbm.inventory.gui;
 
+import api.hbm.energymk2.EnergyUnits;
+
 import java.util.Locale;
 
 import org.lwjgl.opengl.GL11;
@@ -44,7 +46,7 @@ public class GUICombustionEngine extends GuiInfoContainer {
 		super.drawScreen(x, y, interp);
 		
 		if(!isMouseLocked) {
-			this.drawElectricityInfo(this, x, y, guiLeft + 143, guiTop + 17, 16, 52, engine.getPower(), engine.maxPower);
+			this.drawElectricityInfo(this, x, y, guiLeft + 143, guiTop + 17, 16, 52, engine.getStoredEnergyQuanta(), engine.maxPower);
 			engine.tank.renderTankInfo(this, x, y, guiLeft + 35, guiTop + 17, 16, 52);
 		}
 		
@@ -58,10 +60,10 @@ public class GUICombustionEngine extends GuiInfoContainer {
 				FT_Combustible trait = engine.tank.getTankType().getTrait(FT_Combustible.class);
 				int i = engine.slots[2].getItemDamage();
 				EnumPistonType piston = EnumUtil.grabEnumSafely(EnumPistonType.class, i);
-				power = setting * 0.2 * trait.getCombustionEnergy() / 1_000D * piston.eff[trait.getGrade().ordinal()];
+				power = setting * 0.2 * trait.getCombustionEnergyQuanta() / 1_000D * piston.eff[trait.getGrade().ordinal()];
 			}
 			String c = EnumChatFormatting.YELLOW + "";
-			drawCustomInfoStat(x, y, guiLeft + 79, guiTop + 50, 35, 14, x, y, c + String.format(Locale.US, "%,d", (int)(power)) + " HE/t", c + String.format(Locale.US, "%,d", (int)(power * 20)) + " HE/s");
+			drawCustomInfoStat(x, y, guiLeft + 79, guiTop + 50, 35, 14, x, y, c + "Output: " + EnergyUnits.formatQuantaPerTickAsWatts((long) power));
 		}
 		
 		drawCustomInfoStat(x, y, guiLeft + 79, guiTop + 13, 35, 15, x, y, "Ignition");
@@ -131,7 +133,7 @@ public class GUICombustionEngine extends GuiInfoContainer {
 			drawTexturedModalRect(guiLeft + 79, guiTop + 13, 192, 0, 35, 15);
 		}
 		
-		int i = (int) (engine.power * 53 / engine.maxPower);
+		int i = (int) (engine.getStoredEnergyQuanta() * 53 / engine.maxPower);
 		drawTexturedModalRect(guiLeft + 143, guiTop + 69 - i, 176, 52 - i, 16, i);
 
 		engine.tank.renderTank(guiLeft + 35, guiTop + 69, this.zLevel, 16, 52);

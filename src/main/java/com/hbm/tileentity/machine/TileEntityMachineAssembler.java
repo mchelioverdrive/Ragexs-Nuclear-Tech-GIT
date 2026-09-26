@@ -178,7 +178,7 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 		this.runtimeStateInitialized = true;
 
 		long now = worldObj.getTotalWorldTime();
-		if((causes & MachineDirtyCause.LIFECYCLE) != 0 && this.nextRuntimeTick == now + 1L && this.progress[0] > 0 && this.cachedEligible && this.power >= this.consumption) {
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0 && this.nextRuntimeTick == now + 1L && this.progress[0] > 0 && this.cachedEligible && this.energyQuanta >= this.consumption) {
 			this.scheduleMachineTransition(this.nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_ASSEMBLER);
 		} else {
 			this.runAccountingTick(now);
@@ -214,7 +214,7 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 			this.markDirty();
 			this.markNetworkDirty();
 		}
-		if(templateChanged || recipeChanged || eligibilityChanged || upgradeChanged || this.power != this.observedPower || this.hasBatteryWork() && this.nextRuntimeTick < 0L) {
+		if(templateChanged || recipeChanged || eligibilityChanged || upgradeChanged || this.energyQuanta != this.observedPower || this.hasBatteryWork() && this.nextRuntimeTick < 0L) {
 			this.cancelAccountingTransition();
 			this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | (upgradeChanged ? MachineDirtyCause.CONFIGURATION : 0));
 		}
@@ -228,15 +228,15 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 			this.needsInputTransfer = !this.hasAssemblerInputs(0);
 			this.cachedEligible = !this.needsInputTransfer && this.hasAssemblerOutputSpace(0);
 		}
-		long oldPower = this.power;
+		long oldPower = this.energyQuanta;
 		int oldProgress = this.progress[0];
 		int oldMaxProgress = this.maxProgress[0];
 		boolean oldProgressing = this.isProgressing;
 		boolean completed = false;
 
 		this.isProgressing = false;
-		this.setPowerInternal(Library.chargeTEFromItems(slots, getPowerSlot(), power, getMaxPower()));
-		if(this.cachedEligible && this.power >= this.consumption) {
+		this.setPowerInternal(Library.chargeTEFromItems(slots, getPowerSlot(), energyQuanta, getEnergyCapacityQuanta()));
+		if(this.cachedEligible && this.energyQuanta >= this.consumption) {
 			int duration = this.getProcessTime(0) * this.speed / 100;
 			if(this.progress[0] + 1 >= duration && !this.hasValidProcessInputs(0)) {
 				this.cachedEligible = false;
@@ -260,13 +260,13 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 			this.progress[0] = 0;
 		}
 
-		this.observedPower = this.power;
-		if(oldPower != this.power || oldProgress != this.progress[0] || oldMaxProgress != this.maxProgress[0] || oldProgressing != this.isProgressing || completed) {
+		this.observedPower = this.energyQuanta;
+		if(oldPower != this.energyQuanta || oldProgress != this.progress[0] || oldMaxProgress != this.maxProgress[0] || oldProgressing != this.isProgressing || completed) {
 			this.markDirty();
 			this.markNetworkDirty();
 			this.networkPackNTIfDirty(150);
 		}
-		if(this.isProgressing || this.hasBatteryWork() || this.cachedEligible && this.power >= this.consumption) {
+		if(this.isProgressing || this.hasBatteryWork() || this.cachedEligible && this.energyQuanta >= this.consumption) {
 			this.nextRuntimeTick = now + 1L;
 			this.scheduleMachineTransition(this.nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_ASSEMBLER);
 		} else {
@@ -288,11 +288,11 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 	}
 
 	private boolean hasBatteryWork() {
-		if(this.power >= this.getMaxPower() || slots[0] == null) return false;
+		if(this.energyQuanta >= this.getEnergyCapacityQuanta() || slots[0] == null) return false;
 		if(slots[0].getItem() == ModItems.battery_creative || slots[0].getItem() == ModItems.fusion_core_infinite) return true;
 		if(!(slots[0].getItem() instanceof IBatteryItem)) return false;
 		IBatteryItem battery = (IBatteryItem) slots[0].getItem();
-		return battery.getDischargeRate() > 0 && battery.getCharge(slots[0]) > 0;
+		return battery.getMaxOutputQuantaPerTick() > 0 && battery.getStoredEnergyQuanta(slots[0]) > 0;
 	}
 
 	private boolean observeTemplate() {
@@ -311,7 +311,7 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 	private void setPowerInternal(long value) {
 		this.runtimeEnergyMutation = true;
 		try {
-			this.setPower(value);
+			this.setStoredEnergyQuanta(value);
 		} finally {
 			this.runtimeEnergyMutation = false;
 		}
@@ -325,7 +325,7 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		for(int i = 0; i < getRecipeCount(); i++) {
 			buf.writeInt(progress[i]);
 			buf.writeInt(maxProgress[i]);
@@ -338,7 +338,7 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		for(int i = 0; i < getRecipeCount(); i++) {
 			progress[i] = buf.readInt();
 			maxProgress[i] = buf.readInt();
@@ -426,9 +426,9 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		super.setPower(power);
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		super.setStoredEnergyQuanta(energyQuanta);
 		this.markNetworkDirty();
 		if(!this.runtimeEnergyMutation) {
 			this.cancelAccountingTransition();
@@ -483,7 +483,7 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return 100_000;
 	}
 	

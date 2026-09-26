@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.entity.item.EntityMovingItem;
@@ -20,7 +21,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 public class TileEntityConveyorPress extends TileEntityMachineBase implements IEnergyReceiverMK2 {
 
 	public int usage = 100;
-	public long power = 0;
+	public long energyQuanta = 0;
 	public final static long maxPower = 50000;
 
 	public double speed = 0.125;
@@ -56,7 +57,7 @@ public class TileEntityConveyorPress extends TileEntityMachineBase implements IE
 					
 					if(this.canRetract()) {
 						this.press -= speed;
-						this.setPower(this.power - this.usage);
+						this.setStoredEnergyQuanta(this.energyQuanta - this.usage);
 						
 						if(press <= 0) {
 							press = 0;
@@ -69,7 +70,7 @@ public class TileEntityConveyorPress extends TileEntityMachineBase implements IE
 					
 					if(this.canExtend()) {
 						this.press += speed;
-						this.setPower(this.power - this.usage);
+						this.setStoredEnergyQuanta(this.energyQuanta - this.usage);
 						
 						if(press >= 1) {
 							press = 1;
@@ -85,7 +86,7 @@ public class TileEntityConveyorPress extends TileEntityMachineBase implements IE
 			}
 			
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setDouble("press", press);
 			if(slots[0] != null) {
 				NBTTagCompound stack = new NBTTagCompound();
@@ -123,7 +124,7 @@ public class TileEntityConveyorPress extends TileEntityMachineBase implements IE
 	
 	public boolean canExtend() {
 		
-		if(this.power < usage) return false;
+		if(this.energyQuanta < usage) return false;
 		if(slots[0] == null) return false;
 		
 		List<EntityMovingItem> items = worldObj.getEntitiesWithinAABB(EntityMovingItem.class, AxisAlignedBB.getBoundingBox(xCoord, yCoord + 1, zCoord, xCoord + 1, yCoord + 1.5, zCoord + 1));
@@ -174,14 +175,14 @@ public class TileEntityConveyorPress extends TileEntityMachineBase implements IE
 	}
 	
 	public boolean canRetract() {
-		if(this.power < usage) return false;
+		if(this.energyQuanta < usage) return false;
 		return true;
 	}
 	
 	@Override
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.syncPress = nbt.getInteger("press");
 		
 		if(nbt.hasKey("stack")) {
@@ -210,19 +211,19 @@ public class TileEntityConveyorPress extends TileEntityMachineBase implements IE
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
@@ -234,14 +235,14 @@ public class TileEntityConveyorPress extends TileEntityMachineBase implements IE
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.press = nbt.getDouble("press");
 	}
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setDouble("press", press);
 	}
 	

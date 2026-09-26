@@ -19,12 +19,12 @@ public class TileEntityMachineFENSU extends TileEntityMachineBattery {
 	
 	public static final long maxTransfer = 10_000_000_000_000_000L;
 
-	@Override public long getProviderSpeed() {
+	@Override public long getMaxOutputQuantaPerTick() {
 		int mode = this.getRelevantMode(true);
 		return mode == mode_output || mode == mode_buffer ? maxTransfer : 0;
 	}
 	
-	@Override public long getReceiverSpeed() {
+	@Override public long getMaxInputQuantaPerTick() {
 		int mode = this.getRelevantMode(true);
 		return mode == mode_input || mode == mode_buffer ? maxTransfer : 0;
 	}
@@ -48,9 +48,9 @@ public class TileEntityMachineFENSU extends TileEntityMachineBattery {
 				}
 			}
 			
-			long prevPower = this.power;
+			long prevPower = this.energyQuanta;
 			
-			this.setPower(Library.chargeItemsFromTE(slots, 1, power, getMaxPower()));
+			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 1, energyQuanta, getEnergyCapacityQuanta()));
 			
 			if(mode == mode_output || mode == mode_buffer) {
 				this.tryProvide(worldObj, xCoord, yCoord - 1, zCoord, ForgeDirection.DOWN);
@@ -63,9 +63,9 @@ public class TileEntityMachineFENSU extends TileEntityMachineBattery {
 			
 			this.updatePersistentReceiver(mode == mode_input || mode == mode_buffer);
 			
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, getMaxPower()));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, getEnergyCapacityQuanta()));
 
-			long avg = (power / 2 + prevPower / 2);
+			long avg = (energyQuanta / 2 + prevPower / 2);
 			this.delta = avg - this.log[0];
 			
 			for(int i = 1; i < this.log.length; i++) {
@@ -73,7 +73,7 @@ public class TileEntityMachineFENSU extends TileEntityMachineBattery {
 			}
 			
 			this.log[19] = avg;
-			if(this.power != prevPower) this.markPowerNetworkDirty();
+			if(this.energyQuanta != prevPower) this.markPowerNetworkDirty();
 			
 			this.networkPackNT(20);
 		}
@@ -96,17 +96,17 @@ public class TileEntityMachineFENSU extends TileEntityMachineBattery {
 
 	@Override
 	public long getPowerRemainingScaled(long i) {
-		double powerScaled = (double)power / (double)getMaxPower();
+		double powerScaled = (double)energyQuanta / (double)getEnergyCapacityQuanta();
 		return (long)(i * powerScaled);
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return Long.MAX_VALUE;
 	}
 	
 	public float getSpeed() {
-		return (float) Math.pow(Math.log(power * 0.75 + 1) * 0.05F, 5);
+		return (float) Math.pow(Math.log(energyQuanta * 0.75 + 1) * 0.05F, 5);
 	}
 	
 	@Override
@@ -121,27 +121,27 @@ public class TileEntityMachineFENSU extends TileEntityMachineBattery {
 	}
 	
 	@Override
-	public long transferPower(long power) {
+	public long receiveEnergyQuanta(long energyQuanta) {
 		
 		long overshoot = 0;
 		
 		// if power exceeds our transfer limit, truncate
-		if(power > maxTransfer) {
-			overshoot += power - maxTransfer;
-			power = maxTransfer;
+		if(energyQuanta > maxTransfer) {
+			overshoot += energyQuanta - maxTransfer;
+			energyQuanta = maxTransfer;
 		}
 		
 		// this check is in essence the same as the default implementation, but re-arranged to never overflow the int64 range
 		// if the remaining power exceeds the power cap, truncate again
-		long freespace = this.getMaxPower() - this.getPower();
+		long freespace = this.getEnergyCapacityQuanta() - this.getStoredEnergyQuanta();
 		
-		if(freespace < power) {
-			overshoot += power - freespace;
-			power = freespace;
+		if(freespace < energyQuanta) {
+			overshoot += energyQuanta - freespace;
+			energyQuanta = freespace;
 		}
 		
 		// what remains is sure to not exceed the transfer limit and the power cap (and therefore the int64 range)
-		this.setPower(this.getPower() + power);
+		this.setStoredEnergyQuanta(this.getStoredEnergyQuanta() + energyQuanta);
 		
 		return overshoot;
 	}

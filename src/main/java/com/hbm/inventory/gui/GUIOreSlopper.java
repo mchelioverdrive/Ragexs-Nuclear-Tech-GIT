@@ -30,7 +30,7 @@ public class GUIOreSlopper extends GuiInfoContainer {
 
 		slopper.tanks[0].renderTankInfo(this, mouseX, mouseY, guiLeft + 26, guiTop + 18, 34, 52);
 		slopper.tanks[1].renderTankInfo(this, mouseX, mouseY, guiLeft + 116, guiTop + 18, 16, 52);
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 18, 16, 52, slopper.power, slopper.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 18, 16, 52, slopper.getStoredEnergyQuanta(), slopper.maxPower);
 	}
 
 	@Override
@@ -50,10 +50,10 @@ public class GUIOreSlopper extends GuiInfoContainer {
 		int i = (int) (slopper.progress * 35);
 		drawTexturedModalRect(guiLeft + 62, guiTop + 52 - i, 176, 34 - i, 34, i);
 		
-		int j = (int) (slopper.power * 52 / slopper.maxPower);
+		int j = (int) (slopper.getStoredEnergyQuanta() * 52 / slopper.maxPower);
 		drawTexturedModalRect(guiLeft + 8, guiTop + 70 - j, 176, 86 - j, 16, j);
 		
-		if(slopper.power >= slopper.consumption)
+		if(slopper.getStoredEnergyQuanta() >= slopper.consumption)
 			drawTexturedModalRect(guiLeft + 12, guiTop + 4, 202, 34, 9, 12);
 
 		slopper.tanks[0].renderTank(guiLeft + 26, guiTop + 70, this.zLevel, 16, 52);

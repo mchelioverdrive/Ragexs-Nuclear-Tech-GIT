@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
@@ -35,7 +36,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 10_000;
 	public int progress;
 	public int processTime;
@@ -67,7 +68,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 		
 		if(!worldObj.isRemote) {
 			
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 			tanks[2].setType(2, slots);
 			
 			this.upgradeManager.checkSlots(slots, 3, 4);
@@ -91,7 +92,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 			
 			if(this.wasOn) {
 				this.progress++;
-				this.setPower(this.power - this.getConsumption());
+				this.setStoredEnergyQuanta(this.energyQuanta - this.getConsumption());
 				
 				this.processTime -= this.processTime * speedLevel / 4;
 				this.processTime /= (overLevel + 1);
@@ -112,7 +113,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 			}
 			
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", power);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setInteger("processTime", processTime);
 			data.setInteger("progress", progress);
 			data.setInteger("recipe", recipeIndex);
@@ -140,7 +141,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		buf.writeInt(processTime);
 		buf.writeInt(progress);
 		buf.writeInt(recipeIndex);
@@ -152,7 +153,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		processTime = buf.readInt();
 		progress = buf.readInt();
 		recipeIndex = buf.readInt();
@@ -165,7 +166,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
 		
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.processTime = nbt.getInteger("processTime");
 		this.progress = nbt.getInteger("progress");
 		this.recipeIndex = nbt.getInteger("recipe");
@@ -197,7 +198,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 		if(recipe.input2 != null && tanks[1].getFill() < recipe.input2.fill) return false;
 		
 		/* simplest check would usually go first, but fluid checks also do the setup and we want that to happen even without power */
-		if(this.power < getConsumption()) return false;
+		if(this.energyQuanta < getConsumption()) return false;
 		
 		if(recipe.output + tanks[2].getFill() > tanks[2].getMaxFill()) return false;
 		
@@ -258,7 +259,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.power = nbt.getLong("power");
+		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.progress = nbt.getInteger("progress");
 		this.processTime = nbt.getInteger("processTime");
 		this.recipeIndex = nbt.getInteger("recipe");
@@ -269,7 +270,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("progress", progress);
 		nbt.setInteger("processTime", processTime);
 		nbt.setInteger("recipe", recipeIndex);
@@ -277,19 +278,19 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 

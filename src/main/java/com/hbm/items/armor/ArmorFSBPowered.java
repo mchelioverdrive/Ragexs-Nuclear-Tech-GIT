@@ -1,9 +1,9 @@
 package com.hbm.items.armor;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.List;
 
 import com.hbm.handler.ArmorModHandler;
-import com.hbm.util.BobMathUtil;
 
 import api.hbm.energymk2.IBatteryItem;
 import cpw.mods.fml.relauncher.Side;
@@ -31,63 +31,63 @@ public class ArmorFSBPowered extends ArmorFSB implements IBatteryItem {
 
 	@SideOnly(Side.CLIENT)
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
-		list.add("Charge: " + BobMathUtil.getShortNumber(getCharge(stack)) + " / " + BobMathUtil.getShortNumber(getMaxCharge(stack)));
+		list.add("Stored Energy: " + EnergyUnits.formatJoules(getStoredEnergyQuanta(stack)) + " / " + EnergyUnits.formatJoules(getEnergyCapacityQuanta(stack)));
 		super.addInformation(stack, player, list, ext);
 	}
 
 	@Override
 	public boolean isArmorEnabled(ItemStack stack) {
-		return getCharge(stack) > 0;
+		return getStoredEnergyQuanta(stack) > 0;
 	}
 
 	@Override
-	public void chargeBattery(ItemStack stack, long i) {
+	public void receiveEnergyQuanta(ItemStack stack, long i) {
 		if(stack.getItem() instanceof ArmorFSBPowered) {
 			if(stack.hasTagCompound()) {
-				stack.stackTagCompound.setLong("charge", stack.stackTagCompound.getLong("charge") + i);
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, EnergyUnits.readEnergyQuanta(stack.stackTagCompound, "charge") + i);
 			} else {
 				stack.stackTagCompound = new NBTTagCompound();
-				stack.stackTagCompound.setLong("charge", i);
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, i);
 			}
 		}
 	}
 
 	@Override
-	public void setCharge(ItemStack stack, long i) {
+	public void setStoredEnergyQuanta(ItemStack stack, long i) {
 		if(stack.getItem() instanceof ArmorFSBPowered) {
 			if(stack.hasTagCompound()) {
-				stack.stackTagCompound.setLong("charge", i);
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, i);
 			} else {
 				stack.stackTagCompound = new NBTTagCompound();
-				stack.stackTagCompound.setLong("charge", i);
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, i);
 			}
 		}
 	}
 
 	@Override
-	public void dischargeBattery(ItemStack stack, long i) {
+	public void extractEnergyQuanta(ItemStack stack, long i) {
 		if(stack.getItem() instanceof ArmorFSBPowered) {
 			if(stack.hasTagCompound()) {
-				stack.stackTagCompound.setLong("charge", stack.stackTagCompound.getLong("charge") - i);
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, EnergyUnits.readEnergyQuanta(stack.stackTagCompound, "charge") - i);
 			} else {
 				stack.stackTagCompound = new NBTTagCompound();
-				stack.stackTagCompound.setLong("charge", getMaxCharge(stack) - i);
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, getEnergyCapacityQuanta(stack) - i);
 			}
 
-			if(stack.stackTagCompound.getLong("charge") < 0)
-				stack.stackTagCompound.setLong("charge", 0);
+			if(EnergyUnits.readEnergyQuanta(stack.stackTagCompound, "charge") < 0)
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, 0);
 		}
 	}
 
 	@Override
-	public long getCharge(ItemStack stack) {
+	public long getStoredEnergyQuanta(ItemStack stack) {
 		if(stack.getItem() instanceof ArmorFSBPowered) {
 			if(stack.hasTagCompound()) {
-				return Math.min(stack.stackTagCompound.getLong("charge"), getMaxCharge(stack));
+				return Math.min(EnergyUnits.readEnergyQuanta(stack.stackTagCompound, "charge"), getEnergyCapacityQuanta(stack));
 			} else {
 				stack.stackTagCompound = new NBTTagCompound();
-				stack.stackTagCompound.setLong("charge", getMaxCharge(stack));
-				return stack.stackTagCompound.getLong("charge");
+				EnergyUnits.writeEnergyQuanta(stack.stackTagCompound, getEnergyCapacityQuanta(stack));
+				return EnergyUnits.readEnergyQuanta(stack.stackTagCompound, "charge");
 			}
 		}
 
@@ -96,17 +96,17 @@ public class ArmorFSBPowered extends ArmorFSB implements IBatteryItem {
 
 	@Override
 	public boolean showDurabilityBar(ItemStack stack) {
-		return getCharge(stack) < getMaxCharge(stack);
+		return getStoredEnergyQuanta(stack) < getEnergyCapacityQuanta(stack);
 	}
 
 	@Override
 	public double getDurabilityForDisplay(ItemStack stack) {
 
-		return 1 - (double) getCharge(stack) / (double) getMaxCharge(stack);
+		return 1 - (double) getStoredEnergyQuanta(stack) / (double) getEnergyCapacityQuanta(stack);
 	}
 
 	@Override
-	public long getMaxCharge(ItemStack stack) {
+	public long getEnergyCapacityQuanta(ItemStack stack) {
 		if(ArmorModHandler.hasMods(stack)) {
 			ItemStack mod = ArmorModHandler.pryMod(stack, ArmorModHandler.battery);
 			if(mod != null && mod.getItem() instanceof ItemModBattery) {
@@ -117,18 +117,18 @@ public class ArmorFSBPowered extends ArmorFSB implements IBatteryItem {
 	}
 
 	@Override
-	public long getChargeRate() {
+	public long getMaxInputQuantaPerTick() {
 		return chargeRate;
 	}
 
 	@Override
-	public long getDischargeRate() {
+	public long getMaxOutputQuantaPerTick() {
 		return 0;
 	}
 
 	@Override
 	public void setDamage(ItemStack stack, int damage) {
-		this.dischargeBattery(stack, damage * consumption);
+		this.extractEnergyQuanta(stack, damage * consumption);
 	}
 
 	public void onArmorTick(World world, EntityPlayer player, ItemStack itemStack) {
@@ -136,7 +136,7 @@ public class ArmorFSBPowered extends ArmorFSB implements IBatteryItem {
 		super.onArmorTick(world, player, itemStack);
 
 		if(this.drain > 0 && ArmorFSB.hasFSBArmor(player) && !player.capabilities.isCreativeMode) {
-			this.dischargeBattery(itemStack, drain);
+			this.extractEnergyQuanta(itemStack, drain);
 		}
 	}
 }

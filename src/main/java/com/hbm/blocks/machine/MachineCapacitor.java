@@ -1,5 +1,6 @@
 package com.hbm.blocks.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,12 +51,12 @@ public class MachineCapacitor extends BlockContainer implements ILookOverlay, IP
 	@SideOnly(Side.CLIENT) public IIcon iconInnerTop;
 	@SideOnly(Side.CLIENT) public IIcon iconInnerSide;
 	
-	protected long power;
+	protected long capacityQuanta;
 	String name;
 
-	public MachineCapacitor(Material mat, long power, String name) {
+	public MachineCapacitor(Material mat, long capacityQuanta, String name) {
 		super(mat);
-		this.power = power;
+		this.capacityQuanta = capacityQuanta;
 		this.name = name;
 	}
 	
@@ -83,7 +84,7 @@ public class MachineCapacitor extends BlockContainer implements ILookOverlay, IP
 
 	@Override
 	public TileEntity createNewTileEntity(World world, int meta) {
-		return new TileEntityCapacitor(this.power);
+		return new TileEntityCapacitor(this.capacityQuanta);
 	}
 
 	@Override
@@ -96,24 +97,24 @@ public class MachineCapacitor extends BlockContainer implements ILookOverlay, IP
 		
 		TileEntityCapacitor battery = (TileEntityCapacitor) te;
 		List<String> text = new ArrayList();
-		text.add(BobMathUtil.getShortNumber(battery.getPower()) + " / " + BobMathUtil.getShortNumber(battery.getMaxPower()) + "HE");
+		text.add(EnergyUnits.formatJoules(battery.getStoredEnergyQuanta()) + " / " + EnergyUnits.formatJoules(battery.getEnergyCapacityQuanta()));
 		
-		double percent = (double) battery.getPower() / (double) battery.getMaxPower();
+		double percent = (double) battery.getStoredEnergyQuanta() / (double) battery.getEnergyCapacityQuanta();
 		int charge = (int) Math.floor(percent * 10_000D);
 		int color = ((int) (0xFF - 0xFF * percent)) << 16 | ((int)(0xFF * percent) << 8);
 		text.add("&[" + color + "&]" + (charge / 100D) + "%");
-		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + "+" + BobMathUtil.getShortNumber(battery.powerReceived) + "HE/t");
-		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + "-" + BobMathUtil.getShortNumber(battery.powerSent) + "HE/t");
+		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + "+" + EnergyUnits.formatQuantaPerTickAsWatts(battery.receivedQuantaThisTick));
+		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + "-" + EnergyUnits.formatQuantaPerTickAsWatts(battery.sentQuantaThisTick));
 		
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 
 	@Override
 	public void addInformation(ItemStack stack, NBTTagCompound persistentTag, EntityPlayer player, List list, boolean ext) {
-		list.add(EnumChatFormatting.GOLD + "Stores up to "+ BobMathUtil.getShortNumber(this.power) + "HE");
-		list.add(EnumChatFormatting.GOLD + "Charge speed: "+ BobMathUtil.getShortNumber(this.power / 200) + "HE");
-		list.add(EnumChatFormatting.GOLD + "Discharge speed: "+ BobMathUtil.getShortNumber(this.power / 600) + "HE");
-		list.add(EnumChatFormatting.YELLOW + "" + BobMathUtil.getShortNumber(persistentTag.getLong("power")) + "/" + BobMathUtil.getShortNumber(persistentTag.getLong("maxPower")) + "HE");
+		list.add(EnumChatFormatting.GOLD + "Energy Capacity: " + EnergyUnits.formatJoules(this.capacityQuanta));
+		list.add(EnumChatFormatting.GOLD + "Maximum Input: " + EnergyUnits.formatQuantaPerTickAsWatts(this.capacityQuanta / 200));
+		list.add(EnumChatFormatting.GOLD + "Maximum Output: " + EnergyUnits.formatQuantaPerTickAsWatts(this.capacityQuanta / 600));
+		list.add(EnumChatFormatting.YELLOW + EnergyUnits.formatJoules(EnergyUnits.readEnergyQuanta(persistentTag, "power")) + " / " + EnergyUnits.formatJoules(EnergyUnits.readCapacityQuanta(persistentTag, "maxPower")));
 	}
 
 	@Override
@@ -163,10 +164,10 @@ public class MachineCapacitor extends BlockContainer implements ILookOverlay, IP
 
 	public static class TileEntityCapacitor extends TileEntityLoadedBase implements IEnergyProviderMK2, IEnergyReceiverMK2, IBufPacketReceiver, IPersistentNBT {
 		
-		public long power;
+		public long energyQuanta;
 		protected long maxPower;
-		public long powerReceived;
-		public long powerSent;
+		public long receivedQuantaThisTick;
+		public long sentQuantaThisTick;
 		private int connectionMetadata = Integer.MIN_VALUE;
 		private int providerX;
 		private int providerY;
@@ -228,63 +229,63 @@ public class MachineCapacitor extends BlockContainer implements ILookOverlay, IP
 
 				PacketDispatcher.wrapper.sendToAllAround(new BufPacket(xCoord, yCoord, zCoord, this), new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 15));
 				
-				this.powerSent = 0;
-				this.powerReceived = 0;
+				this.sentQuantaThisTick = 0;
+				this.receivedQuantaThisTick = 0;
 			}
 		}
 
 		@Override
 		public void serialize(ByteBuf buf) {
-			buf.writeLong(power);
+			buf.writeLong(energyQuanta);
 			buf.writeLong(maxPower);
-			buf.writeLong(powerReceived);
-			buf.writeLong(powerSent);
+			buf.writeLong(receivedQuantaThisTick);
+			buf.writeLong(sentQuantaThisTick);
 		}
 		
 		@Override
 		public void deserialize(ByteBuf buf) {
-			power = buf.readLong();
+			energyQuanta = buf.readLong();
 			maxPower = buf.readLong();
-			powerReceived = buf.readLong();
-			powerSent = buf.readLong();
+			receivedQuantaThisTick = buf.readLong();
+			sentQuantaThisTick = buf.readLong();
 		}
 
 		@Override
-		public long transferPower(long power) {
-			if(power + this.getPower() <= this.getMaxPower()) {
-				this.setPower(power + this.getPower());
-				this.powerReceived += power;
+		public long receiveEnergyQuanta(long energyQuanta) {
+			if(energyQuanta <= this.getEnergyCapacityQuanta() - this.getStoredEnergyQuanta()) {
+				this.setStoredEnergyQuanta(energyQuanta + this.getStoredEnergyQuanta());
+				this.receivedQuantaThisTick += energyQuanta;
 				return 0;
 			}
-			long capacity = this.getMaxPower() - this.getPower();
-			long overshoot = power - capacity;
-			this.powerReceived += (this.getMaxPower() - this.getPower());
-			this.setPower(this.getMaxPower());
+			long capacity = this.getEnergyCapacityQuanta() - this.getStoredEnergyQuanta();
+			long overshoot = energyQuanta - capacity;
+			this.receivedQuantaThisTick += (this.getEnergyCapacityQuanta() - this.getStoredEnergyQuanta());
+			this.setStoredEnergyQuanta(this.getEnergyCapacityQuanta());
 			return overshoot;
 		}
 		
 		@Override
-		public void usePower(long power) {
-			this.powerSent += Math.min(this.getPower(), power);
-			this.setPower(this.getPower() - power);
+		public void extractEnergyQuanta(long energyQuanta) {
+			this.sentQuantaThisTick += Math.min(this.getStoredEnergyQuanta(), energyQuanta);
+			this.setStoredEnergyQuanta(this.getStoredEnergyQuanta() - energyQuanta);
 		}
 
 		@Override
-		public long getPower() {
-			return power;
+		public long getStoredEnergyQuanta() {
+			return energyQuanta;
 		}
 
 		@Override
-		public long getMaxPower() {
+		public long getEnergyCapacityQuanta() {
 			return maxPower;
 		}
 
-		@Override public long getProviderSpeed() {
-			return this.getMaxPower() / 300;
+		@Override public long getMaxOutputQuantaPerTick() {
+			return this.getEnergyCapacityQuanta() / 300;
 		}
 		
-		@Override public long getReceiverSpeed() {
-			return this.getMaxPower() / 100;
+		@Override public long getMaxInputQuantaPerTick() {
+			return this.getEnergyCapacityQuanta() / 100;
 		}
 
 		@Override
@@ -293,9 +294,9 @@ public class MachineCapacitor extends BlockContainer implements ILookOverlay, IP
 		}
 
 		@Override
-		public void setPower(long power) {
-			if(this.power == power) return;
-			this.power = power;
+		public void setStoredEnergyQuanta(long energyQuanta) {
+			if(this.energyQuanta == energyQuanta) return;
+			this.energyQuanta = energyQuanta;
 			this.markPowerNetDirty();
 		}
 		
@@ -307,30 +308,30 @@ public class MachineCapacitor extends BlockContainer implements ILookOverlay, IP
 		@Override
 		public void writeNBT(NBTTagCompound nbt) {
 			NBTTagCompound data = new NBTTagCompound();
-			data.setLong("power", power);
-			data.setLong("maxPower", maxPower);
+			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+			EnergyUnits.writeCapacityQuanta(data, maxPower);
 			nbt.setTag(NBT_PERSISTENT_KEY, data);
 		}
 
 		@Override
 		public void readNBT(NBTTagCompound nbt) {
 			NBTTagCompound data = nbt.getCompoundTag(NBT_PERSISTENT_KEY);
-			this.power = data.getLong("power");
-			this.maxPower = data.getLong("maxPower");
+			this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
+			this.maxPower = EnergyUnits.readCapacityQuanta(data, "maxPower");
 		}
 		
 		@Override
 		public void readFromNBT(NBTTagCompound nbt) {
 			super.readFromNBT(nbt);
-			this.power = nbt.getLong("power");
-			this.maxPower = nbt.getLong("maxPower");
+			this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
+			this.maxPower = EnergyUnits.readCapacityQuanta(nbt, "maxPower");
 		}
 		
 		@Override
 		public void writeToNBT(NBTTagCompound nbt) {
 			super.writeToNBT(nbt);
-			nbt.setLong("power", power);
-			nbt.setLong("maxPower", maxPower);
+			EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
+			EnergyUnits.writeCapacityQuanta(nbt, maxPower);
 		}
 	}
 }

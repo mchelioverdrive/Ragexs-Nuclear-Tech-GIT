@@ -1,5 +1,6 @@
 package com.hbm.blocks.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -80,7 +81,7 @@ public class MachineXenonThruster extends BlockDummyable implements ILookOverlay
 		if(!thruster.isFacingPrograde()) {
 			text.add("&[" + (BobMathUtil.getBlink() ? 0xff0000 : 0xffff00) + "&]! ! ! " + I18nUtil.resolveKey("atmosphere.engineFacing") + " ! ! !");
 		} else {
-			text.add((thruster.power == 0 ? EnumChatFormatting.RED : EnumChatFormatting.GREEN) + BobMathUtil.getShortNumber(thruster.power) + "HE");
+			text.add((thruster.getStoredEnergyQuanta() == 0 ? EnumChatFormatting.RED : EnumChatFormatting.GREEN) + EnergyUnits.formatJoules(thruster.getStoredEnergyQuanta()));
 			for(int i = 0; i < thruster.tanks.length; i++) {
 				FluidTank tank = thruster.tanks[i];
 				text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + tank.getTankType().getLocalizedName() + ": " + tank.getFill() + "/" + tank.getMaxFill() + "mB");

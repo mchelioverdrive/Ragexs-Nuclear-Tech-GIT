@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.inventory.container.ContainerMachineGasCent;
 import com.hbm.inventory.fluid.FluidType;
@@ -39,7 +40,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 //epic!
 public class TileEntityMachineGasCent extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IInfoProviderEC {
 	
-	public long power;
+	public long energyQuanta;
 	public int progress;
 	public boolean isProgressing;
 	public static final int maxPower = 100000;
@@ -77,7 +78,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		progress = nbt.getShort("progress");
 		tank.readFromNBT(nbt, "tank");
 		inputTank.readFromNBT(nbt, "inputTank");
@@ -87,7 +88,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setShort("progress", (short) progress);
 		tank.writeToNBT(nbt, "tank");
 		inputTank.writeToNBT(nbt, "inputTank");
@@ -99,11 +100,11 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 	}
 	
 	public long getPowerRemainingScaled(int i) {
-		return (power * i) / maxPower;
+		return (energyQuanta * i) / maxPower;
 	}
 	
 	private boolean canEnrich() {
-		if(power > 0 && this.inputTank.getFill() >= inputTank.getTankType().getFluidConsumed() && this.outputTank.getFill() + this.inputTank.getTankType().getFluidProduced() <= outputTank.getMaxFill()) {
+		if(energyQuanta > 0 && this.inputTank.getFill() >= inputTank.getTankType().getFluidConsumed() && this.outputTank.getFill() + this.inputTank.getTankType().getFluidProduced() <= outputTank.getMaxFill()) {
 			
 			ItemStack[] list = inputTank.getTankType().getOutput();
 			
@@ -176,7 +177,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 			
 			updateConnections();
 
-			this.setPower(Library.chargeTEFromItems(slots, 4, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 4, energyQuanta, maxPower));
 			setTankType(5);
 			
 			if(GasCentrifugeRecipes.fluidConversions.containsValue(inputTank.getTankType())) {
@@ -189,12 +190,12 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 				this.progress++;
 				
 				if(slots[6] != null && slots[6].getItem() == ModItems.upgrade_gc_speed)
-					this.setPower(this.power - 300);
+					this.setStoredEnergyQuanta(this.energyQuanta - 300);
 				else
-					this.setPower(this.power - 200);
+					this.setStoredEnergyQuanta(this.energyQuanta - 200);
 				
-				if(this.power < 0) {
-					this.setPower(0);
+				if(this.energyQuanta < 0) {
+					this.setStoredEnergyQuanta(0);
 					this.progress = 0;
 				}
 				
@@ -233,7 +234,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		buf.writeInt(progress);
 		buf.writeBoolean(isProgressing);
 		//pseudofluids can be refactored another day
@@ -248,7 +249,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		progress = buf.readInt();
 		isProgressing = buf.readBoolean();
 		
@@ -281,20 +282,20 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 	}
 
 	@Override
-	public void setPower(long i) {
-		if(this.power == i) return;
-		this.power = i;
+	public void setStoredEnergyQuanta(long i) {
+		if(this.energyQuanta == i) return;
+		this.energyQuanta = i;
 		this.markPowerNetDirty();
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 		
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 	

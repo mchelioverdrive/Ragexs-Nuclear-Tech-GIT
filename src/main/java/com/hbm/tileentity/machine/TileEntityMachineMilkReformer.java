@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine;
 
+import api.hbm.energymk2.EnergyUnits;
 import com.hbm.inventory.container.ContainerMachineMilkReformer;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
@@ -27,7 +28,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 public class TileEntityMachineMilkReformer extends TileEntityMachineBase implements IGUIProvider, IFluidStandardTransceiver, IEnergyReceiverMK2 {
 
 	public FluidTank tanks[];
-	public long power;
+	public long energyQuanta;
 	public static final long maxPower = 100_000_000;
 	
 	public TileEntityMachineMilkReformer() {
@@ -51,19 +52,19 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 	}
 
 	@Override
-	public long getPower() {
-		return power;
+	public long getStoredEnergyQuanta() {
+		return energyQuanta;
 	}
 
 	@Override
-	public long getMaxPower() {
+	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
 
 	@Override
-	public void setPower(long power) {
-		if(this.power == power) return;
-		this.power = power;
+	public void setStoredEnergyQuanta(long energyQuanta) {
+		if(this.energyQuanta == energyQuanta) return;
+		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 	}
 
@@ -94,7 +95,7 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 		if(!worldObj.isRemote) {
 			
 			this.updateConnections();
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 			tanks[0].loadTank(1, 2, slots);
 			
 			refine();
@@ -118,26 +119,26 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
-		buf.writeLong(power);
+		buf.writeLong(energyQuanta);
 		for(int i = 0; i < 4; i++) tanks[i].serialize(buf);
 	}
 
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
-		power = buf.readLong();
+		energyQuanta = buf.readLong();
 		for(int i = 0; i < 4; i++) tanks[i].deserialize(buf);
 	}
 	
 	private void refine() {
 		
-		if(power < 10_000) return;
+		if(energyQuanta < 10_000) return;
 		if(tanks[0].getFill() < 100) return;
 		if(tanks[1].getFill() + 50 > tanks[1].getMaxFill()) return;
 		if(tanks[2].getFill() + 35 > tanks[2].getMaxFill()) return;
 		if(tanks[3].getFill() + 15 > tanks[3].getMaxFill()) return;
 
-		this.setPower(this.power - 10_000);
+		this.setStoredEnergyQuanta(this.energyQuanta - 10_000);
 		tanks[0].setFill(tanks[0].getFill() - 100);
 		tanks[1].setFill(tanks[1].getFill() + 50);
 		tanks[2].setFill(tanks[2].getFill() + 35);
@@ -167,7 +168,7 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		power = nbt.getLong("power");
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		tanks[0].readFromNBT(nbt, "input");
 		tanks[1].readFromNBT(nbt, "m1");
 		tanks[2].readFromNBT(nbt, "m2");
@@ -178,7 +179,7 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		
-		nbt.setLong("power", power);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tanks[0].writeToNBT(nbt, "input");
 		tanks[1].writeToNBT(nbt, "m1");
 		tanks[2].writeToNBT(nbt, "m2");

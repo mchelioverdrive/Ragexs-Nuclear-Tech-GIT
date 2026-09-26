@@ -40,7 +40,7 @@ public class GUIMachineExcavator extends GuiInfoContainer {
 		this.drawCustomInfoStat(x, y, guiLeft + 78, guiTop + 42, 20, 40, x, y, I18nUtil.resolveKey("excavator.veinminer"));
 		this.drawCustomInfoStat(x, y, guiLeft + 102, guiTop + 42, 20, 40, x, y, I18nUtil.resolveKey("excavator.silktouch"));
 		
-		this.drawElectricityInfo(this, x, y, guiLeft + 220, guiTop + 18, 16, 52, drill.getPower(), drill.maxPower);
+		this.drawElectricityInfo(this, x, y, guiLeft + 220, guiTop + 18, 16, 52, drill.getStoredEnergyQuanta(), drill.maxPower);
 		this.drill.tank.renderTankInfo(this, x, y, guiLeft + 202, guiTop + 18, 16, 52);
 	}
 
@@ -76,10 +76,10 @@ public class GUIMachineExcavator extends GuiInfoContainer {
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, 242, 96);
 		drawTexturedModalRect(guiLeft + 33, guiTop + 104, 33, 104, 176, 100);
 		
-		int i = (int) (drill.getPower() * 52 / drill.getMaxPower());
+		int i = (int) (drill.getStoredEnergyQuanta() * 52 / drill.getEnergyCapacityQuanta());
 		drawTexturedModalRect(guiLeft + 220, guiTop + 70 - i, 229, 156 - i, 16, i);
 		
-		if(drill.getPower() > drill.getPowerConsumption()) {
+		if(drill.getStoredEnergyQuanta() > drill.getPowerConsumption()) {
 			drawTexturedModalRect(guiLeft + 224, guiTop + 4, 239, 156, 9, 12);
 		}
 		
@@ -89,7 +89,7 @@ public class GUIMachineExcavator extends GuiInfoContainer {
 		
 		if(drill.enableDrill) {
 			drawTexturedModalRect(guiLeft + 6, guiTop + 42, 209, 114, 20, 40);
-			if(drill.getInstalledDrill() != null && drill.getPower() >= drill.getPowerConsumption()) drawTexturedModalRect(guiLeft + 11, guiTop + 5, 209, 104, 10, 10);
+			if(drill.getInstalledDrill() != null && drill.getStoredEnergyQuanta() >= drill.getPowerConsumption()) drawTexturedModalRect(guiLeft + 11, guiTop + 5, 209, 104, 10, 10);
 			else if(System.currentTimeMillis() % 1000 < 500) drawTexturedModalRect(guiLeft + 11, guiTop + 5, 219, 104, 10, 10);
 		}
 		

@@ -33,7 +33,7 @@ public class GUIMachineCryoDistill extends GuiInfoContainer {
 		cryo.tanks[2].renderTankInfo(this, mouseX, mouseY, guiLeft + 75, guiTop + 70 - 52, 16, 52);
 		cryo.tanks[3].renderTankInfo(this, mouseX, mouseY, guiLeft + 100, guiTop + 70 - 52, 16, 52);
 		cryo.tanks[4].renderTankInfo(this, mouseX, mouseY, guiLeft + 120, guiTop + 70 - 52, 16, 52);
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 144, guiTop + 70 - 52, 16, 52, cryo.power, cryo.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 144, guiTop + 70 - 52, 16, 52, cryo.getStoredEnergyQuanta(), cryo.maxPower);
 	}
 	
 	@Override
@@ -50,7 +50,7 @@ public class GUIMachineCryoDistill extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
-		int j = (int) (cryo.power * 54 / cryo.maxPower);
+		int j = (int) (cryo.getStoredEnergyQuanta() * 54 / cryo.maxPower);
 		drawTexturedModalRect(guiLeft + 145, guiTop + 69 - j, 176, 52 - j, 16, j);
 		
 		cryo.tanks[0].renderTank(guiLeft + 19, guiTop + 69, this.zLevel, 16, 52);
