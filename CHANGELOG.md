@@ -258,3 +258,10 @@ INCOMPLETE:
 - Made existing assembler recipe caching notice registration and `/ntmreload` changes, and marked neighboring inventories dirty on actual direct transfers.
 - Kept the eight-lane assembly factory on its legacy loop. Dedicated-server and in-game behavior, performance, and lifecycle validation remain outstanding.
 - Targeted offline `compileJava` completed successfully.
+
+2026-09-25 23:02 — Migrate the regular Chemplant to the machine runtime
+
+- Moved its one template-selected operation to dirty eligibility and typed slot-0 accounting; retained per-tick battery, power, oxygen, progress, fluid/container transfer, and neighbor automation cadence.
+- Added explicit inventory, power, and standard fluid-transfer invalidation plus a compact 20-tick item/tank audit for direct mutations; completion revalidates current shared resources before consumption and production.
+- Added Chemplant recipe generations for `/ntmreload` and saved the next accounting boundary and active presentation state beside existing progress, power, and tank NBT, without unloaded-time production.
+- Kept multi-recipe Chemplant variants and Assembly Factory on their legacy paths. In-game fluid, atmosphere, automation, reload, and lifecycle behavior remains to be validated.

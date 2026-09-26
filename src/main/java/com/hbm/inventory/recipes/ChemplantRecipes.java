@@ -42,6 +42,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 	public static HashMap<Integer, ChemRecipe> indexMapping = new HashMap<>();
 	public static List<ChemRecipe> recipes = new ArrayList<>();
+	public static long recipeGeneration;
 
 	@Override
 	public void registerDefaults() {
@@ -2175,6 +2176,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 			if(!indexMapping.containsKey(id)) {
 				indexMapping.put(id, this);
+				recipeGeneration++;
 			} else {
 				throw new IllegalStateException("Chemical plant recipe " + name + " has been registered with duplicate id " + id + " used by " + indexMapping.get(id).name + "!");
 			}
@@ -2278,5 +2280,6 @@ public class ChemplantRecipes extends SerializableRecipe {
 	public void deleteRecipes() {
 		indexMapping.clear();
 		recipes.clear();
+		recipeGeneration++;
 	}
 }
