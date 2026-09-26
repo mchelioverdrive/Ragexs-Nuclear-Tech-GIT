@@ -12,9 +12,12 @@ import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.gui.GUIMachineArcWelder;
 import com.hbm.inventory.recipes.ArcWelderRecipes;
 import com.hbm.inventory.recipes.ArcWelderRecipes.ArcWelderRecipe;
+import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.machine.ItemMachineUpgrade;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.tileentity.*;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
@@ -24,6 +27,7 @@ import com.hbm.util.fauxpointtwelve.BlockPos;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.IBatteryItem;
 import api.hbm.fluid.IFluidStandardReceiver;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import cpw.mods.fml.relauncher.Side;
@@ -52,10 +56,19 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 	
 	public FluidTank tank;
 	public ItemStack display;
+	private ArcWelderRecipe cachedRecipe;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
+	private long observedRecipeRevision;
+	private static final int TASK_PROCESS = 1;
+	private static final int TASK_SLOT_MAIN = 0;
 
 	public TileEntityMachineArcWelder() {
 		super(8);
 		this.tank = new FluidTank(Fluids.NONE, 24_000);
+		this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -74,71 +87,155 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
+		// Server work is driven by MachineRuntime.
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20 | MachineExecutionStrategy.COARSE_100;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.refreshRuntimeState();
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0) this.updateConnections();
+		observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(25);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PROCESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long oldEnergy = energyQuanta;
+		int oldProgress = progress;
+		int oldInventoryFingerprint = this.inventoryFingerprint();
+		if(inventoryFingerprintInitialized && oldInventoryFingerprint != observedInventoryFingerprint) this.refreshRuntimeState();
+		this.beginMachineFluidMutation();
+		runtimeEnergyMutation = true;
+		try {
 			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 4, this.getStoredEnergyQuanta(), this.getEnergyCapacityQuanta()));
-			this.tank.setType(5, slots);
-			
-			if(worldObj.getTotalWorldTime() % 20 == 0) {
-				for(DirPos pos : getConPos()) {
-					this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-					if(tank.getTankType() != Fluids.NONE) this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				}
-			}
-			
-			ArcWelderRecipe recipe = ArcWelderRecipes.getRecipe(slots[0], slots[1], slots[2]);
-			long intendedMaxPower;
-			
-			this.upgradeManager.checkSlots(slots, 6, 7);
-			int redLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int blueLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
-			
-			if(recipe != null) {
-				this.processTime = recipe.duration - (recipe.duration * redLevel / 6) + (recipe.duration * blueLevel / 3);
-				this.consumption = recipe.consumption + (recipe.consumption * redLevel) - (recipe.consumption * blueLevel / 6);
-				intendedMaxPower = recipe.consumption * 20;
-				
-				if(canProcess(recipe)) {
-					this.progress++;
-					this.setStoredEnergyQuanta(this.energyQuanta - this.consumption);
+			if(cachedRecipe != null) {
+				if(this.canProcess(cachedRecipe)) {
+					progress++;
+					this.setStoredEnergyQuanta(energyQuanta - consumption);
 					FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1200);
-					
 					if(progress >= processTime) {
-						this.progress = 0;
-						this.consumeItems(recipe);
-						
-						if(slots[3] == null) {
-							slots[3] = recipe.output.copy();
-						} else {
-							slots[3].stackSize += recipe.output.stackSize;
-						}
-						
+						progress = 0;
+						this.consumeItems(cachedRecipe);
+						if(slots[3] == null) slots[3] = cachedRecipe.output.copy();
+						else slots[3].stackSize += cachedRecipe.output.stackSize;
+						this.refreshCachedRecipe();
 						this.markDirty();
 					}
-					
-					if(worldObj.getTotalWorldTime() % 2 == 0) {
-						ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
-						NBTTagCompound dPart = new NBTTagCompound();
-						dPart.setString("type", worldObj.getTotalWorldTime() % 20 == 0 ? "tau" : "hadron");
-						dPart.setByte("count", (byte) 5);
-						PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(dPart, xCoord + 0.5 - dir.offsetX * 0.5, yCoord + 1.25, zCoord + 0.5 - dir.offsetZ * 0.5), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 25));
-					}
-					
+					if(worldObj.getTotalWorldTime() % 2 == 0) this.sendArcParticle();
 				} else {
-					this.progress = 0;
+					progress = 0;
 				}
-				
 			} else {
-				this.progress = 0;
-				this.consumption = 100;
-				intendedMaxPower = 2000;
+				progress = 0;
 			}
-			
-			this.maxPower = Math.max(intendedMaxPower, energyQuanta);
-			
-			this.networkPackNT(25);
+			this.maxPower = Math.max(cachedRecipe == null ? 2_000L : cachedRecipe.consumption * 20L, energyQuanta);
+		} finally {
+			runtimeEnergyMutation = false;
+			this.endMachineFluidMutation();
 		}
+		boolean inventoryChanged = oldInventoryFingerprint != this.inventoryFingerprint();
+		if(inventoryChanged) this.markNetworkDirty();
+		this.observeInventoryFingerprint();
+		if(oldEnergy != energyQuanta || oldProgress != progress || inventoryChanged) this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(25);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(this.observeInventoryFingerprint()) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.FLUID | MachineDirtyCause.UPGRADE);
+		} else if(cadence == 20) {
+			this.updateConnections();
+		} else if(cadence == 100) {
+			long revision = SerializableRecipe.getRegistryRevision();
+			if(revision != observedRecipeRevision) {
+				observedRecipeRevision = revision;
+				this.markMachineDirty(MachineDirtyCause.RECIPE);
+			}
+		}
+	}
+
+	private void refreshRuntimeState() {
+		this.beginMachineFluidMutation();
+		try {
+			tank.setType(5, slots);
+		} finally {
+			this.endMachineFluidMutation();
+		}
+		this.refreshCachedRecipe();
+		this.upgradeManager.checkSlots(slots, 6, 7);
+		if(cachedRecipe != null) {
+			int redLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+			int blueLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+			this.processTime = cachedRecipe.duration - (cachedRecipe.duration * redLevel / 6) + (cachedRecipe.duration * blueLevel / 3);
+			this.consumption = cachedRecipe.consumption + (cachedRecipe.consumption * redLevel) - (cachedRecipe.consumption * blueLevel / 6);
+			this.maxPower = Math.max(cachedRecipe.consumption * 20L, energyQuanta);
+		} else {
+			this.consumption = 100;
+			this.maxPower = Math.max(2_000L, energyQuanta);
+		}
+		this.observeInventoryFingerprint();
+	}
+
+	private void refreshCachedRecipe() {
+		cachedRecipe = ArcWelderRecipes.getRecipe(slots[0], slots[1], slots[2]);
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		if(this.canProcess(cachedRecipe) || this.hasBatteryWork() || progress > 0) this.scheduleMachineTransition(now + 1L, TASK_PROCESS, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
+	}
+
+	private boolean hasBatteryWork() {
+		if(energyQuanta >= this.getEnergyCapacityQuanta() || slots[4] == null) return false;
+		if(slots[4].getItem() == com.hbm.items.ModItems.battery_creative || slots[4].getItem() == com.hbm.items.ModItems.fusion_core_infinite) return true;
+		if(!(slots[4].getItem() instanceof IBatteryItem)) return false;
+		IBatteryItem battery = (IBatteryItem) slots[4].getItem();
+		return battery.getMaxOutputQuantaPerTick() > 0 && battery.getStoredEnergyQuanta(slots[4]) > 0;
+	}
+
+	private void updateConnections() {
+		for(DirPos pos : getConPos()) {
+			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			if(tank.getTankType() != Fluids.NONE) this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+		}
+	}
+
+	private void sendArcParticle() {
+		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
+		NBTTagCompound data = new NBTTagCompound();
+		data.setString("type", worldObj.getTotalWorldTime() % 20 == 0 ? "tau" : "hadron");
+		data.setByte("count", (byte) 5);
+		PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(data, xCoord + 0.5 - dir.offsetX * 0.5, yCoord + 1.25, zCoord + 0.5 - dir.offsetZ * 0.5), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 25));
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
 	}
 	
 	@Override
@@ -152,7 +249,7 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 		
 		tank.serialize(buf);
 		
-		ArcWelderRecipe recipe = ArcWelderRecipes.getRecipe(slots[0], slots[1], slots[2]);
+		ArcWelderRecipe recipe = cachedRecipe;
 		
 		if(recipe != null) {
 			buf.writeBoolean(true);
@@ -180,7 +277,7 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 	}
 	
 	public boolean canProcess(ArcWelderRecipe recipe) {
-		
+		if(recipe == null) return false;
 		if(this.energyQuanta < this.consumption) return false;
 		
 		if(recipe.fluid != null) {
@@ -266,6 +363,7 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override

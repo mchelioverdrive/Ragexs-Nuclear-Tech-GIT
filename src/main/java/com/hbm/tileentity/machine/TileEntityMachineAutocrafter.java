@@ -7,12 +7,15 @@ import java.util.List;
 import com.hbm.inventory.container.ContainerAutocrafter;
 import com.hbm.inventory.gui.GUIAutocrafter;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.module.ModulePatternMatcher;
 import com.hbm.tileentity.IControlReceiverFilter;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.IBatteryItem;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
@@ -37,6 +40,15 @@ public class TileEntityMachineAutocrafter extends TileEntityMachineBase implemen
 	public int recipeCount;
 
 	public ModulePatternMatcher matcher;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
+	private int observedTemplateFingerprint;
+	private boolean templateFingerprintInitialized;
+	private int observedCraftingRecipeCount = -1;
+	private static final int TASK_CRAFT = 1;
+	private static final int TASK_SLOT_MAIN = 0;
 
 	public TileEntityMachineAutocrafter() {
 		super(21);
@@ -62,6 +74,7 @@ public class TileEntityMachineAutocrafter extends TileEntityMachineBase implemen
 		} else {
 			slots[9] = null;
 		}
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.RECIPE);
 	}
 
 	@Override
@@ -73,58 +86,156 @@ public class TileEntityMachineAutocrafter extends TileEntityMachineBase implemen
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
+		// Server-side crafting is driven by MachineRuntime.
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20 | MachineExecutionStrategy.COARSE_100;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		observedCraftingRecipeCount = CraftingManager.getInstance().getRecipeList().size();
+		if(this.observeTemplateFingerprint()) this.updateTemplateGrid();
+		this.observeInventoryFingerprint();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(15);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_CRAFT || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long oldEnergy = energyQuanta;
+		int oldFingerprint = this.inventoryFingerprint();
+		runtimeEnergyMutation = true;
+		try {
 			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 20, energyQuanta, maxPower));
-			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-			
-			if(!this.recipes.isEmpty() && this.energyQuanta >= this.consumption) {
-				IRecipe recipe = this.recipes.get(recipeIndex);
-				
-				if(recipe.matches(this.getRecipeGrid(), this.worldObj)) {
-					ItemStack stack = recipe.getCraftingResult(this.getRecipeGrid());
-					
-					if(stack != null) {
-						
-						boolean didCraft = false;
-						
-						if(slots[19] == null) {
-							slots[19] = stack.copy();
-							didCraft = true;
-						} else if(slots[19].isItemEqual(stack) && ItemStack.areItemStackTagsEqual(stack, slots[19]) && slots[19].stackSize + stack.stackSize <= slots[19].getMaxStackSize()) {
-							slots[19].stackSize += stack.stackSize;
-							didCraft = true;
-						}
-						
-						if(didCraft) {
-							for(int i = 10; i < 19; i++) {
-								
-								ItemStack ingredient = this.getStackInSlot(i);
-
-								if(ingredient != null) {
-									this.decrStackSize(i, 1);
-
-									if(slots[i] == null && ingredient.getItem().hasContainerItem(ingredient)) {
-										ItemStack container = ingredient.getItem().getContainerItem(ingredient);
-
-										if(container != null && container.isItemStackDamageable() && container.getItemDamage() > container.getMaxDamage()) {
-											continue;
-										}
-
-										this.setInventorySlotContents(i, container);
-									}
-								}
-							}
-							
-							this.setStoredEnergyQuanta(this.energyQuanta - this.consumption);
-						}
-					}
-				}
-			}
-			
-			this.networkPackNT(15);
+			this.craftOne();
+		} finally {
+			runtimeEnergyMutation = false;
 		}
+		this.observeInventoryFingerprint();
+		if(oldEnergy != energyQuanta || oldFingerprint != observedInventoryFingerprint) this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(15);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			boolean inventoryChanged = this.observeInventoryFingerprint();
+			boolean templateChanged = this.observeTemplateFingerprint();
+			if(templateChanged) this.updateTemplateGrid();
+			if(inventoryChanged || templateChanged) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.ENERGY);
+		} else if(cadence == 20) {
+			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
+		} else if(cadence == 100) {
+			int recipeCount = CraftingManager.getInstance().getRecipeList().size();
+			if(recipeCount != observedCraftingRecipeCount) {
+				observedCraftingRecipeCount = recipeCount;
+				this.updateTemplateGrid();
+				this.markMachineDirty(MachineDirtyCause.RECIPE | MachineDirtyCause.CONFIGURATION);
+			}
+		}
+	}
+
+	@Override
+	protected void onInventorySlotChanged(int slot) {
+		super.onInventorySlotChanged(slot);
+		if(slot >= 0 && slot < 9 && worldObj != null && !worldObj.isRemote) this.updateTemplateGrid();
+	}
+
+	private boolean canCraft() {
+		if(recipes.isEmpty() || recipeIndex < 0 || recipeIndex >= recipes.size() || energyQuanta < consumption) return false;
+		IRecipe recipe = recipes.get(recipeIndex);
+		InventoryCrafting grid = this.getRecipeGrid();
+		if(!recipe.matches(grid, worldObj)) return false;
+		ItemStack output = recipe.getCraftingResult(grid);
+		return this.hasCraftOutputSpace(output);
+	}
+
+	private boolean hasCraftOutputSpace(ItemStack output) {
+		return output != null && (slots[19] == null || slots[19].isItemEqual(output) && ItemStack.areItemStackTagsEqual(output, slots[19]) && slots[19].stackSize + output.stackSize <= slots[19].getMaxStackSize());
+	}
+
+	private boolean craftOne() {
+		if(!this.canCraft()) return false;
+		IRecipe recipe = recipes.get(recipeIndex);
+		InventoryCrafting grid = this.getRecipeGrid();
+		if(!recipe.matches(grid, worldObj)) return false;
+		ItemStack output = recipe.getCraftingResult(grid);
+		if(!this.hasCraftOutputSpace(output)) return false;
+		if(slots[19] == null) slots[19] = output.copy();
+		else slots[19].stackSize += output.stackSize;
+		for(int i = 10; i < 19; i++) {
+			ItemStack ingredient = this.getStackInSlot(i);
+			if(ingredient == null) continue;
+			this.decrStackSize(i, 1);
+			if(slots[i] == null && ingredient.getItem().hasContainerItem(ingredient)) {
+				ItemStack container = ingredient.getItem().getContainerItem(ingredient);
+				if(container != null && container.isItemStackDamageable() && container.getItemDamage() > container.getMaxDamage()) continue;
+				this.setInventorySlotContents(i, container);
+			}
+		}
+		this.setStoredEnergyQuanta(energyQuanta - consumption);
+		return true;
+	}
+
+	private boolean hasBatteryWork() {
+		if(energyQuanta >= maxPower || slots[20] == null) return false;
+		if(slots[20].getItem() == com.hbm.items.ModItems.battery_creative || slots[20].getItem() == com.hbm.items.ModItems.fusion_core_infinite) return true;
+		if(!(slots[20].getItem() instanceof IBatteryItem)) return false;
+		IBatteryItem battery = (IBatteryItem) slots[20].getItem();
+		return battery.getMaxOutputQuantaPerTick() > 0 && battery.getStoredEnergyQuanta(slots[20]) > 0;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		if(this.canCraft() || this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_CRAFT, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_CRAFT, TASK_SLOT_MAIN);
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private int templateFingerprint() {
+		int hash = 1;
+		for(int i = 0; i < 9; i++) {
+			ItemStack stack = slots[i];
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeTemplateFingerprint() {
+		int current = this.templateFingerprint();
+		boolean changed = templateFingerprintInitialized && current != observedTemplateFingerprint;
+		observedTemplateFingerprint = current;
+		templateFingerprintInitialized = true;
+		return changed;
 	}
 	
 	@Override
@@ -156,6 +267,9 @@ public class TileEntityMachineAutocrafter extends TileEntityMachineBase implemen
 		} else {
 			slots[9] = null;
 		}
+		observedCraftingRecipeCount = CraftingManager.getInstance().getRecipeList().size();
+		this.observeTemplateFingerprint();
+		if(worldObj != null && !worldObj.isRemote) this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.RECIPE);
 	}
 	
 	public List<IRecipe> getMatchingRecipes(InventoryCrafting grid) {
@@ -307,6 +421,7 @@ public class TileEntityMachineAutocrafter extends TileEntityMachineBase implemen
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 	
 	@Override

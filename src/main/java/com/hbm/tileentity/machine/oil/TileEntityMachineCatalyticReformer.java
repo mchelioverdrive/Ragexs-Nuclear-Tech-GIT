@@ -11,6 +11,8 @@ import com.hbm.inventory.gui.GUIMachineCatalyticReformer;
 import com.hbm.inventory.recipes.ReformingRecipes;
 import com.hbm.items.ModItems;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IPersistentNBT;
@@ -19,11 +21,13 @@ import com.hbm.util.Tuple.Triplet;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.IBatteryItem;
 import api.hbm.fluid.IFluidStandardTransceiver;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
@@ -35,6 +39,12 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 	public static final long maxPower = 1_000_000;
 	
 	public FluidTank[] tanks;
+	private static final int TASK_REFORM = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
 
 	public TileEntityMachineCatalyticReformer() {
 		super(11);
@@ -44,6 +54,7 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 		this.tanks[1] = new FluidTank(Fluids.REFORMATE, 24_000);
 		this.tanks[2] = new FluidTank(Fluids.PETROLEUM, 24_000);
 		this.tanks[3] = new FluidTank(Fluids.HYDROGEN, 24_000);
+		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -53,32 +64,64 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
-			if(this.worldObj.getTotalWorldTime() % 20 == 0) this.updateConnections();
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
-			tanks[0].setType(9, slots);
-			tanks[0].loadTank(1, 2, slots);
-			
-			reform();
+		// Server work is driven by MachineRuntime; client synchronization remains packet-based.
+	}
 
-			tanks[1].unloadTank(3, 4, slots);
-			tanks[2].unloadTank(5, 6, slots);
-			tanks[3].unloadTank(7, 8, slots);
-			
-			for(DirPos pos : getConPos()) {
-				for(int i = 1; i < 4; i++) {
-					if(tanks[i].getFill() > 0) {
-						this.sendFluid(tanks[i], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-					}
-				}
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.refreshRuntimeState();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_REFORM || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long oldEnergy = energyQuanta;
+		int oldInput = tanks[0].getFill();
+		int oldReformate = tanks[1].getFill();
+		int oldPetroleum = tanks[2].getFill();
+		int oldHydrogen = tanks[3].getFill();
+		int oldInventoryFingerprint = this.inventoryFingerprint();
+		this.beginMachineFluidMutation();
+		runtimeEnergyMutation = true;
+		try {
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
+			Triplet<FluidStack, FluidStack, FluidStack> output = ReformingRecipes.getOutput(tanks[0].getTankType());
+			if(output != null && this.canReform(output)) {
+				tanks[0].setFill(tanks[0].getFill() - 100);
+				tanks[1].setFill(tanks[1].getFill() + output.getX().fill);
+				tanks[2].setFill(tanks[2].getFill() + output.getY().fill);
+				tanks[3].setFill(tanks[3].getFill() + output.getZ().fill);
+				this.setStoredEnergyQuanta(energyQuanta - 20_000L);
 			}
-			
-			NBTTagCompound data = new NBTTagCompound();
-			EnergyUnits.writeEnergyQuanta(data, this.energyQuanta);
-			for(int i = 0; i < 4; i++) tanks[i].writeToNBT(data, "" + i);
-			this.networkPack(data, 150);
+		} finally {
+			runtimeEnergyMutation = false;
+			this.endMachineFluidMutation();
+		}
+		this.observeInventoryFingerprint();
+		if(oldEnergy != energyQuanta || oldInput != tanks[0].getFill() || oldReformate != tanks[1].getFill() || oldPetroleum != tanks[2].getFill() || oldHydrogen != tanks[3].getFill() || oldInventoryFingerprint != observedInventoryFingerprint) this.markDirty();
+		this.sendOutputFluids();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			boolean inventoryChanged = this.observeInventoryFingerprint();
+			this.refreshRuntimeState();
+			this.sendRuntimeState();
+			if(inventoryChanged) {
+				this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.FLUID);
+				this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+			}
+		} else if(cadence == 20) {
+			this.updateConnections();
 		}
 	}
 	
@@ -90,34 +133,90 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 		for(int i = 0; i < 4; i++) tanks[i].readFromNBT(nbt, "" + i);
 	}
 	
-	private void reform() {
-		
-		Triplet<FluidStack, FluidStack, FluidStack> out = ReformingRecipes.getOutput(tanks[0].getTankType());
-		if(out == null) {
-			tanks[1].setTankType(Fluids.NONE);
-			tanks[2].setTankType(Fluids.NONE);
-			tanks[3].setTankType(Fluids.NONE);
-			return;
+	private void refreshRuntimeState() {
+		this.beginMachineFluidMutation();
+		try {
+			tanks[0].setType(9, slots);
+			tanks[0].loadTank(1, 2, slots);
+			Triplet<FluidStack, FluidStack, FluidStack> output = ReformingRecipes.getOutput(tanks[0].getTankType());
+			if(output == null) {
+				tanks[1].setTankType(Fluids.NONE);
+				tanks[2].setTankType(Fluids.NONE);
+				tanks[3].setTankType(Fluids.NONE);
+			} else {
+				tanks[1].setTankType(output.getX().type);
+				tanks[2].setTankType(output.getY().type);
+				tanks[3].setTankType(output.getZ().type);
+			}
+			tanks[1].unloadTank(3, 4, slots);
+			tanks[2].unloadTank(5, 6, slots);
+			tanks[3].unloadTank(7, 8, slots);
+		} finally {
+			this.endMachineFluidMutation();
 		}
+		this.observeInventoryFingerprint();
+	}
 
-		tanks[1].setTankType(out.getX().type);
-		tanks[2].setTankType(out.getY().type);
-		tanks[3].setTankType(out.getZ().type);
-		
-		if(energyQuanta < 20_000) return;
-		if(tanks[0].getFill() < 100) return;
-		if(slots[10] == null || slots[10].getItem() != ModItems.catalytic_converter) return;
+	private boolean canReform(Triplet<FluidStack, FluidStack, FluidStack> out) {
+		return energyQuanta >= 20_000L && tanks[0].getFill() >= 100 && slots[10] != null && slots[10].getItem() == ModItems.catalytic_converter
+				&& tanks[1].getFill() + out.getX().fill <= tanks[1].getMaxFill()
+				&& tanks[2].getFill() + out.getY().fill <= tanks[2].getMaxFill()
+				&& tanks[3].getFill() + out.getZ().fill <= tanks[3].getMaxFill();
+	}
 
-		if(tanks[1].getFill() + out.getX().fill > tanks[1].getMaxFill()) return;
-		if(tanks[2].getFill() + out.getY().fill > tanks[2].getMaxFill()) return;
-		if(tanks[3].getFill() + out.getZ().fill > tanks[3].getMaxFill()) return;
+	private boolean hasBatteryWork() {
+		if(energyQuanta >= maxPower || slots[0] == null) return false;
+		if(slots[0].getItem() == ModItems.battery_creative || slots[0].getItem() == ModItems.fusion_core_infinite) return true;
+		if(!(slots[0].getItem() instanceof IBatteryItem)) return false;
+		IBatteryItem battery = (IBatteryItem) slots[0].getItem();
+		return battery.getMaxOutputQuantaPerTick() > 0 && battery.getStoredEnergyQuanta(slots[0]) > 0;
+	}
 
-		tanks[0].setFill(tanks[0].getFill() - 100);
-		tanks[1].setFill(tanks[1].getFill() + out.getX().fill);
-		tanks[2].setFill(tanks[2].getFill() + out.getY().fill);
-		tanks[3].setFill(tanks[3].getFill() + out.getZ().fill);
-		
-		this.setStoredEnergyQuanta(this.energyQuanta - 20_000);
+	private boolean hasFluidOutput() {
+		return tanks[1].getFill() > 0 || tanks[2].getFill() > 0 || tanks[3].getFill() > 0;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		Triplet<FluidStack, FluidStack, FluidStack> output = ReformingRecipes.getOutput(tanks[0].getTankType());
+		if((output != null && this.canReform(output)) || this.hasBatteryWork() || this.hasFluidOutput()) this.scheduleMachineTransition(now + 1L, TASK_REFORM, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_REFORM, TASK_SLOT_MAIN);
+	}
+
+	private void sendOutputFluids() {
+		for(DirPos pos : getConPos()) {
+			for(int i = 1; i < 4; i++) {
+				if(tanks[i].getFill() > 0) this.sendFluid(tanks[i], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			}
+		}
+	}
+
+	private void sendRuntimeState() {
+		NBTTagCompound data = new NBTTagCompound();
+		EnergyUnits.writeEnergyQuanta(data, this.energyQuanta);
+		for(int i = 0; i < 4; i++) tanks[i].writeToNBT(data, "" + i);
+		this.networkPack(data, 150);
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
 	}
 	
 	private void updateConnections() {
@@ -198,6 +297,7 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override

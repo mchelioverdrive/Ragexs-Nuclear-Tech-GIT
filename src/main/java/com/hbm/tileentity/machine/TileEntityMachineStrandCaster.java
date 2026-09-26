@@ -4,12 +4,15 @@ import api.hbm.block.ICrucibleAcceptor;
 import api.hbm.fluid.IFluidStandardTransceiver;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.inventory.container.ContainerMachineStrandCaster;
+import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.gui.GUIMachineStrandCaster;
 import com.hbm.inventory.material.Mats;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemMold;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.items.machine.ItemScraps;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.NBTPacket;
@@ -36,6 +39,18 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 	public FluidTank water;
 	public FluidTank steam;
 	private long lastCastTick = 0;
+	private static final int TASK_CAST = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeFluidMutation;
+	private boolean inventoryFingerprintInitialized;
+	private boolean materialFingerprintInitialized;
+	private int observedInventoryFingerprint;
+	private int observedMaterialFingerprint;
+	private FluidType observedWaterType;
+	private ItemMold.Mold cachedMold;
+	private ItemStack cachedOutput;
+	private boolean cachedCanProcess;
 
 	public String getName() {
 		return "container.machineStrandCaster";
@@ -50,74 +65,23 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 		super(7);
 		water = new FluidTank(Fluids.FRESH_WATER, 64_000).migrateFrom(Fluids.WATER);
 		steam = new FluidTank(Fluids.SPENTSTEAM, 64_000);
+		FluidTank.ChangeListener listener = new FluidTank.ChangeListener() {
+			@Override public void onTankChanged(FluidTank tank) {
+				if(runtimeFluidMutation || worldObj == null || worldObj.isRemote) return;
+				markDirty();
+				markMachineDirty(MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE);
+			}
+		};
+		water.setChangeListener(listener);
+		steam.setChangeListener(listener);
 	}
 
 	@Override
 	public void updateEntity() {
-
-		if(!worldObj.isRemote) {
-
-			if(this.lastType != this.type || this.lastAmount != this.amount) {
-				worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
-				this.lastType = this.type;
-				this.lastAmount = this.amount;
-			}
-
-			if (this.amount >= this.getCapacity()) {
-				//In case of overfill problems, spit out the excess as scrap
-				if (amount > getCapacity()) {
-					ItemStack scrap = ItemScraps.create(new Mats.MaterialStack(type, Math.max(amount - getCapacity(), 0)));
-					EntityItem item = new EntityItem(worldObj, xCoord + 0.5, yCoord + 2, zCoord + 0.5, scrap);
-					worldObj.spawnEntityInWorld(item);
-				}
-				this.amount = this.getCapacity();
-			}
-
-			if(this.amount == 0) {
-				this.type = null;
-			}
-
-			this.updateConnections();
-
-			ItemMold.Mold mold = this.getInstalledMold();
-
-			if(canProcess()) {
-				int minAmount = mold.getCost() * 9;
-
-				// Makes it flush the buffers after 10 seconds of inactivity
-				if(worldObj.getWorldTime() >= lastCastTick + 200) {
-					minAmount = mold.getCost();
-				}
-
-				if(this.amount >= minAmount) {
-					int itemsCasted = amount / mold.getCost();
-
-					for(int j = 0; j < itemsCasted; j++) {
-						this.amount -= mold.getCost();
-
-						ItemStack out = mold.getOutput(type);
-
-						for(int i = 1; i < 7; i++) {
-							if(slots[i] == null) {
-								slots[i] = out.copy();
-								break;
-							}
-
-							if(slots[i].isItemEqual(out) && slots[i].stackSize + out.stackSize <= out.getMaxStackSize()) {
-								slots[i].stackSize += out.stackSize;
-								break;
-							}
-
-						}
-					}
-					markChanged();
-
-					water.setFill(water.getFill() - getWaterRequired() * itemsCasted);
-					steam.setFill(steam.getFill() + getWaterRequired() * itemsCasted);
-
-					lastCastTick = worldObj.getWorldTime();
-				}
-			}
+		if(!worldObj.isRemote && (this.lastType != this.type || this.lastAmount != this.amount)) {
+			worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
+			this.lastType = this.type;
+			this.lastAmount = this.amount;
 		}
 
 		NBTTagCompound data = new NBTTagCompound();
@@ -127,6 +91,160 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 
 		this.networkPack(data, 150);
 
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public String getMachineRuntimeType() { return "hbm:strand_caster"; }
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE | MachineDirtyCause.CONFIGURATION)) != 0) this.refreshRuntimeState();
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0 || observedWaterType != water.getTankType()) this.updateConnections();
+		observedWaterType = water.getTankType();
+		runtimeInitialized = true;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_CAST || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		int oldAmount = amount;
+		int oldWater = water.getFill();
+		int oldSteam = steam.getFill();
+		int oldInventory = this.inventoryFingerprint();
+		if(inventoryFingerprintInitialized && oldInventory != observedInventoryFingerprint || materialFingerprintInitialized && this.materialFingerprint() != observedMaterialFingerprint) this.refreshRuntimeState();
+		this.normalizeMaterialBuffer();
+		if(this.cachedCanProcess && this.cachedMold != null && amount >= this.getMinimumCastAmount()) {
+			int itemsCasted = amount / cachedMold.getCost();
+			runtimeFluidMutation = true;
+			try {
+				for(int j = 0; j < itemsCasted; j++) {
+					this.amount -= cachedMold.getCost();
+					for(int i = 1; i < 7; i++) {
+						if(slots[i] == null) {
+							slots[i] = cachedOutput.copy();
+							break;
+						}
+						if(slots[i].isItemEqual(cachedOutput) && slots[i].stackSize + cachedOutput.stackSize <= cachedOutput.getMaxStackSize()) {
+							slots[i].stackSize += cachedOutput.stackSize;
+							break;
+						}
+					}
+				}
+				int waterUsed = this.getWaterRequired() * itemsCasted;
+				water.setFill(water.getFill() - waterUsed);
+				steam.setFill(steam.getFill() + waterUsed);
+			} finally {
+				runtimeFluidMutation = false;
+			}
+			if(amount == 0) type = null;
+			lastCastTick = worldObj.getWorldTime();
+			cooloffMarkDirty();
+			this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE);
+		}
+		this.observeInventoryFingerprint();
+		this.observeMaterialFingerprint();
+		if(oldAmount != amount || oldWater != water.getFill() || oldSteam != steam.getFill() || oldInventory != this.inventoryFingerprint()) {
+			this.markDirty();
+			this.markChanged();
+		}
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			boolean inventoryChanged = this.observeInventoryFingerprint();
+			boolean materialChanged = this.observeMaterialFingerprint();
+			if(inventoryChanged || materialChanged) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+		} else if(cadence == 20) {
+			this.updateConnections();
+		}
+	}
+
+	private void cooloffMarkDirty() {
+		this.markDirty();
+		this.markChanged();
+	}
+
+	private void refreshRuntimeState() {
+		this.normalizeMaterialBuffer();
+		this.cachedMold = this.getInstalledMold();
+		this.cachedOutput = type == null || cachedMold == null ? null : cachedMold.getOutput(type);
+		this.cachedCanProcess = this.canProcessCached();
+		this.observeInventoryFingerprint();
+		this.observeMaterialFingerprint();
+	}
+
+	private boolean canProcessCached() {
+		if(type == null || cachedMold == null || cachedOutput == null) return false;
+		for(int i = 1; i < 7; i++) {
+			if(slots[i] == null || slots[i].isItemEqual(cachedOutput) && slots[i].stackSize + cachedOutput.stackSize <= cachedOutput.getMaxStackSize())
+				return water.getFill() >= this.getWaterRequired() && steam.getFill() < steam.getMaxFill();
+		}
+		return false;
+	}
+
+	private int getMinimumCastAmount() {
+		if(cachedMold == null) return Integer.MAX_VALUE;
+		return worldObj.getWorldTime() >= lastCastTick + 200 ? cachedMold.getCost() : cachedMold.getCost() * 9;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized || !cachedCanProcess || cachedMold == null || amount < cachedMold.getCost()) {
+			this.cancelMachineTransition(TASK_CAST, TASK_SLOT_MAIN);
+			return;
+		}
+		if(amount >= this.getMinimumCastAmount()) {
+			this.scheduleMachineTransition(now + 1L, TASK_CAST, TASK_SLOT_MAIN);
+		} else {
+			long remaining = lastCastTick + 200L - worldObj.getWorldTime();
+			this.scheduleMachineTransition(now + Math.max(1L, remaining), TASK_CAST, TASK_SLOT_MAIN);
+		}
+	}
+
+	private void normalizeMaterialBuffer() {
+		int capacity = this.getCapacity();
+		if(amount > capacity) {
+			ItemStack scrap = ItemScraps.create(new Mats.MaterialStack(type, Math.max(amount - capacity, 0)));
+			EntityItem item = new EntityItem(worldObj, xCoord + 0.5, yCoord + 2, zCoord + 0.5, scrap);
+			worldObj.spawnEntityInWorld(item);
+			amount = capacity;
+		}
+		if(amount == 0) type = null;
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private int materialFingerprint() { return 31 * System.identityHashCode(type) + amount; }
+
+	private boolean observeMaterialFingerprint() {
+		int current = this.materialFingerprint();
+		boolean changed = materialFingerprintInitialized && current != observedMaterialFingerprint;
+		observedMaterialFingerprint = current;
+		materialFingerprintInitialized = true;
+		return changed;
 	}
 
 	public boolean canProcess() {
@@ -224,10 +342,13 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 	}
 	@Override
 	public Mats.MaterialStack standardAdd(World world, int x, int y, int z, ForgeDirection side, Mats.MaterialStack stack) {
+		com.hbm.inventory.material.NTMMaterial oldType = this.type;
+		int oldAmount = this.amount;
 		this.type = stack.material;
 		int limit = this.getInstalledMold() != null ? this.getInstalledMold().getCost() * 9 : this.getCapacity();
 		if(stack.amount + this.amount <= limit) {
 			this.amount += stack.amount;
+			this.markMaterialMutation(oldType, oldAmount);
 			return null;
 		}
 
@@ -235,6 +356,7 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 		this.amount = limit;
 
 		stack.amount -= required;
+		this.markMaterialMutation(oldType, oldAmount);
 
 		return stack;
 	}

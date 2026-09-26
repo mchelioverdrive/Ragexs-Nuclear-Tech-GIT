@@ -4,6 +4,8 @@ import api.hbm.energymk2.EnergyUnits;
 import com.hbm.dim.CelestialBody;
 import com.hbm.dim.WorldProviderCelestial;
 import com.hbm.dim.orbit.WorldProviderOrbit;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.TileEntityLoadedBase;
 
 import api.hbm.energymk2.IEnergyProviderMK2;
@@ -15,24 +17,53 @@ import net.minecraft.world.EnumSkyBlock;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements IEnergyProviderMK2 {
+	private static final int TASK_GENERATE = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
 
 	private long energyQuanta;
 	private long maxpwr = 1_000;
 
 	@Override
 	public void updateEntity() {
+		// Generation and export are driven by MachineRuntime.
+	}
 
-		if(!worldObj.isRemote) {
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
 
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_GENERATE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		runtimeEnergyMutation = true;
+		try {
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
 				tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 			}
-
 			this.setStoredEnergyQuanta(this.energyQuanta + getOutput());
-
-			if(energyQuanta > maxpwr)
-				this.setStoredEnergyQuanta(maxpwr);
+			if(energyQuanta > maxpwr) this.setStoredEnergyQuanta(maxpwr);
+		} finally {
+			runtimeEnergyMutation = false;
 		}
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		if(energyQuanta > 0 || this.getOutput() > 0) this.scheduleMachineTransition(now + 1L, TASK_GENERATE, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_GENERATE, TASK_SLOT_MAIN);
 	}
 
 	private boolean isSunVisible() {
@@ -85,6 +116,10 @@ public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements
 		return (long)(base * daylight * daylight * sunPower);
 	}
 
+	public long getPowerOutputWatts() {
+		return EnergyUnits.quantaPerTickToWatts(this.getOutput());
+	}
+
 	@Override
 	public long getStoredEnergyQuanta() {
 		return energyQuanta;
@@ -100,6 +135,7 @@ public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineDirty(MachineDirtyCause.ENERGY);
 	}
 
 	@Override

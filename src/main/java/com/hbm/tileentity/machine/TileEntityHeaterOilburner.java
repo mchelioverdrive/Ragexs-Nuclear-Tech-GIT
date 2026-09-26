@@ -8,6 +8,8 @@ import com.hbm.inventory.fluid.trait.FT_Flammable;
 import com.hbm.inventory.fluid.trait.FluidTrait.FluidReleaseType;
 import com.hbm.inventory.gui.GUIOilburner;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachinePolluting;
@@ -26,6 +28,13 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 
 public class TileEntityHeaterOilburner extends TileEntityMachinePolluting implements IGUIProvider, IFluidStandardTransceiver, IHeatSource, IControlReceiver, IFluidCopiable {
+	private static final int TASK_BURN = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeWaterlogged;
+	private boolean waterloggedInitialized;
+	private DirPos[] runtimeConnections;
+	private int observedOrientation = Integer.MIN_VALUE;
 	
 	public boolean isOn = false;
 	public FluidTank tank;
@@ -37,6 +46,7 @@ public class TileEntityHeaterOilburner extends TileEntityMachinePolluting implem
 	public TileEntityHeaterOilburner() {
 		super(3, 100);
 		tank = new FluidTank(Fluids.HEATINGOIL, 16000);
+		this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -45,62 +55,117 @@ public class TileEntityHeaterOilburner extends TileEntityMachinePolluting implem
 	}
 	
 	public DirPos[] getConPos() {
-		return new DirPos[] {
+		int orientation = this.getBlockMetadata();
+		if(runtimeConnections == null || observedOrientation != orientation) {
+			runtimeConnections = new DirPos[] {
 				new DirPos(xCoord + 2, yCoord, zCoord, Library.POS_X),
 				new DirPos(xCoord - 2, yCoord, zCoord, Library.NEG_X),
 				new DirPos(xCoord, yCoord, zCoord + 2, Library.POS_Z),
 				new DirPos(xCoord, yCoord, zCoord - 2, Library.NEG_Z)
-		};
+			};
+			observedOrientation = orientation;
+		}
+		return runtimeConnections;
 	}
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
+		// Fuel, heat, and smoke processing are driven by MachineRuntime.
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.beginMachineFluidMutation();
+		try {
 			tank.loadTank(0, 1, slots);
 			tank.setType(2, slots);
+		} finally {
+			this.endMachineFluidMutation();
+		}
+		this.refreshWaterlogged();
+		this.refreshRuntimeConnections();
+		this.subscribeToFuel();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(25);
+	}
 
-			for(DirPos pos : this.getConPos()) {
-				this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				this.sendSmoke(pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			}
-			
-			boolean shouldCool = true;
-			
-			if(!isWaterlogged() && this.isOn && this.heatEnergy < maxHeatEnergy) {
-				if(breatheAir(setting)) {
-					if(tank.getTankType().hasTrait(FT_Flammable.class)) {
-						FT_Flammable type = tank.getTankType().getTrait(FT_Flammable.class);
-						
-						int burnRate = setting;
-						int toBurn = Math.min(burnRate, tank.getFill());
-						
-						tank.setFill(tank.getFill() - toBurn);
-						
-						int heat = (int)(type.getHeatEnergy() / 1000);
-						
-						this.heatEnergy += heat * toBurn;
-						if(toBurn > 0) FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
-	
-						if(worldObj.getTotalWorldTime() % 5 == 0 && toBurn > 0) {
-							super.pollute(tank.getTankType(), FluidReleaseType.BURN, toBurn * 5);
-						}
-						
-						shouldCool = false;
-					}
-				}
-			}
-			
-			if(this.heatEnergy >= maxHeatEnergy)
-				shouldCool = false;
-			
-			if(shouldCool)
-				this.heatEnergy = Math.max(this.heatEnergy - Math.max(this.heatEnergy / 1000, 1), 0);
-			
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		if(cadence == 5) {
+			if(this.refreshWaterlogged()) this.markMachineDirty(MachineDirtyCause.ENVIRONMENT);
+		} else if(cadence == 20) {
+			this.refreshRuntimeConnections();
+			this.subscribeToFuel();
 			this.networkPackNT(25);
 		}
 	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_BURN || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		int previousHeat = heatEnergy;
+		this.beginMachineFluidMutation();
+		try {
+			tank.loadTank(0, 1, slots);
+			tank.setType(2, slots);
+			for(DirPos pos : runtimeConnections) this.sendSmoke(pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			boolean shouldCool = true;
+			if(!runtimeWaterlogged && this.isOn && heatEnergy < maxHeatEnergy && breatheAir(setting) && tank.getTankType().hasTrait(FT_Flammable.class)) {
+				FT_Flammable type = tank.getTankType().getTrait(FT_Flammable.class);
+				int toBurn = Math.min(setting, tank.getFill());
+				tank.setFill(tank.getFill() - toBurn);
+				int heat = (int) (type.getHeatEnergy() / 1000);
+				heatEnergy += heat * toBurn;
+				if(toBurn > 0) FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
+				if(worldObj.getTotalWorldTime() % 5 == 0 && toBurn > 0) super.pollute(tank.getTankType(), FluidReleaseType.BURN, toBurn * 5);
+				shouldCool = false;
+			}
+			if(heatEnergy >= maxHeatEnergy) shouldCool = false;
+			if(shouldCool) heatEnergy = Math.max(heatEnergy - Math.max(heatEnergy / 1000, 1), 0);
+			this.networkPackNT(25);
+		} finally {
+			this.endMachineFluidMutation();
+		}
+		if(previousHeat != heatEnergy) this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	private boolean refreshWaterlogged() {
+		boolean current = this.isWaterlogged();
+		boolean changed = waterloggedInitialized && current != runtimeWaterlogged;
+		runtimeWaterlogged = current;
+		waterloggedInitialized = true;
+		return changed;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		boolean burnOpportunity = !runtimeWaterlogged && isOn && heatEnergy < maxHeatEnergy && tank.getTankType().hasTrait(FT_Flammable.class);
+		if(heatEnergy > 0 || burnOpportunity || this.hasSmoke()) this.scheduleMachineTransition(now + 1L, TASK_BURN, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_BURN, TASK_SLOT_MAIN);
+	}
+
+	private boolean hasSmoke() {
+		for(FluidTank smokeTank : this.getSmokeTanks()) if(smokeTank.getFill() > 0) return true;
+		return false;
+	}
+
+	private void refreshRuntimeConnections() {
+		int orientation = this.getBlockMetadata();
+		if(runtimeConnections == null || observedOrientation != orientation) {
+			runtimeConnections = this.getConPos();
+			observedOrientation = orientation;
+		}
+	}
+
+	private void subscribeToFuel() {
+		for(DirPos pos : runtimeConnections) this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+	}
+
 	
 	@Override
 	public void serialize(ByteBuf buf) {
@@ -145,6 +210,7 @@ public class TileEntityHeaterOilburner extends TileEntityMachinePolluting implem
 		
 		if(setting > 10)
 			setting = 1;
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 
 	@Override
@@ -184,6 +250,7 @@ public class TileEntityHeaterOilburner extends TileEntityMachinePolluting implem
 			this.isOn = !this.isOn;
 		}
 		this.markChanged();
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 	
 	AxisAlignedBB bb = null;
@@ -236,5 +303,6 @@ public class TileEntityHeaterOilburner extends TileEntityMachinePolluting implem
 		tank.setTankType(Fluids.fromID(id));
 		if(nbt.hasKey("isOn")) isOn = nbt.getBoolean("isOn");
 		if(nbt.hasKey("burnRate")) setting = nbt.getInteger("burnRate");
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.FLUID);
 	}
 }

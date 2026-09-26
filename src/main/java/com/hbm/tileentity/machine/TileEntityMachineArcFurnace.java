@@ -7,6 +7,8 @@ import com.hbm.inventory.container.ContainerMachineArcFurnace;
 import com.hbm.inventory.gui.GUIMachineArcFurnace;
 import com.hbm.items.ModItems;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxElectricityPacket;
 import com.hbm.packet.toclient.AuxGaugePacket;
@@ -15,6 +17,7 @@ import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.CompatEnergyControl;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.IBatteryItem;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import cpw.mods.fml.relauncher.Side;
@@ -47,6 +50,13 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 	private static final int[] slots_io = new int[] {0, 1, 2, 3, 4, 5};
 	
 	private String customName;
+	private static final int TASK_PROCESS = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
+	private boolean observedCanProcess;
 	
 	public TileEntityMachineArcFurnace() {
 		slots = new ItemStack[6];
@@ -68,6 +78,7 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 		{
 			ItemStack itemStack = slots[i];
 			slots[i] = null;
+			this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
 			return itemStack;
 		} else {
 		return null;
@@ -81,6 +92,7 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 		{
 			itemStack.stackSize = getInventoryStackLimit();
 		}
+		this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
 	}
 
 	@Override
@@ -138,6 +150,7 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 			{
 				ItemStack itemStack = slots[i];
 				slots[i] = null;
+				this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
 				return itemStack;
 			}
 			ItemStack itemStack1 = slots[i].splitStack(j);
@@ -145,6 +158,7 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 			{
 				slots[i] = null;
 			}
+			this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
 			
 			return itemStack1;
 		} else {
@@ -301,71 +315,124 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 		}
 	}
 	
-	//TODO: fix this punjabi trash
 	@Override
 	public void updateEntity() {
-		boolean flag1 = false;
-		
-		if(!worldObj.isRemote) {
+		// Authoritative processing is driven by MachineRuntime.
+	}
 
-			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
-				this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-			
-			if(hasPower() && canProcess())
-			{
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.reconcileRuntimeState(true);
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PROCESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		int oldProgress = dualCookTime;
+		long oldEnergy = energyQuanta;
+		int oldInventoryFingerprint = this.inventoryFingerprint();
+		runtimeEnergyMutation = true;
+		try {
+			if(this.hasPower() && this.canProcess()) {
 				dualCookTime++;
-				
-				this.setStoredEnergyQuanta(this.energyQuanta - 250);
-				
-				if(energyQuanta < 0)
-					this.setStoredEnergyQuanta(0);
-				
-				if(this.dualCookTime == processingSpeed)
-				{
-					this.dualCookTime = 0;
+				this.setStoredEnergyQuanta(Math.max(0L, energyQuanta - 250L));
+				if(dualCookTime >= processingSpeed) {
+					dualCookTime = 0;
 					this.processItem();
-					flag1 = true;
 				}
-			}else{
+			} else {
 				dualCookTime = 0;
 			}
-			
-			boolean trigger = true;
-			
-			if(hasPower() && canProcess() && this.dualCookTime == 0)
-			{
-				trigger = false;
-			}
-			
-			if(trigger)
-            {
-                flag1 = true;
-                MachineArcFurnace.updateBlockState(this.dualCookTime > 0, this.worldObj, this.xCoord, this.yCoord, this.zCoord);
-            }
-			
-			if(worldObj.getBlock(xCoord, yCoord, zCoord) == ModBlocks.machine_arc_furnace_off) {
-				
-				int meta = worldObj.getBlockMetadata(xCoord, yCoord, zCoord);
-
-				if(hasElectrodes() && meta <= 5) {
-					worldObj.setBlockMetadataWithNotify(xCoord, yCoord, zCoord, meta + 4, 2);
-				}
-				if(!hasElectrodes() && meta > 5) {
-					worldObj.setBlockMetadataWithNotify(xCoord, yCoord, zCoord, meta - 4, 2);
-				}
-			}
-			
+			this.reconcileRuntimeState(false);
 			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 5, energyQuanta, maxPower));
+		} finally {
+			runtimeEnergyMutation = false;
+		}
+		this.observeInventoryFingerprint();
+		if(oldProgress != dualCookTime || oldEnergy != energyQuanta || oldInventoryFingerprint != observedInventoryFingerprint) this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+	}
 
-			PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, energyQuanta), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
-			PacketDispatcher.wrapper.sendToAllAround(new AuxGaugePacket(xCoord, yCoord, zCoord, dualCookTime, 0), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(this.observeInventoryFingerprint()) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+		} else if(cadence == 20) {
+			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
+				this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
+			boolean canProcess = this.canProcess();
+			if(canProcess != observedCanProcess) this.markMachineDirty(MachineDirtyCause.TOPOLOGY | MachineDirtyCause.RECIPE);
+			this.sendRuntimeState();
 		}
-		
-		
-		if(flag1)
-		{
-			this.markDirty();
+	}
+
+	private void reconcileRuntimeState(boolean resetIneligibleProgress) {
+		boolean canProcess = this.canProcess();
+		if(resetIneligibleProgress && (!this.hasPower() || !canProcess)) dualCookTime = 0;
+		observedCanProcess = canProcess;
+		boolean trigger = !(this.hasPower() && canProcess && dualCookTime == 0);
+		if(trigger) {
+			boolean processing = dualCookTime > 0;
+			boolean isOn = worldObj.getBlock(xCoord, yCoord, zCoord) == ModBlocks.machine_arc_furnace_on;
+			if(processing != isOn) MachineArcFurnace.updateBlockState(processing, worldObj, xCoord, yCoord, zCoord);
 		}
+		if(worldObj.getBlock(xCoord, yCoord, zCoord) == ModBlocks.machine_arc_furnace_off) {
+			int meta = worldObj.getBlockMetadata(xCoord, yCoord, zCoord);
+			if(hasElectrodes() && meta <= 5) worldObj.setBlockMetadataWithNotify(xCoord, yCoord, zCoord, meta + 4, 2);
+			if(!hasElectrodes() && meta > 5) worldObj.setBlockMetadataWithNotify(xCoord, yCoord, zCoord, meta - 4, 2);
+		}
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		boolean processing = this.hasPower() && this.canProcess();
+		ItemStack battery = slots[5];
+		boolean charging = energyQuanta < maxPower && battery != null && (battery.getItem() == ModItems.battery_creative || battery.getItem() == ModItems.fusion_core_infinite);
+		if(!charging && energyQuanta < maxPower && battery != null && battery.getItem() instanceof IBatteryItem) {
+			IBatteryItem batteryItem = (IBatteryItem) battery.getItem();
+			charging = batteryItem.getMaxOutputQuantaPerTick() > 0 && batteryItem.getStoredEnergyQuanta(battery) > 0;
+		}
+		if(processing || charging || dualCookTime > 0) this.scheduleMachineTransition(now + 1L, TASK_PROCESS, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private void sendRuntimeState() {
+		if(worldObj == null || worldObj.isRemote) return;
+		TargetPoint point = new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50);
+		PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, energyQuanta), point);
+		PacketDispatcher.wrapper.sendToAllAround(new AuxGaugePacket(xCoord, yCoord, zCoord, dualCookTime, 0), point);
 	}
 
 	@Override
@@ -373,6 +440,7 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineDirty(MachineDirtyCause.ENERGY);
 	}
 
 	@Override

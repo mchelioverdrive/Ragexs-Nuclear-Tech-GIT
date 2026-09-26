@@ -20,6 +20,7 @@ import com.hbm.util.I18nUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.fluid.IFluidStandardTransceiver;
+import api.hbm.energymk2.EnergyUnits;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
@@ -51,6 +52,8 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 
 		water = new FluidTank(Fluids.FRESH_WATER, 64_000).migrateFrom(Fluids.WATER);
 		steam = new FluidTank(Fluids.SPENTSTEAM, 64_000);
+		this.trackMachineFluidTank(water);
+		this.trackMachineFluidTank(steam);
 	}
 
 	@Override
@@ -71,35 +74,7 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 	public void updateEntity() {
 		super.updateEntity();
 		
-		if(!worldObj.isRemote) {
-			
-			if(worldObj.getTotalWorldTime() % 20 == 0) {
-				this.updateConnections();
-			}
-			
-			this.speed = 100;
-			this.consumption = 100;
-			
-			this.upgradeManager.checkSlots(slots, 1, 4);
-
-			int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 6);
-			int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
-			int overLevel = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
-			
-			this.speed -= speedLevel * 15;
-			this.consumption += speedLevel * 300;
-			this.speed += powerLevel * 5;
-			this.consumption -= powerLevel * 30;
-			this.speed /= (overLevel + 1);
-			this.consumption *= (overLevel + 1);
-			
-			for(DirPos pos : getConPos()) {
-				this.sendFluid(steam, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			}
-			
-			this.networkPackNT(150);
-			
-		} else {
+		if(worldObj.isRemote) {
 			
 			for(AssemblerArm arm : arms) {
 				arm.updateInterp();
@@ -107,6 +82,37 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 					arm.updateArm();
 				}
 			}
+		}
+	}
+
+	@Override
+	protected boolean refreshRuntimeSettings(boolean contentAware) {
+		int oldSpeed = this.speed;
+		long oldOperatingPowerWatts = this.operatingPowerWatts;
+		this.speed = 100;
+		if(contentAware) this.upgradeManager.checkSlots(slots, 1, 4);
+		else this.upgradeManager.checkSlotsIfDirty(slots, 1, 4);
+
+		int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 6);
+		int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+		int overLevel = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
+		this.speed -= speedLevel * 15;
+		long consumptionQuantaPerTick = 100L + speedLevel * 300L;
+		this.speed += powerLevel * 5;
+		consumptionQuantaPerTick -= powerLevel * 30L;
+		this.speed /= (overLevel + 1);
+		consumptionQuantaPerTick *= overLevel + 1L;
+		this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(consumptionQuantaPerTick);
+		return oldSpeed != this.speed || oldOperatingPowerWatts != this.operatingPowerWatts;
+	}
+
+	@Override
+	protected void onMachineRuntimeMaintenance(int cadence) {
+		if(cadence == 5) {
+			for(DirPos pos : getConPos()) this.sendFluid(steam, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+		} else if(cadence == 20) {
+			this.updateConnections();
+			this.networkPackNTIfDirty(150);
 		}
 	}
 	

@@ -13,6 +13,8 @@ import com.hbm.inventory.gui.GUIMachineRocketAssembly;
 import com.hbm.items.ISatChip;
 import com.hbm.items.ItemVOTVdrive;
 import com.hbm.items.weapon.ItemCustomRocket;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.BobMathUtil;
@@ -39,6 +41,8 @@ public class TileEntityMachineRocketAssembly extends TileEntityMachineBase imple
 	private List<Integer> platforms = new ArrayList<Integer>();
 
 	private boolean platformFailed = false;
+	private boolean inventoryFingerprintInitialized;
+	private int observedInventoryFingerprint;
 
 	public TileEntityMachineRocketAssembly() {
 		super(1 + RocketStruct.MAX_STAGES * 3 + 1 + 2); // capsule + stages + result + drives
@@ -51,13 +55,59 @@ public class TileEntityMachineRocketAssembly extends TileEntityMachineBase imple
 
 	@Override
 	public void updateEntity() {
-		if(!worldObj.isRemote) {
-			ItemStack fromStack = slots[slots.length - 2];
-			ItemStack toStack = slots[slots.length - 1];
+		// Server-side rocket and VAB state is rebuilt from runtime invalidations.
+	}
 
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		this.rebuildRocketAndVab();
+		this.markNetworkDirty();
+		this.networkPackNTIfDirty(250);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5 && this.observeInventoryFingerprint()) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.CONFIGURATION);
+		if(cadence == 20) {
+			this.refreshDriveTargets();
+			this.networkPackNTIfDirty(250);
+		}
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private void refreshDriveTargets() {
+		ItemVOTVdrive.getTarget(slots[slots.length - 2], worldObj);
+		ItemVOTVdrive.getTarget(slots[slots.length - 1], worldObj);
+	}
+
+	private void rebuildRocketAndVab() {
+		if(!worldObj.isRemote) {
 			// updates the orbital station information and syncs it to the client, if necessary
-			ItemVOTVdrive.getTarget(fromStack, worldObj);
-			ItemVOTVdrive.getTarget(toStack, worldObj);
+			this.refreshDriveTargets();
 
 			rocket = new RocketStruct(slots[0]);
 			if(slots[0] != null && slots[0].getItem() instanceof ISatChip) {
@@ -163,7 +213,7 @@ public class TileEntityMachineRocketAssembly extends TileEntityMachineBase imple
 				rocket.addIssue(EnumChatFormatting.RED + "VAB ceiling too low ");
 			}
 
-			networkPackNT(250);
+			networkPackNTIfDirty(250);
 		}
 	}
 
@@ -226,13 +276,14 @@ public class TileEntityMachineRocketAssembly extends TileEntityMachineBase imple
 	}
 
 	public void construct() {
-		if(!rocket.validate()) return;
+		if(rocket == null || !rocket.validate()) return;
 
 		slots[slots.length - 3] = ItemCustomRocket.build(rocket);
 
 		for(int i = 0; i < slots.length - 3; i++) {
 			slots[i] = null;
 		}
+		this.markControlInventoryChanged();
 	}
 
 	public boolean canDeconstruct() {
@@ -263,6 +314,13 @@ public class TileEntityMachineRocketAssembly extends TileEntityMachineBase imple
 		}
 
 		slots[slots.length - 3] = null;
+		this.markControlInventoryChanged();
+	}
+
+	private void markControlInventoryChanged() {
+		this.markDirty();
+		this.markNetworkDirty();
+		this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.CONFIGURATION);
 	}
 	
 	@Override

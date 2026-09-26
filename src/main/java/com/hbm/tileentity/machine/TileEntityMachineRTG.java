@@ -5,6 +5,8 @@ import com.hbm.config.VersatileConfig;
 import com.hbm.inventory.container.ContainerMachineRTG;
 import com.hbm.inventory.gui.GUIMachineRTG;
 import com.hbm.items.machine.ItemRTGPellet;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxElectricityPacket;
 import com.hbm.tileentity.IGUIProvider;
@@ -27,6 +29,12 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISidedInventory, IEnergyProviderMK2, IGUIProvider, IInfoProviderEC {
+	private static final int TASK_GENERATE = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
 
 	private ItemStack slots[];
 	
@@ -60,6 +68,7 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 		{
 			ItemStack itemStack = slots[i];
 			slots[i] = null;
+			this.markMachineDirty(MachineDirtyCause.INVENTORY);
 			return itemStack;
 		} else {
 		return null;
@@ -73,6 +82,7 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 		{
 			itemStack.stackSize = getInventoryStackLimit();
 		}
+		this.markMachineDirty(MachineDirtyCause.INVENTORY);
 	}
 
 	@Override
@@ -123,6 +133,7 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 			{
 				ItemStack itemStack = slots[i];
 				slots[i] = null;
+				this.markMachineDirty(MachineDirtyCause.INVENTORY);
 				return itemStack;
 			}
 			ItemStack itemStack1 = slots[i].splitStack(j);
@@ -130,6 +141,7 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 			{
 				slots[i] = null;
 			}
+			this.markMachineDirty(MachineDirtyCause.INVENTORY);
 			
 			return itemStack1;
 		} else {
@@ -208,26 +220,86 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 
 	@Override
 	public void updateEntity() {
+		// Pellet decay, generation, and export are driven by MachineRuntime.
+	}
 
-		if(!worldObj.isRemote) {
-			
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.refreshInventoryFingerprint();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeEnergy();
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		if(cadence == 5) {
+			if(this.observeInventoryFingerprint()) this.markMachineDirty(MachineDirtyCause.INVENTORY);
+		} else if(cadence == 20) {
+			this.sendRuntimeEnergy();
+		}
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_GENERATE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		runtimeEnergyMutation = true;
+		try {
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
 				this.tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-			
+
 			heat = RTGUtil.updateRTGs(slots, slot_io);
-			
-			if(heat > heatMax)
-				heat = heatMax;
-			
-			this.setStoredEnergyQuanta(this.energyQuanta + heat * 5);
-			if(energyQuanta > powerMax)
-				this.setStoredEnergyQuanta(powerMax);
-			
-			if(this.energyQuanta != this.lastSyncedPower || worldObj.getWorldTime() % 20 == 0) {
-				PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, energyQuanta), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
-				this.lastSyncedPower = this.energyQuanta;
+			if(heat > heatMax) heat = heatMax;
+			this.setStoredEnergyQuanta(this.energyQuanta + heat * 5L);
+			if(energyQuanta > powerMax) this.setStoredEnergyQuanta(powerMax);
+		} finally {
+			runtimeEnergyMutation = false;
+		}
+		this.refreshInventoryFingerprint();
+		this.sendRuntimeEnergy();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	private void sendRuntimeEnergy() {
+		if(this.energyQuanta != this.lastSyncedPower || worldObj.getWorldTime() % 20 == 0) {
+			PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, energyQuanta), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
+			this.lastSyncedPower = this.energyQuanta;
+		}
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		if(this.hasHeat() || energyQuanta > 0) this.scheduleMachineTransition(now + 1L, TASK_GENERATE, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_GENERATE, TASK_SLOT_MAIN);
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
 			}
 		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private void refreshInventoryFingerprint() {
+		observedInventoryFingerprint = this.inventoryFingerprint();
+		inventoryFingerprintInitialized = true;
 	}
 
 	@Override
@@ -245,6 +317,11 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
+	}
+
+	public long getPowerOutputWatts() {
+		return EnergyUnits.quantaPerTickToWatts(this.heat * 5L);
 	}
 
 	@Override

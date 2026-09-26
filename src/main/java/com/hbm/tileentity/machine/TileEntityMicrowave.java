@@ -1,12 +1,15 @@
 package com.hbm.tileentity.machine;
 
 import api.hbm.energymk2.EnergyUnits;
+import api.hbm.energymk2.IBatteryItem;
 import com.hbm.handler.CompatHandler;
 import com.hbm.interfaces.ICopiable;
 import com.hbm.inventory.container.ContainerMicrowave;
 import com.hbm.inventory.gui.GUIMicrowave;
 import com.hbm.items.ModItems;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 
@@ -40,6 +43,14 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 	public int time;
 	public int speed;
 	public static final int maxSpeed = 5;
+	private ItemStack cachedResult;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
+	private int observedRecipeCount;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private static final int TASK_PROCESS = 1;
+	private static final int TASK_SLOT_MAIN = 0;
 
 	public TileEntityMicrowave() {
 		super(3);
@@ -52,38 +63,126 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 
 	@Override
 	public void updateEntity() {
+		// Server work is driven by MachineRuntime.
+	}
 
-		if(!worldObj.isRemote) {
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20 | MachineExecutionStrategy.COARSE_100;
+	}
 
-			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.refreshCachedResult();
+		this.observeInventoryFingerprint();
+		this.observedRecipeCount = FurnaceRecipes.smelting().getSmeltingList().size();
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0) this.updateConnections();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+	}
 
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PROCESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long oldEnergy = energyQuanta;
+		int oldTime = time;
+		int oldInventoryFingerprint = this.inventoryFingerprint();
+		runtimeEnergyMutation = true;
+		try {
 			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 2, energyQuanta, maxPower));
-
-			if(canProcess()) {
-
-				//if(speed >= maxSpeed) {
-				//	//worldObj.func_147480_a(xCoord, yCoord, zCoord, false);
-				//	//worldObj.newExplosion(null, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, 7.5F, true, true);
-				//	return;
-				//} you blew up one of my larps dickhead
-
+			if(this.canProcess()) {
 				if(time >= maxTime) {
-					process();
+					this.process();
 					time = 0;
+					this.refreshCachedResult();
 				}
-
-				if(canProcess()) {
-					this.setStoredEnergyQuanta(this.energyQuanta - consumption);
+				if(this.canProcess()) {
+					this.setStoredEnergyQuanta(energyQuanta - consumption);
 					time += speed * 2;
 				}
 			}
-
-			NBTTagCompound data = new NBTTagCompound();
-			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
-			data.setInteger("time", time);
-			data.setInteger("speed", speed);
-			networkPack(data, 50);
+		} finally {
+			runtimeEnergyMutation = false;
 		}
+		boolean inventoryChanged = oldInventoryFingerprint != this.inventoryFingerprint();
+		if(inventoryChanged) this.markNetworkDirty();
+		this.observeInventoryFingerprint();
+		if(oldEnergy != energyQuanta || oldTime != time || inventoryChanged) this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(this.observeInventoryFingerprint()) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.ENERGY);
+		} else if(cadence == 20) {
+			this.updateConnections();
+		} else if(cadence == 100) {
+			int count = FurnaceRecipes.smelting().getSmeltingList().size();
+			if(count != observedRecipeCount) {
+				observedRecipeCount = count;
+				this.markMachineDirty(MachineDirtyCause.RECIPE);
+			}
+		}
+	}
+
+	private void refreshCachedResult() {
+		ItemStack result = slots[0] == null ? null : FurnaceRecipes.smelting().getSmeltingResult(slots[0]);
+		cachedResult = result == null ? null : result.copy();
+	}
+
+	private boolean canProcess() {
+		if(speed == 0 || energyQuanta < consumption || slots[0] == null || cachedResult == null) return false;
+		if(!(slots[0].getItem() instanceof ItemFood) && !(cachedResult.getItem() instanceof ItemFood)) return false;
+		if(slots[1] == null) return true;
+		return cachedResult.isItemEqual(slots[1]) && cachedResult.stackSize + slots[1].stackSize <= cachedResult.getMaxStackSize();
+	}
+
+	private boolean hasBatteryWork() {
+		if(energyQuanta >= maxPower || slots[2] == null) return false;
+		if(slots[2].getItem() == ModItems.battery_creative || slots[2].getItem() == ModItems.fusion_core_infinite) return true;
+		if(!(slots[2].getItem() instanceof IBatteryItem)) return false;
+		IBatteryItem battery = (IBatteryItem) slots[2].getItem();
+		return battery.getMaxOutputQuantaPerTick() > 0 && battery.getStoredEnergyQuanta(slots[2]) > 0;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		if(this.canProcess() || this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_PROCESS, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
+	}
+
+	private void updateConnections() {
+		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
+	}
+
+	private void sendRuntimeState() {
+		NBTTagCompound data = new NBTTagCompound();
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+		data.setInteger("time", time);
+		data.setInteger("speed", speed);
+		this.networkPack(data, 50);
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
 	}
 
 	public void networkUnpack(NBTTagCompound data) {
@@ -107,11 +206,12 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 
 		if(speed > maxSpeed)
 			speed = maxSpeed;
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 
 	private void process() {
 
-		ItemStack stack = FurnaceRecipes.smelting().getSmeltingResult(slots[0]).copy();
+		ItemStack stack = cachedResult.copy();
 
 		if(slots[0].getItem() == ModItems.squirrel) {
 			worldObj.playSoundEffect(
@@ -133,28 +233,6 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 		this.decrStackSize(0, 1);
 
 		this.markDirty();
-	}
-
-	private boolean canProcess() {
-
-		if(speed  == 0)
-			return false;
-
-		if(energyQuanta < consumption)
-			return false;
-
-		if(slots[0] != null && FurnaceRecipes.smelting().getSmeltingResult(slots[0]) != null) {
-
-			ItemStack stack = FurnaceRecipes.smelting().getSmeltingResult(slots[0]);
-
-			if(!(slots[0].getItem() instanceof ItemFood) && !(stack.getItem() instanceof ItemFood)) return false;
-			if(slots[1] == null) return true;
-			if(!stack.isItemEqual(slots[1])) return false;
-
-			return stack.stackSize + slots[1].stackSize <= stack.getMaxStackSize();
-		}
-
-		return false;
 	}
 
 	@Override
@@ -206,6 +284,7 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override
@@ -224,6 +303,7 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		speed = nbt.getInteger("speed");
+		time = nbt.getInteger("time");
 	}
 
 	@Override
@@ -232,6 +312,7 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("speed", speed);
+		nbt.setInteger("time", time);
 	}
 
 	@Override
@@ -256,6 +337,7 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] variableset(Context context, Arguments args) {
 		speed = MathHelper.clamp_int(args.checkInteger(0), 0, 5);
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 		return new Object[] {"test of the `setter` callback function"};
 	}
 
@@ -279,7 +361,10 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 
 	@Override
 	public void pasteSettings(NBTTagCompound nbt, int index, World world, EntityPlayer player, int x, int y, int z) {
-		if(nbt.hasKey("microSpeed")) speed = nbt.getInteger("microSpeed");
+		if(nbt.hasKey("microSpeed")) {
+			speed = nbt.getInteger("microSpeed");
+			this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
+		}
 	}
 
 	@Override

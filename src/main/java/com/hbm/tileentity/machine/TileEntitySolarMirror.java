@@ -1,6 +1,8 @@
 package com.hbm.tileentity.machine;
 
 import com.hbm.tileentity.TileEntityTickingBase;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -12,10 +14,13 @@ import net.minecraft.world.EnumSkyBlock;
 
 public class TileEntitySolarMirror extends TileEntityTickingBase {
 
+	private static final int TASK_HEAT_TRANSFER = 1;
+
 	public int tX;
 	public int tY;
 	public int tZ;
 	public boolean isOn;
+	private int sunIntensity;
 
 	@Override
 	public String getInventoryName() {
@@ -23,34 +28,64 @@ public class TileEntitySolarMirror extends TileEntityTickingBase {
 	}
 
 	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		refreshSunState();
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20) return;
+		if(!isOn) refreshSunState();
+		this.sendUpdate();
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_HEAT_TRANSFER || !isOn || worldObj == null || worldObj.isRemote) return;
+		int sun = getCurrentSunIntensity();
+		if(sun <= 0) {
+			sunIntensity = 0;
+			isOn = false;
+			return;
+		}
+		sunIntensity = sun;
+
+		TileEntity te = worldObj.getTileEntity(tX, tY - 1, tZ);
+		if(te instanceof TileEntitySolarBoiler) {
+			((TileEntitySolarBoiler) te).heat += sunIntensity;
+		}
+		this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_HEAT_TRANSFER, 0);
+	}
+
+	private void refreshSunState() {
+		if(worldObj == null || worldObj.isRemote) return;
+		int sun = getCurrentSunIntensity();
+		if(sun <= 0) {
+			sunIntensity = 0;
+			isOn = false;
+			this.cancelMachineTransition(TASK_HEAT_TRANSFER, 0);
+			return;
+		}
+
+		sunIntensity = sun;
+		isOn = true;
+		this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_HEAT_TRANSFER, 0);
+	}
+
+	private int getCurrentSunIntensity() {
+		if(tY < yCoord) return 0;
+		int sun = worldObj.getSavedLightValue(EnumSkyBlock.Sky, xCoord, yCoord, zCoord) - worldObj.skylightSubtracted - 11;
+		return sun > 0 && worldObj.canBlockSeeTheSky(xCoord, yCoord + 1, zCoord) ? sun : 0;
+	}
+
+	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
-			if(worldObj.getTotalWorldTime() % 20 == 0)
-				sendUpdate();
-			
-			if(tY < yCoord) {
-				isOn = false;
-				return;
-			}
-			
-			int sun = worldObj.getSavedLightValue(EnumSkyBlock.Sky, xCoord, yCoord, zCoord) - worldObj.skylightSubtracted - 11;
-			
-			if(sun <= 0 || !worldObj.canBlockSeeTheSky(xCoord, yCoord + 1, zCoord)) {
-				isOn = false;
-				return;
-			}
-			
-			isOn = true;
-			
-			TileEntity te = worldObj.getTileEntity(tX, tY - 1, tZ);
-			
-			if(te instanceof TileEntitySolarBoiler) {
-				TileEntitySolarBoiler boiler = (TileEntitySolarBoiler)te;
-				boiler.heat += sun;
-			}
-		} else {
+		if(worldObj.isRemote) {
 			
 			TileEntity te = worldObj.getTileEntity(tX, tY - 1, tZ);
 			
@@ -87,6 +122,7 @@ public class TileEntitySolarMirror extends TileEntityTickingBase {
 		tY = y;
 		tZ = z;
 		this.markDirty();
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.ENVIRONMENT);
 		this.sendUpdate();
 	}
 

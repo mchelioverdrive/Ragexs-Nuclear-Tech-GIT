@@ -7,18 +7,23 @@ import com.hbm.entity.item.EntityMovingItem;
 import com.hbm.inventory.recipes.PressRecipes;
 import com.hbm.items.machine.ItemStamp;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityConveyorPress extends TileEntityMachineBase implements IEnergyReceiverMK2 {
+
+	private static final int TASK_PRESS = 1;
 
 	public int usage = 100;
 	public long energyQuanta = 0;
@@ -32,6 +37,9 @@ public class TileEntityConveyorPress extends TileEntityMachineBase implements IE
 	private int turnProgress;
 	protected boolean isRetracting = false;
 	private int delay;
+	private boolean runtimeEnergyMutation;
+	private boolean stampFingerprintInitialized;
+	private int observedStampFingerprint;
 	
 	public ItemStack syncStack;
 
@@ -45,57 +53,115 @@ public class TileEntityConveyorPress extends TileEntityMachineBase implements IE
 	}
 
 	@Override
-	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		this.observeStampFingerprint();
+		if(this.shouldRunPress()) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_PRESS, 0);
+		this.sendStateUpdate();
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PRESS || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		long oldEnergy = energyQuanta;
+		double oldPress = press;
+		int oldStamp = this.stampFingerprint();
+		this.simulatePressTick();
+		if(oldEnergy != energyQuanta || oldPress != press || oldStamp != this.stampFingerprint()) this.sendStateUpdate();
+		if(this.shouldRunPress()) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_PRESS, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			int fingerprint = this.stampFingerprint();
+			if(stampFingerprintInitialized && fingerprint != observedStampFingerprint) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+			this.observedStampFingerprint = fingerprint;
+			this.stampFingerprintInitialized = true;
+		} else if(cadence == 20) {
 			this.updateConnections();
-			
-			if(delay <= 0) {
-				
-				if(isRetracting) {
-					
-					if(this.canRetract()) {
-						this.press -= speed;
-						this.setStoredEnergyQuanta(this.energyQuanta - this.usage);
-						
-						if(press <= 0) {
-							press = 0;
-							this.isRetracting = false;
-							delay = 0;
-						}
-					}
-					
-				} else {
-					
-					if(this.canExtend()) {
-						this.press += speed;
-						this.setStoredEnergyQuanta(this.energyQuanta - this.usage);
-						
-						if(press >= 1) {
-							press = 1;
-							this.isRetracting = true;
-							delay = 5;
-							this.process();
-						}
+			this.sendStateUpdate();
+		}
+	}
+
+	private boolean shouldRunPress() {
+		if(energyQuanta < usage) return false;
+		return isRetracting ? press > 0D : slots[0] != null;
+	}
+
+	private void simulatePressTick() {
+		if(delay <= 0) {
+			if(isRetracting) {
+				if(this.canRetract()) {
+					this.press -= speed;
+					this.consumeOperatingEnergy();
+					if(press <= 0) {
+						press = 0;
+						isRetracting = false;
+						delay = 0;
 					}
 				}
-				
-			} else {
-				delay--;
+			} else if(this.canExtend()) {
+				this.press += speed;
+				this.consumeOperatingEnergy();
+				if(press >= 1) {
+					press = 1;
+					isRetracting = true;
+					delay = 5;
+					this.process();
+				}
 			}
-			
-			NBTTagCompound data = new NBTTagCompound();
-			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
-			data.setDouble("press", press);
-			if(slots[0] != null) {
-				NBTTagCompound stack = new NBTTagCompound();
-				slots[0].writeToNBT(stack);
-				data.setTag("stack", stack);
-			}
-			
-			this.networkPack(data, 50);
 		} else {
+			delay--;
+		}
+	}
+
+	private void consumeOperatingEnergy() {
+		runtimeEnergyMutation = true;
+		try {
+			this.setStoredEnergyQuanta(this.energyQuanta - this.usage);
+		} finally {
+			runtimeEnergyMutation = false;
+		}
+	}
+
+	private void sendStateUpdate() {
+		if(worldObj == null || worldObj.isRemote) return;
+		NBTTagCompound data = new NBTTagCompound();
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+		data.setDouble("press", press);
+		if(slots[0] != null) {
+			NBTTagCompound stack = new NBTTagCompound();
+			slots[0].writeToNBT(stack);
+			data.setTag("stack", stack);
+		}
+		this.networkPack(data, 50);
+	}
+
+	private int stampFingerprint() {
+		ItemStack stack = slots[0];
+		if(stack == null) return 0;
+		int hash = Item.getIdFromItem(stack.getItem());
+		hash = 31 * hash + stack.getItemDamage();
+		hash = 31 * hash + stack.stackSize;
+		if(stack.hasTagCompound()) hash = 31 * hash + stack.getTagCompound().hashCode();
+		return hash;
+	}
+
+	private void observeStampFingerprint() {
+		this.observedStampFingerprint = this.stampFingerprint();
+		this.stampFingerprintInitialized = true;
+	}
+
+	@Override
+	public void updateEntity() {
+		if(worldObj.isRemote) {
 			
 			// approach-based interpolation, GO!
 			this.lastPress = this.renderPress;
@@ -171,6 +237,7 @@ public class TileEntityConveyorPress extends TileEntityMachineBase implements IE
 			if(slots[0].getItemDamage() >= slots[0].getMaxDamage()) {
 				slots[0] = null;
 			}
+			this.onInventorySlotChanged(0);
 		}
 	}
 	
@@ -225,6 +292,11 @@ public class TileEntityConveyorPress extends TileEntityMachineBase implements IE
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
+	}
+
+	public long getOperatingPowerWatts() {
+		return EnergyUnits.quantaPerTickToWatts(this.usage);
 	}
 
 	@Override
@@ -237,6 +309,8 @@ public class TileEntityConveyorPress extends TileEntityMachineBase implements IE
 		super.readFromNBT(nbt);
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.press = nbt.getDouble("press");
+		this.isRetracting = nbt.hasKey("retracting") ? nbt.getBoolean("retracting") : this.press >= 1D;
+		this.delay = Math.max(0, nbt.getInteger("delay"));
 	}
 	
 	@Override
@@ -244,6 +318,8 @@ public class TileEntityConveyorPress extends TileEntityMachineBase implements IE
 		super.writeToNBT(nbt);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setDouble("press", press);
+		nbt.setBoolean("retracting", isRetracting);
+		nbt.setInteger("delay", delay);
 	}
 	
 	AxisAlignedBB bb = null;

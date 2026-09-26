@@ -45,7 +45,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	public long energyQuanta;
 	public static final long maxPower = 100000;
 	public int maxProgress = 100;
-	public int consumption = 50;
+	public long operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(50L);
 	private int cooldown = 0;
 	private boolean operationActive;
 	private boolean cachedRecipeEligible;
@@ -91,7 +91,8 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		this.operationActive = nbt.hasKey("runtimeActive") ? nbt.getBoolean("runtimeActive") : this.progress > 0;
 		this.nextRuntimeTick = nbt.hasKey("runtimeNextTick") ? nbt.getLong("runtimeNextTick") : -1L;
 		if(nbt.hasKey("runtimeDuration")) this.maxProgress = nbt.getInteger("runtimeDuration");
-		if(nbt.hasKey("runtimeConsumption")) this.consumption = nbt.getInteger("runtimeConsumption");
+		if(nbt.hasKey("runtimeOperatingPowerWatts")) this.operatingPowerWatts = nbt.getLong("runtimeOperatingPowerWatts");
+		else if(nbt.hasKey("runtimeConsumption")) this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(nbt.getInteger("runtimeConsumption"));
 	}
 
 	@Override
@@ -103,7 +104,8 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		nbt.setBoolean("runtimeActive", operationActive);
 		nbt.setLong("runtimeNextTick", nextRuntimeTick);
 		nbt.setInteger("runtimeDuration", maxProgress);
-		nbt.setInteger("runtimeConsumption", consumption);
+		nbt.setLong("runtimeOperatingPowerWatts", operatingPowerWatts);
+		nbt.setInteger("runtimeConsumption", (int) EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts));
 	}
 
 	@Override
@@ -131,7 +133,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	}
 
 	public boolean hasPower() {
-		return energyQuanta >= consumption;
+		return energyQuanta >= EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
 	}
 
 	public boolean isProcessing() {
@@ -260,7 +262,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		if(this.hasPower() && this.cooldown <= 0 && this.cachedRecipeEligible) {
 			this.progress++;
 			this.operationActive = true;
-			this.setPowerInternal(this.energyQuanta - this.consumption);
+			this.setPowerInternal(this.energyQuanta - EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts));
 
 			if(now % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND);
 
@@ -297,15 +299,16 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 
 	private boolean refreshUpgrades(boolean contentAware) {
 		int oldMaxProgress = this.maxProgress;
-		int oldConsumption = this.consumption;
+		long oldOperatingPowerWatts = this.operatingPowerWatts;
 		if(contentAware) this.upgradeManager.checkSlots(slots, 3, 3);
 		else this.upgradeManager.checkSlotsIfDirty(slots, 3, 3);
 
 		int speedLevel = this.upgradeManager.getLevel(UpgradeType.SPEED);
 		int powerLevel = this.upgradeManager.getLevel(UpgradeType.POWER);
 		this.maxProgress = 100 - speedLevel * 25 + powerLevel * 10;
-		this.consumption = 50 + speedLevel * 50 - powerLevel * 15;
-		return oldMaxProgress != this.maxProgress || oldConsumption != this.consumption;
+		long consumptionQuantaPerTick = 50L + speedLevel * 50L - powerLevel * 15L;
+		this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(consumptionQuantaPerTick);
+		return oldMaxProgress != this.maxProgress || oldOperatingPowerWatts != this.operatingPowerWatts;
 	}
 
 	private boolean needsAnotherAccountingTick(boolean completed) {

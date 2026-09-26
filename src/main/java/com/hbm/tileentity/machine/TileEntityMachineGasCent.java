@@ -12,6 +12,9 @@ import com.hbm.inventory.recipes.GasCentrifugeRecipes.PseudoFluidType;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.IItemFluidIdentifier;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
+import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.LoopedSoundPacket;
 import com.hbm.tileentity.IGUIProvider;
@@ -22,6 +25,7 @@ import com.hbm.util.InventoryUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.IBatteryItem;
 import api.hbm.fluid.IFluidStandardReceiver;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
@@ -49,6 +53,16 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 	public FluidTank tank;
 	public PseudoFluidTank inputTank;
 	public PseudoFluidTank outputTank;
+	private ItemStack[] cachedEnrichmentOutputs;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
+	private PseudoFluidType observedInputType;
+	private boolean lastSoundProgressing;
+	private long observedRecipeRevision;
+	private static final int TASK_PROCESS = 1;
+	private static final int TASK_SLOT_MAIN = 0;
 	
 	private static final int[] slots_io = new int[] { 0, 1, 2, 3 };
 	
@@ -57,6 +71,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 		tank = new FluidTank(Fluids.UF6, 2000);
 		inputTank = new PseudoFluidTank(PseudoFluidType.NUF6, 8000);
 		outputTank = new PseudoFluidTank(PseudoFluidType.LEUF6, 8000);
+		this.trackMachineFluidTank(tank);
 	}
 	
 	@Override
@@ -106,7 +121,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 	private boolean canEnrich() {
 		if(energyQuanta > 0 && this.inputTank.getFill() >= inputTank.getTankType().getFluidConsumed() && this.outputTank.getFill() + this.inputTank.getTankType().getFluidProduced() <= outputTank.getMaxFill()) {
 			
-			ItemStack[] list = inputTank.getTankType().getOutput();
+			ItemStack[] list = cachedEnrichmentOutputs;
 			
 			if(this.inputTank.getTankType().getIfHighSpeed())
 				if(!(slots[6] != null && slots[6].getItem() == ModItems.upgrade_gc_speed))
@@ -126,7 +141,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 	}
 	
 	private void enrich() {
-		ItemStack[] output = inputTank.getTankType().getOutput();
+		ItemStack[] output = cachedEnrichmentOutputs;
 		
 		this.progress = 0;
 		inputTank.setFill(inputTank.getFill() - inputTank.getTankType().getFluidConsumed()); 
@@ -150,6 +165,8 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 			TileEntityMachineGasCent cent = (TileEntityMachineGasCent) te;
 			
 			if(cent.tank.getFill() == 0 && cent.tank.getTankType() == tank.getTankType()) {
+				int oldInputFill = cent.inputTank.getFill();
+				PseudoFluidType oldInputType = cent.inputTank.getTankType();
 				if(cent.inputTank.getTankType() != outputTank.getTankType() && outputTank.getTankType() != PseudoFluidType.NONE) {
 					cent.inputTank.setTankType(outputTank.getTankType());
 					cent.outputTank.setTankType(outputTank.getTankType().getOutputType());
@@ -162,6 +179,10 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 					outputTank.setFill(outputTank.getFill() - fill);
 					cent.inputTank.setFill(cent.inputTank.getFill() + fill);
 				}
+				if(oldInputFill != cent.inputTank.getFill() || oldInputType != cent.inputTank.getTankType()) {
+					cent.markDirty();
+					cent.markMachineDirty(MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE | MachineDirtyCause.TOPOLOGY);
+				}
 				
 				return true;
 			}
@@ -172,63 +193,161 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 	
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
-			updateConnections();
+		// Server work is driven by MachineRuntime.
+	}
 
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20 | MachineExecutionStrategy.COARSE_100;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.refreshRuntimeState();
+		PseudoFluidType inputType = inputTank.getTankType();
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0 || observedInputType != inputType) this.updateConnections();
+		observedInputType = inputType;
+		observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(50);
+		this.sendSoundKeepalive();
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PROCESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long oldEnergy = energyQuanta;
+		int oldProgress = progress;
+		int oldInputFill = inputTank.getFill();
+		int oldOutputFill = outputTank.getFill();
+		int oldRealFill = tank.getFill();
+		int oldInventoryFingerprint = this.inventoryFingerprint();
+		if(inventoryFingerprintInitialized && oldInventoryFingerprint != observedInventoryFingerprint) this.refreshRuntimeState();
+		runtimeEnergyMutation = true;
+		try {
 			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 4, energyQuanta, maxPower));
-			setTankType(5);
-			
-			if(GasCentrifugeRecipes.fluidConversions.containsValue(inputTank.getTankType())) {
-				attemptConversion();
-			}
-			
+			if(this.canConvert()) this.attemptConversion();
 			if(canEnrich()) {
-				
 				isProgressing = true;
-				this.progress++;
-				
-				if(slots[6] != null && slots[6].getItem() == ModItems.upgrade_gc_speed)
-					this.setStoredEnergyQuanta(this.energyQuanta - 300);
-				else
-					this.setStoredEnergyQuanta(this.energyQuanta - 200);
-				
-				if(this.energyQuanta < 0) {
+				progress++;
+				this.setStoredEnergyQuanta(energyQuanta - (slots[6] != null && slots[6].getItem() == ModItems.upgrade_gc_speed ? 300 : 200));
+				if(energyQuanta < 0) {
 					this.setStoredEnergyQuanta(0);
-					this.progress = 0;
+					progress = 0;
 				}
-				
-				if(progress >= getProcessingSpeed())
-					enrich();
-				
+				if(progress >= getProcessingSpeed()) this.enrich();
 			} else {
 				isProgressing = false;
-				this.progress = 0;
+				progress = 0;
 			}
-			
-			if(worldObj.getTotalWorldTime() % 10 == 0) {
-				ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
-				TileEntity te = worldObj.getTileEntity(this.xCoord - dir.offsetX, this.yCoord, this.zCoord - dir.offsetZ);
-				
-				//*AT THE MOMENT*, there's not really any need for a dedicated method for this. Yet.
-				if(!attemptTransfer(te) && this.inputTank.getTankType() == PseudoFluidType.LEUF6) {
-					// Terminal LEUF6 deconversion is compressed into the existing cascade:
-					// it yields fuel-grade uranium feed, not a finished rod or fluorine loop.
-					ItemStack[] converted = new ItemStack[] { new ItemStack(ModItems.nugget_uranium_fuel, 6) };
-					
-					if(this.outputTank.getFill() >= 600 && InventoryUtil.doesArrayHaveSpace(slots, 0, 3, converted)) {
-						this.outputTank.setFill(this.outputTank.getFill() - 600);
-						for(ItemStack stack : converted)
-							InventoryUtil.tryAddItemToInventory(slots, 0, 3, stack);
-					}
-				}
-			}
-			
-			this.networkPackNT(50);
+			if(worldObj.getTotalWorldTime() % 10 == 0) this.transferOrDeconvert();
+		} finally {
+			runtimeEnergyMutation = false;
+		}
+		int currentInventoryFingerprint = this.inventoryFingerprint();
+		boolean inventoryChanged = oldInventoryFingerprint != currentInventoryFingerprint;
+		if(inventoryChanged) this.markNetworkDirty();
+		this.observeInventoryFingerprint();
+		if(oldEnergy != energyQuanta || oldProgress != progress || oldInputFill != inputTank.getFill() || oldOutputFill != outputTank.getFill() || oldRealFill != tank.getFill() || inventoryChanged) this.markDirty();
+		if(inventoryChanged) this.refreshRuntimeState();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(50);
+		this.sendSoundKeepalive();
+	}
 
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(this.observeInventoryFingerprint()) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.ENERGY | MachineDirtyCause.CONFIGURATION);
+		} else if(cadence == 20) {
+			this.updateConnections();
+			this.sendSoundKeepalive();
+		} else if(cadence == 100) {
+			long revision = SerializableRecipe.getRegistryRevision();
+			if(revision != observedRecipeRevision) {
+				observedRecipeRevision = revision;
+				this.markMachineDirty(MachineDirtyCause.RECIPE);
+			}
+		}
+	}
+
+	private void refreshRuntimeState() {
+		this.setTankType(5);
+		cachedEnrichmentOutputs = inputTank.getTankType().getOutput();
+		this.observeInventoryFingerprint();
+	}
+
+	private boolean canConvert() {
+		return GasCentrifugeRecipes.fluidConversions.containsValue(inputTank.getTankType()) && inputTank.getFill() < inputTank.getMaxFill() && tank.getFill() > 0;
+	}
+
+	private boolean hasBatteryWork() {
+		if(energyQuanta >= maxPower || slots[4] == null) return false;
+		if(slots[4].getItem() == ModItems.battery_creative || slots[4].getItem() == ModItems.fusion_core_infinite) return true;
+		if(!(slots[4].getItem() instanceof IBatteryItem)) return false;
+		IBatteryItem battery = (IBatteryItem) slots[4].getItem();
+		return battery.getMaxOutputQuantaPerTick() > 0 && battery.getStoredEnergyQuanta(slots[4]) > 0;
+	}
+
+	private boolean hasTerminalOutput() {
+		return inputTank.getTankType() == PseudoFluidType.LEUF6 && outputTank.getFill() >= 600;
+	}
+
+	private void transferOrDeconvert() {
+		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
+		TileEntity te = worldObj.getTileEntity(this.xCoord - dir.offsetX, this.yCoord, this.zCoord - dir.offsetZ);
+		if(!attemptTransfer(te) && this.hasTerminalOutput()) {
+			ItemStack[] converted = new ItemStack[] { new ItemStack(ModItems.nugget_uranium_fuel, 6) };
+			if(InventoryUtil.doesArrayHaveSpace(slots, 0, 3, converted)) {
+				outputTank.setFill(outputTank.getFill() - 600);
+				for(ItemStack stack : converted) InventoryUtil.tryAddItemToInventory(slots, 0, 3, stack);
+			}
+		}
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		if(this.canEnrich() || this.canConvert() || this.hasBatteryWork() || progress > 0) {
+			this.scheduleMachineTransition(now + 1L, TASK_PROCESS, TASK_SLOT_MAIN);
+		} else if(outputTank.getFill() > 0 || this.hasTerminalOutput()) {
+			this.scheduleMachineTransition(now + 10L - now % 10L, TASK_PROCESS, TASK_SLOT_MAIN);
+		} else {
+			this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
+		}
+	}
+
+	private void updateConnections() {
+		for(DirPos pos : getConPos()) {
+			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			if(GasCentrifugeRecipes.fluidConversions.containsValue(inputTank.getTankType())) this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+		}
+	}
+
+	private void sendSoundKeepalive() {
+		if(isProgressing != lastSoundProgressing) {
+			lastSoundProgressing = isProgressing;
 			PacketDispatcher.wrapper.sendToAllAround(new LoopedSoundPacket(xCoord, yCoord, zCoord), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
 		}
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
 	}
 	
 	@Override
@@ -261,16 +380,6 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 		tank.deserialize(buf);
 	}
 	
-	private void updateConnections() {
-		for(DirPos pos : getConPos()) {
-			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			
-			if(GasCentrifugeRecipes.fluidConversions.containsValue(inputTank.getTankType())) {
-				this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			}
-		}
-	}
-	
 	private DirPos[] getConPos() {
 		return new DirPos[] {
 			new DirPos(xCoord, yCoord - 1, zCoord, Library.NEG_Y),
@@ -286,6 +395,8 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		this.markNetworkDirty();
+		if(!runtimeEnergyMutation) this.markMachineDirty(MachineDirtyCause.ENERGY);
 	}
 
 	@Override

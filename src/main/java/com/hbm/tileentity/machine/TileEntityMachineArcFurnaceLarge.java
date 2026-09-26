@@ -16,11 +16,14 @@ import com.hbm.inventory.material.Mats;
 import com.hbm.inventory.material.Mats.MaterialStack;
 import com.hbm.inventory.recipes.ArcFurnaceRecipes;
 import com.hbm.inventory.recipes.ArcFurnaceRecipes.ArcFurnaceRecipe;
+import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemArcElectrode;
 import com.hbm.items.machine.ItemMachineUpgrade;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.main.MainRegistry;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
@@ -34,6 +37,7 @@ import com.hbm.util.I18nUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.IBatteryItem;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -50,6 +54,17 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase implements IEnergyReceiverMK2, IControlReceiver, IGUIProvider, IUpgradeInfoProvider {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+	private static final int TASK_SIMULATE = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private final ArcFurnaceRecipe[] cachedRecipes = new ArcFurnaceRecipe[20];
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private boolean inventoryFingerprintInitialized;
+	private boolean batteryFingerprintInitialized;
+	private int observedInventoryFingerprint;
+	private int observedBatteryFingerprint;
+	private long observedRecipeRevision = Long.MIN_VALUE;
+	private long operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(1_000L);
 
 	
 	public long energyQuanta;
@@ -102,85 +117,14 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 
 	@Override
 	public void updateEntity() {
-		
-		this.upgradeManager.checkSlots(slots, 4, 4);
-		this.upgrade = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-		
 		if(!worldObj.isRemote) {
-			
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 3, energyQuanta, maxPower));
-			this.isProgressing = false;
-			
-			for(DirPos pos : getConPos()) this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			
-			if(energyQuanta > 0) {
-				
-				boolean ingredients = this.hasIngredients();
-				boolean electrodes = this.hasElectrodes();
-				
-				int consumption = (int) (1_000 * Math.pow(5, upgrade));
-				
-				if(ingredients && electrodes && delay <= 0 && this.liquids.isEmpty()) {
-					if(lid > 0) {
-						lid -= 1F / (60F / (upgrade * 0.5 + 1));
-						if(lid < 0) lid = 0;
-						this.progress = 0;
-					} else {
-						
-						if(energyQuanta >= consumption) {
-							int duration = 400 / (upgrade * 2 + 1);
-							this.progress += 1F / duration;
-							this.isProgressing = true;
-							this.setStoredEnergyQuanta(this.energyQuanta - consumption);
-							FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1000);
-							if(this.progress >= 1F) {
-								this.process();
-								this.progress = 0;
-								this.markDirty();
-								this.delay = (int) (120 / (upgrade * 0.5 + 1));
-								PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, 10F);
-							}
-						}
-					}
-				} else {
-					if(this.delay > 0) delay--;
-					this.progress = 0;
-					if(lid < 1 && this.electrodes[0] != 0 && this.electrodes[1] != 0 && this.electrodes[2] != 0) {
-						lid += 1F / (60F / (upgrade * 0.5 + 1));
-						if(lid > 1) lid = 1;
-					}
-				}
-				
-				hasMaterial = ingredients;
-			}
-			
-			this.decideElectrodeState();
-			
-			if(!hasMaterial) hasMaterial = this.hasIngredients();
-			
-			if(!this.liquids.isEmpty() && this.lid > 0F) {
-				
-				ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
-				
-				Vec3 impact = Vec3.createVectorHelper(0, 0, 0);
-				MaterialStack didPour = CrucibleUtil.pourFullStack(worldObj, xCoord + 0.5D + dir.offsetX * 2.875D, yCoord + 1.25D, zCoord + 0.5D + dir.offsetZ * 2.875D, 6, true, this.liquids, MaterialShapes.INGOT.q(1), impact);
-
-				if(didPour != null) {
-					NBTTagCompound data = new NBTTagCompound();
-					data.setString("type", "foundry");
-					data.setInteger("color", didPour.material.moltenColor);
-					data.setByte("dir", (byte) dir.ordinal());
-					data.setFloat("off", 0.625F);
-					data.setFloat("base", 0.625F);
-					data.setFloat("len", Math.max(1F, yCoord + 1 - (float) (Math.ceil(impact.yCoord) - 0.875)));
-					PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(data, xCoord + 0.5D + dir.offsetX * 2.875D, yCoord + 1, zCoord + 0.5D + dir.offsetZ * 2.875D), new TargetPoint(worldObj.provider.dimensionId, xCoord + 0.5, yCoord + 1, zCoord + 0.5, 50));
-				}
-			}
-			
-			this.liquids.removeIf(o -> o.amount <= 0);
-			
 			this.networkPackNT(150);
-		} else {
+			return;
+		}
+
+		if(worldObj.isRemote) {
+			this.upgradeManager.checkSlots(slots, 4, 4);
+			this.upgrade = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
 
 			this.prevLid = this.lid;
 			
@@ -267,6 +211,243 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 			}
 		}
 	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20 | MachineExecutionStrategy.COARSE_100;
+	}
+
+	@Override public String getMachineRuntimeType() { return "hbm:arc_furnace_large"; }
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.CONFIGURATION | MachineDirtyCause.UPGRADE)) != 0) {
+			this.refreshRuntimeState();
+		}
+		if((causes & MachineDirtyCause.ENERGY) != 0 && energyQuanta <= 0 && isProgressing) {
+			isProgressing = false;
+			this.markNetworkDirty();
+		}
+		runtimeInitialized = true;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_SIMULATE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.simulateArcFurnaceTick();
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			boolean inventoryChanged = this.observeInventoryFingerprint();
+			boolean batteryChanged = this.observeBatteryFingerprint();
+			if(inventoryChanged) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.UPGRADE);
+			if(batteryChanged) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.ENERGY);
+		} else if(cadence == 20) {
+			for(DirPos pos : getConPos()) this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+		} else if(cadence == 100) {
+			long revision = SerializableRecipe.getRegistryRevision();
+			if(revision != observedRecipeRevision) this.markMachineDirty(MachineDirtyCause.RECIPE);
+		}
+	}
+
+	private void refreshRuntimeState() {
+		int previousUpgrade = this.upgrade;
+		long previousPower = this.operatingPowerWatts;
+		this.upgradeManager.checkSlots(slots, 4, 4);
+		this.upgrade = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+		long consumptionQuantaPerTick = 1_000L;
+		for(int i = 0; i < this.upgrade; i++) consumptionQuantaPerTick *= 5L;
+		this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(consumptionQuantaPerTick);
+
+		for(int i = 0; i < cachedRecipes.length; i++) cachedRecipes[i] = ArcFurnaceRecipes.getOutput(slots[i + 5], this.liquidMode);
+		this.observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+		this.hasMaterial = this.hasIngredients();
+		this.decideElectrodeState();
+		this.observeInventoryFingerprint();
+		this.observeBatteryFingerprint();
+		if(previousUpgrade != this.upgrade || previousPower != this.operatingPowerWatts) {
+			this.markDirty();
+			this.markNetworkDirty();
+		}
+	}
+
+	private void simulateArcFurnaceTick() {
+		int oldInventoryFingerprint = this.inventoryFingerprint();
+		int oldBatteryFingerprint = this.batteryFingerprint();
+		long oldEnergy = this.energyQuanta;
+		float oldProgress = this.progress;
+		float oldLid = this.lid;
+		int oldDelay = this.delay;
+		boolean oldProgressing = this.isProgressing;
+		boolean oldMaterial = this.hasMaterial;
+		int oldLiquidFingerprint = this.liquidBufferFingerprint();
+
+		boolean inventoryChangedBeforeTick = inventoryFingerprintInitialized && oldInventoryFingerprint != observedInventoryFingerprint;
+		if(inventoryChangedBeforeTick) this.refreshRuntimeState();
+		this.isProgressing = false;
+		runtimeEnergyMutation = true;
+		try {
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 3, energyQuanta, maxPower));
+		} finally {
+			runtimeEnergyMutation = false;
+		}
+
+		if(energyQuanta > 0) {
+			boolean ingredients = this.hasIngredients();
+			boolean hasElectrodes = this.hasElectrodes();
+			long consumption = EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts);
+
+			if(ingredients && hasElectrodes && delay <= 0 && this.liquids.isEmpty()) {
+				if(lid > 0) {
+					lid -= 1F / (60F / (upgrade * 0.5 + 1));
+					if(lid < 0) lid = 0;
+					this.progress = 0;
+				} else if(energyQuanta >= consumption) {
+					int duration = 400 / (upgrade * 2 + 1);
+					this.progress += 1F / duration;
+					this.isProgressing = true;
+					runtimeEnergyMutation = true;
+					try {
+						this.setStoredEnergyQuanta(this.energyQuanta - consumption);
+					} finally {
+						runtimeEnergyMutation = false;
+					}
+					FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1000);
+					if(this.progress >= 1F) {
+						this.process();
+						this.progress = 0;
+						this.delay = (int) (120 / (upgrade * 0.5 + 1));
+						PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, 10F);
+						this.refreshRuntimeState();
+					}
+				}
+			} else {
+				if(this.delay > 0) delay--;
+				this.progress = 0;
+				if(lid < 1 && this.hasAnyElectrode()) {
+					lid += 1F / (60F / (upgrade * 0.5 + 1));
+					if(lid > 1) lid = 1;
+				}
+			}
+
+			hasMaterial = ingredients;
+		}
+
+		this.decideElectrodeState();
+		if(!hasMaterial) hasMaterial = this.hasIngredients();
+
+		if(!this.liquids.isEmpty() && this.lid > 0F) {
+			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
+			Vec3 impact = Vec3.createVectorHelper(0, 0, 0);
+			MaterialStack didPour = CrucibleUtil.pourFullStack(worldObj, xCoord + 0.5D + dir.offsetX * 2.875D, yCoord + 1.25D, zCoord + 0.5D + dir.offsetZ * 2.875D, 6, true, this.liquids, MaterialShapes.INGOT.q(1), impact);
+
+			if(didPour != null) {
+				NBTTagCompound data = new NBTTagCompound();
+				data.setString("type", "foundry");
+				data.setInteger("color", didPour.material.moltenColor);
+				data.setByte("dir", (byte) dir.ordinal());
+				data.setFloat("off", 0.625F);
+				data.setFloat("base", 0.625F);
+				data.setFloat("len", Math.max(1F, yCoord + 1 - (float) (Math.ceil(impact.yCoord) - 0.875)));
+				PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(data, xCoord + 0.5D + dir.offsetX * 2.875D, yCoord + 1, zCoord + 0.5D + dir.offsetZ * 2.875D), new TargetPoint(worldObj.provider.dimensionId, xCoord + 0.5, yCoord + 1, zCoord + 0.5, 50));
+			}
+		}
+
+		this.liquids.removeIf(o -> o.amount <= 0);
+		int newInventoryFingerprint = this.inventoryFingerprint();
+		int newBatteryFingerprint = this.batteryFingerprint();
+		int newLiquidFingerprint = this.liquidBufferFingerprint();
+		boolean inventoryChanged = inventoryChangedBeforeTick || oldInventoryFingerprint != newInventoryFingerprint;
+		boolean batteryChanged = oldBatteryFingerprint != newBatteryFingerprint;
+		boolean stateChanged = oldEnergy != energyQuanta || oldProgress != progress || oldLid != lid || oldDelay != delay || oldProgressing != isProgressing || oldMaterial != hasMaterial || oldLiquidFingerprint != newLiquidFingerprint;
+		if(inventoryChanged) {
+			this.markNetworkDirty();
+			this.markDirty();
+			this.refreshRuntimeState();
+		}
+		if(stateChanged || inventoryChanged || batteryChanged) {
+			this.markDirty();
+			this.markNetworkDirty();
+		}
+		this.observeInventoryFingerprint();
+		this.observeBatteryFingerprint();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		boolean activeArcCycle = energyQuanta > 0 && this.hasIngredients() && this.hasElectrodes() && delay <= 0 && liquids.isEmpty() && (lid > 0 || energyQuanta >= EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts));
+		boolean mustAdvanceDelayOrLid = energyQuanta > 0 && (delay > 0 || (lid < 1 && this.hasAnyElectrode()));
+		boolean mustResetOperation = energyQuanta > 0 && (progress > 0 || isProgressing);
+		boolean mustPour = !liquids.isEmpty() && lid > 0F;
+		if(activeArcCycle || mustAdvanceDelayOrLid || mustResetOperation || mustPour || this.hasBatteryWork()) {
+			this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
+		} else {
+			this.cancelMachineTransition(TASK_SIMULATE, TASK_SLOT_MAIN);
+		}
+	}
+
+	private boolean hasBatteryWork() {
+		if(energyQuanta >= maxPower || slots[3] == null) return false;
+		if(slots[3].getItem() == ModItems.battery_creative || slots[3].getItem() == ModItems.fusion_core_infinite) return true;
+		if(!(slots[3].getItem() instanceof IBatteryItem)) return false;
+		IBatteryItem battery = (IBatteryItem) slots[3].getItem();
+		return battery.getMaxOutputQuantaPerTick() > 0 && battery.getStoredEnergyQuanta(slots[3]) > 0;
+	}
+
+	private boolean hasAnyElectrode() {
+		return electrodes[0] != ELECTRODE_NONE && electrodes[1] != ELECTRODE_NONE && electrodes[2] != ELECTRODE_NONE;
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(int slot = 0; slot < slots.length; slot++) {
+			ItemStack stack = slots[slot];
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				if(slot != 3) hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private int batteryFingerprint() {
+		ItemStack stack = slots[3];
+		if(stack == null) return 0;
+		int hash = System.identityHashCode(stack);
+		hash = 31 * hash + System.identityHashCode(stack.getItem());
+		hash = 31 * hash + stack.stackSize;
+		hash = 31 * hash + stack.getItemDamage();
+		return 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+	}
+
+	private boolean observeBatteryFingerprint() {
+		int current = this.batteryFingerprint();
+		boolean changed = batteryFingerprintInitialized && current != observedBatteryFingerprint;
+		observedBatteryFingerprint = current;
+		batteryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private int liquidBufferFingerprint() {
+		int hash = 1;
+		for(MaterialStack stack : liquids) {
+			hash = 31 * hash + System.identityHashCode(stack.material);
+			hash = 31 * hash + stack.amount;
+		}
+		return hash;
+	}
 	
 	public void decideElectrodeState() {
 		for(int i = 0; i < 3; i++) {
@@ -287,7 +468,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		
 		for(int i = 5; i < 25; i++) {
 			if(slots[i] == null) continue;
-			ArcFurnaceRecipe recipe = ArcFurnaceRecipes.getOutput(slots[i], this.liquidMode);
+			ArcFurnaceRecipe recipe = this.getCachedRecipe(i);
 			if(recipe == null) continue;
 			
 			if(!liquidMode && recipe.solidOutput != null) {
@@ -322,16 +503,18 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	}
 	
 	public boolean hasIngredients() {
-		
-		for(int i = 5; i < 25; i++) {
-			if(slots[i] == null) continue;
-			ArcFurnaceRecipe recipe = ArcFurnaceRecipes.getOutput(slots[i], this.liquidMode);
+		for(ArcFurnaceRecipe recipe : cachedRecipes) {
 			if(recipe == null) continue;
 			if(liquidMode && recipe.fluidOutput != null) return true;
 			if(!liquidMode && recipe.solidOutput != null) return true;
 		}
 		
 		return false;
+	}
+
+	private ArcFurnaceRecipe getCachedRecipe(int slot) {
+		int recipeIndex = slot - 5;
+		return recipeIndex >= 0 && recipeIndex < cachedRecipes.length ? cachedRecipes[recipeIndex] : null;
 	}
 	
 	public boolean hasElectrodes() {
@@ -516,6 +699,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override
@@ -569,6 +753,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		if(data.getBoolean("liquid")) {
 			this.liquidMode = !this.liquidMode;
 			this.markDirty();
+			this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.RECIPE);
 		}
 	}
 

@@ -9,6 +9,8 @@ import com.hbm.inventory.recipes.MachineRecipes;
 import com.hbm.items.ModItems;
 import com.hbm.lib.Library;
 import com.hbm.main.MainRegistry;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.sound.AudioWrapper;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
@@ -32,6 +34,14 @@ public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineB
 	public static final int processSpeed = 600;
 	
 	private AudioWrapper audio;
+	private boolean runtimeInitialized;
+	private boolean runtimeActive;
+	private boolean runtimeEnergyMutation;
+	private long lastAccountTick;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
+	private static final int TASK_ACCOUNT = 1;
+	private static final int TASK_SLOT_MAIN = 0;
 
 	private static final int[] slots_io = new int[] { 0, 1, 2, 3 };
 
@@ -126,54 +136,84 @@ public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineB
 		return process > 0;
 	}
 
-	public void process() {
-		process++;
-
-		if (process >= processSpeed) {
-
-			this.setStoredEnergyQuanta(0);
+	private void completeOperation() {
+		if(!this.canProcess()) {
 			process = 0;
-
-			slots[0].stackSize--;
-			if (slots[0].stackSize <= 0) {
-				slots[0] = null;
-			}
-
-			if (slots[1] == null) {
-				slots[1] = new ItemStack(VersatileConfig.getTransmutatorItem());
-			} else {
-				slots[1].stackSize++;
-			}
-			if (slots[2] != null && slots[2].getItem() == ModItems.redcoil_capacitor) {
-				slots[2].setItemDamage(slots[2].getItemDamage() + 1);
-			}
-
-			this.worldObj.playSoundEffect(this.xCoord, this.yCoord, this.zCoord, "ambient.weather.thunder", 10000.0F,
-					0.8F + this.worldObj.rand.nextFloat() * 0.2F);
+			return;
 		}
+		this.setStoredEnergyQuanta(0);
+		process = 0;
+		slots[0].stackSize--;
+		if(slots[0].stackSize <= 0) slots[0] = null;
+		if(slots[1] == null) slots[1] = new ItemStack(VersatileConfig.getTransmutatorItem());
+		else slots[1].stackSize++;
+		if(slots[2] != null && slots[2].getItem() == ModItems.redcoil_capacitor) slots[2].setItemDamage(slots[2].getItemDamage() + 1);
+		this.worldObj.playSoundEffect(this.xCoord, this.yCoord, this.zCoord, "ambient.weather.thunder", 10000.0F,
+				0.8F + this.worldObj.rand.nextFloat() * 0.2F);
+	}
+
+	private boolean hasBatteryWork() {
+		if(energyQuanta >= maxPower || slots[3] == null) return false;
+		if(slots[3].getItem() == ModItems.battery_creative || slots[3].getItem() == ModItems.fusion_core_infinite) return true;
+		if(!(slots[3].getItem() instanceof IBatteryItem)) return false;
+		IBatteryItem battery = (IBatteryItem) slots[3].getItem();
+		return battery.getMaxOutputQuantaPerTick() > 0 && battery.getStoredEnergyQuanta(slots[3]) > 0;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		int previousProgress = process;
+		boolean eligible = this.canProcess();
+		if(eligible) {
+			if(!runtimeActive) {
+				runtimeActive = true;
+				lastAccountTick = now;
+			}
+		} else {
+			if(process != 0) process = 0;
+			runtimeActive = false;
+		}
+		if(previousProgress != process) this.markDirty();
+		if(this.hasBatteryWork()) {
+			this.scheduleMachineTransition(now + 1L, TASK_ACCOUNT, TASK_SLOT_MAIN);
+		} else if(eligible) {
+			this.scheduleMachineTransition(now + (5L - now % 5L), TASK_ACCOUNT, TASK_SLOT_MAIN);
+		} else {
+			this.cancelMachineTransition(TASK_ACCOUNT, TASK_SLOT_MAIN);
+		}
+	}
+
+	private void sendRuntimeState() {
+		NBTTagCompound data = new NBTTagCompound();
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+		data.setInteger("progress", process);
+		this.networkPack(data, 50);
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
 	}
 
 	@Override
 	public void updateEntity() {
-
-		if (!worldObj.isRemote) {
-			
-			this.updateConnections();
-			
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 3, energyQuanta, maxPower));
-
-			if(canProcess()) {
-				process();
-			} else {
-				process = 0;
-			}
-			
-			NBTTagCompound data = new NBTTagCompound();
-			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
-			data.setInteger("progress", process);
-			this.networkPack(data, 50);
-			
-		} else {
+		if(worldObj.isRemote) {
 
 			if(process > 0) {
 				
@@ -191,6 +231,57 @@ public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineB
 					audio = null;
 				}
 			}
+		}
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_ACCOUNT || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		long oldEnergy = energyQuanta;
+		int oldProgress = process;
+		int oldInventoryFingerprint = this.inventoryFingerprint();
+		boolean charging = this.hasBatteryWork();
+		long elapsed = charging ? 1L : Math.max(1L, now - lastAccountTick);
+		runtimeEnergyMutation = true;
+		try {
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 3, energyQuanta, maxPower));
+			if(this.canProcess()) {
+				process = (int) Math.min((long) processSpeed, process + elapsed);
+				if(process >= processSpeed) this.completeOperation();
+			} else {
+				process = 0;
+				runtimeActive = false;
+			}
+		} finally {
+			runtimeEnergyMutation = false;
+		}
+		lastAccountTick = now;
+		this.observeInventoryFingerprint();
+		if(oldEnergy != energyQuanta || oldProgress != process || oldInventoryFingerprint != observedInventoryFingerprint) this.markDirty();
+		this.evaluateAndSchedule(now);
+		this.sendRuntimeState();
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(this.observeInventoryFingerprint()) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.ENERGY);
+			if(process > 0) this.sendRuntimeState();
+		} else if(cadence == 20) {
+			this.updateConnections();
+			boolean eligible = this.canProcess();
+			if(eligible != runtimeActive) this.markMachineDirty(MachineDirtyCause.RECIPE | MachineDirtyCause.TOPOLOGY);
 		}
 	}
 	
@@ -239,6 +330,7 @@ public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineB
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override

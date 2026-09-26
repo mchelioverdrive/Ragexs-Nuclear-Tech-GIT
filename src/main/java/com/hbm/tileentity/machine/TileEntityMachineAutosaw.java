@@ -9,6 +9,8 @@ import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.lib.ModDamageSource;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
@@ -31,6 +33,9 @@ import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 
 public class TileEntityMachineAutosaw extends TileEntityLoadedBase implements INBTPacketReceiver, IFluidStandardReceiver, IFluidCopiable {
+
+	private static final int TASK_FUEL_CHECK = 1;
+	private static final int TASK_SAW_TICK = 2;
 	
 	public static final HashSet<FluidType> acceptedFuels = new HashSet();
 	
@@ -61,127 +66,153 @@ public class TileEntityMachineAutosaw extends TileEntityLoadedBase implements IN
 	
 	public TileEntityMachineAutosaw() {
 		this.tank = new FluidTank(Fluids.WOODOIL, 100);
+		this.tank.setChangeListener(new FluidTank.ChangeListener() {
+			@Override public void onTankChanged(FluidTank changedTank) {
+				markMachineDirty(MachineDirtyCause.FLUID);
+			}
+		});
 	}
-	
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		long remainder = now % 20L;
+		long nextFuelCheck = remainder == 0L ? now : now + (20L - remainder);
+		this.scheduleMachineTransition(nextFuelCheck, TASK_FUEL_CHECK, 0);
+		if(isOn) this.scheduleMachineTransition(now + 1L, TASK_SAW_TICK, 0);
+		if((causes & (MachineDirtyCause.FLUID | MachineDirtyCause.LIFECYCLE)) != 0) this.sendServerUpdate();
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(worldObj == null || worldObj.isRemote || taskSlot != 0) return;
+		long now = worldObj.getTotalWorldTime();
+
+		if(taskType == TASK_FUEL_CHECK) {
+			if(tank.getFill() > 0) {
+				tank.setFill(tank.getFill() - 1);
+				this.isOn = true;
+				this.scheduleMachineTransition(now, TASK_SAW_TICK, 0);
+			} else {
+				this.isOn = false;
+				this.cancelMachineTransition(TASK_SAW_TICK, 0);
+				this.sendServerUpdate();
+			}
+			this.subscribeToAllAround(tank.getTankType(), this);
+			this.scheduleMachineTransition(now + 20L, TASK_FUEL_CHECK, 0);
+			return;
+		}
+
+		if(taskType == TASK_SAW_TICK && isOn) {
+			this.simulateSawTick();
+			this.sendServerUpdate();
+			if(isOn) this.scheduleMachineTransition(now + 1L, TASK_SAW_TICK, 0);
+		}
+	}
+
+	private void sendServerUpdate() {
+		if(worldObj == null || worldObj.isRemote) return;
+		NBTTagCompound data = new NBTTagCompound();
+		data.setBoolean("isOn", isOn);
+		data.setFloat("yaw", this.rotationYaw);
+		data.setFloat("pitch", this.rotationPitch);
+		tank.writeToNBT(data, "t");
+		INBTPacketReceiver.networkPack(this, data, 100);
+	}
+
+	private void simulateSawTick() {
+		Vec3 pivot = Vec3.createVectorHelper(xCoord + 0.5, yCoord + 1.75, zCoord + 0.5);
+		Vec3 upperArm = Vec3.createVectorHelper(0, 0, -4);
+		upperArm.rotateAroundX((float) Math.toRadians(80 - rotationPitch));
+		upperArm.rotateAroundY(-(float) Math.toRadians(rotationYaw));
+		Vec3 lowerArm = Vec3.createVectorHelper(0, 0, -4);
+		lowerArm.rotateAroundX((float) -Math.toRadians(80 - rotationPitch));
+		lowerArm.rotateAroundY(-(float) Math.toRadians(rotationYaw));
+		Vec3 armTip = Vec3.createVectorHelper(0, 0, -2);
+		armTip.rotateAroundY(-(float) Math.toRadians(rotationYaw));
+
+		double cX = pivot.xCoord + upperArm.xCoord + lowerArm.xCoord + armTip.xCoord;
+		double cY = pivot.yCoord;
+		double cZ = pivot.zCoord + upperArm.zCoord + lowerArm.zCoord + armTip.zCoord;
+
+		List<EntityLivingBase> affected = worldObj.getEntitiesWithinAABB(EntityLivingBase.class, AxisAlignedBB.getBoundingBox(cX - 1, cY - 0.25, cZ - 1, cX + 1, cY + 0.25, cZ + 1));
+
+		for(EntityLivingBase e : affected) {
+			if(e.isEntityAlive() && e.attackEntityFrom(ModDamageSource.turbofan, 100)) {
+				worldObj.playSoundEffect(e.posX, e.posY, e.posZ, "mob.zombie.woodbreak", 2.0F, 0.95F + worldObj.rand.nextFloat() * 0.2F);
+				int count = Math.min((int)Math.ceil(e.getMaxHealth() / 4), 250);
+				NBTTagCompound data = new NBTTagCompound();
+				data.setString("type", "vanillaburst");
+				data.setInteger("count", count * 4);
+				data.setDouble("motion", 0.1D);
+				data.setString("mode", "blockdust");
+				data.setInteger("block", Block.getIdFromBlock(Blocks.redstone_block));
+				PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(data, e.posX, e.posY + e.height * 0.5, e.posZ), new TargetPoint(e.dimension, e.posX, e.posY, e.posZ, 50));
+			}
+		}
+
+		if(state == 0) {
+			this.rotationYaw += 1;
+			if(this.rotationYaw >= 360) this.rotationYaw -= 360;
+
+			Vec3 grace = Vec3.createVectorHelper(0, 0, -3.5);
+			grace.rotateAroundY(-(float) Math.toRadians(rotationYaw));
+			grace.xCoord += pivot.xCoord;
+			grace.yCoord += pivot.yCoord;
+			grace.zCoord += pivot.zCoord;
+
+			Vec3 detector = Vec3.createVectorHelper(0, 0, -9);
+			detector.rotateAroundY(-(float) Math.toRadians(rotationYaw));
+			detector.xCoord += pivot.xCoord;
+			detector.yCoord += pivot.yCoord;
+			detector.zCoord += pivot.zCoord;
+			MovingObjectPosition pos = worldObj.func_147447_a(grace, detector, false, false, false);
+
+			if(pos != null && pos.typeOfHit == pos.typeOfHit.BLOCK) {
+				Block b = worldObj.getBlock(pos.blockX, pos.blockY, pos.blockZ);
+				if(b.getMaterial() == Material.wood || b.getMaterial() == Material.leaves || b.getMaterial() == Material.plants) {
+					int meta = worldObj.getBlockMetadata(pos.blockX, pos.blockY, pos.blockZ);
+					if(!shouldIgnore(b, meta)) state = 1;
+				}
+			}
+		}
+
+		int hitY = (int) Math.floor(cY);
+		int hitX0 = (int) Math.floor(cX - 0.5);
+		int hitZ0 = (int) Math.floor(cZ - 0.5);
+		int hitX1 = (int) Math.floor(cX + 0.5);
+		int hitZ1 = (int) Math.floor(cZ + 0.5);
+		this.tryInteract(hitX0, hitY, hitZ0);
+		this.tryInteract(hitX1, hitY, hitZ0);
+		this.tryInteract(hitX0, hitY, hitZ1);
+		this.tryInteract(hitX1, hitY, hitZ1);
+
+		if(state == 1) {
+			this.rotationPitch += 2;
+			if(this.rotationPitch > 80) {
+				this.rotationPitch = 80;
+				state = 2;
+			}
+		}
+
+		if(state == 2) {
+			this.rotationPitch -= 2;
+			if(this.rotationPitch <= 0) {
+				this.rotationPitch = 0;
+				state = 0;
+			}
+		}
+	}
+
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
-			if(worldObj.getTotalWorldTime() % 20 == 0) {
-				if(tank.getFill() > 0) {
-					tank.setFill(tank.getFill() - 1);
-					this.isOn = true;
-				} else {
-					this.isOn = false;
-				}
-				
-				this.subscribeToAllAround(tank.getTankType(), this);
-			}
-
-			if(isOn) {
-				Vec3 pivot = Vec3.createVectorHelper(xCoord + 0.5, yCoord + 1.75, zCoord + 0.5);
-				Vec3 upperArm = Vec3.createVectorHelper(0, 0, -4);
-				upperArm.rotateAroundX((float) Math.toRadians(80 - rotationPitch));
-				upperArm.rotateAroundY(-(float) Math.toRadians(rotationYaw));
-				Vec3 lowerArm = Vec3.createVectorHelper(0, 0, -4);
-				lowerArm.rotateAroundX((float) -Math.toRadians(80 - rotationPitch));
-				lowerArm.rotateAroundY(-(float) Math.toRadians(rotationYaw));
-				Vec3 armTip = Vec3.createVectorHelper(0, 0, -2);
-				armTip.rotateAroundY(-(float) Math.toRadians(rotationYaw));
-	
-				double cX = pivot.xCoord + upperArm.xCoord + lowerArm.xCoord + armTip.xCoord;
-				double cY = pivot.yCoord;
-				double cZ = pivot.zCoord + upperArm.zCoord + lowerArm.zCoord + armTip.zCoord;
-				
-				List<EntityLivingBase> affected = worldObj.getEntitiesWithinAABB(EntityLivingBase.class, AxisAlignedBB.getBoundingBox(cX - 1, cY - 0.25, cZ - 1, cX + 1, cY + 0.25, cZ + 1));
-				
-				for(EntityLivingBase e : affected) {
-					if(e.isEntityAlive() && e.attackEntityFrom(ModDamageSource.turbofan, 100)) {
-						worldObj.playSoundEffect(e.posX, e.posY, e.posZ, "mob.zombie.woodbreak", 2.0F, 0.95F + worldObj.rand.nextFloat() * 0.2F);
-						int count = Math.min((int)Math.ceil(e.getMaxHealth() / 4), 250);
-						NBTTagCompound data = new NBTTagCompound();
-						data.setString("type", "vanillaburst");
-						data.setInteger("count", count * 4);
-						data.setDouble("motion", 0.1D);
-						data.setString("mode", "blockdust");
-						data.setInteger("block", Block.getIdFromBlock(Blocks.redstone_block));
-						PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(data, e.posX, e.posY + e.height * 0.5, e.posZ), new TargetPoint(e.dimension, e.posX, e.posY, e.posZ, 50));
-					}
-				}
-				
-				if(state == 0) {
-					
-					this.rotationYaw += 1;
-					
-					if(this.rotationYaw >= 360) {
-						this.rotationYaw -= 360;
-					}
-					
-					Vec3 grace = Vec3.createVectorHelper(0, 0, -3.5);
-					grace.rotateAroundY(-(float) Math.toRadians(rotationYaw));
-					grace.xCoord += pivot.xCoord;
-					grace.yCoord += pivot.yCoord;
-					grace.zCoord += pivot.zCoord;
-					
-					Vec3 detector = Vec3.createVectorHelper(0, 0, -9);
-					detector.rotateAroundY(-(float) Math.toRadians(rotationYaw));
-					detector.xCoord += pivot.xCoord;
-					detector.yCoord += pivot.yCoord;
-					detector.zCoord += pivot.zCoord;
-					MovingObjectPosition pos = worldObj.func_147447_a(grace, detector, false, false, false);
-					
-					if(pos != null && pos.typeOfHit == pos.typeOfHit.BLOCK) {
-						
-						Block b = worldObj.getBlock(pos.blockX, pos.blockY, pos.blockZ);
-						
-						if(b.getMaterial() == Material.wood || b.getMaterial() == Material.leaves || b.getMaterial() == Material.plants) {
-							
-							int meta = worldObj.getBlockMetadata(pos.blockX, pos.blockY, pos.blockZ);
-							if(!shouldIgnore(b, meta)) {
-								state = 1;
-							}
-						}
-					}
-				}
-
-				int hitY = (int) Math.floor(cY);
-				int hitX0 = (int) Math.floor(cX - 0.5);
-				int hitZ0 = (int) Math.floor(cZ - 0.5);
-				int hitX1 = (int) Math.floor(cX + 0.5);
-				int hitZ1 = (int) Math.floor(cZ + 0.5);
-
-				this.tryInteract(hitX0, hitY, hitZ0);
-				this.tryInteract(hitX1, hitY, hitZ0);
-				this.tryInteract(hitX0, hitY, hitZ1);
-				this.tryInteract(hitX1, hitY, hitZ1);
-				
-				if(state == 1) {
-					this.rotationPitch += 2;
-
-					if(this.rotationPitch > 80) {
-						this.rotationPitch = 80;
-						state = 2;
-					}
-				}
-				
-				if(state == 2) {
-					this.rotationPitch -= 2;
-					
-					if(this.rotationPitch <= 0) {
-						this.rotationPitch = 0;
-						state = 0;
-					}
-				}
-			}
-			
-			NBTTagCompound data = new NBTTagCompound();
-			data.setBoolean("isOn", isOn);
-			data.setFloat("yaw", this.rotationYaw);
-			data.setFloat("pitch", this.rotationPitch);
-			tank.writeToNBT(data, "t");
-			INBTPacketReceiver.networkPack(this, data, 100);
-		} else {
+		if(worldObj.isRemote) {
 			
 			this.lastSpin = this.spin;
 			

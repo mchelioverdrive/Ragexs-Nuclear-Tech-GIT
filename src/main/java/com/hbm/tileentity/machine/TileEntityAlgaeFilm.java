@@ -3,6 +3,7 @@ package com.hbm.tileentity.machine;
 import com.hbm.dim.orbit.WorldProviderOrbit;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.TileEntityMachineBase;
 
 import api.hbm.fluid.IFluidStandardTransceiver;
@@ -11,6 +12,9 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityAlgaeFilm extends TileEntityMachineBase implements IFluidStandardTransceiver {
+	private static final int TASK_ENVIRONMENTAL_CYCLE = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
 
 	public FluidTank[] tanks;
 	public boolean canOperate;
@@ -20,6 +24,7 @@ public class TileEntityAlgaeFilm extends TileEntityMachineBase implements IFluid
 		tanks = new FluidTank[2];
 		tanks[0] = new FluidTank(Fluids.CARBONDIOXIDE, 8_000);
 		tanks[1] = new FluidTank(Fluids.OXYGEN, 8_000);
+		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -29,26 +34,50 @@ public class TileEntityAlgaeFilm extends TileEntityMachineBase implements IFluid
 
 	@Override
 	public void updateEntity() {
-		if(!worldObj.isRemote) {
-			canOperate = worldObj.provider instanceof WorldProviderOrbit;
+	}
 
-			if(canOperate && worldObj.rand.nextBoolean()) {
-				if(tanks[0].getFill() > 0 && tanks[1].getFill() < tanks[1].getMaxFill()) {
-					tanks[0].setFill(tanks[0].getFill() - 1);
-					tanks[1].setFill(tanks[1].getFill() + 1);
-				}
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		canOperate = worldObj.provider instanceof WorldProviderOrbit;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(20);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_ENVIRONMENTAL_CYCLE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		boolean fluidChanged = false;
+		this.beginMachineFluidMutation();
+		try {
+			if(canOperate && worldObj.rand.nextBoolean() && tanks[0].getFill() > 0 && tanks[1].getFill() < tanks[1].getMaxFill()) {
+				tanks[0].setFill(tanks[0].getFill() - 1);
+				tanks[1].setFill(tanks[1].getFill() + 1);
+				fluidChanged = true;
 			}
-
 			ForgeDirection d = ForgeDirection.getOrientation(this.getBlockMetadata()).getRotation(ForgeDirection.UP);
-			ForgeDirection[] dirs = new ForgeDirection[] { d, d.getOpposite() };
-
-			for(ForgeDirection dir : dirs) {
-				trySubscribe(tanks[0].getTankType(), worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-				sendFluid(tanks[1], worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-			}
-
-			networkPackNT(20);
+			this.updatePort(d);
+			this.updatePort(d.getOpposite());
+		} finally { this.endMachineFluidMutation(); }
+		if(fluidChanged) {
+			this.markDirty();
+			this.markNetworkDirty();
 		}
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(20);
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(runtimeInitialized && canOperate) this.scheduleMachineTransition(now + 1L, TASK_ENVIRONMENTAL_CYCLE, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_ENVIRONMENTAL_CYCLE, TASK_SLOT_MAIN);
+	}
+
+	private void updatePort(ForgeDirection dir) {
+		this.trySubscribe(tanks[0].getTankType(), worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
+		if(tanks[1].getFill() > 0) this.sendFluid(tanks[1], worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 	}
 
 	@Override

@@ -21,6 +21,7 @@ import com.hbm.util.I18nUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import cpw.mods.fml.relauncher.Side;
+import api.hbm.energymk2.EnergyUnits;
 import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayer;
@@ -34,6 +35,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase implements IUpgradeInfoProvider, IFluidCopiable {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+	private int runtimeConnectionPolls;
 
 	
 	float rotSpeed;
@@ -48,6 +50,8 @@ public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase imp
 
 		water = new FluidTank(Fluids.FRESH_WATER, 64_000).migrateFrom(Fluids.WATER);
 		steam = new FluidTank(Fluids.SPENTSTEAM, 64_000);
+		this.trackMachineFluidTank(water);
+		this.trackMachineFluidTank(steam);
 	}
 
 	@Override
@@ -63,49 +67,7 @@ public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase imp
 	public void updateEntity() {
 		super.updateEntity();
 		
-		if(!worldObj.isRemote) {
-			
-			if(worldObj.getTotalWorldTime() % 60 == 0) {
-				
-				for(DirPos pos : getConPos()) {
-					this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-					
-					for(FluidTank tank : inTanks()) {
-						if(tank.getTankType() != Fluids.NONE) {
-							this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-						}
-					}
-				}
-			}
-			
-			for(DirPos pos : getConPos()) for(FluidTank tank : outTanks()) {
-				if(tank.getTankType() != Fluids.NONE && tank.getFill() > 0) {
-					this.sendFluid(tank, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				}
-			}
-			
-			this.speed = 100;
-			this.consumption = 100;
-			
-			this.upgradeManager.checkSlots(slots, 1, 4);
-
-			int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 6);
-			int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
-			int overLevel = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
-			
-			this.speed -= speedLevel * 15;
-			this.consumption += speedLevel * 300;
-			this.speed += powerLevel * 5;
-			this.consumption -= powerLevel * 20;
-			this.speed /= (overLevel + 1);
-			this.consumption *= (overLevel + 1);
-			
-			if(this.speed <= 0) {
-				this.speed = 1;
-			}
-			
-			this.networkPackNT(150);
-		} else {
+		if(worldObj.isRemote) {
 			
 			float maxSpeed = 30F;
 			
@@ -144,6 +106,43 @@ public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase imp
 			if(rot >= 360) {
 				rot -= 360;
 				prevRot -= 360;
+			}
+		}
+	}
+
+	@Override
+	protected boolean refreshRuntimeSettings(boolean contentAware) {
+		int oldSpeed = this.speed;
+		long oldOperatingPowerWatts = this.operatingPowerWatts;
+		this.speed = 100;
+		if(contentAware) this.upgradeManager.checkSlots(slots, 1, 4);
+		else this.upgradeManager.checkSlotsIfDirty(slots, 1, 4);
+
+		int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 6);
+		int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+		int overLevel = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
+		this.speed -= speedLevel * 15;
+		long consumptionQuantaPerTick = 100L + speedLevel * 300L;
+		this.speed += powerLevel * 5;
+		consumptionQuantaPerTick -= powerLevel * 20L;
+		this.speed /= (overLevel + 1);
+		consumptionQuantaPerTick *= overLevel + 1L;
+		if(this.speed <= 0) this.speed = 1;
+		this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(consumptionQuantaPerTick);
+		return oldSpeed != this.speed || oldOperatingPowerWatts != this.operatingPowerWatts;
+	}
+
+	@Override
+	protected void onMachineRuntimeMaintenance(int cadence) {
+		if(cadence == 5) {
+			for(DirPos pos : getConPos()) for(FluidTank tank : outTanks()) {
+				if(tank.getTankType() != Fluids.NONE && tank.getFill() > 0) this.sendFluid(tank, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			}
+		} else if(cadence == 20 && ++runtimeConnectionPolls >= 3) {
+			runtimeConnectionPolls = 0;
+			for(DirPos pos : getConPos()) {
+				this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+				for(FluidTank tank : inTanks()) if(tank.getTankType() != Fluids.NONE) this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 		}
 	}

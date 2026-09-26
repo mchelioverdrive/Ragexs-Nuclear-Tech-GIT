@@ -13,6 +13,8 @@ import com.hbm.handler.atmosphere.IAtmosphereProvider;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.TileEntityMachineBase;
 
@@ -27,6 +29,9 @@ import net.minecraft.world.World;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityAirPump extends TileEntityMachineBase implements IFluidStandardReceiver, IAtmosphereProvider, CompatHandler.OCComponent {
+	private static final int TASK_ATMOSPHERE = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
 
 	private int onTicks = 0;
 	private boolean registered = false;
@@ -52,6 +57,7 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 	public TileEntityAirPump() {
 		super(1);
 		tank = new FluidTank(Fluids.OXYGEN, 16000);
+		this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -81,88 +87,107 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 
 	@Override
 	public void updateEntity() {
-		if(!worldObj.isRemote) {
-			if(onTicks > 0) onTicks--;
-			if(registerWait > 0) registerWait--;
-
-			if(tank.getFill() >= 20) {
-				onTicks = 20;
-
-				if(registerWait > 0) {
-					// do nothing
-				} else if(!registered) {
-					ChunkAtmosphereManager.proxy.registerAtmosphere(this);
-					registered = true;
-
-					if(blobFillAmount > 1) {
-						recovering = 100;
-					}
-				} else if(recovering > 0) {
-					recovering--;
-					if(currentBlob != null) {
-						recovering = 0;
-					}
-				} else {
-					if(currentBlob != null) {
-						int size = currentBlob.getBlobSize();
-						if(size != 0) {
-							if(blobFillAmount > size)
-								blobFillAmount = size;
-
-							// Fill the blob from the tank, 1mB per block
-							int toFill = Math.min(size - blobFillAmount, 20);
-							blobFillAmount += toFill;
-
-							// Fill to the brim, and then trickle randomly afterwards
-							if(toFill > 0) {
-								tank.setFill(tank.getFill() - toFill);
-							} else if(rand.nextBoolean()) {
-								tank.setFill(tank.getFill() - 1);
-								scrub(1);
-							}
-						} else {
-							currentBlob = null;
-						}
-					}
-
-					if(currentBlob == null) {
-						// Venting to vacuum
-						tank.setFill(tank.getFill() - 20);
-						blobFillAmount = 0;
-					}
-				}
-			} else {
-				if(registered) {
-					ChunkAtmosphereManager.proxy.unregisterAtmosphere(this);
-					registered = false;
-					currentBlob = null;
-					blobFillAmount = 0;
-				}
-			}
-
-			if(worldObj.getTotalWorldTime() % 5 == 0) {
-				currentAtmosphere = ChunkAtmosphereManager.proxy.getAtmosphere(worldObj, xCoord, yCoord, zCoord);
-			}
-
-			subscribeToAllAround(tank.getTankType(), this);
-
-			this.networkPackNT(100);
-
-		} else {
+		if(worldObj.isRemote) {
 			if(onTicks > 0) {
 				this.spawnParticles();
 			}
 		}
 	}
 
-	@Override
-	public void invalidate() {
-		super.invalidate();
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
 
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(100);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_ATMOSPHERE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		if(onTicks > 0) onTicks--;
+		if(registerWait > 0) registerWait--;
+		if(tank.getFill() >= 20) {
+			onTicks = 20;
+			if(registerWait > 0) {
+				// Give the atmosphere graph time to recover after this chunk binds.
+			} else if(!registered) {
+				ChunkAtmosphereManager.proxy.registerAtmosphere(this);
+				registered = true;
+				if(blobFillAmount > 1) recovering = 100;
+			} else if(recovering > 0) {
+				recovering--;
+				if(currentBlob != null) recovering = 0;
+			} else {
+				if(currentBlob != null) {
+					int size = currentBlob.getBlobSize();
+					if(size != 0) {
+						if(blobFillAmount > size) blobFillAmount = size;
+						int toFill = Math.min(size - blobFillAmount, 20);
+						blobFillAmount += toFill;
+						if(toFill > 0) this.setRuntimeTankFill(tank.getFill() - toFill);
+						else if(rand.nextBoolean()) {
+							this.setRuntimeTankFill(tank.getFill() - 1);
+							scrub(1);
+						}
+					} else currentBlob = null;
+				}
+				if(currentBlob == null) {
+					this.setRuntimeTankFill(tank.getFill() - 20);
+					blobFillAmount = 0;
+				}
+			}
+		} else if(registered) {
+			ChunkAtmosphereManager.proxy.unregisterAtmosphere(this);
+			registered = false;
+			currentBlob = null;
+			blobFillAmount = 0;
+		}
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(100);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			currentAtmosphere = ChunkAtmosphereManager.proxy.getAtmosphere(worldObj, xCoord, yCoord, zCoord);
+			this.markNetworkDirty();
+			this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		} else if(cadence == 20) {
+			this.subscribeToAllAround(tank.getTankType(), this);
+			this.networkPackNTIfDirty(100);
+		}
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(runtimeInitialized && (tank.getFill() >= 20 || onTicks > 0 || registerWait > 0 || registered)) this.scheduleMachineTransition(now + 1L, TASK_ATMOSPHERE, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_ATMOSPHERE, TASK_SLOT_MAIN);
+	}
+
+	private void stopAtmosphereRegistration() {
 		if(registered) {
 			ChunkAtmosphereManager.proxy.unregisterAtmosphere(this);
 			registered = false;
 		}
+		currentBlob = null;
+	}
+
+	private void setRuntimeTankFill(int fill) {
+		this.beginMachineFluidMutation();
+		try { tank.setFill(fill); } finally { this.endMachineFluidMutation(); }
+	}
+
+	@Override public void onChunkUnload() {
+		this.stopAtmosphereRegistration();
+		super.onChunkUnload();
+	}
+
+	@Override
+	public void invalidate() {
+		this.stopAtmosphereRegistration();
+		super.invalidate();
 	}
 
 	@Override
@@ -294,6 +319,8 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 	@Override
 	public void onBlobCreated(AtmosphereBlob blob) {
 		currentBlob = blob;
+		this.markNetworkDirty();
+		this.markMachineDirty(MachineDirtyCause.TOPOLOGY);
 	}
 
 	@Override
@@ -301,6 +328,8 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 		blobFillAmount -= amount;
 		if(blobFillAmount < 1) blobFillAmount = 1;
 		scrub(amount);
+		this.markDirty();
+		this.markNetworkDirty();
 	}
 
 	public boolean registerScrubber(TileEntityAirScrubber scrubber) {

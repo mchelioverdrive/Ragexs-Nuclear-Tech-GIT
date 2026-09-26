@@ -54,13 +54,14 @@ public class TileEntityHeaterOven extends TileEntityFireboxBase implements IConf
 	}
 
 	@Override
-	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			this.tryPullHeat();
-		}
-		
-		super.updateEntity();
+	protected void beforeFireboxSimulationTick() {
+		this.tryPullHeat();
+	}
+
+	@Override
+	protected boolean hasAdditionalRuntimeWork() {
+		TileEntity con = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
+		return con instanceof IHeatSource && ((IHeatSource) con).getHeatStored() > 0 && this.heatEnergy < this.getMaxHeat();
 	}
 	
 	protected void tryPullHeat() {

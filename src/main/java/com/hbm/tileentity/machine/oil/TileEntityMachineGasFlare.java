@@ -19,6 +19,8 @@ import com.hbm.inventory.gui.GUIMachineGasFlare;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
 import com.hbm.lib.Library;
 import com.hbm.main.MainRegistry;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IUpgradeInfoProvider;
@@ -45,7 +47,13 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
 public class TileEntityMachineGasFlare extends TileEntityMachineBase implements IEnergyProviderMK2, IFluidStandardReceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable {
+	private static final int TASK_PROCESS = 1;
+	private static final int TASK_SLOT_MAIN = 0;
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private DirPos[] runtimeConnections;
+	private int observedOrientation = Integer.MIN_VALUE;
 
 
 	public long energyQuanta;
@@ -59,6 +67,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 	public TileEntityMachineGasFlare() {
 		super(6);
 		tank = new FluidTank(Fluids.GAS, 64000);
+		this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -98,104 +107,12 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 		if(data.hasKey("valve")) this.isOn = !this.isOn;
 		if(data.hasKey("dial")) this.doesBurn = !this.doesBurn;
 		this.worldObj.markTileEntityChunkModified(this.xCoord, this.yCoord, this.zCoord, this);
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 
 	@Override
 	public void updateEntity() {
-
-		if(!worldObj.isRemote) {
-
-			this.fluidUsed = 0;
-			this.output = 0;
-
-			for(DirPos pos : getConPos()) {
-				this.tryProvide(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			}
-
-			tank.setType(3, slots);
-			tank.loadTank(1, 2, slots);
-
-			int maxVent = 50;
-			int maxBurn = 10;
-
-			if(isOn && tank.getFill() > 0) {
-
-				this.upgradeManager.checkSlots(slots, 4, 5);
-				int burn = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-				int yield = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
-
-				maxVent += maxVent * burn;
-				maxBurn += maxBurn * burn;
-
-				if(!doesBurn || !tank.getTankType().hasTrait(FT_Flammable.class) || !breatheAir(Math.min(maxBurn, tank.getFill()))) {
-
-					if(tank.getTankType().hasTrait(FT_Gaseous.class) || tank.getTankType().hasTrait(FT_Gaseous_ART.class)) {
-						int eject = Math.min(maxVent, tank.getFill());
-						this.fluidUsed = eject;
-						tank.setFill(tank.getFill() - eject);
-						tank.getTankType().onFluidRelease(this, tank, eject);
-
-						if(worldObj.getTotalWorldTime() % 7 == 0)
-							this.worldObj.playSoundEffect(this.xCoord, this.yCoord + 11, this.zCoord, "random.fizz", getVolume(1.5F), 0.5F);
-
-						if(worldObj.getTotalWorldTime() % 5 == 0 && eject > 0) {
-							FT_Polluting.pollute(worldObj, xCoord, yCoord, zCoord, tank.getTankType(), FluidReleaseType.SPILL, eject * 5);
-						}
-
-						CelestialBody.emitGas(worldObj, tank.getTankType(), eject);
-					}
-				} else {
-
-					if(tank.getTankType().hasTrait(FT_Flammable.class)) {
-						int eject = Math.min(maxBurn, tank.getFill());
-						this.fluidUsed = eject;
-						tank.setFill(tank.getFill() - eject);
-
-						int penalty = 5;
-						if(!tank.getTankType().hasTrait(FT_Gaseous.class) && !tank.getTankType().hasTrait(FT_Gaseous_ART.class))
-							penalty = 10;
-
-						long powerProd = tank.getTankType().getTrait(FT_Flammable.class).getHeatEnergy() * eject / 1_000; // divided by 1000 per mB
-						powerProd /= penalty;
-						powerProd += powerProd * yield / 3;
-
-						this.output = (int) powerProd;
-						this.setStoredEnergyQuanta(this.energyQuanta + (long) powerProd);
-
-						if(energyQuanta > maxPower)
-							this.setStoredEnergyQuanta(maxPower);
-
-						ParticleUtil.spawnGasFlame(worldObj, this.xCoord + 0.5F, this.yCoord + 11.75F, this.zCoord + 0.5F, worldObj.rand.nextGaussian() * 0.15, 0.2, worldObj.rand.nextGaussian() * 0.15);
-
-						List<Entity> list = worldObj.getEntitiesWithinAABB(Entity.class, AxisAlignedBB.getBoundingBox(xCoord - 1, yCoord + 12, zCoord - 2, xCoord + 2, yCoord + 17, zCoord + 2));
-						for(Entity e : list) {
-							e.setFire(5);
-							e.attackEntityFrom(DamageSource.onFire, 5F);
-						}
-
-						if(worldObj.getTotalWorldTime() % 3 == 0)
-							this.worldObj.playSoundEffect(this.xCoord, this.yCoord + 11, this.zCoord, "hbm:weapon.flamethrowerShoot", getVolume(1.5F), 0.75F);
-
-						if(worldObj.getTotalWorldTime() % 5 == 0 && eject > 0) {
-							FT_Polluting.pollute(worldObj, xCoord, yCoord, zCoord, tank.getTankType(), FluidReleaseType.BURN, eject * 5);
-						}
-						FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord + 11, zCoord, Math.max(100, 600 / Math.max(eject, 1)));
-					}
-				}
-			}
-
-			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 0, energyQuanta, maxPower));
-
-			NBTTagCompound data = new NBTTagCompound();
-			EnergyUnits.writeEnergyQuanta(data, this.energyQuanta);
-			data.setBoolean("isOn", isOn);
-			data.setBoolean("doesBurn", doesBurn);
-			tank.writeToNBT(data, "t");
-			this.networkPack(data, 50);
-
-		} else {
-
+		if(worldObj.isRemote) {
 			if(isOn && tank.getFill() > 0) {
 
 				if((!doesBurn || !(tank.getTankType().hasTrait(FT_Flammable.class))) && (tank.getTankType().hasTrait(FT_Gaseous.class) || tank.getTankType().hasTrait(FT_Gaseous_ART.class))) {
@@ -240,7 +157,137 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 		}
 	}
 
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.beginMachineFluidMutation();
+		try {
+			tank.setType(3, slots);
+			tank.loadTank(1, 2, slots);
+		} finally {
+			this.endMachineFluidMutation();
+		}
+		this.upgradeManager.checkSlots(slots, 4, 5);
+		this.refreshRuntimeConnections();
+		this.subscribeToFluid();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.refreshRuntimeConnections();
+		this.subscribeToFluid();
+		this.sendRuntimeState();
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PROCESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.beginMachineFluidMutation();
+		runtimeEnergyMutation = true;
+		try {
+			fluidUsed = 0;
+			output = 0;
+			for(DirPos pos : runtimeConnections) this.tryProvide(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			tank.setType(3, slots);
+			tank.loadTank(1, 2, slots);
+			this.processGas();
+			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 0, energyQuanta, maxPower));
+			this.sendRuntimeState();
+		} finally {
+			runtimeEnergyMutation = false;
+			this.endMachineFluidMutation();
+		}
+		this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	private void processGas() {
+		int maxVent = 50;
+		int maxBurn = 10;
+		if(isOn && tank.getFill() > 0) {
+			int burn = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+			int yield = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
+			maxVent += maxVent * burn;
+			maxBurn += maxBurn * burn;
+			if(!doesBurn || !tank.getTankType().hasTrait(FT_Flammable.class) || !breatheAir(Math.min(maxBurn, tank.getFill()))) {
+				if(tank.getTankType().hasTrait(FT_Gaseous.class) || tank.getTankType().hasTrait(FT_Gaseous_ART.class)) {
+					int eject = Math.min(maxVent, tank.getFill());
+					fluidUsed = eject;
+					tank.setFill(tank.getFill() - eject);
+					tank.getTankType().onFluidRelease(this, tank, eject);
+					if(worldObj.getTotalWorldTime() % 7 == 0) worldObj.playSoundEffect(xCoord, yCoord + 11, zCoord, "random.fizz", getVolume(1.5F), 0.5F);
+					if(worldObj.getTotalWorldTime() % 5 == 0 && eject > 0) FT_Polluting.pollute(worldObj, xCoord, yCoord, zCoord, tank.getTankType(), FluidReleaseType.SPILL, eject * 5);
+					CelestialBody.emitGas(worldObj, tank.getTankType(), eject);
+				}
+			} else if(tank.getTankType().hasTrait(FT_Flammable.class)) {
+				int eject = Math.min(maxBurn, tank.getFill());
+				fluidUsed = eject;
+				tank.setFill(tank.getFill() - eject);
+				int penalty = (!tank.getTankType().hasTrait(FT_Gaseous.class) && !tank.getTankType().hasTrait(FT_Gaseous_ART.class)) ? 10 : 5;
+				long powerProd = tank.getTankType().getTrait(FT_Flammable.class).getHeatEnergy() * eject / 1_000;
+				powerProd /= penalty;
+				powerProd += powerProd * yield / 3;
+				output = (int) powerProd;
+				this.setStoredEnergyQuanta(energyQuanta + powerProd);
+				if(energyQuanta > maxPower) this.setStoredEnergyQuanta(maxPower);
+				ParticleUtil.spawnGasFlame(worldObj, xCoord + 0.5F, yCoord + 11.75F, zCoord + 0.5F, worldObj.rand.nextGaussian() * 0.15, 0.2, worldObj.rand.nextGaussian() * 0.15);
+				List<Entity> list = worldObj.getEntitiesWithinAABB(Entity.class, AxisAlignedBB.getBoundingBox(xCoord - 1, yCoord + 12, zCoord - 2, xCoord + 2, yCoord + 17, zCoord + 2));
+				for(Entity e : list) {
+					e.setFire(5);
+					e.attackEntityFrom(DamageSource.onFire, 5F);
+				}
+				if(worldObj.getTotalWorldTime() % 3 == 0) worldObj.playSoundEffect(xCoord, yCoord + 11, zCoord, "hbm:weapon.flamethrowerShoot", getVolume(1.5F), 0.75F);
+				if(worldObj.getTotalWorldTime() % 5 == 0 && eject > 0) FT_Polluting.pollute(worldObj, xCoord, yCoord, zCoord, tank.getTankType(), FluidReleaseType.BURN, eject * 5);
+				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord + 11, zCoord, Math.max(100, 600 / Math.max(eject, 1)));
+			}
+		}
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		boolean gaseous = tank.getTankType().hasTrait(FT_Gaseous.class) || tank.getTankType().hasTrait(FT_Gaseous_ART.class);
+		boolean flammable = tank.getTankType().hasTrait(FT_Flammable.class);
+		boolean processableGas = isOn && tank.getFill() > 0 && (gaseous || (doesBurn && flammable));
+		if(processableGas || energyQuanta > 0L) this.scheduleMachineTransition(now + 1L, TASK_PROCESS, TASK_SLOT_MAIN);
+		else {
+			fluidUsed = 0;
+			output = 0;
+			this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
+		}
+	}
+
+	private void refreshRuntimeConnections() {
+		int orientation = this.getBlockMetadata();
+		if(runtimeConnections == null || observedOrientation != orientation) {
+			runtimeConnections = this.buildConnections();
+			observedOrientation = orientation;
+		}
+	}
+
+	private void subscribeToFluid() {
+		for(DirPos pos : runtimeConnections) this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+	}
+
+	private void sendRuntimeState() {
+		NBTTagCompound data = new NBTTagCompound();
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+		data.setBoolean("isOn", isOn);
+		data.setBoolean("doesBurn", doesBurn);
+		tank.writeToNBT(data, "t");
+		this.networkPack(data, 50);
+	}
+
 	public DirPos[] getConPos() {
+		this.refreshRuntimeConnections();
+		return runtimeConnections;
+	}
+
+	private DirPos[] buildConnections() {
 		return new DirPos[] {
 			new DirPos(xCoord + 2, yCoord, zCoord, Library.POS_X),
 			new DirPos(xCoord - 2, yCoord, zCoord, Library.NEG_X),
@@ -285,6 +332,11 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
+	}
+
+	public long getPowerOutputWatts() {
+		return EnergyUnits.quantaPerTickToWatts(output);
 	}
 
 	@Override
@@ -353,5 +405,6 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 		tank.setTankType(Fluids.fromID(id));
 		if(nbt.hasKey("isOn")) isOn = nbt.getBoolean("isOn");
 		if(nbt.hasKey("doesBurn")) doesBurn = nbt.getBoolean("doesBurn");
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.FLUID);
 	}
 }

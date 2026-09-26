@@ -272,3 +272,109 @@ INCOMPLETE:
 - Added versioned energy NBT reads for existing HE-valued worlds and writes for new saves. Migrated relevant packets, capacity and machine configuration keys, converter behavior, and electrical displays.
 - Kept legacy HE APIs and configuration keys at compatibility boundaries. RF uses 2.5 J per RF; the existing default RF-to-RTM converter loss remains a separate efficiency behavior.
 - Offline Java compilation passed. Existing-world loading, RF exchange, addon behavior, dedicated-server operation, and in-game UI still require runtime checks.
+
+2026-09-26 05:39 — Continue machine-runtime migration
+
+- Extended runtime-driven execution across oil/fluid processing, gas and environmental machines, pump variants, furnace families, radiation generation, ash handling, the Rocket Assembly VAB, and the Drive Processor. Fifty-four concrete machine-related TileEntities now use the runtime directly or inherit a runtime-enabled base.
+- Added owner-scoped FluidTank change callbacks, a shared recipe-registry revision, and explicit watt conversion for migrated power accounting. Preserved eight-lane factory ordering and moved stable eligibility, connection, inventory, and environment checks to dirty evaluation or bounded polls.
+- Documented all 139 remaining legacy concrete descendants by subsystem and their current coupling constraints. Their production-family migration is not complete; in-game timing, resource contention, lifecycle, automation, fluid, energy, and multiblock checks remain outstanding.
+- `git diff --check` passed. The final offline `compileJava` attempt stopped in the Gradle wrapper before Java compilation because its cached distribution lockfile was inaccessible; no source compile result is available. Minecraft was not launched.
+
+2026-09-26 05:57 — Migrate the large arc furnace to the machine runtime
+
+- Moved the large arc furnace's shared batch, progress, lid, energy use, electrode wear, and molten-material pouring into one ordered runtime task while preserving the twenty-slot batch order and existing per-tick active behavior.
+- Cached the twenty recipe results across stable work, reevaluating on inventory, liquid-mode, and recipe-registry changes. Neighbor connections now refresh every twenty ticks; direct inventory and registry mutation retain bounded compatibility polls.
+- Updated the machine census to 55 runtime-covered classes and 138 legacy descendants. Offline `compileJava` passed with the installed Corretto Java 8 JDK, and `git diff --check` passed. Minecraft was not launched.
+
+2026-09-26 06:22 — Migrate foundry casting to the machine runtime
+
+- Enabled loaded-tile lifecycle binding for foundry controllers and moved Foundry Basin and Foundry Mold cooling/output work into a scheduled casting task with inventory and crucible-flow invalidation.
+- Migrated Strand Caster to event-driven batch eligibility, owner callbacks for water and steam tanks, a scheduled 200-tick inactivity flush boundary, and twenty-tick pipe-connection refreshes while preserving its batch threshold and existing network packet cadence.
+- Updated the census to 58 runtime-covered classes and 135 legacy descendants. Offline `compileJava` and `git diff --check` passed; Minecraft was not launched.
+
+2026-09-26 06:29 — Move Solar Mirror simulation to the machine runtime
+
+- Moved idle startup checks into a twenty-tick runtime poll and kept active light evaluation and heat delivery on a scheduled per-tick transition.
+- Target changes now invalidate the logical machine; client-side boiler registration and animation remain on the existing TileEntity update path.
+- Updated the census to 59 runtime-covered classes and 134 legacy descendants. Minecraft was not launched.
+
+2026-09-26 06:40 — Migrate Machine Detector power accounting
+
+- Replaced per-tick connection discovery with twenty-tick topology refreshes and retained the one-quantum-per-tick active drain as a scheduled runtime transition.
+- Persisted its buffer through the existing Joule-quantum NBT helpers and moved metadata activation to energy invalidation.
+- Updated the census to 60 runtime-covered classes and 133 legacy descendants. Minecraft was not launched.
+
+2026-09-26 06:44 — Move Machine Drain spill work to the runtime
+
+- Tank mutations now start or stop the scheduled spill task; its decay, pollution, gas release, volatile-fluid effects, and americium explosion cadence remain server-thread owned.
+- Neighbor discovery and idle tank synchronization now run every twenty ticks; active spill synchronization retains the existing per-tick cadence.
+- Updated the census to 61 runtime-covered classes and 132 legacy descendants. Minecraft was not launched.
+
+2026-09-26 06:50 — Migrate Autosaw fuel and cutting work
+
+- Moved fuel consumption and fluid-network renewal to an exact twenty-tick runtime boundary; while fueled, tree scanning, entity interaction, cutting motion, and packet sync retain their per-tick server cadence.
+- Tank writes now invalidate the scheduled operation, and idle Autosaws no longer execute the server-side update path.
+- Updated the census to 62 runtime-covered classes and 131 legacy descendants. Minecraft was not launched.
+
+2026-09-26 06:59 — Move firebox thermal simulation to the runtime
+
+- Migrated both Heater Firebox and Heater Oven through their shared runtime-enabled base, removing its legacy server tick path.
+- Active fuel burn, oxygen use, heat decay, smoke transfer, and oven heat-source draw remain scheduled at their existing per-tick rate; waterlogging, fuel slots, and external heat availability use five-tick reevaluation.
+- Updated the census to 64 runtime-covered classes and 129 legacy descendants. Minecraft was not launched.
+
+2026-09-26 07:05 — Migrate Conveyor Press operation
+
+- Moved powered extension, retraction, moving-item capture, and stamping to a scheduled transition; neighbor power discovery now refreshes every twenty ticks.
+- Added explicit 1,000 W operating-rate reporting for its default 100 energy quanta per tick and persisted the retraction phase and delay for safe reconstruction.
+- Updated the census to 65 runtime-covered classes and 128 legacy descendants. Minecraft was not launched.
+
+2026-09-26 07:16 — Migrate additional generation controllers
+
+- Moved Mini RTG and Solar Panel generation/export into scheduled machine-runtime work, with the Solar Panel checking its light and time boundary every twenty ticks while idle.
+- Moved Solar Power Plant tower validation to the twenty-tick poll and generation/export to an active scheduled task; migrated Stirling's heat exchange, overspeed behavior, and output to a scheduled simulation while retaining client animation.
+- Exposed watt-rate conversion for the migrated generators and updated the census to 69 runtime-covered classes and 124 legacy descendants. Minecraft was not launched.
+
+2026-09-26 07:20 — Schedule geothermal generator work
+
+- Moved Amgen output, Joule storage, and power export to a scheduled runtime transition; source discovery now checks the two geothermal/lava positions every twenty ticks while idle.
+- Preserved the existing per-tick lava conversion chance while the generator is active, and updated the census to 70 runtime-covered classes and 123 legacy descendants. Minecraft was not launched.
+
+2026-09-26 07:23 — Migrate RTG pellet simulation
+
+- Moved isotope pellet decay, heat production, Joule storage, power export, and electricity synchronization into runtime tasks.
+- Added slot invalidation with a five-tick fingerprint fallback and retained the twenty-tick energy packet baseline; the census now has 71 runtime-covered classes and 122 legacy descendants. Minecraft was not launched.
+
+2026-09-26 07:29 — Move Diesel Generator processing to MachineRuntime
+
+- Moved fuel conversion, item battery charging, pollution, Joule storage, smoke/power transfer, and state synchronization into a scheduled active task.
+- Fuel tanks use owner dirty callbacks; direct inventory and waterlogging changes receive five-tick checks, while fluid subscriptions and connection geometry refresh every twenty ticks. Census: 72 runtime-covered classes and 121 legacy descendants. Minecraft was not launched.
+
+2026-09-26 07:37 — Migrate chimney smoke and ash handling
+
+- Moved chimney ash/soot delivery and active smoke countdown into runtime tasks; pending ash and soot now persist across unload until delivery to a loaded Ashpit.
+- Moved smoke pipe subscriptions and idle packet refresh to twenty-tick maintenance; the two chimney types now inherit runtime binding from their shared base. Census: 74 runtime-covered classes and 119 legacy descendants. Minecraft was not launched.
+
+2026-09-26 07:43 — Move condenser family onto MachineRuntime
+
+- Migrated the Condenser, Radiator, and Powered Condenser through their shared controller, with tank/power invalidation, scheduled bulk conversion, and twenty-tick pipe renewal.
+- Made configured powered-condenser cost authoritative for both operation-energy availability and consumption, and exposed the resulting operating rate in watts. The Large and Small cooling towers inherit the runtime-enabled condenser controller. Census: 79 runtime-covered classes and 114 legacy descendants. Minecraft was not launched.
+
+2026-09-26 07:48 — Migrate Electric Heater heat simulation
+
+- Moved heat decay/transfer and configured Joule consumption to scheduled runtime work, with power and setting invalidation, 20-tick network subscription, and an idle heat-source wake-up check.
+- Added watt-rate reporting for its configured draw. Census: 80 runtime-covered classes and 113 legacy descendants. Minecraft was not launched.
+
+2026-09-26 07:57 — Migrate both Heat Boiler variants
+
+- Replaced the duplicated per-tick boiler controllers with a shared runtime-owned base for tank invalidation, thermal exchange, conversion, fluid output, and lifecycle reconstruction.
+- Kept active heat simulation one tick, moved pipe and idle environmental checks to twenty ticks, and preserved the standard boiler's backpressure explosion plus industrial client audio/port layout. Census: 82 runtime-covered classes and 111 legacy descendants. Minecraft was not launched.
+
+2026-09-26 08:15 — Migrate additional continuous heat and generation machines
+
+- Moved the steam engine, heat exchanger, gas flare, and wood burner server work to scheduled runtime callbacks with tank, inventory, energy, and configuration invalidation as applicable.
+- Cached fixed port geometry and retained active one-tick rotor, heat, fuel, pollution, fluid-transfer, and power accounting. Steam engine, gas flare, and wood burner now expose generated power in watts. Census: 86 runtime-covered classes and 107 legacy descendants. Minecraft was not launched.
+
+2026-09-26 08:22 — Move oil-burner heat simulation to MachineRuntime
+
+- Replaced its full server tick with scheduled fuel, heat-decay, pollution, and smoke work; tank/control changes invalidate eligibility, waterlogging refreshes every five ticks, and port connections are cached and renewed every twenty.
+- Preserved air consumption and active heat-source behavior. Census: 87 runtime-covered classes and 106 legacy descendants. Minecraft was not launched.

@@ -11,6 +11,8 @@ import com.hbm.dim.orbit.WorldProviderOrbit;
 import com.hbm.dim.trait.CBT_Water;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.IConfigurableMachine;
 import com.hbm.tileentity.IFluidCopiable;
@@ -27,6 +29,20 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 
 public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase implements IFluidStandardTransceiver, INBTPacketReceiver, IConfigurableMachine, IFluidCopiable {
+	private static final int TASK_PUMP = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	protected boolean runtimeMachineMutation;
+	private DirPos[] cachedPumpConnections;
+	private int cachedConnectionMetadata = Integer.MIN_VALUE;
+	private final FluidTank.ChangeListener pumpTankListener = new FluidTank.ChangeListener() {
+		@Override public void onTankChanged(FluidTank tank) {
+			if(!runtimeMachineMutation) {
+				markDirty();
+				markMachineDirty(MachineDirtyCause.FLUID);
+			}
+		}
+	};
 
 	public static final HashSet<Block> validBlocks = new HashSet();
 
@@ -91,30 +107,7 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 	}
 
 	public void updateEntity() {
-
-		if(!worldObj.isRemote) {
-
-			for(DirPos pos : getConPos()) {
-				if(water.getFill() > 0) this.sendFluid(water, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			}
-
-			if(groundCheckDelay > 0) {
-				groundCheckDelay--;
-			} else {
-				onGround = this.checkGround();
-			}
-
-			this.isOn = false;
-			if(this.canOperate() && yCoord <= groundHeight && onGround) {
-				this.isOn = true;
-				this.operate();
-			}
-
-			NBTTagCompound data = this.getSync();
-			INBTPacketReceiver.networkPack(this, data, 150);
-
-		} else {
-
+		if(worldObj.isRemote) {
 			this.lastRotor = this.rotor;
 			if(this.isOn) this.rotor += 10F;
 
@@ -126,6 +119,78 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 				MainRegistry.proxy.playSoundClient(xCoord, yCoord, zCoord, "game.neutral.swim.splash", 1F, 0.5F);
 			}
 		}
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		for(FluidTank tank : this.getAllTanks()) if(tank != null) tank.setChangeListener(this.pumpTankListener);
+		runtimeInitialized = true;
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) {
+			runtimeMachineMutation = true;
+			try {
+				onGround = this.checkGround();
+				this.updatePumpConnections();
+			} finally { runtimeMachineMutation = false; }
+		}
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		INBTPacketReceiver.networkPack(this, this.getSync(), 150);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PUMP || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		runtimeMachineMutation = true;
+		try {
+			for(DirPos pos : this.getCachedConnections()) if(water.getFill() > 0) this.sendFluid(water, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			this.sendAdditionalFluids();
+			this.isOn = false;
+			if(this.canOperate() && yCoord <= groundHeight && onGround) {
+				this.isOn = true;
+				this.operate();
+			}
+		} finally { runtimeMachineMutation = false; }
+		this.markDirty();
+		INBTPacketReceiver.networkPack(this, this.getSync(), 150);
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote || cadence != 20) return;
+		boolean oldGround = onGround;
+		com.hbm.inventory.fluid.FluidType oldWaterType = water.getTankType();
+		runtimeMachineMutation = true;
+		try {
+			onGround = this.checkGround();
+			this.updatePumpConnections();
+		} finally { runtimeMachineMutation = false; }
+		groundCheckDelay = 20;
+		if(oldGround != onGround || oldWaterType != water.getTankType()) {
+			this.markDirty();
+			INBTPacketReceiver.networkPack(this, this.getSync(), 150);
+		}
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	protected void updatePumpConnections() { }
+	protected void sendAdditionalFluids() { }
+
+	private void evaluateAndSchedule(long now) {
+		if(runtimeInitialized && (water.getFill() > 0 || this.hasAdditionalFluidToSend() || yCoord <= groundHeight && onGround && this.canOperate())) this.scheduleMachineTransition(now + 1L, TASK_PUMP, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_PUMP, TASK_SLOT_MAIN);
+	}
+
+	protected boolean hasAdditionalFluidToSend() { return false; }
+
+	protected DirPos[] getCachedConnections() {
+		int metadata = this.getBlockMetadata();
+		if(cachedPumpConnections == null || cachedConnectionMetadata != metadata) {
+			cachedPumpConnections = this.getConPos();
+			cachedConnectionMetadata = metadata;
+		}
+		return cachedPumpConnections;
 	}
 
 	protected boolean checkGround() {

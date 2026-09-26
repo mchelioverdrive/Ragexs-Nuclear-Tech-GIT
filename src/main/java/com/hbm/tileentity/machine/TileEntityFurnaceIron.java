@@ -9,6 +9,8 @@ import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerFurnaceIron;
 import com.hbm.inventory.gui.GUIFurnaceIron;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.module.ModuleBurnTime;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IUpgradeInfoProvider;
@@ -41,6 +43,13 @@ public class TileEntityFurnaceIron extends TileEntityMachineBase implements IGUI
 	public static final int baseTime = 160;
 	
 	public ModuleBurnTime burnModule;
+	private ItemStack cachedResult;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
+	private int observedRecipeCount;
+	private static final int TASK_PROCESS = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
 
 	public TileEntityFurnaceIron() {
 		super(5);
@@ -61,86 +70,148 @@ public class TileEntityFurnaceIron extends TileEntityMachineBase implements IGUI
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-
-			this.upgradeManager.checkSlots(slots, 4, 4);
-			this.processingTime = baseTime - ((baseTime / 2) * Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3) / 3);
+		if(!worldObj.isRemote) return;
 			
-			wasOn = false;
+		if(this.progress > 0) {
+			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
+			ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
 			
-			if(burnTime <= 0) {
-				
-				for(int i = 1; i < 3; i++) {
-					if(slots[i] != null) {
-						
-						int fuel = burnModule.getBurnTime(slots[i]);
-						
-						if(fuel > 0) {
-							this.maxBurnTime = this.burnTime = fuel;
-							slots[i].stackSize--;
-
-							if(slots[i].stackSize == 0) {
-								slots[i] = slots[i].getItem().getContainerItem(slots[i]);
-							}
-							
-							break;
-						}
-					}
-				} 
-			}
+			double offset = this.progress % 2 == 0 ? 1 : 0.5;
+			worldObj.spawnParticle("smoke", xCoord + 0.5 - dir.offsetX * offset - rot.offsetX * 0.1875, yCoord + 2, zCoord + 0.5 - dir.offsetZ * offset - rot.offsetZ * 0.1875, 0.0, 0.01, 0.0);
 			
-			if(canSmelt() && breatheAir(worldObj.getTotalWorldTime() % 5 == 0 ? 1 : 0)) {
-				wasOn = true;
-				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
-				this.progress++;
-				this.burnTime--;
-				
-				if(this.progress % 15 == 0 && !this.muffled) {
-					worldObj.playSoundEffect(xCoord, yCoord, zCoord, "fire.fire", 1.0F, 0.5F + worldObj.rand.nextFloat() * 0.5F);
-				}
-				
-				if(this.progress >= this.processingTime) {
-					ItemStack result = FurnaceRecipes.smelting().getSmeltingResult(slots[0]);
-					
-					if(slots[3] == null) {
-						slots[3] = result.copy();
-					} else {
-						slots[3].stackSize += result.stackSize;
-					}
-					
-					this.decrStackSize(0, 1);
-					
-					this.progress = 0;
-					this.markDirty();
-				}
-				if(worldObj.getTotalWorldTime() % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND);
-			} else {
-				this.progress = 0;
-			}
-			
-			NBTTagCompound data = new NBTTagCompound();
-			data.setInteger("maxBurnTime", this.maxBurnTime);
-			data.setInteger("burnTime", this.burnTime);
-			data.setInteger("progress", this.progress);
-			data.setInteger("processingTime", this.processingTime);
-			data.setBoolean("wasOn", this.wasOn);
-			this.networkPack(data, 50);
-		} else {
-			
-			if(this.progress > 0) {
-				ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
-				ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
-				
-				double offset = this.progress % 2 == 0 ? 1 : 0.5;
-				worldObj.spawnParticle("smoke", xCoord + 0.5 - dir.offsetX * offset - rot.offsetX * 0.1875, yCoord + 2, zCoord + 0.5 - dir.offsetZ * offset - rot.offsetZ * 0.1875, 0.0, 0.01, 0.0);
-				
-				if(this.progress % 5 == 0) {
-					double rand = worldObj.rand.nextDouble();
-					worldObj.spawnParticle("flame", xCoord + 0.5 + dir.offsetX * 0.25 + rot.offsetX * rand, yCoord + 0.25 + worldObj.rand.nextDouble() * 0.25, zCoord + 0.5 + dir.offsetZ * 0.25 + rot.offsetZ * rand, 0.0, 0.0, 0.0);
-				}
+			if(this.progress % 5 == 0) {
+				double rand = worldObj.rand.nextDouble();
+				worldObj.spawnParticle("flame", xCoord + 0.5 + dir.offsetX * 0.25 + rot.offsetX * rand, yCoord + 0.25 + worldObj.rand.nextDouble() * 0.25, zCoord + 0.5 + dir.offsetZ * 0.25 + rot.offsetZ * rand, 0.0, 0.0, 0.0);
 			}
 		}
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_100;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.refreshRuntimeState();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PROCESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		int oldBurnTime = burnTime;
+		int oldProgress = progress;
+		wasOn = false;
+		if(burnTime <= 0) this.consumeFuel();
+		if(this.canSmelt() && this.breatheAir(worldObj.getTotalWorldTime() % 5 == 0 ? 1 : 0)) {
+			wasOn = true;
+			FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
+			progress++;
+			burnTime--;
+			if(progress % 15 == 0 && !muffled) worldObj.playSoundEffect(xCoord, yCoord, zCoord, "fire.fire", 1.0F, 0.5F + worldObj.rand.nextFloat() * 0.5F);
+			if(progress >= processingTime) {
+				if(slots[3] == null) slots[3] = cachedResult.copy();
+				else slots[3].stackSize += cachedResult.stackSize;
+				this.decrStackSize(0, 1);
+				progress = 0;
+				this.refreshCachedResult();
+			}
+			if(worldObj.getTotalWorldTime() % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND);
+		} else {
+			progress = 0;
+		}
+		boolean inventoryChanged = this.observeInventoryFingerprint();
+		if(inventoryChanged) this.markNetworkDirty();
+		if(oldBurnTime != burnTime || oldProgress != progress || inventoryChanged) this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5 && this.observeInventoryFingerprint()) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.UPGRADE);
+		else if(cadence == 100) {
+			int count = FurnaceRecipes.smelting().getSmeltingList().size();
+			if(count != observedRecipeCount) {
+				observedRecipeCount = count;
+				this.markMachineDirty(MachineDirtyCause.RECIPE);
+			}
+		}
+	}
+
+	private void refreshRuntimeState() {
+		this.upgradeManager.checkSlots(slots, 4, 4);
+		this.processingTime = baseTime - ((baseTime / 2) * Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3) / 3);
+		this.refreshCachedResult();
+		this.observeInventoryFingerprint();
+		this.observedRecipeCount = FurnaceRecipes.smelting().getSmeltingList().size();
+		if(!this.canSmelt()) progress = 0;
+	}
+
+	private void refreshCachedResult() {
+		ItemStack result = slots[0] == null ? null : FurnaceRecipes.smelting().getSmeltingResult(slots[0]);
+		cachedResult = result == null ? null : result.copy();
+	}
+
+	private void consumeFuel() {
+		for(int i = 1; i < 3; i++) {
+			if(slots[i] == null) continue;
+			int fuel = burnModule.getBurnTime(slots[i]);
+			if(fuel <= 0) continue;
+			maxBurnTime = burnTime = fuel;
+			slots[i].stackSize--;
+			if(slots[i].stackSize == 0) slots[i] = slots[i].getItem().getContainerItem(slots[i]);
+			break;
+		}
+	}
+
+	public boolean canSmelt() {
+		if(burnTime <= 0 || cachedResult == null) return false;
+		if(slots[3] == null) return true;
+		if(!cachedResult.isItemEqual(slots[3])) return false;
+		return cachedResult.stackSize + slots[3].stackSize <= slots[3].getMaxStackSize();
+	}
+
+	private boolean hasFuel() {
+		return slots[1] != null && burnModule.getBurnTime(slots[1]) > 0 || slots[2] != null && burnModule.getBurnTime(slots[2]) > 0;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		if(burnTime > 0 && cachedResult != null && (slots[3] == null || cachedResult.isItemEqual(slots[3]) && cachedResult.stackSize + slots[3].stackSize <= slots[3].getMaxStackSize()) || burnTime <= 0 && this.hasFuel()) this.scheduleMachineTransition(now + 1L, TASK_PROCESS, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
+	}
+
+	private void sendRuntimeState() {
+		NBTTagCompound data = new NBTTagCompound();
+		data.setInteger("maxBurnTime", maxBurnTime);
+		data.setInteger("burnTime", burnTime);
+		data.setInteger("progress", progress);
+		data.setInteger("processingTime", processingTime);
+		data.setBoolean("wasOn", wasOn);
+		this.networkPack(data, 50);
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
 	}
 
 	@Override
@@ -152,22 +223,6 @@ public class TileEntityFurnaceIron extends TileEntityMachineBase implements IGUI
 		this.progress = nbt.getInteger("progress");
 		this.processingTime = nbt.getInteger("processingTime");
 		this.wasOn = nbt.getBoolean("wasOn");
-	}
-	
-	public boolean canSmelt() {
-		
-		if(this.burnTime <= 0) return false;
-		if(slots[0] == null) return false;
-		
-		ItemStack result = FurnaceRecipes.smelting().getSmeltingResult(slots[0]);
-		
-		if(result == null) return false;
-		if(slots[3] == null) return true;
-		
-		if(!result.isItemEqual(slots[3])) return false;
-		if(result.stackSize + slots[3].stackSize > slots[3].getMaxStackSize()) return false;
-		
-		return true;
 	}
 	
 	@Override

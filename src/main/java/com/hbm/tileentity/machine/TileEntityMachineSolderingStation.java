@@ -13,9 +13,12 @@ import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.gui.GUIMachineSolderingStation;
 import com.hbm.inventory.recipes.SolderingRecipes;
 import com.hbm.inventory.recipes.SolderingRecipes.SolderingRecipe;
+import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.machine.ItemMachineUpgrade;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
@@ -25,6 +28,7 @@ import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.I18nUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
+import api.hbm.energymk2.IBatteryItem;
 import api.hbm.energymk2.IEnergyReceiverMK2;
 import api.hbm.fluid.IFluidStandardReceiver;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
@@ -54,10 +58,24 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 
 	public FluidTank tank;
 	public ItemStack display;
+	private static final int TASK_ACCOUNTING = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private boolean runtimeActive;
+	private SolderingRecipe cachedRecipe;
+	private int cachedInputFingerprint;
+	private boolean recipeFingerprintInitialized;
+	private long cachedRecipeRevision = -1L;
+	private long observedRecipeRevision = -1L;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
+	private long operatingPowerWatts;
 
 	public TileEntityMachineSolderingStation() {
 		super(11);
 		this.tank = new FluidTank(Fluids.NONE, 8_000);
+		this.trackMachineFluidTank(this.tank);
 	}
 
 	@Override
@@ -76,103 +94,195 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 
 	@Override
 	public void updateEntity() {
+		// All mutable machine work is scheduled on the server; visuals and packet sync remain client visible.
+	}
 
-		if(!worldObj.isRemote) {
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
 
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 7, this.getStoredEnergyQuanta(), this.getEnergyCapacityQuanta()));
-			this.tank.setType(8, slots);
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(!recipeFingerprintInitialized || (causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.UPGRADE | MachineDirtyCause.CONFIGURATION)) != 0) this.refreshRecipe();
+		this.refreshRuntimeSettings();
+		runtimeInitialized = true;
+		observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
 
-			if(worldObj.getTotalWorldTime() % 20 == 0) {
-				for(DirPos pos : getConPos()) {
-					this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-					if(tank.getTankType() != Fluids.NONE) this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				}
-			}
-
-			SolderingRecipe recipe = SolderingRecipes.getRecipe(new ItemStack[] {slots[0], slots[1], slots[2], slots[3], slots[4], slots[5]});
-			long intendedMaxPower;
-
-			this.upgradeManager.checkSlots(slots, 9, 10);
-			int redLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int blueLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
-
-			if(recipe != null) {
-				this.processTime = recipe.duration - (recipe.duration * redLevel / 6) + (recipe.duration * blueLevel / 3);
-				this.consumption = recipe.consumption + (recipe.consumption * redLevel) - (recipe.consumption * blueLevel / 6);
-				intendedMaxPower = recipe.consumption * 20;
-
-				if(canProcess(recipe)) {
-					this.progress++;
-					this.setStoredEnergyQuanta(this.energyQuanta - this.consumption);
-
-					if(progress >= processTime) {
-						this.progress = 0;
-						this.consumeItems(recipe);
-
-						if(slots[6] == null) {
-							slots[6] = recipe.output.copy();
-						} else {
-							slots[6].stackSize += recipe.output.stackSize;
-						}
-
-						this.markDirty();
-					}
-
-					if(worldObj.getTotalWorldTime() % 20 == 0) {
-						ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
-						ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
-						NBTTagCompound dPart = new NBTTagCompound();
-						dPart.setString("type", "tau");
-						dPart.setByte("count", (byte) 3);
-						PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(dPart, xCoord + 0.5 - dir.offsetX * 0.5 + rot.offsetX * 0.5, yCoord + 1.125, zCoord + 0.5 - dir.offsetZ * 0.5 + rot.offsetZ * 0.5), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 25));
-					}
-
-				} else {
-					this.progress = 0;
-				}
-
-			} else {
-				this.progress = 0;
-				this.consumption = 100;
-				intendedMaxPower = 2000;
-			}
-
-			this.maxPower = Math.max(intendedMaxPower, energyQuanta);
-
-			NBTTagCompound data = new NBTTagCompound();
-			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
-			EnergyUnits.writeCapacityQuanta(data, maxPower);
-			data.setLong("consumption", consumption);
-			data.setInteger("progress", progress);
-			data.setInteger("processTime", processTime);
-			data.setBoolean("collisionPrevention", collisionPrevention);
-			if(recipe != null) {
-				data.setInteger("display", Item.getIdFromItem(recipe.output.getItem()));
-				data.setInteger("displayMeta", recipe.output.getItemDamage());
-			}
-			this.tank.writeToNBT(data, "t");
-			this.networkPack(data, 25);
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_ACCOUNTING || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		long oldPower = energyQuanta;
+		int oldProgress = progress;
+		this.setRuntimePower(Library.chargeTEFromItems(slots, 7, this.getStoredEnergyQuanta(), this.getEnergyCapacityQuanta()));
+		boolean canRun = cachedRecipe != null && this.canProcess(cachedRecipe);
+		if(canRun && progress + 1 >= processTime) {
+			this.refreshRecipe();
+			this.refreshRuntimeSettings();
+			canRun = cachedRecipe != null && this.canProcess(cachedRecipe);
 		}
+		if(canRun) {
+			this.progress++;
+			this.setRuntimePower(this.energyQuanta - EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts));
+			runtimeActive = true;
+			if(progress >= processTime) {
+				if(cachedRecipe != null && this.canProcessMaterials(cachedRecipe)) this.completeOperation(cachedRecipe);
+				else this.progress = 0;
+			}
+		} else {
+			this.progress = 0;
+			runtimeActive = false;
+		}
+		if(oldPower != energyQuanta || oldProgress != progress) this.markDirty();
+		this.sendRuntimeState();
+		this.evaluateAndSchedule(now);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			boolean inventoryChanged = this.observeInventoryFingerprint();
+			boolean fluidItemChanged = this.tank.setType(8, slots);
+			if(inventoryChanged || fluidItemChanged) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE | MachineDirtyCause.UPGRADE);
+			return;
+		}
+		if(cadence != 20) return;
+		for(DirPos pos : getConPos()) {
+			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			if(tank.getTankType() != Fluids.NONE) this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+		}
+		if(observedRecipeRevision != SerializableRecipe.getRegistryRevision()) {
+			observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+			this.markMachineDirty(MachineDirtyCause.RECIPE);
+		}
+		if(runtimeActive && cachedRecipe != null) this.emitSolderingParticle();
+		this.sendRuntimeState();
+	}
+
+	private void refreshRecipe() {
+		int fingerprint = this.recipeInputFingerprint();
+		long revision = SerializableRecipe.getRegistryRevision();
+		if(!recipeFingerprintInitialized || fingerprint != cachedInputFingerprint || revision != cachedRecipeRevision) {
+			this.cachedRecipe = SolderingRecipes.getRecipe(new ItemStack[] {slots[0], slots[1], slots[2], slots[3], slots[4], slots[5]});
+			this.cachedInputFingerprint = fingerprint;
+			this.cachedRecipeRevision = revision;
+			recipeFingerprintInitialized = true;
+		}
+	}
+
+	private void refreshRuntimeSettings() {
+		this.upgradeManager.checkSlots(slots, 9, 10);
+		int redLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+		int blueLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+		long intendedMaxPower;
+		if(cachedRecipe != null) {
+			this.processTime = cachedRecipe.duration - (cachedRecipe.duration * redLevel / 6) + (cachedRecipe.duration * blueLevel / 3);
+			this.consumption = cachedRecipe.consumption + (cachedRecipe.consumption * redLevel) - (cachedRecipe.consumption * blueLevel / 6);
+			intendedMaxPower = cachedRecipe.consumption * 20;
+		} else {
+			this.progress = 0;
+			this.consumption = 100;
+			intendedMaxPower = 2000;
+		}
+		if(this.processTime <= 0) this.processTime = 1;
+		this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(this.consumption);
+		this.maxPower = Math.max(intendedMaxPower, energyQuanta);
+	}
+
+	private void completeOperation(SolderingRecipe recipe) {
+		this.beginMachineFluidMutation();
+		try { this.consumeItems(recipe); } finally { this.endMachineFluidMutation(); }
+		if(slots[6] == null) slots[6] = recipe.output.copy();
+		else slots[6].stackSize += recipe.output.stackSize;
+		this.progress = 0;
+		this.markDirty();
+		this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE);
+	}
+
+	private boolean canProcessMaterials(SolderingRecipe recipe) {
+		if(recipe == null) return false;
+		if(recipe.fluid != null && (this.tank.getTankType() != recipe.fluid.type || this.tank.getFill() < recipe.fluid.fill)) return false;
+		if(collisionPrevention && recipe.fluid == null && this.tank.getFill() > 0) return false;
+		if(slots[6] != null && (slots[6].getItem() != recipe.output.getItem() || slots[6].getItemDamage() != recipe.output.getItemDamage() || slots[6].stackSize + recipe.output.stackSize > slots[6].getMaxStackSize())) return false;
+		return true;
+	}
+
+	private boolean hasBatteryWork() {
+		return energyQuanta < maxPower && slots[7] != null && slots[7].getItem() instanceof IBatteryItem;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		if(cachedRecipe != null && this.canProcess(cachedRecipe) || this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		else {
+			this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+			runtimeActive = false;
+		}
+	}
+
+	private void setRuntimePower(long value) {
+		runtimeEnergyMutation = true;
+		try { this.setStoredEnergyQuanta(value); } finally { runtimeEnergyMutation = false; }
+	}
+
+	private int recipeInputFingerprint() {
+		int hash = 1;
+		for(int i = 0; i < 6; i++) hash = 31 * hash + this.stackFingerprint(slots[i]);
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int hash = 1;
+		for(int i = 0; i < slots.length; i++) {
+			ItemStack stack = slots[i];
+			int tag = stack == null || stack.getItem() instanceof IBatteryItem || stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode();
+			int slot = stack == null ? 0 : 31 * (31 * (31 * System.identityHashCode(stack.getItem()) + stack.getItemDamage()) + stack.stackSize) + tag;
+			hash = 31 * hash + slot;
+		}
+		boolean changed = inventoryFingerprintInitialized && hash != observedInventoryFingerprint;
+		observedInventoryFingerprint = hash;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private int stackFingerprint(ItemStack stack) {
+		if(stack == null) return 0;
+		int hash = System.identityHashCode(stack.getItem());
+		hash = 31 * hash + stack.getItemDamage();
+		hash = 31 * hash + stack.stackSize;
+		return 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+	}
+
+	private void emitSolderingParticle() {
+		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
+		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
+		NBTTagCompound dPart = new NBTTagCompound();
+		dPart.setString("type", "tau");
+		dPart.setByte("count", (byte) 3);
+		PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacketNT(dPart, xCoord + 0.5 - dir.offsetX * 0.5 + rot.offsetX * 0.5, yCoord + 1.125, zCoord + 0.5 - dir.offsetZ * 0.5 + rot.offsetZ * 0.5), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 25));
+	}
+
+	private void sendRuntimeState() {
+		NBTTagCompound data = new NBTTagCompound();
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+		EnergyUnits.writeCapacityQuanta(data, maxPower);
+		data.setLong("consumption", consumption);
+		data.setInteger("progress", progress);
+		data.setInteger("processTime", processTime);
+		data.setBoolean("collisionPrevention", collisionPrevention);
+		if(cachedRecipe != null) {
+			data.setInteger("display", Item.getIdFromItem(cachedRecipe.output.getItem()));
+			data.setInteger("displayMeta", cachedRecipe.output.getItemDamage());
+		}
+		this.tank.writeToNBT(data, "t");
+		this.networkPack(data, 25);
 	}
 
 	public boolean canProcess(SolderingRecipe recipe) {
 
 		if(this.energyQuanta < this.consumption) return false;
-
-		if(recipe.fluid != null) {
-			if(this.tank.getTankType() != recipe.fluid.type) return false;
-			if(this.tank.getFill() < recipe.fluid.fill) return false;
-		}
-
-		if(collisionPrevention && recipe.fluid == null && this.tank.getFill() > 0) return false;
-
-		if(slots[6] != null) {
-			if(slots[6].getItem() != recipe.output.getItem()) return false;
-			if(slots[6].getItemDamage() != recipe.output.getItemDamage()) return false;
-			if(slots[6].stackSize + recipe.output.stackSize > slots[6].getMaxStackSize()) return false;
-		}
-
-		return true;
+		return this.canProcessMaterials(recipe);
 	}
 
 	public void consumeItems(SolderingRecipe recipe) {
@@ -275,6 +385,11 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 		this.processTime = nbt.getInteger("processTime");
 		this.collisionPrevention = nbt.getBoolean("collisionPrevention");
 		tank.readFromNBT(nbt, "t");
+		runtimeInitialized = false;
+		recipeFingerprintInitialized = false;
+		inventoryFingerprintInitialized = false;
+		cachedRecipeRevision = -1L;
+		observedRecipeRevision = -1L;
 	}
 
 	@Override
@@ -299,6 +414,7 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.markMachineEnergyDirty();
 	}
 
 	@Override
@@ -391,5 +507,6 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 	public void receiveControl(NBTTagCompound data) {
 		this.collisionPrevention = !this.collisionPrevention;
 		this.markDirty();
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 }

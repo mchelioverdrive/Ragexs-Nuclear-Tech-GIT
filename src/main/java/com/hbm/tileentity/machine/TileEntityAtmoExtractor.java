@@ -12,6 +12,8 @@ import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.fluid.trait.FT_Gaseous;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.fauxpointtwelve.DirPos;
 import com.hbm.dim.orbit.WorldProviderOrbit;
@@ -27,6 +29,13 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardSender {
+	private static final int TASK_EXTRACT = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private long operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(10_000L);
+	private DirPos[] cachedConnections;
+	private int cachedConnectionMetadata = Integer.MIN_VALUE;
 
 	int consumption = 200;
 	public float rot;
@@ -48,36 +57,7 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 
 	@Override
 	public void updateEntity() {
-
-		if(!worldObj.isRemote) {
-
-			this.updateConnections();
-
-			// Extractors will not work indoors (or in space oops)
-			CBT_Atmosphere atmosphere = !(worldObj.provider instanceof WorldProviderOrbit) && !ChunkAtmosphereManager.proxy.hasAtmosphere(worldObj, xCoord, yCoord, zCoord)
-				? CelestialBody.getTrait(worldObj, CBT_Atmosphere.class)
-				: null;
-
-			if(atmosphere != null) {
-				// If the atmosphere doesn't contain the fluid we're sucking up, pick a new one
-				if(!atmosphere.hasFluid(tank.getTankType())) {
-					tank.setTankType(atmosphere.getMainFluid());
-				}
-			} else {
-				tank.setTankType(Fluids.NONE);
-			}
-
-			if(hasPower() && tank.getFill() + 100 <= tank.getMaxFill()) {
-				tank.setFill(tank.getFill() + 100);
-				this.setStoredEnergyQuanta(this.energyQuanta - this.getEnergyCapacityQuanta() / 100);
-
-				FT_Gaseous.capture(worldObj, tank.getTankType(), 100);
-			}
-
-			markDirty();
-
-			this.networkPackNT(50);
-		} else {
+		if(worldObj.isRemote) {
 			float maxSpeed = 30F;
 
 			if(hasPower()) {
@@ -99,6 +79,83 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 		}
 	}
 
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.trackMachineFluidTank(tank);
+		this.refreshAtmosphericFluid();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(50);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_EXTRACT || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		int oldFill = tank.getFill();
+		long oldEnergy = energyQuanta;
+		this.beginMachineFluidMutation();
+		runtimeEnergyMutation = true;
+		try {
+			this.sendOutput();
+			if(this.hasPower() && tank.getFill() + 100 <= tank.getMaxFill()) {
+				tank.setFill(tank.getFill() + 100);
+				this.setStoredEnergyQuanta(energyQuanta - EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts));
+				FT_Gaseous.capture(worldObj, tank.getTankType(), 100);
+			}
+		} finally {
+			runtimeEnergyMutation = false;
+			this.endMachineFluidMutation();
+		}
+		if(oldFill != tank.getFill() || oldEnergy != energyQuanta) {
+			this.markDirty();
+			this.markNetworkDirty();
+		}
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(50);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(this.refreshAtmosphericFluid()) this.markMachineDirty(MachineDirtyCause.ENVIRONMENT | MachineDirtyCause.FLUID);
+			this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		} else if(cadence == 20) {
+			this.updateConnections();
+			this.networkPackNTIfDirty(50);
+		}
+	}
+
+	private boolean refreshAtmosphericFluid() {
+		FluidType oldType = tank.getTankType();
+		CBT_Atmosphere atmosphere = !(worldObj.provider instanceof WorldProviderOrbit) && !ChunkAtmosphereManager.proxy.hasAtmosphere(worldObj, xCoord, yCoord, zCoord)
+			? CelestialBody.getTrait(worldObj, CBT_Atmosphere.class) : null;
+		if(atmosphere != null) {
+			if(!atmosphere.hasFluid(tank.getTankType())) tank.setTankType(atmosphere.getMainFluid());
+		} else tank.setTankType(Fluids.NONE);
+		return oldType != tank.getTankType();
+	}
+
+	private void sendOutput() {
+		for(DirPos pos : this.getCachedConnections()) this.sendFluid(tank, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+	}
+
+	private DirPos[] getCachedConnections() {
+		int metadata = this.getBlockMetadata();
+		if(cachedConnections == null || cachedConnectionMetadata != metadata) {
+			cachedConnections = this.getConPos();
+			cachedConnectionMetadata = metadata;
+		}
+		return cachedConnections;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(runtimeInitialized && (this.hasPower() && tank.getFill() + 100 <= tank.getMaxFill() || tank.getFill() > 0)) this.scheduleMachineTransition(now + 1L, TASK_EXTRACT, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_EXTRACT, TASK_SLOT_MAIN);
+	}
+
 	public void cycleGas() {
 		CBT_Atmosphere atmosphere = !ChunkAtmosphereManager.proxy.hasAtmosphere(worldObj, xCoord, yCoord, zCoord)
 			? CelestialBody.getTrait(worldObj, CBT_Atmosphere.class)
@@ -114,13 +171,15 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 				if(targetIndex >= atmosphere.fluids.size()) targetIndex = 0;
 
 				tank.setTankType(atmosphere.fluids.get(targetIndex).fluid);
+				this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.FLUID);
+				this.markNetworkDirty();
 				break;
 			}
 		}
 	}
 
 	protected void updateConnections() {
-		for(DirPos pos : getConPos()) {
+		for(DirPos pos : this.getCachedConnections()) {
 			trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			sendFluid(tank, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
@@ -165,6 +224,8 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		this.markNetworkDirty();
+		if(!runtimeEnergyMutation) this.markMachineDirty(MachineDirtyCause.ENERGY);
 	}
 
 	@Override

@@ -36,6 +36,12 @@ public abstract class SerializableRecipe {
 
 	public static final Gson gson = new Gson();
 	public static List<SerializableRecipe> recipeHandlers = new ArrayList();
+	private static long registryRevision;
+
+	/** Revision shared by recipe-backed runtime machines after a complete registry reload. */
+	public static long getRegistryRevision() {
+		return registryRevision;
+	}
 
 	public boolean modified = false;
 
@@ -123,6 +129,7 @@ public abstract class SerializableRecipe {
 
 			recipe.registerPost();
 		}
+		registryRevision++;
 
 		MainRegistry.logger.info("Finished recipe init!");
 	}

@@ -7,9 +7,12 @@ import com.hbm.blocks.generic.BlockBobble.BobbleType;
 import com.hbm.inventory.container.ContainerMachineShredder;
 import com.hbm.inventory.gui.GUIMachineShredder;
 import com.hbm.inventory.recipes.ShredderRecipes;
+import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemBlades;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxElectricityPacket;
 import com.hbm.tileentity.IGUIProvider;
@@ -44,6 +47,16 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 	private static final int[] slots_io = new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29};
 	
 	private String customName;
+	private static final int TASK_ACCOUNTING = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private boolean runtimeInventoryMutation;
+	private boolean runtimeEligible;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
+	private long observedRecipeRevision = -1L;
+	private final ItemStack[] cachedResults = new ItemStack[9];
 	
 	public TileEntityMachineShredder() {
 		slots = new ItemStack[30];
@@ -66,6 +79,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 		{
 			ItemStack itemStack = slots[i];
 			slots[i] = null;
+			this.onInventoryChanged(i);
 			return itemStack;
 		} else {
 		return null;
@@ -79,6 +93,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 		{
 			itemStack.stackSize = getInventoryStackLimit();
 		}
+		this.onInventoryChanged(i);
 	}
 
 	@Override
@@ -133,6 +148,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 			{
 				ItemStack itemStack = slots[i];
 				slots[i] = null;
+				this.onInventoryChanged(i);
 				return itemStack;
 			}
 			ItemStack itemStack1 = slots[i].splitStack(j);
@@ -140,7 +156,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 			{
 				slots[i] = null;
 			}
-			
+			this.onInventoryChanged(i);
 			return itemStack1;
 		} else {
 			return null;
@@ -153,6 +169,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 		NBTTagList list = nbt.getTagList("items", 10);
 		
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "powerTime");
+		this.progress = nbt.getInteger("progress");
 		slots = new ItemStack[getSizeInventory()];
 		
 		for(int i = 0; i < list.tagCount(); i++)
@@ -164,6 +181,9 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 				slots[b0] = ItemStack.loadItemStackFromNBT(nbt1);
 			}
 		}
+		this.runtimeInitialized = false;
+		this.inventoryFingerprintInitialized = false;
+		this.observedRecipeRevision = -1L;
 	}
 	
 	@Override
@@ -182,6 +202,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 				list.appendTag(nbt1);
 			}
 		}
+		nbt.setInteger("progress", progress);
 		nbt.setTag("items", list);
 	}
 	
@@ -233,59 +254,118 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 	
 	@Override
 	public void updateEntity() {
-		boolean flag1 = false;
-		
-		if(!worldObj.isRemote) {
-			
-			this.updateConnections();
-			
-			if(hasPower() && canProcess())
-			{
-				progress++;
-				
-				this.setStoredEnergyQuanta(this.energyQuanta - 5);
-				
-				if(this.progress == TileEntityMachineShredder.processingSpeed)
-				{
-					for(int i = 27; i <= 28; i++)
-						if(slots[i].getMaxDamage() > 0)
-							this.slots[i].setItemDamage(this.slots[i].getItemDamage() + 1);
-					
-					this.progress = 0;
-					this.processItem();
-					flag1 = true;
-				}
-				if(soundCycle == 0)
-		        	this.worldObj.playSoundEffect(this.xCoord, this.yCoord, this.zCoord, "minecart.base", getVolume(1.0F), 0.75F);
-				soundCycle++;
-				
-				if(soundCycle >= 50)
-					soundCycle = 0;
-			}else{
+		// Shredding, battery accounting, and connection maintenance are runtime driven.
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		this.refreshEligibility();
+		runtimeInitialized = true;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_ACCOUNTING || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		long beforePower = energyQuanta;
+		int beforeProgress = progress;
+		runtimeEnergyMutation = true;
+		try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 29, energyQuanta, maxPower)); }
+		finally { runtimeEnergyMutation = false; }
+		boolean canRun = runtimeEligible && hasPower();
+		if(canRun && progress + 1 >= processingSpeed) canRun = this.refreshEligibility() && hasPower();
+		if(canRun) {
+			progress++;
+			runtimeEnergyMutation = true;
+			try { this.setStoredEnergyQuanta(this.energyQuanta - 5L); }
+			finally { runtimeEnergyMutation = false; }
+			if(progress >= processingSpeed) {
+				for(int i = 27; i <= 28; i++) if(slots[i].getMaxDamage() > 0) slots[i].setItemDamage(slots[i].getItemDamage() + 1);
 				progress = 0;
+				runtimeInventoryMutation = true;
+				try { this.processItem(); } finally { runtimeInventoryMutation = false; }
+				this.refreshEligibility();
+				this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
 			}
-			
-			boolean trigger = true;
-			
-			if(hasPower() && canProcess() && this.progress == 0)
-			{
-				trigger = false;
+			if(soundCycle == 0) worldObj.playSoundEffect(xCoord, yCoord, zCoord, "minecart.base", getVolume(1.0F), 0.75F);
+			soundCycle = (soundCycle + 1) % 50;
+		} else progress = 0;
+		if(beforePower != energyQuanta || beforeProgress != progress) this.markDirty();
+		this.evaluateAndSchedule(now);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			boolean changed = this.observeInventoryFingerprint();
+			if(changed) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.UPGRADE);
+			return;
+		}
+		if(cadence != 20) return;
+		boolean recipeChanged = observedRecipeRevision != SerializableRecipe.getRegistryRevision();
+		if(recipeChanged) {
+			observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+			this.markMachineDirty(MachineDirtyCause.RECIPE);
+		}
+		this.updateConnections();
+		PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, energyQuanta), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
+	}
+
+	private boolean refreshEligibility() {
+		java.util.Arrays.fill(cachedResults, null);
+		runtimeEligible = false;
+		if(slots[27] == null || slots[28] == null || getGearLeft() <= 0 || getGearLeft() >= 3 || getGearRight() <= 0 || getGearRight() >= 3) return false;
+		for(int i = 0; i < 9; i++) {
+			ItemStack input = slots[i];
+			if(input == null || input.stackSize <= 0) continue;
+			if(input.getItem() == Item.getItemFromBlock(ModBlocks.bobblehead) && input.getItemDamage() == BobbleType.GWEN.ordinal()) {
+				worldObj.func_147480_a(xCoord, yCoord, zCoord, false);
+				worldObj.newExplosion(null, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, 5, true, true);
+				return false;
 			}
-			
-			if(trigger)
-            {
-                flag1 = true;
-            }
-			
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 29, energyQuanta, maxPower));
-			
-			PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, energyQuanta), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
+			ItemStack result = ShredderRecipes.getShredderResult(input);
+			if(result != null && hasSpaceForResult(result)) {
+				cachedResults[i] = result;
+				runtimeEligible = true;
+			}
 		}
-		
-		if(flag1)
-		{
-			this.markDirty();
+		return runtimeEligible;
+	}
+
+	private boolean hasBatteryWork() {
+		if(energyQuanta >= maxPower || slots[29] == null) return false;
+		if(slots[29].getItem() == ModItems.battery_creative || slots[29].getItem() == ModItems.fusion_core_infinite) return true;
+		if(!(slots[29].getItem() instanceof IBatteryItem)) return false;
+		IBatteryItem battery = (IBatteryItem) slots[29].getItem();
+		return battery.getMaxOutputQuantaPerTick() > 0 && battery.getStoredEnergyQuanta(slots[29]) > 0;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(runtimeEligible && hasPower() || this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int hash = 1;
+		for(int i = 0; i < slots.length; i++) {
+			ItemStack stack = slots[i];
+			int tag = stack == null || stack.getItem() instanceof IBatteryItem || stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode();
+			int slot = stack == null ? 0 : 31 * (31 * (31 * System.identityHashCode(stack.getItem()) + stack.getItemDamage()) + stack.stackSize) + tag;
+			hash = 31 * hash + slot;
 		}
+		boolean changed = inventoryFingerprintInitialized && hash != observedInventoryFingerprint;
+		observedInventoryFingerprint = hash;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private void onInventoryChanged(int slot) {
+		this.markDirty();
+		if(!runtimeInventoryMutation && worldObj != null && !worldObj.isRemote) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | (slot == 29 ? MachineDirtyCause.ENERGY : 0));
 	}
 	
 	private void updateConnections() {
@@ -298,10 +378,10 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 		
 		for(int inpSlot = 0; inpSlot < 9; inpSlot++)
 		{
-			if(slots[inpSlot] != null && hasSpace(slots[inpSlot]))
+			if(slots[inpSlot] != null && cachedResults[inpSlot] != null && hasSpaceForResult(cachedResults[inpSlot]))
 			{
 				ItemStack inp = slots[inpSlot];
-				ItemStack outp = ShredderRecipes.getShredderResult(inp);
+				ItemStack outp = cachedResults[inpSlot];
 				
 				boolean flag = false;
 				
@@ -361,21 +441,17 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 	
 	
 	public boolean hasSpace(ItemStack stack) {
-		
-		ItemStack result = ShredderRecipes.getShredderResult(stack);
-		
-		if (result != null)
-			for (int i = 9; i < 27; i++) {
-				if (slots[i] == null) {
-					return true;
-				}
 
-				if (slots[i] != null && slots[i].getItem().equals(result.getItem())
-						&& slots[i].stackSize + result.stackSize <= result.getMaxStackSize()) {
-					return true;
-				}
-			}
-		
+		ItemStack result = ShredderRecipes.getShredderResult(stack);
+		return this.hasSpaceForResult(result);
+	}
+
+	private boolean hasSpaceForResult(ItemStack result) {
+		if(result == null) return false;
+		for(int i = 9; i < 27; i++) {
+			if(slots[i] == null) return true;
+			if(slots[i].getItem() == result.getItem() && slots[i].getItemDamage() == result.getItemDamage() && slots[i].stackSize + result.stackSize <= result.getMaxStackSize()) return true;
+		}
 		return false;
 	}
 
@@ -384,6 +460,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.markMachineEnergyDirty();
 	}
 	
 	public long getPowerScaled(long i) {

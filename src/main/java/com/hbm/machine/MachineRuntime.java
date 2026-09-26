@@ -135,7 +135,11 @@ public final class MachineRuntime {
 		MachineEntry entry = resolve(tile);
 		if(entry == null || entry.removed || (entry.strategies & MachineExecutionStrategy.SCHEDULED) == 0) return false;
 		long owner = scheduleOwner(taskType, taskSlot);
-		ScheduledTransition old = entry.schedules.remove(owner);
+		ScheduledTransition old = entry.schedules.get(owner);
+		// Dirty reevaluation may happen before a transition already due at this boundary.
+		// Keep the earlier deadline; the callback will observe the new authoritative state.
+		if(old != null && !old.cancelled && old.dueTick <= dueTick) return true;
+		old = entry.schedules.remove(owner);
 		if(old != null) cancelTransition(old);
 		ScheduledTransition transition = new ScheduledTransition(entry.key, entry.type, dueTick, taskType, taskSlot, scheduleSequence++);
 		entry.schedules.put(owner, transition);
@@ -159,8 +163,9 @@ public final class MachineRuntime {
 	void tick() {
 		if(unloaded) return;
 		long now = world.getTotalWorldTime();
-		processScheduled(now);
+		// Apply mutations observed during TileEntity ticking before work due at this boundary.
 		processDirty();
+		processScheduled(now);
 		coarse5.poll(now, diagnostics);
 		coarse20.poll(now, diagnostics);
 		coarse100.poll(now, diagnostics);

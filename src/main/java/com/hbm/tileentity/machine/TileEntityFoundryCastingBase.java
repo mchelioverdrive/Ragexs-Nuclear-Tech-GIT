@@ -1,5 +1,7 @@
 package com.hbm.tileentity.machine;
 
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.inventory.material.Mats.MaterialStack;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemMold;
@@ -19,6 +21,14 @@ import net.minecraftforge.common.util.ForgeDirection;
  *
  */
 public abstract class TileEntityFoundryCastingBase extends TileEntityFoundryBase implements ISidedInventory {
+	private static final int TASK_CAST = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean inputFingerprintInitialized;
+	private boolean materialFingerprintInitialized;
+	private int observedInputFingerprint;
+	private int observedMaterialFingerprint;
+
 	public ItemStack[] slots;
 	public TileEntityFoundryCastingBase(int slotCount) {
 		slots = new ItemStack[slotCount];
@@ -28,39 +38,103 @@ public abstract class TileEntityFoundryCastingBase extends TileEntityFoundryBase
 	@Override
 	public void updateEntity() {
 		super.updateEntity();
-		
-		if(!worldObj.isRemote) {
-			
-			if(this.amount > this.getCapacity()) {
-				this.amount = this.getCapacity();
-			}
-			
-			if(this.amount == 0) {
-				this.type = null;
-			}
-			
-			Mold mold = this.getInstalledMold();
-			
-			if(mold != null && this.amount == this.getCapacity() && slots[1] == null) {
-				cooloff--;
-				
-				if(cooloff <= 0) {
-					this.amount = 0;
-					
-					ItemStack out = mold.getOutput(type);
-					
-					if(out != null) {
-						slots[1] = out.copy();
-					}
-					
-					cooloff = 200;
-					this.markDirty();
-				}
-				
-			} else {
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.CONFIGURATION)) != 0) this.refreshCastingState();
+		runtimeInitialized = true;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_CAST || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.normalizeCastingBuffer();
+		Mold mold = this.getInstalledMold();
+		if(mold != null && this.amount == this.getCapacity() && slots[1] == null) {
+			cooloff--;
+			if(cooloff <= 0) {
+				this.amount = 0;
+				ItemStack out = mold.getOutput(type);
+				if(out != null) slots[1] = out.copy();
 				cooloff = 200;
+				this.markDirty();
+				this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+			}
+		} else {
+			cooloff = 200;
+		}
+		this.observeInputFingerprint();
+		this.observeMaterialFingerprint();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 5 || worldObj == null || worldObj.isRemote) return;
+		boolean inventoryChanged = this.observeInputFingerprint();
+		boolean materialChanged = this.observeMaterialFingerprint();
+		if(inventoryChanged) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+		if(materialChanged) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+	}
+
+	private void refreshCastingState() {
+		this.normalizeCastingBuffer();
+		if(!this.canAdvanceCasting()) cooloff = 200;
+		this.observeInputFingerprint();
+		this.observeMaterialFingerprint();
+	}
+
+	private void normalizeCastingBuffer() {
+		int capacity = this.getCapacity();
+		if(this.amount > capacity) this.amount = capacity;
+		if(this.amount == 0) this.type = null;
+	}
+
+	private boolean canAdvanceCasting() {
+		return this.getInstalledMold() != null && this.amount == this.getCapacity() && slots[1] == null;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		if(this.canAdvanceCasting()) this.scheduleMachineTransition(now + 1L, TASK_CAST, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_CAST, TASK_SLOT_MAIN);
+	}
+
+	private int inputFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
 			}
 		}
+		return hash;
+	}
+
+	private boolean observeInputFingerprint() {
+		int current = this.inputFingerprint();
+		boolean changed = inputFingerprintInitialized && current != observedInputFingerprint;
+		observedInputFingerprint = current;
+		inputFingerprintInitialized = true;
+		return changed;
+	}
+
+	private int materialFingerprint() {
+		return 31 * System.identityHashCode(type) + amount;
+	}
+
+	private boolean observeMaterialFingerprint() {
+		int current = this.materialFingerprint();
+		boolean changed = materialFingerprintInitialized && current != observedMaterialFingerprint;
+		observedMaterialFingerprint = current;
+		materialFingerprintInitialized = true;
+		return changed;
 	}
 
 	@Override
@@ -113,6 +187,7 @@ public abstract class TileEntityFoundryCastingBase extends TileEntityFoundryBase
 		if(slots[i] != null) {
 			ItemStack itemStack = slots[i];
 			slots[i] = null;
+			this.onFoundryInventoryChanged();
 			return itemStack;
 		} else {
 			return null;
@@ -126,6 +201,7 @@ public abstract class TileEntityFoundryCastingBase extends TileEntityFoundryBase
 			itemStack.stackSize = getInventoryStackLimit();
 		}
 		worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
+		this.onFoundryInventoryChanged();
 	}
 	
 	@Override
@@ -135,16 +211,23 @@ public abstract class TileEntityFoundryCastingBase extends TileEntityFoundryBase
 			if(slots[slot].stackSize <= amount) {
 				ItemStack itemStack = slots[slot];
 				slots[slot] = null;
+				this.onFoundryInventoryChanged();
 				return itemStack;
 			}
 			ItemStack itemStack1 = slots[slot].splitStack(amount);
 			if(slots[slot].stackSize == 0) {
 				slots[slot] = null;
 			}
+			this.onFoundryInventoryChanged();
 			return itemStack1;
 		} else {
 			return null;
 		}
+	}
+
+	private void onFoundryInventoryChanged() {
+		this.markDirty();
+		this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
 	}
 
 	@Override

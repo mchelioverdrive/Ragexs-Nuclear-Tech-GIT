@@ -5,6 +5,8 @@ import java.util.List;
 
 import com.hbm.inventory.RecipesCommon.AStack;
 import com.hbm.inventory.recipes.AssemblerRecipes;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemAssemblyTemplate;
 import com.hbm.lib.Library;
@@ -15,6 +17,7 @@ import com.hbm.util.InventoryUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.IBatteryItem;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.item.Item;
@@ -39,8 +42,22 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 	private final ItemStack[][] cachedOutputArrays;
 	private final int[] cachedProcessTimes;
 	private final int[][] cachedSlotIndices;
+	private final boolean[] runtimeMaterialEligible;
+	private final boolean[] runtimeHasRequiredItems;
+	private final int[] runtimeItemFingerprints;
+	private final long[] runtimeLaneTick;
+	private long runtimeRecipeGeneration = -1L;
+	private long runtimePowerFingerprint;
+	private long runtimeLastAccountingTick = Long.MIN_VALUE;
+	private long runtimeLastChargeTick = Long.MIN_VALUE;
+	private boolean runtimeFingerprintsInitialized;
+	private boolean runtimeEnergyMutation;
 
-	int consumption = 100;
+	private static final int TASK_ASSEMBLER_LANE = 1;
+	private static final int TASK_ASSEMBLER_BATTERY = 2;
+	private static final int TASK_SLOT_BATTERY = -1;
+
+	long operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(100L);
 	int speed = 100;
 
 	public TileEntityMachineAssemblerBase(int scount) {
@@ -61,43 +78,199 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 		cachedOutputArrays = new ItemStack[count][];
 		cachedProcessTimes = new int[count];
 		cachedSlotIndices = new int[count][];
+		runtimeMaterialEligible = new boolean[count];
+		runtimeHasRequiredItems = new boolean[count];
+		runtimeLaneTick = new long[count];
+		java.util.Arrays.fill(runtimeLaneTick, Long.MIN_VALUE);
+		runtimeItemFingerprints = new int[scount];
 	}
 
 	@Override
 	public void updateEntity() {
+		// Production, battery charging, and logistics are owned by MachineRuntime.
+	}
 
-		if(!worldObj.isRemote) {
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
 
-			int count = this.getRecipeCount();
-
-			this.isProgressing = false;
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, getPowerSlot(), energyQuanta, this.getEnergyCapacityQuanta()));
-
-			for(int i = 0; i < count; i++) {
-				unloadItems(i);
-				loadItems(i);
-			}
-
-
-			for(int i = 0; i < count; i++) {
-				if(!canProcess(i)) {
-					this.progress[i] = 0;
-				} else {
-					isProgressing = true;
-					process(i);
-				}
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		this.refreshRuntimeSettings(false);
+		long recipeGeneration = AssemblerRecipes.recipeGeneration;
+		if(recipeGeneration != this.runtimeRecipeGeneration) this.runtimeRecipeGeneration = recipeGeneration;
+		long now = worldObj.getTotalWorldTime();
+		this.isProgressing = false;
+		if(this.hasRuntimeBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_ASSEMBLER_BATTERY, TASK_SLOT_BATTERY);
+		else this.cancelMachineTransition(TASK_ASSEMBLER_BATTERY, TASK_SLOT_BATTERY);
+		boolean anyEligible = false;
+		for(int i = 0; i < getRecipeCount(); i++) {
+			boolean eligible = this.canProcess(i);
+			if(eligible && progress[i] > 0) this.isProgressing = true;
+			if(eligible) {
+				anyEligible = true;
+				this.scheduleMachineTransition(now + 1L, TASK_ASSEMBLER_LANE, i);
+			} else {
+				this.cancelMachineTransition(TASK_ASSEMBLER_LANE, i);
+				this.progress[i] = 0;
 			}
 		}
+		if(!anyEligible && !this.hasRuntimeBatteryWork()) this.isProgressing = false;
+		this.runtimePowerFingerprint = this.energyQuanta;
+		this.runtimeRecipeGeneration = recipeGeneration;
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		if(taskType == TASK_ASSEMBLER_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
+			boolean charged = this.beginRuntimeAccounting(now);
+			if(charged) {
+				this.markDirty();
+				this.markNetworkDirty();
+				this.runtimePowerFingerprint = this.energyQuanta;
+				for(int i = 0; i < getRecipeCount(); i++) {
+					if(runtimeMaterialEligible[i] && this.hasLanePower()) this.scheduleMachineTransition(now, TASK_ASSEMBLER_LANE, i);
+				}
+			}
+			if(this.hasRuntimeBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_ASSEMBLER_BATTERY, TASK_SLOT_BATTERY);
+			return;
+		}
+		if(taskType != TASK_ASSEMBLER_LANE || taskSlot < 0 || taskSlot >= getRecipeCount()) return;
+		if(runtimeLaneTick[taskSlot] == now) return;
+		runtimeLaneTick[taskSlot] = now;
+		this.beginRuntimeAccounting(now);
+		long oldPower = this.energyQuanta;
+		int oldProgress = this.progress[taskSlot];
+		int oldMaxProgress = this.maxProgress[taskSlot];
+		boolean canRun = runtimeMaterialEligible[taskSlot] && this.hasLanePower();
+		int completion = this.getProcessTime(taskSlot) * this.speed / 100;
+		if(canRun && this.progress[taskSlot] + 1 >= completion) canRun = this.canProcess(taskSlot);
+		if(canRun) {
+			this.isProgressing = true;
+			runtimeEnergyMutation = true;
+			try { this.process(taskSlot); } finally { runtimeEnergyMutation = false; }
+			this.scheduleMachineTransition(now + 1L, TASK_ASSEMBLER_LANE, taskSlot);
+		} else {
+			this.progress[taskSlot] = 0;
+		}
+		if(this.hasRuntimeBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_ASSEMBLER_BATTERY, TASK_SLOT_BATTERY);
+		if(oldPower != this.energyQuanta || oldProgress != this.progress[taskSlot] || oldMaxProgress != this.maxProgress[taskSlot]) {
+			this.markDirty();
+			this.markNetworkDirty();
+		}
+		this.runtimePowerFingerprint = this.energyQuanta;
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			boolean inventoryChanged = this.updateRuntimeItemFingerprints();
+			if(inventoryChanged) {
+				this.markDirty();
+				this.markNetworkDirty();
+				this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+				return;
+			}
+			boolean changed = false;
+			for(int i = 0; i < getRecipeCount(); i++) {
+				int output = getCachedSlotIndicesFromIndex(i)[2];
+				if(slots[output] != null || needsTemplateSwitch[i]) unloadItems(i);
+				if(!runtimeHasRequiredItems[i]) changed |= loadItems(i);
+			}
+			if(changed) {
+				this.markDirty();
+				this.markNetworkDirty();
+				this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+			}
+			this.onMachineRuntimeMaintenance(cadence);
+			return;
+		}
+		if(cadence != 20) return;
+		boolean settingsChanged = this.refreshRuntimeSettings(true);
+		long recipeGeneration = AssemblerRecipes.recipeGeneration;
+		boolean recipeChanged = recipeGeneration != this.runtimeRecipeGeneration;
+		boolean changed = recipeChanged || settingsChanged || this.energyQuanta != this.runtimePowerFingerprint;
+		if(recipeChanged) this.runtimeRecipeGeneration = recipeGeneration;
+		if(changed) this.markMachineDirty((recipeChanged ? MachineDirtyCause.RECIPE : 0) | MachineDirtyCause.CONFIGURATION | MachineDirtyCause.ENERGY);
+		this.networkPackNTIfDirty(150);
+		this.onMachineRuntimeMaintenance(cadence);
+	}
+
+	/** Recomputes family-specific upgrades/configuration; return true when effective values changed. */
+	protected boolean refreshRuntimeSettings(boolean contentAware) { return false; }
+
+	/** Family hook for bounded connection and fluid-output maintenance. */
+	protected void onMachineRuntimeMaintenance(int cadence) { }
+
+	private boolean beginRuntimeAccounting(long now) {
+		if(runtimeLastAccountingTick != now) {
+			runtimeLastAccountingTick = now;
+			this.isProgressing = false;
+		}
+		return this.chargeRuntimeEnergy(now);
+	}
+
+	private boolean chargeRuntimeEnergy(long now) {
+		if(runtimeLastChargeTick == now) return false;
+		runtimeLastChargeTick = now;
+		long before = this.energyQuanta;
+		runtimeEnergyMutation = true;
+		try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, getPowerSlot(), energyQuanta, getEnergyCapacityQuanta())); }
+		finally { runtimeEnergyMutation = false; }
+		return before != this.energyQuanta;
+	}
+
+	private boolean hasRuntimeBatteryWork() {
+		if(this.energyQuanta >= this.getEnergyCapacityQuanta()) return false;
+		int slot = this.getPowerSlot();
+		if(slot < 0 || slot >= slots.length || slots[slot] == null) return false;
+		if(slots[slot].getItem() == ModItems.battery_creative || slots[slot].getItem() == ModItems.fusion_core_infinite) return true;
+		if(!(slots[slot].getItem() instanceof IBatteryItem)) return false;
+		IBatteryItem battery = (IBatteryItem) slots[slot].getItem();
+		return battery.getMaxOutputQuantaPerTick() > 0 && battery.getStoredEnergyQuanta(slots[slot]) > 0;
+	}
+
+	private boolean hasLanePower() {
+		return this.energyQuanta >= EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts);
+	}
+
+	private boolean updateRuntimeItemFingerprints() {
+		boolean changed = false;
+		for(int i = 0; i < slots.length; i++) {
+			int fingerprint = runtimeItemFingerprint(i);
+			if(runtimeFingerprintsInitialized && runtimeItemFingerprints[i] != fingerprint) changed = true;
+			runtimeItemFingerprints[i] = fingerprint;
+		}
+		runtimeFingerprintsInitialized = true;
+		return changed;
+	}
+
+	private int runtimeItemFingerprint(int index) {
+		ItemStack stack = slots[index];
+		if(stack == null) return 0;
+		int hash = System.identityHashCode(stack.getItem());
+		hash = 31 * hash + stack.getItemDamage();
+		hash = 31 * hash + stack.stackSize;
+		return 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
 	}
 
 	protected boolean canProcess(int index) {
 		int template = getTemplateIndex(index);
+		runtimeMaterialEligible[index] = false;
+		runtimeHasRequiredItems[index] = false;
 		if(slots[template] == null || slots[template].getItem() != ModItems.assembly_template) return false;
 		this.resolveRecipe(index);
 		AStack[] recipe = this.cachedRecipes[index];
-		if(recipe == null || this.energyQuanta < this.consumption) return false;
-		if(!hasRequiredItems(recipe, index)) return false;
-		return hasSpaceForItems(this.cachedOutputs[index], index);
+		if(recipe == null) return false;
+		runtimeHasRequiredItems[index] = hasRequiredItems(recipe, index);
+		if(!runtimeHasRequiredItems[index] || !hasSpaceForItems(this.cachedOutputs[index], index)) return false;
+		runtimeMaterialEligible[index] = true;
+		return this.hasLanePower();
 	}
 
 	protected boolean hasAssemblerInputs(int index) {
@@ -113,7 +286,8 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 		if(recipe == null)
 			return false;
 
-		return hasRequiredItems(recipe, index);
+		runtimeHasRequiredItems[index] = hasRequiredItems(recipe, index);
+		return runtimeHasRequiredItems[index];
 	}
 
 	protected boolean hasValidProcessInputs(int index) {
@@ -144,7 +318,7 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 
 	protected void process(int index) {
 
-		this.setStoredEnergyQuanta(this.energyQuanta - this.consumption);
+		this.setStoredEnergyQuanta(this.energyQuanta - EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts));
 		this.progress[index]++;
 
 		//if(slots[0] != null && slots[0].getItem() == ModItems.meteorite_sword_alloyed)
@@ -163,6 +337,7 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 			this.progress[index] = 0;
 			this.needsTemplateSwitch[index] = true;
 			this.markDirty();
+			this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
 		}
 	}
 
@@ -374,6 +549,7 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	private int[] getCachedSlotIndicesFromIndex(int index) {

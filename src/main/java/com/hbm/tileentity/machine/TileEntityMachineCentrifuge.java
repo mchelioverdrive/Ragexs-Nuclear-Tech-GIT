@@ -11,8 +11,11 @@ import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerCentrifuge;
 import com.hbm.inventory.gui.GUIMachineCentrifuge;
 import com.hbm.inventory.recipes.CentrifugeRecipes;
+import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.main.MainRegistry;
 import com.hbm.sound.AudioWrapper;
 import com.hbm.tileentity.IConfigurableMachine;
@@ -24,6 +27,7 @@ import com.hbm.util.CompatEnergyControl;
 import com.hbm.util.I18nUtil;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.IBatteryItem;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -46,6 +50,24 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 	public long energyQuanta;
 	public boolean isProgressing;
 	private int audioDuration = 0;
+	private int soundCycle;
+	private static final int TASK_ACCOUNTING = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeStateInitialized;
+	private boolean runtimeEnergyMutation;
+	private long nextRuntimeTick = -1L;
+	private long lastAccountingTick = Long.MIN_VALUE;
+	private long observedPower;
+	private long observedRecipeRevision = -1L;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
+	private long operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(baseConsumption);
+	private int processingSpeedPerTick = 1;
+	private ItemStack cachedRecipeInput;
+	private int cachedRecipeMeta;
+	private int cachedRecipeTagHash;
+	private long cachedRecipeRevision = -1L;
+	private ItemStack[] cachedRecipeOutput;
 
 	private AudioWrapper audio;
 
@@ -101,6 +123,11 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 		super.readFromNBT(nbt);
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		progress = nbt.getShort("progress");
+		isProgressing = this.progress > 0;
+		runtimeStateInitialized = false;
+		nextRuntimeTick = -1L;
+		cachedRecipeInput = null;
+		cachedRecipeRevision = -1L;
 	}
 
 	@Override
@@ -128,7 +155,7 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 		if(slots[0] == null) {
 			return false;
 		}
-		ItemStack[] out = CentrifugeRecipes.getOutput(slots[0]);
+		ItemStack[] out = this.getCachedRecipeOutput();
 
 		if(out == null) {
 			return false;
@@ -153,7 +180,8 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 	}
 
 	private void processItem() {
-		ItemStack[] out = CentrifugeRecipes.getOutput(slots[0]);
+		ItemStack[] out = this.getCachedRecipeOutput();
+		if(out == null) return;
 
 		for(int i = 0; i < Math.min(4, out.length); i++) {
 
@@ -182,51 +210,7 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 	@Override
 	public void updateEntity() {
 
-		if(!worldObj.isRemote) {
-
-			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 1, energyQuanta, maxPower));
-
-			int consumption = baseConsumption;
-			int speed = 1;
-
-			this.upgradeManager.checkSlots(slots, 6, 7);
-			speed += Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-			consumption += Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3) * baseConsumption;
-
-			speed *= (1 + Math.min(this.upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3) * 5);
-			consumption += Math.min(this.upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3) * baseConsumption * 50;
-
-			consumption /= (1 + Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3));
-
-			if(hasPower() && isProcessing()) {
-				this.setStoredEnergyQuanta(this.energyQuanta - consumption);
-
-				if(this.energyQuanta < 0) {
-					this.setStoredEnergyQuanta(0);
-				}
-			}
-
-			if(hasPower() && canProcess()) {
-				isProgressing = true;
-			} else {
-				isProgressing = false;
-			}
-
-			if(isProgressing) {
-				progress += speed;
-
-				if(this.progress >= TileEntityMachineCentrifuge.processingSpeed) {
-					this.progress = 0;
-					this.processItem();
-				}
-			} else {
-				progress = 0;
-			}
-
-			this.networkPackNT(50);
-		} else {
+		if(worldObj.isRemote) {
 
 			if(isProgressing) {
 				audioDuration += 2;
@@ -256,6 +240,162 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 				}
 			}
 		}
+	}
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		boolean settingsChanged = this.refreshRuntimeSettings(false);
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE)) != 0 || settingsChanged) {
+			this.getCachedRecipeOutput();
+		}
+		this.runtimeStateInitialized = true;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_ACCOUNTING || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote) return;
+		nextRuntimeTick = -1L;
+		if(!runtimeStateInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		if(lastAccountingTick == now) return;
+		lastAccountingTick = now;
+
+		long oldPower = energyQuanta;
+		int oldProgress = progress;
+		boolean oldActive = isProgressing;
+		this.setRuntimePower(Library.chargeTEFromItems(slots, 1, energyQuanta, maxPower));
+		if(this.progress > 0 && this.hasPower()) {
+			long tickEnergy = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
+			this.setRuntimePower(Math.max(0L, this.energyQuanta - tickEnergy));
+		}
+
+		if(this.hasPower() && this.canProcess()) {
+			isProgressing = true;
+			progress += processingSpeedPerTick;
+			if(progress >= processingSpeed) {
+				progress = 0;
+				this.processItem();
+			}
+		} else {
+			isProgressing = false;
+			progress = 0;
+		}
+
+		if(isProgressing && soundCycle == 0) this.worldObj.playSoundEffect(xCoord, yCoord, zCoord, "minecart.base", getVolume(1.0F), 0.75F);
+		if(isProgressing) soundCycle = (soundCycle + 1) % 50;
+
+		if(oldPower != energyQuanta || oldProgress != progress || oldActive != isProgressing) {
+			this.markDirty();
+			this.markNetworkDirty();
+			this.networkPackNTIfDirty(50);
+		}
+		this.observedPower = energyQuanta;
+		this.evaluateAndSchedule(now);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			boolean inventoryChanged = this.observeInventoryFingerprint();
+			if(inventoryChanged) {
+				this.upgradeManager.invalidate();
+				this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.CONFIGURATION);
+			}
+			return;
+		}
+		if(cadence != 20) return;
+		boolean recipeChanged = observedRecipeRevision != SerializableRecipe.getRegistryRevision();
+		boolean powerChanged = observedPower != energyQuanta;
+		boolean settingsChanged = this.refreshRuntimeSettings(true);
+		if(recipeChanged) observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+		if(recipeChanged || powerChanged || settingsChanged || (this.hasBatteryWork() && nextRuntimeTick < 0L)) {
+			this.markMachineDirty((recipeChanged ? MachineDirtyCause.RECIPE : 0) | (powerChanged ? MachineDirtyCause.ENERGY : 0) | (settingsChanged ? MachineDirtyCause.UPGRADE : 0));
+		}
+		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
+		this.networkPackNTIfDirty(50);
+	}
+
+	private void evaluateAndSchedule(long now) {
+		boolean eligible = this.hasPower() && this.canProcess();
+		if(!eligible && this.progress == 0 && !this.hasBatteryWork()) {
+			this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+			nextRuntimeTick = -1L;
+			return;
+		}
+		long due = now + 1L;
+		nextRuntimeTick = due;
+		this.scheduleMachineTransition(due, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+	}
+
+	private boolean refreshRuntimeSettings(boolean contentAware) {
+		long oldPowerWatts = operatingPowerWatts;
+		int oldSpeed = processingSpeedPerTick;
+		if(contentAware) this.upgradeManager.checkSlots(slots, 6, 7);
+		else this.upgradeManager.checkSlotsIfDirty(slots, 6, 7);
+		int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+		int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+		int overdriveLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3);
+		processingSpeedPerTick = (1 + speedLevel) * (1 + overdriveLevel * 5);
+		long quantaPerTick = baseConsumption + (long) speedLevel * baseConsumption + (long) overdriveLevel * baseConsumption * 50L;
+		quantaPerTick /= 1 + powerLevel;
+		operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(quantaPerTick);
+		return oldPowerWatts != operatingPowerWatts || oldSpeed != processingSpeedPerTick;
+	}
+
+	private ItemStack[] getCachedRecipeOutput() {
+		ItemStack input = slots[0];
+		int meta = input == null ? 0 : input.getItemDamage();
+		int tagHash = input == null || input.getTagCompound() == null ? 0 : input.getTagCompound().hashCode();
+		long revision = SerializableRecipe.getRegistryRevision();
+		if(cachedRecipeInput != input || cachedRecipeMeta != meta || cachedRecipeTagHash != tagHash || cachedRecipeRevision != revision) {
+			cachedRecipeInput = input;
+			cachedRecipeMeta = meta;
+			cachedRecipeTagHash = tagHash;
+			cachedRecipeRevision = revision;
+			cachedRecipeOutput = CentrifugeRecipes.getOutput(input);
+		}
+		return cachedRecipeOutput;
+	}
+
+	private boolean hasBatteryWork() {
+		if(energyQuanta >= maxPower || slots[1] == null) return false;
+		if(slots[1].getItem() == com.hbm.items.ModItems.battery_creative || slots[1].getItem() == com.hbm.items.ModItems.fusion_core_infinite) return true;
+		if(!(slots[1].getItem() instanceof IBatteryItem)) return false;
+		IBatteryItem battery = (IBatteryItem) slots[1].getItem();
+		return battery.getMaxOutputQuantaPerTick() > 0 && battery.getStoredEnergyQuanta(slots[1]) > 0;
+	}
+
+	private void setRuntimePower(long value) {
+		runtimeEnergyMutation = true;
+		try { this.setStoredEnergyQuanta(value); } finally { runtimeEnergyMutation = false; }
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int hash = 1;
+		for(int i = 0; i < slots.length; i++) {
+			ItemStack stack = slots[i];
+			int slot = stack == null ? 0 : 31 * (31 * (31 * System.identityHashCode(stack.getItem()) + stack.getItemDamage()) + stack.stackSize) + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			hash = 31 * hash + slot;
+		}
+		boolean changed = inventoryFingerprintInitialized && hash != observedInventoryFingerprint;
+		observedInventoryFingerprint = hash;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	@Override
+	protected void onInventorySlotChanged(int slot) {
+		super.onInventorySlotChanged(slot);
+		if(slot == 6 || slot == 7) this.upgradeManager.invalidate();
+		if(slot == 0) this.cachedRecipeInput = null;
 	}
 
 	@Override
@@ -330,6 +470,7 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override

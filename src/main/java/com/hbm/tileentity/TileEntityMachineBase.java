@@ -32,6 +32,15 @@ import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.fluids.FluidTank;
 
 public abstract class TileEntityMachineBase extends TileEntityLoadedBase implements ISidedInventory, INBTPacketReceiver, IBufPacketReceiver {
+	private final com.hbm.inventory.fluid.tank.FluidTank.ChangeListener machineTankListener = new com.hbm.inventory.fluid.tank.FluidTank.ChangeListener() {
+		@Override
+		public void onTankChanged(com.hbm.inventory.fluid.tank.FluidTank tank) {
+			if(TileEntityMachineBase.this.machineFluidMutationDepth == 0) TileEntityMachineBase.this.onFluidStorageChanged();
+			TileEntityMachineBase.this.markNetworkDirty();
+			TileEntityMachineBase.this.markDirty();
+		}
+	};
+	private transient int machineFluidMutationDepth;
 
 	public ItemStack slots[];
 
@@ -173,6 +182,20 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 	/** Future common hook for tank owners once a mutation path has reliable coverage. */
 	protected void onFluidStorageChanged() {
 		this.markMachineFluidDirty();
+	}
+
+	/** Opts an owned HBM tank into owner invalidation for direct, pipe, and container mutations. */
+	protected final void trackMachineFluidTank(com.hbm.inventory.fluid.tank.FluidTank tank) {
+		if(tank != null) tank.setChangeListener(this.machineTankListener);
+	}
+
+	/** Suppresses re-evaluation notifications for a machine's own atomic fluid operation. */
+	protected final void beginMachineFluidMutation() {
+		this.machineFluidMutationDepth++;
+	}
+
+	protected final void endMachineFluidMutation() {
+		if(this.machineFluidMutationDepth > 0) this.machineFluidMutationDepth--;
 	}
 
 	/** Future common hook for block/configuration mutations. */

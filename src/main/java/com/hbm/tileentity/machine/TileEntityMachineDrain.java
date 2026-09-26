@@ -12,6 +12,8 @@ import com.hbm.inventory.fluid.trait.FluidTraitSimple.FT_Amat;
 import com.hbm.inventory.fluid.trait.FluidTraitSimple.FT_Liquid;
 import com.hbm.inventory.fluid.trait.FluidTraitSimple.FT_Viscous;
 import com.hbm.main.MainRegistry;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.BufPacket;
 import com.hbm.tileentity.IBufPacketReceiver;
@@ -32,52 +34,81 @@ import net.minecraft.util.Vec3;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineDrain extends TileEntityLoadedBase implements IFluidStandardReceiver, IBufPacketReceiver, IFluidCopiable {
-	
+
+	private static final int TASK_SPILL = 1;
+
 	public FluidTank tank;
 	
 	public TileEntityMachineDrain() {
 		this.tank = new FluidTank(Fluids.NONE, 2_000);
+		this.tank.setChangeListener(new FluidTank.ChangeListener() {
+			@Override public void onTankChanged(FluidTank changedTank) {
+				markMachineDirty(MachineDirtyCause.FLUID);
+			}
+		});
 	}
-	
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(tank.getFill() > 0) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_SPILL, 0);
+		else this.cancelMachineTransition(TASK_SPILL, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_SPILL || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		this.sendTankPacket();
+		if(tank.getFill() <= 0) return;
+
+		if(tank.getTankType().hasTrait(FT_Amat.class)) {
+			worldObj.newExplosion(null, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, 10F, true, true);
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_SPILL, 0);
+			return;
+		}
+
+		int toSpill = Math.max(tank.getFill() / 2, 1);
+		tank.setFill(tank.getFill() - toSpill);
+
+		FT_Polluting.pollute(worldObj, xCoord, yCoord, zCoord, tank.getTankType(), FluidReleaseType.SPILL, toSpill);
+		FT_Gaseous.release(worldObj, tank.getTankType(), toSpill);
+
+		if(toSpill >= 100 && worldObj.rand.nextInt(20) == 0 && tank.getTankType().hasTrait(FT_Liquid.class) && tank.getTankType().hasTrait(FT_Viscous.class) && tank.getTankType().hasTrait(FT_Flammable.class)) {
+			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
+			Vec3 start = Vec3.createVectorHelper(xCoord + 0.5 - dir.offsetX * 3, yCoord + 0.5, zCoord + 0.5 - dir.offsetZ * 3);
+			Vec3 end = start.addVector(worldObj.rand.nextGaussian() * 5, -25, worldObj.rand.nextGaussian() * 5);
+			MovingObjectPosition mop = worldObj.func_147447_a(start, end, false, true, false);
+
+			if(mop != null && mop.typeOfHit == mop.typeOfHit.BLOCK && mop.sideHit == 1) {
+				Block block = worldObj.getBlock(mop.blockX, mop.blockY + 1, mop.blockZ);
+				if(!block.getMaterial().isLiquid() && block.isReplaceable(worldObj, mop.blockX, mop.blockY + 1, mop.blockZ) && ModBlocks.oil_spill.canPlaceBlockAt(worldObj, mop.blockX, mop.blockY + 1, mop.blockZ)) {
+					worldObj.setBlock(mop.blockX, mop.blockY + 1, mop.blockZ, ModBlocks.oil_spill);
+				}
+			}
+		}
+
+		if(tank.getFill() > 0) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_SPILL, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
+		for(DirPos pos : getConPos()) this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+		if(tank.getFill() <= 0) this.sendTankPacket();
+	}
+
+	private void sendTankPacket() {
+		PacketDispatcher.wrapper.sendToAllAround(new BufPacket(xCoord, yCoord, zCoord, this), new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
+	}
+
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
-			if(worldObj.getTotalWorldTime() % 20 == 0) {
-				for(DirPos pos : getConPos()) this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			}
-			
-			PacketDispatcher.wrapper.sendToAllAround(new BufPacket(xCoord, yCoord, zCoord, this), new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
-			
-			if(tank.getFill() > 0) {
-				if(tank.getTankType().hasTrait(FT_Amat.class)) {
-					worldObj.newExplosion(null, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, 10F, true, true);
-					return;
-				}
-				int toSpill = Math.max(tank.getFill() / 2, 1);
-				tank.setFill(tank.getFill() - toSpill);
-
-				FT_Polluting.pollute(worldObj, xCoord, yCoord, zCoord, tank.getTankType(), FluidReleaseType.SPILL, toSpill);
-				FT_Gaseous.release(worldObj, tank.getTankType(), toSpill);
-				
-				if(toSpill >= 100 && worldObj.rand.nextInt(20) == 0 && tank.getTankType().hasTrait(FT_Liquid.class) && tank.getTankType().hasTrait(FT_Viscous.class) && tank.getTankType().hasTrait(FT_Flammable.class)) {
-					ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
-					Vec3 start = Vec3.createVectorHelper(xCoord + 0.5 - dir.offsetX * 3, yCoord + 0.5, zCoord + 0.5 - dir.offsetZ * 3);
-					Vec3 end = start.addVector(worldObj.rand.nextGaussian() * 5, -25, worldObj.rand.nextGaussian() * 5);
-					MovingObjectPosition mop = worldObj.func_147447_a(start, end, false, true, false);
-					
-					if(mop != null && mop.typeOfHit == mop.typeOfHit.BLOCK && mop.sideHit == 1) {
-						Block block = worldObj.getBlock(mop.blockX, mop.blockY + 1, mop.blockZ);
-						if(!block.getMaterial().isLiquid() && block.isReplaceable(worldObj, mop.blockX, mop.blockY + 1, mop.blockZ) && ModBlocks.oil_spill.canPlaceBlockAt(worldObj, mop.blockX, mop.blockY + 1, mop.blockZ)) {
-							worldObj.setBlock(mop.blockX, mop.blockY + 1, mop.blockZ, ModBlocks.oil_spill);
-						}
-					}
-				}
-			}
-			
-		} else {
-			
+		if(worldObj.isRemote) {
 			if(tank.getFill() > 0 && MainRegistry.proxy.me().getDistance(xCoord, yCoord, zCoord) < 100) {
 				ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
 				

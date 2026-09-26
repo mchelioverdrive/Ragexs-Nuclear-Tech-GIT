@@ -9,8 +9,11 @@ import com.hbm.inventory.container.ContainerMachineExposureChamber;
 import com.hbm.inventory.gui.GUIMachineExposureChamber;
 import com.hbm.inventory.recipes.ExposureChamberRecipes;
 import com.hbm.inventory.recipes.ExposureChamberRecipes.ExposureChamberRecipe;
+import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
@@ -19,6 +22,7 @@ import com.hbm.util.I18nUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.IBatteryItem;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
@@ -48,6 +52,15 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 	public boolean isOn = false;
 	public float rotation;
 	public float prevRotation;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
+	private long observedRecipeRevision;
+	private ExposureChamberRecipe cachedInputRecipe;
+	private ExposureChamberRecipe cachedLoadedRecipe;
+	private static final int TASK_PROCESS = 1;
+	private static final int TASK_SLOT_MAIN = 0;
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
@@ -85,104 +98,201 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 
 	@Override
 	public void updateEntity() {
+		if(!worldObj.isRemote) return;
+
+		this.prevRotation = this.rotation;
 		
-		if(!worldObj.isRemote) {
+		if(this.isOn) {
 			
-			this.isOn = false;
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 5, energyQuanta, maxPower));
+			this.rotation += 10D;
 			
-			if(worldObj.getTotalWorldTime() % 20 == 0) {
-				for(DirPos pos : getConPos()) this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			}
-			
-			this.upgradeManager.checkSlots(slots, 6, 7);
-			int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
-			int overdriveLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3);
-			
-			this.consumption = this.consumptionBase;
-			
-			this.processTime = this.processTimeBase - this.processTimeBase / 4 * speedLevel;
-			this.consumption *= (speedLevel / 2 + 1);
-			this.processTime *= (powerLevel / 2 + 1);
-			this.consumption /= (powerLevel + 1);
-			this.processTime /= (overdriveLevel + 1);
-			this.consumption *= (overdriveLevel * 2 + 1);
-			
-			if(slots[1] == null && slots[0] != null && slots[3] != null && this.savedParticles <= 0) {
-				ExposureChamberRecipe recipe = this.getRecipe(slots[0], slots[3]);
-				
-				if(recipe != null) {
-					
-					ItemStack container = slots[0].getItem().getContainerItem(slots[0]);
-					
-					boolean canStore = false;
-					
-					if(container == null) {
-						canStore = true;
-					} else if(slots[2] == null) {
-						slots[2] = container.copy();
-						canStore = true;
-					} else if(slots[2].getItem() == container.getItem() && slots[2].getItemDamage() == container.getItemDamage() && slots[2].stackSize < slots[2].getMaxStackSize()) {
-						slots[2].stackSize++;
-						canStore = true;
-					}
-					
-					if(canStore) {
-						slots[1] = slots[0].copy();
-						slots[1].stackSize = 0;
-						this.decrStackSize(0, 1);
-						this.savedParticles = this.maxParticles;
-					}
-				}
-			}
-			
-			if(slots[1] != null && this.savedParticles > 0 && this.energyQuanta >= this.consumption) {
-				ExposureChamberRecipe recipe = this.getRecipe(slots[1], slots[3]);
-				
-				if(recipe != null && (slots[4] == null || (slots[4].getItem() == recipe.output.getItem() && slots[4].getItemDamage() == recipe.output.getItemDamage() && slots[4].stackSize + recipe.output.stackSize <= slots[4].getMaxStackSize()))) {
-					this.progress++;
-					this.setStoredEnergyQuanta(this.energyQuanta - this.consumption);
-					this.isOn = true;
-					
-					if(this.progress >= this.processTime) {
-						this.progress = 0;
-						this.savedParticles--;
-						this.decrStackSize(3, 1);
-						
-						if(slots[4] == null) {
-							slots[4] = recipe.output.copy();
-						} else {
-							slots[4].stackSize += recipe.output.stackSize;
-						}
-					}
-					
-				} else {
-					this.progress = 0;
-				}
-			} else {
-				this.progress = 0;
-			}
-			
-			if(this.savedParticles <= 0) {
-				slots[1] = null;
-			}
-			
-			this.networkPackNT(50);
-		} else {
-			
-			this.prevRotation = this.rotation;
-			
-			if(this.isOn) {
-				
-				this.rotation += 10D;
-				
-				if(this.rotation >= 720D) {
-					this.rotation -= 720D;
-					this.prevRotation -= 720D;
-				}
+			if(this.rotation >= 720D) {
+				this.rotation -= 720D;
+				this.prevRotation -= 720D;
 			}
 		}
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20 | MachineExecutionStrategy.COARSE_100;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.refreshUpgradeSettings();
+		this.refreshRuntimeRecipes();
+		this.observeInventoryFingerprint();
+		observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0) this.updateConnections();
+		this.reconcileRuntimeState();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(50);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PROCESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long oldEnergy = energyQuanta;
+		int oldProgress = progress;
+		int oldSavedParticles = savedParticles;
+		boolean oldIsOn = isOn;
+		int oldInventoryFingerprint = this.inventoryFingerprint();
+		isOn = false;
+		runtimeEnergyMutation = true;
+		try {
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 5, energyQuanta, maxPower));
+			this.loadParticleIfPossible();
+			this.processOneTick();
+		} finally {
+			runtimeEnergyMutation = false;
+		}
+		this.observeInventoryFingerprint();
+		boolean inventoryChanged = oldInventoryFingerprint != observedInventoryFingerprint;
+		if(inventoryChanged) {
+			this.markNetworkDirty();
+			this.refreshRuntimeRecipes();
+		}
+		if(oldEnergy != energyQuanta || oldProgress != progress || oldSavedParticles != savedParticles || oldIsOn != isOn || inventoryChanged) this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(50);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(this.observeInventoryFingerprint()) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.UPGRADE);
+		} else if(cadence == 20) {
+			this.updateConnections();
+		} else if(cadence == 100) {
+			long revision = SerializableRecipe.getRegistryRevision();
+			if(revision != observedRecipeRevision) {
+				observedRecipeRevision = revision;
+				this.markMachineDirty(MachineDirtyCause.RECIPE);
+			}
+		}
+	}
+
+	private void refreshUpgradeSettings() {
+		this.upgradeManager.checkSlots(slots, 6, 7);
+		int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+		int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+		int overdriveLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3);
+		this.consumption = this.consumptionBase;
+		this.processTime = this.processTimeBase - this.processTimeBase / 4 * speedLevel;
+		this.consumption *= (speedLevel / 2 + 1);
+		this.processTime *= (powerLevel / 2 + 1);
+		this.consumption /= (powerLevel + 1);
+		this.processTime /= (overdriveLevel + 1);
+		this.consumption *= (overdriveLevel * 2 + 1);
+	}
+
+	private void reconcileRuntimeState() {
+		if(savedParticles <= 0) {
+			slots[1] = null;
+			cachedLoadedRecipe = null;
+		}
+		isOn = false;
+		if(!this.canProcessNow()) progress = 0;
+	}
+
+	private void refreshRuntimeRecipes() {
+		cachedInputRecipe = slots[0] != null && slots[3] != null ? this.getRecipe(slots[0], slots[3]) : null;
+		cachedLoadedRecipe = slots[1] != null && savedParticles > 0 && slots[3] != null ? this.getRecipe(slots[1], slots[3]) : null;
+	}
+
+	private boolean canLoadParticle() {
+		return slots[1] == null && slots[0] != null && slots[3] != null && savedParticles <= 0
+				&& cachedInputRecipe != null && this.canStoreParticleContainer();
+	}
+
+	private boolean canStoreParticleContainer() {
+		ItemStack container = slots[0].getItem().getContainerItem(slots[0]);
+		return container == null || slots[2] == null
+				|| slots[2].getItem() == container.getItem() && slots[2].getItemDamage() == container.getItemDamage() && slots[2].stackSize < slots[2].getMaxStackSize();
+	}
+
+	private boolean loadParticleIfPossible() {
+		if(!this.canLoadParticle()) return false;
+		ItemStack container = slots[0].getItem().getContainerItem(slots[0]);
+		if(container != null) {
+			if(slots[2] == null) slots[2] = container.copy();
+			else slots[2].stackSize++;
+		}
+		slots[1] = slots[0].copy();
+		slots[1].stackSize = 0;
+		this.decrStackSize(0, 1);
+		savedParticles = maxParticles;
+		cachedLoadedRecipe = cachedInputRecipe;
+		return true;
+	}
+
+	private boolean hasOutputRoom(ExposureChamberRecipe recipe) {
+		return recipe != null && (slots[4] == null || slots[4].getItem() == recipe.output.getItem() && slots[4].getItemDamage() == recipe.output.getItemDamage() && slots[4].stackSize + recipe.output.stackSize <= slots[4].getMaxStackSize());
+	}
+
+	private boolean canProcessNow() {
+		if(slots[1] == null || savedParticles <= 0 || energyQuanta < consumption) return false;
+		return this.hasOutputRoom(cachedLoadedRecipe);
+	}
+
+	private void processOneTick() {
+		if(savedParticles <= 0) slots[1] = null;
+		if(!this.canProcessNow()) {
+			progress = 0;
+			return;
+		}
+		ExposureChamberRecipe recipe = cachedLoadedRecipe;
+		progress++;
+		this.setStoredEnergyQuanta(energyQuanta - consumption);
+		isOn = true;
+		if(progress >= processTime) {
+			progress = 0;
+			savedParticles--;
+			this.decrStackSize(3, 1);
+			if(slots[4] == null) slots[4] = recipe.output.copy();
+			else slots[4].stackSize += recipe.output.stackSize;
+			if(savedParticles <= 0) slots[1] = null;
+			if(savedParticles <= 0) cachedLoadedRecipe = null;
+		}
+	}
+
+	private boolean hasBatteryWork() {
+		if(energyQuanta >= maxPower || slots[5] == null) return false;
+		if(slots[5].getItem() == com.hbm.items.ModItems.battery_creative || slots[5].getItem() == com.hbm.items.ModItems.fusion_core_infinite) return true;
+		if(!(slots[5].getItem() instanceof IBatteryItem)) return false;
+		IBatteryItem battery = (IBatteryItem) slots[5].getItem();
+		return battery.getMaxOutputQuantaPerTick() > 0 && battery.getStoredEnergyQuanta(slots[5]) > 0;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		if(this.canLoadParticle() || this.canProcessNow() || this.hasBatteryWork() || progress > 0) this.scheduleMachineTransition(now + 1L, TASK_PROCESS, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
+	}
+
+	private void updateConnections() {
+		for(DirPos pos : getConPos()) this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
 	}
 	
 	public DirPos[] getConPos() {
@@ -277,6 +387,7 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override

@@ -1,6 +1,7 @@
 package com.hbm.tileentity.machine;
 
 import api.hbm.energymk2.EnergyUnits;
+import api.hbm.energymk2.IBatteryItem;
 import java.util.List;
 
 import com.hbm.blocks.BlockDummyable;
@@ -8,14 +9,18 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.interfaces.IControlReceiver;
 import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerCompressor;
+import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.gui.GUICompressor;
 import com.hbm.inventory.recipes.CompressorRecipes;
 import com.hbm.inventory.recipes.CompressorRecipes.CompressorRecipe;
+import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
 import com.hbm.lib.Library;
 import com.hbm.main.MainRegistry;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IUpgradeInfoProvider;
@@ -31,6 +36,7 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.EnumChatFormatting;
@@ -57,12 +63,27 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	public float piston;
 	public float prevPiston;
 	public boolean pistonDir;
+	private static final int TASK_ACCOUNTING = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private CompressorRecipe cachedRecipe;
+	private FluidType cachedRecipeInputType;
+	private int cachedRecipeInputPressure = Integer.MIN_VALUE;
+	private long cachedRecipeRevision = -1L;
+	private long observedRecipeRevision = -1L;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
+	private long operatingPowerWatts;
+	private boolean runtimeMaterialEligible;
 
 	public TileEntityMachineCompressor() {
 		super(4);
 		this.tanks = new FluidTank[2];
 		this.tanks[0] = new FluidTank(Fluids.NONE, 16_000);
 		this.tanks[1] = new FluidTank(Fluids.NONE, 16_000).withPressure(1);
+		this.trackMachineFluidTank(this.tanks[0]);
+		this.trackMachineFluidTank(this.tanks[1]);
 	}
 
 	@Override
@@ -72,68 +93,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
-			if(worldObj.getTotalWorldTime() % 20 == 0) {
-				this.updateConnections();
-			}
-			
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 1, energyQuanta, maxPower));
-			this.tanks[0].setType(0, slots);
-			this.setupTanks();
-			
-			this.upgradeManager.checkSlots(slots, 1, 3);
-
-			int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
-			int overLevel = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
-			
-			CompressorRecipe rec = CompressorRecipes.recipes.get(new Pair(tanks[0].getTankType(), tanks[0].getPressure()));
-			int timeBase = this.processTimeBase;
-			if(rec != null) timeBase = rec.duration;
-
-			//there is a reason to do this but i'm not telling you
-			// ^ a few months later i have to wonder what the fuck this guy was on about, and if i ever see him i will punch him in the nuts
-			if(rec == null) this.processTime = speedLevel == 3 ? 10 : speedLevel == 2 ? 20 : speedLevel == 1 ? 60 : timeBase;
-			else this.processTime = timeBase / (speedLevel + 1);
-			this.powerRequirement = this.powerRequirementBase / (powerLevel + 1);
-			this.processTime = this.processTime / (overLevel + 1);
-			this.powerRequirement = this.powerRequirement * ((overLevel * 2) + 1);
-			
-			if(processTime <= 0) processTime = 1;
-			
-			if(canProcess()) {
-				this.progress++;
-				this.isOn = true;
-				this.setStoredEnergyQuanta(this.energyQuanta - powerRequirement);
-				
-				if(progress >= this.processTime) {
-					progress = 0;
-					this.process();
-					this.markChanged();
-				}
-				
-			} else {
-				this.progress = 0;
-				this.isOn = false;
-			}
-			
-			for(DirPos pos : getConPos()) {
-				this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			}
-			
-			NBTTagCompound data = new NBTTagCompound();
-			data.setInteger("progress", progress);
-			data.setInteger("processTime", processTime);
-			data.setInteger("powerRequirement", powerRequirement);
-			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
-			tanks[0].writeToNBT(data, "0");
-			tanks[1].writeToNBT(data, "1");
-			data.setBoolean("isOn", isOn);
-			this.networkPack(data, 100);
-			
-		} else {
+		if(worldObj.isRemote) {
 			
 			this.prevFanSpin = this.fanSpin;
 			this.prevPiston = this.piston;
@@ -163,6 +123,146 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 				this.piston = MathHelper.clamp_float(this.piston, 0F, 1F);
 			}
 		}
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		this.refreshRecipe();
+		this.refreshRuntimeSettings();
+		this.setupTanks();
+		this.runtimeMaterialEligible = this.canProcessMaterials();
+		this.observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+		runtimeInitialized = true;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_ACCOUNTING || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		int oldProgress = progress;
+		long oldPower = energyQuanta;
+		this.setRuntimePower(Library.chargeTEFromItems(slots, 1, energyQuanta, maxPower));
+		boolean canRun = runtimeMaterialEligible && this.hasOperatingPower();
+		if(canRun && progress + 1 >= processTime) canRun = this.canProcessMaterials() && this.hasOperatingPower();
+		if(canRun) {
+			progress++;
+			this.setRuntimePower(energyQuanta - EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts));
+			isOn = true;
+			if(progress >= processTime) {
+				progress = 0;
+				this.process();
+				runtimeMaterialEligible = this.canProcessMaterials();
+				this.markChanged();
+			}
+		} else {
+			progress = 0;
+			isOn = false;
+		}
+		if(oldProgress != progress || oldPower != energyQuanta) this.markDirty();
+		this.sendRuntimeState();
+		this.evaluateAndSchedule(now);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			boolean inventoryChanged = this.observeInventoryFingerprint();
+			boolean containerChanged = this.tanks[0].setType(0, slots);
+			if(inventoryChanged || containerChanged) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE | MachineDirtyCause.UPGRADE);
+			for(DirPos pos : getConPos()) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			return;
+		}
+		if(cadence != 20) return;
+		this.updateConnections();
+		if(observedRecipeRevision != SerializableRecipe.getRegistryRevision()) {
+			observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+			this.markMachineDirty(MachineDirtyCause.RECIPE);
+		}
+		this.sendRuntimeState();
+	}
+
+	private void refreshRuntimeSettings() {
+		this.upgradeManager.checkSlots(slots, 1, 3);
+		int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+		int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+		int overLevel = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
+		int timeBase = this.cachedRecipe == null ? processTimeBase : this.cachedRecipe.duration;
+		if(this.cachedRecipe == null) this.processTime = speedLevel == 3 ? 10 : speedLevel == 2 ? 20 : speedLevel == 1 ? 60 : timeBase;
+		else this.processTime = timeBase / (speedLevel + 1);
+		this.powerRequirement = this.powerRequirementBase / (powerLevel + 1);
+		this.processTime /= overLevel + 1;
+		this.powerRequirement *= (overLevel * 2) + 1;
+		if(this.processTime <= 0) this.processTime = 1;
+		this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(this.powerRequirement);
+	}
+
+	private void refreshRecipe() {
+		FluidType type = tanks[0].getTankType();
+		int pressure = tanks[0].getPressure();
+		long revision = SerializableRecipe.getRegistryRevision();
+		if(type != cachedRecipeInputType || pressure != cachedRecipeInputPressure || revision != cachedRecipeRevision) {
+			cachedRecipeInputType = type;
+			cachedRecipeInputPressure = pressure;
+			cachedRecipeRevision = revision;
+			cachedRecipe = CompressorRecipes.recipes.get(new Pair(type, pressure));
+		}
+	}
+
+	private boolean canProcessMaterials() {
+		this.refreshRecipe();
+		if(cachedRecipe == null) return tanks[0].getFill() >= 1000 && tanks[1].getFill() + 1000 <= tanks[1].getMaxFill();
+		return tanks[0].getFill() > cachedRecipe.inputAmount && tanks[1].getFill() + cachedRecipe.output.fill <= tanks[1].getMaxFill();
+	}
+
+	private boolean hasOperatingPower() {
+		return this.energyQuanta > this.powerRequirement;
+	}
+
+	private boolean hasBatteryWork() {
+		return energyQuanta < maxPower && slots[1] != null && slots[1].getItem() instanceof IBatteryItem;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if((runtimeMaterialEligible && this.hasOperatingPower()) || this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		else {
+			this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+			isOn = false;
+		}
+	}
+
+	private void setRuntimePower(long value) {
+		runtimeEnergyMutation = true;
+		try { this.setStoredEnergyQuanta(value); } finally { runtimeEnergyMutation = false; }
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int hash = 1;
+		for(int i = 0; i < slots.length; i++) {
+			ItemStack stack = slots[i];
+			int tag = stack == null || stack.getItem() instanceof IBatteryItem || stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode();
+			int slot = stack == null ? 0 : 31 * (31 * (31 * System.identityHashCode(stack.getItem()) + stack.getItemDamage()) + stack.stackSize) + tag;
+			hash = 31 * hash + slot;
+		}
+		boolean changed = inventoryFingerprintInitialized && hash != observedInventoryFingerprint;
+		observedInventoryFingerprint = hash;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private void sendRuntimeState() {
+		NBTTagCompound data = new NBTTagCompound();
+		data.setInteger("progress", progress);
+		data.setInteger("processTime", processTime);
+		data.setInteger("powerRequirement", powerRequirement);
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+		tanks[0].writeToNBT(data, "0");
+		tanks[1].writeToNBT(data, "1");
+		data.setBoolean("isOn", isOn);
+		this.networkPack(data, 100);
 	}
 	
 	private float randSpeed = 0.1F;
@@ -200,37 +300,32 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	public boolean canProcess() {
 		
 		if(this.energyQuanta <= powerRequirement) return false;
-		
-		CompressorRecipe recipe = CompressorRecipes.recipes.get(new Pair(tanks[0].getTankType(), tanks[0].getPressure()));
-		
-		if(recipe == null) {
-			return tanks[0].getFill() >= 1000 && tanks[1].getFill() + 1000 <= tanks[1].getMaxFill();
-		}
-		
-		return tanks[0].getFill() > recipe.inputAmount && tanks[1].getFill() + recipe.output.fill <= tanks[1].getMaxFill();
+		return this.canProcessMaterials();
 	}
 	
 	public void process() {
 		
-		CompressorRecipe recipe = CompressorRecipes.recipes.get(new Pair(tanks[0].getTankType(), tanks[0].getPressure()));
-		
-		if(recipe == null) {
+		this.refreshRecipe();
+		this.beginMachineFluidMutation();
+		try {
+		if(cachedRecipe == null) {
 			tanks[0].setFill(tanks[0].getFill() - 1_000);
 			tanks[1].setFill(tanks[1].getFill() + 1_000);
 		} else {
-			tanks[0].setFill(tanks[0].getFill() - recipe.inputAmount);
-			tanks[1].setFill(tanks[1].getFill() + recipe.output.fill);
+			tanks[0].setFill(tanks[0].getFill() - cachedRecipe.inputAmount);
+			tanks[1].setFill(tanks[1].getFill() + cachedRecipe.output.fill);
 		}
+		} finally { this.endMachineFluidMutation(); }
+		this.markMachineDirty(MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE);
 	}
 	
 	protected void setupTanks() {
 		
-		CompressorRecipe recipe = CompressorRecipes.recipes.get(new Pair(tanks[0].getTankType(), tanks[0].getPressure()));
-		
-		if(recipe == null) {
+		this.refreshRecipe();
+		if(cachedRecipe == null) {
 			tanks[1].withPressure(tanks[0].getPressure() + 1).setTankType(tanks[0].getTankType());
 		} else {
-			tanks[1].withPressure(recipe.output.pressure).setTankType(recipe.output.type);
+			tanks[1].withPressure(cachedRecipe.output.pressure).setTankType(cachedRecipe.output.type);
 		}
 	}
 	
@@ -241,6 +336,10 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		progress = nbt.getInteger("progress");
 		tanks[0].readFromNBT(nbt, "0");
 		tanks[1].readFromNBT(nbt, "1");
+		runtimeInitialized = false;
+		inventoryFingerprintInitialized = false;
+		cachedRecipeInputType = null;
+		cachedRecipeRevision = -1L;
 	}
 	
 	@Override
@@ -274,16 +373,15 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		
 		if(compression != tanks[0].getPressure()) {
 			tanks[0].withPressure(compression);
-			
-			CompressorRecipe recipe = CompressorRecipes.recipes.get(new Pair(tanks[0].getTankType(), compression));
-			
-			if(recipe == null) {
+			this.refreshRecipe();
+			if(cachedRecipe == null) {
 				tanks[1].withPressure(compression + 1);
 			} else {
-				tanks[1].withPressure(recipe.output.pressure).setTankType(recipe.output.type);
+				tanks[1].withPressure(cachedRecipe.output.pressure).setTankType(cachedRecipe.output.type);
 			}
 			
 			this.markChanged();
+			this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE);
 		}
 	}
 
@@ -297,6 +395,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.markMachineEnergyDirty();
 	}
 
 	@Override

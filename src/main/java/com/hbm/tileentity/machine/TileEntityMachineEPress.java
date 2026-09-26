@@ -1,6 +1,7 @@
 package com.hbm.tileentity.machine;
 
 import api.hbm.energymk2.EnergyUnits;
+import api.hbm.energymk2.IBatteryItem;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
@@ -8,6 +9,9 @@ import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerMachineEPress;
 import com.hbm.inventory.gui.GUIMachineEPress;
 import com.hbm.inventory.recipes.PressRecipes;
+import com.hbm.inventory.recipes.loader.SerializableRecipe;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
 import com.hbm.items.machine.ItemStamp;
 import com.hbm.lib.Library;
@@ -48,6 +52,22 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 	public final static int maxPress = 200;
 	boolean isRetracting = false;
 	private int delay;
+	private static final int TASK_PRESS = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private ItemStack cachedStamp;
+	private int cachedStampDamage;
+	private NBTTagCompound cachedStampTag;
+	private ItemStack cachedInput;
+	private int cachedInputDamage;
+	private NBTTagCompound cachedInputTag;
+	private long cachedRecipeRevision = -1L;
+	private long observedRecipeRevision = -1L;
+	private ItemStack cachedOutput;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
+	private int runtimeSpeed = 1;
 	
 	public ItemStack syncStack;
 	
@@ -62,79 +82,7 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 	
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
-			this.updateConnections();
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
-			
-			boolean canProcess = this.canProcess();
-			
-			if((canProcess || this.isRetracting || this.delay > 0) && energyQuanta >= 100) {
-				
-				this.setStoredEnergyQuanta(this.energyQuanta - 100);
-				
-				if(delay <= 0) {
-					
-					this.upgradeManager.checkSlots(slots, 4, 4);
-					int speed = 1 + Math.min(3, this.upgradeManager.getLevel(UpgradeType.SPEED));
-					
-					int stampSpeed = this.isRetracting ? 20 : 45;
-					stampSpeed *= (1D + (double) speed / 4D);
-					
-					if(this.isRetracting) {
-						this.press -= stampSpeed;
-						
-						if(this.press <= 0) {
-							this.isRetracting = false;
-							this.delay = 5 - speed + 1;
-						}
-					} else if(canProcess) {
-						this.press += stampSpeed;
-						
-						if(this.press >= this.maxPress) {
-							this.worldObj.playSoundEffect(this.xCoord, this.yCoord, this.zCoord, "hbm:block.pressOperate", getVolume(1.5F), 1.0F);
-							ItemStack output = PressRecipes.getOutput(slots[2], slots[1]);
-							if(slots[3] == null) {
-								slots[3] = output.copy();
-							} else {
-								slots[3].stackSize += output.stackSize;
-							}
-							this.decrStackSize(2, 1);
-							
-							if(slots[1].getMaxDamage() != 0) {
-								slots[1].setItemDamage(slots[1].getItemDamage() + 1);
-								if(slots[1].getItemDamage() >= slots[1].getMaxDamage()) {
-									slots[1] = null;
-								}
-							}
-							
-							this.isRetracting = true;
-							this.delay = 5 - speed + 1;
-							
-							this.markDirty();
-						}
-					} else if(this.press > 0){
-						this.isRetracting = true;
-					}
-				} else {
-					delay--;
-				}
-			}
-			
-			NBTTagCompound data = new NBTTagCompound();
-			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
-			data.setInteger("press", press);
-			if(slots[2] != null) {
-				NBTTagCompound stack = new NBTTagCompound();
-				slots[2].writeToNBT(stack);
-				data.setTag("stack", stack);
-			}
-			
-			this.networkPack(data, 50);
-			
-		} else {
-			
+		if(worldObj.isRemote) {
 			// approach-based interpolation, GO!
 			this.lastPress = this.renderPress;
 			
@@ -145,6 +93,161 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 				this.renderPress = this.syncPress;
 			}
 		}
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		this.upgradeManager.checkSlots(slots, 4, 4);
+		this.runtimeSpeed = 1 + Math.min(3, this.upgradeManager.getLevel(UpgradeType.SPEED));
+		this.resolveCachedOutput();
+		observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+		runtimeInitialized = true;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PRESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long beforePower = energyQuanta;
+		int beforePress = press;
+		int beforeDelay = delay;
+		boolean beforeRetracting = isRetracting;
+		this.setRuntimePower(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
+		boolean canProcess = this.canProcess();
+		if((canProcess || this.isRetracting || this.delay > 0) && energyQuanta >= 100) {
+			this.setRuntimePower(energyQuanta - 100L);
+			if(delay <= 0) {
+				int stampSpeed = this.isRetracting ? 20 : 45;
+				stampSpeed *= (1D + (double) runtimeSpeed / 4D);
+				if(this.isRetracting) {
+					this.press -= stampSpeed;
+					if(this.press <= 0) {
+						this.isRetracting = false;
+						this.delay = 5 - runtimeSpeed + 1;
+					}
+				} else if(canProcess) {
+					this.press += stampSpeed;
+					if(this.press >= this.maxPress) this.completePressOperation();
+				} else if(this.press > 0) {
+					this.isRetracting = true;
+				}
+			} else {
+				delay--;
+			}
+		}
+		if(beforePower != energyQuanta || beforePress != press || beforeDelay != delay || beforeRetracting != isRetracting) this.markDirty();
+		this.sendRuntimeState();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(this.observeInventoryFingerprint()) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.UPGRADE);
+		} else if(cadence == 20) {
+			this.updateConnections();
+			if(observedRecipeRevision != SerializableRecipe.getRegistryRevision()) {
+				observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+				this.markMachineDirty(MachineDirtyCause.RECIPE);
+			}
+			if(this.hasBatteryWork() && !this.hasScheduledPressWork()) this.markMachineDirty(MachineDirtyCause.ENERGY);
+		}
+	}
+
+	private void completePressOperation() {
+		this.resolveCachedOutput();
+		if(cachedOutput == null || !this.hasOutputSpace(cachedOutput)) return;
+		this.worldObj.playSoundEffect(this.xCoord, this.yCoord, this.zCoord, "hbm:block.pressOperate", getVolume(1.5F), 1.0F);
+		if(slots[3] == null) slots[3] = cachedOutput.copy();
+		else slots[3].stackSize += cachedOutput.stackSize;
+		this.decrStackSize(2, 1);
+		if(slots[1].getMaxDamage() != 0) {
+			slots[1].setItemDamage(slots[1].getItemDamage() + 1);
+			if(slots[1].getItemDamage() >= slots[1].getMaxDamage()) slots[1] = null;
+		}
+		this.isRetracting = true;
+		this.delay = 5 - runtimeSpeed + 1;
+		this.markDirty();
+		this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+	}
+
+	private void resolveCachedOutput() {
+		long revision = SerializableRecipe.getRegistryRevision();
+		ItemStack stamp = slots[1];
+		ItemStack input = slots[2];
+		int stampDamage = stamp == null ? -1 : stamp.getItemDamage();
+		int inputDamage = input == null ? -1 : input.getItemDamage();
+		NBTTagCompound stampTag = stamp == null || stamp.getTagCompound() == null ? null : (NBTTagCompound) stamp.getTagCompound().copy();
+		NBTTagCompound inputTag = input == null || input.getTagCompound() == null ? null : (NBTTagCompound) input.getTagCompound().copy();
+		if(cachedRecipeRevision != revision || cachedStamp != stamp || cachedStampDamage != stampDamage || !tagsEqual(cachedStampTag, stampTag) || cachedInput != input || cachedInputDamage != inputDamage || !tagsEqual(cachedInputTag, inputTag)) {
+			cachedStamp = stamp;
+			cachedStampDamage = stampDamage;
+			cachedStampTag = stampTag;
+			cachedInput = input;
+			cachedInputDamage = inputDamage;
+			cachedInputTag = inputTag;
+			cachedRecipeRevision = revision;
+			cachedOutput = stamp == null || input == null ? null : PressRecipes.getOutput(input, stamp);
+		}
+	}
+
+	private static boolean tagsEqual(NBTTagCompound first, NBTTagCompound second) {
+		return first == null ? second == null : first.equals(second);
+	}
+
+	private boolean hasOutputSpace(ItemStack output) {
+		return output != null && (slots[3] == null || slots[3].stackSize + output.stackSize <= slots[3].getMaxStackSize() && slots[3].getItem() == output.getItem() && slots[3].getItemDamage() == output.getItemDamage());
+	}
+
+	private boolean hasBatteryWork() {
+		return energyQuanta < maxPower && slots[0] != null && slots[0].getItem() instanceof IBatteryItem;
+	}
+
+	private boolean hasScheduledPressWork() {
+		return this.canProcess() || this.isRetracting || this.delay > 0;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		if((this.hasScheduledPressWork() && energyQuanta >= 100) || this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_PRESS, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_PRESS, TASK_SLOT_MAIN);
+	}
+
+	private void setRuntimePower(long value) {
+		runtimeEnergyMutation = true;
+		try { this.setStoredEnergyQuanta(value); } finally { runtimeEnergyMutation = false; }
+	}
+
+	private void sendRuntimeState() {
+		NBTTagCompound data = new NBTTagCompound();
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+		data.setInteger("press", press);
+		if(slots[2] != null) {
+			NBTTagCompound stack = new NBTTagCompound();
+			slots[2].writeToNBT(stack);
+			data.setTag("stack", stack);
+		}
+		this.networkPack(data, 50);
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			int slot = stack == null ? 0 : System.identityHashCode(stack.getItem());
+			if(stack != null) {
+				slot = 31 * slot + stack.stackSize;
+				slot = 31 * slot + stack.getItemDamage();
+				slot = 31 * slot + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+			hash = 31 * hash + slot;
+		}
+		boolean changed = inventoryFingerprintInitialized && hash != observedInventoryFingerprint;
+		observedInventoryFingerprint = hash;
+		inventoryFingerprintInitialized = true;
+		return changed;
 	}
 	
 	@Override
@@ -165,16 +268,8 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 	}
 	
 	public boolean canProcess() {
-		if(energyQuanta < 100) return false;
-		if(slots[1] == null || slots[2] == null) return false;
-		
-		ItemStack output = PressRecipes.getOutput(slots[2], slots[1]);
-		
-		if(output == null) return false;
-		
-		if(slots[3] == null) return true;
-		if(slots[3].stackSize + output.stackSize <= slots[3].getMaxStackSize() && slots[3].getItem() == output.getItem() && slots[3].getItemDamage() == output.getItemDamage()) return true;
-		return false;
+		this.resolveCachedOutput();
+		return energyQuanta >= 100 && this.hasOutputSpace(cachedOutput);
 	}
 	
 	private void updateConnections() {
@@ -214,6 +309,11 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 		press = nbt.getInteger("press");
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		isRetracting = nbt.getBoolean("ret");
+		delay = nbt.getInteger("delay");
+		runtimeInitialized = false;
+		inventoryFingerprintInitialized = false;
+		cachedRecipeRevision = -1L;
+		observedRecipeRevision = -1L;
 	}
 	
 	@Override
@@ -223,6 +323,7 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 		nbt.setInteger("press", press);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setBoolean("ret", isRetracting);
+		nbt.setInteger("delay", delay);
 	}
 
 	@Override
@@ -230,6 +331,7 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.markMachineEnergyDirty();
 	}
 
 	@Override

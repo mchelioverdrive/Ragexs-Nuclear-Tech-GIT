@@ -23,6 +23,7 @@ import com.hbm.util.BobMathUtil;
 import com.hbm.util.I18nUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
+import api.hbm.energymk2.EnergyUnits;
 import api.hbm.energymk2.IBatteryItem;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -53,6 +54,8 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 	private int observedTemplateMeta;
 	private int observedTemplateNbtHash;
 	private long observedRecipeGeneration = -1L;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
 	private int cachedPositionMeta = -1;
 	private DirPos[] cachedConnectionPositions;
 	private DirPos[] cachedInputPositions;
@@ -87,49 +90,6 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 	@Override
 	public void updateEntity() {
 		if(!worldObj.isRemote) {
-			if(this.observedRecipeGeneration != AssemblerRecipes.recipeGeneration) this.needsInputTransfer = true;
-			if(slots[5] != null || needsTemplateSwitch[0] && slots[4] != null) this.unloadItems(0);
-			if(!runtimeStateInitialized || needsInputTransfer) {
-				if(this.loadItems(0)) {
-					this.cancelAccountingTransition();
-					this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
-					this.markDirty();
-				}
-			}
-			
-			//meta below 12 means that it's an old multiblock configuration
-			if(this.getBlockMetadata() < 12) {
-				int meta = this.getBlockMetadata();
-				if(meta == 2 || meta == 14) meta = 4;
-				else if(meta == 4 || meta == 13) meta = 3;
-				else if(meta == 3 || meta == 15) meta = 5;
-				else if(meta == 5 || meta == 12) meta = 2;
-				//get old direction
-				ForgeDirection dir = ForgeDirection.getOrientation(meta);
-				//remove tile from the world to prevent inventory dropping
-				MachineRuntimeManager.remove(this);
-				worldObj.removeTileEntity(xCoord, yCoord, zCoord);
-				//use fillspace to create a new multiblock configuration
-				worldObj.setBlock(xCoord, yCoord, zCoord, ModBlocks.machine_assembler, dir.ordinal() + 10, 3);
-				MultiblockHandlerXR.fillSpace(worldObj, xCoord, yCoord, zCoord, ((BlockDummyable) ModBlocks.machine_assembler).getDimensions(), ModBlocks.machine_assembler, dir);
-				//load the tile data to restore the old values
-				NBTTagCompound data = new NBTTagCompound();
-				this.writeToNBT(data);
-				TileEntityMachineAssembler replacement = (TileEntityMachineAssembler) worldObj.getTileEntity(xCoord, yCoord, zCoord);
-				long generation = replacement.getMachineLifecycleGeneration();
-				replacement.readFromNBT(data);
-				replacement.adoptMachineLifecycleGeneration(generation);
-				return;
-			}
-			
-			this.updateConnections();
-
-			/*int rec = -1;
-			if(AssemblerRecipes.getOutputFromTempate(slots[4]) != null) {
-				ComparableStack comp = ItemAssemblyTemplate.readType(slots[4]);
-				rec = AssemblerRecipes.recipeList.indexOf(comp);
-			}*/
-			
 			this.networkPackNTIfDirty(150);
 		} else {
 			
@@ -158,7 +118,7 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 
 	@Override
 	public int getMachineExecutionStrategies() {
-		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
 	}
 
 	@Override
@@ -169,6 +129,12 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 	@Override
 	public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0 && this.upgradeLegacyMetadata()) return;
+		if(this.refreshUpgrades(false)) {
+			causes |= MachineDirtyCause.CONFIGURATION;
+			this.markDirty();
+			this.markNetworkDirty();
+		}
 		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.CONFIGURATION)) != 0) {
 			this.observeTemplate();
 			this.observedRecipeGeneration = AssemblerRecipes.recipeGeneration;
@@ -178,15 +144,10 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 		this.runtimeStateInitialized = true;
 
 		long now = worldObj.getTotalWorldTime();
-		if((causes & MachineDirtyCause.LIFECYCLE) != 0 && this.nextRuntimeTick == now + 1L && this.progress[0] > 0 && this.cachedEligible && this.energyQuanta >= this.consumption) {
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0 && this.nextRuntimeTick == now + 1L && this.progress[0] > 0 && this.cachedEligible && this.energyQuanta >= EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts)) {
 			this.scheduleMachineTransition(this.nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_ASSEMBLER);
 		} else {
 			this.runAccountingTick(now);
-		}
-		if(this.refreshUpgrades(false)) {
-			this.markDirty();
-			this.markNetworkDirty();
-			this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 		}
 	}
 
@@ -200,24 +161,78 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 
 	@Override
 	public void onMachineCoarsePoll(int cadence) {
-		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			int beforeTransfer = this.currentInventoryFingerprint();
+			if(slots[5] != null || needsTemplateSwitch[0] && slots[4] != null) this.unloadItems(0);
+			boolean transferred = (!runtimeStateInitialized || needsInputTransfer) && this.loadItems(0);
+			boolean inventoryChanged = this.observeInventoryFingerprint() || beforeTransfer != this.currentInventoryFingerprint();
+			if(transferred || inventoryChanged) {
+				this.needsInputTransfer = !this.hasAssemblerInputs(0);
+				this.cancelAccountingTransition();
+				this.markDirty();
+				this.markNetworkDirty();
+				this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+			}
+			return;
+		}
+		if(cadence != 20) return;
 		boolean templateChanged = this.observeTemplate();
 		boolean recipeChanged = this.observedRecipeGeneration != AssemblerRecipes.recipeGeneration;
 		this.observedRecipeGeneration = AssemblerRecipes.recipeGeneration;
-		boolean inputSufficient = this.hasAssemblerInputs(0);
-		boolean eligible = inputSufficient && this.hasAssemblerOutputSpace(0);
-		boolean eligibilityChanged = eligible != this.cachedEligible || !inputSufficient != this.needsInputTransfer;
-		this.needsInputTransfer = !inputSufficient;
-		this.cachedEligible = eligible;
+		boolean inventoryChanged = this.observeInventoryFingerprint();
 		boolean upgradeChanged = this.refreshUpgrades(true);
 		if(upgradeChanged) {
 			this.markDirty();
 			this.markNetworkDirty();
 		}
-		if(templateChanged || recipeChanged || eligibilityChanged || upgradeChanged || this.energyQuanta != this.observedPower || this.hasBatteryWork() && this.nextRuntimeTick < 0L) {
+		if(templateChanged || recipeChanged || inventoryChanged || upgradeChanged || this.energyQuanta != this.observedPower || this.hasBatteryWork() && this.nextRuntimeTick < 0L) {
 			this.cancelAccountingTransition();
-			this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | (upgradeChanged ? MachineDirtyCause.CONFIGURATION : 0));
+			if(inventoryChanged) this.upgradeManager.invalidate();
+			this.markMachineDirty((templateChanged || inventoryChanged ? MachineDirtyCause.INVENTORY : 0) | (recipeChanged ? MachineDirtyCause.RECIPE : 0) | (upgradeChanged ? MachineDirtyCause.CONFIGURATION : 0) | (this.energyQuanta != this.observedPower ? MachineDirtyCause.ENERGY : 0));
 		}
+		this.updateConnections();
+	}
+
+	private boolean upgradeLegacyMetadata() {
+		if(this.getBlockMetadata() >= 12) return false;
+		int meta = this.getBlockMetadata();
+		if(meta == 2 || meta == 14) meta = 4;
+		else if(meta == 4 || meta == 13) meta = 3;
+		else if(meta == 3 || meta == 15) meta = 5;
+		else if(meta == 5 || meta == 12) meta = 2;
+		ForgeDirection dir = ForgeDirection.getOrientation(meta);
+		MachineRuntimeManager.remove(this);
+		worldObj.removeTileEntity(xCoord, yCoord, zCoord);
+		worldObj.setBlock(xCoord, yCoord, zCoord, ModBlocks.machine_assembler, dir.ordinal() + 10, 3);
+		MultiblockHandlerXR.fillSpace(worldObj, xCoord, yCoord, zCoord, ((BlockDummyable) ModBlocks.machine_assembler).getDimensions(), ModBlocks.machine_assembler, dir);
+		NBTTagCompound data = new NBTTagCompound();
+		this.writeToNBT(data);
+		TileEntityMachineAssembler replacement = (TileEntityMachineAssembler) worldObj.getTileEntity(xCoord, yCoord, zCoord);
+		if(replacement != null) {
+			long generation = replacement.getMachineLifecycleGeneration();
+			replacement.readFromNBT(data);
+			replacement.adoptMachineLifecycleGeneration(generation);
+		}
+		return true;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int fingerprint = this.currentInventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && fingerprint != observedInventoryFingerprint;
+		observedInventoryFingerprint = fingerprint;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private int currentInventoryFingerprint() {
+		int hash = 1;
+		for(int i = 0; i < slots.length; i++) {
+			ItemStack stack = slots[i];
+			int slotHash = stack == null ? 0 : 31 * (31 * (31 * System.identityHashCode(stack.getItem()) + stack.getItemDamage()) + stack.stackSize) + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			hash = 31 * hash + slotHash;
+		}
+		return hash;
 	}
 
 	private void runAccountingTick(long now) {
@@ -236,7 +251,7 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 
 		this.isProgressing = false;
 		this.setPowerInternal(Library.chargeTEFromItems(slots, getPowerSlot(), energyQuanta, getEnergyCapacityQuanta()));
-		if(this.cachedEligible && this.energyQuanta >= this.consumption) {
+		if(this.cachedEligible && this.energyQuanta >= EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts)) {
 			int duration = this.getProcessTime(0) * this.speed / 100;
 			if(this.progress[0] + 1 >= duration && !this.hasValidProcessInputs(0)) {
 				this.cachedEligible = false;
@@ -266,7 +281,7 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 			this.markNetworkDirty();
 			this.networkPackNTIfDirty(150);
 		}
-		if(this.isProgressing || this.hasBatteryWork() || this.cachedEligible && this.energyQuanta >= this.consumption) {
+		if(this.isProgressing || this.hasBatteryWork() || this.cachedEligible && this.energyQuanta >= EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts)) {
 			this.nextRuntimeTick = now + 1L;
 			this.scheduleMachineTransition(this.nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_ASSEMBLER);
 		} else {
@@ -276,15 +291,16 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 
 	private boolean refreshUpgrades(boolean contentAware) {
 		int oldSpeed = this.speed;
-		int oldConsumption = this.consumption;
+		long oldOperatingPowerWatts = this.operatingPowerWatts;
 		if(contentAware) this.upgradeManager.checkSlots(slots, 1, 3);
 		else this.upgradeManager.checkSlotsIfDirty(slots, 1, 3);
 		int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
 		int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
 		int overLevel = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
 		this.speed = (100 - speedLevel * 25 + powerLevel * 5) / (overLevel + 1);
-		this.consumption = (100 + speedLevel * 300 - powerLevel * 30) * (overLevel + 1);
-		return oldSpeed != this.speed || oldConsumption != this.consumption;
+		long consumptionQuantaPerTick = (100L + speedLevel * 300L - powerLevel * 30L) * (overLevel + 1L);
+		this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(consumptionQuantaPerTick);
+		return oldSpeed != this.speed || oldOperatingPowerWatts != this.operatingPowerWatts;
 	}
 
 	private boolean hasBatteryWork() {

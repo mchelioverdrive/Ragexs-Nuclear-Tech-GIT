@@ -2,9 +2,12 @@ package com.hbm.tileentity.machine.oil;
 
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.inventory.FluidStack;
+import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.recipes.CrackingRecipes;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.INBTPacketReceiver;
 import com.hbm.tileentity.TileEntityLoadedBase;
@@ -21,6 +24,18 @@ import net.minecraftforge.common.util.ForgeDirection;
 public class TileEntityMachineCatalyticCracker extends TileEntityLoadedBase implements INBTPacketReceiver, IFluidStandardTransceiver, IFluidCopiable {
 
 	public FluidTank[] tanks;
+	private static final int TASK_CRACK = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeFluidMutation;
+	private FluidType observedInputType;
+	private FluidType observedSteamType;
+	private final FluidTank.ChangeListener tankChangeListener = new FluidTank.ChangeListener() {
+		@Override public void onTankChanged(FluidTank tank) {
+			if(!runtimeFluidMutation && worldObj != null && !worldObj.isRemote) markMachineDirty(MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE);
+			markDirty();
+		}
+	};
 
 	public TileEntityMachineCatalyticCracker() {
 		tanks = new FluidTank[5];
@@ -29,40 +44,122 @@ public class TileEntityMachineCatalyticCracker extends TileEntityLoadedBase impl
 		tanks[2] = new FluidTank(Fluids.OIL, 4000);
 		tanks[3] = new FluidTank(Fluids.PETROLEUM, 4000);
 		tanks[4] = new FluidTank(Fluids.SPENTSTEAM, 800);
+		for(FluidTank tank : tanks) tank.setChangeListener(tankChangeListener);
 	}
 
 	@Override
 	public void updateEntity() {
+		// Server processing is scheduled through MachineRuntime.
+	}
 
-		if(!worldObj.isRemote) {
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
 
-			this.worldObj.theProfiler.startSection("catalyticCracker_setup_tanks");
-			setupTanks();
-			this.worldObj.theProfiler.endStartSection("catalyticCracker_update_connections");
-			updateConnections();
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.updateTankTypes();
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0 || observedInputType != tanks[0].getTankType() || observedSteamType != tanks[1].getTankType()) this.updateConnections();
+		observedInputType = tanks[0].getTankType();
+		observedSteamType = tanks[1].getTankType();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+	}
 
-			this.worldObj.theProfiler.endStartSection("catalyticCracker_do_recipe");
-			if(worldObj.getTotalWorldTime() % 5 == 0)
-				crack();
-
-			this.worldObj.theProfiler.endStartSection("catalyticCracker_send_fluid");
-			if(worldObj.getTotalWorldTime() % 10 == 0) {
-
-				for(DirPos pos : getConPos()) {
-					for(int i = 2; i <= 4; i++) {
-						if(tanks[i].getFill() > 0) this.sendFluid(tanks[i], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_CRACK || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		boolean changed = false;
+		runtimeFluidMutation = true;
+		try {
+			Pair<FluidStack, FluidStack> output = CrackingRecipes.getCracking(tanks[0].getTankType());
+			if(output != null) {
+				int left = output.getKey().fill;
+				int right = output.getValue().fill;
+				for(int i = 0; i < 2; i++) {
+					if(this.canCrack(left, right)) {
+						tanks[0].setFill(tanks[0].getFill() - 100);
+						tanks[1].setFill(tanks[1].getFill() - 200);
+						tanks[2].setFill(tanks[2].getFill() + left);
+						tanks[3].setFill(tanks[3].getFill() + right);
+						tanks[4].setFill(tanks[4].getFill() + 2);
+						changed = true;
 					}
 				}
-
-				NBTTagCompound data = new NBTTagCompound();
-
-				for(int i = 0; i < 5; i++)
-					tanks[i].writeToNBT(data, "tank" + i);
-
-				INBTPacketReceiver.networkPack(this, data, 50);
 			}
-			this.worldObj.theProfiler.endSection();
+		} finally {
+			runtimeFluidMutation = false;
 		}
+		if(changed) markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		if(worldObj.getTotalWorldTime() % 10L == 0L) {
+			this.sendOutputFluids();
+			this.sendRuntimeState();
+		}
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		if(cadence == 5 && now % 10L == 0L) {
+			this.sendOutputFluids();
+			this.sendRuntimeState();
+		} else if(cadence == 20) {
+			this.updateConnections();
+			observedInputType = tanks[0].getTankType();
+			observedSteamType = tanks[1].getTankType();
+		}
+	}
+
+	private void updateTankTypes() {
+		runtimeFluidMutation = true;
+		try {
+			Pair<FluidStack, FluidStack> output = CrackingRecipes.getCracking(tanks[0].getTankType());
+			if(output != null) {
+				tanks[1].setTankType(Fluids.STEAM);
+				tanks[2].setTankType(output.getKey().type);
+				tanks[3].setTankType(output.getValue().type);
+				tanks[4].setTankType(Fluids.SPENTSTEAM);
+			} else {
+				tanks[2].setTankType(Fluids.NONE);
+				tanks[3].setTankType(Fluids.NONE);
+				tanks[4].setTankType(Fluids.NONE);
+			}
+		} finally {
+			runtimeFluidMutation = false;
+		}
+	}
+
+	private boolean canCrack(int left, int right) {
+		return tanks[0].getFill() >= 100 && tanks[1].getFill() >= 200
+				&& tanks[2].getFill() + left <= tanks[2].getMaxFill()
+				&& tanks[3].getFill() + right <= tanks[3].getMaxFill()
+				&& tanks[4].getFill() + 2 <= tanks[4].getMaxFill();
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		Pair<FluidStack, FluidStack> output = CrackingRecipes.getCracking(tanks[0].getTankType());
+		if(output != null && this.canCrack(output.getKey().fill, output.getValue().fill)) {
+			long due = now + (5L - now % 5L);
+			this.scheduleMachineTransition(due, TASK_CRACK, TASK_SLOT_MAIN);
+		} else {
+			this.cancelMachineTransition(TASK_CRACK, TASK_SLOT_MAIN);
+		}
+	}
+
+	private void sendOutputFluids() {
+		for(DirPos pos : getConPos()) {
+			for(int i = 2; i <= 4; i++) {
+				if(tanks[i].getFill() > 0) this.sendFluid(tanks[i], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			}
+		}
+	}
+
+	private void sendRuntimeState() {
+		NBTTagCompound data = new NBTTagCompound();
+		for(int i = 0; i < 5; i++) tanks[i].writeToNBT(data, "tank" + i);
+		INBTPacketReceiver.networkPack(this, data, 50);
 	}
 
 	@Override
@@ -76,49 +173,6 @@ public class TileEntityMachineCatalyticCracker extends TileEntityLoadedBase impl
 		for(DirPos pos : getConPos()) {
 			this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			this.trySubscribe(tanks[1].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-		}
-	}
-
-	private void crack() {
-
-		Pair<FluidStack, FluidStack> quart = CrackingRecipes.getCracking(tanks[0].getTankType());
-
-		if(quart != null) {
-
-			int left = quart.getKey().fill;
-			int right = quart.getValue().fill;
-
-			for(int i = 0; i < 2; i++) {
-				if(tanks[0].getFill() >= 100 && tanks[1].getFill() >= 200 && hasSpace(left, right)) {
-					tanks[0].setFill(tanks[0].getFill() - 100);
-					tanks[1].setFill(tanks[1].getFill() - 200);
-					tanks[2].setFill(tanks[2].getFill() + left);
-					tanks[3].setFill(tanks[3].getFill() + right);
-					tanks[4].setFill(tanks[4].getFill() + 2); //LPS has the density of WATER not STEAM (1%!)
-				}
-			}
-		}
-	}
-
-	private boolean hasSpace(int left, int right) {
-		return tanks[2].getFill() + left <= tanks[2].getMaxFill() && tanks[3].getFill() + right <= tanks[3].getMaxFill() && tanks[4].getFill() + 2 <= tanks[4].getMaxFill();
-	}
-
-	private void setupTanks() {
-
-		Pair<FluidStack, FluidStack> quart = CrackingRecipes.getCracking(tanks[0].getTankType());
-
-		if(quart != null) {
-			tanks[1].setTankType(Fluids.STEAM);
-			tanks[2].setTankType(quart.getKey().type);
-			tanks[3].setTankType(quart.getValue().type);
-			tanks[4].setTankType(Fluids.SPENTSTEAM);
-		} else {
-			//tanks[0].setTankType(Fluids.NONE);
-			//tanks[1].setTankType(Fluids.NONE);
-			tanks[2].setTankType(Fluids.NONE);
-			tanks[3].setTankType(Fluids.NONE);
-			tanks[4].setTankType(Fluids.NONE);
 		}
 	}
 

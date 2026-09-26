@@ -1,12 +1,15 @@
 package com.hbm.tileentity.machine;
 
 import api.hbm.energymk2.EnergyUnits;
+import api.hbm.energymk2.IBatteryItem;
 import com.hbm.interfaces.IControlReceiver;
 import com.hbm.inventory.container.ContainerDriveProcessor;
 import com.hbm.inventory.gui.GUIMachineDriveProcessor;
 import com.hbm.items.ItemVOTVdrive;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemCircuit.EnumCircuitType;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.lib.Library;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
@@ -27,6 +30,13 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineDriveProcessor extends TileEntityMachineBase implements IGUIProvider, IControlReceiver, IEnergyReceiverMK2 {
+	private static final int TASK_PROCESSING = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private static final long OPERATING_POWER_WATTS = EnergyUnits.quantaPerTickToWatts(200L);
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private boolean inventoryFingerprintInitialized;
+	private int observedInventoryFingerprint;
 
 	public long energyQuanta;
 	public long maxPower = 2_000;
@@ -46,11 +56,31 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 
 	@Override
 	public void updateEntity() {
-		if(!worldObj.isRemote) {
+	}
 
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		hasDrive = slots[0] != null && slots[0].getItem() == ModItems.full_drive;
+		runtimeInitialized = true;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.markNetworkDirty();
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PROCESSING || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+
+		int oldProgress = progress;
+		long oldEnergy = energyQuanta;
+		boolean oldProcessing = isProcessing;
+		boolean oldHasDrive = hasDrive;
+		String oldStatus = status;
+		runtimeEnergyMutation = true;
+		try {
 			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 3, energyQuanta, maxPower));
-			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
-				trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 
 			if(energyQuanta < maxPower * 0.75) {
 				isProcessing = false;
@@ -63,13 +93,10 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 				status = EnumChatFormatting.RED + "Low tier ";
 			}
 
-			if(lastTier != getProcessingTier()) {
-				status = "";
-			}
+			if(lastTier != getProcessingTier()) status = "";
 
 			if(isProcessing) {
-				this.setStoredEnergyQuanta(this.energyQuanta - 200);
-
+				this.setStoredEnergyQuanta(this.energyQuanta - EnergyUnits.wattsToQuantaPerTick(OPERATING_POWER_WATTS));
 				status = EnumChatFormatting.GREEN + "" + EnumChatFormatting.ITALIC + "Processing  ";
 				progress++;
 
@@ -78,6 +105,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 					isProcessing = false;
 					ItemVOTVdrive.setProcessed(slots[0], true);
 					status = EnumChatFormatting.GREEN + "Done! ";
+					this.onInventorySlotChanged(0);
 				}
 			} else {
 				progress = 0;
@@ -85,9 +113,60 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 
 			lastTier = getProcessingTier();
 			hasDrive = slots[0] != null && slots[0].getItem() == ModItems.full_drive;
-
-			networkPackNT(15);
+		} finally {
+			runtimeEnergyMutation = false;
 		}
+
+		if(oldProgress != progress || oldEnergy != energyQuanta || oldProcessing != isProcessing || oldHasDrive != hasDrive || !oldStatus.equals(status)) {
+			this.markDirty();
+			this.markNetworkDirty();
+		}
+		this.networkPackNTIfDirty(15);
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(this.observeInventoryFingerprint()) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.ENERGY);
+		} else if(cadence == 20) {
+			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
+			this.networkPackNTIfDirty(15);
+		}
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(net.minecraft.item.ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private boolean hasBatteryWork() {
+		if(energyQuanta >= maxPower || slots[3] == null) return false;
+		if(slots[3].getItem() == ModItems.battery_creative || slots[3].getItem() == ModItems.fusion_core_infinite) return true;
+		if(!(slots[3].getItem() instanceof IBatteryItem)) return false;
+		IBatteryItem battery = (IBatteryItem) slots[3].getItem();
+		return battery.getStoredEnergyQuanta(slots[3]) > 0 && battery.getMaxOutputQuantaPerTick() > 0;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(runtimeInitialized && (isProcessing || hasBatteryWork())) this.scheduleMachineTransition(now + 1L, TASK_PROCESSING, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_PROCESSING, TASK_SLOT_MAIN);
 	}
 
 	@Override
@@ -157,6 +236,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 	private void processDrive(boolean process) {
 		if(!process) {
 			isProcessing = false;
+			this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 			return;
 		}
 
@@ -167,6 +247,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 		// Check that our installed upgrade is a high enough tier
 		if(getProcessingTier() >= ItemVOTVdrive.getProcessingTier(slots[0])) {
 			isProcessing = true;
+			this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 		}
 	}
 
@@ -182,6 +263,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 		slots[1] = slots[0].copy();
 
 		status = EnumChatFormatting.GREEN + "Drive cloned ";
+		this.onInventorySlotChanged(1);
 	}
 
 	@Override
@@ -240,6 +322,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 	@Override public long getEnergyCapacityQuanta() { return maxPower; }
 	

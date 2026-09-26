@@ -1,6 +1,7 @@
 package com.hbm.tileentity.machine;
 
 import api.hbm.energymk2.EnergyUnits;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.interfaces.ICopiable;
 import com.hbm.main.MainRegistry;
@@ -22,6 +23,10 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IHeatSource, IEnergyReceiverMK2, INBTPacketReceiver, ICopiable, IInfoProviderEC {
+	private static final int TASK_HEAT = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
 
 	public long energyQuanta;
 	public int heatEnergy;
@@ -33,32 +38,7 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 
 	@Override
 	public void updateEntity() {
-
-		if(!worldObj.isRemote) {
-
-			if(worldObj.getTotalWorldTime() % 20 == 0) { //doesn't have to happen constantly
-				ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
-				this.trySubscribe(worldObj, xCoord + dir.offsetX * 3, yCoord, zCoord + dir.offsetZ * 3, dir);
-			}
-
-			this.heatEnergy = Math.min((int) (this.heatEnergy * 0.999D), maxHeatEnergy);
-
-			this.tryPullHeat();
-
-			this.isOn = false;
-			if(setting > 0 && this.energyQuanta >= this.getConsumption() && this.heatEnergy < maxHeatEnergy) {
-				this.setStoredEnergyQuanta(this.energyQuanta - this.getConsumption());
-				this.heatEnergy = Math.min(this.heatEnergy + getHeatGen(), maxHeatEnergy);
-				this.isOn = true;
-			}
-
-			NBTTagCompound data = new NBTTagCompound();
-			data.setByte("s", (byte) this.setting);
-			data.setInteger("h", this.heatEnergy);
-			data.setBoolean("o", isOn);
-			data.setBoolean("muffled", muffled);
-			INBTPacketReceiver.networkPack(this, data, 25);
-		} else {
+		if(worldObj.isRemote) {
 
 			if(isOn) {
 
@@ -80,6 +60,66 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 				}
 			}
 		}
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.refreshPowerSubscription();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.refreshPowerSubscription();
+		if(heatEnergy == 0 && setting == 0 && this.hasHeatSourceWithEnergy()) this.markMachineDirty(com.hbm.machine.MachineDirtyCause.ENVIRONMENT);
+		this.sendRuntimeState();
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_HEAT || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.heatEnergy = Math.min((int) (this.heatEnergy * 0.999D), maxHeatEnergy);
+		this.tryPullHeat();
+		this.isOn = false;
+		if(setting > 0 && this.energyQuanta >= this.getConsumption() && this.heatEnergy < maxHeatEnergy) {
+			runtimeEnergyMutation = true;
+			try { this.setStoredEnergyQuanta(this.energyQuanta - this.getConsumption()); }
+			finally { runtimeEnergyMutation = false; }
+			this.heatEnergy = Math.min(this.heatEnergy + getHeatGen(), maxHeatEnergy);
+			this.isOn = true;
+		}
+		this.sendRuntimeState();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	private void refreshPowerSubscription() {
+		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
+		this.trySubscribe(worldObj, xCoord + dir.offsetX * 3, yCoord, zCoord + dir.offsetZ * 3, dir);
+	}
+
+	private boolean hasHeatSourceWithEnergy() {
+		TileEntity con = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
+		return con instanceof IHeatSource && ((IHeatSource) con).getHeatStored() > 0;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		if(heatEnergy > 0 || setting > 0 || this.hasHeatSourceWithEnergy()) this.scheduleMachineTransition(now + 1L, TASK_HEAT, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_HEAT, TASK_SLOT_MAIN);
+	}
+
+	private void sendRuntimeState() {
+		NBTTagCompound data = new NBTTagCompound();
+		data.setByte("s", (byte) this.setting);
+		data.setInteger("h", this.heatEnergy);
+		data.setBoolean("o", isOn);
+		data.setBoolean("muffled", muffled);
+		INBTPacketReceiver.networkPack(this, data, 25);
 	}
 
 	@Override
@@ -150,6 +190,7 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 
 		if(setting > 10)
 			setting = 0;
+		this.markMachineDirty(com.hbm.machine.MachineDirtyCause.CONFIGURATION);
 	}
 
 	@Override
@@ -159,6 +200,10 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 
 	public long getConsumption() {
 		return (long) (Math.pow(setting, 1.4D) * 200D);
+	}
+
+	public long getPowerRequirementWatts() {
+		return EnergyUnits.quantaPerTickToWatts(this.getConsumption());
 	}
 
 	@Override
@@ -175,6 +220,7 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override
@@ -184,7 +230,11 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 
 	@Override
 	public void useUpHeat(int heat) {
-		this.heatEnergy = Math.max(0, this.heatEnergy - heat);
+		int next = Math.max(0, this.heatEnergy - heat);
+		if(next == this.heatEnergy) return;
+		this.heatEnergy = next;
+		this.markDirty();
+		this.markMachineDirty(com.hbm.machine.MachineDirtyCause.ENVIRONMENT);
 	}
 
 	AxisAlignedBB bb = null;

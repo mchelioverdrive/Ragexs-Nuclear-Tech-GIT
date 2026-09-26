@@ -90,12 +90,12 @@ public class TileEntityCondenserPowered extends TileEntityCondenser implements I
 	
 	@Override
 	public boolean extraCondition(int convert) {
-		return energyQuanta >= convert * 10;
+		return energyQuanta >= getOperationEnergyRequirementQuanta(convert);
 	}
 
 	@Override
 	public void postConvert(int convert) {
-		this.setStoredEnergyQuanta(this.energyQuanta - convert * energyCostQuantaPerMb);
+		this.setStoredEnergyQuanta(this.energyQuanta - getOperationEnergyRequirementQuanta(convert));
 		if(this.energyQuanta < 0) this.setStoredEnergyQuanta(0);
 	}
 
@@ -188,6 +188,15 @@ public class TileEntityCondenserPowered extends TileEntityCondenser implements I
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeFluidMutation) this.markMachineEnergyDirty();
+	}
+
+	public long getPowerRequirementWatts() {
+		return EnergyUnits.quantaPerTickToWatts((long) this.throughput * energyCostQuantaPerMb);
+	}
+
+	public long getOperationEnergyRequirementQuanta(int fluidAmountMb) {
+		return (long) fluidAmountMb * energyCostQuantaPerMb;
 	}
 
 	@Override

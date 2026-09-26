@@ -1,11 +1,14 @@
 package com.hbm.tileentity.machine;
 
 import java.util.List;
+import io.netty.buffer.ByteBuf;
 
 import com.hbm.handler.pollution.PollutionHandler;
 import com.hbm.handler.pollution.PollutionHandler.PollutionType;
 import com.hbm.inventory.container.ContainerFurnaceSteel;
 import com.hbm.inventory.gui.GUIFurnaceSteel;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.ItemStackUtil;
@@ -35,6 +38,16 @@ public class TileEntityFurnaceSteel extends TileEntityMachineBase implements IGU
 	public static final double diffusion = 0.05D;
 	
 	private ItemStack[] lastItems = new ItemStack[3];
+	private ItemStack[] cachedResults = new ItemStack[3];
+	private ItemStack[] cachedInputs = new ItemStack[3];
+	private int[] cachedInputMeta = new int[3];
+	private int[] cachedInputTag = new int[3];
+	private int observedInventoryFingerprint;
+	private int observedRecipeCount;
+	private boolean inventoryFingerprintInitialized;
+	private boolean runtimeInitialized;
+	private static final int TASK_HEAT_AND_PROCESS = 1;
+	private static final int TASK_SLOT_MAIN = 0;
 	
 	public boolean wasOn = false;
 	
@@ -49,60 +62,7 @@ public class TileEntityFurnaceSteel extends TileEntityMachineBase implements IGU
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			tryPullHeat();
-			
-			this.wasOn = false;
-			
-			int burn = (heat - this.maxHeat / 3) / 10;
-			
-			for(int i = 0; i < 3; i++) {
-				
-				if(slots[i] == null || lastItems[i] == null || !slots[i].isItemEqual(lastItems[i])) {
-					progress[i] = 0;
-					bonus[i] = 0;
-				}
-				
-				if(canSmelt(i)) {
-					progress[i] += burn;
-					this.heat -= burn;
-					this.wasOn = true;
-					if(worldObj.getTotalWorldTime() % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 2);
-				}
-				
-				lastItems[i] = slots[i];
-				
-				if(progress[i] >= processTime) {
-					ItemStack result = FurnaceRecipes.smelting().getSmeltingResult(slots[i]);
-					
-					if(slots[i + 3] == null) {
-						slots[i + 3] = result.copy();
-					} else {
-						slots[i + 3].stackSize += result.stackSize;
-					}
-					
-					this.addBonus(slots[i], i);
-					
-					while(bonus[i] >= 100) {
-						slots[i + 3].stackSize =  Math.min(slots[i + 3].getMaxStackSize(), slots[i + 3].stackSize + result.stackSize);
-						bonus[i] -= 100;
-					}
-					
-					this.decrStackSize(i, 1);
-					
-					progress[i] = 0;
-					
-				}
-			}
-			
-			NBTTagCompound data = new NBTTagCompound();
-			data.setIntArray("progress", progress);
-			data.setIntArray("bonus", bonus);
-			data.setInteger("heat", heat);
-			data.setBoolean("wasOn", wasOn);
-			this.networkPack(data, 50);
-		} else {
+		if(worldObj.isRemote) {
 			
 			if(this.wasOn) {
 				ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
@@ -118,6 +78,146 @@ public class TileEntityFurnaceSteel extends TileEntityMachineBase implements IGU
 
 			}
 		}
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_100;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		this.refreshRuntimeRecipes();
+		this.resetChangedInputs();
+		runtimeInitialized = true;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(50);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_HEAT_AND_PROCESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.tryPullHeat();
+		this.wasOn = false;
+		int burn = (heat - this.maxHeat / 3) / 10;
+		for(int i = 0; i < 3; i++) {
+			if(slots[i] == null || lastItems[i] == null || !slots[i].isItemEqual(lastItems[i])) {
+				progress[i] = 0;
+				bonus[i] = 0;
+			}
+			if(canSmelt(i)) {
+				progress[i] += burn;
+				this.heat -= burn;
+				this.wasOn = true;
+				if(worldObj.getTotalWorldTime() % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 2);
+			}
+			lastItems[i] = slots[i];
+			if(progress[i] >= processTime) {
+				ItemStack result = cachedResults[i];
+				if(slots[i + 3] == null) slots[i + 3] = result.copy();
+				else slots[i + 3].stackSize += result.stackSize;
+				this.addBonus(slots[i], i);
+				while(bonus[i] >= 100) {
+					slots[i + 3].stackSize = Math.min(slots[i + 3].getMaxStackSize(), slots[i + 3].stackSize + result.stackSize);
+					bonus[i] -= 100;
+				}
+				this.decrStackSize(i, 1);
+				progress[i] = 0;
+			}
+		}
+		this.markDirty();
+		this.markNetworkDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(50);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(this.observeInventoryFingerprint()) {
+				this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+				return;
+			}
+			this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		} else if(cadence == 100) {
+			int count = FurnaceRecipes.smelting().getSmeltingList().size();
+			if(count != observedRecipeCount) {
+				observedRecipeCount = count;
+				this.refreshRuntimeRecipes();
+				this.markMachineDirty(MachineDirtyCause.RECIPE);
+			}
+		}
+	}
+
+	private void refreshRuntimeRecipes() {
+		for(int i = 0; i < 3; i++) {
+			ItemStack input = slots[i];
+			int meta = input == null ? 0 : input.getItemDamage();
+			int tagHash = input == null || input.getTagCompound() == null ? 0 : input.getTagCompound().hashCode();
+			if(cachedInputs[i] != input || cachedInputMeta[i] != meta || cachedInputTag[i] != tagHash) {
+				cachedInputs[i] = input;
+				cachedInputMeta[i] = meta;
+				cachedInputTag[i] = tagHash;
+				ItemStack result = input == null ? null : FurnaceRecipes.smelting().getSmeltingResult(input);
+				cachedResults[i] = result == null ? null : result.copy();
+			}
+		}
+		this.observeInventoryFingerprint();
+		this.observedRecipeCount = FurnaceRecipes.smelting().getSmeltingList().size();
+	}
+
+	private void resetChangedInputs() {
+		for(int i = 0; i < 3; i++) {
+			if(slots[i] == null || lastItems[i] == null || !slots[i].isItemEqual(lastItems[i])) {
+				progress[i] = 0;
+				bonus[i] = 0;
+			}
+			lastItems[i] = slots[i];
+		}
+	}
+
+	private boolean hasHeatSource() {
+		TileEntity con = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
+		return con instanceof IHeatSource && ((IHeatSource) con).getHeatStored() > 0 && heat < this.maxHeat;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		if(heat > 0 || this.hasHeatSource()) this.scheduleMachineTransition(now + 1L, TASK_HEAT_AND_PROCESS, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_HEAT_AND_PROCESS, TASK_SLOT_MAIN);
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	@Override public void serialize(ByteBuf buf) {
+		super.serialize(buf);
+		buf.writeInt(heat);
+		buf.writeBoolean(wasOn);
+		for(int i = 0; i < 3; i++) { buf.writeInt(progress[i]); buf.writeInt(bonus[i]); }
+	}
+
+	@Override public void deserialize(ByteBuf buf) {
+		super.deserialize(buf);
+		heat = buf.readInt();
+		wasOn = buf.readBoolean();
+		for(int i = 0; i < 3; i++) { progress[i] = buf.readInt(); bonus[i] = buf.readInt(); }
 	}
 
 	@Override
@@ -211,7 +311,7 @@ public class TileEntityFurnaceSteel extends TileEntityMachineBase implements IGU
 		if(this.heat < this.maxHeat / 3) return false;
 		if(slots[index] == null) return false;
 		
-		ItemStack result = FurnaceRecipes.smelting().getSmeltingResult(slots[index]);
+		ItemStack result = runtimeInitialized ? cachedResults[index] : FurnaceRecipes.smelting().getSmeltingResult(slots[index]);
 		
 		if(result == null) return false;
 		if(slots[index + 3] == null) return true;

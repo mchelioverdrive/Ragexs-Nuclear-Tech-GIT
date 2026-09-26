@@ -8,6 +8,8 @@ import com.hbm.handler.atmosphere.AtmosphereBlob;
 import com.hbm.handler.atmosphere.ChunkAtmosphereManager;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.TileEntityMachineBase;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
@@ -32,6 +34,7 @@ public class TileEntityAirScrubber extends TileEntityMachineBase implements IFlu
 	public TileEntityAirScrubber() {
 		super(0);
 		tank = new FluidTank(Fluids.CARBONDIOXIDE, 16_000);
+		this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -41,39 +44,7 @@ public class TileEntityAirScrubber extends TileEntityMachineBase implements IFlu
 
 	@Override
 	public void updateEntity() {
-		if(!worldObj.isRemote) {
-
-			if(canOperate()) {
-				// Fetch a new pump to scrub CO2 from
-				if(worldObj.getTotalWorldTime() % 5 == 0 && (pump == null || pump.getFluidPressure() == 0 || !pump.registerScrubber(this))) {
-					pump = null;
-	
-					List<AtmosphereBlob> blobs = ChunkAtmosphereManager.proxy.getBlobs(worldObj, xCoord, yCoord, zCoord);
-	
-					for(AtmosphereBlob blob : blobs) {
-						if(blob != null) {
-							ThreeInts pos = blob.getRootPosition();
-							TileEntity te = worldObj.getTileEntity(pos.x, pos.y, pos.z);
-							if(te != null && te instanceof TileEntityAirPump) {
-								pump = (TileEntityAirPump) te;
-								if(!pump.registerScrubber(this)) {
-									pump = null;
-								} else {
-									break;
-								}
-							}
-						}
-					}
-				}
-			}
-
-			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-				trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-				if(tank.getFill() > 0) sendFluid(tank, worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-			}
-
-			networkPackNT(20);
-		} else {
+		if(worldObj.isRemote) {
 			float maxSpeed = 30F;
 			
 			if(canOperate()) {
@@ -93,6 +64,59 @@ public class TileEntityAirScrubber extends TileEntityMachineBase implements IFlu
 				prevRot -= 360;
 			}
 		}
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(20);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != 1 || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		int before = tank.getFill();
+		if(before > 0) this.sendFluidToAll(tank, this);
+		if(before != tank.getFill()) {
+			this.markDirty();
+			this.markNetworkDirty();
+		}
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(20);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(canOperate() && (pump == null || pump.getFluidPressure() == 0 || !pump.registerScrubber(this))) this.findAndRegisterPump();
+			this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		} else if(cadence == 20) {
+			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
+			this.networkPackNTIfDirty(20);
+		}
+	}
+
+	private void findAndRegisterPump() {
+		pump = null;
+		List<AtmosphereBlob> blobs = ChunkAtmosphereManager.proxy.getBlobs(worldObj, xCoord, yCoord, zCoord);
+		for(AtmosphereBlob blob : blobs) {
+			if(blob == null) continue;
+			ThreeInts pos = blob.getRootPosition();
+			TileEntity te = worldObj.getTileEntity(pos.x, pos.y, pos.z);
+			if(te instanceof TileEntityAirPump) {
+				pump = (TileEntityAirPump) te;
+				if(!pump.registerScrubber(this)) pump = null;
+				else break;
+			}
+		}
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(tank.getFill() > 0) this.scheduleMachineTransition(now + 1L, 1, 0);
+		else this.cancelMachineTransition(1, 0);
 	}
 
 	public boolean canOperate() {
@@ -154,6 +178,8 @@ public class TileEntityAirScrubber extends TileEntityMachineBase implements IFlu
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		this.markNetworkDirty();
+		this.markMachineDirty(MachineDirtyCause.ENERGY);
 	}
 
 	@Override

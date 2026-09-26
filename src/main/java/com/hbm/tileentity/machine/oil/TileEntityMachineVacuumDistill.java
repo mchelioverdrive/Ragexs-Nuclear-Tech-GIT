@@ -19,7 +19,11 @@ import com.hbm.util.Tuple.Quartet;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.IBatteryItem;
 import api.hbm.fluid.IFluidStandardTransceiver;
+import com.hbm.inventory.recipes.loader.SerializableRecipe;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.player.EntityPlayer;
@@ -39,6 +43,15 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 	private AudioWrapper audio;
 	private int audioTime;
 	public boolean isOn;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
+	private FluidType observedInputType;
+	private long observedRecipeRevision;
+	private Quartet<FluidStack, FluidStack, FluidStack, FluidStack> cachedRecipe;
+	private static final int TASK_REFINE = 1;
+	private static final int TASK_SLOT_MAIN = 0;
 
 	public TileEntityMachineVacuumDistill() {
 		super(12);
@@ -49,6 +62,7 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 		this.tanks[2] = new FluidTank(Fluids.REFORMATE, 24_000);
 		this.tanks[3] = new FluidTank(Fluids.LIGHTOIL_VACUUM, 24_000);
 		this.tanks[4] = new FluidTank(Fluids.SOURGAS, 24_000);
+		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -58,60 +72,80 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
-			this.isOn = false;
-			
-			this.updateConnections();
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
-			tanks[0].setType(11, slots);
-			tanks[0].loadTank(1, 2, slots);
-			
-			refine();
-
-			tanks[1].unloadTank(3, 4, slots);
-			tanks[2].unloadTank(5, 6, slots);
-			tanks[3].unloadTank(7, 8, slots);
-			tanks[4].unloadTank(9, 10, slots);
-			
-			for(DirPos pos : getConPos()) {
-				for(int i = 1; i < 5; i++) {
-					if(tanks[i].getFill() > 0) {
-						this.sendFluid(tanks[i], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-					}
-				}
+		if(!worldObj.isRemote) return;
+		if(this.isOn) audioTime = 20;
+		if(audioTime > 0) {
+			audioTime--;
+			if(audio == null) {
+				audio = createAudioLoop();
+				audio.startSound();
+			} else if(!audio.isPlaying()) {
+				audio = rebootAudio(audio);
 			}
-			
-			NBTTagCompound data = new NBTTagCompound();
-			EnergyUnits.writeEnergyQuanta(data, this.energyQuanta);
-			data.setBoolean("isOn", this.isOn);
-			for(int i = 0; i < 5; i++) tanks[i].writeToNBT(data, "" + i);
-			this.networkPack(data, 150);
-		} else {
-			
-			if(this.isOn) audioTime = 20;
-			
-			if(audioTime > 0) {
-				
-				audioTime--;
-				
-				if(audio == null) {
-					audio = createAudioLoop();
-					audio.startSound();
-				} else if(!audio.isPlaying()) {
-					audio = rebootAudio(audio);
-				}
+			audio.updateVolume(getVolume(1F));
+			audio.keepAlive();
+		} else if(audio != null) {
+			audio.stopSound();
+			audio = null;
+		}
+	}
 
-				audio.updateVolume(getVolume(1F));
-				audio.keepAlive();
-				
-			} else {
-				
-				if(audio != null) {
-					audio.stopSound();
-					audio = null;
-				}
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20 | MachineExecutionStrategy.COARSE_100;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.refreshRuntimeState();
+		FluidType inputType = tanks[0].getTankType();
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0 || observedInputType != inputType) this.updateConnections();
+		observedInputType = inputType;
+		observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_REFINE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long oldEnergy = energyQuanta;
+		int oldInventoryFingerprint = this.inventoryFingerprint();
+		int oldInputFill = tanks[0].getFill();
+		int oldHeavyFill = tanks[1].getFill();
+		int oldReformateFill = tanks[2].getFill();
+		int oldLightFill = tanks[3].getFill();
+		int oldGasFill = tanks[4].getFill();
+		isOn = false;
+		this.beginMachineFluidMutation();
+		runtimeEnergyMutation = true;
+		try {
+			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
+			this.refineBatch();
+			this.unloadOutputContainers();
+		} finally {
+			runtimeEnergyMutation = false;
+			this.endMachineFluidMutation();
+		}
+		this.observeInventoryFingerprint();
+		boolean inventoryChanged = oldInventoryFingerprint != observedInventoryFingerprint;
+		if(inventoryChanged) this.markNetworkDirty();
+		if(oldEnergy != energyQuanta || inventoryChanged || oldInputFill != tanks[0].getFill() || oldHeavyFill != tanks[1].getFill() || oldReformateFill != tanks[2].getFill() || oldLightFill != tanks[3].getFill() || oldGasFill != tanks[4].getFill()) this.markDirty();
+		this.sendOutputFluids();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(this.observeInventoryFingerprint()) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE);
+		} else if(cadence == 20) {
+			this.updateConnections();
+		} else if(cadence == 100) {
+			long revision = SerializableRecipe.getRegistryRevision();
+			if(revision != observedRecipeRevision) {
+				observedRecipeRevision = revision;
+				this.markMachineDirty(MachineDirtyCause.RECIPE);
 			}
 		}
 	}
@@ -151,25 +185,107 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 		for(int i = 0; i < 5; i++) tanks[i].readFromNBT(nbt, "" + i);
 	}
 	
-	private void refine() {
-		Quartet<FluidStack, FluidStack, FluidStack, FluidStack> refinery = RefineryRecipes.getVacuum(tanks[0].getTankType());
-		if(refinery == null) {
-			for(int i = 1; i < 5; i++) tanks[i].setTankType(Fluids.NONE);
-			return;
+	private void refreshRuntimeState() {
+		this.beginMachineFluidMutation();
+		try {
+			tanks[0].setType(11, slots);
+			tanks[0].loadTank(1, 2, slots);
+			cachedRecipe = RefineryRecipes.getVacuum(tanks[0].getTankType());
+			if(cachedRecipe == null) {
+				for(int i = 1; i < 5; i++) tanks[i].setTankType(Fluids.NONE);
+			} else {
+				tanks[1].setTankType(cachedRecipe.getW().type);
+				tanks[2].setTankType(cachedRecipe.getX().type);
+				tanks[3].setTankType(cachedRecipe.getY().type);
+				tanks[4].setTankType(cachedRecipe.getZ().type);
+			}
+			this.unloadOutputContainers();
+		} finally {
+			this.endMachineFluidMutation();
 		}
-		
-		FluidStack[] stacks = new FluidStack[] {refinery.getW(), refinery.getX(), refinery.getY(), refinery.getZ()};
-		for(int i = 0; i < stacks.length; i++) tanks[i + 1].setTankType(stacks[i].type);
-		
-		if(energyQuanta < 10_000) return;
-		if(tanks[0].getFill() < 100) return;
-		for(int i = 0; i < stacks.length; i++) if(tanks[i + 1].getFill() + stacks[i].fill > tanks[i + 1].getMaxFill()) return;
+		this.observeInventoryFingerprint();
+	}
 
-		this.isOn = true;
-		this.setStoredEnergyQuanta(this.energyQuanta - 10_000);
+	private boolean canRefine() {
+		if(cachedRecipe == null || energyQuanta < 10_000 || tanks[0].getFill() < 100) return false;
+		return tanks[1].getFill() + cachedRecipe.getW().fill <= tanks[1].getMaxFill()
+				&& tanks[2].getFill() + cachedRecipe.getX().fill <= tanks[2].getMaxFill()
+				&& tanks[3].getFill() + cachedRecipe.getY().fill <= tanks[3].getMaxFill()
+				&& tanks[4].getFill() + cachedRecipe.getZ().fill <= tanks[4].getMaxFill();
+	}
+
+	private void refineBatch() {
+		isOn = false;
+		if(!this.canRefine()) return;
+		isOn = true;
+		this.setStoredEnergyQuanta(energyQuanta - 10_000);
 		tanks[0].setFill(tanks[0].getFill() - 100);
-		
-		for(int i = 0; i < stacks.length; i++) tanks[i + 1].setFill(tanks[i + 1].getFill() + stacks[i].fill);
+		tanks[1].setFill(tanks[1].getFill() + cachedRecipe.getW().fill);
+		tanks[2].setFill(tanks[2].getFill() + cachedRecipe.getX().fill);
+		tanks[3].setFill(tanks[3].getFill() + cachedRecipe.getY().fill);
+		tanks[4].setFill(tanks[4].getFill() + cachedRecipe.getZ().fill);
+	}
+
+	private boolean hasBatteryWork() {
+		if(energyQuanta >= maxPower || slots[0] == null) return false;
+		if(slots[0].getItem() == com.hbm.items.ModItems.battery_creative || slots[0].getItem() == com.hbm.items.ModItems.fusion_core_infinite) return true;
+		if(!(slots[0].getItem() instanceof IBatteryItem)) return false;
+		IBatteryItem battery = (IBatteryItem) slots[0].getItem();
+		return battery.getMaxOutputQuantaPerTick() > 0 && battery.getStoredEnergyQuanta(slots[0]) > 0;
+	}
+
+	private boolean hasFluidOutput() {
+		return tanks[1].getFill() > 0 || tanks[2].getFill() > 0 || tanks[3].getFill() > 0 || tanks[4].getFill() > 0;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		if(this.canRefine() || this.hasBatteryWork() || this.hasFluidOutput()) this.scheduleMachineTransition(now + 1L, TASK_REFINE, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_REFINE, TASK_SLOT_MAIN);
+	}
+
+	private void unloadOutputContainers() {
+		tanks[1].unloadTank(3, 4, slots);
+		tanks[2].unloadTank(5, 6, slots);
+		tanks[3].unloadTank(7, 8, slots);
+		tanks[4].unloadTank(9, 10, slots);
+	}
+
+	private void sendOutputFluids() {
+		for(DirPos pos : getConPos()) {
+			for(int i = 1; i < 5; i++) {
+				if(tanks[i].getFill() > 0) this.sendFluid(tanks[i], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			}
+		}
+	}
+
+	private void sendRuntimeState() {
+		NBTTagCompound data = new NBTTagCompound();
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+		data.setBoolean("isOn", isOn);
+		for(int i = 0; i < 5; i++) tanks[i].writeToNBT(data, "" + i);
+		this.networkPack(data, 150);
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(net.minecraft.item.ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
 	}
 	
 	private void updateConnections() {
@@ -251,6 +367,7 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override

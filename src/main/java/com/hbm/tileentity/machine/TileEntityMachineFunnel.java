@@ -6,6 +6,8 @@ import com.hbm.interfaces.IControlReceiver;
 import com.hbm.inventory.RecipesCommon.ComparableStack;
 import com.hbm.inventory.container.ContainerFunnel;
 import com.hbm.inventory.gui.GUIFunnel;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.tileentity.machine.TileEntityMachineAutocrafter.InventoryCraftingAuto;
@@ -23,6 +25,17 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 
 public class TileEntityMachineFunnel extends TileEntityMachineBase implements IGUIProvider, IControlReceiver {
+	private static final int TASK_COMPRESS = 1;
+	private static final int TASK_SLOT_SHARED = 0;
+	private boolean runtimeInitialized;
+	private ItemStack[] cachedInputs = new ItemStack[9];
+	private int[] cachedInputMeta = new int[9];
+	private int[] cachedInputTag = new int[9];
+	private ItemStack[] cachedFourResults = new ItemStack[9];
+	private ItemStack[] cachedNineResults = new ItemStack[9];
+	private int observedInventoryFingerprint;
+	private int observedMode;
+	private boolean inventoryFingerprintInitialized;
 	
 	public int mode = 0;
 	public static final int MODE_ALL = 0;
@@ -40,33 +53,125 @@ public class TileEntityMachineFunnel extends TileEntityMachineBase implements IG
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
-			for(int i = 0; i < 9; i++) {
-				
-				if(slots[i] != null) {
-					int stacksize = 9;
-					ItemStack compressed = (mode == MODE_2x2 || slots[i].stackSize < 9) ? null : this.getFrom9(slots[i]);
-					if(compressed == null) {
-						compressed = (mode == MODE_3x3 || slots[i].stackSize < 4) ? null : this.getFrom4(slots[i]);
-						stacksize = 4;
-					}
-					
-					if(compressed != null && slots[i].stackSize >= stacksize) {
-						if(slots[i + 9] == null) {
-							slots[i + 9] = compressed.copy();
-							this.decrStackSize(i, stacksize);
-						} else if(slots[i + 9].getItem() == compressed.getItem() && slots[i + 9].getItemDamage() == compressed.getItemDamage() && slots[i + 9].stackSize + compressed.stackSize <= compressed.getMaxStackSize()) {
-							slots[i + 9].stackSize += compressed.stackSize;
-							this.decrStackSize(i, stacksize);
-						}
-					}
-				}
-			}
-			
-			this.networkPackNT(15);
+		// Compression is event driven through MachineRuntime.
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		this.refreshRecipeInputs();
+		runtimeInitialized = true;
+		this.observeInventoryFingerprint();
+		observedMode = mode;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(15);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_COMPRESS || taskSlot != TASK_SLOT_SHARED || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		boolean changed = false;
+		for(int i = 0; i < 9; i++) changed |= this.compressLane(i);
+		this.observeInventoryFingerprint();
+		if(changed) {
+			this.markDirty();
+			this.markNetworkDirty();
 		}
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(15);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote || cadence != 5) return;
+		boolean inventoryChanged = this.observeInventoryFingerprint();
+		boolean modeChanged = observedMode != mode;
+		if(inventoryChanged || modeChanged) {
+			if(inventoryChanged) this.refreshRecipeInputs();
+			observedMode = mode;
+			this.markMachineDirty((inventoryChanged ? MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE : 0) | (modeChanged ? MachineDirtyCause.CONFIGURATION : 0));
+		}
+	}
+
+	private boolean compressLane(int i) {
+		if(slots[i] == null) return false;
+		int stacksize = 9;
+		ItemStack compressed = (mode == MODE_2x2 || slots[i].stackSize < 9) ? null : cachedNineResults[i];
+		if(compressed == null) {
+			compressed = (mode == MODE_3x3 || slots[i].stackSize < 4) ? null : cachedFourResults[i];
+			stacksize = 4;
+		}
+		if(compressed == null || slots[i].stackSize < stacksize) return false;
+		if(slots[i + 9] == null) {
+			slots[i + 9] = compressed.copy();
+			this.decrStackSize(i, stacksize);
+			return true;
+		}
+		ItemStack existing = slots[i + 9];
+		if(existing.getItem() == compressed.getItem() && existing.getItemDamage() == compressed.getItemDamage() && existing.stackSize + compressed.stackSize <= compressed.getMaxStackSize()) {
+			existing.stackSize += compressed.stackSize;
+			this.decrStackSize(i, stacksize);
+			return true;
+		}
+		return false;
+	}
+
+	private boolean hasCompressibleInput() {
+		for(int i = 0; i < 9; i++) {
+			if(slots[i] == null) continue;
+			int required = 9;
+			ItemStack result = (mode == MODE_2x2 || slots[i].stackSize < 9) ? null : cachedNineResults[i];
+			if(result == null) {
+				result = (mode == MODE_3x3 || slots[i].stackSize < 4) ? null : cachedFourResults[i];
+				required = 4;
+			}
+			if(result == null || slots[i].stackSize < required) continue;
+			ItemStack output = slots[i + 9];
+			if(output == null || output.getItem() == result.getItem() && output.getItemDamage() == result.getItemDamage() && output.stackSize + result.stackSize <= result.getMaxStackSize()) return true;
+		}
+		return false;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(runtimeInitialized && this.hasCompressibleInput()) this.scheduleMachineTransition(now + 1L, TASK_COMPRESS, TASK_SLOT_SHARED);
+		else this.cancelMachineTransition(TASK_COMPRESS, TASK_SLOT_SHARED);
+	}
+
+	private void refreshRecipeInputs() {
+		for(int i = 0; i < 9; i++) {
+			ItemStack input = slots[i];
+			int meta = input == null ? 0 : input.getItemDamage();
+			int tagHash = input == null || input.getTagCompound() == null ? 0 : input.getTagCompound().hashCode();
+			if(cachedInputs[i] != input || cachedInputMeta[i] != meta || cachedInputTag[i] != tagHash) {
+				cachedInputs[i] = input;
+				cachedInputMeta[i] = meta;
+				cachedInputTag[i] = tagHash;
+				cachedFourResults[i] = input == null ? null : this.getFrom4(input);
+				cachedNineResults[i] = input == null ? null : this.getFrom9(input);
+			}
+		}
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
 	}
 	
 	@Override
@@ -175,5 +280,6 @@ public class TileEntityMachineFunnel extends TileEntityMachineBase implements IG
 		this.mode++;
 		if(mode > 2) mode = 0;
 		this.markDirty();
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 }

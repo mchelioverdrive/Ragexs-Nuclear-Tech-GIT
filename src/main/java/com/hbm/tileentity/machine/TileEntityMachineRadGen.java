@@ -10,6 +10,8 @@ import com.hbm.inventory.gui.GUIMachineRadGen;
 import com.hbm.items.ModItems;
 import com.hbm.items.special.ItemWasteLong;
 import com.hbm.items.special.ItemWasteShort;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.CompatEnergyControl;
@@ -31,6 +33,18 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineRadGen extends TileEntityMachineBase implements IEnergyProviderMK2, IGUIProvider, IInfoProviderEC {
+	private static final int TASK_GENERATE = 1;
+	private static final int TASK_SLOT_SHARED = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private ItemStack[] cachedInputs = new ItemStack[12];
+	private int[] cachedInputMeta = new int[12];
+	private int[] cachedInputTag = new int[12];
+	private Triplet<Integer, Integer, ItemStack>[] cachedFuel = new Triplet[12];
+	private long[] operatingPowerWatts = new long[12];
+	private int observedInventoryFingerprint;
+	private int observedFuelCount;
+	private boolean inventoryFingerprintInitialized;
 
 	public int[] progress = new int[12];
 	public int[] maxProgress = new int[12];
@@ -54,72 +68,147 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
-			this.output = 0;
+		// Generation and energy export are scheduled by MachineRuntime.
+	}
 
-			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_100;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		this.refreshRuntimeState();
+		runtimeInitialized = true;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_GENERATE || taskSlot != TASK_SLOT_SHARED || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		if(this.observeInventoryFingerprint()) this.refreshRuntimeState();
+		this.output = 0;
+		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
+		this.runtimeEnergyMutation = true;
+		try {
 			this.tryProvide(worldObj, this.xCoord - dir.offsetX * 4, this.yCoord, this.zCoord - dir.offsetZ * 4, dir.getOpposite());
-			
-			//check if reload necessary for any queues
 			for(int i = 0; i < 12; i++) {
-				
-				if(processing[i] == null && slots[i] != null && getDurationFromItem(slots[i]) > 0 &&
-						(getOutputFromItem(slots[i]) == null || slots[i + 12] == null ||
-						(getOutputFromItem(slots[i]).getItem() == slots[i + 12].getItem() && getOutputFromItem(slots[i]).getItemDamage() == slots[i + 12].getItemDamage() &&
-						getOutputFromItem(slots[i]).stackSize + slots[i + 12].stackSize <= slots[i + 12].getMaxStackSize()))) {
-					
+				if(this.canLoadFuel(i)) {
 					progress[i] = 0;
-					maxProgress[i] = this.getDurationFromItem(slots[i]);
-					production[i] = this.getPowerFromItem(slots[i]);
+					maxProgress[i] = cachedFuel[i].getY();
+					production[i] = cachedFuel[i].getX();
+					operatingPowerWatts[i] = EnergyUnits.quantaPerTickToWatts(production[i]);
 					processing[i] = new ItemStack(slots[i].getItem(), 1, slots[i].getItemDamage());
 					this.decrStackSize(i, 1);
 					this.markDirty();
 				}
 			}
-			
 			this.isOn = false;
-			
 			for(int i = 0; i < 12; i++) {
-				
-				if(processing[i] != null) {
-					
-					this.isOn = true;
-					this.setStoredEnergyQuanta(this.energyQuanta + production[i]);
-					this.output += production[i];
-					progress[i]++;
-					
-					if(progress[i] >= maxProgress[i]) {
-						progress[i] = 0;
-						ItemStack out = getOutputFromItem(processing[i]);
-						
-						if(out != null) {
-							
-							if(slots[i + 12] == null) {
-								slots[i + 12] = out;
-							} else {
-								slots[i + 12].stackSize += out.stackSize;
-							}
-						}
-						
-						processing[i] = null;
-						this.markDirty();
+				if(processing[i] == null) continue;
+				this.isOn = true;
+				this.setStoredEnergyQuanta(energyQuanta + EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts[i]));
+				this.output += production[i];
+				progress[i]++;
+				if(progress[i] >= maxProgress[i]) {
+					progress[i] = 0;
+					ItemStack out = getOutputFromItem(processing[i]);
+					if(out != null) {
+						if(slots[i + 12] == null) slots[i + 12] = out;
+						else slots[i + 12].stackSize += out.stackSize;
 					}
+					processing[i] = null;
+					this.markDirty();
 				}
 			}
-			
-			if(this.energyQuanta > maxPower)
-				this.setStoredEnergyQuanta(maxPower);
-			
-			NBTTagCompound data = new NBTTagCompound();
-			data.setIntArray("progress", this.progress);
-			data.setIntArray("maxProgress", this.maxProgress);
-			data.setIntArray("production", this.production);
-			EnergyUnits.writeEnergyQuanta(data, this.energyQuanta);
-			data.setBoolean("isOn", this.isOn);
-			this.networkPack(data, 50);
+			if(energyQuanta > maxPower) this.setStoredEnergyQuanta(maxPower);
+		} finally { runtimeEnergyMutation = false; }
+		this.observeInventoryFingerprint();
+		this.markDirty();
+		this.markNetworkDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(this.observeInventoryFingerprint()) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+		} else if(cadence == 100) {
+			if(observedFuelCount != fuels.size()) {
+				for(int i = 0; i < 12; i++) { cachedInputs[i] = null; cachedInputMeta[i] = Integer.MIN_VALUE; cachedInputTag[i] = Integer.MIN_VALUE; }
+				this.refreshRuntimeState();
+				this.markMachineDirty(MachineDirtyCause.RECIPE);
+			}
 		}
+	}
+
+	private void refreshRuntimeState() {
+		for(int i = 0; i < 12; i++) {
+			ItemStack input = slots[i];
+			int meta = input == null ? 0 : input.getItemDamage();
+			int tag = input == null || input.getTagCompound() == null ? 0 : input.getTagCompound().hashCode();
+			if(cachedInputs[i] != input || cachedInputMeta[i] != meta || cachedInputTag[i] != tag) {
+				cachedInputs[i] = input;
+				cachedInputMeta[i] = meta;
+				cachedInputTag[i] = tag;
+				cachedFuel[i] = input == null ? null : this.grabResult(input);
+			}
+		}
+		for(int i = 0; i < 12; i++) operatingPowerWatts[i] = EnergyUnits.quantaPerTickToWatts(production[i]);
+		observedFuelCount = fuels.size();
+		this.observeInventoryFingerprint();
+	}
+
+	private boolean canLoadFuel(int lane) {
+		if(processing[lane] != null || slots[lane] == null || cachedFuel[lane] == null) return false;
+		ItemStack outputItem = cachedFuel[lane].getZ();
+		if(outputItem == null || slots[lane + 12] == null) return true;
+		ItemStack existing = slots[lane + 12];
+		return outputItem.getItem() == existing.getItem() && outputItem.getItemDamage() == existing.getItemDamage() && outputItem.stackSize + existing.stackSize <= existing.getMaxStackSize();
+	}
+
+	private boolean hasLoadableFuel() {
+		for(int i = 0; i < 12; i++) if(this.canLoadFuel(i)) return true;
+		return false;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		boolean processingFuel = false;
+		for(int i = 0; i < 12; i++) if(processing[i] != null) { processingFuel = true; break; }
+		if(energyQuanta > 0 || processingFuel || this.hasLoadableFuel()) this.scheduleMachineTransition(now + 1L, TASK_GENERATE, TASK_SLOT_SHARED);
+		else this.cancelMachineTransition(TASK_GENERATE, TASK_SLOT_SHARED);
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private void sendRuntimeState() {
+		NBTTagCompound data = new NBTTagCompound();
+		data.setIntArray("progress", progress);
+		data.setIntArray("maxProgress", maxProgress);
+		data.setIntArray("production", production);
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+		data.setBoolean("isOn", isOn);
+		this.networkPack(data, 50);
 	}
 	
 	@Override
@@ -275,6 +364,13 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		this.markDirty();
+		this.markNetworkDirty();
+		if(!runtimeEnergyMutation) this.markMachineDirty(MachineDirtyCause.ENERGY);
+	}
+
+	public long getOutputPowerWatts() {
+		return EnergyUnits.quantaPerTickToWatts(this.output);
 	}
 	
 	@Override

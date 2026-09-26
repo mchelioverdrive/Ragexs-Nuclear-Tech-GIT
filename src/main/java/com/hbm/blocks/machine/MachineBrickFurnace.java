@@ -10,6 +10,7 @@ import com.hbm.handler.atmosphere.IBlockSealable;
 import com.hbm.lib.RefStrings;
 import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.machine.TileEntityFurnaceBrick;
+import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.I18nUtil;
 import com.hbm.util.ItemStackUtil;
 
@@ -125,20 +126,21 @@ public class MachineBrickFurnace extends BlockContainer implements IBlockSealabl
 	public static void updateBlockState(boolean isProcessing, World world, int x, int y, int z) {
 		int i = world.getBlockMetadata(x, y, z);
 		TileEntity entity = world.getTileEntity(x, y, z);
-		keepInventory = true;
-
-		if(isProcessing) {
-			world.setBlock(x, y, z, ModBlocks.machine_furnace_brick_on);
-		} else {
-			world.setBlock(x, y, z, ModBlocks.machine_furnace_brick_off);
-		}
-
-		keepInventory = false;
-		world.setBlockMetadataWithNotify(x, y, z, i, 2);
-
-		if(entity != null) {
-			entity.validate();
-			world.setTileEntity(x, y, z, entity);
+		boolean retained = entity instanceof TileEntityLoadedBase;
+		if(retained) ((TileEntityLoadedBase) entity).beginRetainedMachineBlockTransition();
+		try {
+			keepInventory = true;
+			if(isProcessing) world.setBlock(x, y, z, ModBlocks.machine_furnace_brick_on);
+			else world.setBlock(x, y, z, ModBlocks.machine_furnace_brick_off);
+			keepInventory = false;
+			world.setBlockMetadataWithNotify(x, y, z, i, 2);
+			if(entity != null) {
+				entity.validate();
+				world.setTileEntity(x, y, z, entity);
+			}
+		} finally {
+			keepInventory = false;
+			if(retained) ((TileEntityLoadedBase) entity).endRetainedMachineBlockTransition();
 		}
 	}
 

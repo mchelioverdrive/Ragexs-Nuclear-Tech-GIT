@@ -1,6 +1,7 @@
 package com.hbm.tileentity.machine;
 
 import api.hbm.energymk2.EnergyUnits;
+import api.hbm.energymk2.IBatteryItem;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
@@ -12,9 +13,12 @@ import com.hbm.inventory.container.ContainerVacuumCircuit;
 import com.hbm.inventory.gui.GUIVacuumCircuit;
 import com.hbm.inventory.recipes.VacuumCircuitRecipes;
 import com.hbm.inventory.recipes.VacuumCircuitRecipes.VacuumCircuitRecipe;
+import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.machine.ItemMachineUpgrade;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
@@ -49,6 +53,19 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 	public ItemStack display;
 
 	public boolean canOperate = true;
+	private static final int TASK_ACCOUNTING = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private VacuumCircuitRecipe cachedRecipe;
+	private int cachedInputFingerprint;
+	private boolean recipeFingerprintInitialized;
+	private long cachedRecipeRevision = -1L;
+	private long observedRecipeRevision = -1L;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
+	private long operatingPowerWatts;
+	private boolean runtimeMaterialEligible;
 	
 	public TileEntityMachineVacuumCircuit() {
 		super(8);
@@ -71,71 +88,168 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			CBT_Atmosphere atmosphere = ChunkAtmosphereManager.proxy.getAtmosphere(worldObj, xCoord, yCoord, zCoord);
-			canOperate = atmosphere == null || atmosphere.getPressure() <= 0.001;
+		// Recipe work, atmosphere checks, and connections are runtime driven.
+	}
 
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 5, this.getStoredEnergyQuanta(), this.getEnergyCapacityQuanta()));
-			this.updateConnections();
-			recipe = VacuumCircuitRecipes.getRecipe(new ItemStack[] {slots[0], slots[1], slots[2], slots[3]});
-			long intendedMaxPower;
-			
-			this.upgradeManager.checkSlots(slots, 6, 7);
-			int redLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int blueLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
-			
-			if(recipe != null) {
-				this.processTime = recipe.duration - (recipe.duration * redLevel / 6) + (recipe.duration * blueLevel / 3);
-				this.consumption = recipe.consumption + (recipe.consumption * redLevel) - (recipe.consumption * blueLevel / 6);
-				intendedMaxPower = recipe.consumption * 20;
-				
-				if(canProcess(recipe)) {
-					this.progress++;
-					this.setStoredEnergyQuanta(this.energyQuanta - this.consumption);
-					
-					if(progress >= processTime) {
-						this.progress = 0;
-						this.consumeItems(recipe);
-						
-						if(slots[4] == null) {
-							slots[4] = recipe.output.copy();
-						} else {
-							slots[4].stackSize += recipe.output.stackSize;
-						}
-						
-						this.markDirty();
-					}
-					
-					
-				} else {
-					this.progress = 0;
-				}
-				
-			} else {
-				this.progress = 0;
-				this.consumption = 100;
-				intendedMaxPower = 2000;
-			}
-			
-			this.maxPower = Math.max(intendedMaxPower, energyQuanta);
-			
-			this.networkPackNT(25);
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(!recipeFingerprintInitialized || (causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.UPGRADE | MachineDirtyCause.CONFIGURATION)) != 0) this.refreshRecipe();
+		this.refreshRuntimeSettings();
+		this.runtimeMaterialEligible = this.canProcessMaterials();
+		runtimeInitialized = true;
+		observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_ACCOUNTING || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		long oldPower = energyQuanta;
+		int oldProgress = progress;
+		this.setRuntimePower(Library.chargeTEFromItems(slots, 5, this.getStoredEnergyQuanta(), this.getEnergyCapacityQuanta()));
+		boolean canRun = runtimeMaterialEligible && this.hasOperatingPower();
+		if(canRun && progress + 1 >= processTime) {
+			this.refreshRecipe();
+			this.refreshRuntimeSettings();
+			canRun = this.canProcessMaterials() && this.hasOperatingPower();
 		}
+		if(canRun) {
+			this.progress++;
+			this.setRuntimePower(this.energyQuanta - EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts));
+			if(progress >= processTime) {
+				if(cachedRecipe != null && this.canProcessMaterials()) this.completeOperation(cachedRecipe);
+				else this.progress = 0;
+			}
+		} else {
+			this.progress = 0;
+		}
+		if(oldPower != energyQuanta || oldProgress != progress) this.markDirty();
+		this.networkPackNT(25);
+		this.evaluateAndSchedule(now);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(this.observeInventoryFingerprint()) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.UPGRADE);
+			return;
+		}
+		if(cadence != 20) return;
+		this.updateConnections();
+		CBT_Atmosphere atmosphere = ChunkAtmosphereManager.proxy.getAtmosphere(worldObj, xCoord, yCoord, zCoord);
+		boolean canOperateNow = atmosphere == null || atmosphere.getPressure() <= 0.001;
+		if(canOperateNow != canOperate) {
+			canOperate = canOperateNow;
+			this.markMachineDirty(MachineDirtyCause.ENVIRONMENT);
+		}
+		if(observedRecipeRevision != SerializableRecipe.getRegistryRevision()) {
+			observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+			this.markMachineDirty(MachineDirtyCause.RECIPE);
+		}
+		this.networkPackNT(25);
+	}
+
+	private void refreshRecipe() {
+		int fingerprint = this.recipeInputFingerprint();
+		long revision = SerializableRecipe.getRegistryRevision();
+		if(!recipeFingerprintInitialized || fingerprint != cachedInputFingerprint || revision != cachedRecipeRevision) {
+			this.cachedRecipe = VacuumCircuitRecipes.getRecipe(new ItemStack[] {slots[0], slots[1], slots[2], slots[3]});
+			this.cachedInputFingerprint = fingerprint;
+			this.cachedRecipeRevision = revision;
+			recipeFingerprintInitialized = true;
+		}
+		this.recipe = this.cachedRecipe;
+	}
+
+	private void refreshRuntimeSettings() {
+		this.upgradeManager.checkSlots(slots, 6, 7);
+		int redLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+		int blueLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+		long intendedMaxPower;
+		if(cachedRecipe != null) {
+			this.processTime = cachedRecipe.duration - (cachedRecipe.duration * redLevel / 6) + (cachedRecipe.duration * blueLevel / 3);
+			this.consumption = cachedRecipe.consumption + (cachedRecipe.consumption * redLevel) - (cachedRecipe.consumption * blueLevel / 6);
+			intendedMaxPower = cachedRecipe.consumption * 20;
+		} else {
+			this.progress = 0;
+			this.consumption = 100;
+			intendedMaxPower = 2000;
+		}
+		if(processTime <= 0) processTime = 1;
+		this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(this.consumption);
+		this.maxPower = Math.max(intendedMaxPower, energyQuanta);
+	}
+
+	private boolean canProcessMaterials() {
+		return cachedRecipe != null && canOperate && this.hasOutputSpace(cachedRecipe.output);
+	}
+
+	private boolean hasOutputSpace(ItemStack output) {
+		return output != null && (slots[4] == null || slots[4].getItem() == output.getItem() && slots[4].getItemDamage() == output.getItemDamage() && slots[4].stackSize + output.stackSize <= slots[4].getMaxStackSize());
+	}
+
+	private boolean hasOperatingPower() { return energyQuanta >= consumption; }
+
+	private boolean hasBatteryWork() {
+		return energyQuanta < maxPower && slots[5] != null && slots[5].getItem() instanceof IBatteryItem;
+	}
+
+	private void completeOperation(VacuumCircuitRecipe recipe) {
+		this.consumeItems(recipe);
+		if(slots[4] == null) slots[4] = recipe.output.copy();
+		else slots[4].stackSize += recipe.output.stackSize;
+		this.progress = 0;
+		this.markDirty();
+		this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if((runtimeMaterialEligible && this.hasOperatingPower()) || this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+	}
+
+	private void setRuntimePower(long value) {
+		runtimeEnergyMutation = true;
+		try { this.setStoredEnergyQuanta(value); } finally { runtimeEnergyMutation = false; }
+	}
+
+	private int recipeInputFingerprint() {
+		int hash = 1;
+		for(int i = 0; i < 4; i++) hash = 31 * hash + this.stackFingerprint(slots[i]);
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int hash = 1;
+		for(int i = 0; i < slots.length; i++) {
+			ItemStack stack = slots[i];
+			int tag = stack == null || stack.getItem() instanceof IBatteryItem || stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode();
+			int slot = stack == null ? 0 : 31 * (31 * (31 * System.identityHashCode(stack.getItem()) + stack.getItemDamage()) + stack.stackSize) + tag;
+			hash = 31 * hash + slot;
+		}
+		boolean changed = inventoryFingerprintInitialized && hash != observedInventoryFingerprint;
+		observedInventoryFingerprint = hash;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private int stackFingerprint(ItemStack stack) {
+		if(stack == null) return 0;
+		int hash = System.identityHashCode(stack.getItem());
+		hash = 31 * hash + stack.getItemDamage();
+		hash = 31 * hash + stack.stackSize;
+		return 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
 	}
 	
 	public boolean canProcess(VacuumCircuitRecipe recipe) {
 		if(!canOperate) return false;
 		
 		if(this.energyQuanta < this.consumption) return false;
-
-		if(slots[4] != null) {
-			if(slots[4].getItem() != recipe.output.getItem()) return false;
-			if(slots[4].getItemDamage() != recipe.output.getItemDamage()) return false;
-			if(slots[4].stackSize + recipe.output.stackSize > slots[4].getMaxStackSize()) return false;
-		}
-		
-		return true;
+		return this.hasOutputSpace(recipe.output);
 	}
 	private void updateConnections() {
 		for(DirPos pos : getConPos()) {
@@ -243,6 +357,11 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 		this.maxPower = EnergyUnits.readCapacityQuanta(nbt, "maxPower");
 		this.progress = nbt.getInteger("progress");
 		this.processTime = nbt.getInteger("processTime");
+		runtimeInitialized = false;
+		recipeFingerprintInitialized = false;
+		inventoryFingerprintInitialized = false;
+		cachedRecipeRevision = -1L;
+		observedRecipeRevision = -1L;
 	}
 	
 	@Override
@@ -265,6 +384,7 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.markMachineEnergyDirty();
 	}
 
 	@Override

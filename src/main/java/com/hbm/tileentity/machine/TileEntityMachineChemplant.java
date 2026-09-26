@@ -82,7 +82,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	public FluidTank[] tanks;
 
 	//upgraded stats
-	int consumption = 100;
+	long operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(100L);
 	int speed = 100;
 
 	public TileEntityMachineChemplant() {
@@ -102,6 +102,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		tanks = new FluidTank[4];
 		for(int i = 0; i < 4; i++) {
 			tanks[i] = new FluidTank(Fluids.NONE, 24_000);
+			this.trackMachineFluidTank(tanks[i]);
 		}
 	}
 
@@ -120,50 +121,6 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	public void updateEntity() {
 
 		if(!worldObj.isRemote) {
-			if(this.recipeChanged()) {
-				this.resolveRecipe();
-				this.needsInputTransfer = true;
-				this.cancelAccountingTransition();
-				this.markMachineDirty(MachineDirtyCause.RECIPE | MachineDirtyCause.CONFIGURATION);
-				this.markNetworkDirty();
-				this.markDirty();
-			}
-
-			int fluidDelay = 40;
-
-			if(lsu0 >= fluidDelay && tanks[0].loadTank(17, 19, slots)) { lsl0 = 0; this.fluidStorageChanged(); }
-			if(lsu1 >= fluidDelay && tanks[1].loadTank(18, 20, slots)) { lsl1 = 0; this.fluidStorageChanged(); }
-
-			if(lsl0 >= fluidDelay && slots[17] != null && !FluidTank.noDualUnload.contains(slots[17].getItem())) if(tanks[0].unloadTank(17, 19, slots)) { lsu0 = 0; this.fluidStorageChanged(); }
-			if(lsl1 >= fluidDelay && slots[18] != null && !FluidTank.noDualUnload.contains(slots[18].getItem())) if(tanks[1].unloadTank(18, 20, slots)) { lsu1 = 0; this.fluidStorageChanged(); }
-
-			if(tanks[2].unloadTank(9, 11, slots)) this.fluidStorageChanged();
-			if(tanks[3].unloadTank(10, 12, slots)) this.fluidStorageChanged();
-
-			if(lsl0 < fluidDelay) lsl0++;
-			if(lsl1 < fluidDelay) lsl1++;
-			if(lsu0 < fluidDelay) lsu0++;
-			if(lsu1 < fluidDelay) lsu1++;
-
-			if(!runtimeStateInitialized || needsInputTransfer) {
-				if(loadItems()) {
-					this.cancelAccountingTransition();
-					this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
-					this.markNetworkDirty();
-					this.markDirty();
-				}
-			}
-			unloadItems();
-
-			if(worldObj.getTotalWorldTime() % 20 == 0) {
-				this.updateConnections();
-			}
-
-			for(DirPos pos : getConPos()) {
-				if(tanks[2].getFill() > 0) this.sendFluid(tanks[2], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				if(tanks[3].getFill() > 0) this.sendFluid(tanks[3], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			}
-
 			this.networkPackNTIfDirty(150);
 		} else {
 
@@ -504,7 +461,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 
 	@Override
 	public int getMachineExecutionStrategies() {
-		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
 	}
 
 	@Override
@@ -527,7 +484,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		this.refreshUpgrades(false);
 		this.runtimeStateInitialized = true;
 		long now = worldObj.getTotalWorldTime();
-		if((causes & MachineDirtyCause.LIFECYCLE) != 0 && this.nextRuntimeTick == now + 1L && this.progress > 0 && this.cachedEligible && this.energyQuanta >= this.consumption) {
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0 && this.nextRuntimeTick == now + 1L && this.progress > 0 && this.cachedEligible && this.energyQuanta >= EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts)) {
 			this.scheduleMachineTransition(this.nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_CHEMPLANT);
 		} else {
 			this.runAccountingTick(now);
@@ -543,7 +500,40 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 
 	@Override
 	public void onMachineCoarsePoll(int cadence) {
-		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			int fluidDelay = 40;
+			boolean fluidContainerChanged = false;
+			if(lsu0 >= fluidDelay && tanks[0].loadTank(17, 19, slots)) { lsl0 = 0; fluidContainerChanged = true; }
+			if(lsu1 >= fluidDelay && tanks[1].loadTank(18, 20, slots)) { lsl1 = 0; fluidContainerChanged = true; }
+			if(lsl0 >= fluidDelay && slots[17] != null && !FluidTank.noDualUnload.contains(slots[17].getItem()) && tanks[0].unloadTank(17, 19, slots)) { lsu0 = 0; fluidContainerChanged = true; }
+			if(lsl1 >= fluidDelay && slots[18] != null && !FluidTank.noDualUnload.contains(slots[18].getItem()) && tanks[1].unloadTank(18, 20, slots)) { lsu1 = 0; fluidContainerChanged = true; }
+			if(tanks[2].unloadTank(9, 11, slots)) fluidContainerChanged = true;
+			if(tanks[3].unloadTank(10, 12, slots)) fluidContainerChanged = true;
+			if(lsl0 < fluidDelay) lsl0 = Math.min(fluidDelay, lsl0 + cadence);
+			if(lsl1 < fluidDelay) lsl1 = Math.min(fluidDelay, lsl1 + cadence);
+			if(lsu0 < fluidDelay) lsu0 = Math.min(fluidDelay, lsu0 + cadence);
+			if(lsu1 < fluidDelay) lsu1 = Math.min(fluidDelay, lsu1 + cadence);
+
+			boolean inventoryChanged = this.itemsChanged();
+			if(!runtimeStateInitialized || needsInputTransfer) inventoryChanged |= this.loadItems();
+			if(this.hasItemsToUnload()) this.unloadItems();
+			inventoryChanged |= this.itemsChanged();
+			this.observeItems();
+			if(inventoryChanged) {
+				this.cancelAccountingTransition();
+				this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+				this.markNetworkDirty();
+				this.markDirty();
+			}
+			if(fluidContainerChanged) this.fluidStorageChanged();
+			for(DirPos pos : getConPos()) {
+				if(tanks[2].getFill() > 0) this.sendFluid(tanks[2], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+				if(tanks[3].getFill() > 0) this.sendFluid(tanks[3], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			}
+			return;
+		}
+		if(cadence != 20) return;
 		boolean recipeChanged = this.recipeChanged();
 		boolean tanksChanged = this.tanksChanged();
 		boolean itemsChanged = this.itemsChanged();
@@ -556,6 +546,12 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 			this.cancelAccountingTransition();
 			this.markMachineDirty((recipeChanged ? MachineDirtyCause.RECIPE : 0) | (tanksChanged ? MachineDirtyCause.FLUID : 0) | (itemsChanged ? MachineDirtyCause.INVENTORY : 0) | (upgradesChanged ? MachineDirtyCause.CONFIGURATION : 0) | MachineDirtyCause.ENERGY);
 		}
+		this.updateConnections();
+	}
+
+	private boolean hasItemsToUnload() {
+		for(int i = 5; i <= 8; i++) if(slots[i] != null) return true;
+		return false;
 	}
 
 	private void runAccountingTick(long now) {
@@ -579,13 +575,13 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 
 		this.isProgressing = false;
 		this.setPowerInternal(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
-		if(this.cachedEligible && this.energyQuanta >= this.consumption && this.cachedRecipe != null) {
+		if(this.cachedEligible && this.energyQuanta >= EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts) && this.cachedRecipe != null) {
 			int duration = this.cachedRecipe.getDuration() * this.speed / 100;
 			if(duration <= 0) duration = 1;
 			if(this.progress + 1 >= duration) this.refreshEligibility();
 			if(this.cachedEligible && (this.cachedRecipe.oxygenConsumption <= 0 || this.breatheAir(this.cachedRecipe.oxygenConsumption))) {
 				this.isProgressing = true;
-				this.setPowerInternal(this.energyQuanta - this.consumption);
+				this.setPowerInternal(this.energyQuanta - EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts));
 				this.progress++;
 				this.maxProgress = duration;
 				if(this.progress >= this.maxProgress) {
@@ -610,7 +606,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	}
 
 	private void scheduleNextTick(long now) {
-		if(this.cachedEligible && this.energyQuanta >= this.consumption || this.hasBatteryWork() || this.progress > 0 || this.isProgressing) {
+		if(this.cachedEligible && this.energyQuanta >= EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts) || this.hasBatteryWork() || this.progress > 0 || this.isProgressing) {
 			if(this.nextRuntimeTick == now + 1L) return;
 			this.nextRuntimeTick = now + 1L;
 			this.scheduleMachineTransition(this.nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_CHEMPLANT);
@@ -639,7 +635,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 
 	private boolean refreshUpgrades(boolean contentAware) {
 		int oldSpeed = this.speed;
-		int oldConsumption = this.consumption;
+		long oldOperatingPowerWatts = this.operatingPowerWatts;
 		if(contentAware) this.upgradeManager.checkSlots(slots, 1, 3);
 		else this.upgradeManager.checkSlotsIfDirty(slots, 1, 3);
 		int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
@@ -647,8 +643,9 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		int overLevel = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
 		this.speed = (100 - speedLevel * 25 + powerLevel * 5) / (overLevel + 1);
 		if(this.speed <= 0) this.speed = 1;
-		this.consumption = (100 + speedLevel * 300 - powerLevel * 20) * (overLevel + 1);
-		return oldSpeed != this.speed || oldConsumption != this.consumption;
+		long consumptionQuantaPerTick = (100L + speedLevel * 300L - powerLevel * 20L) * (overLevel + 1L);
+		this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(consumptionQuantaPerTick);
+		return oldSpeed != this.speed || oldOperatingPowerWatts != this.operatingPowerWatts;
 	}
 
 	private boolean hasBatteryWork() {

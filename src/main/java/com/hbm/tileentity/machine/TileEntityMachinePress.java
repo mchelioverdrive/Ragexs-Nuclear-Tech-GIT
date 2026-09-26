@@ -4,7 +4,10 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.inventory.container.ContainerMachinePress;
 import com.hbm.inventory.gui.GUIMachinePress;
 import com.hbm.inventory.recipes.PressRecipes;
+import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.machine.ItemStamp;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 
@@ -34,6 +37,21 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 	public final static int maxPress = 200; // max tick count per operation assuming speed is 1
 	boolean isRetracting = false; // direction the press is currently going
 	private int delay; // delay between direction changes to look a bit more appealing
+	private static final int TASK_PRESS = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean preheated;
+	private ItemStack cachedStamp;
+	private int cachedStampDamage;
+	private NBTTagCompound cachedStampTag;
+	private ItemStack cachedInput;
+	private int cachedInputDamage;
+	private NBTTagCompound cachedInputTag;
+	private long cachedRecipeRevision = -1L;
+	private long observedRecipeRevision = -1L;
+	private ItemStack cachedOutput;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
 	
 	public ItemStack syncStack;
 	
@@ -48,104 +66,7 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 	
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
-			boolean preheated = false;
-			
-			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-				if(worldObj.getBlock(xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ) == ModBlocks.press_preheater) {
-					preheated = true;
-					break;
-				}
-			}
-			
-			boolean canProcess = this.canProcess();
-			
-			if((canProcess || this.isRetracting) && this.burnTime >= 200) {
-				this.speed += preheated ? 4 : 1;
-				
-				if(this.speed > this.maxSpeed) {
-					this.speed = this.maxSpeed;
-				}
-			} else {
-				this.speed -= 1;
-				if(this.speed < 0) {
-					this.speed = 0;
-				}
-			}
-			
-			if(delay <= 0) {
-				
-				int stampSpeed = speed * progressAtMax / maxSpeed;
-				
-				if(this.isRetracting) {
-					this.press -= stampSpeed;
-					
-					if(this.press <= 0) {
-						this.isRetracting = false;
-						this.delay = 5;
-					}
-				} else if(canProcess) {
-					this.press += stampSpeed;
-					
-					if(this.press >= this.maxPress) {
-						this.worldObj.playSoundEffect(this.xCoord, this.yCoord, this.zCoord, "hbm:block.pressOperate", getVolume(1.5F), 1.0F);
-						ItemStack output = PressRecipes.getOutput(slots[2], slots[1]);
-						if(slots[3] == null) {
-							slots[3] = output.copy();
-						} else {
-							slots[3].stackSize += output.stackSize;
-						}
-						this.decrStackSize(2, 1);
-						
-						if(slots[1].getMaxDamage() != 0) {
-							slots[1].setItemDamage(slots[1].getItemDamage() + 1);
-							if(slots[1].getItemDamage() >= slots[1].getMaxDamage()) {
-								slots[1] = null;
-							}
-						}
-						
-						this.isRetracting = true;
-						this.delay = 5;
-						if(this.burnTime >= 200) {
-							this.burnTime -= 200; // only subtract fuel if operation was actually successful
-						}
-						
-						this.markDirty();
-					}
-				} else if(this.press > 0){
-					this.isRetracting = true;
-				}
-			} else {
-				delay--;
-			}
-			
-			if(slots[0] != null && burnTime < 200 && TileEntityFurnace.getItemBurnTime(slots[0]) > 0) { // less than one operation stored? burn more fuel!
-				burnTime += TileEntityFurnace.getItemBurnTime(slots[0]);
-				
-				if(slots[0].stackSize == 1 && slots[0].getItem().hasContainerItem(slots[0])) {
-					slots[0] = slots[0].getItem().getContainerItem(slots[0]).copy();
-				} else {
-					this.decrStackSize(0, 1);
-				}
-				this.markChanged();
-			}
-			
-			NBTTagCompound data = new NBTTagCompound();
-			data.setInteger("speed", speed);
-			data.setInteger("burnTime", burnTime);
-			data.setInteger("press", press);
-			if(slots[2] != null) {
-				NBTTagCompound stack = new NBTTagCompound();
-				slots[2].writeToNBT(stack);
-				data.setTag("stack", stack);
-			}
-			
-			this.networkPack(data, 50);
-			
-		} else {
-			
+		if(worldObj.isRemote) {
 			// approach-based interpolation, GO!
 			this.lastPress = this.renderPress;
 			
@@ -156,6 +77,180 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 				this.renderPress = this.syncPress;
 			}
 		}
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		this.updatePreheaterState();
+		this.resolveCachedOutput();
+		observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+		runtimeInitialized = true;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PRESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		int oldSpeed = speed;
+		int oldPress = press;
+		int oldBurnTime = burnTime;
+		int oldDelay = delay;
+		boolean oldRetracting = isRetracting;
+		boolean canProcess = this.canProcess();
+		if((canProcess || this.isRetracting) && this.burnTime >= 200) {
+			this.speed += preheated ? 4 : 1;
+			if(this.speed > this.maxSpeed) this.speed = this.maxSpeed;
+		} else {
+			this.speed -= 1;
+			if(this.speed < 0) this.speed = 0;
+		}
+		if(delay <= 0) {
+			int stampSpeed = speed * progressAtMax / maxSpeed;
+			if(this.isRetracting) {
+				this.press -= stampSpeed;
+				if(this.press <= 0) {
+					this.isRetracting = false;
+					this.delay = 5;
+				}
+			} else if(canProcess) {
+				this.press += stampSpeed;
+				if(this.press >= this.maxPress) this.completePressOperation();
+			} else if(this.press > 0) {
+				this.isRetracting = true;
+			}
+		} else {
+			delay--;
+		}
+		this.loadFuelIfNeeded();
+		if(oldSpeed != speed || oldPress != press || oldBurnTime != burnTime || oldDelay != delay || oldRetracting != isRetracting) this.markDirty();
+		this.sendRuntimeState();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5 && this.observeInventoryFingerprint()) {
+			this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+		} else if(cadence == 20) {
+			boolean oldPreheated = preheated;
+			this.updatePreheaterState();
+			if(oldPreheated != preheated) this.markMachineDirty(MachineDirtyCause.ENVIRONMENT | MachineDirtyCause.TOPOLOGY);
+			if(observedRecipeRevision != SerializableRecipe.getRegistryRevision()) {
+				observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+				this.markMachineDirty(MachineDirtyCause.RECIPE);
+			}
+		}
+	}
+
+	private void updatePreheaterState() {
+		preheated = false;
+		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
+			if(worldObj.getBlock(xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ) == ModBlocks.press_preheater) {
+				preheated = true;
+				break;
+			}
+		}
+	}
+
+	private void completePressOperation() {
+		this.resolveCachedOutput();
+		if(cachedOutput == null || !this.hasOutputSpace(cachedOutput)) return;
+		this.worldObj.playSoundEffect(this.xCoord, this.yCoord, this.zCoord, "hbm:block.pressOperate", getVolume(1.5F), 1.0F);
+		if(slots[3] == null) slots[3] = cachedOutput.copy();
+		else slots[3].stackSize += cachedOutput.stackSize;
+		this.decrStackSize(2, 1);
+		if(slots[1].getMaxDamage() != 0) {
+			slots[1].setItemDamage(slots[1].getItemDamage() + 1);
+			if(slots[1].getItemDamage() >= slots[1].getMaxDamage()) slots[1] = null;
+		}
+		this.isRetracting = true;
+		this.delay = 5;
+		if(this.burnTime >= 200) this.burnTime -= 200;
+		this.markDirty();
+		this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+	}
+
+	private void loadFuelIfNeeded() {
+		if(slots[0] == null || burnTime >= 200) return;
+		int burn = TileEntityFurnace.getItemBurnTime(slots[0]);
+		if(burn <= 0) return;
+		burnTime += burn;
+		if(slots[0].stackSize == 1 && slots[0].getItem().hasContainerItem(slots[0])) slots[0] = slots[0].getItem().getContainerItem(slots[0]).copy();
+		else this.decrStackSize(0, 1);
+		this.markChanged();
+		this.markDirty();
+		this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+	}
+
+	private void resolveCachedOutput() {
+		long revision = SerializableRecipe.getRegistryRevision();
+		ItemStack stamp = slots[1];
+		ItemStack input = slots[2];
+		int stampDamage = stamp == null ? -1 : stamp.getItemDamage();
+		int inputDamage = input == null ? -1 : input.getItemDamage();
+		NBTTagCompound stampTag = stamp == null || stamp.getTagCompound() == null ? null : (NBTTagCompound) stamp.getTagCompound().copy();
+		NBTTagCompound inputTag = input == null || input.getTagCompound() == null ? null : (NBTTagCompound) input.getTagCompound().copy();
+		if(cachedRecipeRevision != revision || cachedStamp != stamp || cachedStampDamage != stampDamage || !tagsEqual(cachedStampTag, stampTag) || cachedInput != input || cachedInputDamage != inputDamage || !tagsEqual(cachedInputTag, inputTag)) {
+			cachedStamp = stamp;
+			cachedStampDamage = stampDamage;
+			cachedStampTag = stampTag;
+			cachedInput = input;
+			cachedInputDamage = inputDamage;
+			cachedInputTag = inputTag;
+			cachedRecipeRevision = revision;
+			cachedOutput = stamp == null || input == null ? null : PressRecipes.getOutput(input, stamp);
+		}
+	}
+
+	private static boolean tagsEqual(NBTTagCompound first, NBTTagCompound second) {
+		return first == null ? second == null : first.equals(second);
+	}
+
+	private boolean hasOutputSpace(ItemStack output) {
+		return output != null && (slots[3] == null || slots[3].stackSize + output.stackSize <= slots[3].getMaxStackSize() && slots[3].getItem() == output.getItem() && slots[3].getItemDamage() == output.getItemDamage());
+	}
+
+	private boolean hasRuntimeWork() {
+		return this.canProcess() || this.isRetracting || this.delay > 0 || this.speed > 0 || this.press > 0 || (slots[0] != null && burnTime < 200 && TileEntityFurnace.getItemBurnTime(slots[0]) > 0);
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		if(this.hasRuntimeWork()) this.scheduleMachineTransition(now + 1L, TASK_PRESS, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_PRESS, TASK_SLOT_MAIN);
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			int slot = stack == null ? 0 : System.identityHashCode(stack.getItem());
+			if(stack != null) {
+				slot = 31 * slot + stack.stackSize;
+				slot = 31 * slot + stack.getItemDamage();
+				slot = 31 * slot + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+			hash = 31 * hash + slot;
+		}
+		boolean changed = inventoryFingerprintInitialized && hash != observedInventoryFingerprint;
+		observedInventoryFingerprint = hash;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private void sendRuntimeState() {
+		NBTTagCompound data = new NBTTagCompound();
+		data.setInteger("speed", speed);
+		data.setInteger("burnTime", burnTime);
+		data.setInteger("press", press);
+		if(slots[2] != null) {
+			NBTTagCompound stack = new NBTTagCompound();
+			slots[2].writeToNBT(stack);
+			data.setTag("stack", stack);
+		}
+		this.networkPack(data, 50);
 	}
 	
 	@Override
@@ -178,15 +273,8 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 	
 	public boolean canProcess() {
 		if(burnTime < 200) return false;
-		if(slots[1] == null || slots[2] == null) return false;
-		
-		ItemStack output = PressRecipes.getOutput(slots[2], slots[1]);
-		
-		if(output == null) return false;
-		
-		if(slots[3] == null) return true;
-		if(slots[3].stackSize + output.stackSize <= slots[3].getMaxStackSize() && slots[3].getItem() == output.getItem() && slots[3].getItemDamage() == output.getItemDamage()) return true;
-		return false;
+		this.resolveCachedOutput();
+		return this.hasOutputSpace(cachedOutput);
 	}
 
 	@Override
@@ -223,6 +311,11 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 		burnTime = nbt.getInteger("burnTime");
 		speed = nbt.getInteger("speed");
 		isRetracting = nbt.getBoolean("ret");
+		delay = nbt.getInteger("delay");
+		runtimeInitialized = false;
+		inventoryFingerprintInitialized = false;
+		cachedRecipeRevision = -1L;
+		observedRecipeRevision = -1L;
 	}
 
 	@Override
@@ -232,6 +325,7 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 		nbt.setInteger("burnTime", burnTime);
 		nbt.setInteger("speed", speed);
 		nbt.setBoolean("ret", isRetracting);
+		nbt.setInteger("delay", delay);
 	}
 	
 	AxisAlignedBB aabb;

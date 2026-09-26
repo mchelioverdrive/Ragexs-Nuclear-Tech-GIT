@@ -4,6 +4,8 @@ import com.hbm.interfaces.ICopiable;
 import com.hbm.inventory.material.Mats;
 import com.hbm.inventory.material.NTMMaterial;
 import com.hbm.inventory.material.Mats.MaterialStack;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.tileentity.TileEntityLoadedBase;
 
 import api.hbm.block.ICrucibleAcceptor;
 import net.minecraft.entity.player.EntityPlayer;
@@ -11,7 +13,6 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -21,7 +22,7 @@ import net.minecraftforge.common.util.ForgeDirection;
  * @author hbm
  *
  */
-public abstract class TileEntityFoundryBase extends TileEntity implements ICrucibleAcceptor, ICopiable {
+public abstract class TileEntityFoundryBase extends TileEntityLoadedBase implements ICrucibleAcceptor, ICopiable {
 	
 	public NTMMaterial type;
 	protected NTMMaterial lastType;
@@ -105,10 +106,13 @@ public abstract class TileEntityFoundryBase extends TileEntity implements ICruci
 	 * - returns the amount that cannot be added
 	 */
 	public MaterialStack standardAdd(World world, int x, int y, int z, ForgeDirection side, MaterialStack stack) {
+		NTMMaterial oldType = this.type;
+		int oldAmount = this.amount;
 		this.type = stack.material;
 		
 		if(stack.amount + this.amount <= this.getCapacity()) {
 			this.amount += stack.amount;
+			this.markMaterialMutation(oldType, oldAmount);
 			return null;
 		}
 		
@@ -116,8 +120,16 @@ public abstract class TileEntityFoundryBase extends TileEntity implements ICruci
 		this.amount = this.getCapacity();
 		
 		stack.amount -= required;
+		this.markMaterialMutation(oldType, oldAmount);
 		
 		return stack;
+	}
+
+	protected void markMaterialMutation(NTMMaterial oldType, int oldAmount) {
+		if(oldType != this.type || oldAmount != this.amount) {
+			this.markDirty();
+			this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+		}
 	}
 
 	/** Standard check with no additional limitations added */

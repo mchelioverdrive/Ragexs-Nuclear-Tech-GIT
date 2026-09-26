@@ -1,6 +1,7 @@
 package com.hbm.tileentity.machine;
 
 import api.hbm.energymk2.EnergyUnits;
+import com.hbm.machine.MachineDirtyCause;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.util.fauxpointtwelve.DirPos;
@@ -12,6 +13,7 @@ public class TileEntityMachinePumpElectric extends TileEntityMachinePumpBase imp
 	
 	public long energyQuanta;
 	public static final long maxPower = 10_000;
+	private static final long operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(1_000L);
 	
 	public TileEntityMachinePumpElectric() {
 		super();
@@ -19,15 +21,11 @@ public class TileEntityMachinePumpElectric extends TileEntityMachinePumpBase imp
 	}
 	
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
-			if(worldObj.getTotalWorldTime() % 20 == 0) for(DirPos pos : getConPos()) {
-				this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			}
-		}
-		
-		super.updateEntity();
+		if(worldObj.isRemote) super.updateEntity();
+	}
+
+	@Override protected void updatePumpConnections() {
+		for(DirPos pos : getConPos()) this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 	}
 	
 	protected NBTTagCompound getSync() {
@@ -44,12 +42,12 @@ public class TileEntityMachinePumpElectric extends TileEntityMachinePumpBase imp
 
 	@Override
 	protected boolean canOperate() {
-		return energyQuanta >= 1_000 && water.getFill() < water.getMaxFill();
+		return energyQuanta >= EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts) && water.getFill() < water.getMaxFill();
 	}
 
 	@Override
 	protected void operate() {
-		this.setStoredEnergyQuanta(this.energyQuanta - 1_000);
+		this.setStoredEnergyQuanta(this.energyQuanta - EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts));
 		int pumpSpeed = water.getTankType() == Fluids.WATER ? electricSpeed : electricSpeed / nonWaterDebuff;
 		water.setFill(Math.min(water.getFill() + pumpSpeed, water.getMaxFill()));
 	}
@@ -69,5 +67,7 @@ public class TileEntityMachinePumpElectric extends TileEntityMachinePumpBase imp
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		this.markDirty();
+		if(!runtimeMachineMutation) this.markMachineDirty(MachineDirtyCause.ENERGY);
 	}
 }

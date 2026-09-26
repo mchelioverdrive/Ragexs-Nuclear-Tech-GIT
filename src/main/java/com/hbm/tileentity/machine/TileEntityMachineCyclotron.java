@@ -10,6 +10,7 @@ import com.hbm.inventory.RecipesCommon.AStack;
 import com.hbm.inventory.RecipesCommon.ComparableStack;
 import com.hbm.inventory.container.ContainerMachineCyclotron;
 import com.hbm.inventory.fluid.Fluids;
+import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.gui.GUIMachineCyclotron;
 import com.hbm.inventory.recipes.CyclotronRecipes;
@@ -17,6 +18,9 @@ import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemMachineUpgrade;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
 import com.hbm.lib.Library;
+import com.hbm.inventory.recipes.loader.SerializableRecipe;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.*;
 import com.hbm.util.CompatEnergyControl;
 import com.hbm.util.I18nUtil;
@@ -24,6 +28,7 @@ import com.hbm.util.Tuple.Pair;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.IBatteryItem;
 import api.hbm.fluid.IFluidStandardTransceiver;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.relauncher.Side;
@@ -53,6 +58,15 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 	public static final int duration = 690;
 
 	public FluidTank[] tanks;
+	private final Object[][] cachedLaneResults = new Object[3][];
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
+	private FluidType observedCoolantType;
+	private long observedRecipeRevision;
+	private static final int TASK_PROCESS = 1;
+	private static final int TASK_SLOT_MAIN = 0;
 
 	public TileEntityMachineCyclotron() {
 		super(12);
@@ -61,6 +75,7 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 		this.tanks[0] = new FluidTank(Fluids.FRESH_WATER, 32000).migrateFrom(Fluids.WATER);
 		this.tanks[1] = new FluidTank(Fluids.SPENTSTEAM, 32000);
 		this.tanks[2] = new FluidTank(Fluids.AMAT, 8000);
+		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -70,36 +85,124 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 
 	@Override
 	public void updateEntity() {
+		// Server work is driven by MachineRuntime.
+	}
 
-		if(!worldObj.isRemote) {
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20 | MachineExecutionStrategy.COARSE_100;
+	}
 
-			this.updateConnections();
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.refreshRuntimeState();
+		FluidType coolantType = tanks[0].getTankType();
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0 || observedCoolantType != coolantType) this.updateConnections();
+		observedCoolantType = coolantType;
+		observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(25);
+	}
 
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PROCESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long oldEnergy = energyQuanta;
+		int oldProgress = progress;
+		int oldCoolantFill = tanks[0].getFill();
+		int oldSteamFill = tanks[1].getFill();
+		int oldAmatFill = tanks[2].getFill();
+		int oldInventoryFingerprint = this.inventoryFingerprint();
+		if(inventoryFingerprintInitialized && oldInventoryFingerprint != observedInventoryFingerprint) this.refreshRuntimeState();
+		this.beginMachineFluidMutation();
+		runtimeEnergyMutation = true;
+		try {
 			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 9, energyQuanta, maxPower));
-
-			this.upgradeManager.checkSlots(slots, 10, 11);
-
-			if(canProcess()) {
-				progress += getSpeed();
-				this.setStoredEnergyQuanta(this.energyQuanta - getConsumption());
-
-				int convert = getCoolantConsumption();
+			if(this.canProcess()) {
+				progress += this.getSpeed();
+				this.setStoredEnergyQuanta(energyQuanta - this.getConsumption());
+				int convert = this.getCoolantConsumption();
 				tanks[0].setFill(tanks[0].getFill() - convert);
 				tanks[1].setFill(tanks[1].getFill() + convert);
-
 				if(progress >= duration) {
-					process();
+					this.process();
 					progress = 0;
+					this.refreshRuntimeState();
 					this.markDirty();
 				}
-
 			} else {
 				progress = 0;
 			}
-
-			this.sendFluid();
-			this.networkPackNT(25);
+		} finally {
+			runtimeEnergyMutation = false;
+			this.endMachineFluidMutation();
 		}
+		boolean inventoryChanged = oldInventoryFingerprint != this.inventoryFingerprint();
+		if(inventoryChanged) this.markNetworkDirty();
+		this.observeInventoryFingerprint();
+		if(oldEnergy != energyQuanta || oldProgress != progress || oldCoolantFill != tanks[0].getFill() || oldSteamFill != tanks[1].getFill() || oldAmatFill != tanks[2].getFill() || inventoryChanged) this.markDirty();
+		this.sendFluid();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(25);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(this.observeInventoryFingerprint()) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.UPGRADE | MachineDirtyCause.ENERGY);
+		} else if(cadence == 20) {
+			this.updateConnections();
+		} else if(cadence == 100) {
+			long revision = SerializableRecipe.getRegistryRevision();
+			if(revision != observedRecipeRevision) {
+				observedRecipeRevision = revision;
+				this.markMachineDirty(MachineDirtyCause.RECIPE);
+			}
+		}
+	}
+
+	private void refreshRuntimeState() {
+		this.upgradeManager.checkSlots(slots, 10, 11);
+		for(int i = 0; i < 3; i++) cachedLaneResults[i] = CyclotronRecipes.getOutput(slots[i + 3], slots[i]);
+		this.observeInventoryFingerprint();
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private boolean hasBatteryWork() {
+		if(energyQuanta >= maxPower || slots[9] == null) return false;
+		if(slots[9].getItem() == ModItems.battery_creative || slots[9].getItem() == ModItems.fusion_core_infinite) return true;
+		if(!(slots[9].getItem() instanceof IBatteryItem)) return false;
+		IBatteryItem battery = (IBatteryItem) slots[9].getItem();
+		return battery.getMaxOutputQuantaPerTick() > 0 && battery.getStoredEnergyQuanta(slots[9]) > 0;
+	}
+
+	private boolean hasFluidOutput() {
+		return tanks[1].getFill() > 0 || tanks[2].getFill() > 0;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		if(this.canProcess() || this.hasBatteryWork() || this.hasFluidOutput() || progress > 0) this.scheduleMachineTransition(now + 1L, TASK_PROCESS, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
 	}
 
 	@Override
@@ -170,7 +273,7 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 
 		for(int i = 0; i < 3; i++) {
 
-			Object[] res = CyclotronRecipes.getOutput(slots[i + 3], slots[i]);
+			Object[] res = cachedLaneResults[i];
 
 			if(res == null)
 				continue;
@@ -194,7 +297,7 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 
 		for(int i = 0; i < 3; i++) {
 
-			Object[] res = CyclotronRecipes.getOutput(slots[i + 3], slots[i]);
+			Object[] res = cachedLaneResults[i];
 
 			if(res == null)
 				continue;
@@ -291,6 +394,7 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 	public void setPlug(int index) {
 		this.plugs |= (1 << index);
 		this.markDirty();
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 
 	public boolean getPlug(int index) {
@@ -323,6 +427,7 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override

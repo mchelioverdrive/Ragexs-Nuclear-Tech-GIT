@@ -12,6 +12,7 @@ public final class MachineDirtyCause {
 	public static final int RECIPE = 1 << 6;
 	public static final int ENVIRONMENT = 1 << 7;
 	public static final int LIFECYCLE = 1 << 8;
+	public static final int UPGRADE = 1 << 9;
 
 	private MachineDirtyCause() { }
 }

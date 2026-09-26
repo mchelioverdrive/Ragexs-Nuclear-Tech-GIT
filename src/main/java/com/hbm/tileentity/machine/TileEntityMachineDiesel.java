@@ -19,6 +19,8 @@ import com.hbm.inventory.fluid.trait.FluidTrait.FluidReleaseType;
 import com.hbm.inventory.gui.GUIMachineDiesel;
 import com.hbm.items.ModItems;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IConfigurableMachine;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
@@ -40,6 +42,15 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineDiesel extends TileEntityMachinePolluting implements IEnergyProviderMK2, IFluidStandardTransceiver, IConfigurableMachine, IGUIProvider, IInfoProviderEC, IFluidCopiable {
+	private static final int TASK_GENERATE = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private boolean runtimeWaterlogged;
+	private boolean runtimeWaterStateInitialized;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
+	private FluidTank observedFuelTank;
 
 	public long energyQuanta;
 	public int soundCycle = 0;
@@ -64,6 +75,11 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 	public TileEntityMachineDiesel() {
 		super(5, 100);
 		tank = new FluidTank(Fluids.DIESEL, 4_000);
+		this.trackMachineFluidTank(tank);
+		this.trackMachineFluidTank(smoke);
+		this.trackMachineFluidTank(smoke_leaded);
+		this.trackMachineFluidTank(smoke_poison);
+		observedFuelTank = tank;
 	}
 
 	@Override
@@ -128,37 +144,127 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
+		// Fuel conversion and fluid/power logistics are driven by MachineRuntime.
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.refreshRuntimeEnvironment();
+		this.refreshInventoryFingerprint();
+		if(tank != observedFuelTank) {
+			this.trackMachineFluidTank(tank);
+			observedFuelTank = tank;
+		}
+		this.subscribeToAllAround(tank.getTankType(), this);
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		if(cadence == 5) {
+			boolean environmentChanged = this.refreshRuntimeEnvironment();
+			boolean inventoryChanged = this.observeInventoryFingerprint();
+			if(tank != observedFuelTank) {
+				this.trackMachineFluidTank(tank);
+				observedFuelTank = tank;
+				this.markMachineFluidDirty();
+			}
+			if(environmentChanged) this.markMachineDirty(MachineDirtyCause.ENVIRONMENT);
+			if(inventoryChanged) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.FLUID);
+		} else if(cadence == 20) {
+			this.subscribeToAllAround(tank.getTankType(), this);
+			this.sendRuntimeState();
+		}
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_GENERATE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.beginMachineFluidMutation();
+		runtimeEnergyMutation = true;
+		try {
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
 				this.tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 				this.sendSmoke(xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 			}
 
-			//Tank Management
-			FluidType last = tank.getTankType();
-			if(tank.setType(3, 4, slots)) this.unsubscribeToAllAround(last, this);
+			FluidType previousType = tank.getTankType();
+			if(tank.setType(3, 4, slots)) {
+				this.unsubscribeToAllAround(previousType, this);
+				this.subscribeToAllAround(tank.getTankType(), this);
+			}
 			tank.loadTank(0, 1, slots);
-			
-			this.subscribeToAllAround(tank.getTankType(), this);
+			long previousCapacity = powerCap;
+			powerCap = tank.getTankType() == Fluids.NITAN ? maxPower * 10 : maxPower;
+			if(powerCap != previousCapacity) this.markPowerNetDirty();
 
-			FluidType type = tank.getTankType();
-			if(type == Fluids.NITAN)
-				powerCap = maxPower * 10;
-			else
-				powerCap = maxPower;
-			
-			// Battery Item
 			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 2, energyQuanta, powerCap));
-
 			generate();
-
-			NBTTagCompound data = new NBTTagCompound();
-			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
-			EnergyUnits.writeCapacityQuanta(data, powerCap);
-			tank.writeToNBT(data, "t");
-			this.networkPack(data, 50);
+			this.sendRuntimeState();
+		} finally {
+			runtimeEnergyMutation = false;
+			this.endMachineFluidMutation();
 		}
+		this.refreshInventoryFingerprint();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	private boolean refreshRuntimeEnvironment() {
+		boolean current = this.isWaterlogged();
+		boolean changed = runtimeWaterStateInitialized && current != runtimeWaterlogged;
+		runtimeWaterlogged = current;
+		runtimeWaterStateInitialized = true;
+		return changed;
+	}
+
+	private boolean hasFuelCandidate() {
+		return (tank.getFill() > 0 && getEnergyQuantaFromFuel() > 0) || slots[0] != null || slots[3] != null || slots[4] != null;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		boolean smokeReady = smoke.getFill() > 0 || smoke_leaded.getFill() > 0 || smoke_poison.getFill() > 0;
+		if(this.hasFuelCandidate() || energyQuanta > 0 || smokeReady) this.scheduleMachineTransition(now + 1L, TASK_GENERATE, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_GENERATE, TASK_SLOT_MAIN);
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = this.inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private void refreshInventoryFingerprint() {
+		observedInventoryFingerprint = this.inventoryFingerprint();
+		inventoryFingerprintInitialized = true;
+	}
+
+	private void sendRuntimeState() {
+		NBTTagCompound data = new NBTTagCompound();
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+		EnergyUnits.writeCapacityQuanta(data, powerCap);
+		tank.writeToNBT(data, "t");
+		this.networkPack(data, 50);
 	}
 	
 	public void networkUnpack(NBTTagCompound data) {
@@ -197,7 +303,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 
 	public void generate() {
 		
-		if(!isWaterlogged() && hasAcceptableFuel()) {
+		if(!runtimeWaterlogged && hasAcceptableFuel()) {
 			if (tank.getFill() > 0 && breatheAir(1)) {
 				
 				if(!shutUp) {
@@ -238,6 +344,11 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
+	}
+
+	public long getPowerOutputWatts() {
+		return EnergyUnits.quantaPerTickToWatts(getEnergyQuantaFromFuel());
 	}
 
 	@Override

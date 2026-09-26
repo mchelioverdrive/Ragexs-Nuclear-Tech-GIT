@@ -7,6 +7,9 @@ import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.recipes.AlkylationRecipes;
+import com.hbm.inventory.recipes.loader.SerializableRecipe;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IPersistentNBT;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.Tuple.Triplet;
@@ -27,6 +30,14 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 	public static final long maxPower = 1_000_000;
 
 	public FluidTank[] tanks;
+	private static final int TASK_BATCH = 1;
+	private long observedRecipeRevision = -1L;
+	private long nextBatchTick = -1L;
+	private int runtimeConnectionPolls;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private FluidType cachedFeedType;
+	private Triplet<FluidStack, FluidStack, FluidStack> cachedRecipe;
 
 	public TileEntityMachineAlkylation() {
 		super(11);
@@ -36,6 +47,7 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 		this.tanks[1] = new FluidTank(Fluids.NONE, 4_000);
 		this.tanks[2] = new FluidTank(Fluids.UNSATURATEDS, 8_000);
 		this.tanks[3] = new FluidTank(Fluids.CHLORINE, 8_000);
+		for(FluidTank tank : this.tanks) this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -45,13 +57,107 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			if(this.worldObj.getTotalWorldTime() % 10 == 0) this.updateConnections();
-			
-			if(worldObj.getTotalWorldTime() % 2 == 0) alkylate();
-			
-			this.networkPackNT(25);
+		// Batch chemistry and fluid-network maintenance are owned by MachineRuntime.
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		this.refreshCachedRecipe();
+		this.configureRecipeTanks();
+		runtimeInitialized = true;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime(), 1L);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_BATCH || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		nextBatchTick = -1L;
+		if(this.canProcessBatch()) {
+			this.processBatch();
+			nextBatchTick = now + 2L;
+		}
+		this.evaluateAndSchedule(now, 2L);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(++runtimeConnectionPolls >= 2) {
+				runtimeConnectionPolls = 0;
+				this.updateConnections();
+			}
+			return;
+		}
+		if(cadence != 20) return;
+		boolean recipeChanged = observedRecipeRevision != SerializableRecipe.getRegistryRevision();
+		if(recipeChanged) {
+			observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+			cachedFeedType = null;
+			this.refreshCachedRecipe();
+		}
+		if(recipeChanged) this.markMachineDirty(MachineDirtyCause.RECIPE);
+		this.networkPackNTIfDirty(25);
+	}
+
+	private void refreshCachedRecipe() {
+		FluidType feed = tanks[0].getTankType();
+		long revision = SerializableRecipe.getRegistryRevision();
+		if(cachedFeedType != feed || observedRecipeRevision != revision) {
+			cachedFeedType = feed;
+			observedRecipeRevision = revision;
+			cachedRecipe = AlkylationRecipes.getOutput(feed);
+		}
+	}
+
+	private void configureRecipeTanks() {
+		this.beginMachineFluidMutation();
+		try {
+			if(cachedRecipe == null) {
+				tanks[2].setTankType(Fluids.NONE);
+				tanks[3].setTankType(Fluids.NONE);
+				return;
+			}
+			tanks[1].setTankType(cachedRecipe.getX().type);
+			tanks[2].setTankType(cachedRecipe.getY().type);
+			tanks[3].setTankType(cachedRecipe.getZ().type);
+		} finally { this.endMachineFluidMutation(); }
+	}
+
+	private boolean canProcessBatch() {
+		if(cachedRecipe == null || energyQuanta < 4_000L || tanks[0].getFill() < 100 || tanks[1].getFill() < cachedRecipe.getX().fill) return false;
+		return tanks[2].getFill() + cachedRecipe.getY().fill <= tanks[2].getMaxFill() && tanks[3].getFill() + cachedRecipe.getZ().fill <= tanks[3].getMaxFill();
+	}
+
+	private void processBatch() {
+		if(!this.canProcessBatch()) return;
+		this.beginMachineFluidMutation();
+		this.runtimeEnergyMutation = true;
+		try {
+			tanks[0].setFill(tanks[0].getFill() - 100);
+			tanks[1].setFill(tanks[1].getFill() - cachedRecipe.getX().fill);
+			tanks[2].setFill(tanks[2].getFill() + cachedRecipe.getY().fill);
+			tanks[3].setFill(tanks[3].getFill() + cachedRecipe.getZ().fill);
+			this.setStoredEnergyQuanta(energyQuanta - 4_000L);
+		} finally {
+			this.runtimeEnergyMutation = false;
+			this.endMachineFluidMutation();
+		}
+		this.markDirty();
+		this.markNetworkDirty();
+	}
+
+	private void evaluateAndSchedule(long now, long delay) {
+		if(this.canProcessBatch()) {
+			long due = Math.max(now + delay, nextBatchTick);
+			nextBatchTick = due;
+			this.scheduleMachineTransition(due, TASK_BATCH, 0);
+		} else {
+			this.cancelMachineTransition(TASK_BATCH, 0);
+			nextBatchTick = -1L;
 		}
 	}
 
@@ -67,34 +173,6 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 		super.deserialize(buf);
 		this.energyQuanta = buf.readLong();
 		for(int i = 0; i < tanks.length; i++) tanks[i].deserialize(buf);
-	}
-	
-	private void alkylate() {
-		
-		Triplet<FluidStack, FluidStack, FluidStack> out = AlkylationRecipes.getOutput(tanks[0].getTankType());
-		if(out == null) {
-			tanks[2].setTankType(Fluids.NONE);
-			tanks[3].setTankType(Fluids.NONE);
-			return;
-		}
-
-		tanks[1].setTankType(out.getX().type);
-		tanks[2].setTankType(out.getY().type);
-		tanks[3].setTankType(out.getZ().type);
-		
-		if(energyQuanta < 4_000) return; // 2 kJ stored
-		if(tanks[0].getFill() < 100) return;
-		if(tanks[1].getFill() < out.getX().fill) return;
-
-		if(tanks[2].getFill() + out.getY().fill > tanks[2].getMaxFill()) return;
-		if(tanks[3].getFill() + out.getZ().fill > tanks[3].getMaxFill()) return;
-
-		tanks[0].setFill(tanks[0].getFill() - 100);
-		tanks[1].setFill(tanks[1].getFill() - out.getX().fill);
-		tanks[2].setFill(tanks[2].getFill() + out.getY().fill);
-		tanks[3].setFill(tanks[3].getFill() + out.getZ().fill);
-		
-		this.setStoredEnergyQuanta(this.energyQuanta - 4_000);
 	}
 	
 	private void updateConnections() {
@@ -131,6 +209,9 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 		super.readFromNBT(nbt);
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		for(int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "t" + i);
+		runtimeInitialized = false;
+		cachedFeedType = null;
+		nextBatchTick = -1L;
 	}
 	
 	@Override
@@ -169,6 +250,7 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 	@Override public long getEnergyCapacityQuanta() { return maxPower; }
 	@Override public FluidTank[] getAllTanks() { return tanks; }

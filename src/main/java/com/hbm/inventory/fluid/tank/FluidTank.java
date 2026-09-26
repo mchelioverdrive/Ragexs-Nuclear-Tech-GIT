@@ -25,6 +25,9 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MathHelper;
 
 public class FluidTank {
+	public interface ChangeListener {
+		void onTankChanged(FluidTank tank);
+	}
 
 	public static final List<FluidLoadingHandler> loadingHandlers = new ArrayList<FluidLoadingHandler>();
 	public static final Set<Item> noDualUnload = new HashSet<Item>();
@@ -41,6 +44,7 @@ public class FluidTank {
 	int pressure = 0;
 	private FluidType legacyType;
 	private FluidType migrationTarget;
+	private transient ChangeListener changeListener;
 
 	public FluidTank(FluidType type, int maxFluid) {
 		this.type = type;
@@ -59,15 +63,27 @@ public class FluidTank {
 	}
 
 	public FluidTank withPressure(int pressure) {
-
-		if(this.pressure != pressure) this.setFill(0);
-
+		boolean changed = this.pressure != pressure;
+		if(changed && this.fluid != 0) this.fluid = 0;
 		this.pressure = pressure;
+		if(changed) this.notifyChanged();
 		return this;
 	}
 
+	/** Attaches an optional owner callback for runtime-managed machine tanks. */
+	public FluidTank setChangeListener(ChangeListener listener) {
+		this.changeListener = listener;
+		return this;
+	}
+
+	private void notifyChanged() {
+		if(this.changeListener != null) this.changeListener.onTankChanged(this);
+	}
+
 	public void setFill(int i) {
+		if(this.fluid == i) return;
 		fluid = i;
+		this.notifyChanged();
 	}
 
 	public void setTankType(FluidType type) {
@@ -80,7 +96,8 @@ public class FluidTank {
 			return;
 
 		this.type = type;
-		this.setFill(0);
+		this.fluid = 0;
+		this.notifyChanged();
 	}
 
 	public FluidType getTankType() {
@@ -100,13 +117,16 @@ public class FluidTank {
 	}
 
 	public int changeTankSize(int size) {
+		boolean changed = this.maxFluid != size;
 		maxFluid = size;
 
 		if(fluid > maxFluid) {
 			int dif = fluid - maxFluid;
 			fluid = maxFluid;
+			if(changed || dif > 0) this.notifyChanged();
 			return dif;
 		}
+		if(changed) this.notifyChanged();
 
 		return 0;
 	}
@@ -170,18 +190,16 @@ public class FluidTank {
 				FluidType newType = id.getType(null, 0, 0, 0, slots[in]);
 
 				if(type != newType) {
-					type = newType;
-					fluid = 0;
+					this.setTankType(newType);
 					return true;
 				}
 
 			} else if(slots[out] == null) {
 				FluidType newType = id.getType(null, 0, 0, 0, slots[in]);
 				if(type != newType) {
-					type = newType;
+					this.setTankType(newType);
 					slots[out] = slots[in].copy();
 					slots[in] = null;
-					fluid = 0;
 					return true;
 				}
 			}

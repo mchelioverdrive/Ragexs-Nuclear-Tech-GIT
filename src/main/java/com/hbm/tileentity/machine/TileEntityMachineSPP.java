@@ -3,6 +3,8 @@ package com.hbm.tileentity.machine;
 import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.CompatEnergyControl;
 
@@ -12,6 +14,10 @@ import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 
 public class TileEntityMachineSPP extends TileEntityLoadedBase implements IEnergyProviderMK2, IInfoProviderEC {
+	private static final int TASK_GENERATE = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
 	
 	public long energyQuanta;
 	public static final long maxPower = 100000;
@@ -20,24 +26,49 @@ public class TileEntityMachineSPP extends TileEntityLoadedBase implements IEnerg
 	
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
+		// Generation and export are driven by MachineRuntime.
+	}
 
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		if(energyQuanta > 0) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_GENERATE, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_GENERATE, TASK_SLOT_MAIN);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		int previousGeneration = gen;
+		gen = checkStructure() * 15;
+		if(gen != previousGeneration) this.markDirty();
+		if(gen > 0 || energyQuanta > 0) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_GENERATE, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_GENERATE, TASK_SLOT_MAIN);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_GENERATE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		runtimeEnergyMutation = true;
+		try {
 			this.tryProvide(worldObj, xCoord + 1, yCoord, zCoord, Library.POS_X);
 			this.tryProvide(worldObj, xCoord - 1, yCoord, zCoord, Library.NEG_X);
 			this.tryProvide(worldObj, xCoord, yCoord, zCoord + 1, Library.POS_Z);
 			this.tryProvide(worldObj, xCoord, yCoord, zCoord - 1, Library.NEG_Z);
 			this.tryProvide(worldObj, xCoord, yCoord - 1, zCoord, Library.NEG_Y);
-			
-			if(worldObj.getTotalWorldTime() % 20 == 0)
-				gen = checkStructure() * 15;
-			
-			if(gen > 0)
-				this.setStoredEnergyQuanta(this.energyQuanta + gen);
-			if(energyQuanta > maxPower)
-				this.setStoredEnergyQuanta(maxPower);
+			if(gen > 0) this.setStoredEnergyQuanta(this.energyQuanta + gen);
+			if(energyQuanta > maxPower) this.setStoredEnergyQuanta(maxPower);
+		} finally {
+			runtimeEnergyMutation = false;
 		}
-		
+		if(gen > 0 || energyQuanta > 0) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_GENERATE, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_GENERATE, TASK_SLOT_MAIN);
+	}
+
+	public long getPowerOutputWatts() {
+		return EnergyUnits.quantaPerTickToWatts(this.gen);
 	}
 	
 	public int checkStructure() {
@@ -85,6 +116,7 @@ public class TileEntityMachineSPP extends TileEntityLoadedBase implements IEnerg
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineDirty(MachineDirtyCause.ENERGY);
 	}
 
 	@Override

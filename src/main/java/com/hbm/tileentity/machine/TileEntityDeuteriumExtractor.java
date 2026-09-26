@@ -3,6 +3,8 @@ package com.hbm.tileentity.machine;
 import api.hbm.energymk2.EnergyUnits;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.TileEntityMachineBase;
 
@@ -15,12 +17,16 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 	
 	public long energyQuanta = 0;
 	public FluidTank[] tanks;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private static final int TASK_PROCESS = 1;
 
 	public TileEntityDeuteriumExtractor() {
 		super(0);
 		tanks = new FluidTank[2];
 		tanks[0] = new FluidTank(Fluids.LIGHT_WATER, 1000).migrateFrom(Fluids.WATER);
 		tanks[1] = new FluidTank(Fluids.HEAVYWATER, 100);
+		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -30,30 +36,64 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
-			this.updateConnections();
-			
-			if(hasPower()&& this.energyQuanta > 200 && hasEnoughWater() && tanks[1].getMaxFill() > tanks[1].getFill()) {
+		// Fluid processing and output transfer are driven by MachineRuntime.
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0) this.updateConnections();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(50);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PROCESS || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		boolean fluidChanged = false;
+		this.beginMachineFluidMutation();
+		runtimeEnergyMutation = true;
+		try {
+			if(this.canProcess()) {
 				int convert = Math.min(tanks[1].getMaxFill(), tanks[0].getFill()) / 50;
 				convert = Math.min(convert, tanks[1].getMaxFill() - tanks[1].getFill());
-				
-				tanks[0].setFill(tanks[0].getFill() - convert * 50); //dividing first, then multiplying, will remove any rounding issues
+				tanks[0].setFill(tanks[0].getFill() - convert * 50);
 				tanks[1].setFill(tanks[1].getFill() + convert);
-				this.setStoredEnergyQuanta(this.energyQuanta - this.getEnergyCapacityQuanta() / 100);
+				this.setStoredEnergyQuanta(energyQuanta - getEnergyCapacityQuanta() / 100);
+				fluidChanged = convert > 0;
 			}
-			
-			this.subscribeToAllAround(tanks[0].getTankType(), this);
-			this.sendFluidToAll(tanks[1], this);
-
-			NBTTagCompound data = new NBTTagCompound();
-			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
-			tanks[0].writeToNBT(data, "water");
-			tanks[1].writeToNBT(data, "heavyWater");
-			
-			this.networkPack(data, 50);
+			if(tanks[1].getFill() > 0) this.sendFluidToAll(tanks[1], this);
+		} finally {
+			runtimeEnergyMutation = false;
+			this.endMachineFluidMutation();
 		}
+		if(fluidChanged) {
+			this.markDirty();
+			this.markNetworkDirty();
+		}
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(50);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote || cadence != 20) return;
+		this.updateConnections();
+		this.subscribeToAllAround(tanks[0].getTankType(), this);
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(50);
+	}
+
+	private boolean canProcess() {
+		return this.hasPower() && energyQuanta > 200 && this.hasEnoughWater() && tanks[1].getMaxFill() > tanks[1].getFill();
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		if(this.canProcess() || tanks[1].getFill() > 0) this.scheduleMachineTransition(now + 1L, TASK_PROCESS, 0);
+		else this.cancelMachineTransition(TASK_PROCESS, 0);
 	}
 	
 	protected void updateConnections() {
@@ -99,6 +139,8 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		this.markNetworkDirty();
+		if(!runtimeEnergyMutation) this.markMachineDirty(MachineDirtyCause.ENERGY);
 	}
 
 	@Override

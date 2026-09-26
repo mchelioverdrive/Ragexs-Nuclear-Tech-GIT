@@ -8,6 +8,8 @@ import com.hbm.explosion.ExplosionLarge;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.ParticleUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
@@ -21,6 +23,10 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MathHelper;
 
 public class TileEntityMachineGasDock extends TileEntityMachineBase implements IFluidStandardTransceiver {
+	private static final int TASK_LAUNCH_CYCLE = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean isJool;
 
 	public FluidTank[] tanks;
 	
@@ -40,7 +46,8 @@ public class TileEntityMachineGasDock extends TileEntityMachineBase implements I
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		nbt.setBoolean("hasRocker", hasRocket);
+		hasRocket = nbt.hasKey("hasRocker") ? nbt.getBoolean("hasRocker") : true;
+		launchTicks = nbt.getInteger("launchTicks");
 		tanks[0].readFromNBT(nbt, "gas");
 		tanks[1].readFromNBT(nbt, "f1");
 		tanks[2].readFromNBT(nbt, "f2");
@@ -49,7 +56,8 @@ public class TileEntityMachineGasDock extends TileEntityMachineBase implements I
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
-		nbt.getBoolean("hasRocker");
+		nbt.setBoolean("hasRocker", hasRocket);
+		nbt.setInteger("launchTicks", launchTicks);
 
 		tanks[0].writeToNBT(nbt, "gas");
 		tanks[1].writeToNBT(nbt, "f1");
@@ -59,32 +67,7 @@ public class TileEntityMachineGasDock extends TileEntityMachineBase implements I
 
 	@Override
 	public void updateEntity() {
-		if(!worldObj.isRemote) {
-			updateConnections();
-
-			for(DirPos pos : getConPos()) {
-				if(tanks[0].getFill() > 0) {
-					this.sendFluid(tanks[0], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				}
-			}
-
-			CelestialBody body = CelestialBody.getTarget(worldObj, xCoord, zCoord).body.getPlanet();
-
-			launchTicks = MathHelper.clamp_int(launchTicks + (hasRocket ? -1 : 1), hasRocket ? -20 : 0, 100);
-			if(body == CelestialBody.getBody("jool") && hasFuel()) {
-				if(launchTicks <= -20) {
-					hasRocket = false;
-				} else if(launchTicks >= 100) {
-					hasRocket = true;
-				}
-				
-				if(launchTicks <= -20) {
-					collectGas();
-				}
-			}
-
-			this.networkPackNT(150);
-		} else {
+		if(worldObj.isRemote) {
 			launchTicks = MathHelper.clamp_int(launchTicks + (hasRocket ? -1 : 1), hasRocket ? -20 : 0, 100);
 			if(launchTicks > 0 && launchTicks < 100) {
 				ParticleUtil.spawnGasFlame(worldObj, xCoord + 0.5, yCoord + 0.5 + launchTicks, zCoord + 0.5, 0.0, -1.0, 0.0);
@@ -94,6 +77,54 @@ public class TileEntityMachineGasDock extends TileEntityMachineBase implements I
 				}
 			}
 		}
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) isJool = CelestialBody.getTarget(worldObj, xCoord, zCoord).body.getPlanet() == CelestialBody.getBody("jool");
+		runtimeInitialized = true;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(150);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_LAUNCH_CYCLE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		boolean oldRocket = hasRocket;
+		int oldLaunchTicks = launchTicks;
+		int oldGasFill = tanks[0].getFill();
+		int oldHydrogenFill = tanks[1].getFill();
+		int oldOxygenFill = tanks[2].getFill();
+		this.beginMachineFluidMutation();
+		try {
+			for(DirPos pos : getConPos()) if(tanks[0].getFill() > 0) this.sendFluid(tanks[0], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			launchTicks = MathHelper.clamp_int(launchTicks + (hasRocket ? -1 : 1), hasRocket ? -20 : 0, 100);
+			if(isJool && hasFuel()) {
+				if(launchTicks <= -20) hasRocket = false;
+				else if(launchTicks >= 100) hasRocket = true;
+				if(launchTicks <= -20) this.collectGas();
+			}
+		} finally { this.endMachineFluidMutation(); }
+		if(oldRocket != hasRocket || oldLaunchTicks != launchTicks || oldGasFill != tanks[0].getFill() || oldHydrogenFill != tanks[1].getFill() || oldOxygenFill != tanks[2].getFill()) {
+			this.markDirty();
+			this.markNetworkDirty();
+		}
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(150);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote || cadence != 20) return;
+		this.updateConnections();
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(runtimeInitialized) this.scheduleMachineTransition(now + 1L, TASK_LAUNCH_CYCLE, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_LAUNCH_CYCLE, TASK_SLOT_MAIN);
 	}
 
 	@Override

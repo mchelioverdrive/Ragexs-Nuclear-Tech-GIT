@@ -23,6 +23,8 @@ import com.hbm.inventory.gui.GUIMachineRefinery;
 import com.hbm.inventory.recipes.RefineryRecipes;
 import com.hbm.items.ModItems;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.main.MainRegistry;
 import com.hbm.sound.AudioWrapper;
 import com.hbm.tileentity.*;
@@ -52,6 +54,17 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 	public static final int maxSulfur = 100;
 	public static final long maxPower = 1000;
 	public FluidTank[] tanks;
+	private static final int TASK_ACCOUNTING = 1;
+	private static final int TASK_SLOT_MAIN = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private long operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(5L);
+	private long observedPower;
+	private int observedInventoryFingerprint;
+	private boolean inventoryFingerprintInitialized;
+	private FluidType cachedFeedType;
+	private Quintet<FluidStack, FluidStack, FluidStack, FluidStack, ItemStack> cachedRecipe;
+	private FluidStack[] cachedFractions;
 
 	public boolean hasExploded = false;
 	public boolean onFire = false;
@@ -71,6 +84,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 		tanks[2] = new FluidTank(Fluids.NAPHTHA, 24_000);
 		tanks[3] = new FluidTank(Fluids.LIGHTOIL, 24_000);
 		tanks[4] = new FluidTank(Fluids.PETROLEUM, 24_000);
+		for(FluidTank tank : this.tanks) this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -96,6 +110,8 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 		sulfur = nbt.getInteger("sulfur");
 		hasExploded = nbt.getBoolean("exploded");
 		onFire = nbt.getBoolean("onFire");
+		runtimeInitialized = false;
+		cachedFeedType = null;
 	}
 
 	@Override
@@ -132,9 +148,6 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 	public void updateEntity() {
 
 		if(!worldObj.isRemote) {
-
-			this.isOn = false;
-
 			if(this.getBlockMetadata() < 12) {
 				ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata()).getRotation(ForgeDirection.DOWN);
 				worldObj.removeTileEntity(xCoord, yCoord, zCoord);
@@ -146,57 +159,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 				return;
 			}
 
-			if(!this.hasExploded) {
-
-				this.updateConnections();
-
-				this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
-				tanks[0].setType(12, slots);
-				tanks[0].loadTank(1, 2, slots);
-
-				refine();
-
-				tanks[1].unloadTank(3, 4, slots);
-				tanks[2].unloadTank(5, 6, slots);
-				tanks[3].unloadTank(7, 8, slots);
-				tanks[4].unloadTank(9, 10, slots);
-
-				for(DirPos pos : getConPos()) {
-					for(int i = 1; i < 5; i++) {
-						if(tanks[i].getFill() > 0) {
-							this.sendFluid(tanks[i], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-						}
-					}
-				}
-			} else if(onFire){
-
-				boolean hasFuel = false;
-				for(int i = 0; i < 5; i++) {
-					if(tanks[i].getFill() > 0) {
-						tanks[i].setFill(Math.max(tanks[i].getFill() - 10, 0));
-						hasFuel = true;
-					}
-				}
-
-				if(hasFuel) {
-					List<Entity> affected = worldObj.getEntitiesWithinAABB(Entity.class, AxisAlignedBB.getBoundingBox(xCoord - 1.5, yCoord, zCoord - 1.5, xCoord + 2.5, yCoord + 8, zCoord + 2.5));
-					for(Entity e : affected) e.setFire(5);
-					Random rand = worldObj.rand;
-					ParticleUtil.spawnGasFlame(worldObj, xCoord + rand.nextDouble(), yCoord + 1.5 + rand.nextDouble() * 3, zCoord + rand.nextDouble(), rand.nextGaussian() * 0.05, 0.1, rand.nextGaussian() * 0.05);
-
-					if(worldObj.getTotalWorldTime() % 20 == 0) {
-						PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 3);
-					}
-				}
-			}
-
-			NBTTagCompound data = new NBTTagCompound();
-			EnergyUnits.writeEnergyQuanta(data, this.energyQuanta);
-			for(int i = 0; i < 5; i++) tanks[i].writeToNBT(data, "" + i);
-			data.setBoolean("exploded", hasExploded);
-			data.setBoolean("onFire", onFire);
-			data.setBoolean("isOn", this.isOn);
-			this.networkPack(data, 150);
+			if(this.hasExploded && this.onFire) this.updateFireSimulation();
 		} else {
 
 			if(this.isOn) audioTime = 20;
@@ -223,6 +186,166 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 				}
 			}
 		}
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(hasExploded) {
+			isOn = false;
+			this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+			runtimeInitialized = true;
+			return;
+		}
+		this.refreshCachedRecipe();
+		this.configureRecipeTanks();
+		runtimeInitialized = true;
+		observedPower = energyQuanta;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_ACCOUNTING || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized || hasExploded) return;
+		long now = worldObj.getTotalWorldTime();
+		long beforePower = energyQuanta;
+		this.runtimeEnergyMutation = true;
+		try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower)); }
+		finally { this.runtimeEnergyMutation = false; }
+		isOn = this.canRefine();
+		if(isOn) this.processRefiningStep();
+		if(beforePower != energyQuanta) {
+			this.markDirty();
+			this.markNetworkDirty();
+		}
+		this.observedPower = energyQuanta;
+		this.evaluateAndSchedule(now);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(!hasExploded) {
+				boolean fluidChanged = tanks[0].setType(12, slots);
+				fluidChanged |= tanks[0].loadTank(1, 2, slots);
+				fluidChanged |= tanks[1].unloadTank(3, 4, slots);
+				fluidChanged |= tanks[2].unloadTank(5, 6, slots);
+				fluidChanged |= tanks[3].unloadTank(7, 8, slots);
+				fluidChanged |= tanks[4].unloadTank(9, 10, slots);
+				boolean inventoryChanged = this.observeInventoryFingerprint();
+				if(fluidChanged || inventoryChanged) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE);
+				for(DirPos pos : getConPos()) for(int i = 1; i < 5; i++) if(tanks[i].getFill() > 0) this.sendFluid(tanks[i], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			}
+			return;
+		}
+		if(cadence != 20) return;
+		if(!hasExploded) this.updateConnections();
+		if(observedPower != energyQuanta) this.markMachineEnergyDirty();
+		NBTTagCompound data = new NBTTagCompound();
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+		for(int i = 0; i < 5; i++) tanks[i].writeToNBT(data, "" + i);
+		data.setBoolean("exploded", hasExploded);
+		data.setBoolean("onFire", onFire);
+		data.setBoolean("isOn", isOn);
+		this.networkPack(data, 150);
+	}
+
+	private void refreshCachedRecipe() {
+		FluidType feed = tanks[0].getTankType();
+		if(cachedFeedType != feed) {
+			cachedFeedType = feed;
+			cachedRecipe = RefineryRecipes.getRefinery(feed);
+			cachedFractions = cachedRecipe == null ? null : new FluidStack[] { cachedRecipe.getV(), cachedRecipe.getW(), cachedRecipe.getX(), cachedRecipe.getY() };
+		}
+	}
+
+	private void configureRecipeTanks() {
+		this.refreshCachedRecipe();
+		this.beginMachineFluidMutation();
+		try {
+			for(int i = 0; i < 4; i++) tanks[i + 1].setTankType(cachedFractions == null ? Fluids.NONE : cachedFractions[i].type);
+		} finally { this.endMachineFluidMutation(); }
+	}
+
+	private boolean canRefine() {
+		if(hasExploded || cachedFractions == null || energyQuanta < EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts) || tanks[0].getFill() < 100) return false;
+		for(int i = 0; i < 4; i++) if(tanks[i + 1].getFill() + cachedFractions[i].fill > tanks[i + 1].getMaxFill()) return false;
+		return true;
+	}
+
+	private void processRefiningStep() {
+		if(!this.canRefine()) return;
+		this.beginMachineFluidMutation();
+		this.runtimeEnergyMutation = true;
+		try {
+			tanks[0].setFill(tanks[0].getFill() - 100);
+			for(int i = 0; i < 4; i++) tanks[i + 1].setFill(tanks[i + 1].getFill() + cachedFractions[i].fill);
+			this.setStoredEnergyQuanta(energyQuanta - EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts));
+		} finally {
+			this.runtimeEnergyMutation = false;
+			this.endMachineFluidMutation();
+		}
+		sulfur++;
+		if(sulfur >= maxSulfur) {
+			sulfur -= maxSulfur;
+			ItemStack out = cachedRecipe.getZ();
+			if(out != null) {
+				if(slots[11] == null) slots[11] = out.copy();
+				else if(out.getItem() == slots[11].getItem() && out.getItemDamage() == slots[11].getItemDamage() && slots[11].stackSize + out.stackSize <= slots[11].getMaxStackSize()) slots[11].stackSize += out.stackSize;
+			}
+			this.markDirty();
+			this.markNetworkDirty();
+			this.markMachineDirty(MachineDirtyCause.INVENTORY);
+		}
+		if(worldObj.getTotalWorldTime() % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 5);
+	}
+
+	private boolean hasBatteryWork() {
+		if(energyQuanta >= maxPower || slots[0] == null) return false;
+		if(slots[0].getItem() == ModItems.battery_creative || slots[0].getItem() == ModItems.fusion_core_infinite) return true;
+		if(!(slots[0].getItem() instanceof api.hbm.energymk2.IBatteryItem)) return false;
+		api.hbm.energymk2.IBatteryItem battery = (api.hbm.energymk2.IBatteryItem) slots[0].getItem();
+		return battery.getMaxOutputQuantaPerTick() > 0 && battery.getStoredEnergyQuanta(slots[0]) > 0;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		boolean canRun = this.canRefine();
+		isOn = canRun;
+		if(canRun || this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int hash = 1;
+		for(int i = 0; i < slots.length; i++) {
+			ItemStack stack = slots[i];
+			int tag = stack == null || stack.getItem() instanceof api.hbm.energymk2.IBatteryItem || stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode();
+			int slot = stack == null ? 0 : 31 * (31 * (31 * System.identityHashCode(stack.getItem()) + stack.getItemDamage()) + stack.stackSize) + tag;
+			hash = 31 * hash + slot;
+		}
+		boolean changed = inventoryFingerprintInitialized && hash != observedInventoryFingerprint;
+		observedInventoryFingerprint = hash;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private void updateFireSimulation() {
+		boolean hasFuel = false;
+		this.beginMachineFluidMutation();
+		try {
+			for(int i = 0; i < 5; i++) if(tanks[i].getFill() > 0) {
+				tanks[i].setFill(Math.max(tanks[i].getFill() - 10, 0));
+				hasFuel = true;
+			}
+		} finally { this.endMachineFluidMutation(); }
+		if(!hasFuel) return;
+		List<Entity> affected = worldObj.getEntitiesWithinAABB(Entity.class, AxisAlignedBB.getBoundingBox(xCoord - 1.5, yCoord, zCoord - 1.5, xCoord + 2.5, yCoord + 8, zCoord + 2.5));
+		for(Entity entity : affected) entity.setFire(5);
+		Random rand = worldObj.rand;
+		ParticleUtil.spawnGasFlame(worldObj, xCoord + rand.nextDouble(), yCoord + 1.5 + rand.nextDouble() * 3, zCoord + rand.nextDouble(), rand.nextGaussian() * 0.05, 0.1, rand.nextGaussian() * 0.05);
+		if(worldObj.getTotalWorldTime() % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 3);
 	}
 
 	@Override
@@ -262,56 +385,6 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 		this.isOn = nbt.getBoolean("isOn");
 	}
 
-	private void refine() {
-		Quintet<FluidStack, FluidStack, FluidStack, FluidStack, ItemStack> refinery = RefineryRecipes.getRefinery(tanks[0].getTankType());
-		if(refinery == null) {
-			for(int i = 1; i < 5; i++) tanks[i].setTankType(Fluids.NONE);
-			return;
-		}
-
-		FluidStack[] stacks = new FluidStack[] {refinery.getV(), refinery.getW(), refinery.getX(), refinery.getY()};
-
-		for(int i = 0; i < stacks.length; i++) tanks[i + 1].setTankType(stacks[i].type);
-
-		if(energyQuanta < 5 || tanks[0].getFill() < 100) return;
-
-		for(int i = 0; i < stacks.length; i++) {
-			if(tanks[i + 1].getFill() + stacks[i].fill > tanks[i + 1].getMaxFill()) {
-				return;
-			}
-		}
-
-		this.isOn = true;
-		tanks[0].setFill(tanks[0].getFill() - 100);
-
-		for(int i = 0; i < stacks.length; i++) tanks[i + 1].setFill(tanks[i + 1].getFill() + stacks[i].fill);
-
-		this.sulfur++;
-
-		if(this.sulfur >= maxSulfur) {
-			this.sulfur -= maxSulfur;
-
-			ItemStack out = refinery.getZ();
-
-			if(out != null) {
-
-				if(slots[11] == null) {
-					slots[11] = out.copy();
-				} else {
-
-					if(out.getItem() == slots[11].getItem() && out.getItemDamage() == slots[11].getItemDamage() && slots[11].stackSize + out.stackSize <= slots[11].getMaxStackSize()) {
-						slots[11].stackSize += out.stackSize;
-					}
-				}
-			}
-
-			this.markDirty();
-		}
-
-		if(worldObj.getTotalWorldTime() % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 5);
-		this.setStoredEnergyQuanta(this.energyQuanta - 5);
-	}
-
 	private void updateConnections() {
 		for(DirPos pos : getConPos()) {
 			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
@@ -341,6 +414,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override
@@ -393,6 +467,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 		this.hasExploded = true;
 		this.onFire = true;
 		this.markChanged();
+		this.markMachineDirty(MachineDirtyCause.ENVIRONMENT | MachineDirtyCause.LIFECYCLE);
 	}
 
 	@Override
@@ -402,6 +477,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 		if(type == EnumExtinguishType.FOAM || type == EnumExtinguishType.CO2) {
 			this.onFire = false;
 			this.markChanged();
+			this.markMachineDirty(MachineDirtyCause.ENVIRONMENT);
 			return;
 		}
 
@@ -436,6 +512,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 	public void repair() {
 		this.hasExploded = false;
 		this.markChanged();
+		this.markMachineDirty(MachineDirtyCause.LIFECYCLE | MachineDirtyCause.FLUID | MachineDirtyCause.ENERGY);
 	}
 
 	@Override

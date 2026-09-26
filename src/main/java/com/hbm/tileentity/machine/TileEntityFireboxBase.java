@@ -8,6 +8,8 @@ import com.hbm.handler.pollution.PollutionHandler.PollutionType;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.items.ItemEnums.EnumAshType;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.module.ModuleBurnTime;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachinePolluting;
@@ -19,6 +21,7 @@ import api.hbm.tile.IHeatSource;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -27,6 +30,9 @@ import net.minecraft.util.MathHelper;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting implements IFluidStandardSender, IGUIProvider, IHeatSource {
+
+	protected static final int TASK_SIMULATE = 1;
+	protected static final int TASK_SLOT_MAIN = 0;
 
 	public int maxBurnTime;
 	public int burnTime;
@@ -38,11 +44,101 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 	public float prevDoorAngle = 0;
 
 	public int heatEnergy;
+	private boolean waterlogged;
+	private boolean waterloggedInitialized;
+	private boolean fuelFingerprintInitialized;
+	private int observedFuelFingerprint;
 
 
 	public TileEntityFireboxBase() {
 		super(2, 50);
 	}
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) {
+			this.refreshWaterlogged(false);
+			this.observeFuelInventory();
+		}
+		if((causes & MachineDirtyCause.INVENTORY) != 0) this.observeFuelInventory();
+		if(this.hasContinuousWork() || this.hasFuelItems() || this.hasAdditionalRuntimeWork()) {
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
+		}
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_SIMULATE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote) return;
+		this.beforeFireboxSimulationTick();
+		this.simulateFireboxTick();
+		if(this.hasContinuousWork()) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			this.refreshWaterlogged(true);
+			int fingerprint = this.fuelInventoryFingerprint();
+			if(fuelFingerprintInitialized && fingerprint != observedFuelFingerprint) this.markMachineDirty(MachineDirtyCause.INVENTORY);
+			this.observedFuelFingerprint = fingerprint;
+			this.fuelFingerprintInitialized = true;
+			if(this.hasFuelItems() || this.hasAdditionalRuntimeWork()) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
+		} else if(cadence == 20) {
+			this.networkPackNTIfDirty(50);
+		}
+	}
+
+	private void refreshWaterlogged(boolean notify) {
+		boolean current = this.isWaterlogged();
+		boolean changed = waterloggedInitialized && waterlogged != current;
+		waterlogged = current;
+		waterloggedInitialized = true;
+		if(notify && changed) this.markMachineDirty(MachineDirtyCause.ENVIRONMENT);
+	}
+
+	private int fuelInventoryFingerprint() {
+		int hash = 1;
+		for(int slot = 0; slot < 2; slot++) {
+			ItemStack stack = slots[slot];
+			if(stack == null) {
+				hash = 31 * hash;
+				continue;
+			}
+			hash = 31 * hash + Item.getIdFromItem(stack.getItem());
+			hash = 31 * hash + stack.getItemDamage();
+			hash = 31 * hash + stack.stackSize;
+			if(stack.hasTagCompound()) hash = 31 * hash + stack.getTagCompound().hashCode();
+		}
+		return hash;
+	}
+
+	private void observeFuelInventory() {
+		this.observedFuelFingerprint = this.fuelInventoryFingerprint();
+		this.fuelFingerprintInitialized = true;
+	}
+
+	private boolean hasFuelItems() {
+		return (slots[0] != null && getModule().getBurnTime(slots[0]) > 0) || (slots[1] != null && getModule().getBurnTime(slots[1]) > 0);
+	}
+
+	private boolean hasSmoke() {
+		return smoke.getFill() > 0 || smoke_leaded.getFill() > 0 || smoke_poison.getFill() > 0;
+	}
+
+	private boolean hasContinuousWork() {
+		return burnTime > 0 || heatEnergy > 0 || wasOn || this.hasSmoke() || this.hasAdditionalRuntimeWork();
+	}
+
+	/** Hooks coupled variants into their required active simulation cadence. */
+	protected void beforeFireboxSimulationTick() { }
+	protected boolean hasAdditionalRuntimeWork() { return false; }
 
 	@Override
 	public void openInventory() {
@@ -56,98 +152,7 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 
 	@Override
 	public void updateEntity() {
-
-		if(!worldObj.isRemote) {
-			boolean canOperate = false;
-
-			for(int i = 2; i < 6; i++) {
-				ForgeDirection dir = ForgeDirection.getOrientation(i);
-				ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
-
-				for(int j = -1; j <= 1; j++) {
-					this.sendSmoke(xCoord + dir.offsetX * 2 + rot.offsetX * j, yCoord, zCoord + dir.offsetZ * 2 + rot.offsetZ * j, dir);
-				}
-			}
-
-			wasOn = false;
-
-
-			if(burnTime <= 0) {
-
-
-			if(burnTime <= 0 && !isWaterlogged()) {
-
-				canOperate = breatheAir(0);
-
-				for(int i = 0; i < 2; i++) {
-					if(slots[i] != null) {
-
-						int baseTime = getModule().getBurnTime(slots[i]);
-
-						if(baseTime > 0) {
-							int fuel = (int) (baseTime * getTimeMult());
-
-							TileEntity below = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
-
-							if(below instanceof TileEntityAshpit) {
-								TileEntityAshpit ashpit = (TileEntityAshpit) below;
-								EnumAshType type = getAshFromFuel(slots[i]);
-								if(type == EnumAshType.WOOD) ashpit.ashLevelWood += baseTime;
-								if(type == EnumAshType.COAL) ashpit.ashLevelCoal += baseTime;
-								if(type == EnumAshType.MISC) ashpit.ashLevelMisc += baseTime;
-							}
-
-							this.maxBurnTime = this.burnTime = fuel;
-							this.burnHeat = getModule().getBurnHeat(getBaseHeat(), slots[i]);
-							slots[i].stackSize--;
-
-							if(slots[i].stackSize == 0) {
-								slots[i] = slots[i].getItem().getContainerItem(slots[i]);
-							}
-
-							this.wasOn = true;
-							break;
-						}
-					}
-
-				}
-			} else {
-
-				}
-			} else if(!isWaterlogged()) {
-
-				if(this.heatEnergy < getMaxHeat()) {
-					// firebox consumes 1mB every 5 ticks, heating oven every tick
-					canOperate = breatheAir(worldObj.getTotalWorldTime() % (500 / getBaseHeat()) == 0 ? 1 : 0);
-
-					if(canOperate) {
-						burnTime--;
-						//FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
-						//we want it to produce CO just for being on, not for being used
-						if(worldObj.getTotalWorldTime() % 20 == 0) this.pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 3);
-					}
-				} else {
-					canOperate = breatheAir(0);
-				}
-
-				if(canOperate) {
-					this.wasOn = true;
-					FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
-					if(worldObj.rand.nextInt(15) == 0 && !this.muffled) {
-						worldObj.playSoundEffect(xCoord, yCoord, zCoord, "fire.fire", 1.0F, 0.5F + worldObj.rand.nextFloat() * 0.5F);
-					}
-				}
-			}
-
-			if(wasOn) {
-				this.heatEnergy = Math.min(this.heatEnergy + this.burnHeat, getMaxHeat());
-			} else {
-				this.heatEnergy = Math.max(this.heatEnergy - Math.max(this.heatEnergy / 1000, 1), 0);
-				if(canOperate) this.burnHeat = 0;
-			}
-
-			this.networkPackNT(50);
-		} else {
+		if(worldObj.isRemote) {
 			this.prevDoorAngle = this.doorAngle;
 			float swingSpeed = (doorAngle / 10F) + 3;
 
@@ -167,6 +172,73 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 				worldObj.spawnParticle("flame", x + worldObj.rand.nextDouble() * 0.5 - 0.25, y + worldObj.rand.nextDouble() * 0.25, z + worldObj.rand.nextDouble() * 0.5 - 0.25, 0, 0, 0);
 			}
 		}
+	}
+
+	private void simulateFireboxTick() {
+		int oldBurnTime = burnTime;
+		int oldBurnHeat = burnHeat;
+		int oldHeatEnergy = heatEnergy;
+		boolean oldWasOn = wasOn;
+		boolean canOperate = false;
+
+		if(hasSmoke()) {
+			for(int i = 2; i < 6; i++) {
+				ForgeDirection dir = ForgeDirection.getOrientation(i);
+				ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
+				for(int j = -1; j <= 1; j++) this.sendSmoke(xCoord + dir.offsetX * 2 + rot.offsetX * j, yCoord, zCoord + dir.offsetZ * 2 + rot.offsetZ * j, dir);
+			}
+		}
+
+		wasOn = false;
+		if(burnTime <= 0) {
+			if(!waterlogged) {
+				canOperate = breatheAir(0);
+				for(int i = 0; i < 2; i++) {
+					if(slots[i] == null) continue;
+					int baseTime = getModule().getBurnTime(slots[i]);
+					if(baseTime <= 0) continue;
+					int fuel = (int) (baseTime * getTimeMult());
+					TileEntity below = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
+					if(below instanceof TileEntityAshpit) {
+						TileEntityAshpit ashpit = (TileEntityAshpit) below;
+						EnumAshType type = getAshFromFuel(slots[i]);
+						ashpit.addAsh(type, baseTime);
+					}
+					this.maxBurnTime = this.burnTime = fuel;
+					this.burnHeat = getModule().getBurnHeat(getBaseHeat(), slots[i]);
+					slots[i].stackSize--;
+					if(slots[i].stackSize == 0) slots[i] = slots[i].getItem().getContainerItem(slots[i]);
+					this.onInventorySlotChanged(i);
+					this.wasOn = true;
+					break;
+				}
+			}
+		} else if(!waterlogged) {
+			if(this.heatEnergy < getMaxHeat()) {
+				canOperate = breatheAir(worldObj.getTotalWorldTime() % (500 / getBaseHeat()) == 0 ? 1 : 0);
+				if(canOperate) {
+					burnTime--;
+					if(worldObj.getTotalWorldTime() % 20 == 0) this.pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 3);
+				}
+			} else {
+				canOperate = breatheAir(0);
+			}
+			if(canOperate) {
+				this.wasOn = true;
+				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
+				if(worldObj.rand.nextInt(15) == 0 && !this.muffled) worldObj.playSoundEffect(xCoord, yCoord, zCoord, "fire.fire", 1.0F, 0.5F + worldObj.rand.nextFloat() * 0.5F);
+			}
+		}
+
+		if(wasOn) this.heatEnergy = Math.min(this.heatEnergy + this.burnHeat, getMaxHeat());
+		else {
+			this.heatEnergy = Math.max(this.heatEnergy - Math.max(this.heatEnergy / 1000, 1), 0);
+			if(canOperate) this.burnHeat = 0;
+		}
+
+		if(oldBurnTime != burnTime || oldBurnHeat != burnHeat || oldHeatEnergy != heatEnergy || oldWasOn != wasOn) this.markNetworkDirty();
+		this.observeFuelInventory();
+		this.networkPackNTIfDirty(50);
 	}
 
 	@Override
