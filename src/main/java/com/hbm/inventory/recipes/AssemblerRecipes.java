@@ -46,6 +46,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
 public class AssemblerRecipes extends SerializableRecipe {
+	public static long recipeGeneration;
 
 	public static HashMap<ComparableStack, AssemblerRecipe> recipes = new HashMap();
 	public static List<ComparableStack> recipeList = new ArrayList();
@@ -5351,6 +5352,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 		recipes.put(out,
 					recipe);
 		recipeList.add(out);
+		recipeGeneration++;
 	}
 
 	@Override
@@ -5367,6 +5369,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 	public void deleteRecipes() {
 		recipes.clear();
 		recipeList.clear();
+		recipeGeneration++;
 	}
 
 	@Override
@@ -5495,6 +5498,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 														amount,
 														EnumCircuitType.CAPACITOR_BOARD);
 			recipe.ingredients = news;
+			recipeGeneration++;
 		}
 	}
 

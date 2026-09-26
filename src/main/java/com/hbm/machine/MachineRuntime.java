@@ -19,6 +19,7 @@ public final class MachineRuntime {
 	private MachineRuntimeSavedData savedData;
 	private final Map<MachineKey, MachineEntry> entries = new HashMap<MachineKey, MachineEntry>();
 	private final Map<PositionKey, MachineEntry> entriesByPosition = new HashMap<PositionKey, MachineEntry>();
+	private final Map<PositionKey, TileEntityLoadedBase> retainedTransitions = new HashMap<PositionKey, TileEntityLoadedBase>();
 	private ArrayDeque<MachineEntry> dirtyQueue = new ArrayDeque<MachineEntry>();
 	private ArrayDeque<MachineEntry> dirtyExecution = new ArrayDeque<MachineEntry>();
 	private final PriorityQueue<ScheduledTransition> scheduled = new PriorityQueue<ScheduledTransition>(11, new ScheduledComparator());
@@ -39,6 +40,9 @@ public final class MachineRuntime {
 
 	void bind(TileEntityLoadedBase tile) {
 		if(unloaded || tile == null || tile.getWorldObj() != world || tile.getMachineExecutionStrategies() == MachineExecutionStrategy.LEGACY) return;
+		PositionKey position = new PositionKey(tile.xCoord, tile.yCoord, tile.zCoord);
+		TileEntityLoadedBase retained = retainedTransitions.get(position);
+		if(retained != null && retained != tile) return;
 
 		long generation = tile.getMachineLifecycleGeneration();
 		if(generation <= 0L) {
@@ -49,7 +53,6 @@ public final class MachineRuntime {
 		}
 
 		String type = tile.getMachineRuntimeType();
-		PositionKey position = new PositionKey(tile.xCoord, tile.yCoord, tile.zCoord);
 		MachineEntry entry = entriesByPosition.get(position);
 		if(entry != null && entry.binding != null && entry.binding != tile) {
 			removeEntry(entry);
@@ -79,7 +82,9 @@ public final class MachineRuntime {
 		tile.setMachineRuntimeBinding(key);
 		diagnostics.bind();
 
-		if((entry.strategies & MachineExecutionStrategy.EVENT_DRIVEN) != 0) {
+		// A retained same-instance block-state swap is not a lifecycle transition for
+		// the logical machine and must not enqueue a second reevaluation mid-callback.
+		if((entry.strategies & MachineExecutionStrategy.EVENT_DRIVEN) != 0 && !tile.isRetainingMachineRuntimeOnInvalidate()) {
 			entry.dirtyCauses |= MachineDirtyCause.LIFECYCLE;
 			if(!entry.dirtyQueued) enqueueDirty(entry);
 			diagnostics.dirtySignal(dirtyQueue.size());
@@ -91,6 +96,16 @@ public final class MachineRuntime {
 				scheduled.add(transition);
 			}
 		}
+	}
+
+	void beginRetainedTransition(TileEntityLoadedBase tile) {
+		MachineEntry entry = resolve(tile);
+		if(entry != null && entry.binding == tile) retainedTransitions.put(entry.position, tile);
+	}
+
+	void endRetainedTransition(TileEntityLoadedBase tile) {
+		PositionKey position = new PositionKey(tile.xCoord, tile.yCoord, tile.zCoord);
+		if(retainedTransitions.get(position) == tile) retainedTransitions.remove(position);
 	}
 
 	void unbind(TileEntityLoadedBase tile) {
@@ -163,6 +178,7 @@ public final class MachineRuntime {
 		}
 		entries.clear();
 		entriesByPosition.clear();
+		retainedTransitions.clear();
 		dirtyQueue.clear();
 		dirtyExecution.clear();
 		scheduled.clear();

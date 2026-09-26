@@ -240,3 +240,21 @@ INCOMPLETE:
 - Moved overworld oil, oil sand, bedrock oil, radioactive craters, Moon ice pockets, and Eve volcanoes into chunk-owned generation to reduce neighboring-chunk generation and exploration stalls.
 - Large legacy buildings, vaults, tombs, and jungle dungeons now generate in saved, chunk-sized portions with consistent seeded layouts and loot.
 - Kept small geysers, spikes, and bedrock-ore clusters within safe generation boundaries; already-generated chunks remain unchanged.
+
+2026-09-25 20:21 — Migrate Electric Furnace to the machine runtime
+
+- Opted the Electric Furnace into event-driven eligibility, typed scheduled accounting, and a deterministic 20-tick compatibility poll, removing per-tick recipe and upgrade evaluation while retaining per-tick battery, power, cooldown, progress, and pollution semantics when work requires them.
+- Persisted active operation, cooldown, effective duration/consumption, and the next accounting boundary alongside the existing power/progress keys, with lifecycle revalidation and schedule reconstruction that never simulates unloaded catch-up time.
+- Wired standard inventory, recipe, upgrade, lifecycle, and external energy mutations to cancel and reevaluate work; retained a bounded poll for direct slot/`ItemStack` mutations that bypass inventory hooks.
+- Prevented Forge's temporary TileEntity during lit/unlit block replacement from taking the retained logical generation, while preserving new generations for real destruction and replacement.
+- Preserved sided automation, vanilla recipes, input/output timing, upgrade formulas, PowerNet subscriptions, GUI synchronization cadence, soot emission timing, and the lit-state recipe-boundary behavior. Minecraft was not launched; dedicated-server and in-game lifecycle/behavior validation remains outstanding.
+- Targeted offline `compileJava` completed successfully.
+
+2026-09-25 20:51 — Migrate the regular Assembler to the machine runtime
+
+- Moved its one recipe lane to dirty eligibility evaluation and typed slot-0 accounting, keeping per-tick battery/HE use, progress, output timing, and prompt neighboring inventory transfers.
+- Skipped full ingredient/output evaluation and unnecessary neighboring input/output scans during stable work, reused direction/position descriptors, and retained a distributed 20-tick audit for direct inventory and power mutations.
+- Preserved existing power/progress NBT and added accounting, active, and template-switch state for safe load/rebind reconstruction without unloaded production.
+- Made existing assembler recipe caching notice registration and `/ntmreload` changes, and marked neighboring inventories dirty on actual direct transfers.
+- Kept the eight-lane assembly factory on its legacy loop. Dedicated-server and in-game behavior, performance, and lifecycle validation remain outstanding.
+- Targeted offline `compileJava` completed successfully.

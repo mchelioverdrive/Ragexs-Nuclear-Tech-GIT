@@ -153,24 +153,23 @@ public class MachineElectricFurnace extends BlockContainer {
 	}
 
 	public static void updateBlockState(boolean isProcessing, World world, int x, int y, int z) {
+		Block target = isProcessing ? ModBlocks.machine_electric_furnace_on : ModBlocks.machine_electric_furnace_off;
+		if(world.getBlock(x, y, z) == target) return;
+
 		int i = world.getBlockMetadata(x, y, z);
 		TileEntity entity = world.getTileEntity(x, y, z);
 		if(entity instanceof TileEntityLoadedBase) ((TileEntityLoadedBase) entity).beginRetainedMachineBlockTransition();
 		keepInventory = true;
-		
-		if(isProcessing)
-		{
-			world.setBlock(x, y, z, ModBlocks.machine_electric_furnace_on);
-		}else{
-			world.setBlock(x, y, z, ModBlocks.machine_electric_furnace_off);
-		}
-		
-		keepInventory = false;
-		world.setBlockMetadataWithNotify(x, y, z, i, 2);
-		
-		if(entity != null) {
-			entity.validate();
-			world.setTileEntity(x, y, z, entity);
+		try {
+			world.setBlock(x, y, z, target);
+			world.setBlockMetadataWithNotify(x, y, z, i, 2);
+
+			if(entity != null) {
+				entity.validate();
+				world.setTileEntity(x, y, z, entity);
+			}
+		} finally {
+			keepInventory = false;
 			if(entity instanceof TileEntityLoadedBase) ((TileEntityLoadedBase) entity).endRetainedMachineBlockTransition();
 		}
 	}

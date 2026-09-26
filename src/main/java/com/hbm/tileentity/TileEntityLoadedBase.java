@@ -102,7 +102,7 @@ public class TileEntityLoadedBase extends TileEntity implements ILoadedTile {
 	}
 
 	public final void markMachineEnergyDirty() {
-		this.markMachineDirty(MachineDirtyCause.ENERGY | MachineDirtyCause.RECIPE);
+		this.markMachineDirty(MachineDirtyCause.ENERGY);
 	}
 
 	public final void markMachineFluidDirty() {
@@ -120,10 +120,16 @@ public class TileEntityLoadedBase extends TileEntity implements ILoadedTile {
 	/** Keeps logical identity across a deliberate same-TileEntity block-state swap. */
 	public final void beginRetainedMachineBlockTransition() {
 		this.retainMachineRuntimeOnInvalidate = true;
+		MachineRuntimeManager.beginRetainedTransition(this);
 	}
 
 	public final void endRetainedMachineBlockTransition() {
+		MachineRuntimeManager.endRetainedTransition(this);
 		this.retainMachineRuntimeOnInvalidate = false;
+	}
+
+	public final boolean isRetainingMachineRuntimeOnInvalidate() {
+		return this.retainMachineRuntimeOnInvalidate;
 	}
 
 	public final long getMachineLifecycleGeneration() {

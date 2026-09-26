@@ -43,6 +43,16 @@ public final class MachineRuntimeManager {
 		if(runtime != null) runtime.remove(tile);
 	}
 
+	public static void beginRetainedTransition(TileEntityLoadedBase tile) {
+		MachineRuntime runtime = runtime(tile);
+		if(runtime != null) runtime.beginRetainedTransition(tile);
+	}
+
+	public static void endRetainedTransition(TileEntityLoadedBase tile) {
+		MachineRuntime runtime = runtime(tile);
+		if(runtime != null) runtime.endRetainedTransition(tile);
+	}
+
 	public static void markDirty(TileEntityLoadedBase tile, int causes) {
 		MachineRuntime runtime = runtime(tile);
 		if(runtime != null) runtime.markDirty(tile, causes);

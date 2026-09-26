@@ -9,8 +9,11 @@ import com.hbm.handler.pollution.PollutionHandler.PollutionType;
 import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerElectricFurnace;
 import com.hbm.inventory.gui.GUIMachineElectricFurnace;
+import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
@@ -43,6 +46,15 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	public int maxProgress = 100;
 	public int consumption = 50;
 	private int cooldown = 0;
+	private boolean operationActive;
+	private boolean cachedRecipeEligible;
+	private long nextRuntimeTick = -1L;
+	private long lastAccountingTick = Long.MIN_VALUE;
+	private boolean runtimeEnergyMutation;
+	private boolean runtimeStateInitialized;
+
+	private static final int TASK_ACCOUNTING = 1;
+	private static final int TASK_SLOT_MAIN = 0;
 
 	private static final int[] slots_io = new int[] { 0, 1, 2 };
 
@@ -74,6 +86,11 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 
 		this.power = nbt.getLong("power");
 		this.progress = nbt.getInteger("progress");
+		this.cooldown = nbt.getInteger("runtimeCooldown");
+		this.operationActive = nbt.hasKey("runtimeActive") ? nbt.getBoolean("runtimeActive") : this.progress > 0;
+		this.nextRuntimeTick = nbt.hasKey("runtimeNextTick") ? nbt.getLong("runtimeNextTick") : -1L;
+		if(nbt.hasKey("runtimeDuration")) this.maxProgress = nbt.getInteger("runtimeDuration");
+		if(nbt.hasKey("runtimeConsumption")) this.consumption = nbt.getInteger("runtimeConsumption");
 	}
 
 	@Override
@@ -81,6 +98,11 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		super.writeToNBT(nbt);
 		nbt.setLong("power", power);
 		nbt.setInteger("progress", progress);
+		nbt.setInteger("runtimeCooldown", cooldown);
+		nbt.setBoolean("runtimeActive", operationActive);
+		nbt.setLong("runtimeNextTick", nextRuntimeTick);
+		nbt.setInteger("runtimeDuration", maxProgress);
+		nbt.setInteger("runtimeConsumption", consumption);
 	}
 
 	@Override
@@ -116,123 +138,210 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	}
 
 	public boolean canProcess() {
-
-		if(slots[1] == null || cooldown > 0) {
-			return false;
-		}
-		ItemStack itemStack = FurnaceRecipes.smelting().getSmeltingResult(this.slots[1]);
-
-		if(itemStack == null) {
-			return false;
-		}
-
-		if(slots[2] == null) {
-			return true;
-		}
-
-		if(!slots[2].isItemEqual(itemStack)) {
-			return false;
-		}
-
-		if(slots[2].stackSize < getInventoryStackLimit() && slots[2].stackSize < slots[2].getMaxStackSize()) {
-			return true;
-		} else {
-			return slots[2].stackSize < itemStack.getMaxStackSize();
-		}
+		return cooldown <= 0 && this.findEligibleRecipe() != null;
 	}
 
-	private void processItem() {
-		if(canProcess()) {
-			ItemStack itemStack = FurnaceRecipes.smelting().getSmeltingResult(this.slots[1]);
+	private ItemStack findEligibleRecipe() {
+		if(slots[1] == null) return null;
+		ItemStack itemStack = FurnaceRecipes.smelting().getSmeltingResult(this.slots[1]);
 
-			if(slots[2] == null) {
-				slots[2] = itemStack.copy();
-			} else if(slots[2].isItemEqual(itemStack)) {
-				slots[2].stackSize += itemStack.stackSize;
+		if(itemStack == null) return null;
+
+		if(slots[2] == null) return itemStack;
+
+		if(!slots[2].isItemEqual(itemStack)) return null;
+
+		if(slots[2].stackSize < getInventoryStackLimit() && slots[2].stackSize < slots[2].getMaxStackSize()) {
+			return itemStack;
+		}
+		return slots[2].stackSize < itemStack.getMaxStackSize() ? itemStack : null;
+	}
+
+	private void processItem(ItemStack itemStack) {
+		if(itemStack == null || slots[1] == null) return;
+
+		if(slots[2] == null) {
+			slots[2] = itemStack.copy();
+		} else if(slots[2].isItemEqual(itemStack)) {
+			slots[2].stackSize += itemStack.stackSize;
+		}
+
+		for(int i = 1; i < 2; i++) {
+			if(slots[i].stackSize <= 0) {
+				slots[i] = new ItemStack(slots[i].getItem().setFull3D());
+			} else {
+				slots[i].stackSize--;
 			}
-
-			for(int i = 1; i < 2; i++) {
-				if(slots[i].stackSize <= 0) {
-					slots[i] = new ItemStack(slots[i].getItem().setFull3D());
-				} else {
-					slots[i].stackSize--;
-				}
-				if(slots[i].stackSize <= 0) {
-					slots[i] = null;
-				}
+			if(slots[i].stackSize <= 0) {
+				slots[i] = null;
 			}
 		}
 	}
 
 	@Override
 	public void updateEntity() {
-		boolean markDirty = false;
-
 		if(!worldObj.isRemote) {
-			long syncPower = this.power;
-			int syncMaxProgress = this.maxProgress;
-			int syncProgress = this.progress;
-
-			if(cooldown > 0) {
-				cooldown--;
-			}
-
-			this.setPower(Library.chargeTEFromItems(slots, 0, power, maxPower));
-
 			if(worldObj.getTotalWorldTime() % 40 == 0) this.updateConnections();
-
-			this.consumption = 50;
-			this.maxProgress = 100;
-
-			this.upgradeManager.checkSlotsIfDirty(slots, 3, 3);
-
-			int speedLevel = this.upgradeManager.getLevel(UpgradeType.SPEED);
-			int powerLevel = this.upgradeManager.getLevel(UpgradeType.POWER);
-
-			maxProgress -= speedLevel * 25;
-			consumption += speedLevel * 50;
-			maxProgress += powerLevel * 10;
-			consumption -= powerLevel * 15;
-
-			if(!hasPower()) {
-				cooldown = 20;
-			}
-
-			if(hasPower() && canProcess()) {
-				progress++;
-
-				this.setPower(this.power - consumption);
-
-				if(worldObj.getTotalWorldTime() % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND);
-
-				if(this.progress >= maxProgress) {
-					this.progress = 0;
-					this.processItem();
-					markDirty = true;
-				}
-			} else {
-				progress = 0;
-			}
-
-			boolean trigger = true;
-
-			if(hasPower() && canProcess() && this.progress == 0) {
-				trigger = false;
-			}
-
-			if(trigger) {
-				markDirty = true;
-				MachineElectricFurnace.updateBlockState(this.progress > 0, this.worldObj, this.xCoord, this.yCoord, this.zCoord);
-			}
-
-			if(syncPower != this.power || syncMaxProgress != this.maxProgress || syncProgress != this.progress) this.markNetworkDirty();
 			this.networkPackNTIfDirty(50);
-
-
-			if(markDirty) {
-				this.markDirty();
-			}
 		}
+	}
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public String getMachineRuntimeType() {
+		return "hbm:electric_furnace";
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.CONFIGURATION)) != 0) {
+			if(this.refreshUpgrades(false)) {
+				this.markDirty();
+				this.markNetworkDirty();
+			}
+			this.cachedRecipeEligible = this.findEligibleRecipe() != null;
+		}
+		this.runtimeStateInitialized = true;
+
+		long now = worldObj.getTotalWorldTime();
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0 && this.nextRuntimeTick > now) {
+			this.scheduleMachineTransition(this.nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+			return;
+		}
+		this.runAccountingTick(now);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_ACCOUNTING || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote) return;
+		this.nextRuntimeTick = -1L;
+		if(!this.runtimeStateInitialized) return;
+		this.runAccountingTick(worldObj.getTotalWorldTime());
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
+		boolean upgradeChanged = this.refreshUpgrades(true);
+		boolean eligible = this.findEligibleRecipe() != null;
+		boolean eligibilityChanged = eligible != this.cachedRecipeEligible;
+		this.cachedRecipeEligible = eligible;
+		if(upgradeChanged) {
+			this.markDirty();
+			this.markNetworkDirty();
+		}
+		if(upgradeChanged || eligibilityChanged || (this.hasBatteryWork() && this.nextRuntimeTick < 0L)) {
+			this.cancelAccountingTransition();
+			this.markMachineDirty((upgradeChanged ? MachineDirtyCause.CONFIGURATION : 0) | MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+		}
+	}
+
+	private void runAccountingTick(long now) {
+		if(this.lastAccountingTick == now) return;
+		this.lastAccountingTick = now;
+
+		long oldPower = this.power;
+		int oldProgress = this.progress;
+		int oldCooldown = this.cooldown;
+		boolean oldActive = this.operationActive;
+
+		if(this.cooldown > 0) this.cooldown--;
+		this.setPowerInternal(Library.chargeTEFromItems(slots, 0, power, maxPower));
+
+		if(!this.hasPower()) this.cooldown = 20;
+
+		boolean completed = false;
+		if(this.hasPower() && this.cooldown <= 0 && this.cachedRecipeEligible) {
+			this.progress++;
+			this.operationActive = true;
+			this.setPowerInternal(this.power - this.consumption);
+
+			if(now % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND);
+
+			if(this.progress >= this.maxProgress) {
+				this.progress = 0;
+				this.operationActive = false;
+				ItemStack result = this.findEligibleRecipe();
+				if(result != null) this.processItem(result);
+				this.cachedRecipeEligible = this.findEligibleRecipe() != null;
+				completed = true;
+			}
+		} else {
+			this.progress = 0;
+			this.operationActive = false;
+		}
+
+		boolean keepLitAcrossRecipeBoundary = completed && this.hasPower() && this.cooldown <= 0 && this.cachedRecipeEligible;
+		this.setVisualActive(this.operationActive || keepLitAcrossRecipeBoundary);
+
+		boolean changed = oldPower != this.power || oldProgress != this.progress || oldCooldown != this.cooldown || oldActive != this.operationActive || completed;
+		if(changed) {
+			this.markDirty();
+			this.markNetworkDirty();
+			this.networkPackNTIfDirty(50);
+		}
+
+		if(this.needsAnotherAccountingTick(completed)) {
+			this.nextRuntimeTick = now + 1L;
+			this.scheduleMachineTransition(this.nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		} else {
+			this.nextRuntimeTick = -1L;
+		}
+	}
+
+	private boolean refreshUpgrades(boolean contentAware) {
+		int oldMaxProgress = this.maxProgress;
+		int oldConsumption = this.consumption;
+		if(contentAware) this.upgradeManager.checkSlots(slots, 3, 3);
+		else this.upgradeManager.checkSlotsIfDirty(slots, 3, 3);
+
+		int speedLevel = this.upgradeManager.getLevel(UpgradeType.SPEED);
+		int powerLevel = this.upgradeManager.getLevel(UpgradeType.POWER);
+		this.maxProgress = 100 - speedLevel * 25 + powerLevel * 10;
+		this.consumption = 50 + speedLevel * 50 - powerLevel * 15;
+		return oldMaxProgress != this.maxProgress || oldConsumption != this.consumption;
+	}
+
+	private boolean needsAnotherAccountingTick(boolean completed) {
+		if(this.operationActive) return true;
+		if(this.hasBatteryWork()) return true;
+		if(this.cooldown > 0 && this.hasPower()) return true;
+		if(this.cachedRecipeEligible && this.hasPower()) return true;
+		return completed && this.cachedRecipeEligible;
+	}
+
+	private boolean hasBatteryWork() {
+		if(this.power >= maxPower || slots[0] == null) return false;
+		if(slots[0].getItem() == ModItems.battery_creative || slots[0].getItem() == ModItems.fusion_core_infinite) return true;
+		if(!(slots[0].getItem() instanceof IBatteryItem)) return false;
+		IBatteryItem battery = (IBatteryItem) slots[0].getItem();
+		return battery.getDischargeRate() > 0 && battery.getCharge(slots[0]) > 0;
+	}
+
+	private void setPowerInternal(long value) {
+		this.runtimeEnergyMutation = true;
+		try {
+			this.setPower(value);
+		} finally {
+			this.runtimeEnergyMutation = false;
+		}
+	}
+
+	private void cancelAccountingTransition() {
+		this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		this.nextRuntimeTick = -1L;
+	}
+
+	private void setVisualActive(boolean active) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(active && worldObj.getBlock(xCoord, yCoord, zCoord) == ModBlocks.machine_electric_furnace_on) return;
+		if(!active && worldObj.getBlock(xCoord, yCoord, zCoord) == ModBlocks.machine_electric_furnace_off) return;
+		MachineElectricFurnace.updateBlockState(active, worldObj, xCoord, yCoord, zCoord);
 	}
 
 	@Override
@@ -260,6 +369,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	@Override
 	protected void onInventorySlotChanged(int slot) {
 		super.onInventorySlotChanged(slot);
+		this.cancelAccountingTransition();
 		if(slot == 3) this.upgradeManager.invalidate();
 	}
 
@@ -269,7 +379,10 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		this.markNetworkDirty();
 		this.power = i;
 		this.markPowerNetDirty();
-		this.markMachineEnergyDirty();
+		if(!this.runtimeEnergyMutation) {
+			this.cancelAccountingTransition();
+			this.markMachineEnergyDirty();
+		}
 
 	}
 

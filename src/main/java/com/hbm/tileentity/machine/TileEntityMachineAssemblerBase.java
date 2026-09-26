@@ -16,6 +16,7 @@ import com.hbm.util.fauxpointtwelve.DirPos;
 import api.hbm.energymk2.IEnergyReceiverMK2;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.ISidedInventory;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -28,8 +29,10 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 	public boolean isProgressing;
 	public boolean[] needsTemplateSwitch;
 	private final ItemStack[] cachedTemplateStacks;
+	private final Item[] cachedTemplateItems;
 	private final int[] cachedTemplateMeta;
 	private final int[] cachedTemplateNbtHash;
+	private final long[] cachedRecipeGeneration;
 	private final AStack[][] cachedRecipes;
 	private final ItemStack[] cachedOutputs;
 	private final ItemStack[][] cachedOutputArrays;
@@ -48,8 +51,10 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 		maxProgress = new int[count];
 		needsTemplateSwitch = new boolean[count];
 		cachedTemplateStacks = new ItemStack[count];
+		cachedTemplateItems = new Item[count];
 		cachedTemplateMeta = new int[count];
 		cachedTemplateNbtHash = new int[count];
+		cachedRecipeGeneration = new long[count];
 		cachedRecipes = new AStack[count][];
 		cachedOutputs = new ItemStack[count];
 		cachedOutputArrays = new ItemStack[count][];
@@ -85,6 +90,16 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 	}
 
 	protected boolean canProcess(int index) {
+		int template = getTemplateIndex(index);
+		if(slots[template] == null || slots[template].getItem() != ModItems.assembly_template) return false;
+		this.resolveRecipe(index);
+		AStack[] recipe = this.cachedRecipes[index];
+		if(recipe == null || this.power < this.consumption) return false;
+		if(!hasRequiredItems(recipe, index)) return false;
+		return hasSpaceForItems(this.cachedOutputs[index], index);
+	}
+
+	protected boolean hasAssemblerInputs(int index) {
 
 		int template = getTemplateIndex(index);
 
@@ -93,16 +108,27 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 
 		this.resolveRecipe(index);
 		AStack[] recipe = this.cachedRecipes[index];
-		ItemStack output = this.cachedOutputs[index];
 
 		if(recipe == null)
 			return false;
 
-		if(this.power < this.consumption) return false;
-		if(!hasRequiredItems(recipe, index)) return false;
-		if(!hasSpaceForItems(output, index)) return false;
+		return hasRequiredItems(recipe, index);
+	}
 
-		return true;
+	protected boolean hasValidProcessInputs(int index) {
+		if(!this.hasAssemblerInputs(index)) return false;
+		return this.hasAssemblerOutputSpace(index);
+	}
+
+	protected boolean hasAssemblerOutputSpace(int index) {
+		this.resolveRecipe(index);
+		if(this.cachedRecipes[index] == null) return false;
+		return hasSpaceForItems(this.cachedOutputs[index], index);
+	}
+
+	protected int getProcessTime(int index) {
+		this.resolveRecipe(index);
+		return this.cachedProcessTimes[index];
 	}
 
 	private boolean hasRequiredItems(AStack[] recipe, int index) {
@@ -158,7 +184,8 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 		}
 	}
 
-	private void loadItems(int index) {
+	protected boolean loadItems(int index) {
+		boolean changed = false;
 
 		int template = getTemplateIndex(index);
 
@@ -185,7 +212,9 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 						if(stack != null && stack.getItem() == ModItems.assembly_template && (sided == null || sided.canExtractItem(slot, stack, 0))) {
 							slots[template] = stack.copy();
 							sided.setInventorySlotContents(slot, null);
+							inv.markDirty();
 							this.needsTemplateSwitch[index] = false;
+							changed = true;
 							break;
 						}
 					}
@@ -221,7 +250,9 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 
 											if(slots[j] != null && slots[j].stackSize < slots[j].getMaxStackSize() & InventoryUtil.doesStackDataMatch(slots[j], stack)) {
 												inv.decrStackSize(slot, 1);
+												inv.markDirty();
 												slots[j].stackSize++;
+												changed = true;
 												continue outer;
 											}
 										}
@@ -232,6 +263,8 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 												slots[j] = stack.copy();
 												slots[j].stackSize = 1;
 												inv.decrStackSize(slot, 1);
+												inv.markDirty();
+												changed = true;
 												continue outer;
 											}
 										}
@@ -245,9 +278,10 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 				}
 			}
 		}
+		return changed;
 	}
 
-	private void unloadItems(int index) {
+	protected void unloadItems(int index) {
 
 		DirPos[] positions = getOutputPositions();
 		int[] indices = getCachedSlotIndicesFromIndex(index);
@@ -285,6 +319,7 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 						if(InventoryUtil.doesStackDataMatch(out, target) && target.stackSize < target.getMaxStackSize() && target.stackSize < inv.getInventoryStackLimit()) {
 							this.decrStackSize(i, 1);
 							target.stackSize++;
+							inv.markDirty();
 							return;
 						}
 					}
@@ -300,6 +335,7 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 							ItemStack copy = out.copy();
 							copy.stackSize = 1;
 							inv.setInventorySlotContents(slot, copy);
+							inv.markDirty();
 							this.decrStackSize(i, 1);
 							return;
 						}
@@ -350,13 +386,16 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 
 	private void resolveRecipe(int index) {
 		ItemStack template = this.slots[getTemplateIndex(index)];
+		Item item = template == null ? null : template.getItem();
 		int meta = template == null ? 0 : template.getItemDamage();
 		int nbtHash = template == null || template.getTagCompound() == null ? 0 : template.getTagCompound().hashCode();
-		if(this.cachedTemplateStacks[index] == template && this.cachedTemplateMeta[index] == meta && this.cachedTemplateNbtHash[index] == nbtHash) return;
+		if(this.cachedTemplateStacks[index] == template && this.cachedTemplateItems[index] == item && this.cachedTemplateMeta[index] == meta && this.cachedTemplateNbtHash[index] == nbtHash && this.cachedRecipeGeneration[index] == AssemblerRecipes.recipeGeneration) return;
 
 		this.cachedTemplateStacks[index] = template;
+		this.cachedTemplateItems[index] = item;
 		this.cachedTemplateMeta[index] = meta;
 		this.cachedTemplateNbtHash[index] = nbtHash;
+		this.cachedRecipeGeneration[index] = AssemblerRecipes.recipeGeneration;
 		this.cachedRecipes[index] = null;
 		this.cachedOutputs[index] = null;
 		this.cachedOutputArrays[index] = null;
