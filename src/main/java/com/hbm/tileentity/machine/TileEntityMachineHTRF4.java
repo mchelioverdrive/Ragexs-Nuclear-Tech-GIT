@@ -311,7 +311,7 @@ public class TileEntityMachineHTRF4 extends TileEntityMachineBase implements IPr
 
 		for(FluidTank tank : tanks) {
 			if(tank.getFill() < fuelCost) {
-				errors.add(EnumChatFormatting.RED + I18nUtil.resolveKey(getBlockType().getUnlocalizedName() + ".name") + " - Insufficient fuel: needs " + fuelCost + "mB");
+				errors.add(EnumChatFormatting.RED + I18nUtil.resolveKey(getBlockType().getUnlocalizedName() + ".name") + " - Insufficient fuel: needs " + fuelCost + " L");
 			}
 		}
 	}

@@ -1,5 +1,7 @@
 package com.hbm.tileentity.machine.rbmk;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -460,9 +462,9 @@ public class TileEntityRBMKConsole extends TileEntityMachineBase implements ICon
 				
 			case HEATEX:
 				stats.add(EnumChatFormatting.BLUE + Fluids.fromID(this.data.getShort("type")).getLocalizedName() + " " +
-			this.data.getInteger("water") + "/" + this.data.getInteger("maxWater") + "mB");
+			FluidVolume.formatPair(this.data.getInteger("water"), this.data.getInteger("maxWater")));
 				stats.add(EnumChatFormatting.RED + Fluids.fromID(this.data.getShort("hottype")).getLocalizedName() + " " +
-			this.data.getInteger("steam") + "/" + this.data.getInteger("maxSteam") + "mB");
+			FluidVolume.formatPair(this.data.getInteger("steam"), this.data.getInteger("maxSteam")));
 				break;
 			}
 			

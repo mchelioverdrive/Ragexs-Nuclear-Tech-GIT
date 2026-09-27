@@ -1,9 +1,10 @@
 package com.hbm.inventory.gui;
 
+import com.hbm.util.ThermalUnits;
+
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
@@ -43,8 +44,8 @@ public class GUICrucible extends GuiInfoContainer {
 		drawStackInfo(crucible.wasteStack, x, y, 16, 17);
 		drawStackInfo(crucible.recipeStack, x, y, 61, 17);
 		
-		this.drawCustomInfoStat(x, y, guiLeft + 125, guiTop + 81, 34, 7, x, y, new String[] { String.format(Locale.US, "%,d", crucible.progress) + " / " + String.format(Locale.US, "%,d", crucible.processTime) + "TU" });
-		this.drawCustomInfoStat(x, y, guiLeft + 125, guiTop + 90, 34, 7, x, y, new String[] { String.format(Locale.US, "%,d", crucible.heat) + " / " + String.format(Locale.US, "%,d", crucible.maxHeat) + "TU" });
+		this.drawCustomInfoStat(x, y, guiLeft + 125, guiTop + 81, 34, 7, x, y, new String[] { ThermalUnits.formatThermalEnergyPair(crucible.progress, crucible.processTime) });
+		this.drawCustomInfoStat(x, y, guiLeft + 125, guiTop + 90, 34, 7, x, y, new String[] { ThermalUnits.formatThermalEnergyPair(crucible.heat, crucible.maxHeat) });
 	}
 	
 	@Override

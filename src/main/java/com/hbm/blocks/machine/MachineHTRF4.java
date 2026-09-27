@@ -1,5 +1,7 @@
 package com.hbm.blocks.machine;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
@@ -84,7 +86,7 @@ public class MachineHTRF4 extends BlockDummyable implements ILookOverlay {
 			text.add((thruster.getStoredEnergyQuanta() == 0 ? EnumChatFormatting.RED : EnumChatFormatting.GREEN) + EnergyUnits.formatJoules(thruster.getStoredEnergyQuanta()));
 			for(int i = 0; i < thruster.tanks.length; i++) {
 				FluidTank tank = thruster.tanks[i];
-				text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + tank.getTankType().getLocalizedName() + ": " + tank.getFill() + "/" + tank.getMaxFill() + "mB");
+				text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + tank.getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(tank.getFill(), tank.getMaxFill()));
 			}
 		}
 

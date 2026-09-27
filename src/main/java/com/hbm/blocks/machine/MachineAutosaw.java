@@ -1,5 +1,7 @@
 package com.hbm.blocks.machine;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,7 +85,7 @@ public class MachineAutosaw extends BlockContainer implements ILookOverlay, IToo
 		TileEntityMachineAutosaw saw = (TileEntityMachineAutosaw) te;
 		
 		List<String> text = new ArrayList();
-		text.add(saw.tank.getTankType().getLocalizedName() + ": " + saw.tank.getFill() + "/" + saw.tank.getMaxFill() + "mB");
+		text.add(saw.tank.getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(saw.tank.getFill(), saw.tank.getMaxFill()));
 		
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}

@@ -1,5 +1,7 @@
 package com.hbm.blocks.machine;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
@@ -78,7 +80,7 @@ public class AtmoTower extends BlockDummyable implements ILookOverlay {
 		text.add((tower.getStoredEnergyQuanta() < tower.getEnergyCapacityQuanta() / 20 ? EnumChatFormatting.RED : EnumChatFormatting.GREEN) + "Stored Energy: " + EnergyUnits.formatJoules(tower.getStoredEnergyQuanta()));
 
 		for(int i = 0; i < tower.tanks.length; i++)
-			text.add((i < 1 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + I18nUtil.resolveKey("hbmfluid." + tower.tanks[i].getTankType().getName().toLowerCase()) + ": " + tower.tanks[i].getFill() + "/" + tower.tanks[i].getMaxFill() + "mB");
+			text.add((i < 1 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + I18nUtil.resolveKey("hbmfluid." + tower.tanks[i].getTankType().getName().toLowerCase()) + ": " + FluidVolume.formatPair(tower.tanks[i].getFill(), tower.tanks[i].getMaxFill()));
 
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 		

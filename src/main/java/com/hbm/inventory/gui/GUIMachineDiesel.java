@@ -32,8 +32,8 @@ public class GUIMachineDiesel extends GuiInfoContainer {
 		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 152, guiTop + 69 - 52, 16, 52, diesel.getStoredEnergyQuanta(), diesel.powerCap);
 		
 		String[] text = new String[] { "Fuel consumption rate:",
-				"  1 mB/t",
-				"  20 mB/s",
+				"  1 L/t",
+				"  20 L/s",
 				"(Consumption rate is constant)" };
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 16, guiTop + 36, 16, 16, guiLeft - 8, guiTop + 36 + 16, text);
 		

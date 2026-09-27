@@ -20,13 +20,13 @@ Enabled automatic protection has three operating trip inputs:
 
 A SCRAM latches its first cause, targets 100% rod insertion, and moves the actual rods one percentage point per tick. Full travel from zero therefore takes 100 ticks, approximately five seconds. Fission follows the actual rod position during travel and stops only at full insertion. Rod insertion and manual SCRAM do not require external power.
 
-Feedwater, CO2 inventory, output space, temperature, pressure, and failed cladding are checked separately when starting. Startup requires at least 12,000 mB feedwater, 90% of nominal CO2 inventory, at least 1,000 mB free steam space, core temperature below 350 C, primary pressure below 27 bar, cladding damage below 10,000, and no graphite damage. Harmless accumulated cladding heat stress below that leak threshold does not block restart. A rejected restart records a separate restart blocker without replacing the original latched SCRAM reason. Feedwater quantity and steam-tank fullness are **not** automatic operating trip inputs. During operation they are warnings. A full steam tank is blocked output, not a boiler-pressure measurement.
+Feedwater, CO2 inventory, output space, temperature, pressure, and failed cladding are checked separately when starting. Startup requires at least 12,000 L feedwater, 90% of nominal CO2 inventory, at least 1,000 L free steam space, core temperature below 350 C, primary pressure below 27 bar, cladding damage below 10,000, and no graphite damage. Harmless accumulated cladding heat stress below that leak threshold does not block restart. A rejected restart records a separate restart blocker without replacing the original latched SCRAM reason. Feedwater quantity and steam-tank fullness are **not** automatic operating trip inputs. During operation they are warnings. A full steam tank is blocked output, not a boiler-pressure measurement.
 
 ## Operator controls and test faults
 
 The interface is a gameplay control panel informed by Magnox practice; it does not claim to reproduce one exact station. **SCRAM** is a momentary manual demand which latches a manual trip and targets 100% insertion. **Controlled shutdown** also targets 100%, but records no equipment fault and removes neither stored heat nor decay heat. **Reset trip** only clears a latch after every restart interlock passes; it neither starts fission nor withdraws rods. Separate **Insert** and **Withdraw** controls move the target by 10 percentage points, or one point while Shift is held. Actual rods use the normal five-second travel rather than teleporting to the target.
 
-The original small reactor control and CO2 valve remain usable beside the gauges. The small control demands full rod insertion while running. While stopped, it follows the same server-validated trip-reset and restart interlocks before withdrawing the rods. The original valve sends the same single 1,000 mB vent demand as the extended panel's **Vent CO2** button.
+The original small reactor control and CO2 valve remain usable beside the gauges. The small control demands full rod insertion while running. While stopped, it follows the same server-validated trip-reset and restart interlocks before withdrawing the rods. The original valve sends the same single 1,000 L vent demand as the extended panel's **Vent CO2** button.
 
 This division is based on the IAEA report's fail-safe triplicated protection, pressure-loss and cladding-temperature trips, gravity emergency insertion, and burst-cartridge detection, together with the NKS report's motor-driven coarse and fine rod groups. Manual SCRAM is a reasonable operator demand for that emergency insertion rather than a claim about the exact controls at Bradwell.
 
@@ -53,11 +53,11 @@ Version 2 saves migrate by reconstructing the saved core and primary temperature
 
 ## Steam generation and shutdown cooling
 
-Useful generation ramps between 300 C and 450 C, up to 55 mB/t. Each mB of Light Water produces one mB of Super Dense Steam and removes 80 HU from the primary store. Water, heat, and free output capacity all limit the cycle. When storage fills, production and useful heat removal stop; unmatched heat stays in the reactor.
+Useful generation ramps between 300 C and 450 C, up to 55 L/t. Each L of Light Water produces one L of Super Dense Steam and removes 80 HU from the primary store. Water, heat, and free output capacity all limit the cycle. When storage fills, production and useful heat removal stop; unmatched heat stays in the reactor.
 
-After shutdown, low-speed/natural CO2 circulation continues moving as much as 400 HU/t from core to primary, scaled by actual CO2 inventory. The water-dependent shutdown path consumes at most 10 mB/t and removes 16 HU per mB above its 100 C boiling floor. It creates no useful output credit. Zero feedwater stops it completely. Decay heat can consequently produce a post-SCRAM plateau or rise whenever release exceeds heat removal.
+After shutdown, low-speed/natural CO2 circulation continues moving as much as 400 HU/t from core to primary, scaled by actual CO2 inventory. The water-dependent shutdown path consumes at most 10 L/t and removes 16 HU per L above its 100 C boiling floor. It creates no useful output credit. Zero feedwater stops it completely. Decay heat can consequently produce a post-SCRAM plateau or rise whenever release exceeds heat removal.
 
-Primary pressure is `26 * (CO2 mB / 14000) * (primaryC + 273.15)/(410 + 273.15)` bar. Relief begins at 30 bar and vents at most **24 mB/t**. This controls ordinary natural-uranium transients but is finite, so an extreme exotic-fuel heat-up can cross the 34 bar rupture threshold faster than relief can recover it.
+Primary pressure is `26 * (CO2 L / 14000) * (primaryC + 273.15)/(410 + 273.15)` bar. Relief begins at 30 bar and vents at most **24 L/t**. This controls ordinary natural-uranium transients but is finite, so an extreme exotic-fuel heat-up can cross the 34 bar rupture threshold faster than relief can recover it.
 
 ## Fuel channels, feedback, and failures
 

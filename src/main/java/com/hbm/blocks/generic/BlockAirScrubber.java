@@ -1,5 +1,7 @@
 package com.hbm.blocks.generic;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +48,7 @@ public class BlockAirScrubber extends BlockDummyable implements ILookOverlay, IT
 		List<String> text = new ArrayList<>();
 
 		text.add((scrubber.getStoredEnergyQuanta() <= 200 ? EnumChatFormatting.RED : EnumChatFormatting.GREEN) + "Stored Energy: " + EnergyUnits.formatJoules(scrubber.getStoredEnergyQuanta()));
-		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + scrubber.tank.getTankType().getLocalizedName() + ": " + scrubber.tank.getFill() + "/" + scrubber.tank.getMaxFill() + "mB");
+		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + scrubber.tank.getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(scrubber.tank.getFill(), scrubber.tank.getMaxFill()));
 	
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}

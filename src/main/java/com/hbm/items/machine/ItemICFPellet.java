@@ -1,5 +1,7 @@
 package com.hbm.items.machine;
 
+import api.hbm.energymk2.EnergyUnits;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -10,7 +12,6 @@ import com.hbm.inventory.material.Mats;
 import com.hbm.inventory.material.NTMMaterial;
 import com.hbm.items.ModItems;
 import com.hbm.lib.RefStrings;
-import com.hbm.util.BobMathUtil;
 import com.hbm.util.EnumUtil;
 import com.hbm.util.I18nUtil;
 
@@ -187,7 +188,7 @@ public class ItemICFPellet extends Item {
 		boolean muon = stack.hasTagCompound() && stack.stackTagCompound.getBoolean("muon");
 		list.add(EnumChatFormatting.GREEN + "Depletion: " + String.format(Locale.US, "%.1f", getDurabilityForDisplay(stack) * 100D) + "%");
 		list.add(EnumChatFormatting.YELLOW + "Fuel: " + I18nUtil.resolveKey("icffuel." + getType(stack, true).name().toLowerCase(Locale.US)) + " / " + I18nUtil.resolveKey("icffuel." + getType(stack, false).name().toLowerCase(Locale.US)));
-		list.add(EnumChatFormatting.YELLOW + "Heat required: " + BobMathUtil.getShortNumber(this.getFusingDifficulty(stack)) + "TU");
+		list.add(EnumChatFormatting.YELLOW + "Laser energy required: " + EnergyUnits.formatJoules(this.getFusingDifficulty(stack)));
 		list.add(EnumChatFormatting.YELLOW + "Reactivity multiplier: x" + (int) (getType(stack, true).reactionMult * getType(stack, false).reactionMult * 100) / 100D);
 		if(muon) list.add(EnumChatFormatting.DARK_AQUA + "Muon catalyzed!");
 	}

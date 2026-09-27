@@ -51,7 +51,7 @@ public class RotaryFurnaceHandler extends NEIUniversalHandler {
 
 				FontRenderer fontRenderer = Minecraft.getMinecraft().fontRenderer;
 				String duration = String.format(Locale.US, "%,d", arc.duration) + " ticks";
-				String consumption = I18nUtil.resolveKey(Fluids.STEAM.getUnlocalizedName()) + ": " + String.format(Locale.US, "%,d", arc.steam) + " mB/t";
+				String consumption = I18nUtil.resolveKey(Fluids.STEAM.getUnlocalizedName()) + ": " + String.format(Locale.US, "%,d", arc.steam) + " L/t";
 				int side = 160;
 				fontRenderer.drawString(duration, side - fontRenderer.getStringWidth(duration), 43, 0x404040);
 				fontRenderer.drawString(consumption, side - fontRenderer.getStringWidth(consumption), 55, 0x404040);

@@ -1,6 +1,7 @@
 package com.hbm.inventory.gui;
 
-import java.util.Locale;
+import com.hbm.util.ThermalUnits;
+
 
 import org.lwjgl.opengl.GL11;
 
@@ -32,8 +33,8 @@ public class GUIFurnaceCombo extends GuiInfoContainer {
 		
 		furnace.tank.renderTankInfo(this, x, y, guiLeft + 118, guiTop + 18, 16, 52);
 		
-		this.drawCustomInfoStat(x, y, guiLeft + 44, guiTop + 36, 39, 7, x, y, new String[] { String.format(Locale.US, "%,d", furnace.progress) + " / " + String.format(Locale.US, "%,d", furnace.processTime) + "TU" });
-		this.drawCustomInfoStat(x, y, guiLeft + 44, guiTop + 45, 39, 7, x, y, new String[] { String.format(Locale.US, "%,d", furnace.heat) + " / " + String.format(Locale.US, "%,d", furnace.maxHeat) + "TU" });
+		this.drawCustomInfoStat(x, y, guiLeft + 44, guiTop + 36, 39, 7, x, y, new String[] { ThermalUnits.formatThermalEnergyPair(furnace.progress, furnace.processTime) });
+		this.drawCustomInfoStat(x, y, guiLeft + 44, guiTop + 45, 39, 7, x, y, new String[] { ThermalUnits.formatThermalEnergyPair(furnace.heat, furnace.maxHeat) });
 	}
 	
 	@Override

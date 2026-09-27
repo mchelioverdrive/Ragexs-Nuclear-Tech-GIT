@@ -1,5 +1,7 @@
 package com.hbm.inventory.gui;
 
+import com.hbm.util.ThermalUnits;
+
 import java.util.Locale;
 
 import org.lwjgl.opengl.GL11;
@@ -37,7 +39,7 @@ public class GUIWatz extends GuiInfoContainer {
 	public void drawScreen(int x, int y, float interp) {
 		super.drawScreen(x, y, interp);
 
-		this.drawCustomInfoStat(x, y, guiLeft + 13, guiTop + 100, 18, 18, x, y, new String[] { String.format(Locale.US, "%,d", watz.heat) + " TU" });
+		this.drawCustomInfoStat(x, y, guiLeft + 13, guiTop + 100, 18, 18, x, y, new String[] { ThermalUnits.formatThermalEnergy(watz.heat) });
 		this.drawCustomInfoStat(x, y, guiLeft + 143, guiTop + 71, 16, 16, x, y, new String[] { watz.isLocked ? "Unlock pellet IO configuration" : "Lock pellet IO configuration" });
 
 		watz.tanks[0].renderTankInfo(this, x, y, guiLeft + 142, guiTop + 23, 6, 45);

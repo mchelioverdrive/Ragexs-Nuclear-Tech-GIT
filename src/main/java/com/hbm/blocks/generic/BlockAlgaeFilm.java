@@ -1,5 +1,7 @@
 package com.hbm.blocks.generic;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,8 +76,8 @@ public class BlockAlgaeFilm extends BlockContainer implements ILookOverlay, IToo
 			text.add("&[" + (BobMathUtil.getBlink() ? 0xff0000 : 0xffff00) + "&]! ! ! " + I18nUtil.resolveKey("atmosphere.noGravity") + " ! ! !");
 		}
 
-		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + film.tanks[0].getTankType().getLocalizedName() + ": " + film.tanks[0].getFill() + "/" + film.tanks[0].getMaxFill() + "mB");
-		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + film.tanks[1].getTankType().getLocalizedName() + ": " + film.tanks[1].getFill() + "/" + film.tanks[1].getMaxFill() + "mB");
+		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + film.tanks[0].getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(film.tanks[0].getFill(), film.tanks[0].getMaxFill()));
+		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + film.tanks[1].getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(film.tanks[1].getFill(), film.tanks[1].getMaxFill()));
 	
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}

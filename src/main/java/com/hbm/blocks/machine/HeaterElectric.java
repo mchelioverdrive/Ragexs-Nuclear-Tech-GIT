@@ -1,9 +1,10 @@
 package com.hbm.blocks.machine;
 
+import com.hbm.util.ThermalUnits;
+
 import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import api.hbm.block.IToolable;
 import com.hbm.blocks.BlockDummyable;
@@ -77,9 +78,9 @@ public class HeaterElectric extends BlockDummyable implements ILookOverlay, IToo
 		TileEntityHeaterElectric heater = (TileEntityHeaterElectric) te;
 
 		List<String> text = new ArrayList();
-		text.add(String.format(Locale.US, "%,d", heater.heatEnergy) + " TU");
+		text.add(ThermalUnits.formatThermalEnergy(heater.heatEnergy));
 		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + EnergyUnits.formatQuantaPerTickAsWatts(heater.getConsumption()));
-		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + heater.getHeatGen() + " TU/t");
+		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + ThermalUnits.formatThermalPower(heater.getHeatGen()));
 		
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}

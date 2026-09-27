@@ -1,5 +1,7 @@
 package com.hbm.inventory.fluid.trait;
 
+import com.hbm.util.ThermalUnits;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
@@ -50,7 +52,7 @@ public class FT_Heatable extends FluidTrait {
 
 	@Override
 	public void addInfoHidden(List<String> info) {
-		info.add(EnumChatFormatting.RED + "Thermal capacity: " + this.getFirstStep().heatReq + " TU per " + this.getFirstStep().amountReq + "mB");
+		info.add(EnumChatFormatting.RED + "Thermal capacity: " + ThermalUnits.formatThermalEnergyPerLiter(this.getFirstStep().heatReq, this.getFirstStep().amountReq));
 		for(HeatingType type : HeatingType.values()) {
 
 			double eff = getEfficiency(type);

@@ -75,9 +75,9 @@ public final class EnergyUnits {
 	}
 
 	public static String formatJoules(long quanta) { return format(toJoules(quanta), "J"); }
-	public static String formatWatts(long watts) { return format(watts, "W"); }
-	public static String formatQuantaPerTickAsWatts(long quantaPerTick) { return format((double) quantaPerTick * WATTS_PER_QUANTUM_PER_TICK, "W"); }
-	public static String formatQuantaPerSecondAsWatts(long quantaPerSecond) { return format((double) quantaPerSecond / QUANTA_PER_JOULE, "W"); }
+	public static String formatWatts(long watts) { return format(watts, "W") + " (J/S)"; }
+	public static String formatQuantaPerTickAsWatts(long quantaPerTick) { return format((double) quantaPerTick * WATTS_PER_QUANTUM_PER_TICK, "W") + " (J/S)"; }
+	public static String formatQuantaPerSecondAsWatts(long quantaPerSecond) { return format((double) quantaPerSecond / QUANTA_PER_JOULE, "W") + " (J/S)"; }
 	public static double toWattHours(long quanta) { return toJoules(quanta) / 3600D; }
 
 	private static String format(double value, String unit) {

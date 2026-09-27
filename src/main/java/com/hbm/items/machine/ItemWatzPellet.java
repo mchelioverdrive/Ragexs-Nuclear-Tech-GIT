@@ -1,5 +1,7 @@
 package com.hbm.items.machine;
 
+import com.hbm.util.ThermalUnits;
+
 import java.util.List;
 import java.util.Locale;
 
@@ -264,8 +266,7 @@ public class ItemWatzPellet extends ItemEnumMulti {
 				color +
 					"Heat per flux: " +
 					reset +
-					num.heatEmission +
-					" TU"
+					ThermalUnits.formatThermalEnergy(num.heatEmission)
 			);
 		}
 
@@ -307,10 +308,9 @@ public class ItemWatzPellet extends ItemEnumMulti {
 		if(num.heatDiv != null) {
 			list.add(
 				color +
-					"Thermal coefficient: " +
+					"Heat response function: " +
 					reset +
-					num.heatDiv.getLabelForFuel() +
-					" TU⁻¹"
+					num.heatDiv.getLabelForFuel()
 			);
 		}
 

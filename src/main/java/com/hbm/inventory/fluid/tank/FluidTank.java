@@ -9,6 +9,7 @@ import org.lwjgl.opengl.GL11;
 
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
+import com.hbm.inventory.fluid.FluidVolume;
 import com.hbm.inventory.gui.GuiInfoContainer;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.IItemFluidIdentifier;
@@ -280,7 +281,7 @@ public class FluidTank {
 
 			List<String> list = new ArrayList();
 			list.add(this.type.getLocalizedName());
-			list.add(fluid + "/" + maxFluid + "mB");
+			list.add(FluidVolume.formatPair(fluid, maxFluid));
 
 			if(this.pressure != 0) {
 				list.add(EnumChatFormatting.RED + "Pressure: " + this.pressure + " PU");

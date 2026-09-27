@@ -1,5 +1,7 @@
 package com.hbm.blocks.machine;
 
+import com.hbm.util.ThermalUnits;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -175,9 +177,9 @@ public class MachineHeatBoiler extends BlockDummyable implements ILookOverlay, I
 		if(boiler.hasExploded) return;
 
 		List<String> text = new ArrayList();
-		text.add(String.format(Locale.US, "%,d", boiler.heat) + "TU");
-		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + boiler.tanks[0].getTankType().getLocalizedName() + ": " + String.format(Locale.US, "%,d", boiler.tanks[0].getFill()) + " / " + String.format(Locale.US, "%,d", boiler.tanks[0].getMaxFill()) + "mB");
-		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + boiler.tanks[1].getTankType().getLocalizedName() + ": " + String.format(Locale.US, "%,d", boiler.tanks[1].getFill()) + " / " + String.format(Locale.US, "%,d", boiler.tanks[1].getMaxFill()) + "mB");
+		text.add(ThermalUnits.formatThermalEnergy(boiler.heat));
+		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + boiler.tanks[0].getTankType().getLocalizedName() + ": " + String.format(Locale.US, "%,d", boiler.tanks[0].getFill()) + " / " + String.format(Locale.US, "%,d", boiler.tanks[0].getMaxFill()) + " L");
+		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + boiler.tanks[1].getTankType().getLocalizedName() + ": " + String.format(Locale.US, "%,d", boiler.tanks[1].getFill()) + " / " + String.format(Locale.US, "%,d", boiler.tanks[1].getMaxFill()) + " L");
 		
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}

@@ -1,5 +1,7 @@
 package com.hbm.items.machine;
 
+import com.hbm.util.ThermalUnits;
+
 import java.util.List;
 
 import com.hbm.items.ItemEnumMulti;
@@ -69,7 +71,7 @@ public class ItemPWRFuel extends ItemEnumMulti {
 		String color = EnumChatFormatting.GOLD + "";
 		String reset = EnumChatFormatting.RESET + "";
 
-		list.add(color + "Heat per flux: " + reset + num.heatEmission + " TU");
+		list.add(color + "Heat per flux: " + reset + ThermalUnits.formatThermalEnergy(num.heatEmission));
 		list.add(color + "Reaction function: " + reset + num.function.getLabelForFuel());
 		list.add(color + "Fuel type: " + reset + num.function.getDangerFromFuel());
 	}

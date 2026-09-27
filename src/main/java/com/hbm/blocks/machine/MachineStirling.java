@@ -1,5 +1,7 @@
 package com.hbm.blocks.machine;
 
+import com.hbm.util.ThermalUnits;
+
 import api.hbm.energymk2.EnergyUnits;
 
 import java.util.ArrayList;
@@ -161,7 +163,7 @@ public class MachineStirling extends BlockDummyable implements ILookOverlay, ITo
 		TileEntityStirling stirling = (TileEntityStirling) te;
 
 		List<String> text = new ArrayList();
-		text.add(stirling.heat + "TU/t");
+		text.add("Thermal Input: " + ThermalUnits.formatThermalPower(stirling.heat));
 		text.add(EnergyUnits.formatQuantaPerTickAsWatts(stirling.hasCog ? stirling.powerBuffer : 0));
 
 		if(this != ModBlocks.machine_stirling_creative) {

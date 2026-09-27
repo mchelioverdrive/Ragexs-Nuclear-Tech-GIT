@@ -1,5 +1,7 @@
 package com.hbm.blocks.machine;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -82,7 +84,7 @@ public class MachineLPW2 extends BlockDummyable implements ILookOverlay {
 		} else {
 			for(int i = 0; i < thruster.tanks.length; i++) {
 				FluidTank tank = thruster.tanks[i];
-				text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + tank.getTankType().getLocalizedName() + ": " + tank.getFill() + "/" + tank.getMaxFill() + "mB");
+				text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + tank.getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(tank.getFill(), tank.getMaxFill()));
 			}
 		}
 

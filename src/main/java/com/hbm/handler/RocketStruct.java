@@ -1,5 +1,7 @@
 package com.hbm.handler;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -144,9 +146,9 @@ public class RocketStruct {
 			if(fuelRequirement == Integer.MAX_VALUE) {
 				issues.add(EnumChatFormatting.YELLOW + "Insufficient thrust");
 			} else if(fuelCapacity < fuelRequirement) {
-				issues.add(EnumChatFormatting.YELLOW + "Insufficient fuel: " + fuelCapacity + "/" + fuelRequirement + "mB");
+				issues.add(EnumChatFormatting.YELLOW + "Insufficient fuel: " + FluidVolume.formatPair(fuelCapacity, fuelRequirement));
 			} else if(fuelCapacity > 0 && fuelRequirement > 0) {
-				issues.add(EnumChatFormatting.GREEN + "Trip possible! " + fuelCapacity + "/" + fuelRequirement + "mB");
+				issues.add(EnumChatFormatting.GREEN + "Trip possible! " + FluidVolume.formatPair(fuelCapacity, fuelRequirement));
 			}
 		}
 

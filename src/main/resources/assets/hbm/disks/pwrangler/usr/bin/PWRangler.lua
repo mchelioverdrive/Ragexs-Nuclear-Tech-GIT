@@ -3,6 +3,17 @@ local event = require "event"
 local gpu = component.gpu
 local call = component.invoke
 
+local function formatHeat(tu)
+    local joules = tu * 0.5
+    local prefixes = {"", "k", "M", "G", "T"}
+    local prefix = 1
+    while math.abs(joules) >= 1000 and prefix < #prefixes do
+        joules = joules / 1000
+        prefix = prefix + 1
+    end
+    return string.format("%.3g %sJ", joules, prefixes[prefix])
+end
+
 colorGradient = {0x00FF00, 0x6BEE00, 0x95DB00, 0xB0C800, 0xC5B400, 0xD79F00, 0xE68700, 0xF46900, 0xFC4700, 0xFF0000}
 coreHeatESTOP = true
 coolantLossESTOP = true
@@ -175,8 +186,6 @@ gpu.setForeground(0xAAAAAA)
 
 gpu.setForeground(0x000000)
 gpu.setBackground(0xFFFFFF)
-gpu.set(83,22,"TU")
-gpu.set(83,24,"TU")
 gpu.setForeground(0xFFFFFF)
 gpu.setBackground(0x000000)
 
@@ -242,8 +251,8 @@ while (runSig == true) do
     gpu.fill(92,32+(5-coldCoolantLevel//25600),6,coldCoolantLevel//25600, "█")
     gpu.setForeground(0x000000)
 
-    gpu.set(66,22,tostring(fullCoreHeat))
-    gpu.set(66,24,tostring(fullHullHeat))
+    gpu.set(66,22,formatHeat(fullCoreHeat))
+    gpu.set(66,24,formatHeat(fullHullHeat))
     gpu.set(66,26,tostring(call(pwrController, "getFlux")))
     gpu.set(66,28,tostring(coldCoolantLevel))
     gpu.set(66,30,tostring(hotCoolantLevel))

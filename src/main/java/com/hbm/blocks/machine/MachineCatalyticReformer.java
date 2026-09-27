@@ -1,5 +1,7 @@
 package com.hbm.blocks.machine;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.List;
 
 import com.hbm.blocks.BlockDummyable;
@@ -76,7 +78,7 @@ public class MachineCatalyticReformer extends BlockDummyable implements IPersist
 		for(int i = 0; i < 4; i++) {
 			FluidTank tank = new FluidTank(Fluids.NONE, 0);
 			tank.readFromNBT(persistentTag, "" + i);
-			list.add(EnumChatFormatting.YELLOW + "" + tank.getFill() + "/" + tank.getMaxFill() + "mB " + tank.getTankType().getLocalizedName());
+			list.add(EnumChatFormatting.YELLOW + "" + FluidVolume.formatPair(tank.getFill(), tank.getMaxFill()) + " " + tank.getTankType().getLocalizedName());
 		}
 	}
 }

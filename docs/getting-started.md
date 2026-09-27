@@ -13,6 +13,10 @@ Recommended setup:
 - NotEnoughItems or the recipe viewer bundled in your pack, if available.
 - Backups before testing explosives, reactors, or config changes.
 
+## Units on machine displays
+
+Fluid quantities are shown in liters (L). One existing Forge fluid unit is 1 L, so 1,000 L fills one Minecraft bucket or source block (1 m³). A display of 64,000 L uses the same numeric fluid amount previously shown as 64,000 mB; recipes, tanks, transfer rates, saves, and compatibility are unchanged. Fluid rates use L/t for liters per game tick and L/s for liters per second. Electrical power readings show watts with (J/S), meaning joules per second. Thermal energy is displayed in joules (J), and thermal power in watts (W, also marked J/S). A former 100 TU heat value appears as 50 J; a former 300 TU/t heat rate appears as 3 kW. Machine heat and fuel balance are unchanged.
+
 ## Early-game priorities
 
 1. **Find ores and surface resources.** RNTM adds many ore types and generated resources. Mine broadly and keep unfamiliar ores instead of discarding them.
@@ -124,4 +128,4 @@ Fuel-burning machinery needs breathable air to run. This includes the RBMK burne
 
 The **exposure chamber** is RNTM's compact neutron-irradiation abstraction: use neutron capsules for cobalt activation, lithium breeding, and incremental actinide captures. Its uranium-238-to-plutonium-239 and thorium-232-to-uranium-233 recipes intentionally fold the short-lived beta-decay intermediates into one gameplay operation; this is breeding, not enrichment.
 
-The **cyclotron** uses the legacy charged-ion parts, while the **hadron accelerator** is the high-energy collision machine. The bismuth-plus-helium route is a trace astatine-production abstraction. Its tungsten collision route deliberately produces fictional, gameplay-scale exotic capsules and must not be read as a real bulk antimatter process. The cryogenic distiller separates a fixed 100 mB feed into phase/separation fractions; it cools and separates fluids but does not transmute elements or remove radioactivity.
+The **cyclotron** uses the legacy charged-ion parts, while the **hadron accelerator** is the high-energy collision machine. The bismuth-plus-helium route is a trace astatine-production abstraction. Its tungsten collision route deliberately produces fictional, gameplay-scale exotic capsules and must not be read as a real bulk antimatter process. The cryogenic distiller separates a fixed 100 L feed into phase/separation fractions; it cools and separates fluids but does not transmute elements or remove radioactivity.

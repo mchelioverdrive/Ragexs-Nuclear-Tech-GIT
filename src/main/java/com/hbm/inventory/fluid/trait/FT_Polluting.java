@@ -41,12 +41,12 @@ public class FT_Polluting extends FluidTrait {
 
 		if(!this.releaseMap.isEmpty()) {
 			info.add(EnumChatFormatting.GREEN + "When spilled:");
-			for(Entry<PollutionType, Float> entry : releaseMap.entrySet()) info.add(EnumChatFormatting.GREEN + " - " + entry.getValue() + " " + entry.getKey() + " per mB");
+			for(Entry<PollutionType, Float> entry : releaseMap.entrySet()) info.add(EnumChatFormatting.GREEN + " - " + entry.getValue() + " " + entry.getKey() + " per L");
 		}
 
 		if(!this.burnMap.isEmpty()) {
 			info.add(EnumChatFormatting.RED + "When burned:");
-			for(Entry<PollutionType, Float> entry : burnMap.entrySet()) info.add(EnumChatFormatting.RED + " - " + entry.getValue() + " " + entry.getKey() + " per mB");
+			for(Entry<PollutionType, Float> entry : burnMap.entrySet()) info.add(EnumChatFormatting.RED + " - " + entry.getValue() + " " + entry.getKey() + " per L");
 		}
 	}
 

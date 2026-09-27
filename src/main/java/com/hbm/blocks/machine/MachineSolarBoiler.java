@@ -1,5 +1,7 @@
 package com.hbm.blocks.machine;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -73,7 +75,7 @@ public class MachineSolarBoiler extends BlockDummyable implements ILookOverlay {
 		FluidTank[] tanks = boiler.getAllTanks();
 
 		for(int i = 0; i < tanks.length; i++)
-			text.add((i < 1 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + tanks[i].getTankType().getLocalizedName() + ": " + tanks[i].getFill() + "/" + tanks[i].getMaxFill() + "mB");
+			text.add((i < 1 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + tanks[i].getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(tanks[i].getFill(), tanks[i].getMaxFill()));
 		
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}

@@ -1,5 +1,7 @@
 package com.hbm.blocks.machine;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
@@ -75,7 +77,7 @@ public class MachineCondenserPowered extends BlockDummyable implements ILookOver
 		text.add(EnergyUnits.formatJoules(tower.getStoredEnergyQuanta()) + " / " + EnergyUnits.formatJoules(tower.maxPower));
 
 		for(int i = 0; i < tower.tanks.length; i++)
-			text.add((i < 1 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + tower.tanks[i].getTankType().getLocalizedName() + ": " + tower.tanks[i].getFill() + "/" + tower.tanks[i].getMaxFill() + "mB");
+			text.add((i < 1 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + tower.tanks[i].getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(tower.tanks[i].getFill(), tower.tanks[i].getMaxFill()));
 
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}

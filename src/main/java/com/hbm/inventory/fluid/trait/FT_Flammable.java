@@ -1,11 +1,12 @@
 package com.hbm.inventory.fluid.trait;
 
+import com.hbm.util.ThermalUnits;
+
 import java.io.IOException;
 import java.util.List;
 
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
-import com.hbm.util.BobMathUtil;
 
 import net.minecraft.util.EnumChatFormatting;
 
@@ -31,7 +32,7 @@ public class FT_Flammable extends FluidTrait {
 		info.add(EnumChatFormatting.YELLOW + "[Flammable]");
 		
 		if(energy > 0)
-			info.add(EnumChatFormatting.YELLOW + "Provides " + EnumChatFormatting.RED + "" + BobMathUtil.getShortNumber(energy) + "TU " + EnumChatFormatting.YELLOW + "per bucket");
+			info.add(EnumChatFormatting.YELLOW + "Provides " + EnumChatFormatting.RED + ThermalUnits.formatThermalEnergy(energy) + " " + EnumChatFormatting.YELLOW + "per bucket");
 	}
 
 	@Override

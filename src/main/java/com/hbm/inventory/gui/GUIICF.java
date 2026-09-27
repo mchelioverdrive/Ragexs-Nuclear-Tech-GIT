@@ -1,10 +1,13 @@
 package com.hbm.inventory.gui;
 
+import api.hbm.energymk2.EnergyUnits;
+
+import com.hbm.util.ThermalUnits;
+
 import com.hbm.inventory.container.ContainerICF;
 import com.hbm.lib.RefStrings;
 import com.hbm.render.util.GaugeUtil;
 import com.hbm.tileentity.machine.TileEntityICF;
-import com.hbm.util.BobMathUtil;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
@@ -32,8 +35,8 @@ public class GUIICF extends GuiInfoContainer {
 		icf.tanks[1].renderTankInfo(this, x, y, guiLeft + 188, guiTop + 18, 16, 70);
 		icf.tanks[2].renderTankInfo(this, x, y, guiLeft + 224, guiTop + 18, 16, 70);
 
-		this.drawCustomInfoStat(x, y, guiLeft + 8, guiTop + 18, 16, 70, x, y, icf.maxLaser <= 0 ? "OFFLINE" : (BobMathUtil.getShortNumber(icf.laser) + "TU/t - " + (icf.laser * 1000 / icf.maxLaser) / 10D + "%"));
-		this.drawCustomInfoStat(x, y, guiLeft + 187, guiTop + 89, 18, 18, x, y, BobMathUtil.getShortNumber(icf.heat) + " / " + BobMathUtil.getShortNumber(icf.maxHeat) + "TU");
+		this.drawCustomInfoStat(x, y, guiLeft + 8, guiTop + 18, 16, 70, x, y, icf.maxLaser <= 0 ? "OFFLINE" : (EnergyUnits.formatQuantaPerTickAsWatts(icf.laser) + " - " + (icf.laser * 1000 / icf.maxLaser) / 10D + "%"));
+		this.drawCustomInfoStat(x, y, guiLeft + 187, guiTop + 89, 18, 18, x, y, ThermalUnits.formatThermalEnergyPair(icf.heat, icf.maxHeat));
 	}
 
 	@Override

@@ -1,5 +1,7 @@
 package com.hbm.blocks.bomb;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -100,7 +102,7 @@ public class LaunchPadRocket extends BlockDummyable implements ILookOverlay, ITo
 		for(int i = 0; i < pad.tanks.length; i++) {
 			FluidTank tank = pad.tanks[i];
 			if(tank.getTankType() == Fluids.NONE) continue;
-			text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + tank.getTankType().getLocalizedName() + ": " + tank.getFill() + "/" + tank.getMaxFill() + "mB");
+			text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + tank.getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(tank.getFill(), tank.getMaxFill()));
 		}
 
 		if(text.size() <= 1) return;

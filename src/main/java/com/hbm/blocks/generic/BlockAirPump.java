@@ -1,5 +1,7 @@
 package com.hbm.blocks.generic;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,7 +70,7 @@ public class BlockAirPump extends BlockContainer implements ILookOverlay, IBlock
 
 		List<String> text = new ArrayList<>();
 
-		text.add(I18nUtil.resolveKey("hbmfluid." + pump.tank.getTankType().getName().toLowerCase()) + ": " + pump.tank.getFill() + "/" + pump.tank.getMaxFill() + "mB");
+		text.add(I18nUtil.resolveKey("hbmfluid." + pump.tank.getTankType().getName().toLowerCase()) + ": " + FluidVolume.formatPair(pump.tank.getFill(), pump.tank.getMaxFill()));
 
 		if(pump.tank.getFill() <= 10) {
 			text.add("&[" + (BobMathUtil.getBlink() ? 0xff0000 : 0xffff00) + "&]! ! ! " + I18nUtil.resolveKey("atmosphere.noTank") + " ! ! !");

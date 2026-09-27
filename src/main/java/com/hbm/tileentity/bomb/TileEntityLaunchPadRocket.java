@@ -1,5 +1,7 @@
 package com.hbm.tileentity.bomb;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
@@ -390,9 +392,9 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 				tankName = split[split.length - 1];
 			}
 			if(fill < maxFill) {
-				issues.add(EnumChatFormatting.YELLOW + "" + fill + "/" + maxFill + "mB " + tankName);
+				issues.add(EnumChatFormatting.YELLOW + FluidVolume.formatPair(fill, maxFill) + " " + tankName);
 			} else {
-				issues.add(EnumChatFormatting.GREEN + "" + fill + "/" + maxFill + "mB " + tankName);
+				issues.add(EnumChatFormatting.GREEN + FluidVolume.formatPair(fill, maxFill) + " " + tankName);
 			}
 		}
 

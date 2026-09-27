@@ -413,6 +413,6 @@ public class TileEntitySILEX extends TileEntityMachineBase implements IFluidStan
 		if(current == null)
 			data.setString("tank2", "N/A");
 		else
-			data.setString("tank2", String.format("%s: %s mB", current.toStack().getDisplayName(), currentFill));
+			data.setString("tank2", String.format("%s: %s L", current.toStack().getDisplayName(), currentFill));
 	}
 }

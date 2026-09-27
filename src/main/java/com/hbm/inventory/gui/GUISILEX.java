@@ -44,7 +44,7 @@ public class GUISILEX extends GuiInfoContainer {
 		silex.tank.renderTankInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 42, 52, 7);
 		
 		if(silex.current != null) {
-			this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 27, guiTop + 72, 16, 52, mouseX, mouseY, new String[] { silex.currentFill + "/" + silex.maxFill + "mB", silex.current.toStack().getDisplayName() });
+			this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 27, guiTop + 72, 16, 52, mouseX, mouseY, new String[] { silex.currentFill + "/" + silex.maxFill + " L", silex.current.toStack().getDisplayName() });
 		}
 		
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 10, guiTop + 92, 10, 10, mouseX, mouseY, new String[] { "Void contents" });

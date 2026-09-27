@@ -1,6 +1,7 @@
 package com.hbm.inventory.gui;
 
-import java.util.Locale;
+import com.hbm.util.ThermalUnits;
+
 
 import org.lwjgl.opengl.GL11;
 
@@ -35,10 +36,10 @@ public class GUIOilburner extends GuiInfoContainer {
 	public void drawScreen(int x, int y, float interp) {
 		super.drawScreen(x, y, interp);
 		
-		this.drawCustomInfoStat(x, y, guiLeft + 116, guiTop + 17, 16, 52, x, y, new String[] { String.format(Locale.US, "%,d", Math.min(diFurnace.heatEnergy, diFurnace.maxHeatEnergy)) + " / " + String.format(Locale.US, "%,d", diFurnace.maxHeatEnergy) + " TU" });
+		this.drawCustomInfoStat(x, y, guiLeft + 116, guiTop + 17, 16, 52, x, y, new String[] { ThermalUnits.formatThermalEnergyPair(Math.min(diFurnace.heatEnergy, diFurnace.maxHeatEnergy), diFurnace.maxHeatEnergy) });
 
 		if(diFurnace.tank.getTankType().hasTrait(FT_Flammable.class)) {
-			this.drawCustomInfoStat(x, y, guiLeft + 79, guiTop + 34, 18, 18, x, y, new String[] { diFurnace.setting + " mB/t", String.format(Locale.US, "%,d", (int)(diFurnace.tank.getTankType().getTrait(FT_Flammable.class).getHeatEnergy() / 1000) * diFurnace.setting) + " TU/t" });
+			this.drawCustomInfoStat(x, y, guiLeft + 79, guiTop + 34, 18, 18, x, y, new String[] { diFurnace.setting + " L/t", ThermalUnits.formatThermalPower((int)(diFurnace.tank.getTankType().getTrait(FT_Flammable.class).getHeatEnergy() / 1000) * diFurnace.setting) });
 		}
 		
 		diFurnace.tank.renderTankInfo(this, x, y, guiLeft + 44, guiTop + 17, 16, 52);

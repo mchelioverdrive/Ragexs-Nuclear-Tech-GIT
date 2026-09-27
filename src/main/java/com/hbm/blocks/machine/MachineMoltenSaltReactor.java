@@ -1,5 +1,7 @@
 package com.hbm.blocks.machine;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,9 +46,9 @@ public class MachineMoltenSaltReactor extends BlockMachineBase implements IToolt
 
 		if(tile instanceof TileEntityMoltenSaltReactor) {
 			TileEntityMoltenSaltReactor reactor = (TileEntityMoltenSaltReactor) tile;
-			text.add("Input: " + reactor.tanks[0].getFill() + "/" + reactor.tanks[0].getMaxFill() + " mB");
-			text.add("Output: " + reactor.tanks[1].getFill() + "/" + reactor.tanks[1].getMaxFill() + " mB");
-			text.add("Rate: " + reactor.output + " mB/t");
+			text.add("Input: " + FluidVolume.formatPair(reactor.tanks[0].getFill(), reactor.tanks[0].getMaxFill()));
+			text.add("Output: " + FluidVolume.formatPair(reactor.tanks[1].getFill(), reactor.tanks[1].getMaxFill()));
+			text.add("Rate: " + reactor.output + " L/t");
 			text.add("Corrosion: " + reactor.corrosion + "%");
 			text.add(reactor.isShielded() ? "Shielding: OK" : "&[16733525&]Shielding: LEAKING");
 			text.add("Use lead/boron/concrete or MSR ports on all sides.");

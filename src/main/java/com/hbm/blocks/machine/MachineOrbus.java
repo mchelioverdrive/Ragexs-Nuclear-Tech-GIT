@@ -1,5 +1,7 @@
 package com.hbm.blocks.machine;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -116,6 +118,6 @@ public class MachineOrbus extends BlockDummyable implements IPersistentInfoProvi
 	public void addInformation(ItemStack stack, NBTTagCompound persistentTag, EntityPlayer player, List list, boolean ext) {
 		FluidTank tank = new FluidTank(Fluids.NONE, 0);
 		tank.readFromNBT(persistentTag, "tank");
-		list.add(EnumChatFormatting.YELLOW + "" + tank.getFill() + "/" + tank.getMaxFill() + "mB " + tank.getTankType().getLocalizedName());
+		list.add(EnumChatFormatting.YELLOW + "" + FluidVolume.formatPair(tank.getFill(), tank.getMaxFill()) + " " + tank.getTankType().getLocalizedName());
 	}
 }

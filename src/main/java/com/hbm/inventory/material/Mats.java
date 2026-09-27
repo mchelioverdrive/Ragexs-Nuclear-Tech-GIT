@@ -1,5 +1,7 @@
 package com.hbm.inventory.material;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import static com.hbm.inventory.OreDictManager.*;
 import static com.hbm.inventory.material.MaterialShapes.*;
 
@@ -285,7 +287,7 @@ public class Mats {
 
 	public static String formatAmount(int amount, boolean showInMb) {
 
-		if(showInMb) return (amount * 2) + "mB";
+		if(showInMb) return FluidVolume.format((long) amount * 2);
 
 		String format = "";
 

@@ -1,5 +1,7 @@
 package com.hbm.inventory.fluid.trait;
 
+import com.hbm.util.ThermalUnits;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -42,7 +44,7 @@ public class FT_Coolable extends FluidTrait {
 
 	@Override
 	public void addInfoHidden(List<String> info) {
-		info.add(EnumChatFormatting.RED + "Thermal capacity: " + heatEnergy + " TU per " + amountReq + "mB");
+		info.add(EnumChatFormatting.RED + "Thermal capacity: " + ThermalUnits.formatThermalEnergyPerLiter(heatEnergy, amountReq));
 		for(CoolingType type : CoolingType.values()) {
 
 			double eff = getEfficiency(type);

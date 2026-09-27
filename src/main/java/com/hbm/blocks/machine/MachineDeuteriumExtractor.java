@@ -1,5 +1,7 @@
 package com.hbm.blocks.machine;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +69,7 @@ public class MachineDeuteriumExtractor extends BlockContainer implements ILookOv
 		text.add((extractor.getStoredEnergyQuanta() < extractor.getEnergyCapacityQuanta() / 20 ? EnumChatFormatting.RED : EnumChatFormatting.GREEN) + "Stored Energy: " + EnergyUnits.formatJoules(extractor.getStoredEnergyQuanta()));
 
 		for(int i = 0; i < extractor.tanks.length; i++)
-			text.add((i < 1 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + extractor.tanks[i].getTankType().getLocalizedName() + ": " + extractor.tanks[i].getFill() + "/" + extractor.tanks[i].getMaxFill() + "mB");
+			text.add((i < 1 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + extractor.tanks[i].getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(extractor.tanks[i].getFill(), extractor.tanks[i].getMaxFill()));
 		
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}

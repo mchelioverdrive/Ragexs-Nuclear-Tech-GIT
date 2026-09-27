@@ -72,7 +72,7 @@ public class FractionRecipes extends SerializableRecipe {
 
 	@Override
 	public String getComment() {
-		return "Inputs are always 100mB, set output quantities accordingly.";
+		return "Inputs are always 100 L, set output quantities accordingly.";
 	}
 
 	@Override

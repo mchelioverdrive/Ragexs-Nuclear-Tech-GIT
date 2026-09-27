@@ -52,7 +52,7 @@ public class GUIPump extends GuiScreen {
 		drawDefaultBackground();
 
 		drawString(fontRendererObj, "Throughput:", this.width / 2 - 150, 80, 0xA0A0A0);
-		drawString(fontRendererObj, "(max. 10,000mB)", this.width / 2 - 150, 90, 0xA0A0A0);
+		drawString(fontRendererObj, "(max. 10,000 L)", this.width / 2 - 150, 90, 0xA0A0A0);
 		textPlacementPriority.drawTextBox();
 
 		drawString(fontRendererObj, "Pressure:", this.width / 2 - 50, 80, 0xA0A0A0);

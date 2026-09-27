@@ -1,8 +1,11 @@
 package com.hbm.blocks.machine;
 
+import com.hbm.util.ThermalUnits;
+
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.blocks.ILookOverlay;
@@ -112,11 +115,11 @@ public class MachineHephaestus extends BlockDummyable implements ILookOverlay {
 		TileEntityMachineHephaestus heatex = (TileEntityMachineHephaestus) te;
 		
 		List<String> text = new ArrayList();
-		text.add(String.format(Locale.US, "%,d", heatex.bufferedHeat) + " TU");
+		text.add(ThermalUnits.formatThermalEnergy(heatex.bufferedHeat));
 
 		for(int i = 0; i < heatex.getAllTanks().length; i++) {
 			FluidTank tank = heatex.getAllTanks()[i];
-			text.add((i == 0 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + tank.getTankType().getLocalizedName() + ": " + tank.getFill() + "/" + tank.getMaxFill() + "mB");
+			text.add((i == 0 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + tank.getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(tank.getFill(), tank.getMaxFill()));
 		}
 		
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);

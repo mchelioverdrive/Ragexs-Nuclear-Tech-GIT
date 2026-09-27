@@ -390,3 +390,18 @@ INCOMPLETE:
 
 - Deferred new machine-generation save marks during chunk deserialization until the chunk load event, and marked already loaded chunks directly without TileEntity `markDirty()` metadata lookup. This prevents a stack overflow when a migrated machine is validated while its chunk is still loading.
 - Dedicated-server chunk loading and save/rebind behavior remain unverified in game.
+
+2026-09-26 21:53 — Display fluid volumes in liters and clarify watt readings
+
+- Updated player-facing tank, recipe, tooltip, overlay, and fluid-trait text to liters, with grouped exact quantities where practical. One existing Forge fluid unit is displayed as 1 L; bucket-sized amounts remain 1,000 L. Fluid numbers, rates, recipes, tank storage, packets, and saves are unchanged.
+- Added (J/S) to watt displays to clarify that watts mean joules per second. Offline compileJava passed; Minecraft and dedicated-server UI validation remain unperformed.
+
+2026-09-26 22:10 — Display thermal energy and power in SI units
+
+- Replaced player-facing HBM TU energy and TU/t power readings with joules and watts, using 1 TU = 0.5 J and 1 TU/t = 10 W at 20 TPS. Fluid thermal capacity now displays J/L on the existing liter scale; ICF laser energy uses its electrical quantum scale. Updated the bundled PWRangler screen and corrected localized heat-transfer descriptions to match their actual per-tick fractions.
+- Kept the thermal simulation, machine efficiencies and heat relationships, balance, saves, packets, and compatibility values unchanged. MAGNOX HU remains a separate reactor scale. Offline Java compilation passed; Minecraft and dedicated-server UI behavior remain unverified.
+
+2026-09-26 22:34 — Audit industrial power and fluid scale
+
+- Added a source-based engineering audit of generation, machine demand, heat and steam chains, reactors, water treatment, oil processing, storage, and transport. It includes representative plant budgets, gameplay classifications, priority corrections, and a staged implementation strategy.
+- Identified a high-grade steam energy-ledger mismatch and large differences among industrial electrical loads. This is documentation only: balance values, configurations, recipes, saves, and compatibility behavior remain unchanged. In-game steady-state throughput and dedicated-server behavior remain unverified.

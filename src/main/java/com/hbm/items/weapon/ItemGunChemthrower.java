@@ -1,5 +1,7 @@
 package com.hbm.items.weapon;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.List;
 
 import com.hbm.config.GeneralConfig;
@@ -95,7 +97,7 @@ public class ItemGunChemthrower extends ItemGunBase implements IFillableItem {
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean bool) {
 		
-		list.add("Ammo: " + getMag(stack) + " / " + mainConfig.ammoCap + "mB");
+		list.add("Ammo: " + FluidVolume.formatPair(getMag(stack), mainConfig.ammoCap));
 		
 		list.add("Ammo Type: " + this.getFluidType(stack).getLocalizedName());
 		

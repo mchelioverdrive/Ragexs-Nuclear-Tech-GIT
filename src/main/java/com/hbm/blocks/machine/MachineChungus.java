@@ -1,5 +1,7 @@
 package com.hbm.blocks.machine;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -160,8 +162,8 @@ public class MachineChungus extends BlockDummyable implements ILookOverlay, IToo
 
 		TileEntityChungus turbine = (TileEntityChungus) te;
 		List<String> text = new ArrayList<String>();
-		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + turbine.tanks[0].getTankType().getLocalizedName() + ": " + turbine.tanks[0].getFill() + "/" + turbine.tanks[0].getMaxFill() + "mB");
-		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + turbine.tanks[1].getTankType().getLocalizedName() + ": " + turbine.tanks[1].getFill() + "/" + turbine.tanks[1].getMaxFill() + "mB");
+		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + turbine.tanks[0].getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(turbine.tanks[0].getFill(), turbine.tanks[0].getMaxFill()));
+		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + turbine.tanks[1].getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(turbine.tanks[1].getFill(), turbine.tanks[1].getMaxFill()));
 		text.add(EnumChatFormatting.YELLOW + "Trip valves: " + (turbine.isTripped() ? EnumChatFormatting.RED + "TRIPPED" : EnumChatFormatting.GREEN + "READY"));
 
 		if(turbine.isTripped()) {

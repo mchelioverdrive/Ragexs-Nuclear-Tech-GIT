@@ -104,7 +104,7 @@ public class CrackingRecipes extends SerializableRecipe {
 
 	@Override
 	public String getComment() {
-		return "Inputs are always 100mB, set output quantities accordingly. The steam in/outputs are fixed, using 200mB of steam per 100mB of input.";
+		return "Inputs are always 100 L, set output quantities accordingly. The steam in/outputs are fixed, using 200 L of steam per 100 L of input.";
 	}
 
 	@Override

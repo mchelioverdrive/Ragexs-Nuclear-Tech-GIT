@@ -1,7 +1,8 @@
 package com.hbm.inventory.gui;
 
+import com.hbm.util.ThermalUnits;
+
 import java.util.List;
-import java.util.Locale;
 
 import org.lwjgl.opengl.GL11;
 
@@ -49,8 +50,8 @@ public class GUIFirebox extends GuiInfoContainer {
 			}
 		}
 
-		this.drawCustomInfoStat(x, y, guiLeft + 80, guiTop + 27, 71, 7, x, y, new String[] { String.format(Locale.US, "%,d", firebox.heatEnergy) + " / " + String.format(Locale.US, "%,d", firebox.getMaxHeat()) + "TU" });
-		this.drawCustomInfoStat(x, y, guiLeft + 80, guiTop + 36, 71, 7, x, y, new String[] { firebox.burnHeat + "TU/t", (firebox.burnTime / 20) + "s" });
+		this.drawCustomInfoStat(x, y, guiLeft + 80, guiTop + 27, 71, 7, x, y, new String[] { ThermalUnits.formatThermalEnergyPair(firebox.heatEnergy, firebox.getMaxHeat()) });
+		this.drawCustomInfoStat(x, y, guiLeft + 80, guiTop + 36, 71, 7, x, y, new String[] { ThermalUnits.formatThermalPower(firebox.burnHeat), (firebox.burnTime / 20) + "s" });
 	}
 	
 	@Override

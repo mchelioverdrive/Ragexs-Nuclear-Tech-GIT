@@ -1,6 +1,7 @@
 package com.hbm.inventory.gui;
 
-import java.util.Locale;
+import com.hbm.util.ThermalUnits;
+
 
 import org.lwjgl.opengl.GL11;
 
@@ -33,8 +34,8 @@ public class GUIMachineCoker extends GuiInfoContainer {
 		refinery.tanks[0].renderTankInfo(this, x, y, guiLeft + 35, guiTop + 18, 16, 52);
 		refinery.tanks[1].renderTankInfo(this, x, y, guiLeft + 125, guiTop + 18, 16, 52);
 		
-		this.drawCustomInfoStat(x, y, guiLeft + 60, guiTop + 45, 54, 7, x, y, new String[] { String.format(Locale.US, "%,d", refinery.progress) + " / " + String.format(Locale.US, "%,d", refinery.processTime) + "TU" });
-		this.drawCustomInfoStat(x, y, guiLeft + 60, guiTop + 54, 54, 7, x, y, new String[] { String.format(Locale.US, "%,d", refinery.heat) + " / " + String.format(Locale.US, "%,d", refinery.maxHeat) + "TU" });
+		this.drawCustomInfoStat(x, y, guiLeft + 60, guiTop + 45, 54, 7, x, y, new String[] { ThermalUnits.formatThermalEnergyPair(refinery.progress, refinery.processTime) });
+		this.drawCustomInfoStat(x, y, guiLeft + 60, guiTop + 54, 54, 7, x, y, new String[] { ThermalUnits.formatThermalEnergyPair(refinery.heat, refinery.maxHeat) });
 	}
 	
 	@Override

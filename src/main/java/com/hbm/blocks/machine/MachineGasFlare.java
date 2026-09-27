@@ -66,8 +66,8 @@ public class MachineGasFlare extends BlockDummyable implements ITooltipProvider 
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 
 		list.add(EnumChatFormatting.GOLD + "Can burn fluids and vent gasses");
-		list.add(EnumChatFormatting.GOLD + "Burns up to " + EnumChatFormatting.RED + "10mB/t");
-		list.add(EnumChatFormatting.GOLD + "Vents up to " + EnumChatFormatting.RED + "50mB/t");
+		list.add(EnumChatFormatting.GOLD + "Burns up to " + EnumChatFormatting.RED + "10 L/t");
+		list.add(EnumChatFormatting.GOLD + "Vents up to " + EnumChatFormatting.RED + "50 L/t");
 		list.add("");
 		list.add(EnumChatFormatting.YELLOW + "Fuel efficiency:");
 		list.add(EnumChatFormatting.YELLOW + "-Flammable Gasses: " + EnumChatFormatting.RED + "20%");

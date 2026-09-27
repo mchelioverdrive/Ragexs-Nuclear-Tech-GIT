@@ -1,5 +1,7 @@
 package com.hbm.items.machine;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.List;
 
 import com.hbm.inventory.FluidStack;
@@ -39,7 +41,7 @@ public class ItemFluidIcon extends Item {
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean bool) {
 		if(stack.hasTagCompound()) {
-			if(getQuantity(stack) > 0) list.add(getQuantity(stack) + "mB");
+			if(getQuantity(stack) > 0) list.add(FluidVolume.format(getQuantity(stack)));
 			if(getPressure(stack) > 0) list.add(EnumChatFormatting.RED + "" + getPressure(stack) + "PU");
 		}
 		

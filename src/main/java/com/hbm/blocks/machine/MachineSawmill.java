@@ -1,5 +1,7 @@
 package com.hbm.blocks.machine;
 
+import com.hbm.util.ThermalUnits;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -192,7 +194,7 @@ public class MachineSawmill extends BlockDummyable implements ILookOverlay, IToo
 		TileEntitySawmill stirling = (TileEntitySawmill) te;
 
 		List<String> text = new ArrayList();
-		text.add(stirling.heat + "TU/t");
+		text.add("Heat Input: " + ThermalUnits.formatThermalPower(stirling.heat));
 
 		double percent = (double) stirling.heat / (double) 300;
 		int color = ((int) (0xFF - 0xFF * percent)) << 16 | ((int)(0xFF * percent) << 8);

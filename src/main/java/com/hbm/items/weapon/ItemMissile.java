@@ -1,5 +1,7 @@
 package com.hbm.items.weapon;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.List;
 
 import com.hbm.items.ItemCustomLore;
@@ -45,7 +47,7 @@ public class ItemMissile extends ItemCustomLore {
 			list.add(EnumChatFormatting.RED + "Not launchable!");
 		} else {
 			list.add("Fuel: " + this.fuel.display);
-			if(this.fuelCap > 0) list.add("Fuel capacity: " + this.fuelCap + "mB");
+			if(this.fuelCap > 0) list.add("Fuel capacity: " + FluidVolume.format(this.fuelCap));
 			super.addInformation(itemstack, player, list, bool);
 		}
 	}

@@ -1,5 +1,7 @@
 package com.hbm.items.armor;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.List;
 
 import com.hbm.dim.trait.CBT_Atmosphere;
@@ -39,7 +41,7 @@ public class ItemModOxy extends ItemArmorMod implements IFillableItem {
 	
 	@Override
 	public void addInformation(ItemStack itemstack, EntityPlayer player, List list, boolean bool) {
-		list.add(EnumChatFormatting.LIGHT_PURPLE + fuel.getLocalizedName() + ": " + getFuel(itemstack) + "mB / " + this.maxFuel + "mB");
+		list.add(EnumChatFormatting.LIGHT_PURPLE + fuel.getLocalizedName() + ": " + FluidVolume.formatPair(getFuel(itemstack), this.maxFuel));
 		list.add("");
 		super.addInformation(itemstack, player, list, bool);
 		list.add(EnumChatFormatting.GOLD + I18n.format("armor.mustSeal"));
@@ -47,7 +49,7 @@ public class ItemModOxy extends ItemArmorMod implements IFillableItem {
 	
 	@Override
 	public void addDesc(List list, ItemStack stack, ItemStack armor) {
-		list.add(EnumChatFormatting.RED + "  " + stack.getDisplayName() + " (" + fuel.getLocalizedName() + ": " + getFuel(stack) + "mB / " + this.maxFuel + "mB");
+		list.add(EnumChatFormatting.RED + "  " + stack.getDisplayName() + " (" + fuel.getLocalizedName() + ": " + FluidVolume.formatPair(getFuel(stack), this.maxFuel));
 	}
 	
     @Override

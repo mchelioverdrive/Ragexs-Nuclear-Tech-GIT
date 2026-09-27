@@ -195,7 +195,7 @@ public class BlockBedrockOreTE extends BlockContainer implements ILookOverlay, I
 		text.add("Tier: " + ore.tier);
 		
 		if(ore.acidRequirement != null) {
-			text.add("Requires: " + ore.acidRequirement.fill + "mB " + ore.acidRequirement.type.getLocalizedName());
+			text.add("Requires: " + ore.acidRequirement.fill + " L " + ore.acidRequirement.type.getLocalizedName());
 		}
 		
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);

@@ -1,5 +1,7 @@
 package com.hbm.items.tool;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import api.hbm.fluid.IFillableItem;
 
 import com.hbm.inventory.fluid.FluidType;
@@ -92,7 +94,7 @@ public class ItemPipette extends Item implements IFillableItem {
 				else 
 					a = !player.isSneaking() ? Math.min(this.getCapacity(stack) + 50, 1_000) : Math.max(this.getCapacity(stack) - 50, 50);
 				stack.stackTagCompound.setShort("capacity", (short) a);
-				player.addChatMessage(new ChatComponentText(a + "/" + this.getMaxFill() + "mB"));
+				player.addChatMessage(new ChatComponentText(FluidVolume.formatPair(a, this.getMaxFill())));
 			} else {
 				player.addChatMessage(new ChatComponentTranslation("desc.item.pipette.noEmpty"));
 			}
@@ -111,7 +113,7 @@ public class ItemPipette extends Item implements IFillableItem {
 		if(this == ModItems.pipette)
 			list.add(I18nUtil.resolveKey("desc.item.pipette.noCorrosive"));
 		list.add("Fluid: " + this.getType(stack).getLocalizedName());
-		list.add("Amount: " + this.getFill(stack) + "/" + this.getCapacity(stack) + "mB (" + this.getMaxFill() + "mB)");
+		list.add("Amount: " + FluidVolume.formatPair(this.getFill(stack), this.getCapacity(stack)) + " (" + FluidVolume.format(this.getMaxFill()) + ")");
 	}
 
 	@Override

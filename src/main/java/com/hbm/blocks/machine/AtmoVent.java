@@ -1,5 +1,7 @@
 package com.hbm.blocks.machine;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
@@ -79,7 +81,7 @@ public class AtmoVent extends BlockDummyable implements ILookOverlay, IToolable 
 			text.add(((EnumChatFormatting.RED + "ERROR: ")) + EnumChatFormatting.RESET + I18nUtil.resolveKey("CANNOT COLLECT IN VACUUM"));
 		} else {
 			text.add((tower.getStoredEnergyQuanta() < tower.getEnergyCapacityQuanta() / 20 ? EnumChatFormatting.RED : EnumChatFormatting.GREEN) + "Stored Energy: " + EnergyUnits.formatJoules(tower.getStoredEnergyQuanta()));
-			text.add(((EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + I18nUtil.resolveKey("hbmfluid." + tower.tank.getTankType().getName().toLowerCase()) + ": " + tower.tank.getFill() + "/" + tower.tank.getMaxFill() + "mB");
+			text.add(((EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + I18nUtil.resolveKey("hbmfluid." + tower.tank.getTankType().getName().toLowerCase()) + ": " + FluidVolume.formatPair(tower.tank.getFill(), tower.tank.getMaxFill()));
 		}
 		
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);

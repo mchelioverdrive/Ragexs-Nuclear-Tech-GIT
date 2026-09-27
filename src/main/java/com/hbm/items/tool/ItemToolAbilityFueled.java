@@ -1,5 +1,7 @@
 package com.hbm.items.tool;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.HashSet;
 import java.util.List;
 
@@ -34,7 +36,7 @@ public class ItemToolAbilityFueled extends ItemToolAbility implements IFillableI
 	@SideOnly(Side.CLIENT)
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 
-		list.add(EnumChatFormatting.GOLD + "Fuel: " + this.getFill(stack) + "/" + this.maxFuel + "mB");
+		list.add(EnumChatFormatting.GOLD + "Fuel: " + FluidVolume.formatPair(this.getFill(stack), this.maxFuel));
 		
 		for(FluidType type : acceptedFuels) {
 			list.add(EnumChatFormatting.YELLOW + "- " + type.getLocalizedName());

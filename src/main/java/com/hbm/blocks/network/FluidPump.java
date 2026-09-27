@@ -1,5 +1,7 @@
 package com.hbm.blocks.network;
 
+import com.hbm.inventory.fluid.FluidVolume;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -111,9 +113,9 @@ public class FluidPump extends BlockContainer implements ILookOverlay, IGUIProvi
 		TileEntityFluidPump pump = (TileEntityFluidPump) tile;
 
 		List<String> text = new ArrayList();
-		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + pump.tank[0].getTankType().getLocalizedName() + " (" + pump.tank[0].getPressure() + " PU): " + BobMathUtil.getShortNumber(pump.bufferSize) + "mB/t" + EnumChatFormatting.RED + " ->");
+		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + pump.tank[0].getTankType().getLocalizedName() + " (" + pump.tank[0].getPressure() + " PU): " + FluidVolume.formatPerTick(pump.bufferSize) + EnumChatFormatting.RED + " ->");
 		text.add("Priority: " + EnumChatFormatting.YELLOW + pump.priority.name());
-		if(pump.tank[0].getFill() > 0) text.add(BobMathUtil.getShortNumber(pump.tank[0].getFill()) + "mB buffered");
+		if(pump.tank[0].getFill() > 0) text.add(FluidVolume.format(pump.tank[0].getFill()) + " buffered");
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 
