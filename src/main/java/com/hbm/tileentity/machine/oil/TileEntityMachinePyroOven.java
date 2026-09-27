@@ -14,8 +14,11 @@ import com.hbm.inventory.gui.GUIPyroOven;
 import com.hbm.inventory.recipes.PyroOvenRecipes;
 import com.hbm.inventory.recipes.PyroOvenRecipes.PyroOvenRecipe;
 import com.hbm.items.machine.ItemMachineUpgrade;
+import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.main.MainRegistry;
 import com.hbm.sound.AudioWrapper;
 import com.hbm.tileentity.IFluidCopiable;
@@ -28,6 +31,7 @@ import com.hbm.util.FurnaceGasEmission;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.IBatteryItem;
 import api.hbm.fluid.IFluidStandardTransceiver;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -42,6 +46,15 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
+	private static final int TASK_PROCESS = 1;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private DirPos[] runtimeConnections;
+	private int observedOrientation = Integer.MIN_VALUE;
+	private int runtimeSpeed;
+	private int runtimePowerSaving;
+	private int runtimeOverdrive;
+	private PyroOvenRecipe runtimeRecipe;
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
@@ -64,6 +77,88 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 		tanks = new FluidTank[2];
 		tanks[0] = new FluidTank(Fluids.NONE, 24_000);
 		tanks[1] = new FluidTank(Fluids.NONE, 24_000);
+		this.trackMachineFluidTank(tanks[0]);
+		this.trackMachineFluidTank(tanks[1]);
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.refreshConnections();
+		if((causes & (MachineDirtyCause.INVENTORY | MachineDirtyCause.UPGRADE | MachineDirtyCause.LIFECYCLE)) != 0) this.refreshUpgrades();
+		this.beginMachineFluidMutation();
+		try { tanks[0].setType(3, slots); }
+		finally { this.endMachineFluidMutation(); }
+		if((causes & (MachineDirtyCause.INVENTORY | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE | MachineDirtyCause.LIFECYCLE)) != 0) this.refreshRecipe();
+		this.subscribeToInputs();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(50);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.refreshConnections();
+		this.subscribeToInputs();
+		this.networkPackNT(50);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PROCESS || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.beginMachineFluidMutation();
+		runtimeEnergyMutation = true;
+		try { this.runOvenStep(); }
+		finally {
+			runtimeEnergyMutation = false;
+			this.endMachineFluidMutation();
+		}
+		this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(50);
+	}
+
+	private void refreshConnections() {
+		int orientation = this.getBlockMetadata();
+		if(runtimeConnections == null || observedOrientation != orientation) {
+			runtimeConnections = this.getConPos();
+			observedOrientation = orientation;
+		}
+	}
+
+	private void refreshUpgrades() {
+		this.upgradeManager.checkSlots(slots, 4, 5);
+		runtimeSpeed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+		runtimePowerSaving = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+		runtimeOverdrive = Math.min(this.upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3);
+	}
+
+	private void refreshRecipe() {
+		runtimeRecipe = this.findMatchingRecipe();
+	}
+
+	private void subscribeToInputs() {
+		for(DirPos pos : runtimeConnections) {
+			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			if(tanks[0].getTankType() != Fluids.NONE) this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+		}
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(this.canProcess() || this.hasBatteryInput() || tanks[1].getFill() > 0 || smoke.getFill() > 0 || progress > 0)
+			this.scheduleMachineTransition(now + 1L, TASK_PROCESS, 0);
+		else {
+			isProgressing = false;
+			this.cancelMachineTransition(TASK_PROCESS, 0);
+		}
+	}
+
+	private boolean hasBatteryInput() {
+		if(energyQuanta >= maxPower || slots[0] == null) return false;
+		if(slots[0].getItem() == ModItems.battery_creative || slots[0].getItem() == ModItems.fusion_core_infinite) return true;
+		return slots[0].getItem() instanceof IBatteryItem && ((IBatteryItem) slots[0].getItem()).getStoredEnergyQuanta(slots[0]) > 0;
 	}
 
 	@Override
@@ -82,15 +177,14 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 
 	@Override
 	public void updateEntity() {
+		if(worldObj.isRemote) this.updateClientAnimation();
+	}
 
-		if(!worldObj.isRemote) {
+	private void runOvenStep() {
 
 			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
-			tanks[0].setType(3, slots);
 
-			for(DirPos pos : getConPos()) {
-				this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				if(tanks[0].getTankType() != Fluids.NONE) this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			for(DirPos pos : runtimeConnections) {
 				if(tanks[1].getFill() > 0) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 
@@ -98,10 +192,9 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 			ForgeDirection rot = dir.getRotation(ForgeDirection.DOWN);
 			if(smoke.getFill() > 0) this.sendFluid(smoke, worldObj, xCoord - rot.offsetX, yCoord + 3, zCoord - rot.offsetZ, Library.POS_Y);
 
-			this.upgradeManager.checkSlots(slots, 4, 5);
-			int speed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int powerSaving = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
-			int overdrive = Math.min(this.upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3);
+			int speed = runtimeSpeed;
+			int powerSaving = runtimePowerSaving;
+			int overdrive = runtimeOverdrive;
 
 			this.isProgressing = false;
 			this.isVenting = false;
@@ -115,6 +208,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 				if(progress >= 1F) {
 					this.progress = 0F;
 					this.finishRecipe(recipe);
+					this.refreshRecipe();
 					this.markDirty();
 				}
 
@@ -125,9 +219,9 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 				this.progress = 0F;
 			}
 
-			this.networkPackNT(50);
-		} else {
+	}
 
+	private void updateClientAnimation() {
 			this.prevAnim = this.anim;
 			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
 			ForgeDirection rot = dir.getRotation(ForgeDirection.DOWN);
@@ -176,7 +270,6 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 					MainRegistry.proxy.effectNT(fx);
 				}
 			}
-		}
 	}
 
 	public static int getConsumption(int speed, int powerSaving) {
@@ -186,6 +279,11 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 	protected PyroOvenRecipe lastValidRecipe;
 
 	public PyroOvenRecipe getMatchingRecipe() {
+		if(runtimeInitialized && worldObj != null && !worldObj.isRemote) return runtimeRecipe;
+		return this.findMatchingRecipe();
+	}
+
+	private PyroOvenRecipe findMatchingRecipe() {
 
 		if(lastValidRecipe != null && doesRecipeMatch(lastValidRecipe)) return lastValidRecipe;
 
@@ -215,9 +313,10 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 	}
 
 	public boolean canProcess() {
-		int speed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-		int powerSaving = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
-		if(energyQuanta < this.getConsumption(speed, powerSaving)) return false; // not enough power
+		int speed = runtimeInitialized && worldObj != null && !worldObj.isRemote ? runtimeSpeed : Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+		int powerSaving = runtimeInitialized && worldObj != null && !worldObj.isRemote ? runtimePowerSaving : Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+		int overdrive = runtimeInitialized && worldObj != null && !worldObj.isRemote ? runtimeOverdrive : Math.min(this.upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3);
+		if(energyQuanta < this.getConsumption(speed + overdrive * 2, powerSaving)) return false;
 
 		PyroOvenRecipe recipe = this.getMatchingRecipe();
 		if(recipe == null) return false; // no matching recipe
@@ -354,6 +453,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 	@Override public long getEnergyCapacityQuanta() { return maxPower; }
 

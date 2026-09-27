@@ -6,6 +6,7 @@ import com.hbm.dim.orbit.OrbitalStation.StationState;
 import com.hbm.interfaces.IControlReceiver;
 import com.hbm.inventory.container.ContainerOrbitalStationComputer;
 import com.hbm.inventory.gui.GUIOrbitalStationComputer;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 
@@ -51,11 +52,28 @@ public class TileEntityOrbitalStationComputer extends TileEntityMachineBase impl
 	}
 
 	@Override
-	public void updateEntity() {
-		if(!worldObj.isRemote) {
-			hasDrive = slots[0] != null;
+	public void updateEntity() { }
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		boolean next = slots[0] != null;
+		if(hasDrive != next) {
+			hasDrive = next;
 			networkPackNT(50);
 		}
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
+		onMachineRuntimeDirty(0);
+		networkPackNT(50);
 	}
 
 	@Override

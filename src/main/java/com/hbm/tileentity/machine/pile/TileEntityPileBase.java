@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Random;
 
 import com.hbm.blocks.ModBlocks;
+import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.ContaminationUtil;
 import com.hbm.util.ContaminationUtil.ContaminationType;
 import com.hbm.util.ContaminationUtil.HazardType;
@@ -15,10 +16,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.Vec3;
 
-public abstract class TileEntityPileBase extends TileEntity {
-
-	@Override
-	public abstract void updateEntity();
+public abstract class TileEntityPileBase extends TileEntityLoadedBase {
 
 	protected void castRay(int flux, int range) {
 		Random rand = worldObj.rand;

@@ -53,12 +53,7 @@ public class ItemTeleLink extends Item {
 				
 				TileEntityMachineTeleporter tele = (TileEntityMachineTeleporter) te;
 
-				tele.targetX = x1;
-				tele.targetY = y1;
-				tele.targetZ = z1;
-				tele.targetDim = dim;
-				
-				tele.markDirty();
+				tele.setTarget(x1, y1, z1, dim);
 				world.playSoundAtEntity(player, "hbm:item.techBleep", 1.0F, 1.0F);
 				player.addChatMessage(new ChatComponentText(EnumChatFormatting.AQUA + "[TeleLink] Teleporters destination has been set!"));
 				player.swingItem();

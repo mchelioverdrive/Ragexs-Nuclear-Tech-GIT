@@ -7,17 +7,20 @@ import com.hbm.config.GeneralConfig;
 import com.hbm.config.RadiationConfig;
 import com.hbm.extprop.HbmLivingProps;
 import com.hbm.hazard.type.HazardTypeNeutron;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.main.MainRegistry;
 import com.hbm.potion.HbmPotion;
+import com.hbm.tileentity.TileEntityLoadedBase;
 
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 
-public class TileEntityDecon extends TileEntity {
+public class TileEntityDecon extends TileEntityLoadedBase {
+
+	private static final int TASK_DECONTAMINATE = 0;
 
 	private static final float RADIATION_WASH_PER_TICK = 0.25F;
 	private static final float NEUTRON_WASH_FACTOR = 0.899916F;
@@ -25,36 +28,60 @@ public class TileEntityDecon extends TileEntity {
 	private static final float ARMOR_NEUTRON_WASH_FACTOR = 0.03F;
 
 	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & com.hbm.machine.MachineDirtyCause.LIFECYCLE) != 0 && hasEntitiesToProcess()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_DECONTAMINATE, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 5 || worldObj == null || worldObj.isRemote) return;
+		if(hasEntitiesToProcess()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_DECONTAMINATE, 0);
+		else cancelMachineTransition(TASK_DECONTAMINATE, 0);
+	}
+
+	private AxisAlignedBB getDeconArea() {
+		return AxisAlignedBB.getBoundingBox(xCoord, yCoord, zCoord, xCoord + 1, yCoord + 2, zCoord + 1).expand(0.25D, 0.0D, 0.25D);
+	}
+
+	private List<EntityLivingBase> getEntitiesToProcess() {
+		return worldObj.getEntitiesWithinAABB(EntityLivingBase.class, getDeconArea());
+	}
+
+	private boolean hasEntitiesToProcess() {
+		return !getEntitiesToProcess().isEmpty();
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_DECONTAMINATE || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		List<EntityLivingBase> entities = getEntitiesToProcess();
+		if(!entities.isEmpty()) {
+			runDecontaminationStep(entities);
+			scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_DECONTAMINATE, 0);
+		}
+	}
+
+	private void runDecontaminationStep(List<EntityLivingBase> entities) {
+		debugTick(entities);
+		for(EntityLivingBase e : entities) {
+			/* Stored radiation and current dose rate are separate: wash accumulated radiation here. */
+			float rad = HbmLivingProps.getRadiation(e);
+			if(rad > 0) HbmLivingProps.incrementRadiation(e, -Math.min(rad, RADIATION_WASH_PER_TICK));
+			if(HbmLivingProps.getRadiation(e) <= 0 && HbmLivingProps.getDoseRate(e) < 5F) e.removePotionEffect(HbmPotion.radiation.id);
+			deconContamination(e);
+		}
+		deconNeutron(entities);
+	}
+
+	@Override
 	public void updateEntity() {
-		if(!this.worldObj.isRemote) {
-			AxisAlignedBB box = AxisAlignedBB.getBoundingBox(this.xCoord, this.yCoord, this.zCoord, this.xCoord + 1, this.yCoord + 2, this.zCoord + 1).expand(0.25D, 0.0D, 0.25D);
-			List<EntityLivingBase> entities = this.worldObj.getEntitiesWithinAABB(EntityLivingBase.class, box);
-
-			debugTick(entities);
-
-			if(!entities.isEmpty()) {
-				for(EntityLivingBase e : entities) {
-					/*
-					 * Stored radiation is HbmLivingProps.radiation. Dose rate is only the
-					 * current incoming exposure from environment, timed contamination effects,
-					 * and neutron activation, so do not use dose rate as the condition for
-					 * washing accumulated player/entity radiation.
-					 */
-					float rad = HbmLivingProps.getRadiation(e);
-					if(rad > 0) {
-						HbmLivingProps.incrementRadiation(e, -Math.min(rad, RADIATION_WASH_PER_TICK));
-					}
-
-					if(HbmLivingProps.getRadiation(e) <= 0 && HbmLivingProps.getDoseRate(e) < 5F) {
-						e.removePotionEffect(HbmPotion.radiation.id);
-					}
-
-					deconContamination(e);
-				}
-
-				deconNeutron(entities);
-			}
-		} else {
+		if(worldObj.isRemote) {
 			Random rand = worldObj.rand;
 
 			NBTTagCompound nbt = new NBTTagCompound();

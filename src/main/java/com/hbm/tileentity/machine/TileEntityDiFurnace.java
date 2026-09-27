@@ -9,6 +9,8 @@ import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.gui.GUIDiFurnace;
 import com.hbm.inventory.recipes.BlastFurnaceRecipes;
 import com.hbm.items.ModItems;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.INBTPacketReceiver;
 import com.hbm.tileentity.TileEntityMachinePolluting;
@@ -30,6 +32,11 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityDiFurnace extends TileEntityMachinePolluting implements IFluidStandardSender, IGUIProvider, IInfoProviderEC {
+	private static final int TASK_SMELT = 1;
+	private boolean runtimeInitialized;
+	private boolean runtimeCanBreathe;
+	private boolean runtimeExtension;
+	private ItemStack runtimeRecipeOutput;
 
 	public int progress;
 	public int fuel;
@@ -43,6 +50,65 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 
 	public TileEntityDiFurnace() {
 		super(4, 50);
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		if((causes & (MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.LIFECYCLE)) != 0) this.refreshRecipe();
+		runtimeCanBreathe = this.breatheAir(0);
+		runtimeExtension = worldObj.getBlock(xCoord, yCoord + 1, zCoord) == ModBlocks.machine_difurnace_extension;
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimePacket();
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		if(cadence == 5) {
+			boolean breathable = this.breatheAir(0);
+			if(breathable != runtimeCanBreathe) {
+				runtimeCanBreathe = breathable;
+				this.markMachineDirty(MachineDirtyCause.ENVIRONMENT);
+			}
+		} else if(cadence == 20) {
+			boolean extension = worldObj.getBlock(xCoord, yCoord + 1, zCoord) == ModBlocks.machine_difurnace_extension;
+			if(extension != runtimeExtension) {
+				runtimeExtension = extension;
+				this.markMachineDirty(MachineDirtyCause.TOPOLOGY);
+			}
+			this.sendRuntimePacket();
+		}
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_SMELT || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.runFurnaceStep();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimePacket();
+	}
+
+	private void refreshRecipe() {
+		runtimeRecipeOutput = slots[0] != null && slots[1] != null ? BlastFurnaceRecipes.getOutput(slots[0], slots[1]) : null;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		boolean canLoadFuel = this.hasItemPower(slots[2], runtimeCanBreathe) && fuel <= maxFuel - this.getItemPower(slots[2], runtimeCanBreathe);
+		boolean canSmelt = runtimeCanBreathe && this.canProcess();
+		if(canLoadFuel || canSmelt || progress > 0 || smoke.getFill() > 0 || smoke_leaded.getFill() > 0 || smoke_poison.getFill() > 0)
+			this.scheduleMachineTransition(now + 1L, TASK_SMELT, 0);
+		else this.cancelMachineTransition(TASK_SMELT, 0);
+	}
+
+	private void sendRuntimePacket() {
+		NBTTagCompound data = new NBTTagCompound();
+		data.setShort("time", (short) progress);
+		data.setShort("fuel", (short) fuel);
+		data.setByteArray("modes", new byte[] { sideFuel, sideUpper, sideLower });
+		INBTPacketReceiver.networkPack(this, data, 15);
 	}
 
 	@Override
@@ -138,7 +204,7 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 		if(slots[0] == null || slots[1] == null) return false;
 		if(!this.hasPower()) return false;
 		
-		ItemStack output = BlastFurnaceRecipes.getOutput(slots[0], slots[1]);
+		ItemStack output = runtimeInitialized && worldObj != null && !worldObj.isRemote ? runtimeRecipeOutput : BlastFurnaceRecipes.getOutput(slots[0], slots[1]);
 		if(output == null) return false;
 		if(slots[3] == null) return true;
 		if(!slots[3].isItemEqual(output)) return false;
@@ -151,7 +217,8 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 	}
 
 	private void processItem() {
-		ItemStack itemStack = BlastFurnaceRecipes.getOutput(slots[0], slots[1]);
+		ItemStack itemStack = runtimeRecipeOutput;
+		if(itemStack == null) return;
 
 		if(slots[3] == null) {
 			slots[3] = itemStack.copy();
@@ -162,6 +229,7 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 		for(int i = 0; i < 2; i++) {
 			this.decrStackSize(i, 1);
 		}
+		this.refreshRecipe();
 	}
 
 	public boolean hasPower() {
@@ -174,10 +242,11 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 
 	@Override
 	public void updateEntity() {
+		// Smelting and smoke movement are driven by MachineRuntime.
+	}
 
-		if(!worldObj.isRemote) {
-			
-			boolean extension = worldObj.getBlock(xCoord, yCoord + 1, zCoord) == ModBlocks.machine_difurnace_extension;
+	private void runFurnaceStep() {
+			boolean extension = runtimeExtension;
 			
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
 				this.sendSmoke(xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
@@ -186,7 +255,7 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 			if(extension) this.sendSmoke(xCoord, yCoord + 2, zCoord, ForgeDirection.UP);
 
 			boolean markDirty = false;
-			boolean canOperate = breatheAir(0); // checks breathable but doesn't consume air
+			boolean canOperate = runtimeCanBreathe = breatheAir(0); // checks breathable but doesn't consume air
 			
 			if(this.hasItemPower(this.slots[2], canOperate) && this.fuel <= (TileEntityDiFurnace.maxFuel - getItemPower(this.slots[2], canOperate))) {
 				this.fuel += getItemPower(this.slots[2], canOperate);
@@ -233,16 +302,9 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 				MachineDiFurnace.updateBlockState(this.progress > 0, this.worldObj, this.xCoord, this.yCoord, this.zCoord);
 			}
 
-			NBTTagCompound data = new NBTTagCompound();
-			data.setShort("time", (short) this.progress);
-			data.setShort("fuel", (short) this.fuel);
-			data.setByteArray("modes", new byte[] { (byte) sideFuel, (byte) sideUpper, (byte) sideLower });
-			INBTPacketReceiver.networkPack(this, data, 15);
-
 			if(markDirty) {
 				this.markDirty();
 			}
-		}
 	}
 
 	@Override

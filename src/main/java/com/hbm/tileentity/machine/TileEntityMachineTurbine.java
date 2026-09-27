@@ -14,6 +14,8 @@ import com.hbm.inventory.fluid.trait.FT_Coolable;
 import com.hbm.inventory.fluid.trait.FT_Coolable.CoolingType;
 import com.hbm.inventory.gui.GUIMachineTurbine;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IConfigurableMachine;
 import com.hbm.tileentity.IBufPacketReceiver;
@@ -44,6 +46,15 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityMachineTurbine extends TileEntityLoadedBase implements ISidedInventory, IEnergyProviderMK2, IFluidStandardTransceiver, IBufPacketReceiver, IGUIProvider, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IConfigurableMachine, IFluidCopiable{
+	private static final int TASK_CONVERT = 1;
+	private boolean runtimeInitialized;
+	private boolean runtimeFluidMutation;
+	private boolean runtimeEnergyMutation;
+	private final FluidTank.ChangeListener tankListener = new FluidTank.ChangeListener() {
+		@Override public void onTankChanged(FluidTank tank) {
+			if(worldObj != null && !worldObj.isRemote && !runtimeFluidMutation) markMachineFluidDirty();
+		}
+	};
 
 	private ItemStack slots[];
 
@@ -70,6 +81,57 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 		tanks = new FluidTank[2];
 		tanks[0] = new FluidTank(Fluids.STEAM, inputTankSize);
 		tanks[1] = new FluidTank(Fluids.SPENTSTEAM, outputTankSize);
+		tanks[0].setChangeListener(tankListener);
+		tanks[1].setChangeListener(tankListener);
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.runtimeFluidMutation = true;
+		try { this.loadInputContainers(); }
+		finally { this.runtimeFluidMutation = false; }
+		this.subscribeToInput();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendStandard(25);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.subscribeToInput();
+		this.sendStandard(25);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_CONVERT || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		runtimeFluidMutation = true;
+		runtimeEnergyMutation = true;
+		try { this.runTurbineStep(); }
+		finally {
+			runtimeFluidMutation = false;
+			runtimeEnergyMutation = false;
+		}
+		this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	private void loadInputContainers() {
+		tanks[0].setType(0, 1, slots);
+		tanks[0].loadTank(2, 3, slots);
+	}
+
+	private void subscribeToInput() {
+		this.subscribeToAllAround(tanks[0].getTankType(), this);
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(this.isOverpressurized()) this.scheduleMachineTransition(now, TASK_CONVERT, 0);
+		else if(tanks[0].getFill() > 0 || tanks[1].getFill() > 0 || energyQuanta > 0) this.scheduleMachineTransition(now + 1L, TASK_CONVERT, 0);
+		else this.cancelMachineTransition(TASK_CONVERT, 0);
 	}
 	@Override
 	public String getConfigName() {
@@ -110,6 +172,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 		{
 			ItemStack itemStack = slots[i];
 			slots[i] = null;
+			if(!runtimeFluidMutation) this.markMachineDirty(MachineDirtyCause.INVENTORY);
 			return itemStack;
 		} else {
 		return null;
@@ -119,6 +182,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 	@Override
 	public void setInventorySlotContents(int i, ItemStack itemStack) {
 		slots[i] = itemStack;
+		if(!runtimeFluidMutation) this.markMachineDirty(MachineDirtyCause.INVENTORY);
 		if(itemStack != null && itemStack.stackSize > getInventoryStackLimit())
 		{
 			itemStack.stackSize = getInventoryStackLimit();
@@ -178,6 +242,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 			{
 				ItemStack itemStack = slots[i];
 				slots[i] = null;
+				if(!runtimeFluidMutation) this.markMachineDirty(MachineDirtyCause.INVENTORY);
 				return itemStack;
 			}
 			ItemStack itemStack1 = slots[i].splitStack(j);
@@ -185,6 +250,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 			{
 				slots[i] = null;
 			}
+			if(!runtimeFluidMutation) this.markMachineDirty(MachineDirtyCause.INVENTORY);
 			
 			return itemStack1;
 		} else {
@@ -255,30 +321,33 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 	public long getPowerScaled(int i) {
 		return (energyQuanta * i) / maxPower;
 	}
+
+	public long getPowerOutputWatts() {
+		return EnergyUnits.quantaPerTickToWatts((long) info[2]);
+	}
 	
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
+		// Steam conversion and energy transfer are owned by MachineRuntime.
+	}
+
+	private void runTurbineStep() {
 			if(isOverpressurized()) {
 				explodeFromOverpressure();
 				return;
 			}
 			
-			this.info = new double[3];
+			this.info[0] = this.info[1] = this.info[2] = 0;
 			
 			age++;
 			if(age >= 2) {
 				age = 0;
 			}
 			
-			this.subscribeToAllAround(tanks[0].getTankType(), this);
-			
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
 				this.tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 
-			tanks[0].setType(0, 1, slots);
-			tanks[0].loadTank(2, 3, slots);
+			this.loadInputContainers();
 			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 4, energyQuanta, maxPower));
 			
 			FluidType in = tanks[0].getTankType();
@@ -310,7 +379,6 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 			tanks[1].unloadTank(5, 6, slots);
 			
 			this.sendStandard(25);
-		}
 	}
 
 	/**
@@ -363,6 +431,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override

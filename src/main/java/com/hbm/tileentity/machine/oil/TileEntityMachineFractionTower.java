@@ -1,10 +1,13 @@
 package com.hbm.tileentity.machine.oil;
 
 import com.hbm.inventory.FluidStack;
+import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.recipes.FractionRecipes;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.BufPacket;
 import com.hbm.tileentity.IBufPacketReceiver;
@@ -23,6 +26,18 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 
 public class TileEntityMachineFractionTower extends TileEntityLoadedBase implements IBufPacketReceiver, IFluidStandardTransceiver, IFluidCopiable {
+	private static final int TASK_PROCESS = 1;
+	private boolean runtimeFluidMutation;
+	private boolean runtimeInitialized;
+	private boolean stackPresent;
+	private boolean lowerNotifiedOfOutput;
+	private FluidType runtimeInputType;
+	private DirPos[] runtimeConnections;
+	private final FluidTank.ChangeListener tankListener = new FluidTank.ChangeListener() {
+		@Override public void onTankChanged(FluidTank tank) {
+			if(worldObj != null && !worldObj.isRemote && !runtimeFluidMutation) markMachineFluidDirty();
+		}
+	};
 	
 	public FluidTank[] tanks;
 	
@@ -31,13 +46,99 @@ public class TileEntityMachineFractionTower extends TileEntityLoadedBase impleme
 		tanks[0] = new FluidTank(Fluids.HEAVYOIL, 4000);
 		tanks[1] = new FluidTank(Fluids.BITUMEN, 4000);
 		tanks[2] = new FluidTank(Fluids.SMEAR, 4000);
+		for(FluidTank tank : tanks) tank.setChangeListener(tankListener);
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.refreshConnections();
+		this.refreshStack();
+		if(runtimeInputType != tanks[0].getTankType()) {
+			runtimeFluidMutation = true;
+			try { this.setupTanks(); }
+			finally { runtimeFluidMutation = false; }
+			runtimeInputType = tanks[0].getTankType();
+		}
+		this.updateConnections();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.notifyLowerTower();
+		this.sendRuntimePacket();
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		if(this.refreshStack()) this.markMachineDirty(MachineDirtyCause.TOPOLOGY);
+		this.updateConnections();
+		this.sendRuntimePacket();
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PROCESS || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		runtimeFluidMutation = true;
+		try { this.processTowerStep(); }
+		finally { runtimeFluidMutation = false; }
+		this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.notifyLowerTower();
+		this.sendRuntimePacket();
+	}
+
+	private boolean refreshStack() {
+		boolean present = worldObj.getTileEntity(xCoord, yCoord + 3, zCoord) instanceof TileEntityMachineFractionTower;
+		boolean changed = present != stackPresent;
+		stackPresent = present;
+		return changed;
+	}
+
+	private void refreshConnections() {
+		if(runtimeConnections == null) runtimeConnections = this.getConPos();
+	}
+
+	private void evaluateAndSchedule(long now) {
+		boolean outputFlow = tanks[1].getFill() > 0 || tanks[2].getFill() > 0;
+		boolean inputReady = tanks[0].getFill() > 0;
+		TileEntity upper = stackPresent ? worldObj.getTileEntity(xCoord, yCoord + 3, zCoord) : null;
+		boolean upstreamReady = upper instanceof TileEntityMachineFractionTower &&
+			(((TileEntityMachineFractionTower) upper).tanks[1].getFill() > 0 || ((TileEntityMachineFractionTower) upper).tanks[2].getFill() > 0);
+		boolean fractionReady = false;
+		if(inputReady && !stackPresent && tanks[0].getFill() >= 100) {
+			Pair<FluidStack, FluidStack> recipe = FractionRecipes.getFractions(tanks[0].getTankType());
+			fractionReady = recipe != null && this.hasSpace(recipe.getKey().fill, recipe.getValue().fill);
+		}
+		if(outputFlow || upstreamReady || (stackPresent && inputReady) || fractionReady) {
+			long nextFraction = now + (10L - now % 10L);
+			this.scheduleMachineTransition(outputFlow || upstreamReady || stackPresent ? now + 1L : nextFraction, TASK_PROCESS, 0);
+		} else this.cancelMachineTransition(TASK_PROCESS, 0);
+	}
+
+	private void notifyLowerTower() {
+		if(tanks[1].getFill() == 0 && tanks[2].getFill() == 0) {
+			lowerNotifiedOfOutput = false;
+			return;
+		}
+		if(lowerNotifiedOfOutput) return;
+		TileEntity below = worldObj.getTileEntity(xCoord, yCoord - 3, zCoord);
+		if(below instanceof TileEntityMachineFractionTower) {
+			((TileEntityMachineFractionTower) below).markMachineFluidDirty();
+			lowerNotifiedOfOutput = true;
+		}
+	}
+
+	private void sendRuntimePacket() {
+		PacketDispatcher.wrapper.sendToAllAround(new BufPacket(xCoord, yCoord, zCoord, this), new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
 	}
 	
 	@Override
 	public void updateEntity() {
+		// Fractionation, stack transfer, and fluid output are runtime-owned.
+	}
 
-		if(!worldObj.isRemote) {
-			
+	private void processTowerStep() {
 			TileEntity stack = worldObj.getTileEntity(xCoord, yCoord + 3, zCoord);
 			
 			if(stack instanceof TileEntityMachineFractionTower) {
@@ -62,16 +163,10 @@ public class TileEntityMachineFractionTower extends TileEntityLoadedBase impleme
 				frac.tanks[2].setFill(frac.tanks[2].getFill() - right);
 			}
 			
-			setupTanks();
-			this.updateConnections();
-			
 			if(worldObj.getTotalWorldTime() % 10 == 0)
 				fractionate();
-			
-			this.sendFluid();
 
-			PacketDispatcher.wrapper.sendToAllAround(new BufPacket(xCoord, yCoord, zCoord, this), new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
-		}
+			this.sendFluid();
 	}
 
 	@Override
@@ -88,14 +183,14 @@ public class TileEntityMachineFractionTower extends TileEntityLoadedBase impleme
 	
 	private void updateConnections() {
 		
-		for(DirPos pos : getConPos()) {
+		for(DirPos pos : runtimeConnections) {
 			this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
 	}
 	
 	private void sendFluid() {
 		
-		for(DirPos pos : getConPos()) {
+		for(DirPos pos : runtimeConnections) {
 			this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			this.sendFluid(tanks[2], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}

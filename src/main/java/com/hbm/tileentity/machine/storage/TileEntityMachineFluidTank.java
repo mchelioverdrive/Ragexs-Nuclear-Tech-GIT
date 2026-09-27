@@ -19,6 +19,8 @@ import com.hbm.inventory.gui.GUIMachineFluidTank;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.tileentity.*;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
@@ -49,6 +51,10 @@ import java.util.Random;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "opencomputers")})
 public class TileEntityMachineFluidTank extends TileEntityMachineBase implements SimpleComponent, OCComponent, IFluidStandardTransceiver, IPersistentNBT, IOverpressurable, IGUIProvider, IRepairable, IFluidCopiable{
+	private static final int TASK_TRANSFER = 1;
+	private DirPos[] runtimeConnections;
+	private AxisAlignedBB ladderArea;
+	private int ladderAreaMetadata = Integer.MIN_VALUE;
 	
 	public FluidTank tank;
 	public short mode = 0;
@@ -64,6 +70,7 @@ public class TileEntityMachineFluidTank extends TileEntityMachineBase implements
 	public TileEntityMachineFluidTank() {
 		super(6);
 		tank = new FluidTank(Fluids.NONE, 256000);
+		this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -78,8 +85,41 @@ public class TileEntityMachineFluidTank extends TileEntityMachineBase implements
 	}
 
 	@Override
-	public void updateEntity() {
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
 
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj != null && !worldObj.isRemote)
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_TRANSFER, 0);
+	}
+
+	private boolean hasContainerWork() {
+		return slots[2] != null || (slots[4] != null && tank.getFill() > 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_TRANSFER, 0);
+		if(cadence == 20) {
+			this.markChanged();
+			this.networkPackNT(150);
+		}
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_TRANSFER || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		this.beginMachineFluidMutation();
+		try { runFluidTankStep(); }
+		finally { this.endMachineFluidMutation(); }
+		if(worldObj.getTileEntity(xCoord, yCoord, zCoord) == this && (tank.getFill() > 0 || hasContainerWork()))
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_TRANSFER, 0);
+	}
+
+	private void runFluidTankStep() {
 		if(!worldObj.isRemote) {
 			
 			//meta below 12 means that it's an old multiblock configuration
@@ -154,9 +194,18 @@ public class TileEntityMachineFluidTank extends TileEntityMachineBase implements
 			this.networkPackNT(150);
 		}
 		
-		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
-		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
-		List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, AxisAlignedBB.getBoundingBox(xCoord, yCoord, zCoord, xCoord + 1, yCoord + 2.875, zCoord + 1).offset(dir.offsetX * 0.5 - rot.offsetX * 2.25, 0, dir.offsetZ * 0.5 - rot.offsetZ * 2.25));
+	}
+
+	@Override
+	public void updateEntity() {
+		int metadata = this.getBlockMetadata();
+		if(ladderArea == null || ladderAreaMetadata != metadata) {
+			ForgeDirection dir = ForgeDirection.getOrientation(metadata - 10);
+			ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
+			ladderArea = AxisAlignedBB.getBoundingBox(xCoord, yCoord, zCoord, xCoord + 1, yCoord + 2.875, zCoord + 1).offset(dir.offsetX * 0.5 - rot.offsetX * 2.25, 0, dir.offsetZ * 0.5 - rot.offsetZ * 2.25);
+			ladderAreaMetadata = metadata;
+		}
+		List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, ladderArea);
 		
 		for(EntityPlayer player : players) {
 			HbmPlayerProps props = HbmPlayerProps.getData(player);
@@ -259,7 +308,8 @@ public class TileEntityMachineFluidTank extends TileEntityMachineBase implements
 	}
 	
 	protected DirPos[] getConPos() {
-		return new DirPos[] {
+		if(runtimeConnections != null) return runtimeConnections;
+		runtimeConnections = new DirPos[] {
 				new DirPos(xCoord + 2, yCoord, zCoord - 1, Library.POS_X),
 				new DirPos(xCoord + 2, yCoord, zCoord + 1, Library.POS_X),
 				new DirPos(xCoord - 2, yCoord, zCoord - 1, Library.NEG_X),
@@ -269,11 +319,13 @@ public class TileEntityMachineFluidTank extends TileEntityMachineBase implements
 				new DirPos(xCoord - 1, yCoord, zCoord - 2, Library.NEG_Z),
 				new DirPos(xCoord + 1, yCoord, zCoord - 2, Library.NEG_Z)
 		};
+		return runtimeConnections;
 	}
 	
 	public void handleButtonPacket(int value, int meta) {
 		mode = (short) ((mode + 1) % modes);
 		this.markChanged();
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 	
 	AxisAlignedBB bb = null;

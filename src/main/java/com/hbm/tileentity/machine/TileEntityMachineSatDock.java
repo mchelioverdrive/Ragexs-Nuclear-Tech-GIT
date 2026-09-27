@@ -6,10 +6,13 @@ import com.hbm.inventory.container.ContainerSatDock;
 import com.hbm.inventory.gui.GUISatDock;
 import com.hbm.itempool.ItemPool;
 import com.hbm.items.ISatChip;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.saveddata.SatelliteSavedData;
 import com.hbm.saveddata.satellites.Satellite;
 import com.hbm.saveddata.satellites.SatelliteMiner;
 import com.hbm.tileentity.IGUIProvider;
+import com.hbm.tileentity.TileEntityLoadedBase;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.player.EntityPlayer;
@@ -26,7 +29,11 @@ import net.minecraft.world.World;
 
 import java.util.List;
 
-public class TileEntityMachineSatDock extends TileEntity implements ISidedInventory, IGUIProvider {
+public class TileEntityMachineSatDock extends TileEntityLoadedBase implements ISidedInventory, IGUIProvider {
+    private static final int TASK_TRANSFER = 0;
+    private boolean inventoryFingerprintInitialized;
+    private int observedInventoryFingerprint;
+    private long lastMinerCheckTick = Long.MIN_VALUE;
     private ItemStack[] slots;
 
     private static final int[] access = new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
@@ -54,6 +61,8 @@ public class TileEntityMachineSatDock extends TileEntity implements ISidedInvent
         if (slots[i] != null) {
             ItemStack itemStack = slots[i];
             slots[i] = null;
+			markDirty();
+			markMachineDirty(com.hbm.machine.MachineDirtyCause.INVENTORY);
             return itemStack;
         } else {
             return null;
@@ -66,6 +75,8 @@ public class TileEntityMachineSatDock extends TileEntity implements ISidedInvent
         if (itemStack != null && itemStack.stackSize > getInventoryStackLimit()) {
             itemStack.stackSize = getInventoryStackLimit();
         }
+        markDirty();
+        markMachineDirty(MachineDirtyCause.INVENTORY);
     }
 
     @Override
@@ -114,14 +125,18 @@ public class TileEntityMachineSatDock extends TileEntity implements ISidedInvent
     public ItemStack decrStackSize(int i, int j) {
         if (slots[i] != null) {
             if (slots[i].stackSize <= j) {
-                ItemStack itemStack = slots[i];
-                slots[i] = null;
-                return itemStack;
+            ItemStack itemStack = slots[i];
+            slots[i] = null;
+            markDirty();
+            markMachineDirty(MachineDirtyCause.INVENTORY);
+            return itemStack;
             }
             ItemStack itemStack1 = slots[i].splitStack(j);
             if (slots[i].stackSize == 0) {
                 slots[i] = null;
             }
+            markDirty();
+            markMachineDirty(MachineDirtyCause.INVENTORY);
 
             return itemStack1;
         } else {
@@ -177,60 +192,123 @@ public class TileEntityMachineSatDock extends TileEntity implements ISidedInvent
     }
 
     @Override
-    public void updateEntity() {
-        if (!worldObj.isRemote) {
-            SatelliteSavedData data = SatelliteSavedData.getData(worldObj);
+    public int getMachineExecutionStrategies() {
+        return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+    }
 
-            if (slots[15] != null) {
-                int freq = ISatChip.getFreqS(slots[15]);
+    @Override
+    public void onMachineRuntimeDirty(int causes) {
+        if (worldObj == null || worldObj.isRemote) return;
+        observeInventoryFingerprint();
+        if ((causes & MachineDirtyCause.LIFECYCLE) != 0) checkMinerLaunch();
+        if (hasOutputItems()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_TRANSFER, 0);
+        else cancelMachineTransition(TASK_TRANSFER, 0);
+    }
 
-                Satellite sat = data.getSatFromFreq(freq);
-
-                int delay = 10 * 60 * 1000;
-
-                if (sat instanceof SatelliteMiner) {
-                    SatelliteMiner miner = (SatelliteMiner) sat;
-
-                    if (miner.lastOp + delay < System.currentTimeMillis()) {
-                        EntityMinerRocket rocket = new EntityMinerRocket(worldObj);
-                        rocket.posX = xCoord + 0.5;
-                        rocket.posY = 300;
-                        rocket.posZ = zCoord + 0.5;
-
-                        rocket.getDataWatcher().updateObject(17, freq);
-                        worldObj.spawnEntityInWorld(rocket);
-                        miner.lastOp = System.currentTimeMillis();
-                        data.markDirty();
-                    }
-                }
-            }
-
-            @SuppressWarnings("unchecked")
-            List<EntityMinerRocket> list = worldObj.getEntitiesWithinAABBExcludingEntity(
-                    null,
-                    AxisAlignedBB.getBoundingBox(xCoord - 0.25 + 0.5, yCoord + 0.75, zCoord - 0.25 + 0.5, xCoord + 0.25 + 0.5, yCoord + 2, zCoord + 0.25 + 0.5),
-                    entity -> entity instanceof EntityMinerRocket
-            );
-
-            for (EntityMinerRocket rocket : list) {
-                if (slots[15] != null && ISatChip.getFreqS(slots[15]) != rocket.getDataWatcher().getWatchableObjectInt(17)) {
-                    rocket.setDead();
-                    ExplosionNukeSmall.explode(worldObj, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, ExplosionNukeSmall.PARAMS_TOTS);
-                    break;
-                }
-
-                if (rocket.getDataWatcher().getWatchableObjectInt(16) == 1 && rocket.timer == 50) {
-                    Satellite sat = data.getSatFromFreq(ISatChip.getFreqS(slots[15]));
-                    unloadCargo((SatelliteMiner) sat);
-                }
-            }
-
-            ejectInto(xCoord + 2, yCoord, zCoord);
-            ejectInto(xCoord - 2, yCoord, zCoord);
-            ejectInto(xCoord, yCoord, zCoord + 2);
-            ejectInto(xCoord, yCoord, zCoord - 2);
+    @Override
+    public void onMachineCoarsePoll(int cadence) {
+        if (worldObj == null || worldObj.isRemote) return;
+        if (cadence == 5) {
+            if (observeInventoryFingerprint()) markMachineDirty(MachineDirtyCause.INVENTORY);
+            if (hasOutputItems() || hasDockedRocket()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_TRANSFER, 0);
+            else cancelMachineTransition(TASK_TRANSFER, 0);
+        } else if (cadence == 20 && (lastMinerCheckTick == Long.MIN_VALUE || worldObj.getTotalWorldTime() - lastMinerCheckTick >= 20L)) {
+            checkMinerLaunch();
         }
     }
+
+    private int inventoryFingerprint() {
+        int hash = 1;
+        for (ItemStack stack : slots) {
+            hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+            if (stack != null) {
+                hash = 31 * hash + stack.stackSize;
+                hash = 31 * hash + stack.getItemDamage();
+                hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+            }
+        }
+        return hash;
+    }
+
+    private boolean observeInventoryFingerprint() {
+        int current = inventoryFingerprint();
+        boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+        observedInventoryFingerprint = current;
+        inventoryFingerprintInitialized = true;
+        return changed;
+    }
+
+    private boolean hasOutputItems() {
+        for (int i = 0; i < 15; i++) if (slots[i] != null) return true;
+        return false;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<EntityMinerRocket> getDockedRockets() {
+        return worldObj.getEntitiesWithinAABBExcludingEntity(
+                null,
+                AxisAlignedBB.getBoundingBox(xCoord + 0.25, yCoord + 0.75, zCoord + 0.25, xCoord + 0.75, yCoord + 2, zCoord + 0.75),
+                entity -> entity instanceof EntityMinerRocket
+        );
+    }
+
+    private boolean hasDockedRocket() {
+        return !getDockedRockets().isEmpty();
+    }
+
+    private void checkMinerLaunch() {
+        lastMinerCheckTick = worldObj.getTotalWorldTime();
+        if (slots[15] == null) return;
+        SatelliteSavedData data = SatelliteSavedData.getData(worldObj);
+        int freq = ISatChip.getFreqS(slots[15]);
+        Satellite sat = data.getSatFromFreq(freq);
+        int delay = 10 * 60 * 1000;
+        if (sat instanceof SatelliteMiner) {
+            SatelliteMiner miner = (SatelliteMiner) sat;
+            if (miner.lastOp + delay < System.currentTimeMillis()) {
+                EntityMinerRocket rocket = new EntityMinerRocket(worldObj);
+                rocket.posX = xCoord + 0.5;
+                rocket.posY = 300;
+                rocket.posZ = zCoord + 0.5;
+                rocket.getDataWatcher().updateObject(17, freq);
+                worldObj.spawnEntityInWorld(rocket);
+                miner.lastOp = System.currentTimeMillis();
+                data.markDirty();
+            }
+        }
+    }
+
+    @Override
+    public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+        if (taskType != TASK_TRANSFER || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+        runDockTransferStep();
+        observeInventoryFingerprint();
+        if (!isInvalid() && (hasOutputItems() || hasDockedRocket())) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_TRANSFER, 0);
+    }
+
+    private void runDockTransferStep() {
+        int inventoryBefore = inventoryFingerprint();
+        SatelliteSavedData data = SatelliteSavedData.getData(worldObj);
+        for (EntityMinerRocket rocket : getDockedRockets()) {
+            if (slots[15] != null && ISatChip.getFreqS(slots[15]) != rocket.getDataWatcher().getWatchableObjectInt(17)) {
+                rocket.setDead();
+                ExplosionNukeSmall.explode(worldObj, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, ExplosionNukeSmall.PARAMS_TOTS);
+                break;
+            }
+            if (slots[15] != null && rocket.getDataWatcher().getWatchableObjectInt(16) == 1 && rocket.timer == 50) {
+                Satellite sat = data.getSatFromFreq(ISatChip.getFreqS(slots[15]));
+                if (sat instanceof SatelliteMiner) unloadCargo((SatelliteMiner) sat);
+            }
+        }
+        ejectInto(xCoord + 2, yCoord, zCoord);
+        ejectInto(xCoord - 2, yCoord, zCoord);
+        ejectInto(xCoord, yCoord, zCoord + 2);
+        ejectInto(xCoord, yCoord, zCoord - 2);
+        if (inventoryBefore != inventoryFingerprint()) markDirty();
+    }
+
+    @Override
+    public void updateEntity() { }
 
 	private void unloadCargo(SatelliteMiner satellite) {
 		int itemAmount = worldObj.rand.nextInt(6) + 10;

@@ -5,6 +5,8 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.handler.radiation.ChunkRadiationManager;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.CompatEnergyControl;
@@ -16,6 +18,9 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMoltenSaltReactor extends TileEntityMachineBase implements IFluidStandardTransceiver, IFluidCopiable, IInfoProviderEC {
+	private static final int TASK_REACTOR = 0;
+	private boolean runtimeInitialized;
+	private boolean runtimeShielded;
 
 	public static final int SALT_CAPACITY = 16_000;
 	public static final int HOT_SALT_CAPACITY = 16_000;
@@ -31,6 +36,8 @@ public class TileEntityMoltenSaltReactor extends TileEntityMachineBase implement
 		tanks = new FluidTank[2];
 		tanks[0] = new FluidTank(Fluids.THORIUM_SALT, SALT_CAPACITY);
 		tanks[1] = new FluidTank(Fluids.THORIUM_SALT_HOT, HOT_SALT_CAPACITY);
+		trackMachineFluidTank(tanks[0]);
+		trackMachineFluidTank(tanks[1]);
 	}
 
 	@Override
@@ -39,21 +46,73 @@ public class TileEntityMoltenSaltReactor extends TileEntityMachineBase implement
 	}
 
 	@Override
-	public void updateEntity() {
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void updateEntity() { }
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		trackMachineFluidTank(tanks[0]);
+		trackMachineFluidTank(tanks[1]);
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) {
+			runtimeShielded = isShielded();
+			runtimeInitialized = true;
+			updateConnections();
+		}
+		if(needsReactorSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_REACTOR, 0);
+		else cancelMachineTransition(TASK_REACTOR, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_REACTOR || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		beginMachineFluidMutation();
+		try { runReactorStep(); }
+		finally {
+			endMachineFluidMutation();
+		}
+		markDirty();
+		if(!isInvalid() && needsReactorSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_REACTOR, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote || cadence != 20 || !runtimeInitialized) return;
+		updateConnections();
+		boolean shielded = isShielded();
+		if(shielded != runtimeShielded) {
+			runtimeShielded = shielded;
+			markMachineDirty(MachineDirtyCause.ENVIRONMENT);
+		}
+		if(!needsReactorSimulation()) sendReactorPacket();
+	}
+
+	private boolean needsReactorSimulation() {
+		return tanks[0].getFill() > 0 || tanks[1].getFill() > 0;
+	}
+
+	private void runReactorStep() {
 		if(!worldObj.isRemote) {
 			this.output = 0;
-			this.updateConnections();
 			this.processSalt();
 			this.updateCorrosionAndRadiation();
 			this.sendFluidToAll(tanks[1], this);
 
-			NBTTagCompound data = new NBTTagCompound();
-			data.setInteger("output", output);
-			data.setInteger("corrosion", corrosion);
-			tanks[0].writeToNBT(data, "salt");
-			tanks[1].writeToNBT(data, "hotSalt");
-			this.networkPack(data, 50);
+			sendReactorPacket();
 		}
+	}
+
+	private void sendReactorPacket() {
+		NBTTagCompound data = new NBTTagCompound();
+		data.setInteger("output", output);
+		data.setInteger("corrosion", corrosion);
+		tanks[0].writeToNBT(data, "salt");
+		tanks[1].writeToNBT(data, "hotSalt");
+		this.networkPack(data, 50);
 	}
 
 	protected void updateConnections() {
@@ -77,7 +136,7 @@ public class TileEntityMoltenSaltReactor extends TileEntityMachineBase implement
 		boolean active = this.output > 0 || tanks[1].getFill() > 0;
 		if(!active) return;
 
-		boolean shielded = this.isShielded();
+		boolean shielded = runtimeShielded;
 		if(this.output > 0 && worldObj.getTotalWorldTime() % (shielded ? 200 : 40) == 0 && corrosion < MAX_CORROSION) {
 			corrosion++;
 		}

@@ -20,6 +20,8 @@ import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.gui.GUIReactorZirnox;
 import com.hbm.items.ModItems;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.items.machine.ItemZirnoxRod;
 import com.hbm.items.machine.ItemZirnoxRod.EnumZirnoxType;
 import com.hbm.main.MainRegistry;
@@ -65,6 +67,10 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityReactorZirnox extends TileEntityMachineBase implements IControlReceiver, IFluidStandardTransceiver, SimpleComponent, IGUIProvider, IInfoProviderEC, CompatHandler.OCComponent {
+	private static final int TASK_REACTOR = 0;
+	private boolean runtimeInitialized;
+	private DirPos[] runtimeConnections;
+	private int runtimeConnectionMetadata = Integer.MIN_VALUE;
 
 	public int heat;
 	public static final int maxHeat = 100000;
@@ -135,6 +141,12 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		0, 1, 2, 3, 4, 5, 6, 7,
 		8, 9, 10, 11, 12, 13, 14, 15,
 		16, 17, 18, 19, 20, 21, 22, 23
+	};
+	private static final int[][] NEIGHBORING_SLOTS = new int[][] {
+		{1, 7}, {0, 2, 8}, {1, 9}, {4, 10}, {3, 5, 11}, {4, 6, 12}, {5, 13}, {0, 8, 14},
+		{1, 7, 9, 15}, {2, 8, 16}, {3, 11, 17}, {4, 10, 12, 18}, {5, 11, 13, 19}, {6, 12, 20},
+		{7, 15, 21}, {8, 14, 16, 22}, {9, 15, 23}, {10, 18}, {11, 17, 19}, {12, 18, 20},
+		{13, 19}, {14, 22}, {15, 21, 23}, {16, 22}
 	};
 
 	// ==========================
@@ -264,6 +276,9 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		steam = new FluidTank(Fluids.SUPERHOTSTEAM, 8000);
 		carbonDioxide = new FluidTank(Fluids.CARBONDIOXIDE, 16000);
 		water = new FluidTank(Fluids.LIGHT_WATER, 32000).migrateFrom(Fluids.WATER);
+		trackMachineFluidTank(steam);
+		trackMachineFluidTank(carbonDioxide);
+		trackMachineFluidTank(water);
 	}
 
 	@Override
@@ -450,38 +465,80 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	}
 
 	private int[] getNeighbouringSlots(int id) {
-		switch(id) {
-			case 0: return new int[] { 1, 7 };
-			case 1: return new int[] { 0, 2, 8 };
-			case 2: return new int[] { 1, 9 };
-			case 3: return new int[] { 4, 10 };
-			case 4: return new int[] { 3, 5, 11 };
-			case 5: return new int[] { 4, 6, 12 };
-			case 6: return new int[] { 5, 13 };
-			case 7: return new int[] { 0, 8, 14 };
-			case 8: return new int[] { 1, 7, 9, 15 };
-			case 9: return new int[] { 2, 8, 16 };
-			case 10: return new int[] { 3, 11, 17 };
-			case 11: return new int[] { 4, 10, 12, 18 };
-			case 12: return new int[] { 5, 11, 13, 19 };
-			case 13: return new int[] { 6, 12, 20 };
-			case 14: return new int[] { 7, 15, 21 };
-			case 15: return new int[] { 8, 14, 16, 22 };
-			case 16: return new int[] { 9, 15, 23 };
-			case 17: return new int[] { 10, 18 };
-			case 18: return new int[] { 11, 17, 19 };
-			case 19: return new int[] { 12, 18, 20 };
-			case 20: return new int[] { 13, 19 };
-			case 21: return new int[] { 14, 22 };
-			case 22: return new int[] { 15, 21, 23 };
-			case 23: return new int[] { 16, 22 };
-		}
-
-		return null;
+		return id >= 0 && id < NEIGHBORING_SLOTS.length ? NEIGHBORING_SLOTS[id] : null;
 	}
 
 	@Override
-	public void updateEntity() {
+	public void updateEntity() { }
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		trackMachineFluidTank(steam);
+		trackMachineFluidTank(carbonDioxide);
+		trackMachineFluidTank(water);
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) {
+			runtimeInitialized = true;
+			updateConnections();
+		}
+		if(needsReactorSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_REACTOR, 0);
+		else cancelMachineTransition(TASK_REACTOR, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_REACTOR || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		beginMachineFluidMutation();
+		try { runReactorStep(); }
+		finally { endMachineFluidMutation(); }
+		if(!isInvalid() && needsReactorSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_REACTOR, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote || cadence != 20 || !runtimeInitialized) return;
+		updateConnections();
+		if(!needsReactorSimulation()) sendReactorPacket();
+	}
+
+	private boolean needsReactorSimulation() {
+		if(terminalFailure) return false;
+		if(targetControlRodInsertion != controlRodInsertion || controlRodInsertion < 100 || radioactiveReleaseTicks > 0 || steam.getFill() > 0) return true;
+		if(graphiteHeat > 0 || coreEnergy > 1.0E-6D || primaryEnergy > 1.0E-6D || decayEnergy > 1.0E-6D || decayHeat > 1.0E-6D) return true;
+		for(int i = 24; i < Math.min(28, slots.length); i++) if(slots[i] != null) return true;
+		return false;
+	}
+
+	private void sendReactorPacket() {
+		NBTTagCompound data = new NBTTagCompound();
+		data.setInteger("heat", heat);
+		data.setInteger("pressure", pressure);
+		data.setBoolean("isOn", isOn);
+		data.setInteger("controlRodInsertion", controlRodInsertion);
+		data.setInteger("targetControlRodInsertion", targetControlRodInsertion);
+		data.setInteger("graphiteHeat", graphiteHeat);
+		data.setDouble("decayHeat", decayHeat);
+		data.setInteger("graphiteDamage", graphiteDamage);
+		data.setInteger("claddingDamage", claddingDamage);
+		data.setDouble("primaryContamination", primaryContamination);
+		data.setString("restartBlocker", restartBlocker);
+		data.setInteger("airIngress", airIngress);
+		data.setInteger("activePower", activePower);
+		data.setInteger("co2Cooling", co2Cooling);
+		data.setString("activeTripInput", activeTripInput);
+		steam.writeToNBT(data, "t0");
+		carbonDioxide.writeToNBT(data, "t1");
+		water.writeToNBT(data, "t2");
+		writeThermalState(data);
+		this.networkPack(data, 150);
+	}
+
+	private void runReactorStep() {
 		if(!worldObj.isRemote && !terminalFailure) {
 
 			this.output = 0;
@@ -491,15 +548,11 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			this.primaryGasVented = 0;
 			if(radioactiveReleaseTicks > 0) radioactiveReleaseTicks--;
 
-			if(worldObj.getTotalWorldTime() % 20 == 0) {
-				this.updateConnections();
-			}
-
 			carbonDioxide.loadTank(24, 26, slots);
 			water.loadTank(25, 27, slots);
 			accountForUntrackedCO2Loss();
 			// Export first so a working outlet is not mistaken for blocked storage.
-			for(DirPos pos : getConPos()) {
+			for(DirPos pos : getCachedConnections()) {
 				this.sendFluid(steam, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 			updatePressureFromCO2();
@@ -531,31 +584,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			previousPressureBar = getPressureBar();
 			markDirty();
 
-			NBTTagCompound data = new NBTTagCompound();
-
-			data.setInteger("heat", heat);
-			data.setInteger("pressure", pressure);
-			data.setBoolean("isOn", isOn);
-
-			data.setInteger("controlRodInsertion", controlRodInsertion);
-			data.setInteger("targetControlRodInsertion", targetControlRodInsertion);
-			data.setInteger("graphiteHeat", graphiteHeat);
-			data.setDouble("decayHeat", decayHeat);
-			data.setInteger("graphiteDamage", graphiteDamage);
-			data.setInteger("claddingDamage", claddingDamage);
-			data.setDouble("primaryContamination", primaryContamination);
-			data.setString("restartBlocker", restartBlocker);
-			data.setInteger("airIngress", airIngress);
-			data.setInteger("activePower", activePower);
-			data.setInteger("co2Cooling", co2Cooling);
-			data.setString("activeTripInput", activeTripInput);
-
-			steam.writeToNBT(data, "t0");
-			carbonDioxide.writeToNBT(data, "t1");
-			water.writeToNBT(data, "t2");
-			writeThermalState(data);
-
-			this.networkPack(data, 150);
+			sendReactorPacket();
 		}
 	}
 
@@ -1258,7 +1287,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 	}
 
 	private void updateConnections() {
-		for(DirPos pos : getConPos()) {
+		for(DirPos pos : getCachedConnections()) {
 			this.trySubscribe(water.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			this.trySubscribe(carbonDioxide.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
@@ -1274,6 +1303,15 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			new DirPos(this.xCoord + rot.offsetX * -3, this.yCoord + 1, this.zCoord + rot.offsetZ * -3, rot.getOpposite()),
 			new DirPos(this.xCoord + rot.offsetX * -3, this.yCoord + 3, this.zCoord + rot.offsetZ * -3, rot.getOpposite())
 		};
+	}
+
+	private DirPos[] getCachedConnections() {
+		int metadata = this.getBlockMetadata();
+		if(runtimeConnections == null || runtimeConnectionMetadata != metadata) {
+			runtimeConnections = getConPos();
+			runtimeConnectionMetadata = metadata;
+		}
+		return runtimeConnections;
 	}
 
 	public List<FluidTank> getTanks() {
@@ -1330,6 +1368,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 			testReliefValveJammed = !testReliefValveJammed;
 		}
 		markDirty();
+		markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 
 	@Override
@@ -1354,6 +1393,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		}
 
 		this.markDirty();
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 
 	private void ventCarbonDioxide(int amount) {
@@ -1405,6 +1445,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		targetControlRodInsertion = 100;
 		isOn = false;
 		markDirty();
+		markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 
 	private void scram() {
@@ -1415,6 +1456,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		targetControlRodInsertion = 100;
 		isOn = false;
 		markDirty();
+		markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 
 	private void legacyControlToggle() {
@@ -1452,6 +1494,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		targetControlRodInsertion = clamp(targetControlRodInsertion + adjustment, 0, 100);
 		isOn = targetControlRodInsertion < 100;
 		markDirty();
+		markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 
 	private void setControlRodInsertion(int insertion) {
@@ -1470,6 +1513,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		targetControlRodInsertion = insertion;
 		isOn = true;
 		markDirty();
+		markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 
 	@Override

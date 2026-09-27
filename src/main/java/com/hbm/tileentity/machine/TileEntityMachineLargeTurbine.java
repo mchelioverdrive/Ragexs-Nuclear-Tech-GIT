@@ -16,6 +16,7 @@ import com.hbm.inventory.fluid.trait.FT_Coolable;
 import com.hbm.inventory.fluid.trait.FT_Coolable.CoolingType;
 import com.hbm.inventory.gui.GUIMachineLargeTurbine;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.main.MainRegistry;
 import com.hbm.sound.AudioWrapper;
 import com.hbm.tileentity.IFluidCopiable;
@@ -45,12 +46,18 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityMachineLargeTurbine extends TileEntityMachineBase implements IEnergyProviderMK2, IFluidStandardTransceiver, IGUIProvider, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IConfigurableMachine, IFluidCopiable {
+	private static final int TASK_CONVERT = 1;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private DirPos[] runtimeConnections;
+	private int observedOrientation = Integer.MIN_VALUE;
 
 	public long energyQuanta;
 	public FluidTank[] tanks;
 	protected double[] info = new double[3];
 	
 	private boolean shouldTurn;
+	private boolean runtimeOperational;
 	public float rotor;
 	public float lastRotor;
 	public float fanAcceleration = 0F;
@@ -71,9 +78,83 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 		tanks = new FluidTank[2];
 		tanks[0] = new FluidTank(Fluids.STEAM, inputTankSize);
 		tanks[1] = new FluidTank(Fluids.SPENTSTEAM, outputTankSize);
+		this.trackMachineFluidTank(tanks[0]);
+		this.trackMachineFluidTank(tanks[1]);
 
 		Random rand = new Random();
 		audioDesync = rand.nextFloat() * 0.05F;
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.refreshRuntimeConnections();
+		this.beginMachineFluidMutation();
+		try { this.loadInputContainers(); }
+		finally { this.endMachineFluidMutation(); }
+		this.subscribeToInput();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimePacket(runtimeOperational);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.refreshRuntimeConnections();
+		this.subscribeToInput();
+		this.sendRuntimePacket(runtimeOperational);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_CONVERT || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		runtimeEnergyMutation = true;
+		this.beginMachineFluidMutation();
+		try { this.runTurbineStep(); }
+		finally {
+			this.endMachineFluidMutation();
+			runtimeEnergyMutation = false;
+		}
+		this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	private void loadInputContainers() {
+		tanks[0].setType(0, 1, slots);
+		tanks[0].loadTank(2, 3, slots);
+	}
+
+	private void refreshRuntimeConnections() {
+		int orientation = this.getBlockMetadata();
+		if(runtimeConnections == null || observedOrientation != orientation) {
+			runtimeConnections = this.buildConnections();
+			observedOrientation = orientation;
+		}
+	}
+
+	private void subscribeToInput() {
+		for(DirPos pos : runtimeConnections) this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(this.isOverpressurized()) this.scheduleMachineTransition(now, TASK_CONVERT, 0);
+		else if(tanks[0].getFill() > 0 || tanks[1].getFill() > 0 || energyQuanta > 0) this.scheduleMachineTransition(now + 1L, TASK_CONVERT, 0);
+		else {
+			this.runtimeOperational = false;
+			this.shouldTurn = false;
+			this.cancelMachineTransition(TASK_CONVERT, 0);
+		}
+	}
+
+	private void sendRuntimePacket(boolean operational) {
+		NBTTagCompound data = new NBTTagCompound();
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+		data.setBoolean("operational", operational);
+		tanks[0].writeToNBT(data, "t0");
+		tanks[1].writeToNBT(data, "t1");
+		this.networkPack(data, 50);
 	}
 
 	@Override
@@ -105,22 +186,22 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
+		if(worldObj.isRemote) this.updateClientRotor();
+	}
+
+	private void runTurbineStep() {
 			if(isOverpressurized()) {
 				explodeFromOverpressure();
 				return;
 			}
 			
-			this.info = new double[3];
+			this.info[0] = this.info[1] = this.info[2] = 0;
 			
 			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 			this.tryProvide(worldObj, xCoord + dir.offsetX * -4, yCoord, zCoord + dir.offsetZ * -4, dir.getOpposite());
-			for(DirPos pos : getConPos()) this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			for(DirPos pos : getConPos()) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			for(DirPos pos : runtimeConnections) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 
-			tanks[0].setType(0, 1, slots);
-			tanks[0].loadTank(2, 3, slots);
+			this.loadInputContainers();
 			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 4, energyQuanta, maxPower));
 			
 			boolean operational = false;
@@ -152,13 +233,11 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 			
 			tanks[1].unloadTank(5, 6, slots);
 			
-			NBTTagCompound data = new NBTTagCompound();
-			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
-			data.setBoolean("operational", operational);
-			tanks[0].writeToNBT(data, "t0");
-			tanks[1].writeToNBT(data, "t1");
-			this.networkPack(data, 50);
-		} else {
+			this.runtimeOperational = operational;
+			this.sendRuntimePacket(operational);
+	}
+
+	private void updateClientRotor() {
 			this.lastRotor = this.rotor;
 			this.rotor += this.fanAcceleration;
 				
@@ -193,7 +272,6 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 					}
 				}
 			}
-		}
 	}
 
 	/** Stops the rotor when there is no room for another generated power operation. */
@@ -216,7 +294,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 		worldObj.newExplosion(null, xCoord + 0.5D, yCoord + 0.5D, zCoord + 0.5D, 4.0F, false, true);
 	}
 	
-	protected DirPos[] getConPos() {
+	protected DirPos[] buildConnections() {
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
 		return new DirPos[] {
@@ -237,6 +315,10 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 	
 	public long getPowerScaled(int i) {
 		return (energyQuanta * i) / maxPower;
+	}
+
+	public long getPowerOutputWatts() {
+		return EnergyUnits.quantaPerTickToWatts((long) info[2]);
 	}
 	
 	@Override
@@ -265,6 +347,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override

@@ -15,6 +15,9 @@ import com.hbm.handler.CompatHandler;
 import com.hbm.inventory.container.ContainerMachineBattery;
 import com.hbm.inventory.gui.GUIMachineBattery;
 import com.hbm.lib.Library;
+import com.hbm.items.ModItems;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IPersistentNBT;
 import com.hbm.tileentity.TileEntityMachineBase;
@@ -37,6 +40,9 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "opencomputers")})
 public class TileEntityMachineBattery extends TileEntityMachineBase implements IEnergyConductorMK2, IEnergyProviderMK2, IEnergyReceiverMK2, IPersistentNBT, IGUIProvider, IInfoProviderEC, CompatHandler.OCComponent {
+	private static final int TASK_ACCOUNTING = 1;
+	private int quietTicks = 20;
+	private boolean runtimeEnergyMutation;
 	
 	public long[] log = new long[20];
 	public long delta = 0;
@@ -163,7 +169,52 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 	}
 	
 	@Override
-	public void updateEntity() {
+	public void updateEntity() { }
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj != null && !worldObj.isRemote)
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_ACCOUNTING, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence == 20) onMachineRuntimeDirty(MachineDirtyCause.TOPOLOGY | MachineDirtyCause.REDSTONE);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_ACCOUNTING || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		long before = energyQuanta;
+		runtimeEnergyMutation = true;
+		try { runBatteryStep(); }
+		finally { runtimeEnergyMutation = false; }
+		quietTicks = energyQuanta != before ? 0 : Math.min(20, quietTicks + 1);
+		if(quietTicks < 20 || canTransferItemEnergy() || requiresContinuousExport())
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_ACCOUNTING, 0);
+	}
+
+	protected boolean requiresContinuousExport() { return false; }
+
+	private boolean canTransferItemEnergy() {
+		long capacity = getEnergyCapacityQuanta();
+		if(slots[1] != null && slots[1].getItem() instanceof IBatteryItem && energyQuanta > 0) {
+			IBatteryItem item = (IBatteryItem) slots[1].getItem();
+			if(item.getStoredEnergyQuanta(slots[1]) < item.getEnergyCapacityQuanta(slots[1])) return true;
+		}
+		if(slots[0] != null && energyQuanta < capacity) {
+			if(slots[0].getItem() == ModItems.battery_creative || slots[0].getItem() == ModItems.fusion_core_infinite) return true;
+			if(slots[0].getItem() instanceof IBatteryItem && ((IBatteryItem) slots[0].getItem()).getStoredEnergyQuanta(slots[0]) > 0) return true;
+		}
+		return false;
+	}
+
+	protected void runBatteryStep() {
 		
 		if(!worldObj.isRemote && worldObj.getBlock(xCoord, yCoord, zCoord) instanceof MachineBattery) {
 			long syncPower = this.energyQuanta;
@@ -222,6 +273,7 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 	
 	public void onNodeDestroyedCallback() {
 		this.node = null;
+		this.markMachineDirty(MachineDirtyCause.TOPOLOGY);
 	}
 
 	protected void updatePersistentProvider(boolean attached) {
@@ -322,6 +374,10 @@ public class TileEntityMachineBattery extends TileEntityMachineBase implements I
 		if(changed) this.markNetworkDirty();
 		this.energyQuanta = energyQuanta;
 		if(changed) this.markPowerNetworkDirty();
+		if(changed && !runtimeEnergyMutation) {
+			quietTicks = 0;
+			this.markMachineEnergyDirty();
+		}
 	}
 
 	@Override

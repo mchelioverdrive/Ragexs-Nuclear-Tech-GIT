@@ -8,8 +8,11 @@ import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.items.machine.ItemMachineUpgrade;
+import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.*;
 import com.hbm.util.BobMathUtil;
 import com.hbm.util.Tuple;
@@ -17,6 +20,7 @@ import com.hbm.util.Tuple.Triplet;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.IBatteryItem;
 import api.hbm.fluid.IFluidStandardTransceiver;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -29,6 +33,12 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public abstract class TileEntityOilDrillBase extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IConfigurableMachine, IPersistentNBT, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
+	private static final int TASK_DRILL = 1;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private DirPos[] runtimeConnections;
+	private int observedOrientation = Integer.MIN_VALUE;
+	private int runtimeAfterburn;
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
@@ -43,6 +53,83 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 		tanks = new FluidTank[2];
 		tanks[0] = new FluidTank(Fluids.OIL, 64_000);
 		tanks[1] = new FluidTank(Fluids.GAS, 64_000);
+		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.refreshConnections();
+		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
+		if((causes & (MachineDirtyCause.INVENTORY | MachineDirtyCause.UPGRADE | MachineDirtyCause.LIFECYCLE)) != 0) this.refreshUpgrades();
+		this.beginMachineFluidMutation();
+		try { this.unloadOutputContainers(); }
+		finally { this.endMachineFluidMutation(); }
+		this.updateConnections();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendUpdate();
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.refreshConnections();
+		this.updateConnections();
+		this.sendUpdate();
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_DRILL || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.beginMachineFluidMutation();
+		runtimeEnergyMutation = true;
+		try { this.runDrillStep(); }
+		finally {
+			runtimeEnergyMutation = false;
+			this.endMachineFluidMutation();
+		}
+		this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendUpdate();
+	}
+
+	private void refreshConnections() {
+		int orientation = this.getBlockMetadata();
+		if(runtimeConnections == null || observedOrientation != orientation) {
+			runtimeConnections = this.getConPos();
+			observedOrientation = orientation;
+		}
+	}
+
+	private void refreshUpgrades() {
+		this.upgradeManager.checkSlots(slots, 5, 7);
+		this.speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+		this.energyLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+		this.overLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3) + 1;
+		this.runtimeAfterburn = Math.min(this.upgradeManager.getLevel(UpgradeType.AFTERBURN), 3);
+	}
+
+	private void unloadOutputContainers() {
+		this.tanks[0].unloadTank(1, 2, slots);
+		this.tanks[1].unloadTank(3, 4, slots);
+	}
+
+	private boolean hasBatteryInput() {
+		if(energyQuanta >= this.getEnergyCapacityQuanta() || slots[0] == null) return false;
+		if(slots[0].getItem() == ModItems.battery_creative || slots[0].getItem() == ModItems.fusion_core_infinite) return true;
+		return slots[0].getItem() instanceof IBatteryItem && ((IBatteryItem) slots[0].getItem()).getStoredEnergyQuanta(slots[0]) > 0;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		boolean outputFlow = tanks[0].getFill() > 0 || tanks[1].getFill() > 0;
+		boolean canDrill = energyQuanta >= this.getPowerReqEff() && tanks[0].getFill() < tanks[0].getMaxFill() && tanks[1].getFill() < tanks[1].getMaxFill();
+		if(outputFlow || canDrill || this.hasBatteryInput()) this.scheduleMachineTransition(now + 1L, TASK_DRILL, 0);
+		else {
+			indicator = 2;
+			this.cancelMachineTransition(TASK_DRILL, 0);
+		}
 	}
 
 	@Override
@@ -90,21 +177,12 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 
 	@Override
 	public void updateEntity() {
+		// Drill accounting and world mutation are owned by MachineRuntime.
+	}
 
-		if(!worldObj.isRemote) {
-
-			this.updateConnections();
-
-			this.tanks[0].unloadTank(1, 2, slots);
-			this.tanks[1].unloadTank(3, 4, slots);
-
-			this.upgradeManager.checkSlots(slots, 5, 7);
-			this.speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-			this.energyLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
-			this.overLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3) + 1;
-			int abLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.AFTERBURN), 3);
-
-			int toBurn = Math.min(tanks[1].getFill(), abLevel * 10);
+	private void runDrillStep() {
+			this.unloadOutputContainers();
+			int toBurn = Math.min(tanks[1].getFill(), runtimeAfterburn * 10);
 
 			if(toBurn > 0) {
 				tanks[1].setFill(tanks[1].getFill() - toBurn);
@@ -116,7 +194,7 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 
 			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, this.getEnergyCapacityQuanta()));
 
-			for(DirPos pos : getConPos()) {
+			for(DirPos pos : runtimeConnections) {
 				if(tanks[0].getFill() > 0) this.sendFluid(tanks[0], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				if(tanks[1].getFill() > 0) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
@@ -149,8 +227,6 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 				this.indicator = 2;
 			}
 
-			this.sendUpdate();
-		}
 	}
 
 	public void sendUpdate() {
@@ -285,6 +361,7 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override
@@ -320,8 +397,13 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 
 	public abstract DirPos[] getConPos();
 
+	protected final DirPos[] getRuntimeConnections() {
+		this.refreshConnections();
+		return runtimeConnections;
+	}
+
 	protected void updateConnections() {
-		for(DirPos pos : getConPos()) {
+		for(DirPos pos : getRuntimeConnections()) {
 			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
 	}

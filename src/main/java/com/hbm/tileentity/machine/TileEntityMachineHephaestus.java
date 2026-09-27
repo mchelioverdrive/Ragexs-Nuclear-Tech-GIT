@@ -9,6 +9,7 @@ import com.hbm.inventory.fluid.trait.FT_Heatable.HeatingStep;
 import com.hbm.inventory.fluid.trait.FT_Heatable.HeatingType;
 import com.hbm.lib.Library;
 import com.hbm.main.MainRegistry;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.sound.AudioWrapper;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.INBTPacketReceiver;
@@ -25,6 +26,8 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements INBTPacketReceiver, IFluidStandardTransceiver, IFluidCopiable {
+	private static final int TASK_HEAT = 1;
+	private DirPos[] runtimeConnections;
 
 	public FluidTank input;
 	public FluidTank output;
@@ -36,6 +39,9 @@ public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements
 	public TileEntityMachineHephaestus() {
 		this.input = new FluidTank(Fluids.OIL, 24_000);
 		this.output = new FluidTank(Fluids.HOTOIL, 24_000);
+		FluidTank.ChangeListener listener = changed -> { if(worldObj != null && !worldObj.isRemote) markMachineFluidDirty(); };
+		this.input.setChangeListener(listener);
+		this.output.setChangeListener(listener);
 	}
 	
 	private int[] heat = new int[10];
@@ -44,15 +50,49 @@ public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements
 	private AudioWrapper audio;
 	
 	@Override
-	public void updateEntity() {
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
 
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		setupTanks();
+		if(input.getFill() > 0 || output.getFill() > 0)
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_HEAT, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_HEAT || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		runHephaestusStep();
+		if(input.getFill() > 0 || output.getFill() > 0)
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_HEAT, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
+		updateConnections();
+		if(input.getFill() == 0 && output.getFill() == 0) {
+			for(int height = 0; height < heat.length; height++) {
+				int y = yCoord - 1 - height;
+				heat[height] = 0;
+				if(y >= 0) for(int x = -7; x <= 7; x++) for(int z = -7; z <= 7; z++)
+					heat[height] += heatFromBlock(xCoord + x, y, zCoord + z);
+			}
+			NBTTagCompound data = new NBTTagCompound();
+			input.writeToNBT(data, "i");
+			output.writeToNBT(data, "o");
+			data.setInteger("heat", getTotalHeat());
+			INBTPacketReceiver.networkPack(this, data, 150);
+		}
+	}
+
+	private void runHephaestusStep() {
 		if(!worldObj.isRemote) {
 			
-			setupTanks();
 			
-			if(worldObj.getTotalWorldTime() % 20 == 0) {
-				this.updateConnections();
-			}
 			
 			int height = (int) (worldObj.getTotalWorldTime() % 10);
 			int range = 7;
@@ -83,7 +123,13 @@ public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements
 			data.setInteger("heat", this.getTotalHeat());
 			INBTPacketReceiver.networkPack(this, data, 150);
 			
-		} else {
+		}
+	}
+
+	@Override
+	public void updateEntity() {
+		if(!worldObj.isRemote) return;
+
 			
 			this.prevRot = this.rot;
 			
@@ -112,7 +158,6 @@ public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements
 				this.prevRot -= 360F;
 				this.rot -= 360F;
 			}
-		}
 	}
 	
 	protected void heatFluid() {
@@ -200,8 +245,8 @@ public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements
 	}
 	
 	private DirPos[] getConPos() {
-		
-		return new DirPos[] {
+		if(runtimeConnections != null) return runtimeConnections;
+		runtimeConnections = new DirPos[] {
 				new DirPos(xCoord + 2, yCoord, zCoord, Library.POS_X),
 				new DirPos(xCoord - 2, yCoord, zCoord, Library.NEG_X),
 				new DirPos(xCoord, yCoord, zCoord + 2, Library.POS_Z),
@@ -211,6 +256,7 @@ public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements
 				new DirPos(xCoord, yCoord + 11, zCoord + 2, Library.POS_Z),
 				new DirPos(xCoord, yCoord + 11, zCoord - 2, Library.NEG_Z)
 		};
+		return runtimeConnections;
 	}
 	
 	@Override

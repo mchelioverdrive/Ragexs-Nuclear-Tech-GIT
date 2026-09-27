@@ -17,6 +17,8 @@ import com.hbm.items.special.ItemBedrockOreNew;
 import com.hbm.items.special.ItemBedrockOreNew.BedrockOreGrade;
 import com.hbm.items.special.ItemBedrockOreNew.BedrockOreType;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.lib.ModDamageSource;
 import com.hbm.main.MainRegistry;
 import com.hbm.packet.PacketDispatcher;
@@ -29,6 +31,7 @@ import com.hbm.util.I18nUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.IBatteryItem;
 import api.hbm.fluid.IFluidStandardTransceiver;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import cpw.mods.fml.relauncher.Side;
@@ -48,6 +51,14 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineOreSlopper extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
+	private static final int TASK_SLOP = 1;
+	private static final BedrockOreType[] ORE_TYPES = BedrockOreType.values();
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private DirPos[] runtimeConnections;
+	private int observedOrientation = Integer.MIN_VALUE;
+	private int runtimeSpeed;
+	private int runtimeEfficiency;
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	
@@ -81,6 +92,100 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 		tanks = new FluidTank[2];
 		tanks[0] = new FluidTank(Fluids.WATER, 16_000);
 		tanks[1] = new FluidTank(Fluids.SLOP, 16_000);
+		this.trackMachineFluidTank(tanks[0]);
+		this.trackMachineFluidTank(tanks[1]);
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.refreshConnections();
+		if((causes & (MachineDirtyCause.INVENTORY | MachineDirtyCause.UPGRADE | MachineDirtyCause.LIFECYCLE)) != 0) this.refreshUpgrades();
+		this.beginMachineFluidMutation();
+		try { this.selectFluidTypes(); }
+		finally { this.endMachineFluidMutation(); }
+		this.subscribeToInputs();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(150);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.refreshConnections();
+		this.subscribeToInputs();
+		this.networkPackNT(150);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_SLOP || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.beginMachineFluidMutation();
+		runtimeEnergyMutation = true;
+		try { this.runSlopperStep(); }
+		finally {
+			runtimeEnergyMutation = false;
+			this.endMachineFluidMutation();
+		}
+		this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(150);
+	}
+
+	private void refreshConnections() {
+		int orientation = this.getBlockMetadata();
+		if(runtimeConnections == null || observedOrientation != orientation) {
+			runtimeConnections = this.getConPos();
+			observedOrientation = orientation;
+		}
+	}
+
+	private void refreshUpgrades() {
+		this.upgradeManager.checkSlots(slots, 9, 10);
+		runtimeSpeed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+		runtimeEfficiency = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
+		this.consumption = consumptionBase + (consumptionBase * runtimeSpeed) / 2 + (consumptionBase * runtimeEfficiency);
+	}
+
+	private void selectFluidTypes() {
+		tanks[0].setType(1, slots);
+		FluidType conversion = this.getFluidOutput(tanks[0].getTankType());
+		if(conversion != null) tanks[1].setTankType(conversion);
+	}
+
+	private void subscribeToInputs() {
+		for(DirPos pos : runtimeConnections) {
+			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+		}
+	}
+
+	private boolean hasBatteryInput() {
+		if(energyQuanta >= maxPower || slots[0] == null) return false;
+		if(slots[0].getItem() == ModItems.battery_creative || slots[0].getItem() == ModItems.fusion_core_infinite) return true;
+		return slots[0].getItem() instanceof IBatteryItem && ((IBatteryItem) slots[0].getItem()).getStoredEnergyQuanta(slots[0]) > 0;
+	}
+
+	private boolean hasPendingOreOutput() {
+		for(BedrockOreType type : ORE_TYPES) {
+			if(ores[type.ordinal()] < 1D) continue;
+			ItemStack output = ItemBedrockOreNew.make(BedrockOreGrade.BASE, type);
+			for(int i = 3; i <= 8; i++) {
+				if(slots[i] == null || slots[i].getItem() == output.getItem() && slots[i].getItemDamage() == output.getItemDamage() && slots[i].stackSize < output.getMaxStackSize()) return true;
+			}
+		}
+		return false;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(this.canSlop() || this.hasBatteryInput() || tanks[1].getFill() > 0 || this.hasPendingOreOutput())
+			this.scheduleMachineTransition(now + 1L, TASK_SLOP, 0);
+		else {
+			processing = false;
+			this.cancelMachineTransition(TASK_SLOP, 0);
+		}
 	}
 
 	@Override
@@ -94,30 +199,21 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 
 	@Override
 	public void updateEntity() {
-		
+		if(worldObj.isRemote) this.updateClientAnimation();
+	}
+
+	private void runSlopperStep() {
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
-		
-		if(!worldObj.isRemote) {
 			
 			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
-			
-			tanks[0].setType(1, slots);
-			FluidType conversion = this.getFluidOutput(tanks[0].getTankType());
-			if(conversion != null) tanks[1].setTankType(conversion);
-			
-			for(DirPos pos : getConPos()) {
-				this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			for(DirPos pos : runtimeConnections) {
 				if(tanks[1].getFill() > 0) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 			
 			this.processing = false;
 			
-			this.upgradeManager.checkSlots(slots, 9, 10);
-			int speed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int efficiency = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
-			
-			this.consumption = this.consumptionBase + (this.consumptionBase * speed) / 2 + (this.consumptionBase * efficiency);
+			int speed = runtimeSpeed;
+			int efficiency = runtimeEfficiency;
 			
 			if(canSlop()) {
 				this.setStoredEnergyQuanta(this.energyQuanta - this.consumption);
@@ -128,7 +224,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 				while(progress >= 1F && canSlop()) {
 					progress -= 1F;
 					
-					for(BedrockOreType type : BedrockOreType.values()) {
+					for(BedrockOreType type : ORE_TYPES) {
 						ores[type.ordinal()] += (ItemBedrockOreBase.getOreAmount(slots[2], type) * (1D + efficiency * 0.1));
 					}
 					
@@ -160,7 +256,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 				this.progress = 0;
 			}
 
-			for(BedrockOreType type : BedrockOreType.values()) {
+			for(BedrockOreType type : ORE_TYPES) {
 				ItemStack output = ItemBedrockOreNew.make(BedrockOreGrade.BASE, type);
 				outer: while(ores[type.ordinal()] >= 1) {
 					for(int i = 3; i <= 8; i++) if(slots[i] != null && slots[i].getItem() == output.getItem() && slots[i].getItemDamage() == output.getItemDamage() && slots[i].stackSize < output.getMaxStackSize()) {
@@ -173,10 +269,10 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 				}
 			}
 			
-			this.networkPackNT(150);
-			
-		} else {
-			
+	}
+
+	private void updateClientAnimation() {
+		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
 			this.prevSlider = this.slider;
 			this.prevBucket = this.bucket;
 			this.prevBlades = this.blades;
@@ -251,7 +347,6 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 					break;
 				}
 			}
-		}
 	}
 	
 	public DirPos[] getConPos() {
@@ -314,6 +409,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 		this.progress = nbt.getFloat("progress");
 		tanks[0].readFromNBT(nbt, "water");
 		tanks[1].readFromNBT(nbt, "slop");
+		for(int i = 0; i < ores.length; i++) ores[i] = nbt.getDouble("ore" + i);
 	}
 	
 	@Override
@@ -323,6 +419,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 		nbt.setFloat("progress", progress);
 		tanks[0].writeToNBT(nbt, "water");
 		tanks[1].writeToNBT(nbt, "slop");
+		for(int i = 0; i < ores.length; i++) nbt.setDouble("ore" + i, ores[i]);
 	}
 	
 	public boolean canSlop() {
@@ -344,6 +441,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 	@Override public long getEnergyCapacityQuanta() { return maxPower; }
 

@@ -25,15 +25,58 @@ public class TileEntityRBMKBurner extends TileEntityRBMKBase implements IFluidSt
 		super();
 		
 		this.tank = new FluidTank(Fluids.GASOLINE, 8000);
+		this.tank.setChangeListener(fluid -> markMachineFluidDirty());
+	}
+
+	@Override
+	protected boolean needsRBMKSimulation() {
+		return super.needsRBMKSimulation() || tank.getFill() > 0;
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int interval) {
+		super.onMachineCoarsePoll(interval);
+		if(interval == 20) this.trySubscribe(tank.getTankType(), worldObj, xCoord, yCoord - 1, zCoord, Library.NEG_Y);
 	}
 	
 	@Override
 	public void updateEntity() {
+		if(worldObj.isRemote) {
+
+			if(this.lastHot > 100) {
+				for(int i = 0; i < 2; i++) {
+					worldObj.spawnParticle("flame", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
+					worldObj.spawnParticle("smoke", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
+					ParticleUtil.spawnGasFlame(worldObj, xCoord + worldObj.rand.nextDouble(), yCoord + 3.5 + worldObj.rand.nextDouble(), zCoord + worldObj.rand.nextDouble(), worldObj.rand.nextGaussian() * 0.2, 0.1, worldObj.rand.nextGaussian() * 0.2);
+				}
+
+				if(worldObj.rand.nextInt(20) == 0)
+					worldObj.spawnParticle("lava", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.0, 0);
+			} else if(this.lastHot > 50) {
+				for(int i = 0; i < 2; i++) {
+					worldObj.spawnParticle("cloud", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, worldObj.rand.nextGaussian() * 0.05, 0.2, worldObj.rand.nextGaussian() * 0.05);
+					worldObj.spawnParticle("flame", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
+					worldObj.spawnParticle("smoke", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
+					ParticleUtil.spawnGasFlame(worldObj, xCoord + worldObj.rand.nextDouble(), yCoord + 3.5 + worldObj.rand.nextDouble(), zCoord + worldObj.rand.nextDouble(), worldObj.rand.nextGaussian() * 0.2, 0.1, worldObj.rand.nextGaussian() * 0.2);
+				}
+			} else if(this.lastHot > 0) {
+
+				if(worldObj.getTotalWorldTime() % 2 == 0)
+					worldObj.spawnParticle("flame", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
+					worldObj.spawnParticle("smoke", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
+					ParticleUtil.spawnGasFlame(worldObj, xCoord + worldObj.rand.nextDouble(), yCoord + 3.5 + worldObj.rand.nextDouble(), zCoord + worldObj.rand.nextDouble(), worldObj.rand.nextGaussian() * 0.2, 0.1, worldObj.rand.nextGaussian() * 0.2);
+
+			}
+
+
+		}
+	}
+
+	@Override
+	protected void runRBMKColumnStep() {
 		int maxBurn = 10;
-		if(!worldObj.isRemote) {
+
 			
-			if(this.worldObj.getTotalWorldTime() % 20 == 0)
-				this.trySubscribe(tank.getTankType(), worldObj, xCoord, yCoord - 1, zCoord, Library.NEG_Y);
 			maxBurn += maxBurn;
 
 			if((int)(this.heat) > 19) {
@@ -62,37 +105,8 @@ public class TileEntityRBMKBurner extends TileEntityRBMKBase implements IFluidSt
 				this.lastHot = 0;
 			}
 			
-		} else {
-			
-			if(this.lastHot > 100) {
-				for(int i = 0; i < 2; i++) {
-					worldObj.spawnParticle("flame", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
-					worldObj.spawnParticle("smoke", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
-					ParticleUtil.spawnGasFlame(worldObj, xCoord + worldObj.rand.nextDouble(), yCoord + 3.5 + worldObj.rand.nextDouble(), zCoord + worldObj.rand.nextDouble(), worldObj.rand.nextGaussian() * 0.2, 0.1, worldObj.rand.nextGaussian() * 0.2);
-				}
-				
-				if(worldObj.rand.nextInt(20) == 0)
-					worldObj.spawnParticle("lava", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.0, 0);
-			} else if(this.lastHot > 50) {
-				for(int i = 0; i < 2; i++) {
-					worldObj.spawnParticle("cloud", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, worldObj.rand.nextGaussian() * 0.05, 0.2, worldObj.rand.nextGaussian() * 0.05);
-					worldObj.spawnParticle("flame", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
-					worldObj.spawnParticle("smoke", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
-					ParticleUtil.spawnGasFlame(worldObj, xCoord + worldObj.rand.nextDouble(), yCoord + 3.5 + worldObj.rand.nextDouble(), zCoord + worldObj.rand.nextDouble(), worldObj.rand.nextGaussian() * 0.2, 0.1, worldObj.rand.nextGaussian() * 0.2);
-				}
-			} else if(this.lastHot > 0) {
-				
-				if(worldObj.getTotalWorldTime() % 2 == 0)
-					worldObj.spawnParticle("flame", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
-					worldObj.spawnParticle("smoke", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
-					ParticleUtil.spawnGasFlame(worldObj, xCoord + worldObj.rand.nextDouble(), yCoord + 3.5 + worldObj.rand.nextDouble(), zCoord + worldObj.rand.nextDouble(), worldObj.rand.nextGaussian() * 0.2, 0.1, worldObj.rand.nextGaussian() * 0.2);
-				
-			}
-			
-		}
 		
-		super.updateEntity();
-		
+		super.runRBMKColumnStep();
 	}
 	
 	private int[] findCore(World world, int x, int y, int z) {

@@ -14,6 +14,8 @@ import com.hbm.inventory.gui.GUIMachineStardar;
 import com.hbm.items.ItemVOTVdrive;
 import com.hbm.items.ItemVOTVdrive.Destination;
 import com.hbm.items.ModItems;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 
@@ -61,51 +63,7 @@ public class TileEntityMachineStardar extends TileEntityMachineBase implements I
 
 	@Override
 	public void updateEntity() {
-		if(!worldObj.isRemote) {
-			if(worldObj.getTotalWorldTime() >= pointAtTime) {
-				pointAtTime = worldObj.getTotalWorldTime() + worldObj.rand.nextInt(300) + 300;
-
-				targetYaw = MathHelper.wrapAngleTo180_float(worldObj.rand.nextFloat() * 360);
-				targetPitch = worldObj.rand.nextFloat() * 80;
-			}
-
-			if(slots[0] != null && slots[0].getItem() == ModItems.full_drive) {
-				if(heightmap == null || !slots[0].isItemEqual(previousStack)) {
-					previousStack = slots[0];
-
-					Destination destination = ItemVOTVdrive.getApproximateDestination(slots[0]);
-					CelestialBody body = destination.body.getBody();
-					ChunkCoordIntPair chunk = destination.getChunk();
-
-					if(body != null) {
-						heightmap = new int[256*256];
-						updateHeightmap = true;
-
-						for(int cx = 0; cx < 16; cx++) {
-							for(int cz = 0; cz < 16; cz++) {
-								int[] map = body.getHeightmap(chunk.chunkXPos + cx - 8, chunk.chunkZPos + cz - 8);
-								int ox = cx * 16;
-								int oz = cz * 16;
-
-								for(int x = 0; x < 16; x++) {
-									for(int z = 0; z < 16; z++) {
-										heightmap[(z + oz) * 256 + (x + ox)] = map[z * 16 + x];
-									}
-								}
-							}
-						}
-					}
-				}
-			} else {
-				if(heightmap != null) {
-					heightmap = null;
-					updateHeightmap = true;
-				}
-			}
-
-			networkPackNT(250);
-			updateHeightmap = false;
-		} else {
+		if(worldObj.isRemote) {
 			float yawOffset = MathHelper.wrapAngleTo180_float(targetYaw - dishYaw);
 			float moveYaw = MathHelper.clamp_float(yawOffset, -maxSpeedYaw, maxSpeedYaw);
 
@@ -117,6 +75,66 @@ public class TileEntityMachineStardar extends TileEntityMachineBase implements I
 			prevDishPitch = dishPitch;
 			dishYaw += moveYaw;
 			dishPitch += movePitch;
+		}
+	}
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if((causes & (MachineDirtyCause.INVENTORY | MachineDirtyCause.LIFECYCLE | MachineDirtyCause.CONFIGURATION)) != 0)
+			refreshHeightmap();
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence == 5) {
+			boolean fullDrive = slots[0] != null && slots[0].getItem() == ModItems.full_drive;
+			if(fullDrive != (previousStack != null && previousStack.getItem() == ModItems.full_drive)
+					|| (fullDrive && (heightmap == null || !slots[0].isItemEqual(previousStack))))
+				markMachineDirty(MachineDirtyCause.INVENTORY);
+		} else if(cadence == 20) {
+			if(worldObj.getTotalWorldTime() >= pointAtTime) {
+				pointAtTime = worldObj.getTotalWorldTime() + worldObj.rand.nextInt(300) + 300;
+				targetYaw = MathHelper.wrapAngleTo180_float(worldObj.rand.nextFloat() * 360);
+				targetPitch = worldObj.rand.nextFloat() * 80;
+			}
+			networkPackNT(250);
+			updateHeightmap = false;
+		}
+	}
+
+	private void refreshHeightmap() {
+		if(slots[0] != null && slots[0].getItem() == ModItems.full_drive) {
+			if(heightmap == null || !slots[0].isItemEqual(previousStack)) {
+				previousStack = slots[0];
+				Destination destination = ItemVOTVdrive.getApproximateDestination(slots[0]);
+				CelestialBody body = destination.body.getBody();
+				ChunkCoordIntPair chunk = destination.getChunk();
+				if(body != null) {
+					heightmap = new int[256 * 256];
+					updateHeightmap = true;
+					for(int cx = 0; cx < 16; cx++) {
+						for(int cz = 0; cz < 16; cz++) {
+							int[] map = body.getHeightmap(chunk.chunkXPos + cx - 8, chunk.chunkZPos + cz - 8);
+							int ox = cx * 16;
+							int oz = cz * 16;
+							for(int x = 0; x < 16; x++) {
+								for(int z = 0; z < 16; z++) heightmap[(z + oz) * 256 + (x + ox)] = map[z * 16 + x];
+							}
+						}
+					}
+				}
+			}
+		} else {
+			previousStack = null;
+			if(heightmap != null) {
+				heightmap = null;
+				updateHeightmap = true;
+			}
 		}
 	}
 

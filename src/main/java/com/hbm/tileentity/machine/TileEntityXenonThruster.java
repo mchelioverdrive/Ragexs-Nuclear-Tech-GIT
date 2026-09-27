@@ -9,6 +9,7 @@ import com.hbm.dim.SolarSystem;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.fluid.trait.FT_Rocket;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.BobMathUtil;
 import com.hbm.util.I18nUtil;
@@ -39,6 +40,7 @@ public class TileEntityXenonThruster extends TileEntityMachineBase implements IP
 	public float thrustAmount;
 	
 	private boolean hasRegistered;
+	private DirPos[] runtimeConnections;
 
 	private int fuelCost;
 
@@ -55,21 +57,7 @@ public class TileEntityXenonThruster extends TileEntityMachineBase implements IP
 
 	@Override
 	public void updateEntity() {
-		if(!worldObj.isRemote && CelestialBody.inOrbit(worldObj)) {
-			if(!hasRegistered) {
-				if(isFacingPrograde()) registerPropulsion();
-				hasRegistered = true;
-			}
-
-			for(DirPos pos : getConPos()) {
-				for(FluidTank tank : tanks) {
-					trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-					trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				}
-			}
-
-			networkPackNT(250);
-		} else {
+		if(worldObj.isRemote) {
 			if(isOn) {
 				thrustAmount += 0.01D;
 				if(thrustAmount > 1) thrustAmount = 1;
@@ -80,15 +68,44 @@ public class TileEntityXenonThruster extends TileEntityMachineBase implements IP
 		}
 	}
 
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote || !CelestialBody.inOrbit(worldObj)) return;
+		if(!hasRegistered) {
+			if(isFacingPrograde()) registerPropulsion();
+			hasRegistered = true;
+		}
+		networkPackNT(250);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote || !CelestialBody.inOrbit(worldObj)) return;
+		this.onMachineRuntimeDirty(0);
+		for(DirPos pos : getConPos()) {
+			for(FluidTank tank : tanks) {
+				trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+				trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			}
+		}
+	}
+
 	private DirPos[] getConPos() {
+		if(runtimeConnections != null) return runtimeConnections;
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
 		
-		return new DirPos[] {
+		runtimeConnections = new DirPos[] {
 			new DirPos(xCoord - dir.offsetX - rot.offsetX, yCoord, zCoord - dir.offsetZ - rot.offsetZ, dir),
 			new DirPos(xCoord - dir.offsetX, yCoord, zCoord - dir.offsetZ, dir),
 			new DirPos(xCoord - dir.offsetX + rot.offsetX, yCoord, zCoord - dir.offsetZ + rot.offsetZ, dir),
 		};
+		return runtimeConnections;
 	}
 
 	@Override

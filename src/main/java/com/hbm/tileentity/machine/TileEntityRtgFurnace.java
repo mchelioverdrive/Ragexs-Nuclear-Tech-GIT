@@ -3,7 +3,10 @@ package com.hbm.tileentity.machine;
 import com.hbm.blocks.machine.MachineRtgFurnace;
 import com.hbm.inventory.container.ContainerRtgFurnace;
 import com.hbm.inventory.gui.GUIRtgFurnace;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
+import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.RTGUtil;
 
 import cpw.mods.fml.relauncher.Side;
@@ -16,10 +19,12 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.FurnaceRecipes;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 
-public class TileEntityRtgFurnace extends TileEntity implements ISidedInventory, IGUIProvider {
+public class TileEntityRtgFurnace extends TileEntityLoadedBase implements ISidedInventory, IGUIProvider {
+	private static final int TASK_PROCESS = 0;
+	private boolean inventoryFingerprintInitialized;
+	private int observedInventoryFingerprint;
 
 	private ItemStack slots[];
 	
@@ -52,6 +57,8 @@ public class TileEntityRtgFurnace extends TileEntity implements ISidedInventory,
 		{
 			ItemStack itemStack = slots[i];
 			slots[i] = null;
+			markDirty();
+			markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
 			return itemStack;
 		} else {
 		return null;
@@ -65,6 +72,8 @@ public class TileEntityRtgFurnace extends TileEntity implements ISidedInventory,
 		{
 			itemStack.stackSize = getInventoryStackLimit();
 		}
+		markDirty();
+		markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
 	}
 
 	@Override
@@ -107,7 +116,7 @@ public class TileEntityRtgFurnace extends TileEntity implements ISidedInventory,
 		return true;
 	}
 	
-	public boolean isLoaded() {
+	public boolean hasHeat() {
 		return RTGUtil.hasHeat(slots, slots_side);
 	}
 	
@@ -117,15 +126,19 @@ public class TileEntityRtgFurnace extends TileEntity implements ISidedInventory,
 		{
 			if(slots[i].stackSize <= j)
 			{
-				ItemStack itemStack = slots[i];
-				slots[i] = null;
-				return itemStack;
+			ItemStack itemStack = slots[i];
+			slots[i] = null;
+			markDirty();
+			markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+			return itemStack;
 			}
 			ItemStack itemStack1 = slots[i].splitStack(j);
 			if (slots[i].stackSize == 0)
 			{
 				slots[i] = null;
 			}
+			markDirty();
+			markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
 			
 			return itemStack1;
 		} else {
@@ -138,7 +151,7 @@ public class TileEntityRtgFurnace extends TileEntity implements ISidedInventory,
 		super.readFromNBT(nbt);
 		NBTTagList list = nbt.getTagList("items", 10);
 		
-		dualCookTime = nbt.getShort("CookTime");
+		dualCookTime = nbt.hasKey("cookTime") ? nbt.getShort("cookTime") : nbt.getShort("CookTime");
 		slots = new ItemStack[getSizeInventory()];
 		
 		for(int i = 0; i < list.tagCount(); i++)
@@ -246,7 +259,7 @@ public class TileEntityRtgFurnace extends TileEntity implements ISidedInventory,
 	}
 	
 	public boolean hasPower() {
-		return isLoaded();
+		return hasHeat();
 	}
 	
 	public boolean isProcessing() {
@@ -254,7 +267,61 @@ public class TileEntityRtgFurnace extends TileEntity implements ISidedInventory,
 	}
 	
 	@Override
-	public void updateEntity() {
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		observeInventoryFingerprint();
+		if(needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_PROCESS, 0);
+		else cancelMachineTransition(TASK_PROCESS, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 5 || worldObj == null || worldObj.isRemote) return;
+		if(observeInventoryFingerprint()) markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+		if(needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_PROCESS, 0);
+	}
+
+	private boolean needsSimulation() {
+		return hasHeat() || dualCookTime > 0;
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PROCESS || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		runFurnaceStep();
+		if(!isInvalid() && needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_PROCESS, 0);
+	}
+
+	@Override
+	public void updateEntity() { }
+
+	private void runFurnaceStep() {
 		this.hasPower();
 		boolean flag1 = false;
 		

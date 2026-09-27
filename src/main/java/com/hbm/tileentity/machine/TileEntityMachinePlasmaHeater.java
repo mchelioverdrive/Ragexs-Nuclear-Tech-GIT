@@ -11,11 +11,15 @@ import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.gui.GUIPlasmaHeater;
 import com.hbm.lib.Library;
+import com.hbm.items.ModItems;
+import com.hbm.machine.MachineExecutionStrategy;
+import com.hbm.machine.MachineDirtyCause;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.IBatteryItem;
 import api.hbm.fluid.IFluidStandardReceiver;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -28,6 +32,9 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IFluidCopiable {
+	private static final int TASK_INJECT = 1;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
 
 	public long energyQuanta;
 	public static final long maxPower = 100000000;
@@ -91,6 +98,74 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 		 * Plasma is not stockpiled. It is only a 1 mB unstable injection buffer.
 		 */
 		plasma = new FluidTank(Fluids.PLASMA_DT, PLASMA_BUFFER);
+		this.trackMachineFluidTank(tanks[0]);
+		this.trackMachineFluidTank(tanks[1]);
+		this.trackMachineFluidTank(plasma);
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.beginMachineFluidMutation();
+		try { this.selectInputTypes(); }
+		finally { this.endMachineFluidMutation(); }
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0) this.updateConnections();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimePacket();
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.updateConnections();
+		this.sendRuntimePacket();
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_INJECT || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.beginMachineFluidMutation();
+		runtimeEnergyMutation = true;
+		try { this.runPlasmaStep(); }
+		finally {
+			runtimeEnergyMutation = false;
+			this.endMachineFluidMutation();
+		}
+		this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimePacket();
+	}
+
+	private void selectInputTypes() {
+		tanks[0].setType(1, 2, slots);
+		tanks[1].setType(3, 4, slots);
+	}
+
+	private boolean hasBatteryInput() {
+		if(energyQuanta >= maxPower || slots[0] == null) return false;
+		if(slots[0].getItem() == ModItems.battery_creative || slots[0].getItem() == ModItems.fusion_core_infinite) return true;
+		return slots[0].getItem() instanceof IBatteryItem && ((IBatteryItem) slots[0].getItem()).getStoredEnergyQuanta(slots[0]) > 0;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		FluidType plasmaType = this.getPlasmaTypeFromInputs();
+		boolean pairedFuel = plasmaType != Fluids.NONE && tanks[0].getFill() > 0 && tanks[1].getFill() > 0;
+		if(plasma.getFill() > 0 || (startupCharge > 0 && plasmaType == Fluids.NONE) || (pairedFuel && energyQuanta > 0) || this.hasBatteryInput())
+			this.scheduleMachineTransition(now + 1L, TASK_INJECT, 0);
+		else this.cancelMachineTransition(TASK_INJECT, 0);
+	}
+
+	private void sendRuntimePacket() {
+		NBTTagCompound data = new NBTTagCompound();
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+		data.setInteger("startupCharge", startupCharge);
+		data.setInteger("plasmaAge", plasmaAge);
+		tanks[0].writeToNBT(data, "t0");
+		tanks[1].writeToNBT(data, "t1");
+		plasma.writeToNBT(data, "t2");
+		this.networkPack(data, 50);
 	}
 
 	@Override
@@ -100,19 +175,13 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 
 	@Override
 	public void updateEntity() {
+		// Plasma formation, containment, and reactor injection are runtime-owned.
+	}
 
-		if(!worldObj.isRemote) {
-
-			if(this.worldObj.getTotalWorldTime() % 20 == 0) {
-				this.updateConnections();
-			}
-
+	private void runPlasmaStep() {
 			/// START Managing all the internal stuff ///
 
 			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
-
-			tanks[0].setType(1, 2, slots);
-			tanks[1].setType(3, 4, slots);
 
 			FluidType plasmaType = getPlasmaTypeFromInputs();
 
@@ -161,22 +230,6 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 
 			/// END Loading plasma into the ITER / HTRF ///
 
-			/// START Notif packets ///
-
-			NBTTagCompound data = new NBTTagCompound();
-
-			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
-			data.setInteger("startupCharge", startupCharge);
-			data.setInteger("plasmaAge", plasmaAge);
-
-			tanks[0].writeToNBT(data, "t0");
-			tanks[1].writeToNBT(data, "t1");
-			plasma.writeToNBT(data, "t2");
-
-			this.networkPack(data, 50);
-
-			/// END Notif packets ///
-		}
 	}
 
 	private void runIonizationCycle(FluidType plasmaType) {
@@ -537,6 +590,7 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override

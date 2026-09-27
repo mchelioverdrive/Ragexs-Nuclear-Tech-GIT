@@ -11,6 +11,8 @@ import com.hbm.handler.CompatHandler;
 import com.hbm.interfaces.IControlReceiver;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.gui.GUIRBMKConsole;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.tileentity.machine.rbmk.TileEntityRBMKControlManual.RBMKColor;
@@ -38,6 +40,7 @@ import li.cil.oc.api.network.SimpleComponent;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityRBMKConsole extends TileEntityMachineBase implements IControlReceiver, IGUIProvider, SimpleComponent, CompatHandler.OCComponent {
+	private static final int TASK_RESCAN = 0;
 	
 	private int targetX;
 	private int targetY;
@@ -65,20 +68,32 @@ public class TileEntityRBMKConsole extends TileEntityMachineBase implements ICon
 	}
 
 	@Override
-	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
-			if(this.worldObj.getTotalWorldTime() % 10 == 0) {
+	public void updateEntity() { }
 
-				this.worldObj.theProfiler.startSection("rbmkConsole_rescan");
-				rescan();
-				this.worldObj.theProfiler.endSection();
-				prepareScreenInfo();
-			}
-			
-			prepareNetworkPack();
-		}
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		scheduleMachineTransition(getNextRescanTick(), TASK_RESCAN, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_RESCAN || taskSlot != 0 || worldObj.isRemote) return;
+		this.worldObj.theProfiler.startSection("rbmkConsole_rescan");
+		rescan();
+		this.worldObj.theProfiler.endSection();
+		prepareScreenInfo();
+		prepareNetworkPack();
+		if(!isInvalid()) scheduleMachineTransition(getNextRescanTick(), TASK_RESCAN, 0);
+	}
+
+	private long getNextRescanTick() {
+		long now = worldObj.getTotalWorldTime();
+		return now + (10L - now % 10L);
 	}
 	
 	private void rescan() {
@@ -350,6 +365,7 @@ public class TileEntityRBMKConsole extends TileEntityMachineBase implements ICon
 		this.targetY = y;
 		this.targetZ = z;
 		this.markDirty();
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 	
 	@Override

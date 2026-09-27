@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.List;
 
 import com.hbm.blocks.ModBlocks;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.TileEntityTickingBase;
 import com.hbm.util.fauxpointtwelve.BlockPos;
 
@@ -20,6 +22,7 @@ import net.minecraft.util.DamageSource;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityICFController extends TileEntityTickingBase implements IEnergyReceiverMK2 {
+	private static final int TASK_BEAM = 0;
 	
 	public long energyQuanta;
 	public int laserLength;
@@ -77,14 +80,94 @@ public class TileEntityICFController extends TileEntityTickingBase implements IE
 			}
 		}
 		
+		this.ports.clear();
 		this.ports.addAll(ports);
 		if(this.getEnergyCapacityQuanta() != previousCapacity) this.markPowerNetDirty();
+		this.markMachineDirty(MachineDirtyCause.TOPOLOGY | MachineDirtyCause.LIFECYCLE);
 	}
 
 	public void setAssembled(boolean assembled) {
 		if(this.assembled == assembled) return;
 		this.assembled = assembled;
 		this.markPowerNetDirty();
+		if(!assembled) this.laserLength = 0;
+		this.markMachineDirty(MachineDirtyCause.TOPOLOGY | MachineDirtyCause.CONFIGURATION);
+	}
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0) updatePowerConnections();
+		if(assembled && getStoredEnergyQuanta() > 0) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_BEAM, 0);
+		else cancelMachineTransition(TASK_BEAM, 0);
+		markNetworkDirty();
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_BEAM || taskSlot != 0 || worldObj == null || worldObj.isRemote || !assembled || getStoredEnergyQuanta() <= 0) return;
+		runBeamStep();
+		markNetworkDirty();
+		networkPackNTIfDirty(50);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote || cadence != 20) return;
+		updatePowerConnections();
+		if(!assembled || getStoredEnergyQuanta() <= 0) networkPackNTIfDirty(50);
+	}
+
+	private void updatePowerConnections() {
+		if(!assembled || getEnergyCapacityQuanta() <= 0) return;
+		for(BlockPos pos : ports) {
+			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
+				BlockPos portPos = pos.offset(dir);
+				trySubscribe(worldObj, portPos.getX(), portPos.getY(), portPos.getZ(), dir);
+			}
+		}
+	}
+
+	private void runBeamStep() {
+		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata());
+		for(int i = 1; i < 50; i++) {
+			this.laserLength = i;
+			int bx = xCoord + dir.offsetX * i;
+			int by = yCoord;
+			int bz = zCoord + dir.offsetZ * i;
+			Block b = worldObj.getBlock(bx, by, bz);
+			if(b == ModBlocks.icf) {
+				TileEntity tile = worldObj.getTileEntity(xCoord + dir.offsetX * (i + 8), yCoord - 3, zCoord + dir.offsetZ * (i + 8));
+				if(tile instanceof TileEntityICF) {
+					TileEntityICF icf = (TileEntityICF) tile;
+					icf.receiveLaserBeam(this.getStoredEnergyQuanta(), this.getEnergyCapacityQuanta());
+					break;
+				}
+			}
+			if(!b.isAir(worldObj, bx, by, bz)) {
+				float hardness = b.getExplosionResistance(null);
+				if(hardness < 6000) worldObj.func_147480_a(bx, by, bz, false);
+				break;
+			}
+		}
+
+		double blx = Math.min(xCoord, xCoord + dir.offsetX * laserLength) + 0.2;
+		double bux = Math.max(xCoord, xCoord + dir.offsetX * laserLength) + 0.8;
+		double bly = Math.min(yCoord, yCoord + dir.offsetY * laserLength) + 0.2;
+		double buy = Math.max(yCoord, yCoord + dir.offsetY * laserLength) + 0.8;
+		double blz = Math.min(zCoord, zCoord + dir.offsetZ * laserLength) + 0.2;
+		double buz = Math.max(zCoord, zCoord + dir.offsetZ * laserLength) + 0.8;
+		List<Entity> list = worldObj.getEntitiesWithinAABB(Entity.class, AxisAlignedBB.getBoundingBox(blx, bly, blz, bux, buy, buz));
+		for(Entity e : list) {
+			e.attackEntityFrom(DamageSource.inFire, 50);
+			e.setFire(5);
+		}
+		this.setStoredEnergyQuanta(0);
 	}
 
 	@Override
@@ -94,68 +177,7 @@ public class TileEntityICFController extends TileEntityTickingBase implements IE
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
-			this.networkPackNT(50);
-			
-			if(this.assembled) {
-				for(BlockPos pos : ports) {
-					for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-						BlockPos portPos = pos.offset(dir);
-						if(this.getEnergyCapacityQuanta() > 0) this.trySubscribe(worldObj, portPos.getX(), portPos.getY(), portPos.getZ(), dir);
-					}
-				}
-				
-				if(this.energyQuanta > 0) {
-		
-					ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata());
-					
-					for(int i = 1; i < 50; i++) {
-						this.laserLength = i;
-						
-						Block b = worldObj.getBlock(xCoord + dir.offsetX * i, yCoord, zCoord + dir.offsetZ * i);
-						if(b == ModBlocks.icf) {
-							TileEntity tile = worldObj.getTileEntity(xCoord + dir.offsetX * (i + 8), yCoord - 3, zCoord + dir.offsetZ * (i + 8));
-							if(tile instanceof TileEntityICF) {
-								TileEntityICF icf = (TileEntityICF) tile;
-								icf.laser += this.getStoredEnergyQuanta();
-								icf.maxLaser += this.getEnergyCapacityQuanta();
-								break;
-							}
-						}
-						
-						if(!b.isAir(worldObj, xCoord + dir.offsetX * i, yCoord, zCoord + dir.offsetZ * i)) {
-							float hardness = b.getExplosionResistance(null);
-							if(hardness < 6000) worldObj.func_147480_a(xCoord + dir.offsetX * i, yCoord, zCoord + dir.offsetZ * i, false);
-							break;
-						}
-					}
-		
-					double blx = Math.min(xCoord, xCoord + dir.offsetX * laserLength) + 0.2;
-					double bux = Math.max(xCoord, xCoord + dir.offsetX * laserLength) + 0.8;
-					double bly = Math.min(yCoord, yCoord + dir.offsetY * laserLength) + 0.2;
-					double buy = Math.max(yCoord, yCoord + dir.offsetY * laserLength) + 0.8;
-					double blz = Math.min(zCoord, zCoord + dir.offsetZ * laserLength) + 0.2;
-					double buz = Math.max(zCoord, zCoord + dir.offsetZ * laserLength) + 0.8;
-					
-					List<Entity> list = worldObj.getEntitiesWithinAABB(Entity.class, AxisAlignedBB.getBoundingBox(blx, bly, blz, bux, buy, buz));
-					
-					for(Entity e : list) {
-						e.attackEntityFrom(DamageSource.inFire, 50);
-						e.setFire(5);
-					}
-					
-					this.setStoredEnergyQuanta(0);
-				} else {
-					this.laserLength = 0;
-				}
-				
-			} else {
-				this.laserLength = 0;
-			}
-		} else {
-			
+		if(worldObj.isRemote) {
 			if(this.laserLength > 0 && worldObj.rand.nextInt(5) == 0) {
 				ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata());
 				ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
@@ -232,6 +254,8 @@ public class TileEntityICFController extends TileEntityTickingBase implements IE
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		this.markMachineEnergyDirty();
+		this.markNetworkDirty();
 	}
 
 	@Override

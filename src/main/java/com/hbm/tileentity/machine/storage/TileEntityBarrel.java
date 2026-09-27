@@ -51,6 +51,8 @@ import java.util.Set;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "opencomputers")})
 public class TileEntityBarrel extends TileEntityMachineBase implements SimpleComponent, IFluidStandardTransceiver, IPersistentNBT, IGUIProvider, CompatHandler.OCComponent, IFluidCopiable, IOverpressurable {
+	private static final int TASK_TRANSFER = 1;
+	private DirPos[] runtimeConnections;
 	
 	public boolean hasExploded = false;
 	public FluidTank tank;
@@ -65,11 +67,13 @@ public class TileEntityBarrel extends TileEntityMachineBase implements SimpleCom
 	public TileEntityBarrel() {
 		super(6);
 		tank = new FluidTank(Fluids.NONE, 0);
+		this.trackMachineFluidTank(tank);
 	}
 
 	public TileEntityBarrel(int capacity) {
 		super(6);
 		tank = new FluidTank(Fluids.NONE, capacity);
+		this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -103,7 +107,42 @@ public class TileEntityBarrel extends TileEntityMachineBase implements SimpleCom
 	}
 
 	@Override
-	public void updateEntity() {
+	public void updateEntity() { }
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return com.hbm.machine.MachineExecutionStrategy.EVENT_DRIVEN | com.hbm.machine.MachineExecutionStrategy.SCHEDULED | com.hbm.machine.MachineExecutionStrategy.COARSE_5 | com.hbm.machine.MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj != null && !worldObj.isRemote && !hasExploded)
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_TRANSFER, 0);
+	}
+
+	private boolean hasContainerWork() {
+		return slots[2] != null || (slots[4] != null && tank.getFill() > 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5 && !hasExploded)
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_TRANSFER, 0);
+		if(cadence == 20) this.networkPackNT(50);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_TRANSFER || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		this.beginMachineFluidMutation();
+		try { runBarrelStep(); }
+		finally { this.endMachineFluidMutation(); }
+		if(!hasExploded && (tank.getFill() > 0 || hasContainerWork()))
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_TRANSFER, 0);
+	}
+
+	private void runBarrelStep() {
 		
 		if(!worldObj.isRemote) {
 			if(!this.hasExploded) {
@@ -147,7 +186,8 @@ public class TileEntityBarrel extends TileEntityMachineBase implements SimpleCom
 	}
 	
 	protected DirPos[] getConPos() {
-		return new DirPos[] {
+		if(runtimeConnections != null) return runtimeConnections;
+		runtimeConnections = new DirPos[] {
 				new DirPos(xCoord + 1, yCoord, zCoord, Library.POS_X),
 				new DirPos(xCoord - 1, yCoord, zCoord, Library.NEG_X),
 				new DirPos(xCoord, yCoord + 1, zCoord, Library.POS_Y),
@@ -155,6 +195,7 @@ public class TileEntityBarrel extends TileEntityMachineBase implements SimpleCom
 				new DirPos(xCoord, yCoord, zCoord + 1, Library.POS_Z),
 				new DirPos(xCoord, yCoord, zCoord - 1, Library.NEG_Z)
 		};
+		return runtimeConnections;
 	}
 	
 	protected static int transmitFluidFairly(World world, FluidTank tank, IFluidConnector that, int fill, boolean connect, boolean send, DirPos[] connections) {

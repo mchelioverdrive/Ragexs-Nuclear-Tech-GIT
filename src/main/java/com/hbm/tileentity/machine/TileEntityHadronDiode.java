@@ -1,6 +1,7 @@
 package com.hbm.tileentity.machine;
 
 import com.hbm.tileentity.TileEntityTickingBase;
+import com.hbm.machine.MachineExecutionStrategy;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -19,21 +20,28 @@ public class TileEntityHadronDiode extends TileEntityTickingBase {
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			age++;
-			
-			if(age >= 20) {
-				age = 0;
-				sendSides();
-			}
-		} else {
+		if(worldObj.isRemote) {
 			
 			if(fatherIAskOfYouToUpdateMe) {
 				fatherIAskOfYouToUpdateMe = false;
 				worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
 			}
 		}
+	}
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj != null && !worldObj.isRemote) sendSides();
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence == 20 && worldObj != null && !worldObj.isRemote) sendSides();
 	}
 	
 	public void sendSides() {

@@ -1,17 +1,33 @@
 package com.hbm.tileentity.machine;
 
 import com.hbm.blocks.ModBlocks;
+import com.hbm.machine.MachineExecutionStrategy;
+import com.hbm.tileentity.TileEntityLoadedBase;
 
-import net.minecraft.tileentity.TileEntity;
+public class TileEntityChlorineSeal extends TileEntityLoadedBase {
+	private static final int TASK_SPREAD = 0;
 
-public class TileEntityChlorineSeal extends TileEntity {
-	
 	@Override
-	public void updateEntity() {
-		
-		if(!worldObj.isRemote && worldObj.isBlockIndirectlyGettingPowered(xCoord, yCoord, zCoord))
-			spread(xCoord, yCoord, zCoord, 0);
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5;
 	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence == 5 && worldObj != null && !worldObj.isRemote && worldObj.isBlockIndirectlyGettingPowered(xCoord, yCoord, zCoord))
+			scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_SPREAD, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_SPREAD || taskSlot != 0 || worldObj == null || worldObj.isRemote || !worldObj.isBlockIndirectlyGettingPowered(xCoord, yCoord, zCoord)) return;
+		spread(xCoord, yCoord, zCoord, 0);
+		if(!isInvalid() && worldObj.isBlockIndirectlyGettingPowered(xCoord, yCoord, zCoord))
+			scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_SPREAD, 0);
+	}
+
+	@Override
+	public void updateEntity() { }
 	
 	private void spread(int x, int y, int z, int index) {
 		

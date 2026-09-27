@@ -4,9 +4,12 @@ import java.util.List;
 
 import com.hbm.config.RadiationConfig;
 import com.hbm.hazard.type.HazardTypeNeutron;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.util.ContaminationUtil;
 import com.hbm.util.ContaminationUtil.ContaminationType;
 import com.hbm.util.ContaminationUtil.HazardType;
+import com.hbm.tileentity.TileEntityLoadedBase;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -20,17 +23,42 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
-public class TileEntityDemonLamp extends TileEntity {
+public class TileEntityDemonLamp extends TileEntityLoadedBase {
+	private static final int TASK_RADIATE = 0;
 
 	@Override
-	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			radiate(worldObj, xCoord, yCoord, zCoord);
-		}
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5;
 	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0 && hasNearbyLivingEntities()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_RADIATE, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 5 || worldObj == null || worldObj.isRemote) return;
+		if(hasNearbyLivingEntities()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_RADIATE, 0);
+		else cancelMachineTransition(TASK_RADIATE, 0);
+	}
+
+	private boolean hasNearbyLivingEntities() {
+		AxisAlignedBB box = AxisAlignedBB.getBoundingBox(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5).expand(25D, 25D, 25D);
+		return !worldObj.getEntitiesWithinAABB(EntityLivingBase.class, box).isEmpty();
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_RADIATE || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		if(radiate(worldObj, xCoord, yCoord, zCoord) && !isInvalid()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_RADIATE, 0);
+	}
+
+	@Override
+	public void updateEntity() { }
 	
-	private void radiate(World world, int x, int y, int z) {
+	private boolean radiate(World world, int x, int y, int z) {
 		
 		float rads = 100000F;
 		double range = 25D;
@@ -78,6 +106,7 @@ public class TileEntityDemonLamp extends TileEntity {
 				e.attackEntityFrom(DamageSource.inFire, 100);
 			}
 		}
+		return !entities.isEmpty();
 	}
 	
 	@Override

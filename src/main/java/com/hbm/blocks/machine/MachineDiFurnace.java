@@ -10,6 +10,7 @@ import com.hbm.handler.atmosphere.IBlockSealable;
 import com.hbm.lib.RefStrings;
 import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.machine.TileEntityDiFurnace;
+import com.hbm.tileentity.TileEntityLoadedBase;
 
 import com.hbm.util.I18nUtil;
 import cpw.mods.fml.common.network.internal.FMLNetworkHandler;
@@ -117,21 +118,23 @@ public class MachineDiFurnace extends BlockContainer implements IBlockSealable, 
 	}
 
 	public static void updateBlockState(boolean isProcessing, World world, int x, int y, int z) {
+		if(world.getBlock(x, y, z) == (isProcessing ? ModBlocks.machine_difurnace_on : ModBlocks.machine_difurnace_off)) return;
 		int i = world.getBlockMetadata(x, y, z);
 		TileEntity entity = world.getTileEntity(x, y, z);
-		keepInventory = true;
-
-		if(isProcessing)
-			world.setBlock(x, y, z, ModBlocks.machine_difurnace_on);
-		else
-			world.setBlock(x, y, z, ModBlocks.machine_difurnace_off);
-
-		keepInventory = false;
-		world.setBlockMetadataWithNotify(x, y, z, i, 2);
-
-		if(entity != null) {
-			entity.validate();
-			world.setTileEntity(x, y, z, entity);
+		boolean retained = entity instanceof TileEntityLoadedBase;
+		if(retained) ((TileEntityLoadedBase) entity).beginRetainedMachineBlockTransition();
+		try {
+			keepInventory = true;
+			world.setBlock(x, y, z, isProcessing ? ModBlocks.machine_difurnace_on : ModBlocks.machine_difurnace_off);
+			keepInventory = false;
+			world.setBlockMetadataWithNotify(x, y, z, i, 2);
+			if(entity != null) {
+				entity.validate();
+				world.setTileEntity(x, y, z, entity);
+			}
+		} finally {
+			keepInventory = false;
+			if(retained) ((TileEntityLoadedBase) entity).endRetainedMachineBlockTransition();
 		}
 	}
 

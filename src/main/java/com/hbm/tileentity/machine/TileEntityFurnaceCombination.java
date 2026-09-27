@@ -10,6 +10,8 @@ import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.gui.GUIFurnaceCombo;
 import com.hbm.inventory.recipes.CombinationRecipes;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachinePolluting;
@@ -32,6 +34,9 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityFurnaceCombination extends TileEntityMachinePolluting implements IFluidStandardSender, IGUIProvider, IFluidCopiable {
+	private static final int TASK_HEAT = 1;
+	private boolean runtimeInitialized;
+	private Pair<ItemStack, FluidStack> runtimeRecipe;
 
 	public boolean wasOn;
 	public int progress;
@@ -46,6 +51,56 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 	public TileEntityFurnaceCombination() {
 		super(4, 50);
 		this.tank = new FluidTank(Fluids.NONE, 24_000);
+		this.trackMachineFluidTank(tank);
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		if((causes & (MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.LIFECYCLE)) != 0) this.refreshRecipe();
+		this.beginMachineFluidMutation();
+		try { tank.unloadTank(2, 3, slots); }
+		finally { this.endMachineFluidMutation(); }
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(50);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.sendOutputs();
+		if(heat == 0 && this.hasExternalHeatOpportunity()) this.markMachineDirty(MachineDirtyCause.ENVIRONMENT);
+		this.networkPackNT(50);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_HEAT || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.beginMachineFluidMutation();
+		try { this.runFurnaceStep(); }
+		finally { this.endMachineFluidMutation(); }
+		this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(50);
+	}
+
+	private void refreshRecipe() {
+		runtimeRecipe = slots[0] != null ? CombinationRecipes.getOutput(slots[0]) : null;
+	}
+
+	private boolean hasExternalHeatOpportunity() {
+		TileEntity con = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
+		return con instanceof IHeatSource && ((IHeatSource) con).getHeatStored() > heat;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(heat > 0 || this.hasExternalHeatOpportunity()) this.scheduleMachineTransition(now + 1L, TASK_HEAT, 0);
+		else {
+			wasOn = false;
+			this.cancelMachineTransition(TASK_HEAT, 0);
+		}
 	}
 
 	@Override
@@ -55,11 +110,12 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			this.tryPullHeat();
-			
-			if(this.worldObj.getTotalWorldTime() % 20 == 0) {
+		if(worldObj.isRemote && this.wasOn && worldObj.rand.nextInt(15) == 0) {
+			worldObj.spawnParticle("lava", xCoord + 0.5 + worldObj.rand.nextGaussian() * 0.5, yCoord + 2, zCoord + 0.5 + worldObj.rand.nextGaussian() * 0.5, 0, 0, 0);
+		}
+	}
+
+	private void sendOutputs() {
 				for(int i = 2; i < 6; i++) {
 					ForgeDirection dir = ForgeDirection.getOrientation(i);
 					ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
@@ -78,8 +134,10 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 						this.sendSmoke(x, yCoord + 2, z, ForgeDirection.UP);
 					}
 				}
-			}
-			
+	}
+
+	private void runFurnaceStep() {
+			this.tryPullHeat();
 			this.wasOn = false;
 			
 			tank.unloadTank(2, 3, slots);
@@ -96,7 +154,7 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 						this.markChanged();
 						progress -= this.processTime;
 						
-						Pair<ItemStack, FluidStack> pair = CombinationRecipes.getOutput(slots[0]);
+						Pair<ItemStack, FluidStack> pair = runtimeRecipe;
 						ItemStack out = pair.getKey();
 						FluidStack fluid = pair.getValue();
 						
@@ -117,6 +175,7 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 						}
 						
 						this.decrStackSize(0, 1);
+						this.refreshRecipe();
 					}
 					
 					List<Entity> entities = worldObj.getEntitiesWithinAABB(Entity.class, AxisAlignedBB.getBoundingBox(xCoord - 0.5, yCoord + 2, zCoord - 0.5, xCoord + 1.5, yCoord + 4, zCoord + 1.5));
@@ -131,13 +190,6 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 				this.progress = 0;
 			}
 			
-			this.networkPackNT(50);
-		} else {
-			
-			if(this.wasOn && worldObj.rand.nextInt(15) == 0) {
-				worldObj.spawnParticle("lava", xCoord + 0.5 + worldObj.rand.nextGaussian() * 0.5, yCoord + 2, zCoord + 0.5 + worldObj.rand.nextGaussian() * 0.5, 0, 0, 0);
-			}
-		}
 	}
 	
 	@Override
@@ -160,7 +212,7 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 	
 	public boolean canSmelt() {
 		if(slots[0] == null) return false;
-		Pair<ItemStack, FluidStack> pair = CombinationRecipes.getOutput(slots[0]);
+		Pair<ItemStack, FluidStack> pair = runtimeInitialized && worldObj != null && !worldObj.isRemote ? runtimeRecipe : CombinationRecipes.getOutput(slots[0]);
 		
 		if(pair == null) return false;
 		

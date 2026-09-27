@@ -7,6 +7,8 @@ import com.hbm.interfaces.IControlReceiver;
 import com.hbm.inventory.container.ContainerReactorControl;
 import com.hbm.inventory.gui.GUIReactorControl;
 import com.hbm.items.ModItems;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 
@@ -30,6 +32,10 @@ import net.minecraft.world.World;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityReactorControl extends TileEntityMachineBase implements IControlReceiver, IGUIProvider, SimpleComponent, CompatHandler.OCComponent {
+	private boolean inventoryFingerprintInitialized;
+	private int observedInventoryFingerprint;
+	private int lastSyncFingerprint;
+	private long lastSyncTick = Long.MIN_VALUE;
 
 	public TileEntityReactorControl() {
 		super(1);
@@ -106,36 +112,26 @@ public class TileEntityReactorControl extends TileEntityMachineBase implements I
 	public RodFunction function = RodFunction.LINEAR;
 	
 	@Override
-	public void updateEntity() {
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
 
-		if(!worldObj.isRemote) {
-
-			isLinked = establishLink();
-			
-			if(isLinked) { 
-				
-				double fauxLevel = 0;
-
-				double lowerBound = Math.min(this.heatLower, this.heatUpper);
-				double upperBound = Math.max(this.heatLower, this.heatUpper);
-				
-				if(this.heat < lowerBound) {
-					fauxLevel = this.levelLower;
-					
-				} else if(this.heat > upperBound) {
-					fauxLevel = this.levelUpper;
-					
-				} else {
-					fauxLevel = getTargetLevel(this.function, this.heat);
-				}
-				
-				double level = MathHelper.clamp_double((fauxLevel * 0.01D), 0D, 1D);
-				
-				if(level != this.level) {
-					reactor.setTarget(level);
-				}
-			}
-			
+	private void updateController() {
+		boolean wasLinked = isLinked;
+		isLinked = establishLink();
+		if(isLinked) {
+			double fauxLevel;
+			double lowerBound = Math.min(this.heatLower, this.heatUpper);
+			double upperBound = Math.max(this.heatLower, this.heatUpper);
+			if(this.heat < lowerBound) fauxLevel = this.levelLower;
+			else if(this.heat > upperBound) fauxLevel = this.levelUpper;
+			else fauxLevel = getTargetLevel(this.function, this.heat);
+			double target = MathHelper.clamp_double(fauxLevel * 0.01D, 0D, 1D);
+			if(target != this.level) reactor.setTarget(target);
+		}
+		int fingerprint = runtimeStateFingerprint();
+		long now = worldObj.getTotalWorldTime();
+		if(lastSyncTick == Long.MIN_VALUE || fingerprint != lastSyncFingerprint || wasLinked != isLinked || now - lastSyncTick >= 20L) {
 			NBTTagCompound data = new NBTTagCompound();
 			data.setInteger("heat", heat);
 			data.setDouble("level", level);
@@ -147,8 +143,58 @@ public class TileEntityReactorControl extends TileEntityMachineBase implements I
 			data.setDouble("heatUpper", heatUpper);
 			data.setInteger("function", function.ordinal());
 			this.networkPack(data, 150);
+			lastSyncFingerprint = fingerprint;
+			lastSyncTick = now;
 		}
 	}
+
+	private int runtimeStateFingerprint() {
+		int hash = heat;
+		hash = 31 * hash + Double.valueOf(level).hashCode();
+		hash = 31 * hash + flux;
+		hash = 31 * hash + (isLinked ? 1 : 0);
+		hash = 31 * hash + Double.valueOf(levelLower).hashCode();
+		hash = 31 * hash + Double.valueOf(levelUpper).hashCode();
+		hash = 31 * hash + Double.valueOf(heatLower).hashCode();
+		hash = 31 * hash + Double.valueOf(heatUpper).hashCode();
+		hash = 31 * hash + function.ordinal();
+		return hash;
+	}
+
+	private int inventoryFingerprint() {
+		ItemStack stack = slots[0];
+		int hash = stack == null ? 0 : System.identityHashCode(stack);
+		if(stack != null) {
+			hash = 31 * hash + stack.stackSize;
+			hash = 31 * hash + stack.getItemDamage();
+			hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+		}
+		return hash;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY | MachineDirtyCause.CONFIGURATION)) != 0) updateController();
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5 && observeInventoryFingerprint()) markMachineDirty(MachineDirtyCause.INVENTORY);
+		if((cadence == 5 && isLinked) || cadence == 20) updateController();
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	@Override
+	public void updateEntity() { }
 	
 	public void networkUnpack(NBTTagCompound data) {
 		super.networkUnpack(data);
@@ -165,6 +211,7 @@ public class TileEntityReactorControl extends TileEntityMachineBase implements I
 	}
 	
 	private boolean establishLink() {
+		reactor = null;
 		if(slots[0] != null && slots[0].getItem() == ModItems.reactor_sensor && slots[0].stackTagCompound != null) {
 			int xCoord = slots[0].stackTagCompound.getInteger("x");
     		int yCoord = slots[0].stackTagCompound.getInteger("y");
@@ -239,6 +286,7 @@ public class TileEntityReactorControl extends TileEntityMachineBase implements I
 		}
 		
 		this.markDirty();
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 	
 	@Override
@@ -284,6 +332,7 @@ public class TileEntityReactorControl extends TileEntityMachineBase implements I
 		heatLower = MathHelper.clamp_double(newMinHeat, 0, 9999);
 		levelUpper = MathHelper.clamp_double(newMaxLevel, 0, 1);
 		levelLower = MathHelper.clamp_double(newMinLevel, 0, 1);
+		markMachineDirty(MachineDirtyCause.CONFIGURATION);
 		return new Object[] {};
 	}
 

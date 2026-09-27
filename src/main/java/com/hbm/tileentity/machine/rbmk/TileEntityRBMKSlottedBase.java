@@ -1,5 +1,6 @@
 package com.hbm.tileentity.machine.rbmk;
 
+import com.hbm.machine.MachineDirtyCause;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.NBTPacket;
 import com.hbm.tileentity.IGUIProvider;
@@ -44,6 +45,7 @@ public abstract class TileEntityRBMKSlottedBase extends TileEntityRBMKActiveBase
 		if(slots[i] != null) {
 			ItemStack itemStack = slots[i];
 			slots[i] = null;
+			markMachineDirty(MachineDirtyCause.INVENTORY);
 			return itemStack;
 		} else {
 			return null;
@@ -56,6 +58,7 @@ public abstract class TileEntityRBMKSlottedBase extends TileEntityRBMKActiveBase
 		if(itemStack != null && itemStack.stackSize > getInventoryStackLimit()) {
 			itemStack.stackSize = getInventoryStackLimit();
 		}
+		markMachineDirty(MachineDirtyCause.INVENTORY);
 	}
 
 	@Override
@@ -96,12 +99,14 @@ public abstract class TileEntityRBMKSlottedBase extends TileEntityRBMKActiveBase
 			if(slots[slot].stackSize <= amount) {
 				ItemStack itemStack = slots[slot];
 				slots[slot] = null;
+				markMachineDirty(MachineDirtyCause.INVENTORY);
 				return itemStack;
 			}
 			ItemStack itemStack1 = slots[slot].splitStack(amount);
 			if(slots[slot].stackSize == 0) {
 				slots[slot] = null;
 			}
+			markMachineDirty(MachineDirtyCause.INVENTORY);
 
 			return itemStack1;
 		} else {

@@ -7,6 +7,8 @@ import com.hbm.entity.mob.EntityFBI;
 import com.hbm.entity.mob.EntityFBIDrone;
 import com.hbm.inventory.container.ContainerRadiobox;
 import com.hbm.lib.ModDamageSource;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityLoadedBase;
 
@@ -23,21 +25,33 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityRadiobox extends TileEntityLoadedBase implements IEnergyReceiverMK2, IGUIProvider {
+	private static final int TASK_EFFECT = 1;
+	private boolean runtimeEnergyMutation;
 	
 	long energyQuanta;
 	public static long maxPower = 500000;
 	public boolean infinite = false;
 	
 	@Override
-	public void updateEntity() {
-		
-		if(!worldObj.isRemote)
-			this.updateConnections();
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
 
-		if(!worldObj.isRemote && this.getBlockMetadata() > 5 && (energyQuanta >= 25000 || infinite)) {
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj != null && !worldObj.isRemote && this.getBlockMetadata() > 5 && (energyQuanta >= 25000 || infinite))
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_EFFECT, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_EFFECT || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		if(this.getBlockMetadata() > 5 && (energyQuanta >= 25000 || infinite)) {
 			
 			if(!infinite) {
+				runtimeEnergyMutation = true;
 				this.setStoredEnergyQuanta(this.energyQuanta - 25000);
+				runtimeEnergyMutation = false;
 				this.markDirty();
 			}
 			
@@ -52,6 +66,14 @@ public class TileEntityRadiobox extends TileEntityLoadedBase implements IEnergyR
 				((Entity)entity).attackEntityFrom(ModDamageSource.enervation, 20.0F);
 			}
 		}
+		this.onMachineRuntimeDirty(0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
+		this.updateConnections();
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.REDSTONE);
 	}
 	
 	private void updateConnections() {
@@ -81,6 +103,7 @@ public class TileEntityRadiobox extends TileEntityLoadedBase implements IEnergyR
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override

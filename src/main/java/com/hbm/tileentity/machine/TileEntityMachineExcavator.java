@@ -25,6 +25,8 @@ import com.hbm.items.machine.ItemDrillbit.EnumDrillType;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
 import com.hbm.items.special.ItemBedrockOreBase;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IUpgradeInfoProvider;
@@ -39,6 +41,7 @@ import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.conveyor.IConveyorBelt;
 import api.hbm.energymk2.IEnergyReceiverMK2;
+import api.hbm.energymk2.IBatteryItem;
 import api.hbm.fluid.IFluidStandardReceiver;
 import cpw.mods.fml.relauncher.ReflectionHelper;
 import cpw.mods.fml.relauncher.Side;
@@ -62,6 +65,13 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineExcavator extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
+	private static final int TASK_DRILL = 1;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private DirPos[] runtimeConnections;
+	private int observedOrientation = Integer.MIN_VALUE;
+	private int runtimeSpeedLevel;
+	private int runtimeRadiusLevel;
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
@@ -96,6 +106,81 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 	public TileEntityMachineExcavator() {
 		super(14);
 		this.tank = new FluidTank(Fluids.SULFURIC_ACID, 16_000);
+		this.trackMachineFluidTank(tank);
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.refreshConnections();
+		if((causes & (MachineDirtyCause.INVENTORY | MachineDirtyCause.UPGRADE | MachineDirtyCause.LIFECYCLE)) != 0) this.refreshUpgrades();
+		this.beginMachineFluidMutation();
+		try { tank.setType(1, slots); }
+		finally { this.endMachineFluidMutation(); }
+		this.subscribeToInputs();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(150);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.tryEjectBuffer();
+		this.refreshConnections();
+		this.subscribeToInputs();
+		this.networkPackNT(150);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_DRILL || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		runtimeEnergyMutation = true;
+		try { this.runExcavatorStep(); }
+		finally { runtimeEnergyMutation = false; }
+		this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNT(150);
+	}
+
+	private void refreshConnections() {
+		int orientation = this.getBlockMetadata();
+		if(runtimeConnections == null || observedOrientation != orientation) {
+			runtimeConnections = this.getConPos();
+			observedOrientation = orientation;
+		}
+	}
+
+	private void subscribeToInputs() {
+		for(DirPos pos : runtimeConnections) {
+			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+		}
+	}
+
+	private void refreshUpgrades() {
+		this.upgradeManager.checkSlots(slots, 2, 3);
+		runtimeSpeedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+		int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+		runtimeRadiusLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
+		consumption = baseConsumption * (1 + runtimeSpeedLevel) / (1 + powerLevel);
+	}
+
+	private boolean hasBatteryInput() {
+		if(energyQuanta >= maxPower || slots[0] == null) return false;
+		if(slots[0].getItem() == ModItems.battery_creative || slots[0].getItem() == ModItems.fusion_core_infinite) return true;
+		return slots[0].getItem() instanceof IBatteryItem && ((IBatteryItem) slots[0].getItem()).getStoredEnergyQuanta(slots[0]) > 0;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		boolean canDrill = enableDrill && this.getInstalledDrill() != null && energyQuanta >= this.getPowerConsumption();
+		if(canDrill || this.hasBatteryInput() || chuteTimer > 0) this.scheduleMachineTransition(now + 1L, TASK_DRILL, 0);
+		else {
+			operational = false;
+			targetDepth = 0;
+			this.cancelMachineTransition(TASK_DRILL, 0);
+		}
 	}
 
 	@Override
@@ -105,33 +190,15 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 
 	@Override
 	public void updateEntity() {
+		if(worldObj.isRemote) this.updateClientAnimation();
+	}
 
-		//needs to happen on client too for GUI rendering
-		this.upgradeManager.checkSlots(slots, 2, 3);
-		int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-		int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
-
-		consumption = baseConsumption * (1 + speedLevel);
-		consumption /= (1 + powerLevel);
-
-		if(!worldObj.isRemote) {
-
-			this.tank.setType(1, slots);
-
-			if(worldObj.getTotalWorldTime() % 20 == 0) {
-				tryEjectBuffer();
-
-				for(DirPos pos : getConPos()) {
-					this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-					this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				}
-			}
-
+	private void runExcavatorStep() {
 			if(chuteTimer > 0) chuteTimer--;
 
 			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, this.getStoredEnergyQuanta(), this.getEnergyCapacityQuanta()));
 			this.operational = false;
-			int radiusLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
+			int radiusLevel = runtimeRadiusLevel;
 
 			EnumDrillType type = this.getInstalledDrill();
 			if(this.enableDrill && type != null && this.energyQuanta >= this.getPowerConsumption()) {
@@ -140,7 +207,7 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 				this.setStoredEnergyQuanta(this.energyQuanta - this.getPowerConsumption());
 
 				this.speed = type.speed;
-				this.speed *= (1 + speedLevel / 2D);
+				this.speed *= (1 + runtimeSpeedLevel / 2D);
 
 				int maxDepth = this.yCoord - 4;
 
@@ -155,10 +222,13 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 				this.targetDepth = 0;
 			}
 
-			this.networkPackNT(150);
+	}
 
-		} else {
-
+	private void updateClientAnimation() {
+		this.upgradeManager.checkSlots(slots, 2, 3);
+		int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+		int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
+		consumption = baseConsumption * (1 + speedLevel) / (1 + powerLevel);
 			this.prevDrillExtension = this.drillExtension;
 
 			if(this.drillExtension != this.targetDepth) {
@@ -193,7 +263,6 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 				this.crusherRotation -= 360F;
 				this.prevCrusherRotation -= 360F;
 			}
-		}
 	}
 
 	protected DirPos[] getConPos() {
@@ -869,6 +938,7 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 		if(data.hasKey("silktouch")) this.enableSilkTouch = !this.enableSilkTouch;
 
 		this.markChanged();
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 
 	public EnumDrillType getInstalledDrill() {
@@ -968,6 +1038,7 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override

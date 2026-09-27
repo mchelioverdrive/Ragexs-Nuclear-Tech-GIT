@@ -1,15 +1,16 @@
 package com.hbm.tileentity.machine;
 
-import java.util.Arrays;
-
 import com.hbm.inventory.container.ContainerMachineSiren;
 import com.hbm.inventory.gui.GUIMachineSiren;
 import com.hbm.items.machine.ItemCassette;
 import com.hbm.items.machine.ItemCassette.SoundType;
 import com.hbm.items.machine.ItemCassette.TrackType;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.TESirenPacket;
 import com.hbm.tileentity.IGUIProvider;
+import com.hbm.tileentity.TileEntityLoadedBase;
 
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import cpw.mods.fml.relauncher.Side;
@@ -20,10 +21,14 @@ import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 
-public class TileEntityMachineSiren extends TileEntity implements ISidedInventory, IGUIProvider {
+public class TileEntityMachineSiren extends TileEntityLoadedBase implements ISidedInventory, IGUIProvider {
+	private boolean inventoryFingerprintInitialized;
+	private int observedInventoryFingerprint;
+	private int lastTrackId = Integer.MIN_VALUE;
+	private boolean lastSentActive;
+	private long lastPacketTick = Long.MIN_VALUE;
 
 	private ItemStack slots[];
 	
@@ -55,6 +60,8 @@ public class TileEntityMachineSiren extends TileEntity implements ISidedInventor
 		{
 			ItemStack itemStack = slots[i];
 			slots[i] = null;
+			markDirty();
+			markMachineDirty(com.hbm.machine.MachineDirtyCause.INVENTORY);
 			return itemStack;
 		} else {
 		return null;
@@ -68,6 +75,8 @@ public class TileEntityMachineSiren extends TileEntity implements ISidedInventor
 		{
 			itemStack.stackSize = getInventoryStackLimit();
 		}
+		markDirty();
+		markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.CONFIGURATION);
 	}
 
 	@Override
@@ -117,15 +126,19 @@ public class TileEntityMachineSiren extends TileEntity implements ISidedInventor
 		{
 			if(slots[i].stackSize <= j)
 			{
-				ItemStack itemStack = slots[i];
-				slots[i] = null;
-				return itemStack;
+			ItemStack itemStack = slots[i];
+			slots[i] = null;
+			markDirty();
+			markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.CONFIGURATION);
+			return itemStack;
 			}
 			ItemStack itemStack1 = slots[i].splitStack(j);
 			if (slots[i].stackSize == 0)
 			{
 				slots[i] = null;
 			}
+			markDirty();
+			markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.CONFIGURATION);
 			
 			return itemStack1;
 		} else {
@@ -187,35 +200,73 @@ public class TileEntityMachineSiren extends TileEntity implements ISidedInventor
 	}
 
 	@Override
-	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			int id = Arrays.asList(TrackType.values()).indexOf(getCurrentType());
-			
-			if(getCurrentType().name().equals(TrackType.NULL.name())) {
-				PacketDispatcher.wrapper.sendToAllAround(new TESirenPacket(xCoord, yCoord, zCoord, id, false), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 1500));
-				return;
-			}
-			
-			boolean active = worldObj.isBlockIndirectlyGettingPowered(xCoord, yCoord, zCoord);
-			
-			if(getCurrentType().getType().name().equals(SoundType.LOOP.name())) {
-				
-				PacketDispatcher.wrapper.sendToAllAround(new TESirenPacket(xCoord, yCoord, zCoord, id, active), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 1500));
-			} else {
-				
-				if(!lock && active) {
-					lock = true;
-					PacketDispatcher.wrapper.sendToAllAround(new TESirenPacket(xCoord, yCoord, zCoord, id, false), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 1500));
-					PacketDispatcher.wrapper.sendToAllAround(new TESirenPacket(xCoord, yCoord, zCoord, id, true), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 1500));
-				}
-				
-				if(lock && !active) {
-					lock = false;
-				}
-			}
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		boolean changed = observeInventoryFingerprint();
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0 || changed) updateSirenState(true);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(observeInventoryFingerprint()) updateSirenState(true);
+			else updateSirenState(false);
+		} else if(cadence == 20 && lastPacketTick != Long.MIN_VALUE && worldObj.getTotalWorldTime() - lastPacketTick >= 20L) {
+			updateSirenState(true);
 		}
 	}
+
+	private int inventoryFingerprint() {
+		ItemStack stack = slots[0];
+		int hash = stack == null ? 0 : System.identityHashCode(stack);
+		if(stack != null) {
+			hash = 31 * hash + stack.stackSize;
+			hash = 31 * hash + stack.getItemDamage();
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private void updateSirenState(boolean forcePacket) {
+		TrackType track = getCurrentType();
+		int id = track.ordinal();
+		boolean active = track != TrackType.NULL && worldObj.isBlockIndirectlyGettingPowered(xCoord, yCoord, zCoord);
+		boolean changed = id != lastTrackId || active != lastSentActive;
+		if(track != TrackType.NULL && track.getType() != SoundType.LOOP) {
+			if(!lock && active) {
+				lock = true;
+				PacketDispatcher.wrapper.sendToAllAround(new TESirenPacket(xCoord, yCoord, zCoord, id, false), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 1500));
+				PacketDispatcher.wrapper.sendToAllAround(new TESirenPacket(xCoord, yCoord, zCoord, id, true), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 1500));
+				lastTrackId = id;
+				lastSentActive = true;
+				lastPacketTick = worldObj.getTotalWorldTime();
+				return;
+			}
+			if(lock && !active) lock = false;
+		}
+		if(forcePacket || changed) {
+			PacketDispatcher.wrapper.sendToAllAround(new TESirenPacket(xCoord, yCoord, zCoord, id, active), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 1500));
+			lastTrackId = id;
+			lastSentActive = active;
+			lastPacketTick = worldObj.getTotalWorldTime();
+		}
+	}
+
+	@Override
+	public void updateEntity() { }
 	
 	public TrackType getCurrentType() {
 		if(slots[0] != null && slots[0].getItem() instanceof ItemCassette) {

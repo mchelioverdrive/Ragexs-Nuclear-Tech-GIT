@@ -17,6 +17,8 @@ import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.items.machine.IItemFluidIdentifier;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.main.MainRegistry;
 import com.hbm.sound.AudioWrapper;
 import com.hbm.tileentity.IFluidCopiable;
@@ -45,6 +47,12 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityMachineTurbineGas extends TileEntityMachineBase implements IFluidStandardTransceiver, IEnergyProviderMK2, IControlReceiver, IGUIProvider, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IFluidCopiable {
+	private static final int TASK_SIMULATE = 1;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private ForgeDirection runtimeDirection;
+	private ForgeDirection runtimeRotation;
+	private int observedOrientation = Integer.MIN_VALUE;
 	
 	public long energyQuanta;
 	public static final long maxPower = 1000000L;
@@ -86,21 +94,85 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		tanks[1] = new FluidTank(Fluids.LUBRICANT, 16000);
 		tanks[2] = new FluidTank(Fluids.FRESH_WATER, 16000).migrateFrom(Fluids.WATER);
 		tanks[3] = new FluidTank(Fluids.HOTSTEAM, 160000);
+		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		this.refreshOrientation();
+		this.beginMachineFluidMutation();
+		try { this.selectFuelType(); }
+		finally { this.endMachineFluidMutation(); }
+		this.subscribeToInputs();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimePacket(energyQuanta);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.refreshOrientation();
+		this.subscribeToInputs();
+		this.sendRuntimePacket(energyQuanta);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_SIMULATE || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.beginMachineFluidMutation();
+		runtimeEnergyMutation = true;
+		try { this.runGasTurbineStep(); }
+		finally {
+			runtimeEnergyMutation = false;
+			this.endMachineFluidMutation();
+		}
+		this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	private void selectFuelType() {
+		if(slots[1] != null && slots[1].getItem() instanceof IItemFluidIdentifier) {
+			FluidType fluid = ((IItemFluidIdentifier) slots[1].getItem()).getType(worldObj, xCoord, yCoord, zCoord, slots[1]);
+			if(fluid.hasTrait(FT_Combustible.class) && fluid.getTrait(FT_Combustible.class).getGrade() == FuelGrade.GAS) tanks[0].setTankType(fluid);
+		}
+	}
+
+	private void refreshOrientation() {
+		int orientation = this.getBlockMetadata();
+		if(observedOrientation != orientation) {
+			runtimeDirection = ForgeDirection.getOrientation(orientation - BlockDummyable.offset);
+			runtimeRotation = runtimeDirection.getRotation(ForgeDirection.UP);
+			observedOrientation = orientation;
+		}
+	}
+
+	private void subscribeToInputs() {
+		ForgeDirection dir = runtimeDirection;
+		ForgeDirection rot = runtimeRotation;
+		for(int i = 0; i < 2; i++) {
+			this.trySubscribe(tanks[i].getTankType(), worldObj, xCoord - dir.offsetX * 2 + rot.offsetX, yCoord, zCoord - dir.offsetZ * 2 + rot.offsetZ, dir.getOpposite());
+			this.trySubscribe(tanks[i].getTankType(), worldObj, xCoord + dir.offsetX * 2 + rot.offsetX, yCoord, zCoord + dir.offsetZ * 2 + rot.offsetZ, dir);
+		}
+		this.trySubscribe(tanks[2].getTankType(), worldObj, xCoord - dir.offsetX * 2 - rot.offsetX * 4, yCoord, zCoord - dir.offsetZ * 2 - rot.offsetZ * 4, dir.getOpposite());
+		this.trySubscribe(tanks[2].getTankType(), worldObj, xCoord + dir.offsetX * 2 - rot.offsetX * 4, yCoord, zCoord + dir.offsetZ * 2 - rot.offsetZ * 4, dir);
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(state != 0 || rpm > 0 || counter > 0 || powerSliderPos > 0 || energyQuanta > 0 || tanks[3].getFill() > 0)
+			this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, 0);
+		else this.cancelMachineTransition(TASK_SIMULATE, 0);
 	}
 	
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
+		if(worldObj.isRemote) this.updateClientAudio();
+	}
+
+	private void runGasTurbineStep() {
 			throttle = powerSliderPos * 100 / 60;
-			
-			if(slots[1] != null && slots[1].getItem() instanceof IItemFluidIdentifier) {
-				FluidType fluid = ((IItemFluidIdentifier) slots[1].getItem()).getType(worldObj, xCoord, yCoord, zCoord, slots[1]);
-				if(fluid.hasTrait(FT_Combustible.class) && fluid.getTrait(FT_Combustible.class).getGrade() == FuelGrade.GAS) {
-					tanks[0].setTankType(fluid);
-				}
-			}
 			
 			if(autoMode) { //power production depending on power requirement
 				
@@ -131,11 +203,9 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 				break;
 			}
 			
-			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
-			ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
-			
-			NBTTagCompound data = new NBTTagCompound();
-			EnergyUnits.writeEnergyQuanta(data, Math.min(this.energyQuanta, this.maxPower)); //set first to get an unmodified view of how much power was generated before deductions from the net
+			ForgeDirection dir = runtimeDirection;
+			ForgeDirection rot = runtimeRotation;
+			long packetEnergy = Math.min(this.energyQuanta, this.maxPower);
 			
 			//do net/battery deductions first...
 			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 0, energyQuanta, maxPower));
@@ -145,16 +215,13 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 			if(this.energyQuanta > this.maxPower)
 				this.setStoredEnergyQuanta(this.maxPower);
 			
-			for(int i = 0; i < 2; i++) { //fuel and lube
-				this.trySubscribe(tanks[i].getTankType(), worldObj, xCoord - dir.offsetX * 2 + rot.offsetX, yCoord, zCoord - dir.offsetZ * 2 + rot.offsetZ, dir.getOpposite());
-				this.trySubscribe(tanks[i].getTankType(), worldObj, xCoord + dir.offsetX * 2 + rot.offsetX, yCoord, zCoord + dir.offsetZ * 2 + rot.offsetZ, dir);
-			}
-			//water
-			this.trySubscribe(tanks[2].getTankType(), worldObj, xCoord - dir.offsetX * 2 + rot.offsetX * -4, yCoord, zCoord - dir.offsetZ * 2 + rot.offsetZ * -4, dir.getOpposite());
-			this.trySubscribe(tanks[2].getTankType(), worldObj, xCoord + dir.offsetX * 2 + rot.offsetX * -4, yCoord, zCoord + dir.offsetZ * 2 + rot.offsetZ * -4, dir);
-			//steam
-			this.sendFluid(tanks[3], worldObj, xCoord + dir.offsetZ * 6, yCoord + 1, zCoord - dir.offsetX * 6, rot.getOpposite());
-			
+			if(tanks[3].getFill() > 0) this.sendFluid(tanks[3], worldObj, xCoord + dir.offsetZ * 6, yCoord + 1, zCoord - dir.offsetX * 6, rot.getOpposite());
+			this.sendRuntimePacket(packetEnergy);
+	}
+
+	private void sendRuntimePacket(long packetEnergy) {
+		NBTTagCompound data = new NBTTagCompound();
+		EnergyUnits.writeEnergyQuanta(data, packetEnergy);
 			data.setInteger("rpm",  this.rpm);
 			data.setInteger("temp",  this.temp);
 			data.setInteger("state", this.state);
@@ -174,9 +241,9 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 			tanks[3].writeToNBT(data, "steam");
 				
 			this.networkPack(data, 150);
-			
-		} else { //client side, for sounds n shit
-			
+	}
+
+	private void updateClientAudio() {
 			if(rpm >= 10 && state != -1) { //if conditions are right, play the sound
 				
 				if(audio == null) { //if there is no sound playing, start it
@@ -200,7 +267,6 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 					audio = null;
 				}
 			}
-		}
 	}
 	
 	private void stopIfNotReady() {
@@ -462,6 +528,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 			state = data.getInteger("state");
 
 		this.markDirty();
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 	
 	@Override
@@ -495,6 +562,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override
@@ -505,6 +573,10 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	@Override
 	public long getEnergyCapacityQuanta() {
 		return this.maxPower;
+	}
+
+	public long getPowerOutputWatts() {
+		return state == 1 ? EnergyUnits.quantaPerTickToWatts(instantPowerOutput) : 0L;
 	}
 	
 	AxisAlignedBB bb = null;

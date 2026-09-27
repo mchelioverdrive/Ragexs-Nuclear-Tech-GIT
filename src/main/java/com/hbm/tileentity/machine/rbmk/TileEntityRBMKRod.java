@@ -73,7 +73,12 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 	}
 
 	@Override
-	public void updateEntity() {
+	protected boolean needsRBMKSimulation() {
+		return super.needsRBMKSimulation() || slots[0] != null;
+	}
+
+	@Override
+	protected void runRBMKColumnStep() {
 
 		if(!worldObj.isRemote) {
 			if(!hasAtmosphere()) {
@@ -81,7 +86,7 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 				this.fluxFast = 0;
 				this.fluxSlow = 0;
 				this.hasRod = false;
-				super.updateEntity();
+				super.runRBMKColumnStep();
 				return;
 			}
 
@@ -100,7 +105,7 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 					ChunkRadiationManager.proxy.incrementRad(worldObj, xCoord, yCoord, zCoord, (float) ((this.fluxFast + this.fluxSlow) * 0.05F));
 				}
 
-				super.updateEntity();
+				super.runRBMKColumnStep();
 
 				if(this.heat > this.maxHeat()) {
 
@@ -133,7 +138,7 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 
 				hasRod = false;
 
-				super.updateEntity();
+				super.runRBMKColumnStep();
 			}
 		}
 	}

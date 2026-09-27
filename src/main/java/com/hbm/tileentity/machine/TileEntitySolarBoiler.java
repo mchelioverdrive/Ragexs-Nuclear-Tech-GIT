@@ -7,6 +7,8 @@ import com.hbm.dim.orbit.WorldProviderOrbit;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.BufPacket;
 import com.hbm.tileentity.IBufPacketReceiver;
@@ -23,6 +25,13 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.ChunkCoordinates;
 
 public class TileEntitySolarBoiler extends TileEntityLoadedBase implements IFluidStandardTransceiver, IBufPacketReceiver, IFluidCopiable {
+	private static final int TASK_CONVERT = 1;
+	private boolean runtimeFluidMutation;
+	private final FluidTank.ChangeListener tankListener = new FluidTank.ChangeListener() {
+		@Override public void onTankChanged(FluidTank tank) {
+			if(worldObj != null && !worldObj.isRemote && !runtimeFluidMutation) markMachineFluidDirty();
+		}
+	};
 
 	private FluidTank water;
 	private FluidTank steam;
@@ -34,6 +43,40 @@ public class TileEntitySolarBoiler extends TileEntityLoadedBase implements IFlui
 	public TileEntitySolarBoiler() {
 		water = new FluidTank(Fluids.FRESH_WATER, 100).migrateFrom(Fluids.WATER);
 		steam = new FluidTank(Fluids.STEAM, 10_000);
+		water.setChangeListener(tankListener);
+		steam.setChangeListener(tankListener);
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	/** Mirrors are the authoritative external heat source for this collector. */
+	public void addMirrorHeat(int amount) {
+		if(amount <= 0) return;
+		heat += amount;
+		this.markMachineDirty(MachineDirtyCause.ENVIRONMENT);
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.subscribeToWater();
+		if(heat > 0) this.scheduleMachineTransition(worldObj.getTotalWorldTime(), TASK_CONVERT, 0);
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
+		this.subscribeToWater();
+	}
+
+	private void subscribeToWater() {
+		this.trySubscribe(water.getTankType(), worldObj, xCoord, yCoord + 3, zCoord, Library.POS_Y);
+		this.trySubscribe(water.getTankType(), worldObj, xCoord, yCoord - 1, zCoord, Library.NEG_Y);
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_CONVERT || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		this.convertMirrorHeat();
 	}
 
 	private boolean isReceivingSunlight() {
@@ -46,12 +89,16 @@ public class TileEntitySolarBoiler extends TileEntityLoadedBase implements IFlui
 
 	@Override
 	public void updateEntity() {
+		if(worldObj.isRemote) {
+			secondary.clear();
+			secondary.addAll(primary);
+			primary.clear();
+		}
+	}
 
-		if(!worldObj.isRemote) {
-
-			this.trySubscribe(water.getTankType(), worldObj, xCoord, yCoord + 3, zCoord, Library.POS_Y);
-			this.trySubscribe(water.getTankType(), worldObj, xCoord, yCoord - 1, zCoord, Library.NEG_Y);
-
+	private void convertMirrorHeat() {
+		runtimeFluidMutation = true;
+		try {
 			float sunPower = worldObj.provider instanceof WorldProviderOrbit
 				? ((WorldProviderOrbit)worldObj.provider).getSunPower()
 				: CelestialBody.getBody(worldObj).getSunPower();
@@ -84,11 +131,8 @@ public class TileEntitySolarBoiler extends TileEntityLoadedBase implements IFlui
 			heat = 0;
 
 			networkPackNT(15);
-		} else {
-
-			secondary.clear();
-			secondary.addAll(primary);
-			primary.clear();
+		} finally {
+			runtimeFluidMutation = false;
 		}
 	}
 

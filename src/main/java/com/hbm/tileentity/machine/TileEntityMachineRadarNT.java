@@ -19,6 +19,8 @@ import com.hbm.items.ModItems;
 import com.hbm.items.tool.ItemCoordinateBase;
 import com.hbm.lib.Library;
 import com.hbm.main.MainRegistry;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.BufPacket;
 import com.hbm.saveddata.SatelliteSavedData;
@@ -69,6 +71,9 @@ import net.minecraft.world.WorldServer;
  */
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityMachineRadarNT extends TileEntityMachineBase implements IEnergyReceiverMK2, IGUIProvider, IConfigurableMachine, IControlReceiver, SimpleComponent, CompatHandler.OCComponent {
+	private static final int TASK_SCAN = 0;
+	private boolean inventoryFingerprintInitialized;
+	private int observedInventoryFingerprint;
 
 	public boolean scanMissiles = true;
 	public boolean scanShells = true;
@@ -141,19 +146,122 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 	}
 
 	@Override
-	public void updateEntity() {
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(this.map == null || this.map.length != 40_000) this.map = new byte[40_000];
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0) updatePowerConnections();
+		if(needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_SCAN, 0);
+		else cancelMachineTransition(TASK_SCAN, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_SCAN || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		runRadarStep();
+		markNetworkDirty();
+		networkPackNTIfDirty(50);
+		if(clearFlag) clearFlag = false;
+		if(!isInvalid() && needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_SCAN, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(observeInventoryFingerprint()) markMachineDirty(MachineDirtyCause.INVENTORY);
+			if(lastPower != getRedPower()) {
+				markChanged();
+				for(DirPos pos : getConPos()) updateRedstoneConnection(pos);
+				lastPower = getRedPower();
+			}
+			if(needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_SCAN, 0);
+		} else if(cadence == 20) {
+			updatePowerConnections();
+			if(!needsSimulation()) {
+				advanceIdlePingTimer(20);
+				refreshLinkedScreen();
+				networkPackNTIfDirty(50);
+			}
+		}
+	}
+
+	private boolean needsSimulation() {
+		if(showMap || clearFlag || !entries.isEmpty()) return true;
+		if(yCoord >= radarAltitude && energyQuanta >= consumption) return true;
+		return energyQuanta < maxPower && canDischargeSlot(0) || energyQuanta < maxPower && canDischargeSlot(9);
+	}
+
+	private boolean canDischargeSlot(int slot) {
+		ItemStack stack = slots[slot];
+		if(stack == null) return false;
+		if(stack.getItem() == ModItems.battery_creative || stack.getItem() == ModItems.fusion_core_infinite) return true;
+		return stack.getItem() instanceof api.hbm.energymk2.IBatteryItem && ((api.hbm.energymk2.IBatteryItem) stack.getItem()).getStoredEnergyQuanta(stack) > 0;
+	}
+
+	private void updatePowerConnections() {
+		for(DirPos pos : getConPos()) trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+	}
+
+	private void advanceIdlePingTimer(int elapsedTicks) {
+		if(muffled) return;
+		pingTimer = Math.min(maxTimer, pingTimer + elapsedTicks);
+		if(energyQuanta > 0 && pingTimer >= maxTimer) {
+			worldObj.playSoundEffect(xCoord, yCoord, zCoord, "hbm:block.sonarPing", 5.0F, 1.0F);
+			pingTimer = 0;
+		}
+	}
+
+	private void refreshLinkedScreen() {
+		if(slots[8] == null || slots[8].getItem() != ModItems.radar_linker) return;
+		BlockPos pos = ItemCoordinateBase.getPosition(slots[8]);
+		if(pos == null) return;
+		TileEntity tile = worldObj.getTileEntity(pos.getX(), pos.getY(), pos.getZ());
+		if(tile instanceof TileEntityMachineRadarScreen) {
+			TileEntityMachineRadarScreen screen = (TileEntityMachineRadarScreen) tile;
+			screen.entries.clear();
+			screen.entries.addAll(this.entries);
+			screen.refX = xCoord;
+			screen.refY = yCoord;
+			screen.refZ = zCoord;
+			screen.range = this.getRange();
+			screen.linked = true;
+			PacketDispatcher.wrapper.sendToAllAround(new BufPacket(xCoord, yCoord, zCoord, this), new TargetPoint(this.worldObj.provider.dimensionId, pos.getX(), pos.getY(), pos.getZ(), 25));
+		}
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private void runRadarStep() {
 
 		if(this.map == null || this.map.length != 40_000) this.map = new byte[40_000];
 
 		if(!worldObj.isRemote) {
 
 			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 9, energyQuanta, maxPower));
-
-			if(worldObj.getTotalWorldTime() % 20 == 0) {
-				for(DirPos pos : getConPos()) {
-					this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				}
-			}
 
 			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 			this.jammed = false;
@@ -203,33 +311,20 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 				}
 			}
 
-			if(slots[8] != null && slots[8].getItem() == ModItems.radar_linker) {
-				BlockPos pos = ItemCoordinateBase.getPosition(slots[8]);
-				if(pos != null) {
-					TileEntity tile = worldObj.getTileEntity(pos.getX(), pos.getY(), pos.getZ());
-					if(tile instanceof TileEntityMachineRadarScreen) {
-						TileEntityMachineRadarScreen screen = (TileEntityMachineRadarScreen) tile;
-						screen.entries.clear();
-						screen.entries.addAll(this.entries);
-						screen.refX = xCoord;
-						screen.refY = yCoord;
-						screen.refZ = zCoord;
-						screen.range = this.getRange();
-						screen.linked = true;
-						PacketDispatcher.wrapper.sendToAllAround(new BufPacket(xCoord, yCoord, zCoord, this), new TargetPoint(this.worldObj.provider.dimensionId, pos.getX(), pos.getY(), pos.getZ(), 25));
-					}
-				}
-			}
-
-			this.networkPackNT(50);
+			refreshLinkedScreen();
+			this.markNetworkDirty();
 			if(this.clearFlag) {
 				this.map = new byte[40_000];
-				this.clearFlag = false;
 			}
-		} else {
+		}
+	}
+
+	@Override
+	public void updateEntity() {
+		if(this.map == null || this.map.length != 40_000) this.map = new byte[40_000];
+		if(worldObj.isRemote) {
 			prevRotation = rotation;
 			if(energyQuanta > 0) rotation += 5F;
-
 			if(rotation >= 360) {
 				rotation -= 360F;
 				prevRotation -= 360F;
@@ -411,6 +506,8 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		this.markMachineEnergyDirty();
+		this.markNetworkDirty();
 	}
 
 	@Override
@@ -503,6 +600,8 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 				}
 			}
 		}
+		markMachineDirty(MachineDirtyCause.CONFIGURATION);
+		markNetworkDirty();
 	}
 
 	AxisAlignedBB bb = null;

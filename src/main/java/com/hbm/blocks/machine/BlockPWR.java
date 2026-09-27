@@ -88,7 +88,9 @@ public class BlockPWR extends BlockContainer implements IBlockCT {
 				TileEntity controller = world.getTileEntity(pwr.coreX, pwr.coreY, pwr.coreZ);
 				
 				if(controller instanceof TileEntityPWRController) {
-					((TileEntityPWRController) controller).assembled = false;
+					TileEntityPWRController reactor = (TileEntityPWRController) controller;
+					reactor.assembled = false;
+					reactor.markMachineDirty(com.hbm.machine.MachineDirtyCause.TOPOLOGY);
 				}
 			}
 		} else {

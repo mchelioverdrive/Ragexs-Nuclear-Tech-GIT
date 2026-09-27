@@ -42,6 +42,7 @@ public class TileEntityRBMKControlManual extends TileEntityRBMKControl implement
 	public void setTarget(double target) {
 		this.targetLevel = target;
 		this.startingLevel = this.level;
+		markMachineDirty(com.hbm.machine.MachineDirtyCause.CONFIGURATION);
 	}
 	
 	@Override

@@ -6,6 +6,7 @@ import java.util.Random;
 
 import com.hbm.tileentity.INBTPacketReceiver;
 import com.hbm.tileentity.TileEntityLoadedBase;
+import com.hbm.machine.MachineExecutionStrategy;
 
 import api.hbm.energymk2.IBatteryItem;
 import api.hbm.energymk2.IEnergyReceiverMK2;
@@ -16,6 +17,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityCharger extends TileEntityLoadedBase implements IEnergyReceiverMK2, INBTPacketReceiver {
+	private static final int TASK_CHARGE = 1;
 	
 	private List<EntityPlayer> players = new ArrayList();
 	private long charge = 0;
@@ -26,18 +28,55 @@ public class TileEntityCharger extends TileEntityLoadedBase implements IEnergyRe
 	public int usingTicks;
 	public int lastUsingTicks;
 	public static final int delay = 20;
+	private static final AxisAlignedBB UNIT_BOX = AxisAlignedBB.getBoundingBox(-0.5, 0, -0.5, 0.5, 0, 0.5);
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(lastOp > 0 || usingTicks > 0 || !findPlayers().isEmpty())
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_CHARGE, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 20) {
+			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata()).getOpposite();
+			this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord, zCoord + dir.offsetZ, dir);
+		} else if(cadence == 5) this.onMachineRuntimeDirty(0);
+	}
+
+	private List<EntityPlayer> findPlayers() {
+		return worldObj.getEntitiesWithinAABB(EntityPlayer.class,
+			AxisAlignedBB.getBoundingBox(xCoord, yCoord, zCoord, xCoord + 1, yCoord, zCoord + 1));
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_CHARGE || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		this.runChargeStep();
+		if(lastOp > 0 || usingTicks > 0 || charge > 0)
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_CHARGE, 0);
+	}
 
 	@Override
 	public void updateEntity() {
-		
+		if(!worldObj.isRemote) return;
+		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata()).getOpposite();
+		this.advanceUsingTicks();
+		this.spawnParticles(dir);
+	}
+
+	private void runChargeStep() {
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata()).getOpposite();
 		long previousCharge = this.charge;
 		boolean previouslyReady = this.usingTicks >= delay;
-		
-		if(!worldObj.isRemote) {
-			this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord, zCoord + dir.offsetZ, dir);
-			
-			players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, AxisAlignedBB.getBoundingBox(xCoord + 0.5, yCoord, zCoord + 0.5, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5).expand(0.5, 0.0, 0.5));
+		players = findPlayers();
 			
 			charge = 0;
 			
@@ -68,8 +107,12 @@ public class TileEntityCharger extends TileEntityLoadedBase implements IEnergyRe
 			data.setLong("c", charge);
 			data.setBoolean("p", particles);
 			INBTPacketReceiver.networkPack(this, data, 50);
-		}
-		
+		this.advanceUsingTicks();
+		if(this.charge != previousCharge || previouslyReady != (this.usingTicks >= delay)) this.markPowerNetDirty();
+		this.spawnParticles(dir);
+	}
+
+	private void advanceUsingTicks() {
 		lastUsingTicks = usingTicks;
 		
 		if((charge > 0 || particles) && usingTicks < delay) {
@@ -82,8 +125,9 @@ public class TileEntityCharger extends TileEntityLoadedBase implements IEnergyRe
 			if(usingTicks == 4)
 				worldObj.playSoundEffect(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, "tile.piston.in", 0.5F, 0.5F);
 		}
-		if(!worldObj.isRemote && (this.charge != previousCharge || previouslyReady != (this.usingTicks >= delay))) this.markPowerNetDirty();
-		
+	}
+
+	private void spawnParticles(ForgeDirection dir) {
 		if(particles) {
 			Random rand = worldObj.rand;
 			worldObj.spawnParticle("magicCrit",
@@ -141,7 +185,10 @@ public class TileEntityCharger extends TileEntityLoadedBase implements IEnergyRe
 			}
 		}
 		
-		if(power != offered) this.markPowerNetDirty();
+		if(power != offered) {
+			this.markPowerNetDirty();
+			this.markMachineEnergyDirty();
+		}
 		return power;
 	}
 }

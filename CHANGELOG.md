@@ -378,3 +378,10 @@ INCOMPLETE:
 
 - Replaced its full server tick with scheduled fuel, heat-decay, pollution, and smoke work; tank/control changes invalidate eligibility, waterlogging refreshes every five ticks, and port connections are cached and renewed every twenty.
 - Preserved air consumption and active heat-source behavior. Census: 87 runtime-covered classes and 106 legacy descendants. Minecraft was not launched.
+
+2026-09-26 20:50 — Complete the broad machine-runtime migration pass
+
+- Moved the remaining eligible RBMK, Watz, PWR, research, Zirnox, molten-salt, ICF, crucible, force-field, radar, reactor-support, older furnace, satellite/logistics, radio, radiation, environmental, and crane work onto the world-scoped runtime. Tank, inventory, topology, configuration, and environmental changes now invalidate scheduled work or use bounded compatibility polls.
+- Kept active physics, energy, fluid, and world-interaction rates on typed transitions; persisted crane progress and corrected furnace cook-time key compatibility. The source census now finds 186 of 205 concrete machine/support classes using the runtime. The 19 documented exceptions are coupled core/Hadron/ITER simulation, orbital propulsion and mission controllers, the disabled generator, and proxy endpoints. Minecraft was not launched.
+- Shifted the remaining large-arc, electric-furnace, assembler, chemplant, and strand-caster packet work to runtime callbacks and twenty-tick baselines. Refinery fire effects are scheduled only while burning fuel; the fluid tank caches its ladder contact box while preserving per-tick player contact.
+- Offline `compileJava` passed after the combined source migration; dedicated-server, save/rebind, active machine balance, and in-game performance remain unverified.

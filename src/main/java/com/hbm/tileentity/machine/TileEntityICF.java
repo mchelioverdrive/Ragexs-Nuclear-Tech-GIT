@@ -11,6 +11,8 @@ import com.hbm.inventory.gui.GUIICF;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemICFPellet;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
@@ -40,6 +42,11 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityICF extends TileEntityMachineBase implements IGUIProvider, IFluidStandardTransceiver, IInfoProviderEC, SimpleComponent, CompatHandler.OCComponent, IFluidCopiable {
+	private static final int TASK_PROCESS = 0;
+	private boolean inventoryFingerprintInitialized;
+	private int observedInventoryFingerprint;
+	private transient DirPos[] runtimeConnections;
+	private transient int runtimeConnectionsMeta = -1;
 
 	public long laser;
 	public long maxLaser;
@@ -57,6 +64,7 @@ public class TileEntityICF extends TileEntityMachineBase implements IGUIProvider
 		this.tanks[0] = new FluidTank(Fluids.SODIUM, 512_000);
 		this.tanks[1] = new FluidTank(Fluids.SODIUM_HOT, 512_000);
 		this.tanks[2] = new FluidTank(Fluids.STELLAR_FLUX, 24_000);
+		for(FluidTank tank : this.tanks) trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -65,15 +73,90 @@ public class TileEntityICF extends TileEntityMachineBase implements IGUIProvider
 	}
 
 	@Override
-	public void updateEntity() {
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		for(FluidTank tank : tanks) trackMachineFluidTank(tank);
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY)) != 0) {
+			beginMachineFluidMutation();
+			try { tanks[0].setType(11, slots); }
+			finally { endMachineFluidMutation(); }
+		}
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY | MachineDirtyCause.INVENTORY | MachineDirtyCause.FLUID)) != 0) updateFluidConnections();
+		if(needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_PROCESS, 0);
+		else cancelMachineTransition(TASK_PROCESS, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PROCESS || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		beginMachineFluidMutation();
+		try { runICFStep(); }
+		finally { endMachineFluidMutation(); }
+		markNetworkDirty();
+		networkPackNTIfDirty(150);
+		if(!isInvalid() && needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_PROCESS, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5 && observeInventoryFingerprint()) markMachineDirty(MachineDirtyCause.INVENTORY);
+		if(cadence == 20) {
+			updateFluidConnections();
+			if(!needsSimulation()) networkPackNTIfDirty(150);
+		}
+	}
+
+	private boolean needsSimulation() {
+		if(heat != 0 || laser != 0 || tanks[1].getFill() > 0 || tanks[2].getFill() > 0) return true;
+		if(slots[5] != null && slots[5].getItem() == ModItems.icf_pellet_depleted) {
+			for(int i = 6; i < 11; i++) if(slots[i] == null) return true;
+		} else if(slots[5] != null && slots[5].getItem() == ModItems.icf_pellet && laser > 0) return true;
+		for(int i = 0; i < 5; i++) if(laser > 0 && slots[i] != null && slots[i].getItem() == ModItems.icf_pellet) return true;
+		return false;
+	}
+
+	public void receiveLaserBeam(long energyQuanta, long capacityQuanta) {
+		this.laser += energyQuanta;
+		this.maxLaser += capacityQuanta;
+		markMachineDirty(MachineDirtyCause.ENERGY | MachineDirtyCause.ENVIRONMENT);
+	}
+
+	private void updateFluidConnections() {
+		for(DirPos pos : getConPos()) this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private void runICFStep() {
 
 		if(!worldObj.isRemote) {
 
 			tanks[0].setType(11, slots);
-
-			for(DirPos pos : getConPos()) {
-				this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			}
 
 			boolean markDirty = false;
 
@@ -155,16 +238,22 @@ public class TileEntityICF extends TileEntityMachineBase implements IGUIProvider
 			if(this.heat > this.maxHeat) this.heat = this.maxHeat;
 			if(markDirty) this.markDirty();
 
-			this.networkPackNT(150);
+			if(markDirty) markMachineDirty(MachineDirtyCause.INVENTORY);
 			this.laser = 0;
 			this.maxLaser = 0;
 		}
 	}
 
+	@Override
+	public void updateEntity() { }
+
 	public DirPos[] getConPos() {
+		int meta = this.getBlockMetadata();
+		if(runtimeConnections != null && runtimeConnectionsMeta == meta) return runtimeConnections;
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
 		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
-		return new DirPos[] {
+		runtimeConnectionsMeta = meta;
+		return runtimeConnections = new DirPos[] {
 				new DirPos(xCoord, yCoord + 6, zCoord, Library.POS_Y),
 				new DirPos(xCoord, yCoord - 1, zCoord, Library.NEG_Y),
 				new DirPos(xCoord + dir.offsetX * 3 + rot.offsetX * 6, yCoord + 3, zCoord + dir.offsetZ * 3 + rot.offsetZ * 6, dir),

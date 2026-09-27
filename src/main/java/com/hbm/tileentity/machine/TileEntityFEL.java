@@ -13,6 +13,8 @@ import com.hbm.inventory.gui.GUIFEL;
 import com.hbm.items.machine.ItemFELCrystal;
 import com.hbm.items.machine.ItemFELCrystal.EnumWavelengths;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.main.MainRegistry;
 import com.hbm.sound.AudioWrapper;
 import com.hbm.tileentity.IGUIProvider;
@@ -55,6 +57,7 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 	public List<EntityLivingBase> entities = new ArrayList();
 	private int audioDuration = 0;
 	private AudioWrapper audio;
+	private static final int TASK_BEAM = 0;
 	
 	
 	public TileEntityFEL() {
@@ -70,11 +73,42 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 	@Override
 	@Spaghetti ("What the fuck were you thinking")
 	public void updateEntity() {
+		if(worldObj.isRemote) {
+
+			if(energyQuanta > powerReq * Math.pow(2, mode.ordinal()) && isOn && !(mode == EnumWavelengths.NULL) && distance - 3 > 0) {
+				audioDuration += 2;
+			} else {
+				audioDuration -= 3;
+			}
+
+			audioDuration = MathHelper.clamp_int(audioDuration, 0, 60);
+
+			if(audioDuration > 10) {
+
+				if(audio == null) {
+					audio = createAudioLoop();
+					audio.startSound();
+				} else if(!audio.isPlaying()) {
+					audio = rebootAudio(audio);
+				}
+
+				audio.updateVolume(getVolume(2F));
+				audio.updatePitch((audioDuration - 10) / 100F + 0.5F);
+
+			} else {
+
+				if(audio != null) {
+					audio.stopSound();
+					audio = null;
+				}
+			}
 		
-		if(!worldObj.isRemote) {
+		}
+	}
+
+	private void runFELStep() {
+		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 			
-			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
-			this.trySubscribe(worldObj, xCoord + dir.offsetX * -5, yCoord + 1, zCoord + dir.offsetZ  * -5, dir.getOpposite());
 			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 			
 			if(this.isOn && !(this.slots[1] == null)) {
@@ -143,7 +177,7 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 							int meta = silex.getBlockMetadata() - BlockDummyable.offset;
 							if(rotationIsValid(meta, this.getBlockMetadata() - BlockDummyable.offset) && i >= 5 && silexSpacing == false	) {
 								if(silex.mode != this.mode) {
-									silex.mode = this.mode;
+									silex.acceptLaserMode(this.mode);
 									this.missingValidSilex = false;
 									silexSpacing = true;
 									continue;
@@ -178,37 +212,63 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 				}
 			}
 			
-			this.networkPackNT(250);
-		} else {
 
-			if(energyQuanta > powerReq * Math.pow(2, mode.ordinal()) && isOn && !(mode == EnumWavelengths.NULL) && distance - 3 > 0) {
-				audioDuration += 2;
-			} else {
-				audioDuration -= 3;
-			}
+	}
 
-			audioDuration = MathHelper.clamp_int(audioDuration, 0, 60);
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
 
-			if(audioDuration > 10) {
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		refreshMode();
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) subscribePower();
+		if(shouldRunBeam()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_BEAM, 0);
+		else cancelMachineTransition(TASK_BEAM, 0);
+	}
 
-				if(audio == null) {
-					audio = createAudioLoop();
-					audio.startSound();
-				} else if(!audio.isPlaying()) {
-					audio = rebootAudio(audio);
-				}
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_BEAM || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		runFELStep();
+		networkPackNT(250);
+		if(!isInvalid() && shouldRunBeam()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_BEAM, 0);
+	}
 
-				audio.updateVolume(getVolume(2F));
-				audio.updatePitch((audioDuration - 10) / 100F + 0.5F);
-
-			} else {
-
-				if(audio != null) {
-					audio.stopSound();
-					audio = null;
-				}
-			}
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			EnumWavelengths oldMode = mode;
+			refreshMode();
+			if(oldMode != mode) markMachineDirty(MachineDirtyCause.INVENTORY);
+			else if(shouldRunBeam()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_BEAM, 0);
+		} else if(cadence == 20) {
+			subscribePower();
+			if(!shouldRunBeam()) networkPackNT(250);
 		}
+	}
+
+	private void subscribePower() {
+		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
+		trySubscribe(worldObj, xCoord + dir.offsetX * -5, yCoord + 1, zCoord + dir.offsetZ * -5, dir.getOpposite());
+	}
+
+	private void refreshMode() {
+		if(this.isOn && this.slots[1] != null && this.slots[1].getItem() instanceof ItemFELCrystal)
+			this.mode = ((ItemFELCrystal) this.slots[1].getItem()).wavelength;
+		else
+			this.mode = EnumWavelengths.NULL;
+	}
+
+	private long getRequiredEnergyQuanta() {
+		return (long) (powerReq * (mode.ordinal() == 0 ? 0 : Math.pow(3, mode.ordinal())));
+	}
+
+	private boolean shouldRunBeam() {
+		return this.isOn && mode != EnumWavelengths.NULL && (energyQuanta >= getRequiredEnergyQuanta() || slots[0] != null);
 	}
 	
 	public boolean rotationIsValid(int silexMeta, int felMeta) {
@@ -246,6 +306,7 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 		
 		if(meta == 2){
 			this.isOn = !this.isOn;
+			markMachineDirty(MachineDirtyCause.CONFIGURATION);
 		}
 	}
 	
@@ -296,6 +357,11 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		this.markMachineEnergyDirty();
+	}
+
+	public long getPowerRequirementWatts() {
+		return EnergyUnits.quantaPerTickToWatts(getRequiredEnergyQuanta());
 	}
 
 	@Override

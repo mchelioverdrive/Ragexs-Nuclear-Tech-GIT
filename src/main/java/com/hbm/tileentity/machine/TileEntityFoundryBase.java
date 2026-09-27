@@ -5,6 +5,7 @@ import com.hbm.inventory.material.Mats;
 import com.hbm.inventory.material.NTMMaterial;
 import com.hbm.inventory.material.Mats.MaterialStack;
 import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.TileEntityLoadedBase;
 
 import api.hbm.block.ICrucibleAcceptor;
@@ -31,7 +32,6 @@ public abstract class TileEntityFoundryBase extends TileEntityLoadedBase impleme
 	
 	@Override
 	public void updateEntity() {
-		
 		if(worldObj.isRemote) {
 			
 			if(shouldClientReRender() && this.lastType != this.type || this.lastAmount != this.amount) {
@@ -39,14 +39,27 @@ public abstract class TileEntityFoundryBase extends TileEntityLoadedBase impleme
 				this.lastType = this.type;
 				this.lastAmount = this.amount;
 			}
-		} else {
-			
-			if(this.lastType != this.type || this.lastAmount != this.amount) {
-				worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
-				this.lastType = this.type;
-				this.lastAmount = this.amount;
-			}
 		}
+	}
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(this.lastType != this.type || this.lastAmount != this.amount) {
+			worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
+			this.lastType = this.type;
+			this.lastAmount = this.amount;
+		}
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence == 20) this.onMachineRuntimeDirty(0);
 	}
 	
 	/** Recommended FALSE for things that update a whole lot. TRUE if updates only happen once every few ticks. */

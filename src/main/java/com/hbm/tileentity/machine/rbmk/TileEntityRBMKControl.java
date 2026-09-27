@@ -2,6 +2,7 @@ package com.hbm.tileentity.machine.rbmk;
 
 import com.hbm.entity.projectile.EntityRBMKDebris.DebrisType;
 import com.hbm.handler.CompatHandler;
+import com.hbm.machine.MachineDirtyCause;
 import cpw.mods.fml.common.Optional;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -32,12 +33,17 @@ public abstract class TileEntityRBMKControl extends TileEntityRBMKSlottedBase im
 	
 	@Override
 	public void updateEntity() {
-		
-		if(worldObj.isRemote) {
-			
-			this.lastLevel = this.level;
-		
-		} else {
+		if(worldObj.isRemote) this.lastLevel = this.level;
+	}
+
+	@Override
+	protected boolean needsRBMKSimulation() {
+		return super.needsRBMKSimulation() || level != targetLevel;
+	}
+
+	@Override
+	protected void runRBMKColumnStep() {
+		if(!worldObj.isRemote) {
 			
 			if(level < targetLevel) {
 				
@@ -56,11 +62,12 @@ public abstract class TileEntityRBMKControl extends TileEntityRBMKSlottedBase im
 			}
 		}
 		
-		super.updateEntity();
+		super.runRBMKColumnStep();
 	}
 	
 	public void setTarget(double target) {
 		this.targetLevel = target;
+		markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 	
 	public double getMult() {

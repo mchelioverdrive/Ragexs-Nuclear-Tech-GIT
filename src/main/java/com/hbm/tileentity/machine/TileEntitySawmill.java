@@ -8,6 +8,7 @@ import com.hbm.entity.projectile.EntitySawblade;
 import com.hbm.inventory.RecipesCommon.OreDictStack;
 import com.hbm.items.ModItems;
 import com.hbm.lib.ModDamageSource;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
 import com.hbm.tileentity.INBTPacketReceiver;
@@ -34,6 +35,9 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntitySawmill extends TileEntityMachineBase {
+	private static final int TASK_MECHANICS = 1;
+	private ItemStack cachedRecipeInput;
+	private ItemStack cachedRecipeOutput;
 
 	/*
 	 * Realistified sawmill model:
@@ -93,7 +97,38 @@ public class TileEntitySawmill extends TileEntityMachineBase {
 	}
 
 	@Override
-	public void updateEntity() {
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj != null && !worldObj.isRemote && shouldSimulate())
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_MECHANICS, 0);
+	}
+
+	private boolean shouldSimulate() {
+		if(bladeSpeed > 0 || progress > 0 || jamCooldown > 0 || warnCooldown > 0 || overspeed > 0) return true;
+		if(!hasBlade) return false;
+		TileEntity below = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
+		return below instanceof IHeatSource && ((IHeatSource) below).getHeatStored() > 0;
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_MECHANICS || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		runSawmillStep();
+		if(shouldSimulate()) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_MECHANICS, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
+		this.onMachineRuntimeDirty(0);
+		if(!shouldSimulate()) sendSyncPacket(true);
+	}
+
+	private void runSawmillStep() {
 
 		if(!worldObj.isRemote) {
 
@@ -132,19 +167,17 @@ public class TileEntitySawmill extends TileEntityMachineBase {
 
 			sendSyncPacket(false);
 
-		} else {
+		}
+	}
 
-			this.lastSpin = this.spin;
-
-			if(hasBlade) {
-				float momentum = (float)(bladeSpeed * 0.10D);
-				this.spin += momentum;
-			}
-
-			if(this.spin >= 360F) {
-				this.spin -= 360F;
-				this.lastSpin -= 360F;
-			}
+	@Override
+	public void updateEntity() {
+		if(!worldObj.isRemote) return;
+		this.lastSpin = this.spin;
+		if(hasBlade) this.spin += (float)(bladeSpeed * 0.10D);
+		if(this.spin >= 360F) {
+			this.spin -= 360F;
+			this.lastSpin -= 360F;
 		}
 	}
 
@@ -164,7 +197,7 @@ public class TileEntitySawmill extends TileEntityMachineBase {
 	protected void updateCutting() {
 
 		ItemStack input = slots[0];
-		ItemStack result = getOutput(input);
+		ItemStack result = getCachedOutput(input);
 
 		if(input == null || result == null) {
 			progress = Math.max(progress - 2, 0);
@@ -541,7 +574,7 @@ public class TileEntitySawmill extends TileEntityMachineBase {
 		 */
 		double targetSpeed = NOMINAL_CUT_SPEED;
 
-		if(slots[0] != null && getOutput(slots[0]) != null)
+		if(slots[0] != null && getCachedOutput(slots[0]) != null)
 			targetSpeed = MAX_SAFE_SPEED - 20.0D;
 
 		double speedDeficit = targetSpeed - bladeSpeed;
@@ -659,6 +692,19 @@ public class TileEntitySawmill extends TileEntityMachineBase {
 	@Override
 	public int[] getAccessibleSlotsFromSide(int side) {
 		return new int[] {0, 1, 2};
+	}
+
+	private ItemStack getCachedOutput(ItemStack input) {
+		if(input == null) {
+			cachedRecipeInput = null;
+			cachedRecipeOutput = null;
+			return null;
+		}
+		if(cachedRecipeInput == null || !cachedRecipeInput.isItemEqual(input) || !ItemStack.areItemStackTagsEqual(cachedRecipeInput, input)) {
+			cachedRecipeInput = input.copy();
+			cachedRecipeOutput = getOutput(input);
+		}
+		return cachedRecipeOutput;
 	}
 
 	public ItemStack getOutput(ItemStack input) {

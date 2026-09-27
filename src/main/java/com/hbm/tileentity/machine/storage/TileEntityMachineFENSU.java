@@ -30,7 +30,7 @@ public class TileEntityMachineFENSU extends TileEntityMachineBattery {
 	}
 	
 	@Override
-	public void updateEntity() {
+	protected void runBatteryStep() {
 		
 		if(!worldObj.isRemote) {
 
@@ -78,14 +78,22 @@ public class TileEntityMachineFENSU extends TileEntityMachineBattery {
 			this.networkPackNT(20);
 		}
 		
-		if(worldObj.isRemote) {
-			this.prevRotation = this.rotation;
-			this.rotation += this.getSpeed();
-			
-			if(rotation >= 360) {
-				rotation -= 360;
-				prevRotation -= 360;
-			}
+	}
+
+	@Override
+	protected boolean requiresContinuousExport() {
+		int mode = this.getRelevantMode(true);
+		return energyQuanta > 0 && (mode == mode_output || mode == mode_buffer);
+	}
+
+	@Override
+	public void updateEntity() {
+		if(!worldObj.isRemote) return;
+		this.prevRotation = this.rotation;
+		this.rotation += this.getSpeed();
+		if(rotation >= 360) {
+			rotation -= 360;
+			prevRotation -= 360;
 		}
 	}
 

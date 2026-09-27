@@ -6,9 +6,12 @@ import com.hbm.extprop.HbmPlayerProps;
 import com.hbm.handler.CompatHandler;
 import com.hbm.handler.HbmKeybinds.EnumKeybind;
 import com.hbm.items.machine.ItemRBMKRod;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.NBTPacket;
 import com.hbm.tileentity.INBTPacketReceiver;
+import com.hbm.tileentity.TileEntityLoadedBase;
 import cpw.mods.fml.common.Optional;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import cpw.mods.fml.relauncher.Side;
@@ -21,7 +24,6 @@ import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MathHelper;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -29,7 +31,11 @@ import net.minecraftforge.common.util.ForgeDirection;
 import java.util.List;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
-public class TileEntityCraneConsole extends TileEntity implements INBTPacketReceiver, SimpleComponent, CompatHandler.OCComponent {
+public class TileEntityCraneConsole extends TileEntityLoadedBase implements INBTPacketReceiver, SimpleComponent, CompatHandler.OCComponent {
+	private static final int TASK_CRANE = 0;
+	private boolean syncInitialized;
+	private int lastSyncFingerprint;
+	private long lastSyncTick = Long.MIN_VALUE;
 
 	public int centerX;
 	public int centerY;
@@ -67,126 +73,154 @@ public class TileEntityCraneConsole extends TileEntity implements INBTPacketRece
 	public double loadedEnrichment;
 
 	@Override
-	public void updateEntity() {
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
 
-		if(worldObj.isRemote) {
-			lastTiltFront = tiltFront;
-			lastTiltLeft = tiltLeft;
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.CONFIGURATION | MachineDirtyCause.TOPOLOGY)) != 0) syncMachineState(true);
+		if(needsSimulation(hasNearbyOperator())) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_CRANE, 0);
+		else cancelMachineTransition(TASK_CRANE, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(needsSimulation(hasNearbyOperator())) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_CRANE, 0);
+			else cancelMachineTransition(TASK_CRANE, 0);
 		}
+		if(cadence == 20) syncMachineState(false);
+	}
 
-		if(goesDown) {
-
-			if(progress > 0) {
-				progress -= 0.04D;
-			} else {
-				progress = 0;
-				goesDown = false;
-
-				if(!worldObj.isRemote && this.canTargetInteract()) {
-					IRBMKLoadable column = getColumnAtPos();
-					if(column != null) { // canTargetInteract already assumes this, but there seems to be some freak race conditions that cause the column to be null anyway
-						if(this.loadedItem != null) {
-							column.load(this.loadedItem);
-							this.loadedItem = null;
-						} else {
-							this.loadedItem = column.provideNext();
-							column.unload();
-						}
-
-						this.markDirty();
-					}
-				}
-
-			}
-		} else if(progress != 1) {
-
-			progress += 0.04D;
-
-			if(progress > 1D) {
-				progress = 1D;
-			}
-		}
-
-		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
+	private AxisAlignedBB getOperatorArea() {
+		ForgeDirection dir = ForgeDirection.getOrientation(getBlockMetadata() - BlockDummyable.offset);
 		ForgeDirection side = dir.getRotation(ForgeDirection.UP);
 		double minX = xCoord + 0.5 - side.offsetX * 1.5;
 		double maxX = xCoord + 0.5 + side.offsetX * 1.5 + dir.offsetX * 2;
 		double minZ = zCoord + 0.5 - side.offsetZ * 1.5;
 		double maxZ = zCoord + 0.5 + side.offsetZ * 1.5 + dir.offsetZ * 2;
+		return AxisAlignedBB.getBoundingBox(Math.min(minX, maxX), yCoord, Math.min(minZ, maxZ), Math.max(minX, maxX), yCoord + 2, Math.max(minZ, maxZ));
+	}
 
-		List<EntityPlayer> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class, AxisAlignedBB.getBoundingBox(
-			Math.min(minX, maxX),
-			yCoord,
-			Math.min(minZ, maxZ),
-			Math.max(minX, maxX),
-			yCoord + 2,
-			Math.max(minZ, maxZ)));
+	private List<EntityPlayer> getNearbyOperators() {
+		return worldObj.getEntitiesWithinAABB(EntityPlayer.class, getOperatorArea());
+	}
+
+	private boolean hasNearbyOperator() {
+		return !getNearbyOperators().isEmpty();
+	}
+
+	private boolean needsSimulation(boolean hasOperator) {
+		return goesDown || progress != 1D || (setUpCrane && hasOperator);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_CRANE || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		boolean hasOperator = runCraneStep();
+		syncMachineState(false);
+		if(!isInvalid() && needsSimulation(hasOperator)) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_CRANE, 0);
+	}
+
+	private boolean runCraneStep() {
+		if(goesDown) {
+			if(progress > 0) {
+				progress -= 0.04D;
+			} else {
+				progress = 0;
+				goesDown = false;
+				if(canTargetInteract()) {
+					IRBMKLoadable column = getColumnAtPos();
+					if(column != null) {
+						if(loadedItem != null) {
+							column.load(loadedItem);
+							loadedItem = null;
+						} else {
+							loadedItem = column.provideNext();
+							column.unload();
+						}
+						markDirty();
+					}
+				}
+			}
+		} else if(progress != 1D) {
+			progress += 0.04D;
+			if(progress > 1D) progress = 1D;
+		}
+
+		List<EntityPlayer> players = getNearbyOperators();
 		tiltFront = 0;
 		tiltLeft = 0;
-
-		if(players.size() > 0 && !isCraneLoading()) {
-			EntityPlayer player = players.get(0);
-			HbmPlayerProps props = HbmPlayerProps.getData(player);
+		if(!players.isEmpty() && !isCraneLoading()) {
+			HbmPlayerProps props = HbmPlayerProps.getData(players.get(0));
 			boolean up = props.getKeyPressed(EnumKeybind.CRANE_UP);
 			boolean down = props.getKeyPressed(EnumKeybind.CRANE_DOWN);
 			boolean left = props.getKeyPressed(EnumKeybind.CRANE_LEFT);
 			boolean right = props.getKeyPressed(EnumKeybind.CRANE_RIGHT);
-
-			if(up && !down) {
-				tiltFront = 30;
-				if(!worldObj.isRemote) posFront += speed;
-			}
-			if(!up && down) {
-				tiltFront = -30;
-				if(!worldObj.isRemote) posFront -= speed;
-			}
-			if(left && !right) {
-				tiltLeft = 30;
-				if(!worldObj.isRemote) posLeft += speed;
-			}
-			if(!left && right) {
-				tiltLeft = -30;
-				if(!worldObj.isRemote) posLeft -= speed;
-			}
-
-			if(props.getKeyPressed(EnumKeybind.CRANE_LOAD)) {
-				goesDown = true;
-			}
+			if(up && !down) { tiltFront = 30; posFront += speed; }
+			if(!up && down) { tiltFront = -30; posFront -= speed; }
+			if(left && !right) { tiltLeft = 30; posLeft += speed; }
+			if(!left && right) { tiltLeft = -30; posLeft -= speed; }
+			if(props.getKeyPressed(EnumKeybind.CRANE_LOAD)) goesDown = true;
 		}
-
 		posFront = MathHelper.clamp_double(posFront, -spanB, spanF);
 		posLeft = MathHelper.clamp_double(posLeft, -spanR, spanL);
+		if(loadedItem != null && loadedItem.getItem() instanceof ItemRBMKRod) {
+			loadedHeat = ItemRBMKRod.getHullHeat(loadedItem);
+			loadedEnrichment = ItemRBMKRod.getEnrichment(loadedItem);
+		} else {
+			loadedHeat = 0;
+			loadedEnrichment = 0;
+		}
+		markDirty();
+		return !players.isEmpty();
+	}
 
-		if(!worldObj.isRemote) {
+	private int machineStateFingerprint() {
+		int hash = setUpCrane ? 1 : 0;
+		hash = 31 * hash + craneRotationOffset;
+		hash = 31 * hash + centerX; hash = 31 * hash + centerY; hash = 31 * hash + centerZ;
+		hash = 31 * hash + spanF; hash = 31 * hash + spanB; hash = 31 * hash + spanL; hash = 31 * hash + spanR; hash = 31 * hash + height;
+		hash = foldDouble(hash, posFront); hash = foldDouble(hash, posLeft);
+		hash = foldDouble(hash, loadedHeat); hash = foldDouble(hash, loadedEnrichment);
+		hash = 31 * hash + (loadedItem == null ? 0 : System.identityHashCode(loadedItem));
+		if(loadedItem != null && loadedItem.getTagCompound() != null) hash = 31 * hash + loadedItem.getTagCompound().hashCode();
+		return hash;
+	}
 
-			if(loadedItem != null && loadedItem.getItem() instanceof ItemRBMKRod) {
-				this.loadedHeat = ItemRBMKRod.getHullHeat(loadedItem);
-				this.loadedEnrichment = ItemRBMKRod.getEnrichment(loadedItem);
-			} else {
-				this.loadedHeat = 0;
-				this.loadedEnrichment = 0;
-			}
+	private int foldDouble(int hash, double value) {
+		long bits = Double.doubleToLongBits(value);
+		return 31 * hash + (int)(bits ^ (bits >>> 32));
+	}
 
-			NBTTagCompound nbt = new NBTTagCompound();
-			nbt.setBoolean("crane", setUpCrane);
+	private void syncMachineState(boolean force) {
+		long now = worldObj.getTotalWorldTime();
+		int fingerprint = machineStateFingerprint();
+		if(!force && syncInitialized && fingerprint == lastSyncFingerprint && now - lastSyncTick < 20L) return;
+		NBTTagCompound nbt = new NBTTagCompound();
+		nbt.setBoolean("crane", setUpCrane);
+		if(setUpCrane) {
+			nbt.setInteger("craneRotationOffset", craneRotationOffset);
+			nbt.setInteger("centerX", centerX); nbt.setInteger("centerY", centerY); nbt.setInteger("centerZ", centerZ);
+			nbt.setInteger("spanF", spanF); nbt.setInteger("spanB", spanB); nbt.setInteger("spanL", spanL); nbt.setInteger("spanR", spanR); nbt.setInteger("height", height);
+			nbt.setDouble("posFront", posFront); nbt.setDouble("posLeft", posLeft);
+			nbt.setBoolean("loaded", hasItemLoaded());
+			nbt.setDouble("loadedHeat", loadedHeat); nbt.setDouble("loadedEnrichment", loadedEnrichment);
+		}
+		PacketDispatcher.wrapper.sendToAllAround(new NBTPacket(nbt, xCoord, yCoord, zCoord), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 250));
+		lastSyncFingerprint = fingerprint;
+		lastSyncTick = now;
+		syncInitialized = true;
+	}
 
-			if(setUpCrane) { //no need to send any of this if there's NO FUCKING CRANE THERE
-				nbt.setInteger("craneRotationOffset", craneRotationOffset);
-				nbt.setInteger("centerX", centerX);
-				nbt.setInteger("centerY", centerY);
-				nbt.setInteger("centerZ", centerZ);
-				nbt.setInteger("spanF", spanF);
-				nbt.setInteger("spanB", spanB);
-				nbt.setInteger("spanL", spanL);
-				nbt.setInteger("spanR", spanR);
-				nbt.setInteger("height", height);
-				nbt.setDouble("posFront", posFront);
-				nbt.setDouble("posLeft", posLeft);
-				nbt.setBoolean("loaded", this.hasItemLoaded());
-				nbt.setDouble("loadedHeat", loadedHeat);
-				nbt.setDouble("loadedEnrichment", loadedEnrichment);
-			}
-			PacketDispatcher.wrapper.sendToAllAround(new NBTPacket(nbt, xCoord, yCoord, zCoord), new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 250));
+	@Override
+	public void updateEntity() {
+		if(worldObj.isRemote) {
+			lastTiltFront = tiltFront;
+			lastTiltLeft = tiltLeft;
 		}
 	}
 
@@ -264,6 +298,8 @@ public class TileEntityCraneConsole extends TileEntity implements INBTPacketRece
 		this.height = nbt.getInteger("height");
 		this.posFront = nbt.getDouble("posFront");
 		this.posLeft = nbt.getDouble("posLeft");
+		this.goesDown = nbt.getBoolean("craneGoesDown");
+		this.progress = nbt.hasKey("craneProgress") ? nbt.getDouble("craneProgress") : 1D;
 		this.hasLoaded = nbt.getBoolean("loaded");
 		this.posLeft = nbt.getDouble("posLeft");
 		this.loadedHeat = nbt.getDouble("loadedHeat");
@@ -285,10 +321,12 @@ public class TileEntityCraneConsole extends TileEntity implements INBTPacketRece
 		this.setUpCrane = true;
 
 		this.markDirty();
+		this.markMachineDirty(MachineDirtyCause.TOPOLOGY);
 	}
 
 	public void cycleCraneRotation() {
 		this.craneRotationOffset = (this.craneRotationOffset + 90) % 360;
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 
 	@Override
@@ -328,6 +366,8 @@ public class TileEntityCraneConsole extends TileEntity implements INBTPacketRece
 		nbt.setInteger("height", height);
 		nbt.setDouble("posFront", posFront);
 		nbt.setDouble("posLeft", posLeft);
+		nbt.setBoolean("craneGoesDown", goesDown);
+		nbt.setDouble("craneProgress", progress);
 
 		if(this.loadedItem != null) {
 			NBTTagCompound held = new NBTTagCompound();
@@ -378,6 +418,7 @@ public class TileEntityCraneConsole extends TileEntity implements INBTPacketRece
 					if(!worldObj.isRemote) posLeft -= speed;
 					break;
 			}
+			if(!worldObj.isRemote) markMachineDirty(MachineDirtyCause.CONFIGURATION);
 
 			return new Object[] {};
 		}
@@ -389,6 +430,7 @@ public class TileEntityCraneConsole extends TileEntity implements INBTPacketRece
 	public Object[] load(Context context, Arguments args) {
 		if (setUpCrane) {
 			goesDown = true;
+			markMachineDirty(MachineDirtyCause.CONFIGURATION);
 			return new Object[] {};
 		}
 		return new Object[] {"Crane not found"};

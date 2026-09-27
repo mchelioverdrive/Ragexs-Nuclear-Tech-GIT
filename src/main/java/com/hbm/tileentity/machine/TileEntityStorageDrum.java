@@ -13,6 +13,8 @@ import com.hbm.inventory.gui.GUIStorageDrum;
 import com.hbm.items.ModItems;
 import com.hbm.items.special.ItemWasteLong;
 import com.hbm.items.special.ItemWasteShort;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IBufPacketReceiver;
 import com.hbm.tileentity.IGUIProvider;
@@ -41,12 +43,17 @@ public class TileEntityStorageDrum extends TileEntityMachineBase implements IFlu
 	public FluidTank[] tanks;
 	private static final int[] slots_arr = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 };
 	public int age = 0;
+	private int inventoryFingerprint;
+	private static final int TASK_DECAY = 0;
 
 	public TileEntityStorageDrum() {
 		super(24);
 		tanks = new FluidTank[2];
 		tanks[0] = new FluidTank(Fluids.WASTEFLUID, 16000);
 		tanks[1] = new FluidTank(Fluids.WASTEGAS, 16000);
+		trackMachineFluidTank(tanks[0]);
+		trackMachineFluidTank(tanks[1]);
+		inventoryFingerprint = getInventoryFingerprint();
 	}
 
 	@Override
@@ -55,9 +62,59 @@ public class TileEntityStorageDrum extends TileEntityMachineBase implements IFlu
 	}
 
 	@Override
-	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
+	public void updateEntity() { }
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(hasDrumWork()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_DECAY, 0);
+		else cancelMachineTransition(TASK_DECAY, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_DECAY || taskSlot != 0 || worldObj.isRemote) return;
+		runDrumStep();
+		if(!isInvalid() && hasDrumWork()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_DECAY, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence == 5) {
+			int fingerprint = getInventoryFingerprint();
+			if(fingerprint != inventoryFingerprint) {
+				inventoryFingerprint = fingerprint;
+				markMachineDirty(MachineDirtyCause.INVENTORY);
+			}
+		} else if(cadence == 20) {
+			if(!hasDrumWork()) {
+				this.sendFluidToAll(tanks[0], this);
+				this.sendFluidToAll(tanks[1], this);
+				this.sendStandard(25);
+			}
+		}
+	}
+
+	private boolean hasDrumWork() {
+		if(tanks[0].getFill() > 0 || tanks[1].getFill() > 0) return true;
+		for(ItemStack stack : slots) if(stack != null) return true;
+		return false;
+	}
+
+	private int getInventoryFingerprint() {
+		int fingerprint = 1;
+		for(ItemStack stack : slots) {
+			if(stack != null) fingerprint = 31 * fingerprint + System.identityHashCode(stack.getItem()) * 31 + stack.getItemDamage() * 7 + stack.stackSize;
+			else fingerprint *= 31;
+		}
+		return fingerprint;
+	}
+
+	private void runDrumStep() {
 			
 			float rad = 0;
 
@@ -157,7 +214,7 @@ public class TileEntityStorageDrum extends TileEntityMachineBase implements IFlu
 			if(rad > 0) {
 				radiate(worldObj, xCoord, yCoord, zCoord, rad);
 			}
-		}
+
 	}
 
 	@Override public void serialize(ByteBuf buf) {

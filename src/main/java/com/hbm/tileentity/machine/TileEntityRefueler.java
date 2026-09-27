@@ -7,6 +7,7 @@ import com.hbm.handler.ArmorModHandler;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.main.MainRegistry;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IBufPacketReceiver;
 import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.BobMathUtil;
@@ -22,6 +23,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityRefueler extends TileEntityLoadedBase implements IFluidStandardReceiver, IBufPacketReceiver {
+	private static final int TASK_REFUEL = 1;
 
 	public double fillLevel;
 	public double prevFillLevel;
@@ -34,16 +36,47 @@ public class TileEntityRefueler extends TileEntityLoadedBase implements IFluidSt
 	public TileEntityRefueler() {
 		super();
 		tank = new FluidTank(Fluids.KEROSENE, 100);
+		tank.setChangeListener(changed -> { if(worldObj != null && !worldObj.isRemote) markMachineFluidDirty(); });
+	}
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		sendStandard(150);
+		if(tank.getFill() > 0 && !findPlayers().isEmpty())
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_REFUEL, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 20) {
+			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata()).getOpposite();
+			trySubscribe(tank.getTankType(), worldObj, xCoord + dir.offsetX, yCoord, zCoord + dir.offsetZ, dir);
+			sendStandard(150);
+		} else if(cadence == 5 && tank.getFill() > 0) onMachineRuntimeDirty(0);
+	}
+
+	private List<EntityPlayer> findPlayers() {
+		return worldObj.getEntitiesWithinAABB(EntityPlayer.class,
+			AxisAlignedBB.getBoundingBox(xCoord, yCoord, zCoord, xCoord + 1, yCoord, zCoord + 1));
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_REFUEL || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		runRefuelerStep();
+		if(isOperating) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_REFUEL, 0);
 	}
 
 	@SuppressWarnings("unchecked")
-	@Override
-	public void updateEntity() {
-		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata()).getOpposite();
-		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
-
+	private void runRefuelerStep() {
 		if(!worldObj.isRemote) {
-			trySubscribe(tank.getTankType(), worldObj, xCoord + dir.offsetX, yCoord, zCoord + dir.offsetZ, dir);
 
 			isOperating = false;
 
@@ -82,7 +115,16 @@ public class TileEntityRefueler extends TileEntityLoadedBase implements IFluidSt
 			}
 
 			sendStandard(150);
-		} else {
+		}
+	}
+
+	@Override
+	public void updateEntity() {
+		if(!worldObj.isRemote) return;
+		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata()).getOpposite();
+		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
+
+
 			if(isOperating) {
 				Random rand = worldObj.rand;
 
@@ -103,9 +145,6 @@ public class TileEntityRefueler extends TileEntityLoadedBase implements IFluidSt
 
 			double targetFill = (double)tank.getFill() / (double)tank.getMaxFill();
 			fillLevel = BobMathUtil.lerp(targetFill > fillLevel || !isOperating ? 0.1 : 0.01, fillLevel, targetFill);
-		}
-
-
 	}
 
 	private boolean fillFillable(ItemStack stack) {

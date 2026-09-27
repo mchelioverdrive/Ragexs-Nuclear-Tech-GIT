@@ -117,10 +117,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 
 	@Override
 	public void updateEntity() {
-		if(!worldObj.isRemote) {
-			this.networkPackNT(150);
-			return;
-		}
+		if(!worldObj.isRemote) return;
 
 		if(worldObj.isRemote) {
 			this.upgradeManager.checkSlots(slots, 4, 4);
@@ -229,11 +226,13 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		}
 		runtimeInitialized = true;
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(150);
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
 		if(taskType != TASK_SIMULATE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
 		this.simulateArcFurnaceTick();
+		this.networkPackNTIfDirty(150);
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
@@ -245,6 +244,8 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 			if(batteryChanged) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.ENERGY);
 		} else if(cadence == 20) {
 			for(DirPos pos : getConPos()) this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			this.markNetworkDirty();
+			this.networkPackNTIfDirty(150);
 		} else if(cadence == 100) {
 			long revision = SerializableRecipe.getRegistryRevision();
 			if(revision != observedRecipeRevision) this.markMachineDirty(MachineDirtyCause.RECIPE);

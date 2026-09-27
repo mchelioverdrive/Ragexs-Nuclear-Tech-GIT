@@ -18,6 +18,8 @@ import com.hbm.inventory.material.NTMMaterial;
 import com.hbm.inventory.recipes.CrucibleRecipes;
 import com.hbm.inventory.recipes.CrucibleRecipes.CrucibleRecipe;
 import com.hbm.items.ModItems;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
 import com.hbm.tileentity.IConfigurableMachine;
@@ -48,6 +50,11 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityCrucible extends TileEntityMachineBase implements IGUIProvider, ICrucibleAcceptor, IConfigurableMachine, IMetalCopiable {
+	private static final int TASK_PROCESS = 0;
+	private boolean runtimeHasSmeltable;
+	private boolean inventoryFingerprintInitialized;
+	private int observedInventoryFingerprint;
+	private final List<MaterialStack> runtimeToCast = new ArrayList<MaterialStack>();
 
 	public int heat;
 	public int progress;
@@ -102,38 +109,112 @@ public class TileEntityCrucible extends TileEntityMachineBase implements IGUIPro
 	}
 
 	@Override
-	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			tryPullHeat();
-			
-			/* collect items */
-			if(worldObj.getTotalWorldTime() % 5 == 0) {
-				List<EntityItem> list = worldObj.getEntitiesWithinAABB(EntityItem.class, AxisAlignedBB.getBoundingBox(xCoord - 0.5, yCoord + 0.5, zCoord - 0.5, xCoord + 1.5, yCoord + 1, zCoord + 1.5));
-				
-				for(EntityItem item : list) {
-					ItemStack stack = item.getEntityItem();
-					if(this.isItemSmeltable(stack)) {
-						
-						for(int i = 1; i < 10; i++) {
-							if(slots[i] == null) {
-								
-								if(stack.stackSize == 1) {
-									slots[i] = stack.copy();
-									item.setDead();
-									break;
-								} else {
-									slots[i] = stack.copy();
-									slots[i].stackSize = 1;
-									stack.stackSize--;
-								}
-								
-								this.markChanged();
-							}
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.CONFIGURATION)) != 0) {
+			runtimeHasSmeltable = getFirstSmeltableSlot() >= 0;
+			observeInventoryFingerprint();
+		}
+		if(needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_PROCESS, 0);
+		else cancelMachineTransition(TASK_PROCESS, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PROCESS || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		int beforeInventory = inventoryFingerprint();
+		runCrucibleStep();
+		int afterInventory = inventoryFingerprint();
+		if(beforeInventory != afterInventory) {
+			runtimeHasSmeltable = getFirstSmeltableSlot() >= 0;
+			markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+		}
+		markDirty();
+		markNetworkDirty();
+		networkPackNTIfDirty(25);
+		if(!isInvalid() && needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_PROCESS, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			collectDroppedItems();
+			if(observeInventoryFingerprint()) markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+			if(needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_PROCESS, 0);
+		} else if(cadence == 20 && !needsSimulation()) {
+			networkPackNTIfDirty(25);
+		}
+	}
+
+	private boolean hasHeatSource() {
+		TileEntity below = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
+		return below instanceof IHeatSource && ((IHeatSource) below).getHeatStored() > heat;
+	}
+
+	private boolean needsSimulation() {
+		return heat > 0 || progress > 0 || !recipeStack.isEmpty() || !wasteStack.isEmpty() || runtimeHasSmeltable && heat >= maxHeat / 2 || hasHeatSource();
+	}
+
+	private void collectDroppedItems() {
+		List<EntityItem> list = worldObj.getEntitiesWithinAABB(EntityItem.class, AxisAlignedBB.getBoundingBox(xCoord - 0.5, yCoord + 0.5, zCoord - 0.5, xCoord + 1.5, yCoord + 1, zCoord + 1.5));
+		boolean changed = false;
+		for(EntityItem item : list) {
+			ItemStack stack = item.getEntityItem();
+			if(this.isItemSmeltable(stack)) {
+				for(int i = 1; i < 10; i++) {
+					if(slots[i] == null) {
+						if(stack.stackSize == 1) {
+							slots[i] = stack.copy();
+							item.setDead();
+							changed = true;
+							break;
+						} else {
+							slots[i] = stack.copy();
+							slots[i].stackSize = 1;
+							stack.stackSize--;
+							changed = true;
 						}
 					}
 				}
 			}
+		}
+		if(changed) {
+			markChanged();
+			markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+		}
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private void runCrucibleStep() {
+
+		if(!worldObj.isRemote) {
+			tryPullHeat();
 
 			int totalCap = recipeZCapacity + wasteZCapacity;
 			int totalMass = 0;
@@ -183,7 +264,8 @@ public class TileEntityCrucible extends TileEntityMachineBase implements IGUIPro
 			if(!this.recipeStack.isEmpty()) {
 				
 				ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
-				List<MaterialStack> toCast = new ArrayList();
+				List<MaterialStack> toCast = runtimeToCast;
+				toCast.clear();
 				
 				CrucibleRecipe recipe = this.getLoadedRecipe();
 				//if no recipe is loaded, everything from the recipe stack will be drainable
@@ -224,9 +306,11 @@ public class TileEntityCrucible extends TileEntityMachineBase implements IGUIPro
 			this.wasteStack.removeIf(x -> x.amount <= 0);
 			
 			/* sync */
-			this.networkPackNT(25);
 		}
 	}
+
+	@Override
+	public void updateEntity() { }
 	
 	@Override
 	public void serialize(ByteBuf buf) {
@@ -582,10 +666,12 @@ public class TileEntityCrucible extends TileEntityMachineBase implements IGUIPro
 			
 			if(amount + stack.amount <= this.wasteZCapacity) {
 				this.addToStack(this.wasteStack, stack.copy());
+				markCrucibleMaterialsChanged();
 				return null;
 			} else {
 				int toAdd = this.wasteZCapacity - amount;
 				this.addToStack(this.wasteStack, new MaterialStack(stack.material, toAdd));
+				markCrucibleMaterialsChanged();
 				return new MaterialStack(stack.material, stack.amount - toAdd);
 			}
 		}
@@ -596,13 +682,21 @@ public class TileEntityCrucible extends TileEntityMachineBase implements IGUIPro
 		
 		if(recipeInputRequired + stack.amount <= matMaximum) {
 			this.addToStack(this.recipeStack, stack.copy());
+			markCrucibleMaterialsChanged();
 			return null;
 		}
 		
 		int toAdd = matMaximum - stack.amount;
 		toAdd = Math.min(toAdd, this.recipeZCapacity - getQuantaFromType(this.recipeStack, null));
 		this.addToStack(this.recipeStack, new MaterialStack(stack.material, toAdd));
+		markCrucibleMaterialsChanged();
 		return new MaterialStack(stack.material, stack.amount - toAdd);
+	}
+
+	private void markCrucibleMaterialsChanged() {
+		markDirty();
+		markNetworkDirty();
+		markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
 	}
 
 	@Override public boolean canAcceptPartialFlow(World world, int x, int y, int z, ForgeDirection side, MaterialStack stack) { return false; }

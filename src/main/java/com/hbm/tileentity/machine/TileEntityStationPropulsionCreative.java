@@ -3,24 +3,33 @@ package com.hbm.tileentity.machine;
 import java.util.List;
 
 import com.hbm.dim.CelestialBody;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
+import com.hbm.tileentity.TileEntityLoadedBase;
 
 import api.hbm.tile.IPropulsion;
 import net.minecraft.tileentity.TileEntity;
 
-public class TileEntityStationPropulsionCreative extends TileEntity implements IPropulsion {
+public class TileEntityStationPropulsionCreative extends TileEntityLoadedBase implements IPropulsion {
 
 	private boolean hasRegistered = false;
 
 	@Override
-	public void updateEntity() {
-		if(!CelestialBody.inOrbit(worldObj)) return;
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN;
+	}
 
-		if(!worldObj.isRemote) {
-			if(!hasRegistered) {
-				registerPropulsion();
-				hasRegistered = true;
-			}
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote || (causes & MachineDirtyCause.LIFECYCLE) == 0) return;
+		if(CelestialBody.inOrbit(worldObj) && !hasRegistered) {
+			registerPropulsion();
+			hasRegistered = true;
 		}
+	}
+
+	@Override
+	public void updateEntity() {
 	}
 
 	@Override

@@ -11,6 +11,7 @@ import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.gui.GUIRBMKOutgasser;
 import com.hbm.inventory.recipes.OutgasserRecipes;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
 import com.hbm.tileentity.machine.rbmk.TileEntityRBMKConsole.ColumnType;
 import com.hbm.util.Tuple.Pair;
 import com.hbm.util.fauxpointtwelve.DirPos;
@@ -37,6 +38,12 @@ public class TileEntityRBMKOutgasser extends TileEntityRBMKSlottedBase implement
 	public TileEntityRBMKOutgasser() {
 		super(2);
 		gas = new FluidTank(Fluids.TRITIUM, 64000);
+		gas.setChangeListener(tank -> markMachineFluidDirty());
+	}
+
+	@Override
+	protected boolean needsRBMKSimulation() {
+		return super.needsRBMKSimulation() || gas.getFill() > 0 || progress > 0;
 	}
 
 	@Override
@@ -45,7 +52,7 @@ public class TileEntityRBMKOutgasser extends TileEntityRBMKSlottedBase implement
 	}
 	
 	@Override
-	public void updateEntity() {
+	protected void runRBMKColumnStep() {
 		
 		if(!worldObj.isRemote) {
 			
@@ -58,7 +65,7 @@ public class TileEntityRBMKOutgasser extends TileEntityRBMKSlottedBase implement
 			}
 		}
 		
-		super.updateEntity();
+		super.runRBMKColumnStep();
 	}
 	
 	protected DirPos[] getOutputPos() {
@@ -97,6 +104,7 @@ public class TileEntityRBMKOutgasser extends TileEntityRBMKSlottedBase implement
 				flux *= 0.2D;
 			
 			progress += flux * RBMKDials.getOutgasserMod(worldObj);
+			markMachineDirty(MachineDirtyCause.ENVIRONMENT);
 			
 			if(progress > duration) {
 				process();

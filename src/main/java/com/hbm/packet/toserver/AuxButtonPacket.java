@@ -119,6 +119,7 @@ public class AuxButtonPacket implements IMessage {
 
 					barrel.mode = (short) ((barrel.mode + 1) % barrel.modes);
 					barrel.markDirty();
+					barrel.markMachineDirty(com.hbm.machine.MachineDirtyCause.CONFIGURATION);
 				}
 
 				if (te instanceof TileEntityMachineBattery) {
@@ -144,6 +145,7 @@ public class AuxButtonPacket implements IMessage {
 					}
 					bat.markNetworkDirty();
 					bat.markPowerNetworkDirty();
+					bat.markMachineDirty(com.hbm.machine.MachineDirtyCause.CONFIGURATION);
 				}
 
 				if (te instanceof TileEntitySoyuzLauncher) {
@@ -158,7 +160,7 @@ public class AuxButtonPacket implements IMessage {
 				if (te instanceof TileEntityMachineMiningLaser) {
 					TileEntityMachineMiningLaser laser = (TileEntityMachineMiningLaser)te;
 
-					laser.isOn = !laser.isOn;
+					laser.setLaserOn(!laser.isOn);
 				}
 
 				/// yes ///

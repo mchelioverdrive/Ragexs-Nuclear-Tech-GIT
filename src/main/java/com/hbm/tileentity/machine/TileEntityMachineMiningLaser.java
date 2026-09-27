@@ -1,6 +1,7 @@
 package com.hbm.tileentity.machine;
 
 import api.hbm.energymk2.EnergyUnits;
+import api.hbm.energymk2.IBatteryItem;
 import java.util.List;
 import java.util.Set;
 
@@ -20,6 +21,8 @@ import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemMachineUpgrade;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
@@ -52,6 +55,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineMiningLaser extends TileEntityMachineBase implements IEnergyReceiverMK2, IMiningDrill, IFluidStandardSender, IGUIProvider, IUpgradeInfoProvider {
+	private static final int TASK_MINING = 1;
+	private boolean runtimeEnergyMutation;
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	
@@ -79,6 +84,7 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 		//slots 9 - 29: output
 		super(30);
 		tank = new FluidTank(Fluids.OIL, 64_000);
+		this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -87,11 +93,63 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 	}
 
 	@Override
-	public void updateEntity() {
+	public void updateEntity() { }
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	public void setLaserOn(boolean on) {
+		if(isOn == on) return;
+		isOn = on;
+		markMachineDirty(MachineDirtyCause.CONFIGURATION);
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & (MachineDirtyCause.INVENTORY | MachineDirtyCause.UPGRADE | MachineDirtyCause.LIFECYCLE)) != 0)
+			this.upgradeManager.checkSlots(slots, 1, 8);
+		this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_MINING, 0);
+	}
+
+	private boolean hasBatteryEnergy() {
+		return slots[0] != null && slots[0].getItem() instanceof IBatteryItem && ((IBatteryItem) slots[0].getItem()).getStoredEnergyQuanta(slots[0]) > 0;
+	}
+
+	private int getOperatingCost() {
+		return consumption - (consumption * Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 12) / 16)
+			+ (consumption * Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 12) / 16);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_MINING || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		runtimeEnergyMutation = true;
+		this.beginMachineFluidMutation();
+		try { runMiningStep(); }
+		finally {
+			this.endMachineFluidMutation();
+			runtimeEnergyMutation = false;
+		}
+		if((isOn && (energyQuanta >= getOperatingCost() || hasBatteryEnergy())) || tank.getFill() > 0)
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_MINING, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
+		this.updateConnections();
+		this.upgradeManager.checkSlots(slots, 1, 8);
+		if((isOn && (energyQuanta >= getOperatingCost() || hasBatteryEnergy())) || tank.getFill() > 0) this.onMachineRuntimeDirty(0);
+		else this.sendStatePacket(0);
+	}
+
+	private void runMiningStep() {
 		
 		if(!worldObj.isRemote) {
 			
-			this.updateConnections();
 
 			this.sendFluid(tank, worldObj, xCoord + 2, yCoord, zCoord, Library.POS_X);
 			this.sendFluid(tank, worldObj, xCoord - 2, yCoord, zCoord, Library.NEG_X);
@@ -115,14 +173,11 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 			
 			if(isOn) {
 				
-				this.upgradeManager.checkSlots(slots, 1, 8);
 				int cycles = 1 + this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
 				int speed = 1 + Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 12);
 				int range = 1 + Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT) * 2, 24);
 				int fortune = Math.min(this.upgradeManager.getLevel(UpgradeType.FORTUNE), 3);
-				int consumption = this.consumption
-						- (this.consumption * Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 12) / 16)
-						+ (this.consumption * Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 12) / 16);
+				int consumption = this.getOperatingCost();
 				
 				for(int i = 0; i < cycles; i++) {
 					
@@ -170,6 +225,11 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 			this.tryFillContainer(xCoord, yCoord, zCoord + 2);
 			this.tryFillContainer(xCoord, yCoord, zCoord - 2);
 			
+			this.sendStatePacket(clientBreakProgress);
+		}
+	}
+
+	private void sendStatePacket(double clientBreakProgress) {
 			NBTTagCompound data = new NBTTagCompound();
 			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setInteger("lastX", lastTargetX);
@@ -184,7 +244,6 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 			tank.writeToNBT(data, "t");
 			
 			this.networkPack(data, 250);
-		}
 	}
 	
 	private void updateConnections() {
@@ -611,6 +670,7 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override

@@ -119,10 +119,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 
 	@Override
 	public void updateEntity() {
-
-		if(!worldObj.isRemote) {
-			this.networkPackNTIfDirty(150);
-		} else {
+		if(worldObj.isRemote) {
 
 			if(isProgressing && this.worldObj.getTotalWorldTime() % 3 == 0) {
 
@@ -489,6 +486,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		} else {
 			this.runAccountingTick(now);
 		}
+		this.networkPackNTIfDirty(150);
 	}
 
 	@Override
@@ -496,6 +494,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		if(taskType != TASK_ACCOUNTING || taskSlot != TASK_SLOT_CHEMPLANT || worldObj == null || worldObj.isRemote) return;
 		this.nextRuntimeTick = -1L;
 		if(this.runtimeStateInitialized) this.runAccountingTick(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(150);
 	}
 
 	@Override
@@ -547,6 +546,8 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 			this.markMachineDirty((recipeChanged ? MachineDirtyCause.RECIPE : 0) | (tanksChanged ? MachineDirtyCause.FLUID : 0) | (itemsChanged ? MachineDirtyCause.INVENTORY : 0) | (upgradesChanged ? MachineDirtyCause.CONFIGURATION : 0) | MachineDirtyCause.ENERGY);
 		}
 		this.updateConnections();
+		this.markNetworkDirty();
+		this.networkPackNTIfDirty(150);
 	}
 
 	private boolean hasItemsToUnload() {

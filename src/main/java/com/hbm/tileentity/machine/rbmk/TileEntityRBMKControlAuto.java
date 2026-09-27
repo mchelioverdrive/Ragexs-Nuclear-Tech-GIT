@@ -34,7 +34,7 @@ public class TileEntityRBMKControlAuto extends TileEntityRBMKControl implements 
 	}
 	
 	@Override
-	public void updateEntity() {
+	protected void runRBMKColumnStep() {
 		
 		if(!worldObj.isRemote) {
 			
@@ -73,7 +73,7 @@ public class TileEntityRBMKControlAuto extends TileEntityRBMKControl implements 
 			this.targetLevel = MathHelper.clamp_double(this.targetLevel, 0D, 1D);
 		}
 		
-		super.updateEntity();
+		super.runRBMKColumnStep();
 	}
 	
 	@Override

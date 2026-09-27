@@ -7,6 +7,8 @@ import com.hbm.inventory.container.ContainerMachineReactorBreeding;
 import com.hbm.inventory.gui.GUIMachineReactorBreeding;
 import com.hbm.inventory.recipes.BreederRecipes;
 import com.hbm.inventory.recipes.BreederRecipes.BreederRecipe;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.CompatEnergyControl;
@@ -31,6 +33,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityMachineReactorBreeding extends TileEntityMachineBase implements SimpleComponent, IGUIProvider, IInfoProviderEC, CompatHandler.OCComponent {
+	private static final int TASK_BREED = 0;
 
 	public int flux;
 	public float progress;
@@ -47,37 +50,58 @@ public class TileEntityMachineReactorBreeding extends TileEntityMachineBase impl
 	}
 
 	@Override
-	public void updateEntity() {
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
 
-		if(!worldObj.isRemote) {
+	@Override
+	public void updateEntity() { }
 
-			this.flux = 0;
-			getInteractions();
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY | MachineDirtyCause.TOPOLOGY)) != 0) getInteractions();
+		if(canProcess() && flux > 0) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_BREED, 0);
+		else cancelMachineTransition(TASK_BREED, 0);
+	}
 
-			BreederRecipe out =
-				BreederRecipes.getOutput(slots[0], this.flux);
-
-			if(canProcess() && out != null) {
-
-				progress += 0.0025F *
-					((float)this.flux / (float)out.flux);
-
-				if(this.progress >= 1.0F) {
-
-					this.progress = 0F;
-					this.processItem();
-					this.markDirty();
-				}
-
-			} else {
-				progress = 0.0F;
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_BREED || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		getInteractions();
+		BreederRecipe out = BreederRecipes.getOutput(slots[0], this.flux);
+		if(canProcess() && out != null) {
+			progress += 0.0025F * ((float) this.flux / (float) out.flux);
+			if(progress >= 1.0F) {
+				progress = 0F;
+				processItem();
+				markDirty();
 			}
-
-			NBTTagCompound data = new NBTTagCompound();
-			data.setInteger("flux", flux);
-			data.setFloat("progress", progress);
-			this.networkPack(data, 20);
+		} else {
+			progress = 0.0F;
 		}
+		sendBreederPacket();
+		if(!isInvalid() && canProcess() && flux > 0) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_BREED, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			int oldFlux = flux;
+			getInteractions();
+			if(flux != oldFlux) markMachineDirty(MachineDirtyCause.ENVIRONMENT);
+			else if(canProcess() && flux > 0) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_BREED, 0);
+		} else if(cadence == 20 && canProcess() && flux <= 0) {
+			sendBreederPacket();
+		}
+	}
+
+	private void sendBreederPacket() {
+		NBTTagCompound data = new NBTTagCompound();
+		data.setInteger("flux", flux);
+		data.setFloat("progress", progress);
+		networkPack(data, 20);
 	}
 
 	public void networkUnpack(NBTTagCompound data) {

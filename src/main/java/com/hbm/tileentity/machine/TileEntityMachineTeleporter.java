@@ -8,6 +8,8 @@ import com.hbm.config.GeneralConfig;
 import com.hbm.config.WorldConfig;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.INBTPacketReceiver;
 import com.hbm.tileentity.TileEntityLoadedBase;
 
@@ -39,6 +41,8 @@ import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineTeleporter extends TileEntityLoadedBase implements IEnergyReceiverMK2, IFluidStandardReceiver, INBTPacketReceiver {
+	private static final int TASK_TRANSFER = 1;
+	private boolean runtimeEnergyMutation;
 
 	public long energyQuanta = 0;
 	public int targetX = -1;
@@ -53,34 +57,13 @@ public class TileEntityMachineTeleporter extends TileEntityLoadedBase implements
 
 	public TileEntityMachineTeleporter() {
 		tank = new FluidTank(Fluids.NMASS, 16000);
+		tank.setChangeListener(changed -> { if(worldObj != null && !worldObj.isRemote) markMachineFluidDirty(); });
 		
 	}
 
 	@Override
 	public void updateEntity() {
-		
-		if(!this.worldObj.isRemote) {
-			this.subscribeToAllAround(tank.getTankType(), this);
-
-			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-			
-			if(this.targetY != -1) {
-				List<Entity> entities = this.worldObj.getEntitiesWithinAABB(Entity.class, AxisAlignedBB.getBoundingBox(this.xCoord + 0.25, this.yCoord, this.zCoord + 0.25, this.xCoord + 0.75, this.yCoord + 2, this.zCoord + 0.75));
-				
-				if(!entities.isEmpty()) {
-					for(Entity e : entities) {
-						teleport(e);
-					}
-				}
-			}
-			
-			NBTTagCompound data = new NBTTagCompound();
-			tank.writeToNBT(data, "t");
-			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
-			data.setIntArray("target", new int[] {targetX, targetY, targetZ, targetDim});
-			INBTPacketReceiver.networkPack(this, data, 15);
-			
-		} else {
+		if(worldObj.isRemote) {
 
 			if(this.targetY != -1 && energyQuanta >= consumption && this.tank.getFill() >= flucu) {
 				double x = xCoord + 0.5 + worldObj.rand.nextGaussian() * 0.25D;
@@ -89,6 +72,57 @@ public class TileEntityMachineTeleporter extends TileEntityLoadedBase implements
 				worldObj.spawnParticle("reddust", x, y, z, 0.4F, 0.8F, 1F);
 			}
 		}
+	}
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	public void setTarget(int x, int y, int z, int dimension) {
+		targetX = x;
+		targetY = y;
+		targetZ = z;
+		targetDim = dimension;
+		markDirty();
+		markMachineDirty(MachineDirtyCause.CONFIGURATION);
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		sendRuntimePacket();
+		if(targetY != -1 && energyQuanta >= consumption)
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_TRANSFER, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_TRANSFER || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		if(targetY != -1 && energyQuanta >= consumption) {
+			List<Entity> entities = worldObj.getEntitiesWithinAABB(Entity.class, AxisAlignedBB.getBoundingBox(xCoord + 0.25, yCoord, zCoord + 0.25, xCoord + 0.75, yCoord + 2, zCoord + 0.75));
+			runtimeEnergyMutation = true;
+			try { for(Entity entity : entities) teleport(entity); }
+			finally { runtimeEnergyMutation = false; }
+			sendRuntimePacket();
+			if(energyQuanta >= consumption) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_TRANSFER, 0);
+		}
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
+		this.subscribeToAllAround(tank.getTankType(), this);
+		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
+		onMachineRuntimeDirty(0);
+	}
+
+	private void sendRuntimePacket() {
+		NBTTagCompound data = new NBTTagCompound();
+		tank.writeToNBT(data, "t");
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+		data.setIntArray("target", new int[] {targetX, targetY, targetZ, targetDim});
+		INBTPacketReceiver.networkPack(this, data, 15);
 	}
 
 	@Override
@@ -249,6 +283,7 @@ public class TileEntityMachineTeleporter extends TileEntityLoadedBase implements
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override

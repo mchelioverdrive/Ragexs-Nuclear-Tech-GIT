@@ -19,6 +19,8 @@ import com.hbm.inventory.gui.GUIPWR;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemPWRFuel.EnumPWRFuel;
 import com.hbm.main.MainRegistry;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.sound.AudioWrapper;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
@@ -44,6 +46,8 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityPWRController extends TileEntityMachineBase implements IGUIProvider, IControlReceiver, SimpleComponent, IFluidStandardTransceiver, CompatHandler.OCComponent {
+	private static final int TASK_CORE = 0;
+	private boolean runtimeInitialized;
 
 	public FluidTank[] tanks;
 	public long coreHeat;
@@ -83,6 +87,8 @@ public class TileEntityPWRController extends TileEntityMachineBase implements IG
 		this.tanks = new FluidTank[2];
 		this.tanks[0] = new FluidTank(Fluids.BORATED_WATER, 128_000).migrateFrom(Fluids.COOLANT);
 		this.tanks[1] = new FluidTank(Fluids.BORATED_WATER_HOT, 128_000).migrateFrom(Fluids.COOLANT_HOT);
+		trackMachineFluidTank(this.tanks[0]);
+		trackMachineFluidTank(this.tanks[1]);
 	}
 
 	/** The initial creation of the reactor, does all the pre-calculation and whatnot */
@@ -152,6 +158,7 @@ public class TileEntityPWRController extends TileEntityMachineBase implements IG
 
 		//switching this to int64 because after 2127 heatsinks the capacity exceeds the int32 which is well within the 4000+ threshold we are working with. oops!
 		this.coreHeatCapacity = this.coreHeatCapacityBase + this.heatsinkCount * (this.coreHeatCapacityBase / 20);
+		this.markMachineDirty(MachineDirtyCause.TOPOLOGY | MachineDirtyCause.LIFECYCLE);
 	}
 
 	@Override
@@ -161,25 +168,107 @@ public class TileEntityPWRController extends TileEntityMachineBase implements IG
 
 	@Override
 	public void updateEntity() {
+		if(worldObj.isRemote) {
 
-		if(!worldObj.isRemote) {
+			if(amountLoaded > 0) {
+
+				if(audio == null) {
+					audio = createAudioLoop();
+					audio.startSound();
+				} else if(!audio.isPlaying()) {
+					audio = rebootAudio(audio);
+				}
+
+				audio.updateVolume(getVolume(1F));
+				audio.keepAlive();
+
+			} else {
+
+				if(audio != null) {
+					audio.stopSound();
+					audio = null;
+				}
+			}
+
+		}
+	}
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		trackMachineFluidTank(tanks[0]);
+		trackMachineFluidTank(tanks[1]);
+		runtimeInitialized = true;
+		if(needsPWRSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_CORE, 0);
+		else cancelMachineTransition(TASK_CORE, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_CORE || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		beginMachineFluidMutation();
+		try { runPWRStep(); }
+		finally { endMachineFluidMutation(); }
+		markDirty();
+		if(!isInvalid() && needsPWRSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_CORE, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote || cadence != 20 || !runtimeInitialized) return;
+		int chunkX = xCoord >> 4;
+		int chunkZ = zCoord >> 4;
+		if(!worldObj.getChunkProvider().chunkExists(chunkX, chunkZ)
+				|| !worldObj.getChunkProvider().chunkExists(chunkX + 2, chunkZ + 2)
+				|| !worldObj.getChunkProvider().chunkExists(chunkX + 2, chunkZ - 2)
+				|| !worldObj.getChunkProvider().chunkExists(chunkX - 2, chunkZ + 2)
+				|| !worldObj.getChunkProvider().chunkExists(chunkX - 2, chunkZ - 2)) unloadDelay = 60;
+		if(assembled) {
+			for(BlockPos pos : ports) for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
+				BlockPos portPos = pos.offset(dir);
+				this.trySubscribe(tanks[0].getTankType(), worldObj, portPos.getX(), portPos.getY(), portPos.getZ(), dir);
+			}
+		}
+		if(!needsPWRSimulation()) sendPWRPacket();
+		else scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_CORE, 0);
+	}
+
+	private boolean needsPWRSimulation() {
+		if(unloadDelay > 0) return true;
+		if(!assembled) return false;
+		return rodLevel != rodTarget || amountLoaded > 0 || typeLoaded != -1 || progress > 0 || coreHeat > 0 || hullHeat > 0
+				|| tanks[1].getFill() > 0 || slots[2] != null || slots[0] != null && slots[0].getItem() == ModItems.pwr_fuel;
+	}
+
+	private void sendPWRPacket() {
+		NBTTagCompound data = new NBTTagCompound();
+		tanks[0].writeToNBT(data, "t0");
+		tanks[1].writeToNBT(data, "t1");
+		data.setInteger("rodCount", rodCount);
+		data.setLong("coreHeat", coreHeat);
+		data.setLong("hullHeat", hullHeat);
+		data.setDouble("flux", flux);
+		data.setDouble("processTime", processTime);
+		data.setDouble("progress", progress);
+		data.setInteger("typeLoaded", typeLoaded);
+		data.setInteger("amountLoaded", amountLoaded);
+		data.setDouble("rodLevel", rodLevel);
+		data.setDouble("rodTarget", rodTarget);
+		data.setLong("coreHeatCapacity", coreHeatCapacity);
+		this.networkPack(data, 150);
+	}
+
+	private void runPWRStep() {
 
 			this.tanks[0].setType(2, slots);
 			setupTanks();
 
 			if(unloadDelay > 0) unloadDelay--;
-
-			int chunkX = xCoord >> 4;
-			int chunkZ = zCoord >> 4;
-
-			//since fluid sources are often not within 1 chunk, we just do 2 chunks distance and call it a day
-			if(!worldObj.getChunkProvider().chunkExists(chunkX, chunkZ) ||
-				!worldObj.getChunkProvider().chunkExists(chunkX + 2, chunkZ + 2) ||
-				!worldObj.getChunkProvider().chunkExists(chunkX + 2, chunkZ - 2) ||
-				!worldObj.getChunkProvider().chunkExists(chunkX - 2, chunkZ + 2) ||
-				!worldObj.getChunkProvider().chunkExists(chunkX - 2, chunkZ - 2)) {
-				this.unloadDelay = 60;
-			}
 
 			if(this.assembled) {
 				for(BlockPos pos : ports) {
@@ -187,7 +276,6 @@ public class TileEntityPWRController extends TileEntityMachineBase implements IG
 						BlockPos portPos = pos.offset(dir);
 
 						if(tanks[1].getFill() > 0) this.sendFluid(tanks[1], worldObj, portPos.getX(), portPos.getY(), portPos.getZ(), dir);
-						if(worldObj.getTotalWorldTime() % 20 == 0) this.trySubscribe(tanks[0].getTankType(), worldObj, portPos.getX(), portPos.getY(), portPos.getZ(), dir);
 					}
 				}
 
@@ -278,43 +366,8 @@ public class TileEntityPWRController extends TileEntityMachineBase implements IG
 				}
 			}
 
-			NBTTagCompound data = new NBTTagCompound();
-			tanks[0].writeToNBT(data, "t0");
-			tanks[1].writeToNBT(data, "t1");
-			data.setInteger("rodCount", rodCount);
-			data.setLong("coreHeat", coreHeat);
-			data.setLong("hullHeat", hullHeat);
-			data.setDouble("flux", flux);
-			data.setDouble("processTime", processTime);
-			data.setDouble("progress", progress);
-			data.setInteger("typeLoaded", typeLoaded);
-			data.setInteger("amountLoaded", amountLoaded);
-			data.setDouble("rodLevel", rodLevel);
-			data.setDouble("rodTarget", rodTarget);
-			data.setLong("coreHeatCapacity", coreHeatCapacity);
-			this.networkPack(data, 150);
-		} else {
+			sendPWRPacket();
 
-			if(amountLoaded > 0) {
-
-				if(audio == null) {
-					audio = createAudioLoop();
-					audio.startSound();
-				} else if(!audio.isPlaying()) {
-					audio = rebootAudio(audio);
-				}
-
-				audio.updateVolume(getVolume(1F));
-				audio.keepAlive();
-
-			} else {
-
-				if(audio != null) {
-					audio.stopSound();
-					audio = null;
-				}
-			}
-		}
 	}
 
 	protected void meltDown() {
@@ -550,6 +603,7 @@ public class TileEntityPWRController extends TileEntityMachineBase implements IG
 		if(data.hasKey("control")) {
 			this.rodTarget = MathHelper.clamp_int(data.getInteger("control"), 0, 100);
 			this.markChanged();
+			this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 		}
 	}
 
@@ -602,6 +656,7 @@ public class TileEntityPWRController extends TileEntityMachineBase implements IG
 	public Object[] setLevel(Context context, Arguments args) {
 		rodTarget = MathHelper.clamp_double(args.checkDouble(0), 0, 100);
 		this.markChanged();
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 		return new Object[] {true};
 	}
 

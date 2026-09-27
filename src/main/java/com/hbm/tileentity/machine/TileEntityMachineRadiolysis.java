@@ -12,6 +12,7 @@ import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemRTGPellet;
 import com.hbm.items.machine.ItemRTGPelletDepleted;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
@@ -35,6 +36,9 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineRadiolysis extends TileEntityMachineBase implements IEnergyProviderMK2, IFluidStandardTransceiver, IGUIProvider, IInfoProviderEC, IFluidCopiable {
+	private static final int TASK_SIMULATE = 1;
+	private boolean runtimeEnergyMutation;
+	private DirPos[] runtimeConnections;
 
 	public long energyQuanta;
 	public static final int maxPower = 1000000;
@@ -51,6 +55,7 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 		tanks[0] = new FluidTank(Fluids.NONE, 2_000);
 		tanks[1] = new FluidTank(Fluids.NONE, 2_000);
 		tanks[2] = new FluidTank(Fluids.NONE, 2_000);
+		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -110,7 +115,48 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 	}
 
 	@Override
-	public void updateEntity() {
+	public void updateEntity() { }
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(shouldSimulate()) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_SIMULATE, 0);
+	}
+
+	private boolean shouldSimulate() {
+		if(energyQuanta > 0 || tanks[1].getFill() > 0 || tanks[2].getFill() > 0) return true;
+		if(RTGUtil.hasHeat(slots, slot_rtg)) return true;
+		return slots[14] != null && energyQuanta < maxPower;
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_SIMULATE || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		runtimeEnergyMutation = true;
+		this.beginMachineFluidMutation();
+		try { runRadiolysisStep(); }
+		finally {
+			this.endMachineFluidMutation();
+			runtimeEnergyMutation = false;
+		}
+		if(shouldSimulate()) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_SIMULATE, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
+		for(DirPos pos : getConPos())
+			this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+		this.sendRuntimePacket();
+		this.onMachineRuntimeDirty(0);
+	}
+
+	private void runRadiolysisStep() {
 
 		if(!worldObj.isRemote) {
 			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 14, energyQuanta, maxPower));
@@ -136,28 +182,32 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 
 			for(DirPos pos : getConPos()) {
 				this.tryProvide(worldObj, pos.getX(), pos.getY(),pos.getZ(), pos.getDir());
-				this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(),pos.getZ(), pos.getDir());
 				if(tanks[1].getFill() > 0) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(),pos.getZ(), pos.getDir());
 				if(tanks[2].getFill() > 0) this.sendFluid(tanks[2], worldObj, pos.getX(), pos.getY(),pos.getZ(), pos.getDir());
 			}
 
-			NBTTagCompound data = new NBTTagCompound();
-			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
-			data.setInteger("heat", heat);
-			tanks[0].writeToNBT(data, "t0");
-			tanks[1].writeToNBT(data, "t1");
-			tanks[2].writeToNBT(data, "t2");
-			this.networkPack(data, 50);
 		}
 	}
 
+	private void sendRuntimePacket() {
+		NBTTagCompound data = new NBTTagCompound();
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+		data.setInteger("heat", heat);
+		tanks[0].writeToNBT(data, "t0");
+		tanks[1].writeToNBT(data, "t1");
+		tanks[2].writeToNBT(data, "t2");
+		this.networkPack(data, 50);
+	}
+
 	protected DirPos[] getConPos() {
-		return new DirPos[] {
+		if(runtimeConnections != null) return runtimeConnections;
+		runtimeConnections = new DirPos[] {
 				new DirPos(xCoord + 2, yCoord, zCoord, Library.POS_X),
 				new DirPos(xCoord - 2, yCoord, zCoord, Library.NEG_X),
 				new DirPos(xCoord, yCoord, zCoord + 2, Library.POS_Z),
 				new DirPos(xCoord, yCoord, zCoord - 2, Library.NEG_Z)
 		};
+		return runtimeConnections;
 	}
 
 	/* Processing Methods */
@@ -242,6 +292,7 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override

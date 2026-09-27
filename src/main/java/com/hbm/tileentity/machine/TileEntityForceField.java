@@ -12,6 +12,8 @@ import com.hbm.inventory.container.ContainerForceField;
 import com.hbm.inventory.gui.GUIForceField;
 import com.hbm.items.ModItems;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.TEFFPacket;
 import com.hbm.tileentity.IConfigurableMachine;
@@ -37,6 +39,10 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityForceField extends TileEntityLoadedBase implements ISidedInventory, IEnergyReceiverMK2, IGUIProvider, IConfigurableMachine {
+	private static final int TASK_FIELD = 0;
+	private boolean inventoryFingerprintInitialized;
+	private int observedInventoryFingerprint;
+	private boolean runtimeWasOn;
 
 	private ItemStack slots[];
 
@@ -59,6 +65,8 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 	private static final int[] slots_side = new int[] {0};
 
 	private String customName;
+	private final List<Entity> previousOutside = new ArrayList<Entity>();
+	private final List<Entity> previousInside = new ArrayList<Entity>();
 
 	// config options stuff.
 	public static int baseRadius = 16;
@@ -118,6 +126,7 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 		{
 			ItemStack itemStack = slots[i];
 			slots[i] = null;
+			markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.UPGRADE);
 			return itemStack;
 		} else {
 			return null;
@@ -131,6 +140,7 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 		{
 			itemStack.stackSize = getInventoryStackLimit();
 		}
+		markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.UPGRADE);
 	}
 
 	@Override
@@ -188,6 +198,7 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 			{
 				ItemStack itemStack = slots[i];
 				slots[i] = null;
+				markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.UPGRADE);
 				return itemStack;
 			}
 			ItemStack itemStack1 = slots[i].splitStack(j);
@@ -195,6 +206,7 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 			{
 				slots[i] = null;
 			}
+			markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.UPGRADE);
 
 			return itemStack1;
 		} else {
@@ -279,28 +291,86 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 	}
 
 	@Override
-	public void updateEntity() {
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY | MachineDirtyCause.UPGRADE | MachineDirtyCause.CONFIGURATION)) != 0) {
+			refreshSettings();
+			observeInventoryFingerprint();
+			runtimeWasOn = isOn;
+		}
+		if(!isOn) { outside.clear(); inside.clear(); }
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0) updateConnections();
+		if(needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_FIELD, 0);
+		else cancelMachineTransition(TASK_FIELD, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_FIELD || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		runForceFieldStep();
+		markDirty();
+		PacketDispatcher.wrapper.sendToAllAround(new TEFFPacket(xCoord, yCoord, zCoord, radius, health, maxHealth, energyQuanta, isOn, color, cooldown), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 500));
+		if(!isInvalid() && needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_FIELD, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5) {
+			if(observeInventoryFingerprint()) markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.UPGRADE);
+			if(runtimeWasOn != isOn) {
+				runtimeWasOn = isOn;
+				markMachineDirty(MachineDirtyCause.CONFIGURATION);
+			}
+			if(needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_FIELD, 0);
+		} else if(cadence == 20) {
+			updateConnections();
+			if(!needsSimulation()) PacketDispatcher.wrapper.sendToAllAround(new TEFFPacket(xCoord, yCoord, zCoord, radius, health, maxHealth, energyQuanta, isOn, color, cooldown), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 500));
+		}
+	}
+
+	private void refreshSettings() {
+		int radiusUpgrades = slots[1] != null && slots[1].getItem() == ModItems.upgrade_radius ? slots[1].stackSize : 0;
+		int healthUpgrades = slots[2] != null && slots[2].getItem() == ModItems.upgrade_health ? slots[2].stackSize : 0;
+		radius = baseRadius + radiusUpgrades * radUpgrade;
+		maxHealth = 100 + healthUpgrades * shUpgrade;
+		powerCons = baseCon + radiusUpgrades * radCon + healthUpgrades * shCon;
+	}
+
+	private boolean needsSimulation() {
+		return cooldown > 0 || health < maxHealth || blink > 0 || (isOn && cooldown == 0 && health > 0 && energyQuanta >= powerCons) || (energyQuanta < maxPower && hasChargedBattery());
+	}
+
+	private boolean hasChargedBattery() {
+		ItemStack stack = slots[0];
+		return stack != null && stack.getItem() instanceof IBatteryItem && ((IBatteryItem) stack.getItem()).getStoredEnergyQuanta(stack) > 0;
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) { hash = 31 * hash + stack.stackSize; hash = 31 * hash + stack.getItemDamage(); }
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private void runForceFieldStep() {
 
 		if(!worldObj.isRemote) {
-
-			updateConnections();
-
-			int rStack = 0;
-			int hStack = 0;
-			radius = baseRadius;
-			maxHealth = 100;
-
-			if(slots[1] != null && slots[1].getItem() == ModItems.upgrade_radius) {
-				rStack = slots[1].stackSize;
-				radius += rStack * radUpgrade;
-			}
-
-			if(slots[2] != null && slots[2].getItem() == ModItems.upgrade_health) {
-				hStack = slots[2].stackSize;
-				maxHealth += hStack * shUpgrade;
-			}
-
-			this.powerCons = baseCon + rStack * radCon + hStack * shCon;
 
 			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
 
@@ -337,10 +407,27 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 			if(energyQuanta < powerCons)
 				this.setStoredEnergyQuanta(0);
 		}
+	}
 
-		if(!worldObj.isRemote) {
-			PacketDispatcher.wrapper.sendToAllAround(new TEFFPacket(xCoord, yCoord, zCoord, radius, health, maxHealth, energyQuanta, isOn, color, cooldown), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 500));
-		}
+	@Override
+	public void updateEntity() { }
+
+	@Override
+	public void onChunkUnload() {
+		outside.clear();
+		inside.clear();
+		previousOutside.clear();
+		previousInside.clear();
+		super.onChunkUnload();
+	}
+
+	@Override
+	public void invalidate() {
+		outside.clear();
+		inside.clear();
+		previousOutside.clear();
+		previousInside.clear();
+		super.invalidate();
 	}
 
 	private int impact(Entity e) {
@@ -367,8 +454,10 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 
 	private void doField(float rad) {
 
-		List<Entity> oLegacy = new ArrayList(outside);
-		List<Entity> iLegacy = new ArrayList(inside);
+		previousOutside.clear();
+		previousOutside.addAll(outside);
+		previousInside.clear();
+		previousInside.addAll(inside);
 
 		outside.clear();
 		inside.clear();
@@ -385,7 +474,7 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 				boolean out = dist > rad;
 
 				//if the entity has not been registered yet
-				if(!oLegacy.contains(entity) && !iLegacy.contains(entity)) {
+				if(!previousOutside.contains(entity) && !previousInside.contains(entity)) {
 					if(out) {
 						outside.add(entity);
 					} else {
@@ -396,7 +485,7 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 				} else {
 
 					//if the entity has crossed inwards
-					if(oLegacy.contains(entity) && !out) {
+					if(previousOutside.contains(entity) && !out) {
 						Vec3 vec = Vec3.createVectorHelper(xCoord + 0.5 - entity.posX, yCoord + 0.5 - entity.posY, zCoord + 0.5 - entity.posZ);
 						vec = vec.normalize();
 
@@ -426,7 +515,7 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 					} else
 
 						//if the entity has crossed outwards
-						if(iLegacy.contains(entity) && out) {
+						if(previousInside.contains(entity) && out) {
 							Vec3 vec = Vec3.createVectorHelper(xCoord + 0.5 - entity.posX, yCoord + 0.5 - entity.posY, zCoord + 0.5 - entity.posZ);
 							vec = vec.normalize();
 
@@ -489,6 +578,7 @@ public class TileEntityForceField extends TileEntityLoadedBase implements ISided
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		this.markMachineEnergyDirty();
 	}
 
 	@Override

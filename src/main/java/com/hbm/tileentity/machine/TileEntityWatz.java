@@ -17,6 +17,8 @@ import com.hbm.inventory.gui.GUIWatz;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemWatzPellet;
 import com.hbm.items.machine.ItemWatzPellet.EnumWatzType;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.main.MainRegistry;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.tileentity.IFluidCopiable;
@@ -45,6 +47,9 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityWatz extends TileEntityMachineBase implements IFluidStandardTransceiver, IControlReceiver, IGUIProvider, IFluidCopiable {
+	private static final int TASK_REACTOR = 0;
+	private transient List<TileEntityWatz> runtimeSegments = new ArrayList<TileEntityWatz>();
+	private transient FluidTank[] runtimeSharedTanks;
 
 	// Pebble-bed reactor model: graphite moderated TRISO pebbles, helium primary loop,
 	// xenon/iodine poisoning, center-weighted flux, and a gamified overheat failure.
@@ -93,6 +98,9 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 		this.tanks = new FluidTank[2];
 		this.tanks[0] = new FluidTank(Fluids.HELIUM4, 64_000);
 		this.tanks[1] = new FluidTank(Fluids.HELIUM4_HOT, 64_000);
+		this.runtimeSharedTanks = new FluidTank[] { new FluidTank(Fluids.HELIUM4, 0), new FluidTank(Fluids.HELIUM4_HOT, 0) };
+		trackMachineFluidTank(this.tanks[0]);
+		trackMachineFluidTank(this.tanks[1]);
 		//this.tanks[2] = new FluidTank(Fluids.WATZ, 64_000); //shouldn't this be xenon or something?
 	}
 
@@ -102,31 +110,119 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 	}
 
 	@Override
-	public void updateEntity() {
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void updateEntity() { }
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		trackMachineFluidTank(tanks[0]);
+		trackMachineFluidTank(tanks[1]);
+		TileEntityWatz controller = getController();
+		if(controller != this) {
+			cancelMachineTransition(TASK_REACTOR, 0);
+			controller.markMachineDirty(causes | MachineDirtyCause.TOPOLOGY);
+		} else if(needsReactorSimulation()) {
+			scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_REACTOR, 0);
+		} else {
+			cancelMachineTransition(TASK_REACTOR, 0);
+		}
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_REACTOR || taskSlot != 0 || worldObj == null || worldObj.isRemote || updateLock()) return;
+		List<TileEntityWatz> segments = getRuntimeSegments();
+		for(TileEntityWatz segment : segments) segment.beginMachineFluidMutation();
+		try {
+			runWatzSystemStep();
+		} finally {
+			for(TileEntityWatz segment : segments) {
+				segment.endMachineFluidMutation();
+				segment.markDirty();
+			}
+		}
+		if(!isInvalid() && needsReactorSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_REACTOR, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote || updateLock()) return;
+		if(cadence == 5) {
+			if(isPumpPowered() != isOn) markMachineDirty(MachineDirtyCause.REDSTONE);
+		} else if(cadence == 20) {
+			collectSegments();
+			subscribeToTop();
+			if(needsReactorSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_REACTOR, 0);
+		}
+	}
+
+	private boolean isPumpPowered() {
+		return worldObj.getBlock(xCoord, yCoord + 3, zCoord) == ModBlocks.watz_pump && worldObj.getIndirectPowerLevelTo(xCoord, yCoord + 5, zCoord, 0) > 0;
+	}
+
+	private boolean needsReactorSimulation() {
+		if(isPumpPowered()) return true;
+		for(TileEntityWatz segment : getRuntimeSegments()) {
+			if(segment.heat != 0 || segment.isOn || segment.fluxLastReaction != 0 || segment.iodine != 0 || segment.xenon != 0 || segment.tanks[0].getFill() > 0 || segment.tanks[1].getFill() > 0) return true;
+			for(ItemStack stack : segment.slots) if(stack != null) return true;
+		}
+		return false;
+	}
+
+	private TileEntityWatz getController() {
+		TileEntityWatz controller = this;
+		while(controller.yCoord + 3 < worldObj.getHeight()) {
+			TileEntity above = Compat.getTileStandard(worldObj, controller.xCoord, controller.yCoord + 3, controller.zCoord);
+			if(!(above instanceof TileEntityWatz)) break;
+			controller = (TileEntityWatz) above;
+		}
+		return controller;
+	}
+
+	private List<TileEntityWatz> collectSegments() {
+		runtimeSegments.clear();
+		runtimeSegments.add(this);
+		for(int y = yCoord - 3; y >= 0; y -= 3) {
+			TileEntity tile = Compat.getTileStandard(worldObj, xCoord, y, zCoord);
+			if(tile instanceof TileEntityWatz) runtimeSegments.add((TileEntityWatz) tile);
+			else break;
+		}
+		return runtimeSegments;
+	}
+
+	private List<TileEntityWatz> getRuntimeSegments() {
+		if(runtimeSegments.isEmpty()) collectSegments();
+		return runtimeSegments;
+	}
+
+	@Override
+	public void onChunkUnload() {
+		if(runtimeSegments != null) runtimeSegments.clear();
+		super.onChunkUnload();
+	}
+
+	private void runWatzSystemStep() {
 
 		if(!worldObj.isRemote && !updateLock()) {
 			//xenon *= 0.9995D;
 			//xenon decay should happen only while off
 
-			boolean turnedOn = worldObj.getBlock(xCoord, yCoord + 3, zCoord) == ModBlocks.watz_pump && worldObj.getIndirectPowerLevelTo(xCoord, yCoord + 5, zCoord, 0) > 0;
-			List<TileEntityWatz> segments = new ArrayList();
-			segments.add(this);
+			boolean turnedOn = isPumpPowered();
+			List<TileEntityWatz> segments = getRuntimeSegments();
 			this.subscribeToTop();
 
-			/* accumulate all segments */
-			for(int y = yCoord - 3; y >= 0; y -= 3) {
-				TileEntity tile = Compat.getTileStandard(worldObj, xCoord, y, zCoord);
-				if(tile instanceof TileEntityWatz) {
-					segments.add((TileEntityWatz) tile);
-				} else {
-					break;
-				}
-			}
-
 			/* set up shared tanks */
-			FluidTank[] sharedTanks = new FluidTank[tanks.length];
-
-			for(int i = 0; i < tanks.length; i++) sharedTanks[i] = new FluidTank(tanks[i].getTankType(), 0);
+			FluidTank[] sharedTanks = runtimeSharedTanks;
+			for(int i = 0; i < sharedTanks.length; i++) {
+				sharedTanks[i].setFill(0);
+				sharedTanks[i].changeTankSize(0);
+				sharedTanks[i].setTankType(tanks[i].getTankType());
+			}
 
 			for(TileEntityWatz segment : segments) {
 				segment.setupCoolant();
@@ -304,15 +400,6 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 		xenon -= xenonDecay;
 
 		if(turnedOn) {
-			List<ItemStack> pellets = new ArrayList();
-
-			for(int i = 0; i < 24; i++) {
-				ItemStack stack = slots[i];
-				if(stack != null && stack.getItem() == ModItems.watz_pellet) {
-					pellets.add(stack);
-				}
-			}
-
 			double baseFlux = 0D;
 
 			/* init base flux */

@@ -7,6 +7,7 @@ import java.util.List;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.inventory.material.MaterialShapes;
 import com.hbm.inventory.material.Mats.MaterialStack;
+import com.hbm.machine.MachineExecutionStrategy;
 
 import api.hbm.block.ICrucibleAcceptor;
 import net.minecraft.block.Block;
@@ -15,20 +16,47 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityFoundryChannel extends TileEntityFoundryBase {
+	private static final int TASK_FLOW = 1;
 	
 	public int nextUpdate;
 	public int lastFlow = 0;
 	
 	@Override
 	public void updateEntity() {
+		if(worldObj.isRemote) super.updateEntity();
+	}
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		super.onMachineRuntimeDirty(causes);
+		if(worldObj != null && !worldObj.isRemote && amount > 0 && type != null)
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + Math.max(nextUpdate, 1), TASK_FLOW, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_FLOW || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		this.nextUpdate = 0;
+		com.hbm.inventory.material.NTMMaterial oldType = this.type;
+		int oldAmount = this.amount;
+		runFlowStep();
+		this.markMaterialMutation(oldType, oldAmount);
+		if(amount > 0 && type != null)
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + Math.max(nextUpdate, 1), TASK_FLOW, 0);
+	}
+
+	private void runFlowStep() {
 		
 		if(!worldObj.isRemote) {
 			
 			if(this.type == null && this.amount != 0) {
 				this.amount = 0;
 			}
-			
-			nextUpdate--;
 			
 			if(nextUpdate <= 0 && this.amount > 0 && this.type != null) {
 				
@@ -70,6 +98,8 @@ public class TileEntityFoundryChannel extends TileEntityFoundryBase {
 						
 						if(b instanceof TileEntityFoundryChannel) {
 							TileEntityFoundryChannel acc = (TileEntityFoundryChannel) b;
+							com.hbm.inventory.material.NTMMaterial oldType = acc.type;
+							int oldAmount = acc.amount;
 							
 							if(acc.type == null || acc.type == this.type || acc.amount == 0) {
 								acc.type = this.type;
@@ -93,6 +123,7 @@ public class TileEntityFoundryChannel extends TileEntityFoundryBase {
 										acc.amount += diff;
 									}
 								}
+							acc.markMaterialMutation(oldType, oldAmount);
 							}
 						}
 					}
@@ -101,11 +132,10 @@ public class TileEntityFoundryChannel extends TileEntityFoundryBase {
 			
 			if(this.amount == 0) {
 				this.lastFlow = 0;
-				this.nextUpdate = 5;
+				this.nextUpdate = 0;
 			}
 		}
 		
-		super.updateEntity();
 	}
 
 	@Override

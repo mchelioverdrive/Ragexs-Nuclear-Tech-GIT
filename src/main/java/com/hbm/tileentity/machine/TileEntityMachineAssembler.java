@@ -89,9 +89,7 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 	
 	@Override
 	public void updateEntity() {
-		if(!worldObj.isRemote) {
-			this.networkPackNTIfDirty(150);
-		} else {
+		if(worldObj.isRemote) {
 			
 			float volume = this.getVolume(2F);
 
@@ -149,6 +147,7 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 		} else {
 			this.runAccountingTick(now);
 		}
+		this.networkPackNTIfDirty(150);
 	}
 
 	@Override
@@ -157,6 +156,7 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 		this.nextRuntimeTick = -1L;
 		if(!this.runtimeStateInitialized) return;
 		this.runAccountingTick(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(150);
 	}
 
 	@Override
@@ -192,6 +192,8 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 			this.markMachineDirty((templateChanged || inventoryChanged ? MachineDirtyCause.INVENTORY : 0) | (recipeChanged ? MachineDirtyCause.RECIPE : 0) | (upgradeChanged ? MachineDirtyCause.CONFIGURATION : 0) | (this.energyQuanta != this.observedPower ? MachineDirtyCause.ENERGY : 0));
 		}
 		this.updateConnections();
+		this.markNetworkDirty();
+		this.networkPackNTIfDirty(150);
 	}
 
 	private boolean upgradeLegacyMetadata() {
@@ -279,7 +281,6 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 		if(oldPower != this.energyQuanta || oldProgress != this.progress[0] || oldMaxProgress != this.maxProgress[0] || oldProgressing != this.isProgressing || completed) {
 			this.markDirty();
 			this.markNetworkDirty();
-			this.networkPackNTIfDirty(150);
 		}
 		if(this.isProgressing || this.hasBatteryWork() || this.cachedEligible && this.energyQuanta >= EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts)) {
 			this.nextRuntimeTick = now + 1L;

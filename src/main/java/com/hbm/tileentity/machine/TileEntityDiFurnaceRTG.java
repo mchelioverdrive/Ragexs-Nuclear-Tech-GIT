@@ -5,6 +5,8 @@ import com.hbm.inventory.container.ContainerMachineDiFurnaceRTG;
 import com.hbm.inventory.gui.GUIMachineDiFurnaceRTG;
 import com.hbm.inventory.recipes.BlastFurnaceRecipes;
 import com.hbm.items.machine.ItemRTGPellet;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.CompatEnergyControl;
@@ -20,6 +22,9 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 
 public class TileEntityDiFurnaceRTG extends TileEntityMachineBase implements IGUIProvider, IInfoProviderEC {
+	private static final int TASK_SMELT = 1;
+	private boolean runtimeInitialized;
+	private ItemStack runtimeRecipeOutput;
 	
 	public short progress;
 	private short processSpeed = 0;
@@ -34,11 +39,55 @@ public class TileEntityDiFurnaceRTG extends TileEntityMachineBase implements IGU
 		super(9);
 	}
 
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		runtimeInitialized = true;
+		if((causes & (MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.LIFECYCLE)) != 0) this.refreshRecipe();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimePacket();
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(cadence == 20 && worldObj != null && !worldObj.isRemote && runtimeInitialized) this.sendRuntimePacket();
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_SMELT || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.runFurnaceStep();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimePacket();
+	}
+
+	private void refreshRecipe() {
+		runtimeRecipeOutput = slots[0] != null && slots[1] != null ? BlastFurnaceRecipes.getOutput(slots[0], slots[1]) : null;
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(RTGUtil.hasHeat(slots, rtgIn) || progress > 0) this.scheduleMachineTransition(now + 1L, TASK_SMELT, 0);
+		else {
+			processSpeed = 0;
+			if(progress == 0) MachineDiFurnaceRTG.updateBlockState(false, worldObj, xCoord, yCoord, zCoord);
+			this.cancelMachineTransition(TASK_SMELT, 0);
+		}
+	}
+
+	private void sendRuntimePacket() {
+		NBTTagCompound data = new NBTTagCompound();
+		data.setShort("progress", progress);
+		data.setShort("speed", processSpeed);
+		data.setByteArray("modes", new byte[] { sideUpper, sideLower });
+		networkPack(data, 10);
+	}
+
 	public boolean canProcess() {
-		if ((slots[0] == null || slots[1] == null) && !hasPower())
+		if (slots[0] == null || slots[1] == null || !hasPower())
 			return false;
 		
-		ItemStack recipeResult = BlastFurnaceRecipes.getOutput(slots[0], slots[1]);
+		ItemStack recipeResult = runtimeInitialized && worldObj != null && !worldObj.isRemote ? runtimeRecipeOutput : BlastFurnaceRecipes.getOutput(slots[0], slots[1]);
 		if (recipeResult == null)
 			return false;
 		else if (slots[2] == null)
@@ -55,10 +104,11 @@ public class TileEntityDiFurnaceRTG extends TileEntityMachineBase implements IGU
 	
 	@Override
 	public void updateEntity() {
-		
-		if(worldObj.isRemote)
-			return;
-		
+		// Pellet decay and smelting are driven by MachineRuntime.
+	}
+
+	private void runFurnaceStep() {
+		processSpeed = (short) RTGUtil.updateRTGs(slots, rtgIn);
 		if(canProcess() && hasPower()) {
 			progress += processSpeed;
 			if(progress >= timeRequired) {
@@ -71,11 +121,6 @@ public class TileEntityDiFurnaceRTG extends TileEntityMachineBase implements IGU
 		
 		MachineDiFurnaceRTG.updateBlockState(isProcessing() || (canProcess() && hasPower()), getWorldObj(), xCoord, yCoord, zCoord);
 
-		NBTTagCompound data = new NBTTagCompound();
-		data.setShort("progress", progress);
-		data.setShort("speed", processSpeed);
-		data.setByteArray("modes", new byte[] {(byte) sideUpper, (byte) sideLower});
-		networkPack(data, 10);
 	}
 	
 	@Override
@@ -92,7 +137,8 @@ public class TileEntityDiFurnaceRTG extends TileEntityMachineBase implements IGU
 	private void processItem() {
 		
 		if(canProcess()) {
-			ItemStack recipeOut = BlastFurnaceRecipes.getOutput(slots[0], slots[1]);
+			ItemStack recipeOut = runtimeRecipeOutput;
+			if(recipeOut == null) return;
 			if(slots[2] == null)
 				slots[2] = recipeOut.copy();
 			else if(slots[2].isItemEqual(recipeOut))
@@ -107,6 +153,7 @@ public class TileEntityDiFurnaceRTG extends TileEntityMachineBase implements IGU
 					slots[i] = null;
 			}
 			markDirty();
+			this.refreshRecipe();
 		}
 	}
 
@@ -135,10 +182,7 @@ public class TileEntityDiFurnaceRTG extends TileEntityMachineBase implements IGU
 
 	@Override
 	public void setInventorySlotContents(int i, ItemStack stack) {
-		slots[i] = stack;
-		if(stack != null && stack.stackSize > getInventoryStackLimit()) {
-			stack.stackSize = getInventoryStackLimit();
-		}
+		super.setInventorySlotContents(i, stack);
 	}
 
 	@Override
@@ -147,7 +191,6 @@ public class TileEntityDiFurnaceRTG extends TileEntityMachineBase implements IGU
 	}
 
 	public boolean hasPower() {
-		processSpeed = (short) RTGUtil.updateRTGs(slots, rtgIn);
 		return processSpeed >= 15;
 	}
 

@@ -14,6 +14,8 @@ import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.fluid.trait.FT_Coolable;
 import com.hbm.inventory.fluid.trait.FT_Coolable.CoolingType;
 import com.hbm.main.MainRegistry;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.NBTPacket;
 import com.hbm.sound.AudioWrapper;
@@ -43,6 +45,10 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyProviderMK2, INBTPacketReceiver, IFluidStandardTransceiver, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IConfigurableMachine, IFluidCopiable {
+	private static final int TASK_STEAM = 1;
+	private boolean runtimeEnergyMutation;
+	private boolean runtimeFluidMutation;
+	private DirPos[] runtimeConnections;
 	public static final int TRIP_NONE = 0;
 	public static final int TRIP_OVERPRESSURE = 1;
 	public static final int TRIP_OVERSPEED = 2;
@@ -72,6 +78,9 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 		tanks = new FluidTank[2];
 		tanks[0] = new FluidTank(Fluids.STEAM, inputTankSize);
 		tanks[1] = new FluidTank(Fluids.SPENTSTEAM, outputTankSize);
+		FluidTank.ChangeListener listener = changed -> { if(!runtimeFluidMutation && worldObj != null && !worldObj.isRemote) markMachineFluidDirty(); };
+		tanks[0].setChangeListener(listener);
+		tanks[1].setChangeListener(listener);
 
 		Random rand = new Random();
 		audioDesync = rand.nextFloat() * 0.05F;
@@ -102,8 +111,55 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 
 
 	@Override
-	public void updateEntity() {
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
 
+	private boolean shouldSimulate() {
+		return energyQuanta > 0 || tanks[1].getFill() > 0 || turnTimer > 0 || (!tripped && tanks[0].getFill() > 0);
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(tripped && worldObj.isBlockIndirectlyGettingPowered(xCoord, yCoord, zCoord)) resetTrip();
+		if(shouldSimulate()) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_STEAM, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_STEAM || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		runtimeEnergyMutation = true;
+		runtimeFluidMutation = true;
+		try { runSteamStep(); }
+		finally {
+			runtimeFluidMutation = false;
+			runtimeEnergyMutation = false;
+		}
+		if(shouldSimulate()) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_STEAM, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
+		if(!tripped) for(DirPos pos : getConPos())
+			this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+		if(!shouldSimulate()) sendRuntimePacket();
+		onMachineRuntimeDirty(0);
+	}
+
+	private void sendRuntimePacket() {
+		NBTTagCompound data = new NBTTagCompound();
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+		data.setInteger("operational", turnTimer);
+		data.setBoolean("tripped", tripped);
+		data.setInteger("tripCause", tripCause);
+		tanks[0].writeToNBT(data, "inputTank");
+		tanks[1].writeToNBT(data, "outputTank");
+		this.networkPack(data, 150);
+	}
+
+	private void runSteamStep() {
 		if(!worldObj.isRemote) {
 			// Export stored power before evaluating a reset or an overspeed trip. This
 			// DOES NOT : lets a newly connected load drain a full buffer so redstone can reset an
@@ -117,7 +173,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 				resetTrip();
 			}
 
-			this.info = new double[3];
+			java.util.Arrays.fill(this.info, 0D);
 
 			boolean operational = false;
 			boolean valid = false;
@@ -157,7 +213,6 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 
 			for(DirPos pos : this.getConPos()) {
 				this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				if(!tripped) this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 
 			if(energyQuanta > maxPower)
@@ -176,7 +231,13 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 			tanks[1].writeToNBT(data, "outputTank");
 			this.networkPack(data, 150);
 
-		} else {
+		}
+	}
+
+	@Override
+	public void updateEntity() {
+		if(!worldObj.isRemote) return;
+
 
 			this.lastRotor = this.rotor;
 			this.rotor += this.fanAcceleration;
@@ -225,7 +286,6 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 					}
 				}
 			}
-		}
 	}
 
 	public void onLeverPull(FluidType previous) {
@@ -239,6 +299,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 		this.tripped = false;
 		this.tripCause = TRIP_NONE;
 		this.markDirty();
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 
 	private void trip(int cause) {
@@ -277,13 +338,15 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 	}
 
 	public DirPos[] getConPos() {
+		if(runtimeConnections != null) return runtimeConnections;
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
-		return new DirPos[] {
+		runtimeConnections = new DirPos[] {
 				new DirPos(xCoord + dir.offsetX * 5, yCoord + 2, zCoord + dir.offsetZ * 5, dir),
 				new DirPos(xCoord + rot.offsetX * 3, yCoord, zCoord + rot.offsetZ * 3, rot),
 				new DirPos(xCoord - rot.offsetX * 3, yCoord, zCoord - rot.offsetZ * 3, rot.getOpposite())
 		};
+		return runtimeConnections;
 	}
 
 	public void networkPack(NBTTagCompound nbt, int range) {
@@ -351,6 +414,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override

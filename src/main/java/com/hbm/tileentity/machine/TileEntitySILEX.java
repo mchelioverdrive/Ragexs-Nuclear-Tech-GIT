@@ -10,6 +10,8 @@ import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.gui.GUISILEX;
 import com.hbm.inventory.recipes.SILEXRecipes;
 import com.hbm.inventory.recipes.SILEXRecipes.SILEXRecipe;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemFELCrystal.EnumWavelengths;
 import com.hbm.tileentity.IGUIProvider;
@@ -34,6 +36,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntitySILEX extends TileEntityMachineBase implements IFluidStandardReceiver, IGUIProvider, IInfoProviderEC {
+	private static final int TASK_PROCESS = 1;
 
 	public EnumWavelengths mode = EnumWavelengths.NULL;
 	public boolean hasLaser;
@@ -53,6 +56,7 @@ public class TileEntitySILEX extends TileEntityMachineBase implements IFluidStan
 	public TileEntitySILEX() {
 		super(11);
 		tank = new FluidTank(Fluids.PEROXIDE, 16000);
+		this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -61,16 +65,54 @@ public class TileEntitySILEX extends TileEntityMachineBase implements IFluidStan
 	}
 
 	@Override
-	public void updateEntity() {
+	public void updateEntity() { }
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	public void acceptLaserMode(EnumWavelengths wavelength) {
+		if(this.mode == wavelength) return;
+		this.mode = wavelength;
+		this.markMachineDirty(MachineDirtyCause.ENVIRONMENT);
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj != null && !worldObj.isRemote && shouldProcess())
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_PROCESS, 0);
+	}
+
+	private boolean shouldProcess() {
+		return mode != EnumWavelengths.NULL || slots[0] != null || slots[4] != null || (tank.getFill() > 0 && currentFill < maxFill);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PROCESS || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		this.beginMachineFluidMutation();
+		try { runSilexStep(); }
+		finally { this.endMachineFluidMutation(); }
+		if(shouldProcess()) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_PROCESS, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
+		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10).getRotation(ForgeDirection.UP);
+		this.trySubscribe(tank.getTankType(), worldObj, xCoord + dir.offsetX * 2, yCoord + 1, zCoord + dir.offsetZ * 2, dir);
+		this.trySubscribe(tank.getTankType(), worldObj, xCoord - dir.offsetX * 2, yCoord + 1, zCoord - dir.offsetZ * 2, dir.getOpposite());
+		this.networkPackNT(50);
+		this.onMachineRuntimeDirty(0);
+	}
+
+	private void runSilexStep() {
 
 		if(!worldObj.isRemote) {
 
 			tank.setType(1, 1, slots);
 			tank.loadTank(2, 3, slots);
-
-			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10).getRotation(ForgeDirection.UP);
-			this.trySubscribe(tank.getTankType(), worldObj, xCoord + dir.offsetX * 2, yCoord + 1, zCoord + dir.offsetZ * 2, dir);
-			this.trySubscribe(tank.getTankType(), worldObj, xCoord - dir.offsetX * 2, yCoord + 1, zCoord - dir.offsetZ * 2, dir.getOpposite());
 
 			loadFluid();
 
@@ -124,6 +166,7 @@ public class TileEntitySILEX extends TileEntityMachineBase implements IFluidStan
 
 		this.currentFill = 0;
 		this.current = null;
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 
 	public int getProgressScaled(int i) {

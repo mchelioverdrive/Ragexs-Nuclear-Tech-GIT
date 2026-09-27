@@ -2,11 +2,14 @@ package com.hbm.tileentity.machine.pile;
 
 import com.hbm.blocks.ModBlocks;
 import com.hbm.config.GeneralConfig;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 
 import api.hbm.block.IPileNeutronReceiver;
 import net.minecraft.nbt.NBTTagCompound;
 
 public class TileEntityPileBreedingFuel extends TileEntityPileBase implements IPileNeutronReceiver {
+	private static final int TASK_REACTION = 1;
 
 	public int neutrons;
 	public int lastNeutrons;
@@ -18,7 +21,25 @@ public class TileEntityPileBreedingFuel extends TileEntityPileBase implements IP
 	public static final double maxHeat = 500D;
 
 	@Override
-	public void updateEntity() {
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj != null && !worldObj.isRemote && (heat > 0 || progress > 0 || neutrons > 0))
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_REACTION, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_REACTION || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		this.runReaction();
+		if(heat > 0 || progress > 0 || neutrons > 0)
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_REACTION, 0);
+	}
+
+	private void runReaction() {
 		if(!worldObj.isRemote) {
 			react();
 
@@ -69,6 +90,7 @@ public class TileEntityPileBreedingFuel extends TileEntityPileBase implements IP
 	@Override
 	public void receiveNeutrons(int n) {
 		this.neutrons += n;
+		this.markMachineDirty(MachineDirtyCause.ENVIRONMENT);
 	}
 
 	@Override

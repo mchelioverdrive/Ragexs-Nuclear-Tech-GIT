@@ -9,6 +9,7 @@ import com.hbm.entity.mob.EntityCyberCrab;
 import com.hbm.entity.mob.EntityTeslaCrab;
 import com.hbm.lib.Library;
 import com.hbm.lib.ModDamageSource;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.ArmorUtil;
 
@@ -29,6 +30,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityTesla extends TileEntityMachineBase implements IEnergyReceiverMK2 {
+	private static final int TASK_ZAP = 1;
+	private boolean runtimeEnergyMutation;
 
 	public long energyQuanta;
 	public static final long maxPower = 100000;
@@ -48,18 +51,28 @@ public class TileEntityTesla extends TileEntityMachineBase implements IEnergyRec
 	}
 
 	@Override
-	public void updateEntity() {
+	public void updateEntity() { }
 
-		if(!worldObj.isRemote) {
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
 
-			this.updateConnections();
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj != null && !worldObj.isRemote && (energyQuanta >= 5000 || worldObj.getBlock(xCoord, yCoord - 1, zCoord) == ModBlocks.meteor_battery))
+			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_ZAP, 0);
+	}
 
-			this.targets.clear();
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_ZAP || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		this.targets.clear();
+		runtimeEnergyMutation = true;
+		if(worldObj.getBlock(xCoord, yCoord - 1, zCoord) == ModBlocks.meteor_battery)
+			this.setStoredEnergyQuanta(maxPower);
 
-			if(worldObj.getBlock(xCoord, yCoord - 1, zCoord) == ModBlocks.meteor_battery)
-				this.setStoredEnergyQuanta(maxPower);
-
-			if(energyQuanta >= 5000) {
+		if(energyQuanta >= 5000) {
 				this.setStoredEnergyQuanta(this.energyQuanta - 5000);
 
 				double dx = xCoord + 0.5;
@@ -67,9 +80,9 @@ public class TileEntityTesla extends TileEntityMachineBase implements IEnergyRec
 				double dz = zCoord + 0.5;
 
 				this.targets = zap(worldObj, dx, dy, dz, range, null);
-			}
+		}
 
-			NBTTagCompound data = new NBTTagCompound();
+		NBTTagCompound data = new NBTTagCompound();
 			data.setShort("length", (short)targets.size());
 			int i = 0;
 			for(double[] d : this.targets) {
@@ -79,8 +92,16 @@ public class TileEntityTesla extends TileEntityMachineBase implements IEnergyRec
 				i++;
 			}
 
-			this.networkPack(data, 100);
-		}
+		this.networkPack(data, 100);
+		runtimeEnergyMutation = false;
+		this.onMachineRuntimeDirty(0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
+		this.updateConnections();
+		this.onMachineRuntimeDirty(0);
 	}
 
 	private void updateConnections() {
@@ -166,6 +187,7 @@ public class TileEntityTesla extends TileEntityMachineBase implements IEnergyRec
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override

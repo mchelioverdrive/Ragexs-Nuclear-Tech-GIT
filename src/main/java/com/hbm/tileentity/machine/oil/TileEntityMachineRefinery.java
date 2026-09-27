@@ -55,6 +55,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 	public static final long maxPower = 1000;
 	public FluidTank[] tanks;
 	private static final int TASK_ACCOUNTING = 1;
+	private static final int TASK_FIRE = 2;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
@@ -159,7 +160,6 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 				return;
 			}
 
-			if(this.hasExploded && this.onFire) this.updateFireSimulation();
 		} else {
 
 			if(this.isOn) audioTime = 20;
@@ -197,9 +197,12 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 		if(hasExploded) {
 			isOn = false;
 			this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+			if(onFire && hasFireFuel()) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_FIRE, TASK_SLOT_MAIN);
+			else this.cancelMachineTransition(TASK_FIRE, TASK_SLOT_MAIN);
 			runtimeInitialized = true;
 			return;
 		}
+		this.cancelMachineTransition(TASK_FIRE, TASK_SLOT_MAIN);
 		this.refreshCachedRecipe();
 		this.configureRecipeTanks();
 		runtimeInitialized = true;
@@ -208,6 +211,12 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType == TASK_FIRE && taskSlot == TASK_SLOT_MAIN) {
+			if(worldObj == null || worldObj.isRemote || !hasExploded || !onFire || !hasFireFuel()) return;
+			this.updateFireSimulation();
+			if(!isInvalid() && hasExploded && onFire && hasFireFuel()) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_FIRE, TASK_SLOT_MAIN);
+			return;
+		}
 		if(taskType != TASK_ACCOUNTING || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized || hasExploded) return;
 		long now = worldObj.getTotalWorldTime();
 		long beforePower = energyQuanta;
@@ -331,6 +340,11 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 		return changed;
 	}
 
+	private boolean hasFireFuel() {
+		for(FluidTank tank : tanks) if(tank.getFill() > 0) return true;
+		return false;
+	}
+
 	private void updateFireSimulation() {
 		boolean hasFuel = false;
 		this.beginMachineFluidMutation();
@@ -341,6 +355,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 			}
 		} finally { this.endMachineFluidMutation(); }
 		if(!hasFuel) return;
+		this.markDirty();
 		List<Entity> affected = worldObj.getEntitiesWithinAABB(Entity.class, AxisAlignedBB.getBoundingBox(xCoord - 1.5, yCoord, zCoord - 1.5, xCoord + 2.5, yCoord + 8, zCoord + 2.5));
 		for(Entity entity : affected) entity.setFire(5);
 		Random rand = worldObj.rand;

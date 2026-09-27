@@ -12,6 +12,8 @@ import com.hbm.inventory.material.Mats.MaterialStack;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemICFPellet;
 import com.hbm.items.machine.ItemICFPellet.EnumICFFuel;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
@@ -27,6 +29,9 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 
 public class TileEntityICFPress extends TileEntityMachineBase implements IFluidStandardReceiver, IGUIProvider, IFluidCopiable {
+	private static final int TASK_PRESS = 0;
+	private boolean inventoryFingerprintInitialized;
+	private int observedInventoryFingerprint;
 
 	public FluidTank[] tanks;
 	public int muon;
@@ -37,6 +42,8 @@ public class TileEntityICFPress extends TileEntityMachineBase implements IFluidS
 		this.tanks = new FluidTank[2];
 		this.tanks[0] = new FluidTank(Fluids.DEUTERIUM, 16_000);
 		this.tanks[1] = new FluidTank(Fluids.TRITIUM, 16_000);
+		trackMachineFluidTank(this.tanks[0]);
+		trackMachineFluidTank(this.tanks[1]);
 	}
 
 	@Override
@@ -45,17 +52,97 @@ public class TileEntityICFPress extends TileEntityMachineBase implements IFluidS
 	}
 
 	@Override
-	public void updateEntity() {
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		trackMachineFluidTank(tanks[0]);
+		trackMachineFluidTank(tanks[1]);
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY)) != 0) {
+			beginMachineFluidMutation();
+			try {
+				tanks[0].setType(6, slots);
+				tanks[1].setType(7, slots);
+			} finally { endMachineFluidMutation(); }
+		}
+		if(needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_PRESS, 0);
+		else cancelMachineTransition(TASK_PRESS, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_PRESS || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		int before = inventoryFingerprint();
+		runPressStep();
+		if(before != inventoryFingerprint()) {
+			markDirty();
+			markMachineDirty(MachineDirtyCause.INVENTORY);
+			markNetworkDirty();
+		}
+		networkPackNTIfDirty(15);
+		if(!isInvalid() && needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_PRESS, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5 && observeInventoryFingerprint()) markMachineDirty(MachineDirtyCause.INVENTORY);
+		if(cadence == 20) {
+			this.subscribeToAllAround(tanks[0].getTankType(), this);
+			this.subscribeToAllAround(tanks[1].getTankType(), this);
+			if(!needsSimulation()) networkPackNTIfDirty(15);
+		}
+	}
+
+	private boolean needsSimulation() {
+		if(canPressNow()) return true;
+		return muon <= 0 && slots[2] != null && slots[2].getItem() == ModItems.particle_muon && canStoreMuonContainer();
+	}
+
+	private boolean canPressNow() {
+		if(slots[0] == null || slots[0].getItem() != ModItems.icf_pellet_empty || slots[1] != null) return false;
+		ItemICFPellet.init();
+		EnumICFFuel fuel1 = getFuel(tanks[0], slots[4], 0);
+		EnumICFFuel fuel2 = getFuel(tanks[1], slots[5], 1);
+		return fuel1 != null && fuel2 != null && fuel1 != fuel2;
+	}
+
+	private boolean canStoreMuonContainer() {
+		ItemStack container = slots[2].getItem().getContainerItem(slots[2]);
+		if(container == null || slots[3] == null) return true;
+		return slots[3].getItem() == container.getItem() && slots[3].getItemDamage() == container.getItemDamage() && slots[3].stackSize < slots[3].getMaxStackSize();
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private void runPressStep() {
 
 		if(!worldObj.isRemote) {
 
 			this.tanks[0].setType(6, slots);
 			this.tanks[1].setType(7, slots);
-
-			if(worldObj.getTotalWorldTime() % 20 == 0) {
-				this.subscribeToAllAround(tanks[0].getTankType(), this);
-				this.subscribeToAllAround(tanks[1].getTankType(), this);
-			}
 
 			if(muon <= 0 && slots[2] != null && slots[2].getItem() == ModItems.particle_muon) {
 
@@ -81,9 +168,11 @@ public class TileEntityICFPress extends TileEntityMachineBase implements IFluidS
 
 			press();
 
-			this.networkPackNT(15);
 		}
 	}
+
+	@Override
+	public void updateEntity() { }
 
 	public void press() {
 		if(slots[0] == null || slots[0].getItem() != ModItems.icf_pellet_empty) return;

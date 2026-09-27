@@ -6,6 +6,7 @@ import java.util.Map.Entry;
 
 import com.hbm.blocks.ITooltipProvider;
 import com.hbm.blocks.ModBlocks;
+import com.hbm.machine.MachineDirtyCause;
 import com.hbm.blocks.machine.BlockPWR.TileEntityBlockPWR;
 import com.hbm.lib.RefStrings;
 import com.hbm.main.MainRegistry;
@@ -145,6 +146,7 @@ public class MachinePWRController extends BlockContainer implements ITooltipProv
 			controller.setup(assembly, fuelRods);
 		}
 		controller.assembled = !errored;
+		controller.markMachineDirty(MachineDirtyCause.TOPOLOGY);
 		
 		assembly.clear();
 		fuelRods.clear();

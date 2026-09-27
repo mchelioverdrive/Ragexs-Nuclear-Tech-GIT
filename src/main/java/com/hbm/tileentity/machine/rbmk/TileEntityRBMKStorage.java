@@ -23,7 +23,14 @@ public class TileEntityRBMKStorage extends TileEntityRBMKSlottedBase implements 
 	}
 	
 	@Override
-	public void updateEntity() {
+	protected boolean needsRBMKSimulation() {
+		if(super.needsRBMKSimulation()) return true;
+		for(int i = 1; i < slots.length; i++) if(slots[i] != null && slots[i - 1] == null) return true;
+		return false;
+	}
+
+	@Override
+	protected void runRBMKColumnStep() {
 		
 		if(!worldObj.isRemote && worldObj.getTotalWorldTime() % 10 == 0) {
 			
@@ -36,7 +43,7 @@ public class TileEntityRBMKStorage extends TileEntityRBMKSlottedBase implements 
 			}
 		}
 		
-		super.updateEntity();
+		super.runRBMKColumnStep();
 	}
 
 	@Override

@@ -1,11 +1,29 @@
 package com.hbm.tileentity.machine.pile;
 
 import com.hbm.blocks.ModBlocks;
+import com.hbm.machine.MachineExecutionStrategy;
 
 public class TileEntityPileSource extends TileEntityPileBase {
+	private static final int TASK_EMIT = 1;
 
 	@Override
-	public void updateEntity() {
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj != null && !worldObj.isRemote) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_EMIT, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_EMIT || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		this.emitNeutrons();
+		this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_EMIT, 0);
+	}
+
+	private void emitNeutrons() {
 
 		if(!worldObj.isRemote) {
 

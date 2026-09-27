@@ -46,6 +46,7 @@ public abstract class TileEntityFoundryCastingBase extends TileEntityFoundryBase
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		super.onMachineRuntimeDirty(causes);
 		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.CONFIGURATION)) != 0) this.refreshCastingState();
 		runtimeInitialized = true;
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());

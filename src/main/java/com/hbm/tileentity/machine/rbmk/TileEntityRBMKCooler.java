@@ -28,14 +28,50 @@ public class TileEntityRBMKCooler extends TileEntityRBMKBase implements IFluidSt
 		super();
 
 		this.tank = new FluidTank(Fluids.CRYOGEL, 8_000);
+		this.tank.setChangeListener(fluid -> markMachineFluidDirty());
+	}
+
+	@Override
+	protected boolean needsRBMKSimulation() {
+		return super.needsRBMKSimulation() || tank.getFill() > 0;
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int interval) {
+		super.onMachineCoarsePoll(interval);
+		if(interval == 20) this.trySubscribe(tank.getTankType(), worldObj, xCoord, yCoord - 1, zCoord, Library.NEG_Y);
 	}
 	@Override
 	public void updateEntity() {
+		if(worldObj.isRemote) {
 
-		if (!worldObj.isRemote) {
+			if (this.lastCooled > 100) {
+				for (int i = 0; i < 2; i++) {
+					worldObj.spawnParticle("flame", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
+					worldObj.spawnParticle("smoke", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
+				}
 
-			if (this.worldObj.getTotalWorldTime() % 20 == 0)
-				this.trySubscribe(tank.getTankType(), worldObj, xCoord, yCoord - 1, zCoord, Library.NEG_Y);
+				if (worldObj.rand.nextInt(20) == 0)
+					worldObj.spawnParticle("lava", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.0, 0);
+			} else if (this.lastCooled > 50) {
+				for (int i = 0; i < 2; i++) {
+					worldObj.spawnParticle("cloud", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, worldObj.rand.nextGaussian() * 0.05, 0.2, worldObj.rand.nextGaussian() * 0.05);
+				}
+			} else if (this.lastCooled > 0) {
+
+				if (worldObj.getTotalWorldTime() % 2 == 0)
+					worldObj.spawnParticle("cloud", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
+
+			}
+
+		}
+	}
+
+	@Override
+	protected void runRBMKColumnStep() {
+
+
+
 
 			if ((int) (this.heat) > 750) {
 
@@ -59,29 +95,8 @@ public class TileEntityRBMKCooler extends TileEntityRBMKBase implements IFluidSt
 				this.lastCooled = 0;
 			}
 
-		} else {
 
-			if (this.lastCooled > 100) {
-				for (int i = 0; i < 2; i++) {
-					worldObj.spawnParticle("flame", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
-					worldObj.spawnParticle("smoke", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
-				}
-
-				if (worldObj.rand.nextInt(20) == 0)
-					worldObj.spawnParticle("lava", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.0, 0);
-			} else if (this.lastCooled > 50) {
-				for (int i = 0; i < 2; i++) {
-					worldObj.spawnParticle("cloud", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, worldObj.rand.nextGaussian() * 0.05, 0.2, worldObj.rand.nextGaussian() * 0.05);
-				}
-			} else if (this.lastCooled > 0) {
-
-				if (worldObj.getTotalWorldTime() % 2 == 0)
-					worldObj.spawnParticle("cloud", xCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, yCoord + 4.5, zCoord + 0.25 + worldObj.rand.nextDouble() * 0.5, 0, 0.2, 0);
-
-			}
-		}
-
-		super.updateEntity();
+		super.runRBMKColumnStep();
 	}
 
 	@Override

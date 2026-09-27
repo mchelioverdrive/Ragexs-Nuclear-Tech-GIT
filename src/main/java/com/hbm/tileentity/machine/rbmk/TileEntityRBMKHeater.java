@@ -36,6 +36,19 @@ public class TileEntityRBMKHeater extends TileEntityRBMKSlottedBase implements I
 		super(1);
 		this.feed = new FluidTank(Fluids.COOLANT, 16_000);
 		this.steam = new FluidTank(Fluids.COOLANT_HOT, 16_000);
+		feed.setChangeListener(tank -> markMachineFluidDirty());
+		steam.setChangeListener(tank -> markMachineFluidDirty());
+	}
+
+	@Override
+	protected boolean needsRBMKSimulation() {
+		return super.needsRBMKSimulation() || feed.getFill() > 0 || steam.getFill() > 0;
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int interval) {
+		super.onMachineCoarsePoll(interval);
+		if(interval == 20) this.trySubscribe(feed.getTankType(), worldObj, xCoord, yCoord - 1, zCoord, Library.NEG_Y);
 	}
 
 	@Override
@@ -44,7 +57,7 @@ public class TileEntityRBMKHeater extends TileEntityRBMKSlottedBase implements I
 	}
 	
 	@Override
-	public void updateEntity() {
+	protected void runRBMKColumnStep() {
 		
 		if(!worldObj.isRemote) {
 			
@@ -73,13 +86,12 @@ public class TileEntityRBMKHeater extends TileEntityRBMKSlottedBase implements I
 				steam.setTankType(Fluids.NONE);
 			}
 			
-			this.trySubscribe(feed.getTankType(), worldObj, xCoord, yCoord - 1, zCoord, Library.NEG_Y);
 			for(DirPos pos : getOutputPos()) {
 				if(this.steam.getFill() > 0) this.sendFluid(steam, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 		}
 		
-		super.updateEntity();
+		super.runRBMKColumnStep();
 	}
 	
 	protected DirPos[] getOutputPos() {

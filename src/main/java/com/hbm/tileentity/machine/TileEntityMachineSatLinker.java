@@ -3,8 +3,11 @@ package com.hbm.tileentity.machine;
 import com.hbm.inventory.container.ContainerMachineSatLinker;
 import com.hbm.inventory.gui.GUIMachineSatLinker;
 import com.hbm.items.ISatChip;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.saveddata.SatelliteSavedData;
 import com.hbm.tileentity.IGUIProvider;
+import com.hbm.tileentity.TileEntityLoadedBase;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -14,10 +17,13 @@ import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 
-public class TileEntityMachineSatLinker extends TileEntity implements ISidedInventory, IGUIProvider {
+public class TileEntityMachineSatLinker extends TileEntityLoadedBase implements ISidedInventory, IGUIProvider {
+	private static final int TASK_LINK = 0;
+	private boolean inventoryFingerprintInitialized;
+	private int observedInventoryFingerprint;
+
 	private ItemStack[] slots;
 	
 	//public static final int maxFill = 64 * 3;
@@ -47,6 +53,8 @@ public class TileEntityMachineSatLinker extends TileEntity implements ISidedInve
 		if(slots[i] != null) {
 			ItemStack itemStack = slots[i];
 			slots[i] = null;
+			markDirty();
+			markMachineDirty(com.hbm.machine.MachineDirtyCause.INVENTORY);
 			return itemStack;
 		} else {
 			return null;
@@ -59,6 +67,8 @@ public class TileEntityMachineSatLinker extends TileEntity implements ISidedInve
 		if(itemStack != null && itemStack.stackSize > getInventoryStackLimit()) {
 			itemStack.stackSize = getInventoryStackLimit();
 		}
+		markDirty();
+		markMachineDirty(MachineDirtyCause.INVENTORY);
 	}
 
 	@Override
@@ -103,14 +113,18 @@ public class TileEntityMachineSatLinker extends TileEntity implements ISidedInve
 	public ItemStack decrStackSize(int i, int j) {
 		if(slots[i] != null) {
 			if(slots[i].stackSize <= j) {
-				ItemStack itemStack = slots[i];
-				slots[i] = null;
-				return itemStack;
+			ItemStack itemStack = slots[i];
+			slots[i] = null;
+			markDirty();
+			markMachineDirty(MachineDirtyCause.INVENTORY);
+			return itemStack;
 			}
 			ItemStack itemStack1 = slots[i].splitStack(j);
 			if (slots[i].stackSize == 0) {
 				slots[i] = null;
 			}
+			markDirty();
+			markMachineDirty(MachineDirtyCause.INVENTORY);
 			
 			return itemStack1;
 		} else {
@@ -166,9 +180,73 @@ public class TileEntityMachineSatLinker extends TileEntity implements ISidedInve
 	}
 	
 	@Override
-	public void updateEntity() {
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		observeInventoryFingerprint();
+		if(hasPendingWork()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_LINK, 0);
+		else cancelMachineTransition(TASK_LINK, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 5 || worldObj == null || worldObj.isRemote) return;
+		if(observeInventoryFingerprint()) markMachineDirty(MachineDirtyCause.INVENTORY);
+		if(hasContinuousWork()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_LINK, 0);
+	}
+
+	private boolean hasTransferPair() {
+		return slots[0] != null && slots[1] != null && slots[0].getItem() instanceof ISatChip && slots[1].getItem() instanceof ISatChip;
+	}
+
+	private boolean hasContinuousWork() {
+		return slots[2] != null && slots[2].getItem() instanceof ISatChip;
+	}
+
+	private boolean hasPendingWork() {
+		return hasTransferPair() || hasContinuousWork();
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_LINK || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		runLinkerStep();
+		markDirty();
+		observeInventoryFingerprint();
+		if(!isInvalid() && hasContinuousWork()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_LINK, 0);
+	}
+
+	@Override
+	public void updateEntity() { }
+
+	private void runLinkerStep() {
 		if(!worldObj.isRemote) {
-			if(slots[0] != null && slots[1] != null && slots[0].getItem() instanceof ISatChip && slots[1].getItem() instanceof ISatChip) {
+			if(hasTransferPair()) {
 				ISatChip.setFreqS(slots[1], ISatChip.getFreqS(slots[0]));
 			}
 			

@@ -48,6 +48,7 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 	private int observedInventoryFingerprint;
 	private int observedMaterialFingerprint;
 	private FluidType observedWaterType;
+	private NBTTagCompound lastSyncedFluidData;
 	private ItemMold.Mold cachedMold;
 	private ItemStack cachedOutput;
 	private boolean cachedCanProcess;
@@ -78,19 +79,23 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 
 	@Override
 	public void updateEntity() {
-		if(!worldObj.isRemote && (this.lastType != this.type || this.lastAmount != this.amount)) {
-			worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
-			this.lastType = this.type;
-			this.lastAmount = this.amount;
-		}
+		// Authoritative work and synchronization are driven by MachineRuntime.
+	}
 
+	private void syncMaterialVisual() {
+		if(this.lastType == this.type && this.lastAmount == this.amount) return;
+		worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
+		this.lastType = this.type;
+		this.lastAmount = this.amount;
+	}
+
+	private void syncFluidTanks(boolean baseline) {
 		NBTTagCompound data = new NBTTagCompound();
-
 		water.writeToNBT(data, "w");
 		steam.writeToNBT(data, "s");
-
+		if(!baseline && data.equals(lastSyncedFluidData)) return;
+		lastSyncedFluidData = data;
 		this.networkPack(data, 150);
-
 	}
 
 	@Override public int getMachineExecutionStrategies() {
@@ -106,6 +111,8 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 		observedWaterType = water.getTankType();
 		runtimeInitialized = true;
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.syncMaterialVisual();
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.FLUID)) != 0) this.syncFluidTanks((causes & MachineDirtyCause.LIFECYCLE) != 0);
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
@@ -151,6 +158,8 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 			this.markChanged();
 		}
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.syncMaterialVisual();
+		if(oldWater != water.getFill() || oldSteam != steam.getFill()) this.syncFluidTanks(false);
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
@@ -159,8 +168,10 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 			boolean inventoryChanged = this.observeInventoryFingerprint();
 			boolean materialChanged = this.observeMaterialFingerprint();
 			if(inventoryChanged || materialChanged) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+			this.syncMaterialVisual();
 		} else if(cadence == 20) {
 			this.updateConnections();
+			this.syncFluidTanks(true);
 		}
 	}
 

@@ -5,7 +5,10 @@ import com.hbm.inventory.container.ContainerWasteDrum;
 import com.hbm.inventory.gui.GUIWasteDrum;
 import com.hbm.inventory.recipes.FuelPoolRecipes;
 import com.hbm.items.machine.ItemRBMKRod;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
+import com.hbm.tileentity.TileEntityLoadedBase;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -16,11 +19,14 @@ import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityWasteDrum extends TileEntity implements ISidedInventory, IGUIProvider {
+public class TileEntityWasteDrum extends TileEntityLoadedBase implements ISidedInventory, IGUIProvider {
+	private static final int TASK_COOLING = 0;
+	private boolean inventoryFingerprintInitialized;
+	private int observedInventoryFingerprint;
+	private boolean adjacentWater;
 
 	private ItemStack slots[];
 	
@@ -48,6 +54,8 @@ public class TileEntityWasteDrum extends TileEntity implements ISidedInventory, 
 		{
 			ItemStack itemStack = slots[i];
 			slots[i] = null;
+			markDirty();
+			markMachineDirty(com.hbm.machine.MachineDirtyCause.INVENTORY);
 			return itemStack;
 		} else {
 		return null;
@@ -61,6 +69,8 @@ public class TileEntityWasteDrum extends TileEntity implements ISidedInventory, 
 		{
 			itemStack.stackSize = getInventoryStackLimit();
 		}
+		markDirty();
+		markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
 	}
 
 	@Override
@@ -109,15 +119,19 @@ public class TileEntityWasteDrum extends TileEntity implements ISidedInventory, 
 		{
 			if(slots[i].stackSize <= j)
 			{
-				ItemStack itemStack = slots[i];
-				slots[i] = null;
-				return itemStack;
+			ItemStack itemStack = slots[i];
+			slots[i] = null;
+			markDirty();
+			markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+			return itemStack;
 			}
 			ItemStack itemStack1 = slots[i].splitStack(j);
 			if (slots[i].stackSize == 0)
 			{
 				slots[i] = null;
 			}
+			markDirty();
+			markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
 			
 			return itemStack1;
 		} else {
@@ -182,44 +196,91 @@ public class TileEntityWasteDrum extends TileEntity implements ISidedInventory, 
 	}
 
 	@Override
-	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			
-			int water = 0;
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5;
+	}
 
-			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-				if(worldObj.getBlock(xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ) == Blocks.water || worldObj.getBlock(xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ) == Blocks.flowing_water) {
-					water++;
-				}
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.ENVIRONMENT)) != 0) adjacentWater = countAdjacentWater() > 0;
+		observeInventoryFingerprint();
+		if(adjacentWater && hasContents()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_COOLING, 0);
+		else cancelMachineTransition(TASK_COOLING, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 5 || worldObj == null || worldObj.isRemote) return;
+		int water = countAdjacentWater();
+		adjacentWater = water > 0;
+		if(observeInventoryFingerprint()) markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+		if(adjacentWater && hasContents()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_COOLING, 0);
+	}
+
+	private int countAdjacentWater() {
+		int water = 0;
+		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
+			if(worldObj.getBlock(xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ) == Blocks.water || worldObj.getBlock(xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ) == Blocks.flowing_water) water++;
+		}
+		return water;
+	}
+
+	private boolean hasContents() {
+		for(ItemStack stack : slots) if(stack != null) return true;
+		return false;
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
 			}
-			
-			if(water > 0) {
-				
-				int r = 60 * 60 * 20 / water;
-				
-				for(int i = 0; i < 12; i++) {
-					
-					if(slots[i] != null) {
-						
-						if(slots[i].getItem() instanceof ItemRBMKRod) {
-							
-							ItemRBMKRod rod = (ItemRBMKRod) slots[i].getItem();
-							rod.updateHeat(worldObj, slots[i], 0.025D);
-							rod.provideHeat(worldObj, slots[i], 20D, 0.025D);
-							
-						} else if(worldObj.rand.nextInt(r) == 0) {
+		}
+		return hash;
+	}
 
-							ComparableStack comp = new ComparableStack(getStackInSlot(i));
-							if(FuelPoolRecipes.recipes.containsKey(comp)) {
-								slots[i] = FuelPoolRecipes.recipes.get(comp).copy();
-							}
-						}
-					}
+	private boolean observeInventoryFingerprint() {
+		int current = inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_COOLING || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		int water = countAdjacentWater();
+		adjacentWater = water > 0;
+		if(adjacentWater) runCoolingStep(water);
+		if(!isInvalid() && adjacentWater && hasContents()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_COOLING, 0);
+	}
+
+	private void runCoolingStep(int water) {
+		int r = 60 * 60 * 20 / water;
+		for(int i = 0; i < 12; i++) {
+			if(slots[i] != null) {
+				if(slots[i].getItem() instanceof ItemRBMKRod) {
+					ItemRBMKRod rod = (ItemRBMKRod) slots[i].getItem();
+					rod.updateHeat(worldObj, slots[i], 0.025D);
+					rod.provideHeat(worldObj, slots[i], 20D, 0.025D);
+				} else if(worldObj.rand.nextInt(r) == 0) {
+					ComparableStack comp = new ComparableStack(getStackInSlot(i));
+					if(FuelPoolRecipes.recipes.containsKey(comp)) slots[i] = FuelPoolRecipes.recipes.get(comp).copy();
 				}
 			}
 		}
+		markDirty();
+		observeInventoryFingerprint();
 	}
+
+	@Override
+	public void updateEntity() { }
 
 	@Override
 	public Container provideContainer(int ID, EntityPlayer player, World world, int x, int y, int z) {

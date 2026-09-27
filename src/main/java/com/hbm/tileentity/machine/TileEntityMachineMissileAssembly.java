@@ -7,9 +7,12 @@ import com.hbm.items.weapon.ItemCustomMissile;
 import com.hbm.items.weapon.ItemCustomMissilePart;
 import com.hbm.items.weapon.ItemCustomMissilePart.FuelType;
 import com.hbm.items.weapon.ItemCustomMissilePart.PartType;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.TEMissileMultipartPacket;
 import com.hbm.tileentity.IGUIProvider;
+import com.hbm.tileentity.TileEntityLoadedBase;
 
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import cpw.mods.fml.relauncher.Side;
@@ -24,7 +27,10 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 
-public class TileEntityMachineMissileAssembly extends TileEntity implements ISidedInventory, IGUIProvider {
+public class TileEntityMachineMissileAssembly extends TileEntityLoadedBase implements ISidedInventory, IGUIProvider {
+	private boolean inventoryFingerprintInitialized;
+	private int observedInventoryFingerprint;
+	private long lastPacketTick = Long.MIN_VALUE;
 
 	private ItemStack slots[];
 	
@@ -53,6 +59,8 @@ public class TileEntityMachineMissileAssembly extends TileEntity implements ISid
 		if (slots[i] != null) {
 			ItemStack itemStack = slots[i];
 			slots[i] = null;
+			markDirty();
+			markMachineDirty(com.hbm.machine.MachineDirtyCause.INVENTORY);
 			return itemStack;
 		} else {
 			return null;
@@ -65,6 +73,8 @@ public class TileEntityMachineMissileAssembly extends TileEntity implements ISid
 		if (itemStack != null && itemStack.stackSize > getInventoryStackLimit()) {
 			itemStack.stackSize = getInventoryStackLimit();
 		}
+		markDirty();
+		markMachineDirty(MachineDirtyCause.INVENTORY);
 	}
 
 	@Override
@@ -113,21 +123,24 @@ public class TileEntityMachineMissileAssembly extends TileEntity implements ISid
 	public ItemStack decrStackSize(int i, int j) {
 		if (slots[i] != null) {
 			if (slots[i].stackSize <= j) {
-				ItemStack itemStack = slots[i];
-				slots[i] = null;
-				return itemStack;
+			ItemStack itemStack = slots[i];
+			slots[i] = null;
+			markDirty();
+			markMachineDirty(MachineDirtyCause.INVENTORY);
+			return itemStack;
 			}
 			ItemStack itemStack1 = slots[i].splitStack(j);
 			if (slots[i].stackSize == 0) {
 				slots[i] = null;
 			}
+			markDirty();
+			markMachineDirty(MachineDirtyCause.INVENTORY);
 
 			return itemStack1;
 		} else {
 			return null;
 		}
 	}
-
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
@@ -177,15 +190,53 @@ public class TileEntityMachineMissileAssembly extends TileEntity implements ISid
 	}
 	
 	@Override
-	public void updateEntity() {
-
-		if(!worldObj.isRemote) {
-			
-			MissileStruct multipart = new MissileStruct(slots[1], slots[2], slots[3], slots[4]);
-			
-			PacketDispatcher.wrapper.sendToAllAround(new TEMissileMultipartPacket(xCoord, yCoord, zCoord, multipart), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 250));
-		}
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
 	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		boolean changed = observeInventoryFingerprint();
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0 || changed) sendMultipartPacket();
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 5 && observeInventoryFingerprint()) sendMultipartPacket();
+		if(cadence == 20 && (lastPacketTick == Long.MIN_VALUE || worldObj.getTotalWorldTime() - lastPacketTick >= 20L)) sendMultipartPacket();
+	}
+
+	private int inventoryFingerprint() {
+		int hash = 1;
+		for(ItemStack stack : slots) {
+			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
+			if(stack != null) {
+				hash = 31 * hash + stack.stackSize;
+				hash = 31 * hash + stack.getItemDamage();
+				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
+			}
+		}
+		return hash;
+	}
+
+	private boolean observeInventoryFingerprint() {
+		int current = inventoryFingerprint();
+		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
+		observedInventoryFingerprint = current;
+		inventoryFingerprintInitialized = true;
+		return changed;
+	}
+
+	private void sendMultipartPacket() {
+		MissileStruct multipart = new MissileStruct(slots[1], slots[2], slots[3], slots[4]);
+		PacketDispatcher.wrapper.sendToAllAround(new TEMissileMultipartPacket(xCoord, yCoord, zCoord, multipart), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 250));
+		lastPacketTick = worldObj.getTotalWorldTime();
+	}
+
+	@Override
+	public void updateEntity() { }
 	
 	public int fuselageState() {
 		

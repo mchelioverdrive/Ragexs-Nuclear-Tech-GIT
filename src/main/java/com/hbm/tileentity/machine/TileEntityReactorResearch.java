@@ -2,6 +2,7 @@ package com.hbm.tileentity.machine;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Arrays;
 
 import com.hbm.blocks.ModBlocks;
 import com.hbm.config.MobConfig;
@@ -15,6 +16,8 @@ import com.hbm.inventory.container.ContainerReactorResearch;
 import com.hbm.inventory.gui.GUIReactorResearch;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemPlateFuel;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.CompatEnergyControl;
@@ -48,6 +51,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
 //TODO: fix reactor control;
 public class TileEntityReactorResearch extends TileEntityMachineBase implements IControlReceiver, SimpleComponent, IGUIProvider, IInfoProviderEC, CompatHandler.OCComponent {
+	private static final int TASK_REACTION = 0;
 
 	@SideOnly(Side.CLIENT)
 	public double lastLevel;
@@ -125,10 +129,11 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 
 	@Override
 	public void updateEntity() {
+		if(worldObj.isRemote) rodControl();
+	}
 
+	private void runReactorStep() {
 		rodControl();
-
-		if(!worldObj.isRemote) {
 			totalFlux = 0;
 
 			if(level > 0) {
@@ -204,7 +209,55 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 			data.setIntArray("slotFlux", slotFlux);
 			data.setInteger("totalFlux", totalFlux);
 			this.networkPack(data, 150);
+
+	}
+
+	@Override
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(needsReactorSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_REACTION, 0);
+		else cancelMachineTransition(TASK_REACTION, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_REACTION || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
+		runReactorStep();
+		markDirty();
+		if(!isInvalid() && needsReactorSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_REACTION, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(cadence == 20 && !needsReactorSimulation()) {
+			totalFlux = 0;
+			Arrays.fill(slotFlux, 0);
+			sendResearchPacket();
 		}
+	}
+
+	private boolean needsReactorSimulation() {
+		if(level != targetLevel || heat > 0) return true;
+		if(level <= 0) return false;
+		for(ItemStack stack : slots) if(stack != null && stack.getItem() instanceof ItemPlateFuel) return true;
+		return false;
+	}
+
+	private void sendResearchPacket() {
+		NBTTagCompound data = new NBTTagCompound();
+		data.setInteger("heat", heat);
+		data.setByte("water", water);
+		data.setDouble("level", level);
+		data.setDouble("targetLevel", targetLevel);
+		data.setIntArray("slotFlux", slotFlux);
+		data.setInteger("totalFlux", totalFlux);
+		this.networkPack(data, 150);
 	}
 
 	public void networkUnpack(NBTTagCompound data) {
@@ -393,6 +446,7 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 
 	public void setTarget(double target) {
 		this.targetLevel = target;
+		markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
 
 	public void rodControl() {
@@ -509,7 +563,7 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setLevel(Context context, Arguments args) {
 		double newLevel = args.checkDouble(0)/100.0;
-		targetLevel = MathHelper.clamp_double(newLevel, 0, 1.0);
+		setTarget(MathHelper.clamp_double(newLevel, 0, 1.0));
 		return new Object[] {};
 	}
 

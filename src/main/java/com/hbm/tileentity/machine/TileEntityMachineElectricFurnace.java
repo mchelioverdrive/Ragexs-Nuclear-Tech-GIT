@@ -183,10 +183,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 
 	@Override
 	public void updateEntity() {
-		if(!worldObj.isRemote) {
-			if(worldObj.getTotalWorldTime() % 40 == 0) this.updateConnections();
-			this.networkPackNTIfDirty(50);
-		}
+		// Server work is owned by MachineRuntime.
 	}
 
 	@Override
@@ -214,9 +211,11 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		long now = worldObj.getTotalWorldTime();
 		if((causes & MachineDirtyCause.LIFECYCLE) != 0 && this.nextRuntimeTick > now) {
 			this.scheduleMachineTransition(this.nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+			this.networkPackNTIfDirty(50);
 			return;
 		}
 		this.runAccountingTick(now);
+		this.networkPackNTIfDirty(50);
 	}
 
 	@Override
@@ -225,6 +224,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		this.nextRuntimeTick = -1L;
 		if(!this.runtimeStateInitialized) return;
 		this.runAccountingTick(worldObj.getTotalWorldTime());
+		this.networkPackNTIfDirty(50);
 	}
 
 	@Override
@@ -242,6 +242,9 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 			this.cancelAccountingTransition();
 			this.markMachineDirty((upgradeChanged ? MachineDirtyCause.CONFIGURATION : 0) | MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
 		}
+		if((worldObj.getTotalWorldTime() / 20L & 1L) == 0L) this.updateConnections();
+		this.markNetworkDirty();
+		this.networkPackNTIfDirty(50);
 	}
 
 	private void runAccountingTick(long now) {
@@ -286,7 +289,6 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		if(changed) {
 			this.markDirty();
 			this.markNetworkDirty();
-			this.networkPackNTIfDirty(50);
 		}
 
 		if(this.needsAnotherAccountingTick(completed)) {

@@ -4,6 +4,7 @@ import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.machine.BlockHadronPower;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.BufPacket;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IBufPacketReceiver;
 import com.hbm.tileentity.TileEntityLoadedBase;
 
@@ -24,15 +25,25 @@ public class TileEntityHadronPower extends TileEntityLoadedBase implements IEner
 	}
 	
 	@Override
-	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
-			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-				this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-			}
-			
-			PacketDispatcher.wrapper.sendToAllAround(new BufPacket(xCoord, yCoord, zCoord, this), new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 15));
-		}
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj != null && !worldObj.isRemote) sendRuntimePacket();
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int cadence) {
+		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
+		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
+			this.trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
+		sendRuntimePacket();
+	}
+
+	private void sendRuntimePacket() {
+		PacketDispatcher.wrapper.sendToAllAround(new BufPacket(xCoord, yCoord, zCoord, this), new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 15));
 	}
 
 	@Override
@@ -51,6 +62,7 @@ public class TileEntityHadronPower extends TileEntityLoadedBase implements IEner
 		this.energyQuanta = i;
 		this.worldObj.markTileEntityChunkModified(this.xCoord, this.yCoord, this.zCoord, this);
 		this.markPowerNetDirty();
+		this.markMachineEnergyDirty();
 	}
 
 	@Override

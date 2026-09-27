@@ -13,6 +13,8 @@ import com.hbm.handler.atmosphere.AtmosphereBlob;
 import com.hbm.handler.atmosphere.ChunkAtmosphereManager;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.main.MainRegistry;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
 import com.hbm.packet.toclient.NBTPacket;
@@ -50,6 +52,7 @@ import java.util.*;
  *
  */
 public abstract class TileEntityRBMKBase extends TileEntityLoadedBase implements INBTPacketReceiver {
+	private static final int TASK_SIMULATION = 0;
 
 	public double heat;
 
@@ -127,8 +130,48 @@ public abstract class TileEntityRBMKBase extends TileEntityLoadedBase implements
 	}
 
 	@Override
-	public void updateEntity() {
+	public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
 
+	@Override
+	public void onMachineRuntimeDirty(int causes) {
+		if(needsRBMKSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_SIMULATION, 0);
+		else cancelMachineTransition(TASK_SIMULATION, 0);
+	}
+
+	@Override
+	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_SIMULATION || taskSlot != 0 || worldObj.isRemote) return;
+		runRBMKColumnStep();
+		markDirty();
+		if(!isInvalid() && needsRBMKSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_SIMULATION, 0);
+	}
+
+	@Override
+	public void onMachineCoarsePoll(int interval) {
+		if(interval == 5) {
+			if(needsRBMKSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_SIMULATION, 0);
+		} else if(interval == 20) {
+			NBTTagCompound data = new NBTTagCompound();
+			this.writeToNBT(data);
+			this.networkPack(data, trackingRange());
+		}
+	}
+
+	protected boolean needsRBMKSimulation() {
+		if(heat != 20D || water != 0 || steam != 0) return true;
+		for(ForgeDirection dir : neighborDirs) {
+			TileEntity tile = Compat.getTileStandard(worldObj, xCoord + dir.offsetX, yCoord, zCoord + dir.offsetZ);
+			if(tile instanceof TileEntityRBMKBase) {
+				TileEntityRBMKBase column = (TileEntityRBMKBase) tile;
+				if(column.heat != 20D || column.water != 0 || column.steam != 0) return true;
+			}
+		}
+		return false;
+	}
+
+	protected void runRBMKColumnStep() {
 		if(!worldObj.isRemote) {
 
 			this.worldObj.theProfiler.startSection("rbmkBase_heat_movement");
@@ -142,9 +185,6 @@ public abstract class TileEntityRBMKBase extends TileEntityLoadedBase implements
 			coolPassively();
 			this.worldObj.theProfiler.endSection();
 
-			NBTTagCompound data = new NBTTagCompound();
-			this.writeToNBT(data);
-			this.networkPack(data, trackingRange());
 		}
 	}
 
@@ -182,68 +222,58 @@ public abstract class TileEntityRBMKBase extends TileEntityLoadedBase implements
 	 */
 	private void moveHeat() {
 
-		List<TileEntityRBMKBase> rec = new ArrayList();
-		rec.add(this);
 		double heatTot = this.heat;
 		int waterTot = this.water;
 		int steamTot = this.steam;
+		int members = 1;
 
 		int index = 0;
 		for(ForgeDirection dir : neighborDirs) {
-
-			if(neighborCache[index] != null && neighborCache[index].isInvalid())
-				neighborCache[index] = null;
-
-			if(neighborCache[index] == null) {
-				TileEntity te = Compat.getTileStandard(worldObj, xCoord + dir.offsetX, yCoord, zCoord + dir.offsetZ);
-
-				if(te instanceof TileEntityRBMKBase) {
-					TileEntityRBMKBase base = (TileEntityRBMKBase) te;
-					neighborCache[index] = base;
-				}
+			TileEntityRBMKBase neighbor = neighborCache[index];
+			if(neighbor != null && neighbor.isInvalid()) neighborCache[index] = neighbor = null;
+			if(neighbor == null) {
+				TileEntity tile = Compat.getTileStandard(worldObj, xCoord + dir.offsetX, yCoord, zCoord + dir.offsetZ);
+				if(tile instanceof TileEntityRBMKBase) neighborCache[index] = neighbor = (TileEntityRBMKBase) tile;
 			}
-
+			if(neighbor != null) {
+				members++;
+				heatTot += neighbor.heat;
+				waterTot += neighbor.water;
+				steamTot += neighbor.steam;
+			}
 			index++;
 		}
 
-		for(TileEntityRBMKBase base : neighborCache) {
-
-			if(base != null) {
-				rec.add(base);
-				heatTot += base.heat;
-				waterTot += base.water;
-				steamTot += base.steam;
-			}
-		}
-
-		int members = rec.size();
-		double stepSize = RBMKDials.getColumnHeatFlow(worldObj);
-
 		if(members > 1) {
+			double targetHeat = heatTot / members;
+			int targetWater = waterTot / members;
+			int targetSteam = steamTot / members;
+			int waterRemainder = waterTot % members;
+			int steamRemainder = steamTot % members;
+			double stepSize = RBMKDials.getColumnHeatFlow(worldObj);
 
-			double targetHeat = heatTot / (double)members;
-
-			int tWater = waterTot / members;
-			int rWater = waterTot % members;
-			int tSteam = steamTot / members;
-			int rSteam = steamTot % members;
-
-			for(TileEntityRBMKBase rbmk : rec) {
-				double delta = targetHeat - rbmk.heat;
-				rbmk.heat += delta * stepSize;
-
-				//set to the averages, rounded down
-				rbmk.water = tWater;
-				rbmk.steam = tSteam;
+			applyHeatFlow(this, targetHeat, targetWater, targetSteam, stepSize);
+			for(TileEntityRBMKBase neighbor : neighborCache) {
+				if(neighbor != null) applyHeatFlow(neighbor, targetHeat, targetWater, targetSteam, stepSize);
 			}
-
-			//add the modulo to make up for the losses coming from rounding
-			this.water += rWater;
-			this.steam += rSteam;
-
-			this.markDirty();
+			this.water += waterRemainder;
+			this.steam += steamRemainder;
 		}
 	}
+
+	private void applyHeatFlow(TileEntityRBMKBase column, double targetHeat, int targetWater, int targetSteam, double stepSize) {
+		double previousHeat = column.heat;
+		int previousWater = column.water;
+		int previousSteam = column.steam;
+		column.heat += (targetHeat - column.heat) * stepSize;
+		column.water = targetWater;
+		column.steam = targetSteam;
+		if(previousHeat != column.heat || previousWater != column.water || previousSteam != column.steam) {
+			column.markDirty();
+			if(column != this) column.markMachineDirty(MachineDirtyCause.ENVIRONMENT);
+		}
+	}
+
 
 	@Override
 	public void markDirty() {

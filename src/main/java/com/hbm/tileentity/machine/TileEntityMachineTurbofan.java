@@ -17,6 +17,8 @@ import com.hbm.inventory.gui.GUIMachineTurbofan;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
+import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.lib.ModDamageSource;
 import com.hbm.main.MainRegistry;
 import com.hbm.packet.PacketDispatcher;
@@ -50,6 +52,12 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implements IEnergyProviderMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable {
+	private static final int TASK_BURN = 1;
+	private boolean runtimeInitialized;
+	private boolean runtimeEnergyMutation;
+	private boolean runtimeWaterlogged;
+	private DirPos[] runtimeConnections;
+	private int observedOrientation = Integer.MIN_VALUE;
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
@@ -74,6 +82,105 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 		super(5, 150);
 		tank = new FluidTank(Fluids.KEROSENE, 24000);
 		blood = new FluidTank(Fluids.BLOOD, 24000);
+		this.trackMachineFluidTank(tank);
+		this.trackMachineFluidTank(blood);
+	}
+
+	@Override public int getMachineExecutionStrategies() {
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	}
+
+	@Override public void onMachineRuntimeDirty(int causes) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(this.getBlockMetadata() < 12) {
+			this.migrateOldMultiblock();
+			return;
+		}
+		runtimeInitialized = true;
+		this.refreshConnections();
+		runtimeWaterlogged = this.isWaterlogged();
+		if((causes & (MachineDirtyCause.INVENTORY | MachineDirtyCause.UPGRADE | MachineDirtyCause.LIFECYCLE)) != 0) this.refreshAfterburner();
+		this.beginMachineFluidMutation();
+		try { this.loadFuel(); }
+		finally { this.endMachineFluidMutation(); }
+		this.subscribeToFuel();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimePacket();
+	}
+
+	@Override public void onMachineCoarsePoll(int cadence) {
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		if(cadence == 5) {
+			boolean waterlogged = this.isWaterlogged();
+			if(waterlogged != runtimeWaterlogged) {
+				runtimeWaterlogged = waterlogged;
+				this.markMachineDirty(MachineDirtyCause.ENVIRONMENT);
+			}
+		} else if(cadence == 20) {
+			this.refreshConnections();
+			this.subscribeToFuel();
+			this.sendRuntimePacket();
+		}
+	}
+
+	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
+		if(taskType != TASK_BURN || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.beginMachineFluidMutation();
+		runtimeEnergyMutation = true;
+		try { this.runTurbofanStep(); }
+		finally {
+			runtimeEnergyMutation = false;
+			this.endMachineFluidMutation();
+		}
+		this.markDirty();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimePacket();
+	}
+
+	private void refreshConnections() {
+		int orientation = this.getBlockMetadata();
+		if(runtimeConnections == null || observedOrientation != orientation) {
+			runtimeConnections = this.getConPos();
+			observedOrientation = orientation;
+		}
+	}
+
+	private void refreshAfterburner() {
+		this.upgradeManager.checkSlots(slots, 2, 2);
+		this.afterburner = this.upgradeManager.getLevel(UpgradeType.AFTERBURN);
+		if(slots[2] != null && slots[2].getItem() == ModItems.flame_pony) this.afterburner = 100;
+	}
+
+	private void loadFuel() {
+		tank.setType(4, slots);
+		tank.loadTank(0, 1, slots);
+		blood.setTankType(Fluids.BLOOD);
+	}
+
+	private void subscribeToFuel() {
+		for(DirPos pos : runtimeConnections) this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(tank.getFill() > 0 || blood.getFill() > 0 || energyQuanta > 0 || smoke.getFill() > 0 || smoke_leaded.getFill() > 0 || smoke_poison.getFill() > 0)
+			this.scheduleMachineTransition(now + 1L, TASK_BURN, 0);
+		else {
+			this.output = 0;
+			this.consumption = 0;
+			this.wasOn = false;
+			this.cancelMachineTransition(TASK_BURN, 0);
+		}
+	}
+
+	private void sendRuntimePacket() {
+		NBTTagCompound data = new NBTTagCompound();
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+		data.setByte("after", (byte) afterburner);
+		data.setBoolean("wasOn", wasOn);
+		data.setBoolean("showBlood", showBlood);
+		tank.writeToNBT(data, "tank");
+		blood.writeToNBT(data, "blood");
+		this.networkPack(data, 150);
 	}
 
 	@Override
@@ -120,8 +227,10 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 
 	@Override
 	public void updateEntity() {
-		
-		if(!worldObj.isRemote) {
+		if(worldObj.isRemote) this.updateClientSpin();
+	}
+
+	private void migrateOldMultiblock() {
 			this.output = 0;
 			this.consumption = 0;
 			
@@ -146,18 +255,14 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 				worldObj.getTileEntity(xCoord, yCoord, zCoord).readFromNBT(data);
 				return;
 			}
-			
-			tank.setType(4, slots);
-			tank.loadTank(0, 1, slots);
-			blood.setTankType(Fluids.BLOOD);
+	}
+
+	private void runTurbofanStep() {
+			this.output = 0;
+			this.consumption = 0;
+			this.loadFuel();
 			
 			this.wasOn = false;
-			
-			this.upgradeManager.checkSlots(slots, 2, 2);
-			this.afterburner = this.upgradeManager.getLevel(UpgradeType.AFTERBURN);
-			
-			if(slots[2] != null && slots[2].getItem() == ModItems.flame_pony)
-				this.afterburner = 100;
 			
 			long burnValue = 0;
 			int amount = 1 + this.afterburner;
@@ -166,7 +271,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 				burnValue = tank.getTankType().getTrait(FT_Combustible.class).getCombustionEnergyQuanta() / 1_000;
 			}
 			
-			int amountToBurn = !isWaterlogged() && breatheAir(this.tank.getFill() > 0 ? amount : 0) ? Math.min(amount, this.tank.getFill()) : 0;
+			int amountToBurn = !runtimeWaterlogged && breatheAir(this.tank.getFill() > 0 ? amount : 0) ? Math.min(amount, this.tank.getFill()) : 0;
 			
 			if(amountToBurn > 0) {
 				this.wasOn = true;
@@ -181,9 +286,8 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 			
 			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 3, energyQuanta, energyQuanta));
 			
-			for(DirPos pos : getConPos()) {
+			for(DirPos pos : runtimeConnections) {
 				this.tryProvide(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				if(this.blood.getFill() > 0) this.sendFluid(blood, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				this.sendSmoke(pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
@@ -289,17 +393,9 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 				this.setStoredEnergyQuanta(this.maxPower);
 			}
 			
-			NBTTagCompound data = new NBTTagCompound();
-			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
-			data.setByte("after", (byte) afterburner);
-			data.setBoolean("wasOn", wasOn);
-			data.setBoolean("showBlood", showBlood);
-			tank.writeToNBT(data, "tank");
-			blood.writeToNBT(data, "blood");
-			this.networkPack(data, 150);
-			
-		} else {
-			
+	}
+
+	private void updateClientSpin() {
 			this.lastSpin = this.spin;
 			
 			if(wasOn) {
@@ -387,7 +483,6 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 					}
 				}
 			}
-		}
 	}
 	
 	public void networkUnpack(NBTTagCompound nbt) {
@@ -441,6 +536,11 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
+	}
+
+	public long getPowerOutputWatts() {
+		return EnergyUnits.quantaPerTickToWatts(output);
 	}
 	
 	@Override

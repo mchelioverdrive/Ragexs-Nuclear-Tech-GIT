@@ -186,7 +186,7 @@ public class TileEntityMachineFrackingTower extends TileEntityOilDrillBase {
 
 	@Override
 	protected void updateConnections() {
-		for(DirPos pos : getConPos()) {
+		for(DirPos pos : getRuntimeConnections()) {
 			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			this.trySubscribe(tanks[2].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
