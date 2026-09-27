@@ -404,4 +404,4 @@ INCOMPLETE:
 2026-09-26 22:34 — Audit industrial power and fluid scale
 
 - Added a source-based engineering audit of generation, machine demand, heat and steam chains, reactors, water treatment, oil processing, storage, and transport. It includes representative plant budgets, gameplay classifications, priority corrections, and a staged implementation strategy.
-- Identified a high-grade steam energy-ledger mismatch and large differences among industrial electrical loads. This is documentation only: balance values, configurations, recipes, saves, and compatibility behavior remain unchanged. In-game steady-state throughput and dedicated-server behavior remain unverified.
+- Identified high-grade steam energy gain, a fusion-coolant output shortfall against magnet input, and large differences among industrial electrical loads. This is documentation only: balance values, configurations, recipes, saves, and compatibility behavior remain unchanged. In-game steady-state throughput and dedicated-server behavior remain unverified.
