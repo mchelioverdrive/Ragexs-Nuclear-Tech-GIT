@@ -385,3 +385,8 @@ INCOMPLETE:
 - Kept active physics, energy, fluid, and world-interaction rates on typed transitions; persisted crane progress and corrected furnace cook-time key compatibility. The source census now finds 186 of 205 concrete machine/support classes using the runtime. The 19 documented exceptions are coupled core/Hadron/ITER simulation, orbital propulsion and mission controllers, the disabled generator, and proxy endpoints. Minecraft was not launched.
 - Shifted the remaining large-arc, electric-furnace, assembler, chemplant, and strand-caster packet work to runtime callbacks and twenty-tick baselines. Refinery fire effects are scheduled only while burning fuel; the fluid tank caches its ladder contact box while preserving per-tick player contact.
 - Offline `compileJava` passed after the combined source migration; dedicated-server, save/rebind, active machine balance, and in-game performance remain unverified.
+
+2026-09-26 21:17 — Prevent recursive chunk loading during machine binding
+
+- Deferred new machine-generation save marks during chunk deserialization until the chunk load event, and marked already loaded chunks directly without TileEntity `markDirty()` metadata lookup. This prevents a stack overflow when a migrated machine is validated while its chunk is still loading.
+- Dedicated-server chunk loading and save/rebind behavior remain unverified in game.

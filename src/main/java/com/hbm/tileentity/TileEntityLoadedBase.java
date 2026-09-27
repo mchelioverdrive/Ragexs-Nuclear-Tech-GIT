@@ -20,6 +20,7 @@ public class TileEntityLoadedBase extends TileEntity implements ILoadedTile {
 	public boolean isLoaded = true;
 	public boolean muffled = false;
 	private long machineLifecycleGeneration;
+	private transient boolean machineGenerationSavePending;
 	private transient MachineKey machineRuntimeBinding;
 	private transient boolean retainMachineRuntimeOnInvalidate;
 	
@@ -139,7 +140,19 @@ public class TileEntityLoadedBase extends TileEntity implements ILoadedTile {
 	public final void adoptMachineLifecycleGeneration(long generation) {
 		if(generation <= 0L || this.machineLifecycleGeneration == generation) return;
 		this.machineLifecycleGeneration = generation;
-		this.markDirty();
+		// validate() also runs while AnvilChunkLoader is inserting tiles into a chunk
+		// that the world cannot provide yet. markDirty() would load it recursively.
+		this.machineGenerationSavePending = true;
+		if(this.worldObj != null && this.worldObj.getChunkProvider().chunkExists(this.xCoord >> 4, this.zCoord >> 4)) {
+			this.worldObj.markTileEntityChunkModified(this.xCoord, this.yCoord, this.zCoord, this);
+			this.machineGenerationSavePending = false;
+		}
+	}
+
+	public final boolean consumePendingMachineGenerationSave() {
+		if(!this.machineGenerationSavePending) return false;
+		this.machineGenerationSavePending = false;
+		return true;
 	}
 
 	public final MachineKey getMachineRuntimeBinding() {

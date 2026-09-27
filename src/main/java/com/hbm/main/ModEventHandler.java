@@ -75,6 +75,7 @@ import com.hbm.lib.HbmCollection;
 import com.hbm.lib.ModDamageSource;
 import com.hbm.lib.RefStrings;
 import com.hbm.machine.MachineRuntimeManager;
+import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.PermaSyncPacket;
@@ -183,6 +184,7 @@ import net.minecraftforge.event.terraingen.DecorateBiomeEvent;
 import net.minecraftforge.event.terraingen.OreGenEvent.GenerateMinable;
 import net.minecraftforge.event.world.BlockEvent.BreakEvent;
 import net.minecraftforge.event.world.BlockEvent.PlaceEvent;
+import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.event.world.WorldEvent;
 
 import static com.hbm.extprop.HbmLivingProps.updateAsbestos;
@@ -880,6 +882,16 @@ public class ModEventHandler {
 
 		updateWaterOpacity(event.world);
 		if(!event.world.isRemote) MachineRuntimeManager.onWorldLoad(event.world);
+	}
+
+	@SubscribeEvent
+	public void onMachineChunkLoad(ChunkEvent.Load event) {
+		if(event.world.isRemote) return;
+		for(Object tile : event.getChunk().chunkTileEntityMap.values()) {
+			if(tile instanceof TileEntityLoadedBase && ((TileEntityLoadedBase) tile).consumePendingMachineGenerationSave()) {
+				event.getChunk().setChunkModified();
+			}
+		}
 	}
 
 	@SubscribeEvent

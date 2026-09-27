@@ -230,6 +230,8 @@ A `MachineKey` is dimension + block position + a positive lifecycle generation. 
 
 Binding a TileEntity with no generation allocates a new one. Reloading the same TileEntity NBT reuses its generation and rebinds the existing unloaded entry when it is still present. A different generation or compatibility type at an occupied position removes the old entry and cancels all work it owns before the replacement binds. Scheduled entries retain the full key and type, so work cannot resolve against a later occupant at the same coordinates.
 
+Generation assignment marks an already loaded chunk for saving directly. During chunk deserialization, the tile defers that mark until `ChunkEvent.Load`, when the owning chunk can be marked without asking the world to load it recursively.
+
 The graph itself, loaded references, dirty buffers, polling buckets, scheduler heap, derived caches, and diagnostic counters are deliberately transient. The TileEntity generation preserves lifetime identity across saves. Scheduled operations are not serialized in Phase 0: a migrated machine must persist authoritative operation start/duration/due fields in its own NBT and reconstruct its typed schedule when it binds. This avoids two competing persistent copies of operation state.
 
 ### Binding and destruction lifecycle
