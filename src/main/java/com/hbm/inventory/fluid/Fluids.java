@@ -898,9 +898,9 @@ public class Fluids {
 							.setEff(HeatingType.BOILER, eff_steam_boil)
 							.setEff(HeatingType.HEATEXCHANGER, eff_steam_heatex)
 							.addStep(100, 1, STEAM, 100)
-							.addStep(250, 1, HOTSTEAM, 10)
-							.addStep(500, 1, SUPERHOTSTEAM, 1)
-							.addStep(900, 10, ULTRAHOTSTEAM, 1)
+							.addStep(1_600, 1, HOTSTEAM, 10)
+							.addStep(1_850, 1, SUPERHOTSTEAM, 1)
+							.addStep(18_900, 10, ULTRAHOTSTEAM, 1)
 		);
 		BRINE.addTraits(
 			LIQUID,
@@ -1324,6 +1324,7 @@ public class Fluids {
 		} else {
 			readTraits(config);
 		}
+		SteamLedgerValidator.validate();
 	}
 
 	private static void initDefaultFluids(File file) {
@@ -1457,6 +1458,7 @@ public class Fluids {
 		} else {
 			readTraits(config);
 		}
+		SteamLedgerValidator.validate();
 		BoilingHandler.isReload=true;
 	}
 	private static void registerCalculatedFuel(FluidType type, double base, double combustMult, FuelGrade grade) {

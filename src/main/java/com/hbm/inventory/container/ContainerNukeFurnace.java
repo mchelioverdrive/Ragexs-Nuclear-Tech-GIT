@@ -16,6 +16,12 @@ public class ContainerNukeFurnace extends Container {
 	private TileEntityNukeFurnace diFurnace;
 	private int dualCookTime;
 	private int dualPower;
+	private int runtimeProgressTick = -1;
+	private int runtimeProgressBase = -1;
+	private int runtimeProgressActive = -1;
+	private int clientProgressTick;
+	private int clientProgressBase;
+	private boolean clientProgressActive;
 
 	public ContainerNukeFurnace(InventoryPlayer invPlayer, TileEntityNukeFurnace tedf) {
 		dualCookTime = 0;
@@ -49,6 +55,9 @@ public class ContainerNukeFurnace extends Container {
 		super.addCraftingToCrafters(crafting);
 		crafting.sendProgressBarUpdate(this, 0, this.diFurnace.dualCookTime);
 		crafting.sendProgressBarUpdate(this, 1, this.diFurnace.dualPower);
+		crafting.sendProgressBarUpdate(this, 2, this.diFurnace.getRuntimeProgressTick());
+		crafting.sendProgressBarUpdate(this, 3, this.diFurnace.isRuntimeProgressActive() ? 1 : 0);
+		crafting.sendProgressBarUpdate(this, 4, this.diFurnace.getRuntimeProgressBase());
 	}
 
 	@Override
@@ -104,10 +113,19 @@ public class ContainerNukeFurnace extends Container {
 			if(this.dualPower != this.diFurnace.dualPower) {
 				par1.sendProgressBarUpdate(this, 1, this.diFurnace.dualPower);
 			}
+			int progressTick = this.diFurnace.getRuntimeProgressTick();
+			int progressBase = this.diFurnace.getRuntimeProgressBase();
+			int progressActive = this.diFurnace.isRuntimeProgressActive() ? 1 : 0;
+			if(this.runtimeProgressTick != progressTick) par1.sendProgressBarUpdate(this, 2, progressTick);
+			if(this.runtimeProgressActive != progressActive) par1.sendProgressBarUpdate(this, 3, progressActive);
+			if(this.runtimeProgressBase != progressBase) par1.sendProgressBarUpdate(this, 4, progressBase);
 		}
 
 		this.dualCookTime = this.diFurnace.dualCookTime;
 		this.dualPower = this.diFurnace.dualPower;
+		this.runtimeProgressTick = this.diFurnace.getRuntimeProgressTick();
+		this.runtimeProgressBase = this.diFurnace.getRuntimeProgressBase();
+		this.runtimeProgressActive = this.diFurnace.isRuntimeProgressActive() ? 1 : 0;
 	}
 
 	@Override
@@ -118,5 +136,9 @@ public class ContainerNukeFurnace extends Container {
 		if(i == 1) {
 			diFurnace.dualPower = j;
 		}
+		if(i == 2) clientProgressTick = j & 0xFFFF;
+		if(i == 3) clientProgressActive = j != 0;
+		if(i == 4) clientProgressBase = j;
+		if(i >= 2 && i <= 4) diFurnace.setClientProgressState(clientProgressTick, clientProgressBase, clientProgressActive);
 	}
 }

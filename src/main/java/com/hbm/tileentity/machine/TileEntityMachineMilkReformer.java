@@ -35,11 +35,18 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 	public static final long maxPower = 100_000_000;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
+	private boolean runtimeBatchMutation;
+	private boolean runtimeBatchActive;
+	private long lastBatchTick = Long.MIN_VALUE;
 	private int observedInventoryFingerprint;
 	private boolean inventoryFingerprintInitialized;
 	private FluidType observedInputType;
-	private static final int TASK_REFINE = 1;
+	private static final int TASK_ACCOUNTING = 1;
+	private static final int TASK_BATTERY = 2;
+	private static final int TASK_FLUID = 3;
 	private static final int TASK_SLOT_MAIN = 0;
+	private static final int TASK_SLOT_BATTERY = 1;
+	private static final int TASK_SLOT_FLUID = 2;
 	
 	public TileEntityMachineMilkReformer() {
 		super(11);
@@ -75,6 +82,7 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 	@Override
 	public void setStoredEnergyQuanta(long energyQuanta) {
 		if(this.energyQuanta == energyQuanta) return;
+		if(!runtimeBatchMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleBatchesThrough(worldObj.getTotalWorldTime() - 1L);
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
@@ -112,40 +120,80 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		boolean wasActive = runtimeBatchActive;
+		if(lastBatchTick == Long.MIN_VALUE) lastBatchTick = now;
+		else this.settleBatchesThrough(now - 1L);
 		runtimeInitialized = true;
 		this.refreshRuntimeState();
 		FluidType inputType = tanks[0].getTankType();
 		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0 || observedInputType != inputType) this.updateConnections();
 		observedInputType = inputType;
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		if(wasActive) this.settleBatchesThrough(now);
+		else lastBatchTick = now;
+		this.evaluateAndSchedule(now);
 		this.networkPackNT(150);
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_REFINE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
-		long oldEnergy = energyQuanta;
-		int oldInputFill = tanks[0].getFill();
-		int oldOutput1 = tanks[1].getFill();
-		int oldOutput2 = tanks[2].getFill();
-		int oldOutput3 = tanks[3].getFill();
-		int oldInventoryFingerprint = this.inventoryFingerprint();
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
+			this.settleBatchesThrough(now);
+			long before = energyQuanta;
+			runtimeEnergyMutation = true;
+			try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower)); }
+			finally { runtimeEnergyMutation = false; }
+			if(this.observeInventoryFingerprint()) this.markNetworkDirty();
+			if(before != energyQuanta) {
+				this.markDirty();
+				this.scheduleMachineTransition(now, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+			}
+			if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+			else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
+			return;
+		} else if(taskType == TASK_ACCOUNTING && taskSlot == TASK_SLOT_MAIN) {
+			this.settleBatchesThrough(now);
+			if(this.hasFluidOutput()) this.scheduleMachineTransition(now, TASK_FLUID, TASK_SLOT_FLUID);
+			else this.cancelMachineTransition(TASK_FLUID, TASK_SLOT_FLUID);
+			this.networkPackNT(150);
+		} else if(taskType == TASK_FLUID && taskSlot == TASK_SLOT_FLUID) {
+			this.sendOutputFluids();
+			if(this.hasFluidOutput()) this.scheduleMachineTransition(now + 1L, TASK_FLUID, TASK_SLOT_FLUID);
+			else this.cancelMachineTransition(TASK_FLUID, TASK_SLOT_FLUID);
+			this.networkPackNT(150);
+		} else return;
+		this.evaluateAndSchedule(now);
+	}
+
+	private void settleBatchesThrough(long targetTick) {
+		if(worldObj == null || worldObj.isRemote || lastBatchTick == Long.MIN_VALUE || targetTick <= lastBatchTick || runtimeBatchMutation) return;
+		long elapsed = targetTick - lastBatchTick;
+		lastBatchTick = targetTick;
+		long batches = Math.min(elapsed, Math.min(tanks[0].getFill() / 100L, energyQuanta / 10_000L));
+		batches = limitByOutput(batches, tanks[1], 50);
+		batches = limitByOutput(batches, tanks[2], 35);
+		batches = limitByOutput(batches, tanks[3], 15);
+		if(batches <= 0L) return;
+		runtimeBatchMutation = true;
 		this.beginMachineFluidMutation();
 		runtimeEnergyMutation = true;
 		try {
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
-			this.refineBatch();
-			this.unloadOutputContainers();
+			tanks[0].setFill(tanks[0].getFill() - (int) (batches * 100L));
+			tanks[1].setFill(tanks[1].getFill() + (int) (batches * 50L));
+			tanks[2].setFill(tanks[2].getFill() + (int) (batches * 35L));
+			tanks[3].setFill(tanks[3].getFill() + (int) (batches * 15L));
+			this.setStoredEnergyQuanta(energyQuanta - batches * 10_000L);
 		} finally {
 			runtimeEnergyMutation = false;
 			this.endMachineFluidMutation();
+			runtimeBatchMutation = false;
 		}
-		this.observeInventoryFingerprint();
-		boolean inventoryChanged = oldInventoryFingerprint != observedInventoryFingerprint;
-		if(inventoryChanged) this.markNetworkDirty();
-		if(oldEnergy != energyQuanta || inventoryChanged || oldInputFill != tanks[0].getFill() || oldOutput1 != tanks[1].getFill() || oldOutput2 != tanks[2].getFill() || oldOutput3 != tanks[3].getFill()) this.markDirty();
-		this.sendOutputFluids();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
-		this.networkPackNT(150);
+		this.markDirty();
+	}
+
+	private static long limitByOutput(long batches, FluidTank tank, int amountPerBatch) {
+		return amountPerBatch <= 0 ? batches : Math.min(batches, (tank.getMaxFill() - tank.getFill()) / (long) amountPerBatch);
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
@@ -182,22 +230,6 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 		this.observeInventoryFingerprint();
 	}
 
-	private boolean canRefine() {
-		return energyQuanta >= 10_000 && tanks[0].getFill() >= 100
-				&& tanks[1].getFill() + 50 <= tanks[1].getMaxFill()
-				&& tanks[2].getFill() + 35 <= tanks[2].getMaxFill()
-				&& tanks[3].getFill() + 15 <= tanks[3].getMaxFill();
-	}
-
-	private void refineBatch() {
-		if(!this.canRefine()) return;
-		this.setStoredEnergyQuanta(energyQuanta - 10_000);
-		tanks[0].setFill(tanks[0].getFill() - 100);
-		tanks[1].setFill(tanks[1].getFill() + 50);
-		tanks[2].setFill(tanks[2].getFill() + 35);
-		tanks[3].setFill(tanks[3].getFill() + 15);
-	}
-
 	private boolean hasBatteryWork() {
 		if(energyQuanta >= maxPower || slots[0] == null) return false;
 		if(slots[0].getItem() == com.hbm.items.ModItems.battery_creative || slots[0].getItem() == com.hbm.items.ModItems.fusion_core_infinite) return true;
@@ -212,8 +244,17 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
-		if(this.canRefine() || this.hasBatteryWork() || this.hasFluidOutput()) this.scheduleMachineTransition(now + 1L, TASK_REFINE, TASK_SLOT_MAIN);
-		else this.cancelMachineTransition(TASK_REFINE, TASK_SLOT_MAIN);
+		long batches = Math.min(tanks[0].getFill() / 100L, energyQuanta / 10_000L);
+		batches = limitByOutput(batches, tanks[1], 50);
+		batches = limitByOutput(batches, tanks[2], 35);
+		batches = limitByOutput(batches, tanks[3], 15);
+		runtimeBatchActive = batches > 0L;
+		if(runtimeBatchActive) this.scheduleMachineTransition(now + batches, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
+		if(this.hasFluidOutput()) this.scheduleMachineTransition(now + 1L, TASK_FLUID, TASK_SLOT_FLUID);
+		else this.cancelMachineTransition(TASK_FLUID, TASK_SLOT_FLUID);
 	}
 
 	private void unloadOutputContainers() {
@@ -271,6 +312,10 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+		lastBatchTick = Long.MIN_VALUE;
+		runtimeInitialized = false;
+		runtimeBatchMutation = false;
+		runtimeBatchActive = false;
 
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		tanks[0].readFromNBT(nbt, "input");
@@ -281,6 +326,7 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+		if(worldObj != null && !worldObj.isRemote) this.settleBatchesThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 		
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
@@ -288,6 +334,21 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 		tanks[1].writeToNBT(nbt, "m1");
 		tanks[2].writeToNBT(nbt, "m2");
 		tanks[3].writeToNBT(nbt, "m3");
+	}
+
+	@Override protected void beforeInventorySlotChanged(int slot) {
+		if(!runtimeBatchMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleBatchesThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override protected void beforeFluidStorageChanged(FluidTank tank) {
+		if(!runtimeBatchMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleBatchesThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override public void onChunkUnload() {
+		if(worldObj != null && !worldObj.isRemote) this.settleBatchesThrough(worldObj.getTotalWorldTime() - 1L);
+		lastBatchTick = Long.MIN_VALUE;
+		runtimeBatchActive = false;
+		super.onChunkUnload();
 	}
 	AxisAlignedBB bb = null;
 	

@@ -48,11 +48,15 @@ import net.minecraftforge.common.util.ForgeDirection;
 public class TileEntityCustomMachine extends TileEntityMachinePolluting implements IFluidStandardTransceiver, IEnergyProviderMK2, IEnergyReceiverMK2, IGUIProvider {
 	private static final int TASK_STRUCTURE = 1;
 	private static final int TASK_WORK = 2;
+	private static final int TASK_BATTERY = 3;
+	private static final int TASK_SLOT_MAIN = 0;
+	private static final int TASK_SLOT_BATTERY = 1;
 	private CustomMachineRecipe runtimeRecipe;
 	private int observedInputs;
 	private boolean inputFingerprintInitialized;
 	private boolean recipeDirty = true;
 	private boolean runtimeEnergyMutation;
+	private long lastBatteryChargeTick = Long.MIN_VALUE;
 
 	public String machineType;
 	public MachineConfiguration config;
@@ -129,27 +133,48 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 			worldObj.func_147480_a(xCoord, yCoord, zCoord, false);
 			return;
 		}
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updatePowerConnections();
 		if((causes & (MachineDirtyCause.INVENTORY | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE | MachineDirtyCause.LIFECYCLE | MachineDirtyCause.CONFIGURATION)) != 0) {
 			if(inputTanks.length > 0) inputTanks[0].setType(1, slots);
 			if(inputTanks.length > 1) inputTanks[1].setType(2, slots);
 			if(inputTanks.length > 2) inputTanks[2].setType(3, slots);
 			recipeDirty = true;
 		}
+		this.refreshRecipe();
 		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0)
 			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_STRUCTURE, 0);
-		this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_WORK, 0);
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 	}
 
 	@Override
 	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskSlot != 0 || worldObj == null || worldObj.isRemote || config == null) return;
+		if(worldObj == null || worldObj.isRemote || config == null) return;
 		if(taskType == TASK_STRUCTURE) {
+			if(taskSlot != 0) return;
 			checkStructure();
+			this.updatePowerConnections();
 			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 300L, TASK_STRUCTURE, 0);
-			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_WORK, 0);
+			this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 			return;
 		}
-		if(taskType != TASK_WORK) return;
+		long now = worldObj.getTotalWorldTime();
+		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
+			long oldEnergy = energyQuanta;
+			runtimeEnergyMutation = true;
+			try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, this.config.energyCapacityQuanta)); }
+			finally { runtimeEnergyMutation = false; }
+			lastBatteryChargeTick = now;
+			if(oldEnergy != energyQuanta) this.markDirty();
+			this.evaluateAndSchedule(now);
+			if(this.shouldContinueWork()) this.scheduleMachineTransition(now, TASK_WORK, TASK_SLOT_MAIN);
+			if(now % 20L == 0L) this.sendRuntimePacket();
+			return;
+		}
+		if(taskType != TASK_WORK || taskSlot != TASK_SLOT_MAIN) return;
+		if(lastBatteryChargeTick != now && this.hasBatteryWork()) {
+			this.scheduleMachineTransition(now + 1L, TASK_WORK, TASK_SLOT_MAIN);
+			return;
+		}
 		refreshRecipe();
 		runtimeEnergyMutation = true;
 		this.beginMachineFluidMutation();
@@ -158,13 +183,14 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 			this.endMachineFluidMutation();
 			runtimeEnergyMutation = false;
 		}
-		if(shouldContinueWork()) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_WORK, 0);
+		this.evaluateAndSchedule(now);
 	}
 
 	@Override
 	public void onMachineCoarsePoll(int cadence) {
 		if(cadence != 20 || worldObj == null || worldObj.isRemote || config == null) return;
 		refreshExternalConnections();
+		this.updatePowerConnections();
 		int fingerprint = inputFingerprint();
 		if(inputFingerprintInitialized && fingerprint != observedInputs) {
 			recipeDirty = true;
@@ -172,8 +198,22 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 		}
 		observedInputs = fingerprint;
 		inputFingerprintInitialized = true;
-		if(shouldContinueWork()) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_WORK, 0);
-		else sendRuntimePacket();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		if(!this.shouldContinueWork() && worldObj.getTotalWorldTime() % 20L == 0L) this.sendRuntimePacket();
+	}
+
+	private void evaluateAndSchedule(long now) {
+		if(worldObj == null || worldObj.isRemote || config == null) return;
+		if(this.shouldContinueWork()) this.scheduleMachineTransition(now + 1L, TASK_WORK, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_WORK, TASK_SLOT_MAIN);
+		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
+	}
+
+	private boolean hasBatteryWork() {
+		if(config == null || energyQuanta >= config.energyCapacityQuanta || slots[0] == null) return false;
+		if(slots[0].getItem() == ModItems.battery_creative || slots[0].getItem() == ModItems.fusion_core_infinite) return true;
+		return slots[0].getItem() instanceof IBatteryItem && ((IBatteryItem) slots[0].getItem()).getStoredEnergyQuanta(slots[0]) > 0L;
 	}
 
 	private int inputFingerprint() {
@@ -202,10 +242,6 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 
 	private boolean shouldContinueWork() {
 		if(cachedRecipe != null) return true;
-		if(slots[0] != null && energyQuanta < config.energyCapacityQuanta) {
-			if(slots[0].getItem() == ModItems.battery_creative || slots[0].getItem() == ModItems.fusion_core_infinite) return true;
-			if(slots[0].getItem() instanceof IBatteryItem && ((IBatteryItem) slots[0].getItem()).getStoredEnergyQuanta(slots[0]) > 0) return true;
-		}
 		if(config.generatorMode && energyQuanta > 0) return true;
 		for(FluidTank tank : outputTanks) if(tank.getFill() > 0) return true;
 		if(smoke.getFill() > 0 || smoke_leaded.getFill() > 0 || smoke_poison.getFill() > 0) return true;
@@ -251,6 +287,12 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 				}
 	}
 
+	private void updatePowerConnections() {
+		if(!config.generatorMode) return;
+		for(DirPos pos : this.connectionPos)
+			this.registerPowerConnection(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+	}
+
 	private void sendRuntimePacket() {
 			NBTTagCompound data = new NBTTagCompound();
 			data.setString("type", this.machineType);
@@ -275,13 +317,9 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 				return;
 			}
 
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, this.config.energyCapacityQuanta));
-
-
-
 			for (DirPos pos : this.connectionPos) {
 				if (config.generatorMode && energyQuanta > 0)
-					this.tryProvide(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+					this.providePowerToDirectReceiver(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				for (FluidTank tank : this.outputTanks)
 					if (tank.getFill() > 0)
 						this.sendFluid(tank, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
@@ -605,6 +643,7 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 		this.init();
 
 		super.readFromNBT(nbt);
+		lastBatteryChargeTick = Long.MIN_VALUE;
 
 		if(this.config != null) {
 
@@ -618,6 +657,11 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 				this.cachedRecipe = CustomMachineRecipes.recipes.get(this.config.recipeKey).get(index);
 			}
 		}
+	}
+
+	@Override public void onChunkUnload() {
+		lastBatteryChargeTick = Long.MIN_VALUE;
+		super.onChunkUnload();
 	}
 
 	@Override

@@ -19,10 +19,12 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public abstract class TileEntityChimneyBase extends TileEntityLoadedBase implements IFluidUser, INBTPacketReceiver {
-	private static final int TASK_MAINTENANCE = 1;
+	private static final int TASK_TRANSFER = 1;
+	private static final int TASK_VISUAL_EXPIRE = 2;
 	private static final int TASK_SLOT_MAIN = 0;
 	private static final FluidType[] SMOKE_TYPES = new FluidType[] {Fluids.SMOKE, Fluids.SMOKE_LEADED, Fluids.SMOKE_POISON};
 	private boolean runtimeInitialized;
+	private long smokeUntilTick = -1L;
 
 	public long ashTick = 0;
 	public long sootTick = 0;
@@ -41,7 +43,8 @@ public abstract class TileEntityChimneyBase extends TileEntityLoadedBase impleme
 		if(worldObj == null || worldObj.isRemote) return;
 		runtimeInitialized = true;
 		this.subscribeToSmokeNetworks();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		if(ashTick > 0 || sootTick > 0) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_TRANSFER, TASK_SLOT_MAIN);
+		if(onTicks > 0 && smokeUntilTick > 0L) this.scheduleMachineTransition(smokeUntilTick, TASK_VISUAL_EXPIRE, TASK_SLOT_MAIN);
 		this.sendRuntimeState();
 	}
 
@@ -52,7 +55,17 @@ public abstract class TileEntityChimneyBase extends TileEntityLoadedBase impleme
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_MAINTENANCE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		if(taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		if(taskType == TASK_VISUAL_EXPIRE) {
+			if(smokeUntilTick > worldObj.getTotalWorldTime()) this.scheduleMachineTransition(smokeUntilTick, TASK_VISUAL_EXPIRE, TASK_SLOT_MAIN);
+			else if(onTicks > 0) {
+				onTicks = 0;
+				smokeUntilTick = -1L;
+				this.sendRuntimeState();
+			}
+			return;
+		}
+		if(taskType != TASK_TRANSFER) return;
 		if(ashTick > 0 || sootTick > 0) {
 			TileEntity below = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
 			if(below instanceof TileEntityAshpit) {
@@ -64,12 +77,6 @@ public abstract class TileEntityChimneyBase extends TileEntityLoadedBase impleme
 			this.sootTick = 0;
 			this.markDirty();
 		}
-		this.sendRuntimeState();
-		if(onTicks > 0) {
-			onTicks--;
-			if(onTicks == 0) this.sendRuntimeState();
-		}
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 	}
 
 	private void subscribeToSmokeNetworks() {
@@ -79,12 +86,6 @@ public abstract class TileEntityChimneyBase extends TileEntityLoadedBase impleme
 			this.trySubscribe(type, worldObj, xCoord, yCoord, zCoord + 2, Library.POS_Z);
 			this.trySubscribe(type, worldObj, xCoord, yCoord, zCoord - 2, Library.NEG_Z);
 		}
-	}
-
-	private void evaluateAndSchedule(long now) {
-		if(!runtimeInitialized) return;
-		if(ashTick > 0 || sootTick > 0 || onTicks > 0) this.scheduleMachineTransition(now + 1L, TASK_MAINTENANCE, TASK_SLOT_MAIN);
-		else this.cancelMachineTransition(TASK_MAINTENANCE, TASK_SLOT_MAIN);
 	}
 
 	private void sendRuntimeState() {
@@ -131,6 +132,10 @@ public abstract class TileEntityChimneyBase extends TileEntityLoadedBase impleme
 		if(type != Fluids.SMOKE && type != Fluids.SMOKE_LEADED && type != Fluids.SMOKE_POISON) return fluid;
 		
 		onTicks = 20;
+		if(worldObj != null && !worldObj.isRemote) {
+			smokeUntilTick = worldObj.getTotalWorldTime() + 20L;
+			this.cancelMachineTransition(TASK_VISUAL_EXPIRE, TASK_SLOT_MAIN);
+		}
 
 		if(cpaturesAsh()) ashTick += fluid;
 		if(cpaturesSoot()) sootTick += fluid;

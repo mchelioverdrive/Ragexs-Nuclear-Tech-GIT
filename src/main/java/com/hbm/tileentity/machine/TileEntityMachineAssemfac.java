@@ -125,6 +125,8 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 			buf.writeInt(maxProgress[i]);
 		}
 		buf.writeBoolean(isProgressing);
+		buf.writeLong(worldObj == null ? 0L : worldObj.getTotalWorldTime());
+		for(int i = 0; i < getRecipeCount(); i++) buf.writeBoolean(this.isRuntimeLaneActive(i));
 		water.serialize(buf);
 		steam.serialize(buf);
 	}
@@ -138,6 +140,8 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 			maxProgress[i] = buf.readInt();
 		}
 		isProgressing = buf.readBoolean();
+		this.setClientProgressTick(buf.readLong());
+		for(int i = 0; i < getRecipeCount(); i++) this.setClientLaneState(i, buf.readBoolean());
 		water.deserialize(buf);
 		steam.deserialize(buf);
 	}
@@ -157,6 +161,19 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 	
 	private int getWaterRequired() {
 		return 1000 / this.speed;
+	}
+
+	@Override protected long additionalResourceFullTicks(int activeLanes) {
+		long perTick = (long) getWaterRequired() * activeLanes;
+		if(perTick <= 0L) return Long.MAX_VALUE;
+		return Math.min(water.getFill() / perTick, (steam.getMaxFill() - steam.getFill()) / perTick);
+	}
+
+	@Override protected void consumeAdditionalResources(long ticks, int activeLanes) {
+		int amount = (int) (ticks * activeLanes * (long) getWaterRequired());
+		if(amount <= 0) return;
+		water.setFill(water.getFill() - amount);
+		steam.setFill(steam.getFill() + amount);
 	}
 
 	@Override

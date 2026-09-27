@@ -27,6 +27,7 @@ import net.minecraft.util.MathHelper;
 
 public class FluidTank {
 	public interface ChangeListener {
+		default void beforeTankChanged(FluidTank tank) { }
 		void onTankChanged(FluidTank tank);
 	}
 
@@ -65,6 +66,7 @@ public class FluidTank {
 
 	public FluidTank withPressure(int pressure) {
 		boolean changed = this.pressure != pressure;
+		if(changed) this.notifyBeforeChange();
 		if(changed && this.fluid != 0) this.fluid = 0;
 		this.pressure = pressure;
 		if(changed) this.notifyChanged();
@@ -81,8 +83,13 @@ public class FluidTank {
 		if(this.changeListener != null) this.changeListener.onTankChanged(this);
 	}
 
+	private void notifyBeforeChange() {
+		if(this.changeListener != null) this.changeListener.beforeTankChanged(this);
+	}
+
 	public void setFill(int i) {
 		if(this.fluid == i) return;
+		this.notifyBeforeChange();
 		fluid = i;
 		this.notifyChanged();
 	}
@@ -96,6 +103,7 @@ public class FluidTank {
 		if(this.type == type)
 			return;
 
+		this.notifyBeforeChange();
 		this.type = type;
 		this.fluid = 0;
 		this.notifyChanged();
@@ -119,6 +127,7 @@ public class FluidTank {
 
 	public int changeTankSize(int size) {
 		boolean changed = this.maxFluid != size;
+		if(changed) this.notifyBeforeChange();
 		maxFluid = size;
 
 		if(fluid > maxFluid) {
@@ -284,7 +293,7 @@ public class FluidTank {
 			list.add(FluidVolume.formatPair(fluid, maxFluid));
 
 			if(this.pressure != 0) {
-				list.add(EnumChatFormatting.RED + "Pressure: " + this.pressure + " PU");
+				list.add(EnumChatFormatting.RED + "Network pressure: " + this.pressure + " PU");
 			}
 
 			type.addInfo(list);

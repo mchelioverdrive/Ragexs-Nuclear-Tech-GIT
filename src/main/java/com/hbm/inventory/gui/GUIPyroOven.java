@@ -51,7 +51,7 @@ public class GUIPyroOven extends GuiInfoContainer {
 		int i = (int) (pyro.getStoredEnergyQuanta() * 52 / pyro.maxPower);
 		drawTexturedModalRect(guiLeft + 152, guiTop + 70 - i, 176, 64 - i, 16, i);
 		
-		int p = (int) (pyro.progress * 27);
+		int p = (int) (pyro.getProjectedProgress() * 27);
 		drawTexturedModalRect(guiLeft + 57, guiTop + 47, 176, 0, p, 12);
 
 		pyro.tanks[0].renderTank(guiLeft + 8, guiTop + 70, this.zLevel, 16, 52);

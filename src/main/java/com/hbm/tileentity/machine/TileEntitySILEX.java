@@ -116,9 +116,7 @@ public class TileEntitySILEX extends TileEntityMachineBase implements IFluidStan
 
 			loadFluid();
 
-			if(!process()) {
-				this.progress = 0;
-			}
+			if(mode == EnumWavelengths.NULL || !process()) this.progress = 0;
 
 			dequeue();
 

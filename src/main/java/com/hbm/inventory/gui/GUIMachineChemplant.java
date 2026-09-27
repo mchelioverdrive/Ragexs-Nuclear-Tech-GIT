@@ -70,7 +70,7 @@ public class GUIMachineChemplant extends GuiInfoContainer {
 		int i = (int) (chemplant.getStoredEnergyQuanta() * 52 / chemplant.maxPower);
 		drawTexturedModalRect(guiLeft + 44, guiTop + 70 - i, 176, 52 - i, 16, i);
 
-		int j = chemplant.progress * 90 / chemplant.maxProgress;
+		int j = chemplant.getDisplayedProgress() * 90 / Math.max(chemplant.maxProgress, 1);
 		drawTexturedModalRect(guiLeft + 43, guiTop + 89, 0, 222, j, 18);
 
 		this.drawInfoPanel(guiLeft + 105, guiTop + 40, 8, 8, 8);

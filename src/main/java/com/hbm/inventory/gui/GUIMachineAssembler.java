@@ -62,7 +62,7 @@ public class GUIMachineAssembler extends GuiInfoContainer {
 		drawTexturedModalRect(guiLeft + 116, guiTop + 70 - i, 176, 52 - i, 16, i);
 
 		if(assembler.isProgressing) {
-			int j = assembler.progress[0] * 83 / assembler.maxProgress[0];
+			int j = assembler.getDisplayedProgress(0) * 83 / Math.max(assembler.maxProgress[0], 1);
 			drawTexturedModalRect(guiLeft + 45, guiTop + 82, 2, 222, j, 32);
 		}
 		

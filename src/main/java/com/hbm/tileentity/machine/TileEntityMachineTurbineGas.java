@@ -105,6 +105,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		if(worldObj == null || worldObj.isRemote) return;
 		runtimeInitialized = true;
 		this.refreshOrientation();
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updatePowerConnections();
 		this.beginMachineFluidMutation();
 		try { this.selectFuelType(); }
 		finally { this.endMachineFluidMutation(); }
@@ -116,6 +117,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	@Override public void onMachineCoarsePoll(int cadence) {
 		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
 		this.refreshOrientation();
+		this.updatePowerConnections();
 		this.subscribeToInputs();
 		this.sendRuntimePacket(energyQuanta);
 	}
@@ -158,6 +160,12 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		}
 		this.trySubscribe(tanks[2].getTankType(), worldObj, xCoord - dir.offsetX * 2 - rot.offsetX * 4, yCoord, zCoord - dir.offsetZ * 2 - rot.offsetZ * 4, dir.getOpposite());
 		this.trySubscribe(tanks[2].getTankType(), worldObj, xCoord + dir.offsetX * 2 - rot.offsetX * 4, yCoord, zCoord + dir.offsetZ * 2 - rot.offsetZ * 4, dir);
+	}
+
+	private void updatePowerConnections() {
+		ForgeDirection dir = runtimeDirection;
+		ForgeDirection rot = runtimeRotation;
+		this.registerPowerConnection(worldObj, xCoord - dir.offsetZ * 5, yCoord + 1, zCoord + dir.offsetX * 5, rot);
 	}
 
 	private void evaluateAndSchedule(long now) {
@@ -209,8 +217,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 			
 			//do net/battery deductions first...
 			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 0, energyQuanta, maxPower));
-			this.tryProvide(worldObj, xCoord - dir.offsetZ * 5, yCoord + 1, zCoord + dir.offsetX * 5, rot); //sends out power
-			
+			this.providePowerToDirectReceiver(worldObj, xCoord - dir.offsetZ * 5, yCoord + 1, zCoord + dir.offsetX * 5, rot);
 			//...and then cap it. Prevents potential future cases where power would be limited due to the fuel being too strong and the buffer too small.
 			if(this.energyQuanta > this.maxPower)
 				this.setStoredEnergyQuanta(this.maxPower);

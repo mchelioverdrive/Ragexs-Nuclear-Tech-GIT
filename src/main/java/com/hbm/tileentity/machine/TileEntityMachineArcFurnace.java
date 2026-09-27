@@ -51,7 +51,14 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 	
 	private String customName;
 	private static final int TASK_PROCESS = 1;
+	private static final int TASK_BATTERY = 2;
 	private static final int TASK_SLOT_MAIN = 0;
+	private static final int TASK_SLOT_BATTERY = 1;
+	private long lastAccountingTick = Long.MIN_VALUE;
+	private boolean runtimeMaterialEligible;
+	private boolean runtimeSettling;
+	private long clientProgressTick;
+	private boolean clientProgressing;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
 	private int observedInventoryFingerprint;
@@ -76,6 +83,7 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 	public ItemStack getStackInSlotOnClosing(int i) {
 		if(slots[i] != null)
 		{
+			beforeInventorySlotChanged(i);
 			ItemStack itemStack = slots[i];
 			slots[i] = null;
 			this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
@@ -87,6 +95,7 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 
 	@Override
 	public void setInventorySlotContents(int i, ItemStack itemStack) {
+		beforeInventorySlotChanged(i);
 		slots[i] = itemStack;
 		if(itemStack != null && itemStack.stackSize > getInventoryStackLimit())
 		{
@@ -146,6 +155,7 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 	public ItemStack decrStackSize(int i, int j) {
 		if(slots[i] != null)
 		{
+			beforeInventorySlotChanged(i);
 			if(slots[i].stackSize <= j)
 			{
 				ItemStack itemStack = slots[i];
@@ -173,6 +183,8 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 		
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "powerTime");
 		this.dualCookTime = nbt.getInteger("cookTime");
+		lastAccountingTick = Long.MIN_VALUE;
+		runtimeInitialized = false;
 		slots = new ItemStack[getSizeInventory()];
 		
 		for(int i = 0; i < list.tagCount(); i++)
@@ -188,6 +200,7 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("cookTime", dualCookTime);
@@ -229,7 +242,18 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 	}
 	
 	public int getDiFurnaceProgressScaled(int i) {
-		return (dualCookTime * i) / processingSpeed;
+		long displayed = dualCookTime;
+		if(worldObj != null && worldObj.isRemote && clientProgressing) displayed = Math.min(processingSpeed, displayed + Math.max(0L, worldObj.getTotalWorldTime() - clientProgressTick));
+		return (int) ((displayed * i) / processingSpeed);
+	}
+
+	public void setClientProgress(int value) {
+		this.dualCookTime = value;
+		this.clientProgressTick = worldObj == null ? 0L : worldObj.getTotalWorldTime();
+	}
+
+	public void setClientProgressing(boolean progressing) {
+		this.clientProgressing = progressing;
 	}
 	
 	public long getPowerRemainingScaled(long i) {
@@ -328,39 +352,68 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 	@Override
 	public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		if(lastAccountingTick == Long.MIN_VALUE) lastAccountingTick = now;
+		else this.settleProgressThrough(now - 1L);
+		boolean wasProcessing = dualCookTime > 0;
 		runtimeInitialized = true;
 		this.reconcileRuntimeState(true);
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		runtimeMaterialEligible = this.canProcess();
+		if(wasProcessing) this.settleProgressThrough(now);
+		this.evaluateAndSchedule(now);
 		this.sendRuntimeState();
 	}
 
 	@Override
 	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_PROCESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
-		int oldProgress = dualCookTime;
-		long oldEnergy = energyQuanta;
-		int oldInventoryFingerprint = this.inventoryFingerprint();
-		runtimeEnergyMutation = true;
-		try {
-			if(this.hasPower() && this.canProcess()) {
-				dualCookTime++;
-				this.setStoredEnergyQuanta(Math.max(0L, energyQuanta - 250L));
-				if(dualCookTime >= processingSpeed) {
-					dualCookTime = 0;
-					this.processItem();
-				}
-			} else {
-				dualCookTime = 0;
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
+			this.settleProgressThrough(now);
+			long oldPower = energyQuanta;
+			runtimeEnergyMutation = true;
+			try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 5, energyQuanta, maxPower)); }
+			finally { runtimeEnergyMutation = false; }
+			if(oldPower != energyQuanta) {
+				this.markDirty();
+				this.sendEnergyState();
 			}
-			this.reconcileRuntimeState(false);
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 5, energyQuanta, maxPower));
-		} finally {
-			runtimeEnergyMutation = false;
-		}
-		this.observeInventoryFingerprint();
-		if(oldProgress != dualCookTime || oldEnergy != energyQuanta || oldInventoryFingerprint != observedInventoryFingerprint) this.markDirty();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+			this.evaluateAndSchedule(now);
+			return;
+		} else if(taskType == TASK_PROCESS && taskSlot == TASK_SLOT_MAIN) this.settleProgressThrough(now);
+		else return;
+		this.reconcileRuntimeState(false);
+		this.evaluateAndSchedule(now);
 		this.sendRuntimeState();
+	}
+
+	private void settleProgressThrough(long target) {
+		if(lastAccountingTick == Long.MIN_VALUE || target <= lastAccountingTick) return;
+		long elapsed = target - lastAccountingTick;
+		lastAccountingTick = target;
+		if(!runtimeMaterialEligible || energyQuanta < 250L) {
+			if(dualCookTime != 0) this.markDirty();
+			dualCookTime = 0;
+			return;
+		}
+		long successfulTicks = energyQuanta / 250L;
+		long steps = Math.min(elapsed, Math.min(Math.max(1, processingSpeed - dualCookTime), successfulTicks));
+		if(steps > 0L) {
+			this.runtimeEnergyMutation = true;
+			try { this.setStoredEnergyQuanta(Math.max(0L, energyQuanta - steps * 250L)); }
+			finally { this.runtimeEnergyMutation = false; }
+			dualCookTime += (int) steps;
+			this.markDirty();
+		}
+		if(dualCookTime >= processingSpeed) {
+			if(this.hasPower() && this.canProcess()) {
+				dualCookTime = 0;
+				runtimeSettling = true;
+				try { this.processItem(); } finally { runtimeSettling = false; }
+				runtimeMaterialEligible = this.canProcess();
+				this.markDirty();
+			}
+		} else if(steps < elapsed) dualCookTime = 0;
 	}
 
 	@Override
@@ -396,15 +449,33 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
-		boolean processing = this.hasPower() && this.canProcess();
-		ItemStack battery = slots[5];
-		boolean charging = energyQuanta < maxPower && battery != null && (battery.getItem() == ModItems.battery_creative || battery.getItem() == ModItems.fusion_core_infinite);
-		if(!charging && energyQuanta < maxPower && battery != null && battery.getItem() instanceof IBatteryItem) {
-			IBatteryItem batteryItem = (IBatteryItem) battery.getItem();
-			charging = batteryItem.getMaxOutputQuantaPerTick() > 0 && batteryItem.getStoredEnergyQuanta(battery) > 0;
+		boolean processing = runtimeMaterialEligible && this.hasPower();
+		this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
+		if(processing) {
+			long powerBoundary = energyQuanta / 250L + 1L;
+			this.scheduleMachineTransition(now + Math.max(1L, Math.min(processingSpeed - dualCookTime, powerBoundary)), TASK_PROCESS, TASK_SLOT_MAIN);
 		}
-		if(processing || charging || dualCookTime > 0) this.scheduleMachineTransition(now + 1L, TASK_PROCESS, TASK_SLOT_MAIN);
-		else this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
+		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
+	}
+
+	private boolean hasBatteryWork() {
+		ItemStack battery = slots[5];
+		if(energyQuanta >= maxPower || battery == null) return false;
+		if(battery.getItem() == ModItems.battery_creative || battery.getItem() == ModItems.fusion_core_infinite) return true;
+		if(!(battery.getItem() instanceof IBatteryItem)) return false;
+		IBatteryItem batteryItem = (IBatteryItem) battery.getItem();
+		return batteryItem.getMaxOutputQuantaPerTick() > 0 && batteryItem.getStoredEnergyQuanta(battery) > 0;
+	}
+
+	@Override protected void beforeInventorySlotChanged(int slot) {
+		if(!runtimeSettling && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override public void onChunkUnload() {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+		lastAccountingTick = Long.MIN_VALUE;
+		super.onChunkUnload();
 	}
 
 	private int inventoryFingerprint() {
@@ -430,14 +501,22 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 
 	private void sendRuntimeState() {
 		if(worldObj == null || worldObj.isRemote) return;
+		this.sendEnergyState();
+		TargetPoint point = new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50);
+		PacketDispatcher.wrapper.sendToAllAround(new AuxGaugePacket(xCoord, yCoord, zCoord, dualCookTime, 0), point);
+		PacketDispatcher.wrapper.sendToAllAround(new AuxGaugePacket(xCoord, yCoord, zCoord, runtimeMaterialEligible && this.hasPower() ? 1 : 0, 1), point);
+	}
+
+	private void sendEnergyState() {
+		if(worldObj == null || worldObj.isRemote) return;
 		TargetPoint point = new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50);
 		PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, energyQuanta), point);
-		PacketDispatcher.wrapper.sendToAllAround(new AuxGaugePacket(xCoord, yCoord, zCoord, dualCookTime, 0), point);
 	}
 
 	@Override
 	public void setStoredEnergyQuanta(long i) {
 		if(this.energyQuanta == i) return;
+		if(!runtimeEnergyMutation && !runtimeSettling && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
 		if(!runtimeEnergyMutation) this.markMachineDirty(MachineDirtyCause.ENERGY);

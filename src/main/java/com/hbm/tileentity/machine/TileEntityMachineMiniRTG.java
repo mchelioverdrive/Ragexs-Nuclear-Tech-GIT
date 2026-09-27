@@ -32,24 +32,29 @@ public class TileEntityMachineMiniRTG extends TileEntityLoadedBase implements IE
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updatePowerConnections();
 		runtimeInitialized = true;
 		this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_GENERATE, TASK_SLOT_MAIN);
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
 		if(taskType != TASK_GENERATE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
+			this.providePowerToDirectReceiver(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 		runtimeEnergyMutation = true;
 		try {
 			this.setStoredEnergyQuanta(this.energyQuanta + this.getOutput());
 			if(energyQuanta > getEnergyCapacityQuanta()) this.setStoredEnergyQuanta(getEnergyCapacityQuanta());
 
-			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-				this.tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-			}
 		} finally {
 			runtimeEnergyMutation = false;
 		}
 		this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_GENERATE, TASK_SLOT_MAIN);
+	}
+
+	private void updatePowerConnections() {
+		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
+			this.registerPowerConnection(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 	}
 	
 	public long getOutput() {

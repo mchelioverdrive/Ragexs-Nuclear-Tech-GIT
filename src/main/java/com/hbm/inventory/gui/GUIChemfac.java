@@ -67,7 +67,7 @@ public class GUIChemfac extends GuiInfoContainer {
 			int offX = guiLeft + 110 * (i % 2);
 			int offY = guiTop + 38 * (i / 2);
 			
-			int prog = chemfac.progress[i];
+			int prog = chemfac.getDisplayedProgress(i);
 			int j = prog * 17 / Math.max(chemfac.maxProgress[i], 1);
 			Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 			drawTexturedModalRect(offX + 51, offY + 16, 202, 247, j, 11);

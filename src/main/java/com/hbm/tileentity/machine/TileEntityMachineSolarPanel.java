@@ -36,6 +36,7 @@ public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updatePowerConnections();
 		runtimeInitialized = true;
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 	}
@@ -49,15 +50,19 @@ public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements
 		if(taskType != TASK_GENERATE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
 		runtimeEnergyMutation = true;
 		try {
-			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-				tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-			}
+			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
+				this.providePowerToDirectReceiver(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 			this.setStoredEnergyQuanta(this.energyQuanta + getOutput());
 			if(energyQuanta > maxpwr) this.setStoredEnergyQuanta(maxpwr);
 		} finally {
 			runtimeEnergyMutation = false;
 		}
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	private void updatePowerConnections() {
+		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
+			this.registerPowerConnection(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 	}
 
 	private void evaluateAndSchedule(long now) {

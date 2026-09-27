@@ -70,7 +70,8 @@ public class AuxGaugePacket implements IMessage {
 					TileEntityMachineArcFurnace furn = (TileEntityMachineArcFurnace)te;
 
 					if(m.id == 0)
-						furn.dualCookTime = m.value;
+						furn.setClientProgress(m.value);
+					if(m.id == 1) furn.setClientProgressing(m.value != 0);
 				}
 				if (te instanceof TileEntityLaunchTable) {
 					TileEntityLaunchTable launcher = (TileEntityLaunchTable)te;

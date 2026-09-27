@@ -12,6 +12,7 @@ import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemRTGPellet;
 import com.hbm.items.machine.ItemRTGPelletDepleted;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
 import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
@@ -125,6 +126,7 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 	@Override
 	public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updatePowerConnections();
 		if(shouldSimulate()) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_SIMULATE, 0);
 	}
 
@@ -152,8 +154,14 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
 		for(DirPos pos : getConPos())
 			this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+		this.updatePowerConnections();
 		this.sendRuntimePacket();
 		this.onMachineRuntimeDirty(0);
+	}
+
+	private void updatePowerConnections() {
+		for(DirPos pos : getConPos())
+			this.registerPowerConnection(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 	}
 
 	private void runRadiolysisStep() {
@@ -181,7 +189,7 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 			}
 
 			for(DirPos pos : getConPos()) {
-				this.tryProvide(worldObj, pos.getX(), pos.getY(),pos.getZ(), pos.getDir());
+				this.providePowerToDirectReceiver(worldObj, pos.getX(), pos.getY(),pos.getZ(), pos.getDir());
 				if(tanks[1].getFill() > 0) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(),pos.getZ(), pos.getDir());
 				if(tanks[2].getFill() > 0) this.sendFluid(tanks[2], worldObj, pos.getX(), pos.getY(),pos.getZ(), pos.getDir());
 			}

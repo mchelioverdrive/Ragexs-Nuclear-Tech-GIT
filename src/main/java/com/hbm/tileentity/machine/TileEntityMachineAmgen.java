@@ -35,6 +35,7 @@ public class TileEntityMachineAmgen extends TileEntityLoadedBase implements IEne
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updatePowerConnections();
 		runtimeInitialized = true;
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 	}
@@ -57,12 +58,17 @@ public class TileEntityMachineAmgen extends TileEntityLoadedBase implements IEne
 			this.setStoredEnergyQuanta(this.energyQuanta + this.output);
 			if(energyQuanta > maxPower) this.setStoredEnergyQuanta(maxPower);
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
-				this.tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
+				this.providePowerToDirectReceiver(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 		} finally {
 			runtimeEnergyMutation = false;
 		}
 		if(this.output > 0 || energyQuanta > 0) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_GENERATE, TASK_SLOT_MAIN);
 		else this.cancelMachineTransition(TASK_GENERATE, TASK_SLOT_MAIN);
+	}
+
+	private void updatePowerConnections() {
+		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
+			this.registerPowerConnection(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 	}
 
 	private void evaluateAndSchedule(long now) {

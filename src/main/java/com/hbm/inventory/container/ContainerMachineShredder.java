@@ -17,6 +17,7 @@ public class ContainerMachineShredder extends Container {
 
 	private TileEntityMachineShredder diFurnace;
 	private int progress;
+	private boolean runtimeProgressing;
 
 	public ContainerMachineShredder(InventoryPlayer invPlayer, TileEntityMachineShredder tedf) {
 
@@ -68,6 +69,7 @@ public class ContainerMachineShredder extends Container {
 	public void addCraftingToCrafters(ICrafting crafting) {
 		super.addCraftingToCrafters(crafting);
 		crafting.sendProgressBarUpdate(this, 1, this.diFurnace.progress);
+		crafting.sendProgressBarUpdate(this, 2, this.diFurnace.runtimeProgressing ? 1 : 0);
 	}
 
 	@Override
@@ -119,15 +121,20 @@ public class ContainerMachineShredder extends Container {
 			if(this.progress != this.diFurnace.progress) {
 				par1.sendProgressBarUpdate(this, 1, this.diFurnace.progress);
 			}
+			if(this.runtimeProgressing != this.diFurnace.runtimeProgressing) {
+				par1.sendProgressBarUpdate(this, 2, this.diFurnace.runtimeProgressing ? 1 : 0);
+			}
 		}
 
 		this.progress = this.diFurnace.progress;
+		this.runtimeProgressing = this.diFurnace.runtimeProgressing;
 	}
 
 	@Override
 	public void updateProgressBar(int i, int j) {
 		if(i == 1) {
-			diFurnace.progress = j;
+			diFurnace.setClientProgress(j);
 		}
+		if(i == 2) diFurnace.runtimeProgressing = j != 0;
 	}
 }

@@ -45,6 +45,9 @@ public class TileEntityLoadedBase extends TileEntity implements ILoadedTile {
 		this.isLoaded = false;
 	}
 
+	/** Called before the standard inventory mutation paths change a slot. */
+	protected void beforeInventorySlotChanged(int slot) { }
+
 	@Override
 	public void invalidate() {
 		if(this.worldObj != null && !this.worldObj.isRemote) {

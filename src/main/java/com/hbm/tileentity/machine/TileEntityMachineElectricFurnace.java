@@ -53,14 +53,24 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	private long lastAccountingTick = Long.MIN_VALUE;
 	private boolean runtimeEnergyMutation;
 	private boolean runtimeStateInitialized;
+	private boolean runtimeWorkScheduled;
+	private long clientProgressTick;
 
 	private static final int TASK_ACCOUNTING = 1;
+	private static final int TASK_BATTERY = 2;
 	private static final int TASK_SLOT_MAIN = 0;
+	private static final int TASK_SLOT_BATTERY = 1;
 
 	private static final int[] slots_io = new int[] { 0, 1, 2 };
 
 	public TileEntityMachineElectricFurnace() {
 		super(4);
+	}
+
+	@Override public void onChunkUnload() {
+		if(worldObj != null && !worldObj.isRemote) this.settleAccountingThrough(worldObj.getTotalWorldTime() - 1L);
+		lastAccountingTick = Long.MIN_VALUE;
+		super.onChunkUnload();
 	}
 
 	@Override
@@ -97,6 +107,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+		if(worldObj != null && !worldObj.isRemote) this.settleAccountingThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("progress", progress);
@@ -125,7 +136,9 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	}
 
 	public int getProgressScaled(int i) {
-		return (progress * i) / maxProgress;
+		long displayed = progress;
+		if(worldObj != null && worldObj.isRemote && operationActive) displayed += Math.max(0L, worldObj.getTotalWorldTime() - clientProgressTick);
+		return (int) (Math.min(maxProgress, displayed) * i / maxProgress);
 	}
 
 	public long getPowerScaled(long i) {
@@ -199,6 +212,10 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	@Override
 	public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		if(lastAccountingTick == Long.MIN_VALUE) lastAccountingTick = now;
+		else this.settleAccountingThrough(now - 1L);
+		boolean wasScheduled = runtimeWorkScheduled;
 		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.CONFIGURATION)) != 0) {
 			if(this.refreshUpgrades(false)) {
 				this.markDirty();
@@ -207,29 +224,30 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 			this.cachedRecipeEligible = this.findEligibleRecipe() != null;
 		}
 		this.runtimeStateInitialized = true;
-
-		long now = worldObj.getTotalWorldTime();
-		if((causes & MachineDirtyCause.LIFECYCLE) != 0 && this.nextRuntimeTick > now) {
-			this.scheduleMachineTransition(this.nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_MAIN);
-			this.networkPackNTIfDirty(50);
-			return;
-		}
-		this.runAccountingTick(now);
+		if(wasScheduled || cooldown > 0 && this.hasPower()) this.settleAccountingThrough(now);
+		this.scheduleNextBoundary(now);
 		this.networkPackNTIfDirty(50);
 	}
 
 	@Override
 	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_ACCOUNTING || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote) return;
-		this.nextRuntimeTick = -1L;
-		if(!this.runtimeStateInitialized) return;
-		this.runAccountingTick(worldObj.getTotalWorldTime());
+		if(worldObj == null || worldObj.isRemote || !runtimeStateInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
+			this.settleAccountingThrough(now);
+			this.setPowerInternal(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
+			this.scheduleNextBoundary(now);
+			return;
+		} else if(taskType == TASK_ACCOUNTING && taskSlot == TASK_SLOT_MAIN) this.settleAccountingThrough(now);
+		else return;
+		this.scheduleNextBoundary(now);
 		this.networkPackNTIfDirty(50);
 	}
 
 	@Override
 	public void onMachineCoarsePoll(int cadence) {
 		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
+		this.settleAccountingThrough(worldObj.getTotalWorldTime());
 		boolean upgradeChanged = this.refreshUpgrades(true);
 		boolean eligible = this.findEligibleRecipe() != null;
 		boolean eligibilityChanged = eligible != this.cachedRecipeEligible;
@@ -247,56 +265,92 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		this.networkPackNTIfDirty(50);
 	}
 
-	private void runAccountingTick(long now) {
-		if(this.lastAccountingTick == now) return;
-		this.lastAccountingTick = now;
-
-		long oldPower = this.energyQuanta;
-		int oldProgress = this.progress;
-		int oldCooldown = this.cooldown;
-		boolean oldActive = this.operationActive;
-
-		if(this.cooldown > 0) this.cooldown--;
-		this.setPowerInternal(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
-
-		if(!this.hasPower()) this.cooldown = 20;
-
+	private void settleAccountingThrough(long target) {
+		if(lastAccountingTick == Long.MIN_VALUE || target <= lastAccountingTick) return;
+		long cursor = lastAccountingTick;
+		long oldPower = energyQuanta;
+		int oldProgress = progress;
+		int oldCooldown = cooldown;
+		boolean oldActive = operationActive;
 		boolean completed = false;
-		if(this.hasPower() && this.cooldown <= 0 && this.cachedRecipeEligible) {
-			this.progress++;
-			this.operationActive = true;
-			this.setPowerInternal(this.energyQuanta - EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts));
-
-			if(now % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND);
-
-			if(this.progress >= this.maxProgress) {
-				this.progress = 0;
-				this.operationActive = false;
+		while(cursor < target) {
+			if(!this.hasPower()) {
+				cooldown = 20;
+				progress = 0;
+				operationActive = false;
+				cursor = target;
+				break;
+			}
+			if(cooldown > 0) {
+				long spent = Math.min(target - cursor, cooldown - 1L);
+				cooldown -= (int) spent;
+				cursor += spent;
+				if(cursor >= target) break;
+				cooldown--;
+			}
+			if(!cachedRecipeEligible) {
+				progress = 0;
+				operationActive = false;
+				cursor = target;
+				break;
+			}
+			long cost = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
+			long available = cost <= 0L ? target - cursor : energyQuanta / cost;
+			long steps = Math.min(target - cursor, Math.min(available, maxProgress - progress));
+			if(steps > 0L) {
+				if(cost > 0L) this.setPowerInternal(energyQuanta - steps * cost);
+				progress += (int) steps;
+				operationActive = true;
+				long sootTicks = (cursor + steps) / 20L - cursor / 20L;
+				for(long i = 0L; i < sootTicks; i++) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND);
+				cursor += steps;
+			}
+			if(progress >= maxProgress) {
+				progress = 0;
+				operationActive = false;
 				ItemStack result = this.findEligibleRecipe();
 				if(result != null) this.processItem(result);
-				this.cachedRecipeEligible = this.findEligibleRecipe() != null;
+				cachedRecipeEligible = this.findEligibleRecipe() != null;
 				completed = true;
+			} else if(steps == 0L) {
+				cursor++;
+				cooldown = 20;
+				progress = 0;
+				operationActive = false;
 			}
-		} else {
-			this.progress = 0;
-			this.operationActive = false;
 		}
-
-		boolean keepLitAcrossRecipeBoundary = completed && this.hasPower() && this.cooldown <= 0 && this.cachedRecipeEligible;
-		this.setVisualActive(this.operationActive || keepLitAcrossRecipeBoundary);
-
-		boolean changed = oldPower != this.energyQuanta || oldProgress != this.progress || oldCooldown != this.cooldown || oldActive != this.operationActive || completed;
-		if(changed) {
+		lastAccountingTick = target;
+		this.setVisualActive(operationActive || completed && this.hasPower() && cooldown <= 0 && cachedRecipeEligible);
+		if(oldPower != energyQuanta || oldProgress != progress || oldCooldown != cooldown || oldActive != operationActive || completed) {
 			this.markDirty();
 			this.markNetworkDirty();
 		}
+	}
 
-		if(this.needsAnotherAccountingTick(completed)) {
-			this.nextRuntimeTick = now + 1L;
-			this.scheduleMachineTransition(this.nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+	private void scheduleNextBoundary(long now) {
+		this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		runtimeWorkScheduled = false;
+		if(this.hasPower() && cooldown > 0) {
+			nextRuntimeTick = now + cooldown;
+			runtimeWorkScheduled = true;
+		} else if(this.hasPower() && cachedRecipeEligible) {
+			long cost = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
+			long powerBoundary = cost <= 0L ? Long.MAX_VALUE : energyQuanta / cost + 1L;
+			long sootBoundary = 20L - now % 20L;
+			long delay = Math.max(1L, Math.min(Math.max(1, maxProgress - progress), Math.min(powerBoundary, sootBoundary)));
+			nextRuntimeTick = now + delay;
+			runtimeWorkScheduled = true;
 		} else {
-			this.nextRuntimeTick = -1L;
+			if(operationActive || progress > 0) {
+				operationActive = false;
+				progress = 0;
+				this.setVisualActive(false);
+			}
+			nextRuntimeTick = -1L;
 		}
+		if(runtimeWorkScheduled) this.scheduleMachineTransition(nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
 	}
 
 	private boolean refreshUpgrades(boolean contentAware) {
@@ -311,14 +365,6 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		long consumptionQuantaPerTick = 50L + speedLevel * 50L - powerLevel * 15L;
 		this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(consumptionQuantaPerTick);
 		return oldMaxProgress != this.maxProgress || oldOperatingPowerWatts != this.operatingPowerWatts;
-	}
-
-	private boolean needsAnotherAccountingTick(boolean completed) {
-		if(this.operationActive) return true;
-		if(this.hasBatteryWork()) return true;
-		if(this.cooldown > 0 && this.hasPower()) return true;
-		if(this.cachedRecipeEligible && this.hasPower()) return true;
-		return completed && this.cachedRecipeEligible;
 	}
 
 	private boolean hasBatteryWork() {
@@ -356,6 +402,8 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		buf.writeLong(energyQuanta);
 		buf.writeInt(maxProgress);
 		buf.writeInt(progress);
+		buf.writeLong(worldObj == null ? 0L : worldObj.getTotalWorldTime());
+		buf.writeBoolean(operationActive || runtimeWorkScheduled && cachedRecipeEligible && cooldown <= 0 && this.hasPower());
 	}
 
 	@Override
@@ -364,6 +412,8 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		energyQuanta = buf.readLong();
 		maxProgress = buf.readInt();
 		progress = buf.readInt();
+		clientProgressTick = buf.readLong();
+		operationActive = buf.readBoolean();
 	}
 
 	private void updateConnections() {
@@ -379,9 +429,14 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		if(slot == 3) this.upgradeManager.invalidate();
 	}
 
+	@Override protected void beforeInventorySlotChanged(int slot) {
+		if(worldObj != null && !worldObj.isRemote) this.settleAccountingThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
 	@Override
 	public void setStoredEnergyQuanta(long i) {
 		if(this.energyQuanta == i) return;
+		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.settleAccountingThrough(worldObj.getTotalWorldTime() - 1L);
 		this.markNetworkDirty();
 		this.energyQuanta = i;
 		this.markPowerNetDirty();

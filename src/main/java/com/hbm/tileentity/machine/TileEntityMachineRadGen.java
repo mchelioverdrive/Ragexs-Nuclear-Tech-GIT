@@ -77,6 +77,10 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) {
+			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
+			this.registerPowerConnection(worldObj, this.xCoord - dir.offsetX * 4, this.yCoord, this.zCoord - dir.offsetZ * 4, dir.getOpposite());
+		}
 		this.refreshRuntimeState();
 		runtimeInitialized = true;
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
@@ -90,7 +94,7 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 		this.runtimeEnergyMutation = true;
 		try {
-			this.tryProvide(worldObj, this.xCoord - dir.offsetX * 4, this.yCoord, this.zCoord - dir.offsetZ * 4, dir.getOpposite());
+			this.providePowerToDirectReceiver(worldObj, this.xCoord - dir.offsetX * 4, this.yCoord, this.zCoord - dir.offsetZ * 4, dir.getOpposite());
 			for(int i = 0; i < 12; i++) {
 				if(this.canLoadFuel(i)) {
 					progress[i] = 0;

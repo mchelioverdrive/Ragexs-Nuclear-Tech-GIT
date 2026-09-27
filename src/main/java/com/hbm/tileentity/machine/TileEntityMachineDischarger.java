@@ -52,8 +52,19 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 	private boolean runtimeEnergyMutation;
 	private int observedInventoryFingerprint;
 	private boolean inventoryFingerprintInitialized;
-	private static final int TASK_PROCESS = 1;
+	private static final int TASK_ACCOUNTING = 1;
+	private static final int TASK_COOLDOWN = 2;
+	private static final int TASK_BATTERY = 3;
 	private static final int TASK_SLOT_MAIN = 0;
+	private long lastProcessTick = Long.MIN_VALUE;
+	private long lastCoolingTick = Long.MIN_VALUE;
+	private long cooldownDueTick = Long.MIN_VALUE;
+	private boolean runtimeSettling;
+	private int clientProcess;
+	private int clientTemp;
+	private long clientProjectionTick = Long.MIN_VALUE;
+	private boolean clientProcessing;
+	private boolean clientCooling;
 
 	private static final int[] slots_top = new int[] { 0 };
 	private static final int[] slots_bottom = new int[] { 1, 2 };
@@ -91,6 +102,11 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+		lastProcessTick = Long.MIN_VALUE;
+		lastCoolingTick = Long.MIN_VALUE;
+		cooldownDueTick = Long.MIN_VALUE;
+		runtimeInitialized = false;
+		runtimeSettling = false;
 
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		process = nbt.getInteger("process");
@@ -99,6 +115,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+		if(worldObj != null && !worldObj.isRemote) this.settleTemporalStateThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("process", process);
@@ -110,6 +127,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 	}
 	@Override
 	public void setInventorySlotContents(int i, ItemStack itemStack) {
+		beforeInventorySlotChanged(i);
 		slots[i] = itemStack;
 		if(itemStack != null && itemStack.stackSize > getInventoryStackLimit()) {
 			itemStack.stackSize = getInventoryStackLimit();
@@ -141,12 +159,25 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 		return (energyQuanta * i) / maxPower;
 	}
 
+	public int getProjectedTemp() {
+		if(worldObj == null || !worldObj.isRemote || clientProjectionTick == Long.MIN_VALUE || !clientCooling) return temp;
+		long now = worldObj.getTotalWorldTime();
+		long coolingSteps = Math.max(0L, Math.floorDiv(now, 10L) - Math.floorDiv(clientProjectionTick, 10L));
+		return (int) Math.max(20L, (long) clientTemp - coolingSteps * 5L);
+	}
+
+	public int getProjectedProcess() {
+		if(worldObj == null || !worldObj.isRemote || clientProjectionTick == Long.MIN_VALUE || !clientProcessing) return process;
+		long elapsed = Math.max(0L, worldObj.getTotalWorldTime() - clientProjectionTick);
+		return (int) Math.min(processSpeed, (long) clientProcess + elapsed);
+	}
+
 	public long getTempScaled(int i) {
-		return (temp * i) / maxtemp;
+		return (getProjectedTemp() * i) / maxtemp;
 	}
 
 	public int getProgressScaled(int i) {
-		return (process * i) / processSpeed;
+		return (getProjectedProcess() * i) / processSpeed;
 	}
 
 	public int getCoolDownScaled(int i) {
@@ -155,74 +186,31 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 
 	public boolean canProcess() {
 		//please PLEASE tell me how i can do better ffs
-			if (temp <= 20 && slots[0] != null && MachineRecipes.mODE(slots[0], OreDictManager.SA326.ingot())) {
+			if (temp <= 20 && slots[0] != null && slots[0].stackSize > 0 && MachineRecipes.mODE(slots[0], OreDictManager.SA326.ingot())) {
 				return true;
 			}
 
-			if (temp <= 20 && slots[0] != null && MachineRecipes.mODE(slots[0], OreDictManager.U233.ingot())) {
+			if (temp <= 20 && slots[0] != null && slots[0].stackSize > 0 && MachineRecipes.mODE(slots[0], OreDictManager.U233.ingot())) {
 				return true;
 			}
 
-			if (temp <= 20 && slots[0] != null && slots[0].getItem() == ModItems.ingot_electronium) {
+			if (temp <= 20 && slots[0] != null && slots[0].stackSize > 0 && slots[0].getItem() == ModItems.ingot_electronium) {
 				return true;
 			}
-			if (temp <= 20 && slots[0] != null && slots[0].getItem() == ModItems.battery_creative) {
+			if (temp <= 20 && slots[0] != null && slots[0].stackSize > 0 && slots[0].getItem() == ModItems.battery_creative) {
 				return true;
 			}
 		return false;
 	}
 
 	public boolean isProcessing() {
-		return process > 0;
-	}
-
-	public void process() {
-		process++;
-		if (process >= processSpeed) {
-
-
-			process = 0;
-			temp = maxtemp;
-
-			slots[0].stackSize--;
-			if (slots[0].stackSize <= 0 && slots[0].getItem() == ModItems.ingot_u233) {
-				this.setStoredEnergyQuanta(this.energyQuanta + (long) (Gen * 0.8));
-				slots[0] = null;
-				slots[0] = new ItemStack(ModItems.ingot_titanium);
-			}
-			//if (slots[0].stackSize <= 0 && slots[0].getItem() == ModItems.ingot_schrabidium) {
-			//	power += Gen * 2;
-			//	slots[0] = null;
-			//	slots[0] = new ItemStack(ModItems.ingot_hafnium); //this machine sucks and should be shot
-			//	//if (slots[0].getItem() == ModItems.ingot_lanthanium && slots[0].stackSize < slots[0].getMaxStackSize()) {
-			//	//	  slots[0].stackSize++;
-			//	//}
-			//}
-			if (slots[0].stackSize <= 0 && slots[0].getItem() == ModItems.ingot_electronium) {
-				this.setStoredEnergyQuanta(this.energyQuanta + Gen * 4);
-				slots[0] = null;
-				slots[0] = new ItemStack(ModItems.ingot_dineutronium);
-			}
-			if (slots[0].stackSize <= 0 && slots[0].getItem() == ModItems.battery_creative) {
-				EntityNukeExplosionMK3 ex = EntityNukeExplosionMK3.statFacFleija(worldObj, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, (int) 120);
-				if(!ex.isDead) {
-					worldObj.spawnEntityInWorld(ex);
-
-					EntityCloudFleija cloud = new EntityCloudFleija(worldObj, (int) 120);
-					cloud.setPosition(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5);
-					worldObj.spawnEntityInWorld(cloud);
-				}
-			}
-			this.worldObj.playSoundEffect(this.xCoord, this.yCoord, this.zCoord, "ambient.weather.thunder", 10000.0F,
-					0.8F + this.worldObj.rand.nextFloat() * 0.2F);
-			}
-
+		return this.getProjectedProcess() > 0;
 	}
 
 	@Override
 	public void updateEntity() {
 		if(!worldObj.isRemote) return;
-		if(process > 0) {
+		if(this.getProjectedProcess() > 0) {
 			if(audio == null) {
 				audio = createAudioLoop();
 				audio.startSound();
@@ -241,38 +229,123 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		boolean wasProcessing = process > 0;
+		if(lastProcessTick == Long.MIN_VALUE) lastProcessTick = now;
+		else this.settleTemporalStateThrough(now - 1L);
 		runtimeInitialized = true;
 		this.observeInventoryFingerprint();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		if(wasProcessing) this.settleTemporalStateThrough(now);
+		else lastProcessTick = now;
+		if(lastCoolingTick == Long.MIN_VALUE) lastCoolingTick = now;
+		else this.settleCoolingThrough(now);
+		this.evaluateAndSchedule(now);
 		this.sendRuntimeState();
 		this.sendEnergyState();
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_PROCESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
-		long oldEnergy = energyQuanta;
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized || taskSlot != TASK_SLOT_MAIN) return;
+		long now = worldObj.getTotalWorldTime();
+		if(taskType == TASK_ACCOUNTING) {
+			int oldProcess = process;
+			int oldTemp = temp;
+			long oldEnergy = energyQuanta;
+			this.settleTemporalStateThrough(now);
+			if(oldTemp != temp) this.markDirty();
+			this.evaluateAndSchedule(now);
+			if(oldProcess != process || oldTemp != temp) this.sendRuntimeState();
+			if(oldEnergy != energyQuanta) this.sendEnergyState();
+		} else if(taskType == TASK_COOLDOWN) {
+			int oldTemp = temp;
+			this.settleCoolingThrough(now);
+			if(oldTemp > 20 && temp <= 20) lastProcessTick = now;
+			this.evaluateAndSchedule(now);
+			if(oldTemp != temp) { this.markDirty(); this.sendRuntimeState(); }
+		} else if(taskType == TASK_BATTERY) {
+			long oldEnergy = energyQuanta;
+			runtimeEnergyMutation = true;
+			try { this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 1, energyQuanta, maxPower)); }
+			finally { runtimeEnergyMutation = false; }
+			boolean inventoryChanged = this.observeInventoryFingerprint();
+			if(inventoryChanged) this.markNetworkDirty();
+			if(oldEnergy != energyQuanta || inventoryChanged) this.markDirty();
+			if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_MAIN);
+			else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_MAIN);
+			if(oldEnergy != energyQuanta) { this.sendRuntimeState(); this.sendEnergyState(); }
+		} else return;
+	}
+
+	private void settleTemporalStateThrough(long targetTick) {
+		if(worldObj == null || worldObj.isRemote || runtimeSettling) return;
 		int oldProcess = process;
 		int oldTemp = temp;
-		int oldInventoryFingerprint = this.inventoryFingerprint();
-		runtimeEnergyMutation = true;
-		try {
-			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 1, energyQuanta, maxPower));
-			if(canProcess()) this.process();
-			else process = 0;
-			if(worldObj.getTotalWorldTime() % 10 == 0 && temp > 20) {
-				temp -= 5;
-				if(temp < 20) temp = 20;
+		boolean completed = false;
+		if(lastProcessTick != Long.MIN_VALUE && targetTick > lastProcessTick) {
+			long elapsed = targetTick - lastProcessTick;
+			lastProcessTick = targetTick;
+			if(!this.canProcess()) process = 0;
+			else {
+				int steps = (int) Math.min(elapsed, processSpeed - process);
+				process += steps;
+				if(process >= processSpeed) {
+					runtimeSettling = true;
+					try { this.completeDischarge(); }
+					finally { runtimeSettling = false; }
+					completed = true;
+					lastCoolingTick = targetTick;
+					cooldownDueTick = Long.MIN_VALUE;
+					if(Math.floorMod(targetTick, 10L) == 0L && temp > 20) temp = Math.max(20, temp - 5);
+				}
 			}
-		} finally {
-			runtimeEnergyMutation = false;
 		}
-		boolean inventoryChanged = oldInventoryFingerprint != this.inventoryFingerprint();
-		if(inventoryChanged) this.markNetworkDirty();
-		this.observeInventoryFingerprint();
-		if(oldEnergy != energyQuanta || oldProcess != process || oldTemp != temp || inventoryChanged) this.markDirty();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
-		this.sendRuntimeState();
-		if(oldEnergy != energyQuanta) this.sendEnergyState();
+		this.settleCoolingThrough(targetTick);
+		if(completed && oldTemp != temp) cooldownDueTick = Long.MIN_VALUE;
+		if(oldProcess != process || oldTemp != temp) {
+			this.markDirty();
+			this.markNetworkDirty();
+		}
+	}
+
+	private void settleCoolingThrough(long targetTick) {
+		if(worldObj == null || worldObj.isRemote) return;
+		if(lastCoolingTick == Long.MIN_VALUE) {
+			lastCoolingTick = targetTick;
+			return;
+		}
+		if(targetTick <= lastCoolingTick) return;
+		long firstBoundary = lastCoolingTick + (10L - Math.floorMod(lastCoolingTick, 10L));
+		long steps = firstBoundary > targetTick ? 0L : (targetTick - firstBoundary) / 10L + 1L;
+		if(steps > 0L && temp > 20) temp = (int) Math.max(20L, (long) temp - steps * 5L);
+		lastCoolingTick = targetTick;
+		cooldownDueTick = temp > 20 ? targetTick + (10L - Math.floorMod(targetTick, 10L)) : Long.MIN_VALUE;
+	}
+
+	private void completeDischarge() {
+		process = 0;
+		temp = maxtemp;
+		slots[0].stackSize--;
+		if(slots[0].stackSize <= 0 && slots[0].getItem() == ModItems.ingot_u233) {
+			this.setStoredEnergyQuanta(this.energyQuanta + (long) (Gen * 0.8));
+			slots[0] = null;
+			slots[0] = new ItemStack(ModItems.ingot_titanium);
+		}
+		if(slots[0].stackSize <= 0 && slots[0].getItem() == ModItems.ingot_electronium) {
+			this.setStoredEnergyQuanta(this.energyQuanta + Gen * 4);
+			slots[0] = null;
+			slots[0] = new ItemStack(ModItems.ingot_dineutronium);
+		}
+		if(slots[0].stackSize <= 0 && slots[0].getItem() == ModItems.battery_creative) {
+			EntityNukeExplosionMK3 ex = EntityNukeExplosionMK3.statFacFleija(worldObj, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, (int) 120);
+			if(!ex.isDead) {
+				worldObj.spawnEntityInWorld(ex);
+				EntityCloudFleija cloud = new EntityCloudFleija(worldObj, (int) 120);
+				cloud.setPosition(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5);
+				worldObj.spawnEntityInWorld(cloud);
+			}
+		}
+		this.worldObj.playSoundEffect(this.xCoord, this.yCoord, this.zCoord, "ambient.weather.thunder", 10000.0F,
+				0.8F + this.worldObj.rand.nextFloat() * 0.2F);
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
@@ -291,14 +364,25 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
-		if(this.canProcess() || this.hasBatteryWork() || process > 0) {
-			this.scheduleMachineTransition(now + 1L, TASK_PROCESS, TASK_SLOT_MAIN);
-		} else if(temp > 20) {
-			long delay = 10L - now % 10L;
-			this.scheduleMachineTransition(now + delay, TASK_PROCESS, TASK_SLOT_MAIN);
-		} else {
-			this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
+		if(this.canProcess()) this.scheduleMachineTransition(now + Math.max(1, processSpeed - process), TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		else {
+			if(process > 0) {
+				process = 0;
+				lastProcessTick = now;
+				this.markDirty();
+				this.markNetworkDirty();
+			}
+			this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
 		}
+		if(temp > 20) {
+			if(cooldownDueTick == Long.MIN_VALUE || cooldownDueTick <= now) cooldownDueTick = now + (10L - Math.floorMod(now, 10L));
+			this.scheduleMachineTransition(cooldownDueTick, TASK_COOLDOWN, TASK_SLOT_MAIN);
+		} else {
+			cooldownDueTick = Long.MIN_VALUE;
+			this.cancelMachineTransition(TASK_COOLDOWN, TASK_SLOT_MAIN);
+		}
+		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_MAIN);
 	}
 
 	private void sendRuntimeState() {
@@ -306,6 +390,9 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 		data.setInteger("progress", process);
 		data.setInteger("temp", temp);
+		data.setLong("tick", worldObj == null ? 0L : worldObj.getTotalWorldTime());
+		data.setBoolean("processing", process > 0 && this.canProcess());
+		data.setBoolean("cooling", temp > 20);
 		this.networkPack(data, 50);
 	}
 
@@ -355,6 +442,13 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 
 
 	public void onChunkUnload() {
+		if(worldObj != null && !worldObj.isRemote) {
+			this.settleTemporalStateThrough(worldObj.getTotalWorldTime() - 1L);
+			lastProcessTick = Long.MIN_VALUE;
+			lastCoolingTick = Long.MIN_VALUE;
+			cooldownDueTick = Long.MIN_VALUE;
+			runtimeInitialized = false;
+		}
 		super.onChunkUnload();
 
 		if(audio != null) {
@@ -379,6 +473,11 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		this.process = data.getInteger("progress");
 		this.temp = data.getInteger("temp");
+		this.clientProcess = this.process;
+		this.clientTemp = this.temp;
+		this.clientProjectionTick = data.getLong("tick");
+		this.clientProcessing = data.getBoolean("processing");
+		this.clientCooling = data.getBoolean("cooling");
 	}
 
 	@Override
@@ -412,6 +511,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 
 	@Override
 	public void writeNBT(NBTTagCompound nbt) {
+		if(worldObj != null && !worldObj.isRemote) this.settleTemporalStateThrough(worldObj.getTotalWorldTime() - 1L);
 		NBTTagCompound data = new NBTTagCompound();
 		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 		data.setInteger("progress", process);
@@ -424,6 +524,19 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 		NBTTagCompound data = nbt.getCompoundTag(NBT_PERSISTENT_KEY);
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		this.temp = data.getInteger("temp");
-		this.process = data.getInteger("procsess");
+		this.process = data.getInteger("progress");
+		lastProcessTick = Long.MIN_VALUE;
+		lastCoolingTick = Long.MIN_VALUE;
+		cooldownDueTick = Long.MIN_VALUE;
+		runtimeInitialized = false;
+	}
+
+	@Override
+	protected void beforeInventorySlotChanged(int slot) {
+		if(worldObj == null || worldObj.isRemote || runtimeSettling || !runtimeInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		boolean wasProcessing = process > 0;
+		this.settleTemporalStateThrough(now - 1L);
+		if(wasProcessing) this.settleTemporalStateThrough(now);
 	}
 }

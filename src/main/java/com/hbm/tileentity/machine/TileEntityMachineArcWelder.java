@@ -59,16 +59,32 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 	private ArcWelderRecipe cachedRecipe;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
+	private boolean runtimeSettling;
+	private boolean runtimeActive;
+	private boolean runtimeEffectTickPending;
+	private boolean runtimeMaterialEligible;
+	private long lastProgressTick = Long.MIN_VALUE;
+	private long clientProgressTick;
 	private int observedInventoryFingerprint;
 	private boolean inventoryFingerprintInitialized;
 	private long observedRecipeRevision;
 	private static final int TASK_PROCESS = 1;
+	private static final int TASK_EFFECT = 2;
+	private static final int TASK_BATTERY = 3;
 	private static final int TASK_SLOT_MAIN = 0;
+	private static final int TASK_SLOT_BATTERY = 1;
+	private static final int TASK_SLOT_EFFECT = 2;
 
 	public TileEntityMachineArcWelder() {
 		super(8);
 		this.tank = new FluidTank(Fluids.NONE, 24_000);
 		this.trackMachineFluidTank(tank);
+	}
+
+	@Override public void onChunkUnload() {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+		lastProgressTick = Long.MIN_VALUE;
+		super.onChunkUnload();
 	}
 
 	@Override
@@ -96,55 +112,96 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		if(lastProgressTick == Long.MIN_VALUE) lastProgressTick = now;
+		else this.settleProgressThrough(now - 1L);
+		boolean wasActive = runtimeActive;
 		runtimeInitialized = true;
 		this.refreshRuntimeState();
+		runtimeMaterialEligible = this.canProcessMaterials(cachedRecipe);
 		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0) this.updateConnections();
 		observedRecipeRevision = SerializableRecipe.getRegistryRevision();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		if(wasActive) this.settleProgressThrough(now);
+		this.evaluateAndSchedule(now);
 		this.networkPackNT(25);
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_PROCESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
-		long oldEnergy = energyQuanta;
-		int oldProgress = progress;
-		int oldInventoryFingerprint = this.inventoryFingerprint();
-		if(inventoryFingerprintInitialized && oldInventoryFingerprint != observedInventoryFingerprint) this.refreshRuntimeState();
-		this.beginMachineFluidMutation();
-		runtimeEnergyMutation = true;
-		try {
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 4, this.getStoredEnergyQuanta(), this.getEnergyCapacityQuanta()));
-			if(cachedRecipe != null) {
-				if(this.canProcess(cachedRecipe)) {
-					progress++;
-					this.setStoredEnergyQuanta(energyQuanta - consumption);
-					FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1200);
-					if(progress >= processTime) {
-						progress = 0;
-						this.consumeItems(cachedRecipe);
-						if(slots[3] == null) slots[3] = cachedRecipe.output.copy();
-						else slots[3].stackSize += cachedRecipe.output.stackSize;
-						this.refreshCachedRecipe();
-						this.markDirty();
-					}
-					if(worldObj.getTotalWorldTime() % 2 == 0) this.sendArcParticle();
-				} else {
-					progress = 0;
-				}
-			} else {
-				progress = 0;
-			}
-			this.maxPower = Math.max(cachedRecipe == null ? 2_000L : cachedRecipe.consumption * 20L, energyQuanta);
-		} finally {
-			runtimeEnergyMutation = false;
-			this.endMachineFluidMutation();
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
+			this.settleProgressThrough(now);
+			long oldPower = energyQuanta;
+			runtimeEnergyMutation = true;
+			try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 4, energyQuanta, this.getEnergyCapacityQuanta())); }
+			finally { runtimeEnergyMutation = false; }
+			if(oldPower != energyQuanta) { this.markDirty(); this.markNetworkDirty(); }
+			this.evaluateAndSchedule(now);
+			return;
+		} else if(taskType == TASK_PROCESS && taskSlot == TASK_SLOT_MAIN) {
+			this.settleProgressThrough(now);
 		}
-		boolean inventoryChanged = oldInventoryFingerprint != this.inventoryFingerprint();
-		if(inventoryChanged) this.markNetworkDirty();
-		this.observeInventoryFingerprint();
-		if(oldEnergy != energyQuanta || oldProgress != progress || inventoryChanged) this.markDirty();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
-		this.networkPackNT(25);
+		else if(taskType == TASK_EFFECT && taskSlot == TASK_SLOT_EFFECT) {
+			if(runtimeActive || runtimeEffectTickPending) this.emitRuntimeEffects();
+			runtimeEffectTickPending = false;
+			if(runtimeActive) this.scheduleMachineTransition(now + 1L, TASK_EFFECT, TASK_SLOT_EFFECT);
+		}
+		else return;
+		if(taskType != TASK_EFFECT) {
+			this.evaluateAndSchedule(now);
+			this.networkPackNT(25);
+		}
+	}
+
+	private void settleProgressThrough(long target) {
+		if(lastProgressTick == Long.MIN_VALUE || target <= lastProgressTick) return;
+		long elapsed = target - lastProgressTick;
+		lastProgressTick = target;
+		runtimeEffectTickPending = false;
+		long cost = consumption;
+		if(!runtimeMaterialEligible || (cost > 0L && energyQuanta < cost)) {
+			if(progress != 0) { progress = 0; this.markDirty(); }
+			runtimeActive = false;
+			return;
+		}
+		runtimeSettling = true;
+		runtimeEnergyMutation = true;
+		this.beginMachineFluidMutation();
+		try {
+			long poweredTicks = cost <= 0L ? Long.MAX_VALUE : energyQuanta / cost;
+			long steps = Math.min(elapsed, Math.min(Math.max(1, processTime - progress), poweredTicks));
+			if(steps > 0L) {
+				this.setStoredEnergyQuanta(energyQuanta - steps * cost);
+				progress += (int) steps;
+				this.markDirty();
+				this.markNetworkDirty();
+			}
+			if(progress >= processTime) {
+				if(this.canProcessMaterials(cachedRecipe)) {
+					ArcWelderRecipe recipe = cachedRecipe;
+					progress = 0;
+					this.consumeItems(recipe);
+					if(slots[3] == null) slots[3] = recipe.output.copy();
+					else slots[3].stackSize += recipe.output.stackSize;
+					this.refreshRuntimeState();
+					runtimeMaterialEligible = this.canProcessMaterials(cachedRecipe);
+					this.markDirty();
+				} else runtimeMaterialEligible = false;
+			} else if(steps < elapsed) progress = 0;
+			runtimeEffectTickPending = steps >= elapsed && steps > 0L;
+		} finally {
+			this.endMachineFluidMutation();
+			runtimeEnergyMutation = false;
+			runtimeSettling = false;
+		}
+		runtimeActive = runtimeMaterialEligible && (consumption <= 0L || energyQuanta >= consumption);
+	}
+
+	private void emitRuntimeEffects() {
+		if(runtimeActive) {
+			FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1200);
+			if(worldObj.getTotalWorldTime() % 2 == 0) this.sendArcParticle();
+		}
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
@@ -190,8 +247,30 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
-		if(this.canProcess(cachedRecipe) || this.hasBatteryWork() || progress > 0) this.scheduleMachineTransition(now + 1L, TASK_PROCESS, TASK_SLOT_MAIN);
-		else this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
+		this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
+		runtimeActive = runtimeMaterialEligible && (consumption <= 0L || energyQuanta >= consumption);
+		if(runtimeActive) {
+			long cost = consumption;
+			long poweredBoundary = cost <= 0L ? Long.MAX_VALUE : energyQuanta / cost + 1L;
+			this.scheduleMachineTransition(now + Math.max(1L, Math.min(processTime - progress, poweredBoundary)), TASK_PROCESS, TASK_SLOT_MAIN);
+		} else if(progress > 0 && (!runtimeMaterialEligible || !this.hasBatteryWork())) {
+			progress = 0;
+			this.markDirty();
+			this.markNetworkDirty();
+		}
+		if(runtimeActive) this.scheduleMachineTransition(now + 1L, TASK_EFFECT, TASK_SLOT_EFFECT);
+		else this.cancelMachineTransition(TASK_EFFECT, TASK_SLOT_EFFECT);
+		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
+		this.maxPower = Math.max(cachedRecipe == null ? 2_000L : cachedRecipe.consumption * 20L, energyQuanta);
+	}
+
+	@Override protected void beforeInventorySlotChanged(int slot) {
+		if(!runtimeSettling && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override protected void beforeFluidStorageChanged(FluidTank changedTank) {
+		if(!runtimeSettling && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 	}
 
 	private boolean hasBatteryWork() {
@@ -246,6 +325,8 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 		buf.writeLong(consumption);
 		buf.writeInt(progress);
 		buf.writeInt(processTime);
+		buf.writeLong(worldObj == null ? 0L : worldObj.getTotalWorldTime());
+		buf.writeBoolean(runtimeActive);
 		
 		tank.serialize(buf);
 		
@@ -267,6 +348,8 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 		consumption = buf.readLong();
 		progress = buf.readInt();
 		processTime = buf.readInt();
+		clientProgressTick = buf.readLong();
+		runtimeActive = buf.readBoolean();
 		
 		tank.deserialize(buf);
 		
@@ -279,6 +362,10 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 	public boolean canProcess(ArcWelderRecipe recipe) {
 		if(recipe == null) return false;
 		if(this.energyQuanta < this.consumption) return false;
+		return this.canProcessMaterials(recipe);
+	}
+
+	private boolean canProcessMaterials(ArcWelderRecipe recipe) {
 		
 		if(recipe.fluid != null) {
 			if(this.tank.getTankType() != recipe.fluid.type) return false;
@@ -338,12 +425,17 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.maxPower = EnergyUnits.readCapacityQuanta(nbt, "maxPower");
 		this.progress = nbt.getInteger("progress");
+		lastProgressTick = Long.MIN_VALUE;
 		this.processTime = nbt.getInteger("processTime");
 		tank.readFromNBT(nbt, "t");
+		runtimeInitialized = false;
+		runtimeActive = false;
+		runtimeMaterialEligible = false;
 	}
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
@@ -361,9 +453,15 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 	@Override
 	public void setStoredEnergyQuanta(long energyQuanta) {
 		if(this.energyQuanta == energyQuanta) return;
+		if(!runtimeEnergyMutation && !runtimeSettling && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
+	}
+
+	public int getDisplayedProgress() {
+		if(worldObj == null || !worldObj.isRemote || !runtimeActive) return progress;
+		return (int) Math.min(processTime, progress + Math.max(0L, worldObj.getTotalWorldTime() - clientProgressTick));
 	}
 
 	@Override

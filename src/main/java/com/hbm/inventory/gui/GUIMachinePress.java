@@ -29,8 +29,8 @@ public class GUIMachinePress extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 
-		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 25, guiTop + 16, 18, 18, mouseX, mouseY, (press.speed * 100 / press.maxSpeed) + "%");
-		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 25, guiTop + 34, 18, 18, mouseX, mouseY, (press.burnTime / 200) + " operations left");
+		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 25, guiTop + 16, 18, 18, mouseX, mouseY, (press.getProjectedSpeed() * 100 / press.maxSpeed) + "%");
+		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 25, guiTop + 34, 18, 18, mouseX, mouseY, (press.getProjectedBurnTime() / 200) + " operations left");
 	}
 
 	@Override
@@ -47,14 +47,14 @@ public class GUIMachinePress extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
-		if(press.burnTime >= 20) {
+		if(press.getProjectedBurnTime() >= 20) {
 			this.drawTexturedModalRect(guiLeft + 27, guiTop + 36, 176, 0, 14, 14);
 		}
 		
 		int k = (int) (press.renderPress * 16 / press.maxPress);
 		this.drawTexturedModalRect(guiLeft + 79, guiTop + 35, 194, 0, 18, k);
 		
-		double i = (double) press.speed / (double) press.maxSpeed;
+		double i = (double) press.getProjectedSpeed() / (double) press.maxSpeed;
 		GaugeUtil.drawSmoothGauge(guiLeft + 34, guiTop + 25, this.zLevel, i, 5, 2, 1, 0x7f0000);
 	}
 }

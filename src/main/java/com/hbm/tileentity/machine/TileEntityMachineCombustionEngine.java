@@ -76,6 +76,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 		runtimeInitialized = true;
 		runtimeWaterlogged = this.isWaterlogged();
 		this.refreshRuntimeConnections();
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updatePowerConnections();
 		this.beginMachineFluidMutation();
 		try { this.loadFuel(); }
 		finally { this.endMachineFluidMutation(); }
@@ -94,6 +95,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 			}
 		} else if(cadence == 20) {
 			this.refreshRuntimeConnections();
+			this.updatePowerConnections();
 			this.subscribeToFuel();
 			this.sendRuntimePacket();
 		}
@@ -140,6 +142,10 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 
 	private void subscribeToFuel() {
 		for(DirPos pos : runtimeConnections) this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+	}
+
+	private void updatePowerConnections() {
+		for(DirPos pos : runtimeConnections) this.registerPowerConnection(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 	}
 
 	@Override
@@ -191,7 +197,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 3, energyQuanta, energyQuanta));
 			
 			for(DirPos pos : runtimeConnections) {
-				this.tryProvide(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+				this.providePowerToDirectReceiver(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				this.sendSmoke(pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 			

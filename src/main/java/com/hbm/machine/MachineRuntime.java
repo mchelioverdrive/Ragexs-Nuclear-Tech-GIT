@@ -22,12 +22,13 @@ public final class MachineRuntime {
 	private final Map<PositionKey, TileEntityLoadedBase> retainedTransitions = new HashMap<PositionKey, TileEntityLoadedBase>();
 	private ArrayDeque<MachineEntry> dirtyQueue = new ArrayDeque<MachineEntry>();
 	private ArrayDeque<MachineEntry> dirtyExecution = new ArrayDeque<MachineEntry>();
-	private final PriorityQueue<ScheduledTransition> scheduled = new PriorityQueue<ScheduledTransition>(11, new ScheduledComparator());
+	private PriorityQueue<ScheduledTransition> scheduled = new PriorityQueue<ScheduledTransition>(11, new ScheduledComparator());
 	private final CoarseBucket coarse5 = new CoarseBucket(5);
 	private final CoarseBucket coarse20 = new CoarseBucket(20);
 	private final CoarseBucket coarse100 = new CoarseBucket(100);
 	private final MachineRuntimeDiagnostics diagnostics = new MachineRuntimeDiagnostics();
 	private long scheduleSequence;
+	private int cancelledQueued;
 	private boolean unloaded;
 
 	MachineRuntime(World world) {
@@ -165,6 +166,7 @@ public final class MachineRuntime {
 		long now = world.getTotalWorldTime();
 		// Apply mutations observed during TileEntity ticking before work due at this boundary.
 		processDirty();
+		compactCancelledTransitions();
 		processScheduled(now);
 		coarse5.poll(now, diagnostics);
 		coarse20.poll(now, diagnostics);
@@ -187,6 +189,7 @@ public final class MachineRuntime {
 		dirtyQueue.clear();
 		dirtyExecution.clear();
 		scheduled.clear();
+		cancelledQueued = 0;
 		coarse5.clear();
 		coarse20.clear();
 		coarse100.clear();
@@ -217,7 +220,7 @@ public final class MachineRuntime {
 			"logical/loaded/unloaded = " + entries.size() + "/" + loaded + "/" + (entries.size() - loaded),
 			"event-driven/scheduled/coarse/realtime = " + eventDriven + "/" + scheduledMachines + "/" + coarse + "/" + realtime,
 			"dirty queued/signals/processed/max depth = " + dirtyQueue.size() + "/" + diagnostics.dirtySignals + "/" + diagnostics.dirtyProcessed + "/" + diagnostics.maxDirtyDepth,
-			"scheduled active/created/executed/cancelled/stale = " + activeSchedules + "/" + diagnostics.scheduledCreated + "/" + diagnostics.scheduledExecuted + "/" + diagnostics.scheduledCancelled + "/" + diagnostics.staleRejected,
+			"scheduled active/heap/cancelled queued/created/executed/cancelled/stale = " + activeSchedules + "/" + scheduled.size() + "/" + cancelledQueued + "/" + diagnostics.scheduledCreated + "/" + diagnostics.scheduledExecuted + "/" + diagnostics.scheduledCancelled + "/" + diagnostics.staleRejected,
 			"binds/unbinds/rebindings/removals/registrations = " + diagnostics.binds + "/" + diagnostics.unbinds + "/" + diagnostics.reloadRebindings + "/" + diagnostics.removals + "/" + diagnostics.registrations,
 			"coarse polls executed = " + diagnostics.coarsePolls
 		};
@@ -227,7 +230,10 @@ public final class MachineRuntime {
 		while(!scheduled.isEmpty() && scheduled.peek().dueTick <= now) {
 			ScheduledTransition transition = scheduled.poll();
 			transition.queued = false;
-			if(transition.cancelled) continue;
+			if(transition.cancelled) {
+				cancelledQueued--;
+				continue;
+			}
 			MachineEntry entry = entries.get(transition.key);
 			if(entry == null || entry.removed || !entry.type.equals(transition.type)) {
 				diagnostics.staleRejected();
@@ -303,7 +309,20 @@ public final class MachineRuntime {
 	private void cancelTransition(ScheduledTransition transition) {
 		if(transition.cancelled) return;
 		transition.cancelled = true;
+		if(transition.queued) cancelledQueued++;
 		diagnostics.scheduledCancelled();
+	}
+
+	/** Replaced distant deadlines must not retain dead tiles for their full lifetime. */
+	private void compactCancelledTransitions() {
+		if(cancelledQueued < 64 || cancelledQueued * 2 < scheduled.size()) return;
+		PriorityQueue<ScheduledTransition> live = new PriorityQueue<ScheduledTransition>(Math.max(11, scheduled.size() - cancelledQueued), new ScheduledComparator());
+		for(ScheduledTransition transition : scheduled) {
+			if(transition.cancelled) transition.queued = false;
+			else live.add(transition);
+		}
+		scheduled = live;
+		cancelledQueued = 0;
 	}
 
 	private void registerCoarse(MachineEntry entry) {

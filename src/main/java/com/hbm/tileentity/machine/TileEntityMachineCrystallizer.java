@@ -59,10 +59,15 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	
 	public FluidTank tank;
 	private static final int TASK_ACCOUNTING = 1;
+	private static final int TASK_BATTERY = 2;
 	private static final int TASK_SLOT_MAIN = 0;
+	private static final int TASK_SLOT_BATTERY = 1;
 	private boolean runtimeStateInitialized;
 	private boolean runtimeEnergyMutation;
+	private boolean runtimeSettling;
 	private long nextRuntimeTick = -1L;
+	private long lastAccountingTick = Long.MIN_VALUE;
+	private long clientProgressTick;
 	private long observedRecipeRevision = -1L;
 	private long operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(demand);
 	private int observedInventoryFingerprint;
@@ -145,6 +150,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 		buf.writeShort(getDuration());
 		buf.writeLong(energyQuanta);
 		buf.writeBoolean(isOn);
+		buf.writeLong(worldObj == null ? 0L : worldObj.getTotalWorldTime());
 		tank.serialize(buf);
 	}
 	
@@ -155,6 +161,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 		duration = buf.readShort();
 		energyQuanta = buf.readLong();
 		isOn = buf.readBoolean();
+		clientProgressTick = buf.readLong();
 		tank.deserialize(buf);
 	}
 	
@@ -222,41 +229,87 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	@Override
 	public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		boolean wasActive = runtimeStateInitialized && isOn;
+		if(lastAccountingTick == Long.MIN_VALUE) lastAccountingTick = now;
+		else this.settleProgressThrough(now - 1L);
 		boolean settingsChanged = this.refreshRuntimeSettings(false);
 		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE | MachineDirtyCause.CONFIGURATION | MachineDirtyCause.UPGRADE)) != 0 || settingsChanged) this.resolveCachedRecipe();
 		this.runtimeStateInitialized = true;
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		isOn = this.canProcess() || progress > 0;
+		if(wasActive) this.settleProgressThrough(now);
+		this.evaluateAndSchedule(now);
+		this.networkPackNTIfDirty(25);
 	}
 
 	@Override
 	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_ACCOUNTING || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeStateInitialized) return;
-		nextRuntimeTick = -1L;
-		long oldPower = energyQuanta;
-		int oldProgress = progress;
-		boolean oldOn = isOn;
-		this.setRuntimePower(Library.chargeTEFromItems(slots, 1, energyQuanta, maxPower));
-		isOn = false;
-		for(int i = 0; i < getCycleCount(); i++) {
-			if(canProcess()) {
-				progress++;
-				this.setRuntimePower(this.energyQuanta - EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts));
-				isOn = true;
-				if(progress > getDuration()) {
-					progress = 0;
-					processItem();
-					this.markDirty();
-				}
-			} else {
+		if(worldObj == null || worldObj.isRemote || !runtimeStateInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
+			this.settleProgressThrough(now);
+			long oldPower = energyQuanta;
+			this.setRuntimePower(Library.chargeTEFromItems(slots, 1, energyQuanta, maxPower));
+			if(oldPower != energyQuanta) this.markDirty();
+			this.evaluateAndSchedule(now);
+			return;
+		} else if(taskType == TASK_ACCOUNTING && taskSlot == TASK_SLOT_MAIN) {
+			this.settleProgressThrough(now);
+		} else return;
+		this.markNetworkDirty();
+		this.networkPackNTIfDirty(25);
+		this.evaluateAndSchedule(now);
+	}
+
+	private void settleProgressThrough(long target) {
+		if(lastAccountingTick == Long.MIN_VALUE || target <= lastAccountingTick) return;
+		long elapsed = target - lastAccountingTick;
+		lastAccountingTick = target;
+		long cycleCount = Math.max(1L, (int) this.getCycleCount());
+		long remaining = elapsed > Long.MAX_VALUE / cycleCount ? Long.MAX_VALUE : elapsed * cycleCount;
+		long cost = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
+		boolean changed = false;
+		while(remaining > 0L) {
+			if(!this.canProcess()) {
+				if(progress != 0 || isOn) changed = true;
 				progress = 0;
+				isOn = false;
+				break;
+			}
+			long affordable = cost <= 0L ? remaining : energyQuanta / cost;
+			if(affordable <= 0L) {
+				if(progress != 0 || isOn) changed = true;
+				progress = 0;
+				isOn = false;
+				break;
+			}
+			long toCompletion = Math.max(1L, (long) this.getDuration() + 1L - progress);
+			long steps = Math.min(remaining, Math.min(affordable, toCompletion));
+			if(cost > 0L) this.setRuntimePower(energyQuanta - steps * cost);
+			progress += (int) steps;
+			remaining -= steps;
+			isOn = true;
+			changed = true;
+			if(progress > this.getDuration()) {
+				progress = 0;
+				runtimeSettling = true;
+				this.beginMachineFluidMutation();
+				try { this.processItem(); }
+				finally { this.endMachineFluidMutation(); runtimeSettling = false; }
+				this.markDirty();
+				continue;
+			}
+			if(remaining > 0L && cost > 0L && steps >= affordable) {
+				progress = 0;
+				isOn = false;
+				changed = true;
+				break;
 			}
 		}
-		if(oldPower != energyQuanta || oldProgress != progress || oldOn != isOn) {
+		if(changed) {
 			this.markDirty();
 			this.markNetworkDirty();
-			this.networkPackNTIfDirty(25);
 		}
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 	}
 
 	@Override
@@ -287,14 +340,23 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	}
 
 	private void evaluateAndSchedule(long now) {
-		boolean shouldRun = (energyQuanta > 0 && canProcess()) || progress > 0 || this.hasBatteryWork();
-		if(!shouldRun) {
+		boolean canRun = this.canProcess();
+		if(canRun || progress > 0) {
+			long cycleCount = Math.max(1L, (int) this.getCycleCount());
+			long progressUnits = Math.max(1L, (long) this.getDuration() + 1L - progress);
+			long completionBoundary = (progressUnits + cycleCount - 1L) / cycleCount;
+			long cost = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
+			long affordableUnits = cost <= 0L ? Long.MAX_VALUE : energyQuanta / cost;
+			long resetBoundary = affordableUnits >= progressUnits ? Long.MAX_VALUE : (affordableUnits + 1L + cycleCount - 1L) / cycleCount;
+			long delay = Math.max(1L, Math.min(completionBoundary, resetBoundary));
+			nextRuntimeTick = now + delay;
+			this.scheduleMachineTransition(nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		} else {
 			this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
 			nextRuntimeTick = -1L;
-			return;
 		}
-		nextRuntimeTick = now + 1L;
-		this.scheduleMachineTransition(nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
 	}
 
 	private CrystallizerRecipe resolveCachedRecipe() {
@@ -381,12 +443,15 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	}
 	
 	public int getProgressScaled(int i) {
-		return (progress * i) / duration;
+		long projected = progress;
+		if(worldObj != null && worldObj.isRemote && isOn) projected += Math.max(0L, worldObj.getTotalWorldTime() - clientProgressTick) * Math.max(1L, (int) this.getCycleCount());
+		return (int) (Math.min(getDuration(), projected) * i / Math.max(1, getDuration()));
 	}
 
 	@Override
 	public void setStoredEnergyQuanta(long i) {
 		if(this.energyQuanta == i) return;
+		if(!runtimeEnergyMutation && !runtimeSettling && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
 		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
@@ -411,6 +476,8 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 		duration = nbt.hasKey("runtimeDuration") ? nbt.getShort("runtimeDuration") : 600;
 		isOn = nbt.getBoolean("runtimeOn");
 		runtimeStateInitialized = false;
+		inventoryFingerprintInitialized = false;
+		lastAccountingTick = Long.MIN_VALUE;
 		nextRuntimeTick = -1L;
 		cachedRecipeRevision = -1L;
 		tank.readFromNBT(nbt, "tank");
@@ -418,6 +485,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 		
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
@@ -432,6 +500,20 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 		super.onInventorySlotChanged(slot);
 		if(slot == 5 || slot == 6) this.upgradeManager.invalidate();
 		if(slot == 0) this.cachedRecipeInput = null;
+	}
+
+	@Override protected void beforeInventorySlotChanged(int slot) {
+		if(runtimeStateInitialized && !runtimeSettling && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override protected void beforeFluidStorageChanged(FluidTank changedTank) {
+		if(changedTank == tank && runtimeStateInitialized && !runtimeSettling && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override public void onChunkUnload() {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+		lastAccountingTick = Long.MIN_VALUE;
+		super.onChunkUnload();
 	}
 
 	@Override

@@ -52,7 +52,7 @@ public class GUIMachineDriveProcessor extends GuiInfoContainer {
 		drawTexturedModalRect(guiLeft + 134, guiTop + 18 + 52 - p, xSize, 52 - p, 16, p);
 
 		if(machine.isProcessing) {
-			p = (int) (machine.progress * 44 / machine.maxProgress);
+			p = (int) (machine.getDisplayedProgress() * 44 / machine.maxProgress);
 			drawTexturedModalRect(guiLeft + 59, guiTop + 63, 192, 14, p, 14);
 		}
 

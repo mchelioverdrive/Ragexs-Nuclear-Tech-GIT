@@ -49,11 +49,23 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 	private int observedRecipeCount;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
+	private boolean runtimeMaterialEligible;
 	private static final int TASK_PROCESS = 1;
+	private static final int TASK_BATTERY = 2;
 	private static final int TASK_SLOT_MAIN = 0;
+	private static final int TASK_SLOT_BATTERY = 1;
+	private long lastProcessTick = Long.MIN_VALUE;
+	private long clientProcessTick;
+	private boolean runtimeActive;
 
 	public TileEntityMicrowave() {
 		super(3);
+	}
+
+	@Override public void onChunkUnload() {
+		if(worldObj != null && !worldObj.isRemote) this.settleProcessThrough(worldObj.getTotalWorldTime() - 1L);
+		lastProcessTick = Long.MIN_VALUE;
+		super.onChunkUnload();
 	}
 
 	@Override
@@ -72,43 +84,65 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		if(lastProcessTick == Long.MIN_VALUE) lastProcessTick = now;
+		else this.settleProcessThrough(now - 1L);
+		boolean wasActive = runtimeActive;
 		runtimeInitialized = true;
 		this.refreshCachedResult();
 		this.observeInventoryFingerprint();
 		this.observedRecipeCount = FurnaceRecipes.smelting().getSmeltingList().size();
+		runtimeMaterialEligible = this.hasProcessMaterials();
 		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0) this.updateConnections();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		if(wasActive) this.settleProcessThrough(now);
+		this.evaluateAndSchedule(now);
 		this.sendRuntimeState();
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_PROCESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
-		long oldEnergy = energyQuanta;
-		int oldTime = time;
-		int oldInventoryFingerprint = this.inventoryFingerprint();
-		runtimeEnergyMutation = true;
-		try {
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 2, energyQuanta, maxPower));
-			if(this.canProcess()) {
-				if(time >= maxTime) {
-					this.process();
-					time = 0;
-					this.refreshCachedResult();
-				}
-				if(this.canProcess()) {
-					this.setStoredEnergyQuanta(energyQuanta - consumption);
-					time += speed * 2;
-				}
-			}
-		} finally {
-			runtimeEnergyMutation = false;
-		}
-		boolean inventoryChanged = oldInventoryFingerprint != this.inventoryFingerprint();
-		if(inventoryChanged) this.markNetworkDirty();
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
+			this.settleProcessThrough(now);
+			runtimeEnergyMutation = true;
+			try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 2, energyQuanta, maxPower)); }
+			finally { runtimeEnergyMutation = false; }
+			this.observeInventoryFingerprint();
+			this.evaluateAndSchedule(now);
+			this.sendEnergyState();
+			return;
+		} else if(taskType == TASK_PROCESS && taskSlot == TASK_SLOT_MAIN) this.settleProcessThrough(now);
+		else return;
 		this.observeInventoryFingerprint();
-		if(oldEnergy != energyQuanta || oldTime != time || inventoryChanged) this.markDirty();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.evaluateAndSchedule(now);
 		this.sendRuntimeState();
+	}
+
+	private void settleProcessThrough(long target) {
+		if(lastProcessTick == Long.MIN_VALUE || target <= lastProcessTick) return;
+		long remaining = target - lastProcessTick;
+		lastProcessTick = target;
+		while(remaining > 0 && runtimeMaterialEligible && speed > 0 && energyQuanta >= consumption) {
+			if(time >= maxTime) {
+				runtimeEnergyMutation = true;
+				try { this.process(); } finally { runtimeEnergyMutation = false; }
+				time = 0;
+				this.refreshCachedResult();
+				runtimeMaterialEligible = this.hasProcessMaterials();
+				if(!runtimeMaterialEligible) break;
+			}
+			int delta = speed * 2;
+			long untilCheck = (maxTime - time + delta - 1L) / delta;
+			long steps = Math.min(remaining, Math.min(untilCheck, energyQuanta / consumption));
+			if(steps <= 0L) break;
+			runtimeEnergyMutation = true;
+			try { this.setStoredEnergyQuanta(energyQuanta - steps * consumption); }
+			finally { runtimeEnergyMutation = false; }
+			time += (int) steps * delta;
+			remaining -= steps;
+			this.markDirty();
+			this.markNetworkDirty();
+		}
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
@@ -131,11 +165,15 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 		cachedResult = result == null ? null : result.copy();
 	}
 
-	private boolean canProcess() {
-		if(speed == 0 || energyQuanta < consumption || slots[0] == null || cachedResult == null) return false;
+	private boolean hasProcessMaterials() {
+		if(slots[0] == null || cachedResult == null) return false;
 		if(!(slots[0].getItem() instanceof ItemFood) && !(cachedResult.getItem() instanceof ItemFood)) return false;
 		if(slots[1] == null) return true;
 		return cachedResult.isItemEqual(slots[1]) && cachedResult.stackSize + slots[1].stackSize <= cachedResult.getMaxStackSize();
+	}
+
+	private boolean canProcess() {
+		return speed > 0 && energyQuanta >= consumption && runtimeMaterialEligible;
 	}
 
 	private boolean hasBatteryWork() {
@@ -148,8 +186,15 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
-		if(this.canProcess() || this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_PROCESS, TASK_SLOT_MAIN);
-		else this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
+		this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
+		runtimeActive = this.canProcess();
+		if(runtimeActive) {
+			long untilCheck = time >= maxTime ? 1L : (maxTime - time + speed * 2L - 1L) / (speed * 2L) + 1L;
+			long powerBoundary = energyQuanta / consumption + 1L;
+			this.scheduleMachineTransition(now + Math.max(1L, Math.min(untilCheck, powerBoundary)), TASK_PROCESS, TASK_SLOT_MAIN);
+		}
+		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
 	}
 
 	private void updateConnections() {
@@ -160,7 +205,16 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 		NBTTagCompound data = new NBTTagCompound();
 		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 		data.setInteger("time", time);
+		data.setLong("processTick", worldObj.getTotalWorldTime());
+		data.setBoolean("runtimeActive", runtimeActive);
 		data.setInteger("speed", speed);
+		this.networkPack(data, 50);
+	}
+
+	private void sendEnergyState() {
+		if(worldObj == null || worldObj.isRemote) return;
+		NBTTagCompound data = new NBTTagCompound();
+		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 		this.networkPack(data, 50);
 	}
 
@@ -188,12 +242,15 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 	public void networkUnpack(NBTTagCompound data) {
 		super.networkUnpack(data);
 
-		energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
-		time = data.getInteger("time");
-		speed = data.getInteger("speed");
+		if(data.hasKey("power")) energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
+		if(data.hasKey("time")) time = data.getInteger("time");
+		if(data.hasKey("processTick")) clientProcessTick = data.getLong("processTick");
+		if(data.hasKey("runtimeActive")) runtimeActive = data.getBoolean("runtimeActive");
+		if(data.hasKey("speed")) speed = data.getInteger("speed");
 	}
 
 	public void handleButtonPacket(int value, int meta) {
+		if(worldObj != null && !worldObj.isRemote) this.settleProcessThrough(worldObj.getTotalWorldTime() - 1L);
 
 		if(value == 0)
 			speed++;
@@ -260,7 +317,9 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 	}
 
 	public int getProgressScaled(int i) {
-		return (time * i) / maxTime;
+		long displayed = time;
+		if(worldObj != null && worldObj.isRemote && runtimeActive) displayed += Math.max(0L, worldObj.getTotalWorldTime() - clientProcessTick) * speed * 2L;
+		return (int) (Math.min(maxTime, displayed) * i / maxTime);
 	}
 
 	public int getSpeedScaled(int i) {
@@ -282,9 +341,14 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 	@Override
 	public void setStoredEnergyQuanta(long i) {
 		if(this.energyQuanta == i) return;
+		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.settleProcessThrough(worldObj.getTotalWorldTime() - 1L);
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
 		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
+	}
+
+	@Override protected void beforeInventorySlotChanged(int slot) {
+		if(worldObj != null && !worldObj.isRemote) this.settleProcessThrough(worldObj.getTotalWorldTime() - 1L);
 	}
 
 	@Override
@@ -302,12 +366,14 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 		super.readFromNBT(nbt);
 
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
+		lastProcessTick = Long.MIN_VALUE;
 		speed = nbt.getInteger("speed");
 		time = nbt.getInteger("time");
 	}
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+		if(worldObj != null && !worldObj.isRemote) this.settleProcessThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);

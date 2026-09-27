@@ -53,7 +53,7 @@ public class GUILiquefactor extends GuiInfoContainer {
 		int j = 0;
 
 		if (liquefactor.processTime > 0) {
-			j = liquefactor.progress * 42 / liquefactor.processTime;
+			j = liquefactor.getDisplayedProgress() * 42 / liquefactor.processTime;
 		}
 		//causes a divide by 0 crash... somehow? ^
 		drawTexturedModalRect(guiLeft + 42, guiTop + 17, 192, 0, j, 35);

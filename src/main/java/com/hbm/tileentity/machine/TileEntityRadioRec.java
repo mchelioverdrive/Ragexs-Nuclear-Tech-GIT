@@ -6,6 +6,7 @@ import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.INBTPacketReceiver;
 import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.tileentity.network.RTTYSystem;
+import com.hbm.tileentity.network.RTTYSystem.RTTYListener;
 import com.hbm.tileentity.network.RTTYSystem.RTTYChannel;
 import com.hbm.util.NoteBuilder;
 import com.hbm.util.NoteBuilder.Instrument;
@@ -15,13 +16,15 @@ import com.hbm.util.Tuple.Triplet;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.World;
 
-public class TileEntityRadioRec extends TileEntityLoadedBase implements INBTPacketReceiver, IControlReceiver {
+public class TileEntityRadioRec extends TileEntityLoadedBase implements INBTPacketReceiver, IControlReceiver, RTTYListener {
 	private static final int TASK_LISTEN = 0;
 	private String lastSyncChannel;
 	private boolean lastSyncOn;
 	private boolean syncInitialized;
 	private long lastSyncTick = Long.MIN_VALUE;
+	private String subscribedChannel;
 
 	public String channel = "";
 	public boolean isOn = false;
@@ -34,9 +37,48 @@ public class TileEntityRadioRec extends TileEntityLoadedBase implements INBTPack
 	@Override
 	public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
-		if(isListening()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_LISTEN, 0);
-		else cancelMachineTransition(TASK_LISTEN, 0);
+		boolean wasSubscribed = subscribedChannel != null;
+		if(subscribedChannel != null && (!isListening() || !subscribedChannel.equals(channel))) {
+			RTTYSystem.unsubscribe(worldObj, subscribedChannel, this);
+			subscribedChannel = null;
+			cancelMachineTransition(TASK_LISTEN, 0);
+		}
+		if(isListening() && subscribedChannel == null) {
+			RTTYSystem.subscribe(worldObj, channel, this);
+			subscribedChannel = channel;
+			// A tuned receiver already had a task due this tick under the old
+			// cadence; retuning must still observe the newly selected channel.
+			RTTYChannel current = RTTYSystem.listen(worldObj, channel);
+			if(wasSubscribed && current != null && current.timeStamp == worldObj.getTotalWorldTime() - 1L)
+				scheduleMachineTransition(worldObj.getTotalWorldTime(), TASK_LISTEN, 0);
+		}
 		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.CONFIGURATION)) != 0) syncState(true);
+	}
+
+	@Override
+	public void onRTTYSignal(World world, String channelName) {
+		if(world != worldObj || isInvalid() || !isLoaded() || !isListening() || !channel.equals(channelName)) return;
+		// The server PRE phase publishes the previous tick's signal; the world
+		// runtime observes it after this world's next simulation tick.
+		scheduleMachineTransition(world.getTotalWorldTime() + 1L, TASK_LISTEN, 0);
+	}
+
+	@Override
+	public void onChunkUnload() {
+		this.unsubscribeSignal();
+		super.onChunkUnload();
+	}
+
+	@Override
+	public void invalidate() {
+		this.unsubscribeSignal();
+		super.invalidate();
+	}
+
+	private void unsubscribeSignal() {
+		if(subscribedChannel == null || worldObj == null || worldObj.isRemote) return;
+		RTTYSystem.unsubscribe(worldObj, subscribedChannel, this);
+		subscribedChannel = null;
 	}
 
 	@Override
@@ -65,7 +107,6 @@ public class TileEntityRadioRec extends TileEntityLoadedBase implements INBTPack
 			}
 		}
 		syncState(false);
-		if(!isInvalid() && isListening()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_LISTEN, 0);
 	}
 
 	@Override

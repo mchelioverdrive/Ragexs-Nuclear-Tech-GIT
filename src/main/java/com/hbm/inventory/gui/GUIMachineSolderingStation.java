@@ -73,7 +73,7 @@ public class GUIMachineSolderingStation extends GuiInfoContainer {
 		int p = (int) (solderer.getStoredEnergyQuanta() * 52 / Math.max(solderer.maxPower, 1));
 		drawTexturedModalRect(guiLeft + 152, guiTop + 70 - p, 176, 52 - p, 16, p);
 
-		int i = solderer.progress * 33 / Math.max(solderer.processTime, 1);
+		int i = solderer.getDisplayedProgress() * 33 / Math.max(solderer.processTime, 1);
 		drawTexturedModalRect(guiLeft + 72, guiTop + 28, 192, 0, i, 14);
 
 		if(solderer.getStoredEnergyQuanta() >= solderer.consumption) {

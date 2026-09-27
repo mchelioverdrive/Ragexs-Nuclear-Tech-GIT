@@ -31,12 +31,16 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineDriveProcessor extends TileEntityMachineBase implements IGUIProvider, IControlReceiver, IEnergyReceiverMK2 {
 	private static final int TASK_PROCESSING = 1;
+	private static final int TASK_BATTERY = 2;
 	private static final int TASK_SLOT_MAIN = 0;
+	private static final int TASK_SLOT_BATTERY = 1;
 	private static final long OPERATING_POWER_WATTS = EnergyUnits.quantaPerTickToWatts(200L);
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
 	private boolean inventoryFingerprintInitialized;
 	private int observedInventoryFingerprint;
+	private long lastProgressTick = Long.MIN_VALUE;
+	private long clientProgressTick;
 
 	public long energyQuanta;
 	public long maxPower = 2_000;
@@ -54,6 +58,12 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 		super(4);
 	}
 
+	@Override public void onChunkUnload() {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+		lastProgressTick = Long.MIN_VALUE;
+		super.onChunkUnload();
+	}
+
 	@Override
 	public void updateEntity() {
 	}
@@ -64,65 +74,72 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		if(lastProgressTick == Long.MIN_VALUE) lastProgressTick = now;
+		else settleProgressThrough(this.hasBatteryWork() ? now - 1L : now);
 		hasDrive = slots[0] != null && slots[0].getItem() == ModItems.full_drive;
 		runtimeInitialized = true;
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.evaluateAndSchedule(now);
 		this.markNetworkDirty();
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_PROCESSING || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
-
-		int oldProgress = progress;
-		long oldEnergy = energyQuanta;
-		boolean oldProcessing = isProcessing;
-		boolean oldHasDrive = hasDrive;
-		String oldStatus = status;
-		runtimeEnergyMutation = true;
-		try {
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 3, energyQuanta, maxPower));
-
-			if(energyQuanta < maxPower * 0.75) {
-				isProcessing = false;
-				status = EnumChatFormatting.RED + "No power ";
-			} else if(slots[0] == null || slots[0].getItem() != ModItems.full_drive) {
-				isProcessing = false;
-				status = "";
-			} else if(getProcessingTier() < ItemVOTVdrive.getProcessingTier(slots[0])) {
-				isProcessing = false;
-				status = EnumChatFormatting.RED + "Low tier ";
-			}
-
-			if(lastTier != getProcessingTier()) status = "";
-
-			if(isProcessing) {
-				this.setStoredEnergyQuanta(this.energyQuanta - EnergyUnits.wattsToQuantaPerTick(OPERATING_POWER_WATTS));
-				status = EnumChatFormatting.GREEN + "" + EnumChatFormatting.ITALIC + "Processing  ";
-				progress++;
-
-				if(progress >= maxProgress) {
-					progress = 0;
-					isProcessing = false;
-					ItemVOTVdrive.setProcessed(slots[0], true);
-					status = EnumChatFormatting.GREEN + "Done! ";
-					this.onInventorySlotChanged(0);
-				}
-			} else {
-				progress = 0;
-			}
-
-			lastTier = getProcessingTier();
-			hasDrive = slots[0] != null && slots[0].getItem() == ModItems.full_drive;
-		} finally {
-			runtimeEnergyMutation = false;
-		}
-
-		if(oldProgress != progress || oldEnergy != energyQuanta || oldProcessing != isProcessing || oldHasDrive != hasDrive || !oldStatus.equals(status)) {
-			this.markDirty();
-			this.markNetworkDirty();
-		}
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
+			this.settleProgressThrough(now);
+			long before = energyQuanta;
+			runtimeEnergyMutation = true;
+			try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 3, energyQuanta, maxPower)); }
+			finally { runtimeEnergyMutation = false; }
+			if(before != energyQuanta) this.markNetworkDirty();
+			this.evaluateAndSchedule(now);
+			return;
+		} else if(taskType == TASK_PROCESSING && taskSlot == TASK_SLOT_MAIN) {
+			this.settleProgressThrough(now);
+		} else return;
+		this.evaluateAndSchedule(now);
 		this.networkPackNTIfDirty(15);
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	/** Progress is settled only through loaded ticks; external writes settle through the preceding tick. */
+	private void settleProgressThrough(long target) {
+		if(lastProgressTick == Long.MIN_VALUE || target <= lastProgressTick) return;
+		long elapsed = target - lastProgressTick;
+		lastProgressTick = target;
+		if(!isProcessing) return;
+		if(slots[0] == null || slots[0].getItem() != ModItems.full_drive || getProcessingTier() < ItemVOTVdrive.getProcessingTier(slots[0])) {
+			isProcessing = false;
+			progress = 0;
+			status = "";
+		} else {
+			long cost = EnergyUnits.wattsToQuantaPerTick(OPERATING_POWER_WATTS);
+			long threshold = maxPower * 3L / 4L;
+			long poweredTicks = energyQuanta < threshold ? 0L : (energyQuanta - threshold) / cost + 1L;
+			long steps = Math.min(elapsed, Math.min(poweredTicks, maxProgress - progress));
+			if(steps > 0L) {
+				runtimeEnergyMutation = true;
+				try { this.setStoredEnergyQuanta(energyQuanta - steps * cost); }
+				finally { runtimeEnergyMutation = false; }
+				progress += (int) steps;
+				status = EnumChatFormatting.GREEN + "" + EnumChatFormatting.ITALIC + "Processing  ";
+			}
+			if(progress >= maxProgress) {
+				progress = 0;
+				isProcessing = false;
+				ItemVOTVdrive.setProcessed(slots[0], true);
+				status = EnumChatFormatting.GREEN + "Done! ";
+				this.onInventorySlotChanged(0);
+			} else if(steps < elapsed) {
+				isProcessing = false;
+				progress = 0;
+				status = EnumChatFormatting.RED + "No power ";
+			}
+		}
+		lastTier = getProcessingTier();
+		hasDrive = slots[0] != null && slots[0].getItem() == ModItems.full_drive;
+		this.markDirty();
+		this.markNetworkDirty();
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
@@ -165,8 +182,16 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 	}
 
 	private void evaluateAndSchedule(long now) {
-		if(runtimeInitialized && (isProcessing || hasBatteryWork())) this.scheduleMachineTransition(now + 1L, TASK_PROCESSING, TASK_SLOT_MAIN);
-		else this.cancelMachineTransition(TASK_PROCESSING, TASK_SLOT_MAIN);
+		if(!runtimeInitialized) return;
+		this.cancelMachineTransition(TASK_PROCESSING, TASK_SLOT_MAIN);
+		if(isProcessing) {
+			long cost = EnergyUnits.wattsToQuantaPerTick(OPERATING_POWER_WATTS);
+			long threshold = maxPower * 3L / 4L;
+			long poweredTicks = energyQuanta < threshold ? 1L : (energyQuanta - threshold) / cost + 1L;
+			this.scheduleMachineTransition(now + Math.max(1L, Math.min(maxProgress - progress, poweredTicks)), TASK_PROCESSING, TASK_SLOT_MAIN);
+		}
+		if(hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
 	}
 
 	@Override
@@ -176,6 +201,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 		buf.writeLong(energyQuanta);
 		buf.writeBoolean(isProcessing);
 		buf.writeInt(progress);
+		buf.writeLong(worldObj == null ? 0L : worldObj.getTotalWorldTime());
 		buf.writeBoolean(hasDrive);
 
 		BufferUtil.writeString(buf, status);
@@ -188,6 +214,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 		energyQuanta = buf.readLong();
 		isProcessing = buf.readBoolean();
 		progress = buf.readInt();
+		clientProgressTick = buf.readLong();
 		hasDrive = buf.readBoolean();
 
 		status = BufferUtil.readString(buf);
@@ -195,6 +222,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
@@ -234,6 +262,7 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 	}
 
 	private void processDrive(boolean process) {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		if(!process) {
 			isProcessing = false;
 			this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
@@ -247,11 +276,13 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 		// Check that our installed upgrade is a high enough tier
 		if(getProcessingTier() >= ItemVOTVdrive.getProcessingTier(slots[0])) {
 			isProcessing = true;
+			if(worldObj != null) lastProgressTick = worldObj.getTotalWorldTime();
 			this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 		}
 	}
 
 	private void cloneDrive() {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		if(energyQuanta < maxPower * 0.75) return;
 		if(slots[0] == null || slots[0].getItem() != ModItems.full_drive) return;
 		if(slots[1] == null || slots[1].getItem() != ModItems.hard_drive) {
@@ -320,10 +351,20 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 	@Override public long getStoredEnergyQuanta() { return energyQuanta; }
 	@Override public void setStoredEnergyQuanta(long energyQuanta) {
 		if(this.energyQuanta == energyQuanta) return;
+		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 	@Override public long getEnergyCapacityQuanta() { return maxPower; }
+
+	@Override protected void beforeInventorySlotChanged(int slot) {
+		if((slot == 0 || slot == 2 || slot == 3) && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	public int getDisplayedProgress() {
+		if(worldObj == null || !worldObj.isRemote || !isProcessing) return progress;
+		return (int) Math.min(maxProgress, progress + Math.max(0L, worldObj.getTotalWorldTime() - clientProgressTick));
+	}
 	
 }

@@ -128,72 +128,29 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 	public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
 		if((causes & MachineDirtyCause.LIFECYCLE) != 0 && this.upgradeLegacyMetadata()) return;
-		if(this.refreshUpgrades(false)) {
-			causes |= MachineDirtyCause.CONFIGURATION;
-			this.markDirty();
-			this.markNetworkDirty();
-		}
-		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.CONFIGURATION)) != 0) {
-			this.observeTemplate();
-			this.observedRecipeGeneration = AssemblerRecipes.recipeGeneration;
-			this.needsInputTransfer = !this.hasAssemblerInputs(0);
-			this.cachedEligible = !this.needsInputTransfer && this.hasAssemblerOutputSpace(0);
-		}
-		this.runtimeStateInitialized = true;
-
-		long now = worldObj.getTotalWorldTime();
-		if((causes & MachineDirtyCause.LIFECYCLE) != 0 && this.nextRuntimeTick == now + 1L && this.progress[0] > 0 && this.cachedEligible && this.energyQuanta >= EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts)) {
-			this.scheduleMachineTransition(this.nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_ASSEMBLER);
-		} else {
-			this.runAccountingTick(now);
-		}
+		super.onMachineRuntimeDirty(causes);
 		this.networkPackNTIfDirty(150);
 	}
 
 	@Override
 	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_ACCOUNTING || taskSlot != TASK_SLOT_ASSEMBLER || worldObj == null || worldObj.isRemote) return;
-		this.nextRuntimeTick = -1L;
-		if(!this.runtimeStateInitialized) return;
-		this.runAccountingTick(worldObj.getTotalWorldTime());
+		super.onMachineScheduledTransition(taskType, taskSlot, dueTick);
 		this.networkPackNTIfDirty(150);
 	}
 
 	@Override
 	public void onMachineCoarsePoll(int cadence) {
-		if(worldObj == null || worldObj.isRemote) return;
-		if(cadence == 5) {
-			int beforeTransfer = this.currentInventoryFingerprint();
-			if(slots[5] != null || needsTemplateSwitch[0] && slots[4] != null) this.unloadItems(0);
-			boolean transferred = (!runtimeStateInitialized || needsInputTransfer) && this.loadItems(0);
-			boolean inventoryChanged = this.observeInventoryFingerprint() || beforeTransfer != this.currentInventoryFingerprint();
-			if(transferred || inventoryChanged) {
-				this.needsInputTransfer = !this.hasAssemblerInputs(0);
-				this.cancelAccountingTransition();
-				this.markDirty();
-				this.markNetworkDirty();
-				this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
-			}
-			return;
-		}
-		if(cadence != 20) return;
-		boolean templateChanged = this.observeTemplate();
-		boolean recipeChanged = this.observedRecipeGeneration != AssemblerRecipes.recipeGeneration;
-		this.observedRecipeGeneration = AssemblerRecipes.recipeGeneration;
-		boolean inventoryChanged = this.observeInventoryFingerprint();
-		boolean upgradeChanged = this.refreshUpgrades(true);
-		if(upgradeChanged) {
-			this.markDirty();
-			this.markNetworkDirty();
-		}
-		if(templateChanged || recipeChanged || inventoryChanged || upgradeChanged || this.energyQuanta != this.observedPower || this.hasBatteryWork() && this.nextRuntimeTick < 0L) {
-			this.cancelAccountingTransition();
-			if(inventoryChanged) this.upgradeManager.invalidate();
-			this.markMachineDirty((templateChanged || inventoryChanged ? MachineDirtyCause.INVENTORY : 0) | (recipeChanged ? MachineDirtyCause.RECIPE : 0) | (upgradeChanged ? MachineDirtyCause.CONFIGURATION : 0) | (this.energyQuanta != this.observedPower ? MachineDirtyCause.ENERGY : 0));
-		}
-		this.updateConnections();
-		this.markNetworkDirty();
-		this.networkPackNTIfDirty(150);
+		super.onMachineCoarsePoll(cadence);
+	}
+
+	@Override
+	protected boolean refreshRuntimeSettings(boolean contentAware) {
+		return this.refreshUpgrades(contentAware);
+	}
+
+	@Override
+	protected void onMachineRuntimeMaintenance(int cadence) {
+		if(cadence == 20) this.updateConnections();
 	}
 
 	private boolean upgradeLegacyMetadata() {
@@ -235,59 +192,6 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 			hash = 31 * hash + slotHash;
 		}
 		return hash;
-	}
-
-	private void runAccountingTick(long now) {
-		if(this.lastAccountingTick == now) return;
-		this.lastAccountingTick = now;
-		if(this.observedRecipeGeneration != AssemblerRecipes.recipeGeneration) {
-			this.observedRecipeGeneration = AssemblerRecipes.recipeGeneration;
-			this.needsInputTransfer = !this.hasAssemblerInputs(0);
-			this.cachedEligible = !this.needsInputTransfer && this.hasAssemblerOutputSpace(0);
-		}
-		long oldPower = this.energyQuanta;
-		int oldProgress = this.progress[0];
-		int oldMaxProgress = this.maxProgress[0];
-		boolean oldProgressing = this.isProgressing;
-		boolean completed = false;
-
-		this.isProgressing = false;
-		this.setPowerInternal(Library.chargeTEFromItems(slots, getPowerSlot(), energyQuanta, getEnergyCapacityQuanta()));
-		if(this.cachedEligible && this.energyQuanta >= EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts)) {
-			int duration = this.getProcessTime(0) * this.speed / 100;
-			if(this.progress[0] + 1 >= duration && !this.hasValidProcessInputs(0)) {
-				this.cachedEligible = false;
-				this.needsInputTransfer = !this.hasAssemblerInputs(0);
-				this.progress[0] = 0;
-			} else {
-				this.isProgressing = true;
-				this.runtimeEnergyMutation = true;
-				try {
-					this.process(0);
-				} finally {
-					this.runtimeEnergyMutation = false;
-				}
-				if(this.progress[0] == 0) {
-					completed = true;
-					this.needsInputTransfer = !this.hasAssemblerInputs(0);
-					this.cachedEligible = !this.needsInputTransfer && this.hasAssemblerOutputSpace(0);
-				}
-			}
-		} else {
-			this.progress[0] = 0;
-		}
-
-		this.observedPower = this.energyQuanta;
-		if(oldPower != this.energyQuanta || oldProgress != this.progress[0] || oldMaxProgress != this.maxProgress[0] || oldProgressing != this.isProgressing || completed) {
-			this.markDirty();
-			this.markNetworkDirty();
-		}
-		if(this.isProgressing || this.hasBatteryWork() || this.cachedEligible && this.energyQuanta >= EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts)) {
-			this.nextRuntimeTick = now + 1L;
-			this.scheduleMachineTransition(this.nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_ASSEMBLER);
-		} else {
-			this.nextRuntimeTick = -1L;
-		}
 	}
 
 	private boolean refreshUpgrades(boolean contentAware) {
@@ -349,6 +253,8 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 		}
 		
 		buf.writeBoolean(isProgressing);
+		buf.writeLong(worldObj == null ? 0L : worldObj.getTotalWorldTime());
+		buf.writeBoolean(this.isRuntimeLaneActive(0));
 		buf.writeInt(recipe);
 	}
 	
@@ -362,6 +268,8 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 		}
 		
 		isProgressing = buf.readBoolean();
+		this.setClientProgressTick(buf.readLong());
+		this.setClientLaneState(0, buf.readBoolean());
 		recipe = buf.readInt();
 	}
 	

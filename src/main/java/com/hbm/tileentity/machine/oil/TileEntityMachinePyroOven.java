@@ -46,9 +46,20 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
-	private static final int TASK_PROCESS = 1;
+	private static final int TASK_ACCOUNTING = 1;
+	private static final int TASK_EFFECT = 2;
+	private static final int TASK_BATTERY = 3;
+	private static final int TASK_FLUID = 4;
+	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
+	private boolean runtimeProgressMutation;
+	private boolean runtimeProgressActive;
+	private long lastProgressTick = Long.MIN_VALUE;
+	private float runtimeProgressRate;
+	private float clientProgress;
+	private float clientProgressRate;
+	private long clientProgressTick;
 	private DirPos[] runtimeConnections;
 	private int observedOrientation = Integer.MIN_VALUE;
 	private int runtimeSpeed;
@@ -87,6 +98,10 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		boolean wasActive = runtimeProgressActive;
+		if(lastProgressTick == Long.MIN_VALUE) lastProgressTick = now;
+		else this.settleProgressThrough(now - 1L);
 		runtimeInitialized = true;
 		this.refreshConnections();
 		if((causes & (MachineDirtyCause.INVENTORY | MachineDirtyCause.UPGRADE | MachineDirtyCause.LIFECYCLE)) != 0) this.refreshUpgrades();
@@ -95,7 +110,9 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 		finally { this.endMachineFluidMutation(); }
 		if((causes & (MachineDirtyCause.INVENTORY | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE | MachineDirtyCause.LIFECYCLE)) != 0) this.refreshRecipe();
 		this.subscribeToInputs();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		if(wasActive) this.settleProgressThrough(now);
+		else lastProgressTick = now;
+		this.evaluateAndSchedule(now);
 		this.networkPackNT(50);
 	}
 
@@ -107,17 +124,33 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_PROCESS || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
-		this.beginMachineFluidMutation();
-		runtimeEnergyMutation = true;
-		try { this.runOvenStep(); }
-		finally {
-			runtimeEnergyMutation = false;
-			this.endMachineFluidMutation();
-		}
-		this.markDirty();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
-		this.networkPackNT(50);
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_MAIN) {
+			this.settleProgressThrough(now - 1L);
+			long before = energyQuanta;
+			runtimeEnergyMutation = true;
+			try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower)); }
+			finally { runtimeEnergyMutation = false; }
+			if(before != energyQuanta) this.scheduleMachineTransition(now, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+			if(this.hasBatteryInput()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_MAIN);
+			else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_MAIN);
+		} else if(taskType == TASK_ACCOUNTING && taskSlot == TASK_SLOT_MAIN) {
+			this.settleProgressThrough(now);
+			this.evaluateAndSchedule(now);
+			this.networkPackNT(50);
+		} else if(taskType == TASK_EFFECT && taskSlot == TASK_SLOT_MAIN) {
+			boolean oldVenting = isVenting;
+			this.runOvenEffects();
+			if(isProgressing) this.scheduleMachineTransition(now + 1L, TASK_EFFECT, TASK_SLOT_MAIN);
+			else this.cancelMachineTransition(TASK_EFFECT, TASK_SLOT_MAIN);
+			if(tanks[1].getFill() > 0 || smoke.getFill() > 0) this.scheduleMachineTransition(now, TASK_FLUID, 0);
+			if(oldVenting != isVenting) this.networkPackNT(50);
+		} else if(taskType == TASK_FLUID && taskSlot == 0) {
+			this.sendOutputFluids();
+			if(tanks[1].getFill() > 0 || smoke.getFill() > 0) this.scheduleMachineTransition(now + 1L, TASK_FLUID, 0);
+			else this.cancelMachineTransition(TASK_FLUID, 0);
+		} else return;
 	}
 
 	private void refreshConnections() {
@@ -147,12 +180,26 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 	}
 
 	private void evaluateAndSchedule(long now) {
-		if(this.canProcess() || this.hasBatteryInput() || tanks[1].getFill() > 0 || smoke.getFill() > 0 || progress > 0)
-			this.scheduleMachineTransition(now + 1L, TASK_PROCESS, 0);
-		else {
-			isProgressing = false;
-			this.cancelMachineTransition(TASK_PROCESS, 0);
+		if(!runtimeInitialized) return;
+		boolean canProcess = this.canProcess();
+		runtimeProgressActive = canProcess;
+		isProgressing = canProcess;
+		runtimeProgressRate = canProcess ? this.getProgressRate(runtimeRecipe) : 0F;
+		if(canProcess) {
+			int cost = this.getConsumption(runtimeSpeed + runtimeOverdrive * 2, runtimePowerSaving);
+			int completionTicks = this.ticksUntilRecipeCompletion(runtimeRecipe, progress, runtimeSpeed, runtimeOverdrive);
+			long poweredTicks = energyQuanta / cost + 1L;
+			this.scheduleMachineTransition(now + Math.max(1L, Math.min(completionTicks, poweredTicks)), TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		} else {
+			if(progress != 0F) { progress = 0F; this.markDirty(); this.markNetworkDirty(); }
+			this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
 		}
+		if(isProgressing) this.scheduleMachineTransition(now + 1L, TASK_EFFECT, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_EFFECT, TASK_SLOT_MAIN);
+		if(this.hasBatteryInput()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_MAIN);
+		if(tanks[1].getFill() > 0 || smoke.getFill() > 0) this.scheduleMachineTransition(now + 1L, TASK_FLUID, 0);
+		else this.cancelMachineTransition(TASK_FLUID, 0);
 	}
 
 	private boolean hasBatteryInput() {
@@ -177,48 +224,85 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 
 	@Override
 	public void updateEntity() {
-		if(worldObj.isRemote) this.updateClientAnimation();
+		if(worldObj.isRemote) {
+			this.advanceClientProgress();
+			this.updateClientAnimation();
+		}
 	}
 
-	private void runOvenStep() {
+	private int getProgressDuration(PyroOvenRecipe recipe, int speed, int overdrive) {
+		return Math.max((recipe.duration - speed * (recipe.duration / 4)) / (overdrive * 2 + 1), 1);
+	}
 
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
+	private float getProgressRate(PyroOvenRecipe recipe) {
+		return 1F / this.getProgressDuration(recipe, runtimeSpeed, runtimeOverdrive);
+	}
 
-			for(DirPos pos : runtimeConnections) {
-				if(tanks[1].getFill() > 0) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			}
+	private int ticksUntilRecipeCompletion(PyroOvenRecipe recipe, float currentProgress, int speed, int overdrive) {
+		float projected = currentProgress;
+		float rate = 1F / this.getProgressDuration(recipe, speed, overdrive);
+		int ticks = 0;
+		while(projected < 1F && ticks < 100000) { projected += rate; ticks++; }
+		return Math.max(ticks, 1);
+	}
 
-			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
-			ForgeDirection rot = dir.getRotation(ForgeDirection.DOWN);
-			if(smoke.getFill() > 0) this.sendFluid(smoke, worldObj, xCoord - rot.offsetX, yCoord + 3, zCoord - rot.offsetZ, Library.POS_Y);
-
-			int speed = runtimeSpeed;
-			int powerSaving = runtimePowerSaving;
-			int overdrive = runtimeOverdrive;
-
-			this.isProgressing = false;
-			this.isVenting = false;
-
-			if(this.canProcess()) {
-				PyroOvenRecipe recipe = getMatchingRecipe();
-				this.progress += 1F / Math.max((recipe.duration - speed * (recipe.duration / 4)) / (overdrive * 2 + 1), 1);
-				this.isProgressing = true;
-				this.setStoredEnergyQuanta(this.energyQuanta - this.getConsumption(speed + overdrive * 2, powerSaving));
-
-				if(progress >= 1F) {
-					this.progress = 0F;
+	private void settleProgressThrough(long targetTick) {
+		if(worldObj == null || worldObj.isRemote || runtimeProgressMutation || lastProgressTick == Long.MIN_VALUE || targetTick <= lastProgressTick) return;
+		long remaining = targetTick - lastProgressTick;
+		lastProgressTick = targetTick;
+		float oldProgress = progress;
+		long oldEnergy = energyQuanta;
+		runtimeProgressMutation = true;
+		try {
+			while(remaining > 0L) {
+				PyroOvenRecipe recipe = runtimeRecipe;
+				int cost = this.getConsumption(runtimeSpeed + runtimeOverdrive * 2, runtimePowerSaving);
+				if(!this.canContinueRecipe(recipe) || energyQuanta < cost) { progress = 0F; break; }
+				long steps = Math.min(remaining, energyQuanta / cost);
+				float rate = this.getProgressRate(recipe);
+				long used = 0L;
+				boolean completed = false;
+				while(used < steps) {
+					progress += rate;
+					used++;
+					remaining--;
+					if(progress >= 1F) { completed = true; break; }
+				}
+				runtimeEnergyMutation = true;
+				try { this.setStoredEnergyQuanta(energyQuanta - cost * used); }
+				finally { runtimeEnergyMutation = false; }
+				if(completed) {
+					progress = 0F;
 					this.finishRecipe(recipe);
 					this.refreshRecipe();
 					this.markDirty();
+				} else if(remaining > 0L && energyQuanta < cost) {
+					progress = 0F;
+					break;
 				}
-
-				this.pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND);
-				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 500);
-
-			} else {
-				this.progress = 0F;
 			}
+		} finally {
+			runtimeProgressMutation = false;
+		}
+		if(oldProgress != progress || oldEnergy != energyQuanta) {
+			this.markDirty();
+			this.markNetworkDirty();
+		}
+	}
 
+	private void runOvenEffects() {
+		this.isVenting = false;
+		if(isProgressing) {
+			this.pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND);
+			FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 500);
+		}
+	}
+
+	private void sendOutputFluids() {
+		for(DirPos pos : runtimeConnections) if(tanks[1].getFill() > 0) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
+		ForgeDirection rot = dir.getRotation(ForgeDirection.DOWN);
+		if(smoke.getFill() > 0) this.sendFluid(smoke, worldObj, xCoord - rot.offsetX, yCoord + 3, zCoord - rot.offsetZ, Library.POS_Y);
 	}
 
 	private void updateClientAnimation() {
@@ -316,10 +400,13 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 		int speed = runtimeInitialized && worldObj != null && !worldObj.isRemote ? runtimeSpeed : Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
 		int powerSaving = runtimeInitialized && worldObj != null && !worldObj.isRemote ? runtimePowerSaving : Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
 		int overdrive = runtimeInitialized && worldObj != null && !worldObj.isRemote ? runtimeOverdrive : Math.min(this.upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3);
-		if(energyQuanta < this.getConsumption(speed + overdrive * 2, powerSaving)) return false;
-
 		PyroOvenRecipe recipe = this.getMatchingRecipe();
-		if(recipe == null) return false; // no matching recipe
+		if(energyQuanta < this.getConsumption(speed + overdrive * 2, powerSaving)) return false;
+		return this.canContinueRecipe(recipe);
+	}
+
+	private boolean canContinueRecipe(PyroOvenRecipe recipe) {
+		if(recipe == null) return false;
 		if(recipe.inputFluid != null && tanks[0].getFill() < recipe.inputFluid.fill) return false; // not enough input fluid
 		if(recipe.inputItem != null && slots[1].stackSize < recipe.inputItem.stacksize) return false; // not enough input item
 		if(recipe.outputFluid != null && recipe.outputFluid.fill + tanks[1].getFill() > tanks[1].getMaxFill() && recipe.outputFluid.type == tanks[1].getTankType()) return false; // too much output fluid
@@ -371,6 +458,8 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 		buf.writeBoolean(isVenting);
 		buf.writeBoolean(isProgressing);
 		buf.writeFloat(progress);
+		buf.writeLong(lastProgressTick == Long.MIN_VALUE && worldObj != null ? worldObj.getTotalWorldTime() : lastProgressTick);
+		buf.writeFloat(runtimeProgressRate);
 	}
 
 	@Override public void deserialize(ByteBuf buf) {
@@ -381,11 +470,18 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 		isVenting = buf.readBoolean();
 		isProgressing = buf.readBoolean();
 		progress = buf.readFloat();
+		clientProgress = progress;
+		clientProgressTick = buf.readLong();
+		clientProgressRate = buf.readFloat();
 	}
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+		lastProgressTick = Long.MIN_VALUE;
+		runtimeInitialized = false;
+		runtimeProgressMutation = false;
+		runtimeProgressActive = false;
 		this.tanks[0].readFromNBT(nbt, "t0");
 		this.tanks[1].readFromNBT(nbt, "t1");
 		this.progress = nbt.getFloat("prog");
@@ -394,6 +490,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 		this.tanks[0].writeToNBT(nbt, "t0");
 		this.tanks[1].writeToNBT(nbt, "t1");
@@ -425,6 +522,9 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 	}
 
 	@Override public void onChunkUnload() {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+		lastProgressTick = Long.MIN_VALUE;
+		runtimeProgressActive = false;
 		super.onChunkUnload();
 		if(audio != null) { audio.stopSound(); audio = null; }
 	}
@@ -451,11 +551,34 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 	@Override public long getStoredEnergyQuanta() { return energyQuanta; }
 	@Override public void setStoredEnergyQuanta(long energyQuanta) {
 		if(this.energyQuanta == energyQuanta) return;
+		if(!runtimeProgressMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 	@Override public long getEnergyCapacityQuanta() { return maxPower; }
+
+	private void advanceClientProgress() {
+		if(clientProgressTick == Long.MIN_VALUE) { clientProgress = progress; return; }
+		long now = worldObj.getTotalWorldTime();
+		while(clientProgressTick < now) {
+			if(isProgressing) clientProgress += clientProgressRate;
+			if(clientProgress > 1F) clientProgress = 1F;
+			clientProgressTick++;
+		}
+	}
+
+	public float getProjectedProgress() {
+		return worldObj != null && worldObj.isRemote ? clientProgress : progress;
+	}
+
+	@Override protected void beforeInventorySlotChanged(int slot) {
+		if(!runtimeProgressMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override protected void beforeFluidStorageChanged(FluidTank tank) {
+		if(!runtimeProgressMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+	}
 
 	@Override public FluidTank[] getAllTanks() { return new FluidTank[] { tanks[0], tanks[1], smoke }; }
 	@Override public FluidTank[] getSendingTanks() { return new FluidTank[] { tanks[1], smoke }; }

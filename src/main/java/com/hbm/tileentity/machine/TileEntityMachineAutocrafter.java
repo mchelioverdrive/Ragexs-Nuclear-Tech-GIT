@@ -48,7 +48,9 @@ public class TileEntityMachineAutocrafter extends TileEntityMachineBase implemen
 	private boolean templateFingerprintInitialized;
 	private int observedCraftingRecipeCount = -1;
 	private static final int TASK_CRAFT = 1;
+	private static final int TASK_BATTERY = 2;
 	private static final int TASK_SLOT_MAIN = 0;
+	private static final int TASK_SLOT_BATTERY = 1;
 
 	public TileEntityMachineAutocrafter() {
 		super(21);
@@ -104,20 +106,30 @@ public class TileEntityMachineAutocrafter extends TileEntityMachineBase implemen
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_CRAFT || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
-		long oldEnergy = energyQuanta;
-		int oldFingerprint = this.inventoryFingerprint();
-		runtimeEnergyMutation = true;
-		try {
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 20, energyQuanta, maxPower));
-			this.craftOne();
-		} finally {
-			runtimeEnergyMutation = false;
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
+			long oldEnergy = energyQuanta;
+			int oldFingerprint = this.inventoryFingerprint();
+			runtimeEnergyMutation = true;
+			try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 20, energyQuanta, maxPower)); }
+			finally { runtimeEnergyMutation = false; }
+			this.observeInventoryFingerprint();
+			if(oldEnergy != energyQuanta || oldFingerprint != observedInventoryFingerprint) this.markDirty();
+			if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+			else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
+			this.networkPackNTIfDirty(15);
+		} else if(taskType == TASK_CRAFT && taskSlot == TASK_SLOT_MAIN) {
+			long oldEnergy = energyQuanta;
+			int oldFingerprint = this.inventoryFingerprint();
+			runtimeEnergyMutation = true;
+			try { this.craftOne(); }
+			finally { runtimeEnergyMutation = false; }
+			this.observeInventoryFingerprint();
+			if(oldEnergy != energyQuanta || oldFingerprint != observedInventoryFingerprint) this.markDirty();
+			this.evaluateAndSchedule(now);
+			this.networkPackNT(15);
 		}
-		this.observeInventoryFingerprint();
-		if(oldEnergy != energyQuanta || oldFingerprint != observedInventoryFingerprint) this.markDirty();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
-		this.networkPackNT(15);
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
@@ -146,7 +158,11 @@ public class TileEntityMachineAutocrafter extends TileEntityMachineBase implemen
 	}
 
 	private boolean canCraft() {
-		if(recipes.isEmpty() || recipeIndex < 0 || recipeIndex >= recipes.size() || energyQuanta < consumption) return false;
+		return energyQuanta >= consumption && this.hasCraftInputsAndOutput();
+	}
+
+	private boolean hasCraftInputsAndOutput() {
+		if(recipes.isEmpty() || recipeIndex < 0 || recipeIndex >= recipes.size()) return false;
 		IRecipe recipe = recipes.get(recipeIndex);
 		InventoryCrafting grid = this.getRecipeGrid();
 		if(!recipe.matches(grid, worldObj)) return false;
@@ -191,7 +207,9 @@ public class TileEntityMachineAutocrafter extends TileEntityMachineBase implemen
 
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
-		if(this.canCraft() || this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_CRAFT, TASK_SLOT_MAIN);
+		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
+		if(this.canCraft() || this.hasBatteryWork() && this.hasCraftInputsAndOutput()) this.scheduleMachineTransition(now + 1L, TASK_CRAFT, TASK_SLOT_MAIN);
 		else this.cancelMachineTransition(TASK_CRAFT, TASK_SLOT_MAIN);
 	}
 

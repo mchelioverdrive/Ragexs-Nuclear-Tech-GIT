@@ -76,7 +76,7 @@ public class GUICompressor extends GuiInfoContainer {
 
 		drawTexturedModalRect(guiLeft + 43 + compressor.tanks[0].getPressure() * 11, guiTop + 46, 193, 18, 8, 124);
 		
-		int i = compressor.progress * 55 / compressor.processTime;
+		int i = compressor.getDisplayedProgress() * 55 / compressor.processTime;
 		drawTexturedModalRect(guiLeft + 42, guiTop + 26, 192, 0, i, 17);
 		
 		int j = (int) (compressor.getStoredEnergyQuanta() * 52 / compressor.maxPower);

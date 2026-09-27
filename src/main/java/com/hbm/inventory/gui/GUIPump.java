@@ -55,7 +55,7 @@ public class GUIPump extends GuiScreen {
 		drawString(fontRendererObj, "(max. 10,000 L)", this.width / 2 - 150, 90, 0xA0A0A0);
 		textPlacementPriority.drawTextBox();
 
-		drawString(fontRendererObj, "Pressure:", this.width / 2 - 50, 80, 0xA0A0A0);
+		drawString(fontRendererObj, "Net pressure:", this.width / 2 - 50, 80, 0xA0A0A0);
 		buttonPressure.drawButton(mc, mouseX, mouseY);
 
 		drawString(fontRendererObj, "Priority:", this.width / 2 + 50, 80, 0xA0A0A0);

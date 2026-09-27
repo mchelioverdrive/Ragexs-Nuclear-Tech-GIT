@@ -39,7 +39,9 @@ public class TileEntityRadiobox extends TileEntityLoadedBase implements IEnergyR
 
 	@Override
 	public void onMachineRuntimeDirty(int causes) {
-		if(worldObj != null && !worldObj.isRemote && this.getBlockMetadata() > 5 && (energyQuanta >= 25000 || infinite))
+		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updateConnections();
+		if(this.getBlockMetadata() > 5 && (energyQuanta >= 25000 || infinite))
 			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_EFFECT, 0);
 	}
 
@@ -72,7 +74,6 @@ public class TileEntityRadiobox extends TileEntityLoadedBase implements IEnergyR
 	@Override
 	public void onMachineCoarsePoll(int cadence) {
 		if(cadence != 20 || worldObj == null || worldObj.isRemote) return;
-		this.updateConnections();
 		this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.REDSTONE);
 	}
 	

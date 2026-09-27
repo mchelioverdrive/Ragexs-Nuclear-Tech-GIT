@@ -153,6 +153,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updatePowerConnections();
 		runtimeInitialized = true;
 		this.refreshRuntimeEnvironment();
 		this.refreshInventoryFingerprint();
@@ -189,7 +190,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 		runtimeEnergyMutation = true;
 		try {
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-				this.tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
+				this.providePowerToDirectReceiver(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 				this.sendSmoke(xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 			}
 
@@ -212,6 +213,11 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 		}
 		this.refreshInventoryFingerprint();
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	private void updatePowerConnections() {
+		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
+			this.registerPowerConnection(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 	}
 
 	private boolean refreshRuntimeEnvironment() {

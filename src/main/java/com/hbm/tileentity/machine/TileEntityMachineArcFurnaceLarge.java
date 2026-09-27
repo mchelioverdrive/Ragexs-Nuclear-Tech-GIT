@@ -54,8 +54,12 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase implements IEnergyReceiverMK2, IControlReceiver, IGUIProvider, IUpgradeInfoProvider {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
-	private static final int TASK_SIMULATE = 1;
+	private static final int TASK_ACCOUNTING = 1;
+	private static final int TASK_MECHANICS = 2;
+	private static final int TASK_BATTERY = 3;
+	private static final int TASK_EFFECT = 4;
 	private static final int TASK_SLOT_MAIN = 0;
+	private static final int TASK_SLOT_BATTERY = 1;
 	private final ArcFurnaceRecipe[] cachedRecipes = new ArcFurnaceRecipe[20];
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
@@ -65,6 +69,14 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	private int observedBatteryFingerprint;
 	private long observedRecipeRevision = Long.MIN_VALUE;
 	private long operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(1_000L);
+	private long lastAccountingTick = Long.MIN_VALUE;
+	private long progressEffectThroughTick = Long.MIN_VALUE;
+	private long lastProgressedTick = Long.MIN_VALUE;
+	private long lastProgressEffectTick = Long.MIN_VALUE;
+	private boolean runtimeSettling;
+	private long clientProgressTick = Long.MIN_VALUE;
+	private int clientProgressDuration = 400;
+	private boolean clientProgressing;
 
 	
 	public long energyQuanta;
@@ -217,22 +229,38 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		if(lastAccountingTick == Long.MIN_VALUE) lastAccountingTick = now;
+		else this.settleProgressThrough(now - 1L);
 		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.CONFIGURATION | MachineDirtyCause.UPGRADE)) != 0) {
 			this.refreshRuntimeState();
 		}
-		if((causes & MachineDirtyCause.ENERGY) != 0 && energyQuanta <= 0 && isProgressing) {
-			isProgressing = false;
-			this.markNetworkDirty();
-		}
 		runtimeInitialized = true;
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.evaluateAndSchedule(now);
 		this.networkPackNTIfDirty(150);
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_SIMULATE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
-		this.simulateArcFurnaceTick();
-		this.networkPackNTIfDirty(150);
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		if(taskType == TASK_ACCOUNTING && taskSlot == TASK_SLOT_MAIN) {
+			this.settleProgressThrough(now);
+			this.evaluateAndSchedule(now);
+			this.networkPackNTIfDirty(150);
+		} else if(taskType == TASK_MECHANICS && taskSlot == TASK_SLOT_MAIN) {
+			this.advanceArcMechanicsTick();
+			this.evaluateAndSchedule(now);
+			this.networkPackNTIfDirty(150);
+		} else if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
+			this.transferArcBattery(now);
+		} else if(taskType == TASK_EFFECT && taskSlot == TASK_SLOT_MAIN) {
+			if(now <= progressEffectThroughTick) {
+				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1000);
+				lastProgressEffectTick = now;
+				if(now < progressEffectThroughTick) this.scheduleMachineTransition(now + 1L, TASK_EFFECT, TASK_SLOT_MAIN);
+				else this.cancelMachineTransition(TASK_EFFECT, TASK_SLOT_MAIN);
+			}
+		}
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
@@ -273,72 +301,30 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		}
 	}
 
-	private void simulateArcFurnaceTick() {
-		int oldInventoryFingerprint = this.inventoryFingerprint();
-		int oldBatteryFingerprint = this.batteryFingerprint();
-		long oldEnergy = this.energyQuanta;
-		float oldProgress = this.progress;
+	private void advanceArcMechanicsTick() {
 		float oldLid = this.lid;
 		int oldDelay = this.delay;
-		boolean oldProgressing = this.isProgressing;
-		boolean oldMaterial = this.hasMaterial;
 		int oldLiquidFingerprint = this.liquidBufferFingerprint();
 
-		boolean inventoryChangedBeforeTick = inventoryFingerprintInitialized && oldInventoryFingerprint != observedInventoryFingerprint;
-		if(inventoryChangedBeforeTick) this.refreshRuntimeState();
-		this.isProgressing = false;
-		runtimeEnergyMutation = true;
-		try {
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 3, energyQuanta, maxPower));
-		} finally {
-			runtimeEnergyMutation = false;
-		}
-
 		if(energyQuanta > 0) {
-			boolean ingredients = this.hasIngredients();
+			boolean ingredients = this.hasMaterial;
 			boolean hasElectrodes = this.hasElectrodes();
-			long consumption = EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts);
-
 			if(ingredients && hasElectrodes && delay <= 0 && this.liquids.isEmpty()) {
 				if(lid > 0) {
 					lid -= 1F / (60F / (upgrade * 0.5 + 1));
 					if(lid < 0) lid = 0;
-					this.progress = 0;
-				} else if(energyQuanta >= consumption) {
-					int duration = 400 / (upgrade * 2 + 1);
-					this.progress += 1F / duration;
-					this.isProgressing = true;
-					runtimeEnergyMutation = true;
-					try {
-						this.setStoredEnergyQuanta(this.energyQuanta - consumption);
-					} finally {
-						runtimeEnergyMutation = false;
-					}
-					FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 1000);
-					if(this.progress >= 1F) {
-						this.process();
-						this.progress = 0;
-						this.delay = (int) (120 / (upgrade * 0.5 + 1));
-						PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, 10F);
-						this.refreshRuntimeState();
-					}
 				}
 			} else {
 				if(this.delay > 0) delay--;
-				this.progress = 0;
 				if(lid < 1 && this.hasAnyElectrode()) {
 					lid += 1F / (60F / (upgrade * 0.5 + 1));
 					if(lid > 1) lid = 1;
 				}
 			}
-
-			hasMaterial = ingredients;
 		}
 
-		this.decideElectrodeState();
-		if(!hasMaterial) hasMaterial = this.hasIngredients();
-
 		if(!this.liquids.isEmpty() && this.lid > 0F) {
+			this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
 			Vec3 impact = Vec3.createVectorHelper(0, 0, 0);
 			MaterialStack didPour = CrucibleUtil.pourFullStack(worldObj, xCoord + 0.5D + dir.offsetX * 2.875D, yCoord + 1.25D, zCoord + 0.5D + dir.offsetZ * 2.875D, 6, true, this.liquids, MaterialShapes.INGOT.q(1), impact);
@@ -356,37 +342,158 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		}
 
 		this.liquids.removeIf(o -> o.amount <= 0);
-		int newInventoryFingerprint = this.inventoryFingerprint();
-		int newBatteryFingerprint = this.batteryFingerprint();
 		int newLiquidFingerprint = this.liquidBufferFingerprint();
-		boolean inventoryChanged = inventoryChangedBeforeTick || oldInventoryFingerprint != newInventoryFingerprint;
-		boolean batteryChanged = oldBatteryFingerprint != newBatteryFingerprint;
-		boolean stateChanged = oldEnergy != energyQuanta || oldProgress != progress || oldLid != lid || oldDelay != delay || oldProgressing != isProgressing || oldMaterial != hasMaterial || oldLiquidFingerprint != newLiquidFingerprint;
-		if(inventoryChanged) {
-			this.markNetworkDirty();
-			this.markDirty();
-			this.refreshRuntimeState();
-		}
-		if(stateChanged || inventoryChanged || batteryChanged) {
+		boolean liquidChanged = oldLiquidFingerprint != newLiquidFingerprint;
+		boolean stateChanged = oldLid != lid || oldDelay != delay || liquidChanged;
+		if(stateChanged) {
 			this.markDirty();
 			this.markNetworkDirty();
 		}
-		this.observeInventoryFingerprint();
+		if(oldLid != lid || oldDelay != delay || liquidChanged) lastAccountingTick = worldObj.getTotalWorldTime();
+	}
+
+	private void transferArcBattery(long now) {
+		this.settleProgressThrough(now);
+		long oldEnergy = energyQuanta;
+		int oldBatteryFingerprint = this.batteryFingerprint();
+		runtimeEnergyMutation = true;
+		try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 3, energyQuanta, maxPower)); }
+		finally { runtimeEnergyMutation = false; }
+		boolean batteryChanged = oldBatteryFingerprint != this.batteryFingerprint();
+		if(oldEnergy != energyQuanta || batteryChanged) {
+			this.markDirty();
+			this.markNetworkDirty();
+		}
 		this.observeBatteryFingerprint();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
+		if(oldEnergy != energyQuanta) this.scheduleMachineTransition(now, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+	}
+
+	private void settleProgressThrough(long targetTick) {
+		if(worldObj == null || worldObj.isRemote || runtimeSettling) return;
+		if(lastAccountingTick == Long.MIN_VALUE) {
+			lastAccountingTick = targetTick;
+			return;
+		}
+		if(targetTick <= lastAccountingTick) return;
+		long intervalStart = lastAccountingTick;
+		long elapsed = targetTick - lastAccountingTick;
+		lastAccountingTick = targetTick;
+		int duration = this.progressDuration();
+		long consumption = EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts);
+		boolean ready = this.hasProgressInputs();
+		if(!ready) {
+			boolean stateChanged = progress != 0F || isProgressing;
+			if(energyQuanta > 0 && progress != 0F) progress = 0F;
+			isProgressing = false;
+			progressEffectThroughTick = Math.min(progressEffectThroughTick, targetTick - 1L);
+			if(stateChanged) { this.markDirty(); this.markNetworkDirty(); }
+			return;
+		}
+		long affordable = consumption <= 0L ? elapsed : energyQuanta / consumption;
+		long steps = Math.min(elapsed, affordable);
+		if(steps <= 0L) {
+			isProgressing = false;
+			progressEffectThroughTick = Math.min(progressEffectThroughTick, targetTick - 1L);
+			return;
+		}
+		float increment = 1F / duration;
+		runtimeSettling = true;
+		try {
+			long completedAt = Long.MIN_VALUE;
+		long progressedTicks = 0L;
+			for(long i = 0; i < steps; i++) {
+				progress += increment;
+				progressedTicks++;
+				if(progress >= 1F) {
+					completedAt = targetTick - steps + i + 1L;
+					break;
+				}
+			}
+			if(progressedTicks > 0L) lastProgressedTick = intervalStart + progressedTicks;
+			if(consumption > 0L && progressedTicks > 0L) {
+				runtimeEnergyMutation = true;
+				try { this.setStoredEnergyQuanta(energyQuanta - consumption * progressedTicks); }
+				finally { runtimeEnergyMutation = false; }
+			}
+			if(completedAt != Long.MIN_VALUE) {
+				this.process();
+				progress = 0F;
+				this.delay = (int) (120 / (upgrade * 0.5 + 1));
+				PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, 10F);
+				this.refreshRuntimeState();
+				progressEffectThroughTick = Math.min(progressEffectThroughTick, completedAt);
+			}
+			isProgressing = completedAt == Long.MIN_VALUE && progressedTicks > 0L && energyQuanta >= consumption;
+		} finally {
+			runtimeSettling = false;
+		}
+		this.markDirty();
+		this.markNetworkDirty();
+	}
+
+	private boolean hasProgressInputs() {
+		return this.hasIngredients() && this.hasElectrodes() && delay <= 0 && liquids.isEmpty() && lid <= 0F;
+	}
+
+	private int progressDuration() {
+		return 400 / (upgrade * 2 + 1);
+	}
+
+	private int ticksUntilProgressCompletion() {
+		if(progress >= 1F) return 1;
+		float next = progress;
+		float increment = 1F / this.progressDuration();
+		int ticks = 0;
+		while(next < 1F && ticks <= this.progressDuration()) {
+			next += increment;
+			ticks++;
+		}
+		return Math.max(1, ticks);
 	}
 
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
-		boolean activeArcCycle = energyQuanta > 0 && this.hasIngredients() && this.hasElectrodes() && delay <= 0 && liquids.isEmpty() && (lid > 0 || energyQuanta >= EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts));
-		boolean mustAdvanceDelayOrLid = energyQuanta > 0 && (delay > 0 || (lid < 1 && this.hasAnyElectrode()));
-		boolean mustResetOperation = energyQuanta > 0 && (progress > 0 || isProgressing);
-		boolean mustPour = !liquids.isEmpty() && lid > 0F;
-		if(activeArcCycle || mustAdvanceDelayOrLid || mustResetOperation || mustPour || this.hasBatteryWork()) {
-			this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
-		} else {
-			this.cancelMachineTransition(TASK_SIMULATE, TASK_SLOT_MAIN);
+		boolean ready = this.hasProgressInputs();
+		long consumption = EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts);
+		if(!ready && energyQuanta > 0L) {
+			progress = 0F;
+			isProgressing = false;
+			progressEffectThroughTick = Math.min(progressEffectThroughTick, now - 1L);
 		}
+		if(ready && consumption > 0L && energyQuanta >= consumption) {
+			long completionTicks = this.ticksUntilProgressCompletion();
+			long resourceTicks = energyQuanta / consumption;
+			long ticks = Math.min(completionTicks, resourceTicks);
+			long due = Math.max(now, lastAccountingTick + Math.max(1L, ticks));
+			this.scheduleMachineTransition(due, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+			boolean wasProgressing = isProgressing;
+			isProgressing = true;
+			if(!wasProgressing) this.markNetworkDirty();
+			progressEffectThroughTick = due;
+			long effectStart = lastAccountingTick < now ? now : now + 1L;
+			if(effectStart <= due) this.scheduleMachineTransition(effectStart, TASK_EFFECT, TASK_SLOT_MAIN);
+			else this.cancelMachineTransition(TASK_EFFECT, TASK_SLOT_MAIN);
+		} else {
+			this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+			if(lastProgressedTick != now) progressEffectThroughTick = Math.min(progressEffectThroughTick, now - 1L);
+			if(ready && energyQuanta < consumption || !ready) {
+				if(isProgressing) this.markNetworkDirty();
+				isProgressing = false;
+			}
+		}
+		boolean activeArcCycle = energyQuanta > 0 && hasMaterial && this.hasElectrodes() && delay <= 0 && this.liquids.isEmpty();
+		boolean mustAdvanceDelayOrLid = energyQuanta > 0 && (delay > 0 || (lid < 1 && this.hasAnyElectrode()));
+		boolean mustCloseLid = activeArcCycle && lid > 0F;
+		boolean mustPour = !liquids.isEmpty() && lid > 0F;
+		if(mustAdvanceDelayOrLid || mustCloseLid || mustPour) this.scheduleMachineTransition(now + 1L, TASK_MECHANICS, TASK_SLOT_MAIN);
+		else this.cancelMachineTransition(TASK_MECHANICS, TASK_SLOT_MAIN);
+		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
+		if(progressEffectThroughTick >= now && lastProgressedTick == now && lastProgressEffectTick != now)
+			this.scheduleMachineTransition(now, TASK_EFFECT, TASK_SLOT_MAIN);
+		else if(progressEffectThroughTick < now) this.cancelMachineTransition(TASK_EFFECT, TASK_SLOT_MAIN);
 	}
 
 	private boolean hasBatteryWork() {
@@ -630,6 +737,8 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 			buf.writeInt(mat.material.id);
 			buf.writeInt(mat.amount);
 		}
+		buf.writeLong(worldObj == null ? 0L : worldObj.getTotalWorldTime());
+		buf.writeInt(this.progressDuration());
 	}
 	
 	@Override
@@ -650,13 +759,27 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		for(int i = 0; i < mats; i++) {
 			liquids.add(new MaterialStack(Mats.matById.get(buf.readInt()), buf.readInt()));
 		}
+		this.clientProgressTick = buf.readLong();
+		this.clientProgressDuration = Math.max(1, buf.readInt());
+		this.clientProgressing = this.isProgressing;
 		
 		if(syncLid != 0 && syncLid != 1) this.approachNum = 2;
+	}
+
+	public float getProjectedProgress() {
+		if(worldObj == null || !worldObj.isRemote || clientProgressTick == Long.MIN_VALUE || !clientProgressing) return progress;
+		long elapsed = Math.max(0L, worldObj.getTotalWorldTime() - clientProgressTick);
+		return Math.min(1F, progress + elapsed * (1F / clientProgressDuration));
 	}
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+		lastAccountingTick = Long.MIN_VALUE;
+		progressEffectThroughTick = Long.MIN_VALUE;
+		lastProgressedTick = Long.MIN_VALUE;
+		lastProgressEffectTick = Long.MIN_VALUE;
+		runtimeInitialized = false;
 		
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.liquidMode = nbt.getBoolean("liquidMode");
@@ -674,6 +797,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setBoolean("liquidMode", liquidMode);
@@ -698,6 +822,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	@Override
 	public void setStoredEnergyQuanta(long energyQuanta) {
 		if(this.energyQuanta == energyQuanta) return;
+		if(!runtimeEnergyMutation && !runtimeSettling && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
@@ -752,10 +877,29 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	@Override
 	public void receiveControl(NBTTagCompound data) {
 		if(data.getBoolean("liquid")) {
+			if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 			this.liquidMode = !this.liquidMode;
 			this.markDirty();
 			this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.RECIPE);
 		}
+	}
+
+	@Override
+	protected void beforeInventorySlotChanged(int slot) {
+		if(!runtimeSettling && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override
+	public void onChunkUnload() {
+		if(worldObj != null && !worldObj.isRemote) {
+			this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+			lastAccountingTick = Long.MIN_VALUE;
+			progressEffectThroughTick = Long.MIN_VALUE;
+			lastProgressedTick = Long.MIN_VALUE;
+			lastProgressEffectTick = Long.MIN_VALUE;
+			runtimeInitialized = false;
+		}
+		super.onChunkUnload();
 	}
 
 	@Override

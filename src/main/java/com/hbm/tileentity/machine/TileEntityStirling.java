@@ -70,6 +70,7 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updatePowerConnections();
 		runtimeInitialized = true;
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 	}
@@ -109,10 +110,10 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 
 			this.sendRuntimeState();
 			if(hasCog) {
-				this.tryProvide(worldObj, xCoord + 2, yCoord, zCoord, Library.POS_X);
-				this.tryProvide(worldObj, xCoord - 2, yCoord, zCoord, Library.NEG_X);
-				this.tryProvide(worldObj, xCoord, yCoord, zCoord + 2, Library.POS_Z);
-				this.tryProvide(worldObj, xCoord, yCoord, zCoord - 2, Library.NEG_Z);
+				this.providePowerToDirectReceiver(worldObj, xCoord + 2, yCoord, zCoord, Library.POS_X);
+				this.providePowerToDirectReceiver(worldObj, xCoord - 2, yCoord, zCoord, Library.NEG_X);
+				this.providePowerToDirectReceiver(worldObj, xCoord, yCoord, zCoord + 2, Library.POS_Z);
+				this.providePowerToDirectReceiver(worldObj, xCoord, yCoord, zCoord - 2, Library.NEG_Z);
 			} else if(this.powerBuffer > 0) {
 				this.setStoredEnergyQuanta(this.powerBuffer - 1);
 			}
@@ -124,7 +125,16 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
-		if(cadence == 20 && worldObj != null && !worldObj.isRemote && runtimeInitialized && !hasCog && powerBuffer <= 0) this.sendRuntimeState();
+		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.updatePowerConnections();
+		if(!hasCog && powerBuffer <= 0) this.sendRuntimeState();
+	}
+
+	private void updatePowerConnections() {
+		this.registerPowerConnection(worldObj, xCoord + 2, yCoord, zCoord, Library.POS_X);
+		this.registerPowerConnection(worldObj, xCoord - 2, yCoord, zCoord, Library.NEG_X);
+		this.registerPowerConnection(worldObj, xCoord, yCoord, zCoord + 2, Library.POS_Z);
+		this.registerPowerConnection(worldObj, xCoord, yCoord, zCoord - 2, Library.NEG_Z);
 	}
 
 	private void evaluateAndSchedule(long now) {

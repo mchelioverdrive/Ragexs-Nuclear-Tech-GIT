@@ -78,7 +78,7 @@ public class GUIMachineArcFurnaceLarge extends GuiInfoContainer {
 		int p = (int) (arc.getStoredEnergyQuanta() * 70 / arc.maxPower);
 		drawTexturedModalRect(guiLeft + 8, guiTop + 106 - p, 176, 70 - p, 7, p);
 		
-		int o = (int) (arc.progress * 70);
+		int o = (int) (arc.getProjectedProgress() * 70);
 		drawTexturedModalRect(guiLeft + 17, guiTop + 106 - o, 183, 70 - o, 7, o);
 		
 		drawStack(arc.liquids, arc.maxLiquid, 152, 106);

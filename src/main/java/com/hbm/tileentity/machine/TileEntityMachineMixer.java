@@ -51,14 +51,18 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 
 	private long operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(50L);
 	private static final int TASK_ACCOUNTING = 1;
+	private static final int TASK_BATTERY = 2;
 	private static final int TASK_SLOT_MAIN = 0;
+	private static final int TASK_SLOT_BATTERY = 1;
 	private boolean runtimeStateInitialized;
 	private boolean runtimeEnergyMutation;
+	private boolean runtimeSettling;
 	private long nextRuntimeTick = -1L;
+	private long lastAccountingTick = Long.MIN_VALUE;
+	private long clientProgressTick;
 	private long observedRecipeRevision = -1L;
 	private int observedInventoryFingerprint;
 	private boolean inventoryFingerprintInitialized;
-	private int runtimeConnectionPolls;
 	
 	public FluidTank[] tanks;
 
@@ -102,42 +106,92 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	@Override
 	public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		boolean wasActive = runtimeStateInitialized && wasOn;
+		if(lastAccountingTick == Long.MIN_VALUE) lastAccountingTick = now;
+		else this.settleProgressThrough(now - 1L);
+		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY | MachineDirtyCause.INVENTORY | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE)) != 0) this.updateConnections();
 		this.refreshRuntimeSettings(false);
 		this.runtimeStateInitialized = true;
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		wasOn = this.canProcess() || progress > 0;
+		if(wasActive) this.settleProgressThrough(now);
+		this.evaluateAndSchedule(now);
+		this.networkPackNTIfDirty(50);
 	}
 
 	@Override
 	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_ACCOUNTING || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeStateInitialized) return;
-		nextRuntimeTick = -1L;
-		long oldPower = energyQuanta;
-		int oldProgress = progress;
-		int oldProcessTime = processTime;
-		boolean oldWasOn = wasOn;
-		this.setRuntimePower(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
+		if(worldObj == null || worldObj.isRemote || !runtimeStateInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
+			this.settleProgressThrough(now);
+			long oldPower = energyQuanta;
+			this.setRuntimePower(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
+			if(oldPower != energyQuanta) this.markDirty();
+			this.evaluateAndSchedule(now);
+			return;
+		} else if(taskType == TASK_ACCOUNTING && taskSlot == TASK_SLOT_MAIN) this.settleProgressThrough(now);
+		else return;
+		this.markNetworkDirty();
+		this.networkPackNTIfDirty(50);
+		this.evaluateAndSchedule(now);
+	}
+
+	private void settleProgressThrough(long target) {
+		if(runtimeSettling || lastAccountingTick == Long.MIN_VALUE || target <= lastAccountingTick) return;
+		long elapsed = target - lastAccountingTick;
+		lastAccountingTick = target;
+		runtimeSettling = true;
+		try {
+			long cost = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
+			boolean changed = false;
+			long remaining = elapsed;
+			while(remaining > 0L) {
+				if(!this.canProcess()) {
+					if(progress != 0 || wasOn) changed = true;
+					progress = 0;
+					wasOn = false;
+					break;
+				}
+				processTime = this.getEffectiveProcessTime(processTime);
+				long affordable = cost <= 0L ? remaining : energyQuanta / cost;
+				if(affordable <= 0L) {
+					progress = 0;
+					wasOn = false;
+					changed = true;
+					break;
+				}
+				long steps = Math.min(remaining, Math.min(affordable, Math.max(1, processTime - progress)));
+				if(cost > 0L) this.setRuntimePower(energyQuanta - steps * cost);
+				progress += (int) steps;
+				remaining -= steps;
+				wasOn = true;
+				changed = true;
+				if(progress >= processTime) {
+					this.process();
+					progress = 0;
+					changed = true;
+					continue;
+				}
+				if(remaining > 0L && steps >= affordable) {
+					progress = 0;
+					wasOn = false;
+					changed = true;
+					break;
+				}
+			}
+			if(changed) { this.markDirty(); this.markNetworkDirty(); }
+		} finally {
+			runtimeSettling = false;
+		}
+	}
+
+	private int getEffectiveProcessTime(int recipeDuration) {
 		int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
 		int overLevel = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
-		wasOn = this.canProcess();
-		if(wasOn) {
-			progress++;
-			this.setRuntimePower(this.energyQuanta - EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts));
-			processTime -= processTime * speedLevel / 4;
-			processTime /= (overLevel + 1);
-			if(processTime <= 0) processTime = 1;
-			if(progress >= processTime) {
-				this.process();
-				progress = 0;
-			}
-		} else {
-			progress = 0;
-		}
-		if(oldPower != energyQuanta || oldProgress != progress || oldProcessTime != processTime || oldWasOn != wasOn) {
-			this.markDirty();
-			this.markNetworkDirty();
-			this.networkPackNTIfDirty(50);
-		}
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		int effectiveTime = recipeDuration - recipeDuration * speedLevel / 4;
+		effectiveTime /= overLevel + 1;
+		return Math.max(1, effectiveTime);
 	}
 
 	@Override
@@ -155,15 +209,15 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 		boolean settingsChanged = this.refreshRuntimeSettings(true);
 		if(recipeChanged) observedRecipeRevision = SerializableRecipe.getRegistryRevision();
 		if(recipeChanged || settingsChanged) this.markMachineDirty((recipeChanged ? MachineDirtyCause.RECIPE : 0) | (settingsChanged ? MachineDirtyCause.UPGRADE : 0));
-		if(++runtimeConnectionPolls >= 3) {
-			runtimeConnectionPolls = 0;
-			for(DirPos pos : getConPos()) {
-				this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				if(tanks[0].getTankType() != Fluids.NONE) this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				if(tanks[1].getTankType() != Fluids.NONE) this.trySubscribe(tanks[1].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			}
-		}
 		this.networkPackNTIfDirty(50);
+	}
+
+	private void updateConnections() {
+		for(DirPos pos : getConPos()) {
+			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			if(tanks[0].getTankType() != Fluids.NONE) this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			if(tanks[1].getTankType() != Fluids.NONE) this.trySubscribe(tanks[1].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+		}
 	}
 
 	private boolean refreshRuntimeSettings(boolean contentAware) {
@@ -182,14 +236,23 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	}
 
 	private void evaluateAndSchedule(long now) {
-		boolean shouldRun = this.canProcess() || progress > 0 || this.hasBatteryWork();
-		if(!shouldRun) {
+		boolean canRun = this.canProcess();
+		if(canRun || progress > 0) {
+			if(canRun) processTime = this.getEffectiveProcessTime(processTime);
+			long cost = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
+			long needed = Math.max(1L, processTime - progress);
+			long completionBoundary = needed;
+			long affordable = cost <= 0L ? Long.MAX_VALUE : energyQuanta / cost;
+			long resetBoundary = affordable >= needed ? Long.MAX_VALUE : affordable + 1L;
+			long delay = Math.max(1L, Math.min(completionBoundary, resetBoundary));
+			nextRuntimeTick = now + delay;
+			this.scheduleMachineTransition(nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		} else {
 			this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
 			nextRuntimeTick = -1L;
-			return;
 		}
-		nextRuntimeTick = now + 1L;
-		this.scheduleMachineTransition(nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
 	}
 
 	private boolean hasBatteryWork() {
@@ -226,6 +289,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 		buf.writeInt(progress);
 		buf.writeInt(recipeIndex);
 		buf.writeBoolean(wasOn);
+		buf.writeLong(worldObj == null ? 0L : worldObj.getTotalWorldTime());
 		
 		for(int i = 0; i < tanks.length; i++) tanks[i].serialize(buf);
 	}
@@ -238,6 +302,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 		progress = buf.readInt();
 		recipeIndex = buf.readInt();
 		wasOn = buf.readBoolean();
+		clientProgressTick = buf.readLong();
 		
 		for(int i = 0; i < tanks.length; i++) tanks[i].deserialize(buf);
 	}
@@ -346,12 +411,15 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 		this.processTime = nbt.getInteger("processTime");
 		this.recipeIndex = nbt.getInteger("recipe");
 		this.runtimeStateInitialized = false;
+		this.inventoryFingerprintInitialized = false;
+		this.lastAccountingTick = Long.MIN_VALUE;
 		nextRuntimeTick = -1L;
 		for(int i = 0; i < 3; i++) this.tanks[i].readFromNBT(nbt, i + "");
 	}
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 		
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
@@ -369,6 +437,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	@Override
 	public void setStoredEnergyQuanta(long energyQuanta) {
 		if(this.energyQuanta == energyQuanta) return;
+		if(!runtimeEnergyMutation && !runtimeSettling && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
@@ -377,6 +446,26 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	@Override
 	public long getEnergyCapacityQuanta() {
 		return maxPower;
+	}
+
+	public int getProjectedProgress() {
+		if(worldObj == null || !worldObj.isRemote || !wasOn) return progress;
+		long projected = progress + Math.max(0L, worldObj.getTotalWorldTime() - clientProgressTick);
+		return (int) Math.min(Math.max(1, processTime), projected);
+	}
+
+	@Override protected void beforeInventorySlotChanged(int slot) {
+		if(!runtimeSettling && worldObj != null && !worldObj.isRemote && runtimeStateInitialized) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override protected void beforeFluidStorageChanged(FluidTank changedTank) {
+		if(!runtimeSettling && worldObj != null && !worldObj.isRemote && runtimeStateInitialized) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override public void onChunkUnload() {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+		lastAccountingTick = Long.MIN_VALUE;
+		super.onChunkUnload();
 	}
 
 	@Override
@@ -431,6 +520,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	@Override
 	public void receiveControl(NBTTagCompound data) {
 		if(data.hasKey("toggle")) {
+			if(runtimeStateInitialized && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 			this.recipeIndex++;
 			this.markMachineDirty(MachineDirtyCause.RECIPE | MachineDirtyCause.CONFIGURATION);
 		}

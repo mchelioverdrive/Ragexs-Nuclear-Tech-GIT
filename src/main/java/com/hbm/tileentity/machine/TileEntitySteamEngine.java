@@ -10,6 +10,7 @@ import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.fluid.trait.FT_Coolable;
 import com.hbm.inventory.fluid.trait.FT_Coolable.CoolingType;
+import com.hbm.machine.MachineDirtyCause;
 import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IConfigurableMachine;
 import com.hbm.tileentity.IFluidCopiable;
@@ -110,6 +111,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 		this.trackRuntimeTanks();
 		this.reconcileTankTypes();
 		this.refreshRuntimeConnections();
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updatePowerConnections();
 		this.subscribeToInput();
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 		this.sendRuntimeState();
@@ -119,6 +121,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
 		if(this.trackRuntimeTanks()) this.markMachineFluidDirty();
 		this.refreshRuntimeConnections();
+		this.updatePowerConnections();
 		this.subscribeToInput();
 		this.sendRuntimeState();
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
@@ -151,7 +154,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 			}
 
 			for(DirPos pos : runtimeConnections) {
-				if(this.powerBuffer > 0) this.tryProvide(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+				if(this.powerBuffer > 0) this.providePowerToDirectReceiver(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 			this.sendRuntimeState();
@@ -197,6 +200,10 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 
 	private void subscribeToInput() {
 		for(DirPos pos : runtimeConnections) this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+	}
+
+	private void updatePowerConnections() {
+		for(DirPos pos : runtimeConnections) this.registerPowerConnection(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 	}
 
 	private void evaluateAndSchedule(long now) {

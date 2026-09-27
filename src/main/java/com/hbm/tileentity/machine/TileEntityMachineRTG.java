@@ -229,6 +229,7 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updatePowerConnections();
 		runtimeInitialized = true;
 		this.refreshInventoryFingerprint();
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
@@ -249,8 +250,7 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 		runtimeEnergyMutation = true;
 		try {
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
-				this.tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-
+				this.providePowerToDirectReceiver(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 			heat = RTGUtil.updateRTGs(slots, slot_io);
 			if(heat > heatMax) heat = heatMax;
 			this.setStoredEnergyQuanta(this.energyQuanta + heat * 5L);
@@ -261,6 +261,11 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 		this.refreshInventoryFingerprint();
 		this.sendRuntimeEnergy();
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	private void updatePowerConnections() {
+		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
+			this.registerPowerConnection(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 	}
 
 	private void sendRuntimeEnergy() {

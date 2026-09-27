@@ -24,6 +24,8 @@ public abstract class TileEntityFoundryCastingBase extends TileEntityFoundryBase
 	private static final int TASK_CAST = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
+	private boolean castingActive;
+	private long lastCastingAccountingTick = -1L;
 	private boolean inputFingerprintInitialized;
 	private boolean materialFingerprintInitialized;
 	private int observedInputFingerprint;
@@ -46,9 +48,12 @@ public abstract class TileEntityFoundryCastingBase extends TileEntityFoundryBase
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		boolean wasActive = castingActive;
 		super.onMachineRuntimeDirty(causes);
 		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.CONFIGURATION)) != 0) this.refreshCastingState();
 		runtimeInitialized = true;
+		castingActive = this.canAdvanceCasting();
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0 || !wasActive || !castingActive) lastCastingAccountingTick = worldObj.getTotalWorldTime();
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 	}
 
@@ -57,7 +62,8 @@ public abstract class TileEntityFoundryCastingBase extends TileEntityFoundryBase
 		this.normalizeCastingBuffer();
 		Mold mold = this.getInstalledMold();
 		if(mold != null && this.amount == this.getCapacity() && slots[1] == null) {
-			cooloff--;
+			long elapsed = lastCastingAccountingTick < 0L ? 1L : Math.max(1L, worldObj.getTotalWorldTime() - lastCastingAccountingTick);
+			cooloff = (int) Math.max(0L, (long) cooloff - elapsed);
 			if(cooloff <= 0) {
 				this.amount = 0;
 				ItemStack out = mold.getOutput(type);
@@ -69,6 +75,8 @@ public abstract class TileEntityFoundryCastingBase extends TileEntityFoundryBase
 		} else {
 			cooloff = 200;
 		}
+		lastCastingAccountingTick = worldObj.getTotalWorldTime();
+		castingActive = this.canAdvanceCasting();
 		this.observeInputFingerprint();
 		this.observeMaterialFingerprint();
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
@@ -101,7 +109,7 @@ public abstract class TileEntityFoundryCastingBase extends TileEntityFoundryBase
 
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
-		if(this.canAdvanceCasting()) this.scheduleMachineTransition(now + 1L, TASK_CAST, TASK_SLOT_MAIN);
+		if(this.canAdvanceCasting()) this.scheduleMachineTransition(now + Math.max(0, cooloff), TASK_CAST, TASK_SLOT_MAIN);
 		else this.cancelMachineTransition(TASK_CAST, TASK_SLOT_MAIN);
 	}
 
@@ -261,6 +269,10 @@ public abstract class TileEntityFoundryCastingBase extends TileEntityFoundryBase
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+		cooloff = nbt.hasKey("cooloff") ? nbt.getInteger("cooloff") : 100;
+		runtimeInitialized = false;
+		castingActive = false;
+		lastCastingAccountingTick = -1L;
 		
 		NBTTagList list = nbt.getTagList("items", 10);
 		slots = new ItemStack[getSizeInventory()];
@@ -277,6 +289,9 @@ public abstract class TileEntityFoundryCastingBase extends TileEntityFoundryBase
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+		long elapsed = worldObj != null && !worldObj.isRemote && isLoaded() && getMachineRuntimeBinding() != null && castingActive && lastCastingAccountingTick >= 0L
+				? Math.max(0L, worldObj.getTotalWorldTime() - lastCastingAccountingTick) : 0L;
+		nbt.setInteger("cooloff", (int) Math.max(0L, (long) cooloff - elapsed));
 		
 		NBTTagList list = new NBTTagList();
 		

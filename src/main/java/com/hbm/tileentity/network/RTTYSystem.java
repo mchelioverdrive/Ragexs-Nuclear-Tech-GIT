@@ -1,7 +1,10 @@
 package com.hbm.tileentity.network;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import com.hbm.util.NoteBuilder;
 import com.hbm.util.NoteBuilder.Instrument;
@@ -18,6 +21,45 @@ public class RTTYSystem {
 	public static HashMap<Pair<World, String>, RTTYChannel> broadcast = new HashMap();
 	/** New message queue for writing, gets written into readable Map later on */
 	public static HashMap<Pair<World, String>, Object> newMessages = new HashMap();
+	private static final HashMap<Pair<World, String>, Set<RTTYListener>> listeners = new HashMap<Pair<World, String>, Set<RTTYListener>>();
+
+	public interface RTTYListener {
+		void onRTTYSignal(World world, String channelName);
+	}
+
+	public static void subscribe(World world, String channelName, RTTYListener listener) {
+		Pair<World, String> key = new Pair<World, String>(world, channelName);
+		Set<RTTYListener> channelListeners = listeners.get(key);
+		if(channelListeners == null) {
+			channelListeners = new HashSet<RTTYListener>();
+			listeners.put(key, channelListeners);
+		}
+		channelListeners.add(listener);
+	}
+
+	public static void unsubscribe(World world, String channelName, RTTYListener listener) {
+		Pair<World, String> key = new Pair<World, String>(world, channelName);
+		Set<RTTYListener> channelListeners = listeners.get(key);
+		if(channelListeners == null) return;
+		channelListeners.remove(listener);
+		if(channelListeners.isEmpty()) listeners.remove(key);
+	}
+
+	/** Clear receiver references even if a world closes without unloading each tile first. */
+	public static void forgetWorld(World world) {
+		Iterator<Pair<World, String>> entries = listeners.keySet().iterator();
+		while(entries.hasNext()) if(entries.next().getKey() == world) entries.remove();
+		entries = broadcast.keySet().iterator();
+		while(entries.hasNext()) if(entries.next().getKey() == world) entries.remove();
+		entries = newMessages.keySet().iterator();
+		while(entries.hasNext()) if(entries.next().getKey() == world) entries.remove();
+	}
+
+	private static void notifyListeners(Pair<World, String> key) {
+		Set<RTTYListener> channelListeners = listeners.get(key);
+		if(channelListeners == null) return;
+		for(RTTYListener listener : channelListeners) listener.onRTTYSignal(key.getKey(), key.getValue());
+	}
 	
 	/** Pushes a new signal to be used next tick. Only the last signal pushed will be used. */
 	public static void broadcast(World world, String channelName, Object signal) {
@@ -43,6 +85,7 @@ public class RTTYSystem {
 			channel.signal = lastSignal;
 			
 			broadcast.put(identifier, channel);
+			notifyListeners(identifier);
 		}
 		
 		HashMap<Pair<World, String>, RTTYChannel> toAdd = new HashMap();
@@ -54,6 +97,7 @@ public class RTTYSystem {
 		}
 		
 		broadcast.putAll(toAdd);
+		for(Pair<World, String> identifier : toAdd.keySet()) notifyListeners(identifier);
 		newMessages.clear();
 	}
 	

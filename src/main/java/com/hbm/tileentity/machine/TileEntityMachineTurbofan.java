@@ -98,6 +98,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 		}
 		runtimeInitialized = true;
 		this.refreshConnections();
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updatePowerConnections();
 		runtimeWaterlogged = this.isWaterlogged();
 		if((causes & (MachineDirtyCause.INVENTORY | MachineDirtyCause.UPGRADE | MachineDirtyCause.LIFECYCLE)) != 0) this.refreshAfterburner();
 		this.beginMachineFluidMutation();
@@ -118,6 +119,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 			}
 		} else if(cadence == 20) {
 			this.refreshConnections();
+			this.updatePowerConnections();
 			this.subscribeToFuel();
 			this.sendRuntimePacket();
 		}
@@ -159,6 +161,10 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 
 	private void subscribeToFuel() {
 		for(DirPos pos : runtimeConnections) this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+	}
+
+	private void updatePowerConnections() {
+		for(DirPos pos : runtimeConnections) this.registerPowerConnection(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 	}
 
 	private void evaluateAndSchedule(long now) {
@@ -285,9 +291,9 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 			}
 			
 			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 3, energyQuanta, energyQuanta));
+			for(DirPos pos : runtimeConnections) this.providePowerToDirectReceiver(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			
 			for(DirPos pos : runtimeConnections) {
-				this.tryProvide(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				if(this.blood.getFill() > 0) this.sendFluid(blood, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				this.sendSmoke(pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}

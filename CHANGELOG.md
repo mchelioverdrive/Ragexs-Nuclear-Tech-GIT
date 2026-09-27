@@ -405,3 +405,20 @@ INCOMPLETE:
 
 - Added a source-based engineering audit of generation, machine demand, heat and steam chains, reactors, water treatment, oil processing, storage, and transport. It includes representative plant budgets, gameplay classifications, priority corrections, and a staged implementation strategy.
 - Identified high-grade steam energy gain, a fusion-coolant output shortfall against magnet input, and large differences among industrial electrical loads. This is documentation only: balance values, configurations, recipes, saves, and compatibility behavior remain unchanged. In-game steady-state throughput and dedicated-server behavior remain unverified.
+
+2026-09-27 01:38 — Optimize machine-runtime cadence and record performance comparison
+
+- Replaced foundry cooldown countdown with a loaded-time deadline, projected Gas Dock launch position from elapsed loaded ticks, moved chimney smoke expiry to a 20-tick effect boundary, and changed tuned radio reception to publication-triggered wakeups. The immediate scheduling census fell from 224 source lines at HEAD to 221; the chimney retains a separate next-tick ash handoff.
+- Separated persistent graph attachment from direct power delivery for eighteen provider families and moved five periodic connection refresh operations to invalidation. Removed the Detector's coarse registration poll. Direct receiver delivery remains at its original active point and cadence.
+- Added cancellation-driven scheduler heap compaction and queue diagnostics, plus a compact previous-versus-current audit. Recipe/resource accounting, fluid batching, fuel/thermal/rotor integration, and multi-lane boundary scheduling remain the next broad cadence areas.
+
+2026-09-27 16:05 — Align direct steam traits with the staged ledger
+
+- Corrected the unused direct fresh-water heating costs for hot, superhot, and ultrahot steam to match their stock staged routes while retaining all fluid amounts and first-step boiler selection.
+- Added a registration-time stock steam ledger warning for inconsistent heating, cooling, or stored-fluid ratios, including loaded trait overrides. Clarified transition-energy, nominal steam L, and network PU labels.
+- Updated the RealSim and industrial audits to distinguish the former direct-route inconsistency from reachable stock steam behavior. Turbine, boiler, reactor, fuel, industrial load, transport, and storage balance remain unchanged.
+
+2026-09-27 18:39 — Schedule stable machine recipe progress by boundaries
+
+- Migrated stable recipe and fluid-accounting families to settle elapsed loaded time at completion and resource boundaries, settle before relevant mutations, and preserve ascending order when lanes share resources. Kept exact half-joule energy arithmetic and separated battery or client progress work where the machine boundary supports it.
+- Added the task-level remaining recipe/progress inventory and updated the streamlined previous-versus-current performance comparison. Coupled heat, live world interaction, and general fluid-transfer paths retain their documented active cadence.

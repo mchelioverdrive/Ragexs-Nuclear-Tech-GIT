@@ -40,6 +40,8 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 	private static final int TASK_PRESS = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
+	private boolean runtimeSettling;
+	private long lastAccountingTick = Long.MIN_VALUE;
 	private boolean preheated;
 	private ItemStack cachedStamp;
 	private int cachedStampDamage;
@@ -52,6 +54,15 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 	private ItemStack cachedOutput;
 	private int observedInventoryFingerprint;
 	private boolean inventoryFingerprintInitialized;
+	private long clientPressTick;
+	private int clientDelay;
+	private int clientProjectedSpeed;
+	private int clientProjectedPress;
+	private int clientProjectedBurnTime;
+	private boolean clientRetracting;
+	private boolean clientPreheated;
+	private boolean clientCanProcess;
+	private boolean clientProjectionActive;
 	
 	public ItemStack syncStack;
 	
@@ -67,15 +78,9 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 	@Override
 	public void updateEntity() {
 		if(worldObj.isRemote) {
-			// approach-based interpolation, GO!
 			this.lastPress = this.renderPress;
-			
-			if(this.turnProgress > 0) {
-				this.renderPress = this.renderPress + ((this.syncPress - this.renderPress) / (double) this.turnProgress);
-				--this.turnProgress;
-			} else {
-				this.renderPress = this.syncPress;
-			}
+			this.advanceClientProjection();
+			this.renderPress = clientProjectedPress;
 		}
 	}
 
@@ -85,21 +90,66 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		if(runtimeInitialized) this.settlePressThrough(now - 1L);
+		else lastAccountingTick = now;
 		this.updatePreheaterState();
 		this.resolveCachedOutput();
 		observedRecipeRevision = SerializableRecipe.getRegistryRevision();
 		runtimeInitialized = true;
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+		this.evaluateAndSchedule(now);
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
 		if(taskType != TASK_PRESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.settlePressThrough(worldObj.getTotalWorldTime());
+		this.sendRuntimeState();
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+	}
+
+	private void settlePressThrough(long targetTick) {
+		if(worldObj == null || worldObj.isRemote || runtimeSettling) return;
+		long now = worldObj.getTotalWorldTime();
+		if(lastAccountingTick == Long.MIN_VALUE || targetTick <= lastAccountingTick) {
+			if(lastAccountingTick == Long.MIN_VALUE) lastAccountingTick = Math.min(targetTick, now);
+			return;
+		}
 		int oldSpeed = speed;
 		int oldPress = press;
 		int oldBurnTime = burnTime;
 		int oldDelay = delay;
 		boolean oldRetracting = isRetracting;
-		boolean canProcess = this.canProcess();
+		runtimeSettling = true;
+		try {
+			while(lastAccountingTick < targetTick) {
+				if(!hasPressStepWork()) {
+					lastAccountingTick = targetTick;
+					break;
+				}
+				this.applyPressStep();
+				lastAccountingTick++;
+			}
+		} finally {
+			runtimeSettling = false;
+		}
+		if(oldSpeed != speed || oldPress != press || oldBurnTime != burnTime || oldDelay != delay || oldRetracting != isRetracting) {
+			this.markDirty();
+			this.markNetworkDirty();
+		}
+	}
+
+	private boolean hasPressStepWork() {
+		return this.canProcessState() || (this.isRetracting && burnTime >= 200) || this.delay > 0 || this.speed > 0 || (this.press > 0 && burnTime >= 200)
+				|| (slots[0] != null && burnTime < 200 && TileEntityFurnace.getItemBurnTime(slots[0]) > 0);
+	}
+
+	private boolean canProcessState() {
+		return burnTime >= 200 && this.hasOutputSpace(cachedOutput);
+	}
+
+	private void applyPressStep() {
+		boolean canProcess = this.canProcessState();
 		if((canProcess || this.isRetracting) && this.burnTime >= 200) {
 			this.speed += preheated ? 4 : 1;
 			if(this.speed > this.maxSpeed) this.speed = this.maxSpeed;
@@ -112,6 +162,7 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 			if(this.isRetracting) {
 				this.press -= stampSpeed;
 				if(this.press <= 0) {
+					this.press = 0;
 					this.isRetracting = false;
 					this.delay = 5;
 				}
@@ -125,9 +176,6 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 			delay--;
 		}
 		this.loadFuelIfNeeded();
-		if(oldSpeed != speed || oldPress != press || oldBurnTime != burnTime || oldDelay != delay || oldRetracting != isRetracting) this.markDirty();
-		this.sendRuntimeState();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
@@ -214,13 +262,55 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 	}
 
 	private boolean hasRuntimeWork() {
-		return this.canProcess() || this.isRetracting || this.delay > 0 || this.speed > 0 || this.press > 0 || (slots[0] != null && burnTime < 200 && TileEntityFurnace.getItemBurnTime(slots[0]) > 0);
+		return this.hasPressStepWork();
 	}
 
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
-		if(this.hasRuntimeWork()) this.scheduleMachineTransition(now + 1L, TASK_PRESS, TASK_SLOT_MAIN);
-		else this.cancelMachineTransition(TASK_PRESS, TASK_SLOT_MAIN);
+		this.resolveCachedOutput();
+		if(!this.hasRuntimeWork()) {
+			this.cancelMachineTransition(TASK_PRESS, TASK_SLOT_MAIN);
+			return;
+		}
+		long ticks = this.ticksUntilNextBoundary();
+		this.scheduleMachineTransition(now + Math.max(1L, ticks), TASK_PRESS, TASK_SLOT_MAIN);
+	}
+
+	private long ticksUntilNextBoundary() {
+		if(slots[0] != null && burnTime < 200 && TileEntityFurnace.getItemBurnTime(slots[0]) > 0) return 1L;
+		int simSpeed = speed;
+		int simPress = press;
+		int simDelay = delay;
+		int simBurn = burnTime;
+		boolean simRetracting = isRetracting;
+		boolean process = this.canProcessState();
+		for(long ticks = 1L; ticks <= 10000L; ticks++) {
+			if((process || simRetracting) && simBurn >= 200) {
+				simSpeed = Math.min(maxSpeed, simSpeed + (preheated ? 4 : 1));
+			} else {
+				simSpeed = Math.max(0, simSpeed - 1);
+			}
+			if(simDelay <= 0) {
+				int stampSpeed = simSpeed * progressAtMax / maxSpeed;
+				if(simRetracting) {
+					simPress -= stampSpeed;
+					if(simPress <= 0) {
+						simPress = 0;
+						simRetracting = false;
+					simDelay = 5;
+					}
+				} else if(process) {
+					simPress += stampSpeed;
+					if(simPress >= maxPress) return ticks;
+				} else if(simPress > 0) {
+					simRetracting = true;
+				}
+			} else {
+				simDelay--;
+			}
+			if(!process && simSpeed == 0 && simDelay == 0 && (simPress == 0 || simRetracting)) return ticks;
+		}
+		return 1L;
 	}
 
 	private boolean observeInventoryFingerprint() {
@@ -245,6 +335,11 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 		data.setInteger("speed", speed);
 		data.setInteger("burnTime", burnTime);
 		data.setInteger("press", press);
+		data.setInteger("delay", delay);
+		data.setBoolean("ret", isRetracting);
+		data.setBoolean("preheated", preheated);
+		data.setBoolean("canProcess", this.canProcessState());
+		data.setLong("tick", worldObj.getTotalWorldTime());
 		if(slots[2] != null) {
 			NBTTagCompound stack = new NBTTagCompound();
 			slots[2].writeToNBT(stack);
@@ -260,6 +355,15 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 		this.speed = nbt.getInteger("speed");
 		this.burnTime = nbt.getInteger("burnTime");
 		this.syncPress = nbt.getInteger("press");
+		this.clientProjectedSpeed = speed;
+		this.clientProjectedPress = syncPress;
+		this.clientProjectedBurnTime = burnTime;
+		this.clientDelay = nbt.getInteger("delay");
+		this.clientRetracting = nbt.getBoolean("ret");
+		this.clientPreheated = nbt.getBoolean("preheated");
+		this.clientCanProcess = nbt.getBoolean("canProcess");
+		this.clientPressTick = nbt.getLong("tick");
+		this.clientProjectionActive = true;
 		
 		if(nbt.hasKey("stack")) {
 			NBTTagCompound stack = nbt.getCompoundTag("stack");
@@ -268,13 +372,53 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 			this.syncStack = null;
 		}
 		
-		this.turnProgress = 2;
+		this.turnProgress = 0;
+	}
+
+	public int getProjectedSpeed() {
+		return worldObj != null && worldObj.isRemote ? clientProjectedSpeed : speed;
+	}
+
+	public int getProjectedBurnTime() {
+		return worldObj != null && worldObj.isRemote ? clientProjectedBurnTime : burnTime;
+	}
+
+	private double getProjectedPress() {
+		if(worldObj == null || !worldObj.isRemote || !clientProjectionActive) return syncPress;
+		return clientProjectedPress;
+	}
+
+	private void advanceClientProjection() {
+		if(!clientProjectionActive) {
+			clientProjectedPress = syncPress;
+			return;
+		}
+		long currentTick = worldObj.getTotalWorldTime();
+		while(clientPressTick < currentTick) {
+			if((clientCanProcess || clientRetracting) && clientProjectedBurnTime >= 200) clientProjectedSpeed = Math.min(maxSpeed, clientProjectedSpeed + (clientPreheated ? 4 : 1));
+			else clientProjectedSpeed = Math.max(0, clientProjectedSpeed - 1);
+			if(clientDelay <= 0) {
+				int stampSpeed = clientProjectedSpeed * progressAtMax / maxSpeed;
+				if(clientRetracting) {
+					clientProjectedPress -= stampSpeed;
+					if(clientProjectedPress <= 0) { clientProjectedPress = 0; clientRetracting = false; clientDelay = 5; }
+				} else if(clientCanProcess) {
+					clientProjectedPress += stampSpeed;
+					if(clientProjectedPress >= maxPress) { clientProjectedBurnTime = Math.max(0, clientProjectedBurnTime - 200); clientRetracting = true; clientDelay = 5; clientCanProcess = false; }
+				} else if(clientProjectedPress > 0) clientRetracting = true;
+			} else clientDelay--;
+			clientPressTick++;
+		}
 	}
 	
 	public boolean canProcess() {
 		if(burnTime < 200) return false;
 		this.resolveCachedOutput();
 		return this.hasOutputSpace(cachedOutput);
+	}
+
+	@Override protected void beforeInventorySlotChanged(int slot) {
+		if(!runtimeSettling && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settlePressThrough(worldObj.getTotalWorldTime() - 1L);
 	}
 
 	@Override
@@ -313,6 +457,9 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 		isRetracting = nbt.getBoolean("ret");
 		delay = nbt.getInteger("delay");
 		runtimeInitialized = false;
+		runtimeSettling = false;
+		lastAccountingTick = Long.MIN_VALUE;
+		clientProjectionActive = false;
 		inventoryFingerprintInitialized = false;
 		cachedRecipeRevision = -1L;
 		observedRecipeRevision = -1L;
@@ -320,12 +467,19 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+		if(worldObj != null && !worldObj.isRemote) this.settlePressThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 		nbt.setInteger("press", press);
 		nbt.setInteger("burnTime", burnTime);
 		nbt.setInteger("speed", speed);
 		nbt.setBoolean("ret", isRetracting);
 		nbt.setInteger("delay", delay);
+	}
+
+	@Override public void onChunkUnload() {
+		if(worldObj != null && !worldObj.isRemote) this.settlePressThrough(worldObj.getTotalWorldTime() - 1L);
+		lastAccountingTick = Long.MIN_VALUE;
+		super.onChunkUnload();
 	}
 	
 	AxisAlignedBB aabb;

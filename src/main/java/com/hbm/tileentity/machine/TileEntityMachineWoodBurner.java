@@ -98,6 +98,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 			this.endMachineFluidMutation();
 		}
 		this.refreshRuntimeConnections();
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updatePowerConnections();
 		this.subscribeToFuel();
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 		this.networkPackNT(25);
@@ -106,6 +107,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 	@Override public void onMachineCoarsePoll(int cadence) {
 		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
 		this.refreshRuntimeConnections();
+		this.updatePowerConnections();
 		this.subscribeToFuel();
 		this.networkPackNT(25);
 	}
@@ -119,7 +121,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 			tank.setType(2, slots);
 			tank.loadTank(3, 4, slots);
 			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 5, energyQuanta, maxPower));
-			for(DirPos pos : runtimeConnections) if(energyQuanta > 0) this.tryProvide(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			if(energyQuanta > 0L) for(DirPos pos : runtimeConnections) this.providePowerToDirectReceiver(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			if(!liquidBurn) {
 				if(burnTime <= 0 && slots[0] != null) {
 					int burn = burnModule.getBurnTime(slots[0]);
@@ -187,6 +189,10 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 
 	private void subscribeToFuel() {
 		for(DirPos pos : runtimeConnections) this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+	}
+
+	private void updatePowerConnections() {
+		for(DirPos pos : runtimeConnections) this.registerPowerConnection(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 	}
 
 	@Override

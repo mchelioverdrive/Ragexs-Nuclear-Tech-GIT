@@ -34,6 +34,10 @@ import net.minecraftforge.fluids.FluidTank;
 public abstract class TileEntityMachineBase extends TileEntityLoadedBase implements ISidedInventory, INBTPacketReceiver, IBufPacketReceiver {
 	private final com.hbm.inventory.fluid.tank.FluidTank.ChangeListener machineTankListener = new com.hbm.inventory.fluid.tank.FluidTank.ChangeListener() {
 		@Override
+		public void beforeTankChanged(com.hbm.inventory.fluid.tank.FluidTank tank) {
+			if(TileEntityMachineBase.this.machineFluidMutationDepth == 0) TileEntityMachineBase.this.beforeFluidStorageChanged(tank);
+		}
+		@Override
 		public void onTankChanged(com.hbm.inventory.fluid.tank.FluidTank tank) {
 			if(TileEntityMachineBase.this.machineFluidMutationDepth == 0) TileEntityMachineBase.this.onFluidStorageChanged();
 			TileEntityMachineBase.this.markNetworkDirty();
@@ -73,6 +77,7 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 	public ItemStack getStackInSlotOnClosing(int i) {
 		if(slots[i] != null)
 		{
+			beforeInventorySlotChanged(i);
 			ItemStack itemStack = slots[i];
 			slots[i] = null;
 			onInventorySlotChanged(i);
@@ -84,6 +89,7 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 
 	@Override
 	public void setInventorySlotContents(int i, ItemStack itemStack) {
+		beforeInventorySlotChanged(i);
 		slots[i] = itemStack;
 		if(itemStack != null && itemStack.stackSize > getInventoryStackLimit())
 		{
@@ -137,6 +143,7 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 	@Override
 	public ItemStack decrStackSize(int slot, int amount) {
 		if(slots[slot] != null) {
+			beforeInventorySlotChanged(slot);
 
 			if(slots[slot].stackSize <= amount) {
 				ItemStack itemStack = slots[slot];
@@ -173,6 +180,9 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 	}
 
 	/** Called by the standard inventory mutation paths. Subclasses can invalidate local caches here. */
+	protected void beforeInventorySlotChanged(int slot) { }
+
+	/** Called by the standard inventory mutation paths. Subclasses can invalidate local caches here. */
 	protected void onInventorySlotChanged(int slot) {
 		this.markNetworkDirty();
 		this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
@@ -183,6 +193,9 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 	protected void onFluidStorageChanged() {
 		this.markMachineFluidDirty();
 	}
+
+	/** Called before an observed tank changes its type, pressure, capacity, or fill. */
+	protected void beforeFluidStorageChanged(com.hbm.inventory.fluid.tank.FluidTank tank) { }
 
 	/** Opts an owned HBM tank into owner invalidation for direct, pipe, and container mutations. */
 	protected final void trackMachineFluidTank(com.hbm.inventory.fluid.tank.FluidTank tank) {

@@ -35,6 +35,7 @@ public class TileEntityMachineSPP extends TileEntityLoadedBase implements IEnerg
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updatePowerConnections();
 		runtimeInitialized = true;
 		if(energyQuanta > 0) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_GENERATE, TASK_SLOT_MAIN);
 		else this.cancelMachineTransition(TASK_GENERATE, TASK_SLOT_MAIN);
@@ -53,11 +54,11 @@ public class TileEntityMachineSPP extends TileEntityLoadedBase implements IEnerg
 		if(taskType != TASK_GENERATE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
 		runtimeEnergyMutation = true;
 		try {
-			this.tryProvide(worldObj, xCoord + 1, yCoord, zCoord, Library.POS_X);
-			this.tryProvide(worldObj, xCoord - 1, yCoord, zCoord, Library.NEG_X);
-			this.tryProvide(worldObj, xCoord, yCoord, zCoord + 1, Library.POS_Z);
-			this.tryProvide(worldObj, xCoord, yCoord, zCoord - 1, Library.NEG_Z);
-			this.tryProvide(worldObj, xCoord, yCoord - 1, zCoord, Library.NEG_Y);
+			this.providePowerToDirectReceiver(worldObj, xCoord + 1, yCoord, zCoord, Library.POS_X);
+			this.providePowerToDirectReceiver(worldObj, xCoord - 1, yCoord, zCoord, Library.NEG_X);
+			this.providePowerToDirectReceiver(worldObj, xCoord, yCoord, zCoord + 1, Library.POS_Z);
+			this.providePowerToDirectReceiver(worldObj, xCoord, yCoord, zCoord - 1, Library.NEG_Z);
+			this.providePowerToDirectReceiver(worldObj, xCoord, yCoord - 1, zCoord, Library.NEG_Y);
 			if(gen > 0) this.setStoredEnergyQuanta(this.energyQuanta + gen);
 			if(energyQuanta > maxPower) this.setStoredEnergyQuanta(maxPower);
 		} finally {
@@ -65,6 +66,14 @@ public class TileEntityMachineSPP extends TileEntityLoadedBase implements IEnerg
 		}
 		if(gen > 0 || energyQuanta > 0) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_GENERATE, TASK_SLOT_MAIN);
 		else this.cancelMachineTransition(TASK_GENERATE, TASK_SLOT_MAIN);
+	}
+
+	private void updatePowerConnections() {
+		this.registerPowerConnection(worldObj, xCoord + 1, yCoord, zCoord, Library.POS_X);
+		this.registerPowerConnection(worldObj, xCoord - 1, yCoord, zCoord, Library.NEG_X);
+		this.registerPowerConnection(worldObj, xCoord, yCoord, zCoord + 1, Library.POS_Z);
+		this.registerPowerConnection(worldObj, xCoord, yCoord, zCoord - 1, Library.NEG_Z);
+		this.registerPowerConnection(worldObj, xCoord, yCoord - 1, zCoord, Library.NEG_Y);
 	}
 
 	public long getPowerOutputWatts() {

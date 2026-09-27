@@ -228,6 +228,10 @@ public class FluidType {
 	@SideOnly(Side.CLIENT)
 	public void addInfo(List<String> info) {
 
+		if(this == Fluids.STEAM || this == Fluids.HOTSTEAM || this == Fluids.SUPERHOTSTEAM || this == Fluids.ULTRAHOTSTEAM || this == Fluids.SPENTSTEAM) {
+			info.add(EnumChatFormatting.GRAY + "L = nominal fluid-network amount");
+		}
+
 		if(temperature != ROOM_TEMPERATURE) {
 			if(temperature < 0) info.add(EnumChatFormatting.BLUE + "" + temperature + "°C");
 			if(temperature > 0) info.add(EnumChatFormatting.RED + "" + temperature + "°C");

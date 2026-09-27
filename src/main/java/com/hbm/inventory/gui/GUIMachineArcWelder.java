@@ -50,7 +50,7 @@ public class GUIMachineArcWelder extends GuiInfoContainer {
 		int p = (int) (welder.getStoredEnergyQuanta() * 52 / Math.max(welder.maxPower, 1));
 		drawTexturedModalRect(guiLeft + 152, guiTop + 70 - p, 176, 52 - p, 16, p);
 		
-		int i = welder.progress * 33 / Math.max(welder.processTime, 1);
+		int i = welder.getDisplayedProgress() * 33 / Math.max(welder.processTime, 1);
 		drawTexturedModalRect(guiLeft + 72, guiTop + 37, 192, 0, i, 14);
 		
 		if(welder.getStoredEnergyQuanta() >= welder.consumption) {

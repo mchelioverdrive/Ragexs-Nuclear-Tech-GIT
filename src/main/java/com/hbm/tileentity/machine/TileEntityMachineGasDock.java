@@ -27,6 +27,7 @@ public class TileEntityMachineGasDock extends TileEntityMachineBase implements I
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
 	private boolean isJool;
+	private long lastLaunchAccountingTick = -1L;
 
 	public FluidTank[] tanks;
 	
@@ -48,6 +49,8 @@ public class TileEntityMachineGasDock extends TileEntityMachineBase implements I
 		super.readFromNBT(nbt);
 		hasRocket = nbt.hasKey("hasRocker") ? nbt.getBoolean("hasRocker") : true;
 		launchTicks = nbt.getInteger("launchTicks");
+		lastLaunchAccountingTick = -1L;
+		runtimeInitialized = false;
 		tanks[0].readFromNBT(nbt, "gas");
 		tanks[1].readFromNBT(nbt, "f1");
 		tanks[2].readFromNBT(nbt, "f2");
@@ -57,7 +60,9 @@ public class TileEntityMachineGasDock extends TileEntityMachineBase implements I
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		nbt.setBoolean("hasRocker", hasRocket);
-		nbt.setInteger("launchTicks", launchTicks);
+		long elapsed = worldObj != null && !worldObj.isRemote && isLoaded() && getMachineRuntimeBinding() != null && lastLaunchAccountingTick >= 0L
+				? Math.max(0L, worldObj.getTotalWorldTime() - lastLaunchAccountingTick) : 0L;
+		nbt.setInteger("launchTicks", this.projectLaunchTicks(elapsed));
 
 		tanks[0].writeToNBT(nbt, "gas");
 		tanks[1].writeToNBT(nbt, "f1");
@@ -87,8 +92,14 @@ public class TileEntityMachineGasDock extends TileEntityMachineBase implements I
 		if(worldObj == null || worldObj.isRemote) return;
 		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 		if((causes & MachineDirtyCause.LIFECYCLE) != 0) isJool = CelestialBody.getTarget(worldObj, xCoord, zCoord).body.getPlanet() == CelestialBody.getBody("jool");
+		long now = worldObj.getTotalWorldTime();
+		boolean wasRunning = runtimeInitialized;
+		if(!runtimeInitialized || (causes & MachineDirtyCause.LIFECYCLE) != 0) lastLaunchAccountingTick = now;
+		else this.advanceLaunchMotion(now - 1L);
 		runtimeInitialized = true;
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		this.evaluateAndSchedule(now);
+		if(wasRunning && (tanks[0].getFill() > 0 || isJool && hasFuel() && (launchTicks <= -20 || launchTicks >= 100)))
+			this.scheduleMachineTransition(now, TASK_LAUNCH_CYCLE, TASK_SLOT_MAIN);
 		this.networkPackNTIfDirty(150);
 	}
 
@@ -102,7 +113,7 @@ public class TileEntityMachineGasDock extends TileEntityMachineBase implements I
 		this.beginMachineFluidMutation();
 		try {
 			for(DirPos pos : getConPos()) if(tanks[0].getFill() > 0) this.sendFluid(tanks[0], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			launchTicks = MathHelper.clamp_int(launchTicks + (hasRocket ? -1 : 1), hasRocket ? -20 : 0, 100);
+			this.advanceLaunchMotion(worldObj.getTotalWorldTime());
 			if(isJool && hasFuel()) {
 				if(launchTicks <= -20) hasRocket = false;
 				else if(launchTicks >= 100) hasRocket = true;
@@ -123,8 +134,29 @@ public class TileEntityMachineGasDock extends TileEntityMachineBase implements I
 	}
 
 	private void evaluateAndSchedule(long now) {
-		if(runtimeInitialized) this.scheduleMachineTransition(now + 1L, TASK_LAUNCH_CYCLE, TASK_SLOT_MAIN);
-		else this.cancelMachineTransition(TASK_LAUNCH_CYCLE, TASK_SLOT_MAIN);
+		boolean moving = hasRocket ? launchTicks > -20 : launchTicks < 100;
+		boolean canToggle = isJool && hasFuel() && (launchTicks <= -20 || launchTicks >= 100);
+		if(!runtimeInitialized || !(moving || canToggle || tanks[0].getFill() > 0)) {
+			this.cancelMachineTransition(TASK_LAUNCH_CYCLE, TASK_SLOT_MAIN);
+			return;
+		}
+		long delay = tanks[0].getFill() > 0 || canToggle ? 1L : hasRocket ? launchTicks + 20L : 100L - launchTicks;
+		this.scheduleMachineTransition(now + delay, TASK_LAUNCH_CYCLE, TASK_SLOT_MAIN);
+	}
+
+	private int projectLaunchTicks(long elapsed) {
+		return hasRocket ? (int) Math.max(-20L, (long) launchTicks - elapsed)
+				: (int) Math.min(100L, (long) launchTicks + elapsed);
+	}
+
+	private void advanceLaunchMotion(long tick) {
+		if(lastLaunchAccountingTick < 0L) {
+			lastLaunchAccountingTick = tick;
+			return;
+		}
+		if(tick <= lastLaunchAccountingTick) return;
+		launchTicks = this.projectLaunchTicks(tick - lastLaunchAccountingTick);
+		lastLaunchAccountingTick = tick;
 	}
 
 	@Override

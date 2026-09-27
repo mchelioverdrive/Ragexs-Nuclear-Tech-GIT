@@ -18,12 +18,13 @@ public class TileEntityMachineDetector extends TileEntityLoadedBase implements I
 
 	@Override
 	public int getMachineExecutionStrategies() {
-		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_20;
+		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED;
 	}
 
 	@Override
 	public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updateConnections();
 		this.updateActiveState();
 		if(energyQuanta > 0) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
 	}
@@ -40,11 +41,6 @@ public class TileEntityMachineDetector extends TileEntityLoadedBase implements I
 		this.updateActiveState();
 		this.setStoredEnergyQuanta(this.energyQuanta - 1L);
 		if(energyQuanta > 0) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
-	}
-
-	@Override
-	public void onMachineCoarsePoll(int cadence) {
-		if(cadence == 20 && worldObj != null && !worldObj.isRemote) this.updateConnections();
 	}
 
 	private void updateActiveState() {

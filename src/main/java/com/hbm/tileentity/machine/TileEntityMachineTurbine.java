@@ -3,6 +3,7 @@ package com.hbm.tileentity.machine;
 import api.hbm.energymk2.EnergyUnits;
 import java.io.IOException;
 
+import com.hbm.blocks.BlockDummyable;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 import com.hbm.handler.CompatHandler;
@@ -95,6 +96,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 		this.runtimeFluidMutation = true;
 		try { this.loadInputContainers(); }
 		finally { this.runtimeFluidMutation = false; }
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updatePowerConnections();
 		this.subscribeToInput();
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 		this.sendStandard(25);
@@ -102,6 +104,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 
 	@Override public void onMachineCoarsePoll(int cadence) {
 		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.updatePowerConnections();
 		this.subscribeToInput();
 		this.sendStandard(25);
 	}
@@ -126,6 +129,11 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 
 	private void subscribeToInput() {
 		this.subscribeToAllAround(tanks[0].getTankType(), this);
+	}
+
+	private void updatePowerConnections() {
+		for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
+			this.registerPowerConnection(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 	}
 
 	private void evaluateAndSchedule(long now) {
@@ -343,10 +351,9 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 			if(age >= 2) {
 				age = 0;
 			}
+			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
+			this.providePowerToDirectReceiver(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 			
-			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
-				this.tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-
 			this.loadInputContainers();
 			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 4, energyQuanta, maxPower));
 			

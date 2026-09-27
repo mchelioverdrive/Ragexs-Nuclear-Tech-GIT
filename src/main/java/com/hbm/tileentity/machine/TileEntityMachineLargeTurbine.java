@@ -16,6 +16,7 @@ import com.hbm.inventory.fluid.trait.FT_Coolable;
 import com.hbm.inventory.fluid.trait.FT_Coolable.CoolingType;
 import com.hbm.inventory.gui.GUIMachineLargeTurbine;
 import com.hbm.lib.Library;
+import com.hbm.machine.MachineDirtyCause;
 import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.main.MainRegistry;
 import com.hbm.sound.AudioWrapper;
@@ -93,6 +94,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 		if(worldObj == null || worldObj.isRemote) return;
 		runtimeInitialized = true;
 		this.refreshRuntimeConnections();
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updatePowerConnections();
 		this.beginMachineFluidMutation();
 		try { this.loadInputContainers(); }
 		finally { this.endMachineFluidMutation(); }
@@ -104,6 +106,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 	@Override public void onMachineCoarsePoll(int cadence) {
 		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
 		this.refreshRuntimeConnections();
+		this.updatePowerConnections();
 		this.subscribeToInput();
 		this.sendRuntimePacket(runtimeOperational);
 	}
@@ -136,6 +139,11 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 
 	private void subscribeToInput() {
 		for(DirPos pos : runtimeConnections) this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+	}
+
+	private void updatePowerConnections() {
+		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
+		this.registerPowerConnection(worldObj, xCoord + dir.offsetX * -4, yCoord, zCoord + dir.offsetZ * -4, dir.getOpposite());
 	}
 
 	private void evaluateAndSchedule(long now) {
@@ -196,9 +204,9 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 			}
 			
 			this.info[0] = this.info[1] = this.info[2] = 0;
-			
 			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
-			this.tryProvide(worldObj, xCoord + dir.offsetX * -4, yCoord, zCoord + dir.offsetZ * -4, dir.getOpposite());
+			this.providePowerToDirectReceiver(worldObj, xCoord + dir.offsetX * -4, yCoord, zCoord + dir.offsetZ * -4, dir.getOpposite());
+
 			for(DirPos pos : runtimeConnections) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 
 			this.loadInputContainers();

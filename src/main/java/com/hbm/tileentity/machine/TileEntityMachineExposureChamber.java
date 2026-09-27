@@ -54,13 +54,21 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 	public float prevRotation;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
+	private boolean runtimeSettling;
+	private long lastAccountingTick = Long.MIN_VALUE;
+	private long lastBatteryChargeTick = Long.MIN_VALUE;
+	private long clientProgressTick;
 	private int observedInventoryFingerprint;
 	private boolean inventoryFingerprintInitialized;
 	private long observedRecipeRevision;
 	private ExposureChamberRecipe cachedInputRecipe;
 	private ExposureChamberRecipe cachedLoadedRecipe;
 	private static final int TASK_PROCESS = 1;
+	private static final int TASK_BATTERY = 2;
+	private static final int TASK_SETUP = 3;
 	private static final int TASK_SLOT_MAIN = 0;
+	private static final int TASK_SLOT_BATTERY = 1;
+	private static final int TASK_SLOT_SETUP = 2;
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
@@ -68,10 +76,17 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 		this.progress = nbt.getInteger("progress");
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.savedParticles = nbt.getInteger("savedParticles");
+		this.runtimeInitialized = false;
+		this.inventoryFingerprintInitialized = false;
+		this.cachedInputRecipe = null;
+		this.cachedLoadedRecipe = null;
+		this.lastAccountingTick = Long.MIN_VALUE;
+		this.lastBatteryChargeTick = Long.MIN_VALUE;
 	}
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 		nbt.setInteger("progress", progress);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
@@ -119,6 +134,10 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		boolean wasActive = runtimeInitialized && isOn;
+		if(lastAccountingTick == Long.MIN_VALUE) lastAccountingTick = now;
+		else this.settleProgressThrough(now - 1L);
 		runtimeInitialized = true;
 		this.refreshUpgradeSettings();
 		this.refreshRuntimeRecipes();
@@ -126,35 +145,46 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 		observedRecipeRevision = SerializableRecipe.getRegistryRevision();
 		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0) this.updateConnections();
 		this.reconcileRuntimeState();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
-		this.networkPackNT(50);
+		isOn = this.canProcessNow() || progress > 0;
+		if(wasActive && this.canProcessNow()) this.settleProgressThrough(now);
+		this.evaluateAndSchedule(now);
+		this.networkPackNTIfDirty(50);
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_PROCESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
-		long oldEnergy = energyQuanta;
-		int oldProgress = progress;
-		int oldSavedParticles = savedParticles;
-		boolean oldIsOn = isOn;
-		int oldInventoryFingerprint = this.inventoryFingerprint();
-		isOn = false;
-		runtimeEnergyMutation = true;
-		try {
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 5, energyQuanta, maxPower));
-			this.loadParticleIfPossible();
-			this.processOneTick();
-		} finally {
-			runtimeEnergyMutation = false;
-		}
-		this.observeInventoryFingerprint();
-		boolean inventoryChanged = oldInventoryFingerprint != observedInventoryFingerprint;
-		if(inventoryChanged) {
-			this.markNetworkDirty();
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
+			this.settleProgressThrough(now);
+			if(lastBatteryChargeTick != now) this.chargeBattery(now);
+			if(this.cachedLoadedRecipe != null && slots[1] != null && savedParticles > 0 && energyQuanta >= consumption)
+				this.scheduleMachineTransition(now, TASK_PROCESS, TASK_SLOT_MAIN);
+			if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+			else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
+			return;
+		} else if(taskType == TASK_SETUP && taskSlot == TASK_SLOT_SETUP) {
+			this.settleProgressThrough(now - 1L);
+			runtimeSettling = true;
+			try { this.loadParticleIfPossible(); } finally { runtimeSettling = false; }
 			this.refreshRuntimeRecipes();
-		}
-		if(oldEnergy != energyQuanta || oldProgress != progress || oldSavedParticles != savedParticles || oldIsOn != isOn || inventoryChanged) this.markDirty();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
-		this.networkPackNT(50);
+			if(lastBatteryChargeTick != now && this.hasBatteryWork()) this.chargeBattery(now);
+			this.settleProgressThrough(now);
+		} else if(taskType == TASK_PROCESS && taskSlot == TASK_SLOT_MAIN) this.settleProgressThrough(now);
+		else return;
+		this.observeInventoryFingerprint();
+		this.markDirty();
+		this.markNetworkDirty();
+		this.evaluateAndSchedule(now);
+		this.networkPackNTIfDirty(50);
+	}
+
+	private void chargeBattery(long now) {
+		long oldEnergy = energyQuanta;
+		runtimeEnergyMutation = true;
+		try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 5, energyQuanta, maxPower)); }
+		finally { runtimeEnergyMutation = false; }
+		lastBatteryChargeTick = now;
+		if(oldEnergy != energyQuanta) this.markDirty();
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
@@ -235,25 +265,60 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 		return this.hasOutputRoom(cachedLoadedRecipe);
 	}
 
-	private void processOneTick() {
-		if(savedParticles <= 0) slots[1] = null;
-		if(!this.canProcessNow()) {
-			progress = 0;
-			return;
+	private void settleProgressThrough(long target) {
+		if(lastAccountingTick == Long.MIN_VALUE || target <= lastAccountingTick) return;
+		long elapsed = target - lastAccountingTick;
+		lastAccountingTick = target;
+		long remaining = elapsed;
+		boolean changed = false;
+		while(remaining > 0L) {
+			if(savedParticles <= 0) {
+				slots[1] = null;
+				cachedLoadedRecipe = null;
+			}
+			if(!this.canProcessNow()) {
+				if(progress != 0 || isOn) changed = true;
+				progress = 0;
+				isOn = false;
+				break;
+			}
+			ExposureChamberRecipe recipe = cachedLoadedRecipe;
+			long cost = Math.max(1L, consumption);
+			long affordable = energyQuanta / cost;
+			if(affordable <= 0L) {
+				progress = 0;
+				isOn = false;
+				changed = true;
+				break;
+			}
+			long steps = Math.min(remaining, Math.min(affordable, Math.max(1, processTime - progress)));
+			runtimeEnergyMutation = true;
+			try { this.setStoredEnergyQuanta(energyQuanta - steps * cost); }
+			finally { runtimeEnergyMutation = false; }
+			progress += (int) steps;
+			remaining -= steps;
+			isOn = true;
+			changed = true;
+			if(progress >= processTime) {
+				progress = 0;
+				runtimeSettling = true;
+				try {
+					savedParticles--;
+					this.decrStackSize(3, 1);
+					if(slots[4] == null) slots[4] = recipe.output.copy();
+					else slots[4].stackSize += recipe.output.stackSize;
+					if(savedParticles <= 0) { slots[1] = null; cachedLoadedRecipe = null; }
+				} finally { runtimeSettling = false; }
+				continue;
+			}
+			if(remaining > 0L && steps >= affordable) {
+				progress = 0;
+				isOn = false;
+				changed = true;
+				break;
+			}
 		}
-		ExposureChamberRecipe recipe = cachedLoadedRecipe;
-		progress++;
-		this.setStoredEnergyQuanta(energyQuanta - consumption);
-		isOn = true;
-		if(progress >= processTime) {
-			progress = 0;
-			savedParticles--;
-			this.decrStackSize(3, 1);
-			if(slots[4] == null) slots[4] = recipe.output.copy();
-			else slots[4].stackSize += recipe.output.stackSize;
-			if(savedParticles <= 0) slots[1] = null;
-			if(savedParticles <= 0) cachedLoadedRecipe = null;
-		}
+		if(changed) { this.markDirty(); this.markNetworkDirty(); }
 	}
 
 	private boolean hasBatteryWork() {
@@ -266,8 +331,18 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
-		if(this.canLoadParticle() || this.canProcessNow() || this.hasBatteryWork() || progress > 0) this.scheduleMachineTransition(now + 1L, TASK_PROCESS, TASK_SLOT_MAIN);
-		else this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
+		if(this.canLoadParticle()) this.scheduleMachineTransition(now + 1L, TASK_SETUP, TASK_SLOT_SETUP);
+		else this.cancelMachineTransition(TASK_SETUP, TASK_SLOT_SETUP);
+		if(this.canProcessNow() || progress > 0) {
+			long cost = Math.max(1L, consumption);
+			long needed = Math.max(1L, processTime - progress);
+			long affordable = energyQuanta / cost;
+			long resetBoundary = affordable >= needed ? Long.MAX_VALUE : affordable + 1L;
+			long delay = Math.max(1L, Math.min(needed, resetBoundary));
+			this.scheduleMachineTransition(now + delay, TASK_PROCESS, TASK_SLOT_MAIN);
+		} else this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
+		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
 	}
 
 	private void updateConnections() {
@@ -365,6 +440,7 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 		buf.writeInt(this.consumption);
 		buf.writeLong(this.energyQuanta);
 		buf.writeByte((byte) this.savedParticles);
+		buf.writeLong(worldObj == null ? 0L : worldObj.getTotalWorldTime());
 	}
 	
 	@Override
@@ -375,6 +451,7 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 		this.consumption = buf.readInt();
 		this.energyQuanta = buf.readLong();
 		this.savedParticles = buf.readByte();
+		this.clientProgressTick = buf.readLong();
 	}
 
 	@Override
@@ -385,6 +462,7 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 	@Override
 	public void setStoredEnergyQuanta(long energyQuanta) {
 		if(this.energyQuanta == energyQuanta) return;
+		if(!runtimeEnergyMutation && !runtimeSettling && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
@@ -393,6 +471,23 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 	@Override
 	public long getEnergyCapacityQuanta() {
 		return maxPower;
+	}
+
+	public int getProjectedProgress() {
+		if(worldObj == null || !worldObj.isRemote || !isOn) return progress;
+		long projected = progress + Math.max(0L, worldObj.getTotalWorldTime() - clientProgressTick);
+		return (int) Math.min(Math.max(1, processTime), projected);
+	}
+
+	@Override protected void beforeInventorySlotChanged(int slot) {
+		if(!runtimeSettling && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override public void onChunkUnload() {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+		lastAccountingTick = Long.MIN_VALUE;
+		lastBatteryChargeTick = Long.MIN_VALUE;
+		super.onChunkUnload();
 	}
 
 	AxisAlignedBB bb = null;

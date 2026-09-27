@@ -31,12 +31,15 @@ public interface IEnergyProviderMK2 extends IEnergyHandlerMK2 {
 		if(LegacyEnergyOverrides.of(this.getClass()).providerSpeed) return EnergyUnits.legacyHeToQuanta(this.getProviderSpeed());
 		return this.getEnergyCapacityQuanta();
 	}
-	
-	public default void tryProvide(World world, int x, int y, int z, ForgeDirection dir) {
 
+	/** Registers a persistent conductor path without performing an adjacent direct transfer. */
+	public default void registerPowerConnection(World world, int x, int y, int z, ForgeDirection dir) {
+		PowerNetEndpointRegistry.attachProvider(this, world, x, y, z, dir);
+	}
+
+	/** Preserves the legacy direct-neighbor transfer cadence without repeating graph attachment work. */
+	public default void providePowerToDirectReceiver(World world, int x, int y, int z, ForgeDirection dir) {
 		TileEntity te = Compat.getTileStandard(world, x, y, z);
-		boolean red = PowerNetEndpointRegistry.attachProvider(this, world, x, y, z, dir);
-		
 		if(te instanceof IEnergyReceiverMK2 && te != this) {
 			IEnergyReceiverMK2 rec = (IEnergyReceiverMK2) te;
 			if(rec.canConnect(dir.getOpposite())) {
@@ -47,6 +50,12 @@ public interface IEnergyProviderMK2 extends IEnergyHandlerMK2 {
 				this.extractEnergyQuanta(toTransfer);
 			}
 		}
+	}
+
+	public default void tryProvide(World world, int x, int y, int z, ForgeDirection dir) {
+
+		boolean red = PowerNetEndpointRegistry.attachProvider(this, world, x, y, z, dir);
+		this.providePowerToDirectReceiver(world, x, y, z, dir);
 		
 		if(particleDebug) {
 			NBTTagCompound data = new NBTTagCompound();

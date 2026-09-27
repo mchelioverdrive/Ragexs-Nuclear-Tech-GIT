@@ -89,7 +89,7 @@ public class GUIMixer extends GuiInfoContainer {
 		drawTexturedModalRect(guiLeft + 23, guiTop + 75 - i, 176, 52 - i, 16, i);
 		
 		if(mixer.processTime > 0 && mixer.progress > 0) {
-			int j = mixer.progress * 53 / mixer.processTime;
+			int j = mixer.getProjectedProgress() * 53 / mixer.processTime;
 			drawTexturedModalRect(guiLeft + 62, guiTop + 36, 192, 0, j, 44);
 		}
 

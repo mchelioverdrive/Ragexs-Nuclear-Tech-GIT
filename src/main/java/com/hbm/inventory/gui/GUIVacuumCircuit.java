@@ -50,7 +50,7 @@ public class GUIVacuumCircuit extends GuiInfoContainer {
 		int p = (int) (sucker.getStoredEnergyQuanta() * 52 / Math.max(sucker.maxPower, 1));
 		drawTexturedModalRect(guiLeft + 132, guiTop + 70 - p, 176, 52 - p, 16, p);
 
-		int i = sucker.progress * 33 / Math.max(sucker.processTime, 1);
+		int i = sucker.getDisplayedProgress() * 33 / Math.max(sucker.processTime, 1);
 		drawTexturedModalRect(guiLeft + 50, guiTop + 49, 192, 0, i, 14);
 		
 		if(sucker.getStoredEnergyQuanta() >= sucker.consumption) {

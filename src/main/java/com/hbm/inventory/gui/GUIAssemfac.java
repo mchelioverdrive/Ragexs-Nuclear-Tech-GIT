@@ -38,7 +38,7 @@ public class GUIAssemfac extends GuiInfoContainer {
 		for(int i = 0; i < 8; i++) {
 			
 			if(assemfac.maxProgress[i] > 0) {
-				int progress = assemfac.progress[i] * 16 / assemfac.maxProgress[i];
+				int progress = assemfac.getDisplayedProgress(i) * 16 / Math.max(assemfac.maxProgress[i], 1);
 				
 				if(progress > 0) {
 					GL11.glDisable(GL11.GL_LIGHTING);

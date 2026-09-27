@@ -44,7 +44,7 @@ public class FT_Coolable extends FluidTrait {
 
 	@Override
 	public void addInfoHidden(List<String> info) {
-		info.add(EnumChatFormatting.RED + "Thermal capacity: " + ThermalUnits.formatThermalEnergyPerLiter(heatEnergy, amountReq));
+		info.add(EnumChatFormatting.RED + "Recoverable transition energy per stored L: " + ThermalUnits.formatThermalEnergyPerLiter(heatEnergy, amountReq));
 		for(CoolingType type : CoolingType.values()) {
 
 			double eff = getEfficiency(type);

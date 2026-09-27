@@ -48,7 +48,9 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 	
 	private String customName;
 	private static final int TASK_ACCOUNTING = 1;
+	private static final int TASK_BATTERY = 2;
 	private static final int TASK_SLOT_MAIN = 0;
+	private static final int TASK_SLOT_BATTERY = 1;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
 	private boolean runtimeInventoryMutation;
@@ -57,6 +59,15 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 	private boolean inventoryFingerprintInitialized;
 	private long observedRecipeRevision = -1L;
 	private final ItemStack[] cachedResults = new ItemStack[9];
+	private long lastAccountingTick = Long.MIN_VALUE;
+	private long clientProgressTick;
+	public boolean runtimeProgressing;
+
+	@Override public void onChunkUnload() {
+		if(worldObj != null && !worldObj.isRemote) this.settleAccountingThrough(worldObj.getTotalWorldTime() - 1L);
+		lastAccountingTick = Long.MIN_VALUE;
+		super.onChunkUnload();
+	}
 	
 	public TileEntityMachineShredder() {
 		slots = new ItemStack[30];
@@ -77,6 +88,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 	public ItemStack getStackInSlotOnClosing(int i) {
 		if(slots[i] != null)
 		{
+			this.beforeInventoryChange();
 			ItemStack itemStack = slots[i];
 			slots[i] = null;
 			this.onInventoryChanged(i);
@@ -88,6 +100,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 
 	@Override
 	public void setInventorySlotContents(int i, ItemStack itemStack) {
+		this.beforeInventoryChange();
 		slots[i] = itemStack;
 		if(itemStack != null && itemStack.stackSize > getInventoryStackLimit())
 		{
@@ -144,6 +157,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 	public ItemStack decrStackSize(int i, int j) {
 		if(slots[i] != null)
 		{
+			this.beforeInventoryChange();
 			if(slots[i].stackSize <= j)
 			{
 				ItemStack itemStack = slots[i];
@@ -170,6 +184,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 		
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "powerTime");
 		this.progress = nbt.getInteger("progress");
+		this.lastAccountingTick = Long.MIN_VALUE;
 		slots = new ItemStack[getSizeInventory()];
 		
 		for(int i = 0; i < list.tagCount(); i++)
@@ -188,6 +203,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+		if(worldObj != null && !worldObj.isRemote) this.settleAccountingThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		NBTTagList list = new NBTTagList();
@@ -241,7 +257,14 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 	}
 	
 	public int getDiFurnaceProgressScaled(int i) {
-		return (progress * i) / processingSpeed;
+		long displayed = progress;
+		if(worldObj != null && worldObj.isRemote && runtimeProgressing) displayed = Math.min(processingSpeed, displayed + Math.max(0L, worldObj.getTotalWorldTime() - clientProgressTick));
+		return (int) ((displayed * i) / processingSpeed);
+	}
+
+	public void setClientProgress(int value) {
+		progress = value;
+		if(worldObj != null) clientProgressTick = worldObj.getTotalWorldTime();
 	}
 	
 	public boolean hasPower() {
@@ -263,39 +286,70 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		if(lastAccountingTick == Long.MIN_VALUE) lastAccountingTick = now;
+		else this.settleAccountingThrough(now - 1L);
+		boolean wasProgressing = runtimeProgressing;
 		this.refreshEligibility();
 		runtimeInitialized = true;
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		if(wasProgressing) this.settleAccountingThrough(now);
+		this.evaluateAndSchedule(now);
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_ACCOUNTING || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
 		long now = worldObj.getTotalWorldTime();
-		long beforePower = energyQuanta;
-		int beforeProgress = progress;
-		runtimeEnergyMutation = true;
-		try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 29, energyQuanta, maxPower)); }
-		finally { runtimeEnergyMutation = false; }
-		boolean canRun = runtimeEligible && hasPower();
-		if(canRun && progress + 1 >= processingSpeed) canRun = this.refreshEligibility() && hasPower();
-		if(canRun) {
-			progress++;
+		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
+			this.settleAccountingThrough(now);
+			long oldPower = energyQuanta;
 			runtimeEnergyMutation = true;
-			try { this.setStoredEnergyQuanta(this.energyQuanta - 5L); }
+			try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 29, energyQuanta, maxPower)); }
 			finally { runtimeEnergyMutation = false; }
-			if(progress >= processingSpeed) {
-				for(int i = 27; i <= 28; i++) if(slots[i].getMaxDamage() > 0) slots[i].setItemDamage(slots[i].getItemDamage() + 1);
-				progress = 0;
-				runtimeInventoryMutation = true;
-				try { this.processItem(); } finally { runtimeInventoryMutation = false; }
-				this.refreshEligibility();
-				this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
-			}
-			if(soundCycle == 0) worldObj.playSoundEffect(xCoord, yCoord, zCoord, "minecart.base", getVolume(1.0F), 0.75F);
-			soundCycle = (soundCycle + 1) % 50;
-		} else progress = 0;
-		if(beforePower != energyQuanta || beforeProgress != progress) this.markDirty();
+			if(oldPower != energyQuanta) this.markDirty();
+			this.evaluateAndSchedule(now);
+			return;
+		} else if(taskType == TASK_ACCOUNTING && taskSlot == TASK_SLOT_MAIN) {
+			this.settleAccountingThrough(now);
+		}
+		else return;
 		this.evaluateAndSchedule(now);
+	}
+
+	private void settleAccountingThrough(long target) {
+		if(lastAccountingTick == Long.MIN_VALUE || target <= lastAccountingTick) return;
+		long remaining = target - lastAccountingTick;
+		lastAccountingTick = target;
+		runtimeEnergyMutation = true;
+		try {
+			while(remaining > 0L) {
+				if(!runtimeEligible || !hasPower()) {
+					if(progress != 0) { progress = 0; this.markDirty(); }
+					break;
+				}
+				long untilSound = soundCycle == 0 ? 1L : 51L - soundCycle;
+				long steps = Math.min(remaining, Math.min(Math.min(processingSpeed - progress, (energyQuanta + 4L) / 5L), untilSound));
+				if(steps <= 0L) break;
+				if(progress + steps >= processingSpeed && !this.refreshEligibility()) {
+					progress = 0;
+					this.markDirty();
+					break;
+				}
+				this.setStoredEnergyQuanta(energyQuanta - 5L * steps);
+				progress += (int) steps;
+				soundCycle = (int) ((soundCycle + steps) % 50L);
+				remaining -= steps;
+				this.markDirty();
+				if(progress >= processingSpeed) {
+					for(int i = 27; i <= 28; i++) if(slots[i].getMaxDamage() > 0) slots[i].setItemDamage(slots[i].getItemDamage() + 1);
+					progress = 0;
+					runtimeInventoryMutation = true;
+					try { this.processItem(); } finally { runtimeInventoryMutation = false; }
+					this.refreshEligibility();
+					this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
+				}
+				if(steps == untilSound) worldObj.playSoundEffect(xCoord, yCoord, zCoord, "minecart.base", getVolume(1.0F), 0.75F);
+			}
+		} finally { runtimeEnergyMutation = false; }
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
@@ -345,8 +399,18 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 	}
 
 	private void evaluateAndSchedule(long now) {
-		if(runtimeEligible && hasPower() || this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
-		else this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		runtimeProgressing = runtimeEligible && hasPower();
+		this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		if(runtimeProgressing) {
+			long untilSound = soundCycle == 0 ? 1L : 51L - soundCycle;
+			long due = Math.min(Math.min(processingSpeed - progress, (energyQuanta + 4L) / 5L), untilSound);
+			this.scheduleMachineTransition(now + Math.max(1L, due), TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		} else if(progress > 0 && (!runtimeEligible || !this.hasBatteryWork())) {
+			progress = 0;
+			this.markDirty();
+		}
+		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
 	}
 
 	private boolean observeInventoryFingerprint() {
@@ -366,6 +430,10 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 	private void onInventoryChanged(int slot) {
 		this.markDirty();
 		if(!runtimeInventoryMutation && worldObj != null && !worldObj.isRemote) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | (slot == 29 ? MachineDirtyCause.ENERGY : 0));
+	}
+
+	private void beforeInventoryChange() {
+		if(!runtimeInventoryMutation && worldObj != null && !worldObj.isRemote) this.settleAccountingThrough(worldObj.getTotalWorldTime() - 1L);
 	}
 	
 	private void updateConnections() {
@@ -458,6 +526,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 	@Override
 	public void setStoredEnergyQuanta(long i) {
 		if(this.energyQuanta == i) return;
+		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.settleAccountingThrough(worldObj.getTotalWorldTime() - 1L);
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
 		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.markMachineEnergyDirty();

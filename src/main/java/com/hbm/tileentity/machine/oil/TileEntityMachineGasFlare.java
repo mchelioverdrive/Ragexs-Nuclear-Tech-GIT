@@ -173,6 +173,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 		}
 		this.upgradeManager.checkSlots(slots, 4, 5);
 		this.refreshRuntimeConnections();
+		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.updatePowerConnections();
 		this.subscribeToFluid();
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 		this.sendRuntimeState();
@@ -181,18 +182,19 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 	@Override public void onMachineCoarsePoll(int cadence) {
 		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
 		this.refreshRuntimeConnections();
+		this.updatePowerConnections();
 		this.subscribeToFluid();
 		this.sendRuntimeState();
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
 		if(taskType != TASK_PROCESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		for(DirPos pos : runtimeConnections) this.providePowerToDirectReceiver(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		this.beginMachineFluidMutation();
 		runtimeEnergyMutation = true;
 		try {
 			fluidUsed = 0;
 			output = 0;
-			for(DirPos pos : runtimeConnections) this.tryProvide(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			tank.setType(3, slots);
 			tank.loadTank(1, 2, slots);
 			this.processGas();
@@ -271,6 +273,10 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 
 	private void subscribeToFluid() {
 		for(DirPos pos : runtimeConnections) this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+	}
+
+	private void updatePowerConnections() {
+		for(DirPos pos : runtimeConnections) this.registerPowerConnection(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 	}
 
 	private void sendRuntimeState() {

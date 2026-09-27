@@ -27,8 +27,19 @@ import net.minecraft.world.World;
 
 public class TileEntityNukeFurnace extends TileEntityLoadedBase implements ISidedInventory, IGUIProvider {
 	private static final int TASK_PROCESS = 0;
+	private static final int TASK_FUEL = 1;
 	private boolean inventoryFingerprintInitialized;
 	private int observedInventoryFingerprint;
+	private boolean runtimeInitialized;
+	private boolean runtimeEligible;
+	private boolean runtimeActive;
+	private boolean runtimeSettling;
+	private long lastAccountingTick = Long.MIN_VALUE;
+	private long runtimeProgressTick;
+	private int runtimeProgressBase;
+	private long clientProgressTick;
+	private int clientProgressBase;
+	private boolean clientProgressActive;
 
 	private ItemStack slots[];
 	
@@ -59,6 +70,7 @@ public class TileEntityNukeFurnace extends TileEntityLoadedBase implements ISide
 
 	@Override
 	public ItemStack getStackInSlotOnClosing(int i) {
+		this.settleBeforeInventoryMutation();
 		if(slots[i] != null)
 		{
 			ItemStack itemStack = slots[i];
@@ -73,6 +85,7 @@ public class TileEntityNukeFurnace extends TileEntityLoadedBase implements ISide
 
 	@Override
 	public void setInventorySlotContents(int i, ItemStack itemStack) {
+		this.settleBeforeInventoryMutation();
 		slots[i] = itemStack;
 		if(itemStack != null && itemStack.stackSize > getInventoryStackLimit())
 		{
@@ -139,6 +152,7 @@ public class TileEntityNukeFurnace extends TileEntityLoadedBase implements ISide
 	
 	@Override
 	public ItemStack decrStackSize(int i, int j) {
+		this.settleBeforeInventoryMutation();
 		if(slots[i] != null)
 		{
 			if(slots[i].stackSize <= j)
@@ -170,6 +184,11 @@ public class TileEntityNukeFurnace extends TileEntityLoadedBase implements ISide
 		
 		dualPower = nbt.getShort("powerTime");
 		dualCookTime = nbt.hasKey("cookTime") ? nbt.getShort("cookTime") : nbt.getShort("CookTime");
+		runtimeInitialized = false;
+		runtimeEligible = false;
+		runtimeActive = false;
+		runtimeSettling = false;
+		lastAccountingTick = Long.MIN_VALUE;
 		slots = new ItemStack[getSizeInventory()];
 		
 		for(int i = 0; i < list.tagCount(); i++)
@@ -185,6 +204,7 @@ public class TileEntityNukeFurnace extends TileEntityLoadedBase implements ISide
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 		nbt.setShort("powerTime", (short) dualPower);
 		nbt.setShort("cookTime", (short) dualCookTime);
@@ -240,7 +260,26 @@ public class TileEntityNukeFurnace extends TileEntityLoadedBase implements ISide
 	}
 	
 	public int getDiFurnaceProgressScaled(int i) {
-		return (dualCookTime * i) / processingSpeed;
+		long displayed = dualCookTime;
+		if(worldObj != null && worldObj.isRemote && clientProgressActive) {
+			long elapsed = ((int) worldObj.getTotalWorldTime() - (int) clientProgressTick) & 0xFFFFL;
+			displayed = Math.min(processingSpeed, clientProgressBase + elapsed);
+		}
+		return (int) (displayed * i / processingSpeed);
+	}
+
+	private void settleBeforeInventoryMutation() {
+		if(!runtimeSettling && runtimeInitialized && worldObj != null && !worldObj.isRemote)
+			this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	public int getRuntimeProgressTick() { return (int) (runtimeProgressTick & 0xFFFFL); }
+	public int getRuntimeProgressBase() { return runtimeProgressBase; }
+	public boolean isRuntimeProgressActive() { return runtimeActive; }
+	public void setClientProgressState(int tick, int base, boolean active) {
+		clientProgressTick = tick & 0xFFFFL;
+		clientProgressBase = base;
+		clientProgressActive = active;
 	}
 	
 	public int getPowerRemainingScaled(int i) {
@@ -321,20 +360,90 @@ public class TileEntityNukeFurnace extends TileEntityLoadedBase implements ISide
 	@Override
 	public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		if(lastAccountingTick == Long.MIN_VALUE) lastAccountingTick = now;
+		else this.settleProgressThrough(now - 1L);
+		boolean wasActive = runtimeActive;
 		observeInventoryFingerprint();
-		if(needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_PROCESS, 0);
-		else cancelMachineTransition(TASK_PROCESS, 0);
+		runtimeEligible = this.canProcess();
+		runtimeInitialized = true;
+		if(wasActive) this.settleProgressThrough(now);
+		else lastAccountingTick = now;
+		this.evaluateAndSchedule(now);
 	}
 
 	@Override
 	public void onMachineCoarsePoll(int cadence) {
 		if(cadence != 5 || worldObj == null || worldObj.isRemote) return;
 		if(observeInventoryFingerprint()) markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE);
-		if(needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_PROCESS, 0);
 	}
 
-	private boolean needsSimulation() {
-		return dualCookTime > 0 || (dualPower > 0 && canProcess()) || (dualPower == 0 && hasItemPower(slots[0]));
+	private void evaluateAndSchedule(long now) {
+		if(!runtimeInitialized) return;
+		if(dualCookTime > 0 && (!runtimeEligible || dualPower <= 0 && !hasItemPower(slots[0]))) {
+			dualCookTime = 0;
+			runtimeProgressBase = 0;
+			runtimeProgressTick = now;
+			this.markDirty();
+		}
+		if(runtimeEligible && dualPower > 0) {
+			this.scheduleMachineTransition(now + Math.max(1L, processingSpeed - dualCookTime), TASK_PROCESS, 0);
+		} else this.cancelMachineTransition(TASK_PROCESS, 0);
+		if(dualPower <= 0 && hasItemPower(slots[0])) this.scheduleMachineTransition(now + 1L, TASK_FUEL, 0);
+		else this.cancelMachineTransition(TASK_FUEL, 0);
+		this.updateProcessingState(runtimeEligible && dualPower > 0, now);
+	}
+
+	private void updateProcessingState(boolean active, long now) {
+		if(active && !runtimeActive) {
+			runtimeProgressBase = dualCookTime;
+			runtimeProgressTick = now;
+		} else if(active && dualCookTime == 0 && runtimeProgressBase != 0) {
+			runtimeProgressBase = 0;
+			runtimeProgressTick = now;
+		}
+		runtimeActive = active;
+		if(worldObj != null && !worldObj.isRemote) {
+			boolean shouldBeOn = active || dualCookTime > 0;
+			net.minecraft.block.Block desired = shouldBeOn ? com.hbm.blocks.ModBlocks.machine_nuke_furnace_on : com.hbm.blocks.ModBlocks.machine_nuke_furnace_off;
+			if(worldObj.getBlock(xCoord, yCoord, zCoord) != desired)
+				MachineNukeFurnace.updateBlockState(shouldBeOn, worldObj, xCoord, yCoord, zCoord);
+		}
+	}
+
+	private void settleProgressThrough(long targetTick) {
+		if(runtimeSettling || lastAccountingTick == Long.MIN_VALUE || targetTick <= lastAccountingTick) return;
+		long remaining = targetTick - lastAccountingTick;
+		runtimeSettling = true;
+		try {
+			while(remaining > 0L) {
+				if(!runtimeEligible || dualPower <= 0) {
+					dualCookTime = 0;
+					lastAccountingTick = targetTick;
+					break;
+				}
+				long toCompletion = Math.max(1L, processingSpeed - dualCookTime);
+				long steps = Math.min(remaining, toCompletion);
+				dualCookTime += (int) steps;
+				lastAccountingTick += steps;
+				remaining -= steps;
+				if(dualCookTime >= processingSpeed) {
+					dualCookTime = 0;
+					this.processItem();
+					runtimeEligible = this.canProcess();
+					runtimeProgressBase = 0;
+					runtimeProgressTick = lastAccountingTick;
+					if(!runtimeEligible || dualPower <= 0) {
+						if(remaining > 0L) dualCookTime = 0;
+						lastAccountingTick = targetTick;
+						break;
+					}
+				}
+			}
+		} finally {
+			runtimeSettling = false;
+		}
+		this.markDirty();
 	}
 
 	private int inventoryFingerprint() {
@@ -360,67 +469,38 @@ public class TileEntityNukeFurnace extends TileEntityLoadedBase implements ISide
 
 	@Override
 	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_PROCESS || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
-		runFurnaceStep();
-		if(!isInvalid() && needsSimulation()) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_PROCESS, 0);
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized || taskSlot != 0) return;
+		long now = worldObj.getTotalWorldTime();
+		if(taskType == TASK_FUEL) {
+			this.settleProgressThrough(now - 1L);
+			boolean fuelLoaded = false;
+			if(dualPower <= 0 && hasItemPower(slots[0])) {
+				dualPower += getItemPower(slots[0]);
+				if(slots[0] != null) {
+					slots[0].stackSize--;
+					if(slots[0].stackSize == 0) slots[0] = slots[0].getItem().getContainerItem(slots[0]);
+				}
+				fuelLoaded = true;
+			}
+			if(fuelLoaded) this.markDirty();
+			runtimeEligible = this.canProcess();
+			this.settleProgressThrough(now);
+		} else if(taskType == TASK_PROCESS) {
+			this.settleProgressThrough(now);
+		} else return;
+		if(isInvalid()) return;
+		this.evaluateAndSchedule(now);
+	}
+
+	@Override public void onChunkUnload() {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+		lastAccountingTick = Long.MIN_VALUE;
+		runtimeActive = false;
+		super.onChunkUnload();
 	}
 
 	@Override
 	public void updateEntity() { }
-
-	private void runFurnaceStep() {
-		this.hasPower();
-		boolean flag1 = false;
-		
-		if(!worldObj.isRemote)
-		{
-			if(this.hasItemPower(this.slots[0]) && this.dualPower == 0)
-			{
-				this.dualPower += getItemPower(this.slots[0]);
-				if(this.slots[0] != null)
-				{
-					flag1 = true;
-					this.slots[0].stackSize--;
-					if(this.slots[0].stackSize == 0)
-					{
-						this.slots[0] = this.slots[0].getItem().getContainerItem(this.slots[0]);
-					}
-				}
-			}
-			
-			if(hasPower() && canProcess())
-			{
-				dualCookTime++;
-				
-				if(this.dualCookTime == TileEntityNukeFurnace.processingSpeed)
-				{
-					this.dualCookTime = 0;
-					this.processItem();
-					flag1 = true;
-				}
-			}else{
-				dualCookTime = 0;
-			}
-			
-			boolean trigger = true;
-			
-			if(hasPower() && canProcess() && this.dualCookTime == 0)
-			{
-				trigger = false;
-			}
-			
-			if(trigger)
-            {
-                flag1 = true;
-                MachineNukeFurnace.updateBlockState(this.dualCookTime > 0, this.worldObj, this.xCoord, this.yCoord, this.zCoord);
-            }
-		}
-		
-		if(flag1)
-		{
-			this.markDirty();
-		}
-	}
 	
 	private static HashMap<ComparableStack, Integer> fuels = new HashMap();
 	//for the int array: [0] => level (1-4) [1] => amount of operations

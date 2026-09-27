@@ -897,6 +897,7 @@ public class ModEventHandler {
 	@SubscribeEvent
 	public void onUnload(WorldEvent.Unload event) {
 		if(!event.world.isRemote) {
+			RTTYSystem.forgetWorld(event.world);
 			MachineRuntimeManager.onWorldUnload(event.world);
 			UniNodespace.unloadWorld(event.world);
 		}
