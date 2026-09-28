@@ -214,6 +214,9 @@ public class TileEntityHeaterOilburner extends TileEntityMachinePolluting implem
 	}
 
 	@Override
+	public boolean isFluidDemandObservable() { return true; }
+
+	@Override
 	public FluidTank[] getReceivingTanks()  {
 		return new FluidTank[] { tank };
 	}

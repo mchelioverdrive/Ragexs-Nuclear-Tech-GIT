@@ -52,13 +52,13 @@ public class FT_Heatable extends FluidTrait {
 
 	@Override
 	public void addInfoHidden(List<String> info) {
-		info.add(EnumChatFormatting.RED + "Heat required per stored L: " + ThermalUnits.formatThermalEnergyPerLiter(this.getFirstStep().heatReq, this.getFirstStep().amountReq));
+		info.add(EnumChatFormatting.RED + "Heating energy: " + ThermalUnits.formatThermalEnergyPerLiter(this.getFirstStep().heatReq, this.getFirstStep().amountReq));
 		for(HeatingType type : HeatingType.values()) {
 
 			double eff = getEfficiency(type);
 
 			if(eff > 0) {
-				info.add(EnumChatFormatting.YELLOW + "[" + type.name + "] " + EnumChatFormatting.AQUA + "Efficiency: " + ((int) (eff * 100D)) + "%");
+				info.add(EnumChatFormatting.YELLOW + type.tooltipName + " " + EnumChatFormatting.AQUA + "efficiency: " + ((int) (eff * 100D)) + "%");
 			}
 		}
 	}
@@ -78,15 +78,17 @@ public class FT_Heatable extends FluidTrait {
 	}
 
 	public static enum HeatingType {
-		BOILER("Boilable"),
-		HEATEXCHANGER("Heatable"),
-		PWR("PWR Coolant"),
-		ICF("ICF Coolant");
+		BOILER("Boilable", "Boiler"),
+		HEATEXCHANGER("Heatable", "General heating"),
+		PWR("PWR Coolant", "PWR coolant heating"),
+		ICF("ICF Coolant", "ICF coolant heating");
 
 		public String name;
+		public final String tooltipName;
 
-		private HeatingType(String name) {
+		private HeatingType(String name, String tooltipName) {
 			this.name = name;
+			this.tooltipName = tooltipName;
 		}
 	}
 

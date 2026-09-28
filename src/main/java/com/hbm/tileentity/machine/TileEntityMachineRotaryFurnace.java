@@ -451,6 +451,9 @@ public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting i
 
 	@Override public FluidTank[] getAllTanks() { return new FluidTank[] {tanks[0], tanks[1], tanks[2], smoke}; }
 	@Override public FluidTank[] getSendingTanks() { return new FluidTank[] {tanks[2], smoke}; }
+	@Override
+	public boolean isFluidDemandObservable() { return true; }
+
 	@Override public FluidTank[] getReceivingTanks() { return new FluidTank[] {tanks[0], tanks[1]}; }
 
 	@Override public Container provideContainer(int ID, EntityPlayer player, World world, int x, int y, int z) { return new ContainerMachineRotaryFurnace(player.inventory, this); }

@@ -620,6 +620,9 @@ public class TileEntityMachinePlasmaHeater extends TileEntityMachineBase impleme
 	}
 
 	@Override
+	public boolean isFluidDemandObservable() { return true; }
+
+	@Override
 	public FluidTank[] getReceivingTanks() {
 		return tanks;
 	}

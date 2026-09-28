@@ -85,8 +85,17 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 	private boolean inventoryFingerprintInitialized;
 	private long operatingPowerFluidWatts;
 	private long operatingPowerMetalWatts;
-	private static final int TASK_PROCESS = 1;
+	private static final int TASK_ACCOUNTING = 1;
+	private static final int TASK_BATTERY = 2;
+	private static final int TASK_CAST = 3;
 	private static final int TASK_SLOT_SHARED = 0;
+	private static final int TASK_SLOT_BATTERY = 1;
+	private static final int TASK_SLOT_CAST = 2;
+	private long lastAccountingTick = Long.MIN_VALUE;
+	private long batteryTransitionDueTick = Long.MIN_VALUE;
+	private boolean runtimeAccountingMutation;
+	private boolean runtimeFluidActive;
+	private boolean runtimeMetalActive;
 
 	public TileEntityElectrolyser() {
 		//0: Battery
@@ -133,77 +142,103 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		// Production, fluid logistics, and casting are driven by MachineRuntime.
 	}
 
+	@Override public void onChunkUnload() {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+		lastAccountingTick = Long.MIN_VALUE;
+		batteryTransitionDueTick = Long.MIN_VALUE;
+		runtimeFluidActive = false;
+		runtimeMetalActive = false;
+		super.onChunkUnload();
+	}
+
 	@Override public int getMachineExecutionStrategies() {
 		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
 	}
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		boolean wasActive = runtimeFluidActive || runtimeMetalActive;
+		if(lastAccountingTick == Long.MIN_VALUE) lastAccountingTick = now;
+		else this.settleProgressThrough(now - 1L);
 		this.refreshCachedState();
 		this.observeInventoryFingerprint();
 		runtimeInitialized = true;
 		if((causes & (MachineDirtyCause.LIFECYCLE | MachineDirtyCause.TOPOLOGY)) != 0) this.updateConnections();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		if(wasActive && !this.hasBatteryWork()) this.settleProgressThrough(now);
+		else if(!wasActive) lastAccountingTick = now;
+		this.evaluateAndSchedule(now, wasActive && this.hasBatteryWork());
 		this.networkPackNTIfDirty(50);
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_PROCESS || taskSlot != TASK_SLOT_SHARED || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
-		long beforeEnergy = energyQuanta;
-		int beforeProgressFluid = progressFluid;
-		int beforeProgressOre = progressOre;
-		int beforeLeftAmount = leftStack == null ? 0 : leftStack.amount;
-		int beforeRightAmount = rightStack == null ? 0 : rightStack.amount;
-		if(this.observeInventoryFingerprint()) {
-			this.upgradeManager.invalidate();
-			this.refreshCachedState();
-		}
-		int beforeFingerprint = this.inventoryFingerprint();
-		this.beginMachineFluidMutation();
-		runtimeEnergyMutation = true;
-		try {
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
-			for(int i = 0; i < getCycleCount(); i++) {
-				if(this.canProcessFluid()) {
-					progressFluid++;
-					this.setStoredEnergyQuanta(energyQuanta - EnergyUnits.wattsToQuantaPerTick(operatingPowerFluidWatts));
-					if(progressFluid >= getDurationFluid()) {
-						this.processFluids();
-						progressFluid = 0;
-					}
-				}
-				if(this.canProcessMetal()) {
-					progressOre++;
-					this.setStoredEnergyQuanta(energyQuanta - EnergyUnits.wattsToQuantaPerTick(operatingPowerMetalWatts));
-					if(progressOre >= getDurationMetal()) {
-						this.processMetal();
-						progressOre = 0;
-					}
-				}
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
+			batteryTransitionDueTick = Long.MIN_VALUE;
+			this.settleProgressThrough(now - 1L);
+			if(this.observeInventoryFingerprint()) {
+				this.upgradeManager.invalidate();
+				this.refreshCachedState();
 			}
-		} finally {
-			runtimeEnergyMutation = false;
-			this.endMachineFluidMutation();
+			long beforeEnergy = energyQuanta;
+			runtimeEnergyMutation = true;
+			try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower)); }
+			finally { runtimeEnergyMutation = false; }
+			if(beforeEnergy != energyQuanta) { this.markDirty(); this.markNetworkDirty(); }
+			this.settleProgressThrough(now);
+			this.evaluateAndSchedule(now, false);
+			this.networkPackNTIfDirty(50);
+			return;
 		}
-		boolean poured = this.pourStack(true) | this.pourStack(false);
-		boolean inventoryChanged = beforeFingerprint != this.inventoryFingerprint();
-		this.observeInventoryFingerprint();
-		if(inventoryChanged) {
-			this.upgradeManager.invalidate();
-			this.refreshCachedState();
-			this.markNetworkDirty();
+		if(taskType == TASK_ACCOUNTING && taskSlot == TASK_SLOT_SHARED) {
+			if(this.observeInventoryFingerprint()) {
+				this.settleProgressThrough(now - 1L);
+				this.upgradeManager.invalidate();
+				this.refreshCachedState();
+			}
+			this.settleProgressThrough(now);
+			this.evaluateAndSchedule(now, false);
+			this.networkPackNTIfDirty(50);
+			return;
 		}
-		if(beforeEnergy != energyQuanta || beforeProgressFluid != progressFluid || beforeProgressOre != progressOre || (leftStack == null ? 0 : leftStack.amount) != beforeLeftAmount || (rightStack == null ? 0 : rightStack.amount) != beforeRightAmount || inventoryChanged || poured) {
-			this.markDirty();
-			this.markNetworkDirty();
+		if(taskType == TASK_CAST && taskSlot == TASK_SLOT_CAST) {
+			if(batteryTransitionDueTick <= now) {
+				this.scheduleMachineTransition(now, TASK_CAST, TASK_SLOT_CAST);
+				return;
+			}
+			if(this.observeInventoryFingerprint()) {
+				this.settleProgressThrough(now - 1L);
+				this.upgradeManager.invalidate();
+				this.refreshCachedState();
+				if((runtimeFluidActive || runtimeMetalActive) && !this.hasBatteryWork()) this.settleProgressThrough(now);
+			}
+			this.settleProgressThrough(now);
+			int beforeLeftAmount = leftStack == null ? 0 : leftStack.amount;
+			int beforeRightAmount = rightStack == null ? 0 : rightStack.amount;
+			boolean poured = this.pourStack(true) | this.pourStack(false);
+			if(poured || beforeLeftAmount != (leftStack == null ? 0 : leftStack.amount) || beforeRightAmount != (rightStack == null ? 0 : rightStack.amount)) {
+				this.markDirty();
+				this.markNetworkDirty();
+			}
+			this.evaluateAndSchedule(now, false);
+			this.networkPackNTIfDirty(50);
 		}
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
-		this.networkPackNTIfDirty(50);
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
 		if(worldObj == null || worldObj.isRemote) return;
 		if(cadence == 5) {
+			long now = worldObj.getTotalWorldTime();
+			boolean inventoryChanged = this.observeInventoryFingerprint();
+			boolean wasActive = runtimeFluidActive || runtimeMetalActive;
+			if(inventoryChanged) this.settleProgressThrough(now - 1L);
+			else this.settleProgressThrough(now);
+			if(inventoryChanged) {
+				this.upgradeManager.invalidate();
+				this.refreshCachedState();
+				if(wasActive && !this.hasBatteryWork()) this.settleProgressThrough(now);
+			}
 			this.beginMachineFluidMutation();
 			boolean changed;
 			try {
@@ -222,6 +257,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 			return;
 		}
 		if(cadence != 20) return;
+		this.settleProgressThrough(worldObj.getTotalWorldTime());
 		for(DirPos pos : this.getConPos()) {
 			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
@@ -230,6 +266,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 			if(tanks[2].getFill() > 0) this.sendFluid(tanks[2], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
 		this.networkPackNTIfDirty(50);
+		this.evaluateAndSchedule(worldObj.getTotalWorldTime(), false);
 	}
 
 	private void updateConnections() {
@@ -319,10 +356,98 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		return true;
 	}
 
-	private void evaluateAndSchedule(long now) {
+	private void evaluateAndSchedule(long now, boolean batteryDueNow) {
 		if(!runtimeInitialized) return;
-		if(this.canProcessFluid() || this.canProcessMetal() || this.hasBatteryWork() || leftStack != null || rightStack != null) this.scheduleMachineTransition(now + 1L, TASK_PROCESS, TASK_SLOT_SHARED);
-		else this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_SHARED);
+		boolean battery = this.hasBatteryWork();
+		if(battery) {
+			long due = now + (batteryDueNow ? 0L : 1L);
+			this.scheduleMachineTransition(due, TASK_BATTERY, TASK_SLOT_BATTERY);
+			if(batteryTransitionDueTick == Long.MIN_VALUE || due < batteryTransitionDueTick) batteryTransitionDueTick = due;
+		} else {
+			this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
+			batteryTransitionDueTick = Long.MIN_VALUE;
+		}
+		boolean fluid = this.canProcessFluid();
+		boolean metal = this.canProcessMetal();
+		runtimeFluidActive = fluid;
+		runtimeMetalActive = metal;
+		if(!battery && (fluid || metal)) {
+			long cycleCount = Math.max(1, this.getCycleCount());
+			long ticks = Long.MAX_VALUE;
+			if(fluid) ticks = Math.min(ticks, ceilDiv((long) this.getDurationFluid() - progressFluid, cycleCount));
+			if(metal) ticks = Math.min(ticks, ceilDiv((long) this.getDurationMetal() - progressOre, cycleCount));
+			long costFluid = EnergyUnits.wattsToQuantaPerTick(operatingPowerFluidWatts);
+			long costMetal = EnergyUnits.wattsToQuantaPerTick(operatingPowerMetalWatts);
+			long costPerOperation = fluid ? costFluid : costMetal;
+			long operationsPerTick = cycleCount * ((fluid ? 1L : 0L) + (metal ? 1L : 0L));
+			if(costPerOperation > 0L && operationsPerTick > 0L) ticks = Math.min(ticks, ceilDiv(energyQuanta / costPerOperation, operationsPerTick));
+			if(ticks != Long.MAX_VALUE) this.scheduleMachineTransition(now + Math.max(1L, ticks), TASK_ACCOUNTING, TASK_SLOT_SHARED);
+		} else this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_SHARED);
+		if(leftStack != null || rightStack != null) this.scheduleMachineTransition(now + 1L, TASK_CAST, TASK_SLOT_CAST);
+		else this.cancelMachineTransition(TASK_CAST, TASK_SLOT_CAST);
+	}
+
+	private static long ceilDiv(long value, long divisor) {
+		return value <= 0L ? 1L : 1L + (value - 1L) / divisor;
+	}
+
+	private void settleProgressThrough(long targetTick) {
+		if(worldObj == null || worldObj.isRemote || runtimeAccountingMutation || lastAccountingTick == Long.MIN_VALUE || targetTick <= lastAccountingTick) return;
+		long remaining = targetTick - lastAccountingTick;
+		long beforeEnergy = energyQuanta;
+		int beforeFluid = progressFluid;
+		int beforeMetal = progressOre;
+		int beforeLeft = leftStack == null ? 0 : leftStack.amount;
+		int beforeRight = rightStack == null ? 0 : rightStack.amount;
+		runtimeAccountingMutation = true;
+		this.beginMachineFluidMutation();
+		try {
+			while(remaining > 0L) {
+				boolean fluid = this.canProcessFluid();
+				boolean metal = this.canProcessMetal();
+				if(!fluid && !metal) break;
+				int cycles = Math.max(1, this.getCycleCount());
+				long costFluid = EnergyUnits.wattsToQuantaPerTick(operatingPowerFluidWatts);
+				long costMetal = EnergyUnits.wattsToQuantaPerTick(operatingPowerMetalWatts);
+				long operationsPerTick = cycles * ((fluid ? 1L : 0L) + (metal ? 1L : 0L));
+				long costPerOperation = fluid ? costFluid : costMetal;
+				long completionTick = Long.MAX_VALUE;
+				if(fluid) completionTick = Math.min(completionTick, ceilDiv((long) this.getDurationFluid() - progressFluid, cycles));
+				if(metal) completionTick = Math.min(completionTick, ceilDiv((long) this.getDurationMetal() - progressOre, cycles));
+				long energyTick = costPerOperation <= 0L || operationsPerTick <= 0L ? Long.MAX_VALUE : ceilDiv(energyQuanta / costPerOperation, operationsPerTick);
+				long boundaryTick = Math.min(completionTick, energyTick);
+				long fullTicks = Math.min(remaining, boundaryTick == Long.MAX_VALUE ? remaining : boundaryTick - 1L);
+				if(fullTicks > 0L) {
+					if(fluid) progressFluid += (int) Math.min(Integer.MAX_VALUE, fullTicks * cycles);
+					if(metal) progressOre += (int) Math.min(Integer.MAX_VALUE, fullTicks * cycles);
+					long cost = fullTicks * cycles * ((fluid ? costFluid : 0L) + (metal ? costMetal : 0L));
+					this.setStoredEnergyQuanta(energyQuanta - cost);
+					remaining -= fullTicks;
+				}
+				if(remaining <= 0L) break;
+				for(int i = 0; i < cycles; i++) {
+					if(this.canProcessFluid()) {
+						progressFluid++;
+						this.setStoredEnergyQuanta(energyQuanta - costFluid);
+						if(progressFluid >= this.getDurationFluid()) { this.processFluids(); progressFluid = 0; }
+					}
+					if(this.canProcessMetal()) {
+						progressOre++;
+						this.setStoredEnergyQuanta(energyQuanta - costMetal);
+						if(progressOre >= this.getDurationMetal()) { this.processMetal(); progressOre = 0; }
+					}
+				}
+				remaining--;
+			}
+		} finally {
+			this.endMachineFluidMutation();
+			runtimeAccountingMutation = false;
+			lastAccountingTick = targetTick;
+		}
+		if(beforeEnergy != energyQuanta || beforeFluid != progressFluid || beforeMetal != progressOre || beforeLeft != (leftStack == null ? 0 : leftStack.amount) || beforeRight != (rightStack == null ? 0 : rightStack.amount)) {
+			this.markDirty();
+			this.markNetworkDirty();
+		}
 	}
 
 	public DirPos[] getConPos() {
@@ -506,6 +631,11 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		this.progressOre = nbt.getInteger("progressOre");
 		this.processFluidTime = nbt.getInteger("processFluidTime");
 		this.processOreTime = nbt.getInteger("processOreTime");
+		this.runtimeInitialized = false;
+		this.lastAccountingTick = Long.MIN_VALUE;
+		this.batteryTransitionDueTick = Long.MIN_VALUE;
+		this.runtimeFluidActive = false;
+		this.runtimeMetalActive = false;
 		if(nbt.hasKey("leftType")) this.leftStack = new MaterialStack(Mats.matById.get(nbt.getInteger("leftType")), nbt.getInteger("leftAmount"));
 		else this.leftStack = null;
 		if(nbt.hasKey("rightType")) this.rightStack = new MaterialStack(Mats.matById.get(nbt.getInteger("rightType")), nbt.getInteger("rightAmount"));
@@ -515,6 +645,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 
 		EnergyUnits.writeEnergyQuanta(nbt, this.energyQuanta);
@@ -572,6 +703,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 	@Override
 	public void setStoredEnergyQuanta(long energyQuanta) {
 		if(this.energyQuanta == energyQuanta) return;
+		if(!runtimeEnergyMutation && !runtimeAccountingMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 		this.markNetworkDirty();
@@ -581,6 +713,14 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 	@Override protected void onInventorySlotChanged(int slot) {
 		super.onInventorySlotChanged(slot);
 		if(slot == 1 || slot == 2) this.upgradeManager.invalidate();
+	}
+
+	@Override protected void beforeInventorySlotChanged(int slot) {
+		if(!runtimeAccountingMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override protected void beforeFluidStorageChanged(FluidTank tank) {
+		if(!runtimeAccountingMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 	}
 
 	@Override public void serialize(ByteBuf buf) {
@@ -622,6 +762,9 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 	public FluidTank[] getSendingTanks() {
 		return new FluidTank[] {tanks[1], tanks[2]};
 	}
+
+	@Override
+	public boolean isFluidDemandObservable() { return true; }
 
 	@Override
 	public FluidTank[] getReceivingTanks() {

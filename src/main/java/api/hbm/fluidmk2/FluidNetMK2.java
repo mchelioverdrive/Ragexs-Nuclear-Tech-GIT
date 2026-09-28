@@ -1,6 +1,7 @@
 package api.hbm.fluidmk2;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -17,6 +18,8 @@ import api.hbm.energymk2.IEnergyReceiverMK2.ConnectionPriority;
 import api.hbm.energymk2.PowerNetDiagnostics;
 import api.hbm.fluid.IFluidConnector;
 import api.hbm.fluid.PipeNet;
+import api.hbm.tile.ILoadedTile;
+import net.minecraft.tileentity.TileEntity;
 
 /** Persistent, dirty-scheduled fluid network. */
 public class FluidNetMK2 extends NodeNet<IFluidConnector, IFluidProviderMK2, FluidNode> {
@@ -32,6 +35,11 @@ public class FluidNetMK2 extends NodeNet<IFluidConnector, IFluidProviderMK2, Flu
 	private long trackerTick = Long.MIN_VALUE;
 	protected FluidType type;
 	private int dirtyCauses;
+	private final Set<IFluidConnector> unobservableReceivers = Collections.newSetFromMap(new IdentityHashMap<IFluidConnector, Boolean>());
+	private long demandRevision;
+	private int dormantPressureMask;
+	/** A proof may exclude one receiver that remains owned by receiverEntries. */
+	private final IFluidConnector[] dormantExcluded = new IFluidConnector[IFluidUserMK2.HIGHEST_VALID_PRESSURE + 1];
 
 	public long[] fluidAvailable = new long[IFluidUserMK2.HIGHEST_VALID_PRESSURE + 1];
 	public List<Pair<IFluidProviderMK2, Long>>[] providers = new ArrayList[IFluidUserMK2.HIGHEST_VALID_PRESSURE + 1];
@@ -61,6 +69,8 @@ public class FluidNetMK2 extends NodeNet<IFluidConnector, IFluidProviderMK2, Flu
 			PowerNetDiagnostics.recordFluidDetachment();
 		}
 		this.dirtyCauses = 0;
+		this.invalidateDormantDemand();
+		this.unobservableReceivers.clear();
 		PipeNet.release(this);
 		super.destroy();
 	}
@@ -83,6 +93,7 @@ public class FluidNetMK2 extends NodeNet<IFluidConnector, IFluidProviderMK2, Flu
 	public void addReceiver(IFluidConnector receiver) {
 		if(this.receiverEntries.containsKey(receiver)) return;
 		this.receiverEntries.put(receiver, 0L);
+		if(!receiver.isFluidDemandObservable()) this.unobservableReceivers.add(receiver);
 		trackReceiver(receiver, this);
 		PowerNetDiagnostics.recordFluidAttachment();
 		this.markDemandDirty();
@@ -91,6 +102,7 @@ public class FluidNetMK2 extends NodeNet<IFluidConnector, IFluidProviderMK2, Flu
 	@Override
 	public void removeReceiver(IFluidConnector receiver) {
 		if(this.receiverEntries.remove(receiver) == null) return;
+		this.unobservableReceivers.remove(receiver);
 		untrackReceiver(receiver, this);
 		PowerNetDiagnostics.recordFluidDetachment();
 		this.markDemandDirty();
@@ -132,8 +144,47 @@ public class FluidNetMK2 extends NodeNet<IFluidConnector, IFluidProviderMK2, Flu
 		if(networks != null) for(FluidNetMK2 network : networks) network.markSupplyDirty();
 	}
 
+	/** Tank/owner mutation hook; all distribution remains on the owning server thread. */
+	public static void markEndpointFluidDirty(Object endpoint) {
+		if(endpoint instanceof TileEntity) {
+			TileEntity tile = (TileEntity) endpoint;
+			if(tile.getWorldObj() == null || tile.getWorldObj().isRemote || tile.isInvalid()) return;
+		}
+		if(endpoint instanceof ILoadedTile && !((ILoadedTile) endpoint).isLoaded()) return;
+		if(endpoint instanceof IFluidConnector) markReceiverDemandDirty((IFluidConnector) endpoint);
+		if(endpoint instanceof IFluidProviderMK2) markProviderSupplyDirty((IFluidProviderMK2) endpoint);
+	}
+
+	/** Includes direct PipeNet subscriptions and memberships moved by a merge. */
+	public static void detachEndpointMemberships(Object endpoint) {
+		if(endpoint instanceof IFluidConnector) {
+			Set<FluidNetMK2> networks = receiverMemberships.get(endpoint);
+			while(networks != null && !networks.isEmpty()) {
+				FluidNetMK2 network = networks.iterator().next();
+				network.removeReceiver((IFluidConnector) endpoint);
+				untrackReceiver((IFluidConnector) endpoint, network);
+			}
+		}
+		if(endpoint instanceof IFluidProviderMK2) {
+			Set<FluidNetMK2> networks = providerMemberships.get(endpoint);
+			while(networks != null && !networks.isEmpty()) {
+				FluidNetMK2 network = networks.iterator().next();
+				network.removeProvider((IFluidProviderMK2) endpoint);
+				untrackProvider((IFluidProviderMK2) endpoint, network);
+			}
+		}
+	}
+
+	private void invalidateDormantDemand() {
+		this.demandRevision++;
+		if(this.dormantPressureMask == 0) return;
+		this.dormantPressureMask = 0;
+		Arrays.fill(this.dormantExcluded, null);
+	}
+
 	private void markDirty(int cause) {
 		if(!this.isValid()) return;
+		if((cause & (DIRTY_TOPOLOGY | DIRTY_DEMAND)) != 0) this.invalidateDormantDemand();
 		this.dirtyCauses |= cause;
 		UniNodespace.markFluidNetworkDirty(this);
 	}
@@ -163,7 +214,13 @@ public class FluidNetMK2 extends NodeNet<IFluidConnector, IFluidProviderMK2, Flu
 		Iterator<Entry<IFluidProviderMK2, Long>> iterator = providerEntries.entrySet().iterator();
 		while(iterator.hasNext()) {
 			IFluidProviderMK2 provider = iterator.next().getKey();
-			if(isBadLink(provider)) { iterator.remove(); continue; }
+			if(isBadLink(provider)) {
+				iterator.remove();
+				untrackProvider(provider, this);
+				PowerNetDiagnostics.recordFluidDetachment();
+				this.markSupplyDirty();
+				continue;
+			}
 			int[] range = provider.getProvidingPressureRange(type);
 			for(int pressure = Math.max(0, range[0]); pressure <= Math.min(IFluidUserMK2.HIGHEST_VALID_PRESSURE, range[1]); pressure++) {
 				long available = Math.min(provider.getFluidAvailable(type, pressure), provider.getProviderSpeed(type, pressure));
@@ -177,7 +234,14 @@ public class FluidNetMK2 extends NodeNet<IFluidConnector, IFluidProviderMK2, Flu
 		Iterator<Entry<IFluidConnector, Long>> iterator = receiverEntries.entrySet().iterator();
 		while(iterator.hasNext()) {
 			IFluidConnector receiver = iterator.next().getKey();
-			if(isBadLink(receiver)) { iterator.remove(); continue; }
+			if(isBadLink(receiver)) {
+				iterator.remove();
+				this.unobservableReceivers.remove(receiver);
+				untrackReceiver(receiver, this);
+				PowerNetDiagnostics.recordFluidDetachment();
+				this.markDemandDirty();
+				continue;
+			}
 			int[] range = receivingRange(receiver);
 			for(int pressure = Math.max(0, range[0]); pressure <= Math.min(IFluidUserMK2.HIGHEST_VALID_PRESSURE, range[1]); pressure++) {
 				long required = Math.min(receiver.getDemand(type, pressure), receiverSpeed(receiver, pressure));
@@ -221,32 +285,58 @@ public class FluidNetMK2 extends NodeNet<IFluidConnector, IFluidProviderMK2, Flu
 				notAccountedFor[pressure] -= toUse;
 			}
 		}
+		for(long amount : received) if(amount > 0) {
+			this.invalidateDormantDemand();
+			break;
+		}
 	}
 
 	/** Push adapter for existing machine send calls; topology and receivers remain MK2-owned. */
 	public long transferFluidExternal(FluidType fluid, int pressure, long amount, IFluidConnector excluded) {
 		if(fluid != this.type || amount <= 0 || !this.isValid() || this.isTopologyRepairing()) return amount;
 		this.beginTrackerTick();
+		boolean canProveDormant = this.unobservableReceivers.isEmpty() && pressure >= 0 && pressure <= IFluidUserMK2.HIGHEST_VALID_PRESSURE;
+		if(canProveDormant && (this.dormantPressureMask & (1 << pressure)) != 0 &&
+				this.dormantExcluded[pressure] == excluded) {
+			PowerNetDiagnostics.recordFluidPushDormantSkip();
+			return amount;
+		}
+		PowerNetDiagnostics.recordFluidPushScan();
+		long revision = this.demandRevision;
+		boolean positiveDemand = false;
 		long remaining = amount;
 		for(int priority = ConnectionPriority.values().length - 1; priority >= 0 && remaining > 0; priority--) {
 			long totalDemand = 0;
 			for(IFluidConnector receiver : this.receiverEntries.keySet()) {
 				if(receiver == excluded || isBadLink(receiver) || receiverPriority(receiver).ordinal() != priority || !acceptsPressure(receiver, pressure)) continue;
-				totalDemand += Math.min(receiver.getDemand(type, pressure), receiverSpeed(receiver, pressure));
+				long demand = this.externalDemand(receiver, pressure);
+				if(demand > 0) positiveDemand = true;
+				totalDemand += demand;
 			}
 			if(totalDemand <= 0) continue;
 			long availableForPriority = Math.min(remaining, totalDemand);
 			long transferred = 0;
 			for(IFluidConnector receiver : this.receiverEntries.keySet()) {
 				if(receiver == excluded || isBadLink(receiver) || receiverPriority(receiver).ordinal() != priority || !acceptsPressure(receiver, pressure)) continue;
-				long demand = Math.min(receiver.getDemand(type, pressure), receiverSpeed(receiver, pressure));
+				long demand = this.externalDemand(receiver, pressure);
 				long toSend = (long) Math.max(availableForPriority * ((double) demand / (double) totalDemand), 0D);
 				transferred += toSend - receiver.transferFluid(type, pressure, toSend);
 			}
 			remaining -= transferred;
 			this.fluidTracker += transferred;
 		}
+		if(remaining != amount) this.invalidateDormantDemand();
+		// Do not suppress positive-demand truncation/rejection or cache across a mutation.
+		if(canProveDormant && !positiveDemand && this.demandRevision == revision) {
+			this.dormantExcluded[pressure] = excluded;
+			this.dormantPressureMask |= 1 << pressure;
+		}
 		return remaining;
+	}
+
+	private long externalDemand(IFluidConnector receiver, int pressure) {
+		PowerNetDiagnostics.recordFluidPushDemandQuery();
+		return Math.min(receiver.getDemand(this.type, pressure), receiverSpeed(receiver, pressure));
 	}
 
 	private int[] receivingRange(IFluidConnector receiver) {

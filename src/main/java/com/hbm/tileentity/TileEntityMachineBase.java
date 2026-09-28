@@ -199,7 +199,7 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 
 	/** Opts an owned HBM tank into owner invalidation for direct, pipe, and container mutations. */
 	protected final void trackMachineFluidTank(com.hbm.inventory.fluid.tank.FluidTank tank) {
-		if(tank != null) tank.setChangeListener(this.machineTankListener);
+		if(tank != null) tank.setNetworkOwner(this).setChangeListener(this.machineTankListener);
 	}
 
 	/** Suppresses re-evaluation notifications for a machine's own atomic fluid operation. */

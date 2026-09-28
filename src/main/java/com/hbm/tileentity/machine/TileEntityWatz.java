@@ -867,6 +867,9 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 	} //, tanks[2]
 
 	@Override
+	public boolean isFluidDemandObservable() { return true; }
+
+	@Override
 	public FluidTank[] getReceivingTanks() {
 		return new FluidTank[] { tanks[0] };
 	}

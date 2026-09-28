@@ -363,6 +363,9 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 	}
 
 	@Override
+	public boolean isFluidDemandObservable() { return true; }
+
+	@Override
 	public FluidTank[] getReceivingTanks() {
 		return new FluidTank[] {tank};
 	}

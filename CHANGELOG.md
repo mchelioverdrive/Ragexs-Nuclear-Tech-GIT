@@ -422,3 +422,25 @@ INCOMPLETE:
 
 - Migrated stable recipe and fluid-accounting families to settle elapsed loaded time at completion and resource boundaries, settle before relevant mutations, and preserve ascending order when lanes share resources. Kept exact half-joule energy arithmetic and separated battery or client progress work where the machine boundary supports it.
 - Added the task-level remaining recipe/progress inventory and updated the streamlined previous-versus-current performance comparison. Coupled heat, live world interaction, and general fluid-transfer paths retain their documented active cadence.
+
+2026-09-27 19:02 — Clarify advanced fluid tooltips
+
+- Replaced internal heating and cooling trait terminology in Shift fluid tooltips with clearer engineering labels for transition energy and process efficiencies. Fluid values and the compact tooltip remain unchanged.
+
+2026-09-27 19:16 — Finish recipe and progress cadence boundaries
+
+- Converted Electrolyser's shared fluid/metal lanes, Refinery's 100 mB accounting, and Catalytic Reformer batches to elapsed-loaded-time settlements at completion and resource boundaries. Preserved lane and tank ordering, exact quantum costs, sulfur rounding, and no-offline-catch-up rebind behavior.
+- Separated battery work, molten casting, Reformer output retries, Refinery pollution, and explosion fire from recipe accounting. Updated the cadence audit and recorded the in-game regression cases required before the fluid-network architecture pass.
+
+2026-09-27 19:57 — Establish fluid demand invalidation foundation
+
+- Added independent tank network-owner observation for tracked setter mutations and changed tank restoration, retaining existing before-mutation recipe settlement. Common machine fluid notifications now invalidate receiver demand and native-provider supply; atomic tank operations still notify the network.
+- Added explicit opt-in demand observability and pressure/source-aware zero-demand proofs in the authoritative FluidNetMK2 push path. Accepted transfers, topology changes, demand changes, and membership changes discard proofs. Successful transfer order, pressure filtering, rate caps, demand re-query, and rounding remain unchanged; positive-demand stalls keep retrying.
+- Fixed unload/removal cleanup for direct PipeNet subscriptions and merged reverse memberships. Added cumulative push-scan, demand-query, and dormant-skip counters to the existing optional network diagnostics.
+- Documented the transfer lifecycle, producer families, endpoint classification, rate boundaries, and retained compatibility paths in the performance audit/comparison. No individual machine is opted into dormant-demand suppression yet; fair storage unions, direct neighbors, multiblock handoffs, and unobservable endpoints retain their existing cadence. No blocked/unloaded transfer credit or second network was introduced.
+
+2026-09-27 20:20 — Certify fixed-tank fluid receivers
+
+- Opted 45 machine receiver endpoints into zero-demand proofs after verifying fixed tank membership, independent tank-owner notifications, and standard tank demand/transfer behavior. Oil and chemical, utility/input, heat/power, and reactor families are listed in the performance audit.
+- Producer callbacks, transfer phases, successful transfer formulas, pressure/order behavior, and per-call rate caps remain unchanged. Storage tanks/barrels, configurable receivers, multiblock forwarding ports, direct-neighbor paths, fair storage unions, and unknown third-party endpoints retain their existing retry behavior.
+- The optimization removes repeat receiver traversal and demand queries only after an all-observable network proves zero demand; no successful transfer, producer simulation, or topology reconciliation work is claimed removed. Runtime skip counts and in-game regression checks remain pending.

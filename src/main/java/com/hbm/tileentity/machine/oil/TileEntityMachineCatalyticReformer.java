@@ -39,10 +39,19 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 	public static final long maxPower = 1_000_000;
 	
 	public FluidTank[] tanks;
-	private static final int TASK_REFORM = 1;
+	private static final int TASK_ACCOUNTING = 1;
+	private static final int TASK_BATTERY = 2;
+	private static final int TASK_OUTPUT = 3;
 	private static final int TASK_SLOT_MAIN = 0;
+	private static final int TASK_SLOT_BATTERY = 1;
+	private static final int TASK_SLOT_OUTPUT = 2;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
+	private boolean runtimeAccountingMutation;
+	private boolean runtimeOutputTransfer;
+	private boolean runtimeActive;
+	private long lastAccountingTick = Long.MIN_VALUE;
+	private long batteryTransitionDueTick = Long.MIN_VALUE;
 	private int observedInventoryFingerprint;
 	private boolean inventoryFingerprintInitialized;
 
@@ -67,59 +76,78 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 		// Server work is driven by MachineRuntime; client synchronization remains packet-based.
 	}
 
+	@Override public void onChunkUnload() {
+		if(worldObj != null && !worldObj.isRemote) this.settleReformsThrough(worldObj.getTotalWorldTime() - 1L);
+		lastAccountingTick = Long.MIN_VALUE;
+		batteryTransitionDueTick = Long.MIN_VALUE;
+		runtimeActive = false;
+		super.onChunkUnload();
+	}
+
 	@Override public int getMachineExecutionStrategies() {
 		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.SCHEDULED | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
 	}
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
+		long now = worldObj.getTotalWorldTime();
+		boolean wasActive = runtimeActive;
+		if(lastAccountingTick == Long.MIN_VALUE) lastAccountingTick = now;
+		else this.settleReformsThrough(now - 1L);
 		runtimeInitialized = true;
 		this.refreshRuntimeState();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+		if(wasActive && !this.hasBatteryWork()) this.settleReformsThrough(now);
+		else if(!wasActive) lastAccountingTick = now;
+		this.evaluateAndSchedule(now, wasActive && this.hasBatteryWork());
 		this.sendRuntimeState();
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_REFORM || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
-		long oldEnergy = energyQuanta;
-		int oldInput = tanks[0].getFill();
-		int oldReformate = tanks[1].getFill();
-		int oldPetroleum = tanks[2].getFill();
-		int oldHydrogen = tanks[3].getFill();
-		int oldInventoryFingerprint = this.inventoryFingerprint();
-		this.beginMachineFluidMutation();
-		runtimeEnergyMutation = true;
-		try {
-			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
-			Triplet<FluidStack, FluidStack, FluidStack> output = ReformingRecipes.getOutput(tanks[0].getTankType());
-			if(output != null && this.canReform(output)) {
-				tanks[0].setFill(tanks[0].getFill() - 100);
-				tanks[1].setFill(tanks[1].getFill() + output.getX().fill);
-				tanks[2].setFill(tanks[2].getFill() + output.getY().fill);
-				tanks[3].setFill(tanks[3].getFill() + output.getZ().fill);
-				this.setStoredEnergyQuanta(energyQuanta - 20_000L);
-			}
-		} finally {
-			runtimeEnergyMutation = false;
-			this.endMachineFluidMutation();
+		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		long now = worldObj.getTotalWorldTime();
+		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
+			batteryTransitionDueTick = Long.MIN_VALUE;
+			this.settleReformsThrough(now - 1L);
+			long oldEnergy = energyQuanta;
+			runtimeEnergyMutation = true;
+			try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower)); }
+			finally { runtimeEnergyMutation = false; }
+			if(oldEnergy != energyQuanta) { this.markDirty(); this.markNetworkDirty(); }
+			this.settleReformsThrough(now);
+			this.evaluateAndSchedule(now, false);
+			this.sendRuntimeState();
+			return;
 		}
-		this.observeInventoryFingerprint();
-		if(oldEnergy != energyQuanta || oldInput != tanks[0].getFill() || oldReformate != tanks[1].getFill() || oldPetroleum != tanks[2].getFill() || oldHydrogen != tanks[3].getFill() || oldInventoryFingerprint != observedInventoryFingerprint) this.markDirty();
-		this.sendOutputFluids();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
-		this.sendRuntimeState();
+		if(taskType == TASK_ACCOUNTING && taskSlot == TASK_SLOT_MAIN) {
+			this.settleReformsThrough(now);
+			this.evaluateAndSchedule(now, false);
+			this.sendRuntimeState();
+			return;
+		}
+		if(taskType == TASK_OUTPUT && taskSlot == TASK_SLOT_OUTPUT) {
+			if(batteryTransitionDueTick <= now) {
+				this.scheduleMachineTransition(now, TASK_OUTPUT, TASK_SLOT_OUTPUT);
+				return;
+			}
+			runtimeOutputTransfer = true;
+			try { this.sendOutputFluids(); }
+			finally { runtimeOutputTransfer = false; }
+			this.evaluateAndSchedule(now, false);
+			this.sendRuntimeState();
+		}
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
 		if(worldObj == null || worldObj.isRemote) return;
 		if(cadence == 5) {
+			this.settleReformsThrough(worldObj.getTotalWorldTime());
 			boolean inventoryChanged = this.observeInventoryFingerprint();
 			this.refreshRuntimeState();
 			this.sendRuntimeState();
 			if(inventoryChanged) {
 				this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.FLUID);
-				this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 			}
+			this.evaluateAndSchedule(worldObj.getTotalWorldTime(), false);
 		} else if(cadence == 20) {
 			this.updateConnections();
 		}
@@ -176,11 +204,58 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 		return tanks[1].getFill() > 0 || tanks[2].getFill() > 0 || tanks[3].getFill() > 0;
 	}
 
-	private void evaluateAndSchedule(long now) {
+	private void evaluateAndSchedule(long now, boolean batteryDueNow) {
 		if(!runtimeInitialized) return;
+		boolean battery = this.hasBatteryWork();
+		if(battery) {
+			long due = now + (batteryDueNow ? 0L : 1L);
+			this.scheduleMachineTransition(due, TASK_BATTERY, TASK_SLOT_BATTERY);
+			if(batteryTransitionDueTick == Long.MIN_VALUE || due < batteryTransitionDueTick) batteryTransitionDueTick = due;
+		} else {
+			this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
+			batteryTransitionDueTick = Long.MIN_VALUE;
+		}
 		Triplet<FluidStack, FluidStack, FluidStack> output = ReformingRecipes.getOutput(tanks[0].getTankType());
-		if((output != null && this.canReform(output)) || this.hasBatteryWork() || this.hasFluidOutput()) this.scheduleMachineTransition(now + 1L, TASK_REFORM, TASK_SLOT_MAIN);
-		else this.cancelMachineTransition(TASK_REFORM, TASK_SLOT_MAIN);
+		boolean canRun = output != null && this.canReform(output);
+		runtimeActive = canRun;
+		if(canRun && !battery) {
+			long steps = Math.min(tanks[0].getFill() / 100L, energyQuanta / 20_000L);
+			if(output.getX().fill > 0) steps = Math.min(steps, (tanks[1].getMaxFill() - tanks[1].getFill()) / output.getX().fill);
+			if(output.getY().fill > 0) steps = Math.min(steps, (tanks[2].getMaxFill() - tanks[2].getFill()) / output.getY().fill);
+			if(output.getZ().fill > 0) steps = Math.min(steps, (tanks[3].getMaxFill() - tanks[3].getFill()) / output.getZ().fill);
+			if(steps > 0L) this.scheduleMachineTransition(now + steps, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		} else this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		if(this.hasFluidOutput()) this.scheduleMachineTransition(now + 1L, TASK_OUTPUT, TASK_SLOT_OUTPUT);
+		else this.cancelMachineTransition(TASK_OUTPUT, TASK_SLOT_OUTPUT);
+	}
+
+	private void settleReformsThrough(long targetTick) {
+		if(worldObj == null || worldObj.isRemote || runtimeAccountingMutation || lastAccountingTick == Long.MIN_VALUE || targetTick <= lastAccountingTick) return;
+		long elapsed = targetTick - lastAccountingTick;
+		lastAccountingTick = targetTick;
+		Triplet<FluidStack, FluidStack, FluidStack> output = ReformingRecipes.getOutput(tanks[0].getTankType());
+		if(!runtimeInitialized || output == null || !this.canReform(output)) return;
+		long steps = Math.min(elapsed, Math.min(tanks[0].getFill() / 100L, energyQuanta / 20_000L));
+		if(output.getX().fill > 0) steps = Math.min(steps, (tanks[1].getMaxFill() - tanks[1].getFill()) / output.getX().fill);
+		if(output.getY().fill > 0) steps = Math.min(steps, (tanks[2].getMaxFill() - tanks[2].getFill()) / output.getY().fill);
+		if(output.getZ().fill > 0) steps = Math.min(steps, (tanks[3].getMaxFill() - tanks[3].getFill()) / output.getZ().fill);
+		if(steps <= 0L) return;
+		runtimeAccountingMutation = true;
+		this.beginMachineFluidMutation();
+		runtimeEnergyMutation = true;
+		try {
+			tanks[0].setFill(tanks[0].getFill() - (int) (steps * 100L));
+			tanks[1].setFill(tanks[1].getFill() + (int) (steps * output.getX().fill));
+			tanks[2].setFill(tanks[2].getFill() + (int) (steps * output.getY().fill));
+			tanks[3].setFill(tanks[3].getFill() + (int) (steps * output.getZ().fill));
+			this.setStoredEnergyQuanta(energyQuanta - steps * 20_000L);
+		} finally {
+			runtimeEnergyMutation = false;
+			this.endMachineFluidMutation();
+			runtimeAccountingMutation = false;
+		}
+		this.markDirty();
+		this.markNetworkDirty();
 	}
 
 	private void sendOutputFluids() {
@@ -249,10 +324,15 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 		tanks[1].readFromNBT(nbt, "o1");
 		tanks[2].readFromNBT(nbt, "o2");
 		tanks[3].readFromNBT(nbt, "o3");
+		runtimeInitialized = false;
+		runtimeActive = false;
+		lastAccountingTick = Long.MIN_VALUE;
+		batteryTransitionDueTick = Long.MIN_VALUE;
 	}
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+		if(worldObj != null && !worldObj.isRemote) this.settleReformsThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 		
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
@@ -295,9 +375,20 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 	@Override
 	public void setStoredEnergyQuanta(long energyQuanta) {
 		if(this.energyQuanta == energyQuanta) return;
+		if(!runtimeEnergyMutation && !runtimeAccountingMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleReformsThrough(worldObj.getTotalWorldTime() - 1L);
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
+	}
+
+	@Override protected void beforeInventorySlotChanged(int slot) {
+		if(!runtimeAccountingMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleReformsThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override protected void beforeFluidStorageChanged(FluidTank tank) {
+		if(!runtimeAccountingMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) {
+			this.settleReformsThrough(worldObj.getTotalWorldTime() - (runtimeOutputTransfer ? 0L : 1L));
+		}
 	}
 
 	@Override
@@ -314,6 +405,9 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 	public FluidTank[] getSendingTanks() {
 		return new FluidTank[] {tanks[1], tanks[2], tanks[3]};
 	}
+
+	@Override
+	public boolean isFluidDemandObservable() { return true; }
 
 	@Override
 	public FluidTank[] getReceivingTanks() {

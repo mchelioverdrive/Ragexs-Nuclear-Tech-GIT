@@ -78,14 +78,9 @@ public final class FluidNetEndpointRegistry {
 	}
 
 	public static void detach(Object endpoint) {
+		FluidNetMK2.detachEndpointMemberships(endpoint);
 		EndpointState state = endpoints.get(endpoint);
 		if(state == null) return;
-		List<FluidNetMK2> networks = new ArrayList<FluidNetMK2>();
-		for(Descriptor descriptor : state.descriptors) if(descriptor.network != null && !networks.contains(descriptor.network)) networks.add(descriptor.network);
-		for(FluidNetMK2 network : networks) {
-			if(endpoint instanceof IFluidConnector) network.removeReceiver((IFluidConnector) endpoint);
-			if(endpoint instanceof IFluidProviderMK2) network.removeProvider((IFluidProviderMK2) endpoint);
-		}
 		state.descriptors.clear();
 		removeState(state);
 	}
@@ -97,7 +92,7 @@ public final class FluidNetEndpointRegistry {
 			scratch.addAll(states);
 			for(EndpointState state : scratch) {
 				endpoints.remove(state.endpoint);
-				for(Descriptor descriptor : state.descriptors) if(descriptor.network != null) removeMembership(state.endpoint, descriptor.role, descriptor.network);
+				FluidNetMK2.detachEndpointMemberships(state.endpoint);
 				state.descriptors.clear();
 			}
 			scratch.clear();

@@ -413,6 +413,9 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 	}
 
 	@Override
+	public boolean isFluidDemandObservable() { return true; }
+
+	@Override
 	public FluidTank[] getReceivingTanks() {
 		return new FluidTank[] {tanks[0]};
 	}

@@ -682,6 +682,9 @@ public class TileEntityPWRController extends TileEntityMachineBase implements IG
 	}
 
 	@Override
+	public boolean isFluidDemandObservable() { return true; }
+
+	@Override
 	public FluidTank[] getReceivingTanks() {
 		return new FluidTank[] { tanks[0] };
 	}

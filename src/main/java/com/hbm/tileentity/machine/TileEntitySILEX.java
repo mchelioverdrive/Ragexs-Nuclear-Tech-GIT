@@ -390,6 +390,9 @@ public class TileEntitySILEX extends TileEntityMachineBase implements IFluidStan
 	}
 
 	@Override
+	public boolean isFluidDemandObservable() { return true; }
+
+	@Override
 	public FluidTank[] getReceivingTanks() {
 		return new FluidTank[] {tank};
 	}

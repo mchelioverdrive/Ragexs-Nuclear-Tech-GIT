@@ -44,25 +44,28 @@ public class FT_Coolable extends FluidTrait {
 
 	@Override
 	public void addInfoHidden(List<String> info) {
-		info.add(EnumChatFormatting.RED + "Recoverable transition energy per stored L: " + ThermalUnits.formatThermalEnergyPerLiter(heatEnergy, amountReq));
+		String energyLabel = getEfficiency(CoolingType.TURBINE) > 0 ? "Expansion energy: " : "Recoverable cooling energy: ";
+		info.add(EnumChatFormatting.RED + energyLabel + ThermalUnits.formatThermalEnergyPerLiter(heatEnergy, amountReq));
 		for(CoolingType type : CoolingType.values()) {
 
 			double eff = getEfficiency(type);
 
 			if(eff > 0) {
-				info.add(EnumChatFormatting.YELLOW + "[" + type.name + "] " + EnumChatFormatting.AQUA + "Efficiency: " + ((int) (eff * 100D)) + "%");
+				info.add(EnumChatFormatting.YELLOW + type.tooltipName + " " + EnumChatFormatting.AQUA + "efficiency: " + ((int) (eff * 100D)) + "%");
 			}
 		}
 	}
 
 	public static enum CoolingType {
-		TURBINE("Turbine Steam"),
-		HEATEXCHANGER("Coolable");
+		TURBINE("Turbine Steam", "Turbine"),
+		HEATEXCHANGER("Coolable", "General cooling");
 
 		public String name;
+		public final String tooltipName;
 
-		private CoolingType(String name) {
+		private CoolingType(String name, String tooltipName) {
 			this.name = name;
+			this.tooltipName = tooltipName;
 		}
 	}
 

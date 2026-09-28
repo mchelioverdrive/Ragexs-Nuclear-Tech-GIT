@@ -853,6 +853,9 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	}
 
 	@Override
+	public boolean isFluidDemandObservable() { return true; }
+
+	@Override
 	public FluidTank[] getReceivingTanks() {
 		return new FluidTank[] {tanks[0], tanks[1]};
 	}

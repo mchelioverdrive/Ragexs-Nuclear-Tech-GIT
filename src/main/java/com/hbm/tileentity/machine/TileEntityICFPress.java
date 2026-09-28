@@ -281,6 +281,9 @@ public class TileEntityICFPress extends TileEntityMachineBase implements IFluidS
 	}
 
 	@Override
+	public boolean isFluidDemandObservable() { return true; }
+
+	@Override
 	public FluidTank[] getReceivingTanks() {
 		return tanks;
 	}

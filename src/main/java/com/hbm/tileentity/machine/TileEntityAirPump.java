@@ -281,6 +281,9 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 	}
 
 	@Override
+	public boolean isFluidDemandObservable() { return true; }
+
+	@Override
 	public FluidTank[] getReceivingTanks() {
 		return new FluidTank[] {tank};
 	}

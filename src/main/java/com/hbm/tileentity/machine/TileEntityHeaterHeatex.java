@@ -250,6 +250,9 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements IHe
 	}
 
 	@Override
+	public boolean isFluidDemandObservable() { return true; }
+
+	@Override
 	public FluidTank[] getReceivingTanks() {
 		return new FluidTank[] {tanks[0]};
 	}

@@ -75,6 +75,9 @@ public final class PowerNetDiagnostics {
 	private static long totalSplits;
 	private static long totalIntegrityRemovals;
 	private static long totalDistributionNanos;
+	private static long totalFluidPushScans;
+	private static long totalFluidPushDemandQueries;
+	private static long totalFluidPushDormantSkips;
 
 	private PowerNetDiagnostics() { }
 
@@ -182,6 +185,9 @@ public final class PowerNetDiagnostics {
 	public static void recordFluidAttachment() { if(isEnabled()) fluidAttachments++; }
 	public static void recordFluidDetachment() { if(isEnabled()) fluidDetachments++; }
 	public static void recordFluidIntegrityRemoval() { if(isEnabled()) fluidIntegrityRemovals++; }
+	public static void recordFluidPushScan() { if(isEnabled()) totalFluidPushScans++; }
+	public static void recordFluidPushDemandQuery() { if(isEnabled()) totalFluidPushDemandQueries++; }
+	public static void recordFluidPushDormantSkip() { if(isEnabled()) totalFluidPushDormantSkips++; }
 	public static void recordChunkAttachment() { loadedConductors++; if(isEnabled()) chunkAttachments++; }
 	public static void recordChunkDetachment() { if(loadedConductors > 0) loadedConductors--; if(isEnabled()) chunkDetachments++; }
 	public static void recordFluidNetworkInventory(int active, int processed) { if(isEnabled()) { fluidNetworks += active; fluidNetworksProcessed += processed; } }
@@ -222,6 +228,7 @@ public final class PowerNetDiagnostics {
 			"topology stable-not-visited; loaded/dormant conductors = " + Math.max(0, lastStoredTopologyNodes - lastTopologyNodesProcessed) + "; " + lastLoadedConductors + "/" + Math.max(0, lastStoredTopologyNodes - lastLoadedConductors),
 			"conductor attach/detach; fluid endpoint attach/detach/integrity = " + lastConductorAttachments + "/" + lastConductorDetachments + "; " + lastFluidAttachments + "/" + lastFluidDetachments + "/" + lastFluidIntegrityRemovals,
 			"chunk attach/detach; fluid active/processed/clean-skipped = " + lastChunkAttachments + "/" + lastChunkDetachments + "; " + lastFluidNetworks + "/" + lastFluidNetworksProcessed + "/" + Math.max(0, lastFluidNetworks - lastFluidNetworksProcessed),
+			"fluid push totals scans/demand queries/dormant skips = " + totalFluidPushScans + "/" + totalFluidPushDemandQueries + "/" + totalFluidPushDormantSkips,
 			"active provider endpoints total/max = " + lastProviderEndpoints + "/" + lastMaxProviderEndpoints + ", receiver endpoints total/max = " + lastReceiverEndpoints + "/" + lastMaxReceiverEndpoints,
 			"topology/distribution time = " + lastTopologyNanos + "/" + lastDistributionNanos + " ns; distribution total = " + totalDistributionNanos + " ns",
 			"totals processed/attachments/detachments/merges/splits/integrity = " + totalProcessed + "/" + totalAttachments + "/" + totalDetachments + "/" + totalMerges + "/" + totalSplits + "/" + totalIntegrityRemovals

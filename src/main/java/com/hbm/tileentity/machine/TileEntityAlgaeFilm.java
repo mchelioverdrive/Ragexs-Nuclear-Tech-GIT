@@ -117,6 +117,9 @@ public class TileEntityAlgaeFilm extends TileEntityMachineBase implements IFluid
 	}
 
 	@Override
+	public boolean isFluidDemandObservable() { return true; }
+
+	@Override
 	public FluidTank[] getReceivingTanks() {
 		return new FluidTank[] { tanks[0] };
 	}

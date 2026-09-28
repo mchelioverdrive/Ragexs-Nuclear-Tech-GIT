@@ -479,6 +479,9 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	}
 
 	@Override
+	public boolean isFluidDemandObservable() { return true; }
+
+	@Override
 	public FluidTank[] getReceivingTanks() {
 		return new FluidTank[] {tanks[0], tanks[1]};
 	}

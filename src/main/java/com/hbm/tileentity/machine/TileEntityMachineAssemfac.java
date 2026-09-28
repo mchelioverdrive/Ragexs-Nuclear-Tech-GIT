@@ -454,6 +454,9 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 	}
 
 	@Override
+	public boolean isFluidDemandObservable() { return true; }
+
+	@Override
 	public FluidTank[] getReceivingTanks() {
 		return new FluidTank[] { water };
 	}

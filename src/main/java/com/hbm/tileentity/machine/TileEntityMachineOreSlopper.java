@@ -447,6 +447,9 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 
 	@Override public FluidTank[] getAllTanks() { return tanks; }
 	@Override public FluidTank[] getSendingTanks() { return new FluidTank[] {tanks[1]}; }
+	@Override
+	public boolean isFluidDemandObservable() { return true; }
+
 	@Override public FluidTank[] getReceivingTanks() { return new FluidTank[] {tanks[0]}; }
 	
 	AxisAlignedBB bb = null;

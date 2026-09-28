@@ -34,6 +34,15 @@ public interface IFluidConnector extends ILoadedTile {
 	 * @return
 	 */
 	public long getDemand(FluidType type, int pressure);
+
+	/**
+	 * Opt-in contract for dormant push work. Return a stable value while attached.
+	 * True requires pure demand/pressure/speed/priority queries and demand
+	 * invalidation whenever any result can change, including time-dependent gates.
+	 * The endpoint must also detach on unload/removal. Tank listeners alone do not
+	 * cover modes, selected tanks, delegated ports, or external state.
+	 */
+	public default boolean isFluidDemandObservable() { return false; }
 	
 	/**
 	 * Basic implementation of subscribing to a nearby power grid

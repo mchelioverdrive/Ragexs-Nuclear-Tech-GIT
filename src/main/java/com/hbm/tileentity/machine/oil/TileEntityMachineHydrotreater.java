@@ -319,6 +319,9 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 	@Override public long getEnergyCapacityQuanta() { return maxPower; }
 	@Override public FluidTank[] getAllTanks() { return tanks; }
 	@Override public FluidTank[] getSendingTanks() { return new FluidTank[] {tanks[2], tanks[3]}; }
+	@Override
+	public boolean isFluidDemandObservable() { return true; }
+
 	@Override public FluidTank[] getReceivingTanks() { return new FluidTank[] {tanks[0], tanks[1]}; }
 	@Override public boolean canConnect(ForgeDirection dir) { return dir != ForgeDirection.UNKNOWN && dir != ForgeDirection.DOWN; }
 	@Override public boolean canConnect(FluidType type, ForgeDirection dir) { return dir != ForgeDirection.UNKNOWN && dir != ForgeDirection.DOWN; }

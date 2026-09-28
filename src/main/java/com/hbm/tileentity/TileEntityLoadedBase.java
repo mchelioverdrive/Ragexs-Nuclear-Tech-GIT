@@ -110,6 +110,7 @@ public class TileEntityLoadedBase extends TileEntity implements ILoadedTile {
 	}
 
 	public final void markMachineFluidDirty() {
+		api.hbm.fluidmk2.FluidNetMK2.markEndpointFluidDirty(this);
 		this.markMachineDirty(MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE);
 	}
 

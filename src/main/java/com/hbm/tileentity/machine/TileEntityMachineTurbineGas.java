@@ -622,6 +622,9 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	}
 
 	@Override
+	public boolean isFluidDemandObservable() { return true; }
+
+	@Override
 	public FluidTank[] getReceivingTanks() {
 		return new FluidTank[] { tanks[0], tanks[1], tanks[2] };
 	}

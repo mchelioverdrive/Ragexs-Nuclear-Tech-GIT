@@ -47,6 +47,7 @@ public class FluidTank {
 	private FluidType legacyType;
 	private FluidType migrationTarget;
 	private transient ChangeListener changeListener;
+	private transient Object networkOwner;
 
 	public FluidTank(FluidType type, int maxFluid) {
 		this.type = type;
@@ -79,7 +80,18 @@ public class FluidTank {
 		return this;
 	}
 
+	/** Observes network state independently of the owner's recipe settlement listener. */
+	public FluidTank setNetworkOwner(Object owner) {
+		this.networkOwner = owner;
+		return this;
+	}
+
+	private void notifyNetworkChanged() {
+		if(this.networkOwner != null) api.hbm.fluidmk2.FluidNetMK2.markEndpointFluidDirty(this.networkOwner);
+	}
+
 	private void notifyChanged() {
+		this.notifyNetworkChanged();
 		if(this.changeListener != null) this.changeListener.onTankChanged(this);
 	}
 
@@ -311,6 +323,8 @@ public class FluidTank {
 
 	//Called by TE to load fillstate
 	public void readFromNBT(NBTTagCompound nbt, String s) {
+		int previousFill = fluid, previousMax = maxFluid, previousPressure = pressure;
+		FluidType previousType = type;
 		fluid = nbt.getInteger(s);
 		int max = nbt.getInteger(s + "_max");
 		if(max > 0)
@@ -327,6 +341,7 @@ public class FluidTank {
 		if(type == legacyType) {
 			type = this.typeForMigration();
 		}
+		if(fluid != previousFill || maxFluid != previousMax || pressure != previousPressure || type != previousType) this.notifyNetworkChanged();
 	}
 
 	private FluidType typeForMigration() {
@@ -353,9 +368,12 @@ public class FluidTank {
 	}
 
 	public void deserialize(ByteBuf buf) {
+		int previousFill = fluid, previousMax = maxFluid, previousPressure = pressure;
+		FluidType previousType = type;
 		fluid = buf.readInt();
 		maxFluid = buf.readInt();
 		type = Fluids.fromID(buf.readInt());
 		pressure = buf.readShort();
+		if(fluid != previousFill || maxFluid != previousMax || pressure != previousPressure || type != previousType) this.notifyNetworkChanged();
 	}
 }
