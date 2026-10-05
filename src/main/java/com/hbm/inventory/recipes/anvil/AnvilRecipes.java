@@ -774,6 +774,9 @@ public class AnvilRecipes {
 		// <Evaporite Minerals -> halite, gypsum, etc gpt: Halite/Sylvite/Carnallite/Borates
 		// !*Phosphate Ore -> Apatite just rename phosphorous ore
 		// <Carbon Deposits -> Graphite, coal, etc gpt: Coal/Graphite
+		
+		//TODO: eventually automate/tier this using machines.
+		// This is just a baseline for real earth elements for now.
 
 		//Iron Oxide Ore
 		constructionRecipes.add(new AnvilConstructionRecipe(
