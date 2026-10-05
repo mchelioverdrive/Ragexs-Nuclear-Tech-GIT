@@ -787,7 +787,7 @@ public class AnvilRecipes {
 				new AnvilOutput(new ItemStack(ModItems.fragment_vanadium), 0.2F)
 
 			}
-		).setTier(2));
+		).setTier(1));
 
 		//DictFrame.fromOne(ModBlocks.stone_resource, EnumStoneType.HEMATITE)
 		//bob using enums for some fucking reason instead of just registering shit normally
@@ -810,7 +810,7 @@ public class AnvilRecipes {
 				new AnvilOutput(new ItemStack(ModItems.molybdenite, 1), 0.2F)
 
 			}
-		).setTier(2));
+		).setTier(1));
 
 		//Lead-Zinc Sulfide Ore
 		constructionRecipes.add(new AnvilConstructionRecipe(
