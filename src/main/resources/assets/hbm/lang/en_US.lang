@@ -1440,6 +1440,12 @@ foundry.filter=Filter: %s
 foundry.inverted=Redstone inverted
 foundry.invertFilter=Filter inverted
 foundry.noCast=No mold installed!
+foundry.empty=Empty
+foundry.selectedOutput=Selected for output
+foundry.selectOutput=Left click to select for output
+foundry.openMaterials=Right click for the full material list
+foundry.reservedMaterial=Recipe input or additive; cannot be poured
+foundry.scrollMaterials=Scroll to see more materials
 
 geiger.chunkRad=Current chunk radiation:
 geiger.envRad=Total environmental radiation:

@@ -108,6 +108,16 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	
 	public static final int maxLiquid = MaterialShapes.BLOCK.q(128);
 	public List<MaterialStack> liquids = new ArrayList();
+	public int selectedLiquidMaterial = -1;
+
+	public void selectMoltenMaterial(int materialId) {
+		if(worldObj == null || worldObj.isRemote || !CrucibleUtil.selectMaterial(liquids, materialId)) return;
+		selectedLiquidMaterial = materialId;
+		markDirty();
+		markNetworkDirty();
+		markMachineDirty(MachineDirtyCause.RECIPE);
+		networkPackNTIfDirty(25);
+	}
 
 	public TileEntityMachineArcFurnaceLarge() {
 		super(25);
@@ -327,7 +337,8 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 			this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
 			Vec3 impact = Vec3.createVectorHelper(0, 0, 0);
-			MaterialStack didPour = CrucibleUtil.pourFullStack(worldObj, xCoord + 0.5D + dir.offsetX * 2.875D, yCoord + 1.25D, zCoord + 0.5D + dir.offsetZ * 2.875D, 6, true, this.liquids, MaterialShapes.INGOT.q(1), impact);
+			if(!CrucibleUtil.containsMaterial(liquids, selectedLiquidMaterial)) selectedLiquidMaterial = -1;
+			MaterialStack didPour = CrucibleUtil.pourFullStack(worldObj, xCoord + 0.5D + dir.offsetX * 2.875D, yCoord + 1.25D, zCoord + 0.5D + dir.offsetZ * 2.875D, 6, true, this.liquids, MaterialShapes.INGOT.q(1), impact, selectedLiquidMaterial);
 
 			if(didPour != null) {
 				NBTTagCompound data = new NBTTagCompound();
@@ -342,6 +353,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		}
 
 		this.liquids.removeIf(o -> o.amount <= 0);
+		if(!CrucibleUtil.containsMaterial(liquids, selectedLiquidMaterial)) selectedLiquidMaterial = -1;
 		int newLiquidFingerprint = this.liquidBufferFingerprint();
 		boolean liquidChanged = oldLiquidFingerprint != newLiquidFingerprint;
 		boolean stateChanged = oldLid != lid || oldDelay != delay || liquidChanged;
@@ -739,6 +751,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		}
 		buf.writeLong(worldObj == null ? 0L : worldObj.getTotalWorldTime());
 		buf.writeInt(this.progressDuration());
+		buf.writeInt(selectedLiquidMaterial);
 	}
 	
 	@Override
@@ -761,6 +774,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		}
 		this.clientProgressTick = buf.readLong();
 		this.clientProgressDuration = Math.max(1, buf.readInt());
+		this.selectedLiquidMaterial = buf.readInt();
 		this.clientProgressing = this.isProgressing;
 		
 		if(syncLid != 0 && syncLid != 1) this.approachNum = 2;
@@ -793,6 +807,8 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		for(int i = 0; i < count; i++) {
 			liquids.add(new MaterialStack(Mats.matById.get(nbt.getInteger("m" + i)), nbt.getInteger("a" + i)));
 		}
+		selectedLiquidMaterial = nbt.hasKey("selectedLiquidMaterial") ? nbt.getInteger("selectedLiquidMaterial") : -1;
+		if(!CrucibleUtil.containsMaterial(liquids, selectedLiquidMaterial)) selectedLiquidMaterial = -1;
 	}
 
 	@Override
@@ -804,6 +820,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		nbt.setFloat("progress", progress);
 		nbt.setFloat("lid", lid);
 		nbt.setInteger("delay", delay);
+		nbt.setInteger("selectedLiquidMaterial", selectedLiquidMaterial);
 		
 		int count = liquids.size();
 		nbt.setShort("count", (short) count);

@@ -93,6 +93,7 @@ public class PacketDispatcher {
 
 		// Sync current GUI layer to server
 		wrapper.registerMessage(GuiLayerPacket.Handler.class, GuiLayerPacket.class, i++, Side.SERVER);
+		wrapper.registerMessage(MoltenSelectionPacket.Handler.class, MoltenSelectionPacket.class, i++, Side.SERVER);
 	}
 	
 }

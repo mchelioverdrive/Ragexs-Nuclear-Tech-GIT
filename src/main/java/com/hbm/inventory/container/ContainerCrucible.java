@@ -6,11 +6,10 @@ import com.hbm.util.InventoryUtil;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.Container;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 
-public class ContainerCrucible extends Container {
+public class ContainerCrucible extends ContainerMoltenMaterials {
 	
 	protected TileEntityCrucible crucible;
 	
@@ -71,5 +70,10 @@ public class ContainerCrucible extends Container {
 	@Override
 	public boolean canInteractWith(EntityPlayer player) {
 		return crucible.isUseableByPlayer(player);
+	}
+
+	@Override
+	protected void selectMoltenMaterial(int tank, int material) {
+		crucible.selectMoltenMaterial(tank, material);
 	}
 }

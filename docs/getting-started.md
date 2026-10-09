@@ -42,6 +42,14 @@ Use recipe lookup to work backward from a target machine or item. When a materia
 
 For early workshops, common steel and concrete construction now crafts in palette-sized lots: solid blocks, grates, and railings generally yield 16, thin floor/roof sheets may yield up to 32, lights yield 8, and decorative pipes yield 8. Functional pressure, reactor, hot-process, and launch equipment intentionally remains expensive. See [Workshop and construction recipes](construction-recipes.md) for the inventory and exceptions.
 
+## Foundry pouring
+
+In the crucible and large arc furnace, left-click a molten layer to make that material the next output. The selected layer has a pale border and a `Selected for output` tooltip. Right-click the gauge to open a clickable material list, including amounts too small to occupy a visible layer; scroll longer lists. Clicking empty space in a nonempty gauge also opens the list.
+
+Selection is saved by the server and survives closing the GUI or reloading the world. It lasts until the material is exhausted, you select another material, or a crucible template makes it an input rather than an output. A selected material waits if its receiver is blocked or incompatible. Each crucible buffer is selected independently; template inputs and additives cannot be drained through this control. The electrolyser's two separate output lanes and single-material foundry blocks retain their normal roles.
+
+Molten volume uses **1 nugget = 8 quanta**, **1 ingot = 72 quanta**, and **1 block = 648 quanta = 9 ingots**. Ordinary stone-bearing ore batches supply one block of stone waste. Cast it using the existing **block mold in a foundry basin**, which produces vanilla stone; there is no half-block stone mold. Smaller stone quantities from old saves or custom recipes can accumulate, or be removed as scrap with a shovel. Separate slag and valuable trace byproducts retain their recipe yields.
+
 ## Petrochemical and biomass routes
 
 Coal processing now has a deliberately compact but connected chain. Coking coal tar/creosote produces petroleum coke and **coker gas**; fractionating cracked light oil produces **cracked diesel**, which needs hydrotreating before it becomes normal diesel. The chemical plant can hydrogenate coal with an iron-catalyst abstraction into the existing coal-gasoline fuel, synthesize methanol from conditioned syngas plus hydrogen, and polymerize the mixed light-olefin stream into the existing **POLYTHYLENE** fluid. These recipes compress real multistage plants into the available machine slots, so treat the quantities as gameplay batches rather than plant-scale mass balances.

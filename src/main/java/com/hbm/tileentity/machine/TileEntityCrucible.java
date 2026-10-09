@@ -61,6 +61,42 @@ public class TileEntityCrucible extends TileEntityMachineBase implements IGUIPro
 	
 	public List<MaterialStack> recipeStack = new ArrayList();
 	public List<MaterialStack> wasteStack = new ArrayList();
+	public int selectedRecipeMaterial = -1;
+	public int selectedWasteMaterial = -1;
+
+	public boolean canSelectMoltenMaterial(int tank, MaterialStack stack) {
+		if(stack.material == null || stack.amount <= 0 || stack.material.smeltable != NTMMaterial.SmeltingBehavior.SMELTABLE) return false;
+		if(tank == 0) return true;
+		if(tank != 1) return false;
+		CrucibleRecipe recipe = getLoadedRecipe();
+		if(recipe == null) return true;
+		for(MaterialStack output : recipe.output) if(output.material == stack.material) return true;
+		return false; // Recipe inputs must remain available for alloying.
+	}
+
+	public void selectMoltenMaterial(int tank, int materialId) {
+		if(worldObj == null || worldObj.isRemote || tank < 0 || tank > 1) return;
+		List<MaterialStack> stacks = tank == 0 ? wasteStack : recipeStack;
+		for(MaterialStack stack : stacks) {
+			if(stack.material != null && stack.material.id == materialId && canSelectMoltenMaterial(tank, stack)) {
+				CrucibleUtil.selectMaterial(stacks, materialId);
+				if(tank == 0) selectedWasteMaterial = materialId;
+				else selectedRecipeMaterial = materialId;
+				markCrucibleMaterialsChanged();
+				networkPackNTIfDirty(25);
+				return;
+			}
+		}
+	}
+
+	private void validateMoltenSelections() {
+		if(!CrucibleUtil.containsMaterial(wasteStack, selectedWasteMaterial)) selectedWasteMaterial = -1;
+		boolean recipeSelectionValid = false;
+		for(MaterialStack stack : recipeStack) {
+			if(stack.material != null && stack.material.id == selectedRecipeMaterial && canSelectMoltenMaterial(1, stack)) recipeSelectionValid = true;
+		}
+		if(!recipeSelectionValid) selectedRecipeMaterial = -1;
+	}
 
 	/* CONFIGURABLE CONSTANTS */
 	//because eclipse's auto complete is dumb as a fucking rock, it's now called "ZCapacity" so it's listed AFTER the actual stacks in the auto complete list.
@@ -237,13 +273,14 @@ public class TileEntityCrucible extends TileEntityMachineBase implements IGUIPro
 			FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 900);
 			
 			tryRecipe();
+			validateMoltenSelections();
 			
 			/* pour waste stack */
 			if(!this.wasteStack.isEmpty()) {
 				
 				ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset).getOpposite();
 				Vec3 impact = Vec3.createVectorHelper(0, 0, 0);
-				MaterialStack didPour = CrucibleUtil.pourFullStack(worldObj, xCoord + 0.5D + dir.offsetX * 1.875D, yCoord + 0.25D, zCoord + 0.5D + dir.offsetZ * 1.875D, 6, true, this.wasteStack, MaterialShapes.NUGGET.q(3), impact);
+				MaterialStack didPour = CrucibleUtil.pourFullStack(worldObj, xCoord + 0.5D + dir.offsetX * 1.875D, yCoord + 0.25D, zCoord + 0.5D + dir.offsetZ * 1.875D, 6, true, this.wasteStack, MaterialShapes.NUGGET.q(3), impact, selectedWasteMaterial);
 				
 				if(didPour != null) {
 					NBTTagCompound data = new NBTTagCompound();
@@ -284,7 +321,7 @@ public class TileEntityCrucible extends TileEntityMachineBase implements IGUIPro
 				}
 				
 				Vec3 impact = Vec3.createVectorHelper(0, 0, 0);
-				MaterialStack didPour = CrucibleUtil.pourFullStack(worldObj, xCoord + 0.5D + dir.offsetX * 1.875D, yCoord + 0.25D, zCoord + 0.5D + dir.offsetZ * 1.875D, 6, true, toCast, MaterialShapes.NUGGET.q(3), impact);
+				MaterialStack didPour = CrucibleUtil.pourFullStack(worldObj, xCoord + 0.5D + dir.offsetX * 1.875D, yCoord + 0.25D, zCoord + 0.5D + dir.offsetZ * 1.875D, 6, true, toCast, MaterialShapes.NUGGET.q(3), impact, selectedRecipeMaterial);
 
 				if(didPour != null) {
 					NBTTagCompound data = new NBTTagCompound();
@@ -304,6 +341,7 @@ public class TileEntityCrucible extends TileEntityMachineBase implements IGUIPro
 			/* clean up stacks */
 			this.recipeStack.removeIf(o -> o.amount <= 0);
 			this.wasteStack.removeIf(x -> x.amount <= 0);
+			validateMoltenSelections();
 			
 			/* sync */
 		}
@@ -329,6 +367,8 @@ public class TileEntityCrucible extends TileEntityMachineBase implements IGUIPro
 			buf.writeInt(sta.material.id);
 			buf.writeInt(sta.amount);
 		}
+		buf.writeInt(selectedRecipeMaterial);
+		buf.writeInt(selectedWasteMaterial);
 	}
 	
 	@Override
@@ -349,11 +389,15 @@ public class TileEntityCrucible extends TileEntityMachineBase implements IGUIPro
 		for(int i = 0; i < mats; i++) {
 			wasteStack.add(new MaterialStack(Mats.matById.get(buf.readInt()), buf.readInt()));
 		}
+		selectedRecipeMaterial = buf.readInt();
+		selectedWasteMaterial = buf.readInt();
 	}
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+		recipeStack.clear();
+		wasteStack.clear();
 
 		int[] rec = nbt.getIntArray("rec");
 		for(int i = 0; i < rec.length / 2; i++) {
@@ -371,6 +415,9 @@ public class TileEntityCrucible extends TileEntityMachineBase implements IGUIPro
 		
 		this.progress = nbt.getInteger("progress");
 		this.heat = nbt.getInteger("heat");
+		selectedRecipeMaterial = nbt.hasKey("selectedRecipeMaterial") ? nbt.getInteger("selectedRecipeMaterial") : -1;
+		selectedWasteMaterial = nbt.hasKey("selectedWasteMaterial") ? nbt.getInteger("selectedWasteMaterial") : -1;
+		validateMoltenSelections();
 	}
 	
 	@Override
@@ -385,6 +432,8 @@ public class TileEntityCrucible extends TileEntityMachineBase implements IGUIPro
 		nbt.setIntArray("was", was);
 		nbt.setInteger("progress", progress);
 		nbt.setInteger("heat", heat);
+		nbt.setInteger("selectedRecipeMaterial", selectedRecipeMaterial);
+		nbt.setInteger("selectedWasteMaterial", selectedWasteMaterial);
 	}
 	
 	protected void tryPullHeat() {

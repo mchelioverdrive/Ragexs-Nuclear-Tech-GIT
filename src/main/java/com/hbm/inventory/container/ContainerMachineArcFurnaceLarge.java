@@ -11,12 +11,11 @@ import com.hbm.util.InventoryUtil;
 import api.hbm.energymk2.IBatteryItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.Container;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 
-public class ContainerMachineArcFurnaceLarge extends Container {
+public class ContainerMachineArcFurnaceLarge extends ContainerMoltenMaterials {
 	
 	private TileEntityMachineArcFurnaceLarge furnace;
 
@@ -82,6 +81,11 @@ public class ContainerMachineArcFurnaceLarge extends Container {
 	@Override
 	public boolean canInteractWith(EntityPlayer player) {
 		return furnace.isUseableByPlayer(player);
+	}
+
+	@Override
+	protected void selectMoltenMaterial(int tank, int material) {
+		if(tank == 0) furnace.selectMoltenMaterial(material);
 	}
 	
 	public static class SlotArcFurnace extends SlotNonRetarded {

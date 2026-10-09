@@ -64,23 +64,25 @@ public class MatDistribution extends SerializableRecipe {
 		registerEntry(DictFrame.fromOne(ModItems.casing, EnumCasingType.LARGE_STEEL),	MAT_WEAPONSTEEL,	PLATE.q(1, 2));
 
 		//actual ores
+		// Ore yields are gameplay batches (ORE has no fixed volume). Recover one castable
+		// stone block of gangue per ore; metal/trace yields and remelting volumes stay unchanged.
 		if(!Compat.isModLoaded(Compat.MOD_GT6)) {
-			registerOre(OreDictManager.IRON.ore(), MAT_IRON, INGOT.q(2), MAT_TITANIUM, NUGGET.q(3), MAT_STONE, QUART.q(1));
-			registerOre(OreDictManager.TI.ore(), MAT_TITANIUM, INGOT.q(2), MAT_IRON, NUGGET.q(3), MAT_STONE, QUART.q(1));
-			registerOre(OreDictManager.W.ore(), MAT_TUNGSTEN, INGOT.q(2), MAT_STONE, QUART.q(1));
-			registerOre(OreDictManager.AL.ore(), MAT_ALUMINIUM, INGOT.q(2), MAT_STONE, QUART.q(1));
+			registerOre(OreDictManager.IRON.ore(), MAT_IRON, INGOT.q(2), MAT_TITANIUM, NUGGET.q(3), MAT_STONE, BLOCK.q(1));
+			registerOre(OreDictManager.TI.ore(), MAT_TITANIUM, INGOT.q(2), MAT_IRON, NUGGET.q(3), MAT_STONE, BLOCK.q(1));
+			registerOre(OreDictManager.W.ore(), MAT_TUNGSTEN, INGOT.q(2), MAT_STONE, BLOCK.q(1));
+			registerOre(OreDictManager.AL.ore(), MAT_ALUMINIUM, INGOT.q(2), MAT_STONE, BLOCK.q(1));
 		}
 
-		registerOre(OreDictManager.COAL.ore(), MAT_CARBON, GEM.q(3), MAT_STONE, QUART.q(1));
-		registerOre(OreDictManager.GOLD.ore(), MAT_GOLD, INGOT.q(2), MAT_LEAD, NUGGET.q(3), MAT_STONE, QUART.q(1));
-		registerOre(OreDictManager.U.ore(), MAT_URANIUM, INGOT.q(2), MAT_LEAD, NUGGET.q(3), MAT_STONE, QUART.q(1));
-		for(String ore : OreDictManager.TH232.all(MaterialShapes.ORE)) registerOre(ore, MAT_THORIUM, INGOT.q(2), MAT_URANIUM, NUGGET.q(3), MAT_STONE, QUART.q(1));
-		registerOre(OreDictManager.CU.ore(), MAT_COPPER, INGOT.q(2), MAT_STONE, QUART.q(1));
-		registerOre(OreDictManager.NI.ore(), MAT_NICKEL, INGOT.q(2), MAT_STONE, QUART.q(1));
-		registerOre(OreDictManager.PB.ore(), MAT_LEAD, INGOT.q(2), MAT_GOLD, NUGGET.q(1), MAT_STONE, QUART.q(1));
-		registerOre(OreDictManager.BE.ore(), MAT_BERYLLIUM, INGOT.q(2), MAT_STONE, QUART.q(1));
-		registerOre(OreDictManager.CO.ore(), MAT_COBALT, INGOT.q(1), MAT_STONE, QUART.q(1));
-		registerOre(OreDictManager.REDSTONE.ore(), MAT_REDSTONE, INGOT.q(4), MAT_STONE, QUART.q(1));
+		registerOre(OreDictManager.COAL.ore(), MAT_CARBON, GEM.q(3), MAT_STONE, BLOCK.q(1));
+		registerOre(OreDictManager.GOLD.ore(), MAT_GOLD, INGOT.q(2), MAT_LEAD, NUGGET.q(3), MAT_STONE, BLOCK.q(1));
+		registerOre(OreDictManager.U.ore(), MAT_URANIUM, INGOT.q(2), MAT_LEAD, NUGGET.q(3), MAT_STONE, BLOCK.q(1));
+		for(String ore : OreDictManager.TH232.all(MaterialShapes.ORE)) registerOre(ore, MAT_THORIUM, INGOT.q(2), MAT_URANIUM, NUGGET.q(3), MAT_STONE, BLOCK.q(1));
+		registerOre(OreDictManager.CU.ore(), MAT_COPPER, INGOT.q(2), MAT_STONE, BLOCK.q(1));
+		registerOre(OreDictManager.NI.ore(), MAT_NICKEL, INGOT.q(2), MAT_STONE, BLOCK.q(1));
+		registerOre(OreDictManager.PB.ore(), MAT_LEAD, INGOT.q(2), MAT_GOLD, NUGGET.q(1), MAT_STONE, BLOCK.q(1));
+		registerOre(OreDictManager.BE.ore(), MAT_BERYLLIUM, INGOT.q(2), MAT_STONE, BLOCK.q(1));
+		registerOre(OreDictManager.CO.ore(), MAT_COBALT, INGOT.q(1), MAT_STONE, BLOCK.q(1));
+		registerOre(OreDictManager.REDSTONE.ore(), MAT_REDSTONE, INGOT.q(4), MAT_STONE, BLOCK.q(1));
 
 		registerOre(OreDictManager.HEMATITE.ore(), MAT_HEMATITE, INGOT.q(1));
 		registerOre(OreDictManager.MALACHITE.ore(), MAT_MALACHITE, INGOT.q(1));

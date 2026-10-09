@@ -14,6 +14,25 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class CrucibleUtil {
 
+	/** Reorders the existing stack objects without copying or changing their contents. */
+	public static boolean selectMaterial(List<MaterialStack> stacks, int materialId) {
+		for(int i = 0; i < stacks.size(); i++) {
+			MaterialStack stack = stacks.get(i);
+			if(stack.material != null && stack.material.id == materialId && stack.amount > 0 && stack.material.smeltable == SmeltingBehavior.SMELTABLE) {
+				if(i > 0) stacks.add(0, stacks.remove(i));
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static boolean containsMaterial(List<MaterialStack> stacks, int materialId) {
+		for(MaterialStack stack : stacks) {
+			if(stack.material != null && stack.material.id == materialId && stack.amount > 0) return true;
+		}
+		return false;
+	}
+
 	/**
 	 * Standard pouring, casting a hitscan straight down at the given coordinates with the given range. Returns the leftover material, just like ICrucibleAcceptor's pour.
 	 * The method directly modifies the original stack, so be careful and make a copy beforehand if you don't want that.
@@ -50,6 +69,11 @@ public class CrucibleUtil {
 	 * Pass an empty Vec3 instance in order to get the impact position of the stream.
 	 */
 	public static MaterialStack pourFullStack(World world, double x, double y, double z, double range, boolean safe, List<MaterialStack> stacks, int quanta, Vec3 impactPosHolder) {
+		return pourFullStack(world, x, y, z, range, safe, stacks, quanta, impactPosHolder, -1);
+	}
+
+	/** A manual selection waits for its receiver instead of pouring another material around it. */
+	public static MaterialStack pourFullStack(World world, double x, double y, double z, double range, boolean safe, List<MaterialStack> stacks, int quanta, Vec3 impactPosHolder, int selectedMaterial) {
 
 		if(stacks.isEmpty()) return null;
 
@@ -65,7 +89,8 @@ public class CrucibleUtil {
 		}
 
 		for(MaterialStack stack : stacks) {
-			if(stack.material == null) continue;
+			if(stack.material == null || stack.amount <= 0) continue;
+			if(selectedMaterial >= 0 && stack.material.id != selectedMaterial) continue;
 
 			int amountToPour = Math.min(stack.amount, quanta);
 			MaterialStack toPour = new MaterialStack(stack.material, amountToPour);

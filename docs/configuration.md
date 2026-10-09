@@ -173,6 +173,8 @@ Entry format is documented inside the generated template. In short, entries comb
 
 Serializable recipes are generated in `config/hbmRecipes/`.
 
+Foundry material quantities in `hbmCrucibleSmelting.json` use quanta: nugget = 8, ingot = 72, block = 648. The stock stone-bearing ore definitions return 648 quanta of stone per ore, matching the existing stone block mold. Active custom smelting files replace these defaults; update their ordinary ore gangue outputs explicitly if they still use smaller amounts. The large arc furnace derives its molten recipes from these definitions unless an active `hbmArcFurnace.json` supplies its own outputs, which must be updated separately. Do not increase valuable trace byproducts or remelted item contents merely to make them larger.
+
 Important behavior:
 
 - If an active recipe file is missing, defaults are registered and a template named `_<filename>` is written.
