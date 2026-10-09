@@ -106,6 +106,10 @@ public class SmeltingRecipes {
 		GameRegistry.addSmelting(ModItems.powder_thallium, new ItemStack(ModItems.ingot_thallium), 0.1F);
 
 
+		//progression unfucking
+		GameRegistry.addSmelting(ModItems.wolframite, new ItemStack(ModItems.ingot_tungsten), 0.1F);
+
+
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_iron), new ItemStack(Items.iron_ingot), 0.7F);
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_gold), new ItemStack(Items.gold_ingot), 1.0F);
 		GameRegistry.addSmelting(Item.getItemFromBlock(ModBlocks.ore_diamond), new ItemStack(Items.diamond), 1.0F);
