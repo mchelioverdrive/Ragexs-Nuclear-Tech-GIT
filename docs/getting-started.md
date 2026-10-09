@@ -25,6 +25,8 @@ Fluid quantities are shown in liters (L). One existing Forge fluid unit is 1 L, 
 4. **Read tooltips.** Many items expose hazard, radiation, recipe, or machine information through tooltips.
 5. **Avoid late-game hazards early.** Do not handle radioactive waste, reactor fuel, high explosives, or nuclear devices without understanding consequences.
 
+On XenoFactions maps with mineral drops from stone, a normal furnace can recover one iron ingot from an iron-oxide chunk or one coal from a carbon chunk. Separate the other deposits on an iron or steel anvil, then look up the individual mineral: chalcopyrite and chalcocite yield one copper ingot, cassiterite yields one tin ingot, and pentlandite or sphalerite yield three nickel or zinc nuggets. Nine nuggets craft into an ingot. The existing wolframite recipe yields one tungsten ingot. A steel anvil can also crush spodumene, three petalite, pollucite, columbite, zircon, or celestite into one of their existing processing intermediates. Primitive recovery discards valuable material; save surplus minerals for industrial processing. Bauxite, beryllium ore, chromium, and titanium still need their established industrial routes, and pollucite crushing does not replace cesium chemistry.
+
 ## Mid-game progression themes
 
 RNTM progression is less about a single linear quest and more about connected real-industry systems:

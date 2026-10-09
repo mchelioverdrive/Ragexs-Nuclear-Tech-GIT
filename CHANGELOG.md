@@ -449,3 +449,8 @@ INCOMPLETE:
 
 - Run the existing eye-adaptation scene capture, exposure update, and shader composite at render-tick end when F1 skips Forge's overlay event. The normal pre-HUD path, effect settings and suppression rules remain unchanged; hidden HUD elements stay hidden.
 - Retain the world-depth capture and framebuffer/GL restoration paths. Source tracing confirms the event routing; F1 behavior and shader interoperability still require in-game validation.
+
+2026-10-09 01:52 — Add primitive processing for stone-drop minerals
+
+- Added low-recovery furnace routes for iron/carbon deposits, chalcopyrite, chalcocite, pentlandite, pyrrhotite, cassiterite, sphalerite, molybdenite, stibnite, ilmenite, cinnabar, and dolomite. Pentlandite supplies nickel nuggets before centrifuge/stainless-steel progression; stibnite yields antimony oxide and ilmenite recovers only iron, cinnabar gives a mercury nugget, and dolomite gives lime while discarding magnesium.
+- Added lossy steel-anvil crushing for spodumene, petalite, pollucite, columbite, zircon, and celestite using existing intermediates. Industrial yields, byproducts, chemistry, anvil tiers, material registrations, and stone-drop configuration remain unchanged; the existing wolframite furnace route is retained.

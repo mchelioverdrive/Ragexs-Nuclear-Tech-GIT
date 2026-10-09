@@ -106,6 +106,29 @@ public class SmeltingRecipes {
 		GameRegistry.addSmelting(ModItems.powder_thallium, new ItemStack(ModItems.ingot_thallium), 0.1F);
 
 
+		// Crude recovery for XenoFactions stone-drop deposits. Separation and industrial
+		// processing retain their larger yields and secondary resources.
+		// Direct deposit recipes bootstrap iron/coal without needing an anvil first.
+		GameRegistry.addSmelting(ModItems.chunk_ironoxide, new ItemStack(Items.iron_ingot), 0.1F);
+		GameRegistry.addSmelting(ModItems.chunk_carbon, new ItemStack(Items.coal), 0.1F);
+
+		GameRegistry.addSmelting(ModItems.chalcopyrite, new ItemStack(ModItems.ingot_copper), 0.1F);
+		GameRegistry.addSmelting(ModItems.chalcocite, new ItemStack(ModItems.ingot_copper), 0.1F);
+		GameRegistry.addSmelting(ModItems.pentlandite, new ItemStack(ModItems.nugget_nickel, 3), 0.1F);
+		GameRegistry.addSmelting(ModItems.pyrrhotite, new ItemStack(Items.iron_ingot), 0.1F);
+		GameRegistry.addSmelting(ModItems.cassiterite, new ItemStack(ModItems.ingot_tin), 0.1F);
+		GameRegistry.addSmelting(ModItems.sphalerite, new ItemStack(ModItems.nugget_zinc, 3), 0.1F);
+		GameRegistry.addSmelting(ModItems.molybdenite, new ItemStack(ModItems.ingot_molybdenum), 0.1F);
+
+		// Roasting stibnite yields an oxide, not antimony metal. Ilmenite only gives
+		// crude iron here; its titanium remains on the existing industrial route.
+		GameRegistry.addSmelting(ModItems.stibnite, new ItemStack(ModItems.powder_antimony_trioxide), 0.1F);
+		GameRegistry.addSmelting(ModItems.ilmenite, new ItemStack(Items.iron_ingot), 0.1F);
+		// Small retort-recovery abstraction; industrial cinnabar recovery yields
+		// three mercury ingots. Dolomite recovers lime here, discarding magnesium.
+		GameRegistry.addSmelting(ModItems.cinnebar, new ItemStack(ModItems.nugget_mercury), 0.1F);
+		GameRegistry.addSmelting(ModBlocks.ore_magnesite, new ItemStack(ModItems.quicklime), 0.1F);
+
 		//progression unfucking
 		GameRegistry.addSmelting(ModItems.wolframite, new ItemStack(ModItems.ingot_tungsten), 0.1F);
 

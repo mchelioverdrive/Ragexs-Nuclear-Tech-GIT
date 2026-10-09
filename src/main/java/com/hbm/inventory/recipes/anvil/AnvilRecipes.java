@@ -957,6 +957,28 @@ public class AnvilRecipes {
 			}
 		).setTier(2));
 
+		// Lossy hand crushing before the shredder. Use the existing intermediates
+		// and downstream recipes; do not turn refractory minerals straight into metal.
+		constructionRecipes.add(new AnvilConstructionRecipe(
+			new ComparableStack(ModItems.spodumene),
+			new AnvilOutput(new ItemStack(ModItems.crushed_spodumene))).setTier(2));
+		constructionRecipes.add(new AnvilConstructionRecipe(
+			new ComparableStack(ModItems.petalite, 3),
+			new AnvilOutput(new ItemStack(ModItems.crushed_petalite))).setTier(2));
+		constructionRecipes.add(new AnvilConstructionRecipe(
+			new ComparableStack(ModBlocks.ore_pollucite),
+			new AnvilOutput(new ItemStack(ModItems.powder_pollucite))).setTier(2));
+
+		constructionRecipes.add(new AnvilConstructionRecipe(
+			new ComparableStack(ModItems.columbite),
+			new AnvilOutput(new ItemStack(ModItems.powder_columbite))).setTier(2));
+		constructionRecipes.add(new AnvilConstructionRecipe(
+			new ComparableStack(ModItems.zircon),
+			new AnvilOutput(new ItemStack(ModItems.powder_zircon))).setTier(2));
+		constructionRecipes.add(new AnvilConstructionRecipe(
+			new ComparableStack(ModBlocks.ore_celestite),
+			new AnvilOutput(new ItemStack(ModItems.powder_celestite))).setTier(2));
+
 		//end of realistic ore grouping for XF drops
 
 		//antimony for this recipe but like later in progression to resemble fireproofing's evolution from asbestos to antimony:
