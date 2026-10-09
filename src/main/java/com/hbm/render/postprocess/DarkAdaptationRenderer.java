@@ -22,6 +22,7 @@ import com.hbm.util.Compat;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.TickEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.Tessellator;
@@ -37,7 +38,7 @@ import net.minecraftforge.client.event.EntityViewRenderEvent.FogColors;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 
-/** Captures and processes the completed world at the pre-HUD ALL boundary. */
+/** Captures and processes the completed world before the HUD, or at render tick end when the HUD is hidden. */
 public final class DarkAdaptationRenderer implements IResourceManagerReloadListener {
 	private static final int METER_WIDTH = 16;
 	private static final int METER_HEIGHT = 12;
@@ -115,6 +116,19 @@ public final class DarkAdaptationRenderer implements IResourceManagerReloadListe
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void beforeHud(RenderGameOverlayEvent.Pre event) {
 		if(event.type != RenderGameOverlayEvent.ElementType.ALL) return;
+		renderScene();
+	}
+
+	/** F1 skips the entire overlay call when no screen is open, including its ALL event. */
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void afterHiddenHudRender(TickEvent.RenderTickEvent event) {
+		if(event.phase != TickEvent.Phase.END) return;
+		Minecraft mc = Minecraft.getMinecraft();
+		if(!mc.gameSettings.hideGUI || mc.currentScreen != null) return;
+		renderScene();
+	}
+
+	private void renderScene() {
 		Minecraft mc = Minecraft.getMinecraft();
 		if(mc.theWorld == null || mc.thePlayer == null) { releaseWorld(); return; }
 		if(lastWorld == null) { lastWorld = mc.theWorld; lastNanos = System.nanoTime(); }

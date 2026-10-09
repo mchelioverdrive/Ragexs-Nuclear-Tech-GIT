@@ -444,3 +444,8 @@ INCOMPLETE:
 - Opted 45 machine receiver endpoints into zero-demand proofs after verifying fixed tank membership, independent tank-owner notifications, and standard tank demand/transfer behavior. Oil and chemical, utility/input, heat/power, and reactor families are listed in the performance audit.
 - Producer callbacks, transfer phases, successful transfer formulas, pressure/order behavior, and per-call rate caps remain unchanged. Storage tanks/barrels, configurable receivers, multiblock forwarding ports, direct-neighbor paths, fair storage unions, and unknown third-party endpoints retain their existing retry behavior.
 - The optimization removes repeat receiver traversal and demand queries only after an all-observable network proves zero demand; no successful transfer, producer simulation, or topology reconciliation work is claimed removed. Runtime skip counts and in-game regression checks remain pending.
+
+2026-10-09 01:26 — Keep dark adaptation active with the HUD hidden
+
+- Run the existing eye-adaptation scene capture, exposure update, and shader composite at render-tick end when F1 skips Forge's overlay event. The normal pre-HUD path, effect settings and suppression rules remain unchanged; hidden HUD elements stay hidden.
+- Retain the world-depth capture and framebuffer/GL restoration paths. Source tracing confirms the event routing; F1 behavior and shader interoperability still require in-game validation.
