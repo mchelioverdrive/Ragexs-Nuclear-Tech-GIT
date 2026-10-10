@@ -72,8 +72,8 @@ public class AssemblerRecipes extends SerializableRecipe {
 
 		//motor_desh also:
 		makeRecipe(new ComparableStack(ModItems.motor_desh, 4), new AStack[]{
-				new OreDictStack(DESH.plate(), 2), new ComparableStack(ModItems.coil_gold_torus),
-				new ComparableStack(ModItems.coil_copper_torus), new OreDictStack(DESH.bolt(), 4),
+				new OreDictStack(DESH.ingot(), 2), new ComparableStack(ModItems.coil_gold_torus),
+				new ComparableStack(ModItems.coil_copper_torus), new OreDictStack(ANY_PLASTIC.ingot(), 4),
 				new OreDictStack(ANY_RUBBER.ingot(), 1)}, 100);
 
 		//these recipes but progression un tarded up:

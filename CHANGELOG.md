@@ -34,3 +34,8 @@
 - Made `achievement.hempDiscovery` parentless so hemp pickup no longer depends on `achievement.stratum`; its ID and pickup trigger remain unchanged.
 - Added operator level 2 `/rntachievement list` and `/rntachievement unlock <player> <achievementId>` for online players, including required parent awards and player synchronization through Minecraft's statistics system.
 - Source inspection found no RNT handler that clears achievement progress. Relog, dimension change, and server restart persistence still require in-game validation.
+
+2026-10-10 11:03 — Add direct right-click harvesting for crops and hemp
+
+- Mature strawberry, coffee, and tea crops now return to growth stage 0 on right-click and drop their existing mature harvest, reserving one planting item when present. Immature crops retain their normal interaction and breaking behavior.
+- Fully grown two-block hemp now returns to its short WEED plant on right-click of either half and yields one hemp item after reserving the other for regrowth. Other flower and tall-plant variants are unchanged. Harvesting uses server-side block activation and player edit checks; canceled interactions remain governed by Forge. In-game and claim-mod compatibility still require runtime validation.

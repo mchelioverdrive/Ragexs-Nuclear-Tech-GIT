@@ -12,6 +12,7 @@ import net.minecraft.block.BlockBush;
 import net.minecraft.block.IGrowable;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.init.Blocks;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.IIcon;
@@ -135,6 +136,28 @@ public class BlockCrop extends BlockBush implements IGrowable {
 		} else {
 			return (meta/2);	
 		}
+	}
+
+	@Override
+	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
+		if(world.getBlock(x, y, z) != this || world.getBlockMetadata(x, y, z) != maxGrowthStage
+				|| !player.canPlayerEdit(x, y, z, side, player.getCurrentEquippedItem())) return false;
+		if(world.isRemote) return true;
+
+		ArrayList<ItemStack> drops = getDrops(world, x, y, z, maxGrowthStage, 0);
+		Item plantingItem = this == ModBlocks.crop_tea ? ModItems.teaseeds : getItemDropped(maxGrowthStage, world.rand, 0);
+		for(ItemStack drop : drops) {
+			if(drop.getItem() == plantingItem && drop.stackSize > 0) {
+				drop.stackSize--;
+				break;
+			}
+		}
+
+		world.setBlockMetadataWithNotify(x, y, z, 0, 3);
+		for(ItemStack drop : drops) {
+			if(drop.stackSize > 0) this.dropBlockAsItem(world, x, y, z, drop);
+		}
+		return true;
 	}
 
 	@Override

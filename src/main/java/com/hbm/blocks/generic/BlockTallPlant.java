@@ -210,6 +210,36 @@ public class BlockTallPlant extends BlockEnumMulti implements IPlantable, IGrowa
 	}
 
 	@Override
+	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
+		int bottomY = world.getBlockMetadata(x, y, z) >= 8 ? y - 1 : y;
+		int weed = EnumTallFlower.WEED.ordinal();
+		if(this != ModBlocks.plant_tall || world.getBlock(x, bottomY, z) != this
+				|| world.getBlockMetadata(x, bottomY, z) != weed
+				|| world.getBlock(x, bottomY + 1, z) != this
+				|| world.getBlockMetadata(x, bottomY + 1, z) != weed + 8
+				|| !player.canPlayerEdit(x, bottomY, z, side, player.getCurrentEquippedItem())
+				|| !player.canPlayerEdit(x, bottomY + 1, z, side, player.getCurrentEquippedItem())) return false;
+		if(world.isRemote) return true;
+
+		ArrayList<ItemStack> drops = getDrops(world, x, bottomY, z, weed, 0);
+		drops.addAll(getDrops(world, x, bottomY + 1, z, weed + 8, 0));
+		for(ItemStack drop : drops) {
+			if(drop.getItem() == Item.getItemFromBlock(ModBlocks.plant_flower)
+					&& drop.getItemDamage() == EnumFlowerType.WEED.ordinal() && drop.stackSize > 0) {
+				drop.stackSize--;
+				break;
+			}
+		}
+
+		if(!world.setBlock(x, bottomY, z, ModBlocks.plant_flower, EnumFlowerType.WEED.ordinal(), 3)) return false;
+		if(world.getBlock(x, bottomY + 1, z) == this) world.setBlockToAir(x, bottomY + 1, z);
+		for(ItemStack drop : drops) {
+			if(drop.stackSize > 0) this.dropBlockAsItem(world, x, bottomY, z, drop);
+		}
+		return true;
+	}
+
+	@Override
 	public void updateTick(World world, int x, int y, int z, Random rand) {
 
 		if(world.isRemote) return; //not possible i believe, but better safe than sorry
