@@ -102,12 +102,12 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputFluids(new FluidStack(Fluids.NAPHTHA, 500), new FluidStack(Fluids.AROMATICS, 500))
 				.outputFluids(new FluidStack(Fluids.SOLVENT, 1000)));
 		recipes.add(new ChemRecipe(43, "POLYMER", 100)
-				.inputFluids(new FluidStack(Fluids.PETROLEUM, 500, GeneralConfig.enable528 ? 1 : 0))
+				.inputFluids(new FluidStack(Fluids.PETROLEUM, 500))
 				.outputItems(new ItemStack(ModItems.ingot_polymer, 4)));
 
 		//but synthetic polymers exist
 		recipes.add(new ChemRecipe(44, "SYN_POLYMER", 180)
-				.inputFluids(new FluidStack(Fluids.UNSATURATEDS, 1_000, GeneralConfig.enable528 ? 2 : 0))
+				.inputFluids(new FluidStack(Fluids.UNSATURATEDS, 1_000))
 				.outputItems(new ItemStack(ModItems.ingot_polymer, 2)));
 
 
@@ -120,7 +120,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(82, "RUBBER", 100)
 						.inputItems(
 						new OreDictStack(S.dust()))
-				.inputFluids(new FluidStack(Fluids.UNSATURATEDS, 500, GeneralConfig.enable528 ? 2 : 0))
+				.inputFluids(new FluidStack(Fluids.UNSATURATEDS, 500))
 				.outputItems(new ItemStack(ModItems.ingot_rubber)));
 		/*recipes.add(new ChemRecipe(94, "PET", 100)
 				.inputItems(new OreDictStack(AL.dust()))
@@ -140,10 +140,11 @@ public class ChemplantRecipes extends SerializableRecipe {
 						new ComparableStack(ModBlocks.reinforced_glass),
 						new OreDictStack(STEEL.bolt(), 4))
 				.outputItems(new ItemStack(com.hbm.blocks.ModBlocks.reinforced_laminate)));
+		//PC refers to HARD PLASTIC SOMEHOW. Is this FUCKING GUY RETARDED?
 		recipes.add(new ChemRecipe(94, "PC", 100)
 				.inputFluids(
-						new FluidStack(Fluids.XYLENE, 500, GeneralConfig.enable528 ? 2 : 0),
-						new FluidStack(Fluids.PHOSGENE, 500, GeneralConfig.enable528 ? 2 : 0))
+						new FluidStack(Fluids.XYLENE, 500),
+						new FluidStack(Fluids.PHOSGENE, 500))
 				.outputItems(new ItemStack(ModItems.ingot_pc)));
 		recipes.add(new ChemRecipe(96, "PVC", 100)
 				.inputFluids(
@@ -166,7 +167,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.outputItems(new ItemStack(ModItems.ball_tatb)));
 		recipes.add(new ChemRecipe(84, "C4", 150)
 				.inputItems(new OreDictStack(KNO.dust()))
-				.inputFluids(new FluidStack(Fluids.UNSATURATEDS, 500, GeneralConfig.enable528 ? 1 : 0))
+				.inputFluids(new FluidStack(Fluids.UNSATURATEDS, 500))
 				.outputItems(new ItemStack(ModItems.ingot_c4, 4)));
 		//44, formerly deuterium
 		//45, formerly steam
