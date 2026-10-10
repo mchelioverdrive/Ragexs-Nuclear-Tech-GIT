@@ -798,7 +798,7 @@ public class MainRegistry {
 		achMercury = new Achievement("achievement.mercuryProduction", "mercuryProduction", 3, 1, ModItems.ingot_mercury, achBlastFurnace).initIndependentStat().registerStat();
 		achCarcinogen = new Achievement("achievement.carcinogenExposure", "carcinogenExposure", 4, -6, ModItems.ingot_asbestos, achConcrete).initIndependentStat().registerStat();
 		achDetonator = new Achievement("achievement.detonatorCraft", "detonatorCraft", 5, 5, ModItems.detonator, achAssembly).initIndependentStat().registerStat();
-		achHemp = new Achievement("achievement.hempDiscovery", "hempDiscovery", -6, -2, new ItemStack(ModBlocks.plant_flower, 1, com.hbm.blocks.generic.BlockNTMFlower.EnumFlowerType.WEED.ordinal()), achStratum).initIndependentStat().registerStat();
+		achHemp = new Achievement("achievement.hempDiscovery", "hempDiscovery", -6, -2, new ItemStack(ModBlocks.plant_flower, 1, com.hbm.blocks.generic.BlockNTMFlower.EnumFlowerType.WEED.ordinal()), null).initIndependentStat().registerStat();
 
 		AchievementPage.registerAchievementPage(new AchievementPage("Nuclear Tech", new Achievement[] {
 				//achSacrifice,
@@ -1085,6 +1085,7 @@ public class MainRegistry {
 		event.registerServerCommand(new CommandEnableNukes());
 		event.registerServerCommand(new CommandEnableRedstoneGroundNukes());
 		event.registerServerCommand(new CommandBedrockDrop());
+		event.registerServerCommand(new CommandRNTAchievement());
 		MinecraftForge.EVENT_BUS.register(new NukeScheduler());
 		FMLCommonHandler.instance().bus().register(new NukeScheduler());
 	}

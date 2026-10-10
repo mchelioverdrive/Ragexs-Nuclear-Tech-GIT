@@ -6,6 +6,19 @@ This reference was verified against `src/main/java/com/hbm/commands` and the ser
 
 These commands are registered during server startup.
 
+### `/rntachievement list|unlock`
+
+Lists RNT achievement IDs or unlocks one for an online player. Requires operator permission level 2; the server console can use it.
+
+**Usage**
+
+```text
+/rntachievement list
+/rntachievement unlock <player> <achievementId>
+```
+
+Use the full internal ID shown by `list`, such as `achievement.hempDiscovery`, rather than the translated title. `unlock` awards any missing parent achievements first, then the requested achievement through the normal player statistics system. An achievement the player already has is reported as a successful no-op. Only online players can be targeted.
+
 ### `/ntmreload`
 
 Reloads serializable JSON recipes and item pools.
@@ -241,4 +254,4 @@ Only use this command when debugging hangs or crashes. `crash` intentionally exi
 
 ## Permissions notes
 
-Most server command classes do not override Forge's default permission behavior. `/hbmbedrockdrop` explicitly requires permission level 4. Server owners should additionally restrict command access with their server management tooling, especially for radiation, stations, satellites, recipe reloads, chunk diagnostics, and nuclear toggles.
+Most server command classes do not override Forge's default permission behavior. `/rntachievement` explicitly requires permission level 2, and `/hbmbedrockdrop` explicitly requires permission level 4. Server owners should additionally restrict command access with their server management tooling, especially for radiation, stations, satellites, recipe reloads, chunk diagnostics, and nuclear toggles.

@@ -28,3 +28,9 @@
 
 - Breaking short grass or either half of tall grass can add the existing hemp plant at a 1% server-side roll per plant. Canceled breaks, creative harvesting, shears, and Silk Touch do not receive the extra drop; normal grass drops remain in the Forge harvest path.
 - Added one grass block to short grass and two vertically stacked grass blocks to tall grass crafting recipes using vanilla plant metadata. Placement and drop behavior still require in-game validation.
+
+2026-10-10 09:06 — Unblock hemp discovery and add achievement admin command
+
+- Made `achievement.hempDiscovery` parentless so hemp pickup no longer depends on `achievement.stratum`; its ID and pickup trigger remain unchanged.
+- Added operator level 2 `/rntachievement list` and `/rntachievement unlock <player> <achievementId>` for online players, including required parent awards and player synchronization through Minecraft's statistics system.
+- Source inspection found no RNT handler that clears achievement progress. Relog, dimension change, and server restart persistence still require in-game validation.

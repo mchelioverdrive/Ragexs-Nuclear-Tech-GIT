@@ -135,6 +135,7 @@ The server registers these commands:
 | Command | Purpose |
 | --- | --- |
 | `/ntmreload` | Reloads serializable recipes and item pools. |
+| `/rntachievement list` and `/rntachievement unlock <player> <achievementId>` | Lists RNT achievement IDs or awards one to an online player. |
 | `/ntmloadchunk <x> <z>` | Debugs tile entities in an unloaded chunk using block coordinates. |
 | `/ntmsatellites orbit|descend|list` | Manages launched satellites. |
 | `/ntmrad clear` and `/ntmrad set <amount>` | Clears or sets chunk radiation. |
