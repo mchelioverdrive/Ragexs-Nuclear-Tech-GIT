@@ -57,6 +57,7 @@ public class AchievementHandler {
 			//craftingAchievements.put(new ComparableStack(ModItems.mp_warhead_15_boxcar), MainRegistry.achRedBalloons);
 			craftingAchievements.put(new ComparableStack(ModBlocks.struct_iter_core), MainRegistry.achFusion);
 			craftingAchievements.put(new ComparableStack(ModBlocks.machine_difurnace_off), MainRegistry.achBlastFurnace);
+			craftingAchievements.put(new ComparableStack(ModBlocks.machine_arc_welder), MainRegistry.achArcWelder);
 			craftingAchievements.put(new ComparableStack(ModBlocks.furnace_iron), MainRegistry.achIronFurnace);
 			craftingAchievements.put(new ComparableStack(ModBlocks.machine_shredder), MainRegistry.achShredder);
 			craftOnlyAchievements.put(new ComparableStack(ModItems.circuit, 1, EnumCircuitType.VACUUM_TUBE), MainRegistry.achVacuumTube);

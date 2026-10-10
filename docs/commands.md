@@ -17,7 +17,7 @@ Lists RNT achievement IDs or unlocks one for an online player. Requires operator
 /rntachievement unlock <player> <achievementId>
 ```
 
-Use the full internal ID shown by `list`, such as `achievement.hempDiscovery`, rather than the translated title. `unlock` awards any missing parent achievements first, then the requested achievement through the normal player statistics system. An achievement the player already has is reported as a successful no-op. Only online players can be targeted.
+Use the full internal ID shown by `list`, such as `achievement.arcWelder` or `achievement.hempDiscovery`, rather than the translated title. `unlock` awards any missing parent achievements first, then the requested achievement through the normal player statistics system. An achievement the player already has is reported as a successful no-op. Only online players can be targeted.
 
 ### `/ntmreload`
 

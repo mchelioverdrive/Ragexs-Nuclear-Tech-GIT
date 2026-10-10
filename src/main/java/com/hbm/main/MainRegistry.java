@@ -229,6 +229,7 @@ public class MainRegistry {
 
 	public static Achievement achBurnerPress;
 	public static Achievement achBlastFurnace;
+	public static Achievement achArcWelder;
 	public static Achievement achIronFurnace;
 	public static Achievement achShredder;
 	public static Achievement achVacuumTube;
@@ -764,15 +765,16 @@ public class MainRegistry {
 		//progression achieves
 		achBurnerPress = new Achievement("achievement.burnerPress", "burnerPress", 0, 0, new ItemStack(ModBlocks.machine_press), null).initIndependentStat().registerStat();
 		achBlastFurnace = new Achievement("achievement.blastFurnace", "blastFurnace", 1, 3, new ItemStack(ModBlocks.machine_difurnace_off), achBurnerPress).initIndependentStat().registerStat();
+		achArcWelder = new Achievement("achievement.arcWelder", "arcWelder", 5, 5, new ItemStack(ModBlocks.machine_arc_welder), achBlastFurnace).initIndependentStat().registerStat();
 		achIronFurnace = new Achievement("achievement.ironFurnace", "ironFurnace", 1, 5, new ItemStack(ModBlocks.furnace_iron), achBlastFurnace).initIndependentStat().registerStat();
 		achAssembly = new Achievement("achievement.assembly", "assembly", 3, 3, new ItemStack(ModBlocks.machine_assembler), achBlastFurnace).initIndependentStat().registerStat();
-		achShredder = new Achievement("achievement.shredder", "shredder", 3, 7, new ItemStack(ModBlocks.machine_shredder), achAssembly).initIndependentStat().registerStat();
+		achShredder = new Achievement("achievement.shredder", "shredder", 5, 3, new ItemStack(ModBlocks.machine_shredder), achAssembly).initIndependentStat().registerStat();
 		achVacuumTube = new Achievement("achievement.vacuumTube", "vacuumTube", -3, 3, DictFrame.fromOne(ModItems.circuit, EnumCircuitType.VACUUM_TUBE), achBurnerPress).initIndependentStat().registerStat();
 		achMotor = new Achievement("achievement.motor", "motor", -3, 0, ModItems.motor, achBurnerPress).initIndependentStat().registerStat();
 		achSolderingStation = new Achievement("achievement.solderingStation", "solderingStation", 5, 1, new ItemStack(ModBlocks.machine_soldering_station), achAssembly).initIndependentStat().registerStat();
-		achOilWell = new Achievement("achievement.oilWell", "oilWell", 8, 1, new ItemStack(ModBlocks.machine_well), achSolderingStation).initIndependentStat().registerStat();
-		achPumpjack = new Achievement("achievement.pumpjack", "pumpjack", 10, 3, new ItemStack(ModBlocks.machine_pumpjack), achSolderingStation).initIndependentStat().registerStat();
-		achFrackingTower = new Achievement("achievement.frackingTower", "frackingTower", 8, -3, new ItemStack(ModBlocks.machine_fracking_tower), achAssembly).initIndependentStat().registerStat();
+		achOilWell = new Achievement("achievement.oilWell", "oilWell", 7, 7, new ItemStack(ModBlocks.machine_well), achArcWelder).initIndependentStat().registerStat();
+		achPumpjack = new Achievement("achievement.pumpjack", "pumpjack", 9, 7, new ItemStack(ModBlocks.machine_pumpjack), achOilWell).initIndependentStat().registerStat();
+		achFrackingTower = new Achievement("achievement.frackingTower", "frackingTower", 11, 7, new ItemStack(ModBlocks.machine_fracking_tower), achPumpjack).initIndependentStat().registerStat();
 		//achSelenium = new Achievement("achievement.selenium", "selenium", 3, 2, ModItems.ingot_starmetal, achBurnerPress).initIndependentStat().setSpecial().registerStat();
 		achChemplant = new Achievement("achievement.chemplant", "chemplant", 6, -1, new ItemStack(ModBlocks.machine_chemplant), achSolderingStation).initIndependentStat().registerStat();
 		achConcrete	= new Achievement("achievement.concrete", "concrete", 6, -4, new ItemStack(ModBlocks.concrete), achChemplant).initIndependentStat().registerStat();
@@ -805,7 +807,7 @@ public class MainRegistry {
 		achHelenKeller = new Achievement("achievement.helenKeller", "helenKeller", 10, -2, new ItemStack(ModItems.crystal_meth), achChemplant).initIndependentStat().setSpecial().registerStat();
 		achMercury = new Achievement("achievement.mercuryProduction", "mercuryProduction", 3, 1, ModItems.ingot_mercury, achBlastFurnace).initIndependentStat().registerStat();
 		achCarcinogen = new Achievement("achievement.carcinogenExposure", "carcinogenExposure", 4, -6, ModItems.ingot_asbestos, null).initIndependentStat().registerStat();
-		achDetonator = new Achievement("achievement.detonatorCraft", "detonatorCraft", 5, 5, ModItems.detonator, achAssembly).initIndependentStat().registerStat();
+		achDetonator = new Achievement("achievement.detonatorCraft", "detonatorCraft", 4, -1, ModItems.detonator, achSolderingStation).initIndependentStat().registerStat();
 		achHemp = new Achievement("achievement.hempDiscovery", "hempDiscovery", -6, -2, new ItemStack(ModBlocks.plant_flower, 1, com.hbm.blocks.generic.BlockNTMFlower.EnumFlowerType.WEED.ordinal()), null).initIndependentStat().registerStat();
 
 		AchievementPage.registerAchievementPage(new AchievementPage("Nuclear Tech", new Achievement[] {
@@ -847,6 +849,7 @@ public class MainRegistry {
 
 				achBurnerPress,
 				achBlastFurnace,
+				achArcWelder,
 				achIronFurnace,
 				achShredder,
 				achVacuumTube,

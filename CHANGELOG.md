@@ -50,3 +50,8 @@
 
 - Made the crusher a direct child of the assembler and made the motor and vacuum tube separate direct children of the burner press. Adjusted their tree positions to separate the branches without changing achievement IDs, icons, or unlock events.
 - Existing saved achievement progress remains tied to the same IDs. In-game unlocks and tree layout still require runtime validation.
+
+2026-10-10 17:33 — Add Arc Welder and reroute oil achievements
+
+- Added the Arc Welder achievement beneath the blast furnace, awarded through the existing machine crafting handler when the welder is made at an anvil. The oil derrick (Black Gold), pumpjack, and fracking tower now follow it in machine tier order; the detonator follows the soldering station while the chemical reactor remains on its existing branch.
+- Repositioned these icons and the shredder icon to avoid branch crossings, without changing the shredder's parent. Renamed the fracking tower title. Existing achievement IDs and craft triggers remain, preserving saved progress; in-game unlocks and layout still require runtime validation.

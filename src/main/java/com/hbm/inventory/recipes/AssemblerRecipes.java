@@ -82,7 +82,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 		//
 		makeRecipe(new ComparableStack(ModItems.motor_bismuth, 3), new AStack[]{
 				new OreDictStack(BI.nugget(), 2), new ComparableStack(ModBlocks.hadron_coil_alloy),
-				new ComparableStack(ModItems.coil_copper_torus), new OreDictStack(DESH.bolt(), 4),
+				new ComparableStack(ModItems.coil_copper_torus), new OreDictStack(DESH.ingot(), 4),
 				new ComparableStack(ModItems.ingot_smco)}, 100);
 		//the more I look at this mod the less it makes sense logically.
 
