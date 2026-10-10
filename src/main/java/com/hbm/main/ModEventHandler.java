@@ -1756,6 +1756,9 @@ public class ModEventHandler {
 	@SubscribeEvent
 	public void itemSmelted(PlayerEvent.ItemSmeltedEvent e) {
 		AchievementHandler.fire(e.player, e.smelting);
+		if(e.smelting != null && (e.smelting.getItem() == ModItems.nugget_mercury || e.smelting.getItem() == ModItems.ingot_mercury)) {
+			AchievementHandler.award(e.player, MainRegistry.achMercury);
+		}
 
 		if(!e.player.worldObj.isRemote && e.smelting.getItem() == Items.iron_ingot && e.player.getRNG().nextInt(64) == 0) {
 
@@ -1776,6 +1779,11 @@ public class ModEventHandler {
 
 	@SubscribeEvent
 	public void onItemPickup(PlayerEvent.ItemPickupEvent event) {
+		ItemStack pickedUp = event.pickedUp.getEntityItem();
+		if(pickedUp != null && pickedUp.getItem() == Item.getItemFromBlock(ModBlocks.plant_flower)
+				&& pickedUp.getItemDamage() == com.hbm.blocks.generic.BlockNTMFlower.EnumFlowerType.WEED.ordinal()) {
+			AchievementHandler.award(event.player, MainRegistry.achHemp);
+		}
 		//if(event.pickedUp.getEntityItem().getItem() == ModItems.canned_conserve && EnumUtil.grabEnumSafely((EnumFoodType.class), event.pickedUp.getEntityItem().getItemDamage())== EnumFoodType.JIZZ)
 		//	event.player.triggerAchievement(MainRegistry.achC20_5);
 		if(event.pickedUp.getEntityItem().getItem() == Items.slime_ball)

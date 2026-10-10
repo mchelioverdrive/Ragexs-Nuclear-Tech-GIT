@@ -10,6 +10,7 @@ import com.hbm.items.machine.ItemCircuit.EnumCircuitType;
 import com.hbm.main.MainRegistry;
 
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.stats.Achievement;
 
@@ -60,6 +61,7 @@ public class AchievementHandler {
 			craftingAchievements.put(new ComparableStack(ModBlocks.machine_shredder), MainRegistry.achShredder);
 			craftOnlyAchievements.put(new ComparableStack(ModItems.circuit, 1, EnumCircuitType.VACUUM_TUBE), MainRegistry.achVacuumTube);
 			craftOnlyAchievements.put(new ComparableStack(ModItems.motor), MainRegistry.achMotor);
+			craftOnlyAchievements.put(new ComparableStack(ModItems.detonator), MainRegistry.achDetonator);
 			craftingAchievements.put(new ComparableStack(ModBlocks.machine_assembler), MainRegistry.achAssembly);
 			craftingAchievements.put(new ComparableStack(ModItems.billet_pu_mix), MainRegistry.achChicagoPile);
 			//craftingAchievements.put(new ComparableStack(ModItems.ammo_4gauge, 1, ItemAmmoEnums.Ammo4Gauge.VAMPIRE.ordinal()), MainRegistry.achWitchtaunter);
@@ -87,13 +89,21 @@ public class AchievementHandler {
 			ComparableStack comp = new ComparableStack(stack).makeSingular();
 			Achievement achievement = crafted ? craftOnlyAchievements.get(comp) : null;
 			if (achievement == null) achievement = craftingAchievements.get(comp);
-			if (achievement != null) {
-				player.triggerAchievement(achievement);
-			}
+			if(achievement == MainRegistry.achDetonator) award(player, achievement);
+			else if(achievement != null) player.triggerAchievement(achievement);
 
 		} catch (Exception e) {
 			System.out.println("[Ragex's Nuclear Tech Mod] Failed to fire achievement! (AchievementHandler.java)" + e);
 			e.printStackTrace();
+		}
+	}
+
+	public static void award(EntityPlayer player, Achievement achievement) {
+		if(!(player instanceof EntityPlayerMP) || achievement == null || player.worldObj.isRemote) return;
+		EntityPlayerMP serverPlayer = (EntityPlayerMP) player;
+		if(serverPlayer.func_147099_x().hasAchievementUnlocked(achievement)) return;
+		if(achievement.parentAchievement == null || serverPlayer.func_147099_x().hasAchievementUnlocked(achievement.parentAchievement)) {
+			serverPlayer.triggerAchievement(achievement);
 		}
 	}
 }

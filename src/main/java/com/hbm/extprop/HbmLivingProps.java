@@ -15,6 +15,7 @@ import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
 import com.hbm.packet.toclient.PlayerInformPacket;
 import com.hbm.util.ChatBuilder;
+import com.hbm.util.AchievementHandler;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
@@ -368,6 +369,9 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 
 		int newLevel = getAsbestos(entity) + asbestos;
 		setAsbestos(entity, newLevel);
+		if(entity instanceof EntityPlayerMP && asbestos > 0 && getAsbestos(entity) > 0) {
+			AchievementHandler.award((EntityPlayerMP) entity, MainRegistry.achCarcinogen);
+		}
 
 		if(entity instanceof EntityPlayerMP && asbestos > 0) {
 			PacketDispatcher.wrapper.sendTo(

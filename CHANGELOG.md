@@ -18,3 +18,8 @@
 
 - Renamed the blast furnace achievement without changing its ID, parent, or craft trigger. Added iron furnace, crusher, vacuum tube, and motor achievements in a single parent chain with their own icons and spaced tree positions.
 - Award the two component achievements only through successful player crafting paths. Machine output shift-clicks now award from completed output pickups, avoiding awards from failed transfers or input inventory moves. In-game unlocks and the display of the long titles still require runtime validation.
+
+2026-10-10 08:42 — Branch furnace and assembler achievements and add four milestones
+
+- Moved the assembler achievement under the blast furnace alongside the iron furnace branch, preserving existing IDs and craft triggers. Repositioned the assembler icon and added distinct mercury, carcinogen exposure, detonator, and hemp milestones.
+- Mercury unlocks from successful player smelting of mercury nuggets or ingots; carcinogen unlocks when a player's asbestos condition rises above zero; detonator unlocks from a completed craft; hemp unlocks when the player picks up the hemp plant item. Each new award requires its parent achievement. In-game unlocks and tooltip layout still require runtime validation.
