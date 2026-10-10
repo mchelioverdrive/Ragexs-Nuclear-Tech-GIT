@@ -1750,7 +1750,7 @@ public class ModEventHandler {
 
 	@SubscribeEvent
 	public void itemCrafted(PlayerEvent.ItemCraftedEvent e) {
-		AchievementHandler.fire(e.player, e.crafting);
+		AchievementHandler.fireCrafting(e.player, e.crafting);
 	}
 
 	@SubscribeEvent

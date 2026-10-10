@@ -13,3 +13,8 @@
 - Added shared clickable molten gauges and a scrollable material list to the crucible and large arc furnace. Manual selection reorders existing stack objects, persists by material ID, waits for compatible output, and releases on exhaustion or recipe invalidation; crucible inputs and additives remain reserved.
 - Apply selection requests against the player's open, usable container during the server container tick and immediately synchronize the authoritative state. Preserve automatic pouring when no manual selection is active and retain the electrolyser's fixed output lanes and single-material foundry storage.
 - Changed all fourteen stock stone-bearing ore definitions from 162 to 648 quanta of ordinary stone per ore, matching one vanilla stone block in the existing basin block mold. Metal, trace, slag, remelting, scrap handling, GT6 exclusions, and active custom recipe overrides retain their existing behavior. Documented selection controls, molten units, casting, and recipe override quantities.
+
+2026-10-10 08:19 — Add furnace-to-motor achievement path
+
+- Renamed the blast furnace achievement without changing its ID, parent, or craft trigger. Added iron furnace, crusher, vacuum tube, and motor achievements in a single parent chain with their own icons and spaced tree positions.
+- Award the two component achievements only through successful player crafting paths. Machine output shift-clicks now award from completed output pickups, avoiding awards from failed transfers or input inventory moves. In-game unlocks and the display of the long titles still require runtime validation.

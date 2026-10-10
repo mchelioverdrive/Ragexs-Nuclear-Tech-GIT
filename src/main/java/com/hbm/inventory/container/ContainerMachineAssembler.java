@@ -66,7 +66,6 @@ private TileEntityMachineAssembler assembler;
 		if (slot != null && slot.getHasStack()) {
 			ItemStack stack = slot.getStack();
 			rStack = stack.copy();
-			SlotCraftingOutput.checkAchievements(player, stack);
 			
             if (index <= 17) {
 				if (!this.mergeItemStack(stack, 18, this.inventorySlots.size(), true)) {

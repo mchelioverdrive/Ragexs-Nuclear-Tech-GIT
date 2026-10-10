@@ -6,6 +6,7 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.inventory.RecipesCommon.ComparableStack;
 import com.hbm.items.ItemAmmoEnums;
 import com.hbm.items.ModItems;
+import com.hbm.items.machine.ItemCircuit.EnumCircuitType;
 import com.hbm.main.MainRegistry;
 
 import net.minecraft.entity.player.EntityPlayer;
@@ -15,6 +16,7 @@ import net.minecraft.stats.Achievement;
 public class AchievementHandler {
 
 	public static HashMap<ComparableStack, Achievement> craftingAchievements = new HashMap();
+	private static HashMap<ComparableStack, Achievement> craftOnlyAchievements = new HashMap();
 
 	public static void register() {
 
@@ -54,6 +56,10 @@ public class AchievementHandler {
 			//craftingAchievements.put(new ComparableStack(ModItems.mp_warhead_15_boxcar), MainRegistry.achRedBalloons);
 			craftingAchievements.put(new ComparableStack(ModBlocks.struct_iter_core), MainRegistry.achFusion);
 			craftingAchievements.put(new ComparableStack(ModBlocks.machine_difurnace_off), MainRegistry.achBlastFurnace);
+			craftingAchievements.put(new ComparableStack(ModBlocks.furnace_iron), MainRegistry.achIronFurnace);
+			craftingAchievements.put(new ComparableStack(ModBlocks.machine_shredder), MainRegistry.achShredder);
+			craftOnlyAchievements.put(new ComparableStack(ModItems.circuit, 1, EnumCircuitType.VACUUM_TUBE), MainRegistry.achVacuumTube);
+			craftOnlyAchievements.put(new ComparableStack(ModItems.motor), MainRegistry.achMotor);
 			craftingAchievements.put(new ComparableStack(ModBlocks.machine_assembler), MainRegistry.achAssembly);
 			craftingAchievements.put(new ComparableStack(ModItems.billet_pu_mix), MainRegistry.achChicagoPile);
 			//craftingAchievements.put(new ComparableStack(ModItems.ammo_4gauge, 1, ItemAmmoEnums.Ammo4Gauge.VAMPIRE.ordinal()), MainRegistry.achWitchtaunter);
@@ -66,12 +72,21 @@ public class AchievementHandler {
 	}
 
 	public static void fire(EntityPlayer player, ItemStack stack) {
+		fire(player, stack, false);
+	}
+
+	public static void fireCrafting(EntityPlayer player, ItemStack stack) {
+		fire(player, stack, true);
+	}
+
+	private static void fire(EntityPlayer player, ItemStack stack, boolean crafted) {
 
 		try {
 
 			if (player.worldObj.isRemote) return;
 			ComparableStack comp = new ComparableStack(stack).makeSingular();
-			Achievement achievement = craftingAchievements.get(comp);
+			Achievement achievement = crafted ? craftOnlyAchievements.get(comp) : null;
+			if (achievement == null) achievement = craftingAchievements.get(comp);
 			if (achievement != null) {
 				player.triggerAchievement(achievement);
 			}

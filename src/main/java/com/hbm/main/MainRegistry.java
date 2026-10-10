@@ -35,6 +35,7 @@ import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.ItemAmmoEnums.Ammo4Gauge;
 import com.hbm.items.ItemEnums.EnumAchievementType;
 import com.hbm.items.ModItems;
+import com.hbm.items.machine.ItemCircuit.EnumCircuitType;
 import com.hbm.items.tool.ItemFertilizer;
 import com.hbm.items.weapon.ItemGenericGrenade;
 import com.hbm.lib.HbmWorld;
@@ -228,6 +229,10 @@ public class MainRegistry {
 
 	public static Achievement achBurnerPress;
 	public static Achievement achBlastFurnace;
+	public static Achievement achIronFurnace;
+	public static Achievement achShredder;
+	public static Achievement achVacuumTube;
+	public static Achievement achMotor;
 	public static Achievement achAssembly;
 	//public static Achievement achSelenium;
 	public static Achievement achChemplant;
@@ -751,6 +756,10 @@ public class MainRegistry {
 		//progression achieves
 		achBurnerPress = new Achievement("achievement.burnerPress", "burnerPress", 0, 0, new ItemStack(ModBlocks.machine_press), null).initIndependentStat().registerStat();
 		achBlastFurnace = new Achievement("achievement.blastFurnace", "blastFurnace", 1, 3, new ItemStack(ModBlocks.machine_difurnace_off), achBurnerPress).initIndependentStat().registerStat();
+		achIronFurnace = new Achievement("achievement.ironFurnace", "ironFurnace", 1, 5, new ItemStack(ModBlocks.furnace_iron), achBlastFurnace).initIndependentStat().registerStat();
+		achShredder = new Achievement("achievement.shredder", "shredder", 1, 7, new ItemStack(ModBlocks.machine_shredder), achIronFurnace).initIndependentStat().registerStat();
+		achVacuumTube = new Achievement("achievement.vacuumTube", "vacuumTube", 1, 9, DictFrame.fromOne(ModItems.circuit, EnumCircuitType.VACUUM_TUBE), achShredder).initIndependentStat().registerStat();
+		achMotor = new Achievement("achievement.motor", "motor", 1, 11, ModItems.motor, achVacuumTube).initIndependentStat().registerStat();
 		achAssembly = new Achievement("achievement.assembly", "assembly", 3, -1, new ItemStack(ModBlocks.machine_assembler), achBurnerPress).initIndependentStat().registerStat();
 		//achSelenium = new Achievement("achievement.selenium", "selenium", 3, 2, ModItems.ingot_starmetal, achBurnerPress).initIndependentStat().setSpecial().registerStat();
 		achChemplant = new Achievement("achievement.chemplant", "chemplant", 6, -1, new ItemStack(ModBlocks.machine_chemplant), achAssembly).initIndependentStat().registerStat();
@@ -822,6 +831,10 @@ public class MainRegistry {
 
 				achBurnerPress,
 				achBlastFurnace,
+				achIronFurnace,
+				achShredder,
+				achVacuumTube,
+				achMotor,
 				achAssembly,
 				//achSelenium,
 				achChemplant,

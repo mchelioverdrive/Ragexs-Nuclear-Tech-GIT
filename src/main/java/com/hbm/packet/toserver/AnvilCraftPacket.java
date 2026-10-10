@@ -61,7 +61,7 @@ public class AnvilCraftPacket implements IMessage {
 				
 				if(InventoryUtil.doesPlayerHaveAStacks(p, recipe.input, true)) {
 					InventoryUtil.giveChanceStacksToPlayer(p, recipe.output);
-					AchievementHandler.fire(p, recipe.output.get(0).stack);
+					AchievementHandler.fireCrafting(p, recipe.output.get(0).stack);
 					
 				} else {
 					break;

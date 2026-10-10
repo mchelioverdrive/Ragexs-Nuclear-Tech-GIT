@@ -24,7 +24,7 @@ public class SlotCraftingOutput extends Slot {
 	
 	//ugly but nothing to be done
 	public static void checkAchievements(EntityPlayer player, ItemStack stack) {
-		AchievementHandler.fire(player, stack);
+		AchievementHandler.fireCrafting(player, stack);
 	}
 	
 	@Override

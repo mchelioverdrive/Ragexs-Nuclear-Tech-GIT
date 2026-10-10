@@ -71,7 +71,6 @@ public class ContainerMachineChemplant extends Container {
 		if(slot != null && slot.getHasStack()) {
 			ItemStack stack = slot.getStack();
 			rStack = stack.copy();
-			SlotCraftingOutput.checkAchievements(player, stack);
 
 			if(index <= 20) {
 				if(!this.mergeItemStack(stack, 21, this.inventorySlots.size(), true)) {
@@ -96,6 +95,9 @@ public class ContainerMachineChemplant extends Container {
 				slot.putStack((ItemStack) null);
 			} else {
 				slot.onSlotChanged();
+			}
+			if(index >= 5 && index <= 8) {
+				slot.onPickupFromSlot(player, rStack);
 			}
 		}
 

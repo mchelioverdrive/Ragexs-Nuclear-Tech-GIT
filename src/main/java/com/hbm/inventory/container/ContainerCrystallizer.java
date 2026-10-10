@@ -55,7 +55,6 @@ public class ContainerCrystallizer extends Container {
 		if(slot != null && slot.getHasStack()) {
 			ItemStack stack = slot.getStack();
 			rStack = stack.copy();
-			SlotCraftingOutput.checkAchievements(player, stack);
 
 			if(index <= 7) {
 				if(!this.mergeItemStack(stack, 8, this.inventorySlots.size(), true)) {
@@ -84,6 +83,9 @@ public class ContainerCrystallizer extends Container {
 				slot.putStack((ItemStack) null);
 			} else {
 				slot.onSlotChanged();
+			}
+			if(index == 2 || index == 4) {
+				slot.onPickupFromSlot(player, rStack);
 			}
 		}
 
