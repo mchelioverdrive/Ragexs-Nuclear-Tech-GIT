@@ -64,11 +64,28 @@ public class AssemblerRecipes extends SerializableRecipe {
 
 		// Final motor integration: steel represents the ferromagnetic housing/stator and
 		// shaft hardware, the two coils represent windings and a wound core, and rubber
-		// represents insulation and bearing seals. One recipe intentionally yields one motor.
-		makeRecipe(new ComparableStack(ModItems.motor, 1), new AStack[]{
+		// represents insulation and bearing seals. One recipe intentionally yields 8 motors because we want progression to scale properly.
+		makeRecipe(new ComparableStack(ModItems.motor, 8), new AStack[]{
 				new OreDictStack(STEEL.plate(), 2), new ComparableStack(ModItems.coil_copper),
 				new ComparableStack(ModItems.coil_copper_torus), new OreDictStack(STEEL.bolt(), 4),
 				new OreDictStack(ANY_RUBBER.ingot(), 1)}, 100);
+
+		//motor_desh also:
+		makeRecipe(new ComparableStack(ModItems.motor_desh, 4), new AStack[]{
+				new OreDictStack(DESH.plate(), 2), new ComparableStack(ModItems.coil_gold_torus),
+				new ComparableStack(ModItems.coil_copper_torus), new OreDictStack(DESH.bolt(), 4),
+				new OreDictStack(ANY_RUBBER.ingot(), 1)}, 100);
+
+		//these recipes but progression un tarded up:
+		//addRecipeAuto(new ItemStack(ModItems.motor_bismuth, 1), new Object[] { "BCB", "SDS", "BCB", 'B', BI.nugget(), 'C', ModBlocks.hadron_coil_alloy, 'S', STEEL.plateCast(), 'D', DURA.ingot() });
+		//		addRecipeAuto(new ItemStack(ModItems.motor_bismuth, 2), new Object[] { "BCB", "SDS", "BCB", 'B', BI.nugget(), 'C', ModBlocks.hadron_coil_alloy, 'S', STEEL.plateCast(), 'D', ModItems.ingot_smco });
+		//
+		makeRecipe(new ComparableStack(ModItems.motor_bismuth, 3), new AStack[]{
+				new OreDictStack(BI.nugget(), 2), new ComparableStack(ModBlocks.hadron_coil_alloy),
+				new ComparableStack(ModItems.coil_copper_torus), new OreDictStack(DESH.bolt(), 4),
+				new ComparableStack(ModItems.ingot_smco)}, 100);
+		//the more I look at this mod the less it makes sense logically.
+
 
 		// Dense wire is a cable-bundling operation, not an arc-welded structural assembly.
 		makeRecipe(new ComparableStack(ModItems.wire_dense, 1, Mats.MAT_ALLOY.id), new AStack[]{
