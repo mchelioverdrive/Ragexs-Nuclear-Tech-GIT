@@ -765,10 +765,10 @@ public class MainRegistry {
 		achBurnerPress = new Achievement("achievement.burnerPress", "burnerPress", 0, 0, new ItemStack(ModBlocks.machine_press), null).initIndependentStat().registerStat();
 		achBlastFurnace = new Achievement("achievement.blastFurnace", "blastFurnace", 1, 3, new ItemStack(ModBlocks.machine_difurnace_off), achBurnerPress).initIndependentStat().registerStat();
 		achIronFurnace = new Achievement("achievement.ironFurnace", "ironFurnace", 1, 5, new ItemStack(ModBlocks.furnace_iron), achBlastFurnace).initIndependentStat().registerStat();
-		achShredder = new Achievement("achievement.shredder", "shredder", 1, 7, new ItemStack(ModBlocks.machine_shredder), achIronFurnace).initIndependentStat().registerStat();
-		achVacuumTube = new Achievement("achievement.vacuumTube", "vacuumTube", 1, 9, DictFrame.fromOne(ModItems.circuit, EnumCircuitType.VACUUM_TUBE), achShredder).initIndependentStat().registerStat();
-		achMotor = new Achievement("achievement.motor", "motor", 1, 11, ModItems.motor, achVacuumTube).initIndependentStat().registerStat();
 		achAssembly = new Achievement("achievement.assembly", "assembly", 3, 3, new ItemStack(ModBlocks.machine_assembler), achBlastFurnace).initIndependentStat().registerStat();
+		achShredder = new Achievement("achievement.shredder", "shredder", 3, 7, new ItemStack(ModBlocks.machine_shredder), achAssembly).initIndependentStat().registerStat();
+		achVacuumTube = new Achievement("achievement.vacuumTube", "vacuumTube", -3, 3, DictFrame.fromOne(ModItems.circuit, EnumCircuitType.VACUUM_TUBE), achBurnerPress).initIndependentStat().registerStat();
+		achMotor = new Achievement("achievement.motor", "motor", -3, 0, ModItems.motor, achBurnerPress).initIndependentStat().registerStat();
 		achSolderingStation = new Achievement("achievement.solderingStation", "solderingStation", 5, 1, new ItemStack(ModBlocks.machine_soldering_station), achAssembly).initIndependentStat().registerStat();
 		achOilWell = new Achievement("achievement.oilWell", "oilWell", 8, 1, new ItemStack(ModBlocks.machine_well), achSolderingStation).initIndependentStat().registerStat();
 		achPumpjack = new Achievement("achievement.pumpjack", "pumpjack", 10, 3, new ItemStack(ModBlocks.machine_pumpjack), achSolderingStation).initIndependentStat().registerStat();

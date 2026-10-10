@@ -45,3 +45,8 @@
 - Made `achievement.carcinogenExposure` independent of progression while retaining its asbestos exposure trigger and saved ID. Updated the `hot topic 2` description without changing its achievement identity or furnace branch.
 - Added craft achievements for the soldering station, oil derrick, pumpjack, and fracking tower. The chemical reactor now directly follows the soldering station; the oil machines branch according to their shared crafting prerequisites rather than imposing a false extraction sequence.
 - The derrick is the earliest practical oil extractor by recipe and power demand. The pumpjack adds Desh, hydraulics, and greater throughput; the fracking tower adds Desh, fracking solution, and much higher power demand. In-game achievement unlocks, tree layout, and saved progress still require runtime validation.
+
+2026-10-10 15:12 — Correct crusher and component achievement branches
+
+- Made the crusher a direct child of the assembler and made the motor and vacuum tube separate direct children of the burner press. Adjusted their tree positions to separate the branches without changing achievement IDs, icons, or unlock events.
+- Existing saved achievement progress remains tied to the same IDs. In-game unlocks and tree layout still require runtime validation.
