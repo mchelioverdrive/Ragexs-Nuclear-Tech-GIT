@@ -1888,11 +1888,26 @@ public class ModEventHandler {
 				|| held.getItem() instanceof IItemAbility && ((IItemAbility) held.getItem()).isShears(held))) return;
 		if(EnchantmentHelper.getSilkTouchModifier(player)) return;
 
-		if (event.world.rand.nextInt(100) == 0) {
-			ItemStack drop = event.world.rand.nextBoolean()
-				? new ItemStack(ModBlocks.plant_flower, 1,
-								com.hbm.blocks.generic.BlockNTMFlower.EnumFlowerType.WEED.ordinal())
-				: new ItemStack(ModItems.strawberry, 1);
+		int roll = event.world.rand.nextInt(200);
+
+		if (roll < 4) {
+			ItemStack drop;
+
+			switch (roll) {
+				case 0:
+					drop = new ItemStack(ModBlocks.plant_flower, 1,
+										 com.hbm.blocks.generic.BlockNTMFlower.EnumFlowerType.WEED.ordinal());
+					break;
+				case 1:
+					drop = new ItemStack(ModItems.strawberry, 1);
+					break;
+				case 2:
+					drop = new ItemStack(ModItems.bean_raw, 1);
+					break;
+				default:
+					drop = new ItemStack(ModItems.teaseeds, 1);
+					break;
+			}
 
 			event.world.spawnEntityInWorld(new EntityItem(
 				event.world,
