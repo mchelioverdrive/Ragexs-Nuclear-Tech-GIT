@@ -1888,9 +1888,19 @@ public class ModEventHandler {
 				|| held.getItem() instanceof IItemAbility && ((IItemAbility) held.getItem()).isShears(held))) return;
 		if(EnchantmentHelper.getSilkTouchModifier(player)) return;
 
-		if(event.world.rand.nextInt(100) == 0) {
-			event.world.spawnEntityInWorld(new EntityItem(event.world, event.x + 0.5D, event.y + 0.5D, event.z + 0.5D,
-					new ItemStack(ModBlocks.plant_flower, 1, com.hbm.blocks.generic.BlockNTMFlower.EnumFlowerType.WEED.ordinal())));
+		if (event.world.rand.nextInt(100) == 0) {
+			ItemStack drop = event.world.rand.nextBoolean()
+				? new ItemStack(ModBlocks.plant_flower, 1,
+								com.hbm.blocks.generic.BlockNTMFlower.EnumFlowerType.WEED.ordinal())
+				: new ItemStack(ModItems.strawberry, 1);
+
+			event.world.spawnEntityInWorld(new EntityItem(
+				event.world,
+				event.x + 0.5D,
+				event.y + 0.5D,
+				event.z + 0.5D,
+				drop
+			));
 		}
 	}
 
