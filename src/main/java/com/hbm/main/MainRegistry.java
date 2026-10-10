@@ -234,6 +234,10 @@ public class MainRegistry {
 	public static Achievement achVacuumTube;
 	public static Achievement achMotor;
 	public static Achievement achAssembly;
+	public static Achievement achSolderingStation;
+	public static Achievement achOilWell;
+	public static Achievement achPumpjack;
+	public static Achievement achFrackingTower;
 	public static Achievement achMercury;
 	public static Achievement achCarcinogen;
 	public static Achievement achDetonator;
@@ -765,8 +769,12 @@ public class MainRegistry {
 		achVacuumTube = new Achievement("achievement.vacuumTube", "vacuumTube", 1, 9, DictFrame.fromOne(ModItems.circuit, EnumCircuitType.VACUUM_TUBE), achShredder).initIndependentStat().registerStat();
 		achMotor = new Achievement("achievement.motor", "motor", 1, 11, ModItems.motor, achVacuumTube).initIndependentStat().registerStat();
 		achAssembly = new Achievement("achievement.assembly", "assembly", 3, 3, new ItemStack(ModBlocks.machine_assembler), achBlastFurnace).initIndependentStat().registerStat();
+		achSolderingStation = new Achievement("achievement.solderingStation", "solderingStation", 5, 1, new ItemStack(ModBlocks.machine_soldering_station), achAssembly).initIndependentStat().registerStat();
+		achOilWell = new Achievement("achievement.oilWell", "oilWell", 8, 1, new ItemStack(ModBlocks.machine_well), achSolderingStation).initIndependentStat().registerStat();
+		achPumpjack = new Achievement("achievement.pumpjack", "pumpjack", 10, 3, new ItemStack(ModBlocks.machine_pumpjack), achSolderingStation).initIndependentStat().registerStat();
+		achFrackingTower = new Achievement("achievement.frackingTower", "frackingTower", 8, -3, new ItemStack(ModBlocks.machine_fracking_tower), achAssembly).initIndependentStat().registerStat();
 		//achSelenium = new Achievement("achievement.selenium", "selenium", 3, 2, ModItems.ingot_starmetal, achBurnerPress).initIndependentStat().setSpecial().registerStat();
-		achChemplant = new Achievement("achievement.chemplant", "chemplant", 6, -1, new ItemStack(ModBlocks.machine_chemplant), achAssembly).initIndependentStat().registerStat();
+		achChemplant = new Achievement("achievement.chemplant", "chemplant", 6, -1, new ItemStack(ModBlocks.machine_chemplant), achSolderingStation).initIndependentStat().registerStat();
 		achConcrete	= new Achievement("achievement.concrete", "concrete", 6, -4, new ItemStack(ModBlocks.concrete), achChemplant).initIndependentStat().registerStat();
 		achPolymer = new Achievement("achievement.polymer", "polymer", 9, -1, ModItems.ingot_polymer, achChemplant).initIndependentStat().registerStat();
 		//achDesh = new Achievement("achievement.desh", "desh", 9, 2, ModItems.ingot_desh, achChemplant).initIndependentStat().registerStat();
@@ -796,7 +804,7 @@ public class MainRegistry {
 		achManhattan = new Achievement("achievement.manhattan", "manhattan", 11, -4, new ItemStack(ModBlocks.nuke_boy), achPolymer).initIndependentStat().setSpecial().registerStat();
 		achHelenKeller = new Achievement("achievement.helenKeller", "helenKeller", 10, -2, new ItemStack(ModItems.crystal_meth), achChemplant).initIndependentStat().setSpecial().registerStat();
 		achMercury = new Achievement("achievement.mercuryProduction", "mercuryProduction", 3, 1, ModItems.ingot_mercury, achBlastFurnace).initIndependentStat().registerStat();
-		achCarcinogen = new Achievement("achievement.carcinogenExposure", "carcinogenExposure", 4, -6, ModItems.ingot_asbestos, achConcrete).initIndependentStat().registerStat();
+		achCarcinogen = new Achievement("achievement.carcinogenExposure", "carcinogenExposure", 4, -6, ModItems.ingot_asbestos, null).initIndependentStat().registerStat();
 		achDetonator = new Achievement("achievement.detonatorCraft", "detonatorCraft", 5, 5, ModItems.detonator, achAssembly).initIndependentStat().registerStat();
 		achHemp = new Achievement("achievement.hempDiscovery", "hempDiscovery", -6, -2, new ItemStack(ModBlocks.plant_flower, 1, com.hbm.blocks.generic.BlockNTMFlower.EnumFlowerType.WEED.ordinal()), null).initIndependentStat().registerStat();
 
@@ -844,6 +852,10 @@ public class MainRegistry {
 				achVacuumTube,
 				achMotor,
 				achAssembly,
+				achSolderingStation,
+				achOilWell,
+				achPumpjack,
+				achFrackingTower,
 				achMercury,
 				achCarcinogen,
 				achDetonator,

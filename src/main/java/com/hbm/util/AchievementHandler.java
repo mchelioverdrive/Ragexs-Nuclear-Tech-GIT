@@ -63,6 +63,10 @@ public class AchievementHandler {
 			craftOnlyAchievements.put(new ComparableStack(ModItems.motor), MainRegistry.achMotor);
 			craftOnlyAchievements.put(new ComparableStack(ModItems.detonator), MainRegistry.achDetonator);
 			craftingAchievements.put(new ComparableStack(ModBlocks.machine_assembler), MainRegistry.achAssembly);
+			craftingAchievements.put(new ComparableStack(ModBlocks.machine_soldering_station), MainRegistry.achSolderingStation);
+			craftingAchievements.put(new ComparableStack(ModBlocks.machine_well), MainRegistry.achOilWell);
+			craftingAchievements.put(new ComparableStack(ModBlocks.machine_pumpjack), MainRegistry.achPumpjack);
+			craftingAchievements.put(new ComparableStack(ModBlocks.machine_fracking_tower), MainRegistry.achFrackingTower);
 			craftingAchievements.put(new ComparableStack(ModItems.billet_pu_mix), MainRegistry.achChicagoPile);
 			//craftingAchievements.put(new ComparableStack(ModItems.ammo_4gauge, 1, ItemAmmoEnums.Ammo4Gauge.VAMPIRE.ordinal()), MainRegistry.achWitchtaunter);
 		} catch (Exception e) {

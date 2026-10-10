@@ -39,3 +39,9 @@
 
 - Mature strawberry, coffee, and tea crops now return to growth stage 0 on right-click and drop their existing mature harvest, reserving one planting item when present. Immature crops retain their normal interaction and breaking behavior.
 - Fully grown two-block hemp now returns to its short WEED plant on right-click of either half and yields one hemp item after reserving the other for regrowth. Other flower and tall-plant variants are unchanged. Harvesting uses server-side block activation and player edit checks; canceled interactions remain governed by Forge. In-game and claim-mod compatibility still require runtime validation.
+
+2026-10-10 11:25 — Extend machine achievements and free carcinogen exposure
+
+- Made `achievement.carcinogenExposure` independent of progression while retaining its asbestos exposure trigger and saved ID. Updated the `hot topic 2` description without changing its achievement identity or furnace branch.
+- Added craft achievements for the soldering station, oil derrick, pumpjack, and fracking tower. The chemical reactor now directly follows the soldering station; the oil machines branch according to their shared crafting prerequisites rather than imposing a false extraction sequence.
+- The derrick is the earliest practical oil extractor by recipe and power demand. The pumpjack adds Desh, hydraulics, and greater throughput; the fracking tower adds Desh, fracking solution, and much higher power demand. In-game achievement unlocks, tree layout, and saved progress still require runtime validation.
