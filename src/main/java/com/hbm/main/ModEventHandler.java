@@ -136,6 +136,7 @@ import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemArmor;
 import net.minecraft.item.ItemFood;
+import net.minecraft.item.ItemShears;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.Potion;
@@ -1866,6 +1867,30 @@ public class ModEventHandler {
 					player.addPotionEffect(new PotionEffect(HbmPotion.lead.id, 100, 2));
 				}
 			}
+		}
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onGrassBreak(BreakEvent event) {
+		if(event.isCanceled() || event.world.isRemote) return;
+		boolean shortGrass = event.block == Blocks.tallgrass && event.blockMetadata == 1;
+		// The upper half stores orientation, not plant type; the lower half still has its type here.
+		boolean tallGrass = event.block == Blocks.double_plant && (event.blockMetadata == 2
+				|| (event.blockMetadata & 8) != 0 && event.world.getBlock(event.x, event.y - 1, event.z) == Blocks.double_plant
+						&& (event.world.getBlockMetadata(event.x, event.y - 1, event.z) & 7) == 2);
+		if(!shortGrass && !tallGrass) return;
+
+		EntityPlayer player = event.getPlayer();
+		if(player == null || player.capabilities.isCreativeMode || !event.world.getGameRules().getGameRuleBooleanValue("doTileDrops")
+				|| event.world.restoringBlockSnapshots) return;
+		ItemStack held = player.getCurrentEquippedItem();
+		if(held != null && (held.getItem() instanceof ItemShears
+				|| held.getItem() instanceof IItemAbility && ((IItemAbility) held.getItem()).isShears(held))) return;
+		if(EnchantmentHelper.getSilkTouchModifier(player)) return;
+
+		if(event.world.rand.nextInt(100) == 0) {
+			event.world.spawnEntityInWorld(new EntityItem(event.world, event.x + 0.5D, event.y + 0.5D, event.z + 0.5D,
+					new ItemStack(ModBlocks.plant_flower, 1, com.hbm.blocks.generic.BlockNTMFlower.EnumFlowerType.WEED.ordinal())));
 		}
 	}
 

@@ -23,3 +23,8 @@
 
 - Moved the assembler achievement under the blast furnace alongside the iron furnace branch, preserving existing IDs and craft triggers. Repositioned the assembler icon and added distinct mercury, carcinogen exposure, detonator, and hemp milestones.
 - Mercury unlocks from successful player smelting of mercury nuggets or ingots; carcinogen unlocks when a player's asbestos condition rises above zero; detonator unlocks from a completed craft; hemp unlocks when the player picks up the hemp plant item. Each new award requires its parent achievement. In-game unlocks and tooltip layout still require runtime validation.
+
+2026-10-10 08:57 — Add rare hemp grass drops and craftable grass plants
+
+- Breaking short grass or either half of tall grass can add the existing hemp plant at a 1% server-side roll per plant. Canceled breaks, creative harvesting, shears, and Silk Touch do not receive the extra drop; normal grass drops remain in the Forge harvest path.
+- Added one grass block to short grass and two vertically stacked grass blocks to tall grass crafting recipes using vanilla plant metadata. Placement and drop behavior still require in-game validation.
