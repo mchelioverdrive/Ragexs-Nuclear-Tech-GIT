@@ -30,7 +30,9 @@ import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.LongHashMap;
 import net.minecraft.util.Vec3;
+import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -40,6 +42,9 @@ import net.minecraftforge.common.util.ForgeDirection;
  * repeatedly damage entities or alter the apparent speed of the blast.
  */
 public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
+	private static final long THERMAL_IGNITION_BUDGET_NANOS = 2_000_000L;
+	private static final int MAX_IGNITION_CANDIDATES_PER_TICK = 256;
+	private static final int IGNITION_BATCH_SIZE = 32;
 	public int strength;
 	public int speed;
 	public int length;
@@ -50,6 +55,9 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 	private double currentShockRadius;
 	private boolean promptApplied;
 	private boolean thermalApplied;
+	private boolean groundIgnitionComplete;
+	private ThermalIgnitionJob ignitionJob;
+	private long lastIgnitionTick = Long.MIN_VALUE;
 	private boolean falloutSpawned;
 	private boolean seismicSent;
 	private NuclearDetonationSpec spec;
@@ -70,9 +78,11 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 		ensureEffects();
 		if(!worldObj.isRemote) {
 			if(!seismicSent) { sendSeismicShake(); seismicSent = true; }
-			if(!thermalApplied && (spec.burstType != BurstType.SUBSURFACE || spec.actualSurfaceBreach)) { applyThermalFlash(); applyThermalGroundIgnition(); thermalApplied = true; }
+			if(!thermalApplied && (spec.burstType != BurstType.SUBSURFACE || spec.actualSurfaceBreach)) { applyThermalFlash(); thermalApplied = true; }
+			applyThermalGroundIgnition();
 			if(!promptApplied && (spec.burstType != BurstType.SUBSURFACE || spec.actualSurfaceBreach)) { applyPromptRadiation(); promptApplied = true; }
 			advanceShockFront();
+			advanceThermalGroundIgnition();
 		}
 		double terrainRadius = spec.burstType == BurstType.SUBSURFACE ? effects.cavityRadius : effects.craterRadius;
 		if(terrainRadius > 0D && spec.burstType != BurstType.AIR && spec.burstType != BurstType.VACUUM) {
@@ -129,8 +139,10 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 		}
 	}
 
-	/** Ignites exposed surface terrain without creating a crater or terrain-ray workload. */
+	/** Schedules exposed surface ignition independently from the immediate entity flash. */
 	private void applyThermalGroundIgnition() {
+		if(worldObj.isRemote || groundIgnitionComplete || ignitionJob != null) return;
+		if(spec.burstType == BurstType.SUBSURFACE && !spec.actualSurfaceBreach) return;
 		if(spec.contained || spec.burstType == BurstType.UNDERWATER || spec.burstType == BurstType.VACUUM || effects.thermalRadius <= 0D) return;
 		// Airbursts have no crater pass to spread secondary fires. Cover the entire
 		// blast footprint where practical and place fire on exposed solid terrain,
@@ -138,16 +150,120 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 		double ignitionRadius = spec.burstType == BurstType.AIR ? effects.lightBlastRadius : effects.thermalRadius;
 		double sourceX = spec.vented ? spec.breachX + 0.5D : posX, sourceY = spec.vented ? spec.breachY + 0.5D : (spec.burstType == BurstType.SURFACE && burstContext != null ? burstContext.surfaceY + 0.5D : posY), sourceZ = spec.vented ? spec.breachZ + 0.5D : posZ;
 		int samples = Math.min(65536, Math.max(4096, (int)Math.ceil(Math.PI * ignitionRadius * ignitionRadius)));
-		for(int i = 0; i < samples; i++) {
-			double distance = ignitionRadius * Math.sqrt(worldObj.rand.nextDouble());
-			double angle = worldObj.rand.nextDouble() * Math.PI * 2D;
+		ignitionJob = new ThermalIgnitionJob(worldObj.rand.nextLong(), sourceX, sourceY, sourceZ, ignitionRadius, samples);
+	}
+
+	/** Called only by the server entity update; synchronous world calls stay on that thread. */
+	private void advanceThermalGroundIgnition() {
+		if(worldObj.isRemote || ignitionJob == null || groundIgnitionComplete) return;
+		long tick = worldObj.getTotalWorldTime();
+		if(lastIgnitionTick == tick) return;
+		lastIgnitionTick = tick;
+		long deadline = System.nanoTime() + THERMAL_IGNITION_BUDGET_NANOS;
+		ThermalIgnitionJob job = ignitionJob;
+		int candidates = 0;
+		// Both sampling (including duplicates) and processing consume the tick's cap.
+		// Insertion into a small chunk-ordered batch and deduplication are timed too.
+		while(candidates < MAX_IGNITION_CANDIDATES_PER_TICK && System.nanoTime() - deadline < 0L) {
+			if(job.batchAttempts < IGNITION_BATCH_SIZE && job.sampleCursor < job.sampleCount) {
+				candidates++;
+				job.sampleCandidate();
+			} else if(job.pendingCursor < job.pendingCount) {
+				candidates++;
+				long column = job.pending[job.pendingCursor];
+				processIgnitionColumn(job, (int)column, (int)(column >> 32));
+				job.pendingCursor++;
+			} else if(job.sampleCursor < job.sampleCount) {
+				job.batchAttempts = job.pendingCursor = job.pendingCount = 0;
+			} else {
+				break;
+			}
+		}
+		groundIgnitionComplete = job.sampleCursor == job.sampleCount && job.pendingCursor == job.pendingCount;
+	}
+
+	private void processIgnitionColumn(ThermalIgnitionJob job, int x, int z) {
+		int y = worldObj.getHeightValue(x, z) - 1;
+		if(y < 0 || !worldObj.isAirBlock(x, y + 1, z) || worldObj.getBlock(x, y, z).getMaterial().isLiquid()) return;
+		if(!hasCombustibleFuel(x, y, z)) return;
+		if(worldObj.rayTraceBlocks(Vec3.createVectorHelper(job.sourceX, job.sourceY, job.sourceZ), Vec3.createVectorHelper(x + 0.5D, y + 1.1D, z + 0.5D)) != null) return;
+		worldObj.setBlock(x, y + 1, z, Blocks.fire, 0, 3);
+	}
+
+	private static final class ThermalIgnitionJob {
+		final long seed;
+		final double sourceX, sourceY, sourceZ, radius;
+		final int sampleCount;
+		final LongHashMap seen = new LongHashMap();
+		final long[] seenColumns;
+		final long[] pending = new long[IGNITION_BATCH_SIZE];
+		int sampleCursor, seenCount, batchAttempts, pendingCursor, pendingCount;
+
+		ThermalIgnitionJob(long seed, double sourceX, double sourceY, double sourceZ, double radius, int sampleCount) {
+			this.seed = seed; this.sourceX = sourceX; this.sourceY = sourceY; this.sourceZ = sourceZ;
+			this.radius = radius; this.sampleCount = sampleCount;
+			seenColumns = new long[sampleCount];
+		}
+
+		void sampleCandidate() {
+			double distance = radius * Math.sqrt(sampleUnit(seed, sampleCursor, 0));
+			double angle = sampleUnit(seed, sampleCursor, 1) * Math.PI * 2D;
 			int x = (int)Math.floor(sourceX + Math.cos(angle) * distance);
 			int z = (int)Math.floor(sourceZ + Math.sin(angle) * distance);
-			int y = worldObj.getHeightValue(x, z) - 1;
-			if(y < 0 || !worldObj.isAirBlock(x, y + 1, z) || worldObj.getBlock(x, y, z).getMaterial().isLiquid()) continue;
-			if(worldObj.rayTraceBlocks(Vec3.createVectorHelper(sourceX, sourceY, sourceZ), Vec3.createVectorHelper(x + 0.5D, y + 1.1D, z + 0.5D)) != null) continue;
-			if(!hasCombustibleFuel(x, y, z)) continue;
-			worldObj.setBlock(x, y + 1, z, Blocks.fire, 0, 3);
+			sampleCursor++; batchAttempts++;
+			long column = ChunkCoordIntPair.chunkXZ2Int(x, z);
+			if(seen.getValueByKey(column) != null) return;
+			seen.add(column, Boolean.TRUE);
+			seenColumns[seenCount++] = column;
+			long chunk = ChunkCoordIntPair.chunkXZ2Int(x >> 4, z >> 4);
+			int insert = pendingCount;
+			while(insert > 0 && chunkOf(pending[insert - 1]) > chunk) {
+				pending[insert] = pending[insert - 1]; insert--;
+			}
+			pending[insert] = column; pendingCount++;
+		}
+
+		private static long chunkOf(long column) {
+			return ChunkCoordIntPair.chunkXZ2Int((int)column >> 4, (int)(column >> 32) >> 4);
+		}
+
+		/** Index-addressed SplitMix64 output; sqrt(U) retains uniform disc sampling. */
+		private static double sampleUnit(long seed, int index, int component) {
+			long value = seed + 0x9E3779B97F4A7C15L * (index * 2L + component + 1L);
+			value = (value ^ (value >>> 30)) * 0xBF58476D1CE4E5B9L;
+			value = (value ^ (value >>> 27)) * 0x94D049BB133111EBL;
+			return ((value ^ (value >>> 31)) >>> 11) * 0x1.0p-53;
+		}
+
+		void writeToNBT(NBTTagCompound nbt) {
+			nbt.setLong("seed", seed);
+			nbt.setDouble("sourceX", sourceX); nbt.setDouble("sourceY", sourceY); nbt.setDouble("sourceZ", sourceZ); nbt.setDouble("radius", radius);
+			nbt.setInteger("samples", sampleCount); nbt.setInteger("sampleCursor", sampleCursor); nbt.setInteger("batchAttempts", batchAttempts); nbt.setInteger("pendingCursor", pendingCursor);
+			nbt.setIntArray("seen", packColumns(seenColumns, seenCount));
+			nbt.setIntArray("pending", packColumns(pending, pendingCount));
+		}
+
+		static ThermalIgnitionJob readFromNBT(NBTTagCompound nbt) {
+			int samples = Math.min(65536, Math.max(4096, nbt.getInteger("samples")));
+			ThermalIgnitionJob job = new ThermalIgnitionJob(nbt.getLong("seed"), nbt.getDouble("sourceX"), nbt.getDouble("sourceY"), nbt.getDouble("sourceZ"), nbt.getDouble("radius"), samples);
+			job.sampleCursor = Math.min(samples, Math.max(0, nbt.getInteger("sampleCursor")));
+			job.batchAttempts = Math.min(IGNITION_BATCH_SIZE, Math.max(0, nbt.getInteger("batchAttempts")));
+			int[] seen = nbt.getIntArray("seen"), pending = nbt.getIntArray("pending");
+			job.seenCount = Math.min(job.sampleCursor, seen.length / 2);
+			for(int i = 0; i < job.seenCount; i++) {
+				long column = ChunkCoordIntPair.chunkXZ2Int(seen[i * 2], seen[i * 2 + 1]);
+				job.seenColumns[i] = column; job.seen.add(column, Boolean.TRUE);
+			}
+			job.pendingCount = Math.min(job.batchAttempts, pending.length / 2);
+			for(int i = 0; i < job.pendingCount; i++) job.pending[i] = ChunkCoordIntPair.chunkXZ2Int(pending[i * 2], pending[i * 2 + 1]);
+			job.pendingCursor = Math.min(job.pendingCount, Math.max(0, nbt.getInteger("pendingCursor")));
+			return job;
+		}
+
+		private static int[] packColumns(long[] columns, int count) {
+			int[] packed = new int[count * 2];
+			for(int i = 0; i < count; i++) { packed[i * 2] = (int)columns[i]; packed[i * 2 + 1] = (int)(columns[i] >> 32); }
+			return packed;
 		}
 	}
 	private boolean hasCombustibleFuel(int x, int y, int z) {
@@ -194,10 +310,11 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 		spec.atmosphericReleaseFactor = breach == null ? 0D : Math.max(.05D, spec.predictedBreakthroughFactor);
 		if(breach != null) { spec.breachX=breach[0]; spec.breachY=breach[1]; spec.breachZ=breach[2]; }
 		effects = NuclearEffectsSolver.solve(spec);
-		if(spec.actualSurfaceBreach) { if(!thermalApplied) { applyThermalFlash(); applyThermalGroundIgnition(); thermalApplied=true; } if(!promptApplied) { applyPromptRadiation(); promptApplied=true; } }
+		if(spec.actualSurfaceBreach) { if(!thermalApplied) { applyThermalFlash(); thermalApplied=true; } applyThermalGroundIgnition(); if(!promptApplied) { applyPromptRadiation(); promptApplied=true; } }
 	}
 
 	private void finishDetonation() {
+		if(worldObj.isRemote) return;
 		if(!falloutSpawned && fallout && effects.falloutSourceStrength > 0D && spec.burstType != BurstType.VACUUM && (spec.burstType != BurstType.SUBSURFACE || (spec.actualSurfaceBreach && spec.atmosphericReleaseFactor >= 0.10D))) {
 			EntityFalloutRain rain = new EntityFalloutRain(worldObj);
 			rain.setPosition(spec.burstType == BurstType.SUBSURFACE ? spec.breachX + 0.5D : posX, spec.burstType == BurstType.SUBSURFACE ? spec.breachY + 0.5D : posY, spec.burstType == BurstType.SUBSURFACE ? spec.breachZ + 0.5D : posZ); rain.setSalted(salted);
@@ -205,12 +322,23 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 			rain.setScale((int)((length * 2.5D + falloutAdd) * BombConfig.falloutRange / 100D * rain.getSourceMultiplier()));
 			worldObj.spawnEntityInWorld(rain); falloutSpawned = true;
 		}
+		// Fallout starts at the original finish condition, even if ignition needs more ticks.
+		if(ignitionJob != null && !groundIgnitionComplete) return;
 		clearChunkLoader(); setDead();
+	}
+
+	@Override public void setDead() {
+		ignitionJob = null;
+		super.setDead();
 	}
 
 	@Override protected void readEntityFromNBT(NBTTagCompound nbt) {
 		ticksExisted = nbt.getInteger("ticksExisted"); strength = nbt.getInteger("strength"); speed = nbt.getInteger("speed"); length = nbt.getInteger("length");
 		fallout = nbt.getBoolean("fallout"); salted = nbt.getBoolean("salted"); falloutAdd = nbt.getInteger("falloutAdd"); previousShockRadius = nbt.getDouble("previousShock"); currentShockRadius = nbt.getDouble("currentShock"); promptApplied = nbt.getBoolean("promptApplied"); thermalApplied = nbt.getBoolean("thermalApplied"); falloutSpawned = nbt.getBoolean("falloutSpawned"); seismicSent = nbt.getBoolean("seismicSent");
+		ignitionJob = nbt.hasKey("thermalIgnitionJob") ? ThermalIgnitionJob.readFromNBT(nbt.getCompoundTag("thermalIgnitionJob")) : null;
+		// Legacy thermalApplied means the old synchronous ignition pass already ran.
+		groundIgnitionComplete = nbt.hasKey("groundIgnitionComplete") ? nbt.getBoolean("groundIgnitionComplete") : ignitionJob == null && thermalApplied;
+		lastIgnitionTick = Long.MIN_VALUE;
 		spec = NuclearDetonationSpec.fromLegacyRadius(Math.max(1, length)); if(nbt.hasKey("yieldKt")) spec.yieldKt = nbt.getDouble("yieldKt"); spec.fissionFraction = nbt.getDouble("fissionFraction"); spec.burstHeight = nbt.getDouble("burstHeight"); spec.groundCoupling = nbt.getDouble("groundCoupling"); spec.thermalFraction = nbt.getDouble("thermalFraction"); spec.promptGammaFraction = nbt.getDouble("gammaFraction"); spec.promptNeutronFraction = nbt.getDouble("neutronFraction"); spec.createsFallout = fallout; spec.createsEMP = nbt.getBoolean("emp"); spec.salted = salted;
 		try { spec.burstType = BurstType.valueOf(nbt.getString("burstType")); } catch(IllegalArgumentException ex) { spec.burstType = BurstType.SURFACE; }
 		if(nbt.hasKey("burialDepth")) { spec.burialDepth = nbt.getDouble("burialDepth"); spec.predictedBreakthroughFactor = spec.surfaceBreakthroughFactor = nbt.getDouble("surfaceBreakthrough"); spec.actualSurfaceBreach = nbt.getBoolean("actualSurfaceBreach"); spec.atmosphericReleaseFactor = nbt.getDouble("atmosphericRelease"); spec.surfaceDeformationFactor = nbt.getDouble("surfaceDeformation"); spec.breachConfirmationComplete = nbt.getBoolean("breachConfirmed"); spec.contained = nbt.getBoolean("contained"); spec.vented = nbt.getBoolean("vented"); spec.breachX = nbt.getInteger("breachX"); spec.breachY = nbt.getInteger("breachY"); spec.breachZ = nbt.getInteger("breachZ"); }
@@ -220,6 +348,8 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 	}
 	@Override protected void writeEntityToNBT(NBTTagCompound nbt) {
 		ensureEffects(); nbt.setInteger("ticksExisted", ticksExisted); nbt.setInteger("strength", strength); nbt.setInteger("speed", speed); nbt.setInteger("length", length); nbt.setBoolean("fallout", fallout); nbt.setBoolean("salted", salted); nbt.setInteger("falloutAdd", falloutAdd); nbt.setDouble("previousShock", previousShockRadius); nbt.setDouble("currentShock", currentShockRadius); nbt.setBoolean("promptApplied", promptApplied); nbt.setBoolean("thermalApplied", thermalApplied); nbt.setBoolean("falloutSpawned", falloutSpawned); nbt.setBoolean("seismicSent", seismicSent);
+		nbt.setBoolean("groundIgnitionComplete", groundIgnitionComplete);
+		if(ignitionJob != null) { NBTTagCompound ignitionWork = new NBTTagCompound(); ignitionJob.writeToNBT(ignitionWork); nbt.setTag("thermalIgnitionJob", ignitionWork); }
 		if(explosion != null) { NBTTagCompound terrainWork = new NBTTagCompound(); explosion.writeToNBT(terrainWork); nbt.setTag("terrainWork", terrainWork); }
 		nbt.setDouble("yieldKt", spec.yieldKt); nbt.setDouble("fissionFraction", spec.fissionFraction); nbt.setString("burstType", spec.burstType.name()); nbt.setDouble("burstHeight", spec.burstHeight); nbt.setDouble("groundCoupling", spec.groundCoupling); nbt.setDouble("thermalFraction", spec.thermalFraction); nbt.setDouble("gammaFraction", spec.promptGammaFraction); nbt.setDouble("neutronFraction", spec.promptNeutronFraction); nbt.setBoolean("emp", spec.createsEMP);
 		nbt.setDouble("burialDepth", spec.burialDepth); nbt.setBoolean("actualSurfaceBreach", spec.actualSurfaceBreach); nbt.setDouble("atmosphericRelease", spec.atmosphericReleaseFactor); nbt.setDouble("surfaceDeformation", spec.surfaceDeformationFactor); nbt.setBoolean("breachConfirmed", spec.breachConfirmationComplete); nbt.setDouble("surfaceBreakthrough", spec.surfaceBreakthroughFactor); nbt.setBoolean("contained", spec.contained); nbt.setBoolean("vented", spec.vented); nbt.setInteger("breachX", spec.breachX); nbt.setInteger("breachY", spec.breachY); nbt.setInteger("breachZ", spec.breachZ);
