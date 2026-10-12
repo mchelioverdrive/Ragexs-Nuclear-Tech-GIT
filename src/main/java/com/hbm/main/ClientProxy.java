@@ -158,6 +158,7 @@ public class ClientProxy extends ServerProxy {
 		registerClientEventHandler(new ModEventHandlerClient());
 		registerClientEventHandler(new ModEventHandlerRenderer());
 		registerClientEventHandler(new EventHandlerParticleEngine());
+		registerClientEventHandler(new NukeCloudClient());
 		registerClientEventHandler(theInfoSystem);
 		DarkAdaptationRenderer darkAdaptation = new DarkAdaptationRenderer();
 		registerClientEventHandler(darkAdaptation);

@@ -40,6 +40,10 @@ public class ClientConfig {
 	public static ConfigWrapper<Boolean> RENDER_CABLE_HANG =				new ConfigWrapper(true);
 	public static ConfigWrapper<Boolean> NUKE_HUD_FLASH =					new ConfigWrapper(true);
 	public static ConfigWrapper<Boolean> NUKE_HUD_SHAKE =					new ConfigWrapper(true);
+	// Positive visual-only limits in hbmClient.json / /ntmclient; invalid or missing values use defaults.
+	// Shared/type budgets and camera-distance detail reduce birth density, never the flash or gameplay.
+	public static ConfigWrapper<Integer> nukeCloudMaxCloudlets = new PositiveLimit(4096);
+	public static ConfigWrapper<Integer> nukeCloudMaxTotalCloudlets = new PositiveLimit(8192);
 	public static ConfigWrapper<Boolean> RENDER_REEDS =						new ConfigWrapper(!Compat.isModLoaded(Compat.MOD_ANG));
 	public static ConfigWrapper<Boolean> DEBUG_RENDER_GL_ERRORS =			new ConfigWrapper(false);
 	public static ConfigWrapper<Boolean> DEBUG_PREPARED_MODEL_METRICS =	new ConfigWrapper(false);
@@ -71,6 +75,8 @@ public class ClientConfig {
 		configMap.put("RENDER_CABLE_HANG", RENDER_CABLE_HANG);
 		configMap.put("NUKE_HUD_FLASH", NUKE_HUD_FLASH);
 		configMap.put("NUKE_HUD_SHAKE", NUKE_HUD_SHAKE);
+		configMap.put("nukeCloudMaxCloudlets", nukeCloudMaxCloudlets);
+		configMap.put("nukeCloudMaxTotalCloudlets", nukeCloudMaxTotalCloudlets);
 		configMap.put("RENDER_REEDS", RENDER_REEDS);
 		configMap.put("DEBUG_RENDER_GL_ERRORS", DEBUG_RENDER_GL_ERRORS);
 		configMap.put("DEBUG_PREPARED_MODEL_METRICS", DEBUG_PREPARED_MODEL_METRICS);
@@ -117,6 +123,8 @@ public class ClientConfig {
 	}
 
 	private static void readConfig(File config) {
+		nukeCloudMaxCloudlets.set(4096);
+		nukeCloudMaxTotalCloudlets.set(8192);
 
 		try {
 			JsonObject json = gson.fromJson(new FileReader(config), JsonObject.class);
@@ -127,6 +135,11 @@ public class ClientConfig {
 					JsonElement value = json.get(line.getKey());
 
 					try {
+						if(line.getValue() instanceof PositiveLimit) {
+							// Reject fractional/overflowing values rather than Gson's truncating getAsInt().
+							line.getValue().update(value.getAsString());
+							continue;
+						}
 
 						//world's shittiest dynamic type parser
 						if(configMap.containsKey(line.getKey())) {
@@ -181,6 +194,16 @@ public class ClientConfig {
 			writer.close();
 		} catch(IOException e) {
 			e.printStackTrace();
+		}
+	}
+
+	private static class PositiveLimit extends ConfigWrapper<Integer> {
+		private final int defaultValue;
+		PositiveLimit(int value) { super(value); defaultValue = value; }
+		@Override public void set(Integer value) { super.set(value != null && value > 0 ? value : defaultValue); }
+		@Override public Integer get() { return value != null && value > 0 ? value : defaultValue; }
+		@Override public void update(String param) {
+			try { set(Integer.valueOf(param)); } catch(RuntimeException ex) { set(defaultValue); }
 		}
 	}
 
