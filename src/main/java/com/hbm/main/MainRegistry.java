@@ -1087,6 +1087,12 @@ public class MainRegistry {
 
 	//yes kids, this is where we would usually register commands
 	@EventHandler
+	public void serverStopped(cpw.mods.fml.common.event.FMLServerStoppedEvent event) {
+		com.hbm.explosion.ExplosionWorkScheduler.clear();
+		com.hbm.entity.logic.EntityExplosionChunkloading.releaseAllTickets();
+	}
+
+	@EventHandler
 	public void serverStart(FMLServerStartingEvent event) {
 		World world = event.getServer().getEntityWorld();
 		RBMKDials.createDials(world);

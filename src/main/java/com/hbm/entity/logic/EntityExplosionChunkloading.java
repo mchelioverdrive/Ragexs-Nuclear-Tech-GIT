@@ -10,6 +10,7 @@ import net.minecraftforge.common.ForgeChunkManager.Ticket;
 import net.minecraftforge.common.ForgeChunkManager.Type;
 
 public abstract class EntityExplosionChunkloading extends Entity implements IChunkLoader {
+	private static final java.util.Set<EntityExplosionChunkloading> ticketOwners = new java.util.HashSet<EntityExplosionChunkloading>();
 
 	private Ticket loaderTicket;
 	private ChunkCoordIntPair loadedChunk;
@@ -28,6 +29,7 @@ public abstract class EntityExplosionChunkloading extends Entity implements IChu
 		if(!worldObj.isRemote && ticket != null) {
 			if(loaderTicket != null && loaderTicket != ticket) ForgeChunkManager.releaseTicket(loaderTicket);
 			loaderTicket = ticket;
+			ticketOwners.add(this);
 			loaderTicket.bindEntity(this);
 			loaderTicket.getModData();
 			ForgeChunkManager.forceChunk(loaderTicket, new ChunkCoordIntPair(chunkCoordX, chunkCoordZ));
@@ -47,11 +49,24 @@ public abstract class EntityExplosionChunkloading extends Entity implements IChu
 			ForgeChunkManager.releaseTicket(loaderTicket);
 			loaderTicket = null;
 			loadedChunk = null;
+			ticketOwners.remove(this);
 		}
+	}
+
+	public static void releaseWorldTickets(World world) {
+		for(EntityExplosionChunkloading entity : ticketOwners.toArray(new EntityExplosionChunkloading[0])) {
+			if(entity.worldObj == world) entity.clearChunkLoader();
+		}
+	}
+
+	public static void releaseAllTickets() {
+		for(EntityExplosionChunkloading entity : ticketOwners.toArray(new EntityExplosionChunkloading[0])) entity.clearChunkLoader();
+		ticketOwners.clear();
 	}
 
 	@Override
 	public void setDead() {
+		if(!worldObj.isRemote) com.hbm.explosion.ExplosionWorkScheduler.remove(this);
 		super.setDead();
 		clearChunkLoader();
 	}

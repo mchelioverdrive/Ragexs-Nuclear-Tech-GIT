@@ -33,6 +33,7 @@ public class BombConfig {
 	public static int aSchrabRadius = 20;
 
 	public static int mk5 = 50;
+	public static int explosionWorkBudgetMs = 5;
 	public static int blastSpeed = 1024;
 	public static int falloutRange = 100;
 	public static int fDelay = 4;
@@ -113,14 +114,14 @@ public class BombConfig {
 		blastSpeed = propBlastSpeed.getInt();
 		// new explosion speed
 		Property propFalloutRange = config.get(CATEGORY_NUKE, "6.02_mk5BlastTime", 50);
-		propFalloutRange.comment = "Minimum amount of milliseconds per tick allocated for mk5 chunk processing";
+		propFalloutRange.comment = "Legacy processing time for unrelated callers; ordinary MK5 terrain, thermal ground ignition and fallout use explosionWorkBudgetMs";
 		mk5 = propFalloutRange.getInt();
 		// fallout range
 		Property falloutRangeProp = config.get(CATEGORY_NUKE, "6.03_falloutRange", 100);
 		falloutRangeProp.comment = "Radius of fallout area (base radius * value in percent)";
 		falloutRange = falloutRangeProp.getInt();
 		Property falloutDelayProp = config.get(CATEGORY_NUKE, "6.04_falloutDelay", 4);
-		falloutDelayProp.comment = "How many ticks to wait for the next fallout chunk computation";
+		falloutDelayProp.comment = "Ticks between eligible fallout processing ticks; unfinished chunks resume under the shared explosion budget";
 		fDelay = falloutDelayProp.getInt();
 
 		Property radRain = config.get(CATEGORY_NUKE, "6.05_falloutRainDuration", 0);
@@ -129,6 +130,12 @@ public class BombConfig {
 		Property rainCont = config.get(CATEGORY_NUKE, "6.06_falloutRainRadiation", 0);
 		rainCont.comment = "Radiation in 100th RADs created by fallout rain";
 		cont = rainCont.getInt();
+
+		Property workBudget = config.get(CATEGORY_NUKE, "6.07_explosionWorkBudgetMs", 5);
+		workBudget.comment = "Positive server-wide milliseconds per tick shared by thermal ground ignition, MK5 terrain and fallout across all dimensions. Round-robin slices are at most 1 ms. Synchronous chunk loads and block callbacks cannot be interrupted and may overrun a slice or the shared budget; no further governed work starts after it expires.";
+		workBudget.setMinValue(1);
+		explosionWorkBudgetMs = Math.max(1, workBudget.getInt(5));
+		workBudget.set(explosionWorkBudgetMs);
 
 		chunkloading = CommonConfig.createConfigBool(config, CATEGORY_NUKE, "6.XX_enableChunkLoading", "Allows all types of procedural explosions to keep the central chunk loaded.", true);
 	}

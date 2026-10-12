@@ -898,6 +898,8 @@ public class ModEventHandler {
 	@SubscribeEvent
 	public void onUnload(WorldEvent.Unload event) {
 		if(!event.world.isRemote) {
+			com.hbm.explosion.ExplosionWorkScheduler.unload(event.world);
+			com.hbm.entity.logic.EntityExplosionChunkloading.releaseWorldTickets(event.world);
 			RTTYSystem.forgetWorld(event.world);
 			MachineRuntimeManager.onWorldUnload(event.world);
 			UniNodespace.unloadWorld(event.world);
@@ -1720,6 +1722,8 @@ public class ModEventHandler {
 
 	@SubscribeEvent
 	public void onServerTick(TickEvent.ServerTickEvent event) {
+		if(event.phase == TickEvent.Phase.START) com.hbm.explosion.ExplosionWorkScheduler.beginTick();
+		else com.hbm.explosion.ExplosionWorkScheduler.runTick();
 
 		if(event.phase == event.phase.START) {
 			RTTYSystem.updateBroadcastQueue();

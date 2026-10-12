@@ -289,7 +289,7 @@ public class ItemStarterKit extends Item {
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.explosive_lenses, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.explosive_lenses, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.explosive_lenses, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.man_core, 1));
+			player.inventory.addItemStackToInventory(new ItemStack(ModItems.tsar_corereal, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.tsar_core, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.tsar_corelead, 1));
 
