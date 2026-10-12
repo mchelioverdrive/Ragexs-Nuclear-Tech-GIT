@@ -283,6 +283,9 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 
 	private long maxRefineBatches(long limit) {
 		if(cachedRecipe == null || limit <= 0L) return 0L;
+		if(cachedRecipe != RefineryRecipes.getVacuum(tanks[0].getTankType())
+				|| tanks[1].getTankType() != cachedRecipe.getW().type || tanks[2].getTankType() != cachedRecipe.getX().type
+				|| tanks[3].getTankType() != cachedRecipe.getY().type || tanks[4].getTankType() != cachedRecipe.getZ().type) return 0L;
 		long batches = Math.min(limit, Math.min(tanks[0].getFill() / 100L, energyQuanta / 10_000L));
 		batches = limitByOutput(batches, tanks[1], cachedRecipe.getW().fill);
 		batches = limitByOutput(batches, tanks[2], cachedRecipe.getX().fill);

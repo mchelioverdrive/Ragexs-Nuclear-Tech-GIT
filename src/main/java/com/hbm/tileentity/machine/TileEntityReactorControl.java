@@ -319,7 +319,7 @@ public class TileEntityReactorControl extends TileEntityMachineBase implements I
 		return new Object[] {getDisplayData()};
 	}
 
-	@Callback(direct = true, limit = 4)
+	@Callback(direct = false, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setParams(Context context, Arguments args) { //i hate my life
 		int newFunction = args.checkInteger(0);

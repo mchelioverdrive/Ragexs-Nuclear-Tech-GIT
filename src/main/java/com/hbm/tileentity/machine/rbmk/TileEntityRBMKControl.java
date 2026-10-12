@@ -166,11 +166,11 @@ public abstract class TileEntityRBMKControl extends TileEntityRBMKSlottedBase im
 		return new Object[] {heat, getMult() * 100, targetLevel * 100, xCoord, yCoord, zCoord};
 	}
 
-	@Callback(direct = true, limit = 4)
+	@Callback(direct = false, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setLevel(Context context, Arguments args) {
 		double newLevel = args.checkDouble(0)/100.0;
-		targetLevel = MathHelper.clamp_double(newLevel, 0, 1);
+		setTarget(MathHelper.clamp_double(newLevel, 0, 1));
 		return new Object[] {};
 	}
 }

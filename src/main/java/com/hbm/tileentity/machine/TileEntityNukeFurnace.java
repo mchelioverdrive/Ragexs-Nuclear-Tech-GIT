@@ -306,11 +306,7 @@ public class TileEntityNukeFurnace extends TileEntityLoadedBase implements ISide
 			return false;
 		}
 		
-		if(slots[2].stackSize < getInventoryStackLimit() && slots[2].stackSize < slots[2].getMaxStackSize()) {
-			return true;
-		}else{
-			return slots[2].stackSize < itemStack.getMaxStackSize();
-		}
+		return slots[2].stackSize + itemStack.stackSize <= Math.min(getInventoryStackLimit(), slots[2].getMaxStackSize());
 	}
 	
 	private void processItem() {
@@ -417,6 +413,7 @@ public class TileEntityNukeFurnace extends TileEntityLoadedBase implements ISide
 		runtimeSettling = true;
 		try {
 			while(remaining > 0L) {
+				if(runtimeEligible) runtimeEligible = this.canProcess();
 				if(!runtimeEligible || dualPower <= 0) {
 					dualCookTime = 0;
 					lastAccountingTick = targetTick;

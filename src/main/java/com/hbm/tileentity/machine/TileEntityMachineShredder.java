@@ -322,6 +322,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 		runtimeEnergyMutation = true;
 		try {
 			while(remaining > 0L) {
+				if(runtimeEligible) this.refreshEligibility();
 				if(!runtimeEligible || !hasPower()) {
 					if(progress != 0) { progress = 0; this.markDirty(); }
 					break;

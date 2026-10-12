@@ -80,9 +80,10 @@ public abstract class TileEntityTurretBaseArtillery extends TileEntityTurretBase
 		return "ntm_artillery";
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getCurrentTarget(Context context, Arguments args) {
+		if(targetQueue.isEmpty()) return new Object[] {null, "No current target."};
 		return new Object[] {targetQueue.get(0).xCoord, targetQueue.get(0).yCoord, targetQueue.get(0).zCoord};
 	}
 

@@ -123,8 +123,17 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 		int oldInventory = this.inventoryFingerprint();
 		if(inventoryFingerprintInitialized && oldInventory != observedInventoryFingerprint || materialFingerprintInitialized && this.materialFingerprint() != observedMaterialFingerprint) this.refreshRuntimeState();
 		this.normalizeMaterialBuffer();
+		this.cachedCanProcess = this.canProcessCached();
 		if(this.cachedCanProcess && this.cachedMold != null && amount >= this.getMinimumCastAmount()) {
 			int itemsCasted = amount / cachedMold.getCost();
+			int waterPerItem = this.getWaterRequired();
+			itemsCasted = Math.min(itemsCasted, Math.min(water.getFill() / waterPerItem, (steam.getMaxFill() - steam.getFill()) / waterPerItem));
+			int outputCapacity = 0;
+			for(int i = 1; i < 7; i++) {
+				if(slots[i] == null) outputCapacity += cachedOutput.getMaxStackSize() / cachedOutput.stackSize;
+				else if(slots[i].isItemEqual(cachedOutput)) outputCapacity += (slots[i].getMaxStackSize() - slots[i].stackSize) / cachedOutput.stackSize;
+			}
+			itemsCasted = Math.min(itemsCasted, outputCapacity);
 			runtimeFluidMutation = true;
 			try {
 				for(int j = 0; j < itemsCasted; j++) {
@@ -140,7 +149,7 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 						}
 					}
 				}
-				int waterUsed = this.getWaterRequired() * itemsCasted;
+				int waterUsed = waterPerItem * itemsCasted;
 				water.setFill(water.getFill() - waterUsed);
 				steam.setFill(steam.getFill() + waterUsed);
 			} finally {
@@ -193,7 +202,7 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 		if(type == null || cachedMold == null || cachedOutput == null) return false;
 		for(int i = 1; i < 7; i++) {
 			if(slots[i] == null || slots[i].isItemEqual(cachedOutput) && slots[i].stackSize + cachedOutput.stackSize <= cachedOutput.getMaxStackSize())
-				return water.getFill() >= this.getWaterRequired() && steam.getFill() < steam.getMaxFill();
+				return water.getFill() >= this.getWaterRequired() && steam.getMaxFill() - steam.getFill() >= this.getWaterRequired();
 		}
 		return false;
 	}
@@ -263,7 +272,7 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 		if(type != null && mold != null && mold.getOutput(type) != null) {
 			for(int i = 1; i < 7; i++) {
 				if(slots[i] == null || slots[i].isItemEqual(mold.getOutput(type)) && slots[i].stackSize + mold.getOutput(type).stackSize <= mold.getOutput(type).getMaxStackSize())
-					return water.getFill() >= getWaterRequired() && steam.getFill() < steam.getMaxFill();
+					return water.getFill() >= getWaterRequired() && steam.getMaxFill() - steam.getFill() >= getWaterRequired();
 
 			}
 		}

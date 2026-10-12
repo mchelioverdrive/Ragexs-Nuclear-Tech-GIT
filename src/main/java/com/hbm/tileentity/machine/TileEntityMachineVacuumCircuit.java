@@ -139,6 +139,7 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 		if(lastProgressTick == Long.MIN_VALUE || target <= lastProgressTick) return;
 		long elapsed = target - lastProgressTick;
 		lastProgressTick = target;
+		if(runtimeMaterialEligible) runtimeMaterialEligible = this.canProcessMaterials();
 		if(!runtimeMaterialEligible || !this.hasOperatingPower()) {
 			if(progress != 0 || runtimeActive) { progress = 0; runtimeActive = false; this.markDirty(); }
 			return;
@@ -218,7 +219,9 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 	}
 
 	private boolean canProcessMaterials() {
-		return cachedRecipe != null && canOperate && this.hasOutputSpace(cachedRecipe.output);
+		return cachedRecipe != null && canOperate
+				&& VacuumCircuitRecipes.getRecipe(new ItemStack[] {slots[0], slots[1], slots[2], slots[3]}) == cachedRecipe
+				&& this.hasOutputSpace(cachedRecipe.output);
 	}
 
 	private boolean hasOutputSpace(ItemStack output) {

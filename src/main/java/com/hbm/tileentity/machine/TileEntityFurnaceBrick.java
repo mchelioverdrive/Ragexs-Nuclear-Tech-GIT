@@ -157,6 +157,7 @@ public class TileEntityFurnaceBrick extends TileEntityMachineBase implements IGU
 	}
 
 	private boolean hasRecipeAndOutputRoom() {
+		this.refreshCachedResult();
 		if(cachedResult == null) return false;
 		if(slots[2] == null) return true;
 		if(!slots[2].isItemEqual(cachedResult)) return false;

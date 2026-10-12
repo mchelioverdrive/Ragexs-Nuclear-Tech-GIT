@@ -284,10 +284,19 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 
 	private boolean areTanksFull() {
 		for(FluidTank tank : tanks) if(tank.getTankType() != Fluids.NONE && tank.getFill() < tank.getMaxFill()) return false;
+		RocketStruct currentRocket = ItemCustomRocket.get(slots[0]);
+		if(currentRocket == null) return false;
+		for(Entry<FluidType, Integer> requirement : currentRocket.getFillRequirement().entrySet()) {
+			long available = 0;
+			for(FluidTank tank : tanks) if(tank.getTankType() == requirement.getKey()) available += tank.getFill();
+			if(available < requirement.getValue()) return false;
+		}
 		return true;
 	}
 
 	private boolean canReachDestination() {
+		RocketStruct rocket = ItemCustomRocket.get(slots[0]);
+		if(rocket == null) return false;
 		// Check that the drive is processed
 		if(!ItemVOTVdrive.getProcessed(slots[1])) {
 			return false;
@@ -299,8 +308,6 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 
 		Target from = CelestialBody.getTarget(worldObj, xCoord, zCoord);
 		Target to = ItemVOTVdrive.getTarget(slots[1], worldObj);
-
-		RocketStruct rocket = ItemCustomRocket.get(slots[0]);
 
 		if(!to.isValid && rocket.capsule.part != ModItems.rp_station_core_20) return false;
 		if(to.isValid && rocket.capsule.part == ModItems.rp_station_core_20) return false;
@@ -546,7 +553,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		return returnValues.toArray();
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] canLaunch(Context context, Arguments args) {
 		return new Object[] {canLaunch()};
@@ -555,7 +562,8 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 	@Callback(direct = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getRocketStats(Context context, Arguments args) {
-		if(hasRocket()) {
+		RocketStruct rocket = ItemCustomRocket.get(slots[0]);
+		if(rocket != null) {
 			return new Object[] {
 					rocket.stages.size(),
 					rocket.getLaunchMass(),
@@ -565,7 +573,7 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		return new Object[] {null, ""};
 	}
 
-	@Callback(direct = true, limit = 4)
+	@Callback(direct = false, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] launch(Context context, Arguments args) {
 		// doesn't really "launch" it per-say, just spawns the rocket, so I guess this works
@@ -574,13 +582,13 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		return new Object[] {};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getDestination(Context context, Arguments args) {
-		if(hasDrive()) { // ok maybe I should actually check if there's an item there first
+		if(!hasDrive()) {
 			return new Object[] {null, "No destination drive."};
 		}
-		Target target = ItemVOTVdrive.getTarget(slots[1], null);
+		Target target = ItemVOTVdrive.getTarget(slots[1], worldObj);
 		if(target.body != null) {
 			return new Object[] {target.body.name.toLowerCase()};
 		}

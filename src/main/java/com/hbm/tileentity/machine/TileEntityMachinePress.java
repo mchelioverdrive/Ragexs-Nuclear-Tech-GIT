@@ -145,6 +145,7 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 	}
 
 	private boolean canProcessState() {
+		this.resolveCachedOutput();
 		return burnTime >= 200 && this.hasOutputSpace(cachedOutput);
 	}
 

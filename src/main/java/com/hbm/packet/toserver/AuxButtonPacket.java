@@ -1,6 +1,7 @@
 package com.hbm.packet.toserver;
 
 import com.hbm.config.MobConfig;
+import com.hbm.machine.MachineRuntimeManager;
 //import com.hbm.entity.mob.EntityDuck;
 import com.hbm.items.weapon.ItemCustomMissilePart.PartSize;
 import com.hbm.tileentity.TileEntityMachineBase;
@@ -23,6 +24,8 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.network.NetHandlerPlayServer;
+import net.minecraft.world.World;
 import net.minecraft.util.Vec3;
 
 @Deprecated //use the NBT control packet instead
@@ -68,14 +71,25 @@ public class AuxButtonPacket implements IMessage {
 
 	public static class Handler implements IMessageHandler<AuxButtonPacket, IMessage> {
 
-		@SuppressWarnings("incomplete-switch")
 		@Override
-		public IMessage onMessage(AuxButtonPacket m, MessageContext ctx) {
+		public IMessage onMessage(final AuxButtonPacket m, MessageContext ctx) {
+			final NetHandlerPlayServer handler = ctx.getServerHandler();
+			final EntityPlayer p = handler.playerEntity;
+			final World world = p.worldObj;
+			MachineRuntimeManager.enqueueControl(world, new Runnable() {
+				@Override public void run() {
+					if(p.worldObj != world || !handler.netManager.isChannelOpen() || !world.blockExists(m.x, m.y, m.z)) return;
+					handleButton(m, p);
+				}
+			});
+			return null;
+		}
 
-			EntityPlayer p = ctx.getServerHandler().playerEntity;
-
+		@SuppressWarnings("incomplete-switch")
+		private void handleButton(AuxButtonPacket m, EntityPlayer p) {
 			//try {
 				TileEntity te = p.worldObj.getTileEntity(m.x, m.y, m.z);
+				if(te != null && te.isInvalid()) return;
 
 				if (te instanceof TileEntityForceField) {
 					TileEntityForceField field = (TileEntityForceField)te;
@@ -199,7 +213,6 @@ public class AuxButtonPacket implements IMessage {
 
 			//} catch (Exception x) { }
 
-			return null;
 		}
 	}
 }

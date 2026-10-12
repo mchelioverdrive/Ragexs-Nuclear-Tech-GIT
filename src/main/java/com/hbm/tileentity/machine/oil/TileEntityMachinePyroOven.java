@@ -407,6 +407,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 
 	private boolean canContinueRecipe(PyroOvenRecipe recipe) {
 		if(recipe == null) return false;
+		if(!this.doesRecipeMatch(recipe)) return false;
 		if(recipe.inputFluid != null && tanks[0].getFill() < recipe.inputFluid.fill) return false; // not enough input fluid
 		if(recipe.inputItem != null && slots[1].stackSize < recipe.inputItem.stacksize) return false; // not enough input item
 		if(recipe.outputFluid != null && recipe.outputFluid.fill + tanks[1].getFill() > tanks[1].getMaxFill() && recipe.outputFluid.type == tanks[1].getTankType()) return false; // too much output fluid

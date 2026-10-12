@@ -233,6 +233,7 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 
 	private boolean canProcessMaterials(SolderingRecipe recipe) {
 		if(recipe == null) return false;
+		if(SolderingRecipes.getRecipe(new ItemStack[] {slots[0], slots[1], slots[2], slots[3], slots[4], slots[5]}) != recipe) return false;
 		if(recipe.fluid != null && (this.tank.getTankType() != recipe.fluid.type || this.tank.getFill() < recipe.fluid.fill)) return false;
 		if(collisionPrevention && recipe.fluid == null && this.tank.getFill() > 0) return false;
 		if(slots[6] != null && (slots[6].getItem() != recipe.output.getItem() || slots[6].getItemDamage() != recipe.output.getItemDamage() || slots[6].stackSize + recipe.output.stackSize > slots[6].getMaxStackSize())) return false;

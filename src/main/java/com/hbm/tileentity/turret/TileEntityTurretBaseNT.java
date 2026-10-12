@@ -438,6 +438,7 @@ public abstract class TileEntityTurretBaseNT extends TileEntityMachineBase imple
 
 			if(array == null)
 				return;
+			if(index < 0 || index >= array.length) return;
 
 			List<String> names = new ArrayList(Arrays.asList(array));
 			ItemTurretBiometry.clearNames(slots[0]);
@@ -922,7 +923,7 @@ public abstract class TileEntityTurretBaseNT extends TileEntityMachineBase imple
 	}
 
 	// On/Off
-	@Callback(direct = true, limit = 4)
+	@Callback(direct = false, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setActive(Context context, Arguments args) {
 		this.isOn = args.checkBoolean(0);
@@ -945,7 +946,7 @@ public abstract class TileEntityTurretBaseNT extends TileEntityMachineBase imple
 	///////////////////////
 	// Whitelist Control //
 	///////////////////////
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getWhitelisted(Context context, Arguments args) {
 		if(slots[0] != null && slots[0].getItem() == ModItems.turret_chip) {
@@ -955,7 +956,7 @@ public abstract class TileEntityTurretBaseNT extends TileEntityMachineBase imple
 		return new Object[] {};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] addWhitelist(Context context, Arguments args) {
 		if(this.getWhitelist() != null) {
@@ -967,11 +968,11 @@ public abstract class TileEntityTurretBaseNT extends TileEntityMachineBase imple
 		return new Object[]{true};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] removeWhitelist(Context context, Arguments args) {
 		List<String> names = this.getWhitelist();
-		if(!names.contains(args.checkString(0)))
+		if(names == null || !names.contains(args.checkString(0)))
 			return new Object[] {false};
 		this.removeName(names.indexOf(args.checkString(0)));
 		return new Object[] {true};
@@ -980,7 +981,7 @@ public abstract class TileEntityTurretBaseNT extends TileEntityMachineBase imple
 	///////////////////////
 	// Targeting Control //
 	///////////////////////
-	@Callback(direct = true, limit = 4)
+	@Callback(direct = false, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setTargeting(Context context, Arguments args) {
 		this.targetPlayers = args.checkBoolean(0);

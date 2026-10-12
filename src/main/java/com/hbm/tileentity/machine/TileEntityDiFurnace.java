@@ -201,6 +201,7 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 	}
 
 	public boolean canProcess() {
+		this.refreshRecipe();
 		if(slots[0] == null || slots[1] == null) return false;
 		if(!this.hasPower()) return false;
 		

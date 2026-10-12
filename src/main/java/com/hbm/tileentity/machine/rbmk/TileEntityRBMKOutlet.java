@@ -65,7 +65,7 @@ public class TileEntityRBMKOutlet extends TileEntityLoadedBase implements IFluid
 		for(int i = 2; i < 6; i++) {
 			ForgeDirection dir = ForgeDirection.getOrientation(i);
 			TileEntityRBMKBase rbmk = controllers[i - 2];
-			if(rbmk == null || rbmk.isInvalid() || !(worldObj.getBlock(xCoord + dir.offsetX, yCoord, zCoord + dir.offsetZ) instanceof RBMKBase)) continue;
+			if(rbmk == null || rbmk.isInvalid() || !rbmk.isLoaded() || !(worldObj.getBlock(xCoord + dir.offsetX, yCoord, zCoord + dir.offsetZ) instanceof RBMKBase)) continue;
 			int amount = Math.max(0, Math.min(steam.getMaxFill() - steam.getFill(), rbmk.steam));
 			rbmk.steam -= amount;
 			steam.setFill(steam.getFill() + amount);

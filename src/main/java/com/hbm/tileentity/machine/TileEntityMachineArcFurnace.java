@@ -305,11 +305,7 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 			return false;
 		}
 		
-		if(slots[1].stackSize < getInventoryStackLimit() && slots[1].stackSize < slots[1].getMaxStackSize()) {
-			return true;
-		}else{
-			return slots[1].stackSize < itemStack.getMaxStackSize();
-		}
+		return slots[1].stackSize + itemStack.stackSize <= Math.min(getInventoryStackLimit(), slots[1].getMaxStackSize());
 	}
 	
 	private void processItem() {
@@ -391,6 +387,7 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 		if(lastAccountingTick == Long.MIN_VALUE || target <= lastAccountingTick) return;
 		long elapsed = target - lastAccountingTick;
 		lastAccountingTick = target;
+		if(runtimeMaterialEligible) runtimeMaterialEligible = this.canProcess();
 		if(!runtimeMaterialEligible || energyQuanta < 250L) {
 			if(dualCookTime != 0) this.markDirty();
 			dualCookTime = 0;

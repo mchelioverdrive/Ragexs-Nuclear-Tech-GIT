@@ -61,7 +61,7 @@ public abstract class TileEntityFoundryCastingBase extends TileEntityFoundryBase
 		if(taskType != TASK_CAST || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
 		this.normalizeCastingBuffer();
 		Mold mold = this.getInstalledMold();
-		if(mold != null && this.amount == this.getCapacity() && slots[1] == null) {
+		if(this.canAdvanceCasting()) {
 			long elapsed = lastCastingAccountingTick < 0L ? 1L : Math.max(1L, worldObj.getTotalWorldTime() - lastCastingAccountingTick);
 			cooloff = (int) Math.max(0L, (long) cooloff - elapsed);
 			if(cooloff <= 0) {
@@ -104,7 +104,8 @@ public abstract class TileEntityFoundryCastingBase extends TileEntityFoundryBase
 	}
 
 	private boolean canAdvanceCasting() {
-		return this.getInstalledMold() != null && this.amount == this.getCapacity() && slots[1] == null;
+		Mold mold = this.getInstalledMold();
+		return type != null && mold != null && mold.getOutput(type) != null && this.amount == this.getCapacity() && slots[1] == null;
 	}
 
 	private void evaluateAndSchedule(long now) {

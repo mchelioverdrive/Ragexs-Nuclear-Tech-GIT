@@ -64,7 +64,7 @@ public class TileEntityMoltenSaltReactorPort extends TileEntityLoadedBase implem
 	@Override
 	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
 		if(taskType != TASK_TRANSFER || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
-		if(runtimeReactor == null || runtimeReactor.isInvalid()) runtimeReactor = getReactor();
+		if(runtimeReactor == null || runtimeReactor.isInvalid() || !runtimeReactor.isLoaded()) runtimeReactor = getReactor();
 		if(input) pushInputToReactor();
 		else {
 			pullOutputFromReactor();
@@ -84,7 +84,8 @@ public class TileEntityMoltenSaltReactorPort extends TileEntityLoadedBase implem
 	}
 
 	private boolean needsTransfer() {
-		if(runtimeReactor == null || runtimeReactor.isInvalid()) return false;
+		if(!input && tank.getFill() > 0) return true;
+		if(runtimeReactor == null || runtimeReactor.isInvalid() || !runtimeReactor.isLoaded()) return false;
 		if(input) return tank.getFill() > 0 && runtimeReactor.getDemand(tank.getTankType(), tank.getPressure()) > 0;
 		return tank.getFill() > 0 || runtimeReactor.tanks[1].getFill() > 0 && tank.getMaxFill() > tank.getFill();
 	}
@@ -94,7 +95,7 @@ public class TileEntityMoltenSaltReactorPort extends TileEntityLoadedBase implem
 
 	protected void pushInputToReactor() {
 		TileEntityMoltenSaltReactor reactor = this.runtimeReactor;
-		if(reactor != null) {
+		if(reactor != null && !reactor.isInvalid() && reactor.isLoaded()) {
 			int fill = tank.getFill();
 			long overshoot = reactor.transferFluid(tank.getTankType(), tank.getPressure(), fill);
 			tank.setFill((int) overshoot);
@@ -103,7 +104,7 @@ public class TileEntityMoltenSaltReactorPort extends TileEntityLoadedBase implem
 
 	protected void pullOutputFromReactor() {
 		TileEntityMoltenSaltReactor reactor = this.runtimeReactor;
-		if(reactor != null) {
+		if(reactor != null && !reactor.isInvalid() && reactor.isLoaded()) {
 			FluidTank hotTank = reactor.tanks[1];
 			int transfer = Math.min(tank.getMaxFill() - tank.getFill(), hotTank.getFill());
 			if(transfer > 0) {

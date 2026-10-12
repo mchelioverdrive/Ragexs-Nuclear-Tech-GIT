@@ -308,6 +308,7 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 		lastAccountingTick = target;
 		boolean changed = false;
 		while(remaining > 0L) {
+			if(runtimeEligible) runtimeEligible = this.canProcess();
 			if(!runtimeEligible || energyQuanta <= 0L) {
 				if(progress != 0 || isProgressing) changed = true;
 				progress = 0;

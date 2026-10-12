@@ -346,6 +346,7 @@ public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting i
 	}
 
 	public boolean canProcess(RotaryFurnaceRecipe recipe) {
+		if(recipe == null || RotaryFurnaceRecipes.getRecipe(slots[0], slots[1], slots[2]) != recipe) return false;
 
 		if(this.burnTime <= 0) return false;
 

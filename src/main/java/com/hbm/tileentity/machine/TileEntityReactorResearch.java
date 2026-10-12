@@ -559,7 +559,7 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 		throw new NoSuchMethodException();
 	}
 
-	@Callback(direct = true, limit = 4)
+	@Callback(direct = false, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setLevel(Context context, Arguments args) {
 		double newLevel = args.checkDouble(0)/100.0;

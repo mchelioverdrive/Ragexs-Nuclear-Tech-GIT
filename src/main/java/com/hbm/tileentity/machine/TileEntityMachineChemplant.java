@@ -603,6 +603,15 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		boolean changed = false;
 		try {
 			while(cursor < target && runtimeActive) {
+				if(this.recipeChanged()) this.resolveRecipe();
+				this.refreshEligibility();
+				if(!cachedEligible) {
+					progress = 0;
+					isProgressing = false;
+					runtimeActive = false;
+					changed = true;
+					break;
+				}
 				int duration = Math.max(1, cachedRecipe.getDuration() * speed / 100);
 				long cost = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
 				long available = cost <= 0L ? Long.MAX_VALUE : energyQuanta / cost;

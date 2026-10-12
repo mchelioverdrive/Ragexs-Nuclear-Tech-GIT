@@ -84,6 +84,7 @@ public class TileEntityDiFurnaceRTG extends TileEntityMachineBase implements IGU
 	}
 
 	public boolean canProcess() {
+		this.refreshRecipe();
 		if (slots[0] == null || slots[1] == null || !hasPower())
 			return false;
 		

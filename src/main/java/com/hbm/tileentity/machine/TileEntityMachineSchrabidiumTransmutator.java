@@ -258,7 +258,7 @@ public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineB
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
 		long now = worldObj.getTotalWorldTime();
-		if(!runtimeInitialized) lastAccountTick = now;
+		if(!runtimeInitialized || lastAccountTick == Long.MIN_VALUE) lastAccountTick = now;
 		else this.settleProgressThrough(now - 1L);
 		runtimeMaterialEligible = this.hasOperationMaterials();
 		runtimeInitialized = true;
@@ -287,10 +287,11 @@ public class TileEntityMachineSchrabidiumTransmutator extends TileEntityMachineB
 	}
 
 	private void settleProgressThrough(long target) {
-		if(target <= lastAccountTick) return;
+		if(lastAccountTick == Long.MIN_VALUE || target <= lastAccountTick) return;
 		long elapsed = target - lastAccountTick;
 		lastAccountTick = target;
 		if(!runtimeActive) return;
+		if(runtimeMaterialEligible) runtimeMaterialEligible = this.hasOperationMaterials();
 		if(!runtimeMaterialEligible || energyQuanta < 4990000L) { process = 0; runtimeActive = false; return; }
 		process = (int) Math.min(processSpeed, process + elapsed);
 		if(process >= processSpeed) {

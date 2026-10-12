@@ -201,6 +201,13 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 			while(cursor < target) {
 				int active = 0;
 				int nearestCompletion = Integer.MAX_VALUE;
+				for(int i = 0; i < getRecipeCount(); i++) if(runtimeLaneActive[i]) {
+					if(!this.canProcess(i)) {
+						progress[i] = 0;
+						runtimeLaneActive[i] = false;
+						changed = true;
+					} else maxProgress[i] = Math.max(1, getProcessTime(i) * speed / 100);
+				}
 				for(int i = 0; i < getRecipeCount(); i++) if(runtimeLaneActive[i] && runtimeMaterialEligible[i]) {
 					active++;
 					nearestCompletion = Math.min(nearestCompletion, Math.max(1, maxProgress[i] - progress[i]));

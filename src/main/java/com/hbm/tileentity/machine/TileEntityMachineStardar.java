@@ -281,7 +281,7 @@ public class TileEntityMachineStardar extends TileEntityMachineBase implements I
 			return new Object[]{
 				// wow, that's a lot (basically give a bunch of info about the planet/body specified)
 				body.name,
-				body.parent.name,
+				body.parent == null ? null : body.parent.name,
 				body.getStar().name,
 				body.tidallyLockedTo,
 				body.axialTilt,

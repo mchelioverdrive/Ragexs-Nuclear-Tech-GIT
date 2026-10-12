@@ -168,6 +168,7 @@ public class TileEntityMachineCoker extends TileEntityMachineBase implements IFl
 	
 	public boolean canProcess() {
 		if(cachedRecipe == null) return false;
+		if(cachedRecipe != CokerRecipes.getOutput(tanks[0].getTankType())) return false;
 		int fillReq = cachedRecipe.getX();
 		ItemStack output = cachedRecipe.getY();
 		FluidStack byproduct = cachedRecipe.getZ();

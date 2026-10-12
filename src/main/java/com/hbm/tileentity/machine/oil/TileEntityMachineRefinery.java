@@ -281,7 +281,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 			return;
 		}
 		if(taskType == TASK_POLLUTION && taskSlot == TASK_SLOT_MAIN) {
-			if(batteryTransitionDueTick <= now) {
+			if(batteryTransitionDueTick != Long.MIN_VALUE && batteryTransitionDueTick <= now) {
 				this.scheduleMachineTransition(now, TASK_POLLUTION, TASK_SLOT_MAIN);
 				return;
 			}
@@ -313,6 +313,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 			return;
 		}
 		if(cadence != 20) return;
+		if(cachedRecipe != RefineryRecipes.getRefinery(tanks[0].getTankType())) this.markMachineDirty(MachineDirtyCause.RECIPE);
 		if(!hasExploded) this.updateConnections();
 		if(observedPower != energyQuanta) this.markMachineEnergyDirty();
 		NBTTagCompound data = new NBTTagCompound();
@@ -326,9 +327,10 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 
 	private void refreshCachedRecipe() {
 		FluidType feed = tanks[0].getTankType();
-		if(cachedFeedType != feed) {
+		Quintet<FluidStack, FluidStack, FluidStack, FluidStack, ItemStack> recipe = RefineryRecipes.getRefinery(feed);
+		if(cachedFeedType != feed || cachedRecipe != recipe) {
 			cachedFeedType = feed;
-			cachedRecipe = RefineryRecipes.getRefinery(feed);
+			cachedRecipe = recipe;
 			cachedFractions = cachedRecipe == null ? null : new FluidStack[] { cachedRecipe.getV(), cachedRecipe.getW(), cachedRecipe.getX(), cachedRecipe.getY() };
 		}
 	}
@@ -343,7 +345,8 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 
 	private boolean canRefine() {
 		if(hasExploded || cachedFractions == null || energyQuanta < EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts) || tanks[0].getFill() < 100) return false;
-		for(int i = 0; i < 4; i++) if(tanks[i + 1].getFill() + cachedFractions[i].fill > tanks[i + 1].getMaxFill()) return false;
+		if(cachedRecipe != RefineryRecipes.getRefinery(tanks[0].getTankType())) return false;
+		for(int i = 0; i < 4; i++) if(tanks[i + 1].getTankType() != cachedFractions[i].type || tanks[i + 1].getFill() + cachedFractions[i].fill > tanks[i + 1].getMaxFill()) return false;
 		return true;
 	}
 

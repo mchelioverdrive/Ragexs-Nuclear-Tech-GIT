@@ -3,6 +3,7 @@ package com.hbm.packet.toserver;
 import java.io.IOException;
 
 import com.hbm.interfaces.IControlReceiver;
+import com.hbm.machine.MachineRuntimeManager;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -13,6 +14,8 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.network.NetHandlerPlayServer;
+import net.minecraft.world.World;
 
 public class NBTControlPacket implements IMessage {
 	
@@ -64,33 +67,29 @@ public class NBTControlPacket implements IMessage {
 	public static class Handler implements IMessageHandler<NBTControlPacket, IMessage> {
 		
 		@Override
-		public IMessage onMessage(NBTControlPacket m, MessageContext ctx) {
-
-			EntityPlayer p = ctx.getServerHandler().playerEntity;
-			
-			if(p.worldObj == null)
-				return null;
-			
-			TileEntity te = p.worldObj.getTileEntity(m.x, m.y, m.z);
-			
+		public IMessage onMessage(final NBTControlPacket m, MessageContext ctx) {
+			final NetHandlerPlayServer handler = ctx.getServerHandler();
+			final EntityPlayer p = handler.playerEntity;
+			final World world = p.worldObj;
 			try {
-				
-				NBTTagCompound nbt = m.buffer.readNBTTagCompoundFromBuffer();
-				
-				if(nbt != null) {
-					if(te instanceof IControlReceiver) {
-						
-						IControlReceiver tile = (IControlReceiver)te;
-						
-						if(tile.hasPermission(p)) {
-							tile.receiveControl(p, nbt);
-							tile.receiveControl(nbt);
+				final NBTTagCompound nbt = m.buffer.readNBTTagCompoundFromBuffer();
+				if(nbt != null) MachineRuntimeManager.enqueueControl(world, new Runnable() {
+					@Override public void run() {
+						if(p.worldObj != world || !handler.netManager.isChannelOpen() || !world.blockExists(m.x, m.y, m.z)) return;
+						TileEntity te = world.getTileEntity(m.x, m.y, m.z);
+						if(te instanceof IControlReceiver && !te.isInvalid()) {
+							IControlReceiver tile = (IControlReceiver) te;
+							if(tile.hasPermission(p)) {
+								tile.receiveControl(p, nbt);
+								tile.receiveControl(nbt);
+							}
 						}
 					}
-				}
-				
+				});
 			} catch (IOException e) {
 				e.printStackTrace();
+			} finally {
+				m.buffer.release();
 			}
 			
 			return null;

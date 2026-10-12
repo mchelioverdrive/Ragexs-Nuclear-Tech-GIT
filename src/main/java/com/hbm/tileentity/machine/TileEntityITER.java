@@ -1115,7 +1115,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 		return new Object[] { isOn };
 	}
 
-	@Callback(direct = true, limit = 4)
+	@Callback(direct = false, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setActive(Context context, Arguments args) {
 
@@ -1161,7 +1161,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 		return new Object[] { plasma.getTankType().temperature };
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getMaxTemp(Context context, Arguments args) {
 
@@ -1172,7 +1172,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 		return new Object[] { "N/A" };
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getBlanketDamage(Context context, Arguments args) {
 

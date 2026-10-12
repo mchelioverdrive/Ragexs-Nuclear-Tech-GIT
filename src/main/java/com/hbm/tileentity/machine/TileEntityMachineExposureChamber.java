@@ -232,7 +232,7 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 
 	private boolean canLoadParticle() {
 		return slots[1] == null && slots[0] != null && slots[3] != null && savedParticles <= 0
-				&& cachedInputRecipe != null && this.canStoreParticleContainer();
+				&& cachedInputRecipe != null && this.getRecipe(slots[0], slots[3]) == cachedInputRecipe && this.canStoreParticleContainer();
 	}
 
 	private boolean canStoreParticleContainer() {
@@ -261,7 +261,8 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 	}
 
 	private boolean canProcessNow() {
-		if(slots[1] == null || savedParticles <= 0 || energyQuanta < consumption) return false;
+		if(slots[1] == null || slots[3] == null || savedParticles <= 0 || energyQuanta < consumption) return false;
+		if(this.getRecipe(slots[1], slots[3]) != cachedLoadedRecipe) return false;
 		return this.hasOutputRoom(cachedLoadedRecipe);
 	}
 

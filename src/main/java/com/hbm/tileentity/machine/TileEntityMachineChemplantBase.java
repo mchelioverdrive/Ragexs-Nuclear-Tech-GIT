@@ -45,6 +45,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	private final ItemStack[] cachedTemplateStacks;
 	private final int[] cachedTemplateMeta;
 	private final ChemRecipe[] cachedRecipes;
+	private final long[] cachedRecipeGenerations;
 	private final int[][] cachedSlotIndices;
 	private final boolean[] runtimeMaterialEligible;
 	private final boolean[] runtimeLaneActive;
@@ -79,6 +80,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		cachedTemplateStacks = new ItemStack[count];
 		cachedTemplateMeta = new int[count];
 		cachedRecipes = new ChemRecipe[count];
+		cachedRecipeGenerations = new long[count];
 		cachedSlotIndices = new int[count][];
 		runtimeMaterialEligible = new boolean[count];
 		runtimeLaneActive = new boolean[count];
@@ -234,6 +236,13 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 				int active = 0;
 				int nearestCompletion = Integer.MAX_VALUE;
 				boolean oxygenDependent = false;
+				for(int i = 0; i < getRecipeCount(); i++) if(runtimeLaneActive[i]) {
+					if(!this.canProcess(i)) {
+						progress[i] = 0;
+						runtimeLaneActive[i] = false;
+						changed = true;
+					} else maxProgress[i] = Math.max(1, cachedRecipes[i].getDuration() * speed / 100);
+				}
 				for(int i = 0; i < getRecipeCount(); i++) if(runtimeLaneActive[i] && runtimeMaterialEligible[i]) {
 					ChemRecipe recipe = cachedRecipes[i];
 					if(recipe == null) continue;
@@ -649,9 +658,10 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	private ChemRecipe resolveRecipe(int index) {
 		ItemStack template = this.slots[getTemplateIndex(index)];
 		int meta = template == null ? 0 : template.getItemDamage();
-		if(this.cachedTemplateStacks[index] != template || this.cachedTemplateMeta[index] != meta) {
+		if(this.cachedTemplateStacks[index] != template || this.cachedTemplateMeta[index] != meta || this.cachedRecipeGenerations[index] != ChemplantRecipes.recipeGeneration) {
 			this.cachedTemplateStacks[index] = template;
 			this.cachedTemplateMeta[index] = meta;
+			this.cachedRecipeGenerations[index] = ChemplantRecipes.recipeGeneration;
 			this.cachedRecipes[index] = template != null && template.getItem() == ModItems.chemistry_template ? ChemplantRecipes.indexMapping.get(meta) : null;
 		}
 		return this.cachedRecipes[index];

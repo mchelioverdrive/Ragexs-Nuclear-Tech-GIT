@@ -129,6 +129,8 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 
 	private boolean canProcessBatch() {
 		if(cachedRecipe == null || energyQuanta < 4_000L || tanks[0].getFill() < 100 || tanks[1].getFill() < cachedRecipe.getX().fill) return false;
+		if(cachedRecipe != AlkylationRecipes.getOutput(tanks[0].getTankType()) || tanks[1].getTankType() != cachedRecipe.getX().type
+				|| tanks[2].getTankType() != cachedRecipe.getY().type || tanks[3].getTankType() != cachedRecipe.getZ().type) return false;
 		return tanks[2].getFill() + cachedRecipe.getY().fill <= tanks[2].getMaxFill() && tanks[3].getFill() + cachedRecipe.getZ().fill <= tanks[3].getMaxFill();
 	}
 

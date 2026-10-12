@@ -167,6 +167,7 @@ public class TileEntityFurnaceIron extends TileEntityMachineBase implements IGUI
 	}
 
 	public boolean canSmelt() {
+		this.refreshCachedResult();
 		if(burnTime <= 0 || cachedResult == null) return false;
 		if(slots[3] == null) return true;
 		if(!cachedResult.isItemEqual(slots[3])) return false;

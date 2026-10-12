@@ -161,6 +161,8 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 		this.beginMachineFluidMutation();
 		try {
 			while(remaining > 0L) {
+				for(int i = 0; i < 3; i++) cachedLaneResults[i] = CyclotronRecipes.getOutput(slots[i + 3], slots[i]);
+				runtimeHasOutputRoom = this.hasRuntimeOutputRoom();
 				if(!this.runtimeHasOutputRoom) {
 					if(progress != 0) changed = true;
 					progress = 0;

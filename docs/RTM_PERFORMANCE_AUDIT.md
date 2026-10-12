@@ -2,6 +2,14 @@
 
 This document records the current machine execution architecture and source-confirmed performance work. `MachineRuntime` is now the primary execution model for migrated production families; the remaining legacy systems and their current constraints are listed below. It complements `RTM_Performance_Architecture_Audit.docx`, which remains the original audit snapshot.
 
+### Machine processing and control correctness — 2026-10-11
+
+Dirty reevaluation remains bounded, and machines retain their existing scheduled/active callbacks and persistent power/fluid registrations. Processing eligibility must also be checked against live material, recipe, fluid type, and output capacity before accounting or completion: vanilla slots and automation can mutate stacks in place before the retained coarse fingerprint poll raises a dirty notification. Recipe refresh and the existing dirty/coarse wake paths remain responsible for resuming waiting machines. Optional recipe fluids and outputs keep their individual recipe contracts.
+
+`NBTControlPacket` and `AuxButtonPacket` publish control requests to the loaded server world's queue in `MachineRuntimeManager`. The world-tick hook applies up to 256 queued controls before ticking the runtime, rechecking the player connection, world, loaded target and existing permission checks. World unload discards pending controls. Packet formats remain unchanged. OpenComputers callbacks that mutate machine/world state use server-thread callbacks (`direct = false`); callbacks requiring mutable target queues or destination-world resolution also run there. This introduces the OpenComputers API's normal synchronized-call delay. Runtime deadlines must distinguish `Long.MIN_VALUE` (no battery transition) from an overdue battery transition; unload/rebind accounting must reinitialize its timestamp before accruing progress.
+
+Cached reactor/controller references are usable only while loaded and valid. Ports can still drain their own buffered output while their reactor is unavailable, and existing discovery cadences resume transfers after reload. Computer queries that inspect mutable inventory/NBT or resolve world columns also use server-thread callbacks. RBMK column queries obtain a current snapshot from the column rather than relying on the console display cache having already been populated. Saved NBT keys and machine identities remain unchanged. Compilation is recorded in `CHANGELOG.md`; dedicated-server and in-game behavior have not been observed in this audit.
+
 ## Current machine-runtime status — 2026-09-27
 
 ### Scope and ownership

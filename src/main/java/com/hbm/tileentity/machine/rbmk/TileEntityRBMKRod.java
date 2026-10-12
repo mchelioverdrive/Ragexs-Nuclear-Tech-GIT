@@ -431,7 +431,7 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 		return new Object[] {fluxFast};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getDepletion(Context context, Arguments args) {
 		if(slots[0] != null && slots[0].getItem() instanceof ItemRBMKRod) {
@@ -440,7 +440,7 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 		return new Object[] {"N/A"};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getXenonPoison(Context context, Arguments args) {
 		if(slots[0] != null && slots[0].getItem() instanceof ItemRBMKRod) {
@@ -449,7 +449,7 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 		return new Object[] {"N/A"};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getCoreHeat(Context context, Arguments args) {
 		if(slots[0] != null && slots[0].getItem() instanceof ItemRBMKRod) {
@@ -458,7 +458,7 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 		return new Object[] {"N/A"};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getSkinHeat(Context context, Arguments args) {
 		if(slots[0] != null && slots[0].getItem() instanceof ItemRBMKRod) {
@@ -467,7 +467,7 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 		return new Object[] {"N/A"};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getType(Context context, Arguments args) {
 		if(slots[0] != null && slots[0].getItem() instanceof ItemRBMKRod) {
@@ -476,7 +476,7 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 		return new Object[] {"N/A"};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getInfo(Context context, Arguments args) {
 		List<Object> returnValues = new ArrayList<>();

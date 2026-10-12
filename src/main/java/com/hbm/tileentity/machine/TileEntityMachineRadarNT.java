@@ -731,7 +731,7 @@ public class TileEntityMachineRadarNT extends TileEntityMachineBase implements I
 		return new Object[] {this.getRange()};
 	}
 
-	@Callback(direct = true, limit = 4)
+	@Callback(direct = false, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setSettings(Context context, Arguments args) {
 		this.scanMissiles = args.checkBoolean(0);

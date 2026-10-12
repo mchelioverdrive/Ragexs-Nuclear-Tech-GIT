@@ -224,11 +224,7 @@ public class TileEntityRtgFurnace extends TileEntityLoadedBase implements ISided
 			return false;
 		}
 		
-		if(slots[4].stackSize < getInventoryStackLimit() && slots[4].stackSize < slots[4].getMaxStackSize()) {
-			return true;
-		}else{
-			return slots[4].stackSize < itemStack.getMaxStackSize();
-		}
+		return slots[4].stackSize + itemStack.stackSize <= Math.min(getInventoryStackLimit(), slots[4].getMaxStackSize());
 	}
 	
 	private void processItem() {

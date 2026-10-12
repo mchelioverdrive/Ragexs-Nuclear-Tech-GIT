@@ -218,6 +218,8 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 
 	private long maxDistillBatches(Quartet<FluidStack, FluidStack, FluidStack, FluidStack> output, long limit) {
 		if(output == null || limit <= 0L) return 0L;
+		if(tanks[1].getTankType() != output.getW().type || tanks[2].getTankType() != output.getX().type
+				|| tanks[3].getTankType() != output.getY().type || tanks[4].getTankType() != output.getZ().type) return 0L;
 		long batches = Math.min(limit, Math.min(tanks[0].getFill() / 100L, energyQuanta / 20_000L));
 		batches = limitByOutput(batches, tanks[1], output.getW().fill);
 		batches = limitByOutput(batches, tanks[2], output.getX().fill);

@@ -268,7 +268,7 @@ public class FluidPump extends BlockContainer implements ILookOverlay, IGUIProvi
 			};
 		}
 
-		@Callback(direct = true, limit = 4)
+		@Callback(direct = false, limit = 4)
 		@Optional.Method(modid = "OpenComputers")
 		public Object[] setPriority(Context context, Arguments args) {
 			int num = args.checkInteger(0);
@@ -294,7 +294,7 @@ public class FluidPump extends BlockContainer implements ILookOverlay, IGUIProvi
 			return new Object[] {true};
 		}
 
-		@Callback(direct = true, limit = 4)
+		@Callback(direct = false, limit = 4)
 		@Optional.Method(modid = "OpenComputers")
 		public Object[] setFlow(Context context, Arguments args) {
 			int input = args.checkInteger(0);

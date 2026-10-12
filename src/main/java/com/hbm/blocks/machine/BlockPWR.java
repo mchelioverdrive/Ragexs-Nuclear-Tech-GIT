@@ -163,13 +163,15 @@ public class BlockPWR extends BlockContainer implements IBlockCT {
 		
 		protected TileEntityPWRController getCore() {
 			
-			if(cachedCore != null && !cachedCore.isInvalid()) return cachedCore;
+			if(cachedCore != null && !cachedCore.isInvalid() && cachedCore.isLoaded()) return cachedCore;
+			cachedCore = null;
 
 			if(worldObj.getChunkProvider().chunkExists(coreX >> 4, coreZ >> 4)) {
 				
 				TileEntity tile = worldObj.getTileEntity(coreX, coreY, coreZ);
 				if(tile instanceof TileEntityPWRController) {
 					TileEntityPWRController controller = (TileEntityPWRController) tile;
+					if(controller.isInvalid() || !controller.isLoaded()) return null;
 					cachedCore = controller;
 					return controller;
 				}

@@ -4,7 +4,6 @@ import com.hbm.interfaces.IControlReceiver;
 import com.hbm.inventory.container.ContainerRBMKControlAuto;
 import com.hbm.inventory.gui.GUIRBMKControlAuto;
 import com.hbm.tileentity.machine.rbmk.TileEntityRBMKConsole.ColumnType;
-import com.hbm.tileentity.machine.rbmk.TileEntityRBMKControlManual.RBMKColor;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -88,7 +87,7 @@ public class TileEntityRBMKControlAuto extends TileEntityRBMKControl implements 
 		if(nbt.hasKey("function"))
 			this.function = RBMKFunction.values()[nbt.getInteger("function")];
 		else
-			this.function = null;
+			this.function = RBMKFunction.LINEAR;
 	}
 	
 	@Override
@@ -108,7 +107,7 @@ public class TileEntityRBMKControlAuto extends TileEntityRBMKControl implements 
 	public void receiveControl(NBTTagCompound data) {
 		
 		if(data.hasKey("function")) {
-			int c = Math.abs(data.getInteger("function")) % RBMKColor.values().length;
+			int c = Math.floorMod(data.getInteger("function"), RBMKFunction.values().length);
 			this.function = RBMKFunction.values()[c];
 			
 		} else {

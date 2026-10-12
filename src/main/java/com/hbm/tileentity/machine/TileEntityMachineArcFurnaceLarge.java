@@ -299,7 +299,6 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		for(int i = 0; i < this.upgrade; i++) consumptionQuantaPerTick *= 5L;
 		this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(consumptionQuantaPerTick);
 
-		for(int i = 0; i < cachedRecipes.length; i++) cachedRecipes[i] = ArcFurnaceRecipes.getOutput(slots[i + 5], this.liquidMode);
 		this.observedRecipeRevision = SerializableRecipe.getRegistryRevision();
 		this.hasMaterial = this.hasIngredients();
 		this.decideElectrodeState();
@@ -623,6 +622,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	}
 	
 	public boolean hasIngredients() {
+		for(int i = 0; i < cachedRecipes.length; i++) cachedRecipes[i] = ArcFurnaceRecipes.getOutput(slots[i + 5], this.liquidMode);
 		for(ArcFurnaceRecipe recipe : cachedRecipes) {
 			if(recipe == null) continue;
 			if(liquidMode && recipe.fluidOutput != null) return true;

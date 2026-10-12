@@ -122,6 +122,8 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 		if(lastProcessTick == Long.MIN_VALUE || target <= lastProcessTick) return;
 		long remaining = target - lastProcessTick;
 		lastProcessTick = target;
+		this.refreshCachedResult();
+		if(runtimeMaterialEligible) runtimeMaterialEligible = this.hasProcessMaterials();
 		while(remaining > 0 && runtimeMaterialEligible && speed > 0 && energyQuanta >= consumption) {
 			if(time >= maxTime) {
 				runtimeEnergyMutation = true;
@@ -399,7 +401,7 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 		return new Object[] {speed, "test of the `getter` callback function"};
 	}
 
-	@Callback(direct = true, setter = true)
+	@Callback(direct = false, setter = true)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] variableset(Context context, Arguments args) {
 		speed = MathHelper.clamp_int(args.checkInteger(0), 0, 5);

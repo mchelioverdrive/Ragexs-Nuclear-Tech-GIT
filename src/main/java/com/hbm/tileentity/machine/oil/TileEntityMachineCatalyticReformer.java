@@ -125,7 +125,7 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 			return;
 		}
 		if(taskType == TASK_OUTPUT && taskSlot == TASK_SLOT_OUTPUT) {
-			if(batteryTransitionDueTick <= now) {
+			if(batteryTransitionDueTick != Long.MIN_VALUE && batteryTransitionDueTick <= now) {
 				this.scheduleMachineTransition(now, TASK_OUTPUT, TASK_SLOT_OUTPUT);
 				return;
 			}
@@ -187,6 +187,7 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 
 	private boolean canReform(Triplet<FluidStack, FluidStack, FluidStack> out) {
 		return energyQuanta >= 20_000L && tanks[0].getFill() >= 100 && slots[10] != null && slots[10].getItem() == ModItems.catalytic_converter
+				&& tanks[1].getTankType() == out.getX().type && tanks[2].getTankType() == out.getY().type && tanks[3].getTankType() == out.getZ().type
 				&& tanks[1].getFill() + out.getX().fill <= tanks[1].getMaxFill()
 				&& tanks[2].getFill() + out.getY().fill <= tanks[2].getMaxFill()
 				&& tanks[3].getFill() + out.getZ().fill <= tanks[3].getMaxFill();

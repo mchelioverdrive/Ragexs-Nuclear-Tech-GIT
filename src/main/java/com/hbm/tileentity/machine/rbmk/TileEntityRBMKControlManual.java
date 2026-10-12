@@ -140,7 +140,7 @@ public class TileEntityRBMKControlManual extends TileEntityRBMKControl implement
 		return new Object[] {this.color.ordinal()};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setColor(Context context, Arguments args) {
 		int colorI = args.checkInteger(0);

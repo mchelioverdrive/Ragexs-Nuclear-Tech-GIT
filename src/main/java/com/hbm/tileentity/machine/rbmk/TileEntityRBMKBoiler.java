@@ -304,7 +304,7 @@ public class TileEntityRBMKBoiler extends TileEntityRBMKSlottedBase implements I
 		return CompatHandler.steamTypeToInt(steam.getTankType());
 	}
 
-	@Callback(direct = true, limit = 4)
+	@Callback(direct = false, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setSteamType(Context context, Arguments args) {
 		int type = args.checkInteger(0);

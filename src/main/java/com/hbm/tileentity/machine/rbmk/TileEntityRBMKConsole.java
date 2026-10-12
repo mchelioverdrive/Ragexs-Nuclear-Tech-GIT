@@ -545,19 +545,23 @@ public class TileEntityRBMKConsole extends TileEntityMachineBase implements ICon
 		return "rbmk_console";
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getColumnData(Context context, Arguments args) {
 		int x = args.checkInteger(0) - 7;
 		int y = -args.checkInteger(1) + 7;
 
-		int i = (y + 7) * 15 + (x + 7);
+		if(x < -7 || x > 7 || y < -7 || y > 7) return new Object[] {null};
 
 		TileEntity te = Compat.getTileStandard(worldObj, targetX + x, targetY, targetZ + y);
 		if (te instanceof TileEntityRBMKBase) {
 			TileEntityRBMKBase column = (TileEntityRBMKBase) te;
 
-			NBTTagCompound column_data = columns[i].data;
+			NBTTagCompound column_data = column.getNBTForConsole();
+			if(column_data == null) column_data = new NBTTagCompound();
+			column_data.setDouble("heat", column.heat);
+			column_data.setDouble("maxHeat", column.maxHeat());
+			if(column.isModerated()) column_data.setBoolean("moderated", true);
 			LinkedHashMap<String, Object> data_table = new LinkedHashMap<>();
 			data_table.put("type", column.getConsoleType().name());
 			data_table.put("hullTemp", column_data.getDouble("heat"));
@@ -615,7 +619,7 @@ public class TileEntityRBMKConsole extends TileEntityMachineBase implements ICon
 		return new Object[] {null};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setLevel(Context context, Arguments args) {
 		double new_level = args.checkDouble(0);
@@ -641,7 +645,7 @@ public class TileEntityRBMKConsole extends TileEntityMachineBase implements ICon
 			return new Object[] {"No control rods found"};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setColumnLevel(Context context, Arguments args) {
 		int x = args.checkInteger(0) - 7;
@@ -662,7 +666,7 @@ public class TileEntityRBMKConsole extends TileEntityMachineBase implements ICon
 		return new Object[] {"No control rod found at "+(x+7)+","+(7-y)};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setColorLevel(Context context, Arguments args) {
 		int color = args.checkInteger(0);
@@ -694,7 +698,7 @@ public class TileEntityRBMKConsole extends TileEntityMachineBase implements ICon
 		return new Object[] {"Color "+color+" does not exist"};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setColor(Context context, Arguments args) {
 		int x = args.checkInteger(0) - 7;
@@ -714,7 +718,7 @@ public class TileEntityRBMKConsole extends TileEntityMachineBase implements ICon
 		return new Object[] {"Color "+new_color+" does not exist"};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] pressAZ5(Context context, Arguments args) {
 		boolean hasRods = false;

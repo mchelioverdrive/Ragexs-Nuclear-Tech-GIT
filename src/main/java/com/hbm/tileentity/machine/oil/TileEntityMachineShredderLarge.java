@@ -127,6 +127,7 @@ public class TileEntityMachineShredderLarge extends TileEntityMachineBase implem
 		if(lastProgressTick == Long.MIN_VALUE || target <= lastProgressTick) return;
 		long elapsed = target - lastProgressTick;
 		lastProgressTick = target;
+		if(runtimeMaterialEligible) runtimeMaterialEligible = this.canProcessMaterials();
 		if(!runtimeMaterialEligible || !this.hasOperatingPower()) {
 			if(progress != 0 || runtimeActive) { progress = 0; runtimeActive = false; this.markDirty(); this.markNetworkDirty(); }
 			return;

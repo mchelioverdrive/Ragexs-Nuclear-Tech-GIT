@@ -203,7 +203,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 			return;
 		}
 		if(taskType == TASK_CAST && taskSlot == TASK_SLOT_CAST) {
-			if(batteryTransitionDueTick <= now) {
+			if(batteryTransitionDueTick != Long.MIN_VALUE && batteryTransitionDueTick <= now) {
 				this.scheduleMachineTransition(now, TASK_CAST, TASK_SLOT_CAST);
 				return;
 			}
@@ -257,6 +257,8 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 			return;
 		}
 		if(cadence != 20) return;
+		if(cachedFluidRecipe != ElectrolyserFluidRecipes.getRecipe(tanks[0].getTankType())
+				|| cachedMetalRecipe != ElectrolyserMetalRecipes.getRecipe(slots[14])) this.markMachineDirty(MachineDirtyCause.RECIPE);
 		this.settleProgressThrough(worldObj.getTotalWorldTime());
 		for(DirPos pos : this.getConPos()) {
 			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
@@ -279,14 +281,14 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 
 	private void refreshCachedState() {
 		FluidType fluidInput = tanks[0].getTankType();
-		if(cachedFluidInput != fluidInput) {
+		if(cachedFluidInput != fluidInput || cachedFluidRecipe != ElectrolyserFluidRecipes.getRecipe(fluidInput)) {
 			cachedFluidInput = fluidInput;
 			cachedFluidRecipe = ElectrolyserFluidRecipes.getRecipe(fluidInput);
 		}
 		ItemStack metalInput = slots[14];
 		int meta = metalInput == null ? 0 : metalInput.getItemDamage();
 		int tagHash = metalInput == null || metalInput.getTagCompound() == null ? 0 : metalInput.getTagCompound().hashCode();
-		if(cachedMetalInput != metalInput || cachedMetalInputMeta != meta || cachedMetalInputTag != tagHash) {
+		if(cachedMetalInput != metalInput || cachedMetalInputMeta != meta || cachedMetalInputTag != tagHash || cachedMetalRecipe != ElectrolyserMetalRecipes.getRecipe(metalInput)) {
 			cachedMetalInput = metalInput;
 			cachedMetalInputMeta = meta;
 			cachedMetalInputTag = tagHash;
@@ -489,6 +491,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		ElectrolysisRecipe recipe = cachedFluidRecipe;
 
 		if(recipe == null) return false;
+		if(recipe != ElectrolyserFluidRecipes.getRecipe(tanks[0].getTankType())) return false;
 		if(recipe.amount > tanks[0].getFill()) return false;
 		if(recipe.output1.type == tanks[1].getTankType() && recipe.output1.fill + tanks[1].getFill() > tanks[1].getMaxFill()) return false;
 		if(recipe.output2.type == tanks[2].getTankType() && recipe.output2.fill + tanks[2].getFill() > tanks[2].getMaxFill()) return false;
@@ -540,6 +543,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 
 		ElectrolysisMetalRecipe recipe = cachedMetalRecipe;
 		if(recipe == null) return false;
+		if(recipe != ElectrolyserMetalRecipes.getRecipe(slots[14])) return false;
 
 		if(leftStack != null && recipe.output1 != null) {
 			if(recipe.output1.material != leftStack.material) return false;

@@ -72,6 +72,7 @@ public class TileEntityMachineFunnel extends TileEntityMachineBase implements IG
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
 		if(taskType != TASK_COMPRESS || taskSlot != TASK_SLOT_SHARED || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		this.refreshRecipeInputs();
 		boolean changed = false;
 		for(int i = 0; i < 9; i++) changed |= this.compressLane(i);
 		this.observeInventoryFingerprint();

@@ -137,6 +137,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 	}
 	
 	private boolean canEnrich() {
+		if(runtimeMaterialEligible) this.refreshEnrichmentEligibility();
 		return energyQuanta > 0L && runtimeMaterialEligible;
 	}
 

@@ -61,7 +61,7 @@ public class TileEntityRBMKInlet extends TileEntityLoadedBase implements IFluidS
 		for(int i = 2; i < 6 && water.getFill() > 0; i++) {
 			ForgeDirection dir = ForgeDirection.getOrientation(i);
 			TileEntityRBMKBase rbmk = controllers[i - 2];
-			if(rbmk == null || rbmk.isInvalid() || !(worldObj.getBlock(xCoord + dir.offsetX, yCoord, zCoord + dir.offsetZ) instanceof RBMKBase)) continue;
+			if(rbmk == null || rbmk.isInvalid() || !rbmk.isLoaded() || !(worldObj.getBlock(xCoord + dir.offsetX, yCoord, zCoord + dir.offsetZ) instanceof RBMKBase)) continue;
 			int amount = Math.max(0, Math.min(rbmk.maxWater - rbmk.water, water.getFill()));
 			rbmk.water += amount;
 			water.setFill(water.getFill() - amount);

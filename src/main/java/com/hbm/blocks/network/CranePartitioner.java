@@ -158,6 +158,7 @@ public class CranePartitioner extends BlockContainer implements IConveyorBelt, I
 				
 				for(ItemStack stack : stacks) {
 					int amount = CrystallizerRecipes.getAmount(stack);
+					if(amount <= 0) continue;
 					while(stack.stackSize >= amount) {
 						ItemStack entityStack = stack.copy();
 						entityStack.stackSize = amount;
@@ -166,6 +167,7 @@ public class CranePartitioner extends BlockContainer implements IConveyorBelt, I
 						item.setItemStack(entityStack);
 						item.setPosition(xCoord + 0.5, yCoord + 0.25, zCoord + 0.5);
 						worldObj.spawnEntityInWorld(item);
+						markDirty = true;
 					}
 				}
 				

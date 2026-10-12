@@ -177,6 +177,9 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		if(lastProgressTick == Long.MIN_VALUE || target <= lastProgressTick) return;
 		long elapsed = target - lastProgressTick;
 		lastProgressTick = target;
+		if(runtimeMaterialEligible) runtimeMaterialEligible = cachedRecipeInputType == tanks[0].getTankType()
+				&& cachedRecipeInputPressure == tanks[0].getPressure()
+				&& cachedRecipeRevision == SerializableRecipe.getRegistryRevision() && this.canProcessMaterials();
 		if(!runtimeMaterialEligible || !this.hasOperatingPower()) {
 			if(progress != 0 || isOn) { progress = 0; isOn = false; this.markDirty(); }
 			return;

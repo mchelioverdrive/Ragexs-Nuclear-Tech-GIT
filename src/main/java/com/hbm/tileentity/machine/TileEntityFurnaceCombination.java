@@ -211,6 +211,7 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 	}
 	
 	public boolean canSmelt() {
+		this.refreshRecipe();
 		if(slots[0] == null) return false;
 		Pair<ItemStack, FluidStack> pair = runtimeInitialized && worldObj != null && !worldObj.isRemote ? runtimeRecipe : CombinationRecipes.getOutput(slots[0]);
 		

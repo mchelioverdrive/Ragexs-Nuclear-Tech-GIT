@@ -426,15 +426,17 @@ public class TileEntityICF extends TileEntityMachineBase implements IGUIProvider
 		};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getPelletStats(Context context, Arguments args) {
+		ItemStack pellet = slots[5];
+		if(pellet == null || pellet.getItem() != ModItems.icf_pellet) return new Object[] {null, "No fuel pellet."};
 		return new Object[] {
-				ItemICFPellet.getDepletion(slots[5]),
-				ItemICFPellet.getMaxDepletion(slots[5]),
-				ItemICFPellet.getFusingDifficulty(slots[5]),
-				ItemICFPellet.getType(slots[5], true).name(),
-				ItemICFPellet.getType(slots[5], false).name()
+				ItemICFPellet.getDepletion(pellet),
+				ItemICFPellet.getMaxDepletion(pellet),
+				ItemICFPellet.getFusingDifficulty(pellet),
+				ItemICFPellet.getType(pellet, true).name(),
+				ItemICFPellet.getType(pellet, false).name()
 		};
 	}
 

@@ -522,13 +522,13 @@ public abstract class TileEntityLaunchPadBase extends TileEntityMachineBase impl
 		};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] canLaunch(Context context, Arguments args) {
 		return new Object[] {canLaunch()};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getTier(Context context, Arguments args) {
 		if(!isMissileValid())

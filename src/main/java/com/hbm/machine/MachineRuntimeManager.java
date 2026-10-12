@@ -2,6 +2,10 @@ package com.hbm.machine;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.hbm.tileentity.TileEntityLoadedBase;
 
@@ -11,6 +15,7 @@ import net.minecraft.world.World;
 public final class MachineRuntimeManager {
 
 	private static final Map<World, MachineRuntime> RUNTIMES = new IdentityHashMap<World, MachineRuntime>();
+	private static final ConcurrentMap<World, Queue<Runnable>> CONTROL_QUEUES = new ConcurrentHashMap<World, Queue<Runnable>>();
 
 	private MachineRuntimeManager() { }
 
@@ -21,12 +26,29 @@ public final class MachineRuntimeManager {
 	public static void onWorldUnload(World world) {
 		if(world == null || world.isRemote) return;
 		MachineRuntime runtime = RUNTIMES.remove(world);
+		Queue<Runnable> controls = CONTROL_QUEUES.remove(world);
+		if(controls != null) controls.clear();
 		if(runtime != null) runtime.unload();
 	}
 
 	public static void tick(World world) {
 		if(world == null || world.isRemote) return;
-		getOrCreate(world).tick();
+		MachineRuntime runtime = getOrCreate(world);
+		Queue<Runnable> controls = CONTROL_QUEUES.get(world);
+		// Network handlers only publish requests; world and runtime mutations stay here.
+		for(int i = 0; i < 256; i++) {
+			Runnable control = controls.poll();
+			if(control == null) break;
+			control.run();
+		}
+		runtime.tick();
+	}
+
+	/** Thread-safe publication to an already loaded server world; unload discards pending requests. */
+	public static void enqueueControl(World world, Runnable control) {
+		if(world == null || control == null) return;
+		Queue<Runnable> controls = CONTROL_QUEUES.get(world);
+		if(controls != null) controls.offer(control);
 	}
 
 	public static void bind(TileEntityLoadedBase tile) {
@@ -87,6 +109,7 @@ public final class MachineRuntimeManager {
 		if(runtime == null) {
 			runtime = new MachineRuntime(world);
 			RUNTIMES.put(world, runtime);
+			CONTROL_QUEUES.put(world, new ConcurrentLinkedQueue<Runnable>());
 		}
 		return runtime;
 	}

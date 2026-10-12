@@ -316,7 +316,7 @@ public class TileEntityRadioTelex extends TileEntity implements INBTPacketReceiv
 		return new Object[] {};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] clearAll(Context context, Arguments args) {
 		for(int i = 0; i < 5; i++) this.rxBuffer[i] = "";

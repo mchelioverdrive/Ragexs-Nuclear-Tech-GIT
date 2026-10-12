@@ -67,8 +67,8 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 	public int maxHeat;
 	public int progress;
 	public int maxProgress = 1;
-	public FluidTank[] inputTanks;
-	public FluidTank[] outputTanks;
+	public FluidTank[] inputTanks = new FluidTank[0];
+	public FluidTank[] outputTanks = new FluidTank[0];
 	public ModulePatternMatcher matcher;
 	public int structureCheckDelay;
 	public boolean structureOK = false;
@@ -91,10 +91,9 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 
 	public void init() {
 		MachineConfiguration config = CustomMachineConfigJSON.customMachines.get(this.machineType);
+		this.config = config;
 
 		if (config != null) {
-			this.config = config;
-
 			inputTanks = new FluidTank[config.fluidInCount];
 			for (int i = 0; i < inputTanks.length; i++) inputTanks[i] = new FluidTank(Fluids.NONE, config.fluidInCap);
 			for (FluidTank tank : inputTanks) this.trackMachineFluidTank(tank);
@@ -107,9 +106,6 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 			smoke.changeTankSize(config.maxPollutionCap);
 			smoke_leaded.changeTankSize(config.maxPollutionCap);
 			smoke_poison.changeTankSize(config.maxPollutionCap);
-
-		} else {
-			worldObj.func_147480_a(xCoord, yCoord, zCoord, false);
 		}
 	}
 
@@ -451,11 +447,12 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 	public boolean hasRequiredQuantities(CustomMachineRecipe recipe) {
 
 		for(int i = 0; i < recipe.inputFluids.length; i++) {
+			if(this.inputTanks[i].getTankType() != recipe.inputFluids[i].type || this.inputTanks[i].getPressure() != recipe.inputFluids[i].pressure) return false;
 			if(this.inputTanks[i].getFill() < recipe.inputFluids[i].fill) return false;
 		}
 
 		for(int i = 0; i < recipe.inputItems.length; i++) {
-			if(slots[i + 4] != null && slots[i + 4].stackSize < recipe.inputItems[i].stacksize) return false;
+			if(!recipe.inputItems[i].matchesRecipe(slots[i + 4], true) || slots[i + 4].stackSize < recipe.inputItems[i].stacksize) return false;
 		}
 		if(config.fluxMode ? this.flux < recipe.flux : false) return false;
 		if(config.maxHeat>0 && recipe.heat>0 ? this.heat < recipe.heat : false) return false;
@@ -608,6 +605,7 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 	@Override
 	public boolean isItemValidForSlot(int slot, ItemStack stack) {
 		if(slot < 4 || slot > 9) return false;
+		if(config == null || slot - 4 >= config.itemInCount) return false;
 
 		int index = slot - 4;
 		int filterSlot = slot + 6;
@@ -623,6 +621,7 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 		
 		this.machineType = nbt.getString("type");
 		if(this.config == null) this.init();
+		if(this.config == null) return;
 
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.progress = nbt.getInteger("progress");
@@ -652,10 +651,10 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 
 			this.matcher.readFromNBT(nbt);
 
-			int index = nbt.getInteger("cachedIndex");
-			if(index != -1) {
-				this.cachedRecipe = CustomMachineRecipes.recipes.get(this.config.recipeKey).get(index);
-			}
+			int index = nbt.hasKey("cachedIndex") ? nbt.getInteger("cachedIndex") : -1;
+			List<CustomMachineRecipe> recipes = CustomMachineRecipes.recipes.get(this.config.recipeKey);
+			this.cachedRecipe = recipes != null && index >= 0 && index < recipes.size() ? recipes.get(index) : null;
+			if(index >= 0 && this.cachedRecipe == null) this.progress = 0;
 		}
 	}
 
@@ -682,7 +681,8 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 		this.matcher.writeToNBT(nbt);
 
 		if(this.cachedRecipe != null) {
-			int index = CustomMachineRecipes.recipes.get(this.config.recipeKey).indexOf(this.cachedRecipe);
+			List<CustomMachineRecipe> recipes = CustomMachineRecipes.recipes.get(this.config.recipeKey);
+			int index = recipes == null ? -1 : recipes.indexOf(this.cachedRecipe);
 			nbt.setInteger("cachedIndex", index);
 		} else {
 			nbt.setInteger("cachedIndex", -1);

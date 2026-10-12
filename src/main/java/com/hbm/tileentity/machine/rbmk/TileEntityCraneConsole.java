@@ -394,7 +394,7 @@ public class TileEntityCraneConsole extends TileEntityLoadedBase implements INBT
 		return "rbmk_crane";
 	}
 
-	@Callback(direct = true, limit = 2) //yknow computers are more efficient than humans, lets give an incentive to use OC
+	@Callback(direct = false, limit = 2) //yknow computers are more efficient than humans, lets give an incentive to use OC
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] move(Context context, Arguments args) {
 		if(setUpCrane) {
@@ -436,7 +436,7 @@ public class TileEntityCraneConsole extends TileEntityLoadedBase implements INBT
 		return new Object[] {"Crane not found"};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getDepletion(Context context, Arguments args) {
 		if(loadedItem != null && loadedItem.getItem() instanceof ItemRBMKRod) {
@@ -445,7 +445,7 @@ public class TileEntityCraneConsole extends TileEntityLoadedBase implements INBT
 		return new Object[] {"N/A"};
 	}
 
-	@Callback(direct = true)
+	@Callback(direct = false)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] getXenonPoison(Context context, Arguments args) {
 		if(loadedItem != null && loadedItem.getItem() instanceof ItemRBMKRod) {

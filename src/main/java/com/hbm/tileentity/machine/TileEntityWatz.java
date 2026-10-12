@@ -189,7 +189,7 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 		runtimeSegments.add(this);
 		for(int y = yCoord - 3; y >= 0; y -= 3) {
 			TileEntity tile = Compat.getTileStandard(worldObj, xCoord, y, zCoord);
-			if(tile instanceof TileEntityWatz) runtimeSegments.add((TileEntityWatz) tile);
+			if(tile instanceof TileEntityWatz && !tile.isInvalid() && ((TileEntityWatz) tile).isLoaded()) runtimeSegments.add((TileEntityWatz) tile);
 			else break;
 		}
 		return runtimeSegments;
@@ -197,6 +197,12 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 
 	private List<TileEntityWatz> getRuntimeSegments() {
 		if(runtimeSegments.isEmpty()) collectSegments();
+		else for(TileEntityWatz segment : runtimeSegments) {
+			if(segment.isInvalid() || !segment.isLoaded()) {
+				collectSegments();
+				break;
+			}
+		}
 		return runtimeSegments;
 	}
 

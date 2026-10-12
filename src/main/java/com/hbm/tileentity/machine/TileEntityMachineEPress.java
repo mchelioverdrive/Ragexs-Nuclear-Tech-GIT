@@ -155,6 +155,8 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 		runtimeSettling = true;
 		try {
 			while(remaining > 0L) {
+				this.resolveCachedOutput();
+				runtimeOutputEligible = this.hasOutputSpace(cachedOutput);
 				boolean canProcess = energyQuanta >= 100L && runtimeOutputEligible;
 				boolean active = canProcess || isRetracting || delay > 0 || press > 0;
 				if(!active || energyQuanta < 100L) break;

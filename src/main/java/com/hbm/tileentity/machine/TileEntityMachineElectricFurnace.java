@@ -167,10 +167,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 
 		if(!slots[2].isItemEqual(itemStack)) return null;
 
-		if(slots[2].stackSize < getInventoryStackLimit() && slots[2].stackSize < slots[2].getMaxStackSize()) {
-			return itemStack;
-		}
-		return slots[2].stackSize < itemStack.getMaxStackSize() ? itemStack : null;
+		return slots[2].stackSize + itemStack.stackSize <= Math.min(getInventoryStackLimit(), slots[2].getMaxStackSize()) ? itemStack : null;
 	}
 
 	private void processItem(ItemStack itemStack) {
@@ -288,6 +285,13 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 				if(cursor >= target) break;
 				cooldown--;
 			}
+			if(!cachedRecipeEligible) {
+				progress = 0;
+				operationActive = false;
+				cursor = target;
+				break;
+			}
+			cachedRecipeEligible = this.findEligibleRecipe() != null;
 			if(!cachedRecipeEligible) {
 				progress = 0;
 				operationActive = false;

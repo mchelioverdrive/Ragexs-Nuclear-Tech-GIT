@@ -698,31 +698,35 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		return new Object[] {autoMode};
 	}
 
-	@Callback(direct = true, limit = 4)
+	@Callback(direct = false, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setThrottle(Context context, Arguments args) {
-		powerSliderPos = (int) (args.checkInteger(0) * 60D / 100D);
+		powerSliderPos = (int) (Math.min(100, Math.max(0, args.checkInteger(0))) * 60D / 100D);
+		markMachineDirty(MachineDirtyCause.CONFIGURATION);
 		return new Object[] {};
 	}
 
-	@Callback(direct = true, limit = 4)
+	@Callback(direct = false, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setAuto(Context context, Arguments args) {
 		autoMode = args.checkBoolean(0);
+		markMachineDirty(MachineDirtyCause.CONFIGURATION);
 		return new Object[] {};
 	}
 
-	@Callback(direct = true, limit = 4)
+	@Callback(direct = false, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] start(Context context, Arguments args) {
 		state = -1;
+		markMachineDirty(MachineDirtyCause.CONFIGURATION);
 		return new Object[] {};
 	}
 
-	@Callback(direct = true, limit = 4)
+	@Callback(direct = false, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] stop(Context context, Arguments args) {
 		state = 0;
+		markMachineDirty(MachineDirtyCause.CONFIGURATION);
 		return new Object[] {};
 	}
 
