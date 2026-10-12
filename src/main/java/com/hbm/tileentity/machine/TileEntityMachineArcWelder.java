@@ -158,6 +158,8 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 		long elapsed = target - lastProgressTick;
 		lastProgressTick = target;
 		runtimeEffectTickPending = false;
+		// Inventory/tank state may have changed before its queued dirty callback runs.
+		if(runtimeMaterialEligible) runtimeMaterialEligible = this.canProcessMaterials(cachedRecipe);
 		long cost = consumption;
 		if(!runtimeMaterialEligible || (cost > 0L && energyQuanta < cost)) {
 			if(progress != 0) { progress = 0; this.markDirty(); }
@@ -366,6 +368,9 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 	}
 
 	private boolean canProcessMaterials(ArcWelderRecipe recipe) {
+		if(recipe == null) return false;
+		// Revalidate inputs as well as fluid/output before using a cached recipe.
+		if(ArcWelderRecipes.getRecipe(slots[0], slots[1], slots[2]) != recipe) return false;
 		
 		if(recipe.fluid != null) {
 			if(this.tank.getTankType() != recipe.fluid.type) return false;
@@ -382,12 +387,13 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 	}
 	
 	public void consumeItems(ArcWelderRecipe recipe) {
+		if(!this.canProcessMaterials(recipe)) return;
 		
 		for(AStack aStack : recipe.ingredients) {
 			
 			for(int i = 0; i < 3; i++) {
 				ItemStack stack = slots[i];
-				if(aStack.matchesRecipe(stack, true) && stack.stackSize >= aStack.stacksize) {
+				if(stack != null && aStack.matchesRecipe(stack, true) && stack.stackSize >= aStack.stacksize) {
 					this.decrStackSize(i, aStack.stacksize);
 					break;
 				}

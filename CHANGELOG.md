@@ -55,3 +55,9 @@
 
 - Added the Arc Welder achievement beneath the blast furnace, awarded through the existing machine crafting handler when the welder is made at an anvil. The oil derrick (Black Gold), pumpjack, and fracking tower now follow it in machine tier order; the detonator follows the soldering station while the chemical reactor remains on its existing branch.
 - Repositioned these icons and the shredder icon to avoid branch crossings, without changing the shredder's parent. Renamed the fracking tower title. Existing achievement IDs and craft triggers remain, preserving saved progress; in-game unlocks and layout still require runtime validation.
+
+2026-10-11 21:11 — Fix arc welder dirty-runtime crash
+
+- Reject a null recipe before accessing its fluid in material eligibility checks. Empty or unmatched inputs can legitimately clear the cached recipe during lifecycle or inventory dirty reevaluation.
+- Revalidate the selected recipe against live inputs, fluid, and output capacity before charging processing power or consuming materials, preventing stale eligibility from processing invalid inventory while a dirty callback is queued. Retain the existing recipe refresh, idle wakeup, progress accounting, NBT fields, and bounded MachineRuntime scheduling.
+- Source tracing covers recipe lookup, inventory/tank notifications, dirty callbacks, and processing guards; offline Gradle compileJava succeeded with Java 8. Dedicated-server and in-game behavior still require runtime validation.
