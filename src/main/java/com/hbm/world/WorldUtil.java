@@ -51,8 +51,43 @@ public class WorldUtil {
 		chunk.isModified = true;
 	}
 
+	/** A slice-local view; never retain this across chunk unload/reload or scheduled slices. */
+	public static final class BiomeAccess {
+		private final Chunk chunk;
+		private final byte[] bytes;
+		private final short[] shorts;
+
+		public BiomeAccess(Chunk chunk) {
+			this.chunk = chunk;
+			shorts = getBiomeShortHandle != null ? getBiomeShortArray(chunk) : null;
+			bytes = shorts == null ? chunk.getBiomeArray() : null;
+		}
+
+		public BiomeGenBase get(World world, int x, int z) {
+			int index = (z & 15) << 4 | (x & 15);
+			int id = shorts != null ? shorts[index] & 65535 : bytes[index] & 255;
+			// Let the world's normal (and optionally patched) path initialize unset entries.
+			if(id == (shorts != null ? 65535 : 255)) return world.getBiomeGenForCoords(x, z);
+			BiomeGenBase biome = BiomeGenBase.getBiome(id);
+			return biome == null ? BiomeGenBase.plains : biome;
+		}
+
+		public boolean setIfChanged(int x, int z, BiomeGenBase original, BiomeGenBase biome) {
+			if(biome == null || biome.biomeID == original.biomeID) return false;
+			int index = (z & 15) << 4 | (x & 15);
+			if(shorts != null) shorts[index] = (short)biome.biomeID;
+			else bytes[index] = (byte)(biome.biomeID & 255);
+			chunk.setChunkModified();
+			return true;
+		}
+	}
+
 	public static void syncBiomeChange(World world, int x, int z) {
 		Chunk chunk = world.getChunkFromBlockCoords(x, z);
+		syncBiomeChange(world, x, z, chunk);
+	}
+
+	public static void syncBiomeChange(World world, int x, int z, Chunk chunk) {
 		if(Loader.isModLoaded(Compat.MOD_EIDS)) {
 			PacketDispatcher.wrapper.sendToAllAround(new BiomeSyncPacket(x >> 4, z >> 4, getBiomeShortArray(chunk)), new TargetPoint(world.provider.dimensionId, x, 128, z, 1024D));
 		} else {

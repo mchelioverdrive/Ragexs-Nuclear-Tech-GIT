@@ -34,6 +34,16 @@ public class EntityFallingBlockNT extends Entity {
 	private int damageCap;
 	private float damageAmount;
 	public NBTTagCompound tileNBT;
+	private boolean falloutCollapse;
+
+	public void markFalloutCollapse() { falloutCollapse = true; canDrop = false; }
+	public boolean isFalloutCollapse() { return falloutCollapse; }
+
+	@Override
+	public void setDead() {
+		if(falloutCollapse && !worldObj.isRemote) com.hbm.explosion.FalloutCollapseManager.remove(this);
+		super.setDead();
+	}
 
 	public EntityFallingBlockNT(World world) {
 		super(world);
@@ -212,6 +222,7 @@ public class EntityFallingBlockNT extends Entity {
 		nbt.setByte("Data", (byte) this.fallingMeta);
 		nbt.setByte("Time", (byte) this.fallingTicks);
 		nbt.setBoolean("DropItem", this.canDrop);
+		nbt.setBoolean("FalloutCollapse", falloutCollapse);
 		nbt.setBoolean("HurtEntities", this.canHurtEntities);
 		nbt.setFloat("FallHurtAmount", this.damageAmount);
 		nbt.setInteger("FallHurtMax", this.damageCap);
@@ -223,6 +234,7 @@ public class EntityFallingBlockNT extends Entity {
 
 	@Override
 	protected void readEntityFromNBT(NBTTagCompound nbt) {
+		falloutCollapse = nbt.getBoolean("FalloutCollapse");
 		
 		if(nbt.hasKey("TileID", 99)) {
 			this.fallingBlock = Block.getBlockById(nbt.getInteger("TileID"));
@@ -244,6 +256,7 @@ public class EntityFallingBlockNT extends Entity {
 		if(nbt.hasKey("DropItem", 99)) {
 			this.canDrop = nbt.getBoolean("DropItem");
 		}
+		if(falloutCollapse) this.canDrop = false;
 
 		if(nbt.hasKey("TileEntityData", 10)) {
 			this.tileNBT = nbt.getCompoundTag("TileEntityData");

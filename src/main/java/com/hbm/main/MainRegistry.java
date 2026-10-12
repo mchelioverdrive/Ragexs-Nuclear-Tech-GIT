@@ -1053,6 +1053,7 @@ public class MainRegistry {
 		ModEventHandler commonHandler = new ModEventHandler();
 		FMLCommonHandler.instance().bus().register(commonHandler);
 		MinecraftForge.EVENT_BUS.register(commonHandler);
+		MinecraftForge.EVENT_BUS.register(new com.hbm.explosion.FalloutCollapseManager());
 		MinecraftForge.TERRAIN_GEN_BUS.register(commonHandler);
 		MinecraftForge.ORE_GEN_BUS.register(commonHandler);
 
@@ -1089,6 +1090,7 @@ public class MainRegistry {
 	@EventHandler
 	public void serverStopped(cpw.mods.fml.common.event.FMLServerStoppedEvent event) {
 		com.hbm.explosion.ExplosionWorkScheduler.clear();
+		com.hbm.explosion.FalloutCollapseManager.clear();
 		com.hbm.entity.logic.EntityExplosionChunkloading.releaseAllTickets();
 	}
 
