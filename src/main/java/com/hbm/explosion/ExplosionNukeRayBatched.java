@@ -1,58 +1,76 @@
 package com.hbm.explosion;
 
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.BitSet;
 import java.util.TreeMap;
 
-import com.hbm.util.fauxpointtwelve.BlockPos;
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.Vec3;
+import net.minecraft.util.LongHashMap;
+import net.minecraft.util.MathHelper;
 import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
 
 public class ExplosionNukeRayBatched {
-	public HashMap<ChunkCoordIntPair, List<FloatTriplet>> perChunk = new HashMap<ChunkCoordIntPair, List<FloatTriplet>>();
-	public List<ChunkCoordIntPair> orderedChunks = new LinkedList<ChunkCoordIntPair>();
-	// Build distance buckets incrementally, then drain them one coordinate at a time.
-	private final TreeMap<Integer, LinkedList<ChunkCoordIntPair>> ordering = new TreeMap<Integer, LinkedList<ChunkCoordIntPair>>();
+	private static final int WORK_VERSION = 3;
+	// x occupies the low signed int, z the high signed int, as in chunkXZ2Int.
+	private LongHashMap chunks = new LongHashMap();
+	private ChunkMask firstChunk, lastChunk;
+	private final TreeMap<Integer, DistanceBucket> ordering = new TreeMap<Integer, DistanceBucket>();
 	int posX, posY, posZ;
 	World world;
 	int strength, length;
+	private final int rayLength;
 	private boolean contained;
-	private int surfaceY = 256;
+	private int surfaceY;
 	int gspNumMax, gspNum;
 	double gspX, gspY;
 	public boolean isAusf3Complete;
 
-	private boolean rayActive, rayFinishing;
+	private boolean rayActive, rayFinishing, rayRecorded, hasTip;
 	private double rayX, rayY, rayZ;
 	private int rayStep;
-	private float rayStrength;
-	private FloatTriplet lastPos;
-	private final HashSet<ChunkCoordIntPair> rayChunks = new HashSet<ChunkCoordIntPair>();
-	private Iterator<ChunkCoordIntPair> rayChunkIterator;
+	private float rayStrength, tipX, tipY, tipZ;
+	// Only the unfinished ray retains qualifying chunks; completed rays retain no endpoints.
+	private LongHashMap rayChunks = new LongHashMap();
+	private ArrayList<Long> rayChunkKeys = new ArrayList<Long>();
 	private long collectionTick = Long.MIN_VALUE;
 	private int raysThisTick;
 
-	private ChunkCoordIntPair removalChunk;
-	private int removalRay, removalStep = -1;
-	private boolean removalInChunk, reconstructed;
-	private final HashSet<BlockPos> toRem = new HashSet<BlockPos>();
-	private final HashSet<BlockPos> toRemTips = new HashSet<BlockPos>();
-	private Iterator<BlockPos> removalIterator;
+	private boolean buildActive, buildRestricted, buildInChunk;
+	private long buildChunk;
+	private int buildStep, buildTipX, buildTipY, buildTipZ;
+	private double buildLength, buildX, buildY, buildZ;
 
+	private boolean removalActive;
+	private long removalKey;
+	private int removalSection, removalBit;
+
+	// New saves decode a section at a time. Saving during decoding retains the original snapshot.
 	private NBTTagCompound restoring;
-	private int restorePhase, restoreIndex, restorePoint;
-	private HashSet<ChunkCoordIntPair> restoredOrder;
+	private int restorePhase, restoreIndex, restoreSection;
+	// Endpoint NBT exists only at the old-save boundary, never as the live terrain engine.
+	private NBTTagCompound legacy;
+	private int legacyPhase, legacyIndex, legacyPoint;
+	private boolean legacyChunkStarted;
+
+	private static class SectionMask {
+		final BitSet destruction = new BitSet();
+		BitSet tips;
+	}
+	private static class ChunkMask {
+		final long key;
+		final int distance;
+		final SectionMask[] sections = new SectionMask[16];
+		ChunkMask previous, next, orderPrevious, orderNext;
+		ChunkMask(long key, int distance) { this.key = key; this.distance = distance; }
+	}
+	private static class DistanceBucket {
+		ChunkMask first, last;
+	}
 
 	public ExplosionNukeRayBatched(World world, int x, int y, int z, int strength, int speed, int length) {
 		this(world, x, y, z, strength, speed, length, false, 256);
@@ -60,6 +78,7 @@ public class ExplosionNukeRayBatched {
 	public ExplosionNukeRayBatched(World world, int x, int y, int z, int strength, int speed, int length, boolean contained, int surfaceY) {
 		this.world = world; posX = x; posY = y; posZ = z;
 		this.strength = strength; this.length = length; this.contained = contained; this.surfaceY = surfaceY;
+		rayLength = (int)Math.ceil(strength);
 		gspNumMax = (int)(2.5 * Math.PI * Math.pow(strength, 2));
 		gspNum = 1; gspX = Math.PI;
 	}
@@ -75,120 +94,206 @@ public class ExplosionNukeRayBatched {
 		gspNum++;
 	}
 
-	public boolean hasPendingWork() { return restoring != null || !isAusf3Complete || !perChunk.isEmpty(); }
+	public boolean hasPendingWork() { return restoring != null || legacy != null || !isAusf3Complete || firstChunk != null; }
 	public boolean canWork(long tick, int count) {
-		return restoring != null || isAusf3Complete || gspNum > gspNumMax || collectionTick != tick || raysThisTick < count;
+		return restoring != null || legacy != null || isAusf3Complete || gspNum > gspNumMax || collectionTick != tick || raysThisTick < count;
 	}
-	private int distance(ChunkCoordIntPair coord) {
-		return Math.abs((posX >> 4) - coord.chunkXPos) + Math.abs((posZ >> 4) - coord.chunkZPos);
+	private int distance(long key) {
+		return Math.abs((posX >> 4) - (int)key) + Math.abs((posZ >> 4) - (int)(key >> 32));
 	}
-	private void queueOrder(ChunkCoordIntPair coord) {
-		int distance = distance(coord);
-		LinkedList<ChunkCoordIntPair> bucket = ordering.get(distance);
-		if(bucket == null) { bucket = new LinkedList<ChunkCoordIntPair>(); ordering.put(distance, bucket); }
-		bucket.addLast(coord);
+	private int enter(long key) {
+		return Math.max(0, Math.min(Math.abs(posX - ((int)key << 4)), Math.abs(posZ - ((int)(key >> 32) << 4))) - 16);
+	}
+	private ChunkMask chunkMask(long key) {
+		ChunkMask chunk = (ChunkMask)chunks.getValueByKey(key);
+		if(chunk != null) return chunk;
+		chunk = new ChunkMask(key, distance(key)); chunks.add(key, chunk);
+		chunk.previous = lastChunk;
+		if(lastChunk == null) firstChunk = chunk; else lastChunk.next = chunk;
+		lastChunk = chunk;
+		DistanceBucket bucket = ordering.get(chunk.distance);
+		if(bucket == null) { bucket = new DistanceBucket(); ordering.put(chunk.distance, bucket); }
+		chunk.orderPrevious = bucket.last;
+		if(bucket.last == null) bucket.first = chunk; else bucket.last.orderNext = chunk;
+		bucket.last = chunk;
+		return chunk;
+	}
+	private void removeChunk(ChunkMask chunk) {
+		chunks.remove(chunk.key);
+		if(chunk.previous == null) firstChunk = chunk.next; else chunk.previous.next = chunk.next;
+		if(chunk.next == null) lastChunk = chunk.previous; else chunk.next.previous = chunk.previous;
+		DistanceBucket bucket = ordering.get(chunk.distance);
+		if(chunk.orderPrevious == null) bucket.first = chunk.orderNext; else chunk.orderPrevious.orderNext = chunk.orderNext;
+		if(chunk.orderNext == null) bucket.last = chunk.orderPrevious; else chunk.orderNext.orderPrevious = chunk.orderPrevious;
+		if(bucket.first == null) ordering.remove(chunk.distance);
+	}
+	private void addRayChunk(long key) {
+		if(!rayChunks.containsItem(key)) { rayChunks.add(key, Boolean.TRUE); rayChunkKeys.add(key); }
+	}
+	private void record(int x, int y, int z, boolean tip) {
+		if(y < 0 || y >= 256) return;
+		ChunkMask chunk = chunkMask(ChunkCoordIntPair.chunkXZ2Int(x >> 4, z >> 4));
+		SectionMask section = chunk.sections[y >> 4];
+		if(section == null) chunk.sections[y >> 4] = section = new SectionMask();
+		int bit = (y & 15) << 8 | (z & 15) << 4 | (x & 15);
+		section.destruction.set(bit);
+		if(tip) {
+			if(section.tips == null) section.tips = new BitSet();
+			section.tips.set(bit); // OR preserves tip priority over every normal hit.
+		}
 	}
 
 	/** Legacy API retained for callers outside the governed entity path. */
 	public void collectTip(int count) { collectTip(count, Long.MAX_VALUE, collectionTick + 1); }
 	public void collectTip(int count, long deadline, long tick) {
-		if(!restore(deadline) || isAusf3Complete) return;
+		if(!restore(deadline) || !migrate(deadline) || isAusf3Complete) return;
 		if(collectionTick != tick) { collectionTick = tick; raysThisTick = 0; }
+		// Cache chunk reads only within this slice: another job/tick may change storage.
+		Chunk sampledChunk = null;
 		while(gspNum <= gspNumMax && raysThisTick < count && ExplosionWorkScheduler.before(deadline)) {
 			if(!rayActive) {
 				rayX = Math.sin(gspX) * Math.cos(gspY); rayZ = Math.sin(gspX) * Math.sin(gspY); rayY = Math.cos(gspX);
-				rayStep = 0; rayStrength = strength; lastPos = null; rayActive = true; rayFinishing = false;
+				rayStep = 0; rayStrength = strength; hasTip = false; rayActive = true; rayFinishing = rayRecorded = false;
 			}
-			int rayLength = (int)Math.ceil(strength);
 			while(!rayFinishing && ExplosionWorkScheduler.before(deadline)) {
 				if(rayStep >= rayLength || rayStep > length) { rayFinishing = true; break; }
 				float x = (float)(posX + rayX * rayStep), y = (float)(posY + rayY * rayStep), z = (float)(posZ + rayZ * rayStep);
 				if(contained && y >= surfaceY) { rayFinishing = true; break; }
+				// Stop on leaving storage, but permit a source outside it to approach it.
+				if((y < 0 && (posY >= 0 || rayY <= 0)) || (y >= 256 && (posY < 256 || rayY >= 0))) { rayFinishing = true; break; }
 				int ix = (int)Math.floor(x), iy = (int)Math.floor(y), iz = (int)Math.floor(z);
+				// Null sections contain only vanilla air. Do not trust isEmpty(): custom air
+				// blocks can have resistance. Keep the world border's air behavior as well.
+				if(iy >= 0 && iy < 256 && ix >= -30000000 && iz >= -30000000 && ix < 30000000 && iz < 30000000) {
+					if(sampledChunk == null || sampledChunk.xPosition != ix >> 4 || sampledChunk.zPosition != iz >> 4) {
+						sampledChunk = world.getChunkFromChunkCoords(ix >> 4, iz >> 4);
+						if(!ExplosionWorkScheduler.before(deadline)) return;
+					}
+					if(sampledChunk.getBlockStorageArray()[iy >> 4] == null && masqueradeResistance(Blocks.air) == 0F) {
+						rayStep = endOfEmptySection(ix >> 4, iy >> 4, iz >> 4);
+						// The old post-sample length check stops after length - 1.
+						if(rayStep >= rayLength || rayStep >= Math.max(1, length)) rayFinishing = true;
+						continue;
+					}
+				}
 				double fac = (100 - (double)rayStep / rayLength * 100) * 0.07D;
-				// A chunk load/resistance callback is indivisible; commit this step before yielding.
 				Block block = world.getBlock(ix, iy, iz);
 				if(!ExplosionWorkScheduler.before(deadline)) return;
 				if(!block.getMaterial().isLiquid()) rayStrength -= Math.pow(masqueradeResistance(block), 7.5D - fac);
+				// Resistance callbacks are indivisible. Commit their sample before yielding.
 				if(rayStrength > 0 && block != Blocks.air && !block.getMaterial().isLiquid()) {
-					lastPos = new FloatTriplet(x, y, z);
-					rayChunks.add(new ChunkCoordIntPair(ix >> 4, iz >> 4));
+					tipX = x; tipY = y; tipZ = z; hasTip = true;
+					addRayChunk(ChunkCoordIntPair.chunkXZ2Int(ix >> 4, iz >> 4));
 				}
 				if(rayStrength <= 0 || rayStep + 1 >= length || rayStep == rayLength - 1) rayFinishing = true;
 				rayStep++;
 			}
-			if(!rayFinishing) return;
-			if(rayChunkIterator == null) rayChunkIterator = rayChunks.iterator();
-			while(rayChunkIterator.hasNext() && ExplosionWorkScheduler.before(deadline)) {
-				ChunkCoordIntPair coord = rayChunkIterator.next();
-				List<FloatTriplet> points = perChunk.get(coord);
-				if(points == null) { points = new ArrayList<FloatTriplet>(); perChunk.put(coord, points); queueOrder(coord); }
-				points.add(lastPos);
-				rayChunkIterator.remove(); // NBT retains only endpoints not yet appended.
+			if(!rayFinishing || !ExplosionWorkScheduler.before(deadline)) return;
+			if(hasTip && !rayRecorded) {
+				if(!buildActive) beginBuild(tipX, tipY, tipZ, 0, false, 0L, false);
+				if(!buildMask(deadline)) return;
 			}
-			if(rayChunkIterator.hasNext()) return;
-			rayChunkIterator = null; rayActive = false; rayFinishing = false; lastPos = null;
+			rayRecorded = true;
+			// Advance only after the entire reconstruction is represented by masks.
+			while(!rayChunkKeys.isEmpty() && ExplosionWorkScheduler.before(deadline)) {
+				rayChunks.remove(rayChunkKeys.remove(rayChunkKeys.size() - 1));
+			}
+			if(!rayChunkKeys.isEmpty() || !ExplosionWorkScheduler.before(deadline)) return;
+			rayActive = rayFinishing = rayRecorded = hasTip = false;
 			generateGspUp(); raysThisTick++;
 		}
-		if(gspNum > gspNumMax) finalizeOrder(deadline);
+		// Distance buckets were maintained on insertion; no final large sort/queue copy.
+		if(gspNum > gspNumMax && ExplosionWorkScheduler.before(deadline)) isAusf3Complete = true;
 	}
 
-	private void finalizeOrder(long deadline) {
-		while(!ordering.isEmpty() && ExplosionWorkScheduler.before(deadline)) {
-			Map.Entry<Integer, LinkedList<ChunkCoordIntPair>> entry = ordering.firstEntry();
-			orderedChunks.add(entry.getValue().removeFirst());
-			if(entry.getValue().isEmpty()) ordering.remove(entry.getKey());
+	/** Binary search integer sample indices, not voxel/DDA boundaries. Float rounding
+	 * and the original integer steps are unchanged; zero-resistance air has no effect. */
+	private int endOfEmptySection(int chunkX, int sectionY, int chunkZ) {
+		int low = rayStep + 1, high = Math.min(rayLength, Math.max(1, length));
+		while(low < high) {
+			int middle = low + (high - low) / 2;
+			float x = (float)(posX + rayX * middle), y = (float)(posY + rayY * middle), z = (float)(posZ + rayZ * middle);
+			if((int)Math.floor(x) >> 4 == chunkX && (int)Math.floor(y) >> 4 == sectionY && (int)Math.floor(z) >> 4 == chunkZ && (!contained || y < surfaceY)) low = middle + 1;
+			else high = middle;
 		}
-		if(ordering.isEmpty()) isAusf3Complete = true;
+		return low;
+	}
+
+	private void beginBuild(float x, float y, float z, int step, boolean restricted, long chunk, boolean inChunk) {
+		// Preserve float subtraction before promotion, exactly as old Vec3 construction.
+		double dx = x - posX, dy = y - posY, dz = z - posZ;
+		// Vec3.lengthVector uses MathHelper's float-rounded square root in 1.7.10.
+		buildLength = MathHelper.sqrt_double(dx * dx + dy * dy + dz * dz);
+		buildX = dx / buildLength; buildY = dy / buildLength; buildZ = dz / buildLength;
+		buildTipX = (int)Math.floor(x); buildTipY = (int)Math.floor(y); buildTipZ = (int)Math.floor(z);
+		buildStep = step; buildRestricted = restricted; buildChunk = chunk; buildInChunk = inChunk; buildActive = true;
+	}
+	private boolean buildMask(long deadline) {
+		long sampledKey = 0L;
+		boolean sampled = false, eligible = false;
+		int entryStep = 0;
+		while(buildStep < buildLength && ExplosionWorkScheduler.before(deadline)) {
+			int x = (int)Math.floor(posX + buildX * buildStep), y = (int)Math.floor(posY + buildY * buildStep), z = (int)Math.floor(posZ + buildZ * buildStep);
+			long key = ChunkCoordIntPair.chunkXZ2Int(x >> 4, z >> 4);
+			if(buildRestricted) {
+				// Old-save conversion alone must honor per-chunk reconstruction cursors.
+				if(key != buildChunk) {
+					if(buildInChunk) { buildStep = (int)Math.ceil(buildLength); break; }
+					buildStep++; continue;
+				}
+				buildInChunk = true;
+			} else {
+				if(!sampled || sampledKey != key) {
+					sampledKey = key; sampled = true; eligible = rayChunks.containsItem(key); entryStep = enter(key);
+				}
+				// A positive collection sample is not itself the old destruction set.
+				if(!eligible || buildStep < entryStep) { buildStep++; continue; }
+			}
+			if(y >= 0 && y < 256) {
+				Block block = world.getBlock(x, y, z);
+				if(!ExplosionWorkScheduler.before(deadline)) return false;
+				if(!world.isAirBlock(x, y, z) && !block.getMaterial().isLiquid()) {
+					record(x, y, z, x == buildTipX && y == buildTipY && z == buildTipZ);
+				}
+			}
+			buildStep++;
+		}
+		if(buildStep < buildLength) return false;
+		buildActive = false;
+		return true;
 	}
 
 	public void processChunk() { processChunk(Long.MAX_VALUE); }
 	public void processChunk(long deadline) {
-		if(!restore(deadline) || !isAusf3Complete || perChunk.isEmpty() || !ExplosionWorkScheduler.before(deadline)) return;
-		if(removalChunk == null) {
-			removalChunk = orderedChunks.get(0); removalRay = 0; removalStep = -1; reconstructed = false;
+		if(!restore(deadline) || !migrate(deadline) || !isAusf3Complete || firstChunk == null || !ExplosionWorkScheduler.before(deadline)) return;
+		ChunkMask chunk = removalActive ? (ChunkMask)chunks.getValueByKey(removalKey) : null;
+		if(chunk == null) {
+			chunk = ordering.firstEntry().getValue().first;
+			removalKey = chunk.key; removalSection = removalBit = 0; removalActive = true;
 		}
-		List<FloatTriplet> points = perChunk.get(removalChunk);
-		int chunkX = removalChunk.chunkXPos, chunkZ = removalChunk.chunkZPos;
-		int enter = Math.max(0, Math.min(Math.abs(posX - (chunkX << 4)), Math.abs(posZ - (chunkZ << 4))) - 16);
-		while(!reconstructed && removalRay < points.size() && ExplosionWorkScheduler.before(deadline)) {
-			FloatTriplet tip = points.get(removalRay);
-			Vec3 vec = Vec3.createVectorHelper(tip.xCoord - posX, tip.yCoord - posY, tip.zCoord - posZ);
-			double len = vec.lengthVector(), dx = vec.xCoord / len, dy = vec.yCoord / len, dz = vec.zCoord / len;
-			int tipX = (int)Math.floor(tip.xCoord), tipY = (int)Math.floor(tip.yCoord), tipZ = (int)Math.floor(tip.zCoord);
-			if(removalStep < 0) { removalStep = enter; removalInChunk = false; }
-			while(removalStep < len && ExplosionWorkScheduler.before(deadline)) {
-				int x = (int)Math.floor(posX + dx * removalStep), y = (int)Math.floor(posY + dy * removalStep), z = (int)Math.floor(posZ + dz * removalStep);
-				if(x >> 4 != chunkX || z >> 4 != chunkZ) {
-					if(removalInChunk) { removalStep = (int)Math.ceil(len); break; }
-					removalStep++; continue;
-				}
-				removalInChunk = true;
-				Block block = world.getBlock(x, y, z);
-				if(!ExplosionWorkScheduler.before(deadline)) return;
-				if(!world.isAirBlock(x, y, z) && !block.getMaterial().isLiquid()) {
-					BlockPos pos = new BlockPos(x, y, z);
-					if(x == tipX && y == tipY && z == tipZ) toRemTips.add(pos);
-					toRem.add(pos);
-				}
-				removalStep++;
+		while(removalSection < 16 && ExplosionWorkScheduler.before(deadline)) {
+			SectionMask section = chunk.sections[removalSection];
+			if(section == null) { removalSection++; removalBit = 0; continue; }
+			int bit = section.destruction.nextSetBit(removalBit);
+			if(bit < 0) { chunk.sections[removalSection++] = null; removalBit = 0; continue; }
+			removalBit = bit;
+			int x = ((int)chunk.key << 4) + (bit & 15), y = (removalSection << 4) + (bit >> 8), z = ((int)(chunk.key >> 32) << 4) + ((bit >> 4) & 15);
+			Block block = world.getBlock(x, y, z);
+			if(!ExplosionWorkScheduler.before(deadline)) return;
+			boolean change = !block.getMaterial().isLiquid() && !world.isAirBlock(x, y, z);
+			if(!ExplosionWorkScheduler.before(deadline)) return;
+			if(change) {
+				if(section.tips != null && section.tips.get(bit)) handleTip(x, y, z);
+				else world.setBlock(x, y, z, Blocks.air, 0, 2);
 			}
-			if(removalStep < len) return;
-			removalRay++; removalStep = -1;
+			// Callbacks, tile cleanup, lighting and sync finish before the bit/cursor
+			// advances, even if the indivisible world removal overruns the slice.
+			section.destruction.clear(bit);
+			if(section.tips != null) section.tips.clear(bit);
+			removalBit = bit + 1;
+			if(section.destruction.isEmpty()) { chunk.sections[removalSection++] = null; removalBit = 0; }
 		}
-		if(removalRay == points.size()) reconstructed = true;
-		if(!reconstructed) return;
-		if(removalIterator == null) removalIterator = toRem.iterator();
-		while(removalIterator.hasNext() && ExplosionWorkScheduler.before(deadline)) {
-			BlockPos pos = removalIterator.next();
-			if(toRemTips.contains(pos)) handleTip(pos.getX(), pos.getY(), pos.getZ());
-			else world.setBlock(pos.getX(), pos.getY(), pos.getZ(), Blocks.air, 0, 2);
-			// Callbacks and tile cleanup finish before advancing persisted removal progress.
-			removalIterator.remove(); toRemTips.remove(pos);
-		}
-		if(removalIterator.hasNext()) return;
-		perChunk.remove(removalChunk); orderedChunks.remove(0);
-		removalChunk = null; removalIterator = null; reconstructed = false;
+		if(removalSection == 16) { removeChunk(chunk); removalActive = false; }
 	}
 
 	protected void handleTip(int x, int y, int z) { world.setBlock(x, y, z, Blocks.air, 0, 3); }
@@ -197,68 +302,123 @@ public class ExplosionNukeRayBatched {
 		if(block == Blocks.obsidian) return Blocks.stone.getExplosionResistance(null) * 3;
 		return block.getExplosionResistance(null);
 	}
-	public class CoordComparator implements Comparator<ChunkCoordIntPair> {
-		public int compare(ChunkCoordIntPair a, ChunkCoordIntPair b) { return distance(a) - distance(b); }
-	}
-	public class FloatTriplet {
-		public float xCoord, yCoord, zCoord;
-		public FloatTriplet(float x, float y, float z) { xCoord = x; yCoord = y; zCoord = z; }
-	}
 
-	/** A partially decoded save remains authoritative until decoding completes. */
 	public void readFromNBT(NBTTagCompound tag) {
-		restoring = tag; restorePhase = restoreIndex = restorePoint = 0;
-		perChunk.clear(); orderedChunks.clear(); ordering.clear(); restoredOrder = new HashSet<ChunkCoordIntPair>(); rayChunks.clear(); toRem.clear(); toRemTips.clear();
-		rayChunkIterator = null; removalIterator = null;
+		chunks = new LongHashMap(); firstChunk = lastChunk = null; ordering.clear();
+		rayChunks = new LongHashMap(); rayChunkKeys = new ArrayList<Long>();
 		gspNum = tag.getInteger("gspNum"); gspX = tag.getDouble("gspX"); gspY = tag.getDouble("gspY");
-		isAusf3Complete = false;
 		if(tag.hasKey("contained")) contained = tag.getBoolean("contained");
 		if(tag.hasKey("surfaceY")) surfaceY = tag.getInteger("surfaceY");
 		rayActive = tag.getBoolean("rayActive"); rayFinishing = tag.getBoolean("rayFinishing");
 		rayX = tag.getDouble("rayX"); rayY = tag.getDouble("rayY"); rayZ = tag.getDouble("rayZ");
 		rayStep = tag.getInteger("rayStep"); rayStrength = tag.getFloat("rayStrength");
-		lastPos = tag.hasKey("lastPos") ? readPoint(tag.getCompoundTag("lastPos")) : null;
-		removalChunk = tag.hasKey("removalChunk") ? readCoord(tag.getCompoundTag("removalChunk")) : null;
-		removalRay = tag.getInteger("removalRay"); removalStep = tag.hasKey("removalStep") ? tag.getInteger("removalStep") : -1;
-		removalInChunk = tag.getBoolean("removalInChunk"); reconstructed = tag.getBoolean("reconstructed");
-		collectionTick = Long.MIN_VALUE; raysThisTick = 0;
+		collectionTick = Long.MIN_VALUE; raysThisTick = 0; isAusf3Complete = false;
+		restoring = legacy = null; restorePhase = restoreIndex = restoreSection = 0;
+		legacyPhase = legacyIndex = legacyPoint = 0; legacyChunkStarted = false;
+		buildActive = removalActive = rayRecorded = hasTip = false;
+		if(tag.getInteger("workVersion") < WORK_VERSION) {
+			legacy = tag;
+			if(tag.hasKey("lastPos")) {
+				NBTTagCompound tip = tag.getCompoundTag("lastPos");
+				tipX = tip.getFloat("x"); tipY = tip.getFloat("y"); tipZ = tip.getFloat("z"); hasTip = true;
+			}
+		} else {
+			restoring = tag;
+			rayRecorded = tag.getBoolean("rayRecorded");
+			hasTip = tag.getBoolean("hasTip"); tipX = tag.getFloat("tipX"); tipY = tag.getFloat("tipY"); tipZ = tag.getFloat("tipZ");
+			buildActive = tag.getBoolean("buildActive"); buildRestricted = tag.getBoolean("buildRestricted"); buildInChunk = tag.getBoolean("buildInChunk");
+			buildChunk = tag.getLong("buildChunk"); buildStep = tag.getInteger("buildStep"); buildLength = tag.getDouble("buildLength");
+			buildX = tag.getDouble("buildX"); buildY = tag.getDouble("buildY"); buildZ = tag.getDouble("buildZ");
+			buildTipX = tag.getInteger("buildTipX"); buildTipY = tag.getInteger("buildTipY"); buildTipZ = tag.getInteger("buildTipZ");
+			removalActive = tag.getBoolean("removalActive"); removalKey = tag.getLong("removalKey");
+			removalSection = tag.getInteger("removalSection"); removalBit = tag.getInteger("removalBit");
+			if(tag.hasKey("legacy")) {
+				legacy = tag.getCompoundTag("legacy"); legacyPhase = tag.getInteger("legacyPhase"); legacyIndex = tag.getInteger("legacyIndex");
+				legacyPoint = tag.getInteger("legacyPoint"); legacyChunkStarted = tag.getBoolean("legacyChunkStarted");
+			}
+		}
 	}
 
 	private boolean restore(long deadline) {
 		while(restoring != null && ExplosionWorkScheduler.before(deadline)) {
-			String key = restorePhase == 0 ? "ordered" : restorePhase == 1 ? "chunks" : restorePhase == 2 ? "rayChunks" : restorePhase == 3 ? "remaining" : "tips";
-			NBTTagList list = restoring.getTagList(key, 10);
-			if(restoreIndex >= list.tagCount()) {
-				restoreIndex = restorePoint = 0;
-				if(++restorePhase == 5) {
-					boolean complete = restoring.getBoolean("complete");
-					restoring = null; restoredOrder = null;
-					// Old complete saves lacked an ordered queue; rebuild distance order in slices.
-					if(complete && ordering.isEmpty()) isAusf3Complete = true;
+			if(restorePhase == 0) {
+				NBTTagList savedChunks = restoring.getTagList("chunks", 10);
+				if(restoreIndex == savedChunks.tagCount()) { restorePhase++; restoreIndex = 0; continue; }
+				NBTTagCompound item = savedChunks.getCompoundTagAt(restoreIndex);
+				NBTTagList sections = item.getTagList("sections", 10);
+				if(restoreSection == sections.tagCount()) { restoreIndex++; restoreSection = 0; continue; }
+				NBTTagCompound data = sections.getCompoundTagAt(restoreSection++);
+				int sectionY = data.getInteger("y");
+				if(sectionY < 0 || sectionY >= 16) continue;
+				SectionMask section = new SectionMask();
+				section.destruction.or(BitSet.valueOf(data.getByteArray("destruction")));
+				if(section.destruction.length() > 4096) section.destruction.clear(4096, section.destruction.length());
+				if(section.destruction.isEmpty()) continue;
+				if(data.hasKey("tips")) {
+					section.tips = BitSet.valueOf(data.getByteArray("tips")); section.tips.and(section.destruction);
 				}
-				continue;
+				chunkMask(readCoord(item)).sections[sectionY] = section;
+			} else if(restorePhase == 1) {
+				int[] keys = restoring.getIntArray("rayChunks");
+				if(restoreIndex < keys.length / 2) { addRayChunk(ChunkCoordIntPair.chunkXZ2Int(keys[restoreIndex * 2], keys[restoreIndex * 2 + 1])); restoreIndex++; }
+				else restorePhase++;
+			} else {
+				isAusf3Complete = legacy == null && restoring.getBoolean("complete"); restoring = null;
 			}
-			NBTTagCompound item = list.getCompoundTagAt(restoreIndex);
-			if(restorePhase == 1) {
-				ChunkCoordIntPair coord = readCoord(item);
-				List<FloatTriplet> points = perChunk.get(coord);
-				if(points == null) {
-					points = new ArrayList<FloatTriplet>(); perChunk.put(coord, points);
-					if(!restoredOrder.contains(coord)) queueOrder(coord);
-				}
-				NBTTagList savedPoints = item.getTagList("points", 10);
-				if(restorePoint < savedPoints.tagCount()) { points.add(readPoint(savedPoints.getCompoundTagAt(restorePoint++))); continue; }
-				restorePoint = 0;
-			} else if(restorePhase == 0) {
-				ChunkCoordIntPair coord = readCoord(item); orderedChunks.add(coord); restoredOrder.add(coord);
-			} else if(restorePhase == 2) rayChunks.add(readCoord(item));
-			else {
-				BlockPos pos = new BlockPos(item.getInteger("x"), item.getInteger("y"), item.getInteger("z"));
-				if(restorePhase == 3) toRem.add(pos); else toRemTips.add(pos);
-			}
-			restoreIndex++;
 		}
 		return restoring == null;
+	}
+
+	/** Budgeted old-save boundary. Completed removals are never re-expanded from endpoints. */
+	private boolean migrate(long deadline) {
+		while(legacy != null && ExplosionWorkScheduler.before(deadline)) {
+			if(legacyPhase < 2) {
+				NBTTagList positions = legacy.getTagList(legacyPhase == 0 ? "remaining" : "tips", 10);
+				if(legacyIndex == positions.tagCount()) { legacyPhase++; legacyIndex = 0; continue; }
+				NBTTagCompound pos = positions.getCompoundTagAt(legacyIndex++);
+				int x = pos.getInteger("x"), y = pos.getInteger("y"), z = pos.getInteger("z");
+				if(legacyPhase == 0) record(x, y, z, false);
+				else if(y >= 0 && y < 256) {
+					ChunkMask chunk = (ChunkMask)chunks.getValueByKey(ChunkCoordIntPair.chunkXZ2Int(x >> 4, z >> 4));
+					SectionMask section = chunk == null ? null : chunk.sections[y >> 4];
+					int bit = (y & 15) << 8 | (z & 15) << 4 | (x & 15);
+					if(section != null && section.destruction.get(bit)) record(x, y, z, true);
+				}
+			} else if(legacyPhase == 2) {
+				NBTTagList savedChunks = legacy.getTagList("chunks", 10);
+				if(legacyIndex == savedChunks.tagCount()) { legacyPhase++; legacyIndex = 0; continue; }
+				NBTTagCompound item = savedChunks.getCompoundTagAt(legacyIndex);
+				long key = readCoord(item);
+				boolean current = legacy.hasKey("removalChunk") && readCoord(legacy.getCompoundTag("removalChunk")) == key;
+				NBTTagList points = item.getTagList("points", 10);
+				if(!legacyChunkStarted) {
+					legacyPoint = current ? (legacy.getBoolean("reconstructed") ? points.tagCount() : legacy.getInteger("removalRay")) : 0;
+					legacyChunkStarted = true;
+				}
+				if(legacyPoint >= points.tagCount()) { legacyIndex++; legacyPoint = 0; legacyChunkStarted = false; continue; }
+				if(!buildActive) {
+					NBTTagCompound tip = points.getCompoundTagAt(legacyPoint);
+					boolean partial = current && legacyPoint == legacy.getInteger("removalRay");
+					int step = partial && legacy.hasKey("removalStep") ? legacy.getInteger("removalStep") : -1;
+					beginBuild(tip.getFloat("x"), tip.getFloat("y"), tip.getFloat("z"), step < 0 ? enter(key) : step, true, key, partial && step >= 0 && legacy.getBoolean("removalInChunk"));
+				}
+				if(!buildMask(deadline)) return false;
+				legacyPoint++;
+			} else if(legacyPhase == 3) {
+				NBTTagList keys = legacy.getTagList("rayChunks", 10);
+				if(legacyIndex < keys.tagCount()) addRayChunk(readCoord(keys.getCompoundTagAt(legacyIndex++)));
+				else legacyPhase++;
+			} else {
+				isAusf3Complete = legacy.getBoolean("complete") && !rayActive;
+				// The current old chunk contains only remaining positions and unfinished rays.
+				if(legacy.hasKey("removalChunk")) {
+					removalKey = readCoord(legacy.getCompoundTag("removalChunk"));
+					removalActive = chunks.containsItem(removalKey); removalSection = removalBit = 0;
+				}
+				legacy = null;
+			}
+		}
+		return legacy == null;
 	}
 
 	public void writeToNBT(NBTTagCompound tag) {
@@ -266,42 +426,44 @@ public class ExplosionNukeRayBatched {
 			for(Object key : restoring.func_150296_c()) tag.setTag((String)key, restoring.getTag((String)key).copy());
 			return;
 		}
-		tag.setInteger("workVersion", 2);
+		tag.setInteger("workVersion", WORK_VERSION);
 		tag.setInteger("gspNum", gspNum); tag.setDouble("gspX", gspX); tag.setDouble("gspY", gspY);
 		tag.setBoolean("complete", isAusf3Complete); tag.setBoolean("contained", contained); tag.setInteger("surfaceY", surfaceY);
 		tag.setBoolean("rayActive", rayActive); tag.setBoolean("rayFinishing", rayFinishing);
+		tag.setBoolean("rayRecorded", rayRecorded);
 		tag.setDouble("rayX", rayX); tag.setDouble("rayY", rayY); tag.setDouble("rayZ", rayZ);
 		tag.setInteger("rayStep", rayStep); tag.setFloat("rayStrength", rayStrength);
-		if(lastPos != null) tag.setTag("lastPos", writePoint(lastPos));
-		tag.setTag("rayChunks", writeCoords(rayChunks)); tag.setTag("ordered", writeCoords(orderedChunks));
-		NBTTagList chunks = new NBTTagList();
-		for(Map.Entry<ChunkCoordIntPair, List<FloatTriplet>> entry : perChunk.entrySet()) {
-			NBTTagCompound chunk = writeCoord(entry.getKey()); NBTTagList points = new NBTTagList();
-			for(FloatTriplet point : entry.getValue()) points.appendTag(writePoint(point));
-			chunk.setTag("points", points); chunks.appendTag(chunk);
+		tag.setBoolean("hasTip", hasTip); tag.setFloat("tipX", tipX); tag.setFloat("tipY", tipY); tag.setFloat("tipZ", tipZ);
+		int[] keys = new int[rayChunkKeys.size() * 2];
+		for(int i = 0; i < rayChunkKeys.size(); i++) { long key = rayChunkKeys.get(i); keys[i * 2] = (int)key; keys[i * 2 + 1] = (int)(key >> 32); }
+		tag.setIntArray("rayChunks", keys);
+		tag.setBoolean("buildActive", buildActive); tag.setBoolean("buildRestricted", buildRestricted); tag.setBoolean("buildInChunk", buildInChunk);
+		tag.setLong("buildChunk", buildChunk); tag.setInteger("buildStep", buildStep); tag.setDouble("buildLength", buildLength);
+		tag.setDouble("buildX", buildX); tag.setDouble("buildY", buildY); tag.setDouble("buildZ", buildZ);
+		tag.setInteger("buildTipX", buildTipX); tag.setInteger("buildTipY", buildTipY); tag.setInteger("buildTipZ", buildTipZ);
+		tag.setBoolean("removalActive", removalActive); tag.setLong("removalKey", removalKey);
+		tag.setInteger("removalSection", removalSection); tag.setInteger("removalBit", removalBit);
+		NBTTagList savedChunks = new NBTTagList();
+		for(ChunkMask chunk = firstChunk; chunk != null; chunk = chunk.next) {
+			NBTTagCompound item = new NBTTagCompound(); item.setInteger("x", (int)chunk.key); item.setInteger("z", (int)(chunk.key >> 32));
+			NBTTagList sections = new NBTTagList();
+			for(int y = 0; y < 16; y++) {
+				SectionMask section = chunk.sections[y];
+				if(section == null || section.destruction.isEmpty()) continue;
+				NBTTagCompound data = new NBTTagCompound(); data.setInteger("y", y);
+				data.setByteArray("destruction", section.destruction.toByteArray());
+				if(section.tips != null && !section.tips.isEmpty()) data.setByteArray("tips", section.tips.toByteArray());
+				sections.appendTag(data);
+			}
+			item.setTag("sections", sections); savedChunks.appendTag(item);
 		}
-		tag.setTag("chunks", chunks);
-		if(removalChunk != null) tag.setTag("removalChunk", writeCoord(removalChunk));
-		tag.setInteger("removalRay", removalRay); tag.setInteger("removalStep", removalStep);
-		tag.setBoolean("removalInChunk", removalInChunk); tag.setBoolean("reconstructed", reconstructed);
-		tag.setTag("remaining", writePositions(toRem)); tag.setTag("tips", writePositions(toRemTips));
-	}
-	private static ChunkCoordIntPair readCoord(NBTTagCompound tag) { return new ChunkCoordIntPair(tag.getInteger("x"), tag.getInteger("z")); }
-	private static NBTTagCompound writeCoord(ChunkCoordIntPair coord) {
-		NBTTagCompound tag = new NBTTagCompound(); tag.setInteger("x", coord.chunkXPos); tag.setInteger("z", coord.chunkZPos); return tag;
-	}
-	private static NBTTagList writeCoords(Iterable<ChunkCoordIntPair> coords) {
-		NBTTagList list = new NBTTagList(); for(ChunkCoordIntPair coord : coords) list.appendTag(writeCoord(coord)); return list;
-	}
-	private FloatTriplet readPoint(NBTTagCompound tag) { return new FloatTriplet(tag.getFloat("x"), tag.getFloat("y"), tag.getFloat("z")); }
-	private static NBTTagCompound writePoint(FloatTriplet point) {
-		NBTTagCompound tag = new NBTTagCompound(); tag.setFloat("x", point.xCoord); tag.setFloat("y", point.yCoord); tag.setFloat("z", point.zCoord); return tag;
-	}
-	private static NBTTagList writePositions(Iterable<BlockPos> positions) {
-		NBTTagList list = new NBTTagList();
-		for(BlockPos pos : positions) {
-			NBTTagCompound tag = new NBTTagCompound(); tag.setInteger("x", pos.getX()); tag.setInteger("y", pos.getY()); tag.setInteger("z", pos.getZ()); list.appendTag(tag);
+		tag.setTag("chunks", savedChunks);
+		if(legacy != null) {
+			// Keep old input only until migration completes, with its exact cursor and
+			// already-produced masks. Re-saving before any update is lossless too.
+			tag.setTag("legacy", legacy.copy()); tag.setInteger("legacyPhase", legacyPhase); tag.setInteger("legacyIndex", legacyIndex);
+			tag.setInteger("legacyPoint", legacyPoint); tag.setBoolean("legacyChunkStarted", legacyChunkStarted);
 		}
-		return list;
 	}
+	private static long readCoord(NBTTagCompound tag) { return ChunkCoordIntPair.chunkXZ2Int(tag.getInteger("x"), tag.getInteger("z")); }
 }
