@@ -10,6 +10,7 @@ import com.hbm.entity.effect.EntityFalloutRain;
 import com.hbm.explosion.ExplosionNukeGeneric;
 import com.hbm.explosion.ExplosionNukeRayBatched;
 import com.hbm.explosion.ExplosionWorkScheduler;
+import com.hbm.explosion.ExplosionTerrainAccess;
 import com.hbm.explosion.nuclear.BurstType;
 import com.hbm.explosion.nuclear.NuclearBurstContext;
 import com.hbm.explosion.nuclear.NuclearBurstResolver;
@@ -59,11 +60,23 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 	private ThermalIgnitionJob ignitionJob;
 	private long lastIgnitionTick = Long.MIN_VALUE;
 	private int ignitionCandidatesThisTick;
+	private ExplosionTerrainAccess.Access ignitionTerrain;
+	private ExplosionTerrainAccess.Access breachTerrain;
+	private NuclearBurstResolver.ReleaseSearch breachSearch;
+	private ExplosionTerrainAccess.Access breachTerrain() {
+		if(breachTerrain == null) breachTerrain = new ExplosionTerrainAccess.Access(worldObj);
+		return breachTerrain;
+	}
+	private ExplosionTerrainAccess.Access ignitionTerrain() {
+		if(ignitionTerrain == null) ignitionTerrain = new ExplosionTerrainAccess.Access(worldObj);
+		return ignitionTerrain;
+	}
 	private long activeWorkTick = Long.MIN_VALUE;
 	private final ExplosionWorkScheduler.Job ignitionWork = new ExplosionWorkScheduler.Job() {
 		public net.minecraft.entity.Entity owner() { return EntityNukeExplosionMK5.this; }
 		public long activeTick() { return activeWorkTick; }
-		public boolean ready(long tick) { return ignitionJob != null && !groundIgnitionComplete && (lastIgnitionTick != tick || ignitionCandidatesThisTick < MAX_IGNITION_CANDIDATES_PER_TICK); }
+		public void suspend() { if(ignitionTerrain != null) ignitionTerrain.cancel(); }
+		public boolean ready(long tick) { return ignitionTerrain().ready(tick) && ignitionJob != null && !groundIgnitionComplete && (lastIgnitionTick != tick || ignitionCandidatesThisTick < MAX_IGNITION_CANDIDATES_PER_TICK); }
 		public void run(long deadline, long tick) {
 			advanceThermalGroundIgnition(deadline, tick);
 			if(groundIgnitionComplete) ExplosionWorkScheduler.remove(this);
@@ -72,7 +85,8 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 	private final ExplosionWorkScheduler.Job terrainWork = new ExplosionWorkScheduler.Job() {
 		public net.minecraft.entity.Entity owner() { return EntityNukeExplosionMK5.this; }
 		public long activeTick() { return activeWorkTick; }
-		public boolean ready(long tick) { return explosion == null || explosion.canWork(tick, speed * 10); }
+		public void suspend() { if(explosion != null) explosion.cancelWorkers(); if(breachTerrain != null) breachTerrain.cancel(); }
+		public boolean ready(long tick) { return breachTerrain().ready(tick) && (explosion == null || explosion.canWork(tick, speed * 10)); }
 		public void run(long deadline, long tick) {
 			if(!ExplosionWorkScheduler.before(deadline)) return;
 			if(explosion == null) {
@@ -82,8 +96,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 			if(!explosion.isAusf3Complete) explosion.collectTip(speed * 10, deadline, tick);
 			else explosion.processChunk(deadline);
 			if(!explosion.hasPendingWork() && ExplosionWorkScheduler.before(deadline)) {
-				confirmPostExcavationBreach();
-				ExplosionWorkScheduler.remove(this);
+				if(confirmPostExcavationBreach(deadline)) ExplosionWorkScheduler.remove(this);
 			}
 		}
 	};
@@ -200,6 +213,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 				if(!processIgnitionColumn(job, (int)column, (int)(column >> 32), deadline)) break;
 				job.pendingCursor++;
 				job.columnPhase = 0; job.fuelSide = -1;
+				job.sight.reset();
 			} else if(job.sampleCursor < job.sampleCount) {
 				job.batchAttempts = job.pendingCursor = job.pendingCount = 0;
 			} else {
@@ -210,6 +224,8 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 	}
 
 	private boolean processIgnitionColumn(ThermalIgnitionJob job, int x, int z, long deadline) {
+		if(x < -30000000 || z < -30000000 || x >= 30000000 || z >= 30000000) return true;
+		if(!ExplosionTerrainAccess.neighbors(ignitionTerrain(), x, z, deadline)) return false;
 		while(ExplosionWorkScheduler.before(deadline)) {
 			int y = job.columnY;
 			switch(job.columnPhase) {
@@ -238,6 +254,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 				else if(++job.fuelSide == ForgeDirection.VALID_DIRECTIONS.length) return true;
 				break;
 			case 4:
+				if(!ExplosionTerrainAccess.sight(ignitionTerrain(), job.sight, job.sourceX, job.sourceY, job.sourceZ, x + .5D, y + 1.1D, z + .5D, deadline)) return false;
 				if(worldObj.rayTraceBlocks(Vec3.createVectorHelper(job.sourceX, job.sourceY, job.sourceZ), Vec3.createVectorHelper(x + 0.5D, y + 1.1D, z + 0.5D)) != null) return true;
 				job.columnPhase++; break;
 			default:
@@ -257,6 +274,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 		final long[] pending = new long[IGNITION_BATCH_SIZE];
 		int sampleCursor, seenCount, batchAttempts, pendingCursor, pendingCount;
 		int columnPhase, columnY, fuelSide = -1;
+		final ExplosionTerrainAccess.Sight sight = new ExplosionTerrainAccess.Sight();
 		private NBTTagCompound restoring;
 		private int restoreCursor;
 
@@ -376,20 +394,27 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 	}
 
 	/** Re-check only after every queued terrain block has been applied. Prediction is never promoted implicitly. */
-	private void confirmPostExcavationBreach() {
-		if(spec.burstType != BurstType.SUBSURFACE || spec.breachConfirmationComplete) return;
+	private boolean confirmPostExcavationBreach(long deadline) {
+		if(spec.burstType != BurstType.SUBSURFACE || spec.breachConfirmationComplete) return true;
 		int searchRadius = Math.min(64, Math.max(8, (int)Math.ceil(effects.cavityRadius)));
-		int[] breach = NuclearBurstResolver.findOpenRelease(worldObj, (int)Math.floor(posX), (int)Math.floor(posY), (int)Math.floor(posZ), searchRadius);
+		if(breachSearch == null) breachSearch = new NuclearBurstResolver.ReleaseSearch((int)Math.floor(posX), (int)Math.floor(posY), (int)Math.floor(posZ), searchRadius);
+		breachSearch.advance(breachTerrain(), deadline);
+		if(!breachSearch.complete || !ExplosionWorkScheduler.before(deadline)) return false;
+		int[] breach = breachSearch.breach;
 		spec.breachConfirmationComplete = true; spec.actualSurfaceBreach = breach != null; spec.vented = breach != null; spec.contained = breach == null;
 		spec.atmosphericReleaseFactor = breach == null ? 0D : Math.max(.05D, spec.predictedBreakthroughFactor);
 		if(breach != null) { spec.breachX=breach[0]; spec.breachY=breach[1]; spec.breachZ=breach[2]; }
 		effects = NuclearEffectsSolver.solve(spec);
-		if(spec.actualSurfaceBreach) { if(!thermalApplied) { applyThermalFlash(); thermalApplied=true; } applyThermalGroundIgnition(); if(!promptApplied) { applyPromptRadiation(); promptApplied=true; } }
+		// Immediate entity effects run once from onUpdate after confirmation, outside
+		// the governed terrain slice. Their normal flags survive save/reload.
+		breachSearch = null;
+		return true;
 	}
 
 	private void finishDetonation() {
 		if(worldObj.isRemote) return;
 		if(pendingExplosionData != null || (explosion != null && explosion.hasPendingWork())) return;
+		if(breachSearch != null && !spec.breachConfirmationComplete) return;
 		if(!falloutSpawned && fallout && effects.falloutSourceStrength > 0D && spec.burstType != BurstType.VACUUM && (spec.burstType != BurstType.SUBSURFACE || (spec.actualSurfaceBreach && spec.atmosphericReleaseFactor >= 0.10D))) {
 			EntityFalloutRain rain = new EntityFalloutRain(worldObj);
 			rain.setPosition(spec.burstType == BurstType.SUBSURFACE ? spec.breachX + 0.5D : posX, spec.burstType == BurstType.SUBSURFACE ? spec.breachY + 0.5D : posY, spec.burstType == BurstType.SUBSURFACE ? spec.breachZ + 0.5D : posZ); rain.setSalted(salted);
@@ -403,11 +428,16 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 	}
 
 	@Override public void setDead() {
+		if(explosion != null) explosion.cancelWorkers();
+		if(ignitionTerrain != null) ignitionTerrain.cancel();
+		if(breachTerrain != null) breachTerrain.cancel();
 		ignitionJob = null;
 		super.setDead();
 	}
 
 	@Override protected void readEntityFromNBT(NBTTagCompound nbt) {
+		ignitionTerrain().read(nbt.getCompoundTag("ignitionTerrainRequest"));
+		breachTerrain().read(nbt.getCompoundTag("breachTerrainRequest")); breachSearch = null;
 		ticksExisted = nbt.getInteger("ticksExisted"); strength = nbt.getInteger("strength"); speed = nbt.getInteger("speed"); length = nbt.getInteger("length");
 		fallout = nbt.getBoolean("fallout"); salted = nbt.getBoolean("salted"); falloutAdd = nbt.getInteger("falloutAdd"); previousShockRadius = nbt.getDouble("previousShock"); currentShockRadius = nbt.getDouble("currentShock"); promptApplied = nbt.getBoolean("promptApplied"); thermalApplied = nbt.getBoolean("thermalApplied"); falloutSpawned = nbt.getBoolean("falloutSpawned"); seismicSent = nbt.getBoolean("seismicSent");
 		ignitionJob = nbt.hasKey("thermalIgnitionJob") ? ThermalIgnitionJob.readFromNBT(nbt.getCompoundTag("thermalIgnitionJob")) : null;
@@ -422,6 +452,8 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 		if(nbt.hasKey("terrainWork")) pendingExplosionData = nbt.getCompoundTag("terrainWork");
 	}
 	@Override protected void writeEntityToNBT(NBTTagCompound nbt) {
+		NBTTagCompound request = new NBTTagCompound(); ignitionTerrain().write(request); nbt.setTag("ignitionTerrainRequest", request);
+		NBTTagCompound breachRequest = new NBTTagCompound(); breachTerrain().write(breachRequest); nbt.setTag("breachTerrainRequest", breachRequest);
 		ensureEffects(); nbt.setInteger("ticksExisted", ticksExisted); nbt.setInteger("strength", strength); nbt.setInteger("speed", speed); nbt.setInteger("length", length); nbt.setBoolean("fallout", fallout); nbt.setBoolean("salted", salted); nbt.setInteger("falloutAdd", falloutAdd); nbt.setDouble("previousShock", previousShockRadius); nbt.setDouble("currentShock", currentShockRadius); nbt.setBoolean("promptApplied", promptApplied); nbt.setBoolean("thermalApplied", thermalApplied); nbt.setBoolean("falloutSpawned", falloutSpawned); nbt.setBoolean("seismicSent", seismicSent);
 		nbt.setBoolean("groundIgnitionComplete", groundIgnitionComplete);
 		if(ignitionJob != null) { NBTTagCompound ignitionWork = new NBTTagCompound(); ignitionJob.writeToNBT(ignitionWork); nbt.setTag("thermalIgnitionJob", ignitionWork); }

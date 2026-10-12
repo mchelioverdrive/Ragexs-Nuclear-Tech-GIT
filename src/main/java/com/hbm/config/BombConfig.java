@@ -34,6 +34,11 @@ public class BombConfig {
 
 	public static int mk5 = 50;
 	public static int explosionWorkBudgetMs = 5;
+	public static int explosionChunkLoadsPerTick = 1;
+	public static int explosionSnapshotBudgetMiB = 64;
+	public static int explosionWorkerThreads = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() - 2));
+	public static boolean explosionTerrainLoading = true;
+	public static boolean explosionTerrainGeneration = true;
 	public static int blastSpeed = 1024;
 	public static int falloutRange = 100;
 	public static int fDelay = 4;
@@ -137,6 +142,18 @@ public class BombConfig {
 		explosionWorkBudgetMs = Math.max(1, workBudget.getInt(5));
 		workBudget.set(explosionWorkBudgetMs);
 
-		chunkloading = CommonConfig.createConfigBool(config, CATEGORY_NUKE, "6.XX_enableChunkLoading", "Allows all types of procedural explosions to keep the central chunk loaded.", true);
+		Property loads = config.get(CATEGORY_NUKE, "6.08_explosionChunkLoadsPerTick", 1);
+		loads.comment = "Positive server-wide limit on explicit terrain chunk loads per tick across governed MK5, ignition and fallout jobs and dimensions. Loaded chunks are reused. Synchronous loads, generation/population and mod callbacks cannot be interrupted; their incidental work can exceed the shared deadline.";
+		loads.setMinValue(1); explosionChunkLoadsPerTick = Math.max(1, loads.getInt(1)); loads.set(explosionChunkLoadsPerTick);
+		Property snapshots = config.get(CATEGORY_NUKE, "6.09_explosionSnapshotBudgetMiB", 64);
+		snapshots.comment = "Positive shared MiB ceiling for section snapshot buffers, including incomplete captures and retired snapshots with active readers. Captures run on the server thread; workers receive only immutable primitive terrain data. Requests and batches also have fixed queue limits.";
+		snapshots.setMinValue(1); explosionSnapshotBudgetMiB = Math.max(1, snapshots.getInt(64)); snapshots.set(explosionSnapshotBudgetMiB);
+		int workerDefault = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() - 2));
+		Property workers = config.get(CATEGORY_NUKE, "6.10_explosionWorkerThreads", workerDefault);
+		workers.comment = "Shared terrain tracing/mask worker count. 0 uses the existing bounded server-thread algorithm. Positive counts use a bounded queue, one outstanding batch per job and at most 64 completed rays / 512 traversal operations per batch. At most 64 batches are outstanding globally, with 16 slots reserved for resumptions. All world reads/callbacks, mask commits and world mutations remain on the server thread.";
+		workers.setMinValue(0); explosionWorkerThreads = Math.max(0, workers.getInt(workerDefault)); workers.set(explosionWorkerThreads);
+		explosionTerrainLoading = CommonConfig.createConfigBool(config, CATEGORY_NUKE, "6.11_explosionTerrainLoading", "Allow governed explosion terrain requests to load existing chunks. False waits for external loading; unavailable terrain is never treated as air. Independent of central chunk tickets.", true);
+		explosionTerrainGeneration = CommonConfig.createConfigBool(config, CATEGORY_NUKE, "6.12_explosionTerrainGeneration", "Allow governed explosion terrain requests to generate missing chunks (requires terrain loading). Default true preserves previous terrain coverage beyond player render distance. False uses disk-only loading without Forge's failure-to-generation fallback or automatic population, and retains missing terrain work until terrain exists or is externally loaded. Arbitrary mod load/block callbacks remain synchronous and may perform their own incidental world work.", true);
+		chunkloading = CommonConfig.createConfigBool(config, CATEGORY_NUKE, "6.XX_enableChunkLoading", "Allows all types of procedural explosions to keep only their central chunk loaded. Independent of terrain loading/generation policy.", true);
 	}
 }

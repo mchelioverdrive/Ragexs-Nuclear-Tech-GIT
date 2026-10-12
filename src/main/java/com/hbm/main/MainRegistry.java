@@ -1054,6 +1054,7 @@ public class MainRegistry {
 		FMLCommonHandler.instance().bus().register(commonHandler);
 		MinecraftForge.EVENT_BUS.register(commonHandler);
 		MinecraftForge.EVENT_BUS.register(new com.hbm.explosion.FalloutCollapseManager());
+		MinecraftForge.EVENT_BUS.register(new com.hbm.explosion.ExplosionTerrainAccess());
 		MinecraftForge.TERRAIN_GEN_BUS.register(commonHandler);
 		MinecraftForge.ORE_GEN_BUS.register(commonHandler);
 
@@ -1088,6 +1089,11 @@ public class MainRegistry {
 
 	//yes kids, this is where we would usually register commands
 	@EventHandler
+	public void serverStopping(cpw.mods.fml.common.event.FMLServerStoppingEvent event) {
+		com.hbm.explosion.ExplosionNukeRayBatched.shutdownWorkers();
+	}
+
+	@EventHandler
 	public void serverStopped(cpw.mods.fml.common.event.FMLServerStoppedEvent event) {
 		com.hbm.explosion.ExplosionWorkScheduler.clear();
 		com.hbm.explosion.FalloutCollapseManager.clear();
@@ -1096,6 +1102,7 @@ public class MainRegistry {
 
 	@EventHandler
 	public void serverStart(FMLServerStartingEvent event) {
+		com.hbm.explosion.ExplosionNukeRayBatched.startWorkers();
 		World world = event.getServer().getEntityWorld();
 		RBMKDials.createDials(world);
 		event.registerServerCommand(new CommandReloadRecipes());

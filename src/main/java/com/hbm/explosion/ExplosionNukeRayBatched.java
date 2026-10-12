@@ -4,6 +4,11 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.TreeMap;
 
+import com.hbm.config.BombConfig;
+import com.hbm.main.MainRegistry;
+import com.hbm.explosion.ExplosionTerrainAccess.Access;
+import com.hbm.explosion.ExplosionTerrainAccess.Snapshot;
+
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
@@ -16,6 +21,7 @@ import net.minecraft.world.chunk.Chunk;
 
 public class ExplosionNukeRayBatched {
 	private static final int WORK_VERSION = 3;
+	// Stage 5 adds optional request/checkpoint fields to the stage 3 mask payload.
 	// x occupies the low signed int, z the high signed int, as in chunkXZ2Int.
 	private LongHashMap chunks = new LongHashMap();
 	private ChunkMask firstChunk, lastChunk;
@@ -39,6 +45,12 @@ public class ExplosionNukeRayBatched {
 	private ArrayList<Long> rayChunkKeys = new ArrayList<Long>();
 	private long collectionTick = Long.MIN_VALUE;
 	private int raysThisTick;
+	private final Access terrain;
+	private ExplosionRayWorker.Lifecycle lifecycle;
+	private ExplosionRayWorker.Batch batch;
+	private boolean snapshotPending, workerFailed;
+	private int snapshotX, snapshotY, snapshotZ;
+	private static final java.util.Set<ExplosionNukeRayBatched> workers = new java.util.HashSet<ExplosionNukeRayBatched>();
 
 	private boolean buildActive, buildRestricted, buildInChunk;
 	private long buildChunk;
@@ -77,6 +89,7 @@ public class ExplosionNukeRayBatched {
 	}
 	public ExplosionNukeRayBatched(World world, int x, int y, int z, int strength, int speed, int length, boolean contained, int surfaceY) {
 		this.world = world; posX = x; posY = y; posZ = z;
+		terrain = new Access(world);
 		this.strength = strength; this.length = length; this.contained = contained; this.surfaceY = surfaceY;
 		rayLength = (int)Math.ceil(strength);
 		gspNumMax = (int)(2.5 * Math.PI * Math.pow(strength, 2));
@@ -96,6 +109,7 @@ public class ExplosionNukeRayBatched {
 
 	public boolean hasPendingWork() { return restoring != null || legacy != null || !isAusf3Complete || firstChunk != null; }
 	public boolean canWork(long tick, int count) {
+		if(!terrain.ready(tick) || batch != null && batch.result == null && batch.failure == null) return false;
 		return restoring != null || legacy != null || isAusf3Complete || gspNum > gspNumMax || collectionTick != tick || raysThisTick < count;
 	}
 	private int distance(long key) {
@@ -148,6 +162,10 @@ public class ExplosionNukeRayBatched {
 	public void collectTip(int count, long deadline, long tick) {
 		if(!restore(deadline) || !migrate(deadline) || isAusf3Complete) return;
 		if(collectionTick != tick) { collectionTick = tick; raysThisTick = 0; }
+		if(batch != null || BombConfig.explosionWorkerThreads > 0 && !workerFailed) {
+			collectWorker(count, deadline);
+			return;
+		}
 		// Cache chunk reads only within this slice: another job/tick may change storage.
 		Chunk sampledChunk = null;
 		while(gspNum <= gspNumMax && raysThisTick < count && ExplosionWorkScheduler.before(deadline)) {
@@ -166,7 +184,8 @@ public class ExplosionNukeRayBatched {
 				// blocks can have resistance. Keep the world border's air behavior as well.
 				if(iy >= 0 && iy < 256 && ix >= -30000000 && iz >= -30000000 && ix < 30000000 && iz < 30000000) {
 					if(sampledChunk == null || sampledChunk.xPosition != ix >> 4 || sampledChunk.zPosition != iz >> 4) {
-						sampledChunk = world.getChunkFromChunkCoords(ix >> 4, iz >> 4);
+						sampledChunk = ExplosionTerrainAccess.chunk(terrain, ix >> 4, iz >> 4, deadline);
+						if(sampledChunk == null) return;
 						if(!ExplosionWorkScheduler.before(deadline)) return;
 					}
 					if(sampledChunk.getBlockStorageArray()[iy >> 4] == null && masqueradeResistance(Blocks.air) == 0F) {
@@ -205,6 +224,102 @@ public class ExplosionNukeRayBatched {
 		// Distance buckets were maintained on insertion; no final large sort/queue copy.
 		if(gspNum > gspNumMax && ExplosionWorkScheduler.before(deadline)) isAusf3Complete = true;
 	}
+
+	private void collectWorker(int count, long deadline) {
+		if(!ExplosionWorkScheduler.before(deadline)) return;
+		if(lifecycle == null || lifecycle.cancelled) {
+			lifecycle = new ExplosionRayWorker.Lifecycle(terrain.id, terrain.worldLifecycleId); workers.add(this);
+		}
+		if(batch != null) {
+			ExplosionRayWorker.Result result = batch.result;
+			Throwable failure = batch.failure;
+			if(result == null && failure == null) return;
+			Snapshot snapshot = batch.snapshot;
+			if(failure != null) {
+				MainRegistry.logger.error("Explosion terrain worker failed; retaining checkpoint and using server-thread fallback", failure);
+				workerFailed = true; lifecycle.cancelled = true;
+				batch.cancel(); batch = null; snapshotPending = false; workers.remove(this); return;
+			}
+			if(lifecycle.cancelled || result.jobId != lifecycle.jobId || result.lifecycleId != lifecycle.id || result.worldLifecycleId != terrain.worldLifecycleId || snapshot != null && (!snapshot.valid || result.snapshotId != snapshot.id || snapshot.worldLifecycleId != terrain.worldLifecycleId)) {
+				// The input checkpoint has never advanced. Retry all rejected traversal
+				// and mask work, including a result that reports an unfinished ray.
+				batch.dispose(); batch = null; snapshotPending = false; terrain.defer(); return;
+			}
+			if(snapshot != null) {
+				if(result.completedRays > 0) { rayChunks = new LongHashMap(); rayChunkKeys = new ArrayList<Long>(); }
+				if(result.qualified) addRayChunk(ChunkCoordIntPair.chunkXZ2Int(snapshot.chunkX, snapshot.chunkZ));
+				if(!result.destruction.isEmpty()) {
+					ChunkMask chunk = chunkMask(ChunkCoordIntPair.chunkXZ2Int(snapshot.chunkX, snapshot.chunkZ));
+					SectionMask section = chunk.sections[snapshot.sectionY];
+					if(section == null) chunk.sections[snapshot.sectionY] = section = new SectionMask();
+					section.destruction.or(result.destruction);
+					if(!result.tips.isEmpty()) {
+						if(section.tips == null) section.tips = new BitSet();
+						section.tips.or(result.tips);
+					}
+				}
+			}
+			ExplosionRayWorker.State state = result.state;
+			if(snapshot == null && result.completedRays > 0) { rayChunks = new LongHashMap(); rayChunkKeys = new ArrayList<Long>(); }
+			gspNum = state.gspNum; gspX = state.gx; gspY = state.gy; raysThisTick += result.completedRays;
+			rayActive = state.active; rayRecorded = state.recorded; rayX = state.dx; rayY = state.dy; rayZ = state.dz;
+			rayStep = state.step; rayStrength = state.strength; rayFinishing = state.finishing;
+			hasTip = state.hasTip; tipX = state.tx; tipY = state.ty; tipZ = state.tz;
+			buildStep = state.buildStep; buildActive = state.building; buildLength = state.buildLength;
+			buildX = state.bx; buildY = state.by; buildZ = state.bz;
+			buildTipX = state.tipX; buildTipY = state.tipY; buildTipZ = state.tipZ;
+			buildRestricted = buildInChunk = false;
+			snapshotPending = result.missing || snapshot != null;
+			if(result.missing) { snapshotX = result.chunkX; snapshotY = result.sectionY; snapshotZ = result.chunkZ; }
+			else if(snapshot != null) { snapshotX = snapshot.chunkX; snapshotY = snapshot.sectionY; snapshotZ = snapshot.chunkZ; }
+			// Mask OR and scalar cursor adoption form one bounded server checkpoint.
+			batch.dispose(); batch = null;
+		}
+		if(!ExplosionWorkScheduler.before(deadline)) return;
+		if(BombConfig.explosionWorkerThreads == 0 || workerFailed) return;
+		if(gspNum > gspNumMax) { isAusf3Complete = true; workers.remove(this); return; }
+		if(raysThisTick >= count) return;
+		if(!ExplosionRayWorker.available(rayActive || buildActive)) { terrain.defer(); return; }
+		Snapshot snapshot = null;
+		if(snapshotPending) {
+			snapshot = ExplosionTerrainAccess.snapshot(terrain, snapshotX, snapshotY, snapshotZ, deadline);
+			if(snapshot == null) return;
+		}
+		if(!ExplosionWorkScheduler.before(deadline)) return;
+		ExplosionRayWorker.State state = new ExplosionRayWorker.State();
+		state.posX = posX; state.posY = posY; state.posZ = posZ; state.length = length; state.rayLength = rayLength;
+		state.initialStrength = strength; state.gspNum = gspNum; state.gspNumMax = gspNumMax; state.gx = gspX; state.gy = gspY;
+		state.active = rayActive; state.recorded = rayRecorded; state.rayLimit = Math.min(ExplosionRayWorker.MAX_BATCH_RAYS, count - raysThisTick);
+		state.surfaceY = surfaceY; state.contained = contained; state.step = rayStep; state.strength = rayStrength;
+		state.dx = rayX; state.dy = rayY; state.dz = rayZ; state.finishing = rayFinishing; state.hasTip = hasTip;
+		state.tx = tipX; state.ty = tipY; state.tz = tipZ; state.airResistance = masqueradeResistance(Blocks.air);
+		state.building = buildActive; state.buildStep = buildStep; state.buildLength = buildLength;
+		state.bx = buildX; state.by = buildY; state.bz = buildZ; state.tipX = buildTipX; state.tipY = buildTipY; state.tipZ = buildTipZ;
+		boolean eligible = snapshot != null && rayChunks.containsItem(ChunkCoordIntPair.chunkXZ2Int(snapshot.chunkX, snapshot.chunkZ));
+		if(!ExplosionWorkScheduler.before(deadline)) return;
+		batch = ExplosionRayWorker.submit(state, snapshot, eligible, lifecycle);
+		if(batch == null) terrain.defer();
+	}
+
+	public void cancelWorkers() {
+		if(lifecycle != null) lifecycle.cancelled = true;
+		if(batch != null) { batch.cancel(); batch = null; }
+		terrain.cancel(); workers.remove(this);
+		// All uncommitted inputs remain in the original ray/build fields for saving.
+	}
+	public static void unloadWorkers(World world) {
+		for(ExplosionNukeRayBatched engine : workers.toArray(new ExplosionNukeRayBatched[0])) if(engine.world == world) engine.cancelWorkers();
+	}
+	public static void unloadChunkWorkers(World world, int x, int z) {
+		for(ExplosionNukeRayBatched engine : workers.toArray(new ExplosionNukeRayBatched[0])) {
+			if(engine.world == world && engine.posX >> 4 == x && engine.posZ >> 4 == z) engine.cancelWorkers();
+		}
+	}
+	public static void shutdownWorkers() {
+		for(ExplosionNukeRayBatched engine : workers.toArray(new ExplosionNukeRayBatched[0])) engine.cancelWorkers();
+		ExplosionRayWorker.shutdown();
+	}
+	public static void startWorkers() { ExplosionRayWorker.startServer(); }
 
 	/** Binary search integer sample indices, not voxel/DDA boundaries. Float rounding
 	 * and the original integer steps are unchanged; zero-resistance air has no effect. */
@@ -250,6 +365,7 @@ public class ExplosionNukeRayBatched {
 				if(!eligible || buildStep < entryStep) { buildStep++; continue; }
 			}
 			if(y >= 0 && y < 256) {
+				if(ExplosionTerrainAccess.chunk(terrain, x >> 4, z >> 4, deadline) == null) return false;
 				Block block = world.getBlock(x, y, z);
 				if(!ExplosionWorkScheduler.before(deadline)) return false;
 				if(!world.isAirBlock(x, y, z) && !block.getMaterial().isLiquid()) {
@@ -271,6 +387,7 @@ public class ExplosionNukeRayBatched {
 			chunk = ordering.firstEntry().getValue().first;
 			removalKey = chunk.key; removalSection = removalBit = 0; removalActive = true;
 		}
+		if(ExplosionTerrainAccess.chunk(terrain, (int)chunk.key, (int)(chunk.key >> 32), deadline) == null) return;
 		while(removalSection < 16 && ExplosionWorkScheduler.before(deadline)) {
 			SectionMask section = chunk.sections[removalSection];
 			if(section == null) { removalSection++; removalBit = 0; continue; }
@@ -304,6 +421,8 @@ public class ExplosionNukeRayBatched {
 	}
 
 	public void readFromNBT(NBTTagCompound tag) {
+		cancelWorkers(); terrain.read(tag);
+		snapshotPending = tag.getBoolean("snapshotPending"); snapshotX = tag.getInteger("snapshotX"); snapshotY = tag.getInteger("snapshotY"); snapshotZ = tag.getInteger("snapshotZ");
 		chunks = new LongHashMap(); firstChunk = lastChunk = null; ordering.clear();
 		rayChunks = new LongHashMap(); rayChunkKeys = new ArrayList<Long>();
 		gspNum = tag.getInteger("gspNum"); gspX = tag.getDouble("gspX"); gspY = tag.getDouble("gspY");
@@ -427,6 +546,8 @@ public class ExplosionNukeRayBatched {
 			return;
 		}
 		tag.setInteger("workVersion", WORK_VERSION);
+		terrain.write(tag);
+		tag.setBoolean("snapshotPending", snapshotPending); tag.setInteger("snapshotX", snapshotX); tag.setInteger("snapshotY", snapshotY); tag.setInteger("snapshotZ", snapshotZ);
 		tag.setInteger("gspNum", gspNum); tag.setDouble("gspX", gspX); tag.setDouble("gspY", gspY);
 		tag.setBoolean("complete", isAusf3Complete); tag.setBoolean("contained", contained); tag.setInteger("surfaceY", surfaceY);
 		tag.setBoolean("rayActive", rayActive); tag.setBoolean("rayFinishing", rayFinishing);

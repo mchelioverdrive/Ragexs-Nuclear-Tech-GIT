@@ -17,6 +17,7 @@ public final class ExplosionWorkScheduler {
 		long activeTick();
 		boolean ready(long tick);
 		void run(long deadline, long tick);
+		default void suspend() { }
 	}
 
 	private static final LinkedList<Job> queue = new LinkedList<Job>();
@@ -42,10 +43,10 @@ public final class ExplosionWorkScheduler {
 		Iterator<Job> iterator = queue.iterator();
 		while(iterator.hasNext()) {
 			Job job = iterator.next();
-			if(job.owner() == entity) { iterator.remove(); registered.remove(job); }
+			if(job.owner() == entity) { job.suspend(); iterator.remove(); registered.remove(job); }
 		}
 		// The currently dispatched job is temporarily outside the queue.
-		registered.removeIf(job -> job.owner() == entity);
+		registered.removeIf(job -> { if(job.owner() != entity) return false; job.suspend(); return true; });
 	}
 
 	public static void runTick() {
@@ -54,8 +55,11 @@ public final class ExplosionWorkScheduler {
 		long deadline = System.nanoTime() + Math.max(1, BombConfig.explosionWorkBudgetMs) * 1_000_000L;
 		int idle = 0;
 		while(!queue.isEmpty() && before(deadline)) {
+			ExplosionTerrainAccess.service(deadline);
+			if(!before(deadline)) break;
 			Job job = queue.removeFirst();
 			if(job.owner().isDead || job.activeTick() != tick) {
+				job.suspend();
 				registered.remove(job); // Unloaded/inactive entities re-enroll on their next update.
 				continue;
 			}
@@ -77,15 +81,20 @@ public final class ExplosionWorkScheduler {
 	}
 
 	public static void unload(World world) {
+		ExplosionNukeRayBatched.unloadWorkers(world);
+		ExplosionTerrainAccess.unload(world);
 		Iterator<Job> iterator = queue.iterator();
 		while(iterator.hasNext()) {
 			Job job = iterator.next();
-			if(job.owner().worldObj == world) { iterator.remove(); registered.remove(job); }
+			if(job.owner().worldObj == world) { job.suspend(); iterator.remove(); registered.remove(job); }
 		}
-		registered.removeIf(job -> job.owner().worldObj == world);
+		registered.removeIf(job -> { if(job.owner().worldObj != world) return false; job.suspend(); return true; });
 	}
 
 	public static void clear() {
+		for(Job job : registered) job.suspend();
+		ExplosionNukeRayBatched.shutdownWorkers();
+		ExplosionTerrainAccess.clear();
 		queue.clear(); registered.clear(); tick = 0; lastRun = Long.MIN_VALUE;
 	}
 }

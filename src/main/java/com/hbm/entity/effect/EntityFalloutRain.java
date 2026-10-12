@@ -8,6 +8,7 @@ import com.hbm.config.WorldConfig;
 import com.hbm.entity.item.EntityFallingBlockNT;
 import com.hbm.entity.logic.EntityExplosionChunkloading;
 import com.hbm.explosion.ExplosionWorkScheduler;
+import com.hbm.explosion.ExplosionTerrainAccess;
 import com.hbm.explosion.FalloutCollapseManager;
 import com.hbm.saveddata.AuxSavedData;
 import com.hbm.world.WorldUtil;
@@ -52,10 +53,17 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 	private LongHashMap collapsePending = new LongHashMap();
 	private int collapseHead, collapseCount;
 	private long blockedWorkTick = Long.MIN_VALUE;
+	private ExplosionTerrainAccess.Access terrain;
+	private ExplosionTerrainAccess.Access terrain() {
+		if(terrain == null) terrain = new ExplosionTerrainAccess.Access(worldObj);
+		return terrain;
+	}
 	private final ExplosionWorkScheduler.Job falloutWork = new ExplosionWorkScheduler.Job() {
 		public net.minecraft.entity.Entity owner() { return EntityFalloutRain.this; }
 		public long activeTick() { return activeWorkTick; }
+		public void suspend() { if(terrain != null) terrain.cancel(); }
 		public boolean ready(long tick) {
+			if(!terrain().ready(tick)) return false;
 			return restoring != null || (!gatherComplete && !activeChunk && chunksToProcess.isEmpty() && outerChunksToProcess.isEmpty()) || (eligible && blockedWorkTick != tick);
 		}
 		public void run(long deadline, long tick) {
@@ -88,6 +96,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 	@Override
 	public void onUpdate() {
 		if(worldObj.isRemote || isDead) return;
+		loadChunk((int)Math.floor(posX / 16D), (int)Math.floor(posZ / 16D));
 		activeWorkTick = ExplosionWorkScheduler.currentTick();
 		if(delayTick != activeWorkTick) {
 			delayTick = activeWorkTick;
@@ -126,7 +135,8 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 			}
 			// Signed coordinates are retained in new saves, including negative chunks.
 			int chunkX = (int)chunkCursor, chunkZ = (int)(chunkCursor >> 32);
-			Chunk chunk = worldObj.getChunkFromChunkCoords(chunkX, chunkZ);
+			Chunk chunk = ExplosionTerrainAccess.chunk(terrain(), chunkX, chunkZ, deadline);
+			if(chunk == null) return;
 			if(!ExplosionWorkScheduler.before(deadline)) return;
 			ExtendedBlockStorage[] sections = chunk.getBlockStorageArray();
 			WorldUtil.BiomeAccess biomes = worldObj.provider.dimensionId == 0 && WorldConfig.enableCraterBiomes ? new WorldUtil.BiomeAccess(chunk) : null;
@@ -141,6 +151,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 					columnStarted = true; columnStompComplete = false;
 				}
 				if(!columnStompComplete) {
+					if(!ExplosionTerrainAccess.neighbors(terrain(), x, z, deadline)) return;
 					if(!stomp(x, z, percent, sections, deadline)) {
 						if(collapseCount > MAX_PENDING_COLLAPSES - MAX_COLLAPSES_PER_BLOCK && !FalloutCollapseManager.canSpawn(tick)) blockedWorkTick = tick;
 						return;
@@ -397,6 +408,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 			int x = (int)(position >> 38), y = (int)(position & 4095), z = (int)(position << 26 >> 38);
 			Block block = collapseBlocks[collapseHead];
 			int meta = collapseMetadata[collapseHead];
+			if(ExplosionTerrainAccess.chunk(terrain(), x >> 4, z >> 4, deadline) == null) return;
 			// Do not remove the source here: the falling entity owns that on its first update.
 			if(worldObj.getBlock(x, y, z) != block || worldObj.getBlockMetadata(x, y, z) != meta) { removeCollapse(); continue; }
 			if(!ExplosionWorkScheduler.before(deadline) || !FalloutCollapseManager.canSpawn(tick)) return;
@@ -424,6 +436,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
 	@Override
 	protected void readEntityFromNBT(NBTTagCompound tag) {
+		terrain().read(tag);
 		setScale(tag.getInteger("scale"));
 		salted = tag.getBoolean("salt"); sourceMultiplier = tag.hasKey("sourceMultiplier") ? tag.getDouble("sourceMultiplier") : 1D;
 		gatherComplete = tag.hasKey("gatherComplete") ? tag.getBoolean("gatherComplete") : tag.getIntArray("chunks").length > 0 || tag.getIntArray("outerChunks").length > 0;
@@ -467,6 +480,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
 	@Override
 	protected void writeEntityToNBT(NBTTagCompound tag) {
+		terrain().write(tag);
 		tag.setInteger("workVersion", 4); tag.setInteger("scale", getScale());
 		tag.setBoolean("salt", salted); tag.setDouble("sourceMultiplier", sourceMultiplier);
 		// No effects run during restore. Save the complete original queues with the

@@ -21,6 +21,7 @@ import net.minecraft.world.gen.ChunkProviderServer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.chunkio.ChunkIOExecutor;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
+import net.minecraftforge.event.world.ChunkDataEvent;
 
 public class WorldUtil {
 
@@ -174,6 +175,40 @@ public class WorldUtil {
 		} catch(Throwable x) {
 			return null;
 		}
+	}
+
+	/** Server-thread existing-terrain path with no generation fallback. Forge's
+	 * syncChunkLoad falls back to originalLoadChunk when disk decoding fails, so
+	 * it cannot implement a strict no-generation policy. Use the 1.7.10 loader
+	 * stages and normal chunk/entity/load-event registration here. Population is
+	 * left to external loading when generation is forbidden by the caller. */
+	public static Chunk loadExistingChunk(WorldServer world, int chunkX, int chunkZ) throws java.io.IOException {
+		ChunkProviderServer provider = world.theChunkProviderServer;
+		long key = ChunkCoordIntPair.chunkXZ2Int(chunkX, chunkZ);
+		Chunk chunk = (Chunk)provider.loadedChunkHashMap.getValueByKey(key);
+		if(chunk != null || provider.currentChunkLoader == null) return chunk;
+		if(provider.currentChunkLoader instanceof AnvilChunkLoader) {
+			AnvilChunkLoader loader = (AnvilChunkLoader)provider.currentChunkLoader;
+			// Despite the API name, this call and all subsequent stages run here on
+			// the owning server thread. NBT never enters explosion worker inputs.
+			Object[] data = loader.loadChunk__Async(world, chunkX, chunkZ);
+			if(data == null) return null;
+			chunk = (Chunk)data[0];
+			net.minecraft.nbt.NBTTagCompound compound = (net.minecraft.nbt.NBTTagCompound)data[1];
+			loader.loadEntities(world, compound.getCompoundTag("Level"), chunk);
+			MinecraftForge.EVENT_BUS.post(new ChunkDataEvent.Load(chunk, compound));
+		} else {
+			// IChunkLoader has no existence probe. Its load method is the disk-only
+			// boundary; never fall through to ChunkProviderServer's generator.
+			chunk = provider.currentChunkLoader.loadChunk(world, chunkX, chunkZ);
+			if(chunk == null) return null;
+		}
+		chunk.lastSaveTime = world.getTotalWorldTime();
+		provider.chunksToUnload.remove(Long.valueOf(key));
+		provider.loadedChunkHashMap.add(key, chunk); provider.loadedChunks.add(chunk);
+		chunk.onChunkLoad();
+		if(provider.currentChunkProvider != null) provider.currentChunkProvider.recreateStructures(chunkX, chunkZ);
+		return chunk;
 	}
 
 	private static Chunk loadChunk(WorldServer world, ChunkProviderServer provider, int chunkX, int chunkZ) {

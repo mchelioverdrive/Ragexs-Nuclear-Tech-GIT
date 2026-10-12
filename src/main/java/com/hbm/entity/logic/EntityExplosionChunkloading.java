@@ -21,23 +21,39 @@ public abstract class EntityExplosionChunkloading extends Entity implements IChu
 
 	@Override
 	protected void entityInit() {
-		init(ForgeChunkManager.requestTicket(MainRegistry.instance, worldObj, Type.ENTITY));
+		// Entity construction occurs before its final position is set. Bind now,
+		// force only the real central chunk from the update path.
+		if(!worldObj.isRemote && com.hbm.config.BombConfig.chunkloading) init(ForgeChunkManager.requestTicket(MainRegistry.instance, worldObj, Type.ENTITY));
 	}
 
 	@Override
 	public void init(Ticket ticket) {
+		if(!com.hbm.config.BombConfig.chunkloading) { if(ticket != null) ForgeChunkManager.releaseTicket(ticket); clearChunkLoader(); return; }
 		if(!worldObj.isRemote && ticket != null) {
+			boolean restored = ticket.getEntity() == this;
 			if(loaderTicket != null && loaderTicket != ticket) ForgeChunkManager.releaseTicket(loaderTicket);
 			loaderTicket = ticket;
+			// A restored ticket may include the old constructor's origin chunk.
+			for(ChunkCoordIntPair chunk : ticket.getChunkList()) ForgeChunkManager.unforceChunk(ticket, chunk);
 			ticketOwners.add(this);
 			loaderTicket.bindEntity(this);
 			loaderTicket.getModData();
-			ForgeChunkManager.forceChunk(loaderTicket, new ChunkCoordIntPair(chunkCoordX, chunkCoordZ));
+			loadedChunk = null;
+			if(restored) loadChunk((int)Math.floor(posX / 16D), (int)Math.floor(posZ / 16D));
 		}
 	}
 
+	@Override
+	public void onUpdate() {
+		super.onUpdate();
+		if(!worldObj.isRemote) loadChunk((int)Math.floor(posX / 16D), (int)Math.floor(posZ / 16D));
+	}
+
 	public void loadChunk(int x, int z) {
-		
+		if(!com.hbm.config.BombConfig.chunkloading) { clearChunkLoader(); return; }
+		if(loadedChunk != null && (loadedChunk.chunkXPos != x || loadedChunk.chunkZPos != z)) {
+			ForgeChunkManager.unforceChunk(loaderTicket, loadedChunk); loadedChunk = null;
+		}
 		if(this.loadedChunk == null && loaderTicket != null) {
 			this.loadedChunk = new ChunkCoordIntPair(x, z);
 			ForgeChunkManager.forceChunk(loaderTicket, loadedChunk);

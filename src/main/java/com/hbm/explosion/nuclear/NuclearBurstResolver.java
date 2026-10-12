@@ -6,6 +6,8 @@ import com.hbm.config.BombConfig;
 import com.hbm.dim.CelestialBody;
 import com.hbm.dim.trait.CBT_Atmosphere;
 import com.hbm.util.fauxpointtwelve.BlockPos;
+import com.hbm.explosion.ExplosionTerrainAccess;
+import com.hbm.explosion.ExplosionWorkScheduler;
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.MathHelper;
@@ -42,6 +44,53 @@ public final class NuclearBurstResolver {
   } return null;
  }
  private static boolean isOpen(World w,int x,int y,int z){ Block b=w.getBlock(x,y,z); return b==Blocks.air||b.isReplaceable(w,x,y,z); }
+
+ /** Incremental version of the same release search for scheduled post-excavation
+  * confirmation. No world changes occur here; reload may restart the search. */
+ public static final class ReleaseSearch {
+  private static final int[][] DIRECTIONS={{1,0,0},{-1,0,0},{0,1,0},{0,-1,0},{0,0,1},{0,0,-1}};
+  private final int x,y,z,radius;
+  private final ArrayDeque<BlockPos> queue=new ArrayDeque<BlockPos>();
+  private final HashSet<BlockPos> seen=new HashSet<BlockPos>();
+  private int initial, side;
+  private BlockPos active;
+  public boolean complete;
+  public int[] breach;
+  public ReleaseSearch(int x,int y,int z,int radius){this.x=x;this.y=y;this.z=z;this.radius=radius;}
+  public void advance(ExplosionTerrainAccess.Access access,long deadline){
+   if(complete)return;
+   World world=access.world;
+   while(initial<27&&ExplosionWorkScheduler.before(deadline)){
+    BlockPos p=new BlockPos(x+initial/9-1,y+(initial/3)%3-1,z+initial%3-1);
+    if(ExplosionTerrainAccess.chunk(access,p.getX()>>4,p.getZ()>>4,deadline)==null)return;
+    if(isOpen(world,p.getX(),p.getY(),p.getZ())){queue.add(p);seen.add(p);} initial++;
+   }
+   if(initial<27)return;
+   while(ExplosionWorkScheduler.before(deadline)){
+    if(active==null){
+     if(queue.isEmpty()||seen.size()>=MAX_RELEASE_SEARCH_NODES){complete=true;return;}
+     active=queue.peekFirst();side=-1;
+    }
+    if(ExplosionTerrainAccess.chunk(access,active.getX()>>4,active.getZ()>>4,deadline)==null)return;
+    if(side<0){
+     if(world.canBlockSeeTheSky(active.getX(),active.getY(),active.getZ())){breach=new int[]{active.getX(),active.getY(),active.getZ()};complete=true;return;}
+     queue.removeFirst();side=0;
+    }
+    while(side<6&&ExplosionWorkScheduler.before(deadline)){
+     int[] d=DIRECTIONS[side];int xx=active.getX()+d[0],yy=active.getY()+d[1],zz=active.getZ()+d[2];
+     if(yy>=0&&yy<=255&&Math.abs(xx-x)<=radius&&Math.abs(yy-y)<=radius&&Math.abs(zz-z)<=radius){
+      BlockPos n=new BlockPos(xx,yy,zz);
+      if(!seen.contains(n)){
+       if(ExplosionTerrainAccess.chunk(access,xx>>4,zz>>4,deadline)==null)return;
+       if(isOpen(world,xx,yy,zz)){seen.add(n);queue.addLast(n);}
+      }
+     }
+     side++;
+    }
+    if(side<6)return;active=null;
+   }
+  }
+ }
  private static double calculateBreakthrough(World w,int x,int y,int z,int sy,double base){double reach=Math.max(1D,base*.55D),cost=0D;for(int yy=y+1;yy<sy;yy++){Block b=w.getBlock(x,yy,z);if(b==Blocks.air)continue;if(b.getMaterial().isLiquid())cost+=.25D;else cost+=1D+Math.min(8D,Math.max(0D,b.getExplosionResistance(null))/12D);}return clamp((reach-cost)/Math.max(1D,reach*.65D));}
  private static double clamp(double v){return Math.max(0D,Math.min(1D,v));}
 }
