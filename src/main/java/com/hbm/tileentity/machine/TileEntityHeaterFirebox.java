@@ -40,6 +40,8 @@ public class TileEntityHeaterFirebox extends TileEntityFireboxBase implements IC
 	public TileEntityHeaterFirebox() {
 		super();
 	}
+	@Override protected boolean usesPhysicalCombustion() { return true; }
+	@Override public long getRatedThermalWatts() { return 200_000L; }
 
 	@Override
 	public String getName() {

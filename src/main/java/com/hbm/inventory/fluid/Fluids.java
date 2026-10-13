@@ -106,6 +106,9 @@ public class Fluids {
 	public static FluidType WATZ;
 	public static FluidType CRYOGEL;
 	public static FluidType HYDROGEN;
+	public static FluidType HYDROGEN_GAS;
+	public static FluidType OXYGEN_GAS;
+	public static FluidType NITROGEN_GAS;
 	public static FluidType OXYGEN;
 	public static FluidType NITROGEN;
 	public static FluidType NITROGEN_HELIUM;
@@ -606,6 +609,13 @@ public class Fluids {
 		if(!customTypes.exists()) initDefaultFluids(customTypes);
 		readCustomFluids(customTypes);
 
+		if(nameMapping.containsKey("HYDROGEN_GAS") || nameMapping.containsKey("OXYGEN_GAS") || nameMapping.containsKey("NITROGEN_GAS")) throw new IllegalStateException("Custom fluid names collide with RealSim process gas identities; existing mappings were not reinterpreted");
+		// Append only: HYDROGEN/OXYGEN/NITROGEN retain their cryogenic-liquid IDs.
+		HYDROGEN_GAS = new FluidType("HYDROGEN_GAS", 0x4286f4, 0, 4, 0, EnumSymbol.NONE).addContainers(new CD_Gastank(0x4286f4, 0xffffff)).addTraits(GASEOUS, new FT_Flammable(0), new FT_Combustible(FuelGrade.GAS, 0), P_GAS);
+		OXYGEN_GAS = new FluidType("OXYGEN_GAS", 0x98bdf9, 0, 0, 0, EnumSymbol.OXIDIZER).addContainers(new CD_Gastank(0x98bdf9, 0xffffff)).addTraits(GASEOUS);
+		NITROGEN_GAS = new FluidType("NITROGEN_GAS", 0xB3C6D2, 0, 0, 0, EnumSymbol.ASPHYXIANT).addContainers(new CD_Gastank(0xB3C6D2, 0xffffff)).addTraits(GASEOUS);
+
+
 		//AND DON'T FORGET THE META DOWN HERE
 		// V V V V V V V V
 
@@ -869,6 +879,9 @@ public class Fluids {
 		metaOrder.add(BORATED_WATER);
 		metaOrder.add(LIGHT_WATER_HOT);
 		metaOrder.add(BORATED_WATER_HOT);
+		metaOrder.add(HYDROGEN_GAS);
+		metaOrder.add(OXYGEN_GAS);
+		metaOrder.add(NITROGEN_GAS);
 
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!
@@ -1132,9 +1145,11 @@ public class Fluids {
 		}
 
 
-		/// FINAL - REALISTIC-ISH FUEL HEAT VALUES ///
+		/// DEFERRED LEGACY EQUIPMENT BUDGETS (NOT CHEMICAL LHV) ///
 		//
-		// Realistification rule:
+		// PhysicalRegistry owns the physical chemical-energy reference. These parameters
+		// are retained exclusively for equipment/chemistry awaiting later RealSim tranches.
+		// Historical tuning rationale:
 		// Heat energy should represent chemical burn energy, NOT market demand, recipe difficulty,
 		// refinery complexity, or scarcity.
 		//
@@ -1234,9 +1249,9 @@ public class Fluids {
 		//
 		// These are intentionally not realistic.
 		// They are allowed to be insane because they are fictional HBM-style fuels.
-		registerCalculatedFuel(NITAN, KEROSENE.getTrait(FT_Flammable.class).getHeatEnergy() * 25L, 2.5D, FuelGrade.HIGH);
-		registerCalculatedFuel(BALEFIRE, KEROSENE.getTrait(FT_Flammable.class).getHeatEnergy() * 100L, 2.5D, FuelGrade.HIGH);
-		registerCalculatedFuel(BLOODGAS, KEROSENE.getTrait(FT_Flammable.class).getHeatEnergy() * 0.8D, 2.5D, FuelGrade.AERO);
+		registerCalculatedFuel(NITAN, KEROSENE.getTrait(FT_Flammable.class).getLegacyBurnerBudget() * 25L, 2.5D, FuelGrade.HIGH);
+		registerCalculatedFuel(BALEFIRE, KEROSENE.getTrait(FT_Flammable.class).getLegacyBurnerBudget() * 100L, 2.5D, FuelGrade.HIGH);
+		registerCalculatedFuel(BLOODGAS, KEROSENE.getTrait(FT_Flammable.class).getLegacyBurnerBudget() * 0.8D, 2.5D, FuelGrade.AERO);
 
 		/// vacuum distillation products ///
 		//
@@ -1252,12 +1267,12 @@ public class Fluids {
 		//
 		// Reforming mainly improves fuel quality/octane, not raw heat.
 		// Keep the boost modest.
-		registerCalculatedFuel(DIESEL_REFORM, DIESEL.getTrait(FT_Flammable.class).getHeatEnergy() * bonusReform, 2.5D, FuelGrade.HIGH);
-		registerCalculatedFuel(DIESEL_CRACK_REFORM, DIESEL_CRACK.getTrait(FT_Flammable.class).getHeatEnergy() * bonusReform, 2.5D, FuelGrade.HIGH);
-		registerCalculatedFuel(KEROSENE_REFORM, KEROSENE.getTrait(FT_Flammable.class).getHeatEnergy() * bonusReform, 1.5D, FuelGrade.AERO);
+		registerCalculatedFuel(DIESEL_REFORM, DIESEL.getTrait(FT_Flammable.class).getLegacyBurnerBudget() * bonusReform, 2.5D, FuelGrade.HIGH);
+		registerCalculatedFuel(DIESEL_CRACK_REFORM, DIESEL_CRACK.getTrait(FT_Flammable.class).getLegacyBurnerBudget() * bonusReform, 2.5D, FuelGrade.HIGH);
+		registerCalculatedFuel(KEROSENE_REFORM, KEROSENE.getTrait(FT_Flammable.class).getLegacyBurnerBudget() * bonusReform, 1.5D, FuelGrade.AERO);
 
 		/// ultra-fantasy / special chemicals ///
-		registerCalculatedFuel(NMASSTETRANOL, BALEFIRE.getTrait(FT_Flammable.class).getHeatEnergy() * 1000D, 10.5D, FuelGrade.HIGH);
+		registerCalculatedFuel(NMASSTETRANOL, BALEFIRE.getTrait(FT_Flammable.class).getLegacyBurnerBudget() * 1000D, 10.5D, FuelGrade.HIGH);
 
 		// Dicyanoacetylene is a real extremely hot-burning compound, but not normal engine fuel.
 		// Give it high heat, but do not make it a usable fuel grade unless intentionally desired.
@@ -1273,7 +1288,7 @@ public class Fluids {
 		// Set it near heavy/dirty oil instead of basing it on demand/complexity.
 		registerCalculatedFuel(COALOIL, dieselHeat * 0.80D, 0, null);
 
-		long coaloil = COALOIL.getTrait(FT_Flammable.class).getHeatEnergy();
+		long coaloil = COALOIL.getTrait(FT_Flammable.class).getLegacyBurnerBudget();
 
 		// Coal gas/synthetic gas should be below liquid diesel-equivalent fuels per bucket,
 		// but still useful as a gas fuel.
@@ -1285,8 +1300,8 @@ public class Fluids {
 		// Ethanol has less energy than gasoline/diesel per volume.
 		// Methanol is lower than ethanol.
 		// The old code had methanol higher than ethanol, which was backwards.
-		registerCalculatedFuel(ETHANOL, DIESEL.getTrait(FT_Flammable.class).getHeatEnergy() * 0.55D, 2.5D, FuelGrade.HIGH);
-		registerCalculatedFuel(METHANOL, DIESEL.getTrait(FT_Flammable.class).getHeatEnergy() * 0.41D, 2.5D, FuelGrade.HIGH);
+		registerCalculatedFuel(ETHANOL, DIESEL.getTrait(FT_Flammable.class).getLegacyBurnerBudget() * 0.55D, 2.5D, FuelGrade.HIGH);
+		registerCalculatedFuel(METHANOL, DIESEL.getTrait(FT_Flammable.class).getLegacyBurnerBudget() * 0.41D, 2.5D, FuelGrade.HIGH);
 
 		/// biofuels ///
 		registerCalculatedFuel(BIOGAS, heatGas * 0.55D, 1.25D, FuelGrade.GAS);
@@ -1449,6 +1464,7 @@ public class Fluids {
 		}
 		customFluids.clear();
 		readCustomFluids(customTypes);
+
 		for(FluidType custom : customFluids) metaOrder.add(custom);
 		File config = new File(MainRegistry.configHbmDir.getAbsolutePath() + File.separatorChar + "hbmFluidTraits.json");
 		File template = new File(MainRegistry.configHbmDir.getAbsolutePath() + File.separatorChar + "_hbmFluidTraits.json");
@@ -1487,7 +1503,8 @@ public class Fluids {
 	}
 
 	protected static int registerSelf(FluidType fluid) {
-		int id = idMapping.size();
+		int id = 0;
+		while(idMapping.containsKey(id)) id++;
 		idMapping.put(id, fluid);
 		registerOrder.add(fluid);
 		nameMapping.put(fluid.getName(), fluid);
@@ -1495,6 +1512,9 @@ public class Fluids {
 	}
 
 	protected static void register(FluidType fluid, int id) {
+        FluidType existing = idMapping.get(id), named = nameMapping.get(fluid.getName());
+        if(existing != null && !existing.customFluid || named != null && !named.customFluid) throw new IllegalArgumentException("Custom fluid cannot overwrite built-in fluid mapping: " + fluid.getName() + " / " + id);
+
 		idMapping.put(id, fluid);
 		registerOrder.add(fluid);
 		nameMapping.put(fluid.getName(), fluid);

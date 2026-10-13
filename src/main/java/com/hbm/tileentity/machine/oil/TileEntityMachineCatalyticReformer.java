@@ -62,7 +62,7 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 		this.tanks[0] = new FluidTank(Fluids.NAPHTHA, 64_000);
 		this.tanks[1] = new FluidTank(Fluids.REFORMATE, 24_000);
 		this.tanks[2] = new FluidTank(Fluids.PETROLEUM, 24_000);
-		this.tanks[3] = new FluidTank(Fluids.HYDROGEN, 24_000);
+		this.tanks[3] = new FluidTank(Fluids.HYDROGEN_GAS, 24_000);
 		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 
@@ -168,13 +168,13 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 			tanks[0].loadTank(1, 2, slots);
 			Triplet<FluidStack, FluidStack, FluidStack> output = ReformingRecipes.getOutput(tanks[0].getTankType());
 			if(output == null) {
-				tanks[1].setTankType(Fluids.NONE);
-				tanks[2].setTankType(Fluids.NONE);
-				tanks[3].setTankType(Fluids.NONE);
+				tanks[1].configureForRecipe(Fluids.NONE, 0);
+				tanks[2].configureForRecipe(Fluids.NONE, 0);
+				tanks[3].configureForRecipe(Fluids.NONE, 0);
 			} else {
-				tanks[1].setTankType(output.getX().type);
-				tanks[2].setTankType(output.getY().type);
-				tanks[3].setTankType(output.getZ().type);
+				tanks[1].configureForRecipe(output.getX().type, 0);
+				tanks[2].configureForRecipe(output.getY().type, 0);
+				tanks[3].configureForRecipe(output.getZ().type, 0);
 			}
 			tanks[1].unloadTank(3, 4, slots);
 			tanks[2].unloadTank(5, 6, slots);

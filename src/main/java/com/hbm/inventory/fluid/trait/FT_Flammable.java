@@ -1,6 +1,5 @@
 package com.hbm.inventory.fluid.trait;
 
-import com.hbm.util.ThermalUnits;
 
 import java.io.IOException;
 import java.util.List;
@@ -12,7 +11,7 @@ import net.minecraft.util.EnumChatFormatting;
 
 public class FT_Flammable extends FluidTrait {
 	
-	/** How much heat energy (usually translates into HE 1:1) 1000mB hold */
+	/** Deferred pre-RealSim equipment tuning only; never a physical chemical-energy reference. */
 	private long energy;
 	
 	public FT_Flammable() { }
@@ -21,9 +20,10 @@ public class FT_Flammable extends FluidTrait {
 		this.energy = energy;
 	}
 	
-	public long getHeatEnergy() {
+	public long getLegacyBurnerBudget() {
 		return this.energy;
 	}
+	@Deprecated public long getHeatEnergy() { return getLegacyBurnerBudget(); }
 	
 	@Override
 	public void addInfo(List<String> info) {
@@ -31,8 +31,6 @@ public class FT_Flammable extends FluidTrait {
 		
 		info.add(EnumChatFormatting.YELLOW + "[Flammable]");
 		
-		if(energy > 0)
-			info.add(EnumChatFormatting.YELLOW + "Provides " + EnumChatFormatting.RED + ThermalUnits.formatThermalEnergy(energy) + " " + EnumChatFormatting.YELLOW + "per bucket");
 	}
 
 	@Override

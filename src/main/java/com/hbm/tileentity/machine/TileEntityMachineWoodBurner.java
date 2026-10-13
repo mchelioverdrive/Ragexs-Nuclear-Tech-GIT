@@ -1,6 +1,10 @@
 package com.hbm.tileentity.machine;
 
 import api.hbm.energymk2.EnergyUnits;
+import com.hbm.realsim.Combustion;
+import com.hbm.realsim.FuelCredit;
+import com.hbm.realsim.GeneratorStats;
+import com.hbm.realsim.OutputBudget;
 import com.hbm.handler.pollution.PollutionHandler;
 import com.hbm.handler.pollution.PollutionHandler.PollutionType;
 import com.hbm.interfaces.IControlReceiver;
@@ -9,7 +13,6 @@ import com.hbm.inventory.container.ContainerMachineWoodBurner;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
-import com.hbm.inventory.fluid.trait.FT_Flammable;
 import com.hbm.inventory.gui.GUIMachineWoodBurner;
 import com.hbm.items.ModItems;
 import com.hbm.items.ItemEnums.EnumAshType;
@@ -54,6 +57,12 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 	protected int powerGen = 0;
 
 	public FluidTank tank;
+	public static final long ratedPowerWatts = 40_000L;
+	public static final int electricalEfficiencyPpm = 70_000;
+	public final FuelCredit fuelCredit = new FuelCredit();
+	public final GeneratorStats generatorStats = new GeneratorStats();
+	private final OutputBudget outputBudget = new OutputBudget();
+	private long lastGenerationTick = Long.MIN_VALUE;
 
 	public static ModuleBurnTime burnModule = new ModuleBurnTime().setLogTimeMod(4).setWoodTimeMod(2);
 
@@ -114,18 +123,24 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
 		if(taskType != TASK_GENERATE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		if(lastGenerationTick == worldObj.getTotalWorldTime()) return;
+		lastGenerationTick = worldObj.getTotalWorldTime();
 		powerGen = 0;
+		generatorStats.idle();
 		this.beginMachineFluidMutation();
 		runtimeEnergyMutation = true;
 		try {
 			tank.setType(2, slots);
 			tank.loadTank(3, 4, slots);
-			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 5, energyQuanta, maxPower));
+			long charge = Math.min(energyQuanta, getMaxOutputQuantaPerTick());
+			this.extractEnergyQuanta(charge - Library.chargeItemsFromTE(slots, 5, charge, charge));
 			if(energyQuanta > 0L) for(DirPos pos : runtimeConnections) this.providePowerToDirectReceiver(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			if(!liquidBurn) {
-				if(burnTime <= 0 && slots[0] != null) {
+			long demand = Math.min(ratedPowerWatts / 10L, Math.max(0L, maxPower - energyQuanta));
+			if(isOn && demand > 0 && (fuelCredit.hasCredit() || liquidBurn && tank.getFill() > 0 && Combustion.isBurnerFuel(tank.getTankType()) || !liquidBurn && Combustion.solidChemicalMicrojoules(slots[0]) > 0) && breatheAir(1)) {
+				if(!fuelCredit.hasCredit() && !liquidBurn && slots[0] != null) {
+					long chemical = Combustion.solidChemicalMicrojoules(slots[0]);
 					int burn = burnModule.getBurnTime(slots[0]);
-					if(burn > 0) {
+					if(chemical > 0) {
 						EnumAshType type = TileEntityFireboxBase.getAshFromFuel(slots[0]);
 						if(type == EnumAshType.WOOD) ashLevelWood += burn;
 						if(type == EnumAshType.COAL) ashLevelCoal += burn;
@@ -134,30 +149,21 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 						if(processAsh(ashLevelWood, EnumAshType.WOOD, threshold)) ashLevelWood -= threshold;
 						if(processAsh(ashLevelCoal, EnumAshType.COAL, threshold)) ashLevelCoal -= threshold;
 						if(processAsh(ashLevelMisc, EnumAshType.MISC, threshold)) ashLevelMisc -= threshold;
-						this.maxBurnTime = this.burnTime = burn;
+						String identity = Combustion.solidIdentity(slots[0]);
 						ItemStack container = slots[0].getItem().getContainerItem(slots[0]);
 						this.decrStackSize(0, 1);
 						if(slots[0] == null && container != null) slots[0] = container.copy();
+						fuelCredit.reserve(identity, chemical, 1, electricalEfficiencyPpm);
+						this.maxBurnTime = (int) (fuelCredit.usefulMicrojoules() / 500_000L / (ratedPowerWatts / 10L));
 						this.markChanged();
 					}
-				} else if(burnTime > 0 && energyQuanta < maxPower && isOn && breatheAir(1)) {
-					burnTime--;
-					powerGen += 100;
-					if(worldObj.getTotalWorldTime() % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND);
 				}
-			} else if(energyQuanta < maxPower && tank.getFill() > 0 && isOn && breatheAir(1)) {
-				FT_Flammable trait = tank.getTankType().getTrait(FT_Flammable.class);
-				if(trait != null) {
-					int toBurn = Math.min(tank.getFill(), 2);
-					if(toBurn > 0) {
-						powerGen += trait.getHeatEnergy() * toBurn / 2_000L;
-						tank.setFill(tank.getFill() - toBurn);
-						if(worldObj.getTotalWorldTime() % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * toBurn / 2F);
-					}
-				}
+				powerGen = (int) (liquidBurn ? Combustion.generate(tank, fuelCredit, demand, electricalEfficiencyPpm) : fuelCredit.release(demand));
+				generatorStats.record(powerGen, fuelCredit);
+				if(powerGen > 0 && worldObj.getTotalWorldTime() % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, (float) (PollutionHandler.SOOT_PER_SECOND * powerGen / (double) (ratedPowerWatts / 10L)));
 			}
+			burnTime = (int) (fuelCredit.usefulMicrojoules() / 500_000L / (ratedPowerWatts / 10L));
 			this.setStoredEnergyQuanta(energyQuanta + powerGen);
-			if(energyQuanta > maxPower) this.setStoredEnergyQuanta(maxPower);
 		} finally {
 			runtimeEnergyMutation = false;
 			this.endMachineFluidMutation();
@@ -169,9 +175,9 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
-		boolean solidFuelReady = !liquidBurn && burnTime <= 0 && slots[0] != null && burnModule.getBurnTime(slots[0]) > 0;
-		boolean solidBurnActive = !liquidBurn && burnTime > 0 && isOn && energyQuanta < maxPower;
-		boolean liquidBurnActive = liquidBurn && tank.getFill() > 0 && isOn && energyQuanta < maxPower && tank.getTankType().hasTrait(FT_Flammable.class);
+		boolean solidFuelReady = !liquidBurn && isOn && Combustion.solidChemicalMicrojoules(slots[0]) > 0;
+		boolean solidBurnActive = fuelCredit.hasCredit() && isOn && energyQuanta < maxPower;
+		boolean liquidBurnActive = liquidBurn && tank.getFill() > 0 && isOn && energyQuanta < maxPower && Combustion.isBurnerFuel(tank.getTankType());
 		if(solidFuelReady || solidBurnActive || liquidBurnActive || energyQuanta > 0L) this.scheduleMachineTransition(now + 1L, TASK_GENERATE, TASK_SLOT_MAIN);
 		else {
 			powerGen = 0;
@@ -206,6 +212,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 		buf.writeBoolean(liquidBurn);
 
 		tank.serialize(buf);
+		generatorStats.write(buf, fuelCredit);
 	}
 
 	@Override
@@ -219,6 +226,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 		liquidBurn = buf.readBoolean();
 
 		tank.deserialize(buf);
+		generatorStats.read(buf, fuelCredit);
 	}
 
 	private DirPos[] getConPos() {
@@ -244,6 +252,10 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 		this.isOn = nbt.getBoolean("isOn");
 		this.liquidBurn = nbt.getBoolean("liquidBurn");
 		tank.readFromNBT(nbt, "t");
+		fuelCredit.read(nbt);
+		outputBudget.read(nbt);
+		if(!nbt.hasKey("realSimFuel") && burnTime > 0) fuelCredit.reserve("legacy_solid", burnTime * 50_000_000L, 1, 1_000_000);
+		lastGenerationTick = nbt.hasKey("realSimGenerationTick") ? nbt.getLong("realSimGenerationTick") : Long.MIN_VALUE;
 	}
 
 	@Override
@@ -255,6 +267,9 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 		nbt.setBoolean("isOn", isOn);
 		nbt.setBoolean("liquidBurn", liquidBurn);
 		tank.writeToNBT(nbt, "t");
+		fuelCredit.write(nbt);
+		outputBudget.write(nbt);
+		nbt.setLong("realSimGenerationTick", lastGenerationTick);
 	}
 
 	protected boolean processAsh(int level, EnumAshType type, int threshold) {
@@ -308,7 +323,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 
 	@Override
 	public boolean isItemValidForSlot(int i, ItemStack itemStack) {
-		return i == 0 && burnModule.getBurnTime(itemStack) > 0;
+		return i == 0 && Combustion.solidChemicalMicrojoules(itemStack) > 0;
 	}
 
 	@Override
@@ -321,6 +336,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		this.markDirty();
 		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
@@ -332,6 +348,12 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 	@Override
 	public long getEnergyCapacityQuanta() {
 		return maxPower;
+	}
+	@Override public long getMaxOutputQuantaPerTick() { return outputBudget.available(worldObj == null ? 0 : worldObj.getTotalWorldTime(), ratedPowerWatts / 10L); }
+	@Override public void extractEnergyQuanta(long amount) {
+		long extracted = Math.max(0L, Math.min(amount, Math.min(energyQuanta, getMaxOutputQuantaPerTick())));
+		outputBudget.use(worldObj == null ? 0 : worldObj.getTotalWorldTime(), ratedPowerWatts / 10L, extracted);
+		this.setStoredEnergyQuanta(energyQuanta - extracted);
 	}
 
 	@Override
@@ -386,9 +408,9 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
-		data.setBoolean(CompatEnergyControl.B_ACTIVE, isOn);
-		if(this.liquidBurn) data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, 1D);
-		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(energyQuanta));
+		data.setBoolean(CompatEnergyControl.B_ACTIVE, generatorStats.outputQuanta > 0);
+		if(this.liquidBurn) data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, generatorStats.fuelUnitsPerSecond / 20D);
+		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(generatorStats.outputQuanta));
 	}
 
 	public long getPowerOutputWatts() {

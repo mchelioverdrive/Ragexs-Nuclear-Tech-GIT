@@ -7274,3 +7274,8 @@ desc.gui.zirnox.control.legacyControlToggle=Original reactor control.$While runn
 desc.gui.zirnox.control.faultAutoTrips=Creative test fault: inhibit automatic trip latching.$Trip inputs remain visible; manual SCRAM remains available.
 desc.gui.zirnox.control.faultRodDrive=Creative test fault: jam the rod drive.$Targets change, but actual insertion is frozen.
 desc.gui.zirnox.control.faultReliefValve=Creative test fault: jam automatic pressure relief.
+
+# RealSim process gas states (old liquid identities remain unchanged)
+hbmfluid.hydrogen_gas=Hydrogen Gas
+hbmfluid.oxygen_gas=Oxygen Gas
+hbmfluid.nitrogen_gas=Nitrogen Gas

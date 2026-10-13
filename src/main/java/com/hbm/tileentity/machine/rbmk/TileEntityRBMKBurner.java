@@ -85,7 +85,7 @@ public class TileEntityRBMKBurner extends TileEntityRBMKBase implements IFluidSt
 					{
 						tank.setFill(tank.getFill() - heating );
 						//Math.min(this.heat, maxBurn);
-						long powerProd = tank.getTankType().getTrait(FT_Flammable.class).getHeatEnergy() * heating  / 1_000000; // divided by 1000 per mB
+						long powerProd = tank.getTankType().getTrait(FT_Flammable.class).getLegacyBurnerBudget() * heating  / 1_000000; // divided by 1000 per mB
 						this.heat += powerProd;
 					}
 					this.lastHot = heating;

@@ -44,9 +44,9 @@ public class ItemPistons extends ItemEnumMulti {
 		EnumPistonType type = EnumUtil.grabEnumSafely(theEnum, stack.getItemDamage());
 		
 
-		list.add(EnumChatFormatting.YELLOW + "Fuel efficiency:");
+		list.add(EnumChatFormatting.YELLOW + "Electrical efficiency (LHV):");
 		for(int i = 0; i < type.eff.length; i++) {
-			list.add(EnumChatFormatting.YELLOW + "-" + FuelGrade.values()[i].getGrade() + ": " + EnumChatFormatting.RED + "" + (int)(type.eff[i] * 100) + "%");
+			list.add(EnumChatFormatting.YELLOW + "-" + FuelGrade.values()[i].getGrade() + ": " + EnumChatFormatting.RED + "" + type.getElectricalEfficiencyPpm(FuelGrade.values()[i]) / 10000D + "%");
 		}
 	}
 	
@@ -57,6 +57,7 @@ public class ItemPistons extends ItemEnumMulti {
 		STARMETAL	(0.50, 0.75, 1.00, 0.90, 0.50);
 		
 		public double[] eff;
+		public int getElectricalEfficiencyPpm(FuelGrade grade) { return (int) (380_000D * Math.max(0D, Math.min(1D, eff[grade.ordinal()]))); }
 		
 		private EnumPistonType(double... eff) {
 			this.eff = new double[Math.min(FuelGrade.values().length, eff.length)];

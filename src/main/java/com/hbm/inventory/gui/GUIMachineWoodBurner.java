@@ -42,7 +42,7 @@ public class GUIMachineWoodBurner extends GuiInfoContainer {
 			
 			Slot slot = (Slot) this.inventorySlots.inventorySlots.get(0);
 			if(this.isMouseOverSlot(slot, mouseX, mouseY) && !slot.getHasStack()) {
-				List<String> bonuses = burner.burnModule.getDesc();
+				List<String> bonuses = Arrays.asList(burner.generatorStats.info(burner.ratedPowerWatts, burner.fuelCredit, burner.tank.getTankType().getName(), burner.liquidBurn ? burner.tank.getFill() : 0));
 				if(!bonuses.isEmpty()) {
 					this.func_146283_a(bonuses, mouseX, mouseY);
 				}
@@ -52,7 +52,7 @@ public class GUIMachineWoodBurner extends GuiInfoContainer {
 		if(burner.liquidBurn) burner.tank.renderTankInfo(this, mouseX, mouseY, guiLeft + 80, guiTop + 18, 16, 52);
 		
 		if(!burner.liquidBurn && guiLeft + 16 <= mouseX && guiLeft + 16 + 8 > mouseX && guiTop + 17 < mouseY && guiTop + 17 + 54 >= mouseY) {
-			func_146283_a(Arrays.asList(new String[] { (burner.burnTime / 20) + "s" }), mouseX, mouseY);
+			func_146283_a(Arrays.asList(burner.generatorStats.info(burner.ratedPowerWatts, burner.fuelCredit, burner.tank.getTankType().getName(), burner.liquidBurn ? burner.tank.getFill() : 0)), mouseX, mouseY);
 		}
 		
 		if(guiLeft + 53 <= mouseX && guiLeft + 53 + 16 > mouseX && guiTop + 17 < mouseY && guiTop + 17 + 15 >= mouseY) {

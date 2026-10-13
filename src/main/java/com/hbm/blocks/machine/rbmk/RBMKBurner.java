@@ -42,7 +42,7 @@ public class RBMKBurner extends RBMKBase {
 				
 				FluidType type = ((IItemFluidIdentifier) player.getHeldItem().getItem()).getType(world, pos[0], pos[1], pos[2], player.getHeldItem());
 				
-				if(type.hasTrait(FT_Flammable.class) && type.getTrait(FT_Flammable.class).getHeatEnergy() > 0) {
+				if(type.hasTrait(FT_Flammable.class) && type.getTrait(FT_Flammable.class).getLegacyBurnerBudget() > 0) {
 					burner.tank.setTankType(type);
 					burner.markDirty();
 					player.addChatComponentMessage(new ChatComponentText("Changed type to ").setChatStyle(new ChatStyle().setColor(EnumChatFormatting.YELLOW)).appendSibling(new ChatComponentTranslation("hbmfluid." + type.getName().toLowerCase())).appendSibling(new ChatComponentText("!")));

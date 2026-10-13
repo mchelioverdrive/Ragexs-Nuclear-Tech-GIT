@@ -355,7 +355,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	
 	/** Dynamically calculates a (hopefully) sensible burn heat from the combustion energy, scales from 300°C - 800°C */
 	protected int getFluidBurnTemp(FluidType type) {
-		double dFuel = type.hasTrait(FT_Combustible.class) ? type.getTrait(FT_Combustible.class).getCombustionEnergyQuanta() : 0;
+		double dFuel = type.hasTrait(FT_Combustible.class) ? type.getTrait(FT_Combustible.class).getLegacyEngineBudgetQuanta() : 0;
 		return (int) Math.floor(800D - (Math.pow(Math.E, -dFuel / 100_000D)) * 300D);
 	}
 	
@@ -420,7 +420,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		long energy = 0; //energy per mb of fuel
 		
 		if(tanks[0].getTankType().hasTrait(FT_Combustible.class)) {
-			energy = tanks[0].getTankType().getTrait(FT_Combustible.class).getCombustionEnergyQuanta() / 1000L;
+			energy = tanks[0].getTankType().getTrait(FT_Combustible.class).getLegacyEngineBudgetQuanta() / 1000L;
 		}
 		
 		int rpmEff = rpm - rpmIdle; // RPM above idle level, 0-90

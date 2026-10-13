@@ -177,6 +177,7 @@ repositories {
 }
 
 dependencies {
+	testImplementation 'junit:junit:4.13.2'
 	// Development-only mods: remap production/SRG jars, but use MCP-ready jars directly.
 	runtimeOnly fileTree(dir: remappedDevModsDir, include: '*.jar')
 	runtimeOnly deobfuscatedDevMods

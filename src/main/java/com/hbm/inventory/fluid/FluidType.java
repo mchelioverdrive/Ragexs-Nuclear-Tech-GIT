@@ -146,6 +146,9 @@ public class FluidType {
 	public int getID() {
 		return this.id;
 	}
+	public com.hbm.realsim.PhysicalState getPhysicalState() {
+		return com.hbm.realsim.PhysicalRegistry.get(this.stringId);
+	}
 	/** The unique mapping name for this fluid, usually matches the unlocalied name, minus the prefix */
 	public String getName() {
 		return this.stringId;
@@ -227,6 +230,11 @@ public class FluidType {
 	
 	@SideOnly(Side.CLIENT)
 	public void addInfo(List<String> info) {
+		com.hbm.realsim.PhysicalState physical = getPhysicalState();
+		if(physical.isResolved()) {
+			info.add(EnumChatFormatting.GRAY + (physical.basis == com.hbm.realsim.PhysicalState.Basis.STANDARD_GAS_LITER ? "Standard L: 0 C, 1 bar" : "Reference liquid L"));
+			if(physical.chemicalMicrojoulesPerUnit() > 0) info.add(EnumChatFormatting.YELLOW + "Chemical LHV: " + api.hbm.energymk2.EnergyUnits.formatJoules(physical.chemicalMicrojoulesPerUnit() / 500_000L) + " per L");
+		} else if(hasTrait(com.hbm.inventory.fluid.trait.FT_Flammable.class)) info.add(EnumChatFormatting.GRAY + "Physical assay unresolved");
 
 		if(this == Fluids.STEAM || this == Fluids.HOTSTEAM || this == Fluids.SUPERHOTSTEAM || this == Fluids.ULTRAHOTSTEAM || this == Fluids.SPENTSTEAM) {
 			info.add(EnumChatFormatting.GRAY + "L = nominal fluid-network amount");

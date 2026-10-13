@@ -25,17 +25,17 @@ public class ReformingRecipes extends SerializableRecipe {
 		recipes.put(Fluids.NAPHTHA, new Triplet(
 				new FluidStack(Fluids.REFORMATE, 75),
 				new FluidStack(Fluids.REFORMGAS, 15),
-				new FluidStack(Fluids.HYDROGEN, 10)
+				new FluidStack(Fluids.HYDROGEN_GAS, 10)
 				));
 		recipes.put(Fluids.NAPHTHA_CRACK, new Triplet(
 				new FluidStack(Fluids.REFORMATE, 70),
 				new FluidStack(Fluids.REFORMGAS, 20),
-				new FluidStack(Fluids.HYDROGEN, 5)
+				new FluidStack(Fluids.HYDROGEN_GAS, 5)
 				));
 		recipes.put(Fluids.NAPHTHA_COKER, new Triplet(
 				new FluidStack(Fluids.REFORMATE, 70),
 				new FluidStack(Fluids.REFORMGAS, 10),
-				new FluidStack(Fluids.HYDROGEN, 5)
+				new FluidStack(Fluids.HYDROGEN_GAS, 5)
 				));
 		//recipes.put(Fluids.BIOFUEL, new Triplet(
 		//		new FluidStack(Fluids.TEA, 50),
@@ -54,13 +54,13 @@ public class ReformingRecipes extends SerializableRecipe {
 		//recipes.put(Fluids.CHOLESTEROL, new Triplet(
 		//		new FluidStack(Fluids.ESTRADIOL, 50),
 		//		new FluidStack(Fluids.REFORMGAS, 35),
-		//		new FluidStack(Fluids.HYDROGEN, 15)
+		//		new FluidStack(Fluids.HYDROGEN_GAS, 15)
 		//		));
 		//literally just backwards
 
 		recipes.put(Fluids.CHOLESTEROL, new Triplet(
 			new FluidStack(Fluids.REFORMGAS, 60),
-			new FluidStack(Fluids.HYDROGEN, 20),
+			new FluidStack(Fluids.HYDROGEN_GAS, 20),
 			new FluidStack(Fluids.AROMATICS, 20)
 		));
 

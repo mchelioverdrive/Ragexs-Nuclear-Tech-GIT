@@ -60,8 +60,8 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 		
 		this.tanks = new FluidTank[5];
 		this.tanks[0] = new FluidTank(Fluids.AIR, 64_000);
-		this.tanks[1] = new FluidTank(Fluids.NITROGEN, 24_000);
-		this.tanks[2] = new FluidTank(Fluids.OXYGEN, 24_000);
+		this.tanks[1] = new FluidTank(Fluids.NITROGEN_GAS, 24_000);
+		this.tanks[2] = new FluidTank(Fluids.OXYGEN_GAS, 24_000);
 		this.tanks[3] = new FluidTank(Fluids.KRYPTON, 24_000);
 		this.tanks[4] = new FluidTank(Fluids.CARBONDIOXIDE, 24_000);
 		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
@@ -146,7 +146,7 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 			tanks[2].setFill(tanks[2].getFill() + (int) (batches * output.getX().fill));
 			tanks[3].setFill(tanks[3].getFill() + (int) (batches * output.getY().fill));
 			tanks[4].setFill(tanks[4].getFill() + (int) (batches * output.getZ().fill));
-			this.setStoredEnergyQuanta(energyQuanta - batches * 20_000L);
+			this.setStoredEnergyQuanta(energyQuanta - batches * getBatchWorkQuanta());
 		} finally {
 			runtimeEnergyMutation = false;
 			this.endMachineFluidMutation();
@@ -188,15 +188,15 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 			tanks[0].setType(7, slots);
 			Quartet<FluidStack, FluidStack, FluidStack, FluidStack> output = CryoRecipes.getOutput(tanks[0].getTankType());
 			if(output == null) {
-				tanks[1].setTankType(Fluids.NONE);
-				tanks[2].setTankType(Fluids.NONE);
-				tanks[3].setTankType(Fluids.NONE);
-				tanks[4].setTankType(Fluids.NONE);
+				tanks[1].configureForRecipe(Fluids.NONE, 0);
+				tanks[2].configureForRecipe(Fluids.NONE, 0);
+				tanks[3].configureForRecipe(Fluids.NONE, 0);
+				tanks[4].configureForRecipe(Fluids.NONE, 0);
 			} else {
-				tanks[1].setTankType(output.getW().type);
-				tanks[2].setTankType(output.getX().type);
-				tanks[3].setTankType(output.getY().type);
-				tanks[4].setTankType(output.getZ().type);
+				tanks[1].configureForRecipe(output.getW().type, 0);
+				tanks[2].configureForRecipe(output.getX().type, 0);
+				tanks[3].configureForRecipe(output.getY().type, 0);
+				tanks[4].configureForRecipe(output.getZ().type, 0);
 			}
 			tanks[1].unloadTank(1, 2, slots);
 			tanks[2].unloadTank(3, 4, slots);
@@ -208,8 +208,12 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 		this.observeInventoryFingerprint();
 	}
 
-	private boolean canDistill(Quartet<FluidStack, FluidStack, FluidStack, FluidStack> output) {
-		return energyQuanta >= 20_000L && tanks[0].getFill() >= 100
+	private long getBatchWorkQuanta() {
+        // Air separation: adopted 500 J per standard L for the cryogenic/warming cycle.
+        return tanks[0].getTankType() == Fluids.AIR ? 100_000L : 20_000L;
+    }
+    private boolean canDistill(Quartet<FluidStack, FluidStack, FluidStack, FluidStack> output) {
+		return energyQuanta >= getBatchWorkQuanta() && tanks[0].getFill() >= 100
 				&& tanks[1].getFill() + output.getW().fill <= tanks[1].getMaxFill()
 				&& tanks[2].getFill() + output.getX().fill <= tanks[2].getMaxFill()
 				&& tanks[3].getFill() + output.getY().fill <= tanks[3].getMaxFill()
@@ -220,7 +224,7 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 		if(output == null || limit <= 0L) return 0L;
 		if(tanks[1].getTankType() != output.getW().type || tanks[2].getTankType() != output.getX().type
 				|| tanks[3].getTankType() != output.getY().type || tanks[4].getTankType() != output.getZ().type) return 0L;
-		long batches = Math.min(limit, Math.min(tanks[0].getFill() / 100L, energyQuanta / 20_000L));
+		long batches = Math.min(limit, Math.min(tanks[0].getFill() / 100L, energyQuanta / getBatchWorkQuanta()));
 		batches = limitByOutput(batches, tanks[1], output.getW().fill);
 		batches = limitByOutput(batches, tanks[2], output.getX().fill);
 		batches = limitByOutput(batches, tanks[3], output.getY().fill);

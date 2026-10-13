@@ -234,7 +234,7 @@ public class TileEntityMachineIGenerator extends TileEntityMachineBase implement
 	
 	public int getPowerFromFuel(boolean con) {
 		FluidType type = tanks[1].getTankType();
-		return type.hasTrait(FT_Flammable.class) ? (int)(type.getTrait(FT_Flammable.class).getHeatEnergy() / (con ? 5000L : fluidHeatDiv)) : 0;
+		return type.hasTrait(FT_Flammable.class) ? (int)(type.getTrait(FT_Flammable.class).getLegacyBurnerBudget() / (con ? 5000L : fluidHeatDiv)) : 0;
 	}
 	
 	@Override

@@ -1,6 +1,10 @@
 package com.hbm.tileentity.machine;
 
 import api.hbm.energymk2.EnergyUnits;
+import com.hbm.realsim.Combustion;
+import com.hbm.realsim.FuelCredit;
+import com.hbm.realsim.GeneratorStats;
+import com.hbm.realsim.OutputBudget;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.interfaces.IControlReceiver;
 import com.hbm.inventory.container.ContainerCombustionEngine;
@@ -42,7 +46,6 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
 	private boolean runtimeWaterlogged;
-	private long runtimeGeneratedQuanta;
 	private DirPos[] runtimeConnections;
 	private int observedOrientation = Integer.MIN_VALUE;
 	
@@ -60,6 +63,11 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 	
 	public FluidTank tank;
 	public int tenth = 0;
+	public static final long ratedPowerWatts = 750_000L;
+	public final FuelCredit fuelCredit = new FuelCredit();
+	public final GeneratorStats generatorStats = new GeneratorStats();
+	private final OutputBudget outputBudget = new OutputBudget();
+	private long lastGenerationTick = Long.MIN_VALUE;
 
 	public TileEntityMachineCombustionEngine() {
 		super(5, 50);
@@ -103,6 +111,8 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
 		if(taskType != TASK_GENERATE || taskSlot != 0 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		if(lastGenerationTick == worldObj.getTotalWorldTime()) return;
+		lastGenerationTick = worldObj.getTotalWorldTime();
 		runtimeEnergyMutation = true;
 		this.beginMachineFluidMutation();
 		try { this.runGeneratorStep(); }
@@ -117,17 +127,17 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 
 	private void loadFuel() {
 		this.tank.loadTank(0, 1, slots);
-		if(this.tank.setType(4, slots)) this.tenth = 0;
+		this.tank.setType(4, slots);
 	}
 
 	private void evaluateAndSchedule(long now) {
 		boolean fuelReady = isOn && setting > 0 && !runtimeWaterlogged && slots[2] != null && slots[2].getItem() == ModItems.piston_set &&
-			(tank.getFill() > 0 || tenth > 0) && tank.getTankType().hasTrait(FT_Combustible.class);
+			(fuelCredit.hasCredit() || tank.getFill() > 0 && getElectricalEfficiencyPpm() > 0);
 		if(fuelReady || energyQuanta > 0 || smoke.getFill() > 0 || smoke_leaded.getFill() > 0 || smoke_poison.getFill() > 0) {
 			this.scheduleMachineTransition(now + 1L, TASK_GENERATE, 0);
 		} else {
 			wasOn = false;
-			runtimeGeneratedQuanta = 0L;
+			generatorStats.idle();
 			this.cancelMachineTransition(TASK_GENERATE, 0);
 		}
 	}
@@ -159,51 +169,35 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 	}
 
 	private void runGeneratorStep() {
-			this.loadFuel();
-			wasOn = false;
-			runtimeGeneratedQuanta = 0L;
+		this.loadFuel();
+		wasOn = false;
+		generatorStats.idle();
+		for(DirPos pos : runtimeConnections) {
+			this.providePowerToDirectReceiver(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			this.sendSmoke(pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+		}
+		long charge = Math.min(energyQuanta, getMaxOutputQuantaPerTick());
+		this.extractEnergyQuanta(charge - Library.chargeItemsFromTE(slots, 3, charge, charge));
+		long demand = Math.min(ratedPowerWatts / 10L * MathHelper.clamp_int(setting, 0, 30) / 30L, Math.max(0L, maxPower - energyQuanta));
+		if(!runtimeWaterlogged && isOn && demand > 0 && slots[2] != null && slots[2].getItem() == ModItems.piston_set
+				&& (fuelCredit.hasCredit() || getElectricalEfficiencyPpm() > 0 && tank.getFill() > 0)
+				&& breatheAir(worldObj.getTotalWorldTime() % 5 == 0 ? 1 : 0)) {
+			long generated = Combustion.generate(tank, fuelCredit, demand, getElectricalEfficiencyPpm());
+			this.setStoredEnergyQuanta(energyQuanta + generated);
+			generatorStats.record(generated, fuelCredit);
+			wasOn = generated > 0;
+			if(wasOn) {
+				if(worldObj.getTotalWorldTime() % 5 == 0) super.pollute(Fluids.fromName(fuelCredit.fuel()), FluidReleaseType.BURN, (float) (generatorStats.fuelUnitsPerSecond * 1.25D));
+				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 900);
+			}
+		}
+	}
 
-			int fill = tank.getFill() * 10 + tenth;
-			if(!runtimeWaterlogged && isOn && setting > 0 && slots[2] != null && slots[2].getItem() == ModItems.piston_set && fill > 0 && tank.getTankType().hasTrait(FT_Combustible.class)) {
-				EnumPistonType piston = EnumUtil.grabEnumSafely(EnumPistonType.class, slots[2].getItemDamage());
-				FT_Combustible trait = tank.getTankType().getTrait(FT_Combustible.class);
-				
-				double eff = piston.eff[trait.getGrade().ordinal()];
-				
-				if(eff > 0) {
-					if(breatheAir(worldObj.getTotalWorldTime() % 5 == 0 ? setting : 0)) {
-						int speed = setting * 2;
-						
-						int toBurn = Math.min(fill, speed);
-						runtimeGeneratedQuanta = (long) (toBurn * (trait.getCombustionEnergyQuanta() / 10_000D) * eff);
-						this.setStoredEnergyQuanta(this.energyQuanta + runtimeGeneratedQuanta);
-						fill -= toBurn;
-	
-						if(worldObj.getTotalWorldTime() % 5 == 0 && toBurn > 0) {
-							super.pollute(tank.getTankType(), FluidReleaseType.BURN, toBurn * 0.5F);
-						}
-						
-						if(toBurn > 0) {
-							wasOn = true;
-							FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, Math.max(150, 900 / Math.max(toBurn, 1)));
-						}
-						
-						tank.setFill(fill / 10);
-						tenth = fill % 10;
-					}
-				}
-			}
-			
-			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 3, energyQuanta, energyQuanta));
-			
-			for(DirPos pos : runtimeConnections) {
-				this.providePowerToDirectReceiver(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-				this.sendSmoke(pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			}
-			
-			if(energyQuanta > maxPower)
-				this.setStoredEnergyQuanta(maxPower);
-			
+	public int getElectricalEfficiencyPpm() {
+		if(slots[2] == null || slots[2].getItem() != ModItems.piston_set || !Combustion.isReciprocatingFuel(tank.getTankType())) return 0;
+		EnumPistonType piston = EnumUtil.grabEnumSafely(EnumPistonType.class, slots[2].getItemDamage());
+		FT_Combustible trait = tank.getTankType().getTrait(FT_Combustible.class);
+		return piston.getElectricalEfficiencyPpm(trait.getGrade());
 	}
 
 	private void sendRuntimePacket() {
@@ -214,6 +208,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 		data.setBoolean("isOn", isOn);
 		data.setBoolean("wasOn", wasOn);
 		tank.writeToNBT(data, "tank");
+		generatorStats.write(data, fuelCredit);
 		this.networkPack(data, 50);
 	}
 
@@ -306,6 +301,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 		this.isOn = nbt.getBoolean("isOn");
 		this.wasOn = nbt.getBoolean("wasOn");
 		this.tank.readFromNBT(nbt, "tank");
+		generatorStats.read(nbt, fuelCredit);
 	}
 
 	@Override
@@ -316,6 +312,16 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 		this.isOn = nbt.getBoolean("isOn");
 		this.tank.readFromNBT(nbt, "tank");
 		this.tenth = nbt.getInteger("tenth");
+		fuelCredit.read(nbt);
+		outputBudget.read(nbt);
+		if(!nbt.hasKey("realSimFuel") && tenth > 0) {
+			// Already removed old tenths keep only their old, paid electrical value.
+			long legacyPerLiter = tank.getTankType().hasTrait(FT_Combustible.class) ? tank.getTankType().getTrait(FT_Combustible.class).getLegacyEngineBudgetQuanta() / 1000L : 0L;
+			if(legacyPerLiter > 0) fuelCredit.reserve(tank.getTankType().getName(), legacyPerLiter * 50_000L * MathHelper.clamp_int(tenth, 0, 9), 1, Math.max(1, getElectricalEfficiencyPpm()));
+		}
+		tenth = 0;
+		setting = MathHelper.clamp_int(setting, 0, 30);
+		lastGenerationTick = nbt.hasKey("realSimGenerationTick") ? nbt.getLong("realSimGenerationTick") : Long.MIN_VALUE;
 	}
 
 	@Override
@@ -325,7 +331,9 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setBoolean("isOn", isOn);
 		tank.writeToNBT(nbt, "tank");
-		nbt.setInteger("tenth", tenth);
+		fuelCredit.write(nbt);
+		outputBudget.write(nbt);
+		nbt.setLong("realSimGenerationTick", lastGenerationTick);
 	}
 	
 	@Override
@@ -349,6 +357,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+		this.markDirty();
 		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
@@ -363,7 +372,13 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 	}
 
 	public long getPowerOutputWatts() {
-		return EnergyUnits.quantaPerTickToWatts(runtimeGeneratedQuanta);
+		return EnergyUnits.quantaPerTickToWatts(generatorStats.outputQuanta);
+	}
+	@Override public long getMaxOutputQuantaPerTick() { return outputBudget.available(worldObj == null ? 0 : worldObj.getTotalWorldTime(), ratedPowerWatts / 10L); }
+	@Override public void extractEnergyQuanta(long amount) {
+		long extracted = Math.max(0L, Math.min(amount, Math.min(energyQuanta, getMaxOutputQuantaPerTick())));
+		outputBudget.use(worldObj == null ? 0 : worldObj.getTotalWorldTime(), ratedPowerWatts / 10L, extracted);
+		this.setStoredEnergyQuanta(energyQuanta - extracted);
 	}
 
 	@Override
@@ -428,7 +443,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 	@Override
 	public void receiveControl(NBTTagCompound data) {
 		if(data.hasKey("turnOn")) this.isOn = !this.isOn;
-		if(data.hasKey("setting")) this.setting = data.getInteger("setting");
+		if(data.hasKey("setting")) this.setting = MathHelper.clamp_int(data.getInteger("setting"), 0, 30);
 		
 		this.markChanged();
 		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
@@ -448,7 +463,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 		int id = nbt.getIntArray("fluidID")[index];
 		tank.setTankType(Fluids.fromID(id));
 		if(nbt.hasKey("isOn")) isOn = nbt.getBoolean("isOn");
-		if(nbt.hasKey("burnRate")) setting = nbt.getInteger("burnRate");
+		if(nbt.hasKey("burnRate")) setting = MathHelper.clamp_int(nbt.getInteger("burnRate"), 0, 30);
 		this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.FLUID);
 	}
 }

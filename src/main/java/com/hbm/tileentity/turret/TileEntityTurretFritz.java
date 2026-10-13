@@ -114,7 +114,7 @@ public class TileEntityTurretFritz extends TileEntityTurretBaseNT implements IFl
 			
 			EntityBulletBaseNT proj = new EntityBulletBaseNT(worldObj, BulletConfigSyncingUtil.getKey(conf));
 			proj.setPositionAndRotation(pos.xCoord + vec.xCoord, pos.yCoord + vec.yCoord, pos.zCoord + vec.zCoord, 0.0F, 0.0F);
-			proj.overrideDamage = (float) (trait.getHeatEnergy() / 500_000F);
+			proj.overrideDamage = (float) (trait.getLegacyBurnerBudget() / 500_000F);
 			
 			proj.setThrowableHeading(vec.xCoord, vec.yCoord, vec.zCoord, conf.velocity, conf.spread);
 			worldObj.spawnEntityInWorld(proj);

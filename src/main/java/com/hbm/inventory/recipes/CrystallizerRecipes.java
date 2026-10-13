@@ -211,7 +211,7 @@ public class CrystallizerRecipes extends SerializableRecipe {
 		//(iron + acid → hydrogen)
 		//→ leaching reactor
 
-		//registerRecipe(AL.ingot(),									new CrystallizerRecipe(ModItems.ingot_rubber, mixingTime), new FluidStack(Fluids.NITROGEN, 150));
+		//registerRecipe(AL.ingot(),									new CrystallizerRecipe(ModItems.ingot_rubber, mixingTime), new FluidStack(Fluids.NITROGEN_GAS, 150));
 		//why isn't it possible you stupid bastard
 
 		//ore_zinc needs to make a crystal that can be electrolysized into indium and other byproducts...
@@ -237,7 +237,7 @@ public class CrystallizerRecipes extends SerializableRecipe {
 		registerRecipe(SRN.ingot(),										new CrystallizerRecipe(ModItems.crystal_schraranium, baseTime));
 
 		registerRecipe(KEY_SAND,			new CrystallizerRecipe(ModItems.ingot_fiberglass, utilityTime));
-		registerRecipe(SI.ingot(),			new CrystallizerRecipe(new ItemStack(Items.quartz, 2), utilityTime), new FluidStack(Fluids.OXYGEN, 250));
+		registerRecipe(SI.ingot(),			new CrystallizerRecipe(new ItemStack(Items.quartz, 2), utilityTime), new FluidStack(Fluids.OXYGEN_GAS, 250));
 		registerRecipe(REDSTONE.block(),	new CrystallizerRecipe(ModItems.ingot_mercury, baseTime));
 		registerRecipe(CINNABAR.crystal(),	new CrystallizerRecipe(new ItemStack(ModItems.ingot_mercury, 3), baseTime));
 		registerRecipe(BORAX.dust(),		new CrystallizerRecipe(new ItemStack(ModItems.powder_boron_tiny, 3), baseTime), sulfur);
@@ -347,7 +347,7 @@ public class CrystallizerRecipes extends SerializableRecipe {
 			registerRecipe(new ComparableStack(ItemBedrockOreNew.make(BedrockOreGrade.RAD_ROASTED, type)), new CrystallizerRecipe(ItemBedrockOreNew.make(BedrockOreGrade.RAD_WASHED, type), washing).setReq(rad), new FluidStack(Fluids.WATER, 250));
 			registerRecipe(new ComparableStack(ItemBedrockOreNew.make(BedrockOreGrade.RAD_ARC, type)), new CrystallizerRecipe(ItemBedrockOreNew.make(BedrockOreGrade.RAD_WASHED, type), washing).setReq(rad), new FluidStack(Fluids.WATER, 250));
 
-			FluidStack primary = new FluidStack(Fluids.HYDROGEN, 250);
+			FluidStack primary = new FluidStack(Fluids.HYDROGEN_GAS, 250);
 			registerRecipe(new ComparableStack(ItemBedrockOreNew.make(BedrockOreGrade.PRIMARY, type)), new CrystallizerRecipe(ItemBedrockOreNew.make(BedrockOreGrade.PRIMARY_FIRST, type), bedrock), primary);
 			registerRecipe(new ComparableStack(ItemBedrockOreNew.make(BedrockOreGrade.PRIMARY_ROASTED, type)), new CrystallizerRecipe(ItemBedrockOreNew.make(BedrockOreGrade.PRIMARY_FIRST, type), bedrock), primary);
 			registerRecipe(new ComparableStack(ItemBedrockOreNew.make(BedrockOreGrade.PRIMARY_SULFURIC, type)), new CrystallizerRecipe(ItemBedrockOreNew.make(BedrockOreGrade.PRIMARY_FIRST, type), bedrock), primary);

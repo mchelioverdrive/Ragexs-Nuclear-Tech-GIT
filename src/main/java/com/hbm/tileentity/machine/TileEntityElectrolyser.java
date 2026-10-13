@@ -110,8 +110,8 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		super(21);
 		tanks = new FluidTank[4];
 		tanks[0] = new FluidTank(Fluids.FRESH_WATER, 16000).migrateFrom(Fluids.WATER);
-		tanks[1] = new FluidTank(Fluids.HYDROGEN, 16000);
-		tanks[2] = new FluidTank(Fluids.OXYGEN, 16000);
+		tanks[1] = new FluidTank(Fluids.HYDROGEN_GAS, 16000);
+		tanks[2] = new FluidTank(Fluids.OXYGEN_GAS, 16000);
 		tanks[3] = new FluidTank(Fluids.NITRIC_ACID, 16000);
 		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
@@ -282,8 +282,10 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 	private void refreshCachedState() {
 		FluidType fluidInput = tanks[0].getTankType();
 		if(cachedFluidInput != fluidInput || cachedFluidRecipe != ElectrolyserFluidRecipes.getRecipe(fluidInput)) {
+			ElectrolysisRecipe previous = cachedFluidRecipe;
 			cachedFluidInput = fluidInput;
 			cachedFluidRecipe = ElectrolyserFluidRecipes.getRecipe(fluidInput);
+			if(previous != null && previous != cachedFluidRecipe && (previous.physicalPowerQuanta > 0 || cachedFluidRecipe != null && cachedFluidRecipe.physicalPowerQuanta > 0)) progressFluid = 0;
 		}
 		ItemStack metalInput = slots[14];
 		int meta = metalInput == null ? 0 : metalInput.getItemDamage();
@@ -299,6 +301,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		int powerLevel = Math.min(upgradeManager.getLevel(UpgradeType.POWER), 3);
 		usageOre = usageOreBase - usageOreBase * powerLevel / 4 + usageOreBase * speedLevel;
 		usageFluid = usageFluidBase - usageFluidBase * powerLevel / 4 + usageFluidBase * speedLevel;
+		if(cachedFluidRecipe != null && cachedFluidRecipe.physicalPowerQuanta > 0) usageFluid = cachedFluidRecipe.physicalPowerQuanta;
 		operatingPowerFluidWatts = EnergyUnits.quantaPerTickToWatts(usageFluid);
 		operatingPowerMetalWatts = EnergyUnits.quantaPerTickToWatts(usageOre);
 	}
@@ -493,6 +496,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		if(recipe == null) return false;
 		if(recipe != ElectrolyserFluidRecipes.getRecipe(tanks[0].getTankType())) return false;
 		if(recipe.amount > tanks[0].getFill()) return false;
+		if(tanks[1].getFill() > 0 && tanks[1].getTankType() != recipe.output1.type || tanks[2].getFill() > 0 && tanks[2].getTankType() != recipe.output2.type) return false;
 		if(recipe.output1.type == tanks[1].getTankType() && recipe.output1.fill + tanks[1].getFill() > tanks[1].getMaxFill()) return false;
 		if(recipe.output2.type == tanks[2].getTankType() && recipe.output2.fill + tanks[2].getFill() > tanks[2].getMaxFill()) return false;
 
@@ -616,12 +620,14 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		ElectrolysisRecipe result = cachedFluidRecipe;
 		if(!runtimeInitialized && result == null) result = ElectrolyserFluidRecipes.getRecipe(tanks[0].getTankType());
 		int base = result != null ? result.duration : 100;
+		if(result != null && result.physicalPowerQuanta > 0) return base;
 		int speed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3) - Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 1);
 		return (int) Math.ceil((base * Math.max(1F - 0.25F * speed, 0.2)));
 
 	}
 
 	public int getCycleCount() {
+		if(cachedFluidRecipe != null && cachedFluidRecipe.physicalPowerQuanta > 0) return 1;
 		int speed = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
 		return Math.min(1 + speed * 2, 7);
 	}
@@ -645,6 +651,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		if(nbt.hasKey("rightType")) this.rightStack = new MaterialStack(Mats.matById.get(nbt.getInteger("rightType")), nbt.getInteger("rightAmount"));
 		else this.rightStack = null;
 		for(int i = 0; i < 4; i++) tanks[i].readFromNBT(nbt, "t" + i);
+		if(!nbt.hasKey("realSimProcessVersion") && tanks[0].getTankType() == Fluids.FRESH_WATER) progressFluid = 0;
 	}
 
 	@Override
@@ -654,6 +661,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 
 		EnergyUnits.writeEnergyQuanta(nbt, this.energyQuanta);
 		nbt.setInteger("progressFluid", this.progressFluid);
+		nbt.setInteger("realSimProcessVersion", 1);
 		nbt.setInteger("progressOre", this.progressOre);
 		nbt.setInteger("processFluidTime", getDurationFluid());
 		nbt.setInteger("processOreTime", getDurationMetal());

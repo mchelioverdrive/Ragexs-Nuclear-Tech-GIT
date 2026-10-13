@@ -231,7 +231,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 				fluidUsed = eject;
 				tank.setFill(tank.getFill() - eject);
 				int penalty = (!tank.getTankType().hasTrait(FT_Gaseous.class) && !tank.getTankType().hasTrait(FT_Gaseous_ART.class)) ? 10 : 5;
-				long powerProd = tank.getTankType().getTrait(FT_Flammable.class).getHeatEnergy() * eject / 1_000;
+				long powerProd = tank.getTankType().getTrait(FT_Flammable.class).getLegacyBurnerBudget() * eject / 1_000;
 				powerProd /= penalty;
 				powerProd += powerProd * yield / 3;
 				output = (int) powerProd;

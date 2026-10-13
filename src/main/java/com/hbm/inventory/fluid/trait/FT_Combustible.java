@@ -27,17 +27,15 @@ public class FT_Combustible extends FluidTrait {
 
 		info.add(EnumChatFormatting.GOLD + "[Combustible]");
 		
-		if(combustionEnergyQuanta > 0) {
-			info.add(EnumChatFormatting.GOLD + "Provides " + EnumChatFormatting.RED + EnergyUnits.formatJoules(combustionEnergyQuanta) + " " + EnumChatFormatting.GOLD + "per bucket");
-			info.add(EnumChatFormatting.GOLD + "Fuel grade: " + EnumChatFormatting.RED + this.fuelGrade.getGrade());
-		}
+		info.add(EnumChatFormatting.GOLD + "Fuel grade: " + EnumChatFormatting.RED + this.fuelGrade.getGrade());
 	}
 	
-	public long getCombustionEnergyQuanta() {
+	public long getLegacyEngineBudgetQuanta() {
 		return this.combustionEnergyQuanta;
 	}
+	@Deprecated public long getCombustionEnergyQuanta() { return getLegacyEngineBudgetQuanta(); }
 
-	@Deprecated public long getCombustionEnergy() { return EnergyUnits.quantaToLegacyHe(getCombustionEnergyQuanta()); }
+	@Deprecated public long getCombustionEnergy() { return EnergyUnits.quantaToLegacyHe(getLegacyEngineBudgetQuanta()); }
 	
 	public FuelGrade getGrade() {
 		return this.fuelGrade;

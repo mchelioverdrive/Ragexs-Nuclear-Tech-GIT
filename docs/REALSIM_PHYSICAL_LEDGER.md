@@ -246,3 +246,8 @@ Thermal storage duration is Eheat/transfer power; fuel autonomy is fuel chemical
 ## Ledger release conditions
 
 The steam candidate is numerically closed at its specified reference states. Common fuel proxies are sufficient to compare scales. The unresolved assays and reactor boundaries above are intentionally **unreleased entries**, not permission to invent values during code edits. Phase 5 can start on the canonical accounting/representation contract after approval; a full fuel/recipe/reactor rebalance cannot begin until the readiness checklist in the main document is closed for its chosen implementation tranche.
+
+
+## Phase 5A/5B runtime adoption
+
+The released subset uses literal SI energy and the assays in this ledger through `PhysicalRegistry`; diesel is 35.819 MJ/L independently of the caller. BIOFUEL, leaded additive mixtures, unknown biomass/vegetable-oil assays, sour/refinery/reformer offgas and fictional substances are not silently released. Explicit starter wood mass conventions and gas conversion engineering assumptions are recorded in [the implementation contract](REALSIM_PHASES_1_4.md#phase-5a5b-physical-accounting-and-first-generation-tranche). LO2 adopts 1.141 kg/L, LN2 0.8085 kg/L at normal boiling points. Discrete conversions preserve exact adopted mass with persistent remainders and charge heating/compression/refrigeration work. This does not release the deferred steam, chemistry or nuclear balances.

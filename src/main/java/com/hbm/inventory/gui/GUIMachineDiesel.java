@@ -31,10 +31,7 @@ public class GUIMachineDiesel extends GuiInfoContainer {
 		diesel.tank.renderTankInfo(this, mouseX, mouseY, guiLeft + 80, guiTop + 69 - 52, 16, 52);
 		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 152, guiTop + 69 - 52, 16, 52, diesel.getStoredEnergyQuanta(), diesel.powerCap);
 		
-		String[] text = new String[] { "Fuel consumption rate:",
-				"  1 L/t",
-				"  20 L/s",
-				"(Consumption rate is constant)" };
+		String[] text = diesel.generatorStats.info(diesel.ratedPowerWatts, diesel.fuelCredit, diesel.tank.getTankType().getName(), diesel.tank.getFill());
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 16, guiTop + 36, 16, 16, guiLeft - 8, guiTop + 36 + 16, text);
 		
 		if(!diesel.hasAcceptableFuel()) {
@@ -64,7 +61,7 @@ public class GUIMachineDiesel extends GuiInfoContainer {
 			drawTexturedModalRect(guiLeft + 152, guiTop + 69 - i, 176, 52 - i, 16, i);
 		}
 		
-		if(diesel.tank.getFill() > 0 && diesel.hasAcceptableFuel())
+		if(diesel.generatorStats.outputQuanta > 0)
 		{
 			drawTexturedModalRect(guiLeft + 43 + 18 * 4, guiTop + 34, 208, 0, 18, 18);
 		}

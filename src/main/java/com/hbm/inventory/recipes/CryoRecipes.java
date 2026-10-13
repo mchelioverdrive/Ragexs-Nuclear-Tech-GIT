@@ -27,8 +27,8 @@ public class CryoRecipes extends SerializableRecipe {
 
 		//Earth
 		recipes.put(Fluids.AIR, new Quartet<>(
-			new FluidStack(Fluids.NITROGEN, 77),
-			new FluidStack(Fluids.OXYGEN, 21),
+			new FluidStack(Fluids.NITROGEN_GAS, 77),
+			new FluidStack(Fluids.OXYGEN_GAS, 21),
 			new FluidStack(Fluids.ARGON, 1),
 			new FluidStack(Fluids.NOBLE_GAS_MIX, 1)
 		));
@@ -44,16 +44,16 @@ public class CryoRecipes extends SerializableRecipe {
 		//Titan
 		//mostly nitrogen with methane hydrocarbons
 		recipes.put(Fluids.TEKTOAIR, new Quartet<>(
-			new FluidStack(Fluids.NITROGEN, 89),
+			new FluidStack(Fluids.NITROGEN_GAS, 89),
 			new FluidStack(Fluids.GAS, 8),
 			new FluidStack(Fluids.UNSATURATEDS, 2),
-			new FluidStack(Fluids.HYDROGEN, 1)
+			new FluidStack(Fluids.HYDROGEN_GAS, 1)
 		));
 
 		//Jupiter
 		//H2/He with trace methane; ammonia is a cloud condensate, not bulk gas.
 		recipes.put(Fluids.JOOLGAS, new Quartet<>(
-			new FluidStack(Fluids.HYDROGEN, 89),
+			new FluidStack(Fluids.HYDROGEN_GAS, 89),
 			new FluidStack(Fluids.HELIUM4, 10),
 			new FluidStack(Fluids.GAS, 1),
 			new FluidStack(Fluids.NONE, 0)
@@ -62,7 +62,7 @@ public class CryoRecipes extends SerializableRecipe {
 		//Neptune
 		//H2/He with methane enrichment; deeper ammonia/water ices are not upper atmosphere.
 		recipes.put(Fluids.NGAS, new Quartet<>(
-			new FluidStack(Fluids.HYDROGEN, 80),
+			new FluidStack(Fluids.HYDROGEN_GAS, 80),
 			new FluidStack(Fluids.HELIUM4, 19),
 			new FluidStack(Fluids.GAS, 1),
 			new FluidStack(Fluids.NONE, 0)
@@ -71,7 +71,7 @@ public class CryoRecipes extends SerializableRecipe {
 		//Uranus
 		//H2/He with methane enrichment.
 		recipes.put(Fluids.UGAS, new Quartet<>(
-			new FluidStack(Fluids.HYDROGEN, 82),
+			new FluidStack(Fluids.HYDROGEN_GAS, 82),
 			new FluidStack(Fluids.HELIUM4, 15),
 			new FluidStack(Fluids.GAS, 3),
 			new FluidStack(Fluids.NONE, 0)
@@ -80,7 +80,7 @@ public class CryoRecipes extends SerializableRecipe {
 		//Saturn
 		//H2/He with trace methane; depleted He compared to Jupiter.
 		recipes.put(Fluids.SARNUSGAS, new Quartet<>(
-			new FluidStack(Fluids.HYDROGEN, 96),
+			new FluidStack(Fluids.HYDROGEN_GAS, 96),
 			new FluidStack(Fluids.HELIUM4, 3),
 			new FluidStack(Fluids.GAS, 1),
 			new FluidStack(Fluids.NONE, 0)
@@ -90,7 +90,7 @@ public class CryoRecipes extends SerializableRecipe {
 		//hot CO2 sulfur atmosphere
 		recipes.put(Fluids.EVEAIR, new Quartet<>(
 			new FluidStack(Fluids.CARBONDIOXIDE, 96),
-			new FluidStack(Fluids.NITROGEN, 3),
+			new FluidStack(Fluids.NITROGEN_GAS, 3),
 			new FluidStack(Fluids.SOURGAS, 1), // sulfur-bearing trace-gas abstraction
 			new FluidStack(Fluids.ARGON, 1) //trace
 		));
@@ -98,9 +98,9 @@ public class CryoRecipes extends SerializableRecipe {
 		//Mars
 		recipes.put(Fluids.DUNAAIR, new Quartet<>(
 			new FluidStack(Fluids.CARBONDIOXIDE, 95),
-			new FluidStack(Fluids.NITROGEN, 3),
+			new FluidStack(Fluids.NITROGEN_GAS, 3),
 			new FluidStack(Fluids.ARGON, 2),
-			new FluidStack(Fluids.OXYGEN, 1) //trace amounts do not remove
+			new FluidStack(Fluids.OXYGEN_GAS, 1) //trace amounts do not remove
 		));
 
 		//brine -> iodine brine + salt water (which is just brine...)
@@ -116,7 +116,7 @@ public class CryoRecipes extends SerializableRecipe {
 
 		recipes.put(Fluids.GAS, new Quartet<>(
 			new FluidStack(Fluids.GAS, 85),
-			new FluidStack(Fluids.HYDROGEN, 10),
+			new FluidStack(Fluids.HYDROGEN_GAS, 10),
 			new FluidStack(Fluids.HELIUM4, 1),
 			new FluidStack(Fluids.UNSATURATEDS, 4)
 		));

@@ -39,7 +39,7 @@ public class GUIOilburner extends GuiInfoContainer {
 		this.drawCustomInfoStat(x, y, guiLeft + 116, guiTop + 17, 16, 52, x, y, new String[] { ThermalUnits.formatThermalEnergyPair(Math.min(diFurnace.heatEnergy, diFurnace.maxHeatEnergy), diFurnace.maxHeatEnergy) });
 
 		if(diFurnace.tank.getTankType().hasTrait(FT_Flammable.class)) {
-			this.drawCustomInfoStat(x, y, guiLeft + 79, guiTop + 34, 18, 18, x, y, new String[] { diFurnace.setting + " L/t", ThermalUnits.formatThermalPower((int)(diFurnace.tank.getTankType().getTrait(FT_Flammable.class).getHeatEnergy() / 1000) * diFurnace.setting) });
+			this.drawCustomInfoStat(x, y, guiLeft + 79, guiTop + 34, 18, 18, x, y, diFurnace.generatorStats.info(diFurnace.ratedThermalWatts, diFurnace.fuelCredit, diFurnace.tank.getTankType().getName(), diFurnace.tank.getFill()));
 		}
 		
 		diFurnace.tank.renderTankInfo(this, x, y, guiLeft + 44, guiTop + 17, 16, 52);

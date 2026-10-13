@@ -2,6 +2,8 @@
 
 2026-10-12. RTM/Deadhour, active Forge 1.7.10 checkout at a 933ecc05. **Source, engineering and progression investigation only. Phase 5 was not performed.** No fuel/recipe/output/consumption/reactor/configuration/ID/NBT/runtime change, build, Minecraft launch, benchmark or loaded-world test occurred.
 
+The investigation above is historical. The implemented Phase 5A/5B subset is documented at the end of this file; the remaining thermal, petroleum and nuclear proposals remain future work.
+
 ## Recommendation and document set
 
 Recommend **literal 1:1 energy** for the canonical RealSim engineering model: one represented physical joule is one displayed joule; one electrical quantum remains 0.5 J. Preserve discrete steam grades as **nominal inventory amounts with explicit water-equivalent mass**, distinguish process gases from cryogenic liquids, give machines independent work/heat/flow/power ratings, and accumulate fractional consumption. Do not retain separate flammable/combustible chemical energy contents.
@@ -256,3 +258,92 @@ These are release gates, not a request to perform Phase 5 now. “Specified” m
 | **Remaining runtime measurements** | Obtain loaded-time per-operation debit/yield/cadence and duty profiles; steady turbine/boiler/exchanger/port/condensate flows over several buffer durations; reactor heat/fuel/coolant/aux exports by geometry/dial/shield; cold start, starvation, full power/blocked fluid, trips, unload/reload/world shutdown, legacy saves and dedicated-server behavior. Profile only if later implementation changes hot paths. |
 
 Validation performed here: current-source/callback/recipe inspection, prior-document comparison, authoritative reference lookup, direct arithmetic of ledgers/scale examples, source-link and final-diff checks. No compile/build/reobfuscation/runtime/visual/multiplayer/profiler result is implied. Final recommendation is **1:1 with discrete mass/state accounting and rated throughput**; Phase 5 balance work begins only from released substance/process/reactor rows, not provisional powers copied into code.
+
+
+## Phase 5A/5B: physical accounting and first generation tranche
+
+Implemented 2026-10-12 for the active Forge 1.7.10 target. Literal SI energy is authoritative for the converted paths: one electrical/thermal quantum remains 0.5 J. This subset does not change electrical inventory, old fluid amounts, existing fluid IDs, manufacturing consumption, battery capacities, steam transitions, petroleum unit yields or reactor balances except the phase corrections explicitly listed below.
+
+### Authoritative APIs and compatibility boundary
+
+`com.hbm.realsim.PhysicalRegistry` supplies immutable `PhysicalState` contracts by fluid name. They specify canonical substance, phase, quantity basis, exact adopted mass coefficient, optional mixture, LHV and thermal reference. Chemical energy is calculated once as mass × LHV. Liquid densities and surrogate assays are adopted from the physical ledger; unresolved and fictional entries return an unresolved contract, with null LHV and throwing physical conversion methods. Unknown is never a zero-energy reference. `FluidType.getPhysicalState()` exposes this dataset independently of compatibility traits.
+
+A mass unit is 1 microgram / 22711, allowing the 22.711 L/mol gas reference and selected liquid densities to coexist exactly. Gas counts mean standard-equivalent liters at 0 °C and 1 bar, even when stored at room temperature or compressed. No general conversion from fluid-network PU to bar is introduced.
+
+`CombustionLedger` partitions one chemical input into useful output, recoverable heat and rejected loss; the sum cannot exceed input. This tranche credits no recoverable exhaust, so all non-useful energy is rejected. The model uses whole fuel-to-electric efficiencies, representing burner/expander/shaft/generator losses without inventing another fuel LHV. `Combustion` owns equipment suitability and tank reservations. `FuelCredit` owns the already consumed useful-energy allowance, separately from the tank. `MassRemainder` owns fractional converted product mass separately for each output identity. `GeneratorStats` reports observed production and equivalent continuous fuel flow. `OutputBudget` limits aggregate export across network ports, adjacent receivers and battery charging in a server tick.
+
+The chemical dataset is independent of `FT_Flammable`/`FT_Combustible`. Their old JSON fields and deprecated public methods remain compatibility parameters for deferred equipment. Internal deferred callers explicitly use `getLegacyBurnerBudget()` / `getLegacyEngineBudgetQuanta()`. Their tooltips no longer advertise competing chemical energies; fluid tooltips show one canonical LHV. Converted equipment never calls those budgets except conservative migration of already removed legacy fuel fractions. Gas turbines, steam equipment, exotic fuels and old chemistry still require later conversion; the presence of this foundation does not certify those paths as a closed physical ledger.
+
+### Selected equipment ratings and progression
+
+| Equipment | Useful nameplate | LHV efficiency | Control and compatibility |
+| --- | ---: | ---: | --- |
+| Wood/solid starter generator | 40 kWe | 7% whole fuel-to-electric | Existing ignition, fuel mode, air, ash and pollution; solid or physically defined burner fuel. |
+| Diesel Generator | 200 kWe default | 32% diesel; 30% diesel/reformate blend; 27% petroil | Automatic generator behavior remains. Waterlogging, air, charging, pollution and full-buffer gating retained. Spark fuels are not ordinary diesel fuel. |
+| Industrial Combustion Engine | 750 kWe | 38% × existing piston compatibility factor | Ignition retained; 0–30 slider now sets 0–100% power ceiling, not liters/tick. All pistons share the same mechanical nameplate. Matching piston/fuel improves endurance rather than creating chemical energy or a hidden power tier. |
+| Solid firebox | 200 kWth | 85% useful heat | Canonical solid fuel credit; air/waterlogging/ash and heat-buffer gating. Oven remains deferred. |
+| Fluid burner | 200 kWth | 85% useful heat | 1–10 setting is a 10–100% thermal power ceiling; canonical flammability and resolved assay required. |
+
+The Diesel Generator configuration adds `L:ratedPowerWatts` (default 200000, clamped to 10–500000 W, output rounded down to the 10 W/tick-quantum resolution). The obsolete `D[:efficiency` chemical multiplier is ignored. Firebox `I:baseHeat`/`D:burnTimeMult` and burn-module bonuses do not set physical fuel energy or the new fixed thermal nameplate; `I:heatCap` still configures storage and burn modules retain ash compatibility. Compressor and water-electrolysis recipe JSON now preserve physical work/power fields.
+
+These are plant ratings, independent of the unchanged generator buffers (starter 50 kJ, diesel normally 25 kJ, engine 1.25 MJ; thermal buffers 50 kJ). A buffer cannot increase export above nameplate. Existing stored energy above a configured capacity remains loadable and can discharge; it is not rescaled or converted into new fuel credit. Old diesel saved capacities are retained; the NITAN capacity multiplier no longer governs future operation.
+
+At the constructed Phase 4 loads, starter reserve is 22 kW at 18 kW mean, diesel reserve is 100 kW at 100 kW mean, and industrial reserve is approximately 319 kW at 431 kW mean. Industrial peaks near 1.13 MW require appropriately rated storage or another source. There is no generator technology eligibility flag on consumers. Consumers, batteries and their transfer limits still have their existing ratings; this tranche does not claim that an ordinary battery can service every peak.
+
+Piston factors are compatibility modifiers: for diesel/HIGH, steel yields 9.5%, Dura 34.2%, Desh/Starmetal 38%. Steel's matching heavy-oil/LOW case also yields 38%. The low diesel result for steel is an intentional poor-match penalty inherited from its fuel preference, not a lower nameplate. Hydrazine and direct cryogenic liquid hydrogen are not reciprocating-engine fuels; hydrogen process gas can use the existing GAS-capable piston. Unresolved BIOFUEL, leaded additive assays, fictional fuels and unassayed feedstocks remain stored and transportable but do not supply invented physical energy to converted equipment.
+
+Starter solid assays explicitly adopt 1 kg per full coal/charcoal/coke/petroleum-coke item or dust equivalent, 9 kg per coal block, and wood reference masses of 4 kg/log, 1 kg/plank, 0.5 kg/stick. Wood uses the ledger's 15.6 MJ/kg wet-reference proxy; these item masses are a chosen material convention, not inferred from furnace ticks or Minecraft dimensions. Other biomass, wooden assemblies and fictional solid fuels remain unresolved. Burn-time modules supply ash compatibility amounts only in converted equipment, never chemical energy bonuses.
+
+### Fuel flow and autonomy at full useful output
+
+| Path / representative fuel | Old flow / output | New full-load flow / output | Representative endurance |
+| --- | --- | --- | --- |
+| Starter, coal item | About 1 kWe for the old burn timer | 40 kWe; 1.329 kg/min at 7% | 1 kg coal = 45.15 s; charcoal 51.625 s; 4 kg wood log 109.2 s. |
+| Starter, wood oil | 2 L/t; about 2.47 kWe | 40 kWe; 1.681 L/min | Existing 16000 L tank ≈158.67 h. |
+| Diesel, canonical diesel | 1 L/t = 1200 L/min; 10.27 kWe | 200 kWe; 1.04693 L/min | 4000 L ≈63.68 h full /127.36 h at 100 kW; a 100 L day tank ≈1.59 h full. |
+| Engine, setting 30 and matching diesel piston | 6 L/t = 7200 L/min; 82.2 kWe | 750 kWe; 3.30610 L/min at 38% | 24000 L ≈120.99 h full /210.54 h at 431 kW. |
+| Fluid burner, diesel, setting 10 | 10 L/t; about 27.5 kWth | 200 kWth; ≈0.39414 L/min | 16000 L ≈676.58 h at full useful heat. |
+| Solid firebox, coal | About 2 kWth for a 2000-tick timer | 200 kWth; 0.54720 kg/min | 1 kg coal =109.65 s at full useful heat. |
+
+Old values are source arithmetic at the former defaults, not measured runtime exports. New endurance is calculated at constant selected efficiency and 20 TPS, excluding fuel-acquisition utilities and environmental downtime. Part-load efficiency is intentionally constant in this first model; no idle fuel is burned. Full buffers pause conversion and preserve owned fuel credit. Displayed flow is the equivalent fuel being used from credit, while physical tank withdrawals occur as whole-unit reservations.
+
+### Gas identities and processes
+
+New `HYDROGEN_GAS`, `OXYGEN_GAS`, `NITROGEN_GAS` identities are appended after the existing declarations and loaded custom mappings. Existing cryogenic `HYDROGEN` (ID 38), `OXYGEN` (39), `NITROGEN` (82) retain their meaning. New IDs normally start at 224; allocation skips occupied custom IDs. Existing custom numeric mappings are not overwritten. Configuration reload keeps the registered gas objects and IDs; custom definitions cannot replace built-in names or IDs. Creative ordering adds the new forms without changing old registration order.
+
+At the selected densities, one liquid L corresponds to approximately 797.636 standard H2 L, 809.819 O2 L, or 655.466 N2 L. Whole product counts are emitted and the exact residual mass remains owned by the compressor. Reverse operations preserve the same species mass; pressure and phase do not multiply LHV. The compressor operates at its existing 25 kW rate for physical routes; faster/efficiency upgrades cannot reduce the required work or inherit progress from a different route.
+
+| Existing Compressor route | Adopted work/heat charged |
+| --- | --- |
+| 1 L cryogenic liquid → room-temperature standard-equivalent gas | H2: 4 MJ/kg; O2/N2: 0.4 MJ/kg, conservatively modeled as electrically supplied vaporization/warming heat. |
+| 1000 standard L gas, class 0 → same amount, class 1 | Approximate isothermal 1→10 bar compression at 70% efficiency: 100 J/L × ln(10)/0.70. Class 1's 10-bar meaning is confined to these three process-gas routes. |
+| Class 1 gas → cryogenic liquid | H2: 36 MJ/kg (10 kWh/kg); O2/N2: adopted 1 MJ/kg refrigerator work. H2 liquefaction is a separate refrigeration operation after compression. |
+| Class 1 gas → class 0 gas, decompression mode | 500 J control work per 1000 standard L; pressure work is rejected without energy recovery. Select the mode through the compressor's labeled control. |
+
+LN2 uses 0.8085 kg/L and LO2 1.141 kg/L near normal boiling points; H2 keeps the physical ledger's 0.0708 kg/L. Nitrogen density and latent heat are supported by [Air Products Safetygram 7](https://www.airproducts.com/-/media/files/en/900/900-13-081-us-nov15-liquid-nitrogen-safetygram-7.pdf); oxygen density is supported by the [Air Products physical properties table](https://www.airproducts.com.cn/en/gases/gas-facts/boiling-points-and-densities). Warming and O2/N2 liquefaction budgets are explicitly selected conservative engineering assumptions, not exact plant performance claims.
+
+The cryogenic separator now supplies process-gas H2/O2/N2 instead of labeling gas proportions as liquid liters. Earth AIR separation charges an adopted 50 kJ per 100 standard L for separation/refrigeration/warming. AIR and the noble tail have explicit initial mixture proxies matching the existing 77:21:1:1 and 96:2:1:1 recipe fractions, so their adopted mass accounts close exactly. This proxy is not a measurement of terrestrial atmosphere. Planetary/other separation yields and their utility costs remain legacy abstractions pending their own assays.
+
+Active Chemical Reactor, mixer, fluid electrolysis, pyrolysis, hydrotreating, reforming, radiolysis, welding and crystallizer recipes now use process-gas forms where they formerly used gas-like H2/O2/N2 counts. Rocket oxidizer/fuel storage, fusion inputs and the existing superheated-H2 coolant path keep their old identities and quantity semantics for the later thermal/nuclear/rocket boundary pass. No additional phase identities were required by this subset; aqueous acids and other unresolved species remain later chemistry work.
+
+The early Chemical Reactor water-electrolysis recipe remains accessible: 1 kg reference water →1260 standard H2 L +630 O2 L, with a 22.2 MJ electrical work budget at 8 kW. The bulk fluid electrolyser performs the same water batch at 200 kW. Integer product rounding rejects about 0.05% residual feedwater as an explicit unrepresented process loss; it never creates mass or extra fuel energy. The work corresponds approximately to 55 kWh/kg H2. Physical work duration and cost are protected from ordinary speed/power/overdrive shortcuts in both single and industrial chemistry lanes. Existing metal/isotope electrolysis remains deferred.
+
+Oxyhydrogen uses 666 H2 gas +333 O2 gas →999 standard blend L. Ammonia uses 300 N2 +900 H2 →600 ammonia gas L. Methanol synthesis uses 1124 standard syngas L +562 H2 gas L →1 liquid methanol L; its sub-percent excess feed is a purge/loss. These are the minimum direct phase/stoichiometric repairs; they do not certify the remaining chemistry utility/yield ledger. Biological, atmospheric and reformer gas outputs adopt the gas identities. Existing populated cryogenic machine tanks are held for draining/conversion instead of erased or reinterpreted. Atmospheric users accept new oxygen gas with their legacy atmospheric identity as a compatibility boundary.
+
+### Persistent ownership and migration
+
+Each converted generator/firebox stores a `realSimFuel` compound with `version=1`, fuel identity, useful credit in microjoules, chemical microjoules per reserved unit and locked equipment efficiency in parts per million. The input is removed before the allowance is created. Remaining credit belongs to the reservation's original fuel and efficiency, including after switching tanks, pistons or fuel mode; new settings apply on the next reservation. Draining the tank never refunds consumed material. Less than 0.5 J unusable output remainder may be discarded when replacing an exhausted reservation; it is a bounded loss, not negative debt or free output.
+
+`realSimGenerationTick` prevents repeated production in the same world tick. Electrical generators also persist `realSimExportTick`/`realSimExportUsed`, so same-tick reload cannot reset aggregate export allowance. There is no elapsed-time production catch-up on reload. The existing MachineRuntime server-thread lifecycle and scheduler remain authoritative; no second scheduler or worker thread was added.
+
+Compressor `realSimMass` contains `version=1` and a map of output fluid names to retained mass units. Remainders survive route changes and reload, and cannot become credit for another species. The existing paid process progress persists with `realSimProcessVersion=1`; physical work changes reset unpaid old progress rather than upgrading it into a new allowance. Legacy generator burn timers/tenths migrate conservatively using their already paid old useful-work budget. Tank amounts, electrical quanta, old numeric IDs and saved generator buffers remain unchanged. Unsupported new account versions are rejected rather than silently reinterpreted.
+
+### Validation and remaining boundary
+
+The JUnit accounting suite uses production ledger, tank, budget and remainder classes, including binary compressed NBT round trips. It covers chemical-input ceilings, one LHV across equipment efficiencies, load-proportional consumption, idle/empty behavior, fuel switching/draining, repeated reload, persistent same-tick export limits, mass preservation, unresolved data, checked overflow and old fluid declaration order. It also checks gas registration stability, built-in identity collision protection and compressor refusal to deposit gas quantities into a preserved liquid output tank. Run `gradlew test` or the normal `gradlew build` with the existing Java 8 tooling.
+
+The implementation surface is the nine `com.hbm.realsim` classes (`PhysicalState`, `PhysicalRegistry`, `CombustionLedger`, `Combustion`, `FuelCredit`, `MassRemainder`, `OutputBudget`, `GeneratorStats`, `PhaseConversions`); the wood, diesel and combustion-engine TileEntities; `TileEntityFireboxBase`/`TileEntityHeaterFirebox` and `TileEntityHeaterOilburner`; their GUIs and piston information; `Fluids`/`FluidType`/`FluidTank` and legacy trait boundaries; compressor, cryogenic separator and chemical/electrolysis recipe owners; the directly affected process-gas recipes, atmospheric users and machine tank defaults; and `PowerNetMK2` export rounding. `PhysicalAccountingTest` and the existing Gradle test configuration provide the automated accounting checks. The other two RealSim registry/ledger documents and `CHANGELOG.md` record the released subset; deferred equipment edits only make the legacy-budget boundary explicit.
+
+Gameplay acceptance still requires observed operation of the three plant sizes, air/waterlogging/controls/pollution, several ports and batteries, fuel changes, saved old stocks, chunk/rotation lifecycle and long-run endurance. A compile or headless accounting test is not that acceptance. The implementation has no technology gate on consumers; the Phase 4 load scenarios remain constructed design anchors rather than measured factories.
+
+Later 5C–5G work remains necessary for petroleum yields and chemistry utilities, gas-turbine/combined-cycle recovery, steam plants, machine demand, cooling water, nuclear boundaries and fictional assays. In particular, legacy coal-to-liquids, hydrazine/acid and other synthetic recipes are not mass/energy-certified merely because their gas phase is corrected. Existing enormous bulk tanks intentionally retain their long SI autonomy. This tranche ends at the common foundation and the selected generation paths.

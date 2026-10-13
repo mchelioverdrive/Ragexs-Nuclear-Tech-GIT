@@ -76,7 +76,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputFluids(
 						//(GeneralConfig.enableLBSM && GeneralConfig.enableLBSMSimpleChemsitry) ?
 								//new FluidStack[] {new FluidStack(Fluids.LIGHTOIL, 200)} :
-								new FluidStack[] {new FluidStack(Fluids.OXYGEN, 200),
+								new FluidStack[] {new FluidStack(Fluids.OXYGEN_GAS, 200),
 								new FluidStack(Fluids.ARGON, 20)})
 				.outputItems(new ItemStack(ModItems.ingot_desh, 4))); //here have 4 since this is already cancer
 		recipes.add(new ChemRecipe(39, "NITAN", 50)
@@ -88,8 +88,8 @@ public class ChemplantRecipes extends SerializableRecipe {
 		// Simplified anthraquinone loop: the plant abstracts the recycled organic working solution.
 		recipes.add(new ChemRecipe(40, "PEROXIDE", 50)
 				.inputFluids(
-					new FluidStack(Fluids.HYDROGEN, 500),
-					new FluidStack(Fluids.OXYGEN, 500)
+					new FluidStack(Fluids.HYDROGEN_GAS, 500),
+					new FluidStack(Fluids.OXYGEN_GAS, 500)
 				)
 				.outputFluids(new FluidStack(Fluids.PEROXIDE, 1000)));
 		recipes.add(new ChemRecipe(90, "SULFURIC_ACID", 50)
@@ -126,7 +126,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputItems(new OreDictStack(AL.dust()))
 				.inputFluids(
 						new FluidStack(Fluids.XYLENE, 500),
-						new FluidStack(Fluids.OXYGEN, 100))
+						new FluidStack(Fluids.OXYGEN_GAS, 100))
 				.outputItems(new ItemStack(ModItems.ingot_pet)));*/
 
 
@@ -252,23 +252,23 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//if something says do not remove do not remove it
 
 		//do not remove this I know it's redundant but the electrolysis machine sucks and is late game for some fucking reason
-		recipes.add(new ChemRecipe(58, "ELECTROLYSIS", 150)
-						.inputFluids(new FluidStack(Fluids.FRESH_WATER, 4000))
+		recipes.add(new ChemRecipe(58, "ELECTROLYSIS", 1).physicalProcess(22_200_000L, 8_000L)
+						.inputFluids(new FluidStack(Fluids.FRESH_WATER, 1))
 						.outputFluids(
-							new FluidStack(Fluids.HYDROGEN, 40),
-							new FluidStack(Fluids.OXYGEN, 20)));
+							new FluidStack(Fluids.HYDROGEN_GAS, 1260),
+							new FluidStack(Fluids.OXYGEN_GAS, 630)));
 		//this is here for early game hydrogen/compat. DO NOT REMOVE IT. I don't want to have to come back in this class and be like
 		// "oh, a realistification broke progression because these fucking guys gated electrolysis behind a big ass machine or something"
 		// SO DO NOT REMOVE IT! You can nerf shit like this, or fix it if it's chemically imbalanced but don't just FUCKING REMOVE IT!
 
-		// Recipe 58 was direct water electrolysis and is intentionally retired: use the fluid electrolyser.
+		// Recipe 58 retains the early workshop water-electrolysis route at an explicit 8 kW rating.
 		//DO NOT DO THIS!!^
 
 		recipes.add(new ChemRecipe(59, "XENON", 250, 1)
 				.inputFluids(new FluidStack(Fluids.NONE, 0))
 				.outputFluids(new FluidStack(Fluids.XENON, 50)));
 		recipes.add(new ChemRecipe(60, "XENON_OXY", 20)
-				.inputFluids(new FluidStack(Fluids.OXYGEN, 250))
+				.inputFluids(new FluidStack(Fluids.OXYGEN_GAS, 250))
 				.outputFluids(new FluidStack(Fluids.XENON, 50)));
 		//recipes.add(new ChemRecipe(61, "SATURN", 60)
 		//		.inputItems(
@@ -390,12 +390,12 @@ public class ChemplantRecipes extends SerializableRecipe {
 				//.inputItems(new ComparableStack(ModItems.powder_ice, 4))
 				//.inputFluids(new FluidStack(Fluids.BLOOD, 1000))
 				//.outputItems(new ItemStack(Blocks.sand, 4))
-				//.outputFluids(new FluidStack(Fluids.NITROGEN, 1000)));
+				//.outputFluids(new FluidStack(Fluids.NITROGEN_GAS, 1000)));
 		// Ammonia oxidation and aqueous absorption are represented as one plant operation.
 		recipes.add(new ChemRecipe(99, "NITROACID", 180)
 			.inputFluids(
 				new FluidStack(Fluids.AMMONIA, 1000),
-				new FluidStack(Fluids.OXYGEN, 1250))
+				new FluidStack(Fluids.OXYGEN_GAS, 1250))
 			.outputFluids(new FluidStack(Fluids.NITRIC_ACID, 1000)));
 		// The plant abstracts chloramine formation and ammonia coupling; nitric acid is not a hydrazine precursor.
 		recipes.add(new ChemRecipe(100, "HYDRAZINE", 250)
@@ -403,10 +403,10 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.outputFluids(new FluidStack(Fluids.HYDRAZINE, 800)));
 		//ammonia
 		recipes.add(new ChemRecipe(101, "AMONGUS", 250)
-				.inputFluids(new FluidStack(Fluids.NITROGEN, 300), new FluidStack(Fluids.HYDROGEN, 900))
+				.inputFluids(new FluidStack(Fluids.NITROGEN_GAS, 300), new FluidStack(Fluids.HYDROGEN_GAS, 900))
 				.outputFluids(new FluidStack(Fluids.AMMONIA, 600)));
 		recipes.add(new ChemRecipe(103, "HCL", 250)
-				.inputFluids(new FluidStack(Fluids.HYDROGEN, 500), new FluidStack(Fluids.CHLORINE, 500))
+				.inputFluids(new FluidStack(Fluids.HYDROGEN_GAS, 500), new FluidStack(Fluids.CHLORINE, 500))
 				.outputFluids(new FluidStack(Fluids.HCL, 1000)));
 		recipes.add(new ChemRecipe(104, "AMMONIUM", 250)
 				.inputFluids(new FluidStack(Fluids.AMMONIA, 500), new FluidStack(Fluids.NITRIC_ACID, 500))
@@ -486,7 +486,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.outputItems(
 						new ItemStack(ModItems.s_cream, 4)));
 		recipes.add(new ChemRecipe(123, "POISON", 250)
-			.inputFluids(new FluidStack(Fluids.NITROGEN, 50)) //, new FluidStack(Fluids.CHLORINE, 50)
+			.inputFluids(new FluidStack(Fluids.NITROGEN_GAS, 50)) //, new FluidStack(Fluids.CHLORINE, 50)
 			.inputItems(
 				new ComparableStack(ModItems.powder_sodium, 1),
 				new ComparableStack(ModItems.powder_coal, 1))
@@ -531,14 +531,14 @@ public class ChemplantRecipes extends SerializableRecipe {
 				new OreDictStack(U235.billet(), 1),
 				new ComparableStack(ModItems.powder_bromine),
 				new OreDictStack(ASBESTOS.ingot(), 1))
-			.inputFluids(new FluidStack(Fluids.HYDROGEN, 4000))
+			.inputFluids(new FluidStack(Fluids.HYDROGEN_GAS, 4000))
 			.outputFluids(new FluidStack(Fluids.URANIUM_BROMIDE, 4000)));
 		recipes.add(new ChemRecipe(1005, "PLUTONIUM_BROMIDE", 50)
 			.inputItems(
 				new OreDictStack(PU239.billet(), 1),
 				new ComparableStack(ModItems.powder_bromine),
 				new OreDictStack(ASBESTOS.ingot(), 1))
-			.inputFluids(new FluidStack(Fluids.HYDROGEN, 4000))
+			.inputFluids(new FluidStack(Fluids.HYDROGEN_GAS, 4000))
 			.outputFluids(new FluidStack(Fluids.PLUTONIUM_BROMIDE, 4000)));
 
 		recipes.add(new ChemRecipe(1007, "THORIUM_BROMIDE", 50)
@@ -546,7 +546,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				new OreDictStack(TH232.billet(), 1),
 				new ComparableStack(ModItems.powder_bromine),
 				new OreDictStack(ASBESTOS.ingot(), 1))
-			.inputFluids(new FluidStack(Fluids.HYDROGEN, 4000))
+			.inputFluids(new FluidStack(Fluids.HYDROGEN_GAS, 4000))
 			.outputFluids(new FluidStack(Fluids.THORIUM_BROMIDE, 4000)));
 
 		//ACTUAL FRACKING SOLUTION
@@ -568,7 +568,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.inputFluids(
 				new FluidStack(Fluids.ULTRAHOTSTEAM, 3000))
 			.outputFluids(
-				new FluidStack(Fluids.HYDROGEN, 1000),
+				new FluidStack(Fluids.HYDROGEN_GAS, 1000),
 				new FluidStack(Fluids.CARBONDIOXIDE, 500)
 				//new FluidStack(Fluids.GAS, 5)
 				//this fucking idiot bob only supports 2 outputs.
@@ -580,7 +580,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				new FluidStack(Fluids.GAS, 1000),
 				new FluidStack(Fluids.ULTRAHOTSTEAM, 1000))
 			.outputFluids(
-				new FluidStack(Fluids.HYDROGEN, 3000),
+				new FluidStack(Fluids.HYDROGEN_GAS, 3000),
 				new FluidStack(Fluids.CARBONDIOXIDE, 1000)));
 
 
@@ -815,7 +815,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		// Optional reverse synthesis route; this is not the normal sulfur-production route.
 		recipes.add(new ChemRecipe(1032, "HYDROGEN_SULFIDE", 50)
 			.inputItems(new ComparableStack(ModItems.sulfur, 1))
-			.inputFluids(new FluidStack(Fluids.HYDROGEN, 1000))
+			.inputFluids(new FluidStack(Fluids.HYDROGEN_GAS, 1000))
 			.outputFluids(new FluidStack(Fluids.HYDROGEN_SULFIDE, 1000))
 		);
 
@@ -830,7 +830,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		// barium production (hydrogen reduction)
 		recipes.add(new ChemRecipe(1033, "BARIUM_REDUCTION", 50)
 			.inputItems(new ComparableStack(ModItems.barium_oxide, 1))
-			.inputFluids(new FluidStack(Fluids.HYDROGEN, 1000))
+			.inputFluids(new FluidStack(Fluids.HYDROGEN_GAS, 1000))
 			.outputItems(new ItemStack(ModItems.ingot_barium, 1))
 				//reasoning: I cannot be bothered to change how radium is currently obtained (centrifuging uranium ore)
 				//however, I also want to add a use for barium
@@ -885,7 +885,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(1037, "CLAUS_PROCESS", 300)
 			.inputFluids(
 				new FluidStack(Fluids.HYDROGEN_SULFIDE, 2_000),
-				new FluidStack(Fluids.OXYGEN, 1_000)
+				new FluidStack(Fluids.OXYGEN_GAS, 1_000)
 			)
 			.outputItems(new ItemStack(ModItems.sulfur, 2))
 			.outputFluids(new FluidStack(Fluids.STEAM, 2_000))
@@ -1034,13 +1034,13 @@ public class ChemplantRecipes extends SerializableRecipe {
 		// Step 2: Oxidation (Chemplant)
 		recipes.add(new ChemRecipe(1054, "OSMIRIDIUM_OXIDATION", 300)
 						.inputItems(new ComparableStack(ModItems.powder_impure_osmiridium, 1))
-						.inputFluids(new FluidStack(Fluids.OXYGEN, 1000))
+						.inputFluids(new FluidStack(Fluids.OXYGEN_GAS, 1000))
 						.outputItems(new ItemStack(ModItems.iridium_rich_residue, 1))
 						.outputFluids(new FluidStack(Fluids.OSMIRIDIUM_SOLUTION, 200)) //osmium tetroxide, I am not refactoring it again; it's called it in LANG.
 		);
 
 		recipes.add(new ChemRecipe(1055, "OSMIUM_REDUCTION", 200)
-						.inputFluids(new FluidStack(Fluids.OSMIRIDIUM_SOLUTION, 1000), new FluidStack(Fluids.HYDROGEN, 1000))
+						.inputFluids(new FluidStack(Fluids.OSMIRIDIUM_SOLUTION, 1000), new FluidStack(Fluids.HYDROGEN_GAS, 1000))
 						.outputItems(new ItemStack(ModItems.powder_osmium_tiny, 1))
 						.outputFluids(new FluidStack(Fluids.WATER, 1000))
 		);
@@ -1055,7 +1055,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 		recipes.add(new ChemRecipe(1057, "IRIDIUM_OXIDATION", 400)
 						.inputItems(new ComparableStack(ModItems.iridium_rich_residue, 1))
-						.inputFluids(new FluidStack(Fluids.OXYGEN, 1000))
+						.inputFluids(new FluidStack(Fluids.OXYGEN_GAS, 1000))
 						.outputItems(new ItemStack(ModItems.iridium_oxide, 1))
 		);
 
@@ -1081,13 +1081,13 @@ public class ChemplantRecipes extends SerializableRecipe {
 						.inputItems(new ComparableStack(ModItems.itemsalt, 1))
 						.inputFluids(
 							new FluidStack(Fluids.FRESH_WATER, 1000),
-							new FluidStack(Fluids.OXYGEN, 500)
+							new FluidStack(Fluids.OXYGEN_GAS, 500)
 						)
 						//.oxygenConsumption = 500 // consumes oxygen from the atmosphere to prevent infinite loops with water electrolysis
 						//that's great gpt but I'm not doing allat I'm just adding oxygen fluid in input
 						.outputFluids(
 							new FluidStack(Fluids.CHLORINE, 1000),
-							new FluidStack(Fluids.HYDROGEN, 1000)
+							new FluidStack(Fluids.HYDROGEN_GAS, 1000)
 							//new FluidStack(Fluids.SODIUM_HYDROXIDE, 1000)
 						)
 					//.outputItems(new ItemStack(ModItems.sodium_hydroxide, 1))
@@ -1109,7 +1109,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//RUTHENIUM_RESIDUE + HYDROGEN -> RUTHENIUM + STEAM
 		recipes.add(new ChemRecipe(1065, "RUTHENIUM_REDUCTION", 300)
 						.inputItems(new ComparableStack(ModItems.ruthenium_residue, 1))
-						.inputFluids(new FluidStack(Fluids.HYDROGEN, 1000))
+						.inputFluids(new FluidStack(Fluids.HYDROGEN_GAS, 1000))
 						.outputItems(new ItemStack(ModItems.nugget_ruthenium, 1))
 						.outputFluids(new FluidStack(Fluids.STEAM, 850))
 		);
@@ -1354,7 +1354,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 							)
 						)
 						.inputFluids(
-							new FluidStack(Fluids.OXYGEN, 1000)
+							new FluidStack(Fluids.OXYGEN_GAS, 1000)
 						)
 						.outputItems(
 							new ItemStack(ModItems.powder_terbium_oxide, 1)
@@ -1473,7 +1473,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 							new ComparableStack(ModItems.erbium_powder, 1)
 						)
 						.inputFluids(
-							new FluidStack(Fluids.OXYGEN, 1000)
+							new FluidStack(Fluids.OXYGEN_GAS, 1000)
 						)
 						.outputItems(
 							new ItemStack(ModItems.er_yag_feedstock)
@@ -1487,7 +1487,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 							new ComparableStack(ModItems.powder_ytterbium, 1)
 						)
 						.inputFluids(
-							new FluidStack(Fluids.OXYGEN, 1000)
+							new FluidStack(Fluids.OXYGEN_GAS, 1000)
 						)
 						.outputItems(
 							new ItemStack(ModItems.yby_feedstock)
@@ -1507,7 +1507,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//recipes.add(new ChemRecipe(1090, "IR_LASER_GASMIX", 400)
 		//				.inputFluids(
 		//					new FluidStack(Fluids.CARBONDIOXIDE, 1000),
-		//					new FluidStack(Fluids.NITROGEN, 500),
+		//					new FluidStack(Fluids.NITROGEN_GAS, 500),
 		//					//new FluidStack(Fluids.HELIUM4, 500) //helium 3...?
 		//					//EXCEPT THAT THE CHEMPLANT CANNOT TAKE MORE THAN 2 FLUIDS AT A TIME, SO I HAVE TO ADD EVEN MORE FUCKING RECIPES!!!
 		//				)
@@ -1518,7 +1518,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 		recipes.add(new ChemRecipe(1090, "IR_LASER_GASMIX_1", 200)
 						.inputFluids(
-							new FluidStack(Fluids.NITROGEN, 500),
+							new FluidStack(Fluids.NITROGEN_GAS, 500),
 							new FluidStack(Fluids.HELIUM4, 500)
 						)
 						.outputFluids(
@@ -1987,14 +1987,14 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 		// Compact CO + 2H2 -> CH3OH synthesis: SYNGAS represents the conditioned CO/H2 feed.
 		recipes.add(new ChemRecipe(1128, "METHANOL_SYNTHESIS", 120)
-				.inputFluids(new FluidStack(Fluids.SYNGAS, 1_000), new FluidStack(Fluids.HYDROGEN, 1_000))
-				.outputFluids(new FluidStack(Fluids.METHANOL, 1_000)));
+				.inputFluids(new FluidStack(Fluids.SYNGAS, 1124), new FluidStack(Fluids.HYDROGEN_GAS, 562))
+				.outputFluids(new FluidStack(Fluids.METHANOL, 1)));
 
 		// Coal-to-liquids is represented as hydrogenation over an iron catalyst. The recipe
 		// deliberately compresses gasification, cleanup, and Fischer-Tropsch upgrading.
 		recipes.add(new ChemRecipe(1129, "COAL_GASOLINE", 240)
 				.inputItems(new OreDictStack(COAL.dust(), 8), new ComparableStack(ModItems.powder_iron))
-				.inputFluids(new FluidStack(Fluids.HYDROGEN, 4_000))
+				.inputFluids(new FluidStack(Fluids.HYDROGEN_GAS, 4_000))
 				.outputFluids(new FluidStack(Fluids.COALGAS, 2_000)));
 
 		// UNSATURATEDS is the game's mixed light-olefin stream; this is an intentionally
@@ -2088,8 +2088,8 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//			new ComparableStack(ModItems.powder_coal_tiny, 1) //1 carbon
 		//		)
 		//		.inputFluids(
-		//			new FluidStack(Fluids.HYDROGEN, 400), //3 hydrogen + 1 Hydrogen
-		//			new FluidStack(Fluids.NITROGEN, 100)
+		//			new FluidStack(Fluids.HYDROGEN_GAS, 400), //3 hydrogen + 1 Hydrogen
+		//			new FluidStack(Fluids.NITROGEN_GAS, 100)
 		//		)
 		//		.outputFluids(new FluidStack(Fluids.METHYLAMINE, 1000))
 		//);
@@ -2162,6 +2162,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		public ItemStack[] outputs;
 		public FluidStack[] outputFluids;
 		private int duration;
+		public long physicalPowerQuanta;
 		public int oxygenConsumption = 0; // How much oxygen the recipe consumes from the atmosphere per tick while processing
 
 		public ChemRecipe(int index, String name, int duration) {
@@ -2212,7 +2213,15 @@ public class ChemplantRecipes extends SerializableRecipe {
 			return this.id;
 		}
 
-		public int getDuration() {
+		public ChemRecipe physicalProcess(long workJoules, long watts) {
+            if(workJoules <= 0 || watts < 10) throw new IllegalArgumentException("Invalid physical process");
+            physicalPowerQuanta = watts / 10L;
+            duration = Math.toIntExact(1L + (Math.multiplyExact(workJoules, 2L) - 1L) / physicalPowerQuanta);
+            return this;
+        }
+        public int durationAtSpeed(int speed) { return physicalPowerQuanta > 0 ? duration : Math.max(1, duration * speed / 100); }
+        public long costPerTick(long legacy) { return physicalPowerQuanta > 0 ? physicalPowerQuanta : legacy; }
+        public int getDuration() {
 			return this.duration;
 		}
 	}
@@ -2239,6 +2248,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputItems(	readAStackArray(		(JsonArray) obj.get("itemInput")))
 				.outputFluids(	readFluidArray(		(JsonArray) obj.get("fluidOutput")))
 				.outputItems(	readItemStackArray(	(JsonArray) obj.get("itemOutput"))));
+		if(obj.has("physicalPowerQuanta")) recipes.get(recipes.size() - 1).physicalPowerQuanta = Math.max(0L, obj.get("physicalPowerQuanta").getAsLong());
 	}
 
 	@Override
@@ -2248,6 +2258,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		writer.name("id").value(chem.id);
 		writer.name("name").value(chem.name);
 		writer.name("duration").value(chem.duration);
+		writer.name("physicalPowerQuanta").value(chem.physicalPowerQuanta);
 		//Fluid IN
 		writer.name("fluidInput").beginArray();
 		for(FluidStack input : chem.inputFluids) { if(input != null) writeFluidStack(input, writer); }

@@ -274,7 +274,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 			int amount = 1 + this.afterburner;
 			
 			if(tank.getTankType().hasTrait(FT_Combustible.class) && tank.getTankType().getTrait(FT_Combustible.class).getGrade() == FuelGrade.AERO) {
-				burnValue = tank.getTankType().getTrait(FT_Combustible.class).getCombustionEnergyQuanta() / 1_000;
+				burnValue = tank.getTankType().getTrait(FT_Combustible.class).getLegacyEngineBudgetQuanta() / 1_000;
 			}
 			
 			int amountToBurn = !runtimeWaterlogged && breatheAir(this.tank.getFill() > 0 ? amount : 0) ? Math.min(amount, this.tank.getFill()) : 0;

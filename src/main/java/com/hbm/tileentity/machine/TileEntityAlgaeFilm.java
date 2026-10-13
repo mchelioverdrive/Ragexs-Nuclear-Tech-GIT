@@ -23,7 +23,7 @@ public class TileEntityAlgaeFilm extends TileEntityMachineBase implements IFluid
 		super(0);
 		tanks = new FluidTank[2];
 		tanks[0] = new FluidTank(Fluids.CARBONDIOXIDE, 8_000);
-		tanks[1] = new FluidTank(Fluids.OXYGEN, 8_000);
+		tanks[1] = new FluidTank(Fluids.OXYGEN_GAS, 8_000);
 		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 
@@ -53,7 +53,8 @@ public class TileEntityAlgaeFilm extends TileEntityMachineBase implements IFluid
 		boolean fluidChanged = false;
 		this.beginMachineFluidMutation();
 		try {
-			if(canOperate && worldObj.rand.nextBoolean() && tanks[0].getFill() > 0 && tanks[1].getFill() < tanks[1].getMaxFill()) {
+			if(tanks[1].getFill() == 0) tanks[1].configureForRecipe(Fluids.OXYGEN_GAS, 0);
+			if(tanks[1].getTankType() == Fluids.OXYGEN_GAS && canOperate && worldObj.rand.nextBoolean() && tanks[0].getFill() > 0 && tanks[1].getFill() < tanks[1].getMaxFill()) {
 				tanks[0].setFill(tanks[0].getFill() - 1);
 				tanks[1].setFill(tanks[1].getFill() + 1);
 				fluidChanged = true;

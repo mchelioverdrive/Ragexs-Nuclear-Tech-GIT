@@ -56,7 +56,7 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 		
 		this.tanks = new FluidTank[4];
 		this.tanks[0] = new FluidTank(Fluids.OIL, 64_000);
-		this.tanks[1] = new FluidTank(Fluids.HYDROGEN, 64_000).withPressure(1);
+		this.tanks[1] = new FluidTank(Fluids.HYDROGEN_GAS, 64_000).withPressure(1);
 		this.tanks[2] = new FluidTank(Fluids.OIL_DS, 24_000);
 		this.tanks[3] = new FluidTank(Fluids.SOURGAS, 24_000);
 		for(FluidTank tank : this.tanks) this.trackMachineFluidTank(tank);
@@ -156,13 +156,13 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 		this.beginMachineFluidMutation();
 		try {
 			if(cachedRecipe == null) {
-				tanks[2].setTankType(Fluids.NONE);
-				tanks[3].setTankType(Fluids.NONE);
+				tanks[2].configureForRecipe(Fluids.NONE, 0);
+				tanks[3].configureForRecipe(Fluids.NONE, 0);
 				return;
 			}
-			tanks[1].withPressure(cachedRecipe.getX().pressure).setTankType(cachedRecipe.getX().type);
-			tanks[2].setTankType(cachedRecipe.getY().type);
-			tanks[3].setTankType(cachedRecipe.getZ().type);
+			tanks[1].configureForRecipe(cachedRecipe.getX().type, cachedRecipe.getX().pressure);
+			tanks[2].configureForRecipe(cachedRecipe.getY().type, 0);
+			tanks[3].configureForRecipe(cachedRecipe.getZ().type, 0);
 		} finally { this.endMachineFluidMutation(); }
 	}
 

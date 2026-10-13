@@ -287,14 +287,10 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 			leftover -= toUse;
 		}
 
-		// rounding error compensation, detects surplus that hasn't been used and removes it from random providers
-		int iterationsLeft = 100; // whiles without emergency brakes are a bad idea
-		while(iterationsLeft > 0 && leftover > 0 && this.providerScratch.size > 0) {
-			iterationsLeft--;
-
-			IEnergyProviderMK2 scapegoat = this.providerScratch.get(rand.nextInt(this.providerScratch.size));
-
-			long toUse = Math.min(leftover, scapegoat.getStoredEnergyQuanta());
+		// Rounding compensation must respect each provider's remaining tick budget.
+		for(int i = 0; i < this.providerScratch.size && leftover > 0; i++) {
+			IEnergyProviderMK2 scapegoat = this.providerScratch.get(i);
+			long toUse = Math.min(leftover, Math.min(scapegoat.getStoredEnergyQuanta(), scapegoat.getMaxOutputQuantaPerTick()));
 			scapegoat.extractEnergyQuanta(toUse);
 			leftover -= toUse;
 		}

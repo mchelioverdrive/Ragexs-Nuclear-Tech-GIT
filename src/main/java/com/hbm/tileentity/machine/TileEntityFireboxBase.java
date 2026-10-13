@@ -1,6 +1,9 @@
 package com.hbm.tileentity.machine;
 
 import java.util.List;
+import com.hbm.realsim.Combustion;
+import com.hbm.realsim.FuelCredit;
+import com.hbm.realsim.GeneratorStats;
 
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.handler.pollution.PollutionHandler;
@@ -44,6 +47,9 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 	public float prevDoorAngle = 0;
 
 	public int heatEnergy;
+	public final FuelCredit fuelCredit = new FuelCredit();
+	public final GeneratorStats generatorStats = new GeneratorStats();
+	private long lastPhysicalBurnTick = Long.MIN_VALUE;
 	private boolean waterlogged;
 	private boolean waterloggedInitialized;
 	private boolean fuelFingerprintInitialized;
@@ -125,6 +131,7 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 	}
 
 	private boolean hasFuelItems() {
+		if(usesPhysicalCombustion()) return Combustion.solidChemicalMicrojoules(slots[0]) > 0 || Combustion.solidChemicalMicrojoules(slots[1]) > 0;
 		return (slots[0] != null && getModule().getBurnTime(slots[0]) > 0) || (slots[1] != null && getModule().getBurnTime(slots[1]) > 0);
 	}
 
@@ -133,12 +140,14 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 	}
 
 	private boolean hasContinuousWork() {
-		return burnTime > 0 || heatEnergy > 0 || wasOn || this.hasSmoke() || this.hasAdditionalRuntimeWork();
+		return fuelCredit.hasCredit() || burnTime > 0 || heatEnergy > 0 || wasOn || this.hasSmoke() || this.hasAdditionalRuntimeWork();
 	}
 
 	/** Hooks coupled variants into their required active simulation cadence. */
 	protected void beforeFireboxSimulationTick() { }
 	protected boolean hasAdditionalRuntimeWork() { return false; }
+	protected boolean usesPhysicalCombustion() { return false; }
+	public long getRatedThermalWatts() { return getBaseHeat() * 10L; }
 
 	@Override
 	public void openInventory() {
@@ -175,6 +184,7 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 	}
 
 	private void simulateFireboxTick() {
+		if(usesPhysicalCombustion()) { simulatePhysicalFireboxTick(); return; }
 		int oldBurnTime = burnTime;
 		int oldBurnHeat = burnHeat;
 		int oldHeatEnergy = heatEnergy;
@@ -241,6 +251,38 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 		this.networkPackNTIfDirty(50);
 	}
 
+	private void simulatePhysicalFireboxTick() {
+		if(lastPhysicalBurnTick == worldObj.getTotalWorldTime()) return;
+		lastPhysicalBurnTick = worldObj.getTotalWorldTime();
+		generatorStats.idle(); wasOn = false; burnHeat = 0;
+		if(hasSmoke()) for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) this.sendSmoke(xCoord + dir.offsetX * 2, yCoord, zCoord + dir.offsetZ * 2, dir);
+		long demand = Math.min(getRatedThermalWatts() / 10L, Math.max(0, getMaxHeat() - heatEnergy));
+		if(!waterlogged && demand > 0 && breatheAir(1)) {
+			if(!fuelCredit.hasCredit()) for(int i = 0; i < 2; i++) {
+				long chemical = Combustion.solidChemicalMicrojoules(slots[i]);
+				if(chemical <= 0) continue;
+				String identity = Combustion.solidIdentity(slots[i]);
+				TileEntity below = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
+				if(below instanceof TileEntityAshpit) ((TileEntityAshpit) below).addAsh(getAshFromFuel(slots[i]), getModule().getBurnTime(slots[i]));
+				slots[i].stackSize--;
+				if(slots[i].stackSize == 0) slots[i] = slots[i].getItem().getContainerItem(slots[i]);
+				this.onInventorySlotChanged(i);
+				fuelCredit.reserve(identity, chemical, 1, 850_000);
+				maxBurnTime = (int) (fuelCredit.usefulMicrojoules() / 500_000L / (getRatedThermalWatts() / 10L));
+				break;
+			}
+			burnHeat = (int) fuelCredit.release(demand);
+			heatEnergy += burnHeat; wasOn = burnHeat > 0; generatorStats.record(burnHeat, fuelCredit);
+			if(wasOn) {
+				if(worldObj.getTotalWorldTime() % 20 == 0) this.pollute(PollutionType.SOOT, (float) (PollutionHandler.SOOT_PER_SECOND * 3D * burnHeat / (getRatedThermalWatts() / 10D)));
+				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
+			}
+		}
+		if(!wasOn && heatEnergy < getMaxHeat()) heatEnergy = Math.max(0, heatEnergy - Math.max(heatEnergy / 1000, 1));
+		burnTime = (int) (fuelCredit.usefulMicrojoules() / 500_000L / (getRatedThermalWatts() / 10L));
+		this.markDirty(); this.markNetworkDirty(); this.observeFuelInventory(); this.networkPackNTIfDirty(50);
+	}
+
 	@Override
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
@@ -250,6 +292,7 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 		buf.writeInt(heatEnergy);
 		buf.writeInt(playersUsing);
 		buf.writeBoolean(wasOn);
+		if(usesPhysicalCombustion()) generatorStats.write(buf, fuelCredit);
 	}
 
 	@Override
@@ -261,6 +304,7 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 		heatEnergy = buf.readInt();
 		playersUsing = buf.readInt();
 		wasOn = buf.readBoolean();
+		if(usesPhysicalCombustion()) generatorStats.read(buf, fuelCredit);
 	}
 
 	public static EnumAshType getAshFromFuel(ItemStack stack) {
@@ -291,7 +335,7 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 
 	@Override
 	public boolean isItemValidForSlot(int i, ItemStack itemStack) {
-		return getModule().getBurnTime(itemStack) > 0;
+		return usesPhysicalCombustion() ? Combustion.solidChemicalMicrojoules(itemStack) > 0 : getModule().getBurnTime(itemStack) > 0;
 	}
 
 	@Override
@@ -302,6 +346,11 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 		this.burnTime = nbt.getInteger("burnTime");
 		this.burnHeat = nbt.getInteger("burnHeat");
 		this.heatEnergy = nbt.getInteger("heatEnergy");
+		if(usesPhysicalCombustion()) {
+			fuelCredit.read(nbt);
+			if(!nbt.hasKey("realSimFuel") && burnTime > 0 && burnHeat > 0) fuelCredit.reserve("legacy_solid", (long) burnTime * burnHeat * 500_000L, 1, 1_000_000);
+			lastPhysicalBurnTick = nbt.hasKey("realSimGenerationTick") ? nbt.getLong("realSimGenerationTick") : Long.MIN_VALUE;
+		}
 	}
 
 	@Override
@@ -312,6 +361,7 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 		nbt.setInteger("burnTime", burnTime);
 		nbt.setInteger("burnHeat", burnHeat);
 		nbt.setInteger("heatEnergy", heatEnergy);
+		if(usesPhysicalCombustion()) { fuelCredit.write(nbt); nbt.setLong("realSimGenerationTick", lastPhysicalBurnTick); }
 	}
 
 	@Override
@@ -321,7 +371,9 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 
 	@Override
 	public void useUpHeat(int heat) {
+		if(heat <= 0) return;
 		this.heatEnergy = Math.max(0, this.heatEnergy - heat);
+		this.markDirty(); this.markMachineDirty(MachineDirtyCause.ENERGY);
 	}
 
 	AxisAlignedBB bb = null;

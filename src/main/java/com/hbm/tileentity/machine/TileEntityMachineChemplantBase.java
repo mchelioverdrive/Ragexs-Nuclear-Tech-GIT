@@ -118,7 +118,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		for(int i = 0; i < getRecipeCount(); i++) {
 			boolean eligible = this.canProcess(i);
 			ChemRecipe recipe = this.resolveRecipe(i);
-			if(eligible && recipe != null) maxProgress[i] = Math.max(1, recipe.getDuration() * speed / 100);
+			if(eligible && recipe != null) maxProgress[i] = recipe.durationAtSpeed(speed);
 			runtimeLaneActive[i] = eligible && previouslyActive[i] && now >= runtimeOxygenBlockedUntil[i];
 			if(!eligible) this.progress[i] = 0;
 		}
@@ -234,6 +234,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		try {
 			while(cursor < target) {
 				int active = 0;
+				long activeCost = 0;
 				int nearestCompletion = Integer.MAX_VALUE;
 				boolean oxygenDependent = false;
 				for(int i = 0; i < getRecipeCount(); i++) if(runtimeLaneActive[i]) {
@@ -241,22 +242,23 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 						progress[i] = 0;
 						runtimeLaneActive[i] = false;
 						changed = true;
-					} else maxProgress[i] = Math.max(1, cachedRecipes[i].getDuration() * speed / 100);
+					} else maxProgress[i] = cachedRecipes[i].durationAtSpeed(speed);
 				}
 				for(int i = 0; i < getRecipeCount(); i++) if(runtimeLaneActive[i] && runtimeMaterialEligible[i]) {
 					ChemRecipe recipe = cachedRecipes[i];
 					if(recipe == null) continue;
 					active++;
+					activeCost += recipe.costPerTick(cost);
 					nearestCompletion = Math.min(nearestCompletion, Math.max(1, maxProgress[i] - progress[i]));
 					if(recipe.oxygenConsumption > 0) oxygenDependent = true;
 				}
 				if(active == 0) { cursor = target; break; }
 				long wholeTicks = oxygenDependent ? 0L : Math.min(target - cursor, (long) nearestCompletion - 1L);
-				if(cost > 0L) wholeTicks = Math.min(wholeTicks, energyQuanta / cost / active);
+				if(activeCost > 0L) wholeTicks = Math.min(wholeTicks, energyQuanta / activeCost);
 				wholeTicks = Math.min(wholeTicks, this.additionalResourceFullTicks(active));
 				if(wholeTicks > 0L) {
 					for(int i = 0; i < getRecipeCount(); i++) if(runtimeLaneActive[i] && runtimeMaterialEligible[i]) progress[i] += (int) wholeTicks;
-					if(cost > 0L) this.setStoredEnergyQuanta(energyQuanta - wholeTicks * cost * active);
+					if(activeCost > 0L) this.setStoredEnergyQuanta(energyQuanta - wholeTicks * activeCost);
 					this.consumeAdditionalResources(wholeTicks, active);
 					cursor += wholeTicks;
 					this.isProgressing = true;
@@ -275,7 +277,8 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 						changed = true;
 						continue;
 					}
-					if(cost > 0L && energyQuanta < cost || this.additionalResourceFullTicks(1) <= 0L) {
+					long laneCost = recipe.costPerTick(cost);
+					if(laneCost > 0L && energyQuanta < laneCost || this.additionalResourceFullTicks(1) <= 0L) {
 						progress[i] = 0;
 						runtimeLaneActive[i] = false;
 						changed = true;
@@ -293,7 +296,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 						if(this.canProcess(i)) { this.process(i); sharedMutation = true; }
 						else progress[i] = 0;
 					} else {
-						this.setStoredEnergyQuanta(energyQuanta - cost);
+						this.setStoredEnergyQuanta(energyQuanta - laneCost);
 						this.consumeAdditionalResources(1L, 1);
 						progress[i]++;
 					}
@@ -309,6 +312,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 	private void scheduleLaneBoundaries(long now) {
 		int active = 0;
+		long activeCost = 0;
 		int nearestCompletion = Integer.MAX_VALUE;
 		boolean oxygenDependent = false;
 		for(int i = 0; i < getRecipeCount(); i++) {
@@ -317,13 +321,14 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 				ChemRecipe recipe = cachedRecipes[i];
 				if(recipe == null) continue;
 				active++;
+				activeCost += recipe.costPerTick(EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts));
 				nearestCompletion = Math.min(nearestCompletion, Math.max(1, maxProgress[i] - progress[i]));
 				if(recipe.oxygenConsumption > 0) oxygenDependent = true;
 			} else if(runtimeOxygenBlockedUntil[i] > now) this.scheduleMachineTransition(runtimeOxygenBlockedUntil[i], TASK_CHEMPLANT_LANE, i);
 		}
 		if(active > 0) {
 			long cost = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
-			long powerBoundary = cost <= 0L ? Long.MAX_VALUE : energyQuanta / cost / active + 1L;
+			long powerBoundary = activeCost <= 0L ? Long.MAX_VALUE : energyQuanta / activeCost + 1L;
 			long availableResourceTicks = this.additionalResourceFullTicks(active);
 			long resourceBoundary = availableResourceTicks == Long.MAX_VALUE ? Long.MAX_VALUE : availableResourceTicks + 1L;
 			long due = now + Math.max(1L, Math.min(oxygenDependent ? 1L : nearestCompletion, Math.min(powerBoundary, resourceBoundary)));
@@ -367,7 +372,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	}
 
 	protected boolean canProcess(int index) {
-		return this.canProcessResources(index) && this.hasLanePower();
+		return this.canProcessResources(index) && energyQuanta >= cachedRecipes[index].costPerTick(EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts));
 	}
 
 	private boolean canProcessResources(int index) {
@@ -397,21 +402,21 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	}
 
 	private void setupTanks(ChemRecipe recipe, int index) {
-		if(recipe.inputFluids[0] != null) tanks[index * 4].withPressure(recipe.inputFluids[0].pressure).setTankType(recipe.inputFluids[0].type);		else tanks[index * 4].setTankType(Fluids.NONE);
-		if(recipe.inputFluids[1] != null) tanks[index * 4 + 1].withPressure(recipe.inputFluids[1].pressure).setTankType(recipe.inputFluids[1].type);	else tanks[index * 4 + 1].setTankType(Fluids.NONE);
-		if(recipe.outputFluids[0] != null) tanks[index * 4 + 2].withPressure(recipe.outputFluids[0].pressure).setTankType(recipe.outputFluids[0].type);	else tanks[index * 4 + 2].setTankType(Fluids.NONE);
-		if(recipe.outputFluids[1] != null) tanks[index * 4 + 3].withPressure(recipe.outputFluids[1].pressure).setTankType(recipe.outputFluids[1].type);	else tanks[index * 4 + 3].setTankType(Fluids.NONE);
+		if(recipe.inputFluids[0] != null) tanks[index * 4].configureForRecipe(recipe.inputFluids[0].type, recipe.inputFluids[0].pressure);		else tanks[index * 4].configureForRecipe(Fluids.NONE, 0);
+		if(recipe.inputFluids[1] != null) tanks[index * 4 + 1].configureForRecipe(recipe.inputFluids[1].type, recipe.inputFluids[1].pressure);	else tanks[index * 4 + 1].configureForRecipe(Fluids.NONE, 0);
+		if(recipe.outputFluids[0] != null) tanks[index * 4 + 2].configureForRecipe(recipe.outputFluids[0].type, recipe.outputFluids[0].pressure);	else tanks[index * 4 + 2].configureForRecipe(Fluids.NONE, 0);
+		if(recipe.outputFluids[1] != null) tanks[index * 4 + 3].configureForRecipe(recipe.outputFluids[1].type, recipe.outputFluids[1].pressure);	else tanks[index * 4 + 3].configureForRecipe(Fluids.NONE, 0);
 	}
 
 	private boolean hasRequiredFluids(ChemRecipe recipe, int index) {
-		if(recipe.inputFluids[0] != null && tanks[index * 4].getFill() < recipe.inputFluids[0].fill) return false;
-		if(recipe.inputFluids[1] != null && tanks[index * 4 + 1].getFill() < recipe.inputFluids[1].fill) return false;
+		if(recipe.inputFluids[0] != null && (tanks[index * 4].getTankType() != recipe.inputFluids[0].type || tanks[index * 4].getPressure() != recipe.inputFluids[0].pressure || tanks[index * 4].getFill() < recipe.inputFluids[0].fill)) return false;
+		if(recipe.inputFluids[1] != null && (tanks[index * 4 + 1].getTankType() != recipe.inputFluids[1].type || tanks[index * 4 + 1].getPressure() != recipe.inputFluids[1].pressure || tanks[index * 4 + 1].getFill() < recipe.inputFluids[1].fill)) return false;
 		return true;
 	}
 
 	private boolean hasSpaceForFluids(ChemRecipe recipe, int index) {
-		if(recipe.outputFluids[0] != null && tanks[index * 4 + 2].getFill() + recipe.outputFluids[0].fill > tanks[index * 4 + 2].getMaxFill()) return false;
-		if(recipe.outputFluids[1] != null && tanks[index * 4 + 3].getFill() + recipe.outputFluids[1].fill > tanks[index * 4 + 3].getMaxFill()) return false;
+		if(recipe.outputFluids[0] != null && (tanks[index * 4 + 2].getTankType() != recipe.outputFluids[0].type || tanks[index * 4 + 2].getPressure() != recipe.outputFluids[0].pressure || tanks[index * 4 + 2].getFill() + recipe.outputFluids[0].fill > tanks[index * 4 + 2].getMaxFill())) return false;
+		if(recipe.outputFluids[1] != null && (tanks[index * 4 + 3].getTankType() != recipe.outputFluids[1].type || tanks[index * 4 + 3].getPressure() != recipe.outputFluids[1].pressure || tanks[index * 4 + 3].getFill() + recipe.outputFluids[1].fill > tanks[index * 4 + 3].getMaxFill())) return false;
 		return true;
 	}
 
@@ -427,7 +432,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 	protected void process(int index) {
 
-		this.setStoredEnergyQuanta(this.energyQuanta - EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts));
+		this.setStoredEnergyQuanta(this.energyQuanta - this.resolveRecipe(index).costPerTick(EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts)));
 		this.progress[index]++;
 
 		//if(slots[0] != null && slots[0].getItem() == ModItems.meteorite_sword_machined)
@@ -435,7 +440,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 		ChemRecipe recipe = this.resolveRecipe(index);
 
-		this.maxProgress[index] = recipe.getDuration() * this.speed / 100;
+		this.maxProgress[index] = recipe.durationAtSpeed(this.speed);
 
 		if(maxProgress[index] <= 0) maxProgress[index] = 1;
 
@@ -659,10 +664,12 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		ItemStack template = this.slots[getTemplateIndex(index)];
 		int meta = template == null ? 0 : template.getItemDamage();
 		if(this.cachedTemplateStacks[index] != template || this.cachedTemplateMeta[index] != meta || this.cachedRecipeGenerations[index] != ChemplantRecipes.recipeGeneration) {
+			ChemRecipe previous = cachedRecipes[index];
 			this.cachedTemplateStacks[index] = template;
 			this.cachedTemplateMeta[index] = meta;
 			this.cachedRecipeGenerations[index] = ChemplantRecipes.recipeGeneration;
 			this.cachedRecipes[index] = template != null && template.getItem() == ModItems.chemistry_template ? ChemplantRecipes.indexMapping.get(meta) : null;
+			if(previous != null && previous != cachedRecipes[index] && (previous.physicalPowerQuanta > 0 || cachedRecipes[index] != null && cachedRecipes[index].physicalPowerQuanta > 0)) progress[index] = 0;
 		}
 		return this.cachedRecipes[index];
 	}
@@ -904,6 +911,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.progress = nbt.getIntArray("progress");
+		if(!nbt.hasKey("realSimProcessVersion")) for(int i = 0; i < progress.length && i < getRecipeCount(); i++) { int slot = getTemplateIndex(i); if(slots[slot] != null && slots[slot].getItemDamage() == 58) progress[i] = 0; }
 
 		if(progress.length == 0)
 			progress = new int[this.getRecipeCount()];
@@ -920,6 +928,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setIntArray("progress", progress);
+		nbt.setInteger("realSimProcessVersion", 1);
 
 		for(int i = 0; i < tanks.length; i++) {
 			tanks[i].writeToNBT(nbt, "t" + i);

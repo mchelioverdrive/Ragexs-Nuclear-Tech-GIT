@@ -2,6 +2,7 @@ package com.hbm.tileentity.machine;
 
 import api.hbm.energymk2.EnergyUnits;
 import api.hbm.energymk2.IBatteryItem;
+import com.hbm.realsim.MassRemainder;
 import java.util.List;
 
 import com.hbm.blocks.BlockDummyable;
@@ -81,6 +82,8 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	private boolean runtimeActive;
 	private long lastProgressTick = Long.MIN_VALUE;
 	private long clientProgressTick;
+	private final MassRemainder massRemainder = new MassRemainder();
+	public boolean decompress;
 
 	public TileEntityMachineCompressor() {
 		super(4);
@@ -236,6 +239,12 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		this.powerRequirement *= (overLevel * 2) + 1;
 		if(this.processTime <= 0) this.processTime = 1;
 		this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(this.powerRequirement);
+		if(cachedRecipe != null && cachedRecipe.workQuanta > 0L) {
+			// Physical work is independent of speed/power upgrades and cannot shrink mid-job.
+			this.powerRequirement = powerRequirementBase;
+			this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(powerRequirement);
+			this.processTime = Math.toIntExact(1L + (cachedRecipe.workQuanta - 1L) / powerRequirement);
+		}
 	}
 
 	private void refreshRecipe() {
@@ -243,17 +252,18 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		int pressure = tanks[0].getPressure();
 		long revision = SerializableRecipe.getRegistryRevision();
 		if(type != cachedRecipeInputType || pressure != cachedRecipeInputPressure || revision != cachedRecipeRevision) {
+			if(cachedRecipeInputType != null && (type != cachedRecipeInputType || pressure != cachedRecipeInputPressure)) progress = 0;
 			cachedRecipeInputType = type;
 			cachedRecipeInputPressure = pressure;
 			cachedRecipeRevision = revision;
-			cachedRecipe = CompressorRecipes.recipes.get(new Pair(type, pressure));
+			cachedRecipe = decompress && pressure == 1 ? CompressorRecipes.decompressions.get(type) : CompressorRecipes.recipes.get(new Pair(type, pressure));
 		}
 	}
 
 	private boolean canProcessMaterials() {
 		this.refreshRecipe();
-		if(cachedRecipe == null) return tanks[0].getFill() >= 1000 && tanks[1].getFill() + 1000 <= tanks[1].getMaxFill();
-		return tanks[0].getFill() > cachedRecipe.inputAmount && tanks[1].getFill() + cachedRecipe.output.fill <= tanks[1].getMaxFill();
+		if(cachedRecipe == null) return tanks[0].getFill() >= 1000 && tanks[1].getTankType() == tanks[0].getTankType() && tanks[1].getPressure() == tanks[0].getPressure() + 1 && tanks[1].getFill() + 1000 <= tanks[1].getMaxFill();
+		return tanks[0].getFill() >= cachedRecipe.inputAmount && CompressorRecipes.canAcceptOutput(tanks[0], tanks[1], cachedRecipe, massRemainder);
 	}
 
 	private boolean hasOperatingPower() {
@@ -309,6 +319,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		tanks[0].writeToNBT(data, "0");
 		tanks[1].writeToNBT(data, "1");
 		data.setBoolean("isOn", isOn);
+		data.setBoolean("decompress", decompress);
 		this.networkPack(data, 100);
 	}
 	
@@ -325,6 +336,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		tanks[0].readFromNBT(nbt, "0");
 		tanks[1].readFromNBT(nbt, "1");
 		this.isOn = nbt.getBoolean("isOn");
+		this.decompress = nbt.getBoolean("decompress");
 	}
 	
 	private void updateConnections() {
@@ -354,6 +366,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	public void process() {
 		
 		this.refreshRecipe();
+		if(!this.canProcessMaterials() || cachedRecipe != null && cachedRecipe.workQuanta > 0L && progress < processTime) return;
 		this.beginMachineFluidMutation();
 		try {
 		if(cachedRecipe == null) {
@@ -361,7 +374,8 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 			tanks[1].setFill(tanks[1].getFill() + 1_000);
 		} else {
 			tanks[0].setFill(tanks[0].getFill() - cachedRecipe.inputAmount);
-			tanks[1].setFill(tanks[1].getFill() + cachedRecipe.output.fill);
+			int amount = cachedRecipe.massConversion ? massRemainder.convert(cachedRecipe.output.type.getName(), Math.multiplyExact(tanks[0].getTankType().getPhysicalState().massUnits, cachedRecipe.inputAmount)) : cachedRecipe.output.fill;
+			tanks[1].setFill(tanks[1].getFill() + amount);
 		}
 		} finally { this.endMachineFluidMutation(); }
 		this.markMachineDirty(MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE);
@@ -371,9 +385,9 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		
 		this.refreshRecipe();
 		if(cachedRecipe == null) {
-			tanks[1].withPressure(tanks[0].getPressure() + 1).setTankType(tanks[0].getTankType());
+			tanks[1].configureForRecipe(tanks[0].getTankType(), tanks[0].getPressure() + 1);
 		} else {
-			tanks[1].withPressure(cachedRecipe.output.pressure).setTankType(cachedRecipe.output.type);
+			tanks[1].configureForRecipe(cachedRecipe.output.type, cachedRecipe.output.pressure);
 		}
 	}
 	
@@ -389,6 +403,9 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		inventoryFingerprintInitialized = false;
 		cachedRecipeInputType = null;
 		cachedRecipeRevision = -1L;
+		massRemainder.read(nbt);
+		decompress = nbt.getBoolean("decompress");
+		if(!nbt.hasKey("realSimProcessVersion")) progress = 0;
 	}
 	
 	@Override
@@ -397,6 +414,9 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		super.writeToNBT(nbt);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("progress", progress);
+		massRemainder.write(nbt);
+		nbt.setInteger("realSimProcessVersion", 1);
+		nbt.setBoolean("decompress", decompress);
 		tanks[0].writeToNBT(nbt, "0");
 		tanks[1].writeToNBT(nbt, "1");
 	}
@@ -419,15 +439,23 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 
 	@Override
 	public void receiveControl(NBTTagCompound data) {
-		int compression = data.getInteger("compression");
+		this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+		if(data.hasKey("decompress")) {
+			decompress = !decompress; progress = 0; cachedRecipeRevision = -1L;
+			this.markChanged(); this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.RECIPE);
+			return;
+		}
+		int compression = MathHelper.clamp_int(data.getInteger("compression"), 0, 4);
+		if(tanks[0].getFill() > 0 && CompressorRecipes.decompressions.containsKey(tanks[0].getTankType())) return;
 		
 		if(compression != tanks[0].getPressure()) {
+			progress = 0;
 			tanks[0].withPressure(compression);
 			this.refreshRecipe();
 			if(cachedRecipe == null) {
 				tanks[1].withPressure(compression + 1);
 			} else {
-				tanks[1].withPressure(cachedRecipe.output.pressure).setTankType(cachedRecipe.output.type);
+				tanks[1].configureForRecipe(cachedRecipe.output.type, cachedRecipe.output.pressure);
 			}
 			
 			this.markChanged();
@@ -543,15 +571,19 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		NBTTagCompound tag = new NBTTagCompound();
 		tag.setIntArray("fluidID", getFluidIDToCopy());
 		tag.setInteger("compression", tanks[0].getPressure());
+		tag.setBoolean("decompress", decompress);
 		return tag;
 	}
 
 	@Override
 	public void pasteSettings(NBTTagCompound nbt, int index, World world, EntityPlayer player, int x, int y, int z) {
+		this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		if(nbt.hasKey("compression")) {
-			int compression = nbt.getInteger("compression");
+			int compression = MathHelper.clamp_int(nbt.getInteger("compression"), 0, 4);
+			if(compression != tanks[0].getPressure() && tanks[0].getFill() > 0 && CompressorRecipes.decompressions.containsKey(tanks[0].getTankType())) return;
 
 			if (compression != tanks[0].getPressure()) {
+				progress = 0;
 				tanks[0].withPressure(compression);
 
 				CompressorRecipe recipe = CompressorRecipes.recipes.get(new Pair(tanks[0].getTankType(), compression));
@@ -559,12 +591,14 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 				if (recipe == null) {
 					tanks[1].withPressure(compression + 1);
 				} else {
-					tanks[1].withPressure(recipe.output.pressure).setTankType(recipe.output.type);
+					tanks[1].configureForRecipe(recipe.output.type, recipe.output.pressure);
 				}
 
 				this.markChanged();
 			}
 		}
+		if(nbt.hasKey("decompress") && decompress != nbt.getBoolean("decompress")) { decompress = nbt.getBoolean("decompress"); progress = 0; cachedRecipeRevision = -1L; }
 		IFluidCopiable.super.pasteSettings(nbt, index, world, player, x, y, z);
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE);
 	}
 }

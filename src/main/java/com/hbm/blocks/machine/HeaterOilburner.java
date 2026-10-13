@@ -1,6 +1,5 @@
 package com.hbm.blocks.machine;
 
-import com.hbm.util.ThermalUnits;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,8 +7,6 @@ import java.util.List;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.blocks.ILookOverlay;
 import com.hbm.blocks.ITooltipProvider;
-import com.hbm.inventory.fluid.FluidType;
-import com.hbm.inventory.fluid.trait.FT_Flammable;
 import com.hbm.tileentity.TileEntityProxyCombo;
 import com.hbm.tileentity.machine.TileEntityHeaterOilburner;
 import com.hbm.util.I18nUtil;
@@ -97,12 +94,7 @@ public class HeaterOilburner extends BlockDummyable implements ILookOverlay, ITo
 		TileEntityHeaterOilburner heater = (TileEntityHeaterOilburner) te;
 
 		List<String> text = new ArrayList();
-		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + heater.setting + " L/t");
-		FluidType type = heater.tank.getTankType();
-		if(type.hasTrait(FT_Flammable.class)) {
-			int heat = (int)(type.getTrait(FT_Flammable.class).getHeatEnergy() * heater.setting / 1000);
-			text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + ThermalUnits.formatThermalPower(heat));
-		}
+		java.util.Collections.addAll(text, heater.generatorStats.info(heater.ratedThermalWatts, heater.fuelCredit, heater.tank.getTankType().getName(), heater.tank.getFill()));
 		
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}

@@ -207,7 +207,7 @@ public class SolarSystem {
 					.withColor(1.0f, 0.5f, 0.0f)
 					.withAxialTilt(3.13F)
 					.withTraits(
-						new CBT_Atmosphere(Fluids.HYDROGEN, 89D)
+						new CBT_Atmosphere(Fluids.HYDROGEN_GAS, 89D)
 							.and(Fluids.HELIUM4, 10D)
 							.and(Fluids.GAS, 1D),
 						new CBT_Temperature(-145)
@@ -225,7 +225,7 @@ public class SolarSystem {
 							.withRotationalPeriod(306_806)
 							.withTidalLockingTo("jool")
 							.withProcessingLevel(3)
-							.withTraits(new CBT_Atmosphere(Fluids.AIR, 0.12D).and(Fluids.HYDROGEN, 0.15D), new CBT_Water()),
+							.withTraits(new CBT_Atmosphere(Fluids.AIR, 0.12D).and(Fluids.HYDROGEN_GAS, 0.15D), new CBT_Water()),
 
 						//Ganymede
 						new CelestialBody("vall") //probably
@@ -279,7 +279,7 @@ public class SolarSystem {
 					.withProcessingLevel(3)
 					.withRings(26.73F, 3.0F, 0.72F, 0.60F, 0.48F)
 					.withTraits(
-						new CBT_Atmosphere(Fluids.HYDROGEN, 96D)
+						new CBT_Atmosphere(Fluids.HYDROGEN_GAS, 96D)
 							.and(Fluids.HELIUM4, 3D)
 							.and(Fluids.GAS, 1D),
 						new CBT_Temperature(-178)
@@ -345,7 +345,7 @@ public class SolarSystem {
 					.withProcessingLevel(3)
 					.withRings(97.77F, 2.25F, 0.55F, 0.72F, 0.82F)
 					.withTraits(
-						new CBT_Atmosphere(Fluids.HYDROGEN, 82D)
+						new CBT_Atmosphere(Fluids.HYDROGEN_GAS, 82D)
 							.and(Fluids.HELIUM4, 15D)
 							.and(Fluids.GAS, 3D), // methane
 						new CBT_Temperature(-224)
@@ -393,7 +393,7 @@ public class SolarSystem {
 					.withAxialTilt(28.32F)
 					.withProcessingLevel(3)
 					.withTraits(
-						new CBT_Atmosphere(Fluids.HYDROGEN, 80D)
+						new CBT_Atmosphere(Fluids.HYDROGEN_GAS, 80D)
 							.and(Fluids.HELIUM4, 19D)
 							.and(Fluids.GAS, 1D), // methane
 						new CBT_Temperature(-214)

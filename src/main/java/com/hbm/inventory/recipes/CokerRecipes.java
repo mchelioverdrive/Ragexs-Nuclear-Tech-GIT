@@ -88,8 +88,8 @@ public class CokerRecipes extends SerializableRecipe {
 		registerSFAuto(fluid, 820_000L, DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), type); //3200 burntime * 1.25 burntime bonus * 200 TU/t + 20000TU per operation
 	}
 	private static void registerSFAuto(FluidType fluid, long tuPerSF, ItemStack fuel, FluidType type) {
-		long tuFlammable = fluid.hasTrait(FT_Flammable.class) ? fluid.getTrait(FT_Flammable.class).getHeatEnergy() : 0;
-		long tuCombustible = fluid.hasTrait(FT_Combustible.class) ? fluid.getTrait(FT_Combustible.class).getCombustionEnergyQuanta() : 0;
+		long tuFlammable = fluid.hasTrait(FT_Flammable.class) ? fluid.getTrait(FT_Flammable.class).getLegacyBurnerBudget() : 0;
+		long tuCombustible = fluid.hasTrait(FT_Combustible.class) ? fluid.getTrait(FT_Combustible.class).getLegacyEngineBudgetQuanta() : 0;
 
 		long tuPerBucket = Math.max(tuFlammable, tuCombustible);
 

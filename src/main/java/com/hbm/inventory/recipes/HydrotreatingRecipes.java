@@ -24,37 +24,37 @@ public class HydrotreatingRecipes extends SerializableRecipe {
 	public void registerDefaults() {
 		// Hydrodesulfurization yields a mixed sour-gas stream containing H2S, hydrocarbons, and other refinery gases.
 		recipes.put(Fluids.OIL, new Triplet(
-			new FluidStack(Fluids.HYDROGEN, 5, 1),
+			new FluidStack(Fluids.HYDROGEN_GAS, 5, 1),
 			new FluidStack(Fluids.OIL_DS, 90),
 			new FluidStack(Fluids.SOURGAS, 15)
 		));
 		
 		recipes.put(Fluids.CRACKOIL, new Triplet(
-			new FluidStack(Fluids.HYDROGEN, 5, 1),
+			new FluidStack(Fluids.HYDROGEN_GAS, 5, 1),
 			new FluidStack(Fluids.CRACKOIL_DS, 90),
 			new FluidStack(Fluids.SOURGAS, 15)
 		));
 		
 		recipes.put(Fluids.NAPHTHA, new Triplet(
-			new FluidStack(Fluids.HYDROGEN, 5, 1),
+			new FluidStack(Fluids.HYDROGEN_GAS, 5, 1),
 			new FluidStack(Fluids.NAPHTHA_DS, 95),
 			new FluidStack(Fluids.SOURGAS, 5)
 		));
 		
 		recipes.put(Fluids.DIESEL_CRACK, new Triplet(
-			new FluidStack(Fluids.HYDROGEN, 10, 1),
+			new FluidStack(Fluids.HYDROGEN_GAS, 10, 1),
 			new FluidStack(Fluids.DIESEL, 90),
 			new FluidStack(Fluids.SOURGAS, 10)
 		));
 		
 		recipes.put(Fluids.DIESEL_CRACK_REFORM, new Triplet(
-			new FluidStack(Fluids.HYDROGEN, 10, 1),
+			new FluidStack(Fluids.HYDROGEN_GAS, 10, 1),
 			new FluidStack(Fluids.DIESEL_REFORM, 80),
 			new FluidStack(Fluids.SOURGAS, 30)
 		));
 		
 		recipes.put(Fluids.COALOIL, new Triplet(
-			new FluidStack(Fluids.HYDROGEN, 10, 1),
+			new FluidStack(Fluids.HYDROGEN_GAS, 10, 1),
 			new FluidStack(Fluids.OIL_DS, 85),
 			new FluidStack(Fluids.SOURGAS, 15)
 		));

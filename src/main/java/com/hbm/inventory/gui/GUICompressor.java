@@ -37,11 +37,16 @@ public class GUICompressor extends GuiInfoContainer {
 		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 152, guiTop + 18, 16, 52, compressor.getStoredEnergyQuanta(), compressor.maxPower);
 
 		for(int j = 0; j < 5; j++) drawCustomInfoStat(mouseX, mouseY, guiLeft + 43 + j * 11, guiTop + 46, 8, 14, mouseX, mouseY, j + " PU -> " + (j + 1) + " PU");
+		drawCustomInfoStat(mouseX, mouseY, guiLeft + 40, guiTop + 74, 100, 12, mouseX, mouseY, "Click to select compression / decompression for process gases");
 	}
 
 	@Override
 	protected void mouseClicked(int x, int y, int i) {
 		super.mouseClicked(x, y, i);
+		if(x >= guiLeft + 40 && x < guiLeft + 140 && y >= guiTop + 74 && y < guiTop + 86) {
+			NBTTagCompound data = new NBTTagCompound(); data.setBoolean("decompress", true);
+			PacketDispatcher.wrapper.sendToServer(new NBTControlPacket(data, compressor.xCoord, compressor.yCoord, compressor.zCoord));
+		}
 		
 		for(int j = 0; j < 5; j++) {
 	
@@ -62,6 +67,7 @@ public class GUICompressor extends GuiInfoContainer {
 		
 		this.fontRendererObj.drawString(name, 70 - this.fontRendererObj.getStringWidth(name) / 2, 6, 0xC7C1A3);
 		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96 + 2, 4210752);
+		this.fontRendererObj.drawString(compressor.decompress ? "Decompress" : "Compress / liquefy", 40, 76, 4210752);
 	}
 
 	@Override

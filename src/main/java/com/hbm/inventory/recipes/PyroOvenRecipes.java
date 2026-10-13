@@ -94,17 +94,17 @@ public class PyroOvenRecipes extends SerializableRecipe {
 				.out(new FluidStack(Fluids.SYNGAS, 1_000)).out(new ItemStack(Items.coal, 1, 1)));
 		//soot from tar
 		recipes.add(new PyroOvenRecipe(40)
-			.out(new FluidStack(Fluids.HYDROGEN, 250)).in(new OreDictStack(KEY_ANY_TAR, 4))
+			.out(new FluidStack(Fluids.HYDROGEN_GAS, 250)).in(new OreDictStack(KEY_ANY_TAR, 4))
 				.out(new FluidStack(Fluids.CARBONDIOXIDE, 1_000)).out(DictFrame.fromOne(ModItems.powder_ash, EnumAshType.SOOT)));
 		//heavyoil from coal
 		recipes.add(new PyroOvenRecipe(100)
-				.in(new FluidStack(Fluids.HYDROGEN, 500)).in(new OreDictStack(COAL.gem()))
+				.in(new FluidStack(Fluids.HYDROGEN_GAS, 500)).in(new OreDictStack(COAL.gem()))
 				.out(new FluidStack(Fluids.HEAVYOIL, 1_000)));
 		recipes.add(new PyroOvenRecipe(100)
-				.in(new FluidStack(Fluids.HYDROGEN, 500)).in(new OreDictStack(COAL.dust()))
+				.in(new FluidStack(Fluids.HYDROGEN_GAS, 500)).in(new OreDictStack(COAL.dust()))
 				.out(new FluidStack(Fluids.HEAVYOIL, 1_000)));
 		recipes.add(new PyroOvenRecipe(100)
-				.in(new FluidStack(Fluids.HYDROGEN, 250)).in(new OreDictStack(ANY_COKE.gem()))
+				.in(new FluidStack(Fluids.HYDROGEN_GAS, 250)).in(new OreDictStack(ANY_COKE.gem()))
 				.out(new FluidStack(Fluids.HEAVYOIL, 1_000)));
 		/* coal gas used to consume heavy oil and coal, creating a backwards heavy-oil-to-gas shortcut.
 		recipes.add(new PyroOvenRecipe(50)
@@ -132,7 +132,7 @@ public class PyroOvenRecipes extends SerializableRecipe {
 		registerSFAuto(fluid, 1_440_000L, ModItems.solid_fuel); //3200 burntime * 1.5 burntime bonus * 300 TU/t
 	}
 	private static void registerSFAuto(FluidType fluid, long tuPerSF, Item fuel) {
-		long tuPerBucket = fluid.getTrait(FT_Flammable.class).getHeatEnergy();
+		long tuPerBucket = fluid.getTrait(FT_Flammable.class).getLegacyBurnerBudget();
 		double bonus = 0.5D; //double efficiency!!
 
 		int mB = (int) (tuPerSF * 1000L * bonus / tuPerBucket);

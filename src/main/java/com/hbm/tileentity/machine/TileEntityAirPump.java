@@ -56,7 +56,7 @@ public class TileEntityAirPump extends TileEntityMachineBase implements IFluidSt
 
 	public TileEntityAirPump() {
 		super(1);
-		tank = new FluidTank(Fluids.OXYGEN, 16000);
+		tank = new FluidTank(Fluids.OXYGEN_GAS, 16000);
 		this.trackMachineFluidTank(tank);
 	}
 

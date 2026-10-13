@@ -104,13 +104,13 @@ public abstract class TileEntityRBMKBase extends TileEntityLoadedBase implements
 	 */
 	protected boolean breatheAir(int amount) {
 		CBT_Atmosphere atmosphere = ChunkAtmosphereManager.proxy.getAtmosphere(worldObj, xCoord, yCoord, zCoord);
-		if(atmosphere != null && (atmosphere.hasFluid(Fluids.AIR, 0.19) || atmosphere.hasFluid(Fluids.OXYGEN, 0.09))) {
+		if(atmosphere != null && (atmosphere.hasFluid(Fluids.AIR, 0.19) || (atmosphere.hasFluid(Fluids.OXYGEN, 0.09) || atmosphere.hasFluid(Fluids.OXYGEN_GAS, 0.09)))) {
 			return true;
 		}
 
 		List<AtmosphereBlob> blobs = ChunkAtmosphereManager.proxy.getBlobs(worldObj, xCoord, yCoord, zCoord);
 		for(AtmosphereBlob blob : blobs) {
-			if(blob.hasFluid(Fluids.AIR, 0.19) || blob.hasFluid(Fluids.OXYGEN, 0.09)) {
+			if(blob.hasFluid(Fluids.AIR, 0.19) || (blob.hasFluid(Fluids.OXYGEN, 0.09) || blob.hasFluid(Fluids.OXYGEN_GAS, 0.09))) {
 				blob.consume(amount);
 				return true;
 			}

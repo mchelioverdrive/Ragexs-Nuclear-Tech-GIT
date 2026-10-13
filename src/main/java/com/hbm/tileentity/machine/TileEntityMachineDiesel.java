@@ -1,10 +1,13 @@
 package com.hbm.tileentity.machine;
 
 import api.hbm.energymk2.EnergyUnits;
+import com.hbm.realsim.Combustion;
+import com.hbm.realsim.FuelCredit;
+import com.hbm.realsim.GeneratorStats;
+import com.hbm.realsim.OutputBudget;
 import java.io.IOException;
 import java.util.HashMap;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 import com.hbm.inventory.FluidContainerRegistry;
@@ -12,7 +15,6 @@ import com.hbm.inventory.container.ContainerMachineDiesel;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
-import com.hbm.inventory.fluid.trait.FT_Combustible;
 import com.hbm.inventory.fluid.trait.FT_Polluting;
 import com.hbm.inventory.fluid.trait.FT_Combustible.FuelGrade;
 import com.hbm.inventory.fluid.trait.FluidTrait.FluidReleaseType;
@@ -56,11 +58,17 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 	public int soundCycle = 0;
 	public long powerCap = maxPower;
 	public FluidTank tank;
+	public final FuelCredit fuelCredit = new FuelCredit();
+	public final GeneratorStats generatorStats = new GeneratorStats();
+	private final OutputBudget outputBudget = new OutputBudget();
+	private long lastGenerationTick = Long.MIN_VALUE;
+	public static long ratedPowerWatts = 200_000L;
 	
 	/* CONFIGURABLE CONSTANTS */
 	public static long maxPower = 50000;
 	public static int fluidCap = 16000;
-	public static HashMap<FuelGrade, Double> fuelEfficiency = new HashMap();
+	/** Retained for binary/source compatibility; physical efficiencies are owned by Combustion. */
+	@Deprecated public static HashMap<FuelGrade, Double> fuelEfficiency = new HashMap();
 	static {
 		fuelEfficiency.put(FuelGrade.MEDIUM,	0.5D);
 		fuelEfficiency.put(FuelGrade.HIGH,		0.75D);
@@ -106,6 +114,9 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "powerTime");
 		this.powerCap = EnergyUnits.readCapacityQuanta(nbt, "powerCap");
 		tank.readFromNBT(nbt, "fuel");
+		fuelCredit.read(nbt);
+		outputBudget.read(nbt);
+		lastGenerationTick = nbt.hasKey("realSimGenerationTick") ? nbt.getLong("realSimGenerationTick") : Long.MIN_VALUE;
 	}
 
 	@Override
@@ -115,6 +126,9 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		EnergyUnits.writeCapacityQuanta(nbt, powerCap);
 		tank.writeToNBT(nbt, "fuel");
+		fuelCredit.write(nbt);
+		outputBudget.write(nbt);
+		nbt.setLong("realSimGenerationTick", lastGenerationTick);
 	}
 
 	@Override
@@ -186,6 +200,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
 		if(taskType != TASK_GENERATE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+		if(lastGenerationTick == worldObj.getTotalWorldTime()) return;
 		this.beginMachineFluidMutation();
 		runtimeEnergyMutation = true;
 		try {
@@ -201,11 +216,13 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 			}
 			tank.loadTank(0, 1, slots);
 			long previousCapacity = powerCap;
-			powerCap = tank.getTankType() == Fluids.NITAN ? maxPower * 10 : maxPower;
+			powerCap = Math.max(powerCap, maxPower);
 			if(powerCap != previousCapacity) this.markPowerNetDirty();
 
-			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 2, energyQuanta, powerCap));
+			long charge = Math.min(energyQuanta, getMaxOutputQuantaPerTick());
+			this.extractEnergyQuanta(charge - Library.chargeItemsFromTE(slots, 2, charge, charge));
 			generate();
+			this.markDirty();
 			this.sendRuntimeState();
 		} finally {
 			runtimeEnergyMutation = false;
@@ -229,7 +246,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 	}
 
 	private boolean hasFuelCandidate() {
-		return (tank.getFill() > 0 && getEnergyQuantaFromFuel() > 0) || slots[0] != null || slots[3] != null || slots[4] != null;
+		return fuelCredit.hasCredit() || (tank.getFill() > 0 && getEnergyQuantaFromFuel() > 0) || slots[0] != null || slots[3] != null || slots[4] != null;
 	}
 
 	private void evaluateAndSchedule(long now) {
@@ -270,6 +287,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 		EnergyUnits.writeCapacityQuanta(data, powerCap);
 		tank.writeToNBT(data, "t");
+		generatorStats.write(data, fuelCredit);
 		this.networkPack(data, 50);
 	}
 	
@@ -279,6 +297,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 		energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		powerCap = EnergyUnits.readCapacityQuanta(data, "powerCap");
 		tank.readFromNBT(data, "t");
+		generatorStats.read(data, fuelCredit);
 	}
 	
 	public boolean hasAcceptableFuel() {
@@ -293,50 +312,23 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 	@Deprecated public static long getHEFromFuel(FluidType type) { return EnergyUnits.quantaToLegacyHe(getEnergyQuantaFromFuel(type)); }
 	
 	public static long getEnergyQuantaFromFuel(FluidType type) {
-		
-		if(type.hasTrait(FT_Combustible.class)) {
-			FT_Combustible fuel = type.getTrait(FT_Combustible.class);
-			FuelGrade grade = fuel.getGrade();
-			double efficiency = fuelEfficiency.containsKey(grade) ? fuelEfficiency.get(grade) : 0;
-			
-			if(fuel.getGrade() != FuelGrade.LOW) {
-				return (long) (fuel.getCombustionEnergyQuanta() / 1000L * efficiency);
-			}
-		}
-		
-		return 0;
+		int efficiency = Combustion.dieselEfficiency(type);
+		return efficiency == 0 ? 0 : (long) (com.hbm.realsim.PhysicalRegistry.get(type.getName()).chemicalMicrojoulesPerUnit() / 500_000D * efficiency / 1_000_000D);
 	}
 
 	public void generate() {
-		
-		if(!runtimeWaterlogged && hasAcceptableFuel()) {
-			if (tank.getFill() > 0 && breatheAir(1)) {
-				
-				if(!shutUp) {
-					if (soundCycle == 0) {
-						this.worldObj.playSoundEffect(this.xCoord, this.yCoord, this.zCoord, "fireworks.blast", this.getVolume(0.75F), 0.5F);
-					}
-					soundCycle++;
-				}
-
-				if(soundCycle >= 3)
-					soundCycle = 0;
-
-				tank.setFill(tank.getFill() - 1);
-				if(tank.getFill() < 0)
-					tank.setFill(0);
-				
-				if(worldObj.getTotalWorldTime() % 5 == 0) {
-					super.pollute(tank.getTankType(), FluidReleaseType.BURN, 5F);
-				}
-				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 900);
-
-				if(energyQuanta + getEnergyQuantaFromFuel() <= powerCap) {
-					this.setStoredEnergyQuanta(this.energyQuanta + getEnergyQuantaFromFuel());
-				} else {
-					this.setStoredEnergyQuanta(powerCap);
-				}
-			}
+		if(worldObj == null || worldObj.isRemote || lastGenerationTick == worldObj.getTotalWorldTime()) return;
+		lastGenerationTick = worldObj.getTotalWorldTime();
+		generatorStats.idle();
+		long demand = Math.min(ratedPowerWatts / 10L, Math.max(0L, powerCap - energyQuanta));
+		if(runtimeWaterlogged || demand <= 0 || !(fuelCredit.hasCredit() || hasAcceptableFuel() && tank.getFill() > 0) || !breatheAir(1)) return;
+		long generated = Combustion.generate(tank, fuelCredit, demand, Combustion.dieselEfficiency(tank.getTankType()));
+		this.setStoredEnergyQuanta(energyQuanta + generated);
+		generatorStats.record(generated, fuelCredit);
+		if(generated > 0) {
+			if(!shutUp && soundCycle++ % 3 == 0) this.worldObj.playSoundEffect(xCoord, yCoord, zCoord, "fireworks.blast", this.getVolume(0.75F), 0.5F);
+			if(worldObj.getTotalWorldTime() % 5 == 0) super.pollute(Fluids.fromName(fuelCredit.fuel()), FluidReleaseType.BURN, (float) (generatorStats.fuelUnitsPerSecond * 1.25D));
+			FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 900);
 		}
 	}
 
@@ -350,16 +342,23 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+		this.markDirty();
 		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	public long getPowerOutputWatts() {
-		return EnergyUnits.quantaPerTickToWatts(getEnergyQuantaFromFuel());
+		return EnergyUnits.quantaPerTickToWatts(generatorStats.outputQuanta);
+	}
+	@Override public long getMaxOutputQuantaPerTick() { return outputBudget.available(worldObj == null ? 0 : worldObj.getTotalWorldTime(), ratedPowerWatts / 10L); }
+	@Override public void extractEnergyQuanta(long amount) {
+		long extracted = Math.max(0L, Math.min(amount, Math.min(energyQuanta, getMaxOutputQuantaPerTick())));
+		outputBudget.use(worldObj == null ? 0 : worldObj.getTotalWorldTime(), ratedPowerWatts / 10L, extracted);
+		this.setStoredEnergyQuanta(energyQuanta - extracted);
 	}
 
 	@Override
 	public long getEnergyCapacityQuanta() {
-		return this.maxPower;
+		return this.powerCap;
 	}
 
 	@Override
@@ -383,33 +382,18 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 	@Override
 	public void readIfPresent(JsonObject obj) {
 		maxPower = IConfigurableMachine.grabEnergyQuanta(obj, "L:energyCapacityQuanta", "L:powerCap", maxPower);
+		ratedPowerWatts = Math.max(10L, Math.min(500_000L, IConfigurableMachine.grab(obj, "L:ratedPowerWatts", ratedPowerWatts)));
 		fluidCap = IConfigurableMachine.grab(obj, "I:fuelCap", fluidCap);
 		
-		if(obj.has("D[:efficiency")) {
-			JsonArray array = obj.get("D[:efficiency").getAsJsonArray();
-			for(FuelGrade grade : FuelGrade.values()) {
-				fuelEfficiency.put(grade, array.get(grade.ordinal()).getAsDouble());
-			}
-		}
 		shutUp = IConfigurableMachine.grab(obj, "B:shutUp", shutUp);
 	}
 
 	@Override
 	public void writeConfig(JsonWriter writer) throws IOException {
 		writer.name("L:energyCapacityQuanta").value(maxPower);
+		writer.name("L:ratedPowerWatts").value(ratedPowerWatts);
 		writer.name("I:fuelCap").value(fluidCap);
 		
-		String info = "Fuel grades in order: ";
-		for(FuelGrade grade : FuelGrade.values()) info += grade.name() + " ";
-		info = info.trim();
-		writer.name("INFO").value(info);
-		
-		writer.name("D[:efficiency").beginArray().setIndent("");
-		for(FuelGrade grade : FuelGrade.values()) {
-			double d = fuelEfficiency.containsKey(grade) ? fuelEfficiency.get(grade) : 0.0D;
-			writer.value(d);
-		}
-		writer.endArray().setIndent("  ");
 		writer.name("B:shutUp").value(shutUp);
 	}
 
@@ -431,10 +415,10 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
-		long energyFromFuelQuanta = getEnergyQuantaFromFuel(tank.getTankType());
-		boolean active = tank.getFill() > 0 && energyFromFuelQuanta > 0;
+		long energyFromFuelQuanta = generatorStats.outputQuanta;
+		boolean active = energyFromFuelQuanta > 0;
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, active);
-		data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, active ? 1D : 0D);
+		data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, generatorStats.fuelUnitsPerSecond / 20D);
 		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(energyFromFuelQuanta));
 	}
 }

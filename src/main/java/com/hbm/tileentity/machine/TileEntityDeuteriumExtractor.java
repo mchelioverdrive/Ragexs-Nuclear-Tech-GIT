@@ -87,6 +87,7 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 	}
 
 	private boolean canProcess() {
+		if(this instanceof TileEntityAtmoTower && !tanks[1].configureForRecipe(Fluids.NITROGEN_GAS, 0)) return false;
 		return this.hasPower() && energyQuanta > 200 && this.hasEnoughWater() && tanks[1].getMaxFill() > tanks[1].getFill();
 	}
 

@@ -25,15 +25,15 @@ public class ElectrolyserFluidRecipes extends SerializableRecipe {
 	@Override
 	public void registerDefaults() {
 		// Gas fluid units are volume-like batches: electrolysis therefore keeps the 2:1 hydrogen/deuterium to oxygen ratio.
-		recipes.put(Fluids.FRESH_WATER, new ElectrolysisRecipe(2_000, new FluidStack(Fluids.HYDROGEN, 400), new FluidStack(Fluids.OXYGEN, 200), 10));
-		recipes.put(Fluids.HEAVYWATER, new ElectrolysisRecipe(2_000, new FluidStack(Fluids.DEUTERIUM, 400), new FluidStack(Fluids.OXYGEN, 200), 10));
+		recipes.put(Fluids.FRESH_WATER, new ElectrolysisRecipe(1, new FluidStack(Fluids.HYDROGEN_GAS, 1260), new FluidStack(Fluids.OXYGEN_GAS, 630), 2220).physicalPower(20_000));
+		recipes.put(Fluids.HEAVYWATER, new ElectrolysisRecipe(2_000, new FluidStack(Fluids.DEUTERIUM, 400), new FluidStack(Fluids.OXYGEN_GAS, 200), 10));
 		recipes.put(Fluids.VITRIOL, new ElectrolysisRecipe(1_000, new FluidStack(Fluids.SULFURIC_ACID, 500), new FluidStack(Fluids.CHLORINE, 500), new ItemStack(ModItems.powder_iron), new ItemStack(ModItems.ingot_mercury)));
 		recipes.put(Fluids.SLOP, new ElectrolysisRecipe(1_000, new FluidStack(Fluids.MERCURY, 250), new FluidStack(Fluids.NONE, 0), new ItemStack(ModItems.niter, 2), new ItemStack(ModItems.powder_limestone, 2), new ItemStack(ModItems.sulfur)));
 
 		// Aqueous chloride electrolysis releases chlorine and hydrogen. The two-output machine cannot also retain lye;
 		// sodium hydroxide remains a separate chemical-plant product rather than incorrectly yielding alkali metal here.
-		recipes.put(Fluids.BRINE, new ElectrolysisRecipe(1_000, new FluidStack(Fluids.CHLORINE, 250), new FluidStack(Fluids.HYDROGEN, 250)));
-		recipes.put(Fluids.POTASSIUM_CHLORIDE, new ElectrolysisRecipe(1_000, new FluidStack(Fluids.CHLORINE, 250), new FluidStack(Fluids.HYDROGEN, 250)));
+		recipes.put(Fluids.BRINE, new ElectrolysisRecipe(1_000, new FluidStack(Fluids.CHLORINE, 250), new FluidStack(Fluids.HYDROGEN_GAS, 250)));
+		recipes.put(Fluids.POTASSIUM_CHLORIDE, new ElectrolysisRecipe(1_000, new FluidStack(Fluids.CHLORINE, 250), new FluidStack(Fluids.HYDROGEN_GAS, 250)));
 
 		//molten salt -> 2sodium and 2chlorine
 		recipes.put(Fluids.MOLTEN_SALT, new ElectrolysisRecipe(1_000, new FluidStack(Fluids.SODIUM, 500), new FluidStack(Fluids.CHLORINE, 500)));
@@ -70,7 +70,7 @@ public class ElectrolyserFluidRecipes extends SerializableRecipe {
 					new ElectrolysisRecipe(
 						1000,
 						new FluidStack(Fluids.FLUORINE, 500),
-						new FluidStack(Fluids.HYDROGEN, 500)
+						new FluidStack(Fluids.HYDROGEN_GAS, 500)
 					));
 
 
@@ -141,7 +141,7 @@ public class ElectrolyserFluidRecipes extends SerializableRecipe {
 		ItemStack[] byproducts = new ItemStack[0];
 		if(obj.has("byproducts")) byproducts = this.readItemStackArray(obj.get("byproducts").getAsJsonArray());
 
-		recipes.put(input.type, new ElectrolysisRecipe(input.fill, output1, output2, duration, byproducts));
+		recipes.put(input.type, new ElectrolysisRecipe(input.fill, output1, output2, duration, byproducts).physicalPower(obj.has("physicalPowerQuanta") ? Math.max(0, obj.get("physicalPowerQuanta").getAsInt()) : 0));
 	}
 
 	@Override
@@ -159,6 +159,7 @@ public class ElectrolyserFluidRecipes extends SerializableRecipe {
 		}
 
 		writer.name("duration").value(rec.getValue().duration);
+		writer.name("physicalPowerQuanta").value(rec.getValue().physicalPowerQuanta);
 	}
 
 	public static class ElectrolysisRecipe {
@@ -167,6 +168,8 @@ public class ElectrolyserFluidRecipes extends SerializableRecipe {
 		public int amount;
 		public ItemStack[] byproduct;
 		public int duration;
+		public int physicalPowerQuanta;
+		public ElectrolysisRecipe physicalPower(int quanta) { physicalPowerQuanta = quanta; return this; }
 
 		public ElectrolysisRecipe(int amount, FluidStack output1, FluidStack output2, ItemStack... byproduct) {
 			this.output1 = output1;
