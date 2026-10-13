@@ -1,5 +1,7 @@
 # RealSim thermal and power scale: feasibility design
 
+**Historical proposal.** The [2026-10-12 RealSim phases 1–4 investigation](REALSIM_PHASES_1_4.md) supersedes this document's provisional 1:100 recommendation and illustrative physical state/plant values with a recommended 1:1 model. Retain this source snapshot and safety/migration reasoning as prior work; use the new substance/physical ledger and explicit Phase 5 gates for later implementation. No balance change follows from either proposal alone.
+
 Source review: 2026-09-27. A limited pre-RealSim cleanup now aligns direct steam-heating metadata with the staged ledger, clarifies player-facing units, and checks the stock graph when traits load. **The full RealSim balance, recipes, APIs, and save formats remain unchanged.** The existing [industrial-scale audit](INDUSTRIAL_SCALE_AUDIT.md) supplies the broader machine inventory. This document distinguishes verified current behavior from illustrative target numbers. Rates assume 20 game ticks/s and an unloaded-free, continuously supplied plant; actual sustained rates, network ports, upgrades, configs, and reactor layouts need loaded-world measurement.
 
 ## Decision

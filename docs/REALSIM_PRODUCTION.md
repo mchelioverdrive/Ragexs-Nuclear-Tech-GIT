@@ -246,8 +246,7 @@ RealSim Production should be data-driven and cheap on the steady-state path.
 - Resolve and cache recipe capability alongside the existing per-lane cached inputs, output, and process time. Do not scan capability tables every tick.
 - Invalidate eligibility when the template, capability module, configuration, or relevant inventory changes. Keep simulation dirtiness separate from client network dirtiness.
 - Do not add world scans, adjacent-inventory scans, reflection, or allocation-heavy recipe conversion to per-tick processing.
-- Do not migrate the Fabrication Machine or Industrial Fabrication Machine to the new machine runtime as a side effect of this feature. They remain legacy-driven today, and the performance audit identifies direct slot/tank writes and multiblock lifecycle behavior that require a separate audit before scheduler opt-in.
-- If these machines are later migrated, preserve independent lane ownership and use the existing typed task-slot concept rather than one timer per new recipe object.
+- Current shared assembler and chemistry bases already use MachineRuntime accounting. Preserve that runtime and independent lane ownership when adding capability eligibility; use existing typed task slots rather than one timer per new recipe object. Direct inventory/tank mutations and multiblock lifecycle changes still require the established invalidation/ownership rules.
 - Capability modules should use ordinary saved inventory state and existing controller ownership. Dummy blocks must not register independent logical machines.
 - Packet changes should be state-change-driven and retain a low-frequency recovery baseline where RTM's synchronization architecture expects one.
 

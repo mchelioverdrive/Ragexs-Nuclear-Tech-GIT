@@ -1,5 +1,7 @@
 # RTM industrial power, heat, fluid, and consumption audit
 
+**Historical source snapshot.** The [2026-10-12 RealSim phases 1–4 investigation](REALSIM_PHASES_1_4.md#supersession-of-prior-conclusions) retains the unit/rating distinctions and revises the proposed balance model. It also corrects details below against current source: industrial fabrication/chemistry use cooling water per active processing tick; the reported turbine exhaust capacities and default decay-path RTG ceiling need correction. Consult the new inventory for current behavior; this audit's old target multipliers are not the implementation specification.
+
 Source audit: 2026-09-26. **Recommendation only; no balance values or save formats were changed.** Figures below use the checked-in defaults, no upgrades, 20 ticks/s, and continuously available inputs and outputs unless stated. Configurable machines, gamerules, recipes, fuel grades, world deposits, and block layout can change realized rates. A machine's buffer capacity is not its continuous output rating. No Minecraft run or loaded-world measurement was performed.
 
 ## Method and reference scale
