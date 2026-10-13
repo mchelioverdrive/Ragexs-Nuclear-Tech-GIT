@@ -14,19 +14,16 @@ import com.google.gson.stream.JsonWriter;
 import com.hbm.inventory.FluidStack;
 import com.hbm.inventory.RecipesCommon.AStack;
 import com.hbm.inventory.RecipesCommon.ComparableStack;
-import com.hbm.inventory.RecipesCommon.OreDictStack;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.trait.FT_Flammable;
 import com.hbm.inventory.recipes.loader.SerializableRecipe;
-import com.hbm.items.ItemEnums.EnumAshType;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemFluidIcon;
 import com.hbm.items.special.ItemBedrockOreNew;
 import com.hbm.items.special.ItemBedrockOreNew.BedrockOreGrade;
 import com.hbm.items.special.ItemBedrockOreNew.BedrockOreType;
 
-import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
@@ -78,48 +75,7 @@ public class PyroOvenRecipes extends SerializableRecipe {
 			recipes.add(new PyroOvenRecipe(10).in(new ComparableStack(ItemBedrockOreNew.make(BedrockOreGrade.RAD_BYPRODUCT, type))).out(new FluidStack(Fluids.VITRIOL, 50)).out(ItemBedrockOreNew.make(BedrockOreGrade.RAD_ROASTED, type)));
 		}
 
-		//syngas from coal
-		recipes.add(new PyroOvenRecipe(100)
-				.in(new FluidStack(Fluids.STEAM, 500)).in(new OreDictStack(COAL.gem()))
-				.out(new FluidStack(Fluids.SYNGAS, 1_000)));
-		recipes.add(new PyroOvenRecipe(100)
-				.in(new FluidStack(Fluids.STEAM, 500)).in(new OreDictStack(COAL.dust()))
-				.out(new FluidStack(Fluids.SYNGAS, 1_000)));
-		recipes.add(new PyroOvenRecipe(100)
-				.in(new FluidStack(Fluids.STEAM, 250)).in(new OreDictStack(ANY_COKE.gem()))
-				.out(new FluidStack(Fluids.SYNGAS, 1_000)));
-		//syngas from biomass
-		recipes.add(new PyroOvenRecipe(100)
-				.in(new ComparableStack(ModItems.biomass, 4))
-				.out(new FluidStack(Fluids.SYNGAS, 1_000)).out(new ItemStack(Items.coal, 1, 1)));
-		//soot from tar
-		recipes.add(new PyroOvenRecipe(40)
-			.out(new FluidStack(Fluids.HYDROGEN_GAS, 250)).in(new OreDictStack(KEY_ANY_TAR, 4))
-				.out(new FluidStack(Fluids.CARBONDIOXIDE, 1_000)).out(DictFrame.fromOne(ModItems.powder_ash, EnumAshType.SOOT)));
-		//heavyoil from coal
-		recipes.add(new PyroOvenRecipe(100)
-				.in(new FluidStack(Fluids.HYDROGEN_GAS, 500)).in(new OreDictStack(COAL.gem()))
-				.out(new FluidStack(Fluids.HEAVYOIL, 1_000)));
-		recipes.add(new PyroOvenRecipe(100)
-				.in(new FluidStack(Fluids.HYDROGEN_GAS, 500)).in(new OreDictStack(COAL.dust()))
-				.out(new FluidStack(Fluids.HEAVYOIL, 1_000)));
-		recipes.add(new PyroOvenRecipe(100)
-				.in(new FluidStack(Fluids.HYDROGEN_GAS, 250)).in(new OreDictStack(ANY_COKE.gem()))
-				.out(new FluidStack(Fluids.HEAVYOIL, 1_000)));
-		/* coal gas used to consume heavy oil and coal, creating a backwards heavy-oil-to-gas shortcut.
-		recipes.add(new PyroOvenRecipe(50)
-				.in(new FluidStack(Fluids.HEAVYOIL, 500)).in(new OreDictStack(COAL.gem()))
-				.out(new FluidStack(Fluids.COALGAS, 1_000)));
-		recipes.add(new PyroOvenRecipe(50)
-				.in(new FluidStack(Fluids.HEAVYOIL, 500)).in(new OreDictStack(COAL.dust()))
-				.out(new FluidStack(Fluids.COALGAS, 1_000)));
-		recipes.add(new PyroOvenRecipe(50)
-				.in(new FluidStack(Fluids.HEAVYOIL, 500)).in(new OreDictStack(ANY_COKE.gem()))
-				.out(new FluidStack(Fluids.COALGAS, 1_000)));*/
-		//refgas from coker gas
-		recipes.add(new PyroOvenRecipe(60)
-				.in(new FluidStack(GAS_COKER, 4_000))
-				.out(new FluidStack(Fluids.REFORMGAS, 100)));
+		// Coal gasification/liquefaction use reactor bills with paid utilities and residues.
 		////ammonium chloride + heat -> ammonia + hydrogen chloride
 		//recipes.add(new PyroOvenRecipe(20)
 		//		.in(new ComparableStack(ModItems.ammonium_chloride, 1))

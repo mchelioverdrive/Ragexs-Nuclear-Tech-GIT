@@ -2,7 +2,6 @@ package com.hbm.tileentity.machine.oil;
 
 import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.BlockDummyable;
-import com.hbm.inventory.FluidStack;
 import com.hbm.inventory.container.ContainerMachineCatalyticReformer;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
@@ -17,7 +16,6 @@ import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IPersistentNBT;
 import com.hbm.tileentity.TileEntityMachineBase;
-import com.hbm.util.Tuple.Triplet;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
@@ -34,7 +32,9 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IPersistentNBT, IGUIProvider, IFluidCopiable {
+
 	
+    public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
 	public long energyQuanta;
 	public static final long maxPower = 1_000_000;
 	
@@ -48,10 +48,6 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
 	private boolean runtimeAccountingMutation;
-	private boolean runtimeOutputTransfer;
-	private boolean runtimeActive;
-	private long lastAccountingTick = Long.MIN_VALUE;
-	private long batteryTransitionDueTick = Long.MIN_VALUE;
 	private int observedInventoryFingerprint;
 	private boolean inventoryFingerprintInitialized;
 
@@ -77,10 +73,6 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 	}
 
 	@Override public void onChunkUnload() {
-		if(worldObj != null && !worldObj.isRemote) this.settleReformsThrough(worldObj.getTotalWorldTime() - 1L);
-		lastAccountingTick = Long.MIN_VALUE;
-		batteryTransitionDueTick = Long.MIN_VALUE;
-		runtimeActive = false;
 		super.onChunkUnload();
 	}
 
@@ -89,58 +81,27 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 	}
 
 	@Override public void onMachineRuntimeDirty(int causes) {
-		if(worldObj == null || worldObj.isRemote) return;
-		long now = worldObj.getTotalWorldTime();
-		boolean wasActive = runtimeActive;
-		if(lastAccountingTick == Long.MIN_VALUE) lastAccountingTick = now;
-		else this.settleReformsThrough(now - 1L);
-		runtimeInitialized = true;
-		this.refreshRuntimeState();
-		if(wasActive && !this.hasBatteryWork()) this.settleReformsThrough(now);
-		else if(!wasActive) lastAccountingTick = now;
-		this.evaluateAndSchedule(now, wasActive && this.hasBatteryWork());
-		this.sendRuntimeState();
+        if(worldObj == null || worldObj.isRemote) return;
+        runtimeInitialized = true; this.refreshRuntimeState(); this.updateConnections(); this.evaluateAndSchedule(worldObj.getTotalWorldTime(), false);
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
-		long now = worldObj.getTotalWorldTime();
-		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
-			batteryTransitionDueTick = Long.MIN_VALUE;
-			this.settleReformsThrough(now - 1L);
-			long oldEnergy = energyQuanta;
-			runtimeEnergyMutation = true;
-			try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower)); }
-			finally { runtimeEnergyMutation = false; }
-			if(oldEnergy != energyQuanta) { this.markDirty(); this.markNetworkDirty(); }
-			this.settleReformsThrough(now);
-			this.evaluateAndSchedule(now, false);
-			this.sendRuntimeState();
-			return;
-		}
-		if(taskType == TASK_ACCOUNTING && taskSlot == TASK_SLOT_MAIN) {
-			this.settleReformsThrough(now);
-			this.evaluateAndSchedule(now, false);
-			this.sendRuntimeState();
-			return;
-		}
-		if(taskType == TASK_OUTPUT && taskSlot == TASK_SLOT_OUTPUT) {
-			if(batteryTransitionDueTick != Long.MIN_VALUE && batteryTransitionDueTick <= now) {
-				this.scheduleMachineTransition(now, TASK_OUTPUT, TASK_SLOT_OUTPUT);
-				return;
-			}
-			runtimeOutputTransfer = true;
-			try { this.sendOutputFluids(); }
-			finally { runtimeOutputTransfer = false; }
-			this.evaluateAndSchedule(now, false);
-			this.sendRuntimeState();
-		}
+        if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+        runtimeAccountingMutation = true; runtimeEnergyMutation = true; this.beginMachineFluidMutation();
+        try {
+            this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
+            com.hbm.realsim.ProcessRecipe bill = ReformingRecipes.getPhysical(tanks[0].getTankType());
+            if(slots[10] != null && slots[10].getItem() == ModItems.catalytic_converter)
+                com.hbm.realsim.ProcessMachine.step(this, physicalBatch, bill, new FluidTank[] {tanks[0]}, new FluidTank[] {tanks[1], tanks[2], tanks[3]}, slots, 0, -1, 0, -1);
+        } finally { this.endMachineFluidMutation(); runtimeEnergyMutation = false; runtimeAccountingMutation = false; }
+        if(worldObj.getTotalWorldTime() % 5L == 0L) this.sendOutputFluids();
+        if(worldObj.getTotalWorldTime() % 20L == 0L) this.sendRuntimeState();
+        this.evaluateAndSchedule(worldObj.getTotalWorldTime(), false);
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
 		if(worldObj == null || worldObj.isRemote) return;
 		if(cadence == 5) {
-			this.settleReformsThrough(worldObj.getTotalWorldTime());
 			boolean inventoryChanged = this.observeInventoryFingerprint();
 			this.refreshRuntimeState();
 			this.sendRuntimeState();
@@ -162,36 +123,12 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 	}
 	
 	private void refreshRuntimeState() {
-		this.beginMachineFluidMutation();
-		try {
-			tanks[0].setType(9, slots);
-			tanks[0].loadTank(1, 2, slots);
-			Triplet<FluidStack, FluidStack, FluidStack> output = ReformingRecipes.getOutput(tanks[0].getTankType());
-			if(output == null) {
-				tanks[1].configureForRecipe(Fluids.NONE, 0);
-				tanks[2].configureForRecipe(Fluids.NONE, 0);
-				tanks[3].configureForRecipe(Fluids.NONE, 0);
-			} else {
-				tanks[1].configureForRecipe(output.getX().type, 0);
-				tanks[2].configureForRecipe(output.getY().type, 0);
-				tanks[3].configureForRecipe(output.getZ().type, 0);
-			}
-			tanks[1].unloadTank(3, 4, slots);
-			tanks[2].unloadTank(5, 6, slots);
-			tanks[3].unloadTank(7, 8, slots);
-		} finally {
-			this.endMachineFluidMutation();
-		}
-		this.observeInventoryFingerprint();
+        tanks[0].setType(11, slots); tanks[0].loadTank(1, 2, slots);
+        com.hbm.realsim.ProcessMachine.configure(physicalBatch, ReformingRecipes.getPhysical(tanks[0].getTankType()), new FluidTank[] {tanks[1], tanks[2], tanks[3]});
+        tanks[1].unloadTank(3, 4, slots); tanks[2].unloadTank(5, 6, slots); tanks[3].unloadTank(7, 8, slots);
+        this.observeInventoryFingerprint();
 	}
 
-	private boolean canReform(Triplet<FluidStack, FluidStack, FluidStack> out) {
-		return energyQuanta >= 20_000L && tanks[0].getFill() >= 100 && slots[10] != null && slots[10].getItem() == ModItems.catalytic_converter
-				&& tanks[1].getTankType() == out.getX().type && tanks[2].getTankType() == out.getY().type && tanks[3].getTankType() == out.getZ().type
-				&& tanks[1].getFill() + out.getX().fill <= tanks[1].getMaxFill()
-				&& tanks[2].getFill() + out.getY().fill <= tanks[2].getMaxFill()
-				&& tanks[3].getFill() + out.getZ().fill <= tanks[3].getMaxFill();
-	}
 
 	private boolean hasBatteryWork() {
 		if(energyQuanta >= maxPower || slots[0] == null) return false;
@@ -206,58 +143,13 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 	}
 
 	private void evaluateAndSchedule(long now, boolean batteryDueNow) {
-		if(!runtimeInitialized) return;
-		boolean battery = this.hasBatteryWork();
-		if(battery) {
-			long due = now + (batteryDueNow ? 0L : 1L);
-			this.scheduleMachineTransition(due, TASK_BATTERY, TASK_SLOT_BATTERY);
-			if(batteryTransitionDueTick == Long.MIN_VALUE || due < batteryTransitionDueTick) batteryTransitionDueTick = due;
-		} else {
-			this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
-			batteryTransitionDueTick = Long.MIN_VALUE;
-		}
-		Triplet<FluidStack, FluidStack, FluidStack> output = ReformingRecipes.getOutput(tanks[0].getTankType());
-		boolean canRun = output != null && this.canReform(output);
-		runtimeActive = canRun;
-		if(canRun && !battery) {
-			long steps = Math.min(tanks[0].getFill() / 100L, energyQuanta / 20_000L);
-			if(output.getX().fill > 0) steps = Math.min(steps, (tanks[1].getMaxFill() - tanks[1].getFill()) / output.getX().fill);
-			if(output.getY().fill > 0) steps = Math.min(steps, (tanks[2].getMaxFill() - tanks[2].getFill()) / output.getY().fill);
-			if(output.getZ().fill > 0) steps = Math.min(steps, (tanks[3].getMaxFill() - tanks[3].getFill()) / output.getZ().fill);
-			if(steps > 0L) this.scheduleMachineTransition(now + steps, TASK_ACCOUNTING, TASK_SLOT_MAIN);
-		} else this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
-		if(this.hasFluidOutput()) this.scheduleMachineTransition(now + 1L, TASK_OUTPUT, TASK_SLOT_OUTPUT);
-		else this.cancelMachineTransition(TASK_OUTPUT, TASK_SLOT_OUTPUT);
+        this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY); this.cancelMachineTransition(TASK_OUTPUT, TASK_SLOT_OUTPUT);
+        com.hbm.realsim.ProcessRecipe bill = ReformingRecipes.getPhysical(tanks[0].getTankType());
+        if(slots[10] != null && slots[10].getItem() == ModItems.catalytic_converter && (physicalBatch.active() || bill != null && tanks[0].getFill() > 0) || this.hasBatteryWork())
+            this.scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+        else this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
 	}
 
-	private void settleReformsThrough(long targetTick) {
-		if(worldObj == null || worldObj.isRemote || runtimeAccountingMutation || lastAccountingTick == Long.MIN_VALUE || targetTick <= lastAccountingTick) return;
-		long elapsed = targetTick - lastAccountingTick;
-		lastAccountingTick = targetTick;
-		Triplet<FluidStack, FluidStack, FluidStack> output = ReformingRecipes.getOutput(tanks[0].getTankType());
-		if(!runtimeInitialized || output == null || !this.canReform(output)) return;
-		long steps = Math.min(elapsed, Math.min(tanks[0].getFill() / 100L, energyQuanta / 20_000L));
-		if(output.getX().fill > 0) steps = Math.min(steps, (tanks[1].getMaxFill() - tanks[1].getFill()) / output.getX().fill);
-		if(output.getY().fill > 0) steps = Math.min(steps, (tanks[2].getMaxFill() - tanks[2].getFill()) / output.getY().fill);
-		if(output.getZ().fill > 0) steps = Math.min(steps, (tanks[3].getMaxFill() - tanks[3].getFill()) / output.getZ().fill);
-		if(steps <= 0L) return;
-		runtimeAccountingMutation = true;
-		this.beginMachineFluidMutation();
-		runtimeEnergyMutation = true;
-		try {
-			tanks[0].setFill(tanks[0].getFill() - (int) (steps * 100L));
-			tanks[1].setFill(tanks[1].getFill() + (int) (steps * output.getX().fill));
-			tanks[2].setFill(tanks[2].getFill() + (int) (steps * output.getY().fill));
-			tanks[3].setFill(tanks[3].getFill() + (int) (steps * output.getZ().fill));
-			this.setStoredEnergyQuanta(energyQuanta - steps * 20_000L);
-		} finally {
-			runtimeEnergyMutation = false;
-			this.endMachineFluidMutation();
-			runtimeAccountingMutation = false;
-		}
-		this.markDirty();
-		this.markNetworkDirty();
-	}
 
 	private void sendOutputFluids() {
 		for(DirPos pos : getConPos()) {
@@ -318,6 +210,7 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
+        physicalBatch.read(nbt);
 		super.readFromNBT(nbt);
 
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
@@ -326,14 +219,11 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 		tanks[2].readFromNBT(nbt, "o2");
 		tanks[3].readFromNBT(nbt, "o3");
 		runtimeInitialized = false;
-		runtimeActive = false;
-		lastAccountingTick = Long.MIN_VALUE;
-		batteryTransitionDueTick = Long.MIN_VALUE;
 	}
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
-		if(worldObj != null && !worldObj.isRemote) this.settleReformsThrough(worldObj.getTotalWorldTime() - 1L);
+        physicalBatch.write(nbt);
 		super.writeToNBT(nbt);
 		
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
@@ -376,19 +266,16 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 	@Override
 	public void setStoredEnergyQuanta(long energyQuanta) {
 		if(this.energyQuanta == energyQuanta) return;
-		if(!runtimeEnergyMutation && !runtimeAccountingMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleReformsThrough(worldObj.getTotalWorldTime() - 1L);
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
 		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override protected void beforeInventorySlotChanged(int slot) {
-		if(!runtimeAccountingMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleReformsThrough(worldObj.getTotalWorldTime() - 1L);
 	}
 
 	@Override protected void beforeFluidStorageChanged(FluidTank tank) {
 		if(!runtimeAccountingMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) {
-			this.settleReformsThrough(worldObj.getTotalWorldTime() - (runtimeOutputTransfer ? 0L : 1L));
 		}
 	}
 
@@ -427,7 +314,7 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 
 	@Override
 	public void writeNBT(NBTTagCompound nbt) {
-		if(tanks[0].getFill() == 0 && tanks[1].getFill() == 0 && tanks[2].getFill() == 0 && tanks[3].getFill() == 0) return;
+        physicalBatch.write(nbt);
 		NBTTagCompound data = new NBTTagCompound();
 		for(int i = 0; i < 4; i++) this.tanks[i].writeToNBT(data, "" + i);
 		nbt.setTag(NBT_PERSISTENT_KEY, data);
@@ -435,6 +322,7 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 
 	@Override
 	public void readNBT(NBTTagCompound nbt) {
+        physicalBatch.read(nbt);
 		NBTTagCompound data = nbt.getCompoundTag(NBT_PERSISTENT_KEY);
 		for(int i = 0; i < 4; i++) this.tanks[i].readFromNBT(data, "" + i);
 	}

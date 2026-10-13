@@ -22,7 +22,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IHeatSource, IEnergyReceiverMK2, INBTPacketReceiver, ICopiable, IInfoProviderEC {
+public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IHeatSource, IEnergyReceiverMK2, INBTPacketReceiver, ICopiable, IInfoProviderEC, api.hbm.tile.IProcessHeatSource {
 	private static final int TASK_HEAT = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
@@ -177,7 +177,7 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 	protected void tryPullHeat() {
 		TileEntity con = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
 
-		if(con instanceof IHeatSource) {
+		if(con instanceof api.hbm.tile.IProcessHeatSource && ((api.hbm.tile.IProcessHeatSource) con).getProcessTemperatureC() >= getProcessTemperatureC()) {
 			IHeatSource source = (IHeatSource) con;
 			int toPull = Math.max(Math.min(source.getHeatStored(), maxHeatEnergy - this.heatEnergy), 0);
 			this.heatEnergy += toPull * 0.85D;
@@ -280,4 +280,5 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 	public void pasteSettings(NBTTagCompound nbt, int index, World world, EntityPlayer player, int x, int y, int z) {
 		this.setting = nbt.getInteger("setting");
 	}
+    @Override public int getProcessTemperatureC() { return 900; }
 }

@@ -2,7 +2,6 @@ package com.hbm.tileentity.machine.oil;
 
 import api.hbm.energymk2.EnergyUnits;
 import com.hbm.blocks.BlockDummyable;
-import com.hbm.inventory.FluidStack;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
@@ -12,7 +11,6 @@ import com.hbm.machine.MachineDirtyCause;
 import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IPersistentNBT;
 import com.hbm.tileentity.TileEntityMachineBase;
-import com.hbm.util.Tuple.Triplet;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
@@ -26,7 +24,8 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineAlkylation extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IPersistentNBT {
 	
-	public long energyQuanta;
+	public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
+    public long energyQuanta;
 	public static final long maxPower = 1_000_000;
 
 	public FluidTank[] tanks;
@@ -36,8 +35,7 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 	private int runtimeConnectionPolls;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
-	private FluidType cachedFeedType;
-	private Triplet<FluidStack, FluidStack, FluidStack> cachedRecipe;
+	private com.hbm.realsim.ProcessRecipe cachedRecipe;
 
 	public TileEntityMachineAlkylation() {
 		super(11);
@@ -78,9 +76,9 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 		nextBatchTick = -1L;
 		if(this.canProcessBatch()) {
 			this.processBatch();
-			nextBatchTick = now + 2L;
+			nextBatchTick = now + 1L;
 		}
-		this.evaluateAndSchedule(now, 2L);
+		this.evaluateAndSchedule(now, 1L);
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
@@ -96,7 +94,6 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 		boolean recipeChanged = observedRecipeRevision != SerializableRecipe.getRegistryRevision();
 		if(recipeChanged) {
 			observedRecipeRevision = SerializableRecipe.getRegistryRevision();
-			cachedFeedType = null;
 			this.refreshCachedRecipe();
 		}
 		if(recipeChanged) this.markMachineDirty(MachineDirtyCause.RECIPE);
@@ -104,52 +101,24 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 	}
 
 	private void refreshCachedRecipe() {
-		FluidType feed = tanks[0].getTankType();
-		long revision = SerializableRecipe.getRegistryRevision();
-		if(cachedFeedType != feed || observedRecipeRevision != revision) {
-			cachedFeedType = feed;
-			observedRecipeRevision = revision;
-			cachedRecipe = AlkylationRecipes.getOutput(feed);
-		}
+        cachedRecipe = AlkylationRecipes.getPhysical(tanks[0].getTankType());
 	}
 
 	private void configureRecipeTanks() {
-		this.beginMachineFluidMutation();
-		try {
-			if(cachedRecipe == null) {
-				tanks[2].setTankType(Fluids.NONE);
-				tanks[3].setTankType(Fluids.NONE);
-				return;
-			}
-			tanks[1].setTankType(cachedRecipe.getX().type);
-			tanks[2].setTankType(cachedRecipe.getY().type);
-			tanks[3].setTankType(cachedRecipe.getZ().type);
-		} finally { this.endMachineFluidMutation(); }
+        com.hbm.realsim.ProcessRecipe bill = physicalBatch.active() ? physicalBatch.recipe() : cachedRecipe;
+        if(bill != null) tanks[1].configureForRecipe(Fluids.fromName(bill.inputs[1]), bill.pressures[1]);
+        com.hbm.realsim.ProcessMachine.configure(physicalBatch, cachedRecipe, new FluidTank[] {tanks[2], tanks[3]});
 	}
 
 	private boolean canProcessBatch() {
-		if(cachedRecipe == null || energyQuanta < 4_000L || tanks[0].getFill() < 100 || tanks[1].getFill() < cachedRecipe.getX().fill) return false;
-		if(cachedRecipe != AlkylationRecipes.getOutput(tanks[0].getTankType()) || tanks[1].getTankType() != cachedRecipe.getX().type
-				|| tanks[2].getTankType() != cachedRecipe.getY().type || tanks[3].getTankType() != cachedRecipe.getZ().type) return false;
-		return tanks[2].getFill() + cachedRecipe.getY().fill <= tanks[2].getMaxFill() && tanks[3].getFill() + cachedRecipe.getZ().fill <= tanks[3].getMaxFill();
+        return physicalBatch.active() || com.hbm.realsim.ProcessMachine.inputsReady(cachedRecipe, new FluidTank[] {tanks[0], tanks[1]}, slots, 0, -1);
 	}
 
 	private void processBatch() {
-		if(!this.canProcessBatch()) return;
-		this.beginMachineFluidMutation();
-		this.runtimeEnergyMutation = true;
-		try {
-			tanks[0].setFill(tanks[0].getFill() - 100);
-			tanks[1].setFill(tanks[1].getFill() - cachedRecipe.getX().fill);
-			tanks[2].setFill(tanks[2].getFill() + cachedRecipe.getY().fill);
-			tanks[3].setFill(tanks[3].getFill() + cachedRecipe.getZ().fill);
-			this.setStoredEnergyQuanta(energyQuanta - 4_000L);
-		} finally {
-			this.runtimeEnergyMutation = false;
-			this.endMachineFluidMutation();
-		}
-		this.markDirty();
-		this.markNetworkDirty();
+        this.beginMachineFluidMutation(); runtimeEnergyMutation = true;
+        try { com.hbm.realsim.ProcessMachine.step(this, physicalBatch, cachedRecipe, new FluidTank[] {tanks[0], tanks[1]}, new FluidTank[] {tanks[2], tanks[3]}, slots, 0, -1, 0, -1); }
+        finally { runtimeEnergyMutation = false; this.endMachineFluidMutation(); }
+        this.markNetworkDirty();
 	}
 
 	private void evaluateAndSchedule(long now, long delay) {
@@ -208,16 +177,17 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
+        physicalBatch.read(nbt);
 		super.readFromNBT(nbt);
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		for(int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "t" + i);
 		runtimeInitialized = false;
-		cachedFeedType = null;
 		nextBatchTick = -1L;
 	}
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+        physicalBatch.write(nbt);
 		super.writeToNBT(nbt);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		for(int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(nbt, "t" + i);
@@ -266,7 +236,7 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 
 	@Override
 	public void writeNBT(NBTTagCompound nbt) {
-		if(tanks[0].getFill() == 0 && tanks[1].getFill() == 0 && tanks[2].getFill() == 0 && tanks[3].getFill() == 0) return;
+        physicalBatch.write(nbt);
 		NBTTagCompound data = new NBTTagCompound();
 		for(int i = 0; i < tanks.length; i++) this.tanks[i].writeToNBT(data, "t" + i);
 		nbt.setTag(NBT_PERSISTENT_KEY, data);
@@ -274,6 +244,7 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 
 	@Override
 	public void readNBT(NBTTagCompound nbt) {
+        physicalBatch.read(nbt);
 		NBTTagCompound data = nbt.getCompoundTag(NBT_PERSISTENT_KEY);
 		for(int i = 0; i < tanks.length; i++) this.tanks[i].readFromNBT(data, "t" + i);
 	}

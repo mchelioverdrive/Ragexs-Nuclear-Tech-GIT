@@ -36,17 +36,22 @@ import net.minecraft.item.ItemStack;
 public class CombinationRecipes extends SerializableRecipe {
 
 	private static HashMap<Object, Pair<ItemStack, FluidStack>> recipes = new HashMap();
+	private static HashMap<Object, com.hbm.realsim.ProcessRecipe> physical = new HashMap();
+	private static void balanced(Object key, Pair<ItemStack, FluidStack> preview, com.hbm.realsim.ProcessRecipe bill) {
+		recipes.put(key, preview); physical.put(key, bill);
+	}
 
 	@Override
 	public void registerDefaults() {
-		recipes.put(COAL.gem(),		new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.COAL), new FluidStack(Fluids.COALCREOSOTE, 100)));
-		recipes.put(COAL.dust(),	new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.COAL), new FluidStack(Fluids.COALCREOSOTE, 100)));
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.briquette, EnumBriquetteType.COAL)), new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.COAL), new FluidStack(Fluids.COALCREOSOTE, 150)));
-
-		recipes.put(LIGNITE.gem(),										new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.LIGNITE), new FluidStack(Fluids.COALCREOSOTE, 50)));
-		recipes.put(LIGNITE.dust(),										new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.LIGNITE), new FluidStack(Fluids.COALCREOSOTE, 50)));
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.briquette, EnumBriquetteType.LIGNITE)), new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.LIGNITE), new FluidStack(Fluids.COALCREOSOTE, 100)));
-
+		balanced(COAL.gem(), new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.COAL), new FluidStack(Fluids.COALCREOSOTE, 1)), com.hbm.realsim.ChemicalFuelProcesses.cokeOven("COAL_ITEM"));
+		balanced(COAL.dust(), new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.COAL), new FluidStack(Fluids.COALCREOSOTE, 1)), com.hbm.realsim.ChemicalFuelProcesses.cokeOven("COAL_ITEM"));
+		balanced(new ComparableStack(DictFrame.fromOne(ModItems.briquette, EnumBriquetteType.COAL)), new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.COAL), new FluidStack(Fluids.COALCREOSOTE, 1)), com.hbm.realsim.ChemicalFuelProcesses.cokeOven("COAL_BRIQUETTE_ITEM"));
+		balanced(LIGNITE.gem(), new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.LIGNITE), new FluidStack(Fluids.COALCREOSOTE, 1)), com.hbm.realsim.ChemicalFuelProcesses.cokeOven("LIGNITE_ITEM"));
+		balanced(LIGNITE.dust(), new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.LIGNITE), new FluidStack(Fluids.COALCREOSOTE, 1)), com.hbm.realsim.ChemicalFuelProcesses.cokeOven("LIGNITE_ITEM"));
+		balanced(new ComparableStack(DictFrame.fromOne(ModItems.briquette, EnumBriquetteType.LIGNITE)), new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.LIGNITE), new FluidStack(Fluids.COALCREOSOTE, 1)), com.hbm.realsim.ChemicalFuelProcesses.cokeOven("LIGNITE_BRIQUETTE_ITEM"));
+		balanced(KEY_LOG, new Pair(new ItemStack(Items.coal, 1, 1), new FluidStack(Fluids.WOODOIL, 1)), com.hbm.realsim.ChemicalFuelProcesses.woodCokeOven("WOOD_LOG"));
+		balanced(KEY_SAPLING, new Pair(DictFrame.fromOne(ModItems.powder_ash, EnumAshType.WOOD), new FluidStack(Fluids.WOODOIL, 1)), com.hbm.realsim.ChemicalFuelProcesses.woodCokeOven("SAPLING_ITEM"));
+		balanced(new ComparableStack(DictFrame.fromOne(ModItems.briquette, EnumBriquetteType.WOOD)), new Pair(new ItemStack(Items.coal, 1, 1), new FluidStack(Fluids.WOODOIL, 1)), com.hbm.realsim.ChemicalFuelProcesses.woodCokeOven("WOOD_BRIQUETTE_ITEM"));
 		recipes.put(CHLOROCALCITE.dust(),						new Pair(new ItemStack(ModItems.powder_calcium), new FluidStack(Fluids.CHLORINE, 250)));
 		recipes.put(MOLYSITE.dust(),							new Pair(new ItemStack(Items.iron_ingot), new FluidStack(Fluids.CHLORINE, 250)));
 		recipes.put(CINNABAR.crystal(),							new Pair(new ItemStack(ModItems.sulfur), new FluidStack(Fluids.MERCURY, 100)));
@@ -57,15 +62,11 @@ public class CombinationRecipes extends SerializableRecipe {
 		recipes.put(NA.dust(),									new Pair(null, new FluidStack(Fluids.SODIUM, 100)));
 		recipes.put(LIMESTONE.dust(),							new Pair(new ItemStack(ModItems.powder_calcium), new FluidStack(Fluids.CARBONDIOXIDE, 50)));
 
-		recipes.put(KEY_LOG,		new Pair(new ItemStack(Items.coal, 1 ,1),							new FluidStack(Fluids.WOODOIL, 250)));
-		recipes.put(KEY_SAPLING,	new Pair(DictFrame.fromOne(ModItems.powder_ash, EnumAshType.WOOD),	new FluidStack(Fluids.WOODOIL, 50)));
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.briquette, EnumBriquetteType.WOOD)), new Pair(new ItemStack(Items.coal, 1 ,1),	new FluidStack(Fluids.WOODOIL, 500)));
 
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.CRUDE)),	new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), null));
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.CRACK)),	new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), null));
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.COAL)),		new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.COAL), null));
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.WOOD)),		new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.COAL), null));
-		recipes.put(new ComparableStack(Items.reeds), new Pair(new ItemStack(Items.sugar, 2), new FluidStack(Fluids.ETHANOL, 50)));
+		balanced(new ComparableStack(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.CRUDE)), new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), new FluidStack(Fluids.OIL_COKER, 1)), com.hbm.realsim.ChemicalFuelProcesses.tarCoking("TAR_CRUDE_ITEM"));
+		balanced(new ComparableStack(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.CRACK)), new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.PETROLEUM), new FluidStack(Fluids.OIL_COKER, 1)), com.hbm.realsim.ChemicalFuelProcesses.tarCoking("TAR_CRACK_ITEM"));
+		balanced(new ComparableStack(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.COAL)), new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.COAL), new FluidStack(Fluids.COALCREOSOTE, 1)), com.hbm.realsim.ChemicalFuelProcesses.tarCoking("TAR_COAL_ITEM"));
+		balanced(new ComparableStack(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.WOOD)), new Pair(DictFrame.fromOne(ModItems.coke, EnumCokeType.COAL), new FluidStack(Fluids.WOODOIL, 1)), com.hbm.realsim.ChemicalFuelProcesses.tarCoking("TAR_WOOD_ITEM"));
 		recipes.put(new ComparableStack(Blocks.clay), new Pair(new ItemStack(Blocks.brick_block, 1), null));
 
 		for(BedrockOreType type : BedrockOreType.values()) {
@@ -101,6 +102,14 @@ public class CombinationRecipes extends SerializableRecipe {
 
 		return null;
 	}
+	public static com.hbm.realsim.ProcessRecipe getPhysical(ItemStack stack) {
+		if(stack == null || stack.getItem() == null) return null;
+		ComparableStack key = new ComparableStack(stack.getItem(), 1, stack.getItemDamage());
+		com.hbm.realsim.ProcessRecipe bill = physical.get(key);
+		if(bill != null) return bill;
+		for(String name : key.getDictKeys()) if(physical.containsKey(name)) return physical.get(name);
+		return null;
+	}
 
 	public static HashMap getRecipes() {
 
@@ -109,6 +118,22 @@ public class CombinationRecipes extends SerializableRecipe {
 		for(Entry<Object, Pair<ItemStack, FluidStack>> entry : CombinationRecipes.recipes.entrySet()) {
 			Object key = entry.getKey();
 			Pair<ItemStack, FluidStack> val = entry.getValue();
+			com.hbm.realsim.ProcessRecipe bill = physical.get(key);
+			if(bill != null) {
+				AStack input = key instanceof String ? new OreDictStack((String) key, 10) : ((ComparableStack) key).copy();
+				input.stacksize = 10;
+				java.util.ArrayList<ItemStack> shown = new java.util.ArrayList<ItemStack>();
+				for(int i = 0; i < bill.outputs.length; i++) {
+					if(bill.outputs[i].startsWith("VENT_")) continue;
+					int quantity = (int) (bill.productMass[i] * 10L / com.hbm.realsim.PhysicalRegistry.get(bill.outputs[i]).massUnits);
+					if(quantity <= 0) continue;
+					if(com.hbm.realsim.PhysicalRegistry.get(bill.outputs[i]).phase == com.hbm.realsim.PhysicalState.Phase.SOLID)
+						shown.add(com.hbm.realsim.ProcessMachine.solid(bill.outputs[i], quantity));
+					else shown.add(ItemFluidIcon.make(Fluids.fromName(bill.outputs[i]), quantity));
+				}
+				recipes.put(input, shown.toArray(new ItemStack[shown.size()]));
+				continue;
+			}
 			Object o = key instanceof String ? new OreDictStack((String) key) : key;
 
 			if(val.getKey() != null && val.getValue() != null) {
@@ -143,11 +168,16 @@ public class CombinationRecipes extends SerializableRecipe {
 		if(obj.has("fluid")) fluid = this.readFluidStack(obj.get("fluid").getAsJsonArray());
 		if(obj.has("output")) out = this.readItemStack(obj.get("output").getAsJsonArray());
 
-		if(in instanceof ComparableStack) {
-			recipes.put(((ComparableStack) in).makeSingular(), new Pair(out, fluid));
-		} else if(in instanceof OreDictStack) {
-			recipes.put(((OreDictStack) in).name, new Pair(out, fluid));
-		}
+		Object key = in instanceof ComparableStack ? ((ComparableStack) in).makeSingular() : in instanceof OreDictStack ? ((OreDictStack) in).name : null;
+		if(key == null) return;
+		if(obj.has("physical")) {
+			com.hbm.realsim.ProcessRecipe bill = com.hbm.realsim.PetroleumProcesses.read(obj);
+			if(bill.workQuanta != 0 || bill.heatQuanta > (long) bill.duration * 20000L || bill.inputs.length != 0 || bill.solidCount != 1)
+				throw new IllegalArgumentException("Coke oven physical bill exceeds its heat-only 200 kW rating");
+			physical.put(key, bill);
+		} else if(physical.containsKey(key) || fluid != null && (fluid.type == Fluids.COALCREOSOTE || fluid.type == Fluids.OIL_COKER || fluid.type == Fluids.WOODOIL))
+			throw new IllegalArgumentException("Coal/tar coke-oven JSON requires a physical bill");
+		recipes.put(key, new Pair(out, fluid));
 	}
 
 	@Override
@@ -172,10 +202,12 @@ public class CombinationRecipes extends SerializableRecipe {
 			writer.name("fluid");
 			this.writeFluidStack(fluid, writer);
 		}
+		if(physical.containsKey(in)) com.hbm.realsim.PetroleumProcesses.write(physical.get(in), writer);
 	}
 
 	@Override
 	public void deleteRecipes() {
 		recipes.clear();
+		physical.clear();
 	}
 }

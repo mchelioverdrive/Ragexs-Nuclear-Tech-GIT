@@ -78,7 +78,8 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	private DirPos[] cachedConnectionPositions;
 
 
-	public long energyQuanta;
+	public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
+    public long energyQuanta;
 	public static final long maxPower = 100000;
 	public int progress;
 	public int maxProgress = 100;
@@ -594,6 +595,19 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	private void settleProgressThrough(long target) {
 		if(runtimeSettling || lastAccountingTick == Long.MIN_VALUE || target <= lastAccountingTick) return;
 		long cursor = lastAccountingTick;
+        if(physicalBatch.active() || cachedRecipe != null && cachedRecipe.physicalBill != null) {
+            runtimeSettling = true; runtimeEnergyMutation = true; this.beginMachineFluidMutation();
+            try {
+                int before = physicalBatch.ticks();
+                com.hbm.realsim.ProcessMachine.step(this, physicalBatch, cachedRecipe == null ? null : cachedRecipe.physicalBill,
+                    new FluidTank[] {tanks[0], tanks[1]}, new FluidTank[] {tanks[2], tanks[3]}, slots, 13, 16, 5, 8);
+                isProgressing = before != physicalBatch.ticks(); runtimeActive = isProgressing;
+                progress = physicalBatch.ticks(); maxProgress = physicalBatch.active() ? physicalBatch.recipe().duration : cachedRecipe == null ? 1 : cachedRecipe.getDuration();
+                this.observeItems(); this.observeTanks(); this.refreshEligibility();
+                this.markNetworkDirty();
+            } finally { this.endMachineFluidMutation(); runtimeSettling = false; runtimeEnergyMutation = false; }
+            lastAccountingTick = target; observedPower = energyQuanta; return;
+        }
 		if(!runtimeActive || cachedRecipe == null) {
 			lastAccountingTick = target;
 			if(progress != 0 || isProgressing) { progress = 0; isProgressing = false; this.markDirty(); this.markNetworkDirty(); }
@@ -674,6 +688,13 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 
 	private void scheduleNextBoundary(long now) {
 		this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_CHEMPLANT);
+        if(physicalBatch.active() || cachedRecipe != null && cachedRecipe.physicalBill != null) {
+            if(cachedEligible || physicalBatch.active()) { nextRuntimeTick = now + 1L; this.scheduleMachineTransition(nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_CHEMPLANT); }
+            else nextRuntimeTick = -1L;
+            if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+            else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
+            return;
+        }
 		long cost = (cachedRecipe == null ? EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts) : cachedRecipe.costPerTick(EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts)));
 		if(runtimeActive && cachedEligible && cachedRecipe != null && energyQuanta >= cost) {
 			int duration = cachedRecipe.durationAtSpeed(speed);
@@ -710,6 +731,12 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	}
 
 	private void refreshEligibility() {
+        if(physicalBatch.active() || cachedRecipe != null && cachedRecipe.physicalBill != null) {
+            com.hbm.realsim.ProcessMachine.configure(physicalBatch, cachedRecipe == null ? null : cachedRecipe.physicalBill, new FluidTank[] {tanks[2], tanks[3]});
+            needsInputTransfer = !physicalBatch.active() && !hasRequiredItems(cachedRecipe);
+            cachedEligible = physicalBatch.active() || com.hbm.realsim.ProcessMachine.inputsReady(cachedRecipe.physicalBill, new FluidTank[] {tanks[0], tanks[1]}, slots, 13, 16);
+            this.observeTanks(); return;
+        }
 		if(this.cachedRecipe != null) this.setupTanks(this.cachedRecipe);
 		this.needsInputTransfer = this.cachedRecipe != null && !this.hasRequiredItems(this.cachedRecipe);
 		this.cachedEligible = this.cachedRecipe != null && this.hasRequiredFluids(this.cachedRecipe) && this.hasSpaceForFluids(this.cachedRecipe) && !this.needsInputTransfer && this.hasSpaceForItems(this.cachedRecipe);
@@ -801,6 +828,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
+        physicalBatch.read(nbt);
 		super.readFromNBT(nbt);
 
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
@@ -821,6 +849,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+        physicalBatch.write(nbt);
 		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 

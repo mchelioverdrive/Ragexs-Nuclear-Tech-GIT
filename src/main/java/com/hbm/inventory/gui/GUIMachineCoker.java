@@ -33,8 +33,10 @@ public class GUIMachineCoker extends GuiInfoContainer {
 
 		refinery.tanks[0].renderTankInfo(this, x, y, guiLeft + 35, guiTop + 18, 16, 52);
 		refinery.tanks[1].renderTankInfo(this, x, y, guiLeft + 125, guiTop + 18, 16, 52);
+        refinery.tanks[2].renderTankInfo(this, x, y, guiLeft + 145, guiTop + 18, 8, 52);
+        refinery.tanks[3].renderTankInfo(this, x, y, guiLeft + 157, guiTop + 18, 8, 52);
 		
-		this.drawCustomInfoStat(x, y, guiLeft + 60, guiTop + 45, 54, 7, x, y, new String[] { ThermalUnits.formatThermalEnergyPair(refinery.progress, refinery.processTime) });
+		this.drawCustomInfoStat(x, y, guiLeft + 60, guiTop + 45, 54, 7, x, y, new String[] { "Batch: " + refinery.progress * 100 / refinery.processTime + "%" });
 		this.drawCustomInfoStat(x, y, guiLeft + 60, guiTop + 54, 54, 7, x, y, new String[] { ThermalUnits.formatThermalEnergyPair(refinery.heat, refinery.maxHeat) });
 	}
 	
@@ -60,5 +62,7 @@ public class GUIMachineCoker extends GuiInfoContainer {
 		
 		refinery.tanks[0].renderTank(guiLeft + 35, guiTop + 70, this.zLevel, 16, 52);
 		refinery.tanks[1].renderTank(guiLeft + 125, guiTop + 70, this.zLevel, 16, 52);
+        refinery.tanks[2].renderTank(guiLeft + 145, guiTop + 70, this.zLevel, 8, 52);
+        refinery.tanks[3].renderTank(guiLeft + 157, guiTop + 70, this.zLevel, 8, 52);
 	}
 }

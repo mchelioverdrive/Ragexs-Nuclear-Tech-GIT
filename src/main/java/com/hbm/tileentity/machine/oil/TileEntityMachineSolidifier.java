@@ -41,7 +41,8 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
-	public long energyQuanta;
+	public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
+    public long energyQuanta;
 	public static final long maxPower = 100000;
 	public static final int usageBase = 500;
 	public int usage;
@@ -129,6 +130,14 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
 		if(lastProgressTick == Long.MIN_VALUE || target <= lastProgressTick) return;
 		long elapsed = target - lastProgressTick;
 		lastProgressTick = target;
+        com.hbm.realsim.ProcessRecipe bill = SolidificationRecipes.getPhysical(tank.getTankType());
+        if(physicalBatch.active() || bill != null) {
+            runtimeEnergyMutation = true; this.beginMachineFluidMutation();
+            try { com.hbm.realsim.ProcessMachine.step(this, physicalBatch, bill, new FluidTank[] {tank}, new FluidTank[] {}, slots, 0, -1, 0, 0); }
+            finally { this.endMachineFluidMutation(); runtimeEnergyMutation = false; }
+            progress = physicalBatch.ticks(); processTime = physicalBatch.active() ? physicalBatch.recipe().duration : bill == null ? 100 : bill.duration;
+            runtimeActive = physicalBatch.active(); this.markNetworkDirty(); return;
+        }
 		if(runtimeMaterialEligible) runtimeMaterialEligible = this.canProcessMaterials();
 		if(!runtimeMaterialEligible || !this.hasOperatingPower()) {
 			if(progress != 0 || runtimeActive) { progress = 0; runtimeActive = false; this.markDirty(); this.markNetworkDirty(); }
@@ -205,6 +214,9 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
 	}
 
 	private boolean canProcessMaterials() {
+        com.hbm.realsim.ProcessRecipe bill = SolidificationRecipes.getPhysical(tank.getTankType());
+        if(physicalBatch.active()) return true;
+        if(bill != null) return tank.getFill() > 0 && com.hbm.realsim.ProcessMachine.outputReady(physicalBatch, bill, new FluidTank[] {}, slots, 0, 0);
 		this.resolveCachedRecipe();
 		if(cachedRecipe == null || cachedRecipe.getKey() > tank.getFill()) return false;
 		ItemStack output = cachedRecipe.getValue();
@@ -229,6 +241,13 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
 	}
 
 	private void evaluateAndSchedule(long now) {
+        if(physicalBatch.active() || SolidificationRecipes.getPhysical(tank.getTankType()) != null) {
+            if(this.canProcessMaterials()) this.scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+            else this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+            if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+            else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
+            return;
+        }
 		this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
 		if(runtimeMaterialEligible && this.hasOperatingPower()) {
 			runtimeActive = true;
@@ -328,6 +347,7 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
 	}
 	
 	public void process() {
+        if(physicalBatch.active() || SolidificationRecipes.getPhysical(tank.getTankType()) != null) { this.settleProgressThrough(worldObj.getTotalWorldTime()); return; }
 		
 		this.setStoredEnergyQuanta(this.energyQuanta - usage);
 		
@@ -365,6 +385,7 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
+        physicalBatch.read(nbt);
 		super.readFromNBT(nbt);
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.progress = nbt.getInteger("progress");
@@ -380,6 +401,7 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+        physicalBatch.write(nbt);
 		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 		EnergyUnits.writeEnergyQuanta(nbt, this.energyQuanta);

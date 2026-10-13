@@ -10,7 +10,7 @@ public final class MassRemainder {
     public long remaining(String output) { Long value = mass.get(output); return value == null ? 0 : value; }
     public long preview(String output, long inputMass) {
         long unit = PhysicalRegistry.get(output).massUnits;
-        if(unit <= 0 || inputMass < 0) throw new IllegalArgumentException("Unresolved conversion mass");
+        if(!PhysicalRegistry.get(output).isResolved() || inputMass < 0) throw new IllegalArgumentException("Unresolved conversion mass");
         return Math.addExact(remaining(output), inputMass) / unit;
     }
     /** Input must be removed before committing. */
@@ -34,7 +34,10 @@ public final class MassRemainder {
         NBTTagCompound entries = tag.getCompoundTag("mass");
         for(Object key : entries.func_150296_c()) {
             String name = (String) key; long amount = entries.getLong(name), unit = PhysicalRegistry.get(name).massUnits;
-            if(amount >= 0 && amount < unit) mass.put(name, amount);
+            // An assay revision can make previously fractional owned mass exceed the new unit.
+            // Keep the literal mass; the next capacity-checked conversion releases it normally.
+            if(!PhysicalRegistry.get(name).isResolved() || amount < 0) throw new IllegalStateException("Invalid stored mass ownership: " + name);
+            mass.put(name, amount);
         }
     }
 }

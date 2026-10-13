@@ -1,139 +1,67 @@
 package com.hbm.inventory.recipes;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
-
+import java.util.HashMap;
 import com.hbm.inventory.FluidStack;
-import com.hbm.inventory.OreDictManager.DictFrame;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
-import com.hbm.items.ItemEnums.EnumTarType;
-import com.hbm.items.ModItems;
-import com.hbm.items.machine.ItemFluidIcon;
-import com.hbm.util.ItemStackUtil;
-import com.hbm.util.Tuple.Quartet;
+import com.hbm.inventory.recipes.loader.PetroleumRecipeLoader;
+import com.hbm.realsim.PetroleumProcesses;
+import com.hbm.realsim.ProcessRecipe;
+import com.hbm.realsim.PhysicalRegistry;
 import com.hbm.util.Tuple.Quintet;
-
 import net.minecraft.item.ItemStack;
 
+/** Atmospheric and vacuum bills, with a read-only legacy display adapter. */
 public class RefineryRecipes {
+    /** Historical volume-table constants retained for external source compatibility only. */
+    @Deprecated public static final int oil_frac_heavy = 50;
+    @Deprecated public static final int oil_frac_naph = 25;
+    @Deprecated public static final int oil_frac_light = 15;
+    @Deprecated public static final int oil_frac_petro = 10;
+    @Deprecated public static final int crack_frac_naph = 40;
+    @Deprecated public static final int crack_frac_light = 30;
+    @Deprecated public static final int crack_frac_aroma = 15;
+    @Deprecated public static final int crack_frac_unsat = 15;
+    @Deprecated public static final int oilds_frac_heavy = 30;
+    @Deprecated public static final int oilds_frac_naph = 35;
+    @Deprecated public static final int oilds_frac_light = 20;
+    @Deprecated public static final int oilds_frac_unsat = 15;
+    @Deprecated public static final int crackds_frac_naph = 35;
+    @Deprecated public static final int crackds_frac_light = 35;
+    @Deprecated public static final int crackds_frac_aroma = 15;
+    @Deprecated public static final int crackds_frac_unsat = 15;
+    @Deprecated public static final int vac_frac_heavy = 40;
+    @Deprecated public static final int vac_frac_reform = 25;
+    @Deprecated public static final int vac_frac_light = 20;
+    @Deprecated public static final int vac_frac_sour = 15;
 
-	/// fractions in percent ///
-	public static final int oil_frac_heavy = 50;
-	public static final int oil_frac_naph = 25;
-	public static final int oil_frac_light = 15;
-	public static final int oil_frac_petro = 10;
-	public static final int crack_frac_naph = 40;
-	public static final int crack_frac_light = 30;
-	public static final int crack_frac_aroma = 15;
-	public static final int crack_frac_unsat = 15;
-
-	public static final int oilds_frac_heavy = 30;
-	public static final int oilds_frac_naph = 35;
-	public static final int oilds_frac_light = 20;
-	public static final int oilds_frac_unsat = 15;
-	public static final int crackds_frac_naph = 35;
-	public static final int crackds_frac_light = 35;
-	public static final int crackds_frac_aroma = 15;
-	public static final int crackds_frac_unsat = 15;
-
-	public static final int vac_frac_heavy = 40;
-	public static final int vac_frac_reform = 25;
-	public static final int vac_frac_light = 20;
-	public static final int vac_frac_sour = 15;
-
-	private static Map<FluidType, Quintet<FluidStack, FluidStack, FluidStack, FluidStack, ItemStack>> refinery = new HashMap();
-	private static Map<FluidType, Quartet<FluidStack, FluidStack, FluidStack, FluidStack>> vacuum = new HashMap();
-	
-	public static HashMap<Object, Object[]> getRefineryRecipe() {
-
-		HashMap<Object, Object[]> recipes = new HashMap<Object, Object[]>();
-		
-		for(Entry<FluidType, Quintet<FluidStack, FluidStack, FluidStack, FluidStack, ItemStack>> recipe : refinery.entrySet()) {
-			
-			Quintet<FluidStack, FluidStack, FluidStack, FluidStack, ItemStack> fluids = recipe.getValue();
-			
-			recipes.put(ItemFluidIcon.make(recipe.getKey(), 1000),
-					new ItemStack[] {
-							ItemFluidIcon.make(fluids.getV().type, fluids.getV().fill * 10),
-							ItemFluidIcon.make(fluids.getW().type, fluids.getW().fill * 10),
-							ItemFluidIcon.make(fluids.getX().type, fluids.getX().fill * 10),
-							ItemFluidIcon.make(fluids.getY().type, fluids.getY().fill * 10),
-							ItemStackUtil.carefulCopy(fluids.getZ()) });
-		}
-		
-		return recipes;
-	}
-	
-	public static HashMap getVacuumRecipe() {
-
-		HashMap<Object, Object[]> recipes = new HashMap<Object, Object[]>();
-		
-		for(Entry<FluidType, Quartet<FluidStack, FluidStack, FluidStack, FluidStack>> recipe : vacuum.entrySet()) {
-			
-			Quartet<FluidStack, FluidStack, FluidStack, FluidStack> fluids = recipe.getValue();
-			
-			recipes.put(ItemFluidIcon.make(recipe.getKey(), 1000, 2),
-					new ItemStack[] {
-							ItemFluidIcon.make(fluids.getW().type, fluids.getW().fill * 10),
-							ItemFluidIcon.make(fluids.getX().type, fluids.getX().fill * 10),
-							ItemFluidIcon.make(fluids.getY().type, fluids.getY().fill * 10),
-							ItemFluidIcon.make(fluids.getZ().type, fluids.getZ().fill * 10) });
-		}
-		
-		return recipes;
-	}
-	
-	public static void registerRefinery() {
-		refinery.put(Fluids.HOTOIL, new Quintet(
-				new FluidStack(Fluids.HEAVYOIL,		oil_frac_heavy),
-				new FluidStack(Fluids.NAPHTHA,		oil_frac_naph),
-				new FluidStack(Fluids.LIGHTOIL,		oil_frac_light),
-				new FluidStack(Fluids.PETROLEUM,	oil_frac_petro),
-				new ItemStack(ModItems.sulfur)
-				));
-		refinery.put(Fluids.HOTCRACKOIL, new Quintet(
-				new FluidStack(Fluids.NAPHTHA_CRACK,	crack_frac_naph),
-				new FluidStack(Fluids.LIGHTOIL_CRACK,	crack_frac_light),
-				new FluidStack(Fluids.AROMATICS,		crack_frac_aroma),
-				new FluidStack(Fluids.UNSATURATEDS,		crack_frac_unsat),
-				DictFrame.fromOne(ModItems.oil_tar, EnumTarType.CRACK)
-				));
-		refinery.put(Fluids.HOTOIL_DS, new Quintet(
-				new FluidStack(Fluids.HEAVYOIL,		oilds_frac_heavy),
-				new FluidStack(Fluids.NAPHTHA_DS,	oilds_frac_naph),
-				new FluidStack(Fluids.LIGHTOIL_DS,	oilds_frac_light),
-				new FluidStack(Fluids.UNSATURATEDS,	oilds_frac_unsat),
-				DictFrame.fromOne(ModItems.oil_tar, EnumTarType.PARAFFIN)
-				));
-		refinery.put(Fluids.HOTCRACKOIL_DS, new Quintet(
-				new FluidStack(Fluids.NAPHTHA_DS,		crackds_frac_naph),
-				new FluidStack(Fluids.LIGHTOIL_DS,		crackds_frac_light),
-				new FluidStack(Fluids.AROMATICS,		crackds_frac_aroma),
-				new FluidStack(Fluids.UNSATURATEDS,		crackds_frac_unsat),
-				DictFrame.fromOne(ModItems.oil_tar, EnumTarType.PARAFFIN)
-				));
-
-		vacuum.put(Fluids.OIL, new Quartet(
-				new FluidStack(Fluids.HEAVYOIL_VACUUM,	vac_frac_heavy),
-				new FluidStack(Fluids.REFORMATE,		vac_frac_reform),
-				new FluidStack(Fluids.LIGHTOIL_VACUUM,	vac_frac_light),
-				new FluidStack(Fluids.SOURGAS,			vac_frac_sour)
-				));
-		vacuum.put(Fluids.OIL_DS, new Quartet(
-				new FluidStack(Fluids.HEAVYOIL_VACUUM,	vac_frac_heavy),
-				new FluidStack(Fluids.REFORMATE,		vac_frac_reform),
-				new FluidStack(Fluids.LIGHTOIL_VACUUM,	vac_frac_light),
-				new FluidStack(Fluids.REFORMGAS,		vac_frac_sour)
-				));
-	}
-	
-	public static Quintet<FluidStack, FluidStack, FluidStack, FluidStack, ItemStack> getRefinery(FluidType oil) {
-		return refinery.get(oil);
-	}
-	
-	public static Quartet<FluidStack, FluidStack, FluidStack, FluidStack> getVacuum(FluidType oil) {
-		return vacuum.get(oil);
-	}
+    private static Map<String, ProcessRecipe> refinery = PetroleumProcesses.defaults("refinery");
+    private static Map<String, ProcessRecipe> vacuum = PetroleumProcesses.defaults("vacuum");
+    public static void registerRefinery() {
+        refinery = PetroleumProcesses.defaults("refinery"); vacuum = PetroleumProcesses.defaults("vacuum");
+    }
+    public static ProcessRecipe getPhysical(FluidType type) { return refinery.get(type.getName()); }
+    public static ProcessRecipe getPhysicalVacuum(FluidType type) { return vacuum.get(type.getName()); }
+    public static HashMap getRefineryRecipe() {
+        HashMap result = PetroleumRecipeLoader.display(refinery);
+        HashMap padded = new HashMap();
+        for(Object key : result.keySet()) {
+            ItemStack[] out = (ItemStack[]) result.get(key); ItemStack[] five = new ItemStack[5];
+            System.arraycopy(out, 0, five, 0, out.length); padded.put(key, five);
+        }
+        return padded;
+    }
+    public static HashMap getVacuumRecipe() { return PetroleumRecipeLoader.display(vacuum); }
+    public static Quintet<FluidStack, FluidStack, FluidStack, FluidStack, ItemStack> getRefinery(FluidType type) {
+        ProcessRecipe bill = getPhysical(type); if(bill == null) return null;
+        FluidStack[] display = new FluidStack[4];
+        for(int i = 0; i < 4; i++) display[i] = new FluidStack(Fluids.fromName(bill.outputs[i]),
+                (int) (bill.productMass[i] * 100L / PhysicalRegistry.get(bill.outputs[i]).massUnits));
+        return new Quintet<FluidStack, FluidStack, FluidStack, FluidStack, ItemStack>(display[0], display[1], display[2], display[3], null);
+    }
+    @Deprecated public static com.hbm.util.Tuple.Quartet<FluidStack, FluidStack, FluidStack, FluidStack> getVacuum(FluidType input) {
+        ProcessRecipe bill = getPhysicalVacuum(input); if(bill == null) return null;
+        return new com.hbm.util.Tuple.Quartet<FluidStack, FluidStack, FluidStack, FluidStack>(PetroleumRecipeLoader.preview(bill, 0, 100), PetroleumRecipeLoader.preview(bill, 1, 100), PetroleumRecipeLoader.preview(bill, 2, 100), PetroleumRecipeLoader.preview(bill, 3, 100));
+    }
 }

@@ -38,7 +38,8 @@ import net.minecraft.tileentity.TileEntity;
  */
 public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidUser, IGUIProvider {
 
-	public long energyQuanta;
+	private final com.hbm.realsim.ProcessBatch[] physicalBatches;
+    public long energyQuanta;
 	public int[] progress;
 	public int[] maxProgress;
 	public boolean isProgressing;
@@ -76,6 +77,8 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		int count = this.getRecipeCount();
 
 		progress = new int[count];
+        physicalBatches = new com.hbm.realsim.ProcessBatch[count];
+        for(int i = 0; i < count; i++) physicalBatches[i] = new com.hbm.realsim.ProcessBatch();
 		maxProgress = new int[count];
 		cachedTemplateStacks = new ItemStack[count];
 		cachedTemplateMeta = new int[count];
@@ -223,6 +226,24 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		return before != this.energyQuanta;
 	}
 
+    protected final boolean isPhysicalLane(int lane) {
+        return physicalBatches[lane].active() || cachedRecipes[lane] != null && cachedRecipes[lane].physicalBill != null;
+    }
+    private void settlePhysicalLanes() {
+        for(int step = 0; step < getRecipeCount(); step++) {
+            int lane = (int) ((worldObj.getTotalWorldTime() % getRecipeCount() + step) % getRecipeCount());
+            ChemRecipe selected = this.resolveRecipe(lane);
+            com.hbm.realsim.ProcessBatch batch = physicalBatches[lane];
+            if(!batch.active() && (selected == null || selected.physicalBill == null)) continue;
+            int[] slotsForLane = getCachedSlotIndicesFromIndex(lane);
+            boolean changed = com.hbm.realsim.ProcessMachine.step(this, batch, selected == null ? null : selected.physicalBill,
+                new FluidTank[] {tanks[lane * 4], tanks[lane * 4 + 1]}, new FluidTank[] {tanks[lane * 4 + 2], tanks[lane * 4 + 3]}, slots,
+                slotsForLane[0], slotsForLane[1], slotsForLane[2], slotsForLane[3]);
+            progress[lane] = batch.ticks(); maxProgress[lane] = batch.active() ? batch.recipe().duration : selected == null ? 1 : selected.getDuration();
+            if(changed) { this.markDirty(); this.markNetworkDirty(); }
+        }
+    }
+
 	private void settleLanesThrough(long target) {
 		if(runtimeSettling || runtimeLastAccountingTick == Long.MIN_VALUE || target <= runtimeLastAccountingTick) return;
 		long cursor = runtimeLastAccountingTick;
@@ -232,19 +253,20 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		runtimeSettling = true;
 		runtimeEnergyMutation = true;
 		try {
+            this.settlePhysicalLanes();
 			while(cursor < target) {
 				int active = 0;
 				long activeCost = 0;
 				int nearestCompletion = Integer.MAX_VALUE;
 				boolean oxygenDependent = false;
-				for(int i = 0; i < getRecipeCount(); i++) if(runtimeLaneActive[i]) {
+				for(int i = 0; i < getRecipeCount(); i++) if(runtimeLaneActive[i] && !isPhysicalLane(i)) {
 					if(!this.canProcess(i)) {
 						progress[i] = 0;
 						runtimeLaneActive[i] = false;
 						changed = true;
-					} else maxProgress[i] = cachedRecipes[i].durationAtSpeed(speed);
+					} else if(cachedRecipes[i] != null) maxProgress[i] = cachedRecipes[i].durationAtSpeed(speed);
 				}
-				for(int i = 0; i < getRecipeCount(); i++) if(runtimeLaneActive[i] && runtimeMaterialEligible[i]) {
+				for(int i = 0; i < getRecipeCount(); i++) if(runtimeLaneActive[i] && runtimeMaterialEligible[i] && !isPhysicalLane(i)) {
 					ChemRecipe recipe = cachedRecipes[i];
 					if(recipe == null) continue;
 					active++;
@@ -257,7 +279,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 				if(activeCost > 0L) wholeTicks = Math.min(wholeTicks, energyQuanta / activeCost);
 				wholeTicks = Math.min(wholeTicks, this.additionalResourceFullTicks(active));
 				if(wholeTicks > 0L) {
-					for(int i = 0; i < getRecipeCount(); i++) if(runtimeLaneActive[i] && runtimeMaterialEligible[i]) progress[i] += (int) wholeTicks;
+					for(int i = 0; i < getRecipeCount(); i++) if(runtimeLaneActive[i] && runtimeMaterialEligible[i] && !isPhysicalLane(i)) progress[i] += (int) wholeTicks;
 					if(activeCost > 0L) this.setStoredEnergyQuanta(energyQuanta - wholeTicks * activeCost);
 					this.consumeAdditionalResources(wholeTicks, active);
 					cursor += wholeTicks;
@@ -268,7 +290,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 				cursor++;
 				boolean sharedMutation = false;
 				for(int i = 0; i < getRecipeCount(); i++) {
-					if(!runtimeLaneActive[i]) continue;
+					if(!runtimeLaneActive[i] || isPhysicalLane(i)) continue;
 					if(sharedMutation) runtimeMaterialEligible[i] = this.canProcess(i);
 					ChemRecipe recipe = cachedRecipes[i];
 					if(!runtimeMaterialEligible[i] || recipe == null) {
@@ -317,6 +339,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		boolean oxygenDependent = false;
 		for(int i = 0; i < getRecipeCount(); i++) {
 			this.cancelMachineTransition(TASK_CHEMPLANT_LANE, i);
+            if(isPhysicalLane(i)) { if(this.canProcess(i)) this.scheduleMachineTransition(now + 1L, TASK_CHEMPLANT_LANE, i); continue; }
 			if(runtimeLaneActive[i]) {
 				ChemRecipe recipe = cachedRecipes[i];
 				if(recipe == null) continue;
@@ -332,7 +355,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 			long availableResourceTicks = this.additionalResourceFullTicks(active);
 			long resourceBoundary = availableResourceTicks == Long.MAX_VALUE ? Long.MAX_VALUE : availableResourceTicks + 1L;
 			long due = now + Math.max(1L, Math.min(oxygenDependent ? 1L : nearestCompletion, Math.min(powerBoundary, resourceBoundary)));
-			for(int i = 0; i < getRecipeCount(); i++) if(runtimeLaneActive[i]) this.scheduleMachineTransition(due, TASK_CHEMPLANT_LANE, i);
+			for(int i = 0; i < getRecipeCount(); i++) if(runtimeLaneActive[i] && !isPhysicalLane(i)) this.scheduleMachineTransition(due, TASK_CHEMPLANT_LANE, i);
 		}
 		if(this.hasRuntimeBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_CHEMPLANT_BATTERY, TASK_SLOT_BATTERY);
 		else this.cancelMachineTransition(TASK_CHEMPLANT_BATTERY, TASK_SLOT_BATTERY);
@@ -372,6 +395,14 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	}
 
 	protected boolean canProcess(int index) {
+        ChemRecipe physical = this.resolveRecipe(index);
+        if(physicalBatches[index].active()) return true;
+        if(physical != null && physical.physicalBill != null) {
+            runtimeMaterialEligible[index] = true;
+            runtimeHasRequiredItems[index] = hasRequiredItems(physical, index);
+            int[] indices = getCachedSlotIndicesFromIndex(index);
+            return com.hbm.realsim.ProcessMachine.inputsReady(physical.physicalBill, new FluidTank[] {tanks[index * 4], tanks[index * 4 + 1]}, slots, indices[0], indices[1]);
+        }
 		return this.canProcessResources(index) && energyQuanta >= cachedRecipes[index].costPerTick(EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts));
 	}
 
@@ -431,6 +462,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	}
 
 	protected void process(int index) {
+        if(isPhysicalLane(index)) { this.settleLanesThrough(worldObj.getTotalWorldTime()); return; }
 
 		this.setStoredEnergyQuanta(this.energyQuanta - this.resolveRecipe(index).costPerTick(EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts)));
 		this.progress[index]++;
@@ -911,6 +943,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.progress = nbt.getIntArray("progress");
+        for(int i = 0; i < physicalBatches.length; i++) physicalBatches[i].read(nbt.getCompoundTag("realSimLane" + i));
 		if(!nbt.hasKey("realSimProcessVersion")) for(int i = 0; i < progress.length && i < getRecipeCount(); i++) { int slot = getTemplateIndex(i); if(slots[slot] != null && slots[slot].getItemDamage() == 58) progress[i] = 0; }
 
 		if(progress.length == 0)
@@ -928,6 +961,9 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setIntArray("progress", progress);
+        for(int i = 0; i < physicalBatches.length; i++) {
+            NBTTagCompound lane = new NBTTagCompound(); physicalBatches[i].write(lane); nbt.setTag("realSimLane" + i, lane);
+        }
 		nbt.setInteger("realSimProcessVersion", 1);
 
 		for(int i = 0; i < tanks.length; i++) {

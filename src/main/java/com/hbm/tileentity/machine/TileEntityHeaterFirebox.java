@@ -17,7 +17,7 @@ import net.minecraft.inventory.Container;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 
-public class TileEntityHeaterFirebox extends TileEntityFireboxBase implements IConfigurableMachine {
+public class TileEntityHeaterFirebox extends TileEntityFireboxBase implements IConfigurableMachine, api.hbm.tile.IProcessHeatSource {
 
 	public static int baseHeat = 100;
 	public static double timeMult = 1D;
@@ -106,4 +106,5 @@ public class TileEntityHeaterFirebox extends TileEntityFireboxBase implements IC
 		burnModule.writeConfig(writer);
 		writer.endObject();
 	}
+    @Override public int getProcessTemperatureC() { return 900; }
 }

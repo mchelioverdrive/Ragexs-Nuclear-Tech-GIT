@@ -206,3 +206,172 @@ Whole-chain caution: chemical product energy above feed may be supplied by H2, e
 | [RBMK first power](RBMK_FIRST_POWER_DEPENDENCIES.md), [RealSim Production](REALSIM_PRODUCTION.md) | Preserve hand metallurgy→non-nuclear source→general fabrication/chemistry→heavy/precision hardware→NU reactor and full steam return→enrichment/high throughput. Existing heavy eligibility/balancing tooling is proposed, not implemented. |
 
 The inventory establishes process ownership and correction direction, not a finished per-item recipe rebalance. Missing assay, specific job work, reactor calibration and loaded-world throughput remain named gates. No broad machine multiplier or hidden nuclear bootstrap dependency is authorized by this document.
+
+
+## Phase 5C implementation — authoritative process ownership (2026-10-13)
+
+Petroleum runtime recipes are mass bills owned by the existing recipe loaders. `PetroleumProcesses` and `ChemicalFuelProcesses` construct defaults; `ProcessRecipe` validates and snapshots a bill; `ProcessBatch` owns removed feed and paid work/heat; `ProcessMachine` commits through the actual tanks, inventory, power and calibrated heater on the owning server thread. There is no alternate petroleum volume engine beneath the new interface. Old tuple getters and historical percentage constants are metadata compatibility adapters only; machine controllers call `getPhysical` or `physicalBill`.
+
+| Existing machine | Decision and physical boundary |
+| --- | --- |
+| Oil well /pumpjack | Keep geology, depletion, drilling and upgrades; cap oil extraction at 6/24 L/min using a persisted extraction timestamp. Stock electrical auxiliaries are 1/3 kWe while running; afterburner debits owned gas through the existing fuel account. |
+| Crude heating boiler | Reserve 1 L and pay 561 kJ to reach the declared hot state; 24 L/min material ceiling. Legacy heat-exchanger crude heating is disabled until that exchanger has a calibrated heat ledger. Other boiler paths remain deferred. |
+| Atmospheric refinery | Heated separation, 24 L/min, 163 kJ/L thermal plus 36 kJ/L electrical; no free sulfur item. Existing damage/fire/repair and storage remain. |
+| Fraction tower | Heated separation, 12 L/min, 5 kJ/kg auxiliaries; light/coker feed 440 kJ/kg at 200 C, heavy 740 at 350 C, smear 640 at 300 C. Stack passes feed; base supplies heat, each working stage needs electrical connection. Unrelated nominal egg/mineral splits remain. |
+| Vacuum refinery | Heavy-residue separation at 400 C, declared internal 0.1 bar absolute; 12 L/min, 1360 kJ/kg heat plus 40 kJ/kg vacuum/pump work. Saved class-2 crude inlet has a paid cold-feed boundary bill terminating in the canonical atmospheric cuts. |
+| Catalytic cracker | Feed-class mass yields, coke coproduct, 12 L/min; 2 MJ/kg heat (kerosene 3.1), 50 kJ/kg auxiliaries, 500 C. Old steam stocks remain drainable but cannot substitute for calibrated heat. Added coke inventory access and power ports. |
+| Hydrotreater | 12 L/min, approximately 0.5 wt% added H2 gas at class 1; 98% treated liquid /2% sour stream by combined mass; 400 kJ/kg heat and 100 kJ/kg auxiliaries at 350 C. Existing catalyst remains required. |
+| Catalytic reformer | 12 L/min, 94/4.5/1.5 mass% reformate/reform gas/H2; 2.6 MJ/kg heat and 100 kJ/kg auxiliaries at 500 C. Existing catalyst remains required. |
+| Delayed coker | 6 L/min; accounts oil, gas, coke and wet-feed water; 3.3 MJ/kg heat and 20 kJ/kg auxiliaries, 500 C. Added gas/water stores while preserving old inlet/oil slots. |
+| Coke oven /combination furnace | Retain multipurpose furnace. Coal/lignite, logs/saplings/briquettes and four solid-tar families use owned heat-only carbonization bills at 500 C and up to 200 kWth. Mineral/clay/bedrock roasting stays on its existing nominal path. NEI shows ten-batch whole products; fractional products remain owned. |
+| Alkylation unit | Ethylene gas +liquid LPG into alkylate/reform gas; 100 C paid heat/work. Recycled catalysts/internal equipment are an adopted abstraction. |
+| Chemical Reactor, single and industrial lanes | Paid synthesis, gas recovery, fermentation, extraction, reclamation and tar melting; each physical lane is limited to 8 kWe, 100 kWth, 12 liquid L/min and 6000 standard gas L/min feed. Physical lanes bypass the industrial reactor's unrelated legacy cooling-water/spent-steam bookkeeping. |
+| Mixer /solidifier | Weighted blends and trace additive; bitumen solidification owns literal mass. Speed upgrades cannot shorten physical bills. Existing unrelated recipes retain their established path. |
+| Compressor | Refinery, reform, sour, coker and synthesis gas pressure conversions use the existing charged phase/pressure account, including decompression work. LPG separation belongs to the paid reactor. |
+
+Actual heat-limited throughput is below a material nameplate when its bill demands more than the heater delivers. With one 200 kWth source: crude heating reaches 21.390 L/min; heavy-oil vacuum 9.004 L/min; crude FCC 7.059 L/min; naphtha reforming 6.593 L/min; heavy coking 3.711 L/min. Parallel thermal trains provide additional capacity. Heater temperature is 900 C for the converted fired/electric sources; attach a qualified source directly below the machine core or its established heat proxy. A generic legacy HU store cannot pay these bills.
+
+### Review of removed or replaced recipe routes
+
+This is the disposition of the active recipe removals in this change. Replacement of a volume tuple by a physical bill is not removal of its process family. Inactive/commented auto-registration was dead code and is not an additional gameplay removal.
+
+| Previous route /what it was trying to be | Disposition and reason /future machine recommendation |
+| --- | --- |
+| Coke oven coal/lignite and briquettes →coke +50–150 L tar/item | **Retained in the same oven**, with literal coke/tar/water mass and paid heat. Old liquid yield exceeded the whole solid feed mass. |
+| Coke oven wood, saplings, wood briquettes →charcoal/ash +50–500 L bio-oil | **Retained in the same oven**, with declared feed masses, oil and explicit vapor loss. A future dedicated retort could improve recovery, without removing this multipurpose oven. |
+| Coke oven solid tar →coke | **Retained in the same oven**, returning a liquid coproduct and paid heat instead of treating all tar mass as coke. Four tar identities remain distinct. |
+| Coke oven reeds →2 sugar +50 L ethanol | Tried to combine sugar extraction and fermentation in a hot furnace; removed because even its product mass exceeded the unassayed plant feed and ethanol requires fermentation. Recommend a future sugar extractor/fermenter; sugar fermentation already exists in the reactor. |
+| Blast furnace coal +empty canister →1000 L crude | Tried to provide a coal-liquefaction shortcut; removed because metal smelting cannot account that fluid mass or hydrogen. Paid reactor coal liquefaction replaces fuel production; a dedicated coal-liquefaction train is a future improvement. |
+| Radiolysis automatically copying FCC recipes | Duplicated hydrocarbon cracking under irradiation with no distinct material/utility model; removed. FCC remains the accounted cracking owner. Other radiolysis recipes remain. |
+| RBMK outgasser coal/block →tar +syngas; coal tar →100 L coal oil | Tried to perform carbonization/liquefaction in an irradiation channel; removed the non-nuclear production route. Coke oven carbonization and reactor gasification/liquefaction supply the processes. Recommend a future dedicated gasifier/liquefier rather than an irradiation attachment. |
+| Pyro oven coal/coke +steam →syngas; biomass →syngas +charcoal | Recognizable gasification/pyrolysis, but fixed gas counts omitted water, char/ash and feed mass. Coal gasification is replaced by a paid reactor bill. Coke/biomass gasification remains a future gasifier addition requiring its own feed assay and oxidizer/water balance; it is not relabeled methane. |
+| Pyro oven coal/coke +H2 →1000 L heavy oil; heavy oil +coal →gasoline (inactive variants) | Tried to represent direct coal liquefaction/Fischer–Tropsch upgrading; active hydrogenation shortcut is replaced by the paid coal-liquid reactor bill. Inactive variants were already unregistered. A dedicated slurry hydrogenation/FT train is recommended later. |
+| Pyro oven tar →H2 +CO2 +soot; coker gas →small reform-gas output | Tried to make gas/char recovery or gas conditioning; removed because tar was unassayed, no oxygen feed supplied CO2, and nearly all coker-gas mass disappeared. Existing coke oven/coker returns material. Recommend a future steam gasifier and gas conditioning unit with explicit water/oxidizer, purge and char flows. |
+| Liquefactor tar →50–100 L bitumen; oil sand →100 L bitumen | Melting/extraction was recognizable, but merged distinct tar species and ignored input/tailings mass. Paid species-preserving tar melting and oil-sand extraction are available in the reactor. Recommend a future heated melter/oil-sand extractor if a dedicated machine is added. |
+| Liquefactor sugar/hemp →ethanol; biomass →biogas | These are biological conversion, not simple melting. Paid reactor sugar fermentation and biomass digestion replace the fuel routes. Hemp/cellulose pretreatment is a future hydrolysis/fermentation addition; its feed/yield is not invented here. |
+| Liquefactor fish/sunflower →100 L oil per item | Tried to be mechanical oil extraction. Retained as balanced reactor extraction with biomass residue; recommend a future oil press. Both oil products and both feed families remain. |
+| Mixer/chemical reactor heating oil +ethylene →lubricant | Tried to perform synthetic lubricant upgrading as a cold blend. Removed that unbalanced chemical route; smear fractionation now supplies lubricant. Recommend a future oligomerization/hydrogenation reactor with reactants and purge/catalyst accounting. |
+| Mixer fish or sunflower +ethanol →biofuel | **Both retained** as the same 80/20 volume representative triglyceride/ethanol blend, with weighted mass and LHV. |
+| Mixer fish/seed oil +wood oil →much smaller BIOFUEL output; reactor biogas +ethanol →BIOFUEL | Tried to synthesize biodiesel/bio-oil fuel, but different feeds cannot silently become the same vegetable-oil/ethanol assay and omitted large material streams. Recommend future transesterification (alcohol/glycerol) and bio-oil hydrodeoxygenation (H2/water/gas) equipment. Current declared blend is explicitly not biodiesel. |
+| Mixer coal oil +steam →syngas | Tried to be steam reforming; removed from a cold mixer. Reactor gasification/SMR cover the supported chemistry; future heavy-liquid reformer needs its own coke and gas balance. |
+| Naphtha →gasoline; naphtha +rhenium →gasoline | Tried to be catalytic reforming/finishing. Reforming is now paid by the reformer; equal-mass reformate finishing is retained. The second gasoline template supplies explicit syngas/H2 FT synthesis. Dedicated stabilizer/FT equipment is a future refinement. |
+| Leaded fuels 10000 L +additive →12000 L | **Retained with trace additive mass**, removing the unexplained 20% bulk creation. TEL synthesis is a declared reduced Pb/ethylene/H2 reaction with recycled internal intermediates. |
+| Reclamation, LPG recovery, methanol, SMR, sour-gas treatment, coal liquids | **Retained as revised physical bills**, with every purge/water/char/sulfur product accounted. LPG recovery returns methane rather than deleting it. |
+| Fractionator coal oil →crude +tar; coal tar →coal oil +bitumen | Tried to split coal liquids by boiling range, but the chosen product LHVs cannot make those old two-product tuples pure separations. Coal oil goes through hydrotreating; wet coal tar through the coker. Recommend a future coal-tar distillation/dewatering unit with water/light-tail outlets. |
+| Fractionator reformate →aromatics +xylene | Tried to extract aromatics, but both chosen products have lower LHV than the feed and the two-output tuple omitted a raffinate/light tail. Recommend a future aromatics extraction unit with the extra material outlet; gasoline/FCC uses remain. |
+| Fractionator METHYLENE →methane +CO2 | Tried to split an undefined biological gas/liquid mixture; input phase/composition is unresolved. Recommend a future gas cleanup separator after defining that assay. Egg/mineral separation recipes remain nominal and available. |
+| FCC wet wood oil →heating oil/aromatics | Tried to upgrade oxygenated pyrolysis liquid without paying hydrogen or returning water. Recommend a future bio-oil hydrotreater/hydrodeoxygenation unit; wood oil remains usable fuel and chemistry feed. |
+| FCC Tekto atmosphere →methanol/aromatics; elbow grease →mercury/sour gas | Unresolved planetary/fictional feeds cannot enter the physical hydrocarbon ledger. Recommend a later atmospheric processor or explicitly fictional chemistry converter with declared source/material budgets. Existing stocks are preserved. |
+| Reformer cholesterol →reform gas/H2/aromatics | Tried to perform biological hydrocarbon upgrading without an assay, oxygen/water or residues. Recommend a future biomass hydro-upgrader; cholesterol remains an unrelated nominal chemistry product. |
+| Solidifier crude/heavy/coal/wood oils →tar; lubricant →paraffin | Tried to be residue concentration or wax separation, but discarded 50–1000 L of mass into one item and merged distinct products. Bitumen freezing remains balanced. Recommend future dewatering/residue or wax-separation equipment with liquid/gas returns and a paraffin assay. |
+| Solidifier automatic liquids →generic solid fuel by burn time | Tried to make fuel pellets by energy rather than material; removed because it had no pellet/binder mass assay and could confer old burner multipliers. Recommend a future pelletizer/solid-fuel press with explicit material, binder and moisture outputs. Unrelated solidifier recipes remain. |
+| Old refinery-gas compressor tuple | **Retained through the existing charged pressure conversion**, now applied to all declared process gases. No gas/liquid-liter substitution. |
+
+### Released bill matrix
+
+Every row is a batch equation: paid input counts @network pressure class →product masses in kg. Liquid input counts are reference L; gas counts are dry standard-equivalent L; solid counts are full declared items. The total input kg is the sum of the mass-closed products (display rounded to six decimals); validation uses exact integer mass units. Whole inventory outputs are emitted only after completion, with each species' remainder retained. `VENT_` is an explicit environmental loss, never a saleable product or heat allowance.
+
+The energy equation is chemical input +sensible input +paid electrical work +paid heat =chemical product +sensible product +rejected heat. Rejected heat is currently a declared loss, not a recoverable export. Nameplate work/heat powers below are batch averages at 20 TPS; insufficient supply pauses the batch.
+
+| Bill | Paid inputs | Input kg | Products kg | Seconds | kWe | kWth | C | Rejected MJ |
+| --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |
+| `heat:OIL` | OIL=1@0 | 0.85 | HOTOIL=0.850000000 | 2.5 | 0 | 224.4 | 350 | 0 |
+| `heat:OIL_DS` | OIL_DS=1@0 | 0.85 | HOTOIL_DS=0.850000000 | 2.5 | 0 | 224.4 | 350 | 0 |
+| `heat:CRACKOIL` | CRACKOIL=1@0 | 0.85 | HOTCRACKOIL=0.850000000 | 2.5 | 0 | 224.4 | 350 | 0 |
+| `heat:CRACKOIL_DS` | CRACKOIL_DS=1@0 | 0.85 | HOTCRACKOIL_DS=0.850000000 | 2.5 | 0 | 224.4 | 350 | 0 |
+| `refinery:HOTOIL` | HOTOIL=1@0 | 0.85 | HEAVYOIL=0.387989182; NAPHTHA=0.147510818; LIGHTOIL=0.297500000; PETROLEUM=0.017000000 | 2.5 | 14.4 | 65.2 | 350 | 0.76 |
+| `refinery:HOTOIL_DS` | HOTOIL_DS=1@0 | 0.85 | HEAVYOIL=0.387989182; NAPHTHA_DS=0.147510818; LIGHTOIL_DS=0.297500000; PETROLEUM=0.017000000 | 2.5 | 14.4 | 65.2 | 350 | 0.76 |
+| `refinery:HOTCRACKOIL` | HOTCRACKOIL=1@0 | 0.85 | NAPHTHA_CRACK=0.127500000; LIGHTOIL_CRACK=0.212500000; AROMATICS=0.455265152; UNSATURATEDS=0.054734848 | 2.5 | 14.4 | 65.2 | 350 | 0.76 |
+| `refinery:HOTCRACKOIL_DS` | HOTCRACKOIL_DS=1@0 | 0.85 | NAPHTHA_CRACK=0.127500000; LIGHTOIL_CRACK=0.212500000; AROMATICS=0.455265152; UNSATURATEDS=0.054734848 | 2.5 | 14.4 | 65.2 | 350 | 0.76 |
+| `fraction:LIGHTOIL` | LIGHTOIL=1@0 | 0.8 | DIESEL=0.440000000; KEROSENE=0.360000000 | 5 | 0.8 | 70.4 | 200 | 0.356 |
+| `fraction:LIGHTOIL_DS` | LIGHTOIL_DS=1@0 | 0.8 | DIESEL=0.440000000; KEROSENE=0.360000000 | 5 | 0.8 | 70.4 | 200 | 0.356 |
+| `fraction:LIGHTOIL_CRACK` | LIGHTOIL_CRACK=1@0 | 0.8 | DIESEL_CRACK=0.440000000; KEROSENE=0.360000000 | 5 | 0.8 | 70.4 | 200 | 0.356 |
+| `fraction:LIGHTOIL_VACUUM` | LIGHTOIL_VACUUM=1@0 | 0.8 | DIESEL=0.440000000; KEROSENE=0.360000000 | 5 | 0.8 | 70.4 | 200 | 0.356 |
+| `fraction:HEAVYOIL` | HEAVYOIL=1@0 | 0.98 | HEATINGOIL=0.196000000; BITUMEN=0.784000000 | 5 | 0.98 | 145.04 | 350 | 0.52626 |
+| `fraction:HEAVYOIL_VACUUM` | HEAVYOIL_VACUUM=1@0 | 0.98 | HEATINGOIL_VACUUM=0.196000000; BITUMEN=0.784000000 | 5 | 0.98 | 145.04 | 350 | 0.52626 |
+| `fraction:SMEAR` | SMEAR=1@0 | 0.98 | LUBRICANT=0.490000000; BITUMEN=0.490000000 | 5 | 0.98 | 125.44 | 300 | 0.5047 |
+| `fraction:OIL_COKER` | OIL_COKER=1@0 | 0.833 | HEATINGOIL=0.833000000 | 5 | 0.833 | 73.304 | 200 | 0.370685 |
+| `fraction:NAPHTHA_COKER` | NAPHTHA_COKER=1@0 | 0.7 | NAPHTHA_CRACK=0.700000000 | 5 | 0.7 | 61.6 | 200 | 0.3115 |
+| `vacuum:HEAVYOIL` | HEAVYOIL=1@0 | 0.98 | HEAVYOIL_VACUUM=0.490000000; SMEAR=0.245000000; LIGHTOIL_VACUUM=0.048457278; LUBRICANT=0.196542722 | 5 | 7.84 | 266.56 | 400 | 1.372 |
+| `vacuum:OIL` | OIL=1@2 | 0.85 | HEAVYOIL=0.387989182; NAPHTHA=0.147510818; LIGHTOIL=0.297500000; PETROLEUM=0.017000000 | 5 | 6.8 | 200 | 400 | 1.034 |
+| `vacuum:OIL_DS` | OIL_DS=1@2 | 0.85 | HEAVYOIL=0.387989182; NAPHTHA_DS=0.147510818; LIGHTOIL_DS=0.297500000; PETROLEUM=0.017000000 | 5 | 6.8 | 200 | 400 | 1.034 |
+| `crack:OIL` | OIL=1@0 | 0.85 | CRACKOIL=0.722500000; PETROLEUM=0.085000000; PETCOKE_ITEM=0.042500000 | 5 | 8.5 | 340 | 500 | 1.672472 |
+| `crack:OIL_DS` | OIL_DS=1@0 | 0.85 | CRACKOIL_DS=0.722500000; PETROLEUM=0.085000000; PETCOKE_ITEM=0.042500000 | 5 | 8.5 | 340 | 500 | 1.672472 |
+| `crack:NAPHTHA` | NAPHTHA=1@0 | 0.7 | NAPHTHA_CRACK=0.595000000; PETROLEUM=0.070000000; PETCOKE_ITEM=0.035000000 | 5 | 7 | 280 | 500 | 1.60833 |
+| `crack:NAPHTHA_DS` | NAPHTHA_DS=1@0 | 0.7 | NAPHTHA_CRACK=0.595000000; PETROLEUM=0.070000000; PETCOKE_ITEM=0.035000000 | 5 | 7 | 280 | 500 | 1.60833 |
+| `crack:NAPHTHA_COKER` | NAPHTHA_COKER=1@0 | 0.7 | NAPHTHA_CRACK=0.595000000; PETROLEUM=0.070000000; PETCOKE_ITEM=0.035000000 | 5 | 7 | 280 | 500 | 1.60833 |
+| `crack:HEAVYOIL` | HEAVYOIL=1@0 | 0.98 | CRACKOIL=0.686000000; PETROLEUM=0.049000000; PETCOKE_ITEM=0.245000000 | 5 | 9.8 | 392 | 500 | 2.267531 |
+| `crack:HEAVYOIL_VACUUM` | HEAVYOIL_VACUUM=1@0 | 0.98 | CRACKOIL=0.686000000; PETROLEUM=0.049000000; PETCOKE_ITEM=0.245000000 | 5 | 9.8 | 392 | 500 | 2.267531 |
+| `crack:BITUMEN` | BITUMEN=1@0 | 0.99 | CRACKOIL=0.693000000; PETROLEUM=0.049500000; PETCOKE_ITEM=0.247500000 | 5 | 9.9 | 396 | 500 | 1.904569 |
+| `crack:SMEAR` | SMEAR=1@0 | 0.98 | CRACKOIL=0.686000000; PETROLEUM=0.049000000; PETCOKE_ITEM=0.245000000 | 5 | 9.8 | 392 | 500 | 1.851031 |
+| `crack:RECLAIMED` | RECLAIMED=1@0 | 0.9 | CRACKOIL=0.630000000; PETROLEUM=0.045000000; PETCOKE_ITEM=0.225000000 | 5 | 9 | 360 | 500 | 1.902426 |
+| `crack:DIESEL` | DIESEL=1@0 | 0.833 | KEROSENE=0.666400000; PETROLEUM=0.124950000; PETCOKE_ITEM=0.041650000 | 5 | 8.33 | 333.2 | 500 | 0.984124 |
+| `crack:DIESEL_CRACK` | DIESEL_CRACK=1@0 | 0.833 | KEROSENE=0.666400000; PETROLEUM=0.124950000; PETCOKE_ITEM=0.041650000 | 5 | 8.33 | 333.2 | 500 | 0.984124 |
+| `crack:DIESEL_REFORM` | DIESEL_REFORM=1@0 | 0.8227 | KEROSENE=0.658160000; PETROLEUM=0.123405000; PETCOKE_ITEM=0.041135000 | 5 | 8.227 | 329.08 | 500 | 1.066855 |
+| `crack:DIESEL_CRACK_REFORM` | DIESEL_CRACK_REFORM=1@0 | 0.8227 | KEROSENE=0.658160000; PETROLEUM=0.123405000; PETCOKE_ITEM=0.041135000 | 5 | 8.227 | 329.08 | 500 | 1.066855 |
+| `crack:HEATINGOIL` | HEATINGOIL=1@0 | 0.833 | KEROSENE=0.666400000; PETROLEUM=0.124950000; PETCOKE_ITEM=0.041650000 | 5 | 8.33 | 333.2 | 500 | 0.984124 |
+| `crack:HEATINGOIL_VACUUM` | HEATINGOIL_VACUUM=1@0 | 0.833 | KEROSENE=0.666400000; PETROLEUM=0.124950000; PETCOKE_ITEM=0.041650000 | 5 | 8.33 | 333.2 | 500 | 0.984124 |
+| `crack:KEROSENE` | KEROSENE=1@0 | 0.8 | UNSATURATEDS=0.640000000; PETROLEUM=0.080000000; PETCOKE_ITEM=0.080000000 | 5 | 8 | 496 | 500 | 0.910091 |
+| `crack:XYLENE` | XYLENE=1@0 | 0.86 | AROMATICS=0.602000000; PETROLEUM=0.043000000; PETCOKE_ITEM=0.215000000 | 5 | 8.6 | 344 | 500 | 3.357274 |
+| `crack:REFORMATE` | REFORMATE=1@0 | 0.73 | UNSATURATEDS=0.511000000; REFORMGAS=0.036500000; PETCOKE_ITEM=0.182500000 | 5 | 7.3 | 292 | 500 | 1.674554 |
+| `crack:LPG` | LPG=1@0 | 0.52 | UNSATURATEDS=0.416000000; PETROLEUM=0.078000000; PETCOKE_ITEM=0.026000000 | 5 | 5.2 | 208 | 500 | 1.435939 |
+| `hydro:OIL` | OIL=1@0; HYDROGEN_GAS=48@1 | 0.854261 | OIL_DS=0.837175377; SOURGAS=0.017085212 | 5 | 17 | 68 | 350 | 0.737683 |
+| `hydro:CRACKOIL` | CRACKOIL=1@0; HYDROGEN_GAS=48@1 | 0.854261 | CRACKOIL_DS=0.837175377; SOURGAS=0.017085212 | 5 | 17 | 68 | 350 | 0.737683 |
+| `hydro:NAPHTHA` | NAPHTHA=1@0; HYDROGEN_GAS=40@1 | 0.70355 | NAPHTHA_DS=0.689479481; SOURGAS=0.014071010 | 5 | 14 | 56 | 350 | 0.633892 |
+| `hydro:DIESEL_CRACK` | DIESEL_CRACK=1@0; HYDROGEN_GAS=47@1 | 0.837172 | DIESEL=0.820428390; SOURGAS=0.016743437 | 5 | 16.66 | 66.64 | 350 | 0.731454 |
+| `hydro:DIESEL_CRACK_REFORM` | DIESEL_CRACK_REFORM=1@0; HYDROGEN_GAS=47@1 | 0.826872 | DIESEL_REFORM=0.810334390; SOURGAS=0.016537437 | 5 | 16.454 | 65.816 | 350 | 0.727805 |
+| `hydro:COALOIL` | COALOIL=1@0; HYDROGEN_GAS=48@1 | 0.854261 | OIL_DS=0.837175377; SOURGAS=0.017085212 | 5 | 17 | 68 | 350 | 0.737683 |
+| `reform:NAPHTHA` | NAPHTHA=1@0 | 0.7 | REFORMATE=0.658000000; REFORMGAS=0.031500000; HYDROGEN_GAS=0.010500000 | 5 | 14 | 364 | 500 | 0.809627 |
+| `reform:NAPHTHA_DS` | NAPHTHA_DS=1@0 | 0.7 | REFORMATE=0.658000000; REFORMGAS=0.031500000; HYDROGEN_GAS=0.010500000 | 5 | 14 | 364 | 500 | 0.809627 |
+| `reform:NAPHTHA_CRACK` | NAPHTHA_CRACK=1@0 | 0.7 | REFORMATE=0.658000000; REFORMGAS=0.031500000; HYDROGEN_GAS=0.010500000 | 5 | 14 | 364 | 500 | 0.809627 |
+| `reform:NAPHTHA_COKER` | NAPHTHA_COKER=1@0 | 0.7 | REFORMATE=0.658000000; REFORMGAS=0.031500000; HYDROGEN_GAS=0.010500000 | 5 | 14 | 364 | 500 | 0.809627 |
+| `coker:HEAVYOIL` | HEAVYOIL=1@0 | 0.98 | OIL_COKER=0.735000000; GAS_COKER=0.049000000; PETCOKE_ITEM=0.196000000 | 10 | 1.96 | 323.4 | 500 | 1.481612 |
+| `coker:HEAVYOIL_VACUUM` | HEAVYOIL_VACUUM=1@0 | 0.98 | OIL_COKER=0.735000000; GAS_COKER=0.049000000; PETCOKE_ITEM=0.196000000 | 10 | 1.96 | 323.4 | 500 | 1.481612 |
+| `coker:SMEAR` | SMEAR=1@0 | 0.98 | OIL_COKER=0.735000000; GAS_COKER=0.049000000; PETCOKE_ITEM=0.196000000 | 10 | 1.96 | 323.4 | 500 | 1.065112 |
+| `coker:BITUMEN` | BITUMEN=1@0 | 0.99 | OIL_COKER=0.742500000; GAS_COKER=0.049500000; PETCOKE_ITEM=0.198000000 | 10 | 1.98 | 326.7 | 500 | 1.110631 |
+| `coker:RECLAIMED` | RECLAIMED=1@0 | 0.9 | NAPHTHA_COKER=0.630000000; GAS_COKER=0.027000000; WATER=0.045000000; PETCOKE_ITEM=0.198000000 | 10 | 1.8 | 297 | 500 | 2.830598 |
+| `coker:COALCREOSOTE` | COALCREOSOTE=1@0 | 1.1 | NAPHTHA_COKER=0.440000000; GAS_COKER=0.055000000; WATER=0.385000000; PETCOKE_ITEM=0.220000000 | 10 | 2.2 | 363 | 500 | 3.918034 |
+| `alkyl:UNSATURATEDS` | UNSATURATEDS=1000@0; LPG=1@0 | 1.755223 | REFORMATE=1.720118991; REFORMGAS=0.035104469 | 20 | 2.5 | 5 | 100 | 4.817472 |
+| `chem:methanol` | SYNGAS=1200@1; HYDROGEN_GAS=570@1 | 0.843848 | METHANOL=0.804185646; SYNGAS=0.039662692 | 75 | 8 | 1.067 | 250 | 3.895096 |
+| `chem:synthetic_gasoline` | SYNGAS=1124@1; HYDROGEN_GAS=562@1 | 0.792899 | GASOLINE=0.347097792; WATER=0.445801037 | 120 | 8 | 1.667 | 250 | 4.754427 |
+| `chem:coal_COALGAS` | HYDROGEN_GAS=5138@1; COAL_ITEM=8 | 8.456061 | COALGAS=5.605633643; WATER=0.450398890; CHAR_ITEM=1.600000000; ASH_ITEM=0.800000000; VENT_HYDROGEN_GAS=0.000028029 | 4000 | 8 | 60 | 450 | 232.296326 |
+| `chem:coal_COALOIL` | HYDROGEN_GAS=5138@1; COAL_ITEM=8 | 8.456061 | COALOIL=5.605633643; WATER=0.450398890; CHAR_ITEM=1.600000000; ASH_ITEM=0.800000000; VENT_HYDROGEN_GAS=0.000028029 | 4000 | 8 | 60 | 450 | 243.507594 |
+| `chem:coal_syngas` | WATER=2@0; COAL_ITEM=1 | 3 | SYNGAS=1.499961534; WATER=1.156338327; CHAR_ITEM=0.200000000; ASH_ITEM=0.100000000; VENT_HYDROGEN_GAS=0.043700139 | 500 | 8 | 24 | 850 | 3.780786 |
+| `chem:methane_reforming` | GAS=1000@0; WATER=2@0 | 2.706374 | HYDROGEN_GAS=0.355049095; CARBONDIOXIDE=1.937805469; VENT_WATER=0.413519440 | 200 | 8 | 70 | 850 | 8.336383 |
+| `chem:lpg_recovery` | PETROLEUM=2000@0 | 2.647971 | LPG=1.941597464; GAS=0.706374004 | 500 | 8 | 0 | 20 | 4 |
+| `chem:sweetening` | SOURGAS=1000@0 | 0.7858 | GAS=0.635736603; HYDROGEN_SULFIDE=0.150063317 | 50 | 2 | 5 | 100 | 0.35 |
+| `chem:sulfur_recovery` | HYDROGEN_SULFIDE=1000@0; OXYGEN_GAS=500@0 | 2.205111 | WATER=0.793240280; SULFUR_ITEM=1.411870900 | 50 | 2 | 1 | 300 | 9.884406 |
+| `chem:biogas` | BIOMASS_ITEM=16 | 16 | BIOGAS=12.000000000; WATER=4.000000000 | 500 | 4 | 1 | 40 | 39.944231 |
+| `chem:ethanol` | SUGAR_ITEM=16 | 16 | ETHANOL=8.182858533; CARBONDIOXIDE=7.817141467 | 800 | 2 | 0.4 | 40 | 46.570294 |
+| `chem:fish_oil_extraction` | FISH_FEED_ITEM=1 | 1 | FISHOIL=0.200000000; BIOMASS_ITEM=0.800000000 | 5 | 1 | 0 | 20 | 0.005 |
+| `chem:seed_oil_extraction` | SEED_FEED_ITEM=1 | 1 | SUNFLOWEROIL=0.400000000; BIOMASS_ITEM=0.600000000 | 5 | 1 | 0 | 20 | 0.005 |
+| `chem:wood_pyrolysis` | WOOD_LOG=1 | 4 | WOODOIL=1.200000000; WATER=1.800000000; CHARCOAL_ITEM=1.000000000 | 125 | 8 | 48 | 500 | 19.5 |
+| `chem:oil_sand` | OIL_SAND_BLOCK=1 | 2000 | BITUMEN=100.000000000; SAND_BLOCK=1900.000000000 | 2000 | 5 | 100 | 150 | 184 |
+| `chem:trace_additive` | UNSATURATEDS=439@1; HYDROGEN_GAS=220@1; LEAD_ITEM=1 | 1.561791 | FUEL_ADDITIVE_ITEM=1.561025097; VENT_UNSATURATEDS=0.000696304; VENT_HYDROGEN_GAS=0.000069399 | 50 | 8 | 20 | 300 | 7.441829 |
+| `cokeoven:COAL_ITEM` | COAL_ITEM=1 | 1 | COKE_ITEM=0.700000000; COALCREOSOTE=0.220000000; VENT_WATER=0.080000000 | 10 | 0 | 200 | 500 | 1.9 |
+| `cokeoven:COAL_BRIQUETTE_ITEM` | COAL_BRIQUETTE_ITEM=1 | 1 | COKE_ITEM=0.700000000; COALCREOSOTE=0.220000000; VENT_WATER=0.080000000 | 10 | 0 | 200 | 500 | 1.9 |
+| `cokeoven:LIGNITE_ITEM` | LIGNITE_ITEM=1 | 1 | LIGNITE_COKE_ITEM=0.500000000; COALCREOSOTE=0.220000000; VENT_WATER=0.280000000 | 10 | 0 | 200 | 500 | 1.34 |
+| `cokeoven:LIGNITE_BRIQUETTE_ITEM` | LIGNITE_BRIQUETTE_ITEM=1 | 1 | LIGNITE_COKE_ITEM=0.500000000; COALCREOSOTE=0.220000000; VENT_WATER=0.280000000 | 10 | 0 | 200 | 500 | 1.34 |
+| `cokeoven:WOOD_LOG` | WOOD_LOG=1 | 4 | CHARCOAL_ITEM=1.000000000; WOODOIL=1.200000000; VENT_WATER=1.800000000 | 30 | 0 | 200 | 500 | 18.5 |
+| `cokeoven:SAPLING_ITEM` | SAPLING_ITEM=1 | 1 | WOOD_ASH_ITEM=0.100000000; WOODOIL=0.200000000; VENT_WATER=0.700000000 | 7.5 | 0 | 200 | 500 | 13.7 |
+| `cokeoven:WOOD_BRIQUETTE_ITEM` | WOOD_BRIQUETTE_ITEM=1 | 4 | CHARCOAL_ITEM=1.000000000; WOODOIL=1.200000000; VENT_WATER=1.800000000 | 30 | 0 | 200 | 500 | 18.5 |
+| `cokeoven:TAR_CRUDE_ITEM` | TAR_CRUDE_ITEM=1 | 1 | PETCOKE_ITEM=0.250000000; OIL_COKER=0.750000000 | 16.5 | 0 | 200 | 500 | 2.675 |
+| `cokeoven:TAR_CRACK_ITEM` | TAR_CRACK_ITEM=1 | 1 | PETCOKE_ITEM=0.250000000; OIL_COKER=0.750000000 | 16.5 | 0 | 200 | 500 | 5.225 |
+| `cokeoven:TAR_COAL_ITEM` | TAR_COAL_ITEM=1 | 1 | COKE_ITEM=0.250000000; COALCREOSOTE=0.750000000 | 16.5 | 0 | 200 | 500 | 3.25 |
+| `cokeoven:TAR_WOOD_ITEM` | TAR_WOOD_ITEM=1 | 1 | COKE_ITEM=0.250000000; WOODOIL=0.750000000 | 16.5 | 0 | 200 | 500 | 0.5 |
+| `chem:lubricant` | SMEAR=1@0 | 0.98 | LUBRICANT=0.490000000; BITUMEN=0.490000000 | 6.3 | 0.778 | 99.556 | 300 | 0.5047 |
+| `solidify:BITUMEN` | BITUMEN=1@0 | 0.99 | TAR_CRUDE_ITEM=0.990000000 | 5 | 1 | 0 | 20 | 0.2624 |
+| `chem:reclaimed` | SMEAR=1@0 | 0.98 | RECLAIMED=0.490000000; BITUMEN=0.490000000 | 6.3 | 0.778 | 99.556 | 300 | 0.5047 |
+| `chem:melt_TAR_CRUDE_ITEM` | TAR_CRUDE_ITEM=1 | 1 | BITUMEN=1.000000000 | 6 | 0.833 | 50 | 150 | 0.045 |
+| `chem:melt_TAR_COAL_ITEM` | TAR_COAL_ITEM=1 | 1 | COALCREOSOTE=1.000000000 | 6 | 0.833 | 50 | 150 | 0.305 |
+| `chem:melt_TAR_WOOD_ITEM` | TAR_WOOD_ITEM=1 | 1 | WOODOIL=1.000000000 | 6 | 0.833 | 50 | 150 | 0.305 |
+| `chem:melt_TAR_CRACK_ITEM` | TAR_CRACK_ITEM=1 | 1 | CRACKOIL=1.000000000 | 6 | 0.833 | 50 | 150 | 0.305 |
+| `chem:PETROIL` | RECLAIMED=4@0; LUBRICANT=1@0 | 4.49 | PETROIL=4.490000000 | 25 | 1 | 0 | 20 | 0.025 |
+| `chem:BIOFUEL` | SUNFLOWEROIL=4@0; ETHANOL=1@0 | 4.469 | BIOFUEL=4.469000000 | 25 | 1 | 0 | 20 | 0.025 |
+| `chem:BIOFUEL` | FISHOIL=4@0; ETHANOL=1@0 | 4.469 | BIOFUEL=4.469000000 | 25 | 1 | 0 | 20 | 0.025 |
+| `chem:DIESEL_REFORM` | DIESEL=9@0; REFORMATE=1@0 | 8.227 | DIESEL_REFORM=8.227000000 | 50 | 1 | 0 | 20 | 0.05 |
+| `chem:DIESEL_CRACK_REFORM` | DIESEL_CRACK=9@0; REFORMATE=1@0 | 8.227 | DIESEL_CRACK_REFORM=8.227000000 | 50 | 1 | 0 | 20 | 0.05 |
+| `chem:KEROSENE_REFORM` | KEROSENE=9@0; REFORMATE=1@0 | 7.93 | KEROSENE_REFORM=7.930000000 | 50 | 1 | 0 | 20 | 0.05 |
+| `chem:leaded_PETROIL` | PETROIL=10000@0; FUEL_ADDITIVE_ITEM=1 | 8980.01 | PETROIL_LEADED=8980.010000000 | 50000 | 1 | 0 | 20 | 50 |
+| `chem:leaded_GASOLINE` | GASOLINE=10000@0; FUEL_ADDITIVE_ITEM=1 | 7300.01 | GASOLINE_LEADED=7300.010000000 | 50000 | 1 | 0 | 20 | 50 |
+| `chem:leaded_COALGAS` | COALGAS=10000@0; FUEL_ADDITIVE_ITEM=1 | 7300.01 | COALGAS_LEADED=7300.010000000 | 50000 | 1 | 0 | 20 | 50 |

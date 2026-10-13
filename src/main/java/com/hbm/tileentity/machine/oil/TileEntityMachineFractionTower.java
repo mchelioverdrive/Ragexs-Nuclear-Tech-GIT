@@ -25,7 +25,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 
-public class TileEntityMachineFractionTower extends TileEntityLoadedBase implements IBufPacketReceiver, IFluidStandardTransceiver, IFluidCopiable {
+public class TileEntityMachineFractionTower extends TileEntityLoadedBase implements api.hbm.energymk2.IEnergyReceiverMK2, IBufPacketReceiver, IFluidStandardTransceiver, IFluidCopiable {
 	private static final int TASK_PROCESS = 1;
 	private boolean runtimeFluidMutation;
 	private boolean runtimeInitialized;
@@ -39,7 +39,9 @@ public class TileEntityMachineFractionTower extends TileEntityLoadedBase impleme
 		}
 	};
 	
-	public FluidTank[] tanks;
+	public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
+    public long energyQuanta;
+    public FluidTank[] tanks;
 	
 	public TileEntityMachineFractionTower() {
 		tanks = new FluidTank[3];
@@ -100,20 +102,10 @@ public class TileEntityMachineFractionTower extends TileEntityLoadedBase impleme
 	}
 
 	private void evaluateAndSchedule(long now) {
-		boolean outputFlow = tanks[1].getFill() > 0 || tanks[2].getFill() > 0;
-		boolean inputReady = tanks[0].getFill() > 0;
-		TileEntity upper = stackPresent ? worldObj.getTileEntity(xCoord, yCoord + 3, zCoord) : null;
-		boolean upstreamReady = upper instanceof TileEntityMachineFractionTower &&
-			(((TileEntityMachineFractionTower) upper).tanks[1].getFill() > 0 || ((TileEntityMachineFractionTower) upper).tanks[2].getFill() > 0);
-		boolean fractionReady = false;
-		if(inputReady && !stackPresent && tanks[0].getFill() >= 100) {
-			Pair<FluidStack, FluidStack> recipe = FractionRecipes.getFractions(tanks[0].getTankType());
-			fractionReady = recipe != null && this.hasSpace(recipe.getKey().fill, recipe.getValue().fill);
-		}
-		if(outputFlow || upstreamReady || (stackPresent && inputReady) || fractionReady) {
-			long nextFraction = now + (10L - now % 10L);
-			this.scheduleMachineTransition(outputFlow || upstreamReady || stackPresent ? now + 1L : nextFraction, TASK_PROCESS, 0);
-		} else this.cancelMachineTransition(TASK_PROCESS, 0);
+        boolean work = physicalBatch.active() || FractionRecipes.getPhysical(tanks[0].getTankType()) != null && tanks[0].getFill() > 0 || FractionRecipes.getNominal(tanks[0].getTankType()) != null && tanks[0].getFill() >= 100;
+        boolean flow = tanks[1].getFill() > 0 || tanks[2].getFill() > 0 || stackPresent;
+        if(work || flow) this.scheduleMachineTransition(now + 1L, TASK_PROCESS, 0);
+        else this.cancelMachineTransition(TASK_PROCESS, 0);
 	}
 
 	private void notifyLowerTower() {
@@ -146,7 +138,7 @@ public class TileEntityMachineFractionTower extends TileEntityLoadedBase impleme
 				
 				//make types equal
 				for(int i = 0; i < 3; i++) {
-					frac.tanks[i].setTankType(tanks[i].getTankType());
+					if(!frac.tanks[i].configureForRecipe(tanks[i].getTankType(), tanks[i].getPressure())) return;
 				}
 				
 				//calculate transfer
@@ -163,8 +155,7 @@ public class TileEntityMachineFractionTower extends TileEntityLoadedBase impleme
 				frac.tanks[2].setFill(frac.tanks[2].getFill() - right);
 			}
 			
-			if(worldObj.getTotalWorldTime() % 10 == 0)
-				fractionate();
+			fractionate();
 
 			this.sendFluid();
 	}
@@ -184,6 +175,7 @@ public class TileEntityMachineFractionTower extends TileEntityLoadedBase impleme
 	private void updateConnections() {
 		
 		for(DirPos pos : runtimeConnections) {
+            this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
 	}
@@ -206,34 +198,24 @@ public class TileEntityMachineFractionTower extends TileEntityLoadedBase impleme
 	}
 	
 	private void setupTanks() {
-		
-		Pair<FluidStack, FluidStack> quart = FractionRecipes.getFractions(tanks[0].getTankType());
-		
-		if(quart != null) {
-			tanks[1].setTankType(quart.getKey().type);
-			tanks[2].setTankType(quart.getValue().type);
-		} else {
-			tanks[0].setTankType(Fluids.NONE);
-			tanks[1].setTankType(Fluids.NONE);
-			tanks[2].setTankType(Fluids.NONE);
-		}
+        Pair<FluidStack, FluidStack> nominal = FractionRecipes.getNominal(tanks[0].getTankType());
+        if(!physicalBatch.active() && nominal != null) {
+            tanks[1].configureForRecipe(nominal.getKey().type, 0); tanks[2].configureForRecipe(nominal.getValue().type, 0); return;
+        }
+        com.hbm.realsim.ProcessMachine.configure(physicalBatch, FractionRecipes.getPhysical(tanks[0].getTankType()), new FluidTank[] {tanks[1], tanks[2]});
 	}
 	
 	private void fractionate() {
-		
-		Pair<FluidStack, FluidStack> quart = FractionRecipes.getFractions(tanks[0].getTankType());
-		
-		if(quart != null) {
-			
-			int left = quart.getKey().fill;
-			int right = quart.getValue().fill;
-			
-			if(tanks[0].getFill() >= 100 && hasSpace(left, right)) {
-				tanks[0].setFill(tanks[0].getFill() - 100);
-				tanks[1].setFill(tanks[1].getFill() + left);
-				tanks[2].setFill(tanks[2].getFill() + right);
-			}
-		}
+        if(stackPresent && !physicalBatch.active()) return;
+        Pair<FluidStack, FluidStack> nominal = FractionRecipes.getNominal(tanks[0].getTankType());
+        if(!physicalBatch.active() && nominal != null) {
+            if(worldObj.getTotalWorldTime() % 10L == 0L && tanks[0].getFill() >= 100
+                    && tanks[1].getTankType() == nominal.getKey().type && tanks[2].getTankType() == nominal.getValue().type && hasSpace(nominal.getKey().fill, nominal.getValue().fill)) {
+                tanks[0].setFill(tanks[0].getFill() - 100); tanks[1].setFill(tanks[1].getFill() + nominal.getKey().fill); tanks[2].setFill(tanks[2].getFill() + nominal.getValue().fill);
+            }
+            return;
+        }
+        com.hbm.realsim.ProcessMachine.step(this, physicalBatch, FractionRecipes.getPhysical(tanks[0].getTankType()), new FluidTank[] {tanks[0]}, new FluidTank[] {tanks[1], tanks[2]}, null, 0, -1, 0, -1);
 	}
 	
 	private boolean hasSpace(int left, int right) {
@@ -242,6 +224,8 @@ public class TileEntityMachineFractionTower extends TileEntityLoadedBase impleme
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
+        physicalBatch.read(nbt);
+        energyQuanta = api.hbm.energymk2.EnergyUnits.readEnergyQuanta(nbt, "power");
 		super.readFromNBT(nbt);
 
 		for(int i = 0; i < 3; i++)
@@ -250,6 +234,8 @@ public class TileEntityMachineFractionTower extends TileEntityLoadedBase impleme
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+        physicalBatch.write(nbt);
+        api.hbm.energymk2.EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		super.writeToNBT(nbt);
 
 		for(int i = 0; i < 3; i++)
@@ -295,4 +281,7 @@ public class TileEntityMachineFractionTower extends TileEntityLoadedBase impleme
 	public FluidTank[] getAllTanks() {
 		return tanks;
 	}
+    @Override public long getStoredEnergyQuanta() { return energyQuanta; }
+    @Override public long getEnergyCapacityQuanta() { return 1_000_000L; }
+    @Override public void setStoredEnergyQuanta(long amount) { energyQuanta = amount; markDirty(); markMachineEnergyDirty(); }
 }

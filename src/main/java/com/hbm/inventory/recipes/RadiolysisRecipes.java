@@ -8,7 +8,6 @@ import java.util.Map.Entry;
 import com.hbm.inventory.FluidStack;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
-import com.hbm.inventory.recipes.CrackingRecipes;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemFluidIcon;
 import com.hbm.util.Tuple.Pair;
@@ -49,17 +48,9 @@ public class RadiolysisRecipes {
 	public static void registerRadiolysis() {
 		radiolysis.put(Fluids.FRESH_WATER, new Pair(new FluidStack(80, Fluids.PEROXIDE), new FluidStack(20, Fluids.HYDROGEN_GAS)));
 		
-		//automatically add cracking recipes to the radiolysis recipe list
-		//we want the numbers and types to stay consistent anyway and this will save us a lot of headache later on
-		Map<FluidType, Pair<FluidStack, FluidStack>> cracking = CrackingRecipes.getCrackingRecipes();
-		
-		if(cracking.isEmpty()) {
-			throw new IllegalStateException("RefineryRecipes.getCrackingRecipes has yielded an empty map while registering the radiolysis recipes! Either the load order is broken or cracking recipes have been removed!");
-		}
-		
-		for(Entry<FluidType, Pair<FluidStack, FluidStack>> recipe : cracking.entrySet()) {
-			radiolysis.put(recipe.getKey(), recipe.getValue());
-		}
+		// Petroleum conversion requires paid heat, auxiliaries and coke ownership.
+		// Radiation processing no longer copies those recipes into an unpaid path.
+
 	}
 	
 	public static Pair<FluidStack, FluidStack> getRadiolysis(FluidType input) {

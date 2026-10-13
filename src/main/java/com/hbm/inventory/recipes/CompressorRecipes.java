@@ -32,7 +32,7 @@ public class CompressorRecipes extends SerializableRecipe {
 		recipes.put(new Pair(Fluids.HOTSTEAM, 0), new CompressorRecipe(1_000, new FluidStack(Fluids.SUPERHOTSTEAM, 100)));
 		recipes.put(new Pair(Fluids.SUPERHOTSTEAM, 0), new CompressorRecipe(1_000, new FluidStack(Fluids.ULTRAHOTSTEAM, 100)));
 
-		recipes.put(new Pair(Fluids.PETROLEUM, 0), new CompressorRecipe(2_000, new FluidStack(Fluids.PETROLEUM, 2_000, 1), 20));
+        // Refinery/process gas compression is registered with paid physical work above.
 		// LPG recovery and blood-to-oil conversion are separation/chemical processes, not compression recipes.
 
 	}

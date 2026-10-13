@@ -59,13 +59,9 @@ public class OutgasserRecipes extends SerializableRecipe {
 
 		// This is an RBMK irradiation channel despite its legacy outgasser name; do not use it for unrelated biological conversion.
 
-		recipes.put(new OreDictStack(COAL.gem()),		new Pair(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.COAL, 1), new FluidStack(Fluids.SYNGAS, 50)));
-		recipes.put(new OreDictStack(COAL.dust()),		new Pair(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.COAL, 1), new FluidStack(Fluids.SYNGAS, 50)));
-		recipes.put(new OreDictStack(COAL.block()),		new Pair(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.COAL, 9), new FluidStack(Fluids.SYNGAS, 500)));
 
 		// C4 synthesis is available in the chemical plant; irradiating PVC must not manufacture explosives or colloid.
 
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.COAL)),	new Pair(null, new FluidStack(Fluids.COALOIL, 100)));
 		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.WAX)),	new Pair(null, new FluidStack(Fluids.RADIOSOLVENT, 100)));
 
 		//curium to californium

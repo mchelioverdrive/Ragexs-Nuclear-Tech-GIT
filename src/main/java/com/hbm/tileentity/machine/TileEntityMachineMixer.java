@@ -39,7 +39,8 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	
-	public long energyQuanta;
+	public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
+    public long energyQuanta;
 	public static final long maxPower = 10_000;
 	public int progress;
 	public int processTime;
@@ -143,7 +144,16 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 		lastAccountingTick = target;
 		runtimeSettling = true;
 		try {
-			long cost = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
+			MixerRecipe physical = MixerRecipes.getOutput(tanks[2].getTankType(), recipeIndex);
+            if(physicalBatch.active() || physical != null && physical.physicalBill != null) {
+                int before = physicalBatch.ticks();
+                com.hbm.realsim.ProcessMachine.step(this, physicalBatch, physical == null ? null : physical.physicalBill,
+                    new FluidTank[] {tanks[0], tanks[1]}, new FluidTank[] {tanks[2]}, slots, 1, 1, 0, -1);
+                wasOn = before != physicalBatch.ticks(); progress = physicalBatch.ticks();
+                processTime = physicalBatch.active() ? physicalBatch.recipe().duration : physical == null ? 1 : physical.processTime;
+                this.markNetworkDirty(); return;
+            }
+            long cost = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
 			boolean changed = false;
 			long remaining = elapsed;
 			while(remaining > 0L) {
@@ -236,6 +246,14 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	}
 
 	private void evaluateAndSchedule(long now) {
+        MixerRecipe physical = MixerRecipes.getOutput(tanks[2].getTankType(), recipeIndex);
+        if(physicalBatch.active() || physical != null && physical.physicalBill != null) {
+            if(this.canProcess() || this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+            else this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+            if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+            else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
+            return;
+        }
 		boolean canRun = this.canProcess();
 		if(canRun || progress > 0) {
 			if(canRun) processTime = this.getEffectiveProcessTime(processTime);
@@ -322,6 +340,13 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	}
 	
 	public boolean canProcess() {
+        if(physicalBatch.active()) return true;
+        MixerRecipe physical = MixerRecipes.getOutput(tanks[2].getTankType(), recipeIndex);
+        if(physical != null && physical.physicalBill != null) {
+            processTime = physical.processTime;
+            return com.hbm.realsim.ProcessMachine.inputsReady(physical.physicalBill, new FluidTank[] {tanks[0], tanks[1]}, slots, 1, 1)
+                && com.hbm.realsim.ProcessMachine.outputReady(physicalBatch, physical.physicalBill, new FluidTank[] {tanks[2]}, slots, 0, -1);
+        }
 
 		MixerRecipe[] recipes = MixerRecipes.getOutput(tanks[2].getTankType());
 		if(recipes == null || recipes.length <= 0) {
@@ -336,8 +361,8 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 			return false;
 		}
 		
-		tanks[0].setTankType(recipe.input1 != null ? recipe.input1.type : Fluids.NONE);
-		tanks[1].setTankType(recipe.input2 != null ? recipe.input2.type : Fluids.NONE);
+		if(!tanks[0].configureForRecipe(recipe.input1 != null ? recipe.input1.type : Fluids.NONE, recipe.input1 != null ? recipe.input1.pressure : 0)) return false;
+		if(!tanks[1].configureForRecipe(recipe.input2 != null ? recipe.input2.type : Fluids.NONE, recipe.input2 != null ? recipe.input2.pressure : 0)) return false;
 
 		if(recipe.input1 != null && tanks[0].getFill() < recipe.input1.fill) return false;
 		if(recipe.input2 != null && tanks[1].getFill() < recipe.input2.fill) return false;
@@ -404,6 +429,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
+        physicalBatch.read(nbt);
 		super.readFromNBT(nbt);
 
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
@@ -419,6 +445,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+        physicalBatch.write(nbt);
 		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 		

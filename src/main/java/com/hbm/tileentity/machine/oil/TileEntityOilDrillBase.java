@@ -42,7 +42,15 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
-	public int indicator = 0;
+	private final com.hbm.realsim.FuelCredit afterburnCredit = new com.hbm.realsim.FuelCredit();
+    private long lastExtractionTick = Long.MIN_VALUE;
+    protected boolean reserveExtractionTick(int interval) {
+        long now = worldObj.getTotalWorldTime();
+        if(lastExtractionTick != Long.MIN_VALUE && now < lastExtractionTick) { lastExtractionTick = now; return false; }
+        if(lastExtractionTick != Long.MIN_VALUE && now - lastExtractionTick < interval) return false;
+        lastExtractionTick = now; markDirty(); return true;
+    }
+    public int indicator = 0;
 
 	public long energyQuanta;
 
@@ -134,6 +142,8 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
+        afterburnCredit.read(nbt);
+        lastExtractionTick = nbt.hasKey("realSimExtractionTick") ? nbt.getLong("realSimExtractionTick") : Long.MIN_VALUE;
 		super.readFromNBT(nbt);
 
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
@@ -143,6 +153,8 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+        afterburnCredit.write(nbt);
+        nbt.setLong("realSimExtractionTick", lastExtractionTick);
 		super.writeToNBT(nbt);
 
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
@@ -152,6 +164,8 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 
 	@Override
 	public void writeNBT(NBTTagCompound nbt) {
+        afterburnCredit.write(nbt);
+        nbt.setLong("realSimExtractionTick", lastExtractionTick);
 
 		boolean empty = energyQuanta == 0;
 		for(FluidTank tank : tanks) if(tank.getFill() > 0) empty = false;
@@ -166,6 +180,8 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 
 	@Override
 	public void readNBT(NBTTagCompound nbt) {
+        afterburnCredit.read(nbt);
+        lastExtractionTick = nbt.hasKey("realSimExtractionTick") ? nbt.getLong("realSimExtractionTick") : Long.MIN_VALUE;
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		for(int i = 0; i < this.tanks.length; i++)
 			this.tanks[i].readFromNBT(nbt, "t" + i);
@@ -182,15 +198,11 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 
 	private void runDrillStep() {
 			this.unloadOutputContainers();
-			int toBurn = Math.min(tanks[1].getFill(), runtimeAfterburn * 10);
-
-			if(toBurn > 0) {
-				tanks[1].setFill(tanks[1].getFill() - toBurn);
-				this.setStoredEnergyQuanta(this.energyQuanta + toBurn * 5);
-
-				if(this.energyQuanta > this.getEnergyCapacityQuanta())
-					this.setStoredEnergyQuanta(this.getEnergyCapacityQuanta());
-			}
+            if(runtimeAfterburn > 0) {
+                long recovered = com.hbm.realsim.Combustion.generate(tanks[1], afterburnCredit,
+                    Math.min(runtimeAfterburn * 100L, Math.max(0L, getEnergyCapacityQuanta() - energyQuanta)), 200000);
+                this.setStoredEnergyQuanta(energyQuanta + recovered);
+            }
 
 			this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, this.getEnergyCapacityQuanta()));
 

@@ -29,7 +29,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 
-public class TileEntityHeaterOilburner extends TileEntityMachinePolluting implements IGUIProvider, IFluidStandardTransceiver, IHeatSource, IControlReceiver, IFluidCopiable {
+public class TileEntityHeaterOilburner extends TileEntityMachinePolluting implements IGUIProvider, IFluidStandardTransceiver, IHeatSource, IControlReceiver, IFluidCopiable, api.hbm.tile.IProcessHeatSource {
 	private static final int TASK_BURN = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
@@ -326,4 +326,5 @@ public class TileEntityHeaterOilburner extends TileEntityMachinePolluting implem
 		if(nbt.hasKey("burnRate")) setting = Math.max(1, Math.min(10, nbt.getInteger("burnRate")));
 		this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.FLUID);
 	}
+    @Override public int getProcessTemperatureC() { return 900; }
 }

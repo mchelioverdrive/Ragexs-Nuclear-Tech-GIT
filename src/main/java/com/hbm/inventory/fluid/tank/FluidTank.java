@@ -121,12 +121,9 @@ public class FluidTank {
 		this.notifyChanged();
 	}
 
-	/** Recipe phase migration never clears an old cryogenic store or grants compression. */
+	/** Recipe changes preserve every filled store and its pressure; only an empty tank can be configured. */
 	public boolean configureForRecipe(FluidType target, int targetPressure) {
-		String name = this.type.getName();
-		boolean cryogenic = name.equals("HYDROGEN") || name.equals("OXYGEN") || name.equals("NITROGEN");
-		boolean processGas = name.equals("HYDROGEN_GAS") || name.equals("OXYGEN_GAS") || name.equals("NITROGEN_GAS");
-		if(fluid > 0 && (cryogenic && this.type != target || processGas && (this.type != target || pressure != targetPressure))) return false;
+		if(fluid > 0 && (this.type != target || pressure != targetPressure)) return false;
 		this.withPressure(targetPressure).setTankType(target);
 		return true;
 	}

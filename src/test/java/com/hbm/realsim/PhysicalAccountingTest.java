@@ -151,7 +151,7 @@ public class PhysicalAccountingTest {
         assertEquals("a628424d8f32be3cc376cc1084c1f44e47b3cda4cdb5913a487c1005024ca11a", hex.toString());
     }
     @Test public void unresolvedIsNotZero() {
-        assertFalse(PhysicalRegistry.get("NITAN").isResolved()); assertFalse(PhysicalRegistry.get("BIOFUEL").isResolved());
+        assertFalse(PhysicalRegistry.get("NITAN").isResolved()); assertFalse(PhysicalRegistry.get("COOLANT").isResolved());
         try { PhysicalRegistry.get("NITAN").chemicalMicrojoulesPerUnit(); fail("unresolved became zero"); } catch(IllegalStateException expected) { }
     }
     @Test public void oldWorldHasNoNewCredit() {

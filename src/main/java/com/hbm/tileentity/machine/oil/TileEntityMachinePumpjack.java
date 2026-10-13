@@ -35,23 +35,23 @@ import net.minecraftforge.oredict.OreDictionary;
 public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 
 	protected static int maxPower = 250_000;
-	protected static int consumption = 200;
+	protected static int consumption = 300;
 	protected static int delay = 25;
-	protected static int oilPerDeposit = 750;
-	protected static int oilPerDunaDeposit = 300;
-	protected static int gasPerDepositMin = 50;
-	protected static int gasPerDepositMax = 250;
+	protected static int oilPerDeposit = 1;
+	protected static int oilPerDunaDeposit = 1;
+	protected static int gasPerDepositMin = 1;
+	protected static int gasPerDepositMax = 1;
 	protected static double drainChance = 0.025D;
 	protected static double drainChanceDuna = 0.05D; //essentially, duna is supposed to produce weaker oil than the overworld.
 
-	protected static int oilPerBedrockDepsoit = 40;
-	protected static int gasPerBedrockDepositMin = 5;
-	protected static int gasPerBedrockDepositMax = 9;
+	protected static int oilPerBedrockDepsoit = 1;
+	protected static int gasPerBedrockDepositMin = 1;
+	protected static int gasPerBedrockDepositMax = 1;
 
 	// Gas from pure natgas deposits
-	protected static int gasPerDeposit = 750;
-	protected static int petgasPerDepositMin = 10;
-	protected static int petgasPerDepositMax = 50;
+	protected static int gasPerDeposit = 200;
+	protected static int petgasPerDepositMin = 1;
+	protected static int petgasPerDepositMax = 1;
 
 	public float rot = 0;
 	public float prevRot = 0;
@@ -140,6 +140,7 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 
 	@Override
 	public void onSuck(int x, int y, int z) {
+        if(!this.reserveExtractionTick(50)) return;
 		int meta = worldObj.getBlockMetadata(x, y, z);
 		Block block = worldObj.getBlock(x, y, z);
 
@@ -155,7 +156,7 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 			tanks[1].setTankType(Fluids.GAS);
 
 			if(meta == SolarSystem.Body.DUNA.ordinal()) {
-				this.tanks[0].setFill(this.tanks[0].getFill() + oilPerDunaDeposit);
+				this.tanks[0].setFill(this.tanks[0].getFill() + Math.min(1, oilPerDunaDeposit));
 				if(this.tanks[0].getFill() > this.tanks[0].getMaxFill()) this.tanks[0].setFill(tanks[0].getMaxFill());
 				this.tanks[1].setFill(this.tanks[1].getFill() + (gasPerDepositMin + worldObj.rand.nextInt((gasPerDepositMax - gasPerDepositMin + 1)))); // ditto, lotsa gas
 				if(this.tanks[1].getFill() > this.tanks[1].getMaxFill()) this.tanks[1].setFill(tanks[1].getMaxFill());
@@ -164,7 +165,7 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 					worldObj.setBlock(x, y, z, ModBlocks.ore_oil_empty, meta, 3);
 				}
 			} else {
-				this.tanks[0].setFill(this.tanks[0].getFill() + oilPerDeposit);
+				this.tanks[0].setFill(this.tanks[0].getFill() + Math.min(1, oilPerDeposit));
 				if(this.tanks[0].getFill() > this.tanks[0].getMaxFill()) this.tanks[0].setFill(tanks[0].getMaxFill());
 				this.tanks[1].setFill(this.tanks[1].getFill() + (gasPerDepositMin + worldObj.rand.nextInt((gasPerDepositMax - gasPerDepositMin + 1))));
 				if(this.tanks[1].getFill() > this.tanks[1].getMaxFill()) this.tanks[1].setFill(tanks[1].getMaxFill());
@@ -176,7 +177,7 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
         }
 
 		if(block == Blocks.bedrock) {
-			oil = oilPerBedrockDepsoit;
+			oil = Math.min(1, oilPerBedrockDepsoit);
 			gas = gasPerBedrockDepositMin + worldObj.rand.nextInt(gasPerBedrockDepositMax - gasPerBedrockDepositMin + 1);
 		}
 

@@ -214,7 +214,6 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 
 
 		if(GeneralConfig.enableLBSM && GeneralConfig.enableLBSMSimpleChemsitry) {
-			addRecipe(ModItems.canister_empty, COAL, new ItemStack(ModItems.canister_full, 1, Fluids.OIL.getID()));
 		}
 
 		if(!IMCBlastFurnace.buffer.isEmpty()) {

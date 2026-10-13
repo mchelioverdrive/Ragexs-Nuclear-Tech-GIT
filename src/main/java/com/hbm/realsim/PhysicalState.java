@@ -18,17 +18,24 @@ public final class PhysicalState {
     /** Null means unresolved, never zero. Zero is reserved for known nonfuels. */
     public final BigDecimal lhvJoulesPerKg;
     public final String thermalReference;
+    /** Released petroleum sensible state, relative to 20 C; steam/nuclear enthalpy remains deferred. */
+    public final BigDecimal sensibleJoulesPerKg;
     public final Map<String, BigDecimal> mixture;
     private final long chemicalMicrojoules;
 
     PhysicalState(String substance, Phase phase, Basis basis, long massUnits,
             BigDecimal lhv, String thermalReference, Map<String, BigDecimal> mixture) {
+        this(substance, phase, basis, massUnits, lhv, thermalReference, mixture, BigDecimal.ZERO);
+    }
+    PhysicalState(String substance, Phase phase, Basis basis, long massUnits,
+            BigDecimal lhv, String thermalReference, Map<String, BigDecimal> mixture, BigDecimal sensible) {
         this.substance = substance;
         this.phase = phase;
         this.basis = basis;
         this.massUnits = massUnits;
         this.lhvJoulesPerKg = lhv;
         this.thermalReference = thermalReference;
+        this.sensibleJoulesPerKg = sensible;
         this.mixture = mixture == null ? Collections.<String, BigDecimal>emptyMap() : Collections.unmodifiableMap(mixture);
         this.chemicalMicrojoules = massUnits <= 0 || lhv == null ? -1L : lhv.multiply(BigDecimal.valueOf(massUnits)).multiply(BigDecimal.valueOf(1_000_000L))
                 .divide(BigDecimal.valueOf(MASS_UNITS_PER_KG), 0, RoundingMode.DOWN).longValueExact();

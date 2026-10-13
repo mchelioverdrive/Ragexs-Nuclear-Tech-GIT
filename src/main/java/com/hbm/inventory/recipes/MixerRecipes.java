@@ -14,7 +14,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.inventory.FluidStack;
-import com.hbm.inventory.OreDictManager;
 import com.hbm.inventory.RecipesCommon.AStack;
 import com.hbm.inventory.RecipesCommon.ComparableStack;
 import com.hbm.inventory.RecipesCommon.OreDictStack;
@@ -25,7 +24,6 @@ import com.hbm.items.ModItems;
 import com.hbm.items.ItemEnums.EnumAshType;
 import com.hbm.items.machine.ItemFluidIcon;
 
-import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraftforge.oredict.OreDictionary;
 
@@ -48,8 +46,6 @@ public class MixerRecipes extends SerializableRecipe {
 		register(Fluids.MUSTARDGAS, new MixerRecipe(1000, 20).setStack1(new FluidStack(Fluids.REFORMGAS, 750)).setStack2(new FluidStack(Fluids.CHLORINE, 250)).setSolid(new OreDictStack(S.dust())));
 		register(Fluids.IONGEL, new MixerRecipe(1_000, 50).setStack1(new FluidStack(Fluids.FRESH_WATER, 1000)).setStack2(new FluidStack(Fluids.HYDROGEN_GAS, 200)).setSolid(new ComparableStack(ModItems.pellet_charged)));
 		register(Fluids.EGG, new MixerRecipe(1_000, 50).setStack1(new FluidStack(Fluids.RADIOSOLVENT, 500)).setSolid(new ComparableStack(Items.egg)));
-		register(Fluids.FISHOIL, new MixerRecipe(100, 50).setSolid(new ComparableStack(Items.fish, 1, OreDictionary.WILDCARD_VALUE)));
-		register(Fluids.SUNFLOWEROIL, new MixerRecipe(100, 50).setSolid(new ComparableStack(Blocks.double_plant, 1, 0)));
 		register(Fluids.FULLERENE, new MixerRecipe(250, 50).setStack1(new FluidStack(Fluids.RADIOSOLVENT, 500)).setSolid(new ComparableStack(DictFrame.fromOne(ModItems.powder_ash, EnumAshType.SOOT))));
 
 		register(Fluids.SOLVENT,
@@ -64,32 +60,29 @@ public class MixerRecipes extends SerializableRecipe {
 		register(Fluids.RADIOSOLVENT, new MixerRecipe(1000, 50).setStack1(new FluidStack(Fluids.REFORMGAS, 750)).setStack2(new FluidStack(Fluids.CHLORINE, 250)));
 		register(Fluids.SCHRABIDIC, new MixerRecipe(16_000, 100).setStack1(new FluidStack(Fluids.SAS3, 8_000)).setStack2(new FluidStack(Fluids.PEROXIDE, 6_000)).setSolid(new ComparableStack(ModItems.pellet_charged)));
 
-		register(Fluids.PETROIL, new MixerRecipe(1_000, 30).setStack1(new FluidStack(Fluids.RECLAIMED, 800)).setStack2(new FluidStack(Fluids.LUBRICANT, 200)));
-		register(Fluids.LUBRICANT,
-				new MixerRecipe(1_000, 20).setStack1(new FluidStack(Fluids.HEATINGOIL, 500)).setStack2(new FluidStack(Fluids.UNSATURATEDS, 500)),
-				new MixerRecipe(1_000, 20).setStack1(new FluidStack(Fluids.FISHOIL, 800)).setStack2(new FluidStack(Fluids.ETHANOL, 200)),
-				new MixerRecipe(1_000, 20).setStack1(new FluidStack(Fluids.SUNFLOWEROIL, 800)).setStack2(new FluidStack(Fluids.ETHANOL, 200)));
+		register(Fluids.PETROIL, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemicalFuelProcesses.blend("PETROIL", "RECLAIMED", 4, "LUBRICANT", 1)));
+		// LUBRICANT conversion belongs in a heated reactor/fractionator.
 		register(Fluids.BIOFUEL,
-				new MixerRecipe(250, 20).setStack1(new FluidStack(Fluids.FISHOIL, 500)).setStack2(new FluidStack(Fluids.WOODOIL, 500)),
-				new MixerRecipe(200, 20).setStack1(new FluidStack(Fluids.SUNFLOWEROIL, 500)).setStack2(new FluidStack(Fluids.WOODOIL, 500)));
+				new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemicalFuelProcesses.blend("BIOFUEL", "SUNFLOWEROIL", 4, "ETHANOL", 1)),
+				new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemicalFuelProcesses.blend("BIOFUEL", "FISHOIL", 4, "ETHANOL", 1)));
 		register(Fluids.NITROGLYCERIN,
 				new MixerRecipe(1000, 20).setStack1(new FluidStack(Fluids.PETROLEUM, 1_000)).setStack2(new FluidStack(Fluids.NITRIC_ACID, 1_000)),
 				new MixerRecipe(1000, 20).setStack1(new FluidStack(Fluids.FISHOIL, 500)).setStack2(new FluidStack(Fluids.NITRIC_ACID, 500)));
 
 		register(Fluids.THORIUM_SALT, new MixerRecipe(1_000, 30).setStack1(new FluidStack(Fluids.CHLORINE, 1000)).setSolid(new OreDictStack(TH232.dust())));
 
-		register(Fluids.SYNGAS, new MixerRecipe(1_000, 50).setStack1(new FluidStack(Fluids.COALOIL, 500)).setStack2(new FluidStack(Fluids.STEAM, 500)));
+		// SYNGAS conversion belongs in a heated reactor/fractionator.
 		// Oxyhydrogen is a prepared gas blend, not a source of oxygen; retain the 2:1 gas-volume blend.
 		register(Fluids.OXYHYDROGEN,
 				new MixerRecipe(999, 50).setStack1(new FluidStack(Fluids.HYDROGEN_GAS, 666)).setStack2(new FluidStack(Fluids.OXYGEN_GAS, 333)));
 
-		register(Fluids.PETROIL_LEADED, new MixerRecipe(12_000, 40).setStack1(new FluidStack(Fluids.PETROIL, 10_000)).setSolid(new ComparableStack(ModItems.fuel_additive, 1, 0)));
-		register(Fluids.GASOLINE_LEADED, new MixerRecipe(12_000, 40).setStack1(new FluidStack(Fluids.GASOLINE, 10_000)).setSolid(new ComparableStack(ModItems.fuel_additive, 1, 0)));
-		register(Fluids.COALGAS_LEADED, new MixerRecipe(12_000, 40).setStack1(new FluidStack(Fluids.COALGAS, 10_000)).setSolid(new ComparableStack(ModItems.fuel_additive, 1, 0)));
+		register(Fluids.PETROIL_LEADED, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemicalFuelProcesses.leaded("PETROIL")));
+		register(Fluids.GASOLINE_LEADED, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemicalFuelProcesses.leaded("GASOLINE")));
+		register(Fluids.COALGAS_LEADED, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemicalFuelProcesses.leaded("COALGAS")));
 
-		register(Fluids.DIESEL_REFORM, new MixerRecipe(1_000, 50).setStack1(new FluidStack(Fluids.DIESEL, 900)).setStack2(new FluidStack(Fluids.REFORMATE, 100)));
-		register(Fluids.DIESEL_CRACK_REFORM, new MixerRecipe(1_000, 50).setStack1(new FluidStack(Fluids.DIESEL_CRACK, 900)).setStack2(new FluidStack(Fluids.REFORMATE, 100)));
-		register(Fluids.KEROSENE_REFORM, new MixerRecipe(1_000, 50).setStack1(new FluidStack(Fluids.KEROSENE, 900)).setStack2(new FluidStack(Fluids.REFORMATE, 100)));
+		register(Fluids.DIESEL_REFORM, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemicalFuelProcesses.blend("DIESEL_REFORM", "DIESEL", 9, "REFORMATE", 1)));
+		register(Fluids.DIESEL_CRACK_REFORM, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemicalFuelProcesses.blend("DIESEL_CRACK_REFORM", "DIESEL_CRACK", 9, "REFORMATE", 1)));
+		register(Fluids.KEROSENE_REFORM, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemicalFuelProcesses.blend("KEROSENE_REFORM", "KEROSENE", 9, "REFORMATE", 1)));
 
 		register(Fluids.SMILK, new MixerRecipe(500, 50).setStack1(new FluidStack(Fluids.MILK, 500)).setSolid(new ComparableStack(ModItems.strawberry, 4)));
 		register(Fluids.COFFEE, new MixerRecipe(100, 50).setStack1(new FluidStack(Fluids.FRESH_WATER, 500)).setSolid(new ComparableStack(ModItems.powder_coffee, 4)));
@@ -161,7 +154,9 @@ public class MixerRecipes extends SerializableRecipe {
 			if(sub.has("input2")) mix.setStack2(this.readFluidStack(sub.get("input2").getAsJsonArray()));
 			if(sub.has("solidInput")) mix.setSolid(this.readAStack(sub.get("solidInput").getAsJsonArray()));
 
-			array[i] = mix;
+			if(sub.has("physical")) mix.physical(com.hbm.realsim.PetroleumProcesses.read(sub));
+            if(!sub.has("physical") && com.hbm.realsim.ChemicalFuelProcesses.requiresBill(outputType.getName())) throw new IllegalArgumentException("Fuel-producing mixer JSON requires a physical bill");
+            array[i] = mix;
 
 		}
 
@@ -180,6 +175,7 @@ public class MixerRecipes extends SerializableRecipe {
 			writer.beginObject();
 			writer.name("duration").value(mix.processTime);
 			writer.name("outputAmount").value(mix.output);
+            if(mix.physicalBill != null) com.hbm.realsim.PetroleumProcesses.write(mix.physicalBill, writer);
 
 			if(mix.input1 != null) { writer.name("input1"); this.writeFluidStack(mix.input1, writer); }
 			if(mix.input2 != null) { writer.name("input2"); this.writeFluidStack(mix.input2, writer); }
@@ -219,13 +215,23 @@ public class MixerRecipes extends SerializableRecipe {
 		public AStack solidInput;
 		public int processTime;
 		public int output;
+        public com.hbm.realsim.ProcessRecipe physicalBill;
 
 		protected MixerRecipe(int output, int processTime) {
 			this.output = output;
 			this.processTime = processTime;
 		}
 
-		protected MixerRecipe setStack1(FluidStack stack) { input1 = stack; return this; }
+		protected MixerRecipe physical(com.hbm.realsim.ProcessRecipe bill) {
+            com.hbm.realsim.ChemicalFuelProcesses.validateRating(bill);
+            physicalBill = bill; processTime = bill.duration;
+            input1 = bill.inputs.length > 0 ? new FluidStack(Fluids.fromName(bill.inputs[0]), bill.quantities[0], bill.pressures[0]) : null;
+            input2 = bill.inputs.length > 1 ? new FluidStack(Fluids.fromName(bill.inputs[1]), bill.quantities[1], bill.pressures[1]) : null;
+            if(bill.solidCount > 0) solidInput = new ComparableStack(ModItems.fuel_additive, bill.solidCount);
+            output = Math.toIntExact(com.hbm.realsim.PetroleumProcesses.ceilDiv(bill.productMass[0], com.hbm.realsim.PhysicalRegistry.get(bill.outputs[0]).massUnits));
+            return this;
+        }
+        protected MixerRecipe setStack1(FluidStack stack) { input1 = stack; return this; }
 		protected MixerRecipe setStack2(FluidStack stack) { input2 = stack; return this; }
 		protected MixerRecipe setSolid(AStack stack) { solidInput = stack; return this; }
 	}

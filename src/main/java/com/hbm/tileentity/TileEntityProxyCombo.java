@@ -26,7 +26,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 		@Optional.Interface(iface = "com.hbm.handler.CompatHandler.OCComponent", modid = "opencomputers"),
 		@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "opencomputers")
 })
-public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergyReceiverMK2, ISidedInventory, IFluidConnector, IHeatSource, ICrucibleAcceptor, SimpleComponent, OCComponent {
+public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergyReceiverMK2, ISidedInventory, IFluidConnector, api.hbm.tile.IProcessHeatSource, ICrucibleAcceptor, SimpleComponent, OCComponent {
 
 	TileEntity tile;
 	boolean inventory;
@@ -418,6 +418,10 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 
 		return 0;
 	}
+    @Override public int getProcessTemperatureC() {
+        TileEntity source = getTile();
+        return heat && source instanceof api.hbm.tile.IProcessHeatSource ? ((api.hbm.tile.IProcessHeatSource) source).getProcessTemperatureC() : Integer.MIN_VALUE;
+    }
 
 	@Override
 	public void useUpHeat(int heat) {

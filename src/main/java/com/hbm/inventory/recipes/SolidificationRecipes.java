@@ -27,6 +27,8 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
 public class SolidificationRecipes extends SerializableRecipe {
+    private static com.hbm.realsim.ProcessRecipe bitumenBill;
+    public static com.hbm.realsim.ProcessRecipe getPhysical(FluidType type) { return type == BITUMEN ? bitumenBill : null; }
 
 	public static final int SF_OIL =		200;
 	public static final int SF_CRACK =		200;
@@ -62,6 +64,8 @@ public class SolidificationRecipes extends SerializableRecipe {
 
 	@Override
 	public void registerDefaults() {
+        bitumenBill = com.hbm.realsim.ChemicalFuelProcesses.bitumenFreezing();
+        registerRecipe(BITUMEN, 2, DictFrame.fromOne(ModItems.oil_tar, EnumTarType.CRUDE));
 
 		registerRecipe(WATER,		1000,			Blocks.ice);
 		registerRecipe(LAVA,		1000,			Blocks.obsidian);
@@ -81,48 +85,10 @@ public class SolidificationRecipes extends SerializableRecipe {
 		registerRecipe(POTASSIUM, 1000,	ModItems.potassium_powder);
 		//idk anymore im losing my mind
 
-		registerRecipe(OIL,				SF_OIL,			DictFrame.fromOne(ModItems.oil_tar, EnumTarType.CRUDE));
-		registerRecipe(CRACKOIL,		SF_CRACK,		DictFrame.fromOne(ModItems.oil_tar, EnumTarType.CRACK));
-		registerRecipe(COALOIL,			SF_COALOIL,		DictFrame.fromOne(ModItems.oil_tar, EnumTarType.COAL));
-		registerRecipe(HEAVYOIL,		SF_HEAVY,		DictFrame.fromOne(ModItems.oil_tar, EnumTarType.CRUDE));
-		registerRecipe(HEAVYOIL_VACUUM,	SF_HEAVY,		DictFrame.fromOne(ModItems.oil_tar, EnumTarType.CRUDE));
-		registerRecipe(BITUMEN,			SF_BITUMEN,		DictFrame.fromOne(ModItems.oil_tar, EnumTarType.CRUDE));
-		registerRecipe(COALCREOSOTE,	SF_CREOSOTE,	DictFrame.fromOne(ModItems.oil_tar, EnumTarType.COAL));
-		registerRecipe(WOODOIL,			SF_WOOD,		DictFrame.fromOne(ModItems.oil_tar, EnumTarType.WOOD));
-		registerRecipe(LUBRICANT,		SF_LUBE,		DictFrame.fromOne(ModItems.oil_tar, EnumTarType.PARAFFIN));
+		// Petroleum residues are converted by paid coker bills, not legacy burn-time solidification.
 
 		registerRecipe(BALEFIRE,		250,			ModItems.solid_fuel_bf);
 
-		// Manufactured solid fuel is a residue-disposal route, not literal freezing of light fuels or gases.
-		registerSFAuto(SMEAR);
-		// registerSFAuto(HEATINGOIL); // retain heating oil as a finished liquid fuel
-		registerSFAuto(HEATINGOIL_VACUUM);
-		registerSFAuto(RECLAIMED);
-		// registerSFAuto(PETROIL);
-		// registerSFAuto(NAPHTHA);
-		// registerSFAuto(NAPHTHA_CRACK);
-		// registerSFAuto(DIESEL);
-		registerSFAuto(DIESEL_REFORM);
-		registerSFAuto(DIESEL_CRACK);
-		registerSFAuto(DIESEL_CRACK_REFORM);
-		registerSFAuto(LIGHTOIL);
-		registerSFAuto(LIGHTOIL_CRACK);
-		registerSFAuto(LIGHTOIL_VACUUM);
-		// registerSFAuto(KEROSENE);
-		registerSFAuto(KEROSENE_REFORM);
-		//registerSFAuto(GAS);
-		// registerSFAuto(SOURGAS);
-		// registerSFAuto(REFORMGAS);
-		// registerSFAuto(SYNGAS);
-		// registerSFAuto(PETROLEUM);
-		// registerSFAuto(LPG);
-		//registerSFAuto(BIOGAS);
-		registerSFAuto(BIOFUEL);
-		// registerSFAuto(AROMATICS);
-		// registerSFAuto(UNSATURATEDS);
-		// registerSFAuto(REFORMATE);
-		// registerSFAuto(XYLENE);
-		registerSFAuto(BALEFIRE, 24_000_000L, ModItems.solid_fuel_bf); //holy shit this is energy dense*/
 
 		//todo: potassium powder
 
@@ -185,6 +151,7 @@ public class SolidificationRecipes extends SerializableRecipe {
 
 	@Override
 	public void deleteRecipes() {
+        bitumenBill = null;
 		recipes.clear();
 	}
 
@@ -192,6 +159,7 @@ public class SolidificationRecipes extends SerializableRecipe {
 	public void readRecipe(JsonElement recipe) {
 		JsonObject obj = (JsonObject) recipe;
 		FluidStack in = this.readFluidStack(obj.get("input").getAsJsonArray());
+        if(in.type == BITUMEN) { bitumenBill = com.hbm.realsim.PetroleumProcesses.read(obj); }
 		ItemStack out = this.readItemStack(obj.get("output").getAsJsonArray());
 		recipes.put(in.type, new Pair(in.fill, out));
 	}
@@ -200,6 +168,7 @@ public class SolidificationRecipes extends SerializableRecipe {
 	public void writeRecipe(Object recipe, JsonWriter writer) throws IOException {
 		Entry<FluidType, Pair<Integer, ItemStack>> rec = (Entry<FluidType, Pair<Integer, ItemStack>>) recipe;
 		FluidStack in = new FluidStack(rec.getKey(), rec.getValue().getKey());
+		if(rec.getKey() == BITUMEN && bitumenBill != null) com.hbm.realsim.PetroleumProcesses.write(bitumenBill, writer);
 		writer.name("input");
 		this.writeFluidStack(in, writer);
 		writer.name("output");

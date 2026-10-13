@@ -37,6 +37,7 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 	private static final int TASK_HEAT = 1;
 	private boolean runtimeInitialized;
 	private Pair<ItemStack, FluidStack> runtimeRecipe;
+	public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
 
 	public boolean wasOn;
 	public int progress;
@@ -96,7 +97,7 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 	}
 
 	private void evaluateAndSchedule(long now) {
-		if(heat > 0 || this.hasExternalHeatOpportunity()) this.scheduleMachineTransition(now + 1L, TASK_HEAT, 0);
+		if(physicalBatch.active() || heat > 0 || this.hasExternalHeatOpportunity()) this.scheduleMachineTransition(now + 1L, TASK_HEAT, 0);
 		else {
 			wasOn = false;
 			this.cancelMachineTransition(TASK_HEAT, 0);
@@ -137,6 +138,17 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 	}
 
 	private void runFurnaceStep() {
+			com.hbm.realsim.ProcessRecipe bill = CombinationRecipes.getPhysical(slots[0]);
+			if(physicalBatch.active() || bill != null) {
+				int before = physicalBatch.ticks();
+				boolean changed = com.hbm.realsim.ProcessMachine.step(this, physicalBatch, bill,
+						new FluidTank[0], new FluidTank[] {tank}, slots, 0, 0, 1, 1);
+				this.wasOn = changed && before != physicalBatch.ticks();
+				this.progress = physicalBatch.active() ? (int) ((long) physicalBatch.ticks() * processTime / physicalBatch.recipe().duration) : 0;
+				if(changed) this.markChanged();
+				if(this.wasOn) this.emitFurnaceEffects();
+				return;
+			}
 			this.tryPullHeat();
 			this.wasOn = false;
 			
@@ -178,18 +190,19 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 						this.refreshRecipe();
 					}
 					
-					List<Entity> entities = worldObj.getEntitiesWithinAABB(Entity.class, AxisAlignedBB.getBoundingBox(xCoord - 0.5, yCoord + 2, zCoord - 0.5, xCoord + 1.5, yCoord + 4, zCoord + 1.5));
-					
-					for(Entity e : entities) e.setFire(5);
-					
-					if(worldObj.getTotalWorldTime() % 10 == 0) this.worldObj.playSoundEffect(this.xCoord, this.yCoord + 1, this.zCoord, "hbm:weapon.flamethrowerShoot", 0.25F, 0.5F);
-					if(worldObj.getTotalWorldTime() % 20 == 0) this.pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 3);
-					FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 400);
+					this.emitFurnaceEffects();
 				}
 			} else {
 				this.progress = 0;
 			}
 			
+	}
+	private void emitFurnaceEffects() {
+		List<Entity> entities = worldObj.getEntitiesWithinAABB(Entity.class, AxisAlignedBB.getBoundingBox(xCoord - 0.5, yCoord + 2, zCoord - 0.5, xCoord + 1.5, yCoord + 4, zCoord + 1.5));
+		for(Entity e : entities) e.setFire(5);
+		if(worldObj.getTotalWorldTime() % 10 == 0) this.worldObj.playSoundEffect(this.xCoord, this.yCoord + 1, this.zCoord, "hbm:weapon.flamethrowerShoot", 0.25F, 0.5F);
+		if(worldObj.getTotalWorldTime() % 20 == 0) this.pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 3);
+		FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 400);
 	}
 	
 	@Override
@@ -211,6 +224,10 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 	}
 	
 	public boolean canSmelt() {
+		com.hbm.realsim.ProcessRecipe physical = physicalBatch.active() ? physicalBatch.recipe() : CombinationRecipes.getPhysical(slots[0]);
+		if(physical != null) return com.hbm.realsim.ProcessMachine.outputReady(physicalBatch, physical,
+				new FluidTank[] {tank}, slots, 1, 1) && (physicalBatch.active() ||
+				com.hbm.realsim.ProcessMachine.inputsReady(physical, new FluidTank[0], slots, 0, 0));
 		this.refreshRecipe();
 		if(slots[0] == null) return false;
 		Pair<ItemStack, FluidStack> pair = runtimeInitialized && worldObj != null && !worldObj.isRemote ? runtimeRecipe : CombinationRecipes.getOutput(slots[0]);
@@ -280,6 +297,7 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+		this.physicalBatch.read(nbt);
 		this.tank.readFromNBT(nbt, "tank");
 		this.progress = nbt.getInteger("prog");
 		this.heat = nbt.getInteger("heat");
@@ -288,6 +306,7 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+		this.physicalBatch.write(nbt);
 		this.tank.writeToNBT(nbt, "tank");
 		nbt.setInteger("prog", progress);
 		nbt.setInteger("heat", heat);

@@ -204,12 +204,14 @@ public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase imp
 
 	@Override
 	protected boolean canProcess(int index) {
+		if(isPhysicalLane(index)) return super.canProcess(index);
 		return super.canProcess(index) && this.water.getFill() >= getWaterRequired() && this.steam.getFill() + getWaterRequired() <= this.steam.getMaxFill();
 	}
 
 
 	@Override
 	protected void process(int index) {
+        if(isPhysicalLane(index)) { super.process(index); return; }
 		super.process(index);
 		this.water.setFill(this.water.getFill() - getWaterRequired());
 		this.steam.setFill(this.steam.getFill() + getWaterRequired());

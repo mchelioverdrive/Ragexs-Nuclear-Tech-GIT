@@ -15,7 +15,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
-import net.minecraft.util.StatCollector;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class MachineCoker extends BlockDummyable implements ITooltipProvider {
@@ -28,7 +27,7 @@ public class MachineCoker extends BlockDummyable implements ITooltipProvider {
 	public TileEntity createNewTileEntity(World world, int meta) {
 
 		if(meta >= 12) return new TileEntityMachineCoker();
-		if(meta >= extra) return new TileEntityProxyCombo().inventory().fluid();
+		if(meta >= extra) return new TileEntityProxyCombo().inventory().power().fluid();
 		return null;
 	}
 

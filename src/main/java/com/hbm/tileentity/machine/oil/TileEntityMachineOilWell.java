@@ -35,22 +35,22 @@ public class TileEntityMachineOilWell extends TileEntityOilDrillBase {
 	protected static int maxPower = 100_000;
 	protected static int consumption = 100;
 	protected static int delay = 50;
-	protected static int oilPerDeposit = 500;
-	protected static int oilPerDunaDeposit = 200;
-	protected static int gasPerDepositMin = 100;
-	protected static int gasPerDepositMax = 500;
+	protected static int oilPerDeposit = 1;
+	protected static int oilPerDunaDeposit = 1;
+	protected static int gasPerDepositMin = 1;
+	protected static int gasPerDepositMax = 1;
 	protected static double drainChance = 0.05D;
 	protected static double drainChanceDuna = 0.1D;
 
-	protected static int oilPerBedrockDepsoit = 30;
-	protected static int gasPerBedrockDepositMin = 2;
-	protected static int gasPerBedrockDepositMax = 5;
+	protected static int oilPerBedrockDepsoit = 1;
+	protected static int gasPerBedrockDepositMin = 1;
+	protected static int gasPerBedrockDepositMax = 1;
 
 
 	// Gas from pure natgas deposits
-	protected static int gasPerDeposit = 500;
-	protected static int petgasPerDepositMin = 10;
-	protected static int petgasPerDepositMax = 100;
+	protected static int gasPerDeposit = 100;
+	protected static int petgasPerDepositMin = 1;
+	protected static int petgasPerDepositMax = 1;
 
 	@Override
 	public String getName() {
@@ -105,6 +105,7 @@ public class TileEntityMachineOilWell extends TileEntityOilDrillBase {
 
 	@Override
     public void onSuck(int x, int y, int z) {
+        if(!this.reserveExtractionTick(200)) return;
         worldObj.playSoundEffect(this.xCoord, this.yCoord, this.zCoord, "game.neutral.swim.splash", 2.0F, 0.5F);
 
 		int meta = worldObj.getBlockMetadata(x, y, z);
@@ -122,7 +123,7 @@ public class TileEntityMachineOilWell extends TileEntityOilDrillBase {
 			tanks[1].setTankType(Fluids.GAS);
 
 			if(meta == SolarSystem.Body.DUNA.ordinal()) {
-				this.tanks[0].setFill(this.tanks[0].getFill() + oilPerDunaDeposit);
+				this.tanks[0].setFill(this.tanks[0].getFill() + Math.min(1, oilPerDunaDeposit));
 				if(this.tanks[0].getFill() > this.tanks[0].getMaxFill()) this.tanks[0].setFill(tanks[0].getMaxFill());
 				this.tanks[1].setFill(this.tanks[1].getFill() + (gasPerDepositMin + worldObj.rand.nextInt((gasPerDepositMax - gasPerDepositMin + 1)))); // Duna deposits have a lot of natgas
 				if(this.tanks[1].getFill() > this.tanks[1].getMaxFill()) this.tanks[1].setFill(tanks[1].getMaxFill());
@@ -131,7 +132,7 @@ public class TileEntityMachineOilWell extends TileEntityOilDrillBase {
 					worldObj.setBlock(x, y, z, ModBlocks.ore_oil_empty, meta, 3);
 				}
 			} else {
-				this.tanks[0].setFill(this.tanks[0].getFill() + oilPerDeposit);
+				this.tanks[0].setFill(this.tanks[0].getFill() + Math.min(1, oilPerDeposit));
 				if(this.tanks[0].getFill() > this.tanks[0].getMaxFill()) this.tanks[0].setFill(tanks[0].getMaxFill());
 				this.tanks[1].setFill(this.tanks[1].getFill() + (gasPerDepositMin + worldObj.rand.nextInt((gasPerDepositMax - gasPerDepositMin + 1))));
 				if(this.tanks[1].getFill() > this.tanks[1].getMaxFill()) this.tanks[1].setFill(tanks[1].getMaxFill());
@@ -143,7 +144,7 @@ public class TileEntityMachineOilWell extends TileEntityOilDrillBase {
         }
 
 		if(block == Blocks.bedrock) {
-			oil = oilPerBedrockDepsoit;
+			oil = Math.min(1, oilPerBedrockDepsoit);
 			gas = gasPerBedrockDepositMin + worldObj.rand.nextInt(gasPerBedrockDepositMax - gasPerBedrockDepositMin + 1);
 		}
 

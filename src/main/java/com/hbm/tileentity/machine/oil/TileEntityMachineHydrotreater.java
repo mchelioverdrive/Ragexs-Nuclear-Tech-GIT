@@ -1,7 +1,6 @@
 package com.hbm.tileentity.machine.oil;
 
 import api.hbm.energymk2.EnergyUnits;
-import com.hbm.inventory.FluidStack;
 import com.hbm.inventory.container.ContainerMachineHydrotreater;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
@@ -17,7 +16,6 @@ import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.IPersistentNBT;
 import com.hbm.tileentity.TileEntityMachineBase;
-import com.hbm.util.Tuple.Triplet;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
@@ -34,7 +32,9 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineHydrotreater extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IPersistentNBT, IGUIProvider, IFluidCopiable {
+
 	
+    public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
 	public long energyQuanta;
 	public static final long maxPower = 1_000_000;
 	
@@ -48,8 +48,7 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 	private int observedInventoryFingerprint;
 	private boolean inventoryFingerprintInitialized;
 	private long nextBatchTick = -1L;
-	private FluidType cachedFeedType;
-	private Triplet<FluidStack, FluidStack, FluidStack> cachedRecipe;
+	private com.hbm.realsim.ProcessRecipe cachedRecipe;
 
 	public TileEntityMachineHydrotreater() {
 		super(11);
@@ -105,11 +104,11 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 		this.nextBatchTick = -1L;
 		if(this.canProcessBatch()) {
 			this.processBatch();
-			this.nextBatchTick = now + 2L;
-			this.evaluateAndSchedule(now, 2L);
+			this.nextBatchTick = now + 1L;
+			this.evaluateAndSchedule(now, 1L);
 		} else {
 			this.cancelMachineTransition(TASK_BATCH, 0);
-			this.evaluateAndSchedule(now, 2L);
+			this.evaluateAndSchedule(now, 1L);
 		}
 		this.observedPower = energyQuanta;
 	}
@@ -134,7 +133,6 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 		boolean powerChanged = observedPower != energyQuanta;
 		if(recipeChanged) {
 			this.observedRecipeRevision = SerializableRecipe.getRegistryRevision();
-			this.cachedFeedType = null;
 			this.refreshCachedRecipe();
 		}
 		if(recipeChanged || powerChanged) this.markMachineDirty((recipeChanged ? MachineDirtyCause.RECIPE : 0) | (powerChanged ? MachineDirtyCause.ENERGY : 0));
@@ -143,53 +141,25 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 	}
 
 	private void refreshCachedRecipe() {
-		FluidType feed = tanks[0].getTankType();
-		long revision = SerializableRecipe.getRegistryRevision();
-		if(cachedFeedType != feed || observedRecipeRevision != revision) {
-			cachedFeedType = feed;
-			observedRecipeRevision = revision;
-			cachedRecipe = HydrotreatingRecipes.getOutput(feed);
-		}
+        cachedRecipe = HydrotreatingRecipes.getPhysical(tanks[0].getTankType());
 	}
 
 	private void configureRecipeTanks() {
-		this.beginMachineFluidMutation();
-		try {
-			if(cachedRecipe == null) {
-				tanks[2].configureForRecipe(Fluids.NONE, 0);
-				tanks[3].configureForRecipe(Fluids.NONE, 0);
-				return;
-			}
-			tanks[1].configureForRecipe(cachedRecipe.getX().type, cachedRecipe.getX().pressure);
-			tanks[2].configureForRecipe(cachedRecipe.getY().type, 0);
-			tanks[3].configureForRecipe(cachedRecipe.getZ().type, 0);
-		} finally { this.endMachineFluidMutation(); }
+        com.hbm.realsim.ProcessRecipe bill = physicalBatch.active() ? physicalBatch.recipe() : cachedRecipe;
+        if(bill != null) tanks[1].configureForRecipe(Fluids.fromName(bill.inputs[1]), bill.pressures[1]);
+        com.hbm.realsim.ProcessMachine.configure(physicalBatch, cachedRecipe, new FluidTank[] {tanks[2], tanks[3]});
 	}
 
 	private boolean canProcessBatch() {
-		if(cachedRecipe == null || energyQuanta < 20_000L || tanks[0].getFill() < 100 || tanks[1].getFill() < cachedRecipe.getX().fill) return false;
-		if(cachedRecipe != HydrotreatingRecipes.getOutput(tanks[0].getTankType()) || tanks[1].getTankType() != cachedRecipe.getX().type
-				|| tanks[2].getTankType() != cachedRecipe.getY().type || tanks[3].getTankType() != cachedRecipe.getZ().type) return false;
-		if(slots[10] == null || slots[10].getItem() != ModItems.catalytic_converter) return false;
-		return tanks[2].getFill() + cachedRecipe.getY().fill <= tanks[2].getMaxFill() && tanks[3].getFill() + cachedRecipe.getZ().fill <= tanks[3].getMaxFill();
+        return slots[10] != null && slots[10].getItem() == ModItems.catalytic_converter && (physicalBatch.active() || cachedRecipe != null
+                && com.hbm.realsim.ProcessMachine.inputsReady(cachedRecipe, new FluidTank[] {tanks[0], tanks[1]}, slots, 0, -1));
 	}
 
 	private void processBatch() {
-		if(!this.canProcessBatch()) return;
-		this.beginMachineFluidMutation();
-		this.runtimeEnergyMutation = true;
-		try {
-			tanks[0].setFill(tanks[0].getFill() - 100);
-			tanks[1].setFill(tanks[1].getFill() - cachedRecipe.getX().fill);
-			tanks[2].setFill(tanks[2].getFill() + cachedRecipe.getY().fill);
-			tanks[3].setFill(tanks[3].getFill() + cachedRecipe.getZ().fill);
-			this.setStoredEnergyQuanta(energyQuanta - 20_000L);
-		} finally {
-			this.runtimeEnergyMutation = false;
-			this.endMachineFluidMutation();
-		}
-		this.markDirty();
-		this.markNetworkDirty();
+        this.beginMachineFluidMutation(); runtimeEnergyMutation = true;
+        try { com.hbm.realsim.ProcessMachine.step(this, physicalBatch, cachedRecipe, new FluidTank[] {tanks[0], tanks[1]}, new FluidTank[] {tanks[2], tanks[3]}, slots, 0, -1, 0, -1); }
+        finally { runtimeEnergyMutation = false; this.endMachineFluidMutation(); }
+        this.markNetworkDirty();
 	}
 
 	private boolean hasBatteryWork() {
@@ -265,6 +235,7 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
+        physicalBatch.read(nbt);
 		super.readFromNBT(nbt);
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		tanks[0].readFromNBT(nbt, "t0");
@@ -272,12 +243,12 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 		tanks[2].readFromNBT(nbt, "t2");
 		tanks[3].readFromNBT(nbt, "t3");
 		runtimeInitialized = false;
-		cachedFeedType = null;
 		nextBatchTick = -1L;
 	}
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+        physicalBatch.write(nbt);
 		super.writeToNBT(nbt);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tanks[0].writeToNBT(nbt, "t0");
@@ -330,7 +301,7 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 
 	@Override
 	public void writeNBT(NBTTagCompound nbt) {
-		if(tanks[0].getFill() == 0 && tanks[1].getFill() == 0 && tanks[2].getFill() == 0 && tanks[3].getFill() == 0) return;
+        physicalBatch.write(nbt);
 		NBTTagCompound data = new NBTTagCompound();
 		for(int i = 0; i < 4; i++) this.tanks[i].writeToNBT(data, "" + i);
 		nbt.setTag(NBT_PERSISTENT_KEY, data);
@@ -338,6 +309,7 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 
 	@Override
 	public void readNBT(NBTTagCompound nbt) {
+        physicalBatch.read(nbt);
 		NBTTagCompound data = nbt.getCompoundTag(NBT_PERSISTENT_KEY);
 		for(int i = 0; i < 4; i++) this.tanks[i].readFromNBT(data, "" + i);
 	}

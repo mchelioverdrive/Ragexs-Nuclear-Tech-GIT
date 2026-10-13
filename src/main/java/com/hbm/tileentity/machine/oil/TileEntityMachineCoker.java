@@ -2,7 +2,6 @@ package com.hbm.tileentity.machine.oil;
 
 import com.hbm.handler.pollution.PollutionHandler;
 import com.hbm.handler.pollution.PollutionHandler.PollutionType;
-import com.hbm.inventory.FluidStack;
 import com.hbm.inventory.container.ContainerMachineCoker;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
@@ -17,23 +16,20 @@ import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
-import com.hbm.util.Tuple.Triplet;
 import com.hbm.util.FurnaceGasEmission;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.fluid.IFluidStandardTransceiver;
-import api.hbm.tile.IHeatSource;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 
-public class TileEntityMachineCoker extends TileEntityMachineBase implements IFluidStandardTransceiver, IGUIProvider, IFluidCopiable {
+public class TileEntityMachineCoker extends TileEntityMachineBase implements api.hbm.energymk2.IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IFluidCopiable {
 
 	public boolean wasOn;
 	public int progress;
@@ -43,8 +39,10 @@ public class TileEntityMachineCoker extends TileEntityMachineBase implements IFl
 	public static int maxHeat = 100_000;
 	public static double diffusion = 0.25D;
 	
-	public FluidTank[] tanks;
-	private Triplet<Integer, ItemStack, FluidStack> cachedRecipe;
+	public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
+    public long energyQuanta;
+    public FluidTank[] tanks;
+	private com.hbm.realsim.ProcessRecipe cachedRecipe;
 	private boolean runtimeInitialized;
 	private int observedInventoryFingerprint;
 	private boolean inventoryFingerprintInitialized;
@@ -55,9 +53,11 @@ public class TileEntityMachineCoker extends TileEntityMachineBase implements IFl
 
 	public TileEntityMachineCoker() {
 		super(2);
-		tanks = new FluidTank[2];
+		tanks = new FluidTank[4];
 		tanks[0] = new FluidTank(Fluids.HEAVYOIL, 16_000);
 		tanks[1] = new FluidTank(Fluids.OIL_COKER, 8_000);
+		tanks[2] = new FluidTank(Fluids.GAS_COKER, 8000);
+        tanks[3] = new FluidTank(Fluids.WATER, 8000);
 		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 
@@ -101,39 +101,21 @@ public class TileEntityMachineCoker extends TileEntityMachineBase implements IFl
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType != TASK_SIMULATE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
-		int oldInputFill = tanks[0].getFill();
-		int oldOutputFill = tanks[1].getFill();
-		int oldInventoryFingerprint = this.inventoryFingerprint();
-		wasOn = false;
-		this.tryPullHeat();
-		this.beginMachineFluidMutation();
-		try {
-			if(this.canProcess()) {
-				int burn = heat / 100;
-				if(burn > 0) {
-					wasOn = true;
-					progress += burn;
-					heat -= burn;
-					if(progress >= processTime) {
-						this.markChanged();
-						progress -= processTime;
-						this.applyRecipeOutput();
-					}
-				}
-				if(wasOn && worldObj.getTotalWorldTime() % 5 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 5);
-				if(wasOn) FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 300);
-			}
-		} finally {
-			this.endMachineFluidMutation();
-		}
-		this.observeInventoryFingerprint();
-		boolean inventoryChanged = oldInventoryFingerprint != observedInventoryFingerprint;
-		if(inventoryChanged) this.markNetworkDirty();
-		if(oldInputFill != tanks[0].getFill() || oldOutputFill != tanks[1].getFill() || inventoryChanged) this.markDirty();
-		this.sendOutputFluid();
-		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
-		this.sendRuntimeState();
+        if(taskType != TASK_SIMULATE || worldObj == null || worldObj.isRemote) return;
+        this.beginMachineFluidMutation();
+        try {
+            int before = physicalBatch.ticks();
+            com.hbm.realsim.ProcessMachine.step(this, physicalBatch, cachedRecipe, new FluidTank[] {tanks[0]}, new FluidTank[] {tanks[1], tanks[2], tanks[3]}, slots, 0, -1, 1, 1);
+            wasOn = physicalBatch.ticks() != before;
+            if(wasOn && worldObj.getTotalWorldTime() % 5L == 0L) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 5);
+            if(wasOn) FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 300);
+            progress = physicalBatch.active() ? (int) ((long) physicalBatch.ticks() * processTime / physicalBatch.recipe().duration) : 0;
+            api.hbm.tile.IProcessHeatSource heater = com.hbm.realsim.ProcessMachine.heater(this);
+            heat = heater == null ? 0 : Math.min(maxHeat, heater.getHeatStored());
+        } finally { this.endMachineFluidMutation(); }
+        if(worldObj.getTotalWorldTime() % 5L == 0L) this.sendOutputFluid();
+        if(worldObj.getTotalWorldTime() % 20L == 0L) this.sendRuntimeState();
+        this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
@@ -167,71 +149,42 @@ public class TileEntityMachineCoker extends TileEntityMachineBase implements IFl
 	}
 	
 	public boolean canProcess() {
-		if(cachedRecipe == null) return false;
-		if(cachedRecipe != CokerRecipes.getOutput(tanks[0].getTankType())) return false;
-		int fillReq = cachedRecipe.getX();
-		ItemStack output = cachedRecipe.getY();
-		FluidStack byproduct = cachedRecipe.getZ();
-		if(tanks[0].getFill() < fillReq) return false;
-		if(byproduct != null && byproduct.fill + tanks[1].getFill() > tanks[1].getMaxFill()) return false;
-		if(output != null && slots[1] != null) {
-			if(output.getItem() != slots[1].getItem()) return false;
-			if(output.getItemDamage() != slots[1].getItemDamage()) return false;
-			if(output.stackSize + slots[1].stackSize > output.getMaxStackSize()) return false;
-		}
-		return true;
+        return physicalBatch.active() || cachedRecipe != null && tanks[0].getFill() > 0;
 	}
 
 	private void refreshRuntimeState() {
-		this.beginMachineFluidMutation();
-		try {
-			tanks[0].setType(0, slots);
-			cachedRecipe = CokerRecipes.getOutput(tanks[0].getTankType());
-			if(cachedRecipe != null && cachedRecipe.getZ() != null) tanks[1].setTankType(cachedRecipe.getZ().type);
-		} finally {
-			this.endMachineFluidMutation();
-		}
-		this.observeInventoryFingerprint();
+        tanks[0].setType(0, slots); cachedRecipe = CokerRecipes.getPhysical(tanks[0].getTankType());
+        com.hbm.realsim.ProcessMachine.configure(physicalBatch, cachedRecipe, new FluidTank[] {tanks[1], tanks[2], tanks[3]}); this.observeInventoryFingerprint();
 	}
 
-	private void applyRecipeOutput() {
-		if(cachedRecipe == null) return;
-		ItemStack output = cachedRecipe.getY();
-		FluidStack byproduct = cachedRecipe.getZ();
-		if(output != null) {
-			if(slots[1] == null) slots[1] = output.copy();
-			else slots[1].stackSize += output.stackSize;
-		}
-		if(byproduct != null) tanks[1].setFill(tanks[1].getFill() + byproduct.fill);
-		tanks[0].setFill(tanks[0].getFill() - cachedRecipe.getX());
-	}
 
 	private boolean hasHeatSource() {
-		return worldObj.getTileEntity(xCoord, yCoord - 1, zCoord) instanceof IHeatSource;
+        return com.hbm.realsim.ProcessMachine.heater(this) != null;
 	}
 
 	private void evaluateAndSchedule(long now) {
-		if(!runtimeInitialized) return;
-		if(heat > 0 || this.hasHeatSource()) this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
-		else this.cancelMachineTransition(TASK_SIMULATE, TASK_SLOT_MAIN);
+        if(this.canProcess()) this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
+        else { wasOn = false; this.cancelMachineTransition(TASK_SIMULATE, TASK_SLOT_MAIN); }
 	}
 
 	private void updateConnections() {
-		for(DirPos pos : getConPos()) this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+		for(DirPos pos : getConPos()) { this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir()); this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir()); }
 	}
 
 	private void sendOutputFluid() {
-		if(tanks[1].getFill() <= 0) return;
-		for(DirPos pos : getConPos()) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+        for(DirPos pos : getConPos()) for(int i = 1; i < tanks.length; i++) if(tanks[i].getFill() > 0) this.sendFluid(tanks[i], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 	}
 
 	private void sendRuntimeState() {
 		NBTTagCompound data = new NBTTagCompound();
 		data.setBoolean("wasOn", wasOn);
+        api.hbm.energymk2.EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 		data.setInteger("heat", heat);
 		data.setInteger("progress", progress);
 		tanks[0].writeToNBT(data, "t0");
 		tanks[1].writeToNBT(data, "t1");
+        tanks[2].writeToNBT(data, "t2");
+        tanks[3].writeToNBT(data, "t3");
 		this.networkPack(data, 25);
 	}
 
@@ -261,38 +214,15 @@ public class TileEntityMachineCoker extends TileEntityMachineBase implements IFl
 		super.networkUnpack(nbt);
 		
 		this.wasOn = nbt.getBoolean("wasOn");
+        energyQuanta = api.hbm.energymk2.EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.heat = nbt.getInteger("heat");
 		this.progress = nbt.getInteger("progress");
 		tanks[0].readFromNBT(nbt, "t0");
 		tanks[1].readFromNBT(nbt, "t1");
+        if(nbt.hasKey("t2", 10)) tanks[2].readFromNBT(nbt, "t2");
+        if(nbt.hasKey("t3", 10)) tanks[3].readFromNBT(nbt, "t3");
 	}
-	
-	protected void tryPullHeat() {
-		
-		if(this.heat >= this.maxHeat) return;
-		
-		TileEntity con = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
-		
-		if(con instanceof IHeatSource) {
-			IHeatSource source = (IHeatSource) con;
-			int diff = source.getHeatStored() - this.heat;
-			
-			if(diff == 0) {
-				return;
-			}
-			
-			if(diff > 0) {
-				diff = (int) Math.ceil(diff * diffusion);
-				source.useUpHeat(diff);
-				this.heat += diff;
-				if(this.heat > this.maxHeat)
-					this.heat = this.maxHeat;
-				return;
-			}
-		}
-		
-		this.heat = Math.max(this.heat - Math.max(this.heat / 1000, 1), 0);
-	}
+
 
 	@Override
 	public boolean canExtractItem(int slot, ItemStack stack, int side) {
@@ -306,18 +236,26 @@ public class TileEntityMachineCoker extends TileEntityMachineBase implements IFl
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
+        physicalBatch.read(nbt);
+        energyQuanta = api.hbm.energymk2.EnergyUnits.readEnergyQuanta(nbt, "power");
 		super.readFromNBT(nbt);
 		this.tanks[0].readFromNBT(nbt, "t0");
 		this.tanks[1].readFromNBT(nbt, "t1");
-		this.progress = nbt.getInteger("prog");
+        if(nbt.hasKey("t2", 10)) tanks[2].readFromNBT(nbt, "t2");
+        if(nbt.hasKey("t3", 10)) tanks[3].readFromNBT(nbt, "t3");
+		this.progress = 0; // Legacy progress owned no input and cannot become physical credit.
 		this.heat = nbt.getInteger("heat");
 	}
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+        physicalBatch.write(nbt);
+        api.hbm.energymk2.EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		super.writeToNBT(nbt);
 		this.tanks[0].writeToNBT(nbt, "t0");
 		this.tanks[1].writeToNBT(nbt, "t1");
+        this.tanks[2].writeToNBT(nbt, "t2");
+        this.tanks[3].writeToNBT(nbt, "t3");
 		nbt.setInteger("prog", progress);
 		nbt.setInteger("heat", heat);
 	}
@@ -329,7 +267,7 @@ public class TileEntityMachineCoker extends TileEntityMachineBase implements IFl
 
 	@Override
 	public FluidTank[] getSendingTanks() {
-		return new FluidTank[] { tanks[1] };
+		return new FluidTank[] { tanks[1], tanks[2], tanks[3] };
 	}
 
 	@Override
@@ -375,4 +313,7 @@ public class TileEntityMachineCoker extends TileEntityMachineBase implements IFl
 	public Object provideGUI(int ID, EntityPlayer player, World world, int x, int y, int z) {
 		return new GUIMachineCoker(player.inventory, this);
 	}
+    @Override public long getStoredEnergyQuanta() { return energyQuanta; }
+    @Override public long getEnergyCapacityQuanta() { return 1_000_000L; }
+    @Override public void setStoredEnergyQuanta(long amount) { energyQuanta = amount; markDirty(); markMachineEnergyDirty(); }
 }

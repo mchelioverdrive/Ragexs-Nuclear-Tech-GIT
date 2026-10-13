@@ -10,7 +10,6 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.handler.MultiblockHandlerXR;
 import com.hbm.handler.pollution.PollutionHandler;
 import com.hbm.handler.pollution.PollutionHandler.PollutionType;
-import com.hbm.inventory.FluidStack;
 import com.hbm.inventory.OreDictManager;
 import com.hbm.inventory.RecipesCommon.AStack;
 import com.hbm.inventory.RecipesCommon.ComparableStack;
@@ -29,7 +28,6 @@ import com.hbm.main.MainRegistry;
 import com.hbm.sound.AudioWrapper;
 import com.hbm.tileentity.*;
 import com.hbm.util.ParticleUtil;
-import com.hbm.util.Tuple.Quintet;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
@@ -49,10 +47,12 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineRefinery extends TileEntityMachineBase implements IEnergyReceiverMK2, IOverpressurable, IPersistentNBT, IRepairable, IFluidStandardTransceiver, IGUIProvider, IFluidCopiable {
 
+
+    public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
 	public long energyQuanta = 0;
 	public int sulfur = 0;
 	public static final int maxSulfur = 100;
-	public static final long maxPower = 1000;
+	public static final long maxPower = 1_000_000;
 	public FluidTank[] tanks;
 	private static final int TASK_ACCOUNTING = 1;
 	private static final int TASK_FIRE = 2;
@@ -62,18 +62,10 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 	private static final int TASK_SLOT_BATTERY = 1;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
-	private boolean runtimeAccountingMutation;
-	private long lastAccountingTick = Long.MIN_VALUE;
-	private long lastRefiningTick = Long.MIN_VALUE;
-	private long lastPollutionTick = Long.MIN_VALUE;
-	private long batteryTransitionDueTick = Long.MIN_VALUE;
-	private long operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(5L);
 	private long observedPower;
 	private int observedInventoryFingerprint;
 	private boolean inventoryFingerprintInitialized;
-	private FluidType cachedFeedType;
-	private Quintet<FluidStack, FluidStack, FluidStack, FluidStack, ItemStack> cachedRecipe;
-	private FluidStack[] cachedFractions;
+	private com.hbm.realsim.ProcessRecipe cachedRecipe;
 
 	public boolean hasExploded = false;
 	public boolean onFire = false;
@@ -108,6 +100,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
+        physicalBatch.read(nbt);
 		super.readFromNBT(nbt);
 
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
@@ -120,16 +113,11 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 		hasExploded = nbt.getBoolean("exploded");
 		onFire = nbt.getBoolean("onFire");
 		runtimeInitialized = false;
-		cachedFeedType = null;
-		lastAccountingTick = Long.MIN_VALUE;
-		lastRefiningTick = Long.MIN_VALUE;
-		lastPollutionTick = Long.MIN_VALUE;
-		batteryTransitionDueTick = Long.MIN_VALUE;
 	}
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
-		if(worldObj != null && !worldObj.isRemote) this.settleRefiningThrough(worldObj.getTotalWorldTime() - 1L);
+        physicalBatch.write(nbt);
 		super.writeToNBT(nbt);
 
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
@@ -202,11 +190,6 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 	}
 
 	@Override public void onChunkUnload() {
-		if(worldObj != null && !worldObj.isRemote) this.settleRefiningThrough(worldObj.getTotalWorldTime() - 1L);
-		lastAccountingTick = Long.MIN_VALUE;
-		lastRefiningTick = Long.MIN_VALUE;
-		lastPollutionTick = Long.MIN_VALUE;
-		batteryTransitionDueTick = Long.MIN_VALUE;
 		super.onChunkUnload();
 		if(audio != null) {
 			audio.stopSound();
@@ -219,86 +202,33 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 	}
 
 	@Override public void onMachineRuntimeDirty(int causes) {
-		if(worldObj == null || worldObj.isRemote) return;
-		long now = worldObj.getTotalWorldTime();
-		boolean wasActive = isOn;
-		if(lastAccountingTick == Long.MIN_VALUE) lastAccountingTick = now;
-		else this.settleRefiningThrough(now - 1L);
-		if(hasExploded) {
-			isOn = false;
-			this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
-			this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
-			batteryTransitionDueTick = Long.MIN_VALUE;
-			this.cancelMachineTransition(TASK_POLLUTION, TASK_SLOT_MAIN);
-			if(onFire && hasFireFuel()) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_FIRE, TASK_SLOT_MAIN);
-			else this.cancelMachineTransition(TASK_FIRE, TASK_SLOT_MAIN);
-			runtimeInitialized = true;
-			return;
-		}
-		this.cancelMachineTransition(TASK_FIRE, TASK_SLOT_MAIN);
-		this.refreshCachedRecipe();
-		this.configureRecipeTanks();
-		runtimeInitialized = true;
-		observedPower = energyQuanta;
-		if(wasActive && !this.hasBatteryWork()) this.settleRefiningThrough(now);
-		else if(!wasActive) lastAccountingTick = now;
-		this.evaluateAndSchedule(now, wasActive && this.hasBatteryWork());
+        if(worldObj == null || worldObj.isRemote) return;
+        runtimeInitialized = true; this.configureRecipeTanks(); this.evaluateAndSchedule(worldObj.getTotalWorldTime(), false);
 	}
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
-		if(taskType == TASK_FIRE && taskSlot == TASK_SLOT_MAIN) {
-			if(worldObj == null || worldObj.isRemote || !hasExploded || !onFire || !hasFireFuel()) return;
-			this.updateFireSimulation();
-			if(!isInvalid() && hasExploded && onFire && hasFireFuel()) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_FIRE, TASK_SLOT_MAIN);
-			return;
-		}
-		if(worldObj == null || worldObj.isRemote || !runtimeInitialized || hasExploded) return;
-		long now = worldObj.getTotalWorldTime();
-		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
-			batteryTransitionDueTick = Long.MIN_VALUE;
-			this.settleRefiningThrough(now - 1L);
-			long beforePower = energyQuanta;
-			this.runtimeEnergyMutation = true;
-			try { this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower)); }
-			finally { this.runtimeEnergyMutation = false; }
-			if(beforePower != energyQuanta) { this.markDirty(); this.markNetworkDirty(); }
-			this.settleRefiningThrough(now);
-			this.observedPower = energyQuanta;
-			this.evaluateAndSchedule(now, false);
-			return;
-		}
-		if(taskType == TASK_ACCOUNTING && taskSlot == TASK_SLOT_MAIN) {
-			if(this.observeInventoryFingerprint()) {
-				boolean wasActive = isOn;
-				this.settleRefiningThrough(now - 1L);
-				this.refreshCachedRecipe();
-				this.configureRecipeTanks();
-				if(wasActive && !this.hasBatteryWork()) this.settleRefiningThrough(now);
-			}
-			this.settleRefiningThrough(now);
-			this.observedPower = energyQuanta;
-			this.evaluateAndSchedule(now, false);
-			return;
-		}
-		if(taskType == TASK_POLLUTION && taskSlot == TASK_SLOT_MAIN) {
-			if(batteryTransitionDueTick != Long.MIN_VALUE && batteryTransitionDueTick <= now) {
-				this.scheduleMachineTransition(now, TASK_POLLUTION, TASK_SLOT_MAIN);
-				return;
-			}
-			this.settleRefiningThrough(now);
-			if(lastRefiningTick == now && lastPollutionTick != now) {
-				PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 5);
-				lastPollutionTick = now;
-			}
-			this.evaluateAndSchedule(now, false);
-		}
+        if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+        if(hasExploded) {
+            if(onFire && hasFireFuel()) { this.updateFireSimulation(); this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_FIRE, TASK_SLOT_MAIN); }
+            return;
+        }
+        runtimeEnergyMutation = true; this.beginMachineFluidMutation();
+        try {
+            this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
+            int previous = physicalBatch.ticks();
+            com.hbm.realsim.ProcessMachine.step(this, physicalBatch, RefineryRecipes.getPhysical(tanks[0].getTankType()), new FluidTank[] {tanks[0]},
+                new FluidTank[] {tanks[1], tanks[2], tanks[3], tanks[4]}, slots, 0, -1, 11, 11);
+            isOn = physicalBatch.ticks() != previous;
+            if(isOn && worldObj.getTotalWorldTime() % 20L == 0L) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 5);
+            observedPower = energyQuanta;
+        } finally { this.endMachineFluidMutation(); runtimeEnergyMutation = false; }
+        this.evaluateAndSchedule(worldObj.getTotalWorldTime(), false);
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
 		if(worldObj == null || worldObj.isRemote) return;
 		if(cadence == 5) {
 			long now = worldObj.getTotalWorldTime();
-			this.settleRefiningThrough(now);
 			if(!hasExploded) {
 				boolean fluidChanged = tanks[0].setType(12, slots);
 				fluidChanged |= tanks[0].loadTank(1, 2, slots);
@@ -313,7 +243,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 			return;
 		}
 		if(cadence != 20) return;
-		if(cachedRecipe != RefineryRecipes.getRefinery(tanks[0].getTankType())) this.markMachineDirty(MachineDirtyCause.RECIPE);
+		if(cachedRecipe != RefineryRecipes.getPhysical(tanks[0].getTankType())) this.markMachineDirty(MachineDirtyCause.RECIPE);
 		if(!hasExploded) this.updateConnections();
 		if(observedPower != energyQuanta) this.markMachineEnergyDirty();
 		NBTTagCompound data = new NBTTagCompound();
@@ -326,28 +256,16 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 	}
 
 	private void refreshCachedRecipe() {
-		FluidType feed = tanks[0].getTankType();
-		Quintet<FluidStack, FluidStack, FluidStack, FluidStack, ItemStack> recipe = RefineryRecipes.getRefinery(feed);
-		if(cachedFeedType != feed || cachedRecipe != recipe) {
-			cachedFeedType = feed;
-			cachedRecipe = recipe;
-			cachedFractions = cachedRecipe == null ? null : new FluidStack[] { cachedRecipe.getV(), cachedRecipe.getW(), cachedRecipe.getX(), cachedRecipe.getY() };
-		}
+        cachedRecipe = RefineryRecipes.getPhysical(tanks[0].getTankType());
 	}
 
 	private void configureRecipeTanks() {
-		this.refreshCachedRecipe();
-		this.beginMachineFluidMutation();
-		try {
-			for(int i = 0; i < 4; i++) tanks[i + 1].setTankType(cachedFractions == null ? Fluids.NONE : cachedFractions[i].type);
-		} finally { this.endMachineFluidMutation(); }
+        this.refreshCachedRecipe();
+        com.hbm.realsim.ProcessMachine.configure(physicalBatch, cachedRecipe, new FluidTank[] {tanks[1], tanks[2], tanks[3], tanks[4]});
 	}
 
 	private boolean canRefine() {
-		if(hasExploded || cachedFractions == null || energyQuanta < EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts) || tanks[0].getFill() < 100) return false;
-		if(cachedRecipe != RefineryRecipes.getRefinery(tanks[0].getTankType())) return false;
-		for(int i = 0; i < 4; i++) if(tanks[i + 1].getTankType() != cachedFractions[i].type || tanks[i + 1].getFill() + cachedFractions[i].fill > tanks[i + 1].getMaxFill()) return false;
-		return true;
+        return !hasExploded && (physicalBatch.active() || com.hbm.realsim.ProcessMachine.inputsReady(cachedRecipe, new FluidTank[] {tanks[0]}, slots, 0, -1));
 	}
 
 	private boolean hasBatteryWork() {
@@ -359,77 +277,15 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 	}
 
 	private void evaluateAndSchedule(long now, boolean batteryDueNow) {
-		if(!runtimeInitialized || hasExploded) return;
-		boolean canRun = this.canRefine();
-		isOn = canRun;
-		boolean battery = this.hasBatteryWork();
-		if(battery) {
-			long due = now + (batteryDueNow ? 0L : 1L);
-			this.scheduleMachineTransition(due, TASK_BATTERY, TASK_SLOT_BATTERY);
-			if(batteryTransitionDueTick == Long.MIN_VALUE || due < batteryTransitionDueTick) batteryTransitionDueTick = due;
-		} else {
-			this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
-			batteryTransitionDueTick = Long.MIN_VALUE;
-		}
-		if(canRun && !battery) {
-			long cost = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
-			long steps = Math.min(tanks[0].getFill() / 100L, energyQuanta / cost);
-			for(int i = 0; i < 4; i++) if(cachedFractions[i].fill > 0) steps = Math.min(steps, (tanks[i + 1].getMaxFill() - tanks[i + 1].getFill()) / cachedFractions[i].fill);
-			if(steps > 0L) this.scheduleMachineTransition(now + steps, TASK_ACCOUNTING, TASK_SLOT_MAIN);
-		} else this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
-		boolean pollDueNow = now % 20L == 0L && lastRefiningTick == now && lastPollutionTick != now;
-		if(pollDueNow) this.scheduleMachineTransition(now, TASK_POLLUTION, TASK_SLOT_MAIN);
-		else if(canRun) this.scheduleMachineTransition(now + (20L - now % 20L), TASK_POLLUTION, TASK_SLOT_MAIN);
-		else this.cancelMachineTransition(TASK_POLLUTION, TASK_SLOT_MAIN);
+        if(!runtimeInitialized) return;
+        this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY); this.cancelMachineTransition(TASK_POLLUTION, TASK_SLOT_MAIN);
+        if(hasExploded) {
+            isOn = false; this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+            if(onFire && hasFireFuel()) this.scheduleMachineTransition(now + 1L, TASK_FIRE, TASK_SLOT_MAIN);
+        } else if(this.canRefine() || this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+        else { isOn = false; this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN); }
 	}
 
-	private void settleRefiningThrough(long targetTick) {
-		if(worldObj == null || worldObj.isRemote || runtimeAccountingMutation || lastAccountingTick == Long.MIN_VALUE || targetTick <= lastAccountingTick) return;
-		long startTick = lastAccountingTick;
-		long elapsed = targetTick - startTick;
-		lastAccountingTick = targetTick;
-		if(!runtimeInitialized || hasExploded || !this.canRefine()) return;
-		long cost = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
-		long steps = Math.min(elapsed, Math.min(tanks[0].getFill() / 100L, energyQuanta / cost));
-		for(int i = 0; i < 4; i++) if(cachedFractions[i].fill > 0) steps = Math.min(steps, (tanks[i + 1].getMaxFill() - tanks[i + 1].getFill()) / cachedFractions[i].fill);
-		if(steps <= 0L) return;
-		long sulfurTotal = (long) sulfur + steps;
-		long outputCycles = sulfurTotal / maxSulfur;
-		sulfur = (int) (sulfurTotal % maxSulfur);
-		runtimeAccountingMutation = true;
-		this.beginMachineFluidMutation();
-		runtimeEnergyMutation = true;
-		try {
-			tanks[0].setFill(tanks[0].getFill() - (int) (steps * 100L));
-			for(int i = 0; i < 4; i++) tanks[i + 1].setFill(tanks[i + 1].getFill() + (int) (steps * cachedFractions[i].fill));
-			this.setStoredEnergyQuanta(energyQuanta - steps * cost);
-			this.applySulfurOutputs(outputCycles);
-		} finally {
-			runtimeEnergyMutation = false;
-			this.endMachineFluidMutation();
-			runtimeAccountingMutation = false;
-		}
-		if(steps > 0L) lastRefiningTick = startTick + steps;
-		this.markDirty();
-		this.markNetworkDirty();
-		if(outputCycles > 0L) this.markMachineDirty(MachineDirtyCause.INVENTORY);
-	}
-
-	private void applySulfurOutputs(long cycles) {
-		if(cycles <= 0L) return;
-		ItemStack out = cachedRecipe == null ? null : cachedRecipe.getZ();
-		if(out == null || out.stackSize <= 0) return;
-		ItemStack current = slots[11];
-		if(current == null) {
-			slots[11] = out.copy();
-			cycles--;
-			current = slots[11];
-		}
-		if(cycles > 0L && current != null && out.getItem() == current.getItem() && out.getItemDamage() == current.getItemDamage()) {
-			long additional = Math.min(cycles, Math.max(0, (current.getMaxStackSize() - current.stackSize) / out.stackSize));
-			current.stackSize += (int) (additional * out.stackSize);
-		}
-	}
 
 	private boolean observeInventoryFingerprint() {
 		int hash = 1;
@@ -522,18 +378,15 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 	@Override
 	public void setStoredEnergyQuanta(long i) {
 		if(this.energyQuanta == i) return;
-		if(!runtimeEnergyMutation && !runtimeAccountingMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleRefiningThrough(worldObj.getTotalWorldTime() - 1L);
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
 		if(!runtimeEnergyMutation) this.markMachineEnergyDirty();
 	}
 
 	@Override protected void beforeInventorySlotChanged(int slot) {
-		if(!runtimeAccountingMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleRefiningThrough(worldObj.getTotalWorldTime() - 1L);
 	}
 
 	@Override protected void beforeFluidStorageChanged(FluidTank tank) {
-		if(!runtimeAccountingMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleRefiningThrough(worldObj.getTotalWorldTime() - 1L);
 	}
 
 	@Override
@@ -639,7 +492,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 
 	@Override
 	public void writeNBT(NBTTagCompound nbt) {
-		if(tanks[0].getFill() == 0 && tanks[1].getFill() == 0 && tanks[2].getFill() == 0 && tanks[3].getFill() == 0 && tanks[4].getFill() == 0 && !this.hasExploded) return;
+        physicalBatch.write(nbt);
 		NBTTagCompound data = new NBTTagCompound();
 		for(int i = 0; i < 5; i++) this.tanks[i].writeToNBT(data, "" + i);
 		data.setBoolean("hasExploded", hasExploded);
@@ -649,6 +502,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 
 	@Override
 	public void readNBT(NBTTagCompound nbt) {
+        physicalBatch.read(nbt);
 		NBTTagCompound data = nbt.getCompoundTag(NBT_PERSISTENT_KEY);
 		for(int i = 0; i < 5; i++) this.tanks[i].readFromNBT(data, "" + i);
 		this.hasExploded = data.getBoolean("hasExploded");

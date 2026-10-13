@@ -37,7 +37,7 @@ public class MachineCatalyticCracker extends BlockDummyable implements ILookOver
 		if(meta >= 12)
 			return new TileEntityMachineCatalyticCracker();
 		if(meta >= extra)
-			return new TileEntityProxyCombo(false, false, true);
+			return new TileEntityProxyCombo(true, true, true);
 		
 		return null;
 	}

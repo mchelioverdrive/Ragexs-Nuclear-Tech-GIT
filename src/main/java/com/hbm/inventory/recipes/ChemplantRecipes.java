@@ -317,43 +317,15 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputItems(new ComparableStack(ModBlocks.sand_lead))
 				.inputFluids(new FluidStack(Fluids.WASTEGAS, 1000))
 				.outputItems(new ItemStack(ModItems.nuclear_waste_vitrified)));
-		recipes.add(new ChemRecipe(88, "LUBRICANT", 20)
-				.inputFluids(
-						new FluidStack(Fluids.HEATINGOIL, 500),
-						new FluidStack(Fluids.UNSATURATEDS, 500))
-				.outputFluids(new FluidStack(Fluids.LUBRICANT, 1000)));
-		recipes.add(new ChemRecipe(70, "TEL", 40)
-				.inputItems(
-						new OreDictStack(KEY_ANY_TAR), //FIXED
-						new OreDictStack(PB.dust()))
-				.inputFluids(
-						new FluidStack(Fluids.PETROLEUM, 100),
-						new FluidStack(Fluids.STEAM, 1000))
-				.outputItems(new ItemStack(ModItems.fuel_additive)));
-		recipes.add(new ChemRecipe(4, "FR_REOIL", 30)
-				.inputFluids(new FluidStack(1000, Fluids.SMEAR))
-				.outputFluids(new FluidStack(800, Fluids.RECLAIMED)));
-		recipes.add(new ChemRecipe(5, "FR_PETROIL", 30)
-				.inputFluids(
-						new FluidStack(800, Fluids.RECLAIMED),
-						new FluidStack(200, Fluids.LUBRICANT))
-				.outputFluids(new FluidStack(1000, Fluids.PETROIL)));
-		recipes.add(new ChemRecipe(86, "PETROIL_LEADED", 40)
-				.inputItems(new ComparableStack(ModItems.fuel_additive))
-				.inputFluids(new FluidStack(Fluids.PETROIL, 10_000))
-				.outputFluids(new FluidStack(Fluids.PETROIL_LEADED, 12_000)));
-		recipes.add(new ChemRecipe(71, "GASOLINE", 40)
-				.inputFluids(new FluidStack(Fluids.NAPHTHA, 1000))
-				.outputFluids(new FluidStack(Fluids.GASOLINE, 800)));
+		recipes.add(new ChemRecipe(88, "LUBRICANT", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.reactorFraction()));
+		recipes.add(new ChemRecipe(70, "TEL", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.additive()));
+		recipes.add(new ChemRecipe(4, "FR_REOIL", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.reclaimed()));
+		recipes.add(new ChemRecipe(5, "FR_PETROIL", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.blend("PETROIL", "RECLAIMED", 4, "LUBRICANT", 1)));
+		recipes.add(new ChemRecipe(86, "PETROIL_LEADED", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.leaded("PETROIL")));
+		recipes.add(new ChemRecipe(71, "GASOLINE", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.finishing("REFORMATE", "GASOLINE")));
 
-		recipes.add(new ChemRecipe(85, "GASOLINE_LEADED", 40)
-				.inputItems(new ComparableStack(ModItems.fuel_additive))
-				.inputFluids(new FluidStack(Fluids.GASOLINE, 10_000))
-				.outputFluids(new FluidStack(Fluids.GASOLINE_LEADED, 12_000)));
-		recipes.add(new ChemRecipe(87, "COALGAS_LEADED", 40)
-				.inputItems(new ComparableStack(ModItems.fuel_additive))
-				.inputFluids(new FluidStack(Fluids.COALGAS, 10_000))
-				.outputFluids(new FluidStack(Fluids.COALGAS_LEADED, 12_000)));
+		recipes.add(new ChemRecipe(85, "GASOLINE_LEADED", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.leaded("GASOLINE")));
+		recipes.add(new ChemRecipe(87, "COALGAS_LEADED", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.leaded("COALGAS")));
 		recipes.add(new ChemRecipe(72, "FRACKSOL", 20)
 				.inputItems(new OreDictStack(S.dust()))
 				.inputFluids(
@@ -365,12 +337,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputItems(new ComparableStack(ModBlocks.moon_turf, 8))
 				.outputFluids(new FluidStack(Fluids.HELIUM3, 1000)));
 
-		//one bucket of ethanol equals 275_000 TU using the diesel baseline0
-		//the coal baseline is 400_000 per piece
-		//if we assume a burntime of 1.5 ops (300 ticks) for sugar at 100 TU/t that would equal a total of 30_000 TU
-		recipes.add(new ChemRecipe(75, "ETHANOL", 50)
-				.inputItems(new ComparableStack(Items.sugar, 10))
-				.outputFluids(new FluidStack(Fluids.ETHANOL, 1000)));
+		recipes.add(new ChemRecipe(75, "ETHANOL", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.fermentation()));
 		//recipes.add(new ChemRecipe(76, "METH", 30)
 		//		.inputItems(
 		//				new ComparableStack(Items.wheat),
@@ -562,26 +529,10 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 
 		//coal gasification
-		recipes.add(new ChemRecipe(1009, "COALGAS", 60)
-			.inputItems(
-				new OreDictStack(COAL.dust(), 8))
-			.inputFluids(
-				new FluidStack(Fluids.ULTRAHOTSTEAM, 3000))
-			.outputFluids(
-				new FluidStack(Fluids.HYDROGEN_GAS, 1000),
-				new FluidStack(Fluids.CARBONDIOXIDE, 500)
-				//new FluidStack(Fluids.GAS, 5)
-				//this fucking idiot bob only supports 2 outputs.
-			));
+		recipes.add(new ChemRecipe(1009, "COALGAS", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.gasification()));
 
 		// methane reforming
-		recipes.add(new ChemRecipe(1010, "SMR", 60)
-			.inputFluids(
-				new FluidStack(Fluids.GAS, 1000),
-				new FluidStack(Fluids.ULTRAHOTSTEAM, 1000))
-			.outputFluids(
-				new FluidStack(Fluids.HYDROGEN_GAS, 3000),
-				new FluidStack(Fluids.CARBONDIOXIDE, 1000)));
+		recipes.add(new ChemRecipe(1010, "SMR", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.methaneReforming()));
 
 
 		//molten salt actually this is going in the crucible since it's FUCKING USELESS BOB YOU RELENTLESS FUCK
@@ -1026,10 +977,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 
 		//I FUCKING HATE HOW UNMODULAR THIS INDEX SYSTEM IS !!! MORE RETARDED HUMAN SLOP DESIGN!!!
-		recipes.add(new ChemRecipe(1053, "GASOLINE2", 45)
-						.inputFluids(new FluidStack(Fluids.NAPHTHA, 1200))
-						.inputItems(new ComparableStack(ModItems.powder_rhenium)) //rhenium is used to make lead free gasoline
-						.outputFluids(new FluidStack(Fluids.GASOLINE, 1100)));
+		recipes.add(new ChemRecipe(1053, "GASOLINE2", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.syntheticGasoline()));
 
 		// Step 2: Oxidation (Chemplant)
 		recipes.add(new ChemRecipe(1054, "OSMIRIDIUM_OXIDATION", 300)
@@ -1986,16 +1934,10 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 
 		// Compact CO + 2H2 -> CH3OH synthesis: SYNGAS represents the conditioned CO/H2 feed.
-		recipes.add(new ChemRecipe(1128, "METHANOL_SYNTHESIS", 120)
-				.inputFluids(new FluidStack(Fluids.SYNGAS, 1124), new FluidStack(Fluids.HYDROGEN_GAS, 562))
-				.outputFluids(new FluidStack(Fluids.METHANOL, 1)));
+		recipes.add(new ChemRecipe(1128, "METHANOL_SYNTHESIS", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.methanol()));
 
-		// Coal-to-liquids is represented as hydrogenation over an iron catalyst. The recipe
-		// deliberately compresses gasification, cleanup, and Fischer-Tropsch upgrading.
-		recipes.add(new ChemRecipe(1129, "COAL_GASOLINE", 240)
-				.inputItems(new OreDictStack(COAL.dust(), 8), new ComparableStack(ModItems.powder_iron))
-				.inputFluids(new FluidStack(Fluids.HYDROGEN_GAS, 4_000))
-				.outputFluids(new FluidStack(Fluids.COALGAS, 2_000)));
+		// Coal hydrogenation owns its carbon/char/ash/water and paid utility bill.
+		recipes.add(new ChemRecipe(1129, "COAL_GASOLINE", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.coalLiquid("COALGAS")));
 
 		// UNSATURATEDS is the game's mixed light-olefin stream; this is an intentionally
 		// compact ethylene-polymerization route rather than a claim that every component polymerizes.
@@ -2004,23 +1946,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.outputFluids(new FluidStack(Fluids.POLYTHYLENE, 1_000)));
 
 		// Amine sweetening and regeneration are abstracted here; the amine solvent is recycled internally.
-		recipes.add(new ChemRecipe(1142, "SOUR_GAS_SWEETENING", 150)
-				.inputFluids(new FluidStack(Fluids.SOURGAS, 1_000),
-							 //the water part
-							 new FluidStack(Fluids.FRESH_WATER, 1_000)
-
-				)
-				//the ammonium part
-				.inputItems(
-					new ComparableStack(ModItems.ammonium_nitrate)
-				) //pen pineapple apple pen or something idfk god im tired
-				//I guess I could use nitric acid in place of amine solvent but that's different and I'm lazy
-				//TODO stop being lazy...
-				.outputFluids(
-					new FluidStack(Fluids.HYDROGEN_SULFIDE, 500),
-					new FluidStack(Fluids.GAS, 500)
-				)
-		);
+		recipes.add(new ChemRecipe(1142, "SOUR_GAS_SWEETENING", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.sweetening()));
 		//I am losing my fucking sanity
 
 		recipes.add(new ChemRecipe(1143, "NITRE_BED", 1200)
@@ -2104,7 +2030,16 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//thanks for the very legal autofill ai anyway to the chemical reactor *bat man noise
 
 
-	}
+	        recipes.add(new ChemRecipe(1150, "SULFUR_RECOVERY", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.sulfurRecovery()));
+        recipes.add(new ChemRecipe(1151, "COAL_LIQUEFACTION", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.coalLiquid("COALOIL")));
+        recipes.add(new ChemRecipe(1152, "FISH_OIL_EXTRACTION", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.oilExtraction(true)));
+        recipes.add(new ChemRecipe(1153, "SEED_OIL_EXTRACTION", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.oilExtraction(false)));
+        recipes.add(new ChemRecipe(1154, "WOOD_PYROLYSIS", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.woodPyrolysis()));
+        recipes.add(new ChemRecipe(1155, "BITUMEN_MELTING", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.tarMelting("TAR_CRUDE_ITEM", "BITUMEN")));
+        recipes.add(new ChemRecipe(1156, "COAL_TAR_MELTING", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.tarMelting("TAR_COAL_ITEM", "COALCREOSOTE")));
+        recipes.add(new ChemRecipe(1157, "WOOD_TAR_MELTING", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.tarMelting("TAR_WOOD_ITEM", "WOODOIL")));
+        recipes.add(new ChemRecipe(1158, "CRACK_TAR_MELTING", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.tarMelting("TAR_CRACK_ITEM", "CRACKOIL")));
+    }
 
 	private static void registerPwrReprocessing(int id, String name, EnumPWRFuel fuel, int uranium, int plutonium, boolean zirconiumCladding) {
 		List<ItemStack> outputs = new ArrayList<ItemStack>();
@@ -2132,20 +2067,10 @@ public class ChemplantRecipes extends SerializableRecipe {
 	}
 
 	public static void registerOtherOil() {
-		recipes.add(new ChemRecipe(31, "BP_BIOGAS", 60)
-				.inputItems(new ComparableStack(ModItems.biomass, 16)) //if we assume 1B BF = 500k and translate that to 2B BG = 500k, then each biomass is worth ~31k or roughly 1.5 furnace operations
-				.outputFluids(new FluidStack(2000, Fluids.BIOGAS)));
-		recipes.add(new ChemRecipe(32, "BP_BIOFUEL", 60)
-				.inputFluids(new FluidStack(1500, Fluids.BIOGAS), new FluidStack(250, Fluids.ETHANOL))
-				.outputFluids(new FluidStack(1000, Fluids.BIOFUEL)));
-		recipes.add(new ChemRecipe(33, "LPG", 100)
-				.inputFluids(new FluidStack(2000, Fluids.PETROLEUM))
-				.outputFluids(new FluidStack(1000, Fluids.LPG)));
-		recipes.add(new ChemRecipe(34, "OIL_SAND", 200)
-				.inputItems(new ComparableStack(ModBlocks.ore_oil_sand, 16))
-					//, new OreDictStack(ANY_TAR.any(), 1))
-				.outputItems(new ItemStack(Blocks.sand, 16))
-				.outputFluids(new FluidStack(1000, Fluids.BITUMEN)));
+		recipes.add(new ChemRecipe(31, "BP_BIOGAS", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.digestion()));
+		recipes.add(new ChemRecipe(32, "BP_BIOFUEL", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.blend("BIOFUEL", "SUNFLOWEROIL", 4, "ETHANOL", 1)));
+		recipes.add(new ChemRecipe(33, "LPG", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.gasRecovery()));
+		recipes.add(new ChemRecipe(34, "OIL_SAND", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.oilSand()));
 		recipes.add(new ChemRecipe(35, "ASPHALT", 100)
 				.inputItems(new ComparableStack(Blocks.gravel, 2), new OreDictStack(KEY_SAND, 6))
 				.inputFluids(new FluidStack(1000, Fluids.BITUMEN))
@@ -2163,6 +2088,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		public FluidStack[] outputFluids;
 		private int duration;
 		public long physicalPowerQuanta;
+        public com.hbm.realsim.ProcessRecipe physicalBill;
 		public int oxygenConsumption = 0; // How much oxygen the recipe consumes from the atmosphere per tick while processing
 
 		public ChemRecipe(int index, String name, int duration) {
@@ -2209,6 +2135,30 @@ public class ChemplantRecipes extends SerializableRecipe {
 			return this;
 		}
 
+        public ChemRecipe petroleum(com.hbm.realsim.ProcessRecipe bill) {
+            com.hbm.realsim.ChemicalFuelProcesses.validateRating(bill);
+            physicalBill = bill; duration = bill.duration; physicalPowerQuanta = Math.max(1L, com.hbm.realsim.PetroleumProcesses.ceilDiv(bill.workQuanta, bill.duration));
+            inputs = new AStack[4]; outputs = new ItemStack[4]; inputFluids = new FluidStack[2]; outputFluids = new FluidStack[2];
+            for(int i = 0; i < bill.inputs.length; i++) inputFluids[i] = new FluidStack(Fluids.fromName(bill.inputs[i]), bill.quantities[i], bill.pressures[i]);
+            if(bill.solidCount > 0) inputs[0] = bill.solidInput.equals("BIOMASS_ITEM") ? new ComparableStack(ModItems.biomass, bill.solidCount) : bill.solidInput.equals("FUEL_ADDITIVE_ITEM") ? new ComparableStack(ModItems.fuel_additive, bill.solidCount)
+                    : bill.solidInput.equals("LEAD_ITEM") ? new OreDictStack(PB.dust(), bill.solidCount)
+                    : bill.solidInput.equals("OIL_SAND_BLOCK") ? new ComparableStack(ModBlocks.ore_oil_sand, bill.solidCount)
+                    : bill.solidInput.equals("SUGAR_ITEM") ? new ComparableStack(Items.sugar, bill.solidCount)
+                    : bill.solidInput.equals("FISH_FEED_ITEM") ? new ComparableStack(Items.fish, bill.solidCount, net.minecraftforge.oredict.OreDictionary.WILDCARD_VALUE)
+                    : bill.solidInput.equals("SEED_FEED_ITEM") ? new ComparableStack(Blocks.double_plant, bill.solidCount, 0)
+                    : bill.solidInput.startsWith("TAR_") ? new ComparableStack(ModItems.oil_tar, bill.solidCount, (bill.solidInput.equals("TAR_CRUDE_ITEM") ? ItemEnums.EnumTarType.CRUDE : bill.solidInput.equals("TAR_COAL_ITEM") ? ItemEnums.EnumTarType.COAL : bill.solidInput.equals("TAR_WOOD_ITEM") ? ItemEnums.EnumTarType.WOOD : ItemEnums.EnumTarType.CRACK).ordinal())
+                    : bill.solidInput.equals("WOOD_LOG") ? new OreDictStack(KEY_LOG, bill.solidCount)
+                    : new OreDictStack(COAL.dust(), bill.solidCount);
+            int fluid = 0, solid = 0;
+            for(int i = 0; i < bill.outputs.length; i++) {
+                String name = bill.outputs[i]; if(name.startsWith("VENT_")) continue;
+                int amount = Math.toIntExact(com.hbm.realsim.PetroleumProcesses.ceilDiv(bill.productMass[i], com.hbm.realsim.PhysicalRegistry.get(name).massUnits));
+                if(com.hbm.realsim.PhysicalRegistry.get(name).phase == com.hbm.realsim.PhysicalState.Phase.SOLID) outputs[solid++] = com.hbm.realsim.ProcessMachine.solid(name, amount);
+                else outputFluids[fluid++] = new FluidStack(Fluids.fromName(name), amount);
+            }
+            return this;
+        }
+
 		public int getId() {
 			return this.id;
 		}
@@ -2248,7 +2198,10 @@ public class ChemplantRecipes extends SerializableRecipe {
 				.inputItems(	readAStackArray(		(JsonArray) obj.get("itemInput")))
 				.outputFluids(	readFluidArray(		(JsonArray) obj.get("fluidOutput")))
 				.outputItems(	readItemStackArray(	(JsonArray) obj.get("itemOutput"))));
-		if(obj.has("physicalPowerQuanta")) recipes.get(recipes.size() - 1).physicalPowerQuanta = Math.max(0L, obj.get("physicalPowerQuanta").getAsLong());
+		if(obj.has("physical")) recipes.get(recipes.size() - 1).petroleum(com.hbm.realsim.PetroleumProcesses.read(obj));
+        if(!obj.has("physical")) for(FluidStack out : recipes.get(recipes.size() - 1).outputFluids)
+            if(out != null && com.hbm.realsim.ChemicalFuelProcesses.requiresBill(out.type.getName())) throw new IllegalArgumentException("Fuel-producing reactor JSON requires a physical bill");
+        if(obj.has("physicalPowerQuanta")) recipes.get(recipes.size() - 1).physicalPowerQuanta = Math.max(0L, obj.get("physicalPowerQuanta").getAsLong());
 	}
 
 	@Override
@@ -2259,6 +2212,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		writer.name("name").value(chem.name);
 		writer.name("duration").value(chem.duration);
 		writer.name("physicalPowerQuanta").value(chem.physicalPowerQuanta);
+        if(chem.physicalBill != null) com.hbm.realsim.PetroleumProcesses.write(chem.physicalBill, writer);
 		//Fluid IN
 		writer.name("fluidInput").beginArray();
 		for(FluidStack input : chem.inputFluids) { if(input != null) writeFluidStack(input, writer); }

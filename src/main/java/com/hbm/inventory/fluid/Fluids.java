@@ -363,7 +363,7 @@ public class Fluids {
 		OIL =					new FluidType("OIL",				0x020202, 2, 1, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0x424242)).addTraits(new FT_Flammable(10_000), LIQUID, VISCOUS, P_OIL);
 		HOTOIL =				new FluidType("HOTOIL",				0x300900, 2, 3, 0, EnumSymbol.NONE).setTemp(350).addTraits(LIQUID, VISCOUS, P_OIL);
 		HEAVYOIL =				new FluidType("HEAVYOIL",			0x141312, 2, 1, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0x513F39)).addTraits(new FT_Flammable(50_000), new FT_Combustible(FuelGrade.LOW, 25_000), LIQUID, VISCOUS, P_OIL);
-		BITUMEN =				new FluidType("BITUMEN",			0x1f2426, 2, 0, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0x5A5877)).addTraits(LIQUID, VISCOUS, P_OIL);
+		BITUMEN =				new FluidType("BITUMEN",			0x1f2426, 2, 0, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0x5A5877)).setTemp(150).addTraits(LIQUID, VISCOUS, P_OIL);
 		SMEAR =					new FluidType("SMEAR",				0x190f01, 2, 1, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0x624F3B)).addTraits(new FT_Flammable(50_000), LIQUID, VISCOUS, P_OIL);
 		HEATINGOIL =			new FluidType("HEATINGOIL",			0x211806, 2, 2, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0x694235)).addTraits(new FT_Flammable(150_000), new FT_Combustible(FuelGrade.LOW, 100_000), LIQUID, VISCOUS, P_OIL);
 		RECLAIMED =				new FluidType("RECLAIMED",			0x332b22, 2, 2, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0xF65723)).addTraits(new FT_Flammable(100_000), new FT_Combustible(FuelGrade.LOW, 200_000), LIQUID, VISCOUS, P_FUEL);
@@ -958,15 +958,15 @@ public class Fluids {
 									.setEff(CoolingType.HEATEXCHANGER, eff_steam_cool));
 
 
-		OIL.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, 1.0D).setEff(HeatingType.HEATEXCHANGER, 1.0D).addStep(200, 1, HOTOIL, 1));
-		OIL_DS.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, 1.0D).setEff(HeatingType.HEATEXCHANGER, 1.0D).addStep(200, 1, HOTOIL_DS, 1));
-		CRACKOIL.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, 1.0D).setEff(HeatingType.HEATEXCHANGER, 1.0D).addStep(200, 1, HOTCRACKOIL, 1));
-		CRACKOIL_DS.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, 1.0D).setEff(HeatingType.HEATEXCHANGER, 1.0D).addStep(200, 1, HOTCRACKOIL_DS, 1));
+		OIL.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, 1.0D).setEff(HeatingType.HEATEXCHANGER, 0.0D).addStep(1122000, 1, HOTOIL, 1));
+		OIL_DS.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, 1.0D).setEff(HeatingType.HEATEXCHANGER, 0.0D).addStep(1122000, 1, HOTOIL_DS, 1));
+		CRACKOIL.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, 1.0D).setEff(HeatingType.HEATEXCHANGER, 0.0D).addStep(1122000, 1, HOTCRACKOIL, 1));
+		CRACKOIL_DS.addTraits(new FT_Heatable().setEff(HeatingType.BOILER, 1.0D).setEff(HeatingType.HEATEXCHANGER, 0.0D).addStep(1122000, 1, HOTCRACKOIL_DS, 1));
 
-		HOTOIL.addTraits(new FT_Coolable(OIL, 1, 1, 200).setEff(CoolingType.HEATEXCHANGER, 1.0D));
-		HOTOIL_DS.addTraits(new FT_Coolable(OIL_DS, 1, 1, 200).setEff(CoolingType.HEATEXCHANGER, 1.0D));
-		HOTCRACKOIL.addTraits(new FT_Coolable(CRACKOIL, 1, 1, 200).setEff(CoolingType.HEATEXCHANGER, 1.0D));
-		HOTCRACKOIL_DS.addTraits(new FT_Coolable(CRACKOIL_DS, 1, 1, 200).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+		HOTOIL.addTraits(new FT_Coolable(OIL, 1, 1, 1122000).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+		HOTOIL_DS.addTraits(new FT_Coolable(OIL_DS, 1, 1, 1122000).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+		HOTCRACKOIL.addTraits(new FT_Coolable(CRACKOIL, 1, 1, 1122000).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+		HOTCRACKOIL_DS.addTraits(new FT_Coolable(CRACKOIL_DS, 1, 1, 1122000).setEff(CoolingType.HEATEXCHANGER, 1.0D));
 
 		// Generic reactor coolant is treated as borated light water: strong moderation, good heat transfer, and a realistic PWR outlet temperature.
 		COOLANT.addTraits(

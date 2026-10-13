@@ -14,6 +14,12 @@ public final class PhaseConversions {
         pair(Fluids.HYDROGEN, Fluids.HYDROGEN_GAS, 4_000_000D, 36_000_000D);
         pair(Fluids.OXYGEN, Fluids.OXYGEN_GAS, 400_000D, 1_000_000D);
         pair(Fluids.NITROGEN, Fluids.NITROGEN_GAS, 400_000D, 1_000_000D);
+        for(FluidType gas : new FluidType[] {Fluids.GAS, Fluids.PETROLEUM, Fluids.SYNGAS, Fluids.REFORMGAS, Fluids.SOURGAS,
+                Fluids.GAS_COKER, Fluids.BIOGAS, Fluids.UNSATURATEDS, Fluids.HYDROGEN_SULFIDE}) {
+            conversion(gas, 0, gas, 1, 1000, 0D, 1000D * 100D * Math.log(10D) / 0.70D);
+            CompressorRecipe vent = new CompressorRecipe(1000, new FluidStack(gas, 1000, 0), 1);
+            vent.workQuanta = 1000; vent.massConversion = true; CompressorRecipes.decompressions.put(gas, vent);
+        }
     }
     private static void pair(FluidType liquid, FluidType gas, double warmingJoulesPerKg, double liquefactionJoulesPerKg) {
         conversion(liquid, 0, gas, 0, 1, warmingJoulesPerKg);
