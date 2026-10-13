@@ -1,6 +1,5 @@
 package com.hbm.items.machine;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import java.util.List;
 
@@ -16,7 +15,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IIcon;
 import net.minecraft.util.StatCollector;
 
@@ -40,12 +38,11 @@ public class ItemFluidIcon extends Item {
 
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean bool) {
-		if(stack.hasTagCompound()) {
-			if(getQuantity(stack) > 0) list.add(FluidVolume.format(getQuantity(stack)));
-			if(getPressure(stack) > 0) list.add(EnumChatFormatting.RED + "" + getPressure(stack) + "PU");
-		}
-		
-		Fluids.fromID(stack.getItemDamage()).addInfo(list);
+		FluidType type = Fluids.fromID(stack.getItemDamage());
+		if(getQuantity(stack) > 0) list.add(com.hbm.inventory.fluid.FluidInfo.amount(type, getQuantity(stack)));
+		if(getPressure(stack) > 0) list.add("Network pressure class: " + getPressure(stack) + " PU (not physical bar)");
+		type.addInfo(list);
+		com.hbm.inventory.fluid.FluidInfo.appendStoredEnergy(list, type, getQuantity(stack));
 	}
 
 	public static ItemStack addQuantity(ItemStack stack, int i) {

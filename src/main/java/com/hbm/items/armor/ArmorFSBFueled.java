@@ -3,7 +3,6 @@ package com.hbm.items.armor;
 import java.util.List;
 
 import com.hbm.inventory.fluid.FluidType;
-import com.hbm.util.BobMathUtil;
 
 import api.hbm.fluid.IFillableItem;
 import cpw.mods.fml.relauncher.Side;
@@ -83,7 +82,7 @@ public class ArmorFSBFueled extends ArmorFSB implements IFillableItem {
 
 	@SideOnly(Side.CLIENT)
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
-		list.add(this.fuelType.getLocalizedName() + ": " + BobMathUtil.getShortNumber(getFill(stack)) + " / " + BobMathUtil.getShortNumber(getMaxFill(stack)));
+		com.hbm.inventory.fluid.FluidInfo.appendContainer(list, fuelType, getFill(stack), getMaxFill(stack), 0);
 		super.addInformation(stack, player, list, ext);
 	}
 
@@ -109,7 +108,7 @@ public class ArmorFSBFueled extends ArmorFSB implements IFillableItem {
 			return amount;
 		
 		int toFill = Math.min(amount, this.fillRate);
-		toFill = Math.min(toFill, this.maxFuel - this.getFill(stack));
+		toFill = Math.min(toFill, Math.max(0, this.maxFuel - this.getFill(stack)));
 		this.setFill(stack, this.getFill(stack) + toFill);
 		
 		return amount - toFill;

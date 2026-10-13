@@ -1,6 +1,5 @@
 package com.hbm.blocks.machine;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,7 +88,7 @@ public class MachineTowerLarge extends BlockDummyable implements ILookOverlay {
 		}
 
 		for(int i = 0; i < tower.tanks.length; i++)
-			text.add((i < 1 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + tower.tanks[i].getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(tower.tanks[i].getFill(), tower.tanks[i].getMaxFill()));
+			text.add((i < 1 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + tower.tanks[i].getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(tower.tanks[i].getTankType(), tower.tanks[i].getFill(), tower.tanks[i].getMaxFill()));
 
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}

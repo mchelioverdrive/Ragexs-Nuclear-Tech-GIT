@@ -72,7 +72,7 @@ public class TileEntityBarrel extends TileEntityMachineBase implements SimpleCom
 
 	public TileEntityBarrel(int capacity) {
 		super(6);
-		tank = new FluidTank(Fluids.NONE, capacity);
+		tank = new FluidTank(Fluids.NONE, capacity).withDefaultCapacity();
 		this.trackMachineFluidTank(tank);
 	}
 
@@ -95,7 +95,7 @@ public class TileEntityBarrel extends TileEntityMachineBase implements SimpleCom
 		
 		if(tank.getPressure() != pressure) return 0;
 		
-		return type == tank.getTankType() ? tank.getMaxFill() - tank.getFill() : 0;
+		return type == tank.getTankType() ? Math.max(0L, (long) tank.getMaxFill() - tank.getFill()) : 0;
 	}
 
 	@Override
@@ -116,6 +116,8 @@ public class TileEntityBarrel extends TileEntityMachineBase implements SimpleCom
 
 	@Override
 	public void onMachineRuntimeDirty(int causes) {
+		if(worldObj != null && !worldObj.isRemote && getBlockType() instanceof com.hbm.blocks.machine.BlockFluidBarrel)
+			tank.resizePreservingContents(((com.hbm.blocks.machine.BlockFluidBarrel) getBlockType()).getCapacity());
 		if(worldObj != null && !worldObj.isRemote && !hasExploded)
 			this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_TRANSFER, 0);
 	}
@@ -293,7 +295,7 @@ public class TileEntityBarrel extends TileEntityMachineBase implements SimpleCom
 			
 			if(barrel != null) {
 				barrel.tank.setTankType(tank.getTankType());
-				barrel.tank.setFill(Math.min(barrel.tank.getMaxFill(), tank.getFill()));
+				barrel.tank.setFill(tank.getFill());
 				barrel.slots = copy;
 			}
 			

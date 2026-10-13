@@ -1,6 +1,5 @@
 package com.hbm.blocks.machine;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import java.util.List;
 
@@ -16,7 +15,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -57,7 +55,7 @@ public class MachineHydrotreater extends BlockDummyable implements IPersistentIn
 		for(int i = 0; i < 4; i++) {
 			FluidTank tank = new FluidTank(Fluids.NONE, 0);
 			tank.readFromNBT(persistentTag, "" + i);
-			list.add(EnumChatFormatting.YELLOW + "" + FluidVolume.formatPair(tank.getFill(), tank.getMaxFill()) + " " + tank.getTankType().getLocalizedName());
+			com.hbm.inventory.fluid.FluidInfo.appendContainer(list, tank.getTankType(), tank.getFill(), tank.getMaxFill(), tank.getPressure());
 		}
 	}
 }

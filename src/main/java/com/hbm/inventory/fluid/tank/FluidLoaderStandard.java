@@ -29,7 +29,7 @@ public class FluidLoaderStandard extends FluidLoadingHandler {
 					slots[in] = null;
 				}
 				
-			} else if(slots[out] != null && slots[out].getItem() == full.getItem() && slots[out].getItemDamage() == full.getItemDamage() && slots[out].stackSize < slots[out].getMaxStackSize()) {
+			} else if(slots[out] != null && slots[out].isItemEqual(full) && ItemStack.areItemStackTagsEqual(slots[out], full) && slots[out].stackSize < slots[out].getMaxStackSize()) {
 				
 				tank.setFill(tank.getFill() - FluidContainerRegistry.getFluidContent(full, type));
 				slots[in].stackSize--;
@@ -53,7 +53,7 @@ public class FluidLoaderStandard extends FluidLoadingHandler {
 		FluidType type = tank.getTankType();
 		int amount = FluidContainerRegistry.getFluidContent(slots[in], type);
 		
-		if(amount > 0 && tank.getFill() + amount <= tank.maxFluid) {
+		if(amount > 0 && (long) tank.getFill() + amount <= tank.maxFluid) {
 			
 			ItemStack emptyContainer = FluidContainerRegistry.getEmptyContainer(slots[in]);
 			

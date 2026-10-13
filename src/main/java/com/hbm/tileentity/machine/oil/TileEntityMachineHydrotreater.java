@@ -54,9 +54,9 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 		super(11);
 		
 		this.tanks = new FluidTank[4];
-		this.tanks[0] = new FluidTank(Fluids.OIL, 64_000);
+		this.tanks[0] = new FluidTank(Fluids.OIL, 32_000).withDefaultCapacity();
 		this.tanks[1] = new FluidTank(Fluids.HYDROGEN_GAS, 64_000).withPressure(1);
-		this.tanks[2] = new FluidTank(Fluids.OIL_DS, 24_000);
+		this.tanks[2] = new FluidTank(Fluids.OIL_DS, 16_000).withDefaultCapacity();
 		this.tanks[3] = new FluidTank(Fluids.SOURGAS, 24_000);
 		for(FluidTank tank : this.tanks) this.trackMachineFluidTank(tank);
 	}

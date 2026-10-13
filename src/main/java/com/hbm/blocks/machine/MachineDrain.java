@@ -1,6 +1,5 @@
 package com.hbm.blocks.machine;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -82,7 +81,7 @@ public class MachineDrain extends BlockDummyable implements ILookOverlay {
 		
 		TileEntityMachineDrain drain = (TileEntityMachineDrain) te;
 		List<String> text = new ArrayList();
-		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + drain.tank.getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(drain.tank.getFill(), drain.tank.getMaxFill()));
+		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + drain.tank.getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(drain.tank.getTankType(), drain.tank.getFill(), drain.tank.getMaxFill()));
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 }

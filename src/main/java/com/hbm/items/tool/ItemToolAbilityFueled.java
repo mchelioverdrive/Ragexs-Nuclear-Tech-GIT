@@ -1,6 +1,5 @@
 package com.hbm.items.tool;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import java.util.HashSet;
 import java.util.List;
@@ -36,7 +35,9 @@ public class ItemToolAbilityFueled extends ItemToolAbility implements IFillableI
 	@SideOnly(Side.CLIENT)
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 
-		list.add(EnumChatFormatting.GOLD + "Fuel: " + FluidVolume.formatPair(this.getFill(stack), this.maxFuel));
+		FluidType infoType = acceptedFuels.size() == 1 ? acceptedFuels.iterator().next() : com.hbm.inventory.fluid.Fluids.NONE;
+		com.hbm.inventory.fluid.FluidInfo.appendContainer(list, infoType, getFill(stack), maxFuel, 0);
+		if(infoType == com.hbm.inventory.fluid.Fluids.NONE) list.add("Legacy multi-fuel counter: fluid identity not recorded");
 		
 		for(FluidType type : acceptedFuels) {
 			list.add(EnumChatFormatting.YELLOW + "- " + type.getLocalizedName());
@@ -101,7 +102,7 @@ public class ItemToolAbilityFueled extends ItemToolAbility implements IFillableI
 			return amount;
 		
 		int toFill = Math.min(amount, this.fillRate);
-		toFill = Math.min(toFill, this.maxFuel - this.getFill(stack));
+		toFill = Math.min(toFill, Math.max(0, this.maxFuel - this.getFill(stack)));
 		this.setFill(stack, this.getFill(stack) + toFill);
 		
 		return amount - toFill;

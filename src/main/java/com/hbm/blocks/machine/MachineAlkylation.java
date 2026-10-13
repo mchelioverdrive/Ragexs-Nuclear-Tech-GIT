@@ -1,6 +1,5 @@
 package com.hbm.blocks.machine;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
@@ -90,7 +89,7 @@ public class MachineAlkylation extends BlockDummyable implements ILookOverlay {
 
 		for(int i = 0; i < alkylation.tanks.length; i++) {
 			if(alkylation.tanks[i].getTankType() == Fluids.NONE) continue;
-			text.add((i < 2 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + alkylation.tanks[i].getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(alkylation.tanks[i].getFill(), alkylation.tanks[i].getMaxFill()));
+			text.add((i < 2 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + alkylation.tanks[i].getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(alkylation.tanks[i].getTankType(), alkylation.tanks[i].getFill(), alkylation.tanks[i].getMaxFill()));
 		}
 		
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);

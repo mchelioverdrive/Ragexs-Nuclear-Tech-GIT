@@ -1,7 +1,6 @@
 package com.hbm.inventory.gui;
 
 import java.awt.Color;
-import java.util.Arrays;
 import java.util.Locale;
 
 import org.lwjgl.input.Keyboard;
@@ -110,8 +109,12 @@ public class GUIScreenFluid extends GuiScreen {
 			if(this.searchArray[k] == null)
 				return;
 			
-			if(guiLeft + 7 + k * 18 <= i && guiLeft + 7 + k * 18 + 18 > i && guiTop + 29 < j && guiTop + 29 + 18 >= j)
-				func_146283_a(Arrays.asList(new String[] { this.searchArray[k].getLocalizedName() }), i, j);
+			if(guiLeft + 7 + k * 18 <= i && guiLeft + 7 + k * 18 + 18 > i && guiTop + 29 < j && guiTop + 29 + 18 >= j) {
+				java.util.List<String> info = new java.util.ArrayList<>();
+				info.add(searchArray[k].getLocalizedName());
+				searchArray[k].addInfo(info);
+				func_146283_a(info, i, j);
+			}
 		}
 	}
 

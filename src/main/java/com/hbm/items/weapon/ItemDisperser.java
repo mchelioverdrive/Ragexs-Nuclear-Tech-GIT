@@ -48,10 +48,10 @@ public class ItemDisperser extends ItemFluidTank {
 			FluidType type = order[i];
 			int id = type.getID();
 			if(type.isDispersable() && this == ModItems.disperser_canister) {
-				list.add(new ItemStack(item, 1, id));
+				list.add(com.hbm.inventory.FluidContainerRegistry.newFilledStack(new ItemStack(item, 1, id)));
 			}
 			//else if(type == Fluids.PHEROMONE) {
-			//	list.add(new ItemStack(item, 1, id));
+			//	list.add(com.hbm.inventory.FluidContainerRegistry.newFilledStack(new ItemStack(item, 1, id)));
 			//}
 
 		}

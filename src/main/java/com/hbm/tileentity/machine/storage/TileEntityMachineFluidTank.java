@@ -69,7 +69,7 @@ public class TileEntityMachineFluidTank extends TileEntityMachineBase implements
 	
 	public TileEntityMachineFluidTank() {
 		super(6);
-		tank = new FluidTank(Fluids.NONE, 256000);
+		tank = new FluidTank(Fluids.NONE, 32_000).withDefaultCapacity();
 		this.trackMachineFluidTank(tank);
 	}
 
@@ -388,7 +388,7 @@ public class TileEntityMachineFluidTank extends TileEntityMachineBase implements
 		
 		if(tank.getPressure() != pressure) return 0;
 		
-		return type == tank.getTankType() ? tank.getMaxFill() - tank.getFill() : 0;
+		return type == tank.getTankType() ? Math.max(0L, (long) tank.getMaxFill() - tank.getFill()) : 0;
 	}
 
 	@Override

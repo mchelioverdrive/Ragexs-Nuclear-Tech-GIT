@@ -1,6 +1,5 @@
 package com.hbm.blocks.machine;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -131,7 +130,7 @@ public class MachineCatalyticCracker extends BlockDummyable implements ILookOver
 		List<String> text = new ArrayList();
 
 		for(int i = 0; i < cracker.tanks.length; i++)
-			text.add((i < 2 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + cracker.tanks[i].getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(cracker.tanks[i].getFill(), cracker.tanks[i].getMaxFill()));
+			text.add((i < 2 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + cracker.tanks[i].getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(cracker.tanks[i].getTankType(), cracker.tanks[i].getFill(), cracker.tanks[i].getMaxFill()));
 		
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}

@@ -187,4 +187,80 @@ public class PhysicalAccountingTest {
         catch(IllegalArgumentException expected) { }
         assertSame(original.getTankType(), Fluids.fromID(id)); assertEquals(312, original.getFill());
     }
+
+    @Test public void quantityAndAssayFormattingUsesCanonicalBasis() {
+        FluidType diesel = tank("DIESEL", 0).getTankType(), hydrogen = tank("HYDROGEN_GAS", 0).getTankType();
+        assertEquals("1,842 / 4,000 L", com.hbm.inventory.fluid.FluidInfo.pair(diesel, 1842, 4000));
+        assertEquals("420 / 2,000 standard L", com.hbm.inventory.fluid.FluidInfo.pair(hydrogen, 420, 2000));
+        assertEquals("Capacity: 20 L", com.hbm.inventory.fluid.FluidInfo.containerQuantity(diesel, 0, 20));
+        assertEquals("18 / 20 L", com.hbm.inventory.fluid.FluidInfo.containerQuantity(diesel, 18, 20));
+        assertEquals("Capacity: 500 standard L", com.hbm.inventory.fluid.FluidInfo.containerQuantity(hydrogen, 0, 500));
+        assertEquals("LHV: 35.819 MJ/L", com.hbm.inventory.fluid.FluidInfo.lhv(diesel.getPhysicalState()));
+        assertEquals("Stored chemical energy: 644.742 MJ", com.hbm.inventory.fluid.FluidInfo.storedEnergy(diesel.getPhysicalState(), 18));
+        assertNull(com.hbm.inventory.fluid.FluidInfo.lhv(PhysicalRegistry.get("NITAN")));
+        assertNull(com.hbm.inventory.fluid.FluidInfo.storedEnergy(PhysicalRegistry.get("NITAN"), 100));
+        assertNull(com.hbm.inventory.fluid.FluidInfo.storedEnergy(diesel.getPhysicalState(), 0));
+        java.util.List<String> info = new java.util.ArrayList<>();
+        com.hbm.inventory.fluid.FluidInfo.appendPhysical(info, hydrogen, true);
+        assertTrue(info.contains("Canonical gas reference: 0 \u00b0C / 1 bar; not vessel volume"));
+    }
+    @Test public void revisedCapacityPreservesLegacyAmountIdentityPressureAndReload() throws Exception {
+        FluidTank old = tank("DIESEL", 1842).withPressure(2); old.setFill(1842);
+        NBTTagCompound tag = new NBTTagCompound(); old.writeToNBT(tag, "stock");
+        FluidTank revised = new FluidTank(Fluids.NONE, 400).withDefaultCapacity();
+        revised.readFromNBT(roundTrip(tag), "stock");
+        assertEquals(400, revised.getMaxFill()); assertEquals(1842, revised.getFill());
+        assertSame(old.getTankType(), revised.getTankType()); assertEquals(2, revised.getPressure());
+        revised.resizePreservingContents(200); assertEquals(1842, revised.getFill());
+        revised.writeToNBT(tag, "stock");
+        FluidTank loaded = new FluidTank(Fluids.NONE, 200).withDefaultCapacity(); loaded.readFromNBT(roundTrip(tag), "stock");
+        assertEquals(1842, loaded.getFill()); assertEquals(200, loaded.getMaxFill());
+        // Missing saved capacity also cannot erase a valid amount.
+        tag.removeTag("stock_max"); loaded.readFromNBT(tag, "stock"); assertEquals(1842, loaded.getFill());
+    }
+    @Test public void overCapReceiverRejectsFillsWithoutDeletingStock() {
+        final FluidTank store = tank("DIESEL", 1842); store.resizePreservingContents(400);
+        api.hbm.fluid.IFluidStandardTransceiver receiver = new api.hbm.fluid.IFluidStandardTransceiver() {
+            public FluidTank[] getAllTanks() { return new FluidTank[] {store}; }
+            public FluidTank[] getReceivingTanks() { return getAllTanks(); }
+            public FluidTank[] getSendingTanks() { return getAllTanks(); }
+            public boolean isLoaded() { return true; }
+        };
+        assertEquals(0, receiver.getDemand(store.getTankType(), 0));
+        assertEquals(100, receiver.transferFluid(store.getTankType(), 0, 100)); assertEquals(1842, store.getFill());
+        store.setFill(390); assertEquals(90, receiver.transferFluid(store.getTankType(), 0, 100)); assertEquals(400, store.getFill());
+        assertEquals(Long.MAX_VALUE, receiver.transferFluid(store.getTankType(), 0, Long.MAX_VALUE));
+    }
+    @Test public void stampedContainersKeepUntaggedStockAndCannotMergeAcrossQuantities() throws Exception {
+        net.minecraft.item.Item previous = com.hbm.items.ModItems.canister_full;
+        try {
+            net.minecraft.item.Item item = new net.minecraft.item.Item(); com.hbm.items.ModItems.canister_full = item;
+            FluidType diesel = tank("DIESEL", 0).getTankType();
+            com.hbm.inventory.FluidContainer descriptor = new com.hbm.inventory.FluidContainer(new net.minecraft.item.ItemStack(item), new net.minecraft.item.ItemStack(new net.minecraft.item.Item()), diesel, 1000);
+            net.minecraft.item.ItemStack old = new net.minecraft.item.ItemStack(item), fresh = descriptor.fullContainer;
+            assertEquals(20, descriptor.content); assertEquals(1000, descriptor.amount(old)); assertEquals(20, descriptor.amount(fresh));
+            assertTrue(com.hbm.inventory.FluidContainerRegistry.matchesFilled(fresh, old));
+            assertFalse(net.minecraft.item.ItemStack.areItemStackTagsEqual(fresh, old));
+            NBTTagCompound tag = roundTrip(fresh.getTagCompound()); fresh.setTagCompound(tag);
+            assertEquals(20, descriptor.amount(fresh)); assertEquals(1000, descriptor.amount(old));
+            assertEquals(500, com.hbm.inventory.FluidContainerRegistry.normalizedCapacity(item, tank("HYDROGEN_GAS", 0).getTankType(), 1000));
+            assertEquals(1000, com.hbm.inventory.FluidContainerRegistry.normalizedCapacity(item, tank("NITAN", 0).getTankType(), 1000));
+        } finally { com.hbm.items.ModItems.canister_full = previous; }
+    }
+    @Test public void groundwaterRatingsAreBoundedAndIndependentOfBuffers() {
+        assertEquals(100000, Groundwater.microlitersPerTick(10000, 2));
+        assertEquals(25000, Groundwater.microlitersPerTick(2000, 0.5));
+        assertEquals(0, Groundwater.microlitersPerTick(0, 2));
+        assertEquals(0, Groundwater.microlitersPerTick(10000, Double.NaN));
+        assertTrue(Groundwater.microlitersPerTick(1000, 200) < 20000);
+        assertEquals(120000000, Groundwater.microlitersPerTick(10000, 2) * 20 * 60);
+        assertEquals(50000, Groundwater.STEAM_PARCEL_SHAFT_JOULES * 1000 / Groundwater.STEAM_SHAFT_WATTS);
+    }
+    @Test public void idleGeneratorShowsItsInstalledRatedEfficiencyAndHidesAccounting() {
+        GeneratorStats stats = new GeneratorStats(); FuelCredit credit = new FuelCredit();
+        java.util.List<String> normal = java.util.Arrays.asList(stats.info(750000, credit, "DIESEL", 20, 380000, false));
+        assertTrue(normal.contains("Efficiency: 38.0% rated")); assertTrue(normal.contains("Current output: 0 W"));
+        assertTrue(normal.contains("Fuel flow: 0.0000 L/min")); assertFalse(String.join(" ", normal).contains("Chemical credit"));
+        assertTrue(String.join(" ", stats.info(750000, credit, "DIESEL", 20, 380000, true)).contains("Chemical credit"));
+    }
 }

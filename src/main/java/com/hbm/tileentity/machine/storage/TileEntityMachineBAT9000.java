@@ -10,7 +10,7 @@ import net.minecraft.util.AxisAlignedBB;
 public class TileEntityMachineBAT9000 extends TileEntityBarrel {
 
 	public TileEntityMachineBAT9000() {
-		super(2048000);
+		super(64_000);
 	}
 	
 	@Override

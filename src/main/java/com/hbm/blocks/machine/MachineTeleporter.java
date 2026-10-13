@@ -1,11 +1,10 @@
 package com.hbm.blocks.machine;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
+import java.util.Locale;
 import com.hbm.blocks.ILookOverlay;
 import com.hbm.config.GeneralConfig;
 import com.hbm.lib.RefStrings;
@@ -67,7 +66,7 @@ public class MachineTeleporter extends BlockContainer implements ILookOverlay {
 		} else {
 			text.add((tele.getStoredEnergyQuanta() >= tele.consumption ? EnumChatFormatting.GREEN : EnumChatFormatting.RED) + String.format("%,d", tele.getStoredEnergyQuanta()) + " / " + String.format("%,d", tele.maxPower));
 			if(world.provider.dimensionId != tele.targetDim) {
-				text.add(I18nUtil.resolveKey("hbmfluid." + tele.tank.getTankType().getName().toLowerCase()) + ": " + FluidVolume.formatPair(tele.tank.getFill(), tele.tank.getMaxFill()));
+				text.add(I18nUtil.resolveKey("hbmfluid." + tele.tank.getTankType().getName().toLowerCase()) + ": " + com.hbm.inventory.fluid.FluidInfo.pair(tele.tank.getTankType(), tele.tank.getFill(), tele.tank.getMaxFill()));
 			}
 			text.add("Destination: " + tele.targetX + " / " + tele.targetY + " / " + tele.targetZ + " (D: " + tele.targetDim + ")");
 		}

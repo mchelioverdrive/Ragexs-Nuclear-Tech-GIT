@@ -55,8 +55,8 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 		super(11);
 		
 		this.tanks = new FluidTank[4];
-		this.tanks[0] = new FluidTank(Fluids.NAPHTHA, 64_000);
-		this.tanks[1] = new FluidTank(Fluids.REFORMATE, 24_000);
+		this.tanks[0] = new FluidTank(Fluids.NAPHTHA, 16_000).withDefaultCapacity();
+		this.tanks[1] = new FluidTank(Fluids.REFORMATE, 8_000).withDefaultCapacity();
 		this.tanks[2] = new FluidTank(Fluids.PETROLEUM, 24_000);
 		this.tanks[3] = new FluidTank(Fluids.HYDROGEN_GAS, 24_000);
 		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);

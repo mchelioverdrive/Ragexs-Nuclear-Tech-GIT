@@ -1,6 +1,5 @@
 package com.hbm.items.armor;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import java.util.List;
 
@@ -41,7 +40,7 @@ public class ItemModOxy extends ItemArmorMod implements IFillableItem {
 	
 	@Override
 	public void addInformation(ItemStack itemstack, EntityPlayer player, List list, boolean bool) {
-		list.add(EnumChatFormatting.LIGHT_PURPLE + fuel.getLocalizedName() + ": " + FluidVolume.formatPair(getFuel(itemstack), this.maxFuel));
+		com.hbm.inventory.fluid.FluidInfo.appendContainer(list, fuel, getFuel(itemstack), maxFuel, 0);
 		list.add("");
 		super.addInformation(itemstack, player, list, bool);
 		list.add(EnumChatFormatting.GOLD + I18n.format("armor.mustSeal"));
@@ -49,7 +48,7 @@ public class ItemModOxy extends ItemArmorMod implements IFillableItem {
 	
 	@Override
 	public void addDesc(List list, ItemStack stack, ItemStack armor) {
-		list.add(EnumChatFormatting.RED + "  " + stack.getDisplayName() + " (" + fuel.getLocalizedName() + ": " + FluidVolume.formatPair(getFuel(stack), this.maxFuel));
+		list.add(EnumChatFormatting.RED + "  " + stack.getDisplayName() + " (" + fuel.getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(fuel, getFuel(stack), maxFuel));
 	}
 	
     @Override
@@ -102,7 +101,7 @@ public class ItemModOxy extends ItemArmorMod implements IFillableItem {
             return amount;
 
         int fill = getFuel(stack);
-        int toFill = Math.min(amount, maxFuel - fill);
+        int toFill = Math.min(amount, Math.max(0, maxFuel - fill));
 
         setFuel(stack, fill + toFill);
 

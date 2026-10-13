@@ -375,3 +375,10 @@ The energy equation is chemical input +sensible input +paid electrical work +pai
 | `chem:leaded_PETROIL` | PETROIL=10000@0; FUEL_ADDITIVE_ITEM=1 | 8980.01 | PETROIL_LEADED=8980.010000000 | 50000 | 1 | 0 | 20 | 50 |
 | `chem:leaded_GASOLINE` | GASOLINE=10000@0; FUEL_ADDITIVE_ITEM=1 | 7300.01 | GASOLINE_LEADED=7300.010000000 | 50000 | 1 | 0 | 20 | 50 |
 | `chem:leaded_COALGAS` | COALGAS=10000@0; FUEL_ADDITIVE_ITEM=1 | 7300.01 | COALGAS_LEADED=7300.010000000 | 50000 | 1 | 0 | 20 | 50 |
+
+
+## Infrastructure and UX normalization — 2026-10-13
+
+A separate tranche after Phase 5C adopts role-sized liquid containers/day tanks, geometric bulk-storage limits, selected petroleum buffer capacities and bounded groundwater supply. It preserves saved amounts/identities with explicit legacy-over-cap handling and separates storage from export/processing ratings. Player quantities, canonical LHV/stored energy, gas standard-equivalent wording and idle rated efficiency now share one presentation path. The pump's steam-work allowance remains explicitly transitional; Phase 5D has not begun.
+
+The [fluid infrastructure report](REALSIM_FLUID_INFRASTRUCTURE.md) is authoritative for changed capacities, retained compatibility boundaries, the complete native tank declaration inventory, groundwater settings/work model, revised storage endurance and acceptance checklist. Earlier Phase 5A–5C storage examples remain historical. The user's initial placement smoke test is recorded separately from sustained operation, UI, ports, rotation, save/load and multiplayer acceptance.

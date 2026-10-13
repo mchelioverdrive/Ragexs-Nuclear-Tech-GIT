@@ -66,7 +66,7 @@ public class FluidLoaderFillableItem extends FluidLoadingHandler {
 		
 		IFillableItem fillable = (IFillableItem) stack.getItem();
 		
-		if(fillable.providesFluid(type, stack)) {
+		if(fillable.providesFluid(type, stack) && tank.getFill() < tank.getMaxFill()) {
 			tank.setFill(tank.getFill() + fillable.tryEmpty(type, tank.getMaxFill() - tank.getFill(), stack));
 		}
 		

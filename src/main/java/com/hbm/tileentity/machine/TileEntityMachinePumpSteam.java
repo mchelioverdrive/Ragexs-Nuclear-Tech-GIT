@@ -13,7 +13,7 @@ public class TileEntityMachinePumpSteam extends TileEntityMachinePumpBase {
 	
 	public TileEntityMachinePumpSteam() {
 		super();
-		water = new FluidTank(Fluids.WATER, steamSpeed * 100);
+		water = new FluidTank(Fluids.WATER, com.hbm.realsim.Groundwater.STEAM_BUFFER).withDefaultCapacity();
 		steam = new FluidTank(Fluids.STEAM, 1_000);
 		lps = new FluidTank(Fluids.SPENTSTEAM, 10);
 	}
@@ -66,14 +66,29 @@ public class TileEntityMachinePumpSteam extends TileEntityMachinePumpBase {
 
 	@Override
 	protected boolean canOperate() {
-		return steam.getFill() >= 100 && lps.getMaxFill() - lps.getFill() > 0 && water.getFill() < water.getMaxFill();
+		return steamSpeed > 0 && steamLitersPerMinute > 0 && (shaftWorkJoules >= com.hbm.realsim.Groundwater.STEAM_SHAFT_WATTS / 20
+				|| steam.getFill() >= 100 && lps.getFill() < lps.getMaxFill()) && water.getFill() < water.getMaxFill();
 	}
 
 	@Override
 	protected void operate() {
-		steam.setFill(steam.getFill() - 100);
-		lps.setFill(lps.getFill() + 1);
-		int pumpSpeed = water.getTankType() == Fluids.WATER ? steamSpeed : steamSpeed / nonWaterDebuff;
-		water.setFill(Math.min(water.getFill() + pumpSpeed, water.getMaxFill()));
+		if(shaftWorkJoules < com.hbm.realsim.Groundwater.STEAM_SHAFT_WATTS / 20) {
+			steam.setFill(steam.getFill() - 100);
+			lps.setFill(lps.getFill() + 1);
+			shaftWorkJoules += com.hbm.realsim.Groundwater.STEAM_PARCEL_SHAFT_JOULES;
+		}
+		shaftWorkJoules -= com.hbm.realsim.Groundwater.STEAM_SHAFT_WATTS / 20;
+		produceWater(com.hbm.realsim.Groundwater.microlitersPerTick(com.hbm.realsim.Groundwater.STEAM_SHAFT_WATTS, steamLitersPerMinute / 60D));
+	}
+
+	@Override public void writeToNBT(NBTTagCompound nbt) {
+		super.writeToNBT(nbt);
+		steam.writeToNBT(nbt, "s");
+		lps.writeToNBT(nbt, "l");
+	}
+	@Override public void readFromNBT(NBTTagCompound nbt) {
+		super.readFromNBT(nbt);
+		if(nbt.hasKey("s")) steam.readFromNBT(nbt, "s");
+		if(nbt.hasKey("l")) lps.readFromNBT(nbt, "l");
 	}
 }

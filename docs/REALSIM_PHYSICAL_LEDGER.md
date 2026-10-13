@@ -267,3 +267,10 @@ The steam candidate is numerically closed at its specified reference states. Com
 ## Phase 5A/5B runtime adoption
 
 The released subset uses literal SI energy and the assays in this ledger through `PhysicalRegistry`; diesel is 35.819 MJ/L independently of the caller. BIOFUEL, leaded additive mixtures, unknown biomass/vegetable-oil assays, sour/refinery/reformer offgas and fictional substances are not silently released. Explicit starter wood mass conventions and gas conversion engineering assumptions are recorded in [the implementation contract](REALSIM_PHASES_1_4.md#phase-5a5b-physical-accounting-and-first-generation-tranche). LO2 adopts 1.141 kg/L, LN2 0.8085 kg/L at normal boiling points. Discrete conversions preserve exact adopted mass with persistent remainders and charge heating/compression/refrigeration work. This does not release the deferred steam, chemistry or nuclear balances.
+
+
+## Infrastructure and UX normalization — 2026-10-13
+
+A separate tranche after Phase 5C adopts role-sized liquid containers/day tanks, geometric bulk-storage limits, selected petroleum buffer capacities and bounded groundwater supply. It preserves saved amounts/identities with explicit legacy-over-cap handling and separates storage from export/processing ratings. Player quantities, canonical LHV/stored energy, gas standard-equivalent wording and idle rated efficiency now share one presentation path. The pump's steam-work allowance remains explicitly transitional; Phase 5D has not begun.
+
+The [fluid infrastructure report](REALSIM_FLUID_INFRASTRUCTURE.md) is authoritative for changed capacities, retained compatibility boundaries, the complete native tank declaration inventory, groundwater settings/work model, revised storage endurance and acceptance checklist. Earlier Phase 5A–5C storage examples remain historical. The user's initial placement smoke test is recorded separately from sustained operation, UI, ports, rotation, save/load and multiplayer acceptance.

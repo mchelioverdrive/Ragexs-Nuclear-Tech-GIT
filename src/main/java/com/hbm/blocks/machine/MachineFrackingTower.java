@@ -1,6 +1,5 @@
 package com.hbm.blocks.machine;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
@@ -15,8 +14,8 @@ import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.IPersistentNBT;
 import com.hbm.tileentity.TileEntityProxyCombo;
 import com.hbm.tileentity.machine.oil.TileEntityMachineFrackingTower;
-import com.hbm.util.BobMathUtil;
 
+import com.hbm.util.BobMathUtil;
 import cpw.mods.fml.common.network.internal.FMLNetworkHandler;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.player.EntityPlayer;
@@ -115,7 +114,7 @@ public class MachineFrackingTower extends BlockDummyable implements IPersistentI
 		for(int i = 0; i < 2; i++) {
 			FluidTank tank = new FluidTank(Fluids.NONE, 0);
 			tank.readFromNBT(persistentTag, "t" + i);
-			list.add(EnumChatFormatting.YELLOW + "" + FluidVolume.formatPair(tank.getFill(), tank.getMaxFill()) + " " + tank.getTankType().getLocalizedName());
+			com.hbm.inventory.fluid.FluidInfo.appendContainer(list, tank.getTankType(), tank.getFill(), tank.getMaxFill(), tank.getPressure());
 		}
 	}
 }

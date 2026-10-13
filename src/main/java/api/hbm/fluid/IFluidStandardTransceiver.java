@@ -50,7 +50,7 @@ public interface IFluidStandardTransceiver extends IFluidUser {
 		
 		for(FluidTank tank : getReceivingTanks()) {
 			if(tank.getTankType() == type && tank.getPressure() == pressure) {
-				return tank.getMaxFill() - tank.getFill();
+				return Math.max(0L, (long) tank.getMaxFill() - tank.getFill());
 			}
 		}
 		
@@ -62,15 +62,9 @@ public interface IFluidStandardTransceiver extends IFluidUser {
 
 		for(FluidTank tank : getReceivingTanks()) {
 			if(tank.getTankType() == type && tank.getPressure() == pressure) {
-				tank.setFill(tank.getFill() + (int) amount);
-				
-				if(tank.getFill() > tank.getMaxFill()) {
-					long overshoot = tank.getFill() - tank.getMaxFill();
-					tank.setFill(tank.getMaxFill());
-					return overshoot;
-				}
-				
-				return 0;
+				long accepted = Math.min(Math.max(0L, amount), Math.max(0L, (long) tank.getMaxFill() - tank.getFill()));
+				if(accepted > 0) tank.setFill(tank.getFill() + (int) accepted);
+				return amount - accepted;
 			}
 		}
 		

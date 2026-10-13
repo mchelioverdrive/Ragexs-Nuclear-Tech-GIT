@@ -51,7 +51,7 @@ public class TileEntityHeaterOilburner extends TileEntityMachinePolluting implem
 
 	public TileEntityHeaterOilburner() {
 		super(3, 100);
-		tank = new FluidTank(Fluids.HEATINGOIL, 16000);
+		tank = new FluidTank(Fluids.HEATINGOIL, 200).withDefaultCapacity();
 		this.trackMachineFluidTank(tank);
 	}
 

@@ -1,6 +1,5 @@
 package com.hbm.blocks.machine;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -183,7 +182,7 @@ public class BlockOrbitalStation extends BlockDummyable implements IBlockSealabl
 
 				if(station.needsFuel) {
 					for(FluidTank tank : station.getReceivingTanks()) {
-						text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + tank.getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(tank.getFill(), tank.getMaxFill()));
+						text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + tank.getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(tank.getTankType(), tank.getFill(), tank.getMaxFill()));
 					}
 
 					if(!station.hasFuel) {

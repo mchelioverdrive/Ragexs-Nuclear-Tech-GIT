@@ -230,22 +230,9 @@ public class FluidType {
 	
 	@SideOnly(Side.CLIENT)
 	public void addInfo(List<String> info) {
-		com.hbm.realsim.PhysicalState physical = getPhysicalState();
-		if(physical.isResolved()) {
-			info.add(EnumChatFormatting.GRAY + (physical.basis == com.hbm.realsim.PhysicalState.Basis.STANDARD_GAS_LITER ? "Standard L: 0 C, 1 bar" : "Reference liquid L"));
-			if(physical.chemicalMicrojoulesPerUnit() > 0) info.add(EnumChatFormatting.YELLOW + "Chemical LHV: " + api.hbm.energymk2.EnergyUnits.formatJoules(physical.chemicalMicrojoulesPerUnit() / 500_000L) + " per L");
-		} else if(hasTrait(com.hbm.inventory.fluid.trait.FT_Flammable.class)) info.add(EnumChatFormatting.GRAY + "Physical assay unresolved");
+		com.hbm.inventory.fluid.FluidInfo.appendPhysical(info, this, Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT));
 
-		if(this == Fluids.STEAM || this == Fluids.HOTSTEAM || this == Fluids.SUPERHOTSTEAM || this == Fluids.ULTRAHOTSTEAM || this == Fluids.SPENTSTEAM) {
-			info.add(EnumChatFormatting.GRAY + "L = nominal fluid-network amount");
-		}
-
-		if(temperature != ROOM_TEMPERATURE) {
-			if(temperature < 0) info.add(EnumChatFormatting.BLUE + "" + temperature + "°C");
-			if(temperature > 0) info.add(EnumChatFormatting.RED + "" + temperature + "°C");
-		}
-		
-		boolean shiftHeld = Keyboard.isKeyDown(Keyboard.KEY_LSHIFT);
+		boolean shiftHeld = com.hbm.inventory.fluid.FluidInfo.isExpanded();
 		
 		List<String> hidden = new ArrayList();
 		

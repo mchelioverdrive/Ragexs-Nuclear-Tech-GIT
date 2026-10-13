@@ -81,9 +81,16 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 
 	public static int groundHeight = 70;
 	public static int groundDepth = 4;
-	public static int steamSpeed = 1_000;
-	public static int electricSpeed = 10_000;
+	/** Historical keys remain readable; positive values cannot bypass physical nameplates. */
+	public static int steamSpeed = 1;
+	public static int electricSpeed = 1;
 	public static int nonWaterDebuff = 100;
+	public static int electricLitersPerMinute = 120;
+	public static int steamLitersPerMinute = 30;
+	protected long waterMicroliterRemainder;
+	protected long shaftWorkJoules;
+	private long exportTick = Long.MIN_VALUE;
+	private long exportedWater;
 
 	@Override
 	public String getConfigName() {
@@ -96,6 +103,8 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 		groundDepth = IConfigurableMachine.grab(obj, "I:groundDepth", groundDepth);
 		steamSpeed = IConfigurableMachine.grab(obj, "I:steamSpeed", steamSpeed);
 		electricSpeed = IConfigurableMachine.grab(obj, "I:electricSpeed", electricSpeed);
+		electricLitersPerMinute = Math.max(0, Math.min(120, IConfigurableMachine.grab(obj, "I:electricLitersPerMinute", electricLitersPerMinute)));
+		steamLitersPerMinute = Math.max(0, Math.min(30, IConfigurableMachine.grab(obj, "I:steamLitersPerMinute", steamLitersPerMinute)));
 	}
 
 	@Override
@@ -104,6 +113,8 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 		writer.name("I:groundDepth").value(groundDepth);
 		writer.name("I:steamSpeed").value(steamSpeed);
 		writer.name("I:electricSpeed").value(electricSpeed);
+		writer.name("I:electricLitersPerMinute").value(electricLitersPerMinute);
+		writer.name("I:steamLitersPerMinute").value(steamLitersPerMinute);
 	}
 
 	public void updateEntity() {
@@ -200,7 +211,8 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 		CBT_Water table = CelestialBody.getTrait(worldObj, CBT_Water.class);
 		if(table == null) return false;
 
-		water.setTankType(table.fluid);
+		if(water.getTankType() != table.fluid && waterMicroliterRemainder > 0) return false;
+		if(!water.configureForRecipe(table.fluid, water.getPressure())) return false;
 
 		int validBlocks = 0;
 		int invalidBlocks = 0;
@@ -239,6 +251,48 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 
 	protected abstract boolean canOperate();
 	protected abstract void operate();
+
+	protected void produceWater(long microlitersPerTick) {
+		if(water.getTankType() != com.hbm.inventory.fluid.Fluids.WATER && water.getTankType() != com.hbm.inventory.fluid.Fluids.FRESH_WATER)
+			microlitersPerTick /= Math.max(1, nonWaterDebuff);
+		waterMicroliterRemainder += microlitersPerTick;
+		int produced = (int) Math.min(water.getMaxFill() - water.getFill(), waterMicroliterRemainder / 1_000_000L);
+		if(produced > 0) {
+			water.setFill(water.getFill() + produced);
+			waterMicroliterRemainder -= produced * 1_000_000L;
+		}
+	}
+
+	@Override public long getTotalFluidForSend(com.hbm.inventory.fluid.FluidType type, int pressure) {
+		if(type == water.getTankType() && pressure == water.getPressure()) {
+			long tick = worldObj == null ? 0 : worldObj.getTotalWorldTime();
+			if(exportTick != tick) { exportTick = tick; exportedWater = 0; }
+			return Math.min(water.getFill(), Math.max(0L, 1L - exportedWater)); // 20 L/s across every port
+		}
+		for(FluidTank tank : getSendingTanks()) if(tank.getTankType() == type && tank.getPressure() == pressure) return tank.getFill();
+		return 0;
+	}
+	@Override public void removeFluidForTransfer(com.hbm.inventory.fluid.FluidType type, int pressure, long amount) {
+		for(FluidTank tank : getSendingTanks()) if(tank.getTankType() == type && tank.getPressure() == pressure) {
+			tank.setFill(tank.getFill() - (int) amount);
+			if(tank == water) exportedWater += amount;
+			return;
+		}
+	}
+
+	@Override public void writeToNBT(NBTTagCompound nbt) {
+		super.writeToNBT(nbt);
+		water.writeToNBT(nbt, "w");
+		nbt.setLong("pumpWaterMicroliters", waterMicroliterRemainder);
+		nbt.setLong("pumpShaftJoules", shaftWorkJoules);
+	}
+
+	@Override public void readFromNBT(NBTTagCompound nbt) {
+		super.readFromNBT(nbt);
+		if(nbt.hasKey("w")) water.readFromNBT(nbt, "w");
+		waterMicroliterRemainder = Math.max(0, nbt.getLong("pumpWaterMicroliters"));
+		shaftWorkJoules = Math.max(0, nbt.getLong("pumpShaftJoules"));
+	}
 
 	protected DirPos[] getConPos() {
 		return new DirPos[] {

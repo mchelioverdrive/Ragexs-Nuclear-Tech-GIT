@@ -1,6 +1,5 @@
 package com.hbm.blocks.machine;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +49,7 @@ public class MachineCondenser extends BlockContainer implements ILookOverlay {
 		}
 
 		for(int i = 0; i < condenser.tanks.length; i++)
-			text.add((i < 1 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET +condenser.tanks[i].getTankType().getLocalizedName() + ": " + FluidVolume.formatPair(condenser.tanks[i].getFill(), condenser.tanks[i].getMaxFill()));
+			text.add((i < 1 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET +condenser.tanks[i].getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(condenser.tanks[i].getTankType(), condenser.tanks[i].getFill(), condenser.tanks[i].getMaxFill()));
 		
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}

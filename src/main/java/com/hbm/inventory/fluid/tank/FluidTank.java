@@ -9,7 +9,6 @@ import org.lwjgl.opengl.GL11;
 
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
-import com.hbm.inventory.fluid.FluidVolume;
 import com.hbm.inventory.gui.GuiInfoContainer;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.IItemFluidIdentifier;
@@ -23,7 +22,6 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.MathHelper;
 
 public class FluidTank {
 	public interface ChangeListener {
@@ -48,10 +46,24 @@ public class FluidTank {
 	private FluidType migrationTarget;
 	private transient ChangeListener changeListener;
 	private transient Object networkOwner;
+	private boolean useDefaultCapacity;
 
 	public FluidTank(FluidType type, int maxFluid) {
 		this.type = type;
 		this.maxFluid = maxFluid;
+	}
+
+	/** Adopt a revised nameplate without rescaling or discarding legacy contents. */
+	public FluidTank withDefaultCapacity() {
+		this.useDefaultCapacity = true;
+		return this;
+	}
+
+	public void resizePreservingContents(int size) {
+		if(this.maxFluid == size) return;
+		this.notifyBeforeChange();
+		this.maxFluid = Math.max(0, size);
+		this.notifyChanged();
 	}
 
 	/**
@@ -263,7 +275,7 @@ public class FluidTank {
 
 		Minecraft.getMinecraft().getTextureManager().bindTexture(type.getTexture());
 
-		int i = (fluid * height) / maxFluid;
+		int i = maxFluid <= 0 ? 0 : (int) (Math.min((long) fluid, maxFluid) * height / maxFluid);
 
 		double minX = x;
 		double maxX = x;
@@ -282,7 +294,7 @@ public class FluidTank {
 		}
 
 		if(orientation == 1) {
-			i = (fluid * width) / maxFluid;
+			i = maxFluid <= 0 ? 0 : (int) (Math.min((long) fluid, maxFluid) * width / maxFluid);
 			maxX += i;
 			maxY += height;
 
@@ -309,13 +321,15 @@ public class FluidTank {
 
 			List<String> list = new ArrayList();
 			list.add(this.type.getLocalizedName());
-			list.add(FluidVolume.formatPair(fluid, maxFluid));
+			list.add(com.hbm.inventory.fluid.FluidInfo.pair(type, fluid, maxFluid));
+			if(fluid > maxFluid) list.add("Legacy over-cap stock: drain before filling");
 
 			if(this.pressure != 0) {
 				list.add(EnumChatFormatting.RED + "Network pressure: " + this.pressure + " PU");
 			}
 
 			type.addInfo(list);
+			com.hbm.inventory.fluid.FluidInfo.appendStoredEnergy(list, type, fluid);
 			gui.drawInfo(list.toArray(new String[0]), mouseX, mouseY);
 		}
 	}
@@ -334,10 +348,10 @@ public class FluidTank {
 		FluidType previousType = type;
 		fluid = nbt.getInteger(s);
 		int max = nbt.getInteger(s + "_max");
-		if(max > 0)
+		if(max > 0 && !useDefaultCapacity)
 			maxFluid = max;
 
-		fluid = MathHelper.clamp_int(fluid, 0, max);
+		fluid = Math.max(0, fluid);
 
 		type = Fluids.fromNameCompat(nbt.getString(s + "_type")); //compat
 		if(type == Fluids.NONE)

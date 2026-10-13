@@ -1,6 +1,5 @@
 package com.hbm.blocks.network;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -113,9 +112,9 @@ public class FluidPump extends BlockContainer implements ILookOverlay, IGUIProvi
 		TileEntityFluidPump pump = (TileEntityFluidPump) tile;
 
 		List<String> text = new ArrayList();
-		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + pump.tank[0].getTankType().getLocalizedName() + " (" + pump.tank[0].getPressure() + " PU): " + FluidVolume.formatPerTick(pump.bufferSize) + EnumChatFormatting.RED + " ->");
+		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + pump.tank[0].getTankType().getLocalizedName() + " (" + pump.tank[0].getPressure() + " PU): " + com.hbm.inventory.fluid.FluidInfo.amount(pump.tank[0].getTankType(), pump.bufferSize * 20L) + "/s" + EnumChatFormatting.RED + " ->");
 		text.add("Priority: " + EnumChatFormatting.YELLOW + pump.priority.name());
-		if(pump.tank[0].getFill() > 0) text.add(FluidVolume.format(pump.tank[0].getFill()) + " buffered");
+		if(pump.tank[0].getFill() > 0) text.add(com.hbm.inventory.fluid.FluidInfo.pair(pump.tank[0].getTankType(), pump.tank[0].getFill(), pump.tank[0].getMaxFill()) + " buffered");
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 
@@ -126,11 +125,13 @@ public class FluidPump extends BlockContainer implements ILookOverlay, IGUIProvi
 		public FluidTank[] tank;
 		public ConnectionPriority priority = ConnectionPriority.NORMAL;
 		public boolean redstone = false;
+		private long flowTick = Long.MIN_VALUE;
+		private long exported;
 
 		public TileEntityFluidPump() {
 			super(0);
 			this.tank = new FluidTank[1];
-			this.tank[0] = new FluidTank(Fluids.NONE, bufferSize);
+			this.tank[0] = new FluidTank(Fluids.NONE, 10_000).withDefaultCapacity();
 		}
 
 		@Override
@@ -143,12 +144,6 @@ public class FluidPump extends BlockContainer implements ILookOverlay, IGUIProvi
 
 			if(!worldObj.isRemote) {
 
-				// if the capacity were changed directly, any excess buffered fluid would be destroyed
-				// when running a closed loop or handling hard to get fluids, that's quite bad
-				if(this.bufferSize != this.tank[0].getMaxFill()) {
-					int nextBuffer = Math.max(this.tank[0].getFill(), this.bufferSize);
-					this.tank[0].changeTankSize(nextBuffer);
-				}
 
 				this.redstone = worldObj.isBlockIndirectlyGettingPowered(xCoord, yCoord, zCoord);
 
@@ -195,8 +190,20 @@ public class FluidPump extends BlockContainer implements ILookOverlay, IGUIProvi
 			bufferSize = buf.readInt();
 		}
 
-		@Override public FluidTank[] getSendingTanks() { return redstone ? new FluidTank[0] : tank; }
-		@Override public FluidTank[] getReceivingTanks() { return this.bufferSize < this.tank[0].getFill() ? new FluidTank[0] : tank; }
+		@Override public long getTotalFluidForSend(FluidType type, int pressure) {
+            long now = worldObj == null ? 0 : worldObj.getTotalWorldTime();
+            if(flowTick != now) { flowTick = now; exported = 0; }
+            return !redstone && type == tank[0].getTankType() && pressure == tank[0].getPressure()
+                    ? Math.min(tank[0].getFill(), Math.max(0L, bufferSize - exported)) : 0;
+        }
+        @Override public void removeFluidForTransfer(FluidType type, int pressure, long amount) {
+            if(type == tank[0].getTankType() && pressure == tank[0].getPressure()) {
+                tank[0].setFill(tank[0].getFill() - (int) amount);
+                exported += amount;
+            }
+        }
+        @Override public FluidTank[] getSendingTanks() { return redstone ? new FluidTank[0] : tank; }
+		@Override public FluidTank[] getReceivingTanks() { return tank; }
 		@Override public FluidTank[] getAllTanks() { return tank; }
 
 		@Override

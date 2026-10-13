@@ -3,7 +3,6 @@ package com.hbm.blocks.machine;
 import api.hbm.energymk2.EnergyUnits;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.blocks.ILookOverlay;
@@ -85,15 +84,18 @@ public class MachinePump extends BlockDummyable implements ITooltipProvider, ILo
 
 		if(te instanceof TileEntityMachinePumpSteam) {
 			TileEntityMachinePumpSteam pump = (TileEntityMachinePumpSteam) te;
-			text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + pump.steam.getTankType().getLocalizedName() + ": " + String.format(Locale.US, "%,d", pump.steam.getFill()) + " / " + String.format(Locale.US, "%,d", pump.steam.getMaxFill()) + " L");
-			text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + pump.lps.getTankType().getLocalizedName() + ": " + String.format(Locale.US, "%,d", pump.lps.getFill()) + " / " + String.format(Locale.US, "%,d", pump.lps.getMaxFill()) + " L");
-			text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + pump.water.getTankType().getLocalizedName() + ": " + String.format(Locale.US, "%,d", pump.water.getFill()) + " / " + String.format(Locale.US, "%,d", pump.water.getMaxFill()) + " L");
+			text.add("Pump rating: 2 kW shaft; " + pump.steamLitersPerMinute + " L/min maximum");
+			text.add("Steam drive: transitional 100:1 parcel; 100 kJ shaft work/parcel");
+			text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + pump.steam.getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(pump.steam.getTankType(), pump.steam.getFill(), pump.steam.getMaxFill()));
+			text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + pump.lps.getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(pump.lps.getTankType(), pump.lps.getFill(), pump.lps.getMaxFill()));
+			text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + pump.water.getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(pump.water.getTankType(), pump.water.getFill(), pump.water.getMaxFill()));
 		}
 
 		if(te instanceof TileEntityMachinePumpElectric) {
 			TileEntityMachinePumpElectric pump = (TileEntityMachinePumpElectric) te;
+			text.add("Pump rating: 10 kW electric; " + pump.electricLitersPerMinute + " L/min maximum");
 			text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + EnergyUnits.formatJoules(pump.getStoredEnergyQuanta()) + " / " + EnergyUnits.formatJoules(pump.maxPower));
-			text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + pump.water.getTankType().getLocalizedName() + ": " + String.format(Locale.US, "%,d", pump.water.getFill()) + " / " + String.format(Locale.US, "%,d", pump.water.getMaxFill()) + " L");
+			text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + pump.water.getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(pump.water.getTankType(), pump.water.getFill(), pump.water.getMaxFill()));
 		}
 
 		//if(pos[1] > 70) {

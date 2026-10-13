@@ -1,6 +1,5 @@
 package com.hbm.inventory.gui;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import org.lwjgl.opengl.GL11;
 
@@ -33,14 +32,14 @@ public class GUIMachineGasCent extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 		
-		String[] inTankInfo = new String[] {gasCent.inputTank.getTankType().getName(), FluidVolume.formatPair(gasCent.inputTank.getFill(), gasCent.inputTank.getMaxFill())};
+		String[] inTankInfo = new String[] {gasCent.inputTank.getTankType().getName(), String.format(java.util.Locale.US, "%,d / %,d nominal isotope units", gasCent.inputTank.getFill(), gasCent.inputTank.getMaxFill())};
 		if(gasCent.inputTank.getTankType().getIfHighSpeed()) {
 			if(gasCent.getProcessingSpeed() > gasCent.processingSpeed - 70)
 				inTankInfo[0] = EnumChatFormatting.DARK_RED + inTankInfo[0];
 			else
 				inTankInfo[0] = EnumChatFormatting.GOLD + inTankInfo[0];
 		}
-		String[] outTankInfo = new String[] {gasCent.outputTank.getTankType().getName(), FluidVolume.formatPair(gasCent.outputTank.getFill(), gasCent.outputTank.getMaxFill())};
+		String[] outTankInfo = new String[] {gasCent.outputTank.getTankType().getName(), String.format(java.util.Locale.US, "%,d / %,d nominal isotope units", gasCent.outputTank.getFill(), gasCent.outputTank.getMaxFill())};
 		if(gasCent.outputTank.getTankType().getIfHighSpeed())
 			outTankInfo[0] = EnumChatFormatting.GOLD + outTankInfo[0];
 		

@@ -1,8 +1,8 @@
 package com.hbm.inventory.gui;
 
 
-import java.util.Locale;
 
+import java.util.Locale;
 import org.lwjgl.opengl.GL11;
 
 import com.hbm.inventory.container.ContainerCombustionEngine;
@@ -49,7 +49,7 @@ public class GUICombustionEngine extends GuiInfoContainer {
 			drawCreativeTabHoveringText((setting * 100 / 30) + "% power limit", MathHelper.clamp_int(x, guiLeft + 80, guiLeft + 114), MathHelper.clamp_int(y, guiTop + 38, guiTop + 46));
 		}
 		
-		drawCustomInfoStat(x, y, guiLeft + 79, guiTop + 50, 35, 14, x, y, engine.generatorStats.info(engine.ratedPowerWatts, engine.fuelCredit, engine.tank.getTankType().getName(), engine.tank.getFill()));
+		drawCustomInfoStat(x, y, guiLeft + 79, guiTop + 50, 35, 14, x, y, engine.generatorStats.info(engine.ratedPowerWatts, engine.fuelCredit, engine.tank.getTankType().getName(), engine.tank.getFill(), engine.getElectricalEfficiencyPpm(), com.hbm.inventory.fluid.FluidInfo.isExpanded()));
 		
 		drawCustomInfoStat(x, y, guiLeft + 79, guiTop + 13, 35, 15, x, y, "Ignition");
 

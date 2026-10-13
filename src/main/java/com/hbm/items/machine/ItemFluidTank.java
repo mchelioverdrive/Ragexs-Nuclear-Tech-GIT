@@ -37,11 +37,11 @@ public class ItemFluidTank extends Item {
 			
 			if(type.needsLeadContainer()) {
 				if(this == ModItems.fluid_tank_lead_full) {
-					list.add(new ItemStack(item, 1, id));
+					list.add(com.hbm.inventory.FluidContainerRegistry.newFilledStack(new ItemStack(item, 1, id)));
 				}
 				
 			} else {
-				list.add(new ItemStack(item, 1, id));
+				list.add(com.hbm.inventory.FluidContainerRegistry.newFilledStack(new ItemStack(item, 1, id)));
 			}
 		}
 	}

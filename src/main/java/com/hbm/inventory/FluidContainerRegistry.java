@@ -19,6 +19,47 @@ import net.minecraft.item.ItemStack;
 import net.minecraftforge.oredict.OreDictionary;
 
 public class FluidContainerRegistry {
+	public static final String AMOUNT_KEY = "realSimContainerAmount";
+	private static final HashMap<net.minecraft.item.Item, List<FluidContainer>> itemMap = new HashMap<>();
+
+	public static int normalizedCapacity(net.minecraft.item.Item item, FluidType type, int legacy) {
+		if(type.getPhysicalState().basis == com.hbm.realsim.PhysicalState.Basis.STANDARD_GAS_LITER && item == ModItems.canister_full) return 500;
+		if(type.getPhysicalState().basis != com.hbm.realsim.PhysicalState.Basis.LIQUID_LITER) return legacy;
+		if(item == ModItems.canister_full || item == ModItems.fluid_tank_full || item == ModItems.fluid_tank_lead_full
+				|| item == ModItems.disperser_canister || item == ModItems.gas_full) return 20;
+		if(item == ModItems.fluid_barrel_full) return 200;
+		return legacy;
+	}
+
+	/** Compare identity and existing tags while accepting both old and newly stamped quantities. */
+	public static boolean matchesFilled(ItemStack template, ItemStack stack) {
+		if(template == null || stack == null || !template.isItemEqual(stack)) return false;
+		ItemStack a = template.copy(), b = stack.copy();
+		for(ItemStack value : new ItemStack[] {a, b}) if(value.hasTagCompound()) {
+			value.getTagCompound().removeTag(AMOUNT_KEY);
+			if(value.getTagCompound().hasNoTags()) value.setTagCompound(null);
+		}
+		return ItemStack.areItemStackTagsEqual(a, b);
+	}
+
+	public static FluidContainer filledDescriptor(ItemStack stack) {
+		List<FluidContainer> candidates = itemMap.get(stack.getItem());
+		if(candidates != null) for(FluidContainer container : candidates)
+			if(matchesFilled(container.fullContainer, stack)) return container;
+		return null;
+	}
+
+	public static List<FluidContainer> itemDescriptors(ItemStack stack) { return itemMap.get(stack.getItem()); }
+
+	/** For creative/new reward output only. Existing untagged inventory remains legacy stock. */
+	public static ItemStack newFilledStack(ItemStack stack) {
+		FluidContainer container = filledDescriptor(stack);
+		if(container != null && container.content != container.legacyContent) {
+			if(!stack.hasTagCompound()) stack.setTagCompound(new net.minecraft.nbt.NBTTagCompound());
+			stack.getTagCompound().setInteger(AMOUNT_KEY, container.content);
+		}
+		return stack;
+	}
 
 	//TODO: continue incorporating hashmaps into this
 	public static List<FluidContainer> allContainers = new ArrayList<FluidContainer>();
@@ -106,6 +147,11 @@ public class FluidContainerRegistry {
 
 	public static void registerContainer(FluidContainer con) {
 		allContainers.add(con);
+		for(ItemStack stack : new ItemStack[] {con.fullContainer, con.emptyContainer}) if(stack != null) {
+			List<FluidContainer> candidates = itemMap.get(stack.getItem());
+			if(candidates == null) { candidates = new ArrayList<>(); itemMap.put(stack.getItem(), candidates); }
+			candidates.add(con);
+		}
 		OreDictionary.registerOre(con.type.getDict(con.content), con.fullContainer);
 
 		if(!containerMap.containsKey(con.type))
@@ -150,8 +196,8 @@ public class FluidContainerRegistry {
 			return 0;
 
 		for(FluidContainer container : containerMap.get(type)) {
-			if(ItemStack.areItemStacksEqual(container.fullContainer, sta) && ItemStack.areItemStackTagsEqual(container.fullContainer, sta))
-				return container.content;
+			if(matchesFilled(container.fullContainer, sta))
+				return container.amount(stack);
 		}
 
 		return 0;
@@ -166,7 +212,7 @@ public class FluidContainerRegistry {
 		sta.stackSize = 1;
 
 		for(FluidContainer container : allContainers) {
-			if(ItemStack.areItemStacksEqual(container.fullContainer, sta) && ItemStack.areItemStackTagsEqual(container.fullContainer, sta))
+			if(matchesFilled(container.fullContainer, sta))
 				return container.type;
 		}
 
@@ -199,7 +245,7 @@ public class FluidContainerRegistry {
 		sta.stackSize = 1;
 
 		for(FluidContainer container : allContainers) {
-			if(ItemStack.areItemStacksEqual(container.fullContainer, sta) && ItemStack.areItemStackTagsEqual(container.fullContainer, sta))
+			if(matchesFilled(container.fullContainer, sta))
 				return container.emptyContainer == null ? null : container.emptyContainer.copy();
 		}
 

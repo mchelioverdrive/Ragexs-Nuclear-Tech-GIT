@@ -35,7 +35,7 @@ public class ItemGasTank extends Item {
 			FluidType type = order[i];
 			
 			if(type.getContainer(CD_Gastank.class) != null) {
-				list.add(new ItemStack(item, 1, type.getID()));
+				list.add(com.hbm.inventory.FluidContainerRegistry.newFilledStack(new ItemStack(item, 1, type.getID())));
 			}
 		}
 	}

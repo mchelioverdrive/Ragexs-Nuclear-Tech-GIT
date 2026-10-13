@@ -51,7 +51,7 @@ public class GUIFirebox extends GuiInfoContainer {
 		}
 
 		this.drawCustomInfoStat(x, y, guiLeft + 80, guiTop + 27, 71, 7, x, y, new String[] { ThermalUnits.formatThermalEnergyPair(firebox.heatEnergy, firebox.getMaxHeat()) });
-		this.drawCustomInfoStat(x, y, guiLeft + 80, guiTop + 36, 71, 7, x, y, firebox instanceof com.hbm.tileentity.machine.TileEntityHeaterFirebox ? firebox.generatorStats.info(firebox.getRatedThermalWatts(), firebox.fuelCredit, "", 0) : new String[] { ThermalUnits.formatThermalPower(firebox.burnHeat), (firebox.burnTime / 20) + "s" });
+		this.drawCustomInfoStat(x, y, guiLeft + 80, guiTop + 36, 71, 7, x, y, firebox instanceof com.hbm.tileentity.machine.TileEntityHeaterFirebox ? firebox.generatorStats.info(firebox.getRatedThermalWatts(), firebox.fuelCredit, "", 0, 850_000, com.hbm.inventory.fluid.FluidInfo.isExpanded()) : new String[] { ThermalUnits.formatThermalPower(firebox.burnHeat), (firebox.burnTime / 20) + "s" });
 	}
 	
 	@Override

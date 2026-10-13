@@ -82,7 +82,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 
 	public TileEntityMachineDiesel() {
 		super(5, 100);
-		tank = new FluidTank(Fluids.DIESEL, 4_000);
+		tank = new FluidTank(Fluids.DIESEL, 400).withDefaultCapacity();
 		this.trackMachineFluidTank(tank);
 		this.trackMachineFluidTank(smoke);
 		this.trackMachineFluidTank(smoke_leaded);

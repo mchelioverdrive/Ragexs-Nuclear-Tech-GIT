@@ -31,7 +31,7 @@ public class GUIMachineDiesel extends GuiInfoContainer {
 		diesel.tank.renderTankInfo(this, mouseX, mouseY, guiLeft + 80, guiTop + 69 - 52, 16, 52);
 		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 152, guiTop + 69 - 52, 16, 52, diesel.getStoredEnergyQuanta(), diesel.powerCap);
 		
-		String[] text = diesel.generatorStats.info(diesel.ratedPowerWatts, diesel.fuelCredit, diesel.tank.getTankType().getName(), diesel.tank.getFill());
+		String[] text = diesel.generatorStats.info(diesel.ratedPowerWatts, diesel.fuelCredit, diesel.tank.getTankType().getName(), diesel.tank.getFill(), com.hbm.realsim.Combustion.dieselEfficiency(diesel.tank.getTankType()), com.hbm.inventory.fluid.FluidInfo.isExpanded());
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 16, guiTop + 36, 16, 16, guiLeft - 8, guiTop + 36 + 16, text);
 		
 		if(!diesel.hasAcceptableFuel()) {

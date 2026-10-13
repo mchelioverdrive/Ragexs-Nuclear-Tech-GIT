@@ -39,8 +39,8 @@ public class GUIPump extends GuiScreen {
 		Keyboard.enableRepeatEvents(true);
 
 		textPlacementPriority = new GuiTextField(fontRendererObj, this.width / 2 - 150, 100, 90, 20);
-		textPlacementPriority.setText("" + pump.bufferSize);
-		textPlacementPriority.setMaxStringLength(5);
+		textPlacementPriority.setText("" + pump.bufferSize * 20L);
+		textPlacementPriority.setMaxStringLength(6);
 
 		buttonPressure = new GuiButton(0, this.width / 2 - 50, 100, 90, 20, pressure + " PU");
 
@@ -51,9 +51,11 @@ public class GUIPump extends GuiScreen {
 	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
 		drawDefaultBackground();
 
-		drawString(fontRendererObj, "Throughput:", this.width / 2 - 150, 80, 0xA0A0A0);
-		drawString(fontRendererObj, "(max. 10,000 L)", this.width / 2 - 150, 90, 0xA0A0A0);
+		drawString(fontRendererObj, "Export rate:", this.width / 2 - 150, 80, 0xA0A0A0);
+		drawString(fontRendererObj, "(max. 200,000 units/s)", this.width / 2 - 150, 90, 0xA0A0A0);
 		textPlacementPriority.drawTextBox();
+		drawString(fontRendererObj, com.hbm.inventory.fluid.FluidInfo.unit(pump.tank[0].getTankType()) + "/s; steps of 20", this.width / 2 - 150, 125, 0xA0A0A0);
+		drawString(fontRendererObj, com.hbm.inventory.fluid.FluidInfo.pair(pump.tank[0].getTankType(), pump.tank[0].getFill(), pump.tank[0].getMaxFill()), this.width / 2 - 150, 145, 0xA0A0A0);
 
 		drawString(fontRendererObj, "Net pressure:", this.width / 2 - 50, 80, 0xA0A0A0);
 		buttonPressure.drawButton(mc, mouseX, mouseY);
@@ -73,7 +75,7 @@ public class GUIPump extends GuiScreen {
 		data.setByte("pressure", (byte) pressure);
 		data.setByte("priority", (byte) priority);
 
-		try { data.setInteger("capacity", Integer.parseInt(textPlacementPriority.getText())); } catch(Exception ex) {}
+		try { data.setInteger("capacity", (int) Math.max(0L, Math.min(10_000L, Long.parseLong(textPlacementPriority.getText()) / 20L))); } catch(Exception ex) {}
 
 		PacketDispatcher.wrapper.sendToServer(new NBTControlPacket(data, pump.xCoord, pump.yCoord, pump.zCoord));
 	}

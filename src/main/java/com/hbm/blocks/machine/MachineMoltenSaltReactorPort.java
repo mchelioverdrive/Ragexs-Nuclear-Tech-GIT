@@ -1,6 +1,5 @@
 package com.hbm.blocks.machine;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,11 +76,11 @@ public class MachineMoltenSaltReactorPort extends BlockContainer implements IToo
 		if(tile instanceof TileEntityMoltenSaltReactorPort) {
 			TileEntityMoltenSaltReactorPort port = (TileEntityMoltenSaltReactorPort) tile;
 			TileEntityMoltenSaltReactor reactor = port.getReactor();
-			text.add((port.isInput() ? "Inlet" : "Outlet") + ": " + FluidVolume.formatPair(port.tank.getFill(), port.tank.getMaxFill()));
+			text.add((port.isInput() ? "Inlet" : "Outlet") + ": " + com.hbm.inventory.fluid.FluidInfo.pair(port.tank.getTankType(), port.tank.getFill(), port.tank.getMaxFill()));
 
 			if(reactor != null) {
-				text.add("MSR Input: " + FluidVolume.formatPair(reactor.tanks[0].getFill(), reactor.tanks[0].getMaxFill()));
-				text.add("MSR Output: " + FluidVolume.formatPair(reactor.tanks[1].getFill(), reactor.tanks[1].getMaxFill()));
+				text.add("MSR Input: " + com.hbm.inventory.fluid.FluidInfo.pair(reactor.tanks[0].getTankType(), reactor.tanks[0].getFill(), reactor.tanks[0].getMaxFill()));
+				text.add("MSR Output: " + com.hbm.inventory.fluid.FluidInfo.pair(reactor.tanks[1].getTankType(), reactor.tanks[1].getFill(), reactor.tanks[1].getMaxFill()));
 				text.add("Rate: " + reactor.output + " L/t");
 				text.add("Corrosion: " + reactor.corrosion + "%");
 				text.add(reactor.isShielded() ? "Shielding: OK" : "&[16733525&]Shielding: LEAKING");

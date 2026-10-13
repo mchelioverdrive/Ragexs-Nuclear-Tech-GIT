@@ -72,7 +72,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 
 	public TileEntityMachineWoodBurner() {
 		super(6);
-		this.tank = new FluidTank(Fluids.WOODOIL, 16_000);
+		this.tank = new FluidTank(Fluids.WOODOIL, 100).withDefaultCapacity();
 		this.trackMachineFluidTank(tank);
 	}
 

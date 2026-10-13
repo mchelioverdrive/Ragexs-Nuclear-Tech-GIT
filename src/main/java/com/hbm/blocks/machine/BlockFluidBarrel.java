@@ -1,6 +1,5 @@
 package com.hbm.blocks.machine;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +40,7 @@ import net.minecraft.world.World;
 public class BlockFluidBarrel extends BlockContainer implements ITooltipProvider, IPersistentInfoProvider {
 	
 	int capacity;
+	public int getCapacity() { return capacity; }
 
 	public BlockFluidBarrel(Material p_i45386_1_, int capacity) {
 		super(p_i45386_1_);
@@ -203,21 +203,24 @@ public class BlockFluidBarrel extends BlockContainer implements ITooltipProvider
 	public void addInformation(ItemStack stack, NBTTagCompound persistentTag, EntityPlayer player, List list, boolean ext) {
 		FluidTank tank = new FluidTank(Fluids.NONE, 0);
 		tank.readFromNBT(persistentTag, "tank");
-		list.add(EnumChatFormatting.YELLOW + "" + FluidVolume.formatPair(tank.getFill(), tank.getMaxFill()) + " " + tank.getTankType().getLocalizedName());
+		list.add(tank.getTankType().getLocalizedName());
+		list.add(com.hbm.inventory.fluid.FluidInfo.pair(tank.getTankType(), tank.getFill(), capacity));
+		tank.getTankType().addInfo(list);
+		com.hbm.inventory.fluid.FluidInfo.appendStoredEnergy(list, tank.getTankType(), tank.getFill());
 	}
 
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		
 		if(this == ModBlocks.barrel_plastic) {
-			list.add(EnumChatFormatting.AQUA + "Capacity: 12,000 L");
+			list.add(EnumChatFormatting.AQUA + "Capacity: 200 L / standard L (fluid-dependent)");
 			list.add(EnumChatFormatting.YELLOW + "Cannot store hot fluids");
 			list.add(EnumChatFormatting.YELLOW + "Cannot store corrosive fluids");
 			list.add(EnumChatFormatting.YELLOW + "Cannot store antimatter");
 		}
 		
 		if(this == ModBlocks.barrel_corroded) {
-			list.add(EnumChatFormatting.AQUA + "Capacity: 6,000 L");
+			list.add(EnumChatFormatting.AQUA + "Capacity: 100 L / standard L (fluid-dependent)");
 			list.add(EnumChatFormatting.GREEN + "Can store hot fluids");
 			list.add(EnumChatFormatting.GREEN + "Can store highly corrosive fluids");
 			list.add(EnumChatFormatting.YELLOW + "Cannot store antimatter");
@@ -225,14 +228,14 @@ public class BlockFluidBarrel extends BlockContainer implements ITooltipProvider
 		}
 		
 		if(this == ModBlocks.barrel_iron) {
-			list.add(EnumChatFormatting.AQUA + "Capacity: 8,000 L");
+			list.add(EnumChatFormatting.AQUA + "Capacity: 200 L / standard L (fluid-dependent)");
 			list.add(EnumChatFormatting.GREEN + "Can store hot fluids");
 			list.add(EnumChatFormatting.YELLOW + "Cannot store corrosive fluids properly");
 			list.add(EnumChatFormatting.YELLOW + "Cannot store antimatter");
 		}
 		
 		if(this == ModBlocks.barrel_steel) {
-			list.add(EnumChatFormatting.AQUA + "Capacity: 16,000 L");
+			list.add(EnumChatFormatting.AQUA + "Capacity: 200 L / standard L (fluid-dependent)");
 			list.add(EnumChatFormatting.GREEN + "Can store hot fluids");
 			list.add(EnumChatFormatting.GREEN + "Can store corrosive fluids");
 			list.add(EnumChatFormatting.YELLOW + "Cannot store highly corrosive fluids properly");
@@ -240,14 +243,14 @@ public class BlockFluidBarrel extends BlockContainer implements ITooltipProvider
 		}
 		
 		if(this == ModBlocks.barrel_antimatter) {
-			list.add(EnumChatFormatting.AQUA + "Capacity: 16,000 L");
+			list.add(EnumChatFormatting.AQUA + "Capacity: 200 L / standard L (fluid-dependent)");
 			list.add(EnumChatFormatting.GREEN + "Can store hot fluids");
 			list.add(EnumChatFormatting.GREEN + "Can store highly corrosive fluids");
 			list.add(EnumChatFormatting.GREEN + "Can store antimatter");
 		}
 		
 		if(this == ModBlocks.barrel_tcalloy) {
-			list.add(EnumChatFormatting.AQUA + "Capacity: 24,000 L");
+			list.add(EnumChatFormatting.AQUA + "Capacity: 200 L / standard L (fluid-dependent)");
 			list.add(EnumChatFormatting.GREEN + "Can store hot fluids");
 			list.add(EnumChatFormatting.GREEN + "Can store highly corrosive fluids");
 			list.add(EnumChatFormatting.YELLOW + "Cannot store antimatter");

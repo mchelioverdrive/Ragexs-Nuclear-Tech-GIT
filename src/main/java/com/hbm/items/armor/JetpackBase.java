@@ -1,6 +1,5 @@
 package com.hbm.items.armor;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import java.util.List;
 
@@ -39,7 +38,7 @@ public abstract class JetpackBase extends ItemArmorMod implements IFillableItem 
 	
 	@Override
 	public void addInformation(ItemStack itemstack, EntityPlayer player, List list, boolean bool) {
-		list.add(EnumChatFormatting.LIGHT_PURPLE + fuel.getLocalizedName() + ": " + FluidVolume.formatPair(this.getFuel(itemstack), this.maxFuel));
+		com.hbm.inventory.fluid.FluidInfo.appendContainer(list, fuel, getFuel(itemstack), maxFuel, 0);
 		list.add("");
 		super.addInformation(itemstack, player, list, bool);
 		list.add(EnumChatFormatting.GOLD + "Can be worn on its own!");
@@ -53,7 +52,7 @@ public abstract class JetpackBase extends ItemArmorMod implements IFillableItem 
 		if(jetpack == null)
 			return;
 		
-		list.add(EnumChatFormatting.RED + "  " + stack.getDisplayName() + " (" + fuel.getLocalizedName() + ": " + FluidVolume.formatPair(this.getFuel(jetpack), this.maxFuel));
+		list.add(EnumChatFormatting.RED + "  " + stack.getDisplayName() + " (" + fuel.getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(fuel, getFuel(jetpack), maxFuel));
 	}
 	
 	@Override
@@ -159,7 +158,7 @@ public abstract class JetpackBase extends ItemArmorMod implements IFillableItem 
 			return amount;
 		
 		int fill = this.getFuel(stack);
-		int req = maxFuel - fill;
+		int req = Math.max(0, maxFuel - fill);
 		
 		int toFill = Math.min(amount, req);
 		//toFill = Math.min(toFill, getLoadSpeed(stack));

@@ -771,6 +771,7 @@ public class ModEventHandlerClient {
 
 		ItemStack stack = event.itemStack;
 		List<String> list = event.toolTip;
+		com.hbm.inventory.fluid.PortableFluidInfo.append(stack, list);
 
 		//Item item = stack.getItem();
 		//if(item == Item.getItemFromBlock(Blocks.furnace)

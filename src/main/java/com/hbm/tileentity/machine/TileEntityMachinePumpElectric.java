@@ -13,11 +13,11 @@ public class TileEntityMachinePumpElectric extends TileEntityMachinePumpBase imp
 	
 	public long energyQuanta;
 	public static final long maxPower = 10_000;
-	private static final long operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(1_000L);
+	public static final long operatingPowerWatts = com.hbm.realsim.Groundwater.ELECTRIC_WATTS;
 	
 	public TileEntityMachinePumpElectric() {
 		super();
-		water = new FluidTank(Fluids.WATER, electricSpeed * 100);
+		water = new FluidTank(Fluids.WATER, com.hbm.realsim.Groundwater.ELECTRIC_BUFFER).withDefaultCapacity();
 	}
 	
 	public void updateEntity() {
@@ -42,14 +42,22 @@ public class TileEntityMachinePumpElectric extends TileEntityMachinePumpBase imp
 
 	@Override
 	protected boolean canOperate() {
-		return energyQuanta >= EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts) && water.getFill() < water.getMaxFill();
+		return electricSpeed > 0 && electricLitersPerMinute > 0 && energyQuanta >= EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts) && water.getFill() < water.getMaxFill();
 	}
 
 	@Override
 	protected void operate() {
 		this.setStoredEnergyQuanta(this.energyQuanta - EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts));
-		int pumpSpeed = water.getTankType() == Fluids.WATER ? electricSpeed : electricSpeed / nonWaterDebuff;
-		water.setFill(Math.min(water.getFill() + pumpSpeed, water.getMaxFill()));
+		produceWater(com.hbm.realsim.Groundwater.microlitersPerTick(operatingPowerWatts, electricLitersPerMinute / 60D));
+	}
+
+	@Override public void writeToNBT(NBTTagCompound nbt) {
+		super.writeToNBT(nbt);
+		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
+	}
+	@Override public void readFromNBT(NBTTagCompound nbt) {
+		super.readFromNBT(nbt);
+		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 	}
 
 	@Override

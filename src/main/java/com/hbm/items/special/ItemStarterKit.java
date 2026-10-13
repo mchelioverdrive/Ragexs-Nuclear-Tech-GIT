@@ -127,7 +127,7 @@ public class ItemStarterKit extends Item {
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.pellet_rtg_weak, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.cell_empty, 32));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.rod_empty, 32));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.fluid_barrel_full, 4, Fluids.COOLANT.getID()));
+			player.inventory.addItemStackToInventory(com.hbm.inventory.FluidContainerRegistry.newFilledStack(new ItemStack(ModItems.fluid_barrel_full, 4, Fluids.COOLANT.getID())));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.radaway_strong, 4));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.radx, 4));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.pill_iodine, 1));
@@ -209,8 +209,8 @@ public class ItemStarterKit extends Item {
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.piston_selenium, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.piston_selenium, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.piston_selenium, 1));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.canister_full, 16, Fluids.DIESEL.getID()));
-			player.inventory.addItemStackToInventory(new ItemStack(ModItems.canister_full, 16, Fluids.BIOFUEL.getID()));
+			player.inventory.addItemStackToInventory(com.hbm.inventory.FluidContainerRegistry.newFilledStack(new ItemStack(ModItems.canister_full, 16, Fluids.DIESEL.getID())));
+			player.inventory.addItemStackToInventory(com.hbm.inventory.FluidContainerRegistry.newFilledStack(new ItemStack(ModItems.canister_full, 16, Fluids.BIOFUEL.getID())));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.battery_advanced_cell_4, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.battery_advanced_cell_4, 1));
 			player.inventory.addItemStackToInventory(new ItemStack(ModItems.battery_lithium, 1));

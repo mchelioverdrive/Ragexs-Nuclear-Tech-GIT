@@ -35,8 +35,8 @@ public class ItemPipette extends Item implements IFillableItem {
 	@SideOnly(Side.CLIENT) protected IIcon emptyIcon;
 
 	public short getMaxFill() {
-		if(this == ModItems.pipette_laboratory) return 50;
-		else return 1_000;
+		if(this == ModItems.pipette_laboratory) return 1; // smallest whole-unit sampler
+		else return 20; // hand-operated siphon reservoir
 	}
 
 	public void initNBT(ItemStack stack) {
@@ -58,7 +58,7 @@ public class ItemPipette extends Item implements IFillableItem {
 			initNBT(stack);
 		}
 
-		return stack.stackTagCompound.getShort("capacity");
+		return (short) Math.min(Math.max(1, stack.stackTagCompound.getShort("capacity")), this.getMaxFill());
 	}
 
 	public void setFill(ItemStack stack, FluidType type, short fill) {
@@ -90,9 +90,9 @@ public class ItemPipette extends Item implements IFillableItem {
 			if(this.getFill(stack) == 0) {
 				int a;
 				if(this == ModItems.pipette_laboratory)
-					a = !player.isSneaking() ? Math.min(this.getCapacity(stack) + 1, 50) : Math.max(this.getCapacity(stack) - 1, 1);
+					a = 1;
 				else 
-					a = !player.isSneaking() ? Math.min(this.getCapacity(stack) + 50, 1_000) : Math.max(this.getCapacity(stack) - 50, 50);
+					a = !player.isSneaking() ? Math.min(this.getCapacity(stack) + 1, this.getMaxFill()) : Math.max(this.getCapacity(stack) - 1, 1);
 				stack.stackTagCompound.setShort("capacity", (short) a);
 				player.addChatMessage(new ChatComponentText(FluidVolume.formatPair(a, this.getMaxFill())));
 			} else {
@@ -112,8 +112,8 @@ public class ItemPipette extends Item implements IFillableItem {
 			list.add(I18nUtil.resolveKey("desc.item.pipette.corrosive"));
 		if(this == ModItems.pipette)
 			list.add(I18nUtil.resolveKey("desc.item.pipette.noCorrosive"));
-		list.add("Fluid: " + this.getType(stack).getLocalizedName());
-		list.add("Amount: " + FluidVolume.formatPair(this.getFill(stack), this.getCapacity(stack)) + " (" + FluidVolume.format(this.getMaxFill()) + ")");
+		com.hbm.inventory.fluid.FluidInfo.appendContainer(list, getType(stack), getFill(stack), getCapacity(stack), 0);
+		list.add("Adjustable capacity; maximum: " + com.hbm.inventory.fluid.FluidInfo.amount(getType(stack), getMaxFill()));
 	}
 
 	@Override
@@ -130,7 +130,7 @@ public class ItemPipette extends Item implements IFillableItem {
 		if(this.getFill(stack) == 0)
 			this.setFill(stack, type, (short) 0);
 
-		int req = this.getCapacity(stack) - this.getFill(stack);
+		int req = Math.max(0, this.getCapacity(stack) - this.getFill(stack));
 		int toFill = Math.min(req, amount);
 
 		this.setFill(stack, type, (short) (this.getFill(stack) + toFill));

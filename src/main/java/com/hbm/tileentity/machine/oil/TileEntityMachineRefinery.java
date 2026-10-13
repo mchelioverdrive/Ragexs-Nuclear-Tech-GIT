@@ -80,10 +80,10 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 	public TileEntityMachineRefinery() {
 		super(13);
 		tanks = new FluidTank[5];
-		tanks[0] = new FluidTank(Fluids.HOTOIL, 64_000);
-		tanks[1] = new FluidTank(Fluids.HEAVYOIL, 24_000);
-		tanks[2] = new FluidTank(Fluids.NAPHTHA, 24_000);
-		tanks[3] = new FluidTank(Fluids.LIGHTOIL, 24_000);
+		tanks[0] = new FluidTank(Fluids.HOTOIL, 32_000).withDefaultCapacity();
+		tanks[1] = new FluidTank(Fluids.HEAVYOIL, 8_000).withDefaultCapacity();
+		tanks[2] = new FluidTank(Fluids.NAPHTHA, 8_000).withDefaultCapacity();
+		tanks[3] = new FluidTank(Fluids.LIGHTOIL, 8_000).withDefaultCapacity();
 		tanks[4] = new FluidTank(Fluids.PETROLEUM, 24_000);
 		for(FluidTank tank : this.tanks) this.trackMachineFluidTank(tank);
 	}

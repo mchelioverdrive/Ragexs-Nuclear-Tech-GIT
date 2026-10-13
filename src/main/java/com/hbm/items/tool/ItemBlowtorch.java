@@ -1,7 +1,6 @@
 package com.hbm.items.tool;
 
 import java.util.List;
-import java.util.Locale;
 
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
@@ -22,7 +21,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
 public class ItemBlowtorch extends Item implements IFillableItem {
@@ -58,7 +56,7 @@ public class ItemBlowtorch extends Item implements IFillableItem {
 			return amount;
 		
 		int toFill = Math.min(amount, 50);
-		toFill = Math.min(toFill, getMaxFill(type) - this.getFill(stack, type));
+		toFill = Math.min(toFill, Math.max(0, getMaxFill(type) - this.getFill(stack, type)));
 		this.setFill(stack, type, this.getFill(stack, type) + toFill);
 		
 		return amount - toFill;
@@ -199,17 +197,12 @@ public class ItemBlowtorch extends Item implements IFillableItem {
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		
 		if(this == ModItems.blowtorch) {
-			list.add(EnumChatFormatting.YELLOW + getFillGauge(stack, Fluids.GAS));
+			com.hbm.inventory.fluid.FluidInfo.appendContainer(list, Fluids.GAS, getFill(stack, Fluids.GAS), getMaxFill(Fluids.GAS), 0);
 		}
 		if(this == ModItems.acetylene_torch) {
-			list.add(EnumChatFormatting.YELLOW + getFillGauge(stack, Fluids.UNSATURATEDS));
-			list.add(EnumChatFormatting.AQUA + getFillGauge(stack, Fluids.OXYGEN));
+			com.hbm.inventory.fluid.FluidInfo.appendContainer(list, Fluids.UNSATURATEDS, getFill(stack, Fluids.UNSATURATEDS), getMaxFill(Fluids.UNSATURATEDS), 0);
+			com.hbm.inventory.fluid.FluidInfo.appendContainer(list, Fluids.OXYGEN, getFill(stack, Fluids.OXYGEN), getMaxFill(Fluids.OXYGEN), 0);
 		}
-	}
-
-	@SideOnly(Side.CLIENT)
-	private String getFillGauge(ItemStack stack, FluidType type) {
-		return type.getLocalizedName() + ": " + String.format(Locale.US, "%,d", this.getFill(stack, type)) + " / " + String.format(Locale.US, "%,d", this.getMaxFill(type));
 	}
 
 	@Override public boolean providesFluid(FluidType type, ItemStack stack) { return false; }

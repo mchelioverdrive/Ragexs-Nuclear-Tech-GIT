@@ -27,11 +27,15 @@ public class FT_Combustible extends FluidTrait {
 
 		info.add(EnumChatFormatting.GOLD + "[Combustible]");
 		
-		info.add(EnumChatFormatting.GOLD + "Fuel grade: " + EnumChatFormatting.RED + this.fuelGrade.getGrade());
+		info.add(EnumChatFormatting.GOLD + "Fuel grade (suitability): " + EnumChatFormatting.RED + this.fuelGrade.getGrade());
 	}
 	
 	public long getLegacyEngineBudgetQuanta() {
 		return this.combustionEnergyQuanta;
+	}
+
+	@Override public void addInfoHidden(List<String> info) {
+		info.add("Grade selects equipment suitability; chemical LHV is independent");
 	}
 	@Deprecated public long getCombustionEnergyQuanta() { return getLegacyEngineBudgetQuanta(); }
 

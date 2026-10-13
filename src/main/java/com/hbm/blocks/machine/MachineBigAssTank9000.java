@@ -1,6 +1,5 @@
 package com.hbm.blocks.machine;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -150,8 +149,8 @@ public class MachineBigAssTank9000 extends BlockDummyable implements IPersistent
 
 	@Override
 	public void addInformation(ItemStack stack, NBTTagCompound persistentTag, EntityPlayer player, List list, boolean ext) {
-		FluidTank tank = new FluidTank(Fluids.NONE, 0);
+		FluidTank tank = new FluidTank(Fluids.NONE, 64_000).withDefaultCapacity();
 		tank.readFromNBT(persistentTag, "tank");
-		list.add(EnumChatFormatting.YELLOW + "" + FluidVolume.formatPair(tank.getFill(), tank.getMaxFill()) + " " + tank.getTankType().getLocalizedName());
+		com.hbm.inventory.fluid.FluidInfo.appendContainer(list, tank.getTankType(), tank.getFill(), tank.getMaxFill(), tank.getPressure());
 	}
 }
