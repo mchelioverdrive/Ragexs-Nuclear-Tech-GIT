@@ -71,3 +71,11 @@
 - Replaced groundwater's extreme per-tick production with 10-kW electric / 2-kW shaft envelopes capped at 120/30 L/min, independent buffers and a 20-L/s aggregate water export limit. Retained terrain/celestial eligibility and non-water penalty, persisted fractional production/owned shaft work and pump stores, and kept steam's 100:1 parcel through an explicit transitional 100-kJ shaft allowance. Pipe pump storage and configured export now have separate budgets.
 - Shared canonical quantity, phase, temperature, LHV, stored chemical energy and existing hazard/suitability information across portable items, machine tank hovers, packed storage, NEI and fluid selection. Gas quantities read standard L; unresolved/steam quantities remain nominal. Generator displays retain installed rated efficiency while idle and put owned accounting details behind Shift. World-block buckets and unconverted nuclear/life-support/transport/custom quantities remain explicit compatibility boundaries.
 - Added regression coverage in the existing physical-accounting suite and documented capacity decisions, legacy behavior, hydraulic settings and representative storage endurance in the RealSim reports. Phase 5D remains deferred.
+
+
+2026-10-13 15:03 — Close RealSim fossil heat and steam power accounting
+
+- Added the frozen water-equivalent steam/enthalpy/pressure-state ledger, versioned fractional thermal ownership, checked work/rejection and shared rated heat/electrical export. Preserved fluid IDs, saved quantities and electrical quanta; unowned progress cannot become paid work.
+- Converted gas generation to a 3-MWe/30%-LHV owner with bounded exhaust and an internal HRSG; corrected turbofan afterburning and made plain flares disposal equipment.
+- Converted boilers, compressors, engines/turbines/Leviathan, condensers/radiators, heat exchangers, solar/geothermal steam and the heating oven. Added industrial solid/oil firing and feed-pump ports, retained buffer pause and rupture/trip/reset, and closed condensate return with declared steam loss/makeup. Nuclear calibration/protection remain deferred.
+- Updated shared quantities, machine information and existing RealSim/steam documentation with contracts, facility models and compatibility. Added production-accounting coverage while retaining physical/petroleum tests.

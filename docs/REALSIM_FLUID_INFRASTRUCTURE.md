@@ -369,3 +369,14 @@ This inventory covers current `com/hbm` TileEntity `FluidTank` declarations, inc
 | `turret/TileEntityTurretFritz/tank` (DIESEL) | `16000` | `16000` | liquid L | stationary process buffer; native/configured geometry | Retain; saved/configured quantities unchanged |
 
 Inherited BAT9000 storage changes from 2,048,000 to 64,000 through its `TileEntityBarrel` constructor. Industrial chemical lane `getTankCapacity()` is 32,000. Transporter rocket supplies 128,000/64,000 to its shared base. Boiler/turbine capacities expressed through their native static settings retain those settings and existing steam scaling; these expressions are storage, not adopted thermodynamics. Runtime Watz shared tanks begin at zero as aggregate views. Per-machine recipe, thermal and nuclear source contracts still govern the retained rows.
+
+
+## Phase 5D steam quantity release (2026-10-13)
+
+This supersedes earlier nominal/unreleased steam wording, not capacity or groundwater decisions. Steam grades/spent declare 0.01/0.1/1/10/1 nominal kg water-equivalent per existing count; NBT amounts and IDs are unchanged. Shared information shows water-equivalent units, total mass and enthalpy. Process gases still use standard L; petroleum liquids use L; PU is not thermodynamic pressure.
+
+Converted systems use [one state ledger](REALSIM_PHYSICAL_LEDGER.md#phase-5d-frozen-thermal-contract-2026-10-13). Existing steam capacities are retained independently of ratings. Versioned thermal/exhaust storage is not obtained by scaling saves or certifying old progress. Power buffers retain over-cap stock for rated draining. Industrial boilers add separate 24,000-L oil stores/two solid slots without replacing saved water/steam tanks; the heating oven expands default heat storage to 4 MJ independently of its 500-kW generation/export ceiling.
+
+Closed feedwater circuits replace only the declared 0.5% steam-loss/blowdown equivalent. Passive/radiator/powered cooling has a separate finite ambient heat-rejection rating; it does not evaporate all feedwater. No wet tower/cooling-water species conversion was invented. A future wet/water-cooled adapter must own its separate cooling-water return/evaporative loss; it cannot reuse feedwater mass. Implemented dry/environmental routes close steam mass and heat rejection.
+
+Groundwater remains 120 L/min electric / 30 L/min steam, with prior hydraulics/storage/export. The unchanged 100-kJ shaft parcel now equals 40% of the common ordinary-steam cap. Industrial/combined makeup is 2.379/0.458 L/min, below one pump's rate; once-through demand is much larger, giving condenser return real logistical value. Autonomy and compatibility are in the [Phase 5D report](REALSIM_PHASES_1_4.md#phase-5d-implementation--closed-fossil-thermal-power-2026-10-13).

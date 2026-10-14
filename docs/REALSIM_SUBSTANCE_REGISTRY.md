@@ -206,3 +206,14 @@ This section supersedes the candidate petroleum and mixed-gas values above. Valu
 `OIL_DS`, `CRACKOIL_DS` and their hot forms keep their corresponding crude density/LHV; hydroprocessing pays H2 and separates sour gas instead of granting an energy multiplier. `LIGHTOIL_DS` shares the light assay; diesel/kerosene reform blends retain the 90/10 input volume-weighted mass and energy. Leaded fuels contain one 10 g additive per 10000 reference L, including its mass and chemical energy, without extra bulk fuel. Coal/lignite briquettes are 1 kg reference items; wood briquettes are 4 kg and saplings 1 kg. Wood ash has zero chemical LHV because it is a resolved inert product, not an unresolved substance.
 
 The registry still deliberately refuses unassayed coolant, planetary gases, reactive/fictional mixtures and unrelated chemistry as physical fuel/process inputs. Existing IDs, stores and transport remain available. Specifying a process bill requires a resolved mass and LHV for every input, coproduct and loss identity. Gas-turbine direct output and steam recovery remain deferred to Phase 5D.
+
+
+## Phase 5D released water-equivalent steam (2026-10-13)
+
+`PhysicalRegistry` publishes WATER_EQUIVALENT mass for STEAM/HOTSTEAM/SUPERHOTSTEAM/ULTRAHOTSTEAM/SPENTSTEAM: 0.01/0.1/1/10/1 nominal kg per unchanged count. FRESH_WATER/raw WATER retain the 1-kg reference batch. Counts are not gas L or literal vessel liters; PU remains transport metadata. Shared hovers show water mass and enthalpy rather than retained nuclear trait budgets.
+
+`SteamLedger` freezes cold, internal warm condensate, four steam grades and wet spent steam at the [temperature/pressure/enthalpy table](REALSIM_PHYSICAL_LEDGER.md#phase-5d-frozen-thermal-contract-2026-10-13). Warm condensate has an internal identity; no existing fluid ID was renamed or a new one inserted. Native condensers return cold fresh water, rejecting latent/wet heat and the final warm-to-cold increment. Nominal feedwater kg preserves the 100:10:1:0.1 saved ratios.
+
+Gas-turbine suitability is explicit for released natural/refinery/reform/coker/syngas assays. Each retains Phase 5C composition and mass x LHV. The adopted multi-fuel combustor supports those H2-bearing mixtures; pure H2, sour gas, oxyhydrogen, fictional/unresolved gas and liquid LPG are refused. Refinery gas's existing LPG-vapor component is legitimate gas feed. Throttle/afterburner never rewrite LHV.
+
+Saved stock gains interpretation without rescaling counts. Unknown/custom identities are retained, not replaced with water/air. Nuclear/cryogenic species and coolant/HU calibration remain outside this release.

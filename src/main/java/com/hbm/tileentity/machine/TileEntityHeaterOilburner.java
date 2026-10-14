@@ -30,6 +30,10 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 
 public class TileEntityHeaterOilburner extends TileEntityMachinePolluting implements IGUIProvider, IFluidStandardTransceiver, IHeatSource, IControlReceiver, IFluidCopiable, api.hbm.tile.IProcessHeatSource {
+    private final com.hbm.realsim.OutputBudget heatExportBudget = new com.hbm.realsim.OutputBudget();
+    @Override public com.hbm.realsim.OutputBudget getProcessHeatBudget() { return heatExportBudget; }
+    @Override public long getRatedProcessHeatWatts() { return ratedThermalWatts; }
+
 	private static final int TASK_BURN = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
@@ -200,6 +204,7 @@ public class TileEntityHeaterOilburner extends TileEntityMachinePolluting implem
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        heatExportBudget.read(nbt.getCompoundTag("realSimHeatExport"));
 		tank.readFromNBT(nbt, "tank");
 		isOn = nbt.getBoolean("isOn");
 		heatEnergy = nbt.getInteger("heatEnergy");
@@ -212,6 +217,7 @@ public class TileEntityHeaterOilburner extends TileEntityMachinePolluting implem
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+        net.minecraft.nbt.NBTTagCompound export = new net.minecraft.nbt.NBTTagCompound(); heatExportBudget.write(export); nbt.setTag("realSimHeatExport", export);
 		tank.writeToNBT(nbt, "tank");
 		nbt.setBoolean("isOn", isOn);
 		nbt.setInteger("heatEnergy", heatEnergy);

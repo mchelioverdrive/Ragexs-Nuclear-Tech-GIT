@@ -51,6 +51,7 @@ public class MachineCondenser extends BlockContainer implements ILookOverlay {
 		for(int i = 0; i < condenser.tanks.length; i++)
 			text.add((i < 1 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET +condenser.tanks[i].getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(condenser.tanks[i].getTankType(), condenser.tanks[i].getFill(), condenser.tanks[i].getMaxFill()));
 		
+        com.hbm.realsim.ThermalInfo.condenser(text, condenser.thermal, condenser.getRatedRejectionWatts());
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 }

@@ -8,8 +8,6 @@ import com.google.gson.stream.JsonWriter;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
-import com.hbm.inventory.fluid.trait.FT_Coolable;
-import com.hbm.inventory.fluid.trait.FT_Coolable.CoolingType;
 import com.hbm.machine.MachineDirtyCause;
 import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IConfigurableMachine;
@@ -28,7 +26,12 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MathHelper;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEnergyProviderMK2, IFluidStandardTransceiver, INBTPacketReceiver, IConfigurableMachine, IFluidCopiable {
+public class TileEntitySteamEngine extends TileEntityLoadedBase implements api.hbm.energymk2.IRatedGenerator, IFluidStandardTransceiver, INBTPacketReceiver, IConfigurableMachine, IFluidCopiable {
+    public final com.hbm.realsim.ThermalAccount thermal = new com.hbm.realsim.ThermalAccount();
+    private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
+    @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
+    @Override public long getRatedOutputWatts() { return 25000L; }
+
 	private static final int TASK_SIMULATE = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
@@ -58,7 +61,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 	/* CONFIGURABLE */
 	private static int steamCap = 2_000;
 	private static int ldsCap = 20;
-	private static double efficiency = 0.85D;
+	private static double efficiency = 0.7D;
 
 	public TileEntitySteamEngine() {
 
@@ -132,17 +135,11 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 		runtimeFluidMutation = true;
 		runtimeEnergyMutation = true;
 		try {
-			this.setStoredEnergyQuanta(0);
-			this.reconcileTankTypes();
-
-			FT_Coolable trait = tanks[0].getTankType().getTrait(FT_Coolable.class);
-			double eff = trait.getEfficiency(CoolingType.TURBINE) * efficiency;
-			int inputOps = tanks[0].getFill() / trait.amountReq;
-			int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
-			int ops = Math.min(inputOps, outputOps);
-			tanks[0].setFill(tanks[0].getFill() - ops * trait.amountReq);
-			tanks[1].setFill(tanks[1].getFill() + ops * trait.amountProduced);
-			this.setStoredEnergyQuanta(this.powerBuffer + (long) (ops * trait.heatEnergy * eff));
+            this.reconcileTankTypes();
+            long generated = com.hbm.realsim.ThermalMachine.turbine(thermal, worldObj.getTotalWorldTime(), tanks[0], tanks[1],
+                    15000L, 25000L, com.hbm.realsim.ThermalMachine.efficiency(efficiency, 700000), powerBuffer, getEnergyCapacityQuanta());
+            int ops = thermal.currentMass > 0 ? 1 : 0;
+            this.setStoredEnergyQuanta(Math.addExact(powerBuffer, generated));
 
 			if(ops > 0) this.acceleration += 0.1F;
 			else this.acceleration -= 0.1F;
@@ -208,16 +205,14 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
-		FT_Coolable trait = tanks[0].getTankType().getTrait(FT_Coolable.class);
-		int inputOps = tanks[0].getFill() / trait.amountReq;
-		int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
-		boolean canConvert = Math.min(inputOps, outputOps) > 0;
+        boolean canConvert = (tanks[0].getFill() > 0 || thermal.ownedMass() > 0) && tanks[1].getFill() < tanks[1].getMaxFill() && powerBuffer < getEnergyCapacityQuanta();
 		if(canConvert || tanks[1].getFill() > 0 || acceleration > 0F || powerBuffer > 0L) this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
 		else this.cancelMachineTransition(TASK_SIMULATE, TASK_SLOT_MAIN);
 	}
 
 	private void sendRuntimeState() {
 		NBTTagCompound data = new NBTTagCompound();
+        thermal.writeStatus(data);
 		tanks[0].writeToNBT(data, "s");
 		EnergyUnits.writeEnergyQuanta(data, this.powerBuffer);
 		data.setFloat("rotor", this.rotor);
@@ -244,6 +239,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        thermal.read(nbt); outputBudget.read(nbt);
 
 		this.powerBuffer = EnergyUnits.readEnergyQuanta(nbt, "powerBuffer");
 		this.acceleration = nbt.getFloat("acceleration");
@@ -254,6 +250,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+        thermal.write(nbt); outputBudget.write(nbt);
 
 		EnergyUnits.writeEnergyQuanta(nbt, powerBuffer);
 		nbt.setFloat("acceleration", acceleration);
@@ -284,7 +281,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 
 	@Override
 	public long getEnergyCapacityQuanta() {
-		return powerBuffer;
+		return 1000000L;
 	}
 
 	@Override
@@ -296,11 +293,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 	}
 
 	public long getPowerOutputWatts() {
-		FT_Coolable trait = tanks[0].getTankType().getTrait(FT_Coolable.class);
-		int inputOps = tanks[0].getFill() / trait.amountReq;
-		int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
-		long generationQuantaPerTick = (long) (Math.min(inputOps, outputOps) * trait.heatEnergy * trait.getEfficiency(CoolingType.TURBINE) * efficiency);
-		return EnergyUnits.quantaPerTickToWatts(generationQuantaPerTick);
+        return EnergyUnits.quantaPerTickToWatts(thermal.currentElectricQuanta);
 	}
 
 	@Override
@@ -320,6 +313,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements IEner
 
 	@Override
 	public void networkUnpack(NBTTagCompound nbt) {
+        thermal.readStatus(nbt);
 		this.powerBuffer = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.syncRotor = nbt.getFloat("rotor");
 		this.turnProgress = 3; //use 3-ply for extra smoothness

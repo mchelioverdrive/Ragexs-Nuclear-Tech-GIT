@@ -74,9 +74,10 @@ public class MachineSteamEngine extends BlockDummyable implements ILookOverlay {
 		TileEntitySteamEngine engine = (TileEntitySteamEngine) te;
 
 		List<String> text = new ArrayList();
-		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + engine.tanks[0].getTankType().getLocalizedName() + ": " + String.format(Locale.US, "%,d", engine.tanks[0].getFill()) + " / " + String.format(Locale.US, "%,d", engine.tanks[0].getMaxFill()) + " L");
-		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + engine.tanks[1].getTankType().getLocalizedName() + ": " + String.format(Locale.US, "%,d", engine.tanks[1].getFill()) + " / " + String.format(Locale.US, "%,d", engine.tanks[1].getMaxFill()) + " L");
+		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + engine.tanks[0].getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(engine.tanks[0].getTankType(), engine.tanks[0].getFill(), engine.tanks[0].getMaxFill()));
+		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + engine.tanks[1].getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(engine.tanks[1].getTankType(), engine.tanks[1].getFill(), engine.tanks[1].getMaxFill()));
 
+        com.hbm.realsim.ThermalInfo.generator(text, engine.thermal, engine.getRatedOutputWatts(), 700000);
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 

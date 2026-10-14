@@ -56,7 +56,8 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 	private int observedOrientation = Integer.MIN_VALUE;
 
 
-	public long energyQuanta;
+	private long lastDisposalTick = Long.MIN_VALUE;
+    public long energyQuanta;
 	public static final long maxPower = 100000;
 	public FluidTank tank;
 	public boolean isOn = false;
@@ -78,6 +79,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        lastDisposalTick = nbt.hasKey("realSimFlareTick") ? nbt.getLong("realSimFlareTick") : Long.MIN_VALUE;
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "powerTime");
 		tank.readFromNBT(nbt, "gas");
 		isOn = nbt.getBoolean("isOn");
@@ -87,6 +89,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+        nbt.setLong("realSimFlareTick", lastDisposalTick);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tank.writeToNBT(nbt, "gas");
 		nbt.setBoolean("isOn", isOn);
@@ -189,7 +192,9 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
 		if(taskType != TASK_PROCESS || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
-		for(DirPos pos : runtimeConnections) this.providePowerToDirectReceiver(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+		if(worldObj.getTotalWorldTime() <= lastDisposalTick) return;
+        lastDisposalTick = worldObj.getTotalWorldTime();
+        for(DirPos pos : runtimeConnections) this.providePowerToDirectReceiver(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		this.beginMachineFluidMutation();
 		runtimeEnergyMutation = true;
 		try {
@@ -213,7 +218,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 		int maxBurn = 10;
 		if(isOn && tank.getFill() > 0) {
 			int burn = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-			int yield = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
+
 			maxVent += maxVent * burn;
 			maxBurn += maxBurn * burn;
 			if(!doesBurn || !tank.getTankType().hasTrait(FT_Flammable.class) || !breatheAir(Math.min(maxBurn, tank.getFill()))) {
@@ -230,13 +235,8 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 				int eject = Math.min(maxBurn, tank.getFill());
 				fluidUsed = eject;
 				tank.setFill(tank.getFill() - eject);
-				int penalty = (!tank.getTankType().hasTrait(FT_Gaseous.class) && !tank.getTankType().hasTrait(FT_Gaseous_ART.class)) ? 10 : 5;
-				long powerProd = tank.getTankType().getTrait(FT_Flammable.class).getLegacyBurnerBudget() * eject / 1_000;
-				powerProd /= penalty;
-				powerProd += powerProd * yield / 3;
-				output = (int) powerProd;
-				this.setStoredEnergyQuanta(energyQuanta + powerProd);
-				if(energyQuanta > maxPower) this.setStoredEnergyQuanta(maxPower);
+                output = 0; // Flare combustion rejects chemical energy; no recovery machinery is installed.
+
 				ParticleUtil.spawnGasFlame(worldObj, xCoord + 0.5F, yCoord + 11.75F, zCoord + 0.5F, worldObj.rand.nextGaussian() * 0.15, 0.2, worldObj.rand.nextGaussian() * 0.15);
 				List<Entity> list = worldObj.getEntitiesWithinAABB(Entity.class, AxisAlignedBB.getBoundingBox(xCoord - 1, yCoord + 12, zCoord - 2, xCoord + 2, yCoord + 17, zCoord + 2));
 				for(Entity e : list) {
@@ -381,7 +381,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "+" + (level * 100) + "%"));
 		}
 		if(type == UpgradeType.EFFECT) {
-			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_EFFICIENCY, "+" + (100 * level / 3) + "%"));
+			info.add(EnumChatFormatting.GRAY + "Legacy yield upgrade retained; disposal flares do not generate electricity.");
 		}
 	}
 

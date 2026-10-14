@@ -111,6 +111,13 @@ public final class PhysicalRegistry {
             STATES.put(name + "_LEADED", new PhysicalState(parent.substance, parent.phase, parent.basis, parent.massUnits + trace,
                     budget.divide(BigDecimal.valueOf(parent.massUnits + trace), 18, RoundingMode.DOWN), "weighted parent plus trace organolead surrogate", parent.mixture));
         }
+
+        for(SteamLedger.State state : SteamLedger.State.values()) {
+            if(state == SteamLedger.State.COLD || state == SteamLedger.State.WARM) continue;
+            STATES.put(state.identity, new PhysicalState("water", PhysicalState.Phase.GAS, PhysicalState.Basis.WATER_EQUIVALENT,
+                    Math.multiplyExact(state.massPerUnit, PhysicalState.MASS_UNITS_PER_KG / SteamLedger.MASS_PER_KG), BigDecimal.ZERO,
+                    state.temperatureC + " C / " + state.pressurePa + " Pa; nominal water-equivalent mass", null));
+        }
         // Explicit starter wood assay: 1 kg wet-reference wood per plank, 4 per log.
         solid("WOOD_PLANK", "wood", "1", "15600000");
         solid("WOOD_LOG", "wood", "4", "15600000");

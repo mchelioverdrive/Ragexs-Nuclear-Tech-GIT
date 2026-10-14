@@ -78,6 +78,7 @@ public class MachineCondenserPowered extends BlockDummyable implements ILookOver
 		for(int i = 0; i < tower.tanks.length; i++)
 			text.add((i < 1 ? (EnumChatFormatting.GREEN + "-> ") : (EnumChatFormatting.RED + "<- ")) + EnumChatFormatting.RESET + tower.tanks[i].getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(tower.tanks[i].getTankType(), tower.tanks[i].getFill(), tower.tanks[i].getMaxFill()));
 
+        com.hbm.realsim.ThermalInfo.condenser(text, tower.thermal, tower.getRatedRejectionWatts());
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 }

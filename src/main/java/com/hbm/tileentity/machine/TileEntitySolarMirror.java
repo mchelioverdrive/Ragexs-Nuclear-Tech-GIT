@@ -13,6 +13,7 @@ import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.world.EnumSkyBlock;
 
 public class TileEntitySolarMirror extends TileEntityTickingBase {
+    private long realSimMirrorTick = Long.MIN_VALUE;
 
 	private static final int TASK_HEAT_TRANSFER = 1;
 
@@ -47,7 +48,10 @@ public class TileEntitySolarMirror extends TileEntityTickingBase {
 	@Override
 	public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
 		if(taskType != TASK_HEAT_TRANSFER || !isOn || worldObj == null || worldObj.isRemote) return;
-		int sun = getCurrentSunIntensity();
+		long now = worldObj.getTotalWorldTime();
+        if(now <= realSimMirrorTick) return;
+        realSimMirrorTick = now;
+        int sun = getCurrentSunIntensity();
 		if(sun <= 0) {
 			sunIntensity = 0;
 			isOn = false;
@@ -128,6 +132,7 @@ public class TileEntitySolarMirror extends TileEntityTickingBase {
 
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        realSimMirrorTick = nbt.hasKey("realSimMirrorTick") ? nbt.getLong("realSimMirrorTick") : Long.MIN_VALUE;
 		tX = nbt.getInteger("targetX");
 		tY = nbt.getInteger("targetY");
 		tZ = nbt.getInteger("targetZ");
@@ -135,6 +140,7 @@ public class TileEntitySolarMirror extends TileEntityTickingBase {
 
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+        nbt.setLong("realSimMirrorTick", realSimMirrorTick);
 		nbt.setInteger("targetX", tX);
 		nbt.setInteger("targetY", tY);
 		nbt.setInteger("targetZ", tZ);

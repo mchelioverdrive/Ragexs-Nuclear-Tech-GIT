@@ -102,7 +102,7 @@ public class GUIMachineTurbineGas extends GuiInfoContainer {
 					slidPos = 0;
 			
 				NBTTagCompound data = new NBTTagCompound();
-				data.setDouble("slidPos", slidPos);
+				data.setInteger("slidPos", slidPos);
 				PacketDispatcher.wrapper.sendToServer(new NBTControlPacket(data, turbinegas.xCoord, turbinegas.yCoord, turbinegas.zCoord));
 			}
 		}
@@ -118,7 +118,7 @@ public class GUIMachineTurbineGas extends GuiInfoContainer {
 		if(turbinegas.powerSliderPos == 0)
 			this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 36, guiTop + 36, 16, 66, mouseX, mouseY, new String[] {"Turbine idle"});
 		else
-			this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 36, guiTop + 36, 16, 66, mouseX, mouseY, new String[] {(turbinegas.powerSliderPos) * 100 / 60 + "% power"});	
+			this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 36, guiTop + 36, 16, 66, mouseX, mouseY, new String[] {(turbinegas.powerSliderPos) * 100 / 60 + "% throttle (25% minimum online load)", "Rated: 3 MW electric / 30% LHV gross", "Current: " + api.hbm.energymk2.EnergyUnits.formatWatts(turbinegas.getPowerOutputWatts()), String.format(java.util.Locale.US, "Fuel: %.1f standard L/min", turbinegas.fuelStandardLitersPerMinute), String.format(java.util.Locale.US, "Recoverable exhaust: %.3f MJ", turbinegas.displayedExhaustMicroJ / 1e12D), "HRSG: 6 MWth, 30 C approach"});
 		
 		if(turbinegas.temp >= 20)
 			this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 133, guiTop + 23, 8, 72, mouseX, mouseY, new String[] {"Temperature: " + (turbinegas.temp) + "°C"});
@@ -136,7 +136,7 @@ public class GUIMachineTurbineGas extends GuiInfoContainer {
 		List<String> fuels = new ArrayList();
 		fuels.add(I18nUtil.resolveKey("desc.gui.turbinegas.fuels"));
 		for(FluidType type : Fluids.getInNiceOrder()) {
-			if(type.hasTrait(FT_Combustible.class) && type.getTrait(FT_Combustible.class).getGrade() == FuelGrade.GAS) {
+			if(com.hbm.realsim.TurbineFuelAccount.suitable(type.getName())) {
 				fuels.add("  " + type.getLocalizedName());
 			}
 		}

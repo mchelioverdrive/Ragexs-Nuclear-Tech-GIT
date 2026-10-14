@@ -25,6 +25,10 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.ChunkCoordinates;
 
 public class TileEntitySolarBoiler extends TileEntityLoadedBase implements IFluidStandardTransceiver, IBufPacketReceiver, IFluidCopiable {
+    public final com.hbm.realsim.ThermalAccount thermal = new com.hbm.realsim.ThermalAccount();
+    public long thermalBufferQuanta, startupQuanta;
+    public static final long RATED_THERMAL_WATTS = 500000L;
+
 	private static final int TASK_CONVERT = 1;
 	private boolean runtimeFluidMutation;
 	private final FluidTank.ChangeListener tankListener = new FluidTank.ChangeListener() {
@@ -54,14 +58,14 @@ public class TileEntitySolarBoiler extends TileEntityLoadedBase implements IFlui
 	/** Mirrors are the authoritative external heat source for this collector. */
 	public void addMirrorHeat(int amount) {
 		if(amount <= 0) return;
-		heat += amount;
+		heat = Math.toIntExact(Math.min(RATED_THERMAL_WATTS / 10, Math.addExact(heat, Math.multiplyExact((long) Math.min(amount, 4), 75L)))); // 3 kWth per 4 m2 mirror at full sky
 		this.markMachineDirty(MachineDirtyCause.ENVIRONMENT);
 	}
 
 	@Override public void onMachineRuntimeDirty(int causes) {
 		if(worldObj == null || worldObj.isRemote) return;
 		if((causes & MachineDirtyCause.LIFECYCLE) != 0) this.subscribeToWater();
-		if(heat > 0) this.scheduleMachineTransition(worldObj.getTotalWorldTime(), TASK_CONVERT, 0);
+		if(heat > 0 || thermalBufferQuanta > 0 || thermal.ownedMass() > 0 || steam.getFill() > 0) this.scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_CONVERT, 0);
 	}
 
 	@Override public void onMachineCoarsePoll(int cadence) {
@@ -99,36 +103,22 @@ public class TileEntitySolarBoiler extends TileEntityLoadedBase implements IFlui
 	private void convertMirrorHeat() {
 		runtimeFluidMutation = true;
 		try {
-			float sunPower = worldObj.provider instanceof WorldProviderOrbit
-				? ((WorldProviderOrbit)worldObj.provider).getSunPower()
-				: CelestialBody.getBody(worldObj).getSunPower();
-
-			// HARD GATE: no sun = no production
-			if(!isReceivingSunlight()) {
-				heat = 0;
-				return;
-			}
-
-			// normalize heat into usable thermal energy
-			float thermalInput = heat * sunPower;
-
-			int process = (int)(thermalInput / 50.0f);
-
-			if(process <= 0) {
-				heat = 0;
-				return;
-			}
-
-			process = Math.min(process, water.getFill());
-			process = Math.min(process, (steam.getMaxFill() - steam.getFill()) / 100);
-
-			water.setFill(water.getFill() - process);
-			steam.setFill(steam.getFill() + process * 100);
-
-			this.sendFluid(steam, worldObj, xCoord, yCoord + 3, zCoord, Library.POS_Y);
-			this.sendFluid(steam, worldObj, xCoord, yCoord - 1, zCoord, Library.NEG_Y);
-
-			heat = 0;
+            thermalBufferQuanta = Math.min(16000000L, Math.addExact(thermalBufferQuanta, heat));
+            heat = 0;
+            if(startupQuanta < 1000000L) {
+                long paid = Math.min(1000000L - startupQuanta, thermalBufferQuanta);
+                thermalBufferQuanta -= paid; startupQuanta += paid;
+            }
+            if(startupQuanta == 1000000L) {
+                com.hbm.realsim.ThermalAccount.Result r = com.hbm.realsim.ThermalMachine.transfer(thermal, worldObj.getTotalWorldTime(),
+                        com.hbm.realsim.SteamLedger.transition(com.hbm.realsim.SteamLedger.State.COLD, com.hbm.realsim.SteamLedger.State.ORDINARY, com.hbm.realsim.SteamLedger.Route.BOILER, 950000),
+                        water, steam, 10000L, thermalBufferQuanta, 0, 0, RATED_THERMAL_WATTS / 10, 0, 0, Long.MAX_VALUE);
+                thermalBufferQuanta -= r.heatQuanta;
+            }
+            this.sendFluid(steam, worldObj, xCoord, yCoord + 3, zCoord, Library.POS_Y);
+            this.sendFluid(steam, worldObj, xCoord, yCoord - 1, zCoord, Library.NEG_Y);
+            if(thermalBufferQuanta > 0 || thermal.ownedMass() > 0 || steam.getFill() > 0) scheduleMachineTransition(worldObj.getTotalWorldTime() + 1L, TASK_CONVERT, 0);
+            markDirty();
 
 			networkPackNT(15);
 		} finally {
@@ -139,6 +129,7 @@ public class TileEntitySolarBoiler extends TileEntityLoadedBase implements IFlui
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        thermal.read(nbt); heat = nbt.getInteger("realSimSolarPending"); thermalBufferQuanta = nbt.getLong("realSimSolarHeat"); startupQuanta = nbt.getLong("realSimSolarStartup");
 
 		this.water.readFromNBT(nbt, "water");
 		this.steam.readFromNBT(nbt, "steam");
@@ -147,6 +138,7 @@ public class TileEntitySolarBoiler extends TileEntityLoadedBase implements IFlui
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+        thermal.write(nbt); nbt.setInteger("realSimSolarPending", heat); nbt.setLong("realSimSolarHeat", thermalBufferQuanta); nbt.setLong("realSimSolarStartup", startupQuanta);
 
 		this.water.writeToNBT(nbt, "water");
 		this.steam.writeToNBT(nbt, "steam");

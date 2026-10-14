@@ -28,9 +28,16 @@ public class CompressorRecipes extends SerializableRecipe {
 	@Override
 	public void registerDefaults() {
 		com.hbm.realsim.PhaseConversions.register();
-		recipes.put(new Pair(Fluids.STEAM, 0), new CompressorRecipe(1_000, new FluidStack(Fluids.HOTSTEAM, 100)));
-		recipes.put(new Pair(Fluids.HOTSTEAM, 0), new CompressorRecipe(1_000, new FluidStack(Fluids.SUPERHOTSTEAM, 100)));
-		recipes.put(new Pair(Fluids.SUPERHOTSTEAM, 0), new CompressorRecipe(1_000, new FluidStack(Fluids.ULTRAHOTSTEAM, 100)));
+        for(com.hbm.realsim.SteamLedger.State in : com.hbm.realsim.SteamLedger.State.values()) {
+            com.hbm.realsim.SteamLedger.State out = com.hbm.realsim.SteamLedger.compressorOutlet(in);
+            if(out == null) continue;
+            long work = com.hbm.realsim.SteamLedger.transition(in, out, com.hbm.realsim.SteamLedger.Route.COMPRESSOR, 1000000).workJPerKg;
+            CompressorRecipe recipe = new CompressorRecipe(1000, new FluidStack(Fluids.fromName(out.identity), 100));
+            recipe.workQuanta = com.hbm.realsim.SteamLedger.ceilDiv(Math.multiplyExact(in.mass(1000), work), 500000L);
+            recipe.duration = Math.toIntExact(com.hbm.realsim.SteamLedger.ceilDiv(recipe.workQuanta, 2500));
+            recipes.put(new Pair(Fluids.fromName(in.identity), 0), recipe);
+        }
+
 
         // Refinery/process gas compression is registered with paid physical work above.
 		// LPG recovery and blood-to-oil conversion are separation/chemical processes, not compression recipes.
@@ -83,6 +90,14 @@ public class CompressorRecipes extends SerializableRecipe {
 		result.workQuanta = obj.has("workQuanta") ? Math.max(0L, obj.get("workQuanta").getAsLong()) : 0L;
 		result.massConversion = obj.has("massConversion") && obj.get("massConversion").getAsBoolean();
 		if(result.massConversion && (!input.type.getPhysicalState().isResolved() || !output.type.getPhysicalState().isResolved() || !input.type.getPhysicalState().substance.equals(output.type.getPhysicalState().substance))) throw new IllegalArgumentException("Conversion must preserve chemical identity");
+        com.hbm.realsim.SteamLedger.State steam = com.hbm.realsim.SteamLedger.state(input.type.getName());
+        if(steam != null) {
+            com.hbm.realsim.SteamLedger.State out = com.hbm.realsim.SteamLedger.state(output.type.getName());
+            com.hbm.realsim.SteamLedger.Transition t = com.hbm.realsim.SteamLedger.transition(steam, out, com.hbm.realsim.SteamLedger.Route.COMPRESSOR, 1000000);
+            if(steam.mass(input.fill) != out.mass(output.fill)) throw new IllegalArgumentException("Steam compression must preserve mass");
+            result.workQuanta = com.hbm.realsim.SteamLedger.ceilDiv(Math.multiplyExact(steam.mass(input.fill), t.workJPerKg), 500000);
+        }
+
 		recipes.put(new Pair(input.type, input.pressure), result);
 	}
 

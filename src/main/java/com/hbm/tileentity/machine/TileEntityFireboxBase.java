@@ -34,6 +34,11 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting implements IFluidStandardSender, IGUIProvider, IHeatSource {
 
+    protected final com.hbm.realsim.OutputBudget processHeatBudget = new com.hbm.realsim.OutputBudget();
+    public com.hbm.realsim.OutputBudget getProcessHeatBudget() { return processHeatBudget; }
+    public long getRatedProcessHeatWatts() { return getRatedThermalWatts(); }
+    protected long physicalHeatAllowanceQuanta() { return getRatedThermalWatts() / 10; }
+
 	protected static final int TASK_SIMULATE = 1;
 	protected static final int TASK_SLOT_MAIN = 0;
 
@@ -252,11 +257,11 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 	}
 
 	private void simulatePhysicalFireboxTick() {
-		if(lastPhysicalBurnTick == worldObj.getTotalWorldTime()) return;
+		if(lastPhysicalBurnTick >= worldObj.getTotalWorldTime()) return;
 		lastPhysicalBurnTick = worldObj.getTotalWorldTime();
 		generatorStats.idle(); wasOn = false; burnHeat = 0;
 		if(hasSmoke()) for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) this.sendSmoke(xCoord + dir.offsetX * 2, yCoord, zCoord + dir.offsetZ * 2, dir);
-		long demand = Math.min(getRatedThermalWatts() / 10L, Math.max(0, getMaxHeat() - heatEnergy));
+		long demand = Math.min(physicalHeatAllowanceQuanta(), Math.max(0, getMaxHeat() - heatEnergy));
 		if(!waterlogged && demand > 0 && breatheAir(1)) {
 			if(!fuelCredit.hasCredit()) for(int i = 0; i < 2; i++) {
 				long chemical = Combustion.solidChemicalMicrojoules(slots[i]);
@@ -347,7 +352,7 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 		this.burnHeat = nbt.getInteger("burnHeat");
 		this.heatEnergy = nbt.getInteger("heatEnergy");
 		if(usesPhysicalCombustion()) {
-			fuelCredit.read(nbt);
+			fuelCredit.read(nbt); processHeatBudget.read(nbt.getCompoundTag("realSimHeatExport"));
 			if(!nbt.hasKey("realSimFuel") && burnTime > 0 && burnHeat > 0) fuelCredit.reserve("legacy_solid", (long) burnTime * burnHeat * 500_000L, 1, 1_000_000);
 			lastPhysicalBurnTick = nbt.hasKey("realSimGenerationTick") ? nbt.getLong("realSimGenerationTick") : Long.MIN_VALUE;
 		}
@@ -361,7 +366,7 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 		nbt.setInteger("burnTime", burnTime);
 		nbt.setInteger("burnHeat", burnHeat);
 		nbt.setInteger("heatEnergy", heatEnergy);
-		if(usesPhysicalCombustion()) { fuelCredit.write(nbt); nbt.setLong("realSimGenerationTick", lastPhysicalBurnTick); }
+		if(usesPhysicalCombustion()) { net.minecraft.nbt.NBTTagCompound export = new net.minecraft.nbt.NBTTagCompound(); processHeatBudget.write(export); nbt.setTag("realSimHeatExport", export); fuelCredit.write(nbt); nbt.setLong("realSimGenerationTick", lastPhysicalBurnTick); }
 	}
 
 	@Override

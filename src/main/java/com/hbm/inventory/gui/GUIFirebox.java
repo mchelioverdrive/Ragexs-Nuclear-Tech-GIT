@@ -41,7 +41,7 @@ public class GUIFirebox extends GuiInfoContainer {
 				
 				if(this.isMouseOverSlot(slot, x, y) && !slot.getHasStack()) {
 					
-					List<String> bonuses = this.firebox.getModule().getDesc();
+					List<String> bonuses = firebox instanceof api.hbm.tile.IProcessHeatSource ? java.util.Collections.singletonList("Canonical solid mass x LHV; 85% heating efficiency") : this.firebox.getModule().getDesc();
 					
 					if(!bonuses.isEmpty()) {
 						this.func_146283_a(bonuses, x, y);
@@ -51,7 +51,7 @@ public class GUIFirebox extends GuiInfoContainer {
 		}
 
 		this.drawCustomInfoStat(x, y, guiLeft + 80, guiTop + 27, 71, 7, x, y, new String[] { ThermalUnits.formatThermalEnergyPair(firebox.heatEnergy, firebox.getMaxHeat()) });
-		this.drawCustomInfoStat(x, y, guiLeft + 80, guiTop + 36, 71, 7, x, y, firebox instanceof com.hbm.tileentity.machine.TileEntityHeaterFirebox ? firebox.generatorStats.info(firebox.getRatedThermalWatts(), firebox.fuelCredit, "", 0, 850_000, com.hbm.inventory.fluid.FluidInfo.isExpanded()) : new String[] { ThermalUnits.formatThermalPower(firebox.burnHeat), (firebox.burnTime / 20) + "s" });
+		this.drawCustomInfoStat(x, y, guiLeft + 80, guiTop + 36, 71, 7, x, y, (firebox instanceof com.hbm.tileentity.machine.TileEntityHeaterFirebox || firebox instanceof TileEntityHeaterOven) ? firebox.generatorStats.info(firebox.getRatedThermalWatts(), firebox.fuelCredit, "", 0, 850_000, com.hbm.inventory.fluid.FluidInfo.isExpanded()) : new String[] { ThermalUnits.formatThermalPower(firebox.burnHeat), (firebox.burnTime / 20) + "s" });
 	}
 	
 	@Override

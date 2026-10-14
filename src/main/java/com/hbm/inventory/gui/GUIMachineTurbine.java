@@ -38,6 +38,11 @@ public class GUIMachineTurbine extends GuiInfoContainer {
 			this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 16, guiTop + 36 + 32, 16, 16, guiLeft - 8, guiTop + 36 + 16 + 32, text2);
 		}
 		
+        java.util.List<String> thermalInfo = new java.util.ArrayList<String>();
+        com.hbm.realsim.ThermalInfo.generator(thermalInfo, diFurnace.thermal, diFurnace.getRatedOutputWatts(), 750000);
+        com.hbm.realsim.ThermalInfo.states(thermalInfo, diFurnace.tanks[0], diFurnace.tanks[1], diFurnace.thermal);
+        this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 99, guiTop + 18, 14, 14, mouseX, mouseY, thermalInfo.toArray(new String[0]));
+
 		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 123, guiTop + 69 - 34, 7, 34, diFurnace.getStoredEnergyQuanta(), diFurnace.maxPower);
 	}
 	

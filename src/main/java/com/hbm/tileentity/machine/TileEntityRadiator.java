@@ -17,6 +17,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityRadiator extends TileEntityCondenser {
+    @Override public long getRatedRejectionWatts() { return 1000000L; }
 	
 	public static int inputTankSize = 500;
 	public static int outputTankSize = 500;

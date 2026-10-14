@@ -80,10 +80,13 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 		return tile;
 	}
 
+    private boolean powerEnabled() { return power || worldObj != null && getTile() instanceof com.hbm.tileentity.machine.TileEntityHeatBoilerBase; }
+    private boolean inventoryEnabled() { return inventory || worldObj != null && getTile() instanceof com.hbm.tileentity.machine.TileEntityHeatBoilerIndustrial; }
+
 	@Override
 	public void setStoredEnergyQuanta(long i) {
 
-		if(!power)
+		if(!powerEnabled())
 			return;
 
 		if(getTile() instanceof IEnergyReceiverMK2) {
@@ -94,7 +97,7 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	@Override
 	public long getStoredEnergyQuanta() {
 
-		if(!power)
+		if(!powerEnabled())
 			return 0;
 
 		if(getTile() instanceof IEnergyReceiverMK2) {
@@ -107,7 +110,7 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	@Override
 	public long getEnergyCapacityQuanta() {
 
-		if(!power)
+		if(!powerEnabled())
 			return 0;
 
 		if(getTile() instanceof IEnergyReceiverMK2) {
@@ -120,7 +123,7 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	@Override
 	public long receiveEnergyQuanta(long power) {
 
-		if(!this.power)
+		if(!powerEnabled())
 			return power;
 
 		if(getTile() instanceof IEnergyReceiverMK2) {
@@ -135,7 +138,7 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	@Override
 	public boolean canConnect(ForgeDirection dir) {
 
-		if(!power)
+		if(!powerEnabled())
 			return false;
 
 		if(getTile() instanceof IEnergyReceiverMK2) {
@@ -148,7 +151,7 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	@Override
 	public int getSizeInventory() {
 
-		if(!inventory)
+		if(!inventoryEnabled())
 			return 0;
 
 		if(getTile() instanceof ISidedInventory) {
@@ -161,7 +164,7 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	@Override
 	public ItemStack getStackInSlot(int slot) {
 
-		if(!inventory)
+		if(!inventoryEnabled())
 			return null;
 
 		if(getTile() instanceof ISidedInventory) {
@@ -184,7 +187,7 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	@Override
 	public ItemStack getStackInSlotOnClosing(int slot) {
 
-		if(!inventory)
+		if(!inventoryEnabled())
 			return null;
 
 		if(getTile() instanceof ISidedInventory) {
@@ -197,7 +200,7 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	@Override
 	public void setInventorySlotContents(int slot, ItemStack stack) {
 
-		if(!inventory)
+		if(!inventoryEnabled())
 			return;
 
 		if(getTile() instanceof ISidedInventory) {
@@ -208,7 +211,7 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	@Override
 	public String getInventoryName() {
 
-		if(!inventory)
+		if(!inventoryEnabled())
 			return null;
 
 		if(getTile() instanceof ISidedInventory) {
@@ -221,7 +224,7 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	@Override
 	public boolean hasCustomInventoryName() {
 
-		if(!inventory)
+		if(!inventoryEnabled())
 			return false;
 
 		if(getTile() instanceof ISidedInventory) {
@@ -234,7 +237,7 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	@Override
 	public int getInventoryStackLimit() {
 
-		if(!inventory)
+		if(!inventoryEnabled())
 			return 0;
 
 		if(getTile() instanceof ISidedInventory) {
@@ -247,7 +250,7 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	@Override
 	public boolean isUseableByPlayer(EntityPlayer player) {
 
-		if(!inventory)
+		if(!inventoryEnabled())
 			return false;
 
 		if(getTile() instanceof ISidedInventory) {
@@ -260,7 +263,7 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	@Override
 	public void openInventory() {
 
-		if(!inventory)
+		if(!inventoryEnabled())
 			return;
 
 		if(getTile() instanceof ISidedInventory) {
@@ -271,7 +274,7 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	@Override
 	public void closeInventory() {
 
-		if(!inventory)
+		if(!inventoryEnabled())
 			return;
 
 		if(getTile() instanceof ISidedInventory) {
@@ -282,7 +285,7 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	@Override
 	public boolean isItemValidForSlot(int slot, ItemStack stack) {
 
-		if(!inventory)
+		if(!inventoryEnabled())
 			return false;
 
 		if(getTile() instanceof ISidedInventory) {
@@ -298,7 +301,7 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	@Override
 	public int[] getAccessibleSlotsFromSide(int side) {
 
-		if(!inventory)
+		if(!inventoryEnabled())
 			return new int[0];
 
 		if(getTile() instanceof ISidedInventory) {
@@ -314,7 +317,7 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	@Override
 	public boolean canInsertItem(int i, ItemStack stack, int j) {
 
-		if(!inventory)
+		if(!inventoryEnabled())
 			return false;
 
 		if(getTile() instanceof ISidedInventory) {
@@ -330,7 +333,7 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 	@Override
 	public boolean canExtractItem(int i, ItemStack stack, int j) {
 
-		if(!inventory)
+		if(!inventoryEnabled())
 			return false;
 
 		if(getTile() instanceof ISidedInventory) {
@@ -418,6 +421,15 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
 
 		return 0;
 	}
+
+    @Override public long getAvailableProcessHeatQuanta(long tick) {
+        TileEntity source = getTile();
+        return heat && source instanceof api.hbm.tile.IProcessHeatSource ? ((api.hbm.tile.IProcessHeatSource) source).getAvailableProcessHeatQuanta(tick) : 0;
+    }
+    @Override public long drawProcessHeatQuanta(long tick, long request) {
+        TileEntity source = getTile();
+        return heat && source instanceof api.hbm.tile.IProcessHeatSource ? ((api.hbm.tile.IProcessHeatSource) source).drawProcessHeatQuanta(tick, request) : 0;
+    }
     @Override public int getProcessTemperatureC() {
         TileEntity source = getTile();
         return heat && source instanceof api.hbm.tile.IProcessHeatSource ? ((api.hbm.tile.IProcessHeatSource) source).getProcessTemperatureC() : Integer.MIN_VALUE;

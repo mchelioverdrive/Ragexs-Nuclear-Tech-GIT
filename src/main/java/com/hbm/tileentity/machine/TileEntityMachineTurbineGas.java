@@ -46,7 +46,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
-public class TileEntityMachineTurbineGas extends TileEntityMachineBase implements IFluidStandardTransceiver, IEnergyProviderMK2, IControlReceiver, IGUIProvider, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IFluidCopiable {
+public class TileEntityMachineTurbineGas extends TileEntityMachineBase implements IFluidStandardTransceiver, api.hbm.energymk2.IRatedGenerator, IControlReceiver, IGUIProvider, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IFluidCopiable {
 	private static final int TASK_SIMULATE = 1;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
@@ -55,7 +55,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	private int observedOrientation = Integer.MIN_VALUE;
 	
 	public long energyQuanta;
-	public static final long maxPower = 1000000L;
+	public static final long maxPower = 120_000_000L; // 60 MJ, 20 s gross nameplate
 	
 	public int rpm; //0-100, crescent moon gauge, used for calculating the amount of power generated, starts past 10%
 	public int temp; //0-800, used for figuring out how much water to boil, starts boiling at 300°C
@@ -75,16 +75,19 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	
 	private AudioWrapper audio;
 	
-	public static HashMap<FluidType, Double> fuelMaxCons = new HashMap(); //fuel consumption per tick at max power
-	
-	static {
-		fuelMaxCons.put(Fluids.GAS, 50D);			// natgas doesn't burn well so it burns faster to compensate
-		fuelMaxCons.put(Fluids.SYNGAS, 10D);		// syngas just fucks
-		fuelMaxCons.put(Fluids.OXYHYDROGEN, 100D);	// oxyhydrogen is terrible so it needs to burn a ton for the bare minimum
-		fuelMaxCons.put(Fluids.REFORMGAS, 5D);	// fuck it we ball
-		// default to 5 if not in list
-	}
-	
+    public static final long RATED_ELECTRIC_WATTS = 3_000_000L;
+    public static final long RATED_CHEMICAL_WATTS = 10_000_000L;
+    public static final long HRSG_WATTS = 6_000_000L;
+    public final com.hbm.realsim.TurbineFuelAccount thermalFuel = new com.hbm.realsim.TurbineFuelAccount();
+    public final com.hbm.realsim.ThermalAccount hrsg = new com.hbm.realsim.ThermalAccount();
+    private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
+    private long lubricantMicroliters, lastSimulationTick = Long.MIN_VALUE;
+    public long currentFuelMicroJ, currentExhaustMicroJ, currentHrsgQuanta, currentAuxiliaryQuanta;
+    public double fuelStandardLitersPerMinute;
+    public long displayedExhaustMicroJ;
+    @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
+    @Override public long getRatedOutputWatts() { return RATED_ELECTRIC_WATTS; }
+
 	//TODO particles from heat exchanger maybe? maybe in a future
 	
 	public TileEntityMachineTurbineGas() {
@@ -138,7 +141,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	private void selectFuelType() {
 		if(slots[1] != null && slots[1].getItem() instanceof IItemFluidIdentifier) {
 			FluidType fluid = ((IItemFluidIdentifier) slots[1].getItem()).getType(worldObj, xCoord, yCoord, zCoord, slots[1]);
-			if(fluid.hasTrait(FT_Combustible.class) && fluid.getTrait(FT_Combustible.class).getGrade() == FuelGrade.GAS) tanks[0].setTankType(fluid);
+			if(com.hbm.realsim.TurbineFuelAccount.suitable(fluid.getName()) && tanks[0].getFill() == 0) tanks[0].setTankType(fluid);
 		}
 	}
 
@@ -169,7 +172,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	}
 
 	private void evaluateAndSchedule(long now) {
-		if(state != 0 || rpm > 0 || counter > 0 || powerSliderPos > 0 || energyQuanta > 0 || tanks[3].getFill() > 0)
+		if(thermalFuel.exhaust.remainingMicroJ() > 0 || hrsg.ownedMass() > 0 || state != 0 || rpm > 0 || counter > 0 || powerSliderPos > 0 || energyQuanta > 0 || tanks[3].getFill() > 0)
 			this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, 0);
 		else this.cancelMachineTransition(TASK_SIMULATE, 0);
 	}
@@ -180,6 +183,12 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	}
 
 	private void runGasTurbineStep() {
+            long now = worldObj.getTotalWorldTime();
+            if(now <= lastSimulationTick) return;
+            lastSimulationTick = now;
+            powerSliderPos = Math.max(0, Math.min(60, powerSliderPos));
+            instantPowerOutput = 0;
+            currentFuelMicroJ = currentExhaustMicroJ = currentHrsgQuanta = currentAuxiliaryQuanta = 0;
 			throttle = powerSliderPos * 100 / 60;
 			
 			if(autoMode) { //power production depending on power requirement
@@ -201,22 +210,23 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 				break;
 			case -1:
 				stopIfNotReady();
-				startup();
+                if(state == -1 && burnFuel(false, 5)) startup();
 				break;
 			case 1:			
 				stopIfNotReady();
-				run();
+                if(state == 1) run();
 				break;
 			default:
 				break;
 			}
 			
+            recoverExhaust();
 			ForgeDirection dir = runtimeDirection;
 			ForgeDirection rot = runtimeRotation;
-			long packetEnergy = Math.min(this.energyQuanta, this.maxPower);
+			long packetEnergy = this.energyQuanta;
 			
 			//do net/battery deductions first...
-			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 0, energyQuanta, maxPower));
+			this.setStoredEnergyQuanta(this.chargeRatedItems(slots, 0, maxPower));
 			this.providePowerToDirectReceiver(worldObj, xCoord - dir.offsetZ * 5, yCoord + 1, zCoord + dir.offsetX * 5, rot);
 			//...and then cap it. Prevents potential future cases where power would be limited due to the fuel being too strong and the buffer too small.
 			if(this.energyQuanta > this.maxPower)
@@ -228,6 +238,9 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 
 	private void sendRuntimePacket(long packetEnergy) {
 		NBTTagCompound data = new NBTTagCompound();
+            data.setLong("exhaustMicroJ", thermalFuel.exhaust.remainingMicroJ());
+            data.setLong("hrsgQuanta", currentHrsgQuanta);
+            data.setDouble("fuelStandardLMin", fuelStandardLitersPerMinute);
 		EnergyUnits.writeEnergyQuanta(data, packetEnergy);
 			data.setInteger("rpm",  this.rpm);
 			data.setInteger("temp",  this.temp);
@@ -276,25 +289,13 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 			}
 	}
 	
-	private void stopIfNotReady() {
-		
-		if(tanks[0].getFill() == 0 || tanks[1].getFill() == 0) {
-			state = 0;
-		}
-		if(!hasAcceptableFuel()) {
-			state = 0;
-		}
-	}
-	
-	public boolean hasAcceptableFuel() {
-		
-		if(tanks[0].getTankType().hasTrait(FT_Combustible.class)) {
-			return tanks[0].getTankType().getTrait(FT_Combustible.class).getGrade() == FuelGrade.GAS;
-		}
-		
-		return false;
-	}
-	
+    private void stopIfNotReady() {
+        if((tanks[0].getFill() == 0 && thermalFuel.chemicalCredit() == 0) || (tanks[1].getFill() == 0 && lubricantMicroliters < 50) || !hasAcceptableFuel()) state = 0;
+    }
+    public boolean hasAcceptableFuel() {
+        return com.hbm.realsim.TurbineFuelAccount.suitable(thermalFuel.chemicalCredit() > 0 ? thermalFuel.fuel() : tanks[0].getTankType().getName());
+    }
+
 	private void startup() {
 		
 		counter++;
@@ -353,111 +354,63 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		}
 	}
 	
-	/** Dynamically calculates a (hopefully) sensible burn heat from the combustion energy, scales from 300°C - 800°C */
-	protected int getFluidBurnTemp(FluidType type) {
-		double dFuel = type.hasTrait(FT_Combustible.class) ? type.getTrait(FT_Combustible.class).getLegacyEngineBudgetQuanta() : 0;
-		return (int) Math.floor(800D - (Math.pow(Math.E, -dFuel / 100_000D)) * 300D);
-	}
-	
-	private void run() {
-		
-		if((int) (throttle * 0.9) > rpm - rpmIdle) { //simulates the rotor's moment of inertia
-			if(worldObj.getTotalWorldTime() % 5 == 0) {
-				rpm++;
-			}
-		} else if((int) (throttle * 0.9) < rpm - rpmIdle) {
-			if(worldObj.getTotalWorldTime() % 2 == 0) {
-				rpm--;
-			}
-		}
-		
-		int maxTemp = getFluidBurnTemp(tanks[0].getTankType()); // fuelMaxTemp.get(tanks[0].getTankType())
-		
-		if(throttle * 5 * (maxTemp - tempIdle) / 500 > temp - tempIdle) { //simulates the heat exchanger's resistance to temperature variation
-			if(worldObj.getTotalWorldTime() % 2 == 0) {
-				temp++;
-			}
-		} else if(throttle * 5 * (maxTemp - tempIdle) / 500 < temp - tempIdle) {
-			if(worldObj.getTotalWorldTime() % 2 == 0) {
-				temp--;
-			}
-		}
-		
-		double consumption = fuelMaxCons.containsKey(tanks[0].getTankType()) ? fuelMaxCons.get(tanks[0].getTankType()) : 5D;
-		if(worldObj.getTotalWorldTime() % 20 == 0 && tanks[0].getTankType() != Fluids.OXYHYDROGEN) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 3);
-		makePower(consumption, throttle);
-		FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, Math.max(80, (int) (900 / Math.max(consumption, 1D))));
-	}
-	
-	
-	double fuelToConsume; //used to consume 1 mb of fuel at a time when consumption is <1 mb/tick
-	double waterToBoil;
-	double waterPerTick = 0;
-	
-	private void makePower(double consMax, int throttle) {
-		
-		double idleConsumption = consMax * 0.05D;
-		double consumption = idleConsumption + consMax * throttle / 100;
-		
-		fuelToConsume += consumption;
-		
-		tanks[0].setFill(tanks[0].getFill() - (int) Math.floor(fuelToConsume));
-		fuelToConsume -= (int) Math.floor(fuelToConsume);
-		
-		if(worldObj.getTotalWorldTime() % 10 == 0) //lube consumption 
-			tanks[1].setFill(tanks[1].getFill() - 1);
-		
-		if(tanks[0].getFill() < 0) { //avoids negative amounts of fluid
-			tanks[0].setFill(0);
-			state = 0;
-		}
-		if(tanks[1].getFill() < 0) {
-			tanks[1].setFill(0);
-			state = 0;
-		}
-		
-		
-		long energy = 0; //energy per mb of fuel
-		
-		if(tanks[0].getTankType().hasTrait(FT_Combustible.class)) {
-			energy = tanks[0].getTankType().getTrait(FT_Combustible.class).getLegacyEngineBudgetQuanta() / 1000L;
-		}
-		
-		int rpmEff = rpm - rpmIdle; // RPM above idle level, 0-90
-		
-		//consMax*energy is equivalent to power production at 100%
-		if(instantPowerOutput < (consMax * energy * rpmEff / 90)) { // Smooth quantum output instead of increasing in large steps.
-			instantPowerOutput += Math.random() * 0.005 * consMax * energy;
-			if(instantPowerOutput > (consMax * energy * rpmEff / 90))
-				instantPowerOutput = (int) (consMax * energy * rpmEff / 90);
-		}
-		else if(instantPowerOutput > (consMax * energy * rpmEff / 90)) {
-			instantPowerOutput -= Math.random() * 0.011 * consMax * energy;
-			if(instantPowerOutput < (consMax * energy * rpmEff / 90))
-				instantPowerOutput = (int) (consMax * energy * rpmEff / 90);
-		}
-		this.setStoredEnergyQuanta(this.energyQuanta + instantPowerOutput);
-		
-		waterPerTick = (consMax * energy * (temp - tempIdle) / 220000); //it just works fuck you
-		
-		if(tanks[2].getFill() >= Math.ceil(waterPerTick)) { //checks if there's enough water to boil
-			
-			waterToBoil += waterPerTick;
-			
-			if(tanks[3].getFill() <= 160000 - waterToBoil * 10) { //checks if there's room for steam in the tank
-				
-				tanks[2].setFill(tanks[2].getFill() - (int) Math.floor(waterToBoil));
-				tanks[3].setFill(tanks[3].getFill() + 10 * (int) Math.floor(waterToBoil));
-				waterToBoil -= (int) Math.floor(waterToBoil);
-			}
-		}
-	}
-	
+    private void run() {
+        int target = powerSliderPos == 0 ? rpmIdle : rpmIdle + Math.max(25, throttle) * 90 / 100;
+        if(rpm < target && worldObj.getTotalWorldTime() % 5 == 0) rpm++;
+        if(rpm > target && worldObj.getTotalWorldTime() % 2 == 0) rpm--;
+        int load = powerSliderPos == 0 ? 0 : Math.min(Math.max(25, throttle), Math.max(0, (rpm - rpmIdle) * 100 / 90));
+        burnFuel(load > 0, load > 0 ? load : 5);
+        int targetTemp = load >= 75 ? 500 : 350;
+        if(temp < targetTemp) temp++; else if(temp > targetTemp) temp--;
+        if(currentFuelMicroJ > 0) {
+            if(worldObj.getTotalWorldTime() % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 3);
+            FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
+        }
+    }
+    private boolean burnFuel(boolean generate, int load) {
+        long request = RATED_CHEMICAL_WATTS * 50000L * Math.max(1, Math.min(100, load)) / 100;
+        if(generate) request = Math.min(request, com.hbm.realsim.SteamLedger.mulDiv(Math.max(0, maxPower - energyQuanta), 500000L * 1000000L, 300000));
+        if(request == 0 || !hasAcceptableFuel()) return false;
+        // ~13 kg/s excess air at full load, using the existing atmosphere/intake boundary.
+        if(!breatheAir(Math.toIntExact(com.hbm.realsim.SteamLedger.ceilDiv(request, 1_000_000_000L)))) { state = 0; return false; }
+        if(lubricantMicroliters < 50) {
+            if(tanks[1].getFill() <= 0) { state = 0; return false; }
+            tanks[1].setFill(tanks[1].getFill() - 1); lubricantMicroliters += 1000000;
+        }
+        lubricantMicroliters -= 50; // 0.06 L/min while spooling/running
+        long gross = thermalFuel.burn(worldObj.getTotalWorldTime(), tanks[0], request, generate ? 300000 : 0, generate ? 550000 : 0, Math.min(temp, load >= 75 ? 500 : 350));
+        long aux = gross / 50; // 2% compressor controls/lube auxiliaries; Brayton compressor already in cycle efficiency.
+        instantPowerOutput = Math.toIntExact(gross - aux);
+        this.setStoredEnergyQuanta(Math.addExact(energyQuanta, instantPowerOutput));
+        currentFuelMicroJ = thermalFuel.chemicalInputMicroJ;
+        currentExhaustMicroJ = thermalFuel.recoverableMicroJ;
+        currentAuxiliaryQuanta = aux;
+        com.hbm.realsim.PhysicalState fuel = com.hbm.realsim.PhysicalRegistry.get(thermalFuel.fuel());
+        fuelStandardLitersPerMinute = fuel.isResolved() ? currentFuelMicroJ * 1200D / fuel.chemicalMicrojoulesPerUnit() : 0;
+        return currentFuelMicroJ > 0;
+    }
+    private void recoverExhaust() {
+        com.hbm.realsim.SteamLedger.State out = hrsg.ownedMass() > 0 ? hrsg.outlet() : com.hbm.realsim.ThermalMachine.state(tanks[3]);
+        // Preserve saved output stock. Empty output selects the highest thermally legal state.
+        if(hrsg.ownedMass() == 0 && tanks[3].getFill() == 0) out = thermalFuel.exhaust.availableMicroJ(480) > 0
+                ? com.hbm.realsim.SteamLedger.State.SUPERHOT : com.hbm.realsim.SteamLedger.State.HOT;
+        if(out != com.hbm.realsim.SteamLedger.State.HOT && out != com.hbm.realsim.SteamLedger.State.SUPERHOT) return;
+        if(!com.hbm.realsim.ThermalMachine.configure(tanks[3], out)) return;
+        com.hbm.realsim.ThermalAccount.Result r = com.hbm.realsim.HeatRecovery.advance(worldObj.getTotalWorldTime(), thermalFuel.exhaust, hrsg,
+                out, tanks[2].getFill(), Math.max(0, tanks[3].getMaxFill() - tanks[3].getFill()), energyQuanta);
+        tanks[2].setFill(tanks[2].getFill() - r.consumed); tanks[3].setFill(tanks[3].getFill() + r.produced);
+        this.setStoredEnergyQuanta(energyQuanta - r.workQuanta);
+        currentHrsgQuanta = r.heatQuanta; currentAuxiliaryQuanta += r.workQuanta;
+        // Finite plenum: unavailable low-grade exhaust cannot be upgraded or accumulated forever.
+        if(state == 0 && hrsg.ownedMass() == 0 && tanks[2].getFill() == 0) thermalFuel.exhaust.vent();
+    }
+
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	@Override
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
+        displayedExhaustMicroJ = nbt.getLong("exhaustMicroJ"); currentHrsgQuanta = nbt.getLong("hrsgQuanta"); fuelStandardLitersPerMinute = nbt.getDouble("fuelStandardLMin");
 		
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.rpm = nbt.getInteger("rpm");
@@ -481,6 +434,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        thermalFuel.read(nbt); hrsg.read(nbt); outputBudget.read(nbt); lubricantMicroliters = nbt.getLong("realSimLubeMicroL"); lastSimulationTick = nbt.hasKey("realSimThermalTick") ? nbt.getLong("realSimThermalTick") : Long.MIN_VALUE;
 		this.tanks[0].readFromNBT(nbt, "gas");
 		this.tanks[1].readFromNBT(nbt, "lube");
 		this.tanks[2].readFromNBT(nbt, "water");
@@ -493,11 +447,14 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		this.powerSliderPos = nbt.getInteger("slidPos");
 		this.instantPowerOutput = nbt.getInteger("instPwr");
 		this.counter = nbt.getInteger("counter");
+        rpmLast = nbt.getInteger("realSimRpmLast"); tempLast = nbt.getInteger("realSimTempLast");
+        if(lubricantMicroliters < 0 || lubricantMicroliters >= 1000000) throw new IllegalStateException("Invalid turbine lubricant ownership");
 	}
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+        thermalFuel.write(nbt); hrsg.write(nbt); outputBudget.write(nbt); nbt.setLong("realSimLubeMicroL", lubricantMicroliters); nbt.setLong("realSimThermalTick", lastSimulationTick);
 		
 		tanks[0].writeToNBT(nbt, "gas");
 		tanks[1].writeToNBT(nbt, "lube");
@@ -505,34 +462,23 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		tanks[3].writeToNBT(nbt, "densesteam");
 		nbt.setBoolean("automode", autoMode);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
-		if(state == 1) {
-			nbt.setInteger("state", this.state);
-			nbt.setInteger("rpm", this.rpm);
-			nbt.setInteger("temperature", this.temp);
-			nbt.setInteger("slidPos", this.powerSliderPos);
-			nbt.setInteger("instPwr", instantPowerOutput);
-			nbt.setInteger("counter", 225);
-		} else {
-			nbt.setInteger("state", 0);
-			nbt.setInteger("rpm", 0);
-			nbt.setInteger("temperature", 20);
-			nbt.setInteger("slidPos", 0);
-			nbt.setInteger("instpwr", 0);
-			nbt.setInteger("counter", 0);
-		}
+        nbt.setInteger("state", state); nbt.setInteger("rpm", rpm); nbt.setInteger("temperature", temp);
+        nbt.setInteger("slidPos", powerSliderPos); nbt.setInteger("instPwr", instantPowerOutput); nbt.setInteger("counter", counter);
+        nbt.setInteger("realSimRpmLast", rpmLast); nbt.setInteger("realSimTempLast", tempLast);
 	}
+
+    private void requestStart() { if(state == 0) { state = -1; counter = 0; rpm = 0; temp = 20; markDirty(); } }
 
 	@Override
 	public void receiveControl(NBTTagCompound data) {
 		
 		if(data.hasKey("slidPos"))
-			powerSliderPos = data.getInteger("slidPos");
+			powerSliderPos = Math.max(0, Math.min(60, data.getInteger("slidPos")));
 		
 		if(data.hasKey("autoMode"))
 			autoMode = data.getBoolean("autoMode");
 		
-		if(data.hasKey("state"))
-			state = data.getInteger("state");
+		if(data.hasKey("state")) { int requested = data.getInteger("state"); if(requested == -1) requestStart(); else if(requested == 0) state = 0; }
 
 		this.markDirty();
 		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
@@ -717,7 +663,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	@Callback(direct = false, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] start(Context context, Arguments args) {
-		state = -1;
+        requestStart();
 		markMachineDirty(MachineDirtyCause.CONFIGURATION);
 		return new Object[] {};
 	}
@@ -809,7 +755,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		data.setDouble(CompatEnergyControl.D_TURBINE_PERCENT, this.powerSliderPos * 100D / 60D);
 		data.setInteger(CompatEnergyControl.I_TURBINE_SPEED, this.rpm);
 		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(this.instantPowerOutput));
-		data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, this.waterToBoil);
-		data.setDouble(CompatEnergyControl.D_OUTPUT_MB, this.waterToBoil * 10);
+		data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, (hrsg.currentMass / 1000000D));
+		data.setDouble(CompatEnergyControl.D_OUTPUT_MB, (hrsg.currentMass / 1000000D) * 10);
 	}
 }

@@ -3166,3 +3166,8 @@ All **225 distinct literal FluidType assignments** found in the active registry,
 - [TileMappings](../src/main/java/com/hbm/tileentity/TileMappings.java): persistent class registrations; [English localization](../src/main/resources/assets/hbm/lang/en_US.lang): current player names.
 
 This catalogue is a broad parameter census supporting a source/design investigation. It is not an assertion that every listed callback, recipe variant, addon, world condition or safety transition has been exercised. Runtime measurement gates are in the main document.
+
+
+## Phase 5D catalogue boundary (2026-10-13)
+
+The original census/line links are historical evidence. The [frozen ledger](REALSIM_PHYSICAL_LEDGER.md#phase-5d-frozen-thermal-contract-2026-10-13) and [owner inventory](REALSIM_PROCESS_INVENTORY.md#phase-5d-authoritative-thermal-owners-2026-10-13) supersede converted equipment's old trait/RPM expressions and buffer-derived rates. Steam state/work/heat/rejection originate in `com.hbm.realsim.SteamLedger`; controllers use `ThermalAccount`/`ThermalMachine`, gas recovery uses `TurbineFuelAccount`/`ExhaustAccount`/`HeatRecovery`. Nuclear traits remain deferred boundaries, not converted runtime tables.

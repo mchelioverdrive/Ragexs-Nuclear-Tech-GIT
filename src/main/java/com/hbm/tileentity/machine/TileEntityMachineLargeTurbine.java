@@ -12,8 +12,6 @@ import com.hbm.inventory.container.ContainerMachineLargeTurbine;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
-import com.hbm.inventory.fluid.trait.FT_Coolable;
-import com.hbm.inventory.fluid.trait.FT_Coolable.CoolingType;
 import com.hbm.inventory.gui.GUIMachineLargeTurbine;
 import com.hbm.lib.Library;
 import com.hbm.machine.MachineDirtyCause;
@@ -46,7 +44,12 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
-public class TileEntityMachineLargeTurbine extends TileEntityMachineBase implements IEnergyProviderMK2, IFluidStandardTransceiver, IGUIProvider, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IConfigurableMachine, IFluidCopiable {
+public class TileEntityMachineLargeTurbine extends TileEntityMachineBase implements api.hbm.energymk2.IRatedGenerator, IFluidStandardTransceiver, IGUIProvider, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IConfigurableMachine, IFluidCopiable {
+    public final com.hbm.realsim.ThermalAccount thermal = new com.hbm.realsim.ThermalAccount();
+    private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
+    @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
+    @Override public long getRatedOutputWatts() { return 5000000L; }
+
 	private static final int TASK_CONVERT = 1;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
@@ -70,7 +73,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 	public static long maxPower = 100000000;
 	public static int inputTankSize = 512_000;
 	public static int outputTankSize = 10_240_000;
-	public static double efficiency = 1.0;
+	public static double efficiency = 0.85;
 
 
 	public TileEntityMachineLargeTurbine() {
@@ -158,6 +161,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 
 	private void sendRuntimePacket(boolean operational) {
 		NBTTagCompound data = new NBTTagCompound();
+        thermal.writeStatus(data);
 		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 		data.setBoolean("operational", operational);
 		tanks[0].writeToNBT(data, "t0");
@@ -181,7 +185,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 	@Override
 	public void writeConfig(JsonWriter writer) throws IOException {
 		writer.name("L:energyCapacityQuanta").value(maxPower);
-		writer.name("INFO").value("industrial steam turbine consumes 20% of availible steam per tick");
+		writer.name("INFO").value("industrial steam turbine is rated at 8 kg/s and 5 MWe; direct condensing expansion");
 		writer.name("I:inputTankSize").value(inputTankSize);
 		writer.name("I:outputTankSize").value(outputTankSize);
 		writer.name("D:efficiency").value(efficiency);
@@ -210,34 +214,26 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 			for(DirPos pos : runtimeConnections) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 
 			this.loadInputContainers();
-			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 4, energyQuanta, maxPower));
+			this.setStoredEnergyQuanta(this.chargeRatedItems(slots, 4, maxPower));
 			
 			boolean operational = false;
 			
 			FluidType in = tanks[0].getTankType();
 			boolean valid = false;
-			if(in.hasTrait(FT_Coolable.class)) {
-				FT_Coolable trait = in.getTrait(FT_Coolable.class);
-				double eff = trait.getEfficiency(CoolingType.TURBINE) * efficiency; //100% efficiency by default
-				if(eff > 0) {
-					tanks[1].setTankType(trait.coolsTo);
-					int inputOps = (int) Math.floor(tanks[0].getFill() / trait.amountReq); //amount of cycles possible with the entire input buffer
-					int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced; //amount of cycles possible with the output buffer's remaining space
-					int cap = (int) Math.ceil(tanks[0].getFill() / trait.amountReq / 5F); //amount of cycles by the "at least 20%" rule
-					int powerOps = getAvailablePowerOperations(trait.heatEnergy * eff);
-					int ops = Math.min(inputOps, Math.min(outputOps, Math.min(cap, powerOps))); //defacto amount of cycles
-					tanks[0].setFill(tanks[0].getFill() - ops * trait.amountReq);
-					tanks[1].setFill(tanks[1].getFill() + ops * trait.amountProduced);
-					this.setStoredEnergyQuanta(this.energyQuanta + (long) (ops * trait.heatEnergy * eff));
-					info[0] = ops * trait.amountReq;
-					info[1] = ops * trait.amountProduced;
-					info[2] = ops * trait.heatEnergy * eff;
-					valid = true;
-					operational = ops > 0;
-				}
-			}
-			if(!valid) tanks[1].setTankType(Fluids.NONE);
-			if(energyQuanta > maxPower) this.setStoredEnergyQuanta(maxPower);
+
+            if(com.hbm.realsim.SteamLedger.expansionOutlet(thermal.ownedMass() > 0 ? thermal.inlet() : com.hbm.realsim.ThermalMachine.state(tanks[0])) != null) {
+                long generated = com.hbm.realsim.ThermalMachine.turbine(thermal, worldObj.getTotalWorldTime(), tanks[0], tanks[1], 400000L,
+                        5000000L, com.hbm.realsim.ThermalMachine.efficiency(efficiency, 850000), energyQuanta, maxPower);
+                this.setStoredEnergyQuanta(Math.addExact(energyQuanta, generated));
+                info[0] = thermal.currentMass == 0 ? 0 : thermal.currentMass / (double) thermal.inlet().massPerUnit;
+                info[1] = thermal.currentMass == 0 ? 0 : thermal.currentMass / (double) com.hbm.realsim.ThermalMachine.state(tanks[1]).massPerUnit;
+                info[2] = generated;
+                valid = true;
+                operational = thermal.currentMass > 0;
+            }
+
+			if(!valid && tanks[1].getFill() <= 0) tanks[1].setTankType(Fluids.NONE);
+
 			
 			tanks[1].unloadTank(5, 6, slots);
 			
@@ -283,11 +279,6 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 	}
 
 	/** Stops the rotor when there is no room for another generated power operation. */
-	private int getAvailablePowerOperations(double energyPerOperation) {
-		if(energyQuanta >= maxPower || energyPerOperation <= 0) return 0;
-		return (int) Math.min(Integer.MAX_VALUE, Math.floor((maxPower - energyQuanta) / energyPerOperation));
-	}
-
 	/**
 	 * A turbine cannot safely accept more steam when its inlet and exhaust
 	 * buffers are both full. Rupture it instead of allowing a permanently
@@ -313,6 +304,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 	}
 	
 	public void networkUnpack(NBTTagCompound data) {
+        thermal.readStatus(data);
 		super.networkUnpack(data);
 		
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
@@ -332,6 +324,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        thermal.read(nbt); outputBudget.read(nbt);
 		tanks[0].readFromNBT(nbt, "water");
 		tanks[1].readFromNBT(nbt, "steam");
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
@@ -340,6 +333,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+        thermal.write(nbt); outputBudget.write(nbt);
 		tanks[0].writeToNBT(nbt, "water");
 		tanks[1].writeToNBT(nbt, "steam");
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);

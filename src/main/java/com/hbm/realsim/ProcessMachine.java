@@ -135,6 +135,10 @@ public final class ProcessMachine {
     }
     public static boolean step(TileEntity machine, ProcessBatch batch, ProcessRecipe selected, FluidTank[] inputs,
             FluidTank[] outputs, ItemStack[] slots, int inputFirst, int inputLast, int outputFirst, int outputLast) {
+        return stepWithHeater(machine, batch, selected, inputs, outputs, slots, inputFirst, inputLast, outputFirst, outputLast, null);
+    }
+    public static boolean stepWithHeater(TileEntity machine, ProcessBatch batch, ProcessRecipe selected, FluidTank[] inputs,
+            FluidTank[] outputs, ItemStack[] slots, int inputFirst, int inputLast, int outputFirst, int outputLast, IProcessHeatSource integratedHeater) {
         if(machine.getWorldObj() == null || machine.getWorldObj().isRemote) return false;
         boolean changed = false;
         if(!batch.active()) {
@@ -144,13 +148,13 @@ public final class ProcessMachine {
         ProcessRecipe recipe = batch.recipe();
         if(!outputReady(batch, recipe, outputs, slots, outputFirst, outputLast)) return changed;
         IEnergyReceiverMK2 power = machine instanceof IEnergyReceiverMK2 ? (IEnergyReceiverMK2) machine : null;
-        IProcessHeatSource heater = heater(machine);
-        long availableHeat = heater != null && heater.getProcessTemperatureC() >= recipe.temperatureC ? heater.getHeatStored() : 0;
+        IProcessHeatSource heater = integratedHeater == null ? heater(machine) : integratedHeater;
+        long availableHeat = heater != null && heater.getProcessTemperatureC() >= recipe.temperatureC ? heater.getAvailableProcessHeatQuanta(machine.getWorldObj().getTotalWorldTime()) : 0;
         long now = machine.getWorldObj().getTotalWorldTime();
         if(batch.canAdvance(now, power == null ? 0 : power.getStoredEnergyQuanta(), availableHeat)) {
             long work = batch.nextWork(), heat = batch.nextHeat();
             if(work > 0) power.setStoredEnergyQuanta(power.getStoredEnergyQuanta() - work);
-            if(heat > 0) heater.useUpHeat(Math.toIntExact(heat));
+            if(heat > 0 && heater.drawProcessHeatQuanta(now, heat) != heat) throw new IllegalStateException("Process heat debit changed during commit");
             batch.advance(now); changed = true;
         }
         if(batch.complete()) {

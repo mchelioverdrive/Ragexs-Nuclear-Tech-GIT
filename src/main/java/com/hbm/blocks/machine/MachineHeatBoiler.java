@@ -44,7 +44,7 @@ public class MachineHeatBoiler extends BlockDummyable implements ILookOverlay, I
 	public TileEntity createNewTileEntity(World world, int meta) {
 		
 		if(meta >= 12) return new TileEntityHeatBoiler();
-		if(meta >= extra) return new TileEntityProxyCombo().fluid();
+		if(meta >= extra) return new TileEntityProxyCombo().fluid().power();
 		return null;
 	}
 	
@@ -177,11 +177,13 @@ public class MachineHeatBoiler extends BlockDummyable implements ILookOverlay, I
 		if(boiler.hasExploded) return;
 
 		List<String> text = new ArrayList();
-		text.add(ThermalUnits.formatThermalEnergy(boiler.heat));
-		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + boiler.tanks[0].getTankType().getLocalizedName() + ": " + String.format(Locale.US, "%,d", boiler.tanks[0].getFill()) + " / " + String.format(Locale.US, "%,d", boiler.tanks[0].getMaxFill()) + " L");
-		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + boiler.tanks[1].getTankType().getLocalizedName() + ": " + String.format(Locale.US, "%,d", boiler.tanks[1].getFill()) + " / " + String.format(Locale.US, "%,d", boiler.tanks[1].getMaxFill()) + " L");
 		
-		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
+		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + boiler.tanks[0].getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(boiler.tanks[0].getTankType(), boiler.tanks[0].getFill(), boiler.tanks[0].getMaxFill()));
+		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + boiler.tanks[1].getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(boiler.tanks[1].getTankType(), boiler.tanks[1].getFill(), boiler.tanks[1].getMaxFill()));
+
+        com.hbm.realsim.ThermalInfo.boiler(text, boiler.thermal, boiler.getRatedThermalWatts(), boiler.thermalBufferQuanta);
+        com.hbm.realsim.ThermalInfo.states(text, boiler.tanks[0], boiler.tanks[1], boiler.thermal);
+        ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 
 	@Override

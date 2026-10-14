@@ -20,7 +20,7 @@ public final class FluidInfo {
         PhysicalState state = type.getPhysicalState();
         if(state.basis == PhysicalState.Basis.STANDARD_GAS_LITER) return "standard L";
         if(state.basis == PhysicalState.Basis.LIQUID_LITER) return "L";
-        // No steam enthalpy/volume conversion is released before Phase 5D.
+        if(state.basis == PhysicalState.Basis.WATER_EQUIVALENT) return "water-equivalent units";
         if(type == Fluids.STEAM || type == Fluids.HOTSTEAM || type == Fluids.SUPERHOTSTEAM
                 || type == Fluids.ULTRAHOTSTEAM || type == Fluids.SPENTSTEAM) return "nominal steam units";
         if(type == Fluids.NONE) return "L / standard L (fluid-dependent)";
@@ -53,6 +53,15 @@ public final class FluidInfo {
     public static void appendPhysical(List<String> lines, FluidType type, boolean advanced) {
         PhysicalState state = type.getPhysicalState();
         if(type == Fluids.NONE) return;
+
+        com.hbm.realsim.SteamLedger.State steam = com.hbm.realsim.SteamLedger.state(type.getName());
+        if(steam != null && steam != com.hbm.realsim.SteamLedger.State.COLD) {
+            lines.add(String.format(Locale.US, "Water-equivalent: %.3f kg/unit", steam.massPerUnit / 1000000D));
+            lines.add(String.format(Locale.US, "State: %d °C / %.3f MPa absolute", steam.temperatureC, steam.pressurePa / 1000000D));
+            lines.add(String.format(Locale.US, "Enthalpy: %.3f MJ/kg above cold feed", steam.enthalpyJPerKg / 1000000D));
+            if(advanced) lines.add("Inventory counts are not gas liters; network PU is separate");
+            return;
+        }
         String phase = state.phase == PhysicalState.Phase.NOMINAL
                 ? (type.hasTrait(FT_Gaseous.class) || type.hasTrait(FT_Gaseous_ART.class) ? "Gas" : "Unresolved phase")
                 : state.phase.name().substring(0, 1) + state.phase.name().substring(1).toLowerCase(Locale.US);
@@ -68,6 +77,11 @@ public final class FluidInfo {
     }
 
     public static void appendStoredEnergy(List<String> lines, FluidType type, long amount) {
+        com.hbm.realsim.SteamLedger.State steam = com.hbm.realsim.SteamLedger.state(type.getName());
+        if(steam != null && steam != com.hbm.realsim.SteamLedger.State.COLD) {
+            lines.add(String.format(Locale.US, "Stored water mass: %.3f kg", amount * (steam.massPerUnit / 1000000D)));
+            lines.add(String.format(Locale.US, "State enthalpy: %.3f MJ", amount * (steam.massPerUnit / 1000000D) * (steam.enthalpyJPerKg / 1000000D)));
+        }
         String energy = storedEnergy(type.getPhysicalState(), amount);
         if(energy != null) lines.add(energy);
     }

@@ -382,3 +382,25 @@ The energy equation is chemical input +sensible input +paid electrical work +pai
 A separate tranche after Phase 5C adopts role-sized liquid containers/day tanks, geometric bulk-storage limits, selected petroleum buffer capacities and bounded groundwater supply. It preserves saved amounts/identities with explicit legacy-over-cap handling and separates storage from export/processing ratings. Player quantities, canonical LHV/stored energy, gas standard-equivalent wording and idle rated efficiency now share one presentation path. The pump's steam-work allowance remains explicitly transitional; Phase 5D has not begun.
 
 The [fluid infrastructure report](REALSIM_FLUID_INFRASTRUCTURE.md) is authoritative for changed capacities, retained compatibility boundaries, the complete native tank declaration inventory, groundwater settings/work model, revised storage endurance and acceptance checklist. Earlier Phase 5A–5C storage examples remain historical. The user's initial placement smoke test is recorded separately from sustained operation, UI, ports, rotation, save/load and multiplayer acceptance.
+
+
+## Phase 5D authoritative thermal owners (2026-10-13)
+
+Historical thermal rows are superseded by the [frozen ledger](REALSIM_PHYSICAL_LEDGER.md#phase-5d-frozen-thermal-contract-2026-10-13) and [implementation/plant report](REALSIM_PHASES_1_4.md#phase-5d-implementation--closed-fossil-thermal-power-2026-10-13).
+
+| Native owner | New authoritative path | Legacy disposition |
+| --- | --- | --- |
+| MachineTurbineGas | TurbineFuelAccount -> ExhaustAccount -> HeatRecovery/ThermalAccount; 3 MWe, 30% LHV, 6-MWth HRSG | Arbitrary gas consumption/RPM gain and independent boiling removed |
+| MachineTurbofan | Owned chemical partition, 1-MWe cap, paid extra afterburning fuel/exhaust | Afterburner efficiency multiplier removed; aviation behavior retained |
+| oil/MachineGasFlare | Same-tick disposal, no new electricity | Imaginary recovery/yield power removed; saved electricity still exports |
+| HeatBoilerBase / HeatBoilerIndustrial | Common BOILER transition, owned feed/source debit/paid pressure work; 200 kWth ordinary / 12 MWth hot | Steam first-trait conversion bypassed; crude retains ProcessBatch |
+| HeaterFirebox / HeaterOilburner / HeaterOven / HeaterElectric | Physical fuel/resistive heat and shared transfer budgets; 200 / 200 / 500 / 196 kWth standalone generation | Oven burn-time multiplier replaced; qualified intake is debited and reduces firing; no unqualified HU intake |
+| SteamEngine / MachineTurbine / MachineLargeTurbine / Chungus | Direct common expansion to SPENTSTEAM, 25 kW / 500 kW / 5 MW / 25 MW caps | Trait work, inlet percentage/all-stock power and engine buffer deletion removed; rupture/trips/reset retained |
+| MachineCompressor | Common adjacent compressor/aftercooler, 25 kWe, fractional work/mass | Cheap grade relabeling and legacy tuple completion cannot process steam |
+| Condenser / CondenserPowered / Radiator | Conserved return and 250-kW / 20-MW / 1-MW heat sinks | Unrated all-stock condensation, tiny 5-J fee and evaporative feedwater subtraction removed |
+| HeaterHeatex | Common lower-grade/return transition, 2-MW recovery, conservative temperature quality | Steam trait heat removed; nuclear coolant traits remain deferred/uncertified |
+| SolarBoiler / SolarMirror | Rated mirror heat, owned feed, common ordinary-steam bill | Heat-token -> 100 steam counts shortcut removed |
+| MachineHephaestus | Rated environmental heat -> common steam or Phase 5C crude bill | Steam/oil shortcut removed; other nominal coolant routes remain deferred |
+| MachinePumpSteam | Existing 100-kJ shaft parcel now derived from common ordinary cap at 40% | 30-L/min hydraulic rate and save ownership unchanged |
+
+Direct expansion emits spent steam once, with no intermediate work copy. Filled stocks/counts/PU are retained; reserved mass retains its original route. Nuclear controllers and coolant/HU mappings, shutdown/relief/contamination/decay/trip/explosion paths are not calibrated here.

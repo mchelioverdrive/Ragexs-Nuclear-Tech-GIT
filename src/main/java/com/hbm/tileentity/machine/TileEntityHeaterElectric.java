@@ -23,9 +23,16 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IHeatSource, IEnergyReceiverMK2, INBTPacketReceiver, ICopiable, IInfoProviderEC, api.hbm.tile.IProcessHeatSource {
+    private final com.hbm.realsim.OutputBudget heatExportBudget = new com.hbm.realsim.OutputBudget();
+    @Override public com.hbm.realsim.OutputBudget getProcessHeatBudget() { return heatExportBudget; }
+    @Override public long getRatedProcessHeatWatts() { return 400000L; }
+
+    private final com.hbm.realsim.HeatTransfer physicalIntake = new com.hbm.realsim.HeatTransfer();
+
 	private static final int TASK_HEAT = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
+    private long lastHeatTick = Long.MIN_VALUE;
 	private boolean runtimeEnergyMutation;
 
 	public long energyQuanta;
@@ -83,7 +90,10 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
 		if(taskType != TASK_HEAT || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
-		this.heatEnergy = Math.min((int) (this.heatEnergy * 0.999D), maxHeatEnergy);
+        long now = worldObj.getTotalWorldTime();
+        if(now <= lastHeatTick) return;
+        lastHeatTick = now;
+		this.heatEnergy = Math.min(Math.toIntExact((long) this.heatEnergy * 999L / 1000L), maxHeatEnergy);
 		this.tryPullHeat();
 		this.isOn = false;
 		if(setting > 0 && this.energyQuanta >= this.getConsumption() && this.heatEnergy < maxHeatEnergy) {
@@ -93,6 +103,7 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 			this.heatEnergy = Math.min(this.heatEnergy + getHeatGen(), maxHeatEnergy);
 			this.isOn = true;
 		}
+        this.markDirty();
 		this.sendRuntimeState();
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 	}
@@ -159,6 +170,8 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        lastHeatTick = nbt.hasKey("realSimHeatTick") ? nbt.getLong("realSimHeatTick") : Long.MIN_VALUE;
+        heatExportBudget.read(nbt.getCompoundTag("realSimHeatExport")); physicalIntake.read(nbt);
 
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.setting = nbt.getInteger("setting");
@@ -168,6 +181,8 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+        nbt.setLong("realSimHeatTick", lastHeatTick);
+        net.minecraft.nbt.NBTTagCompound export = new net.minecraft.nbt.NBTTagCompound(); heatExportBudget.write(export); physicalIntake.write(nbt); nbt.setTag("realSimHeatExport", export);
 
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("setting", setting);
@@ -178,10 +193,9 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 		TileEntity con = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
 
 		if(con instanceof api.hbm.tile.IProcessHeatSource && ((api.hbm.tile.IProcessHeatSource) con).getProcessTemperatureC() >= getProcessTemperatureC()) {
-			IHeatSource source = (IHeatSource) con;
-			int toPull = Math.max(Math.min(source.getHeatStored(), maxHeatEnergy - this.heatEnergy), 0);
-			this.heatEnergy += toPull * 0.85D;
-			source.useUpHeat(toPull);
+			api.hbm.tile.IProcessHeatSource source = (api.hbm.tile.IProcessHeatSource) con;
+            long pulled = source.drawProcessHeatQuanta(worldObj.getTotalWorldTime(), Math.max(0, Math.min(20000, maxHeatEnergy - heatEnergy)));
+            this.heatEnergy = Math.toIntExact(Math.addExact(heatEnergy, physicalIntake.accept(pulled, 850000)));
 		}
 	}
 
@@ -199,7 +213,7 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 	}
 
 	public long getConsumption() {
-		return (long) (Math.pow(setting, 1.4D) * 200D);
+		return Math.max(0, Math.min(10, setting)) * 2000L;
 	}
 
 	public long getPowerRequirementWatts() {
@@ -212,7 +226,7 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 	}
 
 	public int getHeatGen() {
-		return this.setting * 100;
+		return Math.toIntExact(getConsumption() * 98L / 100L);
 	}
 
 	@Override

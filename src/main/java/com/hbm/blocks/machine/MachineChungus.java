@@ -172,6 +172,8 @@ public class MachineChungus extends BlockDummyable implements ILookOverlay, IToo
 			text.add(EnumChatFormatting.YELLOW + "Reset with the lever."); //or a redstone signal LARP!!!
 		}
 
+        com.hbm.realsim.ThermalInfo.generator(text, turbine.thermal, turbine.getRatedOutputWatts(), 880000);
+        com.hbm.realsim.ThermalInfo.states(text, turbine.tanks[0], turbine.tanks[1], turbine.thermal);
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 }

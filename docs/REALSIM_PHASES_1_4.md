@@ -445,3 +445,186 @@ These tests exercise production bills/accounts and tank rules; they do not insta
 A separate tranche after Phase 5C adopts role-sized liquid containers/day tanks, geometric bulk-storage limits, selected petroleum buffer capacities and bounded groundwater supply. It preserves saved amounts/identities with explicit legacy-over-cap handling and separates storage from export/processing ratings. Player quantities, canonical LHV/stored energy, gas standard-equivalent wording and idle rated efficiency now share one presentation path. The pump's steam-work allowance remains explicitly transitional; Phase 5D has not begun.
 
 The [fluid infrastructure report](REALSIM_FLUID_INFRASTRUCTURE.md) is authoritative for changed capacities, retained compatibility boundaries, the complete native tank declaration inventory, groundwater settings/work model, revised storage endurance and acceptance checklist. Earlier Phase 5A–5C storage examples remain historical. The user's initial placement smoke test is recorded separately from sustained operation, UI, ports, rotation, save/load and multiplayer acceptance.
+
+
+## Phase 5D implementation -- closed fossil thermal power (2026-10-13)
+
+This supersedes earlier gas-turbine/steam deferrals for converted fossil equipment; nuclear calibration remains deferred. The [frozen ledger](REALSIM_PHYSICAL_LEDGER.md#phase-5d-frozen-thermal-contract-2026-10-13) defines all states, coefficients, legal routes and heat/work/rejection. Saved counts and IDs are unchanged. Steam is nominal water-equivalent mass, not literal gas volume or network PU pressure.
+
+### APIs and migration ownership
+
+New production APIs: `SteamLedger`, `ThermalAccount`, `ThermalMachine`, `TurbineFuelAccount`, `ExhaustAccount`, `HeatRecovery`, `HeatTransfer`, `ThermalInfo` and `IRatedGenerator`. `IProcessHeatSource` separates stored heat from a shared per-tick export debit, including proxy delegation. `ProcessMachine.stepWithHeater` supports qualified integrated heat without recreating a process bill. `PhysicalState.Basis.WATER_EQUIVALENT`/`PhysicalRegistry` publish steam mass. `Groundwater` derives its unchanged 100-kJ owned shaft parcel from 40% of the common ordinary expansion cap.
+
+Thermal mass is integer milligrams; utilities retain half-joule quanta; undelivered heat/work/electric fractions use microjoules. Checked long arithmetic and checked wide multiplication/division protect authoritative results. Each versioned account owns removed inlet mass, inlet/outlet identity, paid utility fragments, pending electricity, output mass by species, steam-loss remainder and last world tick. No elapsed unload production, repeat/backwards-tick work, unpaid completion or identity rewriting is allowed. A full/incompatible steam outlet or electrical buffer prevents further conversion. Floating point is presentation only. Heater decay is integer 999/1000, and electric-heater/heat-exchanger funding and decay also persist their once-per-world-tick controller guards.
+
+Changed controllers: gas turbine, turbofan, flare, boiler base/industrial boiler, steam engine/standard/industrial/Leviathan turbines, condensers/radiator, steam compressor, heat exchanger, solar boiler/mirrors, Hephaestus steam/crude heating, heating oven and qualified solid/fluid/electric heater boundaries. Related changes cover heat proxies, compressor metadata, steam quantity information, boiler/engine/condenser/Leviathan overlays, firebox/standard/gas GUIs and English descriptions. Existing runtime scheduling, server-thread mutation, controls, air/pollution/lubricant and optional integration paths remain native. No block/fluid ID was added.
+
+| Owner | Rating and state | Storage / startup / separate constraint |
+| --- | --- | --- |
+| Solid firebox / fluid burner | 200 kWth generation/export, 85% LHV, 900 C ceiling | Existing heat stores retained |
+| Heating oven | 500 kWth combined delivered firing + intake/export, 85% firing, 900 C | 4 MJ default store; qualified lower intake defaults to 50%; imported heat reduces firing within the same rating |
+| Electric heater | 200 kWe, 98% resistive conversion; up to 200-kW intake at 85%, 400-kW combined export | Existing 0.25-MJ heat store; settings change power, not LHV |
+| Ordinary boiler | 200 kWth, 98%, ordinary steam; 0.2 kg/s feed ceiling | 16 MJ heat, 0.25 MJ prepared structure/startup; actual full heat limits feed to about 0.07563 kg/s |
+| Industrial boiler | 12 MWth combined solid/oil firing + qualified heat, 98%, hot steam; 8 kg/s feed ceiling | 64 MJ heat, 5 MJ startup; 85% LHV firing, 1.5 kJ/kg paid pump work, 1-MJ pump buffer |
+| Solar boiler | 500 kWth collector, 95%, ordinary; 0.2 kg/s feed | 8 MJ heat, 0.5 MJ startup; each full-sky 4-m2 mirror supplies 3 kWth |
+| Hephaestus | 2 MWth, 95%, ordinary; 1 kg/s feed | 16 MJ heat, 2 MJ startup; 1/20/40 kW per normal lava/volcanic lava/ore contact, existing fissure modifier and global cap; crude uses Phase 5C bills |
+| Steam heat exchanger | 2 MWth recovery/export, conserved lower-grade/return mass | 32 MJ recovered heat maximum; quality no higher than outlet temperature minus 30 C; nuclear coolant legacy heat is uncertified |
+| Internal gas HRSG | 6 MWth exhaust input, 90%, 30 C approach; hot/superhot, 4 kg/s feed | Draws 150-MJ exhaust account; paid feed work uses real electrical storage |
+| Small engine | Ordinary -> spent, 70% credited work; 0.3 kg/s | 25 kWe, 0.5-MJ electrical store retained until export |
+| Standard turbine | Any released steam -> spent, 75%; 0.75 kg/s | 500 kWe ceiling, 5-MJ default buffer, rated aggregate export |
+| Industrial turbine | Any steam -> spent, 85%; 8 kg/s | 5 MWe ceiling, 50-MJ default buffer |
+| Leviathan | Any steam -> spent, 88%; 40 kg/s | 25 MWe ceiling; existing 50-GJ stock buffer, rated export, trips/reset retained |
+| Passive condenser / radiator | 250 kWth / 1 MWth environmental rejection; spent -> cold | Conserved passive/gravity return; radiator supports vacuum radiation |
+| Powered condenser | 20 MWth total rejection; spent -> cold | 10 kJ/kg vacuum/fan/drain auxiliary, 5-MJ existing electrical store; atmospheric air sink |
+| Steam compressor + aftercooler | 25 kWe work, 100 kWth rejection; 0.05 kg/s ceiling | Adjacent upgrades cost 735.61 / 599.73 / 739.50 kJ/kg; upgrades cannot discount physical work |
+
+Actual turbine power is bounded by state work, flow, nameplate and free storage. Standard ordinary/hot/superhot output at stock flow is 140.625/309.375/433.125 kWe; ultrahot can reach 500 kW. Industrial hot reaches 3.74 MW, superhot/ultrahot reach 5 MW. Leviathan superhot/ultrahot reach 25 MW. Each native turbine now performs the full condensing expansion once and emits SPENTSTEAM, so a legacy staged installation must reroute exhaust; filled intermediate stock is retained until drained. Rupture, trip valves, overspeed/overpressure and reset remain meaningful.
+
+Industrial boilers have two persisted solid-fuel slots, hand/hopper feeding and existing inventory drops for unburned items. Heavy/heating-oil has a separate 24,000-L inlet; select it with a fluid identifier only when empty. Solids/liquids share one owned fuel account. Cable feed-pump input uses existing ports, including older placed proxies. A 200-kW source cannot exploit the boiler's 12-MW rating.
+
+Gas turbine: 3 MWe gross, 2.94 MWe after 60-kW own auxiliaries, 10-MW chemical input, 5.5-MW recoverable heat, 1.5-MW initial rejection. Part-load cycle efficiency is explicitly constant 30%; throttle changes flow/power/exhaust, never LHV. Admitted load is 25-100%, with transient RPM ramp and a 5% idle/spool chemical allowance; startup produces no electricity. Retained 580-tick startup costs up to 14.5 MJ over 29 s; about another 22.5 s reaches full RPM. Temperature/load conservatively chooses 350/500-C exhaust. Excess-air demand is roughly 500 standard inventory units/t at full load through the existing intake abstraction. Lubricant ownership persists at 0.06 L/min while firing/spooling. Shutdown/spool state persists; only completed startup admits the online state.
+
+Fuel whitelist: natural gas, refinery gas, reform gas, coker gas and released syngas, each with its actual Phase 5C assay. This adopted multi-fuel combustor supports those H2-bearing mixtures; pure H2, sour gas, oxyhydrogen, fictional/unresolved gases and liquid LPG are refused. Refinery gas's LPG-vapor component is already proper gas feed. No standalone LPG vaporizer was invented.
+
+Turbofan remains a 1-MWe aviation-derived generator. Base input is 4 MW at 25% LHV; afterburner levels 1-3 increase fuel to 8/12/16 MW and reduce efficiency to 12.5/about 8.333/6.25%, with electricity capped at 1 MW. Exhaust partitions are 55% base / 75% afterburning, with explicit residual rejection and retained jet/fire/damage behavior. Flares retain disposal/vent/fire/pollution/rates and saved electricity export, but generate no new electricity. Old yield upgrades remain stored and clearly have no recovery effect.
+
+### Facility models and progression
+
+These are analytical steady-state figures from exact adopted bills, not gameplay measurements. Native processing retains milligram/half-joule/whole-output fractions; rate ceilings may round down by less than one milligram/t. BOILER steam loss is 0.5%. Makeup pumping assumes active 120 L/min delivery and full-buffer pause: mean power is 10 kW times makeup demand/120. Continuously running makeup supply instead debits 10 kW. Water treatment, fuel production, startup and external distribution are outside these fuel-at-inlet boundaries, not claimed free.
+
+| Quantity | Early firebox | Oven-fed hot steam | Industrial fossil | Combined cycle |
+| --- | ---: | ---: | ---: | ---: |
+| Chemical input MW | 0.235294118 | 0.588235294 | 28.235294118 | 10 |
+| Source heat / exhaust MWth | 0.200 | 0.500 | 24 | 5.5 exhaust |
+| Prepared feed kg/s | 0.075626318 | 0.165195054 | 7.929362595 | 1.527169455 |
+| Steam kg/s / grade | 0.075248187 ordinary | 0.164369079 hot | 7.889715782 hot | 1.519533608 superhot |
+| Steam gross electricity MW | 0.013168433 | 0.067802245 | 3.688442128 | 0.994534746 |
+| Direct gas electricity MW | 0 | 0 | 0 | 3 |
+| Gas auxiliaries kW | 0 | 0 | 0 | 60 |
+| Feed pump kW | 0 | 0.247793 | 11.894044 | 9.163017 |
+| Condenser heat MW excluding auxiliaries | 0.174281573 | 0.380693580 | 18.273291825 | 3.519376594 |
+| Condenser electricity kW | 0 | 0 | 78.897158 | 15.195336 |
+| Makeup L/min | 0.022687895 | 0.049558516 | 2.378808778 | 0.458150837 |
+| Mean makeup pump kW | 0.001891 | 0.004130 | 0.198234 | 0.038179 |
+| Net electricity MW | 0.013166542 | 0.067550323 | 3.597452692 | 3.910138214 |
+| Net efficiency % | **5.595780** | **11.483555** | **12.740978** | **39.101382** |
+
+Early: one 200-kW firebox, ordinary boiler, small engine and passive condenser. Coal 0.547195622 kg/min, wood 0.904977376 kg/min. The 16,000-count water inlet lasts 58.7685 h once-through or 11,753.7 h against makeup alone. This is a useful modest automatic solid-fuel alternative, not an efficiency upgrade over the 40-kW/7% starter or a diesel competitor. Abundant solid fuel/shared process heating are its role.
+
+Oven: one 500-kW oven beneath an industrial boiler whose own fuel supply is empty, one standard turbine on hot steam, and one radiator (or two passive condensers). Coal 1.367989056 kg/min, wood 2.262443439 kg/min; about 67.55 kW net. The full expansion needs no second turbine. Imported qualified heat reduces oven firing; its store never grants higher boiler power. An ordinary boiler still limits an oven-fed loop to 200 kWth.
+
+Industrial: two integrated 12-MWth boilers, **one industrial turbine**, one powered condenser, makeup/treatment and piping. Flow 7.88972 kg/s is below 8; total condenser rejection including auxiliaries is 18.352189 MW below 20. Coal 65.663474692 kg/min total, heavy oil 42.789392985 L/min, heating oil 47.296620427 L/min. Two coal feeders hold 256 ordinary coal items, about 3.90 min: hopper/storage logistics matter. Each 24,000-L heavy-oil tank lasts about 18.70 h; each 64,000-count feed tank about 4.484 h once-through or 37.37 days makeup-only. Four main thermal machines give 3.60 MW net. Coal/biomass is the rational alternative; engine-suitable oil remains more efficient in matching reciprocating engines.
+
+| Gas at 3-MWe rating | Standard L/min | kg/min | 100,000-standard-L autonomy |
+| --- | ---: | ---: | ---: |
+| Natural gas / methane | 16983.573 | 11.996754 | 5.888 min |
+| Refinery gas, 50/50 molar methane/LPG vapor | 9436.498 | 12.493789 | 10.597 min |
+| Reform gas | 26100.448 | 10.376706 | 3.831 min |
+| Coker gas | 35675.977 | 8.675156 | 2.803 min |
+| Syngas | 51930.047 | 34.328091 | 1.926 min |
+
+Each simple-cycle case has 10-MW chemical input, 3-MW gross electricity, 5.5-MW recoverable heat, 1.5-MW initial rejection, 60-kW auxiliaries and 0.06-L/min lubricant: **2.94 MW net / 29.4%**. A 24-L/min atmospheric refinery yields only about 308 standard refinery-gas L/min before its utility burning, versus 9436.5 needed here. A full turbine requires aggregated coproducts or substantial gas supply; fuel availability was not inflated.
+
+Combined cycle uses that same fuel owner, its existing internal HRSG, **one industrial turbine**, one powered condenser and a closed feedwater/makeup loop. HRSG draws 5.5 MW exhaust, retaining 4.95 MW heat plus 9.163 kW paid feed work, with transfer/steam-loss residuals rejected once. Total auxiliaries including mean makeup are 84.396532 kW. **10 MW fuel = 3.910138214 MW net + 6.089861786 MW total rejection/dissipation**, including auxiliary bookkeeping at steady state. Stored steam/exhaust, utility/work fractions and prepared structure are explicit transient terms. No second fuel copy supplies the HRSG.
+
+Combined storage: 16,000-count water gives 2.91025 h once-through or 582.05 h (24.25 days) makeup-only. The 160,000-count superhot store is 160,000 kg water-equivalent, about 29.25 h without export, not literal vessel volume. Old HOTSTEAM counts retain 0.1 kg/count. Exhaust holds only 150 MJ, 27.27 s full-load recoverable heat. Blockage pauses HRSG; the finite account then vents new exhaust while simple-cycle electricity can continue.
+
+One matched 750-kWe diesel engine remains 38% gross, 3.30610 diesel L/min and about 20.17 h on the normalized 4,000-L store. Four produce 3 MW at the same efficiency and 13.22438 L/min, with more engines/pistons/lube/ports. Central steam trades efficiency/cooling/startup for abundant solid fuel and four main thermal machines. Simple gas uses one large machine, continuous gas logistics and long spool but no steam cooling when vented. Combined cycle uses three main thermal machines including the internal HRSG, with more cooling/startup and 39.10% net efficiency. Diesel/refinery utilities are separate paid inputs. Footprint, supported fuels, lubrication, cooling and coproduct availability determine choice; there is no unlock wall, forced fuel expiry or nuclear gate.
+
+### Before/after, compatibility and validation
+
+Old natural-gas turbine full throttle: about 63,000 nominal gas counts/min, roughly 268 kWe via the 536,000-q legacy trait/RPM term, and a separate potential boiling term near 72,799 water counts/min at maximum temperature. That boiling did not debit residual fuel energy or state enthalpy. New full load: about 16,984 standard L/min, 3 MWe gross, owned 5.5-MW exhaust and about 91.63 feed kg/min in the HRSG case. Old standard ordinary cap was 6000 steam counts/t -> about 51 kWe from tiny cooling traits; new is 0.75 kg/s -> 140.625 kWe with the real expansion cap. Industrial/Leviathan no longer derive output from 20%/all inlet stock or storage capacity. Comparisons are source/default arithmetic, not measured facilities.
+
+Saved electrical quanta, fluid IDs, numeric steam/fuel counts, existing steam/fuel tanks, old cryogenic identities and unrelated data are retained. New thermal/exhaust/fuel/transfer accounts are versioned. Unowned boiler/compressor/oven progress is not paid work; oven stored heat retains its numbers but old unowned burn progress cannot credit new fuel. New boiler thermal buffers start uncertified/empty, not scaled from old GUI heat. Unknown/custom fluids remain drainable and are not certified steam/fuel. Incompatible filled output stock pauses, not relabels. Old staged trains need rerouting; PU is preserved separately. Old configured storage may remain smaller without reducing/increasing continuous nameplate. Standard maxSteamPerTick is only an additional downward inlet cap. Steam JSON cannot undercharge or skip pressure stages; old condenser per-count electricity settings are compatibility metadata, not authoritative bills.
+
+Observed Java 8 offline compilation, build, JUnit, JAR packaging and reobfuscation succeeded. **62 tests passed**: 29 physical, 11 petroleum, 22 thermal. Production API/real tank/compressed-NBT checks cover mass/enthalpy and legal routes; gas split/assays and no duplicate exhaust; persistence/quality/finite plenum; nameplates/full-buffer/unpaid pause; steam loss/makeup and conserved cooling return; compressor work; fractional mass/work; repeat/backwards ticks and no unload catch-up; industrial checked arithmetic/overflow; legacy stock; full staged/direct equivalence; complete combined-cycle mass/energy closure; oven fractional transfer/shared firing; aggregate export and afterburning. These are not loaded-world controller tests.
+
+Single-client startup: existing development tooling launched Minecraft 1.7.10; FML loaded six mods including hbm and created texture atlases. It logged 37 missing hbm textures outside the changed assets. No world or server connection was opened; no multiclient testing occurred. The startup client was intentionally stopped. Initialization is established, not placement/operation; final direct-expansion, port-migration and controller guards subsequently received build/static validation only.
+
+User gameplay acceptance remains: new/saved boiler ports and rotation; solid hand/hopper feed, fuel selection and item recovery; oven intake/firing reduction, ash/pollution/waterlogging; turbine inlet/exhaust rerouting and aggregate cable/battery export; gas spool/throttle/lube/air/fuel switching; HRSG quality and blocked water/steam; condenser environment/return routing; rupture/trip/reset; actual UI; chunk unload/save/reload and sustained facility rates. Config/recipe reload and optional integrations were not exercised in a world. Nuclear outputs, coolant/HU calibration and reactor shutdown/relief/contamination/decay/trip/explosion code remain deferred compatibility paths.
+
+### Changed file manifest
+
+All 58 changed files belong to this tranche. Paths are repository-relative; generated build/runtime outputs are excluded.
+
+**Thermal APIs and shared ownership**
+
+- `src/main/java/com/hbm/realsim/Groundwater.java`
+- `src/main/java/com/hbm/realsim/PhysicalRegistry.java`
+- `src/main/java/com/hbm/realsim/PhysicalState.java`
+- `src/main/java/com/hbm/realsim/ProcessMachine.java`
+- `src/main/java/com/hbm/realsim/ExhaustAccount.java`
+- `src/main/java/com/hbm/realsim/HeatRecovery.java`
+- `src/main/java/com/hbm/realsim/HeatTransfer.java`
+- `src/main/java/com/hbm/realsim/SteamLedger.java`
+- `src/main/java/com/hbm/realsim/ThermalAccount.java`
+- `src/main/java/com/hbm/realsim/ThermalInfo.java`
+- `src/main/java/com/hbm/realsim/ThermalMachine.java`
+- `src/main/java/com/hbm/realsim/TurbineFuelAccount.java`
+
+**Energy and process-heat boundaries**
+
+- `src/main/java/api/hbm/tile/IProcessHeatSource.java`
+- `src/main/java/api/hbm/energymk2/IRatedGenerator.java`
+
+**Native controllers and proxy**
+
+- `src/main/java/com/hbm/tileentity/TileEntityProxyCombo.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityChungus.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityCondenser.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityCondenserPowered.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityFireboxBase.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityHeatBoilerBase.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityHeatBoilerIndustrial.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityHeaterElectric.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityHeaterHeatex.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityHeaterOilburner.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityHeaterOven.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineCompressor.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineHephaestus.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineLargeTurbine.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineTurbine.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineTurbineGas.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineTurbofan.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityRadiator.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntitySolarBoiler.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntitySolarMirror.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntitySteamEngine.java`
+- `src/main/java/com/hbm/tileentity/machine/oil/TileEntityMachineGasFlare.java`
+
+**Blocks, UI, recipes and fluid presentation**
+
+- `src/main/java/com/hbm/blocks/machine/MachineChungus.java`
+- `src/main/java/com/hbm/blocks/machine/MachineCondenser.java`
+- `src/main/java/com/hbm/blocks/machine/MachineCondenserPowered.java`
+- `src/main/java/com/hbm/blocks/machine/MachineHeatBoiler.java`
+- `src/main/java/com/hbm/blocks/machine/MachineHeatBoilerIndustrial.java`
+- `src/main/java/com/hbm/blocks/machine/MachineSteamEngine.java`
+- `src/main/java/com/hbm/inventory/fluid/FluidInfo.java`
+- `src/main/java/com/hbm/inventory/fluid/FluidType.java`
+- `src/main/java/com/hbm/inventory/gui/GUIFirebox.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineTurbine.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineTurbineGas.java`
+- `src/main/java/com/hbm/inventory/recipes/CompressorRecipes.java`
+
+**Player text**
+
+- `src/main/resources/assets/hbm/lang/en_US.lang`
+
+**Automated accounting checks**
+
+- `src/test/java/com/hbm/realsim/ThermalAccountingTest.java`
+
+**Documentation**
+
+- `docs/REALSIM_FLUID_INFRASTRUCTURE.md`
+- `docs/REALSIM_PHASES_1_4.md`
+- `docs/REALSIM_PHYSICAL_LEDGER.md`
+- `docs/REALSIM_PROCESS_INVENTORY.md`
+- `docs/REALSIM_SOURCE_CATALOGUE.md`
+- `docs/REALSIM_SUBSTANCE_REGISTRY.md`
+- `docs/steam-turbines.md`
+
+**Release history**
+
+- `CHANGELOG.md`

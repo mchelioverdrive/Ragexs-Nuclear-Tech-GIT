@@ -23,11 +23,30 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 
-public class TileEntityHeaterOven extends TileEntityFireboxBase implements IConfigurableMachine {
+public class TileEntityHeaterOven extends TileEntityFireboxBase implements IConfigurableMachine, api.hbm.tile.IProcessHeatSource {
+
+    private final com.hbm.realsim.HeatTransfer intake = new com.hbm.realsim.HeatTransfer();
+    private long lastHeatPullTick = Long.MIN_VALUE, importedThisTick;
+    @Override protected boolean usesPhysicalCombustion() { return true; }
+    @Override public long getRatedThermalWatts() { return 500000L; }
+    @Override public int getProcessTemperatureC() { return 900; }
+    @Override protected long physicalHeatAllowanceQuanta() { return com.hbm.realsim.HeatTransfer.remainingAllowance(getRatedThermalWatts(), importedThisTick); }
+    @Override public void readFromNBT(net.minecraft.nbt.NBTTagCompound nbt) {
+        net.minecraft.nbt.NBTTagCompound input = nbt;
+        if(!nbt.hasKey("realSimFuel", 10)) {
+            input = (net.minecraft.nbt.NBTTagCompound) nbt.copy(); input.setInteger("burnTime", 0); input.setInteger("burnHeat", 0);
+        }
+        super.readFromNBT(input); intake.read(nbt);
+        lastHeatPullTick = nbt.hasKey("realSimHeatPullTick") ? nbt.getLong("realSimHeatPullTick") : Long.MIN_VALUE;
+        importedThisTick = nbt.getLong("realSimHeatImported");
+    }
+    @Override public void writeToNBT(net.minecraft.nbt.NBTTagCompound nbt) {
+        super.writeToNBT(nbt); intake.write(nbt); nbt.setLong("realSimHeatPullTick", lastHeatPullTick); nbt.setLong("realSimHeatImported", importedThisTick);
+    }
 
 	public static int baseHeat = 500;
 	public static double timeMult = 0.125D;
-	public static int maxHeatEnergy = 500_000;
+	public static int maxHeatEnergy = 8_000_000; // 4 MJ storage, independent of 500 kW transfer
 	public static double heatEff = 0.5D;
 	public static ModuleBurnTime burnModule = new ModuleBurnTime()
 			.setLigniteTimeMod(1.25)
@@ -61,19 +80,23 @@ public class TileEntityHeaterOven extends TileEntityFireboxBase implements IConf
 	@Override
 	protected boolean hasAdditionalRuntimeWork() {
 		TileEntity con = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
-		return con instanceof IHeatSource && ((IHeatSource) con).getHeatStored() > 0 && this.heatEnergy < this.getMaxHeat();
+		return con instanceof api.hbm.tile.IProcessHeatSource && ((api.hbm.tile.IProcessHeatSource) con).getProcessTemperatureC() >= getProcessTemperatureC() && ((IHeatSource) con).getHeatStored() > 0 && this.heatEnergy < this.getMaxHeat();
 	}
 	
-	protected void tryPullHeat() {
-		TileEntity con = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
-		
-		if(con instanceof IHeatSource) {
-			IHeatSource source = (IHeatSource) con;
-			int toPull = Math.max(Math.min(source.getHeatStored(), this.getMaxHeat() - this.heatEnergy), 0);
-			this.heatEnergy += toPull * heatEff;
-			source.useUpHeat(toPull);
-		}
-	}
+    protected void tryPullHeat() {
+        long now = worldObj.getTotalWorldTime(); if(now <= lastHeatPullTick) return;
+        lastHeatPullTick = now; importedThisTick = 0;
+        TileEntity con = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
+        if(con instanceof api.hbm.tile.IProcessHeatSource) {
+            api.hbm.tile.IProcessHeatSource source = (api.hbm.tile.IProcessHeatSource) con;
+            int efficiency = com.hbm.realsim.ThermalMachine.efficiency(heatEff, 1000000);
+            if(efficiency == 0 || source.getProcessTemperatureC() < getProcessTemperatureC()) return;
+            long draw = source.drawProcessHeatQuanta(now, Math.min(getRatedThermalWatts() / 10, Math.max(0, getMaxHeat() - heatEnergy)));
+            importedThisTick = intake.accept(draw, efficiency);
+            heatEnergy = Math.toIntExact(Math.addExact(heatEnergy, importedThisTick));
+            if(draw > 0) markDirty();
+        }
+    }
 
 	@Override
 	public ModuleBurnTime getModule() {

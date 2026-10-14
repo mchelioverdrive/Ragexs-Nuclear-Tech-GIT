@@ -8,7 +8,7 @@ import java.util.Map;
 /** Physical inventory contract, independent of fluid traits and network pressure units. */
 public final class PhysicalState {
     public enum Phase { SOLID, LIQUID, GAS, NOMINAL }
-    public enum Basis { MATERIAL_ITEM, LIQUID_LITER, STANDARD_GAS_LITER, NOMINAL }
+    public enum Basis { MATERIAL_ITEM, LIQUID_LITER, STANDARD_GAS_LITER, WATER_EQUIVALENT, NOMINAL }
     public static final long MASS_UNITS_PER_KG = 22_711_000_000_000L;
     public final String substance;
     public final Phase phase;
@@ -18,7 +18,7 @@ public final class PhysicalState {
     /** Null means unresolved, never zero. Zero is reserved for known nonfuels. */
     public final BigDecimal lhvJoulesPerKg;
     public final String thermalReference;
-    /** Released petroleum sensible state, relative to 20 C; steam/nuclear enthalpy remains deferred. */
+    /** Released petroleum sensible state, relative to 20 C; steam enthalpy comes from SteamLedger; nuclear calibration remains deferred. */
     public final BigDecimal sensibleJoulesPerKg;
     public final Map<String, BigDecimal> mixture;
     private final long chemicalMicrojoules;

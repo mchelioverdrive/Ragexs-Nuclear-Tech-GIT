@@ -11,8 +11,6 @@ import com.hbm.handler.CompatHandler;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
-import com.hbm.inventory.fluid.trait.FT_Coolable;
-import com.hbm.inventory.fluid.trait.FT_Coolable.CoolingType;
 import com.hbm.main.MainRegistry;
 import com.hbm.machine.MachineDirtyCause;
 import com.hbm.machine.MachineExecutionStrategy;
@@ -44,7 +42,12 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
-public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyProviderMK2, INBTPacketReceiver, IFluidStandardTransceiver, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IConfigurableMachine, IFluidCopiable {
+public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.energymk2.IRatedGenerator, INBTPacketReceiver, IFluidStandardTransceiver, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IConfigurableMachine, IFluidCopiable {
+    public final com.hbm.realsim.ThermalAccount thermal = new com.hbm.realsim.ThermalAccount();
+    private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
+    @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
+    @Override public long getRatedOutputWatts() { return 25000000L; }
+
 	private static final int TASK_STEAM = 1;
 	private boolean runtimeEnergyMutation;
 	private boolean runtimeFluidMutation;
@@ -72,7 +75,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 	public static long maxPower = 100000000000L;
 	public static int inputTankSize = 1_000_000_000;
 	public static int outputTankSize = 1_000_000_000;
-	public static double efficiency = 0.85D;
+	public static double efficiency = 0.88D;
 
 	public TileEntityChungus() {
 		tanks = new FluidTank[2];
@@ -102,7 +105,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 	@Override
 	public void writeConfig(JsonWriter writer) throws IOException {
 		writer.name("L:energyCapacityQuanta").value(maxPower);
-		writer.name("INFO").value("leviathan steam turbine consumes all availible steam per tick");
+		writer.name("INFO").value("leviathan steam turbine is rated at 40 kg/s and 25 MWe; direct condensing expansion");
 		writer.name("I:inputTankSize").value(inputTankSize);
 		writer.name("I:outputTankSize").value(outputTankSize);
 		writer.name("D:efficiency").value(efficiency);
@@ -131,7 +134,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 		if(taskType != TASK_STEAM || taskSlot != 0 || worldObj == null || worldObj.isRemote) return;
 		runtimeEnergyMutation = true;
 		runtimeFluidMutation = true;
-		try { runSteamStep(); }
+		try { runSteamStep(); markDirty(); }
 		finally {
 			runtimeFluidMutation = false;
 			runtimeEnergyMutation = false;
@@ -150,6 +153,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 
 	private void sendRuntimePacket() {
 		NBTTagCompound data = new NBTTagCompound();
+        thermal.writeStatus(data);
 		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 		data.setInteger("operational", turnTimer);
 		data.setBoolean("tripped", tripped);
@@ -185,28 +189,20 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 				trip(TRIP_OVERSPEED);
 			}
 
-			if(!tripped && in.hasTrait(FT_Coolable.class)) {
-				FT_Coolable trait = in.getTrait(FT_Coolable.class);
-				double eff = trait.getEfficiency(CoolingType.TURBINE) * efficiency; //85% efficiency by default
-				if(eff > 0) {
-					tanks[1].setTankType(trait.coolsTo);
-					int inputOps = tanks[0].getFill() / trait.amountReq;
-					int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
-					int powerOps = getAvailablePowerOperations(trait.heatEnergy * eff);
-					int ops = Math.min(inputOps, Math.min(outputOps, powerOps));
-					tanks[0].setFill(tanks[0].getFill() - ops * trait.amountReq);
-					tanks[1].setFill(tanks[1].getFill() + ops * trait.amountProduced);
-					this.setStoredEnergyQuanta(this.energyQuanta + (long) (ops * trait.heatEnergy * eff));
-					info[0] = ops * trait.amountReq;
-					info[1] = ops * trait.amountProduced;
-					info[2] = ops * trait.heatEnergy * eff;
-					valid = true;
-					operational = ops > 0;
-				}
-			}
+
+            if(!tripped && com.hbm.realsim.SteamLedger.expansionOutlet(thermal.ownedMass() > 0 ? thermal.inlet() : com.hbm.realsim.ThermalMachine.state(tanks[0])) != null) {
+                long generated = com.hbm.realsim.ThermalMachine.turbine(thermal, worldObj.getTotalWorldTime(), tanks[0], tanks[1], 2000000L,
+                        25000000L, com.hbm.realsim.ThermalMachine.efficiency(efficiency, 880000), energyQuanta, maxPower);
+                this.setStoredEnergyQuanta(Math.addExact(energyQuanta, generated));
+                info[0] = thermal.currentMass == 0 ? 0 : thermal.currentMass / (double) thermal.inlet().massPerUnit;
+                info[1] = thermal.currentMass == 0 ? 0 : thermal.currentMass / (double) com.hbm.realsim.ThermalMachine.state(tanks[1]).massPerUnit;
+                info[2] = generated;
+                valid = true;
+                operational = thermal.currentMass > 0;
+            }
 
 			if(!valid && tanks[1].getFill() <= 0) tanks[1].setTankType(Fluids.NONE);
-			if(energyQuanta > maxPower) this.setStoredEnergyQuanta(maxPower);
+
 
 			// Export power produced during this tick as well as the stored power above.
 			this.tryProvide(worldObj, xCoord - dir.offsetX * 11, yCoord, zCoord - dir.offsetZ * 11, dir.getOpposite());
@@ -215,14 +211,13 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 				this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 
-			if(energyQuanta > maxPower)
-				this.setStoredEnergyQuanta(maxPower);
 
 			turnTimer--;
 
 			if(operational) turnTimer = 25;
 
 			NBTTagCompound data = new NBTTagCompound();
+        thermal.writeStatus(data);
 			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setInteger("operational", turnTimer);
 			data.setBoolean("tripped", tripped);
@@ -324,11 +319,6 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 	}
 
 	/** Stops the rotor when there is no room for another generated power operation. */
-	private int getAvailablePowerOperations(double energyPerOperation) {
-		if(energyQuanta >= maxPower || energyPerOperation <= 0) return 0;
-		return (int) Math.min(Integer.MAX_VALUE, Math.floor((maxPower - energyQuanta) / energyPerOperation));
-	}
-
 	public boolean isTripped() {
 		return tripped;
 	}
@@ -355,6 +345,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 
 	@Override
 	public void networkUnpack(NBTTagCompound data) {
+        thermal.readStatus(data);
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		this.turnTimer = data.getInteger("operational");
 		this.tripped = data.getBoolean("tripped");
@@ -366,6 +357,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        thermal.read(nbt); outputBudget.read(nbt);
 		tanks[0].readFromNBT(nbt, "water");
 		tanks[1].readFromNBT(nbt, "steam");
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
@@ -376,6 +368,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements IEnergyPr
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+        thermal.write(nbt); outputBudget.write(nbt);
 		tanks[0].writeToNBT(nbt, "water");
 		tanks[1].writeToNBT(nbt, "steam");
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);

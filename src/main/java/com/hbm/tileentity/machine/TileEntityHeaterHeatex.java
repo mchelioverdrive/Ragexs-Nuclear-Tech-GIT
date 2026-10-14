@@ -29,10 +29,21 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityHeaterHeatex extends TileEntityMachineBase implements IHeatSource, INBTPacketReceiver, IFluidStandardTransceiver, IGUIProvider, IControlReceiver, IFluidCopiable {
+public class TileEntityHeaterHeatex extends TileEntityMachineBase implements api.hbm.tile.IProcessHeatSource, INBTPacketReceiver, IFluidStandardTransceiver, IGUIProvider, IControlReceiver, IFluidCopiable {
+    public final com.hbm.realsim.ThermalAccount thermal = new com.hbm.realsim.ThermalAccount();
+    private long recoveredRemainderMicroJ;
+    private int recoveredQualityC;
+    @Override public int getProcessTemperatureC() { return recoveredQualityC; }
+    public long getRatedThermalWatts() { return 2000000L; }
+
+    private final com.hbm.realsim.OutputBudget heatExportBudget = new com.hbm.realsim.OutputBudget();
+    @Override public com.hbm.realsim.OutputBudget getProcessHeatBudget() { return heatExportBudget; }
+    @Override public long getRatedProcessHeatWatts() { return getRatedThermalWatts(); }
+
 	private static final int TASK_SIMULATE = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
+    private long lastHeatTick = Long.MIN_VALUE;
 	private DirPos[] runtimeConnections;
 	private int observedOrientation = Integer.MIN_VALUE;
 
@@ -89,12 +100,14 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements IHe
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
 		if(taskType != TASK_SIMULATE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
-		int previousHeat = heatEnergy;
+        long now = worldObj.getTotalWorldTime();
+        if(now <= lastHeatTick) return;
+        lastHeatTick = now;
 		this.beginMachineFluidMutation();
 		try {
 			this.tanks[0].setType(0, slots);
 			this.setupTanks();
-			this.heatEnergy *= 0.999;
+			this.heatEnergy = Math.toIntExact((long) this.heatEnergy * 999L / 1000L);
 			this.tryConvert();
 			if(tanks[1].getFill() > 0) {
 				for(DirPos pos : runtimeConnections) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
@@ -103,7 +116,7 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements IHe
 		} finally {
 			this.endMachineFluidMutation();
 		}
-		if(previousHeat != heatEnergy) this.markDirty();
+		this.markDirty();
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 	}
 
@@ -116,12 +129,13 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements IHe
 			int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
 			canConvert = Math.min(inputOps, Math.min(outputOps, amountToCool)) > 0;
 		}
-		if(heatEnergy > 0 || canConvert || tanks[1].getFill() > 0) this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
+		if(thermal.ownedMass() > 0 || com.hbm.realsim.ThermalMachine.state(tanks[0]) != null && tanks[0].getFill() > 0 || heatEnergy > 0 || canConvert || tanks[1].getFill() > 0) this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
 		else this.cancelMachineTransition(TASK_SIMULATE, TASK_SLOT_MAIN);
 	}
 
 	private void sendRuntimeState() {
 		NBTTagCompound data = new NBTTagCompound();
+        thermal.writeStatus(data);
 		tanks[0].writeToNBT(data, "0");
 		tanks[1].writeToNBT(data, "1");
 		data.setInteger("heat", heatEnergy);
@@ -132,6 +146,7 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements IHe
 
 	@Override
 	public void networkUnpack(NBTTagCompound nbt) {
+        thermal.readStatus(nbt);
 		tanks[0].readFromNBT(nbt, "0");
 		tanks[1].readFromNBT(nbt, "1");
 		this.heatEnergy = nbt.getInteger("heat");
@@ -140,6 +155,12 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements IHe
 	}
 
 	protected void setupTanks() {
+        com.hbm.realsim.SteamLedger.State state = thermal.ownedMass() > 0 ? thermal.inlet() : com.hbm.realsim.ThermalMachine.state(tanks[0]);
+        if(state != null && state != com.hbm.realsim.SteamLedger.State.COLD) {
+            com.hbm.realsim.SteamLedger.State out = state == com.hbm.realsim.SteamLedger.State.SPENT ? com.hbm.realsim.SteamLedger.State.COLD : com.hbm.realsim.SteamLedger.expansionOutlet(state);
+            if(out != null) com.hbm.realsim.ThermalMachine.configure(tanks[1], out);
+            return;
+        }
 
 		if(tanks[0].getTankType().hasTrait(FT_Coolable.class)) {
 			FT_Coolable trait = tanks[0].getTankType().getTrait(FT_Coolable.class);
@@ -161,6 +182,25 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements IHe
 	}
 
 	protected void tryConvert() {
+        com.hbm.realsim.SteamLedger.State in = thermal.ownedMass() > 0 ? thermal.inlet() : com.hbm.realsim.ThermalMachine.state(tanks[0]);
+        if(in != null) {
+            com.hbm.realsim.SteamLedger.State out = in == com.hbm.realsim.SteamLedger.State.SPENT ? com.hbm.realsim.SteamLedger.State.COLD : com.hbm.realsim.SteamLedger.expansionOutlet(in);
+            if(out == null) return;
+            com.hbm.realsim.SteamLedger.Transition t = com.hbm.realsim.SteamLedger.transition(in, out, com.hbm.realsim.SteamLedger.Route.HEAT_EXCHANGER, 1000000);
+            long room = Math.max(0, 64000000L - heatEnergy);
+            com.hbm.realsim.ThermalAccount.Result r = com.hbm.realsim.ThermalMachine.transfer(thermal, worldObj.getTotalWorldTime(), t, tanks[0], tanks[1],
+                    200000L, 0, 0, 0, 0, 0, 0, Math.min(room, getRatedThermalWatts() / 10));
+            if(r.mass > 0) {
+                int quality = Math.max(0, out.temperatureC - 30);
+                recoveredQualityC = heatEnergy == 0 ? quality : Math.min(recoveredQualityC, quality);
+                recoveredRemainderMicroJ = Math.addExact(recoveredRemainderMicroJ, r.rejectionMicroJ);
+                heatEnergy = Math.toIntExact(Math.addExact(heatEnergy, recoveredRemainderMicroJ / 500000)); recoveredRemainderMicroJ %= 500000;
+                markDirty();
+            }
+            return;
+        }
+        recoveredQualityC = 0; // Uncalibrated reactor coolant remains a deferred external boundary.
+
 
 		if(!tanks[0].getTankType().hasTrait(FT_Coolable.class)) return;
 		if(tickDelay < 1) tickDelay = 1;
@@ -172,11 +212,11 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements IHe
 		int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
 		int opCap = this.amountToCool;
 
-		int ops = Math.min(inputOps, Math.min(outputOps, opCap));
+		int ops = Math.min(inputOps, Math.min(outputOps, Math.min(opCap, (Integer.MAX_VALUE - Math.max(0, heatEnergy)) / Math.max(1, trait.heatEnergy))));
 		if(ops <= 0) return;
 		tanks[0].setFill(tanks[0].getFill() - trait.amountReq * ops);
 		tanks[1].setFill(tanks[1].getFill() + trait.amountProduced * ops);
-		this.heatEnergy += trait.heatEnergy * ops * trait.getEfficiency(CoolingType.HEATEXCHANGER);
+		this.heatEnergy = Math.toIntExact(Math.addExact(heatEnergy, (long) ((long) trait.heatEnergy * ops * trait.getEfficiency(CoolingType.HEATEXCHANGER))));
 		this.markChanged();
 	}
 
@@ -208,6 +248,9 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements IHe
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        lastHeatTick = nbt.hasKey("realSimHeatTick") ? nbt.getLong("realSimHeatTick") : Long.MIN_VALUE;
+        heatExportBudget.read(nbt.getCompoundTag("realSimHeatExport"));
+        thermal.read(nbt); recoveredRemainderMicroJ = nbt.getLong("realSimRecoveredRemainder"); recoveredQualityC = nbt.getInteger("realSimHeatQualityC");
 
 		this.tanks[0].readFromNBT(nbt, "0");
 		this.tanks[1].readFromNBT(nbt, "1");
@@ -219,6 +262,9 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements IHe
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+        nbt.setLong("realSimHeatTick", lastHeatTick);
+        net.minecraft.nbt.NBTTagCompound export = new net.minecraft.nbt.NBTTagCompound(); heatExportBudget.write(export); nbt.setTag("realSimHeatExport", export);
+        thermal.write(nbt); nbt.setLong("realSimRecoveredRemainder", recoveredRemainderMicroJ); nbt.setInteger("realSimHeatQualityC", recoveredQualityC);
 
 		this.tanks[0].writeToNBT(nbt, "0");
 		this.tanks[1].writeToNBT(nbt, "1");

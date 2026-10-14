@@ -23,6 +23,17 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.EnumSkyBlock;
 
 public class TileEntityCondenser extends TileEntityLoadedBase implements IFluidStandardTransceiver, INBTPacketReceiver, IInfoProviderEC, IConfigurableMachine, IFluidCopiable {
+    public final com.hbm.realsim.ThermalAccount thermal = new com.hbm.realsim.ThermalAccount();
+    public long getRatedRejectionWatts() { return 250000L; }
+    protected long availableAuxiliaryQuanta() { return 0; }
+    protected void consumeAuxiliaryQuanta(long amount) { }
+    protected boolean isPoweredCooling() { return false; }
+    protected boolean coolingAvailable() {
+        if(TomSaveData.forWorld(worldObj).fire > 1e-5) return false;
+        CBT_Atmosphere atmosphere = CelestialBody.getTrait(worldObj, CBT_Atmosphere.class);
+        return vacuumOptimised && !isPoweredCooling() || atmosphere != null && atmosphere.getPressure() >= 0.01 && !CelestialBody.inOrbit(worldObj);
+    }
+
 	private static final int TASK_CONDENSE = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
@@ -105,21 +116,17 @@ public class TileEntityCondenser extends TileEntityLoadedBase implements IFluidS
 		runtimeFluidMutation = true;
 		try {
 			if(this.waterTimer > 0) this.waterTimer--;
-			int convert = Math.min(tanks[0].getFill(), tanks[1].getMaxFill() - tanks[1].getFill());
-			this.throughput = convert;
-			if(extraCondition(convert)) {
-				tanks[0].setFill(tanks[0].getFill() - convert);
-				if(convert > 0) this.waterTimer = 20;
-				int light = this.worldObj.getSavedLightValue(EnumSkyBlock.Sky, this.xCoord, this.yCoord, this.zCoord);
-				boolean shouldEvaporate = TomSaveData.forWorld(worldObj).fire > 1e-5 && light > 7;
-				if(!shouldEvaporate && !vacuumOptimised) {
-					CBT_Atmosphere atmosphere = CelestialBody.getTrait(worldObj, CBT_Atmosphere.class);
-					if(CelestialBody.inOrbit(worldObj) || atmosphere == null || atmosphere.getPressure() < 0.01) shouldEvaporate = true;
-				}
-				if(shouldEvaporate) tanks[1].setFill(tanks[1].getFill() - convert);
-				else tanks[1].setFill(tanks[1].getFill() + convert);
-				postConvert(convert);
-			}
+            if(coolingAvailable()) {
+                com.hbm.realsim.SteamLedger.Transition t = com.hbm.realsim.SteamLedger.transition(com.hbm.realsim.SteamLedger.State.SPENT,
+                        com.hbm.realsim.SteamLedger.State.COLD, com.hbm.realsim.SteamLedger.Route.CONDENSER, isPoweredCooling() ? 850000 : 1000000);
+                com.hbm.realsim.ThermalAccount.Result r = com.hbm.realsim.ThermalMachine.transfer(thermal, worldObj.getTotalWorldTime(), t, tanks[0], tanks[1],
+                        1000000L, 0, availableAuxiliaryQuanta(), 0, 0, 20000L, 0, getRatedRejectionWatts() / 10);
+                consumeAuxiliaryQuanta(r.workQuanta);
+                this.throughput = r.produced;
+                if(r.mass > 0) this.waterTimer = 20;
+                if(r.mass > 0) markDirty();
+            }
+
 			if(tanks[1].getFill() > 0) this.sendFluidToAll(tanks[1], this);
 			this.sendRuntimeState();
 		} finally {
@@ -144,7 +151,7 @@ public class TileEntityCondenser extends TileEntityLoadedBase implements IFluidS
 
 	private int updateThroughput() {
 		int convert = Math.min(tanks[0].getFill(), tanks[1].getMaxFill() - tanks[1].getFill());
-		this.throughput = convert;
+
 		return convert;
 	}
 
@@ -153,12 +160,13 @@ public class TileEntityCondenser extends TileEntityLoadedBase implements IFluidS
 		int convert = this.updateThroughput();
 		boolean outputPending = tanks[1].getFill() > 0;
 		boolean timerPending = this.waterTimer > 0;
-		if(outputPending || timerPending || (convert > 0 && extraCondition(convert))) this.scheduleMachineTransition(now + 1L, TASK_CONDENSE, TASK_SLOT_MAIN);
+		if(outputPending || timerPending || ((convert > 0 || thermal.ownedMass() > 0) && coolingAvailable() && (!isPoweredCooling() || availableAuxiliaryQuanta() > 0))) this.scheduleMachineTransition(now + 1L, TASK_CONDENSE, TASK_SLOT_MAIN);
 		else this.cancelMachineTransition(TASK_CONDENSE, TASK_SLOT_MAIN);
 	}
 
 	private void sendRuntimeState() {
 		NBTTagCompound data = new NBTTagCompound();
+        thermal.writeStatus(data);
 		tanks[0].writeToNBT(data, "0");
 		tanks[1].writeToNBT(data, "1");
 		data.setByte("timer", (byte) this.waterTimer);
@@ -172,6 +180,7 @@ public class TileEntityCondenser extends TileEntityLoadedBase implements IFluidS
 
 	@Override
 	public void networkUnpack(NBTTagCompound nbt) {
+        thermal.readStatus(nbt);
 		this.tanks[0].readFromNBT(nbt, "0");
 		this.tanks[1].readFromNBT(nbt, "1");
 		this.waterTimer = nbt.getByte("timer");
@@ -180,6 +189,7 @@ public class TileEntityCondenser extends TileEntityLoadedBase implements IFluidS
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        thermal.read(nbt);
 		tanks[0].readFromNBT(nbt, "water");
 		tanks[1].readFromNBT(nbt, "steam");
 	}
@@ -187,6 +197,7 @@ public class TileEntityCondenser extends TileEntityLoadedBase implements IFluidS
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+        thermal.write(nbt);
 		tanks[0].writeToNBT(nbt, "water");
 		tanks[1].writeToNBT(nbt, "steam");
 	}

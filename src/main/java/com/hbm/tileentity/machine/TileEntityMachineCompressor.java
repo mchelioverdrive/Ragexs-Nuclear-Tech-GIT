@@ -46,6 +46,20 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineCompressor extends TileEntityMachineBase implements IGUIProvider, IControlReceiver, IEnergyReceiverMK2, IFluidStandardTransceiver, IUpgradeInfoProvider, IFluidCopiable {
+    public final com.hbm.realsim.ThermalAccount steamAccount = new com.hbm.realsim.ThermalAccount();
+    private boolean usesSteamLedger() { return steamAccount.ownedMass() > 0 || com.hbm.realsim.SteamLedger.state(tanks[0].getTankType().getName()) != null; }
+    private void stepSteam(long tick) {
+        com.hbm.realsim.SteamLedger.State in = steamAccount.ownedMass() > 0 ? steamAccount.inlet() : com.hbm.realsim.ThermalMachine.state(tanks[0]);
+        com.hbm.realsim.SteamLedger.State out = com.hbm.realsim.SteamLedger.compressorOutlet(in);
+        if(decompress || out == null) { isOn = false; return; }
+        com.hbm.realsim.ThermalAccount.Result r = com.hbm.realsim.ThermalMachine.transfer(steamAccount, tick,
+                com.hbm.realsim.SteamLedger.transition(in, out, com.hbm.realsim.SteamLedger.Route.COMPRESSOR, 1000000),
+                tanks[0], tanks[1], 2500L, 0, energyQuanta, 0, 0, 2500L, 0, 10000L);
+        setRuntimePower(energyQuanta - r.workQuanta); isOn = r.mass > 0;
+        progress = steamAccount.ownedMass() > 0 ? (int) ((in.massPerUnit - steamAccount.ownedMass()) * 100 / in.massPerUnit) : 0;
+        if(r.mass > 0) markDirty();
+    }
+
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	
@@ -177,6 +191,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	}
 
 	private void settleProgressThrough(long target) {
+        if(usesSteamLedger()) { stepSteam(target); return; }
 		if(lastProgressTick == Long.MIN_VALUE || target <= lastProgressTick) return;
 		long elapsed = target - lastProgressTick;
 		lastProgressTick = target;
@@ -275,6 +290,12 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	}
 
 	private void evaluateAndSchedule(long now) {
+        if(usesSteamLedger()) {
+            if(energyQuanta > 0 && (steamAccount.ownedMass() > 0 || tanks[0].getFill() > 0)) scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+            else cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+            scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+            return;
+        }
 		runtimeActive = runtimeMaterialEligible && this.hasOperatingPower();
 		this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
 		if(runtimeMaterialEligible && this.hasOperatingPower()) {
@@ -364,6 +385,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	}
 	
 	public void process() {
+        if(usesSteamLedger()) return; // The canonical account owns steam; legacy tuple completion cannot bypass it.
 		
 		this.refreshRecipe();
 		if(!this.canProcessMaterials() || cachedRecipe != null && cachedRecipe.workQuanta > 0L && progress < processTime) return;
@@ -382,6 +404,11 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	}
 	
 	protected void setupTanks() {
+        if(usesSteamLedger()) {
+            com.hbm.realsim.SteamLedger.State out = steamAccount.ownedMass() > 0 ? steamAccount.outlet() : com.hbm.realsim.SteamLedger.compressorOutlet(com.hbm.realsim.ThermalMachine.state(tanks[0]));
+            if(out != null) com.hbm.realsim.ThermalMachine.configure(tanks[1], out);
+            return;
+        }
 		
 		this.refreshRecipe();
 		if(cachedRecipe == null) {
@@ -394,6 +421,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        steamAccount.read(nbt);
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		progress = nbt.getInteger("progress");
 		lastProgressTick = Long.MIN_VALUE;
@@ -412,6 +440,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	public void writeToNBT(NBTTagCompound nbt) {
 		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
+        steamAccount.write(nbt);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("progress", progress);
 		massRemainder.write(nbt);

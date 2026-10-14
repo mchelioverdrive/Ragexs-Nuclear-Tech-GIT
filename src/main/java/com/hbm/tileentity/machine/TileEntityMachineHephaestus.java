@@ -25,7 +25,21 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements INBTPacketReceiver, IFluidStandardTransceiver, IFluidCopiable {
+public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements api.hbm.tile.IProcessHeatSource, INBTPacketReceiver, IFluidStandardTransceiver, IFluidCopiable {
+    public final com.hbm.realsim.ThermalAccount thermal = new com.hbm.realsim.ThermalAccount();
+    private long geothermalHeatQuanta, startupQuanta, lastThermalTick = Long.MIN_VALUE;
+    public static final long RATED_THERMAL_WATTS = 2000000L;
+
+    private final com.hbm.realsim.ProcessBatch crudeBatch = new com.hbm.realsim.ProcessBatch();
+    private static final java.util.Map<String, com.hbm.realsim.ProcessRecipe> crudeHeating = com.hbm.realsim.PetroleumProcesses.defaults("heat");
+    @Override public int getProcessTemperatureC() { return 900; }
+    @Override public int getHeatStored() { return Math.toIntExact(geothermalHeatQuanta); }
+    @Override public void useUpHeat(int heat) { if(heat > 0) { geothermalHeatQuanta = Math.max(0, geothermalHeatQuanta - heat); markDirty(); } }
+
+    private final com.hbm.realsim.OutputBudget heatExportBudget = new com.hbm.realsim.OutputBudget();
+    @Override public com.hbm.realsim.OutputBudget getProcessHeatBudget() { return heatExportBudget; }
+    @Override public long getRatedProcessHeatWatts() { return RATED_THERMAL_WATTS; }
+
 	private static final int TASK_HEAT = 1;
 	private DirPos[] runtimeConnections;
 
@@ -161,6 +175,31 @@ public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements
 	}
 	
 	protected void heatFluid() {
+        com.hbm.realsim.SteamLedger.State state = com.hbm.realsim.ThermalMachine.state(input);
+        com.hbm.realsim.ProcessRecipe crude = crudeHeating.get(input.getTankType().getName());
+        if(state != null || thermal.ownedMass() > 0 || crude != null || crudeBatch.active()) {
+            if(worldObj.getTotalWorldTime() <= lastThermalTick) return;
+            lastThermalTick = worldObj.getTotalWorldTime();
+            long source = Math.min(RATED_THERMAL_WATTS / 10, getTotalHeat());
+            geothermalHeatQuanta = Math.min(32000000L, Math.addExact(geothermalHeatQuanta, source));
+            if(startupQuanta < 4000000L) {
+                long warmup = Math.min(geothermalHeatQuanta, 4000000L - startupQuanta);
+                geothermalHeatQuanta -= warmup; startupQuanta += warmup;
+            }
+            if(crude != null || crudeBatch.active()) {
+                if(startupQuanta == 4000000L) com.hbm.realsim.ProcessMachine.stepWithHeater(this, crudeBatch, crude,
+                        new FluidTank[] {input}, new FluidTank[] {output}, null, 0, -1, 0, -1, this);
+                markDirty(); return;
+            }
+            if(state != com.hbm.realsim.SteamLedger.State.COLD && thermal.ownedMass() == 0) return;
+            if(startupQuanta == 4000000L) {
+                com.hbm.realsim.ThermalAccount.Result r = com.hbm.realsim.ThermalMachine.transfer(thermal, worldObj.getTotalWorldTime(),
+                        com.hbm.realsim.SteamLedger.transition(com.hbm.realsim.SteamLedger.State.COLD, com.hbm.realsim.SteamLedger.State.ORDINARY, com.hbm.realsim.SteamLedger.Route.BOILER, 950000),
+                        input, output, 50000L, getAvailableProcessHeatQuanta(worldObj.getTotalWorldTime()), 0, 0, RATED_THERMAL_WATTS / 10, 0, 0, Long.MAX_VALUE);
+                if(drawProcessHeatQuanta(worldObj.getTotalWorldTime(), r.heatQuanta) != r.heatQuanta) throw new IllegalStateException("Geothermal heat overdraw");
+            }
+            markDirty(); return;
+        }
 		
 		FluidType type = input.getTankType();
 		
@@ -181,6 +220,11 @@ public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements
 	}
 	
 	protected void setupTanks() {
+        com.hbm.realsim.ProcessRecipe crude = crudeHeating.get(input.getTankType().getName());
+        if(crude != null || crudeBatch.active()) { com.hbm.realsim.ProcessMachine.configure(crudeBatch, crude, new FluidTank[] {output}); return; }
+        if(com.hbm.realsim.ThermalMachine.state(input) != null || thermal.ownedMass() > 0) {
+            com.hbm.realsim.ThermalMachine.configure(output, com.hbm.realsim.SteamLedger.State.ORDINARY); return;
+        }
 		
 		FluidType type = input.getTankType();
 		
@@ -201,12 +245,12 @@ public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements
 	protected int heatFromBlock(int x, int y, int z) {
 		Block b = worldObj.getBlock(x, y, z);
 		
-		if(b == Blocks.lava || b == Blocks.flowing_lava)	return 5;
-		if(b == ModBlocks.volcanic_lava_block)				return 150;
+		if(b == Blocks.lava || b == Blocks.flowing_lava)	return 100;
+		if(b == ModBlocks.volcanic_lava_block)				return 2000;
 		
 		if(b == ModBlocks.ore_volcano) {
 			this.fissureScanTime = worldObj.getTotalWorldTime();
-			return 300;
+			return 4000;
 		}
 		
 		return 0;
@@ -262,6 +306,8 @@ public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        heatExportBudget.read(nbt.getCompoundTag("realSimHeatExport"));
+        thermal.read(nbt); crudeBatch.read(nbt); lastThermalTick = nbt.hasKey("realSimThermalTick") ? nbt.getLong("realSimThermalTick") : Long.MIN_VALUE; geothermalHeatQuanta = nbt.getLong("realSimGeothermalHeat"); startupQuanta = nbt.getLong("realSimGeothermalStartup");
 
 		this.input.readFromNBT(nbt, "0");
 		this.output.readFromNBT(nbt, "1");
@@ -270,6 +316,8 @@ public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+        net.minecraft.nbt.NBTTagCompound export = new net.minecraft.nbt.NBTTagCompound(); heatExportBudget.write(export); nbt.setTag("realSimHeatExport", export);
+        thermal.write(nbt); crudeBatch.write(nbt); nbt.setLong("realSimThermalTick", lastThermalTick); nbt.setLong("realSimGeothermalHeat", geothermalHeatQuanta); nbt.setLong("realSimGeothermalStartup", startupQuanta);
 
 		this.input.writeToNBT(nbt, "0");
 		this.output.writeToNBT(nbt, "1");

@@ -21,6 +21,11 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityCondenserPowered extends TileEntityCondenser implements IEnergyReceiverMK2 {
 	
+    @Override public long getRatedRejectionWatts() { return 20000000L; }
+    @Override protected long availableAuxiliaryQuanta() { return energyQuanta; }
+    @Override protected void consumeAuxiliaryQuanta(long amount) { setStoredEnergyQuanta(energyQuanta - amount); }
+    @Override protected boolean isPoweredCooling() { return true; }
+
 	public long energyQuanta;
 	public float spin;
 	public float lastSpin;
@@ -29,7 +34,7 @@ public class TileEntityCondenserPowered extends TileEntityCondenser implements I
 	public static long maxPower = 10_000_000;
 	public static int inputTankSizeP = 1_000_000;
 	public static int outputTankSizeP = 1_000_000;
-	public static int energyCostQuantaPerMb = 10;
+	public static int energyCostQuantaPerMb = 20000; // 10 kJ/kg, shared ledger owns native fractional flow
 
 	public TileEntityCondenserPowered() {
 		tanks = new FluidTank[2];
@@ -55,7 +60,8 @@ public class TileEntityCondenserPowered extends TileEntityCondenser implements I
 		writer.name("L:energyCapacityQuanta").value(maxPower);
 		writer.name("I:inputTankSize").value(inputTankSizeP);
 		writer.name("I:outputTankSize").value(outputTankSizeP);
-		writer.name("I:energyCostQuantaPerMb").value(energyCostQuantaPerMb);
+		writer.name("INFO").value("Phase 5D steam condensation uses the canonical 10 kJ/kg auxiliary and 20 MWth sink; legacy per-count energyCost is compatibility metadata.");
+        writer.name("I:energyCostQuantaPerMb").value(20000);
 	}
 
 	@Override
@@ -101,6 +107,7 @@ public class TileEntityCondenserPowered extends TileEntityCondenser implements I
 
 	@Override
 	public void networkUnpack(NBTTagCompound nbt) {
+        thermal.readStatus(nbt);
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.tanks[0].readFromNBT(nbt, "0");
 		this.tanks[1].readFromNBT(nbt, "1");
@@ -192,11 +199,11 @@ public class TileEntityCondenserPowered extends TileEntityCondenser implements I
 	}
 
 	public long getPowerRequirementWatts() {
-		return EnergyUnits.quantaPerTickToWatts((long) this.throughput * energyCostQuantaPerMb);
+		return com.hbm.realsim.SteamLedger.mulDiv(thermal.currentMass, 10000L, 50000L);
 	}
 
 	public long getOperationEnergyRequirementQuanta(int fluidAmountMb) {
-		return (long) fluidAmountMb * energyCostQuantaPerMb;
+		return Math.multiplyExact((long) fluidAmountMb, 20000L);
 	}
 
 	@Override

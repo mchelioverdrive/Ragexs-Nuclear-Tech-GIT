@@ -39,7 +39,7 @@ public class MachineHeatBoilerIndustrial extends BlockDummyable implements ILook
 	public TileEntity createNewTileEntity(World world, int meta) {
 		
 		if(meta >= 12) return new TileEntityHeatBoilerIndustrial();
-		if(meta >= extra) return new TileEntityProxyCombo().fluid();
+		if(meta >= extra) return new TileEntityProxyCombo().fluid().power().inventory();
 		return null;
 	}
 	
@@ -47,6 +47,15 @@ public class MachineHeatBoilerIndustrial extends BlockDummyable implements ILook
 	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
 		
 		if(!world.isRemote && !player.isSneaking()) {
+            if(player.getHeldItem() != null && com.hbm.realsim.Combustion.solidChemicalMicrojoules(player.getHeldItem()) > 0) {
+                int[] core = findCore(world, x, y, z);
+                if(core != null && world.getTileEntity(core[0], core[1], core[2]) instanceof TileEntityHeatBoilerIndustrial) {
+                    TileEntityHeatBoilerIndustrial boiler = (TileEntityHeatBoilerIndustrial) world.getTileEntity(core[0], core[1], core[2]);
+                    boiler.insertFuel(player.getHeldItem());
+                    if(player.getHeldItem().stackSize == 0) player.inventory.setInventorySlotContents(player.inventory.currentItem, null);
+                    return true;
+                }
+            }
 				
 			if(player.getHeldItem() != null && player.getHeldItem().getItem() instanceof IItemFluidIdentifier) {
 				int[] pos = this.findCore(world, x, y, z);
@@ -63,7 +72,11 @@ public class MachineHeatBoilerIndustrial extends BlockDummyable implements ILook
 				
 				FluidType type = ((IItemFluidIdentifier) player.getHeldItem().getItem()).getType(world, pos[0], pos[1], pos[2], player.getHeldItem());
 				
-				if(type.hasTrait(FT_Heatable.class) && type.getTrait(FT_Heatable.class).getEfficiency(HeatingType.BOILER) > 0) {
+				String fuelName = type.getName();
+                if(fuelName.equals("HEAVYOIL") || fuelName.equals("HEAVYOIL_VACUUM") || fuelName.equals("HEATINGOIL") || fuelName.equals("HEATINGOIL_VACUUM")) {
+                    if(boiler.tanks[2].getFill() == 0) { boiler.tanks[2].setTankType(type); boiler.markDirty(); boiler.markMachineFluidDirty(); }
+                    else player.addChatComponentMessage(new ChatComponentText("Drain the fuel inlet before changing its fluid."));
+                } else if(type.hasTrait(FT_Heatable.class) && type.getTrait(FT_Heatable.class).getEfficiency(HeatingType.BOILER) > 0) {
 					boiler.tanks[0].setTankType(type);
 					boiler.markDirty();
 					player.addChatComponentMessage(new ChatComponentText("Changed type to ").setChatStyle(new ChatStyle().setColor(EnumChatFormatting.YELLOW)).appendSibling(new ChatComponentTranslation(type.getConditionalName())).appendSibling(new ChatComponentText("!")));
@@ -114,11 +127,15 @@ public class MachineHeatBoilerIndustrial extends BlockDummyable implements ILook
 		TileEntityHeatBoilerIndustrial boiler = (TileEntityHeatBoilerIndustrial) te;
 		
 		List<String> text = new ArrayList();
-		text.add(ThermalUnits.formatThermalEnergy(boiler.heat));
-		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + boiler.tanks[0].getTankType().getLocalizedName() + ": " + String.format(Locale.US, "%,d", boiler.tanks[0].getFill()) + " / " + String.format(Locale.US, "%,d", boiler.tanks[0].getMaxFill()) + " L");
-		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + boiler.tanks[1].getTankType().getLocalizedName() + ": " + String.format(Locale.US, "%,d", boiler.tanks[1].getFill()) + " / " + String.format(Locale.US, "%,d", boiler.tanks[1].getMaxFill()) + " L");
 		
-		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
+		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + boiler.tanks[0].getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(boiler.tanks[0].getTankType(), boiler.tanks[0].getFill(), boiler.tanks[0].getMaxFill()));
+		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + boiler.tanks[1].getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(boiler.tanks[1].getTankType(), boiler.tanks[1].getFill(), boiler.tanks[1].getMaxFill()));
+
+        com.hbm.realsim.ThermalInfo.boiler(text, boiler.thermal, boiler.getRatedThermalWatts(), boiler.thermalBufferQuanta);
+        com.hbm.realsim.ThermalInfo.states(text, boiler.tanks[0], boiler.tanks[1], boiler.thermal);
+        text.add("Fuel: " + com.hbm.inventory.fluid.FluidInfo.pair(boiler.tanks[2].getTankType(), boiler.tanks[2].getFill(), boiler.tanks[2].getMaxFill()));
+        text.add("Feed pump requires electricity; hand feed solids or connect a hopper");
+        ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 
 	@Override

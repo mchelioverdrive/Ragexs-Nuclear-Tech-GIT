@@ -51,7 +51,12 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implements IEnergyProviderMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable {
+public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implements api.hbm.energymk2.IRatedGenerator, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable {
+    public final com.hbm.realsim.TurbineFuelAccount thermalFuel = new com.hbm.realsim.TurbineFuelAccount();
+    private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
+    @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
+    @Override public long getRatedOutputWatts() { return 1000000L; }
+
 	private static final int TASK_BURN = 1;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
@@ -62,7 +67,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 
 
 	public long energyQuanta;
-	public static final long maxPower = 1_000_000;
+	public static final long maxPower = 40_000_000L;
 	public FluidTank tank;
 	public FluidTank blood;
 	
@@ -168,7 +173,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 	}
 
 	private void evaluateAndSchedule(long now) {
-		if(tank.getFill() > 0 || blood.getFill() > 0 || energyQuanta > 0 || smoke.getFill() > 0 || smoke_leaded.getFill() > 0 || smoke_poison.getFill() > 0)
+		if(thermalFuel.chemicalCredit() > 0 || tank.getFill() > 0 || blood.getFill() > 0 || energyQuanta > 0 || smoke.getFill() > 0 || smoke_leaded.getFill() > 0 || smoke_poison.getFill() > 0)
 			this.scheduleMachineTransition(now + 1L, TASK_BURN, 0);
 		else {
 			this.output = 0;
@@ -197,6 +202,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        thermalFuel.read(nbt); outputBudget.read(nbt);
 
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "powerTime");
 		tank.readFromNBT(nbt, "fuel");
@@ -207,6 +213,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+        thermalFuel.write(nbt); outputBudget.write(nbt);
 		
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tank.writeToNBT(nbt, "fuel");
@@ -270,27 +277,28 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 			
 			this.wasOn = false;
 			
-			long burnValue = 0;
-			int amount = 1 + this.afterburner;
-			
-			if(tank.getTankType().hasTrait(FT_Combustible.class) && tank.getTankType().getTrait(FT_Combustible.class).getGrade() == FuelGrade.AERO) {
-				burnValue = tank.getTankType().getTrait(FT_Combustible.class).getLegacyEngineBudgetQuanta() / 1_000;
-			}
-			
-			int amountToBurn = !runtimeWaterlogged && breatheAir(this.tank.getFill() > 0 ? amount : 0) ? Math.min(amount, this.tank.getFill()) : 0;
-			
-			if(amountToBurn > 0) {
-				this.wasOn = true;
-				this.tank.setFill(this.tank.getFill() - amountToBurn);
-				this.output = (int) (burnValue * amountToBurn * (1 + Math.min(this.afterburner / 3D, 4)));
-				this.setStoredEnergyQuanta(this.energyQuanta + this.output);
-				this.consumption = amountToBurn;
-				
-				if(worldObj.getTotalWorldTime() % 20 == 0) super.pollute(tank.getTankType(), FluidTrait.FluidReleaseType.BURN, amountToBurn * 5);;
-				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, Math.max(120, 700 / Math.max(amountToBurn, 1)));
-			}
-			
-			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 3, energyQuanta, energyQuanta));
+            long burnValue = 0;
+            int amount = 1 + Math.min(3, Math.max(0, this.afterburner));
+            boolean appropriate = tank.getTankType().hasTrait(FT_Combustible.class)
+                    && tank.getTankType().getTrait(FT_Combustible.class).getGrade() == FuelGrade.AERO && tank.getTankType().getPhysicalState().isResolved();
+            int amountToBurn = 0;
+            long room = Math.max(0, maxPower - energyQuanta);
+            if(!runtimeWaterlogged && appropriate && room > 0 && breatheAir(200 * amount)) {
+                long request = Math.min(4_000_000L * 50000L * amount,
+                        com.hbm.realsim.SteamLedger.mulDiv(room, 500000L * 1000000L, 250000 / amount));
+                long generated = thermalFuel.burn(worldObj.getTotalWorldTime(), tank, request, 250000 / amount,
+                        amount > 1 ? 750000 : 550000, amount > 1 ? 700 : 500, false);
+                output = Math.toIntExact(generated);
+                this.setStoredEnergyQuanta(Math.addExact(energyQuanta, generated));
+                amountToBurn = thermalFuel.consumedUnits;
+                consumption = amountToBurn;
+                wasOn = thermalFuel.chemicalInputMicroJ > 0;
+                burnValue = wasOn ? 1 : 0;
+                if(wasOn && worldObj.getTotalWorldTime() % 20 == 0) super.pollute(tank.getTankType(), FluidTrait.FluidReleaseType.BURN, Math.max(1, amountToBurn) * 5);
+                if(wasOn) FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
+            }
+
+			this.setStoredEnergyQuanta(this.chargeRatedItems(slots, 3, maxPower));
 			for(DirPos pos : runtimeConnections) this.providePowerToDirectReceiver(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			
 			for(DirPos pos : runtimeConnections) {
@@ -298,7 +306,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 				this.sendSmoke(pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 			
-			if(burnValue > 0 && amountToBurn > 0) {
+			if(burnValue > 0 && wasOn) {
 
 				ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10).getRotation(ForgeDirection.UP);
 				ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
@@ -395,9 +403,6 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 				}
 			}
 			
-			if(this.energyQuanta > this.maxPower) {
-				this.setStoredEnergyQuanta(this.maxPower);
-			}
 			
 	}
 
@@ -598,8 +603,8 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 	public void provideInfo(UpgradeType type, int level, List<String> info, boolean extendedInfo) {
 		info.add(IUpgradeInfoProvider.getStandardLabel(ModBlocks.machine_turbofan));
 		if(type == UpgradeType.AFTERBURN) {
-			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_EFFICIENCY, "+" + (int)(level * 100 * (1 + Math.min(level / 3D, 4D))) + "%"));
-			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "+" + (level * 100) + "%"));
+			info.add(EnumChatFormatting.YELLOW + "Electrical efficiency falls to " + (25D / (1 + Math.min(3, Math.max(0, level)))) + "% LHV; 1 MW electrical nameplate");
+			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "+" + (Math.min(3, Math.max(0, level)) * 100) + "%"));
 		}
 	}
 

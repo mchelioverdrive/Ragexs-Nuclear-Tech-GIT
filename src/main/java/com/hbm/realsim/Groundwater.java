@@ -8,8 +8,8 @@ public final class Groundwater {
     public static final int STEAM_BUFFER = 200;
     public static final double EFFICIENCY = 0.35;
     public static final double EFFECTIVE_HEAD_METERS = 100;
-    /** Transitional pump-only work allowance per existing 100:1 steam/exhaust parcel. */
-    public static final long STEAM_PARCEL_SHAFT_JOULES = 100_000;
+    /** 40% shaft efficiency on the common ordinary-steam expansion credit. */
+    public static final long STEAM_PARCEL_SHAFT_JOULES = com.hbm.realsim.SteamLedger.expansionWork(com.hbm.realsim.SteamLedger.State.ORDINARY) * 2 / 5;
     private Groundwater() { }
 
     public static long microlitersPerTick(long watts, double nameplateLitersPerSecond) {

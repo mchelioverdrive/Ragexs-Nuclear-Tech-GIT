@@ -238,8 +238,9 @@ public class FluidType {
 		
 		for(Class<? extends FluidTrait> clazz : FluidTrait.traitList) {
 			FluidTrait trait = this.getTrait(clazz);
-			if(trait != null) {
-				trait.addInfo(info);
+            if(trait != null) {
+                if(com.hbm.realsim.SteamLedger.state(this.stringId) != null && (trait instanceof com.hbm.inventory.fluid.trait.FT_Heatable || trait instanceof com.hbm.inventory.fluid.trait.FT_Coolable)) continue;
+                trait.addInfo(info);
 				if(shiftHeld) trait.addInfoHidden(info);
 				trait.addInfoHidden(hidden);
 			}
