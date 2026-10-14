@@ -18,6 +18,7 @@ public class GUISolidifier extends GuiInfoContainer {
 
 	public GUISolidifier(InventoryPlayer invPlayer, TileEntityMachineSolidifier tedf) {
 		super(new ContainerSolidifier(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		solidifier = tedf;
 		
 		this.xSize = 176;

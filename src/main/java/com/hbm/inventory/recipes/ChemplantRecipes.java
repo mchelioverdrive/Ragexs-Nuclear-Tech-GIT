@@ -2170,7 +2170,7 @@ public class ChemplantRecipes extends SerializableRecipe {
             return this;
         }
         public int durationAtSpeed(int speed) { return physicalPowerQuanta > 0 ? duration : Math.max(1, duration * speed / 100); }
-        public long costPerTick(long legacy) { return physicalPowerQuanta > 0 ? physicalPowerQuanta : legacy; }
+        public long costPerTick(long equipment) { return physicalPowerQuanta > 0 ? physicalPowerQuanta : Math.max(1L, equipment * com.hbm.realsim.IndustrialDemand.chemicalBaseWatts(name) / com.hbm.realsim.IndustrialDemand.CHEMICAL_W); }
         public int getDuration() {
 			return this.duration;
 		}

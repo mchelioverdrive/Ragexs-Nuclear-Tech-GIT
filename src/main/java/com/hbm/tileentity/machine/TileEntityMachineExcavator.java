@@ -64,7 +64,7 @@ import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineExcavator extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
+public class TileEntityMachineExcavator extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private static final int TASK_DRILL = 1;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
@@ -98,7 +98,7 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 	public int chuteTimer = 0;
 
 	public double speed = 1.0D;
-	public final long baseConsumption = 10_000L;
+	public final long baseConsumption = com.hbm.realsim.IndustrialDemand.EXCAVATOR_W / 10;
 	public long consumption = baseConsumption;
 
 	public FluidTank tank;
@@ -164,7 +164,7 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 		runtimeSpeedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
 		int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
 		runtimeRadiusLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
-		consumption = baseConsumption * (1 + runtimeSpeedLevel) / (1 + powerLevel);
+		consumption = baseConsumption * (2L + runtimeSpeedLevel) / 2L * (100L - 10L * powerLevel) / 100L;
 	}
 
 	private boolean hasBatteryInput() {
@@ -228,7 +228,7 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 		this.upgradeManager.checkSlots(slots, 2, 3);
 		int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
 		int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
-		consumption = baseConsumption * (1 + speedLevel) / (1 + powerLevel);
+		consumption = baseConsumption * (2L + speedLevel) / 2L * (100L - 10L * powerLevel) / 100L;
 			this.prevDrillExtension = this.drillExtension;
 
 			if(this.drillExtension != this.targetDepth) {
@@ -1069,10 +1069,10 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 		info.add(IUpgradeInfoProvider.getStandardLabel(ModBlocks.machine_excavator));
 		if(type == UpgradeType.SPEED) {
 			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_DELAY, "-" + (100 - 200 / (level + 2)) + "%"));
-			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "+" + (level * 100) + "%"));
+			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "+" + (Math.min(3, level) * 50) + "%"));
 		}
 		if(type == UpgradeType.POWER) {
-			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "-" + (100 - 100 / (level + 1)) + "%"));
+			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "-" + (Math.min(3, level) * 10) + "%"));
 		}
 	}
 
@@ -1087,4 +1087,10 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 	public FluidTank getTankToPaste() {
 		return tank;
 	}
+
+    @Override public long getMachineDemandWatts() { return consumption * 10L; }
+    @Override public long getMachineCurrentDrawWatts() { return operational ? getMachineDemandWatts() : 0; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Demand while excavating; transport/handling duty is intermittent");
+    }
 }

@@ -27,6 +27,7 @@ public class GUIMachineWoodBurner extends GuiInfoContainer {
 
 	public GUIMachineWoodBurner(InventoryPlayer invPlayer, TileEntityMachineWoodBurner tedf) {
 		super(new ContainerMachineWoodBurner(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		burner = tedf;
 		
 		this.xSize = 176;

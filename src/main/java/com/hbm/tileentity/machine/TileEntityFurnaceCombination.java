@@ -33,7 +33,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityFurnaceCombination extends TileEntityMachinePolluting implements IFluidStandardSender, IGUIProvider, IFluidCopiable {
+public class TileEntityFurnaceCombination extends TileEntityMachinePolluting implements IFluidStandardSender, IGUIProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private static final int TASK_HEAT = 1;
 	private boolean runtimeInitialized;
 	private Pair<ItemStack, FluidStack> runtimeRecipe;
@@ -357,4 +357,9 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 	public FluidTank[] getSendingTanks() {
 		return new FluidTank[] {tank, smoke, smoke_leaded, smoke_poison};
 	}
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        com.hbm.realsim.MachineInfo.process(lines, physicalBatch.active() ? physicalBatch.recipe() : CombinationRecipes.getPhysical(slots[0]));
+        lines.add("Petroleum preheating uses qualified external heat");
+    }
 }

@@ -26,7 +26,9 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MathHelper;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntitySteamEngine extends TileEntityLoadedBase implements api.hbm.energymk2.IRatedGenerator, IFluidStandardTransceiver, INBTPacketReceiver, IConfigurableMachine, IFluidCopiable {
+public class TileEntitySteamEngine extends TileEntityLoadedBase implements api.hbm.energymk2.IRatedGenerator, IFluidStandardTransceiver, INBTPacketReceiver, IConfigurableMachine, IFluidCopiable, com.hbm.realsim.IMachineInfo {
+    public long getSteamFlowMassPerTick() { return 15000L; }
+    public int getExpansionEfficiencyPpm() { if(worldObj != null && worldObj.isRemote && thermal.installedExpansionEfficiencyPpm >= 0) return thermal.installedExpansionEfficiencyPpm; return com.hbm.realsim.ThermalMachine.efficiency(efficiency, 700000); }
     public final com.hbm.realsim.ThermalAccount thermal = new com.hbm.realsim.ThermalAccount();
     private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
     @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
@@ -137,7 +139,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements api.h
 		try {
             this.reconcileTankTypes();
             long generated = com.hbm.realsim.ThermalMachine.turbine(thermal, worldObj.getTotalWorldTime(), tanks[0], tanks[1],
-                    15000L, 25000L, com.hbm.realsim.ThermalMachine.efficiency(efficiency, 700000), powerBuffer, getEnergyCapacityQuanta());
+                    getSteamFlowMassPerTick(), 25000L, getExpansionEfficiencyPpm(), powerBuffer, getEnergyCapacityQuanta());
             int ops = thermal.currentMass > 0 ? 1 : 0;
             this.setStoredEnergyQuanta(Math.addExact(powerBuffer, generated));
 
@@ -212,7 +214,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements api.h
 
 	private void sendRuntimeState() {
 		NBTTagCompound data = new NBTTagCompound();
-        thermal.writeStatus(data);
+        thermal.writeStatus(data, getExpansionEfficiencyPpm());
 		tanks[0].writeToNBT(data, "s");
 		EnergyUnits.writeEnergyQuanta(data, this.powerBuffer);
 		data.setFloat("rotor", this.rotor);
@@ -325,4 +327,11 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements api.h
 	public FluidTank getTankToPaste() {
 		return null;
 	}
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        if(live) lines.add("Current electrical output: " + com.hbm.realsim.MachineInfo.watts(thermal.currentElectricQuanta * 10L));
+        lines.add(String.format(java.util.Locale.US, "Steam mass-flow ceiling: %.2f kg/s", getSteamFlowMassPerTick() / 50000D));
+        lines.add(String.format(java.util.Locale.US, "Expansion work factor: %.1f%%", getExpansionEfficiencyPpm() / 10000D));
+        lines.add("Accepts ledger steam grades; full power/exhaust buffers stop admission");
+    }
 }

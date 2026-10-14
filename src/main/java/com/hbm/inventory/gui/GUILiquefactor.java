@@ -18,6 +18,7 @@ public class GUILiquefactor extends GuiInfoContainer {
 
 	public GUILiquefactor(InventoryPlayer invPlayer, TileEntityMachineLiquefactor tedf) {
 		super(new ContainerLiquefactor(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		liquefactor = tedf;
 
 		this.xSize = 176;

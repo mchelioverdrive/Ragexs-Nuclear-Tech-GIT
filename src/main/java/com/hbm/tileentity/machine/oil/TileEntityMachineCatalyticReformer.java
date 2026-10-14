@@ -31,7 +31,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IPersistentNBT, IGUIProvider, IFluidCopiable {
+public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IPersistentNBT, IGUIProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 
 	
     public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
@@ -337,4 +337,9 @@ public class TileEntityMachineCatalyticReformer extends TileEntityMachineBase im
 	public Object provideGUI(int ID, EntityPlayer player, World world, int x, int y, int z) {
 		return new GUIMachineCatalyticReformer(player.inventory, this);
 	}
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        com.hbm.realsim.MachineInfo.process(lines, physicalBatch.active() ? physicalBatch.recipe() : ReformingRecipes.getPhysical(tanks[0].getTankType()));
+        lines.add("Blocked operation: check feed state, paid utilities and product storage");
+    }
 }

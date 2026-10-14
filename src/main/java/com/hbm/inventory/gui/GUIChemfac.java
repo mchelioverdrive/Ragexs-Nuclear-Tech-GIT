@@ -19,6 +19,7 @@ public class GUIChemfac extends GuiInfoContainer {
 
 	public GUIChemfac(InventoryPlayer invPlayer, TileEntityMachineChemfac tedf) {
 		super(new ContainerChemfac(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		chemfac = tedf;
 		
 		this.xSize = 256;

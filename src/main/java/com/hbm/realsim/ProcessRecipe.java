@@ -14,6 +14,7 @@ public final class ProcessRecipe {
     public final int solidCount;
     public final int duration, temperatureC;
     public final long workQuanta, heatQuanta;
+    public final long electricalRatingWatts, thermalRatingWatts, rejectedWatts;
     public final boolean separation;
     public final BigDecimal chemicalInputJ, chemicalOutputJ, sensibleInputJ, sensibleOutputJ, rejectedJ;
 
@@ -56,6 +57,9 @@ public final class ProcessRecipe {
         chemicalInputJ = inputEnergy; chemicalOutputJ = outputEnergy; sensibleInputJ = inputSensible; sensibleOutputJ = outputSensible;
         rejectedJ = inputEnergy.add(inputSensible).add(BigDecimal.valueOf(Math.addExact(workJ, heatJ))).subtract(outputEnergy).subtract(outputSensible);
         if(rejectedJ.compareTo(tolerance.negate()) < 0) throw new IllegalArgumentException("Unpaid sensible heat: " + id);
+        electricalRatingWatts = Math.multiplyExact(workQuanta / duration + (workQuanta % duration == 0 ? 0 : 1), 10L);
+        thermalRatingWatts = Math.multiplyExact(heatQuanta / duration + (heatQuanta % duration == 0 ? 0 : 1), 10L);
+        rejectedWatts = rejectedJ.max(BigDecimal.ZERO).multiply(BigDecimal.valueOf(20L)).divide(BigDecimal.valueOf(duration), 0, RoundingMode.CEILING).longValueExact();
     }
     public static PhysicalState resolved(String name) {
         PhysicalState state = PhysicalRegistry.get(name);

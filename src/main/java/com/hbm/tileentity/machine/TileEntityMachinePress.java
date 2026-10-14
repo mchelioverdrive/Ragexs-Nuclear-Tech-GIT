@@ -22,7 +22,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachinePress extends TileEntityMachineBase implements IGUIProvider {
+public class TileEntityMachinePress extends TileEntityMachineBase implements IGUIProvider, com.hbm.realsim.IMachineInfo {
 
 	public int speed = 0; // speed ticks up once (or four times if preheated) when operating
 	public static final int maxSpeed = 400; // max speed ticks for acceleration
@@ -511,4 +511,9 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 	public Object provideGUI(int ID, EntityPlayer player, World world, int x, int y, int z) {
 		return new GUIMachinePress(player.inventory, this);
 	}
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Fuel-driven forming press; preheat and valid stamp required");
+        lines.add("Uncalibrated thermal duty remains nominal");
+    }
 }

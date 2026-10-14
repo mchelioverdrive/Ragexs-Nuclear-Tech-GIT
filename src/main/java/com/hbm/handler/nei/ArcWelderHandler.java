@@ -49,8 +49,8 @@ public class ArcWelderHandler extends NEIUniversalHandler {
 				}
 
 				FontRenderer fontRenderer = Minecraft.getMinecraft().fontRenderer;
-				String duration = String.format(Locale.US, "%,d", arc.duration) + " ticks";
-				String consumption = EnergyUnits.formatQuantaPerTickAsWatts(arc.consumption);
+				String duration = String.format(Locale.US, "%.1f s / ", arc.duration / 20D) + EnergyUnits.formatJoules(Math.multiplyExact(arc.consumption, (long) arc.duration));
+				String consumption = com.hbm.realsim.MachineInfo.watts(arc.consumption * 10L);
 				int side = 160;
 				fontRenderer.drawString(duration, side - fontRenderer.getStringWidth(duration), 43, 0x404040);
 				fontRenderer.drawString(consumption, side - fontRenderer.getStringWidth(consumption), 55, 0x404040);

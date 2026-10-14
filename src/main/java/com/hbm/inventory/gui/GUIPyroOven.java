@@ -18,6 +18,7 @@ public class GUIPyroOven extends GuiInfoContainer {
 
 	public GUIPyroOven(InventoryPlayer playerInv, TileEntityMachinePyroOven tile) {
 		super(new ContainerPyroOven(playerInv, tile));
+        setMachineInfoOwner(tile);
 		
 		this.pyro = tile;
 		this.xSize = 176;

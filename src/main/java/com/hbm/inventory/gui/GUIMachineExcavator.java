@@ -23,6 +23,7 @@ public class GUIMachineExcavator extends GuiInfoContainer {
 
 	public GUIMachineExcavator(InventoryPlayer inventory, TileEntityMachineExcavator tile) {
 		super(new ContainerMachineExcavator(inventory, tile));
+        setMachineInfoOwner(tile);
 		
 		this.drill = tile;
 		

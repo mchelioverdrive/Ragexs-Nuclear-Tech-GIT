@@ -20,6 +20,7 @@ public class GUIAssemfac extends GuiInfoContainer {
 
 	public GUIAssemfac(InventoryPlayer invPlayer, TileEntityMachineAssemfac tedf) {
 		super(new ContainerAssemfac(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		assemfac = tedf;
 		
 		this.xSize = 256;

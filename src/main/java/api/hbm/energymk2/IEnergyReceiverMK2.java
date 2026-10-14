@@ -14,9 +14,12 @@ import net.minecraftforge.common.util.ForgeDirection;
 public interface IEnergyReceiverMK2 extends IEnergyHandlerMK2 {
 
 	public default long receiveEnergyQuanta(long energyQuanta) {
+		// Over-cap legacy stock remains owned; a receive call must never truncate it.
+		if(energyQuanta <= 0L) return energyQuanta;
 		if(LegacyEnergyOverrides.of(this.getClass()).receiverTransfer) {
 			return EnergyUnits.legacyHeToQuanta(this.transferPower(EnergyUnits.quantaToLegacyHe(energyQuanta)));
 		}
+		if(getStoredEnergyQuanta() >= getEnergyCapacityQuanta()) return energyQuanta;
 		long previous = this.getStoredEnergyQuanta();
 		if(energyQuanta <= this.getEnergyCapacityQuanta() - this.getStoredEnergyQuanta()) {
 			this.setStoredEnergyQuanta(energyQuanta + this.getStoredEnergyQuanta());

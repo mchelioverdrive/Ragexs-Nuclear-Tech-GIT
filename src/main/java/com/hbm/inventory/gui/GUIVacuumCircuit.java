@@ -19,6 +19,7 @@ public class GUIVacuumCircuit extends GuiInfoContainer {
 
 	public GUIVacuumCircuit(InventoryPlayer playerInv, TileEntityMachineVacuumCircuit tile) {
 		super(new ContainerVacuumCircuit(playerInv, tile));
+        setMachineInfoOwner(tile);
 		
 		this.sucker = tile;
 		this.xSize = 176;

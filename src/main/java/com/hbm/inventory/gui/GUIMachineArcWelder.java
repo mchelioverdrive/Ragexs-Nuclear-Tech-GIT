@@ -18,6 +18,7 @@ public class GUIMachineArcWelder extends GuiInfoContainer {
 
 	public GUIMachineArcWelder(InventoryPlayer playerInv, TileEntityMachineArcWelder tile) {
 		super(new ContainerMachineArcWelder(playerInv, tile));
+        setMachineInfoOwner(tile);
 		
 		this.welder = tile;
 		this.xSize = 176;

@@ -23,6 +23,7 @@ public class GUIMachineArcFurnaceLarge extends GuiMoltenMaterials {
 
 	public GUIMachineArcFurnaceLarge(InventoryPlayer invPlayer, TileEntityMachineArcFurnaceLarge arc) {
 		super(new ContainerMachineArcFurnaceLarge(invPlayer, arc));
+        setMachineInfoOwner(arc);
 		this.arc = arc;
 		
 		this.xSize = 176;

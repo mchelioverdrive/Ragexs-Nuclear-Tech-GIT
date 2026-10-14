@@ -79,3 +79,19 @@
 - Converted gas generation to a 3-MWe/30%-LHV owner with bounded exhaust and an internal HRSG; corrected turbofan afterburning and made plain flares disposal equipment.
 - Converted boilers, compressors, engines/turbines/Leviathan, condensers/radiators, heat exchangers, solar/geothermal steam and the heating oven. Added industrial solid/oil firing and feed-pump ports, retained buffer pause and rupture/trip/reset, and closed condensate return with declared steam loss/makeup. Nuclear calibration/protection remain deferred.
 - Updated shared quantities, machine information and existing RealSim/steam documentation with contracts, facility models and compatibility. Added production-accounting coverage while retaining physical/petroleum tests.
+
+
+2026-10-13 22:48 — Restore X3030 Large Shredder as a decorative prop
+
+- Recovered the final X3030 body, January 2019 blade model and original body/blade textures from c7a659107f3a0fd8fb1101c2816a5482c140b1a2. Preserved the straight historical body, world scale, centered origin and staggered mirrored blade pivots with stationary blades.
+- Added the Creative/give block machine_shredder_large_dummy, player-facing placement metadata, an oversized oriented selection/collision envelope and a persistent non-ticking render host. No processing, inventory, GUI, power, recipes or multiblock behavior was added.
+- Routed the unchanged triangle assets directly through the existing prepared-model cache, shared VBO upload and resource-reload path; both blade sets and the item form reuse the same model handles and textures. No legacy model loader or separate geometry renderer was introduced.
+
+2026-10-14 00:29 — Normalize RealSim consumers, starter plants and machine information
+
+- Removed the refinery's added solvent-dependent Capacitor Boards while retaining its three Analog Boards and structural recipe.
+- Rebalanced workshop, parallel manufacturing, crushing and mining demand; replaced large-arc exponential upgrades with mass-based persistent paid work/installed power, and tied pyrolysis/centrifuge/excavator upgrades to throughput.
+- Replaced industrial fabrication/chemistry water-to-steam cooling with sealed charged loops, heat-driven circulation and paid scaling auxiliaries; preserved old water/exhaust stock. Casting retains nominal molten cooling with no new unpaid steam.
+- Converted normal/heavy Stirling to qualified paid heat, governed intake, retained electricity/fractional work and bounded export; fresh defaults are 10/40 kW. Marked the wood generator deprecated and corrected starter/early-steam planning.
+- Added shared native item, GUI and existing NEI machine information, including Industrial Turbine hover information, server-sourced installed ratings/efficiencies and draw/cooling snapshots; corrected stale localized descriptions. Extended status requires matching client/server versions.
+- Fixed mixed-lane electrolyser budgeting, empty physical-auxiliary guards and over-cap receiving without truncating saved electricity. Updated existing RealSim reports/tests; retained fuel/fluid/steam/save contracts and deferred nuclear calibration/future manufacturing redesign.

@@ -18,7 +18,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineCatalyticCracker extends com.hbm.tileentity.TileEntityMachineBase implements api.hbm.energymk2.IEnergyReceiverMK2, INBTPacketReceiver, IFluidStandardTransceiver, IFluidCopiable {
+public class TileEntityMachineCatalyticCracker extends com.hbm.tileentity.TileEntityMachineBase implements api.hbm.energymk2.IEnergyReceiverMK2, INBTPacketReceiver, IFluidStandardTransceiver, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 
 	public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
     public long energyQuanta;
@@ -217,4 +217,9 @@ public class TileEntityMachineCatalyticCracker extends com.hbm.tileentity.TileEn
     @Override public String getName() { return "container.catalyticCracker"; }
     @Override public int[] getAccessibleSlotsFromSide(int side) { return new int[] {0}; }
     @Override public boolean canExtractItem(int slot, net.minecraft.item.ItemStack stack, int side) { return slot == 0; }
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        com.hbm.realsim.MachineInfo.process(lines, physicalBatch.active() ? physicalBatch.recipe() : CrackingRecipes.getPhysical(tanks[0].getTankType()));
+        lines.add("Blocked operation: check feed state, paid utilities and product storage");
+    }
 }

@@ -18,6 +18,7 @@ public class GUIMachineArcFurnace extends GuiInfoContainer {
 
 	public GUIMachineArcFurnace(InventoryPlayer invPlayer, TileEntityMachineArcFurnace tedf) {
 		super(new ContainerMachineArcFurnace(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		diFurnace = tedf;
 		
 		this.xSize = 176;

@@ -18,6 +18,7 @@ public class GUIMachineShredder extends GuiInfoContainer {
 
 	public GUIMachineShredder(InventoryPlayer invPlayer, TileEntityMachineShredder tedf) {
 		super(new ContainerMachineShredder(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		diFurnace = tedf;
 
 		this.xSize = 176;

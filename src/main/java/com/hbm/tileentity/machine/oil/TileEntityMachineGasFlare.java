@@ -46,7 +46,7 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
-public class TileEntityMachineGasFlare extends TileEntityMachineBase implements IEnergyProviderMK2, IFluidStandardReceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable {
+public class TileEntityMachineGasFlare extends TileEntityMachineBase implements IEnergyProviderMK2, IFluidStandardReceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private static final int TASK_PROCESS = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
@@ -416,4 +416,8 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 		if(nbt.hasKey("doesBurn")) doesBurn = nbt.getBoolean("doesBurn");
 		this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.FLUID);
 	}
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Gas disposal only; no electrical output or recoverable heat credit");
+    }
 }

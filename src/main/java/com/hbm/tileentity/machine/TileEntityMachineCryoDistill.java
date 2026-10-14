@@ -34,7 +34,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineCryoDistill extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IPersistentNBT, IGUIProvider {
+public class TileEntityMachineCryoDistill extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IPersistentNBT, IGUIProvider, com.hbm.realsim.IMachineInfo {
 	
 	public long energyQuanta;
 	public static final long maxPower = 1_000_000;
@@ -460,4 +460,9 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 	public Object provideGUI(int ID, EntityPlayer player, World world, int x, int y, int z) {
 		return new GUIMachineCryoDistill(player.inventory, this);
 	}
+
+    @Override public long getMachineDemandWatts() { return getBatchWorkQuanta() * 10L; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Batch work: " + api.hbm.energymk2.EnergyUnits.formatJoules(getBatchWorkQuanta()) + " per 100 inventory units of feed");
+    }
 }

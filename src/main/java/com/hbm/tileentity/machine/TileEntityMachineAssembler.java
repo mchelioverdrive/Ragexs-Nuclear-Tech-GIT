@@ -203,8 +203,8 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 		int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
 		int overLevel = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
 		this.speed = (100 - speedLevel * 25 + powerLevel * 5) / (overLevel + 1);
-		long consumptionQuantaPerTick = (100L + speedLevel * 300L - powerLevel * 30L) * (overLevel + 1L);
-		this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(consumptionQuantaPerTick);
+		this.speed = Math.max(1, this.speed);
+		this.operatingPowerWatts = com.hbm.realsim.IndustrialDemand.atSpeed(com.hbm.realsim.IndustrialDemand.FABRICATION_W, this.speed, powerLevel);
 		return oldSpeed != this.speed || oldOperatingPowerWatts != this.operatingPowerWatts;
 	}
 
@@ -444,10 +444,10 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 		info.add(IUpgradeInfoProvider.getStandardLabel(ModBlocks.machine_assembler));
 		if(type == UpgradeType.SPEED) {
 			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_DELAY, "-" + (level * 25) + "%"));
-			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "+" + (level * 300) + "%"));
+			info.add("Electrical demand scales with throughput; see the machine rating");
 		}
 		if(type == UpgradeType.POWER) {
-			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "-" + (level * 30) + "%"));
+			info.add("Work reduction: " + (Math.min(3, level) * 10) + "% (nominal recipes)");
 			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_DELAY, "+" + (level * 5) + "%"));
 		}
 		if(type == UpgradeType.OVERDRIVE) {

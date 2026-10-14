@@ -1051,6 +1051,7 @@ public class ModBlocks {
 	public static Block machine_combustion_engine;
 
 	public static Block machine_shredder;
+	public static Block machine_shredder_large_dummy;
 
 	public static Block machine_teleporter;
 	public static Block teleanchor;
@@ -2157,6 +2158,7 @@ public class ModBlocks {
 		machine_combustion_engine = new MachineCombustionEngine().setBlockName("machine_combustion_engine").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":block_steel");
 
 		machine_shredder = new MachineShredder(Material.iron).setBlockName("machine_shredder").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab);
+		machine_shredder_large_dummy = new BlockLargeShredderDummy().setBlockName("machine_shredder_large_dummy").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":block_steel");
 
 		machine_teleporter = new MachineTeleporter(Material.iron).setBlockName("machine_teleporter").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab);
 		teleanchor = new MachineTeleanchor().setBlockName("teleanchor").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab);
@@ -3762,6 +3764,7 @@ public class ModBlocks {
 		GameRegistry.registerBlock(machine_waste_drum, machine_waste_drum.getUnlocalizedName());
 		GameRegistry.registerBlock(machine_storage_drum, machine_storage_drum.getUnlocalizedName());
 		GameRegistry.registerBlock(machine_shredder, machine_shredder.getUnlocalizedName());
+		GameRegistry.registerBlock(machine_shredder_large_dummy, ItemBlockBase.class, "machine_shredder_large_dummy");
 		register(machine_well);
 		register(machine_pumpjack);
 		register(machine_fracking_tower);

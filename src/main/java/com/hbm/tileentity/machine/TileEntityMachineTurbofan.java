@@ -51,11 +51,12 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implements api.hbm.energymk2.IRatedGenerator, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable {
+public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implements api.hbm.energymk2.IRatedGenerator, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable, com.hbm.realsim.IMachineInfo {
     public final com.hbm.realsim.TurbineFuelAccount thermalFuel = new com.hbm.realsim.TurbineFuelAccount();
     private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
     @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
     @Override public long getRatedOutputWatts() { return 1000000L; }
+    public int getElectricalEfficiencyPpm() { return 250000 / (1 + Math.min(3, Math.max(0, afterburner))); }
 
 	private static final int TASK_BURN = 1;
 	private boolean runtimeInitialized;
@@ -285,8 +286,8 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
             long room = Math.max(0, maxPower - energyQuanta);
             if(!runtimeWaterlogged && appropriate && room > 0 && breatheAir(200 * amount)) {
                 long request = Math.min(4_000_000L * 50000L * amount,
-                        com.hbm.realsim.SteamLedger.mulDiv(room, 500000L * 1000000L, 250000 / amount));
-                long generated = thermalFuel.burn(worldObj.getTotalWorldTime(), tank, request, 250000 / amount,
+                        com.hbm.realsim.SteamLedger.mulDiv(room, 500000L * 1000000L, getElectricalEfficiencyPpm()));
+                long generated = thermalFuel.burn(worldObj.getTotalWorldTime(), tank, request, getElectricalEfficiencyPpm(),
                         amount > 1 ? 750000 : 550000, amount > 1 ? 700 : 500, false);
                 output = Math.toIntExact(generated);
                 this.setStoredEnergyQuanta(Math.addExact(energyQuanta, generated));
@@ -620,4 +621,15 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 		data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, this.consumption);
 		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(this.output));
 	}
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        if(live) lines.add("Current electrical output: " + com.hbm.realsim.MachineInfo.watts(output * 10L));
+        lines.add(String.format(java.util.Locale.US, "LHV efficiency: %.2f%%", getElectricalEfficiencyPpm() / 10000D));
+        if(live) {
+            com.hbm.realsim.PhysicalState fuel = com.hbm.realsim.PhysicalRegistry.get(thermalFuel.fuel());
+            long perUnit = fuel.chemicalMicrojoulesPerUnit();
+            if(perUnit > 0) lines.add(String.format(java.util.Locale.US, "Fuel flow: %.3f L/min", thermalFuel.chemicalInputMicroJ * 1200D / perUnit));
+        }
+        lines.add("Aviation fuel required; afterburning increases fuel use without increasing electrical ceiling");
+    }
 }

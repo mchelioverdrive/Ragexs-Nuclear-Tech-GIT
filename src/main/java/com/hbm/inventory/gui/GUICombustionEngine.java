@@ -29,6 +29,7 @@ public class GUICombustionEngine extends GuiInfoContainer {
 
 	public GUICombustionEngine(InventoryPlayer invPlayer, TileEntityMachineCombustionEngine tedf) {
 		super(new ContainerCombustionEngine(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		engine = tedf;
 		this.setting = engine.setting;
 		

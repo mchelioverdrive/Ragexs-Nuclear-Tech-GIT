@@ -32,7 +32,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public abstract class TileEntityOilDrillBase extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IConfigurableMachine, IPersistentNBT, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
+public abstract class TileEntityOilDrillBase extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IConfigurableMachine, IPersistentNBT, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private static final int TASK_DRILL = 1;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
@@ -438,4 +438,10 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 	public FluidTank getTankToPaste() {
 		return null;
 	}
+
+    @Override public long getMachineDemandWatts() { return (worldObj == null ? getPowerReq() : getPowerReqEff()) * 10L; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        if(live) lines.add("Pumping demand follows installed controls and upgrades");
+        lines.add("Reservoir/terrain eligibility and free product buffers are required");
+    }
 }

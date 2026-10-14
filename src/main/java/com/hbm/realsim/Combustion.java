@@ -12,6 +12,7 @@ import net.minecraft.item.ItemStack;
 
 /** Chemical input is mass x LHV. Traits select equipment suitability, never chemical energy. */
 public final class Combustion {
+    public static final int FIREBOX_EFFICIENCY_PPM = 850_000;
     private Combustion() { }
     public static boolean isBurnerFuel(FluidType type) {
         return type.hasTrait(FT_Flammable.class) && PhysicalRegistry.get(type.getName()).isResolved()

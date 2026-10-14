@@ -4559,9 +4559,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 			addTantalium(new ComparableStack(ModBlocks.machine_chungus,
 											 1),
 						 50);
-			addTantalium(new ComparableStack(ModBlocks.machine_refinery,
-											 1),
-						 3);
+			// Refinery control stays Analog: solvent-dependent capacitor boards would lock its own feedstock.
 			addTantalium(new ComparableStack(ModBlocks.machine_silex,
 											 1),
 						 15);

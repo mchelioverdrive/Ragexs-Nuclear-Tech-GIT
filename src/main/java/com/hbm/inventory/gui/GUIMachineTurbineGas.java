@@ -35,6 +35,7 @@ public class GUIMachineTurbineGas extends GuiInfoContainer {
 	
 	public GUIMachineTurbineGas(InventoryPlayer invPlayer, TileEntityMachineTurbineGas te) {
 		super(new ContainerMachineTurbineGas(invPlayer, te));
+        setMachineInfoOwner(te);
 		turbinegas = te;
 		
 		this.xSize = 176;

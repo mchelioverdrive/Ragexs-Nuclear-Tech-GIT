@@ -32,7 +32,7 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements ISidedInventory, IEnergyReceiverMK2, IGUIProvider, IInfoProviderEC {
+public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements ISidedInventory, IEnergyReceiverMK2, IGUIProvider, IInfoProviderEC, com.hbm.realsim.IMachineInfo {
 
 	private ItemStack slots[];
 	
@@ -546,4 +546,9 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, this.hasPower() && this.canProcess());
 		data.setInteger(CompatEnergyControl.I_PROGRESS, this.dualCookTime);
 	}
+
+    @Override public long getMachineDemandWatts() { return 2500L; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Small electronic-material arc processing; existing 20-tick recipe work envelope");
+    }
 }

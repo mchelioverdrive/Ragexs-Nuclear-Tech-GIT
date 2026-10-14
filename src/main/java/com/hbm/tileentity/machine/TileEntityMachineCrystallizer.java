@@ -43,7 +43,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineCrystallizer extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
+public class TileEntityMachineCrystallizer extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	
@@ -623,4 +623,10 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	public FluidTank getTankToPaste() {
 		return tank;
 	}
+
+    @Override public long getMachineDemandWatts() { return operatingPowerWatts; }
+    @Override public long getMachineCurrentDrawWatts() { return isOn ? operatingPowerWatts : 0; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Crystallization utilities; feed, temperature-compatible recipe and output room required");
+    }
 }

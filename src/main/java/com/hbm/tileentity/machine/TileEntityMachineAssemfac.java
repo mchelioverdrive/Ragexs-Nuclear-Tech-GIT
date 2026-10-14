@@ -43,7 +43,8 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 	public FluidTank steam;
 
 	public TileEntityMachineAssemfac() {
-		super(14 * 8 + 4 + 1); //8 assembler groups with 14 slots, 4 upgrade slots, 1 battery slot
+		super(14 * 8 + 4 + 1);
+        speed = 50; operatingPowerWatts = com.hbm.realsim.IndustrialDemand.FABRICATION_W * 2L + com.hbm.realsim.IndustrialDemand.COOLING_AUXILIARY_W; //8 assembler groups with 14 slots, 4 upgrade slots, 1 battery slot
 		
 		arms = new AssemblerArm[6];
 		for(int i = 0; i < arms.length; i++) {
@@ -65,7 +66,7 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 	public void setInventorySlotContents(int i, ItemStack stack) {
 		super.setInventorySlotContents(i, stack);
 		
-		if(stack != null && i >= 1 && i <= 4 && stack.getItem() instanceof ItemMachineUpgrade) {
+		if(worldObj != null && stack != null && i >= 1 && i <= 4 && stack.getItem() instanceof ItemMachineUpgrade) {
 			worldObj.playSoundEffect(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, "hbm:item.upgradePlug", 1.0F, 1.0F);
 		}
 	}
@@ -96,13 +97,9 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 		int speedLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 6);
 		int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
 		int overLevel = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
-		this.speed -= speedLevel * 15;
-		long consumptionQuantaPerTick = 100L + speedLevel * 300L;
-		this.speed += powerLevel * 5;
-		consumptionQuantaPerTick -= powerLevel * 30L;
-		this.speed /= (overLevel + 1);
-		consumptionQuantaPerTick *= overLevel + 1L;
-		this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(consumptionQuantaPerTick);
+		this.speed = Math.max(1, (50 - speedLevel * 7 + powerLevel * 5) / (overLevel + 1));
+		long utilityWatts = com.hbm.realsim.IndustrialDemand.atSpeed(com.hbm.realsim.IndustrialDemand.FABRICATION_W, this.speed, powerLevel);
+		this.operatingPowerWatts = utilityWatts + com.hbm.realsim.IndustrialDemand.coolingAuxiliaryWatts(utilityWatts);
 		return oldSpeed != this.speed || oldOperatingPowerWatts != this.operatingPowerWatts;
 	}
 
@@ -159,35 +156,15 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 		steam.readFromNBT(nbt, "s");
 	}
 	
-	private int getWaterRequired() {
-		return 1000 / this.speed;
-	}
-
+	/** Sealed water loop with an integral dry cooler. Old exhaust stock is export-only. */
 	@Override protected long additionalResourceFullTicks(int activeLanes) {
-		long perTick = (long) getWaterRequired() * activeLanes;
-		if(perTick <= 0L) return Long.MAX_VALUE;
-		return Math.min(water.getFill() / perTick, (steam.getMaxFill() - steam.getFill()) / perTick);
+		return water.getFill() >= com.hbm.realsim.IndustrialDemand.COOLING_CHARGE_L ? Long.MAX_VALUE : 0L;
 	}
 
-	@Override protected void consumeAdditionalResources(long ticks, int activeLanes) {
-		int amount = (int) (ticks * activeLanes * (long) getWaterRequired());
-		if(amount <= 0) return;
-		water.setFill(water.getFill() - amount);
-		steam.setFill(steam.getFill() + amount);
+	@Override protected boolean canProcess(int index) {
+		return super.canProcess(index) && water.getFill() >= com.hbm.realsim.IndustrialDemand.COOLING_CHARGE_L;
 	}
 
-	@Override
-	protected boolean canProcess(int index) {
-		return super.canProcess(index) && this.water.getFill() >= getWaterRequired() && this.steam.getFill() + getWaterRequired() <= this.steam.getMaxFill();
-	}
-
-	@Override
-	protected void process(int index) {
-		super.process(index);
-		this.water.setFill(this.water.getFill() - getWaterRequired());
-		this.steam.setFill(this.steam.getFill() + getWaterRequired());
-	}
-	
 	private void updateConnections() {
 		for(DirPos pos : getConPos()) {
 			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
@@ -486,12 +463,12 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 	public void provideInfo(UpgradeType type, int level, List<String> info, boolean extendedInfo) {
 		info.add(IUpgradeInfoProvider.getStandardLabel(ModBlocks.machine_assemfac));
 		if(type == UpgradeType.SPEED) {
-			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_DELAY, "-" + (level * 15) + "%"));
-			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "+" + (level * 300) + "%"));
+			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_DELAY, "-" + (Math.min(6, level) * 14) + "%"));
+			info.add("Electrical demand scales with throughput; see the machine rating");
 		}
 		if(type == UpgradeType.POWER) {
-			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "-" + (level * 30) + "%"));
-			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_DELAY, "+" + (level * 5) + "%"));
+			info.add("Work reduction: " + (Math.min(3, level) * 10) + "% (nominal recipes)");
+			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_DELAY, "+" + (Math.min(3, level) * 10) + "%"));
 		}
 		if(type == UpgradeType.OVERDRIVE) {
 			info.add((BobMathUtil.getBlink() ? EnumChatFormatting.RED : EnumChatFormatting.DARK_GRAY) + "YES");
@@ -510,4 +487,11 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 	public FluidTank getTankToPaste() {
 		return null;
 	}
+    @Override public long getMachineCoolingWatts() { return getMachineDemandWatts(); }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        super.appendMachineInfo(lines, live);
+        com.hbm.realsim.MachineInfo.parallelCooling(lines, live && worldObj != null && worldObj.isRemote ? machineInfoCoolingWatts : getMachineCoolingWatts());
+        if(live && water.getFill() < com.hbm.realsim.IndustrialDemand.COOLING_CHARGE_L) lines.add("Stopped: fill the sealed cooling loop");
+        if(live && steam.getFill() > 0) lines.add("Legacy steam stock remains exportable; no new cooling steam is produced");
+    }
 }

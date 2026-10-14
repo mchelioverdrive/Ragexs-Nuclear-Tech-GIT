@@ -25,7 +25,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 
-public class TileEntityMachineFractionTower extends TileEntityLoadedBase implements api.hbm.energymk2.IEnergyReceiverMK2, IBufPacketReceiver, IFluidStandardTransceiver, IFluidCopiable {
+public class TileEntityMachineFractionTower extends TileEntityLoadedBase implements api.hbm.energymk2.IEnergyReceiverMK2, IBufPacketReceiver, IFluidStandardTransceiver, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private static final int TASK_PROCESS = 1;
 	private boolean runtimeFluidMutation;
 	private boolean runtimeInitialized;
@@ -284,4 +284,9 @@ public class TileEntityMachineFractionTower extends TileEntityLoadedBase impleme
     @Override public long getStoredEnergyQuanta() { return energyQuanta; }
     @Override public long getEnergyCapacityQuanta() { return 1_000_000L; }
     @Override public void setStoredEnergyQuanta(long amount) { energyQuanta = amount; markDirty(); markMachineEnergyDirty(); }
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        com.hbm.realsim.MachineInfo.process(lines, physicalBatch.active() ? physicalBatch.recipe() : FractionRecipes.getPhysical(tanks[0].getTankType()));
+        lines.add("Blocked operation: check feed state, paid utilities and product storage");
+    }
 }

@@ -37,7 +37,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
-public class TileEntityMachineSolidifier extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable {
+public class TileEntityMachineSolidifier extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
@@ -526,4 +526,9 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
 	public FluidTank getTankToPaste() {
 		return tank;
 	}
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        com.hbm.realsim.MachineInfo.process(lines, physicalBatch.active() ? physicalBatch.recipe() : SolidificationRecipes.getPhysical(tank.getTankType()));
+        lines.add("Blocked operation: check feed state, paid utilities and product storage");
+    }
 }

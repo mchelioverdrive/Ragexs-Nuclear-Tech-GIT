@@ -42,7 +42,7 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineCentrifuge extends TileEntityMachineBase implements IEnergyReceiverMK2, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IConfigurableMachine{
+public class TileEntityMachineCentrifuge extends TileEntityMachineBase implements IEnergyReceiverMK2, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IConfigurableMachine, com.hbm.realsim.IMachineInfo {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
@@ -80,7 +80,7 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 	//configurable values
 	public static int maxPower = 100000;
 	public static int processingSpeed = 200;
-	public static int baseConsumption = 200;
+	public static int baseConsumption = 500;
 
 	public String getConfigName() {
 		return "centrifuge";
@@ -422,8 +422,7 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 		int powerLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
 		int overdriveLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3);
 		processingSpeedPerTick = (1 + speedLevel) * (1 + overdriveLevel * 5);
-		long quantaPerTick = baseConsumption + (long) speedLevel * baseConsumption + (long) overdriveLevel * baseConsumption * 50L;
-		quantaPerTick /= 1 + powerLevel;
+		long quantaPerTick = (long) Math.max(1, baseConsumption) * processingSpeedPerTick * (100 - 10 * powerLevel) / 100;
 		operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(quantaPerTick);
 		return oldPowerWatts != operatingPowerWatts || oldSpeed != processingSpeedPerTick;
 	}
@@ -591,10 +590,10 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 		info.add(IUpgradeInfoProvider.getStandardLabel(ModBlocks.machine_centrifuge));
 		if(type == UpgradeType.SPEED) {
 			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_DELAY, "-" + (100 - 100 / (level + 1)) + "%"));
-			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "+" + (level * 100) + "%"));
+			info.add("Electrical demand scales with throughput; see the machine rating");
 		}
 		if(type == UpgradeType.POWER) {
-			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "-" + (100 - 100 / (level + 1)) + "%"));
+			info.add("Work reduction: " + (Math.min(3, level) * 10) + "% (nominal recipes)");
 		}
 		if(type == UpgradeType.OVERDRIVE) {
 			info.add((BobMathUtil.getBlink() ? EnumChatFormatting.RED : EnumChatFormatting.DARK_GRAY) + "YES");
@@ -614,4 +613,10 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, this.progress > 0);
 		data.setInteger(CompatEnergyControl.B_ACTIVE, this.progress);
 	}
+
+    @Override public long getMachineDemandWatts() { return operatingPowerWatts; }
+    @Override public long getMachineCurrentDrawWatts() { return isProgressing ? operatingPowerWatts : 0; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Speed/overdrive demand follows throughput; idle load 0 W");
+    }
 }

@@ -32,6 +32,9 @@ import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.fluids.FluidTank;
 
 public abstract class TileEntityMachineBase extends TileEntityLoadedBase implements ISidedInventory, INBTPacketReceiver, IBufPacketReceiver {
+	/** Read-only server snapshots for GUI information, independent of storage and client upgrades. */
+	public long machineInfoDemandWatts = -1L, machineInfoDrawWatts = -1L, machineInfoCoolingWatts = -1L;
+
 	private final com.hbm.inventory.fluid.tank.FluidTank.ChangeListener machineTankListener = new com.hbm.inventory.fluid.tank.FluidTank.ChangeListener() {
 		@Override
 		public void beforeTankChanged(com.hbm.inventory.fluid.tank.FluidTank tank) {
@@ -332,10 +335,19 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 	}
 
 	@Override public void serialize(ByteBuf buf) {
+		if(this instanceof com.hbm.realsim.IMachineInfo) {
+			com.hbm.realsim.IMachineInfo info = (com.hbm.realsim.IMachineInfo) this;
+			buf.writeLong(info.getMachineDemandWatts()); buf.writeLong(info.getMachineCurrentDrawWatts()); buf.writeLong(info.getMachineCoolingWatts());
+		}
+
 		buf.writeBoolean(muffled);
 	}
 
 	@Override public void deserialize(ByteBuf buf) {
+		if(this instanceof com.hbm.realsim.IMachineInfo) {
+			machineInfoDemandWatts = buf.readLong(); machineInfoDrawWatts = buf.readLong(); machineInfoCoolingWatts = buf.readLong();
+		}
+
 		this.muffled = buf.readBoolean();
 	}
 

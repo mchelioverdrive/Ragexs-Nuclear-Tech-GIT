@@ -22,7 +22,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IHeatSource, IEnergyReceiverMK2, INBTPacketReceiver, ICopiable, IInfoProviderEC, api.hbm.tile.IProcessHeatSource {
+public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IHeatSource, IEnergyReceiverMK2, INBTPacketReceiver, ICopiable, IInfoProviderEC, api.hbm.tile.IProcessHeatSource, com.hbm.realsim.IMachineInfo {
     private final com.hbm.realsim.OutputBudget heatExportBudget = new com.hbm.realsim.OutputBudget();
     @Override public com.hbm.realsim.OutputBudget getProcessHeatBudget() { return heatExportBudget; }
     @Override public long getRatedProcessHeatWatts() { return 400000L; }
@@ -195,7 +195,7 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 		if(con instanceof api.hbm.tile.IProcessHeatSource && ((api.hbm.tile.IProcessHeatSource) con).getProcessTemperatureC() >= getProcessTemperatureC()) {
 			api.hbm.tile.IProcessHeatSource source = (api.hbm.tile.IProcessHeatSource) con;
             long pulled = source.drawProcessHeatQuanta(worldObj.getTotalWorldTime(), Math.max(0, Math.min(20000, maxHeatEnergy - heatEnergy)));
-            this.heatEnergy = Math.toIntExact(Math.addExact(heatEnergy, physicalIntake.accept(pulled, 850000)));
+            this.heatEnergy = Math.toIntExact(Math.addExact(heatEnergy, physicalIntake.accept(pulled, getIntakeEfficiencyPpm())));
 		}
 	}
 
@@ -225,8 +225,10 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 		return getConsumption() * 20;
 	}
 
+	public int getResistiveEfficiencyPpm() { return 980000; }
+	public int getIntakeEfficiencyPpm() { return 850000; }
 	public int getHeatGen() {
-		return Math.toIntExact(getConsumption() * 98L / 100L);
+		return Math.toIntExact(getConsumption() * getResistiveEfficiencyPpm() / 1000000L);
 	}
 
 	@Override
@@ -295,4 +297,10 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 		this.setting = nbt.getInteger("setting");
 	}
     @Override public int getProcessTemperatureC() { return 900; }
+    @Override public long getMachineDemandWatts() { return worldObj == null ? 10L * 2000L * api.hbm.energymk2.EnergyUnits.WATTS_PER_QUANTUM_PER_TICK : getPowerRequirementWatts(); }
+    @Override public long getMachineCurrentDrawWatts() { return isOn ? getPowerRequirementWatts() : 0L; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Resistive heat plus qualified external heat intake; the thermal export ceiling includes both sources");
+        lines.add(String.format(java.util.Locale.US, "Resistive efficiency: %.1f%%; imported heat transfer: %.1f%%", getResistiveEfficiencyPpm() / 10000D, getIntakeEfficiencyPpm() / 10000D));
+    }
 }

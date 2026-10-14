@@ -44,7 +44,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineSolderingStation extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
+public class TileEntityMachineSolderingStation extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
@@ -571,4 +571,10 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 		this.markDirty();
 		this.markMachineDirty(MachineDirtyCause.CONFIGURATION);
 	}
+
+    @Override public long getMachineDemandWatts() { return cachedRecipe == null ? 1000L : operatingPowerWatts; }
+    @Override public long getMachineCurrentDrawWatts() { return runtimeActive ? operatingPowerWatts : 0; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Recipe-rated electronics assembly; advanced recipes may require solvent");
+    }
 }

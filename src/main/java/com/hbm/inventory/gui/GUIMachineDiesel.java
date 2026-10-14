@@ -18,6 +18,7 @@ public class GUIMachineDiesel extends GuiInfoContainer {
 
 	public GUIMachineDiesel(InventoryPlayer invPlayer, TileEntityMachineDiesel tedf) {
 		super(new ContainerMachineDiesel(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		diesel = tedf;
 		
 		this.xSize = 176;

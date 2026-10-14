@@ -20,6 +20,7 @@ public class GUIMachineTurbofan extends GuiInfoContainer {
 
 	public GUIMachineTurbofan(InventoryPlayer invPlayer, TileEntityMachineTurbofan tedf) {
 		super(new ContainerMachineTurbofan(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		turbofan = tedf;
 		
 		this.xSize = 176;

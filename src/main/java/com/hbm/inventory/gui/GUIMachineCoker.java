@@ -21,6 +21,7 @@ public class GUIMachineCoker extends GuiInfoContainer {
 
 	public GUIMachineCoker(InventoryPlayer invPlayer, TileEntityMachineCoker tedf) {
 		super(new ContainerMachineCoker(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		refinery = tedf;
 		
 		this.xSize = 176;

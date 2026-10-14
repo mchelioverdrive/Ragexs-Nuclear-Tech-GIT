@@ -19,6 +19,7 @@ public class GUICrystallizer extends GuiInfoContainer {
 	
 	public GUICrystallizer(InventoryPlayer invPlayer, TileEntityMachineCrystallizer acidomatic) {
 		super(new ContainerCrystallizer(invPlayer, acidomatic));
+        setMachineInfoOwner(acidomatic);
 		this.acidomatic = acidomatic;
 
 		this.xSize = 176;

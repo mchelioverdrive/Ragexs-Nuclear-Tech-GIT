@@ -8,20 +8,33 @@ import io.netty.buffer.ByteBuf;
 /** Server-owned observed generation, separate from storage and network export. */
 public final class GeneratorStats {
     public long outputQuanta;
+    private long installedWatts = -1L;
+    private int installedEfficiencyPpm = -1;
+    public long ratedWatts(long fallback) { return installedWatts >= 0L ? installedWatts : fallback; }
+    public int ratedEfficiency(int fallback) { return installedEfficiencyPpm >= 0 ? installedEfficiencyPpm : fallback; }
     public double fuelUnitsPerSecond;
     public void idle() { outputQuanta = 0; fuelUnitsPerSecond = 0; }
     public void record(long output, FuelCredit credit) {
         outputQuanta = output; fuelUnitsPerSecond = output * credit.unitsPerQuantum() * 20D;
     }
     public void write(NBTTagCompound tag, FuelCredit credit) { tag.setLong("realSimOutput", outputQuanta); tag.setDouble("realSimFlow", fuelUnitsPerSecond); credit.write(tag); }
-    public void read(NBTTagCompound tag, FuelCredit credit) { outputQuanta = tag.getLong("realSimOutput"); fuelUnitsPerSecond = tag.getDouble("realSimFlow"); credit.read(tag); }
+    public void write(NBTTagCompound tag, FuelCredit credit, long ratedWatts, int ratedEfficiencyPpm) {
+        write(tag, credit); tag.setLong("realSimInstalledWatts", ratedWatts); tag.setInteger("realSimInstalledEfficiency", ratedEfficiencyPpm);
+    }
+    public void read(NBTTagCompound tag, FuelCredit credit) {
+        installedWatts = tag.hasKey("realSimInstalledWatts") ? Math.max(0L, tag.getLong("realSimInstalledWatts")) : -1L;
+        installedEfficiencyPpm = tag.hasKey("realSimInstalledEfficiency") ? Math.max(0, Math.min(1000000, tag.getInteger("realSimInstalledEfficiency"))) : -1; outputQuanta = tag.getLong("realSimOutput"); fuelUnitsPerSecond = tag.getDouble("realSimFlow"); credit.read(tag); }
     public void write(ByteBuf buf, FuelCredit credit) { NBTTagCompound tag = new NBTTagCompound(); write(tag, credit); cpw.mods.fml.common.network.ByteBufUtils.writeTag(buf, tag); }
+    public void write(ByteBuf buf, FuelCredit credit, long ratedWatts, int ratedEfficiencyPpm) {
+        NBTTagCompound tag = new NBTTagCompound(); write(tag, credit, ratedWatts, ratedEfficiencyPpm); cpw.mods.fml.common.network.ByteBufUtils.writeTag(buf, tag);
+    }
     public void read(ByteBuf buf, FuelCredit credit) { read(cpw.mods.fml.common.network.ByteBufUtils.readTag(buf), credit); }
     /** Retained external API; native callers supply their installed/rated efficiency explicitly. */
     public String[] info(long ratedWatts, FuelCredit credit, String tankFuel, int fill) {
         return info(ratedWatts, credit, tankFuel, fill, credit.efficiencyPpm(), false);
     }
     public String[] info(long ratedWatts, FuelCredit credit, String tankFuel, int fill, int ratedEfficiencyPpm, boolean advanced) {
+        ratedWatts = ratedWatts(ratedWatts); ratedEfficiencyPpm = ratedEfficiency(ratedEfficiencyPpm);
         long watts = EnergyUnits.quantaPerTickToWatts(outputQuanta);
         double runtime = outputQuanta <= 0 ? 0 : credit.usefulMicrojoules() / 1_000_000D / (outputQuanta * 10D);
         if(tankFuel.equals(credit.fuel()) && fuelUnitsPerSecond > 0) runtime += fill / fuelUnitsPerSecond;

@@ -184,6 +184,9 @@ public class ItemAssemblyTemplate extends Item {
 			return;
 		}
 		
+        list.add("Workshop electrical demand: " + com.hbm.realsim.MachineInfo.watts(com.hbm.realsim.IndustrialDemand.FABRICATION_W));
+        list.add("Electrical work: " + api.hbm.energymk2.EnergyUnits.formatJoules(Math.multiplyExact(com.hbm.realsim.IndustrialDemand.FABRICATION_W / 10L, Math.max(1L, recipe.time))));
+        list.add(String.format(java.util.Locale.US, "Base process duration: %.2f s", Math.max(1, recipe.time) / 20D));
 		HashSet<Item> folders = recipe.folders;
 
 		if(folders == null)

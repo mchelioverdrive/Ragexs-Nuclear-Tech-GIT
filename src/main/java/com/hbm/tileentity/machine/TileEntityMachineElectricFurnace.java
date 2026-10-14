@@ -35,7 +35,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineElectricFurnace extends TileEntityMachineBase implements ISidedInventory, IEnergyReceiverMK2, IGUIProvider, IUpgradeInfoProvider {
+public class TileEntityMachineElectricFurnace extends TileEntityMachineBase implements ISidedInventory, IEnergyReceiverMK2, IGUIProvider, IUpgradeInfoProvider, com.hbm.realsim.IMachineInfo {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
@@ -45,7 +45,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	public long energyQuanta;
 	public static final long maxPower = 100000;
 	public int maxProgress = 100;
-	public long operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(50L);
+	public long operatingPowerWatts = com.hbm.realsim.IndustrialDemand.FURNACE_W;
 	private int cooldown = 0;
 	private boolean operationActive;
 	private boolean cachedRecipeEligible;
@@ -365,9 +365,8 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 
 		int speedLevel = this.upgradeManager.getLevel(UpgradeType.SPEED);
 		int powerLevel = this.upgradeManager.getLevel(UpgradeType.POWER);
-		this.maxProgress = 100 - speedLevel * 25 + powerLevel * 10;
-		long consumptionQuantaPerTick = 50L + speedLevel * 50L - powerLevel * 15L;
-		this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(consumptionQuantaPerTick);
+		this.maxProgress = Math.max(1, 100 - Math.min(3, speedLevel) * 25 + Math.min(3, powerLevel) * 10);
+		this.operatingPowerWatts = com.hbm.realsim.IndustrialDemand.atSpeed(com.hbm.realsim.IndustrialDemand.FURNACE_W, maxProgress, powerLevel);
 		return oldMaxProgress != this.maxProgress || oldOperatingPowerWatts != this.operatingPowerWatts;
 	}
 
@@ -483,10 +482,10 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		info.add(IUpgradeInfoProvider.getStandardLabel(ModBlocks.machine_electric_furnace_off));
 		if(type == UpgradeType.SPEED) {
 			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_DELAY, "-" + (level * 25) + "%"));
-			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "+" + (level * 100) + "%"));
+			info.add("Electrical demand scales with throughput; see the machine rating");
 		}
 		if(type == UpgradeType.POWER) {
-			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "-" + (level * 30) + "%"));
+			info.add("Work reduction: " + (Math.min(3, level) * 10) + "% (nominal recipes)");
 			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_DELAY, "+" + (level * 10) + "%"));
 		}
 	}
@@ -497,4 +496,10 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		if(type == UpgradeType.POWER) return 3;
 		return 0;
 	}
+
+    @Override public long getMachineDemandWatts() { return operatingPowerWatts; }
+    @Override public long getMachineCurrentDrawWatts() { return operationActive && hasPower() ? operatingPowerWatts : 0; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Idle load: 0 W; power and throughput rise together with speed upgrades");
+    }
 }

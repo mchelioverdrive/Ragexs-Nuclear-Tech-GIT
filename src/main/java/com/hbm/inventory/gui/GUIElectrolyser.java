@@ -18,6 +18,7 @@ public class GUIElectrolyser extends GuiInfoContainer {
 	
 	public GUIElectrolyser(InventoryPlayer invPlayer, TileEntityElectrolyser electrolyser) {
 		super(new ContainerElectrolyser(invPlayer, electrolyser));
+        setMachineInfoOwner(electrolyser);
 		this.electrolyser = electrolyser;
 
 		this.xSize = 210;

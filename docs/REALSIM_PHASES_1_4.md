@@ -142,7 +142,7 @@ Cold-return normalization and turbine rejection add further heat beyond the last
 
 The current 55L/t Magnox ceiling must not be preserved as the rating at literal thermodynamics:55kg/t corresponds to 1100kg/s, orders above the pilot flow. Source/store sizes are separate from rated output. At 3.849kg/t a 250MWth plant still needs fractional superhot flow and much larger sensible-heat storage/transfer W than current heat boxes. No ordinary machine needs TW merely because final fuel LHV is literal.
 
-Bootstrap requirements are **hand metalworking→starter fossil/biomass/heat power→general fabrication and chemistry→heavy/precision/sealed parts→NU reactor plus complete heat/turbine/condenser/quality-return/control loop→enrichment/high-throughput industry**. Current Magnox natural rod uses empty cladding +2 ordinary uranium billets +10 helium inventory L in 50 chemical ticks; Mg/Be/Al cladding and helium acquisition must be available from non-nuclear metallurgy/atmospheric routes. Current RBMK UEU uses ordinary uranium billets; do not substitute an enriched-only route. A proposed heavy machine must itself be producible using early machinery/tooling and startup electricity. Battery-backed black start, coolant filling/treatment and off-line fabrication complete before first export; assumed auxiliary power cannot simply come from the reactor before it is running.
+Bootstrap requirements are **hand metalworking→starter fossil/biomass/heat power→general fabrication and chemistry→heavy/precision/sealed parts→NU reactor plus complete heat/turbine/condenser/quality-return/control loop→enrichment/high-throughput industry**. Current Magnox natural rod uses empty cladding +2 ordinary uranium billets +10 helium inventory L in 50 chemical ticks; Mg/Be/Al cladding and helium acquisition must be available before nuclear power. The current Earth helium route is natural-gas fractionation; air/noble-tail separation does not output helium. Current RBMK UEU uses ordinary uranium billets; do not substitute an enriched-only route. A proposed heavy machine must itself be producible using early machinery/tooling and startup electricity. Battery-backed black start, coolant filling/treatment and off-line fabrication complete before first export; assumed auxiliary power cannot simply come from the reactor before it is running.
 
 At 34kW peak, this is feasible with the modeled 40kW workshop for ordinary preparation and larger non-nuclear engines for intermittent heavy work. The exact chosen recipe/capability set and clean-world route must still be checked: a source dependency path is not a survival-play proof.
 
@@ -278,7 +278,7 @@ The chemical dataset is independent of `FT_Flammable`/`FT_Combustible`. Their ol
 
 | Equipment | Useful nameplate | LHV efficiency | Control and compatibility |
 | --- | ---: | ---: | --- |
-| Wood/solid starter generator | 40 kWe | 7% whole fuel-to-electric | Existing ignition, fuel mode, air, ash and pollution; solid or physically defined burner fuel. |
+| Deprecated wood/solid generator (existing installations only) | 40 kWe | 7% whole fuel-to-electric | Existing ignition, fuel mode, air, ash and pollution; solid or physically defined burner fuel. |
 | Diesel Generator | 200 kWe default | 32% diesel; 30% diesel/reformate blend; 27% petroil | Automatic generator behavior remains. Waterlogging, air, charging, pollution and full-buffer gating retained. Spark fuels are not ordinary diesel fuel. |
 | Industrial Combustion Engine | 750 kWe | 38% × existing piston compatibility factor | Ignition retained; 0–30 slider now sets 0–100% power ceiling, not liters/tick. All pistons share the same mechanical nameplate. Matching piston/fuel improves endurance rather than creating chemical energy or a hidden power tier. |
 | Solid firebox | 200 kWth | 85% useful heat | Canonical solid fuel credit; air/waterlogging/ash and heat-buffer gating. Oven remains deferred. |
@@ -390,7 +390,7 @@ All changed equations and utility powers, including extraction, fermentation, al
 
 These constructed facilities use only the uncracked atmospheric→light-fractionation diesel path. Per crude L it requires854.9 kJ thermal and37.4875 kJ electric, excluding the well/pump auxiliary. The totals already include crude sensible heating, separation and light fractionation. Whole-unit scheduling and retained mass make actual tank delivery discrete; figures below are steady averages.
 
-For sustained heat, allocate refinery gas to the crude heater and light fractionator, and heavy oil to the atmospheric separator. At85% burner efficiency, this consumes0.016949907 kg refinery gas and0.004843522 heavy-oil L per crude L. Those amounts are **subtracted from export stocks**. Only about0.037835 standard gas L per crude L remains from the refinery. A startup fuel/heat stock is required before the first gas batch; the existing starter generator and coal-fired heater can start the chain. Associated well gas is additional stock and is not credited in these calculations; afterburner is off.
+For sustained heat, allocate refinery gas to the crude heater and light fractionator, and heavy oil to the atmospheric separator. At85% burner efficiency, this consumes0.016949907 kg refinery gas and0.004843522 heavy-oil L per crude L. Those amounts are **subtracted from export stocks**. Only about0.037835 standard gas L per crude L remains from the refinery. A startup fuel/heat stock is required before the first gas batch; Stirling/steam electricity and a coal-fired Heating Oven can start the chain. Crude heating needs 224.4 kWth at 24 L/min, beyond a lone firebox. Associated well gas is additional stock and is not credited in these calculations; afterburner is off.
 
 | Steady case | Small diesel facility | Heavy pre-nuclear facility | Expanded diesel-only fossil plant |
 | --- | ---: | ---: | ---: |
@@ -509,7 +509,7 @@ These are analytical steady-state figures from exact adopted bills, not gameplay
 | Net electricity MW | 0.013166542 | 0.067550323 | 3.597452692 | 3.910138214 |
 | Net efficiency % | **5.595780** | **11.483555** | **12.740978** | **39.101382** |
 
-Early: one 200-kW firebox, ordinary boiler, small engine and passive condenser. Coal 0.547195622 kg/min, wood 0.904977376 kg/min. The 16,000-count water inlet lasts 58.7685 h once-through or 11,753.7 h against makeup alone. This is a useful modest automatic solid-fuel alternative, not an efficiency upgrade over the 40-kW/7% starter or a diesel competitor. Abundant solid fuel/shared process heating are its role.
+Early: one 200-kW firebox, ordinary boiler, small engine and passive condenser. Coal 0.547195622 kg/min, wood 0.904977376 kg/min. The 16,000-count water inlet lasts 58.7685 h once-through or 11,753.7 h against makeup alone. This is a modest automatic solid-fuel steam plant supplying about 13.17 kW net, rather than the engine's 25-kW ceiling. Stirling/Heavy Stirling are the current starter alternatives; the wood generator is deprecated. Abundant solid fuel/shared process heating are its role.
 
 Oven: one 500-kW oven beneath an industrial boiler whose own fuel supply is empty, one standard turbine on hot steam, and one radiator (or two passive condensers). Coal 1.367989056 kg/min, wood 2.262443439 kg/min; about 67.55 kW net. The full expansion needs no second turbine. Imported qualified heat reduces oven firing; its store never grants higher boiler power. An ordinary boiler still limits an oven-fed loop to 200 kWth.
 
@@ -628,3 +628,268 @@ All 58 changed files belong to this tranche. Paths are repository-relative; gene
 **Release history**
 
 - `CHANGELOG.md`
+
+
+## Server-ready base normalization
+
+2026-10-14. This final consumer, cooling, refinery-bootstrap and machine-information tranche follows 5A/5B, 5C, fluid infrastructure and 5D. It supersedes earlier workshop/load recommendations. **The 40-kW wood/solid generator is deprecated**, retained for existing installations; it is not the early steam plant or recommended starter. Nuclear/HU calibration and the later manufacturing-capability redesign remain deferred.
+
+### Refinery progression
+
+The original final recipe had **3 Analog Boards plus 3 Capacitor Boards**: its base Analog requirement was supplemented by `addTantalium(machine_refinery, 3)`. That late augmentation introduced the solvent dependency reported during play. The augmentation is removed; the recipe now has **3 Analog Boards**, without duplicating them.
+
+Unchanged parts: 3 steel welded plates (or 1 heavy steel component in expensive mode), 16 large copper plates, 6 steel shells, 12 steel pipes, 8 polymer plates, 2 steel tanks and 2 motors. Base fabrication duration remains 350 ticks.
+
+The Analog soldering recipe uses 3 vacuum tubes, 2 ordinary capacitors, 4 PCB and 4 fine lead wires, without solvent. Tubes can use glass/carbon wire/polymer; capacitors tin/copper wire/polymer; PCB copper/polymer. **Polymer plate is an insulating abstraction**, with hand recipes from wool/string or bricks as well as later plastic/rubber/fiber. It does not require refinery-derived plastic. Motors have manual and tier-1 anvil routes. The Fabrication Machine's tier-2 anvil recipe needs motors and vacuum tubes, not itself/refinery. Soldering and arc welding also have tier-2 anvil construction. Steel welding uses two cast plates at 5 kW for 100 ticks. Expensive-mode heavy parts remain manufacturing workloads, without the added solvent-only board. Material forming quantities and surrounding circuit tiers are preserved.
+
+The inspected default route is hand metallurgy/anvils -> Stirling/steam power -> manual circuits/motors -> fabrication/soldering -> basic chemistry -> well/pumpjack -> crude heating/refinery/fractionation -> diesel/industrial engines -> larger parallel manufacture and centralized steam/gas -> natural-uranium preparation. Starter Stirling and Steam Engine have tier-2 anvil routes using iron/copper/steel parts. Heavy Stirling additionally needs beryllium, gold coils and a steel/titanium gear. Powder/crystal processing and smelting supply these metals before nuclear technology; Heavy Stirling is an expansion option, not a required first-power part.
+
+**Heat is a separate startup requirement.** Crude heating at 24 L/min needs 224.4 kWth at 350 C. The existing petroleum bill draws the qualified heater directly; the ordinary boiler's 200-kW ceiling applies to its water/steam mode. A coal-fired Heating Oven provides up to 500 kWth, built at tier-2 anvil from firebrick/steel/copper. It can start this process before petroleum fuels exist. Refining needs 14.4 kWe plus 65.2 kWth; light-oil fractionation at 12 L/min needs 0.8 kWe plus 70.4 kWth. Separate qualified heaters serve the process positions. The three heating duties total 360 kWth; a lone 200-kW firebox under the crude heater cannot pay that first bill.
+
+Natural uranium can be smelted from ore and formed into ordinary billets. Magnox natural fuel uses Mg/Be/Al empty cladding, 2 ordinary uranium billets and 10 HELIUM4 inventory units in 50 chemical ticks; enriched fuel is not substituted. Current Earth air/noble-tail recipes do **not** produce helium: existing natural-gas fractionation supplies it before a reactor. The vessel uses steel, boron, graphite, rubber, concrete/scaffold and Basic boards. These are source-checked default routes, including the recipe-mode distinction, not a clean-world survival test or certification of external JSON. No additional clear crafting circle was changed.
+
+### Corrected starter generation
+
+| Fresh-default equipment | Electrical ceiling | Qualified input / practical role |
+| --- | ---: | --- |
+| Starter Stirling | **10 kW** | 66.67 kWth intake ceiling, 15% installed conversion; first tools with staggered jobs |
+| Heavy Stirling | **40 kW** | 200 kWth intake, 20% conversion; complete workshop after its metallurgy |
+| Steam Engine | **25 kW** | Ordinary steam, 0.3 kg/s, 70% credited expansion work; about **13.17 kW net** from one 200-kW firebox/boiler/passive-condenser train |
+| Wood generator | 40 kW unchanged | Deprecated compatibility installation; excluded from new starter advice |
+
+Normal/heavy Stirling now draws paid qualified heat through the shared source budget, with governed intake, aggregate export limits and retained electrical storage. Saved fixed-point conversion fractions and tick/export budgets prevent repeated accounting or unowned credit. Full storage stops heat withdrawal. Conversion is bounded by the hot-source/20-C-cold-sink Carnot limit; residual heat goes to a declared integral ambient radiator. This is an integrated cooling abstraction, not simulated weather or exported steam. Spin follows generation. Governed intake prevents the old inventory-percentage overload in normal operation; saved broken gears, matching-gear repairs, native ports and creative exemption remain. Saved electricity is not rescaled.
+
+Explicit old configuration overrides remain: `D:efficiency`, `I:maxHeatNormal`, `I:maxHeatSteel`. Fresh defaults are 0.15, 6667 qualified q/t and 20000 q/t; new `D:efficiencySteel` defaults to 0.20. An explicitly configured old common efficiency applies to both gears unless overridden by the heavy key. Old 300/1500 and 0.5 settings still install lower ratings, shown by the same runtime getters. `D:diffusion` is retained for creative's exempt nominal path; normal intake uses transfer budgets, not accumulated stock percentage. Uncalibrated reactor/HU heat is not silently certified.
+
+A first furnace/press/fabrication/soldering bench has a 14-kW peak and about 5.55-kW mean at the duties below. One Starter Stirling supports it with scheduling (furnace+press, then fabrication). A full workshop needs two starters, early steam with peak support, or Heavy Stirling. A 25-kW engine ceiling needs sufficient boiler supply; one early boiler does not supply it. Storage must meet peak transfer watts as well as stored joules.
+
+### Consumer ratings and upgrade audit
+
+These are adopted gameplay equipment envelopes tied to native size/cadence/role, not manufacturer measurements. Listed workshop/lane electrical idle loads are zero; fuel/process heat is separate.
+
+| Role/equipment | Old default | Final default/rule |
+| --- | ---: | --- |
+| Electric furnace, intermittent workshop heating | 0.5 kW | **8 kW**, 40 kJ per 100-tick base job |
+| Electric press, forming | 1 kW | **2 kW**, native cadence |
+| Fabrication, workshop assembly | 1 kW | **3 kW**, recipe-duration work |
+| Industrial fabrication, 8 assembly lanes | 1 kW/lane | **6.5 kW/lane, 52 kW total**, twice workshop lane throughput, cooling included |
+| Generic chemical reactor | 1 kW | **1/2/4/10 kW**: fermentation; mixing/dilution/neutralization; other utilities; polymer/rubber/plastic. Released physical bills override families |
+| Industrial chemistry, 8 lanes | 1 kW/lane | **2.5/4.5/8.5/20.5 kW per lane**, or **20/36/68/164 kW** total at twice nominal throughput; physical bills retain their own heat/work/time plus cooling |
+| Centrifuge, separation | 2 kW | **5 kW**, speed/overdrive power follows throughput |
+| Crusher/shredder, workshop processing | 50 W | **3 kW**, blades/cadence retained; full-tick affordability enforced |
+| Pyrolysis oven | 100 kW, squared upgrades | **100 kW base retained**, upgraded draw follows duration/throughput/efficiency rather than a square |
+| Large arc furnace, heavy melting | 10/50/250/1250 kW, x5 tiers | **500/1500/2500/3500 kW**, **1.8 MJ/kg-equivalent** persistent paid work |
+| Mining laser, beam excavation | 100 kW | **500 kW base**, existing cycle/range/efficiency decisions |
+| Excavator, digging/handling | 100 kW | **250 kW**, speed demand follows `(2+speed)/2` throughput, efficiency saves 10%/level |
+| Welder/soldering, intermittent parts/electronics | Recipe-rated | Retained; steel welding **5 kW**, iron **1 kW**, basic soldering around **1 kW**; heavier recipe bills exposed |
+| Compressor, compression/aftercooling | 25 kW | Retained **25 kW** base; physical compression work/pressure requirements |
+| Electrolyser, independent fluid/metal work | 100 kW nominal/lane | Retained **100 kW** nominal lanes and **200 kW water** bill; no physical-water discount; shared budgeting now sums both lane costs |
+| Cryogenic separator, 100-unit batches | Existing physical work | Retained air **50 kJ/batch, up to 1 MW** at one batch/tick; other feeds **10 kJ/batch, up to 200 kW** |
+| Petroleum machinery | Phase 5C bills | Retained mass/work/heat/feed requirements, selected-bill information |
+| Groundwater/well/pumpjack | Existing ratings | Retained **120 L/min at 10 kW**, steam **30 L/min**, default oil auxiliaries **1/3 kW** |
+| Large crusher / X3030 | Dormant historical processing | Old processing tile is unregistered. Separately restored X3030 is a decorative prop with **no power or processing**; neither is a factory load |
+
+`IndustrialDemand.atSpeed` ties nominal work to duration, with up to 30% work saving. Native upgrade/recipe eligibility and whole-tick timing remain. Generic chemical families scale utility work independently of cooling. Physical batches pay auxiliaries only when advancing. High overdrive can have a large demand because it performs more work, without an exponential penalty. Industrial fabrication/chemistry remain eight parallel lanes of the same capability; no heavier manufacturing or chemistry tier is invented.
+
+Large-arc mass follows recipe material/ingot equivalents and actual stack counts, using an explicit 1 kg/ingot-equivalent convention; unmapped solids/reduction items use 1 kg for work. The 1.8-MJ/kg envelope is 500 kWh/metric tonne, within the broad order of the [DOE EAF sourcebook discussion](https://www1.eere.energy.gov/manufacturing/tech_assistance/pdfs/process_heating_sourcebook2.pdf), 400–500 kWh/short ton (about 1.59–1.98 MJ/kg). Nominal duty is around 1600 C, not alloy-specific thermodynamics or literal Minecraft item mass. Duration is batch work divided by installed power, with native charging/pouring delays. Final partial ticks pay only remaining work. Paid work persists; old unowned float progress resets without deleting ingredients/electricity. Storage expands to **100 MJ**, without a nuclear eligibility gate.
+
+### Cooling and groundwater
+
+Industrial fabrication/chemistry use a **sealed 20-L fresh-water charge per machine**, an integral ambient dry cooler and independent active lanes. No operating makeup, evaporation or new SPENTSTEAM is produced. Existing water/steam tanks, capacities, IDs and saved contents remain; old steam is export-only. Empty loops pause both generic and physical chemical work.
+
+Generic utility work is conservatively rejected as heat; released physical chemistry uses its own `rejectedJ`. Cooling pump/fan work is included in draw/rejection: **at least 500 W per active lane**, rising to **2% of process rejection** at high duty, rounded upward to the electrical quantum. Idle lanes do not pay it. No exported warm-water state or weather simulation is added.
+
+Internal circulation is rejected W x 60 / 83,600 L/min, from cp=4.18 kJ/(kg K), a 20-K process rise and cooling back to inlet conditions. Base eight-lane fabrication/chemistry reject 52/68 kW and circulate about **37.32/48.80 L/min**. This is recirculation, not groundwater withdrawal. Electric/steam pumps fill one 20-L loop in **10/40 s**, with unchanged 120/30-L/min nameplates. The old 8-kW -> approximately 3.71-GW implied-steam contradiction is removed at the consumer.
+
+Strand casting also stops its unsupported water-to-steam debit, retaining materials, molds, outputs and old exhaust stock. Its molten cooling stays explicitly **nominal** for the later production ledger, rather than inventing alloy latent heat here.
+
+
+### Machine-information standard and coverage
+
+`IMachineInfo`, `MachineInfo`, `MachineInfoItems` and `IndustrialDemand` provide native requirements and shared W/J/thermal/circulation formatting. Nameplates, configured efficiencies, steam mass ceilings, thermal transfer, real energy capacity, battery charge/discharge limits, RF adapter boundaries and selected process bills come from the same owners used by operation. `ProcessRecipe` caches maximum-tick electrical/thermal ratings. Current demand/draw/cooling are server-owned snapshots; physical batches and thermal accounts expose paid work. These snapshots follow native accounting cadence, not profiler measurement. Installed fossil/Stirling ratings and efficiencies, steam expansion factors and oven intake efficiency also travel through existing status packets, so live values do not depend on a client's different local configuration. Item profiles explicitly describe local settings and direct players to the placed machine for server-installed values.
+
+Items use **67 finite native profile factory branches**, with one typed branch handling the three Stirling identities, plus actual battery-block capacities. Profiles are constructed once without worlds, reflection or ticking. Generators, boilers/heaters/solar/geothermal, all steam expanders, gas/turbofan, condensers/radiator, pumps/oil drilling, petroleum/chemistry, compressor/cryogenics/electrolysis, fabrication/forming/foundry and mining equipment are covered. Nominal sawmill/combination/casting mechanisms say so. Nuclear HU is not presented as calibrated heat; controller/proxy/decorative tiles get no invented rating. Existing fluid hovers retain current amount, capacity, identity and liquid/standard-gas/steam quantity basis.
+
+Power-bar hovers use shared information. A small blue information region inside the existing upper-right panel gives a usable target even without a useful power widget, including **Industrial Steam Turbine**. **44 GUI constructors bind their native machine owner explicitly**; other existing inventory GUIs can resolve it through container/slots. No GUI is redesigned. Applicable restrictions include feed/heat state, cooling charge, blocked products and gear/steam requirements; meaningless fields are omitted. Exact owner/GUI lists are in the source catalogue.
+
+Existing NEI assembly/chemistry template hovers and welder/soldering recipe information expose required power, duration/work and released thermal/feed requirements. Thermal/generator look overlays share ratings. Stale steam, groundwater, flare, Stirling, wood, heater, coker and nominal sawmill descriptions are corrected across locales containing those keys. Numbers are removed from descriptions where runtime information supplies them. Deferred reactor values and external EnergyControl/legacy API fields stay compatibility boundaries, not new SI claims.
+
+Extended machine-base binary status and electrolyser cycle status require **matching client/server mod versions**. Saved inventories, electricity/fluid amounts, IDs and pressure classes remain. New Stirling fractions and arc paid-work fields do not recreate energy from old progress. Over-cap electrical receiving rejects input without deleting stock, after honoring the legacy external adapter. Physical-process guards prevent auxiliary debits from empty electrical stores. The mixed-lane electrolyser budget now sums actual fluid and metal costs. No second scheduler or background world-mutation path is introduced.
+
+### Representative electrical factory models
+
+Constructed planning loads at 20 TPS use selected duty fractions, not measured facilities. Listed consumer idle electrical draw is **0 W**. Size sustained supply against average and nameplates/rated storage/staggering against coincident peaks. Process heat/fuel and generator auxiliaries remain separate paid requirements.
+
+| Model | Normal average | Simultaneous peak | Sensible generation |
+| --- | ---: | ---: | --- |
+| Starter workshop | **10.90 kW** | **36.00 kW** | Heavy Stirling 40 kW covers peak; two 10-kW starters or approximately 13.17-kW early steam cover mean with peak support. One starter serves the smaller first bench |
+| Diesel-era factory | **93.26 kW** | **148.20 kW** | One **200-kW genset** covers both; qualified petroleum heat is separate |
+| Heavy pre-nuclear factory | **622.96 kW** | **1018.20 kW** | One **750-kW engine** covers mean with peak support; **two** cover peak. Adequately supplied steam is an alternative |
+| Large fossil facility | **2515.08 kW** | **3241.20 kW** | Four 750-kW engines cover mean, five peak; **2.94-MW net simple gas** needs peak support; **3.91-MW combined cycle** or approximately **3.60-MW industrial steam reference** covers this peak |
+
+Component assumptions, in kW x active duty:
+
+- **Starter:** furnace 8x0.45, press 2x0.20, fabrication 3x0.60, basic chemistry 4x0.35, centrifuge 5x0.30, crusher 3x0.35, soldering 1x0.15, intermittent groundwater 10x0.10.
+- **Diesel:** four furnaces 32x0.55, two presses 4x0.35, four fabrication machines 12x0.65, two basic reactors 8x0.50, two centrifuges 10x0.70, eight crushers 24x0.80, four soldering stations 4x0.35, petroleum cell 19.2x0.80, groundwater 10x0.20, compressor 25x0.70.
+- **Heavy:** industrial fabrication 52x0.60, default industrial chemistry 68x0.50, eight crushers 24x0.60, base large arc 500x0.60, water electrolysis 200x0.80, separate metal-electrolysis lane 100x0.30, four centrifuges 20x0.50, petroleum/groundwater/compression support 54.2x0.80.
+- **Large:** speed-1 arc 1500x0.75, two water electrolysers 400x0.80, two speed-3 industrial chemical systems 228.8x0.65, two speed-3 industrial fabrication systems 173.6x0.65, 24 crushers 72x0.70, four petroleum cells plus groundwater 86.8x0.90, mining laser 500x0.90, excavator 250x0.80 and an explicit miscellaneous support reserve 30x1.00. That reserve is a planning allowance, not invented idle machine consumption.
+
+A petroleum cell counts refinery 14.4, light fractionator 0.8, well 1 and pumpjack 3 kWe. A full refinery's light output is below the tower's 12-L/min ceiling, so simultaneously assuming both electrical ratings is conservative. Three heating duties can total 360 kWth per cell; no process heat or unburned coproduct is credited as free electricity. Existing 5D facility models retain owned exhaust, finite cooling, fuel logistics and net auxiliary subtraction.
+
+The ladder is first tools -> parallel starters/Heavy Stirling or early steam -> 200-kW diesel -> one/two 750-kW engines and larger steam -> centralized gas/combined cycle for sustained MW demand. The **5-MW Industrial** and **25-MW Leviathan** ceilings do not guarantee that output from any steam grade or boiler supply. This large facility needs neither a 25-MW turbine nor a nuclear unlock. Later nuclear interest follows sustained larger industry; calibration remains deferred.
+
+### Validation and remaining acceptance
+
+Observed Java 8 offline build, existing JUnit suites, reobfuscation and packaging succeed with the repository's existing tooling. **68 tests pass: 35 physical, 11 petroleum, 22 thermal.** Six methods added to the existing physical suite cover demand/upgrade work, arc mass/installed power, heat-driven circulation/auxiliary growth, process presentation vs maximum paid tick/save reconstruction, configured generator information (including a server/client configuration mismatch), and Stirling rating/temperature-bound presentation. Existing suites cover tank/legacy stock, mass/heat/fuel ownership, process/steam persistence, repeat-tick budgets and combined-cycle closure. Mixed-lane native electrolyser costs are inspected against both debit paths. No new test file, fixture or harness is created.
+
+Source review includes paid final arc work, empty auxiliary budgets, loop qualification on physical lanes, over-cap receiving, side-only GUI boundaries, matched status serialization, legacy/new amounts and registered-vs-dormant shredder owners. Generated outputs remain excluded from source control. Concurrent decorative X3030 restoration is preserved and excluded from this pass's manifest.
+
+**No world/GUI/save-reload smoke test was performed for this tranche.** Native desktop control is unavailable; compilation/accounting tests cannot establish visual, placement, rotation, sustained operation or dedicated-server behavior. The user's earlier successful placement smoke test concerns the preceding baseline, not these final changes.
+
+Remaining user acceptance: clean survival anvil/Stirling/steam -> Analog/refinery crafting, including expensive mode and qualified Heating Oven startup; representative consumer GUIs and Industrial Turbine icon; localized/NEI hovers; cold/full/blocked/missing-loop behavior with no new cooling steam; configured generator/export rates; new/saved Stirling and gear repair; arc paid/partial-energy completion; save/reload/chunk unload without stock loss or repeated work; dedicated-server/multiplayer acceptance. No multiclient or client-to-server connection testing is attempted.
+
+### Changed files in this pass
+
+141 files; concurrent decorative X3030 files and generated outputs are excluded.
+
+- `CHANGELOG.md`
+- `docs/REALSIM_FLUID_INFRASTRUCTURE.md`
+- `docs/REALSIM_PHASES_1_4.md`
+- `docs/REALSIM_PHYSICAL_LEDGER.md`
+- `docs/REALSIM_PROCESS_INVENTORY.md`
+- `docs/REALSIM_SOURCE_CATALOGUE.md`
+- `docs/steam-turbines.md`
+- `src/main/java/api/hbm/energymk2/IEnergyReceiverMK2.java`
+- `src/main/java/com/hbm/blocks/machine/MachineChungus.java`
+- `src/main/java/com/hbm/blocks/machine/MachineSteamEngine.java`
+- `src/main/java/com/hbm/blocks/machine/MachineStirling.java`
+- `src/main/java/com/hbm/handler/nei/ArcWelderHandler.java`
+- `src/main/java/com/hbm/handler/nei/SolderingStationHandler.java`
+- `src/main/java/com/hbm/inventory/gui/GUIAssemfac.java`
+- `src/main/java/com/hbm/inventory/gui/GUIChemfac.java`
+- `src/main/java/com/hbm/inventory/gui/GUICombustionEngine.java`
+- `src/main/java/com/hbm/inventory/gui/GUICompressor.java`
+- `src/main/java/com/hbm/inventory/gui/GUICrystallizer.java`
+- `src/main/java/com/hbm/inventory/gui/GUIElectrolyser.java`
+- `src/main/java/com/hbm/inventory/gui/GUIElectrolyserFluid.java`
+- `src/main/java/com/hbm/inventory/gui/GUIElectrolyserMetal.java`
+- `src/main/java/com/hbm/inventory/gui/GUIFurnaceCombo.java`
+- `src/main/java/com/hbm/inventory/gui/GUIHeaterHeatex.java`
+- `src/main/java/com/hbm/inventory/gui/GUILiquefactor.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineArcFurnace.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineArcFurnaceLarge.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineArcWelder.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineAssembler.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineCatalyticReformer.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineCentrifuge.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineChemplant.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineCoker.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineCryoDistill.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineDiesel.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineEPress.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineElectricFurnace.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineExcavator.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineExposureChamber.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineGasFlare.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineHydrotreater.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineLargeTurbine.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachinePress.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineRefinery.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineShredder.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineSolderingStation.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineStrandCaster.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineTurbine.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineTurbineGas.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineTurbofan.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineVacuumDistill.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMachineWoodBurner.java`
+- `src/main/java/com/hbm/inventory/gui/GUIMiningLaser.java`
+- `src/main/java/com/hbm/inventory/gui/GUIOilburner.java`
+- `src/main/java/com/hbm/inventory/gui/GUIPyroOven.java`
+- `src/main/java/com/hbm/inventory/gui/GUISolidifier.java`
+- `src/main/java/com/hbm/inventory/gui/GUIVacuumCircuit.java`
+- `src/main/java/com/hbm/inventory/gui/GuiInfoContainer.java`
+- `src/main/java/com/hbm/inventory/recipes/AssemblerRecipes.java`
+- `src/main/java/com/hbm/inventory/recipes/ChemplantRecipes.java`
+- `src/main/java/com/hbm/items/machine/ItemAssemblyTemplate.java`
+- `src/main/java/com/hbm/items/machine/ItemChemistryTemplate.java`
+- `src/main/java/com/hbm/main/ModEventHandlerClient.java`
+- `src/main/java/com/hbm/realsim/Combustion.java`
+- `src/main/java/com/hbm/realsim/GeneratorStats.java`
+- `src/main/java/com/hbm/realsim/IMachineInfo.java`
+- `src/main/java/com/hbm/realsim/IndustrialDemand.java`
+- `src/main/java/com/hbm/realsim/MachineInfo.java`
+- `src/main/java/com/hbm/realsim/MachineInfoItems.java`
+- `src/main/java/com/hbm/realsim/ProcessBatch.java`
+- `src/main/java/com/hbm/realsim/ProcessMachine.java`
+- `src/main/java/com/hbm/realsim/ProcessRecipe.java`
+- `src/main/java/com/hbm/realsim/ThermalAccount.java`
+- `src/main/java/com/hbm/realsim/ThermalInfo.java`
+- `src/main/java/com/hbm/tileentity/TileEntityMachineBase.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityChungus.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityCondenser.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityElectrolyser.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityFireboxBase.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityFurnaceCombination.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityHeatBoilerBase.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityHeaterElectric.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityHeaterOilburner.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityHeaterOven.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineArcFurnace.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineArcFurnaceLarge.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineArcWelder.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineAssembler.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineAssemblerBase.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineAssemfac.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineCentrifuge.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineChemfac.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineChemplant.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineChemplantBase.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineCombustionEngine.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineCompressor.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineCryoDistill.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineCrystallizer.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineDiesel.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineEPress.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineElectricFurnace.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineExcavator.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineExposureChamber.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineLargeTurbine.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineMiningLaser.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachinePress.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachinePumpElectric.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachinePumpSteam.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineShredder.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineSolderingStation.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineStrandCaster.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineTurbine.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineTurbineGas.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineTurbofan.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineVacuumCircuit.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityMachineWoodBurner.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntitySawmill.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntitySolarBoiler.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntitySteamEngine.java`
+- `src/main/java/com/hbm/tileentity/machine/TileEntityStirling.java`
+- `src/main/java/com/hbm/tileentity/machine/oil/TileEntityMachineAlkylation.java`
+- `src/main/java/com/hbm/tileentity/machine/oil/TileEntityMachineCatalyticCracker.java`
+- `src/main/java/com/hbm/tileentity/machine/oil/TileEntityMachineCatalyticReformer.java`
+- `src/main/java/com/hbm/tileentity/machine/oil/TileEntityMachineCoker.java`
+- `src/main/java/com/hbm/tileentity/machine/oil/TileEntityMachineFractionTower.java`
+- `src/main/java/com/hbm/tileentity/machine/oil/TileEntityMachineGasFlare.java`
+- `src/main/java/com/hbm/tileentity/machine/oil/TileEntityMachineHydrotreater.java`
+- `src/main/java/com/hbm/tileentity/machine/oil/TileEntityMachineLiquefactor.java`
+- `src/main/java/com/hbm/tileentity/machine/oil/TileEntityMachinePyroOven.java`
+- `src/main/java/com/hbm/tileentity/machine/oil/TileEntityMachineRefinery.java`
+- `src/main/java/com/hbm/tileentity/machine/oil/TileEntityMachineSolidifier.java`
+- `src/main/java/com/hbm/tileentity/machine/oil/TileEntityMachineVacuumDistill.java`
+- `src/main/java/com/hbm/tileentity/machine/oil/TileEntityOilDrillBase.java`
+- `src/main/resources/assets/hbm/lang/de_DE.lang`
+- `src/main/resources/assets/hbm/lang/en_NT.lang`
+- `src/main/resources/assets/hbm/lang/en_US.lang`
+- `src/main/resources/assets/hbm/lang/fr_FR.lang`
+- `src/main/resources/assets/hbm/lang/it_IT.lang`
+- `src/main/resources/assets/hbm/lang/pl_PL.lang`
+- `src/main/resources/assets/hbm/lang/ru_RU.lang`
+- `src/main/resources/assets/hbm/lang/zh_CN.lang`
+- `src/test/java/com/hbm/realsim/PhysicalAccountingTest.java`

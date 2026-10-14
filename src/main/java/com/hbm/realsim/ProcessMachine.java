@@ -151,11 +151,13 @@ public final class ProcessMachine {
         IProcessHeatSource heater = integratedHeater == null ? heater(machine) : integratedHeater;
         long availableHeat = heater != null && heater.getProcessTemperatureC() >= recipe.temperatureC ? heater.getAvailableProcessHeatQuanta(machine.getWorldObj().getTotalWorldTime()) : 0;
         long now = machine.getWorldObj().getTotalWorldTime();
-        if(batch.canAdvance(now, power == null ? 0 : power.getStoredEnergyQuanta(), availableHeat)) {
-            long work = batch.nextWork(), heat = batch.nextHeat();
+        long auxiliary = machine instanceof IMachineInfo ? ((IMachineInfo) machine).getProcessAuxiliaryWatts(recipe) / 10L : 0L;
+        if((auxiliary == 0L || power != null && power.getStoredEnergyQuanta() >= auxiliary)
+                && batch.canAdvance(now, power == null ? 0 : power.getStoredEnergyQuanta() - auxiliary, availableHeat)) {
+            long work = Math.addExact(batch.nextWork(), auxiliary), heat = batch.nextHeat();
             if(work > 0) power.setStoredEnergyQuanta(power.getStoredEnergyQuanta() - work);
             if(heat > 0 && heater.drawProcessHeatQuanta(now, heat) != heat) throw new IllegalStateException("Process heat debit changed during commit");
-            batch.advance(now); changed = true;
+            batch.advance(now); batch.recordDraw(now, work); changed = true;
         }
         if(batch.complete()) {
             int[] quantities = batch.finish(); int fluid = 0;

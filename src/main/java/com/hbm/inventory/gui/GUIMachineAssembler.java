@@ -20,6 +20,7 @@ public class GUIMachineAssembler extends GuiInfoContainer {
 	
 	public GUIMachineAssembler(InventoryPlayer invPlayer, TileEntityMachineAssembler tedf) {
 		super(new ContainerMachineAssembler(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		assembler = tedf;
 		
 		this.xSize = 176;

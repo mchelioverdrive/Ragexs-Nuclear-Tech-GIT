@@ -39,6 +39,36 @@ import net.minecraft.util.ResourceLocation;
 @Optional.Interface(iface = "codechicken.nei.api.INEIGuiHandler", modid = "NotEnoughItems")
 public abstract class GuiInfoContainer extends GuiContainer implements INEIGuiHandler {
 
+    private TileEntity machineInfoOwner;
+    private boolean machineInfoOwnerResolved;
+    protected final void setMachineInfoOwner(TileEntity owner) {
+        machineInfoOwner = owner; machineInfoOwnerResolved = true;
+    }
+    protected TileEntity getMachineInfoOwner() {
+        if(!machineInfoOwnerResolved) {
+            machineInfoOwnerResolved = true;
+            if(inventorySlots instanceof ContainerBase && ((ContainerBase) inventorySlots).tile instanceof TileEntity)
+                machineInfoOwner = (TileEntity) ((ContainerBase) inventorySlots).tile;
+            if(machineInfoOwner == null) for(Object entry : inventorySlots.inventorySlots) {
+                Slot slot = (Slot) entry;
+                if(slot.inventory instanceof TileEntity) { machineInfoOwner = (TileEntity) slot.inventory; break; }
+            }
+        }
+        return machineInfoOwner;
+    }
+    @Override public void drawScreen(int mouseX, int mouseY, float partialTick) {
+        super.drawScreen(mouseX, mouseY, partialTick);
+        TileEntity owner = getMachineInfoOwner();
+        if(owner instanceof com.hbm.realsim.IMachineInfo || owner instanceof api.hbm.energymk2.IRatedGenerator
+                || owner instanceof api.hbm.tile.IProcessHeatSource || owner instanceof api.hbm.energymk2.IEnergyHandlerMK2) {
+            GL11.glColor4f(1F, 1F, 1F, 1F);
+            int x = guiLeft + xSize - 12, y = guiTop + 4;
+            drawInfoPanel(x, y, 8, 8, 0);
+            if(mouseX >= x && mouseX < x + 8 && mouseY >= y && mouseY < y + 8)
+                drawCustomInfoStat(mouseX, mouseY, x, y, 8, 8, mouseX, mouseY, com.hbm.realsim.MachineInfo.describe(owner, true));
+        }
+    }
+
 	static final ResourceLocation guiUtil =  new ResourceLocation(RefStrings.MODID + ":textures/gui/gui_utility.png");
 
 	public GuiInfoContainer(Container p_i1072_1_) {
@@ -46,8 +76,12 @@ public abstract class GuiInfoContainer extends GuiContainer implements INEIGuiHa
 	}
 
 	public void drawElectricityInfo(GuiInfoContainer gui, int mouseX, int mouseY, int x, int y, int width, int height, long power, long maxPower) {
-		if(x <= mouseX && x + width > mouseX && y < mouseY && y + height >= mouseY)
-			gui.drawInfo(new String[] { EnergyUnits.formatJoules(power) + " / " + EnergyUnits.formatJoules(maxPower) }, mouseX, mouseY);
+		if(x <= mouseX && x + width > mouseX && y < mouseY && y + height >= mouseY) {
+            TileEntity owner = getMachineInfoOwner();
+            List<String> lines = owner == null ? new ArrayList<String>() : com.hbm.realsim.MachineInfo.describe(owner, true);
+            if(lines.isEmpty()) lines.add(EnergyUnits.formatJoules(power) + " / " + EnergyUnits.formatJoules(maxPower));
+            gui.drawCustomInfoStat(mouseX, mouseY, x, y, width, height, mouseX, mouseY, lines);
+        }
 	}
 
 	public void drawCustomInfoStat(int mouseX, int mouseY, int x, int y, int width, int height, int tPosX, int tPosY, String... text) { drawCustomInfoStat(mouseX, mouseY, x, y, width, height, tPosX, tPosY, Arrays.asList(text)); }

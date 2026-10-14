@@ -46,7 +46,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
-public class TileEntityMachineTurbineGas extends TileEntityMachineBase implements IFluidStandardTransceiver, api.hbm.energymk2.IRatedGenerator, IControlReceiver, IGUIProvider, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IFluidCopiable {
+public class TileEntityMachineTurbineGas extends TileEntityMachineBase implements IFluidStandardTransceiver, api.hbm.energymk2.IRatedGenerator, IControlReceiver, IGUIProvider, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private static final int TASK_SIMULATE = 1;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
@@ -75,6 +75,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	
 	private AudioWrapper audio;
 	
+    public static final int ELECTRICAL_EFFICIENCY_PPM = 300000;
     public static final long RATED_ELECTRIC_WATTS = 3_000_000L;
     public static final long RATED_CHEMICAL_WATTS = 10_000_000L;
     public static final long HRSG_WATTS = 6_000_000L;
@@ -369,7 +370,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
     }
     private boolean burnFuel(boolean generate, int load) {
         long request = RATED_CHEMICAL_WATTS * 50000L * Math.max(1, Math.min(100, load)) / 100;
-        if(generate) request = Math.min(request, com.hbm.realsim.SteamLedger.mulDiv(Math.max(0, maxPower - energyQuanta), 500000L * 1000000L, 300000));
+        if(generate) request = Math.min(request, com.hbm.realsim.SteamLedger.mulDiv(Math.max(0, maxPower - energyQuanta), 500000L * 1000000L, ELECTRICAL_EFFICIENCY_PPM));
         if(request == 0 || !hasAcceptableFuel()) return false;
         // ~13 kg/s excess air at full load, using the existing atmosphere/intake boundary.
         if(!breatheAir(Math.toIntExact(com.hbm.realsim.SteamLedger.ceilDiv(request, 1_000_000_000L)))) { state = 0; return false; }
@@ -378,7 +379,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
             tanks[1].setFill(tanks[1].getFill() - 1); lubricantMicroliters += 1000000;
         }
         lubricantMicroliters -= 50; // 0.06 L/min while spooling/running
-        long gross = thermalFuel.burn(worldObj.getTotalWorldTime(), tanks[0], request, generate ? 300000 : 0, generate ? 550000 : 0, Math.min(temp, load >= 75 ? 500 : 350));
+        long gross = thermalFuel.burn(worldObj.getTotalWorldTime(), tanks[0], request, generate ? ELECTRICAL_EFFICIENCY_PPM : 0, generate ? 550000 : 0, Math.min(temp, load >= 75 ? 500 : 350));
         long aux = gross / 50; // 2% compressor controls/lube auxiliaries; Brayton compressor already in cycle efficiency.
         instantPowerOutput = Math.toIntExact(gross - aux);
         this.setStoredEnergyQuanta(Math.addExact(energyQuanta, instantPowerOutput));
@@ -758,4 +759,12 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, (hrsg.currentMass / 1000000D));
 		data.setDouble(CompatEnergyControl.D_OUTPUT_MB, (hrsg.currentMass / 1000000D) * 10);
 	}
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        if(live) { lines.add("Current electrical output: " + com.hbm.realsim.MachineInfo.watts(getPowerOutputWatts())); lines.add(String.format(java.util.Locale.US, "Fuel flow: %.2f standard L/min", fuelStandardLitersPerMinute)); }
+        lines.add(String.format(java.util.Locale.US, "Gross LHV efficiency: %.1f%%; auxiliaries reduce net output", ELECTRICAL_EFFICIENCY_PPM / 10000D));
+        lines.add("Rated fuel input: " + com.hbm.realsim.MachineInfo.thermalWatts(RATED_CHEMICAL_WATTS));
+        lines.add("HRSG thermal ceiling: " + com.hbm.realsim.MachineInfo.thermalWatts(HRSG_WATTS));
+        lines.add("Gas-phase fuel only; integrated HRSG owns exhaust heat once");
+    }
 }

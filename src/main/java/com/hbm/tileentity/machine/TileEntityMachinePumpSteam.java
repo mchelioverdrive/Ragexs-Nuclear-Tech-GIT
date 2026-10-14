@@ -6,7 +6,7 @@ import com.hbm.util.fauxpointtwelve.DirPos;
 
 import net.minecraft.nbt.NBTTagCompound;
 
-public class TileEntityMachinePumpSteam extends TileEntityMachinePumpBase {
+public class TileEntityMachinePumpSteam extends TileEntityMachinePumpBase implements com.hbm.realsim.IMachineInfo {
 
 	public FluidTank steam;
 	public FluidTank lps;
@@ -91,4 +91,10 @@ public class TileEntityMachinePumpSteam extends TileEntityMachinePumpBase {
 		if(nbt.hasKey("s")) steam.readFromNBT(nbt, "s");
 		if(nbt.hasKey("l")) lps.readFromNBT(nbt, "l");
 	}
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Shaft demand: " + com.hbm.realsim.MachineInfo.watts(com.hbm.realsim.Groundwater.STEAM_SHAFT_WATTS));
+        lines.add("Groundwater ceiling: " + steamLitersPerMinute + " L/min");
+        lines.add("Ordinary ledger steam drives the pump; no change to groundwater nameplate");
+    }
 }

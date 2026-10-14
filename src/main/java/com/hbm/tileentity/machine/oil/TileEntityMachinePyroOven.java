@@ -45,7 +45,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
+public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private static final int TASK_ACCOUNTING = 1;
 	private static final int TASK_EFFECT = 2;
 	private static final int TASK_BATTERY = 3;
@@ -186,7 +186,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 		isProgressing = canProcess;
 		runtimeProgressRate = canProcess ? this.getProgressRate(runtimeRecipe) : 0F;
 		if(canProcess) {
-			int cost = this.getConsumption(runtimeSpeed + runtimeOverdrive * 2, runtimePowerSaving);
+			int cost = getConsumptionForUpgrades(runtimeSpeed, runtimeOverdrive, runtimePowerSaving);
 			int completionTicks = this.ticksUntilRecipeCompletion(runtimeRecipe, progress, runtimeSpeed, runtimeOverdrive);
 			long poweredTicks = energyQuanta / cost + 1L;
 			this.scheduleMachineTransition(now + Math.max(1L, Math.min(completionTicks, poweredTicks)), TASK_ACCOUNTING, TASK_SLOT_MAIN);
@@ -256,7 +256,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 		try {
 			while(remaining > 0L) {
 				PyroOvenRecipe recipe = runtimeRecipe;
-				int cost = this.getConsumption(runtimeSpeed + runtimeOverdrive * 2, runtimePowerSaving);
+				int cost = getConsumptionForUpgrades(runtimeSpeed, runtimeOverdrive, runtimePowerSaving);
 				if(!this.canContinueRecipe(recipe) || energyQuanta < cost) { progress = 0F; break; }
 				long steps = Math.min(remaining, energyQuanta / cost);
 				float rate = this.getProgressRate(recipe);
@@ -357,7 +357,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 	}
 
 	public static int getConsumption(int speed, int powerSaving) {
-		return (int) (consumption * Math.pow(speed + 1, 2)) / (powerSaving + 1);
+		return Math.toIntExact(com.hbm.realsim.IndustrialDemand.atSpeed(Math.max(1L, consumption) * 10L, Math.max(1, 100 / (Math.max(0, speed) + 1)), powerSaving) / 10L);
 	}
 
 	protected PyroOvenRecipe lastValidRecipe;
@@ -401,7 +401,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 		int powerSaving = runtimeInitialized && worldObj != null && !worldObj.isRemote ? runtimePowerSaving : Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
 		int overdrive = runtimeInitialized && worldObj != null && !worldObj.isRemote ? runtimeOverdrive : Math.min(this.upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3);
 		PyroOvenRecipe recipe = this.getMatchingRecipe();
-		if(energyQuanta < this.getConsumption(speed + overdrive * 2, powerSaving)) return false;
+		if(energyQuanta < getConsumptionForUpgrades(speed, overdrive, powerSaving)) return false;
 		return this.canContinueRecipe(recipe);
 	}
 
@@ -601,10 +601,10 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 		info.add(IUpgradeInfoProvider.getStandardLabel(ModBlocks.machine_pyrooven));
 		if(type == UpgradeType.SPEED) {
 			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_DELAY, "-" + (level * 25) + "%"));
-			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "+" + (Math.pow(level + 1, 2) * 100 - 100) + "%"));
+			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "+" + (10000 / Math.max(1, 100 - Math.min(3, level) * 25) - 100) + "%"));
 		}
 		if(type == UpgradeType.POWER) {
-			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "-" + (100 - 100 / (level + 1)) + "%"));
+			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "-" + (10 * Math.min(3, level)) + "%"));
 		}
 		if(type == UpgradeType.OVERDRIVE) {
 			info.add((BobMathUtil.getBlink() ? EnumChatFormatting.RED : EnumChatFormatting.DARK_GRAY) + "YES");
@@ -618,4 +618,15 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 		if(type == UpgradeType.OVERDRIVE) return 3;
 		return 0;
 	}
+    public static int getConsumptionForUpgrades(int speed, int overdrive, int powerSaving) {
+        int durationPercent = Math.max(1, (100 - Math.min(3, Math.max(0, speed)) * 25) / (Math.min(3, Math.max(0, overdrive)) * 2 + 1));
+        return Math.toIntExact(com.hbm.realsim.IndustrialDemand.atSpeed(Math.max(1L, consumption) * 10L, durationPercent, powerSaving) / 10L);
+    }
+
+    @Override public long getMachineDemandWatts() { return getConsumptionForUpgrades(runtimeSpeed, runtimeOverdrive, runtimePowerSaving) * 10L; }
+    @Override public long getMachineCurrentDrawWatts() { return isProgressing ? getMachineDemandWatts() : 0; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Nominal multipurpose pyrolysis work; electrical demand scales with throughput");
+        lines.add("Physical coal/wood petroleum bills remain in their qualified heat routes");
+    }
 }

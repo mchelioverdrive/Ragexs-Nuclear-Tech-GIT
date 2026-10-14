@@ -1,6 +1,5 @@
 package com.hbm.items.machine;
 
-import com.hbm.inventory.fluid.FluidVolume;
 
 import java.util.List;
 
@@ -63,7 +62,13 @@ public class ItemChemistryTemplate extends Item {
 			return;
 		}
 
-		list.add(EnumChatFormatting.YELLOW + I18nUtil.resolveKey("info.templatefolder", I18nUtil.resolveKey(ModItems.template_folder.getUnlocalizedName() + ".name")));
+		if(recipe.physicalBill != null) com.hbm.realsim.MachineInfo.process(list, recipe.physicalBill);
+        else {
+            long cost = recipe.costPerTick(com.hbm.realsim.IndustrialDemand.CHEMICAL_W / 10L);
+            list.add("Workshop electrical demand: " + com.hbm.realsim.MachineInfo.watts(cost * 10L));
+            list.add("Electrical work: " + api.hbm.energymk2.EnergyUnits.formatJoules(Math.multiplyExact(cost, (long) recipe.getDuration())));
+        }
+        list.add(EnumChatFormatting.YELLOW + I18nUtil.resolveKey("info.templatefolder", I18nUtil.resolveKey(ModItems.template_folder.getUnlocalizedName() + ".name")));
 		list.add("");
 
 		try {
@@ -77,7 +82,7 @@ public class ItemChemistryTemplate extends Item {
 			for(int i = 0; i < 2; i++) {
 				if(recipe.outputFluids[i] != null) {
 					int p = recipe.outputFluids[i].pressure;
-					list.add(FluidVolume.format(recipe.outputFluids[i].fill) + " " + recipe.outputFluids[i].type.getLocalizedName() + (p != 0 ? (" at " + p + "PU") : ""));
+					list.add(com.hbm.inventory.fluid.FluidInfo.amount(recipe.outputFluids[i].type, recipe.outputFluids[i].fill) + " " + recipe.outputFluids[i].type.getLocalizedName() + (p != 0 ? (" at " + p + "PU") : ""));
 				}
 			}
 
@@ -92,7 +97,7 @@ public class ItemChemistryTemplate extends Item {
 			for(int i = 0; i < 2; i++) {
 				if(recipe.inputFluids[i] != null) {
 					int p = recipe.inputFluids[i].pressure;
-					list.add(FluidVolume.format(recipe.inputFluids[i].fill) + " " + recipe.inputFluids[i].type.getLocalizedName() + (p != 0 ? (" at " + p + "PU") : ""));
+					list.add(com.hbm.inventory.fluid.FluidInfo.amount(recipe.inputFluids[i].type, recipe.inputFluids[i].fill) + " " + recipe.inputFluids[i].type.getLocalizedName() + (p != 0 ? (" at " + p + "PU") : ""));
 				}
 			}
 

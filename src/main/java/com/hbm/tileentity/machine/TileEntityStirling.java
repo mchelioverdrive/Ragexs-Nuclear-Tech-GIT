@@ -15,8 +15,10 @@ import com.hbm.tileentity.IConfigurableMachine;
 import com.hbm.tileentity.INBTPacketReceiver;
 import com.hbm.tileentity.TileEntityLoadedBase;
 
-import api.hbm.energymk2.IEnergyProviderMK2;
 import api.hbm.tile.IHeatSource;
+import api.hbm.tile.IProcessHeatSource;
+import com.hbm.realsim.OutputBudget;
+import com.hbm.realsim.MachineInfo;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.nbt.NBTTagCompound;
@@ -24,11 +26,34 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityStirling extends TileEntityLoadedBase implements INBTPacketReceiver, IEnergyProviderMK2, IConfigurableMachine {
+public class TileEntityStirling extends TileEntityLoadedBase implements INBTPacketReceiver, api.hbm.energymk2.IRatedGenerator, IConfigurableMachine, com.hbm.realsim.IMachineInfo {
 	private static final int TASK_SIMULATE = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
+	private final OutputBudget outputBudget = new OutputBudget();
+	private long lastConversionTick = Long.MIN_VALUE;
+	private long conversionRemainder;
+	private long currentOutputQuanta;
+	private long currentRejectedQuanta;
+	private final net.minecraft.block.Block itemProfile;
+    private int installedHeatIntake = -1, installedEfficiency = -1;
+	public TileEntityStirling() { this(null); }
+	public TileEntityStirling(net.minecraft.block.Block itemProfile) { this.itemProfile = itemProfile; }
+	private net.minecraft.block.Block ownerBlock() { return worldObj == null ? itemProfile : getBlockType(); }
+	@Override public OutputBudget getOutputBudget() { return outputBudget; }
+	public int getConfiguredEfficiencyPpm() {
+        if(worldObj != null && worldObj.isRemote && installedEfficiency >= 0) return installedEfficiency;
+		double installed = getGeatMeta() == 1 ? efficiencySteel : efficiency;
+		return Double.isFinite(installed) ? (int) (Math.max(0D, Math.min(1D, installed)) * 1000000D) : 0;
+	}
+	public long getRatedHeatInputWatts() { return Math.max(0L, (long) maxHeat()) * 10L; }
+	@Override public long getRatedOutputWatts() { return Math.max(0L, (long) maxHeat()) * getConfiguredEfficiencyPpm() / 1000000L * 10L; }
+	public int getOperatingEfficiencyPpm(int sourceC) {
+		if(sourceC <= 20) return 0;
+		int carnot = (int) (1000000D * (1D - 293.15D / (sourceC + 273.15D)));
+		return Math.min(getConfiguredEfficiencyPpm(), Math.max(0, carnot));
+	}
 
 	public long powerBuffer;
 	public int heat;
@@ -41,16 +66,17 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 
 	/* CONFIGURABLE CONSTANTS */
 	public static double diffusion = 0.1D;
-	public static double efficiency = 0.5D;
-	public static int maxHeatNormal = 300;
-	public static int maxHeatSteel = 1500;
+	public static double efficiency = 0.15D;
+	public static double efficiencySteel = 0.20D;
+	public static int maxHeatNormal = 6667;
+	public static int maxHeatSteel = 20000;
 	public static int overspeedLimit = 300;
 
 	@Override
 	public void updateEntity() {
 		if(worldObj.isRemote) {
 
-			float momentum = powerBuffer * 50F / ((float) maxHeat());
+			float momentum = isCreative() ? powerBuffer * 50F / Math.max(1F, maxHeat()) : currentOutputQuanta * 45F / Math.max(1F, getRatedOutputWatts() / 10F);
 
 			if(this.isCreative()) momentum = Math.min(momentum, 45F);
 
@@ -79,10 +105,15 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 		if(taskType != TASK_SIMULATE || taskSlot != TASK_SLOT_MAIN || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
 		runtimeEnergyMutation = true;
 		try {
+			long now = worldObj.getTotalWorldTime();
+			if(now <= lastConversionTick) { this.evaluateAndSchedule(now); return; }
+			lastConversionTick = now;
+			currentOutputQuanta = 0;
+			currentRejectedQuanta = 0;
+			heat = 0;
 			if(hasCog) {
-				this.setStoredEnergyQuanta(0);
+				if(isCreative()) this.setStoredEnergyQuanta(0);
 				tryPullHeat();
-				this.setStoredEnergyQuanta((long) (this.heat * (this.isCreative() ? 1 : this.efficiency)));
 				if(warnCooldown > 0) warnCooldown--;
 				if(heat > maxHeat() && !isCreative()) {
 					this.overspeed++;
@@ -114,10 +145,7 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 				this.providePowerToDirectReceiver(worldObj, xCoord - 2, yCoord, zCoord, Library.NEG_X);
 				this.providePowerToDirectReceiver(worldObj, xCoord, yCoord, zCoord + 2, Library.POS_Z);
 				this.providePowerToDirectReceiver(worldObj, xCoord, yCoord, zCoord - 2, Library.NEG_Z);
-			} else if(this.powerBuffer > 0) {
-				this.setStoredEnergyQuanta(this.powerBuffer - 1);
 			}
-			this.heat = 0;
 		} finally {
 			runtimeEnergyMutation = false;
 		}
@@ -127,7 +155,7 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 	@Override public void onMachineCoarsePoll(int cadence) {
 		if(cadence != 20 || worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
 		this.updatePowerConnections();
-		if(!hasCog && powerBuffer <= 0) this.sendRuntimeState();
+		if(!hasCog) this.sendRuntimeState();
 	}
 
 	private void updatePowerConnections() {
@@ -139,7 +167,7 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
-		if(hasCog || powerBuffer > 0) this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
+		if(hasCog) this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
 		else this.cancelMachineTransition(TASK_SIMULATE, TASK_SLOT_MAIN);
 	}
 
@@ -148,19 +176,23 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 		EnergyUnits.writeEnergyQuanta(data, powerBuffer);
 		data.setInteger("heat", heat);
 		data.setBoolean("hasCog", hasCog);
+		data.setLong("output", currentOutputQuanta);
+		data.setLong("rejected", currentRejectedQuanta);
+        data.setInteger("installedHeatIntake", maxHeat()); data.setInteger("installedEfficiency", getConfiguredEfficiencyPpm());
 		INBTPacketReceiver.networkPack(this, data, 150);
 	}
 
 	public int getGeatMeta() {
-		return this.getBlockType() == ModBlocks.machine_stirling ? 0 : this.getBlockType() == ModBlocks.machine_stirling_creative ? 2 : 1;
+		return ownerBlock() == null || ownerBlock() == ModBlocks.machine_stirling ? 0 : ownerBlock() == ModBlocks.machine_stirling_creative ? 2 : 1;
 	}
 
 	public int maxHeat() {
-		return this.getBlockType() == ModBlocks.machine_stirling ? maxHeatNormal : maxHeatSteel;
+        if(worldObj != null && worldObj.isRemote && installedHeatIntake >= 0) return installedHeatIntake;
+		return getGeatMeta() == 0 ? maxHeatNormal : maxHeatSteel;
 	}
 
 	public boolean isCreative() {
-		return this.getBlockType() == ModBlocks.machine_stirling_creative;
+		return ownerBlock() != null && ownerBlock() == ModBlocks.machine_stirling_creative;
 	}
 
 	@Override
@@ -168,24 +200,40 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 		this.powerBuffer = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.heat = nbt.getInteger("heat");
 		this.hasCog = nbt.getBoolean("hasCog");
+		this.currentOutputQuanta = nbt.getLong("output");
+		this.currentRejectedQuanta = nbt.getLong("rejected");
+        installedHeatIntake = Math.max(0, nbt.getInteger("installedHeatIntake")); installedEfficiency = Math.max(0, Math.min(1000000, nbt.getInteger("installedEfficiency")));
 	}
 
 	protected void tryPullHeat() {
 		TileEntity con = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
-
-		if(con instanceof IHeatSource) {
-			IHeatSource source = (IHeatSource) con;
-			int heatSrc = (int) (source.getHeatStored() * diffusion);
-
-			if(heatSrc > 0) {
-				source.useUpHeat(heatSrc);
-				this.heat += heatSrc;
-				return;
+		// Creative equipment retains its exempt, nominal heat-conversion behavior.
+		if(isCreative()) {
+			if(con instanceof IHeatSource) {
+				IHeatSource source = (IHeatSource) con;
+				heat = (int) (Math.max(0, source.getHeatStored()) * safeDiffusion());
+				source.useUpHeat(heat);
+				setStoredEnergyQuanta(heat);
+				currentOutputQuanta = heat;
 			}
+			return;
 		}
-
-		this.heat = Math.max(this.heat - Math.max(this.heat / 1000, 1), 0);
+		if(!(con instanceof IProcessHeatSource)) return;
+		IProcessHeatSource source = (IProcessHeatSource) con;
+		int conversion = getOperatingEfficiencyPpm(source.getProcessTemperatureC());
+		long room = Math.min(getRatedOutputWatts() / 10L, Math.max(0L, getEnergyCapacityQuanta() - powerBuffer));
+		if(conversion <= 0 || room <= 0) return;
+		long request = Math.max(0, maxHeat());
+		request = Math.min(request, Math.max(0L, (room * 1000000L - conversionRemainder) / conversion));
+		heat = (int) source.drawProcessHeatQuanta(worldObj.getTotalWorldTime(), request);
+		long converted = (long) heat * conversion + conversionRemainder;
+		currentOutputQuanta = converted / 1000000L;
+		conversionRemainder = converted % 1000000L;
+		currentRejectedQuanta = (long) heat * (1000000L - conversion) / 1000000L;
+		if(heat > 0) markDirty();
+		setStoredEnergyQuanta(powerBuffer + currentOutputQuanta);
 	}
+	private static double safeDiffusion() { return Double.isFinite(diffusion) ? Math.max(0D, Math.min(1D, diffusion)) : 0D; }
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
@@ -194,6 +242,9 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 		this.powerBuffer = EnergyUnits.readEnergyQuanta(nbt, "powerBuffer");
 		this.hasCog = nbt.getBoolean("hasCog");
 		this.overspeed = nbt.getInteger("overspeed");
+		this.conversionRemainder = Math.floorMod(nbt.getLong("realSimStirlingRemainder"), 1000000L);
+		this.lastConversionTick = nbt.hasKey("realSimStirlingTick") ? nbt.getLong("realSimStirlingTick") : Long.MIN_VALUE;
+		outputBudget.read(nbt);
 	}
 
 	@Override
@@ -203,6 +254,9 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 		EnergyUnits.writeEnergyQuanta(nbt, powerBuffer);
 		nbt.setBoolean("hasCog", hasCog);
 		nbt.setInteger("overspeed", overspeed);
+		nbt.setLong("realSimStirlingRemainder", conversionRemainder);
+		nbt.setLong("realSimStirlingTick", lastConversionTick);
+		outputBudget.write(nbt);
 	}
 
 	@Override
@@ -227,18 +281,35 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 
 	@Override
 	public long getEnergyCapacityQuanta() {
-		return powerBuffer;
+		return isCreative() ? powerBuffer : Math.max(1L, getRatedOutputWatts() * 2L);
 	}
 
 	@Override
 	public long getMaxOutputQuantaPerTick() {
-		return this.hasCog ? this.getEnergyCapacityQuanta() : 0;
+		return !hasCog ? 0 : isCreative() ? Math.max(0, powerBuffer) : api.hbm.energymk2.IRatedGenerator.super.getMaxOutputQuantaPerTick();
 	}
 
 	public long getPowerOutputWatts() {
-		return EnergyUnits.quantaPerTickToWatts(this.getMaxOutputQuantaPerTick());
+		return EnergyUnits.quantaPerTickToWatts(currentOutputQuanta);
 	}
 
+	@Override public void extractEnergyQuanta(long amount) {
+		if(isCreative()) { setStoredEnergyQuanta(powerBuffer - amount); return; }
+		api.hbm.energymk2.IRatedGenerator.super.extractEnergyQuanta(amount);
+	}
+	@Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+		if(isCreative()) { lines.add("Creative converter; excluded from the physical power ladder"); return; }
+		lines.add("Thermal intake ceiling: " + MachineInfo.thermalWatts(getRatedHeatInputWatts()));
+		lines.add(String.format(java.util.Locale.US, "Installed heat-to-electric efficiency: %.1f%%; limited by hot/cold temperature difference", getConfiguredEfficiencyPpm() / 10000D));
+		lines.add("Requires a qualified process heater below; cold sink: integral ambient radiator at 20 \u00b0C");
+		lines.add("Governed heat intake; same gear repair and native power ports");
+		if(live) {
+			lines.add("Current output: " + MachineInfo.watts(currentOutputQuanta * 10L));
+			lines.add("Current thermal intake: " + MachineInfo.thermalWatts((long) heat * 10L));
+			lines.add("Current heat rejection: " + MachineInfo.thermalWatts(currentRejectedQuanta * 10L));
+			if(!hasCog) lines.add("Gear missing; right-click with the matching large gear");
+		}
+	}
 	AxisAlignedBB bb = null;
 
 	@Override
@@ -273,6 +344,9 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 	public void readIfPresent(JsonObject obj) {
 		diffusion = IConfigurableMachine.grab(obj, "D:diffusion", diffusion);
 		efficiency = IConfigurableMachine.grab(obj, "D:efficiency", efficiency);
+		// An explicitly configured old common efficiency still applies to both gears.
+		if(obj.has("D:efficiency")) efficiencySteel = efficiency;
+		efficiencySteel = IConfigurableMachine.grab(obj, "D:efficiencySteel", efficiencySteel);
 		maxHeatNormal = IConfigurableMachine.grab(obj, "I:maxHeatNormal", maxHeatNormal);
 		maxHeatSteel = IConfigurableMachine.grab(obj, "I:maxHeatSteel", maxHeatSteel);
 		overspeedLimit = IConfigurableMachine.grab(obj, "I:overspeedLimit", overspeedLimit);
@@ -282,6 +356,7 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 	public void writeConfig(JsonWriter writer) throws IOException {
 		writer.name("D:diffusion").value(diffusion);
 		writer.name("D:efficiency").value(efficiency);
+		writer.name("D:efficiencySteel").value(efficiencySteel);
 		writer.name("I:maxHeatNormal").value(maxHeatNormal);
 		writer.name("I:maxHeatSteel").value(maxHeatSteel);
 		writer.name("I:overspeedLimit").value(overspeedLimit);

@@ -25,7 +25,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 
-public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBase implements IEnergyReceiverMK2, IGUIProvider {
+public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBase implements IEnergyReceiverMK2, IGUIProvider, com.hbm.realsim.IMachineInfo {
 
 	public long energyQuanta;
 	public int[] progress;
@@ -58,7 +58,7 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 	private static final int TASK_ASSEMBLER_BATTERY = 2;
 	private static final int TASK_SLOT_BATTERY = -1;
 
-	long operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(100L);
+	public long operatingPowerWatts = com.hbm.realsim.IndustrialDemand.FABRICATION_W;
 	int speed = 100;
 
 	public TileEntityMachineAssemblerBase(int scount) {
@@ -692,4 +692,16 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 	public abstract DirPos[] getInputPositions();
 	public abstract DirPos[] getOutputPositions();
 	public abstract int getPowerSlot();
+
+    @Override public long getMachineDemandWatts() { return operatingPowerWatts * getRecipeCount(); }
+    @Override public long getMachineCurrentDrawWatts() { return currentLaneDemandWatts(); }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Installed lanes: " + getRecipeCount());
+        lines.add("Idle load: 0 W; electrical work per job follows processing time");
+    }
+    private long currentLaneDemandWatts() {
+        long watts = 0;
+        for(int i = 0; i < getRecipeCount(); i++) if(runtimeLaneActive[i]) watts += operatingPowerWatts;
+        return isProgressing ? watts : 0;
+    }
 }

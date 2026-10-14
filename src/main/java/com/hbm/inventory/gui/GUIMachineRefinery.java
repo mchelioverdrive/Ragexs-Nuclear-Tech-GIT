@@ -26,6 +26,7 @@ public class GUIMachineRefinery extends GuiInfoContainer {
 
 	public GUIMachineRefinery(InventoryPlayer invPlayer, TileEntityMachineRefinery tedf) {
 		super(new ContainerMachineRefinery(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		refinery = tedf;
 		
 		this.xSize = 210;

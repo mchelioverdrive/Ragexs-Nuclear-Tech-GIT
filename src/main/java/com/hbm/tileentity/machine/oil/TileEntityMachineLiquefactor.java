@@ -37,7 +37,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
-public class TileEntityMachineLiquefactor extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardSender, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable {
+public class TileEntityMachineLiquefactor extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardSender, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
@@ -489,4 +489,9 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, this.progress > 0);
 		data.setDouble(CompatEnergyControl.D_CONSUMPTION_HE, EnergyUnits.quantaToLegacyHe(this.usage));
 	}
+
+    @Override public long getMachineDemandWatts() { return operatingPowerWatts; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Nominal multipurpose liquefaction utilities; recipe/material state governs eligibility");
+    }
 }

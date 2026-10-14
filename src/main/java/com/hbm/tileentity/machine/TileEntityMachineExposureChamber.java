@@ -35,7 +35,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineExposureChamber extends TileEntityMachineBase implements IGUIProvider, IEnergyReceiverMK2, IUpgradeInfoProvider {
+public class TileEntityMachineExposureChamber extends TileEntityMachineBase implements IGUIProvider, IEnergyReceiverMK2, IUpgradeInfoProvider, com.hbm.realsim.IMachineInfo {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	
@@ -555,4 +555,10 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 		if(type == UpgradeType.OVERDRIVE) return 3;
 		return 0;
 	}
+
+    @Override public long getMachineDemandWatts() { return consumption * 10L; }
+    @Override public long getMachineCurrentDrawWatts() { return isOn ? consumption * 10L : 0; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Nominal particle exposure process; supplied particle inventory is required");
+    }
 }

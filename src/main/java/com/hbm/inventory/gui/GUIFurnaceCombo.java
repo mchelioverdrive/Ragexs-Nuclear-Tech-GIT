@@ -21,6 +21,7 @@ public class GUIFurnaceCombo extends GuiInfoContainer {
 
 	public GUIFurnaceCombo(InventoryPlayer invPlayer, TileEntityFurnaceCombination tedf) {
 		super(new ContainerFurnaceCombo(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		furnace = tedf;
 		
 		this.xSize = 176;

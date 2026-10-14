@@ -9,7 +9,7 @@ import com.hbm.util.fauxpointtwelve.DirPos;
 import api.hbm.energymk2.IEnergyReceiverMK2;
 import net.minecraft.nbt.NBTTagCompound;
 
-public class TileEntityMachinePumpElectric extends TileEntityMachinePumpBase implements IEnergyReceiverMK2 {
+public class TileEntityMachinePumpElectric extends TileEntityMachinePumpBase implements IEnergyReceiverMK2, com.hbm.realsim.IMachineInfo {
 	
 	public long energyQuanta;
 	public static final long maxPower = 10_000;
@@ -78,4 +78,10 @@ public class TileEntityMachinePumpElectric extends TileEntityMachinePumpBase imp
 		this.markDirty();
 		if(!runtimeMachineMutation) this.markMachineDirty(MachineDirtyCause.ENERGY);
 	}
+
+    @Override public long getMachineDemandWatts() { return operatingPowerWatts; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Groundwater ceiling: " + electricLitersPerMinute + " L/min");
+        lines.add("Requires groundwater/terrain eligibility; full tank pauses pumping");
+    }
 }

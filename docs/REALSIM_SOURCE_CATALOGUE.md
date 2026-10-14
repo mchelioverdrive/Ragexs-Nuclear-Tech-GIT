@@ -1,5 +1,7 @@
 # RealSim current-source parameter catalogue
 
+The earlier dated census is historical. Implemented consumer, starter and cooling changes are authoritative in the Server-ready base normalization section below.
+
 2026-10-12; active source a933ecc05. Documentation snapshot, not executable data, a generated test, or a new runtime registry. Read the [process judgments](REALSIM_PROCESS_INVENTORY.md), [canonical state decisions](REALSIM_SUBSTANCE_REGISTRY.md), and [main scope/limitations](REALSIM_PHASES_1_4.md).
 
 The census below records **171 relevant tile/base/boundary source files**. Shared bases, controller/storage variants and external converter boundaries are deliberately included; their count is not a count of distinct operating processes. Selected exact expressions supplement the inventory rather than replace call-path inspection. All links refer to the current source, not historical copied implementations.
@@ -2062,20 +2064,7 @@ Selected processing/transfer expressions (line links keep the owning condition/c
 
 ### Stirling
 
-Source: [TileEntityStirling.java](../src/main/java/com/hbm/tileentity/machine/TileEntityStirling.java). Persistent tile registry: `tileentity_stirling`.
-
-| Field/boundary | Exact current source |
-| --- | --- |
-| [overspeed](../src/main/java/com/hbm/tileentity/machine/TileEntityStirling.java#L36) | `private int overspeed = 0;` |
-| [diffusion](../src/main/java/com/hbm/tileentity/machine/TileEntityStirling.java#L43) | `public static double diffusion = 0.1D;` |
-| [efficiency](../src/main/java/com/hbm/tileentity/machine/TileEntityStirling.java#L44) | `public static double efficiency = 0.5D;` |
-| [maxHeatNormal](../src/main/java/com/hbm/tileentity/machine/TileEntityStirling.java#L45) | `public static int maxHeatNormal = 300;` |
-| [maxHeatSteel](../src/main/java/com/hbm/tileentity/machine/TileEntityStirling.java#L46) | `public static int maxHeatSteel = 1500;` |
-| [overspeedLimit](../src/main/java/com/hbm/tileentity/machine/TileEntityStirling.java#L47) | `public static int overspeedLimit = 300;` |
-
-Selected processing/transfer expressions (line links keep the owning condition/callback inspectable):
-
-- [L182](../src/main/java/com/hbm/tileentity/machine/TileEntityStirling.java#L182): `this.heat += heatSrc;`
+Source: [TileEntityStirling.java](../src/main/java/com/hbm/tileentity/machine/TileEntityStirling.java). Registry `tileentity_stirling` and block identities are unchanged. Current normal/heavy defaults: `maxHeatNormal = 6667`, `maxHeatSteel = 20000` qualified 0.5-J heat quanta/tick; `efficiency = 0.15`, `efficiencySteel = 0.20`. Electrical nameplates derive from these settings (10/40 kW). `IProcessHeatSource.drawProcessHeatQuanta` pays physical intake; `OutputBudget` bounds aggregate export. `D:diffusion` remains only creative's exempt nominal intake. Gear repairs/saved broken gears remain; governed intake prevents normal overload. Saved electricity is retained; conversion fraction and last-paid/export ticks are additive saved fields. Configuration/migration limits are in the final report.
 
 ### Watz
 
@@ -3171,3 +3160,28 @@ This catalogue is a broad parameter census supporting a source/design investigat
 ## Phase 5D catalogue boundary (2026-10-13)
 
 The original census/line links are historical evidence. The [frozen ledger](REALSIM_PHYSICAL_LEDGER.md#phase-5d-frozen-thermal-contract-2026-10-13) and [owner inventory](REALSIM_PROCESS_INVENTORY.md#phase-5d-authoritative-thermal-owners-2026-10-13) supersede converted equipment's old trait/RPM expressions and buffer-derived rates. Steam state/work/heat/rejection originate in `com.hbm.realsim.SteamLedger`; controllers use `ThermalAccount`/`ThermalMachine`, gas recovery uses `TurbineFuelAccount`/`ExhaustAccount`/`HeatRecovery`. Nuclear traits remain deferred boundaries, not converted runtime tables.
+
+## Server-ready base normalization
+
+The 2026-10-12 declaration census above is historical evidence, not live configuration. [Server-ready base normalization](REALSIM_PHASES_1_4.md#server-ready-base-normalization) is authoritative for changed ratings/cooling and the final starter setup.
+
+| Current owner | Runtime/display source of truth |
+| --- | --- |
+| Workshop/lane/mining demand | `IndustrialDemand`, native duration/upgrades and active lanes |
+| Large arc | Batch material/stack equivalents, `arcWorkQuanta`, `arcRatedWatts`, saved paid work |
+| Chemical/petroleum | Live recipe maps, cached `ProcessRecipe` maximum-tick ratings/rejection, `ProcessBatch`, native auxiliary getter |
+| Generation | Native `IRatedGenerator`, configured efficiencies, `GeneratorStats`; Stirling intake/temperature bound |
+| Steam | Native `getSteamFlowMassPerTick`, `getExpansionEfficiencyPpm`, also called by operation |
+| Thermal equipment | Qualified heat getters, native boiler/rejection/auxiliary ratings and thermal status |
+| Item/GUI/NEI | `IMachineInfo`, `MachineInfo`, `MachineInfoItems`, `GuiInfoContainer`, existing recipe/template hovers |
+| Capacity/compatibility | Actual native buffers, battery-block transfer limits, existing FluidInfo, RF adapter; over-cap receiving preserves stock |
+
+67 native profile factory branches include a typed branch for all three Stirling blocks, alongside actual battery-block capacity handling. 44 GUI constructors bind their native owner explicitly; container/slot resolution covers existing fallback GUIs. Status is server-owned and requires matching mod builds. Generator nameplates/efficiencies, steam factors and oven intake efficiency are synchronized numerically from server owners; item previews explicitly use local configuration. Proxy/dormant/decorative tiles are not assigned invented operating ratings. Old large-shredder processing is unregistered; X3030 is decorative.
+
+**Native profile owners**
+
+`machine.TileEntityChungus`, `machine.TileEntityCondenser`, `machine.TileEntityCondenserPowered`, `machine.TileEntityElectrolyser`, `machine.TileEntityFurnaceCombination`, `machine.TileEntityHeatBoiler`, `machine.TileEntityHeatBoilerIndustrial`, `machine.TileEntityHeaterElectric`, `machine.TileEntityHeaterFirebox`, `machine.TileEntityHeaterHeatex`, `machine.TileEntityHeaterOilburner`, `machine.TileEntityHeaterOven`, `machine.TileEntityMachineArcFurnace`, `machine.TileEntityMachineArcFurnaceLarge`, `machine.TileEntityMachineArcWelder`, `machine.TileEntityMachineAssembler`, `machine.TileEntityMachineAssemfac`, `machine.TileEntityMachineCentrifuge`, `machine.TileEntityMachineChemfac`, `machine.TileEntityMachineChemplant`, `machine.TileEntityMachineCombustionEngine`, `machine.TileEntityMachineCompressor`, `machine.TileEntityMachineCryoDistill`, `machine.TileEntityMachineCrystallizer`, `machine.TileEntityMachineDiesel`, `machine.TileEntityMachineEPress`, `machine.TileEntityMachineElectricFurnace`, `machine.TileEntityMachineExcavator`, `machine.TileEntityMachineExposureChamber`, `machine.TileEntityMachineHephaestus`, `machine.TileEntityMachineLargeTurbine`, `machine.TileEntityMachineMiningLaser`, `machine.TileEntityMachinePress`, `machine.TileEntityMachinePumpElectric`, `machine.TileEntityMachinePumpSteam`, `machine.TileEntityMachineShredder`, `machine.TileEntityMachineSolderingStation`, `machine.TileEntityMachineStrandCaster`, `machine.TileEntityMachineTurbine`, `machine.TileEntityMachineTurbineGas`, `machine.TileEntityMachineTurbofan`, `machine.TileEntityMachineVacuumCircuit`, `machine.TileEntityMachineWoodBurner`, `machine.TileEntityRadiator`, `machine.TileEntitySawmill`, `machine.TileEntitySolarBoiler`, `machine.TileEntitySteamEngine`, `machine.TileEntityStirling`, `machine.TileEntityTowerLarge`, `machine.TileEntityTowerSmall`, `machine.oil.TileEntityMachineAlkylation`, `machine.oil.TileEntityMachineCatalyticCracker`, `machine.oil.TileEntityMachineCatalyticReformer`, `machine.oil.TileEntityMachineCoker`, `machine.oil.TileEntityMachineFrackingTower`, `machine.oil.TileEntityMachineFractionTower`, `machine.oil.TileEntityMachineGasFlare`, `machine.oil.TileEntityMachineHydrotreater`, `machine.oil.TileEntityMachineLiquefactor`, `machine.oil.TileEntityMachineOilWell`, `machine.oil.TileEntityMachinePumpjack`, `machine.oil.TileEntityMachinePyroOven`, `machine.oil.TileEntityMachineRefinery`, `machine.oil.TileEntityMachineSolidifier`, `machine.oil.TileEntityMachineVacuumDistill`, `network.TileEntityConverterHeRf`, `network.TileEntityConverterRfHe`.
+
+**Explicit GUI owner bindings**
+
+`GUIAssemfac`, `GUIChemfac`, `GUICombustionEngine`, `GUICompressor`, `GUICrystallizer`, `GUIElectrolyser`, `GUIElectrolyserFluid`, `GUIElectrolyserMetal`, `GUIFurnaceCombo`, `GUIHeaterHeatex`, `GUILiquefactor`, `GUIMachineArcFurnace`, `GUIMachineArcFurnaceLarge`, `GUIMachineArcWelder`, `GUIMachineAssembler`, `GUIMachineCatalyticReformer`, `GUIMachineCentrifuge`, `GUIMachineChemplant`, `GUIMachineCoker`, `GUIMachineCryoDistill`, `GUIMachineDiesel`, `GUIMachineEPress`, `GUIMachineElectricFurnace`, `GUIMachineExcavator`, `GUIMachineExposureChamber`, `GUIMachineGasFlare`, `GUIMachineHydrotreater`, `GUIMachineLargeTurbine`, `GUIMachinePress`, `GUIMachineRefinery`, `GUIMachineShredder`, `GUIMachineSolderingStation`, `GUIMachineStrandCaster`, `GUIMachineTurbine`, `GUIMachineTurbineGas`, `GUIMachineTurbofan`, `GUIMachineVacuumDistill`, `GUIMachineWoodBurner`, `GUIMiningLaser`, `GUIOilburner`, `GUIPyroOven`, `GUISolidifier`, `GUIVacuumCircuit`, `GuiInfoContainer`.

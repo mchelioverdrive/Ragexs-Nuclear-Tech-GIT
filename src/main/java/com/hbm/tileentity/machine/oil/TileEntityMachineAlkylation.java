@@ -22,7 +22,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineAlkylation extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IPersistentNBT {
+public class TileEntityMachineAlkylation extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IPersistentNBT, com.hbm.realsim.IMachineInfo {
 	
 	public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
     public long energyQuanta;
@@ -248,4 +248,9 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 		NBTTagCompound data = nbt.getCompoundTag(NBT_PERSISTENT_KEY);
 		for(int i = 0; i < tanks.length; i++) this.tanks[i].readFromNBT(data, "t" + i);
 	}
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        com.hbm.realsim.MachineInfo.process(lines, physicalBatch.active() ? physicalBatch.recipe() : AlkylationRecipes.getPhysical(tanks[0].getTankType()));
+        lines.add("Blocked operation: check feed state, paid utilities and product storage");
+    }
 }

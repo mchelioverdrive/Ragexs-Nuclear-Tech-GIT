@@ -21,6 +21,7 @@ public class GUIMiningLaser extends GuiInfoContainer {
 	
 	public GUIMiningLaser(InventoryPlayer invPlayer, TileEntityMachineMiningLaser laser) {
 		super(new ContainerMiningLaser(invPlayer, laser));
+        setMachineInfoOwner(laser);
 		this.laser = laser;
 
 		this.xSize = 176;

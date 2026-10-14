@@ -23,6 +23,7 @@ public class GUIMachineSolderingStation extends GuiInfoContainer {
 
 	public GUIMachineSolderingStation(InventoryPlayer playerInv, TileEntityMachineSolderingStation tile) {
 		super(new ContainerMachineSolderingStation(playerInv, tile));
+        setMachineInfoOwner(tile);
 
 		this.solderer = tile;
 		this.xSize = 176;

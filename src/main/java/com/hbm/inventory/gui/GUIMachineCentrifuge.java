@@ -18,6 +18,7 @@ public class GUIMachineCentrifuge extends GuiInfoContainer {
 	
 	public GUIMachineCentrifuge(InventoryPlayer invPlayer, TileEntityMachineCentrifuge tedf) {
 		super(new ContainerCentrifuge(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		centrifuge = tedf;
 		
 		this.xSize = 176;

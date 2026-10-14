@@ -77,7 +77,7 @@ public class MachineSteamEngine extends BlockDummyable implements ILookOverlay {
 		text.add(EnumChatFormatting.GREEN + "-> " + EnumChatFormatting.RESET + engine.tanks[0].getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(engine.tanks[0].getTankType(), engine.tanks[0].getFill(), engine.tanks[0].getMaxFill()));
 		text.add(EnumChatFormatting.RED + "<- " + EnumChatFormatting.RESET + engine.tanks[1].getTankType().getLocalizedName() + ": " + com.hbm.inventory.fluid.FluidInfo.pair(engine.tanks[1].getTankType(), engine.tanks[1].getFill(), engine.tanks[1].getMaxFill()));
 
-        com.hbm.realsim.ThermalInfo.generator(text, engine.thermal, engine.getRatedOutputWatts(), 700000);
+        com.hbm.realsim.ThermalInfo.generator(text, engine.thermal, engine.getRatedOutputWatts(), engine.getExpansionEfficiencyPpm());
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 

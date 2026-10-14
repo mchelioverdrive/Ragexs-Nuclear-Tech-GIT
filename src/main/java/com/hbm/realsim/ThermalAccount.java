@@ -13,20 +13,23 @@ public final class ThermalAccount {
     private State inlet, outlet;
     private final Map<String, Long> productMass = new HashMap<String, Long>();
     private long lastTick = Long.MIN_VALUE;
-    public long currentMass, currentElectricQuanta, currentRejectedMicroJ, currentHeatQuanta;
+    public long currentMass, currentElectricQuanta, currentRejectedMicroJ, currentHeatQuanta, currentWorkQuanta;
     public long ownedMass() { return ownedMass; }
     public State inlet() { return inlet; }
     public State outlet() { return outlet; }
     public long remainder(State state) { Long m = productMass.get(state.identity); return m == null ? 0 : m; }
-    public void clearCurrent() { currentMass = currentElectricQuanta = currentRejectedMicroJ = currentHeatQuanta = 0; }
+    public void clearCurrent() { currentMass = currentElectricQuanta = currentRejectedMicroJ = currentHeatQuanta = currentWorkQuanta = 0; }
     /** Visual status only; never transfers owned mass or energy to a client. */
+    public int installedExpansionEfficiencyPpm = -1;
+    public void writeStatus(NBTTagCompound n, int efficiencyPpm) { writeStatus(n); n.setInteger("thermalInstalledEfficiency", efficiencyPpm); }
     public void writeStatus(NBTTagCompound n) {
         n.setLong("thermalFlow", currentMass); n.setLong("thermalElectric", currentElectricQuanta);
-        n.setLong("thermalRejected", currentRejectedMicroJ); n.setLong("thermalTransfer", currentHeatQuanta);
+        n.setLong("thermalRejected", currentRejectedMicroJ); n.setLong("thermalTransfer", currentHeatQuanta); n.setLong("thermalWork", currentWorkQuanta);
     }
     public void readStatus(NBTTagCompound n) {
+        installedExpansionEfficiencyPpm = n.hasKey("thermalInstalledEfficiency") ? Math.max(0, Math.min(1000000, n.getInteger("thermalInstalledEfficiency"))) : -1;
         currentMass = n.getLong("thermalFlow"); currentElectricQuanta = n.getLong("thermalElectric");
-        currentRejectedMicroJ = n.getLong("thermalRejected"); currentHeatQuanta = n.getLong("thermalTransfer");
+        currentRejectedMicroJ = n.getLong("thermalRejected"); currentHeatQuanta = n.getLong("thermalTransfer"); currentWorkQuanta = n.getLong("thermalWork");
     }
     public static final class Result {
         public int consumed, produced;
@@ -84,7 +87,7 @@ public final class ThermalAccount {
         productMass.put(t.outlet.identity, output % t.outlet.massPerUnit);
         r.mass = currentMass = mass;
         r.rejectionMicroJ = currentRejectedMicroJ = Math.addExact(retiredHeat, Math.addExact(Math.multiplyExact(mass, t.rejectionJPerKg), Math.multiplyExact(vent, t.outlet.enthalpyJPerKg)));
-        currentElectricQuanta = r.electricQuanta; currentHeatQuanta = r.heatQuanta;
+        currentElectricQuanta = r.electricQuanta; currentHeatQuanta = r.heatQuanta; currentWorkQuanta = r.workQuanta;
         return r;
     }
     public void write(NBTTagCompound parent) {

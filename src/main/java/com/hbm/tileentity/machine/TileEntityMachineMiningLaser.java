@@ -54,7 +54,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineMiningLaser extends TileEntityMachineBase implements IEnergyReceiverMK2, IMiningDrill, IFluidStandardSender, IGUIProvider, IUpgradeInfoProvider {
+public class TileEntityMachineMiningLaser extends TileEntityMachineBase implements IEnergyReceiverMK2, IMiningDrill, IFluidStandardSender, IGUIProvider, IUpgradeInfoProvider, com.hbm.realsim.IMachineInfo {
 	private static final int TASK_MINING = 1;
 	private boolean runtimeEnergyMutation;
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
@@ -63,7 +63,7 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 	public long energyQuanta;
 	public int age = 0;
 	public static final long maxPower = 100000000;
-	public static final int consumption = 10000;
+	public static final int consumption = (int) (com.hbm.realsim.IndustrialDemand.MINING_LASER_W / 10);
 	public FluidTank tank;
 
 	public boolean isOn;
@@ -118,7 +118,7 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 		return slots[0] != null && slots[0].getItem() instanceof IBatteryItem && ((IBatteryItem) slots[0].getItem()).getStoredEnergyQuanta(slots[0]) > 0;
 	}
 
-	private int getOperatingCost() {
+	public int getOperatingCost() {
 		return consumption - (consumption * Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 12) / 16)
 			+ (consumption * Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 12) / 16);
 	}
@@ -765,4 +765,10 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 		if(type == UpgradeType.OVERDRIVE) return 9;
 		return 0;
 	}
+
+    @Override public long getMachineDemandWatts() { return (long) getOperatingCost() * 10L * (1L + upgradeManager.getLevel(UpgradeType.OVERDRIVE)); }
+    @Override public long getMachineCurrentDrawWatts() { return isOn && beam ? getMachineDemandWatts() : 0; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Beam excavation; burst/cycle upgrades increase active demand");
+    }
 }

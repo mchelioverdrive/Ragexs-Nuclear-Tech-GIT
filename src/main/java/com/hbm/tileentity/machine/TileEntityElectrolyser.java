@@ -52,7 +52,7 @@ import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityElectrolyser extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable, IMetalCopiable {
+public class TileEntityElectrolyser extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable, IMetalCopiable, com.hbm.realsim.IMachineInfo {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
@@ -84,6 +84,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 	private int observedInventoryFingerprint;
 	private boolean inventoryFingerprintInitialized;
 	private long operatingPowerFluidWatts;
+	private int clientOperatingCycles = 1;
 	private long operatingPowerMetalWatts;
 	private static final int TASK_ACCOUNTING = 1;
 	private static final int TASK_BATTERY = 2;
@@ -383,9 +384,8 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 			if(metal) ticks = Math.min(ticks, ceilDiv((long) this.getDurationMetal() - progressOre, cycleCount));
 			long costFluid = EnergyUnits.wattsToQuantaPerTick(operatingPowerFluidWatts);
 			long costMetal = EnergyUnits.wattsToQuantaPerTick(operatingPowerMetalWatts);
-			long costPerOperation = fluid ? costFluid : costMetal;
-			long operationsPerTick = cycleCount * ((fluid ? 1L : 0L) + (metal ? 1L : 0L));
-			if(costPerOperation > 0L && operationsPerTick > 0L) ticks = Math.min(ticks, ceilDiv(energyQuanta / costPerOperation, operationsPerTick));
+			long costPerTick = cycleCount * ((fluid ? costFluid : 0L) + (metal ? costMetal : 0L));
+			if(costPerTick > 0L) ticks = Math.min(ticks, ceilDiv(energyQuanta, costPerTick));
 			if(ticks != Long.MAX_VALUE) this.scheduleMachineTransition(now + Math.max(1L, ticks), TASK_ACCOUNTING, TASK_SLOT_SHARED);
 		} else this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_SHARED);
 		if(leftStack != null || rightStack != null) this.scheduleMachineTransition(now + 1L, TASK_CAST, TASK_SLOT_CAST);
@@ -414,12 +414,11 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 				int cycles = Math.max(1, this.getCycleCount());
 				long costFluid = EnergyUnits.wattsToQuantaPerTick(operatingPowerFluidWatts);
 				long costMetal = EnergyUnits.wattsToQuantaPerTick(operatingPowerMetalWatts);
-				long operationsPerTick = cycles * ((fluid ? 1L : 0L) + (metal ? 1L : 0L));
-				long costPerOperation = fluid ? costFluid : costMetal;
+				long costPerTick = cycles * ((fluid ? costFluid : 0L) + (metal ? costMetal : 0L));
 				long completionTick = Long.MAX_VALUE;
 				if(fluid) completionTick = Math.min(completionTick, ceilDiv((long) this.getDurationFluid() - progressFluid, cycles));
 				if(metal) completionTick = Math.min(completionTick, ceilDiv((long) this.getDurationMetal() - progressOre, cycles));
-				long energyTick = costPerOperation <= 0L || operationsPerTick <= 0L ? Long.MAX_VALUE : ceilDiv(energyQuanta / costPerOperation, operationsPerTick);
+				long energyTick = costPerTick <= 0L ? Long.MAX_VALUE : ceilDiv(energyQuanta, costPerTick);
 				long boundaryTick = Math.min(completionTick, energyTick);
 				long fullTicks = Math.min(remaining, boundaryTick == Long.MAX_VALUE ? remaining : boundaryTick - 1L);
 				if(fullTicks > 0L) {
@@ -627,6 +626,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 	}
 
 	public int getCycleCount() {
+		if(worldObj != null && worldObj.isRemote) return clientOperatingCycles;
 		if(cachedFluidRecipe != null && cachedFluidRecipe.physicalPowerQuanta > 0) return 1;
 		int speed = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
 		return Math.min(1 + speed * 2, 7);
@@ -742,6 +742,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		buf.writeInt(progressOre);
 		buf.writeInt(usageFluid);
 		buf.writeInt(usageOre);
+		buf.writeInt(getCycleCount());
 		buf.writeInt(getDurationFluid());
 		buf.writeInt(getDurationMetal());
 		buf.writeBoolean(leftStack != null);
@@ -758,6 +759,9 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		progressOre = buf.readInt();
 		usageFluid = buf.readInt();
 		usageOre = buf.readInt();
+		clientOperatingCycles = Math.max(1, buf.readInt());
+		operatingPowerFluidWatts = usageFluid * 10L;
+		operatingPowerMetalWatts = usageOre * 10L;
 		processFluidTime = buf.readInt();
 		processOreTime = buf.readInt();
 		leftStack = buf.readBoolean() ? new MaterialStack(Mats.matById.get(buf.readInt()), buf.readInt()) : null;
@@ -883,4 +887,14 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		if(rightStack != null)	types.add(rightStack.material.id);
 		return BobMathUtil.intCollectionToArray(types);
 	}
+
+    @Override public long getMachineDemandWatts() { return (operatingPowerFluidWatts > 0 ? operatingPowerFluidWatts : usageFluidBase * 10L) * getCycleCount() + (operatingPowerMetalWatts > 0 ? operatingPowerMetalWatts : usageOreBase * 10L) * getCycleCount(); }
+    @Override public long getMachineCurrentDrawWatts() { return getCycleCount() * ((runtimeFluidActive ? operatingPowerFluidWatts : 0L) + (runtimeMetalActive ? operatingPowerMetalWatts : 0L)); }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Fluid ceiling: " + com.hbm.realsim.MachineInfo.watts((operatingPowerFluidWatts > 0 ? operatingPowerFluidWatts : usageFluidBase * 10L) * getCycleCount()));
+        lines.add("Metal ceiling: " + com.hbm.realsim.MachineInfo.watts((operatingPowerMetalWatts > 0 ? operatingPowerMetalWatts : usageOreBase * 10L) * getCycleCount()));
+        lines.add("Fluid and metal lanes have separate paid work budgets");
+        lines.add("Released water electrolysis has fixed work and one cycle; upgrades cannot underpay it");
+        lines.add("Idle load: 0 W; non-water metal processing is an adopted utility envelope");
+    }
 }

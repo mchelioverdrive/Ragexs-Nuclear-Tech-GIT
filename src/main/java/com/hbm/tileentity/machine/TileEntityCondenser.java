@@ -22,9 +22,10 @@ import api.hbm.tile.IInfoProviderEC;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.EnumSkyBlock;
 
-public class TileEntityCondenser extends TileEntityLoadedBase implements IFluidStandardTransceiver, INBTPacketReceiver, IInfoProviderEC, IConfigurableMachine, IFluidCopiable {
+public class TileEntityCondenser extends TileEntityLoadedBase implements IFluidStandardTransceiver, INBTPacketReceiver, IInfoProviderEC, IConfigurableMachine, IFluidCopiable, com.hbm.realsim.IMachineInfo {
     public final com.hbm.realsim.ThermalAccount thermal = new com.hbm.realsim.ThermalAccount();
     public long getRatedRejectionWatts() { return 250000L; }
+    public long getRatedAuxiliaryWatts() { return isPoweredCooling() ? 200000L : 0L; }
     protected long availableAuxiliaryQuanta() { return 0; }
     protected void consumeAuxiliaryQuanta(long amount) { }
     protected boolean isPoweredCooling() { return false; }
@@ -120,7 +121,7 @@ public class TileEntityCondenser extends TileEntityLoadedBase implements IFluidS
                 com.hbm.realsim.SteamLedger.Transition t = com.hbm.realsim.SteamLedger.transition(com.hbm.realsim.SteamLedger.State.SPENT,
                         com.hbm.realsim.SteamLedger.State.COLD, com.hbm.realsim.SteamLedger.Route.CONDENSER, isPoweredCooling() ? 850000 : 1000000);
                 com.hbm.realsim.ThermalAccount.Result r = com.hbm.realsim.ThermalMachine.transfer(thermal, worldObj.getTotalWorldTime(), t, tanks[0], tanks[1],
-                        1000000L, 0, availableAuxiliaryQuanta(), 0, 0, 20000L, 0, getRatedRejectionWatts() / 10);
+                        1000000L, 0, availableAuxiliaryQuanta(), 0, 0, getRatedAuxiliaryWatts() / 10L, 0, getRatedRejectionWatts() / 10);
                 consumeAuxiliaryQuanta(r.workQuanta);
                 this.throughput = r.produced;
                 if(r.mass > 0) this.waterTimer = 20;
@@ -227,4 +228,11 @@ public class TileEntityCondenser extends TileEntityLoadedBase implements IFluidS
 	public FluidTank getTankToPaste() {
 		return null;
 	}
+
+    @Override public long getMachineDemandWatts() { return isPoweredCooling() ? getRatedAuxiliaryWatts() : -1L; }
+    @Override public long getMachineCurrentDrawWatts() { return isPoweredCooling() ? thermal.currentWorkQuanta * 10L : -1L; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        if(live) com.hbm.realsim.ThermalInfo.condenser(lines, thermal, getRatedRejectionWatts());
+        else lines.add("Rated heat rejection: " + com.hbm.realsim.MachineInfo.thermalWatts(getRatedRejectionWatts()));
+    }
 }

@@ -18,6 +18,7 @@ public class GUIMachineVacuumDistill extends GuiInfoContainer {
 
 	public GUIMachineVacuumDistill(InventoryPlayer invPlayer, TileEntityMachineVacuumDistill tedf) {
 		super(new ContainerMachineVacuumDistill(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		refinery = tedf;
 		
 		this.xSize = 176;

@@ -45,7 +45,7 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineCompressor extends TileEntityMachineBase implements IGUIProvider, IControlReceiver, IEnergyReceiverMK2, IFluidStandardTransceiver, IUpgradeInfoProvider, IFluidCopiable {
+public class TileEntityMachineCompressor extends TileEntityMachineBase implements IGUIProvider, IControlReceiver, IEnergyReceiverMK2, IFluidStandardTransceiver, IUpgradeInfoProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
     public final com.hbm.realsim.ThermalAccount steamAccount = new com.hbm.realsim.ThermalAccount();
     private boolean usesSteamLedger() { return steamAccount.ownedMass() > 0 || com.hbm.realsim.SteamLedger.state(tanks[0].getTankType().getName()) != null; }
     private void stepSteam(long tick) {
@@ -54,7 +54,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
         if(decompress || out == null) { isOn = false; return; }
         com.hbm.realsim.ThermalAccount.Result r = com.hbm.realsim.ThermalMachine.transfer(steamAccount, tick,
                 com.hbm.realsim.SteamLedger.transition(in, out, com.hbm.realsim.SteamLedger.Route.COMPRESSOR, 1000000),
-                tanks[0], tanks[1], 2500L, 0, energyQuanta, 0, 0, 2500L, 0, 10000L);
+                tanks[0], tanks[1], 2500L, 0, energyQuanta, 0, 0, powerRequirementBase, 0, 10000L);
         setRuntimePower(energyQuanta - r.workQuanta); isOn = r.mass > 0;
         progress = steamAccount.ownedMass() > 0 ? (int) ((in.massPerUnit - steamAccount.ownedMass()) * 100 / in.massPerUnit) : 0;
         if(r.mass > 0) markDirty();
@@ -630,4 +630,11 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		IFluidCopiable.super.pasteSettings(nbt, index, world, player, x, y, z);
 		this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE);
 	}
+
+    @Override public long getMachineDemandWatts() { return usesSteamLedger() ? powerRequirementBase * 10L : operatingPowerWatts > 0 ? operatingPowerWatts : powerRequirementBase * 10L; }
+    @Override public long getMachineCurrentDrawWatts() { return usesSteamLedger() ? steamAccount.currentWorkQuanta * 10L : isOn ? getMachineDemandWatts() : 0; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Physical compression pays recipe work; network pressure class is distinct from vessel pressure");
+        if(cachedRecipe != null && cachedRecipe.workQuanta > 0) lines.add("Batch compression work: " + api.hbm.energymk2.EnergyUnits.formatJoules(cachedRecipe.workQuanta));
+    }
 }

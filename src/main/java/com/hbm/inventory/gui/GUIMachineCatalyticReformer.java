@@ -23,6 +23,7 @@ public class GUIMachineCatalyticReformer extends GuiInfoContainer {
 
 	public GUIMachineCatalyticReformer(InventoryPlayer invPlayer, TileEntityMachineCatalyticReformer tedf) {
 		super(new ContainerMachineCatalyticReformer(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		refinery = tedf;
 		
 		this.xSize = 176;

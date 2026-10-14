@@ -45,8 +45,8 @@ public class SolderingStationHandler extends NEIUniversalHandler {
 			if(ItemStack.areItemStacksEqual(sol.output, output)) {
 
 				FontRenderer fontRenderer = Minecraft.getMinecraft().fontRenderer;
-				String duration = String.format(Locale.US, "%,d", sol.duration) + " ticks";
-				String consumption = EnergyUnits.formatQuantaPerTickAsWatts(sol.consumption);
+				String duration = String.format(Locale.US, "%.1f s / ", sol.duration / 20D) + EnergyUnits.formatJoules(Math.multiplyExact(sol.consumption, (long) sol.duration));
+				String consumption = com.hbm.realsim.MachineInfo.watts(sol.consumption * 10L);
 				int side = 160;
 				fontRenderer.drawString(duration, side - fontRenderer.getStringWidth(duration), 43, 0x404040);
 				fontRenderer.drawString(consumption, side - fontRenderer.getStringWidth(consumption), 55, 0x404040);

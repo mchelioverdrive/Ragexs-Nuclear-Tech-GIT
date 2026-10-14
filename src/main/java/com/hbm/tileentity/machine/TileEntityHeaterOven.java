@@ -89,7 +89,7 @@ public class TileEntityHeaterOven extends TileEntityFireboxBase implements IConf
         TileEntity con = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
         if(con instanceof api.hbm.tile.IProcessHeatSource) {
             api.hbm.tile.IProcessHeatSource source = (api.hbm.tile.IProcessHeatSource) con;
-            int efficiency = com.hbm.realsim.ThermalMachine.efficiency(heatEff, 1000000);
+            int efficiency = getIntakeEfficiencyPpm();
             if(efficiency == 0 || source.getProcessTemperatureC() < getProcessTemperatureC()) return;
             long draw = source.drawProcessHeatQuanta(now, Math.min(getRatedThermalWatts() / 10, Math.max(0, getMaxHeat() - heatEnergy)));
             importedThisTick = intake.accept(draw, efficiency);
@@ -132,6 +132,10 @@ public class TileEntityHeaterOven extends TileEntityFireboxBase implements IConf
 		return new GUIFirebox(player.inventory, this, texture);
 	}
 
+    private int clientIntakeEfficiencyPpm = -1;
+    @Override public void serialize(io.netty.buffer.ByteBuf buf) { super.serialize(buf); buf.writeInt(getIntakeEfficiencyPpm()); }
+    @Override public void deserialize(io.netty.buffer.ByteBuf buf) { super.deserialize(buf); clientIntakeEfficiencyPpm = buf.readInt(); }
+    public int getIntakeEfficiencyPpm() { if(worldObj != null && worldObj.isRemote && clientIntakeEfficiencyPpm >= 0) return clientIntakeEfficiencyPpm; return com.hbm.realsim.ThermalMachine.efficiency(heatEff, 1000000); }
 	@Override
 	public String getConfigName() {
 		return "heatingoven";

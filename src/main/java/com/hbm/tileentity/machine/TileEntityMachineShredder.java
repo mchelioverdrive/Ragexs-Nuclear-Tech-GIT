@@ -34,7 +34,7 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineShredder extends TileEntityLoadedBase implements ISidedInventory, IEnergyReceiverMK2, IGUIProvider {
+public class TileEntityMachineShredder extends TileEntityLoadedBase implements ISidedInventory, IEnergyReceiverMK2, IGUIProvider, com.hbm.realsim.IMachineInfo {
 
 	private ItemStack slots[];
 
@@ -268,7 +268,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 	}
 	
 	public boolean hasPower() {
-		return energyQuanta > 0;
+		return energyQuanta >= com.hbm.realsim.IndustrialDemand.CRUSHER_W / 10;
 	}
 	
 	public boolean isProcessing() {
@@ -328,14 +328,14 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 					break;
 				}
 				long untilSound = soundCycle == 0 ? 1L : 51L - soundCycle;
-				long steps = Math.min(remaining, Math.min(Math.min(processingSpeed - progress, (energyQuanta + 4L) / 5L), untilSound));
+				long steps = Math.min(remaining, Math.min(Math.min(processingSpeed - progress, energyQuanta / (com.hbm.realsim.IndustrialDemand.CRUSHER_W / 10)), untilSound));
 				if(steps <= 0L) break;
 				if(progress + steps >= processingSpeed && !this.refreshEligibility()) {
 					progress = 0;
 					this.markDirty();
 					break;
 				}
-				this.setStoredEnergyQuanta(energyQuanta - 5L * steps);
+				this.setStoredEnergyQuanta(energyQuanta - (com.hbm.realsim.IndustrialDemand.CRUSHER_W / 10) * steps);
 				progress += (int) steps;
 				soundCycle = (int) ((soundCycle + steps) % 50L);
 				remaining -= steps;
@@ -404,7 +404,7 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 		this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
 		if(runtimeProgressing) {
 			long untilSound = soundCycle == 0 ? 1L : 51L - soundCycle;
-			long due = Math.min(Math.min(processingSpeed - progress, (energyQuanta + 4L) / 5L), untilSound);
+			long due = Math.min(Math.min(processingSpeed - progress, energyQuanta / (com.hbm.realsim.IndustrialDemand.CRUSHER_W / 10)), untilSound);
 			this.scheduleMachineTransition(now + Math.max(1L, due), TASK_ACCOUNTING, TASK_SLOT_MAIN);
 		} else if(progress > 0 && (!runtimeEligible || !this.hasBatteryWork())) {
 			progress = 0;
@@ -597,4 +597,10 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 	public Object provideGUI(int ID, EntityPlayer player, World world, int x, int y, int z) {
 		return new GUIMachineShredder(player.inventory, this);
 	}
+
+    @Override public long getMachineDemandWatts() { return com.hbm.realsim.IndustrialDemand.CRUSHER_W; }
+    @Override public long getMachineCurrentDrawWatts() { return runtimeProgressing ? com.hbm.realsim.IndustrialDemand.CRUSHER_W : 0; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Workshop crushing; blades and output room are required");
+    }
 }

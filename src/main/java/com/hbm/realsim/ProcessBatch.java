@@ -8,7 +8,11 @@ public final class ProcessBatch {
     private int ticks;
     private long workPaid, heatPaid;
     private long lastTick = Long.MIN_VALUE;
+    private long observedDrawTick = Long.MIN_VALUE, observedDrawQuanta;
     public final MassRemainder products = new MassRemainder();
+    /** Instrumentation only: no saved credit and no offline/repeated-tick power claim. */
+    public void recordDraw(long tick, long debitedQuanta) { observedDrawTick = tick; observedDrawQuanta = debitedQuanta; }
+    public long currentDrawWatts(long tick) { return tick == observedDrawTick ? Math.multiplyExact(observedDrawQuanta, 10L) : 0L; }
     public boolean active() { return owned != null; }
     public ProcessRecipe recipe() { return owned; }
     public int ticks() { return ticks; }
@@ -44,6 +48,7 @@ public final class ProcessBatch {
     }
     public void read(NBTTagCompound parent) {
         owned = null; ticks = 0; workPaid = 0; heatPaid = 0; lastTick = Long.MIN_VALUE;
+        observedDrawTick = Long.MIN_VALUE; observedDrawQuanta = 0L;
         NBTTagCompound tag = parent.getCompoundTag("realSimProcess"); products.read(tag);
         if(!parent.hasKey("realSimProcess", 10)) return;
         if(tag.getInteger("version") != 1) throw new IllegalStateException("Unsupported physical process version");

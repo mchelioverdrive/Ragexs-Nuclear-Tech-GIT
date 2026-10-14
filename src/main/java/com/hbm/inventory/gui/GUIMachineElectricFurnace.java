@@ -20,6 +20,7 @@ public class GUIMachineElectricFurnace extends GuiInfoContainer {
 
 	public GUIMachineElectricFurnace(InventoryPlayer invPlayer, TileEntityMachineElectricFurnace tedf) {
 		super(new ContainerElectricFurnace(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		diFurnace = tedf;
 		
 		this.xSize = 176;

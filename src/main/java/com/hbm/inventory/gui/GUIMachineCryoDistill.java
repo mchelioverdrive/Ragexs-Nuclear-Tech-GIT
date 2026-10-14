@@ -18,6 +18,7 @@ public class GUIMachineCryoDistill extends GuiInfoContainer {
 
 	public GUIMachineCryoDistill(InventoryPlayer invPlayer, TileEntityMachineCryoDistill tedf) {
 		super(new ContainerMachineCryoDistill(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		cryo = tedf;
 		
 		this.xSize = 176;

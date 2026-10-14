@@ -47,7 +47,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineChemplant extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider {
+public class TileEntityMachineChemplant extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, com.hbm.realsim.IMachineInfo {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 	private static final int TASK_ACCOUNTING = 1;
 	private static final int TASK_BATTERY = 2;
@@ -753,8 +753,8 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		int overLevel = this.upgradeManager.getLevel(UpgradeType.OVERDRIVE);
 		this.speed = (100 - speedLevel * 25 + powerLevel * 5) / (overLevel + 1);
 		if(this.speed <= 0) this.speed = 1;
-		long consumptionQuantaPerTick = (100L + speedLevel * 300L - powerLevel * 20L) * (overLevel + 1L);
-		this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(consumptionQuantaPerTick);
+		this.speed = Math.max(1, this.speed);
+		this.operatingPowerWatts = com.hbm.realsim.IndustrialDemand.atSpeed(com.hbm.realsim.IndustrialDemand.CHEMICAL_W, this.speed, powerLevel);
 		return oldSpeed != this.speed || oldOperatingPowerWatts != this.operatingPowerWatts;
 	}
 
@@ -928,10 +928,10 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		info.add(IUpgradeInfoProvider.getStandardLabel(ModBlocks.machine_chemplant));
 		if(type == UpgradeType.SPEED) {
 			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(KEY_DELAY, "-" + (level * 25) + "%"));
-			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(KEY_CONSUMPTION, "+" + (level * 300) + "%"));
+			info.add("Electrical demand scales with throughput; see the machine rating");
 		}
 		if(type == UpgradeType.POWER) {
-			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(KEY_CONSUMPTION, "-" + (level * 30) + "%"));
+			info.add("Work reduction: " + (Math.min(3, level) * 10) + "% (nominal recipes)");
 			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(KEY_DELAY, "+" + (level * 5) + "%"));
 		}
 		if(type == UpgradeType.OVERDRIVE) {
@@ -946,4 +946,11 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		if(type == UpgradeType.OVERDRIVE) return 9;
 		return 0;
 	}
+
+    @Override public long getMachineDemandWatts() { return cachedRecipe != null && cachedRecipe.physicalBill != null ? cachedRecipe.physicalBill.electricalRatingWatts : cachedRecipe == null ? operatingPowerWatts : cachedRecipe.costPerTick(operatingPowerWatts / 10L) * 10L; }
+    @Override public long getMachineCurrentDrawWatts() { return physicalBatch.active() || cachedRecipe != null && cachedRecipe.physicalBill != null ? physicalBatch.currentDrawWatts(worldObj == null ? Long.MIN_VALUE : worldObj.getTotalWorldTime()) : isProgressing ? getMachineDemandWatts() : 0; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        if(cachedRecipe != null && cachedRecipe.physicalBill != null) com.hbm.realsim.MachineInfo.process(lines, physicalBatch.active() ? physicalBatch.recipe() : cachedRecipe.physicalBill);
+        else lines.add("Recipe utility families; idle load 0 W. No universal reaction-energy claim.");
+    }
 }

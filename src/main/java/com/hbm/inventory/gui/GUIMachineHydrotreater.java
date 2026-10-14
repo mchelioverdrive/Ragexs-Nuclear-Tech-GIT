@@ -23,6 +23,7 @@ public class GUIMachineHydrotreater extends GuiInfoContainer {
 
 	public GUIMachineHydrotreater(InventoryPlayer invPlayer, TileEntityMachineHydrotreater tedf) {
 		super(new ContainerMachineHydrotreater(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		hydrotreater = tedf;
 		
 		this.xSize = 176;

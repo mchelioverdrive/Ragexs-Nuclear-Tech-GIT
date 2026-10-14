@@ -19,6 +19,7 @@ public class GUIMachineTurbine extends GuiInfoContainer {
 	
 	public GUIMachineTurbine(InventoryPlayer invPlayer, TileEntityMachineTurbine tedf) {
 		super(new ContainerMachineTurbine(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		diFurnace = tedf;
 
 		this.xSize = 176;
@@ -39,7 +40,7 @@ public class GUIMachineTurbine extends GuiInfoContainer {
 		}
 		
         java.util.List<String> thermalInfo = new java.util.ArrayList<String>();
-        com.hbm.realsim.ThermalInfo.generator(thermalInfo, diFurnace.thermal, diFurnace.getRatedOutputWatts(), 750000);
+        com.hbm.realsim.ThermalInfo.generator(thermalInfo, diFurnace.thermal, diFurnace.getRatedOutputWatts(), diFurnace.getExpansionEfficiencyPpm());
         com.hbm.realsim.ThermalInfo.states(thermalInfo, diFurnace.tanks[0], diFurnace.tanks[1], diFurnace.thermal);
         this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 99, guiTop + 18, 14, 14, mouseX, mouseY, thermalInfo.toArray(new String[0]));
 

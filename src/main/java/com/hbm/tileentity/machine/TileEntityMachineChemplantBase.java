@@ -36,7 +36,7 @@ import net.minecraft.tileentity.TileEntity;
  * Tanks follow the order R1(I1, I2, O1, O2), R2(I1, I2, O1, O2) ...
  * @author hbm
  */
-public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidUser, IGUIProvider {
+public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidUser, IGUIProvider, com.hbm.realsim.IMachineInfo {
 
 	private final com.hbm.realsim.ProcessBatch[] physicalBatches;
     public long energyQuanta;
@@ -68,7 +68,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 	public FluidTank[] tanks;
 
-	long operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(100L);
+	public long operatingPowerWatts = com.hbm.realsim.IndustrialDemand.CHEMICAL_W;
 	int speed = 100;
 
 	public TileEntityMachineChemplantBase(int scount) {
@@ -230,6 +230,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
         return physicalBatches[lane].active() || cachedRecipes[lane] != null && cachedRecipes[lane].physicalBill != null;
     }
     private void settlePhysicalLanes() {
+        if(additionalResourceFullTicks(1) <= 0L) return;
         for(int step = 0; step < getRecipeCount(); step++) {
             int lane = (int) ((worldObj.getTotalWorldTime() % getRecipeCount() + step) % getRecipeCount());
             ChemRecipe selected = this.resolveRecipe(lane);
@@ -270,7 +271,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 					ChemRecipe recipe = cachedRecipes[i];
 					if(recipe == null) continue;
 					active++;
-					activeCost += recipe.costPerTick(cost);
+					activeCost += laneCostQuanta(recipe);
 					nearestCompletion = Math.min(nearestCompletion, Math.max(1, maxProgress[i] - progress[i]));
 					if(recipe.oxygenConsumption > 0) oxygenDependent = true;
 				}
@@ -299,7 +300,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 						changed = true;
 						continue;
 					}
-					long laneCost = recipe.costPerTick(cost);
+					long laneCost = laneCostQuanta(recipe);
 					if(laneCost > 0L && energyQuanta < laneCost || this.additionalResourceFullTicks(1) <= 0L) {
 						progress[i] = 0;
 						runtimeLaneActive[i] = false;
@@ -344,7 +345,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 				ChemRecipe recipe = cachedRecipes[i];
 				if(recipe == null) continue;
 				active++;
-				activeCost += recipe.costPerTick(EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts));
+				activeCost += laneCostQuanta(recipe);
 				nearestCompletion = Math.min(nearestCompletion, Math.max(1, maxProgress[i] - progress[i]));
 				if(recipe.oxygenConsumption > 0) oxygenDependent = true;
 			} else if(runtimeOxygenBlockedUntil[i] > now) this.scheduleMachineTransition(runtimeOxygenBlockedUntil[i], TASK_CHEMPLANT_LANE, i);
@@ -403,7 +404,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
             int[] indices = getCachedSlotIndicesFromIndex(index);
             return com.hbm.realsim.ProcessMachine.inputsReady(physical.physicalBill, new FluidTank[] {tanks[index * 4], tanks[index * 4 + 1]}, slots, indices[0], indices[1]);
         }
-		return this.canProcessResources(index) && energyQuanta >= cachedRecipes[index].costPerTick(EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts));
+		return this.canProcessResources(index) && energyQuanta >= laneCostQuanta(cachedRecipes[index]);
 	}
 
 	private boolean canProcessResources(int index) {
@@ -464,7 +465,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	protected void process(int index) {
         if(isPhysicalLane(index)) { this.settleLanesThrough(worldObj.getTotalWorldTime()); return; }
 
-		this.setStoredEnergyQuanta(this.energyQuanta - this.resolveRecipe(index).costPerTick(EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts)));
+		this.setStoredEnergyQuanta(this.energyQuanta - laneCostQuanta(this.resolveRecipe(index)));
 		this.progress[index]++;
 
 		//if(slots[0] != null && slots[0].getItem() == ModItems.meteorite_sword_machined)
@@ -982,4 +983,36 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	public abstract int[] getSlotIndicesFromIndex(int index);
 	public abstract DirPos[] getInputPositions();
 	public abstract DirPos[] getOutputPositions();
+
+    @Override public long getMachineDemandWatts() { return configuredLaneDemandWatts(false); }
+    @Override public long getMachineCurrentDrawWatts() { return configuredLaneDemandWatts(true); }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Installed chemical lanes: " + getRecipeCount() + "; no additional chemistry tier");
+        lines.add("Recipe utilities vary by process; physical bills retain their own heat/work requirements");
+    }
+    private long configuredLaneDemandWatts(boolean activeOnly) {
+        long watts = 0;
+        for(int i = 0; i < getRecipeCount(); i++) {
+            if(activeOnly && !runtimeLaneActive[i]) continue;
+            com.hbm.realsim.ProcessRecipe bill = physicalBatches[i].active() ? physicalBatches[i].recipe() : cachedRecipes[i] == null ? null : cachedRecipes[i].physicalBill;
+            if(bill != null) watts += activeOnly ? physicalBatches[i].currentDrawWatts(worldObj == null ? Long.MIN_VALUE : worldObj.getTotalWorldTime()) : bill.electricalRatingWatts + getProcessAuxiliaryWatts(bill);
+            else watts += cachedRecipes[i] == null ? operatingPowerWatts : laneCostQuanta(cachedRecipes[i]) * 10L;
+        }
+        return activeOnly && !isProgressing ? 0 : watts;
+    }
+    private long laneCostQuanta(ChemRecipe recipe) {
+        long auxiliary = getProcessAuxiliaryWatts();
+        long utilityQuanta = recipe.costPerTick(Math.max(10L, operatingPowerWatts - auxiliary) / 10L);
+        if(auxiliary > 0L) auxiliary = com.hbm.realsim.IndustrialDemand.coolingAuxiliaryWatts(utilityQuanta * 10L);
+        return utilityQuanta + auxiliary / 10L;
+    }
+    @Override public long getMachineCoolingWatts() {
+        long watts = 0;
+        for(int i = 0; i < getRecipeCount(); i++) {
+            com.hbm.realsim.ProcessRecipe bill = physicalBatches[i].active() ? physicalBatches[i].recipe() : cachedRecipes[i] == null ? null : cachedRecipes[i].physicalBill;
+            watts = Math.addExact(watts, bill == null ? cachedRecipes[i] == null ? operatingPowerWatts : laneCostQuanta(cachedRecipes[i]) * 10L
+                : bill.rejectedWatts + getProcessAuxiliaryWatts(bill));
+        }
+        return watts;
+    }
 }

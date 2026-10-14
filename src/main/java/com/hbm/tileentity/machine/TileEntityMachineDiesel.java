@@ -43,7 +43,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineDiesel extends TileEntityMachinePolluting implements IEnergyProviderMK2, IFluidStandardTransceiver, IConfigurableMachine, IGUIProvider, IInfoProviderEC, IFluidCopiable {
+public class TileEntityMachineDiesel extends TileEntityMachinePolluting implements IEnergyProviderMK2, IFluidStandardTransceiver, IConfigurableMachine, IGUIProvider, IInfoProviderEC, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private static final int TASK_GENERATE = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
@@ -287,7 +287,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 		EnergyUnits.writeCapacityQuanta(data, powerCap);
 		tank.writeToNBT(data, "t");
-		generatorStats.write(data, fuelCredit);
+		generatorStats.write(data, fuelCredit, ratedPowerWatts, com.hbm.realsim.Combustion.dieselEfficiency(tank.getTankType()));
 		this.networkPack(data, 50);
 	}
 	
@@ -421,4 +421,10 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 		data.setDouble(CompatEnergyControl.D_CONSUMPTION_MB, generatorStats.fuelUnitsPerSecond / 20D);
 		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(energyFromFuelQuanta));
 	}
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Rated electrical output: " + com.hbm.realsim.MachineInfo.watts(generatorStats.ratedWatts(ratedPowerWatts)));
+        if(live) { String[] status = generatorStats.info(ratedPowerWatts, fuelCredit, tank.getTankType().getName(), tank.getFill(), com.hbm.realsim.Combustion.dieselEfficiency(tank.getTankType()), false); for(int i = 1; i < status.length; i++) lines.add(status[i]); }
+        lines.add(String.format(java.util.Locale.US, "Installed fuel efficiency: %.1f%%", generatorStats.ratedEfficiency(com.hbm.realsim.Combustion.dieselEfficiency(tank.getTankType())) / 10000D));
+    }
 }

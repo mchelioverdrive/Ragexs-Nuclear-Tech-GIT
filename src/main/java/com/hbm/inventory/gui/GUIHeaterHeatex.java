@@ -28,6 +28,7 @@ public class GUIHeaterHeatex extends GuiInfoContainer {
 
 	public GUIHeaterHeatex(InventoryPlayer invPlayer, TileEntityHeaterHeatex tedf) {
 		super(new ContainerHeaterHeatex(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		heater = tedf;
 		
 		this.xSize = 176;

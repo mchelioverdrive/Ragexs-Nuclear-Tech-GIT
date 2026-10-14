@@ -85,7 +85,7 @@ Fuel **grade (suitability)** is a legacy equipment/ignition category, never anot
 
 The following are calculated chemical-to-output endurance, excluding losses outside the specified efficiency, auxiliary load, dispatch and fuel compatibility. Long autonomy is acceptable for dedicated stationary stores.
 
-| Storage | Starter 40 kW, wood oil at 7% | Diesel 100 kW at 32% | Diesel 200 kW at 32% | Industrial 431 kW at 38% | Industrial 750 kW at 38% |
+| Storage | Deprecated wood generator, 40 kW on wood oil at 7% | Diesel 100 kW at 32% | Diesel 200 kW at 32% | Industrial 431 kW at 38% | Industrial 750 kW at 38% |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | 20 | 0.198 h | 0.637 h | 0.318 h | 0.175 h | 0.101 h |
 | 100 | 0.992 h | 3.184 h | 1.592 h | 0.877 h | 0.504 h |
@@ -95,7 +95,7 @@ The following are calculated chemical-to-output endurance, excluding losses outs
 | 32,000 | 317.333 h | 1018.852 h | 509.426 h | 280.716 h | 161.318 h |
 | 64,000 | 634.667 h | 2037.703 h | 1018.852 h | 561.432 h | 322.636 h |
 
-The new 400-L diesel day tank supplies 6.368 h at 200 kW. A 4,000-L external store supplies 63.678 h; the industrial engine's 4,000-L store supplies about 35.09 h at 431 kW or 20.166 h at 750 kW. The 20-L canister supplies about 19.10 min at 200 kW. The 100-L starter day tank supplies 0.992 h on wood oil. These are useful buffers rather than throughput ratings.
+The new 400-L diesel day tank supplies 6.368 h at 200 kW. A 4,000-L external store supplies 63.678 h; the industrial engine's 4,000-L store supplies about 35.09 h at 431 kW or 20.166 h at 750 kW. The 20-L canister supplies about 19.10 min at 200 kW. The legacy wood generator's 100-L day tank supplies 0.992 h on wood oil. These are useful buffers rather than throughput ratings.
 
 | Petroleum store | Inventory / relevant rate | Nameplate endurance or fill time |
 | --- | --- | ---: |
@@ -380,3 +380,13 @@ Converted systems use [one state ledger](REALSIM_PHYSICAL_LEDGER.md#phase-5d-fro
 Closed feedwater circuits replace only the declared 0.5% steam-loss/blowdown equivalent. Passive/radiator/powered cooling has a separate finite ambient heat-rejection rating; it does not evaporate all feedwater. No wet tower/cooling-water species conversion was invented. A future wet/water-cooled adapter must own its separate cooling-water return/evaporative loss; it cannot reuse feedwater mass. Implemented dry/environmental routes close steam mass and heat rejection.
 
 Groundwater remains 120 L/min electric / 30 L/min steam, with prior hydraulics/storage/export. The unchanged 100-kJ shaft parcel now equals 40% of the common ordinary-steam cap. Industrial/combined makeup is 2.379/0.458 L/min, below one pump's rate; once-through demand is much larger, giving condenser return real logistical value. Autonomy and compatibility are in the [Phase 5D report](REALSIM_PHASES_1_4.md#phase-5d-implementation--closed-fossil-thermal-power-2026-10-13).
+
+## Server-ready base normalization
+
+[Server-ready base normalization](REALSIM_PHASES_1_4.md#server-ready-base-normalization) supersedes wood-generator starter recommendations; saved contents/storage remain. New starter plants use Stirling or qualified early steam.
+
+Industrial fabrication/chemistry need **20 L of fresh water per machine as a sealed loop charge**, without operating makeup/new SPENTSTEAM. Existing 64,000-unit water/exhaust capacities and saved stocks remain; old exhaust is export-only. Casting applies the charge/preservation rule while keeping nominal molten thermodynamics. No fluid ID, exported warm-water state, container stamp, standard-gas basis or amount representation changes.
+
+Electric/steam groundwater fills one loop in 10/40 s at unchanged 120/30-L/min ceilings. Base internal circulation is 37.32/48.80 L/min for eight fabrication/default chemical lanes, through process/ambient radiator at a 20-K rise. This is recirculation, not groundwater withdrawal. Actual rejected heat and paid active pump/fan work set cooling duty.
+
+Actual capacities/current amounts retain shared fluid hovers; item profiles/information icons expose operating demand without treating steam-equivalent inventory counts as literal vessel liters. Matching mod builds are required for extended status. GUI, sustained operation, rotation/ports and save/reload acceptance remains pending.

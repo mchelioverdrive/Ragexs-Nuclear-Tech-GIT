@@ -1,9 +1,5 @@
 package com.hbm.blocks.machine;
 
-import com.hbm.util.ThermalUnits;
-
-import api.hbm.energymk2.EnergyUnits;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -163,18 +159,17 @@ public class MachineStirling extends BlockDummyable implements ILookOverlay, ITo
 		TileEntityStirling stirling = (TileEntityStirling) te;
 
 		List<String> text = new ArrayList();
-		text.add("Thermal Input: " + ThermalUnits.formatThermalPower(stirling.heat));
-		text.add(EnergyUnits.formatQuantaPerTickAsWatts(stirling.hasCog ? stirling.powerBuffer : 0));
+		text.addAll(com.hbm.realsim.MachineInfo.describe(stirling, true));
 
 		if(this != ModBlocks.machine_stirling_creative) {
-			int maxHeat = stirling.maxHeat();
+			int maxHeat = Math.max(1, stirling.maxHeat());
 			double percent = (double) stirling.heat / (double) maxHeat;
 			int color = ((int) (0xFF - 0xFF * percent)) << 16 | ((int)(0xFF * percent) << 8);
 			
 			if(percent > 1D)
 				color = 0xff0000;
 			
-			text.add("&[" + color + "&]" + ((stirling.heat * 1000 / maxHeat) / 10D) + "%");
+			text.add("&[" + color + "&]" + (((long) stirling.heat * 1000 / maxHeat) / 10D) + "%");
 			
 			if(stirling.heat > maxHeat) {
 				text.add("&[" + (BobMathUtil.getBlink() ? 0xff0000 : 0xffff00) + "&]! ! ! OVERSPEED ! ! !");

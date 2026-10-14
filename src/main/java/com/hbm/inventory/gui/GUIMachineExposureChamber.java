@@ -18,6 +18,7 @@ public class GUIMachineExposureChamber extends GuiInfoContainer {
 
 	public GUIMachineExposureChamber(InventoryPlayer invPlayer, TileEntityMachineExposureChamber chamber) {
 		super(new ContainerMachineExposureChamber(invPlayer, chamber));
+        setMachineInfoOwner(chamber);
 		this.chamber = chamber;
 
 		this.xSize = 176;

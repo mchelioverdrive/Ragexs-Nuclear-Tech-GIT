@@ -272,7 +272,7 @@ public abstract class TileEntityFireboxBase extends TileEntityMachinePolluting i
 				slots[i].stackSize--;
 				if(slots[i].stackSize == 0) slots[i] = slots[i].getItem().getContainerItem(slots[i]);
 				this.onInventorySlotChanged(i);
-				fuelCredit.reserve(identity, chemical, 1, 850_000);
+				fuelCredit.reserve(identity, chemical, 1, com.hbm.realsim.Combustion.FIREBOX_EFFICIENCY_PPM);
 				maxBurnTime = (int) (fuelCredit.usefulMicrojoules() / 500_000L / (getRatedThermalWatts() / 10L));
 				break;
 			}

@@ -37,7 +37,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineEPress extends TileEntityMachineBase implements IEnergyReceiverMK2, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC {
+public class TileEntityMachineEPress extends TileEntityMachineBase implements IEnergyReceiverMK2, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, com.hbm.realsim.IMachineInfo {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
@@ -115,7 +115,7 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 		this.runtimeOutputEligible = this.hasOutputSpace(cachedOutput);
 		observedRecipeRevision = SerializableRecipe.getRegistryRevision();
 		runtimeInitialized = true;
-		pressCanAdvance = energyQuanta >= 100L && runtimeOutputEligible;
+		pressCanAdvance = energyQuanta >= (com.hbm.realsim.IndustrialDemand.PRESS_W / 10) && runtimeOutputEligible;
 		this.evaluateAndSchedule(now);
 	}
 
@@ -125,7 +125,7 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
 			if(lastBatteryChargeTick != now) this.chargeBattery(now);
 			this.evaluateAndSchedule(now);
-			if(this.hasScheduledPressWork() && energyQuanta >= 100L) this.scheduleMachineTransition(now, TASK_PRESS, TASK_SLOT_MAIN);
+			if(this.hasScheduledPressWork() && energyQuanta >= (com.hbm.realsim.IndustrialDemand.PRESS_W / 10)) this.scheduleMachineTransition(now, TASK_PRESS, TASK_SLOT_MAIN);
 			this.sendBatteryState();
 			return;
 		} else if(taskType == TASK_PRESS && taskSlot == TASK_SLOT_MAIN) {
@@ -157,13 +157,13 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 			while(remaining > 0L) {
 				this.resolveCachedOutput();
 				runtimeOutputEligible = this.hasOutputSpace(cachedOutput);
-				boolean canProcess = energyQuanta >= 100L && runtimeOutputEligible;
+				boolean canProcess = energyQuanta >= (com.hbm.realsim.IndustrialDemand.PRESS_W / 10) && runtimeOutputEligible;
 				boolean active = canProcess || isRetracting || delay > 0 || press > 0;
-				if(!active || energyQuanta < 100L) break;
-				long poweredTicks = energyQuanta / 100L;
+				if(!active || energyQuanta < (com.hbm.realsim.IndustrialDemand.PRESS_W / 10)) break;
+				long poweredTicks = energyQuanta / (com.hbm.realsim.IndustrialDemand.PRESS_W / 10);
 				if(delay > 0) {
 					long steps = Math.min(remaining, Math.min(poweredTicks, delay));
-					this.setRuntimePower(energyQuanta - steps * 100L);
+					this.setRuntimePower(energyQuanta - steps * (com.hbm.realsim.IndustrialDemand.PRESS_W / 10));
 					delay -= (int) steps;
 					remaining -= steps;
 					if(remaining <= 0L || delay > 0) break;
@@ -173,7 +173,7 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 					int rate = this.getStampSpeed(true);
 					long phaseTicks = press > 0 ? (press + (long) rate - 1L) / rate : 1L;
 					long steps = Math.min(remaining, Math.min(poweredTicks, phaseTicks));
-					this.setRuntimePower(energyQuanta - steps * 100L);
+					this.setRuntimePower(energyQuanta - steps * (com.hbm.realsim.IndustrialDemand.PRESS_W / 10));
 					press -= (int) (steps * rate);
 					remaining -= steps;
 					if(press <= 0) {
@@ -187,18 +187,18 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 					int rate = this.getStampSpeed(false);
 					long phaseTicks = Math.max(1L, (maxPress - (long) press + rate - 1L) / rate);
 					long steps = Math.min(remaining, Math.min(poweredTicks, phaseTicks));
-					this.setRuntimePower(energyQuanta - steps * 100L);
+					this.setRuntimePower(energyQuanta - steps * (com.hbm.realsim.IndustrialDemand.PRESS_W / 10));
 					press += (int) (steps * rate);
 					remaining -= steps;
 					if(press >= maxPress) this.completePressOperation();
 					if(remaining > 0L && steps >= poweredTicks) break;
 					continue;
 				}
-				this.setRuntimePower(energyQuanta - 100L);
+				this.setRuntimePower(energyQuanta - (com.hbm.realsim.IndustrialDemand.PRESS_W / 10));
 				isRetracting = true;
 				remaining--;
 			}
-			pressCanAdvance = energyQuanta >= 100L && runtimeOutputEligible;
+			pressCanAdvance = energyQuanta >= (com.hbm.realsim.IndustrialDemand.PRESS_W / 10) && runtimeOutputEligible;
 		} finally {
 			runtimeSettling = false;
 		}
@@ -280,14 +280,14 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 	}
 
 	private boolean hasScheduledPressWork() {
-		return (energyQuanta >= 100L && runtimeOutputEligible) || this.isRetracting || this.delay > 0 || this.press > 0;
+		return (energyQuanta >= (com.hbm.realsim.IndustrialDemand.PRESS_W / 10) && runtimeOutputEligible) || this.isRetracting || this.delay > 0 || this.press > 0;
 	}
 
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
-		boolean canProcess = energyQuanta >= 100L && runtimeOutputEligible;
+		boolean canProcess = energyQuanta >= (com.hbm.realsim.IndustrialDemand.PRESS_W / 10) && runtimeOutputEligible;
 		boolean work = canProcess || isRetracting || delay > 0 || press > 0;
-		long poweredTicks = energyQuanta / 100L;
+		long poweredTicks = energyQuanta / (com.hbm.realsim.IndustrialDemand.PRESS_W / 10);
 		if(work && poweredTicks > 0L) {
 			long phaseTicks;
 			if(delay > 0) {
@@ -319,7 +319,7 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 		data.setInteger("pressDelay", delay);
 		data.setInteger("pressRate", this.getStampSpeed(isRetracting));
 		data.setBoolean("pressRetracting", isRetracting);
-		data.setBoolean("pressMoving", energyQuanta >= 100L && this.hasScheduledPressWork());
+		data.setBoolean("pressMoving", energyQuanta >= (com.hbm.realsim.IndustrialDemand.PRESS_W / 10) && this.hasScheduledPressWork());
 		data.setLong("pressTick", worldObj == null ? 0L : worldObj.getTotalWorldTime());
 		if(slots[2] != null) {
 			NBTTagCompound stack = new NBTTagCompound();
@@ -529,4 +529,10 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IE
 	public void provideExtraInfo(NBTTagCompound data) {
 		data.setInteger(CompatEnergyControl.I_PROGRESS, this.press);
 	}
+
+    @Override public long getMachineDemandWatts() { return com.hbm.realsim.IndustrialDemand.PRESS_W; }
+    @Override public long getMachineCurrentDrawWatts() { return hasScheduledPressWork() && energyQuanta >= com.hbm.realsim.IndustrialDemand.PRESS_W / 10 ? com.hbm.realsim.IndustrialDemand.PRESS_W : 0; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Rated motor draw while moving; throughput upgrades retain this motor ceiling");
+    }
 }

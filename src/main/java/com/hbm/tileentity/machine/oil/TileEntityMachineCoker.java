@@ -29,7 +29,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 
-public class TileEntityMachineCoker extends TileEntityMachineBase implements api.hbm.energymk2.IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IFluidCopiable {
+public class TileEntityMachineCoker extends TileEntityMachineBase implements api.hbm.energymk2.IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 
 	public boolean wasOn;
 	public int progress;
@@ -316,4 +316,9 @@ public class TileEntityMachineCoker extends TileEntityMachineBase implements api
     @Override public long getStoredEnergyQuanta() { return energyQuanta; }
     @Override public long getEnergyCapacityQuanta() { return 1_000_000L; }
     @Override public void setStoredEnergyQuanta(long amount) { energyQuanta = amount; markDirty(); markMachineEnergyDirty(); }
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        com.hbm.realsim.MachineInfo.process(lines, physicalBatch.active() ? physicalBatch.recipe() : CokerRecipes.getPhysical(tanks[0].getTankType()));
+        lines.add("Blocked operation: check feed state, paid utilities and product storage");
+    }
 }

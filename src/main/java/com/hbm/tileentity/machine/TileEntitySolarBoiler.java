@@ -24,7 +24,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.ChunkCoordinates;
 
-public class TileEntitySolarBoiler extends TileEntityLoadedBase implements IFluidStandardTransceiver, IBufPacketReceiver, IFluidCopiable {
+public class TileEntitySolarBoiler extends TileEntityLoadedBase implements IFluidStandardTransceiver, IBufPacketReceiver, IFluidCopiable, com.hbm.realsim.IMachineInfo {
     public final com.hbm.realsim.ThermalAccount thermal = new com.hbm.realsim.ThermalAccount();
     public long thermalBufferQuanta, startupQuanta;
     public static final long RATED_THERMAL_WATTS = 500000L;
@@ -204,4 +204,9 @@ public class TileEntitySolarBoiler extends TileEntityLoadedBase implements IFlui
 	public FluidTank getTankToPaste() {
 		return null;
 	}
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Thermal ceiling: " + com.hbm.realsim.MachineInfo.thermalWatts(RATED_THERMAL_WATTS));
+        lines.add("Actual solar heat depends on illuminated mirrors; feed pump electricity is separate");
+    }
 }

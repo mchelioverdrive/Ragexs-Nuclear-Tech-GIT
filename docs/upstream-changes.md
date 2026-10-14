@@ -63,6 +63,7 @@ Progression was changed to make industrial infrastructure matter earlier:
 - Blast furnace use is emphasized earlier in progression.
 - Furnace smelting recipes were tweaked.
 - Additional RTG variants were added.
+- The X3030 Large Shredder is available as a decorative prop in the Machines Creative tab or with `/give <player> hbm:machine_shredder_large_dummy`. It faces the player on placement, has stationary blades, and has no recipes or processing functionality. It occupies one anchor block with an oversized selection/collision envelope; leave approximately 3.5 × 5 × 4.25 blocks of visual clearance (width and depth swap when rotated). Neighboring blocks are not reserved, and vanilla anchor-based collision/ray discovery does not cover every outer surface; target the base anchor when breaking it.
 - The Nuclear Furnace recipe was removed.
 
 ## Weapons, warfare, and server controls

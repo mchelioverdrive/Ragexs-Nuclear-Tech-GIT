@@ -52,7 +52,7 @@ import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase implements IEnergyReceiverMK2, IControlReceiver, IGUIProvider, IUpgradeInfoProvider {
+public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase implements IEnergyReceiverMK2, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, com.hbm.realsim.IMachineInfo {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 	private static final int TASK_ACCOUNTING = 1;
 	private static final int TASK_MECHANICS = 2;
@@ -68,7 +68,8 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	private int observedInventoryFingerprint;
 	private int observedBatteryFingerprint;
 	private long observedRecipeRevision = Long.MIN_VALUE;
-	private long operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(1_000L);
+	public long operatingPowerWatts = com.hbm.realsim.IndustrialDemand.ARC_CEILING_W;
+	private long meltPaidQuanta;
 	private long lastAccountingTick = Long.MIN_VALUE;
 	private long progressEffectThroughTick = Long.MIN_VALUE;
 	private long lastProgressedTick = Long.MIN_VALUE;
@@ -80,7 +81,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 
 	
 	public long energyQuanta;
-	public static final long maxPower = 2_500_000;
+	public static final long maxPower = 200_000_000;
 	public boolean liquidMode = false;
 	public float progress;
 	public boolean isProgressing;
@@ -295,9 +296,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		long previousPower = this.operatingPowerWatts;
 		this.upgradeManager.checkSlots(slots, 4, 4);
 		this.upgrade = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-		long consumptionQuantaPerTick = 1_000L;
-		for(int i = 0; i < this.upgrade; i++) consumptionQuantaPerTick *= 5L;
-		this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(consumptionQuantaPerTick);
+		this.operatingPowerWatts = getRatedDemandWatts();
 
 		this.observedRecipeRevision = SerializableRecipe.getRegistryRevision();
 		this.hasMaterial = this.hasIngredients();
@@ -391,52 +390,52 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		long intervalStart = lastAccountingTick;
 		long elapsed = targetTick - lastAccountingTick;
 		lastAccountingTick = targetTick;
-		int duration = this.progressDuration();
 		long consumption = EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts);
 		boolean ready = this.hasProgressInputs();
 		if(!ready) {
-			boolean stateChanged = progress != 0F || isProgressing;
-			if(energyQuanta > 0 && progress != 0F) progress = 0F;
+			boolean stateChanged = progress != 0F || isProgressing || meltPaidQuanta != 0L;
+			if(progress != 0F || meltPaidQuanta != 0L) { progress = 0F; meltPaidQuanta = 0L; }
 			isProgressing = false;
 			progressEffectThroughTick = Math.min(progressEffectThroughTick, targetTick - 1L);
 			if(stateChanged) { this.markDirty(); this.markNetworkDirty(); }
 			return;
 		}
-		long affordable = consumption <= 0L ? elapsed : energyQuanta / consumption;
+		long required = getBatchWorkQuanta();
+		long unpaid = Math.max(0L, required - meltPaidQuanta);
+		long affordable = energyQuanta / consumption;
+		if(energyQuanta >= unpaid) affordable = Math.max(affordable, (unpaid + consumption - 1L) / consumption);
 		long steps = Math.min(elapsed, affordable);
 		if(steps <= 0L) {
 			isProgressing = false;
 			progressEffectThroughTick = Math.min(progressEffectThroughTick, targetTick - 1L);
 			return;
 		}
-		float increment = 1F / duration;
 		runtimeSettling = true;
 		try {
 			long completedAt = Long.MIN_VALUE;
-		long progressedTicks = 0L;
-			for(long i = 0; i < steps; i++) {
-				progress += increment;
-				progressedTicks++;
-				if(progress >= 1F) {
-					completedAt = targetTick - steps + i + 1L;
-					break;
-				}
-			}
+			long progressedTicks = 0L;
+			long untilComplete = Math.max(1L, (Math.max(0L, required - meltPaidQuanta) + consumption - 1L) / consumption);
+			progressedTicks = Math.min(steps, untilComplete);
+			long debit = Math.min(unpaid, Math.multiplyExact(consumption, progressedTicks));
+			meltPaidQuanta = Math.addExact(meltPaidQuanta, debit);
+			progress = Math.min(1F, meltPaidQuanta / (float) Math.max(1L, required));
+			if(meltPaidQuanta >= required) completedAt = intervalStart + progressedTicks;
 			if(progressedTicks > 0L) lastProgressedTick = intervalStart + progressedTicks;
 			if(consumption > 0L && progressedTicks > 0L) {
 				runtimeEnergyMutation = true;
-				try { this.setStoredEnergyQuanta(energyQuanta - consumption * progressedTicks); }
+				try { this.setStoredEnergyQuanta(energyQuanta - debit); }
 				finally { runtimeEnergyMutation = false; }
 			}
 			if(completedAt != Long.MIN_VALUE) {
 				this.process();
+				meltPaidQuanta = 0L;
 				progress = 0F;
 				this.delay = (int) (120 / (upgrade * 0.5 + 1));
 				PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, 10F);
 				this.refreshRuntimeState();
 				progressEffectThroughTick = Math.min(progressEffectThroughTick, completedAt);
 			}
-			isProgressing = completedAt == Long.MIN_VALUE && progressedTicks > 0L && energyQuanta >= consumption;
+			isProgressing = completedAt == Long.MIN_VALUE && progressedTicks > 0L && energyQuanta >= Math.min(consumption, required - meltPaidQuanta);
 		} finally {
 			runtimeSettling = false;
 		}
@@ -448,20 +447,38 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		return this.hasIngredients() && this.hasElectrodes() && delay <= 0 && liquids.isEmpty() && lid <= 0F;
 	}
 
-	private int progressDuration() {
-		return 400 / (upgrade * 2 + 1);
+	public long getRatedDemandWatts() {
+		return com.hbm.realsim.IndustrialDemand.arcRatedWatts(upgrade);
+	}
+
+	public long getBatchMilligrams() {
+		long mass = 0;
+		for(int i = 5; i < 25; i++) {
+			if(slots[i] == null) continue;
+			ArcFurnaceRecipe recipe = ArcFurnaceRecipes.getOutput(slots[i], liquidMode);
+			if(recipe == null || (liquidMode ? recipe.fluidOutput == null : recipe.solidOutput == null)) continue;
+			long equivalent = 1000000L; // unmapped glass/reduction item: explicit 1-kg work convention
+			if(recipe.fluidOutput != null) {
+				equivalent = 0;
+				for(MaterialStack material : recipe.fluidOutput) equivalent += (long) material.amount * 1000000L / com.hbm.inventory.material.MaterialShapes.INGOT.q(1);
+			}
+			mass += Math.max(1L, equivalent) * slots[i].stackSize;
+		}
+		return mass;
+	}
+
+	public long getBatchWorkQuanta() {
+		return com.hbm.realsim.IndustrialDemand.arcWorkQuanta(getBatchMilligrams());
+	}
+
+	public int progressDuration() {
+		long cost = Math.max(1L, getRatedDemandWatts() / 10L);
+		return (int) Math.min(Integer.MAX_VALUE, Math.max(1L, (getBatchWorkQuanta() + cost - 1L) / cost));
 	}
 
 	private int ticksUntilProgressCompletion() {
-		if(progress >= 1F) return 1;
-		float next = progress;
-		float increment = 1F / this.progressDuration();
-		int ticks = 0;
-		while(next < 1F && ticks <= this.progressDuration()) {
-			next += increment;
-			ticks++;
-		}
-		return Math.max(1, ticks);
+		long cost = Math.max(1L, operatingPowerWatts / 10L);
+		return (int) Math.min(Integer.MAX_VALUE, Math.max(1L, (Math.max(0L, getBatchWorkQuanta() - meltPaidQuanta) + cost - 1L) / cost));
 	}
 
 	private void evaluateAndSchedule(long now) {
@@ -473,9 +490,10 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 			isProgressing = false;
 			progressEffectThroughTick = Math.min(progressEffectThroughTick, now - 1L);
 		}
-		if(ready && consumption > 0L && energyQuanta >= consumption) {
+		if(ready && consumption > 0L && energyQuanta >= Math.min(consumption, Math.max(0L, getBatchWorkQuanta() - meltPaidQuanta))) {
 			long completionTicks = this.ticksUntilProgressCompletion();
 			long resourceTicks = energyQuanta / consumption;
+			if(energyQuanta >= Math.max(0L, getBatchWorkQuanta() - meltPaidQuanta)) resourceTicks = Math.max(resourceTicks, ticksUntilProgressCompletion());
 			long ticks = Math.min(completionTicks, resourceTicks);
 			long due = Math.max(now, lastAccountingTick + Math.max(1L, ticks));
 			this.scheduleMachineTransition(due, TASK_ACCOUNTING, TASK_SLOT_MAIN);
@@ -752,6 +770,8 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		buf.writeLong(worldObj == null ? 0L : worldObj.getTotalWorldTime());
 		buf.writeInt(this.progressDuration());
 		buf.writeInt(selectedLiquidMaterial);
+		buf.writeLong(operatingPowerWatts);
+		buf.writeLong(meltPaidQuanta);
 	}
 	
 	@Override
@@ -775,6 +795,8 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		this.clientProgressTick = buf.readLong();
 		this.clientProgressDuration = Math.max(1, buf.readInt());
 		this.selectedLiquidMaterial = buf.readInt();
+		operatingPowerWatts = buf.readLong();
+		meltPaidQuanta = buf.readLong();
 		this.clientProgressing = this.isProgressing;
 		
 		if(syncLid != 0 && syncLid != 1) this.approachNum = 2;
@@ -797,7 +819,8 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.liquidMode = nbt.getBoolean("liquidMode");
-		this.progress = nbt.getFloat("progress");
+		this.meltPaidQuanta = Math.max(0L, nbt.getLong("realSimMeltPaidQuanta"));
+		this.progress = nbt.hasKey("realSimMeltPaidQuanta") ? nbt.getFloat("progress") : 0F;
 		this.lid = nbt.getFloat("lid");
 		this.delay = nbt.getInteger("delay");
 		
@@ -818,6 +841,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setBoolean("liquidMode", liquidMode);
 		nbt.setFloat("progress", progress);
+		nbt.setLong("realSimMeltPaidQuanta", meltPaidQuanta);
 		nbt.setFloat("lid", lid);
 		nbt.setInteger("delay", delay);
 		nbt.setInteger("selectedLiquidMaterial", selectedLiquidMaterial);
@@ -929,7 +953,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		info.add(IUpgradeInfoProvider.getStandardLabel(ModBlocks.machine_arc_furnace));
 		if(type == UpgradeType.SPEED) {
 			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_DELAY, "-" + (100 - 100 / (level * 2 + 1)) + "%"));
-			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "+" + ((int) Math.pow(5, level) * 100 - 100) + "%"));
+			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "+" + (Math.min(3, Math.max(0, level)) * 200) + "%"));
 		}
 	}
 
@@ -938,4 +962,12 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		if(type == UpgradeType.SPEED) return 3;
 		return 0;
 	}
+
+    @Override public long getMachineDemandWatts() { return getRatedDemandWatts(); }
+    @Override public long getMachineCurrentDrawWatts() { return isProgressing ? operatingPowerWatts : 0; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Melt work envelope: " + api.hbm.energymk2.EnergyUnits.formatJoules(com.hbm.realsim.IndustrialDemand.ARC_WORK_J_PER_KG * 2L) + " per kg equivalent, nominal 1600 C duty");
+        if(live) { lines.add("Batch work: " + api.hbm.energymk2.EnergyUnits.formatJoules(getBatchWorkQuanta())); lines.add("Paid work: " + api.hbm.energymk2.EnergyUnits.formatJoules(meltPaidQuanta)); }
+        lines.add("Speed upgrades: 1x / 3x / 5x / 7x installed power; batch work stays constant");
+    }
 }

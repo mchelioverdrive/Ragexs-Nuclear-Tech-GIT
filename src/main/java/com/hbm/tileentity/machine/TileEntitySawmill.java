@@ -34,7 +34,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntitySawmill extends TileEntityMachineBase {
+public class TileEntitySawmill extends TileEntityMachineBase implements com.hbm.realsim.IMachineInfo {
 	private static final int TASK_MECHANICS = 1;
 	private ItemStack cachedRecipeInput;
 	private ItemStack cachedRecipeOutput;
@@ -836,4 +836,8 @@ public class TileEntitySawmill extends TileEntityMachineBase {
 	public double getMaxRenderDistanceSquared() {
 		return 65536.0D;
 	}
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Heat-driven sawmill; shaft/blade speed is an explicit nominal mechanism");
+    }
 }

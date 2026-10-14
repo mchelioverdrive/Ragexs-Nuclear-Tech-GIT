@@ -19,6 +19,7 @@ public class GUIMachinePress extends GuiInfoContainer {
 	
 	public GUIMachinePress(InventoryPlayer invPlayer, TileEntityMachinePress tedf) {
 		super(new ContainerMachinePress(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		press = tedf;
 		
 		this.xSize = 176;

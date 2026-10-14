@@ -25,6 +25,7 @@ public class GUIMachineStrandCaster extends GuiInfoContainer {
 
 	public GUIMachineStrandCaster(InventoryPlayer invPlayer, TileEntityMachineStrandCaster tedf) {
 		super(new ContainerMachineStrandCaster(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		caster = tedf;
 
 		this.xSize = 176;

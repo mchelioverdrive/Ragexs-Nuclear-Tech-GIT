@@ -19,6 +19,7 @@ public class GUIMachineLargeTurbine extends GuiInfoContainer {
 	
 	public GUIMachineLargeTurbine(InventoryPlayer invPlayer, TileEntityMachineLargeTurbine tedf) {
 		super(new ContainerMachineLargeTurbine(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		turbine = tedf;
 
 		this.xSize = 176;

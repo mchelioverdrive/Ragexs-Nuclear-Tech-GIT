@@ -21,11 +21,12 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.EnumSkyBlock;
 
 /** Shared continuous simulation and runtime ownership for both heat boiler variants. */
-public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase implements INBTPacketReceiver, api.hbm.energymk2.IEnergyReceiverMK2, IFluidStandardTransceiver, IConfigurableMachine, IFluidCopiable {
+public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase implements INBTPacketReceiver, api.hbm.energymk2.IEnergyReceiverMK2, IFluidStandardTransceiver, IConfigurableMachine, IFluidCopiable, com.hbm.realsim.IMachineInfo {
     public final com.hbm.realsim.ThermalAccount thermal = new com.hbm.realsim.ThermalAccount();
     public long thermalBufferQuanta, pumpEnergyQuanta, startupPaidQuanta;
     private long lastThermalTick = Long.MIN_VALUE;
     public long getRatedThermalWatts() { return 200000L; }
+    public long getRatedFeedPumpWatts() { return 100000L; }
     protected long getThermalCapacityQuanta() { return 32000000L; }
     protected long getStartupQuanta() { return 500000L; }
     protected com.hbm.realsim.SteamLedger.State boilerOutlet() { return com.hbm.realsim.SteamLedger.State.ORDINARY; }
@@ -59,7 +60,7 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
             com.hbm.realsim.SteamLedger.Transition t = com.hbm.realsim.SteamLedger.transition(in, out, com.hbm.realsim.SteamLedger.Route.BOILER, 980000);
             com.hbm.realsim.ThermalAccount.Result r = com.hbm.realsim.ThermalMachine.transfer(thermal, now, t, tanks[0], tanks[1],
                     this instanceof TileEntityHeatBoilerIndustrial ? 400000L : 10000L,
-                    thermalBufferQuanta, pumpEnergyQuanta, 0, rating, 10000L, 0, Long.MAX_VALUE);
+                    thermalBufferQuanta, pumpEnergyQuanta, 0, rating, getRatedFeedPumpWatts() / 10L, 0, Long.MAX_VALUE);
             thermalBufferQuanta -= r.heatQuanta; pumpEnergyQuanta -= r.workQuanta;
             isOn = r.mass > 0;
             if(shouldExplodeOnBlockedOutput() && tanks[0].getFill() > 0 && tanks[1].getFill() >= tanks[1].getMaxFill() && thermalBufferQuanta >= getThermalCapacityQuanta()) handleBlockedOutput();
@@ -346,4 +347,12 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
 	@Override public FluidTank[] getAllTanks() { return tanks; }
 	@Override public FluidTank[] getSendingTanks() { return new FluidTank[] {tanks[1]}; }
 	@Override public FluidTank[] getReceivingTanks() { return new FluidTank[] {tanks[0]}; }
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        if(live) com.hbm.realsim.ThermalInfo.boiler(lines, thermal, getRatedThermalWatts(), thermalBufferQuanta);
+        else lines.add("Rated thermal transfer: " + com.hbm.realsim.MachineInfo.thermalWatts(getRatedThermalWatts()));
+        lines.add("Feed-pump electrical ceiling: " + com.hbm.realsim.MachineInfo.watts(getRatedFeedPumpWatts()));
+        if(live) lines.add("Current feed-pump draw: " + com.hbm.realsim.MachineInfo.watts(thermal.currentWorkQuanta * 10L));
+        lines.add("Sufficiently hot process heat is required");
+    }
 }

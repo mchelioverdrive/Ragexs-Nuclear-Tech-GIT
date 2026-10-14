@@ -42,7 +42,9 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
-public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.energymk2.IRatedGenerator, INBTPacketReceiver, IFluidStandardTransceiver, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IConfigurableMachine, IFluidCopiable {
+public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.energymk2.IRatedGenerator, INBTPacketReceiver, IFluidStandardTransceiver, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IConfigurableMachine, IFluidCopiable, com.hbm.realsim.IMachineInfo {
+    public long getSteamFlowMassPerTick() { return 2000000L; }
+    public int getExpansionEfficiencyPpm() { if(worldObj != null && worldObj.isRemote && thermal.installedExpansionEfficiencyPpm >= 0) return thermal.installedExpansionEfficiencyPpm; return com.hbm.realsim.ThermalMachine.efficiency(efficiency, 880000); }
     public final com.hbm.realsim.ThermalAccount thermal = new com.hbm.realsim.ThermalAccount();
     private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
     @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
@@ -153,7 +155,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.e
 
 	private void sendRuntimePacket() {
 		NBTTagCompound data = new NBTTagCompound();
-        thermal.writeStatus(data);
+        thermal.writeStatus(data, getExpansionEfficiencyPpm());
 		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 		data.setInteger("operational", turnTimer);
 		data.setBoolean("tripped", tripped);
@@ -191,8 +193,8 @@ public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.e
 
 
             if(!tripped && com.hbm.realsim.SteamLedger.expansionOutlet(thermal.ownedMass() > 0 ? thermal.inlet() : com.hbm.realsim.ThermalMachine.state(tanks[0])) != null) {
-                long generated = com.hbm.realsim.ThermalMachine.turbine(thermal, worldObj.getTotalWorldTime(), tanks[0], tanks[1], 2000000L,
-                        25000000L, com.hbm.realsim.ThermalMachine.efficiency(efficiency, 880000), energyQuanta, maxPower);
+                long generated = com.hbm.realsim.ThermalMachine.turbine(thermal, worldObj.getTotalWorldTime(), tanks[0], tanks[1], getSteamFlowMassPerTick(),
+                        25000000L, getExpansionEfficiencyPpm(), energyQuanta, maxPower);
                 this.setStoredEnergyQuanta(Math.addExact(energyQuanta, generated));
                 info[0] = thermal.currentMass == 0 ? 0 : thermal.currentMass / (double) thermal.inlet().massPerUnit;
                 info[1] = thermal.currentMass == 0 ? 0 : thermal.currentMass / (double) com.hbm.realsim.ThermalMachine.state(tanks[1]).massPerUnit;
@@ -217,7 +219,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.e
 			if(operational) turnTimer = 25;
 
 			NBTTagCompound data = new NBTTagCompound();
-        thermal.writeStatus(data);
+        thermal.writeStatus(data, getExpansionEfficiencyPpm());
 			EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 			data.setInteger("operational", turnTimer);
 			data.setBoolean("tripped", tripped);
@@ -515,4 +517,11 @@ public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.e
 	public FluidTank getTankToPaste() {
 		return null;
 	}
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        if(live) lines.add("Current electrical output: " + com.hbm.realsim.MachineInfo.watts(thermal.currentElectricQuanta * 10L));
+        lines.add(String.format(java.util.Locale.US, "Steam mass-flow ceiling: %.2f kg/s", getSteamFlowMassPerTick() / 50000D));
+        lines.add(String.format(java.util.Locale.US, "Expansion work factor: %.1f%%", getExpansionEfficiencyPpm() / 10000D));
+        lines.add("Accepts ledger steam grades; full power/exhaust buffers stop admission");
+    }
 }

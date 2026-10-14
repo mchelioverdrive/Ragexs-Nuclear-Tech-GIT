@@ -26,6 +26,7 @@ public class GUIOilburner extends GuiInfoContainer {
 
 	public GUIOilburner(InventoryPlayer invPlayer, TileEntityHeaterOilburner tedf) {
 		super(new ContainerOilburner(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		diFurnace = tedf;
 		
 		this.xSize = 176;

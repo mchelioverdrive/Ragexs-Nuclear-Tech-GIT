@@ -39,3 +39,11 @@ Passive condensers reject 250 kWth, radiators 1 MWth, powered condensers 20 MWth
 The gas turbine's existing water/steam ports form a 6-MWth internal HRSG with owned exhaust, 90% transfer and 30 C approach. It makes only hot/superhot states permitted by stored quality, never ultrahot. Combine its 3-MWe prime mover with one industrial turbine, one powered condenser, feed pumping and closed return for the [39.101382% reference combined cycle](REALSIM_PHASES_1_4.md#phase-5d-implementation--closed-fossil-thermal-power-2026-10-13). Blockage pauses recovery; new excess exhaust is vented after finite storage fills.
 
 Nuclear heat/HU/coolant calibration remains deferred and protection paths remain intact. Steam at a converted turbine boundary does not certify a reactor's uncalibrated thermal output.
+
+## Server-ready base normalization
+
+Steam flow/expansion factors now derive from the same native getters used by operation. Shared item information, power-bar hovers and the small upper-right GUI information region expose installed ceilings, current output and storage. **Industrial Steam Turbine now has an explicit information hover target.** The existing rating/state table is unchanged; no buffer-pause, rupture or Leviathan trip/reset behavior is removed.
+
+The deprecated wood generator is not the starter steam plant. One 200-kW firebox/ordinary boiler, Steam Engine and passive condenser supplies about **13.17 kW net**; the engine's **25-kW ceiling** requires more qualified steam supply. Starter/Heavy Stirling fresh defaults are **10/40 kWe**. The 500-kW oven/hot-steam/standard-turbine reference is about 67.55 kW net; two-boiler industrial steam about 3.60 MW net. Size plants against heat/mass supply, condenser rejection and export/storage transfer, not just turbine nameplates.
+
+Matching mod builds are required for extended information status. GUI layout, new/saved placement/ports, trip/reset and reload await in-game acceptance. Build/accounting checks are separate. See [Server-ready base normalization](REALSIM_PHASES_1_4.md#server-ready-base-normalization) for the four factory models and acceptance list.

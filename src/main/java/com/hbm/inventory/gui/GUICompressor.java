@@ -22,6 +22,7 @@ public class GUICompressor extends GuiInfoContainer {
 
 	public GUICompressor(InventoryPlayer invPlayer, TileEntityMachineCompressor tedf) {
 		super(new ContainerCompressor(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		compressor = tedf;
 		
 		this.xSize = 176;

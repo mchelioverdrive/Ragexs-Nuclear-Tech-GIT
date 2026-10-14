@@ -263,4 +263,73 @@ public class PhysicalAccountingTest {
         assertTrue(normal.contains("Fuel flow: 0.0000 L/min")); assertFalse(String.join(" ", normal).contains("Chemical credit"));
         assertTrue(String.join(" ", stats.info(750000, credit, "DIESEL", 20, 380000, true)).contains("Chemical credit"));
     }
+
+    @Test public void industrialUpgradeWorkIsBoundedAndTracksThroughput() {
+        long base = IndustrialDemand.FABRICATION_W;
+        for(int duration : new int[] {100, 75, 50, 25, 10, 1}) {
+            long watts = IndustrialDemand.atSpeed(base, duration, 0);
+            assertEquals(base * 100L, watts * duration);
+            assertTrue(IndustrialDemand.atSpeed(base, duration, 3) >= watts * 7L / 10L);
+            assertTrue(IndustrialDemand.atSpeed(base, duration, 3) <= watts);
+        }
+        assertTrue(IndustrialDemand.atSpeed(base, 0, 100) > 0);
+    }
+    @Test public void arcWorkEnvelopeScalesWithMassAndInstalledThroughput() {
+        long mass = 10000000L;
+        assertEquals(IndustrialDemand.arcWorkQuanta(mass) * 2L, IndustrialDemand.arcWorkQuanta(mass * 2L));
+        assertEquals(IndustrialDemand.ARC_WORK_J_PER_KG * 20L, IndustrialDemand.arcWorkQuanta(mass));
+        assertEquals(IndustrialDemand.arcRatedWatts(0) * 7L, IndustrialDemand.arcRatedWatts(3));
+        assertEquals(IndustrialDemand.arcRatedWatts(3), IndustrialDemand.arcRatedWatts(100));
+    }
+    @Test public void coolingCirculationIsHeatDrivenRatherThanWaterConsumption() {
+        assertEquals(0D, IndustrialDemand.circulationLitersPerMinute(0), 0D);
+        assertEquals(60D, IndustrialDemand.circulationLitersPerMinute(83600), 0.000001D);
+        assertEquals(600D, IndustrialDemand.circulationLitersPerMinute(836000), 0.000001D);
+        assertTrue(IndustrialDemand.COOLING_CHARGE_L <= Groundwater.ELECTRIC_BUFFER);
+        assertEquals(500L, IndustrialDemand.coolingAuxiliaryWatts(8000L));
+        assertEquals(60000L, IndustrialDemand.coolingAuxiliaryWatts(3000000L));
+    }
+    @Test public void processPresentationMatchesMaximumPaidTickAndThermalRating() {
+        for(ProcessRecipe recipe : PetroleumProcesses.defaults("refinery").values()) {
+            ProcessBatch batch = new ProcessBatch(); batch.reserve(recipe);
+            long maximumWork = 0, maximumHeat = 0;
+            for(int tick = 0; tick < recipe.duration; tick++) {
+                maximumWork = Math.max(maximumWork, batch.nextWork()); maximumHeat = Math.max(maximumHeat, batch.nextHeat());
+                assertTrue(batch.canAdvance(tick, recipe.electricalRatingWatts / 10L, recipe.thermalRatingWatts / 10L));
+                batch.advance(tick);
+            }
+            assertEquals(maximumWork * 10L, recipe.electricalRatingWatts);
+            assertEquals(maximumHeat * 10L, recipe.thermalRatingWatts);
+            java.util.List<String> lines = new java.util.ArrayList<>(); MachineInfo.process(lines, recipe);
+            assertTrue(lines.contains("Process electrical demand: " + MachineInfo.watts(recipe.electricalRatingWatts)));
+            assertTrue(lines.contains("Process thermal demand: " + MachineInfo.thermalWatts(recipe.thermalRatingWatts)));
+            ProcessRecipe loaded = ProcessRecipe.read(writeProcessForInfo(recipe));
+            assertEquals(recipe.electricalRatingWatts, loaded.electricalRatingWatts);
+            assertEquals(recipe.rejectedWatts, loaded.rejectedWatts);
+        }
+    }
+    private NBTTagCompound writeProcessForInfo(ProcessRecipe recipe) { NBTTagCompound tag = new NBTTagCompound(); recipe.write(tag); return tag; }
+    @Test public void generatorPresentationUsesConfiguredRatingAndInstalledEfficiency() {
+        GeneratorStats stats = new GeneratorStats(); FuelCredit credit = new FuelCredit();
+        String[] lines = stats.info(750000, credit, "DIESEL", 100, 380000, false);
+        assertEquals("Rated output: " + MachineInfo.watts(750000), lines[0]);
+        assertTrue(java.util.Arrays.asList(lines).contains("Efficiency: 38.0% rated"));
+        assertTrue(java.util.Arrays.asList(lines).contains("Current output: 0 W"));
+        NBTTagCompound status = new NBTTagCompound(); stats.write(status, credit, 100000L, 270000);
+        GeneratorStats client = new GeneratorStats(); client.read(status, new FuelCredit());
+        String[] remote = client.info(750000L, credit, "DIESEL", 100, 380000, false);
+        assertEquals("Rated output: " + MachineInfo.watts(100000L), remote[0]);
+        assertTrue(java.util.Arrays.asList(remote).contains("Efficiency: 27.0% rated"));
+    }
+    @Test public void stirlingNameplatesUseThermalIntakeAndConfiguredEfficiency() {
+        com.hbm.tileentity.machine.TileEntityStirling starter = new com.hbm.tileentity.machine.TileEntityStirling();
+        assertEquals(10000L, starter.getRatedOutputWatts());
+        assertEquals(66670L, starter.getRatedHeatInputWatts());
+        assertEquals(0, starter.getOperatingEfficiencyPpm(20));
+        assertTrue(starter.getOperatingEfficiencyPpm(21) < starter.getConfiguredEfficiencyPpm());
+        assertEquals(starter.getConfiguredEfficiencyPpm(), starter.getOperatingEfficiencyPpm(900));
+        java.util.List<String> info = MachineInfo.describe(starter, false);
+        assertTrue(info.contains("Rated electrical output: " + MachineInfo.watts(starter.getRatedOutputWatts())));
+        assertTrue(info.contains("Thermal intake ceiling: " + MachineInfo.thermalWatts(starter.getRatedHeatInputWatts())));
+    }
 }

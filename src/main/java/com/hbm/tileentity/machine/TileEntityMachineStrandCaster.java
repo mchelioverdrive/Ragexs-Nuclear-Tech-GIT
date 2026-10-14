@@ -34,7 +34,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 //god thank you bob for this base class
-public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase implements IGUIProvider, ICrucibleAcceptor, ISidedInventory, IFluidStandardTransceiver, INBTPacketReceiver, IInventory {
+public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase implements IGUIProvider, ICrucibleAcceptor, ISidedInventory, IFluidStandardTransceiver, INBTPacketReceiver, IInventory, com.hbm.realsim.IMachineInfo {
 
 	public FluidTank water;
 	public FluidTank steam;
@@ -126,8 +126,7 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 		this.cachedCanProcess = this.canProcessCached();
 		if(this.cachedCanProcess && this.cachedMold != null && amount >= this.getMinimumCastAmount()) {
 			int itemsCasted = amount / cachedMold.getCost();
-			int waterPerItem = this.getWaterRequired();
-			itemsCasted = Math.min(itemsCasted, Math.min(water.getFill() / waterPerItem, (steam.getMaxFill() - steam.getFill()) / waterPerItem));
+			// The cooling water is a sealed charge; molten heat is rejected to ambient, not exported as steam.
 			int outputCapacity = 0;
 			for(int i = 1; i < 7; i++) {
 				if(slots[i] == null) outputCapacity += cachedOutput.getMaxStackSize() / cachedOutput.stackSize;
@@ -149,9 +148,7 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 						}
 					}
 				}
-				int waterUsed = waterPerItem * itemsCasted;
-				water.setFill(water.getFill() - waterUsed);
-				steam.setFill(steam.getFill() + waterUsed);
+
 			} finally {
 				runtimeFluidMutation = false;
 			}
@@ -202,7 +199,7 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 		if(type == null || cachedMold == null || cachedOutput == null) return false;
 		for(int i = 1; i < 7; i++) {
 			if(slots[i] == null || slots[i].isItemEqual(cachedOutput) && slots[i].stackSize + cachedOutput.stackSize <= cachedOutput.getMaxStackSize())
-				return water.getFill() >= this.getWaterRequired() && steam.getMaxFill() - steam.getFill() >= this.getWaterRequired();
+				return water.getFill() >= this.getWaterRequired();
 		}
 		return false;
 	}
@@ -272,7 +269,7 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 		if(type != null && mold != null && mold.getOutput(type) != null) {
 			for(int i = 1; i < 7; i++) {
 				if(slots[i] == null || slots[i].isItemEqual(mold.getOutput(type)) && slots[i].stackSize + mold.getOutput(type).stackSize <= mold.getOutput(type).getMaxStackSize())
-					return water.getFill() >= getWaterRequired() && steam.getMaxFill() - steam.getFill() >= getWaterRequired();
+					return water.getFill() >= getWaterRequired();
 
 			}
 		}
@@ -351,7 +348,7 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 	}
 
 	private int getWaterRequired() {
-		return getInstalledMold() != null ? 5 * getInstalledMold().getCost() : 50;
+		return com.hbm.realsim.IndustrialDemand.COOLING_CHARGE_L;
 	}
 
 	private void updateConnections() {
@@ -503,4 +500,9 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 		super.onChunkUnload();
 		this.isLoaded = false;
 	}
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Sealed cooling charge: " + com.hbm.realsim.IndustrialDemand.COOLING_CHARGE_L + " L fresh water; no new steam output");
+        lines.add("Molten-material cooling remains nominal ambient rejection; molds and free output room required");
+    }
 }

@@ -44,7 +44,9 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
-public class TileEntityMachineTurbine extends TileEntityLoadedBase implements ISidedInventory, api.hbm.energymk2.IRatedGenerator, IFluidStandardTransceiver, IBufPacketReceiver, IGUIProvider, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IConfigurableMachine, IFluidCopiable{
+public class TileEntityMachineTurbine extends TileEntityLoadedBase implements ISidedInventory, api.hbm.energymk2.IRatedGenerator, IFluidStandardTransceiver, IBufPacketReceiver, IGUIProvider, SimpleComponent, IInfoProviderEC, CompatHandler.OCComponent, IConfigurableMachine, IFluidCopiable, com.hbm.realsim.IMachineInfo {
+    public long getSteamFlowMassPerTick() { return 37500L; }
+    public int getExpansionEfficiencyPpm() { if(worldObj != null && worldObj.isRemote && thermal.installedExpansionEfficiencyPpm >= 0) return thermal.installedExpansionEfficiencyPpm; return com.hbm.realsim.ThermalMachine.efficiency(efficiency, 750000); }
     public final com.hbm.realsim.ThermalAccount thermal = new com.hbm.realsim.ThermalAccount();
     private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
     @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
@@ -366,8 +368,8 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 			boolean valid = false;
 
             if(com.hbm.realsim.SteamLedger.expansionOutlet(thermal.ownedMass() > 0 ? thermal.inlet() : com.hbm.realsim.ThermalMachine.state(tanks[0])) != null) {
-                long generated = com.hbm.realsim.ThermalMachine.turbine(thermal, worldObj.getTotalWorldTime(), tanks[0], tanks[1], Math.min(37500L, (thermal.ownedMass() > 0 ? thermal.inlet() : com.hbm.realsim.ThermalMachine.state(tanks[0])).mass(Math.max(0, maxSteamPerTick))),
-                        500000L, com.hbm.realsim.ThermalMachine.efficiency(efficiency, 750000), energyQuanta, maxPower);
+                long generated = com.hbm.realsim.ThermalMachine.turbine(thermal, worldObj.getTotalWorldTime(), tanks[0], tanks[1], Math.min(getSteamFlowMassPerTick(), (thermal.ownedMass() > 0 ? thermal.inlet() : com.hbm.realsim.ThermalMachine.state(tanks[0])).mass(Math.max(0, maxSteamPerTick))),
+                        500000L, getExpansionEfficiencyPpm(), energyQuanta, maxPower);
                 this.setStoredEnergyQuanta(Math.addExact(energyQuanta, generated));
                 info[0] = thermal.currentMass == 0 ? 0 : thermal.currentMass / (double) thermal.inlet().massPerUnit;
                 info[1] = thermal.currentMass == 0 ? 0 : thermal.currentMass / (double) com.hbm.realsim.ThermalMachine.state(tanks[1]).massPerUnit;
@@ -406,14 +408,14 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 
 	@Override public void serialize(ByteBuf buf) {
 		buf.writeLong(energyQuanta);
-        buf.writeLong(thermal.currentMass); buf.writeLong(thermal.currentElectricQuanta);
+        buf.writeLong(thermal.currentMass); buf.writeLong(thermal.currentElectricQuanta); buf.writeInt(getExpansionEfficiencyPpm());
 		tanks[0].serialize(buf);
 		tanks[1].serialize(buf);
 	}
 
 	@Override public void deserialize(ByteBuf buf) {
 		this.energyQuanta = buf.readLong();
-        thermal.currentMass = buf.readLong(); thermal.currentElectricQuanta = buf.readLong();
+        thermal.currentMass = buf.readLong(); thermal.currentElectricQuanta = buf.readLong(); thermal.installedExpansionEfficiencyPpm = buf.readInt();
 		tanks[0].deserialize(buf);
 		tanks[1].deserialize(buf);
 	}
@@ -500,4 +502,11 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 		data.setDouble(CompatEnergyControl.D_OUTPUT_MB, info[1]);
 		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(info[2]));
 	}
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        if(live) lines.add("Current electrical output: " + com.hbm.realsim.MachineInfo.watts(thermal.currentElectricQuanta * 10L));
+        lines.add(String.format(java.util.Locale.US, "Steam mass-flow ceiling: %.2f kg/s", getSteamFlowMassPerTick() / 50000D));
+        lines.add(String.format(java.util.Locale.US, "Expansion work factor: %.1f%%", getExpansionEfficiencyPpm() / 10000D));
+        lines.add("Accepts ledger steam grades; full power/exhaust buffers stop admission");
+    }
 }

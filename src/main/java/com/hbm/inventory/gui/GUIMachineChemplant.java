@@ -20,6 +20,7 @@ public class GUIMachineChemplant extends GuiInfoContainer {
 	
 	public GUIMachineChemplant(InventoryPlayer invPlayer, TileEntityMachineChemplant tedf) {
 		super(new ContainerMachineChemplant(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		chemplant = tedf;
 		
 		this.xSize = 176;

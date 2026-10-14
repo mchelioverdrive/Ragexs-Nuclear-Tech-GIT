@@ -24,6 +24,7 @@ public class GUIMachineGasFlare extends GuiInfoContainer {
 	
 	public GUIMachineGasFlare(InventoryPlayer invPlayer, TileEntityMachineGasFlare tedf) {
 		super(new ContainerMachineGasFlare(invPlayer, tedf));
+        setMachineInfoOwner(tedf);
 		flare = tedf;
 		
 		this.xSize = 176;

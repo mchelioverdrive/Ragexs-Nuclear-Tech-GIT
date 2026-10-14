@@ -40,7 +40,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineWoodBurner extends TileEntityMachineBase implements IFluidStandardReceiver, IControlReceiver, IEnergyProviderMK2, IGUIProvider, IInfoProviderEC, IFluidCopiable {
+public class TileEntityMachineWoodBurner extends TileEntityMachineBase implements IFluidStandardReceiver, IControlReceiver, IEnergyProviderMK2, IGUIProvider, IInfoProviderEC, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private static final int TASK_GENERATE = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
@@ -212,7 +212,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 		buf.writeBoolean(liquidBurn);
 
 		tank.serialize(buf);
-		generatorStats.write(buf, fuelCredit);
+		generatorStats.write(buf, fuelCredit, ratedPowerWatts, electricalEfficiencyPpm);
 	}
 
 	@Override
@@ -421,4 +421,11 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 	public FluidTank getTankToPaste() {
 		return tank;
 	}
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Deprecated generator; use Stirling or early steam for new starter plants");
+        lines.add("Rated electrical output: " + com.hbm.realsim.MachineInfo.watts(generatorStats.ratedWatts(ratedPowerWatts)));
+        if(live) { String[] status = generatorStats.info(ratedPowerWatts, fuelCredit, tank.getTankType().getName(), tank.getFill(), electricalEfficiencyPpm, false); for(int i = 1; i < status.length; i++) lines.add(status[i]); }
+        lines.add(String.format(java.util.Locale.US, "Installed fuel efficiency: %.1f%%", generatorStats.ratedEfficiency(electricalEfficiencyPpm) / 10000D));
+    }
 }

@@ -129,7 +129,7 @@ public class TileEntityHeaterOilburner extends TileEntityMachinePolluting implem
 			boolean shouldCool = true;
 			long demand = Math.min(ratedThermalWatts / 10L * Math.max(1, Math.min(10, setting)) / 10L, Math.max(0, maxHeatEnergy - heatEnergy));
 			if(!runtimeWaterlogged && this.isOn && demand > 0 && (fuelCredit.hasCredit() || Combustion.isBurnerFuel(tank.getTankType()) && tank.getFill() > 0) && breatheAir(1)) {
-				long heat = Combustion.generate(tank, fuelCredit, demand, 850_000);
+				long heat = Combustion.generate(tank, fuelCredit, demand, com.hbm.realsim.Combustion.FIREBOX_EFFICIENCY_PPM);
 				heatEnergy += (int) heat;
 				generatorStats.record(heat, fuelCredit);
 				if(heat > 0) FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);

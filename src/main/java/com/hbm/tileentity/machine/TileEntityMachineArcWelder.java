@@ -43,7 +43,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineArcWelder extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IConditionalInvAccess, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
+public class TileEntityMachineArcWelder extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IConditionalInvAccess, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	
@@ -605,4 +605,10 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 	public FluidTank getTankToPaste() {
 		return tank;
 	}
+
+    @Override public long getMachineDemandWatts() { return cachedRecipe == null ? 10000L : consumption * 10L; }
+    @Override public long getMachineCurrentDrawWatts() { return runtimeActive ? consumption * 10L : 0; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Recipe-rated welding; work = draw x process duration");
+    }
 }

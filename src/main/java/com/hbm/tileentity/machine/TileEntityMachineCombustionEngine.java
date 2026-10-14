@@ -41,7 +41,7 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineCombustionEngine extends TileEntityMachinePolluting implements IEnergyProviderMK2, IFluidStandardTransceiver, IControlReceiver, IGUIProvider, IFluidCopiable {
+public class TileEntityMachineCombustionEngine extends TileEntityMachinePolluting implements IEnergyProviderMK2, IFluidStandardTransceiver, IControlReceiver, IGUIProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private static final int TASK_GENERATE = 1;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
@@ -208,7 +208,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 		data.setBoolean("isOn", isOn);
 		data.setBoolean("wasOn", wasOn);
 		tank.writeToNBT(data, "tank");
-		generatorStats.write(data, fuelCredit);
+		generatorStats.write(data, fuelCredit, ratedPowerWatts, getElectricalEfficiencyPpm());
 		this.networkPack(data, 50);
 	}
 
@@ -466,4 +466,11 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 		if(nbt.hasKey("burnRate")) setting = MathHelper.clamp_int(nbt.getInteger("burnRate"), 0, 30);
 		this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.FLUID);
 	}
+
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Rated electrical output: " + com.hbm.realsim.MachineInfo.watts(generatorStats.ratedWatts(ratedPowerWatts)));
+        if(live) { String[] status = generatorStats.info(ratedPowerWatts, fuelCredit, tank.getTankType().getName(), tank.getFill(), getElectricalEfficiencyPpm(), false); for(int i = 1; i < status.length; i++) lines.add(status[i]); }
+        lines.add(String.format(java.util.Locale.US, "Installed fuel efficiency: %.1f%%", generatorStats.ratedEfficiency(getElectricalEfficiencyPpm()) / 10000D));
+        lines.add("Piston set and compatible reciprocating fuel required; efficiency follows installed equipment");
+    }
 }

@@ -315,3 +315,15 @@ Gas turbine: 3 MWe gross, 30% LHV electricity, 55% recoverable exhaust and 15% i
 `TurbineFuelAccount` owns removed chemical fuel; `ExhaustAccount` owns split heat at immutable 350/500/700 C classes, capped at 150 MJ total. Excess is vented/rejected. `HeatRecovery` draws this account at 6 MWth, 90% transfer and 30 C approach. 350 C allows hot steam, 500 C superhot; neither allows ultrahot. Fuel/throttle changes and save/load never upgrade old exhaust or recreate it from fuel.
 
 The [Phase 5D report](REALSIM_PHASES_1_4.md#phase-5d-implementation--closed-fossil-thermal-power-2026-10-13) records ratings, facilities, migration and validation. The first combined-cycle model is **39.101382%**, below the earlier illustrative 40-55% envelope: conservative work credits were retained rather than inflated to hit an efficiency target.
+
+## Server-ready base normalization
+
+Electrical and qualified heat remain 0.5-J quanta. No fuel LHV, gas/liquid identity, petroleum bill, steam-state enthalpy, pressure class, groundwater rate or nuclear/HU calibration changes. See [Server-ready base normalization](REALSIM_PHASES_1_4.md#server-ready-base-normalization).
+
+Starter/Heavy Stirling defaults are 10/40 kWe from 66.67/200 kWth intake at installed 15/20% conversion, capped by the hot-source/20-C-sink Carnot bound. Heat draws through the shared tick budget, fractional electrical conversion is saved, electricity retained, export capped and residual heat assigned to the integral ambient radiator. Explicit configured old values remain; creative is exempt. The deprecated wood generator's existing 40-kW/7% ledger is retained, not recommended. A 200-kW early boiler train supplies about 13.17 kW net, not the engine's 25-kW ceiling.
+
+Large arc uses 1.8 MJ/kg-equivalent with declared 1-kg/ingot-equivalent mass and nominal 1600-C melting duty, not alloy-specific chemistry. Paid work controls completion/save ownership; speed changes installed power/duration, not work per batch. Final partial ticks pay exactly. Old unowned float progress cannot become credit.
+
+Cooling makes no steam or operating makeup demand. A sealed 20-L loop/integral dry cooler rejects generic utility work or physical `rejectedJ`, plus paid pump/fan work. Auxiliaries are at least 500 W/lane, rising to 2% of process rejection. Internal flow follows Q/(4.18 kJ/kg K x 20 K), separately from groundwater. Old exhaust remains exportable, with no new fluid ID/state. Casting stays nominal molten cooling without the unsupported water-to-steam debit.
+
+Process displayed ratings derive from maximum paid ticks; physical draw/thermal auxiliary status is visual data, never restored credit. Shared electrolyser budgeting sums both active lane costs; over-cap electrical receiving rejects new input without deleting saved stock. Consumer/load-model envelopes are explicit planning assumptions, not measurements or nuclear unlocks.
