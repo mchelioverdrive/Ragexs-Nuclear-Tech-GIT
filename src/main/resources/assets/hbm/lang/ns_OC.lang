@@ -1829,9 +1829,9 @@ tile.crashed_bomb.name=Dud
 tile.crate.name=Supply Crate
 tile.marker_structure.name=Multiblock Structure Marker
 
-tile.machine_difurnace_off.name=Alloy Furnace
-tile.machine_difurnace_on.name=Alloy Furnace
-container.diFurnace=Alloy Furnace
+tile.machine_difurnace_off.name=Metallurgical Furnace
+tile.machine_difurnace_on.name=Metallurgical Furnace
+container.diFurnace=Metallurgical Furnace
 tile.machine_centrifuge.name=Centrifuge
 container.centrifuge=Centrifuge
 tile.machine_uf6_tank.name=Uranium Hexafluoride Tank

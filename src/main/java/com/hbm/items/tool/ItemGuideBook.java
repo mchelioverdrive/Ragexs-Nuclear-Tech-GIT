@@ -187,6 +187,8 @@ public class ItemGuideBook extends Item implements IGUIProvider {
 				.addText("book.starter.page6a", 2F)
 				.addText("book.starter.page6b", 2f, 0, 96, 100)
 				.addImage(new ResourceLocation(RefStrings.MODID + ":textures/gui/book/starter6.png"), 9, 89, 84, 36));
+		pages.add(new GuidePage().addTitle("book.starter.blast.title", 0x800000, 1F).addText("book.starter.blast", 2F));
+		pages.add(new GuidePage().addTitle("book.starter.blastAir.title", 0x800000, 1F).addText("book.starter.blastAir", 2F));
 		pages.add(new GuidePage()
 				.addText("book.starter.page7a", 2F)
 				.addText("book.starter.page7b", 2F, 0, 95, 100)

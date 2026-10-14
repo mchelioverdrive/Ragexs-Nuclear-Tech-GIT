@@ -73,7 +73,7 @@ public class AlloyFurnaceRecipeHandler extends SafeTemplateRecipeHandler impleme
 
 	@Override
 	public String getRecipeName() {
-		return "Blast Furnace";
+		return ModBlocks.machine_difurnace_off.getLocalizedName();
 	}
 
 	@Override

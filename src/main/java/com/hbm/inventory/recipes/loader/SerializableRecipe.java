@@ -52,6 +52,7 @@ public abstract class SerializableRecipe {
 	public static void registerAllHandlers() {
 		recipeHandlers.add(new PressRecipes());
 		recipeHandlers.add(new BlastFurnaceRecipes());
+		recipeHandlers.add(new IndustrialBlastFurnaceRecipes());
 		recipeHandlers.add(new ShredderRecipes());
 		recipeHandlers.add(new SolderingRecipes());
 		recipeHandlers.add(new ChemplantRecipes());

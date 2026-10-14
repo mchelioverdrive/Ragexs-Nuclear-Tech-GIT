@@ -108,6 +108,7 @@ public class Fluids {
 	public static FluidType HYDROGEN;
 	public static FluidType HYDROGEN_GAS;
 	public static FluidType OXYGEN_GAS;
+	public static FluidType AIR_HEATED, AIRBLAST, BLAST_FURNACE_GAS;
 	public static FluidType NITROGEN_GAS;
 	public static FluidType OXYGEN;
 	public static FluidType NITROGEN;
@@ -614,6 +615,10 @@ public class Fluids {
 		HYDROGEN_GAS = new FluidType("HYDROGEN_GAS", 0x4286f4, 0, 4, 0, EnumSymbol.NONE).addContainers(new CD_Gastank(0x4286f4, 0xffffff)).addTraits(GASEOUS, new FT_Flammable(0), new FT_Combustible(FuelGrade.GAS, 0), P_GAS);
 		OXYGEN_GAS = new FluidType("OXYGEN_GAS", 0x98bdf9, 0, 0, 0, EnumSymbol.OXIDIZER).addContainers(new CD_Gastank(0x98bdf9, 0xffffff)).addTraits(GASEOUS);
 		NITROGEN_GAS = new FluidType("NITROGEN_GAS", 0xB3C6D2, 0, 0, 0, EnumSymbol.ASPHYXIANT).addContainers(new CD_Gastank(0xB3C6D2, 0xffffff)).addTraits(GASEOUS);
+		for(String name : new String[] {"AIR_HEATED", "AIRBLAST", "BLAST_FURNACE_GAS"}) if(nameMapping.containsKey(name)) throw new IllegalStateException("Custom fluid collides with industrial blast identity: " + name);
+		AIR_HEATED = new FluidType("AIR_HEATED", 0xF4CDA0, 0, 0, 0, EnumSymbol.NONE).setTemp(600).addTraits(GASEOUS);
+		AIRBLAST = new FluidType("AIRBLAST", 0xFFDADA, 0, 0, 0, EnumSymbol.NONE).setTemp(800).addTraits(GASEOUS);
+		BLAST_FURNACE_GAS = new FluidType("BLAST_FURNACE_GAS", 0x84756D, 3, 1, 0, EnumSymbol.ASPHYXIANT).addContainers(new CD_Gastank(0x84756D, 0xffffff)).addTraits(GASEOUS, new FT_Flammable(0), new FT_Poison(true, 1), P_GAS);
 
 
 		//AND DON'T FORGET THE META DOWN HERE
@@ -882,6 +887,9 @@ public class Fluids {
 		metaOrder.add(HYDROGEN_GAS);
 		metaOrder.add(OXYGEN_GAS);
 		metaOrder.add(NITROGEN_GAS);
+		metaOrder.add(AIR_HEATED);
+		metaOrder.add(AIRBLAST);
+		metaOrder.add(BLAST_FURNACE_GAS);
 
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!

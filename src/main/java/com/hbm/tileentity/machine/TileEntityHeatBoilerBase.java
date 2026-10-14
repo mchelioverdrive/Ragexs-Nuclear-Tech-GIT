@@ -35,6 +35,32 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
     @Override public long getEnergyCapacityQuanta() { return 2000000L; }
     @Override public void setStoredEnergyQuanta(long value) { pumpEnergyQuanta = value; markPowerNetDirty(); markMachineEnergyDirty(); markDirty(); }
     private boolean isPhysicalSteamPath() { return thermal.ownedMass() > 0 || com.hbm.realsim.ThermalMachine.state(tanks[0]) != null; }
+    private boolean isBlastHeatingPath() { return thermal.ownedMass() == 0 && !physicalBatch.active() && (tanks[0].getTankType() == Fluids.AIR || tanks[0].getTankType() == Fluids.AIR_HEATED); }
+    private com.hbm.inventory.fluid.FluidType blastOutlet() { return tanks[0].getTankType() == Fluids.AIR ? Fluids.AIR_HEATED : Fluids.AIRBLAST; }
+    private void runBlastHeater() {
+        long now = worldObj.getTotalWorldTime();
+        if(now <= lastThermalTick) return;
+        lastThermalTick = now; isOn = false;
+        com.hbm.inventory.fluid.FluidType outlet = blastOutlet();
+        if(!tanks[1].configureForRecipe(outlet, tanks[0].getPressure())) return;
+        if(tanks[1].getFill() > 0) sendFluid();
+        api.hbm.tile.IProcessHeatSource source = com.hbm.realsim.ProcessMachine.heater(this);
+        // Blast quality cannot be upgraded by stored heat from a cooler source.
+        if(source == null || source.getProcessTemperatureC() < outlet.temperature + 30) return;
+        long perLiter = com.hbm.realsim.SteamLedger.ceilDiv(com.hbm.realsim.PhysicalRegistry.get("AIR").massUnits
+                * (outlet.temperature - tanks[0].getTankType().temperature) * 1000L, com.hbm.realsim.PhysicalState.MASS_UNITS_PER_KG) * 2;
+        int amount = Math.min(tanks[0].getFill(), Math.max(0, tanks[1].getMaxFill() - tanks[1].getFill()));
+        long allowance = getRatedThermalWatts() / 10;
+        long need = Math.min(allowance, Math.max(0, amount * perLiter - thermalBufferQuanta));
+        thermalBufferQuanta += source.drawProcessHeatQuanta(now, need);
+        amount = (int) Math.min(amount, Math.min(allowance, thermalBufferQuanta) / perLiter);
+        if(amount > 0) {
+            tanks[0].setFill(tanks[0].getFill() - amount); tanks[1].setFill(tanks[1].getFill() + amount);
+            thermalBufferQuanta -= amount * perLiter; isOn = true; markDirty();
+        }
+        if(tanks[1].getFill() > 0) sendFluid();
+        heat = Math.toIntExact(com.hbm.realsim.SteamLedger.mulDiv(thermalBufferQuanta, getMaxBoilerHeat(), getThermalCapacityQuanta()));
+    }
     private void runSteamBoiler() {
         long now = worldObj.getTotalWorldTime();
         if(now <= lastThermalTick) return;
@@ -138,6 +164,11 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
         if(isPhysicalSteamPath()) {
             runtimeFluidMutation = true;
             try { runSteamBoiler(); } finally { runtimeFluidMutation = false; }
+            sendRuntimeState(heat); evaluateAndSchedule(worldObj.getTotalWorldTime()); return;
+        }
+        if(isBlastHeatingPath()) {
+            runtimeFluidMutation = true;
+            try { runBlastHeater(); } finally { runtimeFluidMutation = false; }
             sendRuntimeState(heat); evaluateAndSchedule(worldObj.getTotalWorldTime()); return;
         }
 
@@ -264,6 +295,11 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
 	}
 
 	protected void setupTanks() {
+        if(isBlastHeatingPath()) {
+            if(tanks[0].getFill() == 0) tanks[0].withPressure(1);
+            tanks[1].configureForRecipe(blastOutlet(), tanks[0].getPressure());
+            return;
+        }
         if(isPhysicalSteamPath()) {
             com.hbm.realsim.SteamLedger.State in = thermal.ownedMass() > 0 ? thermal.inlet() : com.hbm.realsim.ThermalMachine.state(tanks[0]);
             if(in == com.hbm.realsim.SteamLedger.State.COLD || in == com.hbm.realsim.SteamLedger.State.WARM)

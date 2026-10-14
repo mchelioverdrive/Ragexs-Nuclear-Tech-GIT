@@ -155,6 +155,7 @@ public class CraftingManager {
 		//		},
 		//		new AnvilOutput(new ItemStack(ModBlocks.machine_difurnace_off))).setTier(1));
 		addRecipeAuto(new ItemStack(ModBlocks.machine_difurnace_off, 1), new Object[] { "BBB", "SFS", "SAS", 'S', Blocks.stonebrick, 'F', ModItems.ingot_firebrick, 'A', Blocks.furnace, 'B', CU.ingot() });
+		addRecipeAuto(new ItemStack(ModBlocks.machine_blast_furnace), new Object[] { "BFB", "BMB", "PBP", 'B', STEEL.block(), 'F', ModBlocks.brick_fire, 'M', ModItems.motor, 'P', ModItems.pipes_steel });
 
 
 		//potassium sulfate recipe

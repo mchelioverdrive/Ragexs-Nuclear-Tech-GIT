@@ -100,3 +100,10 @@
 
 - Reorganized the README around RTM's Forge 1.7.10 identity, relationship to HBM/NTM, infrastructure-based progression and connected technological systems. Distinguished current mechanics from design goals and intentional process abstractions.
 - Preserved installation, configuration, commands, build/IDE setup, development mods, integration API, contribution guidance and license/credit references. Updated compatibility descriptions and command coverage, and corrected command-table Markdown.
+
+2026-10-14 14:14 — Integrate industrial Blast Furnace with RealSim
+
+- Adapted the current upstream seven-high industrial furnace structure, ports and model/GUI assets to RTM; the existing MachineRuntime owns dirty/scheduled operation and the prepared-model cache owns shared VBO rendering and reloads.
+- Recontextualized the existing small furnace as the Metallurgical Furnace while retaining registry/tile IDs, inventories, fuel economy and saved state. Moved the stock three-steel ore/coke route into the new ferrous recipe family; unrelated alloys and the Large Arc Furnace retain their roles.
+- Added mass/LHV-paid coke/coal heat, retained process ownership, forced and temperature-qualified hot blast, optional oxygen enrichment and limestone calcination, recoverable CO-bearing Blast Furnace Gas, separate CO2 and useful slag. Preserved existing fluid IDs and introduced a separate industrial recipe override file.
+- Added ordinary structural construction, player tooltips, native GUI/NEI information and guidebook/progression documentation, with explicit integrated refining and chemical-assay abstractions.

@@ -59,6 +59,14 @@ public final class PhysicalRegistry {
         gasBlend("NOBLE_GAS_MIX", "ARGON", "0.96", "trace_ne_kr_xe", "0.04", "40.904584", "0");
         gasBlend("AIR", "NITROGEN_GAS", "0.77", "OXYGEN_GAS", "0.21", "29.09859184", "0");
         replaceMixture("AIR", new String[] {"NITROGEN_GAS", "OXYGEN_GAS", "ARGON", "NOBLE_GAS_MIX"}, new String[] {"0.77", "0.21", "0.01", "0.01"});
+        for(String blast : new String[] {"AIR_HEATED", "AIRBLAST"}) {
+            PhysicalState air = get("AIR");
+            int delta = blast.equals("AIRBLAST") ? 780 : 580;
+            STATES.put(blast, new PhysicalState(air.substance, Phase.GAS, Basis.STANDARD_GAS_LITER, air.massUnits, BigDecimal.ZERO,
+                    (delta + 20) + " C dry blast; cp 1 kJ/(kg K)", air.mixture, BigDecimal.valueOf(delta * 1000L)));
+        }
+        // Dry combustible top-gas proxy, rather than generic combustion FLUE.
+        mixture("BLAST_FURNACE_GAS", new String[] {"CO", "CARBONDIOXIDE", "NITROGEN_GAS", "HYDROGEN_GAS"}, new String[] {"0.22", "0.22", "0.54", "0.02"});
         replaceMixture("NOBLE_GAS_MIX", new String[] {"ARGON", "NEON", "KRYPTON", "XENON"}, new String[] {"0.96", "0.02", "0.01", "0.01"});
         // Released methane and 50:50 syngas proxies; refinery/MAPD offgas is still unresolved.
         putGas("GAS", "methane", "16.04246", new BigDecimal("802340").divide(new BigDecimal("0.01604246"), 18, RoundingMode.DOWN));

@@ -18,7 +18,8 @@ Use current player-facing RTM names in new documentation and interfaces. Histori
 | **Burner Press**, **Electric Press**, and **Conveyor Press** | Press variants | Forming operations selected by reusable press stamps. The Burner and Electric Press use the same `PressRecipes` outputs with different power/throughput behavior. |
 | **Arc Welder** | Same display name | Dedicated joining recipes, including cast-to-welded plates and several structural, missile, satellite, and high-energy products. Some recipes also require a process gas. |
 | **Soldering Station** | Same display name | Dedicated circuit assembly using component, PCB, solder, and sometimes solvent inputs. It should remain electronics-focused. |
-| **Blast Furnace** | DiFurnace in source | Early alloy and steelmaking gate already emphasized by RTM progression. |
+| **Metallurgical Furnace** | DiFurnace in source; registry and saves retained | Cheap first steel and general-purpose small alloy batches; intentionally poor fuel economy. |
+| **Blast Furnace** | `machine_blast_furnace` | Bulk ore-to-steel coke-fired shaft furnace; coke, forced air, paid hot blast, optional limestone and O2, recoverable top gas. |
 | **Chemical Reactor** | Chemical Plant, chemplant | General chemistry and material-conditioning machine. It is not a generic fabrication tier. |
 | **Industrial Size Chemical Reactor** | Chemical Factory, chemfac | Larger chemical-processing equipment. It should not become a catch-all heavy assembler. |
 | **Crusher** | Shredder | Size reduction and ore preparation, not fabrication. |
@@ -119,7 +120,7 @@ Keep these focused on electronics and instrumentation. RealSim Production can ma
 
 ### Blast Furnace, arc furnaces, and chemical equipment
 
-Use these for the material or chemical state they actually produce. The Blast Furnace remains an early metallurgy gate. Arc-furnace roles should be clarified after their current Electric/Plasma names are reconciled. The Chemical Reactor and Industrial Size Chemical Reactor should condition materials, coolants, binders, etchants, fuels, and process chemicals rather than assembling structural equipment.
+Use these for the material or chemical state they actually produce. The Metallurgical Furnace supplies first steel and small alloy batches. The Blast Furnace can be constructed from five steel blocks, one firebrick block, a basic motor and two steel pipe items; efficient bulk operation depends on coke and blast infrastructure, with optional flux, oxygen enrichment and gas recovery. It abstracts downstream hot-metal refining and directly outputs steel. The Large Arc Furnace remains an electric steelmaking/recycling and advanced-alloy machine, rather than a required step after this furnace. The Chemical Reactor and Industrial Size Chemical Reactor should condition materials, coolants, binders, etchants, fuels, and process chemicals rather than assembling structural equipment.
 
 ### Existing specialist assembly
 

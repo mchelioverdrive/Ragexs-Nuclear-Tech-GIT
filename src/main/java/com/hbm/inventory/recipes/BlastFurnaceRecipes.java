@@ -50,7 +50,7 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 		addRecipe(IRON,			COAL,										new ItemStack(ModItems.ingot_steel, 1));
 		addRecipe(IRON,			ANY_COKE,									new ItemStack(ModItems.ingot_steel, 1));
 		addRecipe(IRON.ore(),	COAL,										new ItemStack(ModItems.ingot_steel, 2));
-		addRecipe(IRON.ore(),	ANY_COKE,									new ItemStack(ModItems.ingot_steel, 3));
+		// High-yield ore + coal coke steelmaking belongs to IndustrialBlastFurnaceRecipes.
 		//addRecipe(IRON.ore(),	new ComparableStack(ModItems.powder_flux),	new ItemStack(ModItems.ingot_steel, 3));
 		//No?
 

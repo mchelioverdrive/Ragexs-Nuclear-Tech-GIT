@@ -144,7 +144,7 @@ public class PhysicalAccountingTest {
         String source = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("src/main/java/com/hbm/inventory/fluid/Fluids.java")), java.nio.charset.StandardCharsets.UTF_8);
         java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(?m)^\\s*(\\w+)\\s*=\\s*new FluidType\\(").matcher(source);
         java.util.List<String> names = new java.util.ArrayList<String>();
-        while(matcher.find()) if(!matcher.group(1).endsWith("_GAS") || !matcher.group(1).matches("(HYDROGEN|OXYGEN|NITROGEN)_GAS")) names.add(matcher.group(1));
+        while(matcher.find()) if(!matcher.group(1).matches("(HYDROGEN|OXYGEN|NITROGEN)_GAS|AIR_HEATED|AIRBLAST|BLAST_FURNACE_GAS")) names.add(matcher.group(1));
         assertEquals(224, names.size());
         byte[] hash = java.security.MessageDigest.getInstance("SHA-256").digest(String.join("\n", names).getBytes(java.nio.charset.StandardCharsets.UTF_8));
         StringBuilder hex = new StringBuilder(); for(byte value : hash) hex.append(String.format("%02x", value & 255));

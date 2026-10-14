@@ -67,7 +67,7 @@ Current petroleum processing includes declared feed and product compositions, ma
 
 ### Metallurgy, material processing, and fabrication
 
-Primitive furnaces and anvils provide early recovery and fabrication routes. Blast furnaces, coke production, crucibles and casting, rotary and arc furnaces, presses, welding, soldering, and assembly support larger manufacturing chains. Alloy preparation, ore processing, and component fabrication connect raw resources to industrial machinery and reactor construction.
+Primitive furnaces and anvils provide early recovery and fabrication routes. The cheap, coal-hungry Metallurgical Furnace supplies first steel and small alloy batches. The seven-high Blast Furnace supplies bulk steel from iron ore and coal coke; forced air, paid hot blast, optional limestone flux and oxygen enrichment improve the steelworks, while combustible top gas can supply industrial burners. Construction requires structural materials and basic machinery rather than oil or nuclear products. Foundries and casting, rotary and arc furnaces, presses, welding, soldering, and assembly support larger manufacturing chains.
 
 ### Mining and resource extraction
 
