@@ -95,3 +95,8 @@
 - Converted normal/heavy Stirling to qualified paid heat, governed intake, retained electricity/fractional work and bounded export; fresh defaults are 10/40 kW. Marked the wood generator deprecated and corrected starter/early-steam planning.
 - Added shared native item, GUI and existing NEI machine information, including Industrial Turbine hover information, server-sourced installed ratings/efficiencies and draw/cooling snapshots; corrected stale localized descriptions. Extended status requires matching client/server versions.
 - Fixed mixed-lane electrolyser budgeting, empty physical-auxiliary guards and over-cap receiving without truncating saved electricity. Updated existing RealSim reports/tests; retained fuel/fluid/steam/save contracts and deferred nuclear calibration/future manufacturing redesign.
+
+2026-10-14 01:16 — Rewrite RTM identity and progression README
+
+- Reorganized the README around RTM's Forge 1.7.10 identity, relationship to HBM/NTM, infrastructure-based progression and connected technological systems. Distinguished current mechanics from design goals and intentional process abstractions.
+- Preserved installation, configuration, commands, build/IDE setup, development mods, integration API, contribution guidance and license/credit references. Updated compatibility descriptions and command coverage, and corrected command-table Markdown.
