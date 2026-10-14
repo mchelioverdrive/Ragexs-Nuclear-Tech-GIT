@@ -38,7 +38,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
-public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implements IEnergyReceiverMK2, IGUIProvider, IUpgradeInfoProvider {
+public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implements IEnergyReceiverMK2, IGUIProvider, IUpgradeInfoProvider, com.hbm.realsim.IMachineInfo {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
@@ -516,4 +516,9 @@ public class TileEntityMachineVacuumCircuit extends TileEntityMachineBase implem
 		return 0;
 	}
 
+
+    @Override public long getMachineDemandWatts() { return cachedRecipe == null ? 1000L : operatingPowerWatts; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Recipe-rated vacuum electronics assembly; no new manufacturing tier");
+    }
 }
