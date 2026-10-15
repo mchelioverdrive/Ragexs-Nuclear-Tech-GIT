@@ -193,7 +193,7 @@ public class ShredderRecipes extends SerializableRecipe {
 		//actual real life bullshit:
 
 		//Fe2
-		ShredderRecipes.setRecipe(new ItemStack(ModBlocks.stone_resource, 1, EnumStoneType.HEMATITE.ordinal()), new ItemStack(Blocks.iron_ore, 2));
+		ShredderRecipes.setRecipe(new ItemStack(ModBlocks.stone_resource, 1, EnumStoneType.HEMATITE.ordinal()), new ItemStack(ModItems.powder_hematite));
 		//idea: you get a benefit for doing the REAL industrial processes. The old ones will still exist though. For now.
 		//Fe3
 		ShredderRecipes.setRecipe(new ItemStack(ModItems.magnetite), new ItemStack(Blocks.iron_ore, 3));

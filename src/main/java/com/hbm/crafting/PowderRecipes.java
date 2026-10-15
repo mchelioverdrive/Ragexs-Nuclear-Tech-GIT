@@ -25,7 +25,11 @@ public class PowderRecipes {
 	public static void register() {
 
 		//Explosives
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.ballistite, 3), new Object[] { Items.gunpowder, KNO.dust(), Items.sugar });
+		CraftingManager.addShapelessAuto(new ItemStack(ModItems.regolith_feed, 19), new Object[] { com.hbm.blocks.ModBlocks.moon_turf });
+        // One full mineral block is the adopted 1900-kg parcel, split into nineteen weighed lots.
+        CraftingManager.addShapelessAuto(new ItemStack(ModItems.aggregate_coarse, 19), new Object[] { net.minecraft.init.Blocks.gravel });
+        CraftingManager.addShapelessAuto(new ItemStack(ModItems.aggregate_fine, 19), new Object[] { net.minecraft.init.Blocks.sand });
+        CraftingManager.addShapelessAuto(new ItemStack(ModItems.ballistite, 3), new Object[] { Items.gunpowder, KNO.dust(), Items.sugar });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.ball_dynamite, 2), new Object[] { KNO.dust(), Items.sugar, KEY_SAND, KEY_TOOL_CHEMISTRYSET });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.ball_tnt, 4), new Object[] { Fluids.AROMATICS.getDict(1000), KNO.dust(), KEY_TOOL_CHEMISTRYSET });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.ingot_c4, 4), new Object[] { Fluids.UNSATURATEDS.getDict(1000), KNO.dust(), KEY_TOOL_CHEMISTRYSET });
@@ -62,7 +66,8 @@ public class PowderRecipes {
 		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_nitan_mix, 6), new Object[] { ST.dust(), CO.dust(), BR.dust(), TS.dust(), NB.dust(), CE.dust() });
 		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_spark_mix, 3), new Object[] { DESH.dust(), EUPH.dust(), ModItems.powder_power });
 		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_meteorite, 4), new Object[] { IRON.dust(), CU.dust(), LI.dust(), NETHERQUARTZ.dust() });
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_thermite, 4), new Object[] { IRON.dust(), IRON.dust(), IRON.dust(), AL.dust() });
+		// Oxide supplies oxygen; metallic iron powder cannot oxidize the aluminium reductant.
+		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_thermite, 4), new Object[] { HEMATITE.dust(), HEMATITE.dust(), HEMATITE.dust(), AL.dust() });
 
 		//tool steel
 		//"Melting: Scrap steel is melted, usually in an electric arc furnace,

@@ -29,6 +29,43 @@ public class LiquefactionRecipes extends SerializableRecipe {
 
 	private static HashMap<Object, FluidStack> recipes = new HashMap();
 
+    private static final HashMap<String, com.hbm.realsim.ProcessRecipe> physicalBills = new HashMap<>();
+    private static final HashMap<Object, com.hbm.realsim.ProcessRecipe> overrides = new HashMap<>();
+    private static Object recipeKey(ItemStack input) {
+        if(input == null || input.getItem() == null) return null;
+        ComparableStack exact = new ComparableStack(input).makeSingular();
+        if(recipes.containsKey(exact)) return exact;
+        ComparableStack wildcard = new ComparableStack(input.getItem(), 1, OreDictionary.WILDCARD_VALUE);
+        if(recipes.containsKey(wildcard)) return wildcard;
+        for(String name : exact.getDictKeys()) if(recipes.containsKey(name)) return name;
+        return null;
+    }
+    private static com.hbm.realsim.ProcessRecipe stockPhysical(Object key) {
+        String solid = null;
+        if(key instanceof String) {
+            if(key.equals(NA.dust())) solid = "SODIUM_ITEM";
+        } else if(key instanceof ComparableStack) {
+            net.minecraft.item.Item item = ((ComparableStack) key).toStack().getItem();
+            solid = item == Items.snowball ? "SNOWBALL_ITEM"
+                    : item == net.minecraft.item.Item.getItemFromBlock(Blocks.snow) ? "SNOW_BLOCK"
+                    : item == net.minecraft.item.Item.getItemFromBlock(Blocks.ice) ? "ICE_BLOCK"
+                    : item == net.minecraft.item.Item.getItemFromBlock(Blocks.packed_ice) ? "PACKED_ICE_BLOCK"
+                    : item == net.minecraft.item.Item.getItemFromBlock(ModBlocks.dry_ice) ? "DRY_ICE_BLOCK"
+                    : item == ModItems.powder_sodium ? "SODIUM_ITEM" : item == ModItems.potassium_powder ? "POTASSIUM_ITEM" : null;
+        }
+        if(solid == null) return null;
+        com.hbm.realsim.ProcessRecipe bill = physicalBills.get(solid);
+        if(bill == null) physicalBills.put(solid, bill = com.hbm.realsim.ChemistryProcesses.melting(solid));
+        return bill;
+    }
+    public static com.hbm.realsim.ProcessRecipe getPhysical(ItemStack input) {
+        Object key = recipeKey(input); if(key == null) return null;
+        return overrides.containsKey(key) ? overrides.get(key) : stockPhysical(key);
+    }
+    private static FluidStack display(com.hbm.realsim.ProcessRecipe bill) {
+        return new FluidStack(Fluids.fromName(bill.outputs[0]), Math.toIntExact(com.hbm.realsim.PetroleumProcesses.ceilDiv(bill.productMass[0], com.hbm.realsim.PhysicalRegistry.get(bill.outputs[0]).massUnits)));
+    }
+
 	@Override
 	public void registerDefaults() {
 
@@ -44,14 +81,14 @@ public class LiquefactionRecipes extends SerializableRecipe {
 		//recipes.put(new ComparableStack(Blocks.cobblestone),		new FluidStack(250, Fluids.LAVA));
 		//recipes.put(new ComparableStack(Blocks.stone),				new FluidStack(250, Fluids.LAVA));
 		recipes.put(new ComparableStack(Blocks.obsidian),			new FluidStack(500, Fluids.LAVA));
-		recipes.put(new ComparableStack(Items.snowball),			new FluidStack(125, Fluids.WATER));
-		recipes.put(new ComparableStack(Blocks.snow),				new FluidStack(500, Fluids.WATER));
-		recipes.put(new ComparableStack(Blocks.ice),				new FluidStack(1000, Fluids.WATER));
-		recipes.put(new ComparableStack(Blocks.packed_ice),			new FluidStack(2000, Fluids.WATER));
+		recipes.put(new ComparableStack(Items.snowball),			new FluidStack(1, Fluids.WATER));
+		recipes.put(new ComparableStack(Blocks.snow),				new FluidStack(1, Fluids.WATER));
+		recipes.put(new ComparableStack(Blocks.ice),				new FluidStack(1, Fluids.WATER));
+		recipes.put(new ComparableStack(Blocks.packed_ice),			new FluidStack(2, Fluids.WATER));
 		recipes.put(new ComparableStack(ModBlocks.dry_ice),			new FluidStack(1000, Fluids.CARBONDIOXIDE));
 		//recipes.put(new ComparableStack(Items.ender_pearl),			new FluidStack(100, Fluids.ENDERJUICE));
 		//ionized particles -> helium 4
-		recipes.put(new ComparableStack(ModItems.pellet_charged),	new FluidStack(4000, Fluids.HELIUM4));
+        // Helium comes from assayed geological gas; an exotic charged pellet is not an unbounded bulk gas source.
 
 
 		// Alcohol production uses the reactor fermentation process.
@@ -72,10 +109,10 @@ public class LiquefactionRecipes extends SerializableRecipe {
 		//recipes.put(new ComparableStack(ModItems.solid_fuel_bf),	new FluidStack(250, Fluids.BALEFIRE));
 
 		//potassium -> liquid potassium
-		recipes.put(new ComparableStack(ModItems.potassium_powder),				new FluidStack(800, Fluids.POTASSIUM));
+		recipes.put(new ComparableStack(ModItems.potassium_powder),				new FluidStack(100, Fluids.POTASSIUM));
 
 		//potato -> small amount of potassium
-		recipes.put(new ComparableStack(Items.potato),				new FluidStack(5, Fluids.POTASSIUM));
+		// Potassium extraction is not a phase change; retain the food-processing route instead.
 
 		//TODO: more recipes as the crack oil derivatives are added
 	}
@@ -117,7 +154,8 @@ public class LiquefactionRecipes extends SerializableRecipe {
 
 		for(Entry<Object, FluidStack> entry : LiquefactionRecipes.recipes.entrySet()) {
 
-			FluidStack out = entry.getValue();
+			com.hbm.realsim.ProcessRecipe bill = overrides.containsKey(entry.getKey()) ? overrides.get(entry.getKey()) : stockPhysical(entry.getKey());
+            FluidStack out = bill == null ? entry.getValue() : display(bill);
 
 			if(entry.getKey() instanceof String) {
 				recipes.put(new OreDictStack((String)entry.getKey()), ItemFluidIcon.make(out.type, out.fill));
@@ -146,6 +184,7 @@ public class LiquefactionRecipes extends SerializableRecipe {
 
 	@Override
 	public void deleteRecipes() {
+        overrides.clear();
 		recipes.clear();
 	}
 
@@ -155,11 +194,19 @@ public class LiquefactionRecipes extends SerializableRecipe {
 		AStack in = this.readAStack(obj.get("input").getAsJsonArray());
 		FluidStack out = this.readFluidStack(obj.get("output").getAsJsonArray());
 
-		if(in instanceof ComparableStack) {
-			recipes.put(((ComparableStack) in).makeSingular(), out);
-		} else if(in instanceof OreDictStack) {
-			recipes.put(((OreDictStack) in).name, out);
-		}
+        Object key = in instanceof ComparableStack ? ((ComparableStack) in).makeSingular() : in instanceof OreDictStack ? ((OreDictStack) in).name : null;
+        if(key == null) throw new IllegalArgumentException("Unsupported liquefactor recipe key");
+        com.hbm.realsim.ProcessRecipe bill = obj.has("physical") ? com.hbm.realsim.PetroleumProcesses.read(obj) : stockPhysical(key);
+        if(bill != null) {
+            if(bill.inputs.length != 0 || bill.solidInputs.length != 1 || bill.solidCounts[0] != 1 || bill.electricalRatingWatts > 5000 || bill.heatQuanta != 0
+                    || bill.outputs[0].startsWith("VENT_") || com.hbm.realsim.PhysicalRegistry.get(bill.outputs[0]).phase == com.hbm.realsim.PhysicalState.Phase.SOLID) throw new IllegalArgumentException("Liquefactor requires one solid parcel, one leading fluid product and at most 5 kWe");
+            for(int i = 1; i < bill.outputs.length; i++) if(!bill.outputs[i].startsWith("VENT_")) throw new IllegalArgumentException("Liquefactor has one product port");
+            if(key instanceof ComparableStack && !com.hbm.realsim.ProcessMachine.matches(((ComparableStack) key).toStack(), bill.solidInputs[0])) throw new IllegalArgumentException("Liquefactor lookup key differs from physical feed");
+            FluidStack expected = display(bill);
+            if(!obj.has("physical") && (out.type != expected.type || out.fill != expected.fill)) throw new IllegalArgumentException("Legacy phase recipe disagrees with its mass bill; regenerate defaults");
+            overrides.put(key, bill); out = expected;
+        } else if(com.hbm.realsim.ChemistryProcesses.requiresBillForOutput(out.type.getName())) throw new IllegalArgumentException("Released fluid production requires an explicit physical bill");
+        recipes.put(key, out);
 	}
 
 	@Override
@@ -174,7 +221,9 @@ public class LiquefactionRecipes extends SerializableRecipe {
 			this.writeAStack((ComparableStack) key, writer);
 		}
 
+        com.hbm.realsim.ProcessRecipe bill = overrides.containsKey(key) ? overrides.get(key) : stockPhysical(key);
+        if(bill != null) com.hbm.realsim.PetroleumProcesses.write(bill, writer);
 		writer.name("output");
-		this.writeFluidStack(rec.getValue(), writer);
+		this.writeFluidStack(bill == null ? rec.getValue() : display(bill), writer);
 	}
 }

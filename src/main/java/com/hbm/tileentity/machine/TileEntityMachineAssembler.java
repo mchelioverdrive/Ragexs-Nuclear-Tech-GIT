@@ -447,7 +447,7 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 			info.add("Electrical demand scales with throughput; see the machine rating");
 		}
 		if(type == UpgradeType.POWER) {
-			info.add("Work reduction: " + (Math.min(3, level) * 10) + "% (nominal recipes)");
+			info.add("Work reduction: " + (Math.min(3, level) * 10) + "% (standard recipes)");
 			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_DELAY, "+" + (level * 5) + "%"));
 		}
 		if(type == UpgradeType.OVERDRIVE) {

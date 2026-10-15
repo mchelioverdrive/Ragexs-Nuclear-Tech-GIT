@@ -38,17 +38,27 @@ public class MachineRecipes {
 	public ArrayList<ItemStack> getAlloyFuels() {
 		ArrayList<ItemStack> fuels = new ArrayList<ItemStack>();
 		fuels.add(new ItemStack(Items.coal));
+		fuels.add(new ItemStack(Items.coal, 1, 1));
 		fuels.add(new ItemStack(Blocks.coal_block));
 		fuels.add(new ItemStack(Items.lava_bucket));
 		fuels.add(new ItemStack(Items.blaze_rod));
 		fuels.add(new ItemStack(Items.blaze_powder));
 		fuels.add(new ItemStack(ModItems.lignite));
 		fuels.add(new ItemStack(ModItems.powder_lignite));
-		fuels.add(new ItemStack(ModItems.briquette));
-		fuels.add(new ItemStack(ModItems.coke));
-		fuels.add(new ItemStack(ModItems.powder_coke));
-		fuels.add(new ItemStack(ModItems.solid_fuel));
 		fuels.add(new ItemStack(ModItems.powder_coal));
+		fuels.add(new ItemStack(ModItems.biomass));
+		fuels.add(new ItemStack(ModItems.biomass_compressed));
+		fuels.add(new ItemStack(ModItems.powder_sawdust));
+		fuels.add(new ItemStack(Items.stick));
+		for(com.hbm.items.ItemEnums.EnumBriquetteType type : com.hbm.items.ItemEnums.EnumBriquetteType.values())
+			fuels.add(new ItemStack(ModItems.briquette, 1, type.ordinal()));
+		for(com.hbm.items.ItemEnums.EnumCokeType type : com.hbm.items.ItemEnums.EnumCokeType.values()) {
+			fuels.add(new ItemStack(ModItems.coke, 1, type.ordinal()));
+			fuels.add(new ItemStack(ModItems.powder_coke, 1, type.ordinal()));
+			fuels.add(new ItemStack(com.hbm.blocks.ModBlocks.block_coke, 1, type.ordinal()));
+		}
+		for(String form : new String[] {"logWood", "plankWood", "treeSapling", "stickWood"})
+			for(ItemStack stack : OreDictionary.getOres(form)) if(com.hbm.realsim.Combustion.solidChemicalMicrojoules(stack) > 0) fuels.add(stack.copy());
 		return fuels;
 	}
 	

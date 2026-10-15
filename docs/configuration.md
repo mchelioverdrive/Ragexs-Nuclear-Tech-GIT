@@ -8,15 +8,13 @@ RNTM has three main configuration styles:
 
 Always stop the server before editing startup configuration unless a command explicitly supports runtime reloads.
 
-## Electrical energy settings
+## Energy, fluid and machine settings
 
-RTM thermal energy is displayed in joules and thermal power in watts. The existing HBM thermal simulation remains in TU internally: 1 TU = 0.5 J and, at 20 ticks per second, 1 TU/t = 10 W. This changes presentation only; thermal stores, rates, machine efficiencies, fuel values, heat exchange, recipe balance, saves, packets, and compatibility APIs retain their numeric values and relationships. Fluid thermal properties are expressed as J/L on the existing scale of 1 Forge fluid unit = 1 L. MAGNOX reactor HU is a separate gameplay heat scale and is not assumed to be TU.
+Electrical energy is shown in joules and power in watts. Machine JSON uses exact half-joule counts for migrated capacity keys such as `energyCapacityQuanta`; explicit older settings remain supported where the native loader accepts them. A fresh default does not overwrite a value already saved in the server's configuration.
 
-RTM electrical energy is shown in joules (J), and power is shown in watts (W). Internally, one exact energy quantum is 0.5 J; one quantum transferred each tick is 10 W at 20 ticks per second. Existing numeric machine ratings retain their previous gameplay values, now interpreted as quanta or quanta per tick rather than HE or HE/t.
+Fluid quantities depend on the fluid: ordinary liquid litres, standard gas litres, steam water mass and specialist quantities are distinct. Capacity does not increase process throughput or generator power. Reducing capacity preserves stored contents and stops further filling until room exists. Reactor HU is separate from qualified process heat.
 
-Machine JSON configuration accepts the new `energyCapacityQuanta` key for migrated capacity settings. Old `maxPower` and `powerCap` keys remain loadable as legacy quantum counts. The powered condenser accepts `energyCostQuantaPerMb`, with its old `powerConsumption` key retained as a fallback. When editing these values, enter quanta; for example, 2,000 quanta is 1,000 J. RF converter settings are `inputRfPerBatch` and `outputQuantaPerBatch` for RF input, and `inputQuantaPerBatch` and `outputRfPerBatch` for RF output. Old keys (`RF_Used2`, `HE_Created2`, `HE_Used`, and `RF_Created`) remain loadable; their `HE_*` numbers are legacy HE counts, numerically identical to quanta. The RF conversion is always 5 quanta per RF; the default RF-to-RTM converter is 50% efficient and the default reverse converter is lossless. Configured outputs cannot exceed the energy represented by their inputs.
-
-Combustible fluid trait JSON writes `energyQuanta` for the energy available per bucket; older `energy` values still load as legacy HE counts. Existing OpenComputers numeric readings retain their old count for scripts. Storage offers `getEnergyJoules()` and the gas turbine offers `getStoredEnergyJoules()` for SI readings.
+See [compatibility and persistence](development/compatibility.md), [generator configuration](development/generator_reference.md#configuration-and-recipe-compatibility) and [fluid quantities](development/fluid_reference.md) for exact keys, units and migration rules. [Water quality](gameplay/chemistry.md#water-quality) explains which water to supply.
 
 ## Main Forge config: `config/hbm.cfg`
 

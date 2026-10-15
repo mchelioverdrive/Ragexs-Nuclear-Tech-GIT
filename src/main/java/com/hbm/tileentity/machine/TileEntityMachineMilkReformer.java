@@ -32,6 +32,7 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 
 	public FluidTank tanks[];
 	public long energyQuanta;
+    public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
 	public static final long maxPower = 100_000_000;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
@@ -47,16 +48,17 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 	private static final int TASK_SLOT_MAIN = 0;
 	private static final int TASK_SLOT_BATTERY = 1;
 	private static final int TASK_SLOT_FLUID = 2;
-	
+
 	public TileEntityMachineMilkReformer() {
 		super(11);
-		
-		this.tanks = new FluidTank[4];
-		this.tanks[0] = new FluidTank(Fluids.MILK, 64_000);
-		this.tanks[1] = new FluidTank(Fluids.EMILK, 32_000);
-		this.tanks[2] = new FluidTank(Fluids.CMILK, 32_000);
-		this.tanks[3] = new FluidTank(Fluids.CREAM, 32_000);
-		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
+
+		this.tanks = new FluidTank[5];
+		this.tanks[0] = new FluidTank(Fluids.MILK, 10).withDefaultCapacity();
+		this.tanks[1] = new FluidTank(Fluids.EMILK, 10).withDefaultCapacity();
+		this.tanks[2] = new FluidTank(Fluids.CMILK, 4).withDefaultCapacity();
+		this.tanks[3] = new FluidTank(Fluids.CREAM, 4).withDefaultCapacity();
+		tanks[4] = new FluidTank(Fluids.FRESH_WATER, 10).withDefaultCapacity();
+        for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -90,7 +92,8 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 
 	@Override
 	public FluidTank[] getSendingTanks() {
-		return new FluidTank[] {tanks[1], tanks[2], tanks[3]};	
+		return tanks[0].getFill() > tanks[0].getMaxFill() || tanks[0].getFill() > 0 && tanks[0].getTankType() != Fluids.MILK
+                ? new FluidTank[] {tanks[1], tanks[2], tanks[3], tanks[4], tanks[0]} : new FluidTank[] {tanks[1], tanks[2], tanks[3], tanks[4]};
 		}
 
 	@Override
@@ -111,7 +114,7 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 	public Object provideGUI(int ID, EntityPlayer player, World world, int x, int y, int z) {
 		return new GUIMilkReformer(player.inventory, this);
 	}
-	
+
 	@Override
 	public void updateEntity() {
 		// Server processing is driven by MachineRuntime.
@@ -169,35 +172,16 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 		this.evaluateAndSchedule(now);
 	}
 
-	private void settleBatchesThrough(long targetTick) {
-		if(worldObj == null || worldObj.isRemote || lastBatchTick == Long.MIN_VALUE || targetTick <= lastBatchTick || runtimeBatchMutation) return;
-		long elapsed = targetTick - lastBatchTick;
-		lastBatchTick = targetTick;
-		long batches = Math.min(elapsed, Math.min(tanks[0].getFill() / 100L, energyQuanta / 10_000L));
-		batches = limitByOutput(batches, tanks[1], 50);
-		batches = limitByOutput(batches, tanks[2], 35);
-		batches = limitByOutput(batches, tanks[3], 15);
-		if(batches <= 0L) return;
-		runtimeBatchMutation = true;
-		this.beginMachineFluidMutation();
-		runtimeEnergyMutation = true;
-		try {
-			tanks[0].setFill(tanks[0].getFill() - (int) (batches * 100L));
-			tanks[1].setFill(tanks[1].getFill() + (int) (batches * 50L));
-			tanks[2].setFill(tanks[2].getFill() + (int) (batches * 35L));
-			tanks[3].setFill(tanks[3].getFill() + (int) (batches * 15L));
-			this.setStoredEnergyQuanta(energyQuanta - batches * 10_000L);
-		} finally {
-			runtimeEnergyMutation = false;
-			this.endMachineFluidMutation();
-			runtimeBatchMutation = false;
-		}
-		this.markDirty();
-	}
-
-	private static long limitByOutput(long batches, FluidTank tank, int amountPerBatch) {
-		return amountPerBatch <= 0 ? batches : Math.min(batches, (tank.getMaxFill() - tank.getFill()) / (long) amountPerBatch);
-	}
+    private void settleBatchesThrough(long targetTick) {
+        if(worldObj == null || worldObj.isRemote || lastBatchTick == Long.MIN_VALUE || targetTick <= lastBatchTick || runtimeBatchMutation) return;
+        lastBatchTick=targetTick;runtimeBatchMutation=true;runtimeEnergyMutation=true;this.beginMachineFluidMutation();
+        try {
+            com.hbm.realsim.ProcessRecipe recipe=physicalBatch.active()?physicalBatch.recipe():com.hbm.realsim.AncillaryProcesses.dairy();
+            com.hbm.realsim.ProcessMachine.sizeProcessBuffers(recipe,new FluidTank[]{tanks[0]},new FluidTank[]{tanks[1],tanks[2],tanks[3],tanks[4]});
+            com.hbm.realsim.ProcessMachine.step(this,physicalBatch,recipe,new FluidTank[]{tanks[0]},new FluidTank[]{tanks[1],tanks[2],tanks[3],tanks[4]},slots,0,-1,0,-1);
+        } finally { this.endMachineFluidMutation();runtimeEnergyMutation=false;runtimeBatchMutation=false; }
+        this.markDirty();
+    }
 
 	@Override public void onMachineCoarsePoll(int cadence) {
 		if(worldObj == null || worldObj.isRemote) return;
@@ -212,16 +196,16 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
 		buf.writeLong(energyQuanta);
-		for(int i = 0; i < 4; i++) tanks[i].serialize(buf);
+		for(int i = 0; i < tanks.length; i++) tanks[i].serialize(buf);
 	}
 
 	@Override
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
 		energyQuanta = buf.readLong();
-		for(int i = 0; i < 4; i++) tanks[i].deserialize(buf);
+		for(int i = 0; i < tanks.length; i++) tanks[i].deserialize(buf);
 	}
-	
+
 	private void refreshRuntimeState() {
 		this.beginMachineFluidMutation();
 		try {
@@ -242,18 +226,14 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 	}
 
 	private boolean hasFluidOutput() {
-		return tanks[1].getFill() > 0 || tanks[2].getFill() > 0 || tanks[3].getFill() > 0;
+		for(FluidTank tank:getSendingTanks()) if(tank.getFill()>0) return true; return false;
 	}
 
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
-		long batches = Math.min(tanks[0].getFill() / 100L, energyQuanta / 10_000L);
-		batches = limitByOutput(batches, tanks[1], 50);
-		batches = limitByOutput(batches, tanks[2], 35);
-		batches = limitByOutput(batches, tanks[3], 15);
-		runtimeBatchActive = batches > 0L;
-		if(runtimeBatchActive) this.scheduleMachineTransition(now + batches, TASK_ACCOUNTING, TASK_SLOT_MAIN);
-		else this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+        runtimeBatchActive=physicalBatch.active() || tanks[0].getTankType()==Fluids.MILK && tanks[0].getFill()>=10;
+        if(runtimeBatchActive) this.scheduleMachineTransition(now+1,TASK_ACCOUNTING,TASK_SLOT_MAIN);
+        else this.cancelMachineTransition(TASK_ACCOUNTING,TASK_SLOT_MAIN);
 		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
 		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
 		if(this.hasFluidOutput()) this.scheduleMachineTransition(now + 1L, TASK_FLUID, TASK_SLOT_FLUID);
@@ -268,7 +248,7 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 
 	private void sendOutputFluids() {
 		for(DirPos pos : getConPos()) {
-			for(int i = 1; i < 4; i++) if(tanks[i].getFill() > 0) this.sendFluid(tanks[i], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			for(FluidTank output:getSendingTanks()) if(output.getFill() > 0) this.sendFluid(output, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
 	}
 
@@ -292,14 +272,14 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 		inventoryFingerprintInitialized = true;
 		return changed;
 	}
-	
+
 	private void updateConnections() {
 		for(DirPos pos : getConPos()) {
 			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
 	}
-	
+
 	public DirPos[] getConPos() {
 		return new DirPos[] {
 			new DirPos(xCoord + 2, yCoord, zCoord + 1, Library.POS_X),
@@ -325,18 +305,22 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 		tanks[1].readFromNBT(nbt, "m1");
 		tanks[2].readFromNBT(nbt, "m2");
 		tanks[3].readFromNBT(nbt, "m3");
+        if(nbt.hasKey("m4")) tanks[4].readFromNBT(nbt, "m4");
+        physicalBatch.read(nbt.getCompoundTag("realSimDairy"));
 	}
-	
+
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		if(worldObj != null && !worldObj.isRemote) this.settleBatchesThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
-		
+
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tanks[0].writeToNBT(nbt, "input");
 		tanks[1].writeToNBT(nbt, "m1");
 		tanks[2].writeToNBT(nbt, "m2");
 		tanks[3].writeToNBT(nbt, "m3");
+        tanks[4].writeToNBT(nbt, "m4");
+        NBTTagCompound owned=new NBTTagCompound();physicalBatch.write(owned);nbt.setTag("realSimDairy",owned);
 	}
 
 	@Override protected void beforeInventorySlotChanged(int slot) {
@@ -354,10 +338,10 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 		super.onChunkUnload();
 	}
 	AxisAlignedBB bb = null;
-	
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
-		
+
 		if(bb == null) {
 			bb = AxisAlignedBB.getBoundingBox(
 				xCoord - 2,
@@ -368,10 +352,10 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 				zCoord + 3
 			);
 		}
-		
+
 		return bb;
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public double getMaxRenderDistanceSquared() {

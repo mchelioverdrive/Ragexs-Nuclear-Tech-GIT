@@ -26,7 +26,12 @@ import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
 import api.hbm.energymk2.IBatteryItem;
-import api.hbm.fluid.IFluidStandardReceiver;
+import api.hbm.fluid.IFluidStandardTransceiver;
+import com.hbm.realsim.ProcessRecipe;
+import com.hbm.realsim.ProcessBatch;
+import com.hbm.realsim.ProcessMachine;
+import com.hbm.realsim.PhysicalRegistry;
+import com.hbm.realsim.NuclearChemicalProcesses;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import cpw.mods.fml.relauncher.Side;
@@ -42,8 +47,10 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 //epic!
-public class TileEntityMachineGasCent extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IInfoProviderEC {
+public class TileEntityMachineGasCent extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IInfoProviderEC, com.hbm.realsim.IMachineInfo {
 	
+	public final ProcessBatch nuclearBatch = new ProcessBatch();
+    public final FluidTank recoveredFluorine = new FluidTank(Fluids.FLUORINE, 512).withDefaultCapacity();
 	public long energyQuanta;
 	public int progress;
 	public boolean isProgressing;
@@ -82,6 +89,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 		inputTank = new PseudoFluidTank(PseudoFluidType.NUF6, 8000);
 		outputTank = new PseudoFluidTank(PseudoFluidType.LEUF6, 8000);
 		this.trackMachineFluidTank(tank);
+        this.trackMachineFluidTank(recoveredFluorine);
 	}
 	
 	@Override
@@ -104,7 +112,9 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 		super.readFromNBT(nbt);
 		
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
-		progress = nbt.getShort("progress");
+		progress = nbt.getInteger("progress");
+        nuclearBatch.read(nbt); recoveredFluorine.readFromNBT(nbt, "recoveredFluorine");
+
 		runtimeInitialized = false;
 		inventoryFingerprintInitialized = false;
 		observedRecipeRevision = -1L;
@@ -113,6 +123,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 		tank.readFromNBT(nbt, "tank");
 		inputTank.readFromNBT(nbt, "inputTank");
 		outputTank.readFromNBT(nbt, "outputTank");
+        if(!nbt.hasKey("realSimProcess") && NuclearChemicalProcesses.cascade(inputTank.getTankType().name, true) != null) progress = 0;
 	}
 	
 	@Override
@@ -120,7 +131,8 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
-		nbt.setShort("progress", (short) progress);
+		nbt.setInteger("progress", progress);
+        nuclearBatch.write(nbt); recoveredFluorine.writeToNBT(nbt, "recoveredFluorine");
 		tank.writeToNBT(nbt, "tank");
 		inputTank.writeToNBT(nbt, "inputTank");
 		outputTank.writeToNBT(nbt, "outputTank");
@@ -136,12 +148,76 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 		return (energyQuanta * i) / maxPower;
 	}
 	
+    private boolean fastNuclear() { return slots[6] != null && slots[6].getItem() == ModItems.upgrade_gc_speed; }
+    private ProcessRecipe selectedNuclearBill() { return NuclearChemicalProcesses.cascade(inputTank.getTankType().name, fastNuclear()); }
+    private boolean isNuclear() { return nuclearBatch.active() || selectedNuclearBill() != null; }
+    private boolean nuclearReady(ProcessRecipe bill, boolean requireFeed) {
+        if(bill == null || requireFeed && inputTank.getFill() < bill.quantities[0]) return false;
+        if(inputTank.getTankType().getIfHighSpeed() && !fastNuclear() && !nuclearBatch.active()) return false;
+        ItemStack[] preview = slots.clone();
+        for(int i = 0; i < 4; i++) if(preview[i] != null) preview[i] = preview[i].copy();
+        for(int i = 0; i < bill.outputs.length; i++) {
+            String name = bill.outputs[i]; int amount = Math.toIntExact(nuclearBatch.products.preview(name, bill.productMass[i]));
+            if(name.startsWith("CASCADE_")) {
+                PseudoFluidType type = PseudoFluidType.types.get(name.substring(8));
+                if(type == null || outputTank.getFill() > 0 && outputTank.getTankType() != type || (long) outputTank.getFill() + amount > outputTank.getMaxFill()) return false;
+            } else if(name.equals("FLUORINE")) {
+                if((long) recoveredFluorine.getFill() + amount > recoveredFluorine.getMaxFill()) return false;
+            } else if(amount > 0 && !ProcessMachine.add(preview, 0, 3, ProcessMachine.solid(name, amount))) return false;
+        }
+        return true;
+    }
+    private void settleNuclear() {
+        runtimeSettling = true; runtimeEnergyMutation = true; this.beginMachineFluidMutation();
+        try {
+            ProcessRecipe bill = nuclearBatch.active() ? nuclearBatch.recipe() : selectedNuclearBill();
+            if(bill == null) return;
+            inputTank.maxFluid = bill.inputCapacities[0]; tank.resizePreservingContents(Math.max(400, bill.inputCapacities[0]));
+            for(int i = 0; i < bill.outputs.length; i++) {
+                if(bill.outputs[i].equals("FLUORINE")) recoveredFluorine.resizePreservingContents(bill.outputCapacities[i]);
+                else if(bill.outputs[i].startsWith("CASCADE_")) outputTank.maxFluid = bill.outputCapacities[i];
+            }
+            if(!nuclearBatch.active()) {
+                if(!nuclearReady(bill, true)) { isProgressing = false; return; }
+                nuclearBatch.reserve(bill); inputTank.setFill(inputTank.getFill() - bill.quantities[0]); markDirty();
+            }
+            if(!nuclearReady(bill, false)) { isProgressing = false; return; }
+            long now = worldObj.getTotalWorldTime(), work = nuclearBatch.nextWork();
+            isProgressing = work <= (fastNuclear() ? 10000 : 2000) && nuclearBatch.canAdvance(now, energyQuanta, 0);
+            if(isProgressing) {
+                setStoredEnergyQuanta(energyQuanta - work); nuclearBatch.advance(now); nuclearBatch.recordDraw(now, work);
+                if(nuclearBatch.complete()) {
+                    int[] amount = nuclearBatch.finish();
+                    for(int i = 0; i < amount.length; i++) {
+                        String name = bill.outputs[i];
+                        if(name.startsWith("CASCADE_")) {
+                            outputTank.setTankType(PseudoFluidType.types.get(name.substring(8)));
+                            outputTank.setFill(outputTank.getFill() + amount[i]);
+                        } else if(name.equals("FLUORINE")) recoveredFluorine.setFill(recoveredFluorine.getFill() + amount[i]);
+                        else if(amount[i] > 0 && !ProcessMachine.add(slots, 0, 3, ProcessMachine.solid(name, amount[i]))) throw new IllegalStateException("Cascade output changed during commit");
+                    }
+                }
+                progress = nuclearBatch.ticks(); markDirty(); markNetworkDirty();
+            }
+        } finally { this.endMachineFluidMutation(); runtimeEnergyMutation = false; runtimeSettling = false; }
+    }
+    @Override public long getMachineDemandWatts() { ProcessRecipe bill = nuclearBatch.active() ? nuclearBatch.recipe() : selectedNuclearBill(); return bill == null ? 3000 : bill.electricalRatingWatts; }
+    @Override public long getMachineCurrentDrawWatts() { return isNuclear() ? nuclearBatch.currentDrawWatts(worldObj == null ? Long.MIN_VALUE : worldObj.getTotalWorldTime()) : isProgressing ? 3000 : 0; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        com.hbm.realsim.MachineInfo.process(lines, nuclearBatch.active() ? nuclearBatch.recipe() : selectedNuclearBill());
+        lines.add("Carrier recovery exports fluorine; all coproducts apply backpressure");
+        lines.add("Isotope quantities are fixed carrier aliquots, not standard gas liters");
+        lines.add("Power draw: 20 kW; speed upgrade: 100 kW, same energy per batch");
+    }
+
 	private boolean canEnrich() {
+        if(isNuclear()) return nuclearBatch.active() || energyQuanta > 0 && nuclearReady(selectedNuclearBill(), true);
 		if(runtimeMaterialEligible) this.refreshEnrichmentEligibility();
 		return energyQuanta > 0L && runtimeMaterialEligible;
 	}
 
 	private boolean hasEnrichmentMaterials() {
+        if(isNuclear()) return nuclearBatch.active() || nuclearReady(selectedNuclearBill(), true);
 		if(inputTank.getFill() < inputTank.getTankType().getFluidConsumed()
 				|| outputTank.getFill() + inputTank.getTankType().getFluidProduced() > outputTank.getMaxFill()) return false;
 		if(inputTank.getTankType().getIfHighSpeed() && !(slots[6] != null && slots[6].getItem() == ModItems.upgrade_gc_speed)) return false;
@@ -177,9 +253,9 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 				if(cent.runtimeInitialized && cent.worldObj != null && !cent.worldObj.isRemote) cent.settleProgressThrough(cent.worldObj.getTotalWorldTime());
 				int oldInputFill = cent.inputTank.getFill();
 				PseudoFluidType oldInputType = cent.inputTank.getTankType();
-				if(cent.inputTank.getTankType() != outputTank.getTankType() && outputTank.getTankType() != PseudoFluidType.NONE) {
+				if(cent.inputTank.getTankType() != outputTank.getTankType() && (cent.inputTank.getFill() > 0 || cent.nuclearBatch.active())) return false;
+                if(cent.inputTank.getTankType() != outputTank.getTankType() && outputTank.getTankType() != PseudoFluidType.NONE) {
 					cent.inputTank.setTankType(outputTank.getTankType());
-					cent.outputTank.setTankType(outputTank.getTankType().getOutputType());
 				}
 				
 				//God, why did I forget about the entirety of the fucking math library?
@@ -279,6 +355,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 		if(runtimeSettling || lastAccountingTick == Long.MIN_VALUE || target <= lastAccountingTick) return;
 		long elapsed = target - lastAccountingTick;
 		lastAccountingTick = target;
+		if(isNuclear()) { settleNuclear(); return; }
 		long remaining = elapsed;
 		boolean changed = false;
 		runtimeSettling = true;
@@ -342,6 +419,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 			if(this.observeInventoryFingerprint()) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.RECIPE | MachineDirtyCause.ENERGY | MachineDirtyCause.CONFIGURATION);
 		} else if(cadence == 20) {
 			this.updateConnections();
+            if(recoveredFluorine.getFill() > 0) for(DirPos pos : getConPos()) this.sendFluid(recoveredFluorine, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			this.sendSoundKeepalive();
 		} else if(cadence == 100) {
 			long revision = SerializableRecipe.getRegistryRevision();
@@ -364,7 +442,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 	}
 
 	private boolean canConvert() {
-		return GasCentrifugeRecipes.fluidConversions.containsValue(inputTank.getTankType()) && inputTank.getFill() < inputTank.getMaxFill() && tank.getFill() > 0;
+		return GasCentrifugeRecipes.fluidConversions.get(tank.getTankType()) == inputTank.getTankType() && inputTank.getFill() < inputTank.getMaxFill() && tank.getFill() > 0;
 	}
 
 	private boolean hasBatteryWork() {
@@ -375,24 +453,22 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 		return battery.getMaxOutputQuantaPerTick() > 0 && battery.getStoredEnergyQuanta(slots[4]) > 0;
 	}
 
-	private boolean hasTerminalOutput() {
-		return inputTank.getTankType() == PseudoFluidType.LEUF6 && outputTank.getFill() >= 600;
-	}
-
 	private void transferOrDeconvert() {
-		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
-		TileEntity te = worldObj.getTileEntity(this.xCoord - dir.offsetX, this.yCoord, this.zCoord - dir.offsetZ);
-		if(!attemptTransfer(te) && this.hasTerminalOutput()) {
-			ItemStack[] converted = new ItemStack[] { new ItemStack(ModItems.nugget_uranium_fuel, 6) };
-			if(InventoryUtil.doesArrayHaveSpace(slots, 0, 3, converted)) {
-				outputTank.setFill(outputTank.getFill() - 600);
-				for(ItemStack stack : converted) InventoryUtil.tryAddItemToInventory(slots, 0, 3, stack);
-			}
-		}
-	}
+        ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
+        this.attemptTransfer(worldObj.getTileEntity(xCoord - dir.offsetX, yCoord, zCoord - dir.offsetZ));
+    }
 
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
+        if(isNuclear()) {
+            if(this.canEnrich()) this.scheduleMachineTransition(now + 1L, TASK_PROCESS, TASK_SLOT_MAIN);
+            else this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
+            if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+            else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
+            if(outputTank.getFill() > 0) this.scheduleMachineTransition(now + 10L - now % 10L, TASK_TRANSFER, TASK_SLOT_TRANSFER);
+            else this.cancelMachineTransition(TASK_TRANSFER, TASK_SLOT_TRANSFER);
+            return;
+        }
 		if(this.canEnrich() || progress > 0) {
 			int cost = slots[6] != null && slots[6].getItem() == ModItems.upgrade_gc_speed ? 300 : 200;
 			long needed = Math.max(1L, this.getProcessingSpeed() - progress);
@@ -403,7 +479,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 		} else this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
 		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
 		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
-		if(outputTank.getFill() > 0 || this.hasTerminalOutput()) this.scheduleMachineTransition(now + 10L - now % 10L, TASK_TRANSFER, TASK_SLOT_TRANSFER);
+		if(outputTank.getFill() > 0) this.scheduleMachineTransition(now + 10L - now % 10L, TASK_TRANSFER, TASK_SLOT_TRANSFER);
 		else this.cancelMachineTransition(TASK_TRANSFER, TASK_SLOT_TRANSFER);
 	}
 
@@ -456,6 +532,8 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 		BufferUtil.writeString(buf, outputTank.getTankType().name);
 		
 		tank.serialize(buf);
+        recoveredFluorine.serialize(buf);
+        buf.writeInt(inputTank.maxFluid); buf.writeInt(outputTank.maxFluid);
 	}
 	
 	@Override
@@ -468,10 +546,14 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 		
 		inputTank.setFill(buf.readInt());
 		outputTank.setFill(buf.readInt());
-		inputTank.setTankType(PseudoFluidType.types.get(BufferUtil.readString(buf)));
-		outputTank.setTankType(PseudoFluidType.types.get(BufferUtil.readString(buf)));
+		inputTank.type = PseudoFluidType.types.get(BufferUtil.readString(buf));
+		outputTank.type = PseudoFluidType.types.get(BufferUtil.readString(buf));
+        if(inputTank.type == null) inputTank.type = PseudoFluidType.NONE;
+        if(outputTank.type == null) outputTank.type = PseudoFluidType.NONE;
 		
 		tank.deserialize(buf);
+        recoveredFluorine.deserialize(buf);
+        inputTank.maxFluid = buf.readInt(); outputTank.maxFluid = buf.readInt();
 	}
 	
 	private DirPos[] getConPos() {
@@ -510,7 +592,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 	}
 
 	@Override protected void beforeFluidStorageChanged(FluidTank changedTank) {
-		if(changedTank == tank && !runtimeSettling && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+		if((changedTank == tank || changedTank == recoveredFluorine) && !runtimeSettling && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 	}
 
 	@Override public void onChunkUnload() {
@@ -521,6 +603,8 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 	}
 	
 	public int getProcessingSpeed() {
+        ProcessRecipe nuclear = nuclearBatch.active() ? nuclearBatch.recipe() : selectedNuclearBill();
+        if(nuclear != null) return nuclear.duration;
 		if(slots[6] != null && slots[6].getItem() == ModItems.upgrade_gc_speed) {
 			return processingSpeed - 70;
 		}
@@ -533,7 +617,7 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 			IItemFluidIdentifier id = (IItemFluidIdentifier) slots[in].getItem();
 			FluidType newType = id.getType(worldObj, xCoord, yCoord, zCoord, slots[in]);
 			
-			if(tank.getTankType() != newType) {
+			if(tank.getTankType() != newType && tank.getFill() == 0 && inputTank.getFill() == 0 && outputTank.getFill() == 0 && !nuclearBatch.active()) {
 				PseudoFluidType pseudo = GasCentrifugeRecipes.fluidConversions.get(newType);
 				
 				if(pseudo != null) {
@@ -556,8 +640,9 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 
 	@Override
 	public FluidTank[] getAllTanks() {
-		return new FluidTank[] { tank };
+		return new FluidTank[] { tank, recoveredFluorine };
 	}
+	@Override public FluidTank[] getSendingTanks() { return new FluidTank[] {recoveredFluorine}; }
 	
 	AxisAlignedBB bb = null;
 	
@@ -593,15 +678,13 @@ public class TileEntityMachineGasCent extends TileEntityMachineBase implements I
 		
 		public void setTankType(PseudoFluidType type) {
 			
-			if(this.type.equals(type))
-				return;
+			if(this.type == type || fluid > 0) return;
 			
 			if(type == null)
 				this.type = PseudoFluidType.NONE;
 			else
 				this.type = type;
 			
-			this.setFill(0);
 		}
 		
 		public PseudoFluidType getTankType() {

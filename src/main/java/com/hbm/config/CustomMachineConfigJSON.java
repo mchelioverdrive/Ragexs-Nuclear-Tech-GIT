@@ -66,7 +66,7 @@ public class CustomMachineConfigJSON {
 			writer.endObject();
 			writer.name("localizedName").value("Paper Press");
 			writer.name("fluidInCount").value(1);
-			writer.name("fluidInCap").value(1_000);
+			writer.name("fluidInCap").value(2);
 			writer.name("itemInCount").value(1);
 			writer.name("fluidOutCount").value(0);
 			writer.name("fluidOutCap").value(0);
@@ -171,6 +171,7 @@ public class CustomMachineConfigJSON {
 				configuration.fluidOutCap = machineObject.get("fluidOutCap").getAsInt();
 				configuration.itemOutCount = machineObject.get("itemOutCount").getAsInt();
 				configuration.generatorMode = machineObject.get("generatorMode").getAsBoolean();
+                if(machineObject.has("generatorOutputQuantaPerTick")) configuration.generatorOutputQuantaPerTick = Math.max(0, machineObject.get("generatorOutputQuantaPerTick").getAsLong());
 				if(machineObject.has("maxPollutionCap")) configuration.maxPollutionCap = machineObject.get("maxPollutionCap").getAsInt();
 				if(machineObject.has("fluxMode")) configuration.fluxMode = machineObject.get("fluxMode").getAsBoolean();
 				configuration.recipeSpeedMult = machineObject.get("recipeSpeedMult").getAsDouble();
@@ -262,6 +263,7 @@ public class CustomMachineConfigJSON {
 		public int itemOutCount;
 		/** Whether inputs should be used up when the process begins */
 		public boolean generatorMode;
+        public long generatorOutputQuantaPerTick = -1; // Absent: derive from recipe rates, never capacity
 		public int maxPollutionCap;
 		public boolean fluxMode;
 		public double recipeSpeedMult = 1D;

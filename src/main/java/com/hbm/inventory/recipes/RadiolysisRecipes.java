@@ -39,14 +39,14 @@ public class RadiolysisRecipes {
 				outputs[1] = ItemFluidIcon.make(pair.getValue().type, pair.getValue().fill);
 			}
 			
-			recipes.put(ItemFluidIcon.make((FluidType) entry.getKey(), 100), outputs);
+			recipes.put(ItemFluidIcon.make((FluidType) entry.getKey(), 1), outputs);
 		}
 		
 		return recipes;
 	}
 	
 	public static void registerRadiolysis() {
-		radiolysis.put(Fluids.FRESH_WATER, new Pair(new FluidStack(80, Fluids.PEROXIDE), new FluidStack(20, Fluids.HYDROGEN_GAS)));
+		radiolysis.put(Fluids.FRESH_WATER, new Pair(new FluidStack(1, Fluids.PEROXIDE), new FluidStack(158, Fluids.HYDROGEN_GAS)));
 		
 		// Petroleum conversion requires paid heat, auxiliaries and coke ownership.
 		// Radiation processing no longer copies those recipes into an unpaid path.

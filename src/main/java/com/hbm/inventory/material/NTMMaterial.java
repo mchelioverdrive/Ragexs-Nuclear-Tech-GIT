@@ -3,6 +3,8 @@ package com.hbm.inventory.material;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.EnumSet;
+import com.hbm.realsim.MaterialRole;
 
 import com.hbm.inventory.OreDictManager.DictFrame;
 
@@ -28,8 +30,16 @@ public class NTMMaterial {
 	public NTMMaterial smeltsInto;
 	public int convIn;
 	public int convOut;
+	private final EnumSet<MaterialRole> roles = EnumSet.noneOf(MaterialRole.class);
+	public boolean hasRole(MaterialRole role) { return roles.contains(role); }
+	public Set<MaterialRole> getRoles() { return java.util.Collections.unmodifiableSet(roles); }
+	public NTMMaterial roles(MaterialRole... additions) {
+		for(MaterialRole role : additions) roles.add(role);
+		return this;
+	}
 
 	public NTMMaterial(int id, DictFrame dict) {
+		if(Mats.matById.containsKey(id)) throw new IllegalArgumentException("Duplicate persistent material ID " + id);
 
 		this.names = dict.mats;
 		this.id = id;
@@ -59,8 +69,14 @@ public class NTMMaterial {
 
 	/** Shapes for autogen */
 	public NTMMaterial setAutogen(MaterialShapes... shapes) {
-		for(MaterialShapes shape : shapes) this.autogen.add(shape);
+		for(MaterialShapes shape : shapes) if(shape.hasNativeGenerator()) this.autogen.add(shape);
 		return this;
+	}
+	/** Actual form availability, including aliases/external registrations, independent of generation flags. */
+	public boolean hasForm(MaterialShapes shape) {
+		for(String name : names) for(String prefix : shape.prefixes)
+			if(!net.minecraftforge.oredict.OreDictionary.getOres(prefix + name).isEmpty()) return true;
+		return false;
 	}
 
 	/** Traits for recipe detection */

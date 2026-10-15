@@ -296,11 +296,11 @@ public class TileEntityHeaterElectric extends TileEntityLoadedBase implements IH
 	public void pasteSettings(NBTTagCompound nbt, int index, World world, EntityPlayer player, int x, int y, int z) {
 		this.setting = nbt.getInteger("setting");
 	}
-    @Override public int getProcessTemperatureC() { return 900; }
+    @Override public int getProcessTemperatureC() { return 1600; }
     @Override public long getMachineDemandWatts() { return worldObj == null ? 10L * 2000L * api.hbm.energymk2.EnergyUnits.WATTS_PER_QUANTUM_PER_TICK : getPowerRequirementWatts(); }
     @Override public long getMachineCurrentDrawWatts() { return isOn ? getPowerRequirementWatts() : 0L; }
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
-        lines.add("Resistive heat plus qualified external heat intake; the thermal export ceiling includes both sources");
+        lines.add("Electric resistance heater; also accepts external heat within its total output rating");
         lines.add(String.format(java.util.Locale.US, "Resistive efficiency: %.1f%%; imported heat transfer: %.1f%%", getResistiveEfficiencyPpm() / 10000D, getIntakeEfficiencyPpm() / 10000D));
     }
 }

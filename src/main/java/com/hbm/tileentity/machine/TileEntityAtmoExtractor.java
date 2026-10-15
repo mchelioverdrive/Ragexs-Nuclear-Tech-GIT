@@ -28,16 +28,19 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardSender {
+public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardSender, com.hbm.realsim.IMachineInfo {
 	private static final int TASK_EXTRACT = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
-	private long operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(10_000L);
+	private long operatingPowerWatts = 5000;
+    private int capturedPerTick = 5;
+    private boolean sourceAvailable;
+    private final com.hbm.realsim.OutputBudget captureBudget = new com.hbm.realsim.OutputBudget();
+    private long drawTick = Long.MIN_VALUE, drawQuanta;
 	private DirPos[] cachedConnections;
 	private int cachedConnectionMetadata = Integer.MIN_VALUE;
 
-	int consumption = 200;
 	public float rot;
 	public float prevRot;
 	private float rotSpeed;
@@ -47,7 +50,7 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 
 	public TileEntityAtmoExtractor() {
 		super(0);
-		tank = new FluidTank(Fluids.AIR, 50000);
+		tank = new FluidTank(Fluids.AIR, 6000).withDefaultCapacity();
 	}
 
 	@Override
@@ -100,11 +103,12 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 		runtimeEnergyMutation = true;
 		try {
 			this.sendOutput();
-			if(this.hasPower() && tank.getFill() + 100 <= tank.getMaxFill()) {
-				tank.setFill(tank.getFill() + 100);
-				this.setStoredEnergyQuanta(energyQuanta - EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts));
-				FT_Gaseous.capture(worldObj, tank.getTankType(), 100);
-			}
+            long now = worldObj.getTotalWorldTime();
+            if(this.hasPower() && admitAtmosphericParcel(tank, captureBudget, now, sourceAvailable ? tank.getTankType() : null, capturedPerTick)) {
+                drawQuanta = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts); drawTick = now;
+                this.setStoredEnergyQuanta(energyQuanta - drawQuanta);
+                FT_Gaseous.capture(worldObj, tank.getTankType(), capturedPerTick);
+            }
 		} finally {
 			runtimeEnergyMutation = false;
 			this.endMachineFluidMutation();
@@ -128,15 +132,26 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 		}
 	}
 
-	private boolean refreshAtmosphericFluid() {
-		FluidType oldType = tank.getTankType();
-		CBT_Atmosphere atmosphere = !(worldObj.provider instanceof WorldProviderOrbit) && !ChunkAtmosphereManager.proxy.hasAtmosphere(worldObj, xCoord, yCoord, zCoord)
-			? CelestialBody.getTrait(worldObj, CBT_Atmosphere.class) : null;
-		if(atmosphere != null) {
-			if(!atmosphere.hasFluid(tank.getTankType())) tank.setTankType(atmosphere.getMainFluid());
-		} else tank.setTankType(Fluids.NONE);
-		return oldType != tank.getTankType();
-	}
+    public static boolean admitAtmosphericParcel(FluidTank tank, com.hbm.realsim.OutputBudget budget, long tick, FluidType selected, int amount) {
+        if(selected == null || selected.getName().equals("NONE") || amount <= 0 || budget.available(tick, amount) < amount
+                || (long) tank.getFill() + amount > tank.getMaxFill() || tank.getFill() > 0 && tank.getTankType() != selected) return false;
+        if(!tank.configureForRecipe(selected, 0)) return false;
+        tank.setFill(tank.getFill() + amount); budget.use(tick, amount, amount); return true;
+    }
+    private boolean refreshAtmosphericFluid() {
+        FluidType oldType = tank.getTankType(); boolean wasAvailable = sourceAvailable; long previousPower = operatingPowerWatts;
+        CBT_Atmosphere atmosphere = !(worldObj.provider instanceof WorldProviderOrbit) && !ChunkAtmosphereManager.proxy.hasAtmosphere(worldObj, xCoord, yCoord, zCoord)
+                ? CelestialBody.getTrait(worldObj, CBT_Atmosphere.class) : null;
+        if(atmosphere != null) {
+            if(!atmosphere.hasFluid(tank.getTankType())) tank.configureForRecipe(atmosphere.getMainFluid(), 0);
+        } else tank.configureForRecipe(Fluids.NONE, 0);
+        // A refused retag of legacy contents is never permission to generate that old gas in vacuum.
+        sourceAvailable = atmosphere != null && tank.getTankType() != Fluids.NONE && atmosphere.hasFluid(tank.getTankType()) && tank.getTankType().hasTrait(FT_Gaseous.class);
+        boolean selective = atmosphere != null && tank.getTankType() != atmosphere.getMainFluid();
+        capturedPerTick = selective ? 1 : 5;
+        operatingPowerWatts = selective ? 50000 : 5000; // 2500 / 50 J per standard L, including separation / bulk collection.
+        return oldType != tank.getTankType() || wasAvailable != sourceAvailable || previousPower != operatingPowerWatts;
+    }
 
 	private void sendOutput() {
 		for(DirPos pos : this.getCachedConnections()) this.sendFluid(tank, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
@@ -152,12 +167,12 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 	}
 
 	private void evaluateAndSchedule(long now) {
-		if(runtimeInitialized && (this.hasPower() && tank.getFill() + 100 <= tank.getMaxFill() || tank.getFill() > 0)) this.scheduleMachineTransition(now + 1L, TASK_EXTRACT, TASK_SLOT_MAIN);
+		if(runtimeInitialized && (this.hasPower() && (long) tank.getFill() + capturedPerTick <= tank.getMaxFill() || tank.getFill() > 0)) this.scheduleMachineTransition(now + 1L, TASK_EXTRACT, TASK_SLOT_MAIN);
 		else this.cancelMachineTransition(TASK_EXTRACT, TASK_SLOT_MAIN);
 	}
 
 	public void cycleGas() {
-		CBT_Atmosphere atmosphere = !ChunkAtmosphereManager.proxy.hasAtmosphere(worldObj, xCoord, yCoord, zCoord)
+		CBT_Atmosphere atmosphere = !(worldObj.provider instanceof WorldProviderOrbit) && !ChunkAtmosphereManager.proxy.hasAtmosphere(worldObj, xCoord, yCoord, zCoord)
 			? CelestialBody.getTrait(worldObj, CBT_Atmosphere.class)
 			: null;
 
@@ -170,7 +185,7 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 				int targetIndex = i + 1;
 				if(targetIndex >= atmosphere.fluids.size()) targetIndex = 0;
 
-				tank.setTankType(atmosphere.fluids.get(targetIndex).fluid);
+				tank.configureForRecipe(atmosphere.fluids.get(targetIndex).fluid, 0);
 				this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.FLUID);
 				this.markNetworkDirty();
 				break;
@@ -189,6 +204,7 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
 		buf.writeLong(energyQuanta);
+        buf.writeBoolean(sourceAvailable); buf.writeLong(operatingPowerWatts); buf.writeInt(capturedPerTick);
 		tank.serialize(buf);
 	}
 
@@ -196,11 +212,12 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
 		energyQuanta = buf.readLong();
+        sourceAvailable = buf.readBoolean(); operatingPowerWatts = buf.readLong(); capturedPerTick = buf.readInt();
 		tank.deserialize(buf);
 	}
 
 	public boolean hasPower() {
-		return energyQuanta >= this.getEnergyCapacityQuanta() / 100;
+		return sourceAvailable && energyQuanta >= EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
 	}
 
 	@Override
@@ -208,6 +225,7 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 		super.readFromNBT(nbt);
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		tank.readFromNBT(nbt, "water");
+        captureBudget.read(nbt.getCompoundTag("gasAdmission")); drawTick = Long.MIN_VALUE; drawQuanta = 0;
 	}
 
 	@Override
@@ -215,6 +233,7 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 		super.writeToNBT(nbt);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tank.writeToNBT(nbt, "water");
+        NBTTagCompound admission = new NBTTagCompound(); captureBudget.write(admission); nbt.setTag("gasAdmission", admission);
 	}
 
 
@@ -290,5 +309,13 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 	public double getMaxRenderDistanceSquared() {
 		return 65536.0D;
 	}
+
+    @Override public long getMachineDemandWatts() { return operatingPowerWatts; }
+    @Override public long getMachineCurrentDrawWatts() { return worldObj != null && drawTick == worldObj.getTotalWorldTime() ? drawQuanta * 10 : 0; }
+    @Override public void appendMachineInfo(List<String> lines, boolean live) {
+        lines.add("Bulk collection: 6000 standard L/min at 5 kWe");
+        lines.add("Selective gas recovery: 1200 standard L/min at 50 kWe");
+        if(live && !sourceAvailable) lines.add("No compatible natural atmosphere; legacy gas can still drain");
+    }
 
 }

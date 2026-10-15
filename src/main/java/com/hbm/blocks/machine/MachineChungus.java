@@ -166,7 +166,7 @@ public class MachineChungus extends BlockDummyable implements ILookOverlay, IToo
 		text.add(EnumChatFormatting.YELLOW + "Trip valves: " + (turbine.isTripped() ? EnumChatFormatting.RED + "TRIPPED" : EnumChatFormatting.GREEN + "READY"));
 
 		if(turbine.isTripped()) {
-			String cause = turbine.getTripCause() == TileEntityChungus.TRIP_OVERPRESSURE ? "OVERPRESSURE" : "OVERSPEED";
+			String cause = turbine.getTripCause() == TileEntityChungus.TRIP_OVERPRESSURE ? "EXHAUST BACKPRESSURE" : "LEGACY LOAD REJECTION";
 			text.add("&[" + 0xff0000 + "&]DANGEROUS " + cause + " TRIP EVENT!");
 			text.add("&[" + 0xff0000 + "&]Turbine auto-shutdown; trip valves are closed.");
 			text.add(EnumChatFormatting.YELLOW + "Reset with the lever."); //or a redstone signal LARP!!!

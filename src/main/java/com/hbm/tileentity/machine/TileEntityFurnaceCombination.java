@@ -360,6 +360,6 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
         com.hbm.realsim.MachineInfo.process(lines, physicalBatch.active() ? physicalBatch.recipe() : CombinationRecipes.getPhysical(slots[0]));
-        lines.add("Petroleum preheating uses qualified external heat");
+        lines.add("Petroleum preheating requires external heat");
     }
 }

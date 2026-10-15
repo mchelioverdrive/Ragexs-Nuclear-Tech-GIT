@@ -43,6 +43,17 @@ public abstract class SerializableRecipe {
 		return registryRevision;
 	}
 
+    /** Stable recipe identity for machines which pay work before committing their materials. */
+    public final String accountingKey(Object recipe) {
+        if(recipe == null) return "";
+        java.io.StringWriter text = new java.io.StringWriter();
+        try {
+            JsonWriter writer = new JsonWriter(text); writer.beginObject();
+            writeRecipe(recipe, writer); writer.endObject(); writer.close();
+            return text.toString();
+        } catch(IOException failure) { throw new IllegalStateException("Cannot identify recipe", failure); }
+    }
+
 	public boolean modified = false;
 
 	/*

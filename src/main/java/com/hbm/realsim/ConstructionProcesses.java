@@ -1,0 +1,27 @@
+package com.hbm.realsim;
+
+/** Weighed construction batches. Placed block geometry is not an inventory cubic-metre claim. */
+public final class ConstructionProcesses {
+    private ConstructionProcesses() { }
+    public static ProcessRecipe concrete(int kind) {
+        String[] solids = kind == 0 ? new String[] {"CEMENT_ITEM", "AGGREGATE_COARSE_ITEM", "AGGREGATE_FINE_ITEM"}
+                : new String[] {"CEMENT_ITEM", "AGGREGATE_COARSE_ITEM", "AGGREGATE_FINE_ITEM", kind == 1 ? "ASBESTOS_ITEM" : "DU_BILLET_ITEM"};
+        int[] amounts = kind == 0 ? new int[] {64, 1, 1} : new int[] {64, 1, 1, kind == 1 ? 1 : 2};
+        long mass = ChemistryProcesses.mass("WATER", 16);
+        for(int i = 0; i < solids.length; i++) mass += ChemistryProcesses.mass(solids[i], amounts[i]);
+        return new ProcessRecipe("construction:concrete_" + kind, new String[] {"WATER"}, new int[] {16}, new int[] {0}, solids, amounts,
+                new String[] {kind == 0 ? "CONCRETE_ITEM" : kind == 1 ? "FIBER_CONCRETE_ITEM" : "DUCRETE_ITEM"}, new long[] {mass}, 1600, 320000, 0, 20, true);
+    }
+    public static ProcessRecipe asphalt() {
+        long mass = ChemistryProcesses.mass("AGGREGATE_COARSE_ITEM", 1) + ChemistryProcesses.mass("AGGREGATE_FINE_ITEM", 1) + ChemistryProcesses.mass("BITUMEN", 12);
+        return new ProcessRecipe("construction:asphalt", new String[] {"BITUMEN"}, new int[] {12}, new int[] {0},
+                new String[] {"AGGREGATE_COARSE_ITEM", "AGGREGATE_FINE_ITEM"}, new int[] {1, 1}, new String[] {"ASPHALT_ITEM"}, new long[] {mass},
+                4800, 200000, 20800000, 160, true);
+    }
+    public static ProcessRecipe soil() {
+        return new ProcessRecipe("construction:soil", new String[] {"FRESH_WATER"}, new int[] {4}, new int[] {0},
+                new String[] {"AGGREGATE_COARSE_ITEM", "AMMONIUM_NITRATE_ITEM"}, new int[] {1, 1}, new String[] {"SOIL_ITEM"},
+                new long[] {ChemistryProcesses.mass("AGGREGATE_COARSE_ITEM", 1) + ChemistryProcesses.mass("AMMONIUM_NITRATE_ITEM", 1) + ChemistryProcesses.mass("FRESH_WATER", 4)},
+                1200, 120000, 0, 20, true);
+    }
+}

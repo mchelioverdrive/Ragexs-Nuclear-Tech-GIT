@@ -67,15 +67,10 @@ public class MachineDiesel extends BlockMachineBase implements ITooltipProvider,
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 
-		list.add(EnumChatFormatting.YELLOW + "Fuel efficiency:");
-		for(FuelGrade grade : FuelGrade.values()) {
-			Double efficiency = TileEntityMachineDiesel.fuelEfficiency.get(grade);
+        list.add(EnumChatFormatting.YELLOW + com.hbm.realsim.MachineInfo.watts(TileEntityMachineDiesel.ratedPowerWatts) + " compact compression-ignition genset");
+        list.add("Diesel/cracked diesel: 32%; reform blends: 30%; petroil: 27% LHV");
+        list.add("Short service tank; use external storage for autonomy");
 
-			if(efficiency != null) {
-				int eff = (int)(efficiency * 100);
-				list.add(EnumChatFormatting.YELLOW + "-" + grade.getGrade() + ": " + EnumChatFormatting.RED + "" + eff + "%");
-			}
-		}
 		list.add(EnumChatFormatting.DARK_RED + I18nUtil.resolveKey("tooltip.furnace.monoxide"));
 		list.add(EnumChatFormatting.AQUA + I18nUtil.resolveKey("tooltip.machine.waterlogging"));
 	}

@@ -95,9 +95,8 @@ public class MatDistribution extends SerializableRecipe {
 		registerEntry(ModItems.powder_flux, MAT_FLUX, DUST.q(1));
 		registerEntry(new ItemStack(Items.coal, 1, 1), MAT_CARBON, NUGGET.q(3));
 
-		registerEntry(DictFrame.fromOne(ModItems.powder_ash, EnumAshType.WOOD), MAT_CARBON, NUGGET.q(1));
-		registerEntry(DictFrame.fromOne(ModItems.powder_ash, EnumAshType.COAL), MAT_CARBON, NUGGET.q(2));
-		registerEntry(DictFrame.fromOne(ModItems.powder_ash, EnumAshType.MISC), MAT_CARBON, NUGGET.q(1));
+		// Mineral ash is not carbon. The physical char coproduct uses the distinct SOOT state.
+		registerEntry(DictFrame.fromOne(ModItems.powder_ash, EnumAshType.SOOT), MAT_CARBON, INGOT.q(1));
 	}
 
 	public static void registerEntry(Object key, Object... matDef) {
@@ -199,7 +198,7 @@ public class MatDistribution extends SerializableRecipe {
 
 	@Override
 	public String getComment() {
-		return "Defines a set of items that can be smelted. Smelting generated from the ore dictionary (prefix + material) is auto-generated and cannot be "
+		return "Defines authoritative item and ore assays. An exact item assay replaces generic form matching. Smelting generated from the ore dictionary (prefix + material) is auto-generated and cannot be "
 				+ "changed. This config only changes fixed items (like recycling for certain metallic objects) and ores (with variable byproducts). "
 				+ "Amounts used are in quanta (1 quantum is 1/72 of an ingot or 1/8 of a nugget). Material names are the ore dict suffixes, case-sensitive.";
 	}

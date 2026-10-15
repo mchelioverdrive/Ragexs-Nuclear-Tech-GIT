@@ -100,7 +100,7 @@ public class CrucibleRecipes extends SerializableRecipe {
 
 		recipes.add(new CrucibleRecipe(14, "crucible.hsss", 12, new ItemStack(ModItems.ingot_dura_steel))
 			.inputs(new MaterialStack(Mats.MAT_STAINLESS, n * 5), new MaterialStack(Mats.MAT_TUNGSTEN, n * 3), new MaterialStack(Mats.MAT_COBALT, n * 1))
-			.outputs(new MaterialStack(Mats.MAT_DURA, i * 2)));
+			.outputs(new MaterialStack(Mats.MAT_DURA, n * 9)));
 
 		recipes.add(new CrucibleRecipe(4, "crucible.ferro", 3, new ItemStack(ModItems.ingot_ferrouranium))
 			.inputs(new MaterialStack(Mats.MAT_STEEL, n * 2), new MaterialStack(Mats.MAT_U238, n))
@@ -126,10 +126,9 @@ public class CrucibleRecipes extends SerializableRecipe {
 			.inputs(new MaterialStack(Mats.MAT_COPPER, n * 8), new MaterialStack(Mats.MAT_ARSENIC, n), new MaterialStack(Mats.MAT_FLUX, n * 3))
 			.outputs(new MaterialStack(Mats.MAT_ABRONZE, i), new MaterialStack(Mats.MAT_SLAG, n * 3)));
 
-		recipes.add(new CrucibleRecipe(23, "crucible.abronze2", 9, new ItemStack(ModItems.ingot_arsenic_bronze))
+		recipes.add(new CrucibleRecipe(23, "crucible.bronze", 9, Mats.MAT_BRONZE.make(ModItems.ingot_raw))
 			.inputs(new MaterialStack(Mats.MAT_COPPER, n * 8), new MaterialStack(Mats.MAT_TIN, n), new MaterialStack(Mats.MAT_FLUX, n * 3))
-			.outputs(new MaterialStack(Mats.MAT_ABRONZE, i), new MaterialStack(Mats.MAT_SLAG, n * 3)));
-			//I cannot be bothered to add another bronze for tin, that does basically the same shit
+			.outputs(new MaterialStack(Mats.MAT_BRONZE, i), new MaterialStack(Mats.MAT_SLAG, n * 3)));
 
 		recipes.add(new CrucibleRecipe(18, "crucible.magtung", 3, new ItemStack(ModItems.ingot_magnetized_tungsten))
 			.inputs(new MaterialStack(Mats.MAT_TUNGSTEN, i), new MaterialStack(Mats.MAT_SCHRABIDIUM, n * 1))
@@ -172,6 +171,10 @@ public class CrucibleRecipes extends SerializableRecipe {
 		//	.outputs(new MaterialStack(Mats.MAT_MOLTEN_SALT, i * 2)));
 		//oh dear god
 
+		// Tin/lead soft solder: quantity-preserving alloy preparation, not lead used as pure solder.
+		recipes.add(new CrucibleRecipe(24, "crucible.solder", 8, Mats.MAT_SOLDER.make(ModItems.wire_fine))
+			.inputs(new MaterialStack(Mats.MAT_TIN, n * 5), new MaterialStack(Mats.MAT_LEAD, n * 3))
+			.outputs(new MaterialStack(Mats.MAT_SOLDER, n * 8)));
 		registerMoldsForNEI();
 	}
 
@@ -308,39 +311,33 @@ public class CrucibleRecipes extends SerializableRecipe {
 	public static HashMap<AStack, List<ItemStack>> getSmeltingRecipes() {
 		HashMap<AStack, List<ItemStack>> map = new HashMap();
 
-		for(NTMMaterial material : Mats.orderedList) {
-			int in = material.convIn;
-			int out = material.convOut;
-			NTMMaterial convert = material.smeltsInto;
-			if(convert.smeltable == SmeltingBehavior.SMELTABLE || convert.smeltable == SmeltingBehavior.ADDITIVE) for(MaterialShapes shape : MaterialShapes.allShapes) {
-				//TODO: buffer these
-				if(!shape.noAutogen) {
-					String name = shape.make(material);
-					List<ItemStack> ores = OreDictionary.getOres(name);
-
-					if(!ores.isEmpty()) {
-						List<ItemStack> stacks = new ArrayList();
-						stacks.add(ItemScraps.create(new MaterialStack(convert, (int) (shape.q(1) * out / in)), true));
-						map.put(new OreDictStack(name), stacks);
-					}
+		// Show the actual item assay/acceptance, including aliases and compatibility shapes.
+		// Broad OD display rows would advertise native refining powders that cannot be melted.
+		for(NTMMaterial material : Mats.orderedList) for(MaterialShapes shape : MaterialShapes.allShapes) {
+			for(String alias : material.names) for(String prefix : shape.prefixes) {
+				for(ItemStack item : OreDictionary.getOres(prefix + alias)) {
+					List<MaterialStack> contents = Mats.getSmeltingMaterialsFromItem(item);
+					if(contents.isEmpty()) continue;
+					List<ItemStack> outputs = new ArrayList();
+					for(MaterialStack content : contents) outputs.add(ItemScraps.create(content, true));
+					map.put(new ComparableStack(item).makeSingular(), outputs);
 				}
 			}
 		}
-
 		for(Entry<String, List<MaterialStack>> entry : Mats.materialOreEntries.entrySet()) {
 			List<ItemStack> stacks = new ArrayList();
-			for(MaterialStack mat : entry.getValue()) {
+			for(MaterialStack mat : Mats.getSmeltingMaterials(entry.getValue())) {
 				stacks.add(ItemScraps.create(mat, true));
 			}
-			map.put(new OreDictStack(entry.getKey()), stacks);
+			if(!stacks.isEmpty()) map.put(new OreDictStack(entry.getKey()), stacks);
 		}
 
 		for(Entry<ComparableStack, List<MaterialStack>> entry : Mats.materialEntries.entrySet()) {
 			List<ItemStack> stacks = new ArrayList();
-			for(MaterialStack mat : entry.getValue()) {
+			for(MaterialStack mat : Mats.getSmeltingMaterialsFromItem(entry.getKey().toStack())) {
 				stacks.add(ItemScraps.create(mat, true));
 			}
-			map.put(entry.getKey().copy(), stacks);
+			if(!stacks.isEmpty()) map.put(entry.getKey().copy(), stacks);
 		}
 
 		return map;

@@ -514,6 +514,5 @@ public class TileEntityMachinePress extends TileEntityMachineBase implements IGU
 
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
         lines.add("Fuel-driven forming press; preheat and valid stamp required");
-        lines.add("Uncalibrated thermal duty remains nominal");
     }
 }

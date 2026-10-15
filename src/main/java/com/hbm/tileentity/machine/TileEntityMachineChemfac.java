@@ -33,9 +33,13 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase implements IUpgradeInfoProvider, IFluidCopiable {
+public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase implements IUpgradeInfoProvider, IFluidCopiable, com.hbm.realsim.ProcessMachine.Cooling {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 	private int runtimeConnectionPolls;
+    private final com.hbm.realsim.OutputBudget coolingBudget = new com.hbm.realsim.OutputBudget();
+    public static final long COOLING_WATTS = 1_000_000L;
+    @Override public long availableCoolingQuanta(long tick) { return water.getFill() < com.hbm.realsim.IndustrialDemand.COOLING_CHARGE_L ? 0 : coolingBudget.available(tick, COOLING_WATTS / 10); }
+    @Override public void rejectHeatQuanta(long tick, long quanta) { coolingBudget.use(tick, COOLING_WATTS / 10, quanta); }
     private long nominalCoolingWatts = com.hbm.realsim.IndustrialDemand.COOLING_AUXILIARY_W;
 
 	
@@ -50,8 +54,8 @@ public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase imp
 		super(77);
         speed = 50; operatingPowerWatts = com.hbm.realsim.IndustrialDemand.CHEMICAL_W * 2L + com.hbm.realsim.IndustrialDemand.COOLING_AUXILIARY_W;
 
-		water = new FluidTank(Fluids.FRESH_WATER, 64_000).migrateFrom(Fluids.WATER);
-		steam = new FluidTank(Fluids.SPENTSTEAM, 64_000);
+		water = new FluidTank(Fluids.FRESH_WATER, 20).withDefaultCapacity().migrateFrom(Fluids.WATER);
+		steam = new FluidTank(Fluids.SPENTSTEAM, 1).withDefaultCapacity();
 		this.trackMachineFluidTank(water);
 		this.trackMachineFluidTank(steam);
 	}
@@ -287,6 +291,7 @@ public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase imp
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 		water.readFromNBT(nbt, "w");
+        coolingBudget.read(nbt.getCompoundTag("realSimCooling"));
 		steam.readFromNBT(nbt, "s");
 	}
 	
@@ -294,6 +299,7 @@ public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase imp
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
 		water.writeToNBT(nbt, "w");
+        NBTTagCompound coolingTag = new NBTTagCompound(); coolingBudget.write(coolingTag); nbt.setTag("realSimCooling", coolingTag);
 		steam.writeToNBT(nbt, "s");
 	}
 
@@ -369,7 +375,7 @@ public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase imp
 			info.add("Electrical demand scales with throughput; see the machine rating");
 		}
 		if(type == UpgradeType.POWER) {
-			info.add("Work reduction: " + (Math.min(3, level) * 10) + "% (nominal recipes)");
+			info.add("Work reduction: " + (Math.min(3, level) * 10) + "% (standard recipes)");
 			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_DELAY, "+" + (Math.min(3, level) * 10) + "%"));
 		}
 		if(type == UpgradeType.OVERDRIVE) {
@@ -394,7 +400,8 @@ public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase imp
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
         super.appendMachineInfo(lines, live);
         com.hbm.realsim.MachineInfo.parallelCooling(lines, live && worldObj != null && worldObj.isRemote ? machineInfoCoolingWatts : getMachineCoolingWatts());
+        lines.add("Shared dry cooler: 1 MW thermal; one sealed 20 L charge for all eight lanes");
         if(live && water.getFill() < com.hbm.realsim.IndustrialDemand.COOLING_CHARGE_L) lines.add("Stopped: fill the sealed cooling loop");
-        if(live && steam.getFill() > 0) lines.add("Legacy steam stock remains exportable; no new cooling steam is produced");
+        if(live && steam.getFill() > 0) lines.add("Stored steam can drain; cooling produces no new steam");
     }
 }

@@ -32,10 +32,10 @@ public class OutgasserRecipes extends SerializableRecipe {
 		//outgasser/rbmk irradiation recipes.
 
 		/* lithium to tritium */
-		recipes.put(new OreDictStack(LI.block()),		new Pair(null, new FluidStack(Fluids.TRITIUM, 10_000)));
-		recipes.put(new OreDictStack(LI.ingot()),		new Pair(null, new FluidStack(Fluids.TRITIUM, 1_000)));
-		recipes.put(new OreDictStack(LI.dust()),		new Pair(null, new FluidStack(Fluids.TRITIUM, 1_000)));
-		recipes.put(new OreDictStack(LI.dustTiny()),	new Pair(null, new FluidStack(Fluids.TRITIUM, 100)));
+		recipes.put(new OreDictStack(LI.block()), new Pair(new ItemStack(ModItems.spent_lithium_target, 1, 1), new FluidStack(Fluids.TRITIUM, com.hbm.realsim.IrradiationLedger.target(1).tritiumCounts)));
+		recipes.put(new OreDictStack(LI.ingot()), new Pair(new ItemStack(ModItems.spent_lithium_target, 1, 0), new FluidStack(Fluids.TRITIUM, com.hbm.realsim.IrradiationLedger.target(0).tritiumCounts)));
+		recipes.put(new OreDictStack(LI.dust()), new Pair(new ItemStack(ModItems.spent_lithium_target, 1, 0), new FluidStack(Fluids.TRITIUM, com.hbm.realsim.IrradiationLedger.target(0).tritiumCounts)));
+		recipes.put(new OreDictStack(LI.dustTiny()), new Pair(new ItemStack(ModItems.spent_lithium_target, 1, 2), new FluidStack(Fluids.TRITIUM, com.hbm.realsim.IrradiationLedger.target(2).tritiumCounts)));
 
 		/* gold to gold-198 */
 		recipes.put(new OreDictStack(GOLD.ingot()),		new Pair(new ItemStack(ModItems.ingot_au198), null));
@@ -62,7 +62,7 @@ public class OutgasserRecipes extends SerializableRecipe {
 
 		// C4 synthesis is available in the chemical plant; irradiating PVC must not manufacture explosives or colloid.
 
-		recipes.put(new ComparableStack(DictFrame.fromOne(ModItems.oil_tar, EnumTarType.WAX)),	new Pair(null, new FluidStack(Fluids.RADIOSOLVENT, 100)));
+		// Working ligand is prepared from an assayed mineral/water mixture; irradiation does not create carrier liquid.
 
 		//curium to californium
 		recipes.put(new ComparableStack(ModItems.ingot_cm247),
@@ -166,6 +166,13 @@ public class OutgasserRecipes extends SerializableRecipe {
 			fluidOutput = this.readFluidStack(obj.get("fluidOutput").getAsJsonArray());
 		}
 
+        if(fluidOutput != null && fluidOutput.type == Fluids.TRITIUM) {
+            if(!(input instanceof OreDictStack) || input.stacksize != 1) throw new IllegalArgumentException("Tritium target overrides require a canonical one-packet lithium assay");
+            String form=((OreDictStack)input).name;int kind=form.equals(LI.block())?1:form.equals(LI.dustTiny())?2:form.equals(LI.ingot())||form.equals(LI.dust())?0:-1;
+            if(kind<0 || fluidOutput.fill!=com.hbm.realsim.IrradiationLedger.target(kind).tritiumCounts || solidOutput == null
+                    || solidOutput.getItem()!=ModItems.spent_lithium_target || solidOutput.stackSize!=1 || solidOutput.getItemDamage()!=kind)
+                throw new IllegalArgumentException("Tritium override must retain the spent target and match its natural-lithium isotope bill");
+        }
 		if(solidOutput != null || fluidOutput != null) {
 			this.recipes.put(input, new Pair(solidOutput, fluidOutput));
 		}

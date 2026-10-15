@@ -626,7 +626,7 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
     @Override public long getMachineDemandWatts() { return getConsumptionForUpgrades(runtimeSpeed, runtimeOverdrive, runtimePowerSaving) * 10L; }
     @Override public long getMachineCurrentDrawWatts() { return isProgressing ? getMachineDemandWatts() : 0; }
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
-        lines.add("Nominal multipurpose pyrolysis work; electrical demand scales with throughput");
-        lines.add("Physical coal/wood petroleum bills remain in their qualified heat routes");
+        lines.add("Pyrolysis processing; electrical demand rises with throughput");
+        lines.add("Coal and wood carbonization use the coke oven and external heat");
     }
 }

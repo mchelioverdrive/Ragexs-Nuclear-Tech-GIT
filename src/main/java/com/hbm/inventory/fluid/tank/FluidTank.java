@@ -223,6 +223,8 @@ public class FluidTank {
 	 * @return
 	 */
 	public boolean setType(int in, int out, ItemStack[] slots) {
+		// An identifier selects an empty vessel; it is not a command to discard saved stock.
+		if(fluid > 0) return false;
 
 		if(slots[in] != null && slots[in].getItem() instanceof IItemFluidIdentifier) {
 			IItemFluidIdentifier id = (IItemFluidIdentifier) slots[in].getItem();

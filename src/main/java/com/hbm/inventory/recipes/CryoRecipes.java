@@ -23,7 +23,9 @@ public class CryoRecipes extends SerializableRecipe {
 	@Override
 	public void registerDefaults() {
 
-		// Each operation consumes 100 mB; output fills below are fixed batch fractions.
+		// Each operation consumes 100 standard gas L; the native separator caps admission at 6000 standard L/min.
+
+        recipes.put(Fluids.RAW_NATURAL_GAS, new Quartet<>(new FluidStack(Fluids.GAS, 98), new FluidStack(Fluids.HELIUM4, 2), new FluidStack(Fluids.NONE, 0), new FluidStack(Fluids.NONE, 0)));
 
 		//Earth
 		recipes.put(Fluids.AIR, new Quartet<>(
@@ -89,7 +91,7 @@ public class CryoRecipes extends SerializableRecipe {
 		//Venus
 		//hot CO2 sulfur atmosphere
 		recipes.put(Fluids.EVEAIR, new Quartet<>(
-			new FluidStack(Fluids.CARBONDIOXIDE, 96),
+			new FluidStack(Fluids.CARBONDIOXIDE, 95),
 			new FluidStack(Fluids.NITROGEN_GAS, 3),
 			new FluidStack(Fluids.SOURGAS, 1), // sulfur-bearing trace-gas abstraction
 			new FluidStack(Fluids.ARGON, 1) //trace
@@ -99,30 +101,39 @@ public class CryoRecipes extends SerializableRecipe {
 		recipes.put(Fluids.DUNAAIR, new Quartet<>(
 			new FluidStack(Fluids.CARBONDIOXIDE, 95),
 			new FluidStack(Fluids.NITROGEN_GAS, 3),
-			new FluidStack(Fluids.ARGON, 2),
+			new FluidStack(Fluids.ARGON, 1),
 			new FluidStack(Fluids.OXYGEN_GAS, 1) //trace amounts do not remove
 		));
 
-		//brine -> iodine brine + salt water (which is just brine...)
-		recipes.put(Fluids.BRINE, new Quartet<>(
-			new FluidStack(Fluids.WATER, 69),
-			new FluidStack(Fluids.IODINE_BRINE, 10),
-			new FluidStack(Fluids.BRINE, 20), //salt water = brine
-			new FluidStack(Fluids.BROMINE, 1)
-		));
+		// Geological trace salts are recovered by the conserved mineral-brine chemical bill.
+		// GAS is released pure methane; it cannot separate into helium, hydrogen or ethylene.
 
-
-		// Natural-gas fractionation abstraction; helium is a trace recovery stream.
-
-		recipes.put(Fluids.GAS, new Quartet<>(
-			new FluidStack(Fluids.GAS, 85),
-			new FluidStack(Fluids.HYDROGEN_GAS, 10),
-			new FluidStack(Fluids.HELIUM4, 1),
-			new FluidStack(Fluids.UNSATURATEDS, 4)
-		));
 
 
 	} // this is such a sexy machine might use your code for atmospheric distillator
+
+    public static com.hbm.realsim.ProcessRecipe physicalBill(FluidType input, Quartet<FluidStack, FluidStack, FluidStack, FluidStack> recipe) {
+        if(recipe == null) return null;
+        FluidStack[] streams = {recipe.getW(), recipe.getX(), recipe.getY(), recipe.getZ()};
+        java.util.List<String> names = new java.util.ArrayList<>(); java.util.List<Long> masses = new java.util.ArrayList<>();
+        com.hbm.realsim.PhysicalState source = com.hbm.realsim.ProcessRecipe.resolved(input.getName());
+        if(source.basis != com.hbm.realsim.PhysicalState.Basis.STANDARD_GAS_LITER) throw new IllegalArgumentException("Cryogenic separator accepts reference gas feeds; phase conversion belongs in a liquefactor");
+        long total = 0;
+        for(FluidStack stream : streams) if(stream.fill > 0) {
+            com.hbm.realsim.PhysicalState state = com.hbm.realsim.ProcessRecipe.resolved(stream.type.getName());
+            if(state.basis != com.hbm.realsim.PhysicalState.Basis.STANDARD_GAS_LITER) throw new IllegalArgumentException("Gas separator cannot copy counts into a liquid phase");
+            names.add(stream.type.getName()); long mass = Math.multiplyExact(state.massUnits, stream.fill); masses.add(mass); total += mass;
+        }
+        long rounding = source.massUnits * 100 - total;
+        if(masses.isEmpty() || Math.abs(rounding) > com.hbm.realsim.PhysicalState.MASS_UNITS_PER_KG / 1000000000L) throw new IllegalArgumentException("Unbalanced gas separation");
+        int last = masses.size() - 1; masses.set(last, masses.get(last) + rounding);
+        long[] products = new long[masses.size()]; for(int i = 0; i < products.length; i++) products[i] = masses.get(i);
+        return new com.hbm.realsim.ProcessRecipe("separation:" + input.getName(), new String[] {input.getName()}, new int[] {100}, new int[] {0}, null, 0,
+                names.toArray(new String[0]), products, 20, 50000, 0, 20, true);
+    }
+    @Override public void registerPost() {
+        for(Entry<FluidType, Quartet<FluidStack, FluidStack, FluidStack, FluidStack>> entry : recipes.entrySet()) physicalBill(entry.getKey(), entry.getValue());
+    }
 
 	public static Quartet<FluidStack, FluidStack, FluidStack, FluidStack> getOutput(FluidType type) {
 		return recipes.get(type);
@@ -166,7 +177,9 @@ public class CryoRecipes extends SerializableRecipe {
 		FluidStack output4 = this.readFluidStack(obj.get("output4").getAsJsonArray());
 
 
-		recipes.put(input, new Quartet(output1, output2, output3, output4));
+		Quartet<FluidStack, FluidStack, FluidStack, FluidStack> separation = new Quartet<>(output1, output2, output3, output4);
+        physicalBill(input, separation);
+        recipes.put(input, separation);
 	}
 
 	@Override

@@ -97,6 +97,14 @@ public class ModuleBurnTime {
 		
 		if(stack == null)
 			return 0;
+		com.hbm.realsim.SolidFuel fuel = com.hbm.realsim.SolidFuel.resolve(stack);
+		if(fuel != null) {
+			String identity = fuel.identity;
+			if(identity.equals("COKE_ITEM") || identity.equals("LIGNITE_COKE_ITEM") || identity.equals("PETCOKE_ITEM")) return mod[modCoke];
+			if(identity.equals("LIGNITE_ITEM") || identity.equals("LIGNITE_BRIQUETTE_ITEM")) return mod[modLignite];
+			if(identity.equals("COAL_ITEM") || identity.equals("CHARCOAL_ITEM") || identity.equals("COAL_BRIQUETTE_ITEM")) return mod[modCoal];
+			return identity.equals("WOOD_LOG") ? mod[modLog] : mod[modWood];
+		}
 
 		if(stack.getItem() == ModItems.solid_fuel)						return mod[modSolid];
 		if(stack.getItem() == ModItems.solid_fuel_presto) 				return mod[modSolid];

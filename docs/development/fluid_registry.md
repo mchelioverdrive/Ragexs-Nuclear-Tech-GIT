@@ -1,0 +1,249 @@
+# Fluid declaration census
+
+Current native `new FluidType` declarations in [Fluids](../../src/main/java/com/hbm/inventory/fluid/Fluids.java), in source order. Custom fluids are loaded at the existing insertion boundary and are not enumerated here. This table records declaration traits/temperature, not the final trait override map or thermodynamic phase. `PhysicalRegistry` and the specialist state constructors own mass, phase and LHV; final traits and enabled JSON can differ from a constructor. [Fluid reference](fluid_reference.md) explains the actual quantity contracts.
+
+241 native declarations. Do not derive numeric persistent IDs from row number: custom loading participates in registration. Preserve existing order and append only.
+
+| Field | Persistent name | Declared temperature C | Declaration flags |
+| --- | --- | ---: | --- |
+| `NONE` | `NONE` | 20 (default) |  |
+| `WATER` | `WATER` | 20 (default) | LIQUID |
+| `STEAM` | `STEAM` | 100 | GASEOUS |
+| `HOTSTEAM` | `HOTSTEAM` | 300 | GASEOUS |
+| `SUPERHOTSTEAM` | `SUPERHOTSTEAM` | 450 | GASEOUS |
+| `ULTRAHOTSTEAM` | `ULTRAHOTSTEAM` | 600 | GASEOUS |
+| `COOLANT` | `COOLANT` | 20 (default) | LIQUID |
+| `LAVA` | `LAVA` | 1200 | LIQUID, VISCOUS |
+| `DEUTERIUM` | `DEUTERIUM` | 20 (default) | GASEOUS |
+| `TRITIUM` | `TRITIUM` | 20 (default) | GASEOUS |
+| `OIL` | `OIL` | 20 (default) | LIQUID, VISCOUS |
+| `HOTOIL` | `HOTOIL` | 350 | LIQUID, VISCOUS |
+| `HEAVYOIL` | `HEAVYOIL` | 20 (default) | LIQUID, VISCOUS |
+| `BITUMEN` | `BITUMEN` | 150 | LIQUID, VISCOUS |
+| `SMEAR` | `SMEAR` | 20 (default) | LIQUID, VISCOUS |
+| `HEATINGOIL` | `HEATINGOIL` | 20 (default) | LIQUID, VISCOUS |
+| `RECLAIMED` | `RECLAIMED` | 20 (default) | LIQUID, VISCOUS |
+| `PETROIL` | `PETROIL` | 20 (default) | LIQUID |
+| `LUBRICANT` | `LUBRICANT` | 20 (default) | LIQUID |
+| `NAPHTHA` | `NAPHTHA` | 20 (default) | LIQUID, VISCOUS |
+| `DIESEL` | `DIESEL` | 20 (default) | LIQUID |
+| `LIGHTOIL` | `LIGHTOIL` | 20 (default) | LIQUID |
+| `KEROSENE` | `KEROSENE` | 20 (default) | LIQUID |
+| `GAS` | `GAS` | 20 (default) | GASEOUS |
+| `PETROLEUM` | `PETROLEUM` | 20 (default) | GASEOUS |
+| `LPG` | `LPG` | 20 (default) | LIQUID |
+| `BIOGAS` | `BIOGAS` | 20 (default) | GASEOUS |
+| `BIOFUEL` | `BIOFUEL` | 20 (default) | LIQUID |
+| `NITAN` | `NITAN` | 20 (default) | LIQUID |
+| `UF6` | `UF6` | 80 | GASEOUS |
+| `PUF6` | `PUF6` | 80 | GASEOUS |
+| `SAS3` | `SAS3` | 20 (default) | LIQUID |
+| `SCHRABIDIC` | `SCHRABIDIC` | 20 (default) | LIQUID |
+| `AMAT` | `AMAT` | 20 (default) | GASEOUS |
+| `ASCHRAB` | `ASCHRAB` | 20 (default) | GASEOUS |
+| `PEROXIDE` | `PEROXIDE` | 20 (default) | LIQUID |
+| `WATZ` | `WATZ` | 20 (default) | LIQUID, VISCOUS |
+| `CRYOGEL` | `CRYOGEL` | -170 | LIQUID, VISCOUS |
+| `HYDROGEN` | `HYDROGEN` | -253 | LIQUID |
+| `OXYGEN` | `OXYGEN` | -183 | LIQUID |
+| `XENON` | `XENON` | 20 (default) | GASEOUS |
+| `BALEFIRE` | `BALEFIRE` | 1500 | LIQUID, VISCOUS |
+| `MERCURY` | `MERCURY` | 20 (default) | LIQUID |
+| `PAIN` | `PAIN` | 300 | LIQUID, VISCOUS |
+| `WASTEFLUID` | `WASTEFLUID` | 20 (default) | LIQUID, VISCOUS, NOCON |
+| `WASTEGAS` | `WASTEGAS` | 20 (default) | GASEOUS, NOCON |
+| `GASOLINE` | `GASOLINE` | 20 (default) | LIQUID |
+| `COALGAS` | `COALGAS` | 20 (default) | LIQUID |
+| `SPENTSTEAM` | `SPENTSTEAM` | 20 (default) | GASEOUS, NOCON |
+| `FRACKSOL` | `FRACKSOL` | 20 (default) | LIQUID, VISCOUS |
+| `PLASMA_DT` | `PLASMA_DT` | 150_000_000 | PLASMA, NOCON, NOID |
+| `PLASMA_HD` | `PLASMA_HD` | 80_000_000 | PLASMA, NOCON, NOID |
+| `PLASMA_HT` | `PLASMA_HT` | 100_000_000 | PLASMA, NOCON, NOID |
+| `PLASMA_XM` | `PLASMA_XM` | 4250 | PLASMA, NOCON, NOID |
+| `PLASMA_BF` | `PLASMA_BF` | 8500 | PLASMA, NOCON, NOID |
+| `CARBONDIOXIDE` | `CARBONDIOXIDE` | 20 (default) | GASEOUS |
+| `PLASMA_DH3` | `PLASMA_DH3` | 300_000_000 | PLASMA, NOCON, NOID |
+| `HELIUM3` | `HELIUM3` | 20 (default) | GASEOUS |
+| `OSMIRIDIUM_SOLUTION` | `OSMIRIDIUM_SOLUTION` | 20 (default) | LIQUID, VISCOUS |
+| `ETHANOL` | `ETHANOL` | 20 (default) | LIQUID |
+| `HEAVYWATER` | `HEAVYWATER` | 20 (default) | LIQUID |
+| `CRACKOIL` | `CRACKOIL` | 20 (default) | LIQUID, VISCOUS |
+| `COALOIL` | `COALOIL` | 20 (default) | LIQUID, VISCOUS |
+| `HOTCRACKOIL` | `HOTCRACKOIL` | 350 | LIQUID, VISCOUS |
+| `NAPHTHA_CRACK` | `NAPHTHA_CRACK` | 20 (default) | LIQUID, VISCOUS |
+| `LIGHTOIL_CRACK` | `LIGHTOIL_CRACK` | 20 (default) | LIQUID |
+| `DIESEL_CRACK` | `DIESEL_CRACK` | 20 (default) | LIQUID |
+| `AROMATICS` | `AROMATICS` | 20 (default) | LIQUID, VISCOUS |
+| `UNSATURATEDS` | `UNSATURATEDS` | 20 (default) | GASEOUS |
+| `SALIENT` | `SALIENT` | 20 (default) | LIQUID, VISCOUS |
+| `XPJUICE` | `XPJUICE` | 20 (default) | LIQUID, VISCOUS |
+| `ENDERJUICE` | `ENDERJUICE` | 20 (default) | LIQUID |
+| `PETROIL_LEADED` | `PETROIL_LEADED` | 20 (default) | LIQUID |
+| `GASOLINE_LEADED` | `GASOLINE_LEADED` | 20 (default) | LIQUID |
+| `COALGAS_LEADED` | `COALGAS_LEADED` | 20 (default) | LIQUID |
+| `SULFURIC_ACID` | `SULFURIC_ACID` | 20 (default) | LIQUID |
+| `COOLANT_HOT` | `COOLANT_HOT` | 325 | LIQUID |
+| `MUG` | `MUG` | 20 (default) | LIQUID |
+| `MUG_HOT` | `MUG_HOT` | 500 | LIQUID |
+| `WOODOIL` | `WOODOIL` | 20 (default) | LIQUID, VISCOUS |
+| `COALCREOSOTE` | `COALCREOSOTE` | 20 (default) | LIQUID, VISCOUS |
+| `SEEDSLURRY` | `SEEDSLURRY` | 20 (default) | LIQUID, VISCOUS |
+| `NITROGEN` | `NITROGEN` | -196 | LIQUID |
+| `BLOOD` | `BLOOD` | 20 (default) | LIQUID, VISCOUS |
+| `NITRIC_ACID` | `NITRIC_ACID` | 20 (default) | LIQUID |
+| `AMMONIA` | `AMMONIA` | 20 (default) | GASEOUS |
+| `HYDRAZINE` | `HYDRAZINE` | 20 (default) | LIQUID |
+| `BLOODGAS` | `BLOODGAS` | 20 (default) | LIQUID |
+| `AIR` | `AIR` | 20 (default) | GASEOUS |
+| `BLOOD_HOT` | `BLOOD_HOT` | 666 | LIQUID, VISCOUS |
+| `SOLVENT` | `SOLVENT` | 20 (default) | LIQUID |
+| `HCL` | `HCL` | 20 (default) | LIQUID |
+| `MINSOL` | `MINSOL` | 20 (default) | LIQUID |
+| `SYNGAS` | `SYNGAS` | 20 (default) | GASEOUS |
+| `OXYHYDROGEN` | `OXYHYDROGEN` | 20 (default) | GASEOUS |
+| `RADIOSOLVENT` | `RADIOSOLVENT` | 20 (default) | LIQUID |
+| `CHLORINE` | `CHLORINE` | 20 (default) | GASEOUS |
+| `HEAVYOIL_VACUUM` | `HEAVYOIL_VACUUM` | 20 (default) | LIQUID, VISCOUS |
+| `REFORMATE` | `REFORMATE` | 20 (default) | LIQUID, VISCOUS |
+| `LIGHTOIL_VACUUM` | `LIGHTOIL_VACUUM` | 20 (default) | LIQUID |
+| `SOURGAS` | `SOURGAS` | 20 (default) | GASEOUS |
+| `XYLENE` | `XYLENE` | 20 (default) | LIQUID, VISCOUS |
+| `NEON` | `NEON` | 20 (default) | GASEOUS |
+| `ARGON` | `ARGON` | 20 (default) | GASEOUS |
+| `KRYPTON` | `KRYPTON` | 20 (default) | GASEOUS |
+| `COFFEE` | `COFFEE` | 20 (default) | LIQUID |
+| `TEA` | `TEA` | 20 (default) | LIQUID |
+| `HONEY` | `HONEY` | 20 (default) | LIQUID |
+| `HEATINGOIL_VACUUM` | `HEATINGOIL_VACUUM` | 20 (default) | LIQUID, VISCOUS |
+| `DIESEL_REFORM` | `DIESEL_REFORM` | 20 (default) | LIQUID |
+| `DIESEL_CRACK_REFORM` | `DIESEL_CRACK_REFORM` | 20 (default) | LIQUID |
+| `KEROSENE_REFORM` | `KEROSENE_REFORM` | 20 (default) | LIQUID |
+| `REFORMGAS` | `REFORMGAS` | 20 (default) | GASEOUS |
+| `MILK` | `MILK` | 20 (default) | LIQUID |
+| `SMILK` | `SMILK` | 20 (default) | LIQUID |
+| `OLIVEOIL` | `OLIVEOIL` | 20 (default) | LIQUID |
+| `COLLOID` | `COLLOID` | 20 (default) | LIQUID, VISCOUS |
+| `EVEAIR` | `EVEAIR` | 20 (default) | GASEOUS |
+| `CHLOROMETHANE` | `CHLOROMETHANE` | 20 (default) | GASEOUS |
+| `KMnO4` | `KMnO4` | 20 (default) | LIQUID |
+| `METHANOL` | `METHANOL` | 20 (default) | LIQUID |
+| `BROMINE` | `BROMINE` | 20 (default) | LIQUID, VISCOUS |
+| `METHYLENE` | `METHYLENE` | 20 (default) | GASEOUS |
+| `POLYTHYLENE` | `POLYTHYLENE` | 20 (default) | LIQUID |
+| `FLUORINE` | `FLUORINE` | 20 (default) | GASEOUS |
+| `TEKTOAIR` | `TEKTOAIR` | 20 (default) | GASEOUS |
+| `PHOSGENE` | `PHOSGENE` | 20 (default) | GASEOUS |
+| `MUSTARDGAS` | `MUSTARDGAS` | 20 (default) | LIQUID |
+| `IONGEL` | `IONGEL` | 20 (default) | LIQUID, VISCOUS |
+| `ELBOWGREASE` | `ELBOWGREASE` | 20 (default) | LIQUID |
+| `NMASSTETRANOL` | `NMASSTETRANOL` | 20 (default) | LIQUID |
+| `NMASS` | `NMASS` | 20 (default) | LIQUID |
+| `SCUTTERBLOOD` | `SCUTTERBLOOD` | 20 (default) | LIQUID, VISCOUS |
+| `HTCO4` | `HTCO4` | 20 (default) | LIQUID |
+| `OIL_COKER` | `OIL_COKER` | 20 (default) | LIQUID, VISCOUS |
+| `NAPHTHA_COKER` | `NAPHTHA_COKER` | 20 (default) | LIQUID, VISCOUS |
+| `GAS_COKER` | `GAS_COKER` | 20 (default) | GASEOUS |
+| `EGG` | `EGG` | 20 (default) | LIQUID |
+| `CHOLESTEROL` | `CHOLESTEROL` | 20 (default) | LIQUID |
+| `ESTRADIOL` | `ESTRADIOL` | 20 (default) | LIQUID |
+| `FISHOIL` | `FISHOIL` | 20 (default) | LIQUID |
+| `SUNFLOWEROIL` | `SUNFLOWEROIL` | 20 (default) | LIQUID |
+| `NITROGLYCERIN` | `NITROGLYCERIN` | 20 (default) | LIQUID |
+| `REDMUD` | `REDMUD` | 20 (default) | LIQUID, VISCOUS |
+| `CHLOROCALCITE_SOLUTION` | `CHLOROCALCITE_SOLUTION` | 20 (default) | LIQUID, NOCON |
+| `CHLOROCALCITE_MIX` | `CHLOROCALCITE_MIX` | 20 (default) | LIQUID, NOCON |
+| `CHLOROCALCITE_CLEANED` | `CHLOROCALCITE_CLEANED` | 20 (default) | LIQUID, NOCON |
+| `POTASSIUM_CHLORIDE` | `POTASSIUM_CHLORIDE` | 20 (default) | LIQUID, NOCON |
+| `CALCIUM_CHLORIDE` | `CALCIUM_CHLORIDE` | 20 (default) | LIQUID, VISCOUS, NOCON |
+| `SMOKE` | `SMOKE` | 20 (default) | GASEOUS, NOCON, NOID |
+| `SMOKE_POISON` | `SMOKE_POISON` | 20 (default) | GASEOUS, NOCON, NOID |
+| `JOOLGAS` | `JOOLGAS` | 20 (default) | GASEOUS |
+| `SARNUSGAS` | `SARNUSGAS` | 20 (default) | GASEOUS |
+| `UGAS` | `UGAS` | 20 (default) | GASEOUS |
+| `NGAS` | `NGAS` | 20 (default) | GASEOUS |
+| `EMILK` | `EMILK` | 20 (default) | LIQUID |
+| `CMILK` | `CMILK` | 20 (default) | LIQUID |
+| `CREAM` | `CREAM` | 20 (default) | LIQUID |
+| `DICYANOACETYLENE` | `DICYANOACETYLENE` | 20 (default) | GASEOUS |
+| `HELIUM4` | `HELIUM4` | 20 (default) | GASEOUS |
+| `HEAVYWATER_HOT` | `HEAVYWATER_HOT` | 325 | LIQUID |
+| `SODIUM` | `SODIUM` | 400 | LIQUID, VISCOUS |
+| `SODIUM_HYDROXIDE` | `SODIUM_HYDROXIDE` | 400 | LIQUID, VISCOUS |
+| `SODIUM_CARBONATE` | `SODIUM_CARBONATE` | 400 | LIQUID, VISCOUS |
+| `SODIUM_HOT` | `SODIUM_HOT` | 550 | LIQUID, VISCOUS |
+| `THORIUM_SALT` | `THORIUM_SALT` | 800 | LIQUID, VISCOUS |
+| `THORIUM_SALT_HOT` | `THORIUM_SALT_HOT` | 1600 | LIQUID, VISCOUS |
+| `THORIUM_SALT_DEPLETED` | `THORIUM_SALT_DEPLETED` | 800 | LIQUID, VISCOUS |
+| `FULLERENE` | `FULLERENE` | 20 (default) | LIQUID |
+| `OIL_DS` | `OIL_DS` | 20 (default) | LIQUID, VISCOUS |
+| `HOTOIL_DS` | `HOTOIL_DS` | 350 | LIQUID, VISCOUS |
+| `CRACKOIL_DS` | `CRACKOIL_DS` | 20 (default) | LIQUID, VISCOUS |
+| `HOTCRACKOIL_DS` | `HOTCRACKOIL_DS` | 350 | LIQUID, VISCOUS |
+| `NAPHTHA_DS` | `NAPHTHA_DS` | 20 (default) | LIQUID, VISCOUS |
+| `LIGHTOIL_DS` | `LIGHTOIL_DS` | 20 (default) | LIQUID |
+| `STELLAR_FLUX` | `STELLAR_FLUX` | 20 (default) | GASEOUS |
+| `DUNAAIR` | `DUNAAIR` | 20 (default) | GASEOUS |
+| `VITRIOL` | `VITRIOL` | 20 (default) | LIQUID, VISCOUS |
+| `SLOP` | `SLOP` | 20 (default) | LIQUID, VISCOUS |
+| `SUPERHEATED_HYDROGEN` | `SUPERHEATED_HYDROGEN` | 2200 | GASEOUS, NOCON, NOID |
+| `LEAD` | `LEAD` | 350 | LIQUID, VISCOUS |
+| `LEAD_HOT` | `LEAD_HOT` | 650 | LIQUID, VISCOUS |
+| `GAS_WATZ` | `GAS_WATZ` | 2500 | GASEOUS, NOCON, NOID |
+| `URANIUM_BROMIDE` | `URANIUM_BROMIDE` | 200 | LIQUID, VISCOUS |
+| `PLUTONIUM_BROMIDE` | `PLUTONIUM_BROMIDE` | 200 | LIQUID, VISCOUS |
+| `SCHRABIDIUM_BROMIDE` | `SCHRABIDIUM_BROMIDE` | 200 | LIQUID, VISCOUS |
+| `THORIUM_BROMIDE` | `THORIUM_BROMIDE` | 200 | LIQUID, VISCOUS |
+| `GASEOUS_URANIUM_BROMIDE` | `GASEOUS_URANIUM_BROMIDE` | 2500 | GASEOUS, NOCON, NOID |
+| `GASEOUS_PLUTONIUM_BROMIDE` | `GASEOUS_PLUTONIUM_BROMIDE` | 2600 | GASEOUS, NOCON, NOID |
+| `GASEOUS_SCHRABIDIUM_BROMIDE` | `GASEOUS_SCHRABIDIUM_BROMIDE` | 3000 | GASEOUS, NOCON, NOID |
+| `GASEOUS_THORIUM_BROMIDE` | `GASEOUS_THORIUM_BROMIDE` | 2300 | GASEOUS, NOCON, NOID |
+| `MOLTEN_SALT` | `MOLTEN_SALT` | 800 | LIQUID, VISCOUS |
+| `ACIDWASTE` | `ACIDWASTE` | 20 (default) | LIQUID, VISCOUS |
+| `POTASSIUM` | `POTASSIUM` | 200 | LIQUID |
+| `POTASSIUM_HYDROXIDE` | `POTASSIUM_HYDROXIDE` | 200 | LIQUID |
+| `POLLUCITE_SOLUTION` | `POLLUCITE_SOLUTION` | 20 (default) | LIQUID, NOCON |
+| `POLLUCITE_SOLUTION_HEAVY` | `POLLUCITE_SOLUTION_HEAVY` | 20 (default) | LIQUID, NOCON |
+| `POLLUCITE_SOLUTION_LIGHT` | `POLLUCITE_SOLUTION_LIGHT` | 20 (default) | LIQUID, NOCON |
+| `CACL2` | `CACL2` | 20 (default) | LIQUID |
+| `MOLTEN_STRONTIUM_CHLORIDE` | `MOLTEN_STRONTIUM_CHLORIDE` | 700 | LIQUID |
+| `HYDROGEN_SULFIDE` | `HYDROGEN_SULFIDE` | 20 (default) | GASEOUS |
+| `RAFFINATE` | `RAFFINATE` | 20 (default) | LIQUID, VISCOUS |
+| `RHODIUM_SOLUTION` | `RHODIUM_SOLUTION` | 20 (default) | LIQUID, VISCOUS |
+| `IRIDIUM_SOLUTION` | `IRIDIUM_SOLUTION` | 20 (default) | LIQUID, VISCOUS |
+| `HYDROFLUORIC_ACID` | `HYDROFLUORIC_ACID` | 20 (default) | LIQUID, VISCOUS |
+| `BRINE` | `BRINE` | 20 (default) |  |
+| `BITTERN` | `BITTERN` | 20 (default) | LIQUID, VISCOUS |
+| `IODINE_BRINE` | `IODINE_BRINE` | 20 (default) | LIQUID, VISCOUS |
+| `NOBLE_GAS_MIX` | `NOBLE_GAS_MIX` | 20 (default) | GASEOUS, NOCON |
+| `GADOLINIUM` | `GADOLINIUM` | 1400 | LIQUID, VISCOUS |
+| `CARBONDIOXIDE_NITROGEN_HELIUM` | `CARBONDIOXIDE_NITROGEN_HELIUM` | 20 (default) | GASEOUS |
+| `NITROGEN_HELIUM` | `NITROGEN_HELIUM` | 20 (default) | GASEOUS, NOCON |
+| `EXCIMER_GASMIX` | `EXCIMER_GASMIX` | 20 (default) | GASEOUS |
+| `KRYPTON_FLUORINE` | `KRYPTON_FLUORINE` | 20 (default) | GASEOUS, NOCON |
+| `XENON_CHLORINE` | `XENON_CHLORINE` | 20 (default) | GASEOUS, NOCON |
+| `HELIUM4_HOT` | `HELIUM4_HOT` | 750 | GASEOUS |
+| `ROCKET_FUEL` | `ROCKET_FUEL` | 20 (default) | LIQUID |
+| `FRESH_WATER` | `FRESH_WATER` | 20 (default) | LIQUID |
+| `LIGHT_WATER` | `LIGHT_WATER` | 20 (default) | LIQUID |
+| `BORATED_WATER` | `BORATED_WATER` | 20 (default) | LIQUID |
+| `LIGHT_WATER_HOT` | `LIGHT_WATER_HOT` | 325 | LIQUID |
+| `BORATED_WATER_HOT` | `BORATED_WATER_HOT` | 325 | LIQUID |
+| `HYDROGEN_GAS` | `HYDROGEN_GAS` | 20 (default) | GASEOUS |
+| `OXYGEN_GAS` | `OXYGEN_GAS` | 20 (default) | GASEOUS |
+| `NITROGEN_GAS` | `NITROGEN_GAS` | 20 (default) | GASEOUS |
+| `AIR_HEATED` | `AIR_HEATED` | 600 | GASEOUS |
+| `AIRBLAST` | `AIRBLAST` | 800 | GASEOUS |
+| `BLAST_FURNACE_GAS` | `BLAST_FURNACE_GAS` | 20 (default) | GASEOUS |
+| `DEPLETED_WATER` | `DEPLETED_WATER` | 20 (default) | LIQUID |
+| `BUTADIENE` | `BUTADIENE` | 20 (default) | GASEOUS |
+| `PHENOL` | `PHENOL` | 50 | LIQUID |
+| `ACETONE` | `ACETONE` | 20 (default) | LIQUID |
+| `FORMALDEHYDE` | `FORMALDEHYDE` | 20 (default) | GASEOUS |
+| `BENZENE` | `BENZENE` | 20 (default) | LIQUID |
+| `BAUXITE_RESIDUE` | `BAUXITE_RESIDUE` | 20 (default) | LIQUID, VISCOUS |
+| `MOLTEN_CALCIUM_CHLORIDE` | `MOLTEN_CALCIUM_CHLORIDE` | 900 | LIQUID |
+| `MINERAL_BRINE` | `MINERAL_BRINE` | 20 (default) | LIQUID |
+| `MOLTEN_LITHIUM_CHLORIDE` | `MOLTEN_LITHIUM_CHLORIDE` | 700 | LIQUID |
+| `RAW_NATURAL_GAS` | `RAW_NATURAL_GAS` | 20 (default) | GASEOUS |
+| `TOLUENE` | `TOLUENE` | 20 (default) | LIQUID |
+| `GLYCEROL` | `GLYCEROL` | 20 (default) | LIQUID, VISCOUS |

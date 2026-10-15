@@ -51,8 +51,8 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 			arms[i] = new AssemblerArm(i % 3 == 1 ? 1 : 0); //the second of every group of three becomes a welder
 		}
 
-		water = new FluidTank(Fluids.FRESH_WATER, 64_000).migrateFrom(Fluids.WATER);
-		steam = new FluidTank(Fluids.SPENTSTEAM, 64_000);
+		water = new FluidTank(Fluids.FRESH_WATER, com.hbm.realsim.IndustrialDemand.COOLING_CHARGE_L).migrateFrom(Fluids.WATER).withDefaultCapacity();
+		steam = new FluidTank(Fluids.SPENTSTEAM, 1).withDefaultCapacity();
 		this.trackMachineFluidTank(water);
 		this.trackMachineFluidTank(steam);
 	}
@@ -467,7 +467,7 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 			info.add("Electrical demand scales with throughput; see the machine rating");
 		}
 		if(type == UpgradeType.POWER) {
-			info.add("Work reduction: " + (Math.min(3, level) * 10) + "% (nominal recipes)");
+			info.add("Work reduction: " + (Math.min(3, level) * 10) + "% (standard recipes)");
 			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_DELAY, "+" + (Math.min(3, level) * 10) + "%"));
 		}
 		if(type == UpgradeType.OVERDRIVE) {
@@ -492,6 +492,6 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
         super.appendMachineInfo(lines, live);
         com.hbm.realsim.MachineInfo.parallelCooling(lines, live && worldObj != null && worldObj.isRemote ? machineInfoCoolingWatts : getMachineCoolingWatts());
         if(live && water.getFill() < com.hbm.realsim.IndustrialDemand.COOLING_CHARGE_L) lines.add("Stopped: fill the sealed cooling loop");
-        if(live && steam.getFill() > 0) lines.add("Legacy steam stock remains exportable; no new cooling steam is produced");
+        if(live && steam.getFill() > 0) lines.add("Stored steam can drain; cooling produces no new steam");
     }
 }

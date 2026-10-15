@@ -79,8 +79,9 @@ public class MachineTurbofan extends BlockDummyable implements ITooltipProvider 
 
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
-		list.add(EnumChatFormatting.YELLOW + "Fuel efficiency:");
-		list.add(EnumChatFormatting.YELLOW + "-" + FuelGrade.AERO.getGrade() + ": " + EnumChatFormatting.RED + "100%");
+		list.add(EnumChatFormatting.YELLOW + "Jet-derived turboshaft generator: 1 MW ceiling");
+		list.add("Aviation fuel; 25% LHV electrical conversion");
+        list.add("Afterburning wastes more fuel; it does not raise the electrical ceiling");
 		list.add(EnumChatFormatting.DARK_RED + I18nUtil.resolveKey("tooltip.furnace.monoxide"));
 		list.add(EnumChatFormatting.AQUA + I18nUtil.resolveKey("tooltip.machine.waterlogging"));
 	}

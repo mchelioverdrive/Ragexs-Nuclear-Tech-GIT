@@ -33,7 +33,6 @@ import com.hbm.util.FurnaceGasEmission;
 import com.hbm.util.I18nUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
-import api.hbm.energymk2.IEnergyProviderMK2;
 import api.hbm.fluid.IFluidStandardTransceiver;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
@@ -68,7 +67,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 
 
 	public long energyQuanta;
-	public static final long maxPower = 40_000_000L;
+	public static final long maxPower = 200_000L;
 	public FluidTank tank;
 	public FluidTank blood;
 	
@@ -86,7 +85,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 
 	public TileEntityMachineTurbofan() {
 		super(5, 150);
-		tank = new FluidTank(Fluids.KEROSENE, 24000);
+		tank = new FluidTank(Fluids.KEROSENE, 80).withDefaultCapacity();
 		blood = new FluidTank(Fluids.BLOOD, 24000);
 		this.trackMachineFluidTank(tank);
 		this.trackMachineFluidTank(blood);
@@ -223,7 +222,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 	}
 
 	public long getPowerScaled(long i) {
-		return (energyQuanta * i) / maxPower;
+		return (Math.min(energyQuanta, maxPower) * i) / Math.max(1, maxPower);
 	}
 	
 	protected DirPos[] getConPos() {
@@ -504,7 +503,7 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 		this.afterburner = nbt.getByte("after");
 		this.wasOn = nbt.getBoolean("wasOn");
 		this.showBlood = nbt.getBoolean("showBlood");
-		tank.readFromNBT(nbt, "tank");
+		com.hbm.realsim.GeneratorContract.readTankStatus(tank, nbt, "tank");
 		blood.readFromNBT(nbt, "blood");
 	}
 	

@@ -445,9 +445,9 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
-        physicalBatch.write(nbt);
 		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
-		super.writeToNBT(nbt);
+		physicalBatch.write(nbt);
+        super.writeToNBT(nbt);
 		
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("progress", progress);

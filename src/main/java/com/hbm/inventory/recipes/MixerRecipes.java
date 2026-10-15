@@ -33,48 +33,39 @@ public class MixerRecipes extends SerializableRecipe {
 
 	@Override
 	public void registerDefaults() {
-		register(Fluids.COOLANT, new MixerRecipe(2_000, 50).setStack1(new FluidStack(Fluids.FRESH_WATER, 1_800)).setSolid(new OreDictStack(KNO.dust())));
-		register(Fluids.CRYOGEL, new MixerRecipe(2_000, 50).setStack1(new FluidStack(Fluids.COOLANT, 1_800)).setSolid(new ComparableStack(ModItems.powder_ice)));
-		register(Fluids.NITAN, new MixerRecipe(1_000, 50).setStack1(new FluidStack(Fluids.KEROSENE, 600)).setStack2(new FluidStack(Fluids.MERCURY, 200)).setSolid(new ComparableStack(ModItems.powder_nitan_mix)));
-		register(Fluids.FRACKSOL,
-				new MixerRecipe(1_000, 20).setStack1(new FluidStack(Fluids.SULFURIC_ACID, 900)).setStack2(new FluidStack(Fluids.PETROLEUM, 100)),
-				new MixerRecipe(1_000, 20).setStack1(new FluidStack(Fluids.FRESH_WATER, 1000)).setStack2(new FluidStack(Fluids.PETROLEUM, 100)).setSolid(new OreDictStack(S.dust())));
+		register(Fluids.COOLANT, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemicalFuelProcesses.blend("COOLANT", "FRESH_WATER", 1, "ETHANOL", 9)));
+		register(Fluids.CRYOGEL, new MixerRecipe(1, 1).physical(com.hbm.realsim.AncillaryProcesses.cryogel()));
+		register(Fluids.NITAN, new MixerRecipe(1, 1).physical(com.hbm.realsim.AncillaryProcesses.nitan()));
+		register(Fluids.FRACKSOL, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemistryProcesses.frackingSlurry()));
 		//register(Fluids.ENDERJUICE, new MixerRecipe(100, 100).setStack1(new FluidStack(Fluids.XPJUICE, 500)).setSolid(new OreDictStack(DIAMOND.dust())));
-		register(Fluids.SALIENT, new MixerRecipe(1000, 20).setStack1(new FluidStack(Fluids.SEEDSLURRY, 500)).setStack2(new FluidStack(Fluids.BLOOD, 500)));
-		register(Fluids.COLLOID, new MixerRecipe(500, 20).setStack1(new FluidStack(Fluids.FRESH_WATER, 500)).setSolid(new ComparableStack(ModItems.dust)));
-		register(Fluids.PHOSGENE, new MixerRecipe(1000, 20).setStack1(new FluidStack(Fluids.UNSATURATEDS, 500)).setStack2(new FluidStack(Fluids.CHLORINE, 500)));
-		register(Fluids.MUSTARDGAS, new MixerRecipe(1000, 20).setStack1(new FluidStack(Fluids.REFORMGAS, 750)).setStack2(new FluidStack(Fluids.CHLORINE, 250)).setSolid(new OreDictStack(S.dust())));
-		register(Fluids.IONGEL, new MixerRecipe(1_000, 50).setStack1(new FluidStack(Fluids.FRESH_WATER, 1000)).setStack2(new FluidStack(Fluids.HYDROGEN_GAS, 200)).setSolid(new ComparableStack(ModItems.pellet_charged)));
-		register(Fluids.EGG, new MixerRecipe(1_000, 50).setStack1(new FluidStack(Fluids.RADIOSOLVENT, 500)).setSolid(new ComparableStack(Items.egg)));
-		register(Fluids.FULLERENE, new MixerRecipe(250, 50).setStack1(new FluidStack(Fluids.RADIOSOLVENT, 500)).setSolid(new ComparableStack(DictFrame.fromOne(ModItems.powder_ash, EnumAshType.SOOT))));
+		register(Fluids.SALIENT, new MixerRecipe(1, 1).physical(com.hbm.realsim.UtilityMixtures.mixers().get("SALIENT")));
 
-		register(Fluids.SOLVENT,
-				new MixerRecipe(1000, 50).setStack1(new FluidStack(Fluids.NAPHTHA, 500)).setStack2(new FluidStack(Fluids.AROMATICS, 500)),
-				new MixerRecipe(1000, 50).setStack1(new FluidStack(Fluids.NAPHTHA_CRACK, 500)).setStack2(new FluidStack(Fluids.AROMATICS, 500)),
-				new MixerRecipe(1000, 50).setStack1(new FluidStack(Fluids.NAPHTHA_DS, 500)).setStack2(new FluidStack(Fluids.AROMATICS, 500)),
-				new MixerRecipe(1000, 50).setStack1(new FluidStack(Fluids.NAPHTHA_COKER, 500)).setStack2(new FluidStack(Fluids.AROMATICS, 500)));
-		register(Fluids.SULFURIC_ACID, new MixerRecipe(500, 50).setStack1(new FluidStack(Fluids.PEROXIDE, 800)).setSolid(new OreDictStack(S.dust())));
-		register(Fluids.NITRIC_ACID,
-				new MixerRecipe(1_000, 50).setStack1(new FluidStack(Fluids.AMMONIA, 1000)).setStack2(new FluidStack(Fluids.FRESH_WATER, 500)),
-				new MixerRecipe(1_000, 50).setStack1(new FluidStack(Fluids.SULFURIC_ACID, 500)).setSolid(new OreDictStack(KNO.dust())));
-		register(Fluids.RADIOSOLVENT, new MixerRecipe(1000, 50).setStack1(new FluidStack(Fluids.REFORMGAS, 750)).setStack2(new FluidStack(Fluids.CHLORINE, 250)));
-		register(Fluids.SCHRABIDIC, new MixerRecipe(16_000, 100).setStack1(new FluidStack(Fluids.SAS3, 8_000)).setStack2(new FluidStack(Fluids.PEROXIDE, 6_000)).setSolid(new ComparableStack(ModItems.pellet_charged)));
+        register(Fluids.COLLOID, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemistryProcesses.colloid()));
+		// PHOSGENE synthesis belongs in the Chemical Reactor.
+
+		register(Fluids.MUSTARDGAS, new MixerRecipe(1, 1).physical(com.hbm.realsim.OrganicProcesses.blisterCompound()));
+		register(Fluids.IONGEL, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemistryProcesses.ionGel()));
+		register(Fluids.EGG, new MixerRecipe(1, 1).physical(com.hbm.realsim.UtilityMixtures.mixers().get("EGG")));
+		register(Fluids.FULLERENE, new MixerRecipe(1, 1).physical(com.hbm.realsim.AncillaryProcesses.fullereneSuspension()));
+		register(Fluids.SOLVENT, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemicalFuelProcesses.finishing("AROMATICS", "SOLVENT")));
+		// SULFURIC_ACID synthesis belongs in the Chemical Reactor.
+		// NITRIC_ACID synthesis belongs in the Chemical Reactor.
+
+		register(Fluids.RADIOSOLVENT, new MixerRecipe(1, 1).physical(com.hbm.realsim.AncillaryProcesses.radioLigand()));
+		register(Fluids.SCHRABIDIC, new MixerRecipe(1, 1).physical(com.hbm.realsim.UtilityMixtures.mixers().get("SCHRABIDIC")));
 
 		register(Fluids.PETROIL, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemicalFuelProcesses.blend("PETROIL", "RECLAIMED", 4, "LUBRICANT", 1)));
 		// LUBRICANT conversion belongs in a heated reactor/fractionator.
 		register(Fluids.BIOFUEL,
 				new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemicalFuelProcesses.blend("BIOFUEL", "SUNFLOWEROIL", 4, "ETHANOL", 1)),
 				new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemicalFuelProcesses.blend("BIOFUEL", "FISHOIL", 4, "ETHANOL", 1)));
-		register(Fluids.NITROGLYCERIN,
-				new MixerRecipe(1000, 20).setStack1(new FluidStack(Fluids.PETROLEUM, 1_000)).setStack2(new FluidStack(Fluids.NITRIC_ACID, 1_000)),
-				new MixerRecipe(1000, 20).setStack1(new FluidStack(Fluids.FISHOIL, 500)).setStack2(new FluidStack(Fluids.NITRIC_ACID, 500)));
+		// Nitration requires the reactor bill and its carrier-water output.
 
-		register(Fluids.THORIUM_SALT, new MixerRecipe(1_000, 30).setStack1(new FluidStack(Fluids.CHLORINE, 1000)).setSolid(new OreDictStack(TH232.dust())));
+		// Fluoride fuel salt is prepared with the paid heated reactor recipe, not chlorine/metal mixing.
 
 		// SYNGAS conversion belongs in a heated reactor/fractionator.
 		// Oxyhydrogen is a prepared gas blend, not a source of oxygen; retain the 2:1 gas-volume blend.
-		register(Fluids.OXYHYDROGEN,
-				new MixerRecipe(999, 50).setStack1(new FluidStack(Fluids.HYDROGEN_GAS, 666)).setStack2(new FluidStack(Fluids.OXYGEN_GAS, 333)));
+		register(Fluids.OXYHYDROGEN, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemistryProcesses.oxyhydrogen()));
 
 		register(Fluids.PETROIL_LEADED, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemicalFuelProcesses.leaded("PETROIL")));
 		register(Fluids.GASOLINE_LEADED, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemicalFuelProcesses.leaded("GASOLINE")));
@@ -84,26 +75,29 @@ public class MixerRecipes extends SerializableRecipe {
 		register(Fluids.DIESEL_CRACK_REFORM, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemicalFuelProcesses.blend("DIESEL_CRACK_REFORM", "DIESEL_CRACK", 9, "REFORMATE", 1)));
 		register(Fluids.KEROSENE_REFORM, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemicalFuelProcesses.blend("KEROSENE_REFORM", "KEROSENE", 9, "REFORMATE", 1)));
 
-		register(Fluids.SMILK, new MixerRecipe(500, 50).setStack1(new FluidStack(Fluids.MILK, 500)).setSolid(new ComparableStack(ModItems.strawberry, 4)));
-		register(Fluids.COFFEE, new MixerRecipe(100, 50).setStack1(new FluidStack(Fluids.FRESH_WATER, 500)).setSolid(new ComparableStack(ModItems.powder_coffee, 4)));
-		register(Fluids.TEA, new MixerRecipe(200, 50).setStack1(new FluidStack(Fluids.FRESH_WATER, 500)).setSolid(new ComparableStack(ModItems.tea_leaf, 2)));
+		register(Fluids.SMILK, new MixerRecipe(1, 1).physical(com.hbm.realsim.UtilityMixtures.mixers().get("SMILK")));
 
-		register(Fluids.ELBOWGREASE, new MixerRecipe(1000, 50).setStack1(new FluidStack(Fluids.REFORMGAS, 500)).setStack2(new FluidStack(Fluids.SYNGAS, 500)));
+        register(Fluids.COFFEE, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemistryProcesses.coffee()));
 
-		register(Fluids.HTCO4, new MixerRecipe(250, 50).setStack1(new FluidStack(Fluids.NITRIC_ACID, 500)).setSolid(new ComparableStack(ModItems.nugget_technetium)));
+        register(Fluids.TEA, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemistryProcesses.tea()));
 
-		register(Fluids.MINSOL, new MixerRecipe(250, 50).setStack1(new FluidStack(Fluids.NITRIC_ACID, 500)).setSolid(new ComparableStack(ModBlocks.ore_mineral, 1, OreDictionary.WILDCARD_VALUE)));
-		register(Fluids.REDMUD, new MixerRecipe(50, 100).setStack1(new FluidStack(Fluids.HCL, 1400)).setSolid(new ComparableStack(ModBlocks.duna_sands, 4)));
+		register(Fluids.ELBOWGREASE, new MixerRecipe(1, 1).physical(com.hbm.realsim.UtilityMixtures.mixers().get("ELBOWGREASE")));
 
-		register(Fluids.DICYANOACETYLENE, new MixerRecipe(750, 50).setStack1(new FluidStack(Fluids.AMMONIA, 300)).setStack2(new FluidStack(Fluids.UNSATURATEDS, 500))); //too powerful, needs change
+		// HTCO4 synthesis requires the paid reactor bill and recovered coproducts.
 
-		register(Fluids.CHLOROCALCITE_SOLUTION, new MixerRecipe(500, 50).setStack1(new FluidStack(Fluids.FRESH_WATER, 250)).setStack2(new FluidStack(Fluids.NITRIC_ACID, 250)).setSolid(new OreDictStack(CHLOROCALCITE.dust())));
-		register(Fluids.CHLOROCALCITE_MIX, new MixerRecipe(1000, 50).setStack1(new FluidStack(Fluids.CHLOROCALCITE_SOLUTION, 500)).setStack2(new FluidStack(Fluids.SULFURIC_ACID, 500)).setSolid(new ComparableStack(ModItems.powder_flux)));
+		register(Fluids.MINSOL, new MixerRecipe(1, 1).physical(com.hbm.realsim.UtilityMixtures.mixers().get("MINSOL")));
+		register(Fluids.REDMUD, new MixerRecipe(1, 1).physical(com.hbm.realsim.UtilityMixtures.mixers().get("REDMUD")));
+
+		// DICYANOACETYLENE synthesis requires the paid reactor bill and recovered coproducts. //too powerful, needs change
+
+        register(Fluids.CHLOROCALCITE_SOLUTION, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemistryProcesses.chlorocalciteSolution()));
+
+        register(Fluids.CHLOROCALCITE_MIX, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemistryProcesses.chlorocalciteConditioning()));
 		//register(Fluids.PHEROMONE_M, new MixerRecipe(2000, 10).setStack1(new FluidStack(Fluids.PHEROMONE, 1500)).setStack2(new FluidStack(Fluids.BLOOD, 500)).setSolid(new ComparableStack(ModItems.pill_herbal)));
-		register(Fluids.SCUTTERBLOOD, new MixerRecipe(550, 50).setStack1(new FluidStack(Fluids.HCL, 300)).setSolid(new ComparableStack(ModItems.scuttertail)));
+		register(Fluids.SCUTTERBLOOD, new MixerRecipe(1, 1).physical(com.hbm.realsim.UtilityMixtures.mixers().get("SCUTTERBLOOD")));
 
 		//salt to brine
-		register(Fluids.BRINE, new MixerRecipe(1000, 50).setStack1(new FluidStack(Fluids.FRESH_WATER, 1000)).setSolid(new ComparableStack(ModItems.itemsalt, 32)));
+		register(Fluids.BRINE, new MixerRecipe(1, 1).physical(com.hbm.realsim.ChemistryProcesses.brine()));
 
 	}
 
@@ -155,7 +149,7 @@ public class MixerRecipes extends SerializableRecipe {
 			if(sub.has("solidInput")) mix.setSolid(this.readAStack(sub.get("solidInput").getAsJsonArray()));
 
 			if(sub.has("physical")) mix.physical(com.hbm.realsim.PetroleumProcesses.read(sub));
-            if(!sub.has("physical") && com.hbm.realsim.ChemicalFuelProcesses.requiresBill(outputType.getName())) throw new IllegalArgumentException("Fuel-producing mixer JSON requires a physical bill");
+            if(!sub.has("physical") && com.hbm.realsim.ChemistryProcesses.requiresBillForOutput(outputType.getName())) throw new IllegalArgumentException("Released fluid mixer JSON requires a physical bill");
             array[i] = mix;
 
 		}
@@ -224,10 +218,12 @@ public class MixerRecipes extends SerializableRecipe {
 
 		protected MixerRecipe physical(com.hbm.realsim.ProcessRecipe bill) {
             com.hbm.realsim.ChemicalFuelProcesses.validateRating(bill);
+            if(bill.inputs.length > 2 || bill.solidInputs.length > 1 || bill.outputs[0].startsWith("VENT_") || com.hbm.realsim.PhysicalRegistry.get(bill.outputs[0]).phase == com.hbm.realsim.PhysicalState.Phase.SOLID) throw new IllegalArgumentException("Mixer requires at most two fluid feeds, one solid feed and a leading fluid product");
+            for(int i = 1; i < bill.outputs.length; i++) if(!bill.outputs[i].startsWith("VENT_")) throw new IllegalArgumentException("Mixer has one product port; use the Chemical Reactor for coproduct recovery");
             physicalBill = bill; processTime = bill.duration;
             input1 = bill.inputs.length > 0 ? new FluidStack(Fluids.fromName(bill.inputs[0]), bill.quantities[0], bill.pressures[0]) : null;
             input2 = bill.inputs.length > 1 ? new FluidStack(Fluids.fromName(bill.inputs[1]), bill.quantities[1], bill.pressures[1]) : null;
-            if(bill.solidCount > 0) solidInput = new ComparableStack(ModItems.fuel_additive, bill.solidCount);
+            if(bill.solidCount > 0) solidInput = com.hbm.realsim.ProcessMachine.feed(bill.solidInput, bill.solidCount);
             output = Math.toIntExact(com.hbm.realsim.PetroleumProcesses.ceilDiv(bill.productMass[0], com.hbm.realsim.PhysicalRegistry.get(bill.outputs[0]).massUnits));
             return this;
         }

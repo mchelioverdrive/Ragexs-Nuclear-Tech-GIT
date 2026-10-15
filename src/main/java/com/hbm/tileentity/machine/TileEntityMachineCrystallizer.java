@@ -29,7 +29,7 @@ import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IBatteryItem;
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluid.IFluidStandardReceiver;
+import api.hbm.fluid.IFluidStandardTransceiver;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
@@ -43,7 +43,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineCrystallizer extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
+public class TileEntityMachineCrystallizer extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	
@@ -58,6 +58,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	public float prevAngle;
 	
 	public FluidTank tank;
+	public final FluidTank washReturn = new FluidTank(Fluids.WATER, 32).withDefaultCapacity();
 	private static final int TASK_ACCOUNTING = 1;
 	private static final int TASK_BATTERY = 2;
 	private static final int TASK_SLOT_MAIN = 0;
@@ -78,11 +79,13 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	private com.hbm.inventory.fluid.FluidType cachedRecipeFluid;
 	private long cachedRecipeRevision = -1L;
 	private CrystallizerRecipe cachedRecipe;
+    private String recipeAccountingKey = "";
 
 	public TileEntityMachineCrystallizer() {
 		super(8);
-		tank = new FluidTank(Fluids.PEROXIDE, 8000);
+		tank = new FluidTank(Fluids.PEROXIDE, 32).withDefaultCapacity();
 		this.trackMachineFluidTank(tank);
+		this.trackMachineFluidTank(washReturn);
 	}
 
 	@Override
@@ -152,6 +155,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 		buf.writeBoolean(isOn);
 		buf.writeLong(worldObj == null ? 0L : worldObj.getTotalWorldTime());
 		tank.serialize(buf);
+		washReturn.serialize(buf);
 	}
 	
 	@Override
@@ -163,6 +167,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 		isOn = buf.readBoolean();
 		clientProgressTick = buf.readLong();
 		tank.deserialize(buf);
+		washReturn.deserialize(buf);
 	}
 	
 	private void processItem() {
@@ -179,12 +184,11 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 		else if(slots[2].stackSize + stack.stackSize <= slots[2].getMaxStackSize())
 			slots[2].stackSize += stack.stackSize;
 		
-		tank.setFill(tank.getFill() - getRequiredAcid(result.acidAmount));
+		int used = getRequiredAcid(result.acidAmount);
+		if(result.recoverCarrier) washReturn.setFill(washReturn.getFill() + used);
+		tank.setFill(tank.getFill() - used);
 		
-		float freeChance = this.getFreeChance();
-		
-		if(freeChance == 0 || freeChance < worldObj.rand.nextFloat())
-			this.decrStackSize(0, result.itemAmount);
+		this.decrStackSize(0, result.itemAmount);
 	}
 	
 	private boolean canProcess() {
@@ -199,7 +203,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 		CrystallizerRecipe result = this.resolveCachedRecipe();
 		
 		//Or output?
-		if(result == null)
+		if(result == null || result.acidAmount <= 0 || result.itemAmount <= 0 || result.duration <= 0 || result.output == null || result.output.stackSize <= 0)
 			return false;
 		
 		//Not enough of the input item?
@@ -207,6 +211,8 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 			return false;
 		
 		if(tank.getFill() < getRequiredAcid(result.acidAmount)) return false;
+		if(result.recoverCarrier && (!washReturn.configureForRecipe(tank.getTankType(), tank.getPressure())
+                || (long) washReturn.getFill() + getRequiredAcid(result.acidAmount) > washReturn.getMaxFill())) return false;
 		
 		ItemStack stack = result.output;
 		
@@ -316,6 +322,10 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	public void onMachineCoarsePoll(int cadence) {
 		if(worldObj == null || worldObj.isRemote) return;
 		if(cadence == 5) {
+			for(DirPos pos : getConPos()) {
+                if(washReturn.getFill() > 0) this.sendFluid(washReturn, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+                if(legacyDrainable()) this.sendFluid(tank, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+            }
 			boolean tankContainerChanged = tank.setType(7, slots);
 			tankContainerChanged |= tank.loadTank(3, 4, slots);
 			boolean inventoryChanged = this.observeInventoryFingerprint();
@@ -325,7 +335,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 		if(cadence != 20) return;
 		boolean recipeChanged = observedRecipeRevision != SerializableRecipe.getRegistryRevision();
 		boolean settingsChanged = this.refreshRuntimeSettings(true);
-		if(recipeChanged) observedRecipeRevision = SerializableRecipe.getRegistryRevision();
+		if(recipeChanged) { observedRecipeRevision = SerializableRecipe.getRegistryRevision(); progress = 0; }
 		if(recipeChanged || settingsChanged) this.markMachineDirty((recipeChanged ? MachineDirtyCause.RECIPE : 0) | (settingsChanged ? MachineDirtyCause.UPGRADE : 0));
 		this.updateConnections();
 		this.networkPackNTIfDirty(25);
@@ -371,7 +381,17 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 			cachedRecipeTagHash = tagHash;
 			cachedRecipeFluid = fluid;
 			cachedRecipeRevision = revision;
-			cachedRecipe = CrystallizerRecipes.getOutput(input, fluid);
+			CrystallizerRecipe next = CrystallizerRecipes.getOutput(input, fluid);
+            if(next != cachedRecipe || recipeAccountingKey.isEmpty()) {
+                String key = next == null ? "" : new CrystallizerRecipes().accountingKey(new java.util.AbstractMap.SimpleImmutableEntry<>(
+                        new com.hbm.util.Tuple.Pair<Object, com.hbm.inventory.fluid.FluidType>(new com.hbm.inventory.RecipesCommon.ComparableStack(input), fluid), next));
+                if(!recipeAccountingKey.equals(key)) { progress = 0; recipeAccountingKey = key; }
+            }
+            cachedRecipe = next;
+            int capacity = next == null ? 32 : (int) Math.min(Integer.MAX_VALUE, Math.max(32L, Math.max(next.acidAmount,
+                    (next.acidAmount * 1200L + Math.max(1, next.duration) - 1) / Math.max(1, next.duration))));
+            tank.resizePreservingContents(capacity);
+            if(next != null && next.recoverCarrier) washReturn.resizePreservingContents(capacity);
 		}
 		return cachedRecipe;
 	}
@@ -402,22 +422,11 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 		return changed;
 	}
 	
-	public int getRequiredAcid(int base) {
-		int efficiency = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
-		if(efficiency > 0) {
-			return base * (efficiency + 2);
-		}
-		return base;
-	}
-	
-	public float getFreeChance() {
-		int efficiency = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
-		if(efficiency > 0) {
-			return Math.min(efficiency * 0.05F, 0.15F);
-		}
-		return 0;
-	}
-	
+    public int getRequiredAcid(int base) { return base; }
+
+    /** Retained API: efficiency upgrades no longer create an extra batch from the same solid. */
+    @Deprecated public float getFreeChance() { return 0; }
+
 	public short getDuration() {
 		CrystallizerRecipe result = this.resolveCachedRecipe();
 		int base = result != null ? result.duration : 600;
@@ -430,7 +439,9 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	
 	public int getPowerRequired() {
 		int speed = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
-		return (int) (demand + Math.min(speed * 1000, 3000));
+		int efficiency = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
+        long base = demand + Math.min(speed * 1000, 3000);
+        return (int) Math.max(1L, (base * (100 - 5 * efficiency) + 99) / 100);
 	}
 	
 	public float getCycleCount() {
@@ -473,6 +484,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 		
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		progress = nbt.getShort("runtimeProgress");
+        recipeAccountingKey = nbt.getString("recipeAccountingKey");
 		duration = nbt.hasKey("runtimeDuration") ? nbt.getShort("runtimeDuration") : 600;
 		isOn = nbt.getBoolean("runtimeOn");
 		runtimeStateInitialized = false;
@@ -481,6 +493,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 		nextRuntimeTick = -1L;
 		cachedRecipeRevision = -1L;
 		tank.readFromNBT(nbt, "tank");
+		washReturn.readFromNBT(nbt, "washReturn");
 	}
 	
 	@Override
@@ -490,9 +503,11 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 		
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setShort("runtimeProgress", progress);
+        nbt.setString("recipeAccountingKey", recipeAccountingKey);
 		nbt.setShort("runtimeDuration", duration);
 		nbt.setBoolean("runtimeOn", isOn);
 		tank.writeToNBT(nbt, "tank");
+		washReturn.writeToNBT(nbt, "washReturn");
 	}
 
 	@Override
@@ -507,7 +522,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	}
 
 	@Override protected void beforeFluidStorageChanged(FluidTank changedTank) {
-		if(changedTank == tank && runtimeStateInitialized && !runtimeSettling && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+		if((changedTank == tank || changedTank == washReturn) && runtimeStateInitialized && !runtimeSettling && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 	}
 
 	@Override public void onChunkUnload() {
@@ -566,12 +581,15 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 
 	@Override
 	public FluidTank[] getReceivingTanks() {
-		return new FluidTank[] {tank};
-	}
+        return legacyDrainable() ? new FluidTank[0] : new FluidTank[] {tank};
+    }
+
+	private boolean legacyDrainable() { return tank.getFill() > 0 && (tank.getFill() > tank.getMaxFill() || cachedRecipe == null); }
+    @Override public FluidTank[] getSendingTanks() { return legacyDrainable() ? new FluidTank[] {washReturn, tank} : new FluidTank[] {washReturn}; }
 
 	@Override
 	public FluidTank[] getAllTanks() {
-		return new FluidTank[] { tank };
+		return new FluidTank[] { tank, washReturn };
 	}
 
 	@Override
@@ -598,8 +616,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "+" + (level * 100) + "%"));
 		}
 		if(type == UpgradeType.EFFECT) {
-			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_EFFICIENCY, "+" + (level * 5) + "%"));
-			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(this.KEY_ACID, "+" + (level * 100 + 100) + "%"));
+			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "-" + (level * 5) + "%"));
 		}
 		if(type == UpgradeType.OVERDRIVE) {
 			info.add((BobMathUtil.getBlink() ? EnumChatFormatting.RED : EnumChatFormatting.DARK_GRAY) + "YES");

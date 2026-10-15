@@ -11,7 +11,6 @@ import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.CompatEnergyControl;
 
 import api.hbm.block.ILaserable;
-import api.hbm.energymk2.IEnergyProviderMK2;
 import api.hbm.fluid.IFluidStandardReceiver;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.common.Optional;
@@ -31,7 +30,12 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "OpenComputers")})
-public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEnergyProviderMK2, ILaserable, IFluidStandardReceiver, SimpleComponent, IGUIProvider, IInfoProviderEC, CompatHandler.OCComponent {
+public class TileEntityCoreReceiver extends TileEntityMachineBase implements api.hbm.energymk2.IRatedGenerator, ILaserable, IFluidStandardReceiver, SimpleComponent, IGUIProvider, IInfoProviderEC, CompatHandler.OCComponent {
+    private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
+    private long inputRatingQuanta = 1;
+    @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
+    @Override public long getRatedOutputWatts() { return inputRatingQuanta * 10; }
+
 	
 	public long energyQuanta;
 	public long joules;
@@ -54,7 +58,9 @@ public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEn
 			
 			this.subscribeToAllAround(tank.getTankType(), this);
 			
-			this.setStoredEnergyQuanta(joules * 5000);
+			long converted = joules * 5000;
+            if(converted > 0) inputRatingQuanta = Math.min(Long.MAX_VALUE / 20, converted);
+            this.setStoredEnergyQuanta(com.hbm.realsim.GeneratorContract.admit(energyQuanta, getEnergyCapacityQuanta(), converted));
 			
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
 				this.tryProvide(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
@@ -103,7 +109,7 @@ public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEn
 
 	@Override
 	public long getEnergyCapacityQuanta() {
-		return this.energyQuanta;
+		return inputRatingQuanta * 2;
 	}
 
 	@Override
@@ -111,7 +117,7 @@ public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEn
 		
 		//only accept lasers from the front
 		if(dir.getOpposite().ordinal() == this.getBlockMetadata()) {
-			joules += energy;
+			if(energy > 0 && energy <= Long.MAX_VALUE / 20000 - joules) joules += energy;
 		} else {
 			worldObj.func_147480_a(xCoord, yCoord, zCoord, false);
 			worldObj.createExplosion(null, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, 2.5F, true);
@@ -132,6 +138,8 @@ public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEn
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        outputBudget.read(nbt);
+        inputRatingQuanta = Math.max(1, Math.min(Long.MAX_VALUE / 20, nbt.hasKey("inputRatingQuanta") ? nbt.getLong("inputRatingQuanta") : EnergyUnits.readEnergyQuanta(nbt, "power")));
 		
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		joules = nbt.getLong("joules");
@@ -141,6 +149,7 @@ public class TileEntityCoreReceiver extends TileEntityMachineBase implements IEn
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+        outputBudget.write(nbt); nbt.setLong("inputRatingQuanta", inputRatingQuanta);
 		
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setLong("joules", joules);

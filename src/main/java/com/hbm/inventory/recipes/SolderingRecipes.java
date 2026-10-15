@@ -16,6 +16,8 @@ import com.hbm.inventory.RecipesCommon.AStack;
 import com.hbm.inventory.RecipesCommon.ComparableStack;
 import com.hbm.inventory.RecipesCommon.OreDictStack;
 import com.hbm.inventory.fluid.Fluids;
+import com.hbm.inventory.material.Mats;
+import com.hbm.inventory.material.MaterialShapes;
 import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemFluidIcon;
@@ -26,6 +28,7 @@ import net.minecraft.item.ItemStack;
 
 public class SolderingRecipes extends SerializableRecipe {
 
+	// SOLVENT is a recirculating cleaning charge, not a reactant. Helium-4 is a vented assembly purge.
 	public static List<SolderingRecipe> recipes = new ArrayList();
 
 	@Override
@@ -44,7 +47,7 @@ public class SolderingRecipes extends SerializableRecipe {
 				new AStack[] {
 						new ComparableStack(ModItems.circuit, 4, EnumCircuitType.PCB)},
 				new AStack[] {
-						new OreDictStack(PB.wireFine(), 4)}
+						new OreDictStack(MaterialShapes.WIRE.make(Mats.MAT_SOLDER), 4)}
 		));
 
 		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.BASIC.ordinal()), 200, 250,
@@ -53,20 +56,11 @@ public class SolderingRecipes extends SerializableRecipe {
 				new AStack[] {
 						new ComparableStack(ModItems.circuit, 4, EnumCircuitType.PCB)},
 				new AStack[] {
-						new OreDictStack(PB.wireFine(), 4)}
-		));
-
-		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.BASIC.ordinal()), 210, 150,
-				new AStack[] {
-						new ComparableStack(ModItems.circuit, 2, EnumCircuitType.CHIP)},
-				new AStack[] {
-						new ComparableStack(ModItems.circuit, 1, EnumCircuitType.PCB)},
-				new AStack[] {
-						new ComparableStack(ModItems.ingot_germanium, 2)}
+						new OreDictStack(MaterialShapes.WIRE.make(Mats.MAT_SOLDER), 4)}
 		));
 
 		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.ADVANCED.ordinal()), 300, 1_000,
-				new FluidStack(Fluids.SOLVENT, 250),
+				new FluidStack(Fluids.SOLVENT, 2),
 				new AStack[] {
 						new ComparableStack(ModItems.circuit, lbsm ? 4 : 16, EnumCircuitType.CHIP),
 						new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CAPACITOR)},
@@ -74,65 +68,21 @@ public class SolderingRecipes extends SerializableRecipe {
 						new ComparableStack(ModItems.circuit, 8, EnumCircuitType.PCB),
 						new OreDictStack(RUBBER.ingot(), 2)},
 				new AStack[] {
-						new OreDictStack(PB.wireFine(), 8)}
+						new OreDictStack(MaterialShapes.WIRE.make(Mats.MAT_SOLDER), 8)}
 		));
-
-		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.ADVANCED.ordinal()), 100, 1_000,
-										new FluidStack(Fluids.SOLVENT, 250),
-										new AStack[] {
-											new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CHIP),
-											new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CAPACITOR)},
-										new AStack[] {
-											new ComparableStack(ModItems.circuit, 4, EnumCircuitType.PCB),
-											new ComparableStack(ModItems.ingot_smco)},
-										new AStack[] {
-											new OreDictStack(PB.wireFine(), 4)}
-		));
-
-		// Terbium may stand in for specialized contacts, not a multiplier for complete boards. OK BUT FOR GAMEPLAY REASONS WE WILL BE MULTIPLYING THE BOARDS TO GIVE PLAYERS AN INCENTIVE TO GO THROUGH HELL
-		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 4, EnumCircuitType.ADVANCED.ordinal()), 100, 1_000,
-										new FluidStack(Fluids.SOLVENT, 250),
-										new AStack[] {
-											new ComparableStack(ModItems.circuit, 2, EnumCircuitType.CHIP),
-											new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CAPACITOR)},
-										new AStack[] {
-											new ComparableStack(ModItems.circuit, 6, EnumCircuitType.PCB),
-											new ComparableStack(ModItems.ingot_terbium)},
-										new AStack[] {
-											new OreDictStack(PB.wireFine(), 4)}
-		));
-
 
 		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.CAPACITOR_BOARD.ordinal()), 200, 300,
-				new FluidStack(Fluids.SOLVENT, 250),
+				new FluidStack(Fluids.SOLVENT, 1),
 				new AStack[] {
 						new ComparableStack(ModItems.circuit, 3, EnumCircuitType.CAPACITOR_TANTALIUM)},
 				new AStack[] {
 						new ComparableStack(ModItems.circuit, 1, EnumCircuitType.PCB)},
 				new AStack[] {
-						new OreDictStack(PB.wireFine(), 3)}
+						new OreDictStack(MaterialShapes.WIRE.make(Mats.MAT_SOLDER), 3)}
 		));
-
-		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 4, EnumCircuitType.CAPACITOR_BOARD.ordinal()), 200, 300,
-										new FluidStack(Fluids.SOLVENT, 250),
-										new AStack[] {
-											new ComparableStack(ModItems.ingot_terbium)},
-										new AStack[] {
-											new ComparableStack(ModItems.circuit, 1, EnumCircuitType.PCB)},
-										new AStack[] {
-											new OreDictStack(PB.wireFine(), 3)}
-		));
-
-		// Disabled: one terbium ingot and one PCB cannot credibly yield sixteen populated
-		// capacitor boards. The tantalium-capacitor route above remains the available route.
-		// recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 16, EnumCircuitType.CAPACITOR_BOARD.ordinal()), 200, 300,
-		// 		new FluidStack(Fluids.PEROXIDE, 250), new AStack[] {new ComparableStack(ModItems.ingot_terbium)},
-		// 		new AStack[] {new ComparableStack(ModItems.circuit, 1, EnumCircuitType.PCB)}, new AStack[] {new OreDictStack(PB.wireFine(), 3)}));
-
-		//UNDISABLED and nerfed: reasoning: gameplay abstraction + this is minecraft and I don't want to force people through complete fucking hell
 
 		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.BISMOID.ordinal()), 400, 10_000,
-				new FluidStack(Fluids.SOLVENT, 1_000),
+				new FluidStack(Fluids.SOLVENT, 4),
 				new AStack[] {
 						new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CHIP_BISMOID),
 						new ComparableStack(ModItems.circuit, lbsm ? 4 : 16, EnumCircuitType.CHIP),
@@ -141,66 +91,9 @@ public class SolderingRecipes extends SerializableRecipe {
 						new ComparableStack(ModItems.circuit, 12, EnumCircuitType.PCB),
 						new OreDictStack(ANY_HARDPLASTIC.ingot(), 2)},
 				new AStack[] {
-						new OreDictStack(PB.wireFine(), 12)}
+						new OreDictStack(MaterialShapes.WIRE.make(Mats.MAT_SOLDER), 12)}
 		));
 
-		// Specialized terbium contacts remain an alternative route, but do not multiply boards.
-		// You know what I'm gonna say right...
-		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 4, EnumCircuitType.BISMOID.ordinal()), 400, 10_000,
-				new FluidStack(Fluids.SOLVENT, 1_000),
-				new AStack[] {
-						new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CHIP_BISMOID),
-						new ComparableStack(ModItems.ingot_terbium),
-						new ComparableStack(ModItems.circuit, 24, EnumCircuitType.CAPACITOR)},
-				new AStack[] {
-						new ComparableStack(ModItems.circuit, 12, EnumCircuitType.PCB),
-						new OreDictStack(ANY_HARDPLASTIC.ingot(), 2)},
-				new AStack[] {
-						new OreDictStack(PB.wireFine(), 12)}
-		));
-
-		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 2, EnumCircuitType.BISMOID.ordinal()), 360, 10_000,
-										new FluidStack(Fluids.SOLVENT, 900),
-										new AStack[] {
-											new ComparableStack(ModItems.nugget_ruthenium, 2),
-											new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CHIP),
-											new ComparableStack(ModItems.circuit, 8, EnumCircuitType.CAPACITOR)},
-										new AStack[] {
-											new ComparableStack(ModItems.circuit, 12, EnumCircuitType.PCB),
-											new OreDictStack(ANY_HARDPLASTIC.ingot(), 2)},
-										new AStack[] {
-											new OreDictStack(PB.wireFine(), 12)}
-		));
-
-		// Osmiridium *osmiridium ingot is actually osmium since I had to unfuck bobcat schizophrenia bullshit but yeah represents durable specialty contacts; it does not duplicate populated boards.
-		//anyway since osmiridium is maximum pain to produce I think 4-8 boards is a reasonable amount.
-		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 8, EnumCircuitType.BISMOID.ordinal()), 300, 5_000,
-										new FluidStack(Fluids.SOLVENT, 500),
-										new AStack[] {
-											new ComparableStack(ModItems.ingot_osmiridium),
-											new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CHIP),
-											new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CAPACITOR)},
-										new AStack[] {
-											new ComparableStack(ModItems.circuit, 8, EnumCircuitType.PCB),
-											new OreDictStack(RUBBER.ingot(), 2)},
-										new AStack[] {
-											new OreDictStack(PB.wireFine(), 8)}
-		));
-
-		// Rhodium remains a late-game contact-material alternative without a board multiplier.
-		// yet again we are not 1:1 reality because that's infinite pain as if making some of these elements aren't pain already
-		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 8, EnumCircuitType.BISMOID.ordinal()), 500, 15_000,
-										new FluidStack(Fluids.SOLVENT, 500),
-										new AStack[] {
-											new ComparableStack(ModItems.ingot_rhodium),
-											new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CHIP),
-											new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CAPACITOR)},
-										new AStack[] {
-											new ComparableStack(ModItems.circuit, 8, EnumCircuitType.PCB),
-											new OreDictStack(RUBBER.ingot(), 2)},
-										new AStack[] {
-											new OreDictStack(PB.wireFine(), 8)}
-		));
 
 		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.AVIONICS.ordinal()), 300, 1_000,
 				new AStack[] {
@@ -209,7 +102,7 @@ public class SolderingRecipes extends SerializableRecipe {
 						new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ADVANCED),
 						new OreDictStack(RUBBER.ingot(), 4)},
 				new AStack[] {
-						new OreDictStack(PB.wireFine(), 4)}
+						new OreDictStack(MaterialShapes.WIRE.make(Mats.MAT_SOLDER), 4)}
 		));
 		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.AERO.ordinal()), 300, 1_000,
 				new AStack[] {
@@ -218,12 +111,12 @@ public class SolderingRecipes extends SerializableRecipe {
 						new ComparableStack(ModItems.circuit, 1, EnumCircuitType.BASIC),
 						new ComparableStack(ModItems.nugget_hafnium, 1)},
 				new AStack[] {
-						new OreDictStack(PB.wireFine(), 4)} // temp
+						new OreDictStack(MaterialShapes.WIRE.make(Mats.MAT_SOLDER), 4)} // temp
 		));
 
 
 		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.QUANTUM.ordinal()), 400, 100_000,
-				new FluidStack(Fluids.HELIUM4, 1_000),
+				new FluidStack(Fluids.HELIUM4, 4),
 				new AStack[] {
 						new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CHIP_QUANTUM),
 						new ComparableStack(ModItems.circuit, lbsm ? 4 : 16, EnumCircuitType.CHIP_BISMOID),
@@ -232,7 +125,7 @@ public class SolderingRecipes extends SerializableRecipe {
 						new ComparableStack(ModItems.circuit, 16, EnumCircuitType.PCB),
 						new OreDictStack(ANY_HARDPLASTIC.ingot(), 4)},
 				new AStack[] {
-						new OreDictStack(PB.wireFine(), 16)}
+						new OreDictStack(MaterialShapes.WIRE.make(Mats.MAT_SOLDER), 16)}
 		));
 
 		/*
@@ -249,7 +142,7 @@ public class SolderingRecipes extends SerializableRecipe {
 						new ComparableStack(ModItems.circuit, 1, EnumCircuitType.CONTROLLER_CHASSIS),
 						new ComparableStack(ModItems.upgrade_speed_1)},
 				new AStack[] {
-						new OreDictStack(PB.wireFine(), 16)}
+						new OreDictStack(MaterialShapes.WIRE.make(Mats.MAT_SOLDER), 16)}
 		));
 		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.CONTROLLER_ADVANCED.ordinal()), 600, 25_000,
 				new AStack[] {
@@ -260,10 +153,10 @@ public class SolderingRecipes extends SerializableRecipe {
 						new ComparableStack(ModItems.circuit, 1, EnumCircuitType.CONTROLLER_CHASSIS),
 						new ComparableStack(ModItems.upgrade_speed_3)},
 				new AStack[] {
-						new OreDictStack(PB.wireFine(), 24)}
+						new OreDictStack(MaterialShapes.WIRE.make(Mats.MAT_SOLDER), 24)}
 		));
 		recipes.add(new SolderingRecipe(new ItemStack(ModItems.circuit, 1, EnumCircuitType.CONTROLLER_QUANTUM.ordinal()), 600, 250_000,
-				new FluidStack(Fluids.HELIUM3, 15_000),
+				new FluidStack(Fluids.HELIUM3, 1),
 				new AStack[] {
 						new ComparableStack(ModItems.circuit, lbsm ? 8 : 16, EnumCircuitType.CHIP_QUANTUM),
 						new ComparableStack(ModItems.circuit, lbsm ? 16 : 48, EnumCircuitType.CHIP_BISMOID),
@@ -272,11 +165,9 @@ public class SolderingRecipes extends SerializableRecipe {
 						new ComparableStack(ModItems.circuit, 2, EnumCircuitType.CONTROLLER_ADVANCED),
 						new ComparableStack(ModItems.upgrade_overdrive_1)},
 				new AStack[] {
-						new OreDictStack(PB.wireFine(), 32)}
+						new OreDictStack(MaterialShapes.WIRE.make(Mats.MAT_SOLDER), 32)}
 
 		));
-
-
 
 		recipes.add(new SolderingRecipe(new ItemStack(ModItems.hard_drive, 1), 200, 250,
 				new AStack[] {
@@ -327,8 +218,6 @@ public class SolderingRecipes extends SerializableRecipe {
 				new AStack[] {}
 		));
 
-
-
 		addFirstUpgrade(ModItems.upgrade_speed_1, ModItems.upgrade_speed_2);
 		addSecondUpgrade(ModItems.upgrade_speed_2, ModItems.upgrade_speed_3);
 		addFirstUpgrade(ModItems.upgrade_effect_1, ModItems.upgrade_effect_2);
@@ -353,7 +242,7 @@ public class SolderingRecipes extends SerializableRecipe {
 	public static void addSecondUpgrade(Item lower, Item higher) {
 		boolean lbsm = GeneralConfig.enableLBSM && GeneralConfig.enableLBSMSimpleCrafting;
 		recipes.add(new SolderingRecipe(new ItemStack(higher), 400, 25_000,
-				new FluidStack(Fluids.SOLVENT, 500),
+				new FluidStack(Fluids.SOLVENT, 2),
 				new AStack[] {new ComparableStack(ModItems.circuit, lbsm ? 6 : 16, EnumCircuitType.CHIP), new ComparableStack(ModItems.circuit, lbsm ? 4 : 16, EnumCircuitType.CAPACITOR)},
 				new AStack[] {new ComparableStack(lower), new OreDictStack(RUBBER.ingot(), 4)},
 				new AStack[] {}
@@ -419,7 +308,9 @@ public class SolderingRecipes extends SerializableRecipe {
 		int duration = obj.get("duration").getAsInt();
 		long consumption = obj.get("consumption").getAsLong();
 
-		recipes.add(new SolderingRecipe(output, duration, consumption, fluid, toppings, pcb, solder));
+		SolderingRecipe parsed = new SolderingRecipe(output, duration, consumption, fluid, toppings, pcb, solder);
+        if(obj.has("retainFluid")) parsed.retainFluid = obj.get("retainFluid").getAsBoolean();
+        recipes.add(parsed);
 	}
 
 	@Override
@@ -446,6 +337,7 @@ public class SolderingRecipes extends SerializableRecipe {
 		writer.name("output");
 		this.writeItemStack(recipe.output, writer);
 
+		writer.name("retainFluid").value(recipe.retainFluid);
 		writer.name("duration").value(recipe.duration);
 		writer.name("consumption").value(recipe.consumption);
 	}
@@ -460,6 +352,8 @@ public class SolderingRecipes extends SerializableRecipe {
 		public AStack[] pcb;
 		public AStack[] solder;
 		public FluidStack fluid;
+        /** Closed cleaning bath; trace flux removal and filter servicing remain abstracted. */
+        public boolean retainFluid;
 		public ItemStack output;
 		public int duration;
 		public long consumption;
@@ -469,6 +363,7 @@ public class SolderingRecipes extends SerializableRecipe {
 			this.pcb = pcb;
 			this.solder = solder;
 			this.fluid = fluid;
+            this.retainFluid = fluid != null && fluid.type == Fluids.SOLVENT;
 			this.output = output;
 			this.duration = duration;
 			this.consumption = consumption;

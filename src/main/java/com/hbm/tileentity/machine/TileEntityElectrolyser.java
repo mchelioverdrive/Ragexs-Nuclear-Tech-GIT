@@ -56,7 +56,8 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
-	public long energyQuanta;
+	public final com.hbm.realsim.ProcessBatch fluidBatch = new com.hbm.realsim.ProcessBatch();
+    public long energyQuanta;
 	public static final long maxPower = 20000000;
 	public static final int usageOreBase = 10_000;
 	public static final int usageFluidBase = 10_000;
@@ -109,12 +110,14 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		//14: Crystal
 		//15-20: Outputs
 		super(21);
-		tanks = new FluidTank[4];
+		tanks = new FluidTank[6];
 		tanks[0] = new FluidTank(Fluids.FRESH_WATER, 16000).migrateFrom(Fluids.WATER);
 		tanks[1] = new FluidTank(Fluids.HYDROGEN_GAS, 16000);
 		tanks[2] = new FluidTank(Fluids.OXYGEN_GAS, 16000);
-		tanks[3] = new FluidTank(Fluids.NITRIC_ACID, 16000);
-		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
+		tanks[3] = new FluidTank(Fluids.NITRIC_ACID, 20).withDefaultCapacity();
+		tanks[4] = new FluidTank(Fluids.NONE, 100);
+        tanks[5] = new FluidTank(Fluids.NONE, 100);
+        for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -267,6 +270,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 			this.trySubscribe(tanks[3].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			if(tanks[1].getFill() > 0) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			if(tanks[2].getFill() > 0) this.sendFluid(tanks[2], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+            for(int i = 4; i < 6; i++) if(tanks[i].getFill() > 0) this.sendFluid(tanks[i], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
 		this.networkPackNTIfDirty(50);
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime(), false);
@@ -292,6 +296,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		int meta = metalInput == null ? 0 : metalInput.getItemDamage();
 		int tagHash = metalInput == null || metalInput.getTagCompound() == null ? 0 : metalInput.getTagCompound().hashCode();
 		if(cachedMetalInput != metalInput || cachedMetalInputMeta != meta || cachedMetalInputTag != tagHash || cachedMetalRecipe != ElectrolyserMetalRecipes.getRecipe(metalInput)) {
+			if(cachedMetalRecipe != ElectrolyserMetalRecipes.getRecipe(metalInput)) progressOre = 0;
 			cachedMetalInput = metalInput;
 			cachedMetalInputMeta = meta;
 			cachedMetalInputTag = tagHash;
@@ -375,9 +380,10 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		}
 		boolean fluid = this.canProcessFluid();
 		boolean metal = this.canProcessMetal();
-		runtimeFluidActive = fluid;
+		runtimeFluidActive = physicalFluid() ? fluidBatch.currentDrawWatts(now) > 0 : fluid;
 		runtimeMetalActive = metal;
-		if(!battery && (fluid || metal)) {
+
+        if(!battery && (fluid || metal)) {
 			long cycleCount = Math.max(1, this.getCycleCount());
 			long ticks = Long.MAX_VALUE;
 			if(fluid) ticks = Math.min(ticks, ceilDiv((long) this.getDurationFluid() - progressFluid, cycleCount));
@@ -387,7 +393,8 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 			long costPerTick = cycleCount * ((fluid ? costFluid : 0L) + (metal ? costMetal : 0L));
 			if(costPerTick > 0L) ticks = Math.min(ticks, ceilDiv(energyQuanta, costPerTick));
 			if(ticks != Long.MAX_VALUE) this.scheduleMachineTransition(now + Math.max(1L, ticks), TASK_ACCOUNTING, TASK_SLOT_SHARED);
-		} else this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_SHARED);
+		} else if(!physicalFluid()) this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_SHARED);
+		if(physicalFluid()) this.scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_SHARED);
 		if(leftStack != null || rightStack != null) this.scheduleMachineTransition(now + 1L, TASK_CAST, TASK_SLOT_CAST);
 		else this.cancelMachineTransition(TASK_CAST, TASK_SLOT_CAST);
 	}
@@ -395,6 +402,9 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 	private static long ceilDiv(long value, long divisor) {
 		return value <= 0L ? 1L : 1L + (value - 1L) / divisor;
 	}
+
+	private boolean physicalFluid() { return fluidBatch.active() || cachedFluidRecipe != null && cachedFluidRecipe.physicalBill != null; }
+    public FluidTank[] processFluidOutputs() { return new FluidTank[] {tanks[1], tanks[2], tanks[4], tanks[5]}; }
 
 	private void settleProgressThrough(long targetTick) {
 		if(worldObj == null || worldObj.isRemote || runtimeAccountingMutation || lastAccountingTick == Long.MIN_VALUE || targetTick <= lastAccountingTick) return;
@@ -407,6 +417,11 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		runtimeAccountingMutation = true;
 		this.beginMachineFluidMutation();
 		try {
+            if(physicalFluid()) {
+                com.hbm.realsim.ProcessMachine.step(this, fluidBatch, cachedFluidRecipe == null ? null : cachedFluidRecipe.physicalBill,
+                    new FluidTank[] {tanks[0]}, processFluidOutputs(), slots, 0, -1, 11, 13);
+                progressFluid = fluidBatch.ticks();
+            }
 			while(remaining > 0L) {
 				boolean fluid = this.canProcessFluid();
 				boolean metal = this.canProcessMetal();
@@ -483,10 +498,11 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		else this.leftStack = null;
 		if(nbt.hasKey("rightType")) this.rightStack = new MaterialStack(Mats.matById.get(nbt.getInteger("rightType")), nbt.getInteger("rightAmount"));
 		else this.rightStack = null;
-		for(int i = 0; i < 4; i++) tanks[i].readFromNBT(nbt, "t" + i);
+		for(int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "t" + i);
 	}
 
 	public boolean canProcessFluid() {
+        if(physicalFluid()) return false;
 
 		if(this.energyQuanta < EnergyUnits.wattsToQuantaPerTick(operatingPowerFluidWatts)) return false;
 
@@ -542,7 +558,8 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 
 		if(slots[14] == null) return false;
 		if(this.energyQuanta < EnergyUnits.wattsToQuantaPerTick(operatingPowerMetalWatts)) return false;
-		if(this.tanks[3].getFill() < 100) return false;
+		// The mineral lane retains its sealed electrolyte charge; it is not a once-through acid wash.
+        if(this.tanks[3].getFill() < 20) return false;
 
 		ElectrolysisMetalRecipe recipe = cachedMetalRecipe;
 		if(recipe == null) return false;
@@ -604,7 +621,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 			}
 		}
 
-		this.tanks[3].setFill(this.tanks[3].getFill() - 100);
+		// Electrolyte remains in the bath; output blocking cannot discard its water carrier.
 		this.decrStackSize(14, 1);
 	}
 
@@ -616,7 +633,8 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		return (int) Math.ceil((base * Math.max(1F - 0.25F * speed, 0.2)));
 	}
 	public int getDurationFluid() {
-		ElectrolysisRecipe result = cachedFluidRecipe;
+		if(fluidBatch.active()) return fluidBatch.recipe().duration;
+        ElectrolysisRecipe result = cachedFluidRecipe;
 		if(!runtimeInitialized && result == null) result = ElectrolyserFluidRecipes.getRecipe(tanks[0].getTankType());
 		int base = result != null ? result.duration : 100;
 		if(result != null && result.physicalPowerQuanta > 0) return base;
@@ -634,6 +652,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
+        fluidBatch.read(nbt);
 		super.readFromNBT(nbt);
 
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
@@ -650,14 +669,15 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		else this.leftStack = null;
 		if(nbt.hasKey("rightType")) this.rightStack = new MaterialStack(Mats.matById.get(nbt.getInteger("rightType")), nbt.getInteger("rightAmount"));
 		else this.rightStack = null;
-		for(int i = 0; i < 4; i++) tanks[i].readFromNBT(nbt, "t" + i);
+		for(int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "t" + i);
 		if(!nbt.hasKey("realSimProcessVersion") && tanks[0].getTankType() == Fluids.FRESH_WATER) progressFluid = 0;
 	}
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
-		super.writeToNBT(nbt);
+		fluidBatch.write(nbt);
+        super.writeToNBT(nbt);
 
 		EnergyUnits.writeEnergyQuanta(nbt, this.energyQuanta);
 		nbt.setInteger("progressFluid", this.progressFluid);
@@ -673,7 +693,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 			nbt.setInteger("rightType", rightStack.material.id);
 			nbt.setInteger("rightAmount", rightStack.amount);
 		}
-		for(int i = 0; i < 4; i++) tanks[i].writeToNBT(nbt, "t" + i);
+		for(int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(nbt, "t" + i);
 
 	}
 
@@ -776,7 +796,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 
 	@Override
 	public FluidTank[] getSendingTanks() {
-		return new FluidTank[] {tanks[1], tanks[2]};
+		return processFluidOutputs();
 	}
 
 	@Override
@@ -889,12 +909,14 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 	}
 
     @Override public long getMachineDemandWatts() { return (operatingPowerFluidWatts > 0 ? operatingPowerFluidWatts : usageFluidBase * 10L) * getCycleCount() + (operatingPowerMetalWatts > 0 ? operatingPowerMetalWatts : usageOreBase * 10L) * getCycleCount(); }
-    @Override public long getMachineCurrentDrawWatts() { return getCycleCount() * ((runtimeFluidActive ? operatingPowerFluidWatts : 0L) + (runtimeMetalActive ? operatingPowerMetalWatts : 0L)); }
+    @Override public long getMachineCurrentDrawWatts() { return (physicalFluid() ? fluidBatch.currentDrawWatts(worldObj == null ? Long.MIN_VALUE : worldObj.getTotalWorldTime()) : runtimeFluidActive ? operatingPowerFluidWatts * getCycleCount() : 0L) + (runtimeMetalActive ? operatingPowerMetalWatts * getCycleCount() : 0L); }
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        com.hbm.realsim.MachineInfo.process(lines, fluidBatch.active() ? fluidBatch.recipe() : cachedFluidRecipe == null ? null : cachedFluidRecipe.physicalBill);
         lines.add("Fluid ceiling: " + com.hbm.realsim.MachineInfo.watts((operatingPowerFluidWatts > 0 ? operatingPowerFluidWatts : usageFluidBase * 10L) * getCycleCount()));
+        lines.add("Mineral electrolyte: sealed 20 L nitric-acid bath (retained)");
         lines.add("Metal ceiling: " + com.hbm.realsim.MachineInfo.watts((operatingPowerMetalWatts > 0 ? operatingPowerMetalWatts : usageOreBase * 10L) * getCycleCount()));
-        lines.add("Fluid and metal lanes have separate paid work budgets");
-        lines.add("Released water electrolysis has fixed work and one cycle; upgrades cannot underpay it");
+        lines.add("Fluid and metal processing can run together; power must cover both");
+        lines.add("Water electrolysis has a fixed energy requirement");
         lines.add("Idle load: 0 W; non-water metal processing is an adopted utility envelope");
     }
 }

@@ -38,17 +38,20 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntityFurnace;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting implements IFluidStandardTransceiver, IGUIProvider, IFluidCopiable, IConditionalInvAccess {
+public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting implements IFluidStandardTransceiver, IGUIProvider, IFluidCopiable, IConditionalInvAccess, com.hbm.realsim.IMachineInfo {
 	private static final int TASK_PROCESS = 1;
 	private boolean runtimeInitialized;
 	private boolean runtimeAir;
 	private RotaryFurnaceRecipe runtimeRecipe;
+    private String recipeAccountingKey = "";
+    private final com.hbm.realsim.ThermalAccount drive = new com.hbm.realsim.ThermalAccount();
+    private final com.hbm.realsim.FuelCredit firebox = new com.hbm.realsim.FuelCredit();
+    private long processHeatQuanta;
 	private DirPos[] runtimeSteamPorts;
 	private DirPos[] runtimeFluidPorts;
 	private int observedOrientation = Integer.MIN_VALUE;
@@ -68,9 +71,9 @@ public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting i
 	public TileEntityMachineRotaryFurnace() {
 		super(5, 50);
 		tanks = new FluidTank[3];
-		tanks[0] = new FluidTank(Fluids.NONE, 16_000);
-		tanks[1] = new FluidTank(Fluids.STEAM, 4_000);
-		tanks[2] = new FluidTank(Fluids.SPENTSTEAM, 40);
+		tanks[0] = new FluidTank(Fluids.NONE, 32).withDefaultCapacity();
+		tanks[1] = new FluidTank(Fluids.STEAM, 1200).withDefaultCapacity();
+		tanks[2] = new FluidTank(Fluids.SPENTSTEAM, 12).withDefaultCapacity();
 		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 
@@ -86,12 +89,45 @@ public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting i
 		try { tanks[0].setType(3, slots); }
 		finally { this.endMachineFluidMutation(); }
 		if((causes & (MachineDirtyCause.INVENTORY | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE | MachineDirtyCause.LIFECYCLE)) != 0)
-			runtimeRecipe = RotaryFurnaceRecipes.getRecipe(slots[0], slots[1], slots[2]);
+			refreshRecipe();
 		runtimeAir = this.breatheAir(0);
 		this.subscribeToInputs();
 		this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 		this.networkPackNT(50);
 	}
+
+
+    private void refreshRecipe() {
+        RotaryFurnaceRecipe next = RotaryFurnaceRecipes.getRecipe(slots[0], slots[1], slots[2]);
+        if(next != runtimeRecipe || recipeAccountingKey.isEmpty()) {
+            String key = new RotaryFurnaceRecipes().accountingKey(next);
+            if(!recipeAccountingKey.equals(key)) { progress = 0; recipeAccountingKey = key; }
+        }
+        runtimeRecipe = next;
+        int flow = runtimeRecipe == null ? 1 : runtimeRecipe.steam;
+        tanks[1].resizePreservingContents(flow * 1200); tanks[2].resizePreservingContents(flow * 12);
+        int capacity = runtimeRecipe == null || runtimeRecipe.fluid == null ? 32 : (int) Math.min(Integer.MAX_VALUE,
+                Math.max(32L, Math.max(runtimeRecipe.fluid.fill, (runtimeRecipe.fluid.fill * 1200L + runtimeRecipe.duration - 1L) / runtimeRecipe.duration)));
+        tanks[0].resizePreservingContents(capacity);
+    }
+    public boolean canDrive(int count) {
+        if(count <= 0 || count > 4 || com.hbm.realsim.ThermalMachine.state(tanks[1]) != com.hbm.realsim.SteamLedger.State.ORDINARY
+                || com.hbm.realsim.ThermalMachine.state(tanks[2]) != com.hbm.realsim.SteamLedger.State.SPENT || tanks[1].getFill() < count) return false;
+        long room = Math.max(0L, (long) tanks[2].getMaxFill() - tanks[2].getFill()) * com.hbm.realsim.SteamLedger.State.SPENT.massPerUnit;
+        return room - drive.remainder(com.hbm.realsim.SteamLedger.State.SPENT) >= com.hbm.realsim.SteamLedger.State.ORDINARY.mass(count);
+    }
+    /** Steam provides mechanical drum/blower work; furnace fuel remains the separate high-temperature source. */
+    public boolean driveTick(long tick, int count) {
+        if(!canDrive(count)) return false;
+        com.hbm.realsim.SteamLedger.Transition expansion = com.hbm.realsim.SteamLedger.transition(com.hbm.realsim.SteamLedger.State.ORDINARY,
+                com.hbm.realsim.SteamLedger.State.SPENT, com.hbm.realsim.SteamLedger.Route.TURBINE, 400000);
+        long shaftQuanta = count * 2000L;
+        com.hbm.realsim.ThermalAccount.Result result = drive.advance(tick, expansion, tanks[1].getFill(), tanks[2].getMaxFill() - tanks[2].getFill(),
+                com.hbm.realsim.SteamLedger.State.ORDINARY.mass(count), 0, 0, shaftQuanta, 0, 0, shaftQuanta, Long.MAX_VALUE);
+        tanks[1].setFill(tanks[1].getFill() - result.consumed); tanks[2].setFill(tanks[2].getFill() + result.produced);
+        // This work turns the machinery. It is not also exported as electricity or furnace heat.
+        return result.mass > 0;
+    }
 
 	@Override public void onMachineCoarsePoll(int cadence) {
 		if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
@@ -134,8 +170,8 @@ public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting i
 	}
 
 	private void evaluateAndSchedule(long now) {
-		boolean fuelReady = runtimeRecipe != null && runtimeAir && slots[4] != null && TileEntityFurnace.isItemFuel(slots[4]);
-		if(output != null || burnTime > 0 || fuelReady || tanks[2].getFill() > 0 || smoke.getFill() > 0)
+		boolean fuelReady = runtimeRecipe != null && runtimeAir && com.hbm.realsim.SolidFuel.resolve(slots[4]) != null;
+		if(output != null || burnTime > 0 || firebox.hasCredit() || processHeatQuanta > 0 || fuelReady || tanks[2].getFill() > 0 || smoke.getFill() > 0 || legacyFeedDrainable() || legacySteamDrainable())
 			this.scheduleMachineTransition(now + 1L, TASK_PROCESS, 0);
 		else {
 			isProgressing = false;
@@ -158,9 +194,11 @@ public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting i
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
 		ForgeDirection rot = dir.getRotation(ForgeDirection.DOWN);
 			for(DirPos pos : runtimeSteamPorts) {
+                if(legacySteamDrainable()) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				if(tanks[2].getFill() > 0) this.sendFluid(tanks[2], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 
+            if(legacyFeedDrainable()) for(DirPos pos : runtimeFluidPorts) this.sendFluid(tanks[0], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			if(smoke.getFill() > 0) this.sendFluid(smoke, worldObj, xCoord + rot.offsetX, yCoord + 5, zCoord + rot.offsetZ, Library.POS_Y);
 
 			if(this.output != null) {
@@ -189,22 +227,22 @@ public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting i
 			boolean hasAir = runtimeAir = breatheAir(0);
 			if(recipe != null && hasAir) {
 
-				if(this.burnTime <= 0 && slots[4] != null && TileEntityFurnace.isItemFuel(slots[4])) {
-					this.maxBurnTime = this.burnTime = TileEntityFurnace.getItemBurnTime(slots[4]) / 2;
-					this.decrStackSize(4, 1);
-					this.markChanged();
-				}
+                if(!firebox.hasCredit()) {
+                    com.hbm.realsim.SolidFuel fuel = com.hbm.realsim.SolidFuel.resolve(slots[4]);
+                    if(fuel != null) { this.decrStackSize(4, 1); firebox.reserve(fuel.identity, fuel.chemicalMicrojoules(), 1, com.hbm.realsim.Combustion.FIREBOX_EFFICIENCY_PPM); markChanged(); }
+                }
+                long duty = com.hbm.realsim.PetroleumProcesses.ceilDiv(recipe.thermalJoules * 2L, recipe.duration);
+                if(this.canProcess(recipe)) processHeatQuanta += firebox.release(Math.max(0, duty - processHeatQuanta));
 
-				if(this.canProcess(recipe)) {
+				if(this.canProcess(recipe) && processHeatQuanta >= duty && driveTick(worldObj.getTotalWorldTime(), recipe.steam)) {
+                    processHeatQuanta -= duty;
 					this.progress += 1F / recipe.duration;
-					tanks[1].setFill(tanks[1].getFill() - recipe.steam);
-					tanks[2].setFill(tanks[2].getFill() + recipe.steam / 100);
 					this.isProgressing = true;
 
 					if(this.progress >= 1F) {
 						this.progress -= 1F;
 						this.consumeItems(recipe);
-						runtimeRecipe = RotaryFurnaceRecipes.getRecipe(slots[0], slots[1], slots[2]);
+						refreshRecipe();
 
 						if(this.output == null) {
 							this.output = recipe.output.copy();
@@ -222,10 +260,10 @@ public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting i
 			}
 
 			this.isVenting = false;
-			if(this.burnTime > 0 && breatheAir(1)) {
+			if(this.isProgressing && breatheAir(1)) {
 				FurnaceGasEmission.emitCarbonMonoxide(worldObj, xCoord, yCoord, zCoord, 600);
 				this.pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND / 10F);
-				this.burnTime--;
+
 			}
 
 	}
@@ -233,7 +271,7 @@ public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting i
 	private void updateClientAnimation() {
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
 		ForgeDirection rot = dir.getRotation(ForgeDirection.DOWN);
-			if(this.burnTime > 0 && MainRegistry.proxy.me().getDistance(xCoord, yCoord, zCoord) < 25) {
+			if((this.burnTime > 0 || isProgressing) && MainRegistry.proxy.me().getDistance(xCoord, yCoord, zCoord) < 25) {
 				Random rand = worldObj.rand;
 				worldObj.spawnParticle("flame", xCoord + 0.5 + dir.offsetX * 0.5 + rot.offsetX + rand.nextGaussian() * 0.25, yCoord + 0.375, zCoord + 0.5 + dir.offsetZ * 0.5 + rot.offsetZ + rand.nextGaussian() * 0.25, 0, 0, 0);
 			}
@@ -303,7 +341,11 @@ public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting i
 		this.tanks[1].readFromNBT(nbt, "t1");
 		this.tanks[2].readFromNBT(nbt, "t2");
 		this.progress = nbt.getFloat("prog");
+        firebox.read(nbt.getCompoundTag("rotaryFirebox"));
+        processHeatQuanta = Math.max(0, nbt.getLong("rotaryProcessHeat"));
+        drive.read(nbt); recipeAccountingKey = nbt.getString("recipeAccountingKey");
 		this.burnTime = nbt.getInteger("burn");
+        if(!nbt.hasKey("rotaryProcessHeat") && burnTime > 0) { processHeatQuanta = burnTime * 50000L; burnTime = 0; }
 		this.maxBurnTime = nbt.getInteger("maxBurn");
 		if(nbt.hasKey("outputMaterial") && nbt.getInteger("outputAmount") > 0 && Mats.matById.get(nbt.getInteger("outputMaterial")) != null)
 			this.output = new MaterialStack(Mats.matById.get(nbt.getInteger("outputMaterial")), nbt.getInteger("outputAmount"));
@@ -317,6 +359,8 @@ public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting i
 		this.tanks[1].writeToNBT(nbt, "t1");
 		this.tanks[2].writeToNBT(nbt, "t2");
 		nbt.setFloat("prog", progress);
+        net.minecraft.nbt.NBTTagCompound fuelSave = new net.minecraft.nbt.NBTTagCompound(); firebox.write(fuelSave); nbt.setTag("rotaryFirebox", fuelSave); nbt.setLong("rotaryProcessHeat", processHeatQuanta);
+        drive.write(nbt); nbt.setString("recipeAccountingKey", recipeAccountingKey);
 		nbt.setInteger("burn", burnTime);
 		nbt.setInteger("maxBurn", maxBurnTime);
 		if(output != null) {
@@ -348,15 +392,14 @@ public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting i
 	public boolean canProcess(RotaryFurnaceRecipe recipe) {
 		if(recipe == null || RotaryFurnaceRecipes.getRecipe(slots[0], slots[1], slots[2]) != recipe) return false;
 
-		if(this.burnTime <= 0) return false;
+		if(!firebox.hasCredit() && processHeatQuanta <= 0) return false;
 
 		if(recipe.fluid != null) {
 			if(this.tanks[0].getTankType() != recipe.fluid.type) return false;
 			if(this.tanks[0].getFill() < recipe.fluid.fill) return false;
 		}
 
-		if(tanks[1].getFill() < recipe.steam) return false;
-		if(tanks[2].getMaxFill() - tanks[2].getFill() < recipe.steam / 100) return false;
+		if(!canDrive(recipe.steam)) return false;
 
 		if(this.output != null) {
 			if(this.output.material != recipe.output.material) return false;
@@ -450,12 +493,27 @@ public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting i
 		return new int[] { };
 	}
 
+    @Override public long getMachineDemandWatts() { return 0; }
+    @Override public long getMachineCurrentDrawWatts() { return 0; }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Steam drives drum/blower; 500 kW firebox pays 1.8 MJ per ingot-equivalent process heat at 85% efficiency");
+        lines.add("Drive: " + (runtimeRecipe == null ? 20 : runtimeRecipe.steam * 20) + " kW shaft; exhaust must be drained");
+    }
 	@Override public FluidTank[] getAllTanks() { return new FluidTank[] {tanks[0], tanks[1], tanks[2], smoke}; }
-	@Override public FluidTank[] getSendingTanks() { return new FluidTank[] {tanks[2], smoke}; }
+	private boolean legacyFeedDrainable() { return tanks[0].getFill() > 0 && (tanks[0].getFill() > tanks[0].getMaxFill() || runtimeRecipe == null || runtimeRecipe.fluid == null || runtimeRecipe.fluid.type != tanks[0].getTankType()); }
+    private boolean legacySteamDrainable() { return tanks[1].getFill() > 0 && (tanks[1].getFill() > tanks[1].getMaxFill() || com.hbm.realsim.ThermalMachine.state(tanks[1]) != com.hbm.realsim.SteamLedger.State.ORDINARY); }
+    @Override public FluidTank[] getSendingTanks() {
+        java.util.List<FluidTank> result = new java.util.ArrayList<>(); result.add(tanks[2]); result.add(smoke);
+        if(legacyFeedDrainable()) result.add(tanks[0]); if(legacySteamDrainable()) result.add(tanks[1]);
+        return result.toArray(new FluidTank[result.size()]);
+    }
 	@Override
 	public boolean isFluidDemandObservable() { return true; }
 
-	@Override public FluidTank[] getReceivingTanks() { return new FluidTank[] {tanks[0], tanks[1]}; }
+	@Override public FluidTank[] getReceivingTanks() {
+        if(legacyFeedDrainable()) return legacySteamDrainable() ? new FluidTank[0] : new FluidTank[] {tanks[1]};
+        return legacySteamDrainable() ? new FluidTank[] {tanks[0]} : new FluidTank[] {tanks[0], tanks[1]};
+    }
 
 	@Override public Container provideContainer(int ID, EntityPlayer player, World world, int x, int y, int z) { return new ContainerMachineRotaryFurnace(player.inventory, this); }
 	@Override public Object provideGUI(int ID, EntityPlayer player, World world, int x, int y, int z) { return new GUIMachineRotaryFurnace(player.inventory, this); }

@@ -36,13 +36,19 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineRadiolysis extends TileEntityMachineBase implements IEnergyProviderMK2, IFluidStandardTransceiver, IGUIProvider, IInfoProviderEC, IFluidCopiable {
+public class TileEntityMachineRadiolysis extends TileEntityMachineBase implements api.hbm.energymk2.IEnergyReceiverMK2, api.hbm.energymk2.IRatedGenerator, IFluidStandardTransceiver, IGUIProvider, IInfoProviderEC, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private static final int TASK_SIMULATE = 1;
 	private boolean runtimeEnergyMutation;
 	private DirPos[] runtimeConnections;
 
 	public long energyQuanta;
-	public static final int maxPower = 1000000;
+	private static final com.hbm.realsim.ProcessRecipe RADIO_BILL = com.hbm.realsim.ChemistryProcesses.radiolysis();
+    public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
+    public static final int maxPower = 6000;
+    public final com.hbm.realsim.IsotopeLedger isotope = new com.hbm.realsim.IsotopeLedger();
+    private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
+    @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
+    @Override public long getRatedOutputWatts() { return 30000L; }
 	public int heat;
 
 	public FluidTank[] tanks;
@@ -52,10 +58,11 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 
 	public TileEntityMachineRadiolysis() {
 		super(15); //10 rtg slots, 2 fluid ID slots (io), 2 irradiation slots (io), battery slot
-		tanks = new FluidTank[3];
+		tanks = new FluidTank[4];
 		tanks[0] = new FluidTank(Fluids.NONE, 2_000);
 		tanks[1] = new FluidTank(Fluids.NONE, 2_000);
 		tanks[2] = new FluidTank(Fluids.NONE, 2_000);
+        tanks[3] = new FluidTank(Fluids.FRESH_WATER, 100);
 		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 
@@ -91,6 +98,7 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 		tanks[0].readFromNBT(nbt, "input");
 		tanks[1].readFromNBT(nbt, "output1");
 		tanks[2].readFromNBT(nbt, "output2");
+        tanks[3].readFromNBT(nbt, "returnedWater"); physicalBatch.read(nbt); isotope.read(nbt); outputBudget.read(nbt);
 	}
 
 	@Override
@@ -103,16 +111,18 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 		tanks[0].writeToNBT(nbt, "input");
 		tanks[1].writeToNBT(nbt, "output1");
 		tanks[2].writeToNBT(nbt, "output2");
+        tanks[3].writeToNBT(nbt, "returnedWater"); physicalBatch.write(nbt); isotope.write(nbt); outputBudget.write(nbt);
 	}
 
 	public void networkUnpack(NBTTagCompound data) {
 		super.networkUnpack(data);
 
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
-		this.heat = data.getInteger("heat");
+		this.heat = data.getInteger("heat"); isotope.readStatus(data);
 		tanks[0].readFromNBT(data, "t0");
 		tanks[1].readFromNBT(data, "t1");
 		tanks[2].readFromNBT(data, "t2");
+        tanks[3].readFromNBT(data, "t3");
 	}
 
 	@Override
@@ -167,31 +177,27 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 	private void runRadiolysisStep() {
 
 		if(!worldObj.isRemote) {
-			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 14, energyQuanta, maxPower));
-
-			heat = RTGUtil.updateRTGs(slots, slot_rtg);
-			this.setStoredEnergyQuanta(this.energyQuanta + heat * 10);
-
-			if(energyQuanta > maxPower)
-				this.setStoredEnergyQuanta(maxPower);
-
-			tanks[0].setType(10, 11, slots);
-			setupTanks();
-
-			if(heat > 100) {
-				int crackTime = (int) Math.max(-0.1 * (heat - 100) + 30, 5);
-
-				if(worldObj.getTotalWorldTime() % crackTime == 0)
-					crack();
-
-				if(heat >= 200 && worldObj.getTotalWorldTime() % 100 == 0)
-					sterilize();
-			}
+            long now = worldObj.getTotalWorldTime();
+            if(isotope.begin(now)) {
+                long source = com.hbm.realsim.IsotopeLedger.thermalWatts(slots, slot_rtg);
+                heat = RTGUtil.updateRTGs(slots, slot_rtg);
+                // One 20-J direct irradiation service, competing with thermoelectric output.
+                long sterilization = heat >= 200 && now % 100 == 0 && checkIfValid() && source >= 400 ? 40 : 0;
+                if(sterilization > 0 && !sterilize()) sterilization = 0;
+                setStoredEnergyQuanta(energyQuanta + isotope.convert(now, source, sterilization,
+                    com.hbm.realsim.GeneratorContract.room(energyQuanta, maxPower), getRatedOutputWatts() / 10));
+                tanks[0].setType(10, 11, slots);
+                setupTanks();
+                if(heat > 100 || physicalBatch.active()) crack();
+                setStoredEnergyQuanta(chargeRatedItems(slots, 14, maxPower));
+                markDirty();
+            }
 
 			for(DirPos pos : getConPos()) {
 				this.providePowerToDirectReceiver(worldObj, pos.getX(), pos.getY(),pos.getZ(), pos.getDir());
 				if(tanks[1].getFill() > 0) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(),pos.getZ(), pos.getDir());
 				if(tanks[2].getFill() > 0) this.sendFluid(tanks[2], worldObj, pos.getX(), pos.getY(),pos.getZ(), pos.getDir());
+                if(tanks[3].getFill() > 0) this.sendFluid(tanks[3], worldObj, pos.getX(), pos.getY(),pos.getZ(), pos.getDir());
 			}
 
 		}
@@ -200,10 +206,11 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 	private void sendRuntimePacket() {
 		NBTTagCompound data = new NBTTagCompound();
 		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
-		data.setInteger("heat", heat);
+		data.setInteger("heat", heat); isotope.writeStatus(data);
 		tanks[0].writeToNBT(data, "t0");
 		tanks[1].writeToNBT(data, "t1");
 		tanks[2].writeToNBT(data, "t2");
+        tanks[3].writeToNBT(data, "t3");
 		this.networkPack(data, 50);
 	}
 
@@ -220,49 +227,27 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 
 	/* Processing Methods */
 	private void crack() {
-
-		Pair<FluidStack, FluidStack> quart = RadiolysisRecipes.getRadiolysis(tanks[0].getTankType());
-
-		if(quart != null) {
-
-			int left = quart.getKey().fill;
-			int right = quart.getValue().fill;
-
-			if(tanks[0].getFill() >= 100 && hasSpace(left, right)) {
-				tanks[0].setFill(tanks[0].getFill() - 100);
-				tanks[1].setFill(tanks[1].getFill() + left);
-				tanks[2].setFill(tanks[2].getFill() + right);
-			}
-		}
-	}
+        com.hbm.realsim.ProcessRecipe selected = tanks[0].getTankType() == Fluids.FRESH_WATER ? RADIO_BILL : null;
+        com.hbm.realsim.ProcessMachine.step(this, physicalBatch, selected, new FluidTank[] {tanks[0]},
+            new FluidTank[] {tanks[1], tanks[2], tanks[3]}, slots, 0, -1, 0, -1);
+    }
 
 	private boolean hasSpace(int left, int right) {
 		return tanks[1].getFill() + left <= tanks[1].getMaxFill() && tanks[2].getFill() + right <= tanks[2].getMaxFill();
 	}
 
 	private void setupTanks() {
-
-		Pair<FluidStack, FluidStack> quart = RadiolysisRecipes.getRadiolysis(tanks[0].getTankType());
-
-		if(quart != null) {
-			tanks[1].setTankType(quart.getKey().type);
-			tanks[2].setTankType(quart.getValue().type);
-		} else {
-			tanks[0].setTankType(Fluids.NONE);
-			tanks[1].setTankType(Fluids.NONE);
-			tanks[2].setTankType(Fluids.NONE);
-		}
-
-	}
+        com.hbm.realsim.ProcessMachine.configure(physicalBatch, RADIO_BILL, new FluidTank[] {tanks[1], tanks[2], tanks[3]});
+    }
 
 	// Code: pressure, sword, sterilize.
-	private void sterilize() {
+	private boolean sterilize() {
 		if(slots[12] != null) {
 			//if(slots[12].getItem() instanceof ItemFood && !(slots[12].getItem() == ModItems.pancake)) {
 			//	this.decrStackSize(12, 1);
 			//}
 
-			if(!checkIfValid()) return;
+			if(!checkIfValid()) return false;
 
 			ItemStack output = slots[12].copy();
 			output.stackSize = 1;
@@ -274,6 +259,7 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 				if(slots[13].stackTagCompound.hasNoTags()) {
 					slots[13].stackTagCompound = null;
 				}
+                return true;
 			} else if(slots[13].isItemEqual(output) && slots[13].stackSize + output.stackSize <= slots[13].getMaxStackSize()) {
 				this.decrStackSize(12, output.stackSize);
 				slots[13].stackSize += output.stackSize;
@@ -283,8 +269,10 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 						slots[13].stackTagCompound = null;
 					}
 				}
+                return true;
 			}
 		}
+        return false;
 	}
 
 	private boolean checkIfValid() {
@@ -320,7 +308,7 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 
 	@Override
 	public FluidTank[] getSendingTanks() {
-		return new FluidTank[] {tanks[1], tanks[2]};
+		return new FluidTank[] {tanks[1], tanks[2], tanks[3]};
 	}
 
 	@Override
@@ -358,6 +346,11 @@ public class TileEntityMachineRadiolysis extends TileEntityMachineBase implement
 
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
-		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(this.heat * 10));
+		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(isotope.electricQuanta));
 	}
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("5% thermoelectric conversion; chemical processing reduces available electrical output");
+        lines.add("Peroxide production requires electricity; sterilization uses isotope heat");
+        if(live) { lines.add("Current isotope heat: " + com.hbm.realsim.MachineInfo.thermalWatts(isotope.thermalQuanta * 10)); lines.add("Rejected heat: " + com.hbm.realsim.MachineInfo.thermalWatts(isotope.rejectedQuanta * 10)); }
+    }
 }

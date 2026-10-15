@@ -31,7 +31,6 @@ import com.hbm.util.I18nUtil;
 import com.hbm.util.ParticleUtil;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
-import api.hbm.energymk2.IEnergyProviderMK2;
 import api.hbm.fluid.IFluidStandardReceiver;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.relauncher.Side;
@@ -46,7 +45,12 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
-public class TileEntityMachineGasFlare extends TileEntityMachineBase implements IEnergyProviderMK2, IFluidStandardReceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable, com.hbm.realsim.IMachineInfo {
+public class TileEntityMachineGasFlare extends TileEntityMachineBase implements api.hbm.energymk2.IRatedGenerator, IFluidStandardReceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable, com.hbm.realsim.IMachineInfo {
+    private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
+    @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
+    @Override public long getRatedOutputWatts() { return 0; }
+    @Override public long getExportLimitWatts() { return 100000L; }
+
 	private static final int TASK_PROCESS = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
@@ -79,6 +83,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        outputBudget.read(nbt);
         lastDisposalTick = nbt.hasKey("realSimFlareTick") ? nbt.getLong("realSimFlareTick") : Long.MIN_VALUE;
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "powerTime");
 		tank.readFromNBT(nbt, "gas");
@@ -89,6 +94,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+        outputBudget.write(nbt);
         nbt.setLong("realSimFlareTick", lastDisposalTick);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tank.writeToNBT(nbt, "gas");
@@ -203,7 +209,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 			tank.setType(3, slots);
 			tank.loadTank(1, 2, slots);
 			this.processGas();
-			this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 0, energyQuanta, maxPower));
+			this.setStoredEnergyQuanta(this.chargeRatedItems(slots, 0, maxPower));
 			this.sendRuntimeState();
 		} finally {
 			runtimeEnergyMutation = false;
@@ -330,7 +336,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 
 	@Override
 	public long getEnergyCapacityQuanta() {
-		return this.maxPower;
+		return 0; // No electrical hardware; old over-cap electricity remains exportable.
 	}
 
 	@Override
@@ -381,7 +387,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 			info.add(EnumChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "+" + (level * 100) + "%"));
 		}
 		if(type == UpgradeType.EFFECT) {
-			info.add(EnumChatFormatting.GRAY + "Legacy yield upgrade retained; disposal flares do not generate electricity.");
+			info.add(EnumChatFormatting.GRAY + "Disposal flares do not generate electricity.");
 		}
 	}
 
@@ -418,6 +424,6 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 	}
 
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
-        lines.add("Gas disposal only; no electrical output or recoverable heat credit");
+        lines.add("Burns waste gas; produces no electricity or usable process heat");
     }
 }

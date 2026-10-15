@@ -15,7 +15,11 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IFluidCopiable {
 	
-	public long energyQuanta = 0;
+	private static final com.hbm.realsim.ProcessRecipe HEAVY_WATER_BILL = com.hbm.realsim.ChemistryProcesses.heavyWater();
+    private static final com.hbm.realsim.ProcessRecipe HEAVY_TOWER_BILL = com.hbm.realsim.ChemistryProcesses.heavyWaterTower();
+    private static final com.hbm.realsim.ProcessRecipe AIR_BILL = com.hbm.realsim.ChemistryProcesses.airSeparation();
+    public final com.hbm.realsim.ProcessBatch processBatch = new com.hbm.realsim.ProcessBatch();
+    public long energyQuanta = 0;
 	public FluidTank[] tanks;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
@@ -23,10 +27,11 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 
 	public TileEntityDeuteriumExtractor() {
 		super(0);
-		tanks = new FluidTank[2];
-		tanks[0] = new FluidTank(Fluids.LIGHT_WATER, 1000).migrateFrom(Fluids.WATER);
-		tanks[1] = new FluidTank(Fluids.HEAVYWATER, 100);
-		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
+		tanks = new FluidTank[5];
+		tanks[0] = new FluidTank(Fluids.LIGHT_WATER, 60).withDefaultCapacity().migrateFrom(Fluids.WATER);
+		tanks[1] = new FluidTank(Fluids.HEAVYWATER, 10).withDefaultCapacity();
+		for(int i = 2; i < tanks.length; i++) tanks[i] = new FluidTank(Fluids.NONE, 100);
+        for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 
 	@Override
@@ -57,15 +62,10 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 		this.beginMachineFluidMutation();
 		runtimeEnergyMutation = true;
 		try {
-			if(this.canProcess()) {
-				int convert = Math.min(tanks[1].getMaxFill(), tanks[0].getFill()) / 50;
-				convert = Math.min(convert, tanks[1].getMaxFill() - tanks[1].getFill());
-				tanks[0].setFill(tanks[0].getFill() - convert * 50);
-				tanks[1].setFill(tanks[1].getFill() + convert);
-				this.setStoredEnergyQuanta(energyQuanta - getEnergyCapacityQuanta() / 100);
-				fluidChanged = convert > 0;
-			}
-			if(tanks[1].getFill() > 0) this.sendFluidToAll(tanks[1], this);
+            com.hbm.realsim.ProcessMachine.sizeProcessBuffers(processBatch.active() ? processBatch.recipe() : selectedBill(), new FluidTank[] {tanks[0]}, processOutputs());
+            if(this.canProcess()) fluidChanged = com.hbm.realsim.ProcessMachine.step(this, processBatch, selectedBill(),
+                new FluidTank[] {tanks[0]}, processOutputs(), null, 0, -1, 0, -1);
+            for(FluidTank output : processOutputs()) if(output.getFill() > 0) this.sendFluidToAll(output, this);
 		} finally {
 			runtimeEnergyMutation = false;
 			this.endMachineFluidMutation();
@@ -86,14 +86,17 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 		this.networkPackNTIfDirty(50);
 	}
 
-	private boolean canProcess() {
-		if(this instanceof TileEntityAtmoTower && !tanks[1].configureForRecipe(Fluids.NITROGEN_GAS, 0)) return false;
-		return this.hasPower() && energyQuanta > 200 && this.hasEnoughWater() && tanks[1].getMaxFill() > tanks[1].getFill();
-	}
+    private com.hbm.realsim.ProcessRecipe selectedBill() { return this instanceof TileEntityAtmoTower ? AIR_BILL : this instanceof TileEntityDeuteriumTower ? HEAVY_TOWER_BILL : HEAVY_WATER_BILL; }
+    public FluidTank[] processOutputs() { return new FluidTank[] {tanks[1], tanks[2], tanks[3], tanks[4]}; }
+    private boolean canProcess() {
+        return processBatch.active() || com.hbm.realsim.ProcessMachine.inputsReady(selectedBill(), new FluidTank[] {tanks[0]}, null, 0, -1);
+    }
+
+    private boolean hasOutputs() { for(FluidTank tank : processOutputs()) if(tank.getFill() > 0) return true; return false; }
 
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
-		if(this.canProcess() || tanks[1].getFill() > 0) this.scheduleMachineTransition(now + 1L, TASK_PROCESS, 0);
+		if(this.canProcess() || hasOutputs()) this.scheduleMachineTransition(now + 1L, TASK_PROCESS, 0);
 		else this.cancelMachineTransition(TASK_PROCESS, 0);
 	}
 	
@@ -109,6 +112,7 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		tanks[0].readFromNBT(data, "water");
 		tanks[1].readFromNBT(data, "heavyWater");
+        for(int i = 2; i < tanks.length; i++) tanks[i].readFromNBT(data, "coproduct" + i);
 	}
 
 	public boolean hasPower() {
@@ -116,7 +120,7 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 	}
 
 	public boolean hasEnoughWater() {
-		return tanks[0].getFill() >= 100;
+		return tanks[0].getFill() >= selectedBill().quantities[0];
 	}
 
 	@Override
@@ -125,6 +129,8 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		tanks[0].readFromNBT(nbt, "water");
 		tanks[1].readFromNBT(nbt, "heavyWater");
+        for(int i = 2; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "coproduct" + i);
+        processBatch.read(nbt);
 	}
 
 	@Override
@@ -133,6 +139,8 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		tanks[0].writeToNBT(nbt, "water");
 		tanks[1].writeToNBT(nbt, "heavyWater");
+        for(int i = 2; i < tanks.length; i++) tanks[i].writeToNBT(nbt, "coproduct" + i);
+        processBatch.write(nbt);
 	}
 
 	@Override
@@ -156,7 +164,7 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 
 	@Override
 	public FluidTank[] getSendingTanks() {
-		return new FluidTank[] { tanks[1] };
+		return processOutputs();
 	}
 
 	@Override

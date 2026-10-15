@@ -78,7 +78,7 @@ public class CrucibleCastingHandler extends SafeTemplateRecipeHandler implements
 
 	@Override
 	public String getRecipeName() {
-		return "Crucible Casting";
+		return "Foundry Casting";
 	}
 
 	@Override

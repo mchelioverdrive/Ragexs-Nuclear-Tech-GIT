@@ -64,8 +64,8 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 
 	public TileEntityMachineStrandCaster() {
 		super(7);
-		water = new FluidTank(Fluids.FRESH_WATER, 64_000).migrateFrom(Fluids.WATER);
-		steam = new FluidTank(Fluids.SPENTSTEAM, 64_000);
+		water = new FluidTank(Fluids.FRESH_WATER, com.hbm.realsim.IndustrialDemand.COOLING_CHARGE_L).migrateFrom(Fluids.WATER).withDefaultCapacity();
+		steam = new FluidTank(Fluids.SPENTSTEAM, 1).withDefaultCapacity();
 		FluidTank.ChangeListener listener = new FluidTank.ChangeListener() {
 			@Override public void onTankChanged(FluidTank tank) {
 				if(runtimeFluidMutation || worldObj == null || worldObj.isRemote) return;
@@ -503,6 +503,6 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
         lines.add("Sealed cooling charge: " + com.hbm.realsim.IndustrialDemand.COOLING_CHARGE_L + " L fresh water; no new steam output");
-        lines.add("Molten-material cooling remains nominal ambient rejection; molds and free output room required");
+        lines.add("Casts molten material; requires molds and room for products");
     }
 }

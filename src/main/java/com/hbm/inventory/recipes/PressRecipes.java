@@ -66,13 +66,13 @@ public class PressRecipes extends SerializableRecipe {
 		makeRecipe(StampType.FLAT, new OreDictStack(DIAMOND.dust()),						Items.diamond);
 		makeRecipe(StampType.FLAT, new OreDictStack(EMERALD.dust()),						Items.emerald);
 		makeRecipe(StampType.FLAT, new ComparableStack(ModItems.biomass),					ModItems.biomass_compressed);
-		makeRecipe(StampType.FLAT, new OreDictStack(ANY_COKE.gem()),						ModItems.ingot_graphite);
+		makeRecipe(StampType.FLAT, new OreDictStack(ANY_COKE.gem(), 4), new ItemStack(ModItems.ingot_graphite, 3));
 		//makeRecipe(StampType.FLAT, new ComparableStack(ModItems.meteorite_sword_reforged),	ModItems.meteorite_sword_hardened);
 		makeRecipe(StampType.FLAT, new ComparableStack(Blocks.log, 1, 3),					ModItems.ball_resin);
 
 		makeRecipe(StampType.FLAT, new OreDictStack(COAL.dust()),							DictFrame.fromOne(ModItems.briquette, EnumBriquetteType.COAL));
 		makeRecipe(StampType.FLAT, new OreDictStack(LIGNITE.dust()),						DictFrame.fromOne(ModItems.briquette, EnumBriquetteType.LIGNITE));
-		makeRecipe(StampType.FLAT, new ComparableStack(ModItems.powder_sawdust),			DictFrame.fromOne(ModItems.briquette, EnumBriquetteType.WOOD));
+		makeRecipe(StampType.FLAT, new ComparableStack(ModItems.powder_sawdust, 4),			DictFrame.fromOne(ModItems.briquette, EnumBriquetteType.WOOD));
 
 		makeRecipe(StampType.PLATE, new OreDictStack(IRON.ingot()),			ModItems.plate_iron);
 		makeRecipe(StampType.PLATE, new OreDictStack(GOLD.ingot()),			ModItems.plate_gold);

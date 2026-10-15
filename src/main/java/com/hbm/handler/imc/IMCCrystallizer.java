@@ -40,10 +40,12 @@ public class IMCCrystallizer extends IMCHandler {
 			time = 600;
 		
 		if(acid.type == Fluids.NONE)
-			acid = new FluidStack(Fluids.PEROXIDE, 500);
+			acid = new FluidStack(Fluids.PEROXIDE, 5);
 		
 		CrystallizerRecipe recipe = new CrystallizerRecipe(out, time);
 		recipe.acidAmount = acid.fill;
+        recipe.recoverCarrier = com.hbm.inventory.recipes.CrystallizerRecipes.isRecoveredCarrier(acid.type);
+        if(recipe.recoverCarrier) recipe.duration = Math.max(recipe.duration, 1200);
 		
 		if(in != null) {
 			buffer.put(new Pair(new RecipesCommon.ComparableStack(in), acid.type), recipe);

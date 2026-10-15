@@ -79,7 +79,7 @@ public class ItemChemistryTemplate extends Item {
 				}
 			}
 
-			for(int i = 0; i < 2; i++) {
+			for(int i = 0; i < recipe.outputFluids.length; i++) {
 				if(recipe.outputFluids[i] != null) {
 					int p = recipe.outputFluids[i].pressure;
 					list.add(com.hbm.inventory.fluid.FluidInfo.amount(recipe.outputFluids[i].type, recipe.outputFluids[i].fill) + " " + recipe.outputFluids[i].type.getLocalizedName() + (p != 0 ? (" at " + p + "PU") : ""));
@@ -94,7 +94,7 @@ public class ItemChemistryTemplate extends Item {
 				}
 			}
 
-			for(int i = 0; i < 2; i++) {
+			for(int i = 0; i < recipe.inputFluids.length; i++) {
 				if(recipe.inputFluids[i] != null) {
 					int p = recipe.inputFluids[i].pressure;
 					list.add(com.hbm.inventory.fluid.FluidInfo.amount(recipe.inputFluids[i].type, recipe.inputFluids[i].fill) + " " + recipe.inputFluids[i].type.getLocalizedName() + (p != 0 ? (" at " + p + "PU") : ""));

@@ -261,10 +261,11 @@ public class AnvilRecipes {
 		constructionRecipes.add(new AnvilConstructionRecipe(
 			new AStack[] {
 				new OreDictStack(STEEL.plate(), 16),
-				new OreDictStack(BE.ingot(), 6),
-				new OreDictStack(CU.ingot(), 8),
-				new ComparableStack(ModItems.coil_gold, 16),
-				new ComparableStack(ModItems.gear_large, 1, 1)
+                new OreDictStack(STEEL.shell(), 4),
+                new OreDictStack(CU.plate(), 16),
+                new ComparableStack(Blocks.piston, 4),
+                new ComparableStack(ModItems.coil_copper, 12),
+                new ComparableStack(ModItems.gear_large, 2, 1)
 			}, new AnvilOutput(new ItemStack(ModBlocks.machine_stirling_steel))).setTier(2));
 
 		int ukModifier = 1;
@@ -369,15 +370,18 @@ public class AnvilRecipes {
 				new AStack[] {
 						new OreDictStack(KEY_PLANKS, 16),
 						new OreDictStack(STEEL.plate(), 6),
-						new OreDictStack(CU.ingot(), 8),
+						new OreDictStack(CU.plate(), 8),
+                        new ComparableStack(Blocks.piston, 1),
 						new ComparableStack(ModItems.coil_copper, 4),
 						new ComparableStack(ModItems.gear_large, 1, 0)
 				}, new AnvilOutput(new ItemStack(ModBlocks.machine_stirling))).setTier(2));
 
 		constructionRecipes.add(new AnvilConstructionRecipe(
 				new AStack[] {
-						new ComparableStack(ModBlocks.reinforced_stone, 16),
-						new OreDictStack(STEEL.plate(), 12),
+						new ComparableStack(ModBlocks.reinforced_stone, 4),
+                        new ComparableStack(Blocks.piston, 2),
+                        new OreDictStack(STEEL.pipe(), 2),
+						new OreDictStack(STEEL.plate(), 6),
 						new OreDictStack(STEEL.shell(), 2),
 						new ComparableStack(ModItems.coil_copper, 4),
 						new ComparableStack(ModItems.gear_large, 1)

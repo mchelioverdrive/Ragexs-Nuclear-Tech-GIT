@@ -144,15 +144,20 @@ public class PhysicalAccountingTest {
         String source = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("src/main/java/com/hbm/inventory/fluid/Fluids.java")), java.nio.charset.StandardCharsets.UTF_8);
         java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(?m)^\\s*(\\w+)\\s*=\\s*new FluidType\\(").matcher(source);
         java.util.List<String> names = new java.util.ArrayList<String>();
-        while(matcher.find()) if(!matcher.group(1).matches("(HYDROGEN|OXYGEN|NITROGEN)_GAS|AIR_HEATED|AIRBLAST|BLAST_FURNACE_GAS")) names.add(matcher.group(1));
+        while(matcher.find()) if(!matcher.group(1).matches("(HYDROGEN|OXYGEN|NITROGEN)_GAS|AIR_HEATED|AIRBLAST|BLAST_FURNACE_GAS|DEPLETED_WATER|BUTADIENE|PHENOL|ACETONE|FORMALDEHYDE|BENZENE|BAUXITE_RESIDUE|MOLTEN_CALCIUM_CHLORIDE|MINERAL_BRINE|MOLTEN_LITHIUM_CHLORIDE|RAW_NATURAL_GAS|TOLUENE|GLYCEROL")) names.add(matcher.group(1));
         assertEquals(224, names.size());
+        assertTrue(source.indexOf("DEPLETED_WATER = new FluidType") > source.indexOf("BLAST_FURNACE_GAS = new FluidType"));
         byte[] hash = java.security.MessageDigest.getInstance("SHA-256").digest(String.join("\n", names).getBytes(java.nio.charset.StandardCharsets.UTF_8));
         StringBuilder hex = new StringBuilder(); for(byte value : hash) hex.append(String.format("%02x", value & 255));
         assertEquals("a628424d8f32be3cc376cc1084c1f44e47b3cda4cdb5913a487c1005024ca11a", hex.toString());
     }
     @Test public void unresolvedIsNotZero() {
-        assertFalse(PhysicalRegistry.get("NITAN").isResolved()); assertFalse(PhysicalRegistry.get("COOLANT").isResolved());
-        try { PhysicalRegistry.get("NITAN").chemicalMicrojoulesPerUnit(); fail("unresolved became zero"); } catch(IllegalStateException expected) { }
+        assertFalse(PhysicalRegistry.get("AMAT").isResolved());
+        assertTrue(PhysicalRegistry.get("NITAN").isResolved());
+        assertTrue(PhysicalRegistry.get("COOLANT").isResolved());
+        assertTrue(PhysicalRegistry.get("COOLANT").chemicalMicrojoulesPerUnit() > 0);
+        assertFalse(FuelSuitability.has("COOLANT", MaterialRole.HEATING_FUEL));
+        try { PhysicalRegistry.get("AMAT").chemicalMicrojoulesPerUnit(); fail("unresolved became zero"); } catch(IllegalStateException expected) { }
     }
     @Test public void oldWorldHasNoNewCredit() {
         FuelCredit credit = new FuelCredit(); credit.read(new NBTTagCompound()); assertEquals(0, credit.usefulMicrojoules());
@@ -197,12 +202,13 @@ public class PhysicalAccountingTest {
         assertEquals("Capacity: 500 standard L", com.hbm.inventory.fluid.FluidInfo.containerQuantity(hydrogen, 0, 500));
         assertEquals("LHV: 35.819 MJ/L", com.hbm.inventory.fluid.FluidInfo.lhv(diesel.getPhysicalState()));
         assertEquals("Stored chemical energy: 644.742 MJ", com.hbm.inventory.fluid.FluidInfo.storedEnergy(diesel.getPhysicalState(), 18));
-        assertNull(com.hbm.inventory.fluid.FluidInfo.lhv(PhysicalRegistry.get("NITAN")));
-        assertNull(com.hbm.inventory.fluid.FluidInfo.storedEnergy(PhysicalRegistry.get("NITAN"), 100));
+        assertNull(com.hbm.inventory.fluid.FluidInfo.lhv(PhysicalRegistry.get("AMAT")));
+        assertNotNull(com.hbm.inventory.fluid.FluidInfo.lhv(PhysicalRegistry.get("NITAN")));
+        assertNull(com.hbm.inventory.fluid.FluidInfo.storedEnergy(PhysicalRegistry.get("AMAT"), 100));
         assertNull(com.hbm.inventory.fluid.FluidInfo.storedEnergy(diesel.getPhysicalState(), 0));
         java.util.List<String> info = new java.util.ArrayList<>();
         com.hbm.inventory.fluid.FluidInfo.appendPhysical(info, hydrogen, true);
-        assertTrue(info.contains("Canonical gas reference: 0 \u00b0C / 1 bar; not vessel volume"));
+        assertTrue(info.contains("Gas quantities: standard L (0 C, 1 bar)"));
     }
     @Test public void revisedCapacityPreservesLegacyAmountIdentityPressureAndReload() throws Exception {
         FluidTank old = tank("DIESEL", 1842).withPressure(2); old.setFill(1842);
@@ -244,7 +250,8 @@ public class PhysicalAccountingTest {
             NBTTagCompound tag = roundTrip(fresh.getTagCompound()); fresh.setTagCompound(tag);
             assertEquals(20, descriptor.amount(fresh)); assertEquals(1000, descriptor.amount(old));
             assertEquals(500, com.hbm.inventory.FluidContainerRegistry.normalizedCapacity(item, tank("HYDROGEN_GAS", 0).getTankType(), 1000));
-            assertEquals(1000, com.hbm.inventory.FluidContainerRegistry.normalizedCapacity(item, tank("NITAN", 0).getTankType(), 1000));
+            assertEquals(20, com.hbm.inventory.FluidContainerRegistry.normalizedCapacity(item, tank("NITAN", 0).getTankType(), 1000));
+            assertEquals(1000, com.hbm.inventory.FluidContainerRegistry.normalizedCapacity(item, tank("AMAT", 0).getTankType(), 1000));
         } finally { com.hbm.items.ModItems.canister_full = previous; }
     }
     @Test public void groundwaterRatingsAreBoundedAndIndependentOfBuffers() {
@@ -260,8 +267,8 @@ public class PhysicalAccountingTest {
         GeneratorStats stats = new GeneratorStats(); FuelCredit credit = new FuelCredit();
         java.util.List<String> normal = java.util.Arrays.asList(stats.info(750000, credit, "DIESEL", 20, 380000, false));
         assertTrue(normal.contains("Efficiency: 38.0% rated")); assertTrue(normal.contains("Current output: 0 W"));
-        assertTrue(normal.contains("Fuel flow: 0.0000 L/min")); assertFalse(String.join(" ", normal).contains("Chemical credit"));
-        assertTrue(String.join(" ", stats.info(750000, credit, "DIESEL", 20, 380000, true)).contains("Chemical credit"));
+        assertTrue(normal.contains("Fuel flow: 0.0000 L/min")); assertFalse(String.join(" ", normal).contains("Fuel energy being converted"));
+        assertTrue(String.join(" ", stats.info(750000, credit, "DIESEL", 20, 380000, true)).contains("Fuel energy being converted"));
     }
 
     @Test public void industrialUpgradeWorkIsBoundedAndTracksThroughput() {

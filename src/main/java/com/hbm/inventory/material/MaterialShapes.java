@@ -2,12 +2,14 @@ package com.hbm.inventory.material;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
 
 import com.hbm.util.Compat;
 
 public class MaterialShapes {
 
 	public static final List<MaterialShapes> allShapes = new ArrayList();
+	public static final HashMap<String, MaterialShapes> prefixByName = new HashMap<String, MaterialShapes>();
 
 	public static final MaterialShapes ANY = new MaterialShapes(0).noAutogen();
 	public static final MaterialShapes ORE = new MaterialShapes(0, "ore", "oreNether").noAutogen();
@@ -71,7 +73,7 @@ public class MaterialShapes {
 		this.prefixes = prefixes;
 
 		for(String prefix : prefixes) {
-			Mats.prefixByName.put(prefix, this);
+			prefixByName.put(prefix, this);
 		}
 
 		allShapes.add(this);
@@ -84,6 +86,13 @@ public class MaterialShapes {
 	}
 	public int q(int amount) {
 		return this.quantity * amount;
+	}
+	/** Only these shapes have native metadata item generators; ordinary forms are registered separately. */
+	public boolean hasNativeGenerator() {
+		return this == FRAGMENT || this == INGOT || this == WIRE || this == DENSEWIRE || this == BOLT
+				|| this == CASTPLATE || this == WELDEDPLATE || this == HEAVY_COMPONENT || this == SHELL || this == PIPE
+				|| this == LIGHTBARREL || this == HEAVYBARREL || this == LIGHTRECEIVER || this == HEAVYRECEIVER
+				|| this == MECHANISM || this == STOCK || this == GRIP;
 	}
 
 	public int q(int unitsUsed, int itemsProduced) { //eg rails: INOGT.q(6, 16) since the recipe uses 6 iron ingots producing 16 individual rail blocks

@@ -281,7 +281,7 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 
 	@Override
 	public long getEnergyCapacityQuanta() {
-		return isCreative() ? powerBuffer : Math.max(1L, getRatedOutputWatts() * 2L);
+		return isCreative() ? powerBuffer : Math.max(1L, getRatedOutputWatts() / 5L);
 	}
 
 	@Override
@@ -301,8 +301,8 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 		if(isCreative()) { lines.add("Creative converter; excluded from the physical power ladder"); return; }
 		lines.add("Thermal intake ceiling: " + MachineInfo.thermalWatts(getRatedHeatInputWatts()));
 		lines.add(String.format(java.util.Locale.US, "Installed heat-to-electric efficiency: %.1f%%; limited by hot/cold temperature difference", getConfiguredEfficiencyPpm() / 10000D));
-		lines.add("Requires a qualified process heater below; cold sink: integral ambient radiator at 20 \u00b0C");
-		lines.add("Governed heat intake; same gear repair and native power ports");
+		lines.add("Requires a compatible heater below; integral radiator at 20 \u00b0C");
+		lines.add("Heat intake is governed; repair a broken gear with a matching replacement");
 		if(live) {
 			lines.add("Current output: " + MachineInfo.watts(currentOutputQuanta * 10L));
 			lines.add("Current thermal intake: " + MachineInfo.thermalWatts((long) heat * 10L));

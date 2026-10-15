@@ -69,17 +69,18 @@ public class ArcWelderRecipes extends SerializableRecipe {
 				new OreDictStack(ZR.plateCast(), 2)));
 		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.plate_welded, 1, Mats.MAT_ALUMINIUM.id), 300, 10_000L,
 				new OreDictStack(AL.plateCast(), 2)));
+		// Shield gas is vented: 12 standard L/min argon, not oxygen as an inert blanket.
 		//late-game fusion
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.plate_welded, 1, Mats.MAT_TCALLOY.id), 1_200, 1_000_000L, new FluidStack(Fluids.OXYGEN_GAS, 1_000),
+		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.plate_welded, 1, Mats.MAT_TCALLOY.id), 1_200, 4_000L, new FluidStack(Fluids.ARGON, 12),
 				new OreDictStack(TCALLOY.plateCast(), 2)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.plate_welded, 1, Mats.MAT_CDALLOY.id), 1_200, 1_000_000L, new FluidStack(Fluids.OXYGEN_GAS, 1_000),
+		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.plate_welded, 1, Mats.MAT_CDALLOY.id), 1_200, 4_000L, new FluidStack(Fluids.ARGON, 12),
 				new OreDictStack(CDALLOY.plateCast(), 2)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.plate_welded, 1, Mats.MAT_TUNGSTEN.id), 1_200, 250_000L, new FluidStack(Fluids.OXYGEN_GAS, 1_000),
+		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.plate_welded, 1, Mats.MAT_TUNGSTEN.id), 1_200, 3_000L, new FluidStack(Fluids.ARGON, 12),
 				new OreDictStack(W.plateCast(), 2)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.plate_welded, 1, Mats.MAT_CMB.id), 1_200, 10_000_000L, new FluidStack(Fluids.REFORMGAS, 1_000),
+		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.plate_welded, 1, Mats.MAT_CMB.id), 1_200, 8_000L, new FluidStack(Fluids.REFORMGAS, 20),
 				new OreDictStack(CMB.plateCast(), 2)));
 		//pre-DFC
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.plate_welded, 1, Mats.MAT_OSMIRIDIUM.id), 6_000, 20_000_000L, new FluidStack(Fluids.REFORMGAS, 16_000),
+		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.plate_welded, 1, Mats.MAT_OSMIRIDIUM.id), 6_000, 10_000L, new FluidStack(Fluids.REFORMGAS, 100),
 				new OreDictStack(OSMIRIDIUM.plateCast(), 2)));
 
 		//Missile Parts
@@ -128,14 +129,15 @@ public class ArcWelderRecipes extends SerializableRecipe {
 		//recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.sat_laser), 600, 50_000L, new ComparableStack(ModItems.sat_base), new ComparableStack(ModItems.sat_head_laser)));
 		//recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.sat_resonator), 600, 50_000L, new ComparableStack(ModItems.sat_base), new ComparableStack(ModItems.sat_head_resonator)));
 
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModBlocks.machine_xenon_thruster), 2400, 5_000_000L, new FluidStack(Fluids.XENON, 8_000),
+		// Vented cold-flow/leak test; flight propellant is supplied to the installed thruster.
+		recipes.add(new ArcWelderRecipe(new ItemStack(ModBlocks.machine_xenon_thruster), 2400, 8_000L, new FluidStack(Fluids.XENON, 20),
 				new OreDictStack(W.plateWelded(), 8), new OreDictStack(NB.plateWelded(), 4),
 				new ComparableStack(ModItems.circuit, 4, EnumCircuitType.AVIONICS),
 				new ComparableStack(ModItems.circuit, 2, EnumCircuitType.QUANTUM),
 				new ComparableStack(ModItems.arc_electrode, 2, EnumElectrodeType.SATURNITE)));
 
 		//krypton + silicon wafer = printed silicon wafer
-		recipes.add(new ArcWelderRecipe(DictFrame.fromOne(ModItems.circuit, EnumCircuitType.SILICON), 30, 1_000L, new FluidStack(Fluids.KRYPTON, 400), new ComparableStack(ModItems.billet_silicon)));
+		recipes.add(new ArcWelderRecipe(DictFrame.fromOne(ModItems.circuit, EnumCircuitType.SILICON), 30, 1_000L, new FluidStack(Fluids.KRYPTON, 1), new ComparableStack(ModItems.billet_silicon)));
 
 	}
 

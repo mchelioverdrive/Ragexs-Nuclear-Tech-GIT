@@ -51,6 +51,7 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 	private boolean runtimeBatchMutation;
 	private boolean runtimeBatchActive;
 	private long lastBatchTick = Long.MIN_VALUE;
+    private int admissionTicks; // At most one 100-standard-L batch; loaded time only.
 	private int observedInventoryFingerprint;
 	private boolean inventoryFingerprintInitialized;
 	private FluidType observedInputType;
@@ -59,11 +60,11 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 		super(11);
 		
 		this.tanks = new FluidTank[5];
-		this.tanks[0] = new FluidTank(Fluids.AIR, 64_000);
-		this.tanks[1] = new FluidTank(Fluids.NITROGEN_GAS, 24_000);
-		this.tanks[2] = new FluidTank(Fluids.OXYGEN_GAS, 24_000);
-		this.tanks[3] = new FluidTank(Fluids.KRYPTON, 24_000);
-		this.tanks[4] = new FluidTank(Fluids.CARBONDIOXIDE, 24_000);
+		this.tanks[0] = new FluidTank(Fluids.AIR, 6000).withDefaultCapacity();
+		this.tanks[1] = new FluidTank(Fluids.NITROGEN_GAS, 6000).withDefaultCapacity();
+		this.tanks[2] = new FluidTank(Fluids.OXYGEN_GAS, 6000).withDefaultCapacity();
+		this.tanks[3] = new FluidTank(Fluids.KRYPTON, 6000).withDefaultCapacity();
+		this.tanks[4] = new FluidTank(Fluids.CARBONDIOXIDE, 6000).withDefaultCapacity();
 		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 
@@ -133,7 +134,9 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 		long elapsed = targetTick - lastBatchTick;
 		lastBatchTick = targetTick;
 		Quartet<FluidStack, FluidStack, FluidStack, FluidStack> output = CryoRecipes.getOutput(tanks[0].getTankType());
-		long batches = this.maxDistillBatches(output, elapsed);
+		if(output == null || !canDistill(output)) { admissionTicks = 0; return; }
+        admissionTicks = (int) Math.min(20L, admissionTicks + elapsed);
+        long batches = this.maxDistillBatches(output, admissionTicks / 20);
 		if(batches <= 0L) return;
 		long oldEnergy = energyQuanta;
 		int oldInput = tanks[0].getFill();
@@ -147,6 +150,7 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 			tanks[3].setFill(tanks[3].getFill() + (int) (batches * output.getY().fill));
 			tanks[4].setFill(tanks[4].getFill() + (int) (batches * output.getZ().fill));
 			this.setStoredEnergyQuanta(energyQuanta - batches * getBatchWorkQuanta());
+            admissionTicks -= (int) (batches * 20);
 		} finally {
 			runtimeEnergyMutation = false;
 			this.endMachineFluidMutation();
@@ -208,12 +212,14 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 		this.observeInventoryFingerprint();
 	}
 
-	private long getBatchWorkQuanta() {
-        // Air separation: adopted 500 J per standard L for the cryogenic/warming cycle.
-        return tanks[0].getTankType() == Fluids.AIR ? 100_000L : 20_000L;
+    private long getBatchWorkQuanta() {
+        // Adopted compression/cold-cycle/warming duty: 500 J per standard L, 50 kWe at rated flow.
+        return 100000L;
     }
     private boolean canDistill(Quartet<FluidStack, FluidStack, FluidStack, FluidStack> output) {
-		return energyQuanta >= getBatchWorkQuanta() && tanks[0].getFill() >= 100
+		return output != null && energyQuanta >= getBatchWorkQuanta() && tanks[0].getFill() >= 100
+                && tanks[1].getTankType() == output.getW().type && tanks[2].getTankType() == output.getX().type
+                && tanks[3].getTankType() == output.getY().type && tanks[4].getTankType() == output.getZ().type
 				&& tanks[1].getFill() + output.getW().fill <= tanks[1].getMaxFill()
 				&& tanks[2].getFill() + output.getX().fill <= tanks[2].getMaxFill()
 				&& tanks[3].getFill() + output.getY().fill <= tanks[3].getMaxFill()
@@ -250,10 +256,9 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
 		Quartet<FluidStack, FluidStack, FluidStack, FluidStack> output = CryoRecipes.getOutput(tanks[0].getTankType());
-		long batches = this.maxDistillBatches(output, Long.MAX_VALUE);
-		runtimeBatchActive = batches > 0L;
-		if(batches > 0L) this.scheduleMachineTransition(now + batches, TASK_ACCOUNTING, TASK_SLOT_MAIN);
-		else this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+        runtimeBatchActive = canDistill(output);
+        if(runtimeBatchActive) this.scheduleMachineTransition(now + Math.max(1, 20 - admissionTicks), TASK_ACCOUNTING, TASK_SLOT_MAIN);
+        else this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
 		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
 		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
 		this.scheduleFluidTransfer(now);
@@ -331,6 +336,7 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 		runtimeBatchActive = false;
 
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
+        admissionTicks = Math.max(0, Math.min(19, nbt.getInteger("gasAdmissionTicks")));
 		tanks[0].readFromNBT(nbt, "input");
 		tanks[1].readFromNBT(nbt, "o1");
 		tanks[2].readFromNBT(nbt, "o2");
@@ -344,6 +350,7 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 		super.writeToNBT(nbt);
 		
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
+        nbt.setInteger("gasAdmissionTicks", admissionTicks);
 		tanks[0].writeToNBT(nbt, "input");
 		tanks[1].writeToNBT(nbt, "o1");
 		tanks[2].writeToNBT(nbt, "o2");
@@ -461,8 +468,8 @@ public class TileEntityMachineCryoDistill extends TileEntityMachineBase implemen
 		return new GUIMachineCryoDistill(player.inventory, this);
 	}
 
-    @Override public long getMachineDemandWatts() { return getBatchWorkQuanta() * 10L; }
+    @Override public long getMachineDemandWatts() { return 50000L; }
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
-        lines.add("Batch work: " + api.hbm.energymk2.EnergyUnits.formatJoules(getBatchWorkQuanta()) + " per 100 inventory units of feed");
+        lines.add("Batch work: " + api.hbm.energymk2.EnergyUnits.formatJoules(getBatchWorkQuanta()) + " per 100 standard L of feed");
     }
 }

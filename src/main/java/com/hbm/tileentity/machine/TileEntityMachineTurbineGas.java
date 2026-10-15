@@ -27,7 +27,6 @@ import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.CompatEnergyControl;
 import com.hbm.util.FurnaceGasEmission;
 
-import api.hbm.energymk2.IEnergyProviderMK2;
 import api.hbm.fluid.IFluidStandardTransceiver;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.common.Optional;
@@ -55,7 +54,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	private int observedOrientation = Integer.MIN_VALUE;
 	
 	public long energyQuanta;
-	public static final long maxPower = 120_000_000L; // 60 MJ, 20 s gross nameplate
+	public static final long maxPower = 600_000L; // Two ticks of gross nameplate
 	
 	public int rpm; //0-100, crescent moon gauge, used for calculating the amount of power generated, starts past 10%
 	public int temp; //0-800, used for figuring out how much water to boil, starts boiling at 300°C
@@ -94,10 +93,10 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	public TileEntityMachineTurbineGas() {
 		super(2);
 		this.tanks = new FluidTank[4];
-		tanks[0] = new FluidTank(Fluids.GAS, 100000);
-		tanks[1] = new FluidTank(Fluids.LUBRICANT, 16000);
-		tanks[2] = new FluidTank(Fluids.FRESH_WATER, 16000).migrateFrom(Fluids.WATER);
-		tanks[3] = new FluidTank(Fluids.HOTSTEAM, 160000);
+		tanks[0] = new FluidTank(Fluids.GAS, 6000).withDefaultCapacity();
+		tanks[1] = new FluidTank(Fluids.LUBRICANT, 2).withDefaultCapacity();
+		tanks[2] = new FluidTank(Fluids.FRESH_WATER, 20).withDefaultCapacity().migrateFrom(Fluids.WATER);
+		tanks[3] = new FluidTank(Fluids.HOTSTEAM, 200).withDefaultCapacity();
 		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 
@@ -301,20 +300,14 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		
 		counter++;
 		
-		if(counter <= 20) //rpm gauge 0-100-0
-			rpm = 5 * counter;
-		else if (counter > 20 && counter <= 40)
-			rpm = 100 - 5 * (counter - 20);
-		else if (counter > 50) {
-			rpm = (int) (rpmIdle * (counter - 50) / 530); //slowly ramps up temp and RPM
-			temp = (int) (tempIdle * (counter - 50) / 530);
-		}
-		
+        rpm = com.hbm.realsim.GasTurbineCycle.startupRpm(counter, rpmIdle);
+        temp = com.hbm.realsim.GasTurbineCycle.startupTemperature(counter, tempIdle);
+
 		if(counter == 50) {
 			worldObj.playSoundEffect(xCoord, yCoord + 2, zCoord, "hbm:block.turbinegasStartup", getVolume(1.0F), 1.0F);
 		}
 			
-		if(counter == 580) {
+		if(counter == com.hbm.realsim.GasTurbineCycle.STARTUP_TICKS) {
 			state = 1;
 		}
 	}
@@ -356,10 +349,10 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	}
 	
     private void run() {
-        int target = powerSliderPos == 0 ? rpmIdle : rpmIdle + Math.max(25, throttle) * 90 / 100;
+        int target = com.hbm.realsim.GasTurbineCycle.targetRpm(powerSliderPos, throttle, rpmIdle);
         if(rpm < target && worldObj.getTotalWorldTime() % 5 == 0) rpm++;
         if(rpm > target && worldObj.getTotalWorldTime() % 2 == 0) rpm--;
-        int load = powerSliderPos == 0 ? 0 : Math.min(Math.max(25, throttle), Math.max(0, (rpm - rpmIdle) * 100 / 90));
+        int load = com.hbm.realsim.GasTurbineCycle.load(powerSliderPos, throttle, rpm, rpmIdle);
         burnFuel(load > 0, load > 0 ? load : 5);
         int targetTemp = load >= 75 ? 500 : 350;
         if(temp < targetTemp) temp++; else if(temp > targetTemp) temp--;
@@ -378,7 +371,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
             if(tanks[1].getFill() <= 0) { state = 0; return false; }
             tanks[1].setFill(tanks[1].getFill() - 1); lubricantMicroliters += 1000000;
         }
-        lubricantMicroliters -= 50; // 0.06 L/min while spooling/running
+        lubricantMicroliters -= com.hbm.realsim.GasTurbineCycle.LUBE_MICROLITERS_PER_TICK; // 0.06 L/min while spooling/running
         long gross = thermalFuel.burn(worldObj.getTotalWorldTime(), tanks[0], request, generate ? ELECTRICAL_EFFICIENCY_PPM : 0, generate ? 550000 : 0, Math.min(temp, load >= 75 ? 500 : 350));
         long aux = gross / 50; // 2% compressor controls/lube auxiliaries; Brayton compressor already in cycle efficiency.
         instantPowerOutput = Math.toIntExact(gross - aux);
@@ -397,6 +390,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
                 ? com.hbm.realsim.SteamLedger.State.SUPERHOT : com.hbm.realsim.SteamLedger.State.HOT;
         if(out != com.hbm.realsim.SteamLedger.State.HOT && out != com.hbm.realsim.SteamLedger.State.SUPERHOT) return;
         if(!com.hbm.realsim.ThermalMachine.configure(tanks[3], out)) return;
+        tanks[3].resizePreservingContents(com.hbm.realsim.GeneratorContract.steamCapacity(2000, out));
         com.hbm.realsim.ThermalAccount.Result r = com.hbm.realsim.HeatRecovery.advance(worldObj.getTotalWorldTime(), thermalFuel.exhaust, hrsg,
                 out, tanks[2].getFill(), Math.max(0, tanks[3].getMaxFill() - tanks[3].getFill()), energyQuanta);
         tanks[2].setFill(tanks[2].getFill() - r.consumed); tanks[3].setFill(tanks[3].getFill() + r.produced);
@@ -426,10 +420,10 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		else
 			this.instantPowerOutput = nbt.getInteger("instantPow"); //state 1
 		
-		this.tanks[0].readFromNBT(nbt, "fuel");
-		this.tanks[1].readFromNBT(nbt, "lube");
-		this.tanks[2].readFromNBT(nbt, "water");
-		this.tanks[3].readFromNBT(nbt, "steam");
+		com.hbm.realsim.GeneratorContract.readTankStatus(tanks[0], nbt, "fuel");
+		com.hbm.realsim.GeneratorContract.readTankStatus(tanks[1], nbt, "lube");
+		com.hbm.realsim.GeneratorContract.readTankStatus(tanks[2], nbt, "water");
+		com.hbm.realsim.GeneratorContract.readTankStatus(tanks[3], nbt, "steam");
 	}
 	
 	@Override
@@ -765,6 +759,6 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
         lines.add(String.format(java.util.Locale.US, "Gross LHV efficiency: %.1f%%; auxiliaries reduce net output", ELECTRICAL_EFFICIENCY_PPM / 10000D));
         lines.add("Rated fuel input: " + com.hbm.realsim.MachineInfo.thermalWatts(RATED_CHEMICAL_WATTS));
         lines.add("HRSG thermal ceiling: " + com.hbm.realsim.MachineInfo.thermalWatts(HRSG_WATTS));
-        lines.add("Gas-phase fuel only; integrated HRSG owns exhaust heat once");
+        lines.add("Requires clean compatible fuel gas and lubricant; HRSG recovers exhaust heat");
     }
 }

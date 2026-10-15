@@ -25,7 +25,6 @@ import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.CompatEnergyControl;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
-import api.hbm.energymk2.IEnergyProviderMK2;
 import api.hbm.fluid.IFluidStandardTransceiver;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.common.Optional;
@@ -72,9 +71,10 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 	private float audioDesync;
 	
 	//Configurable Values
-	public static long maxPower = 100000000;
-	public static int inputTankSize = 512_000;
-	public static int outputTankSize = 10_240_000;
+	public static long maxPower = 1000000L;
+	public static int inputTankSize = 1600;
+	public static int outputTankSize = 16;
+	public static boolean massSizedInlet = true;
 	public static double efficiency = 0.85;
 
 
@@ -82,8 +82,8 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 		super(7);
 		
 		tanks = new FluidTank[2];
-		tanks[0] = new FluidTank(Fluids.STEAM, inputTankSize);
-		tanks[1] = new FluidTank(Fluids.SPENTSTEAM, outputTankSize);
+		tanks[0] = new com.hbm.realsim.SteamInletTank(com.hbm.realsim.SteamLedger.State.SUPERHOT, inputTankSize, massSizedInlet);
+		tanks[1] = new FluidTank(Fluids.SPENTSTEAM, outputTankSize).withDefaultCapacity();
 		this.trackMachineFluidTank(tanks[0]);
 		this.trackMachineFluidTank(tanks[1]);
 
@@ -131,7 +131,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 
 	private void loadInputContainers() {
 		tanks[0].setType(0, 1, slots);
-		tanks[0].loadTank(2, 3, slots);
+		if(((com.hbm.realsim.SteamInletTank) tanks[0]).compatible()) tanks[0].loadTank(2, 3, slots);
 	}
 
 	private void refreshRuntimeConnections() {
@@ -152,8 +152,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 	}
 
 	private void evaluateAndSchedule(long now) {
-		if(this.isOverpressurized()) this.scheduleMachineTransition(now, TASK_CONVERT, 0);
-		else if(tanks[0].getFill() > 0 || tanks[1].getFill() > 0 || energyQuanta > 0) this.scheduleMachineTransition(now + 1L, TASK_CONVERT, 0);
+		if(tanks[0].getFill() > 0 || tanks[1].getFill() > 0 || energyQuanta > 0) this.scheduleMachineTransition(now + 1L, TASK_CONVERT, 0);
 		else {
 			this.runtimeOperational = false;
 			this.shouldTurn = false;
@@ -179,6 +178,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 	@Override
 	public void readIfPresent(JsonObject obj) {
 		maxPower = IConfigurableMachine.grabEnergyQuanta(obj, "L:energyCapacityQuanta", "L:maxPower", maxPower);
+		massSizedInlet = IConfigurableMachine.grab(obj, "B:massSizedInlet", !obj.has("I:inputTankSize"));
 		inputTankSize = IConfigurableMachine.grab(obj, "I:inputTankSize", inputTankSize);
 		outputTankSize = IConfigurableMachine.grab(obj, "I:outputTankSize", outputTankSize);
 		efficiency = IConfigurableMachine.grab(obj, "D:efficiency", efficiency);
@@ -189,6 +189,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 		writer.name("L:energyCapacityQuanta").value(maxPower);
 		writer.name("INFO").value("industrial steam turbine is rated at 8 kg/s and 5 MWe; direct condensing expansion");
 		writer.name("I:inputTankSize").value(inputTankSize);
+		writer.name("B:massSizedInlet").value(massSizedInlet);
 		writer.name("I:outputTankSize").value(outputTankSize);
 		writer.name("D:efficiency").value(efficiency);
 	}
@@ -204,16 +205,17 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 	}
 
 	private void runTurbineStep() {
-			if(isOverpressurized()) {
-				explodeFromOverpressure();
-				return;
-			}
+            // Exhaust saturation governs admission; it is not a pressure measurement.
+
 			
 			this.info[0] = this.info[1] = this.info[2] = 0;
 			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 			this.providePowerToDirectReceiver(worldObj, xCoord + dir.offsetX * -4, yCoord, zCoord + dir.offsetZ * -4, dir.getOpposite());
 
-			for(DirPos pos : runtimeConnections) this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			for(DirPos pos : runtimeConnections) {
+				this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+                if(!((com.hbm.realsim.SteamInletTank) tanks[0]).compatible()) this.sendFluid(tanks[0], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+			}
 
 			this.loadInputContainers();
 			this.setStoredEnergyQuanta(this.chargeRatedItems(slots, 4, maxPower));
@@ -223,7 +225,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 			FluidType in = tanks[0].getTankType();
 			boolean valid = false;
 
-            if(com.hbm.realsim.SteamLedger.expansionOutlet(thermal.ownedMass() > 0 ? thermal.inlet() : com.hbm.realsim.ThermalMachine.state(tanks[0])) != null) {
+            if((thermal.ownedMass() > 0 || com.hbm.realsim.GeneratorContract.acceptsSteam(com.hbm.realsim.ThermalMachine.state(tanks[0]), com.hbm.realsim.SteamLedger.State.SUPERHOT))) {
                 long generated = com.hbm.realsim.ThermalMachine.turbine(thermal, worldObj.getTotalWorldTime(), tanks[0], tanks[1], getSteamFlowMassPerTick(),
                         5000000L, getExpansionEfficiencyPpm(), energyQuanta, maxPower);
                 this.setStoredEnergyQuanta(Math.addExact(energyQuanta, generated));
@@ -280,21 +282,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 			}
 	}
 
-	/** Stops the rotor when there is no room for another generated power operation. */
-	/**
-	 * A turbine cannot safely accept more steam when its inlet and exhaust
-	 * buffers are both full. Rupture it instead of allowing a permanently
-	 * blocked industrial steam system to remain safe.
-	 */
-	private boolean isOverpressurized() {
-		return tanks[0].getFill() >= tanks[0].getMaxFill() && tanks[1].getFill() >= tanks[1].getMaxFill();
-	}
 
-	private void explodeFromOverpressure() {
-		worldObj.setBlockToAir(xCoord, yCoord, zCoord);
-		worldObj.newExplosion(null, xCoord + 0.5D, yCoord + 0.5D, zCoord + 0.5D, 4.0F, false, true);
-	}
-	
 	protected DirPos[] buildConnections() {
 		ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 		ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
@@ -311,12 +299,12 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 		
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		this.shouldTurn = data.getBoolean("operational");
-		tanks[0].readFromNBT(data, "t0");
-		tanks[1].readFromNBT(data, "t1");
+		com.hbm.realsim.GeneratorContract.readTankStatus(tanks[0], data, "t0");
+		com.hbm.realsim.GeneratorContract.readTankStatus(tanks[1], data, "t1");
 	}
 	
 	public long getPowerScaled(int i) {
-		return (energyQuanta * i) / maxPower;
+		return (Math.min(energyQuanta, maxPower) * i) / Math.max(1, maxPower);
 	}
 
 	public long getPowerOutputWatts() {
@@ -377,7 +365,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 
 	@Override
 	public FluidTank[] getSendingTanks() {
-		return new FluidTank[] {tanks[1]};
+		return ((com.hbm.realsim.SteamInletTank) tanks[0]).compatible() ? new FluidTank[] {tanks[1]} : tanks;
 	}
 
 	@Override
@@ -385,7 +373,7 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
 
 	@Override
 	public FluidTank[] getReceivingTanks() {
-		return new FluidTank[] {tanks[0]};
+		return ((com.hbm.realsim.SteamInletTank) tanks[0]).compatible() ? new FluidTank[] {tanks[0]} : new FluidTank[0];
 	}
 
 	@Override
@@ -489,6 +477,6 @@ public class TileEntityMachineLargeTurbine extends TileEntityMachineBase impleme
         if(live) lines.add("Current electrical output: " + com.hbm.realsim.MachineInfo.watts(thermal.currentElectricQuanta * 10L));
         lines.add(String.format(java.util.Locale.US, "Steam mass-flow ceiling: %.2f kg/s", getSteamFlowMassPerTick() / 50000D));
         lines.add(String.format(java.util.Locale.US, "Expansion work factor: %.1f%%", getExpansionEfficiencyPpm() / 10000D));
-        lines.add("Accepts ledger steam grades; full power/exhaust buffers stop admission");
+        lines.add("Accepts steam through Superhot; pauses when electricity or exhaust cannot leave");
     }
 }

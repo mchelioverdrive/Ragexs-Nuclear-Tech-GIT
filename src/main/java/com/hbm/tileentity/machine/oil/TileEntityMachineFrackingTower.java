@@ -6,7 +6,6 @@ import java.util.List;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 import com.hbm.blocks.ModBlocks;
-import com.hbm.dim.SolarSystem;
 import com.hbm.inventory.container.ContainerMachineOilWell;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
@@ -33,25 +32,24 @@ public class TileEntityMachineFrackingTower extends TileEntityOilDrillBase {
 
 	protected static int maxPower = 5_000_000;
 	protected static int consumption = 5000;
-	protected static int solutionRequired = 10;
+	protected static int solutionRequired = 1;
 	protected static int delay = 20;
 	protected static int oilPerDeposit = 1000;
-	protected static int gasPerDepositMin = 100;
-	protected static int gasPerDepositMax = 500;
+	protected static int gasPerDepositMin = 10;
+	protected static int gasPerDepositMax = 50;
 	protected static double drainChance = 0.02D;
 	protected static int oilPerBedrockDepsoit = 100;
-	protected static int gasPerBedrockDepositMin = 10;
-	protected static int gasPerBedrockDepositMax = 50;
+	protected static int gasPerBedrockDepositMin = 1;
+	protected static int gasPerBedrockDepositMax = 5;
 	protected static int destructionRange = 75;
 	protected static int oilPerDunaDeposit = 300;
 	protected static double DunadrainChance = 0.05D; //Duna should yield less oil due to it being mostly a meme and also a dead planet
 
 	public TileEntityMachineFrackingTower() {
 		super();
-		tanks = new FluidTank[3];
-		tanks[0] = new FluidTank(Fluids.OIL, 64_000);
-		tanks[1] = new FluidTank(Fluids.GAS, 64_000);
-		tanks[2] = new FluidTank(Fluids.FRACKSOL, 64_000);
+        FluidTank primary = tanks[0], secondary = tanks[1];
+        tanks = new FluidTank[] {primary, secondary, new FluidTank(Fluids.FRACKSOL, Math.max(1, solutionRequired) * 48).withDefaultCapacity()};
+        this.trackMachineFluidTank(tanks[2]);
 	}
 
 	@Override
@@ -106,58 +104,13 @@ public class TileEntityMachineFrackingTower extends TileEntityOilDrillBase {
 
 	@Override
 	public void onSuck(int x, int y, int z) {
-
-		Block b = worldObj.getBlock(x, y, z);
-		int meta = worldObj.getBlockMetadata(x, y, z);
-
-		int oil = 0;
-		int gas = 0;
-
-		if(b == ModBlocks.ore_oil) {
-			if(meta == SolarSystem.Body.DUNA.ordinal()) {
-				tanks[0].setTankType(Fluids.OIL);
-
-				oil = oilPerDunaDeposit;
-				gas = gasPerDepositMin + worldObj.rand.nextInt(gasPerDepositMax - gasPerDepositMin + 1);
-
-				if(worldObj.rand.nextDouble() < DunadrainChance) {
-					worldObj.setBlock(x, y, z, ModBlocks.ore_oil_empty, meta, 3);
-				}
-			} else if(meta == SolarSystem.Body.LAYTHE.ordinal()) {
-				tanks[0].setTankType(Fluids.OIL_DS);
-
-				oil = oilPerDeposit;
-				gas = gasPerDepositMin + worldObj.rand.nextInt(gasPerDepositMax - gasPerDepositMin + 1);
-
-				if(worldObj.rand.nextDouble() < drainChance) {
-					worldObj.setBlock(x, y, z, ModBlocks.ore_oil_empty, meta, 3);
-				}
-			} else {
-				tanks[0].setTankType(Fluids.OIL);
-
-				oil = oilPerDeposit;
-				gas = gasPerDepositMin + worldObj.rand.nextInt(gasPerDepositMax - gasPerDepositMin + 1);
-
-				if(worldObj.rand.nextDouble() < drainChance) {
-					worldObj.setBlock(x, y, z, ModBlocks.ore_oil_empty, meta, 3);
-				}
-			}
-		}
-
-		if(b == Blocks.bedrock) {
-			oil = oilPerBedrockDepsoit;
-			gas = gasPerBedrockDepositMin + worldObj.rand.nextInt(gasPerBedrockDepositMax - gasPerBedrockDepositMin + 1);
-		}
-
-		this.tanks[0].setFill(this.tanks[0].getFill() + oil);
-		if(this.tanks[0].getFill() > this.tanks[0].getMaxFill()) this.tanks[0].setFill(tanks[0].getMaxFill());
-		this.tanks[1].setFill(this.tanks[1].getFill() + gas);
-		if(this.tanks[1].getFill() > this.tanks[1].getMaxFill()) this.tanks[1].setFill(tanks[1].getMaxFill());
-
-		this.tanks[2].setFill(tanks[2].getFill() - solutionRequired);
-
-		OilSpot.generateOilSpot(worldObj, xCoord, zCoord, destructionRange, 10, false);
-	}
+        if(!canPump() || !extractDeposit(x, y, z, 25, oilPerDeposit, oilPerDunaDeposit, oilPerBedrockDepsoit,
+                gasPerDepositMin, gasPerDepositMax, gasPerBedrockDepositMin, gasPerBedrockDepositMax,
+                0, 0, 0, drainChance, DunadrainChance)) return;
+        // Injected slurry remains in the formation. No injection/depletion occurs behind blocked outputs.
+        tanks[2].setFill(tanks[2].getFill() - solutionRequired);
+        OilSpot.generateOilSpot(worldObj, xCoord, zCoord, destructionRange, 10, false);
+    }
 
 	@Override
 	public FluidTank[] getSendingTanks() {

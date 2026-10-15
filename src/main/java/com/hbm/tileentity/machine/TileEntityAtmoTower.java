@@ -17,8 +17,10 @@ public class TileEntityAtmoTower extends TileEntityDeuteriumTower {
 
 	public TileEntityAtmoTower() {
 		super();
-		tanks[0] = new FluidTank(Fluids.AIR, 50000);
-		tanks[1] = new FluidTank(Fluids.NITROGEN_GAS, 5000);
+		tanks[0] = new FluidTank(Fluids.AIR, 6000).withDefaultCapacity();
+		tanks[1] = new FluidTank(Fluids.NITROGEN_GAS, 6000).withDefaultCapacity();
+		this.trackMachineFluidTank(tanks[0]);
+		this.trackMachineFluidTank(tanks[1]);
 	}
 
 	protected void updateConnections() {

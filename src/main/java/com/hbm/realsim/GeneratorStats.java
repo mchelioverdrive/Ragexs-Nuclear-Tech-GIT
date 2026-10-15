@@ -40,7 +40,7 @@ public final class GeneratorStats {
         if(tankFuel.equals(credit.fuel()) && fuelUnitsPerSecond > 0) runtime += fill / fuelUnitsPerSecond;
         String activeFuel = (outputQuanta > 0 || credit.hasCredit()) && !credit.fuel().isEmpty() ? credit.fuel() : tankFuel;
         PhysicalState state = PhysicalRegistry.get(activeFuel);
-        String unit = state.basis == PhysicalState.Basis.MATERIAL_ITEM ? "items" : state.basis == PhysicalState.Basis.STANDARD_GAS_LITER ? "standard L" : state.basis == PhysicalState.Basis.LIQUID_LITER ? "L" : "nominal units";
+        String unit = state.basis == PhysicalState.Basis.MATERIAL_ITEM ? "items" : state.basis == PhysicalState.Basis.STANDARD_GAS_LITER ? "standard L" : state.basis == PhysicalState.Basis.LIQUID_LITER ? "L" : "units";
         java.util.List<String> lines = new java.util.ArrayList<>();
         lines.add("Rated output: " + EnergyUnits.formatWatts(ratedWatts).replace(" (J/S)", ""));
         lines.add("Current output: " + (watts == 0 ? "0 W" : EnergyUnits.formatWatts(watts).replace(" (J/S)", "")));
@@ -51,9 +51,8 @@ public final class GeneratorStats {
         lines.add(String.format(Locale.US, "Fuel flow: %.4f %s/min", fuelUnitsPerSecond * 60D, unit));
         lines.add(outputQuanta <= 0 ? "Runtime: idle" : String.format(Locale.US, "Runtime at current load: %.2f h", runtime / 3600D));
         if(advanced) {
-            lines.add((credit.fuel().startsWith("legacy_") ? "Owned legacy work: " : "Chemical credit: ") + EnergyUnits.formatJoules((long) (credit.remainingChemicalJoules() * 2D)));
-            lines.add(String.format(Locale.US, "Owned batch efficiency: %.1f%%", credit.efficiencyPpm() / 10000D));
-            lines.add("Owned fuel identity: " + credit.fuel());
+            lines.add("Fuel energy being converted: " + EnergyUnits.formatJoules((long) (credit.remainingChemicalJoules() * 2D)));
+            lines.add(String.format(Locale.US, "Current fuel conversion: %.1f%%", credit.efficiencyPpm() / 10000D));
         }
         return lines.toArray(new String[0]);
     }

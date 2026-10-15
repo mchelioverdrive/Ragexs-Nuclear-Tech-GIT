@@ -30,7 +30,7 @@ import net.minecraft.item.ItemStack;
 public class Mats {
 
 	public static List<NTMMaterial> orderedList = new ArrayList();
-	public static HashMap<String, MaterialShapes> prefixByName = new HashMap();
+	public static HashMap<String, MaterialShapes> prefixByName = MaterialShapes.prefixByName;
 	public static HashMap<Integer, NTMMaterial> matById = new HashMap();
 	public static HashMap<String, NTMMaterial> matByName = new HashMap();
 	public static HashMap<ComparableStack, List<MaterialStack>> materialEntries = new HashMap();
@@ -120,7 +120,7 @@ public class Mats {
 	public static final NTMMaterial MAT_NEODYMIUM		= makeSmeltable(6000,		ND,				0xE6E6B6, 0x1C1C00, 0x8F8F5F).setAutogen(FRAGMENT, NUGGET, DUSTTINY, INGOT, DUST, DENSEWIRE, BLOCK).m();
 	public static final NTMMaterial MAT_NIOBIUM			= makeSmeltable(4100,		NB,				0xB76EC9, 0x2F2D42, 0xD576B1).setAutogen(FRAGMENT, NUGGET, DUSTTINY, DUST, BLOCK).m();
 	public static final NTMMaterial MAT_BERYLLIUM		= makeSmeltable(400,		BE,				0xB2B2A6, 0x0F0F03, 0xAE9572).setAutogen(FRAGMENT, NUGGET, DUST, BLOCK).m();
-	public static final NTMMaterial MAT_EMERALD			= makeNonSmeltable(401,		EMERALD,		0xBAFFD4, 0x003900, 0x17DD62).setConversion(MAT_BERYLLIUM, 4, 3).setAutogen(FRAGMENT, DUST, GEM, BLOCK).n();
+	public static final NTMMaterial MAT_EMERALD			= makeNonSmeltable(401,		EMERALD,		0xBAFFD4, 0x003900, 0x17DD62).setAutogen(FRAGMENT, DUST, GEM, BLOCK).n();
 	public static final NTMMaterial MAT_COBALT			= makeSmeltable(2700,		CO,				0xC2D1EE, 0x353554, 0x8F72AE).setAutogen(FRAGMENT, NUGGET, DUSTTINY, BILLET, DUST, BLOCK).m();
 	public static final NTMMaterial MAT_BORON			= makeSmeltable(500,		B,				0xBDC8D2, 0x29343E, 0xAD72AE).setAutogen(FRAGMENT, DUSTTINY, DUST, BLOCK).m();
 	public static final NTMMaterial MAT_RHODIUM 		= makeSmeltable(6900,		Rh,				0xFFFFFF, 0xFFFFFF, 0xFFFFFF).setAutogen(NUGGET, DUST, BLOCK, INGOT).m();
@@ -135,7 +135,8 @@ public class Mats {
 	public static final NTMMaterial MAT_SULFUR			= makeNonSmeltable(1600,	S,				0xFCEE80, 0xBDA022, 0xF1DF68).setAutogen(FRAGMENT, DUST, BLOCK).n();
 	public static final NTMMaterial MAT_KNO				= makeNonSmeltable(700,		KNO,			0xD4D4D4, 0x969696, 0xC9C9C9).setAutogen(FRAGMENT, DUST, BLOCK).n();
 	public static final NTMMaterial MAT_FLUORITE		= makeNonSmeltable(900,		F,				0xFFFFFF, 0xB0A192, 0xE1DBD4).setAutogen(FRAGMENT, DUST, BLOCK).n();
-	public static final NTMMaterial MAT_PHOSPHORUS		= makeNonSmeltable(1500,	P_RED,			0xCB0213, 0x600006, 0xBA0615).setAutogen(FRAGMENT, DUST, BLOCK).n();
+	// ID 1500 remains magnesium: existing foundry saves already decoded it that way.
+	public static final NTMMaterial MAT_PHOSPHORUS		= makeNonSmeltable(1531,	P_RED,			0xCB0213, 0x600006, 0xBA0615).setAutogen(FRAGMENT, DUST, BLOCK).n();
 	public static final NTMMaterial MAT_CHLOROCALCITE	= makeNonSmeltable(1701, 	CHLOROCALCITE,	0xF7E761, 0x475B46, 0xB8B963).setAutogen(FRAGMENT, DUST).n();
 	public static final NTMMaterial MAT_MOLYSITE		= makeNonSmeltable(1702, 	MOLYSITE, 		0xF9E97B, 0x216E00, 0xD0D264).setAutogen(FRAGMENT, DUST).n();
 	public static final NTMMaterial MAT_CINNABAR		= makeNonSmeltable(8001,	CINNABAR,		0xD87070, 0x993030, 0xBF4E4E).setAutogen(FRAGMENT, GEM).n();
@@ -162,7 +163,7 @@ public class Mats {
 	public static final NTMMaterial MAT_STEEL		= makeSmeltable(_AS + 0,	STEEL,			0xAFAFAF, 0x0F0F0F, 0x4A4A4A).setAutogen(DUSTTINY, BOLT, WIRE, DUST, PLATE, CASTPLATE, WELDEDPLATE, SHELL, PIPE, BLOCK, HEAVY_COMPONENT, LIGHTBARREL, HEAVYBARREL, LIGHTRECEIVER, GRIP).m();
 	public static final NTMMaterial MAT_MINGRADE	= makeSmeltable(_AS + 1,	MINGRADE,		0xFFBA7D, 0xAF1700, 0xE44C0F).setAutogen(WIRE, DUST, BLOCK).m();
 	public static final NTMMaterial MAT_ALLOY		= makeSmeltable(_AS + 2,	ALLOY,			0xFF8330, 0x700000, 0xFF7318).setAutogen(WIRE, DUST, DENSEWIRE, PLATE, CASTPLATE, BLOCK, HEAVY_COMPONENT).m();
-	public static final NTMMaterial MAT_CALCINED_DOLOMITE = makeSmeltable(_AS + 14,	CDOLOMITE,		0xCFCFA6, 0x747F6E, 0xB7B784).setAutogen(DUST).m();
+	public static final NTMMaterial MAT_CALCINED_DOLOMITE = makeAdditive(_AS + 14,	CDOLOMITE,		0xCFCFA6, 0x747F6E, 0xB7B784).n();
 	public static final NTMMaterial MAT_DURA		= makeSmeltable(_AS + 3,	DURA,			0x183039, 0x030B0B, 0x376373).setAutogen(BOLT, DUST, PIPE, BLOCK, LIGHTBARREL, HEAVYBARREL, LIGHTRECEIVER, HEAVYRECEIVER, GRIP).m();
 	public static final NTMMaterial MAT_DESH		= makeSmeltable(_AS + 12,	DESH,			0x72787E, 0x2D3136, 0xFFC04A).setAutogen(DUST, CASTPLATE, BLOCK, HEAVY_COMPONENT, LIGHTBARREL, HEAVYBARREL, LIGHTRECEIVER, STOCK, GRIP).m();
 	public static final NTMMaterial MAT_STAR		= makeSmeltable(_AS + 5,	STAR,			0xCCCCEA, 0x11111A, 0xA5A5D3).setAutogen(DUST, DENSEWIRE, BLOCK, PLATE).m();
@@ -180,12 +181,14 @@ public class Mats {
 	//public static final NTMMaterial MAT_MUD			= makeSmeltable(_AS + 14,	MUD,			0xBCB5A9, 0x481213, 0x96783B).n();
 	public static final NTMMaterial MAT_GUNMETAL	= makeSmeltable(_AS + 19,	GUNMETAL,		0xFFEF3F, 0xAD3600, 0xF9C62C).setAutogen(LIGHTBARREL, HEAVYBARREL, LIGHTRECEIVER, HEAVYRECEIVER, MECHANISM, STOCK, GRIP).n();
 	public static final NTMMaterial MAT_WEAPONSTEEL	= makeSmeltable(_AS + 20,	WEAPONSTEEL,	0xA0A0A0, 0x000000, 0x808080).setAutogen(SHELL, LIGHTBARREL, HEAVYBARREL, LIGHTRECEIVER, HEAVYRECEIVER, MECHANISM, STOCK, GRIP).n();
+	public static final NTMMaterial MAT_BRONZE = makeSmeltable(_AS + 21, BRONZE, 0xD59B55, 0x543115, 0xF2B166).setAutogen(INGOT, CASTPLATE, LIGHTBARREL, LIGHTRECEIVER).m();
 	//saturnite is now extremely high strength steel alloy
 	public static final NTMMaterial MAT_SATURN		= makeSmeltable(_AS + 4,	BIGMT,			0x7A8088, 0x31343A, 0xFFD15A).setAutogen(PLATE, CASTPLATE, SHELL, BLOCK, LIGHTBARREL, HEAVYBARREL, LIGHTRECEIVER, HEAVYRECEIVER, MECHANISM, STOCK, GRIP).m();
 
 	//Space extension alloys
 	public static final NTMMaterial MAT_GAAS		= makeSmeltable(_EX + 0,	GAAS,		0x6F4A57, 0x6F4A57, 0x6F4A57).setAutogen(NUGGET, BILLET).m();
 	public static final NTMMaterial MAT_STAINLESS	= makeSmeltable(_EX + 1,	STAINLESS,	0x4A4A4A, 0x4A4A4A, 0x4A4A4A).setAutogen(PLATE).m();
+	public static final NTMMaterial MAT_SOLDER = makeSmeltable(_EX + 2, df("Solder"), 0xB8B8B8).setAutogen(WIRE).m();
 
 	//Extension
 	public static final NTMMaterial MAT_RAREEARTH	= makeNonSmeltable(_ES + 00, 		RAREEARTH,		0xC1BDBD, 0x384646, 0x7B7F7F).setAutogen(FRAGMENT).n();
@@ -194,6 +197,8 @@ public class Mats {
 	public static final NTMMaterial MAT_RUBBER		= makeNonSmeltable(_ES + 03, 		RUBBER,			0x817F75, 0x0F0D03, 0x4B4A3F).setAutogen(PIPE, GRIP).n();
 	public static final NTMMaterial MAT_HARDPLASTIC	= makeNonSmeltable(_ES + 04, 		PC,				0xEDE7C4, 0x908A67, 0xE1DBB8).setAutogen(STOCK, GRIP).n();
 	public static final NTMMaterial MAT_PVC			= makeNonSmeltable(_ES + 05, 		PVC,			0xFCFCFC, 0x9F9F9F, 0xF0F0F0).setAutogen(STOCK, GRIP).n();
+
+	static { MaterialRoles.install(); }
 
 	public static NTMMaterial makeSmeltable(int id, DictFrame dict, int color) { return makeSmeltable(id, dict, color, color, color); }
 
@@ -221,18 +226,32 @@ public class Mats {
 	/** will not respect stacksizes - all stacks will be treated as a singular */
 	public static List<MaterialStack> getMaterialsFromItem(ItemStack stack) {
 		List<MaterialStack> list = new ArrayList();
+		if(stack == null || stack.getItem() == null) return list;
+		// Explicit configured assays are authoritative, rather than added to a generic alias.
+		List<MaterialStack> exact = materialEntries.get(new ComparableStack(stack).makeSingular());
+		if(exact != null) { addPositiveCopies(list, exact); return list; }
+		if(stack.getItem() == ModItems.scraps) {
+			MaterialStack scrap = ItemScraps.getMats(stack);
+			if(scrap != null && scrap.material != null && scrap.amount > 0) list.add(scrap);
+			return list;
+		}
+		if(requiresDedicatedProcessing(stack)) return list;
 		List<String> names = ItemStackUtil.getOreDictNames(stack);
+		return getMaterialsFromOreNames(names);
+	}
+
+	/** Shared form/ore resolver, after native item identity and explicit overrides have been checked. */
+	public static List<MaterialStack> getMaterialsFromOreNames(List<String> names) {
+		List<MaterialStack> list = new ArrayList();
+		// Check every explicit ore assay before considering a generic form alias.
+		for(String name : names) {
+			List<MaterialStack> assay = materialOreEntries.get(name);
+			if(assay != null) { addPositiveCopies(list, assay); return list; }
+		}
 
 		if(!names.isEmpty()) {
 			outer:
 			for(String name : names) {
-
-				List<MaterialStack> oreEntries = materialOreEntries.get(name);
-
-				if(oreEntries != null) {
-					list.addAll(oreEntries);
-					break outer;
-				}
 
 				for(Entry<String, MaterialShapes> prefixEntry : prefixByName.entrySet()) {
 					String prefix = prefixEntry.getKey();
@@ -241,7 +260,7 @@ public class Mats {
 						String materialName = name.substring(prefix.length());
 						NTMMaterial material = matByName.get(materialName);
 
-						if(material != null && (material.smeltsInto.smeltable == SmeltingBehavior.SMELTABLE || material.smeltsInto.smeltable == SmeltingBehavior.ADDITIVE)) {
+						if(material != null && prefixEntry.getValue().q(1) > 0 && (material.smeltsInto.smeltable == SmeltingBehavior.SMELTABLE || material.smeltsInto.smeltable == SmeltingBehavior.ADDITIVE)) {
 							list.add(new MaterialStack(material, prefixEntry.getValue().q(1)));
 							break outer;
 						}
@@ -250,23 +269,34 @@ public class Mats {
 			}
 		}
 
-		List<MaterialStack> entries = materialEntries.get(new ComparableStack(stack).makeSingular());
-
-		if(entries != null) {
-			entries.forEach(x -> { if(x != null) list.add(x); });
-		}
-
-		if(stack.getItem() == ModItems.scraps) {
-			list.add(ItemScraps.getMats(stack));
-		}
-
 		return list;
 	}
 
+	private static void addPositiveCopies(List<MaterialStack> target, List<MaterialStack> source) {
+		for(MaterialStack entry : source) if(entry != null && entry.material != null && entry.amount > 0) target.add(entry.copy());
+	}
+
+	/** Native refining intermediates are not finished metal, regardless of OD dust/nugget aliases. */
+	public static boolean requiresDedicatedProcessing(ItemStack stack) {
+		if(stack == null) return false;
+		net.minecraft.item.Item item = stack.getItem();
+		return item == ModItems.powder_chromium || item == ModItems.powder_samarium || item == ModItems.fragment_samarium
+				|| item == ModItems.powder_gadolinium2 || item == ModItems.powder_rhodium || item == ModItems.powder_iridium
+				|| item == ModItems.powder_thulium || item == ModItems.ingot_terbium_impure;
+	}
+
 	public static List<MaterialStack> getSmeltingMaterialsFromItem(ItemStack stack) {
-		List<MaterialStack> baseMats = getMaterialsFromItem(stack);
+		return getSmeltingMaterials(getMaterialsFromItem(stack));
+	}
+
+	public static List<MaterialStack> getSmeltingMaterials(List<MaterialStack> baseMats) {
 		List<MaterialStack> smelting = new ArrayList();
-		baseMats.forEach(x -> smelting.add(new MaterialStack(x.material.smeltsInto, (int) (x.amount * x.material.convOut / x.material.convIn))));
+		for(MaterialStack x : baseMats) {
+			if(x == null || x.material == null || x.amount <= 0) continue;
+			int amount = Math.toIntExact((long) x.amount * x.material.convOut / x.material.convIn);
+			SmeltingBehavior behavior = x.material.smeltsInto.smeltable;
+			if(amount > 0 && (behavior == SmeltingBehavior.SMELTABLE || behavior == SmeltingBehavior.ADDITIVE)) smelting.add(new MaterialStack(x.material.smeltsInto, amount));
+		}
 		return smelting;
 	}
 

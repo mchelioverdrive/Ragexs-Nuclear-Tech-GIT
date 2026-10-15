@@ -109,11 +109,11 @@ public class ItemRTGPellet extends Item {
 	{
 		if (stack != null && stack.getItem() instanceof ItemRTGPellet)
 		{
-			if (stack.hasTagCompound())
+			if (stack.hasTagCompound() && stack.stackTagCompound.hasKey("PELLET_DEPLETION"))
 				return stack.stackTagCompound.getLong("PELLET_DEPLETION");
 			else
 			{
-				stack.stackTagCompound = new NBTTagCompound();
+                if(!stack.hasTagCompound()) stack.stackTagCompound = new NBTTagCompound();
 				stack.stackTagCompound.setLong("PELLET_DEPLETION", getMaxLifespan());
 				return getMaxLifespan();
 			}
@@ -123,6 +123,7 @@ public class ItemRTGPellet extends Item {
 
 	public static short getScaledPower(ItemRTGPellet fuel, ItemStack stack) {
 
+		if(!fuel.getDoesDecay() || fuel.getMaxLifespan() <= 0) return fuel.getHeat();
 		double remaining =
 			(double)fuel.getLifespan(stack) /
 				(double)fuel.getMaxLifespan();
@@ -160,7 +161,8 @@ public class ItemRTGPellet extends Item {
 		super.addInformation(stack, player, list, bool);
 		list.add(I18nUtil.resolveKey(this.getUnlocalizedName().concat(".desc")));
 		final ItemRTGPellet instance = (ItemRTGPellet) stack.getItem();
-		list.add(I18nUtil.resolveKey("desc.item.rtgHeat", instance.getDoesDecay() && VersatileConfig.scaleRTGPower() ? getScaledPower(instance, stack) : instance.getHeat()));
+		list.add("Decay heat: " + com.hbm.realsim.IsotopeLedger.thermalWatts(stack) + " W thermal; 5% thermoelectric conversion");
+        list.add("Heater compatibility level: " + com.hbm.util.RTGUtil.getPower(instance, stack));
 		if (instance.getDoesDecay()) {
 			list.add(I18nUtil.resolveKey("desc.item.rtgDecay", I18nUtil.resolveKey(instance.getDecayItem().getUnlocalizedName() + ".name"), instance.getDecayItem().stackSize));
 			list.add(BobMathUtil.toPercentage(instance.getLifespan(stack), instance.getMaxLifespan()));
@@ -176,7 +178,7 @@ public class ItemRTGPellet extends Item {
 	}
 
 	public String getData() {
-		return String.format(Locale.US, "%s (%s) %s", I18nUtil.resolveKey(getUnlocalizedName().concat(".name")), EnergyUnits.formatQuantaPerTickAsWatts(getHeat()), (getDoesDecay() ? " (decays)" : ""));
+		return String.format(Locale.US, "%s (%s) %s", I18nUtil.resolveKey(getUnlocalizedName().concat(".name")), com.hbm.realsim.IsotopeLedger.freshThermalWatts(this) + " W thermal", (getDoesDecay() ? " (decays)" : ""));
 	}
 
 	public static HashMap<ItemStack, ItemStack> getRecipeMap() {

@@ -6,6 +6,8 @@ import java.util.HashSet;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.fluid.Fluids;
+import com.hbm.inventory.fluid.FluidType;
+import com.hbm.dim.SolarSystem;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.items.machine.ItemMachineUpgrade;
 import com.hbm.items.ModItems;
@@ -59,8 +61,8 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 	public TileEntityOilDrillBase() {
 		super(8);
 		tanks = new FluidTank[2];
-		tanks[0] = new FluidTank(Fluids.OIL, 64_000);
-		tanks[1] = new FluidTank(Fluids.GAS, 64_000);
+		tanks[0] = new FluidTank(Fluids.OIL, this instanceof TileEntityMachinePumpjack ? 24 : this instanceof TileEntityMachineFrackingTower ? 48 : 6).withDefaultCapacity();
+		tanks[1] = new FluidTank(Fluids.RAW_NATURAL_GAS, this instanceof TileEntityMachinePumpjack ? 4800 : 600).withDefaultCapacity();
 		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 
@@ -365,6 +367,51 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 			onSuck(x, y, z);
 		}
 	}
+
+    /** Atomic world-source admission. Existing incompatible/over-cap stock is drainable, never relabelled/clamped. */
+    public static boolean storeExtractionProducts(FluidTank primary, FluidType primaryType, int amount, FluidTank secondary, FluidType secondaryType, int coproduct) {
+        if(amount < 0 || coproduct < 0 || amount == 0 && coproduct == 0) return false;
+        if((long) primary.getFill() + amount > primary.getMaxFill() || (long) secondary.getFill() + coproduct > secondary.getMaxFill()) return false;
+        if(primary.getFill() > 0 && primary.getTankType() != primaryType || secondary.getFill() > 0 && secondary.getTankType() != secondaryType) return false;
+        if(!primary.configureForRecipe(primaryType, 0) || !secondary.configureForRecipe(secondaryType, 0)) return false;
+        primary.setFill(primary.getFill() + amount); secondary.setFill(secondary.getFill() + coproduct); return true;
+    }
+    private int gasYield(int minimum, int maximum) {
+        int lo = Math.max(0, minimum), hi = Math.max(lo, maximum);
+        return lo == hi ? lo : lo + worldObj.rand.nextInt(hi - lo + 1);
+    }
+    private int extractionBuffer(int quantity, int interval) {
+        return Math.toIntExact(Math.max(1L, Math.max(quantity, com.hbm.realsim.PetroleumProcesses.ceilDiv((long) quantity * 1200, interval))));
+    }
+    /** One authoritative geological extraction path shared by well, pumpjack and stimulation tower. */
+    protected boolean extractDeposit(int x, int y, int z, int interval, int normalOil, int dunaOil, int bedrockOil,
+            int gasMin, int gasMax, int bedGasMin, int bedGasMax, int gasDeposit, int petroleumMin, int petroleumMax, double depletion, double dunaDepletion) {
+        Block block = worldObj.getBlock(x, y, z); int meta = worldObj.getBlockMetadata(x, y, z);
+        FluidType primary = Fluids.OIL, secondary = Fluids.RAW_NATURAL_GAS; Block exhausted = ModBlocks.ore_oil_empty;
+        int amount, gas, maxPrimary, maxSecondary; double chance = depletion;
+        if(block == ModBlocks.ore_oil) {
+            boolean duna = meta == SolarSystem.Body.DUNA.ordinal();
+            primary = meta == SolarSystem.Body.LAYTHE.ordinal() ? Fluids.OIL_DS : Fluids.OIL;
+            amount = Math.max(0, Math.min(1, duna ? dunaOil : normalOil)); gas = gasYield(gasMin, gasMax);
+            maxPrimary = 1; maxSecondary = Math.max(Math.max(0, gasMin), gasMax); if(duna) chance = dunaDepletion;
+        } else if(block == Blocks.bedrock) {
+            amount = Math.max(0, Math.min(1, bedrockOil)); gas = gasYield(bedGasMin, bedGasMax);
+            maxPrimary = 1; maxSecondary = Math.max(Math.max(0, bedGasMin), bedGasMax);
+        } else if(block == ModBlocks.ore_gas && gasDeposit > 0) {
+            primary = Fluids.RAW_NATURAL_GAS; secondary = Fluids.PETROLEUM; exhausted = ModBlocks.ore_gas_empty;
+            amount = gasDeposit; gas = gasYield(petroleumMin, petroleumMax);
+            maxPrimary = gasDeposit; maxSecondary = Math.max(Math.max(0, petroleumMin), petroleumMax);
+        } else return false;
+        tanks[0].resizePreservingContents(extractionBuffer(maxPrimary, interval)); tanks[1].resizePreservingContents(extractionBuffer(maxSecondary, interval));
+        if(!reserveExtractionTick(interval)) return false;
+        boolean stored;
+        beginMachineFluidMutation();
+        try { stored = storeExtractionProducts(tanks[0], primary, amount, tanks[1], secondary, gas); }
+        finally { endMachineFluidMutation(); }
+        if(!stored) return false;
+        if(block != Blocks.bedrock && worldObj.rand.nextDouble() < chance) worldObj.setBlock(x, y, z, exhausted, meta, 3);
+        markDirty(); return true;
+    }
 
 	public abstract void onSuck(int x, int y, int z);
 

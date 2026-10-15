@@ -8,7 +8,6 @@ import com.hbm.machine.MachineDirtyCause;
 import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.TileEntityLoadedBase;
 
-import api.hbm.energymk2.IEnergyProviderMK2;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
@@ -16,14 +15,18 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.world.EnumSkyBlock;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements IEnergyProviderMK2 {
+public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements api.hbm.energymk2.IRatedGenerator, com.hbm.realsim.IMachineInfo {
+    private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
+    @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
+    @Override public long getRatedOutputWatts() { return Math.max(1000L, (long) Math.ceil(1000D * sunPower())); }
+
 	private static final int TASK_GENERATE = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
 
 	private long energyQuanta;
-	private long maxpwr = 1_000;
+	private long maxpwr = 200;
 
 	@Override
 	public void updateEntity() {
@@ -52,8 +55,7 @@ public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements
 		try {
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
 				this.providePowerToDirectReceiver(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-			this.setStoredEnergyQuanta(this.energyQuanta + getOutput());
-			if(energyQuanta > maxpwr) this.setStoredEnergyQuanta(maxpwr);
+			this.setStoredEnergyQuanta(com.hbm.realsim.GeneratorContract.admit(energyQuanta, getEnergyCapacityQuanta(), getOutput()));
 		} finally {
 			runtimeEnergyMutation = false;
 		}
@@ -71,55 +73,14 @@ public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements
 		else this.cancelMachineTransition(TASK_GENERATE, TASK_SLOT_MAIN);
 	}
 
-	private boolean isSunVisible() {
-
-		if(worldObj.provider instanceof WorldProviderOrbit) {
-			return true;
-		}
-
-		if(!worldObj.canBlockSeeTheSky(xCoord, yCoord + 1, zCoord))
-			return false;
-
-		if(!(worldObj.provider instanceof WorldProviderCelestial)) {
-			long time = worldObj.getWorldTime() % 24000L;
-			return time >= 0 && time < 12000;
-		}
-
-		float time =
-			((WorldProviderCelestial) worldObj.provider)
-				.getNormalizedDayTime();
-
-		return time > 0.25F && time < 0.75F;
-	}
-
-	// was? Balanced around 100he/t on Earth
-	//now just randomly gives solar power?
-	public long getOutput() {
-
-		if(!isSunVisible())
-			return 0;
-
-		float sunPower = worldObj.provider instanceof WorldProviderOrbit
-			? ((WorldProviderOrbit) worldObj.provider).getSunPower()
-			: CelestialBody.getBody(worldObj).getSunPower();
-
-		float time;
-
-		if(worldObj.provider instanceof WorldProviderCelestial) {
-			time = ((WorldProviderCelestial) worldObj.provider)
-				.getNormalizedDayTime();
-		} else {
-			time = worldObj.getCelestialAngle(1.0F);
-		}
-
-		// Convert sunrise->sunset (0 -> 0.5) into a noon peak
-		float daylight = (float)Math.sin(time * Math.PI * 2.0F);
-		daylight = MathHelper.clamp_float(daylight, 0.0F, 1.0F);
-
-		float base = 100.0F;
-
-		return (long)(base * daylight * daylight * sunPower);
-	}
+    private float sunPower() {
+        if(worldObj == null) return 1;
+        return worldObj.provider instanceof WorldProviderOrbit ? ((WorldProviderOrbit) worldObj.provider).getSunPower() : CelestialBody.getBody(worldObj).getSunPower();
+    }
+    public long getOutput() {
+        if(worldObj == null || (!(worldObj.provider instanceof WorldProviderOrbit) && !worldObj.canBlockSeeTheSky(xCoord, yCoord + 1, zCoord))) return 0;
+        return com.hbm.realsim.GeneratorContract.solarQuanta(worldObj.getCelestialAngle(1F), sunPower());
+    }
 
 	public long getPowerOutputWatts() {
 		return EnergyUnits.quantaPerTickToWatts(this.getOutput());
@@ -140,26 +101,33 @@ public class TileEntityMachineSolarPanel extends TileEntityLoadedBase implements
 		if(this.energyQuanta == energyQuanta) return;
 		this.energyQuanta = energyQuanta;
 		this.markPowerNetDirty();
+        this.markDirty();
 		if(!runtimeEnergyMutation) this.markMachineDirty(MachineDirtyCause.ENERGY);
 	}
 
 	@Override
 	public long getEnergyCapacityQuanta() {
-		return maxpwr; //temp
+		return com.hbm.realsim.GeneratorContract.buffer(getRatedOutputWatts());
 	}
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        outputBudget.read(nbt);
 
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
-		this.maxpwr = nbt.getLong("maxpwr");
+		// Old saved capacity was not intentional electrical storage.
 	}
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+        outputBudget.write(nbt);
 
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setLong("maxpwr", maxpwr);
 	}
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Photovoltaic specialist: approximately 1 kW peak at unit sunlight");
+        lines.add("Sky/daylight and celestial irradiation apply; external storage is needed at night");
+    }
 }

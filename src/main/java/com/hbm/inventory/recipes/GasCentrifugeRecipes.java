@@ -24,14 +24,15 @@ public class GasCentrifugeRecipes {
 		public static PseudoFluidType NONE		= new PseudoFluidType("NONE",		0,		0,		null,		false,	(ItemStack[])null);
 
 		// Each uranium stage retains a smaller enriched UF6 stream and emits depleted
-		// uranium tails.  Pseudo fluids are internal to the existing cascade machine;
+		// uranium tails. Physical bills own nuclear outputs; these identifiers retain only routing.
+		// Pseudo fluids are internal to the existing cascade machine;
 		// the item tails remain usable as depleted uranium rather than being deleted.
-		public static PseudoFluidType HEUF6		= new PseudoFluidType("HEUF6",		50,	0,		NONE,		true,	new ItemStack(ModItems.nugget_u238, 1), new ItemStack(ModItems.nugget_u235, 1));
-		public static PseudoFluidType MEUF6		= new PseudoFluidType("MEUF6",		100,	50,	HEUF6,		false,	new ItemStack(ModItems.nugget_u238, 1));
-		public static PseudoFluidType LEUF6 	= new PseudoFluidType("LEUF6",		200,	100,	MEUF6,		false,	new ItemStack(ModItems.nugget_u238, 2));
-		public static PseudoFluidType NUF6 		= new PseudoFluidType("NUF6",		400,	200,	LEUF6,		false,	new ItemStack(ModItems.nugget_u238, 4));
+		public static PseudoFluidType HEUF6		= new PseudoFluidType("HEUF6",		50,	0,		NONE,		true);
+		public static PseudoFluidType MEUF6		= new PseudoFluidType("MEUF6",		100,	50,	HEUF6,		false);
+		public static PseudoFluidType LEUF6 	= new PseudoFluidType("LEUF6",		200,	100,	MEUF6,		false);
+		public static PseudoFluidType NUF6 		= new PseudoFluidType("NUF6",		400,	200,	LEUF6,		false);
 
-		public static PseudoFluidType PF6		= new PseudoFluidType("PF6",		300,	0,		NONE,		false,	new ItemStack(ModItems.nugget_pu238, 1), new ItemStack(ModItems.nugget_pu_mix, 2), new ItemStack(ModItems.fluorite, 1));
+		public static PseudoFluidType PF6		= new PseudoFluidType("PF6",		300,	0,		NONE,		false);
 
 		public static PseudoFluidType MUD_HEAVY	= new PseudoFluidType("MUD_HEAVY",	500,	0,		NONE,		false,	new ItemStack(ModItems.powder_iron, 1), new ItemStack(ModItems.dust, 1), new ItemStack(ModItems.nuclear_waste_tiny, 1));
 		public static PseudoFluidType MUD		= new PseudoFluidType("MUD", 		1000,	500,	MUD_HEAVY,	false,	new ItemStack(ModItems.powder_lead, 1), new ItemStack(ModItems.dust, 1));
@@ -101,9 +102,14 @@ public class GasCentrifugeRecipes {
 		fluidConversions.put(Fluids.PUF6, PseudoFluidType.PF6);
 		fluidConversions.put(Fluids.WATZ, PseudoFluidType.MUD);
 
-		gasCent.put(new FluidStack(1200, Fluids.UF6), new Object[] { new ItemStack[] {new ItemStack(ModItems.nugget_u238, 11), new ItemStack(ModItems.nugget_u235, 1), new ItemStack(ModItems.fluorite, 4)}, true, 4 });
-		gasCent.put(new FluidStack(1200, Fluids.UF6), new Object[] { new ItemStack[] {new ItemStack(ModItems.nugget_u238, 6), new ItemStack(ModItems.nugget_uranium_fuel, 6), new ItemStack(ModItems.fluorite, 4)}, false, 2 });
-		gasCent.put(new FluidStack(900, Fluids.PUF6), new Object[] { new ItemStack[] {new ItemStack(ModItems.nugget_pu238, 3), new ItemStack(ModItems.nugget_pu_mix, 6), new ItemStack(ModItems.fluorite, 3)}, false, 1 });
+        ItemStack u235 = new ItemStack(ModItems.nugget_u235).setStackDisplayName("U-235: 7 g per 400 UF6 aliquots; fractional output accumulates");
+        ItemStack tails = new ItemStack(ModItems.nugget_u238, 9).setStackDisplayName("U-238: 993 g per 400 UF6 aliquots; fractional output accumulates");
+        long uranium = (com.hbm.realsim.PhysicalState.MASS_UNITS_PER_KG / 9) * 9;
+        long fluorine = com.hbm.realsim.ChemistryProcesses.mass("UF6", 400) - uranium;
+        int recoveredF = Math.toIntExact(com.hbm.realsim.PetroleumProcesses.ceilDiv(fluorine, com.hbm.realsim.PhysicalRegistry.get("FLUORINE").massUnits));
+        gasCent.put(new FluidStack(400, Fluids.UF6), new Object[] {new ItemStack[] {u235, tails, ItemFluidIcon.make(Fluids.FLUORINE, recoveredF)}, true, 4});
+        long puF = com.hbm.realsim.ChemistryProcesses.mass("PUF6", 300) - (com.hbm.realsim.PhysicalState.MASS_UNITS_PER_KG / 9) * 3;
+        gasCent.put(new FluidStack(300, Fluids.PUF6), new Object[] {new ItemStack[] {new ItemStack(ModItems.nugget_pu_mix, 3), ItemFluidIcon.make(Fluids.FLUORINE, Math.toIntExact(com.hbm.realsim.PetroleumProcesses.ceilDiv(puF, com.hbm.realsim.PhysicalRegistry.get("FLUORINE").massUnits)))}, false, 1});
 		gasCent.put(new FluidStack(1000, Fluids.WATZ), new Object[] { new ItemStack[] {new ItemStack(ModItems.powder_iron, 1), new ItemStack(ModItems.powder_lead, 1), new ItemStack(ModItems.nuclear_waste_tiny, 1), new ItemStack(ModItems.dust, 2)}, false, 2 });
 
 

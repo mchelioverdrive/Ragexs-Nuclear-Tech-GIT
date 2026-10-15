@@ -32,6 +32,9 @@ import net.minecraftforge.common.util.ForgeDirection;
 public class TileEntityHeaterHeatex extends TileEntityMachineBase implements api.hbm.tile.IProcessHeatSource, INBTPacketReceiver, IFluidStandardTransceiver, IGUIProvider, IControlReceiver, IFluidCopiable {
     public final com.hbm.realsim.ThermalAccount thermal = new com.hbm.realsim.ThermalAccount();
     private long recoveredRemainderMicroJ;
+    private long pendingCoolantHeat;
+    private String pendingCoolantReturn = "";
+    private int pendingReturnAmount = 1, pendingQualityC;
     private int recoveredQualityC;
     @Override public int getProcessTemperatureC() { return recoveredQualityC; }
     public long getRatedThermalWatts() { return 2000000L; }
@@ -55,8 +58,8 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements api
 	public TileEntityHeaterHeatex() {
 		super(1);
 		this.tanks = new FluidTank[2];
-		this.tanks[0] = new FluidTank(Fluids.COOLANT_HOT, 24_000);
-		this.tanks[1] = new FluidTank(Fluids.COOLANT, 24_000);
+		this.tanks[0] = new FluidTank(Fluids.COOLANT_HOT, 220).withDefaultCapacity();
+		this.tanks[1] = new FluidTank(Fluids.COOLANT, 220).withDefaultCapacity();
 		this.trackMachineFluidTank(tanks[0]);
 		this.trackMachineFluidTank(tanks[1]);
 	}
@@ -129,7 +132,7 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements api
 			int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
 			canConvert = Math.min(inputOps, Math.min(outputOps, amountToCool)) > 0;
 		}
-		if(thermal.ownedMass() > 0 || com.hbm.realsim.ThermalMachine.state(tanks[0]) != null && tanks[0].getFill() > 0 || heatEnergy > 0 || canConvert || tanks[1].getFill() > 0) this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
+		if(!pendingCoolantReturn.isEmpty() || thermal.ownedMass() > 0 || com.hbm.realsim.ThermalMachine.state(tanks[0]) != null && tanks[0].getFill() > 0 || heatEnergy > 0 || canConvert || tanks[1].getFill() > 0) this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
 		else this.cancelMachineTransition(TASK_SIMULATE, TASK_SLOT_MAIN);
 	}
 
@@ -165,13 +168,13 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements api
 		if(tanks[0].getTankType().hasTrait(FT_Coolable.class)) {
 			FT_Coolable trait = tanks[0].getTankType().getTrait(FT_Coolable.class);
 			if(trait.getEfficiency(CoolingType.HEATEXCHANGER) > 0) {
-				tanks[1].setTankType(trait.coolsTo);
+				tanks[1].configureForRecipe(trait.coolsTo, tanks[1].getPressure());
 				return;
 			}
 		}
 
-		tanks[0].setTankType(Fluids.NONE);
-		tanks[1].setTankType(Fluids.NONE);
+		if(tanks[0].getFill() == 0) tanks[0].setTankType(Fluids.NONE);
+		if(tanks[1].getFill() == 0) tanks[1].setTankType(Fluids.NONE);
 	}
 
 	protected void updateConnections() {
@@ -199,26 +202,42 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements api
             }
             return;
         }
-        recoveredQualityC = 0; // Uncalibrated reactor coolant remains a deferred external boundary.
-
-
-		if(!tanks[0].getTankType().hasTrait(FT_Coolable.class)) return;
-		if(tickDelay < 1) tickDelay = 1;
-		if(worldObj.getTotalWorldTime() % tickDelay != 0) return;
-
-		FT_Coolable trait = tanks[0].getTankType().getTrait(FT_Coolable.class);
-
-		int inputOps = tanks[0].getFill() / trait.amountReq;
-		int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
-		int opCap = this.amountToCool;
-
-		int ops = Math.min(inputOps, Math.min(outputOps, Math.min(opCap, (Integer.MAX_VALUE - Math.max(0, heatEnergy)) / Math.max(1, trait.heatEnergy))));
-		if(ops <= 0) return;
-		tanks[0].setFill(tanks[0].getFill() - trait.amountReq * ops);
-		tanks[1].setFill(tanks[1].getFill() + trait.amountProduced * ops);
-		this.heatEnergy = Math.toIntExact(Math.addExact(heatEnergy, (long) ((long) trait.heatEnergy * ops * trait.getEfficiency(CoolingType.HEATEXCHANGER))));
-		this.markChanged();
-	}
+        if(pendingCoolantReturn.isEmpty()) {
+            if(!tanks[0].getTankType().hasTrait(FT_Coolable.class)) return;
+            FT_Coolable trait=tanks[0].getTankType().getTrait(FT_Coolable.class);
+            if(trait.amountReq<=0 || trait.amountProduced<=0 || trait.coolsTo == null || amountToCool<=0) return;
+            long interval=com.hbm.realsim.PetroleumProcesses.ceilDiv(Math.max(1,tickDelay),Math.max(1,amountToCool));
+            if(interval>1 && worldObj.getTotalWorldTime()%interval!=0) return;
+            if(tanks[0].getFill()<trait.amountReq || !tanks[1].configureForRecipe(trait.coolsTo,tanks[0].getPressure())
+                    || (long)tanks[1].getFill()+trait.amountProduced>tanks[1].getMaxFill()) return;
+            com.hbm.realsim.PhysicalState hot=tanks[0].getTankType().getPhysicalState(),cold=trait.coolsTo.getPhysicalState();
+            long heat=(long)(Math.max(0,trait.heatEnergy)*Math.max(0,Math.min(1,trait.getEfficiency(CoolingType.HEATEXCHANGER))));
+            boolean calibrated=hot.isResolved() && cold.isResolved();
+            if(calibrated) {
+                long mass=Math.multiplyExact(hot.massUnits,trait.amountReq);
+                if(mass!=Math.multiplyExact(cold.massUnits,trait.amountProduced) || cold.lhvJoulesPerKg.compareTo(hot.lhvJoulesPerKg)>0) return;
+                java.math.BigDecimal available=com.hbm.realsim.ProcessRecipe.sensible(tanks[0].getTankType().getName(),mass)
+                        .subtract(com.hbm.realsim.ProcessRecipe.sensible(trait.coolsTo.getName(),mass)).max(java.math.BigDecimal.ZERO);
+                heat=Math.min(heat,available.multiply(java.math.BigDecimal.valueOf(2)).setScale(0,java.math.RoundingMode.DOWN).longValueExact());
+                if(heat<=0) return;
+                int buffer=Math.toIntExact(Math.max(trait.amountReq,Math.min(Integer.MAX_VALUE,com.hbm.realsim.PetroleumProcesses.ceilDiv(getRatedThermalWatts()*120L*trait.amountReq,heat))));
+                tanks[0].resizePreservingContents(buffer);tanks[1].resizePreservingContents(Math.max(trait.amountProduced,buffer/trait.amountReq*trait.amountProduced));
+            }
+            if((long)tanks[1].getFill()+trait.amountProduced>tanks[1].getMaxFill()) return;
+            pendingCoolantReturn=trait.coolsTo.getName();pendingReturnAmount=trait.amountProduced;pendingCoolantHeat=heat;
+            pendingQualityC=calibrated?150:0;
+            tanks[0].setFill(tanks[0].getFill()-trait.amountReq);
+        }
+        if(!tanks[1].configureForRecipe(Fluids.fromName(pendingCoolantReturn),tanks[1].getPressure())
+                || (long)tanks[1].getFill()+pendingReturnAmount>tanks[1].getMaxFill()) return;
+        long recovered=Math.min(pendingCoolantHeat,Math.min(getRatedThermalWatts()/10L,Math.max(0,64000000L-heatEnergy)));
+        if(recovered>0) {
+            recoveredQualityC=heatEnergy==0?pendingQualityC:Math.min(recoveredQualityC,pendingQualityC);
+            heatEnergy=Math.toIntExact(heatEnergy+recovered);pendingCoolantHeat-=recovered;
+        }
+        if(pendingCoolantHeat==0) {tanks[1].setFill(tanks[1].getFill()+pendingReturnAmount);pendingCoolantReturn="";}
+        markDirty();
+    }
 
 	private DirPos[] getConPos() {
 		this.refreshRuntimeConnections();
@@ -250,6 +269,7 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements api
 		super.readFromNBT(nbt);
         lastHeatTick = nbt.hasKey("realSimHeatTick") ? nbt.getLong("realSimHeatTick") : Long.MIN_VALUE;
         heatExportBudget.read(nbt.getCompoundTag("realSimHeatExport"));
+        pendingCoolantHeat = Math.max(0, nbt.getLong("realSimCoolantHeat")); pendingCoolantReturn = nbt.getString("realSimCoolantReturn"); pendingReturnAmount=Math.max(1,nbt.getInteger("realSimCoolantReturnAmount")); pendingQualityC=nbt.getInteger("realSimCoolantQuality");
         thermal.read(nbt); recoveredRemainderMicroJ = nbt.getLong("realSimRecoveredRemainder"); recoveredQualityC = nbt.getInteger("realSimHeatQualityC");
 
 		this.tanks[0].readFromNBT(nbt, "0");
@@ -264,6 +284,7 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements api
 		super.writeToNBT(nbt);
         nbt.setLong("realSimHeatTick", lastHeatTick);
         net.minecraft.nbt.NBTTagCompound export = new net.minecraft.nbt.NBTTagCompound(); heatExportBudget.write(export); nbt.setTag("realSimHeatExport", export);
+        nbt.setLong("realSimCoolantHeat", pendingCoolantHeat); nbt.setString("realSimCoolantReturn", pendingCoolantReturn); nbt.setInteger("realSimCoolantReturnAmount",pendingReturnAmount); nbt.setInteger("realSimCoolantQuality",pendingQualityC);
         thermal.write(nbt); nbt.setLong("realSimRecoveredRemainder", recoveredRemainderMicroJ); nbt.setInteger("realSimHeatQualityC", recoveredQualityC);
 
 		this.tanks[0].writeToNBT(nbt, "0");
@@ -292,7 +313,7 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements api
 
 	@Override
 	public FluidTank[] getSendingTanks() {
-		return new FluidTank[] {tanks[1]};
+		return tanks[0].getFill() > tanks[0].getMaxFill() || tanks[0].getFill() > 0 && !tanks[0].getTankType().hasTrait(FT_Coolable.class) ? tanks : new FluidTank[] {tanks[1]};
 	}
 
 	@Override

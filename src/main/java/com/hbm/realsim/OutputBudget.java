@@ -1,15 +1,16 @@
 package com.hbm.realsim;
 
-/** Aggregate export/charging limit across all ports in one server tick. */
+/** Aggregate rated allocation across ports/lanes in one server tick; the caller owns the quantity basis. */
 public final class OutputBudget {
     private long tick = Long.MIN_VALUE;
     private long used;
     public long available(long now, long ratingQuanta) {
-        if(now != tick) { tick = now; used = 0; }
+        if(now < tick) return 0;
+        if(now > tick) { tick = now; used = 0; }
         return Math.max(0, ratingQuanta - used);
     }
     public void use(long now, long ratingQuanta, long amount) {
-        if(amount < 0 || amount > available(now, ratingQuanta)) throw new IllegalArgumentException("Generator export exceeds nameplate");
+        if(amount < 0 || amount > available(now, ratingQuanta)) throw new IllegalArgumentException("Per-tick allocation exceeds nameplate");
         used += amount;
     }
     public void write(net.minecraft.nbt.NBTTagCompound tag) { tag.setLong("realSimExportTick", tick); tag.setLong("realSimExportUsed", used); }

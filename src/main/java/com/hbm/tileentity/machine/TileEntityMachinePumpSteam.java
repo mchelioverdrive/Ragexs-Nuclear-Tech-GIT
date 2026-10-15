@@ -95,6 +95,6 @@ public class TileEntityMachinePumpSteam extends TileEntityMachinePumpBase implem
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
         lines.add("Shaft demand: " + com.hbm.realsim.MachineInfo.watts(com.hbm.realsim.Groundwater.STEAM_SHAFT_WATTS));
         lines.add("Groundwater ceiling: " + steamLitersPerMinute + " L/min");
-        lines.add("Ordinary ledger steam drives the pump; no change to groundwater nameplate");
+        lines.add("Driven by ordinary steam; drain the exhaust");
     }
 }

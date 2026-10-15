@@ -28,7 +28,14 @@ import net.minecraft.item.ItemStack;
 
 public class SolidificationRecipes extends SerializableRecipe {
     private static com.hbm.realsim.ProcessRecipe bitumenBill;
-    public static com.hbm.realsim.ProcessRecipe getPhysical(FluidType type) { return type == BITUMEN ? bitumenBill : null; }
+    private static final HashMap<FluidType, com.hbm.realsim.ProcessRecipe> overrides = new HashMap<>();
+    private static final com.hbm.realsim.ProcessRecipe waterBill = com.hbm.realsim.ChemistryProcesses.freezing(false), co2Bill = com.hbm.realsim.ChemistryProcesses.freezing(true),
+            sodiumBill = com.hbm.realsim.ChemistryProcesses.metalCooling(false), potassiumBill = com.hbm.realsim.ChemistryProcesses.metalCooling(true);
+    public static com.hbm.realsim.ProcessRecipe getPhysical(FluidType type) {
+        if(!recipes.containsKey(type)) return null;
+        if(overrides.containsKey(type)) return overrides.get(type);
+        return type == BITUMEN ? bitumenBill : type == WATER ? waterBill : type == CARBONDIOXIDE ? co2Bill : type == SODIUM ? sodiumBill : type == POTASSIUM ? potassiumBill : null;
+    }
 
 	public static final int SF_OIL =		200;
 	public static final int SF_CRACK =		200;
@@ -67,22 +74,22 @@ public class SolidificationRecipes extends SerializableRecipe {
         bitumenBill = com.hbm.realsim.ChemicalFuelProcesses.bitumenFreezing();
         registerRecipe(BITUMEN, 2, DictFrame.fromOne(ModItems.oil_tar, EnumTarType.CRUDE));
 
-		registerRecipe(WATER,		1000,			Blocks.ice);
+		registerRecipe(WATER,		1,			Blocks.ice);
 		registerRecipe(LAVA,		1000,			Blocks.obsidian);
 		registerRecipe(MERCURY,		125,			ModItems.ingot_mercury);
-		registerRecipe(BIOGAS,		250,			ModItems.biomass_compressed);
+		// Digestion is not reversible by cooling: fuel gas cannot solidify into wet biomass.
 		registerRecipe(SALIENT,		1280,			new ItemStack(ModItems.bio_wafer, 8)); //4 (food val) * 2 (sat mod) * 2 (constant) * 10 (quanta) * 8 (batch size)
 		registerRecipe(BLOOD,		1290,			new ItemStack(ModItems.flesh_wafer, 5));
 		//registerRecipe(ENDERJUICE,	100,			Items.ender_pearl);
 		//registerRecipe(WATZ,		1000,			ModItems.ingot_mud);
-		registerRecipe(REDMUD,		1000,			Items.iron_ingot);
+        // Red mud requires chemical recovery/reduction; cooling cannot create iron.
 		registerRecipe(SODIUM,		100,			ModItems.powder_sodium);
 		registerRecipe(LEAD, 100, ModItems.ingot_lead);
-		registerRecipe(SLOP,		250,			ModBlocks.ore_oil_sand);
+        // Dirty carrier water cannot become bitumen-bearing ore.
 		registerRecipe(CARBONDIOXIDE, 1000,		ModBlocks.dry_ice);
 
 
-		registerRecipe(POTASSIUM, 1000,	ModItems.potassium_powder);
+		registerRecipe(POTASSIUM, 100,	ModItems.potassium_powder);
 		//idk anymore im losing my mind
 
 		// Petroleum residues are converted by paid coker bills, not legacy burn-time solidification.
@@ -132,6 +139,11 @@ public class SolidificationRecipes extends SerializableRecipe {
 			FluidType type = entry.getKey();
 			int amount = entry.getValue().getKey();
 			ItemStack out = entry.getValue().getValue().copy();
+            com.hbm.realsim.ProcessRecipe bill = getPhysical(type);
+            if(bill != null) {
+                amount = bill.quantities[0];
+                out = com.hbm.realsim.ProcessMachine.solid(bill.outputs[0], Math.toIntExact(com.hbm.realsim.PetroleumProcesses.ceilDiv(bill.productMass[0], com.hbm.realsim.PhysicalRegistry.get(bill.outputs[0]).massUnits)));
+            }
 
 			recipes.put(ItemFluidIcon.make(type, amount), out);
 		}
@@ -151,7 +163,7 @@ public class SolidificationRecipes extends SerializableRecipe {
 
 	@Override
 	public void deleteRecipes() {
-        bitumenBill = null;
+        bitumenBill = null; overrides.clear();
 		recipes.clear();
 	}
 
@@ -159,8 +171,18 @@ public class SolidificationRecipes extends SerializableRecipe {
 	public void readRecipe(JsonElement recipe) {
 		JsonObject obj = (JsonObject) recipe;
 		FluidStack in = this.readFluidStack(obj.get("input").getAsJsonArray());
-        if(in.type == BITUMEN) { bitumenBill = com.hbm.realsim.PetroleumProcesses.read(obj); }
+
 		ItemStack out = this.readItemStack(obj.get("output").getAsJsonArray());
+        com.hbm.realsim.ProcessRecipe canonical = in.type == BITUMEN ? com.hbm.realsim.ChemicalFuelProcesses.bitumenFreezing() : in.type == WATER ? waterBill : in.type == CARBONDIOXIDE ? co2Bill : in.type == SODIUM ? sodiumBill : in.type == POTASSIUM ? potassiumBill : null;
+        com.hbm.realsim.ProcessRecipe bill = obj.has("physical") ? com.hbm.realsim.PetroleumProcesses.read(obj) : canonical;
+        if(bill != null) {
+            if(bill.inputs.length != 1 || !bill.inputs[0].equals(in.type.getName()) || bill.solidInputs.length != 0 || bill.heatQuanta != 0
+                    || bill.electricalRatingWatts > 5000 || com.hbm.realsim.PhysicalRegistry.get(bill.outputs[0]).phase != com.hbm.realsim.PhysicalState.Phase.SOLID) throw new IllegalArgumentException("Solidifier requires one fluid feed, one leading solid product and at most 5 kWe");
+            for(int i = 1; i < bill.outputs.length; i++) if(!bill.outputs[i].startsWith("VENT_")) throw new IllegalArgumentException("Solidifier has one product port");
+            ItemStack product = com.hbm.realsim.ProcessMachine.solid(bill.outputs[0], Math.toIntExact(com.hbm.realsim.PetroleumProcesses.ceilDiv(bill.productMass[0], com.hbm.realsim.PhysicalRegistry.get(bill.outputs[0]).massUnits)));
+            if(!obj.has("physical") && (in.fill != bill.quantities[0] || !out.isItemEqual(product) || out.stackSize != product.stackSize)) throw new IllegalArgumentException("Legacy solidification disagrees with its physical bill; regenerate defaults");
+            overrides.put(in.type, bill); in.fill = bill.quantities[0]; out = product;
+        } else if(in.type == SLOP || in.type == REDMUD || com.hbm.realsim.SolidFuel.resolve(out) != null) throw new IllegalArgumentException("Material/fuel recovery requires a physical reaction, not nominal cooling");
 		recipes.put(in.type, new Pair(in.fill, out));
 	}
 
@@ -168,10 +190,12 @@ public class SolidificationRecipes extends SerializableRecipe {
 	public void writeRecipe(Object recipe, JsonWriter writer) throws IOException {
 		Entry<FluidType, Pair<Integer, ItemStack>> rec = (Entry<FluidType, Pair<Integer, ItemStack>>) recipe;
 		FluidStack in = new FluidStack(rec.getKey(), rec.getValue().getKey());
-		if(rec.getKey() == BITUMEN && bitumenBill != null) com.hbm.realsim.PetroleumProcesses.write(bitumenBill, writer);
+		com.hbm.realsim.ProcessRecipe bill = getPhysical(rec.getKey());
+        if(bill != null) com.hbm.realsim.PetroleumProcesses.write(bill, writer);
 		writer.name("input");
 		this.writeFluidStack(in, writer);
 		writer.name("output");
-		this.writeItemStack(rec.getValue().getValue(), writer);
+        ItemStack product = bill == null ? rec.getValue().getValue() : com.hbm.realsim.ProcessMachine.solid(bill.outputs[0], Math.toIntExact(com.hbm.realsim.PetroleumProcesses.ceilDiv(bill.productMass[0], com.hbm.realsim.PhysicalRegistry.get(bill.outputs[0]).massUnits)));
+		this.writeItemStack(product, writer);
 	}
 }

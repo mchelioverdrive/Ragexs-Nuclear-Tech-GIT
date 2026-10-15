@@ -28,7 +28,7 @@ import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
 import api.hbm.energymk2.IBatteryItem;
-import api.hbm.fluid.IFluidStandardReceiver;
+import api.hbm.fluid.IFluidStandardTransceiver;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -43,7 +43,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineArcWelder extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IConditionalInvAccess, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
+public class TileEntityMachineArcWelder extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IConditionalInvAccess, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 	
@@ -57,6 +57,7 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 	public FluidTank tank;
 	public ItemStack display;
 	private ArcWelderRecipe cachedRecipe;
+    private String recipeAccountingKey = "";
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
 	private boolean runtimeSettling;
@@ -77,7 +78,7 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 
 	public TileEntityMachineArcWelder() {
 		super(8);
-		this.tank = new FluidTank(Fluids.NONE, 24_000);
+		this.tank = new FluidTank(Fluids.NONE, 32).withDefaultCapacity();
 		this.trackMachineFluidTank(tank);
 	}
 
@@ -230,6 +231,13 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 		}
 		this.refreshCachedRecipe();
 		this.upgradeManager.checkSlots(slots, 6, 7);
+        int capacity = 32;
+        if(cachedRecipe != null && cachedRecipe.fluid != null) {
+            long amount = cachedRecipe.fluid.fill;
+            capacity = (int) Math.min(Integer.MAX_VALUE, Math.max(32L, Math.max(amount, (amount * 1200L + Math.max(1, cachedRecipe.duration) - 1L) / Math.max(1, cachedRecipe.duration))));
+        }
+        tank.resizePreservingContents(capacity);
+
 		if(cachedRecipe != null) {
 			int redLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
 			int blueLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
@@ -244,7 +252,13 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 	}
 
 	private void refreshCachedRecipe() {
-		cachedRecipe = ArcWelderRecipes.getRecipe(slots[0], slots[1], slots[2]);
+		ArcWelderRecipe next = ArcWelderRecipes.getRecipe(slots[0], slots[1], slots[2]);
+        if(next != cachedRecipe || recipeAccountingKey.isEmpty()) {
+            String nextKey = new ArcWelderRecipes().accountingKey(next);
+            if(!recipeAccountingKey.equals(nextKey)) { progress = 0; recipeAccountingKey = nextKey; }
+        }
+        cachedRecipe = next;
+
 	}
 
 	private void evaluateAndSchedule(long now) {
@@ -285,6 +299,7 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 
 	private void updateConnections() {
 		for(DirPos pos : getConPos()) {
+            if(legacyDrainable()) this.sendFluid(tank, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			if(tank.getTankType() != Fluids.NONE) this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
@@ -431,6 +446,7 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.maxPower = EnergyUnits.readCapacityQuanta(nbt, "maxPower");
 		this.progress = nbt.getInteger("progress");
+        recipeAccountingKey = nbt.getString("recipeAccountingKey");
 		lastProgressTick = Long.MIN_VALUE;
 		this.processTime = nbt.getInteger("processTime");
 		tank.readFromNBT(nbt, "t");
@@ -447,6 +463,7 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		EnergyUnits.writeCapacityQuanta(nbt, maxPower);
 		nbt.setInteger("progress", progress);
+        nbt.setString("recipeAccountingKey", recipeAccountingKey);
 		nbt.setInteger("processTime", processTime);
 		tank.writeToNBT(nbt, "t");
 	}
@@ -485,8 +502,12 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 
 	@Override
 	public FluidTank[] getReceivingTanks() {
-		return new FluidTank[] {tank};
-	}
+        return legacyDrainable() ? new FluidTank[0] : new FluidTank[] {tank};
+    }
+    private boolean legacyDrainable() {
+        return tank.getFill() > 0 && (tank.getFill() > tank.getMaxFill() || cachedRecipe == null || cachedRecipe.fluid == null || cachedRecipe.fluid.type != tank.getTankType());
+    }
+    @Override public FluidTank[] getSendingTanks() { return legacyDrainable() ? new FluidTank[] {tank} : new FluidTank[0]; }
 
 	@Override
 	public boolean isItemValidForSlot(int slot, ItemStack stack) {
@@ -609,6 +630,6 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
     @Override public long getMachineDemandWatts() { return cachedRecipe == null ? 10000L : consumption * 10L; }
     @Override public long getMachineCurrentDrawWatts() { return runtimeActive ? consumption * 10L : 0; }
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
-        lines.add("Recipe-rated welding; work = draw x process duration");
+        lines.add("Shielding / reducing gas and cold-flow test gas are vented utilities");
     }
 }

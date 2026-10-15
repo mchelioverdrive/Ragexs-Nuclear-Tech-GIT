@@ -103,7 +103,7 @@ public class ArcFurnaceRecipes extends SerializableRecipe {
 		recipes.put(new ComparableStack(ModItems.powder_thulium), new ArcFurnaceRecipe().solid(new ItemStack(ModItems.ingot_thulium, 1)).fluid(new MaterialStack(Mats.MAT_THULIUM, MaterialShapes.INGOT.q(1))));
 
 		//electric arc furnaces are the most efficient way to make steel.
-		recipes.put(new ComparableStack(ModItems.powder_steel_dusted), new ArcFurnaceRecipe().solid(new ItemStack(ModBlocks.block_steel, 1)).fluid(new MaterialStack(Mats.MAT_STEEL, MaterialShapes.BLOCK.q(1))));
+		recipes.put(new ComparableStack(ModItems.powder_steel_dusted), new ArcFurnaceRecipe().solid(new ItemStack(ModItems.ingot_steel, 3)).fluid(new MaterialStack(Mats.MAT_STEEL, MaterialShapes.INGOT.q(3))));
 
 
 		for(BedrockOreType type : BedrockOreType.values()) {
@@ -130,9 +130,9 @@ public class ArcFurnaceRecipes extends SerializableRecipe {
 			int out = material.convOut;
 			NTMMaterial convert = material.smeltsInto;
 			if(convert.smeltable == SmeltingBehavior.SMELTABLE) {
-				for(MaterialShapes shape : MaterialShapes.allShapes) {
+				for(MaterialShapes shape : MaterialShapes.allShapes) for(String alias : material.names) {
 					if(!shape.noAutogen) {
-						String name = shape.name() + material.names[0];
+						String name = shape.name() + alias;
 						if(!OreDictionary.getOres(name).isEmpty()) {
 							OreDictStack dict = new OreDictStack(name);
 							ArcFurnaceRecipe recipe = recipes.get(dict);
@@ -178,7 +178,7 @@ public class ArcFurnaceRecipes extends SerializableRecipe {
 
 	private static void addCustomSmeltable(AStack astack, List<MaterialStack> mats) {
 		List<MaterialStack> smeltables = new ArrayList();
-		for(MaterialStack mat : mats) {
+		for(MaterialStack mat : Mats.getSmeltingMaterials(mats)) {
 			if(mat.material.smeltable == SmeltingBehavior.SMELTABLE) {
 				smeltables.add(mat);
 			}
@@ -208,6 +208,12 @@ public class ArcFurnaceRecipes extends SerializableRecipe {
 		ComparableStack cacheKey = new ComparableStack(stack).makeSingular();
 		if(!liquid && fastCacheSolid.containsKey(cacheKey)) return fastCacheSolid.get(cacheKey);
 		if(liquid && fastCacheLiquid.containsKey(cacheKey)) return fastCacheLiquid.get(cacheKey);
+		// Native refining and configured item bills take precedence over generated form aliases.
+		ArcFurnaceRecipe exact = recipes.get(cacheKey);
+		if(exact != null && (liquid ? exact.fluidOutput != null : exact.solidOutput != null)) {
+			if(liquid) fastCacheLiquid.put(cacheKey, exact); else fastCacheSolid.put(cacheKey, exact);
+			return exact;
+		}
 
 		for(Entry<AStack, ArcFurnaceRecipe> entry : recipes.entrySet()) {
 			if(entry.getKey().matchesRecipe(stack, true)) {

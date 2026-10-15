@@ -1,6 +1,6 @@
 # Workshop and construction recipes
 
-This page documents the recipe-only workshop pass. Use NEI to inspect the live ore-dictionary alternatives and metadata before committing materials.
+Use NEI to inspect the construction recipes and alternatives active in your pack. Ordinary workshop structures craft in useful lots; pressure, thermal and reactor hardware retains specialist costs.
 
 ## Construction batch inventory
 

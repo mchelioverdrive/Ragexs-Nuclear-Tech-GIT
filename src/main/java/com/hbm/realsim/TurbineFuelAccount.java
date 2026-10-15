@@ -14,7 +14,7 @@ public final class TurbineFuelAccount {
     public String fuel() { return fuel; }
     public static boolean suitable(String name) {
         // Fuel suitability is explicit. Sour gas, oxyhydrogen and pure H2 lack a suitable stock combustor.
-        return name.equals("GAS") || name.equals("PETROLEUM") || name.equals("REFORMGAS") || name.equals("GAS_COKER") || name.equals("SYNGAS");
+        return FuelSuitability.has(name, MaterialRole.GAS_TURBINE_FUEL);
     }
     public long burn(long tick, FluidTank tank, long requestedChemicalMicroJ, int electricPpm, int recoverablePpm, int qualityC) {
         return burn(tick, tank, requestedChemicalMicroJ, electricPpm, recoverablePpm, qualityC, true);
@@ -27,7 +27,7 @@ public final class TurbineFuelAccount {
         long left = requestedChemicalMicroJ - burned;
         PhysicalState state = tank.getTankType().getPhysicalState();
         boolean suitable = gasOnly ? suitable(tank.getTankType().getName())
-                : tank.getTankType().hasTrait(com.hbm.inventory.fluid.trait.FT_Combustible.class)
+                : FuelSuitability.has(tank.getTankType().getName(), MaterialRole.AVIATION_FUEL) && tank.getTankType().hasTrait(com.hbm.inventory.fluid.trait.FT_Combustible.class)
                 && tank.getTankType().getTrait(com.hbm.inventory.fluid.trait.FT_Combustible.class).getGrade() == com.hbm.inventory.fluid.trait.FT_Combustible.FuelGrade.AERO;
         long credit = 0; int count = 0;
         if(left > 0 && suitable && state.isResolved() && state.chemicalMicrojoulesPerUnit() > 0 && tank.getFill() > 0) {

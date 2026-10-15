@@ -65,7 +65,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 	public long energyQuanta;
 	public static final long maxPower = 100_000;
 	
-	public static final int waterUsedBase = 1_000;
+	public static final int waterUsedBase = 5;
 	public int waterUsed = waterUsedBase;
 	public static final long consumptionBase = 200;
 	public long consumption = consumptionBase;
@@ -90,8 +90,8 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 	public TileEntityMachineOreSlopper() {
 		super(11);
 		tanks = new FluidTank[2];
-		tanks[0] = new FluidTank(Fluids.WATER, 16_000);
-		tanks[1] = new FluidTank(Fluids.SLOP, 16_000);
+		tanks[0] = new FluidTank(Fluids.WATER, 100).withDefaultCapacity();
+		tanks[1] = new FluidTank(Fluids.SLOP, 100).withDefaultCapacity();
 		this.trackMachineFluidTank(tanks[0]);
 		this.trackMachineFluidTank(tanks[1]);
 	}

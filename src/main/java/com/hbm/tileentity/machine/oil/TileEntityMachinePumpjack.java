@@ -7,7 +7,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.blocks.ModBlocks;
-import com.hbm.dim.SolarSystem;
 import com.hbm.inventory.container.ContainerMachineOilWell;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.gui.GUIMachineOilWell;
@@ -140,67 +139,12 @@ public class TileEntityMachinePumpjack extends TileEntityOilDrillBase {
 
 	@Override
 	public void onSuck(int x, int y, int z) {
-        if(!this.reserveExtractionTick(50)) return;
-		int meta = worldObj.getBlockMetadata(x, y, z);
-		Block block = worldObj.getBlock(x, y, z);
-
-		int oil = 0;
-		int gas = 0;
-
-        if(block == ModBlocks.ore_oil) {
-			if(meta == SolarSystem.Body.LAYTHE.ordinal()) {
-				tanks[0].setTankType(Fluids.OIL_DS);
-			} else {
-				tanks[0].setTankType(Fluids.OIL);
-			}
-			tanks[1].setTankType(Fluids.GAS);
-
-			if(meta == SolarSystem.Body.DUNA.ordinal()) {
-				this.tanks[0].setFill(this.tanks[0].getFill() + Math.min(1, oilPerDunaDeposit));
-				if(this.tanks[0].getFill() > this.tanks[0].getMaxFill()) this.tanks[0].setFill(tanks[0].getMaxFill());
-				this.tanks[1].setFill(this.tanks[1].getFill() + (gasPerDepositMin + worldObj.rand.nextInt((gasPerDepositMax - gasPerDepositMin + 1)))); // ditto, lotsa gas
-				if(this.tanks[1].getFill() > this.tanks[1].getMaxFill()) this.tanks[1].setFill(tanks[1].getMaxFill());
-
-				if(worldObj.rand.nextDouble() < drainChanceDuna) {
-					worldObj.setBlock(x, y, z, ModBlocks.ore_oil_empty, meta, 3);
-				}
-			} else {
-				this.tanks[0].setFill(this.tanks[0].getFill() + Math.min(1, oilPerDeposit));
-				if(this.tanks[0].getFill() > this.tanks[0].getMaxFill()) this.tanks[0].setFill(tanks[0].getMaxFill());
-				this.tanks[1].setFill(this.tanks[1].getFill() + (gasPerDepositMin + worldObj.rand.nextInt((gasPerDepositMax - gasPerDepositMin + 1))));
-				if(this.tanks[1].getFill() > this.tanks[1].getMaxFill()) this.tanks[1].setFill(tanks[1].getMaxFill());
-
-				if(worldObj.rand.nextDouble() < drainChance) {
-					worldObj.setBlock(x, y, z, ModBlocks.ore_oil_empty, meta, 3);
-				}
-			}
+        if(extractDeposit(x, y, z, 50, oilPerDeposit, oilPerDunaDeposit, oilPerBedrockDepsoit,
+                gasPerDepositMin, gasPerDepositMax, gasPerBedrockDepositMin, gasPerBedrockDepositMax,
+                gasPerDeposit, petgasPerDepositMin, petgasPerDepositMax, drainChance, drainChanceDuna)) {
+            worldObj.playSoundEffect(xCoord, yCoord, zCoord, "game.neutral.swim.splash", 2F, .5F);
         }
-
-		if(block == Blocks.bedrock) {
-			oil = Math.min(1, oilPerBedrockDepsoit);
-			gas = gasPerBedrockDepositMin + worldObj.rand.nextInt(gasPerBedrockDepositMax - gasPerBedrockDepositMin + 1);
-		}
-
-		if(block == ModBlocks.ore_gas) {
-			tanks[0].setTankType(Fluids.GAS);
-			tanks[1].setTankType(Fluids.PETROLEUM);
-
-			tanks[0].setFill(tanks[0].getFill() + gasPerDeposit);
-			if(tanks[0].getFill() > tanks[0].getMaxFill()) tanks[0].setFill(tanks[0].getMaxFill());
-			tanks[1].setFill(tanks[1].getFill() + (petgasPerDepositMin + worldObj.rand.nextInt((petgasPerDepositMax - petgasPerDepositMin + 1))));
-			if(tanks[1].getFill() > tanks[1].getMaxFill()) tanks[1].setFill(tanks[1].getMaxFill());
-
-			if(worldObj.rand.nextDouble() < drainChance) {
-				worldObj.setBlock(x, y, z, ModBlocks.ore_gas_empty, meta, 3);
-			}
-		}
-
-		this.tanks[0].setFill(this.tanks[0].getFill() + oil);
-		if(this.tanks[0].getFill() > this.tanks[0].getMaxFill()) this.tanks[0].setFill(tanks[0].getMaxFill());
-		this.tanks[1].setFill(this.tanks[1].getFill() + gas);
-		if(this.tanks[1].getFill() > this.tanks[1].getMaxFill()) this.tanks[1].setFill(tanks[1].getMaxFill());
-
-	}
+    }
 
 
 	AxisAlignedBB bb = null;

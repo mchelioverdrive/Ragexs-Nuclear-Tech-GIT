@@ -30,7 +30,7 @@ import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IBatteryItem;
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluid.IFluidStandardReceiver;
+import api.hbm.fluid.IFluidStandardTransceiver;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -44,7 +44,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineSolderingStation extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
+public class TileEntityMachineSolderingStation extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IControlReceiver, IGUIProvider, IUpgradeInfoProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
@@ -66,6 +66,7 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 	private boolean runtimeEnergyMutation;
 	private boolean runtimeActive;
 	private SolderingRecipe cachedRecipe;
+    private String recipeAccountingKey = "";
 	private int cachedInputFingerprint;
 	private boolean recipeFingerprintInitialized;
 	private long cachedRecipeRevision = -1L;
@@ -78,7 +79,7 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 
 	public TileEntityMachineSolderingStation() {
 		super(11);
-		this.tank = new FluidTank(Fluids.NONE, 8_000);
+		this.tank = new FluidTank(Fluids.NONE, 32).withDefaultCapacity();
 		this.trackMachineFluidTank(this.tank);
 	}
 
@@ -162,7 +163,7 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 		if(progress >= processTime) {
 			this.refreshRecipe();
 			this.refreshRuntimeSettings();
-			if(cachedRecipe != null && this.canProcessMaterials(cachedRecipe)) this.completeOperation(cachedRecipe);
+			if(cachedRecipe != null && progress >= processTime && this.canProcessMaterials(cachedRecipe)) this.completeOperation(cachedRecipe);
 			else progress = 0;
 		} else if(steps < elapsed) {
 			progress = 0;
@@ -180,6 +181,7 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 		}
 		if(cadence != 20) return;
 		for(DirPos pos : getConPos()) {
+            if(legacyDrainable()) this.sendFluid(tank, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			if(tank.getTankType() != Fluids.NONE) this.trySubscribe(tank.getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
@@ -196,6 +198,8 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 		long revision = SerializableRecipe.getRegistryRevision();
 		if(!recipeFingerprintInitialized || fingerprint != cachedInputFingerprint || revision != cachedRecipeRevision) {
 			this.cachedRecipe = SolderingRecipes.getRecipe(new ItemStack[] {slots[0], slots[1], slots[2], slots[3], slots[4], slots[5]});
+            String nextKey = new SolderingRecipes().accountingKey(cachedRecipe);
+            if(!recipeAccountingKey.equals(nextKey)) { progress = 0; recipeAccountingKey = nextKey; }
 			this.cachedInputFingerprint = fingerprint;
 			this.cachedRecipeRevision = revision;
 			recipeFingerprintInitialized = true;
@@ -204,6 +208,13 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 
 	private void refreshRuntimeSettings() {
 		this.upgradeManager.checkSlots(slots, 9, 10);
+        int capacity = 32;
+        if(cachedRecipe != null && cachedRecipe.fluid != null) {
+            long amount = cachedRecipe.fluid.fill;
+            capacity = (int) Math.min(Integer.MAX_VALUE, Math.max(32L, Math.max(amount, (amount * 1200L + Math.max(1, cachedRecipe.duration) - 1L) / Math.max(1, cachedRecipe.duration))));
+        }
+        tank.resizePreservingContents(capacity);
+
 		int redLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.SPEED), 3);
 		int blueLevel = Math.min(this.upgradeManager.getLevel(UpgradeType.POWER), 3);
 		long intendedMaxPower;
@@ -349,7 +360,7 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 			}
 		}
 
-		if(recipe.fluid != null) {
+		if(recipe.fluid != null && !recipe.retainFluid) {
 			this.tank.setFill(tank.getFill() - recipe.fluid.fill);
 		}
 	}
@@ -404,6 +415,7 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 		this.maxPower = EnergyUnits.readCapacityQuanta(nbt, "maxPower");
 		this.consumption = nbt.getLong("consumption");
 		this.progress = nbt.getInteger("progress");
+        recipeAccountingKey = nbt.getString("recipeAccountingKey");
 		this.processTime = nbt.getInteger("processTime");
 		this.collisionPrevention = nbt.getBoolean("collisionPrevention");
 
@@ -423,6 +435,7 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.maxPower = EnergyUnits.readCapacityQuanta(nbt, "maxPower");
 		this.progress = nbt.getInteger("progress");
+        recipeAccountingKey = nbt.getString("recipeAccountingKey");
 		this.clientProgressTick = nbt.getLong("progressTick");
 		this.runtimeActive = nbt.getBoolean("runtimeActive");
 		this.processTime = nbt.getInteger("processTime");
@@ -444,6 +457,7 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		EnergyUnits.writeCapacityQuanta(nbt, maxPower);
 		nbt.setInteger("progress", progress);
+        nbt.setString("recipeAccountingKey", recipeAccountingKey);
 		nbt.setInteger("processTime", processTime);
 		nbt.setBoolean("collisionPrevention", collisionPrevention);
 		tank.writeToNBT(nbt, "t");
@@ -491,8 +505,12 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
 
 	@Override
 	public FluidTank[] getReceivingTanks() {
-		return new FluidTank[] {tank};
-	}
+        return legacyDrainable() ? new FluidTank[0] : new FluidTank[] {tank};
+    }
+    private boolean legacyDrainable() {
+        return tank.getFill() > 0 && (tank.getFill() > tank.getMaxFill() || cachedRecipe == null || cachedRecipe.fluid == null || cachedRecipe.fluid.type != tank.getTankType());
+    }
+    @Override public FluidTank[] getSendingTanks() { return legacyDrainable() ? new FluidTank[] {tank} : new FluidTank[0]; }
 
 	@Override
 	public Container provideContainer(int ID, EntityPlayer player, World world, int x, int y, int z) {
@@ -575,6 +593,6 @@ public class TileEntityMachineSolderingStation extends TileEntityMachineBase imp
     @Override public long getMachineDemandWatts() { return cachedRecipe == null ? 1000L : operatingPowerWatts; }
     @Override public long getMachineCurrentDrawWatts() { return runtimeActive ? operatingPowerWatts : 0; }
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
-        lines.add("Recipe-rated electronics assembly; advanced recipes may require solvent");
+        lines.add("Cleaning solvent is a retained bath; helium-4 assembly purge is vented");
     }
 }

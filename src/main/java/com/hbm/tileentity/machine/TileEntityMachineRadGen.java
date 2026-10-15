@@ -17,7 +17,6 @@ import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.CompatEnergyControl;
 import com.hbm.util.Tuple.Triplet;
 
-import api.hbm.energymk2.IEnergyProviderMK2;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -32,7 +31,11 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineRadGen extends TileEntityMachineBase implements IEnergyProviderMK2, IGUIProvider, IInfoProviderEC {
+public class TileEntityMachineRadGen extends TileEntityMachineBase implements api.hbm.energymk2.IRatedGenerator, IGUIProvider, IInfoProviderEC, com.hbm.realsim.IMachineInfo {
+    private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
+    @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
+    @Override public long getRatedOutputWatts() { return 3000000L; }
+
 	private static final int TASK_GENERATE = 1;
 	private static final int TASK_SLOT_SHARED = 0;
 	private boolean runtimeInitialized;
@@ -53,7 +56,7 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 	protected int output;
 	
 	public long energyQuanta;
-	public static final long maxPower = 1000000;
+	public static final long maxPower = 600000;
 	
 	public boolean isOn = false;
 
@@ -109,8 +112,10 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 			this.isOn = false;
 			for(int i = 0; i < 12; i++) {
 				if(processing[i] == null) continue;
+                long generated = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts[i]);
+                if(generated <= 0 || generated > com.hbm.realsim.GeneratorContract.room(energyQuanta, maxPower)) continue;
 				this.isOn = true;
-				this.setStoredEnergyQuanta(energyQuanta + EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts[i]));
+				this.setStoredEnergyQuanta(energyQuanta + generated);
 				this.output += production[i];
 				progress[i]++;
 				if(progress[i] >= maxProgress[i]) {
@@ -124,7 +129,6 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 					this.markDirty();
 				}
 			}
-			if(energyQuanta > maxPower) this.setStoredEnergyQuanta(maxPower);
 		} finally { runtimeEnergyMutation = false; }
 		this.observeInventoryFingerprint();
 		this.markDirty();
@@ -229,15 +233,10 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
-		this.progress = nbt.getIntArray("progress");
-		
-		if(progress.length != 12) {
-			progress = new int[12];
-			return;
-		}
-		
-		this.maxProgress = nbt.getIntArray("maxProgress");
-		this.production = nbt.getIntArray("production");
+        outputBudget.read(nbt);
+        this.progress = java.util.Arrays.copyOf(nbt.getIntArray("progress"), 12);
+        this.maxProgress = java.util.Arrays.copyOf(nbt.getIntArray("maxProgress"), 12);
+        this.production = java.util.Arrays.copyOf(nbt.getIntArray("production"), 12);
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.isOn = nbt.getBoolean("isOn");
 
@@ -256,6 +255,7 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+        outputBudget.write(nbt);
 		nbt.setIntArray("progress", this.progress);
 		nbt.setIntArray("maxProgress", this.maxProgress);
 		nbt.setIntArray("production", this.production);
@@ -403,4 +403,8 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements IE
 	public void provideExtraInfo(NBTTagCompound data) {
 		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(output));
 	}
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Exotic radiation conversion; outside conventional power progression");
+        lines.add("Fuel processing pauses when generated electricity cannot fit");
+    }
 }

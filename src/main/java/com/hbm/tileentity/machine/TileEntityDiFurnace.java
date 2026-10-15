@@ -8,7 +8,6 @@ import com.hbm.inventory.container.ContainerDiFurnace;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.gui.GUIDiFurnace;
 import com.hbm.inventory.recipes.BlastFurnaceRecipes;
-import com.hbm.items.ModItems;
 import com.hbm.machine.MachineDirtyCause;
 import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
@@ -22,10 +21,8 @@ import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.inventory.Container;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
@@ -125,31 +122,14 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 		return getItemPower(stack, canBreathe) > 0;
 	}
 
-	//TODO: replace this terribleness
+	// Keep saved process credits in their existing units; fresh fuel derives from its assay.
 	private int getItemPower(ItemStack stack, boolean canBreathe) {
-		if(stack == null) {
-			return 0;
-		} else {
-			Item item = stack.getItem();
-
-			if(item == Items.coal) return canBreathe ? 200 : 0;
-			if(item == Item.getItemFromBlock(Blocks.coal_block)) return canBreathe ? 2000 : 0;
-			if(item == Item.getItemFromBlock(ModBlocks.block_coke)) return canBreathe ? 4000 : 0;
-			if(item == Items.lava_bucket) return 12800;
-			if(item == Items.blaze_rod) return canBreathe ? 1000 : 0;
-			if(item == Items.blaze_powder) return canBreathe ? 300 : 0;
-			if(item == ModItems.lignite) return canBreathe ? 150 : 0;
-			if(item == ModItems.powder_lignite) return canBreathe ? 150 : 0;
-			if(item == ModItems.powder_coal) return canBreathe ? 200 : 0;
-			if(item == ModItems.briquette) return canBreathe ? 200 : 0;
-			if(item == ModItems.coke) return canBreathe ? 400 : 0;
-			if(item == ModItems.powder_coke) return canBreathe ? 400 : 0;
-			if(item == ModItems.solid_fuel) return canBreathe ? 400 : 0;
-
-			return 0;
-		}
+		if(stack == null) return 0;
+		if(stack.getItem() == Items.lava_bucket) return 12800; // Explicit legacy geothermal input.
+		if(stack.getItem() == Items.blaze_rod) return canBreathe ? 1000 : 0; // Fictional heat source.
+		if(stack.getItem() == Items.blaze_powder) return canBreathe ? 300 : 0;
+		return canBreathe ? com.hbm.realsim.Combustion.legacySolidTicks(stack, 200) : 0;
 	}
-
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
@@ -220,6 +200,8 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 	private void processItem() {
 		ItemStack itemStack = runtimeRecipeOutput;
 		if(itemStack == null) return;
+		int[] amounts = BlastFurnaceRecipes.getInputAmounts(slots[0], slots[1]);
+		if(amounts == null) return;
 
 		if(slots[3] == null) {
 			slots[3] = itemStack.copy();
@@ -228,7 +210,7 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 		}
 
 		for(int i = 0; i < 2; i++) {
-			this.decrStackSize(i, 1);
+			this.decrStackSize(i, amounts[i]);
 		}
 		this.refreshRecipe();
 	}

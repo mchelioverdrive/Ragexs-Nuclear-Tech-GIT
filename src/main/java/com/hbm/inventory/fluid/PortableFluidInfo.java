@@ -23,7 +23,7 @@ public final class PortableFluidInfo {
         FluidContainer filled = FluidContainerRegistry.filledDescriptor(identity);
         if(filled != null && filled.emptyContainer != null) {
             FluidInfo.appendContainer(lines, filled.type, filled.amount(stack), filled.content, 0);
-            if(stack.getItem() instanceof net.minecraft.item.ItemBucket) lines.add("World-block carrier: abstract portability (one fluid block)");
+            if(stack.getItem() instanceof net.minecraft.item.ItemBucket) lines.add("Places one fluid block");
             return;
         }
         List<FluidContainer> candidates = FluidContainerRegistry.itemDescriptors(stack);
@@ -36,11 +36,11 @@ public final class PortableFluidInfo {
             }
         }
         if(!capacities.isEmpty()) {
-            if(stack.getItem() == net.minecraft.init.Items.bucket) lines.add("World-block carrier: abstract portability (one fluid block)");
+            if(stack.getItem() == net.minecraft.init.Items.bucket) lines.add("Places one fluid block");
             if(stack.getItem() == com.hbm.items.ModItems.gas_empty) lines.add("Accepted: registered gas/cryogenic fills; phase follows fluid identity");
             else if(stack.getItem() == com.hbm.items.ModItems.canister_empty) lines.add("Accepted: fluids with a canister definition");
             else if(stack.getItem() == com.hbm.items.ModItems.fluid_tank_lead_empty) lines.add("Lead-shielded fluid vessel");
-            else lines.add("Accepted: registered fills for this container");
+            else lines.add("Accepts compatible fluids");
             return;
         }
         // Forge-only containers have no RTM assay; never synthesize one from their names.
@@ -48,12 +48,12 @@ public final class PortableFluidInfo {
             net.minecraftforge.fluids.IFluidContainerItem item = (net.minecraftforge.fluids.IFluidContainerItem) stack.getItem();
             net.minecraftforge.fluids.FluidStack fluid = item.getFluid(stack);
             if(fluid != null) lines.add(fluid.getLocalizedName());
-            lines.add(String.format(java.util.Locale.US, "%,d / %,d nominal Forge units", fluid == null ? 0 : fluid.amount, item.getCapacity(stack)));
+            lines.add(String.format(java.util.Locale.US, "%,d / %,d mB", fluid == null ? 0 : fluid.amount, item.getCapacity(stack)));
         } else {
             net.minecraftforge.fluids.FluidStack fluid = net.minecraftforge.fluids.FluidContainerRegistry.getFluidForFilledItem(stack);
             if(fluid != null) {
                 lines.add(fluid.getLocalizedName());
-                lines.add(String.format(java.util.Locale.US, "%,d / %,d nominal Forge units", fluid.amount, fluid.amount));
+                lines.add(String.format(java.util.Locale.US, "%,d / %,d mB", fluid.amount, fluid.amount));
             }
         }
     }

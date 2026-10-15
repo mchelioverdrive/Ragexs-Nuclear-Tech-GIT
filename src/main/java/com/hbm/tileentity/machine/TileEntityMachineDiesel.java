@@ -31,7 +31,6 @@ import com.hbm.util.CompatEnergyControl;
 import com.hbm.util.FurnaceGasEmission;
 
 import api.hbm.energymk2.IBatteryItem;
-import api.hbm.energymk2.IEnergyProviderMK2;
 import api.hbm.fluid.IFluidStandardTransceiver;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.relauncher.Side;
@@ -43,7 +42,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineDiesel extends TileEntityMachinePolluting implements IEnergyProviderMK2, IFluidStandardTransceiver, IConfigurableMachine, IGUIProvider, IInfoProviderEC, IFluidCopiable, com.hbm.realsim.IMachineInfo {
+public class TileEntityMachineDiesel extends TileEntityMachinePolluting implements api.hbm.energymk2.IRatedGenerator, IFluidStandardTransceiver, IConfigurableMachine, IGUIProvider, IInfoProviderEC, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private static final int TASK_GENERATE = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
@@ -65,8 +64,8 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 	public static long ratedPowerWatts = 200_000L;
 	
 	/* CONFIGURABLE CONSTANTS */
-	public static long maxPower = 50000;
-	public static int fluidCap = 16000;
+	public static long maxPower = 40000;
+	public static int fluidCap = 20;
 	/** Retained for binary/source compatibility; physical efficiencies are owned by Combustion. */
 	@Deprecated public static HashMap<FuelGrade, Double> fuelEfficiency = new HashMap();
 	static {
@@ -82,7 +81,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 
 	public TileEntityMachineDiesel() {
 		super(5, 100);
-		tank = new FluidTank(Fluids.DIESEL, 400).withDefaultCapacity();
+		tank = new FluidTank(Fluids.DIESEL, Math.max(1, fluidCap)).withDefaultCapacity();
 		this.trackMachineFluidTank(tank);
 		this.trackMachineFluidTank(smoke);
 		this.trackMachineFluidTank(smoke_leaded);
@@ -112,7 +111,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 		super.readFromNBT(nbt);
 
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "powerTime");
-		this.powerCap = EnergyUnits.readCapacityQuanta(nbt, "powerCap");
+		this.powerCap = maxPower; // Configuration sets capacity; legacy energy remains untouched.
 		tank.readFromNBT(nbt, "fuel");
 		fuelCredit.read(nbt);
 		outputBudget.read(nbt);
@@ -153,7 +152,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 	}
 
 	public long getPowerScaled(long i) {
-		return (energyQuanta * i) / powerCap;
+		return (Math.min(energyQuanta, powerCap) * i) / Math.max(1, powerCap);
 	}
 
 	@Override
@@ -216,7 +215,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 			}
 			tank.loadTank(0, 1, slots);
 			long previousCapacity = powerCap;
-			powerCap = Math.max(powerCap, maxPower);
+			powerCap = maxPower;
 			if(powerCap != previousCapacity) this.markPowerNetDirty();
 
 			long charge = Math.min(energyQuanta, getMaxOutputQuantaPerTick());
@@ -296,7 +295,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 
 		energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		powerCap = EnergyUnits.readCapacityQuanta(data, "powerCap");
-		tank.readFromNBT(data, "t");
+		com.hbm.realsim.GeneratorContract.readTankStatus(tank, data, "t");
 		generatorStats.read(data, fuelCredit);
 	}
 	
@@ -349,12 +348,8 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 	public long getPowerOutputWatts() {
 		return EnergyUnits.quantaPerTickToWatts(generatorStats.outputQuanta);
 	}
-	@Override public long getMaxOutputQuantaPerTick() { return outputBudget.available(worldObj == null ? 0 : worldObj.getTotalWorldTime(), ratedPowerWatts / 10L); }
-	@Override public void extractEnergyQuanta(long amount) {
-		long extracted = Math.max(0L, Math.min(amount, Math.min(energyQuanta, getMaxOutputQuantaPerTick())));
-		outputBudget.use(worldObj == null ? 0 : worldObj.getTotalWorldTime(), ratedPowerWatts / 10L, extracted);
-		this.setStoredEnergyQuanta(energyQuanta - extracted);
-	}
+    @Override public OutputBudget getOutputBudget() { return outputBudget; }
+    @Override public long getRatedOutputWatts() { return ratedPowerWatts; }
 
 	@Override
 	public long getEnergyCapacityQuanta() {

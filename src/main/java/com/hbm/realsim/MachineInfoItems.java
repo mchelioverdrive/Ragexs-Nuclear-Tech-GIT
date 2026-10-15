@@ -15,6 +15,14 @@ public final class MachineInfoItems {
     public static void append(ItemStack stack, List<String> lines) {
         Block block = Block.getBlockFromItem(stack.getItem());
         if(block == net.minecraft.init.Blocks.air) return;
+        if(block == ModBlocks.machine_minirtg || block == ModBlocks.machine_powerrtg) {
+            com.hbm.tileentity.machine.TileEntityMachineMiniRTG isotope = new com.hbm.tileentity.machine.TileEntityMachineMiniRTG();
+            if(stack.hasTagCompound()) isotope.readNBT(stack.getTagCompound());
+            if(isotope.source == null && !isotope.hasUnresolvedSource()) isotope.source = new ItemStack(block == ModBlocks.machine_powerrtg ? com.hbm.items.ModItems.pellet_rtg_polonium : com.hbm.items.ModItems.pellet_rtg);
+            lines.add("Sealed source: " + (isotope.source == null ? "Unknown isotope source; no electrical output" : isotope.source.getDisplayName()));
+            lines.addAll(MachineInfo.describe(isotope, false));
+            return;
+        }
         if(block instanceof com.hbm.blocks.machine.MachineBattery) {
             com.hbm.blocks.machine.MachineBattery battery = (com.hbm.blocks.machine.MachineBattery) block;
             lines.add("Energy storage: " + api.hbm.energymk2.EnergyUnits.formatJoules(battery.maxPower));
@@ -25,9 +33,16 @@ public final class MachineInfoItems {
         TileEntity profile;
         if(PROFILES.containsKey(block)) profile = PROFILES.get(block);
         else { profile = create(block); PROFILES.put(block, profile); }
-        if(profile != null) { lines.add("Item preview: local settings; placed machine shows installed server values"); lines.addAll(MachineInfo.describe(profile, false)); }
+        if(profile != null) { lines.add("Preview ratings; check the placed machine for server settings"); lines.addAll(MachineInfo.describe(profile, false)); }
     }
     private static TileEntity create(Block block) {
+        if(block == ModBlocks.machine_rtg_grey) return new com.hbm.tileentity.machine.TileEntityMachineRTG();
+        if(block == ModBlocks.machine_radiolysis) return new com.hbm.tileentity.machine.TileEntityMachineRadiolysis();
+        if(block == ModBlocks.machine_radgen) return new com.hbm.tileentity.machine.TileEntityMachineRadGen();
+        if(block == ModBlocks.machine_solar) return new com.hbm.tileentity.machine.TileEntityMachineSolarPanel();
+        if(block == ModBlocks.machine_geo) return new com.hbm.tileentity.machine.TileEntityMachineAmgen();
+        if(block == ModBlocks.machine_spp_bottom) return new com.hbm.tileentity.machine.TileEntityMachineSPP();
+        if(block == ModBlocks.machine_discharger) return new com.hbm.tileentity.machine.TileEntityMachineDischarger();
         if(block == ModBlocks.machine_converter_he_rf) return new com.hbm.tileentity.network.TileEntityConverterHeRf();
         if(block == ModBlocks.machine_converter_rf_he) return new com.hbm.tileentity.network.TileEntityConverterRfHe();
         if(block.getClass() == com.hbm.blocks.machine.MachineStirling.class) return new com.hbm.tileentity.machine.TileEntityStirling(block);

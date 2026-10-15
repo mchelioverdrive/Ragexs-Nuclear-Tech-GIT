@@ -47,7 +47,12 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineChemplant extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, com.hbm.realsim.IMachineInfo {
+public class TileEntityMachineChemplant extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, com.hbm.realsim.IMachineInfo, com.hbm.realsim.ProcessMachine.Cooling {
+    private final com.hbm.realsim.OutputBudget coolingBudget = new com.hbm.realsim.OutputBudget();
+    @Override public long availableCoolingQuanta(long tick) { return coolingBudget.available(tick, 20000); }
+    @Override public void rejectHeatQuanta(long tick, long quanta) { coolingBudget.use(tick, 20000, quanta); }
+    @Override public long getMachineCoolingWatts() { return 200000; }
+    @Override public long getProcessAuxiliaryWatts(com.hbm.realsim.ProcessRecipe recipe) { return Math.max(500, com.hbm.realsim.PetroleumProcesses.ceilDiv(recipe.rejectedWatts, 500) * 10); }
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 	private static final int TASK_ACCOUNTING = 1;
 	private static final int TASK_BATTERY = 2;
@@ -69,10 +74,10 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	private boolean runtimeActive;
 	private boolean runtimeSettling;
 	private long observedPower;
-	private final int[] observedTankFill = new int[4];
-	private final int[] observedTankCapacity = new int[4];
-	private final int[] observedTankPressure = new int[4];
-	private final com.hbm.inventory.fluid.FluidType[] observedTankType = new com.hbm.inventory.fluid.FluidType[4];
+	private final int[] observedTankFill = new int[8];
+	private final int[] observedTankCapacity = new int[8];
+	private final int[] observedTankPressure = new int[8];
+	private final com.hbm.inventory.fluid.FluidType[] observedTankType = new com.hbm.inventory.fluid.FluidType[8];
 	private final int[] observedItems = new int[21];
 	private int cachedPositionMeta = -1;
 	private DirPos[] cachedConnectionPositions;
@@ -107,8 +112,8 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		 * 19-20 FIn Out
 		 */
 
-		tanks = new FluidTank[4];
-		for(int i = 0; i < 4; i++) {
+		tanks = new FluidTank[8];
+		for(int i = 0; i < tanks.length; i++) {
 			tanks[i] = new FluidTank(Fluids.NONE, 24_000);
 			this.trackMachineFluidTank(tanks[i]);
 		}
@@ -220,6 +225,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 			this.trySubscribe(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			this.trySubscribe(tanks[0].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			this.trySubscribe(tanks[1].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+            for(int i = 4; i < 6; i++) if(tanks[i].getTankType() != Fluids.NONE) this.trySubscribe(tanks[i].getTankType(), worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		}
 	}
 
@@ -240,24 +246,34 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		return this.cachedConnectionPositions;
 	}
 
-	private void setupTanks(ChemRecipe recipe) {
-		if(recipe.inputFluids[0] != null) tanks[0].configureForRecipe(recipe.inputFluids[0].type, recipe.inputFluids[0].pressure);	else tanks[0].configureForRecipe(Fluids.NONE, 0);
-		if(recipe.inputFluids[1] != null) tanks[1].configureForRecipe(recipe.inputFluids[1].type, recipe.inputFluids[1].pressure);	else tanks[1].configureForRecipe(Fluids.NONE, 0);
-		if(recipe.outputFluids[0] != null) tanks[2].configureForRecipe(recipe.outputFluids[0].type, recipe.outputFluids[0].pressure);	else tanks[2].configureForRecipe(Fluids.NONE, 0);
-		if(recipe.outputFluids[1] != null) tanks[3].configureForRecipe(recipe.outputFluids[1].type, recipe.outputFluids[1].pressure);	else tanks[3].configureForRecipe(Fluids.NONE, 0);
-	}
+    public FluidTank[] processInputs() { return new FluidTank[] {tanks[0], tanks[1], tanks[4], tanks[5]}; }
+    public FluidTank[] processOutputs() { return new FluidTank[] {tanks[2], tanks[3], tanks[6], tanks[7]}; }
+
+	    private FluidTank inputTank(int i) { return tanks[i < 2 ? i : i + 2]; }
+    private FluidTank outputTank(int i) { return tanks[i < 2 ? i + 2 : i + 4]; }
+
+    private void setupTanks(ChemRecipe recipe) {
+        for(int i = 0; i < 4; i++) {
+            inputTank(i).configureForRecipe(recipe.inputFluids[i] == null ? Fluids.NONE : recipe.inputFluids[i].type, recipe.inputFluids[i] == null ? 0 : recipe.inputFluids[i].pressure);
+            outputTank(i).configureForRecipe(recipe.outputFluids[i] == null ? Fluids.NONE : recipe.outputFluids[i].type, recipe.outputFluids[i] == null ? 0 : recipe.outputFluids[i].pressure);
+        }
+    }
 
 	private boolean hasRequiredFluids(ChemRecipe recipe) {
-		if(recipe.inputFluids[0] != null && (tanks[0].getTankType() != recipe.inputFluids[0].type || tanks[0].getPressure() != recipe.inputFluids[0].pressure || tanks[0].getFill() < recipe.inputFluids[0].fill)) return false;
-		if(recipe.inputFluids[1] != null && (tanks[1].getTankType() != recipe.inputFluids[1].type || tanks[1].getPressure() != recipe.inputFluids[1].pressure || tanks[1].getFill() < recipe.inputFluids[1].fill)) return false;
-		return true;
-	}
+        for(int i = 0; i < 4; i++) if(recipe.inputFluids[i] != null) {
+            FluidTank tank = inputTank(i); com.hbm.inventory.FluidStack need = recipe.inputFluids[i];
+            if(tank.getTankType() != need.type || tank.getPressure() != need.pressure || tank.getFill() < need.fill) return false;
+        }
+        return true;
+    }
 
 	private boolean hasSpaceForFluids(ChemRecipe recipe) {
-		if(recipe.outputFluids[0] != null && (tanks[2].getTankType() != recipe.outputFluids[0].type || tanks[2].getPressure() != recipe.outputFluids[0].pressure || tanks[2].getFill() + recipe.outputFluids[0].fill > tanks[2].getMaxFill())) return false;
-		if(recipe.outputFluids[1] != null && (tanks[3].getTankType() != recipe.outputFluids[1].type || tanks[3].getPressure() != recipe.outputFluids[1].pressure || tanks[3].getFill() + recipe.outputFluids[1].fill > tanks[3].getMaxFill())) return false;
-		return true;
-	}
+        for(int i = 0; i < 4; i++) if(recipe.outputFluids[i] != null) {
+            FluidTank tank = outputTank(i); com.hbm.inventory.FluidStack need = recipe.outputFluids[i];
+            if(tank.getTankType() != need.type || tank.getPressure() != need.pressure || (long) tank.getFill() + need.fill > tank.getMaxFill()) return false;
+        }
+        return true;
+    }
 
 	private boolean hasRequiredItems(ChemRecipe recipe) {
 		return InventoryUtil.doesArrayHaveIngredients(slots, 13, 16, recipe.inputs);
@@ -268,14 +284,12 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	}
 
 	private void consumeFluids(ChemRecipe recipe) {
-		if(recipe.inputFluids[0] != null) tanks[0].setFill(tanks[0].getFill() - recipe.inputFluids[0].fill);
-		if(recipe.inputFluids[1] != null) tanks[1].setFill(tanks[1].getFill() - recipe.inputFluids[1].fill);
-	}
+        for(int i = 0; i < 4; i++) if(recipe.inputFluids[i] != null) { FluidTank tank = inputTank(i); tank.setFill(tank.getFill() - recipe.inputFluids[i].fill); }
+    }
 
 	private void produceFluids(ChemRecipe recipe) {
-		if(recipe.outputFluids[0] != null) tanks[2].setFill(tanks[2].getFill() + recipe.outputFluids[0].fill);
-		if(recipe.outputFluids[1] != null) tanks[3].setFill(tanks[3].getFill() + recipe.outputFluids[1].fill);
-	}
+        for(int i = 0; i < 4; i++) if(recipe.outputFluids[i] != null) { FluidTank tank = outputTank(i); tank.setFill(tank.getFill() + recipe.outputFluids[i].fill); }
+    }
 
 	private void consumeItems(ChemRecipe recipe) {
 
@@ -566,6 +580,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 			for(DirPos pos : getConPos()) {
 				if(tanks[2].getFill() > 0) this.sendFluid(tanks[2], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				if(tanks[3].getFill() > 0) this.sendFluid(tanks[3], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+                for(int i = 6; i < 8; i++) if(tanks[i].getFill() > 0) this.sendFluid(tanks[i], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 			return;
 		}
@@ -600,7 +615,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
             try {
                 int before = physicalBatch.ticks();
                 com.hbm.realsim.ProcessMachine.step(this, physicalBatch, cachedRecipe == null ? null : cachedRecipe.physicalBill,
-                    new FluidTank[] {tanks[0], tanks[1]}, new FluidTank[] {tanks[2], tanks[3]}, slots, 13, 16, 5, 8);
+                    processInputs(), processOutputs(), slots, 13, 16, 5, 8);
                 isProgressing = before != physicalBatch.ticks(); runtimeActive = isProgressing;
                 progress = physicalBatch.ticks(); maxProgress = physicalBatch.active() ? physicalBatch.recipe().duration : cachedRecipe == null ? 1 : cachedRecipe.getDuration();
                 this.observeItems(); this.observeTanks(); this.refreshEligibility();
@@ -727,14 +742,15 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		this.observedTemplateMeta = template == null ? 0 : template.getItemDamage();
 		this.observedRecipeGeneration = ChemplantRecipes.recipeGeneration;
 		this.cachedRecipe = template != null && template.getItem() == ModItems.chemistry_template ? ChemplantRecipes.indexMapping.get(this.observedTemplateMeta) : null;
-		if(previous != null && previous != cachedRecipe && (previous.physicalPowerQuanta > 0 || cachedRecipe != null && cachedRecipe.physicalPowerQuanta > 0)) progress = 0;
+		if(previous != null && previous != cachedRecipe && !physicalBatch.active()) progress = 0;
 	}
 
 	private void refreshEligibility() {
         if(physicalBatch.active() || cachedRecipe != null && cachedRecipe.physicalBill != null) {
-            com.hbm.realsim.ProcessMachine.configure(physicalBatch, cachedRecipe == null ? null : cachedRecipe.physicalBill, new FluidTank[] {tanks[2], tanks[3]});
+            com.hbm.realsim.ProcessMachine.sizeProcessBuffers(physicalBatch.active() ? physicalBatch.recipe() : cachedRecipe == null ? null : cachedRecipe.physicalBill, processInputs(), processOutputs());
+            com.hbm.realsim.ProcessMachine.configure(physicalBatch, cachedRecipe == null ? null : cachedRecipe.physicalBill, processOutputs());
             needsInputTransfer = !physicalBatch.active() && !hasRequiredItems(cachedRecipe);
-            cachedEligible = physicalBatch.active() || com.hbm.realsim.ProcessMachine.inputsReady(cachedRecipe.physicalBill, new FluidTank[] {tanks[0], tanks[1]}, slots, 13, 16);
+            cachedEligible = physicalBatch.active() || com.hbm.realsim.ProcessMachine.inputsReady(cachedRecipe.physicalBill, processInputs(), slots, 13, 16);
             this.observeTanks(); return;
         }
 		if(this.cachedRecipe != null) this.setupTanks(this.cachedRecipe);
@@ -829,6 +845,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
         physicalBatch.read(nbt);
+        coolingBudget.read(nbt.getCompoundTag("realSimCooling"));
 		super.readFromNBT(nbt);
 
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
@@ -849,8 +866,9 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
-        physicalBatch.write(nbt);
 		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+        physicalBatch.write(nbt);
+        NBTTagCompound coolingTag = new NBTTagCompound(); coolingBudget.write(coolingTag); nbt.setTag("realSimCooling", coolingTag);
 		super.writeToNBT(nbt);
 
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
@@ -891,7 +909,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 
 	@Override
 	public FluidTank[] getSendingTanks() {
-		return new FluidTank[] {tanks[2], tanks[3]};
+		return processOutputs();
 	}
 
 	@Override
@@ -899,7 +917,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 
 	@Override
 	public FluidTank[] getReceivingTanks() {
-		return new FluidTank[] {tanks[0], tanks[1]};
+		return processInputs();
 	}
 
 	@Override
@@ -931,7 +949,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 			info.add("Electrical demand scales with throughput; see the machine rating");
 		}
 		if(type == UpgradeType.POWER) {
-			info.add("Work reduction: " + (Math.min(3, level) * 10) + "% (nominal recipes)");
+			info.add("Work reduction: " + (Math.min(3, level) * 10) + "% (standard recipes)");
 			info.add(EnumChatFormatting.RED + I18nUtil.resolveKey(KEY_DELAY, "+" + (level * 5) + "%"));
 		}
 		if(type == UpgradeType.OVERDRIVE) {
@@ -947,7 +965,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		return 0;
 	}
 
-    @Override public long getMachineDemandWatts() { return cachedRecipe != null && cachedRecipe.physicalBill != null ? cachedRecipe.physicalBill.electricalRatingWatts : cachedRecipe == null ? operatingPowerWatts : cachedRecipe.costPerTick(operatingPowerWatts / 10L) * 10L; }
+    @Override public long getMachineDemandWatts() { return cachedRecipe != null && cachedRecipe.physicalBill != null ? cachedRecipe.physicalBill.electricalRatingWatts + getProcessAuxiliaryWatts(cachedRecipe.physicalBill) : cachedRecipe == null ? operatingPowerWatts : cachedRecipe.costPerTick(operatingPowerWatts / 10L) * 10L; }
     @Override public long getMachineCurrentDrawWatts() { return physicalBatch.active() || cachedRecipe != null && cachedRecipe.physicalBill != null ? physicalBatch.currentDrawWatts(worldObj == null ? Long.MIN_VALUE : worldObj.getTotalWorldTime()) : isProgressing ? getMachineDemandWatts() : 0; }
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
         if(cachedRecipe != null && cachedRecipe.physicalBill != null) com.hbm.realsim.MachineInfo.process(lines, physicalBatch.active() ? physicalBatch.recipe() : cachedRecipe.physicalBill);

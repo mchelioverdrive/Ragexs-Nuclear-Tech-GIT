@@ -20,11 +20,11 @@ public final class FluidInfo {
         PhysicalState state = type.getPhysicalState();
         if(state.basis == PhysicalState.Basis.STANDARD_GAS_LITER) return "standard L";
         if(state.basis == PhysicalState.Basis.LIQUID_LITER) return "L";
-        if(state.basis == PhysicalState.Basis.WATER_EQUIVALENT) return "water-equivalent units";
+        if(state.basis == PhysicalState.Basis.WATER_EQUIVALENT) return "steam units";
         if(type == Fluids.STEAM || type == Fluids.HOTSTEAM || type == Fluids.SUPERHOTSTEAM
-                || type == Fluids.ULTRAHOTSTEAM || type == Fluids.SPENTSTEAM) return "nominal steam units";
+                || type == Fluids.ULTRAHOTSTEAM || type == Fluids.SPENTSTEAM) return "steam units";
         if(type == Fluids.NONE) return "L / standard L (fluid-dependent)";
-        return "nominal units";
+        return "units";
     }
 
     public static String amount(FluidType type, long amount) {
@@ -40,7 +40,7 @@ public final class FluidInfo {
 
     public static String lhv(PhysicalState state) {
         if(!state.isResolved() || state.chemicalMicrojoulesPerUnit() <= 0) return null;
-        String unit = state.basis == PhysicalState.Basis.STANDARD_GAS_LITER ? "standard L" : "L";
+        String unit = state.basis == PhysicalState.Basis.STANDARD_GAS_LITER ? "standard L" : state.basis == PhysicalState.Basis.LIQUID_LITER ? "L" : "unit";
         return String.format(Locale.US, "LHV: %.3f MJ/%s", state.chemicalMicrojoulesPerUnit() / 1e12D, unit);
     }
 
@@ -56,24 +56,33 @@ public final class FluidInfo {
 
         com.hbm.realsim.SteamLedger.State steam = com.hbm.realsim.SteamLedger.state(type.getName());
         if(steam != null && steam != com.hbm.realsim.SteamLedger.State.COLD) {
-            lines.add(String.format(Locale.US, "Water-equivalent: %.3f kg/unit", steam.massPerUnit / 1000000D));
-            lines.add(String.format(Locale.US, "State: %d �C / %.3f MPa absolute", steam.temperatureC, steam.pressurePa / 1000000D));
+            lines.add(String.format(Locale.US, "Water content: %.3f kg/unit", steam.massPerUnit / 1000000D));
+            lines.add(String.format(Locale.US, "State: %d °C / %.3f MPa absolute", steam.temperatureC, steam.pressurePa / 1000000D));
             lines.add(String.format(Locale.US, "Enthalpy: %.3f MJ/kg above cold feed", steam.enthalpyJPerKg / 1000000D));
-            if(advanced) lines.add("Inventory counts are not gas liters; network PU is separate");
             return;
         }
         String phase = state.phase == PhysicalState.Phase.NOMINAL
-                ? (type.hasTrait(FT_Gaseous.class) || type.hasTrait(FT_Gaseous_ART.class) ? "Gas" : "Unresolved phase")
+                ? (type.hasTrait(FT_Gaseous.class) || type.hasTrait(FT_Gaseous_ART.class) ? "Gas" : "Process fluid")
                 : state.phase.name().substring(0, 1) + state.phase.name().substring(1).toLowerCase(Locale.US);
         lines.add(phase);
         if(state.basis == PhysicalState.Basis.STANDARD_GAS_LITER) {
-            lines.add("Standard-equivalent gas quantity");
-            if(advanced) lines.add("Canonical gas reference: 0 °C / 1 bar; not vessel volume");
-        } else if(state.basis == PhysicalState.Basis.NOMINAL) lines.add("Quantity basis: nominal; physical assay unresolved");
+            lines.add("Gas quantities: standard L (0 C, 1 bar)");
+        }
         lines.add("Temperature: " + type.temperature + " °C");
         String lhv = lhv(state);
         if(lhv != null) lines.add(lhv);
-        if(advanced && state.isResolved()) lines.add("Reference state: " + state.thermalReference);
+        if(state.isResolved()) {
+            if(state.basis == PhysicalState.Basis.LIQUID_LITER) lines.add(String.format(Locale.US, "Density: %.3f kg/L", state.kilogramsPerUnit()));
+            else if(state.basis == PhysicalState.Basis.STANDARD_GAS_LITER && advanced) lines.add(String.format(Locale.US, "Gas density: %.4f g/standard L", state.kilogramsPerUnit() * 1000D));
+            else if(state.basis != PhysicalState.Basis.STANDARD_GAS_LITER) lines.add(String.format(Locale.US, "Mass: %.4f g/unit", state.kilogramsPerUnit() * 1000D));
+            if(advanced && state.lhvJoulesPerKg.signum() > 0) lines.add(String.format(Locale.US, "LHV: %.3f MJ/kg", state.lhvJoulesPerKg.doubleValue() / 1000000D));
+        }
+        if(type == Fluids.HCL) lines.add("Concentration: 30 wt% HCl");
+        else if(type == Fluids.NITRIC_ACID) lines.add("Concentration: 65 wt% HNO3");
+        else if(type == Fluids.SULFURIC_ACID) lines.add("Concentration: 98 wt% H2SO4");
+        else if(type == Fluids.HYDROFLUORIC_ACID) lines.add("Concentration: 48 wt% HF");
+        else if(type == Fluids.PEROXIDE) lines.add("Concentration: 30 wt% H2O2");
+        else if(type == Fluids.BORATED_WATER) lines.add("1 wt% boric acid; about 1748 ppm boron");
     }
 
     public static void appendStoredEnergy(List<String> lines, FluidType type, long amount) {
@@ -90,8 +99,8 @@ public final class FluidInfo {
     public static void appendContainer(List<String> lines, FluidType type, long amount, long capacity, int pressure) {
         if(type != Fluids.NONE) lines.add(type.getLocalizedName());
         lines.add(containerQuantity(type, amount, capacity));
-        if(amount > capacity) lines.add("Legacy over-cap stock: drain before filling");
-        if(pressure > 0) lines.add("Network pressure class: " + pressure + " PU (not physical bar)");
+        if(amount > capacity) lines.add("Above capacity: drain before refilling");
+        if(pressure > 0) lines.add("Pipe pressure class: " + pressure + " PU");
         if(type != Fluids.NONE) {
             type.addInfo(lines);
             appendStoredEnergy(lines, type, amount);

@@ -72,7 +72,7 @@ public class CrucibleSmeltingHandler extends SafeTemplateRecipeHandler implement
 
 	@Override
 	public String getRecipeName() {
-		return "Crucible Smelting";
+		return "Foundry Smelting";
 	}
 
 	@Override

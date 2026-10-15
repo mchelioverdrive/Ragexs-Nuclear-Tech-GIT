@@ -25,7 +25,7 @@ import com.hbm.util.Tuple.Pair;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
-import api.hbm.fluid.IFluidStandardReceiver;
+import api.hbm.fluid.IFluidStandardTransceiver;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -37,7 +37,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
-public class TileEntityMachineSolidifier extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable, com.hbm.realsim.IMachineInfo {
+public class TileEntityMachineSolidifier extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, IInfoProviderEC, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 
 
@@ -72,7 +72,7 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
 
 	public TileEntityMachineSolidifier() {
 		super(5);
-		tank = new FluidTank(Fluids.NONE, 24_000);
+		tank = new FluidTank(Fluids.NONE, 1500).withDefaultCapacity();
 		this.trackMachineFluidTank(tank);
 	}
 
@@ -170,6 +170,7 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
 			return;
 		}
 		if(cadence != 20) return;
+        if(legacyDrainable()) for(DirPos pos : getConPos()) if(tank.getFill() > 0) this.sendFluid(tank, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 		boolean settingsChanged = this.refreshRuntimeSettings(true);
 		boolean recipeChanged = observedRecipeRevision != SerializableRecipe.getRegistryRevision();
 		if(recipeChanged) {
@@ -401,8 +402,8 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
 	
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
-        physicalBatch.write(nbt);
 		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+        physicalBatch.write(nbt);
 		super.writeToNBT(nbt);
 		EnergyUnits.writeEnergyQuanta(nbt, this.energyQuanta);
 		nbt.setInteger("progress", this.progress);
@@ -472,9 +473,11 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
 	public boolean isFluidDemandObservable() { return true; }
 
 	@Override
-	public FluidTank[] getReceivingTanks() {
-		return new FluidTank[] { tank };
-	}
+    public FluidTank[] getReceivingTanks() {
+        return SolidificationRecipes.getOutput(tank.getTankType()) != null ? new FluidTank[] {tank} : new FluidTank[0];
+    }
+    private boolean legacyDrainable() { return tank.getFill() > 0 && (SolidificationRecipes.getOutput(tank.getTankType()) == null || tank.getFill() > tank.getMaxFill()); }
+    @Override public FluidTank[] getSendingTanks() { return legacyDrainable() ? new FluidTank[] {tank} : new FluidTank[0]; }
 
 	@Override
 	public FluidTank[] getAllTanks() {

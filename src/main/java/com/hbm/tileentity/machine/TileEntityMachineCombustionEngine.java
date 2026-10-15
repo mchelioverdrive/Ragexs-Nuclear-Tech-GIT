@@ -29,7 +29,6 @@ import com.hbm.util.EnumUtil;
 import com.hbm.util.FurnaceGasEmission;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
-import api.hbm.energymk2.IEnergyProviderMK2;
 import api.hbm.fluid.IFluidStandardTransceiver;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -41,7 +40,7 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineCombustionEngine extends TileEntityMachinePolluting implements IEnergyProviderMK2, IFluidStandardTransceiver, IControlReceiver, IGUIProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
+public class TileEntityMachineCombustionEngine extends TileEntityMachinePolluting implements api.hbm.energymk2.IRatedGenerator, IFluidStandardTransceiver, IControlReceiver, IGUIProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private static final int TASK_GENERATE = 1;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
@@ -50,7 +49,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 	private int observedOrientation = Integer.MIN_VALUE;
 	
 	public boolean isOn = false;
-	public static long maxPower = 2_500_000;
+	public static long maxPower = 150_000;
 	public long energyQuanta;
 	private int playersUsing = 0;
 	public int setting = 0;
@@ -71,7 +70,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 
 	public TileEntityMachineCombustionEngine() {
 		super(5, 50);
-		this.tank = new FluidTank(Fluids.DIESEL, 4_000).withDefaultCapacity();
+		this.tank = new FluidTank(Fluids.DIESEL, 80).withDefaultCapacity();
 		this.trackMachineFluidTank(tank);
 	}
 
@@ -300,7 +299,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.isOn = nbt.getBoolean("isOn");
 		this.wasOn = nbt.getBoolean("wasOn");
-		this.tank.readFromNBT(nbt, "tank");
+		com.hbm.realsim.GeneratorContract.readTankStatus(tank, nbt, "tank");
 		generatorStats.read(nbt, fuelCredit);
 	}
 
@@ -374,12 +373,8 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 	public long getPowerOutputWatts() {
 		return EnergyUnits.quantaPerTickToWatts(generatorStats.outputQuanta);
 	}
-	@Override public long getMaxOutputQuantaPerTick() { return outputBudget.available(worldObj == null ? 0 : worldObj.getTotalWorldTime(), ratedPowerWatts / 10L); }
-	@Override public void extractEnergyQuanta(long amount) {
-		long extracted = Math.max(0L, Math.min(amount, Math.min(energyQuanta, getMaxOutputQuantaPerTick())));
-		outputBudget.use(worldObj == null ? 0 : worldObj.getTotalWorldTime(), ratedPowerWatts / 10L, extracted);
-		this.setStoredEnergyQuanta(energyQuanta - extracted);
-	}
+    @Override public OutputBudget getOutputBudget() { return outputBudget; }
+    @Override public long getRatedOutputWatts() { return ratedPowerWatts; }
 
 	@Override
 	public Container provideContainer(int ID, EntityPlayer player, World world, int x, int y, int z) {

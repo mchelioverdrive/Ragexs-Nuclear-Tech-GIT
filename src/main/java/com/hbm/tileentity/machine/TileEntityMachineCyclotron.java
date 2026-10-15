@@ -85,8 +85,8 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 		super(12);
 
 		this.tanks = new FluidTank[3];
-		this.tanks[0] = new FluidTank(Fluids.FRESH_WATER, 32000).migrateFrom(Fluids.WATER);
-		this.tanks[1] = new FluidTank(Fluids.SPENTSTEAM, 32000);
+		this.tanks[0] = new FluidTank(Fluids.FRESH_WATER, 20).migrateFrom(Fluids.WATER).withDefaultCapacity();
+		this.tanks[1] = new FluidTank(Fluids.SPENTSTEAM, 1).withDefaultCapacity();
 		this.tanks[2] = new FluidTank(Fluids.AMAT, 8000);
 		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
@@ -174,9 +174,7 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 				int coolant = Math.max(1, runtimeCoolantConsumption);
 				int speed = Math.max(1, runtimeSpeed);
 				long energyTicks = energyQuanta / cost;
-			long coolantTicks = tanks[0].getFill() / (long) coolant;
-			long steamTicks = (tanks[1].getMaxFill() - (long) tanks[1].getFill()) / coolant;
-			long availableTicks = Math.min(energyTicks, Math.min(coolantTicks, steamTicks));
+			long availableTicks = tanks[0].getFill() >= coolant ? energyTicks : 0L;
 			if(availableTicks <= 0L) {
 				progress = 0;
 				runtimeActive = false;
@@ -188,9 +186,8 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 				this.runtimeEnergyMutation = true;
 				try { this.setStoredEnergyQuanta(energyQuanta - ticks * cost); }
 				finally { this.runtimeEnergyMutation = false; }
-				int coolantAmount = (int) (ticks * coolant);
-				tanks[0].setFill(tanks[0].getFill() - coolantAmount);
-				tanks[1].setFill(tanks[1].getFill() + coolantAmount);
+				// Sealed water loop; the integral dry cooler rejects beam/electrical losses to ambient.
+                // It cannot export unowned latent heat as spent steam.
 				progress += (int) (ticks * speed);
 				remaining -= ticks;
 				changed = true;
@@ -247,8 +244,7 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 
 	private boolean hasRuntimeResources() {
 		return runtimeHasOutputRoom && energyQuanta >= runtimeConsumption
-				&& tanks[0].getFill() >= runtimeCoolantConsumption
-				&& tanks[1].getFill() + runtimeCoolantConsumption <= tanks[1].getMaxFill();
+				&& tanks[0].getFill() >= runtimeCoolantConsumption;
 	}
 
 	private int inventoryFingerprint() {
@@ -292,9 +288,7 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 			int speed = Math.max(1, runtimeSpeed);
 			long completionTicks = Math.max(1L, ((long) duration - progress + speed - 1L) / speed);
 			long energyTicks = energyQuanta / cost;
-			long coolantTicks = tanks[0].getFill() / (long) coolant;
-			long steamTicks = (tanks[1].getMaxFill() - (long) tanks[1].getFill()) / coolant;
-			long availableTicks = Math.min(energyTicks, Math.min(coolantTicks, steamTicks));
+			long availableTicks = tanks[0].getFill() >= coolant ? energyTicks : 0L;
 			long resourceBoundary = availableTicks >= completionTicks ? Long.MAX_VALUE : availableTicks + 1L;
 			long delay = Math.max(1L, Math.min(completionTicks, resourceBoundary));
 			this.scheduleMachineTransition(now + delay, TASK_PROCESS, TASK_SLOT_MAIN);
@@ -372,8 +366,6 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 		if(tanks[0].getFill() < convert)
 			return false;
 
-		if(tanks[1].getFill() + convert > tanks[1].getMaxFill())
-			return false;
 
 		for(int i = 0; i < 3; i++) {
 
@@ -446,11 +438,8 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 		return consumption - 100_000 * efficiency;
 	}
 
-	public int getCoolantConsumption() {
-		int efficiency = Math.min(this.upgradeManager.getLevel(UpgradeType.EFFECT), 3);
-		//half a small tower's worth
-		return 500 / (efficiency + 1) * getSpeed();
-	}
+    /** Compatibility accessor: required retained loop charge, not fluid consumed per tick. */
+    public int getCoolantConsumption() { return com.hbm.realsim.IndustrialDemand.COOLING_CHARGE_L; }
 
 	public long getPowerScaled(long i) {
 		return (energyQuanta * i) / maxPower;

@@ -175,7 +175,7 @@ public class CraftingManager {
 		addRecipeAuto(Mats.MAT_STEEL.make(ModItems.bolt, 16), new Object[] { "D", "D", 'D', STEEL.ingot()});
 		addRecipeAuto(Mats.MAT_DURA.make(ModItems.bolt, 16), new Object[] { "D", "D", 'D', DURA.ingot()});
 		addRecipeAuto(new ItemStack(ModItems.bolt_spike, 2), new Object[] { "BB", "B ", "B ", 'B', STEEL.bolt()});
-		addRecipeAuto(new ItemStack(ModItems.pipes_steel, 8), new Object[] { "B", "B", "B", 'B', STEEL.block() });
+		addRecipeAuto(new ItemStack(ModItems.pipes_steel, 1), new Object[] { "B", "B", "B", 'B', STEEL.block() });
 		addRecipeAuto(new ItemStack(ModItems.plate_polymer, 8), new Object[] { "DD", 'D', ANY_PLASTIC.ingot() });
 		addRecipeAuto(new ItemStack(ModItems.plate_polymer, 8), new Object[] { "DD", 'D', ANY_RUBBER.ingot() });
 		addRecipeAuto(new ItemStack(ModItems.plate_polymer, 16), new Object[] { "DD", 'D', FIBER.ingot()});
@@ -425,7 +425,7 @@ public class CraftingManager {
 		//addRecipeAuto(new ItemStack(ModBlocks.machine_coal_off, 1), new Object[] { "STS", "SCS", "SFS", 'S', STEEL.ingot(), 'T', ModItems.tank_steel, 'C', MINGRADE.ingot(), 'F', Blocks.furnace });
 		//addRecipeAuto(new ItemStack(ModBlocks.machine_wood_burner, 1), new Object[] { "PPP", "CFC", "I I" , 'P', STEEL.plate528(), 'C', ModItems.coil_copper, 'I', IRON.ingot(), 'F', Blocks.furnace});
 		//bro you already have the firebox + stirling eng
-		addRecipeAuto(new ItemStack(ModBlocks.machine_turbine, 1), new Object[] { "SMS", "PTP", "SMS", 'S', STEEL.ingot(), 'T', ModItems.turbine_titanium, 'M', ModItems.coil_copper, 'P', ANY_PLASTIC.ingot() });
+		addRecipeAuto(new ItemStack(ModBlocks.machine_turbine, 1), new Object[] { "SMS", "PTP", "SGS", 'S', STEEL.shell(), 'T', ModItems.turbine_titanium, 'M', ModItems.coil_copper, 'P', ANY_PLASTIC.ingot(), 'G', new ItemStack(ModItems.gear_large, 1, 1) });
 		addRecipeAuto(new ItemStack(ModBlocks.machine_converter_he_rf, 1), new Object[] { "RRR", "WWW", "III", 'R', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.CAPACITOR), 'W', REDSTONE.dust(), 'I', STEEL.ingot() });
 		addRecipeAuto(new ItemStack(ModBlocks.machine_converter_rf_he, 1), new Object[] { "RRR", "WWW", "III", 'R', REDSTONE.dust(), 'W', MINGRADE.wireFine(), 'I', STEEL.ingot() });
 		addRecipeAuto(new ItemStack(ModBlocks.crate_template, 1), new Object[] { "IPI", "P P", "IPI", 'I', IRON.ingot(), 'P', Items.paper });
@@ -1012,8 +1012,8 @@ public class CraftingManager {
 		//addRecipeAuto(new ItemStack(ModBlocks.machine_molten_salt_reactor, 1), new Object[] { "PTP", "SCS", "PTP", 'P', DURA.pipe(), 'T', TH232.ingot(), 'S', BIGMT.plateCast(), 'C', ModBlocks.machine_geo });
 		//addRecipeAuto(new ItemStack(ModBlocks.machine_msr_input, 2), new Object[] { "SPS", "PTP", "SPS", 'S', BIGMT.plateCast(), 'P', DURA.pipe(), 'T', TH232.ingot() });
 		//addRecipeAuto(new ItemStack(ModBlocks.machine_msr_output, 2), new Object[] { "SPS", "PTP", "SPS", 'S', BIGMT.plateCast(), 'P', DURA.pipe(), 'T', TH232.ingot() });
-		addRecipeAuto(new ItemStack(ModBlocks.machine_minirtg, 1), new Object[] { "LLL", "PPP", "TRT", 'L', PB.plate(), 'P', PU238.billet(), 'T', ModItems.thermo_element, 'R', ModItems.rtg_unit });
-		addRecipeAuto(new ItemStack(ModBlocks.machine_minirtg, 1), new Object[] { "LLL", "PPP", "TRT", 'L', PB.plate(), 'P', TM170.billet(), 'T', ModItems.thermo_element, 'R', ModItems.rtg_unit });
+		addRecipeAuto(com.hbm.tileentity.machine.TileEntityMachineMiniRTG.crafted(ModBlocks.machine_minirtg, ModItems.pellet_rtg), new Object[] { "LLL", "PPP", "TRT", 'L', PB.plate(), 'P', PU238.billet(), 'T', ModItems.thermo_element, 'R', ModItems.rtg_unit });
+		addRecipeAuto(com.hbm.tileentity.machine.TileEntityMachineMiniRTG.crafted(ModBlocks.machine_minirtg, ModItems.pellet_rtg_tm170), new Object[] { "LLL", "PPP", "TRT", 'L', PB.plate(), 'P', TM170.billet(), 'T', ModItems.thermo_element, 'R', ModItems.rtg_unit });
 		//addRecipeAuto(new ItemStack(ModBlocks.machine_minirtg, 1), new Object[] { "LLL", " P ", "TRT", 'L', PB.plate(), 'P', ModItems.ingot_thulium170, 'T', ModItems.thermo_element, 'R', ModItems.rtg_unit });
 		//addRecipeAuto(new ItemStack(ModBlocks.machine_powerrtg, 1), new Object[] { "SRS", "PTP", "SRS", 'S', STAR.ingot(), 'R', ModItems.rtg_unit, 'P', PO210.billet(), 'T', TS.dust() });
 
@@ -1371,7 +1371,7 @@ public class CraftingManager {
 		//addShapelessAuto(DictFrame.fromOne(ModItems.parts_legendary, EnumLegendaryType.TIER3), new Object[] { ModItems.ingot_chainsteel, ModItems.ingot_smore, ModItems.gem_alexandrite, ModItems.gem_alexandrite, ModItems.gem_alexandrite });
 
 		addRecipeAuto(new ItemStack(ModItems.gear_large, 1, 0), new Object[] { "III", "ICI", "III", 'I', IRON.plate(), 'C', CU.ingot()});
-		addRecipeAuto(new ItemStack(ModItems.gear_large, 1, 1), new Object[] { "III", "ICI", "III", 'I', STEEL.plate(), 'C', TI.ingot()});
+		addRecipeAuto(new ItemStack(ModItems.gear_large, 1, 1), new Object[] { "III", "ICI", "III", 'I', STEEL.plate(), 'C', STEEL.ingot()});
 		addRecipeAuto(new ItemStack(ModItems.sawblade), new Object[] { "III", "ICI", "III", 'I', STEEL.plate(), 'C', IRON.ingot()});
 
 		addRecipeAuto(new ItemStack(ModBlocks.foundry_basin, 2), new Object[] { "B B", "B B", "BSB", 'B', ModItems.ingot_firebrick, 'S', Blocks.stone_slab });

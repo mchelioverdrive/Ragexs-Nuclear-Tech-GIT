@@ -549,6 +549,6 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 
     @Override public long getMachineDemandWatts() { return 2500L; }
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
-        lines.add("Small electronic-material arc processing; existing 20-tick recipe work envelope");
+        lines.add("Compact arc processing for electronic materials");
     }
 }

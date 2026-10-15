@@ -4,10 +4,6 @@ import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.fluid.trait.FT_Combustible;
 import com.hbm.inventory.fluid.trait.FT_Flammable;
-import com.hbm.util.ItemStackUtil;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
 /** Chemical input is mass x LHV. Traits select equipment suitability, never chemical energy. */
@@ -15,7 +11,7 @@ public final class Combustion {
     public static final int FIREBOX_EFFICIENCY_PPM = 850_000;
     private Combustion() { }
     public static boolean isBurnerFuel(FluidType type) {
-        return type.hasTrait(FT_Flammable.class) && PhysicalRegistry.get(type.getName()).isResolved()
+        return type != null && FuelSuitability.has(type.getName(), MaterialRole.HEATING_FUEL) && type.hasTrait(FT_Flammable.class) && PhysicalRegistry.get(type.getName()).isResolved()
                 && PhysicalRegistry.get(type.getName()).chemicalMicrojoulesPerUnit() > 0;
     }
     public static int dieselEfficiency(FluidType type) {
@@ -28,7 +24,7 @@ public final class Combustion {
         return 0;
     }
     public static boolean isReciprocatingFuel(FluidType type) {
-        return isBurnerFuel(type) && type.hasTrait(FT_Combustible.class) && !type.getName().equals("HYDRAZINE") && !type.getName().equals("HYDROGEN");
+        return isBurnerFuel(type) && type.hasTrait(FT_Combustible.class) && FuelSuitability.has(type.getName(), MaterialRole.RECIPROCATING_FUEL);
     }
     public static long generate(FluidTank tank, FuelCredit account, long request, int efficiencyPpm) {
         if(request <= 0) return 0;
@@ -46,24 +42,19 @@ public final class Combustion {
         return output + account.release(left);
     }
     public static String solidIdentity(ItemStack stack) {
-        if(stack == null) return null;
-        if(stack.getItem() == Items.coal) return stack.getItemDamage() == 1 ? "CHARCOAL_ITEM" : "COAL_ITEM";
-        if(stack.getItem() == Item.getItemFromBlock(Blocks.coal_block)) return "COAL_ITEM";
-        if(stack.getItem() == Items.stick) return "WOOD_STICK";
-        for(String name : ItemStackUtil.getOreDictNames(stack)) {
-            if(name.equals("gemCoke") || name.equals("fuelCoke") || name.equals("dustCoke")) return "COKE_ITEM";
-            if(name.equals("gemPetroleumCoke") || name.equals("dustPetroleumCoke")) return "PETCOKE_ITEM";
-            if(name.equals("gemCoal") || name.equals("dustCoal")) return "COAL_ITEM";
-            if(name.equals("gemCharcoal") || name.equals("dustCharcoal")) return "CHARCOAL_ITEM";
-            if(name.equals("logWood")) return "WOOD_LOG";
-            if(name.equals("plankWood")) return "WOOD_PLANK";
-        }
-        return null;
+        SolidFuel fuel = SolidFuel.resolve(stack);
+        return fuel != null && fuel.has(MaterialRole.HEATING_FUEL) ? fuel.identity : null;
     }
     public static long solidChemicalMicrojoules(ItemStack stack) {
-        String identity = solidIdentity(stack);
-        if(identity == null) return 0;
-        long energy = PhysicalRegistry.get(identity).chemicalMicrojoulesPerUnit();
-        return stack.getItem() == Item.getItemFromBlock(Blocks.coal_block) ? energy * 9 : energy;
+        SolidFuel fuel = SolidFuel.resolve(stack);
+        return fuel != null && fuel.has(MaterialRole.HEATING_FUEL) ? fuel.chemicalMicrojoules() : 0;
+    }
+    /** Compatibility work/burn ticks, normalized to coal; these ticks are never joules. */
+    public static int legacySolidTicks(ItemStack stack, int coalTicks) {
+        long chemical = solidChemicalMicrojoules(stack);
+        if(chemical <= 0 || coalTicks <= 0) return 0;
+        return java.math.BigInteger.valueOf(chemical).multiply(java.math.BigInteger.valueOf(coalTicks))
+                .divide(java.math.BigInteger.valueOf(PhysicalRegistry.get("COAL_ITEM").chemicalMicrojoulesPerUnit()))
+                .min(java.math.BigInteger.valueOf(Integer.MAX_VALUE)).intValue();
     }
 }

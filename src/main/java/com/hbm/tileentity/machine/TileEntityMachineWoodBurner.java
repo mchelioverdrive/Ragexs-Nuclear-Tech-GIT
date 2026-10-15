@@ -26,7 +26,6 @@ import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.CompatEnergyControl;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
-import api.hbm.energymk2.IEnergyProviderMK2;
 import api.hbm.fluid.IFluidStandardReceiver;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.relauncher.Side;
@@ -40,7 +39,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineWoodBurner extends TileEntityMachineBase implements IFluidStandardReceiver, IControlReceiver, IEnergyProviderMK2, IGUIProvider, IInfoProviderEC, IFluidCopiable, com.hbm.realsim.IMachineInfo {
+public class TileEntityMachineWoodBurner extends TileEntityMachineBase implements IFluidStandardReceiver, IControlReceiver, api.hbm.energymk2.IRatedGenerator, IGUIProvider, IInfoProviderEC, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	private static final int TASK_GENERATE = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
@@ -49,7 +48,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 	private int observedOrientation = Integer.MIN_VALUE;
 
 	public long energyQuanta;
-	public static final long maxPower = 100_000;
+	public static final long maxPower = 8_000;
 	public int burnTime;
 	public int maxBurnTime;
 	public boolean liquidBurn = false;
@@ -349,12 +348,8 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 	public long getEnergyCapacityQuanta() {
 		return maxPower;
 	}
-	@Override public long getMaxOutputQuantaPerTick() { return outputBudget.available(worldObj == null ? 0 : worldObj.getTotalWorldTime(), ratedPowerWatts / 10L); }
-	@Override public void extractEnergyQuanta(long amount) {
-		long extracted = Math.max(0L, Math.min(amount, Math.min(energyQuanta, getMaxOutputQuantaPerTick())));
-		outputBudget.use(worldObj == null ? 0 : worldObj.getTotalWorldTime(), ratedPowerWatts / 10L, extracted);
-		this.setStoredEnergyQuanta(energyQuanta - extracted);
-	}
+    @Override public OutputBudget getOutputBudget() { return outputBudget; }
+    @Override public long getRatedOutputWatts() { return ratedPowerWatts; }
 
 	@Override
 	public boolean canConnect(ForgeDirection dir) {

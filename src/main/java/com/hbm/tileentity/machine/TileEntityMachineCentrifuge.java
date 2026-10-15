@@ -593,7 +593,7 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 			info.add("Electrical demand scales with throughput; see the machine rating");
 		}
 		if(type == UpgradeType.POWER) {
-			info.add("Work reduction: " + (Math.min(3, level) * 10) + "% (nominal recipes)");
+			info.add("Work reduction: " + (Math.min(3, level) * 10) + "% (standard recipes)");
 		}
 		if(type == UpgradeType.OVERDRIVE) {
 			info.add((BobMathUtil.getBlink() ? EnumChatFormatting.RED : EnumChatFormatting.DARK_GRAY) + "YES");

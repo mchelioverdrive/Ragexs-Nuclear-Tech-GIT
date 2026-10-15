@@ -44,7 +44,7 @@ public interface IEnergyProviderMK2 extends IEnergyHandlerMK2 {
 			IEnergyReceiverMK2 rec = (IEnergyReceiverMK2) te;
 			if(rec.canConnect(dir.getOpposite())) {
 				long provides = Math.min(this.getStoredEnergyQuanta(), this.getMaxOutputQuantaPerTick());
-				long receives = Math.min(rec.getEnergyCapacityQuanta() - rec.getStoredEnergyQuanta(), rec.getMaxInputQuantaPerTick());
+				long receives = Math.max(0, Math.min(rec.getEnergyCapacityQuanta() - rec.getStoredEnergyQuanta(), rec.getMaxInputQuantaPerTick()));
 				long toTransfer = Math.min(provides, receives);
 				toTransfer -= rec.receiveEnergyQuanta(toTransfer);
 				this.extractEnergyQuanta(toTransfer);

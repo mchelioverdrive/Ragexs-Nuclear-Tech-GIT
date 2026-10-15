@@ -25,7 +25,6 @@ import com.hbm.util.CompatEnergyControl;
 import com.hbm.util.fauxpointtwelve.BlockPos;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
-import api.hbm.energymk2.IEnergyProviderMK2;
 import api.hbm.fluid.IFluidStandardTransceiver;
 import api.hbm.tile.IInfoProviderEC;
 import cpw.mods.fml.common.Optional;
@@ -56,6 +55,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.e
 	private DirPos[] runtimeConnections;
 	public static final int TRIP_NONE = 0;
 	public static final int TRIP_OVERPRESSURE = 1;
+	/** Legacy saved load-rejection trip; retained until reset. No speed model. */
 	public static final int TRIP_OVERSPEED = 2;
 
 	public long energyQuanta;
@@ -74,15 +74,16 @@ public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.e
 	private float audioDesync;
 
 	//Configurable values
-	public static long maxPower = 100000000000L;
-	public static int inputTankSize = 1_000_000_000;
-	public static int outputTankSize = 1_000_000_000;
+	public static long maxPower = 5000000L;
+	public static int inputTankSize = 8000;
+	public static int outputTankSize = 80;
+	public static boolean massSizedInlet = true;
 	public static double efficiency = 0.88D;
 
 	public TileEntityChungus() {
 		tanks = new FluidTank[2];
-		tanks[0] = new FluidTank(Fluids.STEAM, inputTankSize);
-		tanks[1] = new FluidTank(Fluids.SPENTSTEAM, outputTankSize);
+		tanks[0] = new com.hbm.realsim.SteamInletTank(com.hbm.realsim.SteamLedger.State.ULTRAHOT, inputTankSize, massSizedInlet);
+		tanks[1] = new FluidTank(Fluids.SPENTSTEAM, outputTankSize).withDefaultCapacity();
 		FluidTank.ChangeListener listener = changed -> { if(!runtimeFluidMutation && worldObj != null && !worldObj.isRemote) markMachineFluidDirty(); };
 		tanks[0].setChangeListener(listener);
 		tanks[1].setChangeListener(listener);
@@ -99,6 +100,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.e
 	@Override
 	public void readIfPresent(JsonObject obj) {
 		maxPower = IConfigurableMachine.grabEnergyQuanta(obj, "L:energyCapacityQuanta", "L:maxPower", maxPower);
+		massSizedInlet = IConfigurableMachine.grab(obj, "B:massSizedInlet", !obj.has("I:inputTankSize"));
 		inputTankSize = IConfigurableMachine.grab(obj, "I:inputTankSize", inputTankSize);
 		outputTankSize = IConfigurableMachine.grab(obj, "I:outputTankSize", outputTankSize);
 		efficiency = IConfigurableMachine.grab(obj, "D:efficiency", efficiency);
@@ -109,6 +111,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.e
 		writer.name("L:energyCapacityQuanta").value(maxPower);
 		writer.name("INFO").value("leviathan steam turbine is rated at 40 kg/s and 25 MWe; direct condensing expansion");
 		writer.name("I:inputTankSize").value(inputTankSize);
+		writer.name("B:massSizedInlet").value(massSizedInlet);
 		writer.name("I:outputTankSize").value(outputTankSize);
 		writer.name("D:efficiency").value(efficiency);
 	}
@@ -167,10 +170,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.e
 
 	private void runSteamStep() {
 		if(!worldObj.isRemote) {
-			// Export stored power before evaluating a reset or an overspeed trip. This
-			// DOES NOT : lets a newly connected load drain a full buffer so redstone can reset an
-			//basically redstone shit still doesn't work because FUCK YOU it's a multi block cry about it!!!!!
-			// overspeed trip instead of immediately latching it again.
+			// Saturation closes steam admission; pressure protection remains independent.
 			ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
 			this.tryProvide(worldObj, xCoord - dir.offsetX * 11, yCoord, zCoord - dir.offsetZ * 11, dir.getOpposite());
 
@@ -187,12 +187,10 @@ public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.e
 
 			if(!tripped && isOverpressurized()) {
 				trip(TRIP_OVERPRESSURE);
-			} else if(!tripped && isOverspeeding()) {
-				trip(TRIP_OVERSPEED);
 			}
 
 
-            if(!tripped && com.hbm.realsim.SteamLedger.expansionOutlet(thermal.ownedMass() > 0 ? thermal.inlet() : com.hbm.realsim.ThermalMachine.state(tanks[0])) != null) {
+            if(!tripped && (thermal.ownedMass() > 0 || com.hbm.realsim.GeneratorContract.acceptsSteam(com.hbm.realsim.ThermalMachine.state(tanks[0]), com.hbm.realsim.SteamLedger.State.ULTRAHOT))) {
                 long generated = com.hbm.realsim.ThermalMachine.turbine(thermal, worldObj.getTotalWorldTime(), tanks[0], tanks[1], getSteamFlowMassPerTick(),
                         25000000L, getExpansionEfficiencyPpm(), energyQuanta, maxPower);
                 this.setStoredEnergyQuanta(Math.addExact(energyQuanta, generated));
@@ -211,6 +209,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.e
 
 			for(DirPos pos : this.getConPos()) {
 				this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+                if(!((com.hbm.realsim.SteamInletTank) tanks[0]).compatible()) this.sendFluid(tanks[0], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 
 
@@ -311,14 +310,6 @@ public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.e
 		return tanks[0].getFill() >= tanks[0].getMaxFill() && tanks[1].getFill() >= tanks[1].getMaxFill();
 	}
 
-	/**
-	 * Steam admission must be closed when the generator's internal energy buffer is
-	 * full and no connected consumer is exporting energy from it. Continuing to
-	 * admit steam in this state would overspeed the turbine.
-	 */
-	private boolean isOverspeeding() {
-		return energyQuanta >= maxPower && tanks[0].getFill() > 0;
-	}
 
 	/** Stops the rotor when there is no room for another generated power operation. */
 	public boolean isTripped() {
@@ -352,8 +343,8 @@ public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.e
 		this.turnTimer = data.getInteger("operational");
 		this.tripped = data.getBoolean("tripped");
 		this.tripCause = data.getInteger("tripCause");
-		tanks[0].readFromNBT(data, "inputTank");
-		tanks[1].readFromNBT(data, "outputTank");
+		com.hbm.realsim.GeneratorContract.readTankStatus(tanks[0], data, "inputTank");
+		com.hbm.realsim.GeneratorContract.readTankStatus(tanks[1], data, "outputTank");
 	}
 
 	@Override
@@ -492,12 +483,12 @@ public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.e
 
 	@Override
 	public FluidTank[] getSendingTanks() {
-		return new FluidTank[] {tanks[1]};
+		return ((com.hbm.realsim.SteamInletTank) tanks[0]).compatible() ? new FluidTank[] {tanks[1]} : tanks;
 	}
 
 	@Override
 	public FluidTank[] getReceivingTanks() {
-		return new FluidTank[] {tanks[0]};
+		return ((com.hbm.realsim.SteamInletTank) tanks[0]).compatible() ? new FluidTank[] {tanks[0]} : new FluidTank[0];
 	}
 
 	@Override
@@ -522,6 +513,6 @@ public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.e
         if(live) lines.add("Current electrical output: " + com.hbm.realsim.MachineInfo.watts(thermal.currentElectricQuanta * 10L));
         lines.add(String.format(java.util.Locale.US, "Steam mass-flow ceiling: %.2f kg/s", getSteamFlowMassPerTick() / 50000D));
         lines.add(String.format(java.util.Locale.US, "Expansion work factor: %.1f%%", getExpansionEfficiencyPpm() / 10000D));
-        lines.add("Accepts ledger steam grades; full power/exhaust buffers stop admission");
+        lines.add("Accepts steam through Ultrahot; pauses when electricity or exhaust cannot leave");
     }
 }

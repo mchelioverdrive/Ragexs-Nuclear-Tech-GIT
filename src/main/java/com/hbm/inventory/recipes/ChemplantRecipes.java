@@ -52,224 +52,83 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//6-30, formerly oil cracking, coal liquefaction and solidifciation
 		registerOtherOil();
 
-		recipes.add(new ChemRecipe(36, "COOLANT", 50)
-				//SUGAR, NOT NITER
-				//.inputItems(new OreDictStack(KNO.dust()))
-				//more bobcat crack rock chemistry
-				.inputFluids(new FluidStack(Fluids.FRESH_WATER, 200), new FluidStack(Fluids.ETHANOL, 1800))
-				.outputFluids(new FluidStack(Fluids.COOLANT, 2000)));
-		recipes.add(new ChemRecipe(37, "CRYOGEL", 50)
-				.inputItems(new ComparableStack(ModItems.powder_ice))
-				.inputFluids(new FluidStack(Fluids.COOLANT, 1800))
-				.outputFluids(new FluidStack(Fluids.CRYOGEL, 2000)));
+		recipes.add(new ChemRecipe(36, "COOLANT", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.blend("COOLANT", "FRESH_WATER", 1, "ETHANOL", 9)));
+		recipes.add(new ChemRecipe(37, "CRYOGEL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(37)));
 
 		//TOOL STEEL DOES NOT INVOLVE FUCKING MERCURY RETARD
-		recipes.add(new ChemRecipe(38, "DESH", 300)
-				.inputItems(
-					//new ComparableStack(ModItems.ingot_steel, 2),
-					//new ComparableStack(ModItems.powder_coal, 1),
-					new ComparableStack(ModItems.powder_desh_mix, 1),
-					new ComparableStack(ModItems.ingot_chromium, 1),
-					new ComparableStack(ModItems.ingot_vanadium, 1)
-					//TODO
-				)
-				.inputFluids(
-						//(GeneralConfig.enableLBSM && GeneralConfig.enableLBSMSimpleChemsitry) ?
-								//new FluidStack[] {new FluidStack(Fluids.LIGHTOIL, 200)} :
-								new FluidStack[] {new FluidStack(Fluids.OXYGEN_GAS, 200),
-								new FluidStack(Fluids.ARGON, 20)})
-				.outputItems(new ItemStack(ModItems.ingot_desh, 4))); //here have 4 since this is already cancer
-		recipes.add(new ChemRecipe(39, "NITAN", 50)
-				.inputItems(new ComparableStack(ModItems.powder_nitan_mix))
-				.inputFluids(
-						new FluidStack(Fluids.KEROSENE, 600),
-						new FluidStack(Fluids.MERCURY, 200))
-				.outputFluids(new FluidStack(Fluids.NITAN, 1000)));
+		recipes.add(new ChemRecipe(38, "DESH", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(38))); //here have 4 since this is already cancer
+		recipes.add(new ChemRecipe(39, "NITAN", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(39)));
 		// Simplified anthraquinone loop: the plant abstracts the recycled organic working solution.
-		recipes.add(new ChemRecipe(40, "PEROXIDE", 50)
-				.inputFluids(
-					new FluidStack(Fluids.HYDROGEN_GAS, 500),
-					new FluidStack(Fluids.OXYGEN_GAS, 500)
-				)
-				.outputFluids(new FluidStack(Fluids.PEROXIDE, 1000)));
-		recipes.add(new ChemRecipe(90, "SULFURIC_ACID", 50)
-				.inputItems(new OreDictStack(S.dust()))
-				.inputFluids(
-						new FluidStack(Fluids.PEROXIDE, 800),
-						new FluidStack(Fluids.FRESH_WATER, 1_000))
-				.outputFluids(new FluidStack(Fluids.SULFURIC_ACID, 2_000)));
-		recipes.add(new ChemRecipe(92, "SOLVENT", 50)
-				.inputFluids(new FluidStack(Fluids.NAPHTHA, 500), new FluidStack(Fluids.AROMATICS, 500))
-				.outputFluids(new FluidStack(Fluids.SOLVENT, 1000)));
-		recipes.add(new ChemRecipe(43, "POLYMER", 100)
-				.inputFluids(new FluidStack(Fluids.PETROLEUM, 500))
-				.outputItems(new ItemStack(ModItems.ingot_polymer, 4)));
+
+		recipes.add(new ChemRecipe(40, "PEROXIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(40)));
+
+		recipes.add(new ChemRecipe(90, "SULFURIC_ACID", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(90)));
+
+		recipes.add(new ChemRecipe(92, "SOLVENT", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(92)));
+
+		recipes.add(new ChemRecipe(43, "POLYMER", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(43)));
 
 		//but synthetic polymers exist
-		recipes.add(new ChemRecipe(44, "SYN_POLYMER", 180)
-				.inputFluids(new FluidStack(Fluids.UNSATURATEDS, 1_000))
-				.outputItems(new ItemStack(ModItems.ingot_polymer, 2)));
+
+		recipes.add(new ChemRecipe(44, "SYN_POLYMER", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(44)));
 
 
 
-		recipes.add(new ChemRecipe(81, "BAKELITE", 100)
-				.inputFluids(
-						new FluidStack(Fluids.AROMATICS, 500, GeneralConfig.enable528 ? 1 : 0),
-						new FluidStack(Fluids.PETROLEUM, 500, GeneralConfig.enable528 ? 1 : 0))
-				.outputItems(new ItemStack(ModItems.ingot_bakelite)));
-		recipes.add(new ChemRecipe(82, "RUBBER", 100)
-						.inputItems(
-						new OreDictStack(S.dust()))
-				.inputFluids(new FluidStack(Fluids.UNSATURATEDS, 500))
-				.outputItems(new ItemStack(ModItems.ingot_rubber)));
-		/*recipes.add(new ChemRecipe(94, "PET", 100)
-				.inputItems(new OreDictStack(AL.dust()))
-				.inputFluids(
-						new FluidStack(Fluids.XYLENE, 500),
-						new FluidStack(Fluids.OXYGEN_GAS, 100))
-				.outputItems(new ItemStack(ModItems.ingot_pet)));*/
+		recipes.add(new ChemRecipe(81, "BAKELITE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(81)));
+		recipes.add(new ChemRecipe(82, "RUBBER", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(82)));
 
 
 
 		//Laminate Glass going here
-		recipes.add(new ChemRecipe(97, "LAMINATE", 100)
-				.inputFluids(
-						new FluidStack(Fluids.XYLENE, 250),
-						new FluidStack(Fluids.PHOSGENE, 250))
-				.inputItems(
-						new ComparableStack(ModBlocks.reinforced_glass),
-						new OreDictStack(STEEL.bolt(), 4))
-				.outputItems(new ItemStack(com.hbm.blocks.ModBlocks.reinforced_laminate)));
+
+        recipes.add(new ChemRecipe(97, "LAMINATE", 1)
+                .inputItems(new ComparableStack(ModBlocks.reinforced_glass), new OreDictStack(STEEL.bolt(), 4), new ComparableStack(ModItems.ingot_pc))
+                .outputItems(new ItemStack(ModBlocks.reinforced_laminate)).physicalProcess(200000, 4000));
 		//PC refers to HARD PLASTIC SOMEHOW. Is this FUCKING GUY RETARDED?
-		recipes.add(new ChemRecipe(94, "PC", 100)
-				.inputFluids(
-						new FluidStack(Fluids.XYLENE, 500),
-						new FluidStack(Fluids.PHOSGENE, 500))
-				.outputItems(new ItemStack(ModItems.ingot_pc)));
-		recipes.add(new ChemRecipe(96, "PVC", 100)
-				.inputFluids(
-						new FluidStack(Fluids.UNSATURATEDS, 250, GeneralConfig.enable528 ? 2 : 0),
-						new FluidStack(Fluids.CHLORINE, 250, GeneralConfig.enable528 ? 2 : 0))
-				.outputItems(new ItemStack(ModItems.ingot_pvc, 2)));
-		recipes.add(new ChemRecipe(89, "DYNAMITE", 50)
-				.inputItems(
-						new ComparableStack(Items.sugar),
-						new OreDictStack(KNO.dust()),
-						new OreDictStack("sand"))
-				.outputItems(new ItemStack(ModItems.ball_dynamite, 2)));
-		recipes.add(new ChemRecipe(83, "TNT", 150)
-				.inputItems(new OreDictStack(KNO.dust()))
-				.inputFluids(new FluidStack(Fluids.AROMATICS, 500, GeneralConfig.enable528 ? 1 : 0))
-				.outputItems(new ItemStack(ModItems.ball_tnt, 4)));
-		recipes.add(new ChemRecipe(95, "TATB", 50)
-				.inputItems(new ComparableStack(ModItems.ball_tnt))
-				.inputFluids(new FluidStack(Fluids.SOURGAS, 200, 1), new FluidStack(Fluids.NITRIC_ACID, 10))
-				.outputItems(new ItemStack(ModItems.ball_tatb)));
-		recipes.add(new ChemRecipe(84, "C4", 150)
-				.inputItems(new OreDictStack(KNO.dust()))
-				.inputFluids(new FluidStack(Fluids.UNSATURATEDS, 500))
-				.outputItems(new ItemStack(ModItems.ingot_c4, 4)));
+
+		recipes.add(new ChemRecipe(94, "PC", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(94)));
+		recipes.add(new ChemRecipe(96, "PVC", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(96)));
+		recipes.add(new ChemRecipe(89, "DYNAMITE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(89)));
+		recipes.add(new ChemRecipe(83, "TNT", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(83)));
+		recipes.add(new ChemRecipe(95, "TATB", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(95)));
+		recipes.add(new ChemRecipe(84, "C4", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(84)));
 		//44, formerly deuterium
 		//45, formerly steam
 
-		recipes.add(new ChemRecipe(46, "YELLOWCAKE", 250)
-				.inputItems(
-						new ComparableStack(ModItems.powder_uranium, 4)) //this should use URANIUM POWDER. NOT ORE, NOT ANYTHING ELSE.
-				.inputFluids(new FluidStack(Fluids.SULFURIC_ACID, 1_000), new FluidStack(Fluids.PEROXIDE, 250))
-				.outputFluids(new FluidStack(Fluids.RAFFINATE, 1000))
-				.outputItems(new ItemStack(ModItems.powder_yellowcake, 2)));
+        recipes.add(new ChemRecipe(46, "YELLOWCAKE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(46)));
 		// Yellowcake-to-UF6 compresses oxide conversion and fluorination; enrichment remains in the gas centrifuge.
-		recipes.add(new ChemRecipe(47, "UF6", 800)
-				.inputItems(
-						new ComparableStack(ModItems.powder_yellowcake, 4))
-				//not technically right? But also not wrong? There's no water in this process though.
-						//new OreDictStack(F.dust(), 4))
-				.inputFluids(new FluidStack(Fluids.FLUORINE, 600))
-				//.outputItems(new ItemStack(ModItems.sulfur, 2)) //?
-				.outputFluids(new FluidStack(Fluids.UF6, 1200)));
-		recipes.add(new ChemRecipe(48, "PUF6", 950)
-				.inputItems(
-						new OreDictStack(PU.dust()))
-						//new OreDictStack(F.dust(), 3))
-				.inputFluids(new FluidStack(Fluids.FLUORINE, 600))
-				.outputFluids(new FluidStack(Fluids.PUF6, 900)));
+
+        recipes.add(new ChemRecipe(47, "UF6", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(47)));
+
+        recipes.add(new ChemRecipe(48, "PUF6", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(48)));
 		//recipes.add(new ChemRecipe(49, "SAS3", 200)
 		//		.inputItems(
 		//				new OreDictStack(SA326.dust()),
 		//				new OreDictStack(S.dust(), 2))
 		//		.inputFluids(new FluidStack(Fluids.PEROXIDE, 2000))
 		//		.outputFluids(new FluidStack(Fluids.SAS3, 1000)));
-		recipes.add(new ChemRecipe(53, "CORDITE", 40)
-				.inputItems(
-						new OreDictStack(KNO.dust(), 2),
-						new OreDictStack(KEY_PLANKS),
-						new ComparableStack(Items.sugar))
-				.inputFluids(
-						(GeneralConfig.enableLBSM && GeneralConfig.enableLBSMSimpleChemsitry) ?
-								new FluidStack(Fluids.HEATINGOIL, 200) :
-								new FluidStack(Fluids.GAS, 200))
-				.outputItems(new ItemStack(ModItems.cordite, 4)));
+		recipes.add(new ChemRecipe(53, "CORDITE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(53)));
 		// Aromatics and phosgene stand in for the aromatic diamine and acid-chloride monomer families.
-		recipes.add(new ChemRecipe(54, "KEVLAR", 40)
-				.inputFluids(new FluidStack(Fluids.AROMATICS, 500), new FluidStack(Fluids.PHOSGENE, 500))
-				.outputItems(new ItemStack(ModItems.plate_kevlar, 2)));
-		recipes.add(new ChemRecipe(55, "CONCRETE", 100)
-				.inputItems(
-						new ComparableStack(ModItems.powder_cement, 1),
-						new ComparableStack(Blocks.gravel, 8),
-						new OreDictStack(KEY_SAND, 8))
-				.inputFluids(new FluidStack(Fluids.WATER, 2000))
-				.outputItems(new ItemStack(ModBlocks.concrete_smooth, 16)));
-		recipes.add(new ChemRecipe(56, "CONCRETE_ASBESTOS", 100)
-				.inputItems(
-						new ComparableStack(ModItems.powder_cement, 1),
-						new ComparableStack(Blocks.gravel, 2),
-						new OreDictStack(KEY_SAND, 2),
-						(GeneralConfig.enableLBSM && GeneralConfig.enableLBSMSimpleChemsitry) ?
-								new OreDictStack(ASBESTOS.ingot(), 1) :
-								new OreDictStack(ASBESTOS.ingot(), 4))
-				.inputFluids(new FluidStack(Fluids.WATER, 2000))
-				.outputItems(new ItemStack(ModBlocks.concrete_asbestos, 16)));
-		recipes.add(new ChemRecipe(79, "DUCRETE", 150)
-				.inputItems(
-						new ComparableStack(ModItems.powder_cement, 4),
-						new ComparableStack(Blocks.gravel, 2),
-						new OreDictStack(KEY_SAND, 8),
-						new OreDictStack(U238.billet(), 2))
-				.inputFluids(new FluidStack(Fluids.WATER, 2000))
-				.outputItems(new ItemStack(ModBlocks.ducrete_smooth, 8)));
-		recipes.add(new ChemRecipe(57, "SOLID_FUEL", 200)
-				//legacy redditor shit
-				.inputItems(new ComparableStack(ModItems.solid_fuel, 2))
-				//actual chemical process
-				.inputFluids(
-					new FluidStack(Fluids.HYDRAZINE, 500),
-					new FluidStack(Fluids.NITRIC_ACID, 500)
-				)
-				//rocket fuel shit
-				.outputFluids(new FluidStack(Fluids.ROCKET_FUEL, 1_000)));
+		recipes.add(new ChemRecipe(54, "KEVLAR", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(54)));
+		recipes.add(new ChemRecipe(55, "CONCRETE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(55)));
+		recipes.add(new ChemRecipe(56, "CONCRETE_ASBESTOS", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(56)));
+		recipes.add(new ChemRecipe(79, "DUCRETE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(79)));
+		recipes.add(new ChemRecipe(57, "SOLID_FUEL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(57)));
 
 		//if something says do not remove do not remove it
 
 		//do not remove this I know it's redundant but the electrolysis machine sucks and is late game for some fucking reason
-		recipes.add(new ChemRecipe(58, "ELECTROLYSIS", 1).physicalProcess(22_200_000L, 8_000L)
-						.inputFluids(new FluidStack(Fluids.FRESH_WATER, 1))
-						.outputFluids(
-							new FluidStack(Fluids.HYDROGEN_GAS, 1260),
-							new FluidStack(Fluids.OXYGEN_GAS, 630)));
+
+		recipes.add(new ChemRecipe(58, "ELECTROLYSIS", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(58)));
 		//this is here for early game hydrogen/compat. DO NOT REMOVE IT. I don't want to have to come back in this class and be like
 		// "oh, a realistification broke progression because these fucking guys gated electrolysis behind a big ass machine or something"
 		// SO DO NOT REMOVE IT! You can nerf shit like this, or fix it if it's chemically imbalanced but don't just FUCKING REMOVE IT!
 
 		// Recipe 58 retains the early workshop water-electrolysis route at an explicit 8 kW rating.
-		//DO NOT DO THIS!!^
 
-		recipes.add(new ChemRecipe(59, "XENON", 250, 1)
-				.inputFluids(new FluidStack(Fluids.NONE, 0))
-				.outputFluids(new FluidStack(Fluids.XENON, 50)));
-		recipes.add(new ChemRecipe(60, "XENON_OXY", 20)
-				.inputFluids(new FluidStack(Fluids.OXYGEN_GAS, 250))
-				.outputFluids(new FluidStack(Fluids.XENON, 50)));
+
+		// Obsolete xenon shortcut removed: recover xenon from the assayed noble-gas tail.
+		// Obsolete xenon shortcut removed: recover xenon from the assayed noble-gas tail.
 		//recipes.add(new ChemRecipe(61, "SATURN", 60)
 		//		.inputItems(
 		//				new OreDictStack(DURA.dust(), 2),
@@ -292,31 +151,13 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//		.inputItems(new OreDictStack(IRON.dust()))
 		//		.inputFluids(new FluidStack(Fluids.SCHRABIDIC, 250))
 		//		.outputItems(new ItemStack(ModItems.powder_schrabidate)));
-		recipes.add(new ChemRecipe(65, "COLTAN_CLEANING", 60)
-				.inputItems(
-						new OreDictStack(COLTAN.dust(), 2))
-				.inputFluids(
-						new FluidStack(Fluids.SULFURIC_ACID, 500),
-						new FluidStack(Fluids.FRESH_WATER, 500))
-				.outputItems(
-						new ItemStack(ModItems.powder_coltan))
-				.outputFluids(new FluidStack(Fluids.ACIDWASTE, 500)));
+
+        recipes.add(new ChemRecipe(65, "COLTAN_CLEANING", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(65)));
 		// Acid leaching and separation are compressed into a concentrate; tantalum crystallization has no dedicated machine.
-		recipes.add(new ChemRecipe(67, "COLTAN_CRYSTAL", 80)
-				.inputItems(new ComparableStack(ModItems.powder_coltan))
-				.inputFluids(new FluidStack(Fluids.HYDROFLUORIC_ACID, 500), new FluidStack(Fluids.FRESH_WATER, 500))
-				.outputItems(
-						new ItemStack(ModItems.gem_tantalium),
-						new ItemStack(ModItems.powder_niobium))
-				.outputFluids(new FluidStack(Fluids.ACIDWASTE, 500)));
-		recipes.add(new ChemRecipe(68, "VIT_LIQUID", 100)
-				.inputItems(new ComparableStack(ModBlocks.sand_lead))
-				.inputFluids(new FluidStack(Fluids.WASTEFLUID, 1000))
-				.outputItems(new ItemStack(ModItems.nuclear_waste_vitrified)));
-		recipes.add(new ChemRecipe(69, "VIT_GAS", 100)
-				.inputItems(new ComparableStack(ModBlocks.sand_lead))
-				.inputFluids(new FluidStack(Fluids.WASTEGAS, 1000))
-				.outputItems(new ItemStack(ModItems.nuclear_waste_vitrified)));
+
+        recipes.add(new ChemRecipe(67, "COLTAN_CRYSTAL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(67)));
+		recipes.add(new ChemRecipe(68, "VIT_LIQUID", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(68)));
+		recipes.add(new ChemRecipe(69, "VIT_GAS", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(69)));
 		recipes.add(new ChemRecipe(88, "LUBRICANT", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.reactorFraction()));
 		recipes.add(new ChemRecipe(70, "TEL", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.additive()));
 		recipes.add(new ChemRecipe(4, "FR_REOIL", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.reclaimed()));
@@ -326,16 +167,10 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 		recipes.add(new ChemRecipe(85, "GASOLINE_LEADED", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.leaded("GASOLINE")));
 		recipes.add(new ChemRecipe(87, "COALGAS_LEADED", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.leaded("COALGAS")));
-		recipes.add(new ChemRecipe(72, "FRACKSOL", 20)
-				.inputItems(new OreDictStack(S.dust()))
-				.inputFluids(
-						new FluidStack(Fluids.PETROLEUM, 100),
-						new FluidStack(Fluids.WATER, 1000))
-				.outputFluids(new FluidStack(Fluids.FRACKSOL, 1000)));
+
+		recipes.add(new ChemRecipe(72, "FRACKSOL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.frackingSlurry()));
 		//kill
-		recipes.add(new ChemRecipe(73, "HELIUM3", 200)
-				.inputItems(new ComparableStack(ModBlocks.moon_turf, 8))
-				.outputFluids(new FluidStack(Fluids.HELIUM3, 1000)));
+		recipes.add(new ChemRecipe(73, "HELIUM3", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(73)));
 
 		recipes.add(new ChemRecipe(75, "ETHANOL", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.fermentation()));
 		//recipes.add(new ChemRecipe(76, "METH", 30)
@@ -346,9 +181,8 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//				new FluidStack(Fluids.LUBRICANT, 400),
 		//				new FluidStack(Fluids.PEROXIDE, 400))
 		//		.outputItems(new ItemStack(ModItems.chocolate, 4)));
-		recipes.add(new ChemRecipe(77, "CO2", 60)
-				.inputFluids(new FluidStack(Fluids.GAS, 1000))
-				.outputFluids(new FluidStack(Fluids.CARBONDIOXIDE, 1000)));
+
+		recipes.add(new ChemRecipe(77, "CO2", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(77)));
 		//recipes.add(new ChemRecipe(80, "EPEARL", 100)
 		//		.inputItems(new OreDictStack(DIAMOND.dust(), 1))
 		//		.inputFluids(new FluidStack(Fluids.XPJUICE, 500))
@@ -359,31 +193,19 @@ public class ChemplantRecipes extends SerializableRecipe {
 				//.outputItems(new ItemStack(Blocks.sand, 4))
 				//.outputFluids(new FluidStack(Fluids.NITROGEN_GAS, 1000)));
 		// Ammonia oxidation and aqueous absorption are represented as one plant operation.
-		recipes.add(new ChemRecipe(99, "NITROACID", 180)
-			.inputFluids(
-				new FluidStack(Fluids.AMMONIA, 1000),
-				new FluidStack(Fluids.OXYGEN_GAS, 1250))
-			.outputFluids(new FluidStack(Fluids.NITRIC_ACID, 1000)));
+
+		recipes.add(new ChemRecipe(99, "NITROACID", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(99)));
 		// The plant abstracts chloramine formation and ammonia coupling; nitric acid is not a hydrazine precursor.
-		recipes.add(new ChemRecipe(100, "HYDRAZINE", 250)
-				.inputFluids(new FluidStack(Fluids.AMMONIA, 1000), new FluidStack(Fluids.CHLORINE, 500))
-				.outputFluids(new FluidStack(Fluids.HYDRAZINE, 800)));
+
+		recipes.add(new ChemRecipe(100, "HYDRAZINE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.hydrazine()));
 		//ammonia
-		recipes.add(new ChemRecipe(101, "AMONGUS", 250)
-				.inputFluids(new FluidStack(Fluids.NITROGEN_GAS, 300), new FluidStack(Fluids.HYDROGEN_GAS, 900))
-				.outputFluids(new FluidStack(Fluids.AMMONIA, 600)));
-		recipes.add(new ChemRecipe(103, "HCL", 250)
-				.inputFluids(new FluidStack(Fluids.HYDROGEN_GAS, 500), new FluidStack(Fluids.CHLORINE, 500))
-				.outputFluids(new FluidStack(Fluids.HCL, 1000)));
-		recipes.add(new ChemRecipe(104, "AMMONIUM", 250)
-				.inputFluids(new FluidStack(Fluids.AMMONIA, 500), new FluidStack(Fluids.NITRIC_ACID, 500))
-				.outputItems(new ItemStack(ModItems.ammonium_nitrate, 4)));
-		recipes.add(new ChemRecipe(105, "ARSENIDE", 250)
-				.inputFluids(new FluidStack(Fluids.FRESH_WATER, 500), new FluidStack(Fluids.LIGHTOIL, 900))
-				.inputItems(
-						new ComparableStack(ModItems.nugget_gallium),
-						new ComparableStack(ModItems.nugget_arsenic))
-				.outputItems(new ItemStack(ModItems.nugget_gaas, 1)));
+
+		recipes.add(new ChemRecipe(101, "AMONGUS", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(101)));
+
+		recipes.add(new ChemRecipe(103, "HCL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(103)));
+
+		recipes.add(new ChemRecipe(104, "AMMONIUM", 1).petroleum(com.hbm.realsim.ChemistryProcesses.ammoniumNitrate()));
+		recipes.add(new ChemRecipe(105, "ARSENIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(105)));
 
 		//recipes.add(new ChemRecipe(107, "ELBOWS", 250)
 		//		.inputFluids(new FluidStack(Fluids.PEROXIDE, 100), new FluidStack(Fluids.ELBOWGREASE, 900))
@@ -403,129 +225,35 @@ public class ChemplantRecipes extends SerializableRecipe {
 		and shows up in very specific geological contexts.
 		 */
 
-		recipes.add(new ChemRecipe(115, "SHELL_CHLORINE", 100)
-				.inputItems(
-						new ComparableStack(ModItems.ammo_arty, 1, 0),
-						new OreDictStack(ANY_PLASTIC.ingot(), 1))
-				.inputFluids(new FluidStack(Fluids.CHLORINE, 4000))
-				.outputItems(new ItemStack(ModItems.ammo_arty, 1, 9)));
-		recipes.add(new ChemRecipe(116, "SHELL_PHOSGENE", 100)
-				.inputItems(
-						new ComparableStack(ModItems.ammo_arty, 1, 0),
-						new OreDictStack(ANY_PLASTIC.ingot(), 1))
-				.inputFluids(new FluidStack(Fluids.PHOSGENE, 4000))
-				.outputItems(new ItemStack(ModItems.ammo_arty, 1, 10)));
-		recipes.add(new ChemRecipe(117, "SHELL_MUSTARD", 100)
-				.inputItems(
-						new ComparableStack(ModItems.ammo_arty, 1, 0),
-						new OreDictStack(ANY_PLASTIC.ingot(), 1))
-				.inputFluids(new FluidStack(Fluids.MUSTARDGAS, 4000))
-				.outputItems(new ItemStack(ModItems.ammo_arty, 1, 11)));
-		recipes.add(new ChemRecipe(118, "CC_CENTRIFUGE", 200)
-				.inputFluids(new FluidStack(Fluids.CHLOROCALCITE_CLEANED, 500), new FluidStack(Fluids.SULFURIC_ACID, 8_000))
-				.outputFluids(new FluidStack(Fluids.POTASSIUM_CHLORIDE, 250), new FluidStack(Fluids.CALCIUM_CHLORIDE, 250)));
-		recipes.add(new ChemRecipe(119, "THORIUM_SALT", 60)
-				.inputFluids(new FluidStack(Fluids.THORIUM_SALT_DEPLETED, 16_000))
-				.inputItems(new OreDictStack(TH232.nugget(), 2))
-				.outputFluids(new FluidStack(Fluids.THORIUM_SALT, 16_000))
-				.outputItems(
-						new ItemStack(ModItems.nugget_u233, 1),
-						new ItemStack(ModItems.nuclear_waste_tiny, 1)));
+		recipes.add(new ChemRecipe(115, "SHELL_CHLORINE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(115)));
+		recipes.add(new ChemRecipe(116, "SHELL_PHOSGENE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(116)));
+		recipes.add(new ChemRecipe(117, "SHELL_MUSTARD", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(117)));
 
-		recipes.add(new ChemRecipe(120, "MASS_CAKE", 30)
-				.inputFluids(new FluidStack(Fluids.CMILK, 4000), new FluidStack(Fluids.CREAM, 1000)) // why not regular milk? well its because the refined products allow for higher mass cakes while still needing less milk
-				.inputItems(
-						new ComparableStack(Items.sugar, 8),				// if there is a hole in my logic i will shoot myself
-						new ComparableStack(Items.egg, 4))				//ex: since a cake needs 3 buckets of milk, c-milk is more dense, leading to it being only 4 buckets of condensed milk, thats 1 bucket per cake.
-				.outputItems(
-						new ItemStack(Items.cake, 4)));
+        recipes.add(new ChemRecipe(118, "CC_CENTRIFUGE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(118)));
+		recipes.add(new ChemRecipe(119, "THORIUM_SALT", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(119)));
 
-		recipes.add(new ChemRecipe(121, "BUTTER", 50)
-				.inputFluids(new FluidStack(Fluids.EMILK, 1000))
-				.outputItems(
-						new ItemStack(ModItems.butter)));
-		recipes.add(new ChemRecipe(122, "STRAWICE", 50)
-				.inputFluids(new FluidStack(Fluids.CREAM, 1000))
-				.inputItems(
-						new ComparableStack(ModItems.butter, 2),
-						new ComparableStack(Blocks.packed_ice, 1),
-						new ComparableStack(ModItems.strawberry, 4))
-				.outputItems(
-						new ItemStack(ModItems.s_cream, 4)));
-		recipes.add(new ChemRecipe(123, "POISON", 250)
-			.inputFluids(new FluidStack(Fluids.NITROGEN_GAS, 50)) //, new FluidStack(Fluids.CHLORINE, 50)
-			.inputItems(
-				new ComparableStack(ModItems.powder_sodium, 1),
-				new ComparableStack(ModItems.powder_coal, 1))
+		recipes.add(new ChemRecipe(120, "MASS_CAKE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(120)));
 
-			.outputItems(new ItemStack(ModItems.powder_poison, 4)));
+		recipes.add(new ChemRecipe(121, "BUTTER", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(121)));
+		recipes.add(new ChemRecipe(122, "STRAWICE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(122)));
+		recipes.add(new ChemRecipe(123, "POISON", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(123)));
 
-		recipes.add(new ChemRecipe(1001, "SOIL", 100)
-				.inputFluids(new FluidStack(Fluids.FRESH_WATER, 4000))
-				.inputItems(
-						new ComparableStack(ModItems.ammonium_nitrate, 1),
-						new ComparableStack(Blocks.gravel, 8))
-				.outputItems(new ItemStack(Blocks.dirt, 8)));
+		recipes.add(new ChemRecipe(1001, "SOIL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1001)));
 
-		recipes.add(new ChemRecipe(1002, "CHLOROMETHANE", 50)
-				.inputFluids(new FluidStack(Fluids.GAS, 750), new FluidStack(Fluids.CHLORINE, 250))
-				.outputFluids(new FluidStack(Fluids.CHLOROMETHANE, 1000)));
+		recipes.add(new ChemRecipe(1002, "CHLOROMETHANE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1002)));
 
 		//aluminum processing
 
-		recipes.add(new ChemRecipe(1003, "Bayer Process", 50)
-			.inputItems(new ComparableStack(ModBlocks.ore_aluminium))
-			.inputFluids(
-				new FluidStack(Fluids.FRESH_WATER, 600),
-				new FluidStack(Fluids.SODIUM_HYDROXIDE, 200))
-			.outputFluids(new FluidStack(Fluids.REDMUD, 1000))
-			.outputItems(
-				new ItemStack(ModItems.powder_aluminium, 8),
-				//new ItemStack(ModItems.REE_sludge, 1) //REE sludge is a yttrium/scandium processing step; not sure that's right
-				new ItemStack(ModItems.powder_gallium_tiny, 3),
-				//bauxite sands
-				new ItemStack(Blocks.sand, 1),
-				//we have one item slot left here, I could be autistic about this or simplistic here
-				//Trace Element Concentration: Naturally occurring radioactive materials like uranium, thorium,
-				//and radium are concentrated in the residue, known as TENORM
-				//Ok for my sanity here's a thorium nugget
-				new ItemStack(ModItems.nugget_th232, 1)
+        recipes.add(new ChemRecipe(1003, "BAYER", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1003)));
 
-			));
+		recipes.add(new ChemRecipe(1004, "URANIUM_BROMIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1004)));
+		recipes.add(new ChemRecipe(1005, "PLUTONIUM_BROMIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1005)));
 
-		recipes.add(new ChemRecipe(1004, "URANIUM_BROMIDE", 50)
-			.inputItems(
-				new OreDictStack(U235.billet(), 1),
-				new ComparableStack(ModItems.powder_bromine),
-				new OreDictStack(ASBESTOS.ingot(), 1))
-			.inputFluids(new FluidStack(Fluids.HYDROGEN_GAS, 4000))
-			.outputFluids(new FluidStack(Fluids.URANIUM_BROMIDE, 4000)));
-		recipes.add(new ChemRecipe(1005, "PLUTONIUM_BROMIDE", 50)
-			.inputItems(
-				new OreDictStack(PU239.billet(), 1),
-				new ComparableStack(ModItems.powder_bromine),
-				new OreDictStack(ASBESTOS.ingot(), 1))
-			.inputFluids(new FluidStack(Fluids.HYDROGEN_GAS, 4000))
-			.outputFluids(new FluidStack(Fluids.PLUTONIUM_BROMIDE, 4000)));
-
-		recipes.add(new ChemRecipe(1007, "THORIUM_BROMIDE", 50)
-			.inputItems(
-				new OreDictStack(TH232.billet(), 1),
-				new ComparableStack(ModItems.powder_bromine),
-				new OreDictStack(ASBESTOS.ingot(), 1))
-			.inputFluids(new FluidStack(Fluids.HYDROGEN_GAS, 4000))
-			.outputFluids(new FluidStack(Fluids.THORIUM_BROMIDE, 4000)));
+		recipes.add(new ChemRecipe(1007, "THORIUM_BROMIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1007)));
 
 		//ACTUAL FRACKING SOLUTION
-		recipes.add(new ChemRecipe(1008, "FRACKSOL2", 20)
-			.inputItems(
-				new OreDictStack(S.dust()),
-				new ComparableStack(Blocks.gravel, 8)
-			)
-			.inputFluids(
-				//new FluidStack(Fluids.PETROLEUM, 100),
-				new FluidStack(Fluids.WATER, 1000))
-			.outputFluids(new FluidStack(Fluids.FRACKSOL, 1000)));
+
+		recipes.add(new ChemRecipe(1008, "FRACKSOL2", 1).petroleum(com.hbm.realsim.ChemistryProcesses.frackingSlurry()));
 
 
 		//coal gasification
@@ -539,62 +267,26 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//NEVERMIND THE FUCKING CRUCIBLE ONLY OUTPUTS FUCKING SOLIDS FOR SOME FUCKING REASON DESPITE BEING USED TO POUR FLUIDS
 		//NICE SHITLOW TINKERS RIPPED DOGSHIT SYSTEM. ANYWAY IT'S GOING IN THE FUCKING CHEMPLANT JUST LIKE EVERY OTHER RETARDED
 		//ACTUAL CHEMICAL PROCESS
-		recipes.add(new ChemRecipe(1011, "MOLTEN_SALT", 500)
-			.inputItems(
-				new OreDictStack(KEY_SALT, 4))
-			//.inputFluids(
-			//	new FluidStack(Fluids.ULTRAHOTSTEAM, 2000))
-					//I don't give a fuck suffer
-			//nvm just use fucking energy because why not
-			.outputFluids(new FluidStack(Fluids.MOLTEN_SALT, 576)));
+
+		recipes.add(new ChemRecipe(1011, "MOLTEN_SALT", 1).petroleum(com.hbm.realsim.ChemistryProcesses.saltMelting()));
 
 		//potash to potassium chloride
-		recipes.add(new ChemRecipe(1012, "POTASSIUM_CHLORIDEPROD", 50)
-				.inputItems(
-					new ComparableStack(ModItems.powder_potash)
-				)
-				.outputFluids(new FluidStack(Fluids.POTASSIUM_CHLORIDE, 2000))
-			.outputItems(
-				new ItemStack(ModItems.itemsalt, 2),
-				new ItemStack(ModItems.rubidiumsalt, 1)));
+
+		recipes.add(new ChemRecipe(1012, "POTASSIUM_CHLORIDEPROD", 1).petroleum(com.hbm.realsim.ChemistryProcesses.potashChlorides()));
 		//oh my god it's radioactive and
 		// god fucking dammit I need to add more ways to obtain it and
 		// god fucking dammit I have to rebalance anything relating to clocks or GPS systems.
 
 		//Molten KCl + sodium vapor → molten NaCl + potassium vapor
-		recipes.add(new ChemRecipe(1013, "POTASSIUM", 90)
-			.inputFluids(new FluidStack(Fluids.POTASSIUM_CHLORIDE, 2000), new FluidStack(Fluids.SODIUM, 2000))
 
-			.outputFluids(
-				new FluidStack(Fluids.MOLTEN_SALT, 2000),
-				new FluidStack(Fluids.POTASSIUM, 2000))
-			);
+		recipes.add(new ChemRecipe(1013, "POTASSIUM", 1).petroleum(com.hbm.realsim.ChemistryProcesses.potassiumReduction()));
 
 		//potassium hydroxide + water + Iodine (2) = potassium iodide
-		recipes.add(new ChemRecipe(1014, "POTASSIUM_IODIDE", 100)
-			.inputFluids(new FluidStack(Fluids.POTASSIUM_HYDROXIDE, 1000), new FluidStack(Fluids.FRESH_WATER, 500))
-			.inputItems(new ComparableStack(ModItems.powder_iodine, 2))
-
-
-			.outputItems(new ItemStack(ModItems.potassium_iodide_powder, 2))
-
-		);
+		recipes.add(new ChemRecipe(1014, "POTASSIUM_IODIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1014)));
 
 
 		//rubidium salt -> rubidium metal
-		recipes.add(new ChemRecipe(1015, "RUBIDIUM", 90)
-			.inputItems(
-				new ComparableStack(ModItems.rubidiumsalt, 1),
-				new ComparableStack(ModItems.ingot_calcium, 1))
-
-				//.inputFluids(new FluidStack(Fluids.CALCIUM_SOLUTION, 2000)) //
-
-			//.outputFluids(
-			//	new FluidStack(Fluids.MOLTEN_SALT, 2000),
-			//	new FluidStack(Fluids.RUBIDIUM, 2000))
-
-				.outputItems(new ItemStack(ModItems.rubidium_ingot, 1))
-				.outputFluids(new FluidStack(Fluids.CALCIUM_CHLORIDE, 800)));
+		recipes.add(new ChemRecipe(1015, "RUBIDIUM", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1015)));
 
 
 		//pure potassium
@@ -606,10 +298,8 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//done
 
 		//sodium hydroxide
-		recipes.add(new ChemRecipe(1016, "SODIUM_HYDROXIDE", 50)
-			.inputFluids(new FluidStack(Fluids.SODIUM, 1000), new FluidStack(Fluids.FRESH_WATER, 500))
-			.outputFluids(new FluidStack(Fluids.SODIUM_HYDROXIDE, 1000))
-		);
+
+		recipes.add(new ChemRecipe(1016, "SODIUM_HYDROXIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.sodiumHydroxide()));
 
 		//recipes.add(new ChemRecipe(1017, "ARGON", 100)
 		//	.inputFluids(new FluidStack(Fluids.AIR, 1000))
@@ -617,46 +307,21 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//);
 		//in cryogenic distillation
 
-		//pollucite dust + sulfuric acid = Mixed sulfate solution + silica
-		recipes.add(new ChemRecipe(1017, "POLLUCITE", 100)
-			.inputItems(new ComparableStack(ModItems.powder_pollucite))
-			.inputFluids(new FluidStack(Fluids.SULFURIC_ACID, 2000))
-			.outputFluids(new FluidStack(Fluids.POLLUCITE_SOLUTION, 2000))
-			.outputItems(new ItemStack(Blocks.sand, 8), new ItemStack(ModItems.powder_quartz, 2))
-		);
+		// Activated pollucite: HCl supplies actual chloride; rejected gangue and carrier are retained.
+		recipes.add(new ChemRecipe(1017, "POLLUCITE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1017)));
 
 		//pollucite solution into heavy fraction and light fraction
-		recipes.add(new ChemRecipe(1018, "POLLUCITE_FRACTION", 100)
-			.inputFluids(new FluidStack(Fluids.POLLUCITE_SOLUTION, 2000))
-			.outputFluids(new FluidStack(Fluids.POLLUCITE_SOLUTION_HEAVY, 500), new FluidStack(Fluids.POLLUCITE_SOLUTION_LIGHT, 1500))
-		);
+		recipes.add(new ChemRecipe(1018, "POLLUCITE_FRACTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1018)));
 
-		//heavy fraction → cesium alum (or cesium compound)
-		recipes.add(new ChemRecipe(1019, "CESIUM_EXTRACTION", 100)
-			.inputFluids(new FluidStack(Fluids.POLLUCITE_SOLUTION_HEAVY, 1000))
-			.outputItems(new ItemStack(ModItems.cesium_salt, 1), new ItemStack(ModItems.rubidiumsalt))
+		// Heavy chloride liquor: dry/recover CsCl and RbCl with steam recovery.
+		recipes.add(new ChemRecipe(1019, "CESIUM_EXTRACTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1019)));
 
-		);
-
-		//light fraction → Na + K
-		recipes.add(new ChemRecipe(1020, "POTASSIUM_SODIUM_EXTRACTION", 100)
-			.inputFluids(new FluidStack(Fluids.POLLUCITE_SOLUTION_LIGHT, 1000))
-			//.outputFluids(new FluidStack(Fluids.SODIUM, 500), new FluidStack(Fluids.POTASSIUM, 500))
-			.outputItems(
-			    new ItemStack(ModItems.sodium_sulfate, 1),
-			    new ItemStack(ModItems.potassium_sulfate, 1)
-			)
-		);
+		// Light chloride liquor: recover NaCl and aqueous KCl.
+		recipes.add(new ChemRecipe(1020, "POTASSIUM_SODIUM_EXTRACTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1020)));
 
 
 		//cesium salt + calcium -> cesium metal + calcium chloride
-		recipes.add(new ChemRecipe(1021, "CESIUM_EXTRACTION_2", 100)
-			.inputFluids(new FluidStack(Fluids.ARGON, 10)) // for storing cesium (it's highly reactive)
-			.inputItems(new ComparableStack(ModItems.cesium_salt, 1), new ComparableStack(ModItems.ingot_calcium, 1))
-			//we are changing the cesium powder item to be a contained version of cesium since it cannot exist in air
-			.outputItems(new ItemStack(ModItems.powder_caesium, 1))
-			.outputFluids(new FluidStack(Fluids.CALCIUM_CHLORIDE, 800))
-		);
+		recipes.add(new ChemRecipe(1021, "CESIUM_EXTRACTION_2", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1021)));
 
 
 		//easier glass production using sodium sulfate
@@ -666,29 +331,10 @@ public class ChemplantRecipes extends SerializableRecipe {
 		);
 
 		// Alkali roasting of beryl (fixed + balanced) (SIMPLISTIC)
-		recipes.add(new ChemRecipe(1023, "BERYL_ROASTING", 120)
-			.inputItems(new ComparableStack(ModBlocks.ore_beryllium, 2))
-			.inputFluids(new FluidStack(Fluids.SODIUM_CARBONATE, 1000))
-			.outputItems(
-				new ItemStack(ModItems.powder_beryllium, 2),
-				new ItemStack(ModItems.powder_aluminium, 3),
-				new ItemStack(ModItems.powder_sodium_silicate, 4)
-				//not actually a powder, looks more like crystal meth but whatever
-				//new ItemStack(ModItems.sodium_silicate, 3)
-			)
-		);
+		recipes.add(new ChemRecipe(1023, "BERYL_ROASTING", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1023)));
 
 		// Sodium carbonate synthesis (CO2 absorption)
-		recipes.add(new ChemRecipe(1024, "SODIUM_CARBONATE", 60)
-			.inputFluids(
-				new FluidStack(Fluids.SODIUM_HYDROXIDE, 1000),
-				new FluidStack(Fluids.CARBONDIOXIDE, 1000)
-			)
-			.outputFluids(
-				new FluidStack(Fluids.SODIUM_CARBONATE, 1000),
-				new FluidStack(Fluids.WATER, 500)
-			)
-		);
+		recipes.add(new ChemRecipe(1024, "SODIUM_CARBONATE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1024)));
 
 		//reinforced glass (silicate use
 		recipes.add(new ChemRecipe(1025, "REINFORCED_GLASS", 100)
@@ -696,12 +342,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 			.outputItems(new ItemStack(ModBlocks.reinforced_glass, 16))
 		);
 
-		recipes.add(new ChemRecipe(1026, "CALCINED_DOLOMITE", 100)
-			//dolomite
-			.inputItems(new ComparableStack(ModBlocks.ore_magnesite, 1))
-			.outputItems(new ItemStack(ModItems.calcined_dolomite, 1))
-			.outputFluids(new FluidStack(Fluids.CARBONDIOXIDE, 500))
-		);
+		recipes.add(new ChemRecipe(1026, "CALCINED_DOLOMITE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1026)));
 
 		recipes.add(new ChemRecipe(1027, "MAGNESIUM_REDUCTION", 200)
 			.inputItems(
@@ -725,50 +366,18 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 		//calcium step 1 HCl + quicklime -> CACL2
 		// Calcium chloride synthesis
-		recipes.add(new ChemRecipe(1028, "CALCIUM_CHLORIDE", 200)
-			.inputItems(
-				new ComparableStack(ModItems.quicklime, 1)
-			)
-			.inputFluids(
-				new FluidStack(Fluids.HCL, 200) // 2x ratio
-			)
-			.outputFluids(
-				new FluidStack(Fluids.CALCIUM_CHLORIDE, 1000), //Fluids.CACL2 is redundant
-				new FluidStack(Fluids.WATER, 200)
-			)
-		);
+		recipes.add(new ChemRecipe(1028, "CALCIUM_CHLORIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1028)));
 
-		recipes.add(new ChemRecipe(1029, "MOLTEN_STRONTIUM_CHLORIDE", 50)
-			.inputItems(new ComparableStack(ModItems.strontium_chloride, 1))
-			.outputFluids(new FluidStack(Fluids.MOLTEN_STRONTIUM_CHLORIDE, 1000))
-		);
+		recipes.add(new ChemRecipe(1029, "MOLTEN_STRONTIUM_CHLORIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1029)));
 
-		recipes.add(new ChemRecipe(1030, "STRONTIUM_CHLORIDE", 50)
-			.inputItems(new ComparableStack(ModItems.powder_strontium_oxide, 1))
-			.inputFluids(new FluidStack(Fluids.HCL, 1000))
-			.outputItems(new ItemStack(ModItems.strontium_chloride, 1))
-			.outputFluids(new FluidStack(Fluids.WATER, 500))
-		);
+		recipes.add(new ChemRecipe(1030, "STRONTIUM_CHLORIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1030)));
 
 		// barium carbonate
-		recipes.add(new ChemRecipe(1031, "BARIUM_CARBONATE", 50)
-			.inputItems(new ComparableStack(ModItems.barium_sulfide, 1))
-			.inputFluids(
-				new FluidStack(Fluids.CARBONDIOXIDE, 1000),
-				new FluidStack(Fluids.FRESH_WATER, 500)
-			)
-			.outputItems(new ItemStack(ModItems.barium_carbonate, 1)) //, new ItemStack(ModItems.sulfur)
-			//I literally cannot be bothered to add Hydrogen sulfide. cry about it...
-			//ok maybe I will just give me the damn template already.
-			.outputFluids(new FluidStack(Fluids.HYDROGEN_SULFIDE, 1000))
-		);
+		recipes.add(new ChemRecipe(1031, "BARIUM_CARBONATE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1031)));
 
 		// Optional reverse synthesis route; this is not the normal sulfur-production route.
-		recipes.add(new ChemRecipe(1032, "HYDROGEN_SULFIDE", 50)
-			.inputItems(new ComparableStack(ModItems.sulfur, 1))
-			.inputFluids(new FluidStack(Fluids.HYDROGEN_GAS, 1000))
-			.outputFluids(new FluidStack(Fluids.HYDROGEN_SULFIDE, 1000))
-		);
+
+		recipes.add(new ChemRecipe(1032, "HYDROGEN_SULFIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.sulfideSynthesis()));
 
 		//barium oxide
 		//recipes.add(new ChemRecipe(1032, "BARIUM_OXIDE", 50)
@@ -779,188 +388,64 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//regular furnace/etc.
 
 		// barium production (hydrogen reduction)
-		recipes.add(new ChemRecipe(1033, "BARIUM_REDUCTION", 50)
-			.inputItems(new ComparableStack(ModItems.barium_oxide, 1))
-			.inputFluids(new FluidStack(Fluids.HYDROGEN_GAS, 1000))
-			.outputItems(new ItemStack(ModItems.ingot_barium, 1))
-				//reasoning: I cannot be bothered to change how radium is currently obtained (centrifuging uranium ore)
-				//however, I also want to add a use for barium
-				//and since barium is used as a binding agent to produce radium this is at least somewhat based on real chemistry.
-				//new ItemStack(ModItems.nugget_ra226))
-			//moved to own process
-			.outputFluids(new FluidStack(Fluids.WATER, 500))
-		);
+		recipes.add(new ChemRecipe(1033, "BARIUM_REDUCTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1033)));
 		//please kill me
 
 		// radium extraction (barium-assisted, simple and 'sane')
-		recipes.add(new ChemRecipe(1034, "RADIUM_EXTRACTION", 80)
-			.inputItems(
-				new ComparableStack(ModItems.powder_uranium, 1),
-				new ComparableStack(ModItems.ingot_barium, 1)
-			)
-			.inputFluids(
-				new FluidStack(Fluids.SULFURIC_ACID, 1000) // sulfuric, nitric, whatever you already use
-			)
-			.outputItems(
-				new ItemStack(ModItems.nugget_ra226, 2),   // the actual goal
-				new ItemStack(ModItems.nugget_uranium, 8), // most uranium remains
-				new ItemStack(ModItems.nuclear_waste, 1),          // junk
-				new ItemStack(ModItems.barium_nugget, 8)            // carrier
-			)
-			.outputFluids(
-				new FluidStack(Fluids.WASTEFLUID, 500)
-			)
-		);
+		recipes.add(new ChemRecipe(1034, "RADIUM_EXTRACTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1034)));
 
 		//sodium sulfate into sodium first step Reduce sodium sulfate with carbon:
-		recipes.add(new ChemRecipe(1035, "SODIUM_SULFATE_REDUCTION", 100)
-			.inputItems(
-				new ComparableStack(ModItems.sodium_sulfate, 1),
-				new ComparableStack(ModItems.powder_coal, 2)
-			)
-			.inputFluids(new FluidStack(Fluids.ULTRAHOTSTEAM, 2000))
-			.outputItems(new ItemStack(ModItems.sodium_sulfide, 1))
-			.outputFluids(new FluidStack(Fluids.CARBONDIOXIDE, 2000))
-		);
+
+		recipes.add(new ChemRecipe(1035, "SODIUM_SULFATE_REDUCTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.sulfateReduction()));
 
 		//sodium sulfide into hydrogen sulfide
-		recipes.add(new ChemRecipe(1036, "SODIUM_SULFIDE_ACIDIFICATION", 100)
-			.inputItems(new ComparableStack(ModItems.sodium_sulfide, 1))
-			.inputFluids(new FluidStack(Fluids.HCL, 1000))
-			.outputItems(new ItemStack(ModItems.itemsalt, 2)) // NaCl
-			.outputFluids(new FluidStack(Fluids.HYDROGEN_SULFIDE, 1000))
-		);
+
+		recipes.add(new ChemRecipe(1036, "SODIUM_SULFIDE_ACIDIFICATION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.sulfideAcidification()));
 
 		// Thermal stage: H2S + 1.5 O2 -> SO2 + H2O. Catalytic stage: 2 H2S + SO2 -> 3 S + 2 H2O.
 		// SO2 remains internal; the abstracted plant uses the net reaction 2 H2S + O2 -> 2 S + 2 H2O.
-		recipes.add(new ChemRecipe(1037, "CLAUS_PROCESS", 300)
-			.inputFluids(
-				new FluidStack(Fluids.HYDROGEN_SULFIDE, 2_000),
-				new FluidStack(Fluids.OXYGEN_GAS, 1_000)
-			)
-			.outputItems(new ItemStack(ModItems.sulfur, 2))
-			.outputFluids(new FluidStack(Fluids.STEAM, 2_000))
-		);
 
-		recipes.add(new ChemRecipe(1038, "RARE_EARTH_ELEMENTS", 100)
-			.inputFluids(
-				new FluidStack(Fluids.RAFFINATE, 1000),
-				new FluidStack(Fluids.AMMONIA, 500)
-			)
+		recipes.add(new ChemRecipe(1037, "CLAUS_PROCESS", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1037)));
 
-
-			.outputItems(new ItemStack(ModItems.REE_sludge))
-		);
+        recipes.add(new ChemRecipe(1038, "RARE_EARTH_ELEMENTS", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1038)));
 
 		// Scandium extraction
-		recipes.add(new ChemRecipe(1039, "SCANDIUM_EXTRACTION", 100)
-			.inputItems(new ComparableStack(ModItems.REE_sludge, 1))
-			.inputFluids(new FluidStack(Fluids.HCL, 500))
-			.outputItems(new ItemStack(ModItems.scandium_oxide, 1))
-			.outputFluids(new FluidStack(Fluids.ACIDWASTE, 500))
-		);
+
+        recipes.add(new ChemRecipe(1039, "SCANDIUM_EXTRACTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1039)));
 
 		// Yttrium extraction
-		recipes.add(new ChemRecipe(1040, "YTTRIUM_EXTRACTION", 100)
-			.inputItems(new ComparableStack(ModItems.REE_sludge, 1))
-			.inputFluids(new FluidStack(Fluids.HCL, 500))
-			.outputItems(new ItemStack(ModItems.yttrium_oxide, 1))
-			.outputFluids(new FluidStack(Fluids.ACIDWASTE, 500))
-		);
+
+        recipes.add(new ChemRecipe(1040, "YTTRIUM_EXTRACTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1040)));
 
 		//waste_water + lime → water + sludge
-		recipes.add(new ChemRecipe(1041, "WASTE_WATER_TREATMENT", 100)
-			.inputFluids(new FluidStack(Fluids.ACIDWASTE, 1000), new FluidStack(Fluids.FRESH_WATER, 1000))
-			.inputItems(new ComparableStack(ModItems.quicklime, 1))
-			.outputFluids(new FluidStack(Fluids.WATER, 800), new FluidStack(Fluids.MINSOL, 250))
-			//.outputItems(new ItemStack(ModItems.slagingot, 1))
-		);
+		recipes.add(new ChemRecipe(1041, "WASTE_WATER_TREATMENT", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1041)));
 
 		//waste_water + sodium_hydroxide → water + salt_sludge
-		recipes.add(new ChemRecipe(1042, "WASTE_WATER_TREATMENT_2", 100)
-			.inputFluids(new FluidStack(Fluids.ACIDWASTE, 1000))
-			.inputFluids(new FluidStack(Fluids.SODIUM_HYDROXIDE, 500))
-			//mineral slurry and water
-			.outputFluids(new FluidStack(Fluids.WATER, 800), new FluidStack(Fluids.MINSOL, 250))
+		recipes.add(new ChemRecipe(1042, "WASTE_WATER_TREATMENT_2", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1042)));
 
-		);
+		recipes.add(new ChemRecipe(1043, "SCANDIUM_CHLORIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1043)));
 
-		recipes.add(new ChemRecipe(1043, "SCANDIUM_CHLORIDE", 100)
-			.inputItems(new ComparableStack(ModItems.scandium_oxide, 1))
-			.inputFluids(new FluidStack(Fluids.HCL, 500))
-			.outputItems(new ItemStack(ModItems.scandium_chloride, 1))
-			.outputFluids(new FluidStack(Fluids.WATER, 250))
-		);
-
-		recipes.add(new ChemRecipe(1044, "SCANDIUM_REDUCTION", 150)
-			.inputItems(
-				new ComparableStack(ModItems.scandium_chloride, 1),
-				new ComparableStack(ModItems.ingot_calcium, 1)
-			)
-			.outputItems(new ItemStack(ModItems.scandium_nugget, 1))
-			//TODOne nugget
-			.outputFluids(new FluidStack(Fluids.CALCIUM_CHLORIDE, 800))
-		);
+		recipes.add(new ChemRecipe(1044, "SCANDIUM_REDUCTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1044)));
 
 		//scandium oxide from rare metals residue (titanium)
-		recipes.add(new ChemRecipe(1045, "SCANDIUM_FROM_TITANIUM", 150)
-			.inputItems(new ComparableStack(ModItems.titanium_trace_metals_slurry, 1))
-			.inputFluids(new FluidStack(Fluids.HCL, 500))
-			.outputItems(
-				new ItemStack(ModItems.scandium_oxide, 1)
-			)
-			.outputFluids(new FluidStack(Fluids.ACIDWASTE, 250))
-		);
+		recipes.add(new ChemRecipe(1045, "SCANDIUM_FROM_TITANIUM", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1045)));
 
 		// Yttrium from titanium
-		recipes.add(new ChemRecipe(1046, "YTTRIUM_FROM_TITANIUM", 150)
-			.inputItems(new ComparableStack(ModItems.titanium_trace_metals_slurry, 1))
-			.inputFluids(new FluidStack(Fluids.HCL, 500))
-			.outputItems(new ItemStack(ModItems.yttrium_oxide, 1))
-			.outputFluids(new FluidStack(Fluids.ACIDWASTE, 250))
-		);
+		recipes.add(new ChemRecipe(1046, "YTTRIUM_FROM_TITANIUM", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1046)));
 
-		recipes.add(new ChemRecipe(1047, "YTTRIUM_CHLORIDE", 100)
-			.inputItems(new ComparableStack(ModItems.yttrium_oxide, 1))
-			.inputFluids(new FluidStack(Fluids.HCL, 500))
-			.outputItems(new ItemStack(ModItems.yttrium_chloride, 1))
-			.outputFluids(new FluidStack(Fluids.WATER, 250))
-		);
+		recipes.add(new ChemRecipe(1047, "YTTRIUM_CHLORIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1047)));
 
-		recipes.add(new ChemRecipe(1048, "YTTRIUM_REDUCTION", 150)
-			.inputItems(
-				new ComparableStack(ModItems.yttrium_chloride, 1),
-				new ComparableStack(ModItems.ingot_calcium, 1)
-			)
-			.outputItems(new ItemStack(ModItems.powder_yttrium_tiny, 1)) //suffer
-			.outputFluids(new FluidStack(Fluids.CALCIUM_CHLORIDE, 800))
-		);
+		recipes.add(new ChemRecipe(1048, "YTTRIUM_REDUCTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1048)));
 
 		//lepidolite
-		recipes.add(new ChemRecipe(1049, "LEPIDOLITE", 100)
-			.inputItems(new ComparableStack(ModItems.lepidolite))
-			.inputFluids(new FluidStack(Fluids.SULFURIC_ACID, 2000))
-			.outputItems(new ItemStack(ModItems.lithium, 1), new ItemStack(ModItems.potassium_sulfate, 1))
-			.outputFluids(new FluidStack(Fluids.ACIDWASTE, 2000))
-		);
+		recipes.add(new ChemRecipe(1049, "LEPIDOLITE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1049)));
 		//I can't be bothered to separate this into another process, maybe later
 
 		//carnallite + water -> potassium chloride + magnesium chloride + water
-		recipes.add(new ChemRecipe(1050, "CARNALLITE", 100)
-			.inputItems(new ComparableStack(ModItems.carnallite))
-			.inputFluids(new FluidStack(Fluids.FRESH_WATER, 2000))
-			.outputItems(
-				new ItemStack(ModItems.itemsalt, 1),
-				new ItemStack(ModItems.magnesium_chloride, 1)
-			)
-			.outputFluids(new FluidStack(Fluids.WATER, 1500))
-		);
+		recipes.add(new ChemRecipe(1050, "CARNALLITE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1050)));
 
 		//powder_fertilizer from potassium chloride
-		recipes.add(new ChemRecipe(1051, "FERTILIZER", 50)
-			.inputFluids(new FluidStack(Fluids.POTASSIUM_CHLORIDE, 1000))
-			.outputItems(new ItemStack(ModItems.powder_fertilizer, 4))
-		);
+		recipes.add(new ChemRecipe(1051, "FERTILIZER", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1051)));
 
 		//potassium sulfate from potassium chloride and sulfuric acid (best fertilizer)
 		//recipes.add(new ChemRecipe(1052, "POTASSIUM_SULFATE", 50)
@@ -970,263 +455,80 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//);
 
 		//fertilizer from potassium sulfate (best process)
-		recipes.add(new ChemRecipe(1052, "FERTILIZER_2", 50)
-			.inputItems(new ComparableStack(ModItems.potassium_sulfate, 1))
-			.outputItems(new ItemStack(ModItems.powder_fertilizer, 8))
-		);
+		recipes.add(new ChemRecipe(1052, "FERTILIZER_2", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1052)));
 
 
 		//I FUCKING HATE HOW UNMODULAR THIS INDEX SYSTEM IS !!! MORE RETARDED HUMAN SLOP DESIGN!!!
 		recipes.add(new ChemRecipe(1053, "GASOLINE2", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.syntheticGasoline()));
 
 		// Step 2: Oxidation (Chemplant)
-		recipes.add(new ChemRecipe(1054, "OSMIRIDIUM_OXIDATION", 300)
-						.inputItems(new ComparableStack(ModItems.powder_impure_osmiridium, 1))
-						.inputFluids(new FluidStack(Fluids.OXYGEN_GAS, 1000))
-						.outputItems(new ItemStack(ModItems.iridium_rich_residue, 1))
-						.outputFluids(new FluidStack(Fluids.OSMIRIDIUM_SOLUTION, 200)) //osmium tetroxide, I am not refactoring it again; it's called it in LANG.
-		);
+		recipes.add(new ChemRecipe(1054, "OSMIRIDIUM_OXIDATION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1054)));
 
-		recipes.add(new ChemRecipe(1055, "OSMIUM_REDUCTION", 200)
-						.inputFluids(new FluidStack(Fluids.OSMIRIDIUM_SOLUTION, 1000), new FluidStack(Fluids.HYDROGEN_GAS, 1000))
-						.outputItems(new ItemStack(ModItems.powder_osmium_tiny, 1))
-						.outputFluids(new FluidStack(Fluids.WATER, 1000))
-		);
+		recipes.add(new ChemRecipe(1055, "OSMIUM_REDUCTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1055)));
 
 		//rhodium extraction using chlorine
-		recipes.add(new ChemRecipe(1056, "RHODIUM_EXTRACTION", 300)
-						.inputItems(new ComparableStack(ModItems.powder_rhodium_solution, 1))
-						.inputFluids(new FluidStack(Fluids.CHLORINE, 1000))
-						.outputItems(new ItemStack(ModItems.iridium_rich_residue, 1)) // leftovers after Rh extraction
-						.outputFluids(new FluidStack(Fluids.RHODIUM_SOLUTION, 200))
-		);
+		recipes.add(new ChemRecipe(1056, "RHODIUM_EXTRACTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1056)));
 
-		recipes.add(new ChemRecipe(1057, "IRIDIUM_OXIDATION", 400)
-						.inputItems(new ComparableStack(ModItems.iridium_rich_residue, 1))
-						.inputFluids(new FluidStack(Fluids.OXYGEN_GAS, 1000))
-						.outputItems(new ItemStack(ModItems.iridium_oxide, 1))
-		);
+		recipes.add(new ChemRecipe(1057, "IRIDIUM_OXIDATION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1057)));
 
-		recipes.add(new ChemRecipe(1061, "IRIDIUM_DISSOLUTION", 300)
-						.inputItems(new ComparableStack(ModItems.iridium_oxide, 1))
-						.inputFluids(new FluidStack(Fluids.CHLORINE, 1000))
-						.outputFluids(new FluidStack(Fluids.IRIDIUM_SOLUTION, 200))
-						.outputItems(new ItemStack(ModItems.ruthenium_residue, 1))
-		);
+		recipes.add(new ChemRecipe(1061, "IRIDIUM_DISSOLUTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1061)));
 
 		//Fluorite → hydrofluoric acid
-		recipes.add(new ChemRecipe(1062, "HYDROFLUORIC_ACID", 100)
-						.inputItems(new ComparableStack(ModItems.crystal_fluorite, 1))
-						.inputFluids(new FluidStack(Fluids.SULFURIC_ACID, 1000))
-						.outputFluids(new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000))
-						.outputItems(new ItemStack(ModItems.gypsum, 4)) //should be calcium sulfate/gypsum? idk I'm just autofilling for now.
-		);
+
+		recipes.add(new ChemRecipe(1062, "HYDROFLUORIC_ACID", 1).petroleum(com.hbm.realsim.ChemistryProcesses.hydrofluoric()));
 
 
 		//DO NOT REMOVE DO NOT REMOVE DO NOT REMOVE
 		//salt + water + power → chlorine + hydrogen + lye
-		recipes.add(new ChemRecipe(1063, "CHLORINE_PRODUCTION", 130)
-						.inputItems(new ComparableStack(ModItems.itemsalt, 1))
-						.inputFluids(
-							new FluidStack(Fluids.FRESH_WATER, 1000),
-							new FluidStack(Fluids.OXYGEN_GAS, 500)
-						)
-						//.oxygenConsumption = 500 // consumes oxygen from the atmosphere to prevent infinite loops with water electrolysis
-						//that's great gpt but I'm not doing allat I'm just adding oxygen fluid in input
-						.outputFluids(
-							new FluidStack(Fluids.CHLORINE, 1000),
-							new FluidStack(Fluids.HYDROGEN_GAS, 1000)
-							//new FluidStack(Fluids.SODIUM_HYDROXIDE, 1000)
-						)
-					//.outputItems(new ItemStack(ModItems.sodium_hydroxide, 1))
-		);
 
-		// Recipe 1063 was direct chlor-alkali electrolysis and is intentionally retired: use brine in the fluid electrolyser.
+		recipes.add(new ChemRecipe(1063, "CHLORINE_PRODUCTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.chloralkali(true)));
+
+		// Recipe 1063 preserves the early chlor-alkali route with paid work and all coproducts.
 		//ok but the electrolyser is a fucking energy sponge so early game that's a nightmare so DO NOT DO THAT.
 		//... And Considering you can do electrolysis in your back yard, LETS KEEP THE RECIPE YEAH?
 
 		//chlorocalcite from calcium chloride and potassium chloride
-		recipes.add(new ChemRecipe(1064, "CHLOROCALCITE", 100)
-						.inputFluids(
-							new FluidStack(Fluids.CALCIUM_CHLORIDE, 1200),
-							new FluidStack(Fluids.POTASSIUM_CHLORIDE, 1000)
-						)
-						.outputItems(new ItemStack(ModItems.powder_chlorocalcite, 1))
-		);
+
+        recipes.add(new ChemRecipe(1064, "CHLOROCALCITE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1064)));
 
 		//RUTHENIUM_RESIDUE + HYDROGEN -> RUTHENIUM + STEAM
-		recipes.add(new ChemRecipe(1065, "RUTHENIUM_REDUCTION", 300)
-						.inputItems(new ComparableStack(ModItems.ruthenium_residue, 1))
-						.inputFluids(new FluidStack(Fluids.HYDROGEN_GAS, 1000))
-						.outputItems(new ItemStack(ModItems.nugget_ruthenium, 1))
-						.outputFluids(new FluidStack(Fluids.STEAM, 850))
-		);
+
+		recipes.add(new ChemRecipe(1065, "RUTHENIUM_REDUCTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.rutheniumReduction()));
 
 		//bromine from bittern + chlorine
-		recipes.add(new ChemRecipe(1066, "BROMINE_EXTRACTION", 200)
-						.inputFluids(
-							new FluidStack(Fluids.BITTERN, 2000),
-							new FluidStack(Fluids.CHLORINE, 1000)
-						)
-						.outputItems(new ItemStack(ModItems.powder_bromine, 1))
-						.outputFluids(
-							//new FluidStack(Fluids.BROMINE, 1000),
-							new FluidStack(Fluids.BRINE, 400)
-						)
-		);
+		recipes.add(new ChemRecipe(1066, "BROMINE_EXTRACTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1066)));
 
 		//iodine brine + chlorine -> iodine + salt brine
-		recipes.add(new ChemRecipe(1067, "IODINE_EXTRACTION", 200)
-						.inputFluids(
-							new FluidStack(Fluids.IODINE_BRINE, 2000),
-							new FluidStack(Fluids.CHLORINE, 1000)
-						)
-						.outputItems(new ItemStack(ModBlocks.ore_iodine, 1))
-						.outputFluids(
-							new FluidStack(Fluids.BRINE, 400)
-							//Brine is a high-concentration solution of salt (usually sodium chloride) dissolved in water
-							//so why the fuck would we specify that it is salty, obviously it's fucking salty,
-							// it's water with high salt
-						)
-		);
+		recipes.add(new ChemRecipe(1067, "IODINE_EXTRACTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1067)));
 
 		//potassium iodide solution + chlorine -> iodine + potassium chloride
-		recipes.add(new ChemRecipe(1068, "IODINE_EXTRACTION2", 180)
-						.inputItems(
-							new ComparableStack(ModItems.potassium_iodide_powder, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.CHLORINE, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.powder_iodine, 4)
-						)
-						.outputFluids(
-							new FluidStack(Fluids.POTASSIUM_CHLORIDE, 800)
-						)
-		);
+		recipes.add(new ChemRecipe(1068, "IODINE_EXTRACTION2", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1068)));
 
 		//Potassium chloride + ammonium nitrate = saltpeter/niter
-		recipes.add(new ChemRecipe(1069, "SALTPETER", 200)
-						.inputItems(
-							new ComparableStack(
-								ModItems.ammonium_nitrate
-							)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.POTASSIUM_CHLORIDE, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.niter, 1),
-							new ItemStack(ModItems.ammonium_chloride, 1)
-						)
-
-		);
+		recipes.add(new ChemRecipe(1069, "SALTPETER", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1069)));
 
 		//ammonium chloride + heat -> ammonia + hydrogen chloride
-		recipes.add(new ChemRecipe(1070, "AMMONIUM_CHLORIDE_DECOMPOSITION", 150)
-						.inputItems(
-							new ComparableStack(ModItems.ammonium_chloride, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.ULTRAHOTSTEAM, 1000)
-						)
-						.outputFluids(
-							new FluidStack(Fluids.AMMONIA, 500),
-							new FluidStack(Fluids.HCL, 500)
-						)
-		);
+
+		recipes.add(new ChemRecipe(1070, "AMMONIUM_CHLORIDE_DECOMPOSITION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.ammoniumChlorideDecomposition()));
 
 		//Potassium chloride + sodium nitrate = saltpeter/niter
-		recipes.add(new ChemRecipe(1071, "SALTPETER2", 200)
-						.inputItems(
-							new ComparableStack(ModItems.sodium_nitrate)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.POTASSIUM_CHLORIDE, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.niter, 1),
-							new ItemStack(ModItems.itemsalt, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1071, "SALTPETER2", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1071)));
 
 		//helium capsule
-		recipes.add(new ChemRecipe(1072, "HELIUM_CAPSULE", 50)
-						.inputItems(
-							new ComparableStack(ModItems.particle_empty, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.HELIUM4, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.particle_helium, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1072, "HELIUM_CAPSULE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1072)));
 
 		//neon used to make vaccum tubes
-		recipes.add(new ChemRecipe(1073, "NEON_CAPSULE", 50)
-						.inputItems(
-							new OreDictStack(KEY_ANYPANE),
-							new ComparableStack(ModItems.plate_polymer),
-							new OreDictStack(CARBON.wireFine())
-						)
-						.inputFluids(
-							new FluidStack(Fluids.NEON, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.circuit, 8, ItemCircuit.EnumCircuitType.VACUUM_TUBE.ordinal())
-						)
-		);
+		recipes.add(new ChemRecipe(1073, "NEON_CAPSULE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1073)));
 
 		//fragment_samarium
 		//    ↓ (Chemical Plant + acid)
-		recipes.add(new ChemRecipe(1074, "SAMARIUM_FRAGMENT_REFINEMENT", 200)
-						.inputItems(
-							new ComparableStack(ModItems.fragment_samarium, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.HCL, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.powder_samarium, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1074, "SAMARIUM_FRAGMENT_REFINEMENT", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1074)));
 
 		//fullerene from graphite electrodes + helium
-		recipes.add(new ChemRecipe(1075, "FULLERENE_SYNTHESIS", 600)
-						.inputItems(
-							new ComparableStack(ModItems.arc_electrode, 1, ItemArcElectrode.EnumElectrodeType.GRAPHITE)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.HELIUM4, 2000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.powder_ash, 1 ,
-										  ItemEnums.EnumAshType.SOOT.ordinal() ), //holy shit I hate enums
-							new ItemStack(ModItems.arc_electrode_burnt, 1, ItemArcElectrode.EnumElectrodeType.GRAPHITE.ordinal())
-						)
-						.outputFluids(
-							new FluidStack(Fluids.FULLERENE, 1000)
-						)
-		);
+		recipes.add(new ChemRecipe(1075, "FULLERENE_SYNTHESIS", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1075)));
 
 		//sulfuric acid + europium_dust_tiny = europium solution
-		recipes.add(new ChemRecipe(1076, "EUROPIUM_SOL", 400)
-						.inputItems(
-							new ComparableStack(
-								ModItems.europium_dust_tiny, 9
-							)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.SULFURIC_ACID, 1000)
-						)
-						.outputItems(
-							new ItemStack(
-								ModItems.europiumsol
-							)
-						)
-		);
+		recipes.add(new ChemRecipe(1076, "EUROPIUM_SOL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1076)));
 
 		//gadolinium_dust_tiny into gadolinium concentrate
 		//recipes.add(new ChemRecipe(1077, "GADOLIN_SOL", 400)
@@ -1248,82 +550,25 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 
 		//now gadolinium powder + heat (steam) = liquid gadolinium
-		recipes.add(new ChemRecipe(1077, "GADOLINIUM_LIQUID", 400)
-						.inputItems(
-							new ComparableStack(
-								ModItems.powder_gadolinium, 1
-							)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.ULTRAHOTSTEAM, 1000)
-						)
-						.outputFluids(
-							new FluidStack(Fluids.GADOLINIUM, 1000)
-						)
-		);
+
+		recipes.add(new ChemRecipe(1077, "GADOLINIUM_LIQUID", 1).petroleum(com.hbm.realsim.ChemistryProcesses.gadoliniumMelting()));
 
 		//liquid gadolinium + solvent = gadolinium powder 2
-		recipes.add(new ChemRecipe(1078, "GADOLINIUM_PRECIPITATION", 400)
-						.inputFluids(
-							new FluidStack(Fluids.GADOLINIUM, 1000),
-							new FluidStack(Fluids.SOLVENT, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.powder_gadolinium2, 1)
-						)
-		);
+
+		recipes.add(new ChemRecipe(1078, "GADOLINIUM_PRECIPITATION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.gadoliniumRefining()));
 
 		//terbiumsol + high perf solvent = terbium step toward ingot
 		//Separation: The mixture is leached using acids, (we did this in the crystallizer (leaching reactor))
 		// and specialized solvent extraction or ion-exchange methods are utilized to separate terbium from other (here!)
 		// rare-earth elements.
-		recipes.add(new ChemRecipe(1079, "TERBIUM_SEPARATION", 400)
-						.inputItems(
-							new ComparableStack(
-								ModItems.terbiumsol, 1
-							)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.RADIOSOLVENT, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.powder_terbium2, 1),
-							new ItemStack(ModItems.powder_yttrium_tiny, 1),
-							new ItemStack(ModItems.nugget_th232, 1),
-							new ItemStack(ModItems.nugget_uranium, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1079, "TERBIUM_SEPARATION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1079)));
 
 		//terbium oxidation
-		recipes.add(new ChemRecipe(1080, "TERBIUM_OXIDATION", 400)
-						.inputItems(
-							new ComparableStack(
-								ModItems.powder_terbium2, 1
-							)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.OXYGEN_GAS, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.powder_terbium_oxide, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1080, "TERBIUM_OXIDATION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1080)));
 
 		//Metallothermic Reduction: To obtain metallic terbium, the oxide is converted into terbium fluoride ( //we are here
 		//) or anhydrous chloride, which is then reduced using calcium or lithium metal in a high-temperature vacuum or inert atmosphere.
-		recipes.add(new ChemRecipe(1081, "TERBIUM_FLUORIDE", 400)
-						.inputItems(
-							new ComparableStack(
-								ModItems.powder_terbium_oxide, 1
-							)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.powder_terbium_fluoride, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1081, "TERBIUM_FLUORIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1081)));
 
 						//.inputFluids(
 						//	new FluidStack(Fluids.CALCIUM_SOLUTION, 1000)
@@ -1333,71 +578,16 @@ public class ChemplantRecipes extends SerializableRecipe {
 						//) //no those come later
 
 		//dysprosiumsol + solvent = dysprosium powder 2
-		recipes.add(new ChemRecipe(1082, "DYSPROSIUM_SEPARATION", 400)
-						.inputItems(
-							new ComparableStack(
-								ModItems.dysprosiumsol, 1
-							)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.RADIOSOLVENT, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.powder_dysprosium2, 1),
-							new ItemStack(ModItems.powder_yttrium_tiny, 1),
-							new ItemStack(ModItems.powder_neodymium_tiny, 1),
-							new ItemStack(ModItems.powder_gadolinium2, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1082, "DYSPROSIUM_SEPARATION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1082)));
 
 		//powder_ytterbium_oxide + hydrofluoric acid = powder_ytterbium_fluoride
-		recipes.add(new ChemRecipe(1083, "YTTERBIUM_FLUORIDE", 400)
-						.inputItems(
-							new ComparableStack(
-								ModItems.powder_ytterbium_oxide, 1
-							)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.powder_ytterbium_fluoride, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1083, "YTTERBIUM_FLUORIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1083)));
 
 		//lutetiumsol + solvent = lutetium powder 2
-		recipes.add(new ChemRecipe(1084, "LUTETIUM_SEPARATION", 400)
-						.inputItems(
-							new ComparableStack(
-								ModItems.lutetiumsol, 1
-							)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.RADIOSOLVENT, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.powder_lutetium2, 1),
-							new ItemStack(ModItems.powder_ytterbium_tiny, 1),
-							new ItemStack(ModItems.powder_erbium_tiny, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1084, "LUTETIUM_SEPARATION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1084)));
 
 		//thuliumsol + solvent = thuliumsol2
-		recipes.add(new ChemRecipe(1085, "THULIUM_SEPARATION", 400)
-						.inputItems(
-							new ComparableStack(
-								ModItems.thuliumsol, 1
-							)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.RADIOSOLVENT, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.powder_thulium2, 1),
-							new ItemStack(ModItems.powder_erbium_tiny, 1),
-							new ItemStack(ModItems.powder_ytterbium_tiny, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1085, "THULIUM_SEPARATION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1085)));
 
 		//powder_vanadium + erbium powder tiny = 3 ingot vanadium since erbium can be used to make vanadium
 		recipes.add(new ChemRecipe(1086, "VANADIUM_INGOT", 400)
@@ -1414,33 +604,9 @@ public class ChemplantRecipes extends SerializableRecipe {
 						)
 		);
 
-		recipes.add(new ChemRecipe(1087, "ER_YAG_PRECURSOR", 300)
-						.inputItems(
-							new ComparableStack(ModItems.powder_yttrium, 3),
-							new ComparableStack(ModItems.powder_aluminium, 5),
-							new ComparableStack(ModItems.erbium_powder, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.OXYGEN_GAS, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.er_yag_feedstock)
-						)
-		);
+		recipes.add(new ChemRecipe(1087, "ER_YAG_PRECURSOR", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1087)));
 
-		recipes.add(new ChemRecipe(1088, "YB_YAG_PRECURSOR", 300)
-						.inputItems(
-							new ComparableStack(ModItems.powder_yttrium, 3),
-							new ComparableStack(ModItems.powder_aluminium, 5),
-							new ComparableStack(ModItems.powder_ytterbium, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.OXYGEN_GAS, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.yby_feedstock)
-						)
-		);
+		recipes.add(new ChemRecipe(1088, "YB_YAG_PRECURSOR", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1088)));
 
 		recipes.add(new ChemRecipe(1089, "ZNSE_SYNTHESIS", 200)
 						.inputItems(
@@ -1464,78 +630,17 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//				)
 		//);
 
-		recipes.add(new ChemRecipe(1090, "IR_LASER_GASMIX_1", 200)
-						.inputFluids(
-							new FluidStack(Fluids.NITROGEN_GAS, 500),
-							new FluidStack(Fluids.HELIUM4, 500)
-						)
-						.outputFluids(
-							new FluidStack(Fluids.NITROGEN_HELIUM, 1000)
-						)
-		);
+		recipes.add(new ChemRecipe(1090, "IR_LASER_GASMIX_1", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1090)));
 
-		recipes.add(new ChemRecipe(1091, "IR_LASER_GASMIX_2", 400)
-						.inputFluids(
-							new FluidStack(Fluids.CARBONDIOXIDE, 1000),
-							new FluidStack(Fluids.NITROGEN_HELIUM, 1000)
-						)
-						.outputFluids(
-							new FluidStack(Fluids.CARBONDIOXIDE_NITROGEN_HELIUM, 400)
-						)
-		);
+		recipes.add(new ChemRecipe(1091, "IR_LASER_GASMIX_2", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1091)));
 
-		recipes.add(new ChemRecipe(1092, "KTP_CRYSTAL", 400)
-						.inputItems(
-							new ComparableStack(ModItems.potassium_powder, 1),
-							new ComparableStack(ModItems.ingot_titanium, 1),
-							new ComparableStack(ModItems.ingot_phosphorus, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.FRESH_WATER, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.KTP_crystal, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1092, "KTP_CRYSTAL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1092)));
 
-		recipes.add(new ChemRecipe(1093, "BBO_CRYSTAL", 400)
-						.inputItems(
-							new OreDictStack(BA.ingot(), 1),
-							new OreDictStack(B.ingot(), 2)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.FRESH_WATER, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.BBO_crystal, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1093, "BBO_CRYSTAL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1093)));
 
-		recipes.add(new ChemRecipe(1094, "TITANIUM_SAPPHIRE_CRYSTAL", 400)
-						.inputItems(
-							new ComparableStack(ModItems.gem_sapphire, 1),
-							new ComparableStack(ModItems.ingot_titanium, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.FRESH_WATER, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.titanium_sapphire_crystal, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1094, "TITANIUM_SAPPHIRE_CRYSTAL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1094)));
 
-		recipes.add(new ChemRecipe(1095, "LITHIUM_NIOBATE_CRYSTAL", 400)
-						.inputItems(
-							new ComparableStack(ModItems.lithium, 1),
-							new ComparableStack(ModItems.ingot_niobium, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.FRESH_WATER, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.lithium_niobate_crystal, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1095, "LITHIUM_NIOBATE_CRYSTAL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1095)));
 
 		recipes.add(new ChemRecipe(1096, "VISIBLE_OPTICS_ARRAY", 400)
 						.inputItems(
@@ -1549,33 +654,9 @@ public class ChemplantRecipes extends SerializableRecipe {
 						)
 		);
 
-		recipes.add(new ChemRecipe(1097, "VISIBLE_DOPANT_CRYSTAL", 400)
-						.inputItems(
-							new ComparableStack(ModItems.ingot_praseodymium, 1),
-							new ComparableStack(ModItems.ingot_dysprosium, 1),
-							new ComparableStack(ModItems.ingot_europium, 1),
-							new ComparableStack(ModItems.ingot_terbium, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.FRESH_WATER, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.visible_dopant_crystal, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1097, "VISIBLE_DOPANT_CRYSTAL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1097)));
 
-		recipes.add(new ChemRecipe(1098, "CERIUM_CRYSTAL", 400)
-						.inputItems(
-							new ComparableStack(ModItems.powder_cerium, 1),
-							new ComparableStack(ModBlocks.glass_quartz, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.FRESH_WATER, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.cerium_crystal, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1098, "CERIUM_CRYSTAL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1098)));
 
 		//TWO FLUIDS AT A TIME BECAUSE BOB HATES GOD
 		//recipes.add(new ChemRecipe(1097, "EXCIMER_GASMIX", 400)
@@ -1590,110 +671,24 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//				)
 		//);
 
-		recipes.add(new ChemRecipe(1099, "EXCIMER_GASMIX1", 400)
-						.inputFluids(
-							new FluidStack(Fluids.KRYPTON, 500),
-							new FluidStack(Fluids.FLUORINE, 500)
-						)
-						.outputFluids(
-							new FluidStack(Fluids.KRYPTON_FLUORINE, 200)
-						)
-		);
+		recipes.add(new ChemRecipe(1099, "EXCIMER_GASMIX1", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1099)));
 
-		recipes.add(new ChemRecipe(1100, "EXCIMER_GASMIX2", 400)
-						.inputFluids(
-							new FluidStack(Fluids.XENON, 500),
-							new FluidStack(Fluids.CHLORINE, 500)
-						)
-						.outputFluids(
-							new FluidStack(Fluids.XENON_CHLORINE, 200)
-						)
-		);
-		recipes.add(new ChemRecipe(1101, "EXCIMER_GASMIX3", 400)
-						.inputFluids(
-							new FluidStack(Fluids.XENON_CHLORINE, 500),
-							new FluidStack(Fluids.KRYPTON_FLUORINE, 500)
-						)
-						.outputFluids(
-							new FluidStack(Fluids.EXCIMER_GASMIX, 1000)
-						)
-		);
+		recipes.add(new ChemRecipe(1100, "EXCIMER_GASMIX2", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1100)));
+		recipes.add(new ChemRecipe(1101, "EXCIMER_GASMIX3", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1101)));
 
-		recipes.add(new ChemRecipe(1102, "CALCIUM_FLUORIDE_CRYSTAL", 400)
-						.inputItems(
-							new ComparableStack(ModItems.powder_calcium, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.calcium_fluoride_crystal, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1102, "CALCIUM_FLUORIDE_CRYSTAL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1102)));
 
-		recipes.add(new ChemRecipe(1103, "KDP_CRYSTAL", 400)
-						.inputItems(
-							new ComparableStack(ModItems.potassium_powder, 1),
-							new ComparableStack(ModItems.ingot_phosphorus, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.FRESH_WATER, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.KDP_crystal, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1103, "KDP_CRYSTAL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1103)));
 
-		recipes.add(new ChemRecipe(1104, "CLBO_CRYSTAL", 400)
-						.inputItems(
-							new ComparableStack(ModItems.powder_caesium, 1),
-							new ComparableStack(ModItems.lithium, 1),
-							new ComparableStack(ModItems.powder_boron, 2)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.FRESH_WATER, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.CLBO_crystal, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1104, "CLBO_CRYSTAL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1104)));
 
-		recipes.add(new ChemRecipe(1105, "LBO_CRYSTAL", 400)
-						.inputItems(
-							new ComparableStack(ModItems.lithium, 1),
-							new ComparableStack(ModItems.powder_boron, 3)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.FRESH_WATER, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.LBO_crystal, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1105, "LBO_CRYSTAL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1105)));
 
 		//tritium into helium 3 (small amount)
-		recipes.add(new ChemRecipe(1106, "TRITIUM_DECAY", 400)
-						.inputFluids(
-							new FluidStack(Fluids.TRITIUM, 1000)
-						)
-						.outputFluids(
-							new FluidStack(Fluids.HELIUM3, 5)
-						)
-		); //WILL BE USED IN NUCLEAR FUSION!!!
+		// 1106 retired: a chemical template cannot instantly age tritium into its daughter isotope. //WILL BE USED IN NUCLEAR FUSION!!!
 
 		//zircon into hafnium + zirconium
-		recipes.add(new ChemRecipe(1107, "ZIRCONIUM_HAFNIUM_SEPARATION", 400)
-						.inputItems(
-							new ComparableStack(ModItems.powder_zircon, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.nugget_hafnium, 1),
-							new ItemStack(ModItems.powder_zirconium, 1)
-						)
-		);
+		recipes.add(new ChemRecipe(1107, "ZIRCONIUM_HAFNIUM_SEPARATION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1107)));
 
 		//HALEU1975 / HALEU15 / LEU5
 		//
@@ -1701,120 +696,31 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//trace transuranics
 		//fission waste
 		//maybe krypton/xenon byproduct fluid later
-		recipes.add(new ChemRecipe(1108, "PBR_URAN_REPROCESS", 400)
-						.inputItems(
-							new ComparableStack(ModItems.powder_spent_haleu, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.nugget_u235, 2),
-							new ItemStack(ModItems.powder_plutonium, 1),
-							new ItemStack(ModItems.nugget_neptunium),
-							new ItemStack(ModItems.nuclear_waste, 2)
-						)
-						.outputFluids(
-							new FluidStack(Fluids.XENON, 100),
-							new FluidStack(Fluids.KRYPTON, 50)
-
-						)
-		);
+		recipes.add(new ChemRecipe(1108, "PBR_URAN_REPROCESS", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1108)));
 
 		//powder_spent_leu
-		recipes.add(new ChemRecipe(1109, "LEU_REPROCESS", 400)
-						.inputItems(
-							new ComparableStack(ModItems.powder_spent_leu, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.powder_uranium, 1),
-							new ItemStack(ModItems.nugget_u235),
-							new ItemStack(ModItems.nugget_neptunium),
-							new ItemStack(ModItems.nuclear_waste)
-						)
-						.outputFluids(
-							new FluidStack(Fluids.XENON, 100),
-							new FluidStack(Fluids.KRYPTON, 50)
-
-						)
-		);
+		recipes.add(new ChemRecipe(1109, "LEU_REPROCESS", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1109)));
 
 		//TH232
 		//
 		//mostly thorium left
 		//bred U-233 traces
 		//some waste
-		recipes.add(new ChemRecipe(1110, "THORIUM_REPROCESS", 400)
-						.inputItems(
-							new ComparableStack(ModItems.powder_spent_thorium, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.powder_thorium, 1),
-							new ItemStack(ModItems.nugget_u233, 2),
-							//new ItemStack(ModItems.nugget_americium_fuel),
-							new ItemStack(ModItems.nuclear_waste, 2)
-						)
-						.outputFluids(
-							new FluidStack(Fluids.XENON, 100),
-							new FluidStack(Fluids.KRYPTON, 50)
-
-						)
-		);
+		recipes.add(new ChemRecipe(1110, "THORIUM_REPROCESS", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1110)));
 
 		//U233
 		//
 		//recovered U-233
 		//nasty fission products
 		//high rad value
-		recipes.add(new ChemRecipe(1111, "U233_REPROCESS", 400)
-						.inputItems(
-							new ComparableStack(ModItems.powder_spent_u233, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.nugget_u233, 1),
-							new ItemStack(ModItems.nugget_neptunium),
-							//new ItemStack(ModItems.nugget_americium_fuel),
-							new ItemStack(ModItems.nuclear_waste, 3)
-						)
-						.outputFluids(
-							new FluidStack(Fluids.XENON, 100),
-							new FluidStack(Fluids.KRYPTON, 50)
-						)
-		);
+		recipes.add(new ChemRecipe(1111, "U233_REPROCESS", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1111)));
 
 		//MOX241
 		//
 		//plutonium-rich recycle stream
 		//americium traces
 		//very radioactive waste
-		recipes.add(new ChemRecipe(1112, "MOX_REPROCESS", 400)
-						.inputItems(
-							new ComparableStack(ModItems.powder_spent_mox, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.HYDROFLUORIC_ACID, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.powder_plutonium, 2),
-							new ItemStack(ModItems.nugget_americium_fuel, 2),
-							new ItemStack(ModItems.nugget_neptunium),
-							new ItemStack(ModItems.nuclear_waste)
-						)
-						.outputFluids(
-							new FluidStack(Fluids.XENON, 150),
-							new FluidStack(Fluids.KRYPTON, 50)
-
-						)
-		);
+		recipes.add(new ChemRecipe(1112, "MOX_REPROCESS", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1112)));
 
 
 		//non fuel pellets
@@ -1884,23 +790,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//
 		//depleted uranium powder
 		//maybe slightly “activated” DU
-		recipes.add(new ChemRecipe(1116, "DU_ABSORBER_REPROCESS", 400)
-						.inputItems(
-							new ComparableStack(ModItems.powder_du_spent, 1)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.HYDROFLUORIC_ACID, 500)
-						)
-						.outputItems(
-							new ItemStack(ModItems.nugget_u238, 8),
-							new ItemStack(ModItems.nugget_plutonium),
-							new ItemStack(ModItems.nugget_neptunium),
-							new ItemStack(ModItems.nuclear_waste)
-						)
-						//.outputFluids(
-						//	new FluidStack(Fluids.XENON, 200)
-						//)
-		);
+		recipes.add(new ChemRecipe(1116, "DU_ABSORBER_REPROCESS", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1116)));
 
 		// Cooled PWR fuel is dissolved and separated here rather than being magically
 		// isotope-sorted by the mechanical centrifuge.  These are deliberately bulk
@@ -1941,72 +831,25 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 		// UNSATURATEDS is the game's mixed light-olefin stream; this is an intentionally
 		// compact ethylene-polymerization route rather than a claim that every component polymerizes.
-		recipes.add(new ChemRecipe(1130, "POLYETHYLENE", 100)
-				.inputFluids(new FluidStack(Fluids.UNSATURATEDS, 1_000))
-				.outputFluids(new FluidStack(Fluids.POLYTHYLENE, 1_000)));
+
+		recipes.add(new ChemRecipe(1130, "POLYETHYLENE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1130)));
 
 		// Amine sweetening and regeneration are abstracted here; the amine solvent is recycled internally.
 		recipes.add(new ChemRecipe(1142, "SOUR_GAS_SWEETENING", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.sweetening()));
 		//I am losing my fucking sanity
 
-		recipes.add(new ChemRecipe(1143, "NITRE_BED", 1200)
-						.inputItems(
-							new OreDictStack("treeLeaves", 8),
-							new ComparableStack(ModItems.powder_fertilizer, 2)
-						)
-						.inputFluids(new FluidStack(Fluids.FRESH_WATER, 1000))
-						.outputItems(new ItemStack(ModItems.niter, 8))
-		);
+		// 1143: obsolete biological nitrate shortcut; retained template IDs resolve as unavailable.
 
 
-		recipes.add(new ChemRecipe(1144, "NITRE_BED2", 1200)
-						.inputItems(
-							new ComparableStack(ModItems.biomass),
-							new ComparableStack(ModItems.powder_fertilizer, 2)
-						)
-						.inputFluids(new FluidStack(Fluids.FRESH_WATER, 1000))
-						.outputItems(new ItemStack(ModItems.niter, 8))
-		);
+		// 1144: obsolete biological nitrate shortcut; retained template IDs resolve as unavailable.
 
-		recipes.add(new ChemRecipe(1145, "WATER_TREATMENT", 100)
-						.inputFluids(
-							new FluidStack(Fluids.WATER, 1000)
-						)
-						.outputFluids(
-							new FluidStack(Fluids.FRESH_WATER, 900),
-							new FluidStack(Fluids.BRINE, 100)
-						)
-		);
+		recipes.add(new ChemRecipe(1145, "WATER_TREATMENT", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1145)));
 
-		recipes.add(new ChemRecipe(1146, "WATER_DEMINERALIZATION", 100)
-						.inputFluids(
-							new FluidStack(Fluids.FRESH_WATER, 1000)
-						)
-						.outputFluids(
-							new FluidStack(Fluids.LIGHT_WATER, 1000)
-						)
-		);
+		recipes.add(new ChemRecipe(1146, "WATER_DEMINERALIZATION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1146)));
 
-		recipes.add(new ChemRecipe(1147, "BORATED_WATER", 100)
-						.inputItems(
-							new ComparableStack(ModItems.powder_boron)
-						)
-						.inputFluids(
-							new FluidStack(Fluids.LIGHT_WATER, 1000)
-						)
-						.outputFluids(
-							new FluidStack(Fluids.BORATED_WATER, 1000)
-						)
-		);
+		recipes.add(new ChemRecipe(1147, "BORATED_WATER", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1147)));
 
-		recipes.add(new ChemRecipe(1148, "BRINE_EVAPORATION", 100)
-						.inputFluids(
-							new FluidStack(Fluids.BRINE, 1000)
-						)
-						.outputItems(
-							new ItemStack(ModItems.itemsalt, 16)
-						)
-		);
+		recipes.add(new ChemRecipe(1148, "BRINE_EVAPORATION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1148)));
 
 		//Methylamine (CH{3} NH{2})
 		//recipes.add(new ChemRecipe(1145, "METHYLAMINE", 1200)
@@ -2038,8 +881,50 @@ public class ChemplantRecipes extends SerializableRecipe {
         recipes.add(new ChemRecipe(1155, "BITUMEN_MELTING", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.tarMelting("TAR_CRUDE_ITEM", "BITUMEN")));
         recipes.add(new ChemRecipe(1156, "COAL_TAR_MELTING", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.tarMelting("TAR_COAL_ITEM", "COALCREOSOTE")));
         recipes.add(new ChemRecipe(1157, "WOOD_TAR_MELTING", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.tarMelting("TAR_WOOD_ITEM", "WOODOIL")));
+        recipes.add(new ChemRecipe(1177, "BORIC_ACID", 1).petroleum(com.hbm.realsim.ChemistryProcesses.boricAcid()));
+        recipes.add(new ChemRecipe(1178, "MINERAL_BRINE_SEPARATION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.mineralBrineSeparation()));
+        recipes.add(new ChemRecipe(1179, "LITHIUM_CARBONATE", 1).petroleum(com.hbm.realsim.MineralChemicalProcesses.lithiumCarbonate()));
+        recipes.add(new ChemRecipe(1180, "LITHIUM_CHLORIDE", 1).petroleum(com.hbm.realsim.MineralChemicalProcesses.lithiumChloride()));
+        recipes.add(new ChemRecipe(1181, "RAW_GAS_SEPARATION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.rawGasRecovery()));
+        recipes.add(new ChemRecipe(1173, "TANTALUM_REDUCTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1173)));
+        recipes.add(new ChemRecipe(1174, "NIOBIUM_REDUCTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1174)));
+        recipes.add(new ChemRecipe(1175, "ALUMINA_REDUCTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1175)));
+        recipes.add(new ChemRecipe(1176, "CALCIUM_DRYING", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1176)));
+        recipes.add(new ChemRecipe(1171, "XYLENE_PRODUCTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.xylene()));
+        recipes.add(new ChemRecipe(1172, "SYNGAS_SEPARATION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.syngasSeparation()));
+        recipes.add(new ChemRecipe(1163, "SULFUR_METERING", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1163)));
+        recipes.add(new ChemRecipe(1164, "BUTADIENE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1164)));
+        recipes.add(new ChemRecipe(1165, "PHENOL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1165)));
+        recipes.add(new ChemRecipe(1166, "FORMALDEHYDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1166)));
+        recipes.add(new ChemRecipe(1167, "BISPHENOL_A", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1167)));
+        recipes.add(new ChemRecipe(1168, "BENZENE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1168)));
+        recipes.add(new ChemRecipe(1169, "PHENYLENEDIAMINE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1169)));
+        recipes.add(new ChemRecipe(1170, "TEREPHTHALOYL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1170)));
+        recipes.add(new ChemRecipe(1162, "POTASSIUM_IODIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.potashLyeMelting()));
+        recipes.add(new ChemRecipe(1161, "TEL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.additiveDoses()));
+        recipes.add(new ChemRecipe(1160, "SODIUM_HYDROXIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.meltLye()));
+        recipes.add(new ChemRecipe(1159, "PHOSGENE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.phosgene()));
         recipes.add(new ChemRecipe(1158, "CRACK_TAR_MELTING", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.tarMelting("TAR_CRACK_ITEM", "CRACKOIL")));
-    }
+
+        recipes.add(new ChemRecipe(1182, "BERYLLIUM_FLUORIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1182)));
+        recipes.add(new ChemRecipe(1183, "BERYLLIUM_REDUCTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1183)));
+        recipes.add(new ChemRecipe(1184, "ZIRCONIUM_REDUCTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1184)));
+        recipes.add(new ChemRecipe(1185, "HAFNIUM_REDUCTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1185)));
+        recipes.add(new ChemRecipe(1186, "FULLERENE_RECOVERY", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1186)));
+        recipes.add(new ChemRecipe(1187, "LITHIUM_FLUORIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1187)));
+        recipes.add(new ChemRecipe(1188, "THORIUM_FLUORIDE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1188)));
+        recipes.add(new ChemRecipe(1189, "FLUORIDE_FUEL_SALT", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1189)));
+        recipes.add(new ChemRecipe(1190, "TOLUENE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1190)));
+        recipes.add(new ChemRecipe(1191, "GLYCEROL", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1191)));
+        recipes.add(new ChemRecipe(1192, "HEXAMINE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1192)));
+        recipes.add(new ChemRecipe(1193, "RDX", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1193)));
+        recipes.add(new ChemRecipe(1194, "NITROCELLULOSE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1194)));
+        recipes.add(new ChemRecipe(1195, "NITROGLYCERIN", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1195)));
+        recipes.add(new ChemRecipe(1196, "BLISTER_COMPOUND", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1196)));
+        recipes.add(new ChemRecipe(1197, "PERTECHNETATE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1197)));
+        recipes.add(new ChemRecipe(1198, "DICYANOACETYLENE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1198)));
+        recipes.add(new ChemRecipe(1199, "EGG_SEPARATION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1199)));
+}
 
 	private static void registerPwrReprocessing(int id, String name, EnumPWRFuel fuel, int uranium, int plutonium, boolean zirconiumCladding) {
 		List<ItemStack> outputs = new ArrayList<ItemStack>();
@@ -2071,10 +956,7 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(32, "BP_BIOFUEL", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.blend("BIOFUEL", "SUNFLOWEROIL", 4, "ETHANOL", 1)));
 		recipes.add(new ChemRecipe(33, "LPG", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.gasRecovery()));
 		recipes.add(new ChemRecipe(34, "OIL_SAND", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.oilSand()));
-		recipes.add(new ChemRecipe(35, "ASPHALT", 100)
-				.inputItems(new ComparableStack(Blocks.gravel, 2), new OreDictStack(KEY_SAND, 6))
-				.inputFluids(new FluidStack(1000, Fluids.BITUMEN))
-				.outputItems(new ItemStack(ModBlocks.asphalt, 16)));
+		recipes.add(new ChemRecipe(35, "ASPHALT", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(35)));
 	}
 
 	public static class ChemRecipe {
@@ -2092,6 +974,9 @@ public class ChemplantRecipes extends SerializableRecipe {
 		public int oxygenConsumption = 0; // How much oxygen the recipe consumes from the atmosphere per tick while processing
 
 		public ChemRecipe(int index, String name, int duration) {
+            this(index, name, duration, true);
+        }
+        private ChemRecipe(int index, String name, int duration, boolean register) {
 			this.id = index;
 			this.name = name;
 			this.duration = duration;
@@ -2099,9 +984,12 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 			this.inputs = new AStack[4];
 			this.outputs = new ItemStack[4];
-			this.inputFluids = new FluidStack[2];
-			this.outputFluids = new FluidStack[2];
+			this.inputFluids = new FluidStack[4];
+			this.outputFluids = new FluidStack[4];
 
+            if(register) register();
+        }
+        private void register() {
 			if(!indexMapping.containsKey(id)) {
 				indexMapping.put(id, this);
 				recipeGeneration++;
@@ -2137,18 +1025,15 @@ public class ChemplantRecipes extends SerializableRecipe {
 
         public ChemRecipe petroleum(com.hbm.realsim.ProcessRecipe bill) {
             com.hbm.realsim.ChemicalFuelProcesses.validateRating(bill);
+            int fluidProducts = 0, solidProducts = 0;
+            for(String product : bill.outputs) if(!product.startsWith("VENT_")) {
+                if(com.hbm.realsim.PhysicalRegistry.get(product).phase == com.hbm.realsim.PhysicalState.Phase.SOLID) solidProducts++; else fluidProducts++;
+            }
+            if(bill.inputs.length > 4 || fluidProducts > 4 || solidProducts > 4) throw new IllegalArgumentException("Chemical Reactor bill exceeds its four feed/coproduct/solid ports");
             physicalBill = bill; duration = bill.duration; physicalPowerQuanta = Math.max(1L, com.hbm.realsim.PetroleumProcesses.ceilDiv(bill.workQuanta, bill.duration));
-            inputs = new AStack[4]; outputs = new ItemStack[4]; inputFluids = new FluidStack[2]; outputFluids = new FluidStack[2];
+            inputs = new AStack[4]; outputs = new ItemStack[4]; inputFluids = new FluidStack[4]; outputFluids = new FluidStack[4];
             for(int i = 0; i < bill.inputs.length; i++) inputFluids[i] = new FluidStack(Fluids.fromName(bill.inputs[i]), bill.quantities[i], bill.pressures[i]);
-            if(bill.solidCount > 0) inputs[0] = bill.solidInput.equals("BIOMASS_ITEM") ? new ComparableStack(ModItems.biomass, bill.solidCount) : bill.solidInput.equals("FUEL_ADDITIVE_ITEM") ? new ComparableStack(ModItems.fuel_additive, bill.solidCount)
-                    : bill.solidInput.equals("LEAD_ITEM") ? new OreDictStack(PB.dust(), bill.solidCount)
-                    : bill.solidInput.equals("OIL_SAND_BLOCK") ? new ComparableStack(ModBlocks.ore_oil_sand, bill.solidCount)
-                    : bill.solidInput.equals("SUGAR_ITEM") ? new ComparableStack(Items.sugar, bill.solidCount)
-                    : bill.solidInput.equals("FISH_FEED_ITEM") ? new ComparableStack(Items.fish, bill.solidCount, net.minecraftforge.oredict.OreDictionary.WILDCARD_VALUE)
-                    : bill.solidInput.equals("SEED_FEED_ITEM") ? new ComparableStack(Blocks.double_plant, bill.solidCount, 0)
-                    : bill.solidInput.startsWith("TAR_") ? new ComparableStack(ModItems.oil_tar, bill.solidCount, (bill.solidInput.equals("TAR_CRUDE_ITEM") ? ItemEnums.EnumTarType.CRUDE : bill.solidInput.equals("TAR_COAL_ITEM") ? ItemEnums.EnumTarType.COAL : bill.solidInput.equals("TAR_WOOD_ITEM") ? ItemEnums.EnumTarType.WOOD : ItemEnums.EnumTarType.CRACK).ordinal())
-                    : bill.solidInput.equals("WOOD_LOG") ? new OreDictStack(KEY_LOG, bill.solidCount)
-                    : new OreDictStack(COAL.dust(), bill.solidCount);
+            for(int i = 0; i < bill.solidInputs.length; i++) inputs[i] = com.hbm.realsim.ProcessMachine.feed(bill.solidInputs[i], bill.solidCounts[i]);
             int fluid = 0, solid = 0;
             for(int i = 0; i < bill.outputs.length; i++) {
                 String name = bill.outputs[i]; if(name.startsWith("VENT_")) continue;
@@ -2192,16 +1077,18 @@ public class ChemplantRecipes extends SerializableRecipe {
 		int id = obj.get("id").getAsInt();
 		String name = obj.get("name").getAsString();
 		int duration = obj.get("duration").getAsInt();
+        if(!obj.has("physical") && (com.hbm.realsim.ChemistryProcesses.reactorRequiresBill(id) || id == 59 || id == 60 || id == 1143 || id == 1144 || id == 1106)) throw new IllegalArgumentException("Released chemistry template " + id + " requires a physical bill; regenerate defaults");
 
-		recipes.add(new ChemRecipe(id, name, duration)
+		ChemRecipe parsed = new ChemRecipe(id, name, duration, false)
 				.inputFluids(	readFluidArray(		(JsonArray) obj.get("fluidInput")))
 				.inputItems(	readAStackArray(		(JsonArray) obj.get("itemInput")))
 				.outputFluids(	readFluidArray(		(JsonArray) obj.get("fluidOutput")))
-				.outputItems(	readItemStackArray(	(JsonArray) obj.get("itemOutput"))));
-		if(obj.has("physical")) recipes.get(recipes.size() - 1).petroleum(com.hbm.realsim.PetroleumProcesses.read(obj));
-        if(!obj.has("physical")) for(FluidStack out : recipes.get(recipes.size() - 1).outputFluids)
-            if(out != null && com.hbm.realsim.ChemicalFuelProcesses.requiresBill(out.type.getName())) throw new IllegalArgumentException("Fuel-producing reactor JSON requires a physical bill");
-        if(obj.has("physicalPowerQuanta")) recipes.get(recipes.size() - 1).physicalPowerQuanta = Math.max(0L, obj.get("physicalPowerQuanta").getAsLong());
+				.outputItems(	readItemStackArray(	(JsonArray) obj.get("itemOutput")));
+		if(obj.has("physical")) parsed.petroleum(com.hbm.realsim.PetroleumProcesses.read(obj));
+        if(!obj.has("physical")) for(FluidStack out : parsed.outputFluids)
+            if(out != null && com.hbm.realsim.ChemistryProcesses.requiresBillForOutput(out.type.getName())) throw new IllegalArgumentException("Released fluid reactor JSON requires a physical bill");
+        if(!obj.has("physical") && obj.has("physicalPowerQuanta")) parsed.physicalPowerQuanta = Math.max(0L, obj.get("physicalPowerQuanta").getAsLong());
+        parsed.register(); recipes.add(parsed);
 	}
 
 	@Override

@@ -58,11 +58,8 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 		//complex tool steel
 		addRecipe(ModItems.ingot_zinc, ModItems.ingot_dura_steel, new ItemStack(ModItems.powder_desh, 1));
 
-		//stainless steel metallurgy
-		addRecipe(NI,			STEEL,										new ItemStack(ModItems.ingot_stainless, 2));
-		addRecipe(CE, 			STEEL,										new ItemStack(ModItems.ingot_stainless, 1));
-		addRecipe(Cr, 			STEEL,										new ItemStack(ModItems.ingot_stainless, 3));
-		addRecipe(ModItems.powder_ytterbium_tiny, 			STEEL,										new ItemStack(ModItems.ingot_stainless, 12));
+		// Chromium supplies stainless corrosion resistance; nickel/rare earths alone cannot.
+		addRecipe(new OreDictStack(STEEL.ingot(), 7), Cr.ingot(), new ItemStack(ModItems.ingot_stainless, 8));
 
 		addRecipe(ModItems.er_yag_feedstock, COAL, new ItemStack(ModItems.er_yag_sintered));
 		addRecipe(ModItems.yby_feedstock, COAL, new ItemStack(ModItems.yby_sintered));
@@ -94,14 +91,12 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 
 		//antimony from antimony_trioxide + ingot_carbon
 		addRecipe(ModItems.powder_antimony_trioxide, ModItems.ingot_graphite, new ItemStack(ModItems.nugget_antimony, 1));
-		//inverse
-		addRecipe(ModItems.nugget_antimony, ModItems.ingot_graphite, new ItemStack(ModItems.powder_antimony_trioxide, 1));
 
 		//tellurium from tellurium_dioxide + ingot_carbon
 		addRecipe(ModItems.powder_tellurium_dioxide, ModItems.ingot_graphite, new ItemStack(ModItems.nugget_tellurium, 1));
 
 		addRecipe(CU,									REDSTONE,										new ItemStack(ModItems.ingot_red_copper, 2));
-		addRecipe(CU,									Te.nugget(),										new ItemStack(ModItems.ingot_red_copper, 3));
+		addRecipe(CU,									Te.nugget(),										new ItemStack(ModItems.ingot_red_copper, 1));
 		//steel copper alloy
 		addRecipe(STEEL,								MINGRADE,										new ItemStack(ModItems.ingot_advanced_alloy, 2));
 		addRecipe(W,									COAL,											new ItemStack(ModItems.neutron_reflector, 2));
@@ -266,10 +261,26 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 		boolean flag = false;
 		byte i = 0;
 		while(!flag && i < recipe.length) {
-			flag = recipe[i].matchesRecipe(in, true);
+			flag = recipe[i].matchesRecipe(in, false);
 			i++;
 		}
 		return flag;
+	}
+
+	/** Counts of the matched stock/configured bill in the actual input order. */
+	public static int[] getInputAmounts(ItemStack in1, ItemStack in2) {
+		for(Triplet<Object, Object, ItemStack> recipe : blastFurnaceRecipes) {
+			AStack[] first = getRecipeStacks(recipe.getX()), second = getRecipeStacks(recipe.getY());
+			int a = matchingAmount(first, in1), b = matchingAmount(second, in2);
+			if(a > 0 && b > 0) return new int[] {a, b};
+			a = matchingAmount(second, in1); b = matchingAmount(first, in2);
+			if(a > 0 && b > 0) return new int[] {a, b};
+		}
+		return null;
+	}
+	private static int matchingAmount(AStack[] inputs, ItemStack stack) {
+		for(AStack input : inputs) if(input.matchesRecipe(stack, false)) return input.stacksize;
+		return 0;
 	}
 
 	private static AStack[] getRecipeStacks(Object in) {

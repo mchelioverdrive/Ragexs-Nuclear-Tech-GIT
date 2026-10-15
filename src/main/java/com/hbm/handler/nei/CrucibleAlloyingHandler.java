@@ -85,7 +85,7 @@ public class CrucibleAlloyingHandler extends SafeTemplateRecipeHandler implement
 
 	@Override
 	public String getRecipeName() {
-		return "Crucible Alloying";
+		return "Foundry Alloying";
 	}
 
 	@Override

@@ -95,12 +95,7 @@ public class TileEntityDiFurnaceRTG extends TileEntityMachineBase implements IGU
 			return true;
 		else if (!slots[2].isItemEqual(recipeResult))
 			return false;
-		else if (slots[2].stackSize + recipeResult.stackSize > getInventoryStackLimit())
-			return false;
-		else if (slots[2].stackSize < getInventoryStackLimit() && slots[2].stackSize < slots[2].getMaxStackSize())
-			return true;
-		else
-			return slots[2].stackSize < recipeResult.getMaxStackSize();
+		return slots[2].stackSize + recipeResult.stackSize <= Math.min(getInventoryStackLimit(), recipeResult.getMaxStackSize());
 	}
 	
 	@Override
@@ -140,18 +135,15 @@ public class TileEntityDiFurnaceRTG extends TileEntityMachineBase implements IGU
 		if(canProcess()) {
 			ItemStack recipeOut = runtimeRecipeOutput;
 			if(recipeOut == null) return;
+			int[] amounts = BlastFurnaceRecipes.getInputAmounts(slots[0], slots[1]);
+			if(amounts == null) return;
 			if(slots[2] == null)
 				slots[2] = recipeOut.copy();
 			else if(slots[2].isItemEqual(recipeOut))
 				slots[2].stackSize += recipeOut.stackSize;
 
 			for(int i = 0; i < 2; i++) {
-				if(slots[i].stackSize <= 0)
-					slots[i] = new ItemStack(slots[i].getItem().setFull3D());
-				else
-					slots[i].stackSize--;
-				if(slots[i].stackSize <= 0)
-					slots[i] = null;
+				this.decrStackSize(i, amounts[i]);
 			}
 			markDirty();
 			this.refreshRecipe();

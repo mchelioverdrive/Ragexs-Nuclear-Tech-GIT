@@ -21,21 +21,7 @@ public class DairyHandler extends NEIUniversalHandler {
 
     public static HashMap<Object, Object> getDairyRecipesForNEI() {
 
-		HashMap<Object, Object> recipes = new HashMap<>();
-        
-        ItemStack[] in = new ItemStack[] {
-            ItemFluidIcon.make(Fluids.MILK, 100),
-        };
-
-        ItemStack[] out = new ItemStack[] {
-            ItemFluidIcon.make(Fluids.EMILK, 50),
-            ItemFluidIcon.make(Fluids.CMILK, 35),
-            ItemFluidIcon.make(Fluids.CREAM, 15),
-        };
-
-        recipes.put(in, out);
-
-        return recipes;
+        return com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.display(java.util.Collections.singletonMap("MILK",com.hbm.realsim.AncillaryProcesses.dairy()));
 	}
     
 }

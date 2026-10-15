@@ -634,7 +634,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
     @Override public long getMachineDemandWatts() { return usesSteamLedger() ? powerRequirementBase * 10L : operatingPowerWatts > 0 ? operatingPowerWatts : powerRequirementBase * 10L; }
     @Override public long getMachineCurrentDrawWatts() { return usesSteamLedger() ? steamAccount.currentWorkQuanta * 10L : isOn ? getMachineDemandWatts() : 0; }
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
-        lines.add("Physical compression pays recipe work; network pressure class is distinct from vessel pressure");
+        lines.add("Compresses compatible gases or upgrades steam; requires electrical work");
         if(cachedRecipe != null && cachedRecipe.workQuanta > 0) lines.add("Batch compression work: " + api.hbm.energymk2.EnergyUnits.formatJoules(cachedRecipe.workQuanta));
     }
 }

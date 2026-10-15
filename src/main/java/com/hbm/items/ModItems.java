@@ -646,6 +646,22 @@ public class ModItems {
 	public static Item quicklime;
 
 	public static Item sodium_sulfate;
+	public static Item sulfur_dose, bisphenol_a, terephthaloyl_chloride, phenylenediamine;
+	public static Item rare_earth_residue;
+	public static Item boric_acid;
+    public static Item aggregate_coarse, aggregate_fine;
+    public static Item spent_lithium_target;
+    public static Item hexamine, rdx_powder, nitrocellulose;
+    public static Item zirconium_oxide, hafnium_oxide, lithium_fluoride, thorium_fluoride;
+    public static Item beryllium_oxide, beryllium_fluoride, magnesium_fluoride, process_residue, radium_residue, regolith_feed;
+    public static Item lithium_sulfate, lithium_carbonate;
+	public static Item caustic_soda;
+	public static Item tantalum_oxide, niobium_oxide;
+	public static Item powder_alumina;
+	public static Item barium_aluminate;
+	public static Item potassium_iodate;
+	public static Item caustic_potash;
+	public static Item fuel_additive_dose;
 	public static Item sodium_sulfide;
 	public static Item potassium_sulfate;
 
@@ -910,6 +926,7 @@ public class ModItems {
 
 
 	public static Item chunk_ironoxide;
+	public static Item powder_hematite;
 	public static Item chunk_coppersulfide;
 	public static Item powder_vanadium;
 
@@ -3582,6 +3599,38 @@ public class ModItems {
 
 
 		sodium_sulfate = new Item().setUnlocalizedName("sodium_sulfate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
+		potassium_iodate = new Item().setUnlocalizedName("potassium_iodate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+		barium_aluminate = new Item().setUnlocalizedName("barium_aluminate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+		tantalum_oxide = new Item().setUnlocalizedName("tantalum_oxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+		niobium_oxide = new Item().setUnlocalizedName("niobium_oxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+		powder_alumina = new Item().setUnlocalizedName("powder_alumina").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+		sulfur_dose = new Item().setUnlocalizedName("sulfur_dose").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+		bisphenol_a = new Item().setUnlocalizedName("bisphenol_a").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+		terephthaloyl_chloride = new Item().setUnlocalizedName("terephthaloyl_chloride").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+		phenylenediamine = new Item().setUnlocalizedName("phenylenediamine").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+		rare_earth_residue = new Item().setUnlocalizedName("rare_earth_residue").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+		boric_acid = new Item().setUnlocalizedName("boric_acid").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+        zirconium_oxide = new Item().setUnlocalizedName("zirconium_oxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+        hexamine = new Item().setUnlocalizedName("hexamine").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+        rdx_powder = new Item().setUnlocalizedName("rdx_powder").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+        nitrocellulose = new Item().setUnlocalizedName("nitrocellulose").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+        spent_lithium_target = new Item().setHasSubtypes(true).setUnlocalizedName("spent_lithium_target").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lithium");
+        lithium_fluoride = new Item().setUnlocalizedName("lithium_fluoride").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+        thorium_fluoride = new Item().setUnlocalizedName("thorium_fluoride").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+        hafnium_oxide = new Item().setUnlocalizedName("hafnium_oxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+        beryllium_oxide = new Item().setUnlocalizedName("beryllium_oxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+        beryllium_fluoride = new Item().setUnlocalizedName("beryllium_fluoride").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+        magnesium_fluoride = new Item().setUnlocalizedName("magnesium_fluoride").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+        process_residue = new Item().setUnlocalizedName("process_residue").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+        radium_residue = new Item().setUnlocalizedName("radium_residue").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+        regolith_feed = new Item().setUnlocalizedName("regolith_feed").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+        aggregate_coarse = new Item().setUnlocalizedName("aggregate_coarse").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_flux");
+        aggregate_fine = new Item().setUnlocalizedName("aggregate_fine").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+        lithium_sulfate = new Item().setUnlocalizedName("lithium_sulfate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+        lithium_carbonate = new Item().setUnlocalizedName("lithium_carbonate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+		caustic_soda = new Item().setUnlocalizedName("caustic_soda").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+		caustic_potash = new Item().setUnlocalizedName("caustic_potash").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_quartz");
+		fuel_additive_dose = new Item().setUnlocalizedName("fuel_additive_dose").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fuel_additive");
 		sodium_sulfide = new Item().setUnlocalizedName("sodium_sulfide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_sodium");
 		potassium_sulfate = new ItemFertilizer().setUnlocalizedName("potassium_sulfate").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":item_salt");
 
@@ -3820,6 +3869,7 @@ public class ModItems {
 
 		//why the fuck did you need enums... bobcat moment!
 		chunk_ironoxide = new Item().setUnlocalizedName("chunk_ironoxide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_iron");
+		powder_hematite = new Item().setUnlocalizedName("powder_hematite").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_iron");
 		chunk_coppersulfide = new Item().setUnlocalizedName("chunk_coppersulfide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_copper");
 		powder_vanadium = new Item().setUnlocalizedName("powder_vanadium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_vanadium");
 		chunk_leadzincsulfide = new Item().setUnlocalizedName("chunk_leadzincsulfide").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_lead");
@@ -7852,6 +7902,38 @@ public class ModItems {
 		GameRegistry.registerItem(magnesium_chloride, magnesium_chloride.getUnlocalizedName());
 
 		GameRegistry.registerItem(sodium_sulfate, sodium_sulfate.getUnlocalizedName());
+		GameRegistry.registerItem(potassium_iodate, potassium_iodate.getUnlocalizedName());
+		GameRegistry.registerItem(barium_aluminate, barium_aluminate.getUnlocalizedName());
+		GameRegistry.registerItem(tantalum_oxide, tantalum_oxide.getUnlocalizedName());
+		GameRegistry.registerItem(niobium_oxide, niobium_oxide.getUnlocalizedName());
+		GameRegistry.registerItem(powder_alumina, powder_alumina.getUnlocalizedName());
+		GameRegistry.registerItem(sulfur_dose, sulfur_dose.getUnlocalizedName());
+		GameRegistry.registerItem(bisphenol_a, bisphenol_a.getUnlocalizedName());
+		GameRegistry.registerItem(terephthaloyl_chloride, terephthaloyl_chloride.getUnlocalizedName());
+		GameRegistry.registerItem(phenylenediamine, phenylenediamine.getUnlocalizedName());
+		GameRegistry.registerItem(rare_earth_residue, rare_earth_residue.getUnlocalizedName());
+		GameRegistry.registerItem(boric_acid, boric_acid.getUnlocalizedName());
+        GameRegistry.registerItem(zirconium_oxide, zirconium_oxide.getUnlocalizedName());
+        GameRegistry.registerItem(hexamine, hexamine.getUnlocalizedName());
+        GameRegistry.registerItem(rdx_powder, rdx_powder.getUnlocalizedName());
+        GameRegistry.registerItem(nitrocellulose, nitrocellulose.getUnlocalizedName());
+        GameRegistry.registerItem(spent_lithium_target, spent_lithium_target.getUnlocalizedName());
+        GameRegistry.registerItem(lithium_fluoride, lithium_fluoride.getUnlocalizedName());
+        GameRegistry.registerItem(thorium_fluoride, thorium_fluoride.getUnlocalizedName());
+        GameRegistry.registerItem(hafnium_oxide, hafnium_oxide.getUnlocalizedName());
+        GameRegistry.registerItem(beryllium_oxide, beryllium_oxide.getUnlocalizedName());
+        GameRegistry.registerItem(beryllium_fluoride, beryllium_fluoride.getUnlocalizedName());
+        GameRegistry.registerItem(magnesium_fluoride, magnesium_fluoride.getUnlocalizedName());
+        GameRegistry.registerItem(process_residue, process_residue.getUnlocalizedName());
+        GameRegistry.registerItem(radium_residue, radium_residue.getUnlocalizedName());
+        GameRegistry.registerItem(regolith_feed, regolith_feed.getUnlocalizedName());
+        GameRegistry.registerItem(aggregate_coarse, aggregate_coarse.getUnlocalizedName());
+        GameRegistry.registerItem(aggregate_fine, aggregate_fine.getUnlocalizedName());
+        GameRegistry.registerItem(lithium_sulfate, lithium_sulfate.getUnlocalizedName());
+        GameRegistry.registerItem(lithium_carbonate, lithium_carbonate.getUnlocalizedName());
+		GameRegistry.registerItem(caustic_soda, caustic_soda.getUnlocalizedName());
+		GameRegistry.registerItem(caustic_potash, caustic_potash.getUnlocalizedName());
+		GameRegistry.registerItem(fuel_additive_dose, fuel_additive_dose.getUnlocalizedName());
 		GameRegistry.registerItem(sodium_sulfide, sodium_sulfide.getUnlocalizedName());
 		GameRegistry.registerItem(potassium_sulfate, potassium_sulfate.getUnlocalizedName());
 
@@ -7944,6 +8026,7 @@ public class ModItems {
 
 		//anti retard logic for ores
 		GameRegistry.registerItem(chunk_ironoxide, chunk_ironoxide.getUnlocalizedName());
+		GameRegistry.registerItem(powder_hematite, powder_hematite.getUnlocalizedName());
 		GameRegistry.registerItem(chunk_coppersulfide, chunk_coppersulfide.getUnlocalizedName());
 		GameRegistry.registerItem(powder_vanadium, powder_vanadium.getUnlocalizedName());
 		GameRegistry.registerItem(chunk_leadzincsulfide, chunk_leadzincsulfide.getUnlocalizedName());

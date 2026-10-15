@@ -7,16 +7,12 @@ import com.hbm.inventory.gui.GUIMachineRTG;
 import com.hbm.items.machine.ItemRTGPellet;
 import com.hbm.machine.MachineDirtyCause;
 import com.hbm.machine.MachineExecutionStrategy;
-import com.hbm.packet.PacketDispatcher;
-import com.hbm.packet.toclient.AuxElectricityPacket;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.CompatEnergyControl;
 import com.hbm.util.RTGUtil;
 
-import api.hbm.energymk2.IEnergyProviderMK2;
 import api.hbm.tile.IInfoProviderEC;
-import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.player.EntityPlayer;
@@ -28,7 +24,11 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISidedInventory, IEnergyProviderMK2, IGUIProvider, IInfoProviderEC {
+public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISidedInventory, api.hbm.energymk2.IRatedGenerator, IGUIProvider, IInfoProviderEC, com.hbm.realsim.IMachineInfo, com.hbm.tileentity.INBTPacketReceiver {
+    private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
+    @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
+    @Override public long getRatedOutputWatts() { return 30000L; }
+
 	private static final int TASK_GENERATE = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
@@ -41,7 +41,8 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 	public int heat;
 	public final int heatMax = VersatileConfig.rtgDecay() ? 600 : 200;
 	public long energyQuanta;
-	public final long powerMax = 100000;
+	public final long powerMax = 6000;
+    public final com.hbm.realsim.IsotopeLedger isotope = new com.hbm.realsim.IsotopeLedger();
 	private long lastSyncedPower = Long.MIN_VALUE;
 	
 	public static final int[] slot_io = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 };
@@ -152,6 +153,7 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        outputBudget.read(nbt); isotope.read(nbt);
 		NBTTagList list = nbt.getTagList("items", 10);
 
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
@@ -172,6 +174,7 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
+        outputBudget.write(nbt); isotope.write(nbt);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("heat", heat);
 		NBTTagList list = new NBTTagList();
@@ -203,7 +206,7 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 	}
 	
 	public long getPowerScaled(long i) {
-		return (energyQuanta * i) / powerMax;
+		return (Math.min(energyQuanta, powerMax) * i) / Math.max(1, powerMax);
 	}
 	
 	public int getHeatScaled(int i) {
@@ -251,10 +254,15 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 		try {
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
 				this.providePowerToDirectReceiver(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-			heat = RTGUtil.updateRTGs(slots, slot_io);
-			if(heat > heatMax) heat = heatMax;
-			this.setStoredEnergyQuanta(this.energyQuanta + heat * 5L);
-			if(energyQuanta > powerMax) this.setStoredEnergyQuanta(powerMax);
+            long now = worldObj.getTotalWorldTime();
+            if(isotope.begin(now)) {
+                long source = com.hbm.realsim.IsotopeLedger.thermalWatts(slots, slot_io);
+                heat = Math.min(heatMax, RTGUtil.updateRTGs(slots, slot_io));
+                setStoredEnergyQuanta(energyQuanta + isotope.convert(now, source, 0,
+                        com.hbm.realsim.GeneratorContract.room(energyQuanta, powerMax), getRatedOutputWatts() / 10));
+                markDirty();
+            }
+
 		} finally {
 			runtimeEnergyMutation = false;
 		}
@@ -270,7 +278,8 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 
 	private void sendRuntimeEnergy() {
 		if(this.energyQuanta != this.lastSyncedPower || worldObj.getWorldTime() % 20 == 0) {
-			PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, energyQuanta), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50));
+			NBTTagCompound data = new NBTTagCompound(); EnergyUnits.writeEnergyQuanta(data, energyQuanta); isotope.writeStatus(data); data.setInteger("heat", heat);
+            com.hbm.tileentity.INBTPacketReceiver.networkPack(this, data, 50);
 			this.lastSyncedPower = this.energyQuanta;
 		}
 	}
@@ -326,7 +335,7 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 	}
 
 	public long getPowerOutputWatts() {
-		return EnergyUnits.quantaPerTickToWatts(this.heat * 5L);
+		return EnergyUnits.quantaPerTickToWatts(isotope.electricQuanta);
 	}
 
 	@Override
@@ -343,6 +352,14 @@ public class TileEntityMachineRTG extends TileEntityLoadedBase implements ISided
 	@Override
 	public void provideExtraInfo(NBTTagCompound data) {
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, this.heat > 0);
-		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(heat * 5D));
+		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(isotope.electricQuanta));
 	}
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("5% thermoelectric conversion of installed isotope heat; excess heat is rejected");
+        lines.add("Source identity and configured pellet decay are retained");
+        if(live) { lines.add("Current isotope heat: " + com.hbm.realsim.MachineInfo.thermalWatts(isotope.thermalQuanta * 10)); lines.add("Rejected heat: " + com.hbm.realsim.MachineInfo.thermalWatts(isotope.rejectedQuanta * 10)); }
+    }
+    @Override public void networkUnpack(NBTTagCompound data) {
+        energyQuanta = EnergyUnits.readEnergyQuanta(data, "power"); heat = data.getInteger("heat"); isotope.readStatus(data);
+    }
 }

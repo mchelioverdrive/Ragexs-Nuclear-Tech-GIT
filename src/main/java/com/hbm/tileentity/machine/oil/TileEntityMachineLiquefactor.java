@@ -42,6 +42,7 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 
 
 
+	public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
 	public long energyQuanta;
 	public static final long maxPower = 100000;
 	public static final int usageBase = 500;
@@ -74,7 +75,7 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 	
 	public TileEntityMachineLiquefactor() {
 		super(4);
-		tank = new FluidTank(Fluids.NONE, 24_000);
+		tank = new FluidTank(Fluids.NONE, 1500).withDefaultCapacity();
 		this.trackMachineFluidTank(tank);
 	}
 
@@ -132,6 +133,16 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 		if(lastProgressTick == Long.MIN_VALUE || target <= lastProgressTick) return;
 		long elapsed = target - lastProgressTick;
 		lastProgressTick = target;
+        com.hbm.realsim.ProcessRecipe bill = LiquefactionRecipes.getPhysical(slots[0]);
+        if(physicalBatch.active() || bill != null) {
+            runtimeEnergyMutation = true; this.beginMachineFluidMutation();
+            try {
+                com.hbm.realsim.ProcessMachine.sizeProcessBuffers(physicalBatch.active() ? physicalBatch.recipe() : bill, new FluidTank[] {}, new FluidTank[] {tank});
+                com.hbm.realsim.ProcessMachine.step(this, physicalBatch, bill, new FluidTank[] {}, new FluidTank[] {tank}, slots, 0, 0, 0, -1);
+            } finally { this.endMachineFluidMutation(); runtimeEnergyMutation = false; }
+            progress = physicalBatch.ticks(); processTime = physicalBatch.active() ? physicalBatch.recipe().duration : bill == null ? 100 : bill.duration;
+            runtimeActive = physicalBatch.active(); this.markNetworkDirty(); return;
+        }
 		if(runtimeMaterialEligible) runtimeMaterialEligible = this.canProcessMaterials();
 		if(!runtimeMaterialEligible || !this.hasOperatingPower()) {
 			if(progress != 0 || runtimeActive) { progress = 0; runtimeActive = false; this.markDirty(); this.markNetworkDirty(); }
@@ -215,6 +226,9 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 	}
 
 	private boolean canProcessMaterials() {
+        com.hbm.realsim.ProcessRecipe bill = LiquefactionRecipes.getPhysical(slots[0]);
+        if(physicalBatch.active()) return true;
+        if(bill != null) return com.hbm.realsim.ProcessMachine.outputReady(physicalBatch, bill, new FluidTank[] {tank}, slots, 0, -1);
 		this.resolveCachedRecipe();
 		if(cachedRecipe == null || slots[0] == null) return false;
 		return (cachedRecipe.type == tank.getTankType() || tank.getFill() == 0) && cachedRecipe.fill + tank.getFill() <= tank.getMaxFill();
@@ -238,6 +252,13 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 	}
 
 	private void evaluateAndSchedule(long now) {
+        if(physicalBatch.active() || LiquefactionRecipes.getPhysical(slots[0]) != null) {
+            if(this.canProcessMaterials()) this.scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+            else this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
+            if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+            else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
+            return;
+        }
 		this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
 		if(runtimeMaterialEligible && this.hasOperatingPower()) {
 			runtimeActive = true;
@@ -313,6 +334,7 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 	}
 	
 	public boolean canProcess() {
+        if(physicalBatch.active() || LiquefactionRecipes.getPhysical(slots[0]) != null) return this.canProcessMaterials();
 		
 		if(this.energyQuanta < usage) return false;
 		if(slots[0] == null) return false;
@@ -327,6 +349,7 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 	}
 	
 	public void process() {
+        if(physicalBatch.active() || LiquefactionRecipes.getPhysical(slots[0]) != null) { this.settleProgressThrough(worldObj.getTotalWorldTime()); return; }
 		
 		this.setStoredEnergyQuanta(this.energyQuanta - usage);
 		
@@ -358,6 +381,7 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
+        physicalBatch.read(nbt);
 		super.readFromNBT(nbt);
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.progress = nbt.getInteger("progress");
@@ -374,6 +398,7 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+        physicalBatch.write(nbt);
 		super.writeToNBT(nbt);
 		EnergyUnits.writeEnergyQuanta(nbt, this.energyQuanta);
 		nbt.setInteger("progress", this.progress);
@@ -492,6 +517,6 @@ public class TileEntityMachineLiquefactor extends TileEntityMachineBase implemen
 
     @Override public long getMachineDemandWatts() { return operatingPowerWatts; }
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
-        lines.add("Nominal multipurpose liquefaction utilities; recipe/material state governs eligibility");
+        lines.add("Converts compatible solid feeds to fluid products; select a supported recipe");
     }
 }

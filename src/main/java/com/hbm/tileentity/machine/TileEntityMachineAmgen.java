@@ -7,21 +7,24 @@ import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.CompatEnergyControl;
 
-import api.hbm.energymk2.IEnergyProviderMK2;
 import api.hbm.tile.IInfoProviderEC;
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineAmgen extends TileEntityLoadedBase implements IEnergyProviderMK2, IInfoProviderEC {
+public class TileEntityMachineAmgen extends TileEntityLoadedBase implements api.hbm.energymk2.IRatedGenerator, IInfoProviderEC, com.hbm.realsim.IMachineInfo {
+    private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
+    @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
+    @Override public long getRatedOutputWatts() { return 10000L; }
+
 	private static final int TASK_GENERATE = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
 
 	public long energyQuanta;
-	public long maxPower = 500;
+	public long maxPower = 2000;
 	protected long output = 0;
 	
 	@Override
@@ -55,8 +58,7 @@ public class TileEntityMachineAmgen extends TileEntityLoadedBase implements IEne
 
 		runtimeEnergyMutation = true;
 		try {
-			this.setStoredEnergyQuanta(this.energyQuanta + this.output);
-			if(energyQuanta > maxPower) this.setStoredEnergyQuanta(maxPower);
+			this.setStoredEnergyQuanta(com.hbm.realsim.GeneratorContract.admit(energyQuanta, maxPower, output));
 			for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS)
 				this.providePowerToDirectReceiver(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
 		} finally {
@@ -104,13 +106,13 @@ public class TileEntityMachineAmgen extends TileEntityLoadedBase implements IEne
 			this.output += 100;
 			
 			if(worldObj.rand.nextInt(6000) == 0) {
-				worldObj.setBlock(xCoord, yCoord - 1, zCoord, Blocks.obsidian);
+				worldObj.setBlock(x, y, z, Blocks.obsidian);
 			}
 		} else if(b == Blocks.flowing_lava) {
 			this.output += 25;
 			
 			if(worldObj.rand.nextInt(3000) == 0) {
-				worldObj.setBlock(xCoord, yCoord - 1, zCoord, Blocks.cobblestone);
+				worldObj.setBlock(x, y, z, Blocks.cobblestone);
 			}
 		}
 	}
@@ -125,6 +127,7 @@ public class TileEntityMachineAmgen extends TileEntityLoadedBase implements IEne
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+        this.markDirty();
 		if(!runtimeEnergyMutation) this.markMachineDirty(MachineDirtyCause.ENERGY);
 	}
 
@@ -142,4 +145,16 @@ public class TileEntityMachineAmgen extends TileEntityLoadedBase implements IEne
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, this.output > 0);
 		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(this.output));
 	}
+    @Override public void readFromNBT(NBTTagCompound nbt) {
+        super.readFromNBT(nbt); outputBudget.read(nbt);
+        energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
+    }
+    @Override public void writeToNBT(NBTTagCompound nbt) {
+        super.writeToNBT(nbt); outputBudget.write(nbt);
+        EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
+    }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Uses lava or geyser heat; up to 5 kW per contact");
+        lines.add("No thermal depletion model; lava transformation affects the actual source contact");
+    }
 }

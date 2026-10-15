@@ -35,18 +35,18 @@ public class RotaryFurnaceRecipes extends SerializableRecipe {
 	@Override
 	public void registerDefaults() {
 
-		recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_STEEL, INGOT.q(1)), 100, 100, new OreDictStack(IRON.ingot()), new OreDictStack(COAL.gem())));
-		recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_STEEL, INGOT.q(1)), 100, 100, new OreDictStack(IRON.ingot()), new OreDictStack(ANY_COKE.gem())));
+		recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_STEEL, INGOT.q(1)), 100, 1, new OreDictStack(IRON.ingot()), new OreDictStack(COAL.gem())));
+		recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_STEEL, INGOT.q(1)), 100, 1, new OreDictStack(IRON.ingot()), new OreDictStack(ANY_COKE.gem())));
 
-		recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_STEEL, INGOT.q(2)), 100, 100, new OreDictStack(IRON.fragment(), 9), new OreDictStack(COAL.gem())));
-		recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_STEEL, INGOT.q(3)), 100, 100, new OreDictStack(IRON.fragment(), 9), new OreDictStack(ANY_COKE.gem())));
-		recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_STEEL, INGOT.q(4)), 200, 100, new OreDictStack(IRON.fragment(), 9), new OreDictStack(ANY_COKE.gem()), new ComparableStack(ModItems.powder_flux)));
+		recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_STEEL, INGOT.q(1)), 100, 1, new OreDictStack(IRON.fragment(), 9), new OreDictStack(COAL.gem())));
+		recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_STEEL, INGOT.q(1)), 100, 1, new OreDictStack(IRON.fragment(), 9), new OreDictStack(ANY_COKE.gem())));
+		recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_STEEL, INGOT.q(1)), 200, 1, new OreDictStack(IRON.fragment(), 9), new OreDictStack(ANY_COKE.gem()), new ComparableStack(ModItems.powder_flux)));
 
 		//recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_DESH, INGOT.q(1)), 100, 200, new FluidStack(Fluids.LIGHTOIL, 100), new ComparableStack(ModItems.powder_desh_ready)));
 
-		recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_GUNMETAL, INGOT.q(4)), 200, 100, new OreDictStack(CU.ingot(), 3), new OreDictStack(Sn.ingot(), 1)));
-		recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_WEAPONSTEEL, INGOT.q(1)), 200, 400, new FluidStack(Fluids.GAS_COKER, 100), new OreDictStack(STEEL.ingot(), 1), new ComparableStack(ModItems.powder_flux, 2)));
-		recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_SATURN, INGOT.q(2)), 200, 400, new FluidStack(Fluids.REFORMGAS, 250), new OreDictStack(DURA.dust(), 4), new OreDictStack(CU.dust())));
+		recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_GUNMETAL, INGOT.q(4)), 200, 1, new OreDictStack(CU.ingot(), 3), new OreDictStack(Sn.ingot(), 1)));
+		recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_WEAPONSTEEL, INGOT.q(1)), 200, 2, new FluidStack(Fluids.GAS_COKER, 4), new OreDictStack(STEEL.ingot(), 1), new ComparableStack(ModItems.powder_flux, 2)));
+		recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_SATURN, INGOT.q(2)), 200, 2, new FluidStack(Fluids.REFORMGAS, 4), new OreDictStack(DURA.dust(), 4), new OreDictStack(CU.dust())));
 	}
 
 	public static HashMap getRecipes() {
@@ -171,13 +171,18 @@ public class RotaryFurnaceRecipes extends SerializableRecipe {
 		public FluidStack fluid;
 		public MaterialStack output;
 		public int duration;
-		public int steam;
+        public long thermalJoules;
+		public int steam; // ordinary steam counts/tick, 20 kW shaft per count at adopted 40% expansion efficiency
 
 		public RotaryFurnaceRecipe(MaterialStack output, int duration, int steam, FluidStack fluid, AStack... ingredients) {
-			this.ingredients = ingredients;
+			if(duration <= 0 || steam <= 0 || steam > 4) throw new IllegalArgumentException("Rotary drive requires 1..4 ordinary-steam counts/tick; migrate legacy steam-token recipes");
+            this.ingredients = ingredients;
 			this.fluid = fluid;
 			this.output = output;
-			this.duration = duration;
+			if(output == null || output.amount <= 0) throw new IllegalArgumentException("Missing rotary product");
+            this.thermalJoules = com.hbm.realsim.PetroleumProcesses.ceilDiv(Math.multiplyExact((long) output.amount, 1800000L), com.hbm.inventory.material.MaterialShapes.INGOT.q(1));
+            // Paid melting/process heat at a 500 kW firebox, independent of the steam drive.
+            this.duration = Math.max(duration, Math.toIntExact(com.hbm.realsim.PetroleumProcesses.ceilDiv(thermalJoules * 20L, 500000L)));
 			this.steam = steam;
 		}
 

@@ -118,6 +118,12 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
     public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
     private static final java.util.Map<String, com.hbm.realsim.ProcessRecipe> crudeHeating = com.hbm.realsim.PetroleumProcesses.defaults("heat");
 
+    private com.hbm.realsim.ProcessRecipe selectedHeating() {
+        String name=tanks[0].getTankType().getName();
+        com.hbm.realsim.ProcessRecipe oil=crudeHeating.get(name);
+        return oil != null ? oil : com.hbm.realsim.CoolantLedger.heating(name);
+    }
+
 	protected abstract int getMaxBoilerHeat();
 	protected abstract double getBoilerDiffusion();
 	protected abstract DirPos[] getBoilerConnections();
@@ -172,7 +178,7 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
             sendRuntimeState(heat); evaluateAndSchedule(worldObj.getTotalWorldTime()); return;
         }
 
-        com.hbm.realsim.ProcessRecipe crude = crudeHeating.get(tanks[0].getTankType().getName());
+        com.hbm.realsim.ProcessRecipe crude = selectedHeating();
         if(physicalBatch.active() || crude != null) {
             runtimeFluidMutation = true;
             try {
@@ -258,7 +264,7 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
 			this.cancelMachineTransition(TASK_SIMULATE, TASK_SLOT_MAIN);
 			return;
 		}
-		if(thermal.ownedMass() > 0 || isPhysicalSteamPath() && tanks[0].getFill() > 0 || physicalBatch.active() || crudeHeating.containsKey(tanks[0].getTankType().getName()) && tanks[0].getFill() > 0 || heat > 0 || tanks[1].getFill() > 0 || this.hasExternalHeatOpportunity()) this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
+		if(thermal.ownedMass() > 0 || isPhysicalSteamPath() && tanks[0].getFill() > 0 || physicalBatch.active() || selectedHeating() != null && tanks[0].getFill() > 0 || heat > 0 || tanks[1].getFill() > 0 || this.hasExternalHeatOpportunity()) this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
 		else this.cancelMachineTransition(TASK_SIMULATE, TASK_SLOT_MAIN);
 	}
 
@@ -306,7 +312,7 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
                 com.hbm.realsim.ThermalMachine.configure(tanks[1], thermal.ownedMass() > 0 ? thermal.outlet() : boilerOutlet());
             return;
         }
-        com.hbm.realsim.ProcessRecipe crude = crudeHeating.get(tanks[0].getTankType().getName());
+        com.hbm.realsim.ProcessRecipe crude = selectedHeating();
         if(physicalBatch.active() || crude != null) {
             com.hbm.realsim.ProcessMachine.configure(physicalBatch, crude, new FluidTank[] {tanks[1]});
             return;
@@ -315,19 +321,20 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
 			FT_Heatable trait = tanks[0].getTankType().getTrait(FT_Heatable.class);
 			if(trait.getEfficiency(HeatingType.BOILER) > 0) {
 				HeatingStep entry = trait.getFirstStep();
-				tanks[1].setTankType(entry.typeProduced);
+				tanks[1].configureForRecipe(entry.typeProduced, tanks[0].getPressure());
 				tanks[1].changeTankSize(tanks[0].getMaxFill() * entry.amountProduced / entry.amountReq);
 				return;
 			}
 		}
-		tanks[0].setTankType(Fluids.NONE);
-		tanks[1].setTankType(Fluids.NONE);
+		if(tanks[0].getFill() == 0) tanks[0].setTankType(Fluids.NONE);
+		if(tanks[1].getFill() == 0) tanks[1].setTankType(Fluids.NONE);
 	}
 
 	protected void tryConvert() {
 		if(!tanks[0].getTankType().hasTrait(FT_Heatable.class)) return;
 		FT_Heatable trait = tanks[0].getTankType().getTrait(FT_Heatable.class);
 		if(trait.getEfficiency(HeatingType.BOILER) <= 0) return;
+        if(!tanks[1].configureForRecipe(trait.getFirstStep().typeProduced, tanks[0].getPressure())) return;
 		HeatingStep entry = trait.getFirstStep();
 		int inputOps = tanks[0].getFill() / entry.amountReq;
 		int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / entry.amountProduced;
@@ -381,7 +388,7 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
 	}
 
 	@Override public FluidTank[] getAllTanks() { return tanks; }
-	@Override public FluidTank[] getSendingTanks() { return new FluidTank[] {tanks[1]}; }
+	@Override public FluidTank[] getSendingTanks() { return tanks[0].getFill() > tanks[0].getMaxFill() ? tanks : new FluidTank[] {tanks[1]}; }
 	@Override public FluidTank[] getReceivingTanks() { return new FluidTank[] {tanks[0]}; }
 
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {

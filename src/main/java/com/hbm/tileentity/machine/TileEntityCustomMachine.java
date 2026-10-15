@@ -31,7 +31,6 @@ import com.hbm.util.Compat;
 import com.hbm.util.fauxpointtwelve.BlockPos;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
-import api.hbm.energymk2.IEnergyProviderMK2;
 import api.hbm.energymk2.IEnergyReceiverMK2;
 import api.hbm.fluid.IFluidStandardTransceiver;
 import cpw.mods.fml.relauncher.Side;
@@ -45,7 +44,17 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityCustomMachine extends TileEntityMachinePolluting implements IFluidStandardTransceiver, IEnergyProviderMK2, IEnergyReceiverMK2, IGUIProvider {
+public class TileEntityCustomMachine extends TileEntityMachinePolluting implements IFluidStandardTransceiver, api.hbm.energymk2.IRatedGenerator, IEnergyReceiverMK2, IGUIProvider {
+    private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
+    private long derivedGeneratorOutput;
+    @Override public long getExportLimitWatts() {
+        return config == null || !config.generatorMode ? 0 : config.generatorOutputQuantaPerTick >= 0 ? Math.min(Long.MAX_VALUE / 10, config.generatorOutputQuantaPerTick) * 10 : getRatedOutputWatts();
+    }
+    @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
+    @Override public long getRatedOutputWatts() {
+        return config == null || !config.generatorMode ? 0 : Math.min(Long.MAX_VALUE / 10, derivedGeneratorOutput) * 10;
+    }
+
 	private static final int TASK_STRUCTURE = 1;
 	private static final int TASK_WORK = 2;
 	private static final int TASK_BATTERY = 3;
@@ -73,6 +82,7 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 	public int structureCheckDelay;
 	public boolean structureOK = false;
 	public CustomMachineRecipe cachedRecipe;
+    public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
 
 	public List<DirPos> connectionPos = new ArrayList();
 	public List<DirPos> fluxPos = new ArrayList();
@@ -95,11 +105,11 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 
 		if (config != null) {
 			inputTanks = new FluidTank[config.fluidInCount];
-			for (int i = 0; i < inputTanks.length; i++) inputTanks[i] = new FluidTank(Fluids.NONE, config.fluidInCap);
+			for (int i = 0; i < inputTanks.length; i++) inputTanks[i] = new FluidTank(Fluids.NONE, config.fluidInCap).withDefaultCapacity();
 			for (FluidTank tank : inputTanks) this.trackMachineFluidTank(tank);
 			outputTanks = new FluidTank[config.fluidOutCount];
 			for (int i = 0; i < outputTanks.length; i++)
-				outputTanks[i] = new FluidTank(Fluids.NONE, config.fluidOutCap);
+				outputTanks[i] = new FluidTank(Fluids.NONE, config.fluidOutCap).withDefaultCapacity();
 			for (FluidTank tank : outputTanks) this.trackMachineFluidTank(tank);
 			maxHeat = config.maxHeat;
 			matcher = new ModulePatternMatcher(config.itemInCount);
@@ -207,7 +217,7 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 	}
 
 	private boolean hasBatteryWork() {
-		if(config == null || energyQuanta >= config.energyCapacityQuanta || slots[0] == null) return false;
+		if(config == null || config.generatorMode || energyQuanta >= config.energyCapacityQuanta || slots[0] == null) return false;
 		if(slots[0].getItem() == ModItems.battery_creative || slots[0].getItem() == ModItems.fusion_core_infinite) return true;
 		return slots[0].getItem() instanceof IBatteryItem && ((IBatteryItem) slots[0].getItem()).getStoredEnergyQuanta(slots[0]) > 0L;
 	}
@@ -233,17 +243,24 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 	private void refreshRecipe() {
 		if(!recipeDirty) return;
 		runtimeRecipe = getMatchingRecipe();
+        long previousOutput = derivedGeneratorOutput;
+        derivedGeneratorOutput = 0;
+        List<CustomMachineRecipe> candidates = CustomMachineRecipes.recipes.get(config.recipeKey);
+        if(candidates != null) for(CustomMachineRecipe recipe : candidates)
+            derivedGeneratorOutput = Math.max(derivedGeneratorOutput, (long) Math.max(recipe.consumptionPerTick * config.recipeConsumptionMult, 1));
+		if(derivedGeneratorOutput != previousOutput) markPowerNetDirty();
 		recipeDirty = false;
 	}
 
 	private boolean shouldContinueWork() {
+        if(physicalBatch.active()) return structureOK;
 		if(cachedRecipe != null) return true;
 		if(config.generatorMode && energyQuanta > 0) return true;
 		for(FluidTank tank : outputTanks) if(tank.getFill() > 0) return true;
 		if(smoke.getFill() > 0 || smoke_leaded.getFill() > 0 || smoke_poison.getFill() > 0) return true;
 		if(structureOK && runtimeRecipe != null && hasRequiredQuantities(runtimeRecipe) && hasSpace(runtimeRecipe)) {
 			if(config.generatorMode) return true;
-			long cost = (long)Math.max(runtimeRecipe.consumptionPerTick * config.recipeConsumptionMult, 1);
+			long cost = runtimeRecipe.physicalBill != null ? com.hbm.realsim.PetroleumProcesses.ceilDiv(runtimeRecipe.physicalBill.workQuanta, runtimeRecipe.physicalBill.duration) : (long)Math.max(runtimeRecipe.consumptionPerTick * config.recipeConsumptionMult, 1);
 			return energyQuanta >= cost;
 		}
 		return false;
@@ -323,6 +340,12 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 			}
 
 			if (this.structureOK) {
+                if(!config.generatorMode && (physicalBatch.active() || runtimeRecipe != null && runtimeRecipe.physicalBill != null)) {
+                    com.hbm.realsim.ProcessRecipe bill = physicalBatch.active() ? physicalBatch.recipe() : runtimeRecipe.physicalBill;
+                    com.hbm.realsim.ProcessMachine.step(this, physicalBatch, bill, inputTanks, outputTanks, slots, 4, 9, 16, 21);
+                    progress = physicalBatch.ticks(); maxProgress = bill.duration;
+                    markDirty(); sendRuntimePacket(); return;
+                }
 
 				if (config.generatorMode) {
 					if (this.cachedRecipe == null) {
@@ -337,10 +360,10 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 						this.maxProgress = (int) Math.max(cachedRecipe.duration / this.config.recipeSpeedMult, 1);
 						int powerReq = (int) Math.max(cachedRecipe.consumptionPerTick * this.config.recipeConsumptionMult, 1);
 
+                        if(powerReq > com.hbm.realsim.GeneratorContract.room(energyQuanta, config.energyCapacityQuanta)) return;
 						this.progress++;
 						this.setStoredEnergyQuanta(this.energyQuanta + powerReq);
 						this.heat -= cachedRecipe.heat;
-						if (energyQuanta > config.energyCapacityQuanta) this.setStoredEnergyQuanta(config.energyCapacityQuanta);
 						if (worldObj.getTotalWorldTime() % 20 == 0) {
 							pollution(cachedRecipe);
 							radiation(cachedRecipe);
@@ -397,6 +420,8 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 
 		outer:
 		for(CustomMachineRecipe recipe : recipes) {
+            if(recipe.physicalBill != null && config.generatorMode) continue;
+            if(recipe.inputFluids.length > inputTanks.length || recipe.outputFluids.length > outputTanks.length || recipe.inputItems.length > 6 || recipe.outputItems.length > 6) continue;
 			for(int i = 0; i < recipe.inputFluids.length; i++) {
 				if(this.inputTanks[i].getTankType() != recipe.inputFluids[i].type || this.inputTanks[i].getPressure() != recipe.inputFluids[i].pressure) continue outer;
 			}
@@ -637,11 +662,16 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
+        physicalBatch.read(nbt);
 
 		this.machineType = nbt.getString("machineType");
 		this.init();
 
 		super.readFromNBT(nbt);
+        outputBudget.read(nbt);
+        energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
+        progress = physicalBatch.active() ? physicalBatch.ticks() : nbt.getInteger("progress"); heat = nbt.getInteger("heat");
+        if(!nbt.hasKey("realSimProcess") && config != null && !config.generatorMode) progress = 0; flux = nbt.getInteger("flux");
 		lastBatteryChargeTick = Long.MIN_VALUE;
 
 		if(this.config != null) {
@@ -665,15 +695,22 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
+        physicalBatch.write(nbt);
 
 		if(machineType == null || this.config == null) {
 			super.writeToNBT(nbt);
+        outputBudget.write(nbt);
+        EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
+        nbt.setInteger("progress", progress); nbt.setInteger("heat", heat); nbt.setInteger("flux", flux);
 			return;
 		}
 
 		nbt.setString("machineType", machineType);
 
 		super.writeToNBT(nbt);
+        outputBudget.write(nbt);
+        EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
+        nbt.setInteger("progress", progress); nbt.setInteger("heat", heat); nbt.setInteger("flux", flux);
 
 		for(int i = 0; i < inputTanks.length; i++) inputTanks[i].writeToNBT(nbt, "i" + i);
 		for(int i = 0; i < outputTanks.length; i++) outputTanks[i].writeToNBT(nbt, "o" + i);
@@ -769,7 +806,6 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 	
 	@Override
 	public long getMaxOutputQuantaPerTick() {
-		if(this.config != null && this.config.generatorMode) return this.getEnergyCapacityQuanta();
-		return 0;
+        return api.hbm.energymk2.IRatedGenerator.super.getMaxOutputQuantaPerTick();
 	}
 }

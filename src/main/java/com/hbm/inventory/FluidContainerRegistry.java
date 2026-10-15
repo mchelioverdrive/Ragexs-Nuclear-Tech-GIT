@@ -23,6 +23,8 @@ public class FluidContainerRegistry {
 	private static final HashMap<net.minecraft.item.Item, List<FluidContainer>> itemMap = new HashMap<>();
 
 	public static int normalizedCapacity(net.minecraft.item.Item item, FluidType type, int legacy) {
+        if(item == Items.water_bucket || item == Items.milk_bucket) return 10;
+        if(item == Items.potionitem && type == com.hbm.inventory.fluid.Fluids.WATER) return 1;
 		if(type.getPhysicalState().basis == com.hbm.realsim.PhysicalState.Basis.STANDARD_GAS_LITER && item == ModItems.canister_full) return 500;
 		if(type.getPhysicalState().basis != com.hbm.realsim.PhysicalState.Basis.LIQUID_LITER) return legacy;
 		if(item == ModItems.canister_full || item == ModItems.fluid_tank_full || item == ModItems.fluid_tank_lead_full

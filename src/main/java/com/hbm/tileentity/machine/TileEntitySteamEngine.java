@@ -16,7 +16,6 @@ import com.hbm.tileentity.INBTPacketReceiver;
 import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.fauxpointtwelve.DirPos;
 
-import api.hbm.energymk2.IEnergyProviderMK2;
 import api.hbm.fluid.IFluidStandardTransceiver;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -61,15 +60,15 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements api.h
 	private float acceleration = 0F;
 
 	/* CONFIGURABLE */
-	private static int steamCap = 2_000;
-	private static int ldsCap = 20;
+	private static int steamCap = 100;
+	private static int ldsCap = 2;
 	private static double efficiency = 0.7D;
 
 	public TileEntitySteamEngine() {
 
 		tanks = new FluidTank[2];
-		tanks[0] = new FluidTank(Fluids.STEAM, steamCap);
-		tanks[1] = new FluidTank(Fluids.SPENTSTEAM, ldsCap);
+		tanks[0] = new com.hbm.realsim.SteamInletTank(com.hbm.realsim.SteamLedger.State.ORDINARY, steamCap, false);
+		tanks[1] = new FluidTank(Fluids.SPENTSTEAM, ldsCap).withDefaultCapacity();
 	}
 
 	@Override
@@ -155,6 +154,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements api.h
 			for(DirPos pos : runtimeConnections) {
 				if(this.powerBuffer > 0) this.providePowerToDirectReceiver(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 				this.sendFluid(tanks[1], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
+                if(!((com.hbm.realsim.SteamInletTank) tanks[0]).compatible()) this.sendFluid(tanks[0], worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			}
 			this.sendRuntimeState();
 		} finally {
@@ -182,8 +182,8 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements api.h
 	private void reconcileTankTypes() {
 		runtimeFluidMutation = true;
 		try {
-			tanks[0].setTankType(Fluids.STEAM);
-			tanks[1].setTankType(Fluids.SPENTSTEAM);
+			tanks[0].configureForRecipe(Fluids.STEAM, tanks[0].getPressure());
+			tanks[1].configureForRecipe(Fluids.SPENTSTEAM, tanks[1].getPressure());
 		} finally {
 			runtimeFluidMutation = false;
 		}
@@ -283,7 +283,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements api.h
 
 	@Override
 	public long getEnergyCapacityQuanta() {
-		return 1000000L;
+		return com.hbm.realsim.GeneratorContract.buffer(getRatedOutputWatts());
 	}
 
 	@Override
@@ -300,12 +300,12 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements api.h
 
 	@Override
 	public FluidTank[] getSendingTanks() {
-		return new FluidTank[] {tanks[1]};
+		return ((com.hbm.realsim.SteamInletTank) tanks[0]).compatible() ? new FluidTank[] {tanks[1]} : tanks;
 	}
 
 	@Override
 	public FluidTank[] getReceivingTanks() {
-		return new FluidTank[] {tanks[0]};
+		return ((com.hbm.realsim.SteamInletTank) tanks[0]).compatible() ? new FluidTank[] {tanks[0]} : new FluidTank[0];
 	}
 
 	@Override
@@ -319,8 +319,8 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements api.h
 		this.powerBuffer = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.syncRotor = nbt.getFloat("rotor");
 		this.turnProgress = 3; //use 3-ply for extra smoothness
-		this.tanks[0].readFromNBT(nbt, "s");
-		this.tanks[1].readFromNBT(nbt, "w");
+		com.hbm.realsim.GeneratorContract.readTankStatus(tanks[0], nbt, "s");
+		com.hbm.realsim.GeneratorContract.readTankStatus(tanks[1], nbt, "w");
 	}
 
 	@Override
@@ -332,6 +332,6 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements api.h
         if(live) lines.add("Current electrical output: " + com.hbm.realsim.MachineInfo.watts(thermal.currentElectricQuanta * 10L));
         lines.add(String.format(java.util.Locale.US, "Steam mass-flow ceiling: %.2f kg/s", getSteamFlowMassPerTick() / 50000D));
         lines.add(String.format(java.util.Locale.US, "Expansion work factor: %.1f%%", getExpansionEfficiencyPpm() / 10000D));
-        lines.add("Accepts ledger steam grades; full power/exhaust buffers stop admission");
+        lines.add("Ordinary steam only; pauses when electricity or exhaust cannot leave");
     }
 }

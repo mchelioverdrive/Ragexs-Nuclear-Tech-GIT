@@ -170,7 +170,11 @@ public class ElectrolyserMetalRecipes extends SerializableRecipe {
 			}
 
 			if(product.getKey() instanceof BedrockOreOutput) solidProducts.add(ItemBedrockOreNew.extract((BedrockOreOutput) product.getKey(), product.getValue()));
-			if(product.getKey() instanceof ItemStack) solidProducts.add(((ItemStack) product.getKey()).copy());
+			if(product.getKey() instanceof ItemStack) {
+				ItemStack solid = ((ItemStack) product.getKey()).copy();
+				solid.stackSize = Math.multiplyExact(solid.stackSize, product.getValue());
+				solidProducts.add(solid);
+			}
 		}
 		if(moltenProducts.size() == 0) moltenProducts.add(new MaterialStack(Mats.MAT_SLAG, MaterialShapes.INGOT.q(2)));
 

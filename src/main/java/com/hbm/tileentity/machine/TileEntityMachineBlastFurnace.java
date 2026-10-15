@@ -296,13 +296,13 @@ public class TileEntityMachineBlastFurnace extends TileEntityMachineBase impleme
         lines.add("Coal coke: 28.2 MJ/kg LHV; 55% process heat, 0.25% recoverable gas, 44.75% rejected");
         lines.add("Raw coal: 25.8 MJ/kg LHV; 30% process heat, 0.125% recoverable gas, 69.875% rejected");
         lines.add("Coke thermal ceilings: 2 / 4 / 8 MW; no electrical furnace input");
-        lines.add("Dry top-gas assay: 22% CO, 22% CO2, 54% N2, 2% H2 (molar)");
+        lines.add("Dry top-gas composition: 22% CO, 22% CO2, 54% N2, 2% H2 (molar)");
         lines.add("Optional flux: CaCO3 -> CaO + CO2; basic slag binds silicate gangue");
         if(live) {
-            lines.add(String.format(java.util.Locale.US, "Paid process heat: %.3f / %.3f MJ", heatPaid / 1000000D, heatRequired / 1000000D));
-            lines.add(String.format(java.util.Locale.US, "Owned thermal credit: %.3f MJ", fuelQuanta / 2000000D));
+            lines.add(String.format(java.util.Locale.US, "Process heating: %.3f / %.3f MJ", heatPaid / 1000000D, heatRequired / 1000000D));
+            lines.add(String.format(java.util.Locale.US, "Available heat: %.3f MJ", fuelQuanta / 2000000D));
             lines.add("Blast consumed: " + airPaid + " / " + airRequired + " standard L; O2: " + oxygenPaid + " standard L");
-            lines.add(enriched ? "O2 enrichment: reduced loss duty and 25% higher heat ceiling" : "O2 enrichment is optional");
+            lines.add(enriched ? "O2 enrichment: lower heat loss and 25% higher thermal throughput" : "O2 enrichment is optional");
         }
     }
     @Override public Container provideContainer(int id, EntityPlayer player, World world, int x, int y, int z) { return new ContainerBlastFurnace(player.inventory, this); }

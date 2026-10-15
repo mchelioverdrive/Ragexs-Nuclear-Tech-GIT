@@ -432,6 +432,7 @@ public class TileEntityPWRController extends TileEntityMachineBase implements IG
 		//no use in trying to convert everythin to long since the internal tanks would never even support operation like that, just cap the heat cycle count to prevent overflows in the math
 		int heatToUse = (int) Math.min(Math.min(this.hullHeat, (long) (this.hullHeat * coolingEff * trait.getEfficiency(HeatingType.PWR))), 2_000_000_000);
 		HeatingStep step = trait.getFirstStep();
+        if(!tanks[1].configureForRecipe(step.typeProduced, tanks[1].getPressure())) return;
 		int coolCycles = tanks[0].getFill() / step.amountReq;
 		int hotCycles = (tanks[1].getMaxFill() - tanks[1].getFill()) / step.amountProduced;
 		int heatCycles = heatToUse / step.heatReq;
@@ -469,12 +470,12 @@ public class TileEntityPWRController extends TileEntityMachineBase implements IG
 		FT_Heatable trait = tanks[0].getTankType().getTrait(FT_Heatable.class);
 
 		if(trait == null || trait.getEfficiency(HeatingType.PWR) <= 0) {
-			tanks[0].setTankType(Fluids.NONE);
-			tanks[1].setTankType(Fluids.NONE);
+			if(tanks[0].getFill() == 0) tanks[0].setTankType(Fluids.NONE);
+			if(tanks[1].getFill() == 0) tanks[1].setTankType(Fluids.NONE);
 			return;
 		}
 
-		tanks[1].setTankType(trait.getFirstStep().typeProduced);
+		tanks[1].configureForRecipe(trait.getFirstStep().typeProduced, tanks[1].getPressure());
 	}
 
 	public double getTotalProcessMultiplier() {

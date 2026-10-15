@@ -30,12 +30,14 @@ public class CustomMachineRecipes extends SerializableRecipe {
 
 		recipes.put("paperPress", new ArrayList() {{
 			CustomMachineRecipe recipe = new CustomMachineRecipe();
-			recipe.inputFluids = new FluidStack[] {new FluidStack(Fluids.FRESH_WATER, 250)};
+			recipe.inputFluids = new FluidStack[] {new FluidStack(Fluids.FRESH_WATER, 1)};
 			recipe.inputItems = new AStack[] {new ComparableStack(ModItems.powder_sawdust)};
 			recipe.outputFluids = new FluidStack[0];
 			recipe.outputItems = new Pair[] {new Pair(new ItemStack(Items.paper, 3), 1F)};
-			recipe.duration = 60;
-			recipe.consumptionPerTick = 10;
+			// Net makeup evaporates during electric drying: 2.61 MJ includes the 1 kg water duty.
+			recipe.physical(com.hbm.realsim.ChemistryProcesses.paper());
+			recipe.duration = 4000;
+			recipe.consumptionPerTick = 1305;
 			recipe.pollutionType = "SOOT";
 			recipe.pollutionAmount = 0.03F;
 			recipe.radiationAmount = 0;
@@ -88,6 +90,7 @@ public class CustomMachineRecipes extends SerializableRecipe {
 			if(rec.has("radiationAmount")) recipeInstance.radiationAmount = rec.get("radiationAmount").getAsFloat();
 			if(rec.has("flux")) recipeInstance.flux = rec.get("flux").getAsInt();
 			if(rec.has("heat")) recipeInstance.heat = rec.get("heat").getAsInt();
+            if(rec.has("physical")) recipeInstance.physical(com.hbm.realsim.PetroleumProcesses.read(rec));
 			
 			list.add(recipeInstance);
 		}
@@ -105,6 +108,7 @@ public class CustomMachineRecipes extends SerializableRecipe {
 		for(CustomMachineRecipe recipeInstance : entry.getValue()) {
 			writer.beginObject();
 
+			if(recipeInstance.physicalBill != null) com.hbm.realsim.PetroleumProcesses.write(recipeInstance.physicalBill, writer);
 			writer.name("inputFluids").beginArray();
 			for(FluidStack stack : recipeInstance.inputFluids) this.writeFluidStack(stack, writer);
 			writer.endArray();
@@ -136,6 +140,24 @@ public class CustomMachineRecipes extends SerializableRecipe {
 	}
 
 	public static class CustomMachineRecipe {
+        public com.hbm.realsim.ProcessRecipe physicalBill;
+        public CustomMachineRecipe physical(com.hbm.realsim.ProcessRecipe bill) {
+            physicalBill = bill; duration = bill.duration;
+            consumptionPerTick = Math.toIntExact(com.hbm.realsim.PetroleumProcesses.ceilDiv(bill.workQuanta, bill.duration));
+            inputFluids = new FluidStack[bill.inputs.length]; inputItems = new AStack[bill.solidInputs.length];
+            for(int i = 0; i < inputFluids.length; i++) inputFluids[i] = new FluidStack(Fluids.fromName(bill.inputs[i]), bill.quantities[i], bill.pressures[i]);
+            for(int i = 0; i < inputItems.length; i++) inputItems[i] = com.hbm.realsim.ProcessMachine.feed(bill.solidInputs[i], bill.solidCounts[i]);
+            List<FluidStack> fluids = new ArrayList<>(); List<Pair<ItemStack, Float>> items = new ArrayList<>();
+            for(int i = 0; i < bill.outputs.length; i++) {
+                String name = bill.outputs[i]; if(name.startsWith("VENT_")) continue;
+                int count = Math.toIntExact(com.hbm.realsim.PetroleumProcesses.ceilDiv(bill.productMass[i], com.hbm.realsim.PhysicalRegistry.get(name).massUnits));
+                if(com.hbm.realsim.PhysicalRegistry.get(name).phase == com.hbm.realsim.PhysicalState.Phase.SOLID) items.add(new Pair<>(com.hbm.realsim.ProcessMachine.solid(name, count), 1F));
+                else fluids.add(new FluidStack(Fluids.fromName(name), count));
+            }
+            outputFluids = fluids.toArray(new FluidStack[fluids.size()]); outputItems = items.toArray(new Pair[items.size()]);
+            return this;
+        }
+
 
 		public FluidStack[] inputFluids;
 		public AStack[] inputItems;

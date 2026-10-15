@@ -22,7 +22,6 @@ import com.hbm.tileentity.IPersistentNBT;
 import com.hbm.tileentity.TileEntityMachineBase;
 
 import api.hbm.energymk2.IBatteryItem;
-import api.hbm.energymk2.IEnergyProviderMK2;
 import com.hbm.machine.MachineDirtyCause;
 import com.hbm.machine.MachineExecutionStrategy;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
@@ -36,7 +35,12 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineDischarger extends TileEntityMachineBase implements IEnergyProviderMK2, IGUIProvider, IPersistentNBT {
+public class TileEntityMachineDischarger extends TileEntityMachineBase implements api.hbm.energymk2.IRatedGenerator, IGUIProvider, IPersistentNBT {
+    private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
+    @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
+    @Override public long getRatedOutputWatts() { return 10000000L; }
+    @Override public long getIntentionalStorageQuanta() { return maxPower; }
+
 
 	public long energyQuanta = 0;
 	public int process = 0;
@@ -67,8 +71,8 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 	private boolean clientCooling;
 
 	private static final int[] slots_top = new int[] { 0 };
-	private static final int[] slots_bottom = new int[] { 1, 2 };
-	private static final int[] slots_side = new int[] { 3, 2 };
+	private static final int[] slots_bottom = new int[] { 1 };
+	private static final int[] slots_side = new int[] { 1 };
 
 	public TileEntityMachineDischarger() {
 		super(2);
@@ -81,27 +85,19 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 
 	@Override
 	public boolean isItemValidForSlot(int i, ItemStack stack) {
-		switch (i) {
-		case 0:
-			if(MachineRecipes.mODE(stack, OreDictManager.SA326.ingot()))
-				return true;
-		break;
-		case 2:
-			if(MachineRecipes.mODE(stack, OreDictManager.U233.ingot()))
-				return true;
-			break;
-        default:
-		case 1:
-			if (stack.getItem() instanceof IBatteryItem)
-				return true;
-			break;
-		}
-		return false;
-	}
+        return stack != null && (i == 0 ? conversionQuanta(stack) > 0 || stack.getItem() == ModItems.battery_creative : i == 1 && stack.getItem() instanceof IBatteryItem);
+    }
+    public static long conversionQuanta(ItemStack stack) {
+        if(stack == null) return 0;
+        if(MachineRecipes.mODE(stack, OreDictManager.U233.ingot())) return Gen * 4 / 5;
+        if(stack.getItem() == ModItems.ingot_electronium) return Gen * 4;
+        return 0;
+    }
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
+        outputBudget.read(nbt);
 		lastProcessTick = Long.MIN_VALUE;
 		lastCoolingTick = Long.MIN_VALUE;
 		cooldownDueTick = Long.MIN_VALUE;
@@ -117,6 +113,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 	public void writeToNBT(NBTTagCompound nbt) {
 		if(worldObj != null && !worldObj.isRemote) this.settleTemporalStateThrough(worldObj.getTotalWorldTime() - 1L);
 		super.writeToNBT(nbt);
+        outputBudget.write(nbt);
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("process", process);
 		nbt.setInteger("temp", temp);
@@ -148,7 +145,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 		}
 
 		if (i == 1) {
-			if (stack.getItem() instanceof IBatteryItem && ((IBatteryItem)stack.getItem()).getStoredEnergyQuanta(stack) == 0)
+			if (stack.getItem() instanceof IBatteryItem && ((IBatteryItem)stack.getItem()).getStoredEnergyQuanta(stack) == ((IBatteryItem)stack.getItem()).getEnergyCapacityQuanta(stack))
 				return true;
 		}
 
@@ -156,7 +153,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 	}
 
 	public long getPowerScaled(long i) {
-		return (energyQuanta * i) / maxPower;
+		return (Math.min(energyQuanta, maxPower) * i) / Math.max(1, maxPower);
 	}
 
 	public int getProjectedTemp() {
@@ -184,24 +181,13 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 		return (temp * i) / CoolDown;
 	}
 
-	public boolean canProcess() {
-		//please PLEASE tell me how i can do better ffs
-			if (temp <= 20 && slots[0] != null && slots[0].stackSize > 0 && MachineRecipes.mODE(slots[0], OreDictManager.SA326.ingot())) {
-				return true;
-			}
-
-			if (temp <= 20 && slots[0] != null && slots[0].stackSize > 0 && MachineRecipes.mODE(slots[0], OreDictManager.U233.ingot())) {
-				return true;
-			}
-
-			if (temp <= 20 && slots[0] != null && slots[0].stackSize > 0 && slots[0].getItem() == ModItems.ingot_electronium) {
-				return true;
-			}
-			if (temp <= 20 && slots[0] != null && slots[0].stackSize > 0 && slots[0].getItem() == ModItems.battery_creative) {
-				return true;
-			}
-		return false;
-	}
+    public boolean canProcess() {
+        // The product replaces this one input slot. Retain overfull legacy stacks for extraction/splitting.
+        if(temp > 20 || slots[0] == null || slots[0].stackSize != 1) return false;
+        if(slots[0].getItem() == ModItems.battery_creative) return true;
+        long yield = conversionQuanta(slots[0]);
+        return yield > 0 && yield <= com.hbm.realsim.GeneratorContract.room(energyQuanta, maxPower);
+    }
 
 	public boolean isProcessing() {
 		return this.getProjectedProcess() > 0;
@@ -265,7 +251,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 		} else if(taskType == TASK_BATTERY) {
 			long oldEnergy = energyQuanta;
 			runtimeEnergyMutation = true;
-			try { this.setStoredEnergyQuanta(Library.chargeItemsFromTE(slots, 1, energyQuanta, maxPower)); }
+			try { this.setStoredEnergyQuanta(this.chargeRatedItems(slots, 1, maxPower)); }
 			finally { runtimeEnergyMutation = false; }
 			boolean inventoryChanged = this.observeInventoryFingerprint();
 			if(inventoryChanged) this.markNetworkDirty();
@@ -321,32 +307,25 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 		cooldownDueTick = temp > 20 ? targetTick + (10L - Math.floorMod(targetTick, 10L)) : Long.MIN_VALUE;
 	}
 
-	private void completeDischarge() {
-		process = 0;
-		temp = maxtemp;
-		slots[0].stackSize--;
-		if(slots[0].stackSize <= 0 && slots[0].getItem() == ModItems.ingot_u233) {
-			this.setStoredEnergyQuanta(this.energyQuanta + (long) (Gen * 0.8));
-			slots[0] = null;
-			slots[0] = new ItemStack(ModItems.ingot_titanium);
-		}
-		if(slots[0].stackSize <= 0 && slots[0].getItem() == ModItems.ingot_electronium) {
-			this.setStoredEnergyQuanta(this.energyQuanta + Gen * 4);
-			slots[0] = null;
-			slots[0] = new ItemStack(ModItems.ingot_dineutronium);
-		}
-		if(slots[0].stackSize <= 0 && slots[0].getItem() == ModItems.battery_creative) {
-			EntityNukeExplosionMK3 ex = EntityNukeExplosionMK3.statFacFleija(worldObj, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, (int) 120);
-			if(!ex.isDead) {
-				worldObj.spawnEntityInWorld(ex);
-				EntityCloudFleija cloud = new EntityCloudFleija(worldObj, (int) 120);
-				cloud.setPosition(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5);
-				worldObj.spawnEntityInWorld(cloud);
-			}
-		}
-		this.worldObj.playSoundEffect(this.xCoord, this.yCoord, this.zCoord, "ambient.weather.thunder", 10000.0F,
-				0.8F + this.worldObj.rand.nextFloat() * 0.2F);
-	}
+    private void completeDischarge() {
+        if(!canProcess()) return;
+        process = 0; temp = maxtemp;
+        ItemStack input = slots[0];
+        if(input.getItem() == ModItems.battery_creative) {
+            slots[0] = null;
+            EntityNukeExplosionMK3 ex = EntityNukeExplosionMK3.statFacFleija(worldObj, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, 120);
+            if(!ex.isDead) {
+                worldObj.spawnEntityInWorld(ex);
+                EntityCloudFleija cloud = new EntityCloudFleija(worldObj, 120);
+                cloud.setPosition(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5); worldObj.spawnEntityInWorld(cloud);
+            }
+        } else {
+            long yield = conversionQuanta(input);
+            slots[0] = new ItemStack(input.getItem() == ModItems.ingot_electronium ? ModItems.ingot_dineutronium : ModItems.ingot_titanium);
+            setStoredEnergyQuanta(energyQuanta + yield);
+        }
+        worldObj.playSoundEffect(xCoord, yCoord, zCoord, "ambient.weather.thunder", 10000F, 0.8F + worldObj.rand.nextFloat() * 0.2F);
+    }
 
 	@Override public void onMachineCoarsePoll(int cadence) {
 		if(worldObj == null || worldObj.isRemote) return;
@@ -516,6 +495,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
 		data.setInteger("progress", process);
 		data.setInteger("temp", temp);
+        outputBudget.write(data);
 		nbt.setTag(NBT_PERSISTENT_KEY, data);
 	}
 
@@ -525,6 +505,7 @@ public class TileEntityMachineDischarger extends TileEntityMachineBase implement
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(data, "power");
 		this.temp = data.getInteger("temp");
 		this.process = data.getInteger("progress");
+        outputBudget.read(data);
 		lastProcessTick = Long.MIN_VALUE;
 		lastCoolingTick = Long.MIN_VALUE;
 		cooldownDueTick = Long.MIN_VALUE;

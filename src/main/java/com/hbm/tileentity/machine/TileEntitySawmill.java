@@ -838,6 +838,6 @@ public class TileEntitySawmill extends TileEntityMachineBase implements com.hbm.
 	}
 
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
-        lines.add("Heat-driven sawmill; shaft/blade speed is an explicit nominal mechanism");
+        lines.add("Heat-driven sawmill; preheat before cutting");
     }
 }

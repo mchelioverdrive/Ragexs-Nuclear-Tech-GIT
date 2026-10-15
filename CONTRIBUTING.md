@@ -43,3 +43,7 @@ If you want to help the project, consider getting involved with the [wiki](https
 * `IConfigurableMachine`, an interface that allows machines to be added to the `hbmMachines.json` config, is still not used by many machines.
 * F1 Presentations, also known as "Stare" or "Jar Presentations", is a neat system of creating a short movie explaining functionality. All the relevant code can be found in `com.hbm.wiaj`.
 * Adding tooltips to more machines, explaining some of the basics.
+
+## Documentation
+
+Use the [documentation index](docs/index.md). Keep player explanations in `docs/gameplay/`, current contracts and source inventories in `docs/development/`, future proposals in `docs/design/` and investigation evidence in `docs/development/historical/`. Update the current specification directly when behavior changes, repair links and record meaningful changes in `CHANGELOG.md`. Preserve useful physical numbers in player text; keep software/accounting details in development references.

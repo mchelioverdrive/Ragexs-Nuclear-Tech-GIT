@@ -91,8 +91,8 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		runtimeHasRequiredItems = new boolean[count];
 		runtimeItemFingerprints = new int[scount];
 
-		tanks = new FluidTank[4 * count];
-		for(int i = 0; i < 4 * count; i++) {
+		tanks = new FluidTank[8 * count];
+		for(int i = 0; i < 8 * count; i++) {
 			tanks[i] = new FluidTank(Fluids.NONE, getTankCapacity());
 			this.trackMachineFluidTank(tanks[i]);
 		}
@@ -237,9 +237,12 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
             com.hbm.realsim.ProcessBatch batch = physicalBatches[lane];
             if(!batch.active() && (selected == null || selected.physicalBill == null)) continue;
             int[] slotsForLane = getCachedSlotIndicesFromIndex(lane);
+            com.hbm.realsim.ProcessMachine.sizeProcessBuffers(batch.active() ? batch.recipe() : selected.physicalBill, processInputs(lane), processOutputs(lane));
+            int beforeTicks = batch.ticks();
             boolean changed = com.hbm.realsim.ProcessMachine.step(this, batch, selected == null ? null : selected.physicalBill,
-                new FluidTank[] {tanks[lane * 4], tanks[lane * 4 + 1]}, new FluidTank[] {tanks[lane * 4 + 2], tanks[lane * 4 + 3]}, slots,
+                processInputs(lane), processOutputs(lane), slots,
                 slotsForLane[0], slotsForLane[1], slotsForLane[2], slotsForLane[3]);
+            this.isProgressing |= beforeTicks != batch.ticks();
             progress[lane] = batch.ticks(); maxProgress[lane] = batch.active() ? batch.recipe().duration : selected == null ? 1 : selected.getDuration();
             if(changed) { this.markDirty(); this.markNetworkDirty(); }
         }
@@ -395,6 +398,9 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		return changed;
 	}
 
+    public FluidTank[] processInputs(int lane) { int b = getRecipeCount() * 4 + lane * 4; return new FluidTank[] {tanks[lane * 4], tanks[lane * 4 + 1], tanks[b], tanks[b + 1]}; }
+    public FluidTank[] processOutputs(int lane) { int b = getRecipeCount() * 4 + lane * 4; return new FluidTank[] {tanks[lane * 4 + 2], tanks[lane * 4 + 3], tanks[b + 2], tanks[b + 3]}; }
+
 	protected boolean canProcess(int index) {
         ChemRecipe physical = this.resolveRecipe(index);
         if(physicalBatches[index].active()) return true;
@@ -402,7 +408,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
             runtimeMaterialEligible[index] = true;
             runtimeHasRequiredItems[index] = hasRequiredItems(physical, index);
             int[] indices = getCachedSlotIndicesFromIndex(index);
-            return com.hbm.realsim.ProcessMachine.inputsReady(physical.physicalBill, new FluidTank[] {tanks[index * 4], tanks[index * 4 + 1]}, slots, indices[0], indices[1]);
+            return com.hbm.realsim.ProcessMachine.inputsReady(physical.physicalBill, processInputs(index), slots, indices[0], indices[1]);
         }
 		return this.canProcessResources(index) && energyQuanta >= laneCostQuanta(cachedRecipes[index]);
 	}
@@ -433,24 +439,31 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		return true;
 	}
 
-	private void setupTanks(ChemRecipe recipe, int index) {
-		if(recipe.inputFluids[0] != null) tanks[index * 4].configureForRecipe(recipe.inputFluids[0].type, recipe.inputFluids[0].pressure);		else tanks[index * 4].configureForRecipe(Fluids.NONE, 0);
-		if(recipe.inputFluids[1] != null) tanks[index * 4 + 1].configureForRecipe(recipe.inputFluids[1].type, recipe.inputFluids[1].pressure);	else tanks[index * 4 + 1].configureForRecipe(Fluids.NONE, 0);
-		if(recipe.outputFluids[0] != null) tanks[index * 4 + 2].configureForRecipe(recipe.outputFluids[0].type, recipe.outputFluids[0].pressure);	else tanks[index * 4 + 2].configureForRecipe(Fluids.NONE, 0);
-		if(recipe.outputFluids[1] != null) tanks[index * 4 + 3].configureForRecipe(recipe.outputFluids[1].type, recipe.outputFluids[1].pressure);	else tanks[index * 4 + 3].configureForRecipe(Fluids.NONE, 0);
-	}
+	    private FluidTank inputTank(int lane, int i) { return tanks[i < 2 ? lane * 4 + i : getRecipeCount() * 4 + lane * 4 + i - 2]; }
+    private FluidTank outputTank(int lane, int i) { return tanks[i < 2 ? lane * 4 + i + 2 : getRecipeCount() * 4 + lane * 4 + i]; }
+
+    private void setupTanks(ChemRecipe recipe, int index) {
+        for(int i = 0; i < 4; i++) {
+            inputTank(index, i).configureForRecipe(recipe.inputFluids[i] == null ? Fluids.NONE : recipe.inputFluids[i].type, recipe.inputFluids[i] == null ? 0 : recipe.inputFluids[i].pressure);
+            outputTank(index, i).configureForRecipe(recipe.outputFluids[i] == null ? Fluids.NONE : recipe.outputFluids[i].type, recipe.outputFluids[i] == null ? 0 : recipe.outputFluids[i].pressure);
+        }
+    }
 
 	private boolean hasRequiredFluids(ChemRecipe recipe, int index) {
-		if(recipe.inputFluids[0] != null && (tanks[index * 4].getTankType() != recipe.inputFluids[0].type || tanks[index * 4].getPressure() != recipe.inputFluids[0].pressure || tanks[index * 4].getFill() < recipe.inputFluids[0].fill)) return false;
-		if(recipe.inputFluids[1] != null && (tanks[index * 4 + 1].getTankType() != recipe.inputFluids[1].type || tanks[index * 4 + 1].getPressure() != recipe.inputFluids[1].pressure || tanks[index * 4 + 1].getFill() < recipe.inputFluids[1].fill)) return false;
-		return true;
-	}
+        for(int i = 0; i < 4; i++) if(recipe.inputFluids[i] != null) {
+            FluidTank tank = inputTank(index, i); com.hbm.inventory.FluidStack need = recipe.inputFluids[i];
+            if(tank.getTankType() != need.type || tank.getPressure() != need.pressure || tank.getFill() < need.fill) return false;
+        }
+        return true;
+    }
 
 	private boolean hasSpaceForFluids(ChemRecipe recipe, int index) {
-		if(recipe.outputFluids[0] != null && (tanks[index * 4 + 2].getTankType() != recipe.outputFluids[0].type || tanks[index * 4 + 2].getPressure() != recipe.outputFluids[0].pressure || tanks[index * 4 + 2].getFill() + recipe.outputFluids[0].fill > tanks[index * 4 + 2].getMaxFill())) return false;
-		if(recipe.outputFluids[1] != null && (tanks[index * 4 + 3].getTankType() != recipe.outputFluids[1].type || tanks[index * 4 + 3].getPressure() != recipe.outputFluids[1].pressure || tanks[index * 4 + 3].getFill() + recipe.outputFluids[1].fill > tanks[index * 4 + 3].getMaxFill())) return false;
-		return true;
-	}
+        for(int i = 0; i < 4; i++) if(recipe.outputFluids[i] != null) {
+            FluidTank tank = outputTank(index, i); com.hbm.inventory.FluidStack need = recipe.outputFluids[i];
+            if(tank.getTankType() != need.type || tank.getPressure() != need.pressure || (long) tank.getFill() + need.fill > tank.getMaxFill()) return false;
+        }
+        return true;
+    }
 
 	private boolean hasRequiredItems(ChemRecipe recipe, int index) {
 		int[] indices = getCachedSlotIndicesFromIndex(index);
@@ -489,14 +502,12 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	}
 
 	private void consumeFluids(ChemRecipe recipe, int index) {
-		if(recipe.inputFluids[0] != null) tanks[index * 4].setFill(tanks[index * 4].getFill() - recipe.inputFluids[0].fill);
-		if(recipe.inputFluids[1] != null) tanks[index * 4 + 1].setFill(tanks[index * 4 + 1].getFill() - recipe.inputFluids[1].fill);
-	}
+        for(int i = 0; i < 4; i++) if(recipe.inputFluids[i] != null) { FluidTank tank = inputTank(index, i); tank.setFill(tank.getFill() - recipe.inputFluids[i].fill); }
+    }
 
 	private void produceFluids(ChemRecipe recipe, int index) {
-		if(recipe.outputFluids[0] != null) tanks[index * 4 + 2].setFill(tanks[index * 4 + 2].getFill() + recipe.outputFluids[0].fill);
-		if(recipe.outputFluids[1] != null) tanks[index * 4 + 3].setFill(tanks[index * 4 + 3].getFill() + recipe.outputFluids[1].fill);
-	}
+        for(int i = 0; i < 4; i++) if(recipe.outputFluids[i] != null) { FluidTank tank = outputTank(index, i); tank.setFill(tank.getFill() + recipe.outputFluids[i].fill); }
+    }
 
 	private void consumeItems(ChemRecipe recipe, int index) {
 
@@ -702,7 +713,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 			this.cachedTemplateMeta[index] = meta;
 			this.cachedRecipeGenerations[index] = ChemplantRecipes.recipeGeneration;
 			this.cachedRecipes[index] = template != null && template.getItem() == ModItems.chemistry_template ? ChemplantRecipes.indexMapping.get(meta) : null;
-			if(previous != null && previous != cachedRecipes[index] && (previous.physicalPowerQuanta > 0 || cachedRecipes[index] != null && cachedRecipes[index].physicalPowerQuanta > 0)) progress[index] = 0;
+			if(previous != null && previous != cachedRecipes[index] && !physicalBatches[index].active()) progress[index] = 0;
 		}
 		return this.cachedRecipes[index];
 	}
@@ -988,7 +999,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
     @Override public long getMachineCurrentDrawWatts() { return configuredLaneDemandWatts(true); }
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
         lines.add("Installed chemical lanes: " + getRecipeCount() + "; no additional chemistry tier");
-        lines.add("Recipe utilities vary by process; physical bills retain their own heat/work requirements");
+        lines.add("Power and heat requirements depend on the selected process");
     }
     private long configuredLaneDemandWatts(boolean activeOnly) {
         long watts = 0;

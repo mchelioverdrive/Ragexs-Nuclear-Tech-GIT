@@ -1,0 +1,53 @@
+package com.hbm.inventory.material;
+
+import com.hbm.realsim.MaterialRole;
+import static com.hbm.inventory.material.Mats.*;
+import static com.hbm.realsim.MaterialRole.*;
+
+/** Applicable stock industrial roles, not universal recipe substitutions or physical mass assays. */
+final class MaterialRoles {
+    private MaterialRoles() { }
+    private static void add(MaterialRole role, NTMMaterial... materials) {
+        for(NTMMaterial material : materials) material.roles(role);
+    }
+    static void install() {
+        // Every foundry identity is a quantity-bearing storage identity. Specialized roles are explicit.
+        for(NTMMaterial material : orderedList) material.roles(STORAGE);
+        add(STRUCTURAL, MAT_WOOD, MAT_IVORY, MAT_STONE, MAT_OBSIDIAN, MAT_IRON, MAT_WROUGHTIRON, MAT_PIGIRON,
+                MAT_METEORICIRON, MAT_STEEL, MAT_STAINLESS, MAT_DURA, MAT_DESH, MAT_SATURN, MAT_TITANIUM,
+                MAT_ALUMINIUM, MAT_GUNMETAL, MAT_WEAPONSTEEL, MAT_BBRONZE, MAT_ABRONZE, MAT_BRONZE,
+                MAT_POLYMER, MAT_BAKELITE, MAT_RUBBER, MAT_HARDPLASTIC, MAT_PVC);
+        add(ALLOYING, MAT_CARBON, MAT_CHROMIUM, MAT_NICKEL, MAT_COBALT, MAT_TUNGSTEN, MAT_NIOBIUM,
+                MAT_TANTALIUM, MAT_MAGNESIUM, MAT_SILICON, MAT_BORON, MAT_ZINC, MAT_TIN, MAT_BISMUTH,
+                MAT_ARSENIC, MAT_BERYLLIUM, MAT_TITANIUM, MAT_COPPER, MAT_ALUMINIUM);
+        add(CONDUCTOR, MAT_COPPER, MAT_ALUMINIUM, MAT_GOLD, MAT_BSCCO);
+        add(MAGNETIC, MAT_IRON, MAT_COBALT, MAT_NICKEL, MAT_NEODYMIUM, MAT_SAMARIUM);
+        add(SEMICONDUCTOR, MAT_SILICON, MAT_GALLIUM, MAT_GAAS, MAT_INDIUM);
+        add(SOLDER, MAT_SOLDER, MAT_TIN, MAT_LEAD);
+        add(CATALYST, MAT_PLATNIUM, MAT_RHODIUM, MAT_NICKEL);
+        add(REFRACTORY, MAT_TUNGSTEN, MAT_TANTALIUM, MAT_NIOBIUM, MAT_GRAPHITE, MAT_ASBESTOS);
+        add(CORROSION_RESISTANT, MAT_STAINLESS, MAT_TITANIUM, MAT_ZIRCONIUM, MAT_NICKEL, MAT_IRIDIUM);
+        add(SHIELDING, MAT_LEAD, MAT_BORON, MAT_GADOLINIUM, MAT_BERYLLIUM);
+        add(REAGENT, MAT_BARIUM, MAT_LANTHANIUM, MAT_SODIUM, MAT_STRONTIUM, MAT_CALCIUM, MAT_LITHIUM,
+                MAT_SULFUR, MAT_KNO, MAT_PHOSPHORUS, MAT_BORAX, MAT_FLUX, MAT_CADMIUM);
+        add(MINERAL_FEED, MAT_HEMATITE, MAT_MALACHITE, MAT_CONGLOMERATE, MAT_EMERALD, MAT_SODALITE,
+                MAT_FLUORITE, MAT_CHLOROCALCITE, MAT_MOLYSITE, MAT_CINNABAR, MAT_RAREEARTH);
+        add(INTERMEDIATE, MAT_CALCINED_DOLOMITE, MAT_HEMATITE, MAT_MALACHITE, MAT_CONGLOMERATE, MAT_RAREEARTH);
+        add(CARBON_SOURCE, MAT_CARBON, MAT_COAL, MAT_LIGNITE, MAT_COALCOKE, MAT_LIGCOKE, MAT_PETCOKE, MAT_GRAPHITE, MAT_DIAMOND);
+        add(REDUCTANT, MAT_CARBON, MAT_COAL, MAT_COALCOKE, MAT_GRAPHITE, MAT_CALCIUM, MAT_ALUMINIUM, MAT_SILICON);
+        add(HEATING_FUEL, MAT_WOOD, MAT_COAL, MAT_LIGNITE, MAT_COALCOKE, MAT_LIGCOKE, MAT_PETCOKE);
+        add(INTERMEDIATE, MAT_COAL, MAT_LIGNITE, MAT_WOOD);
+        add(WASTE, MAT_SLAG);
+        add(NUCLEAR_FUEL, MAT_URANIUM, MAT_U233, MAT_U235, MAT_U238, MAT_THORIUM, MAT_PLUTONIUM,
+                MAT_RGP, MAT_PU239, MAT_PU240, MAT_PU241, MAT_RGA, MAT_AM241, MAT_AM242, MAT_NEPTUNIUM);
+        add(ISOTOPE_SOURCE, MAT_PU238, MAT_POLONIUM, MAT_TECHNETIUM, MAT_RADIUM, MAT_ACTINIUM,
+                MAT_CO60, MAT_AU198, MAT_PB209, MAT_THULIUM);
+        add(INTERMEDIATE, MAT_TERBIUM); // optical/electronic precursor, not a populated circuit.
+        add(ALLOYING, MAT_FERRO, MAT_TCALLOY, MAT_CDALLOY); // specialist/historical alloy abstractions.
+        add(FICTIONAL, MAT_REDSTONE, MAT_MINGRADE, MAT_ALLOY, MAT_STAR, MAT_MAGTUNG, MAT_CMB, MAT_DNT,
+                MAT_SCHRABIDIUM, MAT_SOLINIUM, MAT_SCHRABIDATE,
+                MAT_SCHRARANIUM, MAT_GHIORSIUM);
+        // Specialty contact alloy; no routine structural demand is manufactured for it.
+        add(CONDUCTOR, MAT_OSMIRIDIUM, MAT_RHODIUM);
+    }
+}

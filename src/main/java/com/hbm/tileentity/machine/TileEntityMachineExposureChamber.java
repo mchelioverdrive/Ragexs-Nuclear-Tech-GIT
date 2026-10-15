@@ -559,6 +559,6 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
     @Override public long getMachineDemandWatts() { return consumption * 10L; }
     @Override public long getMachineCurrentDrawWatts() { return isOn ? consumption * 10L : 0; }
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
-        lines.add("Nominal particle exposure process; supplied particle inventory is required");
+        lines.add("Irradiates materials; requires the specified particle source");
     }
 }

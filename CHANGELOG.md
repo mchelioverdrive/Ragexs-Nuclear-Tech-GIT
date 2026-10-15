@@ -107,3 +107,76 @@
 - Recontextualized the existing small furnace as the Metallurgical Furnace while retaining registry/tile IDs, inventories, fuel economy and saved state. Moved the stock three-steel ore/coke route into the new ferrous recipe family; unrelated alloys and the Large Arc Furnace retain their roles.
 - Added mass/LHV-paid coke/coal heat, retained process ownership, forced and temperature-qualified hot blast, optional oxygen enrichment and limestone calcination, recoverable CO-bearing Blast Furnace Gas, separate CO2 and useful slag. Preserved existing fluid IDs and introduced a separate industrial recipe override file.
 - Added ordinary structural construction, player tooltips, native GUI/NEI information and guidebook/progression documentation, with explicit integrated refining and chemical-assay abstractions.
+
+2026-10-14 20:09 — Reconcile material roles, forms and physical fuel identity
+
+- Added explicit industrial/equipment roles and canonical quantity-aware solid-fuel resolution over the existing physical assays. Preserved coke grades, nine-item storage quantities and saved fuel credit; admitted appropriate briquettes, sawdust, biomass and wood forms without granting fuels to residues, reagents or propellants solely from energy content.
+- Reconciled RTM furnace fuel adapters with physical identity, retained legacy furnace counters as compatibility units, and made both Metallurgical Furnace variants consume full declared recipe bills. Corrected chromium-bearing stainless steel, HSS output doubling, steel pipe multiplication, dusted-steel arc output and coke-to-graphite carbon expansion.
+- Split new phosphorus metadata from the historical magnesium ID 1500 without rewriting ambiguous old inventories; duplicate persistent IDs now fail registration. Removed zero-output ore consumption and duplicate exact-plus-alias recovery, copied resolved assays, retained dedicated refining gates, and separated samarium refining parcels from castable metal nuggets.
+- Added quantity-preserving tin-lead solder and hematite fines through existing Foundry/Crusher machinery. Corrected tin/copper template 23 to produce real tin bronze, preserved existing arsenic-bronze stock and removed copper/tellurium output multiplication. Replaced pure lead as stock solder, removed raw-metal/magnet circuit shortcuts, corrected thermite oxide feed and antimony oxide identity, and removed direct emerald-to-beryllium melting, mineral-ash carbon/fuel grants and biogas-to-biomass cooling.
+- Separated shape-prefix initialization from material initialization and restricted generation flags to implemented native shapes. Aligned recipe displays and alias handling, corrected bismuth bedrock metadata and declared metal-electrolyser coproduct counts, and retained old registered forms/configured recipe extension points.
+- Updated RealSim family, exception, fuel and compatibility documentation and added targeted fuel/accounting and persistent-ID consistency tests.
+- Reconciled new water-treatment/demineralization process bills with the existing reactor flow limit and preserved the distinction between resolved coolant chemical energy and equipment fuel suitability.
+
+
+2026-10-14 22:02 — Correct generator output, source accounting and branching progression
+
+- Unified native generator export through one persisted per-tick budget shared by cables, direct receivers and charging. Separated generation/export, technical buffering and intentional storage; ordinary buffers default to two ticks, while existing over-cap electricity, fluids and paid thermal/fuel accounts remain intact and drain normally. Matter Discharger retains its deliberate battery-backed store.
+- Recast the small turbine as a 75-kW precision unit accepting ordinary/hot steam. Formalized ordinary /hot /superhot /ultrahot capability for Steam Engine /small /industrial /Leviathan, normalized mass reserves, preserved incompatible old steam for export, and replaced fullness-based rupture/overspeed claims with admission governing and retained Leviathan backpressure/reset protection.
+- Reduced native Diesel, industrial-piston, turboshaft and gas-turbine service reserves; connected Diesel fuelCap to its actual tank while honoring explicit server values. Preserved gas startup/RPM, lubricant, exhaust/HRSG ownership, fuel policies, installed piston differences and native source identities.
+- Replaced arbitrary generator gold/beryllium/tungsten filler with steel mechanics/pressure hardware, copper heat surfaces/windings, pistons and explicit shaft/compressor/HRSG components through existing manufacturing routes. Retained justified precision/hot rotors, Leviathan flywheel/magnetic materials and recipe override paths.
+- Added shared isotope thermal/conversion/rejection accounting, preserved native pellet decay/NBT/scaling, retained Mini RTG isotope identity through crafting/placement/drops, and defined conservative Pu/Po legacy-source adoption. Radiolysis pays process work from its shared electrical supply and irradiation from source heat.
+- Corrected the solar noon curve, geothermal contact ownership, ZPE invalid shafts, Flare zero-generation presentation and old-energy drain, Radiation Engine saturation, DFC undelivered energy, Matter Discharger input/yield admission and completed battery extraction, and Custom Machine generator saturation/export/persistence. Updated generator information and RealSim contracts without changing reactor/HU calibration or restoring deprecated generators to fresh progression.
+- Corrected three repeating-decimal nugget assay registrations to the released integer mass quantum, preventing shared physical-registry startup failure without changing saved mass units.
+
+
+2026-10-14 23:16 — Replace arbitrary fluid batches with conserved process bills
+
+- Added mass-based chemistry for water treatment, electrolysis, major acids/alkalis, ammonia, methanol/reforming, polymers, mineral chlorides/reduction, coolant preparation and nuclear carriers. Returned water, excess reagents and significant residues now remain explicit; removed fuel, phase and geological-halogen shortcuts that created material or chemical energy.
+- Normalized concrete binder water, paper/drink carriers, ice/snow phase quantities, fracking slurry and bedrock-water service. Added meaningful reagent/oxide/polymer intermediates and reused existing item/fluid icon conventions without moving historical fluid IDs.
+- Extended chemical equipment to four fluid feeds/coproducts and multiple solid feeds, persistent fractional outputs and saved paid recipe bills. Bounded process buffers by batch/rated flow, preserved old over-cap contents and prevented recipe reloads from reinterpreting owned work/material.
+- Replaced operating cooling-water sinks and unowned cooling steam with retained loops and ambient rejection; industrial chemical lanes share one rejection budget. Bounded gas separation to rated admission with paid cycle work and mass/phase validation.
+- Documented implemented quantity families, recipe/rate changes, migration boundaries and remaining nominal chemistry exceptions in the existing RealSim technical ledgers.
+
+- Made water electrolysis release gas proportionally to paid work while retaining the reserved-water batch and fractional product ownership across saves, so starter chemistry does not wait for an entire litre to finish.
+
+
+2026-10-15 02:36 — Preserve progressive chemistry and correct specialist salt carriers
+
+- Added saved proportional product release for paid process progress and used it for water electrolysis, preserving original whole-batch semantics for older saved bills. Kept total feed, work and fractional-product ownership unchanged.
+- Replaced pollucite's sulfate-to-chloride shortcut with an explicit activated-mineral/HCl assay and conserved heavy/light liquors, drying steam, salts and calcium-reduction coproducts. Corrected the oxyhydrogen blend through the same mass/work architecture.
+- Rejected released-chemistry overrides that omit their physical bills or exceed native feed/product dimensions, and synchronized newly appended water/coproduct tanks through the existing client-state paths.
+
+- Made geological extraction atomic across paired outputs, conserved incompatible/over-cap legacy source stock and sized source buffers by admitted flow. Introduced assayed helium-bearing raw natural gas with ordinary-reactor and cryogenic separation, preserved old pure-methane stock, and removed the unsupported charged-pellet bulk-helium shortcut.
+- Replaced disappearing laser-gas batches with conserved standard-gas fill mixtures and prevented progressive output from borrowing an unpaid electrical/thermal rounding quantum.
+
+
+2026-10-15 03:21 — Bound atmospheric capture and fabrication fluid utilities
+
+- Rated bulk/selective natural-atmosphere extraction independently, persisted per-tick source admission and preserved incompatible stored gases across environment changes. Bounded scrubber capture by positive free space and available electrical work, preventing over-cap stock loss and negative-consumption power creation.
+- Replaced consumptive electronics solvent tokens with explicit retained cleaning baths, normalized He4 assembly purge, and changed welding to argon shielding with flow-sized reducing/test gas. Saved recipe identities prevent changed fabrication recipes from inheriting old progress; reduced buffers retain and drain displaced legacy stock.
+- Prevented fluid identifiers from deleting filled tank contents. Aligned melting/freezing recipe overrides and displayed quantities with their physical bills, restored mass-based sodium/potassium cooling and removed unbacked xenon, red-mud iron and slop-to-oil-ore shortcuts.
+
+
+2026-10-15 03:38 — Conserve rotary drive steam and potassium process carriers
+
+- Replaced rotary-furnace mechanical steam tokens with rated ordinary-steam expansion, saved fractional spent mass and blocked-output admission. Kept mechanical work separate from furnace heat, retained old fluid stock and bounded buffers by operating flow.
+- Corrected potassium fertilizer recovery and nitrate crystallization to use assayed five-litre liquor batches, molar coproducts, recovered water/excess salt and paid thermal duties. Defined nutrient-salt doses and removed the unbacked biological nitrate shortcuts while preserving template IDs.
+- Made reactor recipe-override validation precede insertion into both active registries, preventing rejected recipes from remaining available after an error.
+
+- Replaced Crystallizer free-solid upgrade batches and multiplied reagent demand with electrical-efficiency savings. Preserved full feed consumption, returned wash water, saved recipe identity and drainable legacy contents with batch/flow-sized buffers.
+
+2026-10-15 08:42 — Close remaining default reactor and mixer fluid bills
+
+- Replaced remaining default fluid tokens with assayed material, carrier, coproduct and utility bills across construction, specialist mineral/optical chemistry, organic formulations, nuclear carriers, food and fictional mixtures. Added native precursor/residue/aggregate items and removed superseded mass-losing shortcuts.
+- Sized concrete and asphalt from weighed aggregate and binder; normalized helium fills, fabrication work, graphite arc throughput, coolant sensible heat, refrigeration and lithium irradiation target accounting. Rotary fuel energy is owned once, with a saved compatibility voucher for legacy burntime.
+- Preserved saved fluid amounts and over-cap inventories, snapshotted paid process inputs/returns and kept old recipe IDs. New world-filled buckets/bottles carry normalized quantities while untagged old containers retain their previous interpretation. Dairy adds a condensate pipe tank after the original four indices.
+- Updated physical quantity contracts, grouped implementation tables and regression coverage; distinguished closed fluid bills from remaining solid-mineral, reactor-physics and arbitrary custom-recipe boundaries.
+
+
+## 2026-10-15 12:59 — Separate RTM guides, current references and audit history
+
+- Reframed the README around concrete changes from inherited HBM behavior and their player consequences. Added a documentation index and readable guides for power, steam/heat, chemistry, petroleum, materials, manufacturing and nuclear industry; retained practical starter, build, Windows, IDE and contribution instructions.
+- Reconstructed current process, generator, fluid, material, thermal, storage and compatibility references. Preserved the incoming audit inventories, equations, sources and migration evidence separately under development history. Kept RealSim Production focused on proposed industrial capabilities.
+- Corrected active steam restrictions/protection, water-treatment quantities and stale capacity/scale advice. Updated moved links and contributor documentation routing.
+- Reworded shared item/GUI/NEI information and affected locale entries around operating roles and requirements. Retained physical values, added direct density/concentration display, corrected specialist energy units, and aligned steam, Foundry, chemical and arc-furnace names without changing recipes, ratings, IDs or save behavior. Changed existing translated entries use current English until translated.

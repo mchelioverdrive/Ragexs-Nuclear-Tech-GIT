@@ -8,12 +8,15 @@ import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.CompatEnergyControl;
 
-import api.hbm.energymk2.IEnergyProviderMK2;
 import api.hbm.tile.IInfoProviderEC;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 
-public class TileEntityMachineSPP extends TileEntityLoadedBase implements IEnergyProviderMK2, IInfoProviderEC {
+public class TileEntityMachineSPP extends TileEntityLoadedBase implements api.hbm.energymk2.IRatedGenerator, IInfoProviderEC, com.hbm.realsim.IMachineInfo {
+    private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
+    @Override public com.hbm.realsim.OutputBudget getOutputBudget() { return outputBudget; }
+    @Override public long getRatedOutputWatts() { return Math.max(150L, (long) gen * 10); }
+
 	private static final int TASK_GENERATE = 1;
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
@@ -59,8 +62,7 @@ public class TileEntityMachineSPP extends TileEntityLoadedBase implements IEnerg
 			this.providePowerToDirectReceiver(worldObj, xCoord, yCoord, zCoord + 1, Library.POS_Z);
 			this.providePowerToDirectReceiver(worldObj, xCoord, yCoord, zCoord - 1, Library.NEG_Z);
 			this.providePowerToDirectReceiver(worldObj, xCoord, yCoord - 1, zCoord, Library.NEG_Y);
-			if(gen > 0) this.setStoredEnergyQuanta(this.energyQuanta + gen);
-			if(energyQuanta > maxPower) this.setStoredEnergyQuanta(maxPower);
+			if(gen > 0) this.setStoredEnergyQuanta(com.hbm.realsim.GeneratorContract.admit(energyQuanta, getEnergyCapacityQuanta(), gen));
 		} finally {
 			runtimeEnergyMutation = false;
 		}
@@ -95,7 +97,7 @@ public class TileEntityMachineSPP extends TileEntityLoadedBase implements IEnerg
 				return 0;
 
 		
-		return h - yCoord - 1;
+		return Math.max(0, h - yCoord - 1);
 	}
 	
 	public boolean checkSegment(int y) {
@@ -125,12 +127,13 @@ public class TileEntityMachineSPP extends TileEntityLoadedBase implements IEnerg
 		if(this.energyQuanta == i) return;
 		this.energyQuanta = i;
 		this.markPowerNetDirty();
+        this.markDirty();
 		if(!runtimeEnergyMutation) this.markMachineDirty(MachineDirtyCause.ENERGY);
 	}
 
 	@Override
 	public long getEnergyCapacityQuanta() {
-		return this.maxPower;
+		return com.hbm.realsim.GeneratorContract.buffer(getRatedOutputWatts());
 	}
 
 	@Override
@@ -138,4 +141,15 @@ public class TileEntityMachineSPP extends TileEntityLoadedBase implements IEnerg
 		data.setBoolean(CompatEnergyControl.B_ACTIVE, this.gen > 0);
 		data.setDouble(CompatEnergyControl.D_OUTPUT_HE, EnergyUnits.quantaToLegacyHe(this.gen));
 	}
+    @Override public void readFromNBT(NBTTagCompound nbt) {
+        super.readFromNBT(nbt); outputBudget.read(nbt);
+        energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
+    }
+    @Override public void writeToNBT(NBTTagCompound nbt) {
+        super.writeToNBT(nbt); outputBudget.write(nbt);
+        EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
+    }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Exotic ZPE conversion; 150 W per valid hollow shaft segment");
+    }
 }

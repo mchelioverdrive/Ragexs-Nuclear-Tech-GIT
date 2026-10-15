@@ -220,6 +220,7 @@ public class OreDictManager {
 	public static final DictFrame BBRONZE = new DictFrame("BismuthBronze");
 	/** ARSENIC BRONZE */
 	public static final DictFrame ABRONZE = new DictFrame("ArsenicBronze");
+	public static final DictFrame BRONZE = new DictFrame("Bronze");
 	/** BISMUTH STRONTIUM CALCIUM COPPER OXIDE */
 	public static final DictFrame BSCCO = new DictFrame("BSCCO");
 	/** LEAD */
@@ -398,7 +399,7 @@ public class OreDictManager {
 	/** Any post nuclear steel like TCA or CDA */
 	public static final DictGroup ANY_RESISTANTALLOY = new DictGroup("AnyResistantAlloy", TCALLOY, CDALLOY);
 	/** Any post nuclear steel like TCA or CDA */
-	public static final DictGroup ANY_BISMOIDBRONZE = new DictGroup("AnyBismoidBronze", BBRONZE, ABRONZE);
+	public static final DictGroup ANY_BISMOIDBRONZE = new DictGroup("AnyBismoidBronze", BBRONZE, ABRONZE, BRONZE);
 	/** Any "powder" propellant like gunpowder, ballistite and cordite */
 	public static final DictFrame ANY_GUNPOWDER = new DictFrame("AnyPropellant");
 	/** Any smokeless powder like ballistite and cordite */
@@ -520,7 +521,8 @@ public class OreDictManager {
 		ABRONZE																.ingot(ingot_arsenic_bronze);
 		PB			.nugget(nugget_lead)									.ingot(ingot_lead)													.dust(powder_lead)				.plate(plate_lead)				.block(block_lead)			.oreAll(ore_lead);
 		Ag 			.nugget(nugget_silver)									.ingot(ingot_silver)												.dust(powder_silver);
-		Sb .coal(4)  			.nugget(nugget_antimony)								.dust(powder_antimony_trioxide);
+		Sb.coal(4).nugget(nugget_antimony);
+		new DictFrame("AntimonyTrioxide").coal(4).dust(powder_antimony_trioxide);
 		Hg 			.nugget(nugget_mercury)									.ingot(ingot_mercury);
 		BSCCO																.ingot(ingot_bscco);
 		BI			.nugget(nugget_bismuth)		.billet(billet_bismuth)		.ingot(ingot_bismuth)												.dust(powder_bismuth)											.block(block_bismuth);
@@ -591,7 +593,7 @@ public class OreDictManager {
 		MOLYSITE																		.dust(powder_molysite)							.ore(DictFrame.fromOne(ore_basalt, EnumBasaltOreType.MOLYSITE));
 		SODALITE						.gem(gem_sodalite);
 		VOLCANIC						.gem(gem_volcanic)																				.ore(DictFrame.fromOne(ore_basalt, EnumBasaltOreType.GEM));
-		HEMATITE																														.ore(fromOne(stone_resource, EnumStoneType.HEMATITE));
+		HEMATITE.dust(powder_hematite).ore(fromOne(stone_resource, EnumStoneType.HEMATITE));
 		MALACHITE																														.ore(fromOne(stone_resource, EnumStoneType.MALACHITE));
 		LIMESTONE																		.dust(powder_limestone)							.ore(fromOne(stone_resource, EnumStoneType.LIMESTONE));
 		SLAG																									.block(block_slag) .ingot(slagingot);//.ingot(slagpowder)
@@ -638,7 +640,8 @@ public class OreDictManager {
 		Cr .dust(powder_chromium) .ingot(ingot_chromium) ; //.block(block_chromium) .ore(ore_gneiss_chromium) .oreAll(ore_chromium)
 		In .ingot(ingot_indium) .nugget(nugget_indium) .dust(powder_indium);
 		Pd .ingot(ingot_palladium) .ore(ore_palladium) .dust(powder_palladium);
-		Sm .ingot(ingot_samarium) .nugget(fragment_samarium) .dust(powder_samarium);
+		// The ore-recovery fragment is a refining parcel, not a castable metal nugget.
+		Sm .ingot(ingot_samarium) .dust(powder_samarium);
 		Gd .ingot(ingot_gadolinium)  .dust(powder_gadolinium2); //.nugget(fragment_gadolinium) //we don't want the crucible to allow skips for pain the element
 		Tb .ingot(ingot_terbium)     ; //sorry no skips using the crucible fuck you
 		Tm .ingot(ingot_thulium);

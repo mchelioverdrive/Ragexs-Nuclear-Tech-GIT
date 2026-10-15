@@ -246,7 +246,7 @@ public class Library {
 			long batMax = battery.getEnergyCapacityQuanta(slots[index]);
 			long batCharge = battery.getStoredEnergyQuanta(slots[index]);
 			long batRate = battery.getMaxInputQuantaPerTick();
-			long toCharge = Math.min(Math.min(power, batRate), batMax - batCharge);
+			long toCharge = Math.max(0, Math.min(Math.min(power, batRate), batMax - batCharge));
 
 			power -= toCharge;
 

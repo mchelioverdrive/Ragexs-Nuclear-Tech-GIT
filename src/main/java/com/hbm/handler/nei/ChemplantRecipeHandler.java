@@ -43,9 +43,9 @@ public class ChemplantRecipeHandler extends SafeTemplateRecipeHandler implements
 	public class RecipeSet extends TemplateRecipeHandler.CachedRecipe {
 
 		PositionedStack[] itemIn = new PositionedStack[4];
-		PositionedStack[] fluidIn = new PositionedStack[2];
+		PositionedStack[] fluidIn = new PositionedStack[4];
 		PositionedStack[] itemOut = new PositionedStack[4];
-		PositionedStack[] fluidOut = new PositionedStack[2];
+		PositionedStack[] fluidOut = new PositionedStack[4];
 		PositionedStack template;
 
 		public RecipeSet(ChemRecipe recipe) {
@@ -60,7 +60,7 @@ public class ChemplantRecipeHandler extends SafeTemplateRecipeHandler implements
 				FluidStack in = recipe.inputFluids[i];
 				if(in == null) continue;
 				ItemStack drop = ItemFluidIcon.make(in);
-				this.fluidIn[i] = NEISafe.positionedStack(drop, 30 + (i % 2) * 18, 6);
+				this.fluidIn[i] = NEISafe.positionedStack(drop, 12 + i * 18, 6);
 			}
 
 			for(int i = 0; i < recipe.outputs.length; i++) {
@@ -73,7 +73,7 @@ public class ChemplantRecipeHandler extends SafeTemplateRecipeHandler implements
 				FluidStack out = recipe.outputFluids[i];
 				if(out == null) continue;
 				ItemStack drop = ItemFluidIcon.make(out);
-				this.fluidOut[i] = NEISafe.positionedStack(drop, 120 + (i % 2) * 18, 6);
+				this.fluidOut[i] = NEISafe.positionedStack(drop, 102 + i * 18, 6);
 			}
 
 			this.template = NEISafe.positionedStack(new ItemStack(ModItems.chemistry_template, 1, recipe.getId()), 84, 6);
@@ -111,7 +111,7 @@ public class ChemplantRecipeHandler extends SafeTemplateRecipeHandler implements
 
 	@Override
 	public String getRecipeName() {
-		return "Chemical Plant";
+		return "Chemical Reactor";
 	}
 
 	@Override

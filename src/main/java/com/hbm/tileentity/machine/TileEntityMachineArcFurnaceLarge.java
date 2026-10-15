@@ -966,8 +966,8 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
     @Override public long getMachineDemandWatts() { return getRatedDemandWatts(); }
     @Override public long getMachineCurrentDrawWatts() { return isProgressing ? operatingPowerWatts : 0; }
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
-        lines.add("Melt work envelope: " + api.hbm.energymk2.EnergyUnits.formatJoules(com.hbm.realsim.IndustrialDemand.ARC_WORK_J_PER_KG * 2L) + " per kg equivalent, nominal 1600 C duty");
-        if(live) { lines.add("Batch work: " + api.hbm.energymk2.EnergyUnits.formatJoules(getBatchWorkQuanta())); lines.add("Paid work: " + api.hbm.energymk2.EnergyUnits.formatJoules(meltPaidQuanta)); }
+        lines.add("Melting energy: " + api.hbm.energymk2.EnergyUnits.formatJoules(com.hbm.realsim.IndustrialDemand.ARC_WORK_J_PER_KG * 2L) + " per ingot-equivalent, modeled melting duty at 1600 C");
+        if(live) { lines.add("Batch work: " + api.hbm.energymk2.EnergyUnits.formatJoules(getBatchWorkQuanta())); lines.add("Melting progress: " + api.hbm.energymk2.EnergyUnits.formatJoules(meltPaidQuanta)); }
         lines.add("Speed upgrades: 1x / 3x / 5x / 7x installed power; batch work stays constant");
     }
 }

@@ -120,14 +120,20 @@ public class TileEntityAirScrubber extends TileEntityMachineBase implements IFlu
 	}
 
 	public boolean canOperate() {
-		return energyQuanta > 200;
+		return energyQuanta >= 10 && tank.getFill() < tank.getMaxFill();
 	}
 
 	public void scrub(int amount) {
 		if(!canOperate()) return;
-		int add = Math.min(tank.getMaxFill() - tank.getFill(), amount);
+		int add = affordableScrubAmount(amount, tank.getFill(), tank.getMaxFill(), energyQuanta);
+		if(add == 0) return;
 		tank.setFill(tank.getFill() + add);
-		this.setStoredEnergyQuanta(this.energyQuanta - add * 10);
+		this.setStoredEnergyQuanta(this.energyQuanta - add * 10L);
+	}
+
+	/** A full legacy tank may drain, but can never be a negative capture or power source. */
+	public static int affordableScrubAmount(int requested, int fill, int capacity, long energy) {
+		return (int) Math.min(Math.max(0L, (long) capacity - fill), Math.min(Math.max(0L, requested), Math.max(0L, energy) / 10L));
 	}
 
 	@Override
