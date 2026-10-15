@@ -11,8 +11,6 @@ import com.hbm.blocks.IBlockMulti;
 import com.hbm.blocks.ILookOverlay;
 import com.hbm.blocks.ITooltipProvider;
 import com.hbm.inventory.fluid.FluidType;
-import com.hbm.inventory.fluid.trait.FT_Heatable;
-import com.hbm.inventory.fluid.trait.FT_Heatable.HeatingType;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.IItemFluidIdentifier;
 import com.hbm.tileentity.TileEntityProxyCombo;
@@ -68,9 +66,11 @@ public class MachineHeatBoiler extends BlockDummyable implements ILookOverlay, I
 				
 				FluidType type = ((IItemFluidIdentifier) player.getHeldItem().getItem()).getType(world, pos[0], pos[1], pos[2], player.getHeldItem());
 				
-				if(type.hasTrait(FT_Heatable.class) && type.getTrait(FT_Heatable.class).getEfficiency(HeatingType.BOILER) > 0) {
-					boiler.tanks[0].setTankType(type);
-					boiler.markDirty();
+				if(com.hbm.realsim.SteamLedger.state(type.getName()) == com.hbm.realsim.SteamLedger.State.ORDINARY
+                        || com.hbm.realsim.SteamLedger.state(type.getName()) == com.hbm.realsim.SteamLedger.State.HOT) {
+                    if(!boiler.selectSteamOutlet(com.hbm.realsim.SteamLedger.state(type.getName())))
+                        player.addChatComponentMessage(new ChatComponentText("Drain the outlet first; this boiler must support the selected steam grade."));
+                } else if(boiler.selectFeed(type)) {
 					player.addChatComponentMessage(new ChatComponentText("Changed type to ").setChatStyle(new ChatStyle().setColor(EnumChatFormatting.YELLOW)).appendSibling(new ChatComponentTranslation(type.getConditionalName())).appendSibling(new ChatComponentText("!")));
 				}
 				return true;

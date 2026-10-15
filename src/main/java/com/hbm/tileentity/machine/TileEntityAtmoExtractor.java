@@ -33,8 +33,8 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 	private static final int TASK_SLOT_MAIN = 0;
 	private boolean runtimeInitialized;
 	private boolean runtimeEnergyMutation;
-	private long operatingPowerWatts = 5000;
-    private int capturedPerTick = 5;
+	private long operatingPowerWatts = 125000;
+    private int capturedPerTick = 125;
     private boolean sourceAvailable;
     private final com.hbm.realsim.OutputBudget captureBudget = new com.hbm.realsim.OutputBudget();
     private long drawTick = Long.MIN_VALUE, drawQuanta;
@@ -104,10 +104,14 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 		try {
 			this.sendOutput();
             long now = worldObj.getTotalWorldTime();
-            if(this.hasPower() && admitAtmosphericParcel(tank, captureBudget, now, sourceAvailable ? tank.getTankType() : null, capturedPerTick)) {
-                drawQuanta = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts); drawTick = now;
+            long unitCost = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts) / capturedPerTick;
+            int parcel = (int) Math.min(capturedPerTick, Math.min(energyQuanta / unitCost, Math.max(0L, (long) tank.getMaxFill() - tank.getFill())));
+            parcel = (int) Math.min(parcel, captureBudget.available(now, capturedPerTick));
+            if(sourceAvailable && parcel > 0 && tank.getTankType() != Fluids.NONE) {
+                tank.setFill(tank.getFill() + parcel); captureBudget.use(now, capturedPerTick, parcel);
+                drawQuanta = unitCost * parcel; drawTick = now;
                 this.setStoredEnergyQuanta(energyQuanta - drawQuanta);
-                FT_Gaseous.capture(worldObj, tank.getTankType(), capturedPerTick);
+                FT_Gaseous.capture(worldObj, tank.getTankType(), parcel);
             }
 		} finally {
 			runtimeEnergyMutation = false;
@@ -132,6 +136,12 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 		}
 	}
 
+    public static int collectionPerTick(FluidType type, boolean selective) {
+        return selective ? 1 : type == Fluids.AIR ? 125 : 5;
+    }
+    public static long collectionPowerWatts(FluidType type, boolean selective) {
+        return collectionPerTick(type, selective) * (selective ? 50000L : 1000L);
+    }
     public static boolean admitAtmosphericParcel(FluidTank tank, com.hbm.realsim.OutputBudget budget, long tick, FluidType selected, int amount) {
         if(selected == null || selected.getName().equals("NONE") || amount <= 0 || budget.available(tick, amount) < amount
                 || (long) tank.getFill() + amount > tank.getMaxFill() || tank.getFill() > 0 && tank.getTankType() != selected) return false;
@@ -148,8 +158,8 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
         // A refused retag of legacy contents is never permission to generate that old gas in vacuum.
         sourceAvailable = atmosphere != null && tank.getTankType() != Fluids.NONE && atmosphere.hasFluid(tank.getTankType()) && tank.getTankType().hasTrait(FT_Gaseous.class);
         boolean selective = atmosphere != null && tank.getTankType() != atmosphere.getMainFluid();
-        capturedPerTick = selective ? 1 : 5;
-        operatingPowerWatts = selective ? 50000 : 5000; // 2500 / 50 J per standard L, including separation / bulk collection.
+        capturedPerTick = collectionPerTick(tank.getTankType(), selective);
+        operatingPowerWatts = collectionPowerWatts(tank.getTankType(), selective); // 2500 / 50 J per standard L, including separation / bulk collection.
         return oldType != tank.getTankType() || wasAvailable != sourceAvailable || previousPower != operatingPowerWatts;
     }
 
@@ -167,7 +177,7 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 	}
 
 	private void evaluateAndSchedule(long now) {
-		if(runtimeInitialized && (this.hasPower() && (long) tank.getFill() + capturedPerTick <= tank.getMaxFill() || tank.getFill() > 0)) this.scheduleMachineTransition(now + 1L, TASK_EXTRACT, TASK_SLOT_MAIN);
+		if(runtimeInitialized && (this.hasPower() && tank.getFill() < tank.getMaxFill() || tank.getFill() > 0)) this.scheduleMachineTransition(now + 1L, TASK_EXTRACT, TASK_SLOT_MAIN);
 		else this.cancelMachineTransition(TASK_EXTRACT, TASK_SLOT_MAIN);
 	}
 
@@ -217,7 +227,7 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
 	}
 
 	public boolean hasPower() {
-		return sourceAvailable && energyQuanta >= EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
+		return sourceAvailable && energyQuanta >= EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts) / capturedPerTick;
 	}
 
 	@Override
@@ -313,7 +323,8 @@ public class TileEntityAtmoExtractor extends TileEntityMachineBase implements IE
     @Override public long getMachineDemandWatts() { return operatingPowerWatts; }
     @Override public long getMachineCurrentDrawWatts() { return worldObj != null && drawTick == worldObj.getTotalWorldTime() ? drawQuanta * 10 : 0; }
     @Override public void appendMachineInfo(List<String> lines, boolean live) {
-        lines.add("Bulk collection: 6000 standard L/min at 5 kWe");
+        lines.add("Bulk air: up to 150000 standard L/min at 125 kWe; scales with supplied power");
+        lines.add("Other bulk gases: 6000 standard L/min at 5 kWe");
         lines.add("Selective gas recovery: 1200 standard L/min at 50 kWe");
         if(live && !sourceAvailable) lines.add("No compatible natural atmosphere; legacy gas can still drain");
     }

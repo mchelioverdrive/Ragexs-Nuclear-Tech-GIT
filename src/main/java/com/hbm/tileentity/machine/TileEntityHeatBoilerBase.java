@@ -29,7 +29,35 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
     public long getRatedFeedPumpWatts() { return 100000L; }
     protected long getThermalCapacityQuanta() { return 32000000L; }
     protected long getStartupQuanta() { return 500000L; }
-    protected com.hbm.realsim.SteamLedger.State boilerOutlet() { return com.hbm.realsim.SteamLedger.State.ORDINARY; }
+    protected com.hbm.realsim.SteamLedger.State maximumSteamOutlet() { return com.hbm.realsim.SteamLedger.State.ORDINARY; }
+    private com.hbm.realsim.SteamLedger.State selectedSteamOutlet;
+    protected com.hbm.realsim.SteamLedger.State boilerOutlet() { return selectedSteamOutlet == null ? maximumSteamOutlet() : selectedSteamOutlet; }
+    protected int internalHeatTemperatureC() { return 0; }
+    public boolean selectSteamOutlet(com.hbm.realsim.SteamLedger.State state) {
+        if(state != com.hbm.realsim.SteamLedger.State.ORDINARY && state != maximumSteamOutlet()) return false;
+        if(thermal.ownedMass() > 0 || physicalBatch.active() || tanks[1].getFill() > 0 && tanks[1].getTankType() != Fluids.fromName(state.identity)) return false;
+        selectedSteamOutlet = state; markDirty();
+        if(worldObj != null) markMachineFluidDirty();
+        return true;
+    }
+    public static com.hbm.realsim.ProcessRecipe heatingRecipe(com.hbm.inventory.fluid.FluidType type) {
+        com.hbm.realsim.ProcessRecipe oil = crudeHeating.get(type.getName());
+        return oil == null ? com.hbm.realsim.CoolantLedger.heating(type.getName()) : oil;
+    }
+    public static boolean supportsFeed(com.hbm.inventory.fluid.FluidType type) {
+        if(type == null) return false;
+        com.hbm.realsim.SteamLedger.State steam = com.hbm.realsim.SteamLedger.state(type.getName());
+        if(steam != null) return steam == com.hbm.realsim.SteamLedger.State.COLD || steam == com.hbm.realsim.SteamLedger.State.WARM;
+        return type == Fluids.AIR || type == Fluids.AIR_HEATED || heatingRecipe(type) != null
+                || type.hasTrait(FT_Heatable.class) && type.getTrait(FT_Heatable.class).getEfficiency(HeatingType.BOILER) > 0;
+    }
+    public boolean selectFeed(com.hbm.inventory.fluid.FluidType type) {
+        if(!supportsFeed(type) || tanks[0].getFill() > 0 && tanks[0].getTankType() != type) return false;
+        if(thermal.ownedMass() > 0 || physicalBatch.active()) return false;
+        tanks[0].setTankType(type); markDirty();
+        if(worldObj != null) markMachineFluidDirty();
+        return true;
+    }
     protected long additionalHeat(long requestQuanta) { return 0; }
     @Override public long getStoredEnergyQuanta() { return pumpEnergyQuanta; }
     @Override public long getEnergyCapacityQuanta() { return 2000000L; }
@@ -46,13 +74,16 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
         if(tanks[1].getFill() > 0) sendFluid();
         api.hbm.tile.IProcessHeatSource source = com.hbm.realsim.ProcessMachine.heater(this);
         // Blast quality cannot be upgraded by stored heat from a cooler source.
-        if(source == null || source.getProcessTemperatureC() < outlet.temperature + 30) return;
+        boolean externalQualified = source != null && source.getProcessTemperatureC() >= outlet.temperature + 30;
+        boolean internalQualified = internalHeatTemperatureC() >= outlet.temperature + 30;
+        if(!externalQualified && !internalQualified) return;
         long perLiter = com.hbm.realsim.SteamLedger.ceilDiv(com.hbm.realsim.PhysicalRegistry.get("AIR").massUnits
                 * (outlet.temperature - tanks[0].getTankType().temperature) * 1000L, com.hbm.realsim.PhysicalState.MASS_UNITS_PER_KG) * 2;
         int amount = Math.min(tanks[0].getFill(), Math.max(0, tanks[1].getMaxFill() - tanks[1].getFill()));
         long allowance = getRatedThermalWatts() / 10;
         long need = Math.min(allowance, Math.max(0, amount * perLiter - thermalBufferQuanta));
-        thermalBufferQuanta += source.drawProcessHeatQuanta(now, need);
+        long pulled = externalQualified ? source.drawProcessHeatQuanta(now, need) : 0;
+        thermalBufferQuanta += pulled + (internalQualified ? additionalHeat(need - pulled) : 0);
         amount = (int) Math.min(amount, Math.min(allowance, thermalBufferQuanta) / perLiter);
         if(amount > 0) {
             tanks[0].setFill(tanks[0].getFill() - amount); tanks[1].setFill(tanks[1].getFill() + amount);
@@ -119,9 +150,7 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
     private static final java.util.Map<String, com.hbm.realsim.ProcessRecipe> crudeHeating = com.hbm.realsim.PetroleumProcesses.defaults("heat");
 
     private com.hbm.realsim.ProcessRecipe selectedHeating() {
-        String name=tanks[0].getTankType().getName();
-        com.hbm.realsim.ProcessRecipe oil=crudeHeating.get(name);
-        return oil != null ? oil : com.hbm.realsim.CoolantLedger.heating(name);
+        return heatingRecipe(tanks[0].getTankType());
     }
 
 	protected abstract int getMaxBoilerHeat();
@@ -200,7 +229,7 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
 			int reportedHeat = this.heat;
 			this.applyAmbientHeat();
 			NBTTagCompound data = new NBTTagCompound();
-        thermal.writeStatus(data); data.setLong("realSimHeatBuffer", thermalBufferQuanta);
+        thermal.writeStatus(data); data.setLong("realSimHeatBuffer", thermalBufferQuanta); data.setString("realSimSteamOutlet", boilerOutlet().identity);
 			tanks[0].writeToNBT(data, "0");
 			data.setInteger("heat", reportedHeat);
 			this.isOn = false;
@@ -264,7 +293,7 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
 			this.cancelMachineTransition(TASK_SIMULATE, TASK_SLOT_MAIN);
 			return;
 		}
-		if(thermal.ownedMass() > 0 || isPhysicalSteamPath() && tanks[0].getFill() > 0 || physicalBatch.active() || selectedHeating() != null && tanks[0].getFill() > 0 || heat > 0 || tanks[1].getFill() > 0 || this.hasExternalHeatOpportunity()) this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
+		if(thermal.ownedMass() > 0 || (isPhysicalSteamPath() || isBlastHeatingPath()) && tanks[0].getFill() > 0 || physicalBatch.active() || selectedHeating() != null && tanks[0].getFill() > 0 || heat > 0 || tanks[1].getFill() > 0 || this.hasExternalHeatOpportunity()) this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
 		else this.cancelMachineTransition(TASK_SIMULATE, TASK_SLOT_MAIN);
 	}
 
@@ -350,7 +379,7 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
 
 	private void sendRuntimeState(int reportedHeat) {
 		NBTTagCompound data = new NBTTagCompound();
-        thermal.writeStatus(data); data.setLong("realSimHeatBuffer", thermalBufferQuanta);
+        thermal.writeStatus(data); data.setLong("realSimHeatBuffer", thermalBufferQuanta); data.setString("realSimSteamOutlet", boilerOutlet().identity);
 		tanks[0].writeToNBT(data, "0");
 		tanks[1].writeToNBT(data, "1");
 		data.setInteger("heat", reportedHeat);
@@ -362,6 +391,7 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
 
 	@Override public void networkUnpack(NBTTagCompound nbt) {
         thermal.readStatus(nbt); thermalBufferQuanta = nbt.getLong("realSimHeatBuffer");
+        if(nbt.hasKey("realSimSteamOutlet")) readSteamOutlet(nbt);
 		this.heat = nbt.getInteger("heat");
 		this.tanks[0].readFromNBT(nbt, "0");
 		this.tanks[1].readFromNBT(nbt, "1");
@@ -373,15 +403,21 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
 		super.readFromNBT(nbt);
         thermal.read(nbt); thermalBufferQuanta = nbt.getLong("realSimHeatQuanta"); pumpEnergyQuanta = nbt.getLong("realSimPumpQuanta"); startupPaidQuanta = nbt.getLong("realSimStartupQuanta"); lastThermalTick = nbt.hasKey("realSimThermalTick") ? nbt.getLong("realSimThermalTick") : Long.MIN_VALUE;
         physicalBatch.read(nbt);
+        selectedSteamOutlet = null; readSteamOutlet(nbt);
 		tanks[0].readFromNBT(nbt, "water");
 		tanks[1].readFromNBT(nbt, "steam");
 		heat = nbt.getInteger("heat");
 	}
 
+    private void readSteamOutlet(NBTTagCompound nbt) {
+        com.hbm.realsim.SteamLedger.State selected = com.hbm.realsim.SteamLedger.state(nbt.getString("realSimSteamOutlet"));
+        if(selected == com.hbm.realsim.SteamLedger.State.ORDINARY || selected == maximumSteamOutlet()) selectedSteamOutlet = selected;
+    }
 	@Override public void writeToNBT(NBTTagCompound nbt) {
 		super.writeToNBT(nbt);
         thermal.write(nbt); nbt.setLong("realSimHeatQuanta", thermalBufferQuanta); nbt.setLong("realSimPumpQuanta", pumpEnergyQuanta); nbt.setLong("realSimStartupQuanta", startupPaidQuanta); nbt.setLong("realSimThermalTick", lastThermalTick);
         physicalBatch.write(nbt);
+        nbt.setString("realSimSteamOutlet", boilerOutlet().identity);
 		tanks[0].writeToNBT(nbt, "water");
 		tanks[1].writeToNBT(nbt, "steam");
 		nbt.setInteger("heat", heat);
@@ -397,5 +433,8 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
         lines.add("Feed-pump electrical ceiling: " + com.hbm.realsim.MachineInfo.watts(getRatedFeedPumpWatts()));
         if(live) lines.add("Current feed-pump draw: " + com.hbm.realsim.MachineInfo.watts(thermal.currentWorkQuanta * 10L));
         lines.add("Sufficiently hot process heat is required");
+        lines.add("Shared processes: water, hot blast, oil heating and compatible coolants");
+        lines.add("Use a fluid identifier to select the inlet; drain old feed first");
+        lines.add("Steam outlet: " + boilerOutlet().identity + "; select a supported steam identifier with outlet drained");
     }
 }

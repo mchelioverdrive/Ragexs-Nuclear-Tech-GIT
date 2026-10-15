@@ -103,6 +103,142 @@ public class NativeGeneratorContractTest {
         java.util.List<String> info = MachineInfo.describe(furnace, false);
         assertTrue(info.toString().contains("25%")); assertTrue(info.toString().contains("1.2 MJ"));
     }
+    @Test public void blastIntakeRejectsOtherAirGradesButAllowsIndependentOxygen() {
+        int[] airTanks = {0, 2, 3};
+        for(int selected : airTanks) {
+            TileEntityMachineBlastFurnace furnace = new TileEntityMachineBlastFurnace();
+            FluidType type = furnace.tanks[selected].getTankType();
+            assertEquals(0, furnace.transferFluid(type, 1, 100));
+            assertEquals(0, furnace.transferFluid(type, 1, 25));
+            for(int other : airTanks) if(other != selected) {
+                FluidType rejected = furnace.tanks[other].getTankType();
+                assertEquals(0, furnace.getDemand(rejected, 1));
+                assertEquals(100, furnace.transferFluid(rejected, 1, 100));
+                assertEquals(0, furnace.tanks[other].getFill());
+            }
+            assertEquals(0, furnace.transferFluid(Fluids.OXYGEN_GAS, 0, 10));
+            assertEquals(10, furnace.tanks[4].getFill());
+            assertEquals(125, furnace.tanks[selected].getFill());
+            assertEquals(5, furnace.transferFluid(type, 0, 5));
+            furnace.tanks[selected].setFill(0);
+            for(int other : airTanks) assertTrue(furnace.getDemand(furnace.tanks[other].getTankType(), 1) > 0);
+        }
+    }
+    @Test public void gasPreviewsUseGasArtAndPressureStatesHaveDifferentItemNames() {
+        for(FluidType gas : new FluidType[] {Fluids.OXYGEN_GAS, Fluids.HYDROGEN_GAS, Fluids.NITROGEN_GAS, Fluids.AIRBLAST, Fluids.AIR_HEATED, Fluids.BLAST_FURNACE_GAS}) {
+            assertEquals("textures/gui/fluids/air.png", gas.getTexture().getResourcePath());
+            assertEquals(gas.getColor(), gas.getTint());
+        }
+        assertEquals("textures/gui/fluids/water.png", Fluids.WATER.getTexture().getResourcePath());
+        com.hbm.items.machine.ItemFluidIcon icon = (com.hbm.items.machine.ItemFluidIcon) ModItems.fluid_icon;
+        assertNotEquals(icon.getItemStackDisplayName(com.hbm.items.machine.ItemFluidIcon.make(Fluids.OXYGEN_GAS, 1000, 0)),
+                icon.getItemStackDisplayName(com.hbm.items.machine.ItemFluidIcon.make(Fluids.OXYGEN_GAS, 1000, 1)));
+        assertEquals(icon.getItemStackDisplayName(com.hbm.items.machine.ItemFluidIcon.make(Fluids.STEAM, 1000, 0)),
+                icon.getItemStackDisplayName(new ItemStack(ModItems.fluid_icon, 1, Fluids.STEAM.getID())));
+    }
+    @Test public void compressorModeIsIdempotentAndIncludedInInitialClientSync() {
+        TileEntityMachineCompressor server = new TileEntityMachineCompressor(), client = new TileEntityMachineCompressor();
+        assertTrue(server.setDecompressionMode(true)); server.progress = 17;
+        assertFalse(server.setDecompressionMode(true)); assertEquals(17, server.progress);
+        io.netty.buffer.ByteBuf snapshot = io.netty.buffer.Unpooled.buffer();
+        try {
+            server.serialize(snapshot); client.deserialize(snapshot);
+            assertTrue(client.decompress); assertEquals(0, snapshot.readableBytes());
+            assertTrue(server.setDecompressionMode(false)); assertEquals(0, server.progress);
+            snapshot.clear(); server.serialize(snapshot); client.deserialize(snapshot);
+            assertFalse(client.decompress); assertEquals(0, snapshot.readableBytes());
+        } finally { snapshot.release(); }
+    }
+    @Test public void blastFurnaceAuxiliaryFuelIsRetrieveOnlyAndProgressDescribesBlast() {
+        TileEntityMachineBlastFurnace furnace = new TileEntityMachineBlastFurnace();
+        ItemStack oldFuel = new ItemStack(ModItems.fluid_icon);
+        furnace.setInventorySlotContents(0, oldFuel);
+        assertFalse(furnace.isItemValidForSlot(0, oldFuel)); assertFalse(furnace.canInsertItem(0, oldFuel, 1));
+        assertTrue(furnace.canExtractItem(0, oldFuel, 0)); assertSame(oldFuel, furnace.getStackInSlot(0));
+        java.util.List<String> info = new java.util.ArrayList<>(); furnace.appendProgressInfo(info);
+        assertTrue(info.toString().contains("Blast consumed:")); assertTrue(info.toString().contains("O2:"));
+        assertTrue(info.toString().contains("heater below"));
+    }
+    @Test public void bothBoilersAcceptAirAndIndustrialIncludesOrdinarySteam() throws Exception {
+        java.lang.reflect.Method setup = TileEntityHeatBoilerBase.class.getDeclaredMethod("setupTanks"); setup.setAccessible(true);
+        for(TileEntityHeatBoilerBase boiler : new TileEntityHeatBoilerBase[] {new TileEntityHeatBoiler(), new TileEntityHeatBoilerIndustrial()}) {
+            assertTrue(boiler.selectFeed(Fluids.AIR)); boiler.tanks[0].setFill(100); setup.invoke(boiler);
+            assertSame(Fluids.AIR_HEATED, boiler.tanks[1].getTankType());
+            assertFalse(boiler.selectFeed(Fluids.AIR_HEATED)); assertEquals(100, boiler.tanks[0].getFill());
+            boiler.tanks[0].setFill(0); assertTrue(boiler.selectFeed(Fluids.AIR_HEATED)); setup.invoke(boiler);
+            assertSame(Fluids.AIRBLAST, boiler.tanks[1].getTankType());
+            assertTrue(boiler.selectFeed(Fluids.FRESH_WATER)); assertTrue(boiler.selectSteamOutlet(SteamLedger.State.ORDINARY)); setup.invoke(boiler);
+            assertSame(Fluids.STEAM, boiler.tanks[1].getTankType());
+            assertEquals(boiler instanceof TileEntityHeatBoilerIndustrial, boiler.selectSteamOutlet(SteamLedger.State.HOT));
+            assertFalse(boiler.selectSteamOutlet(SteamLedger.State.ULTRAHOT));
+            assertTrue(boiler.selectFeed(Fluids.OIL)); assertTrue(boiler.selectFeed(Fluids.LIGHT_WATER));
+            assertFalse(boiler.selectFeed(Fluids.STEAM));
+        }
+        NBTTagCompound saved = new NBTTagCompound(); saved.setString("realSimSteamOutlet", "STEAM");
+        TileEntityHeatBoilerIndustrial loaded = new TileEntityHeatBoilerIndustrial(); loaded.readFromNBT(saved);
+        assertTrue(MachineInfo.describe(loaded, false).toString().contains("Steam outlet: STEAM;"));
+        saved.setString("realSimSteamOutlet", "HOTSTEAM"); loaded.networkUnpack(saved);
+        assertTrue(MachineInfo.describe(loaded, false).toString().contains("Steam outlet: HOTSTEAM;"));
+    }
+    @Test public void blastAirSupplyCapacityCoversTheExistingMaximumDemand() {
+        com.hbm.inventory.recipes.CompressorRecipes.CompressorRecipe air = new com.hbm.inventory.recipes.CompressorRecipes.CompressorRecipe(1000,
+                new com.hbm.inventory.FluidStack(Fluids.AIR, 1000, 1));
+        long work = (long) Math.ceil(2 * 1000 * 100 * Math.log(10) / .70);
+        int rate = com.hbm.inventory.recipes.CompressorRecipes.physicalPowerQuanta(Fluids.AIR, 0, air, false);
+        assertEquals(75000, rate); assertEquals(9, SteamLedger.ceilDiv(work, rate));
+        long maximumAirPerMinute = SteamLedger.ceilDiv(2700L * 10000000 * 60, 15000000);
+        assertEquals(108000, maximumAirPerMinute);
+        assertTrue(1000 * 1200L / SteamLedger.ceilDiv(work, rate) > maximumAirPerMinute);
+        assertTrue(TileEntityAtmoExtractor.collectionPerTick(Fluids.AIR, false) * 1200L > maximumAirPerMinute);
+        assertEquals(50, TileEntityAtmoExtractor.collectionPowerWatts(Fluids.AIR, false) / 20 / TileEntityAtmoExtractor.collectionPerTick(Fluids.AIR, false));
+        assertEquals(5, TileEntityAtmoExtractor.collectionPerTick(Fluids.NITROGEN_GAS, false));
+        assertEquals(1, TileEntityAtmoExtractor.collectionPerTick(Fluids.AIR, true));
+        assertEquals(2500, com.hbm.inventory.recipes.CompressorRecipes.physicalPowerQuanta(Fluids.AIR, 1, air, true));
+    }
+    @Test public void compressorPhysicalWorkSurvivesBrownoutsAndMigratesOldTicksAtTheirOldCost() throws Exception {
+        com.hbm.inventory.recipes.CompressorRecipes registry = new com.hbm.inventory.recipes.CompressorRecipes();
+        Map<com.hbm.util.Tuple.Pair<FluidType, Integer>, com.hbm.inventory.recipes.CompressorRecipes.CompressorRecipe> old = new HashMap<>(com.hbm.inventory.recipes.CompressorRecipes.recipes);
+        Map<FluidType, com.hbm.inventory.recipes.CompressorRecipes.CompressorRecipe> vents = new HashMap<>(com.hbm.inventory.recipes.CompressorRecipes.decompressions);
+        try {
+            registry.deleteRecipes(); registry.registerDefaults();
+            TileEntityMachineCompressor compressor = new TileEntityMachineCompressor();
+            compressor.tanks[0].configureForRecipe(Fluids.AIR, 0); compressor.tanks[0].setFill(1000);
+            compressor.tanks[1].configureForRecipe(Fluids.AIR, 1);
+            java.lang.reflect.Method refresh = TileEntityMachineCompressor.class.getDeclaredMethod("refreshRecipe"); refresh.setAccessible(true); refresh.invoke(compressor);
+            java.lang.reflect.Method settings = TileEntityMachineCompressor.class.getDeclaredMethod("refreshRuntimeSettings"); settings.setAccessible(true); settings.invoke(compressor);
+            Field eligible = TileEntityMachineCompressor.class.getDeclaredField("runtimeMaterialEligible"); eligible.setAccessible(true); eligible.setBoolean(compressor, true);
+            Field last = TileEntityMachineCompressor.class.getDeclaredField("lastProgressTick"); last.setAccessible(true); last.setLong(compressor, 0);
+            Field paid = TileEntityMachineCompressor.class.getDeclaredField("physicalWorkPaid"); paid.setAccessible(true);
+            java.lang.reflect.Method settle = TileEntityMachineCompressor.class.getDeclaredMethod("settleProgressThrough", long.class); settle.setAccessible(true);
+            compressor.energyQuanta = 1000; settle.invoke(compressor, 1L);
+            assertEquals(0, compressor.energyQuanta); assertEquals(1000, paid.getLong(compressor));
+            settle.invoke(compressor, 2L); assertEquals(1000, paid.getLong(compressor));
+            compressor.tanks[1].setFill(compressor.tanks[1].getMaxFill()); compressor.energyQuanta = 2000; settle.invoke(compressor, 3L);
+            assertEquals(2000, compressor.energyQuanta); assertEquals(1000, paid.getLong(compressor));
+            compressor.tanks[1].setFill(0); eligible.setBoolean(compressor, true); settle.invoke(compressor, 4L);
+            assertEquals(0, compressor.energyQuanta); assertEquals(3000, paid.getLong(compressor));
+            assertEquals(1000, compressor.tanks[0].getFill()); assertEquals(0, compressor.tanks[1].getFill());
+            NBTTagCompound legacy = new NBTTagCompound(); legacy.setInteger("realSimProcessVersion", 1); legacy.setInteger("progress", 17);
+            compressor.tanks[0].writeToNBT(legacy, "0"); compressor.tanks[1].writeToNBT(legacy, "1");
+            TileEntityMachineCompressor loaded = new TileEntityMachineCompressor(); loaded.readFromNBT(legacy); refresh.invoke(loaded); settings.invoke(loaded);
+            assertEquals(17 * 2500L, paid.getLong(loaded)); assertEquals(9, loaded.processTime);
+            loaded.setDecompressionMode(true); assertEquals(0, paid.getLong(loaded));
+        } finally {
+            registry.deleteRecipes(); com.hbm.inventory.recipes.CompressorRecipes.recipes.putAll(old); com.hbm.inventory.recipes.CompressorRecipes.decompressions.putAll(vents);
+        }
+    }
+    @Test public void legacyMixedBlastStockIsRetainedWithoutAllowingNewMixedIntake() {
+        TileEntityMachineBlastFurnace original = new TileEntityMachineBlastFurnace();
+        original.tanks[0].setFill(200); original.tanks[2].setFill(300); original.tanks[3].setFill(400);
+        NBTTagCompound saved = new NBTTagCompound();
+        for(int tank = 0; tank < original.tanks.length; tank++) original.tanks[tank].writeToNBT(saved, "t" + tank);
+        TileEntityMachineBlastFurnace loaded = new TileEntityMachineBlastFurnace(); loaded.readFromNBT(saved);
+        assertEquals(200, loaded.tanks[0].getFill()); assertEquals(300, loaded.tanks[2].getFill()); assertEquals(400, loaded.tanks[3].getFill());
+        for(int tank : new int[] {0, 2, 3}) assertEquals(0, loaded.getDemand(loaded.tanks[tank].getTankType(), 1));
+        assertEquals(0, loaded.transferFluid(Fluids.OXYGEN_GAS, 0, 10));
+        loaded.tanks[0].setFill(0); loaded.tanks[3].setFill(0);
+        assertTrue(loaded.getDemand(Fluids.AIR, 1) > 0); assertEquals(0, loaded.getDemand(Fluids.AIRBLAST, 1));
+    }
     @After public void restoreIdentities() throws Exception {
         for(Map.Entry<Field, Object> e : fields.entrySet()) e.getKey().set(null, e.getValue());
         names.clear(); names.putAll(oldNames);
@@ -257,6 +393,10 @@ public class NativeGeneratorContractTest {
         com.hbm.tileentity.machine.oil.TileEntityMachineGasFlare tile = new com.hbm.tileentity.machine.oil.TileEntityMachineGasFlare();
         assertEquals(0, tile.getRatedOutputWatts()); assertEquals(0, tile.getEnergyCapacityQuanta());
         assertEquals(100000, tile.getExportLimitWatts());
+        String preview = MachineInfo.describe(tile, false).toString();
+        assertFalse(preview.contains("Maximum electrical delivery")); assertTrue(preview.contains("no electricity"));
+        tile.energyQuanta = 200; String live = MachineInfo.describe(tile, true).toString();
+        assertTrue(live.contains("Legacy electrical stock")); assertFalse(live.contains("Maximum electrical delivery"));
     }
     @Test public void unknownMiniSourceIsRetainedWithoutBecomingFreshFuel() {
         NBTTagCompound root = new NBTTagCompound(), data = new NBTTagCompound(), source = new NBTTagCompound();

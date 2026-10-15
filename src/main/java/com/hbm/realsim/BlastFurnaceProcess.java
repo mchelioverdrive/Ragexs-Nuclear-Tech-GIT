@@ -24,4 +24,25 @@ public final class BlastFurnaceProcess {
         long watts = blast.equals("AIRBLAST") ? 8000000 : blast.equals("AIR_HEATED") ? 4000000 : 2000000;
         return enriched ? watts * 5 / 4 : watts;
     }
+    /** Reduce work until both stored/process heat and this step's hot blast can pay it. */
+    public static long heatLimitedStep(long required, long paid, int totalAir, int airPaid,
+            long proposed, long availableJoules, long blastJoulesPerLiter) {
+        long step = proposed;
+        while(step > 0) {
+            long air = SteamLedger.ceilDiv((paid + step) * totalAir, required) - airPaid;
+            long supply = Math.max(0, availableJoules) + Math.max(0, air) * blastJoulesPerLiter;
+            if(supply >= step) return step;
+            step = supply;
+        }
+        return 0;
+    }
+    /** Clip paid heating to the available blast parcel; oxygen enriches that same parcel. */
+    public static long availableHeatStep(long required, long paid, int totalAir, int airPaid, int oxygenPaid,
+            int availableAir, int availableOxygen, boolean enriched, long ceiling) {
+        if(required <= paid || totalAir <= 0 || ceiling <= 0) return 0;
+        long airLimit = Math.min((long) totalAir, (long) airPaid + Math.max(0, availableAir));
+        if(enriched) airLimit = Math.min(airLimit, ((long) oxygenPaid + Math.max(0, availableOxygen)) * 10L);
+        long supportedHeat = airLimit * required / totalAir;
+        return Math.max(0L, Math.min(ceiling, Math.min(required - paid, supportedHeat - paid)));
+    }
 }

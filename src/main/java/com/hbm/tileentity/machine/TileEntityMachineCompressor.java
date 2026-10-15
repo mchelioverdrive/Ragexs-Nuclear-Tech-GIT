@@ -96,6 +96,11 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	private boolean runtimeActive;
 	private long lastProgressTick = Long.MIN_VALUE;
 	private long clientProgressTick;
+    private boolean clientPhysicalWork;
+    private long physicalWorkPaid;
+    private String paidRecipeKey = "";
+    private int legacyPhysicalProgress = -1;
+    private long physicalDrawTick = Long.MIN_VALUE, physicalDrawQuanta;
 	private final MassRemainder massRemainder = new MassRemainder();
 	public boolean decompress;
 
@@ -198,6 +203,25 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		if(runtimeMaterialEligible) runtimeMaterialEligible = cachedRecipeInputType == tanks[0].getTankType()
 				&& cachedRecipeInputPressure == tanks[0].getPressure()
 				&& cachedRecipeRevision == SerializableRecipe.getRegistryRevision() && this.canProcessMaterials();
+        if(cachedRecipe != null && cachedRecipe.workQuanta > 0) {
+            if(!runtimeMaterialEligible || energyQuanta <= 0 && physicalWorkPaid < cachedRecipe.workQuanta) { isOn = false; return; }
+            long remaining = cachedRecipe.workQuanta - physicalWorkPaid;
+            long allowance = elapsed >= com.hbm.realsim.SteamLedger.ceilDiv(remaining, powerRequirement)
+                    ? remaining : elapsed * powerRequirement;
+            long debit = Math.min(energyQuanta, allowance);
+            this.setRuntimePower(energyQuanta - debit);
+            physicalWorkPaid += debit;
+            physicalDrawQuanta = com.hbm.realsim.SteamLedger.ceilDiv(debit, elapsed); physicalDrawTick = target;
+            progress = (int) com.hbm.realsim.SteamLedger.mulDiv(physicalWorkPaid, processTime, cachedRecipe.workQuanta);
+            isOn = debit > 0;
+            if(physicalWorkPaid >= cachedRecipe.workQuanta) {
+                this.process(); physicalWorkPaid = 0; progress = 0;
+                runtimeMaterialEligible = this.canProcessMaterials();
+                this.markChanged();
+            }
+            this.markDirty(); this.markNetworkDirty();
+            return;
+        }
 		if(!runtimeMaterialEligible || !this.hasOperatingPower()) {
 			if(progress != 0 || isOn) { progress = 0; isOn = false; this.markDirty(); }
 			return;
@@ -256,9 +280,10 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(this.powerRequirement);
 		if(cachedRecipe != null && cachedRecipe.workQuanta > 0L) {
 			// Physical work is independent of speed/power upgrades and cannot shrink mid-job.
-			this.powerRequirement = powerRequirementBase;
+			this.powerRequirement = CompressorRecipes.physicalPowerQuanta(cachedRecipeInputType, cachedRecipeInputPressure, cachedRecipe, decompress);
 			this.operatingPowerWatts = EnergyUnits.quantaPerTickToWatts(powerRequirement);
 			this.processTime = Math.toIntExact(1L + (cachedRecipe.workQuanta - 1L) / powerRequirement);
+            this.progress = (int) com.hbm.realsim.SteamLedger.mulDiv(physicalWorkPaid, processTime, cachedRecipe.workQuanta);
 		}
 	}
 
@@ -272,6 +297,16 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 			cachedRecipeInputPressure = pressure;
 			cachedRecipeRevision = revision;
 			cachedRecipe = decompress && pressure == 1 ? CompressorRecipes.decompressions.get(type) : CompressorRecipes.recipes.get(new Pair(type, pressure));
+            String key = cachedRecipe == null || cachedRecipe.workQuanta <= 0 ? "" : new CompressorRecipes().accountingKey(
+                    new java.util.AbstractMap.SimpleImmutableEntry<>(new Pair<>(type, pressure), cachedRecipe));
+            if(legacyPhysicalProgress >= 0) {
+                // Version 1 ticks paid 2500 half-joule quanta, regardless of the new drive ceiling.
+                physicalWorkPaid = cachedRecipe == null ? 0 : Math.min(cachedRecipe.workQuanta, (long) legacyPhysicalProgress * powerRequirementBase);
+                paidRecipeKey = key; legacyPhysicalProgress = -1;
+            }
+            if(!key.equals(paidRecipeKey)) { physicalWorkPaid = 0; paidRecipeKey = key; }
+            if(cachedRecipe == null || cachedRecipe.workQuanta <= 0) physicalWorkPaid = 0;
+            else physicalWorkPaid = Math.min(physicalWorkPaid, cachedRecipe.workQuanta);
 		}
 	}
 
@@ -282,6 +317,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	}
 
 	private boolean hasOperatingPower() {
+        if(cachedRecipe != null && cachedRecipe.workQuanta > 0) return energyQuanta > 0 || physicalWorkPaid >= cachedRecipe.workQuanta;
 		return this.energyQuanta > this.powerRequirement;
 	}
 
@@ -295,6 +331,14 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
             else cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
             scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
             return;
+        }
+        if(cachedRecipe != null && cachedRecipe.workQuanta > 0) {
+            runtimeActive = runtimeMaterialEligible && this.hasOperatingPower();
+            if(runtimeActive) this.scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+            else { this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN); isOn = false; }
+            if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
+            else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
+            return; // Paid work survives power loss and blocked output.
         }
 		runtimeActive = runtimeMaterialEligible && this.hasOperatingPower();
 		this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
@@ -333,6 +377,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	private void sendRuntimeState() {
 		NBTTagCompound data = new NBTTagCompound();
 		data.setInteger("progress", progress);
+        data.setBoolean("physicalWork", cachedRecipe != null && cachedRecipe.workQuanta > 0);
 		data.setLong("progressTick", worldObj.getTotalWorldTime());
 		data.setInteger("processTime", processTime);
 		data.setInteger("powerRequirement", powerRequirement);
@@ -345,11 +390,21 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	}
 	
 	private float randSpeed = 0.1F;
+
+	@Override public void serialize(io.netty.buffer.ByteBuf buf) {
+		super.serialize(buf);
+		buf.writeBoolean(decompress);
+	}
+	@Override public void deserialize(io.netty.buffer.ByteBuf buf) {
+		super.deserialize(buf);
+		decompress = buf.readBoolean();
+	}
 	
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
 		
 		this.progress = nbt.getInteger("progress");
+        this.clientPhysicalWork = nbt.getBoolean("physicalWork");
 		this.clientProgressTick = nbt.getLong("progressTick");
 		this.processTime = nbt.getInteger("processTime");
 		this.powerRequirement = nbt.getInteger("powerRequirement");
@@ -357,7 +412,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		tanks[0].readFromNBT(nbt, "0");
 		tanks[1].readFromNBT(nbt, "1");
 		this.isOn = nbt.getBoolean("isOn");
-		this.decompress = nbt.getBoolean("decompress");
+		if(nbt.hasKey("decompress")) this.decompress = nbt.getBoolean("decompress");
 	}
 	
 	private void updateConnections() {
@@ -380,7 +435,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	
 	public boolean canProcess() {
 		
-		if(this.energyQuanta <= powerRequirement) return false;
+		if(!this.hasOperatingPower()) return false;
 		return this.canProcessMaterials();
 	}
 	
@@ -388,7 +443,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
         if(usesSteamLedger()) return; // The canonical account owns steam; legacy tuple completion cannot bypass it.
 		
 		this.refreshRecipe();
-		if(!this.canProcessMaterials() || cachedRecipe != null && cachedRecipe.workQuanta > 0L && progress < processTime) return;
+		if(!this.canProcessMaterials() || cachedRecipe != null && cachedRecipe.workQuanta > 0L && physicalWorkPaid < cachedRecipe.workQuanta) return;
 		this.beginMachineFluidMutation();
 		try {
 		if(cachedRecipe == null) {
@@ -433,7 +488,12 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		cachedRecipeRevision = -1L;
 		massRemainder.read(nbt);
 		decompress = nbt.getBoolean("decompress");
-		if(!nbt.hasKey("realSimProcessVersion")) progress = 0;
+        int version = nbt.getInteger("realSimProcessVersion");
+        physicalWorkPaid = Math.max(0, nbt.getLong("physicalWorkPaid"));
+        paidRecipeKey = nbt.getString("paidRecipeKey");
+        legacyPhysicalProgress = version == 1 ? Math.max(0, progress) : -1;
+        if(version == 0) { progress = 0; physicalWorkPaid = 0; paidRecipeKey = ""; }
+        physicalDrawTick = Long.MIN_VALUE; physicalDrawQuanta = 0;
 	}
 	
 	@Override
@@ -444,7 +504,9 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		EnergyUnits.writeEnergyQuanta(nbt, energyQuanta);
 		nbt.setInteger("progress", progress);
 		massRemainder.write(nbt);
-		nbt.setInteger("realSimProcessVersion", 1);
+		nbt.setInteger("realSimProcessVersion", legacyPhysicalProgress >= 0 ? 1 : 2);
+        nbt.setLong("physicalWorkPaid", physicalWorkPaid);
+        nbt.setString("paidRecipeKey", paidRecipeKey);
 		nbt.setBoolean("decompress", decompress);
 		tanks[0].writeToNBT(nbt, "0");
 		tanks[1].writeToNBT(nbt, "1");
@@ -469,9 +531,10 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	@Override
 	public void receiveControl(NBTTagCompound data) {
 		this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
-		if(data.hasKey("decompress")) {
-			decompress = !decompress; progress = 0; cachedRecipeRevision = -1L;
-			this.markChanged(); this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.RECIPE);
+		if(data.hasKey("setDecompress") || data.hasKey("decompress")) {
+			boolean requested = data.hasKey("setDecompress") ? data.getBoolean("setDecompress") : !decompress;
+			if(this.setDecompressionMode(requested)) this.markChanged();
+			this.sendRuntimeState();
 			return;
 		}
 		int compression = MathHelper.clamp_int(data.getInteger("compression"), 0, 4);
@@ -490,6 +553,15 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 			this.markChanged();
 			this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE);
 		}
+	}
+
+	/** Idempotent server setting: repeated requests for the same mode do not reset paid progress. */
+	public boolean setDecompressionMode(boolean requested) {
+		if(decompress == requested) return false;
+		decompress = requested; progress = 0; physicalWorkPaid = 0; legacyPhysicalProgress = -1; paidRecipeKey = ""; cachedRecipeRevision = -1L;
+		this.markNetworkDirty();
+		this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.RECIPE);
+		return true;
 	}
 
 	@Override
@@ -515,7 +587,7 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	}
 
 	public int getDisplayedProgress() {
-		if(worldObj == null || !worldObj.isRemote || !isOn) return progress;
+		if(worldObj == null || !worldObj.isRemote || !isOn || clientPhysicalWork) return progress;
 		return (int) Math.min(processTime, progress + Math.max(0L, worldObj.getTotalWorldTime() - clientProgressTick));
 	}
 
@@ -626,15 +698,23 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 				this.markChanged();
 			}
 		}
-		if(nbt.hasKey("decompress") && decompress != nbt.getBoolean("decompress")) { decompress = nbt.getBoolean("decompress"); progress = 0; cachedRecipeRevision = -1L; }
+		if(nbt.hasKey("decompress") && this.setDecompressionMode(nbt.getBoolean("decompress"))) this.markChanged();
 		IFluidCopiable.super.pasteSettings(nbt, index, world, player, x, y, z);
 		this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE);
 	}
 
     @Override public long getMachineDemandWatts() { return usesSteamLedger() ? powerRequirementBase * 10L : operatingPowerWatts > 0 ? operatingPowerWatts : powerRequirementBase * 10L; }
-    @Override public long getMachineCurrentDrawWatts() { return usesSteamLedger() ? steamAccount.currentWorkQuanta * 10L : isOn ? getMachineDemandWatts() : 0; }
+    @Override public long getMachineCurrentDrawWatts() {
+        if(usesSteamLedger()) return steamAccount.currentWorkQuanta * 10L;
+        if(cachedRecipe != null && cachedRecipe.workQuanta > 0)
+            return worldObj != null && physicalDrawTick == worldObj.getTotalWorldTime() ? physicalDrawQuanta * 10L : 0;
+        return isOn ? getMachineDemandWatts() : 0;
+    }
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
         lines.add("Compresses compatible gases or upgrades steam; requires electrical work");
+        lines.add("Air 0 -> 1 PU: up to 750 kWe, 133333 standard L/min at full supply");
+        lines.add("Other physical conversions: 25 kWe; work per parcel is unchanged");
+        lines.add("Physical work pauses safely on low power; more power increases air throughput");
         if(cachedRecipe != null && cachedRecipe.workQuanta > 0) lines.add("Batch compression work: " + api.hbm.energymk2.EnergyUnits.formatJoules(cachedRecipe.workQuanta));
     }
 }

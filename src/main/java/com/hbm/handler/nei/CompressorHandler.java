@@ -34,13 +34,23 @@ public class CompressorHandler extends NEIUniversalHandler {
         RecipeTransferRectHandler.registerRectsToGuis(guiGui, transferRectsGui);
     }
     @Override public void drawExtras(int recipe) {
-        ItemStack key = (ItemStack) ((RecipeSet) arecipes.get(recipe)).originalInputInstance;
+        RecipeSet page = (RecipeSet) arecipes.get(recipe);
+        ItemStack key = (ItemStack) page.originalInputInstance;
         NBTTagCompound tag = key.getTagCompound();
-        boolean steam = com.hbm.realsim.SteamLedger.state(com.hbm.inventory.fluid.Fluids.fromID(key.getItemDamage()).getName()) != null;
-        Minecraft.getMinecraft().fontRenderer.drawString(steam ? "Steam recompression" : tag.getBoolean("compressorVent") ? "Decompress; no work recovery" : "Compress / liquefy", 4, 2, 0x404040);
+        com.hbm.inventory.fluid.FluidType input = com.hbm.inventory.fluid.Fluids.fromID(key.getItemDamage());
+        com.hbm.inventory.fluid.FluidType output = com.hbm.inventory.fluid.Fluids.fromID(page.output[0].item.getItemDamage());
+        boolean steam = com.hbm.realsim.SteamLedger.state(input.getName()) != null;
+        boolean vent = tag.getBoolean("compressorVent");
+        String mode = vent ? "Decompress" : input == output ? "Compress"
+                : output.getPhysicalState().phase == com.hbm.realsim.PhysicalState.Phase.LIQUID ? "Liquefy"
+                : input.getPhysicalState().phase == com.hbm.realsim.PhysicalState.Phase.LIQUID ? "Vaporize" : "Convert";
+        String heading = steam ? "Steam recompression" : mode + ": " + com.hbm.items.machine.ItemFluidIcon.getPressure(key)
+                + " -> " + com.hbm.items.machine.ItemFluidIcon.getPressure(page.output[0].item) + " PU";
+        Minecraft.getMinecraft().fontRenderer.drawString(heading, 4, 2, 0x404040);
         String cost = tag.getLong("compressorWork") > 0 ? api.hbm.energymk2.EnergyUnits.formatJoules(tag.getLong("compressorWork")) : "Base cycle";
         // Steam uses the continuous thermal account's mass-flow/rejection limits, not a discrete recipe timer.
-        String detail = steam ? cost + " / shown parcel" : String.format(java.util.Locale.US, "%.2f s; %s", tag.getInteger("compressorTicks") / 20D, cost);
+        String detail = steam ? cost + " / shown parcel" : vent ? cost + " used; no recovery"
+                : String.format(java.util.Locale.US, "%.2f s; %s", tag.getInteger("compressorTicks") / 20D, cost);
         Minecraft.getMinecraft().fontRenderer.drawString(detail, 4, 55, 0x404040);
     }
 }

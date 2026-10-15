@@ -30,15 +30,19 @@ public class GUIBlastFurnace extends GuiInfoContainer {
 	public void drawScreen(int x, int y, float interp) {
 		super.drawScreen(x, y, interp);
 
-		if(this.mc.thePlayer.inventory.getItemStack() == null) {
-			Slot slot = (Slot) this.inventorySlots.inventorySlots.get(0);
-			if(this.isMouseOverSlot(slot, x, y) && !slot.getHasStack()) {
-				this.func_146283_a(java.util.Arrays.asList(I18n.format("tooltip.blast.fuel")), x, y);
-			}
-		}
-		
-		String label = I18n.format("tooltip.blast.rate") + " " + String.format(java.util.Locale.US, "%.2f MW", furnace.speed);
-		drawCustomInfoStat(x, y, guiLeft + 79, guiTop + 62, 18, 18, x, y, label);
+        boolean overItem = false;
+        for(Object value : this.inventorySlots.inventorySlots) {
+            Slot slot = (Slot) value;
+            if(this.isMouseOverSlot(slot, x, y)) { overItem = true; break; }
+        }
+        if(!overItem && this.mc.thePlayer.inventory.getItemStack() == null) {
+            java.util.List<String> details = new java.util.ArrayList<>();
+            details.add(I18n.format("tooltip.blast.rate") + " " + String.format(java.util.Locale.US, "%.2f MW", furnace.speed));
+            furnace.appendProgressInfo(details);
+            drawCustomInfoStat(x, y, guiLeft + 62, guiTop + 18, 56, 88, x, y, details.toArray(new String[0]));
+        }
+        if(furnace.getStackInSlot(0) != null)
+            drawCustomInfoStat(x, y, guiLeft + 8, guiTop + 91, 16, 16, x, y, I18n.format("tooltip.blast.legacyFuel"));
 
 		furnace.tanks[0].renderTankInfo(this, x, y, guiLeft + 25, guiTop + 71, 18, 18);
 		furnace.tanks[1].renderTankInfo(this, x, y, guiLeft + 25, guiTop + 17, 18, 18);
@@ -64,6 +68,9 @@ public class GUIBlastFurnace extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		drawTexturedModalRect(guiLeft + 133, guiTop + 26, 79, 26, 18, 18);
+        // Remove the obsolete auxiliary-fuel socket before drawing process/heat fill.
+        drawTexturedModalRect(guiLeft + 79, guiTop + 80, 154, 80, 18, 18);
+        if(furnace.getStackInSlot(0) != null) drawTexturedModalRect(guiLeft + 7, guiTop + 90, 79, 26, 18, 18);
 		
 		int fuel = (int) Math.round((double) furnace.fuel * 26D / (double) furnace.MAX_FUEL);
 		int prog = (int) Math.round(furnace.progress * (88D - fuel));

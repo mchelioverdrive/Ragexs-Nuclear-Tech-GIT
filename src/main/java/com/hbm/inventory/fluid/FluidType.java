@@ -30,7 +30,8 @@ public class FluidType {
 
 	private static final String GUI_FLUID_TEXTURE_PATH = "textures/gui/fluids/";
 	private static final String GUI_FLUID_TEXTURE_RESOURCE_PATH = "/assets/" + RefStrings.MODID + "/" + GUI_FLUID_TEXTURE_PATH;
-	private static final ResourceLocation GUI_FLUID_FALLBACK_TEXTURE = new ResourceLocation(RefStrings.MODID + ":" + GUI_FLUID_TEXTURE_PATH + "water.png");
+	private static final ResourceLocation GUI_FLUID_FALLBACK_TEXTURE = new ResourceLocation(RefStrings.MODID + ":" + GUI_FLUID_TEXTURE_PATH + "water_base.png");
+	private static final ResourceLocation GUI_GAS_FALLBACK_TEXTURE = new ResourceLocation(RefStrings.MODID + ":" + GUI_FLUID_TEXTURE_PATH + "air.png");
 
 	//The numeric ID of the fluid
 	private int id;
@@ -61,6 +62,7 @@ public class FluidType {
 	//public List<EnumFluidTrait> enumTraits = new ArrayList();
 	
 	private ResourceLocation texture;
+	private boolean guiTextureFallback;
 	
 	public FluidType(String name, int color, int p, int f, int r, EnumSymbol symbol) {
 		this.stringId = name;
@@ -93,7 +95,7 @@ public class FluidType {
 
 	/**
 	 * Uses the requested GUI art when it is bundled with the mod. Fluids without
-	 * bespoke art reuse water's shape and tint it with their identifying color,
+	 * bespoke art use neutral liquid/gas art tinted with their identifying color,
 	 * rather than allowing Minecraft to render its missing-texture image.
 	 */
 	private boolean setGuiTexture(String textureName, int fallbackColor) {
@@ -104,6 +106,7 @@ public class FluidType {
 		}
 
 		this.texture = GUI_FLUID_FALLBACK_TEXTURE;
+		this.guiTextureFallback = true;
 		this.guiTint = fallbackColor;
 		return false;
 	}
@@ -163,6 +166,12 @@ public class FluidType {
 	}
 
 	public ResourceLocation getTexture() {
+		// Traits are added after construction; choose fallback phase when the texture is requested.
+		if(guiTextureFallback) {
+			com.hbm.realsim.PhysicalState state = getPhysicalState();
+			if(state.phase == com.hbm.realsim.PhysicalState.Phase.GAS || !state.isResolved()
+					&& (hasTrait(FT_Gaseous.class) || hasTrait(FT_Gaseous_ART.class))) return GUI_GAS_FALLBACK_TEXTURE;
+		}
 		return this.texture;
 	}
 	public String getUnlocalizedName() {

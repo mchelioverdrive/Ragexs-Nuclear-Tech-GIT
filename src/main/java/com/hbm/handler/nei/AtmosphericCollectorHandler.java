@@ -25,8 +25,10 @@ public class AtmosphericCollectorHandler extends NEIUniversalHandler {
                 if(!atmosphere.hasFluid(entry.fluid) || !entry.fluid.hasTrait(FT_Gaseous.class)) continue;
                 boolean bulk = entry.fluid == mainEntry.fluid;
                 ItemStack machine = new ItemStack(ModBlocks.machine_atmo_vent);
-                recipes.put(machine, ItemFluidIcon.make(entry.fluid, bulk ? 100 : 20, 0));
-                conditions.put(machine, new String[] {body.name + " natural atmosphere", bulk ? "1 s; 5 kWe (bulk)" : "1 s; 50 kWe (selective)"});
+                int rate = com.hbm.tileentity.machine.TileEntityAtmoExtractor.collectionPerTick(entry.fluid, !bulk);
+                long watts = com.hbm.tileentity.machine.TileEntityAtmoExtractor.collectionPowerWatts(entry.fluid, !bulk);
+                recipes.put(machine, ItemFluidIcon.make(entry.fluid, rate * 20, 0));
+                conditions.put(machine, new String[] {body.name + " natural atmosphere", "1 s; " + watts / 1000 + " kWe (" + (bulk ? "bulk" : "selective") + ")"});
             }
         }
     }

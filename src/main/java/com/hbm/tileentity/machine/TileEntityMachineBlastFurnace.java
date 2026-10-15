@@ -41,7 +41,7 @@ public class TileEntityMachineBlastFurnace extends TileEntityMachineBase impleme
     private static final long FLUX_CO2_MASS = java.math.BigDecimal.valueOf(com.hbm.realsim.PhysicalState.MASS_UNITS_PER_KG)
             .multiply(new java.math.BigDecimal("44.0095")).divide(new java.math.BigDecimal("100.0869"), 0, java.math.RoundingMode.DOWN).longValueExact();
     private long pendingFluxCO2;
-    private static final int TASK_PROCESS = 1, TASK_GAS = 2, CADENCE = 5;
+    private static final int TASK_PROCESS = 1, TASK_GAS = 2, CADENCE = 1;
     private DirPos[] connections;
     private int orientation = -1;
     private Recipe cachedRecipe;
@@ -50,6 +50,7 @@ public class TileEntityMachineBlastFurnace extends TileEntityMachineBase impleme
     private boolean coke, enriched;
     private long heatRequired, heatPaid, fuelQuanta, gasMicroJ;
     private int airRequired, airPaid, oxygenPaid;
+    private int lastBlastTank = 2;
     public boolean isProgressing;
     public float progress, speed;
     public int fuel;
@@ -103,13 +104,39 @@ public class TileEntityMachineBlastFurnace extends TileEntityMachineBase impleme
         if(required == 0) return null;
         long paid = result == null ? 0 : heatPaid;
         int totalAir = result == null ? cachedRecipe.air : airRequired;
-        boolean useCoke = result == null ? cachedRecipe.coke : coke;
+        // Integer-litre admission may already own enough blast for another heating step.
+        // Keep its actual temperature/rating even if that inlet has just emptied.
+        if(result != null && airPaid > 0) {
+            FluidTank owned = tanks[lastBlastTank];
+            long step = blastStep(owned);
+            if(step > 0 && SteamLedger.ceilDiv((paid + step) * totalAir, required) == airPaid) return owned;
+        }
         for(FluidTank tank : blasts) {
-            long step = Math.min(required - paid, BlastFurnaceProcess.ratedWatts(useCoke, tank.getTankType().getName(), result != null && enriched) * CADENCE / 20L);
+            long step = blastStep(tank);
             int amount = (int) SteamLedger.ceilDiv((paid + step) * totalAir, required) - (result == null ? 0 : airPaid);
-            if(tank.getFill() >= amount && amount > 0) return tank;
+            if(step > 0 && tank.getFill() >= amount && amount > 0) return tank;
         }
         return null;
+    }
+    private api.hbm.tile.IProcessHeatSource heater() {
+        api.hbm.tile.IProcessHeatSource source = com.hbm.realsim.ProcessMachine.heater(this);
+        // A 900-C source supplies the lumped burden-preheating deficit, not carbon reduction.
+        return source != null && source.getProcessTemperatureC() >= 900 ? source : null;
+    }
+    private long externalHeatAvailable() {
+        api.hbm.tile.IProcessHeatSource source = heater();
+        return source == null ? 0 : source.getAvailableProcessHeatQuanta(worldObj.getTotalWorldTime());
+    }
+    private long blastStep(FluidTank tank) {
+        long required = result != null ? heatRequired : cachedRecipe == null ? 0 : cachedRecipe.heatJoules;
+        if(required == 0) return 0;
+        long proposed = BlastFurnaceProcess.availableHeatStep(required, result == null ? 0 : heatPaid,
+                result == null ? cachedRecipe.air : airRequired, result == null ? 0 : airPaid, result == null ? 0 : oxygenPaid,
+                tank.getFill(), tanks[4].getFill(), result != null && enriched,
+                BlastFurnaceProcess.ratedWatts(result == null ? cachedRecipe.coke : coke, tank.getTankType().getName(), result != null && enriched) * CADENCE / 20L);
+        if(result == null) return proposed; // The reserved reductant's heat is admitted when the charge starts.
+        return BlastFurnaceProcess.heatLimitedStep(required, heatPaid, airRequired, airPaid, proposed,
+                fuelQuanta / 2 + externalHeatAvailable() / 2, BlastFurnaceProcess.blastJoulesPerLiter(tank.getTankType().getName()));
     }
     private boolean outputFits(ItemStack output, int slot) {
         return output == null || slots[slot] == null || slots[slot].isItemEqual(output) && ItemStack.areItemStackTagsEqual(slots[slot], output)
@@ -122,10 +149,10 @@ public class TileEntityMachineBlastFurnace extends TileEntityMachineBase impleme
         if(result == null) return cachedRecipe != null && gasRoom(slots[2]) && outputFits(cachedRecipe.steel, 3) && outputFits(cachedRecipe.slag, 4);
         if(!outputFits(result, 3) || !outputFits(slag, 4)) return false;
         if(heatPaid >= heatRequired) return true;
-        long step = Math.min(heatRequired - heatPaid, BlastFurnaceProcess.ratedWatts(coke, air.getTankType().getName(), enriched) * CADENCE / 20L);
+        long step = blastStep(air);
         int amount = (int) SteamLedger.ceilDiv((heatPaid + step) * airRequired, heatRequired) - airPaid;
         if(air.getFill() < amount || enriched && tanks[4].getFill() < (airPaid + amount + 9) / 10 - oxygenPaid) return false;
-        return gasRoom(slots[0]) || BlastFurnaceProcess.blastJoulesPerLiter(air.getTankType().getName()) * amount + fuelQuanta / 2 >= step;
+        return step > 0;
     }
     private void schedule() {
         long now = worldObj.getTotalWorldTime();
@@ -151,7 +178,7 @@ public class TileEntityMachineBlastFurnace extends TileEntityMachineBase impleme
         }
         markDirty(); markNetworkDirty(); schedule(); sync();
     }
-    private void addFuel(ItemStack stack) {
+    private void addReductant(ItemStack stack) {
         String identity = BlastFurnaceProcess.fuelIdentity(stack);
         long chemical = PhysicalRegistry.get(identity).chemicalMicrojoulesPerUnit();
         long useful = SteamLedger.mulDiv(chemical, BlastFurnaceProcess.efficiency(identity), 1000000);
@@ -189,24 +216,28 @@ public class TileEntityMachineBlastFurnace extends TileEntityMachineBase impleme
                 slag.stackSize = Math.min(slag.getMaxStackSize(), slag.stackSize + 1); decrStackSize(5, 1);
             }
             heatPaid = 0; airRequired = recipe.air; airPaid = 0; oxygenPaid = 0;
-            addFuel(slots[2]); decrStackSize(1, recipe.feed.stacksize); decrStackSize(2, 1); releaseGas(); refreshRecipe();
+            addReductant(slots[2]); decrStackSize(1, recipe.feed.stacksize); decrStackSize(2, 1); releaseGas(); refreshRecipe();
         }
         if(heatPaid < heatRequired) {
             FluidTank air = blast();
             if(air == null) return;
             long rating = BlastFurnaceProcess.ratedWatts(coke, air.getTankType().getName(), enriched);
-            long step = Math.min(heatRequired - heatPaid, rating * CADENCE / 20L);
+            long step = blastStep(air);
             int amount = (int) SteamLedger.ceilDiv((heatPaid + step) * airRequired, heatRequired) - airPaid;
             int oxygen = enriched ? (airPaid + amount + 9) / 10 - oxygenPaid : 0;
             if(air.getFill() < amount || tanks[4].getFill() < oxygen) return;
             long blastHeat = Math.min(step, BlastFurnaceProcess.blastJoulesPerLiter(air.getTankType().getName()) * amount);
             long needed = (step - blastHeat) * 2;
-            if(fuelQuanta < needed) {
-                if(!gasRoom(slots[0])) return;
-                addFuel(slots[0]); decrStackSize(0, 1); releaseGas();
+            long external = Math.max(0, needed - fuelQuanta);
+            if(external > 0) {
+                api.hbm.tile.IProcessHeatSource source = heater();
+                if(source == null) return;
+                // Draws obey the shared source's per-tick export budget; every received quantum is owned.
+                fuelQuanta = Math.addExact(fuelQuanta, source.drawProcessHeatQuanta(worldObj.getTotalWorldTime(), external));
             }
             if(fuelQuanta < needed) return;
             fuelQuanta -= needed;
+            if(amount > 0) lastBlastTank = air == tanks[0] ? 0 : air == tanks[3] ? 3 : 2;
             air.setFill(air.getFill() - amount); tanks[4].setFill(tanks[4].getFill() - oxygen);
             heatPaid += step; airPaid += amount; oxygenPaid += oxygen;
             isProgressing = true; speed = rating / 1000000F;
@@ -230,14 +261,14 @@ public class TileEntityMachineBlastFurnace extends TileEntityMachineBase impleme
     public int getBurnTime(ItemStack stack) { return BlastFurnaceProcess.fuelIdentity(stack) == null ? 0 : 1; }
     private boolean isFlux(ItemStack stack) { return stack != null && stack.getItem() == com.hbm.items.ModItems.powder_limestone && stack.stackSize > 0; }
     @Override public boolean isItemValidForSlot(int slot, ItemStack stack) {
-        if(slot == 0 || slot == 2) return getBurnTime(stack) > 0;
+        if(slot == 2) return getBurnTime(stack) > 0;
         if(slot == 5) return isFlux(stack);
         if(slot == 1) for(Recipe recipe : IndustrialBlastFurnaceRecipes.recipes) if(recipe.feed.matchesRecipe(stack, true)) return true;
         return false;
     }
     @Override public boolean canInsertItem(int slot, ItemStack stack, int side) { return isItemValidForSlot(slot, stack); }
-    @Override public boolean canExtractItem(int slot, ItemStack stack, int side) { return slot == 3 || slot == 4; }
-    @Override public int[] getAccessibleSlotsFromSide(int side) { return new int[] {1, 2, 0, 5, 3, 4}; }
+    @Override public boolean canExtractItem(int slot, ItemStack stack, int side) { return slot == 0 || slot == 3 || slot == 4; }
+    @Override public int[] getAccessibleSlotsFromSide(int side) { return new int[] {1, 2, 5, 3, 4, 0}; }
     private void sync() {
         progress = heatRequired == 0 ? 0 : (float) ((double) heatPaid / heatRequired);
         fuel = (int) Math.min(MAX_FUEL, fuelQuanta); networkPackNT(40);
@@ -256,6 +287,7 @@ public class TileEntityMachineBlastFurnace extends TileEntityMachineBase impleme
         super.writeToNBT(nbt); NBTTagCompound bill = new NBTTagCompound(); bill.setInteger("version", 1);
         bill.setLong("heatRequired", heatRequired); bill.setLong("heatPaid", heatPaid); bill.setLong("fuelQuanta", fuelQuanta); bill.setLong("gasMicroJ", gasMicroJ);
         bill.setInteger("airRequired", airRequired); bill.setInteger("airPaid", airPaid); bill.setInteger("oxygenPaid", oxygenPaid);
+        bill.setInteger("lastBlastTank", lastBlastTank);
         bill.setBoolean("coke", coke); bill.setBoolean("enriched", enriched);
         bill.setLong("pendingFluxCO2", pendingFluxCO2); fluxGas.write(bill);
         if(result != null) { bill.setTag("result", result.writeToNBT(new NBTTagCompound())); bill.setTag("feed", ownedFeed.writeToNBT(new NBTTagCompound())); }
@@ -267,9 +299,10 @@ public class TileEntityMachineBlastFurnace extends TileEntityMachineBase impleme
         if(bill.hasKey("version") && bill.getInteger("version") != 1) throw new IllegalStateException("Unknown blast furnace accounting version");
         heatRequired = bill.getLong("heatRequired"); heatPaid = bill.getLong("heatPaid"); fuelQuanta = bill.getLong("fuelQuanta"); gasMicroJ = bill.getLong("gasMicroJ");
         airRequired = bill.getInteger("airRequired"); airPaid = bill.getInteger("airPaid"); oxygenPaid = bill.getInteger("oxygenPaid"); coke = bill.getBoolean("coke"); enriched = bill.getBoolean("enriched");
+        lastBlastTank = bill.hasKey("lastBlastTank") ? bill.getInteger("lastBlastTank") : 2;
         pendingFluxCO2 = bill.getLong("pendingFluxCO2"); fluxGas.read(bill);
         result = ItemStack.loadItemStackFromNBT(bill.getCompoundTag("result")); slag = ItemStack.loadItemStackFromNBT(bill.getCompoundTag("slag")); ownedFeed = ItemStack.loadItemStackFromNBT(bill.getCompoundTag("feed"));
-        if(heatRequired < 0 || heatRequired > 1_000_000_000L || heatPaid < 0 || heatPaid > heatRequired || fuelQuanta < 0 || gasMicroJ < 0 || pendingFluxCO2 < 0
+        if((lastBlastTank != 0 && lastBlastTank != 2 && lastBlastTank != 3) || heatRequired < 0 || heatRequired > 1_000_000_000L || heatPaid < 0 || heatPaid > heatRequired || fuelQuanta < 0 || gasMicroJ < 0 || pendingFluxCO2 < 0
                 || airRequired < 0 || airRequired > 1_000_000 || airPaid < 0 || airPaid > airRequired || oxygenPaid < 0 || oxygenPaid > (airRequired + 9) / 10
                 || result != null && (ownedFeed == null || heatRequired <= 0 || airRequired <= 0) || result == null && (ownedFeed != null || slag != null || heatRequired != 0 || pendingFluxCO2 != 0)) throw new IllegalStateException("Invalid owned blast furnace bill");
         for(int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "t" + i);
@@ -277,12 +310,22 @@ public class TileEntityMachineBlastFurnace extends TileEntityMachineBase impleme
     @Override public FluidTank[] getReceivingTanks() { return receiving; }
     @Override public FluidTank[] getSendingTanks() { return sending; }
     @Override public FluidTank[] getAllTanks() { return tanks; }
+    private boolean acceptsBlast(FluidType type) {
+        boolean blastType = false;
+        for(FluidTank tank : blasts) if(tank.getTankType() == type) blastType = true;
+        if(!blastType) return true;
+        // First admitted air selects the inlet until consumed. Never discard old mixed save stock.
+        for(FluidTank tank : blasts) if(tank.getTankType() != type && tank.getFill() > 0) return false;
+        return true;
+    }
     @Override public long getDemand(FluidType type, int pressure) {
+        if(!acceptsBlast(type)) return 0;
         long room = 0;
         for(FluidTank tank : receiving) if(tank.getTankType() == type && tank.getPressure() == pressure) room += Math.max(0L, (long) tank.getMaxFill() - tank.getFill());
         return room;
     }
     @Override public long transferFluid(FluidType type, int pressure, long amount) {
+        if(!acceptsBlast(type)) return amount;
         long remaining = amount;
         for(FluidTank tank : receiving) if(tank.getTankType() == type && tank.getPressure() == pressure) {
             int accepted = (int) Math.min(Math.max(0L, remaining), Math.max(0L, (long) tank.getMaxFill() - tank.getFill()));
@@ -301,15 +344,19 @@ public class TileEntityMachineBlastFurnace extends TileEntityMachineBase impleme
         lines.add("Enrichment reserves 1 standard L O2 per 10 standard L blast at batch start");
         lines.add("Limestone with slag: 1.2 MJ less batch heat, consumed at batch start");
         lines.add("Hot blast also replaces paid fuel heat; use pressure class 1 air");
-        lines.add("Keep fuel, air and output space available; fuller tanks add no speed");
+        lines.add("One blast-air type at a time; oxygen is an independent enrichment feed");
+        lines.add("No auxiliary item fuel; a heater below (900 C+) can supply missing heat");
+        lines.add("Keep reductant, heat, air and output space available; fuller tanks add no speed");
         lines.add("Dry top-gas composition: 22% CO, 22% CO2, 54% N2, 2% H2 (molar)");
         lines.add("Optional flux: CaCO3 -> CaO + CO2; basic slag binds silicate gangue");
-        if(live) {
-            lines.add(String.format(java.util.Locale.US, "Process heating: %.3f / %.3f MJ", heatPaid / 1000000D, heatRequired / 1000000D));
-            lines.add(String.format(java.util.Locale.US, "Available heat: %.3f MJ", fuelQuanta / 2000000D));
-            lines.add("Blast consumed: " + airPaid + " / " + airRequired + " standard L; O2: " + oxygenPaid + " standard L");
-            lines.add(enriched ? "O2 enrichment: lower heat loss and 25% higher thermal throughput" : "O2 enrichment is optional");
-        }
+        if(live) appendProgressInfo(lines);
+    }
+    public void appendProgressInfo(java.util.List<String> lines) {
+        lines.add(String.format(java.util.Locale.US, "Process heating: %.3f / %.3f MJ", heatPaid / 1000000D, heatRequired / 1000000D));
+        lines.add(String.format(java.util.Locale.US, "Available heat: %.3f MJ", fuelQuanta / 2000000D));
+        lines.add("Blast consumed: " + airPaid + " / " + airRequired + " standard L; O2: " + oxygenPaid + " standard L");
+        lines.add(enriched ? "O2 enrichment: lower heat loss and 25% higher thermal throughput" : "O2 enrichment is optional");
+        lines.add("Heat deficit: use hot blast or a 900 C+ heater below the controller");
     }
     @Override public Container provideContainer(int id, EntityPlayer player, World world, int x, int y, int z) { return new ContainerBlastFurnace(player.inventory, this); }
     @Override @SideOnly(Side.CLIENT) public Object provideGUI(int id, EntityPlayer player, World world, int x, int y, int z) { return new GUIBlastFurnace(player.inventory, this); }

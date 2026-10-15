@@ -204,3 +204,32 @@
 - Registered NEI handlers for loaded Compressor compression/decompression recipes, natural atmospheric collection, air separation and isotope separation. Preserved gas/liquid/steam mass quantities, fractional outputs, pressure classes, recipe/usage navigation and paid work; included pressure-preserving blast heating in Boiler previews.
 - Added stock gauges for the Blast Furnace's oxygen and lower blast-air tanks without moving inventory slots. Expanded its LSHIFT description and native information to explain coke, hot blast, oxygen enrichment, limestone and supply/output constraints; retained operating performance and accounting.
 - Connected atmospheric, isotope and electrolysis blocks to the existing item-tooltip registration and supplied operating descriptions/default profiles. Reworked atmospheric collection/separation and isotope construction around vessels, drive/circulation, piping, heat exchange and controls; removed the atmospheric collector's premature titanium rotor and the isotope tower's sour-gas construction dependency while retaining process media and current crafting limits.
+
+2026-10-15 15:43 — Shorten Blast Furnace tooltip and escape percentages
+
+- Condensed the Blast Furnace description while retaining coke, blast-temperature, oxygen and flux speed effects. Escaped literal percent signs for Minecraft localization formatting and shortened the persistent infrastructure hint.
+
+2026-10-15 15:54 — Select exclusive blast grades and clarify gas states
+
+- Restricted Blast Furnace air admission to one stored grade at a time, with independent oxygen enrichment. Metered smaller available blast parcels and retained their paid temperature/rating through integer-litre rounding and saves; preserved old mixed stock and all operating ceilings.
+- Clarified that cold, 600-C and 800-C air all require pressure class 1 while oxygen uses class 0. Kept the shorter item tooltip, escaped literal percentages and made optional heating explicit.
+- Labeled Compressor NEI pressure transitions and conversion modes, and distinguished compressed/uncompressed gas icons in their item names. Decompression continues to consume control work without energy recovery.
+- Replaced the blue-water GUI fallback with existing neutral gas/liquid art tinted by fluid identity, retaining dedicated and custom textures across tanks and barrels.
+
+2026-10-15 16:02 — Repair Compressor mode control and client state
+
+- Moved the mode control out of the upgrade slots into the unused strip below them, using a centered standard button and correcting the oversized pressure-selector drawing. Slot clicks no longer also change mode.
+- Replaced new GUI toggle requests with explicit idempotent mode settings and immediate server status replies, retaining legacy toggle payloads. Included mode in initial chunk synchronization and preserved it when absent from legacy partial NBT updates; clipboard settings share the same setter.
+
+2026-10-15 16:18 — Remove auxiliary blast fuel and match air supply to furnace demand
+
+- Removed the Blast Furnace's auxiliary item-fuel input and combustion path. Preserved the recipe reductant, original slot indices, stored heat and old fuel stacks in a retrieve-only return position. Added shared, budgeted 900-C-or-hotter heat admission below the controller for remaining burden-preheating duty; air and heat advance together at their actual available rate.
+- Added paid heat, blast and oxygen counters to the furnace progress hover, separated reductant/yield information from heating, and updated operating descriptions. Kept steel recipes, yields, air bills and thermal ceilings unchanged.
+- Raised the air compressor drive ceiling to 750 kWe and bulk atmospheric air capture to 125 kWe, retaining work per litre and supporting partial power. Physical compressor work now persists through brownouts/output blockage; saved old progress migrates at its original payment rate. NEI durations and atmospheric quantities share native rate definitions. Other gases, selective capture and steam retain their ratings.
+- Corrected the flare's misleading electrical-delivery tooltip: its retained 100-kW interface drains legacy stock only, while burning produces no electrical or usable thermal output.
+
+2026-10-15 16:23 — Expose shared Boiler and Industrial Boiler process capabilities
+
+- Unified fluid-identifier feed admission with the shared boiler process path so air, petroleum heating and coolant feeds can actually be selected without legacy trait gates; retained nonempty stock. Both boilers appear in NEI for their shared heating routes, including pressure-preserving blast heating and physical heating bills.
+- Kept the industrial default hot-steam outlet and added a saved, selectable ordinary-steam outlet, retaining the small boiler's pressure limit and pending parcel ownership. Removed unsupported steam-upgrade previews and included existing steam blowdown in displayed output mass.
+- Allowed the Industrial Boiler's existing 900-C burner to pay blast-air heating duty as well as steam duty, retaining source qualification, per-tick transfer limits and actual fuel debits.

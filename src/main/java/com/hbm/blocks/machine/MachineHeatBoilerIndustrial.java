@@ -10,8 +10,6 @@ import com.hbm.blocks.BlockDummyable;
 import com.hbm.blocks.ILookOverlay;
 import com.hbm.blocks.ITooltipProvider;
 import com.hbm.inventory.fluid.FluidType;
-import com.hbm.inventory.fluid.trait.FT_Heatable;
-import com.hbm.inventory.fluid.trait.FT_Heatable.HeatingType;
 import com.hbm.items.machine.IItemFluidIdentifier;
 import com.hbm.tileentity.TileEntityProxyCombo;
 import com.hbm.tileentity.machine.TileEntityHeatBoilerIndustrial;
@@ -76,9 +74,11 @@ public class MachineHeatBoilerIndustrial extends BlockDummyable implements ILook
                 if(fuelName.equals("HEAVYOIL") || fuelName.equals("HEAVYOIL_VACUUM") || fuelName.equals("HEATINGOIL") || fuelName.equals("HEATINGOIL_VACUUM")) {
                     if(boiler.tanks[2].getFill() == 0) { boiler.tanks[2].setTankType(type); boiler.markDirty(); boiler.markMachineFluidDirty(); }
                     else player.addChatComponentMessage(new ChatComponentText("Drain the fuel inlet before changing its fluid."));
-                } else if(type.hasTrait(FT_Heatable.class) && type.getTrait(FT_Heatable.class).getEfficiency(HeatingType.BOILER) > 0) {
-					boiler.tanks[0].setTankType(type);
-					boiler.markDirty();
+                } else if(com.hbm.realsim.SteamLedger.state(type.getName()) == com.hbm.realsim.SteamLedger.State.ORDINARY
+                        || com.hbm.realsim.SteamLedger.state(type.getName()) == com.hbm.realsim.SteamLedger.State.HOT) {
+                    if(!boiler.selectSteamOutlet(com.hbm.realsim.SteamLedger.state(type.getName())))
+                        player.addChatComponentMessage(new ChatComponentText("Drain the outlet first; this boiler must support the selected steam grade."));
+                } else if(boiler.selectFeed(type)) {
 					player.addChatComponentMessage(new ChatComponentText("Changed type to ").setChatStyle(new ChatStyle().setColor(EnumChatFormatting.YELLOW)).appendSibling(new ChatComponentTranslation(type.getConditionalName())).appendSibling(new ChatComponentText("!")));
 				}
 				return true;

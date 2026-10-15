@@ -36,11 +36,17 @@ public class CompressorRecipes extends SerializableRecipe {
             addDisplay(display, entry.getKey(), 1, entry.getValue(), true);
         return display;
     }
+    /** Air-blast hardware has a larger drive; work per parcel is unchanged. */
+    public static int physicalPowerQuanta(FluidType input, int pressure, CompressorRecipe bill, boolean vent) {
+        String name = input.getName();
+        return !vent && pressure == 0 && bill.output.type == input && bill.output.pressure == 1
+                && (name.equals("AIR") || name.equals("AIR_HEATED") || name.equals("AIRBLAST")) ? 75000 : 2500;
+    }
     private static void addDisplay(HashMap<Object, Object> display, FluidType input, int pressure, CompressorRecipe bill, boolean vent) {
         net.minecraft.item.ItemStack key = com.hbm.items.machine.ItemFluidIcon.make(input, bill.inputAmount, pressure);
         net.minecraft.nbt.NBTTagCompound tag = key.getTagCompound();
         tag.setBoolean("compressorVent", vent); tag.setLong("compressorWork", bill.workQuanta);
-        tag.setInteger("compressorTicks", bill.workQuanta > 0 ? Math.toIntExact(com.hbm.realsim.SteamLedger.ceilDiv(bill.workQuanta, 2500)) : bill.duration);
+        tag.setInteger("compressorTicks", bill.workQuanta > 0 ? Math.toIntExact(com.hbm.realsim.SteamLedger.ceilDiv(bill.workQuanta, physicalPowerQuanta(input, pressure, bill, vent))) : bill.duration);
         display.put(key, displayOutput(input, bill));
     }
 	public static boolean canAcceptOutput(FluidTank input, FluidTank output, CompressorRecipe recipe, MassRemainder remainder) {

@@ -33,7 +33,7 @@ public final class MachineInfo {
         if(tile instanceof IRatedGenerator && !(tile instanceof com.hbm.tileentity.machine.TileEntityStirling && ((com.hbm.tileentity.machine.TileEntityStirling) tile).isCreative())) {
             String rating = "Rated electrical output: " + watts(((IRatedGenerator) tile).getRatedOutputWatts());
             if(!lines.contains(rating)) lines.add(rating);
-            if(((IRatedGenerator) tile).getExportLimitWatts() != ((IRatedGenerator) tile).getRatedOutputWatts()) lines.add("Maximum electrical delivery: " + watts(((IRatedGenerator) tile).getExportLimitWatts()));
+            if(((IRatedGenerator) tile).getRatedOutputWatts() > 0 && ((IRatedGenerator) tile).getExportLimitWatts() != ((IRatedGenerator) tile).getRatedOutputWatts()) lines.add("Maximum electrical delivery: " + watts(((IRatedGenerator) tile).getExportLimitWatts()));
         }
         if(tile instanceof IProcessHeatSource) {
             IProcessHeatSource heat = (IProcessHeatSource) tile;

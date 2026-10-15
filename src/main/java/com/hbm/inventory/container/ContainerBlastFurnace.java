@@ -15,8 +15,10 @@ public class ContainerBlastFurnace extends ContainerBase {
 		super(invPlayer, tedf);
 		this.tile = tedf;
 
-		// Fuel
-		this.addSlotToContainer(new SlotNonRetarded(tedf, 0, 80, 81));
+		// Saved auxiliary fuel is retrievable, never accepted or burned. Keep six container slots/indices.
+		this.addSlotToContainer(new net.minecraft.inventory.Slot(tedf, 0, 8, 91) {
+			@Override public boolean isItemValid(net.minecraft.item.ItemStack stack) { return false; }
+		});
 		// Input
 		this.addSlotToContainer(new SlotNonRetarded(tedf, 1, 80, 27));
 		this.addSlotToContainer(new SlotNonRetarded(tedf, 2, 80, 45));

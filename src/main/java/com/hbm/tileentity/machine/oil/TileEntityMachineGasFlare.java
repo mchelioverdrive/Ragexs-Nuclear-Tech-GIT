@@ -425,5 +425,7 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
 
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
         lines.add("Burns waste gas; produces no electricity or usable process heat");
+        lines.add("Combustion heat is lost; use a fluid burner/boiler for useful heat");
+        if(live && energyQuanta > 0) lines.add("Legacy electrical stock can drain at up to 100 kW; burning adds none");
     }
 }

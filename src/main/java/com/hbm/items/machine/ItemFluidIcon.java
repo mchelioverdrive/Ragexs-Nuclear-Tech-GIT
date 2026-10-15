@@ -99,7 +99,14 @@ public class ItemFluidIcon extends Item {
 
 	@Override
 	public String getItemStackDisplayName(ItemStack stack) {
-		String s = (StatCollector.translateToLocal(Fluids.fromID(stack.getItemDamage()).getConditionalName())).trim();
+		FluidType type = Fluids.fromID(stack.getItemDamage());
+		String s = (StatCollector.translateToLocal(type.getConditionalName())).trim();
+		if(stack.hasTagCompound() && stack.getTagCompound().hasKey("pressure")
+				&& (getPressure(stack) > 0 || type.getPhysicalState().phase == com.hbm.realsim.PhysicalState.Phase.GAS
+				&& com.hbm.realsim.SteamLedger.state(type.getName()) == null)) {
+			return getPressure(stack) == 0 ? StatCollector.translateToLocalFormatted("item.fluid_icon.uncompressed", s)
+					: StatCollector.translateToLocalFormatted("item.fluid_icon.compressed", s, getPressure(stack));
+		}
 
 		if(s != null) {
 			return s;

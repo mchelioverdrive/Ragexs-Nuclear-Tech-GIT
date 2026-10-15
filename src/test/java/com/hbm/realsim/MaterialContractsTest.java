@@ -191,6 +191,43 @@ public class MaterialContractsTest {
         assertEquals(1500000, BlastFurnaceProcess.ratedWatts(false, "AIR", false));
         assertEquals(2000000, BlastFurnaceProcess.ratedWatts(false, "AIRBLAST", false));
     }
+    @Test public void blastAndOxygenAreMeteredToAvailableWorkInsteadOfDrainingWholeTanks() {
+        long heat = 18000000, paid = 0;
+        int totalAir = 2700, airPaid = 0, oxygenPaid = 0;
+        long first = BlastFurnaceProcess.availableHeatStep(heat, 0, totalAir, 0, 0, 16000, 4000, true, 625000);
+        assertEquals(625000, first);
+        int firstAir = (int) SteamLedger.ceilDiv(first * totalAir, heat);
+        assertTrue(firstAir < totalAir); assertTrue((firstAir + 9) / 10 < 270);
+        assertEquals(0, BlastFurnaceProcess.availableHeatStep(heat, 0, totalAir, 0, 0, 100, 0, true, 625000));
+        assertEquals(500000, BlastFurnaceProcess.availableHeatStep(2000000, 500000, 1, 1, 1, 0, 0, true, 500000));
+        // One-litre parcels must drain completely, allowing a different inlet to be chosen next.
+        while(paid < heat) {
+            long step = BlastFurnaceProcess.availableHeatStep(heat, paid, totalAir, airPaid, oxygenPaid, 1, 1, true, 625000);
+            assertTrue(step > 0 && step <= 625000);
+            int nextAir = (int) SteamLedger.ceilDiv((paid + step) * totalAir, heat);
+            int nextOxygen = (nextAir + 9) / 10;
+            assertEquals(1, nextAir - airPaid); assertTrue(nextOxygen - oxygenPaid <= 1);
+            paid += step; airPaid = nextAir; oxygenPaid = nextOxygen;
+        }
+        assertEquals(heat, paid); assertEquals(totalAir, airPaid); assertEquals(270, oxygenPaid);
+    }
+    @Test public void blastWorkUsesOnlyPaidHeatAndNeverRequiresAWholeStepOfExternalSupply() {
+        assertEquals(0, BlastFurnaceProcess.heatLimitedStep(18000000, 0, 2700, 0, 100000, 0, 0));
+        assertEquals(250, BlastFurnaceProcess.heatLimitedStep(18000000, 0, 2700, 0, 100000, 250, 0));
+        long paid = 0, supplied = 15510000;
+        int airPaid = 0;
+        while(paid < 18000000) {
+            long proposed = Math.min(400000, 18000000 - paid);
+            long step = BlastFurnaceProcess.heatLimitedStep(18000000, paid, 2700, airPaid, proposed,
+                    supplied, BlastFurnaceProcess.blastJoulesPerLiter("AIRBLAST"));
+            assertTrue(step > 0);
+            int air = (int) SteamLedger.ceilDiv((paid + step) * 2700, 18000000) - airPaid;
+            long hot = Math.min(step, air * BlastFurnaceProcess.blastJoulesPerLiter("AIRBLAST"));
+            supplied -= step - hot; assertTrue(supplied >= 0);
+            paid += step; airPaid += air;
+        }
+        assertEquals(2700, airPaid); assertTrue(supplied > 0);
+    }
     @Test public void shaftFuelAndProcessFeedDoNotInheritHeaterAcceptance() {
         assertEquals("COKE_ITEM", BlastFurnaceProcess.fuelIdentity(new ItemStack(ModItems.coke)));
         assertNull(BlastFurnaceProcess.fuelIdentity(new ItemStack(ModItems.coke, 1, 2)));
