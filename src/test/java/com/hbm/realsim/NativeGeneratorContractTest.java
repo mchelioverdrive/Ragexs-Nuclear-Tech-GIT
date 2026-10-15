@@ -38,7 +38,7 @@ public class NativeGeneratorContractTest {
         order = (java.util.List<FluidType>) orderField.get(null); oldOrder = new java.util.ArrayList<>(order);
         oldPellets = new java.util.ArrayList<>(ItemRTGPellet.pelletList);
         for(String name : new String[] {"NONE", "STEAM", "HOTSTEAM", "SUPERHOTSTEAM", "ULTRAHOTSTEAM", "SPENTSTEAM", "DIESEL", "KEROSENE", "BLOOD", "GAS", "LUBRICANT", "WATER", "FRESH_WATER",
-                "HEAVYOIL", "HEAVYOIL_VACUUM", "SMEAR", "LIGHTOIL_VACUUM", "REFORMATE", "SOURGAS", "OIL", "OIL_DS", "LIGHTOIL", "LIGHTOIL_DS", "NAPHTHA", "NAPHTHA_DS", "PETROLEUM", "BITUMEN", "HEATINGOIL", "LPG"}) {
+                "HEAVYOIL", "HEAVYOIL_VACUUM", "SMEAR", "LIGHTOIL_VACUUM", "REFORMATE", "SOURGAS", "OIL", "OIL_DS", "LIGHTOIL", "LIGHTOIL_DS", "NAPHTHA", "NAPHTHA_DS", "PETROLEUM", "BITUMEN", "HEATINGOIL", "LPG", "AIR", "AIR_HEATED", "AIRBLAST", "BLAST_FURNACE_GAS", "OXYGEN", "OXYGEN_GAS", "NITROGEN", "NITROGEN_GAS", "HYDROGEN", "HYDROGEN_GAS", "SYNGAS", "REFORMGAS", "GAS_COKER", "BIOGAS", "UNSATURATEDS", "HYDROGEN_SULFIDE", "LIGHT_WATER", "HEAVYWATER", "DEPLETED_WATER", "ARGON", "NOBLE_GAS_MIX", "CARBONDIOXIDE"}) {
             Field f = Fluids.class.getField(name); fields.put(f, f.get(null));
             FluidType type = new FluidType(name, 0, 0, 0, 0, EnumSymbol.NONE); f.set(null, type); names.put(name, type);
         }
@@ -49,6 +49,59 @@ public class NativeGeneratorContractTest {
         for(String name : new String[] {"canister_full", "fluid_tank_full", "fluid_barrel_full"}) {
             Field f = ModItems.class.getField(name); fields.put(f, f.get(null)); f.set(null, new net.minecraft.item.Item());
         }
+    }
+    @Test public void everyRegisteredCompressorRouteHasAnExactPressureAndMassDisplay() {
+        com.hbm.inventory.recipes.CompressorRecipes registry = new com.hbm.inventory.recipes.CompressorRecipes();
+        Map<com.hbm.util.Tuple.Pair<FluidType, Integer>, com.hbm.inventory.recipes.CompressorRecipes.CompressorRecipe> old = new HashMap<>(com.hbm.inventory.recipes.CompressorRecipes.recipes);
+        Map<FluidType, com.hbm.inventory.recipes.CompressorRecipes.CompressorRecipe> oldVents = new HashMap<>(com.hbm.inventory.recipes.CompressorRecipes.decompressions);
+        try {
+            registry.deleteRecipes(); registry.registerDefaults();
+            Map<Object, Object> display = com.hbm.inventory.recipes.CompressorRecipes.getNEIRecipes();
+            assertEquals(com.hbm.inventory.recipes.CompressorRecipes.recipes.size() + com.hbm.inventory.recipes.CompressorRecipes.decompressions.size(), display.size());
+            boolean forcedAir = false, decompression = false, liquidOxygen = false;
+            for(Map.Entry<Object, Object> entry : display.entrySet()) {
+                ItemStack in = (ItemStack) entry.getKey(), out = (ItemStack) entry.getValue();
+                FluidType input = Fluids.fromID(in.getItemDamage()), output = Fluids.fromID(out.getItemDamage());
+                int pressure = com.hbm.items.machine.ItemFluidIcon.getPressure(in);
+                boolean vent = in.getTagCompound().getBoolean("compressorVent");
+                com.hbm.inventory.recipes.CompressorRecipes.CompressorRecipe bill = vent
+                        ? com.hbm.inventory.recipes.CompressorRecipes.decompressions.get(input)
+                        : com.hbm.inventory.recipes.CompressorRecipes.recipes.get(new com.hbm.util.Tuple.Pair<>(input, pressure));
+                assertNotNull(bill); assertNotSame(Fluids.NONE, input); assertNotSame(Fluids.NONE, output);
+                assertSame(ModItems.fluid_icon, in.getItem()); assertSame(ModItems.fluid_icon, out.getItem());
+                assertEquals(bill.inputAmount, com.hbm.items.machine.ItemFluidIcon.getQuantity(in));
+                assertEquals(bill.output.pressure, com.hbm.items.machine.ItemFluidIcon.getPressure(out));
+                assertTrue(in.getTagCompound().getInteger("compressorTicks") > 0);
+                assertTrue(com.hbm.handler.nei.NEISafe.matchesRecipeStack(in, com.hbm.items.machine.ItemFluidIcon.make(input, 1)));
+                assertTrue(com.hbm.handler.nei.NEISafe.matchesRecipeStack(out, com.hbm.items.machine.ItemFluidIcon.make(output, 1)));
+                if(bill.massConversion || SteamLedger.state(input.getName()) != null)
+                    assertEquals(Math.multiplyExact(input.getPhysicalState().massUnits, bill.inputAmount), out.getTagCompound().getLong("physicalMass"));
+                forcedAir |= input == Fluids.AIR && pressure == 0 && output == Fluids.AIR && bill.output.pressure == 1 && !vent;
+                decompression |= input == Fluids.AIR && pressure == 1 && output == Fluids.AIR && bill.output.pressure == 0 && vent;
+                liquidOxygen |= input == Fluids.OXYGEN_GAS && pressure == 1 && output == Fluids.OXYGEN;
+            }
+            assertTrue("Missing forced-blast air", forcedAir); assertTrue("Missing vent mode", decompression); assertTrue("Missing liquid oxygen route", liquidOxygen);
+            com.hbm.inventory.recipes.CompressorRecipes.recipes.remove(new com.hbm.util.Tuple.Pair<>(Fluids.AIR, 0));
+            assertEquals(display.size() - 1, com.hbm.inventory.recipes.CompressorRecipes.getNEIRecipes().size());
+        } finally {
+            registry.deleteRecipes(); com.hbm.inventory.recipes.CompressorRecipes.recipes.putAll(old); com.hbm.inventory.recipes.CompressorRecipes.decompressions.putAll(oldVents);
+        }
+    }
+    @Test public void atmosphericAndIsotopeMachinesDescribeTheirNativeProcessBills() {
+        TileEntityDeuteriumExtractor[] machines = {new TileEntityDeuteriumExtractor(), new TileEntityDeuteriumTower(), new TileEntityAtmoTower()};
+        ProcessRecipe[] bills = {ChemistryProcesses.heavyWater(), ChemistryProcesses.heavyWaterTower(), ChemistryProcesses.airSeparation()};
+        for(int i = 0; i < machines.length; i++) {
+            assertEquals(bills[i].id, machines[i].selectedBill().id);
+            assertEquals(bills[i].duration, machines[i].selectedBill().duration);
+            assertEquals(bills[i].electricalRatingWatts, machines[i].getMachineDemandWatts());
+            assertTrue(MachineInfo.describe(machines[i], false).toString().contains("Drain"));
+            assertEquals(4, machines[i].processOutputs().length);
+        }
+        TileEntityMachineBlastFurnace furnace = new TileEntityMachineBlastFurnace();
+        assertSame(Fluids.OXYGEN_GAS, furnace.tanks[4].getTankType());
+        assertEquals(0, furnace.tanks[4].getPressure()); assertEquals(1, furnace.tanks[2].getPressure());
+        java.util.List<String> info = MachineInfo.describe(furnace, false);
+        assertTrue(info.toString().contains("25%")); assertTrue(info.toString().contains("1.2 MJ"));
     }
     @After public void restoreIdentities() throws Exception {
         for(Map.Entry<Field, Object> e : fields.entrySet()) e.getKey().set(null, e.getValue());

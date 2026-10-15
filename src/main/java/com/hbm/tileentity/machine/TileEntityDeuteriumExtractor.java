@@ -13,7 +13,7 @@ import api.hbm.fluid.IFluidStandardTransceiver;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IFluidCopiable {
+public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IFluidCopiable, com.hbm.realsim.IMachineInfo {
 	
 	private static final com.hbm.realsim.ProcessRecipe HEAVY_WATER_BILL = com.hbm.realsim.ChemistryProcesses.heavyWater();
     private static final com.hbm.realsim.ProcessRecipe HEAVY_TOWER_BILL = com.hbm.realsim.ChemistryProcesses.heavyWaterTower();
@@ -86,7 +86,15 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 		this.networkPackNTIfDirty(50);
 	}
 
-    private com.hbm.realsim.ProcessRecipe selectedBill() { return this instanceof TileEntityAtmoTower ? AIR_BILL : this instanceof TileEntityDeuteriumTower ? HEAVY_TOWER_BILL : HEAVY_WATER_BILL; }
+    public com.hbm.realsim.ProcessRecipe selectedBill() { return this instanceof TileEntityAtmoTower ? AIR_BILL : this instanceof TileEntityDeuteriumTower ? HEAVY_TOWER_BILL : HEAVY_WATER_BILL; }
+    @Override public long getMachineDemandWatts() { return selectedBill().electricalRatingWatts; }
+    @Override public long getMachineCurrentDrawWatts() { return processBatch.currentDrawWatts(worldObj == null ? Long.MIN_VALUE : worldObj.getTotalWorldTime()); }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        com.hbm.realsim.MachineInfo.process(lines, processBatch.active() ? processBatch.recipe() : selectedBill());
+        lines.add(this instanceof TileEntityAtmoTower ? "Separates air into nitrogen gas, oxygen gas, argon and noble gases" : "Recovers heavy water from light water; depleted water must drain");
+        lines.add("Drain every coproduct; fractional products accumulate between batches");
+        lines.add("Power and any required process heat must be supplied externally");
+    }
     public FluidTank[] processOutputs() { return new FluidTank[] {tanks[1], tanks[2], tanks[3], tanks[4]}; }
     private boolean canProcess() {
         return processBatch.active() || com.hbm.realsim.ProcessMachine.inputsReady(selectedBill(), new FluidTank[] {tanks[0]}, null, 0, -1);

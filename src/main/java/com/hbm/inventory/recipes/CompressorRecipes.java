@@ -19,6 +19,30 @@ public class CompressorRecipes extends SerializableRecipe {
 	
 	public static HashMap<Pair<FluidType, Integer>, CompressorRecipe> recipes = new HashMap();
 	public static HashMap<FluidType, CompressorRecipe> decompressions = new HashMap<FluidType, CompressorRecipe>();
+
+    /** Same mass parcel as gameplay, including fractional phase/steam inventory units. */
+    public static net.minecraft.item.ItemStack displayOutput(FluidType input, CompressorRecipe recipe) {
+        if(recipe.massConversion || com.hbm.realsim.SteamLedger.state(input.getName()) != null) {
+            long mass = Math.multiplyExact(input.getPhysicalState().massUnits, recipe.inputAmount);
+            return com.hbm.items.machine.ItemFluidIcon.makePhysical(recipe.output, mass);
+        }
+        return com.hbm.items.machine.ItemFluidIcon.make(recipe.output);
+    }
+    public static HashMap<Object, Object> getNEIRecipes() {
+        HashMap<Object, Object> display = new HashMap<>();
+        for(Entry<Pair<FluidType, Integer>, CompressorRecipe> entry : recipes.entrySet())
+            addDisplay(display, entry.getKey().getKey(), entry.getKey().getValue(), entry.getValue(), false);
+        for(Entry<FluidType, CompressorRecipe> entry : decompressions.entrySet())
+            addDisplay(display, entry.getKey(), 1, entry.getValue(), true);
+        return display;
+    }
+    private static void addDisplay(HashMap<Object, Object> display, FluidType input, int pressure, CompressorRecipe bill, boolean vent) {
+        net.minecraft.item.ItemStack key = com.hbm.items.machine.ItemFluidIcon.make(input, bill.inputAmount, pressure);
+        net.minecraft.nbt.NBTTagCompound tag = key.getTagCompound();
+        tag.setBoolean("compressorVent", vent); tag.setLong("compressorWork", bill.workQuanta);
+        tag.setInteger("compressorTicks", bill.workQuanta > 0 ? Math.toIntExact(com.hbm.realsim.SteamLedger.ceilDiv(bill.workQuanta, 2500)) : bill.duration);
+        display.put(key, displayOutput(input, bill));
+    }
 	public static boolean canAcceptOutput(FluidTank input, FluidTank output, CompressorRecipe recipe, MassRemainder remainder) {
 		if(output.getTankType() != recipe.output.type || output.getPressure() != recipe.output.pressure) return false;
 		long amount = recipe.massConversion ? remainder.preview(recipe.output.type.getName(), Math.multiplyExact(input.getTankType().getPhysicalState().massUnits, recipe.inputAmount)) : recipe.output.fill;

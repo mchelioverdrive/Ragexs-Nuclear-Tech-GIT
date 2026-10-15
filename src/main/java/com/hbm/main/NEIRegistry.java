@@ -59,6 +59,10 @@ public class NEIRegistry {
 		handlers.add(new PyroHandler());
 		handlers.add(new FractioningHandler());
 		handlers.add(new BoilingHandler());
+		handlers.add(new CompressorHandler());
+		handlers.add(new AtmosphericCollectorHandler());
+		handlers.add(new AtmosphericTowerHandler());
+		handlers.add(new IsotopeSeparationHandler());
 		handlers.add(new CombinationHandler());
 		handlers.add(new SawmillHandler());
 		handlers.add(new MixerHandler());

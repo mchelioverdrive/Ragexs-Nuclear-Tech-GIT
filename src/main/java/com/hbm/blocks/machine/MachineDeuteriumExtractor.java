@@ -22,7 +22,11 @@ import net.minecraft.util.IIcon;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.Pre;
 
-public class MachineDeuteriumExtractor extends BlockContainer implements ILookOverlay {
+public class MachineDeuteriumExtractor extends BlockContainer implements ILookOverlay, com.hbm.blocks.ITooltipProvider {
+
+	@Override public void addInformation(net.minecraft.item.ItemStack stack, net.minecraft.entity.player.EntityPlayer player, java.util.List list, boolean extended) {
+		addStandardInfo(stack, player, list, extended);
+	}
 
 	public MachineDeuteriumExtractor(Material mat) {
 		super(mat);

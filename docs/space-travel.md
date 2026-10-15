@@ -43,3 +43,9 @@ Station propulsion is now balanced as full spacecraft propulsion hardware rather
 - **LPW-2 Station Thruster:** upgraded chemical station thruster assembly that now depends on an LPW-3N core plus extra pumps, tanks, titanium shelling, and advanced-alloy coils.
 - **HTR-F4 Station Thruster:** high-end plasma-heater station thruster with two LPW-3N cores, expanded tungsten/resistant-alloy structure, extra durable feed lines, and more avionics.
 - **Xenon Station Thruster:** ion station thruster fabrication now consumes xenon working gas, high arc-welder energy, tungsten/niobium welded plates, avionics, and Saturnite electrodes to represent grids, discharge chambers, neutralizers, and precision feed hardware.
+
+## Atmospheric processing
+
+The Atmospheric Compressor gathers the local natural gas mixture; it cannot create gas in vacuum, orbit or an artificially pressurized room. Use a screwdriver to select another locally present gas after draining the previous contents. Bulk collection uses 5 kWe at 6000 standard L/min; selective recovery uses 50 kWe at 1200 standard L/min. Its output is pressure class 0. For forced blast, pipe it through the separate Compressor to pressure class 1.
+
+The Atmospheric Liquefaction Tower's legacy name refers to its separation hardware: its delivered products are nitrogen gas, oxygen gas, argon and noble gases. Supply air, power and clear outlets for all four products. Gas liquefaction is a separate paid Compressor process. NEI shows atmospheric collection, separation and Compressor recipes/usages, including pressure and fractional fluid amounts. Hold LSHIFT on these machines, the isotope separators or the Electrolysis Machine for their operating instructions.

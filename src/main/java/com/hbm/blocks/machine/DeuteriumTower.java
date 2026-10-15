@@ -19,7 +19,11 @@ import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.Pre;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class DeuteriumTower extends BlockDummyable implements ILookOverlay {
+public class DeuteriumTower extends BlockDummyable implements ILookOverlay, com.hbm.blocks.ITooltipProvider {
+
+	@Override public void addInformation(net.minecraft.item.ItemStack stack, net.minecraft.entity.player.EntityPlayer player, java.util.List list, boolean extended) {
+		addStandardInfo(stack, player, list, extended);
+	}
 
 	public DeuteriumTower(Material mat) {
 		super(mat);

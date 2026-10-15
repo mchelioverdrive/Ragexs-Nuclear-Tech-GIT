@@ -63,6 +63,8 @@ Construction uses shells/tanks for containment, cast/welded plates and beams for
 | Chemical / petroleum equipment | Existing reactor/refinery vessel, heater, pump and control assemblies; crystallizer adds heat transfer, catalytic cracker and alkylation include feed circulation and controls. |
 | Liquid/solid thermal processors | Vessels, heat-transfer/thermal coils, feed drives and controls; clay is not a universal melting/freezing catalyst. |
 | Cryogenic column | Stainless containment, insulation, heat exchange, piping, circulation/compression drive and controls. No battery is required for ordinary grid operation. |
+| Atmospheric collection / separation | Steel intake/receiver shells, powered compression drive, piping, wiring, scaffold support and Analog controls. The air separator adds stainless containment and heat-exchange hardware. The collector requires no titanium or petroleum reagent. |
+| Isotope separation | Retained sulfur/exchange filters plus containment, copper contact hardware, circulation drives, piping, heat exchange, support and controls; sour-gas containers are not substitutes for these assemblies. |
 | Large generators | Copper power cable, windings, casing, thermal/fluid hardware and mechanical assemblies. Gas-turbine duplicate shell entries are combined; Leviathan uses a consolidated high-temperature rotor assembly; combustion engines contain explicit reciprocating hardware. |
 
 Copper dense cable is an existing generated material form, bundled from eight fine wires and rubber in the Assembler. It is registered with the same OreDict/material/rendering system as other dense conductors.
@@ -72,3 +74,9 @@ Crafting container keys use `FluidType.getCraftingContainerDict(legacyCapacity)`
 ## Information ownership
 
 `IMachineInfo`, `MachineInfo`, `MachineInfoItems` and native owner getters supply item, GUI and NEI information. Live status comes from server snapshots; item previews use local defaults. Matching client/server builds are required. Display data cannot restore paid batch work. Proxy, dormant and decorative tiles receive no invented operating ratings.
+
+The atmospheric collector, air-separation tower, small/large isotope separators, Compressor and industrial Electrolysis Machine expose their descriptions through `ITooltipProvider` and `ItemBlockBase`. Default native item profiles provide operating ratings for the atmospheric/isotope machines. Their existing block/item registry names and saved fluid identities are retained.
+
+NEI has separate collection, atmospheric separation, isotope separation and Compressor handlers. Collection pages are environmental source descriptions, with the machine shown as retained infrastructure; gas availability follows registered celestial atmospheres, the 1-mbar presence threshold and the native bulk/selective collection rates. Compressor pages are rebuilt from the loaded compression/decompression registries for each lookup, with the actual pressure and work. Phase/steam conversion outputs and isotope separation use mass-backed icons so fractional amounts remain visible. Air separation delivers gases despite the tower's legacy Liquefaction name. These displays do not add processing recipes or alter machine ratings.
+
+The atmospheric construction mapping follows the major assemblies described by [Atlas Copco's compressor component guide](https://www.atlascopco.com/en-us/compressors/air-compressor-blog/air-compressor-components) and [Air Products' separation-plant diagram](https://www.airproducts.com/-/media/files/en/33452-supply-options-air-separation-plant-poster.pdf): drive/compression element, containment, regulation, piping and heat-exchange/column hardware. Component counts are RealSim abstractions, not literal industrial bills of materials.

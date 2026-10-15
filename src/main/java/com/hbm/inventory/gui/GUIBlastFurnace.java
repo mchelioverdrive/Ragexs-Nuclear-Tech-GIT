@@ -20,6 +20,7 @@ public class GUIBlastFurnace extends GuiInfoContainer {
 	public GUIBlastFurnace(InventoryPlayer invPlayer, TileEntityMachineBlastFurnace tedf) {
 		super(new ContainerBlastFurnace(invPlayer, tedf));
 		furnace = tedf;
+		setMachineInfoOwner(tedf);
 		
 		this.xSize = 176;
 		this.ySize = 222;
@@ -53,7 +54,7 @@ public class GUIBlastFurnace extends GuiInfoContainer {
 		
 		this.fontRendererObj.drawString(name, this.xSize / 2 - this.fontRendererObj.getStringWidth(name) / 2, 6, 4210752);
 		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96 + 2, 4210752);
-		for(int tank = 2; tank < 5; tank++) this.fontRendererObj.drawString(I18n.format("tooltip.blast.tank" + tank), 8 + (tank - 2) * 50, 119, 4210752);
+		for(int tank = 2; tank < 5; tank++) this.fontRendererObj.drawString(I18n.format("tooltip.blast.tank" + tank), 8 + (tank - 2) * 50, 112, 4210752);
 		this.fontRendererObj.drawString("CO2", 134, 47, 4210752);
 	}
 
@@ -77,5 +78,14 @@ public class GUIBlastFurnace extends GuiInfoContainer {
 
 		drawRect(guiLeft + 27, guiTop + 85, guiLeft + 27 + furnace.tanks[0].getFill() * 14 / furnace.tanks[0].getMaxFill(), guiTop + 88, 0xFF800000);
 		drawRect(guiLeft + 27, guiTop + 31, guiLeft + 27 + furnace.tanks[1].getFill() * 14 / furnace.tanks[1].getMaxFill(), guiTop + 34, 0xFF800000);
+		// The three lower labels previously covered empty art: expose actual synchronized stock,
+		// including the optional oxygen feed, without moving inventory slots or changing the texture.
+		drawRect(guiLeft + 5, guiTop + 111, guiLeft + 155, guiTop + 126, 0xFFC6C6C6);
+		for(int tank = 2; tank < 5; tank++) {
+			int left = guiLeft + 8 + (tank - 2) * 50;
+			drawRect(left, guiTop + 121, left + 45, guiTop + 125, 0xFF302F2C);
+			int width = (int) Math.min(43L, (long) furnace.tanks[tank].getFill() * 43 / furnace.tanks[tank].getMaxFill());
+			drawRect(left + 1, guiTop + 122, left + 1 + width, guiTop + 124, 0xFF000000 | furnace.tanks[tank].getTankType().getColor());
+		}
 	}
 }

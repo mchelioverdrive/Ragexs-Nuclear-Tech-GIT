@@ -180,6 +180,17 @@ public class MaterialContractsTest {
         assertTrue(FuelSuitability.has("OXYGEN_GAS", MaterialRole.OXIDIZER));
         assertFalse(FuelSuitability.has("OXYGEN_GAS", MaterialRole.HEATING_FUEL));
     }
+    @Test public void blastTemperatureAndCokeEnrichmentAreTheOnlyThermalCeilingBonuses() {
+        assertEquals(2000000, BlastFurnaceProcess.ratedWatts(true, "AIR", false));
+        assertEquals(4000000, BlastFurnaceProcess.ratedWatts(true, "AIR_HEATED", false));
+        assertEquals(8000000, BlastFurnaceProcess.ratedWatts(true, "AIRBLAST", false));
+        for(String air : new String[] {"AIR", "AIR_HEATED", "AIRBLAST"}) {
+            assertEquals(BlastFurnaceProcess.ratedWatts(true, air, false) * 5 / 4, BlastFurnaceProcess.ratedWatts(true, air, true));
+            assertEquals(BlastFurnaceProcess.ratedWatts(false, air, false), BlastFurnaceProcess.ratedWatts(false, air, true));
+        }
+        assertEquals(1500000, BlastFurnaceProcess.ratedWatts(false, "AIR", false));
+        assertEquals(2000000, BlastFurnaceProcess.ratedWatts(false, "AIRBLAST", false));
+    }
     @Test public void shaftFuelAndProcessFeedDoNotInheritHeaterAcceptance() {
         assertEquals("COKE_ITEM", BlastFurnaceProcess.fuelIdentity(new ItemStack(ModItems.coke)));
         assertNull(BlastFurnaceProcess.fuelIdentity(new ItemStack(ModItems.coke, 1, 2)));

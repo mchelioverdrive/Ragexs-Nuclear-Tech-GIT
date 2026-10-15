@@ -487,42 +487,48 @@ public class AnvilRecipes {
 		//				new ComparableStack(Items.feather, 24)
 		//		}, new AnvilOutput(new ItemStack(ModItems.wings_limp))).setTier(2));
 
-		constructionRecipes.add(new AnvilConstructionRecipe(
-				new AStack[] {
-						new ComparableStack(ModItems.sulfur, 12),
-						new OreDictStack(STEEL.shell(), 4),
-						new OreDictStack(CU.plateCast(), 6),
-						new ComparableStack(ModItems.circuit, 2, EnumCircuitType.BASIC.ordinal())
-				},
-				new AnvilOutput(new ItemStack(ModBlocks.machine_deuterium_extractor))).setTier(2));
-
-		constructionRecipes.add(new AnvilConstructionRecipe(
-				new AStack[] {
-						new ComparableStack(ModItems.deuterium_filter, 2),
-						new OreDictStack(STEEL.shell(), 5),
-						new OreDictStack(STEEL.pipe(), 12),
-						new ComparableStack(ModBlocks.concrete_asbestos, 8),
-						new ComparableStack(ModBlocks.steel_scaffold, 16),
-						new OreDictStack(Fluids.SOURGAS.getCraftingContainerDict(1_000), 8),
-				},
-				new AnvilOutput(new ItemStack(ModBlocks.machine_deuterium_tower))).setTier(3));
-		constructionRecipes.add(new AnvilConstructionRecipe(
-				new AStack[] {
-						//new ComparableStack(ModItems.hull_big_steel, 4),
-						new ComparableStack(ModItems.plate_stainless, 8),
-						new ComparableStack(ModBlocks.concrete_smooth, 4),
-						new ComparableStack(ModBlocks.heater_heatex),
-						new ComparableStack(ModBlocks.deco_pipe_quad, 10),
-				},
-				new AnvilOutput(new ItemStack(ModBlocks.machine_atmo_tower))).setTier(2));
-		constructionRecipes.add(new AnvilConstructionRecipe(
-				new AStack[] {
-						//new ComparableStack(ModItems.hull_big_steel, 2),
-						new ComparableStack(ModItems.plate_stainless, 4),
-						new ComparableStack(ModBlocks.concrete_smooth, 4),
-						new ComparableStack(ModItems.turbine_titanium, 1),
-				},
-				new AnvilOutput(new ItemStack(ModBlocks.machine_atmo_vent))).setTier(2));
+        // Isotope exchange media remain part of the assembly; utilities remain operating inputs.
+        constructionRecipes.add(new AnvilConstructionRecipe(new AStack[] {
+                new ComparableStack(ModItems.sulfur, 12),
+                new OreDictStack(STEEL.shell(), 4),
+                new OreDictStack(CU.plateCast(), 6),
+                new OreDictStack(STEEL.pipe(), 6),
+                new ComparableStack(ModItems.motor),
+                new ComparableStack(ModBlocks.heater_heatex),
+                new ComparableStack(ModItems.circuit, 2, EnumCircuitType.BASIC),
+                new ComparableStack(ModBlocks.steel_scaffold, 2)
+        }, new AnvilOutput(new ItemStack(ModBlocks.machine_deuterium_extractor))).setTier(2));
+        constructionRecipes.add(new AnvilConstructionRecipe(new AStack[] {
+                new ComparableStack(ModItems.deuterium_filter, 2),
+                new OreDictStack(STEEL.shell(), 5),
+                new OreDictStack(STEEL.pipe(), 12),
+                new ComparableStack(ModBlocks.concrete_asbestos, 8),
+                new ComparableStack(ModBlocks.steel_scaffold, 16),
+                new ComparableStack(ModItems.motor, 3),
+                new ComparableStack(ModBlocks.heater_heatex, 2),
+                new ComparableStack(ModItems.circuit, 2, EnumCircuitType.BASIC)
+        }, new AnvilOutput(new ItemStack(ModBlocks.machine_deuterium_tower))).setTier(3));
+        // Atmospheric processing: vessels, compression drive, piping, heat exchange and control.
+        constructionRecipes.add(new AnvilConstructionRecipe(new AStack[] {
+                new OreDictStack(STEEL.shell(), 4),
+                new ComparableStack(ModItems.plate_stainless, 8),
+                new OreDictStack(STEEL.pipe(), 12),
+                new ComparableStack(ModBlocks.heater_heatex, 2),
+                new ComparableStack(ModItems.motor, 2),
+                new ComparableStack(Blocks.piston, 2),
+                new ComparableStack(ModItems.circuit, 2, EnumCircuitType.ANALOG),
+                new ComparableStack(ModBlocks.steel_scaffold, 8)
+        }, new AnvilOutput(new ItemStack(ModBlocks.machine_atmo_tower))).setTier(2));
+        constructionRecipes.add(new AnvilConstructionRecipe(new AStack[] {
+                new OreDictStack(STEEL.shell(), 2),
+                new OreDictStack(STEEL.plateCast(), 8),
+                new ComparableStack(ModItems.motor, 2),
+                new ComparableStack(Blocks.piston, 2),
+                new OreDictStack(STEEL.pipe(), 6),
+                new OreDictStack(CU.wireFine(), 8),
+                new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ANALOG),
+                new ComparableStack(ModBlocks.steel_scaffold, 4)
+        }, new AnvilOutput(new ItemStack(ModBlocks.machine_atmo_vent))).setTier(2));
 
 		constructionRecipes.add(new AnvilConstructionRecipe(
 				new AStack[] {

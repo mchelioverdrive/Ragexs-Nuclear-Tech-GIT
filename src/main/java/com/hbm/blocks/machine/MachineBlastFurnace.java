@@ -40,7 +40,6 @@ public class MachineBlastFurnace extends BlockDummyable implements com.hbm.block
     }
     @Override public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean extended) {
         addStandardInfo(stack, player, list, extended);
-        list.add(com.hbm.util.I18nUtil.resolveKey("tile.machine_blast_furnace.desc"));
         list.add(com.hbm.util.I18nUtil.resolveKey("tooltip.blast.infrastructure"));
     }
 }

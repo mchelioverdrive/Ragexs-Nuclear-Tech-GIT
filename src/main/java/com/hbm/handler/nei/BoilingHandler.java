@@ -29,8 +29,10 @@ public class BoilingHandler extends NEIUniversalHandler {
 		if(cache != null && !isReload) return cache;
 
 		cache = new HashMap();
-		cache.put(ItemFluidIcon.make(Fluids.AIR, 1), ItemFluidIcon.make(Fluids.AIR_HEATED, 1));
-		cache.put(ItemFluidIcon.make(Fluids.AIR_HEATED, 1), ItemFluidIcon.make(Fluids.AIRBLAST, 1));
+		for(int pressure = 0; pressure <= 1; pressure++) {
+			cache.put(ItemFluidIcon.make(Fluids.AIR, 1, pressure), ItemFluidIcon.make(Fluids.AIR_HEATED, 1, pressure));
+			cache.put(ItemFluidIcon.make(Fluids.AIR_HEATED, 1, pressure), ItemFluidIcon.make(Fluids.AIRBLAST, 1, pressure));
+		}
 
 		for(FluidType type : Fluids.getInNiceOrder()) {
 

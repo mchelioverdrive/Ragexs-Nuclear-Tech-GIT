@@ -7310,7 +7310,7 @@ tile.machine_refinery.desc=Separates heated crude into petroleum fractions.$Requ
 
 container.blastFurnace=Blast Furnace
 tile.machine_blast_furnace.name=Blast Furnace
-tile.machine_blast_furnace.desc=Bulk ore-to-steel production. Coal coke yields three steel per iron ore.
+tile.machine_blast_furnace.desc=Bulk ore-to-steel shaft furnace. Coke yields three steel per$iron ore; raw coal yields two.$Speed: coke permits 2 MW cold, 4 MW at 600 C, or 8 MW at 800$C blast.$Raw coal permits 1.5 MW cold or 2 MW heated; oxygen gives no$raw-coal bonus.$Coke + oxygen: 25% higher heat ceiling and 10% less batch$heat.$Enrichment starts only with a full batch of oxygen: 1$standard L per 10 standard L blast.$Limestone with a slag-producing feed reduces batch heat by$1.2 MJ; flux is consumed at batch start.$Hot blast supplies heat and saves fuel. Compress air to$pressure class 1, then heat it in Boilers (630 C / 830 C$heat sources).$Continuous fuel and blast supply and clear outputs sustain$speed. Fuller tanks give no speed bonus.
 tooltip.blast.infrastructure=Requires forced air. Paid hot blast and optional oxygen improve operation; recover combustible CO-bearing top gas.
 tooltip.blast.fuel=Coal coke preferred; raw coal gives poorer yield, heat efficiency and throughput.
 tooltip.blast.reductant=One coal coke or raw coal is reserved with each feed batch; auxiliary fuel pays remaining heat.
@@ -7419,3 +7419,11 @@ tile.machine_turbinegas.desc=Continuous gas generation with exhaust heat recover
 tile.machine_turbofan.desc=Jet-derived shaft generator; up to 1 MW electrical output.$Requires aviation-grade fuel.$Afterburning increases fuel use without increasing electrical rating.
 
 chem.LUBRICANT_BASE=Heavy-oil Base-stock Fractionation
+
+# Native atmospheric and isotope-processing machinery
+tile.machine_atmo_vent.desc=Collects gases from the natural planetary atmosphere; needs$electricity.$Bulk gas: 6000 standard L/min at 5 kWe. Selective gas: 1200$standard L/min at 50 kWe.$Use a screwdriver to cycle locally available gases; drain$the old gas first.$Outputs gas at pressure class 0. Use a Compressor for$pressure class 1 forced blast.$Cannot collect in vacuum, orbit, or an artificial sealed$atmosphere. No item feed is consumed.
+tile.machine_atmo_tower.desc=Separates piped air into nitrogen gas, oxygen gas, argon and$noble gases.$Processes 100 standard L per 5 seconds at 10 kWe; drain all$four product streams.$Despite the legacy name, its delivered products are gases,$not cryogenic liquids.$Use a Compressor for paid gas liquefaction. No natural$atmosphere is needed if air is piped in.
+tile.machine_compressor.desc=Compresses registered process gases and steam using$electrical work.$For forced blast: pipe atmospheric air at class 0 in; class$1 air comes out.$Select Compress / liquefy for compression or refrigeration;$Decompress vents class 1 gas to class 0.$Gas and liquid volumes differ; conversions conserve mass and$require paid work.$Drain the output before changing its fluid or pressure.$Physical-work recipes run at 25 kWe.
+tile.machine_deuterium_extractor.desc=Recovers trace heavy water from light water through isotope$separation.$Requires electricity and external process heat at 120 C or$hotter.$Drain heavy water and depleted water; fractional recovery$accumulates over multiple batches.
+tile.machine_deuterium_tower.desc=Faster industrial isotope separation of light water into$heavy and depleted water.$Requires electricity and external process heat at 120 C or$hotter.$Same isotope recovery as the small extractor; higher$throughput and utility demand.$Drain both outputs, including depleted water.
+tile.machine_electrolyser.desc=Runs fluid electrolysis and mineral electrolysis in$parallel.$Supply electricity and drain every coproduct. Fluid and$metal demand add together.$Mineral processing requires a retained 20 L nitric-acid$electrolyte bath.$Water produces hydrogen gas and oxygen gas; liquefaction is$a separate Compressor process.

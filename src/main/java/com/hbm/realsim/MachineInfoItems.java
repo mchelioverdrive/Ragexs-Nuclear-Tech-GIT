@@ -36,6 +36,10 @@ public final class MachineInfoItems {
         if(profile != null) { lines.add("Preview ratings; check the placed machine for server settings"); lines.addAll(MachineInfo.describe(profile, false)); }
     }
     private static TileEntity create(Block block) {
+        if(block == ModBlocks.machine_atmo_vent) return new com.hbm.tileentity.machine.TileEntityAtmoExtractor();
+        if(block == ModBlocks.machine_atmo_tower) return new com.hbm.tileentity.machine.TileEntityAtmoTower();
+        if(block == ModBlocks.machine_deuterium_extractor) return new com.hbm.tileentity.machine.TileEntityDeuteriumExtractor();
+        if(block == ModBlocks.machine_deuterium_tower) return new com.hbm.tileentity.machine.TileEntityDeuteriumTower();
         if(block == ModBlocks.machine_rtg_grey) return new com.hbm.tileentity.machine.TileEntityMachineRTG();
         if(block == ModBlocks.machine_radiolysis) return new com.hbm.tileentity.machine.TileEntityMachineRadiolysis();
         if(block == ModBlocks.machine_radgen) return new com.hbm.tileentity.machine.TileEntityMachineRadGen();
