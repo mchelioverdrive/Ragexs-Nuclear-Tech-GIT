@@ -7417,3 +7417,5 @@ chem.EGG_SEPARATION=Egg Separation
 tile.machine_diesel.desc=Compact compression-ignition generator; up to 200 kW.$Requires compatible diesel-family fuel; 32% efficiency on diesel.
 tile.machine_turbinegas.desc=Continuous gas generation with exhaust heat recovery.$Requires clean compatible fuel gas and lubricant.$3 MW gross electrical output; HRSG supplies hot or superhot steam.
 tile.machine_turbofan.desc=Jet-derived shaft generator; up to 1 MW electrical output.$Requires aviation-grade fuel.$Afterburning increases fuel use without increasing electrical rating.
+
+chem.LUBRICANT_BASE=Heavy-oil Base-stock Fractionation

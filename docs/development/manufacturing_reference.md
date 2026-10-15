@@ -47,6 +47,28 @@ Large Arc Furnace work is 1.8 MJ per output kg-equivalent, with a local 1-kg/ing
 
 These are constructed duty-cycle examples, not measured facilities or universal progression requirements. Large physical chemical bills and parallelism can change them. Storage must meet both joule demand and peak transfer watts. Process heat and generator auxiliaries remain separate loads.
 
+## Construction vocabulary and fabrication limits
+
+The workshop Assembler and every industrial Assembler lane have **12 item-input slots**. Industrial fabrication adds parallel lanes, not a larger ingredient grid. Stock definitions and component supplements must fit that limit; registration rejects larger arrays. `AssemblerRecipes.validateRegisteredNEIRecipes()` checks every loaded stock/configured ingredient through the same display contract used by NEI and reports the output, slot, Java type, nested identity and native matcher availability when a display cannot be compiled. Concrete, NBT and wildcard stacks retain quantity and tags; OreDict alternatives cycle through their real registered forms.
+
+Construction uses shells/tanks for containment, cast/welded plates and beams for load paths, motors/gears/blades for drive assemblies, pipes/rubber for fluid handling and seals, and coils/boards for electrical equipment. A motor includes its shaft/bearing hardware; a turbine rotor includes its rotating assembly. Pipes and control hardware also represent local fittings/valves. Components are compressed functional assemblies, not literal real-world bills of materials. External process heaters, shielding and pipe plants remain external where the machine actually requires them.
+
+| Equipment family | Construction represented |
+| --- | --- |
+| Industrial Mixer | Welded vessel, tanks, beam support, motors, reduction gear, steel agitators, piping, seals, wiring and Analog control. Fabricated in the Assembler. |
+| Boilers | Small unit: steel vessel, copper heat-transfer tubes and service piping/insulation. Industrial unit: cast structure, pressure shells, steel/copper tube banks, refractory, supporting beams, feed tank/drive and Analog controls. |
+| Rotary furnace | Refractory drum/support with steam piston and gear drive; its operating steam and process heat remain separate. |
+| Electric / ICF presses | Reinforced load frame, hydraulic cylinders, pump drive and piping; ICF retains its gold target tooling and specialist controls. |
+| Strand caster | Refractory tundish, copper mold/cooling pipes, support and powered withdrawal gears. |
+| Chemical / petroleum equipment | Existing reactor/refinery vessel, heater, pump and control assemblies; crystallizer adds heat transfer, catalytic cracker and alkylation include feed circulation and controls. |
+| Liquid/solid thermal processors | Vessels, heat-transfer/thermal coils, feed drives and controls; clay is not a universal melting/freezing catalyst. |
+| Cryogenic column | Stainless containment, insulation, heat exchange, piping, circulation/compression drive and controls. No battery is required for ordinary grid operation. |
+| Large generators | Copper power cable, windings, casing, thermal/fluid hardware and mechanical assemblies. Gas-turbine duplicate shell entries are combined; Leviathan uses a consolidated high-temperature rotor assembly; combustion engines contain explicit reciprocating hardware. |
+
+Copper dense cable is an existing generated material form, bundled from eight fine wires and rubber in the Assembler. It is registered with the same OreDict/material/rendering system as other dense conductors.
+
+Crafting container keys use `FluidType.getCraftingContainerDict(legacyCapacity)` for the standard container class: current liquid canisters/tanks hold 20 L and barrels 200 L. Exact `getDict(quantity)` keys remain exact for external/configured recipes. Saved container quantities and fluid IDs are not rescaled. In particular, hydraulic pistons and powered condensers accept obtainable current lubricant containers rather than an absent 1000-L key.
+
 ## Information ownership
 
 `IMachineInfo`, `MachineInfo`, `MachineInfoItems` and native owner getters supply item, GUI and NEI information. Live status comes from server snapshots; item previews use local defaults. Matching client/server builds are required. Display data cannot restore paid batch work. Proxy, dormant and decorative tiles receive no invented operating ratings.

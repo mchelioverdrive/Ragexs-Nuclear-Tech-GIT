@@ -159,6 +159,8 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(68, "VIT_LIQUID", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(68)));
 		recipes.add(new ChemRecipe(69, "VIT_GAS", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(69)));
 		recipes.add(new ChemRecipe(88, "LUBRICANT", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.reactorFraction()));
+		// Batch base-oil recovery bootstraps lubrication before the advanced vacuum train.
+		recipes.add(new ChemRecipe(1200, "LUBRICANT_BASE", 1).petroleum(com.hbm.realsim.PetroleumProcesses.lubricantBaseOil()));
 		recipes.add(new ChemRecipe(70, "TEL", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.additive()));
 		recipes.add(new ChemRecipe(4, "FR_REOIL", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.reclaimed()));
 		recipes.add(new ChemRecipe(5, "FR_PETROIL", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.blend("PETROIL", "RECLAIMED", 4, "LUBRICANT", 1)));
@@ -1029,19 +1031,29 @@ public class ChemplantRecipes extends SerializableRecipe {
             for(String product : bill.outputs) if(!product.startsWith("VENT_")) {
                 if(com.hbm.realsim.PhysicalRegistry.get(product).phase == com.hbm.realsim.PhysicalState.Phase.SOLID) solidProducts++; else fluidProducts++;
             }
-            if(bill.inputs.length > 4 || fluidProducts > 4 || solidProducts > 4) throw new IllegalArgumentException("Chemical Reactor bill exceeds its four feed/coproduct/solid ports");
+            if(bill.inputs.length > 4 || bill.solidInputs.length > 4 || fluidProducts > 4 || solidProducts > 4) throw new IllegalArgumentException("Chemical Reactor bill exceeds its four feed/coproduct/solid ports");
             physicalBill = bill; duration = bill.duration; physicalPowerQuanta = Math.max(1L, com.hbm.realsim.PetroleumProcesses.ceilDiv(bill.workQuanta, bill.duration));
             inputs = new AStack[4]; outputs = new ItemStack[4]; inputFluids = new FluidStack[4]; outputFluids = new FluidStack[4];
             for(int i = 0; i < bill.inputs.length; i++) inputFluids[i] = new FluidStack(Fluids.fromName(bill.inputs[i]), bill.quantities[i], bill.pressures[i]);
-            for(int i = 0; i < bill.solidInputs.length; i++) inputs[i] = com.hbm.realsim.ProcessMachine.feed(bill.solidInputs[i], bill.solidCounts[i]);
+            for(int i = 0; i < bill.solidInputs.length; i++) inputs[i] = com.hbm.realsim.ProcessMachine.feed(bill, i, "Chemical Reactor template " + id + " (" + name + ")");
             int fluid = 0, solid = 0;
             for(int i = 0; i < bill.outputs.length; i++) {
-                String name = bill.outputs[i]; if(name.startsWith("VENT_")) continue;
+                String name = bill.outputs[i]; if(name.startsWith("VENT_") || bill.productMass[i] == 0) continue;
                 int amount = Math.toIntExact(com.hbm.realsim.PetroleumProcesses.ceilDiv(bill.productMass[i], com.hbm.realsim.PhysicalRegistry.get(name).massUnits));
                 if(com.hbm.realsim.PhysicalRegistry.get(name).phase == com.hbm.realsim.PhysicalState.Phase.SOLID) outputs[solid++] = com.hbm.realsim.ProcessMachine.solid(name, amount);
                 else outputFluids[fluid++] = new FluidStack(Fluids.fromName(name), amount);
             }
             return this;
+        }
+
+        /** Fractional physical products accrue in the process ledger; do not advertise a rounded litre per batch. */
+        public ItemStack outputFluidDisplay(int slot) {
+            FluidStack fluid = outputFluids[slot];
+            if(fluid == null || fluid.fill <= 0 || fluid.type == Fluids.NONE) return null;
+            if(physicalBill != null) for(int i = 0; i < physicalBill.outputs.length; i++)
+                if(physicalBill.outputs[i].equals(fluid.type.getName()))
+                    return com.hbm.items.machine.ItemFluidIcon.makePhysical(fluid, physicalBill.productMass[i]);
+            return com.hbm.items.machine.ItemFluidIcon.make(fluid);
         }
 
 		public int getId() {

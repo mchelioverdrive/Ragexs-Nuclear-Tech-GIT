@@ -1,7 +1,6 @@
 package com.hbm.inventory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import com.hbm.config.GeneralConfig;
@@ -303,8 +302,27 @@ public class RecipesCommon {
 
 		@Override
 		public List<ItemStack> extractForNEI() {
-			return Arrays.asList(new ItemStack[] {this.toStack()});
+			return displayStacks(this.toStack());
 		}
+	}
+
+	/** A wildcard accepts metadata zero even when an item deliberately has no creative subitems. */
+	private static List<ItemStack> displayStacks(ItemStack stack) {
+		List<ItemStack> result = new ArrayList<ItemStack>();
+		if(stack == null || stack.getItem() == null || stack.stackSize <= 0) return result;
+		if(stack.getItemDamage() != OreDictionary.WILDCARD_VALUE) {
+			result.add(stack.copy());
+			return result;
+		}
+		List<ItemStack> variants = MainRegistry.proxy.getSubItems(stack.copy());
+		if(variants != null) for(ItemStack variant : variants) if(variant != null && variant.getItem() != null) {
+			ItemStack copy = variant.copy(); copy.stackSize = stack.stackSize;
+			if(stack.hasTagCompound()) copy.setTagCompound((NBTTagCompound) stack.getTagCompound().copy());
+			if(copy.getItemDamage() == OreDictionary.WILDCARD_VALUE) copy.setItemDamage(0);
+			result.add(copy);
+		}
+		if(result.isEmpty()) { ItemStack representative = stack.copy(); representative.setItemDamage(0); result.add(representative); }
+		return result;
 	}
 
 
@@ -434,11 +452,7 @@ public class RecipesCommon {
 				ItemStack copy = stack.copy();
 				copy.stackSize = this.stacksize;
 
-				if(stack.getItemDamage() != OreDictionary.WILDCARD_VALUE) {
-					ores.add(copy);
-				} else {
-					ores.addAll(MainRegistry.proxy.getSubItems(copy));
-				}
+				ores.addAll(displayStacks(copy));
 			}
 
 			return ores;

@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.init.Items;
 
 /** Explicit specialist assays and process bills; the ITEM namespace binds existing native forms. */
 public final class SpecialistProcesses {
@@ -26,16 +27,24 @@ public final class SpecialistProcesses {
         if(!name.startsWith("ITEM:")) return null;
         String field = name.substring(5); int meta=0; int at=field.indexOf('@'); if(at>=0){meta=Integer.parseInt(field.substring(at+1));field=field.substring(0,at);}
         String cacheKey=field; Item item = ITEMS.get(cacheKey);
-        if(item == null) try {
-            Class<?> owner = com.hbm.items.ModItems.class;
-            if(field.startsWith("block.")) { owner = com.hbm.blocks.ModBlocks.class; field = field.substring(6); }
-            else if(field.startsWith("vanilla.")) { owner = net.minecraft.init.Items.class; field = field.substring(8); }
-            Object value = owner.getField(field).get(null);
-            item = value instanceof net.minecraft.block.Block ? Item.getItemFromBlock((net.minecraft.block.Block) value) : (Item) value;
+        if(item == null) {
+            if(field.startsWith("vanilla.")) item = vanillaItem(field.substring(8));
+            else try {
+                Class<?> owner = com.hbm.items.ModItems.class;
+                if(field.startsWith("block.")) { owner = com.hbm.blocks.ModBlocks.class; field = field.substring(6); }
+                Object value = owner.getField(field).get(null);
+                item = value instanceof net.minecraft.block.Block ? Item.getItemFromBlock((net.minecraft.block.Block) value) : (Item) value;
+            } catch(ReflectiveOperationException missing) { throw new IllegalArgumentException("Missing native process form: " + name, missing); }
             if(item != null) ITEMS.put(cacheKey, item);
-        } catch(ReflectiveOperationException missing) { throw new IllegalArgumentException("Missing native process form: " + name, missing); }
+        }
         if(item == null) throw new IllegalStateException("Process forms are not initialized: " + name);
         return new ItemStack(item, count, meta);
+    }
+    /** Minecraft fields must be bytecode references so reobfuscation can remap them. */
+    private static Item vanillaItem(String field) {
+        if(field.equals("egg")) return Items.egg;
+        if(field.equals("cake")) return Items.cake;
+        throw new IllegalArgumentException("Missing native process form: ITEM:vanilla." + field);
     }
     static void solid(String field, String kg) {
         String id = key(field); if(!id.startsWith("ITEM:")) return;

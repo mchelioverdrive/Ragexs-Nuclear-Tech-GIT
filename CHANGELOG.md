@@ -180,3 +180,21 @@
 - Reconstructed current process, generator, fluid, material, thermal, storage and compatibility references. Preserved the incoming audit inventories, equations, sources and migration evidence separately under development history. Kept RealSim Production focused on proposed industrial capabilities.
 - Corrected active steam restrictions/protection, water-treatment quantities and stale capacity/scale advice. Updated moved links and contributor documentation routing.
 - Reworded shared item/GUI/NEI information and affected locale entries around operating roles and requirements. Retained physical values, added direct density/concentration display, corrected specialist energy units, and aligned steam, Foundry, chemical and arc-furnace names without changing recipes, ratings, IDs or save behavior. Changed existing translated entries use current English until translated.
+
+2026-10-15 13:21 — Resolve stock physical recipe ingredient adapters
+
+- Bound the existing one-kilogram polyethylene assay to polymer ingots for inputs as well as outputs, added the missing carbon-char input adapter for soot powder metadata, and supplied the sodium-sulfate solid output binding. Kept distinct plastics and ordinary ash separate without changing assays, IDs, saved quantities or material roles.
+- Added recipe family, template and bill/feed context to physical ingredient registration failures. Unknown quantities and unsupported forms still fail; recipe overrides and external recipe formats retain their existing behavior.
+- Extended existing headless accounting tests to compare the default chemistry, mixture and petroleum bills against canonical feed/output dispatch, and verify exact polymer/soot forms, inventory matching and contextual failures. Native Chemical Reactor, Mixer and custom-machine builders validate their literal declared feeds during registration.
+
+2026-10-15 13:45 — Resolve vanilla process items after production remapping
+
+- Replaced development-field reflection for vanilla egg and cake process forms with direct Minecraft item references that ForgeGradle can remap. Preserved the existing process identities, metadata, quantities, assays and mod-owned form bindings; unknown vanilla forms still fail explicitly.
+- Updated existing native-form coverage to require remappable vanilla field references for every vanilla identity used by default physical bills, instead of accepting development-only reflective names.
+
+2026-10-15 14:49 — Reconcile machine construction and lubricant progression
+
+- Repaired the lubricant construction boundary: hydraulic pistons and other construction recipes now select current normalized container keys. Retained Pumpjack construction requirements and added mass/energy-balanced heavy-oil base-stock recovery with circulating LPG solvent; removed the unbalanced bench lubricant shortcut.
+- Aligned vacuum-refinery outlet defaults with smear/lubricant and kept coproduct logistics active after feed exhaustion, preserving drainable legacy fluids. Fluid NEI lookup follows identity across icons/filled containers; Chemical Reactor previews render full product stacks and show fractional physical outputs without zero-product placeholders.
+- Restored generated/bundled copper dense cable for large generator recipes. Added detailed ingredient diagnostics and whole-registry Assembler display validation; concrete, NBT and wildcard displays retain quantities/tags. Consolidated generator assemblies to fit the existing twelve-input machines and retained the current GUI.
+- Reworked mixer, small/industrial boiler, rotary furnace, hydraulic/ICF press, strand caster, crystallizer, catalytic cracker, alkylation, thermal liquid/solid processing and cryogenic-column construction around their actual vessels, drives, piping, heat-transfer hardware, support and controls. Kept operating performance and early-power branches unchanged.

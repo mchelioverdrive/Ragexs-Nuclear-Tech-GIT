@@ -15,6 +15,28 @@ import org.junit.Test;
 
 /** Tests the production bills and ownership account, including binary save/load and JSON boundaries. */
 public class PetroleumAccountingTest {
+    @Test public void lubricantBootstrapIsAcyclicAndReturnsItsSolvent() {
+        ProcessRecipe base = PetroleumProcesses.lubricantBaseOil();
+        ChemicalFuelProcesses.validateRating(base);
+        assertEquals("HEAVYOIL", base.inputs[0]); assertEquals("LPG", base.inputs[1]);
+        assertEquals(4, base.quantities[1]); assertEquals("LPG", base.outputs[3]);
+        assertEquals(4L * PhysicalRegistry.get("LPG").massUnits, base.productMass[3]);
+        java.util.Set<String> available = new java.util.HashSet<String>(); available.add("OIL");
+        List<ProcessRecipe> chain = new ArrayList<ProcessRecipe>();
+        chain.add(PetroleumProcesses.defaults("heat").get("OIL"));
+        chain.add(PetroleumProcesses.defaults("refinery").get("HOTOIL"));
+        chain.add(ChemicalFuelProcesses.gasRecovery()); chain.add(base);
+        for(ProcessRecipe recipe : chain) {
+            for(String input : recipe.inputs) assertTrue(recipe.id + " requires unavailable " + input, available.contains(input));
+            assertEquals(0, recipe.solidInputs.length);
+            available.addAll(java.util.Arrays.asList(recipe.outputs));
+        }
+        assertTrue(available.contains("LUBRICANT"));
+        ProcessRecipe vacuum = PetroleumProcesses.defaults("vacuum").get("HEAVYOIL");
+        assertTrue(vacuum.productMass[3] > 0); assertEquals("LUBRICANT", vacuum.outputs[3]);
+        assertEquals("SMEAR", vacuum.outputs[1]);
+        assertEquals("LUBRICANT", ChemicalFuelProcesses.reactorFraction().outputs[0]);
+    }
     private List<ProcessRecipe> bills() {
         List<ProcessRecipe> result = new ArrayList<ProcessRecipe>();
         for(String machine : new String[] {"heat", "refinery", "fraction", "vacuum", "crack", "hydro", "reform", "coker", "alkyl"}) result.addAll(PetroleumProcesses.defaults(machine).values());
@@ -32,6 +54,7 @@ public class PetroleumAccountingTest {
             result.add(ChemicalFuelProcesses.tarCoking(feed));
         result.add(ChemicalFuelProcesses.reactorFraction()); result.add(ChemicalFuelProcesses.bitumenFreezing());
         result.add(ChemicalFuelProcesses.reclaimed());
+        result.add(PetroleumProcesses.lubricantBaseOil());
         for(String[] pair : new String[][] {{"TAR_CRUDE_ITEM", "BITUMEN"}, {"TAR_COAL_ITEM", "COALCREOSOTE"},
                 {"TAR_WOOD_ITEM", "WOODOIL"}, {"TAR_CRACK_ITEM", "CRACKOIL"}})
             result.add(ChemicalFuelProcesses.tarMelting(pair[0], pair[1]));

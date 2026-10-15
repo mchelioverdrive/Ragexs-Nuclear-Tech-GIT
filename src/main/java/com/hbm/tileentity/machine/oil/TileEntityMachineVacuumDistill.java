@@ -63,9 +63,9 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 		this.tanks = new FluidTank[5];
 		this.tanks[0] = new FluidTank(Fluids.HEAVYOIL, 32_000).withDefaultCapacity();
 		this.tanks[1] = new FluidTank(Fluids.HEAVYOIL_VACUUM, 8_000).withDefaultCapacity();
-		this.tanks[2] = new FluidTank(Fluids.REFORMATE, 8_000).withDefaultCapacity();
+		this.tanks[2] = new FluidTank(Fluids.SMEAR, 8_000).withDefaultCapacity();
 		this.tanks[3] = new FluidTank(Fluids.LIGHTOIL_VACUUM, 8_000).withDefaultCapacity();
-		this.tanks[4] = new FluidTank(Fluids.SOURGAS, 24_000);
+		this.tanks[4] = new FluidTank(Fluids.LUBRICANT, 24_000).withDefaultCapacity();
 		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 
@@ -105,6 +105,13 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 
 	@Override public void onMachineScheduledTransition(int taskType, int taskSlot, long dueTick) {
         if(worldObj == null || worldObj.isRemote || !runtimeInitialized) return;
+        if(taskType == TASK_FLUID) {
+            this.beginMachineFluidMutation();
+            try { this.unloadOutputContainers(); this.sendOutputFluids(); }
+            finally { this.endMachineFluidMutation(); }
+            this.evaluateAndSchedule(worldObj.getTotalWorldTime());
+            return;
+        }
         runtimeBatchMutation = true; runtimeEnergyMutation = true; this.beginMachineFluidMutation();
         try {
             this.setStoredEnergyQuanta(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
@@ -112,7 +119,6 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
             com.hbm.realsim.ProcessMachine.step(this, physicalBatch, cachedRecipe, new FluidTank[] {tanks[0]}, new FluidTank[] {tanks[1], tanks[2], tanks[3], tanks[4]}, slots, 0, -1, 0, -1);
             isOn = physicalBatch.ticks() != previous;
         } finally { this.endMachineFluidMutation(); runtimeEnergyMutation = false; runtimeBatchMutation = false; }
-        if(worldObj.getTotalWorldTime() % 5L == 0L) this.sendOutputFluids();
         if(worldObj.getTotalWorldTime() % 20L == 0L) this.sendRuntimeState();
         this.evaluateAndSchedule(worldObj.getTotalWorldTime());
 	}
@@ -124,6 +130,7 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 			if(this.observeInventoryFingerprint()) this.markMachineDirty(MachineDirtyCause.INVENTORY | MachineDirtyCause.FLUID | MachineDirtyCause.RECIPE);
 		} else if(cadence == 20) {
 			this.updateConnections();
+            this.sendRuntimeState();
 		} else if(cadence == 100) {
 			long revision = SerializableRecipe.getRegistryRevision();
 			if(revision != observedRecipeRevision) {
@@ -193,6 +200,8 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 
 	private void evaluateAndSchedule(long now) {
         this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY); this.cancelMachineTransition(TASK_FLUID, TASK_SLOT_FLUID);
+        // Paid coproducts must keep draining after the last feed is consumed, including old saved reformate/sour gas.
+        if(this.hasFluidOutput()) this.scheduleMachineTransition(now + 5L - Math.floorMod(now, 5L), TASK_FLUID, TASK_SLOT_FLUID);
         if(this.canRefine() || this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
         else { isOn = false; this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN); }
 	}

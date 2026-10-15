@@ -223,7 +223,7 @@ public class MixerRecipes extends SerializableRecipe {
             physicalBill = bill; processTime = bill.duration;
             input1 = bill.inputs.length > 0 ? new FluidStack(Fluids.fromName(bill.inputs[0]), bill.quantities[0], bill.pressures[0]) : null;
             input2 = bill.inputs.length > 1 ? new FluidStack(Fluids.fromName(bill.inputs[1]), bill.quantities[1], bill.pressures[1]) : null;
-            if(bill.solidCount > 0) solidInput = com.hbm.realsim.ProcessMachine.feed(bill.solidInput, bill.solidCount);
+            if(bill.solidCount > 0) solidInput = com.hbm.realsim.ProcessMachine.feed(bill, 0, "Mixer " + bill.outputs[0]);
             output = Math.toIntExact(com.hbm.realsim.PetroleumProcesses.ceilDiv(bill.productMass[0], com.hbm.realsim.PhysicalRegistry.get(bill.outputs[0]).massUnits));
             return this;
         }

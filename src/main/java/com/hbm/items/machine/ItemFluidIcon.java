@@ -39,10 +39,21 @@ public class ItemFluidIcon extends Item {
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean bool) {
 		FluidType type = Fluids.fromID(stack.getItemDamage());
-		if(getQuantity(stack) > 0) list.add(com.hbm.inventory.fluid.FluidInfo.amount(type, getQuantity(stack)));
+		if(getQuantity(stack) > 0) list.add(quantityText(stack));
 		if(getPressure(stack) > 0) list.add("Network pressure class: " + getPressure(stack) + " PU (not physical bar)");
 		type.addInfo(list);
-		com.hbm.inventory.fluid.FluidInfo.appendStoredEnergy(list, type, getQuantity(stack));
+		if(!stack.hasTagCompound() || !stack.getTagCompound().hasKey("physicalMass"))
+			com.hbm.inventory.fluid.FluidInfo.appendStoredEnergy(list, type, getQuantity(stack));
+	}
+
+	public static String quantityText(ItemStack stack) {
+		FluidType type = Fluids.fromID(stack.getItemDamage());
+		if(stack.hasTagCompound() && stack.getTagCompound().hasKey("physicalMass")) {
+			java.math.BigDecimal quantity = java.math.BigDecimal.valueOf(stack.getTagCompound().getLong("physicalMass"))
+					.divide(java.math.BigDecimal.valueOf(com.hbm.realsim.PhysicalRegistry.get(type.getName()).massUnits), 6, java.math.RoundingMode.DOWN).stripTrailingZeros();
+			return quantity.toPlainString() + " " + com.hbm.inventory.fluid.FluidInfo.unit(type) + " per batch (fractional output accumulates)";
+		}
+		return com.hbm.inventory.fluid.FluidInfo.amount(type, getQuantity(stack));
 	}
 
 	public static ItemStack addQuantity(ItemStack stack, int i) {
@@ -59,6 +70,13 @@ public class ItemFluidIcon extends Item {
 
 	public static ItemStack make(FluidStack stack) {
 		return make(stack.type, stack.fill, stack.pressure);
+	}
+
+	public static ItemStack makePhysical(FluidStack fluid, long mass) {
+		if(mass <= 0) return null;
+		ItemStack stack = make(fluid);
+		stack.getTagCompound().setLong("physicalMass", mass);
+		return stack;
 	}
 
 	public static ItemStack make(FluidType fluid, int i) {

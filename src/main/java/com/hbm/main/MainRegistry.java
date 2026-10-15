@@ -980,6 +980,7 @@ public class MainRegistry {
 		DamageResistanceHandler.init();
 		//DamageResistanceHandler.init();
 		FluidContainerRegistry.register();
+		com.hbm.inventory.recipes.AssemblerRecipes.validateNEIRegistry();
         com.hbm.handler.BucketHandler.installDispenserWaterFill();
 		BlockToolConversion.registerRecipes();
 		AchievementHandler.register();

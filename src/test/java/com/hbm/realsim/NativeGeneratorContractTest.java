@@ -37,12 +37,17 @@ public class NativeGeneratorContractTest {
         Field orderField = Fluids.class.getDeclaredField("registerOrder"); orderField.setAccessible(true);
         order = (java.util.List<FluidType>) orderField.get(null); oldOrder = new java.util.ArrayList<>(order);
         oldPellets = new java.util.ArrayList<>(ItemRTGPellet.pelletList);
-        for(String name : new String[] {"NONE", "STEAM", "HOTSTEAM", "SUPERHOTSTEAM", "ULTRAHOTSTEAM", "SPENTSTEAM", "DIESEL", "KEROSENE", "BLOOD", "GAS", "LUBRICANT", "WATER", "FRESH_WATER"}) {
+        for(String name : new String[] {"NONE", "STEAM", "HOTSTEAM", "SUPERHOTSTEAM", "ULTRAHOTSTEAM", "SPENTSTEAM", "DIESEL", "KEROSENE", "BLOOD", "GAS", "LUBRICANT", "WATER", "FRESH_WATER",
+                "HEAVYOIL", "HEAVYOIL_VACUUM", "SMEAR", "LIGHTOIL_VACUUM", "REFORMATE", "SOURGAS", "OIL", "OIL_DS", "LIGHTOIL", "LIGHTOIL_DS", "NAPHTHA", "NAPHTHA_DS", "PETROLEUM", "BITUMEN", "HEATINGOIL", "LPG"}) {
             Field f = Fluids.class.getField(name); fields.put(f, f.get(null));
             FluidType type = new FluidType(name, 0, 0, 0, 0, EnumSymbol.NONE); f.set(null, type); names.put(name, type);
         }
         for(String name : new String[] {"pellet_rtg", "pellet_rtg_tm170", "pellet_rtg_polonium"}) {
             Field f = ModItems.class.getField(name); fields.put(f, f.get(null)); f.set(null, new ItemRTGPellet(10));
+        }
+        Field icon = ModItems.class.getField("fluid_icon"); fields.put(icon, icon.get(null)); icon.set(null, new com.hbm.items.machine.ItemFluidIcon());
+        for(String name : new String[] {"canister_full", "fluid_tank_full", "fluid_barrel_full"}) {
+            Field f = ModItems.class.getField(name); fields.put(f, f.get(null)); f.set(null, new net.minecraft.item.Item());
         }
     }
     @After public void restoreIdentities() throws Exception {
@@ -60,6 +65,84 @@ public class NativeGeneratorContractTest {
             TileEntityMachineAmgen.class, TileEntityMachineSPP.class, TileEntityMachineDischarger.class,
             TileEntityCoreReceiver.class, TileEntityCustomMachine.class, com.hbm.tileentity.machine.oil.TileEntityMachineGasFlare.class};
         for(Class<?> type : types) assertTrue(type.getSimpleName(), IRatedGenerator.class.isAssignableFrom(type));
+    }
+    @Test public void assemblerAndIndustrialLanesHaveExactlyTwelveIngredientPorts() {
+        int[] workshop = new TileEntityMachineAssembler().getSlotIndicesFromIndex(0);
+        assertEquals(12, workshop[1] - workshop[0] + 1);
+        TileEntityMachineAssemfac industrial = new TileEntityMachineAssemfac();
+        for(int lane = 0; lane < 8; lane++) {
+            int[] ports = industrial.getSlotIndicesFromIndex(lane);
+            assertEquals(com.hbm.inventory.recipes.AssemblerRecipes.MAX_INGREDIENTS, ports[1] - ports[0] + 1);
+        }
+    }
+    @Test public void lubricantConstructionKeyUsesTheRegisteredCurrentContainerCapacity() {
+        com.hbm.inventory.FluidContainer container = new com.hbm.inventory.FluidContainer(new ItemStack(ModItems.canister_full, 1, Fluids.LUBRICANT.getID()), null, Fluids.LUBRICANT, 1000);
+        assertEquals(20, container.content);
+        assertEquals(Fluids.LUBRICANT.getDict(container.content), Fluids.LUBRICANT.getCraftingContainerDict(1000));
+        assertEquals(Fluids.LUBRICANT.getDict(200), Fluids.LUBRICANT.getCraftingContainerDict(16000));
+        assertNotEquals(Fluids.LUBRICANT.getDict(1000), Fluids.LUBRICANT.getCraftingContainerDict(1000));
+    }
+    @Test public void reactorPreviewShapesKeepFluidIdentityQuantityAndEmptyPorts() {
+        java.util.Map<Integer, com.hbm.inventory.recipes.ChemplantRecipes.ChemRecipe> old = new java.util.HashMap<>(com.hbm.inventory.recipes.ChemplantRecipes.indexMapping);
+        try {
+            com.hbm.inventory.recipes.ChemplantRecipes.ChemRecipe residue = new com.hbm.inventory.recipes.ChemplantRecipes.ChemRecipe(30000, "residue", 1).petroleum(ChemicalFuelProcesses.reactorFraction());
+            com.hbm.inventory.recipes.ChemplantRecipes.ChemRecipe extraction = new com.hbm.inventory.recipes.ChemplantRecipes.ChemRecipe(30001, "base_oil", 1).petroleum(PetroleumProcesses.lubricantBaseOil());
+            com.hbm.inventory.recipes.ChemplantRecipes.ChemRecipe mixed = new com.hbm.inventory.recipes.ChemplantRecipes.ChemRecipe(30002, "mixed", 20)
+                    .inputItems(new com.hbm.inventory.RecipesCommon.ComparableStack(ModItems.canister_full, 2))
+                    .inputFluids(new com.hbm.inventory.FluidStack(Fluids.SMEAR, 1))
+                    .outputItems(new ItemStack(ModItems.canister_full)).outputFluids(new com.hbm.inventory.FluidStack(Fluids.LUBRICANT, 1));
+            com.hbm.inventory.recipes.ChemplantRecipes.ChemRecipe items = new com.hbm.inventory.recipes.ChemplantRecipes.ChemRecipe(30003, "items", 20)
+                    .inputItems(new com.hbm.inventory.RecipesCommon.ComparableStack(ModItems.canister_full))
+                    .outputItems(new ItemStack(ModItems.canister_full));
+            for(com.hbm.inventory.recipes.ChemplantRecipes.ChemRecipe recipe : new com.hbm.inventory.recipes.ChemplantRecipes.ChemRecipe[] {residue, extraction, mixed, items}) {
+                for(com.hbm.inventory.RecipesCommon.AStack input : recipe.inputs) if(input != null)
+                    for(ItemStack stack : input.extractForNEI()) assertNotSame(ModItems.fluid_icon, stack.getItem());
+                for(int i = 0; i < 4; i++) {
+                    ItemStack display = recipe.outputFluidDisplay(i);
+                    if(recipe.outputFluids[i] == null) assertNull(display);
+                    else {
+                        assertSame(ModItems.fluid_icon, display.getItem());
+                        assertEquals(recipe.outputFluids[i].type.getID(), display.getItemDamage());
+                        assertTrue(com.hbm.items.machine.ItemFluidIcon.getQuantity(display) > 0);
+                    }
+                }
+            }
+            ItemStack baseOil = extraction.outputFluidDisplay(1);
+            assertTrue(baseOil.getTagCompound().getLong("physicalMass") < PhysicalRegistry.get("LUBRICANT").massUnits);
+            assertTrue(com.hbm.items.machine.ItemFluidIcon.quantityText(baseOil).startsWith("0."));
+            assertEquals("LUBRICANT", Fluids.fromID(baseOil.getItemDamage()).getName());
+            extraction.outputFluids[3] = new com.hbm.inventory.FluidStack(Fluids.NONE, 0);
+            assertNull(extraction.outputFluidDisplay(3));
+        } finally {
+            com.hbm.inventory.recipes.ChemplantRecipes.indexMapping.clear();
+            com.hbm.inventory.recipes.ChemplantRecipes.indexMapping.putAll(old);
+        }
+    }
+    @Test public void vacuumLubricantSurvivesNativeLookupDisplayAndPaidBatchReservation() {
+        com.hbm.tileentity.machine.oil.TileEntityMachineVacuumDistill tile = new com.hbm.tileentity.machine.oil.TileEntityMachineVacuumDistill();
+        ProcessRecipe recipe = com.hbm.inventory.recipes.RefineryRecipes.getPhysicalVacuum(Fluids.HEAVYOIL);
+        assertNotNull(recipe); assertEquals("LUBRICANT", recipe.outputs[3]); assertTrue(recipe.productMass[3] > 0);
+        assertSame(Fluids.SMEAR, tile.tanks[2].getTankType()); assertSame(Fluids.LUBRICANT, tile.tanks[4].getTankType());
+        FluidTank[] outputs = {tile.tanks[1], tile.tanks[2], tile.tanks[3], tile.tanks[4]};
+        tile.tanks[0].setFill(1);
+        ProcessMachine.sizeProcessBuffers(recipe, new FluidTank[] {tile.tanks[0]}, outputs);
+        assertTrue(ProcessMachine.reserveInputs(tile.physicalBatch, recipe, new FluidTank[] {tile.tanks[0]}, outputs, null, 0, -1, 0, -1));
+        assertEquals(0, tile.tanks[0].getFill()); assertTrue(tile.physicalBatch.active());
+        long lubricant = 0;
+        MassRemainder products = new MassRemainder();
+        for(int batch = 0; batch < 1000; batch++) lubricant += products.convert("LUBRICANT", recipe.productMass[3]);
+        assertTrue(lubricant > 0);
+        boolean visible = false;
+        for(Object value : com.hbm.inventory.recipes.RefineryRecipes.getVacuumRecipe().values())
+            for(ItemStack stack : (ItemStack[]) value) if(stack.getItemDamage() == Fluids.LUBRICANT.getID()) {
+                visible = true; assertEquals(lubricant, com.hbm.items.machine.ItemFluidIcon.getQuantity(stack));
+            }
+        assertTrue("Vacuum output disappeared in NEI compilation", visible);
+        NBTTagCompound saved = new NBTTagCompound();
+        tile.tanks[2].setTankType(Fluids.REFORMATE); tile.tanks[2].setFill(17); tile.tanks[2].writeToNBT(saved, "reformate");
+        FluidTank legacy = new FluidTank(Fluids.SMEAR, 10).withDefaultCapacity(); legacy.readFromNBT(saved, "reformate");
+        assertSame(Fluids.REFORMATE, legacy.getTankType()); assertEquals(17, legacy.getFill());
+        assertFalse(legacy.configureForRecipe(Fluids.SMEAR, 0));
     }
     @Test public void nativeSteamAdmissionRejectsGradesWithoutConsumingOrRelabelingStock() {
         TileEntityMachineTurbine small = new TileEntityMachineTurbine();

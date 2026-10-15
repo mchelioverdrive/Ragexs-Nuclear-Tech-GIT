@@ -58,7 +58,7 @@ public class ChemplantRecipeHandler extends SafeTemplateRecipeHandler implements
 
 			for(int i = 0; i < recipe.inputFluids.length; i++) {
 				FluidStack in = recipe.inputFluids[i];
-				if(in == null) continue;
+				if(in == null || in.fill <= 0 || in.type == com.hbm.inventory.fluid.Fluids.NONE) continue;
 				ItemStack drop = ItemFluidIcon.make(in);
 				this.fluidIn[i] = NEISafe.positionedStack(drop, 12 + i * 18, 6);
 			}
@@ -72,7 +72,7 @@ public class ChemplantRecipeHandler extends SafeTemplateRecipeHandler implements
 			for(int i = 0; i < recipe.outputFluids.length; i++) {
 				FluidStack out = recipe.outputFluids[i];
 				if(out == null) continue;
-				ItemStack drop = ItemFluidIcon.make(out);
+				ItemStack drop = recipe.outputFluidDisplay(i);
 				this.fluidOut[i] = NEISafe.positionedStack(drop, 102 + i * 18, 6);
 			}
 
@@ -204,7 +204,7 @@ public class ChemplantRecipeHandler extends SafeTemplateRecipeHandler implements
 	}
 
 	private boolean compareFluidStacks(ItemStack sta1, ItemStack sta2) {
-		return NEISafe.isValid(sta1) && NEISafe.isValid(sta2) && sta1.getItem() == sta2.getItem() && sta1.getItemDamage() == sta2.getItemDamage();
+		return NEISafe.matchesRecipeStack(sta1, sta2);
 	}
 
 	@Override

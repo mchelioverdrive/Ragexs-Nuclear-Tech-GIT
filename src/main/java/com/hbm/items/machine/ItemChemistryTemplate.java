@@ -82,7 +82,8 @@ public class ItemChemistryTemplate extends Item {
 			for(int i = 0; i < recipe.outputFluids.length; i++) {
 				if(recipe.outputFluids[i] != null) {
 					int p = recipe.outputFluids[i].pressure;
-					list.add(com.hbm.inventory.fluid.FluidInfo.amount(recipe.outputFluids[i].type, recipe.outputFluids[i].fill) + " " + recipe.outputFluids[i].type.getLocalizedName() + (p != 0 ? (" at " + p + "PU") : ""));
+					ItemStack display = recipe.outputFluidDisplay(i);
+					if(display != null) list.add(ItemFluidIcon.quantityText(display) + " " + recipe.outputFluids[i].type.getLocalizedName() + (p != 0 ? (" at " + p + "PU") : ""));
 				}
 			}
 

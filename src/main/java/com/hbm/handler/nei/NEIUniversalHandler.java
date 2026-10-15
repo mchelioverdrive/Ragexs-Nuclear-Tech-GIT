@@ -15,7 +15,6 @@ import com.hbm.items.ModItems;
 import com.hbm.lib.RefStrings;
 import com.hbm.util.InventoryUtil;
 
-import codechicken.nei.NEIServerUtils;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.block.Block;
@@ -296,7 +295,7 @@ public abstract class NEIUniversalHandler extends SafeTemplateRecipeHandler impl
 			match:
 			for(ItemStack[] array : outs) {
 				for(ItemStack stack : array) {
-					if(NEIServerUtils.areStacksSameTypeCrafting(stack, result)) {
+					if(NEISafe.matchesRecipeStack(stack, result)) {
 						this.arecipes.add(new RecipeSet(ins, outs, recipe.getKey()));
 						break match;
 					}
@@ -328,7 +327,7 @@ public abstract class NEIUniversalHandler extends SafeTemplateRecipeHandler impl
 			match:
 			for(ItemStack[] array : ins) {
 				for(ItemStack stack : array) {
-					if(NEIServerUtils.areStacksSameTypeCrafting(stack, ingredient)) {
+					if(NEISafe.matchesRecipeStack(stack, ingredient)) {
 						this.arecipes.add(new RecipeSet(ins, outs, recipe.getKey()));
 						break match;
 					}

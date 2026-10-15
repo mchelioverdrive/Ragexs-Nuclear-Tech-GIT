@@ -20,6 +20,11 @@ public class ItemRenderTemplate implements IItemRenderer {
 	private ItemStack currentItem;
 
 	public boolean handleRenderType(ItemStack stack, IItemRenderer.ItemRenderType type) {
+		this.currentItem = null;
+		if(stack.getItem() == ModItems.chemistry_icon && type == IItemRenderer.ItemRenderType.INVENTORY) {
+			this.currentItem = ((ItemChemistryIcon) ModItems.chemistry_icon).getDisplayStack(stack.getItemDamage());
+			return this.currentItem != null && this.currentItem.getItem() != ModItems.chemistry_icon;
+		}
 		
 		if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) && (type == IItemRenderer.ItemRenderType.INVENTORY)) {
 

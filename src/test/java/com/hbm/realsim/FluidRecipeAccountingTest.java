@@ -474,14 +474,57 @@ public class FluidRecipeAccountingTest {
     }
     @Test public void releasedSpecialtyFormsBindRealNativeFields() throws Exception {
         java.util.Set<String> ids=new java.util.HashSet<>();
-        for(ProcessRecipe recipe:ChemistryProcesses.defaults().values()) {ids.addAll(java.util.Arrays.asList(recipe.solidInputs));ids.addAll(java.util.Arrays.asList(recipe.outputs));}
-        for(ProcessRecipe recipe:UtilityMixtures.mixers().values()){ids.addAll(java.util.Arrays.asList(recipe.solidInputs));ids.addAll(java.util.Arrays.asList(recipe.outputs));}
+        java.util.List<ProcessRecipe> defaults=new java.util.ArrayList<>(ChemistryProcesses.defaults().values());
+        defaults.addAll(UtilityMixtures.mixers().values());
+        for(String family:new String[] {"heat","refinery","vacuum","fraction","crack","reform","hydro","coker","alkyl"}) defaults.addAll(PetroleumProcesses.defaults(family).values());
+        for(Class<?> family:new Class<?>[] {ChemicalFuelProcesses.class,ChemistryProcesses.class})
+            for(java.lang.reflect.Method method:family.getDeclaredMethods())
+                if(method.getParameterTypes().length==0 && method.getReturnType()==ProcessRecipe.class) defaults.add((ProcessRecipe)method.invoke(null));
+        // Check the canonical dispatch itself, without native registries or a second adapter list.
+        // The full native declarations are also validated by the registration boundary at startup.
+        String adapters=new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("src/main/java/com/hbm/realsim/ProcessMachine.java")),java.nio.charset.StandardCharsets.UTF_8);
+        String minerals=adapters.substring(adapters.indexOf("private static net.minecraft.item.Item mineralItem"),adapters.indexOf("public static AStack feed(String"));
+        String feeds=adapters.substring(adapters.indexOf("public static AStack feed(String"),adapters.indexOf("public static boolean matches"));
+        String products=adapters.substring(adapters.indexOf("public static ItemStack solid"),adapters.indexOf("public static boolean add("));
+        java.util.Set<String> supported=new java.util.HashSet<>(), outputs=new java.util.HashSet<>();
+        java.util.regex.Pattern selector=java.util.regex.Pattern.compile("name\\.equals\\(\"([^\"]+)\"\\)");
+        java.util.regex.Matcher matches=selector.matcher(minerals+feeds);
+        while(matches.find()) supported.add(matches.group(1));
+        matches=selector.matcher(minerals+products); while(matches.find()) outputs.add(matches.group(1));
+        java.util.List<String> failures=new java.util.ArrayList<>();
+        for(ProcessRecipe recipe:defaults) {
+            ids.addAll(java.util.Arrays.asList(recipe.solidInputs)); ids.addAll(java.util.Arrays.asList(recipe.outputs));
+            for(String feed:recipe.solidInputs)
+                if(!feed.startsWith("ITEM:") && !feed.startsWith("TAR_") && !supported.contains(feed)) failures.add(recipe.id+" / feed "+feed);
+            for(String output:recipe.outputs)
+                if(!output.startsWith("ITEM:") && !output.startsWith("VENT_") && PhysicalRegistry.get(output).phase==PhysicalState.Phase.SOLID && !outputs.contains(output)) failures.add(recipe.id+" / solid output "+output);
+        }
+        assertTrue("Default physical feed adapters: "+failures,failures.isEmpty());
         for(String id:ids) if(id.startsWith("ITEM:")) {
             String field=id.substring(5).split("@")[0];Class<?> owner=com.hbm.items.ModItems.class;
             if(field.startsWith("block.")){owner=com.hbm.blocks.ModBlocks.class;field=field.substring(6);}
-            else if(field.startsWith("vanilla.")){owner=net.minecraft.init.Items.class;field=field.substring(8);}
+            else if(field.startsWith("vanilla.")) continue; // Checked as remappable bytecode below, not MCP-only reflection.
             assertNotNull(owner.getField(field));
         }
+        org.objectweb.asm.tree.ClassNode nativeForms=new org.objectweb.asm.tree.ClassNode();
+        try(java.io.InputStream code=SpecialistProcesses.class.getResourceAsStream("SpecialistProcesses.class")) {
+            new org.objectweb.asm.ClassReader(code).accept(nativeForms,0);
+        }
+        java.util.Set<String> remappable=new java.util.HashSet<>();
+        for(Object value:nativeForms.methods) {
+            org.objectweb.asm.tree.MethodNode method=(org.objectweb.asm.tree.MethodNode)value;
+            if(!method.name.equals("vanillaItem")) continue;
+            for(org.objectweb.asm.tree.AbstractInsnNode instruction=method.instructions.getFirst();instruction!=null;instruction=instruction.getNext()) {
+                if(instruction instanceof org.objectweb.asm.tree.FieldInsnNode) {
+                    org.objectweb.asm.tree.FieldInsnNode field=(org.objectweb.asm.tree.FieldInsnNode)instruction;
+                    if(field.getOpcode()==org.objectweb.asm.Opcodes.GETSTATIC && field.owner.equals("net/minecraft/init/Items")) remappable.add(field.name);
+                }
+                if(instruction instanceof org.objectweb.asm.tree.MethodInsnNode)
+                    assertNotEquals("Vanilla process forms must survive production remapping", "java/lang/Class", ((org.objectweb.asm.tree.MethodInsnNode)instruction).owner);
+            }
+        }
+        for(String id:ids) if(id.startsWith("ITEM:vanilla."))
+            assertTrue("No remappable vanilla binding: "+id, remappable.contains(id.substring("ITEM:vanilla.".length()).split("@")[0]));
     }
 
 }

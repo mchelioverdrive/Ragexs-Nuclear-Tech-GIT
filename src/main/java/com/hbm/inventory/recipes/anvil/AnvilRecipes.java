@@ -360,11 +360,14 @@ public class AnvilRecipes {
 
 		constructionRecipes.add(new AnvilConstructionRecipe(
 			new AStack[] {
-				new ComparableStack(Blocks.stonebrick, 8),
-				new ComparableStack(ModItems.ingot_firebrick, 16),
-				new OreDictStack(IRON.ingot(), 4),
-				new OreDictStack(CU.plate(), 8),
-			}, new AnvilOutput(new ItemStack(ModBlocks.machine_rotary_furnace))).setTier(2));
+						new ComparableStack(Blocks.stonebrick, 8),
+						new ComparableStack(ModItems.ingot_firebrick, 16),
+						new OreDictStack(IRON.ingot(), 4),
+						new OreDictStack(CU.plate(), 8),
+						new ComparableStack(Blocks.piston, 2),
+						new ComparableStack(ModItems.gear_large, 2, 1),
+						new ComparableStack(ModBlocks.steel_beam, 4)
+				}, new AnvilOutput(new ItemStack(ModBlocks.machine_rotary_furnace))).setTier(2));
 
 		constructionRecipes.add(new AnvilConstructionRecipe(
 				new AStack[] {
@@ -405,9 +408,11 @@ public class AnvilRecipes {
 
 		constructionRecipes.add(new AnvilConstructionRecipe(
 				new AStack[] {
-						new OreDictStack(STEEL.ingot(), 4),
-						new OreDictStack(CU.plate528(), 16),
-						new ComparableStack(ModItems.plate_polymer, 8)
+						new OreDictStack(STEEL.plate(), 8),
+						new OreDictStack(STEEL.shell(), 2),
+						new OreDictStack(CU.pipe(), 4),
+						new OreDictStack(STEEL.pipe(), 2),
+						new ComparableStack(ModItems.plate_polymer, 4)
 				}, new AnvilOutput(new ItemStack(ModBlocks.machine_boiler))).setTier(2));
 
 		constructionRecipes.add(new AnvilConstructionRecipe(
@@ -429,8 +434,14 @@ public class AnvilRecipes {
 		constructionRecipes.add(new AnvilConstructionRecipe(
 				new AStack[] {
 						new OreDictStack(STEEL.plateCast(), 8),
-						new OreDictStack(CU.ingot(), 8),
-						new OreDictStack(ANY_PLASTIC.ingot(), 4)
+						new OreDictStack(STEEL.shell(), 6),
+						new OreDictStack(STEEL.pipe(), 12),
+						new OreDictStack(CU.pipe(), 8),
+						new ComparableStack(ModItems.ingot_firebrick, 16),
+						new ComparableStack(ModBlocks.steel_beam, 4),
+						new ComparableStack(ModItems.tank_steel, 2),
+						new ComparableStack(ModItems.motor, 1),
+						new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ANALOG)
 				}, new AnvilOutput(new ItemStack(ModBlocks.machine_industrial_boiler))).setTier(3));
 
 		constructionRecipes.add(new AnvilConstructionRecipe(
@@ -492,7 +503,7 @@ public class AnvilRecipes {
 						new OreDictStack(STEEL.pipe(), 12),
 						new ComparableStack(ModBlocks.concrete_asbestos, 8),
 						new ComparableStack(ModBlocks.steel_scaffold, 16),
-						new OreDictStack(Fluids.SOURGAS.getDict(1_000), 8),
+						new OreDictStack(Fluids.SOURGAS.getCraftingContainerDict(1_000), 8),
 				},
 				new AnvilOutput(new ItemStack(ModBlocks.machine_deuterium_tower))).setTier(3));
 		constructionRecipes.add(new AnvilConstructionRecipe(

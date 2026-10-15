@@ -26,14 +26,84 @@ import net.minecraft.nbt.NBTTagCompound;
 public class MaterialContractsTest {
     private final Map<Field, Object> previous = new HashMap<Field, Object>();
 
+    @Test public void assemblerDisplayPreservesConcreteNbtAndWildcardRequirements() {
+        com.hbm.main.ServerProxy previousProxy = com.hbm.main.MainRegistry.proxy;
+        com.hbm.main.MainRegistry.proxy = new com.hbm.main.ServerProxy();
+        try {
+            com.hbm.inventory.RecipesCommon.ComparableStack output = new com.hbm.inventory.RecipesCommon.ComparableStack(ModItems.ingot_polymer);
+            NBTTagCompound data = new NBTTagCompound(); data.setString("grade", "retained");
+            com.hbm.inventory.RecipesCommon.AStack[] ingredients = {
+                new com.hbm.inventory.RecipesCommon.ComparableStack(ModItems.ingot_polymer, 3),
+                new com.hbm.inventory.RecipesCommon.ComparableNBTStack(ModItems.ingot_polymer, 2).addNBT(data),
+                new com.hbm.inventory.RecipesCommon.ComparableStack(ModItems.ingot_polymer, 4, net.minecraftforge.oredict.OreDictionary.WILDCARD_VALUE)
+            };
+            for(int i = 0; i < ingredients.length; i++) {
+                java.util.List<ItemStack> display = com.hbm.inventory.recipes.AssemblerRecipes.compileIngredientForNEI(output, i, ingredients[i]);
+                assertFalse(display.isEmpty());
+                for(ItemStack stack : display) {
+                    assertEquals(ingredients[i].stacksize, stack.stackSize);
+                    assertTrue(ingredients[i].matchesRecipe(stack, true));
+                }
+            }
+            assertEquals("retained", ingredients[1].extractForNEI().get(0).getTagCompound().getString("grade"));
+        } finally { com.hbm.main.MainRegistry.proxy = previousProxy; }
+    }
+
+    @Test public void everyDefaultAssemblerArrayFitsNativeInputPorts() throws Exception {
+        String materials = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("src/main/java/com/hbm/inventory/material/Mats.java")), java.nio.charset.StandardCharsets.UTF_8);
+        assertTrue(java.util.regex.Pattern.compile("MAT_COPPER[^;]+setAutogen\\([^)]*DENSEWIRE").matcher(materials).find());
+        org.objectweb.asm.tree.ClassNode code = new org.objectweb.asm.tree.ClassNode();
+        new org.objectweb.asm.ClassReader(com.hbm.inventory.recipes.AssemblerRecipes.class.getName()).accept(code, 0);
+        int arrays = 0;
+        for(Object value : code.methods) {
+            org.objectweb.asm.tree.MethodNode method = (org.objectweb.asm.tree.MethodNode) value;
+            if(!method.name.equals("registerDefaults")) continue;
+            for(org.objectweb.asm.tree.AbstractInsnNode node = method.instructions.getFirst(); node != null; node = node.getNext())
+                if(node.getOpcode() == org.objectweb.asm.Opcodes.ANEWARRAY && ((org.objectweb.asm.tree.TypeInsnNode) node).desc.equals("com/hbm/inventory/RecipesCommon$AStack")) {
+                    org.objectweb.asm.tree.AbstractInsnNode size = node.getPrevious();
+                    int count = size instanceof org.objectweb.asm.tree.IntInsnNode ? ((org.objectweb.asm.tree.IntInsnNode) size).operand
+                            : size.getOpcode() - org.objectweb.asm.Opcodes.ICONST_0;
+                    assertTrue("Invalid/default recipe input count " + count, count > 0 && count <= com.hbm.inventory.recipes.AssemblerRecipes.MAX_INGREDIENTS);
+                    arrays++;
+                }
+        }
+        assertTrue("Default recipe census was empty", arrays > 100);
+    }
+
     @Before public void nativeItems() throws Exception {
-        for(String name : new String[] {"coke", "powder_coke", "lignite", "powder_lignite", "powder_coal", "briquette", "biomass", "biomass_compressed", "powder_sawdust", "powder_ash", "scrap", "dust", "sulfur", "solid_fuel", "rocket_fuel"}) {
+        for(String name : new String[] {"coke", "powder_coke", "lignite", "powder_lignite", "powder_coal", "briquette", "biomass", "biomass_compressed", "powder_sawdust", "powder_ash", "scrap", "dust", "sulfur", "solid_fuel", "rocket_fuel", "ingot_polymer", "ingot_pvc"}) {
             Field field = ModItems.class.getField(name); previous.put(field, field.get(null)); field.set(null, new Item());
         }
 
     }
     @After public void restoreNativeItems() throws Exception {
         for(Map.Entry<Field, Object> entry : previous.entrySet()) entry.getKey().set(null, entry.getValue());
+    }
+    @Test public void polymerAndSootFeedsUseTheirExactExistingAssaysAndForms() {
+        assertEquals("polyethylene", PhysicalRegistry.get("POLYMER_ITEM").substance);
+        assertEquals(PhysicalState.MASS_UNITS_PER_KG, PhysicalRegistry.get("POLYMER_ITEM").massUnits);
+        assertEquals(47_200_000_000_000L, PhysicalRegistry.get("POLYMER_ITEM").chemicalMicrojoulesPerUnit());
+        com.hbm.inventory.RecipesCommon.ComparableStack polymer = (com.hbm.inventory.RecipesCommon.ComparableStack) ProcessMachine.feed("POLYMER_ITEM", 2);
+        assertSame(ModItems.ingot_polymer, polymer.item); assertEquals(2, polymer.stacksize);
+        assertTrue(ProcessMachine.matches(new ItemStack(ModItems.ingot_polymer), "POLYMER_ITEM"));
+        assertFalse(ProcessMachine.matches(new ItemStack(ModItems.ingot_pvc), "POLYMER_ITEM"));
+        assertSame(ModItems.ingot_polymer, ProcessMachine.solid("POLYMER_ITEM", 1).getItem());
+        com.hbm.inventory.RecipesCommon.ComparableStack soot = (com.hbm.inventory.RecipesCommon.ComparableStack) ProcessMachine.feed("CHAR_ITEM", 3);
+        assertSame(ModItems.powder_ash, soot.item); assertEquals(3, soot.stacksize);
+        assertEquals(com.hbm.items.ItemEnums.EnumAshType.SOOT.ordinal(), soot.meta);
+        assertEquals(PhysicalState.MASS_UNITS_PER_KG, PhysicalRegistry.get("CHAR_ITEM").massUnits);
+        assertTrue(ProcessMachine.matches(soot.toStack(), "CHAR_ITEM"));
+        assertFalse(ProcessMachine.matches(new ItemStack(ModItems.powder_ash), "CHAR_ITEM"));
+        try { ProcessMachine.feed("UNKNOWN_PHYSICAL_ITEM", 1); fail("Unknown feed accepted"); }
+        catch(IllegalArgumentException expected) { assertTrue(expected.getMessage().contains("UNKNOWN_PHYSICAL_ITEM")); }
+        ProcessRecipe bill = ChemistryProcesses.defaults().get(84).snapshot();
+        bill.solidInputs[1] = "WOOD_ASH_ITEM"; // Known assay, deliberately missing ingredient adapter.
+        try { ProcessMachine.feed(bill, 1, "Chemical Reactor template 84"); fail("Unsupported feed accepted"); }
+        catch(IllegalArgumentException expected) {
+            assertTrue(expected.getMessage().contains("Chemical Reactor template 84"));
+            assertTrue(expected.getMessage().contains(bill.id));
+            assertTrue(expected.getMessage().contains("WOOD_ASH_ITEM"));
+        }
     }
     private void fuel(ItemStack stack, String identity, int units) {
         SolidFuel actual = SolidFuel.resolve(stack);

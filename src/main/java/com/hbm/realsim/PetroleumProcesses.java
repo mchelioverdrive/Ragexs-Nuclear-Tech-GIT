@@ -75,6 +75,19 @@ public final class PetroleumProcesses {
         return result;
     }
     private static void put(Map<String, ProcessRecipe> map, ProcessRecipe recipe) { map.put(recipe.inputs[0], recipe); }
+    /** Compressed propane deasphalting and solvent recovery: recover base oil and reject asphaltic bottoms.
+     * The existing lubricant identity represents plain mineral base oil, not an additive package.
+     * Mass and chemical energy use the same assay solver as the refinery/vacuum cuts.
+     */
+    public static ProcessRecipe lubricantBaseOil() {
+        ProcessRecipe cuts = separation("chem_base_oil", "HEAVYOIL", new String[] {"HEATINGOIL", "LUBRICANT", "BITUMEN"},
+                new double[] {.10}, 6, 40000, 1360000, 350);
+        // LPG uses the existing propane assay. Solvent circulates; it is returned, not turned into extra oil.
+        return new ProcessRecipe(cuts.id, new String[] {"HEAVYOIL", "LPG"}, new int[] {1, 4}, new int[] {0, 0}, null, 0,
+                new String[] {"HEATINGOIL", "LUBRICANT", "BITUMEN", "LPG"},
+                new long[] {cuts.productMass[0], cuts.productMass[1], cuts.productMass[2], ProcessRecipe.resolved("LPG").massUnits * 4L},
+                400, cuts.workQuanta / 2, cuts.heatQuanta / 2, cuts.temperatureC, true);
+    }
     public static long ceilDiv(long a, long b) { return a == 0 ? 0 : 1 + (a - 1) / b; }
     public static long joules(long mass, long joulesPerKg) {
         return BigDecimal.valueOf(mass).multiply(BigDecimal.valueOf(joulesPerKg)).divide(BigDecimal.valueOf(PhysicalState.MASS_UNITS_PER_KG), 0, RoundingMode.CEILING).longValueExact();

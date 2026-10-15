@@ -52,7 +52,7 @@ public class AssemblerRecipeHandler extends SafeTemplateRecipeHandler implements
 	ComparableStack comp = new ComparableStack(result);
 	ItemStack template = ItemAssemblyTemplate.writeType(new ItemStack(ModItems.assembly_template), comp);
 
-	for(int i = 0; i < Math.min(in.size(), 12); i++) {
+	for(int i = 0; i < Math.min(in.size(), AssemblerRecipes.MAX_INGREDIENTS); i++) {
 		input.add(NEISafe.positionedStack(in.get(i), 30 + (i % 4) * 18, 6 + (i / 4) * 18));
 	}
 
@@ -123,21 +123,13 @@ public class AssemblerRecipeHandler extends SafeTemplateRecipeHandler implements
 
 		Map<ItemStack, List<Object>> recipes = AssemblerRecipes.getRecipes();
 
+		outer:
 		for (Map.Entry<ItemStack, List<Object>> recipe : recipes.entrySet()) {
-
-			for(Object o : recipe.getValue()) {
-
-				if(o instanceof ItemStack && NEIServerUtils.areStacksSameTypeCrafting((ItemStack)o, ingredient)) {
+			for(Object value : recipe.getValue()) {
+				List<?> candidates = value instanceof List ? (List<?>) value : java.util.Arrays.asList(value);
+				for(Object candidate : candidates) if(candidate instanceof ItemStack && NEIServerUtils.areStacksSameTypeCrafting((ItemStack) candidate, ingredient)) {
 					this.arecipes.add(new SmeltingSet(recipe.getValue(), recipe.getKey()));
-
-				} else if(o instanceof List) {
-
-					for(Object obj : (List)o) {
-
-						if(obj instanceof ItemStack && NEIServerUtils.areStacksSameTypeCrafting((ItemStack)obj, ingredient)) {
-							this.arecipes.add(new SmeltingSet(recipe.getValue(), recipe.getKey()));
-						}
-					}
+					continue outer;
 				}
 			}
 		}

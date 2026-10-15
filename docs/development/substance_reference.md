@@ -41,6 +41,8 @@ Current default mass/LHV coefficients for petroleum, supported fuel streams and 
 | `LIGNITE_COKE_ITEM` | solid | 1 | 25 | 1 kg lignite coke/item; adopted carbonization assay. |
 | `COAL_ITEM` | solid | 1 | 25.8 | 1 kg/item; 80%C, 5%H, 5%O, 10%ash for supported coal-liquid/gasifier bills. |
 | `LIGNITE_ITEM` | solid | 1 | 18 | 1 kg/item, moist/inert lignite surrogate for carbonization. |
+| `POLYMER_ITEM` | solid | 1 | 47.2 | Polyethylene parcel bound specifically to `ingot_polymer` for process inputs and outputs; other plastics keep their own identities. |
+| `CHAR_ITEM` | solid | 1 | 32.8 | Carbon-char parcel bound to the soot metadata of `powder_ash`; ordinary ash is not this feed. |
 | `COALOIL` | liquid | 0.85 | 42.3 | Coal-derived crude surrogate; hydrotreating or fuel use. |
 | `COALGAS` | liquid | 0.73 | 44.3 | Liquid coal gasoline, despite historical name. |
 | `SYNGAS` | gas | 0.000661045 | 17.478397 | 50 mol% CO /50% H2; synthesis feed, never liquid liters. |

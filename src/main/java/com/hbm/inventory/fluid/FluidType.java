@@ -180,6 +180,14 @@ public class FluidType {
 		String prefix = GeneralConfig.enableFluidContainerCompat ? "container" : "ntmcontainer";
 		return prefix + quantity + this.stringId.replace("_", "").toLowerCase(Locale.US);
 	}
+	/** Construction recipes select the current standard container, while exact quantity keys stay unchanged for compatibility. */
+	public String getCraftingContainerDict(int legacyCapacity) {
+		int quantity = legacyCapacity;
+		if(legacyCapacity == 1000 || legacyCapacity == 16000)
+			quantity = com.hbm.inventory.FluidContainerRegistry.normalizedCapacity(legacyCapacity == 16000
+					? com.hbm.items.ModItems.fluid_barrel_full : com.hbm.items.ModItems.fluid_tank_full, this, legacyCapacity);
+		return getDict(quantity);
+	}
 	
 	public boolean isHot() {
 		return this.temperature >= 100;

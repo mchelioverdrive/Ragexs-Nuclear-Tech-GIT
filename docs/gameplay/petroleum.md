@@ -28,7 +28,11 @@ Cracked diesel needs hydrotreating before use as normal diesel. Sulfur recovery 
 
 Diesel suits compression-ignition generation; kerosene supplies aviation equipment; gasoline and prepared blends have their own compatible engines. LPG is liquid fuel distinct from refinery gas. Synthesis gas is a hydrogen/carbon-monoxide mixture for synthesis and approved gas equipment. Energy content alone does not grant universal engine compatibility.
 
-Lubricant comes from suitable industrial-oil fractionation and refining. Keep a service supply for gas turbines. Reclaimed oil and heavy oils have heating, blending or recovery roles; they are not interchangeable finished motor fuels.
+Lubricant represents mineral lubricating base oil. Start with an **Oil Well**, which uses ordinary motors and no lubricant. Heat its crude in a boiler and separate it in the atmospheric refinery. The heavy-oil outlet and recovered LPG support Chemical Reactor template **Heavy-oil Base-stock Fractionation**: propane-assisted deasphalting with recovered solvent, heating-oil and bitumen coproducts. Supply process heat and electricity and drain every outlet. This route does not require a Pumpjack or Vacuum Refinery.
+
+The existing advanced route remains **heavy oil → Vacuum Refinery → lubricant + smear**, followed by further lubricant/bitumen recovery from smear in the Chemical Reactor or Fraction Tower. The vacuum machine needs a 400 C heat supply and electrical pumping. Pipe its small process buffers to storage to fill service containers; fractional products accumulate across batches. Old saved reformate/sour gas must drain before those outlets can accept the new products.
+
+A filled current lubricant container supplies the hydraulic-piston crafting ingredient; the Pumpjack retains its frame, welded construction, tanks, upgraded motor and hydraulic piston. Keep a lubricant service supply for gas turbines. Reclaimed oil and heavy oils have heating, blending or recovery roles; they are not interchangeable finished motor fuels.
 
 Diesel contains about 35.8 MJ/L at 0.833 kg/L. Electrical efficiency determines how much reaches the grid. Reforming and additives change application; octane does not multiply energy. Gas turbines can use exhaust in a [combined-cycle steam plant](power_generation.md#gas-turbines-and-combined-cycle).
 

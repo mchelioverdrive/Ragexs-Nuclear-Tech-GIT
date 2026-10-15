@@ -97,6 +97,8 @@ public final class ProcessMachine {
         if(name.equals("BISPHENOL_A_ITEM")) return ModItems.bisphenol_a;
         if(name.equals("TPC_ITEM")) return ModItems.terephthaloyl_chloride;
         if(name.equals("PPD_ITEM")) return ModItems.phenylenediamine;
+        if(name.equals("POLYMER_ITEM")) return ModItems.ingot_polymer;
+        if(name.equals("SODIUM_SULFATE_ITEM")) return ModItems.sodium_sulfate;
         if(name.equals("RUBBER_ITEM")) return ModItems.ingot_rubber;
         if(name.equals("PVC_ITEM")) return ModItems.ingot_pvc;
         if(name.equals("BAKELITE_ITEM")) return ModItems.ingot_bakelite;
@@ -186,6 +188,7 @@ public final class ProcessMachine {
     }
     public static AStack feed(String name, int count) {
         if(name.startsWith("ITEM:")) return new ComparableStack(SpecialistProcesses.stack(name, count));
+        if(name.equals("CHAR_ITEM")) return new ComparableStack(ModItems.powder_ash, count, EnumAshType.SOOT.ordinal());
         if(name.equals("GLASS_PANE_ITEM")) return new OreDictStack(KEY_ANYPANE, count);
         if(name.equals("CARBON_WIRE_ITEM")) return new OreDictStack(CARBON.wireFine(), count);
         if(name.equals("ASBESTOS_ITEM")) return new OreDictStack(ASBESTOS.ingot(), count);
@@ -199,6 +202,19 @@ public final class ProcessMachine {
                     : name.equals("WOOD_LOG") ? new OreDictStack(KEY_LOG, count)
                     : name.equals("COAL_ITEM") ? new OreDictStack(COAL.dust(), count) : unsupportedFeed(name); }
     private static AStack unsupportedFeed(String name) { throw new IllegalArgumentException("No physical ingredient adapter: " + name); }
+    /** Registration boundary shared by stock and configured physical recipes. */
+    public static AStack feed(ProcessRecipe bill, int index, String family) {
+        String identity = bill.solidInputs[index];
+        try {
+            ProcessRecipe.resolved(identity);
+            AStack result = feed(identity, bill.solidCounts[index]);
+            if(result instanceof ComparableStack && (((ComparableStack) result).item == null || ((ComparableStack) result).item == ModItems.nothing))
+                throw new IllegalArgumentException("Uninitialized native item");
+            return result;
+        } catch(RuntimeException failure) {
+            throw new IllegalArgumentException(family + " / " + bill.id + " / feed " + identity + ": " + failure.getMessage(), failure);
+        }
+    }
     public static boolean matches(ItemStack stack, String identity) {
         if(stack == null) return false;
         if(identity.equals("GLASS_PANE_ITEM")) return hasOre(stack, KEY_ANYPANE);
@@ -268,7 +284,6 @@ public final class ProcessMachine {
         else if(name.equals("FUEL_ADDITIVE_DOSE_ITEM")) stack = new ItemStack(ModItems.fuel_additive_dose);
         else if(name.equals("SALT_ITEM")) stack = new ItemStack(ModItems.itemsalt);
         else if(name.equals("BORON_ITEM")) stack = new ItemStack(ModItems.powder_boron);
-        else if(name.equals("POLYMER_ITEM")) stack = new ItemStack(ModItems.ingot_polymer);
         else if(name.equals("AMMONIUM_NITRATE_ITEM")) stack = new ItemStack(ModItems.ammonium_nitrate);
         else if(name.equals("SODIUM_SULFIDE_ITEM")) stack = new ItemStack(ModItems.sodium_sulfide);
         else if(name.equals("GADOLINIUM_ITEM")) stack = new ItemStack(ModItems.powder_gadolinium);

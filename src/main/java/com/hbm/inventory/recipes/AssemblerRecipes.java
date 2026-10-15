@@ -46,10 +46,37 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
 public class AssemblerRecipes extends SerializableRecipe {
+	/** Both native machines provide twelve item inputs per fabrication lane. */
+	public static final int MAX_INGREDIENTS = 12;
 	public static long recipeGeneration;
 
 	public static HashMap<ComparableStack, AssemblerRecipe> recipes = new HashMap();
 	public static List<ComparableStack> recipeList = new ArrayList();
+
+	/** Runs against the real stock/configured registry after Forge has registered item and OreDict identities. */
+	@Override public void registerPost() {
+		// Initial recipe registration precedes service-container OreDict registration.
+		// PostLoad performs the first check after those identities exist; reloads can check here.
+		if(!com.hbm.inventory.FluidContainerRegistry.allContainers.isEmpty()) validateNEIRegistry();
+	}
+
+	public static void validateNEIRegistry() {
+		List<String> failures = validateRegisteredNEIRecipes();
+		for(String failure : failures) MainRegistry.logger.error(failure);
+		MainRegistry.logger.info("Assembler recipe validation: " + recipes.size() + " recipes, " + failures.size() + " failures");
+	}
+
+	public static List<String> validateRegisteredNEIRecipes() {
+		List<String> failures = new ArrayList<String>();
+		for(Entry<ComparableStack, AssemblerRecipe> entry : recipes.entrySet()) {
+			AStack[] inputs = entry.getValue().ingredients;
+			if(inputs.length > MAX_INGREDIENTS) failures.add("Assembler recipe exceeds twelve input slots: " + entry.getKey().toStack());
+			for(int i = 0; i < inputs.length; i++) try {
+				compileIngredientForNEI(entry.getKey(), i, inputs[i]);
+			} catch(IllegalArgumentException failure) { failures.add(failure.getMessage()); }
+		}
+		return failures;
+	}
 
 	/**
 	 * Legacy NOP, WarTec needs this
@@ -88,6 +115,8 @@ public class AssemblerRecipes extends SerializableRecipe {
 
 
 		// Dense wire is a cable-bundling operation, not an arc-welded structural assembly.
+		makeRecipe(new ComparableStack(ModItems.wire_dense, 1, Mats.MAT_COPPER.id), new AStack[]{
+				new OreDictStack(CU.wireFine(), 8), new OreDictStack(ANY_RUBBER.ingot(), 1)}, 100);
 		makeRecipe(new ComparableStack(ModItems.wire_dense, 1, Mats.MAT_ALLOY.id), new AStack[]{
 				new OreDictStack(ALLOY.wireFine(), 8), new OreDictStack(ANY_HARDPLASTIC.ingot(), 1)}, 100);
 		makeRecipe(new ComparableStack(ModItems.wire_dense, 1, Mats.MAT_GOLD.id), new AStack[]{
@@ -467,7 +496,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 										   8),
 					   new OreDictStack(LI.ingot(),
 										8),
-					   new OreDictStack(Fluids.DEUTERIUM.getDict(1_000),
+					   new OreDictStack(Fluids.DEUTERIUM.getCraftingContainerDict(1_000),
 										8),
 					   new ComparableStack(ModItems.circuit,
 										   4,
@@ -980,19 +1009,31 @@ public class AssemblerRecipes extends SerializableRecipe {
 										   3,
 										   EnumCircuitType.ANALOG)},
 				   350);
+		// Industrial vessel, agitator/reduction drive, sealed piping and controls.
+		makeRecipe(new ComparableStack(ModBlocks.machine_mixer, 1), new AStack[]{
+				new OreDictStack(STEEL.plateWelded(), 4),
+				new ComparableStack(ModItems.tank_steel, 2),
+				new ComparableStack(ModBlocks.steel_beam, 4),
+				new ComparableStack(ModItems.motor, 2),
+				new ComparableStack(ModItems.gear_large, 1, 1),
+				new ComparableStack(ModItems.blades_steel, 2),
+				new OreDictStack(STEEL.pipe(), 4),
+				new OreDictStack(ANY_RUBBER.ingot(), 2),
+				new OreDictStack(CU.wireFine(), 8),
+				new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ANALOG)
+		}, 200);
+		// Hydraulic frame, pump drive and control; cylinders retain their paid lubricant.
 		makeRecipe(new ComparableStack(ModBlocks.machine_epress,
 									   1),
 				   new AStack[]{
-					   new OreDictStack(STEEL.plate(),
-										8),
-					   new OreDictStack(ANY_RUBBER.ingot(),
-										4),
-					   new ComparableStack(ModItems.part_generic,
-										   2,
-										   EnumPartType.PISTON_HYDRAULIC.ordinal()),
-					   new ComparableStack(ModItems.circuit,
-										   1,
-										   EnumCircuitType.BASIC)},
+				new OreDictStack(STEEL.plateCast(), 6),
+				new ComparableStack(ModBlocks.steel_beam, 4),
+				new OreDictStack(ANY_RUBBER.ingot(), 4),
+				new ComparableStack(ModItems.part_generic, 2, EnumPartType.PISTON_HYDRAULIC.ordinal()),
+				new ComparableStack(ModItems.motor, 1),
+				new OreDictStack(STEEL.pipe(), 4),
+				new ComparableStack(ModItems.circuit, 1, EnumCircuitType.BASIC)
+			},
 				   100);
 		makeRecipe(new ComparableStack(ModBlocks.machine_chemplant,
 									   1),
@@ -1013,6 +1054,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 					   new ComparableStack(ModItems.plate_polymer,
 										   8),},
 				   200);
+		// Vessel and circulation drive with heat-transfer tubing.
 		makeRecipe(new ComparableStack(ModBlocks.machine_crystallizer,
 									   1),
 				   new AStack[]{
@@ -1024,13 +1066,14 @@ public class AssemblerRecipes extends SerializableRecipe {
 										4),
 					   new ComparableStack(ModItems.motor,
 												   1),
-					   new OreDictStack(CU.pipe(),
-										3),
+					   new OreDictStack(CU.pipe(), 6),
 					   new OreDictStack(ANY_RUBBER.ingot(),
 										2),
 					   new ComparableStack(ModItems.circuit,
 										   2,
-										   EnumCircuitType.BASIC),},
+										   EnumCircuitType.BASIC),
+				new ComparableStack(ModItems.coil_tungsten, 2)
+			},
 				   200);
 		makeRecipe(new ComparableStack(ModBlocks.machine_fluidtank,
 									   1),
@@ -1119,8 +1162,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 		makeRecipe(new ComparableStack(ModBlocks.machine_turbinegas,
 									   1),
 				   new AStack[]{
-					   !exp ? new OreDictStack(STEEL.shell(),
-											   10) : new OreDictStack(STEEL.heavyComp(),
+					   !exp ? new OreDictStack(STEEL.shell(), 14) : new OreDictStack(STEEL.heavyComp(),
 																	  2),
 					   new OreDictStack(CU.wireDense(),
 										12),
@@ -1131,7 +1173,6 @@ public class AssemblerRecipes extends SerializableRecipe {
 					   new OreDictStack(STEEL.pipe(),
 										4),
 					   new ComparableStack(ModItems.turbine_titanium, 4),
-                       new OreDictStack(STEEL.shell(), 4),
                        new OreDictStack(CU.pipe(), 12),
                        new ComparableStack(ModItems.coil_copper, 16),
                        new ComparableStack(ModItems.turbine_tungsten,
@@ -2864,15 +2905,11 @@ public class AssemblerRecipes extends SerializableRecipe {
 										   EnumCircuitType.BISMOID),
 					   },
 				   600);
+		// Engine block, reciprocating assemblies and reduction drive alongside its generator.
 		makeRecipe(new ComparableStack(ModBlocks.machine_combustion_engine,
 									   1),
 				   new AStack[]{
-					   new OreDictStack(STEEL.plate528(),
-										12),
-					   new OreDictStack(IRON.plate(),
-										8),
-					   new OreDictStack(CU.ingot(),
-										8),
+					   new OreDictStack(STEEL.plate528(), 20),
 					   new OreDictStack(CU.wireDense(),
 										6),
 					   new ComparableStack(ModItems.tank_steel,
@@ -2885,24 +2922,28 @@ public class AssemblerRecipes extends SerializableRecipe {
 										24),
 					   new ComparableStack(ModItems.circuit,
 										   1,
-										   EnumCircuitType.BASIC)
-				   },
+										   EnumCircuitType.BASIC),
+				new ComparableStack(ModItems.piston_selenium, 4),
+				new ComparableStack(ModItems.gear_large, 2, 1),
+				new OreDictStack(STEEL.pipe(), 6)
+			},
 				   300);
 
+		// Refractory tundish, cooled mold, powered withdrawal rolls and structural support.
 		makeRecipe(new ComparableStack(ModBlocks.machine_strand_caster,
 									   1),
 				   new AStack[]{
-					   new ComparableStack(ModItems.ingot_firebrick,
-										   12),
-					   new OreDictStack(STEEL.plateCast(),
-										6),
-					   new OreDictStack(CU.plateWelded(),
-										2),
-					   new ComparableStack(ModItems.tank_steel,
-										   2),
-					   new OreDictStack(ANY_CONCRETE.any(),
-										8)
-				   },
+				new ComparableStack(ModItems.ingot_firebrick, 12),
+				new OreDictStack(STEEL.plateCast(), 6),
+				new OreDictStack(CU.plateWelded(), 2),
+				new ComparableStack(ModItems.tank_steel, 2),
+				new OreDictStack(ANY_CONCRETE.any(), 8),
+				new ComparableStack(ModBlocks.steel_beam, 4),
+				new ComparableStack(ModItems.motor, 2),
+				new ComparableStack(ModItems.gear_large, 2, 1),
+				new OreDictStack(CU.pipe(), 6),
+				new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ANALOG)
+			},
 				   100);
 
 		makeRecipe(new ComparableStack(ModItems.piston_set,
@@ -3180,12 +3221,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 																	  1),
 					   new OreDictStack(ANY_RESISTANTALLOY.ingot(),
 										16),
-					   new ComparableStack(ModItems.turbine_tungsten,
-										   5),
-					   new ComparableStack(ModItems.turbine_titanium,
-										   3),
-					   new ComparableStack(ModItems.flywheel_beryllium,
-										   1),
+					   new ComparableStack(ModItems.turbine_tungsten, 8),
 					   new OreDictStack(CU.wireDense(),
 										2),
 					   new OreDictStack(DURA.pipe(),
@@ -3194,9 +3230,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 										16),
 					   new ComparableStack(ModItems.motor, 4),
                        new ComparableStack(ModItems.coil_copper, 24),
-                       new ComparableStack(ModItems.circuit, 2, EnumCircuitType.BASIC),
-                       new ComparableStack(ModItems.ingot_smco,
-										   2)
+                       new ComparableStack(ModItems.circuit, 2, EnumCircuitType.BASIC)
 				   },
 				   600);
 
@@ -3215,7 +3249,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 										   3),
 					   new OreDictStack(STEEL.pipe(),
 										24),
-					   new OreDictStack(Fluids.LUBRICANT.getDict(1_000),
+					   new OreDictStack(Fluids.LUBRICANT.getCraftingContainerDict(1_000),
 										4)
 				   },
 				   600);
@@ -4265,7 +4299,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 										4),
 					   new OreDictStack(MAGTUNG.wireDense(),
 										16),
-					   new OreDictStack(Fluids.XENON.getDict(16_000))
+					   new OreDictStack(Fluids.XENON.getCraftingContainerDict(16_000))
 				   },
 				   200);
 		makeRecipe(new ComparableStack(ModBlocks.icf_laser_component,
@@ -4384,17 +4418,19 @@ public class AssemblerRecipes extends SerializableRecipe {
 										   EnumCircuitType.QUANTUM),
 					   },
 				   600);
+		// Gold is the target tooling; the load frame and hydraulic plant are reinforced steel.
 		makeRecipe(new ComparableStack(ModBlocks.machine_icf_press,
 									   1),
 				   new AStack[]{
-					   new OreDictStack(GOLD.plateCast(),
-										8),
-					   new ComparableStack(ModItems.motor,
-										   4),
-					   new ComparableStack(ModItems.circuit,
-										   1,
-										   EnumCircuitType.BISMOID)
-				   },
+				new OreDictStack(GOLD.plateCast(), 8),
+				new OreDictStack(STEEL.plateWelded(), 8),
+				new ComparableStack(ModBlocks.steel_beam, 8),
+				new ComparableStack(ModItems.part_generic, 4, EnumPartType.PISTON_HYDRAULIC.ordinal()),
+				new ComparableStack(ModItems.motor, 4),
+				new ComparableStack(ModItems.tank_steel, 2),
+				new OreDictStack(DURA.pipe(), 8),
+				new ComparableStack(ModItems.circuit, 1, EnumCircuitType.BISMOID)
+			},
 				   100);
 
 		makeRecipe(new ComparableStack(DictFrame.fromOne(ModBlocks.block_cap,
@@ -4785,74 +4821,61 @@ public class AssemblerRecipes extends SerializableRecipe {
 				   },
 				   600);
 
+		// Catalyst vessel with circulation, heated feed and controls.
 		makeRecipe(new ComparableStack(ModBlocks.machine_catalytic_cracker),
 				   new AStack[]{
-					   new ComparableStack(ModBlocks.steel_scaffold,
-										   16),
-					   !exp ? new OreDictStack(STEEL.shell(),
-											   6) : new OreDictStack(STEEL.heavyComp()),
-					   new OreDictStack(ANY_PLASTIC.ingot(),
-										4),
-					   new OreDictStack(NB.ingot(),
-										2),
-					   new ComparableStack(ModItems.catalyst_clay,
-										   12),
-					   },
+				new ComparableStack(ModBlocks.steel_scaffold, 16),
+				!exp ? new OreDictStack(STEEL.shell(), 6) : new OreDictStack(STEEL.heavyComp()),
+				new OreDictStack(ANY_PLASTIC.ingot(), 4),
+				new OreDictStack(NB.ingot(), 2),
+				new ComparableStack(ModItems.catalyst_clay, 12),
+				new OreDictStack(STEEL.pipe(), 12),
+				new ComparableStack(ModItems.motor, 2),
+				new ComparableStack(ModItems.tank_steel, 2),
+				new ComparableStack(ModItems.coil_tungsten, 4),
+				new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ANALOG)
+			},
 				   300);
 
+		// Heated melting vessel and feed drive; clay is not a universal melting catalyst.
 		makeRecipe(new ComparableStack(ModBlocks.machine_liquefactor),
 				   new AStack[]{
-					   new OreDictStack(STEEL.ingot(),
-										8),
-					   new OreDictStack(CU.plate528(),
-										12),
-					   //new OreDictStack(ANY_TAR.any(), 8),
-					   new OreDictStack(STEEL.shell(),
-										3),
-					   new ComparableStack(ModItems.circuit,
-										   12,
-										   EnumCircuitType.CAPACITOR),
-					   new ComparableStack(ModItems.catalyst_clay,
-										   4),
-					   new ComparableStack(ModItems.coil_tungsten,
-										   8)
-				   },
+				new OreDictStack(STEEL.plate(), 8),
+				new OreDictStack(CU.plate528(), 12),
+				new OreDictStack(STEEL.shell(), 3),
+				new ComparableStack(ModItems.coil_tungsten, 8),
+				new ComparableStack(ModItems.motor, 1),
+				new OreDictStack(STEEL.pipe(), 4),
+				new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ANALOG)
+			},
 				   200);
 
+		// Cooled vessel, transfer drive and controls; no universal clay catalyst.
 		makeRecipe(new ComparableStack(ModBlocks.machine_solidifier),
 				   new AStack[]{
-					   new OreDictStack(ANY_CONCRETE.any(),
-										8),
-					   new OreDictStack(AL.plate528(),
-										12),
-					   new OreDictStack(ANY_PLASTIC.ingot(),
-										4),
-					   new OreDictStack(STEEL.shell(),
-										3),
-					   new ComparableStack(ModItems.circuit,
-										   12,
-										   EnumCircuitType.CAPACITOR),
-					   new ComparableStack(ModItems.catalyst_clay,
-										   4),
-					   new ComparableStack(ModItems.coil_copper,
-										   4)
-				   },
+				new OreDictStack(ANY_CONCRETE.any(), 8),
+				new OreDictStack(AL.plate528(), 12),
+				new OreDictStack(ANY_PLASTIC.ingot(), 4),
+				new OreDictStack(STEEL.shell(), 3),
+				new ComparableStack(ModItems.coil_copper, 4),
+				new ComparableStack(ModItems.motor, 1),
+				new OreDictStack(CU.pipe(), 6),
+				new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ANALOG)
+			},
 				   200);
+		// Insulated column, circulation/compression drive and recuperator; no installed battery.
 		makeRecipe(new ComparableStack(ModBlocks.machine_cryo_distill),
 				   new AStack[]{
-					   new OreDictStack(ANY_CONCRETE.any(),
-										4),
-					   new OreDictStack(STAINLESS.plate(),
-										12),
-					   new OreDictStack(ANY_PLASTIC.ingot(),
-										4),
-					   new ComparableStack(ModItems.tank_steel,
-										   4),
-					   new ComparableStack(ModBlocks.machine_battery,
-										   1),
-					   new ComparableStack(ModItems.coil_copper,
-										   4),
-					   },
+				new OreDictStack(ANY_CONCRETE.any(), 4),
+				new OreDictStack(STAINLESS.plate(), 12),
+				new OreDictStack(ANY_PLASTIC.ingot(), 4),
+				new ComparableStack(ModItems.tank_steel, 4),
+				new ComparableStack(ModItems.motor, 2),
+				new ComparableStack(ModItems.coil_copper, 4),
+				new OreDictStack(CU.pipe(), 8),
+				new OreDictStack(STEEL.pipe(), 4),
+				new ComparableStack(ModItems.circuit, 2, EnumCircuitType.BASIC)
+			},
 				   200);
 		makeRecipe(new ComparableStack(ModBlocks.machine_radiolysis),
 				   new AStack[]{
@@ -4870,22 +4893,19 @@ public class AssemblerRecipes extends SerializableRecipe {
 										   3)
 				   },
 				   200);
+		// Corrosion-resistant catalytic vessel with pumped feed, piping and controls.
 		makeRecipe(new ComparableStack(ModBlocks.machine_alkylation),
 				   new AStack[]{
-					   new OreDictStack(ANY_CONCRETE.any(),
-										12),
-					   new OreDictStack(STAINLESS.plate(),
-										12),
-					   new OreDictStack(STEEL.shell(),
-										6),
-					   new ComparableStack(ModItems.circuit,
-										   8,
-										   EnumCircuitType.CAPACITOR),
-					   new ComparableStack(ModItems.catalyst_clay,
-										   12),
-					   new ComparableStack(ModItems.coil_tungsten,
-										   4)
-				   },
+				new OreDictStack(ANY_CONCRETE.any(), 12),
+				new OreDictStack(STAINLESS.plate(), 12),
+				new OreDictStack(STEEL.shell(), 6),
+				new ComparableStack(ModItems.catalyst_clay, 12),
+				new ComparableStack(ModItems.coil_tungsten, 4),
+				new ComparableStack(ModItems.motor, 2),
+				new OreDictStack(STEEL.pipe(), 12),
+				new OreDictStack(ANY_RUBBER.ingot(), 4),
+				new ComparableStack(ModItems.circuit, 2, EnumCircuitType.ANALOG)
+			},
 				   200);
 
 		makeRecipe(new ComparableStack(ModBlocks.transition_seal,
@@ -5368,6 +5388,8 @@ public class AssemblerRecipes extends SerializableRecipe {
 	}
 
 	public static void makeRecipe(ComparableStack out, AStack[] in, int duration, Item... folder) {
+		if(in == null || in.length == 0 || in.length > MAX_INGREDIENTS)
+			throw new IllegalArgumentException("Assembler recipe " + (out == null ? "null" : out.toStack()) + " must fit " + MAX_INGREDIENTS + " ingredient slots");
 
 		if (out == null || Item.itemRegistry.getNameForObject(out.item) == null) {
 			MainRegistry.logger.error("Canceling assembler registration, item was null!");
@@ -5516,6 +5538,7 @@ public class AssemblerRecipes extends SerializableRecipe {
 		AssemblerRecipe recipe = recipes.get(out);
 
 		if (recipe != null) {
+			if(recipe.ingredients.length >= MAX_INGREDIENTS) throw new IllegalArgumentException("Assembler component supplement exceeds twelve input slots: " + out.toStack());
 
 			AStack[] news = new AStack[recipe.ingredients.length + 1];
 
@@ -5539,20 +5562,15 @@ public class AssemblerRecipes extends SerializableRecipe {
 			List<Object> value = new ArrayList();
 			AssemblerRecipe recipe = entry.getValue();
 
-			for (AStack ingredient : recipe.ingredients) {
-				List<ItemStack> extracted = ingredient.extractForNEI();
-				List<ItemStack> valid = new ArrayList();
-
-				if (extracted != null) {
-					for (ItemStack stack : extracted) {
-						if (stack != null && stack.getItem() != null) valid.add(stack);
-					}
-				}
-
-				if (valid.isEmpty()) {
+			for (int slot = 0; slot < recipe.ingredients.length; slot++) {
+				List<ItemStack> valid;
+				try {
+					valid = compileIngredientForNEI(entry.getKey(), slot, recipe.ingredients[slot]);
+				} catch(IllegalArgumentException failure) {
+					valid = new ArrayList<ItemStack>();
 					ItemStack missing = new ItemStack(ModItems.nothing).setStackDisplayName("Missing assembler ingredient; check the console.");
 					valid.add(missing);
-					MainRegistry.logger.error("Assembler cannot compile an ingredient for NEI in recipe for: " + entry.getKey().toStack().getDisplayName());
+					MainRegistry.logger.error(failure.getMessage(), failure);
 				}
 
 				value.add(valid);
@@ -5564,6 +5582,37 @@ public class AssemblerRecipes extends SerializableRecipe {
 		}
 
 		return recipes;
+	}
+
+	/** The same AStack display contract is used for concrete, NBT, OreDict and extension ingredients. */
+	public static List<ItemStack> compileIngredientForNEI(ComparableStack output, int slot, AStack ingredient) {
+		List<ItemStack> valid = new ArrayList<ItemStack>();
+		RuntimeException extractionFailure = null;
+		try {
+			List<ItemStack> extracted = ingredient == null ? null : ingredient.extractForNEI();
+			if(extracted != null) for(ItemStack stack : extracted)
+				if(stack != null && stack.getItem() != null && stack.getItem() != ModItems.nothing && stack.stackSize > 0) valid.add(stack.copy());
+		} catch(RuntimeException failure) { extractionFailure = failure; }
+		if(!valid.isEmpty()) return valid;
+
+		List<ItemStack> candidates = new ArrayList<ItemStack>();
+		String nested = "display contract returned no concrete stacks";
+		if(ingredient instanceof OreDictStack) {
+			OreDictStack ore = (OreDictStack) ingredient;
+			candidates.addAll(ore.toStacks());
+			nested = "OreDict key=" + ore.name + " (java.lang.String), registered=" + candidates;
+		} else if(ingredient instanceof ComparableStack) {
+			ComparableStack stack = (ComparableStack) ingredient;
+			candidates.add(stack.toStack());
+			nested = "item=" + Item.itemRegistry.getNameForObject(stack.item) + ", metadata=" + stack.meta + ", stack=" + candidates;
+		}
+		boolean accepted = false;
+		for(ItemStack stack : candidates) if(stack != null && stack.getItem() != null && stack.getItem() != ModItems.nothing && ingredient.matchesRecipe(stack, true)) accepted = true;
+		throw new IllegalArgumentException("Assembler cannot compile an ingredient for NEI:\n  Recipe: " + output.toStack().getDisplayName()
+				+ " [" + Item.itemRegistry.getNameForObject(output.item) + ":" + output.meta + "]\n  Slot: " + slot
+				+ " (zero based)\n  Ingredient: " + nested + ", count=" + (ingredient == null ? 0 : ingredient.stacksize)
+				+ "\n  Type: " + (ingredient == null ? "null" : ingredient.getClass().getName())
+				+ "\n  Nested: " + nested + "\n  Ordinary Assembler matcher accepts a registered candidate: " + accepted, extractionFailure);
 	}
 
 	public static class AssemblerRecipe {

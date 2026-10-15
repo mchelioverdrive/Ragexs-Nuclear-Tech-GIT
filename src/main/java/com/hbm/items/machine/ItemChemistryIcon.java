@@ -73,10 +73,9 @@ public class ItemChemistryIcon extends Item {
 			IIcon icon = this.icons[rec.listing % this.icons.length];
 			if(icon != null) return icon;
 
-			ItemStack product = getRecipeProduct(rec);
-			if(product != null) return product.getIconIndex();
-		} else {
-			return ModItems.nothing.getIconFromDamage(i);
+			// Product icons may live on the block atlas or require fluid tint/multiple passes.
+			// ItemRenderTemplate renders the full product stack for this case.
+			return ModItems.chemistry_template.getIconFromDamage(i);
 		}
 
 		return ModItems.nothing.getIconFromDamage(i);
@@ -107,7 +106,8 @@ public class ItemChemistryIcon extends Item {
 		}
 
 		for(int i = 0; i < recipe.outputFluids.length; i++) {
-			if(recipe.outputFluids[i] != null) return ItemFluidIcon.make(recipe.outputFluids[i]);
+			ItemStack display = recipe.outputFluidDisplay(i);
+			if(display != null) return display;
 		}
 
 		return null;

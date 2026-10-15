@@ -146,7 +146,7 @@ public class CustomMachineRecipes extends SerializableRecipe {
             consumptionPerTick = Math.toIntExact(com.hbm.realsim.PetroleumProcesses.ceilDiv(bill.workQuanta, bill.duration));
             inputFluids = new FluidStack[bill.inputs.length]; inputItems = new AStack[bill.solidInputs.length];
             for(int i = 0; i < inputFluids.length; i++) inputFluids[i] = new FluidStack(Fluids.fromName(bill.inputs[i]), bill.quantities[i], bill.pressures[i]);
-            for(int i = 0; i < inputItems.length; i++) inputItems[i] = com.hbm.realsim.ProcessMachine.feed(bill.solidInputs[i], bill.solidCounts[i]);
+            for(int i = 0; i < inputItems.length; i++) inputItems[i] = com.hbm.realsim.ProcessMachine.feed(bill, i, "Custom machine");
             List<FluidStack> fluids = new ArrayList<>(); List<Pair<ItemStack, Float>> items = new ArrayList<>();
             for(int i = 0; i < bill.outputs.length; i++) {
                 String name = bill.outputs[i]; if(name.startsWith("VENT_")) continue;

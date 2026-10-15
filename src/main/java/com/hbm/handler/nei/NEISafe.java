@@ -25,6 +25,22 @@ public final class NEISafe {
 		return stack != null && stack.getItem() != null && stack.stackSize > 0;
 	}
 
+	/** Fluid recipe navigation follows identity, not preview quantity/NBT or the selected container. */
+	public static boolean matchesRecipeStack(ItemStack a, ItemStack b) {
+		if(!isValid(a) || !isValid(b)) return false;
+		if(a.getItem() == com.hbm.items.ModItems.fluid_icon || b.getItem() == com.hbm.items.ModItems.fluid_icon) {
+			com.hbm.inventory.fluid.FluidType left = fluidIdentity(a), right = fluidIdentity(b);
+			return left != com.hbm.inventory.fluid.Fluids.NONE && left == right;
+		}
+		return codechicken.nei.NEIServerUtils.areStacksSameTypeCrafting(a, b);
+	}
+
+	private static com.hbm.inventory.fluid.FluidType fluidIdentity(ItemStack stack) {
+		return stack.getItem() == com.hbm.items.ModItems.fluid_icon
+				? com.hbm.inventory.fluid.Fluids.fromID(stack.getItemDamage())
+				: com.hbm.inventory.FluidContainerRegistry.getFluidType(stack);
+	}
+
 	public static ItemStack copy(ItemStack stack) {
 		return isValid(stack) ? stack.copy() : null;
 	}
