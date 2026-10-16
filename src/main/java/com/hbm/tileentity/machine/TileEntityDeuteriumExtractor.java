@@ -93,7 +93,7 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
         com.hbm.realsim.MachineInfo.process(lines, processBatch.active() ? processBatch.recipe() : selectedBill());
         lines.add(this instanceof TileEntityAtmoTower ? "Separates air into nitrogen gas, oxygen gas, argon and noble gases" : "Recovers heavy water from light water; depleted water must drain");
         lines.add("Drain every coproduct; fractional products accumulate between batches");
-        lines.add("Power and any required process heat must be supplied externally");
+        lines.add("Electricity supplies separation, circulation and any process heating");
     }
     public FluidTank[] processOutputs() { return new FluidTank[] {tanks[1], tanks[2], tanks[3], tanks[4]}; }
     private boolean canProcess() {
@@ -138,7 +138,7 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 		tanks[0].readFromNBT(nbt, "water");
 		tanks[1].readFromNBT(nbt, "heavyWater");
         for(int i = 2; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "coproduct" + i);
-        processBatch.read(nbt);
+        processBatch.read(nbt); processBatch.electrifyUtilities();
 	}
 
 	@Override

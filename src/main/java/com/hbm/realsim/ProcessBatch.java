@@ -7,6 +7,7 @@ public final class ProcessBatch {
     private ProcessRecipe owned;
     private int ticks, releasedTicks;
     private long workPaid, heatPaid;
+    private int workRoundingDebt;
     private long lastTick = Long.MIN_VALUE;
     private long observedDrawTick = Long.MIN_VALUE, observedDrawQuanta;
     public final MassRemainder products = new MassRemainder();
@@ -20,18 +21,27 @@ public final class ProcessBatch {
     /** Caller must atomically remove every fluid/solid reactant before this call. */
     public void reserve(ProcessRecipe recipe) {
         if(active() || recipe == null) throw new IllegalStateException("Cannot overwrite owned process");
-        owned = recipe.snapshot(); releasedTicks = 0; ticks = 0; workPaid = 0; heatPaid = 0;
+        owned = recipe.snapshot(); workRoundingDebt = 0; releasedTicks = 0; ticks = 0; workPaid = 0; heatPaid = 0;
     }
     private long cumulative(long total, int t) { return total / owned.duration * t + total % owned.duration * t / owned.duration; }
+    /** Explicit electric-equipment migration: retain inputs, products, progress and every paid utility quantum. */
+    public void electrifyUtilities() {
+        if(!active() || owned.heatQuanta == 0 && owned.temperatureC == 0) return;
+        owned = owned.electricallyDriven();
+        workPaid = Math.addExact(workPaid, heatPaid); heatPaid = 0;
+        // floor(a) + floor(b) can trail floor(a+b) by one quantum. Pay it on the next tick.
+        workRoundingDebt = Math.toIntExact(cumulative(owned.workQuanta, ticks) - workPaid);
+    }
     public long nextWork() { return !active() || complete() ? 0 : cumulative(owned.workQuanta, ticks + 1) - workPaid; }
     public long nextHeat() { return !active() || complete() ? 0 : cumulative(owned.heatQuanta, ticks + 1) - heatPaid; }
+    public long remainingHeat() { return active() ? owned.heatQuanta - heatPaid : 0; }
     public boolean canAdvance(long now, long work, long heat) {
         return active() && !complete() && now != lastTick && work >= nextWork() && heat >= nextHeat();
     }
     /** Both exact debits must be made by the owner before advancing. */
     public void advance(long now) {
         if(!active() || complete() || now == lastTick) throw new IllegalStateException("Invalid process advance");
-        workPaid += nextWork(); heatPaid += nextHeat(); ticks++; lastTick = now;
+        workPaid += nextWork(); heatPaid += nextHeat(); ticks++; workRoundingDebt = 0; lastTick = now;
     }
     /** Material still owned by this batch, excluding products already released at paid progress. */
     public long pendingMass(ProcessRecipe recipe, int product) {
@@ -60,12 +70,13 @@ public final class ProcessBatch {
     }
     public void write(NBTTagCompound parent) {
         NBTTagCompound tag = new NBTTagCompound(); tag.setInteger("version", 1); tag.setLong("lastTick", lastTick);
+        tag.setInteger("workRoundingDebt", workRoundingDebt);
         tag.setInteger("ticks", ticks); tag.setInteger("releasedTicks", releasedTicks); tag.setLong("workPaid", workPaid); tag.setLong("heatPaid", heatPaid);
         if(active()) { NBTTagCompound recipe = new NBTTagCompound(); owned.write(recipe); tag.setTag("owned", recipe); }
         products.write(tag); parent.setTag("realSimProcess", tag);
     }
     public void read(NBTTagCompound parent) {
-        owned = null; ticks = 0; releasedTicks = 0; workPaid = 0; heatPaid = 0; lastTick = Long.MIN_VALUE;
+        owned = null; ticks = 0; releasedTicks = 0; workPaid = 0; heatPaid = 0; workRoundingDebt = 0; lastTick = Long.MIN_VALUE;
         observedDrawTick = Long.MIN_VALUE; observedDrawQuanta = 0L;
         NBTTagCompound tag = parent.getCompoundTag("realSimProcess"); products.read(tag);
         if(!parent.hasKey("realSimProcess", 10)) return;
@@ -73,8 +84,8 @@ public final class ProcessBatch {
         lastTick = tag.getLong("lastTick");
         if(tag.hasKey("owned", 10)) {
             owned = ProcessRecipe.read(tag.getCompoundTag("owned")); ticks = tag.getInteger("ticks"); releasedTicks = tag.getInteger("releasedTicks");
-            workPaid = tag.getLong("workPaid"); heatPaid = tag.getLong("heatPaid");
-            if(ticks < 0 || ticks > owned.duration || releasedTicks < 0 || releasedTicks > ticks || !owned.continuousOutputs && releasedTicks != 0 || workPaid != cumulative(owned.workQuanta, ticks) || heatPaid != cumulative(owned.heatQuanta, ticks))
+            workPaid = tag.getLong("workPaid"); heatPaid = tag.getLong("heatPaid"); workRoundingDebt = tag.getInteger("workRoundingDebt");
+            if(ticks < 0 || ticks > owned.duration || releasedTicks < 0 || releasedTicks > ticks || !owned.continuousOutputs && releasedTicks != 0 || workRoundingDebt < 0 || workRoundingDebt > 1 || workPaid != cumulative(owned.workQuanta, ticks) - workRoundingDebt || heatPaid != cumulative(owned.heatQuanta, ticks))
                 throw new IllegalStateException("Invalid stored physical process credit");
         }
     }

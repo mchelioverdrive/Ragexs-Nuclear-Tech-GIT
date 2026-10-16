@@ -14,7 +14,7 @@ public class FractionRecipes extends PetroleumRecipeLoader {
     @Override protected String machine() { return "fraction"; }
     @Override public String getFileName() { return "hbmFractions.json"; }
     public static ProcessRecipe getPhysical(FluidType input) { return recipes.get(input.getName()); }
-    @Override public void registerDefaults() { super.registerDefaults(); recipes.put("CHLOROCALCITE_MIX",com.hbm.realsim.ChemistryProcesses.chlorocalciteClarification()); }
+    @Override public void registerDefaults() { super.registerDefaults(); recipes.put("CHLOROCALCITE_MIX",com.hbm.realsim.ChemistryProcesses.chlorocalciteClarification().electricallyDriven()); }
     /** Compatibility query for removed volume-only recipes. */
     @Deprecated public static com.hbm.util.Tuple.Pair<com.hbm.inventory.FluidStack,com.hbm.inventory.FluidStack> getNominal(FluidType input) { return null; }
     public static HashMap getFractionRecipesForNEI() { return display(recipes); }

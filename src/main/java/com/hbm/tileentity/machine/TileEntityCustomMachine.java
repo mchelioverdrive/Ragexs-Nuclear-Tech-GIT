@@ -5,7 +5,6 @@ import api.hbm.energymk2.IBatteryItem;
 import java.util.ArrayList;
 import java.util.List;
 
-import api.hbm.tile.IHeatSource;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.machine.ReactorResearch;
 import com.hbm.config.CustomMachineConfigJSON;
@@ -44,7 +43,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityCustomMachine extends TileEntityMachinePolluting implements IFluidStandardTransceiver, api.hbm.energymk2.IRatedGenerator, IEnergyReceiverMK2, IGUIProvider {
+public class TileEntityCustomMachine extends TileEntityMachinePolluting implements IFluidStandardTransceiver, api.hbm.energymk2.IRatedGenerator, IEnergyReceiverMK2, IGUIProvider, api.hbm.tile.IProcessHeatReceiver {
     private final com.hbm.realsim.OutputBudget outputBudget = new com.hbm.realsim.OutputBudget();
     private long derivedGeneratorOutput;
     @Override public long getExportLimitWatts() {
@@ -61,6 +60,7 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 	private static final int TASK_SLOT_MAIN = 0;
 	private static final int TASK_SLOT_BATTERY = 1;
 	private CustomMachineRecipe runtimeRecipe;
+    private com.hbm.realsim.ProcessRecipe runtimePhysicalBill;
 	private int observedInputs;
 	private boolean inputFingerprintInitialized;
 	private boolean recipeDirty = true;
@@ -243,6 +243,7 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 	private void refreshRecipe() {
 		if(!recipeDirty) return;
 		runtimeRecipe = getMatchingRecipe();
+        runtimePhysicalBill = runtimeRecipe == null ? null : config.physicalBill(runtimeRecipe.physicalBill);
         long previousOutput = derivedGeneratorOutput;
         derivedGeneratorOutput = 0;
         List<CustomMachineRecipe> candidates = CustomMachineRecipes.recipes.get(config.recipeKey);
@@ -260,11 +261,26 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 		if(smoke.getFill() > 0 || smoke_leaded.getFill() > 0 || smoke_poison.getFill() > 0) return true;
 		if(structureOK && runtimeRecipe != null && hasRequiredQuantities(runtimeRecipe) && hasSpace(runtimeRecipe)) {
 			if(config.generatorMode) return true;
-			long cost = runtimeRecipe.physicalBill != null ? com.hbm.realsim.PetroleumProcesses.ceilDiv(runtimeRecipe.physicalBill.workQuanta, runtimeRecipe.physicalBill.duration) : (long)Math.max(runtimeRecipe.consumptionPerTick * config.recipeConsumptionMult, 1);
+			long cost = runtimePhysicalBill != null ? com.hbm.realsim.PetroleumProcesses.ceilDiv(runtimePhysicalBill.workQuanta, runtimePhysicalBill.duration) : (long)Math.max(runtimeRecipe.consumptionPerTick * config.recipeConsumptionMult, 1);
 			return energyQuanta >= cost;
 		}
 		return false;
 	}
+
+    @Override public api.hbm.tile.IProcessHeatSource getProcessHeatSource() {
+        if(config == null || !structureOK || !config.hasExternalHeatInterface()) return null;
+        com.hbm.realsim.ProcessRecipe bill = physicalBatch.active() ? physicalBatch.recipe() : runtimeRecipe == null ? null : runtimeRecipe.physicalBill;
+        api.hbm.tile.IProcessHeatSource best = null;
+        for(DirPos port : heatPos) {
+            api.hbm.tile.IProcessHeatSource source = com.hbm.realsim.ProcessMachine.heaterBelow(this, port.getX(), port.getY(), port.getZ());
+            if(source != null && (bill == null || source.getProcessTemperatureC() >= bill.temperatureC)
+                    && (best == null || source.getAvailableProcessHeatQuanta(worldObj.getTotalWorldTime()) > best.getAvailableProcessHeatQuanta(worldObj.getTotalWorldTime()))) best = source;
+        }
+        return best;
+    }
+    private boolean usesPhysicalProcess() {
+        return !config.generatorMode && (physicalBatch.active() || runtimeRecipe != null && runtimeRecipe.physicalBill != null);
+    }
 
 	private void refreshExternalConnections() {
 				for (DirPos pos : this.connectionPos) {
@@ -292,12 +308,10 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 							}
 						}
 					}
-					if(config.maxHeat>0){
-						for (DirPos pos : this.heatPos){
-							this.tryPullHeat(pos.getX() + dir.offsetX, pos.getY()-1, pos.getZ() + dir.offsetZ);
-						}
-					}
 				}
+        if(config.maxHeat > 0 && !usesPhysicalProcess()) {
+            for(DirPos port : heatPos) tryPullHeat(port.getX(), port.getY(), port.getZ());
+        }
 	}
 
 	private void updatePowerConnections() {
@@ -340,8 +354,9 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 			}
 
 			if (this.structureOK) {
-                if(!config.generatorMode && (physicalBatch.active() || runtimeRecipe != null && runtimeRecipe.physicalBill != null)) {
-                    com.hbm.realsim.ProcessRecipe bill = physicalBatch.active() ? physicalBatch.recipe() : runtimeRecipe.physicalBill;
+                if(usesPhysicalProcess()) {
+                    if(!config.hasExternalHeatInterface()) physicalBatch.electrifyUtilities();
+                    com.hbm.realsim.ProcessRecipe bill = physicalBatch.active() ? physicalBatch.recipe() : runtimePhysicalBill;
                     com.hbm.realsim.ProcessMachine.step(this, physicalBatch, bill, inputTanks, outputTanks, slots, 4, 9, 16, 21);
                     progress = physicalBatch.ticks(); maxProgress = bill.duration;
                     markDirty(); sendRuntimePacket(); return;
@@ -451,23 +466,8 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 		}
 	}
 	protected void tryPullHeat(int x, int y, int z) {
-		TileEntity con = worldObj.getTileEntity(x, y, z);
-
-		if(con instanceof IHeatSource) {
-			IHeatSource source = (IHeatSource) con;
-			int diff = source.getHeatStored() - this.heat;
-
-			if(diff == 0) {
-				return;
-			}
-
-			if(diff > 0) {
-				source.useUpHeat(diff);
-				this.heat += diff;
-				if(this.heat > this.maxHeat)
-					this.heat = this.maxHeat;
-			}
-		}
+        api.hbm.tile.IProcessHeatSource source = com.hbm.realsim.ProcessMachine.heaterBelow(this, x, y, z);
+        if(source != null) this.heat += Math.toIntExact(source.drawProcessHeatQuanta(worldObj.getTotalWorldTime(), Math.max(0L, (long) maxHeat - heat)));
 	}
 	public boolean hasRequiredQuantities(CustomMachineRecipe recipe) {
 
@@ -480,7 +480,7 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 			if(!recipe.inputItems[i].matchesRecipe(slots[i + 4], true) || slots[i + 4].stackSize < recipe.inputItems[i].stacksize) return false;
 		}
 		if(config.fluxMode ? this.flux < recipe.flux : false) return false;
-		if(config.maxHeat>0 && recipe.heat>0 ? this.heat < recipe.heat : false) return false;
+		if(recipe.physicalBill == null && config.maxHeat > 0 && recipe.heat > 0 && this.heat < recipe.heat) return false;
 		return true;
 	}
 
@@ -574,10 +574,8 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 					this.fluxPos.add(new DirPos(x + facing.offsetX, y + facing.offsetY, z + facing.offsetZ, facing));
 				}
 			}
-			else if(worldObj.getBlock(x,y,z) == ModBlocks.cm_heat){
-				for(ForgeDirection facing : ForgeDirection.VALID_DIRECTIONS) {
-					this.heatPos.add(new DirPos(x + facing.offsetX, y + facing.offsetY, z + facing.offsetZ, facing));
-				}
+			else if(config.isUsableThermalPort(comp)) {
+                this.heatPos.add(new DirPos(x, y, z, ForgeDirection.DOWN));
 			}
 
 		}
@@ -666,6 +664,7 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 
 		this.machineType = nbt.getString("machineType");
 		this.init();
+        if(config != null && !config.hasExternalHeatInterface()) physicalBatch.electrifyUtilities();
 
 		super.readFromNBT(nbt);
         outputBudget.read(nbt);

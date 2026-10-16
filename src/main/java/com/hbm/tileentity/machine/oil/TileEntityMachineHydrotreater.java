@@ -235,7 +235,7 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
-        physicalBatch.read(nbt);
+        physicalBatch.read(nbt); physicalBatch.electrifyUtilities();
 		super.readFromNBT(nbt);
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		tanks[0].readFromNBT(nbt, "t0");
@@ -309,7 +309,7 @@ public class TileEntityMachineHydrotreater extends TileEntityMachineBase impleme
 
 	@Override
 	public void readNBT(NBTTagCompound nbt) {
-        physicalBatch.read(nbt);
+        physicalBatch.read(nbt); physicalBatch.electrifyUtilities();
 		NBTTagCompound data = nbt.getCompoundTag(NBT_PERSISTENT_KEY);
 		for(int i = 0; i < 4; i++) this.tanks[i].readFromNBT(data, "" + i);
 	}

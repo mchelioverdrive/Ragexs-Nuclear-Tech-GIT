@@ -129,7 +129,7 @@ public final class AncillaryProcesses {
         // Half of the remaining nonfat solids go to 50%-solids condensed skim; the rest to 9%-solids skim.
         long feed=m("MILK",10),cream=feed/10,nonfat=ratio(feed,".085","1")-ratio(cream,".06","1"),condensed=nonfat,skim=ratio(nonfat,".5",".09");
         Map<String,Long> out=new LinkedHashMap<>();out.put("EMILK",skim);out.put("CMILK",condensed);out.put("CREAM",cream);out.put("FRESH_WATER",feed-cream-skim-condensed);
-        return bill("dairy_separation_evaporation",new String[]{"MILK"},new int[]{10},new String[0],new int[0],out,3600,180000,13000000,120);
+        return bill("dairy_separation_evaporation",new String[]{"MILK"},new int[]{10},new String[0],new int[0],out,3600,180000,13000000,120).electricallyDriven();
     }
     public static Map<Integer,ProcessRecipe> defaults(){Map<Integer,ProcessRecipe> map=new LinkedHashMap<>();map.put(1034,radiumRecovery());map.put(1075,fullereneArc());map.put(1186,fullereneRecovery());map.put(1187,fuelFluoride(false));map.put(1188,fuelFluoride(true));map.put(1189,freshSalt());map.put(37,cryogel());map.put(38,desh());map.put(39,nitan());map.put(68,vitrify(false));map.put(69,vitrify(true));map.put(1072,heliumCapsule());map.put(119,saltRefuel());map.put(1004,bromide(0));map.put(1005,bromide(1));map.put(1007,bromide(2));map.put(120,cake());map.put(121,butter());map.put(122,iceCream());return map;}
 }

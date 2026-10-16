@@ -48,7 +48,7 @@ public class IndustrialBlastFurnaceRecipes extends SerializableRecipe {
         return null;
     }
     @Override public String getFileName() { return "hbmIndustrialBlastFurnace.json"; }
-    @Override public String getComment() { return "Ferrous process bills. One reductant item is reserved with the feed; auxiliary fuel is charged by mass/LHV. Heat is J; air is standard L. Old hbmBlastFurnace.json remains the Metallurgical Furnace override."; }
+    @Override public String getComment() { return "Ferrous process bills. One reductant item is reserved with the feed. Its useful energy and hot blast offset the heating bill; a 900-C-or-hotter heater at the 3x3 underside contact supplies the deficit. No auxiliary item fuel. Heat is J; air is standard L. Old hbmBlastFurnace.json remains the Metallurgical Furnace override."; }
     @Override public Object getRecipeObject() { return recipes; }
     @Override public void deleteRecipes() { recipes.clear(); }
     @Override public void readRecipe(JsonElement element) {

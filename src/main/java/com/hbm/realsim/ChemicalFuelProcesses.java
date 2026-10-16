@@ -142,8 +142,9 @@ public final class ChemicalFuelProcesses {
     }
     public static ProcessRecipe reactorFraction() {
         ProcessRecipe bill = PetroleumProcesses.defaults("fraction").get("SMEAR");
+        // Chemistry's raw duty is independent of the native Fraction Tower's electrical utility adapter.
         return new ProcessRecipe("chem:lubricant", bill.inputs, bill.quantities, bill.pressures, null, 0, bill.outputs, bill.productMass,
-                126, bill.workQuanta / 2, bill.heatQuanta / 2, bill.temperatureC, true);
+                126, PetroleumProcesses.joules(bill.inputMass(), 5000), PetroleumProcesses.joules(bill.inputMass(), 640000), bill.referenceTemperatureC, true);
     }
     public static ProcessRecipe reclaimed() {
         return new ProcessRecipe("chem:reclaimed", new String[] {"SMEAR"}, new int[] {1}, new int[] {0}, null, 0,
@@ -166,9 +167,12 @@ public final class ChemicalFuelProcesses {
                 new String[] {"FUEL_ADDITIVE_ITEM", "VENT_UNSATURATEDS", "VENT_HYDROGEN_GAS"},
                 new long[] {lead + ethylene + hydrogen, mass("UNSATURATEDS", qe) - ethylene, mass("HYDROGEN_GAS", qh) - hydrogen}, 1000, 400000, 1000000, 300, false);
     }
-    public static void validateRating(ProcessRecipe bill) {
-        if(bill.workQuanta > (long) bill.duration * 800L || bill.heatQuanta > (long) bill.duration * 10000L)
-            throw new IllegalArgumentException("Reactor/mixer physical bill exceeds 8 kWe / 100 kWth; lengthen duration");
+    public static void validateRating(ProcessRecipe bill) { validateRating(bill, false); }
+    public static void validateReactorRating(ProcessRecipe bill) { validateRating(bill, true); }
+    private static void validateRating(ProcessRecipe bill, boolean reactor) {
+        if(reactor ? Math.addExact(bill.workQuanta, bill.heatQuanta) > (long) bill.duration * 10800L
+                : bill.workQuanta > (long) bill.duration * 800L || bill.heatQuanta > (long) bill.duration * 10000L)
+            throw new IllegalArgumentException(reactor ? "Chemical Reactor bill exceeds 108 kW combined electrical duty; lengthen duration" : "Mixer physical bill exceeds 8 kWe / 100 kWth; lengthen duration");
         for(int i = 0; i < bill.inputs.length; i++) {
             PhysicalState state = ProcessRecipe.resolved(bill.inputs[i]);
             if(state.substance.equals("hydrogen") && state.phase == PhysicalState.Phase.LIQUID) throw new IllegalArgumentException("Ordinary synthesis requires HYDROGEN_GAS");

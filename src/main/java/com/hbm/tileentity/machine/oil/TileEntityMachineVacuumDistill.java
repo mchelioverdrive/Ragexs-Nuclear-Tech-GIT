@@ -277,7 +277,7 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
-        physicalBatch.read(nbt);
+        physicalBatch.read(nbt); physicalBatch.electrifyUtilities();
 		super.readFromNBT(nbt);
 		runtimeInitialized = false;
 		runtimeBatchMutation = false;
@@ -384,7 +384,7 @@ public class TileEntityMachineVacuumDistill extends TileEntityMachineBase implem
 
 	@Override
 	public void readNBT(NBTTagCompound nbt) {
-        physicalBatch.read(nbt);
+        physicalBatch.read(nbt); physicalBatch.electrifyUtilities();
 		NBTTagCompound data = nbt.getCompoundTag(NBT_PERSISTENT_KEY);
 		for(int i = 0; i < 5; i++) this.tanks[i].readFromNBT(data, "" + i);
 	}

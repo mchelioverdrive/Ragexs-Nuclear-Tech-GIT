@@ -78,7 +78,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	private final int[] observedTankCapacity = new int[8];
 	private final int[] observedTankPressure = new int[8];
 	private final com.hbm.inventory.fluid.FluidType[] observedTankType = new com.hbm.inventory.fluid.FluidType[8];
-	private final int[] observedItems = new int[21];
+	private final int[] observedItems = new int[29];
 	private int cachedPositionMeta = -1;
 	private DirPos[] cachedConnectionPositions;
 
@@ -99,7 +99,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	int speed = 100;
 
 	public TileEntityMachineChemplant() {
-		super(21);
+		super(29);
 		/*
 		 * 0 Battery
 		 * 1-3 Upgrades
@@ -124,11 +124,11 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		return "container.chemplant";
 	}
 
-	// last successful load
-	int lsl0 = 0;
-	int lsl1 = 0;
-	int lsu0 = 0;
-	int lsu1 = 0;
+    public static int inputContainerSlot(int channel) { return channel < 2 ? 17 + channel : 21 + channel - 2; }
+    public static int inputReturnSlot(int channel) { return channel < 2 ? 19 + channel : 23 + channel - 2; }
+    public static int outputContainerSlot(int channel) { return channel < 2 ? 9 + channel : 25 + channel - 2; }
+    public static int outputReturnSlot(int channel) { return channel < 2 ? 11 + channel : 27 + channel - 2; }
+    private final int[] lastLoad = new int[4], lastUnload = new int[4];
 
 	@Override
 	public void updateEntity() {
@@ -328,6 +328,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 				int[] access = sided != null ? sided.getAccessibleSlotsFromSide(dir.ordinal()) : null;
 
 				for(AStack ingredient : recipe.inputs) {
+                    if(ingredient == null) continue;
 
 					outer:
 					while(!InventoryUtil.doesArrayHaveIngredients(slots, 13, 16, ingredient)) {
@@ -339,11 +340,11 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 							int slot = access != null ? access[i] : i;
 							ItemStack stack = inv.getStackInSlot(slot);
 
-							if(ingredient.matchesRecipe(stack, true) && (sided == null || sided.canExtractItem(slot, stack, 0))) {
+							if(ingredient.matchesRecipe(stack, true) && (sided == null || sided.canExtractItem(slot, stack, dir.ordinal()))) {
 
 								for(int j = 13; j <= 16; j++) {
 
-									if(slots[j] != null && slots[j].stackSize < slots[j].getMaxStackSize() & InventoryUtil.doesStackDataMatch(slots[j], stack)) {
+									if(slots[j] != null && slots[j].stackSize < slots[j].getMaxStackSize() && InventoryUtil.doesStackDataMatch(slots[j], stack)) {
 										inv.decrStackSize(slot, 1);
 										slots[j].stackSize++;
 										changed = true;
@@ -409,7 +410,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 
 							ItemStack target = inv.getStackInSlot(slot);
 
-							if(InventoryUtil.doesStackDataMatch(out, target) && target.stackSize < Math.min(target.getMaxStackSize(), inv.getInventoryStackLimit())) {
+							if((sided == null || sided.canInsertItem(slot, out, dir.ordinal())) && InventoryUtil.doesStackDataMatch(out, target) && target.stackSize < Math.min(target.getMaxStackSize(), inv.getInventoryStackLimit())) {
 								int toDec = Math.min(out.stackSize, Math.min(target.getMaxStackSize(), inv.getInventoryStackLimit()) - target.stackSize);
 								this.decrStackSize(i, toDec);
 								target.stackSize += toDec;
@@ -554,16 +555,15 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		if(cadence == 5) {
 			int fluidDelay = 40;
 			boolean fluidContainerChanged = false;
-			if(lsu0 >= fluidDelay && tanks[0].loadTank(17, 19, slots)) { lsl0 = 0; fluidContainerChanged = true; }
-			if(lsu1 >= fluidDelay && tanks[1].loadTank(18, 20, slots)) { lsl1 = 0; fluidContainerChanged = true; }
-			if(lsl0 >= fluidDelay && slots[17] != null && !FluidTank.noDualUnload.contains(slots[17].getItem()) && tanks[0].unloadTank(17, 19, slots)) { lsu0 = 0; fluidContainerChanged = true; }
-			if(lsl1 >= fluidDelay && slots[18] != null && !FluidTank.noDualUnload.contains(slots[18].getItem()) && tanks[1].unloadTank(18, 20, slots)) { lsu1 = 0; fluidContainerChanged = true; }
-			if(tanks[2].unloadTank(9, 11, slots)) fluidContainerChanged = true;
-			if(tanks[3].unloadTank(10, 12, slots)) fluidContainerChanged = true;
-			if(lsl0 < fluidDelay) lsl0 = Math.min(fluidDelay, lsl0 + cadence);
-			if(lsl1 < fluidDelay) lsl1 = Math.min(fluidDelay, lsl1 + cadence);
-			if(lsu0 < fluidDelay) lsu0 = Math.min(fluidDelay, lsu0 + cadence);
-			if(lsu1 < fluidDelay) lsu1 = Math.min(fluidDelay, lsu1 + cadence);
+            for(int channel = 0; channel < 4; channel++) {
+                int in = inputContainerSlot(channel), out = inputReturnSlot(channel);
+                if(lastUnload[channel] >= fluidDelay && inputTank(channel).loadTank(in, out, slots)) { lastLoad[channel] = 0; fluidContainerChanged = true; }
+                if(lastLoad[channel] >= fluidDelay && slots[in] != null && !FluidTank.noDualUnload.contains(slots[in].getItem())
+                        && inputTank(channel).unloadTank(in, out, slots)) { lastUnload[channel] = 0; fluidContainerChanged = true; }
+                if(outputTank(channel).unloadTank(outputContainerSlot(channel), outputReturnSlot(channel), slots)) fluidContainerChanged = true;
+                lastLoad[channel] = Math.min(fluidDelay, lastLoad[channel] + cadence);
+                lastUnload[channel] = Math.min(fluidDelay, lastUnload[channel] + cadence);
+            }
 
 			boolean inventoryChanged = this.itemsChanged();
 			if(!runtimeStateInitialized || needsInputTransfer) inventoryChanged |= this.loadItems();
@@ -837,6 +837,43 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		for(int i = 0; i < observedItems.length; i++) observedItems[i] = itemFingerprint(i);
 	}
 
+    @Override public int[] getAccessibleSlotsFromSide(int side) {
+        int[] access = new int[slots.length]; for(int i = 0; i < access.length; i++) access[i] = i; return access;
+    }
+    @Override public boolean isItemValidForSlot(int slot, ItemStack stack) {
+        if(stack == null) return false;
+        if(slot == 0) return stack.getItem() instanceof IBatteryItem || stack.getItem() == ModItems.battery_creative;
+        if(slot >= 1 && slot <= 3) return stack.getItem() instanceof com.hbm.items.machine.ItemMachineUpgrade;
+        if(slot == 4) return stack.getItem() == ModItems.chemistry_template;
+        if(slot >= 13 && slot <= 16) return true;
+        for(int channel = 0; channel < 4; channel++) {
+            if(slot == inputContainerSlot(channel)) return acceptsContainer(inputTank(channel), stack, true);
+            if(slot == outputContainerSlot(channel)) return acceptsContainer(outputTank(channel), stack, false);
+        }
+        return false;
+    }
+    private boolean acceptsContainer(FluidTank tank, ItemStack stack, boolean input) {
+        if(stack.getItem() instanceof api.hbm.fluid.IFillableItem) {
+            api.hbm.fluid.IFillableItem item = (api.hbm.fluid.IFillableItem) stack.getItem();
+            return input && item.providesFluid(tank.getTankType(), stack) || item.acceptsFluid(tank.getTankType(), stack);
+        }
+        if(stack.getItem() instanceof com.hbm.items.machine.ItemInfiniteFluid) return true;
+        return input && com.hbm.inventory.FluidContainerRegistry.getFluidType(stack) == tank.getTankType()
+                && tank.getTankType() != Fluids.NONE
+                || com.hbm.inventory.FluidContainerRegistry.getContainer(tank.getTankType(), stack) != null;
+    }
+    @Override public boolean canExtractItem(int slot, ItemStack stack, int side) {
+        if(slot >= 5 && slot <= 8) return true;
+        for(int channel = 0; channel < 4; channel++) {
+            if(slot == inputReturnSlot(channel) || slot == outputReturnSlot(channel)) return true;
+            if(slot == inputContainerSlot(channel) && stack != null && stack.getItem() instanceof api.hbm.fluid.IFillableItem)
+                return ((api.hbm.fluid.IFillableItem) stack.getItem()).getFill(stack) == 0;
+            if(slot == outputContainerSlot(channel) && stack != null && stack.getItem() instanceof api.hbm.fluid.IFillableItem)
+                return ((api.hbm.fluid.IFillableItem) stack.getItem()).getFill(stack) > 0;
+        }
+        return false;
+    }
+
 	@Override
 	public long getEnergyCapacityQuanta() {
 		return maxPower;
@@ -845,6 +882,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
         physicalBatch.read(nbt);
+        physicalBatch.electrifyUtilities();
         coolingBudget.read(nbt.getCompoundTag("realSimCooling"));
 		super.readFromNBT(nbt);
 

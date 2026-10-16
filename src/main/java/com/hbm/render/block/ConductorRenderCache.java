@@ -32,16 +32,21 @@ final class ConductorRenderCache {
 		return mask;
 	}
 
-	static int getFluidMask(IBlockAccess world, int x, int y, int z, FluidType type) {
-		int mask = 0;
-		if(Library.canConnectFluid(world, x + 1, y, z, Library.POS_X, type)) mask |= POS_X;
-		if(Library.canConnectFluid(world, x - 1, y, z, Library.NEG_X, type)) mask |= NEG_X;
-		if(Library.canConnectFluid(world, x, y + 1, z, Library.POS_Y, type)) mask |= POS_Y;
-		if(Library.canConnectFluid(world, x, y - 1, z, Library.NEG_Y, type)) mask |= NEG_Y;
-		if(Library.canConnectFluid(world, x, y, z + 1, Library.POS_Z, type)) mask |= POS_Z;
-		if(Library.canConnectFluid(world, x, y, z - 1, Library.NEG_Z, type)) mask |= NEG_Z;
-		return mask;
-	}
+    static int getFluidMask(IBlockAccess world, int x, int y, int z, FluidType type) {
+        int mask = 0;
+        net.minecraft.tileentity.TileEntity tile = world.getTileEntity(x, y, z);
+        FluidType[] channels = tile instanceof com.hbm.tileentity.network.TileEntityPipeBaseNT
+                ? ((com.hbm.tileentity.network.TileEntityPipeBaseNT) tile).getTypes() : new FluidType[] {type};
+        for(FluidType channel : channels) {
+            if(Library.canConnectFluid(world, x + 1, y, z, Library.POS_X, channel)) mask |= POS_X;
+            if(Library.canConnectFluid(world, x - 1, y, z, Library.NEG_X, channel)) mask |= NEG_X;
+            if(Library.canConnectFluid(world, x, y + 1, z, Library.POS_Y, channel)) mask |= POS_Y;
+            if(Library.canConnectFluid(world, x, y - 1, z, Library.NEG_Y, channel)) mask |= NEG_Y;
+            if(Library.canConnectFluid(world, x, y, z + 1, Library.POS_Z, channel)) mask |= POS_Z;
+            if(Library.canConnectFluid(world, x, y, z - 1, Library.NEG_Z, channel)) mask |= NEG_Z;
+        }
+        return mask;
+    }
 
 	static String[][] buildCableShapes(PreparedModelHandle model) {
 		String[][] shapes = new String[64][];

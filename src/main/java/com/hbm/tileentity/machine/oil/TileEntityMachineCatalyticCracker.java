@@ -132,7 +132,7 @@ public class TileEntityMachineCatalyticCracker extends com.hbm.tileentity.TileEn
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
-        physicalBatch.read(nbt);
+        physicalBatch.read(nbt); physicalBatch.electrifyUtilities();
         energyQuanta = api.hbm.energymk2.EnergyUnits.readEnergyQuanta(nbt, "power");
 		super.readFromNBT(nbt);
 

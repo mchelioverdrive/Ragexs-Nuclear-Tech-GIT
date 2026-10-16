@@ -28,7 +28,13 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 
-public class TileEntityMachineMilkReformer extends TileEntityMachineBase implements IGUIProvider, IFluidStandardTransceiver, IEnergyReceiverMK2 {
+public class TileEntityMachineMilkReformer extends TileEntityMachineBase implements IGUIProvider, IFluidStandardTransceiver, IEnergyReceiverMK2, com.hbm.realsim.IMachineInfo {
+    @Override public long getMachineDemandWatts() { return com.hbm.realsim.AncillaryProcesses.dairy().electricalRatingWatts; }
+    @Override public long getMachineCurrentDrawWatts() { return physicalBatch.currentDrawWatts(worldObj == null ? Long.MIN_VALUE : worldObj.getTotalWorldTime()); }
+    @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        com.hbm.realsim.MachineInfo.process(lines, physicalBatch.active() ? physicalBatch.recipe() : com.hbm.realsim.AncillaryProcesses.dairy());
+        lines.add("Self-contained electric separation and evaporation; drain all products and condensate");
+    }
 
 	public FluidTank tanks[];
 	public long energyQuanta;
@@ -306,7 +312,7 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 		tanks[2].readFromNBT(nbt, "m2");
 		tanks[3].readFromNBT(nbt, "m3");
         if(nbt.hasKey("m4")) tanks[4].readFromNBT(nbt, "m4");
-        physicalBatch.read(nbt.getCompoundTag("realSimDairy"));
+        physicalBatch.read(nbt.getCompoundTag("realSimDairy")); physicalBatch.electrifyUtilities();
 	}
 
 	@Override

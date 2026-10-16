@@ -96,8 +96,9 @@ public class FluidDuctGauge extends FluidDuctBase implements IBlockMultiPass, IL
 		TileEntityPipeGauge duct = (TileEntityPipeGauge) te;
 		
 		List<String> text = new ArrayList();
-		text.add("&[" + duct.getType().getColor() + "&]" + duct.getType().getLocalizedName());
-		text.add(FluidVolume.formatPerTick(duct.deltaTick));
+		duct.appendChannelInfo(text);
+		if(duct.getTypes().length > 1) text.add("Metered channel: " + duct.getType().getLocalizedName());
+        text.add(FluidVolume.formatPerTick(duct.deltaTick));
 		text.add(FluidVolume.formatPerSecond(duct.deltaLastSecond));
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}

@@ -3181,9 +3181,9 @@ item.fluid_barrel_infinite.name=Infinite Fluid Barrel
 item.fluid_duct.name=Fluid Duct:
 item.fluid_identifier.name=Fluid Identifier
 item.fluid_identifier.info=Universal fluid identifier for:
-item.fluid_identifier.usage0=Right click fluid ducts to set their fluid type.
-item.fluid_identifier.usage1=Shift right click fluid ducts to set adjacent ducts
-item.fluid_identifier.usage2=up to a maximum range of 64 ducts.
+item.fluid_identifier.usage0=Right click a pipe to add/remove this fluid (up to four).
+item.fluid_identifier.usage1=Shift/CTRL-click changes matching connected pipes;
+item.fluid_identifier.usage2=single-fluid branches filter shared trunks. Range: 64.
 item.fluid_identifier_multi.name=Multi Fluid Identifier
 item.fluid_identifier_multi.info=Universal fluid identifier for:
 item.fluid_identifier_multi.info2=Secondary type:
@@ -6117,7 +6117,7 @@ tile.machine_chungus.desc=25 MW central steam turbine; up to 40 kg/s.$Accepts st
 tile.machine_coal_off.name=Combustion Generator
 tile.machine_coal_on.name=Combustion Generator
 tile.machine_coker.name=Coker Unit
-tile.machine_coker.desc=Recovers oil, gas and petroleum coke from heavy residues.$Requires external process heat, electricity and clear product outlets.
+tile.machine_coker.desc=Recovers oil, gas and petroleum coke from heavy residues.$Center a heater directly below the bottom core,$with its top contact upward and full 3x3 footprint clear.$Requires process heat, electricity and clear product outlets.
 tile.machine_combine_factory.name=Alien Steel Furnace
 tile.machine_combustion_engine.name=Industrial Combustion Engine
 tile.machine_compressor.name=Compressor
@@ -6168,7 +6168,7 @@ tile.machine_hephaestus.name=Geothermal Heat Exchanger
 tile.machine_icf_press.name=ICF Fuel Pellet Maker
 tile.machine_icf_press.desc=Fills ICF Fuel pellets$Left fuel slot is accepted by top/bottom, right by the sides$Muons and pellets may be supplied from any side
 tile.machine_industrial_boiler.name=Industrial Boiler
-tile.machine_industrial_boiler.desc=Industrial boiler: hot or ordinary steam; also heats$blast air, oil and coolants.$Choose feed with a fluid identifier; drain old contents first.$With outlet drained, a steam identifier selects its grade.$Hand feed solids or use hoppers; oil fuel has a separate inlet.$The burner can also heat blast air; external process heat$can supply other heating duties.$Feed pump requires electricity; cannot explode.
+tile.machine_industrial_boiler.desc=Industrial boiler: hot or ordinary steam; also heats$blast air, oil and coolants.$Choose feed with a fluid identifier; drain old contents first.$With outlet drained, a steam identifier selects its grade.$Hand feed solids or use hoppers; oil fuel has a separate inlet.$Internal fuel or sufficiently hot external heat supplies$steam, blast air, oil and coolant heating.$Electricity pays pumping, not the thermal duty.$Cannot explode.
 tile.machine_industrial_generator.name=Industrial Generator
 tile.machine_keyforge.name=Locksmith Table
 tile.machine_large_turbine.name=Industrial Steam Turbine
@@ -7304,9 +7304,9 @@ hbmfluid.nitrogen_gas=Nitrogen Gas
 
 tile.machine_assemfac.desc=Eight parallel fabrication lanes; runs the same recipes as the Fabrication Machine.$Fill the sealed cooling loop with 20 L Fresh Water.$Recirculates coolant without producing steam.
 
-tile.machine_chemfac.desc=Eight parallel chemical lanes with shared cooling.$Fill the sealed loop with 20 L Fresh Water.$Each process needs its own power, heat and clear outputs.
+tile.machine_chemfac.desc=Eight parallel chemical lanes with shared cooling.$Fill the sealed loop with 20 L Fresh Water.$Electricity supplies process work and added heating;$keep every product outlet clear. No external heater.
 
-tile.machine_refinery.desc=Separates heated crude into petroleum fractions.$Requires external process heat, electricity and clear product outlets.
+tile.machine_refinery.desc=Separates already-heated crude into petroleum fractions.$Electricity pays drives and additional vaporization duty.$No external heater; drain every product outlet.
 
 container.blastFurnace=Blast Furnace
 tile.machine_blast_furnace.name=Blast Furnace
@@ -7424,8 +7424,8 @@ chem.LUBRICANT_BASE=Heavy-oil Base-stock Fractionation
 tile.machine_atmo_vent.desc=Collects gases from the natural planetary atmosphere; needs$electricity.$Bulk air: up to 150000 standard L/min at 125 kWe.$Other bulk gas: 6000 L/min at 5 kWe; selective: 1200 at 50 kWe.$Air collection scales with supplied power (50 J/L).$Use a screwdriver to cycle locally available gases; drain$the old gas first.$Outputs gas at pressure class 0. Use a Compressor for$pressure class 1 forced blast.$Cannot collect in vacuum, orbit, or an artificial sealed$atmosphere. No item feed is consumed.
 tile.machine_atmo_tower.desc=Separates piped air into nitrogen gas, oxygen gas, argon and$noble gases.$Processes 100 standard L per 5 seconds at 10 kWe; drain all$four product streams.$Despite the legacy name, its delivered products are gases,$not cryogenic liquids.$Use a Compressor for paid gas liquefaction. No natural$atmosphere is needed if air is piped in.
 tile.machine_compressor.desc=Compresses registered process gases and steam using$electrical work.$For forced blast: pipe atmospheric air at class 0 in; class$1 air comes out.$Select Compress / liquefy for compression or refrigeration;$Decompress vents class 1 gas to class 0.$Gas and liquid volumes differ; conversions conserve mass and$require paid work.$Drain the output before changing its fluid or pressure.$Air compression: up to 750 kWe; 1000 L in 0.45 s.$Other physical conversions: 25 kWe.$Lower power slows air compression; paid work is retained.
-tile.machine_deuterium_extractor.desc=Recovers trace heavy water from light water through isotope$separation.$Requires electricity and external process heat at 120 C or$hotter.$Drain heavy water and depleted water; fractional recovery$accumulates over multiple batches.
-tile.machine_deuterium_tower.desc=Faster industrial isotope separation of light water into$heavy and depleted water.$Requires electricity and external process heat at 120 C or$hotter.$Same isotope recovery as the small extractor; higher$throughput and utility demand.$Drain both outputs, including depleted water.
+tile.machine_deuterium_extractor.desc=Recovers trace heavy water from light water through isotope$separation.$Electricity supplies separation and process heating;$no external heater is required.$Drain heavy water and depleted water; fractional recovery$accumulates over multiple batches.
+tile.machine_deuterium_tower.desc=Industrial isotope separation of light water into heavy$and depleted water.$Electricity supplies separation and process heating;$no external heater is required.$Same isotope recovery as the small extractor; higher$throughput and utility demand. Drain both outputs.
 tile.machine_electrolyser.desc=Runs fluid electrolysis and mineral electrolysis in$parallel.$Supply electricity and drain every coproduct. Fluid and$metal demand add together.$Mineral processing requires a retained 20 L nitric-acid$electrolyte bath.$Water produces hydrogen gas and oxygen gas; liquefaction is$a separate Compressor process.
 
 item.fluid_icon.uncompressed=%s (uncompressed, 0 PU)

@@ -55,14 +55,21 @@ public class RotaryFurnaceRecipes extends SerializableRecipe {
 
 		for(RotaryFurnaceRecipe recipe : RotaryFurnaceRecipes.recipes) {
 
-			int size = recipe.ingredients.length + (recipe.fluid != null ? 1 : 0);
+			int size = recipe.ingredients.length + (recipe.fluid != null ? 1 : 0) + 1;
 			Object[] array = new Object[size];
 
 			for(int i = 0; i < recipe.ingredients.length; i++) {
 				array[i] = recipe.ingredients[i];
 			}
 
-			if(recipe.fluid != null) array[size - 1] = ItemFluidIcon.make(recipe.fluid);
+			if(recipe.fluid != null) array[recipe.ingredients.length] = ItemFluidIcon.make(recipe.fluid);
+            List<ItemStack> fuelChoices = new ArrayList<>();
+            for(ItemStack candidate : MachineRecipes.instance().getAlloyFuels()) if(com.hbm.realsim.SolidFuel.resolve(candidate) != null) {
+                ItemStack fuel = candidate.copy(); fuel.stackSize = 1;
+                if(!fuel.hasTagCompound()) fuel.setTagCompound(new net.minecraft.nbt.NBTTagCompound());
+                fuel.getTagCompound().setBoolean("neiRotaryFuel", true); fuelChoices.add(fuel);
+            }
+            array[size - 1] = fuelChoices.toArray(new ItemStack[0]);
 
 			recipes.put(array, ItemScraps.create(recipe.output, true));
 		}

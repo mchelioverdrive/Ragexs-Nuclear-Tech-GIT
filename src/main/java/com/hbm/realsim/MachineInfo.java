@@ -74,6 +74,7 @@ public final class MachineInfo {
         lines.add(String.format(Locale.US, "Process duration: %.2f s", recipe.duration / 20D));
         lines.add("Electrical work: " + EnergyUnits.formatJoules(recipe.workQuanta));
         if(recipe.heatQuanta > 0) lines.add("Required heat source: " + recipe.temperatureC + " \u00b0C or hotter");
+        if(recipe.referenceTemperatureC > 0) lines.add("Recipe temperature reference (informational): " + recipe.referenceTemperatureC + " \u00b0C");
         for(int i = 0; i < recipe.inputs.length; i++) {
             PhysicalState state = PhysicalRegistry.get(recipe.inputs[i]);
             String unit = state.basis == PhysicalState.Basis.STANDARD_GAS_LITER ? "standard L/min" : state.basis == PhysicalState.Basis.LIQUID_LITER ? "L/min" : "units/min";

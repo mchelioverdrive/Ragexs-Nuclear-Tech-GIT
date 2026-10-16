@@ -119,21 +119,18 @@ public class CombinationRecipes extends SerializableRecipe {
 			Object key = entry.getKey();
 			Pair<ItemStack, FluidStack> val = entry.getValue();
 			com.hbm.realsim.ProcessRecipe bill = physical.get(key);
-			if(bill != null) {
-				AStack input = key instanceof String ? new OreDictStack((String) key, 10) : ((ComparableStack) key).copy();
-				input.stacksize = 10;
-				java.util.ArrayList<ItemStack> shown = new java.util.ArrayList<ItemStack>();
-				for(int i = 0; i < bill.outputs.length; i++) {
-					if(bill.outputs[i].startsWith("VENT_")) continue;
-					int quantity = (int) (bill.productMass[i] * 10L / com.hbm.realsim.PhysicalRegistry.get(bill.outputs[i]).massUnits);
-					if(quantity <= 0) continue;
-					if(com.hbm.realsim.PhysicalRegistry.get(bill.outputs[i]).phase == com.hbm.realsim.PhysicalState.Phase.SOLID)
-						shown.add(com.hbm.realsim.ProcessMachine.solid(bill.outputs[i], quantity));
-					else shown.add(ItemFluidIcon.make(Fluids.fromName(bill.outputs[i]), quantity));
-				}
-				recipes.put(input, shown.toArray(new ItemStack[shown.size()]));
-				continue;
-			}
+            if(bill != null) {
+                AStack input = key instanceof String ? new OreDictStack((String) key, bill.solidCounts[0]) : ((ComparableStack) key).copy();
+                input.stacksize = bill.solidCounts[0];
+                java.util.ArrayList<ItemStack> shown = new java.util.ArrayList<>();
+                for(int i = 0; i < bill.outputs.length; i++) {
+                    ItemStack product = com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.productDisplay(bill, i);
+                    if(product != null) shown.add(com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.describe(product, bill));
+                }
+                recipes.put(input, shown.toArray(new ItemStack[0]));
+                continue;
+            }
+
 			Object o = key instanceof String ? new OreDictStack((String) key) : key;
 
 			if(val.getKey() != null && val.getValue() != null) {

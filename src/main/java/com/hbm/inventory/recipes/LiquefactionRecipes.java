@@ -158,9 +158,9 @@ public class LiquefactionRecipes extends SerializableRecipe {
             FluidStack out = bill == null ? entry.getValue() : display(bill);
 
 			if(entry.getKey() instanceof String) {
-				recipes.put(new OreDictStack((String)entry.getKey()), ItemFluidIcon.make(out.type, out.fill));
+				recipes.put(new OreDictStack((String)entry.getKey()), com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.describe(bill == null ? ItemFluidIcon.make(out.type, out.fill) : ItemFluidIcon.makePhysical(out, bill.productMass[0]), bill));
 			} else {
-				recipes.put(((ComparableStack)entry.getKey()).toStack(), ItemFluidIcon.make(out.type, out.fill));
+				recipes.put(((ComparableStack)entry.getKey()).toStack(), com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.describe(bill == null ? ItemFluidIcon.make(out.type, out.fill) : ItemFluidIcon.makePhysical(out, bill.productMass[0]), bill));
 			}
 		}
 

@@ -62,7 +62,8 @@ public class GasCentrifugeRecipeHandler extends SafeTemplateRecipeHandler implem
 		@Override
 		public List<PositionedStack> getOtherStacks() {
 			List<PositionedStack> stacks = new ArrayList<PositionedStack>();
-			stacks.add(fuels.get((cycleticks / 48) % fuels.size()).stack);
+			ensureResources();
+            if(!fuels.isEmpty()) stacks.add(fuels.get((cycleticks / 48) % fuels.size()).stack);
 			stacks.addAll(output);
 			return NEISafe.cleanPositionedList(stacks);
 		}
@@ -92,15 +93,13 @@ public class GasCentrifugeRecipeHandler extends SafeTemplateRecipeHandler implem
 		return RefStrings.MODID + ":textures/gui/nei/gui_nei_centrifuge_gas.png";
 	}
 
-	@Override
-	public TemplateRecipeHandler newInstance() {
-		if(fuels == null || fuels.isEmpty())
-			fuels = new ArrayList<Fuel>();
-		for(ItemStack i : MachineRecipes.instance().getBatteries()) {
-			fuels.add(new Fuel(i));
-		}
-		return super.newInstance();
-	}
+    private static void ensureResources() {
+        if(fuels != null && !fuels.isEmpty()) return;
+        fuels = new ArrayList<Fuel>();
+        for(ItemStack item : MachineRecipes.instance().getBatteries()) {
+            if(NEISafe.isValid(item)) fuels.add(new Fuel(item));
+        }
+    }
 
 	@Override
 	public void loadCraftingRecipes(String outputId, Object... results) {

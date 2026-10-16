@@ -275,6 +275,23 @@ public class CustomMachineConfigJSON {
 		/** Definitions of blocks that this machine is composed of */
 		public List<ComponentDefinition> components;
 
+        /** A thermal contact must expose a whole 3x3 heater layer below it, clear of required structure. */
+        public boolean isUsableThermalPort(ComponentDefinition port) {
+            if(ModBlocks.cm_heat == null || port.block != ModBlocks.cm_heat) return false;
+            if(port.y == 1 && Math.abs(port.x) <= 1 && Math.abs(port.z) <= 1) return false; // Controller collision.
+            for(ComponentDefinition other : components) {
+                if(other.y == port.y - 1 && Math.abs((long) other.x - port.x) <= 1 && Math.abs((long) other.z - port.z) <= 1) return false;
+            }
+            return true;
+        }
+        public boolean hasExternalHeatInterface() {
+            if(components != null) for(ComponentDefinition port : components) if(isUsableThermalPort(port)) return true;
+            return false;
+        }
+        public com.hbm.realsim.ProcessRecipe physicalBill(com.hbm.realsim.ProcessRecipe bill) {
+            return bill == null || hasExternalHeatInterface() ? bill : bill.electricallyDriven();
+        }
+
 		public static class ComponentDefinition {
 			public Block block;
 			public Set<Integer> allowedMetas;

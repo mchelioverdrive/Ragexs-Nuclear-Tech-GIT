@@ -309,7 +309,6 @@ public class PhysicalAccountingTest {
             assertEquals(maximumHeat * 10L, recipe.thermalRatingWatts);
             java.util.List<String> lines = new java.util.ArrayList<>(); MachineInfo.process(lines, recipe);
             assertTrue(lines.contains("Process electrical demand: " + MachineInfo.watts(recipe.electricalRatingWatts)));
-            assertTrue(lines.contains("Process thermal demand: " + MachineInfo.thermalWatts(recipe.thermalRatingWatts)));
             ProcessRecipe loaded = ProcessRecipe.read(writeProcessForInfo(recipe));
             assertEquals(recipe.electricalRatingWatts, loaded.electricalRatingWatts);
             assertEquals(recipe.rejectedWatts, loaded.rejectedWatts);

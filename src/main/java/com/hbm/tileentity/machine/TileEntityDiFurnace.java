@@ -123,7 +123,7 @@ public class TileEntityDiFurnace extends TileEntityMachinePolluting implements I
 	}
 
 	// Keep saved process credits in their existing units; fresh fuel derives from its assay.
-	private int getItemPower(ItemStack stack, boolean canBreathe) {
+	public static int getItemPower(ItemStack stack, boolean canBreathe) {
 		if(stack == null) return 0;
 		if(stack.getItem() == Items.lava_bucket) return 12800; // Explicit legacy geothermal input.
 		if(stack.getItem() == Items.blaze_rod) return canBreathe ? 1000 : 0; // Fictional heat source.

@@ -1,6 +1,5 @@
 package com.hbm.tileentity.network;
 
-import com.hbm.uninos.UniNodespace;
 import net.minecraft.block.Block;
 import net.minecraft.world.World;
 
@@ -15,10 +14,7 @@ public class TileEntityFluidValve extends TileEntityPipeBaseNT {
 		
 		this.blockMetadata = -1; // delete cache
 		
-		if(this.getBlockMetadata() == 0 && this.node != null) {
-			UniNodespace.destroyNode(this.worldObj, this.node);
-			this.node = null;
-		}
+        if(this.getBlockMetadata() == 0) detachNodes();
 		this.queueNodeReconciliation();
 	}
 	

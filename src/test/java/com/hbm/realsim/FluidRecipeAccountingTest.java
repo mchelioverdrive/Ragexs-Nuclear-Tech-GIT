@@ -20,6 +20,103 @@ public class FluidRecipeAccountingTest {
         for(int i = 0; i < counts.length; i++) exported += counts[i] * PhysicalRegistry.get(bill.outputs[i]).massUnits + batch.products.remaining(bill.outputs[i]);
         assertEquals(bill.id, bill.inputMass(), exported);
     }
+    @Test public void reactorUtilitiesHaveNoHeatGateAndRetainExactEnergyAndMaterials() {
+        for(ProcessRecipe original : ChemistryProcesses.defaults().values()) {
+            ProcessRecipe reactor = original.electricallyDriven();
+            assertEquals(original.id, 0, reactor.temperatureC); assertEquals(original.id, 0L, reactor.heatQuanta);
+            assertEquals(original.referenceTemperatureC, reactor.referenceTemperatureC);
+            NBTTagCompound metadata = new NBTTagCompound(); reactor.continuous().snapshot().write(metadata);
+            assertEquals(original.referenceTemperatureC, ProcessRecipe.read(metadata).referenceTemperatureC);
+            assertEquals(original.id, original.workQuanta + original.heatQuanta, reactor.workQuanta);
+            assertArrayEquals(original.inputs, reactor.inputs); assertArrayEquals(original.pressures, reactor.pressures);
+            assertArrayEquals(original.quantities, reactor.quantities); assertArrayEquals(original.outputs, reactor.outputs);
+            assertArrayEquals(original.productMass, reactor.productMass);
+            assertEquals(original.rejectedJ, reactor.rejectedJ);
+            ChemicalFuelProcesses.validateReactorRating(reactor); assertClosed(reactor);
+        }
+        ProcessRecipe hot = ChemistryProcesses.moltenSaltElectrolysis();
+        assertArrayEquals(hot.inputs, hot.electricallyDriven().inputs);
+    }
+    @Test public void migratingPaidReactorBatchesRetainsEveryQuantumAcrossRoundingAndReload() {
+        ProcessRecipe old = new ProcessRecipe("migration", new String[] {"FRESH_WATER"}, new int[] {1}, new int[] {0}, null, 0,
+                new String[] {"FRESH_WATER"}, new long[] {ChemistryProcesses.mass("FRESH_WATER", 1)}, 3, 1, 1, 600, true);
+        for(int before = 0; before <= old.duration; before++) {
+            ProcessBatch batch = new ProcessBatch(); batch.reserve(old); long paid = 0;
+            for(int t = 0; t < before; t++) { paid += batch.nextWork() + batch.nextHeat(); batch.advance(t); }
+            batch.electrifyUtilities(); assertEquals(before, batch.ticks()); assertEquals(0, batch.recipe().temperatureC);
+            NBTTagCompound save = new NBTTagCompound(); batch.write(save);
+            batch = new ProcessBatch(); batch.read(save); batch.electrifyUtilities();
+            assertEquals(old.temperatureC, batch.recipe().referenceTemperatureC);
+            for(int t = before; t < old.duration; t++) {
+                assertEquals(0, batch.nextHeat()); paid += batch.nextWork(); assertTrue(batch.canAdvance(t, batch.nextWork(), 0)); batch.advance(t);
+            }
+            assertEquals(old.workQuanta + old.heatQuanta, paid); assertEquals(1, batch.finish()[0]); assertFalse(batch.active());
+        }
+    }
+    @Test public void heatSourcesRemainIndependentOfHotFeedAndElectricalDrives() {
+        ProcessRecipe heating = PetroleumProcesses.defaults("heat").get("OIL");
+        ProcessRecipe refinery = PetroleumProcesses.defaults("refinery").get("HOTOIL");
+        assertEquals(new BigDecimal("561000.000000000000000000"), refinery.sensibleInputJ);
+        assertEquals(561000L * 2L, heating.heatQuanta);
+        assertEquals(0, refinery.heatQuanta);
+        assertEquals((36000L + 163000L) * 2L, refinery.workQuanta); // Added vaporization only, not another preheat.
+        for(ProcessRecipe molten : new ProcessRecipe[] {ChemistryProcesses.moltenSaltElectrolysis(), ChemistryProcesses.strontiumElectrolysis()}) {
+            assertTrue(molten.sensibleInputJ.signum() > 0); assertEquals(0, molten.heatQuanta);
+            assertTrue(molten.workQuanta > 0); assertClosed(molten);
+        }
+        ProcessRecipe legacy = ChemistryProcesses.heavyWater(); NBTTagCompound tag = new NBTTagCompound(); legacy.write(tag);
+        tag.removeTag("referenceTemperature");
+        assertEquals(legacy.temperatureC, ProcessRecipe.read(tag).referenceTemperatureC);
+        assertEquals(0, legacy.heatQuanta); assertEquals(3120000L * 2, legacy.workQuanta);
+        assertEquals(0, AncillaryProcesses.dairy().heatQuanta); assertEquals(13180000L * 2, AncillaryProcesses.dairy().workQuanta);
+        assertEquals(0, ChemistryProcesses.paper().heatQuanta);
+    }
+    @Test public void reactorServicePortsAppendWithoutRenumberingSavedInventoryOrTanks() {
+        com.hbm.tileentity.machine.TileEntityMachineChemplant machine = new com.hbm.tileentity.machine.TileEntityMachineChemplant();
+        assertEquals(29, machine.getSizeInventory()); assertEquals(8, machine.tanks.length);
+        assertSame(machine.tanks[0], machine.processInputs()[0]); assertSame(machine.tanks[1], machine.processInputs()[1]);
+        assertSame(machine.tanks[4], machine.processInputs()[2]); assertSame(machine.tanks[5], machine.processInputs()[3]);
+        assertSame(machine.tanks[2], machine.processOutputs()[0]); assertSame(machine.tanks[3], machine.processOutputs()[1]);
+        assertSame(machine.tanks[6], machine.processOutputs()[2]); assertSame(machine.tanks[7], machine.processOutputs()[3]);
+        java.util.Set<Integer> service = new java.util.HashSet<>();
+        for(int channel = 0; channel < 4; channel++) {
+            assertTrue(service.add(com.hbm.tileentity.machine.TileEntityMachineChemplant.inputContainerSlot(channel)));
+            assertTrue(service.add(com.hbm.tileentity.machine.TileEntityMachineChemplant.inputReturnSlot(channel)));
+            assertTrue(service.add(com.hbm.tileentity.machine.TileEntityMachineChemplant.outputContainerSlot(channel)));
+            assertTrue(service.add(com.hbm.tileentity.machine.TileEntityMachineChemplant.outputReturnSlot(channel)));
+        }
+        assertEquals(16, service.size()); assertEquals(29, machine.getAccessibleSlotsFromSide(0).length);
+    }
+    @Test public void sharedPipeIdentifiersToggleFourIndependentChannelsAndPersistLegacySaves() {
+        com.hbm.inventory.fluid.FluidType a = fluid("WATER"), b = fluid("FRESH_WATER"), c = fluid("HYDROGEN_GAS"), d = fluid("OXYGEN_GAS"), e = fluid("NITROGEN_GAS");
+        com.hbm.tileentity.network.TileEntityPipeBaseNT pipe = new com.hbm.tileentity.network.TileEntityPipeBaseNT();
+        assertTrue(pipe.toggleType(a)); assertTrue(pipe.toggleType(b)); assertTrue(pipe.toggleType(c)); assertTrue(pipe.toggleType(d));
+        assertEquals(4, pipe.getTypes().length); assertFalse(pipe.toggleType(e)); assertTrue(pipe.carries(a));
+        assertTrue(pipe.toggleType(b)); assertFalse(pipe.carries(b)); assertTrue(pipe.carries(c)); assertTrue(pipe.toggleType(e));
+        NBTTagCompound saved = pipe.getSettings(null, 0, 0, 0);
+        com.hbm.tileentity.network.TileEntityPipeBaseNT loaded = new com.hbm.tileentity.network.TileEntityPipeBaseNT(); loaded.readFromNBT(saved);
+        assertArrayEquals(pipe.getFluidIDToCopy(), loaded.getFluidIDToCopy());
+        assertArrayEquals(pipe.getFluidIDToCopy(), pipe.getSettings(null, 0, 0, 0).getIntArray("sharedPipeTypes"));
+        NBTTagCompound legacy = new NBTTagCompound(); legacy.setInteger("type", b.getID()); loaded.readFromNBT(legacy);
+        assertEquals(1, loaded.getTypes().length); assertSame(b, loaded.getType());
+        assertTrue(loaded.canConnect(b, net.minecraftforge.common.util.ForgeDirection.NORTH));
+        assertFalse(loaded.canConnect(a, net.minecraftforge.common.util.ForgeDirection.NORTH));
+        assertTrue(loaded.toggleType(b)); assertSame(com.hbm.inventory.fluid.Fluids.NONE, loaded.getType());
+    }
+    @Test public void sharedPipeDispatchUsesTheRequestedSpeciesGraphRatherThanItsPrimaryGraph() throws Exception {
+        com.hbm.inventory.fluid.FluidType a = fluid("WATER"), b = fluid("HYDROGEN_GAS"), c = fluid("OXYGEN_GAS");
+        com.hbm.tileentity.network.TileEntityPipeBaseNT pipe = new com.hbm.tileentity.network.TileEntityPipeBaseNT(); pipe.setTypes(a, b);
+        java.lang.reflect.Field field = pipe.getClass().getDeclaredField("channelNodes"); field.setAccessible(true);
+        api.hbm.fluidmk2.FluidNode[] nodes = (api.hbm.fluidmk2.FluidNode[]) field.get(pipe);
+        api.hbm.fluidmk2.FluidNetMK2 first = new api.hbm.fluidmk2.FluidNetMK2(a), second = new api.hbm.fluidmk2.FluidNetMK2(b);
+        try {
+            nodes[0] = pipe.createNode(a); first.joinLink(nodes[0]); nodes[1] = pipe.createNode(b); second.joinLink(nodes[1]);
+            assertSame(first, pipe.getFluidNet(a)); assertSame(second, pipe.getFluidNet(b)); assertNull(pipe.getFluidNet(c));
+            assertSame(first, pipe.getFluidNet());
+            assertEquals(10, first.transferFluidExternal(b, 1, 10, null));
+            pipe.toggleType(a); assertNull(pipe.getFluidNet(a)); assertNull(pipe.getFluidNet(b));
+        } finally { first.destroy(); second.destroy(); }
+    }
     @Test public void scrubberCaptureCannotClobberLegacyStockOrBorrowPower() {
         assertEquals(0, com.hbm.tileentity.machine.TileEntityAirScrubber.affordableScrubAmount(1000, 20000, 16000, 10000));
         assertEquals(0, com.hbm.tileentity.machine.TileEntityAirScrubber.affordableScrubAmount(-1, 0, 16000, 10000));
@@ -37,7 +134,11 @@ public class FluidRecipeAccountingTest {
                 for(int variant=0;variant<variants;variant++) try {
                     Object[] values=args.length==0?new Object[0]:new Object[]{args[0]==boolean.class?(Object)(variant==1):(Object)variant};
                     ProcessRecipe bill=(ProcessRecipe)method.invoke(null,values);
-                    ChemicalFuelProcesses.validateRating(bill);
+                    if(family == AncillaryProcesses.class && method.getName().equals("dairy")) {
+                        assertEquals(0, bill.heatQuanta);
+                        assertTrue(PetroleumProcesses.ceilDiv(bill.workQuanta, bill.duration)
+                                <= com.hbm.tileentity.machine.TileEntityMachineMilkReformer.maxPower);
+                    } else ChemicalFuelProcesses.validateRating(bill);
                     int solid=0,fluid=0;
                     for(String output:bill.outputs) if(!output.startsWith("VENT_")) { if(PhysicalRegistry.get(output).phase==PhysicalState.Phase.SOLID) solid++;else fluid++; }
                     if(solid>4 || fluid>4 || bill.rejectedWatts>200000) failures.add(bill.id+" excessive ports/cooling: "+solid+"/"+fluid+"/"+bill.rejectedWatts);
@@ -463,7 +564,8 @@ public class FluidRecipeAccountingTest {
         assertEquals(10.3,recipe.inputMass()/(double)PhysicalState.MASS_UNITS_PER_KG,1E-12);
         assertEquals(.1,product(recipe,"CREAM")/(double)recipe.inputMass(),1E-12);
         assertTrue(product(recipe,"FRESH_WATER")>3*PhysicalState.MASS_UNITS_PER_KG);
-        assertTrue(recipe.heatQuanta/2>product(recipe,"FRESH_WATER")/(double)PhysicalState.MASS_UNITS_PER_KG*2250000);
+        assertEquals(0, recipe.heatQuanta);
+        assertTrue(recipe.workQuanta/2 - 180000 > product(recipe,"FRESH_WATER")/(double)PhysicalState.MASS_UNITS_PER_KG*2250000);
     }
     @Test public void newlyStampedContainersDoNotReinterpretLegacyFilledItems() {
         net.minecraft.item.Item full=new net.minecraft.item.Item(),empty=new net.minecraft.item.Item();

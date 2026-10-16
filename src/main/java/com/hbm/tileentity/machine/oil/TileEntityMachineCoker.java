@@ -29,7 +29,11 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 
-public class TileEntityMachineCoker extends TileEntityMachineBase implements api.hbm.energymk2.IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
+public class TileEntityMachineCoker extends TileEntityMachineBase implements api.hbm.energymk2.IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo, api.hbm.tile.IProcessHeatReceiver {
+    @Override public api.hbm.tile.IProcessHeatSource getProcessHeatSource() {
+        return com.hbm.realsim.ProcessMachine.heaterBelow(this, xCoord, yCoord, zCoord);
+    }
+
 
 	public boolean wasOn;
 	public int progress;
@@ -319,6 +323,7 @@ public class TileEntityMachineCoker extends TileEntityMachineBase implements api
 
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
         com.hbm.realsim.MachineInfo.process(lines, physicalBatch.active() ? physicalBatch.recipe() : CokerRecipes.getPhysical(tanks[0].getTankType()));
+        lines.add("Heater: upward top contact centered directly beneath the bottom core; full 3x3 heater layer below the base");
         lines.add("Blocked operation: check feed state, paid utilities and product storage");
     }
 }

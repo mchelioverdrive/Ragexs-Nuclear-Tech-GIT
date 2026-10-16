@@ -58,8 +58,9 @@ public class ShredderRecipeHandler extends SafeTemplateRecipeHandler implements 
 		@Override
 		public List<PositionedStack> getOtherStacks() {
 			List<PositionedStack> stacks = new ArrayList<PositionedStack>();
-			stacks.add(fuels.get((cycleticks / 24) % fuels.size()).stack0);
-			stacks.add(fuels.get((cycleticks / 24) % fuels.size()).stack1);
+			ensureResources();
+            if(!fuels.isEmpty()) stacks.add(fuels.get((cycleticks / 24) % fuels.size()).stack0);
+			if(!fuels.isEmpty()) stacks.add(fuels.get((cycleticks / 24) % fuels.size()).stack1);
 			return NEISafe.cleanPositionedList(stacks);
 		}
 
@@ -172,13 +173,11 @@ public class ShredderRecipeHandler extends SafeTemplateRecipeHandler implements 
 		drawProgressBar(83 - 3, 5 + 18, 100, 118, 24, 16, 48, 0);
 	}
 
-	@Override
-	public TemplateRecipeHandler newInstance() {
-		if(fuels == null || fuels.isEmpty())
-			fuels = new ArrayList<Fuel>();
-		for(ItemStack i : MachineRecipes.instance().getBlades()) {
-			fuels.add(new Fuel(i));
-		}
-		return super.newInstance();
-	}
+    private static void ensureResources() {
+        if(fuels != null && !fuels.isEmpty()) return;
+        fuels = new ArrayList<Fuel>();
+        for(ItemStack item : MachineRecipes.instance().getBlades()) {
+            if(NEISafe.isValid(item)) fuels.add(new Fuel(item));
+        }
+    }
 }

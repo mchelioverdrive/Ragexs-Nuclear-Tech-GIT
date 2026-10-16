@@ -67,6 +67,7 @@ public class BoilingHandler extends NEIUniversalHandler {
             if(bill != null) {
                 ItemStack input = ItemFluidIcon.make(type, bill.quantities[0], bill.pressures[0]);
                 input.getTagCompound().setInteger("boilerTemperature", bill.temperatureC);
+                com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.describe(input, bill);
                 cache.put(input, AtmosphericTowerHandler.products(bill));
             } else if(type.hasTrait(FT_Heatable.class)) {
                 FT_Heatable trait = type.getTrait(FT_Heatable.class);

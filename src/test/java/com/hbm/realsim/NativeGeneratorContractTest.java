@@ -22,6 +22,125 @@ import net.minecraft.nbt.NBTTagCompound;
 
 /** Native tile constructors/admission/save readers, without launching or substituting a world. */
 public class NativeGeneratorContractTest {
+    @Test public void poweredNativeReadersRetainPaidThermalCreditWithoutAHeaterGate() {
+        com.hbm.tileentity.machine.oil.TileEntityMachineFractionTower fraction = new com.hbm.tileentity.machine.oil.TileEntityMachineFractionTower();
+        TileEntityDeuteriumExtractor extractor = new TileEntityDeuteriumExtractor();
+        TileEntityMachineMilkReformer dairy = new TileEntityMachineMilkReformer();
+        net.minecraft.tileentity.TileEntity[] machines = {fraction, extractor, dairy};
+        ProcessBatch[] owned = {fraction.physicalBatch, extractor.processBatch, dairy.physicalBatch};
+        ProcessRecipe[] bills = {ChemicalFuelProcesses.reactorFraction(), ChemistryProcesses.heavyWater(), AncillaryProcesses.dairy()};
+        long[] oldWork = {4900, 120000, 180000}, oldHeat = {627200, 3000000, 13000000};
+        for(int i = 0; i < machines.length; i++) {
+            NBTTagCompound recipeTag = new NBTTagCompound(); bills[i].write(recipeTag);
+            recipeTag.setLong("work", oldWork[i]); recipeTag.setLong("heat", oldHeat[i]);
+            recipeTag.setInteger("temperature", bills[i].referenceTemperatureC);
+            ProcessRecipe legacy = ProcessRecipe.read(recipeTag);
+            ProcessBatch paid = new ProcessBatch(); paid.reserve(legacy); long payment = 0;
+            for(int tick = 0; tick < 13; tick++) { payment += paid.nextWork() + paid.nextHeat(); paid.advance(tick); }
+            NBTTagCompound save = new NBTTagCompound(); paid.write(save);
+            if(i == 2) { NBTTagCompound root = new NBTTagCompound(); root.setTag("realSimDairy", save); save = root; }
+            machines[i].readFromNBT(save);
+            assertEquals(13, owned[i].ticks()); assertEquals(0, owned[i].recipe().heatQuanta);
+            assertEquals(0, owned[i].recipe().temperatureC);
+            assertEquals(legacy.referenceTemperatureC, owned[i].recipe().referenceTemperatureC);
+            assertArrayEquals(legacy.productMass, owned[i].recipe().productMass);
+            assertEquals(legacy.sensibleInputJ, owned[i].recipe().sensibleInputJ);
+            assertNull(ProcessMachine.heater(machines[i]));
+            for(int tick = 13; !owned[i].complete(); tick++) { payment += owned[i].nextWork(); owned[i].advance(tick); }
+            assertEquals(legacy.workQuanta + legacy.heatQuanta, payment);
+        }
+    }
+    @Test public void externalHeatIsAnExplicitNativeEquipmentCapability() {
+        for(Class<?> tile : new Class<?>[] {TileEntityHeatBoiler.class, TileEntityHeatBoilerIndustrial.class, TileEntityFurnaceCombination.class,
+                TileEntityMachineBlastFurnace.class, com.hbm.tileentity.machine.oil.TileEntityMachineCoker.class})
+            assertTrue(tile.getName(), api.hbm.tile.IProcessHeatReceiver.class.isAssignableFrom(tile));
+        for(Class<?> tile : new Class<?>[] {com.hbm.tileentity.machine.oil.TileEntityMachineRefinery.class,
+                com.hbm.tileentity.machine.oil.TileEntityMachineVacuumDistill.class, com.hbm.tileentity.machine.oil.TileEntityMachineFractionTower.class,
+                com.hbm.tileentity.machine.oil.TileEntityMachineCatalyticCracker.class, com.hbm.tileentity.machine.oil.TileEntityMachineCatalyticReformer.class,
+                com.hbm.tileentity.machine.oil.TileEntityMachineHydrotreater.class, com.hbm.tileentity.machine.oil.TileEntityMachineAlkylation.class,
+                TileEntityDeuteriumExtractor.class, TileEntityDeuteriumTower.class, TileEntityMachineMilkReformer.class})
+            assertFalse(tile.getName(), api.hbm.tile.IProcessHeatReceiver.class.isAssignableFrom(tile));
+        api.hbm.tile.IProcessHeatSource source = new TileEntityHeaterFirebox();
+        for(net.minecraftforge.common.util.ForgeDirection side : net.minecraftforge.common.util.ForgeDirection.values())
+            assertEquals(side == net.minecraftforge.common.util.ForgeDirection.UP, source.canSupplyProcessHeat(side));
+    }
+    @Test public void retainedNativeHeaterBasesLeaveTheWholeHeaterBelowTheirStructure() {
+        com.hbm.blocks.BlockDummyable[] equipment = {new com.hbm.blocks.machine.MachineHeatBoiler(), new com.hbm.blocks.machine.MachineHeatBoilerIndustrial(),
+                new com.hbm.blocks.machine.MachineCoker(net.minecraft.block.material.Material.iron), new com.hbm.blocks.machine.MachineBlastFurnace(),
+                new com.hbm.blocks.machine.FurnaceCombination(), new com.hbm.blocks.machine.FurnaceSteel(), new com.hbm.blocks.machine.MachineCrucible(),
+                new com.hbm.blocks.machine.MachineStirling(), new com.hbm.blocks.machine.MachineSawmill()};
+        com.hbm.blocks.BlockDummyable[] heaters = {new com.hbm.blocks.machine.HeaterFirebox(), new com.hbm.blocks.machine.HeaterOven(),
+                new com.hbm.blocks.machine.HeaterHeatex(), new com.hbm.blocks.machine.HeaterOilburner()};
+        for(com.hbm.blocks.BlockDummyable machine : equipment) {
+            int[] body = machine.getDimensions(); assertEquals(machine.getClass().getName(), 0, body[1]);
+            for(int axis = 2; axis < 6; axis++) assertEquals(machine.getClass().getName(), 1, body[axis]);
+            for(com.hbm.blocks.BlockDummyable heater : heaters) {
+                int[] footprint = heater.getDimensions();
+                for(int axis = 2; axis < 6; axis++) assertEquals(heater.getClass().getName(), 1, footprint[axis]);
+                int heaterCoreY = -1 - footprint[0];
+                assertEquals(-1, heaterCoreY + footprint[0]); assertTrue(heaterCoreY - footprint[1] < 0);
+            }
+        }
+    }
+    @Test public void customThermalPortsRequireAPlaceableThreeByThreeUnderside() {
+        net.minecraft.block.Block old = com.hbm.blocks.ModBlocks.cm_heat;
+        try {
+            com.hbm.blocks.ModBlocks.cm_heat = new com.hbm.blocks.machine.BlockCMHeat(net.minecraft.block.material.Material.iron, "cm_heat");
+            com.hbm.config.CustomMachineConfigJSON.MachineConfiguration config = new com.hbm.config.CustomMachineConfigJSON.MachineConfiguration();
+            config.components = new java.util.ArrayList<>();
+            ProcessRecipe heated = PetroleumProcesses.defaults("coker").get("HEAVYOIL");
+            assertEquals(0, config.physicalBill(heated).heatQuanta);
+            com.hbm.config.CustomMachineConfigJSON.MachineConfiguration.ComponentDefinition port = new com.hbm.config.CustomMachineConfigJSON.MachineConfiguration.ComponentDefinition();
+            port.block = com.hbm.blocks.ModBlocks.cm_heat; port.x = 3; config.components.add(port);
+            assertTrue(config.hasExternalHeatInterface()); assertSame(heated, config.physicalBill(heated));
+            com.hbm.config.CustomMachineConfigJSON.MachineConfiguration.ComponentDefinition obstruction = new com.hbm.config.CustomMachineConfigJSON.MachineConfiguration.ComponentDefinition();
+            obstruction.x = 4; obstruction.y = -1; config.components.add(obstruction);
+            assertFalse(config.hasExternalHeatInterface()); assertEquals(0, config.physicalBill(heated).heatQuanta);
+            config.components.remove(obstruction); port.x = 0; port.y = 1;
+            assertFalse("Heater would occupy controller", config.hasExternalHeatInterface());
+        } finally { com.hbm.blocks.ModBlocks.cm_heat = old; }
+    }
+    @Test public void boilerRetainsPartialProcessHeatWithoutRelabelingSteamBuffer() throws Exception {
+        TileEntityHeatBoilerIndustrial boiler = new TileEntityHeatBoilerIndustrial();
+        ProcessRecipe bill = PetroleumProcesses.defaults("heat").get("OIL"); boiler.physicalBatch.reserve(bill);
+        Field heat = TileEntityHeatBoilerBase.class.getDeclaredField("processHeatQuanta"); heat.setAccessible(true);
+        long partial = boiler.physicalBatch.nextHeat() / 2; heat.setLong(boiler, partial);
+        boiler.thermalBufferQuanta = 1234; boiler.pumpEnergyQuanta = 4321;
+        // Native readers can be exercised without initializing Minecraft's tile-ID registry.
+        NBTTagCompound save = new NBTTagCompound(); boiler.physicalBatch.write(save);
+        save.setLong("realSimProcessHeatQuanta", partial); save.setLong("realSimHeatQuanta", boiler.thermalBufferQuanta);
+        save.setLong("realSimPumpQuanta", boiler.pumpEnergyQuanta);
+        boiler.tanks[0].writeToNBT(save, "water"); boiler.tanks[1].writeToNBT(save, "steam");
+        TileEntityHeatBoilerIndustrial restored = new TileEntityHeatBoilerIndustrial(); restored.readFromNBT(save);
+        assertEquals(partial, heat.getLong(restored)); assertEquals(1234, restored.thermalBufferQuanta);
+        assertEquals(4321, restored.pumpEnergyQuanta); assertEquals(bill.heatQuanta, restored.physicalBatch.recipe().heatQuanta);
+        assertEquals(0, restored.physicalBatch.ticks());
+        java.lang.reflect.Method firing = TileEntityHeatBoilerIndustrial.class.getDeclaredMethod("additionalHeat", long.class); firing.setAccessible(true);
+        assertEquals(0L, ((Long) firing.invoke(restored, 0L)).longValue());
+        save.setLong("realSimProcessHeatQuanta", restored.physicalBatch.remainingHeat() + 1);
+        try { restored.readFromNBT(save); fail("Unowned process heat accepted"); } catch(IllegalStateException expected) { }
+    }
+    @Test public void ordinaryBoilerUsesItsRatedSupplyWithoutWastingPartialTickHeat() throws Exception {
+        TileEntityHeatBoiler boiler = new TileEntityHeatBoiler();
+        ProcessRecipe bill = PetroleumProcesses.defaults("heat").get("OIL"); boiler.physicalBatch.reserve(bill);
+        Field buffer = TileEntityHeatBoilerBase.class.getDeclaredField("processHeatQuanta"); buffer.setAccessible(true);
+        Field source = TileEntityHeatBoilerBase.class.getDeclaredField("processHeat"); source.setAccessible(true);
+        api.hbm.tile.IProcessHeatSource paidHeat = (api.hbm.tile.IProcessHeatSource) source.get(boiler);
+        java.lang.reflect.Method request = TileEntityHeatBoilerBase.class.getDeclaredMethod("processHeatRequest"); request.setAccessible(true);
+        long supplied = 0; int ticks = 0;
+        while(!boiler.physicalBatch.complete() && ticks < 100) {
+            long heat = (Long) request.invoke(boiler); assertTrue(heat <= boiler.getRatedThermalWatts() / 10);
+            supplied += heat; buffer.setLong(boiler, buffer.getLong(boiler) + heat);
+            if(boiler.physicalBatch.canAdvance(ticks, boiler.physicalBatch.nextWork(), paidHeat.getAvailableProcessHeatQuanta(ticks))) {
+                long due = boiler.physicalBatch.nextHeat(); assertEquals(due, paidHeat.drawProcessHeatQuanta(ticks, due));
+                boiler.physicalBatch.advance(ticks);
+            }
+            ticks++;
+        }
+        assertEquals(SteamLedger.ceilDiv(bill.heatQuanta, boiler.getRatedThermalWatts() / 10), ticks);
+        assertTrue(boiler.physicalBatch.complete()); assertEquals(bill.heatQuanta, supplied); assertEquals(0, buffer.getLong(boiler));
+        assertEquals(0, boiler.physicalBatch.remainingHeat());
+    }
     private final Map<Field, Object> fields = new HashMap<>();
     private Map<String, FluidType> names;
     private Map<String, FluidType> oldNames;
@@ -38,7 +157,7 @@ public class NativeGeneratorContractTest {
         order = (java.util.List<FluidType>) orderField.get(null); oldOrder = new java.util.ArrayList<>(order);
         oldPellets = new java.util.ArrayList<>(ItemRTGPellet.pelletList);
         for(String name : new String[] {"NONE", "STEAM", "HOTSTEAM", "SUPERHOTSTEAM", "ULTRAHOTSTEAM", "SPENTSTEAM", "DIESEL", "KEROSENE", "BLOOD", "GAS", "LUBRICANT", "WATER", "FRESH_WATER",
-                "HEAVYOIL", "HEAVYOIL_VACUUM", "SMEAR", "LIGHTOIL_VACUUM", "REFORMATE", "SOURGAS", "OIL", "OIL_DS", "LIGHTOIL", "LIGHTOIL_DS", "NAPHTHA", "NAPHTHA_DS", "PETROLEUM", "BITUMEN", "HEATINGOIL", "LPG", "AIR", "AIR_HEATED", "AIRBLAST", "BLAST_FURNACE_GAS", "OXYGEN", "OXYGEN_GAS", "NITROGEN", "NITROGEN_GAS", "HYDROGEN", "HYDROGEN_GAS", "SYNGAS", "REFORMGAS", "GAS_COKER", "BIOGAS", "UNSATURATEDS", "HYDROGEN_SULFIDE", "LIGHT_WATER", "HEAVYWATER", "DEPLETED_WATER", "ARGON", "NOBLE_GAS_MIX", "CARBONDIOXIDE"}) {
+                "HEAVYOIL", "HEAVYOIL_VACUUM", "SMEAR", "LIGHTOIL_VACUUM", "REFORMATE", "SOURGAS", "OIL", "OIL_DS", "LIGHTOIL", "LIGHTOIL_DS", "NAPHTHA", "NAPHTHA_DS", "PETROLEUM", "BITUMEN", "HEATINGOIL", "LPG", "AIR", "AIR_HEATED", "AIRBLAST", "BLAST_FURNACE_GAS", "OXYGEN", "OXYGEN_GAS", "NITROGEN", "NITROGEN_GAS", "HYDROGEN", "HYDROGEN_GAS", "SYNGAS", "REFORMGAS", "GAS_COKER", "BIOGAS", "UNSATURATEDS", "HYDROGEN_SULFIDE", "LIGHT_WATER", "HEAVYWATER", "DEPLETED_WATER", "ARGON", "NOBLE_GAS_MIX", "CARBONDIOXIDE", "MILK", "EMILK", "CMILK", "CREAM"}) {
             Field f = Fluids.class.getField(name); fields.put(f, f.get(null));
             FluidType type = new FluidType(name, 0, 0, 0, 0, EnumSymbol.NONE); f.set(null, type); names.put(name, type);
         }
@@ -324,7 +443,9 @@ public class NativeGeneratorContractTest {
         boolean visible = false;
         for(Object value : com.hbm.inventory.recipes.RefineryRecipes.getVacuumRecipe().values())
             for(ItemStack stack : (ItemStack[]) value) if(stack.getItemDamage() == Fluids.LUBRICANT.getID()) {
-                visible = true; assertEquals(lubricant, com.hbm.items.machine.ItemFluidIcon.getQuantity(stack));
+                visible = true;
+                assertEquals(recipe.productMass[3], stack.getTagCompound().getLong("physicalMass"));
+                assertEquals(PetroleumProcesses.ceilDiv(recipe.productMass[3], PhysicalRegistry.get("LUBRICANT").massUnits), com.hbm.items.machine.ItemFluidIcon.getQuantity(stack));
             }
         assertTrue("Vacuum output disappeared in NEI compilation", visible);
         NBTTagCompound saved = new NBTTagCompound();

@@ -33,7 +33,11 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityFurnaceCombination extends TileEntityMachinePolluting implements IFluidStandardSender, IGUIProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo {
+public class TileEntityFurnaceCombination extends TileEntityMachinePolluting implements IFluidStandardSender, IGUIProvider, IFluidCopiable, com.hbm.realsim.IMachineInfo, api.hbm.tile.IProcessHeatReceiver {
+    @Override public api.hbm.tile.IProcessHeatSource getProcessHeatSource() {
+        return com.hbm.realsim.ProcessMachine.heaterBelow(this, xCoord, yCoord, zCoord);
+    }
+
 	private static final int TASK_HEAT = 1;
 	private boolean runtimeInitialized;
 	private Pair<ItemStack, FluidStack> runtimeRecipe;
@@ -360,6 +364,6 @@ public class TileEntityFurnaceCombination extends TileEntityMachinePolluting imp
 
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
         com.hbm.realsim.MachineInfo.process(lines, physicalBatch.active() ? physicalBatch.recipe() : CombinationRecipes.getPhysical(slots[0]));
-        lines.add("Petroleum preheating requires external heat");
+        lines.add("External heater: upward top contact directly beneath the bottom core, centered on the 3x3 oven base");
     }
 }

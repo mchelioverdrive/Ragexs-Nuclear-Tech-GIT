@@ -141,6 +141,19 @@ public abstract class NEIUniversalHandler extends SafeTemplateRecipeHandler impl
 		drawTexturedModalRect(74, 14, 59, 87, 18, 36);
 	}
 
+    @Override public void drawExtras(int recipe) {
+        RecipeSet page = (RecipeSet) arecipes.get(recipe);
+        for(PositionedStack input : page.input) {
+            com.hbm.realsim.ProcessRecipe bill = com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.describedBill(NEISafe.firstStack(input));
+            if(bill == null) continue;
+            String text = String.format(java.util.Locale.US, "%.2f s; %s electric", bill.duration / 20D, com.hbm.realsim.MachineInfo.watts(bill.electricalRatingWatts));
+            if(bill.heatQuanta > 0) text += "; " + com.hbm.realsim.MachineInfo.thermalWatts(bill.thermalRatingWatts);
+            org.lwjgl.opengl.GL11.glPushMatrix(); org.lwjgl.opengl.GL11.glScalef(0.75F, 0.75F, 1);
+            net.minecraft.client.Minecraft.getMinecraft().fontRenderer.drawString(text, 4, 73, 0x404040);
+            org.lwjgl.opengl.GL11.glPopMatrix(); break;
+        }
+    }
+
 	public static int[][] getInputCoords(int count) {
 
 		switch(count) {
@@ -241,19 +254,19 @@ public abstract class NEIUniversalHandler extends SafeTemplateRecipeHandler impl
 		case 6: return new int[][] {
 			{102, 6}, {120, 6},
 			{102, 24}, {120, 24},
-			{102, 32}, {120, 32},
+			{102, 42}, {120, 42},
 		};
 		case 7: return new int[][] {
 			{102, 6}, {120, 6},
 			{102, 24}, {120, 24},
-			{102, 32}, {120, 32},
+			{102, 42}, {120, 42},
 			{138, 24},
 		};
 		case 8: return new int[][] {
 			{102, 6}, {120, 6},
 			{102, 24}, {120, 24},
-			{102, 32}, {120, 32},
-			{138, 24}, {138, 32},
+			{102, 42}, {120, 42},
+			{138, 24}, {138, 42},
 		};
 		}
 

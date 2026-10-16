@@ -49,6 +49,13 @@ public class ItemFluidDuct extends Item {
 		return s;
 	}
 
+    @Override public void addInformation(ItemStack stack, EntityPlayer player, List lines, boolean extended) {
+        lines.add("Identifier click: add/remove a fluid; up to 4 fluids per pipe");
+        lines.add("Sneak/CTRL: change matching connected pipes (64 blocks)");
+        lines.add("Use a single-fluid pipe as a filtered branch");
+        if(stack.hasTagCompound()) for(int id : stack.getTagCompound().getIntArray("sharedPipeTypes")) lines.add(Fluids.fromID(id).getLocalizedName());
+    }
+
 	@Override
 	@SideOnly(Side.CLIENT)
 	public boolean requiresMultipleRenderPasses() {
@@ -122,7 +129,12 @@ public class ItemFluidDuct extends Item {
 			world.setBlock(x, y, z, ModBlocks.fluid_duct_neo);
 
 			if(world.getTileEntity(x, y, z) instanceof TileEntityPipeBaseNT) {
-				((TileEntityPipeBaseNT) world.getTileEntity(x, y, z)).setType(Fluids.fromID(stack.getItemDamage()));
+				TileEntityPipeBaseNT pipe = (TileEntityPipeBaseNT) world.getTileEntity(x, y, z);
+                if(stack.hasTagCompound() && stack.getTagCompound().hasKey("sharedPipeTypes")) {
+                    int[] ids = stack.getTagCompound().getIntArray("sharedPipeTypes");
+                    FluidType[] selected = new FluidType[ids.length]; for(int channel = 0; channel < ids.length; channel++) selected[channel] = Fluids.fromID(ids[channel]);
+                    pipe.setTypes(selected);
+                } else pipe.setType(Fluids.fromID(stack.getItemDamage()));
 			}
 			
 			world.playSoundEffect(x + 0.5, y + 0.5, z + 0.5, ModBlocks.fluid_duct_neo.stepSound.func_150496_b(), (ModBlocks.fluid_duct_neo.stepSound.getVolume() + 1.0F) / 2.0F, ModBlocks.fluid_duct_neo.stepSound.getPitch() * 0.8F);

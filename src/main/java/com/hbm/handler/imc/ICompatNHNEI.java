@@ -10,5 +10,7 @@ public interface ICompatNHNEI {
 	 **/
 	public ItemStack[] getMachinesForRecipe();
 	public String getRecipeID();
+    default int getNEIHandlerHeight() { return 65; }
+    default int getNEIMaxRecipesPerPage() { return 3; }
 
 }

@@ -145,7 +145,7 @@ public class SolidificationRecipes extends SerializableRecipe {
                 out = com.hbm.realsim.ProcessMachine.solid(bill.outputs[0], Math.toIntExact(com.hbm.realsim.PetroleumProcesses.ceilDiv(bill.productMass[0], com.hbm.realsim.PhysicalRegistry.get(bill.outputs[0]).massUnits)));
             }
 
-			recipes.put(ItemFluidIcon.make(type, amount), out);
+			recipes.put(com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.describe(ItemFluidIcon.make(type, amount), bill), bill == null ? out : com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.productDisplay(bill, 0));
 		}
 
 		return recipes;

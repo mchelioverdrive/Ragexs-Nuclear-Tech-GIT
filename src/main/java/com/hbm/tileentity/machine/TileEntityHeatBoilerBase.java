@@ -21,7 +21,11 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.EnumSkyBlock;
 
 /** Shared continuous simulation and runtime ownership for both heat boiler variants. */
-public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase implements INBTPacketReceiver, api.hbm.energymk2.IEnergyReceiverMK2, IFluidStandardTransceiver, IConfigurableMachine, IFluidCopiable, com.hbm.realsim.IMachineInfo {
+public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase implements INBTPacketReceiver, api.hbm.energymk2.IEnergyReceiverMK2, IFluidStandardTransceiver, IConfigurableMachine, IFluidCopiable, com.hbm.realsim.IMachineInfo, api.hbm.tile.IProcessHeatReceiver {
+    @Override public api.hbm.tile.IProcessHeatSource getProcessHeatSource() {
+        return com.hbm.realsim.ProcessMachine.heaterBelow(this, xCoord, yCoord, zCoord);
+    }
+
     public final com.hbm.realsim.ThermalAccount thermal = new com.hbm.realsim.ThermalAccount();
     public long thermalBufferQuanta, pumpEnergyQuanta, startupPaidQuanta;
     private long lastThermalTick = Long.MIN_VALUE;
@@ -59,6 +63,46 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
         return true;
     }
     protected long additionalHeat(long requestQuanta) { return 0; }
+    private long processHeatQuanta;
+    /** Private paid buffer, not a new heat export port on the boiler. */
+    private final api.hbm.tile.IProcessHeatSource processHeat = new api.hbm.tile.IProcessHeatSource() {
+        @Override public int getProcessTemperatureC() { return physicalBatch.active() ? physicalBatch.recipe().temperatureC : 0; }
+        @Override public int getHeatStored() { return (int) Math.min(Integer.MAX_VALUE, processHeatQuanta); }
+        @Override public void useUpHeat(int amount) { processHeatQuanta -= Math.min(Math.max(0, amount), processHeatQuanta); }
+    };
+    private long processHeatRequest() {
+        com.hbm.realsim.ProcessRecipe bill = physicalBatch.recipe();
+        long step = com.hbm.realsim.SteamLedger.ceilDiv(bill.heatQuanta, bill.duration);
+        long bufferLimit = Math.min(physicalBatch.remainingHeat(), Math.multiplyExact(step, 2L));
+        return Math.min(getRatedThermalWatts() / 10L, Math.max(0, bufferLimit - processHeatQuanta));
+    }
+    private void runPhysicalHeating(com.hbm.realsim.ProcessRecipe selected) {
+        long now = worldObj.getTotalWorldTime();
+        if(now <= lastThermalTick) return;
+        lastThermalTick = now; isOn = false;
+        if(tanks[1].getFill() > 0) sendFluid();
+        FluidTank[] inputs = {tanks[0]}, outputs = {tanks[1]};
+        com.hbm.realsim.ProcessMachine.sizeProcessBuffers(physicalBatch.active() ? physicalBatch.recipe() : selected, inputs, outputs);
+        if(!physicalBatch.active() && !com.hbm.realsim.ProcessMachine.reserveInputs(physicalBatch, selected, inputs, outputs, null, 0, -1, 0, -1)) return;
+        com.hbm.realsim.ProcessRecipe bill = physicalBatch.recipe();
+        if(com.hbm.realsim.ProcessMachine.outputReady(physicalBatch, bill, outputs, null, 0, -1)
+                && pumpEnergyQuanta >= physicalBatch.nextWork()) {
+            api.hbm.tile.IProcessHeatSource source = com.hbm.realsim.ProcessMachine.heater(this);
+            boolean externalQualified = source != null && source.getProcessTemperatureC() >= bill.temperatureC;
+            boolean internalQualified = internalHeatTemperatureC() >= bill.temperatureC;
+            if(physicalBatch.nextHeat() <= processHeatQuanta || externalQualified || internalQualified) {
+                long need = processHeatRequest();
+                long pulled = externalQualified ? source.drawProcessHeatQuanta(now, need) : 0;
+                // Partial supply is saved against this immutable bill; never relabel steam heat quality.
+                processHeatQuanta += pulled + (internalQualified ? additionalHeat(need - pulled) : 0);
+                int before = physicalBatch.ticks();
+                com.hbm.realsim.ProcessMachine.stepWithHeater(this, physicalBatch, selected, inputs, outputs, null, 0, -1, 0, -1, processHeat);
+                isOn = before != physicalBatch.ticks() || !physicalBatch.active();
+            }
+        }
+        if(tanks[1].getFill() > 0) sendFluid();
+        markDirty();
+    }
     @Override public long getStoredEnergyQuanta() { return pumpEnergyQuanta; }
     @Override public long getEnergyCapacityQuanta() { return 2000000L; }
     @Override public void setStoredEnergyQuanta(long value) { pumpEnergyQuanta = value; markPowerNetDirty(); markMachineEnergyDirty(); markDirty(); }
@@ -211,10 +255,7 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
         if(physicalBatch.active() || crude != null) {
             runtimeFluidMutation = true;
             try {
-                int before = physicalBatch.ticks();
-                com.hbm.realsim.ProcessMachine.step(this, physicalBatch, crude, new FluidTank[] {tanks[0]}, new FluidTank[] {tanks[1]}, null, 0, -1, 0, -1);
-                isOn = before != physicalBatch.ticks();
-                if(tanks[1].getFill() > 0) this.sendFluid();
+                runPhysicalHeating(crude);
             } finally { runtimeFluidMutation = false; }
             this.sendRuntimeState(heat);
             this.evaluateAndSchedule(worldObj.getTotalWorldTime());
@@ -403,6 +444,9 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
 		super.readFromNBT(nbt);
         thermal.read(nbt); thermalBufferQuanta = nbt.getLong("realSimHeatQuanta"); pumpEnergyQuanta = nbt.getLong("realSimPumpQuanta"); startupPaidQuanta = nbt.getLong("realSimStartupQuanta"); lastThermalTick = nbt.hasKey("realSimThermalTick") ? nbt.getLong("realSimThermalTick") : Long.MIN_VALUE;
         physicalBatch.read(nbt);
+        processHeatQuanta = nbt.getLong("realSimProcessHeatQuanta");
+        if(processHeatQuanta < 0 || processHeatQuanta > physicalBatch.remainingHeat())
+            throw new IllegalStateException("Invalid owned boiler process heat");
         selectedSteamOutlet = null; readSteamOutlet(nbt);
 		tanks[0].readFromNBT(nbt, "water");
 		tanks[1].readFromNBT(nbt, "steam");
@@ -417,6 +461,7 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
 		super.writeToNBT(nbt);
         thermal.write(nbt); nbt.setLong("realSimHeatQuanta", thermalBufferQuanta); nbt.setLong("realSimPumpQuanta", pumpEnergyQuanta); nbt.setLong("realSimStartupQuanta", startupPaidQuanta); nbt.setLong("realSimThermalTick", lastThermalTick);
         physicalBatch.write(nbt);
+        nbt.setLong("realSimProcessHeatQuanta", processHeatQuanta);
         nbt.setString("realSimSteamOutlet", boilerOutlet().identity);
 		tanks[0].writeToNBT(nbt, "water");
 		tanks[1].writeToNBT(nbt, "steam");
@@ -433,6 +478,12 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
         lines.add("Feed-pump electrical ceiling: " + com.hbm.realsim.MachineInfo.watts(getRatedFeedPumpWatts()));
         if(live) lines.add("Current feed-pump draw: " + com.hbm.realsim.MachineInfo.watts(thermal.currentWorkQuanta * 10L));
         lines.add("Sufficiently hot process heat is required");
+        lines.add("External heater: center its upward top contact directly under the boiler's bottom core; leave its full 3x3 layer clear");
+        if(this instanceof TileEntityHeatBoilerIndustrial) lines.add("Internal fuel firing or qualified external heat supplies steam, blast, oil and coolant duty");
+        if(live && physicalBatch.active()) {
+            com.hbm.realsim.MachineInfo.process(lines, physicalBatch.recipe());
+            lines.add("Paid heat awaiting process progress: " + api.hbm.energymk2.EnergyUnits.formatJoules(processHeatQuanta));
+        }
         lines.add("Shared processes: water, hot blast, oil heating and compatible coolants");
         lines.add("Use a fluid identifier to select the inlet; drain old feed first");
         lines.add("Steam outlet: " + boilerOutlet().identity + "; select a supported steam identifier with outlet drained");

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm.blocks.IBlockMulti;
+import com.hbm.inventory.fluid.FluidType;
 import com.hbm.blocks.ILookOverlay;
 import com.hbm.lib.Library;
 import com.hbm.lib.RefStrings;
@@ -304,7 +305,8 @@ public class FluidDuctBox extends FluidDuctBase implements IBlockMulti, ILookOve
 	
 	public boolean canConnectTo(IBlockAccess world, int x, int y, int z, ForgeDirection dir, TileEntity tile) {
 		if(tile instanceof TileEntityPipeBaseNT) {
-			return Library.canConnectFluid(world, x + dir.offsetX, y + dir.offsetY, z + dir.offsetZ, dir, ((TileEntityPipeBaseNT) tile).getType());
+			for(FluidType channel : ((TileEntityPipeBaseNT) tile).getTypes())
+                if(Library.canConnectFluid(world, x + dir.offsetX, y + dir.offsetY, z + dir.offsetZ, dir, channel)) return true;
 		}
 		return false;
 	}
@@ -320,7 +322,7 @@ public class FluidDuctBox extends FluidDuctBase implements IBlockMulti, ILookOve
 		TileEntityPipeBaseNT duct = (TileEntityPipeBaseNT) te;
 		
 		List<String> text = new ArrayList();
-		text.add("&[" + duct.getType().getColor() + "&]" + duct.getType().getLocalizedName());
+		duct.appendChannelInfo(text);
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 	

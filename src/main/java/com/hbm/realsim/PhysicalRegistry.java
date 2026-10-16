@@ -417,7 +417,7 @@ public final class PhysicalRegistry {
         return state != null ? state : UNRESOLVED;
     }
     private static void liquid(String substance, String kg, String lhv, String... names) {
-        for(String name : names) putLiquid(name, substance, kg, new BigDecimal(lhv), name.startsWith("HOT") ? "350 C liquid; sensible enthalpy deferred" : "20 C reference liquid");
+        for(String name : names) putLiquid(name, substance, kg, new BigDecimal(lhv), name.startsWith("HOT") ? "350 C liquid; 660 kJ/kg sensible heat, vaporization paid separately" : "20 C reference liquid");
     }
     private static void putLiquid(String name, String substance, String kg, BigDecimal lhv, String reference) {
         BigDecimal sensible = name.startsWith("HOT") ? new BigDecimal("660000") : name.equals("BITUMEN") ? new BigDecimal("260000") : BigDecimal.ZERO;

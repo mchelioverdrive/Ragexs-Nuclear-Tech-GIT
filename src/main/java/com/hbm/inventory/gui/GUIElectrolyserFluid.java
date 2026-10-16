@@ -37,6 +37,8 @@ public class GUIElectrolyserFluid extends GuiInfoContainer {
 		electrolyser.tanks[1].renderTankInfo(this, mouseX, mouseY, guiLeft + 96, guiTop + 18, 16, 52);
 		electrolyser.tanks[2].renderTankInfo(this, mouseX, mouseY, guiLeft + 116, guiTop + 18, 16, 52);
 		
+        for(int channel = 0; channel < 2; channel++) electrolyser.tanks[4 + channel].renderTankInfo(this, mouseX, mouseY,
+                guiLeft + 96 + channel * 20, guiTop + 78, 16, 28);
 		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 186, guiTop + 18, 16, 89, electrolyser.getStoredEnergyQuanta(), electrolyser.maxPower);
 	}
 	
@@ -74,6 +76,11 @@ public class GUIElectrolyserFluid extends GuiInfoContainer {
 		int e = electrolyser.progressFluid * 41 / electrolyser.processFluidTime;
 		drawTexturedModalRect(guiLeft + 62, guiTop + 26, 226, 0, 12, e);
 
+        for(int channel = 0; channel < 2; channel++) {
+            int tankX = guiLeft + 96 + channel * 20;
+            drawRect(tankX - 1, guiTop + 77, tankX + 17, guiTop + 107, 0xff373737);
+            electrolyser.tanks[4 + channel].renderTank(tankX, guiTop + 106, zLevel, 16, 28);
+        }
 		electrolyser.tanks[0].renderTank(guiLeft + 42, guiTop + 70, this.zLevel, 16, 52);
 		electrolyser.tanks[1].renderTank(guiLeft + 96, guiTop + 70, this.zLevel, 16, 52);
 		electrolyser.tanks[2].renderTank(guiLeft + 116, guiTop + 70, this.zLevel, 16, 52);

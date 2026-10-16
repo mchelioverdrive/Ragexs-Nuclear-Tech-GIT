@@ -19,7 +19,7 @@ public class IMCHandlerNHNEI {
 			if(handler instanceof ICompatNHNEI && ((ICompatNHNEI) handler).getMachinesForRecipe() != null) {
 				String blockName = "hbm:" + ((ICompatNHNEI) handler).getMachinesForRecipe()[0].getUnlocalizedName();
 				String hClass = handlerClass.getName();
-				sendHandler(hClass, ((ICompatNHNEI) handler).getRecipeID(), blockName);
+				sendHandler(hClass, ((ICompatNHNEI) handler).getRecipeID(), blockName, ((ICompatNHNEI) handler).getNEIMaxRecipesPerPage(), ((ICompatNHNEI) handler).getNEIHandlerHeight());
 				for(ItemStack stack : ((ICompatNHNEI) handler).getMachinesForRecipe()) {
 					sendCatalyst(hClass, "hbm:" + stack.getUnlocalizedName());
 				}
@@ -27,11 +27,7 @@ public class IMCHandlerNHNEI {
 		}
 	}
 
-	private static void sendHandler(String aName, String handlerID, String aBlock) {
-		sendHandler(aName, handlerID, aBlock, 3);
-	}
-
-	private static void sendHandler(String aName, String handlerID, String aBlock, int maxRecipesPerPage) {
+	private static void sendHandler(String aName, String handlerID, String aBlock, int maxRecipesPerPage, int height) {
 		NBTTagCompound aNBT = new NBTTagCompound();
 		aNBT.setString("handler", aName);
 		aNBT.setString("handlerID", handlerID);
@@ -39,7 +35,7 @@ public class IMCHandlerNHNEI {
 		aNBT.setString("modId", RefStrings.MODID);
 		aNBT.setBoolean("modRequired", true);
 		aNBT.setString("itemName", aBlock);
-		aNBT.setInteger("handlerHeight", 65);
+		aNBT.setInteger("handlerHeight", height);
 		aNBT.setInteger("handlerWidth", 166);
 		aNBT.setInteger("maxRecipesPerPage", maxRecipesPerPage);
 		aNBT.setInteger("yShift", 6);

@@ -47,36 +47,38 @@ public class ChemplantRecipeHandler extends SafeTemplateRecipeHandler implements
 		PositionedStack[] itemOut = new PositionedStack[4];
 		PositionedStack[] fluidOut = new PositionedStack[4];
 		PositionedStack template;
+        final ChemRecipe bill;
 
 		public RecipeSet(ChemRecipe recipe) {
+            this.bill = recipe;
 
 			for(int i = 0; i < recipe.inputs.length; i++) {
 				AStack in = recipe.inputs[i];
 				if(in == null) continue;
-				this.itemIn[i] = NEISafe.positionedStack(in.extractForNEI(), 30 + (i % 2) * 18, 24 + (i / 2) * 18);
+				this.itemIn[i] = NEISafe.positionedStack(in.extractForNEI(), i * 18, 36);
 			}
 
 			for(int i = 0; i < recipe.inputFluids.length; i++) {
 				FluidStack in = recipe.inputFluids[i];
 				if(in == null || in.fill <= 0 || in.type == com.hbm.inventory.fluid.Fluids.NONE) continue;
 				ItemStack drop = ItemFluidIcon.make(in);
-				this.fluidIn[i] = NEISafe.positionedStack(drop, 12 + i * 18, 6);
+				this.fluidIn[i] = NEISafe.positionedStack(drop, i * 18, 16);
 			}
 
 			for(int i = 0; i < recipe.outputs.length; i++) {
-				ItemStack out = recipe.outputs[i];
+				ItemStack out = recipe.outputItemDisplay(i);
 				if(out == null) continue;
-				this.itemOut[i] = NEISafe.positionedStack(out, 120 + (i % 2) * 18, 24 + (i / 2) * 18);
+				this.itemOut[i] = NEISafe.positionedStack(out, 96 + i * 18, 36);
 			}
 
 			for(int i = 0; i < recipe.outputFluids.length; i++) {
 				FluidStack out = recipe.outputFluids[i];
 				if(out == null) continue;
 				ItemStack drop = recipe.outputFluidDisplay(i);
-				this.fluidOut[i] = NEISafe.positionedStack(drop, 102 + i * 18, 6);
+				this.fluidOut[i] = NEISafe.positionedStack(drop, 96 + i * 18, 16);
 			}
 
-			this.template = NEISafe.positionedStack(new ItemStack(ModItems.chemistry_template, 1, recipe.getId()), 84, 6);
+			this.template = NEISafe.positionedStack(new ItemStack(ModItems.chemistry_template, 1, recipe.getId()), 76, 16);
 		}
 
 		@Override
@@ -217,19 +219,33 @@ public class ChemplantRecipeHandler extends SafeTemplateRecipeHandler implements
 		transferRectsGui = new LinkedList<RecipeTransferRect>();
 		guiGui = new LinkedList<Class<? extends GuiContainer>>();
 
-		transferRects.add(new RecipeTransferRect(new Rectangle(138 - 1 - 72, 23, 18 * 3, 18), "chemistry"));
-		transferRectsGui.add(new RecipeTransferRect(new Rectangle(18 * 2 + 2, 89 - 7 - 11, 18 * 5 - 4, 18 + 16), "chemistry"));
+		transferRects.add(new RecipeTransferRect(new Rectangle(74, 36, 20, 16), "chemistry"));
+		transferRectsGui.add(new RecipeTransferRect(new Rectangle(88, 96, 72, 10), "chemistry"));
 		guiGui.add(GUIMachineChemplant.class);
 		RecipeTransferRectHandler.registerRectsToGuis(getRecipeTransferRectGuis(), transferRects);
 		RecipeTransferRectHandler.registerRectsToGuis(guiGui, transferRectsGui);
 	}
 
-	@Override
-	public void drawExtras(int recipe) {
-
-		drawProgressBar(83 - (18 * 4) - 9 + 1, 6, 0, 86, 16, 18 * 3 - 2, 480, 7);
-		drawProgressBar(83 - 3 + 16 + 5 - 36, 5 + 18, 16, 86, 18 * 3, 18, 48, 0);
-	}
+    @Override public int recipiesPerPage() { return 1; }
+    @Override public int getNEIHandlerHeight() { return 112; }
+    @Override public int getNEIMaxRecipesPerPage() { return 1; }
+    @Override public void drawBackground(int recipe) {
+        org.lwjgl.opengl.GL11.glColor4f(1, 1, 1, 1);
+        net.minecraft.client.gui.Gui.drawRect(0, 0, 166, 112, 0xffc6c6c6);
+        for(int i = 0; i < 4; i++) for(int x : new int[] {i * 18, 96 + i * 18})
+            for(int y : new int[] {16, 36}) net.minecraft.client.gui.Gui.drawRect(x, y, x + 16, y + 16, 0xff8b8b8b);
+    }
+    @Override public void drawExtras(int recipe) {
+        ChemRecipe bill = ((RecipeSet) arecipes.get(recipe)).bill;
+        net.minecraft.client.gui.FontRenderer font = net.minecraft.client.Minecraft.getMinecraft().fontRenderer;
+        font.drawString("Feeds", 0, 4, 0x404040); font.drawString("Products", 96, 4, 0x404040);
+        font.drawString("->", 77, 40, 0x404040);
+        font.drawString(String.format(java.util.Locale.US, "Time: %.2f s", bill.getDuration() / 20D), 0, 58, 0x404040);
+        long cost = bill.costPerTick(com.hbm.realsim.IndustrialDemand.CHEMICAL_W / 10);
+        font.drawString("Process: " + com.hbm.realsim.MachineInfo.watts(cost * 10), 0, 70, 0x404040);
+        font.drawString("Work: " + api.hbm.energymk2.EnergyUnits.formatJoules(bill.physicalBill == null ? cost * bill.getDuration() : bill.physicalBill.workQuanta), 0, 82, 0x404040);
+        if(bill.oxygenConsumption > 0) font.drawString("Atmospheric oxygen: " + bill.oxygenConsumption + "/tick", 0, 94, 0x404040);
+    }
 
 	@Override
 	public TemplateRecipeHandler newInstance() {

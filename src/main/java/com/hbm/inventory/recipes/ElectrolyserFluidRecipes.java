@@ -78,7 +78,7 @@ public class ElectrolyserFluidRecipes extends SerializableRecipe {
                     String name = recipe.physicalBill.outputs[i]; if(name.startsWith("VENT_")) continue;
                     int count = Math.toIntExact(com.hbm.realsim.PetroleumProcesses.ceilDiv(recipe.physicalBill.productMass[i], com.hbm.realsim.PhysicalRegistry.get(name).massUnits));
                     if(com.hbm.realsim.PhysicalRegistry.get(name).phase == com.hbm.realsim.PhysicalState.Phase.SOLID) outputs.add(com.hbm.realsim.ProcessMachine.solid(name, count));
-                    else outputs.add(ItemFluidIcon.make(Fluids.fromName(name), count));
+                    else outputs.add(ItemFluidIcon.makePhysical(new FluidStack(Fluids.fromName(name), count), recipe.physicalBill.productMass[i]));
                 }
             } else {
                 if(recipe.output1.type != Fluids.NONE) outputs.add(ItemFluidIcon.make(recipe.output1));
@@ -86,7 +86,7 @@ public class ElectrolyserFluidRecipes extends SerializableRecipe {
                 for(ItemStack byproduct : recipe.byproduct) outputs.add(byproduct);
             }
 
-			recipes.put(ItemFluidIcon.make(input), outputs.toArray());
+			recipes.put(com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.describe(ItemFluidIcon.make(input), recipe.physicalBill), outputs.toArray());
 		}
 
 		return recipes;

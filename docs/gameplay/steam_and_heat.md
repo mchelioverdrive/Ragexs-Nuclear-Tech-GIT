@@ -25,9 +25,11 @@ Steam quantities represent water mass. Each ordinary/hot/superhot/ultrahot unit 
 
 ## Heat sources and boilers
 
-Fireboxes, fluid burners and electric heaters supply process heat. Chemistry and metallurgy may also require a sufficiently hot source directly below their core or heat connection. Electricity alone cannot replace an external-heat requirement.
+Fireboxes, fluid burners and electric heaters supply process heat. Externally heated machines expose deliberate bottom contacts: boilers, the Coker, Blast Furnace, Combination Furnace, Steel Furnace and Crucible, plus thermal drives such as the Stirling Engine and Sawmill. Center the upward-output heater directly under the bottom core with the full 3x3 layer below clear; a two-high Oil Burner needs its lower layer clear as well. Powered chemical/refinery vessels without these contacts supply their own added heating electrically.
 
 The ordinary boiler accepts up to 200 kW of heat and makes ordinary steam. The Industrial Boiler accepts up to 12 MW and makes hot steam with electrical feed pumping. A Heating Oven supplies up to 500 kW of combined firing and imported heat; an ordinary boiler still limits that train to 200 kW. Use suitable larger boiling equipment for its full supply.
+
+Industrial Boiler fuel firing also heats oil and compatible coolants, and can heat blast air. A sufficiently hot external heater can share the duty and reduce fuel use. Electricity pays the declared pumping work. Partial heat payments are retained when supply is too small for a complete process step; heating resumes when enough has accumulated.
 
 Solar boilers depend on illuminated mirrors. The gas turbine's heat-recovery steam generator uses exhaust to make hot or superhot steam. Compression can raise grade but consumes substantial electricity and rejects heat; it is not free upgrading.
 

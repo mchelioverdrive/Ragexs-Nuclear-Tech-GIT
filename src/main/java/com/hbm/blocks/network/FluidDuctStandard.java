@@ -105,7 +105,11 @@ public class FluidDuctStandard extends FluidDuctBase implements IBlockMulti, ILo
 			FluidType fluidType = pipe.getType();
 			int retadata = fluidType.getID(); // florf
 
-			return new ItemStack(ModItems.fluid_duct, 1, retadata);
+			ItemStack picked = new ItemStack(ModItems.fluid_duct, 1, retadata);
+            if(pipe.getTypes().length > 1) {
+                picked.setTagCompound(new net.minecraft.nbt.NBTTagCompound()); picked.getTagCompound().setIntArray("sharedPipeTypes", pipe.getFluidIDToCopy());
+            }
+            return picked;
 		}
 		return super.getPickBlock(target, world, x, y, z, player);
 	}
@@ -234,7 +238,13 @@ public class FluidDuctStandard extends FluidDuctBase implements IBlockMulti, ILo
 	}
 	
 	public boolean canConnectTo(IBlockAccess world, int x, int y, int z, ForgeDirection dir, FluidType type) {
-		return Library.canConnectFluid(world, x + dir.offsetX, y + dir.offsetY, z + dir.offsetZ, dir, type);
+		TileEntity tile = world.getTileEntity(x, y, z);
+        if(tile instanceof TileEntityPipeBaseNT) {
+            for(FluidType channel : ((TileEntityPipeBaseNT) tile).getTypes())
+                if(Library.canConnectFluid(world, x + dir.offsetX, y + dir.offsetY, z + dir.offsetZ, dir, channel)) return true;
+            return false;
+        }
+        return Library.canConnectFluid(world, x + dir.offsetX, y + dir.offsetY, z + dir.offsetZ, dir, type);
 	}
 
 	@Override
@@ -248,7 +258,7 @@ public class FluidDuctStandard extends FluidDuctBase implements IBlockMulti, ILo
 		TileEntityPipeBaseNT duct = (TileEntityPipeBaseNT) te;
 		
 		List<String> text = new ArrayList();
-		text.add("&[" + duct.getType().getColor() + "&]" + duct.getType().getLocalizedName());
+		duct.appendChannelInfo(text);
 		ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getUnlocalizedName() + ".name"), 0xffff00, 0x404000, text);
 	}
 }

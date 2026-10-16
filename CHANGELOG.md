@@ -233,3 +233,31 @@
 - Unified fluid-identifier feed admission with the shared boiler process path so air, petroleum heating and coolant feeds can actually be selected without legacy trait gates; retained nonempty stock. Both boilers appear in NEI for their shared heating routes, including pressure-preserving blast heating and physical heating bills.
 - Kept the industrial default hot-steam outlet and added a saved, selectable ordinary-steam outlet, retaining the small boiler's pressure limit and pending parcel ownership. Removed unsupported steam-upgrade previews and included existing steam blowdown in displayed output mass.
 - Allowed the Industrial Boiler's existing 900-C burner to pay blast-air heating duty as well as steam duty, retaining source qualification, per-tick transfer limits and actual fuel debits.
+
+2026-10-15 19:10 — Repair Chemical Reactor interfaces and add shared fluid ducts
+
+- Removed Chemical Reactor heat-source and operating-temperature gates. Registered physical bills pay the same total utilities electrically; hot/molten ingredient identities, duration, materials, yields and cooling rejection remain intact. Migrated owned batches with their paid inputs, progress, products and exact utility credit retained.
+- Exposed all four item/fluid feed and product channels in workshop and industrial reactor interfaces. Appended workshop container pairs without renumbering saved inventory or tanks; completed shift-click and sided automation. Added missing Electrolyser coproduct and Dairy condensate gauges.
+- Preserved full process bills in shared NEI previews, with exact fractional yields, duration, electrical work, thermal duty, pressure and retained catalyst information. Repaired eager fuel/resource-list initialization; fueled furnace previews use native burn credit and rotary previews include actual firebox fuel choices, energy and separate drive steam. Added native petroleum port checks.
+- Added up to four independently identified fluids per ordinary duct using existing per-species networks. Identifier clicks add/remove one fluid, matching-run edits stop at differently filtered branches, and single-fluid branches filter shared trunks. Retained old single-fluid saves, pressure and transfer accounting; synchronized all channels and removed all valve channels on closure. Shared standard ducts render as four smaller tubes with colored bands, fitting reactor fluid logistics into its three available pipe connections beside power.
+
+2026-10-15 19:25 — Correct process heat-source ownership
+
+- Allowed Industrial Boiler oil/coolant heating to use its existing internal fuel burner or qualified external heat, with external contributions reducing firing under one intake ceiling. Persisted partial process heat separately from the steam buffer; ordinary boilers also retain partial payments instead of requiring an oversized instantaneous heat draw. Electrical work and total recipe heat remain unchanged.
+- Removed legacy custom-machine heat collection and nominal heat gates while a physical process bill owns the utilities. Kept nominal and generator heat contracts, hot-feed energy, internal furnace fuel, steam drives and legitimate external process heating intact; added no blanket electrical replacement cost.
+- Preserved informational recipe temperature references through electrical adaptation, snapshots and JSON/NBT without restoring execution gates. Clarified thermal previews, hot-oil sensible/vaporization boundaries and the existing process/thermal documentation.
+
+2026-10-15 19:29 — Restore original shared-pipe appearance
+
+- Removed the four-tube rendering path and restored the existing pipe model for shared ducts. Retained shared-fluid routing, identifier add/remove controls, filtered branches and saved channel settings; updated the pipe documentation.
+
+2026-10-15 19:40 — Repair cryogenic NEI background
+
+- Made the cryogenic distillation NEI page draw its panel and slot backgrounds directly, avoiding the shared background texture lookup that produced a missing-texture page. Preserved recipe contents, positions and recipe navigation.
+- Removed the Chemical Reactor NEI page's feed-pressure/exact-yields hover hint; retained the actual tooltips and atmospheric oxygen readout.
+2026-10-15 20:00 — Require intentional physical heater interfaces
+
+- Made generic physical-process external heat opt-in through an explicit receiver and directly contacting upward heater output. Removed Fraction Tower thermal forwarding and arbitrary custom-machine heat adjacency; custom thermal ports must leave a placeable 3x3 heater layer below them.
+- Assigned supplied heating to electricity for the seven powered petroleum vessel families, both deuterium extractors and the Dairy Tank. Preserved hot-feed sensible energy, total utility energy, duration, products, catalysts and existing progression; migrated owned batches with progress and paid work/heat credit intact.
+- Retained the Coker and existing bottom-heated equipment, including the deliberately supported Blast Furnace 3x3 heater connection. Blast hot feed and recipe reductant still offset external duty; no redundant auxiliary fuel-item consumption or electrical replacement was added. Industrial Boiler internal firing and external heat continue to share one demand.
+- Updated native machine information, NEI utility displays and process/thermal guides with actual energy sources, informational temperature references and exact retained heater placement.

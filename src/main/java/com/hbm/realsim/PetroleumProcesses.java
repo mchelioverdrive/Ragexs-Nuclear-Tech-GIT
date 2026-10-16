@@ -17,6 +17,8 @@ public final class PetroleumProcesses {
             for(String feed : new String[] {"OIL", "OIL_DS", "CRACKOIL", "CRACKOIL_DS"})
                 put(result, separation(machine, feed, new String[] {"HOT" + feed}, new double[] {1}, 24, 0, 561000, 350));
         } else if(machine.equals("refinery")) {
+            // Hot liquid already owns its 561 kJ/L preheat. The separate 163 kJ/L is vaporization,
+            // not a second cold-to-350-C charge; auxiliaries remain mechanical electrical work.
             for(String feed : new String[] {"HOTOIL", "HOTOIL_DS"})
                 put(result, separation(machine, feed, new String[] {"LIGHTOIL", "PETROLEUM", "HEAVYOIL", "NAPHTHA"}, new double[] {.35, .02}, 24, 36000, 163000, 350));
             for(String feed : new String[] {"HOTCRACKOIL", "HOTCRACKOIL_DS"})
@@ -74,7 +76,14 @@ public final class PetroleumProcesses {
         }
         return result;
     }
-    private static void put(Map<String, ProcessRecipe> map, ProcessRecipe recipe) { map.put(recipe.inputs[0], recipe); }
+    private static void put(Map<String, ProcessRecipe> map, ProcessRecipe recipe) {
+        map.put(recipe.inputs[0], forEquipment(recipe.id.substring(0, recipe.id.indexOf(':')), recipe));
+    }
+    /** These powered vessels have no heater contact. Preserve feed enthalpy and pay only their added duty electrically. */
+    public static ProcessRecipe forEquipment(String machine, ProcessRecipe recipe) {
+        return machine.equals("refinery") || machine.equals("vacuum") || machine.equals("fraction") || machine.equals("crack")
+                || machine.equals("reform") || machine.equals("hydro") || machine.equals("alkyl") ? recipe.electricallyDriven() : recipe;
+    }
     /** Compressed propane deasphalting and solvent recovery: recover base oil and reject asphaltic bottoms.
      * The existing lubricant identity represents plain mineral base oil, not an additive package.
      * Mass and chemical energy use the same assay solver as the refinery/vacuum cuts.

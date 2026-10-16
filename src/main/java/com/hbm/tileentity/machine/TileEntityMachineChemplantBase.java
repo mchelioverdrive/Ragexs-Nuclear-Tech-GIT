@@ -554,6 +554,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 					int[] access = sided != null ? sided.getAccessibleSlotsFromSide(coord.getDir().ordinal()) : null;
 
 					for(AStack ingredient : recipe.inputs) {
+                    if(ingredient == null) continue;
 
 						outer:
 						while(!InventoryUtil.doesArrayHaveIngredients(slots, indices[0], indices[1], ingredient)) {
@@ -564,11 +565,11 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 								int slot = access != null ? access[i] : i;
 								ItemStack stack = inv.getStackInSlot(slot);
-								if(ingredient.matchesRecipe(stack, true) && (sided == null || sided.canExtractItem(slot, stack, 0))) {
+								if(ingredient.matchesRecipe(stack, true) && (sided == null || sided.canExtractItem(slot, stack, coord.getDir().ordinal()))) {
 
 									for(int j = indices[0]; j <= indices[1]; j++) {
 
-						if(slots[j] != null && slots[j].stackSize < slots[j].getMaxStackSize() & InventoryUtil.doesStackDataMatch(slots[j], stack)) {
+						if(slots[j] != null && slots[j].stackSize < slots[j].getMaxStackSize() && InventoryUtil.doesStackDataMatch(slots[j], stack)) {
 							inv.decrStackSize(slot, 1);
 							slots[j].stackSize++;
 							changed = true;
@@ -634,7 +635,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 								ItemStack target = inv.getStackInSlot(slot);
 
-								if(InventoryUtil.doesStackDataMatch(out, target) && target.stackSize < target.getMaxStackSize() && target.stackSize < inv.getInventoryStackLimit()) {
+								if((sided == null || sided.canInsertItem(slot, out, coord.getDir().ordinal())) && InventoryUtil.doesStackDataMatch(out, target) && target.stackSize < target.getMaxStackSize() && target.stackSize < inv.getInventoryStackLimit()) {
 									int toDec = Math.min(out.stackSize, Math.min(target.getMaxStackSize(), inv.getInventoryStackLimit()) - target.stackSize);
 									this.decrStackSize(i, toDec);
 									target.stackSize += toDec;
@@ -955,7 +956,10 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.progress = nbt.getIntArray("progress");
-        for(int i = 0; i < physicalBatches.length; i++) physicalBatches[i].read(nbt.getCompoundTag("realSimLane" + i));
+        for(int i = 0; i < physicalBatches.length; i++) {
+            physicalBatches[i].read(nbt.getCompoundTag("realSimLane" + i));
+            physicalBatches[i].electrifyUtilities();
+        }
 		if(!nbt.hasKey("realSimProcessVersion")) for(int i = 0; i < progress.length && i < getRecipeCount(); i++) { int slot = getTemplateIndex(i); if(slots[slot] != null && slots[slot].getItemDamage() == 58) progress[i] = 0; }
 
 		if(progress.length == 0)
@@ -991,6 +995,27 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	 * @param index
 	 * @return A size 4 int array containing min input, max input, min output and max output indices in that order.
 	 */
+    @Override public int[] getAccessibleSlotsFromSide(int side) {
+        int[] access = new int[slots.length]; for(int i = 0; i < access.length; i++) access[i] = i; return access;
+    }
+    @Override public boolean isItemValidForSlot(int slot, ItemStack stack) {
+        if(stack == null) return false;
+        if(slot == 0) return stack.getItem() instanceof IBatteryItem || stack.getItem() == ModItems.battery_creative;
+        if(slot >= 1 && slot <= 4) return stack.getItem() instanceof com.hbm.items.machine.ItemMachineUpgrade;
+        for(int lane = 0; lane < getRecipeCount(); lane++) {
+            if(slot == getTemplateIndex(lane)) return stack.getItem() == ModItems.chemistry_template;
+            int[] indices = getCachedSlotIndicesFromIndex(lane);
+            if(slot >= indices[0] && slot <= indices[1]) return true;
+        }
+        return false;
+    }
+    @Override public boolean canExtractItem(int slot, ItemStack stack, int side) {
+        for(int lane = 0; lane < getRecipeCount(); lane++) {
+            int[] indices = getCachedSlotIndicesFromIndex(lane);
+            if(slot >= indices[2] && slot <= indices[3]) return true;
+        }
+        return false;
+    }
 	public abstract int[] getSlotIndicesFromIndex(int index);
 	public abstract DirPos[] getInputPositions();
 	public abstract DirPos[] getOutputPositions();
@@ -999,7 +1024,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
     @Override public long getMachineCurrentDrawWatts() { return configuredLaneDemandWatts(true); }
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
         lines.add("Installed chemical lanes: " + getRecipeCount() + "; no additional chemistry tier");
-        lines.add("Power and heat requirements depend on the selected process");
+        lines.add("Electrical work depends on the selected process; no reactor temperature requirement");
     }
     private long configuredLaneDemandWatts(boolean activeOnly) {
         long watts = 0;

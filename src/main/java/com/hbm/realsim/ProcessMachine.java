@@ -38,14 +38,15 @@ public final class ProcessMachine {
         for(int i = 0; i < recipe.outputs.length; i++) if(recipe.outputCapacities[i] > 0) outputs[fluid++].resizePreservingContents(recipe.outputCapacities[i]);
     }
     public static IProcessHeatSource heater(TileEntity machine) {
+        return machine instanceof api.hbm.tile.IProcessHeatReceiver
+                ? ((api.hbm.tile.IProcessHeatReceiver) machine).getProcessHeatSource() : null;
+    }
+    /** For explicitly designed underside contacts only. No scanning, offsets to nearby heaters, or stack forwarding. */
+    public static IProcessHeatSource heaterBelow(TileEntity machine, int receiverX, int receiverY, int receiverZ) {
         if(machine.getWorldObj() == null) return null;
-        int y = machine.yCoord;
-        // A stacked fractionator conveys feed/vapor; its base supplies the top's paid utilities.
-        if(machine instanceof com.hbm.tileentity.machine.oil.TileEntityMachineFractionTower) {
-            while(machine.getWorldObj().getTileEntity(machine.xCoord, y - 3, machine.zCoord) instanceof com.hbm.tileentity.machine.oil.TileEntityMachineFractionTower) y -= 3;
-        }
-        TileEntity below = machine.getWorldObj().getTileEntity(machine.xCoord, y - 1, machine.zCoord);
-        return below instanceof IProcessHeatSource ? (IProcessHeatSource) below : null;
+        TileEntity below = machine.getWorldObj().getTileEntity(receiverX, receiverY - 1, receiverZ);
+        return below instanceof IProcessHeatSource && ((IProcessHeatSource) below).canSupplyProcessHeat(net.minecraftforge.common.util.ForgeDirection.UP)
+                ? (IProcessHeatSource) below : null;
     }
     public static boolean configure(ProcessBatch batch, ProcessRecipe selected, FluidTank[] outputs) {
         ProcessRecipe recipe = batch.active() ? batch.recipe() : selected;

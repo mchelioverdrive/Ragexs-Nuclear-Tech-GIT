@@ -210,11 +210,11 @@ public final class ChemistryProcesses {
         long total = mass("LIGHT_WATER", 10), recovered = ratio(total, ".000156", "1");
         recovered = ratio(recovered, "20.027603556", "18.01528"); recovered = ratio(recovered, ".8", "1");
         return new ProcessRecipe("isotope:heavy_water", new String[] {"LIGHT_WATER"}, new int[] {10}, new int[] {0}, null, 0,
-                new String[] {"HEAVYWATER", "DEPLETED_WATER"}, new long[] {recovered, total - recovered}, 1200, 120000, 3000000, 120, false);
+                new String[] {"HEAVYWATER", "DEPLETED_WATER"}, new long[] {recovered, total - recovered}, 1200, 120000, 3000000, 120, false).electricallyDriven();
     }
     public static ProcessRecipe heavyWaterTower() {
         ProcessRecipe base = heavyWater();
-        return new ProcessRecipe(base.id, base.inputs, base.quantities, base.pressures, null, 0, base.outputs, base.productMass, 100, 600000, 2000000, 120, false);
+        return new ProcessRecipe(base.id, base.inputs, base.quantities, base.pressures, null, 0, base.outputs, base.productMass, 100, 600000, 2000000, 120, false).electricallyDriven();
     }
     public static ProcessRecipe heavyElectrolysis() {
         long water = mass("HEAVYWATER", 1), deuterium = ratio(water, "4.028203556", "20.027603556");

@@ -177,7 +177,7 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
-        physicalBatch.read(nbt);
+        physicalBatch.read(nbt); physicalBatch.electrifyUtilities();
 		super.readFromNBT(nbt);
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		for(int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "t" + i);
@@ -244,7 +244,7 @@ public class TileEntityMachineAlkylation extends TileEntityMachineBase implement
 
 	@Override
 	public void readNBT(NBTTagCompound nbt) {
-        physicalBatch.read(nbt);
+        physicalBatch.read(nbt); physicalBatch.electrifyUtilities();
 		NBTTagCompound data = nbt.getCompoundTag(NBT_PERSISTENT_KEY);
 		for(int i = 0; i < tanks.length; i++) this.tanks[i].readFromNBT(data, "t" + i);
 	}

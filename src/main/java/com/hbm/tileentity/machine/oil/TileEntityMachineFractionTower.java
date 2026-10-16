@@ -224,7 +224,7 @@ public class TileEntityMachineFractionTower extends TileEntityLoadedBase impleme
 	
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
-        physicalBatch.read(nbt);
+        physicalBatch.read(nbt); physicalBatch.electrifyUtilities();
         energyQuanta = api.hbm.energymk2.EnergyUnits.readEnergyQuanta(nbt, "power");
 		super.readFromNBT(nbt);
 

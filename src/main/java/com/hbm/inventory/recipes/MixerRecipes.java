@@ -25,6 +25,7 @@ import com.hbm.items.ItemEnums.EnumAshType;
 import com.hbm.items.machine.ItemFluidIcon;
 
 import net.minecraft.init.Items;
+import net.minecraft.item.ItemStack;
 import net.minecraftforge.oredict.OreDictionary;
 
 public class MixerRecipes extends SerializableRecipe {
@@ -196,7 +197,10 @@ public class MixerRecipes extends SerializableRecipe {
 				if(recipe.input2 != null) objects.add(ItemFluidIcon.make(recipe.input2));
 				if(recipe.solidInput != null) objects.add(recipe.solidInput);
 
-				recipes.put(objects.toArray(), ItemFluidIcon.make(output));
+				if(recipe.physicalBill != null) {
+                    for(Object value : objects) if(value instanceof ItemStack) { com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.describe((ItemStack) value, recipe.physicalBill); break; }
+                    recipes.put(objects.toArray(), ItemFluidIcon.makePhysical(output, recipe.physicalBill.productMass[0]));
+                } else recipes.put(objects.toArray(), ItemFluidIcon.make(output));
 			}
 		}
 

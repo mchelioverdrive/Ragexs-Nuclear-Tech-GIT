@@ -18,6 +18,7 @@ public class IsotopeSeparationHandler extends NEIUniversalHandler {
     }
     private void add(ProcessRecipe bill, net.minecraft.block.Block machine) {
         ItemStack[] key = {ItemFluidIcon.make(Fluids.fromName(bill.inputs[0]), bill.quantities[0], bill.pressures[0]), new ItemStack(machine)};
+        com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.describe(key[0], bill);
         recipes.put(key, AtmosphericTowerHandler.products(bill)); machineOverrides.put(key, new ItemStack(machine)); bills.put(key, bill);
     }
     @Override public ItemStack[] getMachinesForRecipe() { return new ItemStack[] {new ItemStack(ModBlocks.machine_deuterium_extractor), new ItemStack(ModBlocks.machine_deuterium_tower)}; }
@@ -25,7 +26,7 @@ public class IsotopeSeparationHandler extends NEIUniversalHandler {
     @Override public void drawExtras(int recipe) {
         ProcessRecipe bill = bills.get(((RecipeSet) arecipes.get(recipe)).originalInputInstance);
         Minecraft.getMinecraft().fontRenderer.drawString("Installed machine (retained)", 4, 2, 0x404040);
-        Minecraft.getMinecraft().fontRenderer.drawString(String.format(java.util.Locale.US, "%.1f s; %s; %d C heat", bill.duration / 20D,
-                com.hbm.realsim.MachineInfo.watts(bill.electricalRatingWatts), bill.temperatureC), 4, 55, 0x404040);
+        Minecraft.getMinecraft().fontRenderer.drawString(String.format(java.util.Locale.US, "%.1f s; %s electric", bill.duration / 20D,
+                com.hbm.realsim.MachineInfo.watts(bill.electricalRatingWatts)), 4, 55, 0x404040);
     }
 }

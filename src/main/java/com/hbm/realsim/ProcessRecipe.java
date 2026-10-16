@@ -17,6 +17,8 @@ public final class ProcessRecipe {
     public final String[] solidInputs;
     public final int[] solidCounts;
     public final int duration, temperatureC;
+    /** Informational recipe temperature reference; neither a feed-state thermometer nor an execution gate. */
+    public final int referenceTemperatureC;
     public final long workQuanta, heatQuanta;
     public final long electricalRatingWatts, thermalRatingWatts, rejectedWatts;
     public final boolean separation, continuousOutputs;
@@ -36,7 +38,14 @@ public final class ProcessRecipe {
     private ProcessRecipe(String id, String[] inputs, int[] quantities, int[] pressures,
             String[] solids, int[] counts, String[] outputs, long[] productMass,
             int duration, long workJ, long heatJ, int temperatureC, boolean separation, boolean continuousOutputs) {
+        this(id, inputs, quantities, pressures, solids, counts, outputs, productMass,
+                duration, workJ, heatJ, temperatureC, separation, continuousOutputs, temperatureC);
+    }
+    private ProcessRecipe(String id, String[] inputs, int[] quantities, int[] pressures,
+            String[] solids, int[] counts, String[] outputs, long[] productMass,
+            int duration, long workJ, long heatJ, int temperatureC, boolean separation, boolean continuousOutputs, int referenceTemperatureC) {
         this.continuousOutputs = continuousOutputs;
+        this.referenceTemperatureC = referenceTemperatureC;
         if(solids.length != counts.length || solids.length > 4) throw new IllegalArgumentException("Invalid solid feeds");
         this.solidInputs = solids.clone(); this.solidCounts = counts.clone();
         String solidInput = solids.length == 0 ? null : solids[0]; int solidCount = counts.length == 0 ? 0 : counts[0];
@@ -92,10 +101,16 @@ public final class ProcessRecipe {
             outputCapacities[i] = Math.toIntExact(Math.max(1, Math.max(batch, minute)));
         }
     }
+    /** Explicit electrically heated equipment boundary; never infer this from a hot feed or temperature. */
+    public ProcessRecipe electricallyDriven() {
+        if(heatQuanta == 0 && temperatureC == 0) return this;
+        return new ProcessRecipe(id, inputs, quantities, pressures, solidInputs, solidCounts, outputs, productMass,
+                duration, Math.addExact(workQuanta, heatQuanta) / 2, 0, 0, separation, continuousOutputs, referenceTemperatureC);
+    }
     /** Same total material/work bill, with products released in proportion to paid progress. */
     public ProcessRecipe continuous() {
         return new ProcessRecipe(id, inputs, quantities, pressures, solidInputs, solidCounts, outputs, productMass,
-                duration, workQuanta / 2, heatQuanta / 2, temperatureC, separation, true);
+                duration, workQuanta / 2, heatQuanta / 2, temperatureC, separation, true, referenceTemperatureC);
     }
     public static PhysicalState resolved(String name) {
         PhysicalState state = PhysicalRegistry.get(name);
@@ -119,11 +134,12 @@ public final class ProcessRecipe {
     }
     public ProcessRecipe snapshot() {
         return new ProcessRecipe(id, inputs, quantities, pressures, solidInputs, solidCounts, outputs, productMass,
-                duration, workQuanta / 2, heatQuanta / 2, temperatureC, separation, continuousOutputs);
+                duration, workQuanta / 2, heatQuanta / 2, temperatureC, separation, continuousOutputs, referenceTemperatureC);
     }
     public void write(NBTTagCompound tag) {
         tag.setString("id", id); tag.setInteger("duration", duration); tag.setLong("work", workQuanta / 2); tag.setLong("heat", heatQuanta / 2);
         tag.setInteger("temperature", temperatureC); tag.setBoolean("separation", separation); tag.setBoolean("continuousOutputs", continuousOutputs);
+        tag.setInteger("referenceTemperature", referenceTemperatureC);
         tag.setInteger("solidFeeds", solidInputs.length);
         for(int i = 0; i < solidInputs.length; i++) { tag.setString("solid" + i, solidInputs[i]); tag.setInteger("solidQ" + i, solidCounts[i]); }
         tag.setString("solid", solidInput == null ? "" : solidInput); tag.setInteger("solidCount", solidCount);
@@ -142,7 +158,8 @@ public final class ProcessRecipe {
         String[] solids = new String[ns]; int[] counts = new int[ns];
         for(int i = 0; i < ns; i++) { solids[i] = tag.getString(tag.hasKey("solidFeeds") ? "solid" + i : "solid"); counts[i] = tag.getInteger(tag.hasKey("solidFeeds") ? "solidQ" + i : "solidCount"); }
         ProcessRecipe result = new ProcessRecipe(tag.getString("id"), in, q, p, solids, counts, out, m,
-                tag.getInteger("duration"), tag.getLong("work"), tag.getLong("heat"), tag.getInteger("temperature"), tag.getBoolean("separation"));
-        return tag.getBoolean("continuousOutputs") ? result.continuous() : result;
+                tag.getInteger("duration"), tag.getLong("work"), tag.getLong("heat"), tag.getInteger("temperature"), tag.getBoolean("separation"),
+                tag.getBoolean("continuousOutputs"), tag.hasKey("referenceTemperature") ? tag.getInteger("referenceTemperature") : tag.getInteger("temperature"));
+        return result;
     }
 }

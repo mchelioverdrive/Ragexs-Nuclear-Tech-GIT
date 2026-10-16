@@ -15,6 +15,30 @@ import org.junit.Test;
 
 /** Tests the production bills and ownership account, including binary save/load and JSON boundaries. */
 public class PetroleumAccountingTest {
+    @Test public void poweredVesselsNormalizeDeclaredThermalDutyWithoutChargingFeedHeatAgain() {
+        for(String family : new String[] {"refinery", "vacuum", "fraction", "crack", "reform", "hydro", "alkyl"}) {
+            for(ProcessRecipe bill : PetroleumProcesses.defaults(family).values()) {
+                assertEquals(bill.id, 0, bill.heatQuanta); assertEquals(bill.id, 0, bill.temperatureC);
+                assertTrue(bill.id, bill.referenceTemperatureC > 0);
+                NBTTagCompound legacy = new NBTTagCompound(); bill.write(legacy);
+                legacy.setLong("work", bill.workQuanta / 2 - 1); legacy.setLong("heat", 1);
+                legacy.setInteger("temperature", bill.referenceTemperatureC);
+                ProcessRecipe old = ProcessRecipe.read(legacy), adapted = PetroleumProcesses.forEquipment(family, old);
+                assertEquals(bill.workQuanta, adapted.workQuanta); assertEquals(0, adapted.heatQuanta);
+                assertEquals(old.rejectedJ, adapted.rejectedJ); assertEquals(old.sensibleInputJ, adapted.sensibleInputJ);
+                assertArrayEquals(old.productMass, adapted.productMass); assertArrayEquals(old.inputs, adapted.inputs);
+                assertEquals(old.referenceTemperatureC, adapted.referenceTemperatureC);
+            }
+        }
+        for(String family : new String[] {"heat", "coker"}) for(ProcessRecipe bill : PetroleumProcesses.defaults(family).values()) {
+            assertTrue(bill.id, bill.heatQuanta > 0); assertSame(bill, PetroleumProcesses.forEquipment(family, bill));
+        }
+    }
+    @Test public void everyStockPetroleumBillFitsItsNativeMaterialPorts() {
+        for(String machine : new String[] {"heat", "refinery", "fraction", "vacuum", "crack", "hydro", "reform", "coker", "alkyl"})
+            for(ProcessRecipe bill : PetroleumProcesses.defaults(machine).values())
+                com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.validatePorts(machine, bill);
+    }
     @Test public void lubricantBootstrapIsAcyclicAndReturnsItsSolvent() {
         ProcessRecipe base = PetroleumProcesses.lubricantBaseOil();
         ChemicalFuelProcesses.validateRating(base);

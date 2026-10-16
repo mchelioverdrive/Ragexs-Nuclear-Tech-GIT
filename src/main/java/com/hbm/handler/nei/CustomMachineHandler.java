@@ -91,9 +91,13 @@ public class CustomMachineHandler extends SafeTemplateRecipeHandler {
 			this.pollutionAmount = recipe.pollutionAmount;
 			this.radiationAmount = recipe.radiationAmount;
 			if(conf.fluxMode) this.flux = recipe.flux;
-			if(conf.maxHeat > 0 && recipe.heat > 0) this.heat = recipe.heat;
+			if(recipe.physicalBill == null && conf.maxHeat > 0 && recipe.heat > 0) this.heat = recipe.heat;
 
 			this.machine = NEISafe.positionedStack(new ItemStack(ModBlocks.custom_machine, 1, 100 + CustomMachineConfigJSON.niceList.indexOf(conf)), 75, 42);
+            if(recipe.physicalBill != null) {
+                ItemStack preview = NEISafe.firstStack(inputs.isEmpty() ? this.machine : inputs.get(0));
+                com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.describe(preview, conf.physicalBill(recipe.physicalBill));
+            }
 		}
 
 		@Override

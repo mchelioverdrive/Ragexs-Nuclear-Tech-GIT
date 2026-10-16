@@ -29,7 +29,10 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 /** Upstream seven-high machine; RTM MachineRuntime owns all server processing. */
-public class TileEntityMachineBlastFurnace extends TileEntityMachineBase implements IFluidStandardTransceiverMK2, IGUIProvider, com.hbm.realsim.IMachineInfo {
+public class TileEntityMachineBlastFurnace extends TileEntityMachineBase implements IFluidStandardTransceiverMK2, IGUIProvider, com.hbm.realsim.IMachineInfo, api.hbm.tile.IProcessHeatReceiver {
+    @Override public api.hbm.tile.IProcessHeatSource getProcessHeatSource() {
+        return com.hbm.realsim.ProcessMachine.heaterBelow(this, xCoord, yCoord, zCoord);
+    }
     public final FluidTank[] tanks = new FluidTank[] {
         new FluidTank(Fluids.AIRBLAST, 16000), new FluidTank(Fluids.BLAST_FURNACE_GAS, 16000),
         new FluidTank(Fluids.AIR, 16000), new FluidTank(Fluids.AIR_HEATED, 16000), new FluidTank(Fluids.OXYGEN_GAS, 4000), new FluidTank(Fluids.CARBONDIOXIDE, 4000)
@@ -120,7 +123,7 @@ public class TileEntityMachineBlastFurnace extends TileEntityMachineBase impleme
     }
     private api.hbm.tile.IProcessHeatSource heater() {
         api.hbm.tile.IProcessHeatSource source = com.hbm.realsim.ProcessMachine.heater(this);
-        // A 900-C source supplies the lumped burden-preheating deficit, not carbon reduction.
+        // The intended 3x3 underside contact supplies the burden-preheating deficit, not carbon reduction.
         return source != null && source.getProcessTemperatureC() >= 900 ? source : null;
     }
     private long externalHeatAvailable() {
@@ -346,6 +349,7 @@ public class TileEntityMachineBlastFurnace extends TileEntityMachineBase impleme
         lines.add("Hot blast also replaces paid fuel heat; use pressure class 1 air");
         lines.add("One blast-air type at a time; oxygen is an independent enrichment feed");
         lines.add("No auxiliary item fuel; a heater below (900 C+) can supply missing heat");
+        lines.add("Center the heater's upward top contact under the bottom core; full 3x3 heater layer clear");
         lines.add("Keep reductant, heat, air and output space available; fuller tanks add no speed");
         lines.add("Dry top-gas composition: 22% CO, 22% CO2, 54% N2, 2% H2 (molar)");
         lines.add("Optional flux: CaCO3 -> CaO + CO2; basic slag binds silicate gangue");

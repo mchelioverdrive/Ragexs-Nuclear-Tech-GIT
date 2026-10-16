@@ -1,91 +1,57 @@
 package com.hbm.inventory.gui;
 
-import org.lwjgl.opengl.GL11;
-
 import com.hbm.inventory.container.ContainerMachineChemplant;
-import com.hbm.items.ModItems;
-import com.hbm.lib.RefStrings;
+import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.tileentity.machine.TileEntityMachineChemplant;
-import com.hbm.util.I18nUtil;
-
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.inventory.Slot;
 
 public class GUIMachineChemplant extends GuiInfoContainer {
-
-	private static ResourceLocation texture = new ResourceLocation(RefStrings.MODID + ":textures/gui/gui_chemplant.png");
-	private TileEntityMachineChemplant chemplant;
-	
-	public GUIMachineChemplant(InventoryPlayer invPlayer, TileEntityMachineChemplant tedf) {
-		super(new ContainerMachineChemplant(invPlayer, tedf));
-        setMachineInfoOwner(tedf);
-		chemplant = tedf;
-		
-		this.xSize = 176;
-		this.ySize = 222;
-	}
-	
-	@Override
-	public void drawScreen(int mouseX, int mouseY, float f) {
-		super.drawScreen(mouseX, mouseY, f);
-
-		chemplant.tanks[0].renderTankInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 52 - 34, 16, 34);
-		chemplant.tanks[1].renderTankInfo(this, mouseX, mouseY, guiLeft + 26, guiTop + 52 - 34, 16, 34);
-		chemplant.tanks[2].renderTankInfo(this, mouseX, mouseY, guiLeft + 134, guiTop + 52 - 34, 16, 34);
-		chemplant.tanks[3].renderTankInfo(this, mouseX, mouseY, guiLeft + 152, guiTop + 52 - 34, 16, 34);
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 44, guiTop + 70 - 52, 16, 52, chemplant.getStoredEnergyQuanta(), chemplant.maxPower);
-		
-		if(chemplant.getStackInSlot(4) == null || chemplant.getStackInSlot(4).getItem()!= ModItems.chemistry_template) {
-
-			String[] warningText = I18nUtil.resolveKeyArray("desc.gui.chemplant.warning");
-			this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 16, guiTop + 36, 16, 16, guiLeft - 8, guiTop + 36 + 16, warningText);
-		}
-		
-		String[] templateText = I18nUtil.resolveKeyArray("desc.gui.template");
-		this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 16, guiTop + 16, 16, 16, guiLeft - 8, guiTop + 16 + 16, templateText);
-		
-		String[] upgradeText = new String[3];
-		upgradeText[0] = I18nUtil.resolveKey("desc.gui.upgrade");
-		upgradeText[1] = I18nUtil.resolveKey("desc.gui.upgrade.speed");
-		upgradeText[2] = I18nUtil.resolveKey("desc.gui.upgrade.power");
-		
-		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 105, guiTop + 40, 8, 8, guiLeft + 105, guiTop + 40 + 16, upgradeText);
-	}
-
-	@Override
-	protected void drawGuiContainerForegroundLayer( int i, int j) {
-		String name = this.chemplant.hasCustomInventoryName() ? this.chemplant.getInventoryName() : I18n.format(this.chemplant.getInventoryName());
-		
-		this.fontRendererObj.drawString(name, this.xSize / 2 - this.fontRendererObj.getStringWidth(name) / 2, 6, 4210752);
-		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96 + 2, 4210752);
-	}
-	
-	@Override
-	protected void drawGuiContainerBackgroundLayer(float p_146976_1_, int p_146976_2_, int p_146976_3_) {
-		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
-		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
-		
-		int i = (int) (chemplant.getStoredEnergyQuanta() * 52 / chemplant.maxPower);
-		drawTexturedModalRect(guiLeft + 44, guiTop + 70 - i, 176, 52 - i, 16, i);
-
-		int j = chemplant.getDisplayedProgress() * 90 / Math.max(chemplant.maxProgress, 1);
-		drawTexturedModalRect(guiLeft + 43, guiTop + 89, 0, 222, j, 18);
-
-		this.drawInfoPanel(guiLeft + 105, guiTop + 40, 8, 8, 8);
-		
-		if(chemplant.getStackInSlot(4) == null || chemplant.getStackInSlot(4).getItem()!= ModItems.chemistry_template) {
-
-			this.drawInfoPanel(guiLeft - 16, guiTop + 36, 16, 16, 6);
-		}
-		
-		this.drawInfoPanel(guiLeft - 16, guiTop + 16, 16, 16, 11);
-		
-		chemplant.tanks[0].renderTank(guiLeft + 8, guiTop + 52, this.zLevel, 16, 34);
-		chemplant.tanks[1].renderTank(guiLeft + 26, guiTop + 52, this.zLevel, 16, 34);
-		chemplant.tanks[2].renderTank(guiLeft + 134, guiTop + 52, this.zLevel, 16, 34);
-		chemplant.tanks[3].renderTank(guiLeft + 152, guiTop + 52, this.zLevel, 16, 34);
-	}
+    private final TileEntityMachineChemplant chemplant;
+    public GUIMachineChemplant(InventoryPlayer player, TileEntityMachineChemplant tile) {
+        super(new ContainerMachineChemplant(player, tile)); setMachineInfoOwner(tile); chemplant = tile;
+        xSize = 248; ySize = 244;
+    }
+    @Override public void drawScreen(int x, int y, float partial) {
+        super.drawScreen(x, y, partial);
+        for(int i = 0; i < 4; i++) {
+            chemplant.processInputs()[i].renderTankInfo(this, x, y, guiLeft + 8 + i * 18, guiTop + 26, 16, 42);
+            chemplant.processOutputs()[i].renderTankInfo(this, x, y, guiLeft + 170 + i * 18, guiTop + 26, 16, 42);
+        }
+        drawElectricityInfo(this, x, y, guiLeft + 82, guiTop + 26, 8, 52, chemplant.energyQuanta, chemplant.maxPower);
+    }
+    @Override protected void drawGuiContainerForegroundLayer(int x, int y) {
+        String name = chemplant.hasCustomInventoryName() ? chemplant.getInventoryName() : I18n.format(chemplant.getInventoryName());
+        fontRendererObj.drawString(name, (xSize - fontRendererObj.getStringWidth(name)) / 2, 6, 4210752);
+        fontRendererObj.drawString("Feed", 8, 16, 4210752);
+        fontRendererObj.drawString("Products", 170, 16, 4210752);
+        fontRendererObj.drawString("Template", 101, 52, 4210752);
+        fontRendererObj.drawString("Items in", 8, 134, 4210752);
+        fontRendererObj.drawString("Items out", 170, 134, 4210752);
+        fontRendererObj.drawString(I18n.format("container.inventory"), 44, 150, 4210752);
+    }
+    @Override protected void drawGuiContainerBackgroundLayer(float partial, int x, int y) {
+        drawRect(guiLeft, guiTop, guiLeft + xSize, guiTop + ySize, 0xffc6c6c6);
+        for(Object value : inventorySlots.inventorySlots) {
+            Slot slot = (Slot) value;
+            drawRect(guiLeft + slot.xDisplayPosition - 1, guiTop + slot.yDisplayPosition - 1,
+                    guiLeft + slot.xDisplayPosition + 17, guiTop + slot.yDisplayPosition + 17, 0xff373737);
+            drawRect(guiLeft + slot.xDisplayPosition, guiTop + slot.yDisplayPosition,
+                    guiLeft + slot.xDisplayPosition + 16, guiTop + slot.yDisplayPosition + 16, 0xff8b8b8b);
+        }
+        FluidTank[] in = chemplant.processInputs(), out = chemplant.processOutputs();
+        for(int i = 0; i < 4; i++) {
+            for(int tankX : new int[] {8 + i * 18, 170 + i * 18})
+                drawRect(guiLeft + tankX, guiTop + 26, guiLeft + tankX + 16, guiTop + 68, 0xff373737);
+            in[i].renderTank(guiLeft + 8 + i * 18, guiTop + 68, zLevel, 16, 42);
+            out[i].renderTank(guiLeft + 170 + i * 18, guiTop + 68, zLevel, 16, 42);
+        }
+        drawRect(guiLeft + 82, guiTop + 26, guiLeft + 90, guiTop + 78, 0xff373737);
+        int charge = (int) (Math.min(chemplant.energyQuanta, chemplant.maxPower) * 52 / chemplant.maxPower);
+        drawRect(guiLeft + 82, guiTop + 78 - charge, guiLeft + 90, guiTop + 78, 0xffffb000);
+        drawRect(guiLeft + 88, guiTop + 96, guiLeft + 160, guiTop + 106, 0xff373737);
+        int progress = chemplant.getDisplayedProgress() * 72 / Math.max(chemplant.maxProgress, 1);
+        drawRect(guiLeft + 88, guiTop + 96, guiLeft + 88 + progress, guiTop + 106, 0xff62a84a);
+    }
 }

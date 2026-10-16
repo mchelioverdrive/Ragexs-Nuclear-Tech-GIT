@@ -426,6 +426,11 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
         TileEntity source = getTile();
         return heat && source instanceof api.hbm.tile.IProcessHeatSource ? ((api.hbm.tile.IProcessHeatSource) source).getAvailableProcessHeatQuanta(tick) : 0;
     }
+    @Override public boolean canSupplyProcessHeat(ForgeDirection side) {
+        TileEntity source = getTile();
+        return heat && source instanceof api.hbm.tile.IProcessHeatSource
+                && ((api.hbm.tile.IProcessHeatSource) source).canSupplyProcessHeat(side);
+    }
     @Override public long drawProcessHeatQuanta(long tick, long request) {
         TileEntity source = getTile();
         return heat && source instanceof api.hbm.tile.IProcessHeatSource ? ((api.hbm.tile.IProcessHeatSource) source).drawProcessHeatQuanta(tick, request) : 0;

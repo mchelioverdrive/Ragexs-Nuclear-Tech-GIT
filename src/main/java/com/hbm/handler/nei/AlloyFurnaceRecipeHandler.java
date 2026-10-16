@@ -53,7 +53,8 @@ public class AlloyFurnaceRecipeHandler extends SafeTemplateRecipeHandler impleme
 
 		@Override
 		public PositionedStack getOtherStack() {
-			return fuels.get((cycleticks / 48) % fuels.size()).stack;
+			ensureResources();
+            return fuels.isEmpty() ? null : fuels.get((cycleticks / 48) % fuels.size()).stack;
 		}
 
 		@Override
@@ -70,6 +71,16 @@ public class AlloyFurnaceRecipeHandler extends SafeTemplateRecipeHandler impleme
 
 		public PositionedStack stack;
 	}
+
+    @Override public List<String> handleItemTooltip(codechicken.nei.recipe.GuiRecipe gui, ItemStack stack, List<String> lines, int recipe) {
+        int ticks = com.hbm.tileentity.machine.TileEntityDiFurnace.getItemPower(stack, true);
+        if(ticks > 0) {
+            lines.add("Fueled furnace: " + ticks + " fuel ticks per item");
+            lines.add("Job: " + com.hbm.tileentity.machine.TileEntityDiFurnace.processingSpeed + " fuel ticks; unused credit is retained");
+            lines.add(String.format(java.util.Locale.US, "Fuel per job: %.4f item equivalents", com.hbm.tileentity.machine.TileEntityDiFurnace.processingSpeed / (double) ticks));
+        }
+        return super.handleItemTooltip(gui, stack, lines, recipe);
+    }
 
 	@Override
 	public String getRecipeName() {
@@ -153,13 +164,11 @@ public class AlloyFurnaceRecipeHandler extends SafeTemplateRecipeHandler impleme
 		drawProgressBar(39, 7, 201, 0, 16, 52, 480, 7);
 	}
 
-	@Override
-	public TemplateRecipeHandler newInstance() {
-		if(fuels == null || fuels.isEmpty())
-			fuels = new ArrayList<Fuel>();
-		for(ItemStack i : MachineRecipes.instance().getAlloyFuels()) {
-			fuels.add(new Fuel(i));
-		}
-		return super.newInstance();
-	}
+    private static void ensureResources() {
+        if(fuels != null && !fuels.isEmpty()) return;
+        fuels = new ArrayList<Fuel>();
+        for(ItemStack item : MachineRecipes.instance().getAlloyFuels()) {
+            if(NEISafe.isValid(item) && com.hbm.tileentity.machine.TileEntityDiFurnace.getItemPower(item, true) > 0) fuels.add(new Fuel(item));
+        }
+    }
 }

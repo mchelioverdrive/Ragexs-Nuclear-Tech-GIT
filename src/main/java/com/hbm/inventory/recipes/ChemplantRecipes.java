@@ -1026,7 +1026,8 @@ public class ChemplantRecipes extends SerializableRecipe {
 		}
 
         public ChemRecipe petroleum(com.hbm.realsim.ProcessRecipe bill) {
-            com.hbm.realsim.ChemicalFuelProcesses.validateRating(bill);
+            com.hbm.realsim.ChemicalFuelProcesses.validateReactorRating(bill);
+            bill = bill.electricallyDriven();
             int fluidProducts = 0, solidProducts = 0;
             for(String product : bill.outputs) if(!product.startsWith("VENT_")) {
                 if(com.hbm.realsim.PhysicalRegistry.get(product).phase == com.hbm.realsim.PhysicalState.Phase.SOLID) solidProducts++; else fluidProducts++;
@@ -1046,6 +1047,15 @@ public class ChemplantRecipes extends SerializableRecipe {
             return this;
         }
 
+        public ItemStack outputItemDisplay(int slot) {
+            if(outputs[slot] == null || physicalBill == null) return outputs[slot];
+            int solid = 0;
+            for(int i = 0; i < physicalBill.outputs.length; i++) if(!physicalBill.outputs[i].startsWith("VENT_") && physicalBill.productMass[i] > 0
+                    && com.hbm.realsim.PhysicalRegistry.get(physicalBill.outputs[i]).phase == com.hbm.realsim.PhysicalState.Phase.SOLID) {
+                if(solid++ == slot) return com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.productDisplay(physicalBill, i);
+            }
+            return outputs[slot];
+        }
         /** Fractional physical products accrue in the process ledger; do not advertise a rounded litre per batch. */
         public ItemStack outputFluidDisplay(int slot) {
             FluidStack fluid = outputFluids[slot];

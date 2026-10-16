@@ -40,7 +40,7 @@ public class TileEntityHeatBoilerIndustrial extends TileEntityHeatBoilerBase imp
     @Override protected com.hbm.realsim.SteamLedger.State maximumSteamOutlet() { return com.hbm.realsim.SteamLedger.State.HOT; }
     @Override protected int internalHeatTemperatureC() { return 900; }
     @Override protected long additionalHeat(long request) {
-        if(tanks[0].getFill() == 0 && thermal.ownedMass() == 0 || tanks[1].getFill() >= tanks[1].getMaxFill()) return 0;
+        if(request <= 0 || tanks[0].getFill() == 0 && thermal.ownedMass() == 0 && !physicalBatch.active() || tanks[1].getFill() >= tanks[1].getMaxFill()) return 0;
         com.hbm.dim.trait.CBT_Atmosphere air = com.hbm.dim.CelestialBody.getTrait(worldObj, com.hbm.dim.trait.CBT_Atmosphere.class);
         if(air == null || !air.hasFluid(Fluids.AIR, 0.19)) return 0;
         String name = tanks[2].getTankType().getName();

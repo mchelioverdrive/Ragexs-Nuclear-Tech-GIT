@@ -2,6 +2,18 @@
 
 RTM's chemistry links water treatment, gases, mineral processing, petroleum and manufacturing. A useful plant needs the right material state, power, heat and outlets for the entire reaction. NEI shows your pack's active recipe; machine information explains operating limits.
 
+The Chemical Reactor uses electrical process work and has no internal temperature or heater requirement. Hot liquids, molten feeds and steam must still arrive in the specified material state. Each recipe can use up to four item inputs, four fluid inputs, four item outputs and four fluid outputs. The template is retained. The workshop interface exposes each fluid channel with a gauge and container pair; the industrial interface shows all four inlet and outlet gauges for each lane.
+
+NEI shows exact batch yields, duration and electrical work. Hover process feeds for pressure, flow and utility details. Other machines can require external heat: NEI reports the heat energy, rate and source temperature; fuel is consumed by that heat source. Rotary furnace jobs also show their firebox fuel energy separately from drive steam.
+
+## Shared fluid pipes
+
+A placed Universal Fluid Duct can carry up to four selected fluids. Right-click it with a fluid identifier to add that fluid; click with the same identifier again to remove it. Removing an assignment does not drain or alter any machine tank. A fifth assignment is rejected. Shared pipes use the original pipe model and its first selected fluid color; the pipe overlay lists every assigned fluid.
+
+For a shared trunk, add each required identifier to its pipes. Sneak/CTRL-click applies the same change to connected pipes with the same fluid set, within the existing 64-block range; differently filtered branches stop propagation. Build a branch with only one identifier to carry only that fluid from the trunk to its destination. Fluids and network pressure remain separate, and closed valves stop every channel. Pipe overlays list all assigned fluids. A shared flow gauge retains its first-channel reading and labels which fluid it meters.
+
+The Chemical Reactor's four utility positions leave three available for fluid piping when one is occupied by power. Use shared trunks to carry its full feed/coproduct set through those available connections; the internal gauges and container pairs are storage channels, not additional physical pipe sockets.
+
 ## Water quality
 
 **Water** is raw environmental water for washing, concrete and rough service. Chemical Reactor treatment turns 10 kg into 9 kg of **Fresh Water** and 1 kg of mineral brine over 50 seconds. Drain both products. The default feed rate is 12 L/min.
@@ -10,7 +22,7 @@ RTM's chemistry links water treatment, gases, mineral processing, petroleum and 
 
 **Borated Water** contains 1 wt% boric acid, about 1,748 ppm elemental boron. Make the acid precursor before preparing coolant. The PWR also supports light and heavy water with different operating behavior. Hot coolant needs the correct cooling route; refilling does not remove heat.
 
-**Heavy Water** requires isotope separation. Extraction produces depleted reject that cannot simply be passed through again as natural feed.
+**Heavy Water** requires isotope separation. Both extractor sizes supply separation and heating electrically. Extraction produces depleted reject that cannot simply be passed through again as natural feed.
 
 ## Reading fluid quantities
 
@@ -20,7 +32,7 @@ Steam shows water mass and conditions; see [Steam and heat](steam_and_heat.md). 
 
 ## Reaction and separation equipment
 
-The **Chemical Reactor** handles reaction, dilution, controlled mixing and compact multistage chemistry. Some recipes need external heat at a specified temperature. Its industrial counterpart runs eight lanes with a sealed fresh-water cooling charge and shared heat-rejection limit. More lanes increase throughput without unlocking a hidden chemistry tier.
+The **Chemical Reactor** handles reaction, dilution, controlled mixing and compact multistage chemistry. Its physical recipes supply process work and added heating electrically; process-temperature references do not require a separate heater. Its industrial counterpart runs eight lanes with a sealed fresh-water cooling charge and shared heat-rejection limit. More lanes increase throughput without unlocking a hidden chemistry tier.
 
 The **Electrolyser** separates compounds with electricity. Water produces hydrogen/oxygen gas in a 2:1 molar ratio. Early reactor electrolysis is slower; the native electrolyser increases production with a 200-kW water duty. Reactive metals need appropriate dry or molten salts: an aqueous sodium salt does not directly yield sodium metal.
 

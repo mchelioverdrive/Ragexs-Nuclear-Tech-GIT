@@ -99,6 +99,7 @@ public final class MachineInfoItems {
         if(block.getClass() == com.hbm.blocks.machine.MachinePyroOven.class) return new com.hbm.tileentity.machine.oil.TileEntityMachinePyroOven();
         if(block.getClass() == com.hbm.blocks.machine.MachineRadiator.class) return new com.hbm.tileentity.machine.TileEntityRadiator();
         if(block.getClass() == com.hbm.blocks.machine.MachineRefinery.class) return new com.hbm.tileentity.machine.oil.TileEntityMachineRefinery();
+        if(block.getClass() == com.hbm.blocks.machine.MachineMilkReformer.class) return new com.hbm.tileentity.machine.TileEntityMachineMilkReformer();
         if(block.getClass() == com.hbm.blocks.machine.MachineSawmill.class) return new com.hbm.tileentity.machine.TileEntitySawmill();
         if(block.getClass() == com.hbm.blocks.machine.MachineShredder.class) return new com.hbm.tileentity.machine.TileEntityMachineShredder();
         if(block.getClass() == com.hbm.blocks.machine.MachineSolarBoiler.class) return new com.hbm.tileentity.machine.TileEntitySolarBoiler();

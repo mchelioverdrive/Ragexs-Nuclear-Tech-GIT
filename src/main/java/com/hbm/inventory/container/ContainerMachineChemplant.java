@@ -2,12 +2,7 @@ package com.hbm.inventory.container;
 
 import com.hbm.inventory.SlotCraftingOutput;
 import com.hbm.inventory.SlotTakeOnly;
-import com.hbm.items.ModItems;
-import com.hbm.items.machine.ItemChemistryTemplate;
-import com.hbm.items.machine.ItemMachineUpgrade;
 import com.hbm.tileentity.machine.TileEntityMachineChemplant;
-
-import api.hbm.energymk2.IBatteryItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -15,97 +10,63 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 
 public class ContainerMachineChemplant extends Container {
-
-	private TileEntityMachineChemplant nukeBoy;
-
-	public ContainerMachineChemplant(InventoryPlayer invPlayer, TileEntityMachineChemplant tedf) {
-		nukeBoy = tedf;
-
-		// Battery
-		this.addSlotToContainer(new Slot(tedf, 0, 80, 18));
-		// Upgrades
-		this.addSlotToContainer(new Slot(tedf, 1, 116, 18));
-		this.addSlotToContainer(new Slot(tedf, 2, 116, 36));
-		this.addSlotToContainer(new Slot(tedf, 3, 116, 54));
-		// Schematic
-		this.addSlotToContainer(new Slot(tedf, 4, 80, 54));
-		// Outputs
-		this.addSlotToContainer(new SlotCraftingOutput(invPlayer.player, tedf, 5, 134, 90));
-		this.addSlotToContainer(new SlotCraftingOutput(invPlayer.player, tedf, 6, 152, 90));
-		this.addSlotToContainer(new SlotCraftingOutput(invPlayer.player, tedf, 7, 134, 108));
-		this.addSlotToContainer(new SlotCraftingOutput(invPlayer.player, tedf, 8, 152, 108));
-		// Fluid Output In
-		this.addSlotToContainer(new Slot(tedf, 9, 134, 54));
-		this.addSlotToContainer(new Slot(tedf, 10, 152, 54));
-		// Fluid Outputs Out
-		this.addSlotToContainer(new SlotTakeOnly(tedf, 11, 134, 72));
-		this.addSlotToContainer(new SlotTakeOnly(tedf, 12, 152, 72));
-		// Input
-		this.addSlotToContainer(new Slot(tedf, 13, 8, 90));
-		this.addSlotToContainer(new Slot(tedf, 14, 26, 90));
-		this.addSlotToContainer(new Slot(tedf, 15, 8, 108));
-		this.addSlotToContainer(new Slot(tedf, 16, 26, 108));
-		// Fluid Input In
-		this.addSlotToContainer(new Slot(tedf, 17, 8, 54));
-		this.addSlotToContainer(new Slot(tedf, 18, 26, 54));
-		// Fluid Input Out
-		this.addSlotToContainer(new SlotTakeOnly(tedf, 19, 8, 72));
-		this.addSlotToContainer(new SlotTakeOnly(tedf, 20, 26, 72));
-
-		for(int i = 0; i < 3; i++) {
-			for(int j = 0; j < 9; j++) {
-				this.addSlotToContainer(new Slot(invPlayer, j + i * 9 + 9, 8 + j * 18, 84 + i * 18 + 56));
-			}
-		}
-
-		for(int i = 0; i < 9; i++) {
-			this.addSlotToContainer(new Slot(invPlayer, i, 8 + i * 18, 142 + 56));
-		}
-	}
-
-	@Override
-	public ItemStack transferStackInSlot(EntityPlayer player, int index) {
-		ItemStack rStack = null;
-		Slot slot = (Slot) this.inventorySlots.get(index);
-
-		if(slot != null && slot.getHasStack()) {
-			ItemStack stack = slot.getStack();
-			rStack = stack.copy();
-
-			if(index <= 20) {
-				if(!this.mergeItemStack(stack, 21, this.inventorySlots.size(), true)) {
-					return null;
-				}
-			} else {
-				
-				if(rStack.getItem() instanceof IBatteryItem || rStack.getItem() == ModItems.battery_creative) {
-					if(!this.mergeItemStack(stack, 0, 1, false)) return null;
-				} else if(rStack.getItem() instanceof ItemMachineUpgrade ) {
-					if(!this.mergeItemStack(stack, 1, 4, false)) return null;
-				} else if(rStack.getItem() instanceof ItemChemistryTemplate) {
-					if(!this.mergeItemStack(stack, 4, 5, false)) return null;
-				} else { //proper shift-clicking filled/empty fluid tanks is an exercise in futility 
-					if(!this.mergeItemStack(stack, 13, 19, false))
-					if(!this.mergeItemStack(stack, 9, 11, false))
-						return null;
-				}
-			}
-			
-			if(stack.stackSize == 0) {
-				slot.putStack((ItemStack) null);
-			} else {
-				slot.onSlotChanged();
-			}
-			if(index >= 5 && index <= 8) {
-				slot.onPickupFromSlot(player, rStack);
-			}
-		}
-
-		return rStack;
-	}
-
-	@Override
-	public boolean canInteractWith(EntityPlayer player) {
-		return nukeBoy.isUseableByPlayer(player);
-	}
+    private final TileEntityMachineChemplant chemplant;
+    public ContainerMachineChemplant(InventoryPlayer player, final TileEntityMachineChemplant tile) {
+        chemplant = tile;
+        int[][] positions = new int[29][2];
+        positions[0] = new int[] {98, 26};
+        for(int i = 1; i <= 3; i++) positions[i] = new int[] {98 + i * 18, 26};
+        positions[4] = new int[] {116, 62};
+        for(int i = 0; i < 4; i++) {
+            positions[5 + i] = new int[] {170 + i * 18, 112};
+            positions[13 + i] = new int[] {8 + i * 18, 112};
+            positions[TileEntityMachineChemplant.inputContainerSlot(i)] = new int[] {8 + i * 18, 72};
+            positions[TileEntityMachineChemplant.inputReturnSlot(i)] = new int[] {8 + i * 18, 90};
+            positions[TileEntityMachineChemplant.outputContainerSlot(i)] = new int[] {170 + i * 18, 72};
+            positions[TileEntityMachineChemplant.outputReturnSlot(i)] = new int[] {170 + i * 18, 90};
+        }
+        // Container indices stay identical to persisted inventory indices, including appended ports.
+        for(int i = 0; i < positions.length; i++) {
+            final int index = i;
+            Slot slot;
+            if(i >= 5 && i <= 8) slot = new SlotCraftingOutput(player.player, tile, i, positions[i][0], positions[i][1]);
+            else if(i == 11 || i == 12 || i == 19 || i == 20 || i == 23 || i == 24 || i == 27 || i == 28)
+                slot = new SlotTakeOnly(tile, i, positions[i][0], positions[i][1]);
+            else slot = new Slot(tile, i, positions[i][0], positions[i][1]) {
+                @Override public boolean isItemValid(ItemStack stack) { return tile.isItemValidForSlot(index, stack); }
+            };
+            addSlotToContainer(slot);
+        }
+        for(int row = 0; row < 3; row++) for(int col = 0; col < 9; col++)
+            addSlotToContainer(new Slot(player, col + row * 9 + 9, 44 + col * 18, 162 + row * 18));
+        for(int col = 0; col < 9; col++) addSlotToContainer(new Slot(player, col, 44 + col * 18, 220));
+    }
+    @Override public ItemStack transferStackInSlot(EntityPlayer player, int index) {
+        Slot source = (Slot) inventorySlots.get(index);
+        if(source == null || !source.getHasStack()) return null;
+        ItemStack stack = source.getStack(), original = stack.copy();
+        if(index < 29) {
+            if(!mergeItemStack(stack, 29, inventorySlots.size(), true)) return null;
+        } else {
+            // Route service containers before ordinary reactants; all four channels are considered.
+            boolean moved = false;
+            for(int channel = 0; channel < 4 && stack.stackSize > 0; channel++) {
+                int slot = TileEntityMachineChemplant.inputContainerSlot(channel);
+                if(chemplant.isItemValidForSlot(slot, stack)) moved |= mergeItemStack(stack, slot, slot + 1, false);
+                slot = TileEntityMachineChemplant.outputContainerSlot(channel);
+                if(stack.stackSize > 0 && chemplant.isItemValidForSlot(slot, stack)) moved |= mergeItemStack(stack, slot, slot + 1, false);
+            }
+            if(!moved) {
+                int first = chemplant.isItemValidForSlot(0, stack) ? 0 : chemplant.isItemValidForSlot(1, stack) ? 1
+                        : chemplant.isItemValidForSlot(4, stack) ? 4 : 13;
+                int end = first == 1 ? 4 : first == 13 ? 17 : first + 1;
+                if(!mergeItemStack(stack, first, end, false)) return null;
+            }
+        }
+        if(stack.stackSize == original.stackSize) return null;
+        if(stack.stackSize == 0) source.putStack(null); else source.onSlotChanged();
+        source.onPickupFromSlot(player, original);
+        return original;
+    }
+    @Override public boolean canInteractWith(EntityPlayer player) { return chemplant.isUseableByPlayer(player); }
 }

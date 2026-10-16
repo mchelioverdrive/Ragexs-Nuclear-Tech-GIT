@@ -100,7 +100,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
-        physicalBatch.read(nbt);
+        physicalBatch.read(nbt); physicalBatch.electrifyUtilities();
 		super.readFromNBT(nbt);
 
 		energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
@@ -502,7 +502,7 @@ public class TileEntityMachineRefinery extends TileEntityMachineBase implements 
 
 	@Override
 	public void readNBT(NBTTagCompound nbt) {
-        physicalBatch.read(nbt);
+        physicalBatch.read(nbt); physicalBatch.electrifyUtilities();
 		NBTTagCompound data = nbt.getCompoundTag(NBT_PERSISTENT_KEY);
 		for(int i = 0; i < 5; i++) this.tanks[i].readFromNBT(data, "" + i);
 		this.hasExploded = data.getBoolean("hasExploded");
