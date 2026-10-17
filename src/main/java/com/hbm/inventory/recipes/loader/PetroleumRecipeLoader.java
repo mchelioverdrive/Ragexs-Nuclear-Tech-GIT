@@ -77,7 +77,10 @@ public abstract class PetroleumRecipeLoader extends SerializableRecipe {
         return result;
     }
     public static ItemStack productDisplay(ProcessRecipe bill, int product) {
-        String identity = bill.outputs[product]; long mass = bill.productMass[product];
+        return productDisplay(bill.outputs[product], bill.productMass[product]);
+    }
+    /** One display parcel, including its own exact mass when a large solid lot spans several slots. */
+    public static ItemStack productDisplay(String identity, long mass) {
         if(identity.startsWith("VENT_") || mass == 0) return null;
         int quantity = Math.toIntExact(PetroleumProcesses.ceilDiv(mass, PhysicalRegistry.get(identity).massUnits));
         if(PhysicalRegistry.get(identity).phase != PhysicalState.Phase.SOLID)

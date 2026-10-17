@@ -348,6 +348,12 @@ public final class PhysicalRegistry {
         BigDecimal roadEnergy = BigDecimal.valueOf(12 * get("BITUMEN").massUnits).multiply(get("BITUMEN").lhvJoulesPerKg);
         STATES.put("ASPHALT_ITEM", new PhysicalState("bitumen_aggregate_road_parcel", Phase.SOLID, Basis.MATERIAL_ITEM, roadMass,
                 roadEnergy.divide(BigDecimal.valueOf(roadMass * 16), 18, RoundingMode.DOWN), "cold installed parcel; 200 kg aggregate + 12 reference L bitumen per sixteen parcels", null));
+        // Construction output counts are gameplay compression, like the existing aggregate bags.
+        // Retain the old identities above for saved paid batches and species-isolated remainders.
+        solid("BUILDING_CONCRETE_ITEM", "construction_concrete_parcel", "0.96875", "0");
+        solid("BUILDING_FIBER_CONCRETE_ITEM", "construction_fiber_concrete_parcel", "0.97265625", "0");
+        STATES.put("BUILDING_ASPHALT_ITEM", new PhysicalState("construction_paving_parcel", Phase.SOLID, Basis.MATERIAL_ITEM, roadMass / 16,
+                get("ASPHALT_ITEM").lhvJoulesPerKg, "256 building blocks per weighed 200-kg aggregate/12-L binder lot; block geometry is abstracted", null));
         solid("SODIUM_SULFATE_ITEM", "sodium_sulfate", "1", "0");
         solid("SODIUM_SULFIDE_ITEM", "sodium_sulfide", "1", "11000000");
         // Legacy metal parcels remain explicit nominal amounts: sodium/potassium use 100 counts/kg,

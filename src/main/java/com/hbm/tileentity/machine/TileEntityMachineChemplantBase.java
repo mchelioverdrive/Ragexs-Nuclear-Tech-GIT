@@ -405,6 +405,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
         ChemRecipe physical = this.resolveRecipe(index);
         if(physicalBatches[index].active()) return true;
         if(physical != null && physical.physicalBill != null) {
+            com.hbm.realsim.ProcessMachine.sizeProcessBuffers(physical.physicalBill, processInputs(index), processOutputs(index));
             runtimeMaterialEligible[index] = true;
             runtimeHasRequiredItems[index] = hasRequiredItems(physical, index);
             int[] indices = getCachedSlotIndicesFromIndex(index);

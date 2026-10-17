@@ -49,9 +49,9 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntityMachineChemplant extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IUpgradeInfoProvider, com.hbm.realsim.IMachineInfo, com.hbm.realsim.ProcessMachine.Cooling {
     private final com.hbm.realsim.OutputBudget coolingBudget = new com.hbm.realsim.OutputBudget();
-    @Override public long availableCoolingQuanta(long tick) { return coolingBudget.available(tick, 20000); }
-    @Override public void rejectHeatQuanta(long tick, long quanta) { coolingBudget.use(tick, 20000, quanta); }
-    @Override public long getMachineCoolingWatts() { return 200000; }
+    @Override public long availableCoolingQuanta(long tick) { return coolingBudget.available(tick, getMachineCoolingWatts() / 10); }
+    @Override public void rejectHeatQuanta(long tick, long quanta) { coolingBudget.use(tick, getMachineCoolingWatts() / 10, quanta); }
+    @Override public long getMachineCoolingWatts() { return 1000000; }
     @Override public long getProcessAuxiliaryWatts(com.hbm.realsim.ProcessRecipe recipe) { return Math.max(500, com.hbm.realsim.PetroleumProcesses.ceilDiv(recipe.rejectedWatts, 500) * 10); }
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 	private static final int TASK_ACCOUNTING = 1;

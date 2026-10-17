@@ -16,7 +16,7 @@ The Chemical Reactor's four utility positions leave three available for fluid pi
 
 ## Water quality
 
-**Water** is raw environmental water for washing, concrete and rough service. Chemical Reactor treatment turns 10 kg into 9 kg of **Fresh Water** and 1 kg of mineral brine over 50 seconds. Drain both products. The default feed rate is 12 L/min.
+**Water** is raw environmental water for washing, concrete and rough service. Chemical Reactor treatment turns 50 kg into 45 kg of **Fresh Water** and 5 kg of mineral brine over 50 seconds. Drain both products. The default feed rate is 60 L/min.
 
 **Fresh Water** supplies boilers, chemistry and closed industrial cooling charges. Demineralization polishes 10 L into 10 L of **Light Water** in 50 seconds. Light Water supplies direct-boiling reactor systems and deuterium extraction. Steam condensate is fresh water; polish it again where a reactor needs light water.
 
@@ -34,7 +34,7 @@ Steam shows water mass and conditions; see [Steam and heat](steam_and_heat.md). 
 
 The **Chemical Reactor** handles reaction, dilution, controlled mixing and compact multistage chemistry. Its physical recipes supply process work and added heating electrically; process-temperature references do not require a separate heater. Its industrial counterpart runs eight lanes with a sealed fresh-water cooling charge and shared heat-rejection limit. More lanes increase throughput without unlocking a hidden chemistry tier.
 
-The **Electrolyser** separates compounds with electricity. Water produces hydrogen/oxygen gas in a 2:1 molar ratio. Early reactor electrolysis is slower; the native electrolyser increases production with a 200-kW water duty. Reactive metals need appropriate dry or molten salts: an aqueous sodium salt does not directly yield sodium metal.
+The **Electrolyser** separates compounds with electricity. Water produces hydrogen/oxygen gas in a 2:1 molar ratio. Early reactor electrolysis is slower; the native electrolyser increases production with a 20-kW water duty. Reactive metals need appropriate dry or molten salts: an aqueous sodium salt does not directly yield sodium metal.
 
 The **Compressor** prepares gas pressure or changes steam grade with paid work. The **Cryogenic Separator** separates compatible mixtures and recovers atmospheric/geological gases. The **Leaching Reactor** prepares crystals and concentrates with a working bath. Filtration and regeneration return the liquid instead of consuming a tank of acid per crystal. Efficiency saves electricity, not raw material.
 
@@ -49,5 +49,9 @@ Manufactured salt brine supplies chlor-alkali chemistry. Geological mineral brin
 Nitrogen/hydrogen supply ammonia; hydrogen also supports refining. Methane reforming and coal gasification supply synthesis gas for methanol and other routes. Raw natural gas contains methane and helium; separation supplies both without requiring space travel.
 
 Prepared monomers feed plastics. Rubber, PVC, phenolic resin, polycarbonate and aramid have different reagents and coproducts. Sulfur, chlorine and aromatic intermediates matter because they are part of the chemistry. Fuel mixtures are covered in [Petroleum](petroleum.md).
+
+Common prerequisites run in useful industrial lots: polyethylene uses 8,000 standard L monomer per 100-second cycle, water treatment handles 50 L per cycle, and basic acid/base feeds use the same 60-L/min plumbing allowance as water. The existing reactor cooling system supports these lots without an extra coolant chain; the workshop cooler rejects up to 1 MW and the industrial plant shares 5 MW across its eight lanes. Cooling fans and pumps still consume electricity. Oil, nuclear chemistry and specialty materials retain their separate process constraints.
+
+Bulk construction deliberately uses Minecraft building quantities: concrete and fibre concrete produce four stacks per 80-second cycle, and asphalt four stacks per 240-second cycle. See [construction recipes](../construction-recipes.md) for the complete supply chain and rates. Stored stock is unchanged, and a batch already in progress finishes its original paid recipe. Enabled recipe overrides must be updated from the generated templates to adopt the new defaults.
 
 Follow hazard labels for toxic gases, corrosive acids, hot melts and cryogens. Combustion needs suitable atmosphere and ventilation; electrical processing can still need atmosphere for cooling or shielding gas for the operation.

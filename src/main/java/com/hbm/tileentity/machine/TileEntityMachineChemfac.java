@@ -37,7 +37,7 @@ public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase imp
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 	private int runtimeConnectionPolls;
     private final com.hbm.realsim.OutputBudget coolingBudget = new com.hbm.realsim.OutputBudget();
-    public static final long COOLING_WATTS = 1_000_000L;
+    public static final long COOLING_WATTS = 5_000_000L;
     @Override public long availableCoolingQuanta(long tick) { return water.getFill() < com.hbm.realsim.IndustrialDemand.COOLING_CHARGE_L ? 0 : coolingBudget.available(tick, COOLING_WATTS / 10); }
     @Override public void rejectHeatQuanta(long tick, long quanta) { coolingBudget.use(tick, COOLING_WATTS / 10, quanta); }
     private long nominalCoolingWatts = com.hbm.realsim.IndustrialDemand.COOLING_AUXILIARY_W;
@@ -400,7 +400,7 @@ public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase imp
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
         super.appendMachineInfo(lines, live);
         com.hbm.realsim.MachineInfo.parallelCooling(lines, live && worldObj != null && worldObj.isRemote ? machineInfoCoolingWatts : getMachineCoolingWatts());
-        lines.add("Shared dry cooler: 1 MW thermal; one sealed 20 L charge for all eight lanes");
+        lines.add("Shared dry cooler: 5 MW thermal; one sealed 20 L charge for all eight lanes");
         if(live && water.getFill() < com.hbm.realsim.IndustrialDemand.COOLING_CHARGE_L) lines.add("Stopped: fill the sealed cooling loop");
         if(live && steam.getFill() > 0) lines.add("Stored steam can drain; cooling produces no new steam");
     }

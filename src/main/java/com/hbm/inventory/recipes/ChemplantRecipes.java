@@ -591,20 +591,8 @@ public class ChemplantRecipes extends SerializableRecipe {
 		//thuliumsol + solvent = thuliumsol2
 		recipes.add(new ChemRecipe(1085, "THULIUM_SEPARATION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1085)));
 
-		//powder_vanadium + erbium powder tiny = 3 ingot vanadium since erbium can be used to make vanadium
-		recipes.add(new ChemRecipe(1086, "VANADIUM_INGOT", 400)
-						.inputItems(
-							new ComparableStack(
-								ModItems.powder_vanadium, 1
-							),
-							new ComparableStack(
-								ModItems.powder_erbium_tiny, 1
-							)
-						)
-						.outputItems(
-							new ItemStack(ModItems.ingot_vanadium, 3)
-						)
-		);
+		// Consolidate existing vanadium; recover the erbium addition without creating metal.
+		recipes.add(new ChemRecipe(1086, "VANADIUM_INGOT", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1086)));
 
 		recipes.add(new ChemRecipe(1087, "ER_YAG_PRECURSOR", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1087)));
 
@@ -1048,13 +1036,21 @@ public class ChemplantRecipes extends SerializableRecipe {
         }
 
         public ItemStack outputItemDisplay(int slot) {
-            if(outputs[slot] == null || physicalBill == null) return outputs[slot];
+            if(physicalBill == null) return outputs[slot];
             int solid = 0;
             for(int i = 0; i < physicalBill.outputs.length; i++) if(!physicalBill.outputs[i].startsWith("VENT_") && physicalBill.productMass[i] > 0
                     && com.hbm.realsim.PhysicalRegistry.get(physicalBill.outputs[i]).phase == com.hbm.realsim.PhysicalState.Phase.SOLID) {
-                if(solid++ == slot) return com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.productDisplay(physicalBill, i);
+                String name = physicalBill.outputs[i];
+                long left = physicalBill.productMass[i];
+                long capacity = Math.multiplyExact(com.hbm.realsim.PhysicalRegistry.get(name).massUnits,
+                        com.hbm.realsim.ProcessMachine.solid(name, 1).getMaxStackSize());
+                while(left > 0) {
+                    long parcel = Math.min(left, capacity);
+                    if(solid++ == slot) return com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.productDisplay(name, parcel);
+                    left -= parcel;
+                }
             }
-            return outputs[slot];
+            return null;
         }
         /** Fractional physical products accrue in the process ledger; do not advertise a rounded litre per batch. */
         public ItemStack outputFluidDisplay(int slot) {

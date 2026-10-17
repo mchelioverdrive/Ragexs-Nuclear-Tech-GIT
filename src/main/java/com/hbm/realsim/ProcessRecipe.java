@@ -112,6 +112,19 @@ public final class ProcessRecipe {
         return new ProcessRecipe(id, inputs, quantities, pressures, solidInputs, solidCounts, outputs, productMass,
                 duration, workQuanta / 2, heatQuanta / 2, temperatureC, separation, true, referenceTemperatureC);
     }
+    /** Whole reaction copies, including recovered carriers, losses and both utilities.
+     * Equipment registration still validates power/flow; callers choose supported lots. */
+    public ProcessRecipe rebatch(int copies) { return rebatch(copies, duration); }
+    public ProcessRecipe rebatch(int copies, int ticks) {
+        if(copies < 1 || ticks < duration) throw new IllegalArgumentException("Rebatching cannot shorten a process cycle");
+        int[] fluids = quantities.clone(), solids = solidCounts.clone(); long[] products = productMass.clone();
+        for(int i = 0; i < fluids.length; i++) fluids[i] = Math.multiplyExact(fluids[i], copies);
+        for(int i = 0; i < solids.length; i++) solids[i] = Math.multiplyExact(solids[i], copies);
+        for(int i = 0; i < products.length; i++) products[i] = Math.multiplyExact(products[i], copies);
+        return new ProcessRecipe(id, inputs, fluids, pressures, solidInputs, solids, outputs, products, ticks,
+                Math.multiplyExact(workQuanta / 2, copies), Math.multiplyExact(heatQuanta / 2, copies),
+                temperatureC, separation, continuousOutputs, referenceTemperatureC);
+    }
     public static PhysicalState resolved(String name) {
         PhysicalState state = PhysicalRegistry.get(name);
         if(!state.isResolved()) throw new IllegalArgumentException("Unresolved physical substance: " + name);

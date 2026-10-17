@@ -344,6 +344,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
         MixerRecipe physical = MixerRecipes.getOutput(tanks[2].getTankType(), recipeIndex);
         if(physical != null && physical.physicalBill != null) {
             processTime = physical.processTime;
+            com.hbm.realsim.ProcessMachine.sizeProcessBuffers(physical.physicalBill, new FluidTank[] {tanks[0], tanks[1]}, new FluidTank[] {tanks[2]});
             return com.hbm.realsim.ProcessMachine.inputsReady(physical.physicalBill, new FluidTank[] {tanks[0], tanks[1]}, slots, 1, 1)
                 && com.hbm.realsim.ProcessMachine.outputReady(physicalBatch, physical.physicalBill, new FluidTank[] {tanks[2]}, slots, 0, -1);
         }

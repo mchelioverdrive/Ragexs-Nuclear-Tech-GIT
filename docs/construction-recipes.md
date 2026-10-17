@@ -19,6 +19,23 @@ Use NEI to inspect the construction recipes and alternatives active in your pack
 
 The inventory also reviewed common tanks and pipes (vessel/fluid handling), motors and pistons (drive), pumps (drive/fluid handling), circuits and casings (electrical/control and structural), refinery and chemical equipment (vessel plus thermal/chemical lining), and assembler infrastructure (structural plus process tooling). Ordinary machines already compose these reusable parts. Common steel pipe, steel tank, motor, and piston recipes now produce predictable batches; advanced motors, lead-shielded vessels, corrosive-service equipment, reactors, and high-pressure/high-temperature machines retain specialized inputs justified by service conditions.
 
+## Bulk concrete and paving
+
+Ordinary construction uses Minecraft-scale output lots. A supplied Chemical Reactor makes **256 concrete or fibre-concrete blocks in 80 seconds** (192 blocks/minute), or **256 asphalt blocks in 240 seconds** (64/minute). It needs four empty output slots for the four stacks. Mixing times remain long enough for automated supply and storage to matter; building a factory does not require a specialist chemistry progression chain. DUcrete remains a shielding material at 16 blocks per 80 seconds.
+
+| Product | Feed per cycle | Recipe energy / cycle | Supply for continuous production |
+| --- | --- | --- | --- |
+| Concrete | 64 cement, one coarse and one fine aggregate bag, 16 L raw water | 320 kJ electrical; 4 kW over 80 s | 48 cement/min, 0.75 bags/min of each aggregate, 12 L/min water |
+| Fibre concrete | Concrete feed plus one asbestos ingot-equivalent | 320 kJ electrical; 4 kW over 80 s | Same supply plus 0.75 fibre/min |
+| Asphalt | One coarse and one fine aggregate bag, 12 L bitumen | 21 MJ electrical; 87.5 kW over 240 s | 0.25 bags/min of each aggregate, 3 L/min bitumen |
+| Soil | Eight coarse aggregate bags, eight ammonium nitrate, 32 L fresh water | 960 kJ electrical over 60 s | 64 blocks/min; fertilizer and fresh-water supply |
+
+Cement is supplied by the existing crafting routes: limestone dust plus three clay balls produces eight cement, while gypsum produces six; calcium/sand alternatives produce four. These have no machine cycle or electrical bill. The limestone route needs eight crafts (eight limestone dust and 24 clay balls) per 256-block concrete lot, or six crafts/minute to keep one line supplied. Shredding existing slag blocks remains a four-cement recovery alternative; its own upstream throughput depends on the source of slag. One gravel/sand block produces 19 matching aggregate bags. Concrete therefore needs about 0.0395 gravel and sand blocks/minute each; its coarse/fine ratio and water/cement mass ratio remain unchanged.
+
+At the listed supplied rates, 1,000 concrete blocks take about 5.21 minutes of sustained production (four complete lots take 5 minutes 20 seconds and yield 1,024 blocks). Asphalt takes 15.63 minutes of sustained production (four complete lots take 16 minutes). Power figures exclude the reactor's separately paid cooling auxiliaries. Bitumen still comes from the petroleum chain: paving output uses the existing binder, rather than increasing refinery yields. Storage can accumulate construction supplies while the player builds elsewhere.
+
+The block output count is a deliberate gameplay abstraction; it does not claim that each placed block contains a cubic metre of inventory material. Material and chemical-energy ledgers still close for the complete lot. Old paid construction lots finish with their old output quantities; existing blocks and stored items are never rescaled. NEI shows the four output stacks and their exact shares of the batch.
+
 ## Obtainable control-room furniture
 
 The IBM computer and old CRT craft in lots of four, while the toaster crafts in lots of eight. The existing office-door item recipe remains the correct route to the existing office-door block. Steel filing cabinets are directly craftable; adding green dye converts one to the already-rendered and localized `GREEN` metadata. There is no reverse cabinet recipe and no invented dusty metadata.

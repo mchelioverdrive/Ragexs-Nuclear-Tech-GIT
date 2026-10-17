@@ -202,7 +202,7 @@ public class PetroleumAccountingTest {
         assertTrue(hydrogen.configureForRecipe(hydrogenType, 1));
     }
     @Test public void customBillsMustFitTheirMachineRating() {
-        for(ProcessRecipe recipe : bills()) if(recipe.id.startsWith("chem:")) try { ChemicalFuelProcesses.validateRating(recipe); }
+        for(ProcessRecipe recipe : bills()) if(recipe.id.startsWith("chem:")) try { ChemicalFuelProcesses.validateReactorRating(recipe.electricallyDriven()); }
         catch(IllegalArgumentException failure) { throw new AssertionError(recipe.id, failure); }
         ProcessRecipe stock = ChemicalFuelProcesses.methanol();
         ProcessRecipe tooFast = new ProcessRecipe("custom:too_fast", stock.inputs, stock.quantities, stock.pressures,

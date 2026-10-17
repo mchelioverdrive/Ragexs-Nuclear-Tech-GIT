@@ -166,10 +166,10 @@ public final class ProcessMachine {
         if(name.equals("CEMENT_ITEM")) return ModItems.powder_cement;
         if(name.equals("AGGREGATE_COARSE_ITEM")) return ModItems.aggregate_coarse;
         if(name.equals("AGGREGATE_FINE_ITEM")) return ModItems.aggregate_fine;
-        if(name.equals("CONCRETE_ITEM")) return net.minecraft.item.Item.getItemFromBlock(ModBlocks.concrete_smooth);
-        if(name.equals("FIBER_CONCRETE_ITEM")) return net.minecraft.item.Item.getItemFromBlock(ModBlocks.concrete_asbestos);
+        if(name.equals("CONCRETE_ITEM") || name.equals("BUILDING_CONCRETE_ITEM")) return net.minecraft.item.Item.getItemFromBlock(ModBlocks.concrete_smooth);
+        if(name.equals("FIBER_CONCRETE_ITEM") || name.equals("BUILDING_FIBER_CONCRETE_ITEM")) return net.minecraft.item.Item.getItemFromBlock(ModBlocks.concrete_asbestos);
         if(name.equals("DUCRETE_ITEM")) return net.minecraft.item.Item.getItemFromBlock(ModBlocks.ducrete_smooth);
-        if(name.equals("ASPHALT_ITEM")) return net.minecraft.item.Item.getItemFromBlock(ModBlocks.asphalt);
+        if(name.equals("ASPHALT_ITEM") || name.equals("BUILDING_ASPHALT_ITEM")) return net.minecraft.item.Item.getItemFromBlock(ModBlocks.asphalt);
         if(name.equals("SOIL_ITEM")) return net.minecraft.item.Item.getItemFromBlock(Blocks.dirt);
         if(name.equals("QUICKLIME_ITEM")) return ModItems.quicklime;
         if(name.equals("STRONTIUM_OXIDE_ITEM")) return ModItems.powder_strontium_oxide;

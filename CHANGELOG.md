@@ -261,3 +261,11 @@
 - Assigned supplied heating to electricity for the seven powered petroleum vessel families, both deuterium extractors and the Dairy Tank. Preserved hot-feed sensible energy, total utility energy, duration, products, catalysts and existing progression; migrated owned batches with progress and paid work/heat credit intact.
 - Retained the Coker and existing bottom-heated equipment, including the deliberately supported Blast Furnace 3x3 heater connection. Blast hot feed and recipe reductant still offset external duty; no redundant auxiliary fuel-item consumption or electrical replacement was added. Industrial Boiler internal firing and external heat continue to share one demand.
 - Updated native machine information, NEI utility displays and process/thermal guides with actual energy sources, informational temperature references and exact retained heater placement.
+
+2026-10-16 21:34 — Rebalance industrial chemistry lots and bulk construction
+
+- Enlarged commodity water, acid/base, fertilizer, polymer, gas, salt-support and biological-feed lots while retaining reaction ratios, recovered carriers, byproducts, pressure and paid per-lot utilities. Preserved oil/nuclear/specialty progression rates and existing recipe identifiers.
+- Prioritized building demand with 256-block concrete/fibre-concrete and asphalt lots at their existing cycle times. Retained legacy construction parcel identities for already paid batches; no saved item or fluid counts are rescaled. DUcrete retains its shielding-material lot.
+- Expanded existing reactor basic-aqueous service to 60 L/min and integral workshop/shared industrial cooling to 1/5 MW, with existing fan/pump energy accounting. Adopted a lower closed-carrier utility allowance for bulk fertilizer instead of full-charge boiling; no extra coolant chain or technology tier was added.
+- Split bulk NEI solid products into legal output stacks with exact per-stack mass; sized mixer/industrial reactor tanks before recipe admission. Fixed vanadium consolidation creating three ingots from one powder, retaining its erbium addition as a recovered output.
+- Updated existing process/construction references and regression coverage for quantities, conservation, energy, port capacity, displays and saved paid lots.

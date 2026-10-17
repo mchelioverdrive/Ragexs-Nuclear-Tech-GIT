@@ -63,7 +63,7 @@ public final class SpecialistProcesses {
                 "gem_sapphire", "block.glass_quartz", "ingot_phosphorus", "powder_zircon", "ingot_hafnium", "block.ore_beryllium", "block.ore_magnesite", "calcined_dolomite",
                 "beryllium_oxide", "beryllium_fluoride", "magnesium_fluoride", "magnesium_ingot", "powder_beryllium", "powder_quartz", "powder_sodium_silicate",
                 "ingot_praseodymium", "ingot_dysprosium", "ingot_europium", "ingot_terbium", "powder_uranium", "powder_spent_haleu", "powder_spent_leu", "powder_spent_thorium", "powder_spent_u233", "powder_spent_mox", "powder_du_spent",
-                "powder_thorium", "nuclear_waste", "radium_residue", "process_residue", "powder_zirconium", "zirconium_oxide", "hafnium_oxide", "ingot_titanium", "powder_chromium", "ingot_chromium", "ingot_vanadium"}) solid(field, "1");
+                "powder_thorium", "nuclear_waste", "radium_residue", "process_residue", "powder_zirconium", "zirconium_oxide", "hafnium_oxide", "ingot_titanium", "powder_chromium", "ingot_chromium", "ingot_vanadium", "powder_vanadium"}) solid(field, "1");
         for(String field : new String[] {"KTP_crystal", "BBO_crystal", "titanium_sapphire_crystal", "lithium_niobate_crystal", "visible_dopant_crystal", "cerium_crystal", "KDP_crystal", "CLBO_crystal", "LBO_crystal", "er_yag_feedstock", "yby_feedstock", "calcium_fluoride_crystal"}) solid(field, ".1");
         for(String field : new String[] {"europium_dust_tiny", "powder_erbium_tiny", "powder_ytterbium_tiny", "powder_yttrium_tiny", "powder_neodymium_tiny", "nugget_th232", "nugget_uranium", "nugget_neptunium", "nugget_u233", "nugget_americium_fuel", "nugget_hafnium", "barium_nugget", "nugget_niobium"}) {
             String id = key(field);
@@ -94,6 +94,14 @@ public final class SpecialistProcesses {
         ticks=Math.max(ticks,Math.toIntExact(PetroleumProcesses.ceilDiv(rejection*20,200000)));
         long[] values=new long[out.size()]; int j=0; for(long value:out.values()) values[j++]=value;
         return new ProcessRecipe("specialist:"+id,in,quantities,new int[in.length],solids,counts,out.keySet().toArray(new String[out.size()]),values,ticks,work,heat,temperature,false);
+    }
+    /** Material-form consolidation; the legacy erbium addition is recovered, not transmuted into vanadium. */
+    public static ProcessRecipe vanadiumConsolidation() {
+        Map<String,Long> out = new LinkedHashMap<>();
+        out.put(key("ingot_vanadium"), m(key("powder_vanadium"), 1));
+        out.put(key("powder_erbium_tiny"), m(key("powder_erbium_tiny"), 1));
+        return bill("vanadium_consolidation", new String[0], new int[0],
+                new String[] {key("powder_vanadium"), key("powder_erbium_tiny")}, new int[] {1, 1}, out, 400, 80000, 0, 20);
     }
     public static ProcessRecipe fluoride(int kind) {
         String feed=kind==0?key("powder_terbium_oxide"):kind==1?key("powder_ytterbium_oxide"):"CALCIUM_ITEM";

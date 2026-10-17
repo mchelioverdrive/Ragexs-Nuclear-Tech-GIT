@@ -38,7 +38,9 @@ public final class UtilityMixtures {
     }
     public static ProcessRecipe blend(String id,String[] fluids,int[] qty,String[] solids,int[] counts) {
         long mass=0;for(int i=0;i<fluids.length;i++)mass+=m(fluids[i],qty[i]);for(int i=0;i<solids.length;i++)mass+=m(solids[i],counts[i]);Map<String,Long> out=new LinkedHashMap<>();out.put(id,mass);
-        return bill("working_preparation_"+id,fluids,qty,solids,counts,out,2400,120000,0,20);
+        // Cleaning emulsion and mineral slurries are bulk services. Exotic/biological preparations retain their lots.
+        return bill("working_preparation_"+id,fluids,qty,solids,counts,out,2400,120000,0,20)
+                .rebatch(id.equals("ELBOWGREASE") ? 8 : id.equals("MINSOL") || id.equals("REDMUD") ? 2 : 1);
     }
     public static Map<String,ProcessRecipe> mixers() {
         Map<String,ProcessRecipe> map=new LinkedHashMap<>();

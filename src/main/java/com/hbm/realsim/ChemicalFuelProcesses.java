@@ -59,7 +59,7 @@ public final class ChemicalFuelProcesses {
         long water = mass("WATER", 2) - consumedWater;
         long purge = coal + mass("WATER", 2) - syngas - charMass - ash - water;
         return new ProcessRecipe("chem:coal_syngas", new String[] {"FRESH_WATER"}, new int[] {2}, new int[] {0}, "COAL_ITEM", 1,
-                new String[] {"SYNGAS", "WATER", "CHAR_ITEM", "ASH_ITEM", "VENT_HYDROGEN_GAS"}, new long[] {syngas, water, charMass, ash, purge}, 10000, 4000000, 12000000, 850, false);
+                new String[] {"SYNGAS", "WATER", "CHAR_ITEM", "ASH_ITEM", "VENT_HYDROGEN_GAS"}, new long[] {syngas, water, charMass, ash, purge}, 10000, 4000000, 12000000, 850, false).rebatch(3);
     }
     public static ProcessRecipe methaneReforming() {
         // CH4 + 2H2O -> CO2 + 4H2; excess liquid feed is vented after heating.
@@ -86,13 +86,13 @@ public final class ChemicalFuelProcesses {
     public static ProcessRecipe digestion() {
         long total = mass("BIOMASS_ITEM", 16);
         return new ProcessRecipe("chem:biogas", new String[] {}, new int[] {}, new int[] {}, "BIOMASS_ITEM", 16,
-                new String[] {"BIOGAS", "WATER"}, PetroleumProcesses.split(total, new double[] {.75, .25}), 10000, 2000000, 500000, 40, false);
+                new String[] {"BIOGAS", "WATER"}, PetroleumProcesses.split(total, new double[] {.75, .25}), 10000, 2000000, 500000, 40, false).rebatch(4); // One stack of established biological feed.
     }
     public static ProcessRecipe fermentation() {
         long sugar = mass("SUGAR_ITEM", 16);
         long ethanol = ratio(sugar, "92.13688", "180.15588");
         return new ProcessRecipe("chem:ethanol", new String[] {}, new int[] {}, new int[] {}, "SUGAR_ITEM", 16,
-                new String[] {"ETHANOL", "CARBONDIOXIDE"}, new long[] {ethanol, sugar - ethanol}, 16000, 1600000, 320000, 40, false);
+                new String[] {"ETHANOL", "CARBONDIOXIDE"}, new long[] {ethanol, sugar - ethanol}, 16000, 1600000, 320000, 40, false).rebatch(4); // One stack; same conversion and paid energy per sugar.
     }
     public static ProcessRecipe oilExtraction(boolean fish) {
         long feed = mass(fish ? "FISH_FEED_ITEM" : "SEED_FEED_ITEM", 1);
@@ -176,16 +176,24 @@ public final class ChemicalFuelProcesses {
         for(int i = 0; i < bill.inputs.length; i++) {
             PhysicalState state = ProcessRecipe.resolved(bill.inputs[i]);
             if(state.substance.equals("hydrogen") && state.phase == PhysicalState.Phase.LIQUID) throw new IllegalArgumentException("Ordinary synthesis requires HYDROGEN_GAS");
-            long rate = state.phase == PhysicalState.Phase.GAS ? 6000L : state.basis == PhysicalState.Basis.NOMINAL ? 1200L : waterService(bill.inputs[i]) ? 60L : 12L;
+            long rate = state.phase == PhysicalState.Phase.GAS ? 6000L : state.basis == PhysicalState.Basis.NOMINAL ? 1200L : waterService(bill.inputs[i]) || reactor && commodityService(bill.inputs[i]) ? 60L : 12L;
             if((long) bill.quantities[i] * 1200L > (long) bill.duration * rate) throw new IllegalArgumentException("Reactor/mixer feed exceeds nameplate");
         }
         for(int i = 0; i < bill.outputs.length; i++) if(ProcessRecipe.resolved(bill.outputs[i]).basis == PhysicalState.Basis.LIQUID_LITER
                 && BigDecimal.valueOf(bill.productMass[i]).multiply(BigDecimal.valueOf(1200))
-                    .compareTo(BigDecimal.valueOf(ProcessRecipe.resolved(bill.outputs[i]).massUnits).multiply(BigDecimal.valueOf((long) bill.duration * (waterService(bill.outputs[i]) ? 60 : 12)))) > 0)
+                    .compareTo(BigDecimal.valueOf(ProcessRecipe.resolved(bill.outputs[i]).massUnits).multiply(BigDecimal.valueOf((long) bill.duration * (waterService(bill.outputs[i]) || reactor && commodityService(bill.outputs[i]) ? 60 : 12)))) > 0)
             throw new IllegalArgumentException("Reactor/mixer liquid output exceeds nameplate");
     }
     private static boolean waterService(String name) {
         return name.equals("WATER") || name.equals("FRESH_WATER") || name.equals("LIGHT_WATER") || name.equals("BORATED_WATER");
+    }
+    /** Existing general-purpose reactor plumbing handles basic aqueous reagents at water-service flow.
+     * Oil/fuel and specialty synthesis keep their separate process ceilings. */
+    private static boolean commodityService(String name) {
+        for(String commodity : new String[] {"HCL", "PEROXIDE", "NITRIC_ACID", "SULFURIC_ACID", "HYDROFLUORIC_ACID",
+                "BRINE", "MINERAL_BRINE", "BITTERN", "IODINE_BRINE", "SODIUM_HYDROXIDE", "SODIUM_CARBONATE", "POTASSIUM_CHLORIDE", "CALCIUM_CHLORIDE"})
+            if(name.equals(commodity)) return true;
+        return false;
     }
     public static boolean requiresBill(String output) {
         for(String name : new String[] {"GAS", "CO", "RAW_NATURAL_GAS", "UNSATURATEDS", "AROMATICS", "XYLENE", "HEAVYOIL", "LIGHTOIL", "NAPHTHA", "SMEAR", "HEATINGOIL", "BITUMEN", "COALCREOSOTE", "HOTOIL", "OIL", "COALOIL", "COALGAS", "GASOLINE", "DIESEL", "KEROSENE", "PETROIL", "BIOFUEL", "ETHANOL", "WOODOIL", "LPG", "SYNGAS", "REFORMGAS", "GAS_COKER", "PETROLEUM", "METHANOL", "LUBRICANT", "RECLAIMED"})

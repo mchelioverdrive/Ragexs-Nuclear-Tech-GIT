@@ -35,19 +35,19 @@ public final class ChemistryProcesses {
     public static ProcessRecipe ammonia() {
         long total = mass("NITROGEN_GAS", 100) + mass("HYDROGEN_GAS", 300);
         return bill("ammonia", new String[] {"NITROGEN_GAS", "HYDROGEN_GAS"}, new int[] {100, 300}, null, 0,
-                new String[] {"AMMONIA"}, new long[] {total}, 200, 60000, 15000, 400, false);
+                new String[] {"AMMONIA"}, new long[] {total}, 200, 60000, 15000, 400, false).rebatch(3);
     }
     public static ProcessRecipe peroxide() {
         long reagent = mass("HYDROGEN_GAS", 100) + mass("OXYGEN_GAS", 100), water = mass("FRESH_WATER", 1);
         long solution = ratio(reagent, "1", ".30");
         return bill("peroxide", new String[] {"HYDROGEN_GAS", "OXYGEN_GAS", "FRESH_WATER"}, new int[] {100, 100, 1}, null, 0,
-                new String[] {"PEROXIDE", "FRESH_WATER"}, new long[] {solution, reagent + water - solution}, 200, 20000, 0, 20, false);
+                new String[] {"PEROXIDE", "FRESH_WATER"}, new long[] {solution, reagent + water - solution}, 200, 20000, 0, 20, false).rebatch(3);
     }
     public static ProcessRecipe hydrochloric() {
         long reagent = mass("HYDROGEN_GAS", 100) + mass("CHLORINE", 100), water = mass("FRESH_WATER", 1);
         long acid = ratio(reagent, "1", ".30");
         return bill("hcl_absorption", new String[] {"HYDROGEN_GAS", "CHLORINE", "FRESH_WATER"}, new int[] {100, 100, 1}, null, 0,
-                new String[] {"HCL", "FRESH_WATER"}, new long[] {acid, reagent + water - acid}, 200, 20000, 0, 20, false);
+                new String[] {"HCL", "FRESH_WATER"}, new long[] {acid, reagent + water - acid}, 200, 20000, 0, 20, false).rebatch(3);
     }
     public static ProcessRecipe nitric() {
         // NH3 + 2 O2 -> HNO3 + H2O, then aqueous absorption to 65 wt% acid.
@@ -55,7 +55,7 @@ public final class ChemistryProcesses {
         long acid = ratio(mass("AMMONIA", 100), "63.01284", "17.03052");
         long solution = ratio(acid, "1", ".65");
         return bill("nitric_acid", new String[] {"AMMONIA", "OXYGEN_GAS", "FRESH_WATER"}, new int[] {100, 200, 1}, null, 0,
-                new String[] {"NITRIC_ACID", "FRESH_WATER"}, new long[] {solution, feed - solution}, 200, 60000, 10000, 850, false);
+                new String[] {"NITRIC_ACID", "FRESH_WATER"}, new long[] {solution, feed - solution}, 200, 60000, 10000, 850, false).rebatch(4);
     }
     public static ProcessRecipe sulfuric() {
         // S + 1.5 O2 + H2O -> H2SO4. Rounded oxidizer excess is exported intact.
@@ -65,19 +65,19 @@ public final class ChemistryProcesses {
         long total = sulfur + mass("OXYGEN_GAS", gas) + mass("FRESH_WATER", 1);
         long excess = mass("OXYGEN_GAS", gas) - oxygen;
         return bill("sulfuric_acid", new String[] {"OXYGEN_GAS", "FRESH_WATER"}, new int[] {gas, 1}, "SULFUR_ITEM", 1,
-                new String[] {"SULFURIC_ACID", "FRESH_WATER", "OXYGEN_GAS"}, new long[] {solution, total - solution - excess, excess}, 1200, 120000, 100000, 450, false);
+                new String[] {"SULFURIC_ACID", "FRESH_WATER", "OXYGEN_GAS"}, new long[] {solution, total - solution - excess, excess}, 1200, 120000, 100000, 450, false).rebatch(4);
     }
     public static ProcessRecipe waterTreatment() {
         // Raw water contains NaCl plus trace geological KBr/NaI; manufactured salt brine does not.
         return bill("water_treatment", new String[] {"WATER"}, new int[] {10}, null, 0,
-                new String[] {"FRESH_WATER", "MINERAL_BRINE"}, new long[] {mass("FRESH_WATER", 9), mass("WATER", 10) - mass("FRESH_WATER", 9)}, 1000, 30000, 0, 20, true);
+                new String[] {"FRESH_WATER", "MINERAL_BRINE"}, new long[] {mass("FRESH_WATER", 9), mass("WATER", 10) - mass("FRESH_WATER", 9)}, 1000, 30000, 0, 20, true).rebatch(5);
     }
     public static ProcessRecipe mineralBrineSeparation() {
         // Tenfold concentration of raw-water trace salts, then selective recovery into existing liquors.
         long feed = mass("MINERAL_BRINE", 10), bittern = ratio(feed, ".002", ".02046"), iodide = ratio(feed, ".00005", ".01");
         return bill("mineral_brine_separation", new String[] {"MINERAL_BRINE", "FRESH_WATER"}, new int[] {10, 2}, null, 0,
                 new String[] {"BRINE", "BITTERN", "IODINE_BRINE", "FRESH_WATER"},
-                new long[] {feed, bittern, iodide, mass("FRESH_WATER", 2) - bittern - iodide}, 2400, 100000, 0, 20, true);
+                new long[] {feed, bittern, iodide, mass("FRESH_WATER", 2) - bittern - iodide}, 2400, 100000, 0, 20, true).rebatch(2);
     }
     public static ProcessRecipe halogenRecovery(boolean iodine, boolean solidFeed) {
         String source = solidFeed ? "POTASSIUM_IODIDE_ITEM" : iodine ? "IODINE_BRINE" : "BITTERN";
@@ -93,11 +93,11 @@ public final class ChemistryProcesses {
         return bill("halogen_recovery_" + source.toLowerCase(java.util.Locale.ROOT), inputs, counts, solidFeed ? source : null, solidFeed ? 1 : 0,
                 new String[] {iodine ? "IODINE_ITEM" : "BROMINE_REAGENT_ITEM", potassium ? "POTASSIUM_CHLORIDE" : "SALT_ITEM", "FRESH_WATER", "CHLORINE"},
                 new long[] {halogen, solution, feed + (solidFeed ? mass("FRESH_WATER", 1) : 0) + chlorine - halogen - solution, mass("CHLORINE", q) - chlorine},
-                200, 20000, 0, 20, false);
+                200, 20000, 0, 20, false).rebatch(solidFeed ? 1 : 2);
     }
     public static ProcessRecipe demineralization() {
         return bill("demineralization", new String[] {"FRESH_WATER"}, new int[] {10}, null, 0,
-                new String[] {"LIGHT_WATER"}, new long[] {mass("FRESH_WATER", 10)}, 1000, 30000, 0, 20, true);
+                new String[] {"LIGHT_WATER"}, new long[] {mass("FRESH_WATER", 10)}, 1000, 30000, 0, 20, true).rebatch(5);
     }
     public static ProcessRecipe brine() {
         long total = mass("FRESH_WATER", 31) + mass("SALT_ITEM", 1);
@@ -126,17 +126,17 @@ public final class ChemistryProcesses {
     public static ProcessRecipe polymer(boolean fluid) {
         long feed = mass("UNSATURATEDS", 1000);
         return bill("polyethylene", new String[] {"UNSATURATEDS"}, new int[] {1000}, null, 0,
-                new String[] {fluid ? "POLYTHYLENE" : "POLYMER_ITEM"}, new long[] {feed}, 2000, 200000, 100000, 200, false);
+                new String[] {fluid ? "POLYTHYLENE" : "POLYMER_ITEM"}, new long[] {feed}, 2000, 200000, 100000, 200, false).rebatch(8);
     }
     public static ProcessRecipe phosgene() {
         long feed = mass("CO", 100) + mass("CHLORINE", 100);
         return bill("phosgene", new String[] {"CO", "CHLORINE"}, new int[] {100, 100}, null, 0,
-                new String[] {"PHOSGENE"}, new long[] {feed}, 200, 20000, 0, 150, false);
+                new String[] {"PHOSGENE"}, new long[] {feed}, 200, 20000, 0, 150, false).rebatch(5);
     }
     public static ProcessRecipe combustion() {
         long total = mass("GAS", 100) + mass("OXYGEN_GAS", 200), co2 = mass("CARBONDIOXIDE", 100);
         return bill("methane_oxidation", new String[] {"GAS", "OXYGEN_GAS"}, new int[] {100, 200}, null, 0,
-                new String[] {"CARBONDIOXIDE", "FRESH_WATER"}, new long[] {co2, total - co2}, 800, 20000, 0, 20, false);
+                new String[] {"CARBONDIOXIDE", "FRESH_WATER"}, new long[] {co2, total - co2}, 800, 20000, 0, 20, false).rebatch(2);
     }
     public static ProcessRecipe chloralkali(boolean saltFeed) {
         long salt = saltFeed ? mass("SALT_ITEM", 1) : ratio(mass("BRINE", 1), ".03125", "1");
@@ -146,7 +146,7 @@ public final class ChemistryProcesses {
         int ticks = saltFeed ? 14000 : 500;
         return bill("chloralkali", new String[] {saltFeed ? "FRESH_WATER" : "BRINE"}, new int[] {1}, saltFeed ? "SALT_ITEM" : null, saltFeed ? 1 : 0,
                 new String[] {"CHLORINE", "HYDROGEN_GAS", "FRESH_WATER", "LYE_ITEM"},
-                new long[] {chlorine, hydrogen, total - chlorine - hydrogen - lye, lye}, ticks, saltFeed ? 5500000 : 200000, 0, 20, false);
+                new long[] {chlorine, hydrogen, total - chlorine - hydrogen - lye, lye}, ticks, saltFeed ? 5500000 : 200000, 0, 20, false).rebatch(saltFeed ? 8 : 2);
     }
     public static ProcessRecipe hydrazine() {
         // Peroxide process: 2 NH3 + H2O2 -> N2H4 + 2 H2O. Organic carrier is recycled internally.
@@ -161,7 +161,7 @@ public final class ChemistryProcesses {
         long consumedSolution = ratio(acid, "1", ".65");
         return bill("ammonium_nitrate", new String[] {"AMMONIA", "NITRIC_ACID"}, new int[] {100, 1}, null, 0,
                 new String[] {"AMMONIUM_NITRATE_ITEM", "FRESH_WATER", "NITRIC_ACID"},
-                new long[] {ammonia + acid, consumedSolution - acid, mass("NITRIC_ACID", 1) - consumedSolution}, 400, 80000, 400000, 120, false);
+                new long[] {ammonia + acid, consumedSolution - acid, mass("NITRIC_ACID", 1) - consumedSolution}, 400, 80000, 400000, 120, false).rebatch(4);
     }
     public static ProcessRecipe fluorideElectrolysis() {
         // HF drying and anhydrous KF/HF cell compressed into one bill; water is rejected before electrolysis.
@@ -173,10 +173,11 @@ public final class ChemistryProcesses {
     /** Recover a dry nutrient salt; the generic fertilizer dose does not assert one fixed anion. */
     public static ProcessRecipe fertilizer(boolean sulfate) {
         if(sulfate) return bill("sulfate_fertilizer_packaging", new String[0], new int[0], "POTASSIUM_SULFATE_ITEM", 1,
-                new String[] {"FERTILIZER_ITEM"}, new long[] {mass("POTASSIUM_SULFATE_ITEM", 1)}, 200, 20000, 0, 20, true);
+                new String[] {"FERTILIZER_ITEM"}, new long[] {mass("POTASSIUM_SULFATE_ITEM", 1)}, 200, 20000, 0, 20, true).rebatch(16);
+        // Closed carrier recovery uses an abstracted utility bill rather than repeatedly boiling the whole fresh charge.
         long solution = mass("POTASSIUM_CHLORIDE", 5), salt = ratio(solution, ".20", "1");
         return bill("potash_fertilizer_recovery", new String[] {"POTASSIUM_CHLORIDE"}, new int[] {5}, null, 0,
-                new String[] {"FERTILIZER_ITEM", "FRESH_WATER"}, new long[] {salt, solution - salt}, 3000, 75000, 12000000, 120, true);
+                new String[] {"FERTILIZER_ITEM", "FRESH_WATER"}, new long[] {salt, solution - salt}, 3000, 75000, 1200000, 120, true).rebatch(12);
     }
     /** Aqueous salt exchange, selective crystallization and internal carrier-water recovery. */
     public static ProcessRecipe potassiumNitrate(boolean ammonium) {
@@ -186,7 +187,7 @@ public final class ChemistryProcesses {
         long usedLiquor = ratio(kcl, "1", ".20"), solution = mass("POTASSIUM_CHLORIDE", 5);
         return bill(ammonium ? "potassium_nitrate_ammonium" : "potassium_nitrate_sodium", new String[] {"POTASSIUM_CHLORIDE"}, new int[] {5}, nitrate, 1,
                 new String[] {"POTASSIUM_NITRATE_ITEM", ammonium ? "AMMONIUM_CHLORIDE_ITEM" : "SALT_ITEM", "POTASSIUM_CHLORIDE", "FRESH_WATER"},
-                new long[] {product, solid + kcl - product, solution - usedLiquor, usedLiquor - kcl}, 3000, 100000, 10000000, 120, false);
+                new long[] {product, solid + kcl - product, solution - usedLiquor, usedLiquor - kcl}, 3000, 100000, 10000000, 120, false).rebatch(2, 4000);
     }
     public static ProcessRecipe hydrofluoric() {
         long fluorite = mass("FLUORITE_ITEM", 1), acid = ratio(fluorite, "98.07848", "78.0748064");
@@ -196,7 +197,7 @@ public final class ChemistryProcesses {
         long total = fluorite + mass("SULFURIC_ACID", 1) + mass("FRESH_WATER", 1);
         return bill("hydrofluoric_acid", new String[] {"SULFURIC_ACID", "FRESH_WATER"}, new int[] {1, 1}, "FLUORITE_ITEM", 1,
                 new String[] {"HYDROFLUORIC_ACID", "SULFURIC_ACID", "FRESH_WATER", "GYPSUM_ITEM"},
-                new long[] {hfSolution, excess, total - hfSolution - excess - gypsum, gypsum}, 1000, 50000, 100000, 80, false);
+                new long[] {hfSolution, excess, total - hfSolution - excess - gypsum, gypsum}, 1000, 50000, 100000, 80, false).rebatch(8);
     }
     public static ProcessRecipe ammoniumChlorideDecomposition() {
         long salt = mass("AMMONIUM_CHLORIDE_ITEM", 1), ammonia = ratio(salt, "17.03052", "53.49146");
@@ -254,7 +255,7 @@ public final class ChemistryProcesses {
                 new String[] {"SODIUM_SULFATE_ITEM", "CHAR_ITEM"}, new int[] {1, 1},
                 new String[] {"SODIUM_SULFIDE_ITEM", "CARBONDIOXIDE", "CHAR_ITEM"}, new long[] {sulfide, co2, mass("CHAR_ITEM", 1) - carbon},
                 2000, 100000, 5000000, 850, false);
-        ChemicalFuelProcesses.validateRating(result); return result;
+        ChemicalFuelProcesses.validateRating(result); return result.rebatch(2);
     }
     public static ProcessRecipe sulfideAcidification() {
         long sulfide = mass("SODIUM_SULFIDE_ITEM", 1), acid = ratio(sulfide, "72.92188", "78.04454");
@@ -262,7 +263,7 @@ public final class ChemistryProcesses {
         long h2s = sulfide + acid - salt;
         return bill("sulfide_acidification", new String[] {"HCL"}, new int[] {3}, "SODIUM_SULFIDE_ITEM", 1,
                 new String[] {"HYDROGEN_SULFIDE", "SALT_ITEM", "FRESH_WATER", "HCL"},
-                new long[] {h2s, salt, consumed - acid, mass("HCL", 3) - consumed}, 800, 20000, 0, 20, false);
+                new long[] {h2s, salt, consumed - acid, mass("HCL", 3) - consumed}, 800, 20000, 0, 20, false).rebatch(3);
     }
     public static ProcessRecipe gadoliniumMelting() {
         return bill("gadolinium_melting", new String[] {}, new int[] {}, "GADOLINIUM_ITEM", 1,
@@ -282,7 +283,7 @@ public final class ChemistryProcesses {
     public static ProcessRecipe sulfideSynthesis() {
         long sulfur = mass("SULFUR_ITEM", 1), hydrogen = ratio(sulfur, "2.01588", "32.065");
         return bill("hydrogen_sulfide", new String[] {"HYDROGEN_GAS"}, new int[] {800}, "SULFUR_ITEM", 1,
-                new String[] {"HYDROGEN_SULFIDE", "HYDROGEN_GAS"}, new long[] {sulfur + hydrogen, mass("HYDROGEN_GAS", 800) - hydrogen}, 1200, 60000, 500000, 200, false);
+                new String[] {"HYDROGEN_SULFIDE", "HYDROGEN_GAS"}, new long[] {sulfur + hydrogen, mass("HYDROGEN_GAS", 800) - hydrogen}, 1200, 60000, 500000, 200, false).rebatch(4);
     }
     public static ProcessRecipe saltMelting() {
         return bill("salt_melting", new String[] {}, new int[] {}, "SALT_ITEM", 1,
@@ -298,7 +299,7 @@ public final class ChemistryProcesses {
         long hydrogen = ratio(sodium, "1.00794", "22.98977");
         return bill("sodium_hydroxide", new String[] {"SODIUM", "FRESH_WATER"}, new int[] {100, 1}, null, 0,
                 new String[] {"SODIUM_HYDROXIDE", "HYDROGEN_GAS", "FRESH_WATER"}, new long[] {sodium + water - hydrogen, hydrogen, mass("FRESH_WATER", 1) - water},
-                1000, 50000, 0, 20, false);
+                1000, 50000, 0, 20, false).rebatch(3);
     }
     public static ProcessRecipe potassiumChlorideElectrolysis() {
         long feed = mass("POTASSIUM_CHLORIDE", 1), salt = ratio(feed, ".2", "1");
@@ -328,7 +329,7 @@ public final class ChemistryProcesses {
         long total = feed + mass("HCL", 3) + mass("FRESH_WATER", 1);
         return bill("potash_chlorides", new String[] {"HCL", "FRESH_WATER"}, new int[] {3, 1}, "POTASH_ITEM", 1,
                 new String[] {"POTASSIUM_CHLORIDE", "SALT_ITEM", "RUBIDIUM_SALT_ITEM", "CARBONDIOXIDE", "HCL", "FRESH_WATER"},
-                new long[] {solution, nacl, rbcl, co2, excess, total - solution - nacl - rbcl - co2 - excess}, 1200, 60000, 0, 20, false);
+                new long[] {solution, nacl, rbcl, co2, excess, total - solution - nacl - rbcl - co2 - excess}, 1200, 60000, 0, 20, false).rebatch(4);
     }
     public static ProcessRecipe chloromethane() {
         // Radical substitution, not methane/chlorine blending: CH4 + Cl2 -> CH3Cl + HCl.
@@ -336,14 +337,14 @@ public final class ChemistryProcesses {
         long acid = ratio(mass("GAS", 100), "36.46094", "16.04246"), solution = ratio(acid, "1", ".30");
         long total = mass("GAS", 100) + mass("CHLORINE", 100) + mass("FRESH_WATER", 1);
         return bill("chloromethane", new String[] {"GAS", "CHLORINE", "FRESH_WATER"}, new int[] {100, 100, 1}, null, 0,
-                new String[] {"CHLOROMETHANE", "HCL", "FRESH_WATER"}, new long[] {product, solution, total - product - solution}, 400, 40000, 100000, 300, false);
+                new String[] {"CHLOROMETHANE", "HCL", "FRESH_WATER"}, new long[] {product, solution, total - product - solution}, 400, 40000, 100000, 300, false).rebatch(2);
     }
     public static ProcessRecipe calciumChloride() {
         long lime = mass("QUICKLIME_ITEM", 1), used = ratio(lime, "72.92188", "56.0774");
         long salt = ratio(lime, "110.984", "56.0774"), solution = ratio(salt, "1", ".40");
         long acid = mass("HCL", 4), excess = acid - ratio(used, "1", ".30");
         return bill("calcium_chloride", new String[] {"HCL"}, new int[] {4}, "QUICKLIME_ITEM", 1,
-                new String[] {"CALCIUM_CHLORIDE", "HCL", "FRESH_WATER"}, new long[] {solution, excess, lime + acid - solution - excess}, 800, 40000, 0, 20, false);
+                new String[] {"CALCIUM_CHLORIDE", "HCL", "FRESH_WATER"}, new long[] {solution, excess, lime + acid - solution - excess}, 800, 40000, 0, 20, false).rebatch(2);
     }
     public static ProcessRecipe strontiumChloride() {
         long oxide = mass("STRONTIUM_OXIDE_ITEM", 1), used = ratio(oxide, "72.92188", "103.6194");
@@ -421,7 +422,7 @@ public final class ChemistryProcesses {
         long solution = ratio(kcl, "1", ".20"), water = mass("FRESH_WATER", 2);
         return bill("carnallite", new String[] {"FRESH_WATER"}, new int[] {2}, "CARNALLITE_ITEM", 1,
                 new String[] {"POTASSIUM_CHLORIDE", "MAGNESIUM_CHLORIDE_ITEM", "FRESH_WATER"},
-                new long[] {solution, magnesium, ore + water - solution - magnesium}, 1000, 50000, 2000000, 120, true);
+                new long[] {solution, magnesium, ore + water - solution - magnesium}, 1000, 50000, 2000000, 120, true).rebatch(2);
     }
     public static ProcessRecipe strontiumMelting() {
         return bill("strontium_chloride_melting", new String[] {}, new int[] {}, "STRONTIUM_CHLORIDE_ITEM", 1,
@@ -439,18 +440,18 @@ public final class ChemistryProcesses {
     public static ProcessRecipe butadiene() {
         long feed = mass("UNSATURATEDS", 1000), gas = mass("HYDROGEN_GAS", 500);
         return bill("butadiene", new String[] {"UNSATURATEDS"}, new int[] {1000}, null, 0,
-                new String[] {"BUTADIENE", "HYDROGEN_GAS"}, new long[] {feed - gas, gas}, 2000, 200000, 4000000, 550, false);
+                new String[] {"BUTADIENE", "HYDROGEN_GAS"}, new long[] {feed - gas, gas}, 2000, 200000, 4000000, 550, false).rebatch(2);
     }
     public static ProcessRecipe rubber() {
         return bill("rubber", new String[] {"BUTADIENE"}, new int[] {200}, "SULFUR_DOSE_ITEM", 1,
-                new String[] {"RUBBER_ITEM"}, new long[] {mass("BUTADIENE", 200) + mass("SULFUR_DOSE_ITEM", 1)}, 1000, 200000, 300000, 150, false);
+                new String[] {"RUBBER_ITEM"}, new long[] {mass("BUTADIENE", 200) + mass("SULFUR_DOSE_ITEM", 1)}, 1000, 200000, 300000, 150, false).rebatch(10);
     }
     public static ProcessRecipe pvc() {
         // Ethylene oxychlorination, EDC cracking and polymerization; recycled HCl stays inside the plant.
         long polymer = ratio(mass("UNSATURATEDS", 400), "62.49822", "28.05316");
         long total = mass("UNSATURATEDS", 400) + mass("CHLORINE", 200) + mass("OXYGEN_GAS", 100);
         return bill("pvc", new String[] {"UNSATURATEDS", "CHLORINE", "OXYGEN_GAS"}, new int[] {400, 200, 100}, null, 0,
-                new String[] {"PVC_ITEM", "FRESH_WATER"}, new long[] {polymer, total - polymer}, 2000, 200000, 600000, 500, false);
+                new String[] {"PVC_ITEM", "FRESH_WATER"}, new long[] {polymer, total - polymer}, 2000, 200000, 600000, 500, false).rebatch(8);
     }
     public static ProcessRecipe phenol() {
         // Cumene surrogate + O2 -> phenol + acetone. No existing aromatic stock coefficient changes.
@@ -458,20 +459,20 @@ public final class ChemistryProcesses {
         int q = Math.toIntExact(PetroleumProcesses.ceilDiv(oxygen, mass("OXYGEN_GAS", 1)));
         long phenol = ratio(feed, "94.11124", "120.19158");
         return bill("phenol", new String[] {"AROMATICS", "OXYGEN_GAS"}, new int[] {1, q}, null, 0,
-                new String[] {"PHENOL", "ACETONE", "OXYGEN_GAS"}, new long[] {phenol, feed + oxygen - phenol, mass("OXYGEN_GAS", q) - oxygen}, 2000, 100000, 200000, 120, false);
+                new String[] {"PHENOL", "ACETONE", "OXYGEN_GAS"}, new long[] {phenol, feed + oxygen - phenol, mass("OXYGEN_GAS", q) - oxygen}, 2000, 100000, 200000, 120, false).rebatch(4);
     }
     public static ProcessRecipe formaldehyde() {
         long methanol = mass("METHANOL", 1), oxygen = ratio(methanol, "15.9994", "32.04186");
         int q = Math.toIntExact(PetroleumProcesses.ceilDiv(oxygen, mass("OXYGEN_GAS", 1)));
         long product = ratio(methanol, "30.02598", "32.04186");
         return bill("formaldehyde", new String[] {"METHANOL", "OXYGEN_GAS"}, new int[] {1, q}, null, 0,
-                new String[] {"FORMALDEHYDE", "FRESH_WATER", "OXYGEN_GAS"}, new long[] {product, methanol + oxygen - product, mass("OXYGEN_GAS", q) - oxygen}, 2000, 200000, 600000, 250, false);
+                new String[] {"FORMALDEHYDE", "FRESH_WATER", "OXYGEN_GAS"}, new long[] {product, methanol + oxygen - product, mass("OXYGEN_GAS", q) - oxygen}, 2000, 200000, 600000, 250, false).rebatch(4);
     }
     public static ProcessRecipe bakelite() {
         long phenol = mass("PHENOL", 1), used = ratio(phenol, "30.02598", "94.11124"), polymer = ratio(phenol, "106.12194", "94.11124");
         return bill("bakelite", new String[] {"PHENOL", "FORMALDEHYDE"}, new int[] {1, 300}, null, 0,
                 new String[] {"BAKELITE_ITEM", "FRESH_WATER", "FORMALDEHYDE"},
-                new long[] {polymer, phenol + used - polymer, mass("FORMALDEHYDE", 300) - used}, 2000, 200000, 400000, 150, false);
+                new long[] {polymer, phenol + used - polymer, mass("FORMALDEHYDE", 300) - used}, 2000, 200000, 400000, 150, false).rebatch(8);
     }
     public static ProcessRecipe bisphenol() {
         long phenol = mass("PHENOL", 1), used = ratio(phenol, "58.07914", "188.22248"), product = ratio(phenol, "228.28634", "188.22248");
@@ -490,7 +491,7 @@ public final class ChemistryProcesses {
         long aromatic = mass("AROMATICS", 1), usedH2 = ratio(aromatic, "2.01588", "120.19158");
         long product = ratio(aromatic, "78.11184", "120.19158");
         return bill("benzene", new String[] {"AROMATICS", "HYDROGEN_GAS"}, new int[] {1, 200}, null, 0,
-                new String[] {"BENZENE", "LPG", "HYDROGEN_GAS"}, new long[] {product, aromatic + usedH2 - product, mass("HYDROGEN_GAS", 200) - usedH2}, 2000, 200000, 2500000, 650, false);
+                new String[] {"BENZENE", "LPG", "HYDROGEN_GAS"}, new long[] {product, aromatic + usedH2 - product, mass("HYDROGEN_GAS", 200) - usedH2}, 2000, 200000, 2500000, 650, false).rebatch(4);
     }
     public static ProcessRecipe diamine() {
         // Nitration + hydrogenation: benzene + 2 HNO3 + 6 H2 -> PPD + 6 H2O.
@@ -526,11 +527,11 @@ public final class ChemistryProcesses {
     public static ProcessRecipe xylene() {
         long aromatic = mass("AROMATICS", 1), usedH2 = ratio(aromatic, "2.01588", "120.19158"), product = ratio(aromatic, "106.165", "120.19158");
         return bill("xylene", new String[] {"AROMATICS", "HYDROGEN_GAS"}, new int[] {1, 200}, null, 0,
-                new String[] {"XYLENE", "GAS", "HYDROGEN_GAS"}, new long[] {product, aromatic + usedH2 - product, mass("HYDROGEN_GAS", 200) - usedH2}, 2000, 100000, 2500000, 650, false);
+                new String[] {"XYLENE", "GAS", "HYDROGEN_GAS"}, new long[] {product, aromatic + usedH2 - product, mass("HYDROGEN_GAS", 200) - usedH2}, 2000, 100000, 2500000, 650, false).rebatch(4);
     }
     public static ProcessRecipe syngasSeparation() {
         return bill("syngas_separation", new String[] {"SYNGAS"}, new int[] {1000}, null, 0,
-                new String[] {"HYDROGEN_GAS", "CO"}, new long[] {mass("HYDROGEN_GAS", 500), mass("CO", 500)}, 1000, 100000, 0, 20, true);
+                new String[] {"HYDROGEN_GAS", "CO"}, new long[] {mass("HYDROGEN_GAS", 500), mass("CO", 500)}, 1000, 100000, 0, 20, true).rebatch(5);
     }
     public static ProcessRecipe coltanCleaning() {
         // Adopted 50 wt% concentrate/50 wt% gangue ore assay. Acid wash is recycled, not annihilated.
@@ -565,7 +566,7 @@ public final class ChemistryProcesses {
     public static ProcessRecipe calciumDrying() {
         long feed = mass("CALCIUM_CHLORIDE", 1), salt = ratio(feed, ".40", "1");
         return bill("calcium_chloride_drying", new String[] {"CALCIUM_CHLORIDE"}, new int[] {1}, null, 0,
-                new String[] {"MOLTEN_CALCIUM_CHLORIDE", "STEAM"}, new long[] {salt, feed - salt}, 1000, 50000, 3000000, 900, true);
+                new String[] {"MOLTEN_CALCIUM_CHLORIDE", "STEAM"}, new long[] {salt, feed - salt}, 1000, 50000, 3000000, 900, true).rebatch(2, 1200);
     }
     public static ProcessRecipe calciumElectrolysis() {
         long feed = mass("MOLTEN_CALCIUM_CHLORIDE", 144), calcium = ratio(feed, "40.078", "110.984");
@@ -590,7 +591,7 @@ public final class ChemistryProcesses {
     }
     public static ProcessRecipe rawGasRecovery() {
         return bill("raw_natural_gas_separation", new String[] {"RAW_NATURAL_GAS"}, new int[] {100}, null, 0,
-                new String[] {"GAS", "HELIUM4"}, new long[] {mass("GAS", 98), mass("HELIUM4", 2)}, 200, 50000, 0, 20, true);
+                new String[] {"GAS", "HELIUM4"}, new long[] {mass("GAS", 98), mass("HELIUM4", 2)}, 200, 50000, 0, 20, true).rebatch(10);
     }
     public static ProcessRecipe oxyhydrogen() {
         long total = mass("HYDROGEN_GAS", 100) + mass("OXYGEN_GAS", 50);
@@ -618,15 +619,15 @@ public final class ChemistryProcesses {
     }
     public static ProcessRecipe colloid() {
         return bill("mineral_colloid", new String[] {"FRESH_WATER"}, new int[] {1}, "GANGUE_ITEM", 1,
-                new String[] {"COLLOID"}, new long[] {mass("FRESH_WATER", 1) + mass("GANGUE_ITEM", 1)}, 400, 30000, 0, 20, true);
+                new String[] {"COLLOID"}, new long[] {mass("FRESH_WATER", 1) + mass("GANGUE_ITEM", 1)}, 400, 30000, 0, 20, true).rebatch(2);
     }
     public static ProcessRecipe chlorocalciteSolution() {
         return bill("chlorocalcite_dissolution", new String[] {"FRESH_WATER"}, new int[] {4}, "CHLOROCALCITE_ITEM", 1,
-                new String[] {"CHLOROCALCITE_SOLUTION"}, new long[] {mass("FRESH_WATER", 4) + mass("CHLOROCALCITE_ITEM", 1)}, 1200, 60000, 0, 20, true);
+                new String[] {"CHLOROCALCITE_SOLUTION"}, new long[] {mass("FRESH_WATER", 4) + mass("CHLOROCALCITE_ITEM", 1)}, 1200, 60000, 0, 20, true).rebatch(2);
     }
     public static ProcessRecipe chlorocalciteConditioning() {
         return bill("chlorocalcite_conditioning", new String[] {"CHLOROCALCITE_SOLUTION", "FRESH_WATER"}, new int[] {2, 1}, "FLUX_ITEM", 1,
-                new String[] {"CHLOROCALCITE_MIX"}, new long[] {mass("CHLOROCALCITE_SOLUTION", 2) + mass("FRESH_WATER", 1) + mass("FLUX_ITEM", 1)}, 1200, 60000, 0, 20, true);
+                new String[] {"CHLOROCALCITE_MIX"}, new long[] {mass("CHLOROCALCITE_SOLUTION", 2) + mass("FRESH_WATER", 1) + mass("FLUX_ITEM", 1)}, 1200, 60000, 0, 20, true).rebatch(2);
     }
     public static ProcessRecipe chlorocalciteClarification() {
         long feed = mass("CHLOROCALCITE_MIX", 1), liquor = ratio(feed, "23", "43");
@@ -638,14 +639,14 @@ public final class ChemistryProcesses {
         long potassium = ratio(mineral, "74.5513", "185.5353"), calcium = mineral - potassium;
         long kcl = ratio(potassium, "1", ".20"), cacl = ratio(calcium, "1", ".40");
         return bill("chlorocalcite_separation", new String[] {"CHLOROCALCITE_CLEANED"}, new int[] {1}, null, 0,
-                new String[] {"POTASSIUM_CHLORIDE", "CALCIUM_CHLORIDE", "FRESH_WATER"}, new long[] {kcl, cacl, feed - kcl - cacl}, 1000, 50000, 300000, 120, true);
+                new String[] {"POTASSIUM_CHLORIDE", "CALCIUM_CHLORIDE", "FRESH_WATER"}, new long[] {kcl, cacl, feed - kcl - cacl}, 1000, 50000, 300000, 120, true).rebatch(4);
     }
     public static ProcessRecipe chlorocalciteCrystallization() {
         long calcium = ratio(mass("CALCIUM_CHLORIDE", 1), ".40", "1"), usedK = ratio(calcium, "74.5513", "110.984");
         long crystal = calcium + usedK, remainingK = mass("POTASSIUM_CHLORIDE", 4) - ratio(usedK, "1", ".20");
         return bill("chlorocalcite_crystallization", new String[] {"CALCIUM_CHLORIDE", "POTASSIUM_CHLORIDE"}, new int[] {1, 4}, null, 0,
                 new String[] {"CHLOROCALCITE_ITEM", "POTASSIUM_CHLORIDE", "FRESH_WATER"},
-                new long[] {crystal, remainingK, mass("CALCIUM_CHLORIDE", 1) + mass("POTASSIUM_CHLORIDE", 4) - crystal - remainingK}, 2000, 100000, 5000000, 400, true);
+                new long[] {crystal, remainingK, mass("CALCIUM_CHLORIDE", 1) + mass("POTASSIUM_CHLORIDE", 4) - crystal - remainingK}, 2000, 100000, 5000000, 400, true).rebatch(2);
     }
     public static boolean electrolyserRequiresBill(String input) {
         for(String name : new String[] {"FRESH_WATER", "HEAVYWATER", "BRINE", "HYDROFLUORIC_ACID", "MOLTEN_SALT", "POTASSIUM_CHLORIDE", "MOLTEN_STRONTIUM_CHLORIDE", "MOLTEN_CALCIUM_CHLORIDE", "MOLTEN_LITHIUM_CHLORIDE", "RHODIUM_SOLUTION", "IRIDIUM_SOLUTION", "SLOP"}) if(input.equals(name)) return true;
@@ -659,6 +660,7 @@ public final class ChemistryProcesses {
     private static Map<Integer, ProcessRecipe> createDefaults() {
         Map<Integer, ProcessRecipe> result = new LinkedHashMap<Integer, ProcessRecipe>();
         result.putAll(SpecialistProcesses.defaults());
+        result.put(1086, SpecialistProcesses.vanadiumConsolidation());
         result.putAll(AncillaryProcesses.defaults());
         result.putAll(OrganicProcesses.defaults());
         result.putAll(UtilityMixtures.defaults());
