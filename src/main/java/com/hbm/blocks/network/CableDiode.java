@@ -1,6 +1,7 @@
 package com.hbm.blocks.network;
 
 import api.hbm.energymk2.EnergyUnits;
+import api.hbm.energymk2.ElectricalWorkGuard;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -212,14 +213,16 @@ public class CableDiode extends BlockContainer implements IEnergyConnectorBlock,
 
 		@Override
 		public long receiveEnergyQuanta(long energyQuanta) {
-
-			if(recursionBrake)
+			if(recursionBrake || energyQuanta <= 0)
 				return energyQuanta;
 			
 			pulses++;
 			if(this.getStoredEnergyQuanta() >= this.getEnergyCapacityQuanta() || pulses > 10) return energyQuanta; //if we have already maxed out transfer or max pulses, abort
 			
+			ElectricalWorkGuard guard = ElectricalWorkGuard.enter(this);
+			if(guard == null) return energyQuanta;
 			recursionBrake = true;
+			try {
 			
 			ForgeDirection dir = getDir();
 			PowerNode node = Nodespace.getNode(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ);
@@ -235,16 +238,19 @@ public class CableDiode extends BlockContainer implements IEnergyConnectorBlock,
 			} else if(te instanceof IEnergyReceiverMK2 && te != this) {
 				IEnergyReceiverMK2 rec = (IEnergyReceiverMK2) te;
 				if(rec.canConnect(dir.getOpposite())) {
-					long toTransfer = Math.min(energyQuanta, rec.getMaxInputQuantaPerTick());
-					long remainder = rec.receiveEnergyQuanta(toTransfer);
-					energyQuanta -= (toTransfer - remainder);
-					recursionBrake = false;
+					long toTransfer = Math.min(energyQuanta, Math.min(this.getMaxInputQuantaPerTick(), ElectricalWorkGuard.room(rec)));
+					long transferred = guard.offer(rec, toTransfer);
+					this.setStoredEnergyQuanta(this.energyQuanta + transferred);
+					energyQuanta -= transferred;
 					return energyQuanta;
 				}
 			}
 			
-			recursionBrake = false;
 			return energyQuanta;
+			} finally {
+				recursionBrake = false;
+				guard.close();
+			}
 		}
 
 		@Override

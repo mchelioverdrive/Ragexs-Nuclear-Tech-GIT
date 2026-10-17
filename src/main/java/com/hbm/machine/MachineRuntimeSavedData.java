@@ -5,7 +5,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.WorldSavedData;
 
 /** Persists only the next lifetime generation for this world's machine graph. */
-final class MachineRuntimeSavedData extends WorldSavedData {
+public final class MachineRuntimeSavedData extends WorldSavedData {
 
 	private static final String DATA_NAME = "hbm_machine_runtime";
 	private static final int DATA_VERSION = 1;

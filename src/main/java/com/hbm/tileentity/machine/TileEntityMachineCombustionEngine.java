@@ -177,12 +177,12 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 		}
 		long charge = Math.min(energyQuanta, getMaxOutputQuantaPerTick());
 		this.extractEnergyQuanta(charge - Library.chargeItemsFromTE(slots, 3, charge, charge));
-		long demand = Math.min(ratedPowerWatts / 10L * MathHelper.clamp_int(setting, 0, 30) / 30L, Math.max(0L, maxPower - energyQuanta));
+		long demand = ratedPowerWatts / 10L * MathHelper.clamp_int(setting, 0, 30) / 30L;
 		if(!runtimeWaterlogged && isOn && demand > 0 && slots[2] != null && slots[2].getItem() == ModItems.piston_set
 				&& (fuelCredit.hasCredit() || getElectricalEfficiencyPpm() > 0 && tank.getFill() > 0)
 				&& breatheAir(worldObj.getTotalWorldTime() % 5 == 0 ? 1 : 0)) {
 			long generated = Combustion.generate(tank, fuelCredit, demand, getElectricalEfficiencyPpm());
-			this.setStoredEnergyQuanta(energyQuanta + generated);
+			this.setStoredEnergyQuanta(com.hbm.realsim.GeneratorContract.admit(energyQuanta, maxPower, generated));
 			generatorStats.record(generated, fuelCredit);
 			wasOn = generated > 0;
 			if(wasOn) {
@@ -463,6 +463,7 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 	}
 
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Fuel follows the manual throttle; surplus electricity is dissipated when unloaded");
         lines.add("Rated electrical output: " + com.hbm.realsim.MachineInfo.watts(generatorStats.ratedWatts(ratedPowerWatts)));
         if(live) { String[] status = generatorStats.info(ratedPowerWatts, fuelCredit, tank.getTankType().getName(), tank.getFill(), getElectricalEfficiencyPpm(), false); for(int i = 1; i < status.length; i++) lines.add(status[i]); }
         lines.add(String.format(java.util.Locale.US, "Installed fuel efficiency: %.1f%%", generatorStats.ratedEfficiency(getElectricalEfficiencyPpm()) / 10000D));

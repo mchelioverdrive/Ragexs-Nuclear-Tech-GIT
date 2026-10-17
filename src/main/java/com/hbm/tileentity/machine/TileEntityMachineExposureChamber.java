@@ -461,6 +461,11 @@ public class TileEntityMachineExposureChamber extends TileEntityMachineBase impl
 	}
 
 	@Override
+	public void prepareEnergyTransfer() {
+		if(!runtimeEnergyMutation && !runtimeSettling && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override
 	public void setStoredEnergyQuanta(long energyQuanta) {
 		if(this.energyQuanta == energyQuanta) return;
 		if(!runtimeEnergyMutation && !runtimeSettling && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);

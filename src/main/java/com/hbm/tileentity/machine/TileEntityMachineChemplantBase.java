@@ -355,7 +355,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		}
 		if(active > 0) {
 			long cost = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
-			long powerBoundary = activeCost <= 0L ? Long.MAX_VALUE : energyQuanta / activeCost + 1L;
+			long powerBoundary = activeCost <= 0L ? Long.MAX_VALUE : energyQuanta / activeCost;
 			long availableResourceTicks = this.additionalResourceFullTicks(active);
 			long resourceBoundary = availableResourceTicks == Long.MAX_VALUE ? Long.MAX_VALUE : availableResourceTicks + 1L;
 			long due = now + Math.max(1L, Math.min(oxygenDependent ? 1L : nearestCompletion, Math.min(powerBoundary, resourceBoundary)));
@@ -671,6 +671,11 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	@Override
 	public long getStoredEnergyQuanta() {
 		return this.energyQuanta;
+	}
+
+	@Override
+	public void prepareEnergyTransfer() {
+		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.settleLanesThrough(worldObj.getTotalWorldTime() - 1L);
 	}
 
 	@Override

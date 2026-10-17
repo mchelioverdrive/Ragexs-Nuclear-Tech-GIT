@@ -137,7 +137,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements api.h
 		runtimeEnergyMutation = true;
 		try {
             this.reconcileTankTypes();
-            long generated = com.hbm.realsim.ThermalMachine.turbine(thermal, worldObj.getTotalWorldTime(), tanks[0], tanks[1],
+            long generated = com.hbm.realsim.ThermalMachine.ungovernedTurbine(thermal, worldObj.getTotalWorldTime(), tanks[0], tanks[1],
                     getSteamFlowMassPerTick(), 25000L, getExpansionEfficiencyPpm(), powerBuffer, getEnergyCapacityQuanta());
             int ops = thermal.currentMass > 0 ? 1 : 0;
             this.setStoredEnergyQuanta(Math.addExact(powerBuffer, generated));
@@ -207,7 +207,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements api.h
 
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
-        boolean canConvert = (tanks[0].getFill() > 0 || thermal.ownedMass() > 0) && tanks[1].getFill() < tanks[1].getMaxFill() && powerBuffer < getEnergyCapacityQuanta();
+        boolean canConvert = (tanks[0].getFill() > 0 || thermal.ownedMass() > 0) && tanks[1].getFill() < tanks[1].getMaxFill();
 		if(canConvert || tanks[1].getFill() > 0 || acceleration > 0F || powerBuffer > 0L) this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
 		else this.cancelMachineTransition(TASK_SIMULATE, TASK_SLOT_MAIN);
 	}
@@ -329,6 +329,7 @@ public class TileEntitySteamEngine extends TileEntityLoadedBase implements api.h
 	}
 
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Steam admission continues unloaded; unused work is rejected through the ambient sink");
         if(live) lines.add("Current electrical output: " + com.hbm.realsim.MachineInfo.watts(thermal.currentElectricQuanta * 10L));
         lines.add(String.format(java.util.Locale.US, "Steam mass-flow ceiling: %.2f kg/s", getSteamFlowMassPerTick() / 50000D));
         lines.add(String.format(java.util.Locale.US, "Expansion work factor: %.1f%%", getExpansionEfficiencyPpm() / 10000D));

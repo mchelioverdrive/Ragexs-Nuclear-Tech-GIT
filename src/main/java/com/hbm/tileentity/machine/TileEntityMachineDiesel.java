@@ -58,6 +58,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 	public long powerCap = maxPower;
 	public FluidTank tank;
 	public final FuelCredit fuelCredit = new FuelCredit();
+	private long governedInputQuanta;
 	public final GeneratorStats generatorStats = new GeneratorStats();
 	private final OutputBudget outputBudget = new OutputBudget();
 	private long lastGenerationTick = Long.MIN_VALUE;
@@ -114,6 +115,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 		this.powerCap = maxPower; // Configuration sets capacity; legacy energy remains untouched.
 		tank.readFromNBT(nbt, "fuel");
 		fuelCredit.read(nbt);
+		governedInputQuanta = Math.max(0, nbt.getLong("realSimGovernorInput"));
 		outputBudget.read(nbt);
 		lastGenerationTick = nbt.hasKey("realSimGenerationTick") ? nbt.getLong("realSimGenerationTick") : Long.MIN_VALUE;
 	}
@@ -126,6 +128,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 		EnergyUnits.writeCapacityQuanta(nbt, powerCap);
 		tank.writeToNBT(nbt, "fuel");
 		fuelCredit.write(nbt);
+		nbt.setLong("realSimGovernorInput", governedInputQuanta);
 		outputBudget.write(nbt);
 		nbt.setLong("realSimGenerationTick", lastGenerationTick);
 	}
@@ -319,10 +322,13 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 		if(worldObj == null || worldObj.isRemote || lastGenerationTick == worldObj.getTotalWorldTime()) return;
 		lastGenerationTick = worldObj.getTotalWorldTime();
 		generatorStats.idle();
-		long demand = Math.min(ratedPowerWatts / 10L, Math.max(0L, powerCap - energyQuanta));
+		// Automatic governor retains a 10% no-load firing allowance; it cannot stop fuel use for free.
+		long demand = Math.max(ratedPowerWatts / 100L, Math.min(ratedPowerWatts / 10L, com.hbm.realsim.GeneratorContract.room(energyQuanta, powerCap)));
+		governedInputQuanta = com.hbm.realsim.GeneratorContract.governedInput(governedInputQuanta, demand, ratedPowerWatts / 10L);
+		demand = governedInputQuanta;
 		if(runtimeWaterlogged || demand <= 0 || !(fuelCredit.hasCredit() || hasAcceptableFuel() && tank.getFill() > 0) || !breatheAir(1)) return;
 		long generated = Combustion.generate(tank, fuelCredit, demand, Combustion.dieselEfficiency(tank.getTankType()));
-		this.setStoredEnergyQuanta(energyQuanta + generated);
+		this.setStoredEnergyQuanta(com.hbm.realsim.GeneratorContract.admit(energyQuanta, powerCap, generated));
 		generatorStats.record(generated, fuelCredit);
 		if(generated > 0) {
 			if(!shutUp && soundCycle++ % 3 == 0) this.worldObj.playSoundEffect(xCoord, yCoord, zCoord, "fireworks.blast", this.getVolume(0.75F), 0.5F);
@@ -418,6 +424,7 @@ public class TileEntityMachineDiesel extends TileEntityMachinePolluting implemen
 	}
 
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Automatic fuel governor; running unloaded still burns 10% of full-load fuel");
         lines.add("Rated electrical output: " + com.hbm.realsim.MachineInfo.watts(generatorStats.ratedWatts(ratedPowerWatts)));
         if(live) { String[] status = generatorStats.info(ratedPowerWatts, fuelCredit, tank.getTankType().getName(), tank.getFill(), com.hbm.realsim.Combustion.dieselEfficiency(tank.getTankType()), false); for(int i = 1; i < status.length; i++) lines.add(status[i]); }
         lines.add(String.format(java.util.Locale.US, "Installed fuel efficiency: %.1f%%", generatorStats.ratedEfficiency(com.hbm.realsim.Combustion.dieselEfficiency(tank.getTankType())) / 10000D));

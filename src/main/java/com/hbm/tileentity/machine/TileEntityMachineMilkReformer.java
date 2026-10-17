@@ -88,6 +88,11 @@ public class TileEntityMachineMilkReformer extends TileEntityMachineBase impleme
 	}
 
 	@Override
+	public void prepareEnergyTransfer() {
+		if(!runtimeBatchMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleBatchesThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override
 	public void setStoredEnergyQuanta(long energyQuanta) {
 		if(this.energyQuanta == energyQuanta) return;
 		if(!runtimeBatchMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleBatchesThrough(worldObj.getTotalWorldTime() - 1L);

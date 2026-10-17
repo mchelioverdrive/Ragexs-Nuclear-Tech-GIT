@@ -371,7 +371,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 			boolean valid = false;
 
             if((thermal.ownedMass() > 0 || com.hbm.realsim.GeneratorContract.acceptsSteam(com.hbm.realsim.ThermalMachine.state(tanks[0]), com.hbm.realsim.SteamLedger.State.HOT))) {
-                long generated = com.hbm.realsim.ThermalMachine.turbine(thermal, worldObj.getTotalWorldTime(), tanks[0], tanks[1], Math.min(getSteamFlowMassPerTick(), (thermal.ownedMass() > 0 ? thermal.inlet() : com.hbm.realsim.ThermalMachine.state(tanks[0])).mass(Math.max(0, maxSteamPerTick))),
+                long generated = com.hbm.realsim.ThermalMachine.ungovernedTurbine(thermal, worldObj.getTotalWorldTime(), tanks[0], tanks[1], Math.min(getSteamFlowMassPerTick(), (thermal.ownedMass() > 0 ? thermal.inlet() : com.hbm.realsim.ThermalMachine.state(tanks[0])).mass(Math.max(0, maxSteamPerTick))),
                         75000L, getExpansionEfficiencyPpm(), energyQuanta, maxPower);
                 this.setStoredEnergyQuanta(Math.addExact(energyQuanta, generated));
                 info[0] = thermal.currentMass == 0 ? 0 : thermal.currentMass / (double) thermal.inlet().massPerUnit;
@@ -491,6 +491,7 @@ public class TileEntityMachineTurbine extends TileEntityLoadedBase implements IS
 	}
 
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Unloaded expansion continues while the spent-steam outlet has room; unused work is rejected");
         if(live) lines.add("Current electrical output: " + com.hbm.realsim.MachineInfo.watts(thermal.currentElectricQuanta * 10L));
         lines.add(String.format(java.util.Locale.US, "Steam mass-flow ceiling: %.2f kg/s", getSteamFlowMassPerTick() / 50000D));
         lines.add(String.format(java.util.Locale.US, "Expansion work factor: %.1f%%", getExpansionEfficiencyPpm() / 10000D));

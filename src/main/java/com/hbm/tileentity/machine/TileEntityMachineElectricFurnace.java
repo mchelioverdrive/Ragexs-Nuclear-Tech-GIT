@@ -43,7 +43,8 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	// thanks Martin, vaer and Bob for the help
 	public int progress;
 	public long energyQuanta;
-	public static final long maxPower = 100000;
+	// Two ticks at the unupgraded heater rating; this machine has no battery hardware.
+	public static final long maxPower = 1600;
 	public int maxProgress = 100;
 	public long operatingPowerWatts = com.hbm.realsim.IndustrialDemand.FURNACE_W;
 	private int cooldown = 0;
@@ -142,7 +143,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	}
 
 	public long getPowerScaled(long i) {
-		return (energyQuanta * i) / maxPower;
+		return (Math.max(0, Math.min(energyQuanta, getEnergyCapacityQuanta())) * i) / getEnergyCapacityQuanta();
 	}
 
 	public boolean hasPower() {
@@ -232,7 +233,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 		long now = worldObj.getTotalWorldTime();
 		if(taskType == TASK_BATTERY && taskSlot == TASK_SLOT_BATTERY) {
 			this.settleAccountingThrough(now);
-			this.setPowerInternal(Library.chargeTEFromItems(slots, 0, energyQuanta, maxPower));
+			this.setPowerInternal(Library.chargeTEFromItems(slots, 0, energyQuanta, getEnergyCapacityQuanta()));
 			this.scheduleNextBoundary(now);
 			return;
 		} else if(taskType == TASK_ACCOUNTING && taskSlot == TASK_SLOT_MAIN) this.settleAccountingThrough(now);
@@ -339,10 +340,15 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 			runtimeWorkScheduled = true;
 		} else if(this.hasPower() && cachedRecipeEligible) {
 			long cost = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
-			long powerBoundary = cost <= 0L ? Long.MAX_VALUE : energyQuanta / cost + 1L;
+			long powerBoundary = cost <= 0L ? Long.MAX_VALUE : energyQuanta / cost;
 			long sootBoundary = 20L - now % 20L;
 			long delay = Math.max(1L, Math.min(Math.max(1, maxProgress - progress), Math.min(powerBoundary, sootBoundary)));
 			nextRuntimeTick = now + delay;
+			runtimeWorkScheduled = true;
+		} else if(cachedRecipeEligible && progress > 0) {
+			// This tick was paid. Give the next network phase a chance to refill before
+			// settling an actually unpowered tick and applying the normal progress reset.
+			nextRuntimeTick = now + 1L;
 			runtimeWorkScheduled = true;
 		} else {
 			if(operationActive || progress > 0) {
@@ -371,7 +377,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	}
 
 	private boolean hasBatteryWork() {
-		if(this.energyQuanta >= maxPower || slots[0] == null) return false;
+		if(this.energyQuanta >= getEnergyCapacityQuanta() || slots[0] == null) return false;
 		if(slots[0].getItem() == ModItems.battery_creative || slots[0].getItem() == ModItems.fusion_core_infinite) return true;
 		if(!(slots[0].getItem() instanceof IBatteryItem)) return false;
 		IBatteryItem battery = (IBatteryItem) slots[0].getItem();
@@ -403,6 +409,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	public void serialize(ByteBuf buf) {
 		super.serialize(buf);
 		buf.writeLong(energyQuanta);
+		buf.writeLong(operatingPowerWatts);
 		buf.writeInt(maxProgress);
 		buf.writeInt(progress);
 		buf.writeLong(worldObj == null ? 0L : worldObj.getTotalWorldTime());
@@ -413,6 +420,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	public void deserialize(ByteBuf buf) {
 		super.deserialize(buf);
 		energyQuanta = buf.readLong();
+		operatingPowerWatts = buf.readLong();
 		maxProgress = buf.readInt();
 		progress = buf.readInt();
 		clientProgressTick = buf.readLong();
@@ -437,6 +445,11 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 	}
 
 	@Override
+	public void prepareEnergyTransfer() {
+		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.settleAccountingThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override
 	public void setStoredEnergyQuanta(long i) {
 		if(this.energyQuanta == i) return;
 		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.settleAccountingThrough(worldObj.getTotalWorldTime() - 1L);
@@ -458,7 +471,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
 
 	@Override
 	public long getEnergyCapacityQuanta() {
-		return maxPower;
+		return com.hbm.realsim.GeneratorContract.buffer(Math.max(10, operatingPowerWatts));
 	}
 
 	@Override
@@ -501,5 +514,7 @@ public class TileEntityMachineElectricFurnace extends TileEntityMachineBase impl
     @Override public long getMachineCurrentDrawWatts() { return operationActive && hasPower() ? operatingPowerWatts : 0; }
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
         lines.add("Idle load: 0 W; power and throughput rise together with speed upgrades");
+        lines.add("Two ticks of heater power in the working reserve; no internal battery");
+        lines.add("Slot battery supplies power to the heater; this slot does not charge batteries");
     }
 }

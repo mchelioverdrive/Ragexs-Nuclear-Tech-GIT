@@ -345,6 +345,8 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 		if(runtimeMaterialEligible && this.hasOperatingPower()) {
 			long poweredTicks = powerRequirement <= 0 ? processTime : Math.max(1L, (energyQuanta - 1L) / powerRequirement);
 			this.scheduleMachineTransition(now + Math.max(1L, Math.min(processTime - progress, poweredTicks)), TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		} else if(progress > 0 && runtimeMaterialEligible) {
+			this.scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
 		} else if(progress > 0 || isOn) {
 			progress = 0;
 			isOn = false;
@@ -567,6 +569,11 @@ public class TileEntityMachineCompressor extends TileEntityMachineBase implement
 	@Override
 	public long getStoredEnergyQuanta() {
 		return energyQuanta;
+	}
+
+	@Override
+	public void prepareEnergyTransfer() {
+		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 	}
 
 	@Override

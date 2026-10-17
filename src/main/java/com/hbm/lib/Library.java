@@ -257,6 +257,8 @@ public class Library {
 	}
 
 	public static long chargeTEFromItems(ItemStack[] slots, int index, long power, long maxPower) {
+		// Legacy over-cap stock must drain normally, never reverse-charge a battery or be clipped.
+		if(power >= maxPower) return power;
 
 		if(slots[index] != null && slots[index].getItem() == ModItems.battery_creative) {
 			return maxPower;

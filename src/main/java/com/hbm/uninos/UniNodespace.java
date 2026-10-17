@@ -599,10 +599,11 @@ public class UniNodespace {
 					}
 				}
 				GenNode node = this.frontier.remove();
+				// Stale/duplicate dequeues are work too; they must consume this tick's budget.
+				used++;
 				if(node.expired || node.net != this.source || !this.visited.add(node)) continue;
 				this.current.add(node);
 				for(GenNode neighbor : getConnectedNodes(world, node, true)) if(!this.visited.contains(neighbor)) this.frontier.add(neighbor);
-				used++;
 			}
 			while(used < budget && this.assigning && !this.complete) {
 				if(this.assignComponent >= this.components.size()) {

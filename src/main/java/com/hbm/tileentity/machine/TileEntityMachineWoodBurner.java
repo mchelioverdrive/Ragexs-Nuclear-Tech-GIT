@@ -134,7 +134,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 			long charge = Math.min(energyQuanta, getMaxOutputQuantaPerTick());
 			this.extractEnergyQuanta(charge - Library.chargeItemsFromTE(slots, 5, charge, charge));
 			if(energyQuanta > 0L) for(DirPos pos : runtimeConnections) this.providePowerToDirectReceiver(worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
-			long demand = Math.min(ratedPowerWatts / 10L, Math.max(0L, maxPower - energyQuanta));
+			long demand = ratedPowerWatts / 10L;
 			if(isOn && demand > 0 && (fuelCredit.hasCredit() || liquidBurn && tank.getFill() > 0 && Combustion.isBurnerFuel(tank.getTankType()) || !liquidBurn && Combustion.solidChemicalMicrojoules(slots[0]) > 0) && breatheAir(1)) {
 				if(!fuelCredit.hasCredit() && !liquidBurn && slots[0] != null) {
 					long chemical = Combustion.solidChemicalMicrojoules(slots[0]);
@@ -162,7 +162,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 				if(powerGen > 0 && worldObj.getTotalWorldTime() % 20 == 0) PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, (float) (PollutionHandler.SOOT_PER_SECOND * powerGen / (double) (ratedPowerWatts / 10L)));
 			}
 			burnTime = (int) (fuelCredit.usefulMicrojoules() / 500_000L / (ratedPowerWatts / 10L));
-			this.setStoredEnergyQuanta(energyQuanta + powerGen);
+			this.setStoredEnergyQuanta(com.hbm.realsim.GeneratorContract.admit(energyQuanta, maxPower, powerGen));
 		} finally {
 			runtimeEnergyMutation = false;
 			this.endMachineFluidMutation();
@@ -175,8 +175,8 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 	private void evaluateAndSchedule(long now) {
 		if(!runtimeInitialized) return;
 		boolean solidFuelReady = !liquidBurn && isOn && Combustion.solidChemicalMicrojoules(slots[0]) > 0;
-		boolean solidBurnActive = fuelCredit.hasCredit() && isOn && energyQuanta < maxPower;
-		boolean liquidBurnActive = liquidBurn && tank.getFill() > 0 && isOn && energyQuanta < maxPower && Combustion.isBurnerFuel(tank.getTankType());
+		boolean solidBurnActive = fuelCredit.hasCredit() && isOn;
+		boolean liquidBurnActive = liquidBurn && tank.getFill() > 0 && isOn && Combustion.isBurnerFuel(tank.getTankType());
 		if(solidFuelReady || solidBurnActive || liquidBurnActive || energyQuanta > 0L) this.scheduleMachineTransition(now + 1L, TASK_GENERATE, TASK_SLOT_MAIN);
 		else {
 			powerGen = 0;
@@ -418,6 +418,7 @@ public class TileEntityMachineWoodBurner extends TileEntityMachineBase implement
 	}
 
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Burns while switched on; electrical saturation dissipates output without stopping fuel use");
         lines.add("Deprecated generator; use Stirling or early steam for new starter plants");
         lines.add("Rated electrical output: " + com.hbm.realsim.MachineInfo.watts(generatorStats.ratedWatts(ratedPowerWatts)));
         if(live) { String[] status = generatorStats.info(ratedPowerWatts, fuelCredit, tank.getTankType().getName(), tank.getFill(), electricalEfficiencyPpm, false); for(int i = 1; i < status.length; i++) lines.add(status[i]); }

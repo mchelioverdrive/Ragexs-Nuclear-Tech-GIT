@@ -15,6 +15,9 @@ public interface IEnergyHandlerMK2 extends IEnergyConnectorMK2, ILoadedTile {
 	public default void setStoredEnergyQuanta(long energyQuanta) { setPower(EnergyUnits.quantaToLegacyHe(energyQuanta)); }
 	public default long getEnergyCapacityQuanta() { return EnergyUnits.legacyHeToQuanta(getMaxPower()); }
 
+	/** Settle deferred work against old stock before computing an external energy delta. */
+	public default void prepareEnergyTransfer() { }
+
 	/** Legacy HE API. One legacy HE is exactly one half-joule quantum. */
 	@Deprecated public default long getPower() { return getStoredEnergyQuanta(); }
 	@Deprecated public default void setPower(long legacyHe) { setStoredEnergyQuanta(EnergyUnits.legacyHeToQuanta(legacyHe)); }

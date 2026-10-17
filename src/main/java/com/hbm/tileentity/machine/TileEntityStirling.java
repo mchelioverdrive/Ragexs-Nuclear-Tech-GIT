@@ -219,19 +219,23 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 			return;
 		}
 		if(!(con instanceof IProcessHeatSource)) return;
-		IProcessHeatSource source = (IProcessHeatSource) con;
+		convertProcessHeat((IProcessHeatSource) con, worldObj.getTotalWorldTime());
+	}
+
+	/** The hot-side engine keeps running even when its alternator cannot export. */
+	protected void convertProcessHeat(IProcessHeatSource source, long tick) {
 		int conversion = getOperatingEfficiencyPpm(source.getProcessTemperatureC());
-		long room = Math.min(getRatedOutputWatts() / 10L, Math.max(0L, getEnergyCapacityQuanta() - powerBuffer));
-		if(conversion <= 0 || room <= 0) return;
+		if(conversion <= 0 || !hasCog) return;
 		long request = Math.max(0, maxHeat());
-		request = Math.min(request, Math.max(0L, (room * 1000000L - conversionRemainder) / conversion));
-		heat = (int) source.drawProcessHeatQuanta(worldObj.getTotalWorldTime(), request);
+		heat = (int) source.drawProcessHeatQuanta(tick, request);
 		long converted = (long) heat * conversion + conversionRemainder;
 		currentOutputQuanta = converted / 1000000L;
 		conversionRemainder = converted % 1000000L;
-		currentRejectedQuanta = (long) heat * (1000000L - conversion) / 1000000L;
+		long admitted = Math.min(currentOutputQuanta, com.hbm.realsim.GeneratorContract.room(powerBuffer, getEnergyCapacityQuanta()));
+		// Conversion loss and electrically unloaded shaft work both leave through the ambient sink.
+		currentRejectedQuanta = heat - admitted;
 		if(heat > 0) markDirty();
-		setStoredEnergyQuanta(powerBuffer + currentOutputQuanta);
+		setStoredEnergyQuanta(com.hbm.realsim.GeneratorContract.admit(powerBuffer, getEnergyCapacityQuanta(), admitted));
 	}
 	private static double safeDiffusion() { return Double.isFinite(diffusion) ? Math.max(0D, Math.min(1D, diffusion)) : 0D; }
 
@@ -302,9 +306,10 @@ public class TileEntityStirling extends TileEntityLoadedBase implements INBTPack
 		lines.add("Thermal intake ceiling: " + MachineInfo.thermalWatts(getRatedHeatInputWatts()));
 		lines.add(String.format(java.util.Locale.US, "Installed heat-to-electric efficiency: %.1f%%; limited by hot/cold temperature difference", getConfiguredEfficiencyPpm() / 10000D));
 		lines.add("Requires a compatible heater below; integral radiator at 20 \u00b0C");
-		lines.add("Heat intake is governed; repair a broken gear with a matching replacement");
+		lines.add("Runs while supplied with heat; surplus electricity is dissipated, not stored");
+		lines.add("Repair a broken gear with a matching replacement");
 		if(live) {
-			lines.add("Current output: " + MachineInfo.watts(currentOutputQuanta * 10L));
+			lines.add("Current alternator production before rejection: " + MachineInfo.watts(currentOutputQuanta * 10L));
 			lines.add("Current thermal intake: " + MachineInfo.thermalWatts((long) heat * 10L));
 			lines.add("Current heat rejection: " + MachineInfo.thermalWatts(currentRejectedQuanta * 10L));
 			if(!hasCog) lines.add("Gear missing; right-click with the matching large gear");

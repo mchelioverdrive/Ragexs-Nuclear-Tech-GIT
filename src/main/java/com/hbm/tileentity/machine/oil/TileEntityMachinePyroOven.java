@@ -188,8 +188,10 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 		if(canProcess) {
 			int cost = getConsumptionForUpgrades(runtimeSpeed, runtimeOverdrive, runtimePowerSaving);
 			int completionTicks = this.ticksUntilRecipeCompletion(runtimeRecipe, progress, runtimeSpeed, runtimeOverdrive);
-			long poweredTicks = energyQuanta / cost + 1L;
+			long poweredTicks = energyQuanta / cost;
 			this.scheduleMachineTransition(now + Math.max(1L, Math.min(completionTicks, poweredTicks)), TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		} else if(progress > 0F && this.canContinueRecipe(runtimeRecipe)) {
+			this.scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
 		} else {
 			if(progress != 0F) { progress = 0F; this.markDirty(); this.markNetworkDirty(); }
 			this.cancelMachineTransition(TASK_ACCOUNTING, TASK_SLOT_MAIN);
@@ -550,7 +552,12 @@ public class TileEntityMachinePyroOven extends TileEntityMachinePolluting implem
 	}
 
 	@Override public long getStoredEnergyQuanta() { return energyQuanta; }
-	@Override public void setStoredEnergyQuanta(long energyQuanta) {
+	@Override public void prepareEnergyTransfer() {
+		if(!runtimeProgressMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override
+	public void setStoredEnergyQuanta(long energyQuanta) {
 		if(this.energyQuanta == energyQuanta) return;
 		if(!runtimeProgressMutation && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		this.energyQuanta = energyQuanta;

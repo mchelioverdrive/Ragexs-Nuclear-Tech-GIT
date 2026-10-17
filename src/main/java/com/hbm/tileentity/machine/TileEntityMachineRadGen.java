@@ -113,9 +113,9 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements ap
 			for(int i = 0; i < 12; i++) {
 				if(processing[i] == null) continue;
                 long generated = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts[i]);
-                if(generated <= 0 || generated > com.hbm.realsim.GeneratorContract.room(energyQuanta, maxPower)) continue;
+                if(generated <= 0) continue;
 				this.isOn = true;
-				this.setStoredEnergyQuanta(energyQuanta + generated);
+				this.setStoredEnergyQuanta(com.hbm.realsim.GeneratorContract.admit(energyQuanta, maxPower, generated));
 				this.output += production[i];
 				progress[i]++;
 				if(progress[i] >= maxProgress[i]) {

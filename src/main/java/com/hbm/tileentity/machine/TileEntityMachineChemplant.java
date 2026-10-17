@@ -448,6 +448,11 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	}
 
 	@Override
+	public void prepareEnergyTransfer() {
+		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override
 	public void setStoredEnergyQuanta(long energyQuanta) {
 		if(this.energyQuanta == energyQuanta) return;
 		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
@@ -713,7 +718,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		long cost = (cachedRecipe == null ? EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts) : cachedRecipe.costPerTick(EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts)));
 		if(runtimeActive && cachedEligible && cachedRecipe != null && energyQuanta >= cost) {
 			int duration = cachedRecipe.durationAtSpeed(speed);
-			long poweredTicks = cost <= 0L ? Long.MAX_VALUE : energyQuanta / cost + 1L;
+			long poweredTicks = cost <= 0L ? Long.MAX_VALUE : energyQuanta / cost;
 			long delay = Math.max(1L, Math.min(cachedRecipe.oxygenConsumption > 0 ? 1L : duration - progress, poweredTicks));
 			nextRuntimeTick = now + delay;
 			this.scheduleMachineTransition(nextRuntimeTick, TASK_ACCOUNTING, TASK_SLOT_CHEMPLANT);

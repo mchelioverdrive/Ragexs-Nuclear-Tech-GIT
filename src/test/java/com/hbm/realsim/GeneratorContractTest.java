@@ -13,6 +13,24 @@ import net.minecraft.nbt.NBTTagCompound;
 
 /** Production accounting and native tank contracts. World/port ordering remains a runtime acceptance check. */
 public class GeneratorContractTest {
+    @Test public void dieselGovernorRetainsIdleFiringAndCannotInstantlyFollowAFullLoadStep() {
+        long firing = 0;
+        for(int tick=0;tick<20;tick++) firing = GeneratorContract.governedInput(firing, 20000, 20000);
+        assertEquals(20000, firing);
+        firing = GeneratorContract.governedInput(firing, 0, 20000); assertEquals(19000, firing);
+        for(int tick=0;tick<20;tick++) firing = GeneratorContract.governedInput(firing, 0, 20000);
+        assertEquals(2000, firing);
+        assertEquals(3000, GeneratorContract.governedInput(firing, 20000, 20000));
+        assertEquals(40000, GeneratorContract.admit(40000, 40000, firing));
+    }
+    @Test public void manualFuelCreditIsSpentUnderSaturationWithoutBecomingStoredPower() {
+        FuelCredit credit = new FuelCredit(); credit.reserve("DIESEL", 1000000000000L, 1, 320000);
+        long before = credit.usefulMicrojoules(), generated = credit.release(20000);
+        assertEquals(20000, generated); assertEquals(before - generated * 500000L, credit.usefulMicrojoules());
+        assertEquals(40000, GeneratorContract.admit(40000, 40000, generated));
+        TurbineFuelAccount turbine = new TurbineFuelAccount();
+        assertEquals(0, turbine.admitElectrical(100000, 0)); assertEquals(100000, turbine.loadRejectedQuanta);
+    }
     @Test public void cableDirectAndChargingShareOneBudget() {
         OutputBudget b = new OutputBudget();
         b.use(1, 20000, 8000); // cable

@@ -392,7 +392,7 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 		} else if(eligible) {
 			long cost = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
 			long poweredSteps = cost <= 0L ? Long.MAX_VALUE : progress == 0 ? (energyQuanta - 1L) / cost + 1L : (energyQuanta - 1L) / cost;
-			long resetBoundary = poweredSteps == Long.MAX_VALUE ? Long.MAX_VALUE : poweredSteps + 1L;
+			long resetBoundary = poweredSteps == Long.MAX_VALUE ? Long.MAX_VALUE : poweredSteps;
 			long completionBoundary = Math.max(1L, ((long) processingSpeed - progress + processingSpeedPerTick - 1L) / processingSpeedPerTick);
 			long soundBoundary = soundCycle == 0 ? 1L : 51L - soundCycle;
 			nextRuntimeTick = now + Math.max(1L, Math.min(completionBoundary, Math.min(resetBoundary, soundBoundary)));
@@ -547,6 +547,11 @@ public class TileEntityMachineCentrifuge extends TileEntityMachineBase implement
 	@SideOnly(Side.CLIENT)
 	public double getMaxRenderDistanceSquared() {
 		return 65536.0D;
+	}
+
+	@Override
+	public void prepareEnergyTransfer() {
+		if(!runtimeEnergyMutation && !runtimeSettling && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 	}
 
 	@Override

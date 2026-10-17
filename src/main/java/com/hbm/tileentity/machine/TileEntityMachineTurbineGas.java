@@ -194,7 +194,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 			if(autoMode) { //power production depending on power requirement
 				
 				//scales the slider proportionally to the power gauge
-				int powerSliderTarget = 60 - (int) (60 * energyQuanta / maxPower);
+				int powerSliderTarget = 60 - (int) (60 * Math.min(Math.max(0, energyQuanta), maxPower) / maxPower);
 				
 				if(powerSliderTarget > powerSliderPos) { //makes the auto slider slide instead of snapping into position
 					powerSliderPos++;
@@ -228,10 +228,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 			//do net/battery deductions first...
 			this.setStoredEnergyQuanta(this.chargeRatedItems(slots, 0, maxPower));
 			this.providePowerToDirectReceiver(worldObj, xCoord - dir.offsetZ * 5, yCoord + 1, zCoord + dir.offsetX * 5, rot);
-			//...and then cap it. Prevents potential future cases where power would be limited due to the fuel being too strong and the buffer too small.
-			if(this.energyQuanta > this.maxPower)
-				this.setStoredEnergyQuanta(this.maxPower);
-			
+
 			if(tanks[3].getFill() > 0) this.sendFluid(tanks[3], worldObj, xCoord + dir.offsetZ * 6, yCoord + 1, zCoord - dir.offsetX * 6, rot.getOpposite());
 			this.sendRuntimePacket(packetEnergy);
 	}
@@ -363,7 +360,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
     }
     private boolean burnFuel(boolean generate, int load) {
         long request = RATED_CHEMICAL_WATTS * 50000L * Math.max(1, Math.min(100, load)) / 100;
-        if(generate) request = Math.min(request, com.hbm.realsim.SteamLedger.mulDiv(Math.max(0, maxPower - energyQuanta), 500000L * 1000000L, ELECTRICAL_EFFICIENCY_PPM));
+        if(generate) request = Math.max(RATED_CHEMICAL_WATTS * 50000L / 20L, Math.min(request, com.hbm.realsim.SteamLedger.mulDiv(com.hbm.realsim.GeneratorContract.room(energyQuanta, maxPower), 500000L * 1000000L, ELECTRICAL_EFFICIENCY_PPM)));
         if(request == 0 || !hasAcceptableFuel()) return false;
         // ~13 kg/s excess air at full load, using the existing atmosphere/intake boundary.
         if(!breatheAir(Math.toIntExact(com.hbm.realsim.SteamLedger.ceilDiv(request, 1_000_000_000L)))) { state = 0; return false; }
@@ -374,8 +371,8 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
         lubricantMicroliters -= com.hbm.realsim.GasTurbineCycle.LUBE_MICROLITERS_PER_TICK; // 0.06 L/min while spooling/running
         long gross = thermalFuel.burn(worldObj.getTotalWorldTime(), tanks[0], request, generate ? ELECTRICAL_EFFICIENCY_PPM : 0, generate ? 550000 : 0, Math.min(temp, load >= 75 ? 500 : 350));
         long aux = gross / 50; // 2% compressor controls/lube auxiliaries; Brayton compressor already in cycle efficiency.
-        instantPowerOutput = Math.toIntExact(gross - aux);
-        this.setStoredEnergyQuanta(Math.addExact(energyQuanta, instantPowerOutput));
+        instantPowerOutput = Math.toIntExact(thermalFuel.admitElectrical(gross - aux, com.hbm.realsim.GeneratorContract.room(energyQuanta, maxPower)));
+        this.setStoredEnergyQuanta(com.hbm.realsim.GeneratorContract.admit(energyQuanta, maxPower, instantPowerOutput));
         currentFuelMicroJ = thermalFuel.chemicalInputMicroJ;
         currentExhaustMicroJ = thermalFuel.recoverableMicroJ;
         currentAuxiliaryQuanta = aux;
@@ -755,6 +752,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 	}
 
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Unloaded firing remains at least 5%; startup, lubrication and shutdown remain active");
         if(live) { lines.add("Current electrical output: " + com.hbm.realsim.MachineInfo.watts(getPowerOutputWatts())); lines.add(String.format(java.util.Locale.US, "Fuel flow: %.2f standard L/min", fuelStandardLitersPerMinute)); }
         lines.add(String.format(java.util.Locale.US, "Gross LHV efficiency: %.1f%%; auxiliaries reduce net output", ELECTRICAL_EFFICIENCY_PPM / 10000D));
         lines.add("Rated fuel input: " + com.hbm.realsim.MachineInfo.thermalWatts(RATED_CHEMICAL_WATTS));

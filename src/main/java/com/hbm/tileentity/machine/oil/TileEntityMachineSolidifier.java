@@ -253,11 +253,12 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
 		if(runtimeMaterialEligible && this.hasOperatingPower()) {
 			runtimeActive = true;
 			long cost = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
-			long poweredTicks = cost <= 0L ? Long.MAX_VALUE : energyQuanta / cost + 1L;
+			long poweredTicks = cost <= 0L ? Long.MAX_VALUE : energyQuanta / cost;
 			this.scheduleMachineTransition(now + Math.max(1L, Math.min(processTime - progress, poweredTicks)), TASK_ACCOUNTING, TASK_SLOT_MAIN);
 		} else {
 			runtimeActive = false;
-			if(progress > 0) { progress = 0; this.markDirty(); this.markNetworkDirty(); }
+			if(progress > 0 && runtimeMaterialEligible) this.scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+			else if(progress > 0) { progress = 0; this.markDirty(); this.markNetworkDirty(); }
 		}
 		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
 		else this.cancelMachineTransition(TASK_BATTERY, TASK_SLOT_BATTERY);
@@ -410,6 +411,11 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
 		nbt.setInteger("usage", this.usage);
 		nbt.setInteger("processTime", this.processTime);
 		tank.writeToNBT(nbt, "tank");
+	}
+
+	@Override
+	public void prepareEnergyTransfer() {
+		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 	}
 
 	@Override

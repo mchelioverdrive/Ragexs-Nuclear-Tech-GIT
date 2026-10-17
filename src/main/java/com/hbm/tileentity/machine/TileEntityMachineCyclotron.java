@@ -524,6 +524,11 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 	}
 
 	@Override
+	public void prepareEnergyTransfer() {
+		if(!runtimeEnergyMutation && !runtimeSettling && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override
 	public void setStoredEnergyQuanta(long i) {
 		if(this.energyQuanta == i) return;
 		if(!runtimeEnergyMutation && !runtimeSettling && runtimeInitialized && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);

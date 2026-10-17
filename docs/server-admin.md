@@ -122,3 +122,10 @@ mods/RX-RNTM*.jar
 - `/hbmbedrockdrop` edits the runtime excavator drop list; persistence is not clearly documented in code.
 - Several JSON systems generate templates with leading underscores; forgetting to remove the underscore is a common cause of changes not applying.
 - Legacy 1.7.10 server forks may alter ticking behavior and break machines.
+
+
+## Capturing a live electrical stall
+
+A running JVM can have a stalled server thread. Before forced termination on Linux, use `jstack <pid> > thread-dump.txt` as the JVM's operating-system user, or `kill -3 <pid>` and retain JVM console/log output. Capture two or three dumps several seconds apart where possible. Inspect `"Server thread"` for an unchanged loop, monitor owner or blocking electrical callback. On Java 8 Windows, use the JDK's `jstack.exe <pid>`.
+
+Keep preceding logs, mod versions, machine JSON, recipes and network arrangement. Electrical guard warnings identify network/source/destination, transfer quantities, work and elapsed time; `/ntmpowerstats` retains the latest abnormal report. Enable `1.45_enablePowerNetDiagnostics` for additional topology/transfer counters when needed. Normal zero electrical acceptance does not warn every tick.

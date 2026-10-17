@@ -406,6 +406,8 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 			long untilSound = soundCycle == 0 ? 1L : 51L - soundCycle;
 			long due = Math.min(Math.min(processingSpeed - progress, energyQuanta / (com.hbm.realsim.IndustrialDemand.CRUSHER_W / 10)), untilSound);
 			this.scheduleMachineTransition(now + Math.max(1L, due), TASK_ACCOUNTING, TASK_SLOT_MAIN);
+		} else if(progress > 0 && runtimeEligible) {
+			this.scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
 		} else if(progress > 0 && (!runtimeEligible || !this.hasBatteryWork())) {
 			progress = 0;
 			this.markDirty();
@@ -522,6 +524,11 @@ public class TileEntityMachineShredder extends TileEntityLoadedBase implements I
 			if(slots[i].getItem() == result.getItem() && slots[i].getItemDamage() == result.getItemDamage() && slots[i].stackSize + result.stackSize <= result.getMaxStackSize()) return true;
 		}
 		return false;
+	}
+
+	@Override
+	public void prepareEnergyTransfer() {
+		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.settleAccountingThrough(worldObj.getTotalWorldTime() - 1L);
 	}
 
 	@Override

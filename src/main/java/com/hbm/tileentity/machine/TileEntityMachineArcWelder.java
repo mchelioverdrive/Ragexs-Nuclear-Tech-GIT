@@ -267,8 +267,10 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 		runtimeActive = runtimeMaterialEligible && (consumption <= 0L || energyQuanta >= consumption);
 		if(runtimeActive) {
 			long cost = consumption;
-			long poweredBoundary = cost <= 0L ? Long.MAX_VALUE : energyQuanta / cost + 1L;
+			long poweredBoundary = cost <= 0L ? Long.MAX_VALUE : energyQuanta / cost;
 			this.scheduleMachineTransition(now + Math.max(1L, Math.min(processTime - progress, poweredBoundary)), TASK_PROCESS, TASK_SLOT_MAIN);
+		} else if(progress > 0 && runtimeMaterialEligible) {
+			this.scheduleMachineTransition(now + 1L, TASK_PROCESS, TASK_SLOT_MAIN);
 		} else if(progress > 0 && (!runtimeMaterialEligible || !this.hasBatteryWork())) {
 			progress = 0;
 			this.markDirty();
@@ -471,6 +473,11 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase implements
 	@Override
 	public long getStoredEnergyQuanta() {
 		return Math.max(Math.min(energyQuanta, maxPower), 0);
+	}
+
+	@Override
+	public void prepareEnergyTransfer() {
+		if(!runtimeEnergyMutation && !runtimeSettling && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 	}
 
 	@Override

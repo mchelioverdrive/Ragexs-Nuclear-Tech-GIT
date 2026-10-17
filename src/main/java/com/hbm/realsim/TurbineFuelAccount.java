@@ -9,6 +9,8 @@ public final class TurbineFuelAccount {
     private String fuel = "";
     public final ExhaustAccount exhaust = new ExhaustAccount();
     public long chemicalInputMicroJ, electricMicroJ, recoverableMicroJ, rejectedMicroJ;
+    /** Further allocation of generated electrical work, not an additional chemical-energy source. */
+    public long loadRejectedQuanta;
     public int consumedUnits;
     public long chemicalCredit() { return chemicalCredit; }
     public String fuel() { return fuel; }
@@ -21,6 +23,7 @@ public final class TurbineFuelAccount {
     }
     public long burn(long tick, FluidTank tank, long requestedChemicalMicroJ, int electricPpm, int recoverablePpm, int qualityC, boolean gasOnly) {
         chemicalInputMicroJ = electricMicroJ = recoverableMicroJ = rejectedMicroJ = 0; consumedUnits = 0;
+        loadRejectedQuanta = 0;
         if(tick <= lastTick || requestedChemicalMicroJ <= 0) return 0;
         if(electricPpm < 0 || recoverablePpm < 0 || electricPpm > 1000000 - recoverablePpm) throw new IllegalArgumentException("Invalid turbine split");
         long burned = Math.min(requestedChemicalMicroJ, chemicalCredit);
@@ -48,6 +51,11 @@ public final class TurbineFuelAccount {
         electricRemainder = Math.addExact(electricRemainder, electricMicroJ);
         long quanta = electricRemainder / 500000; electricRemainder %= 500000;
         return quanta;
+    }
+    public long admitElectrical(long generated, long room) {
+        long admitted = Math.min(generated, Math.max(0, room));
+        loadRejectedQuanta = generated - admitted;
+        return admitted;
     }
     public void write(NBTTagCompound parent) {
         NBTTagCompound n = new NBTTagCompound(); n.setInteger("version", 1); n.setString("fuel", fuel);

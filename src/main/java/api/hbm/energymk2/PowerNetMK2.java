@@ -37,6 +37,7 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 	private final long[] demandScratch = new long[PRIORITIES.length];
 	private final long[] diodeDemandScratch = new long[PRIORITIES.length];
 	private int dirtyCauses;
+	private long topologyChanges, deliveredInUpdate;
 
 	private static final IdentityHashMap<IEnergyProviderMK2, Set<PowerNetMK2>> providerMemberships = new IdentityHashMap<IEnergyProviderMK2, Set<PowerNetMK2>>();
 	private static final IdentityHashMap<IEnergyReceiverMK2, Set<PowerNetMK2>> receiverMemberships = new IdentityHashMap<IEnergyReceiverMK2, Set<PowerNetMK2>>();
@@ -118,6 +119,7 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 	}
 
 	public void markTopologyDirty() {
+		this.topologyChanges++;
 		PowerNetEndpointRegistry.markTopologyDirty(this.getWorld());
 		this.markDirty(DIRTY_TOPOLOGY);
 	}
@@ -219,82 +221,50 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 
 	@Override
 	public void update() {
+		ElectricalWorkGuard guard = ElectricalWorkGuard.enter(this);
+		if(guard == null) return;
 		long diagnosticStart = PowerNetDiagnostics.startDistribution();
-		this.providerScratch.clear();
-		clearReceiverScratch(this.receiverScratch, this.demandScratch);
-
-		if(providerEntries.isEmpty() && receiverEntries.isEmpty()) {
-			PowerNetDiagnostics.finishDistribution(diagnosticStart);
-			return;
-		}
-
-		long availableEnergyQuanta = 0;
-
-		// Sum available energy quanta for this distribution pass.
-		Iterator<Entry<IEnergyProviderMK2, Long>> provIt = providerEntries.entrySet().iterator();
-		while(provIt.hasNext()) {
-			Entry<IEnergyProviderMK2, Long> entry = provIt.next();
-			IEnergyProviderMK2 provider = entry.getKey();
-			long src = Math.min(provider.getStoredEnergyQuanta(), provider.getMaxOutputQuantaPerTick());
-			if(src > 0) {
-				this.providerScratch.add(provider, src);
-				availableEnergyQuanta += src;
+		long available = 0;
+		deliveredInUpdate = 0;
+		providerScratch.clear();
+		try {
+			// Snapshot membership before callbacks, which can detach/remove endpoints.
+			for(IEnergyProviderMK2 provider : new ArrayList<IEnergyProviderMK2>(providerEntries.keySet())) {
+				if(!guard.visit(provider)) break;
+				if(isBadLink(provider)) continue;
+				provider.prepareEnergyTransfer();
+				long supply = Math.max(0, Math.min(provider.getStoredEnergyQuanta(), provider.getMaxOutputQuantaPerTick()));
+				supply = Math.min(supply, Long.MAX_VALUE - available);
+				if(supply > 0) { providerScratch.add(provider, supply); available += supply; }
+			}
+			if(providerScratch.size > 0) guard.source(providerScratch.get(0));
+			guard.budget(available);
+			distribute(available, receiverScratch, demandScratch, guard, true);
+		} finally {
+			try {
+				// Always settle accepted deliveries, including on a diagnostic cutoff.
+				long left = deliveredInUpdate;
+				for(int i = 0; i < providerScratch.size && left > 0; i++) {
+					long debit = proportional(deliveredInUpdate, providerScratch.amounts[i], available);
+					debit = Math.min(left, debit);
+					if(debit > 0) providerScratch.get(i).extractEnergyQuanta(debit);
+					providerScratch.amounts[i] -= debit;
+					left -= debit;
+				}
+				for(int i = 0; i < providerScratch.size && left > 0; i++) {
+					long debit = Math.min(left, providerScratch.amounts[i]);
+					if(debit > 0) providerScratch.get(i).extractEnergyQuanta(debit);
+					left -= debit;
+				}
+				transferredEnergyQuantaThisTick = ElectricalWorkGuard.add(transferredEnergyQuantaThisTick, deliveredInUpdate);
+				guard.delivered(deliveredInUpdate);
+				if(guard.halted()) markSupplyDirty();
+			} finally {
+				providerScratch.clear();
+				guard.close();
+				PowerNetDiagnostics.finishDistribution(diagnosticStart);
 			}
 		}
-
-		// sum up total demand, categorized by priority
-		long totalDemand = 0;
-
-		Iterator<Entry<IEnergyReceiverMK2, Long>> recIt = receiverEntries.entrySet().iterator();
-
-		while(recIt.hasNext()) {
-			Entry<IEnergyReceiverMK2, Long> entry = recIt.next();
-			IEnergyReceiverMK2 receiver = entry.getKey();
-			long rec = Math.min(receiver.getEnergyCapacityQuanta() - receiver.getStoredEnergyQuanta(), receiver.getMaxInputQuantaPerTick());
-			if(rec > 0) {
-				int p = receiver.getPriority().ordinal();
-				this.receiverScratch[p].add(receiver, rec);
-				this.demandScratch[p] += rec;
-				totalDemand += rec;
-			}
-		}
-		long toTransfer = Math.min(availableEnergyQuanta, totalDemand);
-		long transferredEnergyQuanta = 0;
-
-		// Distribute quanta to receivers, ordered by priority.
-		for(int i = PRIORITIES.length - 1; i >= 0; i--) {
-			EndpointScratch<IEnergyReceiverMK2> list = this.receiverScratch[i];
-			long priorityDemand = this.demandScratch[i];
-
-			for(int j = 0; j < list.size; j++) {
-				long requested = list.amounts[j];
-				double weight = (double) requested / (double) priorityDemand;
-				long toSend = (long) Math.min(Math.max(toTransfer * weight, 0D), requested);
-				transferredEnergyQuanta += (toSend - list.get(j).receiveEnergyQuanta(toSend)); //leftovers are subtracted from the intended amount to use up
-			}
-
-			toTransfer -= transferredEnergyQuanta;
-		}
-
-		this.transferredEnergyQuantaThisTick += transferredEnergyQuanta;
-		long leftover = transferredEnergyQuanta;
-
-		// Extract the delivered quanta from providers.
-		for(int i = 0; i < this.providerScratch.size; i++) {
-			double weight = (double) this.providerScratch.amounts[i] / (double) availableEnergyQuanta;
-			long toUse = (long) Math.max(transferredEnergyQuanta * weight, 0D);
-			this.providerScratch.get(i).extractEnergyQuanta(toUse);
-			leftover -= toUse;
-		}
-
-		// Rounding compensation must respect each provider's remaining tick budget.
-		for(int i = 0; i < this.providerScratch.size && leftover > 0; i++) {
-			IEnergyProviderMK2 scapegoat = this.providerScratch.get(i);
-			long toUse = Math.min(leftover, Math.min(scapegoat.getStoredEnergyQuanta(), scapegoat.getMaxOutputQuantaPerTick()));
-			scapegoat.extractEnergyQuanta(toUse);
-			leftover -= toUse;
-		}
-		PowerNetDiagnostics.finishDistribution(diagnosticStart);
 	}
 
 	/** Legacy HE entry point for addons. */
@@ -304,49 +274,71 @@ public class PowerNetMK2 extends NodeNet<IEnergyReceiverMK2, IEnergyProviderMK2,
 	}
 
 	public long sendEnergyQuantaThroughDiode(long energyQuanta) {
+		if(energyQuanta <= 0) return energyQuanta;
+		ElectricalWorkGuard guard = ElectricalWorkGuard.enter(this);
+		if(guard == null) return energyQuanta;
 		long diagnosticStart = PowerNetDiagnostics.startDistribution();
-		clearReceiverScratch(this.diodeReceiverScratch, this.diodeDemandScratch);
-
-		if(receiverEntries.isEmpty()) {
+		try {
+			guard.budget(energyQuanta);
+			long delivered = distribute(energyQuanta, diodeReceiverScratch, diodeDemandScratch, guard, false);
+			guard.delivered(delivered);
+			transferredEnergyQuantaThisTick = ElectricalWorkGuard.add(transferredEnergyQuantaThisTick, delivered);
+			if(delivered > 0) markDemandDirty();
+			return energyQuanta - delivered;
+		} finally {
+			guard.close();
 			PowerNetDiagnostics.finishDistribution(diagnosticStart);
-			return energyQuanta;
 		}
+	}
 
-		long totalDemand = 0;
-
-		Iterator<Entry<IEnergyReceiverMK2, Long>> recIt = receiverEntries.entrySet().iterator();
-
-		while(recIt.hasNext()) {
-			Entry<IEnergyReceiverMK2, Long> entry = recIt.next();
-			IEnergyReceiverMK2 receiver = entry.getKey();
-			long rec = Math.min(receiver.getEnergyCapacityQuanta() - receiver.getStoredEnergyQuanta(), receiver.getMaxInputQuantaPerTick());
-			int p = receiver.getPriority().ordinal();
-			this.diodeReceiverScratch[p].add(receiver, rec);
-			this.diodeDemandScratch[p] += rec;
-			totalDemand += rec;
+	/** Linear endpoint work; each receiver receives at most one offer per pass. */
+	private long distribute(long available, EndpointScratch<IEnergyReceiverMK2>[] scratch, long[] demands, ElectricalWorkGuard guard, boolean debitProviders) {
+		clearReceiverScratch(scratch, demands);
+		if(available <= 0) return 0;
+		for(IEnergyReceiverMK2 receiver : new ArrayList<IEnergyReceiverMK2>(receiverEntries.keySet())) {
+			if(!guard.visit(receiver)) break;
+			if(isBadLink(receiver)) continue;
+			long demand = ElectricalWorkGuard.room(receiver);
+			int priority = receiver.getPriority().ordinal();
+			demand = Math.min(demand, Long.MAX_VALUE - demands[priority]);
+			if(demand > 0) { scratch[priority].add(receiver, demand); demands[priority] += demand; }
 		}
-		long toTransfer = Math.min(energyQuanta, totalDemand);
-		long transferredEnergyQuanta = 0;
-
-		for(int i = PRIORITIES.length - 1; i >= 0; i--) {
-			EndpointScratch<IEnergyReceiverMK2> list = this.diodeReceiverScratch[i];
-			long priorityDemand = this.diodeDemandScratch[i];
-
-			for(int j = 0; j < list.size; j++) {
-				long requested = list.amounts[j];
-				double weight = (double) requested / (double) priorityDemand;
-				long toSend = (long) Math.max(toTransfer * weight, 0D);
-				transferredEnergyQuanta += (toSend - list.get(j).receiveEnergyQuanta(toSend)); //leftovers are subtracted from the intended amount to use up
+		long delivered = 0;
+		try {
+			for(int priority = PRIORITIES.length - 1; priority >= 0 && delivered < available; priority--) {
+				long unallocated = Math.min(available - delivered, demands[priority]);
+				long demandLeft = demands[priority];
+				EndpointScratch<IEnergyReceiverMK2> endpoints = scratch[priority];
+				for(int i = 0; i < endpoints.size && unallocated > 0; i++) {
+					if(!guard.visit(endpoints.get(i))) return delivered;
+					long demand = endpoints.amounts[i];
+					long offer = proportional(unallocated, demand, demandLeft);
+					demandLeft -= demand;
+					unallocated -= offer;
+					IEnergyReceiverMK2 receiver = endpoints.get(i);
+					if(!receiverEntries.containsKey(receiver) || isBadLink(receiver)) continue;
+					long accepted = guard.offer(receiver, offer);
+					delivered += accepted;
+					if(debitProviders) deliveredInUpdate += accepted;
+				}
+				// Next priority sees the actual remaining supply, not cumulative double subtraction.
 			}
+			return delivered;
+		} finally { clearReceiverScratch(scratch, demands); }
+	}
 
-			toTransfer -= transferredEnergyQuanta;
-		}
+	private static long proportional(long amount, long weight, long total) {
+		if(amount == 0 || weight == 0) return 0;
+		if(amount <= Long.MAX_VALUE / weight) return amount * weight / total;
+		return java.math.BigInteger.valueOf(amount).multiply(java.math.BigInteger.valueOf(weight))
+				.divide(java.math.BigInteger.valueOf(total)).longValueExact();
+	}
 
-		this.transferredEnergyQuantaThisTick += transferredEnergyQuanta;
-		if(transferredEnergyQuanta > 0) this.markDemandDirty();
-		PowerNetDiagnostics.finishDistribution(diagnosticStart);
-
-		return energyQuanta - transferredEnergyQuanta;
+	public String describeTopology() {
+		return "network=" + Integer.toHexString(System.identityHashCode(this))
+				+ ",dim=" + (getWorld() == null ? "none" : getWorld().provider.dimensionId)
+				+ ",cables=" + links.size() + ",providers=" + providerEntries.size() + ",receivers=" + receiverEntries.size()
+				+ ",topologyChanges=" + topologyChanges + ",repairing=" + isTopologyRepairing();
 	}
 
 	@Override

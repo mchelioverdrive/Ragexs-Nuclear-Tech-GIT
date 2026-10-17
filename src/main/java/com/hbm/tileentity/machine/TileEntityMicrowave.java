@@ -192,7 +192,7 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 		runtimeActive = this.canProcess();
 		if(runtimeActive) {
 			long untilCheck = time >= maxTime ? 1L : (maxTime - time + speed * 2L - 1L) / (speed * 2L) + 1L;
-			long powerBoundary = energyQuanta / consumption + 1L;
+			long powerBoundary = energyQuanta / consumption;
 			this.scheduleMachineTransition(now + Math.max(1L, Math.min(untilCheck, powerBoundary)), TASK_PROCESS, TASK_SLOT_MAIN);
 		}
 		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
@@ -338,6 +338,11 @@ public class TileEntityMicrowave extends TileEntityMachineBase implements IEnerg
 	public double getMaxRenderDistanceSquared()
 	{
 		return 65536.0D;
+	}
+
+	@Override
+	public void prepareEnergyTransfer() {
+		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.settleProcessThrough(worldObj.getTotalWorldTime() - 1L);
 	}
 
 	@Override

@@ -449,7 +449,7 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 		boolean processing = runtimeMaterialEligible && this.hasPower();
 		this.cancelMachineTransition(TASK_PROCESS, TASK_SLOT_MAIN);
 		if(processing) {
-			long powerBoundary = energyQuanta / 250L + 1L;
+			long powerBoundary = energyQuanta / 250L;
 			this.scheduleMachineTransition(now + Math.max(1L, Math.min(processingSpeed - dualCookTime, powerBoundary)), TASK_PROCESS, TASK_SLOT_MAIN);
 		}
 		if(this.hasBatteryWork()) this.scheduleMachineTransition(now + 1L, TASK_BATTERY, TASK_SLOT_BATTERY);
@@ -508,6 +508,11 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 		if(worldObj == null || worldObj.isRemote) return;
 		TargetPoint point = new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50);
 		PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, energyQuanta), point);
+	}
+
+	@Override
+	public void prepareEnergyTransfer() {
+		if(!runtimeEnergyMutation && !runtimeSettling && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 	}
 
 	@Override

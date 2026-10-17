@@ -349,7 +349,12 @@ public class TileEntityMachineDriveProcessor extends TileEntityMachineBase imple
 	}
 
 	@Override public long getStoredEnergyQuanta() { return energyQuanta; }
-	@Override public void setStoredEnergyQuanta(long energyQuanta) {
+	@Override public void prepareEnergyTransfer() {
+		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
+	}
+
+	@Override
+	public void setStoredEnergyQuanta(long energyQuanta) {
 		if(this.energyQuanta == energyQuanta) return;
 		if(!runtimeEnergyMutation && worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 		this.energyQuanta = energyQuanta;

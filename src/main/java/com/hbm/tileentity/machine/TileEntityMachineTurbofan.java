@@ -283,13 +283,13 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
                     && tank.getTankType().getTrait(FT_Combustible.class).getGrade() == FuelGrade.AERO && tank.getTankType().getPhysicalState().isResolved();
             int amountToBurn = 0;
             long room = Math.max(0, maxPower - energyQuanta);
-            if(!runtimeWaterlogged && appropriate && room > 0 && breatheAir(200 * amount)) {
-                long request = Math.min(4_000_000L * 50000L * amount,
-                        com.hbm.realsim.SteamLedger.mulDiv(room, 500000L * 1000000L, getElectricalEfficiencyPpm()));
+            if(!runtimeWaterlogged && appropriate && breatheAir(200 * amount)) {
+                long request = 4_000_000L * 50000L * amount;
                 long generated = thermalFuel.burn(worldObj.getTotalWorldTime(), tank, request, getElectricalEfficiencyPpm(),
                         amount > 1 ? 750000 : 550000, amount > 1 ? 700 : 500, false);
-                output = Math.toIntExact(generated);
-                this.setStoredEnergyQuanta(Math.addExact(energyQuanta, generated));
+                long admitted = thermalFuel.admitElectrical(generated, room);
+                output = Math.toIntExact(admitted);
+                this.setStoredEnergyQuanta(com.hbm.realsim.GeneratorContract.admit(energyQuanta, maxPower, admitted));
                 amountToBurn = thermalFuel.consumedUnits;
                 consumption = amountToBurn;
                 wasOn = thermalFuel.chemicalInputMicroJ > 0;
@@ -630,5 +630,6 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
             if(perUnit > 0) lines.add(String.format(java.util.Locale.US, "Fuel flow: %.3f L/min", thermalFuel.chemicalInputMicroJ * 1200D / perUnit));
         }
         lines.add("Aviation fuel required; afterburning increases fuel use without increasing electrical ceiling");
+        lines.add("Keeps firing without electrical load; rejected output is dissipated");
     }
 }

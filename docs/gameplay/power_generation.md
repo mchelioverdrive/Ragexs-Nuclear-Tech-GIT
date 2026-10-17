@@ -52,3 +52,12 @@ Radiation engines, matter conversion, ZPE shafts and fictional laser power retai
 ## Sizing a grid
 
 Plan average supply, simultaneous peak load and storage discharge power separately. An 8-kW furnace, 2-kW press and 3-kW Fabrication Machine can overwhelm one starter if run together. Stagger jobs, add generation or provide a battery able to supply the peak. Generators have little internal electrical storage; external batteries bridge interruptions. Fuel delivery, clear byproducts and dependable cooling matter as much as the nameplate.
+
+
+## When electrical demand disappears
+
+Stirlings continue drawing supplied heat. Steam Engines and small turbines continue expanding steam while their spent-steam outlet has room. Unused output dissipates instead of accumulating in a hidden battery. Stop their heat/steam supply deliberately to save input.
+
+Industrial steam turbines close controlled intake without electrical/exhaust room; Leviathan retains its separate pressure protection/reset. Diesel governs down but still burns idle fuel. The industrial piston engine follows manual throttle; Turbofan keeps firing. Gas turbine retains minimum running fuel, lubrication, paid startup/shutdown and finite exhaust recovery. Isotope decay continues regardless of electrical demand. Material-conversion/custom batches follow their own contracts.
+
+Ordinary generators need a separate battery for stored electricity. Electric furnace has a two-tick working reserve (800 J at default); its slot battery supplies the heater and is not charged there. Old saved excess drains without deletion. See the [generator reference](../development/generator_reference.md#saturation-and-physical-operation) for the full behavior/construction table.

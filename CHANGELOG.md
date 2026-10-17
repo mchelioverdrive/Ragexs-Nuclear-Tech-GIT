@@ -269,3 +269,19 @@
 - Expanded existing reactor basic-aqueous service to 60 L/min and integral workshop/shared industrial cooling to 1/5 MW, with existing fan/pump energy accounting. Adopted a lower closed-carrier utility allowance for bulk fertilizer instead of full-charge boiling; no extra coolant chain or technology tier was added.
 - Split bulk NEI solid products into legal output stacks with exact per-stack mass; sized mixer/industrial reactor tanks before recipe admission. Fixed vanadium consolidation creating three ingots from one powder, retaining its erbium addition as a recovered output.
 - Updated existing process/construction references and regression coverage for quantities, conservation, energy, port capacity, displays and saved paid lots.
+
+2026-10-17 01:37 — Fix dedicated-server legacy structure recording
+
+- Replaced the client-only multiplayer save handler and World constructor used by legacy structure recording with a common-side no-op save handler and the server-safe World constructor. Recording owns isolated world/map data and never opens save, chunk or player files.
+- Preserved structure selection, seeds, layouts, block metadata, tile data, queued recording jobs and chunk-slice placement. Added dedicated-compatible classloading and generation regression coverage with client-only classes and members unavailable.
+
+
+2026-10-17 01:42 — Bound electrical distribution and separate generator operation from load
+
+- Corrected cumulative priority accounting, overflow-safe allocation and callback-safe endpoint snapshots in electrical distribution. Added shared work/time and recursion diagnostics for networks, direct transfers and diode chains; diode direct output now respects its own throughput. Counted stale split-queue removals against topology work.
+- Settled deferred electrical consumption before external admission/extraction across all 28 accounting owners and their shared-base descendants, preventing stale intake values from refunding process energy. Retained legacy energy and prevented over-cap battery backcharging.
+- Made Starter/Heavy Stirling, early open-admission steam equipment, manual piston/Turbofan/legacy wood generation and loaded radiation-engine fuel continue physical operation under electrical saturation, rejecting surplus without enlarging transfer buffers. Added finite Diesel fuel-governor response and idle firing; retained gas-turbine running fuel/lubrication and exhaust ownership at no load. Preserved rated progression, controlled industrial steam protection and existing recipes.
+- Preserved endpoint membership across same-instance retained machine block swaps, avoiding periodic power loss when a furnace lights or extinguishes. Made the machine lifetime ledger accessible to vanilla saved-data reloading without changing its format.
+- Scheduled deferred electrical exhaustion at the last paid tick across affected machine families. Retained paid partial jobs across the next supply phase, applying existing starvation resets only after an actually unpowered tick.
+- Replaced Electric Furnace's unsupported 50-kJ internal reserve with two heater ticks, scaling with upgrades. Preserved saved excess energy, synchronized installed demand and real gauge capacity, and clarified that its battery slot supplies the heater.
+- Updated existing generator/progression, player and server diagnostic references; added regression coverage for saturated/rejecting networks, recursive paths, cyclic topology, bounded work, generator input behavior, storage and aggregate export.

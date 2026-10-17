@@ -47,4 +47,15 @@ public final class ThermalMachine {
     public static int efficiency(double setting, int maximumPpm) {
         return Double.isFinite(setting) ? Math.max(0, Math.min(maximumPpm, (int) (setting * 1000000))) : maximumPpm;
     }
+
+    /** Open-admission early engines keep expanding; rejected shaft work joins the ambient sink. */
+    public static long ungovernedTurbine(ThermalAccount account, long tick, FluidTank in, FluidTank out,
+            long flowMassPerTick, long ratingWatts, int efficiencyPpm, long energy, long capacity) {
+        long generated = turbine(account, tick, in, out, flowMassPerTick, ratingWatts, efficiencyPpm, 0, ratingWatts / 10);
+        long admitted = Math.min(generated, GeneratorContract.room(energy, capacity));
+        account.currentElectricQuanta = admitted;
+        account.currentRejectedMicroJ = Math.addExact(account.currentRejectedMicroJ,
+                Math.multiplyExact(generated - admitted, SteamLedger.MICROJ_PER_QUANTUM));
+        return admitted;
+    }
 }

@@ -364,6 +364,44 @@ public class NativeGeneratorContractTest {
         ids.clear(); ids.putAll(oldIds); order.clear(); order.addAll(oldOrder);
         ItemRTGPellet.pelletList.clear(); ItemRTGPellet.pelletList.addAll(oldPellets);
     }
+    @Test public void everyDeferredElectricalAccountingOwnerSettlesBeforeAdmission() throws Exception {
+        Class<?>[] owners = {TileEntityElectrolyser.class, TileEntityMachineArcFurnace.class, TileEntityMachineArcFurnaceLarge.class,
+            TileEntityMachineArcWelder.class, TileEntityMachineAssemblerBase.class, TileEntityMachineCentrifuge.class,
+            TileEntityMachineChemplant.class, TileEntityMachineChemplantBase.class, TileEntityMachineCompressor.class,
+            TileEntityMachineCryoDistill.class, TileEntityMachineCrystallizer.class, TileEntityMachineCyclotron.class,
+            TileEntityMachineDriveProcessor.class, TileEntityMachineElectricFurnace.class, TileEntityMachineEPress.class,
+            TileEntityMachineExposureChamber.class, TileEntityMachineGasCent.class, TileEntityMachineMilkReformer.class,
+            TileEntityMachineMixer.class, TileEntityMachineSchrabidiumTransmutator.class, TileEntityMachineShredder.class,
+            TileEntityMachineSolderingStation.class, TileEntityMachineVacuumCircuit.class, TileEntityMicrowave.class,
+            com.hbm.tileentity.machine.oil.TileEntityMachineLiquefactor.class, com.hbm.tileentity.machine.oil.TileEntityMachinePyroOven.class,
+            com.hbm.tileentity.machine.oil.TileEntityMachineShredderLarge.class, com.hbm.tileentity.machine.oil.TileEntityMachineSolidifier.class};
+        for(Class<?> owner : owners) assertEquals(owner.getName(), owner, owner.getMethod("prepareEnergyTransfer").getDeclaringClass());
+        assertEquals(TileEntityMachineAssemblerBase.class, TileEntityMachineAssembler.class.getMethod("prepareEnergyTransfer").getDeclaringClass());
+        assertEquals(TileEntityMachineAssemblerBase.class, TileEntityMachineAssemfac.class.getMethod("prepareEnergyTransfer").getDeclaringClass());
+    }
+    @Test public void earlySteamKeepsFlowingUnderElectricalSaturationButCannotLoseExhaustMass() {
+        TileEntityMachineTurbine tile = new TileEntityMachineTurbine();
+        tile.tanks[0].setFill(100); long converted = 0, stored = 15000, rejected = 0;
+        for(long tick = 1; tick <= 100; tick++) {
+            long admitted = ThermalMachine.ungovernedTurbine(tile.thermal, tick, tile.tanks[0], tile.tanks[1],
+                    10000, 75000, 750000, stored, 15000);
+            assertEquals(0, admitted); converted += tile.thermal.currentMass;
+            rejected += tile.thermal.currentRejectedMicroJ;
+        }
+        assertTrue(converted > 0); assertTrue(rejected > 0); assertEquals(15000, stored);
+        assertEquals((100L - tile.tanks[0].getFill()) * SteamLedger.State.ORDINARY.massPerUnit,
+                converted + tile.thermal.ownedMass());
+        assertEquals(converted, tile.tanks[1].getFill() * SteamLedger.State.SPENT.massPerUnit + tile.thermal.remainder(SteamLedger.State.SPENT));
+        tile.tanks[1].setFill(tile.tanks[1].getMaxFill()); int inlet = tile.tanks[0].getFill();
+        assertEquals(0, ThermalMachine.ungovernedTurbine(tile.thermal, 101, tile.tanks[0], tile.tanks[1], 10000, 75000, 750000, stored, 15000));
+        assertEquals(inlet, tile.tanks[0].getFill());
+    }
+    @Test public void fullFurnaceDoesNotReverseChargeItsSupplyBattery() {
+        com.hbm.items.machine.ItemBattery battery = new com.hbm.items.machine.ItemBattery(100, 100, 100);
+        ItemStack stack = new ItemStack(battery); battery.setStoredEnergyQuanta(stack, 70);
+        assertEquals(100000, com.hbm.lib.Library.chargeTEFromItems(new ItemStack[] {stack}, 0, 100000, 1600));
+        assertEquals(70, battery.getStoredEnergyQuanta(stack));
+    }
     @Test public void everyActiveGeneratorHasAnExplicitRatedContract() {
         Class<?>[] types = {TileEntityStirling.class, TileEntitySteamEngine.class, TileEntityMachineTurbine.class,
             TileEntityMachineLargeTurbine.class, TileEntityChungus.class, TileEntityMachineDiesel.class,

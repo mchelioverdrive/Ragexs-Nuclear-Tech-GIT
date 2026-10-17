@@ -15,6 +15,7 @@ public interface IEnergyProviderMK2 extends IEnergyHandlerMK2 {
 
 	/** Extracts stored energy. Caller must not request more than is available. */
 	public default void extractEnergyQuanta(long energyQuanta) {
+		this.prepareEnergyTransfer();
 		if(LegacyEnergyOverrides.of(this.getClass()).providerExtract) {
 			this.usePower(EnergyUnits.quantaToLegacyHe(energyQuanta));
 			return;
@@ -43,11 +44,18 @@ public interface IEnergyProviderMK2 extends IEnergyHandlerMK2 {
 		if(te instanceof IEnergyReceiverMK2 && te != this) {
 			IEnergyReceiverMK2 rec = (IEnergyReceiverMK2) te;
 			if(rec.canConnect(dir.getOpposite())) {
-				long provides = Math.min(this.getStoredEnergyQuanta(), this.getMaxOutputQuantaPerTick());
-				long receives = Math.max(0, Math.min(rec.getEnergyCapacityQuanta() - rec.getStoredEnergyQuanta(), rec.getMaxInputQuantaPerTick()));
-				long toTransfer = Math.min(provides, receives);
-				toTransfer -= rec.receiveEnergyQuanta(toTransfer);
-				this.extractEnergyQuanta(toTransfer);
+				ElectricalWorkGuard guard = ElectricalWorkGuard.enter(this);
+				if(guard == null) return;
+				try {
+					guard.source(this);
+					this.prepareEnergyTransfer();
+					long provides = Math.max(0, Math.min(this.getStoredEnergyQuanta(), this.getMaxOutputQuantaPerTick()));
+					long offered = Math.min(provides, ElectricalWorkGuard.room(rec));
+					guard.budget(offered);
+					long accepted = guard.offer(rec, offered);
+					guard.delivered(accepted);
+					if(accepted > 0) this.extractEnergyQuanta(accepted);
+				} finally { guard.close(); }
 			}
 		}
 	}

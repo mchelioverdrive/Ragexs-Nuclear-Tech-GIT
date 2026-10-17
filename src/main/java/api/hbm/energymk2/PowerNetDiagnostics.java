@@ -216,9 +216,11 @@ public final class PowerNetDiagnostics {
 	public static String[] getReport() {
 		if(!isEnabled()) return new String[] {
 			"MK2 power diagnostics are disabled.",
-			"Set 1.45_enablePowerNetDiagnostics=true in hbm.cfg and restart the server."
+			"Set 1.45_enablePowerNetDiagnostics=true in hbm.cfg and restart the server.",
+			ElectricalWorkGuard.lastAbnormalReport()
 		};
 		return new String[] {
+			ElectricalWorkGuard.lastAbnormalReport(),
 			"MK2 power diagnostics, completed tick " + lastTick + ":",
 			"active/dirty-processed/clean-skipped = " + lastActive + "/" + lastProcessed + "/" + Math.max(0, lastActive - lastProcessed),
 			"attachments/detachments/integrity removals = " + lastAttachments + "/" + lastDetachments + "/" + lastIntegrityRemovals,

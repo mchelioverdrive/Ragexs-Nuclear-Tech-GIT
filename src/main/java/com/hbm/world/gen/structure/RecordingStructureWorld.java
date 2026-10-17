@@ -20,7 +20,6 @@ import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.biome.WorldChunkManager;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.structure.StructureBoundingBox;
-import net.minecraft.world.storage.SaveHandlerMP;
 
 /** In-memory destination for legacy schematic builders; it never asks the real world for blocks. */
 public class RecordingStructureWorld extends World {
@@ -39,7 +38,8 @@ public class RecordingStructureWorld extends World {
 	}
 
 	public RecordingStructureWorld(World realWorld, long seed, int groundY, Block groundBlock, boolean underground) {
-		super(new SaveHandlerMP(), "RTMStructureRecording", new WorldProviderSurface(), new WorldSettings(realWorld.getWorldInfo()), new Profiler());
+		// The overload with provider before settings is client-only in 1.7.10.
+		super(new RecordingSaveHandler(), "RTMStructureRecording", new WorldSettings(realWorld.getWorldInfo()), new WorldProviderSurface(), new Profiler());
 		this.realWorld = realWorld;
 		this.groundY = groundY;
 		this.groundBlock = groundBlock;

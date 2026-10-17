@@ -54,8 +54,10 @@ public class TileEntityLoadedBase extends TileEntity implements ILoadedTile {
 			if(this.retainMachineRuntimeOnInvalidate) MachineRuntimeManager.unbind(this);
 			else MachineRuntimeManager.remove(this);
 		}
-		if(this.worldObj != null && !this.worldObj.isRemote && this instanceof IEnergyHandlerMK2) PowerNetMK2.detachEndpoint((IEnergyHandlerMK2) this);
-		if(this.worldObj != null && !this.worldObj.isRemote && (this instanceof IFluidConnector || this instanceof IFluidProviderMK2)) FluidNetEndpointRegistry.detach(this);
+		if(!this.retainMachineRuntimeOnInvalidate) {
+			if(this.worldObj != null && !this.worldObj.isRemote && this instanceof IEnergyHandlerMK2) PowerNetMK2.detachEndpoint((IEnergyHandlerMK2) this);
+			if(this.worldObj != null && !this.worldObj.isRemote && (this instanceof IFluidConnector || this instanceof IFluidProviderMK2)) FluidNetEndpointRegistry.detach(this);
+		}
 		super.invalidate();
 	}
 	

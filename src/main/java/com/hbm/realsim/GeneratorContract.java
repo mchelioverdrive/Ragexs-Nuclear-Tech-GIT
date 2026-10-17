@@ -10,6 +10,13 @@ public final class GeneratorContract {
     public static long admit(long stored, long capacity, long generated) {
         return Math.addExact(stored, Math.min(Math.max(0, generated), room(stored, capacity)));
     }
+    /** Simplified genset fuel governor: 10% idle firing and a one-second full-scale response. */
+    public static long governedInput(long previous, long desired, long ratingQuanta) {
+        long idle = Math.max(1, ratingQuanta / 10), step = Math.max(1, ratingQuanta / 20);
+        long target = Math.max(idle, Math.min(ratingQuanta, desired));
+        previous = Math.max(0, Math.min(ratingQuanta, previous));
+        return previous < target ? Math.min(target, previous + step) : Math.max(target, previous - step);
+    }
     public static boolean acceptsSteam(SteamLedger.State state, SteamLedger.State maximum) {
         return state != null && state.ordinal() >= SteamLedger.State.ORDINARY.ordinal() && state.ordinal() <= maximum.ordinal();
     }
