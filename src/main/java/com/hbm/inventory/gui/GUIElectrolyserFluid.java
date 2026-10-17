@@ -78,8 +78,7 @@ public class GUIElectrolyserFluid extends GuiInfoContainer {
 
         for(int channel = 0; channel < 2; channel++) {
             int tankX = guiLeft + 96 + channel * 20;
-            drawRect(tankX - 1, guiTop + 77, tankX + 17, guiTop + 107, 0xff373737);
-            electrolyser.tanks[4 + channel].renderTank(tankX, guiTop + 106, zLevel, 16, 28);
+            MachineGuiParts.tank(electrolyser.tanks[4 + channel], tankX, guiTop + 78, zLevel, 16, 28);
         }
 		electrolyser.tanks[0].renderTank(guiLeft + 42, guiTop + 70, this.zLevel, 16, 52);
 		electrolyser.tanks[1].renderTank(guiLeft + 96, guiTop + 70, this.zLevel, 16, 52);

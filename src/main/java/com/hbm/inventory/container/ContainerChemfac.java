@@ -11,17 +11,19 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 
 public class ContainerChemfac extends Container {
+	public static final int LANE_PITCH_X = 144;
+	public static final int LANE_PITCH_Y = 36;
 	
 	private TileEntityMachineChemfac chemfac;
 
 	public ContainerChemfac(InventoryPlayer playerInv, TileEntityMachineChemfac tile) {
 		chemfac = tile;
 
-		this.addSlotToContainer(new Slot(tile, 0, 266, 79));
+		this.addSlotToContainer(new Slot(tile, 0, 294, 79));
 		
 		for(int i = 0; i < 2; i++) {
 			for(int j = 0; j < 2; j++) {
-				this.addSlotToContainer(new SlotUpgrade(tile, 1 + i * 2 + j, 251 + j * 18, 172 + i * 18));
+				this.addSlotToContainer(new SlotUpgrade(tile, 1 + i * 2 + j, 276 + j * 18, 172 + i * 18));
 			}
 		}
 		
@@ -30,28 +32,28 @@ public class ContainerChemfac extends Container {
 
 				for(int k = 0; k < 2; k++) {
 					for(int l = 0; l < 2; l++) {
-						this.addSlotToContainer(new Slot(tile, this.inventorySlots.size(), 7 + j * 132 + l * 16, 14  + i * 38 + k * 16));
+						this.addSlotToContainer(new Slot(tile, this.inventorySlots.size(), 8 + j * LANE_PITCH_X + l * 18, 14 + i * LANE_PITCH_Y + k * 18));
 					}
 				}
 
 				for(int k = 0; k < 2; k++) {
 					for(int l = 0; l < 2; l++) {
-						this.addSlotToContainer(new SlotCraftingOutput(playerInv.player, tile, this.inventorySlots.size(), 75 + j * 132 + l * 16, 14  + i * 38 + k * 16));
+						this.addSlotToContainer(new SlotCraftingOutput(playerInv.player, tile, this.inventorySlots.size(), 88 + j * LANE_PITCH_X + l * 18, 14 + i * LANE_PITCH_Y + k * 18));
 					}
 				}
 				
-				this.addSlotToContainer(new Slot(tile, this.inventorySlots.size(), 55 + j * 132, 30  + i * 38));
+				this.addSlotToContainer(new Slot(tile, this.inventorySlots.size(), 66 + j * LANE_PITCH_X, 32 + i * LANE_PITCH_Y));
 			}
 		}
 		
 		for(int i = 0; i < 3; i++) {
 			for(int j = 0; j < 9; j++) {
-				this.addSlotToContainer(new Slot(playerInv, j + i * 9 + 9, 62 + j * 18, 174 + i * 18));
+				this.addSlotToContainer(new Slot(playerInv, j + i * 9 + 9, 62 + j * 18, 158 + i * 18));
 			}
 		}
 
 		for(int i = 0; i < 9; i++) {
-			this.addSlotToContainer(new Slot(playerInv, i, 62 + i * 18, 232));
+			this.addSlotToContainer(new Slot(playerInv, i, 62 + i * 18, 216));
 		}
 	}
 

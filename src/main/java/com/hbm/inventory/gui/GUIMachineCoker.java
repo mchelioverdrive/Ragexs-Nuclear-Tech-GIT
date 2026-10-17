@@ -63,7 +63,7 @@ public class GUIMachineCoker extends GuiInfoContainer {
 		
 		refinery.tanks[0].renderTank(guiLeft + 35, guiTop + 70, this.zLevel, 16, 52);
 		refinery.tanks[1].renderTank(guiLeft + 125, guiTop + 70, this.zLevel, 16, 52);
-        refinery.tanks[2].renderTank(guiLeft + 145, guiTop + 70, this.zLevel, 8, 52);
-        refinery.tanks[3].renderTank(guiLeft + 157, guiTop + 70, this.zLevel, 8, 52);
+        MachineGuiParts.tank(refinery.tanks[2], guiLeft + 145, guiTop + 18, zLevel, 8, 52);
+        MachineGuiParts.tank(refinery.tanks[3], guiLeft + 157, guiTop + 18, zLevel, 8, 52);
 	}
 }

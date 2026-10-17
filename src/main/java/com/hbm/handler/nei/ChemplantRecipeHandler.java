@@ -10,6 +10,9 @@ import com.hbm.handler.imc.ICompatNHNEI;
 import com.hbm.inventory.FluidStack;
 import com.hbm.inventory.RecipesCommon.AStack;
 import com.hbm.inventory.gui.GUIMachineChemplant;
+import com.hbm.inventory.gui.GUIChemfac;
+import com.hbm.inventory.container.ContainerChemfac;
+import com.hbm.inventory.container.ContainerMachineChemplant;
 import com.hbm.inventory.recipes.ChemplantRecipes;
 import com.hbm.inventory.recipes.ChemplantRecipes.ChemRecipe;
 import com.hbm.items.ModItems;
@@ -220,10 +223,17 @@ public class ChemplantRecipeHandler extends SafeTemplateRecipeHandler implements
 		guiGui = new LinkedList<Class<? extends GuiContainer>>();
 
 		transferRects.add(new RecipeTransferRect(new Rectangle(74, 36, 20, 16), "chemistry"));
-		transferRectsGui.add(new RecipeTransferRect(new Rectangle(88, 96, 72, 10), "chemistry"));
+		transferRectsGui.add(new RecipeTransferRect(new Rectangle(ContainerMachineChemplant.PROCESS_X, ContainerMachineChemplant.PROCESS_Y,
+				ContainerMachineChemplant.PROCESS_WIDTH, ContainerMachineChemplant.PROCESS_HEIGHT), "chemistry"));
 		guiGui.add(GUIMachineChemplant.class);
 		RecipeTransferRectHandler.registerRectsToGuis(getRecipeTransferRectGuis(), transferRects);
 		RecipeTransferRectHandler.registerRectsToGuis(guiGui, transferRectsGui);
+		LinkedList<RecipeTransferRect> industrialRects = new LinkedList<RecipeTransferRect>();
+		for(int lane = 0; lane < 8; lane++) industrialRects.add(new RecipeTransferRect(new Rectangle(
+				66 + ContainerChemfac.LANE_PITCH_X * (lane % 2), 16 + ContainerChemfac.LANE_PITCH_Y * (lane / 2), 18, 10), "chemistry"));
+		LinkedList<Class<? extends GuiContainer>> industrialGuis = new LinkedList<Class<? extends GuiContainer>>();
+		industrialGuis.add(GUIChemfac.class);
+		RecipeTransferRectHandler.registerRectsToGuis(industrialGuis, industrialRects);
 	}
 
     @Override public int recipiesPerPage() { return 1; }

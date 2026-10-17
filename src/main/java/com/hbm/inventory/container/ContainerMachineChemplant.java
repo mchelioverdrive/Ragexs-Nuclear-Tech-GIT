@@ -10,13 +10,15 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 
 public class ContainerMachineChemplant extends Container {
+    public static final int PROCESS_X = 100, PROCESS_Y = 96, PROCESS_WIDTH = 56, PROCESS_HEIGHT = 10;
+    public static final int TEMPLATE_X = 120;
     private final TileEntityMachineChemplant chemplant;
     public ContainerMachineChemplant(InventoryPlayer player, final TileEntityMachineChemplant tile) {
         chemplant = tile;
         int[][] positions = new int[29][2];
         positions[0] = new int[] {98, 26};
         for(int i = 1; i <= 3; i++) positions[i] = new int[] {98 + i * 18, 26};
-        positions[4] = new int[] {116, 62};
+        positions[4] = new int[] {TEMPLATE_X, 62};
         for(int i = 0; i < 4; i++) {
             positions[5 + i] = new int[] {170 + i * 18, 112};
             positions[13 + i] = new int[] {8 + i * 18, 112};
@@ -38,8 +40,8 @@ public class ContainerMachineChemplant extends Container {
             addSlotToContainer(slot);
         }
         for(int row = 0; row < 3; row++) for(int col = 0; col < 9; col++)
-            addSlotToContainer(new Slot(player, col + row * 9 + 9, 44 + col * 18, 162 + row * 18));
-        for(int col = 0; col < 9; col++) addSlotToContainer(new Slot(player, col, 44 + col * 18, 220));
+            addSlotToContainer(new Slot(player, col + row * 9 + 9, 44 + col * 18, 158 + row * 18));
+        for(int col = 0; col < 9; col++) addSlotToContainer(new Slot(player, col, 44 + col * 18, 216));
     }
     @Override public ItemStack transferStackInSlot(EntityPlayer player, int index) {
         Slot source = (Slot) inventorySlots.get(index);

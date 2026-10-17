@@ -28,12 +28,12 @@ public class GUIMilkReformer extends GuiInfoContainer {
 	public void drawScreen(int mouseX, int mouseY, float f) {
 		super.drawScreen(mouseX, mouseY, f);
 
-		refinery.tanks[0].renderTankInfo(this, mouseX, mouseY, guiLeft + 45, guiTop + 90 - 52, 16, 29);
-		refinery.tanks[1].renderTankInfo(this, mouseX, mouseY, guiLeft + 90, guiTop + 70 - 15, 21, 10);
-		refinery.tanks[2].renderTankInfo(this, mouseX, mouseY, guiLeft + 117, guiTop + 70 - 15, 21, 10);
-		refinery.tanks[3].renderTankInfo(this, mouseX, mouseY, guiLeft + 143, guiTop + 70 - 15, 21, 10);
+		refinery.tanks[0].renderTankInfo(this, mouseX, mouseY, guiLeft + 50, guiTop + 32, 5, 30);
+		refinery.tanks[1].renderTankInfo(this, mouseX, mouseY, guiLeft + 101, guiTop + 53, 3, 10);
+		refinery.tanks[2].renderTankInfo(this, mouseX, mouseY, guiLeft + 128, guiTop + 53, 3, 10);
+		refinery.tanks[3].renderTankInfo(this, mouseX, mouseY, guiLeft + 155, guiTop + 53, 3, 10);
         refinery.tanks[4].renderTankInfo(this, mouseX, mouseY, guiLeft + 10, guiTop + 38, 16, 29);
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 98,  guiTop + 60 - 52, 70, 20, refinery.getStoredEnergyQuanta(), TileEntityMachineMilkReformer.maxPower);
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 98, guiTop + 13, 63, 6, refinery.getStoredEnergyQuanta(), TileEntityMachineMilkReformer.maxPower);
 	}
 	
 	@Override
@@ -50,8 +50,7 @@ public class GUIMilkReformer extends GuiInfoContainer {
 		int j = (int) (refinery.getStoredEnergyQuanta() * 63 / TileEntityMachineMilkReformer.maxPower);
 		drawTexturedModalRect(guiLeft + 98, guiTop + 13, 176, 6, j, 6);
 		
-        drawRect(guiLeft + 9, guiTop + 37, guiLeft + 27, guiTop + 68, 0xff373737);
-        refinery.tanks[4].renderTank(guiLeft + 10, guiTop + 67, zLevel, 16, 29);
+        MachineGuiParts.tank(refinery.tanks[4], guiLeft + 10, guiTop + 38, zLevel, 16, 29);
 		refinery.tanks[0].renderTank(guiLeft + 50, guiTop + 62, this.zLevel, 5, 30);
 		refinery.tanks[1].renderTank(guiLeft + 101, guiTop + 63, this.zLevel, 3, 10);
 		refinery.tanks[2].renderTank(guiLeft + 128, guiTop + 63, this.zLevel, 3, 10);

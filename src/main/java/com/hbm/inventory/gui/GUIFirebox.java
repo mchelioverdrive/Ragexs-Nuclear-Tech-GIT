@@ -24,6 +24,7 @@ public class GUIFirebox extends GuiInfoContainer {
 	public GUIFirebox(InventoryPlayer invPlayer, TileEntityFireboxBase tedf, ResourceLocation texture) {
 		super(new ContainerFirebox(invPlayer, tedf));
 		firebox = tedf;
+		setMachineInfoOwner(tedf);
 		this.texture = texture;
 		
 		this.xSize = 176;
@@ -62,6 +63,11 @@ public class GUIFirebox extends GuiInfoContainer {
 		
 		this.fontRendererObj.drawString(name, this.xSize / 2 - this.fontRendererObj.getStringWidth(name) / 2, 6, color);
 		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96 + 2, 4210752);
+		if(firebox instanceof TileEntityHeaterOven) {
+			MachineGuiParts.label(fontRendererObj, I18n.format("gui.rtm.fuel"), 44, 47, 34, 0xFFFFFF);
+			MachineGuiParts.label(fontRendererObj, I18n.format("gui.rtm.heat"), 81, 17, 70, 0xFFFFFF);
+			MachineGuiParts.label(fontRendererObj, I18n.format(firebox.wasOn ? "gui.rtm.firing" : "gui.rtm.idle"), 81, 47, 70, 0xFFFFFF);
+		}
 	}
 
 	@Override
@@ -70,10 +76,10 @@ public class GUIFirebox extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
-		int i = firebox.heatEnergy * 69 / firebox.getMaxHeat();
+		int i = MachineGuiParts.scaled(firebox.heatEnergy, firebox.getMaxHeat(), 69);
 		drawTexturedModalRect(guiLeft + 81, guiTop + 28, 176, 0, i, 5);
 		
-		int j = firebox.burnTime * 70 / Math.max(firebox.maxBurnTime, 1);
+		int j = MachineGuiParts.scaled(firebox.burnTime, firebox.maxBurnTime, 70);
 		drawTexturedModalRect(guiLeft + 81, guiTop + 37, 176, 5, j, 5);
 		
 		if(firebox.wasOn) {

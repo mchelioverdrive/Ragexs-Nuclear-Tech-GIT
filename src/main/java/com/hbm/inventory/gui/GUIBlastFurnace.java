@@ -46,10 +46,10 @@ public class GUIBlastFurnace extends GuiInfoContainer {
 
 		furnace.tanks[0].renderTankInfo(this, x, y, guiLeft + 25, guiTop + 71, 18, 18);
 		furnace.tanks[1].renderTankInfo(this, x, y, guiLeft + 25, guiTop + 17, 18, 18);
-		for(int tank = 2; tank < 5; tank++) furnace.tanks[tank].renderTankInfo(this, x, y, guiLeft + 8 + (tank - 2) * 50, guiTop + 118, 45, 12);
+		for(int tank = 2; tank < 5; tank++) furnace.tanks[tank].renderTankInfo(this, x, y, guiLeft + 8 + (tank - 2) * 50, guiTop + 122, 45, 5);
 		drawCustomInfoStat(x, y, guiLeft + 80, guiTop + 45, 16, 16, x, y, I18n.format("tooltip.blast.reductant"));
 		drawCustomInfoStat(x, y, guiLeft + 134, guiTop + 27, 16, 16, x, y, I18n.format("tooltip.blast.flux"));
-		furnace.tanks[5].renderTankInfo(this, x, y, guiLeft + 134, guiTop + 45, 20, 12);
+		furnace.tanks[5].renderTankInfo(this, x, y, guiLeft + 134, guiTop + 56, 20, 5);
 	}
 	
 	@Override
@@ -58,7 +58,7 @@ public class GUIBlastFurnace extends GuiInfoContainer {
 		
 		this.fontRendererObj.drawString(name, this.xSize / 2 - this.fontRendererObj.getStringWidth(name) / 2, 6, 4210752);
 		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96 + 2, 4210752);
-		for(int tank = 2; tank < 5; tank++) this.fontRendererObj.drawString(I18n.format("tooltip.blast.tank" + tank), 8 + (tank - 2) * 50, 112, 4210752);
+		for(int tank = 2; tank < 5; tank++) MachineGuiParts.label(fontRendererObj, I18n.format("tooltip.blast.tank" + tank), 8 + (tank - 2) * 50, 112, 45, 4210752);
 		this.fontRendererObj.drawString("CO2", 134, 47, 4210752);
 	}
 
@@ -85,14 +85,14 @@ public class GUIBlastFurnace extends GuiInfoContainer {
 
 		drawRect(guiLeft + 27, guiTop + 85, guiLeft + 27 + furnace.tanks[0].getFill() * 14 / furnace.tanks[0].getMaxFill(), guiTop + 88, 0xFF800000);
 		drawRect(guiLeft + 27, guiTop + 31, guiLeft + 27 + furnace.tanks[1].getFill() * 14 / furnace.tanks[1].getMaxFill(), guiTop + 34, 0xFF800000);
-		// The three lower labels previously covered empty art: expose actual synchronized stock,
-		// including the optional oxygen feed, without moving inventory slots or changing the texture.
-		drawRect(guiLeft + 5, guiTop + 111, guiLeft + 155, guiTop + 126, 0xFFC6C6C6);
+		MachineGuiParts.recess(guiLeft + 5, guiTop + 111, 152, 17);
 		for(int tank = 2; tank < 5; tank++) {
 			int left = guiLeft + 8 + (tank - 2) * 50;
-			drawRect(left, guiTop + 121, left + 45, guiTop + 125, 0xFF302F2C);
-			int width = (int) Math.min(43L, (long) furnace.tanks[tank].getFill() * 43 / furnace.tanks[tank].getMaxFill());
-			drawRect(left + 1, guiTop + 122, left + 1 + width, guiTop + 124, 0xFF000000 | furnace.tanks[tank].getTankType().getColor());
+			MachineGuiParts.recess(left, guiTop + 122, 45, 5);
+			furnace.tanks[tank].renderTank(left, guiTop + 127, zLevel, 45, 5, 1);
 		}
+		MachineGuiParts.recess(guiLeft + 134, guiTop + 56, 20, 5);
+		furnace.tanks[5].renderTank(guiLeft + 134, guiTop + 61, zLevel, 20, 5, 1);
+		GL11.glColor4f(1, 1, 1, 1);
 	}
 }

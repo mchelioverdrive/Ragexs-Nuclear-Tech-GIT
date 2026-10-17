@@ -40,6 +40,8 @@ public class GUIMachineLargeTurbine extends GuiInfoContainer {
 		}
 		
 		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 123, guiTop + 69 - 34, 7, 34, turbine.getStoredEnergyQuanta(), turbine.maxPower);
+		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 82, guiTop + 36, 36, 12, mouseX, mouseY,
+				com.hbm.realsim.MachineInfo.describe(turbine, true));
 	}
 	
 	@Override
@@ -48,6 +50,7 @@ public class GUIMachineLargeTurbine extends GuiInfoContainer {
 		
 		this.fontRendererObj.drawString(name, this.xSize / 2 - this.fontRendererObj.getStringWidth(name) / 2, 6, 4210752);
 		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96 + 2, 4210752);
+		MachineGuiParts.label(fontRendererObj, I18n.format(turbine.thermal.currentMass > 0 ? "gui.rtm.on" : "gui.rtm.idle"), 83, 38, 35, MachineGuiParts.TEXT);
 	}
 	
 	@Override
@@ -61,7 +64,7 @@ public class GUIMachineLargeTurbine extends GuiInfoContainer {
 		if(turbine.tanks[0].getTankType() == Fluids.SUPERHOTSTEAM)drawTexturedModalRect(guiLeft + 99, guiTop + 18, 183, 28, 14, 14);
 		if(turbine.tanks[0].getTankType() == Fluids.ULTRAHOTSTEAM)drawTexturedModalRect(guiLeft + 99, guiTop + 18, 183, 42, 14, 14);
 
-		int i = (int)turbine.getPowerScaled(34);
+		int i = MachineGuiParts.scaled(turbine.getStoredEnergyQuanta(), turbine.maxPower, 34);
 		drawTexturedModalRect(guiLeft + 123, guiTop + 69 - i, 176, 34 - i, 7, i);
 		
 		if(turbine.tanks[1].getTankType() == Fluids.NONE) {

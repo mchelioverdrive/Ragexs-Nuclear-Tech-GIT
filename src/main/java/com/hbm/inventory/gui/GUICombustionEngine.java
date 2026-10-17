@@ -52,7 +52,7 @@ public class GUICombustionEngine extends GuiInfoContainer {
 		
 		drawCustomInfoStat(x, y, guiLeft + 79, guiTop + 50, 35, 14, x, y, engine.generatorStats.info(engine.ratedPowerWatts, engine.fuelCredit, engine.tank.getTankType().getName(), engine.tank.getFill(), engine.getElectricalEfficiencyPpm(), com.hbm.inventory.fluid.FluidInfo.isExpanded()));
 		
-		drawCustomInfoStat(x, y, guiLeft + 79, guiTop + 13, 35, 15, x, y, "Ignition");
+		drawCustomInfoStat(x, y, guiLeft + 89, guiTop + 14, 16, 13, x, y, I18n.format("gui.rtm.ignition"));
 
 		if(isMouseLocked) {
 			
@@ -100,6 +100,9 @@ public class GUICombustionEngine extends GuiInfoContainer {
 	@Override
 	protected void drawGuiContainerForegroundLayer(int i, int j) {
 		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96 + 2, 4210752);
+        MachineGuiParts.label(fontRendererObj, I18n.format("gui.rtm.fuel"), 17, 95, 40, 0xFFFFFF);
+        MachineGuiParts.label(fontRendererObj, I18n.format(engine.isOn ? "gui.rtm.on" : "gui.rtm.off"), 79, 95, 35, 0xFFFFFF);
+        MachineGuiParts.label(fontRendererObj, I18n.format("gui.rtm.power"), 136, 95, 32, 0xFFFFFF);
 	}
 
 	@Override
@@ -119,7 +122,7 @@ public class GUICombustionEngine extends GuiInfoContainer {
 			drawTexturedModalRect(guiLeft + 79, guiTop + 13, 192, 0, 35, 15);
 		}
 		
-		int i = (int) (engine.getStoredEnergyQuanta() * 53 / engine.maxPower);
+		int i = MachineGuiParts.scaled(engine.getStoredEnergyQuanta(), engine.maxPower, 52);
 		drawTexturedModalRect(guiLeft + 143, guiTop + 69 - i, 176, 52 - i, 16, i);
 
 		engine.tank.renderTank(guiLeft + 35, guiTop + 69, this.zLevel, 16, 52);

@@ -47,3 +47,11 @@ If you want to help the project, consider getting involved with the [wiki](https
 ## Documentation
 
 Use the [documentation index](docs/index.md). Keep player explanations in `docs/gameplay/`, current contracts and source inventories in `docs/development/`, future proposals in `docs/design/` and investigation evidence in `docs/development/historical/`. Update the current specification directly when behavior changes, repair links and record meaningful changes in `CHANGELOG.md`. Preserve useful physical numbers in player text; keep software/accounting details in development references.
+
+## Machine GUI conventions
+
+Use established HBM machine artwork as the reference: gray or olive beveled casing, recessed 18-pixel slot frames, red tank graduations, textured power strips, mechanical process arrows and small information/warning sprites. Keep feed, product, process/control and player inventory groups distinct. Retain the native brick Heating Oven, olive Blast Furnace and instrumented generator panels rather than replacing them with one generic skin.
+
+Reuse existing sprites at their native pixel dimensions. `MachineGuiParts` provides client-only casing, sockets, tank framing and bounded fills for expanded interfaces. Battery/template engravings reuse `gui_chemplant.png`; circuit socket contacts and power strips reuse `gui_assembler.png`. Keep special socket markings visible with an item installed, and render all decoration before ordinary inventory items. Restore white color after tinted rendering. Center control labels within their panel and keep the entire progress frame inside its bevel; share its bounds with NEI recipe browsing.
+
+Use the actual container slot coordinates and synchronized tank/progress/energy values. GUI layout changes must preserve inventory indices, slot types and transfer rules. Keep hover rectangles equal to the displayed gauge interiors, bound fills to their sprite dimensions without changing saved contents, fit localized labels to their panels and align NEI recipe regions with process indicators. Put rendering helpers only in client paths; common containers may own layout constants but must not reference GUI classes. Verify populated/empty slots, active/idle/blocked states, GUI scales, NEI and dedicated-server loading separately from builds.

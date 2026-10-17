@@ -285,3 +285,10 @@
 - Scheduled deferred electrical exhaustion at the last paid tick across affected machine families. Retained paid partial jobs across the next supply phase, applying existing starvation resets only after an actually unpowered tick.
 - Replaced Electric Furnace's unsupported 50-kJ internal reserve with two heater ticks, scaling with upgrades. Preserved saved excess energy, synchronized installed demand and real gauge capacity, and clarified that its battery slot supplies the heater.
 - Updated existing generator/progression, player and server diagnostic references; added regression coverage for saturated/rejecting networks, recursive paths, cyclic topology, bounded work, generator input behavior, storage and aggregate export.
+
+2026-10-17 02:37 — Match expanded machine interfaces to HBM GUI conventions
+
+- Replaced flat workshop and industrial Chemical Reactor panels with beveled functional groups, normal slot frames, graduated fluid gauges, retained-template engravings and process/state indicators. Expanded industrial slot spacing without changing saved inventory indices, slot rules, recipes or tank identities; connected every industrial progress indicator to chemistry recipe browsing.
+- Framed Blast Furnace feed/exhaust, Electrolyser coproduct, Coker coproduct and Dairy condensate gauges. Added Heating Oven fuel/heat/firing labels, visible gas-turbine HRSG recovery, inactive automatic-control feedback and Industrial Steam Turbine flow state using existing synchronized values.
+- Corrected fluid/energy hover alignment and power-strip sampling in affected generator, cryogenic and petroleum interfaces. Clamped display fills only, preserving legacy over-cap stock. Reused existing template/power artwork and shared client rendering helpers; documented contributor GUI conventions.
+- Centered reactor labels and the workshop template socket, bounded its process bar inside the control-panel bevel and shared that rectangle with NEI. Restored native circuit-contact surrounds for template/upgrade slots and battery engravings. Fitted both reactor inventories within the 240-pixel minimum scaled screen height.

@@ -114,7 +114,14 @@ public class GUIMachineTurbineGas extends GuiInfoContainer {
 		
 		super.drawScreen(mouseX, mouseY, f);
 
-		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 26, guiTop + 108, 142, 16, turbinegas.getStoredEnergyQuanta(), turbinegas.getEnergyCapacityQuanta());
+		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 26, guiTop + 109, 142, 16, turbinegas.getStoredEnergyQuanta(), turbinegas.getEnergyCapacityQuanta());
+		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 80, guiTop + 32, 16, 16, mouseX, mouseY,
+				I18n.format("gui.rtm.ignition"), I18n.format(turbinegas.state == -1 ? "gui.rtm.starting" : turbinegas.state == 1 ? "gui.rtm.on" : "gui.rtm.off"));
+		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 74, guiTop + 86, 29, 13, mouseX, mouseY,
+				I18n.format("gui.rtm.automatic"), I18n.format(turbinegas.state == 1 ? "gui.rtm.available" : "gui.rtm.offline.control"));
+		this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 61, guiTop + 100, 72, 9, mouseX, mouseY,
+				"HRSG: " + api.hbm.energymk2.EnergyUnits.formatWatts(turbinegas.currentHrsgQuanta * 10L),
+				"6 MWth / 30 C approach", String.format(java.util.Locale.US, "Recoverable exhaust: %.3f MJ", turbinegas.displayedExhaustMicroJ / 1e12D));
 		
 		if(turbinegas.powerSliderPos == 0)
 			this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 36, guiTop + 36, 16, 66, mouseX, mouseY, new String[] {"Turbine idle"});
@@ -126,10 +133,10 @@ public class GUIMachineTurbineGas extends GuiInfoContainer {
 		else
 			this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 133, guiTop + 23, 8, 72, mouseX, mouseY, new String[] {"Temperature: 20°C"});
 		
-		turbinegas.tanks[0].renderTankInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 16, 16, 48);
-		turbinegas.tanks[1].renderTankInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 70, 16, 32);
-		turbinegas.tanks[2].renderTankInfo(this, mouseX, mouseY, guiLeft + 147, guiTop + 61, 16, 36);
-		turbinegas.tanks[3].renderTankInfo(this, mouseX, mouseY, guiLeft + 147, guiTop + 21, 16, 36);
+		turbinegas.tanks[0].renderTankInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 17, 16, 48);
+		turbinegas.tanks[1].renderTankInfo(this, mouseX, mouseY, guiLeft + 8, guiTop + 71, 16, 32);
+		turbinegas.tanks[2].renderTankInfo(this, mouseX, mouseY, guiLeft + 147, guiTop + 62, 16, 36);
+		turbinegas.tanks[3].renderTankInfo(this, mouseX, mouseY, guiLeft + 147, guiTop + 22, 16, 36);
 		
 		String[] info = I18nUtil.resolveKeyArray("desc.gui.turbinegas.automode");
 		this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 16, guiTop + 34, 16, 16, guiLeft - 8, guiTop + 44 + 16, info);
@@ -159,6 +166,10 @@ public class GUIMachineTurbineGas extends GuiInfoContainer {
 			drawTexturedModalRect(guiLeft + 74, guiTop + 86, 194, 11, 29, 13); //auto mode button
 		else
 			drawTexturedModalRect(guiLeft + 74, guiTop + 86, 194, 24, 29, 13);
+		if(turbinegas.state != 1) {
+			drawRect(guiLeft + 74, guiTop + 86, guiLeft + 103, guiTop + 99, 0x808B8B8B);
+			GL11.glColor4f(1, 1, 1, 1);
+		}
 		
 		switch(turbinegas.state) {
 			case 0:
@@ -178,7 +189,7 @@ public class GUIMachineTurbineGas extends GuiInfoContainer {
 		
 		drawTexturedModalRect(guiLeft + 36, guiTop + 97 - turbinegas.powerSliderPos, 178, 0, 16, 6); //power slider
 		
-		int power = (int) (turbinegas.getStoredEnergyQuanta() * 142 / turbinegas.maxPower); //power storage
+		int power = MachineGuiParts.scaled(turbinegas.getStoredEnergyQuanta(), turbinegas.maxPower, 142);
 		drawTexturedModalRect(guiLeft + 26, guiTop + 109, 0, 223, power, 16);
 		
 		drawRPMGauge(turbinegas.rpm);
@@ -252,6 +263,7 @@ public class GUIMachineTurbineGas extends GuiInfoContainer {
 	}
 	
 	protected void drawThermometer(int temp) {
+		temp = Math.max(0, Math.min(800, temp));
 		
 		int xPos = guiLeft + 136;
 		int yPos = guiTop + 28;
@@ -283,6 +295,7 @@ public class GUIMachineTurbineGas extends GuiInfoContainer {
 	}
 	
 	protected void drawRPMGauge(int position) {
+		position = Math.max(0, Math.min(100, position));
 		
 		int xPos = guiLeft + 64;
 		int yPos = guiTop + 16;
@@ -312,10 +325,11 @@ public class GUIMachineTurbineGas extends GuiInfoContainer {
 	
 	@Override
 	protected void drawGuiContainerForegroundLayer(int i, int j) {
-		//useless piece of shit, at least for now
 		String name = this.turbinegas.hasCustomInventoryName() ? this.turbinegas.getInventoryName() : I18n.format(this.turbinegas.getInventoryName());
 		
 		this.fontRendererObj.drawString(name, this.xSize / 2 - this.fontRendererObj.getStringWidth(name) / 2, 6, 4210752);
 		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 94, 4210752);
+		MachineGuiParts.label(fontRendererObj, "HRSG " + api.hbm.energymk2.EnergyUnits.formatWatts(turbinegas.currentHrsgQuanta * 10L),
+				61, 100, 72, MachineGuiParts.TEXT);
 	}
 }

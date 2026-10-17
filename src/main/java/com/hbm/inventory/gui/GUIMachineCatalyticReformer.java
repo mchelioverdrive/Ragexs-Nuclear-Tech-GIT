@@ -63,7 +63,7 @@ public class GUIMachineCatalyticReformer extends GuiInfoContainer {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 		drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 		
-		int j = (int) (refinery.getStoredEnergyQuanta() * 54 / refinery.maxPower);
+		int j = MachineGuiParts.scaled(refinery.getStoredEnergyQuanta(), refinery.maxPower, 52);
 		drawTexturedModalRect(guiLeft + 17, guiTop + 70 - j, 176, 52 - j, 16, j);
 		
 		refinery.tanks[0].renderTank(guiLeft + 35, guiTop + 70, this.zLevel, 16, 52);
