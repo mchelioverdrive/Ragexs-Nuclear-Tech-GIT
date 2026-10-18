@@ -80,6 +80,7 @@ public class CraftingManager {
 		RecipeSorter.register("hbm:scraps", ScrapsCraftingHandler.class, RecipeSorter.Category.SHAPELESS, "after:minecraft:shapeless");
 		RecipeSorter.register("hbm:mku", MKUCraftingHandler.class, RecipeSorter.Category.SHAPED, "after:minecraft:shaped before:minecraft:shapeless");
 		RecipeSorter.register("hbm:containerupgrade", ContainerUpgradeCraftingHandler.class, RecipeSorter.Category.SHAPED, "after:minecraft:shaped before:minecraft:shapeless");
+		RecipeSorter.register("hbm:mask_attachment", MaskAttachmentCraftingHandler.class, RecipeSorter.Category.SHAPED, "after:minecraft:shaped before:minecraft:shapeless");
 	}
 
 	public static void AddCraftingRec() {

@@ -533,6 +533,8 @@ public class ModItems {
 	public static Item bolt_spike;
 	public static Item plate_polymer;
 	public static Item plate_kevlar;
+	public static Item armor_tile_unfired;
+	public static Item armor_tile_alumina;
 	public static Item plate_dineutronium;
 	public static Item plate_desh;
 	public static Item plate_bismuth;
@@ -3164,6 +3166,8 @@ public class ModItems {
 		bolt_spike = new ItemCustomLore().setUnlocalizedName("bolt_spike").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":bolt_spike");
 		plate_polymer = new Item().setUnlocalizedName("plate_polymer").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_polymer");
 		plate_kevlar = new Item().setUnlocalizedName("plate_kevlar").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_kevlar");
+		armor_tile_unfired = new Item().setUnlocalizedName("armor_tile_unfired").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_polymer");
+		armor_tile_alumina = new Item().setUnlocalizedName("armor_tile_alumina").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_polymer");
 		plate_dineutronium = new Item().setUnlocalizedName("plate_dineutronium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_dineutronium");
 		plate_desh = new Item().setUnlocalizedName("plate_desh").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_desh");
 		plate_bismuth = new ItemCustomLore().setUnlocalizedName("plate_bismuth").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":plate_bismuth");
@@ -8211,6 +8215,8 @@ public class ModItems {
 		GameRegistry.registerItem(plate_paa, plate_paa.getUnlocalizedName());
 		GameRegistry.registerItem(plate_polymer, plate_polymer.getUnlocalizedName());
 		GameRegistry.registerItem(plate_kevlar, plate_kevlar.getUnlocalizedName());
+		GameRegistry.registerItem(armor_tile_unfired, armor_tile_unfired.getUnlocalizedName());
+		GameRegistry.registerItem(armor_tile_alumina, armor_tile_alumina.getUnlocalizedName());
 		GameRegistry.registerItem(plate_dalekanium, plate_dalekanium.getUnlocalizedName());
 		GameRegistry.registerItem(plate_desh, plate_desh.getUnlocalizedName());
 		GameRegistry.registerItem(plate_bismuth, plate_bismuth.getUnlocalizedName());

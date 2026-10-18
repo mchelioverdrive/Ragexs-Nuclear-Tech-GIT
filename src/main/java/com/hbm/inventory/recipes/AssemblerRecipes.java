@@ -5378,6 +5378,105 @@ public class AssemblerRecipes extends SerializableRecipe {
 			MainRegistry.logger.info("WarTec recipes loaded!");
 		} catch (Exception e) {
 		}
+
+		// Append so existing legacy numeric templates keep their native recipe indices.
+		registerArmorModRecipes();
+	}
+
+	private static void registerArmorModRecipes() {
+		// Prepared aramid sheets are layered and sewn into a leather cover. The existing
+		// chemical route includes fiber/sheet preparation; its chemistry/mass bill is unchanged.
+		makeRecipe(new ComparableStack(ModItems.insert_kevlar), new AStack[] {
+				new ComparableStack(ModItems.plate_kevlar, 4), new ComparableStack(Items.leather, 2),
+				new ComparableStack(Items.string, 4)}, 100);
+
+		// Alumina tiles are dry-pressed and separately sintered in the Metallurgical Furnace.
+		// Tile/backing quantities distinguish game tiers, not verified military specifications.
+		// Prepared thermoplastic represents bonding film; leather contains the finished panel.
+		makeRecipe(new ComparableStack(ModItems.insert_sapi), new AStack[] {
+				new ComparableStack(ModItems.armor_tile_alumina, 1), new ComparableStack(ModItems.plate_kevlar, 4),
+				new ComparableStack(ModItems.ingot_polymer, 1), new ComparableStack(Items.leather, 2)}, 200);
+		makeRecipe(new ComparableStack(ModItems.insert_esapi), new AStack[] {
+				new ComparableStack(ModItems.armor_tile_alumina, 2), new ComparableStack(ModItems.plate_kevlar, 6),
+				new ComparableStack(ModItems.ingot_polymer, 2), new ComparableStack(Items.leather, 3)}, 300);
+		makeRecipe(new ComparableStack(ModItems.insert_xsapi), new AStack[] {
+				new ComparableStack(ModItems.armor_tile_alumina, 3), new ComparableStack(ModItems.plate_kevlar, 8),
+				new ComparableStack(ModItems.ingot_polymer, 3), new ComparableStack(Items.leather, 4)}, 400);
+		// Existing formed weapon steel is a game proxy for armor-grade plate, not certified
+		// ballistic steel. The aramid/leather envelope represents fragment containment.
+		makeRecipe(new ComparableStack(ModItems.insert_steel), new AStack[] {
+				new OreDictStack(WEAPONSTEEL.plate(), 4), new ComparableStack(ModItems.plate_kevlar, 2),
+				new ComparableStack(Items.leather, 2), new ComparableStack(Items.string, 4)}, 200);
+
+		// Prepared shielding cloth and elastomer, rather than curing coke-filled raw rubber here.
+		makeRecipe(new ComparableStack(ModItems.cladding_rubber), new AStack[] {
+				new ComparableStack(ModItems.hazmat_cloth, 2), new OreDictStack(ANY_RUBBER.ingot(), 4),
+				new ComparableStack(Items.leather, 2)}, 100);
+		makeRecipe(new ComparableStack(ModItems.cladding_lead), new AStack[] {
+				new OreDictStack(PB.plate(), 4), new ComparableStack(ModItems.hazmat_cloth, 2),
+				new OreDictStack(ANY_RUBBER.ingot(), 2), new ComparableStack(Items.leather, 2)}, 200);
+		// Obsidian aggregate is prepared by the existing Shredder before encapsulation.
+		makeRecipe(new ComparableStack(ModItems.cladding_obsidian), new AStack[] {
+				new ComparableStack(ModBlocks.gravel_obsidian, 6), new OreDictStack(STEEL.plate(), 2),
+				new ComparableStack(ModItems.ingot_polymer, 2), new OreDictStack(STEEL.bolt(), 4)}, 200);
+		makeRecipe(new ComparableStack(ModItems.servo_set), new AStack[] {
+				new ComparableStack(ModItems.motor, 4), new OreDictStack(STEEL.plate(), 2),
+				new OreDictStack(STEEL.bolt(), 4), new ComparableStack(ModItems.circuit, 1, EnumCircuitType.BASIC),
+				new OreDictStack(CU.wireFine(), 4), new OreDictStack(ANY_RUBBER.ingot(), 2)}, 200);
+
+		// Finished cell packs, control boards and insulated connections; no block-sized capacitors.
+		// These existing armor items modify capacity, not stored charge; their output stays bare.
+		makeRecipe(new ComparableStack(ModItems.armor_battery), new AStack[] {
+				new ComparableStack(ModItems.battery_red_cell_6), new OreDictStack(STEEL.plate(), 2),
+				new ComparableStack(ModItems.circuit, 1, EnumCircuitType.BASIC), new OreDictStack(CU.wireFine(), 4),
+				new OreDictStack(ANY_RUBBER.ingot(), 2)}, 100);
+		makeRecipe(new ComparableStack(ModItems.armor_battery_mk2), new AStack[] {
+				new ComparableStack(ModItems.battery_advanced_cell_4), new OreDictStack(AL.plate(), 2),
+				new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ADVANCED), new OreDictStack(CU.wireFine(), 4),
+				new OreDictStack(ANY_RUBBER.ingot(), 2)}, 200);
+		makeRecipe(new ComparableStack(ModItems.armor_battery_mk3), new AStack[] {
+				new ComparableStack(ModItems.battery_lithium_cell_6), new OreDictStack(TI.plate(), 2),
+				new ComparableStack(ModItems.circuit, 1, EnumCircuitType.ADVANCED), new OreDictStack(GOLD.wireFine(), 4),
+				new OreDictStack(ANY_RUBBER.ingot(), 2)}, 300);
+
+		// SmCo is the existing furnace-made permanent magnet; integrate it with formed hardware.
+		makeRecipe(new ComparableStack(ModItems.lodestone), new AStack[] {
+				new ComparableStack(ModItems.ingot_smco), new OreDictStack(STEEL.plate(), 1),
+				new ComparableStack(Items.leather)}, 100);
+		makeRecipe(new ComparableStack(ModItems.horseshoe_magnet), new AStack[] {
+				new ComparableStack(ModItems.ingot_smco, 2), new OreDictStack(STEEL.plate(), 2),
+				new OreDictStack(STEEL.bolt(), 2)}, 150);
+		makeRecipe(new ComparableStack(ModItems.industrial_magnet), new AStack[] {
+				new ComparableStack(ModItems.ingot_smco, 2), new ComparableStack(ModItems.coil_copper, 2),
+				new OreDictStack(STEEL.plate(), 4), new ComparableStack(ModItems.circuit, 1, EnumCircuitType.BASIC),
+				new OreDictStack(CU.wireFine(), 4), new OreDictStack(ANY_RUBBER.ingot(), 2)}, 200);
+
+		// Sensor fabrication and calibration remain compressed operations. Prepared boards,
+		// electrodes/photodetectors, optics and wiring replace loose rare-earth substitutions.
+		makeRecipe(new ComparableStack(ModItems.gas_tester), new AStack[] {
+				new OreDictStack(GOLD.plate(), 1), new ComparableStack(ModItems.filter_coal),
+				new ComparableStack(ModItems.circuit, 1, EnumCircuitType.BASIC), new OreDictStack(CU.wireFine(), 2),
+				new OreDictStack(ANY_PLASTIC.ingot(), 2), new ComparableStack(ModItems.battery_generic)}, 150);
+		makeRecipe(new ComparableStack(ModItems.neutrino_lens), new AStack[] {
+				new OreDictStack(STAR.ingot(), 4), new ComparableStack(ModItems.photo_panel),
+				new OreDictStack(KEY_ANYGLASS, 2), new ComparableStack(ModItems.circuit, 1, EnumCircuitType.BISMOID),
+				new OreDictStack(ANY_PLASTIC.ingot(), 4), new OreDictStack(GOLD.wireFine(), 4)}, 300);
+		makeRecipe(new ComparableStack(ModItems.night_vision), new AStack[] {
+				new ComparableStack(ModItems.photo_panel, 2), new ComparableStack(ModItems.circuit, 2, EnumCircuitType.VACUUM_TUBE),
+				new ComparableStack(ModItems.circuit, 1, EnumCircuitType.BASIC), new OreDictStack(KEY_ANYGLASS, 2),
+				new OreDictStack(ANY_PLASTIC.ingot(), 2), new OreDictStack(CU.wireFine(), 4),
+				new ComparableStack(ModItems.battery_generic)}, 200);
+		makeRecipe(new ComparableStack(ModItems.oxy_plss), new AStack[] {
+				new OreDictStack(AL.plate(), 2), new ComparableStack(ModItems.tank_steel),
+				new ComparableStack(ModItems.circuit, 1, EnumCircuitType.BASIC), new OreDictStack(RUBBER.ingot(), 2),
+				new OreDictStack(STEEL.pipe(), 2), new OreDictStack(CU.wireFine(), 2)}, 200);
+
+		// Mold/seal the facepieces and fit their finished panes/ports before adding helmet mounts.
+		makeRecipe(new ComparableStack(ModItems.gas_mask_m65), new AStack[] {
+				new OreDictStack(ANY_RUBBER.ingot(), 4), new OreDictStack(KEY_ANYPANE, 2),
+				new OreDictStack(IRON.plate(), 1)}, 100);
+		makeRecipe(new ComparableStack(ModItems.gas_mask_mono), new AStack[] {
+				new OreDictStack(ANY_RUBBER.ingot(), 4), new OreDictStack(IRON.plate(), 1)}, 100);
 	}
 
 	public static void makeRecipe(ComparableStack out, AStack[] in, int duration) {

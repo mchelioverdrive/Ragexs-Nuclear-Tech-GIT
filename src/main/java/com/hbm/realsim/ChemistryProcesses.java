@@ -516,6 +516,8 @@ public final class ChemistryProcesses {
                 2000, 200000, 1000000, 200, false);
     }
     public static ProcessRecipe aramid() {
+        // ARAMID_ITEM retains plate_kevlar: this route abstracts synthesis plus fiber/sheet
+        // preparation, not polymerization alone as weaving. Keep the existing mass bill.
         long tpc = mass("TPC_ITEM", 1), diamine = ratio(tpc, "108.14112", "203.02216"), polymer = ratio(tpc, "238.2414", "203.02216");
         long acid = tpc + diamine - polymer, solution = ratio(acid, "1", ".30");
         ProcessRecipe result = new ProcessRecipe("chem:aramid", new String[] {"FRESH_WATER"}, new int[] {1}, new int[] {0},

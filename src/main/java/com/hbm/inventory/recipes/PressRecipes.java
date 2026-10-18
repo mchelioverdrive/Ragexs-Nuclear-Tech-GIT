@@ -61,6 +61,9 @@ public class PressRecipes extends SerializableRecipe {
 	@Override
 	public void registerDefaults() {
 
+		// Dry forming only: the compact must still be fired before it can serve as a strike face.
+		makeRecipe(StampType.PLATE, new ComparableStack(ModItems.powder_alumina), ModItems.armor_tile_unfired);
+
 		makeRecipe(StampType.FLAT, new OreDictStack(NETHERQUARTZ.dust()),					Items.quartz);
 		makeRecipe(StampType.FLAT, new OreDictStack(LAPIS.dust()),							new ItemStack(Items.dye, 1, 4));
 		makeRecipe(StampType.FLAT, new OreDictStack(DIAMOND.dust()),						Items.diamond);

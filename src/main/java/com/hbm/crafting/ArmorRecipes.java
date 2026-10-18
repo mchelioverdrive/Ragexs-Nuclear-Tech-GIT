@@ -128,8 +128,7 @@ public class ArmorRecipes {
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.jetpack_vector, 1), new Object[] { "TCT", "MJM", "B B", 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.ADVANCED), 'T', ModItems.tank_steel, 'J', ModItems.jetpack_break, 'M', ModItems.motor, 'B', DURA.bolt() });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.jetpack_boost, 1), new Object[] { "PCP", "DJD", "PAP", 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.ADVANCED), 'P', BIGMT.plate(), 'D', DESH.ingot(), 'J', ModItems.jetpack_vector, 'A', CU.plateCast() });
 
-		// Life support
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.oxy_plss, 1), new Object[] { "AA", "TC", "RR", 'A', AL.plate(), 'T', ModItems.tank_steel, 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC), 'R', RUBBER.ingot() });
+		// Life-support module manufacture is registered in AssemblerRecipes.
 
 		//Hazmat
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.hazmat_helmet, 1), new Object[] { "EEE", "EIE", " P ", 'E', ModItems.hazmat_cloth, 'I', KEY_ANYPANE, 'P', IRON.plate() });
@@ -165,9 +164,8 @@ public class ArmorRecipes {
 		//Masks
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.goggles, 1), new Object[] { "P P", "GPG", 'G', KEY_ANYPANE, 'P', STEEL.plate() });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.gas_mask, 1), new Object[] { "PPP", "GPG", " F ", 'G', KEY_ANYPANE, 'P', STEEL.plate(), 'F', IRON.plate() });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.gas_mask_m65, 1), new Object[] { "PPP", "GPG", " F ", 'G', KEY_ANYPANE, 'P', ANY_RUBBER.ingot(), 'F', IRON.plate() });
+		// M65/mono mask manufacture is in AssemblerRecipes; mounting a finished mask is hand assembly.
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.gas_mask_olde, 1), new Object[] { "PPP", "GPG", " F ", 'G', KEY_ANYPANE, 'P', Items.leather, 'F', IRON.ingot() });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.gas_mask_mono, 1), new Object[] { " P ", "PPP", " F ", 'P', ANY_RUBBER.ingot(), 'F', IRON.plate() });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.mask_of_infamy, 1), new Object[] { "III", "III", " I ", 'I', IRON.plate() });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.ashglasses, 1), new Object[] { "I I", "GPG", 'I', ANY_RUBBER.ingot(), 'G', ModBlocks.glass_ash, 'P', ANY_PLASTIC.ingot() });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.mask_rag, 1), new Object[] { "RRR", 'R', ModItems.rag_damp });

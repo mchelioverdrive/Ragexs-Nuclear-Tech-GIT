@@ -2,13 +2,13 @@ package com.hbm.crafting;
 
 import com.hbm.blocks.ModBlocks;
 import com.hbm.config.GeneralConfig;
+import com.hbm.crafting.handlers.MaskAttachmentCraftingHandler;
 import com.hbm.inventory.OreDictManager;
 import com.hbm.inventory.OreDictManager.DictFrame;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.material.Mats;
 import com.hbm.items.ItemAmmoEnums.AmmoFatman;
 import com.hbm.items.food.ItemConserve;
-import com.hbm.items.machine.ItemCircuit.EnumCircuitType;
 import com.hbm.items.ItemEnums;
 import com.hbm.items.ModItems;
 import com.hbm.main.CraftingManager;
@@ -17,6 +17,7 @@ import static com.hbm.inventory.OreDictManager.*;
 
 import com.hbm.util.EnumUtil;
 import cpw.mods.fml.common.registry.GameData;
+import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
@@ -268,56 +269,45 @@ public class ConsumableRecipes {
 			}
 		);
 
+		// Manufactured armor mods are registered in AssemblerRecipes; only hand work remains here.
 		//Cladding
-		CraftingManager.addShapelessAuto(new ItemStack(ModItems.cladding_paint, 1), new Object[] { PB.nugget(), PB.nugget(), PB.nugget(), PB.nugget(), Items.clay_ball, Items.glass_bottle });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.cladding_rubber, 1), new Object[] { "RCR", "CDC", "RCR", 'R', ANY_RUBBER.ingot(), 'C', COKE.dust(), 'D', ModItems.ducttape });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.cladding_lead, 1), new Object[] { "DPD", "PRP", "DPD", 'R', ModItems.cladding_rubber, 'P', PB.plate(), 'D', ModItems.ducttape });
+		// Hand mixing a powdered coating and bottling it; no alloying or panel manufacture.
+		CraftingManager.addShapelessAuto(new ItemStack(ModItems.cladding_paint, 1), new Object[] { PB.dust(), Items.clay_ball, Items.glass_bottle });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.cladding_desh, 1), new Object[] { "DPD", "PRP", "DPD", 'R', ModItems.cladding_lead, 'P', ModItems.plate_desh, 'D', ModItems.ducttape });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.cladding_ghiorsium, 1), new Object[] { "DPD", "PRP", "DPD", 'R', ModItems.cladding_desh, 'P', ModItems.ingot_gh336, 'D', ModItems.ducttape });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.cladding_obsidian, 1), new Object[] { "OOO", "PDP", "OOO", 'O', Blocks.obsidian, 'P', STEEL.plate(), 'D', ModItems.ducttape });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.cladding_iron, 1), new Object[] { "OOO", "PDP", "OOO", 'O', IRON.plate(), 'P', ModItems.plate_polymer, 'D', ModItems.ducttape });
 
 		//Inserts
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.insert_steel, 1), new Object[] { "DPD", "PSP", "DPD", 'D', ModItems.ducttape, 'P', IRON.plate(), 'S', STEEL.block() });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.insert_du, 1), new Object[] { "DPD", "PSP", "DPD", 'D', ModItems.ducttape, 'P', IRON.plate(), 'S', U238.block() });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.insert_ghiorsium, 1), new Object[] { "DPD", "PSP", "DPD", 'D', ModItems.ducttape, 'P', GH336.ingot(), 'S', U238.ingot() });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.insert_cmb, 1), new Object[] { "DPD", "PSP", "DPD", 'D', ModItems.ducttape, 'P', CMB.ingot(), 'S', U238.ingot() });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.insert_polonium, 1), new Object[] { "DPD", "PSP", "DPD", 'D', ModItems.ducttape, 'P', IRON.plate(), 'S', PO210.block() });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.insert_era, 1), new Object[] { "DPD", "PSP", "DPD", 'D', ModItems.ducttape, 'P', IRON.plate(), 'S', ModItems.ingot_semtex });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.insert_kevlar, 1), new Object[] { "KIK", "IDI", "KIK", 'K', ModItems.plate_kevlar, 'I', ANY_RUBBER.ingot(), 'D', ModItems.ducttape });
 
 
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.insert_sapi, 1), new Object[] { "PKP", "DXD", "PKP", 'P', ANY_PLASTIC.ingot(), 'K', ModItems.insert_kevlar, 'D', ModItems.ducttape, 'X', ModItems.plate_stainless });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.insert_sapi, 1), new Object[] { "PKP", "DXD", "PKP", 'P', ANY_PLASTIC.ingot(), 'K', ModItems.insert_kevlar, 'D', ModItems.ducttape, 'X', ModItems.plate_welded, Mats.MAT_TITANIUM.id }); //titanium new ItemStack(ModItems.plate_welded, 1, Mats.MAT_TITANIUM.id)
 
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.insert_esapi, 1), new Object[] { "PKP", "DSD", "PKP", 'P', ANY_PLASTIC.ingot(), 'K', ModItems.insert_sapi, 'D', ModItems.ducttape, 'S', ModItems.plate_titanium });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.insert_xsapi, 1), new Object[] { "PKP", "DSD", "PKP", 'P', ModItems.ingot_boron, 'K', ModItems.insert_esapi, 'D', ModItems.ducttape, 'S', ModItems.ingot_silicon }); //boron ingot isn't an ingot. it isnt an ingot IT ISNT AN INGOT IT ISNT AN INGOT DIE DIE DIE DIE DIE DIE
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.insert_yharonite, 1), new Object[] { "YIY", "IYI", "YIY", 'Y', ModItems.billet_yharonite, 'I', ModItems.insert_du });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.australium_iii, 1), new Object[] { "WSW", "PAP", "SPS", 'S', STEEL.plateWelded(), 'P', ANY_PLASTIC.ingot(), 'A', AUSTRALIUM.ingot(), 'W', GOLD.wireDense() });
 
 		//Servos
 		//ill leave it in on the aspect that it's theoretically probable
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.servo_set, 1), new Object[] { "MBM", "PBP", "MBM", 'M', ModItems.motor, 'B', STEEL.bolt(), 'P', ModItems.ingot_chainsteel }); //titanium plate
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.servo_set_desh, 1), new Object[] { "MBM", "PSP", "MBM", 'M', ModItems.motor_desh, 'B', DURA.bolt(), 'P', ALLOY.plate(), 'S', ModItems.servo_set });
 
 		//Helmet Mods
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.attachment_mask, 1), new Object[] { "DID", "IGI", " F ", 'D', ModItems.ducttape, 'I', ANY_RUBBER.ingot(), 'G', KEY_ANYPANE, 'F', IRON.plate() });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.attachment_mask_mono, 1), new Object[] { " D ", "DID", " F ", 'D', ModItems.ducttape, 'I', ANY_RUBBER.ingot(), 'F', IRON.plate() });
+		// Finished masks fitted with leather straps and existing mounting hardware.
+		GameRegistry.addRecipe(new MaskAttachmentCraftingHandler(ModItems.attachment_mask, ModItems.gas_mask_m65));
+		GameRegistry.addRecipe(new MaskAttachmentCraftingHandler(ModItems.attachment_mask_mono, ModItems.gas_mask_mono));
 
 		//Boot Mods
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.pads_rubber, 1), new Object[] { "P P", "IDI", "P P", 'P', ANY_RUBBER.ingot(), 'I', IRON.plate(), 'D', ModItems.ducttape });
+		// Cut prepared rubber stock and lace it into leather straps by hand.
+		CraftingManager.addRecipeAuto(new ItemStack(ModItems.pads_rubber, 1), new Object[] { "RLR", "S S", "RLR", 'R', ANY_RUBBER.ingot(), 'L', Items.leather, 'S', Items.string });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.pads_slime, 1), new Object[] { "SPS", "DSD", "SPS", 'S', KEY_SLIME, 'P', ModItems.pads_rubber, 'D', ModItems.ducttape });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.pads_static, 1), new Object[] { "CDC", "ISI", "CDC", 'C', CU.ingot(), 'D', ModItems.ducttape, 'I', ANY_RUBBER.ingot(), 'S', ModItems.pads_slime });
 
 		//Batteries
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.armor_battery, 1), new Object[] { "PCP", "PCP", "PCP", 'P', STEEL.plate(), 'C', ModBlocks.capacitor_gold });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.armor_battery_mk2, 1), new Object[] { "PCP", "PCP", "PCP", 'P', ANY_PLASTIC.ingot(), 'C', ModBlocks.capacitor_niobium });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.armor_battery_mk3, 1), new Object[] { "PCP", "PCP", "PCP", 'P', GOLD.plate(), 'C', ModBlocks.capacitor_tantalium });
 
 		//Special Mods
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.lodestone, 1), new Object[] { "IGI", "GPG", "IGI", 'I', IRON.ingot(), 'G', NI.ingot(), 'P', ModItems.ingot_praseodymium });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.horseshoe_magnet, 1), new Object[] { "L L", "I I", "ILI", 'L', ModItems.lodestone, 'I', IRON.ingot() });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.industrial_magnet, 1), new Object[] { "SMS", " B ", "SMS", 'S', STEEL.ingot(), 'M', ModItems.horseshoe_magnet, 'B', ModBlocks.fusion_conductor });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.heart_container, 1), new Object[] { "HAH", "ACA", "HAH", 'H', ModItems.heart_piece, 'A', AL.ingot(), 'C', ModItems.coin_creeper });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.heart_booster, 1), new Object[] { "GHG", "MCM", "GHG", 'G', GOLD.ingot(), 'H', ModItems.heart_container, 'M', ModItems.morning_glory, 'C', ModItems.coin_maskman });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.heart_fab, 1), new Object[] { "GHG", "MCM", "GHG", 'G', PO210.billet(), 'H', ModItems.heart_booster, 'M', ModItems.canteen_fab, 'C', ModItems.coin_worm });
@@ -331,12 +321,8 @@ public class ConsumableRecipes {
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.black_diamond, 1), new Object[] { "NIN", "IGI", "NIN", 'N', AU198.nugget(), 'I', ModItems.ink, 'G', VOLCANIC.gem() });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.protection_charm, 1), new Object[] { " M ", "MDM", " M ", 'M', ModItems.fragment_meteorite, 'D', DIAMOND.gem() });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.meteor_charm, 1), new Object[] { " M ", "MDM", " M ", 'M', ModItems.fragment_meteorite, 'D', VOLCANIC.gem() });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.neutrino_lens, 1), new Object[] { "PSP", "SCS", "PSP", 'P', ANY_PLASTIC.ingot(), 'S', STAR.ingot(), 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BISMOID) });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.gas_tester, 1), new Object[] { "G", "C", "I", 'G', GOLD.plate(), 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.VACUUM_TUBE), 'I', IRON.plate() });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.gas_tester, 1), new Object[] { "G", "C", "I", 'G', ModItems.powder_erbium_tiny, 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.VACUUM_TUBE), 'I', IRON.plate() });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.defuser_gold, 1), new Object[] { "GPG", "PRP", "GPG", 'G', Items.gunpowder, 'P', GOLD.plate(), 'R', "record" });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.ballistic_gauntlet, 1), new Object[] { " WS", "WRS", " RS", 'W', CU.wireFine(), 'R', ModItems.ring_starmetal, 'S', STEEL.plate() });
-		CraftingManager.addRecipeAuto(new ItemStack(ModItems.night_vision, 1), "P P", "GCG", 'P', ANY_PLASTIC.ingot(), 'G', KEY_ANYGLASS, 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC));
 
 		//Stealth boy
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.stealth_boy, 1), new Object[] { " B", "LI", "LC", 'B', Blocks.stone_button, 'L', Items.leather, 'I', STEEL.ingot(), 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC) });

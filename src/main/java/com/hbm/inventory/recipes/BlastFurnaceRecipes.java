@@ -64,6 +64,10 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 		addRecipe(ModItems.er_yag_feedstock, COAL, new ItemStack(ModItems.er_yag_sintered));
 		addRecipe(ModItems.yby_feedstock, COAL, new ItemStack(ModItems.yby_sintered));
 
+		// Same thermal-processing abstraction as the sintered optical feedstocks above.
+		// Coke is consumed process carbon; the furnace also pays its ordinary heating fuel.
+		addRecipe(ModItems.armor_tile_unfired, new OreDictStack(ANY_COKE.gem()), new ItemStack(ModItems.armor_tile_alumina));
+
 		//super steel alloy from ingot_molybdenum
 		addRecipe(Mo, DESH, new ItemStack(ModItems.ingot_saturnite, 1));
 
