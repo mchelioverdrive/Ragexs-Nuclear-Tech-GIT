@@ -2,6 +2,8 @@
 
 > **Historical evidence.** Preserved incoming investigation and implementation record; values describe its recorded stages. For current behavior use the [current reference](../process_reference.md).
 
+> **2026-10-18 correction:** references below to unavailable/obsolete nitre-bed IDs are superseded. Templates 1143/1144 are restored as explicit work-only gameplay abstractions, alongside early compost fertilizer and the historical copper-crystal sulfur coproduct. See [current chemistry routes](../../gameplay/chemistry.md#early-gunpowder-for-deadhour).
+
 The earlier dated census is historical. Implemented consumer, starter and cooling changes are authoritative in the Server-ready base normalization section below. Current material/form/fuel contracts are in the [material implementation report](REALSIM_MATERIAL_IMPLEMENTATION.md).
 
 ## Material-process corrections (2026-10-14)

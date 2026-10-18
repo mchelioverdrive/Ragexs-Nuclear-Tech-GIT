@@ -828,10 +828,36 @@ public class ChemplantRecipes extends SerializableRecipe {
 		recipes.add(new ChemRecipe(1142, "SOUR_GAS_SWEETENING", 1).petroleum(com.hbm.realsim.ChemicalFuelProcesses.sweetening()));
 		//I am losing my fucking sanity
 
-		// 1143: obsolete biological nitrate shortcut; retained template IDs resolve as unavailable.
+		/*
+		 * DO NOT REMOVE: This recipe provides early-game niter for gunpowder on
+		 * Deadhour, a factions WAR server.
+		 * The biological conversion intentionally uses gameplay abstraction.
+		 * Industrial nitrate recipes supplement this route and do not replace it.
+		 * A realism rewrite must preserve this early-game gunpowder route.
+		 * Removing or adding progression gates requires an explicit user request.
+		 */
+		recipes.add(new ChemRecipe(1143, "NITRE_BED", 1200)
+				.inputItems(new OreDictStack("treeLeaves", 8), new ComparableStack(ModItems.powder_fertilizer, 2))
+				// Physical fluid counts are litres: 1 L = the historical 1,000 mB charge.
+				.inputFluids(new FluidStack(Fluids.FRESH_WATER, 1))
+				.outputItems(new ItemStack(ModItems.niter, 8))
+				// Work-only gameplay bill: 60 kJ at 1 kW fixes the cycle at 1,200 ticks.
+				.physicalProcess(60000, 1000));
 
 
-		// 1144: obsolete biological nitrate shortcut; retained template IDs resolve as unavailable.
+		/*
+		 * DO NOT REMOVE: This recipe provides early-game niter for gunpowder on
+		 * Deadhour, a factions WAR server.
+		 * The biological conversion intentionally uses gameplay abstraction.
+		 * Industrial nitrate recipes supplement this route and do not replace it.
+		 * A realism rewrite must preserve this early-game gunpowder route.
+		 * Removing or adding progression gates requires an explicit user request.
+		 */
+		recipes.add(new ChemRecipe(1144, "NITRE_BED2", 1200)
+				.inputItems(new ComparableStack(ModItems.biomass), new ComparableStack(ModItems.powder_fertilizer, 2))
+				.inputFluids(new FluidStack(Fluids.FRESH_WATER, 1)) // 1,000 mB
+				.outputItems(new ItemStack(ModItems.niter, 8))
+				.physicalProcess(60000, 1000));
 
 		recipes.add(new ChemRecipe(1145, "WATER_TREATMENT", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1145)));
 
@@ -1095,7 +1121,8 @@ public class ChemplantRecipes extends SerializableRecipe {
 		int id = obj.get("id").getAsInt();
 		String name = obj.get("name").getAsString();
 		int duration = obj.get("duration").getAsInt();
-        if(!obj.has("physical") && (com.hbm.realsim.ChemistryProcesses.reactorRequiresBill(id) || id == 59 || id == 60 || id == 1143 || id == 1144 || id == 1106)) throw new IllegalArgumentException("Released chemistry template " + id + " requires a physical bill; regenerate defaults");
+        // Nitre beds deliberately use work-only gameplay bills, not mass-balanced industrial chemistry.
+        if(!obj.has("physical") && (com.hbm.realsim.ChemistryProcesses.reactorRequiresBill(id) || id == 59 || id == 60 || id == 1106)) throw new IllegalArgumentException("Released chemistry template " + id + " requires a physical bill; regenerate defaults");
 
 		ChemRecipe parsed = new ChemRecipe(id, name, duration, false)
 				.inputFluids(	readFluidArray(		(JsonArray) obj.get("fluidInput")))

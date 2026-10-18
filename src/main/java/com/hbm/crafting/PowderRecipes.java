@@ -113,6 +113,11 @@ public class PowderRecipes {
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_flux, 16), new Object[] { BORAX.dust(), KEY_SAND });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_flux, 14), new Object[] { new ItemStack(ModItems.ammonium_chloride) });
 
+		// DO NOT REMOVE: compost supplies the Deadhour nitre beds before industrial fertilizer.
+		// Bone meal, decaying organics and soil intentionally abstract a prepared nutrient dose.
+		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_fertilizer, 2), new Object[] {
+				new ItemStack(Items.dye, 1, 15), Items.rotten_flesh, Blocks.dirt });
+
 		//probably bobslop:
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_fertilizer, 4), new Object[] { CA.dust(), P_RED.dust(), ModItems.ammonium_nitrate });
 		CraftingManager.addShapelessAuto(new ItemStack(ModItems.powder_fertilizer, 4), new Object[] { ANY_ASH.any(), P_RED.dust(), KNO.dust(), ModItems.ammonium_nitrate});

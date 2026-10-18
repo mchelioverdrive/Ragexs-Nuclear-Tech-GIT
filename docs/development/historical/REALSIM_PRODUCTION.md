@@ -2,6 +2,8 @@
 
 > **Historical evidence.** Preserved incoming investigation and implementation record; values describe its recorded stages. For current behavior use the [current reference](../../design/REALSIM_PRODUCTION.md).
 
+> **2026-10-18 correction:** the later statement that nitre-bed IDs 1143/1144 are unavailable is superseded. Both are restored as explicit work-only gameplay abstractions for Deadhour, with early compost fertilizer and the historical copper-crystal sulfur coproduct. See [current chemistry routes](../../gameplay/chemistry.md#early-gunpowder-for-deadhour) for quantities, dependencies and override handling.
+
 > **Status: future design proposal.** Nothing in this document describes an implemented recipe tier, machine restriction, or save migration unless it is explicitly identified as current behavior. This document does not authorize recipe changes by itself.
 
 RealSim Production is a possible future progression pass for Ragex's Nuclear Tech Mod (RTM). Its purpose is to make an early mechanized workshop, a heavy wartime production plant, and a controlled Cold War nuclear or aerospace facility feel different without requiring a new model for every manufacturing operation.
