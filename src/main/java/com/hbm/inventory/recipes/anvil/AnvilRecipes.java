@@ -155,6 +155,8 @@ public class AnvilRecipes {
 		//constructionRecipes.add(new AnvilConstructionRecipe(new OreDictStack(CMB.ingot()), new AnvilOutput(new ItemStack(ModItems.plate_combine_steel))).setTier(3));
 
 		for(NTMMaterial mat : Mats.orderedList) {
+			// Solder is alloyed and cast with the Foundry wire mold; it has no native ingot form.
+			if(mat == Mats.MAT_SOLDER) continue;
 			if(mat.autogen.contains(MaterialShapes.WIRE) && OreDictionary.doesOreNameExist(MaterialShapes.INGOT.make(mat))) {
 				constructionRecipes.add(new AnvilConstructionRecipe(new OreDictStack(MaterialShapes.INGOT.name() + mat.names[0]), new AnvilOutput(new ItemStack(ModItems.wire_fine, 8, mat.id))).setTier(3));
 			}

@@ -12,7 +12,7 @@ Chromium-bearing stainless steels serve corrosion-resistant equipment. High-spee
 
 ## Conductors, solder and magnets
 
-Copper is the ordinary conductor and generator winding material. Precious and exotic conductors have specialist roles rather than replacing every coil. Tin–lead solder joins electronic components; prepare solder wire for the Soldering Station. Raw germanium or an expensive magnet alloy cannot replace a finished circuit.
+Copper is the ordinary conductor and generator winding material. Precious and exotic conductors have specialist roles rather than replacing every coil. Tin–lead solder joins electronic components: alloy tin and lead in the Foundry using the Tin-Lead Solder Production template, then cast eight wires per batch with a wire mold in a Shallow Foundry Basin. Solder wire is not made on an anvil. Supply it to the Soldering Station; an Integrated Circuit Board needs four Microchips, four Printed Circuit Boards and four solder wires. Raw germanium or an expensive magnet alloy cannot replace a finished circuit.
 
 Rare earths and magnetic alloys support suitable magnets, optics and nuclear/material applications. Samarium–cobalt is distinct from structural steel. Raw ingots still need the proper component-making route.
 
