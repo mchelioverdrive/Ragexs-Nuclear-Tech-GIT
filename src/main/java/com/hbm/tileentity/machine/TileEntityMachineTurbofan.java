@@ -76,6 +76,8 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 	public boolean showBlood = false;
 	protected int output;
 	protected int consumption;
+    /** Display snapshot; negative until the server supplies a resolved fuel flow. */
+    private double fuelLitersPerMinute = -1D;
 
 	public float spin;
 	public float lastSpin;
@@ -184,8 +186,17 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 	}
 
 	private void sendRuntimePacket() {
+		// The fuel ledger belongs to the server and is not part of the client tank status.
+        com.hbm.realsim.PhysicalState fuel = com.hbm.realsim.PhysicalRegistry.get(thermalFuel.fuel());
+        fuelLitersPerMinute = -1D;
+        if(fuel.isResolved()) {
+            long perUnit = fuel.chemicalMicrojoulesPerUnit();
+            if(perUnit > 0) fuelLitersPerMinute = wasOn ? thermalFuel.chemicalInputMicroJ * 1200D / perUnit : 0D;
+        }
 		NBTTagCompound data = new NBTTagCompound();
 		EnergyUnits.writeEnergyQuanta(data, energyQuanta);
+		data.setInteger("output", output);
+        data.setDouble("fuelLMin", fuelLitersPerMinute);
 		data.setByte("after", (byte) afterburner);
 		data.setBoolean("wasOn", wasOn);
 		data.setBoolean("showBlood", showBlood);
@@ -500,6 +511,8 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
 		super.networkUnpack(nbt);
 		
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
+        this.output = nbt.getInteger("output");
+        this.fuelLitersPerMinute = nbt.hasKey("fuelLMin", 6) ? nbt.getDouble("fuelLMin") : -1D;
 		this.afterburner = nbt.getByte("after");
 		this.wasOn = nbt.getBoolean("wasOn");
 		this.showBlood = nbt.getBoolean("showBlood");
@@ -625,9 +638,8 @@ public class TileEntityMachineTurbofan extends TileEntityMachinePolluting implem
         if(live) lines.add("Current electrical output: " + com.hbm.realsim.MachineInfo.watts(output * 10L));
         lines.add(String.format(java.util.Locale.US, "LHV efficiency: %.2f%%", getElectricalEfficiencyPpm() / 10000D));
         if(live) {
-            com.hbm.realsim.PhysicalState fuel = com.hbm.realsim.PhysicalRegistry.get(thermalFuel.fuel());
-            long perUnit = fuel.chemicalMicrojoulesPerUnit();
-            if(perUnit > 0) lines.add(String.format(java.util.Locale.US, "Fuel flow: %.3f L/min", thermalFuel.chemicalInputMicroJ * 1200D / perUnit));
+            lines.add(fuelLitersPerMinute >= 0D ? String.format(java.util.Locale.US, "Fuel flow: %.3f L/min", fuelLitersPerMinute)
+                    : "Fuel flow: unavailable");
         }
         lines.add("Aviation fuel required; afterburning increases fuel use without increasing electrical ceiling");
         lines.add("Keeps firing without electrical load; rejected output is dissipated");
