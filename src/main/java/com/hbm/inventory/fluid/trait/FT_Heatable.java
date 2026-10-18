@@ -70,6 +70,8 @@ public class FT_Heatable extends FluidTrait {
 		public final int amountProduced;
 
 		public HeatingStep(int req, int heat, FluidType type, int prod) {
+			if(req <= 0 || heat <= 0 || prod <= 0 || type == null || type == Fluids.NONE)
+				throw new IllegalArgumentException("Heating steps require positive amounts/heat and a registered product");
 			this.amountReq = req;
 			this.heatReq = heat;
 			this.typeProduced = type;
@@ -132,6 +134,7 @@ public class FT_Heatable extends FluidTrait {
 	public void deserializeJSON(JsonObject obj) {
 
 		JsonArray steps = obj.get("steps").getAsJsonArray();
+		if(steps.size() == 0) throw new IllegalArgumentException("Heating trait has no steps");
 
 		for(int i = 0; i < steps.size(); i++) {
 			JsonObject step = steps.get(i).getAsJsonObject();

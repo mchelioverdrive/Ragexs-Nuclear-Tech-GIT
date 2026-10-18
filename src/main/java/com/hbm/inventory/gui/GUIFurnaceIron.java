@@ -71,7 +71,7 @@ public class GUIFurnaceIron extends GuiInfoContainer {
 		int j = furnace.burnTime * 70 / Math.max(furnace.maxBurnTime, 1);
 		drawTexturedModalRect(guiLeft + 53, guiTop + 45, 176, 23, j, 5);
 		
-		if(furnace.canSmelt())
+		if(furnace.wasOn)
 			drawTexturedModalRect(guiLeft + 70, guiTop + 16, 176, 0, 18, 18);
 	}
 }

@@ -434,7 +434,7 @@ public class TileEntityPWRController extends TileEntityMachineBase implements IG
 		HeatingStep step = trait.getFirstStep();
         if(!tanks[1].configureForRecipe(step.typeProduced, tanks[1].getPressure())) return;
 		int coolCycles = tanks[0].getFill() / step.amountReq;
-		int hotCycles = (tanks[1].getMaxFill() - tanks[1].getFill()) / step.amountProduced;
+		int hotCycles = Math.max(0, tanks[1].getMaxFill() - tanks[1].getFill()) / step.amountProduced;
 		int heatCycles = heatToUse / step.heatReq;
 		int cycles = Math.min(coolCycles, Math.min(hotCycles, heatCycles));
 

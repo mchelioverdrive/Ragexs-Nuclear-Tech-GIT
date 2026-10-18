@@ -355,7 +355,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 			return false;
 		}
 		
-		this.recipeIndex = this.recipeIndex % recipes.length;
+		this.recipeIndex = Math.floorMod(this.recipeIndex, recipes.length);
 		MixerRecipe recipe = recipes[this.recipeIndex];
 		if(recipe == null) {
 			this.recipeIndex = 0;
@@ -385,9 +385,8 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	}
 	
 	protected void process() {
-		
-		MixerRecipe[] recipes = MixerRecipes.getOutput(tanks[2].getTankType());
-		MixerRecipe recipe = recipes[this.recipeIndex % recipes.length];
+		MixerRecipe recipe = MixerRecipes.getOutput(tanks[2].getTankType(), recipeIndex);
+		if(recipe == null || !canProcess()) return;
 
 		if(recipe.input1 != null) tanks[0].setFill(tanks[0].getFill() - recipe.input1.fill);
 		if(recipe.input2 != null) tanks[1].setFill(tanks[1].getFill() - recipe.input2.fill);
@@ -419,10 +418,7 @@ public class TileEntityMachineMixer extends TileEntityMachineBase implements INB
 	@Override
 	public boolean isItemValidForSlot(int i, ItemStack itemStack) {
 		
-		MixerRecipe[] recipes = MixerRecipes.getOutput(tanks[2].getTankType());
-		if(recipes == null || recipes.length <= 0) return false;
-		
-		MixerRecipe recipe = recipes[this.recipeIndex % recipes.length];
+		MixerRecipe recipe = MixerRecipes.getOutput(tanks[2].getTankType(), recipeIndex);
 		if(recipe == null || recipe.solidInput == null) return false;
 			
 		return recipe.solidInput.matchesRecipe(itemStack, true);

@@ -372,6 +372,7 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 					}
 
 					if (this.cachedRecipe != null) {
+						if(!this.hasSpace(cachedRecipe)) return;
 						this.maxProgress = (int) Math.max(cachedRecipe.duration / this.config.recipeSpeedMult, 1);
 						int powerReq = (int) Math.max(cachedRecipe.consumptionPerTick * this.config.recipeConsumptionMult, 1);
 
@@ -485,9 +486,11 @@ public class TileEntityCustomMachine extends TileEntityMachinePolluting implemen
 	}
 
 	public boolean hasSpace(CustomMachineRecipe recipe) {
+		if(recipe == null || recipe.outputFluids.length > outputTanks.length || recipe.outputItems.length > 6) return false;
 
 		for(int i = 0; i < recipe.outputFluids.length; i++) {
-			if(this.outputTanks[i].getTankType() == recipe.outputFluids[i].type && this.outputTanks[i].getFill() + recipe.outputFluids[i].fill > this.outputTanks[i].getMaxFill()) return false;
+			if(this.outputTanks[i].getFill() > 0 && this.outputTanks[i].getTankType() != recipe.outputFluids[i].type) return false;
+			if((long) this.outputTanks[i].getFill() + recipe.outputFluids[i].fill > this.outputTanks[i].getMaxFill()) return false;
 		}
 
 		for(int i = 0; i < recipe.outputItems.length; i++) {

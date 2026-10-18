@@ -16,6 +16,7 @@ public abstract class SafeTemplateRecipeHandler extends TemplateRecipeHandler {
 
     @Override public java.util.List<String> handleItemTooltip(codechicken.nei.recipe.GuiRecipe gui,
             net.minecraft.item.ItemStack stack, java.util.List<String> lines, int recipe) {
+        if(!isRecipeItem(stack, recipe)) return super.handleItemTooltip(gui, stack, lines, recipe);
         com.hbm.realsim.ProcessRecipe bill = com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.describedBill(stack);
         if(bill != null) {
             com.hbm.realsim.MachineInfo.process(lines, bill);
@@ -30,12 +31,26 @@ public abstract class SafeTemplateRecipeHandler extends TemplateRecipeHandler {
             if(stack.getTagCompound().getBoolean("neiRetainedCatalyst")) lines.add("Required catalyst hardware; not consumed");
             if(stack.getTagCompound().hasKey("neiProductMass")) {
                 String identity = stack.getTagCompound().getString("neiProductIdentity");
-                java.math.BigDecimal amount = java.math.BigDecimal.valueOf(stack.getTagCompound().getLong("neiProductMass"))
-                        .divide(java.math.BigDecimal.valueOf(com.hbm.realsim.PhysicalRegistry.get(identity).massUnits), 8, java.math.RoundingMode.DOWN).stripTrailingZeros();
-                lines.add("Exact yield: " + amount.toPlainString() + " items/batch; fractional material accumulates");
+                com.hbm.realsim.PhysicalState state = com.hbm.realsim.PhysicalRegistry.get(identity);
+                if(state.isResolved()) {
+                    java.math.BigDecimal amount = java.math.BigDecimal.valueOf(stack.getTagCompound().getLong("neiProductMass"))
+                            .divide(java.math.BigDecimal.valueOf(state.massUnits), 8, java.math.RoundingMode.DOWN).stripTrailingZeros();
+                    lines.add("Exact yield: " + amount.toPlainString() + " items/batch; fractional material accumulates");
+                }
             }
         }
         return super.handleItemTooltip(gui, stack, lines, recipe);
+    }
+
+    /** GTNH NEI offers the hovered stack (possibly null) to every visible recipe. */
+    protected final boolean isRecipeItem(net.minecraft.item.ItemStack stack, int recipe) {
+        if(!NEISafe.isValid(stack) || recipe < 0 || recipe >= arecipes.size()) return false;
+        TemplateRecipeHandler.CachedRecipe page = arecipes.get(recipe);
+        codechicken.nei.PositionedStack result = page.getResult();
+        if(result != null && result.contains(stack)) return true;
+        for(codechicken.nei.PositionedStack input : page.getIngredients()) if(input != null && input.contains(stack)) return true;
+        for(codechicken.nei.PositionedStack other : page.getOtherStacks()) if(other != null && other.contains(stack)) return true;
+        return false;
     }
 
 	private static class SafeRecipeList extends ArrayList<TemplateRecipeHandler.CachedRecipe> {

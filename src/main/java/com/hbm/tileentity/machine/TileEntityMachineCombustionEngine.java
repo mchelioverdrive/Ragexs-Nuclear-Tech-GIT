@@ -455,8 +455,8 @@ public class TileEntityMachineCombustionEngine extends TileEntityMachinePollutin
 
 	@Override
 	public void pasteSettings(NBTTagCompound nbt, int index, World world, EntityPlayer player, int x, int y, int z) {
-		int id = nbt.getIntArray("fluidID")[index];
-		tank.setTankType(Fluids.fromID(id));
+		int[] ids = nbt.getIntArray("fluidID");
+		if(index >= 0 && index < ids.length) tank.configureForRecipe(Fluids.fromID(ids[index]), tank.getPressure());
 		if(nbt.hasKey("isOn")) isOn = nbt.getBoolean("isOn");
 		if(nbt.hasKey("burnRate")) setting = MathHelper.clamp_int(nbt.getInteger("burnRate"), 0, 30);
 		this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.FLUID);

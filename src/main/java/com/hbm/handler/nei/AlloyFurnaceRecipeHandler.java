@@ -73,6 +73,7 @@ public class AlloyFurnaceRecipeHandler extends SafeTemplateRecipeHandler impleme
 	}
 
     @Override public List<String> handleItemTooltip(codechicken.nei.recipe.GuiRecipe gui, ItemStack stack, List<String> lines, int recipe) {
+        if(!isRecipeItem(stack, recipe)) return super.handleItemTooltip(gui, stack, lines, recipe);
         int ticks = com.hbm.tileentity.machine.TileEntityDiFurnace.getItemPower(stack, true);
         if(ticks > 0) {
             lines.add("Fueled furnace: " + ticks + " fuel ticks per item");

@@ -40,12 +40,8 @@ public class RotaryFurnaceHandler extends NEIUniversalHandler {
 
     @Override public java.util.List<String> handleItemTooltip(codechicken.nei.recipe.GuiRecipe gui, ItemStack stack, java.util.List<String> lines, int recipe) {
         // NEI calls this for every visible recipe, including when no item is hovered.
-        if(stack == null) return super.handleItemTooltip(gui, stack, lines, recipe);
+        if(!isRecipeItem(stack, recipe)) return super.handleItemTooltip(gui, stack, lines, recipe);
         RecipeSet page = (RecipeSet) arecipes.get(recipe);
-        boolean recipeItem = page.machinePositioned != null && page.machinePositioned.contains(stack);
-        for(codechicken.nei.PositionedStack input : page.input) if(input != null && input.contains(stack)) recipeItem = true;
-        for(codechicken.nei.PositionedStack output : page.output) if(output != null && output.contains(stack)) recipeItem = true;
-        if(!recipeItem) return super.handleItemTooltip(gui, stack, lines, recipe);
         Object[] key = (Object[]) page.originalInputInstance;
         for(RotaryFurnaceRecipe bill : RotaryFurnaceRecipes.recipes) {
             if(key.length != bill.ingredients.length + (bill.fluid == null ? 0 : 1) + 1) continue;

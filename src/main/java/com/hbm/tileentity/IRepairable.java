@@ -76,7 +76,7 @@ public interface IRepairable {
 		for(AStack stack : materials) {
 			try {
 				ItemStack display = stack.extractForCyclingDisplay(20);
-				text.add("- " + display.getDisplayName() + " x" + display.stackSize);
+				if(display != null) text.add("- " + display.getDisplayName() + " x" + display.stackSize);
 			} catch(Exception ex) {
 				text.add(EnumChatFormatting.RED + "- ERROR");
 			}

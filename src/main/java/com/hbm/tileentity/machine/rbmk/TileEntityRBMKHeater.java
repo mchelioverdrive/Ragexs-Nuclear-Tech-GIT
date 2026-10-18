@@ -66,24 +66,25 @@ public class TileEntityRBMKHeater extends TileEntityRBMKSlottedBase implements I
 			if(feed.getTankType().hasTrait(FT_Heatable.class)) {
 				FT_Heatable trait = feed.getTankType().getTrait(FT_Heatable.class);
 				HeatingStep step = trait.getFirstStep();
-				steam.setTankType(step.typeProduced);
-				double tempRange = this.heat - steam.getTankType().temperature;
-				double eff = trait.getEfficiency(HeatingType.HEATEXCHANGER);
-				
-				if(tempRange > 0 && eff > 0) {
-					double TU_PER_DEGREE = 2_000D * eff; //based on 1mB of water absorbing 200 TU as well as 0.1°C from an RBMK column
-					int inputOps = feed.getFill() / step.amountReq;
-					int outputOps = (steam.getMaxFill() - steam.getFill()) / step.amountProduced;
-					int tempOps = (int) Math.floor((tempRange * TU_PER_DEGREE) / step.heatReq);
-					int ops = Math.min(inputOps, Math.min(outputOps, tempOps));
+				if(steam.configureForRecipe(step.typeProduced, steam.getPressure())) {
+					double tempRange = this.heat - steam.getTankType().temperature;
+					double eff = trait.getEfficiency(HeatingType.HEATEXCHANGER);
 
-					feed.setFill(feed.getFill() - step.amountReq * ops);
-					steam.setFill(steam.getFill() + step.amountProduced * ops);
-					this.heat -= (step.heatReq * ops / TU_PER_DEGREE) * trait.getEfficiency(HeatingType.HEATEXCHANGER);
+					if(tempRange > 0 && eff > 0) {
+						double TU_PER_DEGREE = 2_000D * eff; //based on 1mB of water absorbing 200 TU as well as 0.1°C from an RBMK column
+						int inputOps = feed.getFill() / step.amountReq;
+						int outputOps = Math.max(0, steam.getMaxFill() - steam.getFill()) / step.amountProduced;
+						int tempOps = (int) Math.floor((tempRange * TU_PER_DEGREE) / step.heatReq);
+						int ops = Math.min(inputOps, Math.min(outputOps, tempOps));
+
+						feed.setFill(feed.getFill() - step.amountReq * ops);
+						steam.setFill(steam.getFill() + step.amountProduced * ops);
+						this.heat -= (step.heatReq * ops / TU_PER_DEGREE) * trait.getEfficiency(HeatingType.HEATEXCHANGER);
+					}
 				}
 				
 			} else {
-				steam.setTankType(Fluids.NONE);
+				if(steam.getFill() == 0) steam.setTankType(Fluids.NONE);
 			}
 			
 			for(DirPos pos : getOutputPos()) {

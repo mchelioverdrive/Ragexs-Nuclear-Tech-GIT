@@ -78,7 +78,7 @@ public abstract class GUITurretBase extends GuiInfoContainer {
 			if(draw) {
 				List<ItemStack> list = new ArrayList(turret.getAmmoTypesForDisplay());
 				List<Object[]> lines = new ArrayList();
-				ItemStack selected = list.get(0);
+				ItemStack selected = list.isEmpty() ? null : list.get(0);
 				
 				if(list.size() > 1) {
 					int cycle = (int) ((System.currentTimeMillis() % (1000 * list.size())) / 1000);
@@ -100,8 +100,10 @@ public abstract class GUITurretBase extends GuiInfoContainer {
 					lines.add(list.subList(bound1, list.size()).toArray());
 				}
 				
-				lines.add(new Object[] {I18nUtil.resolveKey(selected.getDisplayName())});
-				this.drawStackText(lines, mouseX, mouseY, this.fontRendererObj);
+				if(selected != null) {
+					lines.add(new Object[] {I18nUtil.resolveKey(selected.getDisplayName())});
+					this.drawStackText(lines, mouseX, mouseY, this.fontRendererObj);
+				}
 			}
 		}
 	}

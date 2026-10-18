@@ -113,9 +113,9 @@ public class MixerRecipes extends SerializableRecipe {
 	public static MixerRecipe getOutput(FluidType type, int index) {
 		MixerRecipe[] recs = recipes.get(type);
 
-		if(recs == null) return null;
+		if(recs == null || recs.length == 0) return null;
 
-		return recs[index % recs.length];
+		return recs[Math.floorMod(index, recs.length)];
 	}
 
 	@Override

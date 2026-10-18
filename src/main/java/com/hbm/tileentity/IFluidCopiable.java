@@ -35,7 +35,8 @@ public interface IFluidCopiable extends ICopiable {
 		TileEntity te = (TileEntity) this;
 		if(te instanceof IFluidStandardTransceiver) {
 			IFluidStandardTransceiver tile = (IFluidStandardTransceiver) this;
-			return tile.getReceivingTanks() != null ? tile.getReceivingTanks()[0] : null;
+			FluidTank[] tanks = tile.getReceivingTanks();
+			return tanks != null && tanks.length > 0 ? tanks[0] : null;
 		}
 		return null;
 	}
@@ -49,11 +50,12 @@ public interface IFluidCopiable extends ICopiable {
 
 	@Override
 	default void pasteSettings(NBTTagCompound nbt, int index, World world, EntityPlayer player, int x, int y, int z) {
-		if(getTankToPaste() != null) {
+		FluidTank tank = getTankToPaste();
+		if(tank != null) {
 			int[] ids = nbt.getIntArray("fluidID");
-			if(ids.length > 0 && index < ids.length) {
+			if(index >= 0 && index < ids.length) {
 				int id = ids[index];
-				getTankToPaste().setTankType(Fluids.fromID(id));
+				tank.configureForRecipe(Fluids.fromID(id), tank.getPressure());
 			}
 		}
 	}

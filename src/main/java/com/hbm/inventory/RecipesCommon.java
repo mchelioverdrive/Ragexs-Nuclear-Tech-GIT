@@ -97,10 +97,9 @@ public class RecipesCommon {
 
 		public ItemStack extractForCyclingDisplay(int cycle) {
 			List<ItemStack> list = extractForNEI();
-
-			cycle *= 50;
-
-			return list.get((int)(System.currentTimeMillis() % (cycle * list.size()) / cycle));
+			if(list == null || list.isEmpty()) return null;
+			long interval = Math.max(1L, cycle) * 50L;
+			return list.get((int) ((System.currentTimeMillis() / interval) % list.size()));
 		}
 	}
 

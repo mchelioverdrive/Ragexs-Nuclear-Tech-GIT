@@ -87,6 +87,8 @@ public class FT_Coolable extends FluidTrait {
 		this.amountReq = obj.get("amountReq").getAsInt();
 		this.amountProduced = obj.get("amountProd").getAsInt();
 		this.heatEnergy = obj.get("heatEnergy").getAsInt();
+		if(coolsTo == Fluids.NONE || amountReq <= 0 || amountProduced <= 0 || heatEnergy < 0)
+			throw new IllegalArgumentException("Cooling traits require positive amounts, nonnegative heat and a registered product");
 
 		for(CoolingType type : CoolingType.values()) {
 			if(obj.has(type.name())) efficiency.put(type, obj.get(type.name()).getAsDouble());

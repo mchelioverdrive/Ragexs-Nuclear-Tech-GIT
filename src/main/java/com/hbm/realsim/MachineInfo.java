@@ -21,10 +21,13 @@ public final class MachineInfo {
         List<String> lines = new ArrayList<>();
         if(tile instanceof IMachineInfo) {
             IMachineInfo owner = (IMachineInfo) tile;
-            long demand = owner.getMachineDemandWatts(), draw = owner.getMachineCurrentDrawWatts();
+            long demand, draw;
             if(live && tile instanceof TileEntityMachineBase) {
                 demand = ((TileEntityMachineBase) tile).machineInfoDemandWatts;
                 draw = ((TileEntityMachineBase) tile).machineInfoDrawWatts;
+            } else {
+                demand = owner.getMachineDemandWatts();
+                draw = owner.getMachineCurrentDrawWatts();
             }
             if(demand >= 0) lines.add("Electrical demand: " + watts(demand));
             if(live && draw >= 0) lines.add("Current draw: " + watts(draw));

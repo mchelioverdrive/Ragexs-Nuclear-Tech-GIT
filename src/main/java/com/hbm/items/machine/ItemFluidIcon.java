@@ -48,9 +48,10 @@ public class ItemFluidIcon extends Item {
 
 	public static String quantityText(ItemStack stack) {
 		FluidType type = Fluids.fromID(stack.getItemDamage());
-		if(stack.hasTagCompound() && stack.getTagCompound().hasKey("physicalMass")) {
+		com.hbm.realsim.PhysicalState state = type.getPhysicalState();
+		if(stack.hasTagCompound() && stack.getTagCompound().hasKey("physicalMass") && state.isResolved()) {
 			java.math.BigDecimal quantity = java.math.BigDecimal.valueOf(stack.getTagCompound().getLong("physicalMass"))
-					.divide(java.math.BigDecimal.valueOf(com.hbm.realsim.PhysicalRegistry.get(type.getName()).massUnits), 6, java.math.RoundingMode.DOWN).stripTrailingZeros();
+					.divide(java.math.BigDecimal.valueOf(state.massUnits), 6, java.math.RoundingMode.DOWN).stripTrailingZeros();
 			return quantity.toPlainString() + " " + com.hbm.inventory.fluid.FluidInfo.unit(type) + " per batch (fractional output accumulates)";
 		}
 		return com.hbm.inventory.fluid.FluidInfo.amount(type, getQuantity(stack));

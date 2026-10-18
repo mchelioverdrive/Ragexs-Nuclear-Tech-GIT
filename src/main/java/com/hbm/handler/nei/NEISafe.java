@@ -75,6 +75,17 @@ public final class NEISafe {
 		return valid.isEmpty() ? null : valid.toArray(new ItemStack[valid.size()][]);
 	}
 
+	/** Required inputs may lose invalid alternatives, but never a whole ingredient slot. */
+	public static ItemStack[][] copyRequired2D(ItemStack[][] stacks) {
+		if(stacks == null || stacks.length == 0) return null;
+		ItemStack[][] result = new ItemStack[stacks.length][];
+		for(int i = 0; i < stacks.length; i++) {
+			result[i] = copyValid(stacks[i]);
+			if(result[i] == null) return null;
+		}
+		return result;
+	}
+
 	public static PositionedStack positionedStack(Object object, int x, int y) {
 		return positionedStack(object, x, y, true);
 	}

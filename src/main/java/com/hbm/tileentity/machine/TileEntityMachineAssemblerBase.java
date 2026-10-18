@@ -603,8 +603,8 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 		super.readFromNBT(nbt);
 
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
-		if(nbt.hasKey("progress")) this.progress = nbt.getIntArray("progress");
-		if(nbt.hasKey("maxProgress")) this.maxProgress = nbt.getIntArray("maxProgress");
+		if(nbt.hasKey("progress")) this.progress = java.util.Arrays.copyOf(nbt.getIntArray("progress"), getRecipeCount());
+		if(nbt.hasKey("maxProgress")) this.maxProgress = java.util.Arrays.copyOf(nbt.getIntArray("maxProgress"), getRecipeCount());
 	}
 
 	@Override

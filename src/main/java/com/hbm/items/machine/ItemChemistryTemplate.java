@@ -91,7 +91,8 @@ public class ItemChemistryTemplate extends Item {
 
 			for(int i = 0; i < recipe.inputs.length; i++) {
 				if(recipe.inputs[i] != null) {
-					list.add(recipe.inputs[i].stacksize + "x " + recipe.inputs[i].extractForCyclingDisplay(20).getDisplayName());
+					ItemStack display = recipe.inputs[i].extractForCyclingDisplay(20);
+					if(display != null) list.add(recipe.inputs[i].stacksize + "x " + display.getDisplayName());
 				}
 			}
 

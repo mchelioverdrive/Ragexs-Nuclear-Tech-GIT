@@ -415,31 +415,18 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 				continue;
 			}
 			
-			if(item.getEntityItem().getItem() == Item.getItemFromBlock(ModBlocks.ore_oil)) {
-				
-				if(item.getEntityItem().getItemDamage() == SolarSystem.Body.LAYTHE.ordinal()) {
-					tank.setTankType(Fluids.OIL_DS);
-				} else {
-					tank.setTankType(Fluids.OIL); // now it seems we must be sure
-				}
-				
+			com.hbm.inventory.fluid.FluidType recovered = null;
+			if(item.getEntityItem().getItem() == Item.getItemFromBlock(ModBlocks.ore_oil))
+				recovered = item.getEntityItem().getItemDamage() == SolarSystem.Body.LAYTHE.ordinal() ? Fluids.OIL_DS : Fluids.OIL;
+			if(item.getEntityItem().getItem() == Item.getItemFromBlock(ModBlocks.ore_gas)) recovered = Fluids.GAS;
+			if(recovered != null && (long) tank.getFill() + 500 <= tank.getMaxFill()
+					&& tank.configureForRecipe(recovered, tank.getPressure())) {
 				tank.setFill(tank.getFill() + 500);
-				if(tank.getFill() > tank.getMaxFill())
-					tank.setFill(tank.getMaxFill());
-				
-				item.setDead();
-				continue;
-			}
-			
-			if(item.getEntityItem().getItem() == Item.getItemFromBlock(ModBlocks.ore_gas)) {
-				
-				tank.setTankType(Fluids.GAS); // because the tank can change forever more
-				
-				tank.setFill(tank.getFill() + 500);
-				if(tank.getFill() > tank.getMaxFill())
-					tank.setFill(tank.getMaxFill());
-				
-				item.setDead();
+				if(item.getEntityItem().stackSize > 1) {
+					ItemStack remainder = item.getEntityItem().copy();
+					remainder.stackSize--;
+					item.setEntityItemStack(remainder);
+				} else item.setDead();
 				continue;
 			}
 			

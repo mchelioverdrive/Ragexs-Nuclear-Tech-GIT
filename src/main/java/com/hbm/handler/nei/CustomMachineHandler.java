@@ -58,8 +58,10 @@ public class CustomMachineHandler extends SafeTemplateRecipeHandler {
 		public float radiationAmount = 0;
 		public String pollutionType;
 		public float pollutionAmount = 0;
+		public final com.hbm.realsim.ProcessRecipe physicalBill;
 
 		public RecipeSet(CustomMachineRecipe recipe) {
+			physicalBill = recipe.physicalBill == null ? null : conf.physicalBill(recipe.physicalBill);
 
 			for(int i = 0; i < 3; i++) if(recipe.inputFluids.length > i) inputs.add(NEISafe.positionedStack(ItemFluidIcon.make(recipe.inputFluids[i]), 12 + i * 18, 6));
 			for(int i = 0; i < 3; i++) if(recipe.inputItems.length > i) inputs.add(NEISafe.positionedStack(recipe.inputItems[i].extractForNEI(), 12 + i * 18, 24));
@@ -94,10 +96,6 @@ public class CustomMachineHandler extends SafeTemplateRecipeHandler {
 			if(recipe.physicalBill == null && conf.maxHeat > 0 && recipe.heat > 0) this.heat = recipe.heat;
 
 			this.machine = NEISafe.positionedStack(new ItemStack(ModBlocks.custom_machine, 1, 100 + CustomMachineConfigJSON.niceList.indexOf(conf)), 75, 42);
-            if(recipe.physicalBill != null) {
-                ItemStack preview = NEISafe.firstStack(inputs.isEmpty() ? this.machine : inputs.get(0));
-                com.hbm.inventory.recipes.loader.PetroleumRecipeLoader.describe(preview, conf.physicalBill(recipe.physicalBill));
-            }
 		}
 
 		@Override
@@ -118,6 +116,15 @@ public class CustomMachineHandler extends SafeTemplateRecipeHandler {
 			other.addAll(outputs);
 			return NEISafe.getCycledIngredients(this, cycleticks / 20, other);
 		}
+	}
+
+	@Override
+	public List<String> handleItemTooltip(codechicken.nei.recipe.GuiRecipe gui, ItemStack stack, List<String> lines, int recipe) {
+		if(isRecipeItem(stack, recipe)) {
+			com.hbm.realsim.ProcessRecipe bill = ((RecipeSet) arecipes.get(recipe)).physicalBill;
+			if(bill != null) com.hbm.realsim.MachineInfo.process(lines, bill);
+		}
+		return super.handleItemTooltip(gui, stack, lines, recipe);
 	}
 
 	@Override

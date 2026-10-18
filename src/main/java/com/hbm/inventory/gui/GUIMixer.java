@@ -44,11 +44,14 @@ public class GUIMixer extends GuiInfoContainer {
 		
 		if(recipes != null && recipes.length > 1) {
 			List<String> label = new ArrayList();
-			label.add(EnumChatFormatting.YELLOW + "Current recipe (" + (mixer.recipeIndex + 1) + "/" + recipes.length + "):");
-			MixerRecipe recipe = recipes[mixer.recipeIndex % recipes.length];
-			if(recipe.input1 != null) label.add("-" + recipe.input1.type.getLocalizedName());
-			if(recipe.input2 != null) label.add("-" + recipe.input2.type.getLocalizedName());
-			if(recipe.solidInput != null) label.add("-" + recipe.solidInput.extractForCyclingDisplay(20).getDisplayName());
+			label.add(EnumChatFormatting.YELLOW + "Current recipe (" + (Math.floorMod(mixer.recipeIndex, recipes.length) + 1) + "/" + recipes.length + "):");
+			MixerRecipe recipe = MixerRecipes.getOutput(mixer.tanks[2].getTankType(), mixer.recipeIndex);
+			if(recipe != null) {
+				if(recipe.input1 != null) label.add("-" + recipe.input1.type.getLocalizedName());
+				if(recipe.input2 != null) label.add("-" + recipe.input2.type.getLocalizedName());
+				net.minecraft.item.ItemStack solid = recipe.solidInput == null ? null : recipe.solidInput.extractForCyclingDisplay(20);
+				if(solid != null) label.add("-" + solid.getDisplayName());
+			}
 			label.add(EnumChatFormatting.RED + "Click to change!");
 			this.drawCustomInfoStat(x, y, guiLeft + 62, guiTop + 22, 12, 12, x, y, label);
 		}

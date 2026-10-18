@@ -224,8 +224,8 @@ public class TileEntityFurnaceSteel extends TileEntityMachineBase implements IGU
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
 		
-		this.progress = nbt.getIntArray("progress");
-		this.bonus = nbt.getIntArray("bonus");
+		this.progress = java.util.Arrays.copyOf(nbt.getIntArray("progress"), 3);
+		this.bonus = java.util.Arrays.copyOf(nbt.getIntArray("bonus"), 3);
 		this.heat = nbt.getInteger("heat");
 		this.wasOn = nbt.getBoolean("wasOn");
 	}
@@ -234,8 +234,8 @@ public class TileEntityFurnaceSteel extends TileEntityMachineBase implements IGU
 	public void readFromNBT(NBTTagCompound nbt) {
 		super.readFromNBT(nbt);
 
-		this.progress = nbt.getIntArray("progress");
-		this.bonus = nbt.getIntArray("bonus");
+		this.progress = java.util.Arrays.copyOf(nbt.getIntArray("progress"), 3);
+		this.bonus = java.util.Arrays.copyOf(nbt.getIntArray("bonus"), 3);
 		this.heat = nbt.getInteger("heat");
 		
 		NBTTagList list = nbt.getTagList("lastItems", 10);

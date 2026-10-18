@@ -391,8 +391,8 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
 			FT_Heatable trait = tanks[0].getTankType().getTrait(FT_Heatable.class);
 			if(trait.getEfficiency(HeatingType.BOILER) > 0) {
 				HeatingStep entry = trait.getFirstStep();
-				tanks[1].configureForRecipe(entry.typeProduced, tanks[0].getPressure());
-				tanks[1].changeTankSize(tanks[0].getMaxFill() * entry.amountProduced / entry.amountReq);
+				if(tanks[1].configureForRecipe(entry.typeProduced, tanks[0].getPressure()))
+					tanks[1].resizePreservingContents((int) Math.min(Integer.MAX_VALUE, (long) tanks[0].getMaxFill() * entry.amountProduced / entry.amountReq));
 				return;
 			}
 		}
@@ -407,7 +407,7 @@ public abstract class TileEntityHeatBoilerBase extends TileEntityLoadedBase impl
         if(!tanks[1].configureForRecipe(trait.getFirstStep().typeProduced, tanks[0].getPressure())) return;
 		HeatingStep entry = trait.getFirstStep();
 		int inputOps = tanks[0].getFill() / entry.amountReq;
-		int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / entry.amountProduced;
+		int outputOps = Math.max(0, tanks[1].getMaxFill() - tanks[1].getFill()) / entry.amountProduced;
 		int heatOps = this.heat / entry.heatReq;
 		int ops = Math.min(inputOps, Math.min(outputOps, heatOps));
 		tanks[0].setFill(tanks[0].getFill() - entry.amountReq * ops);

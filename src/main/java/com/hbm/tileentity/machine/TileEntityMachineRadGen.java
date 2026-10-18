@@ -223,9 +223,9 @@ public class TileEntityMachineRadGen extends TileEntityMachineBase implements ap
 	public void networkUnpack(NBTTagCompound nbt) {
 		super.networkUnpack(nbt);
 		
-		this.progress = nbt.getIntArray("progress");
-		this.maxProgress = nbt.getIntArray("maxProgress");
-		this.production = nbt.getIntArray("production");
+		this.progress = java.util.Arrays.copyOf(nbt.getIntArray("progress"), 12);
+		this.maxProgress = java.util.Arrays.copyOf(nbt.getIntArray("maxProgress"), 12);
+		this.production = java.util.Arrays.copyOf(nbt.getIntArray("production"), 12);
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.isOn = nbt.getBoolean("isOn");
 	}

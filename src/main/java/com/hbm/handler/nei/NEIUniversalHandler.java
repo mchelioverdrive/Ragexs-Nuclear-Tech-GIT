@@ -279,7 +279,7 @@ public abstract class NEIUniversalHandler extends SafeTemplateRecipeHandler impl
 		if(outputId.equals(getKey())) {
 
 			outer: for(Entry<Object, Object> recipe : recipes.entrySet()) {
-				ItemStack[][] ins = NEISafe.copyValid2D(InventoryUtil.extractObject(recipe.getKey()));
+				ItemStack[][] ins = NEISafe.copyRequired2D(InventoryUtil.extractObject(recipe.getKey()));
 				ItemStack[][] outs = NEISafe.copyValid2D(InventoryUtil.extractObject(recipe.getValue()));
 				if(ins == null || outs == null) continue;
 
@@ -298,7 +298,7 @@ public abstract class NEIUniversalHandler extends SafeTemplateRecipeHandler impl
 	public void loadCraftingRecipes(ItemStack result) {
 
 		outer: for(Entry<Object, Object> recipe : recipes.entrySet()) {
-			ItemStack[][] ins = NEISafe.copyValid2D(InventoryUtil.extractObject(recipe.getKey()));
+			ItemStack[][] ins = NEISafe.copyRequired2D(InventoryUtil.extractObject(recipe.getKey()));
 			ItemStack[][] outs = NEISafe.copyValid2D(InventoryUtil.extractObject(recipe.getValue()));
 			if(ins == null || outs == null) continue;
 
@@ -330,7 +330,7 @@ public abstract class NEIUniversalHandler extends SafeTemplateRecipeHandler impl
 	public void loadUsageRecipes(ItemStack ingredient) {
 
 		outer: for(Entry<Object, Object> recipe : recipes.entrySet()) {
-			ItemStack[][] ins = NEISafe.copyValid2D(InventoryUtil.extractObject(recipe.getKey()));
+			ItemStack[][] ins = NEISafe.copyRequired2D(InventoryUtil.extractObject(recipe.getKey()));
 			ItemStack[][] outs = NEISafe.copyValid2D(InventoryUtil.extractObject(recipe.getValue()));
 			if(ins == null || outs == null) continue;
 

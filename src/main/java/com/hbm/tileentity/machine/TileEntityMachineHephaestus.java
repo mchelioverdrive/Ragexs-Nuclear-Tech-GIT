@@ -205,11 +205,13 @@ public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements
 		
 		if(type.hasTrait(FT_Heatable.class)) {
 			FT_Heatable trait = type.getTrait(FT_Heatable.class);
+			if(trait.getEfficiency(HeatingType.HEATEXCHANGER) <= 0) return;
 			int heat = this.getTotalHeat();
 			HeatingStep step = trait.getFirstStep();
+			if(!output.configureForRecipe(step.typeProduced, output.getPressure())) return;
 			
 			int inputOps = input.getFill() / step.amountReq;
-			int outputOps = (output.getMaxFill() - output.getFill()) / step.amountProduced;
+			int outputOps = Math.max(0, output.getMaxFill() - output.getFill()) / step.amountProduced;
 			int heatOps = heat / step.heatReq;
 			int ops = Math.min(Math.min(inputOps, outputOps), heatOps);
 
@@ -233,13 +235,13 @@ public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements
 			
 			if(trait.getEfficiency(HeatingType.HEATEXCHANGER) > 0) {
 				FluidType outType = trait.getFirstStep().typeProduced;
-				output.setTankType(outType);
+				output.configureForRecipe(outType, output.getPressure());
 				return;
 			}
 		}
 
-		input.setTankType(Fluids.NONE);
-		output.setTankType(Fluids.NONE);
+		if(input.getFill() == 0) input.setTankType(Fluids.NONE);
+		if(output.getFill() == 0) output.setTankType(Fluids.NONE);
 	}
 	
 	protected int heatFromBlock(int x, int y, int z) {

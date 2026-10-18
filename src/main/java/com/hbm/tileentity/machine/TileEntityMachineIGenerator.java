@@ -228,7 +228,7 @@ public class TileEntityMachineIGenerator extends TileEntityMachineBase implement
 		
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.spin = nbt.getInteger("spin");
-		this.burn = nbt.getIntArray("burn");
+		this.burn = java.util.Arrays.copyOf(nbt.getIntArray("burn"), 4);
 		this.hasRTG = nbt.getBoolean("hasRTG");
 	}
 	
@@ -245,7 +245,7 @@ public class TileEntityMachineIGenerator extends TileEntityMachineBase implement
 			tanks[i].readFromNBT(nbt, "tank_" + i);
 		
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
-		this.burn = nbt.getIntArray("burn");
+		this.burn = java.util.Arrays.copyOf(nbt.getIntArray("burn"), 4);
 	}
 	
 	@Override

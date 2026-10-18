@@ -224,6 +224,12 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 
 			/* set up shared tanks */
 			FluidTank[] sharedTanks = runtimeSharedTanks;
+			for(TileEntityWatz segment : segments) segment.setupCoolant();
+			boolean compatibleCoolant = true;
+			for(TileEntityWatz segment : segments) for(int i = 0; i < tanks.length; i++) {
+				if(segment.tanks[i].getFill() > 0 && (segment.tanks[i].getTankType() != tanks[i].getTankType()
+						|| segment.tanks[i].getPressure() != tanks[i].getPressure())) compatibleCoolant = false;
+			}
 			for(int i = 0; i < sharedTanks.length; i++) {
 				sharedTanks[i].setFill(0);
 				sharedTanks[i].changeTankSize(0);
@@ -231,10 +237,10 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 			}
 
 			for(TileEntityWatz segment : segments) {
-				segment.setupCoolant();
+				if(!compatibleCoolant) continue;
 
 				for(int i = 0; i < tanks.length; i++) {
-					sharedTanks[i].changeTankSize(
+					sharedTanks[i].resizePreservingContents(
 						sharedTanks[i].getMaxFill() +
 							segment.tanks[i].getMaxFill()
 					);
@@ -249,7 +255,7 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 			//update coolant, bottom to top
 			for(int i = segments.size() - 1; i >= 0; i--) {
 				TileEntityWatz segment = segments.get(i);
-				segment.updateCoolant(sharedTanks);
+				if(compatibleCoolant) segment.updateCoolant(sharedTanks);
 			}
 
 			/* update reaction, top to bottom */
@@ -263,7 +269,7 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 			/* send sync packets (order doesn't matter) */
 			for(TileEntityWatz segment : segments) {
 				segment.isOn = turnedOn;
-				segment.sendPacket(sharedTanks);
+				segment.sendPacket(compatibleCoolant ? sharedTanks : segment.tanks);
 				double passiveCooling =
 					Math.max(0.02,
 							 segment.heat * 0.0008);
@@ -273,9 +279,10 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 
 			/* re-distribute fluid from shared tanks back into actual tanks, bottom to top */
 			for(int i = segments.size() - 1; i >= 0; i--) {
+				if(!compatibleCoolant) break;
 				TileEntityWatz segment = segments.get(i);
 				for(int j = 0; j < tanks.length; j++) {
-					int min = Math.min(segment.tanks[j].getMaxFill(), sharedTanks[j].getFill());
+					int min = i == 0 ? sharedTanks[j].getFill() : Math.min(segment.tanks[j].getMaxFill(), sharedTanks[j].getFill());
 					sharedTanks[j].setFill(sharedTanks[j].getFill() - min);
 					segment.tanks[j].setFill(min);
 				}
@@ -353,8 +360,9 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 
 	/** basic sanity checking, usually wouldn't do anything except when NBT loading borks */
 	public void setupCoolant() {
-		tanks[0].setTankType(Fluids.HELIUM4);
-		tanks[1].setTankType(tanks[0].getTankType().getTrait(FT_Heatable.class).getFirstStep().typeProduced);
+		if(!tanks[0].configureForRecipe(Fluids.HELIUM4, tanks[0].getPressure())) return;
+		FT_Heatable trait = tanks[0].getTankType().getTrait(FT_Heatable.class);
+		if(trait != null) tanks[1].configureForRecipe(trait.getFirstStep().typeProduced, tanks[1].getPressure());
 	}
 
 	public void updateCoolant(FluidTank[] tanks) {
@@ -370,11 +378,13 @@ public class TileEntityWatz extends TileEntityMachineBase implements IFluidStand
 			this.heat * coolingFactor;
 
 		FT_Heatable trait = tanks[0].getTankType().getTrait(FT_Heatable.class);
+		if(trait == null || tanks[0].getTankType() != Fluids.HELIUM4) return;
 		HeatingStep step = trait.getFirstStep();
+		if(!tanks[1].configureForRecipe(step.typeProduced, tanks[1].getPressure())) return;
 
 		int heatCycles = (int) (heatToUse / step.heatReq);
 		int coolCycles = tanks[0].getFill() / step.amountReq;
-		int hotCycles = (tanks[1].getMaxFill() - tanks[1].getFill()) / step.amountProduced;
+		int hotCycles = Math.max(0, tanks[1].getMaxFill() - tanks[1].getFill()) / step.amountProduced;
 
 		int cycles = Math.min(heatCycles, Math.min(hotCycles, coolCycles));
 		this.heat -= cycles * step.heatReq;

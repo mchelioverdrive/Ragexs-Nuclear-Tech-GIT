@@ -403,7 +403,7 @@ public class InventoryUtil {
 			ItemStack[][] stacks = new ItemStack[ingredients.length][0];
 			
 			for(int i = 0; i < ingredients.length; i++) {
-				stacks[i] = ingredients[i].extractForNEI().toArray(new ItemStack[0]);
+				if(ingredients[i] != null) stacks[i] = ingredients[i].extractForNEI().toArray(new ItemStack[0]);
 			}
 			
 			return stacks;
@@ -423,6 +423,9 @@ public class InventoryUtil {
 				if(ingredient instanceof ItemStack) {
 					stacks[i] = new ItemStack[1];
 					stacks[i][0] = ((ItemStack) ingredient).copy();
+				}
+				if(ingredient instanceof ItemStack[]) {
+					stacks[i] = com.hbm.inventory.RecipesCommon.copyStackArray((ItemStack[]) ingredient);
 				}
 			}
 			

@@ -152,7 +152,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 	private void selectFluidTypes() {
 		tanks[0].setType(1, slots);
 		FluidType conversion = this.getFluidOutput(tanks[0].getTankType());
-		if(conversion != null) tanks[1].setTankType(conversion);
+		if(conversion != null) tanks[1].configureForRecipe(conversion, tanks[1].getPressure());
 	}
 
 	private void subscribeToInputs() {
@@ -423,7 +423,8 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 	}
 	
 	public boolean canSlop() {
-		if(this.getFluidOutput(tanks[0].getTankType()) == null) return false;
+		FluidType conversion = this.getFluidOutput(tanks[0].getTankType());
+		if(conversion == null || tanks[1].getTankType() != conversion) return false;
 		if(tanks[0].getFill() < waterUsed) return false;
 		if(tanks[1].getFill() + waterUsed > tanks[1].getMaxFill()) return false;
 		if(energyQuanta < consumption) return false;

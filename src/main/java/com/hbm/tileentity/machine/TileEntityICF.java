@@ -214,19 +214,20 @@ public class TileEntityICF extends TileEntityMachineBase implements IGUIProvider
 			if(tanks[0].getTankType().hasTrait(FT_Heatable.class)) {
 				FT_Heatable trait = tanks[0].getTankType().getTrait(FT_Heatable.class);
 				HeatingStep step = trait.getFirstStep();
-				tanks[1].setTankType(step.typeProduced);
+				if(tanks[1].configureForRecipe(step.typeProduced, tanks[1].getPressure())) {
 
-				int coolingCycles = tanks[0].getFill() / step.amountReq;
-				int heatingCycles = (tanks[1].getMaxFill() - tanks[1].getFill()) / step.amountProduced;
-				int heatCycles = (int) Math.min(this.heat / 4D / step.heatReq * trait.getEfficiency(HeatingType.ICF), this.heat / step.heatReq); //25% cooling per tick
-				int cycles = Math.min(coolingCycles, Math.min(heatingCycles, heatCycles));
+					int coolingCycles = tanks[0].getFill() / step.amountReq;
+					int heatingCycles = Math.max(0, tanks[1].getMaxFill() - tanks[1].getFill()) / step.amountProduced;
+					int heatCycles = (int) Math.min(this.heat / 4D / step.heatReq * trait.getEfficiency(HeatingType.ICF), this.heat / step.heatReq); //25% cooling per tick
+					int cycles = Math.min(coolingCycles, Math.min(heatingCycles, heatCycles));
 
-				tanks[0].setFill(tanks[0].getFill() - step.amountReq * cycles);
-				tanks[1].setFill(tanks[1].getFill() + step.amountProduced * cycles);
-				this.heat -= step.heatReq * cycles;
+					tanks[0].setFill(tanks[0].getFill() - step.amountReq * cycles);
+					tanks[1].setFill(tanks[1].getFill() + step.amountProduced * cycles);
+					this.heat -= step.heatReq * cycles;
 
-				this.consumption = step.amountReq * cycles;
-				this.output = step.amountProduced * cycles;
+					this.consumption = step.amountReq * cycles;
+					this.output = step.amountProduced * cycles;
+				}
 			}
 
 			for(DirPos pos : getConPos()) {

@@ -124,7 +124,7 @@ public abstract class TileEntityTransporterBase extends TileEntityMachineBase im
 			for(int i = 0; i < inputTankMax; i++) {
 				int o = i+inputTankMax;
 
-				linkedTransporter.tanks[o].setTankType(tanks[i].getTankType());
+				if(!linkedTransporter.tanks[o].configureForRecipe(tanks[i].getTankType(), tanks[i].getPressure())) continue;
 
 				int sourceFillLevel = tanks[i].getFill();
 				int targetFillLevel = linkedTransporter.tanks[o].getFill();

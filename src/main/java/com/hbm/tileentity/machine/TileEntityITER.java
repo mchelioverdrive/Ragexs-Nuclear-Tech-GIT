@@ -444,13 +444,13 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 			HeatingStep step = trait.getFirstStep();
 
 			if(step != null && step.typeProduced != null) {
-				tanks[3].setTankType(step.typeProduced);
+				tanks[3].configureForRecipe(step.typeProduced, tanks[3].getPressure());
 			}
 
 		} else {
 
-			tanks[2].setTankType(Fluids.NONE);
-			tanks[3].setTankType(Fluids.NONE);
+			if(tanks[2].getFill() == 0) tanks[2].setTankType(Fluids.NONE);
+			if(tanks[3].getFill() == 0) tanks[3].setTankType(Fluids.NONE);
 		}
 	}
 
@@ -472,6 +472,9 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 		}
 
 		int operations = Math.min(MAX_PLASMA_BURN_PER_TICK, plasma.getFill());
+		FT_Heatable coolant = tanks[2].getTankType().getTrait(FT_Heatable.class);
+		boolean compatibleCoolant = coolant != null
+				&& tanks[3].configureForRecipe(coolant.getFirstStep().typeProduced, tanks[3].getPressure());
 
 		for(int i = 0; i < operations; i++) {
 
@@ -479,7 +482,7 @@ public class TileEntityITER extends TileEntityMachineBase implements IEnergyRece
 				break;
 			}
 
-			if(tanks[2].getFill() < coolantReq) {
+			if(!compatibleCoolant || tanks[2].getFill() < coolantReq) {
 
 				heatStress += HEAT_STRESS_PER_FAILED_COOLING;
 				damageShield(OVERHEAT_SHIELD_DAMAGE);

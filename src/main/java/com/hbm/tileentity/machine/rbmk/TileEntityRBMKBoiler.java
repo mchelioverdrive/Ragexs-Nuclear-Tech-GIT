@@ -75,7 +75,7 @@ public class TileEntityRBMKBoiler extends TileEntityRBMKSlottedBase implements I
 			double heatCap = this.getHeatFromSteam(steam.getTankType());
 			double heatProvided = this.heat - heatCap;
 			
-			if(heatProvided > 0) {
+			if(heatProvided > 0 && getFactorFromSteam(steam.getTankType()) > 0) {
 				double HEAT_PER_MB_WATER = RBMKDials.getBoilerHeatConsumption(worldObj);
 				double steamFactor = getFactorFromSteam(steam.getTankType());
 				int waterUsed;
@@ -188,12 +188,13 @@ public class TileEntityRBMKBoiler extends TileEntityRBMKSlottedBase implements I
 	}
 	
 	public void cyceCompressor() {
-		
+		// Select the next output grade only after the previous stock has drained.
+		if(steam.getFill() > 0) return;
 		FluidType type = steam.getTankType();
-		if(type == Fluids.STEAM) {			steam.setTankType(Fluids.HOTSTEAM);			steam.setFill(steam.getFill() / 10); }
-		if(type == Fluids.HOTSTEAM) {		steam.setTankType(Fluids.SUPERHOTSTEAM);	steam.setFill(steam.getFill() / 10); }
-		if(type == Fluids.SUPERHOTSTEAM) {	steam.setTankType(Fluids.ULTRAHOTSTEAM);	steam.setFill(steam.getFill() / 10); }
-		if(type == Fluids.ULTRAHOTSTEAM) {	steam.setTankType(Fluids.STEAM);			steam.setFill(Math.min(steam.getFill() * 1000, steam.getMaxFill())); }
+		if(type == Fluids.STEAM) steam.setTankType(Fluids.HOTSTEAM);
+		if(type == Fluids.HOTSTEAM) steam.setTankType(Fluids.SUPERHOTSTEAM);
+		if(type == Fluids.SUPERHOTSTEAM) steam.setTankType(Fluids.ULTRAHOTSTEAM);
+		if(type == Fluids.ULTRAHOTSTEAM) steam.setTankType(Fluids.STEAM);
 		
 		this.markDirty();
 	}
@@ -308,8 +309,7 @@ public class TileEntityRBMKBoiler extends TileEntityRBMKSlottedBase implements I
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setSteamType(Context context, Arguments args) {
 		int type = args.checkInteger(0);
-		steam.setTankType(CompatHandler.intToSteamType(type));
-		return new Object[] {true};
+		return new Object[] {steam.configureForRecipe(CompatHandler.intToSteamType(type), steam.getPressure())};
 	}
 
 	@Override

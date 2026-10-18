@@ -128,9 +128,11 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements api
 		boolean canConvert = false;
 		if(tanks[0].getTankType().hasTrait(FT_Coolable.class)) {
 			FT_Coolable trait = tanks[0].getTankType().getTrait(FT_Coolable.class);
-			int inputOps = tanks[0].getFill() / trait.amountReq;
-			int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
-			canConvert = Math.min(inputOps, Math.min(outputOps, amountToCool)) > 0;
+			if(trait.amountReq > 0 && trait.amountProduced > 0) {
+				int inputOps = tanks[0].getFill() / trait.amountReq;
+				int outputOps = Math.max(0, tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
+				canConvert = Math.min(inputOps, Math.min(outputOps, amountToCool)) > 0;
+			}
 		}
 		if(!pendingCoolantReturn.isEmpty() || thermal.ownedMass() > 0 || com.hbm.realsim.ThermalMachine.state(tanks[0]) != null && tanks[0].getFill() > 0 || heatEnergy > 0 || canConvert || tanks[1].getFill() > 0) this.scheduleMachineTransition(now + 1L, TASK_SIMULATE, TASK_SLOT_MAIN);
 		else this.cancelMachineTransition(TASK_SIMULATE, TASK_SLOT_MAIN);
@@ -392,9 +394,9 @@ public class TileEntityHeaterHeatex extends TileEntityMachineBase implements api
 	@Override
 	public void pasteSettings(NBTTagCompound nbt, int index, World world, EntityPlayer player, int x, int y, int z) {
 		int[] ids = nbt.getIntArray("fluidID");
-		if(ids.length > 0) {
+		if(index >= 0 && index < ids.length) {
 			int id = ids[index];
-			tanks[0].setTankType(Fluids.fromID(id));
+			tanks[0].configureForRecipe(Fluids.fromID(id), tanks[0].getPressure());
 		}
 		if(nbt.hasKey("toCool")) amountToCool = nbt.getInteger("toCool");
 		this.markMachineDirty(MachineDirtyCause.CONFIGURATION | MachineDirtyCause.FLUID);

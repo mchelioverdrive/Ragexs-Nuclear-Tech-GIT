@@ -444,7 +444,7 @@ public class TileEntityChungus extends TileEntityLoadedBase implements api.hbm.e
 	@Callback(direct = false, limit = 4)
 	@Optional.Method(modid = "OpenComputers")
 	public Object[] setType(Context context, Arguments args) {
-		tanks[0].setTankType(CompatHandler.intToSteamType(args.checkInteger(0)));
+		tanks[0].configureForRecipe(CompatHandler.intToSteamType(args.checkInteger(0)), tanks[0].getPressure());
 		return new Object[] {};
 	}
 

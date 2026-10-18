@@ -148,8 +148,8 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
 		super.networkUnpack(nbt);
 		
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
-		this.progress = nbt.getIntArray("progress");
-		this.maxProgress = nbt.getIntArray("maxProgress");
+		this.progress = java.util.Arrays.copyOf(nbt.getIntArray("progress"), getRecipeCount());
+		this.maxProgress = java.util.Arrays.copyOf(nbt.getIntArray("maxProgress"), getRecipeCount());
 		this.isProgressing = nbt.getBoolean("isProgressing");
 		
 		water.readFromNBT(nbt, "w");

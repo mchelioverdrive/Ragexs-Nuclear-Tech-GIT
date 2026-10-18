@@ -845,7 +845,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		if(send.size() == 0)
 			return;
 
-		int offer = 0;
+		long offer = 0;
 		List<Integer> weight = new ArrayList();
 
 		for(FluidTank tank : send) {
@@ -854,13 +854,15 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 			weight.add(fillWeight);
 		}
 
+		if(offer <= 0) return;
+		amount = (int) Math.min(amount, offer);
 		int tracker = amount;
 
 		for(int i = 0; i < send.size(); i++) {
 
 			FluidTank tank = send.get(i);
 			int fillWeight = weight.get(i);
-			int part = amount * fillWeight / offer;
+			int part = (int) ((long) amount * fillWeight / offer);
 
 			tank.setFill(tank.getFill() - part);
 			tracker -= part;
@@ -900,7 +902,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 	@Override
 	public long transferFluid(FluidType type, int pressure, long fluid) {
-		int amount = (int) fluid;
+		int amount = (int) Math.min(Integer.MAX_VALUE, fluid);
 
 		if(amount <= 0)
 			return 0;
@@ -916,11 +918,11 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		if(rec.size() == 0)
 			return fluid;
 
-		int demand = 0;
+		long demand = 0;
 		List<Integer> weight = new ArrayList();
 
 		for(FluidTank tank : rec) {
-			int fillWeight = tank.getMaxFill() - tank.getFill();
+			int fillWeight = Math.max(0, tank.getMaxFill() - tank.getFill());
 			demand += fillWeight;
 			weight.add(fillWeight);
 		}
@@ -943,7 +945,10 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 
 	@Override
 	public long getDemand(FluidType type, int pressure) {
-		return getMaxFluidFill(type) - getFluidFillForTransfer(type, pressure);
+		long demand = 0;
+		for(FluidTank tank : inTanks()) if(tank.getTankType() == type && tank.getPressure() == pressure)
+			demand += Math.max(0, tank.getMaxFill() - tank.getFill());
+		return demand;
 	}
 
 	@Override
@@ -961,15 +966,12 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		super.readFromNBT(nbt);
 
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
-		this.progress = nbt.getIntArray("progress");
+		this.progress = java.util.Arrays.copyOf(nbt.getIntArray("progress"), getRecipeCount());
         for(int i = 0; i < physicalBatches.length; i++) {
             physicalBatches[i].read(nbt.getCompoundTag("realSimLane" + i));
             physicalBatches[i].electrifyUtilities();
         }
 		if(!nbt.hasKey("realSimProcessVersion")) for(int i = 0; i < progress.length && i < getRecipeCount(); i++) { int slot = getTemplateIndex(i); if(slots[slot] != null && slots[slot].getItemDamage() == 58) progress[i] = 0; }
-
-		if(progress.length == 0)
-			progress = new int[this.getRecipeCount()];
 
 		for(int i = 0; i < tanks.length; i++) {
 			tanks[i].readFromNBT(nbt, "t" + i);

@@ -89,14 +89,14 @@ public class GUIMachineCustom extends GuiInfoContainer {
 			drawTexturedModalRect(guiLeft + 61, guiTop + 53, 236, 0, 18, 18);
 			GaugeUtil.drawSmoothGauge(guiLeft + 70, guiTop + 62, this.zLevel, (double) custom.heat / (double) custom.config.maxHeat, 5, 2, 1, 0x7F0000);
 		}
-		int p = custom.progress * 90 / custom.maxProgress;
+		int p = MachineGuiParts.scaled(custom.progress, custom.maxProgress, 90);
 		drawTexturedModalRect(guiLeft + 78, guiTop + 119, 192, 0, Math.min(p, 44), 16);
 		if(p > 44) {
 			p -= 44;
 			drawTexturedModalRect(guiLeft + 78 + 44, guiTop + 119, 192, 16, p, 16);
 		}
 
-		int e = (int) (custom.getStoredEnergyQuanta() * 52 / custom.config.energyCapacityQuanta);
+		int e = MachineGuiParts.scaled(custom.getStoredEnergyQuanta(), custom.config.energyCapacityQuanta, 52);
 		drawTexturedModalRect(guiLeft + 150, guiTop + 70 - e, 176, 52 - e, 16, e);
 
 		for(int i = 0; i < 2; i++) {

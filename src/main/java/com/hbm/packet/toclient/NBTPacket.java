@@ -13,6 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.World;
 
 @Deprecated // rest in peace sweet little prince
 public class NBTPacket implements IMessage {
@@ -68,25 +69,24 @@ public class NBTPacket implements IMessage {
 	public static class Handler implements IMessageHandler<NBTPacket, IMessage> {
 		
 		@Override
-		public IMessage onMessage(NBTPacket m, MessageContext ctx) {
-			
-			if(Minecraft.getMinecraft().theWorld == null)
-				return null;
-			
-			TileEntity te = Minecraft.getMinecraft().theWorld.getTileEntity(m.x, m.y, m.z);
-			
+		public IMessage onMessage(final NBTPacket m, MessageContext ctx) {
 			try {
-				
-				NBTTagCompound nbt = m.buffer.readNBTTagCompoundFromBuffer();
-				
+				final NBTTagCompound nbt = m.buffer.readNBTTagCompoundFromBuffer();
 				if(nbt != null) {
-					
-					if(te instanceof INBTPacketReceiver)
-						((INBTPacketReceiver) te).networkUnpack(nbt);
+					Minecraft.getMinecraft().func_152344_a(new Runnable() {
+						@Override public void run() {
+							World world = Minecraft.getMinecraft().theWorld;
+							if(world == null || !world.blockExists(m.x, m.y, m.z)) return;
+							TileEntity te = world.getTileEntity(m.x, m.y, m.z);
+							if(te instanceof INBTPacketReceiver && !te.isInvalid())
+								((INBTPacketReceiver) te).networkUnpack(nbt);
+						}
+					});
 				}
-				
 			} catch (IOException e) {
 				e.printStackTrace();
+			} finally {
+				m.buffer.release();
 			}
 			
 			return null;
